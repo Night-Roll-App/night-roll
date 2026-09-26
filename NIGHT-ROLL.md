@@ -1156,62 +1156,55 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   add_annotation to what the user asked for in words — his rule: the
   model never volunteers a reading, it writes what he dictates. Fill's
   schema path sends no tools. The browser (WebLLM) backend ignores them.
-- **Claude Code as a backend (`tools/claude-bridge.mjs`, 2026-09-26 —
-  Josh: "I just want to use Claude Code as my backing LLM").** A
-  dependency-free Node server on 127.0.0.1:8787 speaking the OpenAI
-  protocol: `GET /v1/models` lists one model, `claude-code`; `POST
-  /v1/chat/completions` (stream or not) flattens the messages into one
-  prompt and runs `claude -p --output-format stream-json
-  --include-partial-messages --append-system-prompt … --allowedTools
-  Read Glob Grep WebFetch WebSearch` with cwd = this repo, so Claude
-  Code reads any song's .notes.txt / .rollnotes.json / docs and the web,
-  and writes nothing. Text deltas stream as OpenAI chunks; Claude's own
-  tool uses (Read …) stream as `reasoning_content` notes so the app's
-  thinking counter moves. App tools: the bridge appends the tool list to
-  the system prompt and asks for a one-line `{"tool_call":{…}}` reply
-  when Claude wants one; it holds back the first characters of a reply
-  until it can tell prose from JSON, then emits proper OpenAI
-  `tool_calls` + `finish_reason: "tool_calls"`; `tool` messages come
-  back as "TOOL RESULT" lines in the next prompt. Every turn is a fresh
-  process (5-minute cap, killed on client abort). The appended prompt
-  tells Claude to ignore hook style rules (the caveman hook fires in
-  `-p` too) and to obey CLAUDE.md. Exposed on the tailnet next to LM
-  Studio: `tailscale serve --bg --set-path /claude 8787` → Settings URL
-  `https://<mac>.<tailnet>.ts.net/claude`, model `claude-code`, context
-  100000 (the app trims history to `aiWindow`; 8192 starves Claude).
-  Not persistent across reboots: `node tools/claude-bridge.mjs &` (the
-  serve mount persists). Cost: each turn is a Claude Code run on his
-  account (~25k cached input tokens for the repo context).
-  **Capabilities are the machine's** (found 2026-09-26): Josh's global
-  Claude Code permission mode is "auto", so `claude -p` has Edit, Write
-  and Bash, and the first bridge session edited index.html, ran the
-  tests, and pushed twice (c2f0bcf, 9cc232a) when he said "go" — while
-  telling him in other turns it was read-only. The `--allowedTools`
-  list is gone (it only ever added), and the appended prompt now says:
-  you have what a terminal session has, check rather than assume, and
-  CLAUDE.md binds you (announce first; vm tests under an alarm; never
-  Playwright; commit, push, report the hash; never touch
-  albums/compositions/ unasked).
-  **Jobs** (same day — the iPad problem): Safari suspends a backgrounded
-  tab and drops the connection; a run tied to it died and the answer
-  never existed, and the sheet redrew from storage without the question.
-  Now every turn is a JOB keyed by the app's `x-nr-job` header: the
-  bridge runs it to the end with or without a listener, keeps text,
-  notes and result for two hours, re-attaches a second POST with the
-  same id (replaying the text so far), answers `GET /v1/jobs/:id`
-  (status running/done/error, text, notes, result) and `DELETE` (the
-  app's ■ Stop → status error "stopped"); `GET /v1/jobs` is the
-  capability probe. App side: `askSend` saves the question at once with
-  `pending: <jobId>` (`askJobId`), `askRun` does the exchange (tool
-  rounds inside) and `askFinish`/`askFail` replace the marker; a
-  dropped connection on a jobs-capable server leaves the marker and
-  schedules `askResume`, which runs on sheet open (a pending question
-  renders with a "still working" bubble), on `visibilitychange`, and
-  every 3 s while waiting; a job that ended in a tool call is run here
-  and continued as a new job with the same history; without jobs (LM
-  Studio) a dropped reply becomes "⚠ no reply came back — ask again".
-  `askBuildMessages` skips the pending copy. vm-tested (store flow);
-  browser-verified: send, reload mid-reply, reopen → the answer landed.
+- **The AI bridge (`tools/claude-bridge.mjs`, `npm run bridge`; 2026-09-26,
+  generalized the same day — Josh: "I want to make sure everybody can run
+  this with LM Studio or Claude Code or both, or Ollama").** A
+  dependency-free Node server (Node 18+) speaking the OpenAI protocol,
+  meant to be THE server Settings points at. Flags/env in the file header:
+  `--port/--host/--token`, `--upstream name=url` (repeatable; without any,
+  LM Studio :1234 and Ollama :11434 are probed and listed only while
+  running), `--no-claude`, `--claude read|full` (default read), `--repo`,
+  `--jobs-dir`, `--keep-hours`.
+  - **Models:** `GET /v1/models` = `claude-code` when the `claude` CLI is
+    installed, plus every model each upstream lists right now (a shared id
+    becomes `<upstream>/<id>`); the app's Test/dropdown just work. A turn
+    for an upstream model is forwarded with `stream: true` and the app's
+    `tools` as-is; a turn for `claude-code` runs `claude -p
+    --output-format stream-json --include-partial-messages
+    --append-system-prompt …` in `--repo`, with `--tools Read Glob Grep
+    WebFetch WebSearch` in read mode and no restriction in full mode
+    (full = whatever this machine's Claude Code may do; Josh's global
+    permission mode is "auto", so his bridge edits, tests, commits and
+    pushes on his "go" — the first session did, c2f0bcf and 9cc232a —
+    and the full-mode prompt binds CLAUDE.md: announce first, vm tests
+    under an alarm, never Playwright, push and report the hash, never
+    touch albums/compositions/ unasked). App tools reach Claude as a
+    one-line `{"tool_call":{…}}` convention; the bridge holds the first
+    characters until prose and JSON can be told apart and emits OpenAI
+    `tool_calls`; `tool` messages return as "TOOL RESULT" lines.
+  - **Jobs** (the iPad problem: Safari suspends a backgrounded tab and
+    drops the connection): every turn is a job keyed by the app's
+    `x-nr-job` header; it runs to the end with or without a listener,
+    keeps every chunk, replays them to a second POST with the same id,
+    answers `GET /v1/jobs/:id` (status/text/notes/result) and `DELETE`
+    (kill → error "stopped"); `GET /v1/jobs` is the capability probe.
+    Finished jobs are written to `--jobs-dir` (default
+    `~/.night-roll-bridge/jobs`) and kept until fetched + `--keep-hours`
+    (24; 7 days unfetched), so a restart keeps answers. Claude's own tool
+    uses stream as `reasoning_content` notes (the app's thinking
+    counter). 20-minute cap per turn.
+  - **Security:** binds 127.0.0.1 unless `--host`; `--token` requires
+    `Authorization: Bearer` (the app's Settings key); CORS open (the app
+    is a static page). TLS is someone else's job: Josh uses `tailscale
+    serve --bg --set-path /claude 8787` → `https://<mac>.<tailnet>.ts.net/claude`
+    (tailnet-only); Caddy or any reverse proxy works the same.
+  - **Tests:** tests/bridge.test.mjs runs the bridge with `--no-claude`
+    against a fake upstream: model merge with prefixing, a job outliving
+    a dropped client, replay on re-attach, tool_calls assembly,
+    non-stream on a finished job, kill, 404, the token gate. In `npm test`.
+  - Josh's box: `node tools/claude-bridge.mjs --claude full --upstream
+    lmstudio=http://localhost:1234` (LM Studio needs `lms server start
+    --cors`); not persistent across reboots.
 - **iPad route (P4) — done 2026-09-25.** Josh's iPad asks the Mac's LM
   Studio over Tailscale, verified end to end (Test listed the models,
   ✦ Ask answered). Exact recipe on the Mac: `lms server start --cors`

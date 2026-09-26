@@ -19,15 +19,22 @@ is deployment. Built for iPad-in-bed ergonomics, works anywhere.
   dictation), synced to this repo via the GitHub Contents API.
 - **✦ Ask (AI tutor)** — a chat sheet that sees the song, your cursor, your
   annotations, and the bars in view, talking to any OpenAI-compatible model
-  server you point it at (LM Studio or Ollama on your own machine, so
-  nothing leaves your house) — or at `tools/claude-bridge.mjs`, which
-  turns Claude Code itself into that server (it reads the whole repo and
-  the web). House rules: hints before answers, never names a key you
-  haven't set. On request it acts: "put an F#m chord annotation on 21.1"
-  writes exactly that; "compare this to ambush" reads that song. On your
-  own songs, **✦ Fill** asks it to write notes into a range — validated,
-  applied as one undo step exactly like the Bassist. Design in
+  server you point it at. House rules: hints before answers, never names a
+  key you haven't set. On request it acts: "put an F#m chord annotation on
+  21.1" writes exactly that; "compare this to ambush" reads that song. On
+  your own songs, **✦ Fill** asks it to write notes into a range —
+  validated, applied as one undo step exactly like the Bassist. Design in
   `local-llm-design.md`.
+- **The AI bridge** (`npm run bridge`, `tools/claude-bridge.mjs`, no
+  dependencies) — one small server in front of whatever models you have:
+  LM Studio and Ollama are found automatically when running, any other
+  OpenAI server with `--upstream name=url`, and **Claude Code** if the
+  `claude` CLI is installed (read-only by default; `--claude full` lets it
+  edit, test and push under the repo's rules). Point Settings at the
+  bridge, tap Test, pick a model from what it lists. Every turn is a job
+  that survives your phone or iPad suspending the tab: leave, come back,
+  the answer is there. `--token` protects it; put TLS in front (Tailscale
+  Serve, Caddy) to reach it from a device that opens Night Roll over https.
 - **Composing** — it grew into a small DAW (2026-08): pencil/drag note entry
   on a 16th/triplet grid, multi-note selection editing (move, resize, split,
   join, velocity), chord & progression insertion, a drum kit with its own

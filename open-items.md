@@ -4,6 +4,21 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## THE AI BRIDGE, FOR EVERYONE — 2026-09-26 (NIGHT-ROLL.md "✦ Ask / ✦ Fill" → The AI bridge)
+
+Josh: "I want to make sure everybody can run this with LM Studio or
+Claude Code or both, or Ollama … that's what I am planning to roll out."
+Rebuilt the bridge as one configurable server: upstreams by flag (LM
+Studio and Ollama auto-found), Claude Code if installed (read-only by
+default, `--claude full` opt-in), one model list, jobs for every model,
+kept on disk until fetched + 24 h, `--token`, `--host`; tests in
+tests/bridge.test.mjs against a fake upstream; README section; `npm run
+bridge`. His box runs `--claude full --upstream lmstudio=…`; the iPad
+now needs only the /claude URL for both models. Not done: a launchd
+plist / `brew services`-style always-on; a per-song `--resume` session
+to cut Claude's per-turn latency; a "Models" refresh button in Settings
+(Test already re-lists).
+
 ## ASK TOOLS + CLAUDE CODE BRIDGE — SHIPPED 2026-09-26 (NIGHT-ROLL.md "✦ Ask / ✦ Fill" → Tools, Claude Code as a backend)
 
 From the first .ask.md (graveyard-2). Josh's rulings, applied: the AI
