@@ -2972,6 +2972,10 @@ async function loadSong(path) {
   songLoading = true;
   try {
     await loadSongInner(path);
+  } catch (err) { // a failed open must SAY so (Josh, 2026-09-26, airplane mode: "it just hangs")
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    setInfo("couldn't open " + songTitleOf(path) + (offline ? " — you're offline and it isn't on this device yet; songs are kept as you open them (and all of them after one online launch)" : " — " + (err && err.message || "fetch failed")));
+    return false; // said in the info strip; not an app error for the ⚠ log
   } finally {
     songLoading = false;
     if (pendingPlay) { // play pressed mid-load: honor it now the song is real — and its notes
@@ -15800,7 +15804,11 @@ async function readData(which, path, bust) {
   if (f) return {ok: true, status: 200, fromFolder: true,
     text: () => f.text(), arrayBuffer: () => f.arrayBuffer(), json: async () => JSON.parse(await f.text())};
   const url = (which === "analysis" ? analysisURL(path) : songsURL(path)) + (bust ? "?t=" + Date.now() : "");
-  return fetch(url, {cache: "no-cache"});
+  // a fetch that never settles used to lock the loader for good (open-items:
+  // "song open hangs on a CDN blip"); 12 s then give up and say so
+  const init = {cache: "no-cache"};
+  if (typeof AbortSignal !== "undefined" && AbortSignal.timeout) init.signal = AbortSignal.timeout(12000);
+  return fetch(url, init);
 }
 async function idbFsGet() {
   try {
@@ -16289,7 +16297,9 @@ if (typeof navigator !== "undefined" && navigator.serviceWorker && typeof locati
     if (typeof caches !== "undefined") caches.keys().then(ks => ks.forEach(k => { if (k.startsWith("night-roll-")) caches.delete(k); })).catch(() => {});
     setInfo("offline support turned off on this device — reload without ?sw=0 to turn it back on");
   } else {
-    navigator.serviceWorker.register(new URL("sw.js", APP_BASE).href, {scope: APP_BASE}).catch(err => console.warn("sw:", err.message));
+    navigator.serviceWorker.register(new URL("sw.js", APP_BASE).href, {scope: APP_BASE})
+      .then(reg => { const w = reg.active || reg.waiting || reg.installing; if (w && navigator.onLine !== false) w.postMessage("warm"); }) // every catalog song into the cache, in the background
+      .catch(err => console.warn("sw:", err.message));
   }
 }
 try { // a capture beacon surviving into a fresh load = the tab was killed mid-capture

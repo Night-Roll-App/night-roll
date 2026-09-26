@@ -6,6 +6,13 @@ session start alongside the quiz.)
 
 ## PHASE 0 — PWA — SHIPPED 2026-09-26 (NIGHT-ROLL.md "Installable app — PWA")
 
+Josh installed it ("Dude, it works … I actually love the icon"). First
+airplane-mode test: a song he had not opened "just hangs" → fixed the
+same hour: every catalog song is warmed into the cache (~1.2 MB), song
+fetches time out after 12 s, and a failed open says so. This also closes
+the old "song open hangs on a CDN blip" item below. Awaiting his second
+airplane-mode test.
+
 Manifest, icons, service worker, kill switch, tests. Josh's exit
 criterion still to run on HIS iPad: Add to Home Screen, airplane mode,
 launch, a song plays. Pricing research landed in the Desktop plan's

@@ -12,8 +12,10 @@
 //   vendor/soundfonts/*                 cache-first, cached ON FIRST USE
 //                                      (83 MB — never precached; iOS quota)
 //   albums/** and albums/manifest.json  network-first with cache fallback,
-//                                      the ?t= cache-buster ignored, so the
-//                                      songs you played are there offline
+//                                      the ?t= cache-buster ignored; EVERY
+//                                      catalog song is warmed into the cache
+//                                      after activate and on each online boot
+//                                      (~1.2 MB), so any song opens offline
 //   sw.js / 404.html                    never intercepted
 //
 // One cache, versioned by SW_VERSION; activating a new version drops the old
@@ -21,7 +23,7 @@
 // A stale-index footgun is avoided by design: index.html is only ever served
 // from cache when the network failed or timed out.
 
-const SW_VERSION = "nr-v2";
+const SW_VERSION = "nr-v4";
 const CACHE = "night-roll-" + SW_VERSION;
 const PRECACHE = ["./", "index.html", "vendor/vexflow.js", "app.webmanifest",
                   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
@@ -41,8 +43,44 @@ self.addEventListener("activate", e => {
   e.waitUntil((async () => {
     for (const k of await caches.keys()) if (k.startsWith("night-roll-") && k !== CACHE) await caches.delete(k);
     await self.clients.claim();
+    warmSongs(); // in the background — never gates activation
   })());
 });
+
+// Every song in the catalog is small (all albums together: ~1.2 MB of .mid +
+// .rollnotes.json + album.json). Josh installed the app, went into airplane
+// mode, and a song he had not opened yet just hung (2026-09-26): songs must
+// be there before they are opened. Fetch what the catalog lists and keep what
+// is not cached yet; the page asks for another pass on every online boot.
+let warming = null;
+function warmSongs() {
+  if (warming) return warming;
+  warming = (async () => {
+    try {
+      const c = await caches.open(CACHE);
+      const r = await fetch(new Request("albums/manifest.json", {cache: "no-cache"}));
+      if (!r.ok) return;
+      const copy = r.clone(); // clone BEFORE reading: a consumed body cannot be cloned
+      const manifest = await r.json();
+      await c.put("albums/manifest.json", copy).catch(() => {});
+      const paths = new Set();
+      (function walk(v) { if (typeof v === "string") { if (/\.midi?$/i.test(v) && v.startsWith("albums/")) paths.add(v); } else if (v && typeof v === "object") Object.values(v).forEach(walk); })(manifest);
+      const wanted = new Set();
+      for (const mid of paths) {
+        wanted.add(mid); wanted.add(mid.replace(/\.midi?$/i, ".rollnotes.json"));
+        const dir = mid.slice(0, mid.lastIndexOf("/")); wanted.add(dir + "/album.json"); wanted.add(dir.slice(0, dir.lastIndexOf("/")) + "/album.json");
+      }
+      let n = 0;
+      for (const rel of wanted) {
+        const key = new URL(rel, self.registration.scope).href;
+        if (await c.match(key)) continue;
+        try { const f = await fetch(new Request(key, {cache: "no-cache"})); if (f.ok) { await c.put(key, f); n++; } } catch (err) { /* offline mid-warm: next pass */ }
+      }
+    } catch (err) { /* offline at install: the page asks again when online */ }
+    finally { warming = null; }
+  })();
+  return warming;
+}
 
 const stripBust = url => { const u = new URL(url); u.searchParams.delete("t"); return u.href; };
 
@@ -105,4 +143,5 @@ self.addEventListener("fetch", e => {
 
 self.addEventListener("message", e => {
   if (e.data === "skipWaiting") self.skipWaiting();
+  if (e.data === "warm") warmSongs();
 });

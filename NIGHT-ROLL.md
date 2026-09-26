@@ -1262,7 +1262,18 @@ WebLLM CDN pass through untouched):
   never precached (iOS quota, slow installs).
 - `albums/**` incl. the catalog: network-first with cache fallback; the
   `?t=` buster is stripped from the cache key, so cross-device freshness
-  keeps working online and the songs you opened play offline.
+  keeps working online. **Every catalog song is warmed into the cache**
+  (`warmSongs`: on activate and on a "warm" message the page posts at
+  every online boot) — all albums together are ~1.2 MB of .mid +
+  .rollnotes.json + album.json, so any song opens offline, not just the
+  ones opened before (Josh's first airplane-mode test: a fresh song
+  "just hangs"). Soundfonts stay cache-on-first-use. Two footguns met on
+  the way: the manifest Response must be cloned BEFORE `.json()` reads
+  it, and `readData` now aborts a fetch after 12 s (`AbortSignal.timeout`)
+  so a hung CDN or a dead network cannot lock `songLoading` for good —
+  `loadSong` catches, says "couldn't open <song> — offline and not on this
+  device yet" in the info strip, and returns false (the old CDN-blip hang
+  in open-items is closed by this).
 - `sw.js`, `404.html`: never intercepted.
 One cache, `night-roll-<SW_VERSION>`; a new version drops the old
 cache on activate (`skipWaiting` + `clients.claim`). Kill switch:

@@ -38,4 +38,7 @@ test("PWA: sw.js parses, precaches only files that exist, never the soundfonts",
   assert.ok(!list.some(p => p.includes("soundfonts")), "soundfonts are cached on first use, never precached");
   assert.match(sw, /req\.mode === "navigate"/);
   assert.match(sw, /url\.origin !== self\.location\.origin\) return/, "cross-origin passes through");
+  assert.match(sw, /function warmSongs/, "every catalog song is warmed into the cache");
+  assert.match(sw, /const copy = r\.clone\(\);[\s\S]*await r\.json\(\)/, "the manifest response is cloned before it is read");
+  assert.match(sw, /e\.data === "warm"/, "the page can ask for a warm pass");
 });
