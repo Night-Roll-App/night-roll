@@ -24,7 +24,10 @@ queued from earlier: an undoable Revert (stash + "Restore local copy").
 
 Step 2 done: share links / link mode (NIGHT-ROLL.md "Publish + share
 links"); test repo joshcough/night-roll-test-songs is his to delete.
-Step 3 done: Connect GitHub as a two-step setup with Check.
+Step 3 done: Connect GitHub as a two-step setup with Check. Step 4
+done: Publish keeps a song list (player links) in the repo's README
+between markers; this repo's README seeded. Live run pending Josh's
+next Publish.
 Remaining, one at a time on his go:
 4 README with player links written into the songs repo, 5 EDITION flag
 + packaging script + ship-guard + About attribution.

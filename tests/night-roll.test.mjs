@@ -1392,7 +1392,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo",
+    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -2822,6 +2822,23 @@ test("Connect GitHub: annotations follow the songs repo unless split on purpose;
   assert.match(val(`ghCheckMessage("a/b", 404, null)`), /no access to a\/b/);
   assert.match(val(`ghCheckMessage("a/b", 401, null)`), /rejected the token/);
   run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
+});
+
+test("Songs README: the block lists every song as a player link; splice creates, appends, or replaces between markers only", () => {
+  installSong();
+  run(`APP_BASE = "https://joshcough.github.io/night-roll/"; saveCfg({songsBase: ""});`);
+  const albums = [{title: "Tunes", songs: [{title: "One", path: "albums/tunes/one.mid"}, {title: "Two", path: "albums/tunes/two.mid"}]}, {title: "Empty", songs: []}];
+  const block = val(`songsReadmeBlock(${JSON.stringify(albums)}, "alice/tunes")`);
+  assert.match(block, /^<!-- night-roll:songs -->\n## Songs — open in Night Roll/);
+  assert.match(block, /- \[One\]\(https:\/\/joshcough\.github\.io\/night-roll\/albums\/tunes\/one\?songs=alice%2Ftunes\)/);
+  assert.ok(!block.includes("Empty"), "albums with no songs are skipped");
+  assert.match(block, /<!-- \/night-roll:songs -->$/);
+  const own = val(`songsReadmeBlock(${JSON.stringify(albums)}, "joshcough/night-roll")`);
+  assert.match(own, /\(https:\/\/joshcough\.github\.io\/night-roll\/albums\/tunes\/one\)/, "the site's own repo needs no songs=");
+  assert.equal(val(`spliceReadme("", "B")`), "B\n");
+  assert.equal(val(`spliceReadme("# Mine\\n\\nprose\\n", "B")`), "# Mine\n\nprose\n\nB\n");
+  assert.equal(val(`spliceReadme("# Mine\\n\\n<!-- night-roll:songs -->old<!-- /night-roll:songs -->\\n\\ntail\\n", "<!-- night-roll:songs -->new<!-- /night-roll:songs -->")`), "# Mine\n\n<!-- night-roll:songs -->new<!-- /night-roll:songs -->\n\ntail\n");
+  run(`saveCfg({songsBase: ""}); songKey = null;`);
 });
 
 test("Ask: host consent — localhost never prompts, other hosts once", () => {

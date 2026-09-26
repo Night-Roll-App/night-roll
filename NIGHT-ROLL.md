@@ -1290,6 +1290,20 @@ The Publish sheet's no-token line now says "Connect GitHub first". Josh
 generated a new token for the home-screen app the same evening (the
 installed app has its own storage; a token is never shown twice).
 
+**The repo's song list (step 4):** after the manifest update,
+`commitCompositionNow` calls `writeSongsReadme(h)`: GET the manifest
+through the API, `songsReadmeBlock(albums, repo)` renders every album's
+songs as player links (`shareLinkFor(path, repo)`; `APP_REPO` =
+`joshcough/night-roll` needs no `songs=`, any other repo gets it),
+`spliceReadme(existing, block)` creates the README, appends the block to
+one without markers, or replaces only what sits between
+`<!-- night-roll:songs -->` and `<!-- /night-roll:songs -->`, and a PUT
+follows only if the text changed (one stale-sha retry). Never fatal: a
+failure is a parenthetical on the "Published ✓" line. This repo's
+README was seeded with the block (84 songs) so the first real publish
+just refreshes it. Not run live yet (needs a publish); the block and
+splice are vm-tested. Folder mode skips it.
+
 ## Installable app — PWA (Phase 0 of the iPad app plan, 2026-09-26)
 
 `app.webmanifest` (NOT `albums/manifest.json`, the song catalog) +
