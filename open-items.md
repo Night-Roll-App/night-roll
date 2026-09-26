@@ -4,6 +4,29 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## PHASE 1 — publish + links (in progress 2026-09-26)
+
+Rulings so far: step 1 done (5add982) — the one deliberate step is
+called Publish everywhere (File → Publish…, footer, PUBLISH sheet, ⇪
+Publish song / Publish all; Save… in folder mode). Drafts and Revert
+unchanged.
+
+**Design gap Josh raised (2026-09-26, "not immediately"):** a user who
+never publishes has no checkpoint — the device draft is always the
+latest state, so Revert can only go back to the published copy, and
+"every single thing you do is always saved, that kind of sucks … not
+the way it works in Logic". Fix to build in this phase: a Logic-style
+**Save** = a local checkpoint distinct from the working draft
+(snapshot on the device; Revert → last Save, or the published copy if
+none; the ● means "changed since the last Save"). In the iPad app that
+Save is the file in Files and the draft is autosave/recovery. Also
+queued from earlier: an undoable Revert (stash + "Restore local copy").
+
+Remaining steps, one at a time on his go: 2 share links carrying the
+repo (`?song=…&songs=<raw base>`), 3 Connect GitHub as a setup step,
+4 README with player links written into the songs repo, 5 EDITION flag
++ packaging script + ship-guard + About attribution.
+
 ## PHASE 0 — PWA — SHIPPED 2026-09-26 (NIGHT-ROLL.md "Installable app — PWA")
 
 Josh installed it ("Dude, it works … I actually love the icon"). First
