@@ -1275,6 +1275,21 @@ Not yet: `analysis=` as a separate base (the mirror tree makes it
 unnecessary so far); opening a link in the installed app offline
 (cross-origin, so the SW passes it through).
 
+**Connect GitHub (step 3):** Settings → GITHUB is a two-step setup —
+"1. repo" (`#cfgsongsrepo`, promoted out of the advanced rows, with a
+"create one ↗" button to github.com/new) and "2. token" (`#ghtoken`,
+"make one ↗" to the fine-grained-token page, and **Check**). `ghCheck`
+GETs `api.github.com/repos/<repo>` with the token; `ghCheckMessage`
+maps 200+push / 200 read-only / 401 / 404 / 403 to one line each with
+the fix in it, shown gold/red via `aiSay` in `#ghcheckout`; it runs by
+itself when the sheet opens with a token stored. Defaults: a new user's
+`analysisRepo` follows `songsRepo` (`cfg()` falls back to it, and
+`settingsPersist("cfgsongsrepo")` moves analysisRepo along whenever the
+two were equal — a deliberate split in the advanced rows stays split).
+The Publish sheet's no-token line now says "Connect GitHub first". Josh
+generated a new token for the home-screen app the same evening (the
+installed app has its own storage; a token is never shown twice).
+
 ## Installable app — PWA (Phase 0 of the iPad app plan, 2026-09-26)
 
 `app.webmanifest` (NOT `albums/manifest.json`, the song catalog) +

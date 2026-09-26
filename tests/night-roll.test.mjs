@@ -1392,7 +1392,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo",
+    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -2807,6 +2807,21 @@ test("Share link: songs= parses owner/repo or a base URL; the link carries it on
   run(`saveCfg({songsBase: "https://raw.githubusercontent.com/alice/tunes/main/"});`);
   assert.equal(val(`shareLinkFor("albums/test/scratch.mid")`), "https://joshcough.github.io/night-roll/albums/test/scratch?songs=alice%2Ftunes");
   run(`saveCfg({songsBase: ""}); songKey = null;`);
+});
+
+test("Connect GitHub: annotations follow the songs repo unless split on purpose; Check messages name the fix", () => {
+  run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
+  assert.equal(val(`cfg().analysisRepo`), "joshcough/night-roll");
+  run(`document.getElementById("cfgsongsrepo").value = "alice/tunes"; settingsPersist("cfgsongsrepo");`); // a new user types their repo: both were the default
+  assert.equal(val(`cfg().songsRepo`), "alice/tunes");
+  assert.equal(val(`cfg().analysisRepo`), "alice/tunes", "annotations follow");
+  run(`saveCfg({analysisRepo: "alice/notes"}); document.getElementById("cfgsongsrepo").value = "alice/music"; settingsPersist("cfgsongsrepo");`);
+  assert.equal(val(`cfg().analysisRepo`), "alice/notes", "a deliberate split stays split");
+  assert.match(val(`ghCheckMessage("a/b", 200, {permissions: {push: true}})`), /^✓ connected — a\/b/);
+  assert.match(val(`ghCheckMessage("a/b", 200, {permissions: {push: false}})`), /Contents: Read and write/);
+  assert.match(val(`ghCheckMessage("a/b", 404, null)`), /no access to a\/b/);
+  assert.match(val(`ghCheckMessage("a/b", 401, null)`), /rejected the token/);
+  run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
 });
 
 test("Ask: host consent — localhost never prompts, other hosts once", () => {
