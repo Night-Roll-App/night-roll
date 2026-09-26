@@ -1239,6 +1239,42 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   `applyTake` undo/mirror, target default rule, Bassist golden fixture,
   FEATURES keywords `✦ Ask` / `✦ Fill`.
 
+## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
+
+**Words (step 1, 5add982):** the one deliberate step that sends a song
+to the repo is **Publish** everywhere — File → Publish…, the footer
+button (`#syncbtn`, "Publish (N)" when several songs are pending), the
+PUBLISH sheet, ⇪ Publish song / Publish all, "Publishing…" /
+"Published ✓" ("Save…" wording in folder mode). Drafts still land on the
+device by themselves; Revert to repo copy is unchanged. Josh's open
+design point: a user who never publishes has no checkpoint — a
+Logic-style local Save is queued (open-items).
+
+**Share links (step 2):** a link = this player + the song + where the
+song lives. `?songs=owner/repo` (or a full base URL) puts the page in
+**link mode** for that load only: `LINK_SONGS` (declared beside
+`APP_BASE`; `linkSongsBase` parses, `linkRepoLabel` shortens a raw
+GitHub base back to owner/repo) overrides the songs AND analysis bases
+(mirror tree), `readData` skips the folder, `initCatalog` skips the
+folder scan, `loadSongInner` skips this device's drafts, `loadNotes`
+skips the local notes stash and the last-sync bridge, `setSong` skips
+the meter stash, `rememberLastSong` (every last-song write) is a no-op,
+`editableSong()` is false, `openEditor` and `askAddAnnotation` refuse,
+the Publish sheet says whose songs these are and disables publishing,
+the breadcrumb starts "🔗 owner/repo ›". Nothing is written, nothing is
+remembered: a listening room. Path-form URLs keep the param
+(`reflectSongURL` preserves every param but `song`; 404.html and the
+service worker's offline redirect both keep the query), so the address
+bar is the link. **🔗 Share link** in the Publish sheet → `shareLinkFor`
+(path form; `songs=` only when the song lives elsewhere — a followed
+link or a custom `songsBase`) → `navigator.share` on the iPad, else the
+clipboard. Test repo: `joshcough/night-roll-test-songs` (a generated
+scratch song; safe to delete). vm-tested: parse, label, link building;
+browser-verified against the test repo over raw.githubusercontent.com.
+Not yet: `analysis=` as a separate base (the mirror tree makes it
+unnecessary so far); opening a link in the installed app offline
+(cross-origin, so the SW passes it through).
+
 ## Installable app — PWA (Phase 0 of the iPad app plan, 2026-09-26)
 
 `app.webmanifest` (NOT `albums/manifest.json`, the song catalog) +

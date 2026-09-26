@@ -1392,7 +1392,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge",
+    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -2792,6 +2792,21 @@ test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply an
   assert.equal(val(`document.getElementById("askreplybtn").style.display`), "", "another song is open: badge");
   assert.match(val(`document.getElementById("noteinfo").textContent`), / in /);
   run(`asksheet.classList.remove("on"); askBadgeOff(); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/job-test.mid"); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/other.mid"); songKey = null;`);
+});
+
+test("Share link: songs= parses owner/repo or a base URL; the link carries it only for songs that live elsewhere", () => {
+  assert.equal(val(`linkSongsBase("alice/tunes")`), "https://raw.githubusercontent.com/alice/tunes/main");
+  assert.equal(val(`linkSongsBase("https://example.com/songs/")`), "https://example.com/songs");
+  assert.equal(val(`linkSongsBase("not a repo!")`), null);
+  assert.equal(val(`linkSongsBase("")`), null);
+  assert.equal(val(`linkRepoLabel("https://raw.githubusercontent.com/alice/tunes/main")`), "alice/tunes");
+  assert.equal(val(`linkRepoLabel("https://example.com/songs")`), "https://example.com/songs");
+  installSong();
+  run(`APP_BASE = "https://joshcough.github.io/night-roll/"; saveCfg({songsBase: ""});`);
+  assert.equal(val(`shareLinkFor("albums/compositions/nightroll/ambush.mid")`), "https://joshcough.github.io/night-roll/albums/compositions/nightroll/ambush");
+  run(`saveCfg({songsBase: "https://raw.githubusercontent.com/alice/tunes/main/"});`);
+  assert.equal(val(`shareLinkFor("albums/test/scratch.mid")`), "https://joshcough.github.io/night-roll/albums/test/scratch?songs=alice%2Ftunes");
+  run(`saveCfg({songsBase: ""}); songKey = null;`);
 });
 
 test("Ask: host consent — localhost never prompts, other hosts once", () => {

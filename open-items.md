@@ -22,8 +22,9 @@ none; the ● means "changed since the last Save"). In the iPad app that
 Save is the file in Files and the draft is autosave/recovery. Also
 queued from earlier: an undoable Revert (stash + "Restore local copy").
 
-Remaining steps, one at a time on his go: 2 share links carrying the
-repo (`?song=…&songs=<raw base>`), 3 Connect GitHub as a setup step,
+Step 2 done: share links / link mode (NIGHT-ROLL.md "Publish + share
+links"); test repo joshcough/night-roll-test-songs is his to delete.
+Remaining, one at a time on his go: 3 Connect GitHub as a setup step,
 4 README with player links written into the songs repo, 5 EDITION flag
 + packaging script + ship-guard + About attribution.
 
