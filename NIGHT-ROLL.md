@@ -1046,7 +1046,7 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   capitalized first word; the join adds a space, and a period first when
   the next segment starts with a capital and the last ended without
   punctuation. vm-tested. Also the shared `micToggle` (🎤 Speak), as the annotation
-  editor and dev channel use. `micStop` detaches the recognizer's handlers
+  editor and ✦ Ask use. `micStop` detaches the recognizer's handlers
   BEFORE `stop()`: Safari delivers one more result after stop, which used to
   refill the Ask box Send had just cleared (2026-09-26). Dictation fires
   `input` on the box, so `askGrow` sizes `#askinput` to its text (CSS cap
@@ -1238,6 +1238,16 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   classing, `parsePitch`, validator fixtures (one per rule, 6/8 + chop),
   `applyTake` undo/mirror, target default rule, Bassist golden fixture,
   FEATURES keywords `✦ Ask` / `✦ Fill`.
+
+## Dev channel — removed 2026-09-26
+
+The `?dev=1` in-app dev channel (💬 Feature request → ntfy request
+topic, 🛰 replies via EventSource, history sheet, two Settings fields)
+is gone: the AI bridge in full mode does the same job synchronously
+from the ✦ Ask sheet and the conversation lands in `<song>.ask.md`
+(Josh: "absolutely the dev channel is gone"). Code lives in git history
+(last at 88b83b0). The deploy-notice ntfy topic used by terminal
+sessions is unrelated and stays.
 
 ## Compare with repo (2026-09-25)
 

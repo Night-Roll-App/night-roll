@@ -351,7 +351,7 @@ keyset per-frame DOM write guard.
 offender. If hot≈0 and lag≈worst → GC/audio-IPC; if lag small → rAF
 throttle (environment). He REMOVED the in-app dev-channel/feature-
 request feature (this commit) as both a suspect and a risk — the
-ntfy-app channel still works for him; code lives in git history.
+ntfy-app channel still works for him; code lives in git history. (The in-app dev channel itself was removed for good on 2026-09-26 — the AI bridge replaced it.)
 Perf fixes this arc (all deployed): silent-wav, scene-cache blit,
 28px strip repaint, noise-buffer caches, all-path onended, scene
 realloc guard, keepalive pause-on-stop.
