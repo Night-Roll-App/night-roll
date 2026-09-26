@@ -4,6 +4,16 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## PHASE 0 — PWA — SHIPPED 2026-09-26 (NIGHT-ROLL.md "Installable app — PWA")
+
+Manifest, icons, service worker, kill switch, tests. Josh's exit
+criterion still to run on HIS iPad: Add to Home Screen, airplane mode,
+launch, a song plays. Pricing research landed in the Desktop plan's
+appendix: $4.99 paid-upfront confirmed as the indie slot; enroll in the
+Small Business Program before launch. Next: Phase 0.5 (WKWebView spike)
+on "run the audio spike", or Phase 1 (publish + links) on "build
+publish and links".
+
 ## iPAD APP PLAN v3 — on Josh's Desktop (2026-09-26; not committed by his rule)
 
 `~/Desktop/nightroll-ipad-app-plan.md` (v2 kept beside it). Spine

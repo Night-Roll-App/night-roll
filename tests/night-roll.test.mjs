@@ -1392,7 +1392,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Commit song", "Commit all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "✦ reply</b> badge",
+    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Commit song", "Commit all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));

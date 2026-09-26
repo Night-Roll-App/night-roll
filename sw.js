@@ -1,0 +1,108 @@
+// sw.js — Night Roll's service worker (Phase 0 of the iPad app plan, 2026-09-26).
+//
+// Job: make Add-to-Home-Screen a real app — launch offline, keep working
+// without a network, never serve a stale index.html when a network exists.
+//
+// Strategy, by request type (same-origin only; every other origin — GitHub's
+// API, model servers, the WebLLM CDN — passes straight through untouched):
+//   navigations (the page itself)      network-first, 4 s, else the cached
+//                                      index.html — so a path-form song link
+//                                      opens offline too
+//   vendor/vexflow.js, manifest, icons  cache-first, precached at install
+//   vendor/soundfonts/*                 cache-first, cached ON FIRST USE
+//                                      (83 MB — never precached; iOS quota)
+//   albums/** and albums/manifest.json  network-first with cache fallback,
+//                                      the ?t= cache-buster ignored, so the
+//                                      songs you played are there offline
+//   sw.js / 404.html                    never intercepted
+//
+// One cache, versioned by SW_VERSION; activating a new version drops the old
+// cache. The page can kill the whole thing with ?sw=0 (unregister + clear).
+// A stale-index footgun is avoided by design: index.html is only ever served
+// from cache when the network failed or timed out.
+
+const SW_VERSION = "nr-v2";
+const CACHE = "night-roll-" + SW_VERSION;
+const PRECACHE = ["./", "index.html", "vendor/vexflow.js", "app.webmanifest",
+                  "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
+const NAV_TIMEOUT_MS = 4000;
+
+self.addEventListener("install", e => {
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    await Promise.all(PRECACHE.map(async p => { // one missing file must not fail the install
+      try { const r = await fetch(new Request(p, {cache: "reload"})); if (r.ok) await c.put(p, r); } catch (err) { /* offline install: filled on first online run */ }
+    }));
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener("activate", e => {
+  e.waitUntil((async () => {
+    for (const k of await caches.keys()) if (k.startsWith("night-roll-") && k !== CACHE) await caches.delete(k);
+    await self.clients.claim();
+  })());
+});
+
+const stripBust = url => { const u = new URL(url); u.searchParams.delete("t"); return u.href; };
+
+async function networkFirst(req, {timeout, key, fallback, noStore}) {
+  const c = await caches.open(CACHE);
+  try {
+    const ctl = new AbortController();
+    const timer = timeout ? setTimeout(() => ctl.abort(), timeout) : null;
+    const r = await fetch(req, {signal: ctl.signal});
+    if (timer) clearTimeout(timer);
+    if (r.ok && key && !noStore) c.put(key, r.clone()).catch(() => {}); // a full quota must not fail the response
+    return r;
+  } catch (err) {
+    const hit = (key && await c.match(key)) || (fallback ? await c.match(fallback) : null);
+    if (hit) return hit;
+    throw err;
+  }
+}
+async function cacheFirst(req, key) {
+  const c = await caches.open(CACHE);
+  const hit = await c.match(key);
+  if (hit) return hit;
+  const r = await fetch(req);
+  if (r.ok) c.put(key, r.clone()).catch(() => {});
+  return r;
+}
+
+self.addEventListener("fetch", e => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  const scope = new URL(self.registration.scope);
+  if (!url.pathname.startsWith(scope.pathname)) return;
+  const rel = url.pathname.slice(scope.pathname.length);
+  if (rel === "sw.js" || rel === "404.html") return;
+  if (req.mode === "navigate") {
+    // A path-form song link (…/albums/x/song) is served online by Pages'
+    // 404.html, which redirects into the app as ?song=. Offline we must do
+    // the same redirect ourselves: serving index.html AT that path would make
+    // the app take the song's directory for its own (APP_BASE) and every
+    // relative fetch would miss.
+    const songForm = rel.startsWith("albums/") && !/\.[a-z0-9]+$/i.test(rel);
+    e.respondWith((async () => {
+      try { return await networkFirst(req, {timeout: NAV_TIMEOUT_MS, key: songForm ? null : "index.html", fallback: null, noStore: songForm}); }
+      catch (err) {
+        if (songForm) { const q = new URLSearchParams(url.search); q.set("song", rel.replace(/\/+$/, "") + ".mid"); return Response.redirect(scope.href + "?" + q.toString() + url.hash, 302); }
+        const c = await caches.open(CACHE);
+        return (await c.match("index.html")) || (await c.match("./")) || Response.error();
+      }
+    })());
+    return;
+  }
+  if (rel.startsWith("vendor/soundfonts/")) { e.respondWith(cacheFirst(req, stripBust(req.url))); return; }
+  if (rel === "vendor/vexflow.js" || rel === "app.webmanifest" || rel.startsWith("icons/")) { e.respondWith(cacheFirst(req, rel)); return; }
+  if (rel.startsWith("albums/")) { e.respondWith(networkFirst(req, {timeout: 0, key: stripBust(req.url)})); return; }
+  // anything else same-origin (tools/nsf, docs): network, cache as a courtesy
+  e.respondWith(networkFirst(req, {timeout: 0, key: stripBust(req.url)}));
+});
+
+self.addEventListener("message", e => {
+  if (e.data === "skipWaiting") self.skipWaiting();
+});

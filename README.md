@@ -25,6 +25,10 @@ is deployment. Built for iPad-in-bed ergonomics, works anywhere.
   your own songs, **✦ Fill** asks it to write notes into a range —
   validated, applied as one undo step exactly like the Bassist. Design in
   `local-llm-design.md`.
+- **Installable** — Safari → Share → Add to Home Screen (or the install
+  icon in Chrome/Edge): own icon, full screen, works offline with the songs
+  you have opened; instrument sounds are kept as first used. Nothing to
+  install on a computer, updates arrive on the next launch with a network.
 - **The AI bridge** (`npm run bridge`, `tools/claude-bridge.mjs`, no
   dependencies) — one small server in front of whatever models you have:
   LM Studio and Ollama are found automatically when running, any other
