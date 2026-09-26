@@ -1392,7 +1392,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ Ask", "✦ Fill", ".ask.md", "Commit song", "Commit all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks",
+    "✦ Ask", "✦ Fill", ".ask.md", "Commit song", "Commit all", "data locations (advanced)", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "✦ reply</b> badge",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -2768,6 +2768,30 @@ test("Ask jobs: a pending question is stored at send time; finish/fail replace t
   assert.equal(st.msgs.length, 6); assert.equal(st.msgs[5].content, "⚠ stopped"); assert.equal(st.msgs[4].pending, undefined);
   assert.equal(val(`askUnsavedCount()`), 6);
   run(`localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/job-test.mid"); songKey = null;`);
+});
+
+test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply and the info strip; open sheet redraws instead; the reply follows its song", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/job-test.mid"; asksheet.classList.remove("on"); askBadgeOff();
+       askSave([{role: "user", content: "q", t: 1, at: "bars 1–4 (view)", pending: "nr_one"}]);
+       askFinish("nr_one", "the answer");`);
+  assert.equal(val(`document.getElementById("askreplybtn").style.display`), "", "badge shows when the sheet is closed");
+  assert.match(val(`document.getElementById("noteinfo").textContent`), /✦ Ask replied/);
+  run(`askBadgeOff(); asksheet.classList.add("on"); askRender();`); // what openAsk does (its target picker needs a real <select>)
+  assert.equal(val(`document.getElementById("askreplybtn").style.display`), "none", "opening Ask clears the badge");
+  assert.equal(val(`asklog.children.filter(c => c.className === "askmsg ai").pop().textContent`), "the answer", "the sheet shows the landed reply");
+  run(`{ const mm = askLoad(); mm.push({role: "user", content: "q2", pending: "nr_two"}); askSave(mm); } asklog.innerHTML = ""; asklog.children.length = 0; askFinish("nr_two", "second");`);
+  assert.equal(val(`document.getElementById("askreplybtn").style.display`), "none", "sheet open on this song: no badge");
+  assert.equal(val(`asklog.children.filter(c => c.className === "askmsg ai").pop().textContent`), "second", "sheet open: redrawn with the reply");
+  // the song changed while the job cooked: the reply lands in the asking song's log, the badge names it
+  run(`{ const mm = askLoad(); mm.push({role: "user", content: "q3", pending: "nr_three"}); askSave(mm); }
+       songKey = "albums/compositions/nightroll/other.mid"; askFinish("nr_three", "third", "ff1roll-ask-albums/compositions/nightroll/job-test.mid");`);
+  assert.equal(val(`askLoad().length`), 0, "the open song's log is untouched");
+  let st = JSON.parse(app.store.get("ff1roll-ask-albums/compositions/nightroll/job-test.mid"));
+  assert.equal(st.msgs[st.msgs.length - 1].content, "third"); assert.equal(st.msgs[st.msgs.length - 2].pending, undefined);
+  assert.equal(val(`document.getElementById("askreplybtn").style.display`), "", "another song is open: badge");
+  assert.match(val(`document.getElementById("noteinfo").textContent`), / in /);
+  run(`asksheet.classList.remove("on"); askBadgeOff(); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/job-test.mid"); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/other.mid"); songKey = null;`);
 });
 
 test("Ask: host consent — localhost never prompts, other hosts once", () => {

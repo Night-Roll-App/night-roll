@@ -51,7 +51,12 @@ when he switches to YouTube, "very old messages" after coming back —
 were one design gap: the reply was only stored when it finished and
 the run died with the connection. Shipped: the job model (bridge keeps
 the run; the app saves the question at send and fetches the reply on
-return). Not yet seen on his iPad.
+return). Not yet seen on his iPad. Then (same day, through the bridge):
+"scroll away from the dialogue after I send a message, maybe work on a
+song, and when a message comes in get a notification … like the one in
+the bottom right for error messages" → shipped: the ✦ reply footer
+badge (⚠ pattern), polling continues with the sheet closed, and the
+reply is keyed to the asking song. Not yet seen on his iPad either.
 
 Open: replies through the bridge take 10–30 s (a Claude Code run per
 turn); a persistent session per song (`--resume`) would cut that and

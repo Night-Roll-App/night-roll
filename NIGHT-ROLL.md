@@ -1193,6 +1193,17 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     (24; 7 days unfetched), so a restart keeps answers. Claude's own tool
     uses stream as `reasoning_content` notes (the app's thinking
     counter). 20-minute cap per turn.
+  - **App side of a job** (2026-09-26, Josh: "scroll away … work on a
+    song … get a notification"): the question is saved at Send with a
+    `pending: <jobId>` marker; `askResume` polls `/v1/jobs/:id`
+    whether or not the sheet is open (only a hidden tab pauses it);
+    `askFinish`/`askFail` take the store key captured at Send, so the
+    reply lands in the song that asked even if another song is open.
+    `askLanded`: sheet open on that song → `askRender` (the live
+    bubble may be a stale node after a close+reopen); otherwise the
+    footer's gold `#askreplybtn` ("✦ reply", the ⚠ pattern: stays until
+    tapped, opens Ask) plus one info-strip line naming the other song
+    when it differs. `openAsk` clears it. Test: "Ask reply badge".
   - **Security:** binds 127.0.0.1 unless `--host`; `--token` requires
     `Authorization: Bearer` (the app's Settings key); CORS open (the app
     is a static page). TLS is someone else's job: Josh uses `tailscale
