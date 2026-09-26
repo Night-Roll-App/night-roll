@@ -82,3 +82,7 @@ exercises), [quizzes.md](quizzes.md) (spaced-recall bank),
 `make serve` → http://localhost:8000 · `make test` → Node's built-in runner
 over `tests/` (the harness runs the app's inline script in a vm, so the app
 stays one file). Technical reference: [NIGHT-ROLL.md](NIGHT-ROLL.md).
+
+## License
+
+The app (index.html, tools, tests, docs) is under the [PolyForm Noncommercial License 1.0.0](LICENSE): use it, study it, change it and share it for noncommercial purposes; selling it or publishing it on a store needs permission. The music under `albums/` is not covered: Josh's compositions are his, and the game transcriptions belong to their publishers and are here for private study.
