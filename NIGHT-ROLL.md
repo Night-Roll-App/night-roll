@@ -1304,6 +1304,22 @@ README was seeded with the block (84 songs) so the first real publish
 just refreshes it. Not run live yet (needs a publish); the block and
 splice are vm-tested. Folder mode skips it.
 
+**Settings, simplified (step 5a, same evening — Josh: "do we have a
+reason for it to even exist?"):** the "data locations (advanced)"
+rows are gone from the sheet. Songs are read from the site (other repos
+arrive through links), annotations follow the songs repo, and the
+**NSF repo** is now a visible optional field under GITHUB: chip audio
+plays the original NSF, so publishing an imported album uploads its
+.nsf there (a separate repo keeps game files out of the songs repo — a
+takedown cannot touch the songs). Defaults in `cfg()`: `nsfRepo` is
+Josh's public archive only when the songs repo is this site's; anyone
+else starts with none, and `nsfBase` derives from `nsfRepo` when set.
+With no NSF repo the import publish keeps the file on the device and
+says so in the status line instead of failing. The cfg keys
+`songsBase`/`analysisBase`/`analysisRepo` still exist for stored
+values and the mirror-tree fallbacks; nothing writes them from the UI
+any more.
+
 ## Installable app — PWA (Phase 0 of the iPad app plan, 2026-09-26)
 
 `app.webmanifest` (NOT `albums/manifest.json`, the song catalog) +
@@ -1318,6 +1334,9 @@ the touch icon; header/footer already pad by `env(safe-area-inset-*)`.
 WebLLM CDN pass through untouched):
 - navigations: network-first with a 4 s timeout, else the cached
   index.html — so a stale page can never stick while a network exists.
+  The network fetch is `cache: "no-cache"` (revalidate): the browser's
+  own HTTP cache answered a plain fetch and a reload showed the previous
+  build (found 2026-09-26 while checking Settings at iPad width).
   A **path-form song URL offline** is redirected to `./?song=…` (what
   Pages' 404.html does online); serving index.html AT that path made
   the app take the song's directory for `APP_BASE` and every relative

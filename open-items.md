@@ -28,6 +28,10 @@ Step 3 done: Connect GitHub as a two-step setup with Check. Step 4
 done: Publish keeps a song list (player links) in the repo's README
 between markers; this repo's README seeded. Live run pending Josh's
 next Publish.
+Step 5a done: the advanced data-location rows are gone; NSF repo is a
+visible optional setting (device-only default for other users). Josh
+reported overlapping text above the GITHUB heading on the iPad — not
+reproducible at 768 px here; awaiting his screenshot.
 Remaining, one at a time on his go:
 4 README with player links written into the songs repo, 5 EDITION flag
 + packaging script + ship-guard + About attribution.

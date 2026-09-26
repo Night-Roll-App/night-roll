@@ -23,7 +23,7 @@
 // A stale-index footgun is avoided by design: index.html is only ever served
 // from cache when the network failed or timed out.
 
-const SW_VERSION = "nr-v4";
+const SW_VERSION = "nr-v5";
 const CACHE = "night-roll-" + SW_VERSION;
 const PRECACHE = ["./", "index.html", "vendor/vexflow.js", "app.webmanifest",
                   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
@@ -84,12 +84,14 @@ function warmSongs() {
 
 const stripBust = url => { const u = new URL(url); u.searchParams.delete("t"); return u.href; };
 
-async function networkFirst(req, {timeout, key, fallback, noStore}) {
+async function networkFirst(req, {timeout, key, fallback, noStore, revalidate}) {
   const c = await caches.open(CACHE);
   try {
     const ctl = new AbortController();
     const timer = timeout ? setTimeout(() => ctl.abort(), timeout) : null;
-    const r = await fetch(req, {signal: ctl.signal});
+    // revalidate: the browser's own HTTP cache must not answer for the page
+    // itself — it did, and a reload showed the previous build (2026-09-26)
+    const r = await (revalidate ? fetch(req.url, {cache: "no-cache", credentials: "same-origin", signal: ctl.signal}) : fetch(req, {signal: ctl.signal}));
     if (timer) clearTimeout(timer);
     if (r.ok && key && !noStore) c.put(key, r.clone()).catch(() => {}); // a full quota must not fail the response
     return r;
@@ -125,7 +127,7 @@ self.addEventListener("fetch", e => {
     // relative fetch would miss.
     const songForm = rel.startsWith("albums/") && !/\.[a-z0-9]+$/i.test(rel);
     e.respondWith((async () => {
-      try { return await networkFirst(req, {timeout: NAV_TIMEOUT_MS, key: songForm ? null : "index.html", fallback: null, noStore: songForm}); }
+      try { return await networkFirst(req, {timeout: NAV_TIMEOUT_MS, key: songForm ? null : "index.html", fallback: null, noStore: songForm, revalidate: true}); }
       catch (err) {
         if (songForm) { const q = new URLSearchParams(url.search); q.set("song", rel.replace(/\/+$/, "") + ".mid"); return Response.redirect(scope.href + "?" + q.toString() + url.hash, 302); }
         const c = await caches.open(CACHE);
