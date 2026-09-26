@@ -4,6 +4,22 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## iPAD APP PLAN v3 — on Josh's Desktop (2026-09-26; not committed by his rule)
+
+`~/Desktop/nightroll-ipad-app-plan.md` (v2 kept beside it). Spine
+unchanged: PWA → WKWebView audio spike → publish/links → Capacitor
+shell → TestFlight → Store, $4.99. v3 rulings: one repo, one
+index.html (no fork; a small private shell repo pins the web build);
+an EDITION flag hides token/data-locations/Web-session in the app
+edition, perf HUD stays; GitHub is reframed as the **Publish** feature
+with player links (for him and every user); everything public for now
+(a web app's code is its deployed page anyway); a noncommercial license
+(PolyForm NC) to block republishing — awaiting his yes; AI tiers:
+on-device runtime in the shell (v1.1), Claude by API key, a bridge on
+a computer. Folder mode already IS the persistence adapter. Spike list
+grew (recording, dictation, WebGPU). Budget 10–16 sessions. Open
+decisions for him listed at the end of the file.
+
 ## THE AI BRIDGE, FOR EVERYONE — 2026-09-26 (NIGHT-ROLL.md "✦ Ask / ✦ Fill" → The AI bridge)
 
 Josh: "I want to make sure everybody can run this with LM Studio or
