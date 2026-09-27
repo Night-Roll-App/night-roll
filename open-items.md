@@ -88,6 +88,29 @@ next turn. Also fixed on the way: tool rounds through the bridge reused
 the job id and replayed round one's tool call. Open: nothing pushes to
 the iPad while the app is closed (ntfy app on the iPad would; ask Josh).
 
+## IMPORT TESTS AGAINST REAL RIPS — QUEUED 2026-09-27 (Josh, tired: "too tired to really think about that right now")
+
+The Game Boy import shipped green on synthetic files and was wrong three
+ways on the first real rip (Latin-1 playlists, 0-based tracks, an SM83
+JR bug). Josh: "We need to somehow have unit tests for all these imports
+… we might need to support various different ways of importing … one
+M3U with all the songs in it instead of one M3U per song … We should
+really be downloading more of these and making more unit tests."
+Plan (not built):
+- A fixture corpus of REAL playlist files (.m3u is metadata, fine to
+  commit) from several rips per console: per-track m3us (FFL1), one
+  m3u for the album (most NSF rips), Latin-1 and UTF-8, 0- and 1-based,
+  titles with dashes/commas. Tests: parseM3u + the picker's merge on
+  each, row count, names, order, track numbers.
+- The ROMs stay out of the repo; a `tools/import-check.mjs` that takes a
+  local zip and reports what Import would show (rows, first-track
+  capture summary) so a new rip can be tried in one command, and the
+  browser only after that.
+- Each new console (VGM/PS1/SPC/N64) gets the same treatment before its
+  app hook: download two or three real rips, dump them, look, then wire.
+- Already true: one m3u listing all songs works (parseM3u is per line;
+  the merge is over picked files).
+
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
 The five overnight branches (gbs, vgm, psx, spc, n64) merged to main at
