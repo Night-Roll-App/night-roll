@@ -3451,7 +3451,7 @@ test("folders: a song's folder and its title come from its path; LOCAL rows say 
   assert.equal(run(`folderTitle("compositions/nightroll")`), "My Compositions › Night Roll Sketches");
   assert.equal(run(`folderTitle("imports/mega-man-2")`), "Imports › Mega Man 2");
   assert.equal(run(`folderTitle("snes/chrono-trigger")`), "SNES › Chrono Trigger", "console parents by their own names");
-  assert.equal(run(`folderTitle("local")`), "Imported files");
+  assert.equal(run(`folderTitle("local")`), "Not saved yet");
   // status words
   run(`localStorage.setItem(draftStoreKey("albums/compositions/nightroll/ambush.mid"), JSON.stringify({dirty: true, savedStamp: 5, tracks: []}));
        localStorage.setItem(draftStoreKey("albums/compositions/nightroll/ambush-3.mid"), JSON.stringify({dirty: true, savedStamp: 0, tracks: []}));
@@ -3469,4 +3469,49 @@ test("folders: a song's folder and its title come from its path; LOCAL rows say 
   assert.equal(run(`publishLabel("kept tracks")`), "⇪ Publish kept tracks");
   run(`localStorage.removeItem("ff1roll-ghtoken");`);
   for (const k of ["albums/compositions/nightroll/ambush.mid", "albums/compositions/nightroll/ambush-3.mid", "albums/compositions/threnody.mid"]) run(`localStorage.removeItem(draftStoreKey(${JSON.stringify(k)}))`);
+});
+
+test("save names the song: New makes Untitled N under local/; Save picks folder + name; Move of an unpublished song stays local", async () => {
+  run(`CATALOG = {"Night Roll Sketches": [["Ambush", "albums/compositions/nightroll/ambush.mid"]], "Final Fantasy I": [["Overworld", "albums/final-fantasy-i/songs/overworld.mid"]]};
+       for (const k of Object.keys(localStorage)) if (/untitled|graveyard/.test(k)) localStorage.removeItem(k);
+       localStorage.removeItem("ff1roll-lastfolder"); rollnotes = []; fsRoot.handle = null; fsRoot.mode = null;`);
+  run(`createComposition(120, 4, 4)`);
+  assert.equal(run(`songKey`), "local/untitled-1.mid");
+  assert.equal(run(`songTitleOf(songKey)`), "Untitled 1");
+  assert.equal(run(`isUnsaved(songKey)`), true);
+  assert.equal(run(`editableSong()`), true, "editable before it has a name");
+  assert.equal(run(`isComposition()`), false, "not publishable yet");
+  assert.equal(run(`songStatus(songKey)`), "never saved");
+  assert.equal(run(`saveCheckpoint(true)`), false, "a quiet Save cannot name it");
+  // a second New song numbers up
+  run(`createComposition(100, 3, 4)`);
+  assert.equal(run(`songKey`), "local/untitled-2.mid");
+  // the folder choices: own folders only, never the corpora
+  const choices = val(`folderChoices()`);
+  assert.ok(choices.includes("compositions/nightroll"));
+  assert.ok(!choices.includes("final-fantasy-i") && !choices.includes("local"));
+  assert.equal(run(`folderFromInput("NES/My Covers")`), "nes/my-covers");
+  assert.equal(run(`folderFromInput("imports")`), null, "reserved");
+  // Save: folder + name → the key moves, the title sticks, it is now a composition in that folder
+  assert.equal(await run(`saveSongAs("graveyard-stuff", "Ambush 3")`), true);
+  assert.equal(run(`songKey`), "albums/graveyard-stuff/ambush-3.mid");
+  assert.equal(run(`songTitleOf(songKey)`), "Ambush 3");
+  assert.equal(run(`isComposition()`), true);
+  assert.equal(run(`localStorage.getItem("ff1roll-lastfolder")`), "graveyard-stuff");
+  assert.equal(run(`songStatus(songKey)`), "not published");
+  assert.equal(run(`folderTitle(folderOf(songKey))`), "Graveyard Stuff");
+  assert.equal(run(`albumTitleFor(songKey)`), "Graveyard Stuff", "the manifest album a Publish would create");
+  assert.equal(run(`localStorage.getItem(draftStoreKey("local/untitled-2.mid"))`), null, "the Untitled key is gone");
+  assert.ok(app.store.has("ff1roll-save-albums/graveyard-stuff/ambush-3.mid"), "checkpointed");
+  // Move of a never-published song: this device only, no token needed
+  run(`localStorage.setItem("ff1roll-ghtoken", "t");`);
+  await run(`moveComposition("albums/nes/covers/")`);
+  assert.equal(run(`songKey`), "albums/nes/covers/ambush-3.mid");
+  assert.equal(run(`folderTitle(folderOf(songKey))`), "NES › Covers");
+  run(`localStorage.removeItem("ff1roll-ghtoken");`);
+  // read-only folders never become compositions, even with a draft
+  run(`localStorage.setItem(draftStoreKey("albums/final-fantasy-i/songs/overworld.mid"), "{}"); songKey = "albums/final-fantasy-i/songs/overworld.mid";`);
+  assert.equal(run(`isComposition()`), false);
+  run(`localStorage.removeItem(draftStoreKey("albums/final-fantasy-i/songs/overworld.mid"));
+       for (const k of Object.keys(localStorage)) if (k.includes("untitled") || k.includes("graveyard") || k.includes("nes/covers")) localStorage.removeItem(k);`);
 });

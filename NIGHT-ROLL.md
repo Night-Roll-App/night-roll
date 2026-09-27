@@ -1239,6 +1239,35 @@ then), mirror publish per folder, iPad Save writes Files without the
 checkbox, then Josh's batch of moves (imports + FF1 under console
 folders; nightroll/ stays his).
 
+**Save names the song; folders are yours (2026-09-27, phase 2).** File →
+New asks tempo/meter only and creates `local/untitled-N.mid`
+(`untitledKey()`; `isUnsaved(key)` = under local/, which also covers
+imported MIDIs): editable via `isLocalDraft`, never publishable
+(`syncable` skips local/), row word "never saved". Save (⌘S, File →
+"Save…") on an unsaved song opens the Save form instead of
+checkpointing (`openSaveForm("save")` inside the File menu: `#fsfolder`
+= `fillFolderSelect` over `folderChoices()` — this device's folders ∪
+the repo's, own folders only, last-used (`ff1roll-lastfolder`) first,
+plus "New folder…" → `#fsnewfolder`, `folderFromInput` slugifies each
+segment and refuses `RESERVED_FOLDERS`); `saveSongAs(folder, name)`
+asks before replacing an existing local copy (Josh: "overwrite that
+one"), `renameLocalKeys(old, new)` carries every per-song key
+(draft/notes/ts/edits/save/stash + IDB) and the open song, the typed
+name lands in the draft's `title`, then `saveCheckpoint(true)`. Save
+As shares the form (`mode: "fork"`, `forkCurrentSong(name, folder)`).
+Move to… lists every folder (or a new one) and moves a never-published
+song on this device only (`moveComposition` returns after
+`renameLocalKeys` when `!catalogHas(oldKey)`). Editability is by
+folder: `READONLY_DIRS` (final-fantasy-i, imports, starters) are
+annotate-only; any other `albums/` path with a local draft or
+provenance is a composition (`ownFolderPath`, `isComposition`,
+`isCompositionKey`); `albumTitleFor` titles an unknown folder by its
+last segment (what a first Publish writes into the manifest — two
+folders with the same leaf name would share a manifest album: known
+edge). `tools/build_manifest.mjs` walks any depth (a directory with
+.mid files is an album; `songs/` collapses). NR_DIR is no longer where
+New lands, only still auto-editable.
+
 **App edition reads from the configured repo (2026-09-27).** On the web
 "this site" (blank base) is Pages = the whole catalog; in the app it is
 the bundle = starters only, so Josh's published songs never listed
