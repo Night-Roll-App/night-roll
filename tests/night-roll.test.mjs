@@ -2863,8 +2863,7 @@ test("dictation: a tapped Stop keeps onresult for Safari's late transcript; Send
   assert.equal(val(`_rec2.stopped`), true);
   assert.equal(val(`_rec2.onresult`), null, "Send discards the late result");
   assert.equal(val(`micPrev`), null, "Send releases the microphone for good: the remembered recognizer is aborted too, so the iPad's audio session returns to playback (2026-09-27)");
-  assert.equal(val(`audioDead`), true, "after any dictation the next ▶ tap replaces the engine");
-  run(`micPrev = null; audioDead = false;`);
+  run(`micPrev = null;`); // (audioDead is set where a recognizer STARTS, in micToggle — not exercised here)
   run(`askinput.scrollHeight = 90; askinput.value = "a b c";`);
   app.dispatch("askinput", { type: "input" });
   assert.equal(val(`askinput.style.height`), "90px", "box sized to its text");
