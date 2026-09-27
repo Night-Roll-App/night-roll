@@ -12090,7 +12090,11 @@ function fsubAlbums() {
     fsubItem(group + "  ›", () => fsubSongs(group));
   if (draftKeys().length) fsubItem("Night Roll drafts  ›", fsubDrafts);
   { // build stamp: which deploy THIS tab is actually running (stale-cache tell)
+    // ONE stamp: this runs on every open and every "‹ back", and each run
+    // appended another line (Josh, 2026-09-27: "there's two of them … earlier three")
+    const old = document.getElementById("fsubbuild"); if (old) old.remove();
     const d = document.createElement("div");
+    d.id = "fsubbuild";
     d.className = "meta";
     d.style.cssText = "padding:6px 10px;opacity:.6;white-space:normal";
     const installed = typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches;
