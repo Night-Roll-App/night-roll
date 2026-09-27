@@ -1,0 +1,51 @@
+{
+  "comment": "Text only: what the Zophar USF sets (2026-09-27) told us. Tags are PSF text from the minis; seq/notes/bpm/loopTick/endTick are the interpreter's output on the rip's sequence bytes (holes never read). decomp = the name the sm64 / zeldaret decomps give that sequence id. No rip bytes live in the repo; tests/n64-real.test.mjs replays the numbers when N64_USF_DIR points at the unzipped sets.",
+  "games": [
+    {
+      "game": "Super Mario 64", "dir": "sm64", "usflib": "NUS-NSME-USA.usflib", "code": "NSME", "abi": "sm64",
+      "seqIdRule": "li-a1", "tables": "sm64 ALSeqFile: Audioseq @ROM 0x7B0860 rev 3 (35 entries), bank sets @0x7CC620; Audiobank @0x57B720 rev 1 (38), Audiotable @0x593560 rev 2 (38)",
+      "sequences": 35, "minis": 38, "parsed": 38,
+      "tags": {"artist": "Koji Kondo", "year": "1996-06-23", "copyright": "Nintendo", "usfby": "hcs, ugetab", "genre": "Platform"},
+      "tracks": [
+        {"file": "02 Title Theme.miniusf", "title": "Title Theme", "length": "3:41", "fade": "5", "seq": 2, "decomp": "02_menu_title_screen", "notes": 4008, "bpm": 172, "loopTick": 769, "endTick": 14593},
+        {"file": "05 Main Theme.miniusf", "title": "Main Theme", "seq": 3, "decomp": "03_level_grass", "notes": 1419, "bpm": 113, "loopTick": 384, "endTick": 6528},
+        {"file": "07 Inside the Castle Walls.miniusf", "title": "Inside the Castle Walls", "seq": 4, "decomp": "04_level_inside_castle", "notes": 548, "bpm": 145, "loopTick": 20, "endTick": 7124},
+        {"file": "06 Slider.miniusf", "title": "Slider", "seq": 9, "decomp": "09_level_slide", "notes": 2962, "bpm": 168, "loopTick": 384, "endTick": 10368},
+        {"file": "09a Dire, Dire Docks.miniusf", "title": "Dire, Dire Docks", "seq": 5, "decomp": "05_level_water", "notes": 390, "bpm": 133, "loopTick": 20, "endTick": 9620},
+        {"file": "35 Staff Roll.miniusf", "title": "Staff Roll", "seq": 26, "decomp": "1A_cutscene_credits", "notes": 6011, "bpm": 106, "loopTick": null, "endTick": 16706}
+      ]
+    },
+    {
+      "game": "The Legend of Zelda: Ocarina of Time (v1.0)", "dir": "oot", "usflib": "NUS-CZLE-USA.usflib", "code": "CZLE", "abi": "oot",
+      "seqIdRule": "li-a1", "tables": "oot AudioTable in RDRAM (code): gSoundFontTable @0x80113740 (38 fonts, Audiobank ROM 0xD390), gSequenceFontTable @0x801139B0, gSequenceTable @0x80113B70 (110 entries, Audioseq ROM 0x29DE0), sample banks @0x80114260 (7, Audiotable ROM 0x79470)",
+      "sequences": 110, "minis": 109, "parsed": 108,
+      "notReachable": {"LOZ57.miniusf": "seq 0x57 has no table row in the rip"},
+      "gameDriven": {"19a Hyrule Field Main Theme.miniusf": "seq 2 NA_BGM_FIELD_LOGIC only ldseq's sequences 3-0x17 by game io; those are the LOZ03-LOZ17 tracks"},
+      "tags": {"artist": "Koji Kondo", "year": "1998-11-21", "copyright": "Nintendo", "usfby": "hcs, ugetab", "genre": "Action, Adventure"},
+      "tracks": [
+        {"file": "01 Title Theme.miniusf", "title": "Title Theme", "length": "2:25", "fade": "10", "seq": 30, "decomp": "NA_BGM_TITLE", "notes": 138, "bpm": 100, "loopTick": 624, "endTick": 4464},
+        {"file": "06 Kokiri Forest.miniusf", "title": "Kokiri Forest", "seq": 60, "decomp": "NA_BGM_KOKIRI", "source": "RDRAM persistent cache @0x801C0BD0 (never read from ROM during the rip)", "notes": 589, "bpm": 145, "loopTick": 960, "endTick": 5952},
+        {"file": "35 Lost Woods.miniusf", "title": "Lost Woods", "seq": 62, "decomp": "NA_BGM_SARIA_THEME", "notes": 556, "bpm": 140, "loopTick": 192, "endTick": 3648},
+        {"file": "LOZ03.miniusf", "title": "Hyrule Field", "seq": 3, "decomp": "NA_BGM_FIELD_INIT", "notes": 382, "bpm": 150, "loopTick": null, "endTick": 1592},
+        {"file": "30 Kakariko Village.miniusf", "title": "Kakariko Village", "seq": 39, "decomp": "NA_BGM_KAKARIKO_KID", "notes": 199, "bpm": 105, "loopTick": 288, "endTick": 7632},
+        {"file": "68 Gerudo Valley.miniusf", "title": "Gerudo Valley", "seq": 95, "decomp": "NA_BGM_GERUDO_VALLEY", "notes": 6285, "bpm": 120, "loopTick": 1344, "endTick": 8256}
+      ]
+    },
+    {
+      "game": "The Legend of Zelda: Majora's Mask", "dir": "mm", "usflib": "NUS-NZSE-USA.usflib", "code": "NZSE", "abi": "mm",
+      "seqIdRule": "ram 0x1F9B24", "tables": "oot-generation AudioTable in RDRAM: gSoundFontTable @0x801E1180 (41 fonts, Audiobank ROM 0x20700), gSequenceFontTable @0x801E1420, gSequenceTable @0x801E1630 (128 entries, Audioseq ROM 0x46AF0), sample banks @0x801E1E40 (3, Audiotable ROM 0x97F70)",
+      "sequences": 128, "minis": 118, "parsed": 103,
+      "notReachable": {"Ocarina (*).miniusf x15": "the id word holds a pointer (0x801F9D14): ocarina songs go through the SFX/ocarina path, not Audioseq"},
+      "gameDriven": {"235 Ballad of the Wind Fish.miniusf": "seq 0x54 reads io port 4 for the band; unset (-1) plays the whole band", "903 New Wave Bossa Nova with Lulu.miniusf": "seq 0x68 is 16 bytes: stio 4=1; runseq 0x4D (= track 232)"},
+      "tags": {"artist": "Koji Kondo, Toru Minegishi", "year": "2000-04-27", "copyright": "Nintendo", "usfby": "hcs", "genre": "Action, Adventure"},
+      "tracks": [
+        {"file": "101 Title Demo.miniusf", "title": "Title Demo", "length": "2:18", "seq": 118, "decomp": "NA_BGM_TITLE_THEME", "notes": 696, "bpm": 94, "loopTick": null, "endTick": 9792},
+        {"file": "108 Clock Town - Day 1.miniusf", "title": "Clock Town - Day 1", "seq": 21, "decomp": "NA_BGM_CLOCK_TOWN_DAY_1", "notes": 651, "bpm": 110, "loopTick": 384, "endTick": 4992},
+        {"file": "105 Majora's Theme.miniusf", "title": "Majora's Theme", "seq": 4, "decomp": "NA_BGM_MAJORAS_THEME", "notes": 619, "bpm": 80, "loopTick": 0, "endTick": 4224},
+        {"file": "134 Termina Field.miniusf", "title": "Termina Field", "seq": 2, "decomp": "NA_BGM_TERMINA_FIELD", "notes": 1283, "bpm": 120, "loopTick": 13, "endTick": 7693},
+        {"file": "235 Ballad of the Wind Fish.miniusf", "title": "Ballad of the Wind Fish", "seq": 84, "decomp": "NA_BGM_BALLAD_OF_THE_WIND_FISH", "notes": 42, "bpm": 108, "loopTick": null, "endTick": 768},
+        {"file": "253 Staff Roll.miniusf", "title": "Staff Roll", "seq": 116, "decomp": "NA_BGM_END_CREDITS", "notes": 1612, "bpm": 50, "loopTick": null, "endTick": 9793}
+      ]
+    }
+  ]
+}
