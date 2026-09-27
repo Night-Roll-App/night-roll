@@ -2862,9 +2862,8 @@ test("dictation: a tapped Stop keeps onresult for Safari's late transcript; Send
        micRec = _rec2; micBtn = document.getElementById("askmic"); askMicOff();`);
   assert.equal(val(`_rec2.stopped`), true);
   assert.equal(val(`_rec2.onresult`), null, "Send discards the late result");
-  assert.equal(val(`micPrev`), null, "Send releases the microphone for good: the remembered recognizer is aborted too, so the iPad's audio session returns to playback (2026-09-27)");
-  assert.equal(val(`audioDead`), true, "after any dictation the next ▶ tap replaces the engine");
-  run(`micPrev = null; audioDead = false;`);
+  assert.equal(val(`micPrev === _rec`), true, "a discarded stop does not replace the remembered one");
+  run(`micPrev = null;`);
   run(`askinput.scrollHeight = 90; askinput.value = "a b c";`);
   app.dispatch("askinput", { type: "input" });
   assert.equal(val(`askinput.style.height`), "90px", "box sized to its text");

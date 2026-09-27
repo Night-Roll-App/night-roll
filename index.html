@@ -5667,7 +5667,7 @@ function ensureAudio() { // one context for the app's lifetime — iOS Safari
   if (audio && audio.state === "closed") { // iOS closes a context under pressure; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds
     if (!gestureActive()) return;
     logErr("audio engine was closed by the system; rebuilt in this tap");
-    audio = null; master = null; meter = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
+    audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
   }
   if (audio) return;
   audio = new (window.AudioContext || window.webkitAudioContext)();
@@ -5675,8 +5675,6 @@ function ensureAudio() { // one context for the app's lifetime — iOS Safari
   master = audio.createGain();
   master.gain.value = MASTER_VOL * masterVol;
   master.connect(audio.destination);
-  meter = audio.createAnalyser ? audio.createAnalyser() : null; // the app's own ear: is anything actually coming out? (the vm's stub context has no analyser)
-  if (meter) { meter.fftSize = 2048; master.connect(meter); }
   trackGains = [];
   warmContext();
 }
@@ -5702,29 +5700,7 @@ async function clockAlive() { // don't trust the state string: prove the clock t
 // closed-state path, synchronous at the top of play()'s tap, and it resets
 // every node the app keeps across a rebuild.
 function gestureActive() { return !(typeof navigator !== "undefined" && navigator.userActivation) || navigator.userActivation.isActive; }
-let audioDead = false; // resumeAudio's retries failed, or the output measured silent, or dictation ran: the next tap rebuilds before anything else
-let meter = null; // AnalyserNode on master
-function outputRms() { // what the master is putting out right now; 0 with no meter
-  if (!meter) return 0;
-  const d = new Float32Array(meter.fftSize); meter.getFloatTimeDomainData(d);
-  let sum = 0; for (let i = 0; i < d.length; i++) sum += d[i] * d[i];
-  return Math.sqrt(sum / d.length);
-}
-// State lied all night ("running" while mute — Josh, 2026-09-27), so the app
-// measures: a little after play() has notes due, the master must carry
-// signal. If it does not, the engine is marked dead and the next ▶ tap
-// replaces it. His ear report, taken by the app itself.
-function audioSelfCheck(gen) {
-  setTimeout(() => {
-    if (!playing || play.gen !== gen || !audio) return;
-    const due = schedEvents.some(e => e.sec >= playOffset && e.sec < playOffset + 1.0 && !(e.n && e.n._clip));
-    if (!due) return; // nothing was supposed to sound yet
-    if (outputRms() > 1e-4) return;
-    audioDead = true;
-    logErr("audio engine running but silent (measured at the output, state " + audio.state + ") — tap ▶ again: it will be replaced");
-    setInfo("⚠ no sound is coming out — tap ▶ again");
-  }, 1500);
-}
+let audioDead = false; // resumeAudio's retries failed: the next tap rebuilds before anything else
 // The one place a context may be replaced: synchronously, first thing in a
 // tap, before any await (a context created after awaits is mute on iOS). An
 // engine "interrupted" from birth or closed by the system, or one whose
@@ -5733,7 +5709,7 @@ function audioSelfCheck(gen) {
 function audioRebuildAtTap(why) {
   if (!gestureActive()) return false;
   try { if (audio) audio.close().catch(() => {}); } catch (err) { /* already closed */ }
-  audio = null; master = null; meter = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
+  audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
   audioDead = false;
   ensureAudio();
   logErr("audio engine rebuilt at the top of a tap (" + why + ")");
@@ -7891,7 +7867,6 @@ async function play(fromSec = 0, opts = {}) {
   };
   schedTimer = setInterval(pump, 60);
   pump(); // schedule the first batch immediately — waiting one interval put beat 1 in the past
-  audioSelfCheck(++play.gen); // in ~1.5 s: is anything coming out?
   followFree = false;
   const tick = () => {
     if (!playing) return;
@@ -11367,8 +11342,6 @@ function micToggle(btn, textarea, statusFn) { // shared dictation: append into a
   if (micPrev) { micPrev.onresult = null; try { micPrev.abort(); } catch (err) { /* already gone */ } micPrev = null; }
   const base = textarea.value ? textarea.value.replace(/\s+$/, "") + " " : "";
   let finals = "";
-  if (typeof playing !== "undefined" && playing) stop(); // the iPad has one audio session: dictation takes it
-  audioDead = true; // after any dictation the engine is suspect: the next ▶ tap replaces it
   micRec = new SPEECH();
   micBtn = btn;
   micRec.continuous = true;
@@ -16021,7 +15994,7 @@ document.getElementById("askclear").addEventListener("click", async () => { // C
 });
 document.getElementById("asksend").addEventListener("click", askSend);
 document.getElementById("askstop").addEventListener("click", () => { if (askBusy) askBusy.abort(); });
-function askMicOff() { if (micBtn === document.getElementById("askmic")) micRelease(); } // Send clears the box: a late result must not refill it — and the session must go back to playback (abort, not stop)
+function askMicOff() { if (micBtn === document.getElementById("askmic")) micStop(true); } // Send clears the box: a late result must not refill it
 function askGrow() { // size the box to its text (CSS caps it) and keep the end in view
   askinput.style.height = "auto";
   askinput.style.height = askinput.scrollHeight + "px";
