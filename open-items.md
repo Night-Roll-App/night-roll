@@ -145,8 +145,14 @@ lessons: the icon must have no alpha (flattened onto #0D1120 with a
 CoreGraphics script), and a build number is single-use (ITMS-90189 —
 CURRENT_PROJECT_VERSION is now 2 for the next upload; never pipe
 xcodebuild's upload through `head`, SIGPIPE kills it mid-way).
-Info.plist carries ITSAppUsesNonExemptEncryption=false. Josh still
-does: TestFlight → internal testers → install from the TestFlight app;
+Info.plist carries ITSAppUsesNonExemptEncryption=false. Build 2 (the redrawn original icon, ~/Desktop/nightroll-icons and
+icons/icon-1024.png, drawn by tools/icon-1024.swift) uploaded the same
+evening; CURRENT_PROJECT_VERSION is 3. Screenshot drafts at iPad 13"
+size (2752×2064) from the website via scratch/shots.mjs (headless
+chromium, run only while Josh is away): ~/Desktop/nightroll-screenshots/
+— 1 Overworld roll, 2 score, 3 Ambush, 4 Open tree, 5 Ask (empty), 6
+Chrono Trigger. Josh still does: TestFlight → internal testers →
+install from the TestFlight app;
 privacy labels (no data collected); the listing
 (docs/app-store-listing.md is the draft); pick an icon (three
 candidates emailed, ~/Desktop/nightroll-icons/).
