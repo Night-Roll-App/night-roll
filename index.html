@@ -5703,15 +5703,19 @@ function rebuildAudio(why) {
 }
 async function resumeAudio() {
   if (!audio) return;
+  const tapped = gestureActive(); // read NOW: transient activation lapses during the awaits below
   await audio.resume().catch(() => {});
   if (await clockAlive()) return;
   await audio.resume().catch(() => {});
   if (await clockAlive()) return;
-  if (!gestureActive()) { setInfo("audio asleep — tap ▶ again"); return; } // never rebuild here: see above
+  if (!tapped) { asleep("no gesture"); return; } // never rebuild here: see above
   rebuildAudio("clock dead inside a tap");
   await audio.resume().catch(() => {});
-  if (!(await clockAlive()))
-    setInfo("audio asleep — tap ▶ again"); // surfaced: consoles don't exist on an iPad
+  if (!(await clockAlive())) asleep("rebuilt inside a tap, clock still dead");
+  function asleep(why) { // surfaced: consoles don't exist on an iPad — the ⚠ log carries the state
+    setInfo("audio asleep — tap ▶ again");
+    logErr("audio asleep (" + why + "; state " + (audio ? audio.state : "none") + ") — tap ▶ again; if it stays silent, relaunch and tell Claude this line");
+  }
 }
 // coming back from another app: revive audio without waiting for a Play tap
 // (resume only — a rebuild waits for the tap)
@@ -7103,6 +7107,7 @@ async function updateChipBtn() { // name kept for call sites; now just the auto-
            "Re-import the album's NSF once, or commit the album; playing synthesized voices meanwhile.");
   }
   if (available && chip.key !== songKey && chip.rendering !== songKey) {
+    if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.key = null; } // free the last song's buffers: eight SNES voices are hundreds of MB
     chip.rendering = songKey;
     const forKey = songKey;
     chip.renderPromise = chipRender().catch(() => false) // not renderable: synth carries the song
@@ -7135,15 +7140,25 @@ async function chipRender() {
   const secs = Math.ceil(src.secs + 1);
   if (!M.renderApu) return false; // no renderer for this chip (yet): synth carries the song
   chip.progress = 0;
-  const res = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
-    p => { chip.progress = p * 0.3; console.log("[chip] emulating " + Math.round(p * 100) + "%"); });
+  // a song opened on top of this one aborts the render at its next progress
+  // tick — several quick opens used to leave several renders running to the
+  // end (memory, and a starved audio thread: Josh, 2026-09-27)
+  const alive = () => { if (songKey !== forKey) throw new Error("stale render: " + forKey.split("/").pop()); };
+  let res;
+  try {
+    res = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
+      p => { alive(); chip.progress = p * 0.3; console.log("[chip] emulating " + Math.round(p * 100) + "%"); });
+  } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
   const {frameSec} = res;
   // song time zero = first onset (the capture's trim) — find it the same way
   const ev = res.events || M.reconstruct(res.apuLog, res.frames, frameSec);
   const t0 = ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0;
   const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
-  const r = await render(M, res, {sampleRate: audio.sampleRate,
-    onProgress: p => { chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
+  let r;
+  try {
+    r = await render(M, res, {sampleRate: CHIPS[kind].renderRate || audio.sampleRate,
+      onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
+  } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
   const chans = CHIPS[kind].channels.filter(name => r[name]);
   if (chipSilent(chans.map(name => r[name]))) {
@@ -7152,8 +7167,10 @@ async function chipRender() {
   }
   const buffers = {};
   for (const name of chans) {
-    const buf = audio.createBuffer(1, r[name].length, r.sampleRate);
+    if (chipSilent([r[name]])) { r[name] = null; continue; } // a voice the song never uses gets no buffer
+    const buf = audio.createBuffer(1, r[name].length, r.sampleRate); // at the render's rate: the graph resamples on playback
     buf.copyToChannel(r[name], 0);
+    r[name] = null; // the Float32 copy is garbage the moment the buffer has it
     buffers[name] = buf;
   }
   chip.buffers = buffers;
@@ -12450,6 +12467,7 @@ const CHIPS = {
         channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"], perFile: true, tagged: true,
         files: ["spc/spc", "spc/notes", "?spc/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"], // "?" = optional: the S-DSP renderer lands separately; until then synth carries these songs
         render: (M, res, o) => M.renderApu(res.apuLog, o), // the SPC renderer takes the capture itself
+        renderRate: 32000, // the chip's own rate: eight voices of a 3-minute song at 48 kHz were ~300 MB twice over
         parse: M => M.parseSPC,
         run: M => async (spc, n, seconds, onProgress) => {
           const cap = await M.runSPCAsync(spc, seconds, onProgress);
