@@ -116,10 +116,11 @@ function fakeAudio(clock) {
   };
 }
 
-export function createApp() {
+export function createApp(opts = {}) {
   const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
   const m = html.match(/<script>\n([\s\S]*?)<\/script>/); // inline script only (vendor tag has src=)
   if (!m) throw new Error("inline <script> not found in index.html");
+  if (opts.edition) m[1] = m[1].replace('const EDITION = "web";', 'const EDITION = "' + opts.edition + '";'); // the product build's one-line change (tools/package.mjs)
 
   const elements = new Map();
   const store = new Map();

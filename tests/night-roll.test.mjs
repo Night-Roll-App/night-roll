@@ -3405,3 +3405,37 @@ test("Settings tabs: one pane at a time, the last one remembered on this device"
   assert.equal(run(`localStorage.getItem("ff1roll-cfgpane")`), "saving");
   run(`localStorage.removeItem("ff1roll-cfgpane")`);
 });
+
+test("app edition: reads come from the configured repo; bundled starters list and load without it", async () => {
+  const app2 = createApp({edition: "app"});
+  const run2 = app2.run;
+  run2(`APP_BASE = "capacitor://localhost/"; localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
+  assert.equal(run2(`EDITION`), "app");
+  assert.equal(run2(`readBase("songs")`), "https://raw.githubusercontent.com/joshcough/night-roll/main");
+  assert.equal(run2(`cfg().songsBase`), "", "derived, never stored");
+  assert.equal(run2(`songsURL("albums/compositions/nightroll/a.mid")`), "https://raw.githubusercontent.com/joshcough/night-roll/main/albums/compositions/nightroll/a.mid");
+  run2(`saveCfg({songsRepo: "someone/songs", analysisRepo: "someone/songs"}); cfg.c = null;`); // Settings keeps the pair together (settingsPersist)
+  assert.equal(run2(`readBase("analysis")`), "https://raw.githubusercontent.com/someone/songs/main", "annotations follow the songs repo");
+  // the catalog: repo manifest ∪ bundled manifest; the repo alone, or the bundle alone, suffices
+  const seen = [];
+  app2.context.fakeFetch = (url) => {
+    seen.push(String(url));
+    if (/raw\.githubusercontent\.com.*manifest/.test(url)) return Promise.resolve({ok: true, json: async () => [{title: "My Songs", songs: [{title: "One", path: "albums/mine/one.mid"}]}]});
+    if (/^albums\/manifest\.json/.test(url)) return Promise.resolve({ok: true, json: async () => [{title: "Starters", songs: [{title: "Prelude", path: "albums/starters/p.mid"}]}]});
+    if (/raw\.githubusercontent\.com.*starters\/p\.mid/.test(url)) return Promise.resolve({ok: false, status: 404});
+    if (/^albums\/starters\/p\.mid/.test(url)) return Promise.resolve({ok: true, status: 200, text: async () => "bundle"});
+    return Promise.reject(new Error("no network"));
+  };
+  run2(`fetch = fakeFetch;`);
+  await run2(`initCatalog()`);
+  assert.deepEqual(val2(`Object.keys(CATALOG).sort()`), ["My Songs", "Starters"]);
+  // a starter the repo lacks falls back to the bundle; a repo copy wins when it exists
+  const r = await run2(`readData("songs", "albums/starters/p.mid")`);
+  assert.equal(await r.text(), "bundle");
+  assert.ok(seen.some(u => /raw\.githubusercontent\.com.*starters\/p\.mid/.test(u)), "the repo was asked first");
+  // repo unreachable: the starters still list (offline launch)
+  run2(`fetch = (url) => String(url).startsWith("albums/manifest.json") ? fakeFetch(url) : Promise.reject(new Error("offline"));`);
+  await run2(`initCatalog()`);
+  assert.deepEqual(val2(`Object.keys(CATALOG)`), ["Starters"]);
+  function val2(code) { return JSON.parse(run2(`JSON.stringify(${code})`)); }
+});

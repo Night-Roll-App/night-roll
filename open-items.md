@@ -55,6 +55,16 @@ in in-app order, `node tools/build_manifest.mjs` would re-sort them —
 the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
+## QUEUED IDEA (Josh, 2026-09-27): folders above albums in Open
+
+"I want to be able to have folders for my albums, maybe like an NES
+folder, an SNES folder, N64…" Not possible today (Open = albums + drafts,
+flat). Sketch: album.json gains "group" (NES/SNES/Genesis/PS1/N64/Game
+Boy/My songs); imports set it from the chip kind; Open lists groups →
+albums → songs; manifest carries the field. Also his wish for Open to
+separate "Published songs" from "Local songs" (it already splits albums
+vs "Night Roll drafts"; a wording pass at most).
+
 ## QUEUED IDEA (Josh, 2026-09-27): "✦ Annotate this song for me"
 
 Import a classical MIDI, ask the AI to analyze it and write the

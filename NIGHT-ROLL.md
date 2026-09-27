@@ -1212,6 +1212,22 @@ tests/night-roll.test.mjs); the shell project lives outside this repo
 (`~/work/ff/night-roll-app`, `build-ipad.sh` = package → sync → build →
 install).
 
+**App edition reads from the configured repo (2026-09-27).** On the web
+"this site" (blank base) is Pages = the whole catalog; in the app it is
+the bundle = starters only, so Josh's published songs never listed
+("why didn't it show the songs that I currently have up there").
+`readBase(which)` now answers: the explicit base if set, else in the
+app edition `https://raw.githubusercontent.com/<repo>/main` for the
+configured songs/analysis repo, else "". It is computed per read, never
+stored (saveCfg persists cfg() whole — a stored base would outlive a
+repo change; that bit the first draft). `songsURL`/`analysisURL` use
+it. `initCatalog` in the app also fetches the bundle's own
+`albums/manifest.json` and unions it (repo titles win) so the starters
+list offline or with a repo that lacks them; `readData` for a
+`bundledPath()` (albums/starters/…) asks the repo first and falls back
+to the bundle. Harness: `createApp({edition: "app"})` swaps the
+EDITION line like the packager does.
+
 **Settings tabs (2026-09-27).** The sheet is three panes behind a `.seg`
 tab strip — Saving (auto-save, the desktop folder rows, and in the iPad
 app the **Keep my songs in Files on this iPad** checkbox `#filesonipad`
