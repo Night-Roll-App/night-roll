@@ -910,6 +910,7 @@
   <button id="notebtn">+ Note</button>
   <button id="syncbtn">Publish</button>
   <button id="errbtn" style="display:none;color:#e66767" aria-label="Errors">⚠</button>
+  <button id="jobsbtn" style="display:none;color:var(--gold)" aria-label="Jobs — captures and publishes running in the background">⏳</button>
   <button id="askreplybtn" style="display:none;color:var(--gold)" aria-label="An Ask reply is ready — open it">✦ reply</button>
   <button id="clearbtn" style="display:none">Clear edits</button>
 </footer>
@@ -1565,6 +1566,17 @@
       <button id="midcancel">Cancel</button>
     </div>
     <div class="status">An album lands in Open → LOCAL as a folder — audition, rename, then ⇪ Publish sends it to the songs repo and annotations sync everywhere. Local stays on this device, annotations included.</div>
+  </div>
+</div>
+
+<div class="overlay" id="jobssheet">
+  <div class="sheet">
+    <h2>JOBS</h2>
+    <div id="jobslist" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="status" id="jobshelp">Captures and publishes run here in the background. Close their panels any time; reopen from this list. A job keeps going while the app is in front; it pauses when the app is in the background and picks up where it was.</div>
+    <div class="row" style="margin-top:10px">
+      <button id="jobsclear">Clear finished</button>
+    </div>
   </div>
 </div>
 
@@ -4908,6 +4920,110 @@ let infoCopyText = null; // when set, tapping the info strip copies this
 // (the next message overwrites it) and be findable without devtools —
 // crucial on the iPad. ⚠ appears in the footer only when something logged.
 const appErrors = [];
+// ---------------------------------------------------- jobs (footer ⏳)
+// Long work that must outlive the sheet that started it (Josh, 2026-09-27:
+// "you should not feel worried about minimizing or even closing that
+// capture window as it goes"; design: capture-jobs-design.md, generalized
+// at his ask — captures are the first kind, not the only one). A job is a
+// plain record: no bytes, no DOM. It is mirrored to localStorage on every
+// state change (pct throttled) so a reload can say what was running; the
+// real output (drafts, commits) lands through the normal seams. Kinds
+// register how to label, open and retry themselves.
+const JOB_KINDS = {}; // kind -> {label(job), open(job), retry(job)}: retry absent = not retryable
+let jobs = [];        // oldest first
+const jobListeners = new Set();
+const jobControls = {}; // id -> {aborted}
+function jobsSave(now) { // throttled: a pct tick every frame must not write 90 items each time
+  if (now) { clearTimeout(jobsSave.t); jobsSave.t = 0; try { localStorage.setItem("ff1roll-jobs", JSON.stringify(jobs)); } catch (err) { /* private mode */ } return; }
+  if (!jobsSave.t) jobsSave.t = setTimeout(() => jobsSave(true), 250);
+}
+function jobsNotify() { for (const fn of jobListeners) { try { fn(); } catch (err) { /* a listener's problem */ } } updateJobsBtn(); }
+function jobsOnChange(fn) { jobListeners.add(fn); return () => jobListeners.delete(fn); }
+function jobsLoad() { // boot: what was running when the page last died is "interrupted", with its last counts
+  try { jobs = JSON.parse(localStorage.getItem("ff1roll-jobs") || "[]"); } catch (err) { jobs = []; }
+  if (!Array.isArray(jobs)) jobs = [];
+  let hit = null;
+  for (const j of jobs) if (j.state === "running" || j.state === "queued") {
+    j.state = "interrupted"; j.ended = Date.now(); hit = j;
+    for (const it of j.items || []) if (it.st === "running") it.st = "interrupted";
+  }
+  jobsSave(true);
+  updateJobsBtn();
+  return hit;
+}
+function jobProgress(job) { // "12/92 · Frog's Theme 40%"
+  const items = job.items || [], done = items.filter(it => it.st === "done" || it.st === "silent" || it.st === "failed" || it.st === "cancelled").length;
+  const cur = items.find(it => it.st === "running" || it.st === "interrupted");
+  return (items.length > 1 ? done + "/" + items.length : "") + (cur ? (items.length > 1 ? " · " : "") + cur.label + (cur.pct ? " " + Math.round(cur.pct * 100) + "%" : "") : "") + (job.note ? (items.length > 1 || cur ? " — " : "") + job.note : "");
+}
+function jobStart(kind, title, items, runner, extra) { // runner(api) is async; api.aborted flips on ✕
+  const job = Object.assign({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind, title, state: "running",
+    items: items.map(it => ({label: it.label, st: "queued", pct: 0, msg: "", key: it.key || null})),
+    note: "", started: Date.now(), ended: 0, err: ""}, extra || {});
+  jobs.push(job);
+  jobsSave(true); jobsNotify();
+  const api = jobApi(job);
+  Promise.resolve().then(() => runner(api)).then(() => { if (job.state === "running") api.done(); }, err => api.fail(err));
+  return job;
+}
+function jobApi(job) {
+  const ctl = jobControls[job.id] || (jobControls[job.id] = {aborted: false});
+  const finish = (state, err) => { job.state = state; job.ended = Date.now(); if (err) job.err = String(err && err.message || err); delete jobControls[job.id]; jobsSave(true); jobsNotify(); };
+  return {
+    job,
+    get aborted() { return ctl.aborted; },
+    update(i, patch) { const it = job.items[i]; if (!it) return; Object.assign(it, patch); if (patch.st) jobsSave(true); else jobsSave(); jobsNotify(); },
+    note(text) { job.note = text; jobsSave(); jobsNotify(); },
+    done() { finish("done"); },
+    fail(err) { finish("failed", err); },
+    cancel() { finish("cancelled"); },
+  };
+}
+function jobsList() { return jobs.slice(); }
+function jobsFind(kind, slug, live) { // the newest matching job; live = still running/queued
+  return jobs.filter(j => j.kind === kind && (!slug || j.slug === slug) && (!live || j.state === "running" || j.state === "queued")).pop() || null;
+}
+function jobCancel(id) { const c = jobControls[id]; if (c) c.aborted = true; const j = jobs.find(x => x.id === id); if (j && j.state === "queued") jobApi(j).cancel(); }
+function jobsDismiss(id) { jobs = jobs.filter(j => j.id !== id); jobsSave(true); jobsNotify(); }
+function jobsClearFinished() { jobs = jobs.filter(j => j.state === "running" || j.state === "queued"); jobsSave(true); jobsNotify(); }
+function updateJobsBtn() {
+  const b = document.getElementById("jobsbtn");
+  if (!b) return;
+  const running = jobs.filter(j => j.state === "running" || j.state === "queued").length;
+  const rest = jobs.length - running;
+  b.style.display = jobs.length ? "" : "none";
+  b.textContent = "⏳" + (running ? " " + running : "");
+  b.style.color = running ? "var(--gold)" : "var(--dim)";
+  b.setAttribute("aria-label", running ? running + " running — open the jobs list" : rest + " finished — open the jobs list");
+}
+function renderJobs() {
+  const list = document.getElementById("jobslist");
+  list.innerHTML = "";
+  if (!jobs.length) { const d = document.createElement("div"); d.className = "status"; d.textContent = "No jobs."; list.appendChild(d); return; }
+  for (const job of jobs.slice().reverse()) {
+    const kind = JOB_KINDS[job.kind] || {};
+    const row = document.createElement("div");
+    row.className = "row";
+    const body = document.createElement("span");
+    body.style.cssText = "flex:1;min-width:0;font-size:13px";
+    const word = {running: "⏳", queued: "· queued", done: "✓", failed: "✗ failed", cancelled: "✕ cancelled", interrupted: "⚠ interrupted"}[job.state] || job.state;
+    body.textContent = (kind.label ? kind.label(job) : job.title) + "  " + word + (jobProgress(job) ? "  " + jobProgress(job) : "") + (job.err ? "  " + job.err : "");
+    row.appendChild(body);
+    const btn = (label, fn, aria) => { const b = document.createElement("button"); b.textContent = label; b.style.minHeight = "36px"; if (aria) b.setAttribute("aria-label", aria); b.addEventListener("click", fn); row.appendChild(b); };
+    if (kind.open) btn("Open", () => { document.getElementById("jobssheet").classList.remove("on"); kind.open(job); });
+    if (job.state === "running" || job.state === "queued") btn("✕", () => { jobCancel(job.id); renderJobs(); }, "Cancel");
+    else {
+      if (kind.retry && job.state !== "done") btn("↻", () => { document.getElementById("jobssheet").classList.remove("on"); kind.retry(job); }, "Retry what is left");
+      btn("✕", () => { jobsDismiss(job.id); renderJobs(); }, "Dismiss");
+    }
+    list.appendChild(row);
+  }
+}
+if (typeof document !== "undefined" && document.getElementById("jobsbtn")) {
+  document.getElementById("jobsbtn").addEventListener("click", () => { renderJobs(); document.getElementById("jobssheet").classList.add("on"); });
+  document.getElementById("jobsclear").addEventListener("click", () => { jobsClearFinished(); renderJobs(); });
+  jobsOnChange(() => { if (document.getElementById("jobssheet").classList.contains("on")) renderJobs(); });
+}
 function logErr(msg) {
   appErrors.push({t: new Date(), msg: String(msg)});
   if (appErrors.length > 200) appErrors.shift();
@@ -17874,16 +17990,14 @@ if (typeof navigator !== "undefined" && navigator.serviceWorker && typeof locati
       .catch(err => console.warn("sw:", err.message));
   }
 }
-try { // a capture beacon surviving into a fresh load = the tab was killed mid-capture
-  const b = JSON.parse(sessionStorage.getItem("ff1roll-capcrash") || "null");
-  if (b) {
-    sessionStorage.removeItem("ff1roll-capcrash");
-    const msg = "⚠ the last NSF capture killed this tab: track " + b.n + ", " + b.phase +
-                " at " + (b.pct || 0) + "% of " + b.secs + "s — tell Claude these numbers";
+try { // a job still "running" in the mirror = the page died mid-way; the row keeps its last counts (this replaced the sessionStorage capture beacon, 2026-09-27)
+  const j = jobsLoad();
+  if (j) {
+    const msg = "⚠ interrupted: " + j.title + " " + jobProgress(j) + " — tap ⏳ to see or retry";
     setInfo(msg);
     setTimeout(() => setInfo(msg), 2500); // outlive whatever boot writes over it
   }
-} catch (err) { /* no beacon */ }
+} catch (err) { /* no mirror */ }
 (async function boot() {
   await restoreFolder(); // where data lives decides what the catalog holds
   renderFolderUI();
