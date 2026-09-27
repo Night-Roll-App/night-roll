@@ -92,6 +92,23 @@ in in-app order, `node tools/build_manifest.mjs` would re-sort them —
 the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
+## QUEUED IDEA (Josh, 2026-09-27 evening): a real windowing system
+
+"A full-on windowing system like you would find in IntelliJ or VS
+Code, where you can move windows around, attach them to the right-hand
+side or left-hand side or the bottom … everything could be windowed.
+You could have the roll view and the tracks view on top of each other,
+for example." Not now (his words). What exists: every sheet drags by
+its title and resizes by the ◢ grip, and remembers its spot per device
+(ff1roll-sheetpos-<id>); roll / tracks / score are three renderers of
+one timeline and one cursor. What it would take: dock zones (left,
+right, bottom) with a split layout the views and sheets can live in;
+two timeline views at once sharing scroll/zoom/cursor (the state is
+global today: view.x, playCursor); a saved layout per device; a
+phone-width fallback (everything back to one column). Do after the
+store release. Claude's view: the sheets-as-windows half is cheap and
+already started; the docked-views half is the real project.
+
 ## QUEUED IDEA (Josh, 2026-09-27): folders above albums in Open
 
 "I want to be able to have folders for my albums, maybe like an NES
