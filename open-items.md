@@ -622,6 +622,10 @@ or File menu) with per-job progress; the capture panel is a VIEW onto a
 job, so closing it never cancels; chip renders already run in a Worker
 and captures should follow. Same day, shipped alongside: sheets drag by
 their title line (71af6ef) so Ask can sit beside the capture panel.
+Design done the same day by an advisor: capture-jobs-design.md (job
+model, ⏳ footer chip + jobs sheet, the import panel as a view, five
+commits in order). Implementation not started; the terminal session or
+the Ask session takes it on Josh's word.
 
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
