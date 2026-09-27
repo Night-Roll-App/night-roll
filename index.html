@@ -652,6 +652,11 @@
      hid it (Josh, 2026-09-27: "I should be able to move these dialogues around") */
   .sheet > h2, #importsheet .row:first-child { cursor: move; touch-action: none; -webkit-user-select: none; user-select: none; }
   .sheet.dragging { transition: none; }
+  /* ◢ resize grip: a real element (a pseudo-element gets no pointer events),
+     sticky at the end of the scroll box so it stays visible at the corner */
+  .sheetgrip { position: sticky; bottom: -16px; align-self: flex-end; flex: none; width: 26px; height: 26px; margin: -8px -12px -12px 0;
+               cursor: nwse-resize; touch-action: none; color: var(--dim); font-size: 16px; line-height: 26px; text-align: center; opacity: .7; z-index: 2; }
+  #importsheet .sheetgrip { margin: -4px -8px -8px 0; bottom: -12px; }
   #asklog { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
             -webkit-user-select: text; user-select: text; min-height: 80px; }
   .askmsg { font-size: 17px; line-height: 1.5; padding: 10px 13px; border-radius: 10px; /* 14 was too small to read on the iPad (Josh, 2026-09-27) */
@@ -1379,7 +1384,7 @@
     <dl>
       <dt>✦ Ask</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ Ask</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
-      <dt>Move a sheet</dt><dd>Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask. It comes back centered the next time it opens.</dd>
+      <dt>Move a sheet</dt><dd>Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
       <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
@@ -16627,9 +16632,20 @@ askInboxStart();
     if (row && !(t.closest("button"))) return {handle: row, box: document.getElementById("importsheet")};
     return null;
   };
-  let drag = null;
+  let drag = null, size = null;
+  // the ◢ grip on every sheet and on the capture panel (Josh, 2026-09-27: "resize them too by clicking in the corner")
+  const addGrips = () => { for (const box of [...document.querySelectorAll(".sheet"), document.getElementById("importsheet") && document.getElementById("importsheet").querySelector(".metpanel")]) { if (!box || box.querySelector(":scope > .sheetgrip")) continue; const g = document.createElement("div"); g.className = "sheetgrip"; g.textContent = "◢"; g.setAttribute("aria-label", "Resize"); box.appendChild(g); } };
+  addGrips();
   document.addEventListener("pointerdown", e => {
     if (e.button && e.button !== 0) return;
+    const grip = e.target.closest && e.target.closest(".sheetgrip");
+    if (grip) {
+      const box = grip.parentElement.classList.contains("metpanel") ? document.getElementById("importsheet") : grip.parentElement;
+      const r = box.getBoundingClientRect();
+      size = {box, x0: e.clientX, y0: e.clientY, w0: r.width, h0: r.height, id: e.pointerId};
+      try { grip.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+      e.preventDefault(); return;
+    }
     const hit = handleFor(e.target);
     if (!hit || !hit.box) return;
     const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(hit.box.style.transform || "");
@@ -16639,14 +16655,19 @@ askInboxStart();
     e.preventDefault();
   }, {capture: true});
   document.addEventListener("pointermove", e => {
+    if (size && e.pointerId === size.id) {
+      const w = Math.max(280, Math.round(size.w0 + e.clientX - size.x0)), h = Math.max(160, Math.round(size.h0 + e.clientY - size.y0));
+      size.box.style.width = w + "px"; size.box.style.maxWidth = "none"; size.box.style.height = h + "px"; size.box.style.maxHeight = "none";
+      return;
+    }
     if (!drag || e.pointerId !== drag.id) return;
     drag.box.style.transform = "translate(" + Math.round(drag.dx + e.clientX - drag.x0) + "px, " + Math.round(drag.dy + e.clientY - drag.y0) + "px)";
   });
-  const end = e => { if (drag && (!e || e.pointerId === drag.id)) { drag.box.classList.remove("dragging"); drag = null; } };
+  const end = e => { if (size && (!e || e.pointerId === size.id)) size = null; if (drag && (!e || e.pointerId === drag.id)) { drag.box.classList.remove("dragging"); drag = null; } };
   document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
   // a sheet opens centered: forget the last drag when its overlay turns on
   if (typeof MutationObserver === "function") new MutationObserver(muts => {
-    for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box && box.style.transform) box.style.transform = ""; } }
+    for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box) { box.style.transform = ""; box.style.width = ""; box.style.height = ""; box.style.maxWidth = ""; box.style.maxHeight = ""; } } }
   }).observe(document.body, {attributes: true, attributeFilter: ["class"], subtree: true});
 })();
 function openAsk() {
