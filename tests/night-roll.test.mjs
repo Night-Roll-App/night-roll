@@ -1395,9 +1395,10 @@ test("chip render: a silent render is detected; a render for a song no longer op
   assert.equal(val(`(() => { const a = new Float32Array(48000); a[91] = 0.2; return chipSilent([new Float32Array(100), a]); })()`), false);
   void loud;
   // the source reads the song it started for: chipRender stamps forKey, never the song current at the end
-  const src = val(`chipRender.toString()`);
+  const src = val(`chipRender.toString() + chipPublish.toString()`);
   assert.ok(/const forKey = songKey/.test(src) && /chip\.key = forKey/.test(src) && !/chip\.key = songKey/.test(src), "chip.key comes from forKey");
   assert.ok(/songKey !== forKey/.test(src), "a stale render is discarded");
+  assert.equal(val(`chipWorkerAvailable()`), false, "the vm has no Worker: the inline path stays"); // the browser path is verified in Chrome
 });
 
 test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore them; a full localStorage never throws out of saveDraft", async () => {

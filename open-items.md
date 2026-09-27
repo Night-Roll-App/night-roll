@@ -401,8 +401,8 @@ interrupts the AudioContext; the visibility handler rebuilt it outside a
 tap, and iOS runs such a context mute. Rebuild now only inside a tap
 (f733b42). Josh confirmed CT plays (with the new SNES chip audio). Follow
 -up shipped the same night: Play waits for a chip render in flight, with
-progress (b31ff7e). Open: move chip renders off the main thread (a Worker)
-so a render never competes with playback at all; SNES echo path.
+progress (b31ff7e). Chip renders moved to a Worker 2026-09-27 afternoon (NIGHT-ROLL.md "Chip
+render in a Worker"); iPad verification pending. Open: SNES echo path.
 
 ### Big imports and device storage — FIXED 2026-09-27 (NIGHT-ROLL.md "Big drafts")
 

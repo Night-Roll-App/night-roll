@@ -592,6 +592,24 @@ at 113 bpm, Dire Dire Docks 390 notes, ~150 ms each. Test: "USF import:
 …" (sniff, lib file, capture presence); the real-set run is the browser
 check and tests/n64-real.test.mjs with N64_USF_DIR.
 
+**Chip render in a Worker (2026-09-27, afternoon).** The console render
+ran on the page's thread in 35 ms slices: the first Play after opening a
+song stuttered over it, the Fall view starved the scheduler, and on the
+iPad a long render could take the audio session down. `chipRender` now
+hands the work to `tools/chip-worker.mjs`, a module worker that imports
+the same chip modules (relative to tools/, with the page's `?v` buster),
+parses, emulates and renders per chip (`RUNNERS`: nsf/gbs/spc), drops
+silent voices, and posts `{pcm, sampleRate, leadSec}` back as
+transferables, with `progress` messages feeding `chip.progress`. One
+worker at a time (`chipWorker`); a song change terminates it within
+250 ms ("stale render stopped"); a worker failure logs and falls back to
+the inline path once, and an environment without module workers
+(`chipWorkerAvailable.broken`) stays inline. `chipPublish` is the one
+place a finished render (worker or inline) becomes `chip.pcm`. Verified
+in Chrome: Overworld (NES, 3 voices) and Frog's Theme (SNES, 8 voices)
+render in the worker with the page idle; the vm keeps the inline path
+(no Worker there). Not verified on the iPad yet.
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware

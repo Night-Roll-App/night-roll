@@ -7172,12 +7172,22 @@ async function chipRender() {
   // everything). The render only makes Float32 PCM; chipBuffers() turns it
   // into AudioBuffers inside play()'s tap, on whatever context is live then.
   const kind = src.chip || "nsf";
-  const M = await chipModules(kind);
-  const nsfParsed = CHIPS[kind].parse(M)(src.bytes);
   const secs = Math.ceil(src.secs + 1);
-  if (!M.renderApu) return false; // no renderer for this chip (yet): synth carries the song
   const rate = CHIPS[kind].renderRate || (audio ? audio.sampleRate : 44100);
   chip.progress = 0;
+  // Off the main thread when the browser can (module workers: every current
+  // Safari/Chrome): the page stays fluid, the first Play after opening a
+  // song no longer plays over a render, and a song change just terminates
+  // the worker. The inline path below is the fallback.
+  if (chipWorkerAvailable()) {
+    const w = await chipRenderInWorker(kind, src, secs, rate, forKey);
+    if (w === "stale") return false;
+    if (w) { return chipPublish(forKey, kind, w.pcm, w.sampleRate, w.leadSec); }
+    // a worker failure falls through to the inline render, once, and says so
+  }
+  const M = await chipModules(kind);
+  const nsfParsed = CHIPS[kind].parse(M)(src.bytes);
+  if (!M.renderApu) return false; // no renderer for this chip (yet): synth carries the song
   // a song opened on top of this one aborts the render at its next progress
   // tick — several quick opens used to leave several renders running to the
   // end (memory, and a starved audio thread: Josh, 2026-09-27)
@@ -7198,19 +7208,45 @@ async function chipRender() {
       onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
   } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
-  const chans = CHIPS[kind].channels.filter(name => r[name]);
-  if (chipSilent(chans.map(name => r[name]))) {
+  const pcm = {};
+  for (const name of CHIPS[kind].channels) { if (r[name] && !chipSilent([r[name]])) pcm[name] = r[name]; r[name] = null; } // a voice the song never uses keeps nothing
+  return chipPublish(forKey, kind, pcm, r.sampleRate, t0 * frameSec);
+}
+function chipPublish(forKey, kind, pcm, sampleRate, leadSec) { // the render is in: keep it for the song it was made for
+  if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
+  if (!Object.keys(pcm).length) {
     logErr("chip render came out silent for " + forKey.split("/").pop() + " (" + CHIPS[kind].label + ") — playing synthesized voices; tell Claude the song name");
     return false;
   }
-  const pcm = {};
-  for (const name of chans) { if (!chipSilent([r[name]])) pcm[name] = r[name]; r[name] = null; } // a voice the song never uses keeps nothing
-  chip.pcm = pcm; chip.pcmRate = r.sampleRate;
+  chip.pcm = pcm; chip.pcmRate = sampleRate;
   chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers)
-  chip.lead = t0 * frameSec;
+  chip.lead = leadSec;
   chip.key = forKey;
   console.log("[chip] ready: " + forKey + " — playing the console's own sound");
   return true;
+}
+function chipWorkerAvailable() { return typeof Worker !== "undefined" && typeof APP_BASE !== "undefined" && !!APP_BASE && !chipWorkerAvailable.broken; }
+let chipWorker = null; // one at a time; a new song terminates the old render
+function chipRenderInWorker(kind, src, secs, rate, forKey) {
+  return new Promise(resolve => {
+    if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; }
+    let w;
+    try { w = new Worker(new URL("tools/chip-worker.mjs?v=" + Date.now(), APP_BASE).href, {type: "module"}); }
+    catch (err) { chipWorkerAvailable.broken = true; console.warn("[chip] no module worker here: rendering inline (" + err.message + ")"); return resolve(null); }
+    chipWorker = w;
+    const c = CHIPS[kind];
+    const watch = setInterval(() => { if (songKey !== forKey) { finish("stale"); } }, 250); // a song change ends the render at once
+    const finish = out => { clearInterval(watch); if (chipWorker === w) chipWorker = null; try { w.terminate(); } catch (err) { /* gone */ } if (out === "stale") console.log("[chip] stale render stopped: " + forKey.split("/").pop()); resolve(out); };
+    w.onmessage = e => {
+      const m = e.data || {};
+      if (typeof m.progress === "number") { chip.progress = m.progress; return; }
+      if (m.error) { console.warn("[chip] worker: " + m.error + " — rendering inline"); chipWorkerAvailable.broken = /no module worker|import|Failed to fetch/i.test(m.error); return finish(null); }
+      if (m.done) return finish(m.done);
+    };
+    w.onerror = err => { console.warn("[chip] worker failed: " + (err && err.message || "error") + " — rendering inline"); chipWorkerAvailable.broken = true; finish(null); };
+    const bytes = src.bytes instanceof Uint8Array ? src.bytes.slice() : new Uint8Array(src.bytes).slice(); // a copy: the record keeps its own
+    w.postMessage({id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, n: src.n, secs, rate}, [bytes.buffer]);
+  });
 }
 function chipActive() { return chip.key === songKey && !!(chip.pcm || chip.buffers); }
 function chipHas(name) { return !!((chip.pcm && chip.pcm[name]) || (chip.buffers && chip.buffers[name])); } // this track name has console audio
