@@ -138,6 +138,24 @@ Queued from what remains approximate:
 - File → Import hook per INTEGRATION.md §4 "What File → Import needs";
   index.html untouched by that session.
 
+### SNES (SPC) — real rips done 2026-09-27, merged 9729ffc (tools/spc/INTEGRATION.md §5)
+
+FF4, FF5, FF6, Chrono Trigger, A Link to the Past: 342 .spc, all run
+clean after three fixes (long-loop root estimation, dumped-KON start,
+text-format tag byte + xid6). Import-side items the app must handle
+when SNES gets its File → Import hook:
+- many files = one album (a flat zip of .spc, no m3u): the picker
+  takes N files; rows ordered by `parseTrackName` (disc+track, parts
+  a/b/c of one OST slot together, 99/999 "not on the OST" tracks last);
+  titles from ID666/xid6, never the mangled file names (`?`/`"` → `_`).
+- a roots panel: per-instrument root pitch with confidence, editable
+  (`--root` today); events flagged `unpitched` go to the drum channel.
+- zip, not rar (.rsn sets are rar — refuse with a message, or unrar).
+- multi-part tracks (101a/b/c) as one song with sections, or three songs.
+Approximate: root octave on bright looped samples; portamento as chromatic
+runs (slide-aware merge queued); voices mid-note at dump time without a
+KON bit stay silent.
+
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
 The five overnight branches (gbs, vgm, psx, spc, n64) merged to main at
