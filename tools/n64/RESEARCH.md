@@ -2,9 +2,10 @@
 
 Facts only; each claim names its source. Where a statement is an
 inference from a tool's configuration rather than a documented fact it
-says so. Nothing here has been run against a real ROM yet — see
-`INTEGRATION.md` for what that would take and `seq-libultra.mjs` for the
-prototype parser this research produced.
+says so. Written before any real data; on 2026-09-27 the prototype was
+run against the SM64 / OoT / MM USF sets and three paragraphs below carry
+corrections marked as such (§1, §2a, §4). `INTEGRATION.md` §8 has the
+results; `seq-libultra.mjs` is the parser this research produced.
 
 ## 0. Why the N64 is not the NES
 
@@ -44,20 +45,24 @@ PSF-family container. Facts from the spec (hcs64.com/usf/usf.txt):
 Sources: https://hcs64.com/usf/ · https://hcs64.com/usf/usf.txt ·
 https://github.com/kode54/lazyusf · https://www.vgmpf.com/Wiki/index.php?title=USF
 
-**Honest assessment of note extraction via USF.** A USF rip is a ROM
-fragment plus a CPU snapshot; playing it means running the game's own
-audio thread. To get notes out we would have to (a) port or bind a MIPS
-R4300 interpreter plus RSP audio-microcode emulation to the browser
-(LazyUSF is tens of thousands of lines of C — feasible as WASM, but a
-separate project several times the size of the whole NSF pipeline), and
-then (b) still have no notes: the emulated output is mixed PCM. The only
-note-level signal would come from hooking the game's sequence player in
-emulated RDRAM (e.g. SM64's `gSequencePlayers` / note structs), which
-requires per-game symbol addresses and differs per audio library. That is
-strictly more work than parsing the sequence data directly, with the
-emulator as dead weight. Conclusion: USF is a listening format, not an
-extraction format. It could serve one purpose later — audition audio for
-an imported song without decoding banks ourselves — but not for notes.
+**Honest assessment of note extraction via USF — revised 2026-09-27
+against the real sets (INTEGRATION.md §8).** Playing a USF does mean
+emulating the R4300 + RSP, and that path is still not worth taking. But
+the first version of this note drew the wrong conclusion from it: the
+"ROM fragment" is exactly the part of the ROM the game read while the
+ripper played every track, and for the EAD games that includes **every
+music sequence, byte for byte** (SM64: 33 of 34 music sequences complete,
+one missing 4 unread bytes; OoT: 105 of 105 music sequences readable,
+one of them from the save state's RDRAM; MM: 105 of 128 rows, the rest
+never played or not sequences). The sequence *tables* are there too — in
+ROM for SM64, in the save state's RDRAM for OoT/MM, whose `code` overlay
+is compressed on the cartridge. So a USF set is an extraction source
+without an emulator: parse the container, rebuild the sparse images,
+locate the tables by structure, feed the sequence bytes to
+`seq-libultra.mjs`. The one thing a rip cannot give is bytes the game
+never read (unused branches); the interpreter is told which those are and
+fails loudly if it needs one, which so far it never has. USF still has
+the audition role noted before, on top of this.
 
 ## 2. What games actually sequence with
 
@@ -169,11 +174,16 @@ blobs, each indexed by an `ALSeqFile` header — `s16 revision; s16 count;
   banks (`u16 offset[seq]` → `count, bankIds…`, listed backwards).
 
 OoT/MM use the same three blobs with 16-byte table entries
-(`romAddr, size, medium, cachePolicy, 3×u16`) and a sequence→font table;
-their files are Yaz0-compressed in the ROM (SubDrag's `Yaz0EADZelda`);
-Pokémon Stadium's are Yay0 (`Yay0Sng`). The sequence bytecode itself is
-never compressed — "compressed" in tool names refers to these wrappers
-or, for the SGI library below, to compressed MIDI.
+(`romAddr, size, medium, cachePolicy, 3×u16`) and a sequence→font table.
+**Correction (2026-09-27, from the real rips):** the three audio blobs are
+*not* compressed in OoT/MM — the audio thread DMAs sequences and samples
+straight from the cartridge (OoT 1.0: Audiobank 0xD390, Audioseq 0x29DE0,
+Audiotable 0x79470; MM US: 0x20700 / 0x46AF0 / 0x97F70). What is Yaz0'd
+is the `code` overlay that holds the *tables* (`gSequenceTable` etc.),
+which is why SubDrag's `Yaz0EADZelda` decompresses first: the tables must
+be read from decompressed `code` (or, in a USF, from RDRAM). Pokémon
+Stadium's `Yay0Sng` is a different case not checked here. The sequence
+bytecode itself is never compressed.
 
 ### 2b. The stock libultra audio library (SGI SDK, later "n_audio")
 
@@ -273,5 +283,9 @@ documentation.
 3. **Then the stock libultra path** (compressed MIDI + `ALBankFile`),
    which is a MIDI parser plus a bank parser, unlocking the third-party
    long tail and, behind container unpackers, Rare.
-4. **Skip USF** for extraction; revisit only as an audition source.
+4. ~~Skip USF for extraction~~ **Corrected 2026-09-27:** a USF set is the
+   easiest source of all — no ROM in hand, the tables and every played
+   sequence are inside the usflib/save state, and the tags name the
+   tracks. `tools/n64/usf.mjs` + `ead-usf.mjs` do it; the ROM manifest in
+   step 1 is still what a `.z64` import would need.
 5. MusyX / Konami / Midway: only if a specific song is asked for.

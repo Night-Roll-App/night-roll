@@ -13,9 +13,17 @@
 // sequence script; the format carries no time signature.
 //
 // ABI: "sm64" = SM64 JP/US (also fine for Wave Race 64). "oot" = the
-// OoT/MM generation: relative branches F2-F4, remapped channel low-nibble
-// ops, channel A0-BE, layer CD-CF. SF64/MK64 sit between; try "sm64" and
-// fall back to "oot" if it throws on an opcode (the parser fails loudly).
+// OoT generation: relative branches F2-F4, remapped channel low-nibble
+// ops, full channel opcodes from B0, layer CD-CF, an s8 sequence register.
+// "mm" = "oot" with Majora's Mask's channel argument table (A0-AF exist,
+// BD/BE differ). SF64/MK64 sit between; try "sm64" and fall back to "oot"
+// if it throws on an opcode (the parser fails loudly).
+//
+// Options beyond the ABI: `present` (a byte mask from a USF rip: reading a
+// missing byte throws with its offset), `io` ({port: value} the game would
+// have written), `maxSeconds` / `maxTicks` / `stopAtLoop`. The result
+// carries `ioReads` so a caller can tell a game-driven song from a broken
+// one. Verified against the SM64 / OoT / MM catalogues (INTEGRATION.md §8).
 //
 // Implemented (state actually tracked, affects output):
 //   all three levels: FF FD FE FC F8 F7 F6 FB FA F9 F5 (+ F4 F3 F2 in oot)
@@ -44,25 +52,38 @@ function state(pc) { return {pc, depth: 0, stack: [0, 0, 0, 0], loops: [0, 0, 0,
 
 export function parseSequence(input, opts = {}) {
   const {abi = "sm64", maxTicks = TICKS_PER_BEAT * 4 * 2000, maxSeconds = Infinity,
-         maxNotes = 250000, stopAtLoop = true} = opts;
-  if (abi !== "sm64" && abi !== "oot") throw new Error("abi must be sm64 or oot, got " + abi);
-  const oot = abi === "oot";
+         maxNotes = 250000, stopAtLoop = true, present = null, io = null} = opts;
+  if (abi !== "sm64" && abi !== "oot" && abi !== "mm") throw new Error("abi must be sm64, oot or mm, got " + abi);
+  const oot = abi === "oot" || abi === "mm"; // the OoT generation; "mm" differs only in the channel A0-BE table
+  const mm = abi === "mm";
   // copy: channel C7 / sequence C7 write into the sequence bytes
   const seq = input instanceof ArrayBuffer ? new Uint8Array(input.slice(0)) : Uint8Array.from(input);
+  // `present[i]` falsy = byte i is a hole (a USF rip carries only the bytes
+  // the game read); reading one is an error, not a zero
+  const have = present ? Uint8Array.from(present) : null;
   const notes = [], tempos = [], stubbed = new Set();
-  let tick = 0, seconds = 0, loop = null, selfModified = false;
+  // io ports are how the game steers a sequence (which section, which
+  // band member); we never write them, so a song that reads them is
+  // running a path the game would not necessarily take — count the reads
+  let tick = 0, seconds = 0, loop = null, selfModified = false, ioReads = 0;
 
   const hex = v => "0x" + v.toString(16).padStart(2, "0");
   const fail = (level, cmd, at) => new Error(`${level} opcode ${hex(cmd)} at ${hex(at)}: not in the ${abi} ABI table (tick ${tick})`);
   const stub = name => { stubbed.add(name); };
 
   // ---- byte readers (m64_read_u8 / _s16 / _compressed_u16)
-  const u8 = s => { if (s.pc >= seq.length) throw new Error(`script ran off the end at ${hex(s.pc)} (tick ${tick})`); return seq[s.pc++]; };
+  const at = a => {
+    if (a >= seq.length) throw new Error(`script ran off the end at ${hex(a)} (tick ${tick})`);
+    if (have && !have[a]) throw new Error(`byte ${hex(a)} is not in the rip (tick ${tick})`);
+    return seq[a];
+  };
+  const poke = (a, v) => { seq[a] = v; if (have) have[a] = 1; selfModified = true; };
+  const u8 = s => at(s.pc++);
   const s8 = s => (u8(s) << 24) >> 24;
   const u16 = s => (u8(s) << 8) | u8(s);
   const s16 = s => (u16(s) << 16) >> 16;
   const cu16 = s => { let v = u8(s); if (v & 0x80) v = ((v & 0x7F) << 8) | u8(s); return v; };
-  const u16at = a => (seq[a] << 8) | seq[a + 1];
+  const u16at = a => (at(a) << 8) | at(a + 1);
   const push = (s, pc) => { if (s.depth >= 4) throw new Error(`call stack overflow at ${hex(s.pc)}`); s.stack[s.depth++] = pc; };
 
   // ---- control flow shared by all three levels. `o.value` is the level's
@@ -128,8 +149,11 @@ export function parseSequence(input, opts = {}) {
   const player = {enabled: true, delay: 0, tempo: 120, transposition: 0, value: 0, variation: -1,
                   io: new Array(8).fill(-1), shortVel: -1, shortGate: -1, channels: new Array(CHANNELS).fill(null),
                   st: state(0)};
-  const shortVel = i => player.shortVel < 0 ? DEFAULT_SHORT_VEL[i] : seq[player.shortVel + i];
-  const shortGate = i => player.shortGate < 0 ? DEFAULT_SHORT_GATE[i] : seq[player.shortGate + i];
+  // opts.io = {port: value}: what the game would have written before the
+  // song started (MM's Ballad of the Wind Fish reads port 4 for the band)
+  if (io) for (const [k, v] of Object.entries(io)) { const p = +k; if (p >= 0 && p < 8) player.io[p] = (v << 24) >> 24; }
+  const shortVel = i => player.shortVel < 0 ? DEFAULT_SHORT_VEL[i] : at(player.shortVel + i);
+  const shortGate = i => player.shortGate < 0 ? DEFAULT_SHORT_GATE[i] : at(player.shortGate + i);
 
   function newChannel(idx) {
     return {idx, enabled: false, finished: false, stopScript: false, delay: 0, value: 0, transposition: 0,
@@ -260,7 +284,9 @@ export function parseSequence(input, opts = {}) {
           if (cmd === 0xFD) { C.delay = cu16(s); break; }
           if (!oot && cmd === 0xF3) { C.stopScript = true; break; } // chan_hang
           if (oot && cmd === 0xEA) { C.stopScript = true; break; }
-          if (cmd > 0xC0) { if (!flow(C, s, cmd, "channel")) channelOp(C, s, cmd); continue; }
+          // OoT dispatches full opcodes from 0xB0 (seqplayer.c "cmd >= 0xB0"), MM
+          // from 0xA0; below that the low nibble/3 bits select a layer or io slot
+          if (cmd > 0xC0 || (oot && cmd >= (mm ? 0xA0 : 0xB0))) { if (!flow(C, s, cmd, "channel")) channelOp(C, s, cmd); continue; }
           channelLow(C, s, cmd);
         }
       }
@@ -269,6 +295,7 @@ export function parseSequence(input, opts = {}) {
   }
 
   const wrap8 = v => (v << 24) >> 24;
+  const seqVal = v => oot ? wrap8(v) : v;
   function channelOp(C, s, cmd) {
     const at = s.pc - 1;
     switch (cmd) {
@@ -281,12 +308,12 @@ export function parseSequence(input, opts = {}) {
       case 0xC4: C.largeNotes = true; break;
       case 0xC5: if (C.value !== -1) C.dynTable = dynAddr(C, C.value); break;
       case 0xC6: C.bank = u8(s); break;
-      case 0xC7: { const v = u8(s), a = u16(s); seq[a] = (C.value + v) & 0xFF; selfModified = true; break; }
+      case 0xC7: { const v = u8(s), a = u16(s); poke(a, (C.value + v) & 0xFF); break; }
       case 0xC8: C.value = wrap8(C.value - u8(s)); break;
       case 0xC9: C.value = wrap8(C.value & u8(s)); break;
       case 0xCC: C.value = wrap8(u8(s)); break;
       case 0xCA: u8(s); break;                                                     // mute behaviour
-      case 0xCB: { const a = (u16(s) + C.value) & 0xFFFF; C.value = wrap8(seq[a]); break; }
+      case 0xCB: { const a = (u16(s) + C.value) & 0xFFFF; C.value = wrap8(at(a)); break; }
       case 0xCD: if (!oot) throw fail("channel", cmd, at); disableChannel(player.channels[u8(s)]); break;
       case 0xCE: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel ldptr CE"); break;
       case 0xCF: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel stptrtoseq CF"); break;
@@ -304,12 +331,18 @@ export function parseSequence(input, opts = {}) {
       case 0xEB: C.bank = u8(s); C.instr = u8(s); break;
       case 0xEC: break;                                                            // vibrato reset
       default: {
-        // OoT/MM A0-BE: sizes from mm's sSeqInstructionArgsTable; A8 is the MM
-        // width (OoT differs there per the mm comment)
+        // OoT B0-BD / MM A0-BE: argument widths from each decomp's
+        // sSeqInstructionArgsTable (oot src/audio/internal/seqplayer.c, mm
+        // src/audio/lib/seqplayer.c). They disagree at BD (OoT randptr s16,s16;
+        // MM s16) and BE (OoT none; MM u8); OoT has no A0-AF at all.
         if (!oot || cmd < 0xA0 || cmd > 0xBE) throw fail("channel", cmd, at);
-        const sizes = {0xA0: [2], 0xA1: [], 0xA2: [2], 0xA3: [], 0xA4: [1], 0xA5: [], 0xA6: [1, 2], 0xA7: [1], 0xA8: [2, 2],
-                       0xB0: [2], 0xB1: [], 0xB2: [2], 0xB3: [1], 0xB4: [], 0xB5: [], 0xB6: [], 0xB7: [2], 0xB8: [1],
-                       0xB9: [1], 0xBA: [1], 0xBB: [1, 2], 0xBC: [2], 0xBD: [2], 0xBE: [1]};
+        const sizes = mm
+          ? {0xA0: [2], 0xA1: [], 0xA2: [2], 0xA3: [], 0xA4: [1], 0xA5: [], 0xA6: [1, 2], 0xA7: [1], 0xA8: [2, 2],
+             0xA9: [], 0xAA: [], 0xAB: [], 0xAC: [], 0xAD: [], 0xAE: [], 0xAF: [],
+             0xB0: [2], 0xB1: [], 0xB2: [2], 0xB3: [1], 0xB4: [], 0xB5: [], 0xB6: [], 0xB7: [2], 0xB8: [1],
+             0xB9: [1], 0xBA: [1], 0xBB: [1, 2], 0xBC: [2], 0xBD: [2], 0xBE: [1]}
+          : {0xB0: [2], 0xB1: [], 0xB2: [2], 0xB3: [1], 0xB4: [], 0xB5: [], 0xB6: [], 0xB7: [2], 0xB8: [1],
+             0xB9: [1], 0xBA: [1], 0xBB: [1, 2], 0xBC: [2], 0xBD: [2, 2], 0xBE: []};
         const sz = sizes[cmd];
         if (!sz) throw fail("channel", cmd, at);
         for (const n of sz) n === 2 ? u16(s) : u8(s);
@@ -323,18 +356,19 @@ export function parseSequence(input, opts = {}) {
     const at = s.pc - 1;
     if (!oot) {
       const lo = cmd & 0xF;
-      // soundScriptIO has 8 slots; a higher index is an OoT opcode (0x88 ldlayer) fed to the wrong table
-      if (lo >= 8 && (cmd & 0xF0) >= 0x50 && (cmd & 0xF0) <= 0x80) throw fail("channel", cmd, at);
+      // soundScriptIO has 8 slots; a higher index is an OoT opcode (0x88 ldlayer) fed to the wrong table.
+      // 0x60|n is note priority (n is the priority, 2..15 in every SM64 song), not an io op.
+      if (lo >= 8 && (cmd & 0xF0) >= 0x50 && (cmd & 0xF0) <= 0x80 && (cmd & 0xF0) !== 0x60) throw fail("channel", cmd, at);
       switch (cmd & 0xF0) {
         case 0x00: if (C.layers[lo]) C.value = C.layers[lo].finished ? 1 : 0; break;
         case 0x10: enableChannel(lo, u16(s)); break;
         case 0x20: disableChannel(player.channels[lo]); break;
         case 0x30: { const io = u8(s); const T = player.channels[lo]; if (T) T.io[io] = C.value; break; }
-        case 0x40: { const io = u8(s); const T = player.channels[lo]; C.value = T ? T.io[io] : -1; break; }
-        case 0x50: C.value = wrap8(C.value - C.io[lo]); break;
+        case 0x40: { const io = u8(s); const T = player.channels[lo]; C.value = T ? T.io[io] : -1; ioReads++; break; }
+        case 0x50: C.value = wrap8(C.value - C.io[lo]); ioReads++; break;
         case 0x60: break;                                                          // note priority
         case 0x70: C.io[lo] = C.value; break;
-        case 0x80: C.value = C.io[lo]; if (lo < 4) C.io[lo] = -1; break;
+        case 0x80: C.value = C.io[lo]; if (lo < 4) C.io[lo] = -1; ioReads++; break;
         case 0x90: setLayer(C, lo & 3, u16(s)); break;
         case 0xA0: freeLayer(C, lo & 3); break;
         case 0xB0: if (C.value !== -1) setLayer(C, lo & 3, dynAddr(C, C.value)); break;
@@ -348,9 +382,9 @@ export function parseSequence(input, opts = {}) {
       case 0x10: case 0x18: throw fail("channel (ldsample)", cmd, at);
       case 0x20: case 0x28: enableChannel(lo, u16(s)); return;
       case 0x30: case 0x38: { const io = u8(s); const T = player.channels[lo]; if (T) T.io[io] = C.value; return; }
-      case 0x40: case 0x48: { const io = u8(s); const T = player.channels[lo]; C.value = T ? T.io[io] : -1; return; }
-      case 0x50: case 0x58: C.value = wrap8(C.value - C.io[lo]); return;
-      case 0x60: case 0x68: C.value = C.io[lo]; if (lo < 2) C.io[lo] = -1; return;
+      case 0x40: case 0x48: { const io = u8(s); const T = player.channels[lo]; C.value = T ? T.io[io] : -1; ioReads++; return; }
+      case 0x50: case 0x58: C.value = wrap8(C.value - C.io[lo]); ioReads++; return;
+      case 0x60: case 0x68: C.value = C.io[lo]; if (lo < 2) C.io[lo] = -1; ioReads++; return;
       case 0x70: C.io[l] = C.value; return;
       case 0x78: { const r = s16(s); setLayer(C, l & 3, s.pc + r); return; }
       case 0x80: if (C.layers[l]) C.value = C.layers[l].finished ? 1 : 0; return;
@@ -402,12 +436,15 @@ export function parseSequence(input, opts = {}) {
           case 0xD4: break;                                                        // mute
           case 0xD2: player.shortVel = u16(s); break;
           case 0xD1: player.shortGate = u16(s); break;
-          case 0xCC: player.value = u8(s); break;
-          case 0xC9: player.value &= u8(s); break;
-          case 0xC8: player.value -= u8(s); break;
+          // the sequence register is an s8 in the OoT generation (SeqScriptState.value;
+          // MM's Ballad of the Wind Fish does `ldio 4; sub 0xFF; rbeqz` and relies on the
+          // wrap) but a local s32 in SM64 (sequence_player_process_sequence)
+          case 0xCC: player.value = seqVal(u8(s)); break;
+          case 0xC9: player.value = seqVal(player.value & u8(s)); break;
+          case 0xC8: player.value = seqVal(player.value - u8(s)); break;
           case 0xCE: if (!oot) throw fail("sequence", cmd, at); u8(s); player.value = 0; stub("sequence random CE"); break;
           case 0xCD: if (!oot) throw fail("sequence", cmd, at); { const t = u16(s); if (player.value !== -1) { push(s, s.pc); s.pc = u16at(t + player.value * 2); } } break;
-          case 0xC7: { const v = u8(s), a = u16(s); seq[a] = (player.value + v) & 0xFF; selfModified = true; break; }
+          case 0xC7: { const v = u8(s), a = u16(s); poke(a, (player.value + v) & 0xFF); break; }
           case 0xC6: if (!oot) throw fail("sequence", cmd, at); player.enabled = false; freeChannels(0xFFFF); return;
           case 0xC5: case 0xC3: case 0xC2: if (!oot) throw fail("sequence", cmd, at); u16(s); stub("sequence " + hex(cmd)); break;
           case 0xC4: if (!oot) throw fail("sequence", cmd, at); u8(s); u8(s); stub("sequence runseq C4"); break;
@@ -420,10 +457,10 @@ export function parseSequence(input, opts = {}) {
       switch (cmd & 0xF0) {
         case 0x00: { const C = player.channels[lo]; if (C) player.value = C.finished ? 1 : 0; break; }
         case 0x40: if (!oot) throw fail("sequence", cmd, at); disableChannel(player.channels[lo]); break;
-        case 0x50: player.value -= oot ? player.io[lo] : player.variation; break;
+        case 0x50: player.value = seqVal(player.value - (oot ? player.io[lo] : player.variation)); if (oot) ioReads++; break;
         case 0x60: if (!oot) throw fail("sequence", cmd, at); u8(s); u8(s); stub("sequence ldres 0x6n"); break;
         case 0x70: if (oot) player.io[lo] = player.value; else player.variation = player.value; break;
-        case 0x80: if (oot) { player.value = player.io[lo]; if (lo < 2) player.io[lo] = -1; } else player.value = player.variation; break;
+        case 0x80: if (oot) { player.value = player.io[lo]; if (lo < 2) player.io[lo] = -1; ioReads++; } else player.value = player.variation; break;
         case 0x90: enableChannel(lo, u16(s)); break;
         case 0xA0: if (!oot) throw fail("sequence", cmd, at); { const r = s16(s); enableChannel(lo, s.pc + r); } break;
         case 0xB0: if (!oot) throw fail("sequence", cmd, at); u8(s); u16(s); stub("sequence ldseq 0xBn"); break;
@@ -450,7 +487,7 @@ export function parseSequence(input, opts = {}) {
   if (!tempos.length || tempos[0].tick !== 0) tempos.unshift({tick: 0, bpm: 120}); // init_sequence_player default
 
   return {abi, ticksPerBeat: TICKS_PER_BEAT, notes, tempos, endTick: tick, seconds, loop,
-          truncated, selfModified, stubbed: [...stubbed].sort(),
+          truncated, selfModified, ioReads, stubbed: [...stubbed].sort(),
           channels: [...new Set(notes.map(n => n.ch))].sort((a, b) => a - b)};
 }
 
