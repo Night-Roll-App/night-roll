@@ -3337,6 +3337,7 @@ test("iPad app: the Files folder is a folder root — opt-in pref, same seams, b
   await run(`chooseFolder()`);
   assert.equal(run(`folderActive()`), true);
   assert.equal(run(`fsRoot.mode`), "native");
+  assert.equal(run(`document.getElementById("filesonipad").checked`), true, "the Settings checkbox reflects it");
   assert.equal(run(`localStorage.getItem("ff1roll-folder-native")`), "1");
   assert.equal(run(`writeToken()`), "folder");
   // text and bytes round-trip through base64; directories are created on the way
@@ -3392,4 +3393,15 @@ test("iPad app: a file handed over by Files/share sheet opens as a local draft; 
   assert.equal(await run(`nativeOpenUrl("https://example.com/x.mid")`), false);
   run(`delete window.Capacitor;`);
   assert.equal(await run(`nativeOpenUrl(${JSON.stringify(url)})`), false);
+});
+
+test("Settings tabs: one pane at a time, the last one remembered on this device", () => {
+  run(`cfgShowPane("ai")`);
+  assert.equal(run(`document.getElementById("cfgpane-ai").classList.contains("on")`), true);
+  assert.equal(run(`document.getElementById("cfgpane-saving").classList.contains("on")`), false);
+  assert.equal(run(`document.getElementById("cfgtab-ai").classList.contains("on")`), true);
+  assert.equal(run(`localStorage.getItem("ff1roll-cfgpane")`), "ai");
+  run(`cfgShowPane("nope")`); // unknown → Saving
+  assert.equal(run(`localStorage.getItem("ff1roll-cfgpane")`), "saving");
+  run(`localStorage.removeItem("ff1roll-cfgpane")`);
 });

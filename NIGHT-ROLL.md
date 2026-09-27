@@ -1212,6 +1212,17 @@ tests/night-roll.test.mjs); the shell project lives outside this repo
 (`~/work/ff/night-roll-app`, `build-ipad.sh` = package → sync → build →
 install).
 
+**Settings tabs (2026-09-27).** The sheet is three panes behind a `.seg`
+tab strip — Saving (auto-save, the desktop folder rows, and in the iPad
+app the **Keep my songs in Files on this iPad** checkbox `#filesonipad`
+with its status line `#fileshelp`), AI, GitHub (repo/token, ▸ advanced).
+`cfgShowPane(name)` toggles `.cfgpane.on`/tab `.on` and remembers the
+pane in `ff1roll-cfgpane` (device pref); `openSettingsSheet` restores it.
+`renderFolderUI` shows `#filesrow` and hides `#folderrow` when
+`nativeFs()` is present; the checkbox's change handler is `chooseFolder`
+(toggles), and the re-render re-syncs the box. Josh, from the iPad: one
+long sheet had texts running into each other.
+
 **Open in Night Roll (iPad app, 2026-09-27).** The shell's Info.plist
 declares `public.midi-audio` plus an imported UTI for chip files
 (nsf/nsfe/gbs/spc/vgm/vgz) with `LSSupportsOpeningDocumentsInPlace`

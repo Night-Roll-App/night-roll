@@ -31,6 +31,16 @@ enrolled. Next: Phase 2, the real shell (Files-app storage, icon, name,
 TestFlight). Still needs Josh: a support email address; two more starter
 songs; "merge it" for the overnight branch.
 
+## QUEUED IDEA (Josh, 2026-09-27): "✦ Annotate this song for me"
+
+Import a classical MIDI, ask the AI to analyze it and write the
+annotations. Consistent with the 2026-08-19 ruling (asked-for = a tool):
+on-demand, per song, per tap, never volunteered. Design sketch: an Ask
+mode that returns structured chord/section/key lines, parsed into
+annotations tagged as AI-written (reviewable, clearable in one go);
+MIDI-derived songs only (chip imports included), audio tracks have no
+notes. Not started.
+
 ## PHASE 2 — THE REAL SHELL, STARTED 2026-09-27 (afternoon)
 
 Shell project `~/work/ff/night-roll-app` (local git, no GitHub repo yet;
