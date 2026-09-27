@@ -7031,9 +7031,9 @@ async function vaultFetch(file) {
   return bytes;
 }
 async function chipSource() { // {bytes, n, secs} for the current song, or null
-  if (chipTrackNo() !== null && nsfSess.bytes) {
+  if (chipTrackNo() !== null && (nsfSess.bytes || nsfSess.rows[chipTrackNo()].bytes)) {
     const n = chipTrackNo();
-    return {bytes: nsfSess.bytes, n, secs: nsfSess.rows[n].secs || 60, chip: nsfSess.chip || "nsf"};
+    return {bytes: nsfSess.bytes || nsfSess.rows[n].bytes, n: nsfSess.bytes ? n : 1, secs: nsfSess.rows[n].secs || 60, chip: nsfSess.chip || "nsf"};
   }
   if (!songKey) return null;
   const base = songKey.split("/").pop().replace(/\.mid$/, "");
@@ -7047,21 +7047,22 @@ async function chipSource() { // {bytes, n, secs} for the current song, or null
   let tr = (rec && rec.tracks && rec.tracks[base]) || metaTr;
   if (tr === undefined || tr === null) return null;
   if (typeof tr === "number") tr = {n: tr};
-  let bytes = rec && rec.bytes;
+  const vault = (meta && meta.nsf && meta.nsf.vault) || "";
+  const kind = (rec && rec.chip) || (meta && meta.nsf && meta.nsf.chip) || (/\.gbs$/i.test(vault) ? "gbs" : "nsf");
+  const perFile = !!(meta && meta.nsf && meta.nsf.perFile) || !!(tr && tr.bytes);
+  let bytes = perFile ? tr.bytes : rec && rec.bytes;
   if (!bytes && meta && meta.nsf && meta.nsf.vault) { // fall back to the vault, then cache
-    console.log("[chip] fetching NSF from the archive…");
+    console.log("[chip] fetching the console file from the archive…");
     try {
-      bytes = await vaultFetch(meta.nsf.vault);
-      if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {}, meta.nsf.chip || (/\.gbs$/i.test(meta.nsf.vault) ? "gbs" : "nsf"));
+      if (perFile) { bytes = await vaultFetch(chipVaultFile(meta.nsf, base)); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
+      else { bytes = await vaultFetch(meta.nsf.vault); if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {}, kind); }
     } catch (err) { // say WHY and stand down to synthesized voices — never a stuck banner
       setInfo("⚠ chip audio unavailable: " + err.message + " (synthesized voices for now)");
       return null;
     }
   }
   if (!bytes) return null;
-  const vault = (meta && meta.nsf && meta.nsf.vault) || "";
-  const kind = (rec && rec.chip) || (meta && meta.nsf && meta.nsf.chip) || (/\.gbs$/i.test(vault) ? "gbs" : "nsf");
-  return {bytes, n: tr.n, secs: tr.secs || 75, chip: kind};
+  return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind};
 }
 async function updateChipBtn() { // name kept for call sites; now just the auto-render kick
   // "the chip button should not even have to exist" (Josh, 2026-08-17): chip
@@ -7110,12 +7111,15 @@ async function chipRender() {
   const M = await chipModules(kind);
   const nsfParsed = CHIPS[kind].parse(M)(src.bytes);
   const secs = Math.ceil(src.secs + 1);
-  const {apuLog, frames, frameSec} = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
+  if (!M.renderApu) return false; // no renderer for this chip (yet): synth carries the song
+  const res = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
     p => console.log("[chip] emulating " + Math.round(p * 100) + "%"));
+  const {frameSec} = res;
   // song time zero = first onset (the capture's trim) — find it the same way
-  const ev = M.reconstruct(apuLog, frames, frameSec);
+  const ev = res.events || M.reconstruct(res.apuLog, res.frames, frameSec);
   const t0 = ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0;
-  const r = await M.renderApu(apuLog, frames, frameSec, {sampleRate: audio.sampleRate,
+  const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
+  const r = await render(M, res, {sampleRate: audio.sampleRate,
     onProgress: p => console.log("[chip] rendering " + Math.round(p * 100) + "%")});
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
   const chans = CHIPS[kind].channels.filter(name => r[name]);
@@ -12375,8 +12379,9 @@ const CHIPS = {
   // Chrono Trigger set the scan took 5–40 s per track, found nothing, and
   // then the 300 s retry doubled it (an iPad tab would not survive that).
   spc: {magic: b => String.fromCharCode(...b.subarray(0, 27)) === "SNES-SPC700 Sound File Data", ext: ".spc", label: "SPC",
-        channels: [], perFile: true, tagged: true,
-        files: ["spc/spc", "spc/notes"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
+        channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"], perFile: true, tagged: true,
+        files: ["spc/spc", "spc/notes", "?spc/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"], // "?" = optional: the S-DSP renderer lands separately; until then synth carries these songs
+        render: (M, res, o) => M.renderApu(res.apuLog, o), // the SPC renderer takes the capture itself
         parse: M => M.parseSPC,
         run: M => async (spc, n, seconds, onProgress) => {
           const cap = await M.runSPCAsync(spc, seconds, onProgress);
@@ -12394,6 +12399,14 @@ function chipTrackOrder(files) { // a set's files in disc/track/part order, unli
 }
 function chipKindOf(bytes) { for (const k of Object.keys(CHIPS)) if (bytes.length > 8 && CHIPS[k].magic(bytes)) return k; return null; }
 function chipExt(kind) { return (CHIPS[kind] || CHIPS.nsf).ext; }
+function chipVaultMeta(slug, kind) { // album.json's nsf: block for an import — one file per album, or a folder of one file per track
+  const c = CHIPS[kind] || CHIPS.nsf;
+  const m = {vault: c.perFile ? slug + "/" : slug + c.ext, tracks: {}};
+  if (kind && kind !== "nsf") m.chip = kind;
+  if (c.perFile) m.perFile = true;
+  return m;
+}
+function chipVaultFile(meta, base) { return meta.perFile ? meta.vault + base + chipExt(meta.chip) : meta.vault; } // where a track's console file lives in the archive
 async function chipModules(kind) {
   kind = kind || "nsf";
   chipModules.cache = chipModules.cache || {};
@@ -12403,7 +12416,7 @@ async function chipModules(kind) {
     // froze Josh's iPad tab an hour after the async fix shipped)
     const v = "?v=" + Date.now();
     const c = CHIPS[kind];
-    const parts = await Promise.all(c.files.map(f => import("./tools/" + f + ".mjs" + v)));
+    const parts = await Promise.all(c.files.map(f => f.startsWith("?") ? import("./tools/" + f.slice(1) + ".mjs" + v).catch(() => ({})) : import("./tools/" + f + ".mjs" + v)));
     const shared = await Promise.all(c.shared.map(f => import("./tools/" + f + ".mjs" + v)));
     const M = Object.assign({}, ...parts, ...shared);
     for (const k of c.own) for (const part of parts) if (part[k]) M[k] = part[k];
@@ -12514,7 +12527,7 @@ async function openChipImport(kind, bytes, name, m3uList, files) {
     });
     row.append(lbl, st, cap, open);
     list.appendChild(row);
-    nsfSess.rows[n] = {name: lbl, st, open, cap, parsed: set ? set[n - 1].parsed : null};
+    nsfSess.rows[n] = {name: lbl, st, open, cap, parsed: set ? set[n - 1].parsed : null, bytes: set ? set[n - 1].bytes : null};
   }
   document.getElementById("impall").textContent = "Capture all"; // fresh import, fresh verb
   if (m3uList && m3uList.length) setInfo(nsfSess.trackList.length + " songs listed from the playlist (of " + nsf.songs + " NSF slots) — names loaded.");
@@ -12639,7 +12652,8 @@ async function impCapture(n) {
     if (chip.key === key) { chip.key = null; updateChipBtn(); } // re-capture invalidates rendered audio
     // NSF bytes + track number persist on this device so chip audio outlives
     // the session (never the repo — *.nsf is gitignored ROM music)
-    if (nsfSess.bytes) idbNsfPut(slug, nsfSess.bytes, {[base]: {n, secs: cap.secs}}, nsfSess.chip); // a per-file set has no one blob and no renderer yet
+    if (nsfSess.bytes) idbNsfPut(slug, nsfSess.bytes, {[base]: {n, secs: cap.secs}}, nsfSess.chip);
+    else if (row.bytes) idbNsfPut(slug, null, {[base]: {n: 1, secs: cap.secs, bytes: row.bytes}}, nsfSess.chip); // a per-file set: the track's own file rides in its entry (64 KB an .spc)
     row.st.textContent = "✓ saved · " + cap.secs.toFixed(1) + "s · " + cap.bpm + "bpm · " +
                          (cap.looped ? "loop" : tagged ? "tagged length" : "no loop ≤" + secs + "s") +
                          (cap.snapped ? "" : " · raw timing (tempo shifts)");
@@ -12707,8 +12721,7 @@ async function computeImportAlbumJson(slug, h, songTitles, nsfTracks, chipKind) 
   }
   meta.songs = {...(meta.songs || {}), ...(songTitles || {})};
   if (nsfTracks && Object.keys(nsfTracks).length) {
-    meta.nsf = meta.nsf || {vault: slug + chipExt(chipKind), tracks: {}};
-    if (chipKind && chipKind !== "nsf") meta.nsf.chip = chipKind;
+    meta.nsf = meta.nsf || chipVaultMeta(slug, chipKind);
     meta.nsf.tracks = {...meta.nsf.tracks, ...nsfTracks};
   }
   return {path, text: JSON.stringify(meta, null, 1) + "\n"};
@@ -12851,11 +12864,30 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
       const nsfTracks = {};
       if (rec && rec.tracks) for (const k of keys) {
         const base = k.split("/").pop().replace(/\.mid$/, "");
-        if (k.split("/")[2] === slug && rec.tracks[base] !== undefined) nsfTracks[base] = rec.tracks[base];
+        const t = rec.tracks[base];
+        if (k.split("/")[2] === slug && t !== undefined) nsfTracks[base] = typeof t === "object" && t && t.bytes ? {n: t.n, secs: t.secs} : t; // the file itself never enters album.json
       }
       const chipKind = (rec && rec.chip) || "nsf", vaultFile = slug + chipExt(chipKind);
+      const perFile = !!(CHIPS[chipKind] && CHIPS[chipKind].perFile);
+      const trackFiles = perFile && rec && rec.tracks ? Object.entries(rec.tracks).filter(([b, t]) => nsfTracks[b] && t && t.bytes) : [];
       songFiles.push(await computeImportAlbumJson(slug, h, overrides, nsfTracks, chipKind));
-      if (rec && rec.bytes && !folderActive() && !cfg().nsfRepo) status("No NSF repo in Settings — the " + chipExt(chipKind) + " stays on this device (chip audio here; synth voices elsewhere)");
+      if (((rec && rec.bytes) || trackFiles.length) && !folderActive() && !cfg().nsfRepo) status("No NSF repo in Settings — the " + chipExt(chipKind) + (perFile ? " files stay" : " stays") + " on this device (chip audio here; synth voices elsewhere)");
+      if (trackFiles.length && !folderActive() && cfg().nsfRepo) { // a per-file set: one archive file per track, only the ones not there yet
+        let up = 0, failed = 0;
+        for (const [b, t] of trackFiles) {
+          const file = slug + "/" + b + chipExt(chipKind);
+          try {
+            const chk = await fetch(nsfURL(file) + "?t=" + Date.now(), {cache: "no-cache"});
+            if (chk.ok) continue;
+            status("Uploading " + CHIPS[chipKind].label + " " + (++up) + "/" + trackFiles.length + " to the archive…");
+            const put = await fetch(repoApi("nsf") + file, {method: "PUT", headers: h, body: JSON.stringify({
+              message: CHIPS[chipKind].label + " for " + slug + "/" + b + " (chip audio)", branch: "main",
+              content: midiBase64(t.bytes instanceof Uint8Array ? t.bytes : new Uint8Array(t.bytes))})});
+            if (!put.ok) throw new Error("HTTP " + put.status);
+          } catch (err) { failed++; }
+        }
+        if (failed) status("⚠ " + failed + " " + CHIPS[chipKind].label + " upload" + (failed === 1 ? "" : "s") + " failed — chip audio for those stays device-local");
+      }
       if (rec && rec.bytes && !folderActive() && cfg().nsfRepo) { // folder mode: the chip file stays in this device's IndexedDB
         try { // chip file -> archive if it isn't publicly there yet
           const chk = await fetch(nsfURL(vaultFile) + "?t=" + Date.now(), {cache: "no-cache"});

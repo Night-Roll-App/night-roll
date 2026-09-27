@@ -436,7 +436,19 @@ present; `midiOpts` = `{volMax: 127}`; drums are excluded from the snap
 gate like noise. `CHIPS.spc.tagged`: the tag's seconds ARE the length
 (intro + one pass), so the capture runs that long, the loop scan is
 skipped and the 300 s no-loop retry never fires — measured on the real
-Frog's Theme: scan 5.6 s in node (40 s+ in Chrome) for a null result. No renderer yet: `nsfSess.bytes` is null, nothing goes
+Frog's Theme: scan 5.6 s in node (40 s+ in Chrome) for a null result.
+Console audio for a per-file set (groundwork 2026-09-27, renderer in
+progress): each captured row stores ITS file in the IndexedDB record's
+track entry (`tracks[base].bytes`, 64 KB an .spc; `rec.bytes` stays
+null), `chipSource` returns that entry's bytes with `n: 1`, album.json
+gets `nsf: {vault: "<slug>/", chip: "spc", perFile: true, tracks}`
+(`chipVaultMeta`) and Publish uploads one archive file per track
+(`<slug>/<base>.spc`, only the missing ones); `chipVaultFile` names a
+track's file for the vault fallback. `CHIPS.spc.files` lists
+`?spc/apu-render` as OPTIONAL (a failed import is an empty module), so
+the app keeps working until tools/spc/apu-render.mjs exists;
+`chipRender` returns false without `M.renderApu`, and a chip's `render`
+hook adapts the renderer's signature (the SPC one takes the capture). No renderer yet: `nsfSess.bytes` is null, nothing goes
 to IndexedDB or the archive, synth voices carry the songs, the panel
 status says so, and the "no NSF on this device" warning now needs an
 album.json that actually names a console file (`chipAlbumHasSource`).
