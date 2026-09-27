@@ -5700,21 +5700,6 @@ async function clockAlive() { // don't trust the state string: prove the clock t
 // closed-state path, synchronous at the top of play()'s tap, and it resets
 // every node the app keeps across a rebuild.
 function gestureActive() { return !(typeof navigator !== "undefined" && navigator.userActivation) || navigator.userActivation.isActive; }
-let audioDead = false; // resumeAudio's retries failed: the next tap rebuilds before anything else
-// The one place a context may be replaced: synchronously, first thing in a
-// tap, before any await (a context created after awaits is mute on iOS). An
-// engine "interrupted" from birth or closed by the system, or one whose
-// resume left the clock dead, is replaced here; ensureAudio then makes the
-// new one inside the same synchronous stretch.
-function audioRebuildAtTap(why) {
-  if (!gestureActive()) return false;
-  try { if (audio) audio.close().catch(() => {}); } catch (err) { /* already closed */ }
-  audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
-  audioDead = false;
-  ensureAudio();
-  logErr("audio engine rebuilt at the top of a tap (" + why + ")");
-  return true;
-}
 // resumeAudio never closes or creates a context. Even inside a tap, a context
 // created AFTER awaits is not gesture-initiated to iOS and runs mute with a
 // ticking clock (Josh, 2026-09-27: Fall tap → silence, Stop/Play no help, no
@@ -5725,11 +5710,10 @@ async function resumeAudio() {
   const tapped = gestureActive(); // read NOW: transient activation lapses during the awaits below
   const before = audio.state;
   await audio.resume().catch(() => {});
-  if (await clockAlive()) { audioDead = false; return; }
+  if (await clockAlive()) return;
   if (audio.state === "interrupted") { micRelease(); await new Promise(r => setTimeout(r, 400)); } // iOS: the session comes back a moment after its holder lets go
   await audio.resume().catch(() => {});
-  if (await clockAlive()) { audioDead = false; return; }
-  audioDead = true; // the next tap replaces the engine before anything else
+  if (await clockAlive()) return;
   setInfo("audio asleep — tap ▶ again"); // surfaced: consoles don't exist on an iPad — the ⚠ log carries the state
   logErr("audio asleep (" + (tapped ? "in a tap" : "no gesture") + "; state " + before + " → " + audio.state + ") — tap ▶ again; if it stays silent, relaunch and tell Claude this line");
 }
@@ -7736,7 +7720,6 @@ async function play(fromSec = 0, opts = {}) {
     return;
   }
   micRelease(); // dictation holds the iPad's audio session; give it back before the engine wakes
-  if (audio && (audioDead || audio.state === "interrupted" || audio.state === "closed")) audioRebuildAtTap(audioDead ? "clock was dead" : audio.state); // synchronous, before any await
   ensureAudio();
   await resumeAudio(); // await: scheduling against a frozen clock builds a stale time base
   // the console's voice is still rendering on this thread (Josh, 2026-09-27,
