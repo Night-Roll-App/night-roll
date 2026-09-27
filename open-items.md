@@ -578,6 +578,17 @@ the loop: annotation. Verified on the real Sonic 1 set. Next: PS1 (minis
 + psflib together), then N64 (miniusf + usflib); Genesis sound chip
 (YM2612 + SN76489 renderer) later.
 
+## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
+
+Josh: "we ought to have some sort of a job system where the captures go
+off into long-running jobs and you can reopen them to look at what
+they're doing later — you should not feel worried about minimizing or
+even closing that capture window as it goes." Shape: a job list (footer
+or File menu) with per-job progress; the capture panel is a VIEW onto a
+job, so closing it never cancels; chip renders already run in a Worker
+and captures should follow. Same day, shipped alongside: sheets drag by
+their title line (71af6ef) so Ask can sit beside the capture panel.
+
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
 The five overnight branches (gbs, vgm, psx, spc, n64) merged to main at
