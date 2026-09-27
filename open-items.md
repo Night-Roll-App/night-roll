@@ -88,14 +88,28 @@ next turn. Also fixed on the way: tool rounds through the bridge reused
 the job id and replayed round one's tool call. Open: nothing pushes to
 the iPad while the app is closed (ntfy app on the iPad would; ask Josh).
 
-## CONSOLE IMPORTS — ON MAIN 2026-09-27, COMMAND LINE ONLY
+## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
 The five overnight branches (gbs, vgm, psx, spc, n64) merged to main at
 33b185d on Josh's "no reason these couldn't be pushed to master". Each is
 `tools/<console>/` with RESEARCH.md + INTEGRATION.md + a dump CLI +
-tests in `npm test`; index.html untouched — no app button yet, nothing a
-user sees. Next real step per console: run its dump on a real file from
-Josh's collection (never committed), then the app hook per INTEGRATION.md.
+tests in `npm test`. **GBS is wired into File → Import…** (same day, via
+the bridge relay: Josh had the Final Fantasy Legend zip on the iPad) —
+see NIGHT-ROLL.md "Game Boy import". Awaiting his test on a real rip
+(FFL1: DMG-SAJ.gbs + 17 per-track m3us). VGM/PS1/SPC/N64 remain command
+line only; next step per console: a real file from Josh's collection
+(never committed), then the app hook per its INTEGRATION.md.
+
+## GENERAL ASK (not per song) — QUEUED 2026-09-27
+
+Josh via the bridge: "we need to have some sort of main ask section
+that's not per song … I'm talking to you on the death song from Final
+Fantasy but nothing we're talking about has anything to do with that."
+Plan: a `general` chat key beside the per-song keys (one more resumed
+bridge session), its log at a repo-level `ask/general.ask.md`, a way in
+that needs no song open (File → ✦ Ask (general)), turns without a
+song context block so the tutor rules about keys/annotations stay
+quiet; inbox, tell-the-terminal and tools unchanged.
 
 **GBS .m3u discovery (Josh, 2026-09-26) — two known app fixes before GBS
 import works.** Zophar's rips of the two Uematsu Game Boy scores (The

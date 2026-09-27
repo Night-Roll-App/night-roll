@@ -729,7 +729,7 @@
        registered type), while NO accept summons the photo-library sheet.
        application/octet-stream maps to the root "any data" type: Files opens
        directly and everything is selectable — the byte-sniff stays the real gate -->
-  <input type="file" id="fileinput" multiple accept="application/octet-stream,.mid,.midi,.smf,.kar,.rmi,.nsf,.m3u,.m3u8,audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac">
+  <input type="file" id="fileinput" multiple accept="application/octet-stream,.mid,.midi,.smf,.kar,.rmi,.nsf,.gbs,.m3u,.m3u8,audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac">
   <!-- the ＋∿ chip's own picker: audio only, so iOS opens Files (not the photo library) -->
   <input type="file" id="audioinput" multiple accept="audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac" style="display:none">
 </header>
@@ -1331,7 +1331,7 @@
     <div class="hsec" data-hsec="files">
     <dl>
       <dt>Install on the iPad</dt><dd>Safari → Share → <b>Add to Home Screen</b>. Night Roll then launches from its own icon, full screen with no browser bars, works offline (the app and any song you have opened are kept on the device; instrument sounds are kept as they are first used), and its drafts, annotations and settings live in storage Safari does not evict. Updates arrive on the next launch with a network — the page is always fetched fresh when it can be. Same for Chrome/Edge on a computer (the install icon in the address bar). File → the "build" line at the bottom of the menu says "installed" when you are running the installed copy. If offline support ever misbehaves, open the site with <code>?sw=0</code> once to turn it off on that device.</dd>
-      <dt>File</dt><dd>Everything file-shaped lives here now. Open… (the song picker — albums, drafts; the current song's title shows above the track chips), New song (name/tempo/meter dialog → blank 3-voice NES composition), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (forks ANY song, including a locked capture, into nightroll/ with its annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF chip-music file opens the capture panel: every track runs through the same 6502/APU pipeline that dumped the FF1 album — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder, ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Commit import still pushes every import draft across all folders at once); expansion-chip audio like VRC6 is not captured), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under "Night Roll drafts" in the song picker, where a ✕ (tap twice) deletes a draft from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition between Night Roll Sketches and My Compositions (files + catalog together; the row names the song's current album first, and the dropdown lists only where it can go — New song and Save always land in Sketches); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums.</dd>
+      <dt>File</dt><dd>Everything file-shaped lives here now. Open… (the song picker — albums, drafts; the current song's title shows above the track chips), New song (name/tempo/meter dialog → blank 3-voice NES composition), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (forks ANY song, including a locked capture, into nightroll/ with its annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF or GBS chip-music file (NES or <b>Game Boy</b>) opens the capture panel: every track runs through the same pipeline that dumped the FF1 album (6502/APU for the NES, SM83/Game Boy APU for a .gbs — its wave channel becomes a <b>wave</b> track) — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder, ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Commit import still pushes every import draft across all folders at once); expansion-chip audio like VRC6 is not captured), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under "Night Roll drafts" in the song picker, where a ✕ (tap twice) deletes a draft from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition between Night Roll Sketches and My Compositions (files + catalog together; the row names the song's current album first, and the dropdown lists only where it can go — New song and Save always land in Sketches); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums.</dd>
       <dt>Share a song</dt><dd><b>🔗 Share link</b> in the Publish sheet hands the song's link to the share sheet (or copies it). A link is this player plus the song plus where the song lives: songs on this site need nothing more; a song published to another GitHub repo carries <code>songs=owner/repo</code>, so anyone who taps it hears that song from that repo, no setup — and you can open such links too (the breadcrumb then starts with 🔗 and the repo's name; everything is read-only there, your own songs are untouched, and nothing about the link is remembered). Publish also keeps a <b>song list in the repo's README</b> — every song as a player link, between two markers the app owns, the rest of the README untouched — so the repo page itself is the share page. The address bar is always a shareable link to the open song, and it is the song's path with no extension — …/night-roll/albums/compositions/nightroll/ambush. <b>Add .mid to the end and the same link is the MIDI file</b> (Logic opens it); take it off and it's the player again. Older ?song= links still open the player. The tab title and the link preview in Messages name the song first — "Threnody · Night Roll" — so a pasted link reads as the song, not the app.</dd>
       <dt>Data locations</dt><dd>Night Roll is configured with WHERE its data lives (Sync → "Data locations ▾"): three rows — songs (.mid, album.json, catalog), analysis (.rollnotes + docs), and NSF (chip-audio source) — each with a read base URL (blank = this site; or any raw.githubusercontent.com/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt; or local server) and an owner/repo write target. One fine-grained token, granted to every repo you write to, covers all commits; write errors name the repo they hit, and a 404 usually means the token hasn't been granted that repo. This is what lets another analyst point their own analysis repo at a shared songs corpus. Defaults: everything in this site's repo, NSFs from the public nsf-archive.</dd>
       <dt>📁 Folder on this computer</dt><dd>Saving without GitHub. In File → Settings, tap <b>Choose folder…</b> and pick a folder on this computer: from then on every Save writes the song, its annotations, and its notes dump into that folder (laid out exactly like the repo — <code>albums/…/song.mid</code> beside its <code>.rollnotes.json</code>), nothing goes to GitHub, and no token is needed. The song picker lists the folder's albums alongside the site's; a song that exists in both opens from the folder. Tick <b>show only this folder's songs</b> under the folder row and the list becomes yours alone — the folder plus this device's drafts, none of the site's albums; with an empty folder the app opens straight into New song instead of Overworld. A device setting: it stays on that machine. FF1 songs still load from the site — annotate one and the annotations save to your folder. Chrome may ask for the folder again after a restart: <b>📁 Reconnect folder</b> appears at the top of the File menu (until you tap it, reads fall back to the site). <b>Forget</b> in Settings returns saves to GitHub; the files stay where they are. Needs Chrome or Edge on a computer — Safari and the iPad have no way to write files, and the row says so there. Brave ships the door switched off: enable <code>brave://flags/#file-system-access-api</code> and relaunch (the row tells you). Recordings that aren't yours belong here, not in a repo (see the design docs).</dd>
@@ -1414,7 +1414,7 @@
   <div class="fdiv"></div>
   <button class="fitem" id="fileopen">Open…</button>
   <button class="fitem" id="filenew">＋ New song…</button>
-  <label class="fitem" for="fileinput" style="display:block">Import… (.mid / .nsf)</label>
+  <label class="fitem" for="fileinput" style="display:block">Import… (.mid / .nsf / .gbs)</label>
   <div class="fdiv"></div>
   <button class="fitem" id="filesave">Publish…</button>
   <button class="fitem" id="filesaveas">Save As…</button>
@@ -7014,7 +7014,7 @@ async function vaultFetch(file) {
 async function chipSource() { // {bytes, n, secs} for the current song, or null
   if (chipTrackNo() !== null) {
     const n = chipTrackNo();
-    return {bytes: nsfSess.bytes, n, secs: nsfSess.rows[n].secs || 60};
+    return {bytes: nsfSess.bytes, n, secs: nsfSess.rows[n].secs || 60, chip: nsfSess.chip || "nsf"};
   }
   if (!songKey) return null;
   const base = songKey.split("/").pop().replace(/\.mid$/, "");
@@ -7033,14 +7033,16 @@ async function chipSource() { // {bytes, n, secs} for the current song, or null
     console.log("[chip] fetching NSF from the archive…");
     try {
       bytes = await vaultFetch(meta.nsf.vault);
-      if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {});
+      if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {}, meta.nsf.chip || (/\.gbs$/i.test(meta.nsf.vault) ? "gbs" : "nsf"));
     } catch (err) { // say WHY and stand down to synthesized voices — never a stuck banner
       setInfo("⚠ chip audio unavailable: " + err.message + " (synthesized voices for now)");
       return null;
     }
   }
   if (!bytes) return null;
-  return {bytes, n: tr.n, secs: tr.secs || 75};
+  const vault = (meta && meta.nsf && meta.nsf.vault) || "";
+  const kind = (rec && rec.chip) || (meta && meta.nsf && meta.nsf.chip) || (/\.gbs$/i.test(vault) ? "gbs" : "nsf");
+  return {bytes, n: tr.n, secs: tr.secs || 75, chip: kind};
 }
 async function updateChipBtn() { // name kept for call sites; now just the auto-render kick
   // "the chip button should not even have to exist" (Josh, 2026-08-17): chip
@@ -7069,10 +7071,11 @@ async function chipRender() {
   const src = await chipSource();
   if (!src) return false;
   ensureAudio();
-  const M = await nsfModules();
-  const nsfParsed = M.parseNSF(src.bytes);
+  const kind = src.chip || "nsf";
+  const M = await chipModules(kind);
+  const nsfParsed = CHIPS[kind].parse(M)(src.bytes);
   const secs = Math.ceil(src.secs + 1);
-  const {apuLog, frames, frameSec} = await M.runNSFAsync(nsfParsed, src.n, secs,
+  const {apuLog, frames, frameSec} = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
     p => console.log("[chip] emulating " + Math.round(p * 100) + "%"));
   // song time zero = first onset (the capture's trim) — find it the same way
   const ev = M.reconstruct(apuLog, frames, frameSec);
@@ -7080,7 +7083,8 @@ async function chipRender() {
   const r = await M.renderApu(apuLog, frames, frameSec, {sampleRate: audio.sampleRate,
     onProgress: p => console.log("[chip] rendering " + Math.round(p * 100) + "%")});
   chip.buffers = {};
-  for (const name of ["pulse1", "pulse2", "triangle", "noise"]) {
+  for (const name of CHIPS[kind].channels) {
+    if (!r[name]) continue;
     const buf = audio.createBuffer(1, r[name].length, r.sampleRate);
     buf.copyToChannel(r[name], 0);
     chip.buffers[name] = buf;
@@ -10058,7 +10062,7 @@ document.getElementById("accseg").addEventListener("click", e => {
 function parseM3u(text) { // ordered [{n, title}] — playlist order IS album order
   const list = [];
   for (const line of text.split(/\r?\n/)) {
-    const m = line.match(/::NSF,(\d+),(.+?),(\d+):(\d\d(?:\.\d+)?)/);
+    const m = line.match(/::(?:NSF|GBS),(\d+),(.+?),(\d+):(\d\d(?:\.\d+)?)/); // NSF and GBS rips share the line shape
     if (!m) continue;
     const raw = m[2].replace(/\\,/g, ",");
     const parts = raw.split(" - ");
@@ -10094,17 +10098,22 @@ document.getElementById("fileinput").addEventListener("change", async e => {
     const isM3u = x => /\.m3u8?$/i.test(x.name);
     const m3us = loaded.filter(isM3u);
     const rest = loaded.filter(x => !isM3u(x));
-    const names = m3us.length ? parseM3u(new TextDecoder().decode(m3us[0].bytes)) : null;
-    const nsfs = rest.filter(x => String.fromCharCode(...x.bytes.subarray(0, 5)) === "NESM\x1a");
+    // Game Boy rips (Zophar) ship ONE .m3u per track — "02 Main Theme.m3u" —
+    // so every picked playlist merges, in file-name order (Josh, from the
+    // Final Fantasy Legend zip, 2026-09-27)
+    const names = m3us.length
+      ? [].concat(...m3us.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true})).map(x => parseM3u(new TextDecoder().decode(x.bytes))))
+      : null;
+    const nsfs = rest.filter(x => chipKindOf(x.bytes));
     const audios = rest.filter(x => audioMagic(x.bytes));
     if (audios.length && audios.length === rest.length && !m3us.length) { // recordings → audio tracks on the open song
       audioReplaceTi = null;
       await importAudioFiles(audios.map(x => ({name: x.name, bytes: x.bytes, type: ""})));
-    } else if (nsfs.length) { // an NSF is an album by itself
-      if (rest.length > 1) setInfo("importing the NSF; pick MIDI files separately from other formats");
-      await openNsfImport(nsfs[0].bytes, nsfs[0].name, names);
+    } else if (nsfs.length) { // a chip-music file (NSF or GBS) is an album by itself
+      if (rest.length > 1) setInfo("importing the chip file; pick MIDI files separately from other formats");
+      await openChipImport(chipKindOf(nsfs[0].bytes), nsfs[0].bytes, nsfs[0].name, names);
     } else if (m3us.length && !rest.length) { // playlist alone: name the open session's tracks/drafts
-      if (!nsfSess) setInfo("⚠ that is a track-name playlist — import its NSF first (or pick both together)");
+      if (!nsfSess) setInfo("⚠ that is a track-name playlist — import its NSF or GBS first (or pick both together)");
       else setInfo("✓ " + applyM3uNames(names) + " tracks named from the playlist" +
                    " — captured drafts renamed in place.");
     } else {
@@ -12276,31 +12285,56 @@ document.getElementById("filedlmid").addEventListener("click", () => {
 const IMP_DIR = "albums/imports/";
 function importDraftKeys() { return draftKeys().filter(k => k.startsWith(IMP_DIR)); }
 function impTrackKey(slug, n) { return IMP_DIR + slug + "/track-" + String(n).padStart(2, "0") + ".mid"; }
-let nsfSess = null; // {M: pipeline modules, nsf: parsed file, rows: [{st, open}]}
-async function nsfModules() {
-  if (!nsfModules.cache) {
+let nsfSess = null; // {chip, M: pipeline modules, nsf: parsed file, rows: [{st, open}]} — the name predates the second chip
+// One chip per descriptor (2026-09-27, Game Boy joins the NES): the GB
+// modules export the NSF names (parse/run/reconstruct/renderApu) with GB
+// semantics, so everything after `reconstruct` is one code path. The vault
+// file's extension is the chip id; album.json's `nsf:` key name stays for
+// old albums (`nsf.chip` says which). `shared` are the NSF modules the chip
+// builds on, loaded HERE with the ?v buster and merged last: a module's own
+// nested import (gbs/notes → ../nsf/notes) carries no buster, and the
+// browser handed the GB pipeline a stale midi-write from cache on the first
+// try; `own` names what the chip's module must still win. `midiOpts` are
+// the writer options that make the shared makeMidi speak the chip.
+const CHIPS = {
+  nsf: {magic: b => String.fromCharCode(...b.subarray(0, 5)) === "NESM\x1a", ext: ".nsf", label: "NSF",
+        channels: ["pulse1", "pulse2", "triangle", "noise"],
+        files: ["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"], shared: [], own: [],
+        parse: M => M.parseNSF, run: M => M.runNSFAsync, midiOpts: () => ({})},
+  gbs: {magic: b => String.fromCharCode(...b.subarray(0, 3)) === "GBS" && b[3] === 1, ext: ".gbs", label: "GBS",
+        channels: ["pulse1", "pulse2", "wave", "noise"],
+        files: ["gbs/gbs", "gbs/notes", "gbs/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
+        parse: M => M.parseGBS, run: M => M.runGBSAsync, midiOpts: M => ({chans: M.GB_CHANNELS, drum: M.gbNoiseDrum})},
+};
+function chipKindOf(bytes) { for (const k of Object.keys(CHIPS)) if (bytes.length > 8 && CHIPS[k].magic(bytes)) return k; return null; }
+function chipExt(kind) { return (CHIPS[kind] || CHIPS.nsf).ext; }
+async function chipModules(kind) {
+  kind = kind || "nsf";
+  chipModules.cache = chipModules.cache || {};
+  if (!chipModules.cache[kind]) {
     // ?v busts the Pages CDN per page load — a stale pipeline module next to
     // a fresh index.html reintroduced fixed bugs (the sync-runner fallback
     // froze Josh's iPad tab an hour after the async fix shipped)
     const v = "?v=" + Date.now();
-    const [a, b, c, d] = await Promise.all([
-      import("./tools/nsf/nsf.mjs" + v),
-      import("./tools/nsf/notes.mjs" + v),
-      import("./tools/nsf/midi-write.mjs" + v),
-      import("./tools/nsf/apu-render.mjs" + v),
-    ]);
-    nsfModules.cache = {...a, ...b, ...c, ...d};
+    const c = CHIPS[kind];
+    const parts = await Promise.all(c.files.map(f => import("./tools/" + f + ".mjs" + v)));
+    const shared = await Promise.all(c.shared.map(f => import("./tools/" + f + ".mjs" + v)));
+    const M = Object.assign({}, ...parts, ...shared);
+    for (const k of c.own) for (const part of parts) if (part[k]) M[k] = part[k];
+    chipModules.cache[kind] = M;
   }
-  return nsfModules.cache;
+  return chipModules.cache[kind];
 }
-async function captureNsfTrack(M, nsf, track, seconds, onProgress) { // dump-all.mjs recipe, minus the FF1 reference data
+function nsfModules() { return chipModules("nsf"); }
+async function captureChipTrack(kind, M, nsf, track, seconds, onProgress) { // dump-all.mjs recipe, minus the FF1 reference data
   // async runner yields to the event loop — a 300s emulation as one sync
   // block froze the tab long enough for iOS Safari's watchdog to force a
   // reload, killing the whole import mid-run (Josh, 2026-08-16)
   // NO sync fallback: a long sync run freezes the tab until Safari's
   // watchdog force-reloads it — an honest error beats a dead page
-  if (!M.runNSFAsync || !M.detectLoopAsync) throw new Error("pipeline update still deploying — close the import panel and retry in a minute");
-  const {apuLog, frames, frameSec} = await M.runNSFAsync(nsf, track, seconds, onProgress);
+  const run = CHIPS[kind || "nsf"].run(M);
+  if (!run || !M.detectLoopAsync) throw new Error("pipeline update still deploying — close the import panel and retry in a minute");
+  const {apuLog, frames, frameSec} = await run(nsf, track, seconds, onProgress);
   let events = M.reconstruct(apuLog, frames, frameSec);
   if (!events.length) return null; // silent slot (SFX banks have them)
   const t0 = Math.min(...events.map(ev => ev.startFrame));
@@ -12329,7 +12363,7 @@ async function captureNsfTrack(M, nsf, track, seconds, onProgress) { // dump-all
     if (Math.min(ph, grid - ph) > 1.6) far++;
   }
   const snap = far / Math.max(1, timed) < 0.12;
-  const bytes = M.makeMidi(events, {bpm, tsNum: 4, tsDen: 4, frameSec, snap});
+  const bytes = M.makeMidi(events, {bpm, tsNum: 4, tsDen: 4, frameSec, snap, ...CHIPS[kind || "nsf"].midiOpts(M)});
   const beatSec = 60 / bpm;
   const backBeats = loop ? (loop.keep - loop.period) * frameSec / beatSec : 0;
   const bq = beats => { // beats-from-zero -> [bar, beat] on the 16th grid (4/4 until re-barred)
@@ -12340,13 +12374,14 @@ async function captureNsfTrack(M, nsf, track, seconds, onProgress) { // dump-all
           loopAnchor: loop && backBeats > 0.4 ? bq(keptFrames * frameSec / beatSec) : null,
           loopTarget: loop && backBeats > 0.4 ? bq(backBeats) : null};
 }
-async function openNsfImport(bytes, name, m3uList) {
-  const M = await nsfModules();
-  const nsf = M.parseNSF(bytes);
-  nsfSess = {M, nsf, bytes, rows: []};
+async function openChipImport(kind, bytes, name, m3uList) {
+  kind = kind || "nsf";
+  const M = await chipModules(kind);
+  const nsf = CHIPS[kind].parse(M)(bytes);
+  nsfSess = {chip: kind, M, nsf, bytes, rows: []};
   document.getElementById("imptitle").textContent =
     ((nsf.name || name) + (nsf.artist && nsf.artist !== "<?>" ? " — " + nsf.artist : "")).toUpperCase();
-  document.getElementById("impslug").value = slugify(nsf.name || name.replace(/\.nsf$/i, ""));
+  document.getElementById("impslug").value = slugify(nsf.name || name.replace(/\.(nsf|gbs)$/i, ""));
   const list = document.getElementById("implist");
   list.innerHTML = "";
   // an m3u names the MUSIC tracks — an NSF like TMNT2 carries 120 slots of
@@ -12393,8 +12428,11 @@ async function openNsfImport(bytes, name, m3uList) {
     sheet.style.left = Math.max(6, (window.innerWidth - w) / 2) + "px";
     sheet.style.top = "56px";
   });
-  impStatus(nsf.songs + " tracks — Capture all, audition, then commit the keepers.");
+  // a timer-driven GBS runs PLAY at up to 4 kHz: same seconds, a longer emulation
+  const pace = kind === "gbs" ? (nsf.timerMode ? " · Game Boy, timer " + Math.round(nsf.playRateHz) + " Hz" : " · Game Boy") : "";
+  impStatus(nsf.songs + " tracks" + pace + " — Capture all, audition, then commit the keepers.");
 }
+function openNsfImport(bytes, name, m3uList) { return openChipImport("nsf", bytes, name, m3uList); }
 const impStatus = s => {
   if (/⚠|failed|error|can't|cannot/i.test(s)) logErr(s);
   document.getElementById("impstatus").textContent = s;
@@ -12460,14 +12498,14 @@ async function impCapture(n) {
   };
   const pct = tick("");
   try {
-    let cap = await captureNsfTrack(nsfSess.M, nsfSess.nsf, n, secs, pct);
+    let cap = await captureChipTrack(nsfSess.chip, nsfSess.M, nsfSess.nsf, n, secs, pct);
     // the detector needs intro + TWO full passes in frame — a 35s loop with an
     // intro already busts 75s. No loop found? ONE retry straight at the 300s
     // ceiling (a doubling ladder just re-emulates the same song extra times)
     if (cap && !cap.looped && secs < 300 && !isJingle) {
       secs = 300;
       beacon("retry");
-      cap = await captureNsfTrack(nsfSess.M, nsfSess.nsf, n, secs, tick("no loop — 300s: "));
+      cap = await captureChipTrack(nsfSess.chip, nsfSess.M, nsfSess.nsf, n, secs, tick("no loop — 300s: "));
     }
     if (!cap) { row.st.textContent = "silent — nothing to keep"; return; }
     const raw = row.name.value.trim() || "track-" + String(n).padStart(2, "0");
@@ -12503,7 +12541,7 @@ async function impCapture(n) {
     if (chip.key === key) { chip.key = null; updateChipBtn(); } // re-capture invalidates rendered audio
     // NSF bytes + track number persist on this device so chip audio outlives
     // the session (never the repo — *.nsf is gitignored ROM music)
-    idbNsfPut(slug, nsfSess.bytes, {[base]: {n, secs: cap.secs}});
+    idbNsfPut(slug, nsfSess.bytes, {[base]: {n, secs: cap.secs}}, nsfSess.chip);
     row.st.textContent = "✓ saved · " + cap.secs.toFixed(1) + "s · " + cap.bpm + "bpm · " +
                          (cap.looped ? "loop" : "no loop ≤" + secs + "s") +
                          (cap.snapped ? "" : " · raw timing (tempo shifts)");
@@ -12554,7 +12592,7 @@ document.getElementById("impcommit").addEventListener("click", e => {
   btn.disabled = true;
   commitImports(impStatus).finally(() => { btn.disabled = false; });
 });
-async function computeImportAlbumJson(slug, h, songTitles, nsfTracks) {
+async function computeImportAlbumJson(slug, h, songTitles, nsfTracks, chipKind) {
   // album.json keeps build_manifest.mjs honest offline; NSF link = vault
   // file + track map (pure metadata — ROM data lives in the private
   // archive). GET current, merge, return content for the batch commit.
@@ -12571,7 +12609,8 @@ async function computeImportAlbumJson(slug, h, songTitles, nsfTracks) {
   }
   meta.songs = {...(meta.songs || {}), ...(songTitles || {})};
   if (nsfTracks && Object.keys(nsfTracks).length) {
-    meta.nsf = meta.nsf || {vault: slug + ".nsf", tracks: {}};
+    meta.nsf = meta.nsf || {vault: slug + chipExt(chipKind), tracks: {}};
+    if (chipKind && chipKind !== "nsf") meta.nsf.chip = chipKind;
     meta.nsf.tracks = {...meta.nsf.tracks, ...nsfTracks};
   }
   return {path, text: JSON.stringify(meta, null, 1) + "\n"};
@@ -12643,14 +12682,14 @@ function idbOpen() {
   });
 }
 let _idbQueue = Promise.resolve();
-function idbNsfPut(slug, bytes, trackPatch) {
+function idbNsfPut(slug, bytes, trackPatch, chipKind) {
   // serialized: rapid captures fired concurrent read-modify-writes and lost
   // track entries — only 9 of TMNT's 24 songs reached the committed chip map
-  const p = _idbQueue.then(() => idbNsfPutNow(slug, bytes, trackPatch));
+  const p = _idbQueue.then(() => idbNsfPutNow(slug, bytes, trackPatch, chipKind));
   _idbQueue = p.catch(() => { /* keep the queue alive */ });
   return p;
 }
-async function idbNsfPutNow(slug, bytes, trackPatch) {
+async function idbNsfPutNow(slug, bytes, trackPatch, chipKind) {
   try {
     const db = await idbOpen();
     const cur = await new Promise(res => {
@@ -12658,7 +12697,7 @@ async function idbNsfPutNow(slug, bytes, trackPatch) {
       r.onsuccess = () => res(r.result || null);
       r.onerror = () => res(null);
     });
-    const rec = {bytes: bytes || (cur && cur.bytes), tracks: {...(cur ? cur.tracks : {}), ...(trackPatch || {})}};
+    const rec = {bytes: bytes || (cur && cur.bytes), tracks: {...(cur ? cur.tracks : {}), ...(trackPatch || {})}, chip: chipKind || (cur && cur.chip) || "nsf"};
     await new Promise((res, rej) => {
       const tx = db.transaction("nsf", "readwrite");
       tx.objectStore("nsf").put(rec, slug);
@@ -12716,20 +12755,21 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
         const base = k.split("/").pop().replace(/\.mid$/, "");
         if (k.split("/")[2] === slug && rec.tracks[base] !== undefined) nsfTracks[base] = rec.tracks[base];
       }
-      songFiles.push(await computeImportAlbumJson(slug, h, overrides, nsfTracks));
-      if (rec && rec.bytes && !folderActive() && !cfg().nsfRepo) status("No NSF repo in Settings — the .nsf stays on this device (chip audio here; synth voices elsewhere)");
-      if (rec && rec.bytes && !folderActive() && cfg().nsfRepo) { // folder mode: the NSF stays in this device's IndexedDB
-        try { // NSF -> archive if it isn't publicly there yet
-          const chk = await fetch(nsfURL(slug + ".nsf") + "?t=" + Date.now(), {cache: "no-cache"});
+      const chipKind = (rec && rec.chip) || "nsf", vaultFile = slug + chipExt(chipKind);
+      songFiles.push(await computeImportAlbumJson(slug, h, overrides, nsfTracks, chipKind));
+      if (rec && rec.bytes && !folderActive() && !cfg().nsfRepo) status("No NSF repo in Settings — the " + chipExt(chipKind) + " stays on this device (chip audio here; synth voices elsewhere)");
+      if (rec && rec.bytes && !folderActive() && cfg().nsfRepo) { // folder mode: the chip file stays in this device's IndexedDB
+        try { // chip file -> archive if it isn't publicly there yet
+          const chk = await fetch(nsfURL(vaultFile) + "?t=" + Date.now(), {cache: "no-cache"});
           if (!chk.ok) {
-            status("Uploading NSF to the archive…");
-            const put = await fetch(repoApi("nsf") + slug + ".nsf", {
+            status("Uploading " + CHIPS[chipKind].label + " to the archive…");
+            const put = await fetch(repoApi("nsf") + vaultFile, {
               method: "PUT", headers: h, body: JSON.stringify({
-                message: "NSF for " + slug + " (chip audio)", branch: "main",
+                message: CHIPS[chipKind].label + " for " + slug + " (chip audio)", branch: "main",
                 content: midiBase64(rec.bytes instanceof Uint8Array ? rec.bytes : new Uint8Array(rec.bytes))})});
             if (!put.ok) throw new Error("HTTP " + put.status);
           }
-        } catch (err) { status("⚠ NSF upload failed (" + err.message + ") — chip audio stays device-local"); }
+        } catch (err) { status("⚠ " + CHIPS[chipKind].label + " upload failed (" + err.message + ") — chip audio stays device-local"); }
       }
       delete albumMetaCache[IMP_DIR + slug];
     }

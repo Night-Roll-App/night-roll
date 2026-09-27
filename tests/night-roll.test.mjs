@@ -1357,7 +1357,7 @@ test("NSF import: in-app capture runs the real pipeline and round-trips through 
   // track 17 = menu: known 8-bar loop, quick to run. captureNsfTrack is
   // async (the runner yields so iOS Safari's watchdog doesn't kill the tab);
   // the vm shares node's event loop, so await its promise from out here
-  run(`__capP = captureNsfTrack(__M, __nsf, 17, 35).then(cap => {
+  run(`__capP = captureChipTrack("nsf", __M, __nsf, 17, 35).then(cap => {
     const parsed = parseMidi(new Uint8Array(cap.bytes).buffer);
     __cap = {looped: cap.looped, bpm: cap.bpm, secs: cap.secs,
              anchor: cap.loopAnchor, target: cap.loopTarget,
@@ -1371,6 +1371,34 @@ test("NSF import: in-app capture runs the real pipeline and round-trips through 
   assert.ok(got.secs > 5 && got.secs < 35, "trimmed to intro + one pass");
   assert.ok(got.tracks >= 3, "conductor + chip voices"); // conductor + pulses/triangle
   assert.ok(got.notes > 50, "melody actually captured: " + got.notes + " notes");
+});
+
+test("GBS import: the Game Boy chip goes through the same capture path (synthetic GBS, wave track, chip descriptor)", async () => {
+  const gb = await import("../tools/gbs/notes.mjs");
+  const M = { // the browser's merge: shared NSF stages win, the chip keeps its own reconstruct
+    ...(await import("../tools/gbs/gbs.mjs")), ...gb,
+    ...(await import("../tools/nsf/notes.mjs")), ...(await import("../tools/nsf/midi-write.mjs")),
+    reconstruct: gb.reconstruct, toNotesTxt: gb.toNotesTxt,
+  };
+  const {makeTestGBS} = await import("../tools/gbs/make-test-gbs.mjs");
+  const bytes = makeTestGBS();
+  assert.equal(val(`chipKindOf(new Uint8Array(${JSON.stringify([...bytes.subarray(0, 16)])}))`), "gbs");
+  assert.equal(val(`chipKindOf(new Uint8Array([0x4E,0x45,0x53,0x4D,0x1A,1,1,1,0,0,0,0]))`), "nsf");
+  assert.equal(val(`chipKindOf(new Uint8Array([0x4D,0x54,0x68,0x64,0,0,0,6,0,1,0,2]))`), null, "a MIDI is not a chip file");
+  assert.equal(val(`chipExt("gbs")`), ".gbs"); assert.equal(val(`chipExt(undefined)`), ".nsf");
+  assert.deepEqual(val(`CHIPS.gbs.channels`), ["pulse1", "pulse2", "wave", "noise"]);
+  app.context.__M = M;
+  app.context.__gbs = M.parseGBS(bytes);
+  run(`__capP = captureChipTrack("gbs", __M, __gbs, 1, 12).then(cap => {
+    const parsed = parseMidi(new Uint8Array(cap.bytes).buffer);
+    __cap = {bpm: cap.bpm, secs: cap.secs, names: parsed.tracks.map(t => t.name),
+             notes: parsed.tracks.reduce((a, t) => a + t.notes.length, 0)};
+  })`);
+  await app.context.__capP;
+  const got = val(`__cap`);
+  assert.ok(got.names.includes("pulse1") && got.names.includes("wave"), "GB tracks named for the chip audio matcher: " + got.names.join(","));
+  assert.ok(got.notes >= 5, "the C4 E4 G4 C5 line plus the pedal: " + got.notes);
+  assert.ok(got.bpm > 60 && got.bpm < 300, "sane tempo: " + got.bpm);
 });
 
 test("help sheet covers every shipped feature (drift guard — extend this list when you ship)", () => {
@@ -1388,7 +1416,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
@@ -1565,6 +1593,9 @@ test("m3u playlists: track names parse from the emu-scene format", () => {
     [11, "Dr. Wily's Castle"], // escaped commas in artist survive; order = playlist order
     [12, "Dr. Wily's Castle II"],
   ]);
+  // a Game Boy rip's line (Zophar: one such file per track, so the picker merges them)
+  const gb = val(`parseM3u(${JSON.stringify("DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:28,,10")})`);
+  assert.deepEqual(gb.map(e => [e.n, e.title, e.len]), [[1, "Final Fantasy Legend - ©1989-12-15 Square", 88]]);
 });
 
 test("split at cursor / split in half / join — one undo step each", () => {

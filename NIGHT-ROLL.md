@@ -377,6 +377,31 @@ Sync — a sidecar without its .mid would be an orphan). Expansion-chip
 NSFs (VRC6/FDS/…) capture 2A03 channels only; silent SFX slots report
 "silent" and store nothing.
 
+**Game Boy import (2026-09-27; Josh from bed via the bridge: the Zophar
+Final Fantasy Legend rips, "push it to master and I'll test").** A
+second chip behind the same panel. `CHIPS` is the descriptor table
+(`nsf`, `gbs`: magic sniff, vault extension, channel names, module files,
+parse/run pickers); `chipKindOf(bytes)` routes Import, `chipModules(kind)`
+dynamically imports `tools/gbs/{gbs,notes,apu-render}.mjs` the same way
+(`nsfModules()` = `chipModules("nsf")`), `openChipImport(kind, …)` and
+`captureChipTrack(kind, M, …)` are the old NSF functions with the run
+picked by descriptor — everything after `reconstruct` is shared because
+the GB reconstructor emits the NSF event shape and the GB `makeMidi`
+bakes in `{pulse1, pulse2, wave, noise}` (wave = the GB's sample
+channel; noise → drums by LFSR shift). `nsfSess.chip` names the live
+session's chip; the IndexedDB record gains `chip`; album.json keeps the
+`nsf:` key with `vault: "<slug>.gbs"` and `chip: "gbs"`; the archive
+upload uses the chip's extension (`*.gbs` gitignored like `*.nsf`). A
+timer-mode GBS shows its PLAY rate in the panel status (same seconds,
+longer emulation). m3u: Zophar's GBS rips ship ONE .m3u per track
+(`DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - …,01:28,,10`), so
+`parseM3u` accepts `::GBS,` and the picker merges every picked playlist
+in natural file-name order (a single NSF playlist is unchanged). The
+file picker accepts `.gbs`; the File menu says "Import… (.mid / .nsf /
+.gbs)". Tests: "GBS import: the Game Boy chip goes through the same
+capture path" (synthetic GBS from `tools/gbs/make-test-gbs.mjs`, no ROM
+data), the m3u test's GBS line. Offline twin: `node tools/gbs/dump.mjs`.
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware
@@ -391,6 +416,12 @@ the render. All async yields (emulation, loop scan, render) use
 MessageChannel, not setTimeout — background tabs throttle setTimeout
 to ~1/sec.
 
+Chip audio is per chip since 2026-09-27: `chipSource()` returns `chip`
+(live session → IndexedDB record → album.json `nsf.chip` → the vault
+extension), `chipRender` parses/runs through `CHIPS[kind]` and builds one
+buffer per name in `CHIPS[kind].channels` — a Game Boy song gets
+pulse1/pulse2/wave/noise buffers matched to its tracks by name exactly
+like the NES four; missing channels are skipped.
 Chip audio is the DEFAULT wherever a source resolves (Josh: "a million
 times better... always use this if possible"; the chip button is the
 opt-out, preference in ff1roll-chip). Source chain, honoring the

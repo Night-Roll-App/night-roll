@@ -11,6 +11,11 @@ is deployment. Built for iPad-in-bed ergonomics, works anywhere.
 
 - **Two views, one timeline** — canvas piano roll and VexFlow-engraved score,
   sharing the bar ruler, sections, cursor, playhead, and pinch gestures.
+- **Import** — MIDI, NES `.nsf` and Game Boy `.gbs` chip-music files:
+  chip files are captured track by track in the browser through the same
+  emulators that dumped the FF1 album (loop detected, tempo fitted),
+  auditioned as drafts, then published; the original file stays out of
+  the public repo and plays back as the console's own sound.
 - **Playback** — WebAudio NES voices (pulse/pulse/triangle + drum kit),
   per-track mute/solo, loop directives with mid-song jump points, 25–200%
   speed, smooth notehead-to-notehead score playhead.
