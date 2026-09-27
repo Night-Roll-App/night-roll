@@ -7338,7 +7338,15 @@ async function chipSource() { // {bytes, n, secs} for the current song, or null
     }
   }
   if (!bytes) return null;
-  return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind};
+  let libs = (rec && rec.libs) || null; // a set's shared library (PS1): on the device, else from the archive, then cached
+  if (!libs && meta && meta.nsf && Array.isArray(meta.nsf.libs) && meta.nsf.libs.length) {
+    libs = {};
+    try {
+      for (const l of meta.nsf.libs) { const b = await vaultFetch(meta.nsf.vault + l.file); if (b) libs[l.name] = b; }
+      if (Object.keys(libs).length) idbNsfPut(slug, null, {}, kind, libs);
+    } catch (err) { setInfo("⚠ chip audio unavailable: " + err.message + " (synthesized voices for now)"); return null; }
+  }
+  return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind, libs: libs || {}};
 }
 async function updateChipBtn() { // name kept for call sites; now just the auto-render kick
   // "the chip button should not even have to exist" (Josh, 2026-08-17): chip
@@ -13172,7 +13180,7 @@ const CHIPS = {
   // this chip has a `capture` of its own that writes the MIDI directly and
   // never goes through the frame/loop-scan/tempo-fit path. No renderer.
   psf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x01, ext: ".psf", label: "PSF",
-        channels: [], perFile: true, tagged: true, keepBytes: false,
+        channels: [], perFile: true, tagged: true, keepBytes: true, // the mini per track + the set's lib (below): chip audio outlives the session
         libFile: name => /\.psflib$/i.test(name),
         files: ["psx/psf", "psx/akao", "psx/seq", "psx/vab", "psx/notes", "psx/spu-render"], shared: [], own: [],
         // chip audio (2026-09-27): the driver's own samples, pitched per the
@@ -13581,6 +13589,11 @@ async function impCapture(n, api, i) { // api/i: the capture job and this track'
     // the session (never the repo — *.nsf is gitignored ROM music)
     if (nsfSess.bytes) idbNsfPut(slug, nsfSess.bytes, {[base]: {n, secs: cap.secs}}, nsfSess.chip);
     else if (row.bytes && CHIPS[nsfSess.chip || "nsf"].keepBytes) idbNsfPut(slug, null, {[base]: {n: 1, secs: cap.secs, bytes: row.bytes}}, nsfSess.chip); // a per-file set with a renderer: the track's own file rides in its entry (64 KB an .spc)
+    if (nsfSess.libs && Object.keys(nsfSess.libs).length && nsfSess.libsStored !== slug) { // the set's shared library, once: chip audio after a reload needs it too
+      const libs = {}; for (const [k, f] of Object.entries(nsfSess.libs)) libs[k] = f.bytes;
+      nsfSess.libsStored = slug;
+      idbNsfPut(slug, null, {}, nsfSess.chip, libs);
+    }
     row.st.textContent = "✓ saved · " + cap.secs.toFixed(1) + "s · " + cap.bpm + "bpm · " +
                          (cap.looped ? "loop" : tagged ? "tagged length" : "no loop ≤" + secs + "s") +
                          (cap.snapped ? "" : " · raw timing (tempo shifts)") +
@@ -13674,7 +13687,7 @@ document.getElementById("impcommit").addEventListener("click", e => {
   btn.disabled = true;
   const off = jobsOnChange(() => { if (job.state === "running") return; off(); btn.disabled = false; });
 });
-async function computeImportAlbumJson(slug, h, songTitles, nsfTracks, chipKind, dir) {
+async function computeImportAlbumJson(slug, h, songTitles, nsfTracks, chipKind, dir, libs) { // libs: [{name, file}] in the archive folder
   // album.json keeps build_manifest.mjs honest offline; NSF link = vault
   // file + track map (pure metadata — ROM data lives in the private
   // archive). GET current, merge, return content for the batch commit.
@@ -13693,6 +13706,7 @@ async function computeImportAlbumJson(slug, h, songTitles, nsfTracks, chipKind, 
   if (nsfTracks && Object.keys(nsfTracks).length) {
     meta.nsf = meta.nsf || chipVaultMeta(slug, chipKind);
     meta.nsf.tracks = {...meta.nsf.tracks, ...nsfTracks};
+    if (libs && libs.length) meta.nsf.libs = libs;
   }
   return {path, text: JSON.stringify(meta, null, 1) + "\n"};
 }
@@ -13764,14 +13778,14 @@ function idbOpen() {
   });
 }
 let _idbQueue = Promise.resolve();
-function idbNsfPut(slug, bytes, trackPatch, chipKind) {
+function idbNsfPut(slug, bytes, trackPatch, chipKind, libs) { // libs: {name: bytes} — a set's shared library (PS1 .psflib), merged in
   // serialized: rapid captures fired concurrent read-modify-writes and lost
   // track entries — only 9 of TMNT's 24 songs reached the committed chip map
-  const p = _idbQueue.then(() => idbNsfPutNow(slug, bytes, trackPatch, chipKind));
+  const p = _idbQueue.then(() => idbNsfPutNow(slug, bytes, trackPatch, chipKind, libs));
   _idbQueue = p.catch(() => { /* keep the queue alive */ });
   return p;
 }
-async function idbNsfPutNow(slug, bytes, trackPatch, chipKind) {
+async function idbNsfPutNow(slug, bytes, trackPatch, chipKind, libs) {
   try {
     const db = await idbOpen();
     const cur = await new Promise(res => {
@@ -13780,6 +13794,7 @@ async function idbNsfPutNow(slug, bytes, trackPatch, chipKind) {
       r.onerror = () => res(null);
     });
     const rec = {bytes: bytes || (cur && cur.bytes), tracks: {...(cur ? cur.tracks : {}), ...(trackPatch || {})}, chip: chipKind || (cur && cur.chip) || "nsf"};
+    if ((cur && cur.libs) || libs) rec.libs = {...((cur && cur.libs) || {}), ...(libs || {})};
     await new Promise((res, rej) => {
       const tx = db.transaction("nsf", "readwrite");
       tx.objectStore("nsf").put(rec, slug);
@@ -13878,7 +13893,8 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
       const perFile = !!(CHIPS[chipKind] && CHIPS[chipKind].perFile);
       const trackFiles = perFile && rec && rec.tracks ? Object.entries(rec.tracks).filter(([b, t]) => nsfTracks[b] && t && t.bytes) : [];
       const dir = keys.find(k => k.split("/")[2] === slug).replace(/\/[^/]+\.mid$/, "");
-      songFiles.push(await computeImportAlbumJson(slug, h, overrides, nsfTracks, chipKind, dir));
+      const libFiles = rec && rec.libs ? Object.entries(rec.libs).map(([name, bytes]) => ({name, file: slugify(name.replace(/\.[a-z0-9]+$/i, "")) + (name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase(), bytes})) : [];
+      songFiles.push(await computeImportAlbumJson(slug, h, overrides, nsfTracks, chipKind, dir, libFiles.map(l => ({name: l.name, file: l.file}))));
       if (((rec && rec.bytes) || trackFiles.length) && !folderActive() && !cfg().nsfRepo) status("No NSF repo in Settings — the " + chipExt(chipKind) + (perFile ? " files stay" : " stays") + " on this device (chip audio here; synth voices elsewhere)");
       if (trackFiles.length && !folderActive() && cfg().nsfRepo) { // a per-file set: one archive file per track, only the ones not there yet
         let up = 0, failed = 0;
@@ -13895,6 +13911,20 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
           } catch (err) { failed++; }
         }
         if (failed) status("⚠ " + failed + " " + CHIPS[chipKind].label + " upload" + (failed === 1 ? "" : "s") + " failed — chip audio for those stays device-local");
+      }
+      if (libFiles.length && !folderActive() && cfg().nsfRepo) { // the set's shared library, once per album (check-before-PUT: a second publish skips it)
+        for (const l of libFiles) {
+          const file = slug + "/" + l.file;
+          try {
+            const chk = await fetch(nsfURL(file) + "?t=" + Date.now(), {cache: "no-cache"});
+            if (chk.ok) continue;
+            status("Uploading the set's library " + l.file + " to the archive (" + Math.round(l.bytes.length / 1024) + " KB)…");
+            const put = await fetch(repoApi("nsf") + file, {method: "PUT", headers: h, body: JSON.stringify({
+              message: CHIPS[chipKind].label + " library for " + slug + " (chip audio)", branch: "main",
+              content: midiBase64(l.bytes instanceof Uint8Array ? l.bytes : new Uint8Array(l.bytes))})});
+            if (!put.ok) throw new Error("HTTP " + put.status);
+          } catch (err) { status("⚠ library upload failed (" + err.message + ") — chip audio for this album stays device-local"); }
+        }
       }
       if (rec && rec.bytes && !folderActive() && cfg().nsfRepo) { // folder mode: the chip file stays in this device's IndexedDB
         try { // chip file -> archive if it isn't publicly there yet
