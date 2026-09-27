@@ -15571,7 +15571,9 @@ async function aiTest(url, statusEl, btn) {
     let reachable = false;
     try { await fetch(url + "/v1/models", {mode: "no-cors"}); reachable = true; } catch (err2) { reachable = false; }
     if (reachable) say("⚠ reachable, but CORS is off: in LM Studio → Developer → Server settings turn on Enable CORS (Ollama: set OLLAMA_ORIGINS=*)");
-    else say("⚠ unreachable: is the server running at " + url + "? Same network? (If the browser asked to allow local-network access, say yes.)");
+    else say(/\.ts\.net\b/.test(url) // a tailnet address: the usual cause is the VPN being off on THIS device (Josh, 2026-09-27, twice)
+      ? "⚠ unreachable: is Tailscale connected on this device? (Open the Tailscale app — it drops sometimes.) And is the bridge running on the Mac?"
+      : "⚠ unreachable: is the server running at " + url + "? Same network? (If the browser asked to allow local-network access, say yes.)");
     return null;
   } finally {
     clearTimeout(timer);
