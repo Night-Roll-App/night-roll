@@ -31,7 +31,19 @@ enrolled. Next: Phase 2, the real shell (Files-app storage, icon, name,
 TestFlight). Still needs Josh: a support email address; two more starter
 songs; "merge it" for the overnight branch.
 
-## APP STORE PREP — BRANCH overnight-2026-09-26, PUSHED 2026-09-27, UNMERGED
+## APP STORE PREP — OVERNIGHT BRANCH FULLY MERGED 2026-09-27 (afternoon)
+
+One commit at a time, each tested in Chrome and deployed alone: product
+build 6e2a500, bridge installer 21c2739, Local Save + recording a36161b,
+Bach starter 660b329, Publish all 2892e26, roadmap notes 54d7fbc. The
+branch can be deleted. Also that afternoon: docs/promo-video-script.md
+(agent draft, merged 232db19), the help wording on chip audio, and the
+"newer save exists" false alarm (e1dc9ba: loadNotes now records the
+file's saved stamp). Still needs Josh: a support email address (his own
+for now); two more starter songs. Next: Phase 2, the real shell (private
+repo — confirm name `night-roll-app`), then TestFlight.
+
+## (history) APP STORE PREP — BRANCH overnight-2026-09-26, PUSHED 2026-09-27, UNMERGED
 
 Eight commits, none on main (Josh's rule that night: nothing to main):
 local Save + auto-save off by default + the recording open-end fix
