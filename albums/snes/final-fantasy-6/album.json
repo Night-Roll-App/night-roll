@@ -1,0 +1,372 @@
+{
+ "title": "Final Fantasy 6",
+ "order": 50,
+ "songs": {
+  "another-world-of-beasts": "Another World of Beasts",
+  "aria-de-mezzo-carattere": "Aria de Mezzo Carattere",
+  "dancing-mad-full": "Dancing Mad (Full)",
+  "dancing-mad-part-1": "Dancing Mad (part 1)",
+  "dancing-mad-part-2": "Dancing Mad (part 2)",
+  "dancing-mad-part-3": "Dancing Mad (part 3)",
+  "dancing-mad-part-4": "Dancing Mad (part 4)",
+  "dancing-mad-part-5": "Dancing Mad (part 5)",
+  "devil-s-lab": "Devil's Lab",
+  "edgar-and-sabin": "Edgar and Sabin",
+  "ending-theme-part-1": "Ending Theme (part 1)",
+  "ending-theme-part-2": "Ending Theme (part 2)",
+  "forever-rachel": "Forever Rachel!",
+  "grand-finale-part-1": "Grand Finale (part 1)",
+  "grand-finale-part-2": "Grand Finale (part 2)",
+  "johnny-c-bad": "Johnny C. Bad",
+  "kids-run-through-the-city": "Kids Run Through the City",
+  "mt-koltz": "Mt. Koltz",
+  "opening-theme-part-1": "Opening Theme (part 1)",
+  "opening-theme-part-2": "Opening Theme (part 2)",
+  "opening-theme-part-3": "Opening Theme (part 3)",
+  "overture-part-1": "Overture (part 1)",
+  "overture-part-2": "Overture (part 2)",
+  "overture-part-3": "Overture (part 3)",
+  "rest-in-peace": "Rest in Peace",
+  "save-them": "Save Them!",
+  "searching-for-friends": "Searching for Friends",
+  "techno-de-chocobo": "Techno de Chocobo",
+  "the-mines-of-narshe": "The Mines of Narshe",
+  "the-wedding-waltz-duel-part-1": "The Wedding Waltz-Duel (part 1)",
+  "the-wedding-waltz-duel-part-2": "The Wedding Waltz-Duel (part 2)",
+  "the-wedding-waltz-duel-part-3": "The Wedding Waltz-Duel (part 3)",
+  "the-wedding-waltz-duel-part-4": "The Wedding Waltz-Duel (part 4)",
+  "troops-march-on": "Troops March on",
+  "untitled": "\"??\""
+ },
+ "nsf": {
+  "vault": "final-fantasy-6/",
+  "tracks": {
+   "another-world-of-beasts": {
+    "n": 1,
+    "secs": 136
+   },
+   "aria-de-mezzo-carattere": {
+    "n": 1,
+    "secs": 235.99
+   },
+   "awakening": {
+    "n": 1,
+    "secs": 103
+   },
+   "battle-theme": {
+    "n": 1,
+    "secs": 110
+   },
+   "blackjack": {
+    "n": 1,
+    "secs": 164
+   },
+   "blazing-fire": {
+    "n": 1,
+    "secs": 21
+   },
+   "catastrophe": {
+    "n": 1,
+    "secs": 112
+   },
+   "celes": {
+    "n": 1,
+    "secs": 161
+   },
+   "coin-song": {
+    "n": 1,
+    "secs": 178.99
+   },
+   "cyan": {
+    "n": 1,
+    "secs": 129.99
+   },
+   "dancing-mad-full": {
+    "n": 1,
+    "secs": 299.98
+   },
+   "dancing-mad-part-1": {
+    "n": 1,
+    "secs": 216
+   },
+   "dancing-mad-part-2": {
+    "n": 1,
+    "secs": 223
+   },
+   "dancing-mad-part-3": {
+    "n": 1,
+    "secs": 191
+   },
+   "dancing-mad-part-4": {
+    "n": 1,
+    "secs": 33
+   },
+   "dancing-mad-part-5": {
+    "n": 1,
+    "secs": 300
+   },
+   "dark-world": {
+    "n": 1,
+    "secs": 165
+   },
+   "devil-s-lab": {
+    "n": 1,
+    "secs": 119
+   },
+   "edgar-and-sabin": {
+    "n": 1,
+    "secs": 142
+   },
+   "ending-theme-part-1": {
+    "n": 1,
+    "secs": 300
+   },
+   "ending-theme-part-2": {
+    "n": 1,
+    "secs": 300
+   },
+   "epitaph": {
+    "n": 1,
+    "secs": 151
+   },
+   "fanatics": {
+    "n": 1,
+    "secs": 78
+   },
+   "fanfare": {
+    "n": 1,
+    "secs": 33
+   },
+   "forever-rachel": {
+    "n": 1,
+    "secs": 157
+   },
+   "gau": {
+    "n": 1,
+    "secs": 142
+   },
+   "gogo": {
+    "n": 1,
+    "secs": 116
+   },
+   "good-night": {
+    "n": 1,
+    "secs": 12
+   },
+   "grand-finale-part-1": {
+    "n": 1,
+    "secs": 12
+   },
+   "grand-finale-part-2": {
+    "n": 1,
+    "secs": 175
+   },
+   "johnny-c-bad": {
+    "n": 1,
+    "secs": 160
+   },
+   "kefka": {
+    "n": 1,
+    "secs": 155
+   },
+   "kids-run-through-the-city": {
+    "n": 1,
+    "secs": 148
+   },
+   "last-dungeon": {
+    "n": 1,
+    "secs": 151
+   },
+   "locke": {
+    "n": 1,
+    "secs": 111
+   },
+   "metamorphasis": {
+    "n": 1,
+    "secs": 74
+   },
+   "mog": {
+    "n": 1,
+    "secs": 97
+   },
+   "mt-koltz": {
+    "n": 1,
+    "secs": 133
+   },
+   "new-continent": {
+    "n": 1,
+    "secs": 148
+   },
+   "opening-theme-part-1": {
+    "n": 1,
+    "secs": 74
+   },
+   "opening-theme-part-2": {
+    "n": 1,
+    "secs": 69
+   },
+   "opening-theme-part-3": {
+    "n": 1,
+    "secs": 116
+   },
+   "overture-part-1": {
+    "n": 1,
+    "secs": 104
+   },
+   "overture-part-2": {
+    "n": 1,
+    "secs": 44
+   },
+   "overture-part-3": {
+    "n": 1,
+    "secs": 128
+   },
+   "quiet-beach": {
+    "n": 1,
+    "secs": 27
+   },
+   "relm": {
+    "n": 1,
+    "secs": 138
+   },
+   "rest-in-peace": {
+    "n": 1,
+    "secs": 29
+   },
+   "returners": {
+    "n": 1,
+    "secs": 147
+   },
+   "save-them": {
+    "n": 1,
+    "secs": 106
+   },
+   "searching-for-friends": {
+    "n": 1,
+    "secs": 151
+   },
+   "setzer": {
+    "n": 1,
+    "secs": 99.99000000000001
+   },
+   "shadow": {
+    "n": 1,
+    "secs": 99
+   },
+   "slam-shuffle": {
+    "n": 1,
+    "secs": 127
+   },
+   "spinach-rag": {
+    "n": 1,
+    "secs": 121
+   },
+   "strago": {
+    "n": 1,
+    "secs": 121
+   },
+   "strong-wind": {
+    "n": 1,
+    "secs": 16
+   },
+   "techno-de-chocobo": {
+    "n": 1,
+    "secs": 226
+   },
+   "terra": {
+    "n": 1,
+    "secs": 215.99
+   },
+   "the-day-after": {
+    "n": 1,
+    "secs": 118
+   },
+   "the-decisive-battle": {
+    "n": 1,
+    "secs": 106
+   },
+   "the-empire-gestahl": {
+    "n": 1,
+    "secs": 171
+   },
+   "the-fierce-battle": {
+    "n": 1,
+    "secs": 137
+   },
+   "the-magic-house": {
+    "n": 1,
+    "secs": 136
+   },
+   "the-mines-of-narshe": {
+    "n": 1,
+    "secs": 158
+   },
+   "the-phantom-forest": {
+    "n": 1,
+    "secs": 187
+   },
+   "the-phantom-train": {
+    "n": 1,
+    "secs": 144
+   },
+   "the-prelude": {
+    "n": 1,
+    "secs": 154
+   },
+   "the-serpent-trench": {
+    "n": 1,
+    "secs": 119
+   },
+   "the-unforgiven": {
+    "n": 1,
+    "secs": 73
+   },
+   "the-wedding-waltz-duel-part-1": {
+    "n": 1,
+    "secs": 77
+   },
+   "the-wedding-waltz-duel-part-2": {
+    "n": 1,
+    "secs": 33.980000000000004
+   },
+   "the-wedding-waltz-duel-part-3": {
+    "n": 1,
+    "secs": 45
+   },
+   "the-wedding-waltz-duel-part-4": {
+    "n": 1,
+    "secs": 86
+   },
+   "train": {
+    "n": 1,
+    "secs": 18
+   },
+   "troops-march-on": {
+    "n": 1,
+    "secs": 104
+   },
+   "umaro": {
+    "n": 1,
+    "secs": 93
+   },
+   "under-martial-law": {
+    "n": 1,
+    "secs": 134
+   },
+   "untitled": {
+    "n": 1,
+    "secs": 68
+   },
+   "unused-fanfare": {
+    "n": 1,
+    "secs": 12
+   },
+   "wild-west": {
+    "n": 1,
+    "secs": 131
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}

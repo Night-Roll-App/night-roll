@@ -1364,5 +1364,334 @@
     "path": "albums/snes/final-fantasy-5/what.mid"
    }
   ]
+ },
+ {
+  "title": "Final Fantasy 6",
+  "songs": [
+   {
+    "title": "\"??\"",
+    "path": "albums/snes/final-fantasy-6/untitled.mid"
+   },
+   {
+    "title": "Another World of Beasts",
+    "path": "albums/snes/final-fantasy-6/another-world-of-beasts.mid"
+   },
+   {
+    "title": "Aria de Mezzo Carattere",
+    "path": "albums/snes/final-fantasy-6/aria-de-mezzo-carattere.mid"
+   },
+   {
+    "title": "Awakening",
+    "path": "albums/snes/final-fantasy-6/awakening.mid"
+   },
+   {
+    "title": "Battle Theme",
+    "path": "albums/snes/final-fantasy-6/battle-theme.mid"
+   },
+   {
+    "title": "Blackjack",
+    "path": "albums/snes/final-fantasy-6/blackjack.mid"
+   },
+   {
+    "title": "Blazing Fire",
+    "path": "albums/snes/final-fantasy-6/blazing-fire.mid"
+   },
+   {
+    "title": "Catastrophe",
+    "path": "albums/snes/final-fantasy-6/catastrophe.mid"
+   },
+   {
+    "title": "Celes",
+    "path": "albums/snes/final-fantasy-6/celes.mid"
+   },
+   {
+    "title": "Coin Song",
+    "path": "albums/snes/final-fantasy-6/coin-song.mid"
+   },
+   {
+    "title": "Cyan",
+    "path": "albums/snes/final-fantasy-6/cyan.mid"
+   },
+   {
+    "title": "Dancing Mad (Full)",
+    "path": "albums/snes/final-fantasy-6/dancing-mad-full.mid"
+   },
+   {
+    "title": "Dancing Mad (part 1)",
+    "path": "albums/snes/final-fantasy-6/dancing-mad-part-1.mid"
+   },
+   {
+    "title": "Dancing Mad (part 2)",
+    "path": "albums/snes/final-fantasy-6/dancing-mad-part-2.mid"
+   },
+   {
+    "title": "Dancing Mad (part 3)",
+    "path": "albums/snes/final-fantasy-6/dancing-mad-part-3.mid"
+   },
+   {
+    "title": "Dancing Mad (part 4)",
+    "path": "albums/snes/final-fantasy-6/dancing-mad-part-4.mid"
+   },
+   {
+    "title": "Dancing Mad (part 5)",
+    "path": "albums/snes/final-fantasy-6/dancing-mad-part-5.mid"
+   },
+   {
+    "title": "Dark World",
+    "path": "albums/snes/final-fantasy-6/dark-world.mid"
+   },
+   {
+    "title": "Devil's Lab",
+    "path": "albums/snes/final-fantasy-6/devil-s-lab.mid"
+   },
+   {
+    "title": "Edgar and Sabin",
+    "path": "albums/snes/final-fantasy-6/edgar-and-sabin.mid"
+   },
+   {
+    "title": "Ending Theme (part 1)",
+    "path": "albums/snes/final-fantasy-6/ending-theme-part-1.mid"
+   },
+   {
+    "title": "Ending Theme (part 2)",
+    "path": "albums/snes/final-fantasy-6/ending-theme-part-2.mid"
+   },
+   {
+    "title": "Epitaph",
+    "path": "albums/snes/final-fantasy-6/epitaph.mid"
+   },
+   {
+    "title": "Fanatics",
+    "path": "albums/snes/final-fantasy-6/fanatics.mid"
+   },
+   {
+    "title": "Fanfare",
+    "path": "albums/snes/final-fantasy-6/fanfare.mid"
+   },
+   {
+    "title": "Forever Rachel!",
+    "path": "albums/snes/final-fantasy-6/forever-rachel.mid"
+   },
+   {
+    "title": "Gau",
+    "path": "albums/snes/final-fantasy-6/gau.mid"
+   },
+   {
+    "title": "Gogo",
+    "path": "albums/snes/final-fantasy-6/gogo.mid"
+   },
+   {
+    "title": "Good Night",
+    "path": "albums/snes/final-fantasy-6/good-night.mid"
+   },
+   {
+    "title": "Grand Finale (part 1)",
+    "path": "albums/snes/final-fantasy-6/grand-finale-part-1.mid"
+   },
+   {
+    "title": "Grand Finale (part 2)",
+    "path": "albums/snes/final-fantasy-6/grand-finale-part-2.mid"
+   },
+   {
+    "title": "Johnny C. Bad",
+    "path": "albums/snes/final-fantasy-6/johnny-c-bad.mid"
+   },
+   {
+    "title": "Kefka",
+    "path": "albums/snes/final-fantasy-6/kefka.mid"
+   },
+   {
+    "title": "Kids Run Through the City",
+    "path": "albums/snes/final-fantasy-6/kids-run-through-the-city.mid"
+   },
+   {
+    "title": "Last Dungeon",
+    "path": "albums/snes/final-fantasy-6/last-dungeon.mid"
+   },
+   {
+    "title": "Locke",
+    "path": "albums/snes/final-fantasy-6/locke.mid"
+   },
+   {
+    "title": "Metamorphasis",
+    "path": "albums/snes/final-fantasy-6/metamorphasis.mid"
+   },
+   {
+    "title": "Mog",
+    "path": "albums/snes/final-fantasy-6/mog.mid"
+   },
+   {
+    "title": "Mt. Koltz",
+    "path": "albums/snes/final-fantasy-6/mt-koltz.mid"
+   },
+   {
+    "title": "New Continent",
+    "path": "albums/snes/final-fantasy-6/new-continent.mid"
+   },
+   {
+    "title": "Opening Theme (part 1)",
+    "path": "albums/snes/final-fantasy-6/opening-theme-part-1.mid"
+   },
+   {
+    "title": "Opening Theme (part 2)",
+    "path": "albums/snes/final-fantasy-6/opening-theme-part-2.mid"
+   },
+   {
+    "title": "Opening Theme (part 3)",
+    "path": "albums/snes/final-fantasy-6/opening-theme-part-3.mid"
+   },
+   {
+    "title": "Overture (part 1)",
+    "path": "albums/snes/final-fantasy-6/overture-part-1.mid"
+   },
+   {
+    "title": "Overture (part 2)",
+    "path": "albums/snes/final-fantasy-6/overture-part-2.mid"
+   },
+   {
+    "title": "Overture (part 3)",
+    "path": "albums/snes/final-fantasy-6/overture-part-3.mid"
+   },
+   {
+    "title": "Quiet Beach",
+    "path": "albums/snes/final-fantasy-6/quiet-beach.mid"
+   },
+   {
+    "title": "Relm",
+    "path": "albums/snes/final-fantasy-6/relm.mid"
+   },
+   {
+    "title": "Rest in Peace",
+    "path": "albums/snes/final-fantasy-6/rest-in-peace.mid"
+   },
+   {
+    "title": "Returners",
+    "path": "albums/snes/final-fantasy-6/returners.mid"
+   },
+   {
+    "title": "Save Them!",
+    "path": "albums/snes/final-fantasy-6/save-them.mid"
+   },
+   {
+    "title": "Searching for Friends",
+    "path": "albums/snes/final-fantasy-6/searching-for-friends.mid"
+   },
+   {
+    "title": "Setzer",
+    "path": "albums/snes/final-fantasy-6/setzer.mid"
+   },
+   {
+    "title": "Shadow",
+    "path": "albums/snes/final-fantasy-6/shadow.mid"
+   },
+   {
+    "title": "Slam Shuffle",
+    "path": "albums/snes/final-fantasy-6/slam-shuffle.mid"
+   },
+   {
+    "title": "Spinach Rag",
+    "path": "albums/snes/final-fantasy-6/spinach-rag.mid"
+   },
+   {
+    "title": "Strago",
+    "path": "albums/snes/final-fantasy-6/strago.mid"
+   },
+   {
+    "title": "Strong Wind",
+    "path": "albums/snes/final-fantasy-6/strong-wind.mid"
+   },
+   {
+    "title": "Techno de Chocobo",
+    "path": "albums/snes/final-fantasy-6/techno-de-chocobo.mid"
+   },
+   {
+    "title": "Terra",
+    "path": "albums/snes/final-fantasy-6/terra.mid"
+   },
+   {
+    "title": "The Day After",
+    "path": "albums/snes/final-fantasy-6/the-day-after.mid"
+   },
+   {
+    "title": "The Decisive Battle",
+    "path": "albums/snes/final-fantasy-6/the-decisive-battle.mid"
+   },
+   {
+    "title": "The Empire Gestahl",
+    "path": "albums/snes/final-fantasy-6/the-empire-gestahl.mid"
+   },
+   {
+    "title": "The Fierce Battle",
+    "path": "albums/snes/final-fantasy-6/the-fierce-battle.mid"
+   },
+   {
+    "title": "The Magic House",
+    "path": "albums/snes/final-fantasy-6/the-magic-house.mid"
+   },
+   {
+    "title": "The Mines of Narshe",
+    "path": "albums/snes/final-fantasy-6/the-mines-of-narshe.mid"
+   },
+   {
+    "title": "The Phantom Forest",
+    "path": "albums/snes/final-fantasy-6/the-phantom-forest.mid"
+   },
+   {
+    "title": "The Phantom Train",
+    "path": "albums/snes/final-fantasy-6/the-phantom-train.mid"
+   },
+   {
+    "title": "The Prelude",
+    "path": "albums/snes/final-fantasy-6/the-prelude.mid"
+   },
+   {
+    "title": "The Serpent Trench",
+    "path": "albums/snes/final-fantasy-6/the-serpent-trench.mid"
+   },
+   {
+    "title": "The Unforgiven",
+    "path": "albums/snes/final-fantasy-6/the-unforgiven.mid"
+   },
+   {
+    "title": "The Wedding Waltz-Duel (part 1)",
+    "path": "albums/snes/final-fantasy-6/the-wedding-waltz-duel-part-1.mid"
+   },
+   {
+    "title": "The Wedding Waltz-Duel (part 2)",
+    "path": "albums/snes/final-fantasy-6/the-wedding-waltz-duel-part-2.mid"
+   },
+   {
+    "title": "The Wedding Waltz-Duel (part 3)",
+    "path": "albums/snes/final-fantasy-6/the-wedding-waltz-duel-part-3.mid"
+   },
+   {
+    "title": "The Wedding Waltz-Duel (part 4)",
+    "path": "albums/snes/final-fantasy-6/the-wedding-waltz-duel-part-4.mid"
+   },
+   {
+    "title": "Train",
+    "path": "albums/snes/final-fantasy-6/train.mid"
+   },
+   {
+    "title": "Troops March on",
+    "path": "albums/snes/final-fantasy-6/troops-march-on.mid"
+   },
+   {
+    "title": "Umaro",
+    "path": "albums/snes/final-fantasy-6/umaro.mid"
+   },
+   {
+    "title": "Under Martial Law",
+    "path": "albums/snes/final-fantasy-6/under-martial-law.mid"
+   },
+   {
+    "title": "Unused Fanfare",
+    "path": "albums/snes/final-fantasy-6/unused-fanfare.mid"
+   },
+   {
+    "title": "Wild West",
+    "path": "albums/snes/final-fantasy-6/wild-west.mid"
+   }
+  ]
  }
 ]
