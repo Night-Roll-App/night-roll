@@ -212,6 +212,19 @@ lies ("running" while mute). Needs an ON-DEVICE output measurement
 Unverified but likely real: dictation (SpeechRecognition) holds the
 iPad's audio session; micStop uses stop() and micPrev lingers until the
 next dictation.
+Found by an independent read-only review the same night (real, in my
+code, guarded by a bridge session): play() gives up on a render after
+25 s and plays synth; when the render then lands MID-playback,
+chipRender sets chip.key, scheduleNote starts dropping notes on
+chip-covered tracks, but chipStart never ran → cursor moves, silence;
+the next song can hit the same. The guard requires chip.srcs.length.
+The reviewer also notes the "context created after a gesture = mute
+forever" rule was inferred from two heavy-load incidents and never
+measured; standard WebKit starts such a context suspended and resumes
+it on a later gesture. Measure before believing it.
+Coordination failure the same night: three bridge sessions pushed
+audio changes within minutes of each other after the revert — the
+one-at-a-time rule applies to them too; one owner per report.
 Rule from Josh, applied from here: when it works, stop; when it breaks
 right after my change, revert first; then one change at a time with his
 ear as the test. Order when he's ready: (1) micRelease() (abort both
