@@ -1,0 +1,182 @@
+{
+ "title": "Legend Of Zelda A Link To The Past",
+ "order": 50,
+ "songs": {
+  "anger-of-the-guardians": "Anger of the Guardians",
+  "beginning-of-the-journey": "Beginning of the Journey",
+  "black-mist-storm": "Black Mist (Storm)",
+  "dungeon-of-shadows": "Dungeon of Shadows",
+  "epilogue-beautiful-hyrule": "Epilogue ~ Beautiful Hyrule",
+  "forest-of-mystery": "Forest of Mystery",
+  "ganon-s-message": "Ganon's Message",
+  "great-victory": "Great Victory!",
+  "guessing-game-house": "Guessing-Game House",
+  "majestic-castle-storm": "Majestic Castle (Storm)",
+  "meeting-the-maidens": "Meeting the Maidens",
+  "power-of-the-gods": "Power of the Gods",
+  "priest-of-the-dark-order": "Priest of the Dark Order",
+  "princess-zelda-s-rescue": "Princess Zelda's Rescue",
+  "release-of-ganon": "Release of Ganon",
+  "safety-in-the-sanctuary": "Safety in the Sanctuary",
+  "seal-of-seven-maidens": "Seal of Seven Maidens",
+  "soldiers-of-kakariko-village": "Soldiers of Kakariko Village",
+  "the-prince-of-darkness": "The Prince of Darkness",
+  "the-silly-pink-rabbit-storm": "The Silly Pink Rabbit! (Storm)",
+  "the-silly-pink-rabbit": "The Silly Pink Rabbit!",
+  "time-of-the-falling-rain-storm": "Time of the Falling Rain (Storm)",
+  "time-of-the-falling-rain": "Time of the Falling Rain",
+  "title-link-to-the-past": "Title ~ Link to the Past",
+  "unsealing-the-master-sword": "Unsealing the Master Sword"
+ },
+ "nsf": {
+  "vault": "legend-of-zelda-a-link-to-the-past/",
+  "tracks": {
+   "anger-of-the-guardians": {
+    "n": 1,
+    "secs": 26
+   },
+   "beginning-of-the-journey": {
+    "n": 1,
+    "secs": 48
+   },
+   "black-mist-storm": {
+    "n": 1,
+    "secs": 99
+   },
+   "black-mist": {
+    "n": 1,
+    "secs": 98.92
+   },
+   "dank-dungeons": {
+    "n": 1,
+    "secs": 40
+   },
+   "dark-golden-land": {
+    "n": 1,
+    "secs": 120
+   },
+   "dungeon-of-shadows": {
+    "n": 1,
+    "secs": 96
+   },
+   "epilogue-beautiful-hyrule": {
+    "n": 1,
+    "secs": 229.86
+   },
+   "forest-of-mystery": {
+    "n": 1,
+    "secs": 41
+   },
+   "fortune-teller": {
+    "n": 1,
+    "secs": 39
+   },
+   "ganon-s-message": {
+    "n": 1,
+    "secs": 63
+   },
+   "great-victory": {
+    "n": 1,
+    "secs": 12
+   },
+   "guessing-game-house": {
+    "n": 1,
+    "secs": 43
+   },
+   "hyrule-field-main-theme": {
+    "n": 1,
+    "secs": 78
+   },
+   "kakariko-village": {
+    "n": 1,
+    "secs": 186
+   },
+   "lost-ancient-ruins": {
+    "n": 1,
+    "secs": 114
+   },
+   "majestic-castle-storm": {
+    "n": 1,
+    "secs": 169
+   },
+   "majestic-castle": {
+    "n": 1,
+    "secs": 169
+   },
+   "meeting-the-maidens": {
+    "n": 1,
+    "secs": 63
+   },
+   "power-of-the-gods": {
+    "n": 1,
+    "secs": 83
+   },
+   "priest-of-the-dark-order": {
+    "n": 1,
+    "secs": 59
+   },
+   "princess-zelda-s-rescue": {
+    "n": 1,
+    "secs": 91
+   },
+   "release-of-ganon": {
+    "n": 1,
+    "secs": 12
+   },
+   "safety-in-the-sanctuary": {
+    "n": 1,
+    "secs": 62
+   },
+   "seal-of-seven-maidens": {
+    "n": 1,
+    "secs": 109
+   },
+   "soldiers-of-kakariko-village": {
+    "n": 1,
+    "secs": 19.92
+   },
+   "staff-roll": {
+    "n": 1,
+    "secs": 234
+   },
+   "the-goddess-appears": {
+    "n": 1,
+    "secs": 51
+   },
+   "the-prince-of-darkness": {
+    "n": 1,
+    "secs": 65
+   },
+   "the-silly-pink-rabbit-storm": {
+    "n": 1,
+    "secs": 51
+   },
+   "the-silly-pink-rabbit": {
+    "n": 1,
+    "secs": 51
+   },
+   "time-of-the-falling-rain-storm": {
+    "n": 1,
+    "secs": 48
+   },
+   "time-of-the-falling-rain": {
+    "n": 1,
+    "secs": 48
+   },
+   "title-link-to-the-past": {
+    "n": 1,
+    "secs": 17
+   },
+   "unsealing-the-master-sword": {
+    "n": 1,
+    "secs": 12
+   },
+   "unused-sound": {
+    "n": 1,
+    "secs": 12
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}

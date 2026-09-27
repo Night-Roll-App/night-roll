@@ -1693,5 +1693,154 @@
     "path": "albums/snes/final-fantasy-6/wild-west.mid"
    }
   ]
+ },
+ {
+  "title": "Legend Of Zelda A Link To The Past",
+  "songs": [
+   {
+    "title": "Anger of the Guardians",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/anger-of-the-guardians.mid"
+   },
+   {
+    "title": "Beginning of the Journey",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/beginning-of-the-journey.mid"
+   },
+   {
+    "title": "Black Mist",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/black-mist.mid"
+   },
+   {
+    "title": "Black Mist (Storm)",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/black-mist-storm.mid"
+   },
+   {
+    "title": "Dank Dungeons",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dank-dungeons.mid"
+   },
+   {
+    "title": "Dark Golden Land",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dark-golden-land.mid"
+   },
+   {
+    "title": "Dungeon of Shadows",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dungeon-of-shadows.mid"
+   },
+   {
+    "title": "Epilogue ~ Beautiful Hyrule",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/epilogue-beautiful-hyrule.mid"
+   },
+   {
+    "title": "Forest of Mystery",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/forest-of-mystery.mid"
+   },
+   {
+    "title": "Fortune Teller",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/fortune-teller.mid"
+   },
+   {
+    "title": "Ganon's Message",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/ganon-s-message.mid"
+   },
+   {
+    "title": "Great Victory!",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/great-victory.mid"
+   },
+   {
+    "title": "Guessing-Game House",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/guessing-game-house.mid"
+   },
+   {
+    "title": "Hyrule Field Main Theme",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/hyrule-field-main-theme.mid"
+   },
+   {
+    "title": "Kakariko Village",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/kakariko-village.mid"
+   },
+   {
+    "title": "Lost Ancient Ruins",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/lost-ancient-ruins.mid"
+   },
+   {
+    "title": "Majestic Castle",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/majestic-castle.mid"
+   },
+   {
+    "title": "Majestic Castle (Storm)",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/majestic-castle-storm.mid"
+   },
+   {
+    "title": "Meeting the Maidens",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/meeting-the-maidens.mid"
+   },
+   {
+    "title": "Power of the Gods",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/power-of-the-gods.mid"
+   },
+   {
+    "title": "Priest of the Dark Order",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/priest-of-the-dark-order.mid"
+   },
+   {
+    "title": "Princess Zelda's Rescue",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/princess-zelda-s-rescue.mid"
+   },
+   {
+    "title": "Release of Ganon",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/release-of-ganon.mid"
+   },
+   {
+    "title": "Safety in the Sanctuary",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/safety-in-the-sanctuary.mid"
+   },
+   {
+    "title": "Seal of Seven Maidens",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/seal-of-seven-maidens.mid"
+   },
+   {
+    "title": "Soldiers of Kakariko Village",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/soldiers-of-kakariko-village.mid"
+   },
+   {
+    "title": "Staff Roll",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/staff-roll.mid"
+   },
+   {
+    "title": "The Goddess Appears",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-goddess-appears.mid"
+   },
+   {
+    "title": "The Prince of Darkness",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-prince-of-darkness.mid"
+   },
+   {
+    "title": "The Silly Pink Rabbit!",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-silly-pink-rabbit.mid"
+   },
+   {
+    "title": "The Silly Pink Rabbit! (Storm)",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-silly-pink-rabbit-storm.mid"
+   },
+   {
+    "title": "Time of the Falling Rain",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/time-of-the-falling-rain.mid"
+   },
+   {
+    "title": "Time of the Falling Rain (Storm)",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/time-of-the-falling-rain-storm.mid"
+   },
+   {
+    "title": "Title ~ Link to the Past",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/title-link-to-the-past.mid"
+   },
+   {
+    "title": "Unsealing the Master Sword",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/unsealing-the-master-sword.mid"
+   },
+   {
+    "title": "Unused Sound",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/unused-sound.mid"
+   }
+  ]
  }
 ]
