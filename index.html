@@ -15912,6 +15912,10 @@ function openAsk() {
   askModeButtons(); // sets the placeholder for the mode
   asksheet.classList.add("on");
   askGrow();
+  askFocusIfKeyboard();
+}
+function askFocusIfKeyboard() { // a touch screen's keyboard took half the sheet on every open, and Josh dictates (2026-09-27); focus only where a real keyboard is likely
+  if (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches) return;
   askinput.focus();
 }
 document.getElementById("askbtn").addEventListener("click", openAsk);
@@ -16169,7 +16173,7 @@ function openFill() { // the edit-row / Edit ▾ entry: the same sheet, target r
   if (gate) { setInfo(gate); return; }
   openAsk();
   askinput.placeholder = "What should go here? (e.g. chords under the melody, a walking line to the V…)";
-  askinput.focus();
+  askFocusIfKeyboard();
 }
 document.getElementById("fillbtn").addEventListener("click", openFill);
 
