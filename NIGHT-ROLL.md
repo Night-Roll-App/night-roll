@@ -1192,6 +1192,28 @@ needed. The folder's layout mirrors the repo exactly
   (`tests/e2e/folder.spec.mjs`, chromium only) and browser checks use it.
   The vm test drives the backend with an in-memory fake handle.
 
+**iPad app (2026-09-27, revised the same evening): Files IS Local.**
+The first cut made the Files folder a third folder ROOT behind a
+Settings checkbox (Save → Files, Publish bypassed). Josh read it as
+"everything in Files until I hit Publish" and then ruled "everything
+saved locally and up on GitHub", so the mode is gone: `filesMirror()`
+writes .mid + .rollnotes.json + .notes.txt at the song's path into the
+app's Documents through `nativeDirHandle` (passed as the `root` of
+`folderWrite`/`fsDirFor`) on every `saveCheckpoint`, after a Publish
+with auto-save on, and 2 s after edits settle with auto-save on
+(`filesMirrorSoon`). It is a visible copy, never read back; reads,
+`folderActive()` and Publish are untouched; the Settings row is one
+sentence (`#filesrow`/`#fileshelp`). `nativeDirHandle` stays the
+adapter; the desktop picker/OPFS roots are unchanged. The older
+paragraph below describes the adapter; ignore its checkbox/pref parts.
+
+**Edit here (2026-09-27).** A published song in a folder of the user's
+own with no local copy on this device shows `#editherebtn` ("✎ Edit
+here") beside Edit ▾ (`updateEditBtnVis`: `ownFolderPath(songKey) &&
+!editable`). Tapping asks first (Josh's ruling) and then writes
+`draftDoc(true)` as the draft — the local copy, clean until the first
+edit — which makes `isComposition()` true.
+
 **iPad app (2026-09-27): the Files folder as a third root.** In the
 Capacitor shell, `nativeFs()` returns the `@capacitor/filesystem` plugin
 (`window.Capacitor.Plugins.Filesystem`, native platform only) and

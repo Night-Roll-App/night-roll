@@ -55,9 +55,14 @@ path, Commit → Publish wording, publish buttons name their destination
 folders ∪ repo folders, New folder…, nested paths allowed); Save As and
 Move to… go to any folder; a never-published song moves on the device
 only; editability by folder (READONLY_DIRS); build_manifest walks any
-depth. NEXT: phase 3 — the iPad Files mirror (Save writes Files, no
-checkbox) and "ask first" before editing a published song of his; then
-his batch of moves (imports + FF1 under console folders).
+depth. Phase 3 DONE too: the iPad Files mirror (every Save also writes the
+song into Files; the checkbox and the Files "mode" are gone; the
+Settings row is one sentence) and "✎ Edit here" (a published song of
+his with no local copy on the device asks first, then makes the local
+copy). NEXT: his batch of moves (imports + FF1 under console folders),
+one commit with the MOVED table, when he says go; the import sheet
+proposing a console folder for new imports; notes.txt duplicate in
+nightroll/ (cool-b-maj-with-b-part) on his word.
 
 ## OPEN DESIGN QUESTION (Josh, 2026-09-27): where saves live on the iPad
 
