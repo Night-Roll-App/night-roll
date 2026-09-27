@@ -4,6 +4,24 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## PHASE 0.5 AUDIO SPIKE — DONE 2026-09-27 MORNING: GO
+
+Throwaway Capacitor 8 shell at ~/work/ff/nightroll-shell-spike (not in
+the repo; notes + results in its spike-notes.md), loading the Pages URL,
+on Josh's iPad Pro 13" M4 via Xcode 26.6. Passed: sound, NES/SNES/GB chip
+audio "perfect", timer interruption resumes by itself, dictation then
+Play (last night's Safari failure!), audio file as a track, persistence,
+bridge over Tailscale + GitHub, WebGPU. Failed: the Control Center bell
+mutes Web Audio (known WebKit behavior; fix = a silent media element
+held open in shell mode or a native session hold). Skipped: AirPods,
+hardware keyboard (none). Bug seen: a wrong "newer save exists" dialog on
+Threnody II after relaunch (repo stamp 2026-09-26 12:31 < the draft; the
+fresh install likely stamped the draft before the annotation file
+loaded) — fix in loadSongInner/saveDraft. Apple Developer Program:
+enrolled. Next: Phase 2, the real shell (Files-app storage, icon, name,
+TestFlight). Still needs Josh: a support email address; two more starter
+songs; "merge it" for the overnight branch.
+
 ## APP STORE PREP — BRANCH overnight-2026-09-26, PUSHED 2026-09-27, UNMERGED
 
 Eight commits, none on main (Josh's rule that night: nothing to main):
