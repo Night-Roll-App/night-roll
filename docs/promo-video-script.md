@@ -150,3 +150,20 @@ words already in the app name or subtitle — they're indexed already.
 | General chat | HELP.md "General chat" |
 | Publish to your own GitHub repo; README song list of player links; a phone opens as a player | HELP.md "Publish", "Share a song", "📻 Listener mode" |
 | ✦ Fill (optional line) | HELP.md "✦ Fill" |
+
+## Production — who does what (2026-09-27)
+
+What Claude can make from the Mac, unattended: this script and shot list;
+still and animated captures of the app from Chrome (scripted); a rough cut
+assembled with ffmpeg from those captures, with a placeholder voice from the
+system's text-to-speech (`say`) so timing can be judged. A proof of that
+pipeline is `~/Desktop/nightroll-promo-roughcut.mp4` (17 s, three frames,
+the first four voiceover lines). It is a timing sketch, not a deliverable:
+stills with crossfades, synthetic voice.
+
+What needs a person: the real screen recording of the iPad (QuickTime over
+the cable, or iOS screen recording — smooth playback and touch, which
+Chrome captures cannot give), the voiceover (Josh's voice, or a paid TTS
+voice), and the edit (Final Cut Pro, iMovie and OBS are on this Mac). With
+those recordings in a folder, Claude can do the assembly: cut to the shot
+list's timecodes, lay the voice, export the 16:9 and the 15-second cut.
