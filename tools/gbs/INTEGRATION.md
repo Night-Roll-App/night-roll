@@ -216,3 +216,31 @@ README's "what the project is" sentence if it names NES specifically;
 open-items entry closing the "other consoles" roadmap line for GBS. An
 e2e import test can use `makeTestGBS()` written to `tests/fixtures/` at
 test time (no ROM data in the repo).
+
+## Real rips (2026-09-27)
+
+Two Zophar sets run end to end on the Mac (never committed): **Final
+Fantasy Legend** (DMG-SAJ.gbs, 17 subsongs) and **Final Fantasy Legend
+II** (DMG-S2J.gbs, 19 subsongs). Both ship as one .gbs plus ONE .m3u per
+track, Latin-1 encoded (© = 0xA9), lines `DMG-SAJ.gbs::GBS,<n>,Title -
+Artist - Game - ©date Company,mm:ss,,fade` with `n` 0-BASED and out of
+album order (album order = the file names' leading numbers). Neither uses
+timer mode (v-blank PLAY, 59.7 Hz). The app handles all of this since
+b9a5d5a (decodeM3u, title-first + n+1 keyed on `::GBS,`, natural-order
+merge of the picked playlists).
+
+Findings from the dumps:
+- FFL1 Main Theme: 44 s loop, pulse1/pulse2/wave 161/117/146 notes,
+  fitted 102.5 bpm but flagged "raw timing" by the snap gate — Square's
+  GB driver runs tempo in fractional frames, so the grid fit is
+  approximate; the notes are right, the bar labels are not exact.
+- The first real rip derailed the SM83 on an unconditional JR (operand
+  fetch order) — fixed in cpu-sm83.mjs with a byte-level test.
+- Pulse "rests": Square's driver parks a pulse at period x=2047
+  (131 kHz, MIDI 168) for a few frames with the envelope still on
+  (FFL2 "Searching…": 24 such events, 1–7 frames). Inaudible on hardware;
+  `makeMidi` drops p > 127 so they never reach the roll. `.notes.txt`
+  still lists them. If a driver ever parks at an AUDIBLE period the same
+  way, this needs a rule (very short + max period → rest).
+- Wave channel pitch on both rips sits in MIDI 36–61 (bass register),
+  consistent with the wave-cycle measurement.
