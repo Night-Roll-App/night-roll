@@ -16687,13 +16687,14 @@ askInboxStart();
     if (rec.w) { box.style.width = rec.w; box.style.maxWidth = "none"; }
     if (rec.h) { box.style.height = rec.h; box.style.maxHeight = "none"; }
     box.style.transform = "translate(" + rec.tx + "px, " + rec.ty + "px)";
-    if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => {
-      const r = box.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight;
-      let dx = 0, dy = 0;
-      if (r.right > W - 8) dx = W - 8 - r.right; if (r.left + dx < 8) dx += 8 - (r.left + dx);
-      if (r.bottom > H - 8) dy = H - 8 - r.bottom; if (r.top + dy < 8) dy += 8 - (r.top + dy);
-      if (dx || dy) box.style.transform = "translate(" + Math.round(rec.tx + dx) + "px, " + Math.round(rec.ty + dy) + "px)";
-    });
+    // measured right away (the overlay is already display:flex here); an
+    // animation frame would never come in a hidden tab
+    const r = box.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight;
+    if (!r.width) return;
+    let dx = 0, dy = 0;
+    if (r.right > W - 8) dx = W - 8 - r.right; if (r.left + dx < 8) dx += 8 - (r.left + dx);
+    if (r.bottom > H - 8) dy = H - 8 - r.bottom; if (r.top + dy < 8) dy += 8 - (r.top + dy);
+    if (dx || dy) box.style.transform = "translate(" + Math.round(rec.tx + dx) + "px, " + Math.round(rec.ty + dy) + "px)";
   };
   const end = e => {
     if (size && (!e || e.pointerId === size.id)) { remember(size.box); size = null; }
