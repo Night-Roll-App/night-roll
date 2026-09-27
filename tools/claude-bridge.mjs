@@ -21,7 +21,8 @@
 // 127.0.0.1] · --token T [BRIDGE_TOKEN] · --upstream name=url (repeatable)
 // [BRIDGE_UPSTREAMS, comma-separated name=url] · --no-claude · --claude read|full
 // [BRIDGE_CLAUDE, read] · --repo DIR [cwd for Claude Code, default: this repo] ·
-// --jobs-dir DIR [BRIDGE_JOBS, ~/.night-roll-bridge/jobs] · --keep-hours H [24].
+// --jobs-dir DIR [BRIDGE_JOBS, ~/.night-roll-bridge/jobs] · --keep-hours H [24] ·
+// --state-dir DIR [beside the default jobs dir; inside a custom one].
 //
 // Models: "claude-code" when the `claude` CLI is installed (and not --no-claude),
 // plus every model each upstream lists, refreshed on every /v1/models call —
@@ -80,7 +81,12 @@ const TOKEN = flag("--token", process.env.BRIDGE_TOKEN || "");
 const REPO = path.resolve(flag("--repo", path.resolve(HERE, "..")));
 const JOBS_DIR = flag("--jobs-dir", process.env.BRIDGE_JOBS || path.join(os.homedir(), ".night-roll-bridge", "jobs"));
 const KEEP_MS = Math.min(7 * 24, Math.max(1, +flag("--keep-hours", 24))) * 3600 * 1000;
-const STATE_DIR = path.dirname(JOBS_DIR); // sessions.json and inbox.json live beside jobs/
+// sessions.json and inbox.json live beside the default jobs/ dir; a custom
+// --jobs-dir (the tests' temp dir) keeps its state INSIDE it, so two bridges
+// never share an inbox by accident (the test suite read the real one, 2026-09-27).
+// Not in the jobs dir itself: sweep() treats every file there as a job.
+const DEFAULT_JOBS_DIR = path.join(os.homedir(), ".night-roll-bridge", "jobs");
+const STATE_DIR = flag("--state-dir", path.resolve(JOBS_DIR) === DEFAULT_JOBS_DIR ? path.dirname(JOBS_DIR) : path.join(JOBS_DIR, "state"));
 const SESSIONS_FILE = path.join(STATE_DIR, "sessions.json");
 const INBOX_FILE = path.join(STATE_DIR, "inbox.json");
 const CLAUDE_MODE = has("--no-claude") ? "off" : (flag("--claude", process.env.BRIDGE_CLAUDE || "read") === "full" ? "full" : "read");
