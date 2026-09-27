@@ -222,6 +222,16 @@ The reviewer also notes the "context created after a gesture = mute
 forever" rule was inferred from two heavy-load incidents and never
 measured; standard WebKit starts such a context suspended and resumes
 it on a later gesture. Measure before believing it.
+From Josh's first real ⚠ log (69da39f): "engine #1 created (NO
+gesture; suspended)" → "interrupted (system)" the same second, 3 s
+before his Play; then "#2 created (in a gesture) → running" and STILL
+silent. #1's creator is the first-touch warm handler
+(`pointerdown` → ensureAudio): on a touch screen pointerdown grants no
+user activation (pointerup/touchend/click do), so WebKit parks that
+context "interrupted". Handed to the owning session as the next single
+change (warm on pointerup, or drop the warm). #2 silent inside a
+gesture means birth is not the whole story; the output meter (log only)
+is the measurement that comes next.
 Coordination failure the same night: three bridge sessions pushed
 audio changes within minutes of each other after the revert — the
 one-at-a-time rule applies to them too; one owner per report.
