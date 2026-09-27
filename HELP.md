@@ -275,6 +275,9 @@ Talk to an AI tutor about what you're looking at — and, on your own songs, hav
 **House rules**
 Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.
 
+**Move a sheet**
+Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask. It comes back centered the next time it opens.
+
 **⧉ copy / links**
 Every bubble ends with a small **⧉**: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.
 

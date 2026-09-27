@@ -647,6 +647,11 @@
   .chiprow { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
   /* ✦ Ask: the in-app AI sheet. The log is the tall part; rows stay fixed. */
   .sheet.ask { height: 88dvh; width: min(680px, 100%); }
+  #asksheet .sheet.ask { width: max(min(680px, 100%), 75vw); max-width: 100%; } /* three quarters of the screen, whatever rule comes later (Josh, 2026-09-27: "shrunk back to a third") */
+  /* sheets move: drag by the title line — the Ask sheet over the capture panel
+     hid it (Josh, 2026-09-27: "I should be able to move these dialogues around") */
+  .sheet > h2, #importsheet .row:first-child { cursor: move; touch-action: none; -webkit-user-select: none; user-select: none; }
+  .sheet.dragging { transition: none; }
   #asklog { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
             -webkit-user-select: text; user-select: text; min-height: 80px; }
   .askmsg { font-size: 17px; line-height: 1.5; padding: 10px 13px; border-radius: 10px; /* 14 was too small to read on the iPad (Josh, 2026-09-27) */
@@ -1374,6 +1379,7 @@
     <dl>
       <dt>✦ Ask</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ Ask</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
+      <dt>Move a sheet</dt><dd>Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask. It comes back centered the next time it opens.</dd>
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
       <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
@@ -16608,6 +16614,41 @@ async function askResume() {
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
 askInboxStart();
+// Drag any sheet by its title line (and the capture panel by its title row).
+// The offset lives in a transform so the overlay's centering still applies;
+// it resets each time the sheet opens. Pointer capture keeps the drag alive
+// when the finger leaves the title.
+(function sheetDrag() {
+  if (typeof document === "undefined" || !document.body) return;
+  const handleFor = t => {
+    const h2 = t.closest && t.closest(".sheet > h2");
+    if (h2) return {handle: h2, box: h2.parentElement};
+    const row = t.closest && t.closest("#importsheet .row:first-child");
+    if (row && !(t.closest("button"))) return {handle: row, box: document.getElementById("importsheet")};
+    return null;
+  };
+  let drag = null;
+  document.addEventListener("pointerdown", e => {
+    if (e.button && e.button !== 0) return;
+    const hit = handleFor(e.target);
+    if (!hit || !hit.box) return;
+    const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(hit.box.style.transform || "");
+    drag = {box: hit.box, x0: e.clientX, y0: e.clientY, dx: m ? +m[1] : 0, dy: m ? +m[2] : 0, id: e.pointerId};
+    hit.box.classList.add("dragging");
+    try { hit.handle.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    e.preventDefault();
+  }, {capture: true});
+  document.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.box.style.transform = "translate(" + Math.round(drag.dx + e.clientX - drag.x0) + "px, " + Math.round(drag.dy + e.clientY - drag.y0) + "px)";
+  });
+  const end = e => { if (drag && (!e || e.pointerId === drag.id)) { drag.box.classList.remove("dragging"); drag = null; } };
+  document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+  // a sheet opens centered: forget the last drag when its overlay turns on
+  if (typeof MutationObserver === "function") new MutationObserver(muts => {
+    for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box && box.style.transform) box.style.transform = ""; } }
+  }).observe(document.body, {attributes: true, attributeFilter: ["class"], subtree: true});
+})();
 function openAsk() {
   if (!song) return;
   askBadgeOff();
