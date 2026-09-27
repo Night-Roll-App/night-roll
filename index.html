@@ -11864,9 +11864,10 @@ const syncsheet = document.getElementById("syncsheet");
 const NR_DIR = "albums/compositions/nightroll/";
 const COMP_DIR = "albums/compositions/";
 // Writable = the app's OWN songs only (2026-08-15 tightening), and since
-// 2026-09-27 only the LOCAL COPY of one: a song this device holds a draft of,
-// or one carrying a provenance note ("forked from" by Save As, "moved from"
-// by Move). nightroll/ is no longer editable by path alone.
+// 2026-09-27 only the LOCAL COPY of one: the song this device holds a draft
+// of. Provenance notes ("forked from" by Save As, "moved from" by Move) are
+// kept as history but no longer unlock editing; nightroll/ is no longer
+// editable by path alone either. "✎ Edit here" makes the copy.
 // The note is what makes promotion hold on OTHER devices: a draft is this
 // machine's only, and Threnody, promoted by a git rename, was locked on
 // the very machine that wrote it (Josh, 2026-09-07). Josh's Logic exports
@@ -11896,10 +11897,8 @@ function ownFolderPath(key) { return !!key && key.startsWith("albums/") && !READ
 // edit a local version … pull it down from the published to your local, and
 // then start editing it"): editable = this device holds the local copy (the
 // draft), or the song carries provenance. Sketches are no exception now.
-function isComposition() {
-  if (!ownFolderPath(songKey)) return false;
-  return localStorage.getItem(draftStoreKey(songKey)) !== null ||
-         rollnotes.some(n => n.text && PROVENANCE_RE.test(n.text));
+function isComposition() { // the local copy, nothing else (a "forked from"/"moved from" note is history, not a key — Josh, Graveyard 2, 2026-09-27)
+  return ownFolderPath(songKey) && localStorage.getItem(draftStoreKey(songKey)) !== null;
 }
 // The two albums the app itself named; every other folder is titled by its
 // last segment (album.json can override on the repo side)

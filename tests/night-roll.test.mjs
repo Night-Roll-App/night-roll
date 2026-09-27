@@ -820,15 +820,16 @@ test("composition helpers: slugify, isComposition gate, draft store round-trip",
   assert.equal(run(`isComposition()`), false); // chip capture: Save locked
   run(`songKey = "albums/compositions/nightroll/test-tune.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */`);
   assert.equal(run(`isComposition()`), true);
-  // promoted out of nightroll/: no local draft on this device (git rename, or
-  // a Move done elsewhere) — only a provenance note keeps it editable
+  // promoted out of nightroll/ with no local draft on this device: a provenance
+  // note is history, not a key — the song stays a published copy until Edit
+  // here makes the local one (2026-09-27)
   run(`songKey = "albums/compositions/promoted.mid"; rollnotes = [];`);
   assert.equal(run(`isComposition()`), false);
   run(`rollnotes = parseRollnotes('{"version":1,"notes":[{"at":[1,1],"text":"moved from albums/compositions/nightroll/promoted.mid"}]}').map(resolveNote);`);
-  assert.equal(run(`isComposition()`), true);
-  run(`rollnotes = parseRollnotes('{"version":1,"notes":[{"at":[1,1],"text":"forked from albums/nes/final-fantasy-i/songs/town.mid"}]}').map(resolveNote);`);
-  assert.equal(run(`isComposition()`), true);
-  run(`rollnotes = parseRollnotes('{"version":1,"notes":[{"at":[1,1],"text":"note that merely mentions moved from"}]}').map(resolveNote);`);
+  assert.equal(run(`isComposition()`), false);
+  run(`localStorage.setItem(draftStoreKey(songKey), "{}");`);
+  assert.equal(run(`isComposition()`), true, "the local copy is the key");
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
   assert.equal(run(`isComposition()`), false); // anchored at line start, not a substring
   run(`rollnotes = []; songKey = "albums/compositions/nightroll/test-tune.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */`);
   run(`
