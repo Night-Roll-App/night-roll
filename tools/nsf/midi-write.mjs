@@ -53,7 +53,12 @@ function trackBytes(name, notes, ch, metas = []) {
 // NES noise has 16 period settings, not pitches; map to the app's drum kit
 function noiseDrum(idx) { return idx < 6 ? 42 : idx < 12 ? 38 : 35; } // hat / snare / kick
 
-export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true}) {
+// volMax: the chip's full-scale level for e.vol (NES 4-bit = 15; the SNES
+// pipeline passes 127). Channels beyond the NES four (SNES voice0-7) get
+// MIDI channels in order of appearance, skipping 9; an event with an
+// explicit `drum` (a GM number) is a percussion hit on channel 9 whatever
+// its channel name — SNES noise voices.
+export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, volMax = 15}) {
   const usq = Math.round(6e7 / bpm);
   // snap:false keeps raw hardware timing — for through-composed pieces with
   // tempo changes/fermatas (epilogue) that no single grid can follow
@@ -65,24 +70,32 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
   for (const e of events) {
     const t = toTick(e.startFrame);
     const d = Math.max(40, toTick(e.endFrame) - t); // min = a quantized 12th
-    const p = e.channel === "noise" ? noiseDrum(e.midi) : e.midi;
+    const p = e.drum != null ? e.drum : e.channel === "noise" ? noiseDrum(e.midi) : e.midi;
     if (p < 0 || p > 127) continue;
     // chip volume -> velocity (accent data from the ROM); triangle and
     // envelope-mode notes have no level, so they get a neutral 96
-    const v = e.vol == null ? 96 : Math.max(8, Math.round(e.vol / 15 * 127));
+    const v = e.vol == null ? 96 : Math.max(8, Math.round(e.vol / volMax * 127));
     // end-volume of the software envelope rides along (0-127 like velocity)
     const ve = e.volEnd != null && e.vol != null && e.volEnd < e.vol
-      ? Math.max(8, Math.round(e.volEnd / 15 * 127)) : undefined;
-    byCh[e.channel].push({t, d, p, v, duty: e.duty, ve});
+      ? Math.max(8, Math.round(e.volEnd / volMax * 127)) : undefined;
+    const key = e.drum != null ? "drums" : e.channel;
+    (byCh[key] = byCh[key] || []).push({t, d, p, v, duty: e.duty, ve});
   }
   const metas = [
     {t: 0, d: [0xFF, 0x58, 4, tsNum, Math.round(Math.log2(tsDen)), 24, 8]},
     {t: 0, d: [0xFF, 0x51, 3, (usq >> 16) & 255, (usq >> 8) & 255, usq & 255]},
   ];
   const tracks = [trackBytes("conductor", [], 0, metas)];
-  const chans = {pulse1: 0, pulse2: 1, triangle: 2, noise: 9};
+  const chans = {pulse1: 0, pulse2: 1, triangle: 2, noise: 9, drums: 9};
+  const used = new Set(Object.entries(byCh).filter(([n, l]) => l.length && chans[n] != null).map(([n]) => chans[n]));
+  let nextCh = 0;
   for (const [name, notes] of Object.entries(byCh)) {
-    if (notes.length) tracks.push(trackBytes(name, notes, chans[name]));
+    if (!notes.length) continue;
+    if (chans[name] == null) { // SNES voices: first free channel in this file, never 9
+      while (nextCh === 9 || used.has(nextCh)) nextCh++;
+      chans[name] = nextCh; used.add(nextCh);
+    }
+    tracks.push(trackBytes(name, notes, chans[name]));
   }
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
   const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, PPQ >> 8, PPQ & 255];
