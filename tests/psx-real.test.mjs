@@ -192,7 +192,11 @@ test("AKAO score: notes, ties (after a note, after a rest), octaves, transpose, 
   assert.ok(usq > 692000 && usq < 694000, "86.58bpm is about 693 ms per quarter: " + usq);
   assert.match(hex, new RegExp(`ff 51 03 ${[(usq >> 16) & 255, (usq >> 8) & 255, usq & 255].map(b => b.toString(16).padStart(2, "0")).join(" ")}`));
   assert.match(hex, /00 90 3c 64 83 60 80 3c 40/, "C4 on channel 1 for 480 ticks");
-  assert.match(hex, /99 18 7f/, "drum key 24 on channel 10");
+  // drum-mode degree 24 lands on channel 10 with a GM kit key (a raw 24 would
+  // play as a kick in any GM player; the rhythm guess picks the voice)
+  assert.doesNotMatch(hex, /99 18 7f/, "degree 24 is not written raw");
+  assert.match(hex, /99 (24|26|2a|2e|33|29|2d|2f|30|32|31) 7f/, "one GM kit key on channel 10");
+  assert.ok(r.kitGuess && r.kitGuess.some(g => g.key === 24), "the guess names the degree");
 });
 
 test("AKAO: tempo and meter stated after an opening rest belong to tick 0 (316, 414); later ones are changes", () => {

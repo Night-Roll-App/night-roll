@@ -612,6 +612,56 @@ the loop: annotation. Verified on the real Sonic 1 set. Next: PS1 (minis
    4–6 shippable commits each with its help entry + FEATURES keyword +
    NIGHT-ROLL.md section.
 
+## N64 + PS1 IMPORTS — BROKEN ON THE iPAD (Josh, 2026-09-27 17:46, from the Ask chat)
+
+Ear reports, his words (the failing tests; verify against the real
+rips on the Mac before touching the app):
+
+- N64 (Mario 64 set, build 8b83162 or later): "every song imported
+  almost instantaneously and I think they all said like one note. Then
+  I opened one of the songs and it was all messed up — I can recognize
+  some of the notes in there but they're definitely in the wrong
+  timing. There are remnants of the real song in there." Later: "the one-note thing might be a red herring — maybe it was
+  one note in the loop — when I opened the song there were tons and
+  tons of notes, including some of the right notes but not in the right
+  timing. But it definitely said that." (So the row status says 1 note
+  while the draft holds many on a scrambled timeline.) So: the app
+  capture yields ~1 note per row and a scrambled timeline, while the
+  command-line dump of the same set was verified full length. Suspects:
+  the app hook feeding the sequence parser a different sequence/bank
+  than dump.mjs (the .miniusf ↔ .usflib pairing, sequence id from RAM),
+  or the 10 ms rebin/loop stages on the N64 tick rate.
+- PS1 (FF7 set): "Bombing Mission was just a disaster — all the correct
+  notes are there in the right timing but there's some other noise going
+  on that I can't explain. Tifa's Theme, a quieter one, is better, not
+  so much noise, maybe still a little noisy. Maybe it has to do with the
+  drums." Suspect: percussion/noise voices landing as pitched notes on
+  melodic tracks (the Game Boy had the same bug: noise must ride ch 9 /
+  a drums track), or one-shot samples with no root mapped to pitches. Josh's own read (17:53): "I remember the N64 and PlayStation
+  imports are notes only — no instrument information. I opened Those
+  Chosen by the Planet, which starts with really spooky drums, and it
+  just sounds like noise." Fits: percussion voices (VAB drum programs)
+  are being played as pitched synth notes instead of a drums track. His track chips on that song read "ch1 prog1 … ch9 prog44": the
+  program number IS carried per track (in the name), no "drums" track
+  exists — so the fix is a program → drums mapping (which AKAO programs
+  are percussion for FF7; the VAB knows) routing those tracks to ch 9.
+
+Owner: the terminal session. The Ask session never implements.
+
+TERMINAL, 2026-09-27 evening: N64 — the app's own capture code replayed
+on the real Mario 64 set on the Mac (scratch/usf-app-path.mjs, the vm
+harness driving CHIPS.usf with the real tools/n64 modules) gives exactly
+the CLI's result (7 tracks, 1419 notes, drums on ch 10, 72 s, loop 3.1);
+the scramble is iPad-only and needs the device's ⚠ log (Copy all) and
+the row's status text — asked Josh. PS1 — FIXED: `kitify` in
+tools/psx/notes.mjs (NIGHT-ROLL.md "PlayStation captures: percussion by
+rhythm"); the 90-song FF7 program survey (scratch/ff7-programs.mjs)
+showed drum-mode degrees 24–35 (all kicks in the app) and one-pitch
+programs (36 = hat) as the noise. Bombing Mission now: prog 26 → kick,
+37 → snare, 41 → closed hat, 66 → open hat; Those Chosen by the Planet:
+17 → hat, 40 → open hat, 50 → kick. Josh's ear decides; the row's
+warning names the guess. Re-import FF7 to get the new mapping.
+
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 
 Josh: "we ought to have some sort of a job system where the captures go

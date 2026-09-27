@@ -1364,6 +1364,28 @@ Filesystem plugins.
 autosave-on-edit in folder mode (explicit Save kept for parity and so
 Revert still means something), copying the FF1 corpus into a folder.
 
+## PlayStation captures: percussion by rhythm (2026-09-27)
+
+Josh, FF7 Bombing Mission on the iPad: "all the correct notes are there
+in the right timing but there's some other noise going on". Two causes,
+both in tools/psx/notes.mjs → `kitify(result)` (called by `makeMidi`,
+so the CLI and the app agree): AKAO drum-mode notes carry degree keys
+24–35, which the app's kit (and any GM player) reads as twelve kicks;
+and FF7's kit sounds are mostly ordinary programs played at one pitch
+(hi-hat = program 36 at 72–79 in 24 songs; a 90-song survey is in
+open-items). Rules, per song, no game table: a note in drum mode is
+percussion, and so is every note of a program that appears in drum mode
+anywhere in the song; a program played at exactly one pitch over ≥ 12
+notes is percussion (two pitches is an ostinato — Bombing Mission's bass
+runs on two, and stays a bass); each percussion voice (program + source
+key) gets a GM key from its rhythm — backbeats → snare 38, downbeats →
+kick 36, the busiest rest → closed hat 42, open hat 46, ride 51, toms by
+source pitch, a sparse voice on beat 1 → crash 49. A VAB kit already in
+GM range keeps its keys. The guess lands in `result.kitGuess` and in the
+capture's warnings ("kit guessed from rhythm: prog 37 K71 → snare, …"),
+so a wrong guess is visible in the row's ⓘ. N64 sequences already put
+drums on channel 10 with GM-ish keys (50–59); untouched.
+
 ## Jobs (footer ⏳) — captures and publishes in the background (2026-09-27)
 
 Design: capture-jobs-design.md (advisor), generalized at Josh's ask —

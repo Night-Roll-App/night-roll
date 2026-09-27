@@ -140,9 +140,88 @@ export function toNotesTxt(result, {title = "seq"} = {}) {
   return L.join("\n") + "\n";
 }
 
+// Percussion on the PS1 has no flag: AKAO's drum mode names a sample per
+// degree (keys 24–35, which a GM player reads as twelve kicks), and many
+// kit sounds are ordinary programs played at one or two "pitches" (FF7's
+// hi-hat is program 36 at 72–79, in 24 songs). Night Roll plays MIDI channel
+// 10 through a GM-keyed kit, so a capture needs GM keys. The rules, per
+// song, nothing game-specific:
+//   1. a note in drum mode is percussion; so is every note of a program that
+//      appears in drum mode anywhere in the song;
+//   2. a program played at exactly one pitch over ≥ 12 notes is percussion
+//      (two pitches is an ostinato — Bombing Mission's bass runs on two);
+//   3. each percussion voice (program + source key) gets a GM key from its
+//      rhythm: the voice that sits on beats 2 and 4 is the snare, the one on
+//      1 and 3 the kick, the busiest remaining one the closed hat, then open
+//      hat, ride, toms by source pitch; a sparse voice mostly on beat 1 is a
+//      crash. The guess is reported in result.kitGuess (and the warnings).
+// (Josh, 2026-09-27, FF7 Bombing Mission: "all the correct notes are there
+// in the right timing but there's some other noise going on".)
+export function kitify(result) {
+  const {notes, seq} = result;
+  if (result.kitGuess) return result.kitGuess; // idempotent
+  const drumProgs = new Set(notes.filter(n => n.drum).map(n => n.program));
+  const byProg = new Map();
+  for (const n of notes) (byProg.get(n.program) || byProg.set(n.program, []).get(n.program)).push(n);
+  for (const [p, evs] of byProg) {
+    if (drumProgs.has(p)) continue;
+    const pitches = new Set(evs.map(n => n.pitch));
+    if (evs.length >= 12 && pitches.size === 1) drumProgs.add(p);
+  }
+  const perc = notes.filter(n => n.drum || drumProgs.has(n.program));
+  const guess = [];
+  if (!perc.length) { result.kitGuess = guess; return guess; }
+  // a kit that already speaks GM (a VAB kit keyed 35+) keeps its keys; drum-mode
+  // degrees (24–35) and promoted programs need a GM key
+  const needs = perc.filter(n => !n.drum || n.key < 35);
+  for (const n of perc) n.drum = true;
+  if (!needs.length) { result.kitGuess = guess; return guess; }
+  // voices: program + the key as written (drum mode: the degree key; else the pitch)
+  const voices = new Map();
+  for (const n of needs) { const k = n.program + ":" + n.key; (voices.get(k) || voices.set(k, {program: n.program, key: n.key, notes: []}).get(k)).notes.push(n); }
+  const ts = seq.timeSigs && seq.timeSigs[0] || {num: 4, den: 4};
+  const beatTicks = seq.ppq * 4 / ts.den, barBeats = ts.num;
+  for (const v of voices.values()) {
+    let down = 0, back = 0, one = 0, on = 0;
+    for (const n of v.notes) {
+      const beat = (n.tick / beatTicks) % barBeats, whole = Math.abs(beat - Math.round(beat)) < 0.05;
+      if (!whole) continue;
+      on++;
+      const b = Math.round(beat) % barBeats;
+      if (b === 0) one++;
+      if (b % 2 === 0) down++; else back++;
+    }
+    v.count = v.notes.length; v.down = down / v.count; v.back = back / v.count; v.one = one / v.count; v.on = on / v.count;
+  }
+  const list = [...voices.values()];
+  const taken = new Set();
+  const pick = (score, gm, label) => {
+    const c = list.filter(v => !v.gm).sort((a, b) => score(b) - score(a))[0];
+    if (c && score(c) > 0) { c.gm = gm; c.label = label; taken.add(gm); }
+  };
+  pick(v => v.count >= 4 ? v.back : 0, 38, "snare");
+  pick(v => v.count >= 4 ? v.down : 0, 36, "kick");
+  pick(v => v.count >= 8 ? v.count : 0, 42, "closed hat");
+  pick(v => v.count >= 8 ? v.count : 0, 46, "open hat");
+  pick(v => v.count >= 8 ? v.count : 0, 51, "ride");
+  const rest = list.filter(v => !v.gm).sort((a, b) => a.key - b.key);
+  const toms = [41, 45, 47, 48, 50], tomNames = ["low tom", "tom", "mid tom", "high-mid tom", "high tom"];
+  let ti = 0;
+  for (const v of rest) {
+    if (v.count < 8 && v.one >= 0.5) { v.gm = 49; v.label = "crash"; continue; }
+    v.gm = toms[Math.min(ti, toms.length - 1)]; v.label = tomNames[Math.min(ti, toms.length - 1)]; ti++;
+  }
+  for (const v of list) { for (const n of v.notes) n.gm = v.gm; guess.push({program: v.program, key: v.key, gm: v.gm, label: v.label, notes: v.count}); }
+  guess.sort((a, b) => a.program - b.program || a.key - b.key);
+  result.kitGuess = guess;
+  (seq.warnings || (seq.warnings = [])).push("kit guessed from rhythm: " + guess.map(g => "prog " + g.program + (drumProgs.size ? "" : "") + " K" + g.key + " → " + g.label).join(", "));
+  return guess;
+}
+
 // type-1 MIDI: conductor (tempo map + meters) then one track per SEQ
 // channel; kit programs land on MIDI channel 10 (index 9)
 export function makeMidi(result) {
+  kitify(result);
   const {notes, seq} = result;
   const scale = PPQ / seq.ppq;
   const T = tick => Math.round(tick * scale);
@@ -175,7 +254,7 @@ export function makeMidi(result) {
   const emit = (name, evs, ch) => {
     const out = [];
     for (const n of evs) {
-      const p = n.drum ? n.key : n.pitch;
+      const p = n.drum ? (n.gm || n.key) : n.pitch;
       if (p < 0 || p > 127) continue;
       const t = T(n.tick);
       out.push({t, d: Math.max(1, T(n.endTick) - t), p, v: Math.max(1, Math.min(127, n.vel))});
