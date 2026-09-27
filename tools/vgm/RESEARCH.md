@@ -58,6 +58,18 @@ Rules of thumb:
   YM2413 field at 0x10 (the spec's compatibility note).
 - If the YM2612 clock is 0 but 0x52/0x53 commands appear, assume NTSC
   7670454 Hz — enough malformed rips exist that a hard failure helps no one.
+- The wild writes **7670453** (one Hz under the nominal 53693175/7 —
+  every Sonic 1/2 file, 2026-09-27); keep it verbatim, the pitch effect is
+  a hundredth of a cent.
+- A loop offset that points at the first command (loop sample 0) is legal
+  and common: the whole tune loops with no intro (Sonic 2's Hill Top,
+  Death Egg). Consumers must test `loopSample != null`, not truthiness.
+- Genesis rips open with one or two **0x4F** (Game Gear stereo) bytes —
+  the logger's PSG init — despite the chip not existing on the console.
+  Skip one operand; never treat the command set as a system fingerprint.
+- Sonic-era loggers **pre-write whole DAC samples at time 0** with the
+  wait-0 form (0x80 × 2500 between two 0xE0s before the first real wait).
+  A burst with no time span is a logging artefact, not a drum hit.
 
 ### Command stream
 
@@ -164,10 +176,28 @@ which operators are *carriers* (see algorithms).
 
 11-bit Fnum (0–2047), 3-bit block (0–7, one octave each). Sanity anchor:
 A4 = 440 Hz → block 4, Fnum ≈ 1082.7, and Sega2's own table lists A = 1081
-at that clock. C4 (261.63 Hz) is block 4 / Fnum 644. Because Fnum is 11
-bits, drivers keep one Fnum table for every octave and only change block;
-equal-tempered pitches sit within ±1 cent of integer Fnums in block 4,
-coarser in low blocks (block 0 resolution ≈ 5 cents around C1).
+at that clock (Sonic's SMPS driver uses 1084, +2 cents). C4 (261.63 Hz) is
+block 4 / Fnum 644. Because Fnum is 11 bits, drivers keep one Fnum table
+for every octave and only change block; equal-tempered pitches sit within
+±1 cent of integer Fnums in block 4, coarser in low blocks (block 0
+resolution ≈ 5 cents around C1).
+
+**That formula is the channel's *base* frequency, not what you hear.**
+Each operator runs at base × MUL (register 0x30, bits 0–3; MUL 0 = ×½),
+so the sounding pitch is the *carriers'* multiple of it. This is not a
+corner case (found 2026-09-27 against the real Sonic rips, RESEARCH was
+wrong to leave it out): Sonic's chord-stab voice runs all four operators
+at MUL 4 — its Fnums read two octaves below the notes — and its bass voice
+has the carrier at MUL 0, an octave *below* its Fnum. Read Fnums alone and
+the roll inverts. Rule the importer applies: pitch = base × MUL of the
+lowest carrier; when carriers sit at different MULs (Oil Ocean's bass: op2
+×6, op3/op4 ×4 — a fifth apart) the lowest is the note and the spread is
+recorded on the event (`mul`, `mulHi`). Detune (DT1, ±a few cents to a
+few dozen at low keycodes) is ignored. An unwritten MUL is treated as ×1:
+the chip resets to 0 but every logged driver writes the voice before it
+keys, so "unwritten" means "no information", not "half speed". A MUL
+written under a held note is the *next* note's voice (SMPS sends it about
+a millisecond before the key-off) and does not re-pitch the held one.
 
 ### Algorithms and carriers (what decides loudness)
 
@@ -202,8 +232,12 @@ When 0x2B bit 7 is set the sixth channel becomes an 8-bit PCM output;
 register 0x2A (or the 0x8n stream commands, or 0x90–0x95 streams) carries
 the samples. There is no note-on: a drum hit is a *burst* of non-0x80
 samples. The importer clusters DAC writes into bursts (a gap or a run of
-near-0x80 silence ≥ 30 ms ends one) and reports one percussion onset per
-burst with velocity from the burst's peak amplitude.
+near-0x80 silence ≥ 30 ms ends one, **and so does an 0xE0 seek** — the
+sample pointer being reset is the driver re-triggering a drum, and dense
+patterns never gap: Sonic 2's Final Boss keeps the DAC busy for 58 s
+straight, 340 seeks, and read as one hit before the seek rule) and
+reports one percussion onset per burst with velocity from the burst's
+peak amplitude (sample byte 0x00 is 128 from centre; clamped to 127).
 
 ## 3. SN76489 — the PSG
 

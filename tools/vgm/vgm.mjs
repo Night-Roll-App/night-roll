@@ -6,8 +6,10 @@
 // parseVGM(bytes) -> {version, clocks, totalSamples, loopSample, loopSamples,
 //                     gd3, log, dac, dacStreams, pcm}
 //   log:  [{t, chip: "ym"|"psg", port?, addr?, value}]   t in 44100 Hz samples
-//   dac:  {t: Float64Array, v: Uint8Array}  every DAC sample write (compact —
-//         a 3-minute drum track is ~10^6 of these; objects would not fit)
+//   dac:  {t: Float64Array, v: Uint8Array, seek: Uint8Array}  every DAC sample
+//         write (compact — a 3-minute drum track is ~10^6 of these; objects
+//         would not fit); seek[i] = 1 when write i is the first after an 0xE0
+//         — the sample pointer was reset, i.e. a drum was (re)triggered
 //   dacStreams: [{t, stream, peak, samples}]  0x93/0x95 stream starts
 //   pcm:  the concatenated type-0 data blocks (the DAC bank)
 //
@@ -33,6 +35,15 @@ export async function inflateVGM(bytes) {
   }
   const zlib = await import("node:zlib");
   return new Uint8Array(zlib.gunzipSync(d));
+}
+
+// "NN - Title.vgm" (the vgmrips/Zophar pack convention: 1-based, zero-padded,
+// one file per tune, no playlist) -> {n, title}; null when there is no
+// number prefix. The GD3 track name, not this title, is the tune's real name
+// (a pack can name a file "Hidden Palace Zone" for a tag that says "Unused").
+export function trackFromFileName(name) {
+  const m = /^(\d+)\s*[-_.]\s*(.*?)\.(vgm|vgz)$/i.exec(name.split("/").pop());
+  return m ? {n: parseInt(m[1], 10), title: m[2]} : null;
 }
 
 // operand counts for commands we skip (RESEARCH.md §1): unknown chips must
@@ -91,18 +102,20 @@ export function parseVGM(input) {
   const gd3 = readGd3(d, gd3Off);
 
   const log = [];
-  const dacT = [], dacV = [];
+  const dacT = [], dacV = [], dacSeek = [];
+  let seeked = false; // an 0xE0 happened since the last DAC write
+  const dacWrite = (t, v) => { dacT.push(t); dacV.push(v); dacSeek.push(seeked ? 1 : 0); seeked = false; };
   const dacStreams = [];
   const blocks = [];        // every data block, by type — DAC streams index them
   let pcm = new Uint8Array(0); // type-0 blocks concatenated: the DAC bank
   let pcmPos = 0;
   let t = 0, loopSample = null, ymUsed = false;
   const streams = {};      // 0x90-0x95 state per stream id
-  const peakOf = (bytes, from, len) => { // loudest excursion from DAC centre 0x80
+  const peakOf = (bytes, from, len) => { // loudest excursion from DAC centre 0x80 (byte 0x00 is 128 away: clamp to the 7-bit scale)
     let peak = 0;
     const end = Math.min(bytes.length, from + len);
     for (let i = from; i < end; i++) { const a = Math.abs(bytes[i] - 0x80); if (a > peak) peak = a; }
-    return peak;
+    return Math.min(127, peak);
   };
 
   let i = dataOff;
@@ -115,7 +128,7 @@ export function parseVGM(input) {
     if (cmd === 0x52 || cmd === 0x53) {
       const port = cmd & 1, addr = d[i + 1], value = d[i + 2];
       ymUsed = true;
-      if (port === 0 && addr === 0x2A) { dacT.push(t); dacV.push(value); }
+      if (port === 0 && addr === 0x2A) dacWrite(t, value);
       else log.push({t, chip: "ym", port, addr, value});
       i += 3; continue;
     }
@@ -125,7 +138,7 @@ export function parseVGM(input) {
     if (cmd >= 0x70 && cmd <= 0x7F) { t += (cmd & 15) + 1; i += 1; continue; }
     if (cmd >= 0x80 && cmd <= 0x8F) {
       // stream one bank byte to the DAC, then wait n
-      if (pcmPos < pcm.length) { dacT.push(t); dacV.push(pcm[pcmPos]); }
+      if (pcmPos < pcm.length) dacWrite(t, pcm[pcmPos]);
       pcmPos++;
       t += cmd & 15;
       i += 1; continue;
@@ -144,7 +157,7 @@ export function parseVGM(input) {
       }
       i += 7 + size; continue;
     }
-    if (cmd === 0xE0) { pcmPos = u32(i + 1); i += 5; continue; }
+    if (cmd === 0xE0) { pcmPos = u32(i + 1); seeked = true; i += 5; continue; }
     if (cmd === 0x90) { // setup: which chip/port/register the stream feeds
       const id = d[i + 1];
       streams[id] = {...(streams[id] || {}), chip: d[i + 2], port: d[i + 3], reg: d[i + 4], freq: 0, bank: 0};
@@ -184,7 +197,7 @@ export function parseVGM(input) {
     loopSample, loopSamples,
     endSample: t,
     log,
-    dac: {t: Float64Array.from(dacT), v: Uint8Array.from(dacV)},
+    dac: {t: Float64Array.from(dacT), v: Uint8Array.from(dacV), seek: Uint8Array.from(dacSeek)},
     dacStreams,
     pcm,
   };
