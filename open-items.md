@@ -678,6 +678,15 @@ per track + the lib once, on the device and in the archive at Publish
 the Mac's (notes, ticks, tempo, loop) — the "scramble" is after the
 capture or in the listening; asked for a published Peach's Message to
 diff. The "1 note" was the warnings count (now "1 warning").
+Later (Josh: "everything has reverted to not using the correct
+instruments"): every unpublished PS1 song lost chip audio after the
+app relaunched (my iPad rebuild). Cause: chipSource named the device's
+chip record only by the legacy albums/imports/ prefix or a published
+album.json — captures in the console folders have neither until
+Publish. Fixed 6d4d40e: a capture's folder is its record's slug.
+Reproduced and verified in Brave against a real FF7 minipsf; vm test
+added. Publishing FF7 was never required for chip audio; it still
+matters for other devices.
 
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 
