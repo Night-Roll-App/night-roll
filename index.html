@@ -3034,6 +3034,7 @@ async function loadSongInner(path) {
     // must not silently mask it
     let d = null;
     try { d = JSON.parse(draftRaw); } catch (err) {}
+    if (d && d.tracksRef && !d.tracks) d.tracks = (await idbDraftGet(path)) || []; // an import's notes live in IndexedDB
     let repoStamp = 0;
     try {
       const r = await readData("analysis", path.replace(/\.mid$/, "") + ".rollnotes.json", true);
@@ -3048,6 +3049,7 @@ async function loadSongInner(path) {
       if (takeNewer) {
         for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-"])
           localStorage.removeItem(pre + path);
+        idbDraftDelete(path);
         // fall through to the normal repo load below
       } else {
         if (albumRun) setInfo("draft kept — a newer save of this song exists on the repo");
@@ -10313,7 +10315,7 @@ document.getElementById("midcreate").addEventListener("click", () => {
     const base = slugify(name.replace(/\.(midi?|smf|kar|rmi)$/i, ""));
     const key = IMP_DIR + slug + "/" + base + ".mid";
     if (!firstKey) firstKey = key;
-    localStorage.setItem(draftStoreKey(key), JSON.stringify({
+    draftWrite(key, {
       savedStamp: 0, dirty: true, title: name.replace(/\.(midi?|smf|kar|rmi)$/i, ""),
       ppq: parsed.ppq, timesig: parsed.timesig || [4, 4], tempos: parsed.tempos,
       tracks: parsed.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(nt => {
@@ -10322,7 +10324,7 @@ document.getElementById("midcreate").addEventListener("click", () => {
         if (nt.duty !== undefined) o.duty = nt.duty;
         if (nt.ve !== undefined) o.ve = nt.ve;
         return o;
-      })}))}));
+      })}))});
   }
   const count = pendingMidis.length;
   pendingMidis = null;
@@ -10337,7 +10339,7 @@ function localMidiOpen(parsed, name) {
   // switching songs used to lose it with no way back) — reopen from
   // Open → drafts; ✕ there to let it go; never synced to the repo
   const key = "local/" + slugify(name.replace(/\.(midi?|smf|kar|rmi)$/i, "")) + ".mid";
-  localStorage.setItem(draftStoreKey(key), JSON.stringify({
+  draftWrite(key, {
     savedStamp: 0, dirty: true, title: name, ppq: parsed.ppq, timesig: parsed.timesig || [4, 4],
     tempos: parsed.tempos,
     tracks: parsed.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(nt => {
@@ -10346,7 +10348,7 @@ function localMidiOpen(parsed, name) {
       if (nt.duty !== undefined) o.duty = nt.duty; // chip timbre survives too
       if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
       return o;
-    })}))}));
+    })}))});
   openDraft(key);
   setInfo(name + " imported — edits stay on this device; reopen from Open → drafts");
 }
@@ -11657,7 +11659,7 @@ function isLocalDraft() { return !!songKey && songKey.startsWith("local/"); }
 function saveDraft(clean) { // clean=true right after a successful Save
   if (!isComposition() && !isLocalDraft()) return;
   if (cmp && cmp.showing === "repo") return; // the saved copy is swapped in: writing it over the draft would destroy his edits
-  localStorage.setItem(draftStoreKey(songKey), JSON.stringify({
+  try { draftWrite(songKey, {
     savedStamp: song.savedStamp || 0, dirty: !clean,
     ppq: song.ppq, timesig: song.timesig || effTs(), tempos: song.baseTempos || song.tempos,
     tracks: song.tracks.map(tr => ({name: tr.name,
@@ -11668,15 +11670,19 @@ function saveDraft(clean) { // clean=true right after a successful Save
         if (n.ve !== undefined) o.ve = n.ve;
         return o;
       })})),
-  }));
+  }); } catch (err) { // a full localStorage must never throw out of an edit: say so, loudly, once per song
+    if (saveDraft.warned !== songKey) { saveDraft.warned = songKey; logErr("this device's storage is full — the last edit to " + baseName() + " is NOT saved. Publish, or ✕ some drafts under Open → drafts, then edit again."); }
+    setInfo("⚠ storage full — edit not saved (see ⚠)");
+  }
   updateSongBtn(); // the unsaved dot tracks every edit
 }
 function draftKeys() {
   return Object.keys(localStorage).filter(k => k.startsWith("ff1roll-draft-"))
     .map(k => k.slice("ff1roll-draft-".length)).sort();
 }
-function openDraft(key) {
-  const d = JSON.parse(localStorage.getItem(draftStoreKey(key)));
+async function openDraft(key) {
+  const d = await draftRead(key);
+  if (!d) { setInfo("⚠ that draft is gone from this device"); return; }
   openDraftDoc(d, key);
 }
 function openDraftDoc(d, key) {
@@ -12045,6 +12051,7 @@ function draftRow(key, label, rerender, extra) { // open + (optional extra) + tw
     }
     for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-"])
       localStorage.removeItem(pre + key);
+    idbDraftDelete(key);
     rerender();
   });
   row.appendChild(del);
@@ -12074,9 +12081,11 @@ function fsubDrafts() {
         del.style.color = "#e66767";
         return;
       }
-      for (const k of importDraftKeys().filter(k => k.split("/")[2] === slug))
+      for (const k of importDraftKeys().filter(k => k.split("/")[2] === slug)) {
         for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-"])
           localStorage.removeItem(pre + k);
+        idbDraftDelete(k);
+      }
       fsubDrafts();
       if (!draftKeys().length) fsubAlbums();
     });
@@ -12275,6 +12284,7 @@ document.getElementById("filerevert").addEventListener("click", async () => {
   for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-",
                      "ff1roll-tombs-", "ff1roll-lastsync-"])
     localStorage.removeItem(pre + songKey);
+  idbDraftDelete(songKey);
   editUndo = []; editRedo = [];
   const k = songKey;
   songKey = null; // force a clean load path
@@ -12564,6 +12574,7 @@ function renameImportDraft(oldKey, raw) { // returns the new key; null = name co
       const v = localStorage.getItem(pre + oldKey);
       if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
     }
+    idbDraftMove(oldKey, newKey); // the notes follow the stub
     if (songKey === oldKey) { // renamed the song being auditioned — follow it
       songKey = newKey;
       currentPath = newKey;
@@ -12633,7 +12644,7 @@ async function impCapture(n) {
     row.key = key;
     localStorage.removeItem("ff1roll-notes-" + key); // stale loop note dies with the old capture
     const parsed = parseMidi(cap.bytes.buffer);
-    localStorage.setItem(draftStoreKey(key), JSON.stringify({
+    draftWrite(key, {
       savedStamp: 0, dirty: true, title: raw, ppq: parsed.ppq, timesig: parsed.timesig || [4, 4],
       tempos: parsed.tempos,
       tracks: parsed.tracks.map(tr => ({name: tr.name,
@@ -12643,7 +12654,7 @@ async function impCapture(n) {
           if (nt.duty !== undefined) o.duty = nt.duty; // chip timbre (per-note duty) survives
           if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
           return o;
-        })}))}));
+        })}))});
     if (cap.loopAnchor) // hardware loop point -> annotation, same rule as the FF1 dumps
       localStorage.setItem("ff1roll-notes-" + key, JSON.stringify([
         {b1: cap.loopAnchor[0], q1: cap.loopAnchor[1], b2: null, q2: null,
@@ -12781,12 +12792,13 @@ async function batchCommit(which, files, message, h, status) {
 // redistribution. Each device imports the NSF once.
 function idbOpen() {
   return new Promise((res, rej) => {
-    const rq = indexedDB.open("ff1roll", 3); // v2: "fs" holds the local-folder handle; v3: "audio" clip bytes
+    const rq = indexedDB.open("ff1roll", 4); // v2: "fs" holds the local-folder handle; v3: "audio" clip bytes; v4: "drafts" = import drafts' notes
     rq.onupgradeneeded = () => {
       const db = rq.result;
       if (!db.objectStoreNames.contains("nsf")) db.createObjectStore("nsf");
       if (!db.objectStoreNames.contains("fs")) db.createObjectStore("fs");
       if (!db.objectStoreNames.contains("audio")) db.createObjectStore("audio");
+      if (!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts");
     };
     rq.onsuccess = () => res(rq.result);
     rq.onerror = () => rej(rq.error);
@@ -12818,6 +12830,38 @@ async function idbNsfPutNow(slug, bytes, trackPatch, chipKind) {
     db.close();
   } catch (err) { /* private mode etc: chip audio stays session-only */ }
 }
+// ---- big drafts (2026-09-27; Josh imported Chrono Trigger's 92 songs on the
+// iPad: "quota has been exceeded", and the album vanished). localStorage
+// holds ~5 MB per site and 92 captured SNES songs are 6 MB of notes. An
+// import's or local MIDI's draft keeps a small STUB in localStorage
+// (flags, title, tempo, meter — everything the lists and Publish read
+// synchronously) with tracksRef: 1, and its tracks in IndexedDB "drafts"
+// under the same key. His own compositions stay whole in localStorage:
+// small, synchronous, proven. Reads that need notes (open, load, commit)
+// go through draftRead; every writer goes through draftWrite; ✕/rename/
+// revert keep the store in step. All IDB traffic rides _idbQueue so a
+// put, a rename and the open that follows land in order.
+function draftInIdb(key) { return typeof indexedDB !== "undefined" && (key.startsWith(IMP_DIR) || key.startsWith("local/")); }
+function draftWrite(key, doc) { // synchronous for the caller; the notes follow through the queue
+  if (draftInIdb(key)) {
+    const {tracks, ...stub} = doc;
+    stub.tracksRef = 1;
+    idbDraftPut(key, tracks);
+    localStorage.setItem(draftStoreKey(key), JSON.stringify(stub));
+  } else localStorage.setItem(draftStoreKey(key), JSON.stringify(doc));
+}
+async function draftRead(key) { // the whole draft, notes included, or null
+  const raw = localStorage.getItem(draftStoreKey(key));
+  if (raw === null) return null;
+  let d = null; try { d = JSON.parse(raw); } catch (err) { return null; }
+  if (d && d.tracksRef && !d.tracks) d.tracks = (await idbDraftGet(key)) || [];
+  return d;
+}
+function idbDraftOp(fn) { const p = _idbQueue.then(fn); _idbQueue = p.catch(() => { /* keep the queue alive */ }); return p; }
+function idbDraftPut(key, tracks) { return idbDraftOp(async () => { try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").put(tracks, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); } catch (err) { logErr("draft notes could not be stored for " + key.split("/").pop() + ": " + (err && err.message || err)); } }); }
+function idbDraftGet(key) { return idbDraftOp(async () => { try { const db = await idbOpen(); const v = await new Promise(res => { const r = db.transaction("drafts").objectStore("drafts").get(key); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); }); db.close(); return v; } catch (err) { return null; } }); }
+function idbDraftDelete(key) { return idbDraftOp(async () => { try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").delete(key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); } catch (err) { /* nothing stored */ } }); }
+function idbDraftMove(oldKey, newKey) { return idbDraftOp(async () => { try { const db = await idbOpen(); const v = await new Promise(res => { const r = db.transaction("drafts").objectStore("drafts").get(oldKey); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); }); if (v !== null) await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").put(v, newKey); tx.objectStore("drafts").delete(oldKey); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); } catch (err) { /* nothing stored */ } }); }
 async function idbNsfGet(slug) {
   try {
     const db = await idbOpen();
@@ -12839,7 +12883,8 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
   try {
     const titles = {}, songFiles = [], analysisFiles = [], bridges = [];
     for (const key of keys) {
-      const d = JSON.parse(localStorage.getItem(draftStoreKey(key)));
+      const d = await draftRead(key);
+      if (!d) throw new Error("draft missing on this device: " + key);
       const base = key.split("/").pop().replace(/\.mid$/, "");
       titles[key] = impDisplayTitle(d, base);
       songFiles.push({path: key,
@@ -13104,6 +13149,7 @@ async function moveComposition(destDir) {
       const v = localStorage.getItem(pre + oldKey);
       if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
     }
+    idbDraftMove(oldKey, newKey);
     songKey = newKey;
     currentPath = newKey;
     rememberLastSong(newKey);
@@ -16368,7 +16414,7 @@ function renderSyncPending() {
       const o = document.createElement("button");
       o.textContent = "Open";
       o.title = "Open this song (its music and chat commit from here)";
-      o.addEventListener("click", () => { openDraft(key); openSyncSheet(); });
+      o.addEventListener("click", () => { openDraft(key).then(openSyncSheet); });
       title.appendChild(o);
     }
     block.appendChild(title);

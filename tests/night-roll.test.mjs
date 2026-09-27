@@ -1384,6 +1384,42 @@ test("chip render: a silent render is detected; a render for a song no longer op
   assert.ok(/songKey !== forKey/.test(src), "a stale render is discarded");
 });
 
+test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore them; a full localStorage never throws out of saveDraft", async () => {
+  // the vm has no indexedDB: stand one in, and fake the store the helpers use
+  run(`globalThis.indexedDB = {}; __idb = {};
+       idbDraftPut = (k, t) => { __idb[k] = t; return Promise.resolve(); };
+       idbDraftGet = k => Promise.resolve(__idb[k] || null);
+       idbDraftDelete = k => { delete __idb[k]; return Promise.resolve(); };
+       idbDraftMove = (a, b) => { if (__idb[a]) { __idb[b] = __idb[a]; delete __idb[a]; } return Promise.resolve(); };`);
+  const doc = {savedStamp: 0, dirty: true, title: "Frog's Theme", ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "voice0", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+  run(`draftWrite("albums/imports/chrono-trigger/frog-s-theme.mid", ${JSON.stringify(doc)});`);
+  const stub = JSON.parse(val(`localStorage.getItem(draftStoreKey("albums/imports/chrono-trigger/frog-s-theme.mid"))`));
+  assert.equal(stub.tracksRef, 1); assert.equal(stub.tracks, undefined, "no notes in localStorage"); assert.equal(stub.title, "Frog's Theme");
+  assert.equal(val(`__idb["albums/imports/chrono-trigger/frog-s-theme.mid"][0].notes.length`), 1);
+  run(`__rd = null; draftRead("albums/imports/chrono-trigger/frog-s-theme.mid").then(d => { __rd = d; });`);
+  await new Promise(r => setTimeout(r, 20));
+  assert.equal(val(`__rd.tracks[0].notes[0].p`), 60, "draftRead restores the notes");
+  // his own compositions stay whole in localStorage
+  run(`draftWrite("albums/compositions/nightroll/x.mid", ${JSON.stringify(doc)});`);
+  assert.equal(JSON.parse(val(`localStorage.getItem(draftStoreKey("albums/compositions/nightroll/x.mid"))`)).tracks.length, 1);
+  // an old inline import draft still reads
+  run(`localStorage.setItem(draftStoreKey("albums/imports/old/a.mid"), ${JSON.stringify(JSON.stringify(doc))}); __rd2 = null; draftRead("albums/imports/old/a.mid").then(d => { __rd2 = d; });`);
+  await new Promise(r => setTimeout(r, 20));
+  assert.equal(val(`__rd2.tracks.length`), 1);
+  // rename moves the notes; delete drops them
+  run(`renameImportDraft("albums/imports/chrono-trigger/frog-s-theme.mid", "Frog");`);
+  assert.equal(val(`!!__idb["albums/imports/chrono-trigger/frog.mid"]`), true, "notes followed the rename");
+  assert.equal(val(`!!__idb["albums/imports/chrono-trigger/frog-s-theme.mid"]`), false);
+  // saveDraft with a full store: says so, does not throw
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/full.mid"; const realSet = localStorage.setItem.bind(localStorage);
+       localStorage.setItem = (k, v) => { if (k.startsWith("ff1roll-draft-")) { const e = new Error("QuotaExceededError"); e.name = "QuotaExceededError"; throw e; } return realSet(k, v); };
+       __threw = false; try { saveDraft(); } catch (e) { __threw = true; } localStorage.setItem = realSet;`);
+  assert.equal(val(`__threw`), false, "saveDraft swallowed the quota error");
+  assert.match(val(`appErrors.map(e => e.msg).join(" ")`), /storage is full/);
+  run(`delete globalThis.indexedDB; localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/x.mid")); localStorage.removeItem(draftStoreKey("albums/imports/old/a.mid")); localStorage.removeItem(draftStoreKey("albums/imports/chrono-trigger/frog.mid"));`);
+});
+
 test("chip vault meta: one file per album for NSF/GBS, a folder of per-track files for SNES", () => {
   assert.deepEqual(val(`chipVaultMeta("tmnt", "nsf")`), {vault: "tmnt.nsf", tracks: {}});
   assert.deepEqual(val(`chipVaultMeta("ffl", "gbs")`), {vault: "ffl.gbs", tracks: {}, chip: "gbs"});

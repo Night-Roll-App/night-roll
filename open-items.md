@@ -177,6 +177,17 @@ Angel (7/8 + 3/8 bars) dump full length. Import-side items:
 Approximate: pitch = written key (INSTR.DAT articulations not read yet);
 no per-note velocity in AKAO; bends counted, not applied.
 
+### Big imports and device storage — FIXED 2026-09-27 (NIGHT-ROLL.md "Big drafts")
+
+Josh's Chrono Trigger import (92 .spc) hit "quota has been exceeded" on
+the iPad and the album seemed to vanish (it was under Open → drafts →
+the folder). 92 captured SNES songs = 6 MB of notes; localStorage holds
+~5 MB. Import and local-MIDI drafts now keep their notes in IndexedDB
+behind a small stub; his compositions unchanged; saveDraft never throws
+out of an edit when storage is full (⚠ line + info strip instead).
+Open: a storage meter in Settings; drafts that were already truncated
+by the quota need re-capturing (the rows that failed said so).
+
 ### N64 (USF) — real rips done 2026-09-27, merged e8ca4bb (tools/n64/INTEGRATION.md §8)
 
 Super Mario 64, Ocarina of Time (1.0 + 1.2), Majora's Mask: the USF

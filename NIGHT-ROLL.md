@@ -416,6 +416,25 @@ file picker accepts `.gbs`; the File menu says "Import… (.mid / .nsf /
 capture path" (synthetic GBS from `tools/gbs/make-test-gbs.mjs`, no ROM
 data), the m3u test's GBS line. Offline twin: `node tools/gbs/dump.mjs`.
 
+**Big drafts (2026-09-27; Josh imported Chrono Trigger's 92 songs on the
+iPad: "quota has been exceeded", and the album "vanished" — it was under
+Open → drafts → the folder).** localStorage holds ~5 MB per site and 92
+captured SNES songs are 6 MB of note JSON (measured: 67 KB a track). An
+import's (`albums/imports/**`) or local MIDI's (`local/**`) draft is now
+a STUB in localStorage — flags, title, ppq, meter, tempos, `tracksRef: 1`
+— with its `tracks` in IndexedDB store "drafts" (db version 4) under the
+same key; his own compositions stay whole in localStorage (small,
+synchronous, proven). `draftWrite(key, doc)` is the one writer (sync for
+the caller; the IDB put rides `_idbQueue`), `draftRead(key)` the reader
+that needs notes (`openDraft` is async now; `loadSongInner` fetches the
+notes when the stub says so; `commitImports` reads whole drafts);
+everything that only reads flags keeps reading the stub. ✕ (row and
+album), Revert, rename (import and composition) call
+`idbDraftDelete/Move` so the store stays in step; an old inline draft
+still reads. `saveDraft` no longer throws out of an edit when storage is
+full: one ⚠ line per song and an info strip, and the edit is honestly
+reported as NOT saved. Test: "big drafts: …" (fakes indexedDB in the vm).
+
 **Super Nintendo import (2026-09-27; Josh from bed with the Chrono
 Trigger zip: "can he just get the Super Nintendo stuff merged so I can
 test it here").** The third chip behind the same panel, and the first
