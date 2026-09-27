@@ -661,6 +661,14 @@ programs (36 = hat) as the noise. Bombing Mission now: prog 26 → kick,
 37 → snare, 41 → closed hat, 66 → open hat; Those Chosen by the Planet:
 17 → hat, 40 → open hat, 50 → kick. Josh's ear decides; the row's
 warning names the guess. Re-import FF7 to get the new mapping.
+Later the same evening: envelopes now come from the driver's
+instrument table (NIGHT-ROLL.md "PlayStation captures: envelopes from
+the instrument table") — bells fall, pads hold, per instrument; the
+generic 12% decay is only the no-table fallback. Pad tracks (a few very
+long notes) also get a `track: trN voice=sine` hint at capture. Still
+open: the drum heuristic (rhythm) — the table has no percussion flag;
+Genesis/N64 instrument envelopes; the N64 iPad scramble (diagnostic
+line ships in the capture row's ⚠ log — awaiting Josh's Copy all).
 
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 
