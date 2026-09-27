@@ -5711,6 +5711,7 @@ async function resumeAudio() {
   const before = audio.state;
   await audio.resume().catch(() => {});
   if (await clockAlive()) return;
+  if (audio.state === "interrupted") { micRelease(); await new Promise(r => setTimeout(r, 400)); } // iOS: the session comes back a moment after its holder lets go
   await audio.resume().catch(() => {});
   if (await clockAlive()) return;
   setInfo("audio asleep — tap ▶ again"); // surfaced: consoles don't exist on an iPad — the ⚠ log carries the state
@@ -7718,6 +7719,7 @@ async function play(fromSec = 0, opts = {}) {
     document.getElementById("playbtn").textContent = "▶ …";
     return;
   }
+  micRelease(); // dictation holds the iPad's audio session; give it back before the engine wakes
   ensureAudio();
   await resumeAudio(); // await: scheduling against a frozen clock builds a stale time base
   // the console's voice is still rendering on this thread (Josh, 2026-09-27,
@@ -11288,6 +11290,16 @@ function micStop(discard) {
   micBtn = null;
 }
 let micBtn = null; // whichever 🎤 is live (annotation editor or ✦ Ask)
+// Release the microphone for good: stop() keeps the recognizer alive until
+// its late words land, and micPrev lingered until the NEXT dictation — and
+// while it lingers iOS keeps the audio session with speech recognition, so
+// the app's AudioContext sits "interrupted" and Play is silent (Josh,
+// 2026-09-27: dictate to Ask, tap ▶, nothing; the ⚠ log said interrupted).
+// Called at the top of play() and when the engine reports interrupted.
+function micRelease() {
+  if (micRec) micStop(true);
+  if (micPrev) { micPrev.onresult = null; try { micPrev.abort(); } catch (err) { /* already gone */ } micPrev = null; }
+}
 // Safari hands dictation back one segment per pause, with no space and no
 // period between segments, but it capitalizes the first word after a pause
 // (Josh, 2026-09-26: "nowAnd", "butIt"). Join segments with a space, and when
