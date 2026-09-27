@@ -687,6 +687,18 @@ Publish. Fixed 6d4d40e: a capture's folder is its record's slug.
 Reproduced and verified in Brave against a real FF7 minipsf; vm test
 added. Publishing FF7 was never required for chip audio; it still
 matters for other devices.
+Josh's edge case (same hour, "not that worried"): re-import the set
+while one of its songs is open, re-capture that row, tap open — the
+song kept synth voices until he left and came back. Reproduced the
+steps in Brave: the re-capture re-kicks the render, open lands while
+it runs, the render then publishes for the open song — so the state
+machine is not stuck here. What is left: ▶ waits at most 25 s for a
+render (play(), "console render still running after 25 s" in ⚠) and
+a PS1 render on the iPad can run longer; a render that lands
+mid-playback does not switch over until the next ▶ (by design since
+the mute review). Next time it happens: Messages → Copy all — the
+⚠ lines say whether the 25 s cap fired and whether a later ▶ still
+played synth.
 
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 
