@@ -102,8 +102,31 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     }
     tracks.push(trackBytes(name, notes, chans[name]));
   }
+  return fileBytes(tracks);
+}
+
+function fileBytes(tracks) {
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
   const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, PPQ >> 8, PPQ & 255];
   for (const t of tracks) bytes.push(0x4D, 0x54, 0x72, 0x6B, ...u32(t.length), ...t);
   return new Uint8Array(bytes);
+}
+
+export { PPQ };
+
+// Sources that already carry beat time (N64 sequences: exact 48ths) skip
+// the frame->beat fit above. tracks: [{name, ch, program?, notes: [{t, d, p, v}]}]
+// with t/d in PPQ ticks; tempos: [{t, bpm}] in PPQ ticks.
+export function makeMidiTracks(tracks, {tempos = [{t: 0, bpm: 120}], tsNum = 4, tsDen = 4} = {}) {
+  const metas = [{t: 0, d: [0xFF, 0x58, 4, tsNum, Math.round(Math.log2(tsDen)), 24, 8]}];
+  for (const {t, bpm} of tempos) {
+    const usq = Math.round(6e7 / bpm);
+    metas.push({t, d: [0xFF, 0x51, 3, (usq >> 16) & 255, (usq >> 8) & 255, usq & 255]});
+  }
+  const out = [trackBytes("conductor", [], 0, metas)];
+  for (const tr of tracks) {
+    const pre = tr.program == null ? [] : [{t: 0, o: -1, d: [0xC0 | (tr.ch & 15), tr.program & 0x7F]}];
+    out.push(trackBytes(tr.name, tr.notes, tr.ch & 15, pre));
+  }
+  return fileBytes(out);
 }
