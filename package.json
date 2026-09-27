@@ -5,7 +5,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node --test --test-force-exit tests/night-roll.test.mjs && node --test tests/nsf.test.mjs && node --test tests/gbs.test.mjs && node --test tests/vgm.test.mjs && node --test tests/vgm-real.test.mjs && node --test tests/psx.test.mjs && node --test tests/spc.test.mjs && node --test tests/n64.test.mjs && node --test tests/gestures.test.mjs && node --test tests/bridge.test.mjs && node --test tests/pwa.test.mjs",
+    "test": "node --test --test-force-exit tests/night-roll.test.mjs && node --test tests/nsf.test.mjs && node --test tests/gbs.test.mjs && node --test tests/vgm.test.mjs && node --test tests/vgm-real.test.mjs && node --test tests/psx.test.mjs && node --test tests/spc.test.mjs && node --test tests/spc-real.test.mjs && node --test tests/n64.test.mjs && node --test tests/gestures.test.mjs && node --test tests/bridge.test.mjs && node --test tests/pwa.test.mjs",
     "bridge": "node tools/claude-bridge.mjs",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --project=chromium -g @smoke"

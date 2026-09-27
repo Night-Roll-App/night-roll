@@ -76,34 +76,48 @@ export function estimateRoot(inst) {
     while (i < maxLag && nsdf[i] > 0) { if (nsdf[i] > best) { best = nsdf[i]; bi = i; } i++; }
     if (bi > 0) peaks.push({lag: bi, val: best});
   }
+  const refine = (p) => { // parabolic refinement around the integer peak
+    const a = nsdf[p.lag - 1] ?? p.val, b = p.val, c = nsdf[p.lag + 1] ?? p.val;
+    const denom = a - 2 * b + c;
+    const shift = denom ? 0.5 * (a - c) / denom : 0;
+    return p.lag + (Math.abs(shift) < 1 ? shift : 0);
+  };
   let free = null;
   if (peaks.length) {
     const tallest = Math.max(...peaks.map(p => p.val));
     const p = peaks.find(p => p.val >= 0.8 * tallest);
-    // parabolic refinement around the integer peak
-    const a = nsdf[p.lag - 1] ?? p.val, b = p.val, c = nsdf[p.lag + 1] ?? p.val;
-    const denom = a - 2 * b + c;
-    const shift = denom ? 0.5 * (a - c) / denom : 0;
-    free = {period: p.lag + (Math.abs(shift) < 1 ? shift : 0), clarity: b};
+    free = {period: refine(p), clarity: p.val};
   }
-  // loop-constrained estimate: period = L/k, but only where the NSDF has a
-  // PEAK — a smooth wave correlates ~1 at any tiny lag, so "high NSDF" alone
-  // would pick lag 2 for a sine
+  // loop-constrained estimate: a peak counts only if the loop holds a whole
+  // number k of it (period = L/k within tolerance) — a smooth wave
+  // correlates ~1 at any tiny lag, so "high NSDF" alone would pick lag 2
+  // for a sine. Two lessons from real rips (FF4/FF5/FF6/CT/ALttP,
+  // 2026-09-27): (1) the long multi-period loops of string/choir samples
+  // (4-15k samples) hold HUNDREDS of cycles, so k is bounded by the peak,
+  // never by a fixed count — a cap of 64 forced the period up to L/64, a
+  // twelfth or more too low at "high" confidence; (2) once k² > L the grid
+  // of L/k is finer than a sample and says nothing about the period, so
+  // the refined peak lag is the estimate (snapping to the grid biased
+  // Terra's lead sample a semitone sharp). Among the candidates the pick is
+  // McLeod's: the SHORTEST period whose peak reaches 0.8 of the tallest. A
+  // tiled loop correlates perfectly with itself at L and at L/2 (a loop cut
+  // as two identical halves), so "tallest peak" alone names the loop, not
+  // the note.
   let looped = null;
   if (inst.looped && inst.loopLength >= 2 && peaks.length) {
     const L = inst.loopLength;
     const cands = [];
-    for (let k = 1; k <= Math.min(64, L / 2); k++) {
-      const period = L / k;
-      const tol = Math.max(1.5, period * 0.02);
-      const peak = peaks.find(p => Math.abs(p.lag - period) <= tol);
-      if (peak) cands.push({period, k, val: Math.max(peak.val, at(period))});
+    for (const p of peaks) {
+      const k = Math.round(L / p.lag);
+      if (k < 1) continue;
+      const grid = L / k;
+      if (Math.abs(grid - p.lag) > Math.max(1.5, p.lag * 0.02)) continue;
+      cands.push({period: k * k > L ? refine(p) : grid, k, val: Math.max(p.val, at(grid))});
     }
     if (cands.length) {
       const top = Math.max(...cands.map(c => c.val));
-      // smallest period whose peak stands about as tall as the best: the fundamental
-      const pick = cands.filter(c => c.val >= top - 0.1 && c.val >= 0.5).sort((a, b) => a.period - b.period)[0];
-      if (pick) looped = {period: pick.period, clarity: pick.val};
+      const pick = cands.filter(c => c.val >= 0.8 * top && c.val >= 0.5).sort((a, b) => a.period - b.period)[0];
+      if (pick) looped = {period: pick.period, clarity: pick.val, k: pick.k};
     }
   }
   let period, clarity, confidence;
@@ -115,6 +129,17 @@ export function estimateRoot(inst) {
     period = free.period; clarity = free.clarity;
     confidence = free.clarity >= 0.9 ? "medium" : free.clarity >= 0.6 ? "low" : "none";
   } else return none;
+  // Two measurements that are real but rarely a NOTE, so their confidence is
+  // capped (the estimate is still reported and used — the person decides):
+  //  - a k = 1 pick on a loop longer than 1024 samples says only "the loop
+  //    repeats itself" — every tiled loop correlates 1.0 at lag L — and a
+  //    root under 31 Hz is a wind/cymbal loop, not a bass (FF5 "Fate in
+  //    Haze": 24.4 Hz at "high", ALttP pads at 17.7 Hz);
+  //  - a period under 12 samples (> 2.7 kHz) is a bright or metallic sample
+  //    whose fundamental is not what the ear calls its pitch (FF5's 3.5 kHz
+  //    shaker loop): the octave will be off.
+  if (looped && looped.k === 1 && inst.loopLength > 1024) confidence = "low";
+  if (period < 12 && confidence === "high") confidence = "medium";
   if (confidence === "none") return {...none, clarity};
   const rootHz = SAMPLE_RATE / period;
   return {periodSamples: period, rootHz, rootMidi: 69 + 12 * Math.log2(rootHz / 440), confidence, clarity};
@@ -139,7 +164,7 @@ export function resolveRoots(instruments, roots = {}) {
 function noiseDrum(clock) { return clock < 12 ? 35 : clock < 22 ? 38 : 42; }
 
 // Reconstruct per-voice note events from a capture (runSPC's result).
-// onset = a KON bit; end = KOFF bit, the next KON, volume zeroed, one-shot
+// onset = a KON bit (the dump's own KON register included, at sample 0); end = KOFF bit, the next KON, volume zeroed, one-shot
 // sample END, or the envelope model fading below SILENCE_ENV; pitch =
 // PITCH at onset relative to the instrument's root; velocity = VOL level
 // × the envelope's peak (ADSR peaks at full scale; direct GAIN at its
@@ -150,7 +175,6 @@ export function reconstruct(capture, {roots = {}} = {}) {
   const byKey = new Map(insts.map(i => [i.key, i]));
   const regs = Uint8Array.from(dsp0);
   const dsp = new DspVoices(ram, regs);
-  dsp.restoreFromRegs();
   const events = [];
   const open = new Array(8).fill(null);
   const pending = new Array(8).fill(false); // voice had PITCH/VOL writes this sample: settle at the next sample
@@ -192,12 +216,17 @@ export function reconstruct(capture, {roots = {}} = {}) {
       vol: level, volEnd: level, legato,
       drum: noise ? noiseDrum(regs[0x6C] & 0x1F) : undefined, noiseClock: noise ? (regs[0x6C] & 0x1F) : undefined,
       confidence: inst ? inst.root.confidence : "none",
+      // a one-shot sample with no usable root is a drum hit for every
+      // practical purpose (FF6 Strago's voice 7 read as MIDI 117): the pitch
+      // stays relative to the default root, and this flag lets an import
+      // route the voice to the drum channel instead
+      unpitched: !!inst && !inst.looped && (inst.root.confidence === "none" || inst.root.confidence === "low"),
     };
     open[v] = e;
     events.push(e);
   };
-  // voices sounding at dump time: notes with no onset, from t = 0
-  for (let v = 0; v < 8; v++) if (regs[v * 16 + 8] & 0x7F) start(v, 0, false);
+  // no ENVX-based "already sounding" pass: the dumped KON register arrives
+  // as a logged KON at sample 0 (spc.mjs), the player convention
 
   const settle = (v) => { // PITCH/VOL writes landed: same-sample-as-onset = setup, later = vibrato/slide/fade
     pending[v] = false;

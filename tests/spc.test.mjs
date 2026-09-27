@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { makeTestSPC, TEST_ROOT_HZ, TEST_MELODY_MIDI, TEST_TICKS_PER_NOTE, TEST_TICK_TARGET } from "../tools/spc/make-test-spc.mjs";
-import { parseSPC, runSPC } from "../tools/spc/spc.mjs";
+import { parseSPC, runSPC, parseXid6, parseTrackName } from "../tools/spc/spc.mjs";
 import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC } from "../tools/spc/notes.mjs";
 import { decodeBRR, encodeBRR } from "../tools/spc/brr.mjs";
 import { SPC700 } from "../tools/spc/cpu-spc700.mjs";
@@ -179,4 +179,114 @@ test("envelope model: KOFF releases in 8 ms, ADSR decays to the sustain level, o
   assert.equal(dsp.voices[0].stage, OFF);
   assert.equal(regs[0x7C] & 1, 1, "ENDX bit set");
   assert.equal(RATE_PERIOD[31], 1); assert.equal(RATE_PERIOD[1], 2048);
+});
+
+// ---- regressions from the real rips (Zophar SPC sets, 2026-09-27) ---------
+// Each reproduces a bug the FF4/FF5/FF6/Chrono Trigger/ALttP dumps exposed,
+// on synthetic bytes — no rip data.
+
+test("root estimation: a long multi-period loop names the cycle, not the loop grid", () => {
+  const ram = new Uint8Array(0x10000);
+  // 100 cycles of a 40-sample wave (800 Hz) in one 4000-sample loop, with a
+  // slow amplitude swell across the loop as real string samples have. The
+  // old picker capped k at 64, so the shortest period it could return was
+  // L/64 = 62.5 -> it chose 80 (an octave low) at "high" confidence.
+  const long = new Int16Array(4000);
+  for (let i = 0; i < 4000; i++) {
+    const ph = 2 * Math.PI * i / 40;
+    long[i] = Math.round((1 + 0.3 * Math.sin(2 * Math.PI * i / 4000)) * 7000 * (Math.sin(ph) + 0.5 * Math.sin(2 * ph) + 0.25 * Math.sin(3 * ph)));
+  }
+  ram.set(encodeBRR(long, {loopStart: 0}), 0x1000);
+  const a = estimateRoot(decodeBRR(ram, 0x1000, 0x1000));
+  assert.ok(Math.abs(a.rootHz - 800) < 8, "long loop root " + a.rootHz + " Hz (expected 800)");
+  assert.equal(a.confidence, "high");
+  // a loop cut as two identical halves (3600 = 2 x 1800, 120 cycles of 30):
+  // the tiled loop correlates perfectly at L/2, and the old "tallest peak"
+  // rule took that lag's grid instead of the fundamental
+  const halves = new Int16Array(3600);
+  for (let i = 0; i < 3600; i++) { const ph = 2 * Math.PI * i / 30; halves[i] = Math.round(8000 * (Math.sin(ph) + 0.4 * Math.sin(2 * ph))); }
+  ram.set(encodeBRR(halves, {loopStart: 0}), 0x3000);
+  const b = estimateRoot(decodeBRR(ram, 0x3000, 0x3000));
+  assert.ok(Math.abs(b.rootHz - 32000 / 30) < 10, "two-halves loop root " + b.rootHz + " Hz (expected 1066.7)");
+  // a loop that is NOT a whole number of cycles (4480 samples of a 25-sample
+  // wave = 179.2 cycles, Terra's lead sample): the estimate must stay on the
+  // NSDF peak, not snap to a nearby L/k grid point (that bias read a semitone sharp)
+  const seam = new Int16Array(4480);
+  for (let i = 0; i < 4480; i++) { const ph = 2 * Math.PI * i / 25; seam[i] = Math.round(8000 * (Math.sin(ph) + 0.3 * Math.sin(3 * ph))); }
+  ram.set(encodeBRR(seam, {loopStart: 0}), 0x5000);
+  const c = estimateRoot(decodeBRR(ram, 0x5000, 0x5000));
+  assert.ok(Math.abs(c.periodSamples - 25) < 0.15, "seamed loop period " + c.periodSamples + " (expected 25)");
+  // the short single-cycle cases still resolve to the loop length itself
+  const sq = Int16Array.from({length: 16}, (_, i) => i < 8 ? 8000 : -8000);
+  ram.set(encodeBRR(sq, {loopStart: 0}), 0x7000);
+  assert.ok(Math.abs(estimateRoot(decodeBRR(ram, 0x7000, 0x7000)).rootHz - 2000) < 1);
+});
+
+test("dumped KON register is a pending key-on; dumped ENVX alone is not a note", () => {
+  // Every real set is dumped at the song's first KON write: the register
+  // file holds KON bits with ENVX still 0. SPC players (blargg's
+  // SPC_DSP::load) key those voices on at start and zero every envelope;
+  // we used to do the reverse, so single-KON tracks never sounded.
+  const out = makeTestSPC();
+  out[0x100 + 0x200] = 0x2F; out[0x100 + 0x201] = 0xFE;   // driver = BRA -2: never touches the DSP
+  const r = 0x10100, pitch = Math.round(4096 * 440 * 2 ** ((60 - 69) / 12) / TEST_ROOT_HZ); // C4 on the 500 Hz sine
+  out[r + 0x6C] = 0x20; out[r + 0x0C] = 0x7F; out[r + 0x1C] = 0x7F; out[r + 0x5D] = 0x03; // FLG, MVOL, DIR page 3
+  for (const v of [0, 1, 2]) {
+    out[r + v * 16 + 0] = 0x7F; out[r + v * 16 + 1] = 0x7F; out[r + v * 16 + 2] = pitch & 0xFF; out[r + v * 16 + 3] = pitch >> 8;
+    out[r + v * 16 + 4] = 0x00; out[r + v * 16 + 5] = 0xFF; out[r + v * 16 + 6] = 0xE0;
+  }
+  out[r + 0x4C] = 0x05;      // KON: voices 0 and 2 pending
+  out[r + 0x5C] = 0x04;      // KOFF: voice 2 is being released — KOFF wins, as on the chip
+  out[r + 0x18] = 0x40;      // voice 1: ENVX says "sounding", but no KON bit
+  const spc = parseSPC(out.buffer);
+  const cap = runSPC(spc, 1);
+  assert.deepEqual(cap.dspLog.filter(w => w.addr === 0x4C).map(w => [w.sample, w.value]), [[0, 0x01]], "one KON, at sample 0, voice 0 only");
+  assert.equal(cap.instruments.size, 1);
+  const ev = reconstruct(cap).events;
+  assert.equal(ev.length, 1, "exactly one note: " + JSON.stringify(ev.map(e => [e.channel, e.startFrame, e.endFrame])));
+  assert.equal(ev[0].channel, "voice0");
+  assert.equal(ev[0].startFrame, 0);
+  assert.equal(pitchName(ev[0].midi), "C4");
+  assert.equal(ev[0].endFrame, Math.round(1 / TICK_SEC), "held to the end (ADSR SR = 0)");
+});
+
+test("ID666 text format: the emulator byte is an ASCII digit; xid6 supplies the untruncated game name", () => {
+  // Header text as the ALttP set carries it (32-byte game field cuts the name)
+  const out = makeTestSPC();
+  const put = (off, s) => { for (let i = 0; i < s.length; i++) out[off + i] = s.charCodeAt(i); };
+  out.fill(0, 0x2E, 0xD3);
+  put(0x2E, "Hyrule Field Main Theme"); put(0x4E, "Legend of Zelda: A Link to the P"); put(0x6E, "Datschge");
+  put(0x7E, "Overworld"); put(0xA9, "77"); put(0xAC, "7000"); put(0xB1, "Koji Kondo"); put(0xD2, "0");
+  const plain = parseSPC(out.buffer);
+  assert.equal(plain.tags.textFormat, true);
+  assert.equal(plain.tags.seconds, 77); assert.equal(plain.tags.fadeMs, 7000);
+  assert.equal(plain.tags.emulator, 0, "'0' means unknown, not 48");
+  assert.equal(plain.game, "Legend of Zelda: A Link to the P");
+  // the set's real xid6 block (tag text only): game name, year, publisher, intro + fade ticks
+  const hex = "786964364c000000020124004c6567656e64206f66205a656c64613a2041204c696e6b20746f207468652050617374001400c707130109004e696e74656e646f000000003004040000324b003304040000d60600";
+  const xid6 = Uint8Array.from(hex.match(/../g).map(h => parseInt(h, 16)));
+  const withExt = new Uint8Array(out.length + xid6.length); withExt.set(out); withExt.set(xid6, out.length);
+  const spc = parseSPC(withExt.buffer);
+  assert.equal(spc.game, "Legend of Zelda: A Link to the Past");
+  assert.deepEqual(spc.ext, {game: "Legend of Zelda: A Link to the Past", year: 1991, publisher: "Nintendo",
+    introTicks: 4928000, fadeTicks: 448000, introSec: 77, fadeSec: 7});
+  // FF4 "07a Main Theme": OST title/disc/track (track packs number << 8 | suffix char)
+  const ff4 = "78696436600000001001330046696e616c2046616e746173792034204f726967696e616c20536f756e642056657273696f6e20285053434e2d3530313429000011000100120000071400c70713010700537175617265000030040400006496003304040000dc0500";
+  const e = parseXid6(Uint8Array.from(ff4.match(/../g).map(h => parseInt(h, 16))));
+  assert.equal(e.ostTitle, "Final Fantasy 4 Original Sound Version (PSCN-5014)");
+  assert.equal(e.ostDisc, 1); assert.equal(e.ostTrack, 7); assert.equal(e.ostTrackChar, "");
+  assert.equal(e.year, 1991); assert.equal(e.publisher, "Square");
+  assert.equal(e.introSec, 154); assert.equal(e.fadeSec, 6);
+  assert.deepEqual(parseXid6(null), {});
+  assert.deepEqual(parseXid6(new Uint8Array(8)), {}, "no magic -> nothing");
+});
+
+test("set file names: <disc><track><part> Title.spc, all-nines = not on the soundtrack", () => {
+  assert.deepEqual(parseTrackName("07a Main Theme.spc"), {disc: null, track: 7, part: "a", unlisted: false, title: "Main Theme"});
+  assert.deepEqual(parseTrackName("314c Dancing Mad (part 3).spc"), {disc: 3, track: 14, part: "c", unlisted: false, title: "Dancing Mad (part 3)"});
+  assert.deepEqual(parseTrackName("101 Ahead on our Way.spc"), {disc: 1, track: 1, part: "", unlisted: false, title: "Ahead on our Way"});
+  assert.deepEqual(parseTrackName("999 Time Vortex.spc"), {disc: null, track: 99, part: "", unlisted: true, title: "Time Vortex"});
+  assert.deepEqual(parseTrackName("99 Unused Sound.spc"), {disc: null, track: 99, part: "", unlisted: true, title: "Unused Sound"});
+  assert.equal(parseTrackName("/sets/zelda/05b Majestic Castle (Storm).spc").part, "b");
+  assert.equal(parseTrackName("random.spc"), null);
 });
