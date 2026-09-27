@@ -310,6 +310,14 @@ note priority opcode, OoT/MM channel B0–BE, s8 sequence register → a
 (like PS1's lib); per-game manifest keyed on the lib's NUS code; bank
 tuning not applied yet (+21 convention), drums unnamed.
 
+### Genesis (VGM) — IN THE APP 2026-09-27 (NIGHT-ROLL.md "Genesis import")
+
+Josh: "is it gonna download games to test it with?" File → Import takes a
+.vgm/.vgz set (multi-select), synth voices, the header's loop point as
+the loop: annotation. Verified on the real Sonic 1 set. Next: PS1 (minis
++ psflib together), then N64 (miniusf + usflib); Genesis sound chip
+(YM2612 + SN76489 renderer) later.
+
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
 The five overnight branches (gbs, vgm, psx, spc, n64) merged to main at

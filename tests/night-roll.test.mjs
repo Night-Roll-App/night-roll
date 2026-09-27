@@ -1420,6 +1420,29 @@ test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore
   run(`delete globalThis.indexedDB; localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/x.mid")); localStorage.removeItem(draftStoreKey("albums/imports/old/a.mid")); localStorage.removeItem(draftStoreKey("albums/imports/chrono-trigger/frog.mid"));`);
 });
 
+test("VGM import: a Genesis log goes through the capture path; gz sniff by name; the header's loop point becomes the loop annotation", async () => {
+  const vg = await import("../tools/vgm/notes.mjs");
+  const M = {...(await import("../tools/vgm/vgm.mjs")), ...vg, ...(await import("../tools/nsf/notes.mjs")), ...(await import("../tools/nsf/midi-write.mjs")), reconstruct: vg.reconstruct, toNotesTxt: vg.toNotesTxt};
+  const {makeTestVGM} = await import("../tools/vgm/make-test-vgm.mjs");
+  const bytes = makeTestVGM();
+  assert.equal(val(`chipKindOf(new Uint8Array(${JSON.stringify([...bytes.subarray(0, 16)])}), "01 - Title.vgm")`), "vgm");
+  assert.equal(val(`chipKindOf(new Uint8Array([0x1F, 0x8B, 8, 0, 0, 0, 0, 0, 0, 3, 1, 2]), "02 - Green Hill Zone.vgz")`), "vgm", "a gzipped .vgz is recognised by its name");
+  assert.equal(val(`chipKindOf(new Uint8Array([0x1F, 0x8B, 8, 0, 0, 0, 0, 0, 0, 3, 1, 2]), "notes.gz")`), null);
+  assert.equal(val(`CHIPS.vgm.perFile && CHIPS.vgm.tagged`), true);
+  app.context.__M = M;
+  app.context.__vgm = await (async () => { const v = M.parseVGM(await M.inflateVGM(bytes)); v.name = ""; v.tags = {seconds: Math.round(v.endSample / 44100)}; return v; })();
+  run(`__capP = captureChipTrack("vgm", __M, __vgm, 1, 30).then(cap => {
+    const parsed = parseMidi(new Uint8Array(cap.bytes).buffer);
+    __cap = {bpm: cap.bpm, secs: cap.secs, looped: cap.looped, anchor: cap.loopAnchor, target: cap.loopTarget, names: parsed.tracks.map(t => t.name),
+             notes: parsed.tracks.reduce((a, t) => a + t.notes.length, 0), pitches: parsed.tracks.flatMap(t => t.notes.map(n => n.p))};
+  })`);
+  await app.context.__capP;
+  const got = val(`__cap`);
+  assert.ok(got.names.some(n => /^fm1$/.test(n)), "FM channels are tracks: " + got.names.join(","));
+  assert.ok([60, 64, 67, 72].every(p => got.pitches.includes(p)), "the C4 E4 G4 C5 line: " + got.pitches.join(","));
+  assert.ok(got.bpm > 60 && got.bpm < 300, "sane tempo: " + got.bpm);
+});
+
 test("chip vault meta: one file per album for NSF/GBS, a folder of per-track files for SNES", () => {
   assert.deepEqual(val(`chipVaultMeta("tmnt", "nsf")`), {vault: "tmnt.nsf", tracks: {}});
   assert.deepEqual(val(`chipVaultMeta("ffl", "gbs")`), {vault: "ffl.gbs", tracks: {}, chip: "gbs"});
@@ -1497,7 +1520,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "General chat", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "General chat", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",

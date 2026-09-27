@@ -511,6 +511,26 @@ Verified in Chrome with the real Chrono Trigger set: 92 rows in order
 with tag titles, Frog's Theme captured. Test: "SPC import: a Super
 Nintendo set…" (synthetic SPC; `chipTrackOrder` on real file names).
 
+**Genesis import (2026-09-27; Josh: "is it gonna download games to test
+it with?" — built and verified against the real Sonic 1 set the agents
+downloaded).** The fourth chip, second per-file one. `CHIPS.vgm`:
+`magic(bytes, name)` — "Vgm " or gzip 1F 8B when the NAME ends .vgm/.vgz
+(`chipKindOf` takes the name now; the picker passes it); `parseAsync`
+(inflate via DecompressionStream, then `parseVGM`; GD3 track/game/author
+become name/game/artist, header samples become `tags.seconds`) — the
+per-file loop in `openChipImport` awaits it; `perFile` + `tagged`
+(header states total and loop samples, so no scan and no retry). A VGM
+is a register log, not a program: `run` calls `reconstruct` directly,
+rebins the 44100 Hz sample frames to 10 ms (k = 441), maps `vel/velEnd`
+to `vol/volEnd` (volMax 127), keeps `drum` on noise/DAC hits (→ the
+"drums" track), and returns `loopFrame` from the header; `captureChipTrack`
+turns a stated loop into the same `loop:` annotation the detector would
+(`statedLoop`). No renderer, no chip audio: synth voices; nothing here
+touches the AudioContext. Verified in Chrome: 19 rows with GD3 titles,
+Green Hill Zone captured in 99 ms at exactly 150 bpm, 8 tracks
+(fm1–fm5, psg1–2, drums), `loop: 10.2` at bar 34. Test: "VGM import: …"
+(synthetic VGM through captureChipTrack; the .vgz sniff by name).
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware
