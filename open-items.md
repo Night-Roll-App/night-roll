@@ -156,6 +156,22 @@ Approximate: root octave on bright looped samples; portamento as chromatic
 runs (slide-aware merge queued); voices mid-note at dump time without a
 KON bit stay silent.
 
+### PS1 (PSF/AKAO) — real rips done 2026-09-27 (tools/psx/INTEGRATION.md §6)
+
+Final Fantasy VII: 90 minipsf + one 700 KB psflib; no SEQ/VAB anywhere —
+Square's AKAO driver. New reader tools/psx/akao.mjs (opcodes per VGMTrans
++ Qhimm, tempo constant 0x43D1 confirmed from the driver bytes): all 90
+songs, 0 crashes; Prelude, Tifa, Main Theme (11 tempo points), One-Winged
+Angel (7/8 + 3/8 bars) dump full length. Import-side items:
+- the lib: one minipsf alone is useless; Import must take the .psflib
+  with the minis (ask for it by its `_lib` name if missing).
+- inflate via DecompressionStream, assemble the 2 MiB RAM, scan, drop it.
+- parseMidi's 32-bar tacet guard truncates FF7 tracks (Main Theme voice 2
+  rests 41 bars → 118 notes dropped): imports need the guard off.
+- show `seq.warnings` (conditional jumps, tempo after an opening rest).
+Approximate: pitch = written key (INSTR.DAT articulations not read yet);
+no per-note velocity in AKAO; bends counted, not applied.
+
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
 The five overnight branches (gbs, vgm, psx, spc, n64) merged to main at
