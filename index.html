@@ -7074,7 +7074,20 @@ async function updateChipBtn() { // name kept for call sites; now just the auto-
       .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
   }
 }
+// A render belongs to the song it started for. Two renders can be in flight
+// (open a slow Game Boy song, get bored, open an FF1 song): each used to
+// empty chip.buffers on the way in and stamp chip.key with whatever song was
+// CURRENT on the way out, so the later finisher could hand an FF1 song the
+// Game Boy's buffers (Josh, 2026-09-27: FFL songs silent, then FF1 silent
+// too). Now: build aside, and only publish if this song is still open. A
+// render whose every channel came out silent is refused with a ⚠ line
+// naming the song — synth carries it, and the log says why.
+function chipSilent(chans) { // Float32Array[] → true when nothing in any of them is above the noise floor
+  for (const a of chans) { if (!a) continue; for (let i = 0; i < a.length; i += 13) if (Math.abs(a[i]) > 1e-4) return false; }
+  return true;
+}
 async function chipRender() {
+  const forKey = songKey;
   const src = await chipSource();
   if (!src) return false;
   ensureAudio();
@@ -7089,16 +7102,22 @@ async function chipRender() {
   const t0 = ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0;
   const r = await M.renderApu(apuLog, frames, frameSec, {sampleRate: audio.sampleRate,
     onProgress: p => console.log("[chip] rendering " + Math.round(p * 100) + "%")});
-  chip.buffers = {};
-  for (const name of CHIPS[kind].channels) {
-    if (!r[name]) continue;
+  if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
+  const chans = CHIPS[kind].channels.filter(name => r[name]);
+  if (chipSilent(chans.map(name => r[name]))) {
+    logErr("chip render came out silent for " + forKey.split("/").pop() + " (" + CHIPS[kind].label + ") — playing synthesized voices; tell Claude the song name");
+    return false;
+  }
+  const buffers = {};
+  for (const name of chans) {
     const buf = audio.createBuffer(1, r[name].length, r.sampleRate);
     buf.copyToChannel(r[name], 0);
-    chip.buffers[name] = buf;
+    buffers[name] = buf;
   }
+  chip.buffers = buffers;
   chip.lead = t0 * frameSec;
-  chip.key = songKey;
-  console.log("[chip] ready: " + songKey + " — playing the console's own sound");
+  chip.key = forKey;
+  console.log("[chip] ready: " + forKey + " — playing the console's own sound");
   return true;
 }
 function chipActive() { return chip.key === songKey && !!chip.buffers; }

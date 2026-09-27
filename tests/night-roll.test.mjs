@@ -1373,6 +1373,17 @@ test("NSF import: in-app capture runs the real pipeline and round-trips through 
   assert.ok(got.notes > 50, "melody actually captured: " + got.notes + " notes");
 });
 
+test("chip render: a silent render is detected; a render for a song no longer open is not published", () => {
+  assert.equal(val(`chipSilent([new Float32Array(48000), new Float32Array(1000)])`), true);
+  const loud = new Float32Array(48000); loud[13 * 7] = 0.2; // on the subsampling stride
+  assert.equal(val(`(() => { const a = new Float32Array(48000); a[91] = 0.2; return chipSilent([new Float32Array(100), a]); })()`), false);
+  void loud;
+  // the source reads the song it started for: chipRender stamps forKey, never the song current at the end
+  const src = val(`chipRender.toString()`);
+  assert.ok(/const forKey = songKey/.test(src) && /chip\.key = forKey/.test(src) && !/chip\.key = songKey/.test(src), "chip.key comes from forKey");
+  assert.ok(/songKey !== forKey/.test(src), "a stale render is discarded");
+});
+
 test("GBS import: the Game Boy chip goes through the same capture path (synthetic GBS, wave track, chip descriptor)", async () => {
   const gb = await import("../tools/gbs/notes.mjs");
   const M = { // the browser's merge: shared NSF stages win, the chip keeps its own reconstruct
