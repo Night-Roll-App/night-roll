@@ -15365,7 +15365,11 @@ function askContext(sp, budget) { // the ONE block per request; never stored
   return L.join("\n");
 }
 function askBudget() { // profiles keyed to the window (tokens); LM Studio loads at 4–8k by default, WebLLM's prebuilts are 4096
-  const win = cfg().aiBackend === "browser" ? 4096 : (+cfg().aiWindow || 8192);
+  // the bridge's Claude Code has a large window whatever the Settings field
+  // says: the 8k default trimmed its context and warned about a "small
+  // window" it does not have (Josh, 2026-09-26)
+  const claude = /^claude/i.test(String(cfg().aiModel || (askModelCache && askModelCache.ids && askModelCache.ids[0]) || ""));
+  const win = cfg().aiBackend === "browser" ? 4096 : claude ? 200000 : (+cfg().aiWindow || 8192);
   return win <= 4096 ? {win, small: true, anno: 500, span: 1200, hist: 300}
        : win <= 8192 ? {win, small: true, anno: 1000, span: 2000, hist: 1000}
                      : {win, small: false, anno: 6000, span: 8000, hist: 3000};

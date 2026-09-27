@@ -3142,5 +3142,8 @@ test("Ask: backend selection from cfg; browser backend forces the 4k budget tier
   assert.equal(val(`aiProvider().id`), "browser");
   assert.deepEqual(val(`(({win, anno, span, hist}) => [win, anno, span, hist])(askBudget())`), [4096, 500, 1200, 300]);
   assert.ok(val(`AI_BROWSER_MODELS.every(m => /-MLC$/.test(m[0]) && / GB/.test(m[1]))`));
-  run(`saveCfg({aiBackend: "remote", aiWindow: 8192})`);
+  // the bridge's Claude Code: a large window whatever the field says, and no "small window" warning
+  run(`saveCfg({aiBackend: "remote", aiWindow: 8192, aiModel: "claude-code"})`);
+  assert.deepEqual(val(`(({win, small, span}) => [win, small, span])(askBudget())`), [200000, false, 8000]);
+  run(`saveCfg({aiBackend: "remote", aiWindow: 8192, aiModel: ""})`);
 });
