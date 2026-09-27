@@ -7128,15 +7128,16 @@ async function chipRender() {
   const nsfParsed = CHIPS[kind].parse(M)(src.bytes);
   const secs = Math.ceil(src.secs + 1);
   if (!M.renderApu) return false; // no renderer for this chip (yet): synth carries the song
+  chip.progress = 0;
   const res = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
-    p => console.log("[chip] emulating " + Math.round(p * 100) + "%"));
+    p => { chip.progress = p * 0.3; console.log("[chip] emulating " + Math.round(p * 100) + "%"); });
   const {frameSec} = res;
   // song time zero = first onset (the capture's trim) — find it the same way
   const ev = res.events || M.reconstruct(res.apuLog, res.frames, frameSec);
   const t0 = ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0;
   const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
   const r = await render(M, res, {sampleRate: audio.sampleRate,
-    onProgress: p => console.log("[chip] rendering " + Math.round(p * 100) + "%")});
+    onProgress: p => { chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
   const chans = CHIPS[kind].channels.filter(name => r[name]);
   if (chipSilent(chans.map(name => r[name]))) {
@@ -7675,6 +7676,7 @@ function audioStopSrcs() {
   for (const s of audioSrcs) { try { s.stop(); } catch (err) { /* already done */ } }
   audioSrcs = [];
 }
+play.gen = 0;
 async function play(fromSec = 0, opts = {}) {
   if (songLoading) { // starting a transport against a half-loaded song played
     pendingPlay = true; // a couple of chase notes then died (Josh, 2026-08-17)
@@ -7683,6 +7685,22 @@ async function play(fromSec = 0, opts = {}) {
   }
   ensureAudio();
   await resumeAudio(); // await: scheduling against a frozen clock builds a stale time base
+  // the console's voice is still rendering on this thread (Josh, 2026-09-27,
+  // first Play on a Chrono Trigger song: "sounds weird … the cursor paused",
+  // fine after Stop/⏮/Play): a synth pass under a render is starved and
+  // garbled, so wait for the render instead — with its progress — and let a
+  // second tap (Stop) during the wait win
+  if (chip.rendering === songKey && chip.renderPromise) {
+    const gen = ++play.gen;
+    document.getElementById("playbtn").textContent = "▶ …";
+    const t0 = Date.now();
+    while (chip.rendering === songKey && Date.now() - t0 < 25000) {
+      setInfo("rendering the console's voice… " + Math.round((chip.progress || 0) * 100) + "%");
+      await new Promise(r => setTimeout(r, 200));
+      if (gen !== play.gen || playing) return; // stopped or restarted meanwhile
+    }
+    setInfo("");
+  }
   openMaster();
   buildSchedule();
   stretchEnsureAll(); // takes at a non-native rate need their stretched copies (no-op at 100% / tape-style)
