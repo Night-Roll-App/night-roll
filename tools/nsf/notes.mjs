@@ -105,13 +105,19 @@ export function reconstruct(apuLog, frames, frameSec) {
   }
   for (const name of Object.keys(open)) open[name].endFrame = frames;
   for (const e of events) if (e.endFrame === null) e.endFrame = frames;
-  // Slide collapse (MM2 2026-08-16): drivers render glissandi as per-frame
-  // period steps — a chain of abutting ≤2-frame notes, pitch moving each
-  // step (Flash Man's falling bass: A G F Eb D, one frame each, restart).
-  // Chip-true but musical nonsense as separate notes. A chain sliding INTO
-  // a held note merges into that note (portamento — the target is the note);
-  // an all-tiny chain merges into its FIRST pitch (a fall-off ornament).
-  // Real fast runs are safe: their notes are ≥3 frames and retriggered.
+  return collapseSlides(events);
+}
+
+// Slide collapse (MM2 2026-08-16): drivers render glissandi as per-frame
+// period steps — a chain of abutting ≤2-frame notes, pitch moving each
+// step (Flash Man's falling bass: A G F Eb D, one frame each, restart).
+// Chip-true but musical nonsense as separate notes. A chain sliding INTO
+// a held note merges into that note (portamento — the target is the note);
+// an all-tiny chain merges into its FIRST pitch (a fall-off ornament).
+// Real fast runs are safe: their notes are ≥3 frames and retriggered.
+// Shared with the Game Boy reconstructor (tools/gbs/notes.mjs) — same
+// driver habit, same channel-agnostic rule.
+export function collapseSlides(events) {
   const byCh = {};
   for (const e of events) (byCh[e.channel] = byCh[e.channel] || []).push(e);
   const dead = new Set();
@@ -335,7 +341,11 @@ export function fitBpm(events, frameSec, seedBpm) {
 
 // Stage 3: events -> the repo's .notes.txt format. Bars need a tempo the
 // chip doesn't carry — bpm/timesig come from the caller (known per song).
-export function toNotesTxt(events, {frames, frameSec, bpm, tsNum = 4, tsDen = 4, title = "nsf", snap = true}) {
+// source/volNote name the chip: the Game Boy pipeline reuses this writer
+// with its own wording (the wave channel HAS a level, the triangle doesn't)
+export function toNotesTxt(events, {frames, frameSec, bpm, tsNum = 4, tsDen = 4, title = "nsf", snap = true,
+                                    source = "NSF capture",
+                                    volNote = "vN = chip volume 0-15; pulse/noise only — the triangle has no volume control"}) {
   const beatSec = 60 / bpm;
   const beatsPerBar = tsNum * 4 / tsDen;
   // snapped to the grid like the MIDI writer — or, for snap:false songs
@@ -344,8 +354,8 @@ export function toNotesTxt(events, {frames, frameSec, bpm, tsNum = 4, tsDen = 4,
   const byChannel = {};
   for (const e of events) (byChannel[e.channel] = byChannel[e.channel] || []).push(e);
   const L = [];
-  L.push(`# ${title} — ${tsNum}/${tsDen}, ${bpm}bpm, ${Math.ceil(frames * frameSec / (beatSec * beatsPerBar))} bars (from NSF capture)`);
-  L.push("# Format: bar N: beat pitch duration-in-quarter-notes [vN = chip volume 0-15; pulse/noise only — the triangle has no volume control]");
+  L.push(`# ${title} — ${tsNum}/${tsDen}, ${bpm}bpm, ${Math.ceil(frames * frameSec / (beatSec * beatsPerBar))} bars (from ${source})`);
+  L.push(`# Format: bar N: beat pitch duration-in-quarter-notes [${volNote}]`);
   L.push("# Channel identity is hardware fact. Pitches use sharp spelling; no key is stated.");
   for (const [name, evs] of Object.entries(byChannel)) {
     L.push("");

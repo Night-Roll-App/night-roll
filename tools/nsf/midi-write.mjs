@@ -53,7 +53,11 @@ function trackBytes(name, notes, ch, metas = []) {
 // NES noise has 16 period settings, not pitches; map to the app's drum kit
 function noiseDrum(idx) { return idx < 6 ? 42 : idx < 12 ? 38 : 35; } // hat / snare / kick
 
-export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true}) {
+// chans: channel name -> MIDI channel (track order follows it); drum: noise
+// index -> drum note. Defaults are the NES; the Game Boy pipeline passes its
+// own (wave instead of triangle, its LFSR shift scale) and shares the rest.
+const NES_CHANS = {pulse1: 0, pulse2: 1, triangle: 2, noise: 9};
+export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = true, chans = NES_CHANS, drum = noiseDrum}) {
   const usq = Math.round(6e7 / bpm);
   // snap:false keeps raw hardware timing — for through-composed pieces with
   // tempo changes/fermatas (epilogue) that no single grid can follow
@@ -61,11 +65,13 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     const b = frames * frameSec / (60 / bpm);
     return Math.round((snap ? snapBeat(b) : b) * PPQ);
   };
-  const byCh = {pulse1: [], pulse2: [], triangle: [], noise: []};
+  const byCh = {};
+  for (const name of Object.keys(chans)) byCh[name] = [];
   for (const e of events) {
+    if (!byCh[e.channel]) continue; // a channel this chip map doesn't know
     const t = toTick(e.startFrame);
     const d = Math.max(40, toTick(e.endFrame) - t); // min = a quantized 12th
-    const p = e.channel === "noise" ? noiseDrum(e.midi) : e.midi;
+    const p = e.channel === "noise" ? drum(e.midi) : e.midi;
     if (p < 0 || p > 127) continue;
     // chip volume -> velocity (accent data from the ROM); triangle and
     // envelope-mode notes have no level, so they get a neutral 96
@@ -80,7 +86,6 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
     {t: 0, d: [0xFF, 0x51, 3, (usq >> 16) & 255, (usq >> 8) & 255, usq & 255]},
   ];
   const tracks = [trackBytes("conductor", [], 0, metas)];
-  const chans = {pulse1: 0, pulse2: 1, triangle: 2, noise: 9};
   for (const [name, notes] of Object.entries(byCh)) {
     if (notes.length) tracks.push(trackBytes(name, notes, chans[name]));
   }
