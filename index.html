@@ -15392,7 +15392,7 @@ function askRender() {
   let pendingSeen = false;
   if (!msgs.length && !st.trimmed && askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
   else if (!msgs.length && !st.trimmed) askBubble("ai", "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
-  for (const m of msgs) { askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", m.role === "note" ? askNoteLabel(m.m) + m.content : askStripContext(m.content)); if (m.pending) { askBubble("ai", "… (still working — the reply lands here)"); pendingSeen = true; } }
+  for (const m of msgs) { askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", m.role === "note" ? askNoteLabel(m.m) + m.content : askStripContext(m.content)); if (m.pending) { askBubble("ai", "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; } }
   if (pendingSeen) askResumeSoon(200);
 }
 async function askRenderEarlier() { // what this device let go of after it reached the repo file
@@ -15531,6 +15531,7 @@ async function askSend() {
   askGrow();
   askBubble("user", text);
   const live = askBubble("ai", "…");
+  live.dataset.job = jobId; // askResume finds THIS bubble by job, never "the last ai bubble"
   await askRun({msgs, text, sp, messages, jobId, live, key: askStoreKey()});
 }
 let askResumeTimer = null;
@@ -15541,7 +15542,10 @@ async function askResume() { // a pending question: fetch its job; finished → 
   const i = msgs.findIndex(m => m.pending);
   if (i < 0) return;
   const pend = msgs[i], jobId = pend.pending;
-  const live = [...asklog.querySelectorAll(".askmsg.ai")].pop();
+  // the bubble under the question this job answers — the last ai bubble belongs to
+  // whatever was asked most recently, and a resumed older reply landed there
+  // (Josh, 2026-09-26: "messages out of order")
+  const live = [...asklog.querySelectorAll(".askmsg.ai")].find(d => d.dataset.job === jobId) || null;
   if (!(await askJobsSupported())) { askFail(jobId, "no reply came back (the connection dropped) — ask again"); return; }
   let j;
   try { const r = await fetch(aiUrl() + "/v1/jobs/" + encodeURIComponent(jobId), {headers: aiHeaders()}); if (r.status === 404) { askFail(jobId, "the server no longer has this job — ask again"); return; } j = await r.json(); }
