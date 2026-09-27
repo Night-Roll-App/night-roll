@@ -1212,6 +1212,20 @@ tests/night-roll.test.mjs); the shell project lives outside this repo
 (`~/work/ff/night-roll-app`, `build-ipad.sh` = package → sync → build →
 install).
 
+**Open in Night Roll (iPad app, 2026-09-27).** The shell's Info.plist
+declares `public.midi-audio` plus an imported UTI for chip files
+(nsf/nsfe/gbs/spc/vgm/vgz) with `LSSupportsOpeningDocumentsInPlace`
+OFF, so a file tapped in Files or sent via the share sheet is copied to
+Documents/Inbox and delivered as a `file:` URL through the App plugin
+(`appUrlOpen`; `getLaunchUrl` for a cold start). `nativeOpenHook()` is
+attached at the end of boot, after the first song settles;
+`nativeOpenUrl(url)` reads the bytes with `Filesystem.readFile({path:
+url})`, opens a lone MIDI straight into a `local/` draft
+(`localMidiOpen`, no import sheet) and everything else through
+`openPickedFiles(loaded)` — the picker's own body, extracted so the two
+doors share it — then deletes the Inbox copy. vm test: fake App +
+Filesystem plugins.
+
 **Not done:** Safari fallback (a downloadable project bundle),
 autosave-on-edit in folder mode (explicit Save kept for parity and so
 Revert still means something), copying the FF1 corpus into a folder.
