@@ -21,6 +21,12 @@ the way it works in Logic". Fix to build in this phase: a Logic-style
 none; the ● means "changed since the last Save"). In the iPad app that
 Save is the file in Files and the draft is autosave/recovery. Also
 queued from earlier: an undoable Revert (stash + "Restore local copy").
+Josh's later ruling (same day): a Settings switch **Auto-save: off by
+default** — off = edits live in a working copy until Save (the
+checkpoint that Revert and Compare go back to; the working copy still
+survives a crash, it just isn't "saved"); on = every edit is the save
+(today's behaviour). Publish stays separate in both. Compare with repo
+becomes "Compare with last save" (published copy only when never saved).
 
 Step 2 done: share links / link mode (NIGHT-ROLL.md "Publish + share
 links"); test repo joshcough/night-roll-test-songs is his to delete.
