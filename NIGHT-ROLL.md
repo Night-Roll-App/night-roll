@@ -397,6 +397,10 @@ longer emulation). m3u: Zophar's GBS rips ship ONE .m3u per track
 (`DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - …,01:28,,10`), so
 `parseM3u` accepts `::GBS,` and the picker merges every picked playlist
 in natural file-name order (a single NSF playlist is unchanged). The
+two scenes order the fields differently — NSF "Game - Artist - Title",
+Game Boy "Title - Artist - Game - ©1989-12-15 Square" — so a copyright
+tail (©, (c), or a year) means title-first; without that every FFL1
+row read as the game name (Josh, from the iPad, 2026-09-27). The
 file picker accepts `.gbs`; the File menu says "Import… (.mid / .nsf /
 .gbs)". Tests: "GBS import: the Game Boy chip goes through the same
 capture path" (synthetic GBS from `tools/gbs/make-test-gbs.mjs`, no ROM

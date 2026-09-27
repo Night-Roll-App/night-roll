@@ -10073,7 +10073,11 @@ function parseM3u(text) { // ordered [{n, title}] — playlist order IS album or
     if (!m) continue;
     const raw = m[2].replace(/\\,/g, ",");
     const parts = raw.split(" - ");
-    const title = (parts.length >= 3 ? parts.slice(2).join(" - ") : parts[parts.length - 1]).trim();
+    // two layouts: NSF rips write "Game - Artist - Title"; Game Boy rips write
+    // "Title - Artist - Game - ©1989-12-15 Square" (Josh, 2026-09-27: every
+    // FFL1 row came out as the game name). A copyright tail = title first.
+    const gbLayout = parts.length >= 3 && /^(©|\(c\)|\d{4}\b)/i.test(parts[parts.length - 1].trim());
+    const title = (gbLayout ? parts[0] : parts.length >= 3 ? parts.slice(2).join(" - ") : parts[parts.length - 1]).trim();
     if (title) list.push({n: +m[1], title, len: +m[3] * 60 + +m[4]});
   }
   return list;

@@ -1594,8 +1594,11 @@ test("m3u playlists: track names parse from the emu-scene format", () => {
     [12, "Dr. Wily's Castle II"],
   ]);
   // a Game Boy rip's line (Zophar: one such file per track, so the picker merges them)
-  const gb = val(`parseM3u(${JSON.stringify("DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:28,,10")})`);
-  assert.deepEqual(gb.map(e => [e.n, e.title, e.len]), [[1, "Final Fantasy Legend - ©1989-12-15 Square", 88]]);
+  // Game Boy rips write Title - Artist - Game - ©year: the title is FIRST (Josh, 2026-09-27: every FFL1 row read as the game name)
+  const gb = val(`parseM3u(${JSON.stringify(["DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:28,,10", "DMG-SAJ.gbs::GBS,2,Battle - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,00:59,,10", "x.gbs::GBS,3,Town - Someone - Some Game - (C) 1990 Co,01:00,,5"].join("\n"))})`);
+  assert.deepEqual(gb.map(e => [e.n, e.title, e.len]), [[1, "Main Theme", 88], [2, "Battle", 59], [3, "Town", 60]]);
+  // an NSF line with a dash in the title keeps the NSF rule
+  assert.deepEqual(val(`parseM3u(${JSON.stringify("a.nsf::NSF,4,Game - Artist - Stage 1 - Intro,0:01:00,,0:00:05")})`).map(e => e.title), ["Stage 1 - Intro"]);
 });
 
 test("split at cursor / split in half / join — one undo step each", () => {
