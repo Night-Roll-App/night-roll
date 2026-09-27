@@ -1,0 +1,421 @@
+{
+ "title": "Chrono Trigger",
+ "order": 50,
+ "songs": {
+  "a-prayer-to-the-road-that-leads": "A Prayer to the Road that Leads",
+  "a-shot-of-crisis": "A Shot of Crisis",
+  "at-the-bottom-of-night": "At the Bottom of Night",
+  "ayla-s-theme": "Ayla's Theme",
+  "battle-with-magus": "Battle with Magus",
+  "blackbird-inside": "Blackbird (Inside)",
+  "blackbird-outside": "Blackbird (Outside)",
+  "breath-of-lavos": "Breath of Lavos",
+  "brink-of-time": "Brink of Time",
+  "burn-bobonga": "Burn! Bobonga!",
+  "chrono-trigger-looped": "Chrono Trigger (Looped)",
+  "corridors-of-time": "Corridors of Time",
+  "courage-and-pride": "Courage and Pride",
+  "epilogue-to-good-friends": "Epilogue ~ To Good Friends",
+  "fall-of-zeal": "Fall of Zeal",
+  "first-festival-of-stars": "First Festival of Stars",
+  "frog-s-theme": "Frog's Theme",
+  "gato-s-song": "Gato's Song",
+  "huh": "Huh?!",
+  "lab-16-s-ruin": "Lab 16's Ruin",
+  "lavos-stirs-faster": "Lavos Stirs (Faster)",
+  "lavos-theme-extended": "Lavos' Theme (Extended)",
+  "lavos-theme": "Lavos' Theme",
+  "leene-s-bell": "Leene's Bell",
+  "magus-castle": "Magus' Castle",
+  "memories-of-green": "Memories of Green",
+  "mystery-of-the-past": "Mystery of the Past",
+  "people-without-hope-variant-1": "People Without Hope (Variant 1)",
+  "people-without-hope-variant-2": "People Without Hope (Variant 2)",
+  "rain-and-flowing-water": "Rain and Flowing Water",
+  "rat-a-tat-tat-it-s-mitsuda": "Rat-a-Tat-Tat It's... Mitsuda",
+  "remains-of-the-factory": "Remains of the Factory",
+  "rhythm-of-wind-sky-and-earth": "Rhythm of Wind, Sky and Earth",
+  "robo-s-theme": "Robo's Theme",
+  "schala-s-theme": "Schala's Theme",
+  "secret-of-the-forest": "Secret of the Forest",
+  "the-day-the-world-revived": "The Day the World Revived",
+  "the-hidden-truth-looped": "The Hidden Truth (Looped)",
+  "underground-sewer-no-water": "Underground Sewer (No Water)",
+  "voice-of-lavos": "Voice of Lavos"
+ },
+ "nsf": {
+  "vault": "chrono-trigger/",
+  "tracks": {
+   "a-prayer-to-the-road-that-leads": {
+    "n": 1,
+    "secs": 12
+   },
+   "a-shot-of-crisis": {
+    "n": 1,
+    "secs": 99
+   },
+   "a-strange-happening": {
+    "n": 1,
+    "secs": 86
+   },
+   "at-the-bottom-of-night": {
+    "n": 1,
+    "secs": 133.99
+   },
+   "ayla-s-theme": {
+    "n": 1,
+    "secs": 69
+   },
+   "battle-1": {
+    "n": 1,
+    "secs": 91
+   },
+   "battle-2": {
+    "n": 1,
+    "secs": 74
+   },
+   "battle-with-magus": {
+    "n": 1,
+    "secs": 165
+   },
+   "bike-chase": {
+    "n": 1,
+    "secs": 53
+   },
+   "black-omen": {
+    "n": 1,
+    "secs": 166
+   },
+   "blackbird-inside": {
+    "n": 1,
+    "secs": 12
+   },
+   "blackbird-outside": {
+    "n": 1,
+    "secs": 12
+   },
+   "boss-battle-1": {
+    "n": 1,
+    "secs": 69
+   },
+   "boss-battle-2": {
+    "n": 1,
+    "secs": 145
+   },
+   "breath-of-lavos": {
+    "n": 1,
+    "secs": 12
+   },
+   "brink-of-time": {
+    "n": 1,
+    "secs": 133
+   },
+   "burn-bobonga": {
+    "n": 1,
+    "secs": 78
+   },
+   "chrono-trigger-looped": {
+    "n": 1,
+    "secs": 75
+   },
+   "chrono-trigger": {
+    "n": 1,
+    "secs": 121
+   },
+   "confusing-melody": {
+    "n": 1,
+    "secs": 58.99
+   },
+   "corridors-of-time": {
+    "n": 1,
+    "secs": 164
+   },
+   "courage-and-pride": {
+    "n": 1,
+    "secs": 193
+   },
+   "delightful-spekkio": {
+    "n": 1,
+    "secs": 152
+   },
+   "determination": {
+    "n": 1,
+    "secs": 53
+   },
+   "earthquake": {
+    "n": 1,
+    "secs": 12
+   },
+   "epilogue-to-good-friends": {
+    "n": 1,
+    "secs": 118
+   },
+   "fall-of-zeal": {
+    "n": 1,
+    "secs": 73
+   },
+   "fanfare-1": {
+    "n": 1,
+    "secs": 33
+   },
+   "fanfare-2": {
+    "n": 1,
+    "secs": 12
+   },
+   "fanfare-3": {
+    "n": 1,
+    "secs": 12
+   },
+   "far-off-promise": {
+    "n": 1,
+    "secs": 96
+   },
+   "first-festival-of-stars": {
+    "n": 1,
+    "secs": 149
+   },
+   "frog-s-theme": {
+    "n": 1,
+    "secs": 62
+   },
+   "gato-s-song": {
+    "n": 1,
+    "secs": 20
+   },
+   "goodnight": {
+    "n": 1,
+    "secs": 12
+   },
+   "guardia-millennial-fair": {
+    "n": 1,
+    "secs": 182
+   },
+   "huh": {
+    "n": 1,
+    "secs": 12
+   },
+   "kingdom-trial": {
+    "n": 1,
+    "secs": 206.99
+   },
+   "lab-16-s-ruin": {
+    "n": 1,
+    "secs": 77
+   },
+   "last-battle": {
+    "n": 1,
+    "secs": 207
+   },
+   "lavos-stirs-faster": {
+    "n": 1,
+    "secs": 12
+   },
+   "lavos-stirs": {
+    "n": 1,
+    "secs": 13
+   },
+   "lavos-theme-extended": {
+    "n": 1,
+    "secs": 289.92
+   },
+   "lavos-theme": {
+    "n": 1,
+    "secs": 81.96000000000001
+   },
+   "leene-s-bell": {
+    "n": 1,
+    "secs": 13
+   },
+   "magus-castle": {
+    "n": 1,
+    "secs": 27
+   },
+   "manoria-cathedral": {
+    "n": 1,
+    "secs": 30
+   },
+   "memories-of-green": {
+    "n": 1,
+    "secs": 214
+   },
+   "morning-sunlight": {
+    "n": 1,
+    "secs": 38
+   },
+   "mystery-of-the-past": {
+    "n": 1,
+    "secs": 12
+   },
+   "mystic-chanting": {
+    "n": 1,
+    "secs": 12
+   },
+   "ocean-waves": {
+    "n": 1,
+    "secs": 38
+   },
+   "ozzie-laugh": {
+    "n": 1,
+    "secs": 12
+   },
+   "ozzie-scream": {
+    "n": 1,
+    "secs": 12
+   },
+   "peaceful-days": {
+    "n": 1,
+    "secs": 152
+   },
+   "people-without-hope-variant-1": {
+    "n": 1,
+    "secs": 167
+   },
+   "people-without-hope-variant-2": {
+    "n": 1,
+    "secs": 167
+   },
+   "people-without-hope": {
+    "n": 1,
+    "secs": 167
+   },
+   "presentiment": {
+    "n": 1,
+    "secs": 33
+   },
+   "primitive-mountain": {
+    "n": 1,
+    "secs": 171
+   },
+   "prison-tower": {
+    "n": 1,
+    "secs": 53
+   },
+   "quiet-beach": {
+    "n": 1,
+    "secs": 41
+   },
+   "rain-and-flowing-water": {
+    "n": 1,
+    "secs": 12
+   },
+   "rat-a-tat-tat-it-s-mitsuda": {
+    "n": 1,
+    "secs": 12
+   },
+   "remains-of-the-factory": {
+    "n": 1,
+    "secs": 172
+   },
+   "rhythm-of-wind-sky-and-earth": {
+    "n": 1,
+    "secs": 97
+   },
+   "robo-gang-johnny": {
+    "n": 1,
+    "secs": 78
+   },
+   "robo-s-theme": {
+    "n": 1,
+    "secs": 75
+   },
+   "ruined-world": {
+    "n": 1,
+    "secs": 141
+   },
+   "schala-s-theme": {
+    "n": 1,
+    "secs": 147
+   },
+   "sealed-door": {
+    "n": 1,
+    "secs": 145
+   },
+   "secret-of-the-forest": {
+    "n": 1,
+    "secs": 268
+   },
+   "silent-light": {
+    "n": 1,
+    "secs": 127
+   },
+   "singing-mountain": {
+    "n": 1,
+    "secs": 110
+   },
+   "strong-wind": {
+    "n": 1,
+    "secs": 29
+   },
+   "the-day-the-world-revived": {
+    "n": 1,
+    "secs": 65
+   },
+   "the-hidden-truth-looped": {
+    "n": 1,
+    "secs": 53
+   },
+   "the-hidden-truth": {
+    "n": 1,
+    "secs": 58
+   },
+   "time-vortex": {
+    "n": 1,
+    "secs": 239
+   },
+   "to-far-away-times": {
+    "n": 1,
+    "secs": 260
+   },
+   "truce-canyon": {
+    "n": 1,
+    "secs": 16
+   },
+   "tsunami": {
+    "n": 1,
+    "secs": 9.82
+   },
+   "tyran-castle": {
+    "n": 1,
+    "secs": 213
+   },
+   "underground-sewer-no-water": {
+    "n": 1,
+    "secs": 122
+   },
+   "underground-sewer": {
+    "n": 1,
+    "secs": 122.49000000000001
+   },
+   "undersea-palace": {
+    "n": 1,
+    "secs": 181
+   },
+   "unknown-fanfare": {
+    "n": 1,
+    "secs": 16
+   },
+   "voice-of-lavos": {
+    "n": 1,
+    "secs": 12
+   },
+   "wind-scene": {
+    "n": 1,
+    "secs": 184
+   },
+   "wings-that-cross-time": {
+    "n": 1,
+    "secs": 183.85
+   },
+   "world-revolution": {
+    "n": 1,
+    "secs": 213
+   },
+   "zeal-palace": {
+    "n": 1,
+    "secs": 218
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}

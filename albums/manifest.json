@@ -432,5 +432,378 @@
     "path": "albums/imports/final-fantasy-legend/wipe-your-tears-away.mid"
    }
   ]
+ },
+ {
+  "title": "Chrono Trigger",
+  "songs": [
+   {
+    "title": "A Prayer to the Road that Leads",
+    "path": "albums/imports/chrono-trigger/a-prayer-to-the-road-that-leads.mid"
+   },
+   {
+    "title": "A Shot of Crisis",
+    "path": "albums/imports/chrono-trigger/a-shot-of-crisis.mid"
+   },
+   {
+    "title": "A Strange Happening",
+    "path": "albums/imports/chrono-trigger/a-strange-happening.mid"
+   },
+   {
+    "title": "At the Bottom of Night",
+    "path": "albums/imports/chrono-trigger/at-the-bottom-of-night.mid"
+   },
+   {
+    "title": "Ayla's Theme",
+    "path": "albums/imports/chrono-trigger/ayla-s-theme.mid"
+   },
+   {
+    "title": "Battle 1",
+    "path": "albums/imports/chrono-trigger/battle-1.mid"
+   },
+   {
+    "title": "Battle 2",
+    "path": "albums/imports/chrono-trigger/battle-2.mid"
+   },
+   {
+    "title": "Battle with Magus",
+    "path": "albums/imports/chrono-trigger/battle-with-magus.mid"
+   },
+   {
+    "title": "Bike Chase",
+    "path": "albums/imports/chrono-trigger/bike-chase.mid"
+   },
+   {
+    "title": "Black Omen",
+    "path": "albums/imports/chrono-trigger/black-omen.mid"
+   },
+   {
+    "title": "Blackbird (Inside)",
+    "path": "albums/imports/chrono-trigger/blackbird-inside.mid"
+   },
+   {
+    "title": "Blackbird (Outside)",
+    "path": "albums/imports/chrono-trigger/blackbird-outside.mid"
+   },
+   {
+    "title": "Boss Battle 1",
+    "path": "albums/imports/chrono-trigger/boss-battle-1.mid"
+   },
+   {
+    "title": "Boss Battle 2",
+    "path": "albums/imports/chrono-trigger/boss-battle-2.mid"
+   },
+   {
+    "title": "Breath of Lavos",
+    "path": "albums/imports/chrono-trigger/breath-of-lavos.mid"
+   },
+   {
+    "title": "Brink of Time",
+    "path": "albums/imports/chrono-trigger/brink-of-time.mid"
+   },
+   {
+    "title": "Burn! Bobonga!",
+    "path": "albums/imports/chrono-trigger/burn-bobonga.mid"
+   },
+   {
+    "title": "Chrono Trigger",
+    "path": "albums/imports/chrono-trigger/chrono-trigger.mid"
+   },
+   {
+    "title": "Chrono Trigger (Looped)",
+    "path": "albums/imports/chrono-trigger/chrono-trigger-looped.mid"
+   },
+   {
+    "title": "Confusing Melody",
+    "path": "albums/imports/chrono-trigger/confusing-melody.mid"
+   },
+   {
+    "title": "Corridors of Time",
+    "path": "albums/imports/chrono-trigger/corridors-of-time.mid"
+   },
+   {
+    "title": "Courage and Pride",
+    "path": "albums/imports/chrono-trigger/courage-and-pride.mid"
+   },
+   {
+    "title": "Delightful Spekkio",
+    "path": "albums/imports/chrono-trigger/delightful-spekkio.mid"
+   },
+   {
+    "title": "Determination",
+    "path": "albums/imports/chrono-trigger/determination.mid"
+   },
+   {
+    "title": "Earthquake",
+    "path": "albums/imports/chrono-trigger/earthquake.mid"
+   },
+   {
+    "title": "Epilogue ~ To Good Friends",
+    "path": "albums/imports/chrono-trigger/epilogue-to-good-friends.mid"
+   },
+   {
+    "title": "Fall of Zeal",
+    "path": "albums/imports/chrono-trigger/fall-of-zeal.mid"
+   },
+   {
+    "title": "Fanfare 1",
+    "path": "albums/imports/chrono-trigger/fanfare-1.mid"
+   },
+   {
+    "title": "Fanfare 2",
+    "path": "albums/imports/chrono-trigger/fanfare-2.mid"
+   },
+   {
+    "title": "Fanfare 3",
+    "path": "albums/imports/chrono-trigger/fanfare-3.mid"
+   },
+   {
+    "title": "Far Off Promise",
+    "path": "albums/imports/chrono-trigger/far-off-promise.mid"
+   },
+   {
+    "title": "First Festival of Stars",
+    "path": "albums/imports/chrono-trigger/first-festival-of-stars.mid"
+   },
+   {
+    "title": "Frog's Theme",
+    "path": "albums/imports/chrono-trigger/frog-s-theme.mid"
+   },
+   {
+    "title": "Gato's Song",
+    "path": "albums/imports/chrono-trigger/gato-s-song.mid"
+   },
+   {
+    "title": "Goodnight",
+    "path": "albums/imports/chrono-trigger/goodnight.mid"
+   },
+   {
+    "title": "Guardia Millennial Fair",
+    "path": "albums/imports/chrono-trigger/guardia-millennial-fair.mid"
+   },
+   {
+    "title": "Huh?!",
+    "path": "albums/imports/chrono-trigger/huh.mid"
+   },
+   {
+    "title": "Kingdom Trial",
+    "path": "albums/imports/chrono-trigger/kingdom-trial.mid"
+   },
+   {
+    "title": "Lab 16's Ruin",
+    "path": "albums/imports/chrono-trigger/lab-16-s-ruin.mid"
+   },
+   {
+    "title": "Last Battle",
+    "path": "albums/imports/chrono-trigger/last-battle.mid"
+   },
+   {
+    "title": "Lavos Stirs",
+    "path": "albums/imports/chrono-trigger/lavos-stirs.mid"
+   },
+   {
+    "title": "Lavos Stirs (Faster)",
+    "path": "albums/imports/chrono-trigger/lavos-stirs-faster.mid"
+   },
+   {
+    "title": "Lavos' Theme",
+    "path": "albums/imports/chrono-trigger/lavos-theme.mid"
+   },
+   {
+    "title": "Lavos' Theme (Extended)",
+    "path": "albums/imports/chrono-trigger/lavos-theme-extended.mid"
+   },
+   {
+    "title": "Leene's Bell",
+    "path": "albums/imports/chrono-trigger/leene-s-bell.mid"
+   },
+   {
+    "title": "Magus' Castle",
+    "path": "albums/imports/chrono-trigger/magus-castle.mid"
+   },
+   {
+    "title": "Manoria Cathedral",
+    "path": "albums/imports/chrono-trigger/manoria-cathedral.mid"
+   },
+   {
+    "title": "Memories of Green",
+    "path": "albums/imports/chrono-trigger/memories-of-green.mid"
+   },
+   {
+    "title": "Morning Sunlight",
+    "path": "albums/imports/chrono-trigger/morning-sunlight.mid"
+   },
+   {
+    "title": "Mystery of the Past",
+    "path": "albums/imports/chrono-trigger/mystery-of-the-past.mid"
+   },
+   {
+    "title": "Mystic Chanting",
+    "path": "albums/imports/chrono-trigger/mystic-chanting.mid"
+   },
+   {
+    "title": "Ocean Waves",
+    "path": "albums/imports/chrono-trigger/ocean-waves.mid"
+   },
+   {
+    "title": "Ozzie Laugh",
+    "path": "albums/imports/chrono-trigger/ozzie-laugh.mid"
+   },
+   {
+    "title": "Ozzie Scream",
+    "path": "albums/imports/chrono-trigger/ozzie-scream.mid"
+   },
+   {
+    "title": "Peaceful Days",
+    "path": "albums/imports/chrono-trigger/peaceful-days.mid"
+   },
+   {
+    "title": "People Without Hope",
+    "path": "albums/imports/chrono-trigger/people-without-hope.mid"
+   },
+   {
+    "title": "People Without Hope (Variant 1)",
+    "path": "albums/imports/chrono-trigger/people-without-hope-variant-1.mid"
+   },
+   {
+    "title": "People Without Hope (Variant 2)",
+    "path": "albums/imports/chrono-trigger/people-without-hope-variant-2.mid"
+   },
+   {
+    "title": "Presentiment",
+    "path": "albums/imports/chrono-trigger/presentiment.mid"
+   },
+   {
+    "title": "Primitive Mountain",
+    "path": "albums/imports/chrono-trigger/primitive-mountain.mid"
+   },
+   {
+    "title": "Prison Tower",
+    "path": "albums/imports/chrono-trigger/prison-tower.mid"
+   },
+   {
+    "title": "Quiet Beach",
+    "path": "albums/imports/chrono-trigger/quiet-beach.mid"
+   },
+   {
+    "title": "Rain and Flowing Water",
+    "path": "albums/imports/chrono-trigger/rain-and-flowing-water.mid"
+   },
+   {
+    "title": "Rat-a-Tat-Tat It's... Mitsuda",
+    "path": "albums/imports/chrono-trigger/rat-a-tat-tat-it-s-mitsuda.mid"
+   },
+   {
+    "title": "Remains of the Factory",
+    "path": "albums/imports/chrono-trigger/remains-of-the-factory.mid"
+   },
+   {
+    "title": "Rhythm of Wind, Sky and Earth",
+    "path": "albums/imports/chrono-trigger/rhythm-of-wind-sky-and-earth.mid"
+   },
+   {
+    "title": "Robo Gang Johnny",
+    "path": "albums/imports/chrono-trigger/robo-gang-johnny.mid"
+   },
+   {
+    "title": "Robo's Theme",
+    "path": "albums/imports/chrono-trigger/robo-s-theme.mid"
+   },
+   {
+    "title": "Ruined World",
+    "path": "albums/imports/chrono-trigger/ruined-world.mid"
+   },
+   {
+    "title": "Schala's Theme",
+    "path": "albums/imports/chrono-trigger/schala-s-theme.mid"
+   },
+   {
+    "title": "Sealed Door",
+    "path": "albums/imports/chrono-trigger/sealed-door.mid"
+   },
+   {
+    "title": "Secret of the Forest",
+    "path": "albums/imports/chrono-trigger/secret-of-the-forest.mid"
+   },
+   {
+    "title": "Silent Light",
+    "path": "albums/imports/chrono-trigger/silent-light.mid"
+   },
+   {
+    "title": "Singing Mountain",
+    "path": "albums/imports/chrono-trigger/singing-mountain.mid"
+   },
+   {
+    "title": "Strong Wind",
+    "path": "albums/imports/chrono-trigger/strong-wind.mid"
+   },
+   {
+    "title": "The Day the World Revived",
+    "path": "albums/imports/chrono-trigger/the-day-the-world-revived.mid"
+   },
+   {
+    "title": "The Hidden Truth",
+    "path": "albums/imports/chrono-trigger/the-hidden-truth.mid"
+   },
+   {
+    "title": "The Hidden Truth (Looped)",
+    "path": "albums/imports/chrono-trigger/the-hidden-truth-looped.mid"
+   },
+   {
+    "title": "Time Vortex",
+    "path": "albums/imports/chrono-trigger/time-vortex.mid"
+   },
+   {
+    "title": "To Far Away Times",
+    "path": "albums/imports/chrono-trigger/to-far-away-times.mid"
+   },
+   {
+    "title": "Truce Canyon",
+    "path": "albums/imports/chrono-trigger/truce-canyon.mid"
+   },
+   {
+    "title": "Tsunami",
+    "path": "albums/imports/chrono-trigger/tsunami.mid"
+   },
+   {
+    "title": "Tyran Castle",
+    "path": "albums/imports/chrono-trigger/tyran-castle.mid"
+   },
+   {
+    "title": "Underground Sewer",
+    "path": "albums/imports/chrono-trigger/underground-sewer.mid"
+   },
+   {
+    "title": "Underground Sewer (No Water)",
+    "path": "albums/imports/chrono-trigger/underground-sewer-no-water.mid"
+   },
+   {
+    "title": "Undersea Palace",
+    "path": "albums/imports/chrono-trigger/undersea-palace.mid"
+   },
+   {
+    "title": "Unknown Fanfare",
+    "path": "albums/imports/chrono-trigger/unknown-fanfare.mid"
+   },
+   {
+    "title": "Voice of Lavos",
+    "path": "albums/imports/chrono-trigger/voice-of-lavos.mid"
+   },
+   {
+    "title": "Wind Scene",
+    "path": "albums/imports/chrono-trigger/wind-scene.mid"
+   },
+   {
+    "title": "Wings That Cross Time",
+    "path": "albums/imports/chrono-trigger/wings-that-cross-time.mid"
+   },
+   {
+    "title": "World Revolution",
+    "path": "albums/imports/chrono-trigger/world-revolution.mid"
+   },
+   {
+    "title": "Zeal Palace",
+    "path": "albums/imports/chrono-trigger/zeal-palace.mid"
+   }
+  ]
  }
 ]
