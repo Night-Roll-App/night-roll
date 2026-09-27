@@ -644,7 +644,7 @@
   .sheet.ask { height: 88dvh; width: min(680px, 100%); }
   #asklog { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
             -webkit-user-select: text; user-select: text; min-height: 80px; }
-  .askmsg { font-size: 14px; line-height: 1.5; padding: 9px 12px; border-radius: 10px;
+  .askmsg { font-size: 17px; line-height: 1.5; padding: 10px 13px; border-radius: 10px; /* 14 was too small to read on the iPad (Josh, 2026-09-27) */
             white-space: pre-wrap; max-width: 92%; }
   .askmsg.user { background: var(--panel2); border: 1px solid var(--grid); align-self: flex-end; }
   .askmsg.ai { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; }
