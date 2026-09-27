@@ -90,8 +90,24 @@ which is what the chip-audio matcher keys on.
 
 `openNsfImport` → `openChipImport(chip, bytes, name, m3uList)`; the fields
 it reads (`.name`, `.artist`, `.songs`, `.startSong`) exist on both parsed
-headers. `nsfSess` gains `chip`. The m3u handling is unchanged — GBS rips
-ship the same playlist convention. One extra line of status is worth
+headers. `nsfSess` gains `chip`. **The m3u handling needs two changes** —
+this note first claimed GBS ships the same playlist convention; the real
+rips say otherwise (Josh, 2026-09-26, from the two Uematsu Game Boy
+scores on Zophar: `final-fantasy-legend-the`, `final-fantasy-legend-ii`).
+Each zip holds ONE .gbs (`DMG-SAJ.gbs`, `DMG-S2J.gbs`) plus one .m3u PER
+TRACK — 17 files for FFL, 19 for FFL II, named `02 Main Theme.m3u`:
+
+- `parseM3u` (~10058) matches `::NSF,` only. GBS lines carry `::GBS,`:
+  `DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - Final Fantasy Legend -
+  ©1989-12-15 Square,01:28,,10`. Widen to `::(?:NSF|GBS),`; the rest of the
+  line (`n,title,m:ss`) parses identically, and the ` - `-split title rule
+  already yields "Main Theme".
+- The Import handler (~10097) reads `m3us[0]` only — fine for a single
+  playlist, wrong for 17 one-line files. Every picked m3u must be parsed
+  and the results merged (concat, dedupe by `n`, keep playlist order).
+  Josh picks them all at once from the iPad's Files sheet.
+
+One extra line of status is worth
 showing for GBS: `parsed.timerMode ? "timer " + rate.toFixed(1) + " Hz" :
 "v-blank"`, because a timer-driven file (some run PLAY at 256 Hz or more)
 produces 4–5× the frames per second, and the capture window (`#impsecs`)

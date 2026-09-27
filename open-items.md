@@ -97,6 +97,21 @@ tests in `npm test`; index.html untouched — no app button yet, nothing a
 user sees. Next real step per console: run its dump on a real file from
 Josh's collection (never committed), then the app hook per INTEGRATION.md.
 
+**GBS .m3u discovery (Josh, 2026-09-26) — two known app fixes before GBS
+import works.** Zophar's rips of the two Uematsu Game Boy scores (The
+Final Fantasy Legend, Final Fantasy Legend II —
+<https://www.zophar.net/music/gameboy-gbs/final-fantasy-legend-the> and
+`.../final-fantasy-legend-ii`) each ship a small zip holding ONE .gbs
+(`DMG-SAJ.gbs` / `DMG-S2J.gbs`) plus one .m3u PER TRACK (17 and 19 files,
+named `02 Main Theme.m3u`), not a single playlist. Sample line:
+`DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - Final Fantasy Legend -
+©1989-12-15 Square,01:28,,10`. So: (1) `parseM3u` (index.html ~10058)
+matches `::NSF,` only → needs `::(?:NSF|GBS),`; (2) the Import handler
+(~10097) reads `m3us[0]` only → must parse every picked m3u and merge.
+Recorded in tools/gbs/INTEGRATION.md, which previously claimed the m3u
+handling needed no change. Josh has the FFL1 zip on his iPad already;
+GBS is still command-line only, so the m3u fix lands with the app hook.
+
 ## THE AI BRIDGE, FOR EVERYONE — 2026-09-26 (NIGHT-ROLL.md "✦ Ask / ✦ Fill" → The AI bridge)
 
 Josh: "I want to make sure everybody can run this with LM Studio or
