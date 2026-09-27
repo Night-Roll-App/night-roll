@@ -8905,7 +8905,7 @@ function renderFolder(section, folder) { // one level: subfolders, then this fol
   const rows = document.getElementById("songrows");
   rows.innerHTML = "";
   const up = parentFolder(folder);
-  rows.appendChild(songRow("‹ " + (up ? segTitle(up) : "Open"), () => up ? renderFolder(section, up) : renderSongGroups(), true));
+  rows.appendChild(songRow("‹ " + (up ? segTitle(up) : "All folders"), () => up ? renderFolder(section, up) : renderSongGroups(), true));
   rows.appendChild(songHeader(section === "local" ? localLabel() : publishedLabel()));
   for (const seg of subfolderKeys(node)) rows.appendChild(songRow(segTitle(node.sub[seg].path) + "  (" + nodeCount(node.sub[seg]) + ") ›", () => renderFolder(section, node.sub[seg].path)));
   if (section === "local") {
@@ -12535,7 +12535,7 @@ function fsubFolder(section, folder) { // one level: subfolders, then this folde
     return fsubImportAlbum(folder.split("/").pop()); // captures: publish-all + per-track rows
   filesub.innerHTML = "";
   const up = parentFolder(folder);
-  fsubItem("‹ " + (up ? segTitle(up) : "Open"), () => up ? fsubFolder(section, up) : fsubAlbums(), true);
+  fsubItem("‹ " + (up ? segTitle(up) : "All folders"), () => up ? fsubFolder(section, up) : fsubAlbums(), true);
   fsubHeader((section === "local" ? localLabel() : publishedLabel()) + "  ·  " + folderTitle(folder));
   for (const seg of subfolderKeys(node)) fsubItem(segTitle(node.sub[seg].path) + "  (" + nodeCount(node.sub[seg]) + ")  ›", () => fsubFolder(section, node.sub[seg].path));
   const songs = node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
@@ -12600,7 +12600,7 @@ let impCommitLive = null; // {slug, text} while a folder commit runs
 function fsubImportAlbum(slug) {
   filesub.innerHTML = "";
   { const f = folderOf(importDraftKeys().find(k => k.split("/")[2] === slug) || "albums/imports/" + slug + "/x.mid");
-    fsubItem("‹ " + (parentFolder(f) ? segTitle(parentFolder(f)) : "Open"), () => parentFolder(f) ? fsubFolder("local", parentFolder(f)) : fsubAlbums(), true); }
+    fsubItem("‹ " + (parentFolder(f) ? segTitle(parentFolder(f)) : "All folders"), () => parentFolder(f) ? fsubFolder("local", parentFolder(f)) : fsubAlbums(), true); }
   fsubHeader(localLabel());
   const keys = importDraftKeys().filter(k => k.split("/")[2] === slug);
   const all = document.createElement("button"); // whole folder in one publish
