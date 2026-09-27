@@ -359,5 +359,78 @@
     "path": "albums/imports/tmnt-2/selection.mid"
    }
   ]
+ },
+ {
+  "title": "Final Fantasy Legend",
+  "songs": [
+   {
+    "title": "Demon Cave",
+    "path": "albums/imports/final-fantasy-legend/demon-cave.mid"
+   },
+   {
+    "title": "Eat the Meat",
+    "path": "albums/imports/final-fantasy-legend/eat-the-meat.mid"
+   },
+   {
+    "title": "Epilogue",
+    "path": "albums/imports/final-fantasy-legend/epilogue.mid"
+   },
+   {
+    "title": "Fanfare",
+    "path": "albums/imports/final-fantasy-legend/fanfare.mid"
+   },
+   {
+    "title": "Fierce Battle",
+    "path": "albums/imports/final-fantasy-legend/fierce-battle.mid"
+   },
+   {
+    "title": "Fight",
+    "path": "albums/imports/final-fantasy-legend/fight.mid"
+   },
+   {
+    "title": "Forbidden Tower",
+    "path": "albums/imports/final-fantasy-legend/forbidden-tower.mid"
+   },
+   {
+    "title": "Furious Battle",
+    "path": "albums/imports/final-fantasy-legend/furious-battle.mid"
+   },
+   {
+    "title": "Hurry Up!",
+    "path": "albums/imports/final-fantasy-legend/hurry-up.mid"
+   },
+   {
+    "title": "Jingle #01",
+    "path": "albums/imports/final-fantasy-legend/jingle-01.mid"
+   },
+   {
+    "title": "Knights of the Demon World Tower",
+    "path": "albums/imports/final-fantasy-legend/knights-of-the-demon-world-tower.mid"
+   },
+   {
+    "title": "Main Theme",
+    "path": "albums/imports/final-fantasy-legend/main-theme.mid"
+   },
+   {
+    "title": "Prologue",
+    "path": "albums/imports/final-fantasy-legend/prologue.mid"
+   },
+   {
+    "title": "Requiem",
+    "path": "albums/imports/final-fantasy-legend/requiem.mid"
+   },
+   {
+    "title": "The Highest Floor",
+    "path": "albums/imports/final-fantasy-legend/the-highest-floor.mid"
+   },
+   {
+    "title": "Town Theme",
+    "path": "albums/imports/final-fantasy-legend/town-theme.mid"
+   },
+   {
+    "title": "Wipe Your Tears Away",
+    "path": "albums/imports/final-fantasy-legend/wipe-your-tears-away.mid"
+   }
+  ]
  }
 ]

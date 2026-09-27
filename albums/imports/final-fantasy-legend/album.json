@@ -1,0 +1,84 @@
+{
+ "title": "Final Fantasy Legend",
+ "order": 50,
+ "songs": {
+  "eat-the-meat": "Eat the Meat",
+  "hurry-up": "Hurry Up!",
+  "jingle-01": "Jingle #01",
+  "knights-of-the-demon-world-tower": "Knights of the Demon World Tower"
+ },
+ "nsf": {
+  "vault": "final-fantasy-legend.gbs",
+  "tracks": {
+   "demon-cave": {
+    "n": 5,
+    "secs": 48.68778991699219
+   },
+   "eat-the-meat": {
+    "n": 13,
+    "secs": 16.374366760253906
+   },
+   "epilogue": {
+    "n": 4,
+    "secs": 299.9790687561035
+   },
+   "fanfare": {
+    "n": 15,
+    "secs": 11.987777709960938
+   },
+   "fierce-battle": {
+    "n": 7,
+    "secs": 43.02875518798828
+   },
+   "fight": {
+    "n": 9,
+    "secs": 35.762420654296875
+   },
+   "forbidden-tower": {
+    "n": 11,
+    "secs": 36.33167266845703
+   },
+   "furious-battle": {
+    "n": 6,
+    "secs": 52.371185302734375
+   },
+   "hurry-up": {
+    "n": 3,
+    "secs": 34.18860626220703
+   },
+   "jingle-01": {
+    "n": 16,
+    "secs": 13.980159759521484
+   },
+   "knights-of-the-demon-world-tower": {
+    "n": 12,
+    "secs": 37.202293395996094
+   },
+   "main-theme": {
+    "n": 2,
+    "secs": 44.01657485961914
+   },
+   "prologue": {
+    "n": 1,
+    "secs": 64.22502136230469
+   },
+   "requiem": {
+    "n": 14,
+    "secs": 27.49152374267578
+   },
+   "the-highest-floor": {
+    "n": 17,
+    "secs": 22.66962432861328
+   },
+   "town-theme": {
+    "n": 8,
+    "secs": 47.43208694458008
+   },
+   "wipe-your-tears-away": {
+    "n": 10,
+    "secs": 67.2721939086914
+   }
+  },
+  "chip": "gbs"
+ }
+}
