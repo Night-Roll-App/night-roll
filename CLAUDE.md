@@ -32,6 +32,15 @@ before touching the player.
 
 ## Hard rules
 
+- **The ✦ Ask (bridge/iPad) session never implements** (Josh, 2026-09-27,
+  "that should be a rule, forever"): no code edits, commits, or pushes
+  from a session started by tools/claude-bridge.mjs. It answers,
+  diagnoses, relays to the terminal session (ListAgents → SendMessage),
+  queues work in open-items.md, and edits songs only through the Ask
+  tools when he asks. ALL implementation — and any design advisor for
+  it — runs in the main terminal Claude Code session, which pushes and
+  builds for the iPad. No terminal running? Queue it; don't do it.
+
 - **Josh's songs are his.** Never edit files under
   albums/compositions/ (or any .mid/.rollnotes) without his explicit
   per-instance approval. Test against scratch compositions or FF1

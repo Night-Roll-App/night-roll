@@ -595,6 +595,23 @@ the loop: annotation. Verified on the real Sonic 1 set. Next: PS1 (minis
 + psflib together), then N64 (miniusf + usflib); Genesis sound chip
 (YM2612 + SN76489 renderer) later.
 
+## FOR THE TERMINAL — 2026-09-27 evening (from the Ask session; Josh's ruling: Ask never implements)
+
+1. **Bridge prompt**: add the rule to BRIDGE_SYS_FULL in tools/claude-bridge.mjs —
+   the Ask session answers, diagnoses, relays, queues; it never edits code,
+   commits or pushes. (CLAUDE.md "Hard rules" now says it; the prompt should too.)
+2. **Capture jobs**: Josh wants YOU to bring a design advisor (Plan agent) and
+   then implement, scope = captures + their publishes first, "maybe more". A
+   read-only design run was started from the Ask session and cut off when its
+   process ended; nothing landed. Advisor brief to reuse: job model (kind, id,
+   title, items with status/progress, persisted mirror, survive panel close /
+   reload / tab suspend); UI (a ⏳ indicator + jobs sheet; the capture panel
+   becomes a VIEW onto a job; cancel/retry/dismiss); which operations become
+   jobs first (captureChipTrack loops, commitImports) and later (Publish all,
+   chip renders on the Worker, audio export); concurrency + cancellation rules;
+   4–6 shippable commits each with its help entry + FEATURES keyword +
+   NIGHT-ROLL.md section.
+
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 
 Josh: "we ought to have some sort of a job system where the captures go
