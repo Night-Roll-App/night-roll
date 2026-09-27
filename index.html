@@ -5709,7 +5709,7 @@ function rebuildAudio(why) {
   try { if (audio) audio.close().catch(() => {}); } catch (err) { /* already closed */ }
   audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
   ensureAudio(); // rebuilds + re-warms (covers the first-quantum glitch)
-  console.log("[audio] context rebuilt (" + why + ")");
+  logErr("audio engine rebuilt (" + why + "; gesture " + (gestureActive() ? "active" : "lapsed") + ")"); // the ⚠ log, not the console: an iPad has no console
 }
 async function resumeAudio() {
   if (!audio) return;
@@ -6849,7 +6849,12 @@ function scheduleNote(ti, n, when, durSec) {
   // song made no sound). Nothing is sounding underneath a tap, so there is
   // nothing to double; and the chip buffer is a whole-track render, so there
   // is no way to sound one note from it. The preview uses the synth voice.
-  if (!n._preview && chipActive() && song.tracks[ti] && chipHas(song.tracks[ti].name) &&
+  // …and only while chip sources are actually sounding: a render that lands
+  // MID-playback (the ▶ wait gave up, or the song was already rolling) set
+  // chip.key, which muted the synth here while chipStart never ran — cursor
+  // moving, nothing heard, on the SNES song and on the NES song after it
+  // (review, 2026-09-27). chip.srcs is what chipStart made; no srcs, synth plays.
+  if (!n._preview && chipActive() && chip.srcs.length && song.tracks[ti] && chipHas(song.tracks[ti].name) &&
       (!song.tracks[ti].voice || song.tracks[ti].voice === "auto")) return;
   if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v); return; }
   let v = trackVoice(ti);
@@ -7746,6 +7751,7 @@ async function play(fromSec = 0, opts = {}) {
       await new Promise(r => setTimeout(r, 200));
       if (gen !== play.gen || playing) return; // stopped or restarted meanwhile
     }
+    if (chip.rendering === songKey) logErr("console render still running after 25 s (" + Math.round((chip.progress || 0) * 100) + "%) — playing synthesized voices; the chip joins at the next ▶");
     setInfo("");
   }
   openMaster();

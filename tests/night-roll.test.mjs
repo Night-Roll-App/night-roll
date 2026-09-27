@@ -2551,7 +2551,7 @@ test("a note preview sounds on a chip song; playback notes still don't double", 
   run(`song.tracks = [{name: "pulse1", notes: []}];
        trackState = [{muted: false, solo: false}];
        songKey = "albums/final-fantasy-i/songs/overworld.mid";
-       chip.key = songKey; chip.buffers = {pulse1: {}};
+       chip.key = songKey; chip.buffers = {pulse1: {}}; chip.srcs = [{stop() {}}]; // chipStart made a source: the chip is sounding
        ensureAudio(); playing = false;`);
   assert.equal(val(`chipActive()`), true, "chip is active for this song");
   // the guard returns BEFORE the first createGain, so counting gains says
@@ -2561,6 +2561,8 @@ test("a note preview sounds on a chip song; playback notes still don't double", 
 
   run(`_gains = 0; scheduleNote(0, {p: 60, v: 90, ch: 0, _preview: true}, audio.currentTime + 0.01, 0.3)`);
   assert.ok(val(`_gains`) > 0, "a preview sounds on a chip-backed track");
+  run(`_gains = 0; playing = true; chip.srcs = []; scheduleNote(0, {p: 60, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3); chip.srcs = [{stop() {}}]; playing = false;`);
+  assert.ok(val(`_gains`) > 0, "no chip source running (a render landed mid-play): the synth plays, never silence");
 
   run(`_gains = 0; playing = true;
        scheduleNote(0, {p: 60, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3)`);
