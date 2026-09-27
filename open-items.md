@@ -323,6 +323,15 @@ note priority opcode, OoT/MM channel B0–BE, s8 sequence register → a
 (like PS1's lib); per-game manifest keyed on the lib's NUS code; bank
 tuning not applied yet (+21 convention), drums unnamed.
 
+### Nintendo 64 (USF) — IN THE APP 2026-09-27 (NIGHT-ROLL.md "Nintendo 64 import")
+
+File → Import takes the .miniusf files WITH their .usflib (multi-select
+all). Verified on the real Super Mario 64 set (38 rows; Title, Main
+Theme, Dire Dire Docks full length with loops). Synth voices; the N64
+voice (VADPCM banks) is Phase C in tools/n64/INTEGRATION.md. Bank
+tuning not applied (+21 convention): pitches may sit an octave off on
+some instruments — Josh's ear decides. All six consoles now import.
+
 ### PlayStation (PSF) — IN THE APP 2026-09-27 (NIGHT-ROLL.md "PlayStation import")
 
 File → Import takes the .minipsf files WITH their .psflib (multi-select

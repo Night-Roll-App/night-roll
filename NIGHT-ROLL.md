@@ -559,6 +559,28 @@ Theme 2238 notes with 11 tempo points and `loop: 19.1`, ~1.1 s each.
 Test: "PSF import: …" (synthetic minipsf + lib; the missing-lib error;
 the trust flag on a 41-bar rest).
 
+**Nintendo 64 import (2026-09-27; verified on the real Super Mario 64
+set).** The sixth chip, the second sequence one. A USF set is many
+`.miniusf` (a save-state word or two each) plus ONE `.usflib` carrying
+the game's sparse ROM and RDRAM; `CHIPS.usf` sniffs PSF version 0x21,
+`libFile` keeps the lib beside the rows, `parseAsync` reads the tags
+(title/game/artist/length). `capture`: `loadUSF([mini, ...libs])` (the
+lib objects persist across captures, so their parse is cached on them),
+`gameOfSet` → manifest (abi, sequence-id rule), `locateEAD` (tables in
+ROM for SM64, in RDRAM for OoT/MM), `miniSequenceId` from the save
+state, the sequence bytes from ROM pages or the RDRAM cache with a
+presence mask, `parseSequence` (stop at the loop jump, 600 s cap),
+`toMidi` (a track per channel, `inst N`/`drums` names, the tempo map);
+bpm = the first tempo, seconds from the interpreter, the loop jump →
+`loop:` annotation in 48-tick beats (4/4 assumed — the format carries no
+meter); truncation, self-modification, io-port reads and ignored
+sound-shaping ops become the row's tooltip notes. `keepBytes: false`, no
+renderer. Verified in Chrome: 38 rows with tag titles, Title Theme 4008
+notes / 13 tracks / 6 tempo points / `loop: 5.1`, Main Theme 1419 notes
+at 113 bpm, Dire Dire Docks 390 notes, ~150 ms each. Test: "USF import:
+…" (sniff, lib file, capture presence); the real-set run is the browser
+check and tests/n64-real.test.mjs with N64_USF_DIR.
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware
