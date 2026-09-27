@@ -1212,6 +1212,33 @@ tests/night-roll.test.mjs); the shell project lives outside this repo
 (`~/work/ff/night-roll-app`, `build-ipad.sh` = package → sync → build →
 install).
 
+**Open as LOCAL / PUBLISHED, folders by path (2026-09-27; design:
+docs/song-organization-proposal.md, phase 1 of 5).** Nothing moved on
+disk: the tree is derived from paths. `folderOf(path)` = the directory
+without `albums/` (FF1's `songs/` level collapses); `folderTitle(f)`
+names each segment by the catalog album that lives there
+(`albumFolders()`), else `FOLDER_NAMES` (nes → NES, imports → Imports,
+local → Imported files), else Title Case — "Imports › Mega Man 2",
+"My Compositions › Night Roll Sketches". `localFolders()` groups
+`draftKeys()` by folder; `songStatus(key)` is the row word: not
+published (not in the catalog) / changed since publish (draft dirty) /
+annotations changed here (`dirtySongs`) / published. Both pickers —
+File → Open (`fsubAlbums` → `fsubLocalFolder` / `fsubSongs`;
+`fsubImportAlbum` is the LOCAL view of an imports folder and now holds
+the discard-all ✕) and the crumb sheet (`renderSongGroups` →
+`renderLocalFolder` / `renderSongList`) — show LOCAL · this device
+(folders of local copies) above PUBLISHED · <repo> (catalog albums as
+folders); a published song with a local copy says "· local copy" and
+opens the local one (draft wins, as before). "Night Roll drafts" and
+`fsubDrafts`/`renderDraftList` are gone. Commit → Publish everywhere the
+user reads it: `publishDest()` (github / folder / null) and
+`publishLabel(what)` ("⇪ Publish …", "Save … to Files/folder", or
+"Connect GitHub to publish", disabled) label the import buttons.
+Still to come (phases 2–5): Save asks folder + name (Untitled until
+then), mirror publish per folder, iPad Save writes Files without the
+checkbox, then Josh's batch of moves (imports + FF1 under console
+folders; nightroll/ stays his).
+
 **App edition reads from the configured repo (2026-09-27).** On the web
 "this site" (blank base) is Pages = the whole catalog; in the app it is
 the bundle = starters only, so Josh's published songs never listed

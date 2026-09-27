@@ -48,6 +48,9 @@ nightroll/cool-b-maj-with-b-part.notes.txt (an older dump of the moved
 song; the current one is in compositions/) — delete on his word.
 Build order per the doc: wording → Save with folders + mirrored
 publish → Open LOCAL/PUBLISHED → iPad Files → the one batch of moves.
+DONE (evening): phase 1 — Open as LOCAL / PUBLISHED with folders by
+path, Commit → Publish wording, publish buttons name their destination
+(branch `folders`, merged). NEXT: Save asks folder + name.
 
 ## OPEN DESIGN QUESTION (Josh, 2026-09-27): where saves live on the iPad
 
