@@ -10,6 +10,9 @@ Two routes to note data on PS1:
   Researched below; not implemented (cost assessment at the end).
   The container itself is parsed (`psf.mjs`) so the app can sniff it
   and scan its RAM image for embedded SEQ/VAB data.
+- **Route A′ — Square's AKAO** (Final Fantasy VII; §6). A second
+  sequenced format, read straight from the PSF's RAM image with no
+  emulation (`akao.mjs`). Added 2026-09-27 from the real FF7 set.
 
 Byte layouts below were checked against Sony's own *File Formats*
 reference (Psy-Q SDK, 1998), the nocash/psx-spx spec, the VGMTrans
@@ -288,7 +291,13 @@ each `.minipsf` holds only the per-track data plus `_lib=driver.psflib`.
 Load order: recurse into `_lib` first (it sets PC and SP), then overlay
 this file's own text section on top, then `_lib2`.. `_libN` in order.
 Executables are overlaid by their `text start / size`, never
-relocated.
+relocated. *Confirmed on the FF7 set (2026-09-27):* the lib is text
+`0x80010000 + 0x1E0000`, PC `0x800110C0`; every mini is text
+`0x801D0000 + 0x8000` — inside the lib's span — with a placeholder PC
+`0x80010000`, so "PC from the first file loaded" is load-bearing, not a
+nicety. `psf.mjs` `loadPSFChain` / `assembleRam` implement this. Other
+real-tag facts: `utf8=1`, `length` as `m:ss`, `fade` in whole seconds,
+multi-line values as repeated keys, reserved area 0.
 
 ### PS1 program: PS-X EXE
 
@@ -430,4 +439,91 @@ Verdict: route A now (done here); a PSF **container** parser with an
 in-RAM SEQ/VAB scan is the cheap 80% and is included; a real R3000 +
 SPU logger is a multi-week project on the order of the whole NSF
 pipeline plus its DSP, to be started only for a specific non-libsnd
-soundtrack Josh wants.
+soundtrack Josh wants. *Postscript:* the first soundtrack he wanted was
+FF7, which is neither libsnd nor emulation-only — its AKAO score is a
+byte code readable in place (§6), so the "ported parser" option in
+INTEGRATION.md §4 was the one taken.
+
+## 6. AKAO — Square's PS1 sequence format (FF7 flavour)
+
+Measured on the real FF7 PSF set (INTEGRATION.md §6) against two
+sources that mostly agree and disagree once:
+
+- VGMTrans, `AkaoSeq.cpp` / `AkaoInstr.cpp` —
+  https://github.com/vgmtrans/vgmtrans/blob/master/src/main/formats/Akao/AkaoSeq.cpp
+  (event maps per "version": FF7 is VERSION_1_0)
+- Qhimm wiki, *FF7/PSX/Sound/AKAO sequence* —
+  https://wiki.ffrtt.ru/index.php/FF7/PSX/Sound/AKAO_sequence
+  (opcode table with operand sizes and semantics)
+
+**Header (16 bytes)**: `"AKAO"`, u16 id, u16 length (after the
+header), u16 reverb type, six BCD bytes `yy mm dd hh mm ss`. Then u32
+voice mask at 0x10 (bits 0..23) and one u16 per set bit at 0x14: the
+voice's stream offset **relative to the byte after the field**. Later
+AKAO (FF8/9, Chrono Cross) has a 0x40 header with the mask at 0x20 and
+instrument pointers; `isAKAO` rejects it by shape (byte 0x13 non-zero).
+
+**Score byte code**, one stream per voice, 48 ticks per quarter:
+
+| op | meaning |
+|----|---------|
+| 0x00–0x83 | note: degree = op ÷ 11, length = `DELTA[op mod 11]` with DELTA = 192 96 48 24 12 6 3 32 16 8 4 (whole … 64th, then triplet half … triplet 16th) |
+| 0x84–0x8E | tie: extend the sounding note by `DELTA[op − 0x84]` |
+| 0x8F–0x99 | rest |
+| 0xA0 | end of voice |
+| 0xA1 / 0xF2 | instrument (0xF2: without attack sample) |
+| 0xA2 n | next note/tie/rest lasts n ticks instead of its table length |
+| 0xA3 / 0xA8 | master volume / volume (0..127); 0xA9 = volume slide (len, target) |
+| 0xA5 n / 0xA6 / 0xA7 | octave set / +1 / −1 (masked to 4 bits) |
+| 0xC0 / 0xC1 | transpose absolute / relative (s8 semitones) |
+| 0xC8 / 0xC9 n / 0xCA | repeat start / until n times (0 = 256) / again; four levels |
+| 0xF0 n s16 / 0xF1 n s16 | on the n-th pass jump / jump and leave the repeat |
+| 0xEE s16 | jump (relative to the byte after the operand) — the song loop |
+| 0xEF n s16 | jump if the game's condition byte == n |
+| 0xE8 u16 / 0xE9 len u16 | tempo / tempo slide |
+| 0xFD a b | meter: a ticks per beat, b beats per bar (0 0 = none) |
+| 0xFE u16 | measure number (marker) |
+| 0xEC s16 / 0xED | drum mode on (operand → 5-byte-per-degree map: instrument, key, vol u16, pan) / off; the octave is ignored, degree → key 24 + degree |
+| 0xD8 / 0xD9 | tuning absolute / relative: multiplier 1 + n/128 (n ≥ 0) or 1 + n/256 |
+| 0xCC / 0xCD, 0xD0 / 0xD1 | slur, legato: no key-off between notes |
+| 0xDC s8 | fixed note length = last length + s8, for all following notes |
+| rest of 0xA4–0xDF, 0xEA–0xEB, 0xF4–0xF9 | pitch-bend slide, pan, noise, ADSR, vibrato/tremolo/pan LFOs, reverb depth, overlay/alternate voice — operand counts in `AKAO_OPLEN`, no note effect except as noted |
+| 0x9A–0x9F, 0xE0–0xE7, 0xF3, 0xFA–0xFC, 0xFF | unimplemented in FF7's driver; none occur in the 90 songs |
+
+Pitch: `octave × 12 + degree + transpose`, taken as the MIDI key (so
+octave 5 degree 0 = C4 = 60). FF7's INSTR.DAT articulation (64 bytes:
+SPU sample address, loop address, 8 ADSR bytes, then twelve u32 base
+pitches with 0x1000 = unity) is what makes that true — VGMTrans derives
+`unityKey = 72 − coarse(basePitch[C])`, and the base pitches are set so
+the written key sounds. Not verified per instrument here.
+
+**Tempo.** The driver runs a tick accumulator off root counter 2
+(sysclock ÷ 8 = 4 233 600 Hz) with a target it loads as an immediate;
+each interrupt adds the u16 tempo to a 16.16 counter, one tick per
+overflow:
+
+    ticks/s = (4 233 600 / target) × tempo / 65536
+    bpm     = ticks/s × 60 / 48
+
+**The one disagreement.** The Qhimm page's prose formula uses
+`target = 0x44E8` (exactly 240 Hz) "for FF7, different from other
+games"; VGMTrans uses `0x43D1` for VERSION_1_0 (FF7) and `0x44E8` for
+everything later. The FF7 psflib settles it: the driver code contains
+`ori a1, zero, 0x43D1` (bytes `d1 43 05 34`, 34 occurrences of the
+constant in the image) and no `0x44E8` anywhere. The page's own
+numeric shortcut, `bpm = tempo / 214.998`, is the 0x43D1 figure (0x44E8
+would give 218.45), and Corlett's `length` tags fit 0x43D1 (Tifa's
+Theme: two passes = 4:48 exactly). So: FF7 = 0x43D1 = 243.86 Hz;
+`TIMER_DIV_FF7` in `akao.mjs`, with `TIMER_DIV_LATER` for a future
+FF8/9 reader.
+
+**Loops** are per voice (each voice's own 0xEE), which the real files
+exploit: echo voices offset by 32/64 ticks, ostinato voices with a
+short period under a long form. The app wants one loop; the rule and
+the evidence are in INTEGRATION.md §6.
+
+**Where the data sits in a PSF.** The mini's text is the AKAO
+sequence alone (32 KB page at 0x801D0000); the driver, INSTR.DAT and
+INSTR.ALL are in the lib's 1.9 MB text. The lib has no AKAO block and
+no VAB, so a `pQES`/`pBAV` scan is the right first test and its
+emptiness the right cue to try `scanAKAO`.

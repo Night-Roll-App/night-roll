@@ -152,3 +152,182 @@ named soundtrack that neither the SEQ scan nor a ported parser reaches.
   "C4 assumed" per program in the .notes.txt); kits are detected by
   shape (several one-key tones) and can be forced per program; pitch
   bends are counted, not applied.
+
+## 6. Real rips (2026-09-27)
+
+Josh's authorisation: "go out and download all those other games from
+the web and try to import them". Set: **Final Fantasy VII** (PSF),
+Zophar's Domain, `https://www.zophar.net/music/playstation-psf/final-fantasy-vii`
+→ `Final Fantasy VII (EMU).zophar.zip` (835 KB). Rip bytes stayed in the
+session scratchpad; nothing under `rips/` is in the repo. Everything
+below was measured on those files; the synthetic reproductions live in
+`tools/psx/make-test-seq.mjs` and the tests in `tests/psx-real.test.mjs`.
+
+### Set shape
+
+- 90 `.minipsf` (0.6–4.8 KB each) + one `Final Fantasy 7.psflib`
+  (700 KB). No `.m3u`, no readme. Names are `NNN Title.minipsf` with
+  disc-track numbering (101…123, 201…221, 301…323, 401…418, 901); a few
+  carry suffixes (`102a`/`102b`, `305a`/`305b`, `412a`/`412b`/`412c`).
+- Tags (Neill Corlett, 1997 rip): `utf8=1`, `_lib=Final Fantasy 7.psflib`,
+  `game`, `artist=Nobuo Uematsu`, `psfby`, `year`, `copyright`,
+  `volume=1`, `title`, `length` (`m:ss`, no fraction), `fade` (whole
+  seconds), `genre=RPG`, sometimes `comment`. Key order varies file to
+  file. The lib's `comment` is two `comment=` lines (parsePSF joins
+  them with `\n`). Reserved area size 0 in every file; CRCs all match.
+- **Lib chain**: every mini names the one lib; the lib names none.
+  Load order (Corlett): lib first, mini on top. The lib's PS-X EXE is
+  text `0x80010000 + 0x1E0000` (driver + sample bank), entry PC
+  `0x800110C0`. Every mini's EXE is text `0x801D0000 + 0x8000` — **inside
+  the lib's span** — with a placeholder PC `0x80010000`. So the RAM
+  image is lib, then the mini overwriting one 32 KB page of it, and the
+  entry point is the lib's. `psf.mjs` now has `loadPSFChain` +
+  `assembleRam` for exactly this. One exception: `416 One-Winged
+  Angel` is text `0x801C0000 + 0x18000`; the extra 64 KB below the
+  sequence is zeros but for a `01 00 00 00` at `0x801C0000` — a flag the
+  driver reads (the battle-instrument overlay), not sequence data.
+
+### Sequence format: AKAO, not SEQ
+
+`scanMagic` finds **0 SEQ, 0 VAB** in every mini and in the lib (RAM
+scan of the assembled image, too). Each mini's text starts with `AKAO`:
+Square's own driver format. Layout as measured (matches VGMTrans's
+"version 1.0" and the Qhimm wiki):
+
+    0x00  "AKAO"
+    0x04  u16 song id        (0x60 Prelude, 0x23 Tifa, 0x0E Main Theme, 0x52 OWA)
+    0x06  u16 length         (bytes after the 16-byte header)
+    0x08  u16 reverb type    (1, 3, 4 seen; 2 on two jingles)
+    0x0A  6 × BCD            yy mm dd hh mm ss — 1996-12-18 22:44:59 … 22:46:40
+                             for 88 of 90 files (the export run), two
+                             from 1996-11-29
+    0x10  u32 voice mask     (bits 0..23; 0xFFFF = 16 voices, 0xFFFE0 =
+                             voices 5..19, World Crisis uses all 24)
+    0x14  u16 × popcount     per-voice offset, relative to the byte AFTER
+                             the field
+    then  one byte-code stream per voice; drum maps after the score
+
+Opcodes: `tools/psx/akao.mjs` (`AKAO_OPLEN`), taken from VGMTrans
+`AkaoSeq.cpp` (VERSION_1_0 event map) and the Qhimm page, then run over
+all 90 songs: **no unimplemented opcode, no stream running off its end,
+no event-budget overrun** — the byte lengths are right. Notes are
+`degree × 11 + lengthIndex` (0x00..0x83), ties 0x84..0x8E, rests
+0x8F..0x99, lengths `192 96 48 24 12 6 3 | 32 16 8 4` ticks at **48 per
+quarter**; pitch = `octave × 12 + degree + transpose` (0xA5/A6/A7,
+0xC0/C1), which VGMTrans treats as the MIDI key outright (FF7's
+articulation table gives every instrument a per-degree base pitch with
+unity at that key). Tempo 0xE8 is a u16 tick-accumulator increment;
+`bpm = tempo × (33 868 800 / 8 / 0x43D1) / 65536 × 60 / 48` — see
+RESEARCH.md §6 for why 0x43D1 and not the wiki's 0x44E8. Meter 0xFD is
+`ticks-per-beat, beats-per-bar`. The song loop is an 0xEE jump back
+into visited bytes, **one per voice**; 0xC8/C9/CA repeats nest four
+deep and are unrolled.
+
+What the real files do that a spec would not have told us:
+
+- **Staggered loop starts.** The Prelude's three arpeggio voices are
+  the same line 32 and 64 ticks apart (an echo): their jumps land 32/64
+  ticks later. 35 of 90 songs stagger by a few ticks. One song loop for
+  the app = latest start, one longest period long (that cut is seamless
+  for every voice; the earliest start is not).
+- **Nested periods.** `108 Lurking in the Darkness`: voice 1 is a
+  96-tick drum ostinato looping forever under a 6336-tick form. Nine
+  songs do this (periods 48…3072 under 1536…9216). Shorter voices are
+  unrolled to the song loop, as the driver plays them.
+- **Ties after rests and at repeat heads** (`c8 a5 04 86 …`): a tie
+  with no sounding note just lets time pass — dotted rests, and "note +
+  tie" written across the repeat boundary. 391 sites; not an error.
+- **Tempo after an opening rest**: `316 Interrupted by Fireworks` sets
+  tempo and 6/8 at tick 4 (after `a2 04 8f`); `414 Jenova Absolute` at
+  tick 72, but one of its voices already sounds at tick 0. Before the
+  first 0xE8 the driver runs at whatever the previous song left. Rule:
+  a tempo/meter stated before any note belongs to tick 0; 414 keeps
+  its warning and a 120 bpm assumption for 72 ticks.
+- Ten songs (jingles, the ending) end with 0xA0 on every voice and do
+  not loop: 203, 206 Waltz de Chocobo, 308, 410, 412a/b/c, 417 World
+  Crisis, 418 Staff Roll, 901.
+- Voice count outruns MIDI: World Crisis 24 voices, Staff Roll 20.
+
+### Per-track results (`node tools/psx/dump.mjs "<mini>"`, lib beside it)
+
+| track | id | voices | notes | tempo | meter | length → loop | app parse |
+|-------|----|--------|-------|-------|-------|---------------|-----------|
+| 101 The Prelude | 0x60 | 13 | 2836 | 81.49 | 4/4 | 53 bars; loop bar 17 b2.33 → 53 b2.33 (echo voices +32/+64 ticks) | 2836 |
+| 105 Tifa's Theme | 0x23 | 13 | 536 | 81.49 | 4/4 | 49 bars; loops from bar 1 | 536 |
+| 201 Main Theme | 0x0E | 16 | 2238 | 86.58, 11 tempo points (71.3 at bar 18, slide 83.5→74.4 in bar 70 …) | 4/4 | 124 bars; loop bar 19 → 125 | **2120** |
+| 416 One-Winged Angel | 0x52 | 16 | 7842 | 120.2 | 4/4 with 7/8 (bar 21), 3/8 (bar 94) | 125 bars; loop tick 6648 → 23208 | 7842 |
+
+Sanity that the numbers are music, not noise: the Prelude's voices
+11–13 are the C-pentatonic arpeggio in 16ths (`C1 D1 E1 G1 C2 …` up
+four octaves and back), 832 notes each, three voices 32 ticks apart;
+One-Winged Angel's bass sits on E2 in 16ths under a 120 bpm 4/4;
+Tifa's Theme's 9408 ticks at 81.49 bpm are 144.3 s, and Corlett's
+`length=4:48` is exactly two passes — with the wiki's tempo constant it
+would be 4:44. All 90 songs parse in ~100 ms total, zero crashes.
+
+### Bugs fixed (regression tests in `tests/psx-real.test.mjs`)
+
+- **dump.mjs scanned only the mini's own image** and never loaded the
+  lib, so a minipsf could not be judged at all ("route B needed" for a
+  libsnd game whose SEQ sits in the mini and VAB in the lib). Now:
+  `loadPSFChain` → `assembleRam` → scan the whole image; lib found
+  beside the file or via `--lib`; a missing lib is a named error
+  (test: "dump CLI: a minipsf finds its lib beside it").
+- **makeMidi channel bytes**: a melodic source channel 9 landed on GM
+  drums, and channels ≥ 16 overflowed the status byte (`0x90 | 16 =
+  0xA0`, poly aftertouch). Now channel 9 and voices past 15 take free
+  MIDI channels, then share (test: "MIDI channels: …").
+- **Mixed drum/melodic voices** (0xEC … 0xED mid-track) were written to
+  one channel; the kit part now goes to its own channel-10 track
+  (test: "AKAO score …", `ch 2 prog 16,17 kit`).
+- AKAO reader itself (new): staggered starts, nested periods, ties
+  without notes, late tempo — each has a test above.
+
+### What remains approximate
+
+- **Pitch is the written key.** FF7's INSTR.DAT gives each articulation
+  twelve per-degree base pitches (`0x1000` = unity); VGMTrans derives
+  `unityKey = 72 − coarse` from the C entry and its FF7 output is in
+  tune, so the written key is the sounding note for melodic
+  instruments. Kits (drum mode) and effect samples are not pitched. We
+  do not read INSTR.DAT/INSTR.ALL from the lib yet (their RAM location
+  is not in the AKAO header for this version; VGMTrans carries a
+  per-game table), so no per-instrument confirmation.
+- **Durations are written lengths**; the driver keys off 2 ticks
+  early unless legato/slur. Pitch-bend slides (0xA4) are counted, not
+  applied; tuning (0xD8/D9) is applied as cents; vibrato/tremolo/pan
+  LFOs, ADSR, portamento, overlay/alternate voices are ignored.
+- **Velocity** is `master (0xA3) × volume (0xA8) / 127` at note-on,
+  with 0xA9 slides interpolated; AKAO has no per-note velocity.
+- **CPU-conditional jumps (0xEF)** follow VGMTrans: taken when the
+  condition byte is 0. Songs the game varies at runtime (battle
+  variants) read as their default form.
+- Tempo slides are stepped every 6 ticks, not continuous.
+
+### What File → Import in index.html would need (not done — another session owns it)
+
+1. Sniff `PSF\x01` as today, then read `_lib` from the tags and ask for
+   the lib **by name** when it was not picked along (`Final Fantasy
+   7.psflib`, 700 KB, one file for the whole set — the m3u-style "pick
+   both together" rule fits). Cache the inflated lib per session; the
+   mini is 32 KB.
+2. In the browser, inflate with `DecompressionStream("deflate")` and
+   pass that as `inflate` to `loadPSFChain`; `assembleRam` needs 2 MiB
+   per song, so assemble, scan, drop.
+3. `scanMagic(ram)` → existing SEQ path; else `scanAKAO(ram)` →
+   `parseAKAO` → `akaoNotes` → `makeMidi`; prefer the AKAO inside the
+   mini's own text range (`ranges` from `assembleRam`).
+4. **parseMidi's 32-bar tacet guard truncates FF7 tracks.** The Main
+   Theme's voice 2 rests 41 bars (ticks 2496 → 10368 at 48 ppq); the
+   guard (`notes[k].t - notes[k-1].t > 32 × 4 × ppq` → cut) drops 118
+   of its 2238 notes on the way in. Imports need the guard off (the
+   guard exists for corrupt ff1 files, and an import of our own bytes
+   is not one of those), or the import should hand notes to the album
+   directly rather than round-trip through the .mid parser.
+5. Warnings from `result.seq.warnings` belong in the panel, not
+   hidden (staggered starts, unrolled periods, the 414 tempo
+   assumption).
+6. Row naming from `tags.title`; album from `tags.game`; the tag
+   `length` is Corlett's two-passes-plus-fade, not the loop.
+7. Help sheet / HELP.md / drift keyword / NIGHT-ROLL.md "PS1 import"
+   paragraph as §5 lists, adding "PSF (libsnd or Square AKAO: FF7)".

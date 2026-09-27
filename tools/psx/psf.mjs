@@ -53,6 +53,50 @@ export async function inflatePSF(psf, inflate = null) {
   return new Uint8Array(await inflate(psf.program));
 }
 
+// minipsf → psflib chain (Corlett §"PSF1 libraries", checked against the
+// FF7 set): load `_lib` first — recursively, it sets PC and SP — then this
+// file's own EXE on top, then `_lib2`..`_libN` in order. readLib(name) ->
+// bytes | Promise<bytes> for a lib named in a tag (the name is relative to
+// the minipsf's own directory; the caller resolves that). Returns the
+// executables in load order: [{name, psf, exe}].
+export async function loadPSFChain(bytes, readLib, {name = "", inflate = null, seen = new Set()} = {}) {
+  const psf = parsePSF(bytes);
+  if (psf.version !== 1) throw new Error(`PSF version 0x${psf.version.toString(16)} is not PS1`);
+  const key = name.toLowerCase();
+  if (seen.has(key)) throw new Error(`_lib cycle at ${name}`);
+  seen.add(key);
+  const out = [];
+  const lib = async n => {
+    const b = await readLib(n);
+    if (!b) throw new Error(`missing library ${n} (named by ${name || "the minipsf"}'s _lib tag)`);
+    return loadPSFChain(b, readLib, {name: n, inflate, seen});
+  };
+  if (psf.libs[0]) out.push(...await lib(psf.libs[0]));
+  out.push({name, psf, exe: await inflatePSF(psf, inflate)});
+  for (const n of psf.libs.slice(1)) out.push(...await lib(n));
+  return out;
+}
+
+// Overlay PS-X EXEs into a 2 MiB RAM image by their text start/size
+// (never relocated). PC/SP come from the first executable loaded — the
+// lib's; a minipsf's own header carries placeholders (FF7: PC 0x80010000
+// in every mini, the driver's real entry 0x800110C0 in the lib).
+export const RAM_SIZE = 0x200000;
+export function assembleRam(chain) {
+  const ram = new Uint8Array(RAM_SIZE);
+  const ranges = [];
+  let pc = null, sp = null, gp = null, region = "";
+  for (const {name, exe} of chain) {
+    const h = parseExe(exe);
+    const start = h.textStart & 0x1FFFFF;
+    if (start + h.textSize > RAM_SIZE) throw new Error(`${name || "PSF"}: text 0x${h.textStart.toString(16)}+0x${h.textSize.toString(16)} does not fit in RAM`);
+    ram.set(h.text.subarray(0, h.textSize), start);
+    ranges.push({name, start: h.textStart >>> 0, size: h.textSize});
+    if (pc === null) { pc = h.pc; sp = h.sp; gp = h.gp; region = h.region; }
+  }
+  return {ram, pc, sp, gp, region, ranges};
+}
+
 // offsets of every "pQES" (SEQ/SEP) and "pBAV" (VAB) in a byte range
 export function scanMagic(bytes) {
   const d = new Uint8Array(bytes);
