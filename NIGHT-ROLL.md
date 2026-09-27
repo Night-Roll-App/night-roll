@@ -1209,7 +1209,7 @@ paragraph below describes the adapter; ignore its checkbox/pref parts.
 
 **Edit here (2026-09-27).** A published song in a folder of the user's
 own with no local copy on this device shows `#editherebtn` ("✎ Edit
-here") beside Edit ▾ (`updateEditBtnVis`: `ownFolderPath(songKey) &&
+locally") beside Edit ▾ (`updateEditBtnVis`: `ownFolderPath(songKey) &&
 !editable`). Tapping asks first (Josh's ruling) and then writes
 `draftDoc(true)` as the draft — the local copy, clean until the first
 edit — which makes `isComposition()` true.
@@ -1317,7 +1317,7 @@ edge). `tools/build_manifest.mjs` walks any depth (a directory with
 New lands, and since the same evening no longer editable by path
 either: a published copy is never edited in place (Josh), so
 `isComposition` needs the local draft or provenance for EVERY folder,
-Sketches included; "✎ Edit here" is the way in.
+Sketches included; "✎ Edit locally" is the way in.
 
 **App edition reads from the configured repo (2026-09-27).** On the web
 "this site" (blank base) is Pages = the whole catalog; in the app it is
