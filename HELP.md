@@ -278,6 +278,9 @@ Hints and direction first. It confirms or refines a guess you've made, and it te
 **Move a sheet**
 Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask; drag the **◢** in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.
 
+**⏳ Jobs**
+Captures and publishes run as background jobs: start one and close its panel — the **⏳** chip in the footer shows how many are running, tap it for the list (title, progress like "12/92 · Frog's Theme 40%", and per job **Open** to get back to its panel, **✕** to cancel a running one or dismiss a finished one, **↻** to retry what is left). A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job interrupted with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; publishes one per folder.
+
 **⧉ copy / links**
 Every bubble ends with a small **⧉**: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.
 

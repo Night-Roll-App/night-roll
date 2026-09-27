@@ -1386,6 +1386,7 @@
       <dt>✦ Ask</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ Ask</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
       <dt>Move a sheet</dt><dd>Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
+      <dt>⏳ Jobs</dt><dd>Captures and publishes run as background jobs: start one and close its panel — the <b>⏳</b> chip in the footer shows how many are running, tap it for the list (title, progress like "12/92 · Frog's Theme 40%", and per job <b>Open</b> to get back to its panel, <b>✕</b> to cancel a running one or dismiss a finished one, <b>↻</b> to retry what is left). A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job <i>interrupted</i> with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; publishes one per folder.</dd>
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
       <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
@@ -12733,7 +12734,28 @@ function fsubLocalFolder(folder) { return fsubFolder("local", folder); }
 // every open, so its progress must live outside the button (Josh,
 // 2026-09-27, minutes into the Chrono Trigger commit: "I didn't know if I
 // could click away"). The footer strip carries the same line everywhere.
-let impCommitLive = null; // {slug, text} while a folder commit runs
+// A publish of captures is a job too: one per folder at a time, its note is
+// commitImports' status line, ↻ re-runs it for the drafts still there
+// (commitImports deletes drafts only after success, so a retry is safe).
+function publishJobStart(slug, keys, statusFn) {
+  keys = keys || importDraftKeys();
+  if (!keys.length) { statusFn && statusFn("No captures to publish."); return null; }
+  const live = jobsFind("publish", slug, true) || (slug ? null : jobsFind("publish", null, true));
+  if (live) { statusFn && statusFn("a publish is running: " + live.title + " — tap ⏳"); return null; }
+  const title = slug ? titleCaseSlug(slug) : keys.length + " tracks";
+  return jobStart("publish", title, [{label: keys.length + " track" + (keys.length === 1 ? "" : "s")}], async api => {
+    api.update(0, {st: "running"});
+    await commitImports(s => { api.note(s); statusFn && statusFn(s); }, keys);
+    const left = keys.filter(k => localStorage.getItem(draftStoreKey(k)) !== null && importDraftKeys().includes(k));
+    api.update(0, {st: left.length ? "failed" : "done", msg: left.length ? left.length + " not published" : ""});
+    if (left.length) throw new Error(left.length + " of " + keys.length + " not published");
+  }, {slug, keys});
+}
+JOB_KINDS.publish = {
+  label: j => "Publish · " + j.title,
+  open: j => { if (j.slug) { document.getElementById("filesheetbtn").click(); fsubImportAlbum(j.slug); } else setInfo(j.title + ": " + (j.note || j.state)); },
+  retry: j => { const keys = (j.keys || []).filter(k => importDraftKeys().includes(k)); if (!keys.length) { setInfo(j.title + ": nothing left to publish"); return; } publishJobStart(j.slug, keys, setInfo); },
+};
 function fsubImportAlbum(slug) {
   filesub.innerHTML = "";
   { const f = folderOf(importDraftKeys().find(k => k.split("/")[2] === slug) || "albums/imports/" + slug + "/x.mid");
@@ -12746,19 +12768,17 @@ function fsubImportAlbum(slug) {
   all.dataset.impcommit = slug;
   all.textContent = publishLabel("folder (" + keys.length + " track" + (keys.length === 1 ? "" : "s") + ")");
   all.disabled = !publishDest();
-  if (impCommitLive && impCommitLive.slug === slug) { all.disabled = true; all.textContent = impCommitLive.text; } // reopened mid-run: pick up where it is
+  { const live = jobsFind("publish", slug, true); if (live) { all.disabled = true; all.textContent = "⏳ " + (live.note || "publishing…"); } } // reopened mid-run: the job carries the line
   all.addEventListener("click", () => {
-    if (impCommitLive) return;
-    all.disabled = true;
     const status = s => { // the button if the menu shows it, and the footer strip always
-      impCommitLive = {slug, text: s};
       const b = filesub.querySelector('[data-impcommit="' + slug + '"]');
       if (b) b.textContent = s;
       setInfo("⇪ " + titleCaseSlug(slug) + ": " + s);
     };
-    status("publishing…");
-    commitImports(status, keys)
-      .finally(() => { impCommitLive = null; importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); });
+    const job = publishJobStart(slug, keys, status);
+    if (!job) return;
+    all.disabled = true;
+    const off = jobsOnChange(() => { if (job.state === "running") return; off(); importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); });
   });
   filesub.appendChild(all);
   { // the folder's ✕ (tap twice) discards the WHOLE album's captures at once (Josh 2026-08-16)
@@ -12785,9 +12805,10 @@ function fsubImportAlbum(slug) {
     up.setAttribute("aria-label", "Publish this track");
     up.disabled = !publishDest();
     up.addEventListener("click", () => {
+      const job = publishJobStart(slug, [key], s => fileStatus(s));
+      if (!job) return;
       up.disabled = true;
-      commitImports(s => fileStatus(s), [key])
-        .finally(() => { importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); });
+      const off = jobsOnChange(() => { if (job.state === "running") return; off(); importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); });
     });
     draftRow(key, songTitleOf(key) + "  · " + songStatus(key),
              () => { importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); },
@@ -13355,7 +13376,7 @@ async function openChipImport(kind, bytes, name, m3uList, files) {
     const cap = document.createElement("button");
     cap.style.cssText = "min-height:32px;padding:4px 10px;flex:none";
     cap.textContent = "capture";
-    cap.addEventListener("click", () => impCapture(n));
+    cap.addEventListener("click", () => captureJobStart([n], impStatus)); // one row = a one-item job
     const open = document.createElement("button");
     open.style.cssText = "min-height:32px;padding:4px 10px;flex:none;display:none";
     open.textContent = "open";
@@ -13423,9 +13444,11 @@ function renameImportDraft(oldKey, raw) { // returns the new key; null = name co
   } catch (err) { /* draft absent — nothing to title */ }
   return newKey;
 }
-async function impCapture(n) {
+async function impCapture(n, api, i) { // api/i: the capture job and this track's item, when run as one
   if (!nsfSess) return;
   const slug = slugify(document.getElementById("impslug").value) || "import";
+  nsfSess.slug = slug; // the job's Open/↻ find this session by slug
+  const item = patch => { if (api) api.update(i, patch); };
   let secs = Math.max(10, Math.min(300, +document.getElementById("impsecs").value || 75));
   // the playlist knows each track's length: size the capture to it (a 10s
   // jingle should not produce a 300s draft), and skip the 300s no-loop
@@ -13437,19 +13460,15 @@ async function impCapture(n) {
   const row = nsfSess.rows[n];
   row.st.textContent = "capturing…";
   row.open.style.display = "none";
+  item({st: "running", pct: 0, msg: "capturing…"});
   await new Promise(r => setTimeout(r)); // let the label paint before the CPU burn
-  // crash beacon: if the tab dies mid-capture (watchdog, OOM), this survives
-  // the reload and names the casualty instead of leaving a mystery
-  const beacon = phase => sessionStorage.setItem("ff1roll-capcrash",
-    JSON.stringify({n, secs, phase, pct: 0, t: Date.now()}));
-  beacon("emulating");
+  // progress goes to the row (the panel may be hidden — it still exists) and
+  // to the job (the ⏳ list, the mirror a reload reads); ✕ on the job aborts
+  // at the next tick, inside the emulation
   const tick = (label) => p => {
-    try {
-      const b = JSON.parse(sessionStorage.getItem("ff1roll-capcrash"));
-      if (p === "scan") { b.phase = "loop-scan"; row.st.textContent = label + "detecting loop…"; }
-      else { b.pct = Math.round(p * 100); row.st.textContent = label + "capturing… " + b.pct + "%"; }
-      sessionStorage.setItem("ff1roll-capcrash", JSON.stringify(b));
-    } catch (err) { /* beacon lost */ }
+    if (api && api.aborted) throw new Error("cancelled");
+    if (p === "scan") { row.st.textContent = label + "detecting loop…"; item({msg: label + "detecting loop…"}); }
+    else { row.st.textContent = label + "capturing… " + Math.round(p * 100) + "%"; item({pct: p, msg: label + "capturing…"}); }
   };
   const pct = tick("");
   try {
@@ -13460,10 +13479,9 @@ async function impCapture(n) {
     // ceiling (a doubling ladder just re-emulates the same song extra times)
     if (cap && !cap.looped && secs < 300 && !isJingle && !tagged && !own) {
       secs = 300;
-      beacon("retry");
       cap = await captureChipTrack(nsfSess.chip, nsfSess.M, row.parsed || nsfSess.nsf, n, secs, tick("no loop — 300s: "));
     }
-    if (!cap) { row.st.textContent = "silent — nothing to keep"; return; }
+    if (!cap) { row.st.textContent = "silent — nothing to keep"; item({st: "silent", msg: "silent"}); return; }
     const raw = row.name.value.trim() || "track-" + String(n).padStart(2, "0");
     const base = slugify(raw) || "track-" + String(n).padStart(2, "0");
     const key = impDirFor(nsfSess.chip) + slug + "/" + base + ".mid";
@@ -13471,8 +13489,9 @@ async function impCapture(n) {
     // left by an earlier import of the same album just gets overwritten —
     // that's what re-importing means (Josh 2026-08-16, after a re-import
     // refused every track until each old draft was deleted by hand)
-    if (nsfSess.rows.some((r, i) => r && i !== n && r.key === key)) {
+    if (nsfSess.rows.some((r, j) => r && j !== n && r.key === key)) {
       row.st.textContent = "⚠ another captured track is already named \"" + base + "\"";
+      item({st: "failed", msg: "name taken: " + base});
       return;
     }
     row.key = key;
@@ -13507,12 +13526,53 @@ async function impCapture(n) {
     row.open.style.display = "";
     row.cap.textContent = "↻"; // captured: tapping again re-runs and overwrites this draft
     row.cap.setAttribute("aria-label", "Re-capture this track");
-    sessionStorage.removeItem("ff1roll-capcrash"); // survived
+    item({st: "done", pct: 1, msg: "", key});
     return true;
-  } catch (err) { row.st.textContent = "failed: " + err.message; }
-  sessionStorage.removeItem("ff1roll-capcrash"); // an error row is not a crash
+  } catch (err) {
+    const cancelled = /cancelled/.test(err.message);
+    row.st.textContent = cancelled ? "cancelled" : "failed: " + err.message;
+    item({st: cancelled ? "cancelled" : "failed", msg: cancelled ? "" : err.message});
+  }
   return false;
 }
+// ---- captures as jobs: Capture all and a single row both run inside one;
+// the panel keeps painting its rows (hidden or not), the ⏳ list shows the
+// same items, and a reload marks a dead run interrupted with its counts.
+function impTrackLabel(e) { return (e && (e.title || e.name)) || ("track " + (e ? e.n : "?")); }
+function captureJobStart(ns, statusFn) { // ns: track numbers to capture, in order
+  if (!nsfSess) return null;
+  const live = jobsFind("capture", null, true);
+  if (live) { statusFn && statusFn("a capture is running: " + live.title + " " + jobProgress(live) + " — tap ⏳"); return null; }
+  const slug = slugify(document.getElementById("impslug").value) || "import";
+  nsfSess.slug = slug;
+  const list = nsfSess.trackList || [];
+  const items = ns.map(n => ({label: impTrackLabel(list.find(e => e.n === n)) || ("track " + n)}));
+  return jobStart("capture", titleCaseSlug(slug), items, async api => {
+    let saved = 0;
+    for (let i = 0; i < ns.length; i++) {
+      if (api.aborted) { for (let j = i; j < ns.length; j++) api.update(j, {st: "cancelled"}); api.cancel(); return; }
+      statusFn && statusFn("capturing " + (i + 1) + "/" + ns.length + "… (close this panel any time — ⏳ in the footer keeps the progress)");
+      if (await impCapture(ns[i], api, i)) saved++;
+      if (api.aborted && api.job.items[i].st !== "done") { for (let j = i + 1; j < ns.length; j++) api.update(j, {st: "cancelled"}); api.cancel(); return; }
+    }
+    api.note(saved + " saved");
+    statusFn && statusFn(saved + " track" + (saved === 1 ? "" : "s") + " saved as local drafts — folder \"" + titleCaseSlug(slug) + "\" in Open → LOCAL. Re-capturing overwrites them.");
+  }, {slug, ns, chip: nsfSess.chip || "nsf"});
+}
+JOB_KINDS.capture = {
+  label: j => "Capture · " + j.title,
+  open: j => { // the panel, if this session is still the one; else say what a retry needs
+    if (nsfSess && nsfSess.slug === j.slug) { document.getElementById("importsheet").classList.add("on"); return; }
+    setInfo(j.title + ": " + jobProgress(j) + " — the files are no longer open; Import them again to continue (captured tracks are kept)");
+  },
+  retry: j => { // what is not done, in the same session; a re-import of the same set attaches by slug
+    if (!(nsfSess && nsfSess.slug === j.slug)) { setInfo(j.title + ": Import the same files again, then Capture all — tracks already captured are skipped"); return; }
+    const left = (j.ns || []).filter((n, i) => !(j.items[i] && j.items[i].st === "done"));
+    if (!left.length) { setInfo(j.title + ": nothing left to capture"); return; }
+    document.getElementById("importsheet").classList.add("on");
+    captureJobStart(left, impStatus);
+  },
+};
 function impRename(n) { // typed a name in a row: rename its captured draft in place
   const row = nsfSess && nsfSess.rows[n];
   if (!row) return;
@@ -13527,29 +13587,29 @@ function impRename(n) { // typed a name in a row: rename its captured draft in p
   row.key = newKey;
   impStatus("renamed → " + newKey.split("/").pop());
 }
-document.getElementById("impall").addEventListener("click", async e => {
+document.getElementById("impall").addEventListener("click", e => {
   if (!nsfSess) return;
   const btn = e.currentTarget; // currentTarget nulls once the dispatch ends — grab it pre-await
+  const list = nsfSess.trackList || [];
+  // re-capture skips what this session already saved (Josh's rule: a re-run overwrites only what it captures)
+  const ns = list.map(x => x.n);
+  const job = captureJobStart(ns, impStatus);
+  if (!job) return;
   btn.disabled = true;
-  try {
-    let saved = 0;
-    const list = nsfSess.trackList || [];
-    for (let i = 0; i < list.length; i++) {
-      impStatus("capturing " + (i + 1) + "/" + list.length + "…");
-      if (await impCapture(list[i].n)) saved++;
-    }
-    const slug = slugify(document.getElementById("impslug").value) || "import";
-    impStatus(saved + " track" + (saved === 1 ? "" : "s") + " saved as local drafts — folder \"" +
-              titleCaseSlug(slug) + "\" in Open → LOCAL. Re-capturing overwrites them.");
-    btn.textContent = "↻ Re-capture all";
-  } finally { btn.disabled = false; }
+  const off = jobsOnChange(() => {
+    if (job.state === "running") { btn.textContent = "⏳ " + jobProgress(job).split(" · ")[0]; return; }
+    btn.disabled = false; btn.textContent = "↻ Re-capture all"; off();
+  });
 });
 document.getElementById("impclose").addEventListener("click", () =>
   document.getElementById("importsheet").classList.remove("on")); // captures live on as drafts
 document.getElementById("impcommit").addEventListener("click", e => {
   const btn = e.currentTarget;
+  const slug = nsfSess && nsfSess.slug;
+  const job = publishJobStart(slug || null, slug ? importDraftKeys().filter(k => k.split("/")[2] === slug) : importDraftKeys(), impStatus);
+  if (!job) return;
   btn.disabled = true;
-  commitImports(impStatus).finally(() => { btn.disabled = false; });
+  const off = jobsOnChange(() => { if (job.state === "running") return; off(); btn.disabled = false; });
 });
 async function computeImportAlbumJson(slug, h, songTitles, nsfTracks, chipKind, dir) {
   // album.json keeps build_manifest.mjs honest offline; NSF link = vault
@@ -13835,8 +13895,12 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
 }
 document.getElementById("fileimpcommit").addEventListener("click", e => {
   const btn = e.currentTarget;
+  const job = publishJobStart(null, importDraftKeys(), fileStatus);
+  if (!job) return;
   btn.disabled = true;
-  commitImports(fileStatus).finally(() => {
+  const off = jobsOnChange(() => {
+    if (job.state === "running") return;
+    off();
     btn.disabled = false;
     const n = importDraftKeys().length;
     btn.style.display = n ? "" : "none";

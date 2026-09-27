@@ -622,6 +622,10 @@ or File menu) with per-job progress; the capture panel is a VIEW onto a
 job, so closing it never cancels; chip renders already run in a Worker
 and captures should follow. Same day, shipped alongside: sheets drag by
 their title line (71af6ef) so Ask can sit beside the capture panel.
+BUILT the same evening (branch `jobs`, merged): the general job core
+(NIGHT-ROLL.md "Jobs (footer ⏳)"), captures and publishes as its first
+two kinds, cancel / retry / interrupted-at-boot. Not yet: Publish all as
+a job, captures in the worker (the design's later steps).
 Design done the same day by an advisor: capture-jobs-design.md (job
 model, ⏳ footer chip + jobs sheet, the import panel as a view, five
 commits in order). Implementation not started; the terminal session or
