@@ -7,7 +7,7 @@
   {"at": [1, 1], "type": "track", "track": "bass", "voice": "sf-piano"},
   {"at": [1, 1], "to": [4, 4], "type": "section", "label": "Home"},
   {"at": [1, 1], "text": "J. S. Bach, Prelude in C major, BWV 846 (Well-Tempered Clavier I, 1722). Public domain. Every bar is one chord broken the same way: bass, tenor, then the top three notes as sixteenths, twice. Listen for the bass line first — it walks down almost the whole way."},
-  {"at": [1, 1], "text": "Starter song, annotated as demo content by Claude (2026-09-26) at Josh's request. Chord labels are the textbook readings; the notes on some bars say why."},
+  {"at": [1, 1], "text": "Starter song. Chord labels are the textbook readings; the notes on some bars say why."},
   {"at": [1, 1], "to": [1, 4], "type": "chord", "chord": "C"},
   {"at": [2, 1], "to": [2, 4], "type": "chord", "chord": "Dm7/C", "note": "ii7 over the tonic pedal — the pattern starts moving"},
   {"at": [3, 1], "to": [3, 4], "type": "chord", "chord": "G7/B", "note": "V7 in first inversion"},

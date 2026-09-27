@@ -7,7 +7,7 @@
   {"at": [1, 1], "type": "track", "track": "bass", "voice": "sf-piano"},
   {"at": [1, 1], "to": [4, 4], "type": "section", "label": "Introduction"},
   {"at": [1, 1], "text": "Ludwig van Beethoven, Piano Sonata No. 14 in C-sharp minor, Op. 27 No. 2 ('Moonlight'), 1801, first movement, Adagio sostenuto. Public domain. Written alla breve; here as 4/4 at quarter = 54, so every beat is one triplet group. Three tracks by role: the triplets run the whole way; the melody enters on beat 4 of bar 5 with its dotted figure, and also takes the lower voice that answers it (bars 29, 31, 37–40); the bass is the left-hand octaves and held notes. The score asks for the sustain pedal throughout."},
-  {"at": [1, 1], "text": "Starter song, annotated as demo content by Claude (2026-09-27) at Josh's request. Notes entered from the score (Durand 1915 urtext, bar numbering as in Henle); chord labels are the textbook readings, the notes on some bars say why."},
+  {"at": [1, 1], "text": "Starter song. Notes entered from the score (Durand 1915 urtext, bar numbering as in Henle); chord labels are the textbook readings, the notes on some bars say why."},
   {"at": [1, 1], "to": [1, 4], "type": "chord", "chord": "C#m", "note": "i — the triplets alone for four bars"},
   {"at": [2, 1], "to": [2, 4], "type": "chord", "chord": "C#m/B", "note": "the same triplets; the bass walks down C#, B, A, then F#, G#"},
   {"at": [3, 1], "to": [3, 2], "type": "chord", "chord": "A", "note": "VI"},
