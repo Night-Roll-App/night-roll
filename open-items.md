@@ -672,10 +672,9 @@ line ships in the capture row's ⚠ log — awaiting Josh's Copy all).
 Then, still the same evening — PS1 CHIP AUDIO shipped: the driver's
 own samples rendered in the app (NIGHT-ROLL.md "PlayStation chip audio").
 Open: pitch per instrument unverified by ear (VGMTrans's rule); no
-pan/reverb; PS1 chip audio only within the import session (the vault
-needs the lib: store `<slug>/<lib>` once and per-track minis, like
-SPC's per-file bytes — then reloads and other devices get it); SEQ/VAB
-games not rendered. N64: Josh's ⚠ log shows the iPad's captures equal
+pan/reverb; SEQ/VAB games not rendered. (PS1 chip audio now persists: minis
+per track + the lib once, on the device and in the archive at Publish
+— one re-import + Publish of FF7 populates it for every device.) N64: Josh's ⚠ log shows the iPad's captures equal
 the Mac's (notes, ticks, tempo, loop) — the "scramble" is after the
 capture or in the listening; asked for a published Peach's Message to
 diff. The "1 note" was the warnings count (now "1 warning").

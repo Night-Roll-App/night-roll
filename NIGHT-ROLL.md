@@ -1392,9 +1392,17 @@ AKAO → table → bank), `lead` (0), `render`, `renderRate` 44100;
 channel names off the render when `channels` is empty; `chipSource`
 adds the session's `libs`; `chipRenderInWorker` ships them
 (transferred copies); `tools/chip-worker.mjs` has a `psf` runner and
-takes `libs`. Limits: chip audio for PS1 lives only in the import
-session (keepBytes false: after a reload the vault has no lib yet, so
-synthesized voices return); SEQ/VAB games are not rendered yet. Test:
+takes `libs`. Persistence (same evening): `CHIPS.psf.keepBytes` is true, so each
+track's mini lands in the device's chip record like SPC's per-file
+bytes, and the set's library is stored once per album in the same
+record (`idbNsfPut(slug, null, {}, kind, libs)` from `impCapture`;
+`rec.libs = {name: bytes}`). `chipSource` returns `libs` from the
+record, else fetches them from the archive by `meta.nsf.libs`
+(`[{name, file}]`, file = the slugified library name) and caches them.
+`commitImports` uploads the library once per album (check-before-PUT,
+`<slug>/<file>`) and writes `nsf.libs` into album.json. So after one
+import + Publish, every device plays the PS1 songs with the console's
+sound, like SNES. Not rendered yet: SEQ/VAB games. Test:
 tests/psx-render.test.mjs (a synthetic rip: table, bank, one note).
 
 ## PlayStation captures: envelopes from the instrument table (2026-09-27)
