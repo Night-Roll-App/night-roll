@@ -3524,6 +3524,27 @@ test("console folders: old links and keys redirect; captures are read-only by ma
   run(`localStorage.removeItem(draftStoreKey("albums/nes/mega-man-2/air-man.mid")); localStorage.removeItem(draftStoreKey("albums/nes/my-covers/air-man.mid")); delete albumMetaCache["albums/snes/chrono-trigger"];`);
 });
 
+test("chip source: an unpublished capture under a console folder finds its record by the folder name", async () => {
+  // no album.json yet (never published), no live import session, key not under
+  // the legacy imports/ prefix — the device record is keyed by the set's slug,
+  // which is the capture's own folder (Josh, 2026-09-27: every FF7 song fell
+  // to synth after a relaunch)
+  run(`nsfSess = null; songKey = "albums/ps1/final-fantasy-7/bombing-mission.mid";
+       localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: true, tracks: []}));
+       albumMetaFor = async () => null;
+       idbNsfGet = async slug => slug === "final-fantasy-7"
+         ? {chip: "psf", tracks: {"bombing-mission": {n: 1, secs: 12, bytes: new Uint8Array([80, 83, 70])}}, libs: {"final fantasy 7.psflib": new Uint8Array([1])}}
+         : null;`);
+  const src = await run(`chipSource()`);
+  assert.ok(src, "the record resolves without album.json or a session");
+  assert.equal(src.chip, "psf");
+  assert.equal(src.n, 1);
+  assert.deepEqual(Object.keys(src.libs), ["final fantasy 7.psflib"]);
+  run(`songKey = "albums/ps1/my-own-folder/tune.mid";`);
+  assert.equal(await run(`chipSource()`), null, "a song that is not a capture never guesses a record");
+  run(`localStorage.removeItem(draftStoreKey("albums/ps1/final-fantasy-7/bombing-mission.mid")); songKey = null;`);
+});
+
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {
   run(`CATALOG = {"Final Fantasy I": [["Overworld", "albums/nes/final-fantasy-i/songs/overworld.mid"]],
                  "Mega Man 2": [["Air Man", "albums/nes/mega-man-2/air-man.mid"]],

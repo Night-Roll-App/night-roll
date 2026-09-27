@@ -7316,7 +7316,13 @@ async function chipSource() { // {bytes, n, secs} for the current song, or null
   // this device already has the bytes? (import happened here, or vault cached)
   const im = songKey.match(/^albums\/imports\/([^/]+)\//);
   const meta = await albumMetaFor(songKey);
-  const slug = im ? im[1] : (meta && meta.nsf && meta.nsf.vault) || null;
+  // the record's slug: a published album names it (nsf.vault); an unpublished
+  // capture has no album.json, so its folder IS the slug (impTrackKey builds
+  // albums/<console>/<slug>/…). Only the legacy imports/ prefix was checked
+  // once console folders came in — every unpublished PS1 song fell to synth
+  // after a relaunch (Josh, 2026-09-27: "everything has reverted")
+  const slug = im ? im[1] : (meta && meta.nsf && meta.nsf.vault) ||
+    (isCaptureKey(songKey) ? songKey.replace(/\/[^/]+\.mid$/, "").split("/").pop() : null);
   if (!slug) return null;
   const metaTr = meta && meta.nsf && meta.nsf.tracks && meta.nsf.tracks[base];
   const rec = await idbNsfGet(slug);
@@ -18165,7 +18171,7 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
     return;
   }
   const all = Object.values(CATALOG).flat().map(([, p]) => p);
-  const qsong = songPathFromURL(location.href); // shared link wins — ?song= (old) or the path form
+  const qsong = typeof location !== "undefined" ? songPathFromURL(location.href) : null; // shared link wins — ?song= (old) or the path form
   const last = localStorage.getItem("ff1roll-lastsong");
   // drafts aren't in the manifest but are perfectly loadable (draft-wins path)
   const loadable = p => all.includes(p) || (p && localStorage.getItem("ff1roll-draft-" + p));
