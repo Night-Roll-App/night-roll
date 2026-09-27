@@ -13517,10 +13517,19 @@ async function impCapture(n, api, i) { // api/i: the capture job and this track'
           if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
           return o;
         })}))});
-    if (cap.loopAnchor) // hardware loop point -> annotation, same rule as the FF1 dumps
-      localStorage.setItem("ff1roll-notes-" + key, JSON.stringify([
-        {b1: cap.loopAnchor[0], q1: cap.loopAnchor[1], b2: null, q2: null,
-         text: "loop: " + cap.loopTarget[0] + "." + cap.loopTarget[1]}]));
+    { // capture-time annotations: the hardware loop point (same rule as the FF1
+      // dumps) and, for sequence chips with no sound of their own, a soft voice
+      // for pad tracks — every note 8+ quarters long, a handful of them — so a
+      // held chord hums on a sine instead of buzzing on a saw (Josh, FF7 "You
+      // Can Hear the Cry of the Planet": three detuned D2 drones, 2026-09-27)
+      const anns = [];
+      if (cap.loopAnchor) anns.push({b1: cap.loopAnchor[0], q1: cap.loopAnchor[1], b2: null, q2: null, text: "loop: " + cap.loopTarget[0] + "." + cap.loopTarget[1]});
+      if (!CHIPS[nsfSess.chip || "nsf"].render) parsed.tracks.forEach((tr, ti) => {
+        if (tr.notes.length && tr.notes.length <= 6 && tr.notes.every(x => x.d >= parsed.ppq * 8) && !tr.notes.some(x => x.ch === 9))
+          anns.push({b1: 1, q1: 1, b2: null, q2: null, text: "track: tr" + (ti + 1) + " voice=sine"});
+      });
+      if (anns.length) localStorage.setItem("ff1roll-notes-" + key, JSON.stringify(anns));
+    }
     row.secs = cap.secs; // chip-audio render length for this track
     if (chip.key === key) { chip.key = null; updateChipBtn(); } // re-capture invalidates rendered audio
     // NSF bytes + track number persist on this device so chip audio outlives

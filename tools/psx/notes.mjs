@@ -257,7 +257,15 @@ export function makeMidi(result) {
       const p = n.drum ? (n.gm || n.key) : n.pitch;
       if (p < 0 || p > 127) continue;
       const t = T(n.tick);
-      out.push({t, d: Math.max(1, T(n.endTick) - t), p, v: Math.max(1, Math.min(127, n.vel))});
+      const d = Math.max(1, T(n.endTick) - t), v = Math.max(1, Math.min(127, n.vel));
+      // the SPU's samples decay (ADSR sustain below peak) — the reader does not
+      // yet read each instrument's envelope, so a long melodic note gets a
+      // generic decay to 12% by its end (the app's ve, as chip captures carry):
+      // a bell rings and fades instead of sustaining flat ("sound like mud",
+      // Josh, FF7 You Can Hear the Cry of the Planet, 2026-09-27). Kits and
+      // short notes are untouched.
+      const ve = !n.drum && d >= PPQ * 2 ? Math.max(1, Math.round(v * 0.12)) : undefined;
+      out.push(ve !== undefined ? {t, d, p, v, ve} : {t, d, p, v});
     }
     tracks.push(trackBytes(name, out, ch));
   };
