@@ -5656,6 +5656,11 @@ function tap(pos) {
 // ---------------------------------------------------------------- audio (NES-ish voices)
 const MASTER_VOL = 0.22;
 let masterVol = 1; // user's master multiplier (🔊 button), device pref
+// Josh's ⚠ log, 2026-09-27 00:58: dictating a message → "state → interrupted
+// (system)" → 7 s later "→ running" — and that resumed engine plays silent.
+// An engine that has been interrupted even once is done for: the next ▶ tap
+// replaces it whatever its state says now.
+let audioDead = false;
 function warmContext() { // one silent sample: absorbs the fresh context's glitchy first quantum
   const src = audio.createBufferSource();
   src.buffer = audio.createBuffer(1, 1, audio.sampleRate);
@@ -5665,9 +5670,10 @@ function warmContext() { // one silent sample: absorbs the fresh context's glitc
 function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // glitches the first render quantum of a fresh context. But a context iOS
   // has killed (state "closed") can never come back: rebuild + re-warm.
-  if (audio && (audio.state === "closed" || audio.state === "interrupted")) { // iOS closes a context under pressure or hands it to another audio holder; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds, synchronously, before any await
+  if (audio && (audio.state === "closed" || audio.state === "interrupted" || audioDead)) { // iOS closes a context under pressure or hands it to another audio holder; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds, synchronously, before any await
     if (!gestureActive()) return;
-    logErr("audio engine " + audio.state + " — replaced at the top of this tap");
+    logErr("audio engine " + (audioDead && audio.state !== "interrupted" && audio.state !== "closed" ? "was interrupted earlier (now " + audio.state + ")" : audio.state) + " — replaced at the top of this tap");
+    audioDead = false;
     try { audio.close().catch(() => {}); } catch (err) { /* already closed */ }
     audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
   }
@@ -5677,7 +5683,7 @@ function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // every birth is on the record (2026-09-27 review): a context born outside a
   // gesture, or late inside one, runs its clock but never reaches the speaker
   logErr("audio engine #" + ensureAudio.serial + " created (" + (gestureActive() ? "in a gesture" : "NO gesture") + "; state " + audio.state + ", " + audio.sampleRate + " Hz)");
-  audio.onstatechange = () => { const st = audio && audio.state; console.log("[audio] state:", st); if (st) logErr("audio engine state → " + st + (st === "closed" || st === "interrupted" ? " (system) — tap ▶ to replace it" : "")); };
+  audio.onstatechange = () => { const st = audio && audio.state; console.log("[audio] state:", st); if (st === "interrupted" || st === "closed") audioDead = true; if (st) logErr("audio engine state → " + st + (st === "closed" || st === "interrupted" ? " (system) — tap ▶ to replace it" : "")); };
   master = audio.createGain();
   master.gain.value = MASTER_VOL * masterVol;
   master.connect(audio.destination);
