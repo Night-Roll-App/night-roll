@@ -7402,8 +7402,11 @@ function applyAudioDirs() { // called from finalizeNotes: every audio: note is o
       // parseMidi keeps only tracks that have notes, and a clip's track never
       // does — so a song reloaded from its saved .mid arrives without it.
       // Recreate it by name (the addTrackUndoable shape keeps trackState and
-      // rawNotes in step); on a locked song a stray directive stays stray.
-      if (!(isComposition() || isLocalDraft()) || !trackState) continue;
+      // rawNotes in step); on a corpus song or a capture a stray directive
+      // stays stray. A published song of the user's own rebuilds it even
+      // with no local copy here: the recording is the song's, not the copy's
+      // (2026-09-27, when published copies stopped being editable in place).
+      if (!(isComposition() || isLocalDraft() || ownFolderPath(songKey)) || !trackState) continue;
       ti = addTrackUndoable({name: n.audiodir.track, notes: []});
     }
     const tr = song.tracks[ti];
