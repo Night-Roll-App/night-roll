@@ -15721,7 +15721,7 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
     const http = !!(err && /^HTTP /.test(err.message));
     if (aborted) { if (partial) askFinish(cur, partial, key); else askFail(cur, "stopped", key); askstatus.textContent = "stopped"; if (!partial) { live.classList.add("err"); live.textContent = "⚠ stopped"; } }
     else if (jobs !== false && !http && delivered) { // the connection died, not the job: the answer is still cooking on the server
-      askstatus.textContent = "connection dropped — the answer keeps cooking; it appears when you come back";
+      askstatus.textContent = "the live stream was cut (Safari does that when the app leaves the screen) — the reply keeps cooking on the Mac; checking every few seconds";
       live.textContent = "… (still working — reopen or come back to see it)";
       askResumeSoon(3000);
     } else if (jobs !== false && !http && !delivered) { // the question never reached the Mac: say so, keep it in the log
@@ -15796,7 +15796,9 @@ async function askResume() {
     let j;
     try { const r = await fetch(aiUrl() + "/v1/jobs/" + encodeURIComponent(p.jobId), {headers: aiHeaders()}); if (r.status === 404) { askFail(p.jobId, "the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again", p.key); continue; } j = await r.json(); }
     catch (err) { again = true; continue; }
-    if (j.status === "running") { if (live) live.textContent = j.text ? j.text : "… (" + ((j.notes || []).slice(-1)[0] || "working") + ")"; again = true; continue; }
+    const step = ((j.notes || []).slice(-1)[0] || "working").replace(/^using /, "").replace(/…\s*$/, "");
+    if (j.status === "running") { if (live) live.textContent = j.text ? j.text : "… (" + step + ")"; if (mine) askstatus.textContent = "working: " + step; again = true; continue; }
+    if (mine) askstatus.textContent = ""; // the "stream was cut" line is over once the reply lands or fails
     if (j.status === "error") { askFail(p.jobId, j.error || "the job failed", p.key); continue; }
     const calls = j.result && j.result.tool_calls;
     if (!calls || !calls.length) { askFinish(p.jobId, (j.text || "").trim() || "(no reply)", p.key); continue; }
