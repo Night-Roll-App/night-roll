@@ -3078,7 +3078,14 @@ async function loadSongInner(path) {
         // fall through to the normal repo load below
       } else {
         if (albumRun) setInfo("draft kept — a newer save of this song exists on the repo");
-        openDraftDoc(d, path); return; // keep the local draft, knowingly
+        // the user (or an album run) keeps the draft knowingly: it now derives
+        // from this repo save, so the question is not asked again on every
+        // launch — a draft stamped 0 before the loadNotes fix asked forever
+        // (Josh, the iPad shell, 2026-09-27)
+        d.savedStamp = repoStamp;
+        openDraftDoc(d, path);
+        if (isComposition() || isLocalDraft()) saveDraft(); // persist the new base with the draft's own dirty state
+        return;
       }
     } else if (d) { openDraftDoc(d, path); return; } // draft is the newest known state
   }
