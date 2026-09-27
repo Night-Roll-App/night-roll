@@ -1360,6 +1360,7 @@
       <dt>∿ Audio tracks (recordings)</dt><dd>A recording — a guitar take, a vocal, a phone memo, a DAW bounce — as a track next to your MIDI voices. Tap the <b>＋∿</b> chip in the track bar (compositions and local drafts; File → Import… also recognizes audio files) and pick wav, aiff, mp3, or m4a. The clip lands at the cursor's bar as a new track named after the file, with the usual chip: M, S, color, fader, rename, ✕ Delete track. Leading silence is trimmed on arrival, so the take's FIRST SOUND sits on that bar (the status line says how much it trimmed). It plays in time with the song, loops with it (a clip longer than the notes extends the song's end), and is in the exported audio. <b>Slow it down and the pitch stays put</b>: at any speed but 100% the take is re-rendered (time-stretched, the way a slow-downer app does it) in the background — the lane says "⏳ preparing 50% (pitch kept)…" for a moment, then it plays in tune with your notes; a device toggle in the recording sheet turns that off for tape-style, slower = lower, like chip audio. Fine for guitar and voice down to about 40%; grainier below. <b>Tracks view</b> shows the waveform; <b>tap the clip</b> to select it (the status line says file, length, where its bytes are, and where it starts), <b>tap again to play from its start</b>, and in <b>Select</b> mode <b>hold and drag</b> to slide it in time (16th snap, one ⟲ undoes; with no tool armed a drag pans, as with notes). Every other view shows a thin ∿ strip under the ruler marking where the recording plays. <b>Pieces:</b> a recording can be cut into pieces that move on their own. <b>✂ Split at cursor</b> (the edit row's ✂, Edit ▾, or the recording sheet) cuts the selected piece where the play cursor is; <b>trim</b> by dragging a selected piece's left or right edge in Select (left trim keeps the sound where it is); <b>Erase</b> tap on a piece removes just that piece (the track stays); each piece drags separately. One ⟲ undoes any of it. Tap the selected chip for the <b>recording sheet</b> (‹ prev / next › step between pieces): nudge <b>starts</b> by a bar, a beat, or a 16th, <b>offset</b> by 10 ms or 100 ms (how far into the file the piece starts — the last hair of alignment), <b>⇤ Align first sound</b> (re-trims leading silence to the current anchor), <b>♩ Tempo from this take</b> (reads the beat spacing of the piece — its waveform's onsets, autocorrelated over 40–240 BPM — and offers the tempo it hears plus half and double, with how strong the read is; tap one and it becomes the song's tempo at bar 1, one ⟲ undoes; your notes keep their bar positions, so the grid moves to meet the take, which is the point; needs about four seconds of steady playing, and your own songs only — captures keep their measured tempo), <b>♩♩ Map the bars to this take</b> (the other direction: the GRID bends to the recording — it finds the beats through the whole piece, groups them into bars by the meter, and shows what it found: how many bars, the tempo range, and where the first downbeat sits; <b>Apply</b> writes one tempo change per bar from the piece's bar onward so every bar line lands on a downbeat it heard, wobble and all; <b>◀ downbeat / downbeat ▶</b> shift which beat counts as bar 1 when it guessed wrong — the correction Logic's Smart Tempo asks for too; the piece must start on a bar line, and a first downbeat that isn't at the piece's start means a pickup: shift, or trim the piece to the downbeat first; one ⟲ removes the whole map), <b>✂ Split at cursor</b>, <b>🗑 Remove piece</b>, <b>Replace file…</b>, and <b>☐ someone else's recording</b>: tick it for a band's track you play along with and it is never uploaded — GitHub removes such files on a rights holder's notice, and a public site is distribution. Storage: until you Save, the bytes live on this device only (the sheet says so; Safari can evict browser storage after a week away, so Save soon); Save writes them beside the song as <code>&lt;song&gt;.audio/&lt;file&gt;</code> — into your folder in folder mode, into the songs repo otherwise. Files over 20 MB get one question: <b>store as 16-bit mono WAV</b> (lossless for a mono source, half a stereo bounce) or import as-is. m4a/mp3 note: Safari and Chrome trim the encoder's lead-in differently, so millisecond alignment is honest only for WAV/AIFF. Not yet: recording from the mic, trimming or splitting a clip, looping a clip by itself, keeping pitch when slowing down, iPad/Safari playback of webm.</dd>
       <dt>⚠ Messages</dt><dd>Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
+      <dt>Save and Auto-save</dt><dd>By default (auto-save off) your edits live in a <b>working copy</b> on this device: it follows every change so nothing is lost to a crash, but it is not <i>saved</i> until you choose File → <b>Save</b> (⌘S). Save is your checkpoint: the gold ● means "changed since your last Save", <b>Revert to last save…</b> goes back to it, and <b>Compare with last save</b> shows the difference on the roll. Revert is undoable — the working copy is stashed first and File → <b>Restore unsaved copy…</b> brings it back until your next Save or Publish. Settings → SAVING → <b>Auto-save</b> switches to the other way: every edit is the save and the ● means unpublished. Publish is a separate step in both modes, and publishing also saves.</dd>
       <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and the footer button open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since the last save, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and pushes every song's annotations; music and chat commit from the open song. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
     </dl>
     </div>
@@ -1440,10 +1441,12 @@
   <button class="fitem" id="filenew">＋ New song…</button>
   <label class="fitem" for="fileinput" style="display:block">Import… (.mid / .nsf / .gbs / .spc / .vgm / .psf / .usf)</label>
   <div class="fdiv"></div>
+  <button class="fitem" id="filesavelocal">Save</button>
   <button class="fitem" id="filesave">Publish…</button>
   <button class="fitem" id="filesaveas">Save As…</button>
   <button class="fitem" id="filerename">Rename…</button>
   <button class="fitem" id="filerevert">Revert to repo copy…</button>
+  <button class="fitem" id="filerestore" style="display:none">Restore unsaved copy…</button>
   <button class="fitem" id="fileimpcommit" style="display:none">Commit import</button>
   <div class="fdiv"></div>
   <button class="fitem" id="filedlmid">Download .mid</button>
@@ -1628,6 +1631,10 @@
     <!-- every field saves itself on change (Josh, 2026-09-25: the Save button
          lost him a URL; Close/✕/backdrop/Esc are always safe now). AI first:
          it is what he sets up; the repo locations fold away below. -->
+    <div class="cfgsec">SAVING</div>
+    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+      <input type="checkbox" id="cfgautosave" style="width:20px;height:20px"> Auto-save: every edit is the save</label></div>
+    <div class="status cfgind" id="cfgautosavehelp">Off (the usual way): edits stay in a working copy until File → Save (⌘S); the ● means changed since your last Save; Revert goes back to it, undoably. Nothing is lost either way — the working copy survives a crash. Publish is a separate step in both modes.</div>
     <div class="cfgsec">AI</div>
     <div class="row"><span class="lbl" style="width:70px">runs</span>
       <select id="cfgaibackend" aria-label="Where the AI model runs" style="flex:1;min-height:36px">
@@ -7790,6 +7797,7 @@ async function play(fromSec = 0, opts = {}) {
                end: tickToSec(song, Math.min(rangeSel.b, songEndTick))};
     playOffset = fromSec = loopSeg.start; // ▶ always replays from the cycle's top (Logic habit — Josh, 2026-08-19)
   }
+  if (recording) loopSeg = recOpenEnded(loopSeg); // ● : the tape rolls on past the end and the song grows with the take
   // album play: this song ends after its passes (2 of the loop body after the
   // intro; once through if nothing loops), then the next one loads
   albumEndAbs = null; albumFading = false;
@@ -7835,7 +7843,7 @@ async function play(fromSec = 0, opts = {}) {
       // every pass ends at the loop point; material past it (a written-out
       // repeat, e.g. ship's bar 25.5 seam) is shown but never played
       if (schedIdx >= schedEvents.length || schedEvents[schedIdx].sec >= loopSeg.end - 1e-9) {
-        if (wrapIdx < 0 || schedEvents[wrapIdx].sec >= loopSeg.end) break; // nothing inside the segment
+        if (wrapIdx < 0 || !isFinite(loopSeg.end) || schedEvents[wrapIdx].sec >= loopSeg.end) break; // nothing inside the segment, or an open-ended take: no wrap
         loopPass++;
         schedIdx = wrapIdx;
         // chase across the wrap: a note straddling the loop target plays its
@@ -8725,11 +8733,12 @@ function updateSongBtn() { // breadcrumb: Album › Title, with the real path di
   title.textContent = songTitleOf(currentPath);
   songtitleEl.append(crumb, title);
   const chat = askUnsavedCount();
-  if (songDirtyFlag() || chat) { // unsaved edits or chat: the gold dot every editor uses
+  const unsaved = songUnsaved();
+  if (unsaved || chat) { // unsaved edits or chat: the gold dot every editor uses
     const dot = document.createElement("span");
     dot.textContent = " ●";
     dot.style.color = "var(--gold)";
-    dot.setAttribute("aria-label", songDirtyFlag() ? "Unsaved changes" : chat + " chat messages not saved");
+    dot.setAttribute("aria-label", unsaved ? (autosaveOn() ? "Unpublished changes" : "Changed since your last Save") : chat + " chat messages not saved");
     songtitleEl.appendChild(dot);
   }
 }
@@ -10826,6 +10835,12 @@ function instTap(e, dragging) {
 // Key-down starts the note, key-up (or sliding to another key) ends it;
 // starts/durations snap to the move grid; the whole take is ONE undo step.
 let recording = false, recTake = [], recPending = new Map(); // pointerId → {p, tick}
+// While ● is armed the transport must not wrap at the song's end: a new song is
+// two bars, and Josh's son's arpeggiator take looped onto bars 1–2 instead of
+// growing the song (2026-09-26). An open-ended segment keeps playSec() linear,
+// the scheduler never re-arms a pass, and recFinish's computeSongEnd lets the
+// song end where the take ended.
+function recOpenEnded(seg) { return {start: seg ? seg.start : 0, end: Infinity}; }
 function recSnap(t) { const g = moveSnapTicks(); return Math.max(0, Math.round(t / g) * g); }
 function recNoteOn(pid, p, vel) {
   recNoteOff(pid); // sliding to a new key closes the old one
@@ -10852,6 +10867,7 @@ function recFinish() { // called from stop(): close pendings, commit the take
   if (recTake.length) {
     pushUndo({kind: "addBatch", items: recTake.slice()});
     saveEdits();
+    if (isComposition() || isLocalDraft()) saveDraft(); // the take is part of the working copy, not just the undo stack
     computeSongEnd();
     if (viewMode === "score") buildScoreModel();
     setInfo("recorded " + recTake.length + " note" + (recTake.length === 1 ? "" : "s") + " — one ⟲ removes the take");
@@ -11757,10 +11773,8 @@ function draftStoreKey(key) { return "ff1roll-draft-" + key; }
 // imported local MIDIs live under local/ — draft-backed and editable on this
 // device, but with no repo path: never synced, never committed
 function isLocalDraft() { return !!songKey && songKey.startsWith("local/"); }
-function saveDraft(clean) { // clean=true right after a successful Save
-  if (!isComposition() && !isLocalDraft()) return;
-  if (cmp && cmp.showing === "repo") return; // the saved copy is swapped in: writing it over the draft would destroy his edits
-  try { draftWrite(songKey, {
+function draftDoc(clean) { // the song as this device stores it (the working copy, or a Save checkpoint)
+  return {
     savedStamp: song.savedStamp || 0, dirty: !clean,
     ppq: song.ppq, timesig: song.timesig || effTs(), tempos: song.baseTempos || song.tempos,
     tracks: song.tracks.map(tr => ({name: tr.name,
@@ -11771,11 +11785,58 @@ function saveDraft(clean) { // clean=true right after a successful Save
         if (n.ve !== undefined) o.ve = n.ve;
         return o;
       })})),
-  }); } catch (err) { // a full localStorage must never throw out of an edit: say so, loudly, once per song
+  };
+}
+function saveDraft(clean) { // clean=true right after a successful Publish; the working copy follows every edit regardless (crash recovery)
+  if (!isComposition() && !isLocalDraft()) return;
+  if (cmp && cmp.showing === "repo") return; // the saved copy is swapped in: writing it over the draft would destroy his edits
+  try { draftWrite(songKey, draftDoc(clean)); } catch (err) { // a full localStorage must never throw out of an edit: say so, loudly, once per song
     if (saveDraft.warned !== songKey) { saveDraft.warned = songKey; logErr("this device's storage is full — the last edit to " + baseName() + " is NOT saved. Publish, or ✕ some drafts under Open → drafts, then edit again."); }
     setInfo("⚠ storage full — edit not saved (see ⚠)");
   }
   updateSongBtn(); // the unsaved dot tracks every edit
+}
+// ---- Local Save (Josh, 2026-09-26: "every single thing you do is always
+// saved, that kind of sucks … not the way it works in Logic"). With auto-save
+// OFF (the default) the working copy still follows every edit — nothing is
+// ever lost to a crash — but it is not "saved": File → Save (⌘S) copies it to
+// a checkpoint, the ● means "changed since that Save", Revert goes back to it
+// (undoably: the working copy is stashed first, File → Restore unsaved copy
+// brings it back), and Compare compares against it. Publish implies Save.
+// With auto-save ON every edit is the save: the old behaviour, ● = unpublished.
+function autosaveOn() { return localStorage.getItem("ff1roll-autosave") === "1"; }
+function saveStoreKey(key) { return "ff1roll-save-" + key; }
+function stashStoreKey(key) { return "ff1roll-stash-" + key; }
+function songDocSig(d) { return JSON.stringify([d.ppq, d.timesig, d.tempos, d.tracks]); }
+function lastSaveDoc(key) { try { return JSON.parse(localStorage.getItem(saveStoreKey(key || songKey)) || "null"); } catch (err) { return null; } }
+function songUnsaved() { // what the ● means: auto-save off → changed since the last Save (since Publish when never saved); on → unpublished
+  if (!song || !isComposition()) return false;
+  if (autosaveOn()) return songDirtyFlag();
+  const cp = lastSaveDoc();
+  return cp ? songDocSig(draftDoc(false)) !== songDocSig(cp) : songDirtyFlag();
+}
+function saveCheckpoint(quiet) { // File → Save / ⌘S
+  if (!song || !songKey || !isComposition()) { if (!quiet) setInfo("Save works on your own songs — this one is a capture; Save As forks it"); return false; }
+  if (cmp && cmp.showing === "repo") { if (!quiet) setInfo("you're hearing the repo copy — switch back to your version first"); return false; }
+  const d = draftDoc(!songDirtyFlag()); d.savedAt = Date.now();
+  localStorage.setItem(saveStoreKey(songKey), JSON.stringify(d));
+  localStorage.removeItem(stashStoreKey(songKey));
+  updateSongBtn();
+  if (!quiet) setInfo("saved on this device" + (songDirtyFlag() ? " — Publish sends it to the repo" : ""));
+  return true;
+}
+function stashWorking(key) { // before a Revert: what Restore unsaved copy brings back
+  const draft = localStorage.getItem(draftStoreKey(key)), notes = localStorage.getItem("ff1roll-notes-" + key);
+  if (draft || notes) localStorage.setItem(stashStoreKey(key), JSON.stringify({draft, notes, at: Date.now()}));
+}
+function hasStash(key) { return localStorage.getItem(stashStoreKey(key || songKey)) !== null; }
+function restoreStash(key) { // Restore unsaved copy: the stashed working copy becomes the working copy again
+  let st = null; try { st = JSON.parse(localStorage.getItem(stashStoreKey(key)) || "null"); } catch (err) { st = null; }
+  if (!st) return false;
+  if (st.draft) localStorage.setItem(draftStoreKey(key), st.draft); else localStorage.removeItem(draftStoreKey(key));
+  if (st.notes) localStorage.setItem("ff1roll-notes-" + key, st.notes); else localStorage.removeItem("ff1roll-notes-" + key);
+  localStorage.removeItem(stashStoreKey(key));
+  return true;
 }
 function draftKeys() {
   return Object.keys(localStorage).filter(k => k.startsWith("ff1roll-draft-"))
@@ -11898,7 +11959,7 @@ function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2-char s
   };
   const base = {vwScore: "𝄞  Score view", vwListener: "📻  Listener mode", vwTracksView: "▤  Tracks view", vwTracks: "◂  Tracks", vwEdit: "🛠  Edit toolbar",
                 vwFooter: "▦  Bottom bar", vwInst: "🎹  Instrument panel", vwSub: "💬  Notes strip",
-                vwCompare: "⇄  Compare with repo"}; // static: folderActive() reads a const declared after the boot-time menu render (TDZ)
+                vwCompare: "⇄  Compare with " + (song && songKey && !autosaveOn() && lastSaveDoc() ? "last save" : "repo")}; // no folderActive() here: its const is declared after the boot-time menu render (TDZ)
   for (const [id, label] of Object.entries(base)) document.getElementById(id).textContent = label;
   set("vwScore", viewMode === "score");
   set("vwTracksView", viewMode === "tracks");
@@ -12030,9 +12091,17 @@ document.getElementById("editsheetbtn").addEventListener("click", e => {
   proxy("emBassist", () => openBassist());
   proxy("emAskFill", () => openFill());
 }
+function fileMenuSaveLabels() { // Save / Revert / Restore read the auto-save switch and this song's checkpoint + stash
+  const comp = !!song && isComposition() && !LINK_SONGS;
+  const cp = comp && !autosaveOn() ? lastSaveDoc() : null;
+  document.getElementById("filesavelocal").style.display = comp && !autosaveOn() ? "" : "none";
+  document.getElementById("filerevert").textContent = cp ? "Revert to last save…" : (folderActive() ? "Revert to saved copy…" : "Revert to repo copy…");
+  document.getElementById("filerestore").style.display = comp && hasStash() ? "" : "none";
+}
 document.getElementById("filesheetbtn").addEventListener("click", e => {
   if (filesheet.classList.contains("on")) { closeFileMenus(); return; }
   closeFileMenus();
+  fileMenuSaveLabels();
   filesub.classList.remove("on");
   document.getElementById("filenewform").style.display = "none";
   document.getElementById("filesaveasform").style.display = "none";
@@ -12390,19 +12459,49 @@ async function renameRepoTitle(key, title, h) { // album.json songs override + m
     return changed;
   });
 }
+document.getElementById("filesavelocal").addEventListener("click", () => { closeFileMenus(); saveCheckpoint(); });
+document.getElementById("filerestore").addEventListener("click", async () => {
+  closeFileMenus();
+  if (!songKey || !hasStash()) return;
+  const ok = await appConfirm("RESTORE UNSAVED COPY", "Brings back the working copy you had before the last Revert (music and any unsynced annotations), replacing what is open now.", "Restore", "Cancel");
+  if (!ok) return;
+  const k = songKey;
+  if (!restoreStash(k)) return;
+  editUndo = []; editRedo = [];
+  openDraft(k);
+  setInfo("restored — your unsaved copy is back");
+});
 document.getElementById("filerevert").addEventListener("click", async () => {
-  // the escape hatch (Josh, 2026-08-20): drop EVERYTHING this device thinks it
-  // knows about the song — draft, local annotations, deletions, sync stamps —
-  // and load the repo's last save as the truth
   if (!songKey) { setInfo("open a song first"); return; }
   if (songKey.startsWith("local/")) { setInfo("local imports have no repo copy to revert to"); return; }
+  const cp = isComposition() && !autosaveOn() ? lastSaveDoc() : null;
+  if (cp) { // Revert to last save: the checkpoint becomes the working copy; the working copy waits in the stash
+    const ok = await appConfirm("REVERT TO LAST SAVE",
+      "Goes back to your last Save on this device, dropping the edits since. File → Restore unsaved copy undoes this until your next Save or Publish.",
+      "Revert to last save", "Cancel");
+    if (!ok) return;
+    const k = songKey;
+    stashWorking(k);
+    const d = {...cp}; delete d.savedAt;
+    localStorage.setItem(draftStoreKey(k), JSON.stringify(d));
+    editUndo = []; editRedo = [];
+    openDraft(k);
+    setInfo("reverted to your last save — File → Restore unsaved copy brings the edits back");
+    return;
+  }
+  // the escape hatch (Josh, 2026-08-20): drop EVERYTHING this device thinks it
+  // knows about the song — draft, local annotations, deletions, sync stamps —
+  // and load the repo's last save as the truth. Since 2026-09-26 the working
+  // copy is stashed first, so File → Restore unsaved copy can undo it.
   const ok = await appConfirm("REVERT TO REPO COPY",
     "Discards this device's draft, unsynced annotations, and deletions for THIS song. " +
-    "The repo's last save becomes what you see. This cannot be undone on this device.",
+    "The repo's last save becomes what you see. File → Restore unsaved copy undoes this until your next Save or Publish.",
     "Revert — use the repo's copy", "Cancel");
   if (!ok) return;
+  const k0 = songKey;
+  stashWorking(k0);
   for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-",
-                     "ff1roll-tombs-", "ff1roll-lastsync-"])
+                     "ff1roll-tombs-", "ff1roll-lastsync-", "ff1roll-save-"])
     localStorage.removeItem(pre + songKey);
   idbDraftDelete(songKey);
   editUndo = []; editRedo = [];
@@ -13336,6 +13435,8 @@ async function commitCompositionNow(status) { // .mid + annotations + notes.txt,
     let readmeNote = "";
     try { await writeSongsReadme(h); } catch (err) { readmeNote = " (the repo's song list didn't update: " + err.message + ")"; } // the song is published either way
     markCurrentSongSynced(content, stamp);
+    if (!autosaveOn()) saveCheckpoint(true); // publishing is also a Save
+    localStorage.removeItem(stashStoreKey(songKey));
     await initCatalog().catch(() => {});
     updateSongBtn();
     renderSyncPending();
@@ -14965,6 +15066,7 @@ document.addEventListener("keydown", e => {
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   const grid = moveSnapTicks(); // 16ths, or triplet steps while a T duration is active
   const meta = e.metaKey || e.ctrlKey;
+  if (meta && e.key.toLowerCase() === "s") { e.preventDefault(); if (!autosaveOn()) saveCheckpoint(); else setInfo("auto-save is on: every edit is already saved (Settings → Saving)"); return; }
   if (meta && e.key.toLowerCase() === "c") {
     const k = copySelection();
     if (k) { setInfo("copied " + clipSummary() + " — ⌘V pastes at the playhead"); e.preventDefault(); }
@@ -15035,11 +15137,16 @@ async function cmpEnter() {
   if (!song || !songKey || !isComposition()) { setInfo("compare works on your own saved songs"); return; }
   if (chopS > 0 || chopE !== null) { setInfo("turn the chop off first — compare looks at the whole song"); return; }
   const key = songKey;
-  setInfo("fetching the saved copy…");
-  let res = null;
-  try { res = await readData("songs", key, true); } catch (err) { res = null; }
-  if (!res || !res.ok) { setInfo("no saved copy of this song " + (folderActive() ? "in the folder" : "in the repo") + " yet"); return; }
-  const parsed = parseMidi(await res.arrayBuffer());
+  const cp = !autosaveOn() ? lastSaveDoc() : null; // auto-save off: the baseline is your last Save, when there is one
+  let parsed;
+  if (cp) parsed = {ppq: cp.ppq, tracks: cp.tracks};
+  else {
+    setInfo("fetching the saved copy…");
+    let res = null;
+    try { res = await readData("songs", key, true); } catch (err) { res = null; }
+    if (!res || !res.ok) { setInfo("no saved copy of this song " + (folderActive() ? "in the folder" : "in the repo") + " yet"); return; }
+    parsed = parseMidi(await res.arrayBuffer());
+  }
   if (!song || songKey !== key) return; // he moved on while it loaded
   const scale = song.ppq / parsed.ppq; // same lineage, but be safe
   const repo = parsed.tracks.map(t => ({name: t.name, notes: t.notes.map(n => scale === 1 ? {...n} : {...n, t: Math.round(n.t * scale), d: Math.round(n.d * scale)})}));
@@ -16794,6 +16901,7 @@ function openSettingsSheet() {
   const c = cfg();
   document.getElementById("ghtoken").value = localStorage.getItem("ff1roll-ghtoken") || "";
   document.getElementById("cfgsongsrepo").value = c.songsRepo;
+  document.getElementById("cfgautosave").checked = autosaveOn();
   ghCheckOut("");
   if (localStorage.getItem("ff1roll-ghtoken")) ghCheck(); // one small GET: "connected" shows without a tap
   document.getElementById("cfgnsfrepo").value = c.nsfRepo;
@@ -16816,6 +16924,7 @@ function settingsPersist(id) {
   const keep = (k, val) => { if (val) localStorage.setItem(k, val); else localStorage.removeItem(k); };
   switch (id) {
     case "ghtoken": keep("ff1roll-ghtoken", v("ghtoken")); ghCheckOut(""); break;
+    case "cfgautosave": { const on = document.getElementById("cfgautosave").checked; if (on) localStorage.setItem("ff1roll-autosave", "1"); else localStorage.removeItem("ff1roll-autosave"); updateSongBtn(); setInfo(on ? "auto-save on: every edit is the save; the ● means unpublished" : "auto-save off: File → Save (⌘S) is your checkpoint; the ● means changed since it"); break; }
     case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); askModelCache = null; break;
     case "cfgaibackend": saveCfg({aiBackend: v("cfgaibackend") === "browser" ? "browser" : "remote"}); aiBackendRows(); break;
     case "cfgaibrowsermodel": saveCfg({aiBrowserModel: v("cfgaibrowsermodel") || "Llama-3.2-1B-Instruct-q4f16_1-MLC"}); break;

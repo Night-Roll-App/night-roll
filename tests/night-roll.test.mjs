@@ -1562,7 +1562,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README",
+    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -3095,6 +3095,42 @@ test("Songs README: the block lists every song as a player link; splice creates,
   assert.equal(val(`spliceReadme("# Mine\\n\\nprose\\n", "B")`), "# Mine\n\nprose\n\nB\n");
   assert.equal(val(`spliceReadme("# Mine\\n\\n<!-- night-roll:songs -->old<!-- /night-roll:songs -->\\n\\ntail\\n", "<!-- night-roll:songs -->new<!-- /night-roll:songs -->")`), "# Mine\n\n<!-- night-roll:songs -->new<!-- /night-roll:songs -->\n\ntail\n");
   run(`saveCfg({songsBase: ""}); songKey = null;`);
+});
+
+test("Local Save: auto-save off by default; Save is the checkpoint the ● and Compare use; Revert stashes, Restore brings it back", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/save-test.mid"; song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}]}]; song.baseTempos = song.tempos;
+       localStorage.removeItem("ff1roll-autosave"); for (const k of ["ff1roll-draft-", "ff1roll-save-", "ff1roll-stash-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey);`);
+  assert.equal(val(`autosaveOn()`), false, "off by default");
+  run(`saveDraft(false);`); // an edit: working copy, dirty vs publish
+  assert.equal(val(`songUnsaved()`), true, "never saved locally: unsaved = unpublished");
+  assert.equal(val(`saveCheckpoint(true)`), true);
+  assert.equal(val(`songUnsaved()`), false, "right after Save: clean");
+  assert.ok(val(`lastSaveDoc().savedAt > 0`));
+  run(`song.tracks[0].notes.push({t: 480, d: 480, p: 64, v: 100}); saveDraft(false);`);
+  assert.equal(val(`songUnsaved()`), true, "an edit after Save: unsaved");
+  assert.equal(val(`songDocSig(lastSaveDoc()) === songDocSig(draftDoc(false))`), false);
+  // Revert to last save = stash the working copy, restore the checkpoint
+  run(`stashWorking(songKey); localStorage.setItem(draftStoreKey(songKey), JSON.stringify(lastSaveDoc()));`);
+  assert.equal(val(`hasStash()`), true);
+  assert.equal(val(`JSON.parse(localStorage.getItem(draftStoreKey(songKey))).tracks[0].notes.length`), 1);
+  assert.equal(val(`restoreStash(songKey)`), true);
+  assert.equal(val(`JSON.parse(localStorage.getItem(draftStoreKey(songKey))).tracks[0].notes.length`), 2, "the stashed working copy is back");
+  assert.equal(val(`hasStash()`), false);
+  // auto-save on: the ● means unpublished, the checkpoint is ignored
+  run(`localStorage.setItem("ff1roll-autosave", "1"); saveDraft(true);`);
+  assert.equal(val(`songUnsaved()`), false);
+  run(`saveDraft(false);`); assert.equal(val(`songUnsaved()`), true);
+  run(`localStorage.removeItem("ff1roll-autosave"); for (const k of ["ff1roll-draft-", "ff1roll-save-", "ff1roll-stash-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey); songKey = null;`);
+});
+
+test("Recording: ● opens the loop end so a take past bar 2 grows the song instead of wrapping", () => {
+  const seg = JSON.parse(val(`JSON.stringify(recOpenEnded({start: 0, end: 4}))`));
+  assert.equal(seg.start, 0); assert.equal(seg.end, null, "Infinity serializes as null: the end is open");
+  assert.equal(val(`isFinite(recOpenEnded({start: 1.5, end: 4}).end)`), false);
+  assert.equal(val(`recOpenEnded({start: 1.5, end: 4}).start`), 1.5, "a cycle's start is kept; only the end opens");
+  // playSec's wrap math is a no-op on an open segment
+  assert.equal(val(`(() => { const s = 9.75, l = recOpenEnded({start: 0, end: 4}); return s < l.end ? s : l.start + (s - l.end) % (l.end - l.start); })()`), 9.75);
 });
 
 test("Ask: host consent — localhost never prompts, other hosts once", () => {

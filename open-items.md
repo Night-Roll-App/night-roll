@@ -4,6 +4,15 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## Recording looped instead of growing the song — FIXED on the overnight branch (2026-09-26)
+
+Josh's son: new song (two bars), MIDI keyboard + arpeggiator, ●, the
+take wrapped onto bars 1–2. Cause: the transport's loop segment (0 →
+song end) also applied while recording. Fix: an open-ended segment
+while ● is armed (NIGHT-ROLL.md "Recording past the end"). Needs a
+real-keyboard test by the son; vm test covers the segment math.
+
+## ROADMAP — the whole remaining list (written 2026-09-26, end of a long day)
 ## PHASE 0.5 AUDIO SPIKE — DONE 2026-09-27 MORNING: GO
 
 Throwaway Capacitor 8 shell at ~/work/ff/nightroll-shell-spike (not in

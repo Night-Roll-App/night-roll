@@ -1639,6 +1639,20 @@ from the ✦ Ask sheet and the conversation lands in `<song>.ask.md`
 (last at 88b83b0). The deploy-notice ntfy topic used by terminal
 sessions is unrelated and stays.
 
+## Recording past the end (2026-09-26)
+
+Josh's son (MIDI keyboard, arpeggiator) recorded into a fresh two-bar
+song and the take looped onto bars 1–2. `playSec()` maps transport time
+back into `loopSeg` (0 → song end) and the scheduler re-arms a pass at
+the end. While `recording`, `play()` now replaces the segment with
+`recOpenEnded(seg)` (same start, `end: Infinity`): `playSec` stays
+linear, the wrap loop breaks on a non-finite end, chip-buffer loop
+points clamp to the buffer, and `recFinish` → `computeSongEnd` grows the
+song to the take's last bar. `recFinish` also writes the draft, so the
+take is in the working copy immediately. ● can only be armed from a
+stop (● while rolling = stop), so the check in `play()` covers every
+path.
+
 ## Compare with repo (2026-09-25)
 
 Josh: "I have seven songs where it says the notes are changed, but I
