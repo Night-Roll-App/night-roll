@@ -435,6 +435,23 @@ tap) does the rebuild via `rebuildAudio(why)`, which also resets
 closed context. Unverifiable on the Mac (Chrome has no interruption
 path); the gating itself is exercised in Chrome with a faked dead clock.
 
+**Chip audio and the AudioContext (2026-09-27, the second silence).** A
+committed Chrono Trigger song silenced everything again with no picker
+involved. `chipRender` runs at song load and called `ensureAudio`; iOS had
+closed the context under the render's memory (eight voices × 3 min ×
+48 kHz ≈ 300 MB twice over), and the rebuild ran outside a tap. Now the
+render never touches the context: it produces `chip.pcm` (Float32 per
+voice at `CHIPS[kind].renderRate` — 32 kHz for the SNES — or the live
+rate), silent voices keep nothing, and `chipBuffers()` builds
+AudioBuffers inside play()'s tap on the live context (rebuilt if the
+context changed; `chipActive`/`chipHas` read either form). A render whose
+song is no longer open throws "stale render" at its next progress tick;
+`updateChipBtn` frees the previous song's pcm/buffers first. `ensureAudio`
+rebuilds a closed context only inside a gesture, the visibility handler
+only resumes, `resumeAudio` reads `gestureActive()` before its awaits,
+and "audio asleep"/"engine closed" write the state to the ⚠ log.
+Queued: a Worker for the render.
+
 **Big drafts (2026-09-27; Josh imported Chrono Trigger's 92 songs on the
 iPad: "quota has been exceeded", and the album "vanished" — it was under
 Open → drafts → the folder).** localStorage holds ~5 MB per site and 92
