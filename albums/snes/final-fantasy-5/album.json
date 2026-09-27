@@ -1,0 +1,309 @@
+{
+ "title": "Final Fantasy 5",
+ "order": 50,
+ "songs": {
+  "ahead-on-our-way": "Ahead on our Way",
+  "as-i-feel-you-feel": "As I Feel, You Feel",
+  "battle-with-gilgamesh": "Battle with Gilgamesh",
+  "beyond-the-deep-blue-sea": "Beyond the Deep Blue Sea",
+  "critter-tripper-fritter": "Critter Tripper Fritter!",
+  "danger": "Danger!",
+  "exdeath-s-castle": "Exdeath's Castle",
+  "fate-in-haze": "Fate in Haze",
+  "go-go-boco": "Go Go Boco!",
+  "good-night": "Good Night!",
+  "hurry-hurry": "Hurry! Hurry!",
+  "i-m-a-dancer": "I'm a Dancer",
+  "intension-of-the-earth": "Intension of the Earth",
+  "lenna-s-theme": "Lenna's Theme",
+  "mambo-de-chocobo": "Mambo de Chocobo!",
+  "my-home-sweet-home": "My Home, Sweet Home",
+  "pirates-ahoy": "Pirates Ahoy!",
+  "run": "Run!",
+  "searching-the-light": "Searching the Light",
+  "tenderness-in-the-air": "Tenderness in the Air",
+  "the-book-of-sealings": "The Book of Sealings",
+  "the-castle-of-dawn": "The Castle of Dawn",
+  "the-dragon-spreads-it-s-wings": "The Dragon Spreads it's Wings",
+  "the-four-warriors-of-dawn": "The Four Warriors of Dawn",
+  "the-prelude-of-empty-skies": "The Prelude of Empty Skies",
+  "victory-s-fanfare": "Victory's Fanfare",
+  "walking-the-snowy-mountains": "Walking the Snowy Mountains",
+  "what": "What?"
+ },
+ "nsf": {
+  "vault": "final-fantasy-5/",
+  "tracks": {
+   "a-new-origin": {
+    "n": 1,
+    "secs": 300
+   },
+   "a-presentiment": {
+    "n": 1,
+    "secs": 269
+   },
+   "ahead-on-our-way": {
+    "n": 1,
+    "secs": 144
+   },
+   "as-i-feel-you-feel": {
+    "n": 1,
+    "secs": 124
+   },
+   "battle-with-gilgamesh": {
+    "n": 1,
+    "secs": 135
+   },
+   "beyond-the-deep-blue-sea": {
+    "n": 1,
+    "secs": 93
+   },
+   "critter-tripper-fritter": {
+    "n": 1,
+    "secs": 72
+   },
+   "cursed-earths": {
+    "n": 1,
+    "secs": 101
+   },
+   "danger": {
+    "n": 1,
+    "secs": 71
+   },
+   "dear-friends": {
+    "n": 1,
+    "secs": 300
+   },
+   "deception": {
+    "n": 1,
+    "secs": 62
+   },
+   "exdeath-s-castle": {
+    "n": 1,
+    "secs": 128
+   },
+   "fanfare-1": {
+    "n": 1,
+    "secs": 12
+   },
+   "fanfare-2": {
+    "n": 1,
+    "secs": 12
+   },
+   "fate-in-haze": {
+    "n": 1,
+    "secs": 135
+   },
+   "final-fantasy": {
+    "n": 1,
+    "secs": 212
+   },
+   "four-valiant-hearts": {
+    "n": 1,
+    "secs": 91
+   },
+   "go-go-boco": {
+    "n": 1,
+    "secs": 62
+   },
+   "good-night": {
+    "n": 1,
+    "secs": 12
+   },
+   "harvest": {
+    "n": 1,
+    "secs": 93
+   },
+   "hurry-hurry": {
+    "n": 1,
+    "secs": 33
+   },
+   "i-m-a-dancer": {
+    "n": 1,
+    "secs": 16
+   },
+   "intension-of-the-earth": {
+    "n": 1,
+    "secs": 133
+   },
+   "lenna-s-theme": {
+    "n": 1,
+    "secs": 141
+   },
+   "mambo-de-chocobo": {
+    "n": 1,
+    "secs": 59
+   },
+   "music-box": {
+    "n": 1,
+    "secs": 111
+   },
+   "musica-machina": {
+    "n": 1,
+    "secs": 73
+   },
+   "my-home-sweet-home": {
+    "n": 1,
+    "secs": 139
+   },
+   "nostalgia": {
+    "n": 1,
+    "secs": 84
+   },
+   "piano-lesson-1": {
+    "n": 1,
+    "secs": 12
+   },
+   "piano-lesson-2": {
+    "n": 1,
+    "secs": 13
+   },
+   "piano-lesson-3": {
+    "n": 1,
+    "secs": 12
+   },
+   "piano-lesson-4": {
+    "n": 1,
+    "secs": 26
+   },
+   "piano-lesson-5": {
+    "n": 1,
+    "secs": 12
+   },
+   "piano-lesson-6": {
+    "n": 1,
+    "secs": 12
+   },
+   "piano-lesson-7": {
+    "n": 1,
+    "secs": 12
+   },
+   "piano-lesson-8": {
+    "n": 1,
+    "secs": 13
+   },
+   "pirates-ahoy": {
+    "n": 1,
+    "secs": 114
+   },
+   "reminiscence": {
+    "n": 1,
+    "secs": 99
+   },
+   "requiem": {
+    "n": 1,
+    "secs": 26
+   },
+   "royal-palace": {
+    "n": 1,
+    "secs": 85.98
+   },
+   "run": {
+    "n": 1,
+    "secs": 38.86
+   },
+   "sealed-away": {
+    "n": 1,
+    "secs": 97
+   },
+   "searching-the-light": {
+    "n": 1,
+    "secs": 85
+   },
+   "tenderness-in-the-air": {
+    "n": 1,
+    "secs": 149
+   },
+   "the-airship": {
+    "n": 1,
+    "secs": 109
+   },
+   "the-ancient-library": {
+    "n": 1,
+    "secs": 143
+   },
+   "the-battle": {
+    "n": 1,
+    "secs": 63
+   },
+   "the-book-of-sealings": {
+    "n": 1,
+    "secs": 85
+   },
+   "the-castle-of-dawn": {
+    "n": 1,
+    "secs": 108
+   },
+   "the-day-will-come": {
+    "n": 1,
+    "secs": 141.63
+   },
+   "the-decisive-battle": {
+    "n": 1,
+    "secs": 300
+   },
+   "the-dragon-spreads-it-s-wings": {
+    "n": 1,
+    "secs": 96
+   },
+   "the-evil-lord-exdeath": {
+    "n": 1,
+    "secs": 118
+   },
+   "the-fierce-battle": {
+    "n": 1,
+    "secs": 136
+   },
+   "the-fire-powered-ship": {
+    "n": 1,
+    "secs": 86
+   },
+   "the-four-warriors-of-dawn": {
+    "n": 1,
+    "secs": 122
+   },
+   "the-land-unknown": {
+    "n": 1,
+    "secs": 120
+   },
+   "the-last-battle": {
+    "n": 1,
+    "secs": 201
+   },
+   "the-prelude-of-empty-skies": {
+    "n": 1,
+    "secs": 200
+   },
+   "the-prelude": {
+    "n": 1,
+    "secs": 126
+   },
+   "the-silent-beyond": {
+    "n": 1,
+    "secs": 300
+   },
+   "unknown-lands": {
+    "n": 1,
+    "secs": 124
+   },
+   "victory-s-fanfare": {
+    "n": 1,
+    "secs": 32
+   },
+   "walking-the-snowy-mountains": {
+    "n": 1,
+    "secs": 99
+   },
+   "waltz-suomi": {
+    "n": 1,
+    "secs": 122.93
+   },
+   "what": {
+    "n": 1,
+    "secs": 45
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}
