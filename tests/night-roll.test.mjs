@@ -1575,7 +1575,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
@@ -3366,4 +3366,30 @@ test("iPad app: the Files folder is a folder root — opt-in pref, same seams, b
   assert.equal(run(`folderActive()`), false);
   assert.equal(run(`localStorage.getItem("ff1roll-folder-native")`), null);
   run(`delete window.Capacitor; fetch = globalThis.__prevFetch2;`);
+});
+
+test("iPad app: a file handed over by Files/share sheet opens as a local draft; the Inbox copy goes", async () => {
+  installSong();
+  run(`song.tracks = [{name: "v1", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}]}];`);
+  const b64 = run(`midiBase64(writeMidi(song))`);
+  const calls = [];
+  app.context.capOpen = {
+    listeners: {},
+    App: {addListener(name, fn) { app.context.capOpen.listeners[name] = fn; return Promise.resolve({remove() {}}); },
+          getLaunchUrl: async () => undefined},
+    Filesystem: {async readFile({path}) { calls.push(["read", path]); return {data: b64}; },
+                 async deleteFile({path}) { calls.push(["delete", path]); }},
+  };
+  run(`window.Capacitor = {isNativePlatform: () => true, Plugins: {Filesystem: capOpen.Filesystem, App: capOpen.App}};`);
+  run(`nativeOpenHook()`);
+  assert.equal(typeof app.context.capOpen.listeners.appUrlOpen, "function", "listens for hand-overs");
+  const url = "file:///private/var/mobile/Containers/Data/Application/X/Documents/Inbox/Test%20Song.mid";
+  assert.equal(await run(`nativeOpenUrl(${JSON.stringify(url)})`), true);
+  assert.equal(run(`songKey`), "local/test-song.mid");
+  assert.equal(run(`song.tracks.length`), 1);
+  assert.deepEqual(calls, [["read", url], ["delete", url]]);
+  // not a file URL, or the web: nothing happens
+  assert.equal(await run(`nativeOpenUrl("https://example.com/x.mid")`), false);
+  run(`delete window.Capacitor;`);
+  assert.equal(await run(`nativeOpenUrl(${JSON.stringify(url)})`), false);
 });

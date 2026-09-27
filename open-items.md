@@ -48,8 +48,10 @@ first catalog song (7424964). The Bach starter now plays on piano
 alternative). Files-app storage: `nativeDirHandle` over the Filesystem
 plugin, opt-in switch in Settings (NIGHT-ROLL.md "iPad app: the Files
 folder"). Needs Josh on the device: turn it on in Settings, Save a
-starter, find it in Files → On My iPad → Night Roll. Next: open a .mid
-from Files/share sheet into the app (`appUrlOpen`), then TestFlight.
+starter, find it in Files → On My iPad → Night Roll. Open in Night Roll
+also shipped (a .mid or chip file tapped in Files / Share → Night Roll
+opens as a local draft; needs Josh: tap a .mid in Files on the iPad).
+Next: TestFlight (archive + upload, privacy labels, support email).
 
 ## APP STORE PREP — OVERNIGHT BRANCH FULLY MERGED 2026-09-27 (afternoon)
 
