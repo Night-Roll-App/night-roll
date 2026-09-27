@@ -5666,12 +5666,11 @@ function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // has killed (state "closed") can never come back: rebuild + re-warm.
   if (audio && audio.state === "closed") { // iOS closes a context under pressure; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds
     if (!gestureActive()) return;
-    logErr("audio engine was closed by the system; rebuilt in this tap");
     audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
   }
   if (audio) return;
   audio = new (window.AudioContext || window.webkitAudioContext)();
-  audio.onstatechange = () => { const st = audio && audio.state; console.log("[audio] state:", st); if (st === "closed" || st === "interrupted") logErr("audio engine " + st + " (system) — tap ▶ to bring it back"); };
+  audio.onstatechange = () => { console.log("[audio] state:", audio && audio.state); if (audio && audio.state === "closed") logErr("audio engine closed by the system — tap ▶ to rebuild it"); };
   master = audio.createGain();
   master.gain.value = MASTER_VOL * masterVol;
   master.connect(audio.destination);
@@ -5696,25 +5695,30 @@ async function clockAlive() { // don't trust the state string: prove the clock t
 // the visibility handler below then ran resumeAudio with a dead clock and
 // rebuilt the context OUTSIDE a gesture — on iOS such a context runs its
 // clock but never reaches the speaker, and resume() has nothing left to do.
-// Now a dead clock only asks for a tap; the one rebuild is ensureAudio's
-// closed-state path, synchronous at the top of play()'s tap, and it resets
-// every node the app keeps across a rebuild.
+// Now a dead clock outside a gesture only asks for a tap; play() (a tap)
+// rebuilds for real. Every node the app keeps across the rebuild is reset.
 function gestureActive() { return !(typeof navigator !== "undefined" && navigator.userActivation) || navigator.userActivation.isActive; }
-// resumeAudio never closes or creates a context. Even inside a tap, a context
-// created AFTER awaits is not gesture-initiated to iOS and runs mute with a
-// ticking clock (Josh, 2026-09-27: Fall tap → silence, Stop/Play no help, no
-// ⚠ line because the clock was alive). The only rebuild is ensureAudio's
-// closed-state one, which runs synchronously at the top of play()'s tap.
+function rebuildAudio(why) {
+  try { if (audio) audio.close().catch(() => {}); } catch (err) { /* already closed */ }
+  audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
+  ensureAudio(); // rebuilds + re-warms (covers the first-quantum glitch)
+  console.log("[audio] context rebuilt (" + why + ")");
+}
 async function resumeAudio() {
   if (!audio) return;
   const tapped = gestureActive(); // read NOW: transient activation lapses during the awaits below
-  const before = audio.state;
   await audio.resume().catch(() => {});
   if (await clockAlive()) return;
   await audio.resume().catch(() => {});
   if (await clockAlive()) return;
-  setInfo("audio asleep — tap ▶ again"); // surfaced: consoles don't exist on an iPad — the ⚠ log carries the state
-  logErr("audio asleep (" + (tapped ? "in a tap" : "no gesture") + "; state " + before + " → " + audio.state + ") — tap ▶ again; if it stays silent, relaunch and tell Claude this line");
+  if (!tapped) { asleep("no gesture"); return; } // never rebuild here: see above
+  rebuildAudio("clock dead inside a tap");
+  await audio.resume().catch(() => {});
+  if (!(await clockAlive())) asleep("rebuilt inside a tap, clock still dead");
+  function asleep(why) { // surfaced: consoles don't exist on an iPad — the ⚠ log carries the state
+    setInfo("audio asleep — tap ▶ again");
+    logErr("audio asleep (" + why + "; state " + (audio ? audio.state : "none") + ") — tap ▶ again; if it stays silent, relaunch and tell Claude this line");
+  }
 }
 // coming back from another app: revive audio without waiting for a Play tap
 // (resume only — a rebuild waits for the tap)
