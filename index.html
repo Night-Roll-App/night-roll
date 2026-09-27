@@ -15440,8 +15440,17 @@ function askSpanNotes(t0, t1, maxChars) { // notesTxtFor's shape, three deltas: 
   if (cut !== null) L.push("# (cut at bar " + cut + " to fit the model's window — ask about a narrower range for the rest)");
   return L.join("\n");
 }
+function askAppState() { // what is running: build, install, audio engine, the last ⚠ lines — a bug report should need no relay (Josh, 2026-09-27: "you should have access to the current running build and any errors")
+  const installed = (typeof navigator !== "undefined" && navigator.standalone) || (typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches);
+  const L = [];
+  L.push("app: build " + (document.lastModified || "unknown") + (installed ? " · installed (home screen)" : " · in the browser") + (typeof navigator !== "undefined" && navigator.onLine === false ? " · offline" : "") +
+         "; audio engine: " + (typeof audio !== "undefined" && audio ? audio.state : "not created yet") + (typeof playing !== "undefined" && playing ? ", playing" : ""));
+  const errs = (typeof appErrors !== "undefined" ? appErrors : []).slice(-6).map(e => (e.t instanceof Date ? e.t.toTimeString().slice(0, 8) + " " : "") + e.msg);
+  L.push("recent ⚠ log (" + (typeof appErrors !== "undefined" ? appErrors.length : 0) + " total; newest last):\n" + (errs.length ? errs.join("\n") : "(none)"));
+  return L.join("\n");
+}
 function askContext(sp, budget) { // the ONE block per request; never stored
-  if (askGeneral) return "general chat — no song attached. The user opened the general Ask: for the app, the project, music in general, or a message for the terminal; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. The tutor rule about the user's own discoveries still holds for music questions.";
+  if (askGeneral) return "general chat — no song attached. The user opened the general Ask: for the app, the project, music in general, or a message for the terminal; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. The tutor rule about the user's own discoveries still holds for music questions.\n" + askAppState();
   const bt = barTicks(), qt = beatTicks(), ts = effTs();
   const tick = curTick();
   const own = isComposition() || isLocalDraft() || songKey === null;
@@ -15455,6 +15464,7 @@ function askContext(sp, budget) { // the ONE block per request; never stored
   L.push("view: " + viewMode + (playing ? ", playing" : ", paused") + (playRate !== 1 ? " at " + Math.round(playRate * 100) + "% speed" : "") +
          "; cursor: bar " + (Math.floor(tick / bt) + 1) + " beat " + (Math.round(((tick % bt) / qt + 1) * 100) / 100));
   L.push("key state: " + document.getElementById("keyunset").textContent + " — 'not set' means the user has NOT discovered the key; do not reveal it");
+  L.push(askAppState());
   if (multiSel.length) {
     const pitches = [...new Set(multiSel.map(m => song.tracks[m.ti].notes[m.ni].p))].sort((a, b) => a - b);
     L.push("lasso-selected notes: " + pitches.map(p => pitchName(p, multiSelSf)).join(" ") + " — do not name this chord unless the user has guessed or insists");
