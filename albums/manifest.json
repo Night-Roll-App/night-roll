@@ -162,6 +162,10 @@
   "title": "Starters",
   "songs": [
    {
+    "title": "Für Elise (Beethoven, A section)",
+    "path": "albums/starters/fur-elise.mid"
+   },
+   {
     "title": "Prelude in C (Bach, BWV 846)",
     "path": "albums/starters/bach-prelude-in-c.mid"
    }

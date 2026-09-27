@@ -3,6 +3,7 @@
  "title": "Starters",
  "order": 4,
  "songs": {
-  "bach-prelude-in-c": "Prelude in C (Bach, BWV 846)"
+  "bach-prelude-in-c": "Prelude in C (Bach, BWV 846)",
+  "fur-elise": "Für Elise (Beethoven, A section)"
  }
 }
