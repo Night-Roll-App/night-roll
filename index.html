@@ -3287,6 +3287,12 @@ function draw() { sceneValid = false; drawFull(false); }
 function playbackFrame() {
   if (!song) { draw(); return; }
   if (PERF_NOSCENE) { drawFull(false); return; } // ?scene=0: never allocate the cache
+  // Fall is a function of time, not of the view: every frame is a new picture,
+  // and the roll's playhead means nothing over it. The scene cache below froze
+  // it at the first frame and drew a gold line marching across (Josh, 2026-09-27,
+  // Chrono Trigger: "the notes … are just stopped, and there's a cursor for
+  // some reason scrolling across the screen")
+  if (fallActive()) { sceneValid = false; drawFull(false); return; }
   if (instOpen) drawInst();
   const dpr = window.devicePixelRatio || 1;
   if (!sceneValid || view.x !== sceneVX || view.y !== sceneVY ||
