@@ -459,19 +459,8 @@ rebuild is `ensureAudio`'s closed-state path, synchronous at the top of
 logs `before → after` state; transitions to "interrupted"/"closed" log
 as they happen. Also: the pump looks 0.6 s ahead (a slow frame no longer
 drops notes as past) and `drawFall` skips out-of-window notes by tick
-(Chrono Trigger: 9 ms median → 1.9 ms per frame).
-Fourth pass (a plain relaunch dead, ⚠ "interrupted"): dictation's
-`stop()` keeps the recognizer alive for late words and `micPrev`
-lingered until the next dictation, and while it lingers iOS keeps the
-audio session with speech recognition — every silence that night
-followed a dictated message. `micRelease()` aborts both; `play()` calls
-it first, and `resumeAudio` calls it and waits 400 ms when the state is
-"interrupted". And the recovery removed in the third pass is back in
-the one safe place: `audioRebuildAtTap` runs synchronously as the first
-thing in `play()`'s tap when the engine is interrupted, closed, or
-`audioDead` (set when `resumeAudio`'s retries fail), closing the old
-context and letting `ensureAudio` make the new one in the same
-synchronous stretch. Queued: a Worker for the render.
+(Chrono Trigger: 9 ms median → 1.9 ms per frame). Queued: a Worker for
+the render.
 
 **Big drafts (2026-09-27; Josh imported Chrono Trigger's 92 songs on the
 iPad: "quota has been exceeded", and the album "vanished" — it was under
