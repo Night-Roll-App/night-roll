@@ -15525,6 +15525,8 @@ function askModeButtons() {
   if (!a || !b) return;
   a.classList.toggle("active", !askGeneral); b.classList.toggle("active", askGeneral);
   a.setAttribute("aria-selected", String(!askGeneral)); b.setAttribute("aria-selected", String(askGeneral));
+  // the tab names the song: the sheet covers the title behind it (Josh, 2026-09-27)
+  try { const t = songKey ? songTitleOf(songKey) : (typeof baseName === "function" ? baseName() : ""); a.textContent = "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song"); } catch (err) { a.textContent = "♪ this song"; }
   const spanrow = document.getElementById("askspanrow"); if (spanrow) spanrow.style.display = askGeneral ? "none" : "";
   const fillrow = document.getElementById("askfill"); if (fillrow && askGeneral) fillrow.style.display = "none";
   if (typeof askinput !== "undefined" && askinput) askinput.placeholder = askGeneral ? "Anything — the app, the project, music in general, a message for the terminal…" : "Ask about what you're looking at…";
