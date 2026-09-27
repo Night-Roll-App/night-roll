@@ -112,7 +112,6 @@ function fileBytes(tracks) {
   return new Uint8Array(bytes);
 }
 
-export { PPQ };
 
 // Sources that already carry beat time (N64 sequences: exact 48ths) skip
 // the frame->beat fit above. tracks: [{name, ch, program?, notes: [{t, d, p, v}]}]
