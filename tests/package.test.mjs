@@ -28,6 +28,10 @@ test("package: builds the app edition into a temp dir with only starter albums a
   const manifest = JSON.parse(readFileSync(path.join(out, "albums", "manifest.json"), "utf8"));
   for (const al of manifest) for (const s of al.songs) { assert.ok(s.path.startsWith("albums/starters/")); assert.ok(existsSync(path.join(out, s.path)), s.path); }
   assert.ok(!files.some(f => /^albums\/.*\.md$/.test(f)), "no journals/analysis docs");
+  // the browser-side modules ship (Josh, 2026-09-27, in the app: "Importing a module script failed"); the node-only scripts beside them do not
+  for (const f of ["tools/chip-worker.mjs", "tools/nsf/nsf.mjs", "tools/nsf/cpu6502.mjs", "tools/spc/spc.mjs", "tools/spc/apu-render.mjs", "tools/gbs/cpu-sm83.mjs", "tools/psx/psf.mjs", "tools/n64/usf.mjs"])
+    assert.ok(existsSync(path.join(out, f)), f + " should ship");
+  assert.ok(!files.some(f => /^tools\/(package|dump_notes|claude-bridge|at|span)\.mjs$|^tools\/nsf\/(dump|dump-all|make-test-nsf)\.mjs$/.test(f)), "no node-only tools in the output");
   rmSync(out, {recursive: true, force: true});
 });
 

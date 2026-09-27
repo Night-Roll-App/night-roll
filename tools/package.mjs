@@ -32,6 +32,34 @@ const ALLOWED_ALBUM_DIRS = ["albums/starters"];
 const FORBIDDEN = /final[-_ ]?fantasy|mega[-_ ]?man|tmnt|teenage mutant|nintendo|capcom|konami|square ?enix|castlevania|zelda|metroid/i;
 const TOP_FILES = ["index.html", "sw.js", "app.webmanifest", "404.html", "LICENSE"];
 const TOP_DIRS = ["vendor", "icons"];
+// Runtime modules: the browser imports these from tools/ (chip captures, chip
+// audio in the Worker). Only what the app's entry points reach, transitively —
+// the node-only scripts in the same folders (dumps, tests, bridges) stay home.
+// Keep in step with CHIPS[].files/shared in index.html and RUNNERS in chip-worker.
+const RUNTIME_ENTRIES = ["chip-worker.mjs",
+  "nsf/nsf.mjs", "nsf/notes.mjs", "nsf/midi-write.mjs", "nsf/apu-render.mjs",
+  "gbs/gbs.mjs", "gbs/notes.mjs", "gbs/apu-render.mjs",
+  "spc/spc.mjs", "spc/notes.mjs", "spc/apu-render.mjs",
+  "vgm/vgm.mjs", "vgm/notes.mjs",
+  "psx/psf.mjs", "psx/akao.mjs", "psx/seq.mjs", "psx/vab.mjs", "psx/notes.mjs",
+  "n64/usf.mjs", "n64/ead-usf.mjs", "n64/seq-libultra.mjs", "n64/notes.mjs"];
+function runtimeModules() { // tools-relative paths, entry points plus every static relative import under tools/
+  const seen = new Set(), todo = [...RUNTIME_ENTRIES];
+  while (todo.length) {
+    const m = todo.pop();
+    if (seen.has(m)) continue;
+    const abs = path.join(ROOT, "tools", m);
+    if (!existsSync(abs)) continue; // an optional module (spc/apu-render lands separately) may be absent
+    seen.add(m);
+    const src = readFileSync(abs, "utf8");
+    for (const im of src.matchAll(/(?:from|import)\s*\(?\s*"(\.\.?\/[^"]+\.mjs)"/g)) {
+      const t = path.posix.normalize(path.posix.join(path.posix.dirname(m), im[1]));
+      if (!t.startsWith("..")) todo.push(t); // imports that leave tools/ (tests/harness) are node-only
+    }
+  }
+  return [...seen].sort();
+}
+const RUNTIME = runtimeModules();
 
 const rel = p => path.relative(OUT, p).split(path.sep).join("/");
 function walk(dir, out = []) { for (const e of readdirSync(dir)) { const f = path.join(dir, e); if (statSync(f).isDirectory()) walk(f, out); else out.push(f); } return out; }
@@ -64,6 +92,7 @@ if (!CHECK_ONLY) {
   for (const f of TOP_FILES) if (existsSync(path.join(ROOT, f))) copyFileSync(path.join(ROOT, f), path.join(OUT, f));
   writeFileSync(path.join(OUT, "index.html"), appIndex);
   for (const d of TOP_DIRS) if (existsSync(path.join(ROOT, d))) copyDir(path.join(ROOT, d), path.join(OUT, d));
+  for (const m of RUNTIME) { const dst = path.join(OUT, "tools", m); mkdirSync(path.dirname(dst), {recursive: true}); copyFileSync(path.join(ROOT, "tools", m), dst); }
   mkdirSync(path.join(OUT, "albums"), {recursive: true});
   for (const d of shipAlbums) copyDir(d, path.join(OUT, path.relative(ROOT, d)));
   writeFileSync(path.join(OUT, "albums", "manifest.json"), JSON.stringify(shipManifest, null, 1) + "\n");
@@ -76,7 +105,7 @@ const files = CHECK_ONLY ? [] : walk(OUT);
 for (const f of files) {
   const r = rel(f);
   if (r.startsWith("albums/") && r !== "albums/manifest.json" && !ALLOWED_ALBUM_DIRS.some(d => r.startsWith(d + "/"))) fail("album not allowed in the product: " + r);
-  if (/^(journals|handoffs|tests|tools)\//.test(r) || /\.(ask|rollnotes)\.md$/.test(r)) fail("not a product file: " + r);
+  if (r.startsWith("tools/") ? !RUNTIME.includes(r.slice(6)) : /^(journals|handoffs|tests)\//.test(r) || /\.(ask|rollnotes)\.md$/.test(r)) fail("not a product file: " + r);
   if (FORBIDDEN.test(r)) fail("forbidden name in path: " + r);
   if (/\.(json|md|txt|webmanifest|js)$/.test(r) && r !== "index.html" && !r.startsWith("vendor/")) {
     const t = readFileSync(f, "utf8");
@@ -95,4 +124,4 @@ if (problems.length) {
   process.exit(1);
 }
 const size = files.reduce((n, f) => n + statSync(f).size, 0);
-console.log((CHECK_ONLY ? "ship guard: clean (check only)" : "packaged → " + OUT) + "\n  albums: " + (shipManifest.map(a => a.title).join(", ") || "(none yet — add albums/starters/)") + "\n  songs: " + shipManifest.reduce((n, a) => n + a.songs.length, 0) + (CHECK_ONLY ? "" : "\n  files: " + files.length + ", " + (size / 1048576).toFixed(1) + " MB"));
+console.log((CHECK_ONLY ? "ship guard: clean (check only)" : "packaged → " + OUT) + "\n  runtime modules: " + RUNTIME.length + "\n  albums: " + (shipManifest.map(a => a.title).join(", ") || "(none yet — add albums/starters/)") + "\n  songs: " + shipManifest.reduce((n, a) => n + a.songs.length, 0) + (CHECK_ONLY ? "" : "\n  files: " + files.length + ", " + (size / 1048576).toFixed(1) + " MB"));
