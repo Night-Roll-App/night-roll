@@ -13661,11 +13661,13 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
       }
       for (const d of Object.keys(albumMetaCache)) if (d.endsWith("/" + slug)) delete albumMetaCache[d];
     }
+    let manifestNow = null; // the manifest as this publish writes it: the dropdown applies it directly (Pages serves the old one for a minute)
     if (!folderActive()) { // manifest: GET repo truth, apply the same mutation updateManifest would
       // (the folder has no manifest — initCatalog rescans it)
       const mg = await fetch(repoApi("songs") + "albums/manifest.json?ref=main", {headers: h, cache: "no-store"});
       if (!mg.ok) throw apiError("songs", mg, "manifest GET");
       const albums = JSON.parse(decodeURIComponent(escape(atob((await mg.json()).content.replace(/\n/g, "")))));
+      manifestNow = albums;
       for (const k of keys) {
         manifestPlace(albums, null, k);
         const album = albums.find(a => a.title === albumTitleFor(k));
@@ -13690,7 +13692,14 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
       localStorage.removeItem("ff1roll-notes-" + key);
       if (key === songKey && song) song.savedStamp = Date.now();
     }
+    // the site serves the OLD manifest for about a minute after the commit, so
+    // initCatalog alone brought back a list without the album just published
+    // (Josh, 2026-09-27: "I published Final Fantasy V … I don't see it in Open";
+    // FF4 'worked' only because he looked later). Apply what we wrote, on top.
+    const applyNow = () => { if (manifestNow) for (const a of manifestNow) CATALOG[a.title] = a.songs.map(x => [x.title, x.path]); };
+    applyNow();
     await initCatalog().catch(() => { /* Pages lag; dropdown refreshes next boot */ });
+    applyNow();
     updateSongBtn();
     updateSyncBtn();
     status("Published " + keys.length + " track" + (keys.length === 1 ? "" : "s") +
