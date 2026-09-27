@@ -416,6 +416,25 @@ file picker accepts `.gbs`; the File menu says "Import… (.mid / .nsf /
 capture path" (synthetic GBS from `tools/gbs/make-test-gbs.mjs`, no ROM
 data), the m3u test's GBS line. Offline twin: `node tools/gbs/dump.mjs`.
 
+**Audio context rebuild only inside a tap (2026-09-27).** Josh, after
+importing on the iPad (Game Boy, then Chrono Trigger): the imported song
+played with a moving cursor and no sound, and every song after it was
+silent until a relaunch — "the same exact bug we had with Game Boy". Not
+the chip path (the SNES import had no renderer yet) and not scheduling
+(Chrome: 1575 events scheduled, no exception). Import's file picker
+interrupts the AudioContext; the `visibilitychange` handler then ran
+`resumeAudio` with a dead clock, and its last resort closed and REBUILT
+the context outside a user gesture — on iOS such a context runs its
+clock (the cursor moves) but never reaches the speaker, and resume()
+has nothing left to do. Now: `resumeAudio` resumes twice and, with a
+dead clock, rebuilds only when `gestureActive()`
+(`navigator.userActivation.isActive`; true where the API is missing);
+outside a gesture it says "audio asleep — tap ▶ again" and play() (a
+tap) does the rebuild via `rebuildAudio(why)`, which also resets
+`metGain` and `organWave` — nodes the old rebuild left bound to the
+closed context. Unverifiable on the Mac (Chrome has no interruption
+path); the gating itself is exercised in Chrome with a faked dead clock.
+
 **Big drafts (2026-09-27; Josh imported Chrono Trigger's 92 songs on the
 iPad: "quota has been exceeded", and the album "vanished" — it was under
 Open → drafts → the folder).** localStorage holds ~5 MB per site and 92

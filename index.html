@@ -5658,7 +5658,7 @@ function warmContext() { // one silent sample: absorbs the fresh context's glitc
 function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // glitches the first render quantum of a fresh context. But a context iOS
   // has killed (state "closed") can never come back: rebuild + re-warm.
-  if (audio && audio.state === "closed") { audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; }
+  if (audio && audio.state === "closed") { audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null; }
   if (audio) return;
   audio = new (window.AudioContext || window.webkitAudioContext)();
   audio.onstatechange = () => console.log("[audio] state:", audio && audio.state);
@@ -5679,22 +5679,36 @@ async function clockAlive() { // don't trust the state string: prove the clock t
   await new Promise(r => setTimeout(r, 40));
   return audio.currentTime > t0;
 }
+// The rebuild is the last resort and it is ONLY safe inside a tap. Josh,
+// 2026-09-27, after importing on the iPad (Game Boy, then Chrono Trigger):
+// the imported song's cursor moved with no sound, and every song after it
+// was silent until a relaunch. Import's file picker interrupts the context;
+// the visibility handler below then ran resumeAudio with a dead clock and
+// rebuilt the context OUTSIDE a gesture — on iOS such a context runs its
+// clock but never reaches the speaker, and resume() has nothing left to do.
+// Now a dead clock outside a gesture only asks for a tap; play() (a tap)
+// rebuilds for real. Every node the app keeps across the rebuild is reset.
+function gestureActive() { return !(typeof navigator !== "undefined" && navigator.userActivation) || navigator.userActivation.isActive; }
+function rebuildAudio(why) {
+  try { if (audio) audio.close().catch(() => {}); } catch (err) { /* already closed */ }
+  audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
+  ensureAudio(); // rebuilds + re-warms (covers the first-quantum glitch)
+  console.log("[audio] context rebuilt (" + why + ")");
+}
 async function resumeAudio() {
   if (!audio) return;
   await audio.resume().catch(() => {});
-  if (!(await clockAlive())) {
-    await audio.resume().catch(() => {});
-    if (!(await clockAlive())) {
-      try { await audio.close(); } catch (err) {}
-      audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = [];
-      ensureAudio(); // rebuilds + re-warms (covers the first-quantum glitch)
-      await audio.resume().catch(() => {});
-    }
-  }
+  if (await clockAlive()) return;
+  await audio.resume().catch(() => {});
+  if (await clockAlive()) return;
+  if (!gestureActive()) { setInfo("audio asleep — tap ▶ again"); return; } // never rebuild here: see above
+  rebuildAudio("clock dead inside a tap");
+  await audio.resume().catch(() => {});
   if (!(await clockAlive()))
     setInfo("audio asleep — tap ▶ again"); // surfaced: consoles don't exist on an iPad
 }
 // coming back from another app: revive audio without waiting for a Play tap
+// (resume only — a rebuild waits for the tap)
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && audio) { ensureAudio(); resumeAudio(); }
 });
