@@ -13381,6 +13381,7 @@ async function openChipImport(kind, bytes, name, m3uList, files) {
     const st = document.createElement("span");
     st.className = "st";
     st.textContent = "—";
+    st.addEventListener("click", () => { if (st.title) setInfo("ⓘ " + st.title.split("\n").join(" · ")); }); // touch has no tooltip: a tap shows the warnings in the footer
     const cap = document.createElement("button");
     cap.style.cssText = "min-height:32px;padding:4px 10px;flex:none";
     cap.textContent = "capture";
@@ -13529,7 +13530,7 @@ async function impCapture(n, api, i) { // api/i: the capture job and this track'
     row.st.textContent = "✓ saved · " + cap.secs.toFixed(1) + "s · " + cap.bpm + "bpm · " +
                          (cap.looped ? "loop" : tagged ? "tagged length" : "no loop ≤" + secs + "s") +
                          (cap.snapped ? "" : " · raw timing (tempo shifts)") +
-                         (cap.warnings && cap.warnings.length ? " · " + cap.warnings.length + " warning" + (cap.warnings.length === 1 ? "" : "s") + " (hold the row)" : ""); // "1 note" read as one musical note (Josh, 2026-09-27)
+                         (cap.warnings && cap.warnings.length ? " · " + cap.warnings.length + " warning" + (cap.warnings.length === 1 ? "" : "s") + " (tap to read)" : ""); // "1 note" read as one musical note (Josh, 2026-09-27)
     if (cap.warnings && cap.warnings.length) { row.st.title = cap.warnings.join("\n"); console.log("[import] " + raw + ":\n" + cap.warnings.join("\n")); }
     row.open.style.display = "";
     row.cap.textContent = "↻"; // captured: tapping again re-runs and overwrites this draft
