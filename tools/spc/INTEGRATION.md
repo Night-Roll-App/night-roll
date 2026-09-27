@@ -51,9 +51,15 @@ the existing `nsf: {vault, tracks}` block. The `.spc` itself goes to the
 private archive repo like `.nsf`s do (same gitignore reasoning: game
 data never enters the public repo).
 
-Voices that were already sounding at dump time appear as notes starting
-at tick 0 with no onset. Loop-trim usually cuts them anyway (they are
-"intro" by construction); if not, they are correct facts and should stay.
+The dump's own KON register is the song's first chord: it arrives as a
+key-on at tick 0 like any other note (the player convention — see
+RESEARCH.md §1). A voice that was mid-note at dump time without its KON
+bit is silent, in players and here.
+
+Events also carry `unpitched: true` when their sample is a one-shot with
+no usable root — a drum hit for every practical purpose (FF6 "Strago"'s
+voice 7 otherwise reads as MIDI 117). The import should route those to
+the drum channel like noise voices, rather than draw them as pitches.
 
 ## 2. Chip audio — an S-DSP renderer is a bigger job than the 2A03 one
 
@@ -127,8 +133,152 @@ the ear before Route A lands.
   for a byte that never comes. Symptom: a capture with zero KON writes.
   Report it as "silent" like an SFX slot, and note the driver family if
   it becomes a pattern (a per-driver port-feeding table is the usual
-  fix in SPC players).
+  fix in SPC players). None of the five real sets (Square's AKAO in
+  FF4/5/6/CT, Nintendo's in ALttP) does this: every one of 342 drivers
+  ran for the whole capture. The "silent" captures they did produce were
+  the dumped-KON convention, fixed in `spc.mjs` (see §5).
 - IPL ROM window not modelled; TCALL vectors under it are read from RAM.
   No dumped driver depends on it.
 - Loop/tempo detection reused from NSF assumes its NES frame floor; see
   the table above for the two constants to revisit.
+
+## 5. Real rips (2026-09-27)
+
+Josh's five albums, downloaded from Zophar's Domain
+(`https://www.zophar.net/music/nintendo-snes-spc/<slug>`, the "(EMU)" zip
+— the original files, not the MP3 set) and run through the pipeline as it
+stands. Rip bytes stayed in the session scratchpad; the TEXT they carry
+(tags, names, lengths) is in `tests/fixtures/spc-real-tags.json` and
+pinned by `tests/spc-real.test.mjs`.
+
+### Archive shape — the same for all five
+
+A flat zip of `.spc` files, one per track, nothing else: **no `.m3u`, no
+`.rsn`**, no folders. Every file is text-format ID666 with an xid6 block
+(66,048 + 80-300 bytes). Titles, games, artists, comments are pure ASCII
+in all 342 files (no byte ≥ 0x80 anywhere, so Latin-1 vs UTF-8 never
+arises). The ID666 date is empty everywhere; the emulator byte is the
+ASCII digit `'0'`.
+
+| Album | slug | files | numbering | seconds (min-max) | xid6 OST tags |
+|---|---|---|---|---|---|
+| Final Fantasy IV | `final-fantasy-iv` | 65 | `01`-`44`, parts `07a`, `44 (part 3)`; `99` = not on OST | 3-502 | 47 of 65 |
+| Final Fantasy V | `final-fantasy-v` | 67 | `101`-`133`, `201`-`232` (disc + track) | 5-495 | all |
+| Final Fantasy VI | `final-fantasy-vi` | 82 | `101a`-`314d`, `999` = not on OST | 5-683 | 75 of 82 |
+| Chrono Trigger | `chrono-trigger` | 92 | `101`-`224`, `999` (22 of them) | 2-289 | 73 of 92 |
+| A Link to the Past | `legend-of-zelda-the-a-link-to-the-past` | 36 | `01`-`31`, parts `04a/04b`, `99` | 4-233 | none (xid6 has only the full game name) |
+
+**Names carry the order**, and the pattern is uniform:
+`<number><part?> <Title>.spc` — a 3-digit number is `<disc><track><track>`
+(`314c` = disc 3, track 14, part c), a 2-digit one is the track, a letter
+suffix splits one OST slot into parts (the xid6 OST track of `101a/b/c` is
+1 for all three; the letter lives only in the file name), and all-nines
+(`99`, `999`) marks unlisted tracks — SFX, ambience, unused songs. The
+zip order is the name order. `parseTrackName()` in `spc.mjs` reads this.
+The file name is not the title: `?` and `"` are mangled to `_` (`216
+____.spc` is `"??"`), so the ID666 title is authoritative. Where the
+32-byte ID666 game field truncates ("Legend of Zelda: A Link to the P")
+the xid6 game name (`spc.game`) is whole. Header seconds = xid6 intro
+ticks / 64000 in every file; header fade ms = fade ticks / 64.
+
+### What the dump produced
+
+Every one of the 342 files parses and emulates: 0 crashes, 0 CPU halts,
+0 port handshakes; 30 s of a track captures in ~0.5 s of Node time, a
+full 683 s track in ~11 s. Per album, 30 s per track (median / max):
+
+| Album | notes per 30 s | instruments per track | legato splits | drum (noise) notes |
+|---|---|---|---|---|
+| FF4 | 326 / 1227 | 5 / 11 | 6% | 9 |
+| FF5 | 426 / 1625 | 6 / 11 | 9% | 0 |
+| FF6 | 352 / 1245 | 6 / 14 | 11% | 115 |
+| CT | 311 / 2231 | 5 / 12 | 26% | 22 |
+| ALttP | 437 / 1073 | 3 / 7 | 14% | 0 |
+
+The five melodies, full length, with the final pipeline:
+
+| Track | length | instruments | notes | melody voice / range | wall |
+|---|---|---|---|---|---|
+| FF4 "Main Theme" (`07a`) | 154 s | 7 | 3469 | voice 0, A4-E6 on a 32-sample single-cycle loop (1000 Hz root); harp arpeggio on voice 1 fading in over 3 bars; bass A1-D2; strings on voices 3-5 share one 10,704-sample loop | 2.3 s |
+| FF5 "Ahead on our Way" (`101`) | 143 s | 10 | 3240 | voice 0, B3-G5; strings voices 1-3 on a 10,256-sample loop | 2.1 s |
+| FF6 "Terra" (`201`) | 215 s | 8 | 4556 | voice 0, C4-F#6 on a 4,480-sample loop (1278.6 Hz root, period 25.0) | 3.4 s |
+| CT "Frog's Theme" (`119`) | 61 s | 6 | 1563 | voice 1, F#5-C#7 brass; voices 2/3 in thirds and voice 4 two octaves down on one 13,216-sample string loop | 1.0 s |
+| ALttP "Hyrule Field Main Theme" (`08`) | 77 s | 6 | 1983 | voices 0 and 7 doubled, F3-C#5, on a 96-sample loop; pad on voices 3/4 | 1.2 s |
+
+Every `.mid` opens (format 1, 9 tracks, 480 ppq, one channel per voice,
+velocities from VOL × envelope). The `.notes.txt` headers name each
+sample's root and confidence as before.
+
+### Bugs the rips exposed, all fixed with a synthetic regression test
+
+1. **Root estimation capped `k` at 64** (`notes.mjs`). Square's and
+   Nintendo's strings, choirs and brass are long loops of hundreds of
+   cycles (4-15k samples); the cap forced their period up to L/64 and the
+   pick rule then preferred it — a twelfth or more too low, labelled
+   "high", on every album (Terra's lead: period 74.7 for a true 25.0;
+   ALttP's pad: 17.7 Hz). Now `k` follows the peak and the pick is
+   McLeod's shortest-strong-peak. Test: *"a long multi-period loop names
+   the cycle, not the loop grid"* (also covers the two-identical-halves
+   loop and the seamed loop where snapping to the L/k grid read a
+   semitone sharp).
+2. **Dumped KON ignored, dumped ENVX trusted** (`spc.mjs`, `notes.mjs`,
+   `dsp-state.mjs`). Every set is dumped at the first KON write; the
+   pipeline started ENVX > 0 voices and dropped the KON, so 8 tracks were
+   silent (CT "Time Vortex"/"Strong Wind"/"Blackbird (Outside)", FF4
+   "Down the Well", ALttP "Unused Sound", …) and every song lost its
+   opening chord. Now the player convention (RESEARCH.md §1). Test:
+   *"dumped KON register is a pending key-on; dumped ENVX alone is not a
+   note"*.
+3. **Emulator byte** read as 48 in text-format headers. Test: *"ID666 text
+   format: the emulator byte is an ASCII digit; xid6 supplies the
+   untruncated game name"* — which also covers the new `parseXid6`
+   (OST title/disc/track, publisher, year, intro/fade ticks) against the
+   FF4 and ALttP tag blocks.
+4. **Set file names**: `parseTrackName()` plus its test; the real-set
+   test checks all 342 names against the xid6 OST fields (two unlisted
+   tracks are tagged with an OST slot anyway: CT "999 Unknown Fanfare",
+   FF6 "999 Dancing Mad (Full)").
+5. **Confidence caps** for two real-but-not-a-note measurements (a k = 1
+   pick on a loop over 1024 samples; a period under 12 samples) and the
+   `unpitched` event flag — both documented in RESEARCH.md §3.3 and §1
+   above; the sweep numbers below are with them.
+
+Root confidence over the 1,707 instrument captures of the 30 s sweep,
+before → after: high 940 → 1035, medium 229 → 88,
+low 193 → 194, none 396 → 390.
+
+### What stays approximate
+
+- **Roots.** A "high" root is a measured period, not a guaranteed octave:
+  bright or metallic looped samples (FF5's srcn 40 shaker at 3.5 kHz,
+  Strago's percussion) still land a melodic-looking note in the 100+ MIDI
+  range; SFX tracks play samples at PITCH `$0040`-`$0300` and yield
+  subsonic "notes" (CT "Breath of Lavos" at MIDI −37) that are facts about
+  the dump. The root panel of §1 is the answer; the `.notes.txt` header
+  and event `confidence`/`unpitched` are the inputs to it.
+- **Slides.** Portamento and pitch bends render as runs of short
+  chromatic notes (the ±70-cent split rule from NSF); CT leans on them
+  (26% of its events are splits). A slide-aware merge (one note with a
+  bend) is a candidate improvement, not a bug.
+- **Voices mid-note at dump time without a KON bit** are silent until
+  re-keyed, as in players; FF6 "Grand Finale (part 1)" (a 9 s sustained
+  chord, 4 of 6 voices in KON) shows the cost.
+- Envelope-end timing, velocity, tempo and loop detection: as in §4.
+
+### What File → Import has to handle
+
+- **Many files, one song each.** The album arrives as a zip of `.spc`s
+  (or a multi-file pick); "capture all" iterates files, not subsongs.
+  Order by `parseTrackName()` (disc, track, part; unlisted last), title
+  from the ID666 tag, album slug from `spc.game` (xid6 first), per-track
+  seconds from `tags.seconds` (2-683 s in these sets — a 683 s capture is
+  ~11 s in Node; `runSPCAsync` yields, but show progress).
+- **Zip in the browser**: Zophar's EMU sets are plain zip (no `.rsn`);
+  the same unzip path as the Game Boy sets applies. RAR stays out of scope.
+- **Roots panel** as in §1, plus: voices whose events carry `unpitched`
+  go to the drum channel; `confidence: "low"` rows visibly different.
+- **Unlisted tracks** (`99`/`999`): SFX, ambience, jingles of 2-30 s.
+  Import them, but after the numbered ones, and expect one-voice or
+  subsonic results.
+- **Multi-part tracks** (`101a/b/c`, `314a-d`) are separate songs sharing
+  an OST slot: keep the part letter in the track name.

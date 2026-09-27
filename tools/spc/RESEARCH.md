@@ -37,9 +37,20 @@ An `.spc` is a **snapshot**, not a program: the entire 64 KB of sound RAM
 plus CPU and DSP registers, frozen while the game was playing. Playing it
 back means restoring that state and letting the CPU run. There is no
 init/play entry point like NSF — the driver is already mid-loop, timers
-armed, and it simply continues. (Consequence: a note that was already
-sounding at dump time has no onset in our log; we see its ENVX > 0 and
-treat it as "sounding since t = 0".)
+armed, and it simply continues.
+
+What "restoring the DSP" means is a convention, not a chip fact, and the
+real sets settled it (2026-09-27): dumpers hook the song's **first KON
+write**, so the file holds the KON register with bits set and every ENVX
+still 0. SPC players (blargg's `SPC_DSP::load`: `new_kon = REG(kon)`, all
+voice envelopes zeroed) therefore key those voices on at start and play
+nothing else until the driver acts. `spc.mjs` does the same: the dumped
+KON (minus KOFF bits) is logged as a key-on at cycle 0, and a dumped
+ENVX > 0 without its KON bit is NOT a note — the player would be silent
+there too. An earlier version did the reverse (started ENVX voices,
+ignored KON) and every single-KON track — wind and rumble loops, the FF4
+"Down the Well" slide, ALttP's "Unused Sound" — came out empty, while
+every song lost its opening chord.
 
 Layout (offsets in hex; total 66,048 bytes minimum):
 
@@ -76,6 +87,22 @@ Layout (offsets in hex; total 66,048 bytes minimum):
 The text/binary ID666 ambiguity is real: the spec has no flag, so readers
 sniff (if bytes `0xA9..0xAB` are ASCII digits it's text; a binary date has
 a zero at `0xA2`). `spc.mjs` does the sniff and keeps the raw bytes too.
+Details the real sets (all text format) added: the **emulator byte at
+`0xD2` is an ASCII digit too** (`'0'` = 48, not 0); a 3-digit seconds
+field fills its 3 bytes with no NUL before the fade (`"154"` + `"6000"`
+read back to back); the 32-byte game field truncates ("Legend of Zelda: A
+Link to the P"); the date field is empty in every file.
+
+**xid6** (every file in every set carries one): after the 4-byte
+`"xid6"` + chunk size come sub-chunks `{id, type, len}` with 32-bit
+padding. Type 0 stores the value in `len` itself, 1 is a NUL-terminated
+string, 4 a 32-bit integer. Ids seen: `02` game name (the untruncated
+one), `07` comments, `10` OST title, `11` OST disc, `12` OST track
+(`number << 8 | optional ASCII suffix`), `13` publisher, `14` year, `30`
+intro length and `33` fade length in ticks of 1/64000 s (intro ticks =
+header seconds × 64000; fade ticks / 64 = header ms, to the millisecond).
+`parseXid6` in `spc.mjs` returns them by name; `spc.game` prefers the
+xid6 name.
 
 ## 2. The machine: S-SMP (SPC700 core) + S-DSP
 
@@ -261,6 +288,22 @@ Three ways to get a root, and the pipeline supports all three:
    the period when the timbre is hollow — the loop constraint mostly
    catches it), inharmonic samples (bells, drums: no meaningful root),
    very short samples (< 3 periods of anything below ~100 Hz).
+
+   What the real sets taught the loop constraint (2026-09-27): the
+   "small k" picture above is the single-cycle synth patch (16-576
+   samples, k = 1 — half of Square's and Nintendo's instruments), but
+   their strings, choirs and brass are **long loops of hundreds of
+   cycles** (4-15k samples). Capping k at 64 forced those periods up to
+   L/64 — a twelfth or more too low, at "high" confidence — on every
+   album. Now k is whatever the peak implies, and once k² > L the grid is
+   finer than a sample and the refined peak lag is the estimate. Among the
+   candidates the pick is McLeod's (shortest period whose peak reaches
+   0.8 of the tallest), because a tiled loop correlates 1.0 with itself
+   at L and at L/2 (loops cut as two identical halves exist), so "tallest
+   peak" names the loop, not the note. Two measurements that are real but
+   rarely notes get their confidence capped: a k = 1 pick on a loop over
+   1024 samples (a 24 Hz "root" is a wind loop), and a period under 12
+   samples (a 3.5 kHz "root" is a shaker).
 3. **Leave notes relative and let the user set the root.** The dump's
    per-instrument header prints `root ≈ X (confidence)`; `--root k=NOTE`
    overrides it and every note on that sample shifts together. This is

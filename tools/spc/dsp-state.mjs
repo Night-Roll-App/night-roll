@@ -33,18 +33,10 @@ export class DspVoices {
     this.sample = 0;
   }
 
-  // Voices already sounding when the dump was taken: ENVX > 0 in the file.
-  // Position in the sample is unknowable; we start them at the sample head
-  // in sustain at that level — enough for the driver's polls and for
-  // notes.mjs to see "sounding since t = 0".
-  restoreFromRegs() {
-    for (const vc of this.voices) {
-      const envx = this.regs[vc.v * 16 + 8] & 0x7F;
-      if (!envx) continue;
-      const {start, loop} = this.dirEntry(this.regs[vc.v * 16 + 4]);
-      Object.assign(vc, {stage: SUSTAIN, env: envx << 4, addr: start, start, loop, nib: 0, frac: 0, counter: 0, konSample: 0});
-    }
-  }
+  // No restore from the dumped ENVX: like blargg's SPC_DSP::load, every
+  // voice starts silent and only the dumped KON register (replayed by the
+  // caller as a key-on at sample 0) starts anything. A voice mid-note at
+  // dump time without its KON bit is silent in every SPC player too.
 
   dirEntry(srcn) {
     const base = ((this.regs[0x5D] << 8) + srcn * 4) & 0xFFFF;
