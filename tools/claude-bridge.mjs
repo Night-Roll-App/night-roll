@@ -183,9 +183,18 @@ async function listModels() { // {models: [{id, owned_by}], route: Map id → {u
 const jobs = new Map();
 fs.mkdirSync(JOBS_DIR, {recursive: true});
 function jobFile(id) { return path.join(JOBS_DIR, id.replace(/[^\w.-]/g, "_") + ".json"); }
+// A running job is on disk from the start (2026-09-26 audit): a restart used
+// to forget it, and the app then read "no such job" — the same words as a
+// question that never arrived. Now the restart marks it, and the app can say
+// which happened.
+const RESTART_MSG = "the bridge restarted while this reply was cooking — ask again";
+function jobWrite(job) { try { fs.writeFileSync(jobFile(job.id), JSON.stringify({id: job.id, model: job.model, status: job.status, text: job.text, notes: (job.notes || []).slice(-5), error: job.error, result: job.result, started: job.started, ended: job.ended, fetched: job.fetched || 0})); } catch (e) { /* disk is best-effort */ } }
+function jobStale(j) { if (j && j.status === "running") { j.status = "error"; j.error = RESTART_MSG; j.ended = Date.now(); return true; } return false; }
+try { for (const f of fs.readdirSync(JOBS_DIR)) { const p = path.join(JOBS_DIR, f); try { const j = JSON.parse(fs.readFileSync(p, "utf8")); if (jobStale(j)) fs.writeFileSync(p, JSON.stringify(j)); } catch (err) { /* skip */ } } } catch (err) { /* no dir */ }
 function newJob(id, model) {
   const job = {id, model, status: "running", chunks: [], text: "", toolCalls: [], notes: [], error: null, result: null, started: Date.now(), ended: 0, fetched: 0, child: null, killed: false, subs: new Set()};
   jobs.set(id, job);
+  jobWrite(job);
   return job;
 }
 function jobPush(job, delta, finish) { // one OpenAI delta; aggregate text and tool calls as we go
@@ -210,18 +219,18 @@ function jobEnd(job, err) {
   }
   for (const s of job.subs) { try { s({type: "end"}); } catch (e) { /* gone */ } }
   job.subs.clear();
-  try { fs.writeFileSync(jobFile(job.id), JSON.stringify({id: job.id, model: job.model, status: job.status, text: job.text, notes: job.notes.slice(-5), error: job.error, result: job.result, started: job.started, ended: job.ended, fetched: 0})); } catch (e) { /* disk is best-effort */ }
+  jobWrite(job);
   job.child = null;
 }
 function loadJob(id) { // finished jobs outlive a restart
   if (jobs.has(id)) return jobs.get(id);
-  try { const j = JSON.parse(fs.readFileSync(jobFile(id), "utf8")); j.chunks = []; j.subs = new Set(); j.toolCalls = []; jobs.set(id, j); return j; } catch (err) { return null; }
+  try { const j = JSON.parse(fs.readFileSync(jobFile(id), "utf8")); if (jobStale(j)) fs.writeFileSync(jobFile(id), JSON.stringify(j)); j.chunks = []; j.subs = new Set(); j.toolCalls = []; jobs.set(id, j); return j; } catch (err) { return null; }
 }
 function markFetched(job) { if (job.status !== "running" && !job.fetched) { job.fetched = Date.now(); try { const f = jobFile(job.id); const j = JSON.parse(fs.readFileSync(f, "utf8")); j.fetched = job.fetched; fs.writeFileSync(f, JSON.stringify(j)); } catch (err) { /* fine */ } } }
 function sweep() { // fetched + keep, or 7 days unfetched
   const now = Date.now();
   for (const [id, j] of jobs) if (j.status !== "running" && ((j.fetched && now - j.fetched > KEEP_MS) || now - j.ended > 7 * 86400e3)) { jobs.delete(id); try { fs.unlinkSync(jobFile(id)); } catch (err) { /* gone */ } }
-  try { for (const f of fs.readdirSync(JOBS_DIR)) { const p = path.join(JOBS_DIR, f); try { const j = JSON.parse(fs.readFileSync(p, "utf8")); if ((j.fetched && now - j.fetched > KEEP_MS) || now - (j.ended || 0) > 7 * 86400e3) fs.unlinkSync(p); } catch (err) { /* skip */ } } } catch (err) { /* no dir */ }
+  try { for (const f of fs.readdirSync(JOBS_DIR)) { const p = path.join(JOBS_DIR, f); try { const j = JSON.parse(fs.readFileSync(p, "utf8")); if (j.status === "running") continue; if ((j.fetched && now - j.fetched > KEEP_MS) || now - (j.ended || 0) > 7 * 86400e3) fs.unlinkSync(p); } catch (err) { /* skip */ } } } catch (err) { /* no dir */ }
 }
 setInterval(sweep, 10 * 60 * 1000).unref();
 const jobView = j => ({id: j.id, model: j.model, status: j.status, text: j.text, notes: (j.notes || []).slice(-3), error: j.error, result: j.result, started: j.started, ended: j.ended});

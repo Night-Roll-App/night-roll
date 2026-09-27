@@ -1384,6 +1384,31 @@ test("chip render: a silent render is detected; a render for a song no longer op
   assert.ok(/songKey !== forKey/.test(src), "a stale render is discarded");
 });
 
+test("SPC import: a Super Nintendo set (one file per track) goes through the capture path; rows order by disc/track", async () => {
+  const sp = await import("../tools/spc/notes.mjs");
+  const M = {...(await import("../tools/spc/spc.mjs")), ...sp, ...(await import("../tools/nsf/notes.mjs")), ...(await import("../tools/nsf/midi-write.mjs")), reconstruct: sp.reconstruct, toNotesTxt: sp.toNotesTxt};
+  const {makeTestSPC} = await import("../tools/spc/make-test-spc.mjs");
+  const bytes = makeTestSPC();
+  assert.equal(val(`chipKindOf(new Uint8Array(${JSON.stringify([...bytes.subarray(0, 40)])}))`), "spc");
+  assert.equal(val(`CHIPS.spc.perFile`), true);
+  app.context.__M = M;
+  app.context.__spc = M.parseSPC(bytes);
+  run(`chipModules.cache = Object.assign(chipModules.cache || {}, {spc: __M});`); // what the browser would have loaded
+  const order = JSON.parse(val(`JSON.stringify(chipTrackOrder([{name: "999 Unused.spc"}, {name: "216 Frog's Theme.spc"}, {name: "101a Presentiment.spc"}, {name: "105 Peaceful Days.spc"}, {name: "101b Presentiment (part 2).spc"}]).map(f => f.name))`));
+  assert.deepEqual(order, ["101a Presentiment.spc", "101b Presentiment (part 2).spc", "105 Peaceful Days.spc", "216 Frog's Theme.spc", "999 Unused.spc"]);
+  run(`__capP = captureChipTrack("spc", __M, __spc, 1, 10).then(cap => {
+    const parsed = parseMidi(new Uint8Array(cap.bytes).buffer);
+    __cap = {bpm: cap.bpm, secs: cap.secs, names: parsed.tracks.map(t => t.name), notes: parsed.tracks.reduce((a, t) => a + t.notes.length, 0),
+             pitches: parsed.tracks.flatMap(t => t.notes.map(n => n.p))};
+  })`);
+  await app.context.__capP;
+  const got = val(`__cap`);
+  assert.ok(got.names.includes("voice0"), "SNES voices are tracks: " + got.names.join(","));
+  assert.ok(got.notes >= 4, "the C4 E4 G4 C5 line: " + got.notes);
+  assert.ok([60, 64, 67, 72].every(p => got.pitches.includes(p)), "pitches from the root estimate: " + got.pitches.join(","));
+  assert.ok(got.bpm > 60 && got.bpm < 300, "sane tempo: " + got.bpm);
+});
+
 test("GBS import: the Game Boy chip goes through the same capture path (synthetic GBS, wave track, chip descriptor)", async () => {
   const gb = await import("../tools/gbs/notes.mjs");
   const M = { // the browser's merge: shared NSF stages win, the chip keeps its own reconstruct
@@ -1427,7 +1452,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Game Boy", "General chat", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "General chat", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
@@ -2714,7 +2739,7 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   run(`localStorage.setItem("ff1roll-ask-a/clean.mid", JSON.stringify({lastUsed: 1, saved: 2, msgs: [{role: "user", content: "q".repeat(300000)}, {role: "assistant", content: "a"}]}));
        localStorage.setItem("ff1roll-ask-a/dirty.mid", JSON.stringify({lastUsed: 2, saved: 0, msgs: [{role: "user", content: "q".repeat(300000)}, {role: "assistant", content: "a"}]}));
        askSave([{role: "user", content: "hi"}, {role: "assistant", content: "yo"}]);`);
-  assert.equal(app.store.get("ff1roll-ask-a/clean.mid"), undefined, "clean log evicted");
+  assert.deepEqual(JSON.parse(app.store.get("ff1roll-ask-a/clean.mid")), {lastUsed: 1, msgs: [], saved: 0, trimmed: true}, "clean log evicted, but marked: the repo file holds it");
   assert.ok(app.store.get("ff1roll-ask-a/dirty.mid"), "log with unsaved messages kept");
   // quota: a throwing setItem must not propagate
   run(`(() => { const real = localStorage.setItem; localStorage.setItem = () => { throw new Error("QuotaExceededError"); };
@@ -2876,6 +2901,32 @@ test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply an
   assert.equal(val(`document.getElementById("askreplybtn").style.display`), "", "another song is open: badge");
   assert.match(val(`document.getElementById("noteinfo").textContent`), / in /);
   run(`asksheet.classList.remove("on"); askBadgeOff(); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/job-test.mid"); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/other.mid"); songKey = null;`);
+});
+
+test("Ask resume: pending questions are found across every chat; a tool round moves the marker; eviction leaves the repo marker; Publish stops at a pending question", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/pend-a.mid";
+       askSave([{role: "user", content: "a", t: 5, pending: "nr_a"}]);
+       askSave([{role: "user", content: "g", t: 2, pending: "nr_g"}], undefined, ASK_GENERAL_KEY);
+       askSave([{role: "user", content: "old q"}, {role: "assistant", content: "old a"}], {saved: 2}, "ff1roll-ask-albums/compositions/nightroll/pend-b.mid");`);
+  const all = JSON.parse(val(`JSON.stringify(askPendingAll().map(p => [p.key, p.jobId]))`));
+  assert.deepEqual(all, [["ff1roll-ask-general", "nr_g"], ["ff1roll-ask-albums/compositions/nightroll/pend-a.mid", "nr_a"]], "oldest first, the general chat and other songs included");
+  assert.equal(val(`askRepending("ff1roll-ask-albums/compositions/nightroll/pend-a.mid", "nr_a", "nr_a-r1")`), true);
+  assert.equal(val(`askLoad()[0].pending`), "nr_a-r1", "the marker follows the tool round's job id");
+  assert.equal(val(`askRepending(askStoreKey(), "nr_zzz", "x")`), false);
+  // eviction: a clean log (all in the repo) gives way, but keeps the marker that says so
+  run(`askEvictOthers(ASK_TOTAL_CAP + 1);`);
+  const b = JSON.parse(app.store.get("ff1roll-ask-albums/compositions/nightroll/pend-b.mid"));
+  assert.equal(b.trimmed, true); assert.deepEqual(b.msgs, []); assert.equal(b.saved, 0);
+  assert.ok(app.store.get("ff1roll-ask-general"), "a log with an unanswered question is never evicted");
+  // the publish watermark never passes a pending question: the reply that lands after it stays unsaved
+  run(`askSave([{role: "user", content: "q1"}, {role: "assistant", content: "a1"}, {role: "user", content: "q2", t: 9, pending: "nr_p"}, {role: "note", content: "hi", m: "terminal"}]);`);
+  const st = JSON.parse(val(`JSON.stringify(askStore())`));
+  const stop = st.msgs.findIndex((m, k) => k >= st.saved && m.pending);
+  assert.equal(st.msgs.slice(st.saved, stop).length, 2, "what Publish would append: up to the pending question only");
+  run(`askFinish("nr_p", "a2");`);
+  assert.equal(val(`askUnsavedCount()`), 5);
+  run(`localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/pend-a.mid"); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/pend-b.mid"); localStorage.removeItem(ASK_GENERAL_KEY); songKey = null;`);
 });
 
 test("Share link: songs= parses owner/repo or a base URL; the link carries it only for songs that live elsewhere", () => {

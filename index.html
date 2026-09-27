@@ -742,7 +742,7 @@
        registered type), while NO accept summons the photo-library sheet.
        application/octet-stream maps to the root "any data" type: Files opens
        directly and everything is selectable — the byte-sniff stays the real gate -->
-  <input type="file" id="fileinput" multiple accept="application/octet-stream,.mid,.midi,.smf,.kar,.rmi,.nsf,.gbs,.m3u,.m3u8,audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac">
+  <input type="file" id="fileinput" multiple accept="application/octet-stream,.mid,.midi,.smf,.kar,.rmi,.nsf,.gbs,.spc,.m3u,.m3u8,audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac">
   <!-- the ＋∿ chip's own picker: audio only, so iOS opens Files (not the photo library) -->
   <input type="file" id="audioinput" multiple accept="audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac" style="display:none">
 </header>
@@ -1344,7 +1344,7 @@
     <div class="hsec" data-hsec="files">
     <dl>
       <dt>Install on the iPad</dt><dd>Safari → Share → <b>Add to Home Screen</b>. Night Roll then launches from its own icon, full screen with no browser bars, works offline (the app and any song you have opened are kept on the device; instrument sounds are kept as they are first used), and its drafts, annotations and settings live in storage Safari does not evict. Updates arrive on the next launch with a network — the page is always fetched fresh when it can be. Same for Chrome/Edge on a computer (the install icon in the address bar). File → the "build" line at the bottom of the menu says "installed" when you are running the installed copy. If offline support ever misbehaves, open the site with <code>?sw=0</code> once to turn it off on that device.</dd>
-      <dt>File</dt><dd>Everything file-shaped lives here now. Open… (the song picker — albums, drafts; the current song's title shows above the track chips), New song (name/tempo/meter dialog → blank 3-voice NES composition), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (forks ANY song, including a locked capture, into nightroll/ with its annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF or GBS chip-music file (NES or <b>Game Boy</b>) opens the capture panel: every track runs through the same pipeline that dumped the FF1 album (6502/APU for the NES, SM83/Game Boy APU for a .gbs — its wave channel becomes a <b>wave</b> track) — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder, ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Commit import still pushes every import draft across all folders at once); expansion-chip audio like VRC6 is not captured), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under "Night Roll drafts" in the song picker, where a ✕ (tap twice) deletes a draft from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition between Night Roll Sketches and My Compositions (files + catalog together; the row names the song's current album first, and the dropdown lists only where it can go — New song and Save always land in Sketches); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums.</dd>
+      <dt>File</dt><dd>Everything file-shaped lives here now. Open… (the song picker — albums, drafts; the current song's title shows above the track chips), New song (name/tempo/meter dialog → blank 3-voice NES composition), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (forks ANY song, including a locked capture, into nightroll/ with its annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF or GBS chip-music file (NES or <b>Game Boy</b>), or a set of <b>Super Nintendo</b> .spc files (one per song — multi-select the whole set; rows come in disc/track order with the tags' titles; synth voices for now), opens the capture panel: every track runs through the same pipeline that dumped the FF1 album (6502/APU for the NES, SM83/Game Boy APU for a .gbs — its wave channel becomes a <b>wave</b> track) — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder, ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Commit import still pushes every import draft across all folders at once); expansion-chip audio like VRC6 is not captured), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under "Night Roll drafts" in the song picker, where a ✕ (tap twice) deletes a draft from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition between Night Roll Sketches and My Compositions (files + catalog together; the row names the song's current album first, and the dropdown lists only where it can go — New song and Save always land in Sketches); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums.</dd>
       <dt>Share a song</dt><dd><b>🔗 Share link</b> in the Publish sheet hands the song's link to the share sheet (or copies it). A link is this player plus the song plus where the song lives: songs on this site need nothing more; a song published to another GitHub repo carries <code>songs=owner/repo</code>, so anyone who taps it hears that song from that repo, no setup — and you can open such links too (the breadcrumb then starts with 🔗 and the repo's name; everything is read-only there, your own songs are untouched, and nothing about the link is remembered). Publish also keeps a <b>song list in the repo's README</b> — every song as a player link, between two markers the app owns, the rest of the README untouched — so the repo page itself is the share page. The address bar is always a shareable link to the open song, and it is the song's path with no extension — …/night-roll/albums/compositions/nightroll/ambush. <b>Add .mid to the end and the same link is the MIDI file</b> (Logic opens it); take it off and it's the player again. Older ?song= links still open the player. The tab title and the link preview in Messages name the song first — "Threnody · Night Roll" — so a pasted link reads as the song, not the app.</dd>
       <dt>Data locations</dt><dd>Night Roll is configured with WHERE its data lives (Sync → "Data locations ▾"): three rows — songs (.mid, album.json, catalog), analysis (.rollnotes + docs), and NSF (chip-audio source) — each with a read base URL (blank = this site; or any raw.githubusercontent.com/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt; or local server) and an owner/repo write target. One fine-grained token, granted to every repo you write to, covers all commits; write errors name the repo they hit, and a 404 usually means the token hasn't been granted that repo. This is what lets another analyst point their own analysis repo at a shared songs corpus. Defaults: everything in this site's repo, NSFs from the public nsf-archive.</dd>
       <dt>📁 Folder on this computer</dt><dd>Saving without GitHub. In File → Settings, tap <b>Choose folder…</b> and pick a folder on this computer: from then on every Save writes the song, its annotations, and its notes dump into that folder (laid out exactly like the repo — <code>albums/…/song.mid</code> beside its <code>.rollnotes.json</code>), nothing goes to GitHub, and no token is needed. The song picker lists the folder's albums alongside the site's; a song that exists in both opens from the folder. Tick <b>show only this folder's songs</b> under the folder row and the list becomes yours alone — the folder plus this device's drafts, none of the site's albums; with an empty folder the app opens straight into New song instead of Overworld. A device setting: it stays on that machine. FF1 songs still load from the site — annotate one and the annotations save to your folder. Chrome may ask for the folder again after a restart: <b>📁 Reconnect folder</b> appears at the top of the File menu (until you tap it, reads fall back to the site). <b>Forget</b> in Settings returns saves to GitHub; the files stay where they are. Needs Chrome or Edge on a computer — Safari and the iPad have no way to write files, and the row says so there. Brave ships the door switched off: enable <code>brave://flags/#file-system-access-api</code> and relaunch (the row tells you). Recordings that aren't yours belong here, not in a repo (see the design docs).</dd>
@@ -1429,7 +1429,7 @@
   <div class="fdiv"></div>
   <button class="fitem" id="fileopen">Open…</button>
   <button class="fitem" id="filenew">＋ New song…</button>
-  <label class="fitem" for="fileinput" style="display:block">Import… (.mid / .nsf / .gbs)</label>
+  <label class="fitem" for="fileinput" style="display:block">Import… (.mid / .nsf / .gbs / .spc)</label>
   <div class="fdiv"></div>
   <button class="fitem" id="filesave">Publish…</button>
   <button class="fitem" id="filesaveas">Save As…</button>
@@ -7031,7 +7031,7 @@ async function vaultFetch(file) {
   return bytes;
 }
 async function chipSource() { // {bytes, n, secs} for the current song, or null
-  if (chipTrackNo() !== null) {
+  if (chipTrackNo() !== null && nsfSess.bytes) {
     const n = chipTrackNo();
     return {bytes: nsfSess.bytes, n, secs: nsfSess.rows[n].secs || 60, chip: nsfSess.chip || "nsf"};
   }
@@ -7073,7 +7073,7 @@ async function updateChipBtn() { // name kept for call sites; now just the auto-
   // loudly enough to find (Josh listened to synth for an hour believing it
   // was the chip, 2026-08-17): the ⚠ log names the fix
   if (!available && songKey && songKey.startsWith("albums/imports/") &&
-      updateChipBtn.warned !== songKey) {
+      updateChipBtn.warned !== songKey && await chipAlbumHasSource()) {
     updateChipBtn.warned = songKey;
     logErr("chip audio unavailable for " + songKey.split("/").pop() +
            " — no NSF on this device (captures made before NSF storage, or another device's import). " +
@@ -7097,6 +7097,9 @@ async function updateChipBtn() { // name kept for call sites; now just the auto-
 function chipSilent(chans) { // Float32Array[] → true when nothing in any of them is above the noise floor
   for (const a of chans) { if (!a) continue; for (let i = 0; i < a.length; i += 13) if (Math.abs(a[i]) > 1e-4) return false; }
   return true;
+}
+async function chipAlbumHasSource() { // an SNES import has no console file at all: no warning is due
+  try { const meta = await albumMetaFor(songKey); return !!(meta && meta.nsf); } catch (err) { return false; }
 }
 async function chipRender() {
   const forKey = songKey;
@@ -10163,8 +10166,9 @@ document.getElementById("fileinput").addEventListener("change", async e => {
       audioReplaceTi = null;
       await importAudioFiles(audios.map(x => ({name: x.name, bytes: x.bytes, type: ""})));
     } else if (nsfs.length) { // a chip-music file (NSF or GBS) is an album by itself
-      if (rest.length > 1) setInfo("importing the chip file; pick MIDI files separately from other formats");
-      await openChipImport(chipKindOf(nsfs[0].bytes), nsfs[0].bytes, nsfs[0].name, names);
+      if (rest.length > 1 && !CHIPS[chipKindOf(nsfs[0].bytes)].perFile) setInfo("importing the chip file; pick MIDI files separately from other formats");
+      const kind = chipKindOf(nsfs[0].bytes);
+      await openChipImport(kind, nsfs[0].bytes, nsfs[0].name, names, CHIPS[kind].perFile ? nsfs.filter(x => chipKindOf(x.bytes) === kind) : null);
     } else if (m3us.length && !rest.length) { // playlist alone: name the open session's tracks/drafts
       if (!nsfSess) setInfo("⚠ that is a track-name playlist — import its NSF or GBS first (or pick both together)");
       else setInfo("✓ " + applyM3uNames(names) + " tracks named from the playlist" +
@@ -12358,7 +12362,32 @@ const CHIPS = {
         channels: ["pulse1", "pulse2", "wave", "noise"],
         files: ["gbs/gbs", "gbs/notes", "gbs/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
         parse: M => M.parseGBS, run: M => M.runGBSAsync, midiOpts: M => ({chans: M.GB_CHANNELS, drum: M.gbNoiseDrum})},
+  // Super Nintendo (2026-09-27, Josh from bed with the Chrono Trigger zip:
+  // "can he just get the Super Nintendo stuff merged so I can test it").
+  // ONE .spc PER TRACK (perFile): the picker takes the whole set, rows are
+  // the files in disc/track order, titles from the tags. The SPC pipeline
+  // returns its own events (8 voices as voice0-7, noise as drums, volumes
+  // already 0-127) on 2 ms ticks; they are rebinned to 10 ms so the NES
+  // loop/tempo stages see a frame count they were tuned for. No renderer
+  // yet: synth voices carry these songs, and nothing goes to the archive.
+  spc: {magic: b => String.fromCharCode(...b.subarray(0, 27)) === "SNES-SPC700 Sound File Data", ext: ".spc", label: "SPC",
+        channels: [], perFile: true,
+        files: ["spc/spc", "spc/notes"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
+        parse: M => M.parseSPC,
+        run: M => async (spc, n, seconds, onProgress) => {
+          const cap = await M.runSPCAsync(spc, seconds, onProgress);
+          const r = M.reconstruct(cap, {});
+          const k = 5; // 2 ms ticks → 10 ms frames
+          const events = r.events.map(e => { const a = Math.round(e.startFrame / k); return {...e, midi: Math.round(e.midi), startFrame: a, endFrame: Math.max(a + 1, Math.round(e.endFrame / k))}; });
+          return {apuLog: cap, frames: Math.round(r.frames / k), frameSec: r.frameSec * k, events};
+        },
+        midiOpts: () => ({volMax: 127})},
 };
+function chipTrackOrder(files) { // a set's files in disc/track/part order, unlisted (99/999) last; anything unparsable by name
+  const M = chipModules.cache && chipModules.cache.spc;
+  const key = f => { const t = M && M.parseTrackName ? M.parseTrackName(f.name) : null; return t ? [t.unlisted ? 1 : 0, t.disc || 0, t.track, t.part || ""] : [2, 0, 0, f.name]; };
+  return files.slice().sort((a, b) => { const x = key(a), y = key(b); for (let i = 0; i < 4; i++) { if (x[i] < y[i]) return -1; if (x[i] > y[i]) return 1; } return a.name.localeCompare(b.name, undefined, {numeric: true}); });
+}
 function chipKindOf(bytes) { for (const k of Object.keys(CHIPS)) if (bytes.length > 8 && CHIPS[k].magic(bytes)) return k; return null; }
 function chipExt(kind) { return (CHIPS[kind] || CHIPS.nsf).ext; }
 async function chipModules(kind) {
@@ -12387,8 +12416,9 @@ async function captureChipTrack(kind, M, nsf, track, seconds, onProgress) { // d
   // watchdog force-reloads it — an honest error beats a dead page
   const run = CHIPS[kind || "nsf"].run(M);
   if (!run || !M.detectLoopAsync) throw new Error("pipeline update still deploying — close the import panel and retry in a minute");
-  const {apuLog, frames, frameSec} = await run(nsf, track, seconds, onProgress);
-  let events = M.reconstruct(apuLog, frames, frameSec);
+  const res = await run(nsf, track, seconds, onProgress);
+  const {apuLog, frames, frameSec} = res;
+  let events = res.events || M.reconstruct(apuLog, frames, frameSec); // a chip whose runner already reconstructed (SPC) hands its events over
   if (!events.length) return null; // silent slot (SFX banks have them)
   const t0 = Math.min(...events.map(ev => ev.startFrame));
   events = events.map(ev => ({...ev, startFrame: ev.startFrame - t0, endFrame: ev.endFrame - t0}));
@@ -12410,7 +12440,7 @@ async function captureChipTrack(kind, M, nsf, track, seconds, onProgress) { // d
   const grid = 60 / bpm / 4 / frameSec; // frames per 16th
   let far = 0, timed = 0;
   for (const ev of events) {
-    if (ev.channel === "noise") continue;
+    if (ev.channel === "noise" || ev.drum != null) continue;
     timed++;
     const ph = ev.startFrame % grid;
     if (Math.min(ph, grid - ph) > 1.6) far++;
@@ -12427,20 +12457,30 @@ async function captureChipTrack(kind, M, nsf, track, seconds, onProgress) { // d
           loopAnchor: loop && backBeats > 0.4 ? bq(keptFrames * frameSec / beatSec) : null,
           loopTarget: loop && backBeats > 0.4 ? bq(backBeats) : null};
 }
-async function openChipImport(kind, bytes, name, m3uList) {
+async function openChipImport(kind, bytes, name, m3uList, files) {
   kind = kind || "nsf";
   const M = await chipModules(kind);
-  const nsf = CHIPS[kind].parse(M)(bytes);
-  nsfSess = {chip: kind, M, nsf, bytes, rows: []};
+  const perFile = !!CHIPS[kind].perFile;
+  let set = null, nsf;
+  if (perFile) { // one file per track: parse them all, order the set, the first one names the album
+    set = chipTrackOrder((files || []).map(f => { let parsed = null; try { parsed = CHIPS[kind].parse(M)(f.bytes); } catch (err) { parsed = null; } return {name: f.name, bytes: f.bytes, parsed}; }).filter(f => f.parsed));
+    if (!set.length) { setInfo("⚠ none of those " + CHIPS[kind].label + " files could be read"); return; }
+    const first = set[0].parsed;
+    nsf = {name: first.game || name.replace(/\.[a-z0-9]+$/i, ""), artist: first.artist, songs: set.length};
+  } else nsf = CHIPS[kind].parse(M)(bytes);
+  nsfSess = {chip: kind, M, nsf, bytes: perFile ? null : bytes, set, rows: []};
   document.getElementById("imptitle").textContent =
     ((nsf.name || name) + (nsf.artist && nsf.artist !== "<?>" ? " — " + nsf.artist : "")).toUpperCase();
-  document.getElementById("impslug").value = slugify(nsf.name || name.replace(/\.(nsf|gbs)$/i, ""));
+  document.getElementById("impslug").value = slugify(nsf.name || name.replace(/\.(nsf|gbs|spc)$/i, ""));
   const list = document.getElementById("implist");
   list.innerHTML = "";
   // an m3u names the MUSIC tracks — an NSF like TMNT2 carries 120 slots of
   // which 95 are sound effects; with a playlist we list only the songs, in
-  // album order, pre-named. Without one: every slot, as before.
-  nsfSess.trackList = m3uList && m3uList.length
+  // album order, pre-named. Without one: every slot, as before. A per-file
+  // set is its own list: one row per file, the tag's title, its tagged length.
+  nsfSess.trackList = perFile
+    ? set.map((f, i) => { const t = M.parseTrackName ? M.parseTrackName(f.name) : null; return {n: i + 1, title: f.parsed.name || (t && t.title) || f.name.replace(/\.[a-z0-9]+$/i, ""), len: f.parsed.tags && f.parsed.tags.seconds || 0}; })
+    : m3uList && m3uList.length
     ? m3uList.filter(e => e.n >= 1 && e.n <= nsf.songs)
     : Array.from({length: nsf.songs}, (_, i) => ({n: i + 1, title: null}));
   for (const {n, title} of nsfSess.trackList) {
@@ -12470,7 +12510,7 @@ async function openChipImport(kind, bytes, name, m3uList) {
     });
     row.append(lbl, st, cap, open);
     list.appendChild(row);
-    nsfSess.rows[n] = {name: lbl, st, open, cap};
+    nsfSess.rows[n] = {name: lbl, st, open, cap, parsed: set ? set[n - 1].parsed : null};
   }
   document.getElementById("impall").textContent = "Capture all"; // fresh import, fresh verb
   if (m3uList && m3uList.length) setInfo(nsfSess.trackList.length + " songs listed from the playlist (of " + nsf.songs + " NSF slots) — names loaded.");
@@ -12482,7 +12522,7 @@ async function openChipImport(kind, bytes, name, m3uList) {
     sheet.style.top = "56px";
   });
   // a timer-driven GBS runs PLAY at up to 4 kHz: same seconds, a longer emulation
-  const pace = kind === "gbs" ? (nsf.timerMode ? " · Game Boy, timer " + Math.round(nsf.playRateHz) + " Hz" : " · Game Boy") : "";
+  const pace = kind === "gbs" ? (nsf.timerMode ? " · Game Boy, timer " + Math.round(nsf.playRateHz) + " Hz" : " · Game Boy") : kind === "spc" ? " · Super Nintendo (synth voices; no console audio yet)" : "";
   impStatus(nsf.songs + " tracks" + pace + " — Capture all, audition, then commit the keepers.");
 }
 function openNsfImport(bytes, name, m3uList) { return openChipImport("nsf", bytes, name, m3uList); }
@@ -12551,14 +12591,14 @@ async function impCapture(n) {
   };
   const pct = tick("");
   try {
-    let cap = await captureChipTrack(nsfSess.chip, nsfSess.M, nsfSess.nsf, n, secs, pct);
+    let cap = await captureChipTrack(nsfSess.chip, nsfSess.M, row.parsed || nsfSess.nsf, n, secs, pct);
     // the detector needs intro + TWO full passes in frame — a 35s loop with an
     // intro already busts 75s. No loop found? ONE retry straight at the 300s
     // ceiling (a doubling ladder just re-emulates the same song extra times)
     if (cap && !cap.looped && secs < 300 && !isJingle) {
       secs = 300;
       beacon("retry");
-      cap = await captureChipTrack(nsfSess.chip, nsfSess.M, nsfSess.nsf, n, secs, tick("no loop — 300s: "));
+      cap = await captureChipTrack(nsfSess.chip, nsfSess.M, row.parsed || nsfSess.nsf, n, secs, tick("no loop — 300s: "));
     }
     if (!cap) { row.st.textContent = "silent — nothing to keep"; return; }
     const raw = row.name.value.trim() || "track-" + String(n).padStart(2, "0");
@@ -12594,7 +12634,7 @@ async function impCapture(n) {
     if (chip.key === key) { chip.key = null; updateChipBtn(); } // re-capture invalidates rendered audio
     // NSF bytes + track number persist on this device so chip audio outlives
     // the session (never the repo — *.nsf is gitignored ROM music)
-    idbNsfPut(slug, nsfSess.bytes, {[base]: {n, secs: cap.secs}}, nsfSess.chip);
+    if (nsfSess.bytes) idbNsfPut(slug, nsfSess.bytes, {[base]: {n, secs: cap.secs}}, nsfSess.chip); // a per-file set has no one blob and no renderer yet
     row.st.textContent = "✓ saved · " + cap.secs.toFixed(1) + "s · " + cap.bpm + "bpm · " +
                          (cap.looped ? "loop" : "no loop ≤" + secs + "s") +
                          (cap.snapped ? "" : " · raw timing (tempo shifts)");
@@ -14836,7 +14876,7 @@ function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots
       const j = await r.json();
       return (j.data || []).map(m => m.id).filter(Boolean);
     },
-    async chat({system, messages, signal, onDelta, schema, onStatus, tools, onTool, job}) {
+    async chat({system, messages, signal, onDelta, schema, onStatus, tools, onTool, job, onOpen, onRound}) {
       let model = cfg().aiModel;
       const headers = aiHeaders();
       if (job) { // the bridge keeps a job alive through a dropped connection; ■ Stop kills it explicitly
@@ -14856,7 +14896,7 @@ function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots
       let retried = false;
       for (let round = 0; round < 5; round++) {
         const body = {model, stream: true, messages: convo};
-        if (job && round) headers["x-nr-job"] = job + "-r" + round; // a new job per tool round: the same id would replay round one's tool call forever
+        if (job && round) { headers["x-nr-job"] = job + "-r" + round; if (onRound) onRound(job + "-r" + round); } // a new job per tool round: the same id would replay round one's tool call forever; the caller's marker follows
         if (schema) body.response_format = {type: "json_schema", json_schema: {name: "take", strict: true, schema}};
         if (tools && tools.length && onTool) body.tools = tools;
         const r = await fetch(url + "/v1/chat/completions", {method: "POST", headers, body: JSON.stringify(body), signal});
@@ -14865,6 +14905,7 @@ function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots
           try { const j = await r.json(); if (j.error) msg += " — " + (j.error.message || j.error); } catch (err) { /* no body */ }
           throw new Error(msg);
         }
+        if (onOpen) onOpen(); // headers back = the server has the question (a drop after this is a dropped connection, not a lost question)
         const reader = r.body.getReader(), dec = new TextDecoder(), st = {buf: "", think: 0};
         let out = "", shown = 0;
         for (;;) {
@@ -15291,7 +15332,15 @@ function askEvictOthers(mine) { // other songs' logs go LRU-first when the total
       .map(k => { const st = askStore(k); return {k, lu: st.lastUsed, n: (localStorage.getItem(k) || "").length, clean: st.msgs.length === st.saved}; })
       .sort((a, b) => a.lu - b.lu);
     let total = mine + others.reduce((a, o) => a + o.n, 0);
-    for (const o of others) { if (total <= ASK_TOTAL_CAP) break; if (!o.clean) continue; localStorage.removeItem(o.k); total -= o.n; }
+    for (const o of others) {
+      if (total <= ASK_TOTAL_CAP) break;
+      if (!o.clean) continue;
+      // an emptied log keeps its `trimmed` marker: askRender then loads the
+      // repo file instead of greeting an empty chat (the messages were not lost)
+      const had = askStore(o.k).msgs.length;
+      if (had) localStorage.setItem(o.k, JSON.stringify({lastUsed: o.lu, msgs: [], saved: 0, trimmed: true})); else localStorage.removeItem(o.k);
+      total -= o.n;
+    }
   } catch (err) { /* enumeration failed: skip eviction */ }
 }
 function askModelName() { const c = cfg(); return c.aiBackend === "browser" ? c.aiBrowserModel : (c.aiModel || (askModelCache && askModelCache.ids[0]) || "model"); }
@@ -15317,7 +15366,11 @@ async function askCommitLog(h, keyArg) { // Save's chat leg: append the unsaved 
   const general = key === ASK_GENERAL_KEY;
   const path = askLogPath(key);
   const st = askStore(key);
-  const fresh = st.msgs.slice(st.saved);
+  // never past a question still waiting for its reply: askFinish splices the
+  // reply right after it, and a watermark already beyond that spot would
+  // count the reply as published — then shed it from the device unpublished
+  const stop = st.msgs.findIndex((m, k) => k >= st.saved && m.pending);
+  const fresh = st.msgs.slice(st.saved, stop < 0 ? st.msgs.length : stop);
   if (!path || !fresh.length) return;
   const add = askLogMarkdown(fresh);
   if (folderActive()) {
@@ -15406,7 +15459,7 @@ function askNotesArrived(notes) { // into the open song's chat, saved like any m
   else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ Ask to read it"); }
 }
 function askNoteLabel(from) { return "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; }
-function askInboxStart() { clearInterval(askInboxTimer); askInboxTimer = setInterval(() => { if (!document.hidden) askInboxPoll(); }, 60000); askInboxPoll(); }
+function askInboxStart() { clearInterval(askInboxTimer); askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askResume(); } }, 60000); askInboxPoll(); askResumeSoon(1500); } // at boot too: a reply that landed while the app was closed lights ✦ without opening the sheet
 function askBubble(role, text) {
   const div = document.createElement("div");
   div.className = "askmsg " + role;
@@ -15506,7 +15559,8 @@ async function askJobsSupported() {
   if (cfg().aiBackend === "browser") return false;
   if (askJobsCache && askJobsCache.url === url) return askJobsCache.ok;
   let ok = false;
-  try { const r = await fetch(url + "/v1/jobs", {headers: aiHeaders()}); ok = r.ok && !!(await r.json()).ok; } catch (err) { ok = false; }
+  try { const r = await fetch(url + "/v1/jobs", {headers: aiHeaders()}); ok = r.ok && !!(await r.json()).ok; }
+  catch (err) { return null; } // unreachable right now is not "no jobs": a reload with Tailscale down must not fail every pending question
   askJobsCache = {url, ok};
   return ok;
 }
@@ -15555,23 +15609,30 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
   askBusy = ctl;
   document.getElementById("askstop").style.display = "";
   document.getElementById("asksend").disabled = true;
-  const jobs = await askJobsSupported();
+  const jobs = await askJobsSupported(); // true / false / null = unreachable this instant (the POST decides)
+  let cur = jobId, delivered = false; // cur: the job id the marker carries now (tool rounds move it); delivered: the Mac took the question
   try {
-    let out = await aiProvider().chat({system: ASK_SYS, messages, signal: ctl.signal, onDelta: raw => askShowThinking(live, raw), onStatus: t => { askstatus.textContent = t; }, tools: askToolsNow(), onTool: askRunTool, job: jobs ? jobId : undefined});
+    let out = await aiProvider().chat({system: ASK_SYS, messages, signal: ctl.signal, onDelta: raw => askShowThinking(live, raw), onStatus: t => { askstatus.textContent = t; }, tools: askToolsNow(), onTool: askRunTool, job: jobs !== false ? jobId : undefined,
+      onOpen: () => { delivered = true; },
+      onRound: id => { askRepending(key, cur, id); cur = id; if (live) live.dataset.job = id; }});
     out = out.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
     if (!out) out = "(no reply — try rephrasing)";
     askFillBubble(live, out);
-    askFinish(jobId, out, key);
+    askFinish(cur, out, key);
     askstatus.textContent = "";
   } catch (err) {
     const aborted = err && err.name === "AbortError";
     const partial = live.textContent && live.textContent !== "…" ? live.textContent : "";
-    if (aborted) { if (partial) askFinish(jobId, partial, key); else askFail(jobId, "stopped", key); askstatus.textContent = "stopped"; if (!partial) { live.classList.add("err"); live.textContent = "⚠ stopped"; } }
-    else if (jobs && !(err && /^HTTP /.test(err.message))) { // the connection died, not the job: the answer is still cooking on the server
+    const http = !!(err && /^HTTP /.test(err.message));
+    if (aborted) { if (partial) askFinish(cur, partial, key); else askFail(cur, "stopped", key); askstatus.textContent = "stopped"; if (!partial) { live.classList.add("err"); live.textContent = "⚠ stopped"; } }
+    else if (jobs !== false && !http && delivered) { // the connection died, not the job: the answer is still cooking on the server
       askstatus.textContent = "connection dropped — the answer keeps cooking; it appears when you come back";
       live.textContent = "… (still working — reopen or come back to see it)";
       askResumeSoon(3000);
-    } else { live.classList.add("err"); live.textContent = "⚠ " + err.message + " — check File → Settings… → AI model, and Test"; askFail(jobId, err.message, key); askstatus.textContent = ""; }
+    } else if (jobs !== false && !http && !delivered) { // the question never reached the Mac: say so, keep it in the log
+      live.classList.add("err"); live.textContent = "⚠ not delivered — the Mac couldn't be reached; ask again when the connection is back";
+      askFail(cur, "not delivered — the Mac couldn't be reached; ask again", key); askstatus.textContent = "";
+    } else { live.classList.add("err"); live.textContent = "⚠ " + err.message + " — check File → Settings… → AI model, and Test"; askFail(cur, err.message, key); askstatus.textContent = ""; }
   } finally {
     askBusy = null;
     document.getElementById("askstop").style.display = "none";
@@ -15602,38 +15663,69 @@ async function askSend() {
 }
 let askResumeTimer = null;
 function askResumeSoon(ms) { clearTimeout(askResumeTimer); askResumeTimer = setTimeout(() => { askResumeTimer = null; askResume(); }, ms); }
-async function askResume() { // a pending question: fetch its job; finished → store; tool call → run it and continue; running → look again soon
-  if (askBusy || !song || (typeof document.hidden === "boolean" && document.hidden)) return; // the sheet may be closed: the badge reports the landing
-  const msgs = askLoad();
-  const i = msgs.findIndex(m => m.pending);
-  if (i < 0) return;
-  const pend = msgs[i], jobId = pend.pending;
-  // the bubble under the question this job answers — the last ai bubble belongs to
-  // whatever was asked most recently, and a resumed older reply landed there
-  // (Josh, 2026-09-26: "messages out of order")
-  const live = [...asklog.querySelectorAll(".askmsg.ai")].find(d => d.dataset.job === jobId) || null;
-  if (!(await askJobsSupported())) { askFail(jobId, "no reply came back (the connection dropped) — ask again"); return; }
-  let j;
-  try { const r = await fetch(aiUrl() + "/v1/jobs/" + encodeURIComponent(jobId), {headers: aiHeaders()}); if (r.status === 404) { askFail(jobId, "the server no longer has this job — ask again"); return; } j = await r.json(); }
-  catch (err) { askResumeSoon(5000); return; }
-  if (j.status === "running") { if (live) { live.textContent = j.text ? j.text : "… (" + ((j.notes || []).slice(-1)[0] || "working") + ")"; } askResumeSoon(3000); return; }
-  if (j.status === "error") { askFail(jobId, j.error || "the job failed"); return; }
-  const calls = j.result && j.result.tool_calls;
-  if (!calls || !calls.length) { askFinish(jobId, (j.text || "").trim() || "(no reply)"); return; }
-  // the job ended in a tool call: run it here, then continue the exchange as a new job
-  const sp = askSpanFrozen || askSpan();
-  const budget = askBudget();
-  const history = msgs.slice(0, i);
-  const messages = askBuildMessages(history, pend.content, askContext(sp, budget), budget);
-  messages.push({role: "assistant", content: "", tool_calls: calls});
-  for (const c of calls) {
-    let args = {}; try { args = JSON.parse(c.function.arguments || "{}"); } catch (err) { args = {}; }
-    let result; try { result = await askRunTool(c.function.name, args); } catch (err) { result = {error: String(err.message || err)}; }
-    messages.push({role: "tool", tool_call_id: c.id, content: typeof result === "string" ? result : JSON.stringify(result)});
+function askPendingAll() { // every pending question on this device, oldest first — across songs and the general chat
+  const out = [];
+  try {
+    for (const k of Object.keys(localStorage)) {
+      if (!k.startsWith("ff1roll-ask-") || k === askInboxSeenKey()) continue;
+      askStore(k).msgs.forEach((m, i) => { if (m.pending) out.push({key: k, jobId: m.pending, i, t: m.t || 0}); });
+    }
+  } catch (err) { /* enumeration failed: nothing to resume */ }
+  return out.sort((a, b) => a.t - b.t);
+}
+function askRepending(key, from, to) { // a tool round continues under a new job id: the marker follows it (re-read, never a stale array)
+  const msgs = askStore(key).msgs, i = askPendingIndex(msgs, from);
+  if (i < 0) return false;
+  msgs[i].pending = to;
+  askSave(msgs, undefined, key);
+  return true;
+}
+// Resume (2026-09-26 audit): every pending question gets looked at, in every
+// chat, not just the open one — and a look that cannot happen now (busy,
+// backgrounded, the Mac unreachable) is rescheduled, never dropped. Only
+// a real answer from the bridge ("no such job", "error") fails a question.
+async function askResume() {
+  const all = askPendingAll();
+  if (!all.length) return;
+  if (askBusy || !song || (typeof document.hidden === "boolean" && document.hidden)) { askResumeSoon(3000); return; }
+  const liveFor = jobId => [...asklog.querySelectorAll(".askmsg.ai")].find(d => d.dataset.job === jobId) || null;
+  const sup = await askJobsSupported();
+  if (sup === null) { // unreachable right now: the reply is kept on the Mac; say so where the bubble is, and look again
+    for (const p of all) { const live = p.key === askStoreKey() ? liveFor(p.jobId) : null; if (live) live.textContent = "… (can't reach the Mac right now — the reply is kept there; retrying)"; }
+    askResumeSoon(5000); return;
   }
-  const nextId = askJobId();
-  pend.pending = nextId; askSave(msgs);
-  await askRun({msgs, text: pend.content, sp, messages, jobId: nextId, live: live || askBubble("ai", "…"), key: askStoreKey()});
+  if (!sup) { for (const p of all) askFail(p.jobId, "no reply came back (the connection dropped) — ask again", p.key); return; }
+  let again = false;
+  for (const p of all) {
+    const mine = p.key === askStoreKey(), live = mine ? liveFor(p.jobId) : null;
+    let j;
+    try { const r = await fetch(aiUrl() + "/v1/jobs/" + encodeURIComponent(p.jobId), {headers: aiHeaders()}); if (r.status === 404) { askFail(p.jobId, "the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again", p.key); continue; } j = await r.json(); }
+    catch (err) { again = true; continue; }
+    if (j.status === "running") { if (live) live.textContent = j.text ? j.text : "… (" + ((j.notes || []).slice(-1)[0] || "working") + ")"; again = true; continue; }
+    if (j.status === "error") { askFail(p.jobId, j.error || "the job failed", p.key); continue; }
+    const calls = j.result && j.result.tool_calls;
+    if (!calls || !calls.length) { askFinish(p.jobId, (j.text || "").trim() || "(no reply)", p.key); continue; }
+    if (!mine) { again = true; continue; } // a tool round acts on the OPEN song: it continues when that chat is opened again
+    // the job ended in a tool call: run it here, then continue the exchange as a new job
+    const msgs = askStore(p.key).msgs, i = askPendingIndex(msgs, p.jobId);
+    if (i < 0) continue;
+    const pend = msgs[i];
+    const sp = askSpanFrozen || askSpan();
+    const budget = askBudget();
+    const history = msgs.slice(0, i);
+    const messages = askBuildMessages(history, pend.content, askContext(sp, budget), budget);
+    messages.push({role: "assistant", content: "", tool_calls: calls});
+    for (const c of calls) {
+      let args = {}; try { args = JSON.parse(c.function.arguments || "{}"); } catch (err) { args = {}; }
+      let result; try { result = await askRunTool(c.function.name, args); } catch (err) { result = {error: String(err.message || err)}; }
+      messages.push({role: "tool", tool_call_id: c.id, content: typeof result === "string" ? result : JSON.stringify(result)});
+    }
+    const nextId = askJobId();
+    askRepending(p.key, p.jobId, nextId);
+    await askRun({msgs, text: pend.content, sp, messages, jobId: nextId, live: live || askBubble("ai", "…"), key: p.key});
+    askResumeSoon(500); return; // one exchange at a time; the others get their look after it
+  }
+  if (again) askResumeSoon(3000);
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
 askInboxStart();
@@ -15857,8 +15949,7 @@ async function askFill() {
     if (!result) throw new Error("three takes in a row were unusable — last problem: " + lastErr);
     if (result.question) {
       live.textContent = result.question;
-      msgs.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp)}, {role: "assistant", content: result.question, m: askModelName()});
-      askSave(msgs);
+      { const cur = askLoad(); cur.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp)}, {role: "assistant", content: result.question, m: askModelName()}); askSave(cur); }
       askstatus.textContent = "it needs an answer — reply, then Fill again";
       return;
     }
@@ -15880,8 +15971,7 @@ async function askFill() {
       b.addEventListener("click", () => { b.replaceWith(document.createTextNode("\n" + result.why)); });
       live.appendChild(b);
     }
-    msgs.push({role: "user", content: text + " [fill bars " + sp.from + "–" + sp.to + "]", t: Date.now(), at: askSpanLabel(sp)}, {role: "assistant", content: "(wrote " + k + " notes into bars " + sp.from + "–" + sp.to + " on " + (song.tracks[ti].name || "track " + (ti + 1)) + ")", m: askModelName()});
-    askSave(msgs);
+    { const cur = askLoad(); cur.push({role: "user", content: text + " [fill bars " + sp.from + "–" + sp.to + "]", t: Date.now(), at: askSpanLabel(sp)}, {role: "assistant", content: "(wrote " + k + " notes into bars " + sp.from + "–" + sp.to + " on " + (song.tracks[ti].name || "track " + (ti + 1)) + ")", m: askModelName()}); askSave(cur); }
     askstatus.textContent = "";
     setInfo("✦ take " + askTakes.length + ": " + k + " notes in bars " + sp.from + "–" + sp.to + " (one ⟲ restores what was there)");
     askRefreshTarget();
