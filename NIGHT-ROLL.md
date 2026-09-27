@@ -1468,9 +1468,13 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     a dropped client, replay on re-attach, tool_calls assembly,
     non-stream on a finished job, kill, 404, the token gate, the inbox
     (POST/GET/since, the `--say` client, token). In `npm test`.
-  - Josh's box: `node tools/claude-bridge.mjs --claude full --upstream
-    lmstudio=http://localhost:1234` (LM Studio needs `lms server start
-    --cors`); not persistent across reboots.
+  - **Always on (2026-09-26):** `sh tools/launchd/install.sh --claude full
+    --upstream lmstudio=http://localhost:1234` installs
+    `~/Library/LaunchAgents/com.nightroll.bridge.plist` (template in
+    tools/launchd/, absolute node/repo/PATH filled in, RunAtLoad +
+    KeepAlive, log `~/Library/Logs/nightroll-bridge.log`); `--uninstall`
+    removes it. Installed on Josh's Mac that night. LM Studio's own
+    start-at-login is separate (`lms server start --cors` otherwise).
 - **iPad route (P4) — done 2026-09-25.** Josh's iPad asks the Mac's LM
   Studio over Tailscale, verified end to end (Test listed the models,
   ✦ Ask answered). Exact recipe on the Mac: `lms server start --cors`
