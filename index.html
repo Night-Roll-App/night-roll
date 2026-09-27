@@ -1357,7 +1357,7 @@
     <div class="hsec" data-hsec="files">
     <dl>
       <dt>Install on the iPad</dt><dd>Safari → Share → <b>Add to Home Screen</b>. Night Roll then launches from its own icon, full screen with no browser bars, works offline (the app and any song you have opened are kept on the device; instrument sounds are kept as they are first used), and its drafts, annotations and settings live in storage Safari does not evict. Updates arrive on the next launch with a network — the page is always fetched fresh when it can be. Same for Chrome/Edge on a computer (the install icon in the address bar). File → the "build" line at the bottom of the menu says "installed" when you are running the installed copy. If offline support ever misbehaves, open the site with <code>?sw=0</code> once to turn it off on that device.</dd>
-      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has three tabs — <b>Saving</b> (auto-save, folder or Files), <b>AI</b>, <b>GitHub</b> — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips), New song (name/tempo/meter dialog → blank 3-voice NES composition), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (forks ANY song, including a locked capture, into nightroll/ with its annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF or GBS chip-music file (NES or <b>Game Boy</b>), or a set of <b>Super Nintendo</b> .spc files, <b>Genesis</b> .vgm/.vgz files, <b>PlayStation</b> .minipsf files together with their .psflib library, or <b>Nintendo 64</b> .miniusf files together with their .usflib (one file per song — multi-select the whole set; rows come in track order with the tags' titles; the Genesis header's and the PlayStation and N64 sequences' loop points become the loop: annotation; NES, Game Boy and Super Nintendo songs play through their own sound chips, the other three through synth voices for now), opens the capture panel: every track runs through the same pipeline that dumped the FF1 album (6502/APU for the NES, SM83/Game Boy APU for a .gbs — its wave channel becomes a <b>wave</b> track) — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder — and keeps going if you leave the menu: the footer strip shows its progress anywhere in the app, and reopening the folder shows the same line (just don't leave the app itself mid-upload; Safari may freeze the page), ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Publish import still pushes every import capture across all folders at once); expansion-chip audio like VRC6 is not captured), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition between Night Roll Sketches and My Compositions (files + catalog together; the row names the song's current album first, and the dropdown lists only where it can go — New song and Save always land in Sketches); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums.</dd>
+      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has three tabs — <b>Saving</b> (auto-save, folder or Files), <b>AI</b>, <b>GitHub</b> — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF or GBS chip-music file (NES or <b>Game Boy</b>), or a set of <b>Super Nintendo</b> .spc files, <b>Genesis</b> .vgm/.vgz files, <b>PlayStation</b> .minipsf files together with their .psflib library, or <b>Nintendo 64</b> .miniusf files together with their .usflib (one file per song — multi-select the whole set; rows come in track order with the tags' titles; the Genesis header's and the PlayStation and N64 sequences' loop points become the loop: annotation; NES, Game Boy and Super Nintendo songs play through their own sound chips, the other three through synth voices for now), opens the capture panel: every track runs through the same pipeline that dumped the FF1 album (6502/APU for the NES, SM83/Game Boy APU for a .gbs — its wave channel becomes a <b>wave</b> track) — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder — and keeps going if you leave the menu: the footer strip shows its progress anywhere in the app, and reopening the folder shows the same line (just don't leave the app itself mid-upload; Safari may freeze the page), ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Publish import still pushes every import capture across all folders at once); expansion-chip audio like VRC6 is not captured), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums.</dd>
       <dt>Share a song</dt><dd><b>🔗 Share link</b> in the Publish sheet hands the song's link to the share sheet (or copies it). A link is this player plus the song plus where the song lives: songs on this site need nothing more; a song published to another GitHub repo carries <code>songs=owner/repo</code>, so anyone who taps it hears that song from that repo, no setup — and you can open such links too (the breadcrumb then starts with 🔗 and the repo's name; everything is read-only there, your own songs are untouched, and nothing about the link is remembered). Publish also keeps a <b>song list in the repo's README</b> — every song as a player link, between two markers the app owns, the rest of the README untouched — so the repo page itself is the share page. The address bar is always a shareable link to the open song, and it is the song's path with no extension — …/night-roll/albums/compositions/nightroll/ambush. <b>Add .mid to the end and the same link is the MIDI file</b> (Logic opens it); take it off and it's the player again. Older ?song= links still open the player. The tab title and the link preview in Messages name the song first — "Threnody · Night Roll" — so a pasted link reads as the song, not the app.</dd>
       <dt>Data locations</dt><dd>Night Roll is configured with WHERE its data lives (Sync → "Data locations ▾"): three rows — songs (.mid, album.json, catalog), analysis (.rollnotes + docs), and NSF (chip-audio source) — each with a read base URL (blank = this site; or any raw.githubusercontent.com/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt; or local server) and an owner/repo write target. One fine-grained token, granted to every repo you write to, covers all commits; write errors name the repo they hit, and a 404 usually means the token hasn't been granted that repo. This is what lets another analyst point their own analysis repo at a shared songs corpus. Defaults: everything in this site's repo, NSFs from the public nsf-archive. In the iPad app "this site" is only the bundled starters, so reads default to the repo in Settings → GitHub (the same place Publish writes): your published songs, annotations and imports appear there once the repo is set; the starters come from the bundle either way.</dd>
       <dt>📁 Folder on this computer</dt><dd>Saving without GitHub. In File → Settings, tap <b>Choose folder…</b> and pick a folder on this computer: from then on every Save writes the song, its annotations, and its notes dump into that folder (laid out exactly like the repo — <code>albums/…/song.mid</code> beside its <code>.rollnotes.json</code>), nothing goes to GitHub, and no token is needed. The song picker lists the folder's albums alongside the site's; a song that exists in both opens from the folder. Tick <b>show only this folder's songs</b> under the folder row and the list becomes yours alone — the folder plus this device's drafts, none of the site's albums; with an empty folder the app opens straight into New song instead of Overworld. A device setting: it stays on that machine. FF1 songs still load from the site — annotate one and the annotations save to your folder. Chrome may ask for the folder again after a restart: <b>📁 Reconnect folder</b> appears at the top of the File menu (until you tap it, reads fall back to the site). <b>Forget</b> in Settings returns saves to GitHub; the files stay where they are. Needs Chrome or Edge on a computer — Safari has no way to write files, and the row says so there. In the iPad app a <code>.mid</code> or chip file tapped in Files, or sent with <b>Share → Night Roll</b>, opens here as a local draft. In the iPad app the row is a checkbox, <b>Keep my songs in Files on this iPad</b>: on, every Save writes into Files → On My iPad → Night Roll (same layout), where you can copy, share or back them up; off, saves go to GitHub again. Brave ships the door switched off: enable <code>brave://flags/#file-system-access-api</code> and relaunch (the row tells you). Recordings that aren't yours belong here, not in a repo (see the design docs).</dd>
@@ -1458,7 +1458,6 @@
   <button class="fitem" id="filehelp">Help</button>
   <button class="fitem" id="fileabout">About</button>
   <div id="filenewform" style="display:none">
-    <div class="row"><input type="text" id="fnname" placeholder="song name" style="flex:1;min-height:40px"></div>
     <div class="row">
       <input type="number" id="fnbpm" value="120" min="20" max="300" style="width:72px;min-height:40px" aria-label="Tempo">
       <select id="fnnum"></select><span class="lbl">/</span>
@@ -1466,10 +1465,13 @@
       <button class="primary" id="fncreate">Create</button>
     </div>
   </div>
-  <div id="filesaveasform" style="display:none">
+  <div id="filesaveasform" style="display:none"><!-- Save (names an Untitled song) and Save As share it: folder + name -->
+    <div class="row"><span class="lbl">folder</span>
+      <select id="fsfolder" aria-label="Folder" style="flex:1;min-height:40px"></select></div>
+    <div class="row"><input type="text" id="fsnewfolder" placeholder="new folder name (NES/My Covers nests)" style="flex:1;min-height:40px;display:none" autocapitalize="off"></div>
     <div class="row">
-      <input type="text" id="fsname" placeholder="fork name" style="flex:1;min-height:40px">
-      <button class="primary" id="fsgo">Fork</button>
+      <input type="text" id="fsname" placeholder="song name" style="flex:1;min-height:40px">
+      <button class="primary" id="fsgo">Save</button>
     </div>
   </div>
   <div id="filerenameform" style="display:none">
@@ -1481,6 +1483,7 @@
   <div class="row" id="filemoverow" style="display:none;padding-left:10px">
     <span class="lbl" id="fmlbl">Move to</span>
     <select id="fmdest"></select>
+    <input type="text" id="fmnewfolder" placeholder="new folder name" style="flex:1;min-height:40px;display:none" autocapitalize="off">
     <button id="fmgo">Move</button>
   </div>
   <div class="status" id="filestatus"></div>
@@ -11839,17 +11842,26 @@ const COMP_DIR = "albums/compositions/";
 // would also strip anything beyond notes/tempo/meter (CCs, programs), so
 // they stay locked like chip captures. Save As forks them into nightroll/.
 const PROVENANCE_RE = /^(forked|moved) from /;
+// "Just folders" (docs/song-organization-proposal.md, 2026-09-27): a song is
+// editable when it sits in a folder of the user's own — any albums/ path
+// outside the read-only corpora — and this device holds its local copy (or
+// the song carries provenance). The FF1 corpus, chip captures and the
+// bundled starters are annotate-only; Save As forks them into a folder.
+const READONLY_DIRS = ["albums/final-fantasy-i/", "albums/imports/", "albums/starters/"];
+function ownFolderPath(key) { return !!key && key.startsWith("albums/") && !READONLY_DIRS.some(d => key.startsWith(d)); }
 function isComposition() {
-  if (!songKey || !songKey.startsWith(COMP_DIR)) return false;
+  if (!ownFolderPath(songKey)) return false;
   if (songKey.startsWith(NR_DIR)) return true;
   return localStorage.getItem(draftStoreKey(songKey)) !== null ||
          rollnotes.some(n => n.text && PROVENANCE_RE.test(n.text));
 }
-// Move targets (Josh 2026-08-15: only compositions move, between these two)
+// The two albums the app itself named; every other folder is titled by its
+// last segment (album.json can override on the repo side)
 const COMP_ALBUMS = [["Night Roll Sketches", NR_DIR], ["My Compositions", COMP_DIR]];
 function albumTitleFor(path) {
   for (const [t, dir] of COMP_ALBUMS) if (path.startsWith(dir) && !(dir === COMP_DIR && path.startsWith(NR_DIR))) return t;
   if (path.startsWith("albums/imports/")) return titleCaseSlug(path.split("/")[2] || "imports");
+  if (ownFolderPath(path)) return titleCaseSlug(folderOf(path).split("/").pop());
   return null;
 }
 function titleCaseSlug(base) {
@@ -11903,7 +11915,92 @@ function isLocalDraft() { return !!songKey && songKey.startsWith("local/"); }
 // derived from the paths songs already have. Album titles from the catalog
 // name the leaf folder; parents fall back to their segment.
 const FOLDER_NAMES = {nes: "NES", snes: "SNES", n64: "Nintendo 64", "game-boy": "Game Boy", genesis: "Genesis",
-                      ps1: "PlayStation", imports: "Imports", local: "Imported files"};
+                      ps1: "PlayStation", imports: "Imports", local: "Not saved yet"};
+// A new (or imported) song has no folder until its first Save: it lives under
+// local/ as "Untitled N" — editable, never publishable — and Save asks for a
+// folder and a name (Josh, 2026-09-27: "it's just unnamed until you save it.
+// And then when you save it, you pick what folder it goes into and you give
+// it a name").
+function untitledKey() { let n = 1; while (localStorage.getItem(draftStoreKey("local/untitled-" + n + ".mid"))) n++; return "local/untitled-" + n + ".mid"; }
+function isUnsaved(key) { return !!key && key.startsWith("local/"); }
+const RESERVED_FOLDERS = ["final-fantasy-i", "imports", "starters", "local", "albums"]; // roots the user cannot save into
+function folderChoices() { // the folders a Save can go to: this device's plus the repo's, own folders only, last used first
+  const set = new Set();
+  for (const f of Object.keys(localFolders())) if (f !== "local" && ownFolderPath("albums/" + f + "/x.mid")) set.add(f);
+  for (const songs of Object.values(CATALOG)) if (songs.length && ownFolderPath(songs[0][1])) set.add(folderOf(songs[0][1]));
+  const last = localStorage.getItem("ff1roll-lastfolder");
+  const out = [...set].sort((a, b) => folderTitle(a).localeCompare(folderTitle(b)));
+  if (last && out.includes(last)) { out.splice(out.indexOf(last), 1); out.unshift(last); }
+  return out;
+}
+function folderFromInput(text) { // "NES/My Covers" → "nes/my-covers"; null when empty or reserved
+  const parts = (text || "").split("/").map(slugify).filter(x => x && x !== "untitled");
+  if (!parts.length || RESERVED_FOLDERS.includes(parts[0])) return null;
+  return parts.join("/");
+}
+function fillFolderSelect(sel, exclude) { // options: known folders + New folder…
+  sel.innerHTML = "";
+  for (const f of folderChoices()) {
+    if (f === exclude) continue;
+    const o = document.createElement("option"); o.value = f; o.textContent = folderTitle(f); sel.appendChild(o);
+  }
+  const o = document.createElement("option"); o.value = "__new__"; o.textContent = "New folder…"; sel.appendChild(o);
+  if (!sel.options.length || sel.options[0].value === "__new__") sel.value = "__new__";
+}
+function chosenFolder(sel, inp) { // the select, or the typed folder; null = nothing valid
+  if (sel.value !== "__new__") return sel.value || null;
+  return folderFromInput(inp.value);
+}
+function renameLocalKeys(oldKey, newKey) { // every per-song key on this device rides along; the open song follows
+  for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-save-", "ff1roll-stash-"]) {
+    const v = localStorage.getItem(pre + oldKey);
+    if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
+  }
+  idbDraftMove(oldKey, newKey);
+  if (songKey === oldKey) {
+    songKey = newKey;
+    currentPath = newKey;
+    rememberLastSong(newKey);
+    reflectSongURL(newKey);
+    updateSongBtn();
+    updateEditBtnVis();
+  }
+}
+async function saveSongAs(folder, name) { // first Save of an Untitled song: it gets a folder and a name, then a checkpoint
+  if (!song || !isUnsaved(songKey)) return false;
+  const newKey = "albums/" + folder + "/" + slugify(name) + ".mid";
+  if (localStorage.getItem(draftStoreKey(newKey)) !== null) { // Josh: "if you already have a local version, it could maybe overwrite that one"
+    const ok = await appConfirm("REPLACE " + songTitleOf(newKey).toUpperCase() + "?", "A local copy with that name already exists in " + folderTitle(folder) + ". Replace it with this song?", "Replace", "Keep both");
+    if (!ok) return false;
+    for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-save-"]) localStorage.removeItem(pre + newKey);
+    idbDraftDelete(newKey);
+  }
+  renameLocalKeys(songKey, newKey);
+  try { // the typed name is the title; the filename is its slug
+    const d = JSON.parse(localStorage.getItem(draftStoreKey(newKey)) || "null");
+    if (d) { d.title = name.trim(); localStorage.setItem(draftStoreKey(newKey), JSON.stringify(d)); }
+  } catch (err) { /* the slug will do */ }
+  localStorage.setItem("ff1roll-lastfolder", folder);
+  saveCheckpoint(true);
+  updateSongBtn();
+  setInfo("saved as " + name.trim() + " in " + folderTitle(folder) + " — Publish sends it to " + (publishDest() === "folder" ? fsRoot.name : "GitHub"));
+  return true;
+}
+function openSaveForm(mode) { // "save" (name an Untitled song) | "fork" (Save As): folder + name inside the File menu
+  document.getElementById("filesheetbtn").click();
+  document.getElementById("filenewform").style.display = "none";
+  document.getElementById("filerenameform").style.display = "none";
+  const form = document.getElementById("filesaveasform");
+  form.style.display = "";
+  form.dataset.mode = mode;
+  fillFolderSelect(document.getElementById("fsfolder"), null);
+  document.getElementById("fsnewfolder").style.display = document.getElementById("fsfolder").value === "__new__" ? "" : "none";
+  const inp = document.getElementById("fsname");
+  inp.value = mode === "fork" ? "" : (songKey && !/untitled-\d+\.mid$/.test(songKey) ? songTitleOf(songKey) : "");
+  inp.placeholder = mode === "fork" ? "name for the copy" : "song name";
+  document.getElementById("fsgo").textContent = mode === "fork" ? "Save copy" : "Save";
+  inp.focus();
+}
 function folderOf(path) { // "albums/compositions/nightroll/x.mid" → "compositions/nightroll"; FF1's songs/ level collapses
   const parts = path.split("/"); parts.pop();
   if (parts[0] === "albums") parts.shift();
@@ -11927,6 +12024,7 @@ function localFolders() { // folder → this device's copies (draft keys), sorte
 }
 function catalogHas(path) { return Object.values(CATALOG).some(songs => songs.some(([, p]) => p === path)); }
 function songStatus(key) { // the word on a LOCAL row
+  if (isUnsaved(key)) return "never saved";
   if (!catalogHas(key)) return "not published";
   let d = null;
   try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
@@ -11985,6 +12083,7 @@ function songUnsaved() { // what the ● means: auto-save off → changed since 
   return cp ? songDocSig(draftDoc(false)) !== songDocSig(cp) : songDirtyFlag();
 }
 function saveCheckpoint(quiet) { // File → Save / ⌘S
+  if (song && isUnsaved(songKey)) { if (!quiet) openSaveForm("save"); return false; } // first Save: folder + name
   if (!song || !songKey || !isComposition()) { if (!quiet) setInfo("Save works on your own songs — this one is a capture; Save As forks it"); return false; }
   if (cmp && cmp.showing === "repo") { if (!quiet) setInfo("you're hearing the repo copy — switch back to your version first"); return false; }
   const d = draftDoc(!songDirtyFlag()); d.savedAt = Date.now();
@@ -12072,8 +12171,8 @@ function midiBase64(bytes) { // btoa in chunks — big songs overflow the arg li
   for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
   return btoa(bin);
 }
-function createComposition(name, bpm, num, den) {
-  const key = NR_DIR + slugify(name) + ".mid";
+function createComposition(bpm, num, den) { // Untitled until the first Save names it and picks its folder
+  const key = untitledKey();
   const parsed = {ppq: 480, timesig: [num, den],
     tempos: [{tick: 0, usq: Math.round(60e6 / bpm), sec: 0}],
     tracks: [{name: "pulse1", notes: []}, {name: "pulse2", notes: []}, {name: "triangle", notes: []}]};
@@ -12091,8 +12190,9 @@ function createComposition(name, bpm, num, den) {
   updateSongBtn(); // now that the draft exists, the crumb names its folder
   draw();
 }
-function forkCurrentSong(name) {
-  const key = NR_DIR + slugify(name) + ".mid";
+function forkCurrentSong(name, folder) { // Save As: a copy in the folder you chose (the last used one by default)
+  const key = "albums/" + (folder || localStorage.getItem("ff1roll-lastfolder") || NR_DIR.slice(7, -1)) + "/" + slugify(name) + ".mid";
+  if (folder) localStorage.setItem("ff1roll-lastfolder", folder);
   const notesText = serializeRollnotes(); // inherit — ruled 2026-08-14
   const origin = songKey || "local file";
   const parsed = {ppq: song.ppq, timesig: song.timesig || effTs(),
@@ -12276,20 +12376,14 @@ document.getElementById("filesheetbtn").addEventListener("click", e => {
   document.getElementById("filesaveasform").style.display = "none";
   document.getElementById("filerenameform").style.display = "none";
   document.getElementById("filemoverow").style.display = isComposition() ? "" : "none";
-  if (isComposition()) { // move targets: the other compositions album(s)
+  document.getElementById("filesavelocal").textContent = song && isUnsaved(songKey) ? "Save…" : "Save";
+  if (isComposition()) { // move targets: any folder of yours, or a new one
     const sel = document.getElementById("fmdest");
-    sel.innerHTML = "";
     // name the current home first — a dropdown holding only the OTHER album
     // read as "destination selected" (Josh, 2026-09-07)
-    const home = albumTitleFor(songKey);
-    document.getElementById("fmlbl").textContent = home ? "In " + home + " · move to" : "Move to";
-    for (const [title, dir] of COMP_ALBUMS) {
-      if (songKey.startsWith(dir) && albumTitleFor(songKey) === title) continue; // already home
-      const o = document.createElement("option");
-      o.value = dir;
-      o.textContent = title;
-      sel.appendChild(o);
-    }
+    document.getElementById("fmlbl").textContent = "In " + folderTitle(folderOf(songKey)) + " · move to";
+    fillFolderSelect(sel, folderOf(songKey));
+    document.getElementById("fmnewfolder").style.display = sel.value === "__new__" ? "" : "none";
   }
   const impN = importDraftKeys().length;
   const impBtn = document.getElementById("fileimpcommit");
@@ -12301,7 +12395,8 @@ document.getElementById("filesheetbtn").addEventListener("click", e => {
     document.getElementById("filerename").textContent =
       t ? "Rename “" + (t.length > 18 ? t.slice(0, 17) + "…" : t) + "”…" : "Rename…";
   }
-  fileStatus(isComposition() ? "composition — editable" : "locked (not an app-made song) — Save As forks an editable copy");
+  fileStatus(song && isUnsaved(songKey) ? "not saved yet — Save names it and picks its folder"
+             : isComposition() ? "your song — editable" : "read-only here — Save As makes an editable copy in a folder of yours");
   const r = e.currentTarget.getBoundingClientRect();
   filesheet.style.left = Math.max(6, r.left) + "px";
   filesheet.style.top = (r.bottom + 4) + "px";
@@ -12312,11 +12407,18 @@ document.addEventListener("pointerdown", e => { // tap-away closes, like a real 
   if (filesheet.contains(e.target) || filesub.contains(e.target) || e.target.closest("#filesheetbtn")) return;
   closeFileMenus();
 }, {capture: true});
+document.getElementById("fmdest").addEventListener("change", () => {
+  const isNew = document.getElementById("fmdest").value === "__new__";
+  document.getElementById("fmnewfolder").style.display = isNew ? "" : "none";
+  if (isNew) document.getElementById("fmnewfolder").focus();
+});
 document.getElementById("fmgo").addEventListener("click", e => {
-  const dest = document.getElementById("fmdest").value;
-  if (!dest || !isComposition()) return;
+  const folder = chosenFolder(document.getElementById("fmdest"), document.getElementById("fmnewfolder"));
+  if (!folder) { fileStatus("⚠ Pick a folder, or type a name for a new one."); return; }
+  if (!isComposition()) return;
+  localStorage.setItem("ff1roll-lastfolder", folder);
   e.currentTarget.disabled = true;
-  moveComposition(dest).finally(() => { e.currentTarget.disabled = false; });
+  moveComposition("albums/" + folder + "/").finally(() => { e.currentTarget.disabled = false; });
 });
 // Open › is a cascading submenu: albums fly out beside the File menu,
 // drill into a group, tap a song. Opens straight into the current group.
@@ -12500,48 +12602,43 @@ document.getElementById("fileopen").addEventListener("click", e => {
 document.getElementById("filenew").addEventListener("click", () => {
   document.getElementById("filenewform").style.display = "";
   document.getElementById("filesaveasform").style.display = "none";
-  document.getElementById("fnname").focus();
+  document.getElementById("fnbpm").focus();
 });
 document.getElementById("fncreate").addEventListener("click", () => {
-  const name = document.getElementById("fnname").value;
-  if (!name.trim()) { fileStatus("⚠ Name it first."); document.getElementById("fnname").focus(); return; }
-  const key = NR_DIR + slugify(name) + ".mid";
-  if (localStorage.getItem(draftStoreKey(key))) {
-    // collision: suggest the next free name instead of silently refusing
-    let n = 2;
-    while (localStorage.getItem(draftStoreKey(NR_DIR + slugify(name) + "-" + n + ".mid"))) n++;
-    document.getElementById("fnname").value = slugify(name) + "-" + n;
-    fileStatus("⚠ A draft named \"" + slugify(name) + "\" already exists (see Open → LOCAL). " +
-               "Suggested \"" + slugify(name) + "-" + n + "\" — tap Create again to use it.");
-    return;
-  }
   stop();
-  createComposition(name, +document.getElementById("fnbpm").value || 120,
+  createComposition(+document.getElementById("fnbpm").value || 120,
                     +document.getElementById("fnnum").value, +document.getElementById("fnden").value);
   document.getElementById("filesheet").classList.remove("on");
-  setInfo("new song — Edit → Pencil to write. Draft auto-saves on this device; File → Save commits.");
+  setInfo("new song — Edit → Pencil to write. It lives on this device as " + songTitleOf(songKey) + " until File → Save names it and picks its folder.");
 });
 // return key in the name fields = the primary action (iOS keyboards
 // otherwise cost an extra tap: the first one just dismisses the keyboard)
-document.getElementById("fnname").addEventListener("keydown", e => {
-  if (e.key === "Enter") { e.preventDefault(); document.getElementById("fncreate").click(); }
-});
 document.getElementById("fsname").addEventListener("keydown", e => {
   if (e.key === "Enter") { e.preventDefault(); document.getElementById("fsgo").click(); }
 });
-document.getElementById("filesaveas").addEventListener("click", () => {
-  if (!song) return;
-  document.getElementById("filesaveasform").style.display = "";
-  document.getElementById("filenewform").style.display = "none";
-  document.getElementById("fsname").focus();
+document.getElementById("fsnewfolder").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); document.getElementById("fsname").focus(); }
 });
-document.getElementById("fsgo").addEventListener("click", () => {
+document.getElementById("fsfolder").addEventListener("change", () => {
+  const isNew = document.getElementById("fsfolder").value === "__new__";
+  document.getElementById("fsnewfolder").style.display = isNew ? "" : "none";
+  if (isNew) document.getElementById("fsnewfolder").focus();
+});
+document.getElementById("filesaveas").addEventListener("click", () => { if (song) openSaveForm("fork"); });
+document.getElementById("fsgo").addEventListener("click", async () => {
+  const form = document.getElementById("filesaveasform");
   const name = document.getElementById("fsname").value;
-  if (!name.trim()) { fileStatus("Name the fork first."); return; }
+  const folder = chosenFolder(document.getElementById("fsfolder"), document.getElementById("fsnewfolder"));
+  if (!folder) { fileStatus("⚠ Pick a folder, or type a name for a new one."); document.getElementById("fsnewfolder").focus(); return; }
+  if (!name.trim()) { fileStatus("⚠ Name the song."); document.getElementById("fsname").focus(); return; }
   stop();
-  forkCurrentSong(name);
-  document.getElementById("filesheet").classList.remove("on");
-  setInfo("forked to " + songKey + " — fully editable; File → Save commits it.");
+  if (form.dataset.mode === "fork") {
+    forkCurrentSong(name, folder);
+    document.getElementById("filesheet").classList.remove("on");
+    setInfo("copy saved as " + name.trim() + " in " + folderTitle(folder) + " — fully editable; Publish sends it to GitHub.");
+    return;
+  }
+  if (await saveSongAs(folder, name)) document.getElementById("filesheet").classList.remove("on");
 });
 // Rename works on EVERYTHING (Josh 2026-08-16): an uncommitted draft renames
 // its file; a repo song keeps its filename (analysis docs reference it) and
@@ -12628,7 +12725,7 @@ async function renameRepoTitle(key, title, h) { // album.json songs override + m
     return changed;
   });
 }
-document.getElementById("filesavelocal").addEventListener("click", () => { closeFileMenus(); saveCheckpoint(); });
+document.getElementById("filesavelocal").addEventListener("click", () => { if (song && isUnsaved(songKey)) { openSaveForm("save"); return; } closeFileMenus(); saveCheckpoint(); });
 document.getElementById("filerestore").addEventListener("click", async () => {
   closeFileMenus();
   if (!songKey || !hasStash()) return;
@@ -13585,7 +13682,7 @@ async function uploadAudioClips(h, status) {
   }
 }
 function isCompositionKey(key) { // isComposition() for a song that is not open (no rollnotes to consult: the draft decides)
-  if (!key || !key.startsWith(COMP_DIR)) return false;
+  if (!ownFolderPath(key)) return false;
   return key.startsWith(NR_DIR) || localStorage.getItem(draftStoreKey(key)) !== null;
 }
 // Publish all reaches songs that are NOT open (Josh, 2026-09-26: it used to
@@ -13696,19 +13793,12 @@ async function moveComposition(destDir) {
     saveLocalNotes();
   }
   const token = writeToken();
-  const renameLocal = () => { // every per-song localStorage key rides along
-    for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-"]) {
-      const v = localStorage.getItem(pre + oldKey);
-      if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
-    }
-    idbDraftMove(oldKey, newKey);
-    songKey = newKey;
-    currentPath = newKey;
-    rememberLastSong(newKey);
-    reflectSongURL(newKey);
-    updateSongBtn();
-    updateEditBtnVis();
-  };
+  const renameLocal = () => renameLocalKeys(oldKey, newKey); // every per-song key rides along
+  if (!catalogHas(oldKey)) { // never published: the move is this device's alone; Publish will use the new path
+    renameLocal();
+    fileStatus("Moved to " + folderTitle(folderOf(newKey)) + ".");
+    return;
+  }
   if (!token) { // no token: draft-only move on this device
     renameLocal();
     fileStatus("Moved locally (draft only — no token stored; add one in File → Settings to enable repo moves).");

@@ -50,7 +50,14 @@ Build order per the doc: wording → Save with folders + mirrored
 publish → Open LOCAL/PUBLISHED → iPad Files → the one batch of moves.
 DONE (evening): phase 1 — Open as LOCAL / PUBLISHED with folders by
 path, Commit → Publish wording, publish buttons name their destination
-(branch `folders`, merged). NEXT: Save asks folder + name.
+(branch `folders`, merged). Phase 2 also DONE: New makes "Untitled N"
+(local/, editable, never publishable); Save asks folder + name (own
+folders ∪ repo folders, New folder…, nested paths allowed); Save As and
+Move to… go to any folder; a never-published song moves on the device
+only; editability by folder (READONLY_DIRS); build_manifest walks any
+depth. NEXT: phase 3 — the iPad Files mirror (Save writes Files, no
+checkbox) and "ask first" before editing a published song of his; then
+his batch of moves (imports + FF1 under console folders).
 
 ## OPEN DESIGN QUESTION (Josh, 2026-09-27): where saves live on the iPad
 

@@ -26,18 +26,18 @@ function addAlbum(full, dirName) {
   if (songs.length) albums.push({title: meta.title || titleCase(dirName),
                                  order: meta.order ?? 99, songs});
 }
-for (const dir of readdirSync(ALBUMS).sort()) {
-  const full = path.join(ALBUMS, dir);
-  if (!statSync(full).isDirectory()) continue;
-  addAlbum(full, dir);
-  // a subdirectory with its own album.json is its own album (e.g.
-  // compositions/nightroll — the in-app scratch space)
-  for (const sub of readdirSync(full).sort()) {
-    const subFull = path.join(full, sub);
-    if (statSync(subFull).isDirectory() && existsSync(path.join(subFull, "album.json")))
-      addAlbum(subFull, sub);
+// Any depth: every directory holding .mid files is an album (its songs/
+// sub-folder, FF1's layout, counts as its own); nested folders are how the
+// app groups things now ("just folders", docs/song-organization-proposal.md)
+function walk(dir) {
+  for (const sub of readdirSync(dir).sort()) {
+    const full = path.join(dir, sub);
+    if (!statSync(full).isDirectory() || sub === "songs") continue;
+    addAlbum(full, sub);
+    walk(full);
   }
 }
+walk(ALBUMS);
 albums.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
 for (const a of albums) delete a.order;
 writeFileSync(path.join(ALBUMS, "manifest.json"), JSON.stringify(albums, null, 1) + "\n");
