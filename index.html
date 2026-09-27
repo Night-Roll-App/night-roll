@@ -13240,6 +13240,13 @@ const CHIPS = {
           const res = M.parseSequence(seqBytes, {abi: game ? game.abi : loc.abi, present, io: null, maxSeconds: 600, stopAtLoop: true});
           const bytes = M.toMidi(res, {tsNum: 4, tsDen: 4});
           const tpb = res.ticksPerBeat || 48;
+          { // diagnostic (2026-09-27: the iPad scrambles Mario 64 while the Mac, running this same code, does not): the facts of this capture, into ⚠ so Copy all carries them
+            let cov = 0; for (let i = 0; i < present.length; i++) cov += present[i];
+            const nn = (res.notes || []).length, chs = [...new Set((res.notes || []).map(n => n.ch))].join(" ");
+            const line = "usf " + parsed.fileName + ": game " + (game ? game.id || game.abi : "?") + " seq " + id + " @" + (seq.rom != null ? "rom " + seq.rom.toString(16) : "ram") + " " + seq.size + "B cov " + cov +
+                         " → " + nn + " notes ch[" + chs + "] tpb " + tpb + " ticks " + (res.ticks ?? res.endTick ?? "?") + " " + (res.seconds || 0).toFixed(1) + "s tempo " + (res.tempos && res.tempos[0] ? res.tempos[0].bpm : "?") + (res.loop ? " loop@" + res.loop.tick : " noloop") + " midi " + bytes.length + "B";
+            if (typeof logErr === "function") logErr(line);
+          }
           const bq = tick => { const b = tick / tpb; return [Math.floor(b / 4) + 1, Math.round((b - Math.floor(b / 4) * 4) * 4) / 4 + 1]; };
           const loops = !!res.loop;
           const warnings = [];
