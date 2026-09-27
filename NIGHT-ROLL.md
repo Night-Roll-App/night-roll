@@ -1214,25 +1214,21 @@ locally") beside Edit ▾ (`updateEditBtnVis`: `ownFolderPath(songKey) &&
 `draftDoc(true)` as the draft — the local copy, clean until the first
 edit — which makes `isComposition()` true.
 
-**iPad app (2026-09-27): the Files folder as a third root.** In the
-Capacitor shell, `nativeFs()` returns the `@capacitor/filesystem` plugin
+**iPad app (2026-09-27): the Files adapter.** In the Capacitor shell,
+`nativeFs()` returns the `@capacitor/filesystem` plugin
 (`window.Capacitor.Plugins.Filesystem`, native platform only) and
 `nativeDirHandle(fs, rel)` wraps it in the same handle subset the picker
 and OPFS roots expose (get*Handle with {create}, getFile, createWritable,
 removeEntry, entries) over the app's Documents directory (`DOCUMENTS`),
 which iOS shows as Files → On My iPad → Night Roll (Info.plist:
-UIFileSharingEnabled + LSSupportsOpeningDocumentsInPlace). Bytes cross
-the bridge as base64. Opt-in like the desktop folder: the Settings row
-becomes one switch (**Save in Files on this iPad** / **Stop**,
-`chooseFolder` toggles the device pref `ff1roll-folder-native`;
-`restoreFolder` honours it at boot before the IndexedDB handle;
-`forgetFolder` clears it). `fsRoot.mode === "native"`; no permission
-model, no picker, no persistence of a handle. Every seam above is
-unchanged — `folderActive()` is still the one predicate. The vm test
-drives it with an in-memory plugin (`fakeCapacitorFs` in
-tests/night-roll.test.mjs); the shell project lives outside this repo
-(`~/work/ff/night-roll-app`, `build-ipad.sh` = package → sync → build →
-install).
+UIFileSharingEnabled; documents are NOT opened in place — incoming files
+are copied to Documents/Inbox). Bytes cross the bridge as base64. It is
+used only by `filesMirror()` (the paragraph above) — never as a folder
+ROOT: `folderActive()` stays false in the app, reads and Publish are
+untouched. The vm test drives it with an in-memory plugin
+(`fakeCapacitorFs` in tests/night-roll.test.mjs); the shell project
+lives outside this repo (`~/work/ff/night-roll-app`, `build-ipad.sh` =
+package → sync → build → install + relaunch).
 
 **Open as LOCAL / PUBLISHED, folders by path (2026-09-27; design:
 docs/song-organization-proposal.md, phase 1 of 5).** Nothing moved on
@@ -1256,10 +1252,15 @@ opens the local one (draft wins, as before). "Night Roll drafts" and
 user reads it: `publishDest()` (github / folder / null) and
 `publishLabel(what)` ("⇪ Publish …", "Save … to Files/folder", or
 "Connect GitHub to publish", disabled) label the import buttons.
-Still to come (phases 2–5): Save asks folder + name (Untitled until
-then), mirror publish per folder, iPad Save writes Files without the
-checkbox, then Josh's batch of moves (imports + FF1 under console
-folders; nightroll/ stays his).
+The later phases the same evening: Save asks folder + name (below),
+the Files mirror (below), the console-folder batch move (below), and
+Open as a real tree — `folderTree(paths)` → `{sub, songs, path}` nested
+by `folderOf`, `nodeAt`, `nodeCount`, `segTitle` (album title, then
+`FOLDER_NAMES`, then Title Case), `parentFolder`; both pickers render
+one level per tap (`fsubAlbums`/`fsubFolder(section, folder)` and
+`renderSongGroups`/`renderFolder`), top-level folders sorted by title,
+"‹ All folders" at the top (Josh: the flat chained list was "thrown
+all over the place").
 
 **Console folders — the batch move (2026-09-27, phase 5; branch
 `console-folders` until Josh says go).** `git mv`: final-fantasy-i →
@@ -1337,14 +1338,13 @@ EDITION line like the packager does.
 
 **Settings tabs (2026-09-27).** The sheet is three panes behind a `.seg`
 tab strip — Saving (auto-save, the desktop folder rows, and in the iPad
-app the **Keep my songs in Files on this iPad** checkbox `#filesonipad`
-with its status line `#fileshelp`), AI, GitHub (repo/token, ▸ advanced).
+app one sentence in `#filesrow`/`#fileshelp`: songs are kept in Files,
+Publish goes to GitHub), AI, GitHub (repo/token, ▸ advanced).
 `cfgShowPane(name)` toggles `.cfgpane.on`/tab `.on` and remembers the
 pane in `ff1roll-cfgpane` (device pref); `openSettingsSheet` restores it.
 `renderFolderUI` shows `#filesrow` and hides `#folderrow` when
-`nativeFs()` is present; the checkbox's change handler is `chooseFolder`
-(toggles), and the re-render re-syncs the box. Josh, from the iPad: one
-long sheet had texts running into each other.
+`nativeFs()` is present. Josh, from the iPad: one long sheet had texts
+running into each other.
 
 **Open in Night Roll (iPad app, 2026-09-27).** The shell's Info.plist
 declares `public.midi-audio` plus an imported UTI for chip files
