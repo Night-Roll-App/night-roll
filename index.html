@@ -236,6 +236,7 @@
             color: var(--text); background: var(--panel); border-bottom: 1px solid var(--grid); flex-wrap: wrap; }
   #cmpbar button { min-height: 32px; padding: 4px 10px; }
   #cmpbar .gold { color: var(--gold); } #cmpbar .red { color: #e66767; }
+  body[data-edition="app"] .webonly { display: none !important; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 
   #editrow {
@@ -1012,9 +1013,11 @@
   <div class="sheet">
     <h2>NIGHT // ROLL</h2>
     <p style="font-family:var(--mono);font-size:13px;line-height:1.7;margin:8px 0">
-      A piano-roll and engraved-score player for studying game soundtracks —
-      built for learning music theory by analyzing the Final Fantasy I OST,
-      captured note-for-note from the actual NES sound chip.
+      The chiptune DAW that teaches you composition — a piano roll and an
+      engraved score over one timeline, authentic 2A03 chip audio, and an
+      annotation layer that lives with the notes.<span class="webonly"> This
+      site is where it was built: by studying the Final Fantasy I soundtrack,
+      captured note-for-note from the actual NES sound chip.</span>
     </p>
     <p style="font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--dim);margin:8px 0">
       House rule: keys, meters, and chords are the analyst's discoveries.
@@ -1022,6 +1025,11 @@
       them for you.
     </p>
     <p class="meta" id="aboutstats" style="margin:8px 0"></p>
+    <p style="font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--dim);margin:8px 0">
+      Sounds: FluidR3_GM by Frank Wen (MIT), via Benjamin Gleitzman's midi-js-soundfonts (MIT).
+      Notation: VexFlow (MIT). Night Roll itself: PolyForm Noncommercial 1.0.0 — free for
+      personal and noncommercial use; selling or republishing it is not permitted.
+    </p>
     <p style="font-family:var(--mono);font-size:12px;margin:8px 0">
       Josh Cough &amp; Claude, 2026 ·
       <a href="https://github.com/joshcough/night-roll" target="_blank" rel="noopener"
@@ -1725,7 +1733,7 @@
       <button id="dlfile">Download</button>
       <a id="repolink" href="https://github.com/joshcough/night-roll" target="_blank" rel="noopener"
          style="text-decoration:none"><button>Repo ↗</button></a>
-      <button id="websess">⎘ Web session</button>
+      <button id="websess" class="webonly">⎘ Web session</button>
       <button id="sharelink">🔗 Share link</button>
     </div>
     <div id="syncpending"></div>
@@ -1771,6 +1779,10 @@ function setDocTitle(name) {
 // directory, snapshotted before the address bar ever changes, and pinned as
 // <base> so relative fetches (soundfonts, albums/, tools/nsf) never follow the
 // song path.
+// EDITION: "web" is this site; the packager (tools/package.mjs) rewrites this
+// ONE line to "app" for the store build. The app edition hides what only makes
+// sense on the public study site (class="webonly"), nothing else changes.
+const EDITION = "web";
 let APP_BASE = (() => { // let: the vm tests pin it (no location there)
   try { return new URL(".", location.href).href; } catch (e) { return ""; }
 })();
@@ -17100,6 +17112,7 @@ document.getElementById("ghsaveall").addEventListener("click", async e => {
   btn.disabled = false;
 });
 
+if (typeof document !== "undefined" && document.body && document.body.dataset) document.body.dataset.edition = EDITION; // the vm harness has no body
 applyViewMode();
 resize();
 updateSyncBtn();
