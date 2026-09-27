@@ -232,6 +232,18 @@ context "interrupted". Handed to the owning session as the next single
 change (warm on pointerup, or drop the warm). #2 silent inside a
 gesture means birth is not the whole story; the output meter (log only)
 is the measurement that comes next.
+8e1c72d, fresh launch, NO dictation: #1 NO gesture → interrupted, #2
+created in the Play tap → running → silent; the first tap "did nothing",
+the second moved the cursor. So a context born inside a tap can still be
+mute. Reverted to f733b42's engine + the chipStart guard (5fc6e79).
+Hypothesis to test next (from the bridge session's diff of the two
+builds): f733b42 rebuilt the context and CONTINUED into play in the same
+tap (resume + first sources started inside the gesture); 69da39f created
+it and returned, so the second tap played on a context that never had a
+source start in its birth gesture. If 5fc6e79 plays, keep that variable:
+whatever creates the engine must also start sound in the same gesture
+(warmContext's silent buffer alone may not count). Branch audio-dictation
+(eee6011) is built on the reverted replace path — rebase before any use.
 Coordination failure the same night: three bridge sessions pushed
 audio changes within minutes of each other after the revert — the
 one-at-a-time rule applies to them too; one owner per report.
