@@ -15789,8 +15789,12 @@ async function askInboxPoll() {
   if (r.status === 404) { askInboxNo = url; return; }
   if (!r.ok) return;
   let j; try { j = await r.json(); } catch (err) { return; }
-  const notes = (j && j.notes || []).filter(n => n && n.text);
-  if (!notes.length) return;
+  let notes = (j && j.notes || []).filter(n => n && n.text);
+  // a device that has never polled (a fresh install: the Xcode shell,
+  // 2026-09-27, got the whole night's 40 notes poured into Threnody II's
+  // chat) takes only the last few hours, then keeps up like any other
+  if (localStorage.getItem(askInboxSeenKey()) === null) { const cutoff = Date.now() - 6 * 3600e3; notes = notes.filter(n => (n.t || 0) >= cutoff); }
+  if (!notes.length) { if (j && j.last) localStorage.setItem(askInboxSeenKey(), String(j.last)); return; }
   askNotesArrived(notes);
   localStorage.setItem(askInboxSeenKey(), String(j.last || notes[notes.length - 1].id));
 }
