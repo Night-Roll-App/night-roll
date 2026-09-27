@@ -1842,5 +1842,14 @@
     "path": "albums/snes/legend-of-zelda-a-link-to-the-past/unused-sound.mid"
    }
   ]
+ },
+ {
+  "title": "Super Mario 64",
+  "songs": [
+   {
+    "title": "Title Theme",
+    "path": "albums/n64/super-mario-64/title-theme.mid"
+   }
+  ]
  }
 ]
