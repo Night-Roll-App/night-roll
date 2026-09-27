@@ -60,30 +60,46 @@ export function makeTestVGM() {
 
   const loopSamples = TEST_TIMING.hold * 4 + TEST_TIMING.gap * 4 + TEST_TIMING.tail;
   const totalSamples = setup + loopSamples;
+  return wrapVGM(data, {
+    loopPos, loopSamples, totalSamples,
+    gd3Fields: ["Night Roll test tune", "", "Night Roll", "", "Sega Mega Drive / Genesis", "",
+                "synthetic", "", "2026", "tools/vgm/make-test-vgm.mjs", ""],
+  });
+}
 
-  // ---- GD3
-  const gd3Fields = ["Night Roll test tune", "", "Night Roll", "", "Sega Mega Drive / Genesis", "",
-                     "synthetic", "", "2026", "tools/vgm/make-test-vgm.mjs", ""];
-  const gd3Body = [];
-  for (const s of gd3Fields) { for (const c of s) gd3Body.push(c.charCodeAt(0) & 0xFF, c.charCodeAt(0) >> 8); gd3Body.push(0, 0); }
-  const gd3 = [0x47, 0x64, 0x33, 0x20, 0x00, 0x01, 0x00, 0x00,
-               gd3Body.length & 0xFF, (gd3Body.length >> 8) & 0xFF, 0, 0, ...gd3Body];
+// GD3 tag bytes: "Gd3 ", version 1.00, payload length, eleven UTF-16LE
+// strings each 00 00-terminated (the field order is the spec's; see RESEARCH.md)
+export function makeGd3(fields) {
+  const body = [];
+  for (const s of fields) { for (const c of s) body.push(c.charCodeAt(0) & 0xFF, c.charCodeAt(0) >> 8); body.push(0, 0); }
+  return [0x47, 0x64, 0x33, 0x20, 0x00, 0x01, 0x00, 0x00,
+          body.length & 0xFF, (body.length >> 8) & 0xFF, 0, 0, ...body];
+}
 
-  // ---- header (0x40 bytes, v1.50, data at 0x40)
+// Wraps a command stream (which must end in 0x66) in a v1.50 header (0x40
+// bytes, data offset field 0x0C, the shape every Genesis pack in the wild
+// has) plus an optional GD3 tag and loop. loopPos is the loop's byte offset
+// within `data`; null = no loop. The header words are all overridable so a
+// test can reproduce a real rip's header exactly with its own stream.
+export function wrapVGM(data, {
+  loopPos = null, loopSamples = 0, totalSamples, gd3Fields = null,
+  version = 0x150, ymClock = YM2612_NTSC, psgClock = SN76489_NTSC, rate = 60,
+} = {}) {
+  const gd3 = gd3Fields ? makeGd3(gd3Fields) : [];
   const HEADER = 0x40;
   const out = new Uint8Array(HEADER + data.length + gd3.length);
   const dv = new DataView(out.buffer);
   out.set([0x56, 0x67, 0x6D, 0x20], 0);                       // "Vgm "
   dv.setUint32(0x04, out.length - 4, true);                   // EOF offset
-  dv.setUint32(0x08, 0x00000150, true);                       // version
-  dv.setUint32(0x0C, SN76489_NTSC, true);
-  dv.setUint32(0x14, HEADER + data.length - 0x14, true);      // GD3 offset
+  dv.setUint32(0x08, version, true);
+  dv.setUint32(0x0C, psgClock, true);
+  if (gd3.length) dv.setUint32(0x14, HEADER + data.length - 0x14, true); // GD3 offset
   dv.setUint32(0x18, totalSamples, true);
-  dv.setUint32(0x1C, HEADER + loopPos - 0x1C, true);          // loop offset
+  if (loopPos != null) dv.setUint32(0x1C, HEADER + loopPos - 0x1C, true); // loop offset
   dv.setUint32(0x20, loopSamples, true);
-  dv.setUint32(0x24, 60, true);
+  dv.setUint32(0x24, rate, true);
   dv.setUint16(0x28, 0x0009, true); out[0x2A] = 16;
-  dv.setUint32(0x2C, YM2612_NTSC, true);
+  dv.setUint32(0x2C, ymClock, true);
   dv.setUint32(0x34, HEADER - 0x34, true);                    // data offset
   out.set(data, HEADER);
   out.set(gd3, HEADER + data.length);

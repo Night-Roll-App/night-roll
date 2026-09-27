@@ -6,9 +6,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { gzipSync } from "node:zlib";
-import { makeTestVGM, TEST_NOTES, TEST_TIMING, TEST_PSG_PERIOD, TEST_TL, TEST_DAC_PEAK } from "../tools/vgm/make-test-vgm.mjs";
+import { makeTestVGM, wrapVGM, TEST_NOTES, TEST_TIMING, TEST_PSG_PERIOD, TEST_TL, TEST_DAC_PEAK } from "../tools/vgm/make-test-vgm.mjs";
 import { parseVGM, inflateVGM, isGzip, YM2612_NTSC, SN76489_NTSC } from "../tools/vgm/vgm.mjs";
-import { reconstruct, toNotesTxt, pitchName, fmVelocity, psgVelocity, FRAME_SEC } from "../tools/vgm/notes.mjs";
+import { reconstruct, toNotesTxt, pitchName, fmVelocity, psgVelocity, mulFactor, FRAME_SEC } from "../tools/vgm/notes.mjs";
 import { makeMidi, MIDI_CHANNELS } from "../tools/vgm/midi-write.mjs";
 
 const FREQ4 = [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00,
@@ -220,6 +220,109 @@ test("velocity curves: TL and attenuation map monotonically, carriers add per al
   assert.equal(psgVelocity(15), 0);
   assert.equal(psgVelocity(0), 127);
   assert.ok(psgVelocity(4) > psgVelocity(8));
+});
+
+// writes a voice's MUL for op1..op4 — the bus slot order is op1, op3, op2, op4
+const mulWrites = (t, muls, ch = 0, port = 0) =>
+  [[0, 0], [4, 2], [8, 1], [12, 3]].map(([slot, op]) => ym(t, 0x30 + slot + ch, muls[op], port));
+const keyC4 = (t, ch = 0, port = 0) => [
+  ym(t, 0xA4 + ch, (4 << 3) | (644 >> 8), port), ym(t, 0xA0 + ch, 644 & 0xFF, port),
+  ym(t, 0x28, 0xF0 | (port ? ch + 4 : ch)),
+];
+
+test("FM pitch follows the carriers' MUL, not the bare Fnum (Sonic's chord voice is ×4, its bass ×½)", () => {
+  assert.equal(mulFactor(0), 0.5);
+  assert.equal(mulFactor(1), 1);
+  assert.equal(mulFactor(15), 15);
+  const one = (log) => reconstruct(fakeVgm(log, 2000)).filter(e => e.channel === "fm1")[0];
+  const tl0 = [ym(0, 0x40, 0), ym(0, 0x44, 0), ym(0, 0x48, 0), ym(0, 0x4C, 0)];
+  // every operator at MUL 4 (alg 4: op2 + op4 carry): C4's Fnum sounds C6
+  let e = one([ym(0, 0xB0, 4), ...tl0, ...mulWrites(0, [4, 4, 4, 4]), ...keyC4(0), ym(1000, 0x28, 0)]);
+  assert.equal(pitchName(e.midi), "C6");
+  assert.equal(e.mul, 4);
+  assert.equal(e.mulHi, undefined);
+  assert.deepEqual([e.fnum, e.block], [644, 4], "the raw Fnum/block stay reported");
+  // alg 0: op4 is the only carrier, at MUL 0 = ×½ — an octave BELOW; op1's MUL 10 is a modulator and irrelevant
+  e = one([ym(0, 0xB0, 0), ...tl0, ...mulWrites(0, [10, 0, 0, 0]), ...keyC4(0), ym(1000, 0x28, 0)]);
+  assert.equal(pitchName(e.midi), "C3");
+  assert.equal(e.mul, 0.5);
+  // alg 6: carriers op2 (×6), op3 (×4), op4 (×4) — a fifth apart; the lowest is the pitch, the spread is recorded
+  e = one([ym(0, 0xB0, 6), ...tl0, ...mulWrites(0, [6, 6, 4, 4]), ...keyC4(0), ym(1000, 0x28, 0)]);
+  assert.equal(pitchName(e.midi), "C6");
+  assert.deepEqual([e.mul, e.mulHi], [4, 6]);
+  // MUL never written: the base pitch (×1), not the chip's reset value
+  e = one([ym(0, 0xB0, 0), ...tl0, ...keyC4(0), ym(1000, 0x28, 0)]);
+  assert.equal(pitchName(e.midi), "C4");
+  assert.equal(e.mul, 1);
+  // the voice written a moment before key-off is the NEXT note's (SMPS order):
+  // the held note keeps its pitch and length, the next key-on takes the new MUL
+  const ev = reconstruct(fakeVgm([
+    ym(0, 0xB0, 0), ...tl0, ...mulWrites(0, [1, 1, 1, 1]), ...keyC4(0),
+    ...mulWrites(960, [2, 2, 2, 2]), ym(1000, 0x28, 0),
+    ...keyC4(1010), ym(1500, 0x28, 0),
+  ], 2000)).filter(e => e.channel === "fm1");
+  assert.deepEqual(ev.map(e => [pitchName(e.midi), e.startFrame, e.endFrame, !!e.legato]),
+                   [["C4", 0, 1000, false], ["C5", 1010, 1500, false]]);
+  // MUL landing at the key-on's own sample updates the note in place
+  const same = one([ym(0, 0xB0, 0), ...tl0, ...keyC4(0), ...mulWrites(0, [2, 2, 2, 2]), ym(1000, 0x28, 0)]);
+  assert.equal(pitchName(same.midi), "C5");
+  // an Fnum step under a held note still splits (legato), as before
+  const step = reconstruct(fakeVgm([
+    ym(0, 0xB0, 0), ...tl0, ...mulWrites(0, [4, 4, 4, 4]), ...keyC4(0),
+    ym(500, 0xA4, (4 << 3) | (965 >> 8)), ym(500, 0xA0, 965 & 0xFF), ym(1000, 0x28, 0),
+  ], 2000)).filter(e => e.channel === "fm1");
+  assert.deepEqual(step.map(e => [pitchName(e.midi), !!e.legato]), [["C6", false], ["G6", true]]);
+});
+
+// a raw VGM command stream around one DAC bank; every hit is `n` 0x8w commands
+const dacStream = ({bank, hits, prefill = 0, gapWait = 0}) => {
+  const data = [0x67, 0x66, 0x00, bank.length & 0xFF, (bank.length >> 8) & 0xFF, 0, 0, ...bank];
+  data.push(0x52, 0x2B, 0x80);
+  if (prefill) { data.push(0xE0, 0, 0, 0, 0); for (let i = 0; i < prefill; i++) data.push(0x80); }
+  if (gapWait) data.push(0x61, gapWait & 0xFF, gapWait >> 8);
+  for (const {n, wait} of hits) {
+    data.push(0xE0, 0, 0, 0, 0);
+    for (let i = 0; i < n; i++) data.push(0x80 | wait);
+  }
+  data.push(0x61, 0xD0, 0x07, 0x66); // 2000 samples of tail
+  return wrapVGM(data, {totalSamples: 0});
+};
+
+test("DAC: an 0xE0 seek under a still-sounding sample is a new hit; frame-0 prefill is not; peak clamps at 127", () => {
+  // bank: 300 samples that never fall quiet, with byte 0x00 (128 below centre) in front
+  const bank = new Array(300).fill(0x40); for (let i = 0; i < 10; i++) bank[i] = 0x00;
+  // four kicks at wait 5, 200 writes each = 1000 samples apiece, back to back —
+  // no 30 ms gap anywhere; before the seek rule this was one 4 s hit
+  let vgm = parseVGM(dacStream({bank, prefill: 300, gapWait: 100, hits: [{n: 200, wait: 5}, {n: 200, wait: 5}, {n: 200, wait: 5}, {n: 200, wait: 5}]}));
+  assert.equal(vgm.dac.t.length, 300 + 800);
+  assert.equal(vgm.dac.seek.reduce((a, b) => a + b, 0), 5, "each 0xE0 marks the write after it");
+  let dac = reconstruct(vgm).filter(e => e.channel === "dac");
+  assert.deepEqual(dac.map(e => e.startFrame), [100, 1100, 2100, 3100], "one hit per seek; the 300 wait-0 writes at t=0 are no hit");
+  dac.forEach(e => assert.equal(e.endFrame, e.startFrame + 199 * 5, "each hit ends at its last audible write"));
+  dac.forEach(e => { assert.equal(e.peak, 127, "byte 0x00 clamps to the 7-bit scale"); assert.equal(e.vel, 127); });
+  const txt = toNotesTxt(dac, {frames: 5000, bpm: 120, title: "t"});
+  assert.doesNotMatch(txt, /p128/);
+  // the gap rule still splits when a driver writes raw 0x2A bytes with no seeks
+  const t = [], v = [];
+  for (let i = 0; i < 50; i++) { t.push(i * 10); v.push(0x40); }
+  for (let i = 0; i < 50; i++) { t.push(3000 + i * 10); v.push(0x40); }
+  dac = reconstruct({clocks: {}, log: [], endSample: 5000, dac: {t: Float64Array.from(t), v: Uint8Array.from(v)}, dacStreams: []});
+  assert.deepEqual(dac.map(e => e.startFrame), [0, 3000]);
+});
+
+test("container: a Genesis rip's stray 0x4F is skipped; a loop offset at the first command means the whole song loops", () => {
+  const data = [0x4F, 0x00, 0x52, 0xB0, 0x00, 0x52, 0x4C, 0x00,
+                0x52, 0xA4, (4 << 3) | (644 >> 8), 0x52, 0xA0, 644 & 0xFF, 0x52, 0x28, 0xF0,
+                0x61, 0xE7, 0x03, 0x52, 0x28, 0x00, 0x61, 0xE7, 0x03, 0x66]; // 999 + 999 samples
+  const vgm = parseVGM(wrapVGM(data, {loopPos: 0, loopSamples: 1998, totalSamples: 1998}));
+  assert.equal(vgm.loopSample, 0, "0, not null: Sonic 2's Hill Top and Death Egg loop from the top");
+  assert.equal(vgm.endSample, 1998);
+  const events = reconstruct(vgm);
+  assert.equal(pitchName(events[0].midi), "C4");
+  const txt = toNotesTxt(events, {frames: 1998, bpm: 120, title: "t", loopSample: vgm.loopSample});
+  assert.match(txt, /# loop: returns to bar 1 beat 1 \(sample 0\)/);
+  const tracks = readMidi(makeMidi(events, {bpm: 120, loopSample: vgm.loopSample}));
+  assert.deepEqual(tracks[0].notes.find(n => n.marker), {marker: "loop", t: 0});
 });
 
 // a minimal SMF reader: our writer emits full status bytes, so no running status

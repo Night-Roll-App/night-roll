@@ -14,9 +14,12 @@ export const FRAME_SEC = 1 / SAMPLE_RATE;
 // chip order for output: FM 1-6, PSG 1-3, then the unpitched pair
 export const CHANNEL_ORDER = ["fm1", "fm2", "fm3", "fm4", "fm5", "fm6", "psg1", "psg2", "psg3", "noise", "dac"];
 
+// the channel's base frequency; each operator runs at base × MUL (MUL 0 = ×½),
+// so the sounding pitch is the carriers' multiple of this, not this itself
 export function fmFreq(fnum, block, clock = YM2612_NTSC) {
   return fnum * clock / (144 * 2 ** (21 - block));
 }
+export const mulFactor = mul => (mul & 15) || 0.5;
 export function psgFreq(period, clock = SN76489_NTSC) {
   return clock / (32 * (period || 1024)); // period 0 counts as 1024 on the Genesis PSG
 }
@@ -69,31 +72,45 @@ export function reconstruct(vgm, opts = {}) {
 
   // ---- YM2612 ------------------------------------------------------------
   const fm = [];
-  for (let c = 0; c < 6; c++) fm.push({slots: 0, fnum: 0, block: 0, latch: 0, alg: 0, tl: [127, 127, 127, 127]});
+  // mul defaults to ×1 (the base pitch): the chip resets to 0 (×½) but every
+  // logged driver writes the voice before keying, so an unwritten MUL means
+  // "no information", not "half speed"
+  for (let c = 0; c < 6; c++) fm.push({slots: 0, fnum: 0, block: 0, latch: 0, alg: 0, tl: [127, 127, 127, 127], mul: [1, 1, 1, 1]});
   let ch3mode = 0, dacOn = false;
   const fmName = c => "fm" + (c + 1);
+  // the sounding pitch: the lowest carrier's frequency. Sonic's chord voice
+  // runs every operator at MUL 4 (two octaves above its Fnum), its bass at
+  // MUL 0 (an octave below) — read the Fnum alone and the roll inverts.
+  // Carriers at different MULs (6 and 4: a fifth) sound a chord; the lowest
+  // is reported and the spread recorded
   const fmPitch = (c) => {
     const s = fm[c];
     if (!s.fnum) return null;
-    const freq = fmFreq(s.fnum, s.block, ymClock);
-    return {freq, midi: midiFromFreq(freq)};
+    const base = fmFreq(s.fnum, s.block, ymClock);
+    const muls = CARRIERS[s.alg].map(op => mulFactor(s.mul[op]));
+    const mul = Math.min(...muls), mulHi = Math.max(...muls);
+    const freq = base * mul;
+    return {freq, midi: midiFromFreq(freq), mul, mulHi: mulHi !== mul ? mulHi : undefined};
   };
   const fmOnset = (c, t) => {
     const s = fm[c], p = fmPitch(c);
     if (!p) return; // Fnum 0 keys a DC level, not a note
     start(fmName(c), t, {
-      midi: p.midi, freq0: p.freq, fnum: s.fnum, block: s.block, alg: s.alg,
+      midi: p.midi, freq0: p.freq, fnum: s.fnum, block: s.block, alg: s.alg, mul: p.mul, mulHi: p.mulHi,
       tl: Math.min(...CARRIERS[s.alg].map(op => s.tl[op])),
       vel: fmVelocity(s.tl, s.alg),
       special: c === 2 && ch3mode === 1 ? true : undefined, // op4's pitch reported; ops 1-3 may differ
     });
   };
-  const fmPitchWrite = (c, t) => { // latched Fnum landed: vibrato, setup, or a real step
+  const fmPitchWrite = (c, t, voice = false) => { // latched Fnum landed: vibrato, setup, or a real step
     const name = fmName(c), cur = open[name];
     if (!cur) return;
     const p = fmPitch(c);
     if (!p) { close(name, t); return; }
-    if (t === cur.startFrame) { Object.assign(cur, {midi: p.midi, freq0: p.freq, fnum: fm[c].fnum, block: fm[c].block}); return; }
+    if (t === cur.startFrame) { Object.assign(cur, {midi: p.midi, freq0: p.freq, fnum: fm[c].fnum, block: fm[c].block, mul: p.mul, mulHi: p.mulHi}); return; }
+    // a voice (MUL) written under a held note is the NEXT note's setup — SMPS
+    // sends it a millisecond before the key-off — not a pitch step of this one
+    if (voice) return;
     if (p.midi === cur.midi || cents(p.freq, cur.freq0) < 70) return;
     fmOnset(c, t);
     open[name].legato = true; // pitch moved without a re-key: envelope not restarted
@@ -129,6 +146,7 @@ export function reconstruct(vgm, opts = {}) {
     const c = (addr & 3);
     if (c === 3 || addr < 0x30) return;
     const ch = port * 3 + c, s = fm[ch];
+    if (addr >= 0x30 && addr <= 0x3E) { s.mul[SLOT_OP[(addr >> 2) & 3]] = value & 15; fmPitchWrite(ch, t, true); return; }
     if (addr >= 0x40 && addr <= 0x4E) { s.tl[SLOT_OP[(addr >> 2) & 3]] = value & 0x7F; fmLevelWrite(ch, t); return; }
     if (addr >= 0xA0 && addr <= 0xA2) { // low byte commits the latched block/high bits
       s.fnum = ((s.latch & 7) << 8) | value;
@@ -224,21 +242,29 @@ export function reconstruct(vgm, opts = {}) {
   for (const name of Object.keys(open)) close(name, endT);
 
   // ---- DAC: bursts of non-silent samples are the hits -------------------
+  // A burst ends at a gap, or at an 0xE0 seek: the driver reset the sample
+  // pointer, i.e. hit a drum again while the last one was still sounding
+  // (a kick every 100 ms on a 100 ms sample never gaps — Sonic 2's Final
+  // Boss read as ONE hit in 58 s before this). A burst with no time span
+  // (the logger's frame-0 prefill: whole samples at wait 0) is not a hit.
   const GAP = Math.round(0.03 * SAMPLE_RATE), QUIET = 6;
   const dacEvents = [];
-  let burst = null;
-  const {t: dt, v: dv} = vgm.dac;
+  let burst = null, seekPending = false;
+  const {t: dt, v: dv, seek: ds} = vgm.dac;
+  const endBurst = () => { burst.end = burst.last; if (burst.end > burst.start) dacEvents.push(burst); burst = null; };
   for (let i = 0; i < dt.length; i++) {
     const t = dt[i];
     if (t > endT) break;
-    const a = Math.abs(dv[i] - 0x80);
+    if (ds && ds[i]) seekPending = true;
+    const a = Math.min(127, Math.abs(dv[i] - 0x80));
     if (a <= QUIET) continue;
-    if (burst && t - burst.last > GAP) { burst.end = burst.last; dacEvents.push(burst); burst = null; }
+    if (burst && (t - burst.last > GAP || seekPending)) endBurst();
+    seekPending = false;
     if (!burst) burst = {start: t, last: t, end: null, peak: 0};
     burst.last = t;
     if (a > burst.peak) burst.peak = a;
   }
-  if (burst) { burst.end = burst.last; dacEvents.push(burst); }
+  if (burst) endBurst();
   for (const s of vgm.dacStreams) {
     if (s.t > endT) continue;
     dacEvents.push({start: s.t, end: s.t + Math.max(1, s.samples), peak: s.peak});
