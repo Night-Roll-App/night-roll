@@ -187,6 +187,17 @@ Angel (7/8 + 3/8 bars) dump full length. Import-side items:
 Approximate: pitch = written key (INSTR.DAT articulations not read yet);
 no per-note velocity in AKAO; bends counted, not applied.
 
+### The import-silence bug — FIXED 2026-09-27 (NIGHT-ROLL.md "Audio context rebuild only inside a tap")
+
+Game Boy, then Chrono Trigger: imported song silent with a moving cursor,
+every song after it silent until relaunch. Cause: Import's file picker
+interrupts the AudioContext; the visibility handler rebuilt it outside a
+tap, and iOS runs such a context mute. Rebuild now only inside a tap
+(f733b42). Josh confirmed CT plays (with the new SNES chip audio). Follow
+-up shipped the same night: Play waits for a chip render in flight, with
+progress (b31ff7e). Open: move chip renders off the main thread (a Worker)
+so a render never competes with playback at all; SNES echo path.
+
 ### Big imports and device storage — FIXED 2026-09-27 (NIGHT-ROLL.md "Big drafts")
 
 Josh's Chrono Trigger import (92 .spc) hit "quota has been exceeded" on
