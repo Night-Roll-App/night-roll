@@ -220,6 +220,22 @@ export function kitify(result) {
   return guess;
 }
 
+// The MIDI's tracks, before bytes: one per source channel, a channel's kit
+// notes split off — the names the renderer (spu-render.mjs) must match, so
+// the app can pair each rendered channel with its track
+export function channelGroups(result) {
+  kitify(result);
+  const byCh = new Map();
+  for (const n of result.notes) (byCh.get(n.ch) || byCh.set(n.ch, []).get(n.ch)).push(n);
+  const progsOf = evs => [...new Set(evs.map(n => n.program))].join(",");
+  const out = [];
+  for (const [ch, evs] of [...byCh].sort((a, b) => a[0] - b[0])) {
+    const kit = evs.filter(n => n.drum), mel = evs.filter(n => !n.drum);
+    if (mel.length) out.push({name: `ch ${ch + 1} prog ${progsOf(mel)}`, notes: mel, ch, kit: false});
+    if (kit.length) out.push({name: `ch ${ch + 1} prog ${progsOf(kit)}${mel.length ? " kit" : ""}`, notes: kit, ch, kit: true});
+  }
+  return out;
+}
 // type-1 MIDI: conductor (tempo map + meters) then one track per SEQ
 // channel; kit programs land on MIDI channel 10 (index 9)
 export function makeMidi(result) {
@@ -284,12 +300,7 @@ export function makeMidi(result) {
     }
     tracks.push(trackBytes(name, out, ch));
   };
-  const progsOf = evs => [...new Set(evs.map(n => n.program))].join(",");
-  for (const [ch, evs] of order) {
-    const kit = evs.filter(n => n.drum), mel = evs.filter(n => !n.drum);
-    if (mel.length) emit(`ch ${ch + 1} prog ${progsOf(mel)}`, mel, midiCh.get(ch));
-    if (kit.length) emit(`ch ${ch + 1} prog ${progsOf(kit)}${mel.length ? " kit" : ""}`, kit, 9);
-  }
+  for (const g of channelGroups(result)) emit(g.name, g.notes, g.kit ? 9 : midiCh.get(g.ch));
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
   const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, PPQ >> 8, PPQ & 255];
   for (const t of tracks) bytes.push(0x4D, 0x54, 0x72, 0x6B, ...u32(t.length), ...t);

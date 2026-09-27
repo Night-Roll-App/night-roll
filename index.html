@@ -7308,7 +7308,8 @@ async function vaultFetch(file) {
 async function chipSource() { // {bytes, n, secs} for the current song, or null
   if (chipTrackNo() !== null && (nsfSess.bytes || nsfSess.rows[chipTrackNo()].bytes)) {
     const n = chipTrackNo();
-    return {bytes: nsfSess.bytes || nsfSess.rows[n].bytes, n: nsfSess.bytes ? n : 1, secs: nsfSess.rows[n].secs || 60, chip: nsfSess.chip || "nsf"};
+    const libs = {}; for (const [k, f] of Object.entries(nsfSess.libs || {})) libs[k] = f.bytes; // the set's shared library, by lower-cased name
+    return {bytes: nsfSess.bytes || nsfSess.rows[n].bytes, n: nsfSess.bytes ? n : 1, secs: nsfSess.rows[n].secs || 60, chip: nsfSess.chip || "nsf", libs};
   }
   if (!songKey) return null;
   const base = songKey.split("/").pop().replace(/\.mid$/, "");
@@ -7402,8 +7403,8 @@ async function chipRender() {
     // a worker failure falls through to the inline render, once, and says so
   }
   const M = await chipModules(kind);
-  const nsfParsed = CHIPS[kind].parse(M)(src.bytes);
-  if (!M.renderApu) return false; // no renderer for this chip (yet): synth carries the song
+  const nsfParsed = CHIPS[kind].parse(M)(src.bytes, src);
+  if (!M.renderApu && !M.renderSpu) return false; // no renderer for this chip (yet): synth carries the song
   // a song opened on top of this one aborts the render at its next progress
   // tick — several quick opens used to leave several renders running to the
   // end (memory, and a starved audio thread: Josh, 2026-09-27)
@@ -7414,9 +7415,10 @@ async function chipRender() {
       p => { alive(); chip.progress = p * 0.3; console.log("[chip] emulating " + Math.round(p * 100) + "%"); });
   } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
   const {frameSec} = res;
-  // song time zero = first onset (the capture's trim) — find it the same way
-  const ev = res.events || M.reconstruct(res.apuLog, res.frames, frameSec);
-  const t0 = ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0;
+  // song time zero = first onset (the capture's trim) — find it the same way; a sequence chip says 0 itself
+  let leadSec = 0;
+  if (CHIPS[kind].lead) leadSec = CHIPS[kind].lead(M, res);
+  else { const ev = res.events || M.reconstruct(res.apuLog, res.frames, frameSec); leadSec = (ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0) * frameSec; }
   const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
   let r;
   try {
@@ -7425,8 +7427,9 @@ async function chipRender() {
   } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
   const pcm = {};
-  for (const name of CHIPS[kind].channels) { if (r[name] && !chipSilent([r[name]])) pcm[name] = r[name]; r[name] = null; } // a voice the song never uses keeps nothing
-  return chipPublish(forKey, kind, pcm, r.sampleRate, t0 * frameSec);
+  const names = CHIPS[kind].channels.length ? CHIPS[kind].channels : Object.keys(r).filter(k => r[k] instanceof Float32Array); // a sequence chip names its channels per song
+  for (const name of names) { if (r[name] && !chipSilent([r[name]])) pcm[name] = r[name]; r[name] = null; } // a voice the song never uses keeps nothing
+  return chipPublish(forKey, kind, pcm, r.sampleRate, leadSec);
 }
 function chipPublish(forKey, kind, pcm, sampleRate, leadSec) { // the render is in: keep it for the song it was made for
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
@@ -7461,7 +7464,9 @@ function chipRenderInWorker(kind, src, secs, rate, forKey) {
     };
     w.onerror = err => { console.warn("[chip] worker failed: " + (err && err.message || "error") + " — rendering inline"); chipWorkerAvailable.broken = true; finish(null); };
     const bytes = src.bytes instanceof Uint8Array ? src.bytes.slice() : new Uint8Array(src.bytes).slice(); // a copy: the record keeps its own
-    w.postMessage({id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, n: src.n, secs, rate}, [bytes.buffer]);
+    const libs = {}, transfer = [bytes.buffer];
+    for (const [name, b] of Object.entries(src.libs || {})) { const c2 = b instanceof Uint8Array ? b.slice() : new Uint8Array(b).slice(); libs[name] = c2; transfer.push(c2.buffer); } // a set's shared library (PS1, N64)
+    w.postMessage({id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, n: src.n, secs, rate}, transfer);
   });
 }
 function chipActive() { return chip.key === songKey && !!(chip.pcm || chip.buffers); }
@@ -13169,13 +13174,40 @@ const CHIPS = {
   psf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x01, ext: ".psf", label: "PSF",
         channels: [], perFile: true, tagged: true, keepBytes: false,
         libFile: name => /\.psflib$/i.test(name),
-        files: ["psx/psf", "psx/akao", "psx/seq", "psx/vab", "psx/notes"], shared: [], own: [],
+        files: ["psx/psf", "psx/akao", "psx/seq", "psx/vab", "psx/notes", "psx/spu-render"], shared: [], own: [],
+        // chip audio (2026-09-27): the driver's own samples, pitched per the
+        // instrument table, shaped by each instrument's envelope — spu-render.mjs.
+        // parse/run/render mirror the SNES contract; the lib rides in src.libs.
+        parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
+        run: M => async (parsed, n, secs, onProgress) => {
+          const readLib = name => { const b = parsed.libs[name.toLowerCase()]; if (!b) throw new Error("this song needs its library file " + name + " — pick it together with the songs"); return b; };
+          const chain = await M.loadPSFChain(parsed.bytes, readLib, {name: "song.minipsf", inflate: psfInflater()});
+          const {ram, ranges} = M.assembleRam(chain);
+          if (onProgress) onProgress(0.3);
+          const found = M.scanMagic(ram);
+          let result;
+          if (found.seq.length) result = M.seqNotes(M.parseSEQ(ram.subarray(found.seq[0])).sequences[0], {vab: found.vab.length ? M.parseVAB(ram.subarray(found.vab[0])) : null});
+          else {
+            const akaos = M.scanAKAO(ram);
+            if (!akaos.length) throw new Error("no SEQ or AKAO music data");
+            const own = ranges.find(r => r.name === "song.minipsf");
+            const inOwn = own ? akaos.filter(o => o >= (own.start & 0x1FFFFF) && o < (own.start & 0x1FFFFF) + own.size) : [];
+            const table = M.findInstrDat(ram);
+            result = M.akaoNotes(M.parseAKAO(ram, (inOwn.length ? inOwn : akaos)[0]), {instr: table ? {ram, offset: table.offset} : null});
+            const bank = table ? M.findSampleBank(ram, table) : null;
+            if (!table || !bank) throw new Error("no instrument table or sample bank in this rip — synthesized voices");
+            if (onProgress) onProgress(1);
+            return {result, ram, table, bank, seconds: secs};
+          }
+          throw new Error("SEQ/VAB playback is not rendered yet — synthesized voices");
+        },
+        lead: () => 0, // the capture's MIDI keeps the score's own rests: song time zero is tick 0
+        render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
+        renderRate: 44100,
         parseAsync: M => async (bytes, name) => { const psf = M.parsePSF(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
         parse: M => () => { throw new Error("PSF parses asynchronously"); },
         capture: async (M, parsed, secs, onProgress, sess) => {
-          const inflate = typeof DecompressionStream !== "undefined" && typeof Response !== "undefined" && typeof Blob !== "undefined"
-            ? async b => new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer())
-            : null; // no browser inflater (the vm tests): loadPSFChain falls back to node:zlib
+          const inflate = psfInflater(); // no browser inflater (the vm tests): loadPSFChain falls back to node:zlib
           const readLib = n => { const f = sess && sess.libs && sess.libs[n.toLowerCase()]; if (!f) throw new Error("this song needs its library file " + n + " — pick it together with the songs"); return f.bytes; };
           const chain = await M.loadPSFChain(parsed.bytes, readLib, {name: parsed.fileName, inflate});
           const {ram, ranges} = M.assembleRam(chain);
@@ -13260,6 +13292,11 @@ const CHIPS = {
                   loopAnchor: loops && res.loop.tick > 0 ? bq(res.loop.at) : null, loopTarget: loops && res.loop.tick > 0 ? bq(res.loop.tick) : null, warnings};
         }},
 };
+function psfInflater() { // a PSF program is zlib-deflated: the browser's inflater, or null (node:zlib in the vm tests)
+  return typeof DecompressionStream !== "undefined" && typeof Response !== "undefined" && typeof Blob !== "undefined"
+    ? async b => new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer())
+    : null;
+}
 function chipTrackOrder(files) { // a set's files in disc/track/part order, unlisted (99/999) last; anything unparsable by name
   const M = chipModules.cache && chipModules.cache.spc;
   const key = f => { const t = M && M.parseTrackName ? M.parseTrackName(f.name) : null; return t ? [t.unlisted ? 1 : 0, t.disc || 0, t.track, t.part || ""] : [2, 0, 0, f.name]; };

@@ -1364,6 +1364,39 @@ Filesystem plugins.
 autosave-on-edit in folder mode (explicit Save kept for parity and so
 Revert still means something), copying the FF1 corpus into a folder.
 
+## PlayStation chip audio — the console's own samples (2026-09-27)
+
+Josh, FF7 Opening ~ Bombing Mission against the OST: "they just don't
+sound like the same instrument … hopefully the information should be
+there." It is: the psflib carries INSTR.ALL, the SPU-ADPCM sample bank,
+loaded contiguously into SPU RAM. `tools/psx/spu-render.mjs`:
+`findSampleBank(ram, table)` finds the RAM offset where every
+instrument's address lands on a valid block and an end-flag block sits
+right before the next instrument's start (FF7: 93/93, base 0x800ef000,
+first sample at SPU 0x1010); `renderSpu(result, {ram, table, bank,
+sampleRate, keepSeconds, onProgress})` decodes each instrument's sample
+once (`decodeAdpcm`; loop from the block flags or the table's loop
+address), plays every note of the capture at SPU pitch
+base[key % 12] × 2^(floor(key / 12) − 6) (VGMTrans's rule: degree 0 at
+octave 6 = the table's base pitch; not verified by ear per instrument —
+autocorrelation and spectra disagree on these samples), through a
+streamed SPU ADSR (`Envelope`: attack/decay/sustain/release with the
+rate → shift/step math), at the score's velocity, linear interpolation,
+mono and dry (no pan, no reverb, no in-note volume slides). Output: the
+SNES contract — `{sampleRate, seconds, [name]: Float32Array}` with one
+channel per MIDI track, named by `channelGroups(result)` (notes.mjs;
+makeMidi now emits through the same helper, so names match). App:
+`CHIPS.psf` gained `parse` (bytes + `src.libs`), `run` (chain → RAM →
+AKAO → table → bank), `lead` (0), `render`, `renderRate` 44100;
+`chipRender` passes `src` to parse, takes a chip's own `lead`, and reads
+channel names off the render when `channels` is empty; `chipSource`
+adds the session's `libs`; `chipRenderInWorker` ships them
+(transferred copies); `tools/chip-worker.mjs` has a `psf` runner and
+takes `libs`. Limits: chip audio for PS1 lives only in the import
+session (keepBytes false: after a reload the vault has no lib yet, so
+synthesized voices return); SEQ/VAB games are not rendered yet. Test:
+tests/psx-render.test.mjs (a synthetic rip: table, bank, one note).
+
 ## PlayStation captures: envelopes from the instrument table (2026-09-27)
 
 Josh: "why isn't it looking at the instrument table?" Now it does.
