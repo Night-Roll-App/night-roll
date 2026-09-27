@@ -31,6 +31,30 @@ enrolled. Next: Phase 2, the real shell (Files-app storage, icon, name,
 TestFlight). Still needs Josh: a support email address; two more starter
 songs; "merge it" for the overnight branch.
 
+## OPEN DESIGN QUESTION (Josh, 2026-09-27): where saves live on the iPad
+
+The Files checkbox in Settings (Saving tab) is the desktop folder mode:
+on, Save writes into Files → On My iPad → Night Roll and Publish is
+BYPASSED. Josh read it as "everything in Files until I hit Publish" and
+found it confusing; then: "I would like everything that I do to be
+saved locally and up on GitHub … I think we need to think through it
+some more." Not the same as the folder mode (which exists for people
+with no GitHub account). Candidate: Save writes a visible copy into
+Files always (a mirror, never read from), Publish still goes to GitHub;
+the checkbox then means only "no GitHub". Decide with Josh before any
+code; until then the box is documented as-is (help sheet, folder entry).
+
+## STARTERS (2026-09-27): four public-domain pieces
+
+Bach Prelude in C (piano, tracks arpeggio/tenor/bass), Gymnopédie No. 1
+(full 78 bars, verified against Mutopia's edition), Für Elise (A
+section, 31 bars incl. the written-out repeat), Moonlight Sonata first
+movement (agent in progress). Generator scripts were not committed (the
+Bach precedent). Known drift: albums/manifest.json's imports albums are
+in in-app order, `node tools/build_manifest.mjs` would re-sort them —
+the starters were inserted by hand to avoid a 300-line reorder; decide
+whether the tool or the app owns the order.
+
 ## QUEUED IDEA (Josh, 2026-09-27): "✦ Annotate this song for me"
 
 Import a classical MIDI, ask the AI to analyze it and write the
