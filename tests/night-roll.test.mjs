@@ -1121,6 +1121,22 @@ test("audio tracks: the audio: annotation round-trips and derives kind/clip onto
   run(`editUndo = []; song = null; songKey = null; rollnotes = [];`);
 });
 
+test("loadNotes: the repo file's saved stamp becomes the song's base, so another device's first draft is not 'older than a newer save'", async () => {
+  run(`globalThis.__prevFetchS = fetch; fetch = async () => ({ok: true, status: 200, text: async () => JSON.stringify({saved: 1790440274161, notes: [{b1: 1, q1: 1, b2: null, q2: null, text: "section: A"}]})});`);
+  run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 72, v: 80}]}]};
+    song.baseTempos = null; song.rawNotes = song.tracks.map(tr => tr.notes.map(n => ({...n})));
+    songKey = "albums/compositions/nightroll/stamp-test.mid";
+    trackState = song.tracks.map(() => ({muted: false, solo: false}));
+    keyRegions = []; previewSf = null; playCursor = 0; playRate = 1; rangeSel = null; loopSeg = null; rollnotes = [];
+    localStorage.removeItem("ff1roll-notes-" + songKey); localStorage.removeItem("ff1roll-lastsync-" + songKey);
+  `);
+  await run(`loadNotes()`);
+  assert.equal(run(`song.savedStamp`), 1790440274161, "the file's stamp is the draft's base");
+  assert.equal(run(`rollnotes.some(n => n.section)`), true, "notes still load");
+  run(`fetch = globalThis.__prevFetchS;`);
+});
+
 test("audio tracks: an unsynced audio: note survives a reload — local notes re-derive from text", async () => {
   run(`globalThis.__prevFetch2 = fetch; fetch = () => Promise.reject(new Error("no network"));`);
   run(`

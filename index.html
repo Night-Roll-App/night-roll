@@ -2689,6 +2689,11 @@ async function loadNotes() {
       } catch (err) { /* corrupt bridge: ignore */ }
       if (text !== null) {
         rollnotes = parseRollnotes(text).map(resolveNote);
+        // the file's save stamp is the base this device's draft derives from.
+        // It was only ever set by THIS device's own Publish, so any other
+        // device tripped "newer save exists" on its first edit (Josh, the
+        // fresh Xcode shell, Threnody II, 2026-09-27)
+        try { const j = JSON.parse(text); if (j && typeof j.saved === "number" && song && j.saved > (song.savedStamp || 0)) song.savedStamp = j.saved; } catch (err) { /* legacy text format carries no stamp */ }
         try { // subtract tombstoned deletions (they only die for real on Sync)
           const tombs = new Set(JSON.parse(localStorage.getItem(tombKey()) || "[]"));
           if (tombs.size) rollnotes = rollnotes.filter(n => !tombs.has(noteIdentity(n)));
