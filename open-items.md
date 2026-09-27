@@ -323,6 +323,13 @@ note priority opcode, OoT/MM channel B0–BE, s8 sequence register → a
 (like PS1's lib); per-game manifest keyed on the lib's NUS code; bank
 tuning not applied yet (+21 convention), drums unnamed.
 
+### PlayStation (PSF) — IN THE APP 2026-09-27 (NIGHT-ROLL.md "PlayStation import")
+
+File → Import takes the .minipsf files WITH their .psflib (multi-select
+all). Verified on the real FF7 set (90 rows; Prelude, Tifa, Main Theme
+full length with their loops and tempo changes). Synth voices; the PS1
+SPU renderer (VAB/AKAO instruments) later. Next: N64.
+
 ### Genesis (VGM) — IN THE APP 2026-09-27 (NIGHT-ROLL.md "Genesis import")
 
 Josh: "is it gonna download games to test it with?" File → Import takes a

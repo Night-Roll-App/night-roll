@@ -531,6 +531,34 @@ Green Hill Zone captured in 99 ms at exactly 150 bpm, 8 tracks
 (fm1–fm5, psg1–2, drums), `loop: 10.2` at bar 34. Test: "VGM import: …"
 (synthetic VGM through captureChipTrack; the .vgz sniff by name).
 
+**PlayStation import (2026-09-27; verified on the real Final Fantasy VII
+set).** The fifth chip and the first SEQUENCE one: a PSF is a program
+image, and the reader yields notes in ticks with a tempo map and meter,
+so `CHIPS.psf` has a `capture` of its own and never enters the
+frame/loop-scan/tempo-fit path. A set is many `.minipsf` plus ONE
+`.psflib` named by every mini's `_lib` tag — `libFile(name)` keeps the
+lib out of the rows and in `nsfSess.libs` (by lowercase name);
+`parseAsync(bytes, name)` reads the tags (title/game/artist/length) and
+keeps the bytes; the panel status names a missing lib; a capture
+without it fails with the lib's name in the row. `capture`: inflate the
+chain with DecompressionStream("deflate") (`loadPSFChain` with the
+session's libs as `readLib`), `assembleRam` (2 MiB, assemble → scan →
+drop), `scanMagic` → SEQ/VAB path (`parseSEQ`/`parseVAB`/`seqNotes`)
+else `scanAKAO` → prefer the sequence inside the mini's own range →
+`akaoNotes`; the PSX `makeMidi(result)` writes the file (conductor
+with the tempo map and meters, a track per voice, drums split to
+channel 10); bpm = the first tempo, seconds from the tempo map, the
+sequence's loop → `loop:` annotation in the sequence's meter; the
+reader's warnings go to the row's tooltip, the console and a "· N
+notes" suffix. `keepBytes: false` (no renderer, nothing stored or
+uploaded); `parseMidi(buf, {trust: true})` for imports (and for
+`albums/imports/**` on load) turns off the corrupt-file guards that cut
+FF7's 41-bar rests. Verified in Chrome: 90 rows with tag titles,
+Prelude 2836 notes / 13 tracks / `loop: 17.2.25`, Tifa 536 notes, Main
+Theme 2238 notes with 11 tempo points and `loop: 19.1`, ~1.1 s each.
+Test: "PSF import: …" (synthetic minipsf + lib; the missing-lib error;
+the trust flag on a 41-bar rest).
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware

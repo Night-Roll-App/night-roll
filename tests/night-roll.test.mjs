@@ -1443,6 +1443,36 @@ test("VGM import: a Genesis log goes through the capture path; gz sniff by name;
   assert.ok(got.bpm > 60 && got.bpm < 300, "sane tempo: " + got.bpm);
 });
 
+test("PSF import: a minipsf + psflib set captures through the sequence reader; a missing lib is named; trusted MIDI keeps long rests", async () => {
+  const M = {...(await import("../tools/psx/psf.mjs")), ...(await import("../tools/psx/akao.mjs")), ...(await import("../tools/psx/seq.mjs")), ...(await import("../tools/psx/vab.mjs")), ...(await import("../tools/psx/notes.mjs"))};
+  const T = await import("../tools/psx/make-test-seq.mjs");
+  const akao = T.makeTestAKAO({voices: {0: [0xA5, 5, 0x02, 0xA0]}}); // one voice: octave, a note, end
+  const {lib, mini} = T.makeTestMiniPSF(akao, {title: "Test Tune"});
+  assert.equal(val(`chipKindOf(new Uint8Array(${JSON.stringify([...mini.subarray(0, 12)])}), "101 Test.minipsf")`), "psf");
+  assert.equal(val(`CHIPS.psf.libFile("Final Fantasy 7.psflib") && !CHIPS.psf.libFile("101 The Prelude.minipsf")`), true);
+  app.context.__M = M;
+  app.context.__mini = mini; app.context.__lib = lib; app.context.__libName = T.TEST_LIB_NAME;
+  run(`__pP = CHIPS.psf.parseAsync(__M)(__mini, "101 Test.minipsf").then(p => { __parsed = p; });`);
+  await app.context.__pP;
+  assert.equal(val(`__parsed.name`), "Test Tune"); assert.deepEqual(val(`__parsed.libs`), [T.TEST_LIB_NAME]);
+  // without the lib: a named error, no crash
+  run(`__e1 = null; CHIPS.psf.capture(__M, __parsed, 0, () => {}, {libs: {}}).catch(e => { __e1 = String(e.message); });`);
+  await new Promise(r => setTimeout(r, 200));
+  assert.match(val(`__e1`), /needs its library file Test Game\.psflib/);
+  // with the lib: a MIDI with the melody
+  run(`__cap = null; __e2 = null; CHIPS.psf.capture(__M, __parsed, 0, () => {}, {libs: {[__libName.toLowerCase()]: {bytes: __lib}}}).then(c => { const parsed = parseMidi(new Uint8Array(c.bytes).buffer, {trust: true}); __cap = {bpm: c.bpm, secs: c.secs, looped: c.looped, notes: parsed.tracks.reduce((a, t) => a + t.notes.length, 0), tracks: parsed.tracks.length}; }).catch(e => { __e2 = String(e.stack || e); });`);
+  await new Promise(r => setTimeout(r, 1500));
+  assert.equal(val(`__e2`), null, "capture threw: " + val(`__e2`));
+  const got = val(`__cap`);
+  assert.ok(got && got.notes > 0, "notes from the AKAO sequence: " + JSON.stringify(got));
+  assert.ok(got.bpm > 30 && got.bpm < 300, "tempo from the sequence: " + got.bpm);
+  // the trust flag keeps a 41-bar rest that the corrupt-file guard would cut
+  const ppq = 480; const far = 41 * 4 * ppq;
+  const smf = (() => { const vlq = n => { const b = [n & 0x7F]; while ((n >>= 7) > 0) b.unshift((n & 0x7F) | 0x80); return b; }; const body = [0, 0x90, 60, 100, ...vlq(240), 0x80, 60, 0, ...vlq(far), 0x90, 64, 100, ...vlq(240), 0x80, 64, 0, 0, 0xFF, 0x2F, 0]; const u32 = n => [n >>> 24 & 255, n >>> 16 & 255, n >>> 8 & 255, n & 255]; return [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 0, 0, 1, ppq >> 8, ppq & 255, 0x4D, 0x54, 0x72, 0x6B, ...u32(body.length), ...body]; })();
+  assert.equal(val(`parseMidi(new Uint8Array(${JSON.stringify(smf)}).buffer).tracks[0].notes.length`), 1, "the guard cuts after a 41-bar rest by default");
+  assert.equal(val(`parseMidi(new Uint8Array(${JSON.stringify(smf)}).buffer, {trust: true}).tracks[0].notes.length`), 2, "trusted: both notes survive");
+});
+
 test("chip vault meta: one file per album for NSF/GBS, a folder of per-track files for SNES", () => {
   assert.deepEqual(val(`chipVaultMeta("tmnt", "nsf")`), {vault: "tmnt.nsf", tracks: {}});
   assert.deepEqual(val(`chipVaultMeta("ffl", "gbs")`), {vault: "ffl.gbs", tracks: {}, chip: "gbs"});
@@ -1520,7 +1550,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "General chat", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "General chat", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
