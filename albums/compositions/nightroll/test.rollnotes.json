@@ -1,4 +1,0 @@
-{ "version": 1, "song": "test", "saved": 1786941071771, "notes": [
-  {"at":[1,1],"type":"timesig","timesig":"4/4"},
-  {"at":[1,1],"type":"key","key":"Cm"}
-] }

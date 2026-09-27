@@ -118,9 +118,14 @@ yours (yes per move):
 
 - `final-fantasy-i/` — as-is (its `songs/` sub-folder stays a scanner
   rule, L20; analysis/ and reference/ untouched).
-- `compositions/` ("My Compositions") — as-is. Your three Logic
-  exports (CM6-G7b9, cool-b-maj-with-b-part, threnody) get
-  `"locked": [...]` in album.json: Save As only, never `writeMidi`.
+- `compositions/` ("My Compositions") — as-is. The three songs there
+  (CM6-G7b9, cool-b-maj-with-b-part, threnody) were made in Night Roll
+  and moved here when Josh considered them finished (correction: an
+  earlier draft of this doc called them Logic exports; the git history
+  says "Save … from Night Roll"). Today the app never rewrites a .mid
+  outside nightroll/, so editing one forces Save As; "finished songs
+  are protected from accidental edits" is the rule to keep, as
+  `"locked": [...]` in album.json.
 - `compositions/nightroll/` ("Night Roll Sketches") — an ordinary
   nested folder. Keep, rename, or merge its 14 songs up into
   compositions/ (section 7). `NR_DIR` (L11826) stops being special:
@@ -234,7 +239,8 @@ before it does so resurrects the old path. So: few moves, batched.
    *Default: merge, in the same batch.*
 5. iPad: Save always writes Files, no checkbox? *Default: yes.*
 6. Should Save also publish? *Default: no — one deliberate tap.*
-7. Keep the three Logic exports locked? *Default: yes.*
+7. Keep the three finished songs in compositions/ protected (Save As
+   only)? *Default: yes.*
 8. The strays in nightroll/ (test.rollnotes.json,
    test-chord-inserts.rollnotes.json, cool-b-maj-with-b-part.md)?
    *Default: ask you per file.*

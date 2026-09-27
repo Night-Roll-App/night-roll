@@ -31,6 +31,24 @@ enrolled. Next: Phase 2, the real shell (Files-app storage, icon, name,
 TestFlight). Still needs Josh: a support email address; two more starter
 songs; "merge it" for the overnight branch.
 
+## SONG ORGANIZATION — JOSH'S ANSWERS (2026-09-27 evening)
+
+Proposal: docs/song-organization-proposal.md. His rulings on its
+questions: 1 ASK FIRST before making a local copy of a published song
+(not silent); 2 mirror the local tree on GitHub (default); 3 console
+folders as parents, move the imports AND Final Fantasy I under nes/ in
+one batch (his addition); 4 DO NOT merge nightroll/ — "I can move them
+on my own. I'm not ready for some of those to be official
+compositions"; 5 iPad Save always writes Files, no checkbox; 6 Save
+never publishes; 7 the three songs in compositions/ are finished Night
+Roll songs (NOT Logic exports — the doc was wrong, corrected), keep
+them protected; 8 the two test rollnotes deleted, the Cool B Maj
+journal moved beside its song (done, this commit). Stale leftover:
+nightroll/cool-b-maj-with-b-part.notes.txt (an older dump of the moved
+song; the current one is in compositions/) — delete on his word.
+Build order per the doc: wording → Save with folders + mirrored
+publish → Open LOCAL/PUBLISHED → iPad Files → the one batch of moves.
+
 ## OPEN DESIGN QUESTION (Josh, 2026-09-27): where saves live on the iPad
 
 The Files checkbox in Settings (Saving tab) is the desktop folder mode:

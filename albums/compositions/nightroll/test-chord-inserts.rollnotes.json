@@ -1,8 +1,0 @@
-{ "version": 1, "song": "test-chord-inserts", "saved": 1786941035713, "notes": [
-  {"at":[1,1],"type":"timesig","timesig":"4/4"},
-  {"at":[1,1],"type":"key","key":"Cm"},
-  {"at":[1,1],"type":"tempo","bpm":60},
-  {"at":[1,1],"type":"tempo","bpm":60},
-  {"at":[1,1],"type":"track","track":"pulse1","voice":"sf-violin"},
-  {"at":[1,1],"type":"track","track":"pulse1","voice":"sf-violin"}
-] }
