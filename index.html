@@ -11236,7 +11236,11 @@ function micJoin(parts) {
 }
 function micToggle(btn, textarea, statusFn) { // shared dictation: append into any box
   if (micRec) { const same = micBtn === btn; micStop(!same); if (same) return; } // same button = a tapped Stop: its words still land
-  if (micPrev) { micPrev.onresult = null; micPrev = null; } // a stale late result must not overwrite this session's base
+  // a stale late result must not overwrite this session's base — and Safari
+  // runs ONE recognition at a time: a stopped session still winding down made
+  // the new start() throw while the button said it was listening (Josh,
+  // 2026-09-26: "it just wasn't accepting anything")
+  if (micPrev) { micPrev.onresult = null; try { micPrev.abort(); } catch (err) { /* already gone */ } micPrev = null; }
   const base = textarea.value ? textarea.value.replace(/\s+$/, "") + " " : "";
   let finals = "";
   micRec = new SPEECH();
@@ -11258,7 +11262,8 @@ function micToggle(btn, textarea, statusFn) { // shared dictation: append into a
   micRec.onend = () => micStop(); // Safari ends recognition on silence
   btn.classList.add("active");
   btn.textContent = "■ Stop listening"; // the Ask sheet has a second ■ (stop reply): say which this is
-  micRec.start();
+  try { micRec.start(); }
+  catch (err) { statusFn("Dictation couldn't start (" + (err.message || err) + ") — tap 🎤 again"); micStop(true); } // never a listening button that isn't
 }
 nmic.addEventListener("click", () =>
   micToggle(nmic, document.getElementById("ntext"), s2 => document.getElementById("nstatus").textContent = s2));
