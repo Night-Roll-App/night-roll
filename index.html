@@ -646,6 +646,8 @@
   .askmsg.user { background: var(--panel2); border: 1px solid var(--grid); align-self: flex-end; }
   .askmsg.ai { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; }
   .askmsg.err { color: #e66767; }
+  #askmoderow { gap: 6px; margin-bottom: 4px; }
+  #askmoderow button { min-height: 30px; padding: 3px 12px; font-size: 12px; }
   .askmsg.note { background: rgba(230,192,96,.10); border: 1px solid rgba(230,192,96,.5); align-self: stretch; white-space: pre-wrap; }
   #askbtn.hasnote::after { content: " ✉"; color: #e6c060; }
   .askmsg.earlier { font-family: var(--mono); font-size: 12px; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
@@ -1348,6 +1350,7 @@
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
       <dt>🎤 Speak / ■ Stop</dt><dd>Tap <b>🎤 Speak</b> to dictate a question, <b>■ Stop</b> to cut a slow reply short.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
+      <dt>General chat</dt><dd>At the top of ✦ Ask, <b>♪ this song</b> / <b>✦ general</b> pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ Ask as a gold <b>✉</b> bubble (inbox), and the <b>✦ Ask</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).</dd>
       <dt>Where the model runs</dt><dd>File → Settings… → <b>AI model</b>. <b>In this browser</b>: pick a small model (0.4–4 GB), the first Ask downloads it once and it runs on this device's GPU, nothing leaves the device; Test checks WebGPU and whether it's downloaded. <b>On a server</b>: the URL of an OpenAI-compatible server — LM Studio or Ollama on this computer (<code>http://localhost:1234</code>) or on another machine on your network — plus an optional API key; <b>Test</b> lists the server's models, picks one (your last pick if the server still has it), saves, and names exactly what's wrong when it can't (server off, CORS not enabled, https page talking to an http server, no answer in 8 s). On an iPad the server must be https (Tailscale Serve). The first time you point it at a machine other than this one, it asks once before sending your notes there.</dd>
@@ -1568,6 +1571,10 @@
 <div class="overlay" id="asksheet">
   <div class="sheet ask">
     <h2>ASK</h2>
+    <div class="chiprow" id="askmoderow" role="tablist" aria-label="Which chat">
+      <button id="askmodesong" role="tab" class="active">♪ this song</button>
+      <button id="askmodegen" role="tab">✦ general</button>
+    </div>
     <div id="asklog"></div>
     <div class="chiprow" id="asktakes"></div>
     <div class="row" id="askspanrow">
@@ -15138,6 +15145,7 @@ function askSpanNotes(t0, t1, maxChars) { // notesTxtFor's shape, three deltas: 
   return L.join("\n");
 }
 function askContext(sp, budget) { // the ONE block per request; never stored
+  if (askGeneral) return "general chat — no song attached. The user opened the general Ask: for the app, the project, music in general, or a message for the terminal; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. The tutor rule about the user's own discoveries still holds for music questions.";
   const bt = barTicks(), qt = beatTicks(), ts = effTs();
   const tick = curTick();
   const own = isComposition() || isLocalDraft() || songKey === null;
@@ -15171,7 +15179,32 @@ function askStripContext(text) { return text.replace(/^<context>[\s\S]*?<\/conte
 // ---- history: per song, context stripped at SAVE time, capped so it can
 // never crowd out saveDraft (drafts are the only copy of unsynced music)
 const ASK_LOCAL_SOFT = 256 * 1024, ASK_TOTAL_CAP = 512 * 1024;
-function askStoreKey() { return "ff1roll-ask-" + (songKey || "local"); }
+// General chat (2026-09-27, Josh via the bridge: "some sort of main ask
+// section that's not per song … I'm talking to you on the death song from
+// Final Fantasy but nothing we're talking about has anything to do with
+// that"). One more chat key, "general": its own store, its own resumed
+// bridge session, no song context, no annotation tool, and a repo-level
+// log at ask/general.ask.md that Publish ships like a song's chat. The
+// toggle at the top of the sheet picks; the choice is a device preference.
+const ASK_GENERAL_KEY = "ff1roll-ask-general";
+const ASK_GENERAL_LOG = "ask/general.ask.md";
+let askGeneral = false;
+try { askGeneral = localStorage.getItem("ff1roll-ask-mode") === "general"; } catch (err) { askGeneral = false; }
+function askSetMode(general) {
+  askGeneral = !!general;
+  try { localStorage.setItem("ff1roll-ask-mode", askGeneral ? "general" : "song"); } catch (err) { /* private mode */ }
+  askModeButtons();
+}
+function askModeButtons() {
+  const a = document.getElementById("askmodesong"), b = document.getElementById("askmodegen");
+  if (!a || !b) return;
+  a.classList.toggle("active", !askGeneral); b.classList.toggle("active", askGeneral);
+  a.setAttribute("aria-selected", String(!askGeneral)); b.setAttribute("aria-selected", String(askGeneral));
+  const spanrow = document.getElementById("askspanrow"); if (spanrow) spanrow.style.display = askGeneral ? "none" : "";
+  const fillrow = document.getElementById("askfill"); if (fillrow && askGeneral) fillrow.style.display = "none";
+  if (typeof askinput !== "undefined" && askinput) askinput.placeholder = askGeneral ? "Anything — the app, the project, music in general, a message for the terminal…" : "Ask about what you're looking at…";
+}
+function askStoreKey() { return askGeneral ? ASK_GENERAL_KEY : "ff1roll-ask-" + (songKey || "local"); }
 // The chat is his session record (Josh, 2026-09-25): it lives here whole
 // until the song's Save appends it to <song>.ask.md, and only messages the
 // repo file already holds ever leave this device. `saved` counts those from
@@ -15216,8 +15249,9 @@ function askEvictOthers(mine) { // other songs' logs go LRU-first when the total
   } catch (err) { /* enumeration failed: skip eviction */ }
 }
 function askModelName() { const c = cfg(); return c.aiBackend === "browser" ? c.aiBrowserModel : (c.aiModel || (askModelCache && askModelCache.ids[0]) || "model"); }
-function askLogPath() { return notesBase() ? notesBase() + ".ask.md" : null; } // beside the .mid (compositions) or the .rollnotes.json (analyzed)
-function askLogHeader() {
+function askLogPath(key) { return (key || askStoreKey()) === ASK_GENERAL_KEY ? ASK_GENERAL_LOG : notesBase() ? notesBase() + ".ask.md" : null; } // beside the .mid (compositions) or the .rollnotes.json (analyzed); the general chat at the repo root
+function askLogHeader(key) {
+  if ((key || askStoreKey()) === ASK_GENERAL_KEY) return "# ✦ Ask log — general\n\nThe chat that is not about one song (the app, the project, music in general, messages for the terminal). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
   return "# ✦ Ask log — " + songTitleOf(songKey) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
 }
 function askLogMarkdown(msgs) { // what Save appends: one heading per question (when, which bars), the reply under it
@@ -15232,19 +15266,21 @@ function askLogMarkdown(msgs) { // what Save appends: one heading per question (
   }
   return out;
 }
-async function askCommitLog(h) { // Save's chat leg: append the unsaved messages to <song>.ask.md
-  const path = askLogPath();
-  const st = askStore();
+async function askCommitLog(h, keyArg) { // Save's chat leg: append the unsaved messages to <song>.ask.md (or the general log)
+  const key = keyArg || (askGeneral ? "ff1roll-ask-" + (songKey || "local") : askStoreKey()); // a song's Publish ships the SONG's chat even while the general tab is showing
+  const general = key === ASK_GENERAL_KEY;
+  const path = askLogPath(key);
+  const st = askStore(key);
   const fresh = st.msgs.slice(st.saved);
   if (!path || !fresh.length) return;
   const add = askLogMarkdown(fresh);
   if (folderActive()) {
     const f = await folderRead(path);
-    await folderWrite(path, (f ? await f.text() : askLogHeader()) + add);
+    await folderWrite(path, (f ? await f.text() : askLogHeader(key)) + add);
   } else {
-    const repo = isComposition() ? "songs" : "analysis";
+    const repo = general || isComposition() ? "songs" : "analysis";
     const putOnce = async () => {
-      let sha = null, old = askLogHeader();
+      let sha = null, old = askLogHeader(key);
       const g = await fetch(repoApi(repo) + path + "?ref=main", {headers: h, cache: "no-store"});
       if (g.ok) {
         const j = await g.json();
@@ -15261,8 +15297,8 @@ async function askCommitLog(h) { // Save's chat leg: append the unsaved messages
     if (r.status === 409) r = await putOnce();
     if (!r.ok) throw new Error(".ask.md HTTP " + r.status);
   }
-  const now = askStore(); // messages may have arrived meanwhile; only the snapshot is in the file
-  askSave(now.msgs, {saved: now.saved + fresh.length});
+  const now = askStore(key); // messages may have arrived meanwhile; only the snapshot is in the file
+  askSave(now.msgs, {saved: now.saved + fresh.length}, key);
 }
 function askBuildMessages(msgs, text, ctx, budget) { // stripped history newest-first until the history budget is spent
   const out = [];
@@ -15291,7 +15327,8 @@ const askstatus = document.getElementById("askstatus");
 // reaches <song>.ask.md), and lights ✉ on the Ask button until read. Only a
 // host already allowed for Ask is polled; a server without /v1/inbox (LM
 // Studio, Ollama) is asked once and left alone.
-function askSessionName() { return String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160); }
+function askSessionName() { return askGeneral ? "general" : String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160); }
+function askToolsNow() { return askGeneral ? ASK_TOOLS.filter(t => t.function.name !== "add_annotation") : ASK_TOOLS; } // no song to annotate in the general chat
 function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
 let askInboxNo = ""; // the url that answered 404 (no inbox there)
 let askInboxTimer = null;
@@ -15338,7 +15375,8 @@ function askRender() {
   const msgs = st.msgs;
   if (st.trimmed) askRenderEarlier();
   let pendingSeen = false;
-  if (!msgs.length && !st.trimmed) askBubble("ai", "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
+  if (!msgs.length && !st.trimmed && askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
+  else if (!msgs.length && !st.trimmed) askBubble("ai", "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
   for (const m of msgs) { askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", m.role === "note" ? askNoteLabel(m.m) + m.content : askStripContext(m.content)); if (m.pending) { askBubble("ai", "… (still working — the reply lands here)"); pendingSeen = true; } }
   if (pendingSeen) askResumeSoon(200);
 }
@@ -15438,7 +15476,7 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
   document.getElementById("asksend").disabled = true;
   const jobs = await askJobsSupported();
   try {
-    let out = await aiProvider().chat({system: ASK_SYS, messages, signal: ctl.signal, onDelta: raw => askShowThinking(live, raw), onStatus: t => { askstatus.textContent = t; }, tools: ASK_TOOLS, onTool: askRunTool, job: jobs ? jobId : undefined});
+    let out = await aiProvider().chat({system: ASK_SYS, messages, signal: ctl.signal, onDelta: raw => askShowThinking(live, raw), onStatus: t => { askstatus.textContent = t; }, tools: askToolsNow(), onTool: askRunTool, job: jobs ? jobId : undefined});
     out = out.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
     if (!out) out = "(no reply — try rephrasing)";
     live.textContent = out;
@@ -15522,12 +15560,17 @@ function openAsk() {
   askRender();
   askRefresh();
   askRefreshTarget();
-  askinput.placeholder = "Ask about what you're looking at…";
+  askModeButtons(); // sets the placeholder for the mode
   asksheet.classList.add("on");
   askGrow();
   askinput.focus();
 }
 document.getElementById("askbtn").addEventListener("click", openAsk);
+for (const [id, general] of [["askmodesong", false], ["askmodegen", true]]) document.getElementById(id).addEventListener("click", () => {
+  if (askGeneral === general) return;
+  askSetMode(general);
+  askRender(); askRefresh(); askRefreshTarget();
+});
 document.getElementById("askreplybtn").addEventListener("click", openAsk);
 document.getElementById("askgear").addEventListener("click", () => { asksheet.classList.remove("on"); openSettingsSheet(); });
 document.getElementById("askclear").addEventListener("click", async () => { // Clear = new session; unsaved messages are the one thing it can destroy
@@ -15632,6 +15675,7 @@ function askFillable() { // the Bassist's gates, with the reason
   return null;
 }
 function askRefreshTarget() {
+  if (askGeneral) { document.getElementById("askfill").style.display = "none"; return; } // nothing to fill in the general chat
   const row = document.getElementById("asktargetrow");
   const gate = askFillable();
   row.style.display = gate ? "none" : "";
@@ -16058,6 +16102,7 @@ function pendingSongs() { // every song with anything to ship, the open one firs
   for (const k of Object.keys(localStorage)) {
     if (!k.startsWith("ff1roll-ask-")) continue;
     const key = k.slice("ff1roll-ask-".length);
+    if (key === "general") { if (askUnsavedCount(k) > 0) set.add("general"); continue; } // the general chat: no song, its own block
     if (key !== "local" && syncable(key) && askUnsavedCount(k) > 0) set.add(key);
   }
   return [...set].sort((a, b) => (a === songKey ? -1 : b === songKey ? 1 : 0) || a.localeCompare(b));
@@ -16076,6 +16121,30 @@ function renderSyncPending() {
   };
   for (const key of pendingSongs()) {
     const block = document.createElement("div");
+    if (key === "general") { // the general chat ships by itself: one tap, no song involved
+      block.className = "psong";
+      const title = document.createElement("div");
+      title.className = "ptitle";
+      const tspan = document.createElement("span"); tspan.textContent = "✦ General chat"; tspan.style.flex = "1";
+      const b = document.createElement("button");
+      b.textContent = folderActive() ? "Save chat" : "Publish chat";
+      b.title = "Append the unsaved general chat to " + ASK_GENERAL_LOG;
+      b.addEventListener("click", async () => {
+        const status = document.getElementById("syncstatus");
+        const token = folderActive() ? "folder" : takeToken(status);
+        if (!token) return;
+        b.disabled = true; status.textContent = "Publishing the general chat…";
+        try { await askCommitLog(folderActive() ? null : ghHeaders(token), ASK_GENERAL_KEY); status.textContent = "General chat published ✓"; }
+        catch (err) { status.textContent = "⚠ general chat: " + err.message; }
+        b.disabled = false; updateSyncBtn(); renderSyncPending();
+      });
+      title.append(tspan, b);
+      block.appendChild(title);
+      const n = askUnsavedCount(ASK_GENERAL_KEY);
+      line(block, "✦ " + n + " chat message" + (n === 1 ? "" : "s") + " unsaved");
+      box.appendChild(block);
+      continue;
+    }
     block.className = "psong" + (key === songKey ? " open" : "");
     const title = document.createElement("div");
     title.className = "ptitle";
@@ -16467,9 +16536,13 @@ document.getElementById("ghsaveall").addEventListener("click", async e => {
   const token = takeToken(status);
   if (!token) return;
   const dirty = dirtySongs();
-  if (!dirty.length) { status.textContent = "No unsynced annotations on this device (music and chat commit from the open song)."; return; }
+  const generalChat = askUnsavedCount(ASK_GENERAL_KEY) > 0;
+  if (!dirty.length && !generalChat) { status.textContent = "No unsynced annotations on this device (music and chat commit from the open song)."; return; }
   btn.disabled = true;
   const results = [];
+  if (generalChat) { // the general chat rides Publish all too
+    try { await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY); results.push("general chat ✓"); } catch (err) { results.push("general chat ✗ " + err.message); }
+  }
   for (const key of dirty) {
     const short = key.split("/").pop().replace(/\.midi?$/i, "");
     status.textContent = "Publishing " + short + "… " + results.join("  ");

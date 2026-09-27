@@ -1264,6 +1264,21 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     answerable. `GET /v1/jobs` now says `inbox: true`. Tool rounds get
     their own job id (`<job>-r<round>`) — the same id replayed round
     one's tool call forever through the bridge.
+  - **General chat (2026-09-27, Josh via the bridge: "some sort of main
+    ask section that's not per song").** `askGeneral` (device pref
+    `ff1roll-ask-mode`) is picked by the ♪ this song / ✦ general toggle at
+    the top of the sheet. In general mode: store key `ff1roll-ask-general`
+    (`ASK_GENERAL_KEY`), bridge session name `general` (so it is one more
+    entry in sessions.json), `askContext` is one sentence saying no song
+    is attached, `askToolsNow()` drops add_annotation, the span/fill rows
+    hide, and the log is the repo-level `ask/general.ask.md`
+    (`ASK_GENERAL_LOG`; `askLogPath/askLogHeader/askCommitLog` take a key).
+    Publishing: `pendingSongs()` lists "general" when it has unsaved
+    messages; the PUBLISH sheet renders it as its own block with a
+    Publish chat button, and Publish all ships it first. A song's Publish
+    still ships the SONG's chat even while the general tab is showing
+    (`askCommitLog` picks the song key unless given the general one).
+    Test: the general-chat block in the "Ask: history is whole…" test.
   - **Security:** binds 127.0.0.1 unless `--host`; `--token` requires
     `Authorization: Bearer` (the app's Settings key); CORS open (the app
     is a static page). TLS is someone else's job: Josh uses `tailscale

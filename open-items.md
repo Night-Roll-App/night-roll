@@ -100,16 +100,16 @@ see NIGHT-ROLL.md "Game Boy import". Awaiting his test on a real rip
 line only; next step per console: a real file from Josh's collection
 (never committed), then the app hook per its INTEGRATION.md.
 
-## GENERAL ASK (not per song) — QUEUED 2026-09-27
+## GENERAL ASK (not per song) — SHIPPED 2026-09-27 (NIGHT-ROLL.md → The AI bridge → General chat)
 
 Josh via the bridge: "we need to have some sort of main ask section
 that's not per song … I'm talking to you on the death song from Final
 Fantasy but nothing we're talking about has anything to do with that."
-Plan: a `general` chat key beside the per-song keys (one more resumed
-bridge session), its log at a repo-level `ask/general.ask.md`, a way in
-that needs no song open (File → ✦ Ask (general)), turns without a
-song context block so the tutor rules about keys/annotations stay
-quiet; inbox, tell-the-terminal and tools unchanged.
+Shipped as the ♪ this song / ✦ general toggle at the top of ✦ Ask: own
+store + bridge session ("general"), no song context, no annotation
+tool, log at `ask/general.ask.md` published from the PUBLISH sheet
+(own block + Publish all). Open: a way in with no song loaded at all
+(today a song is always open, so the toggle suffices).
 
 **GBS .m3u discovery (Josh, 2026-09-26) — two known app fixes before GBS
 import works.** Zophar's rips of the two Uematsu Game Boy scores (The
