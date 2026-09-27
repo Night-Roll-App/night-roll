@@ -450,17 +450,7 @@ song is no longer open throws "stale render" at its next progress tick;
 rebuilds a closed context only inside a gesture, the visibility handler
 only resumes, `resumeAudio` reads `gestureActive()` before its awaits,
 and "audio asleep"/"engine closed" write the state to the ⚠ log.
-Third pass the same night (Fall tap → silence, Stop/Play no help, no ⚠):
-`resumeAudio` had one rebuild left, inside a tap but after four awaits —
-too late for iOS, which then runs the new context mute with a ticking
-clock. Rule now: NO context is ever created after an await. The one
-rebuild is `ensureAudio`'s closed-state path, synchronous at the top of
-`play()`'s tap; `resumeAudio` resumes twice, then asks for a tap and
-logs `before → after` state; transitions to "interrupted"/"closed" log
-as they happen. Also: the pump looks 0.6 s ahead (a slow frame no longer
-drops notes as past) and `drawFall` skips out-of-window notes by tick
-(Chrono Trigger: 9 ms median → 1.9 ms per frame). Queued: a Worker for
-the render.
+Queued: a Worker for the render.
 
 **Big drafts (2026-09-27; Josh imported Chrono Trigger's 92 songs on the
 iPad: "quota has been exceeded", and the album "vanished" — it was under
