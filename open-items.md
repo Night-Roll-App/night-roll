@@ -31,6 +31,26 @@ enrolled. Next: Phase 2, the real shell (Files-app storage, icon, name,
 TestFlight). Still needs Josh: a support email address; two more starter
 songs; "merge it" for the overnight branch.
 
+## PHASE 2 — THE REAL SHELL, STARTED 2026-09-27 (afternoon)
+
+Shell project `~/work/ff/night-roll-app` (local git, no GitHub repo yet;
+Josh, 2026-09-27: no dev/prod split until App Store time): Capacitor 8,
+packaged web files (`build-www.sh` runs tools/package.mjs; www/ is not
+committed), the spike's AVAudioSession code, mic/speech strings,
+.mid/.nsf document types, UIFileSharingEnabled, 1024 icon upscaled from
+icons/icon-512 (a real master is a polish item). `build-ipad.sh` =
+package → cap sync → xcodebuild → devicectl install+launch, silent since
+Josh clicked Always Allow on the keychain prompt. First launch failed
+("Couldn't open Overworld. Load failed"): the boot fallback song was
+hardcoded and the app edition ships no FF1 → `homeSong()` picks the
+first catalog song (7424964). The Bach starter now plays on piano
+(42449c8; Josh: the chip voices didn't suit it — harpsichord is the
+alternative). Files-app storage: `nativeDirHandle` over the Filesystem
+plugin, opt-in switch in Settings (NIGHT-ROLL.md "iPad app: the Files
+folder"). Needs Josh on the device: turn it on in Settings, Save a
+starter, find it in Files → On My iPad → Night Roll. Next: open a .mid
+from Files/share sheet into the app (`appUrlOpen`), then TestFlight.
+
 ## APP STORE PREP — OVERNIGHT BRANCH FULLY MERGED 2026-09-27 (afternoon)
 
 One commit at a time, each tested in Chrome and deployed alone: product
