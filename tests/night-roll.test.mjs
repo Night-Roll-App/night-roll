@@ -3323,50 +3323,29 @@ function fakeCapacitorFs() {
   };
 }
 
-test("iPad app: the Files folder is a folder root — opt-in pref, same seams, base64 round trips", async () => {
+test("iPad app: every Save also writes the song into Files (a mirror, never read back); the web writes nothing", async () => {
   run(`globalThis.__prevFetch2 = fetch; fetch = () => Promise.reject(new Error("no network"));`);
-  run(`fsRoot.handle = null; fsRoot.mode = null; fsRoot.needsGrant = false; localStorage.removeItem("ff1roll-folder-native");`);
-  assert.equal(run(`nativeFs()`), null); // the web: no Capacitor, nothing changes
+  run(`fsRoot.handle = null; fsRoot.mode = null; fsRoot.needsGrant = false;`);
+  installSong();
+  run(`song.tracks = [{name: "v1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]; songKey = "albums/compositions/nightroll/mirror-me.mid"; currentPath = songKey; rollnotes = [];
+       localStorage.setItem(draftStoreKey(songKey), JSON.stringify({dirty: true, savedStamp: 0, tracks: []}));`);
+  assert.equal(run(`nativeFs()`), null);
+  assert.equal(await run(`filesMirror()`), false, "the web has no Files");
   app.context.capFs = fakeCapacitorFs();
   run(`window.Capacitor = {isNativePlatform: () => true, Plugins: {Filesystem: capFs}};`);
-  assert.equal(run(`folderSupported()`), true);
-  // boot without the pref: GitHub as before, even inside the app
-  await run(`restoreFolder()`);
-  assert.equal(run(`folderActive()`), false);
-  // Settings → "Save in Files on this iPad" (chooseFolder) turns it on and remembers it
-  await run(`chooseFolder()`);
-  assert.equal(run(`folderActive()`), true);
-  assert.equal(run(`fsRoot.mode`), "native");
-  assert.equal(run(`document.getElementById("filesonipad").checked`), true, "the Settings checkbox reflects it");
-  assert.equal(run(`localStorage.getItem("ff1roll-folder-native")`), "1");
-  assert.equal(run(`writeToken()`), "folder");
-  // text and bytes round-trip through base64; directories are created on the way
-  await run(`folderWrite("albums/compositions/nightroll/a.rollnotes.json", '{"version":1,"saved":7,"notes":[]}')`);
-  await run(`folderWrite("albums/compositions/nightroll/a.mid", new Uint8Array([77, 84, 104, 100, 0, 255, 128]))`);
-  assert.ok(app.context.capFs.files.has("albums/compositions/nightroll/a.mid"), "the plugin got a Documents-relative path");
-  const r = await run(`readData("analysis", "albums/compositions/nightroll/a.rollnotes.json", true)`);
-  assert.equal(r.fromFolder, true);
-  assert.equal(JSON.parse(await r.text()).saved, 7);
-  const mid = await run(`folderRead("albums/compositions/nightroll/a.mid")`);
-  assert.deepEqual([...new Uint8Array(await mid.arrayBuffer())], [77, 84, 104, 100, 0, 255, 128]);
-  assert.equal(await run(`folderRead("albums/compositions/nightroll/missing.mid")`), null);
-  // the catalog scan walks the plugin's readdir
-  await run(`folderWrite("albums/compositions/album.json", '{"title":"My Compositions","order":2,"songs":{"c":"Third Song"}}')`);
-  await run(`folderWrite("albums/compositions/c.mid", new Uint8Array([77, 84, 104, 100]))`);
-  const scan = JSON.parse(JSON.stringify(await run(`folderScanAlbums()`)));
-  assert.deepEqual(scan.map(a => a.title), ["My Compositions", "Night Roll Sketches"]);
-  assert.deepEqual(scan[1].songs, [{ title: "A", path: "albums/compositions/nightroll/a.mid" }]);
-  // delete: gone, and "never there" also answers true
-  assert.equal(await run(`folderDelete("albums/compositions/c.mid")`), true);
-  assert.equal(await run(`folderDelete("albums/compositions/c.mid")`), true);
-  // the pref survives a relaunch; Stop clears it
-  run(`fsRoot.handle = null; fsRoot.mode = null;`);
-  await run(`restoreFolder()`);
-  assert.equal(run(`fsRoot.mode`), "native");
-  await run(`chooseFolder()`); // toggles off
-  assert.equal(run(`folderActive()`), false);
-  assert.equal(run(`localStorage.getItem("ff1roll-folder-native")`), null);
-  run(`delete window.Capacitor; fetch = globalThis.__prevFetch2;`);
+  assert.equal(run(`folderActive()`), false, "Files is not a folder mode: reads and Publish are untouched");
+  assert.equal(run(`writeToken()`), null);
+  assert.equal(await run(`filesMirror()`), true);
+  const files = [...app.context.capFs.files.keys()].sort();
+  assert.deepEqual(files, ["albums/compositions/nightroll/mirror-me.mid", "albums/compositions/nightroll/mirror-me.notes.txt", "albums/compositions/nightroll/mirror-me.rollnotes.json"]);
+  const midB64 = app.context.capFs.files.get("albums/compositions/nightroll/mirror-me.mid");
+  assert.equal(Buffer.from(midB64, "base64").subarray(0, 4).toString("latin1"), "MThd");
+  // Save writes it; a read-only song never does
+  assert.equal(run(`saveCheckpoint(true)`), true);
+  run(`songKey = "albums/final-fantasy-i/songs/overworld.mid";`);
+  assert.equal(await run(`filesMirror()`), false);
+  run(`songKey = "albums/compositions/nightroll/mirror-me.mid"; localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem(saveStoreKey(songKey));
+       delete window.Capacitor; fetch = globalThis.__prevFetch2;`);
 });
 
 test("iPad app: a file handed over by Files/share sheet opens as a local draft; the Inbox copy goes", async () => {
