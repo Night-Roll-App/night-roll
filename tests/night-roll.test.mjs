@@ -763,7 +763,7 @@ test("song links: path form in, ?song= form in (either), path form out", () => {
   assert.equal(from("https://joshcough.github.io/night-roll/?song=../etc/passwd"), null);
   assert.equal(from("https://joshcough.github.io/night-roll/vendor/x"), null); // only albums/ is a song
   assert.equal(val(`songShareURL("albums/compositions/nightroll/ambush.mid")`), "https://joshcough.github.io/night-roll/albums/compositions/nightroll/ambush");
-  assert.equal(val(`songShareURL("albums/final-fantasy-i/songs/town.mid", "http://localhost:8735/")`), "http://localhost:8735/albums/final-fantasy-i/songs/town");
+  assert.equal(val(`songShareURL("albums/nes/final-fantasy-i/songs/town.mid", "http://localhost:8735/")`), "http://localhost:8735/albums/nes/final-fantasy-i/songs/town");
 });
 
 test("album play: pass math, album lookup, and no dialog mid-run", async () => {
@@ -816,7 +816,7 @@ test("composition helpers: slugify, isComposition gate, draft store round-trip",
   installSong();
   assert.equal(run(`slugify("  My New Song! ")`), "my-new-song");
   assert.equal(run(`slugify("")`), "untitled");
-  run(`songKey = "albums/final-fantasy-i/songs/town.mid";`);
+  run(`songKey = "albums/nes/final-fantasy-i/songs/town.mid";`);
   assert.equal(run(`isComposition()`), false); // chip capture: Save locked
   run(`songKey = "albums/compositions/nightroll/test-tune.mid";`);
   assert.equal(run(`isComposition()`), true);
@@ -826,7 +826,7 @@ test("composition helpers: slugify, isComposition gate, draft store round-trip",
   assert.equal(run(`isComposition()`), false);
   run(`rollnotes = parseRollnotes('{"version":1,"notes":[{"at":[1,1],"text":"moved from albums/compositions/nightroll/promoted.mid"}]}').map(resolveNote);`);
   assert.equal(run(`isComposition()`), true);
-  run(`rollnotes = parseRollnotes('{"version":1,"notes":[{"at":[1,1],"text":"forked from albums/final-fantasy-i/songs/town.mid"}]}').map(resolveNote);`);
+  run(`rollnotes = parseRollnotes('{"version":1,"notes":[{"at":[1,1],"text":"forked from albums/nes/final-fantasy-i/songs/town.mid"}]}').map(resolveNote);`);
   assert.equal(run(`isComposition()`), true);
   run(`rollnotes = parseRollnotes('{"version":1,"notes":[{"at":[1,1],"text":"note that merely mentions moved from"}]}').map(resolveNote);`);
   assert.equal(run(`isComposition()`), false); // anchored at line start, not a substring
@@ -847,7 +847,7 @@ test("manifest placement: save adds, move relocates, albums resolve by dir", () 
   installSong();
   assert.equal(run(`albumTitleFor("albums/compositions/nightroll/x.mid")`), "Night Roll Sketches");
   assert.equal(run(`albumTitleFor("albums/compositions/x.mid")`), "My Compositions");
-  assert.equal(run(`albumTitleFor("albums/final-fantasy-i/songs/town.mid")`), null);
+  assert.equal(run(`albumTitleFor("albums/nes/final-fantasy-i/songs/town.mid")`), "Final Fantasy I"); // every albums/ folder titles by its leaf now
   const out = val(`(() => {
     const albums = [{title: "My Compositions", songs: [{title: "Old", path: "albums/compositions/old.mid"}]}];
     manifestPlace(albums, null, "albums/compositions/nightroll/test-tune.mid"); // first save
@@ -983,7 +983,7 @@ test("local folder mode: reads fall back to the site, writes need no token, cata
   assert.equal(r.fromFolder, true);
   assert.equal(JSON.parse(await r.text()).saved, 5);
   // absent in the folder → the site (still no network here)
-  await assert.rejects(() => run(`readData("songs", "albums/final-fantasy-i/songs/overworld.mid")`), /no network/);
+  await assert.rejects(() => run(`readData("songs", "albums/nes/final-fantasy-i/songs/overworld.mid")`), /no network/);
   // the write helpers route to the folder and answer ok without touching GitHub
   installSong();
   run(`song.tracks = [{name: "v1", notes: [{t: 0, d: 480, p: 60, v: 80}]}];`);
@@ -1008,7 +1008,7 @@ test("local folder mode: reads fall back to the site, writes need no token, cata
   await run(`initCatalog()`);
   assert.deepEqual(val(`CATALOG["Night Roll Sketches"]`), [["A", "albums/compositions/nightroll/a.mid"]]);
   // "my folder only": with the site reachable, its albums are merged in — unless the pref is on
-  run(`fetch = () => Promise.resolve({ok: true, json: async () => [{title: "Final Fantasy I", songs: [{title: "Overworld", path: "albums/final-fantasy-i/songs/overworld.mid"}]}]});`);
+  run(`fetch = () => Promise.resolve({ok: true, json: async () => [{title: "Final Fantasy I", songs: [{title: "Overworld", path: "albums/nes/final-fantasy-i/songs/overworld.mid"}]}]});`);
   await run(`initCatalog()`);
   assert.ok(val(`Object.keys(CATALOG)`).includes("Final Fantasy I"));
   run(`localStorage.setItem("ff1roll-folderonly", "1");`);
@@ -1306,7 +1306,7 @@ test("setSongTempo writes the 1.1 tempo annotation on a composition, one undo, c
   assert.equal(val(`rollnotes.filter(n => n.tempodir !== undefined).map(n => n.text)`).length, 1); // replaced, not stacked
   assert.equal(run(`rollnotes.find(n => n.tempodir !== undefined).text`), "tempo: 92.3");
   assert.equal(run(`editUndo.length`), 1);
-  run(`songKey = "albums/final-fantasy-i/songs/overworld.mid";`);
+  run(`songKey = "albums/nes/final-fantasy-i/songs/overworld.mid";`);
   assert.equal(run(`setSongTempo(120)`), false); // measured captures keep their tempo
   run(`song = null; songKey = null; rollnotes = []; editUndo = [];`);
 });
@@ -1358,7 +1358,7 @@ test("NSF import rename: draft moves, typed title survives, collisions refused",
 // ff1.nsf lives in the private vault, not this repo — CI runners skip; the
 // full pipeline still runs on any checkout that has fetched it (the planned
 // existsSync gate from the data-locations work)
-const FF1_NSF = new URL("../albums/final-fantasy-i/reference/ff1.nsf", import.meta.url);
+const FF1_NSF = new URL("../albums/nes/final-fantasy-i/reference/ff1.nsf", import.meta.url);
 test("NSF import: in-app capture runs the real pipeline and round-trips through parseMidi",
      { skip: !existsSync(FF1_NSF) && "ff1.nsf not present (vault-only)" }, async () => {
   // same modules the browser dynamically imports, wired into the vm realm
@@ -1409,11 +1409,11 @@ test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore
        idbDraftDelete = k => { delete __idb[k]; return Promise.resolve(); };
        idbDraftMove = (a, b) => { if (__idb[a]) { __idb[b] = __idb[a]; delete __idb[a]; } return Promise.resolve(); };`);
   const doc = {savedStamp: 0, dirty: true, title: "Frog's Theme", ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "voice0", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
-  run(`draftWrite("albums/imports/chrono-trigger/frog-s-theme.mid", ${JSON.stringify(doc)});`);
-  const stub = JSON.parse(val(`localStorage.getItem(draftStoreKey("albums/imports/chrono-trigger/frog-s-theme.mid"))`));
+  run(`draftWrite("albums/snes/chrono-trigger/frog-s-theme.mid", ${JSON.stringify(doc)});`);
+  const stub = JSON.parse(val(`localStorage.getItem(draftStoreKey("albums/snes/chrono-trigger/frog-s-theme.mid"))`));
   assert.equal(stub.tracksRef, 1); assert.equal(stub.tracks, undefined, "no notes in localStorage"); assert.equal(stub.title, "Frog's Theme");
-  assert.equal(val(`__idb["albums/imports/chrono-trigger/frog-s-theme.mid"][0].notes.length`), 1);
-  run(`__rd = null; draftRead("albums/imports/chrono-trigger/frog-s-theme.mid").then(d => { __rd = d; });`);
+  assert.equal(val(`__idb["albums/snes/chrono-trigger/frog-s-theme.mid"][0].notes.length`), 1);
+  run(`__rd = null; draftRead("albums/snes/chrono-trigger/frog-s-theme.mid").then(d => { __rd = d; });`);
   await new Promise(r => setTimeout(r, 20));
   assert.equal(val(`__rd.tracks[0].notes[0].p`), 60, "draftRead restores the notes");
   // his own compositions stay whole in localStorage
@@ -1424,9 +1424,9 @@ test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore
   await new Promise(r => setTimeout(r, 20));
   assert.equal(val(`__rd2.tracks.length`), 1);
   // rename moves the notes; delete drops them
-  run(`renameImportDraft("albums/imports/chrono-trigger/frog-s-theme.mid", "Frog");`);
-  assert.equal(val(`!!__idb["albums/imports/chrono-trigger/frog.mid"]`), true, "notes followed the rename");
-  assert.equal(val(`!!__idb["albums/imports/chrono-trigger/frog-s-theme.mid"]`), false);
+  run(`renameImportDraft("albums/snes/chrono-trigger/frog-s-theme.mid", "Frog");`);
+  assert.equal(val(`!!__idb["albums/snes/chrono-trigger/frog.mid"]`), true, "notes followed the rename");
+  assert.equal(val(`!!__idb["albums/snes/chrono-trigger/frog-s-theme.mid"]`), false);
   // saveDraft with a full store: says so, does not throw
   installSong();
   run(`songKey = "albums/compositions/nightroll/full.mid"; const realSet = localStorage.setItem.bind(localStorage);
@@ -1434,7 +1434,7 @@ test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore
        __threw = false; try { saveDraft(); } catch (e) { __threw = true; } localStorage.setItem = realSet;`);
   assert.equal(val(`__threw`), false, "saveDraft swallowed the quota error");
   assert.match(val(`appErrors.map(e => e.msg).join(" ")`), /storage is full/);
-  run(`delete globalThis.indexedDB; localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/x.mid")); localStorage.removeItem(draftStoreKey("albums/imports/old/a.mid")); localStorage.removeItem(draftStoreKey("albums/imports/chrono-trigger/frog.mid"));`);
+  run(`delete globalThis.indexedDB; localStorage.removeItem(draftStoreKey("albums/compositions/nightroll/x.mid")); localStorage.removeItem(draftStoreKey("albums/imports/old/a.mid")); localStorage.removeItem(draftStoreKey("albums/snes/chrono-trigger/frog.mid"));`);
 });
 
 test("VGM import: a Genesis log goes through the capture path; gz sniff by name; the header's loop point becomes the loop annotation", async () => {
@@ -2628,7 +2628,7 @@ test("a note preview sounds on a chip song; playback notes still don't double", 
   // a chip-active song: NSF buffers keyed by track name, track on the auto voice
   run(`song.tracks = [{name: "pulse1", notes: []}];
        trackState = [{muted: false, solo: false}];
-       songKey = "albums/final-fantasy-i/songs/overworld.mid";
+       songKey = "albums/nes/final-fantasy-i/songs/overworld.mid";
        chip.key = songKey; chip.buffers = {pulse1: {}}; chip.srcs = [{stop() {}}]; // chipStart made a source: the chip is sounding
        ensureAudio(); playing = false;`);
   assert.equal(val(`chipActive()`), true, "chip is active for this song");
@@ -2882,18 +2882,18 @@ test("Save & Commit: pendingSongs unions music edits, unsynced annotations and u
   run(`songKey = "albums/compositions/nightroll/p-open.mid";
        localStorage.setItem("ff1roll-draft-albums/compositions/nightroll/p-music.mid", JSON.stringify({savedStamp: 5, dirty: true, notes: []}));
        localStorage.setItem("ff1roll-draft-albums/compositions/nightroll/p-clean.mid", JSON.stringify({savedStamp: 5, dirty: false, notes: []}));
-       localStorage.setItem("ff1roll-notes-albums/final-fantasy-i/songs/p-notes.mid", JSON.stringify([{b1: 1, q1: 1, text: "x", added: true}]));
+       localStorage.setItem("ff1roll-notes-albums/nes/final-fantasy-i/songs/p-notes.mid", JSON.stringify([{b1: 1, q1: 1, text: "x", added: true}]));
        localStorage.setItem("ff1roll-ask-albums/compositions/nightroll/p-open.mid", JSON.stringify({saved: 0, msgs: [{role: "user", content: "q"}, {role: "assistant", content: "a"}]}));
        localStorage.setItem("ff1roll-ask-albums/compositions/nightroll/p-saved.mid", JSON.stringify({saved: 2, msgs: [{role: "user", content: "q"}, {role: "assistant", content: "a"}]}));
        localStorage.setItem("ff1roll-ask-local/p.mid", JSON.stringify({saved: 0, msgs: [{role: "user", content: "q"}]}));`);
   const all = JSON.parse(val(`JSON.stringify(pendingSongs())`)); // earlier tests leave their own dirty drafts behind: look only at ours
   assert.equal(all[0], "albums/compositions/nightroll/p-open.mid", "the open song comes first");
   const got = all.filter(k => /\/p-[a-z]+\.mid$/.test(k));
-  assert.deepEqual(got, ["albums/compositions/nightroll/p-open.mid", "albums/compositions/nightroll/p-music.mid", "albums/final-fantasy-i/songs/p-notes.mid"]);
+  assert.deepEqual(got, ["albums/compositions/nightroll/p-open.mid", "albums/compositions/nightroll/p-music.mid", "albums/nes/final-fantasy-i/songs/p-notes.mid"]);
   assert.equal(val(`draftDirtyState("albums/compositions/nightroll/p-music.mid")`), "edited");
   assert.equal(val(`draftDirtyState("albums/compositions/nightroll/p-clean.mid")`), null);
   run(`for (const k of ["ff1roll-draft-albums/compositions/nightroll/p-music.mid", "ff1roll-draft-albums/compositions/nightroll/p-clean.mid",
-       "ff1roll-notes-albums/final-fantasy-i/songs/p-notes.mid", "ff1roll-ask-albums/compositions/nightroll/p-open.mid",
+       "ff1roll-notes-albums/nes/final-fantasy-i/songs/p-notes.mid", "ff1roll-ask-albums/compositions/nightroll/p-open.mid",
        "ff1roll-ask-albums/compositions/nightroll/p-saved.mid", "ff1roll-ask-local/p.mid"]) localStorage.removeItem(k); songKey = null;`);
 });
 
@@ -3155,7 +3155,7 @@ test("Publish all: isCompositionKey mirrors isComposition for a closed song; not
   assert.equal(val(`isCompositionKey("albums/compositions/nightroll/x.mid")`), true);
   assert.equal(val(`isCompositionKey("albums/compositions/other.mid")`), true, "a draft marks it as ours");
   assert.equal(val(`isCompositionKey("albums/compositions/stranger.mid")`), false);
-  assert.equal(val(`isCompositionKey("albums/final-fantasy-i/songs/airship.mid")`), false);
+  assert.equal(val(`isCompositionKey("albums/nes/final-fantasy-i/songs/airship.mid")`), false);
   run(`localStorage.removeItem("ff1roll-draft-albums/compositions/other.mid");`);
   const txt = val(`notesTxtFor({ppq: 480, timesig: [3, 4], tempos: [{usq: 600000}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 67, v: 100}]}]}, "albums/x/waltz.mid")`);
   assert.match(txt, /^# waltz\.mid — 3\/4, 100bpm, 1 bars/);
@@ -3278,7 +3278,7 @@ test("Ask: backend selection from cfg; browser backend forces the 4k budget tier
 });
 
 test("homeSong: Overworld when shipped, else the first catalog song (the app edition)", () => {
-  const ow = "albums/final-fantasy-i/songs/overworld.mid";
+  const ow = "albums/nes/final-fantasy-i/songs/overworld.mid";
   const home = (all) => val(`homeSong(${JSON.stringify(all)})`);
   assert.equal(home(["albums/starters/songs/a.mid", ow]), ow);
   assert.equal(home(["albums/starters/songs/a.mid", "albums/starters/songs/b.mid"]), "albums/starters/songs/a.mid");
@@ -3342,7 +3342,7 @@ test("iPad app: every Save also writes the song into Files (a mirror, never read
   assert.equal(Buffer.from(midB64, "base64").subarray(0, 4).toString("latin1"), "MThd");
   // Save writes it; a read-only song never does
   assert.equal(run(`saveCheckpoint(true)`), true);
-  run(`songKey = "albums/final-fantasy-i/songs/overworld.mid";`);
+  run(`songKey = "albums/nes/final-fantasy-i/songs/overworld.mid";`);
   assert.equal(await run(`filesMirror()`), false);
   run(`songKey = "albums/compositions/nightroll/mirror-me.mid"; localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem(saveStoreKey(songKey));
        delete window.Capacitor; fetch = globalThis.__prevFetch2;`);
@@ -3422,10 +3422,10 @@ test("app edition: reads come from the configured repo; bundled starters list an
 test("folders: a song's folder and its title come from its path; LOCAL rows say where the song stands", () => {
   run(`CATALOG = {"My Compositions": [["Threnody", "albums/compositions/threnody.mid"]],
                  "Night Roll Sketches": [["Ambush", "albums/compositions/nightroll/ambush.mid"]],
-                 "Mega Man 2": [["Air Man", "albums/imports/mega-man-2/air-man.mid"]],
-                 "Final Fantasy I": [["Overworld", "albums/final-fantasy-i/songs/overworld.mid"]]};`);
+                 "Mega Man 2": [["Air Man", "albums/nes/mega-man-2/air-man.mid"]],
+                 "Final Fantasy I": [["Overworld", "albums/nes/final-fantasy-i/songs/overworld.mid"]]};`);
   assert.equal(run(`folderOf("albums/compositions/nightroll/ambush.mid")`), "compositions/nightroll");
-  assert.equal(run(`folderOf("albums/final-fantasy-i/songs/overworld.mid")`), "final-fantasy-i", "FF1's songs/ level collapses");
+  assert.equal(run(`folderOf("albums/nes/final-fantasy-i/songs/overworld.mid")`), "nes/final-fantasy-i", "FF1's songs/ level collapses");
   assert.equal(run(`folderOf("local/test-song.mid")`), "local");
   assert.equal(run(`folderTitle("compositions/nightroll")`), "My Compositions › Night Roll Sketches");
   assert.equal(run(`folderTitle("imports/mega-man-2")`), "Imports › Mega Man 2");
@@ -3451,7 +3451,7 @@ test("folders: a song's folder and its title come from its path; LOCAL rows say 
 });
 
 test("save names the song: New makes Untitled N under local/; Save picks folder + name; Move of an unpublished song stays local", async () => {
-  run(`CATALOG = {"Night Roll Sketches": [["Ambush", "albums/compositions/nightroll/ambush.mid"]], "Final Fantasy I": [["Overworld", "albums/final-fantasy-i/songs/overworld.mid"]]};
+  run(`CATALOG = {"Night Roll Sketches": [["Ambush", "albums/compositions/nightroll/ambush.mid"]], "Final Fantasy I": [["Overworld", "albums/nes/final-fantasy-i/songs/overworld.mid"]]};
        for (const k of Object.keys(localStorage)) if (/untitled|graveyard/.test(k)) localStorage.removeItem(k);
        localStorage.removeItem("ff1roll-lastfolder"); rollnotes = []; fsRoot.handle = null; fsRoot.mode = null;`);
   run(`createComposition(120, 4, 4)`);
@@ -3489,8 +3489,36 @@ test("save names the song: New makes Untitled N under local/; Save picks folder 
   assert.equal(run(`folderTitle(folderOf(songKey))`), "NES › Covers");
   run(`localStorage.removeItem("ff1roll-ghtoken");`);
   // read-only folders never become compositions, even with a draft
-  run(`localStorage.setItem(draftStoreKey("albums/final-fantasy-i/songs/overworld.mid"), "{}"); songKey = "albums/final-fantasy-i/songs/overworld.mid";`);
+  run(`localStorage.setItem(draftStoreKey("albums/nes/final-fantasy-i/songs/overworld.mid"), "{}"); songKey = "albums/nes/final-fantasy-i/songs/overworld.mid";`);
   assert.equal(run(`isComposition()`), false);
-  run(`localStorage.removeItem(draftStoreKey("albums/final-fantasy-i/songs/overworld.mid"));
+  run(`localStorage.removeItem(draftStoreKey("albums/nes/final-fantasy-i/songs/overworld.mid"));
        for (const k of Object.keys(localStorage)) if (k.includes("untitled") || k.includes("graveyard") || k.includes("nes/covers")) localStorage.removeItem(k);`);
+});
+
+test("console folders: old links and keys redirect; captures are read-only by marker, not by folder name", () => {
+  assert.equal(run(`movedPath("albums/final-fantasy-i/songs/overworld.mid")`), "albums/nes/final-fantasy-i/songs/overworld.mid");
+  assert.equal(run(`movedPath("albums/imports/chrono-trigger/corridors-of-time.mid")`), "albums/snes/chrono-trigger/corridors-of-time.mid");
+  assert.equal(run(`movedPath("albums/compositions/nightroll/ambush.mid")`), null);
+  run(`APP_BASE = "https://joshcough.github.io/night-roll/";`);
+  assert.equal(run(`songPathFromURL("https://joshcough.github.io/night-roll/albums/final-fantasy-i/songs/overworld")`), "albums/nes/final-fantasy-i/songs/overworld.mid", "an old link opens the moved song");
+  assert.equal(run(`songPathFromURL("https://joshcough.github.io/night-roll/?song=albums/imports/mega-man-2/air-man.mid")`), "albums/nes/mega-man-2/air-man.mid");
+  // where new captures land
+  assert.equal(run(`impDirFor("spc")`), "albums/snes/");
+  assert.equal(run(`impDirFor("gbs")`), "albums/game-boy/");
+  assert.equal(run(`impDirFor(undefined)`), "albums/imports/", "unknown kind: the legacy folder");
+  // a capture is read-only by its draft's stamp (this device) or album.json's nsf block (any device)
+  run(`localStorage.setItem(draftStoreKey("albums/nes/mega-man-2/air-man.mid"), JSON.stringify({capture: true, dirty: false, tracks: []}));
+       localStorage.setItem(draftStoreKey("albums/nes/my-covers/air-man.mid"), JSON.stringify({dirty: true, tracks: []}));
+       albumMetaCache["albums/snes/chrono-trigger"] = {title: "Chrono Trigger", nsf: {vault: "chrono-trigger.spc"}};`);
+  assert.equal(run(`isCaptureKey("albums/nes/mega-man-2/air-man.mid")`), true);
+  assert.equal(run(`isCaptureKey("albums/snes/chrono-trigger/corridors-of-time.mid")`), true, "by album.json");
+  assert.equal(run(`isCaptureKey("albums/nes/my-covers/air-man.mid")`), false, "Josh's own folder beside the captures");
+  assert.equal(run(`ownFolderPath("albums/nes/my-covers/air-man.mid")`), true);
+  assert.equal(run(`ownFolderPath("albums/nes/mega-man-2/air-man.mid")`), false);
+  assert.equal(run(`ownFolderPath("albums/nes/final-fantasy-i/songs/overworld.mid")`), false);
+  assert.deepEqual(val(`importDraftKeys()`).filter(k => k.includes("air-man")), ["albums/nes/mega-man-2/air-man.mid"]);
+  assert.equal(run(`albumTitleFor("albums/nes/mega-man-2/air-man.mid")`), "Mega Man 2");
+  assert.equal(run(`albumTitleFor("albums/nes/final-fantasy-i/songs/overworld.mid")`), "Final Fantasy I");
+  assert.equal(run(`folderTitle("nes/mega-man-2")`), "NES › Mega Man 2");
+  run(`localStorage.removeItem(draftStoreKey("albums/nes/mega-man-2/air-man.mid")); localStorage.removeItem(draftStoreKey("albums/nes/my-covers/air-man.mid")); delete albumMetaCache["albums/snes/chrono-trigger"];`);
 });

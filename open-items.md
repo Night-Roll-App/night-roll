@@ -59,8 +59,12 @@ depth. Phase 3 DONE too: the iPad Files mirror (every Save also writes the
 song into Files; the checkbox and the Files "mode" are gone; the
 Settings row is one sentence) and "✎ Edit here" (a published song of
 his with no local copy on the device asks first, then makes the local
-copy). NEXT: his batch of moves (imports + FF1 under console folders),
-one commit with the MOVED table, when he says go; the import sheet
+copy). The batch of moves is PREPARED on branch `console-folders` (pushed,
+not merged): FF1 + the four imports under nes/ snes/ game-boy/, old
+links and device keys remap at boot, new captures land under their
+console, captures read-only by marker. Merge when Josh says go — then
+build the iPad, and every device must load the new build once before
+publishing (a publish from an old build resurrects the old path); the import sheet
 proposing a console folder for new imports; notes.txt duplicate in
 nightroll/ (cool-b-maj-with-b-part) on his word.
 

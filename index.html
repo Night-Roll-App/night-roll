@@ -1834,13 +1834,24 @@ function linkSongsBase(v) {
 const LINK_SONGS = (() => { try { return linkSongsBase(new URL(location.href).searchParams.get("songs")); } catch (e) { return null; } })();
 function linkRepoLabel(base) { const m = /^https:\/\/raw\.githubusercontent\.com\/([\w.-]+\/[\w.-]+)\/main$/.exec(base || ""); return m ? m[1] : (base || ""); }
 function rememberLastSong(key) { if (!LINK_SONGS) localStorage.setItem("ff1roll-lastsong", key); } // a linked song is not "where you left off"
+// "Just folders" (2026-09-27, docs/song-organization-proposal.md): the corpora
+// moved under console folders in one batch. Old links and every per-song key
+// on a device follow by prefix (boot, fourth wave). Keep this table forever:
+// a device that never loaded this build still holds the old keys.
+const MOVED_DIRS = {"albums/final-fantasy-i/": "albums/nes/final-fantasy-i/",
+                    "albums/imports/mega-man-2/": "albums/nes/mega-man-2/",
+                    "albums/imports/tmnt-2/": "albums/nes/tmnt-2/",
+                    "albums/imports/chrono-trigger/": "albums/snes/chrono-trigger/",
+                    "albums/imports/final-fantasy-legend/": "albums/game-boy/final-fantasy-legend/"};
+function movedPath(p) { for (const [a, b] of Object.entries(MOVED_DIRS)) if (p.startsWith(a)) return b + p.slice(a.length); return null; }
 function songPathFromURL(href) { // "albums/…/x.mid" from ?song= (either form) or the path form; null if neither
   try {
     const u = new URL(href);
     let p = u.searchParams.get("song");
     if (!p && APP_BASE && u.href.startsWith(APP_BASE)) p = decodeURIComponent(u.href.slice(APP_BASE.length).split(/[?#]/)[0]);
     if (!p || !/^albums\/[\w\-./]+$/.test(p)) return null;
-    return /\.midi?$/i.test(p) ? p : p + ".mid";
+    p = /\.midi?$/i.test(p) ? p : p + ".mid";
+    return movedPath(p) || p;
   } catch (e) { return null; }
 }
 function songShareURL(path, base) { // the address-bar form for an albums/ path
@@ -2948,13 +2959,32 @@ let lastSubtitle = null;
   }
   const last3 = localStorage.getItem("ff1roll-lastsong");
   if (last3 && MOVED[last3]) rememberLastSong(MOVED[last3]);
+  // fourth wave (2026-09-27, "just folders"): whole folders moved under console
+  // folders — every per-song key follows by prefix (MOVED_DIRS, defined with the
+  // link parser); a capture's draft from imports/ is stamped as a capture so
+  // it stays read-only (its new folder no longer says so by name)
+  for (const k of Object.keys(localStorage)) {
+    const m = k.match(/^(ff1roll-(?:notes|edits|ts|draft|tombs|lastsync|save|stash|ask)-)(.+)$/);
+    if (!m) continue;
+    const np = movedPath(m[2]);
+    if (!np) continue;
+    let v = localStorage.getItem(k);
+    if (m[1] === "ff1roll-draft-" && m[2].startsWith("albums/imports/")) {
+      try { const d = JSON.parse(v); if (d && typeof d === "object") { d.capture = true; v = JSON.stringify(d); } } catch (err) { /* keep as is */ }
+      if (typeof idbDraftMove === "function") idbDraftMove(m[2], np); // big drafts keep their notes in IndexedDB
+    }
+    if (!localStorage.getItem(m[1] + np)) localStorage.setItem(m[1] + np, v);
+    localStorage.removeItem(k);
+  }
+  const last4 = localStorage.getItem("ff1roll-lastsong");
+  if (last4 && movedPath(last4)) rememberLastSong(movedPath(last4));
 })();
 // The first song a fresh device sees. Overworld on the web; the app edition
 // ships only the starter albums (FF1 rips are not ours to sell), so a
 // hardcoded path would fail there (Josh, 2026-09-27: "Couldn't open
 // Overworld. Load failed" on the packaged shell's first launch).
 function homeSong(all) {
-  const ow = "albums/final-fantasy-i/songs/overworld.mid";
+  const ow = "albums/nes/final-fantasy-i/songs/overworld.mid";
   return all.includes(ow) ? ow : (all[0] || ow);
 }
 function appConfirm(title, body, okLabel, cancelLabel) { // non-blocking confirm:
@@ -10537,11 +10567,11 @@ document.getElementById("midcreate").addEventListener("click", () => {
   if (!pendingMidis || !pendingMidis.length) return;
   const alb = document.getElementById("midalbum").value.trim();
   if (!alb) { setInfo("⚠ name the album first"); return; }
-  const slug = slugify(alb);
+  const slug = folderFromInput(alb) || slugify(alb);
   let firstKey = null;
   for (const {name, parsed} of pendingMidis) {
     const base = slugify(name.replace(/\.(midi?|smf|kar|rmi)$/i, ""));
-    const key = IMP_DIR + slug + "/" + base + ".mid";
+    const key = "albums/" + slug + "/" + base + ".mid"; // MIDI files: a folder of the user's own, editable, published like any song
     if (!firstKey) firstKey = key;
     draftWrite(key, {
       savedStamp: 0, dirty: true, title: name.replace(/\.(midi?|smf|kar|rmi)$/i, ""),
@@ -11850,8 +11880,19 @@ const PROVENANCE_RE = /^(forked|moved) from /;
 // outside the read-only corpora — and this device holds its local copy (or
 // the song carries provenance). The FF1 corpus, chip captures and the
 // bundled starters are annotate-only; Save As forks them into a folder.
-const READONLY_DIRS = ["albums/final-fantasy-i/", "albums/imports/", "albums/starters/"];
-function ownFolderPath(key) { return !!key && key.startsWith("albums/") && !READONLY_DIRS.some(d => key.startsWith(d)); }
+const READONLY_DIRS = ["albums/nes/final-fantasy-i/", "albums/starters/", "albums/imports/"]; // the FF1 corpus, the bundled starters, the pre-move imports folder
+// A chip capture is read-only wherever its folder sits (Josh's "NES/My Covers"
+// may live beside "nes/mega-man-2"): known by its draft's capture stamp on
+// the device that made it, by album.json's nsf block anywhere else.
+function isCaptureKey(key) {
+  if (!key || !key.startsWith("albums/")) return false;
+  if (key.startsWith("albums/imports/")) return true;
+  try { const d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); if (d && d.capture) return true; } catch (err) { /* not a draft */ }
+  const dir = key.replace(/\/(?:songs\/)?[^/]+\.mid$/, "");
+  const meta = typeof albumMetaCache === "object" ? albumMetaCache[dir] : null;
+  return !!(meta && meta.nsf);
+}
+function ownFolderPath(key) { return !!key && key.startsWith("albums/") && !READONLY_DIRS.some(d => key.startsWith(d)) && !isCaptureKey(key); }
 function isComposition() {
   if (!ownFolderPath(songKey)) return false;
   if (songKey.startsWith(NR_DIR)) return true;
@@ -11863,8 +11904,7 @@ function isComposition() {
 const COMP_ALBUMS = [["Night Roll Sketches", NR_DIR], ["My Compositions", COMP_DIR]];
 function albumTitleFor(path) {
   for (const [t, dir] of COMP_ALBUMS) if (path.startsWith(dir) && !(dir === COMP_DIR && path.startsWith(NR_DIR))) return t;
-  if (path.startsWith("albums/imports/")) return titleCaseSlug(path.split("/")[2] || "imports");
-  if (ownFolderPath(path)) return titleCaseSlug(folderOf(path).split("/").pop());
+  if (path.startsWith("albums/")) return titleCaseSlug(folderOf(path).split("/").pop() || "albums"); // captures, corpora and own folders alike: the leaf folder
   return null;
 }
 function titleCaseSlug(base) {
@@ -12522,7 +12562,8 @@ function draftRow(key, label, rerender, extra) { // open + (optional extra) + tw
   filesub.appendChild(row);
 }
 function fsubLocalFolder(folder) {
-  if (folder.startsWith("imports/")) return fsubImportAlbum(folder.split("/")[1]); // captures: publish-all + per-track rows
+  const keys = localFolders()[folder] || [];
+  if (keys.length && keys.every(isCaptureKey)) return fsubImportAlbum(folder.split("/").pop()); // captures: publish-all + per-track rows
   filesub.innerHTML = "";
   fsubItem("‹ " + folderTitle(folder), fsubAlbums, true);
   fsubHeader(localLabel());
@@ -12536,7 +12577,7 @@ function fsubLocalFolder(folder) {
 let impCommitLive = null; // {slug, text} while a folder commit runs
 function fsubImportAlbum(slug) {
   filesub.innerHTML = "";
-  fsubItem("‹ " + folderTitle("imports/" + slug), fsubAlbums, true);
+  fsubItem("‹ " + folderTitle(folderOf((importDraftKeys().find(k => k.split("/")[2] === slug) || "albums/imports/" + slug + "/x.mid"))), fsubAlbums, true);
   fsubHeader(localLabel());
   const keys = importDraftKeys().filter(k => k.split("/")[2] === slug);
   const all = document.createElement("button"); // whole folder in one publish
@@ -12854,9 +12895,11 @@ document.getElementById("filedlmid").addEventListener("click", () => {
 // first — a bad capture never gets committed). ✕ the duds in Open → drafts;
 // Commit pushes the keepers: .mid + loop rollnotes + album.json + manifest.
 // Expansion-chip NSFs (VRC6/FDS/…) play 2A03 channels only.
-const IMP_DIR = "albums/imports/";
-function importDraftKeys() { return draftKeys().filter(k => k.startsWith(IMP_DIR)); }
-function impTrackKey(slug, n) { return IMP_DIR + slug + "/track-" + String(n).padStart(2, "0") + ".mid"; }
+const IMP_DIR = "albums/imports/"; // legacy: where captures landed before the console folders (2026-09-27); still read-only
+const CONSOLE_OF = {nsf: "nes", gbs: "game-boy", spc: "snes", vgm: "genesis", psf: "ps1", usf: "n64"};
+function impDirFor(kind) { return "albums/" + (CONSOLE_OF[kind] || "imports") + "/"; } // a capture's folder: albums/<console>/<game>/
+function importDraftKeys() { return draftKeys().filter(isCaptureKey); }
+function impTrackKey(slug, n) { return impDirFor(nsfSess && nsfSess.chip) + slug + "/track-" + String(n).padStart(2, "0") + ".mid"; }
 let nsfSess = null; // {chip, M: pipeline modules, nsf: parsed file, rows: [{st, open}]} — the name predates the second chip
 // One chip per descriptor (2026-09-27, Game Boy joins the NES): the GB
 // modules export the NSF names (parse/run/reconstruct/renderApu) with GB
@@ -13263,7 +13306,7 @@ async function impCapture(n) {
     if (!cap) { row.st.textContent = "silent — nothing to keep"; return; }
     const raw = row.name.value.trim() || "track-" + String(n).padStart(2, "0");
     const base = slugify(raw) || "track-" + String(n).padStart(2, "0");
-    const key = IMP_DIR + slug + "/" + base + ".mid";
+    const key = impDirFor(nsfSess.chip) + slug + "/" + base + ".mid";
     // collision = two rows of THIS import fighting over one name. A draft
     // left by an earlier import of the same album just gets overwritten —
     // that's what re-importing means (Josh 2026-08-16, after a re-import
@@ -13276,7 +13319,7 @@ async function impCapture(n) {
     localStorage.removeItem("ff1roll-notes-" + key); // stale loop note dies with the old capture
     const parsed = parseMidi(cap.bytes.buffer, {trust: true}); // our own bytes: the corrupt-file guards (8-bar notes, 32-bar tacets) must not cut real music
     draftWrite(key, {
-      savedStamp: 0, dirty: true, title: raw, ppq: parsed.ppq, timesig: parsed.timesig || [4, 4],
+      savedStamp: 0, dirty: true, title: raw, capture: true, ppq: parsed.ppq, timesig: parsed.timesig || [4, 4], // capture: read-only wherever its folder sits
       tempos: parsed.tempos,
       tracks: parsed.tracks.map(tr => ({name: tr.name,
         notes: tr.notes.map(nt => {
@@ -13348,11 +13391,11 @@ document.getElementById("impcommit").addEventListener("click", e => {
   btn.disabled = true;
   commitImports(impStatus).finally(() => { btn.disabled = false; });
 });
-async function computeImportAlbumJson(slug, h, songTitles, nsfTracks, chipKind) {
+async function computeImportAlbumJson(slug, h, songTitles, nsfTracks, chipKind, dir) {
   // album.json keeps build_manifest.mjs honest offline; NSF link = vault
   // file + track map (pure metadata — ROM data lives in the private
   // archive). GET current, merge, return content for the batch commit.
-  const path = IMP_DIR + slug + "/album.json";
+  const path = (dir || impDirFor(chipKind) + slug) + "/album.json";
   let meta = {title: titleCaseSlug(slug), order: 50, songs: {}};
   if (folderActive()) {
     const r = await readData("songs", path, true);
@@ -13474,7 +13517,10 @@ async function idbNsfPutNow(slug, bytes, trackPatch, chipKind) {
 // go through draftRead; every writer goes through draftWrite; ✕/rename/
 // revert keep the store in step. All IDB traffic rides _idbQueue so a
 // put, a rename and the open that follows land in order.
-function draftInIdb(key) { return typeof indexedDB !== "undefined" && (key.startsWith(IMP_DIR) || key.startsWith("local/")); }
+function draftInIdb(key) { // big drafts (captures, imported files) keep their notes in IndexedDB; compositions stay whole in localStorage
+  return typeof indexedDB !== "undefined" && (key.startsWith(IMP_DIR) || key.startsWith("local/") ||
+    Object.values(CONSOLE_OF).some(c => key.startsWith("albums/" + c + "/")));
+}
 function draftWrite(key, doc) { // synchronous for the caller; the notes follow through the queue
   if (draftInIdb(key)) {
     const {tracks, ...stub} = doc;
@@ -13548,7 +13594,8 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
       const chipKind = (rec && rec.chip) || "nsf", vaultFile = slug + chipExt(chipKind);
       const perFile = !!(CHIPS[chipKind] && CHIPS[chipKind].perFile);
       const trackFiles = perFile && rec && rec.tracks ? Object.entries(rec.tracks).filter(([b, t]) => nsfTracks[b] && t && t.bytes) : [];
-      songFiles.push(await computeImportAlbumJson(slug, h, overrides, nsfTracks, chipKind));
+      const dir = keys.find(k => k.split("/")[2] === slug).replace(/\/[^/]+\.mid$/, "");
+      songFiles.push(await computeImportAlbumJson(slug, h, overrides, nsfTracks, chipKind, dir));
       if (((rec && rec.bytes) || trackFiles.length) && !folderActive() && !cfg().nsfRepo) status("No NSF repo in Settings — the " + chipExt(chipKind) + (perFile ? " files stay" : " stays") + " on this device (chip audio here; synth voices elsewhere)");
       if (trackFiles.length && !folderActive() && cfg().nsfRepo) { // a per-file set: one archive file per track, only the ones not there yet
         let up = 0, failed = 0;
@@ -13579,7 +13626,7 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
           }
         } catch (err) { status("⚠ " + CHIPS[chipKind].label + " upload failed (" + err.message + ") — chip audio stays device-local"); }
       }
-      delete albumMetaCache[IMP_DIR + slug];
+      for (const d of Object.keys(albumMetaCache)) if (d.endsWith("/" + slug)) delete albumMetaCache[d];
     }
     if (!folderActive()) { // manifest: GET repo truth, apply the same mutation updateManifest would
       // (the folder has no manifest — initCatalog rescans it)
