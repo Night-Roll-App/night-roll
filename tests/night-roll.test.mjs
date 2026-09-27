@@ -1575,7 +1575,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
@@ -3438,4 +3438,35 @@ test("app edition: reads come from the configured repo; bundled starters list an
   await run2(`initCatalog()`);
   assert.deepEqual(val2(`Object.keys(CATALOG)`), ["Starters"]);
   function val2(code) { return JSON.parse(run2(`JSON.stringify(${code})`)); }
+});
+
+test("folders: a song's folder and its title come from its path; LOCAL rows say where the song stands", () => {
+  run(`CATALOG = {"My Compositions": [["Threnody", "albums/compositions/threnody.mid"]],
+                 "Night Roll Sketches": [["Ambush", "albums/compositions/nightroll/ambush.mid"]],
+                 "Mega Man 2": [["Air Man", "albums/imports/mega-man-2/air-man.mid"]],
+                 "Final Fantasy I": [["Overworld", "albums/final-fantasy-i/songs/overworld.mid"]]};`);
+  assert.equal(run(`folderOf("albums/compositions/nightroll/ambush.mid")`), "compositions/nightroll");
+  assert.equal(run(`folderOf("albums/final-fantasy-i/songs/overworld.mid")`), "final-fantasy-i", "FF1's songs/ level collapses");
+  assert.equal(run(`folderOf("local/test-song.mid")`), "local");
+  assert.equal(run(`folderTitle("compositions/nightroll")`), "My Compositions › Night Roll Sketches");
+  assert.equal(run(`folderTitle("imports/mega-man-2")`), "Imports › Mega Man 2");
+  assert.equal(run(`folderTitle("snes/chrono-trigger")`), "SNES › Chrono Trigger", "console parents by their own names");
+  assert.equal(run(`folderTitle("local")`), "Imported files");
+  // status words
+  run(`localStorage.setItem(draftStoreKey("albums/compositions/nightroll/ambush.mid"), JSON.stringify({dirty: true, savedStamp: 5, tracks: []}));
+       localStorage.setItem(draftStoreKey("albums/compositions/nightroll/ambush-3.mid"), JSON.stringify({dirty: true, savedStamp: 0, tracks: []}));
+       localStorage.setItem(draftStoreKey("albums/compositions/threnody.mid"), JSON.stringify({dirty: false, savedStamp: 5, tracks: []}));`);
+  assert.equal(run(`songStatus("albums/compositions/nightroll/ambush.mid")`), "changed since publish");
+  assert.equal(run(`songStatus("albums/compositions/nightroll/ambush-3.mid")`), "not published");
+  assert.equal(run(`songStatus("albums/compositions/threnody.mid")`), "published");
+  const folders = val(`Object.keys(localFolders()).sort()`);
+  assert.deepEqual(folders.filter(f => f.startsWith("compositions")), ["compositions", "compositions/nightroll"]);
+  // the publish button names its destination, or what to do
+  run(`localStorage.removeItem("ff1roll-ghtoken"); fsRoot.handle = null; fsRoot.mode = null;`);
+  assert.equal(run(`publishDest()`), null);
+  assert.equal(run(`publishLabel("folder")`), "Connect GitHub to publish");
+  run(`localStorage.setItem("ff1roll-ghtoken", "t");`);
+  assert.equal(run(`publishLabel("kept tracks")`), "⇪ Publish kept tracks");
+  run(`localStorage.removeItem("ff1roll-ghtoken");`);
+  for (const k of ["albums/compositions/nightroll/ambush.mid", "albums/compositions/nightroll/ambush-3.mid", "albums/compositions/threnody.mid"]) run(`localStorage.removeItem(draftStoreKey(${JSON.stringify(k)}))`);
 });
