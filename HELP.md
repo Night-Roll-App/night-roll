@@ -272,8 +272,8 @@ Talk to an AI tutor about what you're looking at — and, on your own songs, hav
 **House rules**
 Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.
 
-**🎤 Speak / ■ Stop**
-Tap **🎤 Speak** to dictate a question, **■ Stop** to cut a slow reply short.
+**🎤 Speak / ■ Stop listening / ■ Stop reply**
+Tap **🎤 Speak** to dictate a question; while it listens the same button reads **■ Stop listening** (your words still land in the box). The other stop, **■ Stop reply** beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.
 
 **Slow replies**
 Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold **✦ reply** badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.

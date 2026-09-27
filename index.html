@@ -360,6 +360,9 @@
   #editsheet .fitem, #viewsheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 8px 10px; font-family: var(--mono); font-size: 13px; color: var(--text); cursor: pointer; }
   #editsheet .fitem:active, #viewsheet .fitem:active { background: var(--panel); }
   #drummersheet .sheet { width: min(720px, 100%); } /* the range row wraps at 560 (Josh, from bed) */
+  /* the chat: three quarters of the screen on a tablet — half was hard to
+     read (Josh, 2026-09-26); phones keep the full width they already had */
+  #asksheet .sheet { width: max(min(560px, 100%), 75vw); max-width: 100%; }
   .drseg button { min-height: 44px; min-width: 42px; }
   #drparts button { min-height: 44px; padding: 8px 12px; }
   /* listener mode (phones default): the app is a PLAYER — roll + transport only */
@@ -1348,7 +1351,7 @@
     <dl>
       <dt>✦ Ask</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ Ask</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
-      <dt>🎤 Speak / ■ Stop</dt><dd>Tap <b>🎤 Speak</b> to dictate a question, <b>■ Stop</b> to cut a slow reply short.</dd>
+      <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
       <dt>General chat</dt><dd>At the top of ✦ Ask, <b>♪ this song</b> / <b>✦ general</b> pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ Ask as a gold <b>✉</b> bubble (inbox), and the <b>✦ Ask</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
@@ -1595,7 +1598,7 @@
     </div>
     <div class="row">
       <span class="status" id="askstatus" style="flex:1"></span>
-      <button id="askstop" style="display:none">■ Stop</button>
+      <button id="askstop" style="display:none">■ Stop reply</button>
       <button id="askclear">Clear chat</button>
     </div>
   </div>
@@ -11235,7 +11238,7 @@ function micToggle(btn, textarea, statusFn) { // shared dictation: append into a
   };
   micRec.onend = () => micStop(); // Safari ends recognition on silence
   btn.classList.add("active");
-  btn.textContent = "■ Stop";
+  btn.textContent = "■ Stop listening"; // the Ask sheet has a second ■ (stop reply): say which this is
   micRec.start();
 }
 nmic.addEventListener("click", () =>
