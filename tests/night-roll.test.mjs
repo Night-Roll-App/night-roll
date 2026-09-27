@@ -1575,7 +1575,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Commit import", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
@@ -3283,4 +3283,87 @@ test("homeSong: Overworld when shipped, else the first catalog song (the app edi
   assert.equal(home(["albums/starters/songs/a.mid", ow]), ow);
   assert.equal(home(["albums/starters/songs/a.mid", "albums/starters/songs/b.mid"]), "albums/starters/songs/a.mid");
   assert.equal(home([]), ow);
+});
+
+// In-memory @capacitor/filesystem: stat/mkdir/readFile/writeFile/readdir/
+// deleteFile over base64 strings, the way the iOS plugin moves bytes.
+function fakeCapacitorFs() {
+  const files = new Map(), dirs = new Set([""]);
+  const parent = p => p.split("/").slice(0, -1).join("/");
+  const missing = () => new Error("File does not exist");
+  return {
+    files, dirs,
+    async stat({path}) {
+      if (files.has(path)) return {type: "file", size: files.get(path).length};
+      if (dirs.has(path)) return {type: "directory", size: 0};
+      throw missing();
+    },
+    async mkdir({path, recursive}) {
+      const parts = path.split("/");
+      for (let i = 1; i <= parts.length; i++) {
+        const d = parts.slice(0, i).join("/");
+        if (!dirs.has(d) && i < parts.length && !recursive) throw new Error("Parent directory does not exist");
+        dirs.add(d);
+      }
+    },
+    async readFile({path}) { if (!files.has(path)) throw missing(); return {data: files.get(path)}; },
+    async writeFile({path, data, recursive}) {
+      if (!dirs.has(parent(path))) { if (!recursive) throw new Error("Parent directory does not exist"); await this.mkdir({path: parent(path), recursive: true}); }
+      files.set(path, data); return {uri: "file:///Documents/" + path};
+    },
+    async readdir({path}) {
+      if (!dirs.has(path)) throw missing();
+      const out = [];
+      const under = n => (path ? n.startsWith(path + "/") : true) && !n.slice(path ? path.length + 1 : 0).includes("/") && n !== path;
+      for (const d of dirs) if (under(d)) out.push({name: d.split("/").pop(), type: "directory", size: 0, mtime: 0});
+      for (const f of files.keys()) if (under(f)) out.push({name: f.split("/").pop(), type: "file", size: 0, mtime: 0});
+      return {files: out};
+    },
+    async deleteFile({path}) { if (!files.delete(path)) throw missing(); },
+  };
+}
+
+test("iPad app: the Files folder is a folder root — opt-in pref, same seams, base64 round trips", async () => {
+  run(`globalThis.__prevFetch2 = fetch; fetch = () => Promise.reject(new Error("no network"));`);
+  run(`fsRoot.handle = null; fsRoot.mode = null; fsRoot.needsGrant = false; localStorage.removeItem("ff1roll-folder-native");`);
+  assert.equal(run(`nativeFs()`), null); // the web: no Capacitor, nothing changes
+  app.context.capFs = fakeCapacitorFs();
+  run(`window.Capacitor = {isNativePlatform: () => true, Plugins: {Filesystem: capFs}};`);
+  assert.equal(run(`folderSupported()`), true);
+  // boot without the pref: GitHub as before, even inside the app
+  await run(`restoreFolder()`);
+  assert.equal(run(`folderActive()`), false);
+  // Settings → "Save in Files on this iPad" (chooseFolder) turns it on and remembers it
+  await run(`chooseFolder()`);
+  assert.equal(run(`folderActive()`), true);
+  assert.equal(run(`fsRoot.mode`), "native");
+  assert.equal(run(`localStorage.getItem("ff1roll-folder-native")`), "1");
+  assert.equal(run(`writeToken()`), "folder");
+  // text and bytes round-trip through base64; directories are created on the way
+  await run(`folderWrite("albums/compositions/nightroll/a.rollnotes.json", '{"version":1,"saved":7,"notes":[]}')`);
+  await run(`folderWrite("albums/compositions/nightroll/a.mid", new Uint8Array([77, 84, 104, 100, 0, 255, 128]))`);
+  assert.ok(app.context.capFs.files.has("albums/compositions/nightroll/a.mid"), "the plugin got a Documents-relative path");
+  const r = await run(`readData("analysis", "albums/compositions/nightroll/a.rollnotes.json", true)`);
+  assert.equal(r.fromFolder, true);
+  assert.equal(JSON.parse(await r.text()).saved, 7);
+  const mid = await run(`folderRead("albums/compositions/nightroll/a.mid")`);
+  assert.deepEqual([...new Uint8Array(await mid.arrayBuffer())], [77, 84, 104, 100, 0, 255, 128]);
+  assert.equal(await run(`folderRead("albums/compositions/nightroll/missing.mid")`), null);
+  // the catalog scan walks the plugin's readdir
+  await run(`folderWrite("albums/compositions/album.json", '{"title":"My Compositions","order":2,"songs":{"c":"Third Song"}}')`);
+  await run(`folderWrite("albums/compositions/c.mid", new Uint8Array([77, 84, 104, 100]))`);
+  const scan = JSON.parse(JSON.stringify(await run(`folderScanAlbums()`)));
+  assert.deepEqual(scan.map(a => a.title), ["My Compositions", "Night Roll Sketches"]);
+  assert.deepEqual(scan[1].songs, [{ title: "A", path: "albums/compositions/nightroll/a.mid" }]);
+  // delete: gone, and "never there" also answers true
+  assert.equal(await run(`folderDelete("albums/compositions/c.mid")`), true);
+  assert.equal(await run(`folderDelete("albums/compositions/c.mid")`), true);
+  // the pref survives a relaunch; Stop clears it
+  run(`fsRoot.handle = null; fsRoot.mode = null;`);
+  await run(`restoreFolder()`);
+  assert.equal(run(`fsRoot.mode`), "native");
+  await run(`chooseFolder()`); // toggles off
+  assert.equal(run(`folderActive()`), false);
+  assert.equal(run(`localStorage.getItem("ff1roll-folder-native")`), null);
+  run(`delete window.Capacitor; fetch = globalThis.__prevFetch2;`);
 });

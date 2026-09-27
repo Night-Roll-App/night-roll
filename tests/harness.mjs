@@ -185,6 +185,8 @@ export function createApp() {
     fetch: () => Promise.reject(new Error("no network in tests")),
     navigator: {},
     TextDecoder,
+    TextEncoder,
+    atob: (b) => Buffer.from(b, "base64").toString("binary"),
     URL,
     Blob,
     btoa: (s) => Buffer.from(s, "binary").toString("base64"),

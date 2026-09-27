@@ -1192,7 +1192,27 @@ needed. The folder's layout mirrors the repo exactly
   (`tests/e2e/folder.spec.mjs`, chromium only) and browser checks use it.
   The vm test drives the backend with an in-memory fake handle.
 
-**Not done:** Safari/iPad fallback (a downloadable project bundle),
+**iPad app (2026-09-27): the Files folder as a third root.** In the
+Capacitor shell, `nativeFs()` returns the `@capacitor/filesystem` plugin
+(`window.Capacitor.Plugins.Filesystem`, native platform only) and
+`nativeDirHandle(fs, rel)` wraps it in the same handle subset the picker
+and OPFS roots expose (get*Handle with {create}, getFile, createWritable,
+removeEntry, entries) over the app's Documents directory (`DOCUMENTS`),
+which iOS shows as Files → On My iPad → Night Roll (Info.plist:
+UIFileSharingEnabled + LSSupportsOpeningDocumentsInPlace). Bytes cross
+the bridge as base64. Opt-in like the desktop folder: the Settings row
+becomes one switch (**Save in Files on this iPad** / **Stop**,
+`chooseFolder` toggles the device pref `ff1roll-folder-native`;
+`restoreFolder` honours it at boot before the IndexedDB handle;
+`forgetFolder` clears it). `fsRoot.mode === "native"`; no permission
+model, no picker, no persistence of a handle. Every seam above is
+unchanged — `folderActive()` is still the one predicate. The vm test
+drives it with an in-memory plugin (`fakeCapacitorFs` in
+tests/night-roll.test.mjs); the shell project lives outside this repo
+(`~/work/ff/night-roll-app`, `build-ipad.sh` = package → sync → build →
+install).
+
+**Not done:** Safari fallback (a downloadable project bundle),
 autosave-on-edit in folder mode (explicit Save kept for parity and so
 Revert still means something), copying the FF1 corpus into a folder.
 
