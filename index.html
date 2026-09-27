@@ -10066,6 +10066,14 @@ document.getElementById("accseg").addEventListener("click", e => {
 // one). Zero-typing names (Josh, 2026-08-17 — hands hurt; data entry that a
 // file already did is theft): pick the m3u with the NSF, or alone while an
 // import session is open, and every row gets its real title.
+// Zophar's playlists are latin-1, not UTF-8: the © in "©1989-12-15 Square" is
+// one byte (0xA9). A plain UTF-8 decode turns it into U+FFFD, which defeated
+// the copyright test below and made every FFL row read the same (Josh,
+// 2026-09-27). Strict UTF-8 first — real UTF-8 rips keep working — else 1252.
+function decodeM3u(bytes) {
+  try { return new TextDecoder("utf-8", {fatal: true}).decode(bytes); }
+  catch { return new TextDecoder("windows-1252").decode(bytes); }
+}
 function parseM3u(text) { // ordered [{n, title}] — playlist order IS album order
   const list = [];
   for (const line of text.split(/\r?\n/)) {
@@ -10073,12 +10081,15 @@ function parseM3u(text) { // ordered [{n, title}] — playlist order IS album or
     if (!m) continue;
     const raw = m[2].replace(/\\,/g, ",");
     const parts = raw.split(" - ");
-    // two layouts: NSF rips write "Game - Artist - Title"; Game Boy rips write
-    // "Title - Artist - Game - ©1989-12-15 Square" (Josh, 2026-09-27: every
-    // FFL1 row came out as the game name). A copyright tail = title first.
-    const gbLayout = parts.length >= 3 && /^(©|\(c\)|\d{4}\b)/i.test(parts[parts.length - 1].trim());
-    const title = (gbLayout ? parts[0] : parts.length >= 3 ? parts.slice(2).join(" - ") : parts[parts.length - 1]).trim();
-    if (title) list.push({n: +m[1], title, len: +m[3] * 60 + +m[4]});
+    // two scenes, two layouts (the real FFL1 rip, 2026-09-27): NSF lines are
+    // "Game - Artist - Title" with 1-based tracks; GBS lines are "Title -
+    // Artist - Game - ©1989-12-15 Square" with 0-BASED tracks (gbsplay's
+    // numbering, 0-16 for 17 subsongs) — title first, and +1 to the app's
+    // rows. Keyed on the ::GBS marker, so a single picked per-track file
+    // (no track 0 in sight) still lands on the right subsong.
+    const gb = m[0].includes("::GBS,");
+    const title = (gb && parts.length >= 2 ? parts[0] : parts.length >= 3 ? parts.slice(2).join(" - ") : parts[parts.length - 1]).trim();
+    if (title) list.push({n: +m[1] + (gb ? 1 : 0), title, len: +m[3] * 60 + +m[4]});
   }
   return list;
 }
@@ -10113,7 +10124,7 @@ document.getElementById("fileinput").addEventListener("change", async e => {
     // so every picked playlist merges, in file-name order (Josh, from the
     // Final Fantasy Legend zip, 2026-09-27)
     const names = m3us.length
-      ? [].concat(...m3us.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true})).map(x => parseM3u(new TextDecoder().decode(x.bytes))))
+      ? [].concat(...m3us.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true})).map(x => parseM3u(decodeM3u(x.bytes))))
       : null;
     const nsfs = rest.filter(x => chipKindOf(x.bytes));
     const audios = rest.filter(x => audioMagic(x.bytes));

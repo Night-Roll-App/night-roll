@@ -165,6 +165,23 @@ test("SM83: JR loop, INC/DEC keep carry, ADD HL half-carry from bit 11, SUB borr
   assert.equal(cpu.f, 0x50, "N and C (borrow), no H");
 });
 
+test("SM83: unconditional JR lands past its own operand, forward and back", () => {
+  // Josh's FFL rip derailed here: `pc + rel()` read PC before the operand
+  // fetch, so every JR e landed a byte short and the driver hit RST 38.
+  const {cpu, run} = cpuWith([
+    0x18, 0x03,             // $100: JR +3   -> $105 (skips the three bytes)
+    0x3E, 0xFF, 0x00,       //      LD A,$FF / NOP  (jumped over)
+    0x3C,                   // $105: INC A
+    0x18, 0xFA,             // $106: JR -6   -> $102
+  ]);
+  run(1);
+  assert.equal(cpu.pc, 0x105, "forward JR: target = address after the operand + e");
+  run(1);
+  assert.equal(cpu.a, 1, "landed on INC A, not on the skipped LD A,$FF");
+  run(1);
+  assert.equal(cpu.pc, 0x102, "backward JR from $106 with e=-6");
+});
+
 test("SM83: HL+/HL- loads, LDH ports, LD (C),A, PUSH/POP AF masks the low nibble", () => {
   const {cpu, mem, run} = cpuWith([
     0x21, 0x00, 0xC0, 0x3E, 0x11, 0x22, 0x3E, 0x22, 0x32, // LD HL,$C000 / LD A,$11 / LD (HL+),A / LD A,$22 / LD (HL-),A

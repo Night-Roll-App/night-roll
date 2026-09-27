@@ -397,10 +397,20 @@ longer emulation). m3u: Zophar's GBS rips ship ONE .m3u per track
 (`DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - …,01:28,,10`), so
 `parseM3u` accepts `::GBS,` and the picker merges every picked playlist
 in natural file-name order (a single NSF playlist is unchanged). The
-two scenes order the fields differently — NSF "Game - Artist - Title",
-Game Boy "Title - Artist - Game - ©1989-12-15 Square" — so a copyright
-tail (©, (c), or a year) means title-first; without that every FFL1
-row read as the game name (Josh, from the iPad, 2026-09-27). The
+real FFL1 rip (downloaded to test after Josh's iPad showed every row
+with the same name, 2026-09-27) settled three things: the files are
+Latin-1 (© is the single byte 0xA9 — `decodeM3u` tries strict UTF-8,
+then windows-1252; a plain decode made U+FFFD and broke a copyright
+heuristic); GBS lines are "Title - Artist - Game - ©1989-12-15 Square"
+(NSF: "Game - Artist - Title") so the `::GBS,` marker means title
+first; and GBS track numbers are 0-BASED (0–16 for 17 subsongs, out
+of album order), so the marker also adds 1 to reach the app's rows —
+keyed on the marker, not on "a 0 is present", so one picked per-track
+file still lands on the right subsong. Running the real rip also found
+an SM83 bug: JR e read PC before the operand fetch and landed a byte
+short (tools/gbs/cpu-sm83.mjs; test "SM83: unconditional JR lands past
+its own operand"). Verified with the real files in Chrome: 17 rows,
+album order, Main Theme captured. The
 file picker accepts `.gbs`; the File menu says "Import… (.mid / .nsf /
 .gbs)". Tests: "GBS import: the Game Boy chip goes through the same
 capture path" (synthetic GBS from `tools/gbs/make-test-gbs.mjs`, no ROM

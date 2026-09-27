@@ -1594,11 +1594,27 @@ test("m3u playlists: track names parse from the emu-scene format", () => {
     [12, "Dr. Wily's Castle II"],
   ]);
   // a Game Boy rip's line (Zophar: one such file per track, so the picker merges them)
-  // Game Boy rips write Title - Artist - Game - ©year: the title is FIRST (Josh, 2026-09-27: every FFL1 row read as the game name)
-  const gb = val(`parseM3u(${JSON.stringify(["DMG-SAJ.gbs::GBS,1,Main Theme - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:28,,10", "DMG-SAJ.gbs::GBS,2,Battle - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,00:59,,10", "x.gbs::GBS,3,Town - Someone - Some Game - (C) 1990 Co,01:00,,5"].join("\n"))})`);
-  assert.deepEqual(gb.map(e => [e.n, e.title, e.len]), [[1, "Main Theme", 88], [2, "Battle", 59], [3, "Town", 60]]);
+  // Game Boy rips (the real FFL1 lines, 2026-09-27): "Title - Artist - Game - ©year", tracks 0-BASED → title first, row n+1
+  const gb = val(`parseM3u(${JSON.stringify(["DMG-SAJ.gbs::GBS,0,Prologue - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:56,,10", "DMG-SAJ.gbs::GBS,7,Town Theme - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:00,,10", "DMG-SAJ.gbs::GBS,15,Jingle #01 - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,00:04,,1"].join("\n"))})`);
+  assert.deepEqual(gb.map(e => [e.n, e.title, e.len]), [[1, "Prologue", 116], [8, "Town Theme", 60], [16, "Jingle #01", 4]]);
   // an NSF line with a dash in the title keeps the NSF rule
   assert.deepEqual(val(`parseM3u(${JSON.stringify("a.nsf::NSF,4,Game - Artist - Stage 1 - Intro,0:01:00,,0:00:05")})`).map(e => e.title), ["Stage 1 - Intro"]);
+});
+
+test("m3u: latin-1 playlist bytes decode, and GBS lines land on 1-based rows", () => {
+  // Zophar's real files are latin-1: © is the single byte 0xA9, so a plain
+  // UTF-8 decode replaced it and every FFL row read "Final Fantasy Legend -
+  // <?>1989-12-15 Square" (Josh's iPad import, 2026-09-27).
+  const line = "DMG-SAJ.gbs::GBS,0,Prologue - Nobuo Uematsu - Final Fantasy Legend - \xA91989-12-15 Square,01:56,,10";
+  const bytes = Uint8Array.from([...line].map(c => c.charCodeAt(0)));
+  assert.throws(() => new TextDecoder("utf-8", {fatal: true}).decode(bytes), "the fixture really is not UTF-8");
+  const titles = val(`parseM3u(decodeM3u(Uint8Array.from(${JSON.stringify([...bytes])})))`);
+  assert.deepEqual(titles.map(e => [e.n, e.title]), [[1, "Prologue"]]); // 0-based in the file, row 1 in the app
+  // UTF-8 playlists still decode as UTF-8
+  const utf8 = new TextEncoder().encode("a.gbs::GBS,1,Main Theme - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:28,,10");
+  assert.deepEqual(val(`parseM3u(decodeM3u(Uint8Array.from(${JSON.stringify([...utf8])})))`).map(e => e.title), ["Main Theme"]);
+  // NSF playlists start at 1 and must not move
+  assert.deepEqual(val(`parseM3u(${JSON.stringify("mm2.nsf::NSF,3,Mega Man II - Artist - Flash Man,0:01:17,,0:00:06")})`).map(e => e.n), [3]);
 });
 
 test("split at cursor / split in half / join — one undo step each", () => {

@@ -161,7 +161,10 @@ export class SM83 {
             if (y === 0) break;                                                    // NOP
             if (y === 1) { const a = this.imm16(); this.wr(a, this.sp & 0xFF); this.wr(a + 1, this.sp >> 8); break; } // LD (a16),SP
             if (y === 2) { this.halted = true; this.pc++; break; }                  // STOP (skips its padding byte)
-            if (y === 3) { this.pc = (this.pc + this.rel()) & 0xFFFF; break; }      // JR e
+            // rel() advances PC past the operand — read it into a local first:
+            // `this.pc + this.rel()` evaluates PC before the fetch and lands a
+            // byte short (Josh's FFL rip derailed in frame 3 on the first one)
+            if (y === 3) { const e = this.rel(); this.pc = (this.pc + e) & 0xFFFF; break; } // JR e
             { const e = this.rel(); if (this.cond(y - 4)) { this.pc = (this.pc + e) & 0xFFFF; cyc += 4; } break; } // JR cc,e
           case 1:
             if (q === 0) this.setRp(p, this.imm16());                              // LD rp,d16
