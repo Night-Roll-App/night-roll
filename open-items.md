@@ -44,6 +44,24 @@ Needs Josh, in order: the audio spike at the Mac with the iPad plugged
 in (~30 min); ~~an Apple Developer account~~ (DONE 2026-09-27 morning:
 enrolled and paid); a support email address; two more starter songs.
 Told him 2026-09-27 01:20 by inbox note and email.
+## ROADMAP — the whole remaining list (written 2026-09-26, end of a long day)
+
+Josh's rulings tonight: $4.99 confirmed; support email he creates
+tomorrow; app name "Night Roll" (availability checked — see below);
+starter content = ONE well-known public-domain classical piece, fully
+annotated by Claude as demo content (his explicit ask; the analysis
+rule is about HIS music), plus two more songs to be picked; overnight
+work happens on a branch (`overnight-2026-09-26`), nothing to main.
+
+**Phase 1, to finish**
+1. Step 5: `EDITION` flag; packaging script + ship guard (no FF1 /
+   Mega Man / TMNT / compositions in the store build; byte-identical
+   index.html); About attribution (FluidR3_GM, VexFlow, PolyForm).
+2. Local Save + auto-save switch (off by default): Save is the
+   checkpoint; Revert and Compare go to the last save; the working copy
+   survives a crash; undoable Revert (stash + Restore local copy).
+3. Live-test step 4 (README song list) on Josh's next Publish.
+
 **Then the native app**
 4. Phase 0.5 audio spike (needs Josh at the Mac, iPad plugged in).
 5. Phase 2 Capacitor shell (Files, "Open in Night Roll", audio session).
@@ -80,6 +98,11 @@ generated from the score's chord table and annotated by Claude as demo
 material at Josh's request (the analysis rule is about HIS music). The
 Starters album shows on the site too (public domain) and is the only
 album the packager ships. Two more starter songs are Josh's to pick.
+
+**Parked** — 16 Publish all shipping music + chat · 17 Compare under a
+chop; saved-only tracks · 18 in-browser model on the iPad (WebGPU)
+untested; Claude-by-API-key backend for users · 19 MIDI input
+(Jamstik) v1.1 · 20 on-device model runtime in the shell v1.1.
 
 **Tonight, on the branch (Claude alone):** 1, 2, 15 (plist + token),
 16, 17, and a first cut of the classical starter (Bach, Prelude in C
