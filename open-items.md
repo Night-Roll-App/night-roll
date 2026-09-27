@@ -136,11 +136,20 @@ Also that afternoon: a Release archive of the shell succeeds
 (`xcodebuild archive`, build/NightRoll.xcarchive); privacy.html on the
 site (draft — Josh to read before the listing uses it); the overnight
 branch deleted from GitHub (local tag archive/overnight-2026-09-26 keeps
-it). TestFlight needs Josh once at appstoreconnect.apple.com: My Apps →
-＋ → New App (iOS, name Night Roll, bundle id com.joshcough.nightroll,
-SKU nightroll, English). After that the upload is a command here
-(`xcodebuild -exportArchive` + `xcrun altool --upload-app`, or Xcode →
-Distribute). Privacy labels: no data collected (see privacy.html).
+it). TESTFLIGHT (2026-09-27 evening): the App Store Connect record existed
+(Apple ID 6816720406); build 1.0 (1) uploaded from the Mac
+(`xcodebuild -exportArchive` with ExportOptions method
+app-store-connect / destination upload; the archive is
+~/work/ff/night-roll-app/ios/App/build/NightRoll.xcarchive). Two
+lessons: the icon must have no alpha (flattened onto #0D1120 with a
+CoreGraphics script), and a build number is single-use (ITMS-90189 —
+CURRENT_PROJECT_VERSION is now 2 for the next upload; never pipe
+xcodebuild's upload through `head`, SIGPIPE kills it mid-way).
+Info.plist carries ITSAppUsesNonExemptEncryption=false. Josh still
+does: TestFlight → internal testers → install from the TestFlight app;
+privacy labels (no data collected); the listing
+(docs/app-store-listing.md is the draft); pick an icon (three
+candidates emailed, ~/Desktop/nightroll-icons/).
 
 ## APP STORE PREP — OVERNIGHT BRANCH FULLY MERGED 2026-09-27 (afternoon)
 
