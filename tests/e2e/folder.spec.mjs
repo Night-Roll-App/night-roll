@@ -31,7 +31,8 @@ test.describe("local folder mode", () => {
     // a new composition with one note, saved with NO token stored
     await page.evaluate(async () => {
       localStorage.removeItem("ff1roll-ghtoken");
-      createComposition("e2e-folder", 120, 4, 4);
+      createComposition(120, 4, 4);
+      await saveSongAs("compositions/nightroll", "e2e-folder");
       song.tracks[0].notes.push({ t: 0, d: 480, p: 60, v: 80 });
       saveDraft();
       await commitCompositionNow({ textContent: "" });

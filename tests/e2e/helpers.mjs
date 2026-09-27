@@ -40,9 +40,10 @@ export async function openApp(page) {
 }
 
 export async function newComposition(page, name = "e2e-scratch") {
-  await page.evaluate(n => {
-    for (const k of Object.keys(localStorage)) if (k.includes("e2e-scratch")) localStorage.removeItem(k);
-    createComposition(n, 120, 4, 4);
+  await page.evaluate(async n => {
+    for (const k of Object.keys(localStorage)) if (k.includes("e2e-scratch") || k.includes("untitled")) localStorage.removeItem(k);
+    createComposition(120, 4, 4); // Untitled until Save names it and picks its folder (2026-09-27)
+    await saveSongAs("compositions/nightroll", n);
   }, name);
 }
 

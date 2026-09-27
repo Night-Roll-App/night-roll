@@ -27,7 +27,7 @@ test.describe("audio tracks", () => {
   test("import → clip decodes → schedules → saves beside the .mid → reloads @smoke", async ({ page }) => {
     await open(page);
     await wipe(page);
-    await page.evaluate(() => { localStorage.removeItem("ff1roll-ghtoken"); createComposition("e2e-audio", 120, 4, 4); });
+    await page.evaluate(async () => { localStorage.removeItem("ff1roll-ghtoken"); createComposition(120, 4, 4); await saveSongAs("compositions/nightroll", "e2e-audio"); });
     // import the fixture through the same path the ＋∿ chip uses
     await page.evaluate(async () => {
       const r = await fetch("/tests/e2e/fixtures/tone.wav");
