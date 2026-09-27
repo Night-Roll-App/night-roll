@@ -1261,6 +1261,32 @@ then), mirror publish per folder, iPad Save writes Files without the
 checkbox, then Josh's batch of moves (imports + FF1 under console
 folders; nightroll/ stays his).
 
+**Console folders — the batch move (2026-09-27, phase 5; branch
+`console-folders` until Josh says go).** `git mv`: final-fantasy-i →
+nes/final-fantasy-i, imports/{mega-man-2,tmnt-2} → nes/, imports/
+chrono-trigger → snes/, imports/final-fantasy-legend → game-boy/.
+`MOVED_DIRS` + `movedPath(p)` (beside `songPathFromURL`, which now
+redirects old links) drive the boot's fourth wave: every per-song key
+(notes/edits/ts/draft/tombs/lastsync/save/stash/ask) follows by prefix,
+IndexedDB draft notes move with `idbDraftMove`, and a draft from
+imports/ is stamped `capture: true`. Captures are read-only by MARKER,
+not by folder (Josh's own "NES/My Covers" may sit beside
+nes/mega-man-2): `isCaptureKey(key)` = legacy imports/ prefix, or the
+draft's `capture` stamp (impCapture writes it), or `albumMetaCache[dir]
+.nsf` (album.json's chip block, for other devices). `ownFolderPath`
+excludes captures and `READONLY_DIRS` (nes/final-fantasy-i, starters,
+imports/). New captures land in `impDirFor(kind)` =
+albums/<console>/<game>/ (`CONSOLE_OF`: nsf→nes, gbs→game-boy,
+spc→snes, vgm→genesis, psf→ps1, usf→n64); MIDI-file album imports land
+in albums/<folder>/ as the user's own editable folder;
+`computeImportAlbumJson` takes the album dir; `importDraftKeys` =
+drafts that are captures; `draftInIdb` covers the console roots.
+`albumTitleFor` titles any albums/ path by its leaf folder. The
+manifest was rebuilt with the tool (imports albums now sort by name).
+Tests, README, WEB-SESSION.md and tools/loop_target_bass.mjs use the
+new paths; the pre-move waves in the boot block still name the old
+ones on purpose (they run first, wave four moves their output).
+
 **Save names the song; folders are yours (2026-09-27, phase 2).** File →
 New asks tempo/meter only and creates `local/untitled-N.mid`
 (`untitledKey()`; `isUnsaved(key)` = under local/, which also covers

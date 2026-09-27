@@ -65,7 +65,7 @@ a destroyed exercise.
    tally in the sweep). Non-circularity matters: note what was predicted,
    what evidence decided it, in what order.
 7. **Spoiler quarantine:** never fetch, quote, or summarize anything in
-   `albums/final-fantasy-i/reference/` whose header marks it quarantined
+   `albums/nes/final-fantasy-i/reference/` whose header marks it quarantined
    (currently `floating-castle-parked.md`) unless Josh explicitly says he
    is picking that song back up. Cloning puts quarantined files within
    easy reach; the rule is entirely on you to honor.
@@ -89,14 +89,14 @@ always fail. Blob pages on github.com work but cost ~2k tokens of nav
 chrome each.)
 
 - `open-items.md` — **start here**: restart context, open questions, queues.
-- `albums/final-fantasy-i/songs/<song>.notes.txt` — the note data Josh reads
+- `albums/nes/final-fantasy-i/songs/<song>.notes.txt` — the note data Josh reads
   (bar/beat/pitch/duration + `vN` chip volume on pulses; triangle has no
   volume control — absence there is N/A, not silence).
 - `albums/**/<song>.ask.md` — his in-app ✦ Ask chat about that song,
   appended on every Save (headings say when and which bars). Read it
   like a handoff: questions he asked, what the local model told him,
   anything he said the tool should do differently.
-- `albums/final-fantasy-i/songs/<song>.rollnotes.json` — his annotations: keys
+- `albums/nes/final-fantasy-i/songs/<song>.rollnotes.json` — his annotations: keys
   (partial `"key": "Bb?"` = tonic stored/mode pending), meters, sections,
   chords, loops, chops, tempo, track voice/color. JSON since 2026-08-15,
   one note per line; format spec in `NIGHT-ROLL.md` (legacy text grammar

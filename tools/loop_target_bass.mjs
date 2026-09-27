@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const SONGS = path.join(ROOT, "albums/final-fantasy-i/songs");
+const SONGS = path.join(ROOT, "albums/nes/final-fantasy-i/songs");
 const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const LETTER_PC = {C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11};
 

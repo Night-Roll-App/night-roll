@@ -4,79 +4,79 @@
   "songs": [
    {
     "title": "Airship",
-    "path": "albums/final-fantasy-i/songs/airship.mid"
+    "path": "albums/nes/final-fantasy-i/songs/airship.mid"
    },
    {
     "title": "Battle Scene",
-    "path": "albums/final-fantasy-i/songs/battle.mid"
+    "path": "albums/nes/final-fantasy-i/songs/battle.mid"
    },
    {
     "title": "Cornelia Castle",
-    "path": "albums/final-fantasy-i/songs/cornelia-castle.mid"
+    "path": "albums/nes/final-fantasy-i/songs/cornelia-castle.mid"
    },
    {
     "title": "Dead Music",
-    "path": "albums/final-fantasy-i/songs/game-over.mid"
+    "path": "albums/nes/final-fantasy-i/songs/game-over.mid"
    },
    {
     "title": "Dungeon",
-    "path": "albums/final-fantasy-i/songs/cave.mid"
+    "path": "albums/nes/final-fantasy-i/songs/cave.mid"
    },
    {
     "title": "Ending Theme",
-    "path": "albums/final-fantasy-i/songs/epilogue.mid"
+    "path": "albums/nes/final-fantasy-i/songs/epilogue.mid"
    },
    {
     "title": "Floating Castle",
-    "path": "albums/final-fantasy-i/songs/floating-castle.mid"
+    "path": "albums/nes/final-fantasy-i/songs/floating-castle.mid"
    },
    {
     "title": "Gurgu Volcano",
-    "path": "albums/final-fantasy-i/songs/gurgu-volcano.mid"
+    "path": "albums/nes/final-fantasy-i/songs/gurgu-volcano.mid"
    },
    {
     "title": "Matoya's Cave",
-    "path": "albums/final-fantasy-i/songs/matoyas-cave.mid"
+    "path": "albums/nes/final-fantasy-i/songs/matoyas-cave.mid"
    },
    {
     "title": "Menu Screen",
-    "path": "albums/final-fantasy-i/songs/menu.mid"
+    "path": "albums/nes/final-fantasy-i/songs/menu.mid"
    },
    {
     "title": "Opening Theme",
-    "path": "albums/final-fantasy-i/songs/prologue.mid"
+    "path": "albums/nes/final-fantasy-i/songs/prologue.mid"
    },
    {
     "title": "Overworld",
-    "path": "albums/final-fantasy-i/songs/overworld.mid"
+    "path": "albums/nes/final-fantasy-i/songs/overworld.mid"
    },
    {
     "title": "Prelude",
-    "path": "albums/final-fantasy-i/songs/prelude.mid"
+    "path": "albums/nes/final-fantasy-i/songs/prelude.mid"
    },
    {
     "title": "Ship",
-    "path": "albums/final-fantasy-i/songs/ship.mid"
+    "path": "albums/nes/final-fantasy-i/songs/ship.mid"
    },
    {
     "title": "Shop",
-    "path": "albums/final-fantasy-i/songs/shop.mid"
+    "path": "albums/nes/final-fantasy-i/songs/shop.mid"
    },
    {
     "title": "Temple of Chaos",
-    "path": "albums/final-fantasy-i/songs/chaos-temple.mid"
+    "path": "albums/nes/final-fantasy-i/songs/chaos-temple.mid"
    },
    {
     "title": "Town",
-    "path": "albums/final-fantasy-i/songs/town.mid"
+    "path": "albums/nes/final-fantasy-i/songs/town.mid"
    },
    {
     "title": "Undersea Shrine",
-    "path": "albums/final-fantasy-i/songs/underwater-palace.mid"
+    "path": "albums/nes/final-fantasy-i/songs/underwater-palace.mid"
    },
    {
     "title": "Victory",
-    "path": "albums/final-fantasy-i/songs/victory.mid"
+    "path": "albums/nes/final-fantasy-i/songs/victory.mid"
    }
   ]
  },
@@ -180,204 +180,375 @@
   ]
  },
  {
-  "title": "Mega Man 2",
+  "title": "Chrono Trigger",
   "songs": [
    {
-    "title": "Air Man",
-    "path": "albums/imports/mega-man-2/air-man.mid"
+    "title": "A Prayer to the Road that Leads",
+    "path": "albums/snes/chrono-trigger/a-prayer-to-the-road-that-leads.mid"
    },
    {
-    "title": "Boss Battle",
-    "path": "albums/imports/mega-man-2/boss-battle.mid"
+    "title": "A Shot of Crisis",
+    "path": "albums/snes/chrono-trigger/a-shot-of-crisis.mid"
    },
    {
-    "title": "Bubble Man",
-    "path": "albums/imports/mega-man-2/bubble-man.mid"
+    "title": "A Strange Happening",
+    "path": "albums/snes/chrono-trigger/a-strange-happening.mid"
    },
    {
-    "title": "Crash Man",
-    "path": "albums/imports/mega-man-2/crash-man.mid"
+    "title": "At the Bottom of Night",
+    "path": "albums/snes/chrono-trigger/at-the-bottom-of-night.mid"
    },
    {
-    "title": "Credits",
-    "path": "albums/imports/mega-man-2/credits.mid"
+    "title": "Ayla's Theme",
+    "path": "albums/snes/chrono-trigger/ayla-s-theme.mid"
    },
    {
-    "title": "Dr. Wily Defeated!",
-    "path": "albums/imports/mega-man-2/dr-wily-defeated.mid"
+    "title": "Battle 1",
+    "path": "albums/snes/chrono-trigger/battle-1.mid"
    },
    {
-    "title": "Dr. Wily's Castle",
-    "path": "albums/imports/mega-man-2/dr-wily-s-castle.mid"
+    "title": "Battle 2",
+    "path": "albums/snes/chrono-trigger/battle-2.mid"
    },
    {
-    "title": "Dr. Wily's Castle II",
-    "path": "albums/imports/mega-man-2/dr-wily-s-castle-ii.mid"
+    "title": "Battle with Magus",
+    "path": "albums/snes/chrono-trigger/battle-with-magus.mid"
    },
    {
-    "title": "Dr. Wily's Map",
-    "path": "albums/imports/mega-man-2/dr-wily-s-map.mid"
+    "title": "Bike Chase",
+    "path": "albums/snes/chrono-trigger/bike-chase.mid"
    },
    {
-    "title": "Enemy Chosen",
-    "path": "albums/imports/mega-man-2/enemy-chosen.mid"
+    "title": "Black Omen",
+    "path": "albums/snes/chrono-trigger/black-omen.mid"
    },
    {
-    "title": "Epilogue",
-    "path": "albums/imports/mega-man-2/epilogue.mid"
+    "title": "Blackbird (Inside)",
+    "path": "albums/snes/chrono-trigger/blackbird-inside.mid"
    },
    {
-    "title": "Flash Man",
-    "path": "albums/imports/mega-man-2/flash-man.mid"
+    "title": "Blackbird (Outside)",
+    "path": "albums/snes/chrono-trigger/blackbird-outside.mid"
    },
    {
-    "title": "Get Your Weapons Ready",
-    "path": "albums/imports/mega-man-2/get-your-weapons-ready.mid"
+    "title": "Boss Battle 1",
+    "path": "albums/snes/chrono-trigger/boss-battle-1.mid"
    },
    {
-    "title": "Heat Man",
-    "path": "albums/imports/mega-man-2/heat-man.mid"
+    "title": "Boss Battle 2",
+    "path": "albums/snes/chrono-trigger/boss-battle-2.mid"
    },
    {
-    "title": "Introduction",
-    "path": "albums/imports/mega-man-2/introduction.mid"
+    "title": "Breath of Lavos",
+    "path": "albums/snes/chrono-trigger/breath-of-lavos.mid"
    },
    {
-    "title": "Metal Man",
-    "path": "albums/imports/mega-man-2/metal-man.mid"
+    "title": "Brink of Time",
+    "path": "albums/snes/chrono-trigger/brink-of-time.mid"
    },
    {
-    "title": "Password Screen",
-    "path": "albums/imports/mega-man-2/password-screen.mid"
+    "title": "Burn! Bobonga!",
+    "path": "albums/snes/chrono-trigger/burn-bobonga.mid"
    },
    {
-    "title": "Quick Man",
-    "path": "albums/imports/mega-man-2/quick-man.mid"
+    "title": "Chrono Trigger",
+    "path": "albums/snes/chrono-trigger/chrono-trigger.mid"
    },
    {
-    "title": "Stage Select",
-    "path": "albums/imports/mega-man-2/stage-select.mid"
+    "title": "Chrono Trigger (Looped)",
+    "path": "albums/snes/chrono-trigger/chrono-trigger-looped.mid"
    },
    {
-    "title": "Title Screen",
-    "path": "albums/imports/mega-man-2/title-screen.mid"
+    "title": "Confusing Melody",
+    "path": "albums/snes/chrono-trigger/confusing-melody.mid"
    },
    {
-    "title": "Track 20",
-    "path": "albums/imports/mega-man-2/track-20.mid"
+    "title": "Corridors of Time",
+    "path": "albums/snes/chrono-trigger/corridors-of-time.mid"
    },
    {
-    "title": "Track 23",
-    "path": "albums/imports/mega-man-2/track-23.mid"
+    "title": "Courage and Pride",
+    "path": "albums/snes/chrono-trigger/courage-and-pride.mid"
    },
    {
-    "title": "Victory",
-    "path": "albums/imports/mega-man-2/victory.mid"
+    "title": "Delightful Spekkio",
+    "path": "albums/snes/chrono-trigger/delightful-spekkio.mid"
    },
    {
-    "title": "Wood Man",
-    "path": "albums/imports/mega-man-2/wood-man.mid"
-   }
-  ]
- },
- {
-  "title": "TMNT 2",
-  "songs": [
-   {
-    "title": "Boss A",
-    "path": "albums/imports/tmnt-2/boss-a.mid"
+    "title": "Determination",
+    "path": "albums/snes/chrono-trigger/determination.mid"
    },
    {
-    "title": "Boss B",
-    "path": "albums/imports/tmnt-2/boss-b.mid"
+    "title": "Earthquake",
+    "path": "albums/snes/chrono-trigger/earthquake.mid"
    },
    {
-    "title": "Boss C",
-    "path": "albums/imports/tmnt-2/boss-c.mid"
+    "title": "Epilogue ~ To Good Friends",
+    "path": "albums/snes/chrono-trigger/epilogue-to-good-friends.mid"
    },
    {
-    "title": "Credits",
-    "path": "albums/imports/tmnt-2/credits.mid"
+    "title": "Fall of Zeal",
+    "path": "albums/snes/chrono-trigger/fall-of-zeal.mid"
    },
    {
-    "title": "Cutscene A",
-    "path": "albums/imports/tmnt-2/cutscene-a.mid"
+    "title": "Fanfare 1",
+    "path": "albums/snes/chrono-trigger/fanfare-1.mid"
    },
    {
-    "title": "Cutscene B",
-    "path": "albums/imports/tmnt-2/cutscene-b.mid"
+    "title": "Fanfare 2",
+    "path": "albums/snes/chrono-trigger/fanfare-2.mid"
    },
    {
-    "title": "Cutscene C",
-    "path": "albums/imports/tmnt-2/cutscene-c.mid"
+    "title": "Fanfare 3",
+    "path": "albums/snes/chrono-trigger/fanfare-3.mid"
    },
    {
-    "title": "Cutscene D",
-    "path": "albums/imports/tmnt-2/cutscene-d.mid"
+    "title": "Far Off Promise",
+    "path": "albums/snes/chrono-trigger/far-off-promise.mid"
    },
    {
-    "title": "Cutscene E",
-    "path": "albums/imports/tmnt-2/cutscene-e.mid"
+    "title": "First Festival of Stars",
+    "path": "albums/snes/chrono-trigger/first-festival-of-stars.mid"
    },
    {
-    "title": "Cutscene F",
-    "path": "albums/imports/tmnt-2/cutscene-f.mid"
+    "title": "Frog's Theme",
+    "path": "albums/snes/chrono-trigger/frog-s-theme.mid"
    },
    {
-    "title": "Epilogue",
-    "path": "albums/imports/tmnt-2/epilogue.mid"
+    "title": "Gato's Song",
+    "path": "albums/snes/chrono-trigger/gato-s-song.mid"
    },
    {
-    "title": "Game Over",
-    "path": "albums/imports/tmnt-2/game-over.mid"
+    "title": "Goodnight",
+    "path": "albums/snes/chrono-trigger/goodnight.mid"
    },
    {
-    "title": "Scene 1",
-    "path": "albums/imports/tmnt-2/scene-1.mid"
+    "title": "Guardia Millennial Fair",
+    "path": "albums/snes/chrono-trigger/guardia-millennial-fair.mid"
    },
    {
-    "title": "Scene 2A",
-    "path": "albums/imports/tmnt-2/scene-2a.mid"
+    "title": "Huh?!",
+    "path": "albums/snes/chrono-trigger/huh.mid"
    },
    {
-    "title": "Scene 2B",
-    "path": "albums/imports/tmnt-2/scene-2b.mid"
+    "title": "Kingdom Trial",
+    "path": "albums/snes/chrono-trigger/kingdom-trial.mid"
    },
    {
-    "title": "Scene 3A",
-    "path": "albums/imports/tmnt-2/scene-3a.mid"
+    "title": "Lab 16's Ruin",
+    "path": "albums/snes/chrono-trigger/lab-16-s-ruin.mid"
    },
    {
-    "title": "Scene 3B & 5",
-    "path": "albums/imports/tmnt-2/scene-3b-5.mid"
+    "title": "Last Battle",
+    "path": "albums/snes/chrono-trigger/last-battle.mid"
    },
    {
-    "title": "Scene 4A",
-    "path": "albums/imports/tmnt-2/scene-4a.mid"
+    "title": "Lavos Stirs",
+    "path": "albums/snes/chrono-trigger/lavos-stirs.mid"
    },
    {
-    "title": "Scene 4B",
-    "path": "albums/imports/tmnt-2/scene-4b.mid"
+    "title": "Lavos Stirs (Faster)",
+    "path": "albums/snes/chrono-trigger/lavos-stirs-faster.mid"
    },
    {
-    "title": "Scene 6",
-    "path": "albums/imports/tmnt-2/scene-6.mid"
+    "title": "Lavos' Theme",
+    "path": "albums/snes/chrono-trigger/lavos-theme.mid"
    },
    {
-    "title": "Scene 7",
-    "path": "albums/imports/tmnt-2/scene-7.mid"
+    "title": "Lavos' Theme (Extended)",
+    "path": "albums/snes/chrono-trigger/lavos-theme-extended.mid"
    },
    {
-    "title": "Scene Cleared A",
-    "path": "albums/imports/tmnt-2/scene-cleared-a.mid"
+    "title": "Leene's Bell",
+    "path": "albums/snes/chrono-trigger/leene-s-bell.mid"
    },
    {
-    "title": "Scene Cleared B",
-    "path": "albums/imports/tmnt-2/scene-cleared-b.mid"
+    "title": "Magus' Castle",
+    "path": "albums/snes/chrono-trigger/magus-castle.mid"
    },
    {
-    "title": "Selection",
-    "path": "albums/imports/tmnt-2/selection.mid"
+    "title": "Manoria Cathedral",
+    "path": "albums/snes/chrono-trigger/manoria-cathedral.mid"
+   },
+   {
+    "title": "Memories of Green",
+    "path": "albums/snes/chrono-trigger/memories-of-green.mid"
+   },
+   {
+    "title": "Morning Sunlight",
+    "path": "albums/snes/chrono-trigger/morning-sunlight.mid"
+   },
+   {
+    "title": "Mystery of the Past",
+    "path": "albums/snes/chrono-trigger/mystery-of-the-past.mid"
+   },
+   {
+    "title": "Mystic Chanting",
+    "path": "albums/snes/chrono-trigger/mystic-chanting.mid"
+   },
+   {
+    "title": "Ocean Waves",
+    "path": "albums/snes/chrono-trigger/ocean-waves.mid"
+   },
+   {
+    "title": "Ozzie Laugh",
+    "path": "albums/snes/chrono-trigger/ozzie-laugh.mid"
+   },
+   {
+    "title": "Ozzie Scream",
+    "path": "albums/snes/chrono-trigger/ozzie-scream.mid"
+   },
+   {
+    "title": "Peaceful Days",
+    "path": "albums/snes/chrono-trigger/peaceful-days.mid"
+   },
+   {
+    "title": "People Without Hope",
+    "path": "albums/snes/chrono-trigger/people-without-hope.mid"
+   },
+   {
+    "title": "People Without Hope (Variant 1)",
+    "path": "albums/snes/chrono-trigger/people-without-hope-variant-1.mid"
+   },
+   {
+    "title": "People Without Hope (Variant 2)",
+    "path": "albums/snes/chrono-trigger/people-without-hope-variant-2.mid"
+   },
+   {
+    "title": "Presentiment",
+    "path": "albums/snes/chrono-trigger/presentiment.mid"
+   },
+   {
+    "title": "Primitive Mountain",
+    "path": "albums/snes/chrono-trigger/primitive-mountain.mid"
+   },
+   {
+    "title": "Prison Tower",
+    "path": "albums/snes/chrono-trigger/prison-tower.mid"
+   },
+   {
+    "title": "Quiet Beach",
+    "path": "albums/snes/chrono-trigger/quiet-beach.mid"
+   },
+   {
+    "title": "Rain and Flowing Water",
+    "path": "albums/snes/chrono-trigger/rain-and-flowing-water.mid"
+   },
+   {
+    "title": "Rat-a-Tat-Tat It's... Mitsuda",
+    "path": "albums/snes/chrono-trigger/rat-a-tat-tat-it-s-mitsuda.mid"
+   },
+   {
+    "title": "Remains of the Factory",
+    "path": "albums/snes/chrono-trigger/remains-of-the-factory.mid"
+   },
+   {
+    "title": "Rhythm of Wind, Sky and Earth",
+    "path": "albums/snes/chrono-trigger/rhythm-of-wind-sky-and-earth.mid"
+   },
+   {
+    "title": "Robo Gang Johnny",
+    "path": "albums/snes/chrono-trigger/robo-gang-johnny.mid"
+   },
+   {
+    "title": "Robo's Theme",
+    "path": "albums/snes/chrono-trigger/robo-s-theme.mid"
+   },
+   {
+    "title": "Ruined World",
+    "path": "albums/snes/chrono-trigger/ruined-world.mid"
+   },
+   {
+    "title": "Schala's Theme",
+    "path": "albums/snes/chrono-trigger/schala-s-theme.mid"
+   },
+   {
+    "title": "Sealed Door",
+    "path": "albums/snes/chrono-trigger/sealed-door.mid"
+   },
+   {
+    "title": "Secret of the Forest",
+    "path": "albums/snes/chrono-trigger/secret-of-the-forest.mid"
+   },
+   {
+    "title": "Silent Light",
+    "path": "albums/snes/chrono-trigger/silent-light.mid"
+   },
+   {
+    "title": "Singing Mountain",
+    "path": "albums/snes/chrono-trigger/singing-mountain.mid"
+   },
+   {
+    "title": "Strong Wind",
+    "path": "albums/snes/chrono-trigger/strong-wind.mid"
+   },
+   {
+    "title": "The Day the World Revived",
+    "path": "albums/snes/chrono-trigger/the-day-the-world-revived.mid"
+   },
+   {
+    "title": "The Hidden Truth",
+    "path": "albums/snes/chrono-trigger/the-hidden-truth.mid"
+   },
+   {
+    "title": "The Hidden Truth (Looped)",
+    "path": "albums/snes/chrono-trigger/the-hidden-truth-looped.mid"
+   },
+   {
+    "title": "Time Vortex",
+    "path": "albums/snes/chrono-trigger/time-vortex.mid"
+   },
+   {
+    "title": "To Far Away Times",
+    "path": "albums/snes/chrono-trigger/to-far-away-times.mid"
+   },
+   {
+    "title": "Truce Canyon",
+    "path": "albums/snes/chrono-trigger/truce-canyon.mid"
+   },
+   {
+    "title": "Tsunami",
+    "path": "albums/snes/chrono-trigger/tsunami.mid"
+   },
+   {
+    "title": "Tyran Castle",
+    "path": "albums/snes/chrono-trigger/tyran-castle.mid"
+   },
+   {
+    "title": "Underground Sewer",
+    "path": "albums/snes/chrono-trigger/underground-sewer.mid"
+   },
+   {
+    "title": "Underground Sewer (No Water)",
+    "path": "albums/snes/chrono-trigger/underground-sewer-no-water.mid"
+   },
+   {
+    "title": "Undersea Palace",
+    "path": "albums/snes/chrono-trigger/undersea-palace.mid"
+   },
+   {
+    "title": "Unknown Fanfare",
+    "path": "albums/snes/chrono-trigger/unknown-fanfare.mid"
+   },
+   {
+    "title": "Voice of Lavos",
+    "path": "albums/snes/chrono-trigger/voice-of-lavos.mid"
+   },
+   {
+    "title": "Wind Scene",
+    "path": "albums/snes/chrono-trigger/wind-scene.mid"
+   },
+   {
+    "title": "Wings That Cross Time",
+    "path": "albums/snes/chrono-trigger/wings-that-cross-time.mid"
+   },
+   {
+    "title": "World Revolution",
+    "path": "albums/snes/chrono-trigger/world-revolution.mid"
+   },
+   {
+    "title": "Zeal Palace",
+    "path": "albums/snes/chrono-trigger/zeal-palace.mid"
    }
   ]
  },
@@ -386,444 +557,273 @@
   "songs": [
    {
     "title": "Demon Cave",
-    "path": "albums/imports/final-fantasy-legend/demon-cave.mid"
+    "path": "albums/game-boy/final-fantasy-legend/demon-cave.mid"
    },
    {
     "title": "Eat the Meat",
-    "path": "albums/imports/final-fantasy-legend/eat-the-meat.mid"
+    "path": "albums/game-boy/final-fantasy-legend/eat-the-meat.mid"
    },
    {
     "title": "Epilogue",
-    "path": "albums/imports/final-fantasy-legend/epilogue.mid"
+    "path": "albums/game-boy/final-fantasy-legend/epilogue.mid"
    },
    {
     "title": "Fanfare",
-    "path": "albums/imports/final-fantasy-legend/fanfare.mid"
+    "path": "albums/game-boy/final-fantasy-legend/fanfare.mid"
    },
    {
     "title": "Fierce Battle",
-    "path": "albums/imports/final-fantasy-legend/fierce-battle.mid"
+    "path": "albums/game-boy/final-fantasy-legend/fierce-battle.mid"
    },
    {
     "title": "Fight",
-    "path": "albums/imports/final-fantasy-legend/fight.mid"
+    "path": "albums/game-boy/final-fantasy-legend/fight.mid"
    },
    {
     "title": "Forbidden Tower",
-    "path": "albums/imports/final-fantasy-legend/forbidden-tower.mid"
+    "path": "albums/game-boy/final-fantasy-legend/forbidden-tower.mid"
    },
    {
     "title": "Furious Battle",
-    "path": "albums/imports/final-fantasy-legend/furious-battle.mid"
+    "path": "albums/game-boy/final-fantasy-legend/furious-battle.mid"
    },
    {
     "title": "Hurry Up!",
-    "path": "albums/imports/final-fantasy-legend/hurry-up.mid"
+    "path": "albums/game-boy/final-fantasy-legend/hurry-up.mid"
    },
    {
     "title": "Jingle #01",
-    "path": "albums/imports/final-fantasy-legend/jingle-01.mid"
+    "path": "albums/game-boy/final-fantasy-legend/jingle-01.mid"
    },
    {
     "title": "Knights of the Demon World Tower",
-    "path": "albums/imports/final-fantasy-legend/knights-of-the-demon-world-tower.mid"
+    "path": "albums/game-boy/final-fantasy-legend/knights-of-the-demon-world-tower.mid"
    },
    {
     "title": "Main Theme",
-    "path": "albums/imports/final-fantasy-legend/main-theme.mid"
+    "path": "albums/game-boy/final-fantasy-legend/main-theme.mid"
    },
    {
     "title": "Prologue",
-    "path": "albums/imports/final-fantasy-legend/prologue.mid"
+    "path": "albums/game-boy/final-fantasy-legend/prologue.mid"
    },
    {
     "title": "Requiem",
-    "path": "albums/imports/final-fantasy-legend/requiem.mid"
+    "path": "albums/game-boy/final-fantasy-legend/requiem.mid"
    },
    {
     "title": "The Highest Floor",
-    "path": "albums/imports/final-fantasy-legend/the-highest-floor.mid"
+    "path": "albums/game-boy/final-fantasy-legend/the-highest-floor.mid"
    },
    {
     "title": "Town Theme",
-    "path": "albums/imports/final-fantasy-legend/town-theme.mid"
+    "path": "albums/game-boy/final-fantasy-legend/town-theme.mid"
    },
    {
     "title": "Wipe Your Tears Away",
-    "path": "albums/imports/final-fantasy-legend/wipe-your-tears-away.mid"
+    "path": "albums/game-boy/final-fantasy-legend/wipe-your-tears-away.mid"
    }
   ]
  },
  {
-  "title": "Chrono Trigger",
+  "title": "Mega Man 2",
   "songs": [
    {
-    "title": "A Prayer to the Road that Leads",
-    "path": "albums/imports/chrono-trigger/a-prayer-to-the-road-that-leads.mid"
+    "title": "Air Man",
+    "path": "albums/nes/mega-man-2/air-man.mid"
    },
    {
-    "title": "A Shot of Crisis",
-    "path": "albums/imports/chrono-trigger/a-shot-of-crisis.mid"
+    "title": "Boss Battle",
+    "path": "albums/nes/mega-man-2/boss-battle.mid"
    },
    {
-    "title": "A Strange Happening",
-    "path": "albums/imports/chrono-trigger/a-strange-happening.mid"
+    "title": "Bubble Man",
+    "path": "albums/nes/mega-man-2/bubble-man.mid"
    },
    {
-    "title": "At the Bottom of Night",
-    "path": "albums/imports/chrono-trigger/at-the-bottom-of-night.mid"
+    "title": "Crash Man",
+    "path": "albums/nes/mega-man-2/crash-man.mid"
    },
    {
-    "title": "Ayla's Theme",
-    "path": "albums/imports/chrono-trigger/ayla-s-theme.mid"
+    "title": "Credits",
+    "path": "albums/nes/mega-man-2/credits.mid"
    },
    {
-    "title": "Battle 1",
-    "path": "albums/imports/chrono-trigger/battle-1.mid"
+    "title": "Dr. Wily Defeated!",
+    "path": "albums/nes/mega-man-2/dr-wily-defeated.mid"
    },
    {
-    "title": "Battle 2",
-    "path": "albums/imports/chrono-trigger/battle-2.mid"
+    "title": "Dr. Wily's Castle",
+    "path": "albums/nes/mega-man-2/dr-wily-s-castle.mid"
    },
    {
-    "title": "Battle with Magus",
-    "path": "albums/imports/chrono-trigger/battle-with-magus.mid"
+    "title": "Dr. Wily's Castle II",
+    "path": "albums/nes/mega-man-2/dr-wily-s-castle-ii.mid"
    },
    {
-    "title": "Bike Chase",
-    "path": "albums/imports/chrono-trigger/bike-chase.mid"
+    "title": "Dr. Wily's Map",
+    "path": "albums/nes/mega-man-2/dr-wily-s-map.mid"
    },
    {
-    "title": "Black Omen",
-    "path": "albums/imports/chrono-trigger/black-omen.mid"
+    "title": "Enemy Chosen",
+    "path": "albums/nes/mega-man-2/enemy-chosen.mid"
    },
    {
-    "title": "Blackbird (Inside)",
-    "path": "albums/imports/chrono-trigger/blackbird-inside.mid"
+    "title": "Epilogue",
+    "path": "albums/nes/mega-man-2/epilogue.mid"
    },
    {
-    "title": "Blackbird (Outside)",
-    "path": "albums/imports/chrono-trigger/blackbird-outside.mid"
+    "title": "Flash Man",
+    "path": "albums/nes/mega-man-2/flash-man.mid"
    },
    {
-    "title": "Boss Battle 1",
-    "path": "albums/imports/chrono-trigger/boss-battle-1.mid"
+    "title": "Get Your Weapons Ready",
+    "path": "albums/nes/mega-man-2/get-your-weapons-ready.mid"
    },
    {
-    "title": "Boss Battle 2",
-    "path": "albums/imports/chrono-trigger/boss-battle-2.mid"
+    "title": "Heat Man",
+    "path": "albums/nes/mega-man-2/heat-man.mid"
    },
    {
-    "title": "Breath of Lavos",
-    "path": "albums/imports/chrono-trigger/breath-of-lavos.mid"
+    "title": "Introduction",
+    "path": "albums/nes/mega-man-2/introduction.mid"
    },
    {
-    "title": "Brink of Time",
-    "path": "albums/imports/chrono-trigger/brink-of-time.mid"
+    "title": "Metal Man",
+    "path": "albums/nes/mega-man-2/metal-man.mid"
    },
    {
-    "title": "Burn! Bobonga!",
-    "path": "albums/imports/chrono-trigger/burn-bobonga.mid"
+    "title": "Password Screen",
+    "path": "albums/nes/mega-man-2/password-screen.mid"
    },
    {
-    "title": "Chrono Trigger",
-    "path": "albums/imports/chrono-trigger/chrono-trigger.mid"
+    "title": "Quick Man",
+    "path": "albums/nes/mega-man-2/quick-man.mid"
    },
    {
-    "title": "Chrono Trigger (Looped)",
-    "path": "albums/imports/chrono-trigger/chrono-trigger-looped.mid"
+    "title": "Stage Select",
+    "path": "albums/nes/mega-man-2/stage-select.mid"
    },
    {
-    "title": "Confusing Melody",
-    "path": "albums/imports/chrono-trigger/confusing-melody.mid"
+    "title": "Title Screen",
+    "path": "albums/nes/mega-man-2/title-screen.mid"
    },
    {
-    "title": "Corridors of Time",
-    "path": "albums/imports/chrono-trigger/corridors-of-time.mid"
+    "title": "Track 20",
+    "path": "albums/nes/mega-man-2/track-20.mid"
    },
    {
-    "title": "Courage and Pride",
-    "path": "albums/imports/chrono-trigger/courage-and-pride.mid"
+    "title": "Track 23",
+    "path": "albums/nes/mega-man-2/track-23.mid"
    },
    {
-    "title": "Delightful Spekkio",
-    "path": "albums/imports/chrono-trigger/delightful-spekkio.mid"
+    "title": "Victory",
+    "path": "albums/nes/mega-man-2/victory.mid"
    },
    {
-    "title": "Determination",
-    "path": "albums/imports/chrono-trigger/determination.mid"
-   },
-   {
-    "title": "Earthquake",
-    "path": "albums/imports/chrono-trigger/earthquake.mid"
-   },
-   {
-    "title": "Epilogue ~ To Good Friends",
-    "path": "albums/imports/chrono-trigger/epilogue-to-good-friends.mid"
-   },
-   {
-    "title": "Fall of Zeal",
-    "path": "albums/imports/chrono-trigger/fall-of-zeal.mid"
-   },
-   {
-    "title": "Fanfare 1",
-    "path": "albums/imports/chrono-trigger/fanfare-1.mid"
-   },
-   {
-    "title": "Fanfare 2",
-    "path": "albums/imports/chrono-trigger/fanfare-2.mid"
-   },
-   {
-    "title": "Fanfare 3",
-    "path": "albums/imports/chrono-trigger/fanfare-3.mid"
-   },
-   {
-    "title": "Far Off Promise",
-    "path": "albums/imports/chrono-trigger/far-off-promise.mid"
-   },
-   {
-    "title": "First Festival of Stars",
-    "path": "albums/imports/chrono-trigger/first-festival-of-stars.mid"
-   },
-   {
-    "title": "Frog's Theme",
-    "path": "albums/imports/chrono-trigger/frog-s-theme.mid"
-   },
-   {
-    "title": "Gato's Song",
-    "path": "albums/imports/chrono-trigger/gato-s-song.mid"
-   },
-   {
-    "title": "Goodnight",
-    "path": "albums/imports/chrono-trigger/goodnight.mid"
-   },
-   {
-    "title": "Guardia Millennial Fair",
-    "path": "albums/imports/chrono-trigger/guardia-millennial-fair.mid"
-   },
-   {
-    "title": "Huh?!",
-    "path": "albums/imports/chrono-trigger/huh.mid"
-   },
-   {
-    "title": "Kingdom Trial",
-    "path": "albums/imports/chrono-trigger/kingdom-trial.mid"
-   },
-   {
-    "title": "Lab 16's Ruin",
-    "path": "albums/imports/chrono-trigger/lab-16-s-ruin.mid"
-   },
-   {
-    "title": "Last Battle",
-    "path": "albums/imports/chrono-trigger/last-battle.mid"
-   },
-   {
-    "title": "Lavos Stirs",
-    "path": "albums/imports/chrono-trigger/lavos-stirs.mid"
-   },
-   {
-    "title": "Lavos Stirs (Faster)",
-    "path": "albums/imports/chrono-trigger/lavos-stirs-faster.mid"
-   },
-   {
-    "title": "Lavos' Theme",
-    "path": "albums/imports/chrono-trigger/lavos-theme.mid"
-   },
-   {
-    "title": "Lavos' Theme (Extended)",
-    "path": "albums/imports/chrono-trigger/lavos-theme-extended.mid"
-   },
-   {
-    "title": "Leene's Bell",
-    "path": "albums/imports/chrono-trigger/leene-s-bell.mid"
-   },
-   {
-    "title": "Magus' Castle",
-    "path": "albums/imports/chrono-trigger/magus-castle.mid"
-   },
-   {
-    "title": "Manoria Cathedral",
-    "path": "albums/imports/chrono-trigger/manoria-cathedral.mid"
-   },
-   {
-    "title": "Memories of Green",
-    "path": "albums/imports/chrono-trigger/memories-of-green.mid"
-   },
-   {
-    "title": "Morning Sunlight",
-    "path": "albums/imports/chrono-trigger/morning-sunlight.mid"
-   },
-   {
-    "title": "Mystery of the Past",
-    "path": "albums/imports/chrono-trigger/mystery-of-the-past.mid"
-   },
-   {
-    "title": "Mystic Chanting",
-    "path": "albums/imports/chrono-trigger/mystic-chanting.mid"
-   },
-   {
-    "title": "Ocean Waves",
-    "path": "albums/imports/chrono-trigger/ocean-waves.mid"
-   },
-   {
-    "title": "Ozzie Laugh",
-    "path": "albums/imports/chrono-trigger/ozzie-laugh.mid"
-   },
-   {
-    "title": "Ozzie Scream",
-    "path": "albums/imports/chrono-trigger/ozzie-scream.mid"
-   },
-   {
-    "title": "Peaceful Days",
-    "path": "albums/imports/chrono-trigger/peaceful-days.mid"
-   },
-   {
-    "title": "People Without Hope",
-    "path": "albums/imports/chrono-trigger/people-without-hope.mid"
-   },
-   {
-    "title": "People Without Hope (Variant 1)",
-    "path": "albums/imports/chrono-trigger/people-without-hope-variant-1.mid"
-   },
-   {
-    "title": "People Without Hope (Variant 2)",
-    "path": "albums/imports/chrono-trigger/people-without-hope-variant-2.mid"
-   },
-   {
-    "title": "Presentiment",
-    "path": "albums/imports/chrono-trigger/presentiment.mid"
-   },
-   {
-    "title": "Primitive Mountain",
-    "path": "albums/imports/chrono-trigger/primitive-mountain.mid"
-   },
-   {
-    "title": "Prison Tower",
-    "path": "albums/imports/chrono-trigger/prison-tower.mid"
-   },
-   {
-    "title": "Quiet Beach",
-    "path": "albums/imports/chrono-trigger/quiet-beach.mid"
-   },
-   {
-    "title": "Rain and Flowing Water",
-    "path": "albums/imports/chrono-trigger/rain-and-flowing-water.mid"
-   },
-   {
-    "title": "Rat-a-Tat-Tat It's... Mitsuda",
-    "path": "albums/imports/chrono-trigger/rat-a-tat-tat-it-s-mitsuda.mid"
-   },
-   {
-    "title": "Remains of the Factory",
-    "path": "albums/imports/chrono-trigger/remains-of-the-factory.mid"
-   },
-   {
-    "title": "Rhythm of Wind, Sky and Earth",
-    "path": "albums/imports/chrono-trigger/rhythm-of-wind-sky-and-earth.mid"
-   },
-   {
-    "title": "Robo Gang Johnny",
-    "path": "albums/imports/chrono-trigger/robo-gang-johnny.mid"
-   },
-   {
-    "title": "Robo's Theme",
-    "path": "albums/imports/chrono-trigger/robo-s-theme.mid"
-   },
+    "title": "Wood Man",
+    "path": "albums/nes/mega-man-2/wood-man.mid"
+   }
+  ]
+ },
+ {
+  "title": "TMNT 2",
+  "songs": [
    {
-    "title": "Ruined World",
-    "path": "albums/imports/chrono-trigger/ruined-world.mid"
+    "title": "Boss A",
+    "path": "albums/nes/tmnt-2/boss-a.mid"
    },
    {
-    "title": "Schala's Theme",
-    "path": "albums/imports/chrono-trigger/schala-s-theme.mid"
+    "title": "Boss B",
+    "path": "albums/nes/tmnt-2/boss-b.mid"
    },
    {
-    "title": "Sealed Door",
-    "path": "albums/imports/chrono-trigger/sealed-door.mid"
+    "title": "Boss C",
+    "path": "albums/nes/tmnt-2/boss-c.mid"
    },
    {
-    "title": "Secret of the Forest",
-    "path": "albums/imports/chrono-trigger/secret-of-the-forest.mid"
+    "title": "Credits",
+    "path": "albums/nes/tmnt-2/credits.mid"
    },
    {
-    "title": "Silent Light",
-    "path": "albums/imports/chrono-trigger/silent-light.mid"
+    "title": "Cutscene A",
+    "path": "albums/nes/tmnt-2/cutscene-a.mid"
    },
    {
-    "title": "Singing Mountain",
-    "path": "albums/imports/chrono-trigger/singing-mountain.mid"
+    "title": "Cutscene B",
+    "path": "albums/nes/tmnt-2/cutscene-b.mid"
    },
    {
-    "title": "Strong Wind",
-    "path": "albums/imports/chrono-trigger/strong-wind.mid"
+    "title": "Cutscene C",
+    "path": "albums/nes/tmnt-2/cutscene-c.mid"
    },
    {
-    "title": "The Day the World Revived",
-    "path": "albums/imports/chrono-trigger/the-day-the-world-revived.mid"
+    "title": "Cutscene D",
+    "path": "albums/nes/tmnt-2/cutscene-d.mid"
    },
    {
-    "title": "The Hidden Truth",
-    "path": "albums/imports/chrono-trigger/the-hidden-truth.mid"
+    "title": "Cutscene E",
+    "path": "albums/nes/tmnt-2/cutscene-e.mid"
    },
    {
-    "title": "The Hidden Truth (Looped)",
-    "path": "albums/imports/chrono-trigger/the-hidden-truth-looped.mid"
+    "title": "Cutscene F",
+    "path": "albums/nes/tmnt-2/cutscene-f.mid"
    },
    {
-    "title": "Time Vortex",
-    "path": "albums/imports/chrono-trigger/time-vortex.mid"
+    "title": "Epilogue",
+    "path": "albums/nes/tmnt-2/epilogue.mid"
    },
    {
-    "title": "To Far Away Times",
-    "path": "albums/imports/chrono-trigger/to-far-away-times.mid"
+    "title": "Game Over",
+    "path": "albums/nes/tmnt-2/game-over.mid"
    },
    {
-    "title": "Truce Canyon",
-    "path": "albums/imports/chrono-trigger/truce-canyon.mid"
+    "title": "Scene 1",
+    "path": "albums/nes/tmnt-2/scene-1.mid"
    },
    {
-    "title": "Tsunami",
-    "path": "albums/imports/chrono-trigger/tsunami.mid"
+    "title": "Scene 2A",
+    "path": "albums/nes/tmnt-2/scene-2a.mid"
    },
    {
-    "title": "Tyran Castle",
-    "path": "albums/imports/chrono-trigger/tyran-castle.mid"
+    "title": "Scene 2B",
+    "path": "albums/nes/tmnt-2/scene-2b.mid"
    },
    {
-    "title": "Underground Sewer",
-    "path": "albums/imports/chrono-trigger/underground-sewer.mid"
+    "title": "Scene 3A",
+    "path": "albums/nes/tmnt-2/scene-3a.mid"
    },
    {
-    "title": "Underground Sewer (No Water)",
-    "path": "albums/imports/chrono-trigger/underground-sewer-no-water.mid"
+    "title": "Scene 3B & 5",
+    "path": "albums/nes/tmnt-2/scene-3b-5.mid"
    },
    {
-    "title": "Undersea Palace",
-    "path": "albums/imports/chrono-trigger/undersea-palace.mid"
+    "title": "Scene 4A",
+    "path": "albums/nes/tmnt-2/scene-4a.mid"
    },
    {
-    "title": "Unknown Fanfare",
-    "path": "albums/imports/chrono-trigger/unknown-fanfare.mid"
+    "title": "Scene 4B",
+    "path": "albums/nes/tmnt-2/scene-4b.mid"
    },
    {
-    "title": "Voice of Lavos",
-    "path": "albums/imports/chrono-trigger/voice-of-lavos.mid"
+    "title": "Scene 6",
+    "path": "albums/nes/tmnt-2/scene-6.mid"
    },
    {
-    "title": "Wind Scene",
-    "path": "albums/imports/chrono-trigger/wind-scene.mid"
+    "title": "Scene 7",
+    "path": "albums/nes/tmnt-2/scene-7.mid"
    },
    {
-    "title": "Wings That Cross Time",
-    "path": "albums/imports/chrono-trigger/wings-that-cross-time.mid"
+    "title": "Scene Cleared A",
+    "path": "albums/nes/tmnt-2/scene-cleared-a.mid"
    },
    {
-    "title": "World Revolution",
-    "path": "albums/imports/chrono-trigger/world-revolution.mid"
+    "title": "Scene Cleared B",
+    "path": "albums/nes/tmnt-2/scene-cleared-b.mid"
    },
    {
-    "title": "Zeal Palace",
-    "path": "albums/imports/chrono-trigger/zeal-palace.mid"
+    "title": "Selection",
+    "path": "albums/nes/tmnt-2/selection.mid"
    }
   ]
  }
