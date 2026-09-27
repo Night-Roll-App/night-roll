@@ -3133,6 +3133,19 @@ test("Recording: ● opens the loop end so a take past bar 2 grows the song inst
   assert.equal(val(`(() => { const s = 9.75, l = recOpenEnded({start: 0, end: 4}); return s < l.end ? s : l.start + (s - l.end) % (l.end - l.start); })()`), 9.75);
 });
 
+test("Publish all: isCompositionKey mirrors isComposition for a closed song; notesTxtFor renders a passed document", () => {
+  run(`localStorage.setItem("ff1roll-draft-albums/compositions/other.mid", JSON.stringify({dirty: true, tracks: []}));`);
+  assert.equal(val(`isCompositionKey("albums/compositions/nightroll/x.mid")`), true);
+  assert.equal(val(`isCompositionKey("albums/compositions/other.mid")`), true, "a draft marks it as ours");
+  assert.equal(val(`isCompositionKey("albums/compositions/stranger.mid")`), false);
+  assert.equal(val(`isCompositionKey("albums/final-fantasy-i/songs/airship.mid")`), false);
+  run(`localStorage.removeItem("ff1roll-draft-albums/compositions/other.mid");`);
+  const txt = val(`notesTxtFor({ppq: 480, timesig: [3, 4], tempos: [{usq: 600000}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 67, v: 100}]}]}, "albums/x/waltz.mid")`);
+  assert.match(txt, /^# waltz\.mid — 3\/4, 100bpm, 1 bars/);
+  assert.match(txt, /## track 1 \(lead\)\nbar 1: 1 G4 1/);
+  assert.equal(val(`askLogPath("albums/x/waltz.mid")`), "albums/x/waltz.ask.md");
+});
+
 test("Ask: host consent — localhost never prompts, other hosts once", () => {
   assert.equal(val(`aiHostKind("http://localhost:1234")`), "local");
   assert.equal(val(`aiHostKind("http://127.0.0.1:1234")`), "local");

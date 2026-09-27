@@ -1361,7 +1361,7 @@
       <dt>⚠ Messages</dt><dd>Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
       <dt>Save and Auto-save</dt><dd>By default (auto-save off) your edits live in a <b>working copy</b> on this device: it follows every change so nothing is lost to a crash, but it is not <i>saved</i> until you choose File → <b>Save</b> (⌘S). Save is your checkpoint: the gold ● means "changed since your last Save", <b>Revert to last save…</b> goes back to it, and <b>Compare with last save</b> shows the difference on the roll. Revert is undoable — the working copy is stashed first and File → <b>Restore unsaved copy…</b> brings it back until your next Save or Publish. Settings → SAVING → <b>Auto-save</b> switches to the other way: every edit is the save and the ● means unpublished. Publish is a separate step in both modes, and publishing also saves.</dd>
-      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and the footer button open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since the last save, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and pushes every song's annotations; music and chat commit from the open song. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
+      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and the footer button open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since the last save, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
     </dl>
     </div>
 
@@ -13344,18 +13344,19 @@ document.getElementById("fileimpcommit").addEventListener("click", e => {
     btn.textContent = "Commit import (" + n + ")";
   });
 });
-function notesTxtFor() { // the web-session dump: claude.ai reads text, not .mid binaries
+function notesTxtFor(doc, key) { // defaults to the open song; Publish all passes another song's draft // the web-session dump: claude.ai reads text, not .mid binaries
+  doc = doc || song; key = key || songKey;
   const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   const pn = p => NAMES[p % 12] + (Math.floor(p / 12) - 1);
-  const ts = song.timesig || [4, 4];
-  const bt = ts[0] * 4 / ts[1] * song.ppq;
+  const ts = doc.timesig || [4, 4];
+  const bt = ts[0] * 4 / ts[1] * doc.ppq;
   let end = 0;
-  song.tracks.forEach(t => t.notes.forEach(n => { if (!n.gone) end = Math.max(end, n.t + n.d); }));
+  doc.tracks.forEach(t => t.notes.forEach(n => { if (!n.gone) end = Math.max(end, n.t + n.d); }));
   const nBars = Math.ceil(end / bt - 0.05);
   const fmt = x => x.toFixed(2).replace(/\.?0+$/, "");
   const L = [];
-  L.push("# " + (songKey || "song").split("/").pop() + " — " + ts[0] + "/" + ts[1] + ", " +
-         Math.round(6e7 / song.tempos[0].usq) + "bpm, " + nBars + " bars");
+  L.push("# " + (key || "song").split("/").pop() + " — " + ts[0] + "/" + ts[1] + ", " +
+         Math.round(6e7 / doc.tempos[0].usq) + "bpm, " + nBars + " bars");
   L.push("# Format: bar N: beat pitch duration-in-quarter-notes");
   // gate-vs-notated: the 08-25 web session read 0.33 gates as triplets and
   // asserted it to Josh twice. Onset spacing is the evidence for rhythm.
@@ -13363,14 +13364,14 @@ function notesTxtFor() { // the web-session dump: claude.ai reads text, not .mid
   L.push("# RHYTHM comes from ONSET SPACING (the beat column), never from duration:");
   L.push("# staccato eighths gate at ~0.33 and are still eighths, not triplets.");
   L.push("# Pitches use sharp spelling; the true key is Josh's to discover — this file states no key.");
-  song.tracks.forEach((tr, ti) => {
+  doc.tracks.forEach((tr, ti) => {
     L.push("");
     L.push("## track " + (ti + 1) + (tr.name ? " (" + tr.name + ")" : ""));
     for (let b = 0; b < nBars; b++) {
       const ns = tr.notes.filter(n => !n.gone && n.t >= b * bt && n.t < (b + 1) * bt);
       if (!ns.length) continue;
       L.push("bar " + (b + 1) + ": " + ns.map(n =>
-        fmt((n.t - b * bt) / song.ppq + 1) + " " + pn(n.p) + " " + fmt(n.d / song.ppq)).join(", "));
+        fmt((n.t - b * bt) / doc.ppq + 1) + " " + pn(n.p) + " " + fmt(n.d / doc.ppq)).join(", "));
     }
   });
   return L.join("\n") + "\n";
@@ -13412,6 +13413,35 @@ async function uploadAudioClips(h, status) {
     const e = audioBufCache.get(audioCacheKey(file));
     if (e) e.where = where;
   }
+}
+function isCompositionKey(key) { // isComposition() for a song that is not open (no rollnotes to consult: the draft decides)
+  if (!key || !key.startsWith(COMP_DIR)) return false;
+  return key.startsWith(NR_DIR) || localStorage.getItem(draftStoreKey(key)) !== null;
+}
+// Publish all reaches songs that are NOT open (Josh, 2026-09-26: it used to
+// push their annotations only and say "open it to commit"). The device's
+// draft is the song: it becomes the .mid, the notes.txt and the manifest
+// entry exactly as commitCompositionNow does for the open song; annotations
+// come through buildRollnotesFor; the chat through askCommitLog(key).
+async function publishDraftSong(key, h) {
+  const d = JSON.parse(localStorage.getItem(draftStoreKey(key)));
+  const doc = {ppq: d.ppq, timesig: d.timesig, tempos: d.tempos.map(t => ({...t})),
+               tracks: d.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(n => ({...n}))}))};
+  const r1 = await putMidAt(key, h, writeMidi(doc));
+  if (!r1.ok) throw new Error(".mid HTTP " + r1.status);
+  const {path, content, stamp} = await buildRollnotesFor(key);
+  const r2 = await putRollnotes(path, content, h);
+  if (!r2.ok) throw new Error(".rollnotes.json HTTP " + r2.status);
+  const r3 = await putSongsText(key.replace(/\.midi?$/i, "") + ".notes.txt", notesTxtFor(doc, key), h);
+  if (!r3.ok) throw new Error(".notes.txt HTTP " + r3.status);
+  await askCommitLog(h, key, true);
+  await updateManifest(h, albums => manifestPlace(albums, null, key));
+  d.dirty = false; d.savedStamp = stamp;
+  localStorage.setItem(draftStoreKey(key), JSON.stringify(d));
+  if (!autosaveOn()) localStorage.setItem(saveStoreKey(key), JSON.stringify({...d, savedAt: Date.now()})); // publishing is also a Save
+  localStorage.removeItem(stashStoreKey(key));
+  localStorage.removeItem("ff1roll-notes-" + key);
+  recordLastSync(key, content);
 }
 async function commitCompositionNow(status) { // .mid + annotations + notes.txt, one flow
   if (cmp && cmp.showing === "repo") { status.textContent = "You are hearing the saved copy — switch back to your version first (the compare bar)."; return; }
@@ -15807,10 +15837,16 @@ function askEvictOthers(mine) { // other songs' logs go LRU-first when the total
   } catch (err) { /* enumeration failed: skip eviction */ }
 }
 function askModelName() { const c = cfg(); return c.aiBackend === "browser" ? c.aiBrowserModel : (c.aiModel || (askModelCache && askModelCache.ids[0]) || "model"); }
-function askLogPath(key) { return (key || askStoreKey()) === ASK_GENERAL_KEY ? ASK_GENERAL_LOG : notesBase() ? notesBase() + ".ask.md" : null; } // beside the .mid (compositions) or the .rollnotes.json (analyzed); the general chat at the repo root
+function askLogKey(keyArg) { // a store key ("ff1roll-ask-…"), a song key, or nothing (the open chat) → the store key
+  if (!keyArg) return askStoreKey();
+  return keyArg.startsWith("ff1roll-ask-") ? keyArg : "ff1roll-ask-" + keyArg;
+}
+function askLogSong(storeKey) { return storeKey === ASK_GENERAL_KEY ? null : storeKey.slice("ff1roll-ask-".length); }
+function askLogPath(key) { const sk = askLogKey(key); if (sk === ASK_GENERAL_KEY) return ASK_GENERAL_LOG; const song = askLogSong(sk); return song && song !== "local" ? song.replace(/\.midi?$/i, "") + ".ask.md" : null; } // beside the .mid (compositions) or the .rollnotes.json (analyzed); the general chat at the repo root
 function askLogHeader(key) {
-  if ((key || askStoreKey()) === ASK_GENERAL_KEY) return "# ✦ Ask log — general\n\nThe chat that is not about one song (the app, the project, music in general, messages for the terminal). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
-  return "# ✦ Ask log — " + songTitleOf(songKey) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
+  const sk = askLogKey(key);
+  if (sk === ASK_GENERAL_KEY) return "# ✦ Ask log — general\n\nThe chat that is not about one song (the app, the project, music in general, messages for the terminal). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
+  return "# ✦ Ask log — " + songTitleOf(askLogSong(sk)) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
 }
 function askLogMarkdown(msgs) { // what Save appends: one heading per question (when, which bars), the reply under it
   const two = n => String(n).padStart(2, "0");
@@ -15824,9 +15860,10 @@ function askLogMarkdown(msgs) { // what Save appends: one heading per question (
   }
   return out;
 }
-async function askCommitLog(h, keyArg) { // Save's chat leg: append the unsaved messages to <song>.ask.md (or the general log)
-  const key = keyArg || (askGeneral ? "ff1roll-ask-" + (songKey || "local") : askStoreKey()); // a song's Publish ships the SONG's chat even while the general tab is showing
+async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the unsaved messages to <song>.ask.md (or the general log); keyArg: another song's key for Publish all
+  const key = askLogKey(keyArg || (askGeneral ? "ff1roll-ask-" + (songKey || "local") : null)); // a song's Publish ships the SONG's chat even while the general tab is showing
   const general = key === ASK_GENERAL_KEY;
+  const sk = askLogSong(key);
   const path = askLogPath(key);
   const st = askStore(key);
   // never past a question still waiting for its reply: askFinish splices the
@@ -15840,7 +15877,7 @@ async function askCommitLog(h, keyArg) { // Save's chat leg: append the unsaved 
     const f = await folderRead(path);
     await folderWrite(path, (f ? await f.text() : askLogHeader(key)) + add);
   } else {
-    const repo = general || isComposition() ? "songs" : "analysis";
+    const repo = general || (comp !== undefined ? comp : (sk && typeof isCompositionKey === "function" ? isCompositionKey(sk) : isComposition())) ? "songs" : "analysis";
     const putOnce = async () => {
       let sha = null, old = askLogHeader(key);
       const g = await fetch(repoApi(repo) + path + "?ref=main", {headers: h, cache: "no-store"});
@@ -17193,29 +17230,43 @@ document.getElementById("ghsaveall").addEventListener("click", async e => {
   const status = document.getElementById("syncstatus");
   const token = takeToken(status);
   if (!token) return;
-  const dirty = dirtySongs();
-  const generalChat = askUnsavedCount(ASK_GENERAL_KEY) > 0;
-  if (!dirty.length && !generalChat) { status.textContent = "No unsynced annotations on this device (music and chat commit from the open song)."; return; }
+  const pending = pendingSongs();
+  if (!pending.length) { status.textContent = "Nothing pending on this device."; return; }
   btn.disabled = true;
+  const h = ghHeaders(token);
   const results = [];
-  if (generalChat) { // the general chat rides Publish all too
-    try { await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY); results.push("general chat ✓"); } catch (err) { results.push("general chat ✗ " + err.message); }
-  }
-  for (const key of dirty) {
+  for (const key of pending) {
+    if (key === "general") { // the general chat rides Publish all too
+      try { await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY); results.push("general chat ✓"); } catch (err) { results.push("general chat ✗ " + err.message); }
+      continue;
+    }
     const short = key.split("/").pop().replace(/\.midi?$/i, "");
     status.textContent = "Publishing " + short + "… " + results.join("  ");
     try {
-      const {path, content, stamp} = await buildRollnotesFor(key);
-      const r = await putRollnotes(path, content, ghHeaders(token));
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      if (key === songKey) markCurrentSongSynced(content, stamp, {keepDraft: true}); // the .mid did not go up: the ● must stay
-      else { localStorage.removeItem("ff1roll-notes-" + key); recordLastSync(key, content); }
+      if (key === songKey && song && isComposition()) { // the open song: its full flow
+        const sub = {textContent: ""}; await commitCompositionNow(sub);
+        if (/failed/i.test(sub.textContent)) throw new Error(sub.textContent.replace(/^.*failed: /i, ""));
+      } else if (isCompositionKey(key) && draftDirtyState(key)) { // another composition edited here: music + annotations + notes.txt + chat
+        await publishDraftSong(key, h);
+      } else { // annotations and chat only (analyzed songs, or nothing musical pending)
+        let notes = []; try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { notes = []; }
+        if (notes.length) {
+          const {path, content, stamp} = await buildRollnotesFor(key);
+          const r = await putRollnotes(path, content, h);
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          if (key === songKey) markCurrentSongSynced(content, stamp, {keepDraft: true});
+          else { localStorage.removeItem("ff1roll-notes-" + key); recordLastSync(key, content); }
+        }
+        await askCommitLog(h, key, isCompositionKey(key));
+      }
       results.push(short + " ✓");
     } catch (err) {
       results.push(short + " ✗ " + err.message);
     }
   }
+  await initCatalog().catch(() => {});
   updateSyncBtn();
+  updateSongBtn();
   renderSyncPending();
   status.textContent = results.join("  ");
   btn.disabled = false;

@@ -299,6 +299,17 @@ analyst exists — see the plan in open-items; the mirror-tree layout
 **Sync / Save & Commit sheet:** serializes the full current rollnotes
 state and commits it to this repo via the GitHub Contents API
 (fine-grained token, stored in browser localStorage, never in the repo).
+**Publish all (2026-09-26, overnight branch):** publishes everything
+`pendingSongs()` lists — the open song through `commitCompositionNow`;
+another composition edited on this device through `publishDraftSong`
+(the draft becomes the .mid via `writeMidi`, annotations via
+`buildRollnotesFor`, `notesTxtFor(doc, key)`, `askCommitLog(h, key,
+true)`, the manifest entry; then the draft is marked clean, a Save
+checkpoint written when auto-save is off, the stash and notes stash
+cleared); annotation-only and chat-only songs through `putRollnotes` /
+`askCommitLog(h, key, isCompositionKey(key))`. `isCompositionKey`
+mirrors `isComposition` for a closed song. The pending list's Open
+button stays as a convenience; "open it to commit" is gone.
 Rebuilt 2026-09-25 (Josh: "there should be song sections"):
 `pendingSongs()` is the union of `dirtySongs()` (unsynced annotation
 stashes), drafts whose `dirty` is set (`draftDirtyState`: "edited" since
