@@ -15713,6 +15713,7 @@ async function askRenderEarlier() { // what this device let go of after it reach
     }
     div.textContent = text.trim() || "(the repo file is empty)";
   } catch (err) { div.textContent = "earlier messages are in " + path + " — couldn't load it (" + err.message + ")"; }
+  askScrollEnd(); // the earlier block grows above the conversation: keep its end in view
 }
 function askRefresh() { // span label + model line; called on open and after Settings
   if (!song) return;
@@ -15928,8 +15929,10 @@ function openAsk() {
   askModeButtons(); // sets the placeholder for the mode
   asksheet.classList.add("on");
   askGrow();
+  askScrollEnd(); // the log was drawn while the sheet was display:none (scrollHeight 0), so every open landed at the top (Josh, 2026-09-27)
   askFocusIfKeyboard();
 }
+function askScrollEnd() { if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => { asklog.scrollTop = asklog.scrollHeight; }); else asklog.scrollTop = asklog.scrollHeight; }
 function askFocusIfKeyboard() { // a touch screen's keyboard took half the sheet on every open, and Josh dictates (2026-09-27); focus only where a real keyboard is likely
   if (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches) return;
   askinput.focus();
