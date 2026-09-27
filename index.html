@@ -2918,6 +2918,14 @@ let lastSubtitle = null;
   const last3 = localStorage.getItem("ff1roll-lastsong");
   if (last3 && MOVED[last3]) rememberLastSong(MOVED[last3]);
 })();
+// The first song a fresh device sees. Overworld on the web; the app edition
+// ships only the starter albums (FF1 rips are not ours to sell), so a
+// hardcoded path would fail there (Josh, 2026-09-27: "Couldn't open
+// Overworld. Load failed" on the packaged shell's first launch).
+function homeSong(all) {
+  const ow = "albums/final-fantasy-i/songs/overworld.mid";
+  return all.includes(ow) ? ow : (all[0] || ow);
+}
 function appConfirm(title, body, okLabel, cancelLabel) { // non-blocking confirm:
   // window.confirm freezes the main thread AND every automation/CDP command
   // (the invisible-dialog page-freeze class, found by Josh 2026-08-19)
@@ -17372,7 +17380,7 @@ try { // a capture beacon surviving into a fresh load = the tab was killed mid-c
       return;
     }
   } else currentPath = qsong ? qsong
-    : loadable(last) ? last : "albums/final-fantasy-i/songs/overworld.mid";
+    : loadable(last) ? last : homeSong(all);
   updateSongBtn();
   reflectSongURL(currentPath); // the address bar is the share link from the first frame: path form, never ?song=
   // a dead link (moved/renamed song in ?song= or a stale last-song) must not

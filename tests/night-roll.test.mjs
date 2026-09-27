@@ -3276,3 +3276,11 @@ test("Ask: backend selection from cfg; browser backend forces the 4k budget tier
   assert.deepEqual(val(`(({win, small, span}) => [win, small, span])(askBudget())`), [200000, false, 8000]);
   run(`saveCfg({aiBackend: "remote", aiWindow: 8192, aiModel: ""})`);
 });
+
+test("homeSong: Overworld when shipped, else the first catalog song (the app edition)", () => {
+  const ow = "albums/final-fantasy-i/songs/overworld.mid";
+  const home = (all) => val(`homeSong(${JSON.stringify(all)})`);
+  assert.equal(home(["albums/starters/songs/a.mid", ow]), ow);
+  assert.equal(home(["albums/starters/songs/a.mid", "albums/starters/songs/b.mid"]), "albums/starters/songs/a.mid");
+  assert.equal(home([]), ow);
+});
