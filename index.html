@@ -5664,10 +5664,13 @@ function warmContext() { // one silent sample: absorbs the fresh context's glitc
 function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // glitches the first render quantum of a fresh context. But a context iOS
   // has killed (state "closed") can never come back: rebuild + re-warm.
-  if (audio && audio.state === "closed") { audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null; }
+  if (audio && audio.state === "closed") { // iOS closes a context under pressure; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds
+    if (!gestureActive()) return;
+    audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
+  }
   if (audio) return;
   audio = new (window.AudioContext || window.webkitAudioContext)();
-  audio.onstatechange = () => console.log("[audio] state:", audio && audio.state);
+  audio.onstatechange = () => { console.log("[audio] state:", audio && audio.state); if (audio && audio.state === "closed") logErr("audio engine closed by the system — tap ▶ to rebuild it"); };
   master = audio.createGain();
   master.gain.value = MASTER_VOL * masterVol;
   master.connect(audio.destination);
@@ -5720,7 +5723,7 @@ async function resumeAudio() {
 // coming back from another app: revive audio without waiting for a Play tap
 // (resume only — a rebuild waits for the tap)
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && audio) { ensureAudio(); resumeAudio(); }
+  if (!document.hidden && audio && audio.state !== "closed") resumeAudio(); // a closed one waits for the tap
 });
 function openMaster() { // declick: ramp the master up instead of snapping on
   const t = audio.currentTime;
@@ -6281,7 +6284,7 @@ async function sfWaitForSong(capMs) { // resolve when this song's sampled pitche
   await Promise.race([Promise.all(waits), new Promise(r => setTimeout(r, capMs))]);
 }
 function autoVoiceLabel(ti) { // what "auto" actually resolves to for THIS track
-  if (chipActive() && chip.buffers && song.tracks[ti] && chip.buffers[song.tracks[ti].name])
+  if (chipActive() && song.tracks[ti] && chipHas(song.tracks[ti].name))
     return "chip — the game's own sound";
   const v = voiceType(ti);
   return (VOICES.find(([id]) => id === v) || [, v])[1];
@@ -6838,7 +6841,7 @@ function scheduleNote(ti, n, when, durSec) {
   // song made no sound). Nothing is sounding underneath a tap, so there is
   // nothing to double; and the chip buffer is a whole-track render, so there
   // is no way to sound one note from it. The preview uses the synth voice.
-  if (!n._preview && chipActive() && song.tracks[ti] && chip.buffers[song.tracks[ti].name] &&
+  if (!n._preview && chipActive() && song.tracks[ti] && chipHas(song.tracks[ti].name) &&
       (!song.tracks[ti].voice || song.tracks[ti].voice === "auto")) return;
   if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v); return; }
   let v = trackVoice(ti);
@@ -7010,7 +7013,7 @@ function currentLoop() { // "loop: B.Q" = at the anchor (jump point), return to 
 // (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
 // oscillator per note, hardware envelopes, real noise. Available while the
 // import session that captured the current draft is still open.
-const chip = {key: null, buffers: null, lead: 0, srcs: []}; // no toggle: chip audio is automatic wherever a source resolves
+const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: []}; // no toggle: chip audio is automatic wherever a source resolves
 function chipTrackNo() { // NSF track number from the LIVE import session
   if (!songKey || !nsfSess) return null;
   for (let n = 1; n < nsfSess.rows.length; n++)
@@ -7107,7 +7110,7 @@ async function updateChipBtn() { // name kept for call sites; now just the auto-
            "Re-import the album's NSF once, or commit the album; playing synthesized voices meanwhile.");
   }
   if (available && chip.key !== songKey && chip.rendering !== songKey) {
-    if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.key = null; } // free the last song's buffers: eight SNES voices are hundreds of MB
+    if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; } // free the last song's audio: eight SNES voices are hundreds of MB
     chip.rendering = songKey;
     const forKey = songKey;
     chip.renderPromise = chipRender().catch(() => false) // not renderable: synth carries the song
@@ -7133,12 +7136,17 @@ async function chipRender() {
   const forKey = songKey;
   const src = await chipSource();
   if (!src) return false;
-  ensureAudio();
+  // NO ensureAudio here: this runs at song load, outside any tap. Creating or
+  // rebuilding the AudioContext outside a gesture is the mute-until-relaunch
+  // case (Josh, 2026-09-27, a committed Chrono Trigger song silenced
+  // everything). The render only makes Float32 PCM; chipBuffers() turns it
+  // into AudioBuffers inside play()'s tap, on whatever context is live then.
   const kind = src.chip || "nsf";
   const M = await chipModules(kind);
   const nsfParsed = CHIPS[kind].parse(M)(src.bytes);
   const secs = Math.ceil(src.secs + 1);
   if (!M.renderApu) return false; // no renderer for this chip (yet): synth carries the song
+  const rate = CHIPS[kind].renderRate || (audio ? audio.sampleRate : 44100);
   chip.progress = 0;
   // a song opened on top of this one aborts the render at its next progress
   // tick — several quick opens used to leave several renders running to the
@@ -7156,7 +7164,7 @@ async function chipRender() {
   const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
   let r;
   try {
-    r = await render(M, res, {sampleRate: CHIPS[kind].renderRate || audio.sampleRate,
+    r = await render(M, res, {sampleRate: rate,
       onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
   } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
@@ -7165,28 +7173,36 @@ async function chipRender() {
     logErr("chip render came out silent for " + forKey.split("/").pop() + " (" + CHIPS[kind].label + ") — playing synthesized voices; tell Claude the song name");
     return false;
   }
-  const buffers = {};
-  for (const name of chans) {
-    if (chipSilent([r[name]])) { r[name] = null; continue; } // a voice the song never uses gets no buffer
-    const buf = audio.createBuffer(1, r[name].length, r.sampleRate); // at the render's rate: the graph resamples on playback
-    buf.copyToChannel(r[name], 0);
-    r[name] = null; // the Float32 copy is garbage the moment the buffer has it
-    buffers[name] = buf;
-  }
-  chip.buffers = buffers;
+  const pcm = {};
+  for (const name of chans) { if (!chipSilent([r[name]])) pcm[name] = r[name]; r[name] = null; } // a voice the song never uses keeps nothing
+  chip.pcm = pcm; chip.pcmRate = r.sampleRate;
+  chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers)
   chip.lead = t0 * frameSec;
   chip.key = forKey;
   console.log("[chip] ready: " + forKey + " — playing the console's own sound");
   return true;
 }
-function chipActive() { return chip.key === songKey && !!chip.buffers; }
+function chipActive() { return chip.key === songKey && !!(chip.pcm || chip.buffers); }
+function chipHas(name) { return !!((chip.pcm && chip.pcm[name]) || (chip.buffers && chip.buffers[name])); } // this track name has console audio
+function chipBuffers() { // AudioBuffers for the live context, made from the render's PCM — called from play()'s tap only
+  if (chip.buffers && chip.buffersCtx === audio) return chip.buffers;
+  if (!chip.pcm || !audio) return chip.buffers || {};
+  const out = {};
+  for (const [name, data] of Object.entries(chip.pcm)) {
+    const buf = audio.createBuffer(1, data.length, chip.pcmRate || audio.sampleRate); // at the render's rate: the graph resamples on playback
+    buf.copyToChannel(data, 0);
+    out[name] = buf;
+  }
+  chip.buffers = out; chip.buffersCtx = audio;
+  return out;
+}
 function chipStopSrcs() {
   for (const s of chip.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
   chip.srcs = [];
 }
 function chipStart(fromSec) {
   chipStopSrcs();
-  for (const [name, buffer] of Object.entries(chip.buffers)) {
+  for (const [name, buffer] of Object.entries(chipBuffers())) {
     const ti = song.tracks.findIndex(tr => (tr.name || "") === name);
     if (ti < 0) continue;
     const vv = song.tracks[ti].voice;
