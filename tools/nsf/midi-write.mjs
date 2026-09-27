@@ -4,7 +4,7 @@
 // frames, so raw times sit ±1 frame off the grid — hardware clock jitter,
 // not music. Musical analysis wants notes on the beats they mean. Raw frame
 // data stays intact upstream (events/.notes internals) if ever needed.
-const PPQ = 480;
+export const PPQ = 480; // exported: tools/vgm/midi-write.mjs builds on the same track encoder
 
 // snap a beat position to the nearest 16th (k/4) or triplet slot (k/6 —
 // covers triplet 8ths AND triplet 16ths; the epilogue uses the latter)
@@ -24,7 +24,7 @@ function vl(v) {
   return out.reverse();
 }
 
-function trackBytes(name, notes, ch, metas = []) {
+export function trackBytes(name, notes, ch, metas = []) {
   const evs = [];
   if (name) evs.push({t: 0, d: [0xFF, 0x03, name.length, ...[...name].map(c => c.charCodeAt(0))]});
   for (const m of metas) evs.push(m);
