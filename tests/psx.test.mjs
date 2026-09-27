@@ -181,7 +181,7 @@ test("SEP: two sequences with their own tempo and meter", () => {
   assert.deepEqual(r.notes.map(n => [n.tick, n.key, n.endTick - n.tick]), [[0, 69, 480]]);
 });
 
-test("PSF container: tags, CRC, EXE header, embedded SEQ + VAB found by scan", () => {
+test("PSF container: tags, CRC, EXE header, embedded SEQ + VAB found by scan", async () => {
   const bytes = makeTestPSF();
   assert.ok(isPSF(bytes));
   const psf = parsePSF(bytes);
@@ -189,7 +189,7 @@ test("PSF container: tags, CRC, EXE header, embedded SEQ + VAB found by scan", (
   assert.equal(psf.crcOk, true);
   assert.equal(psf.tags.title, "Night Roll test tune");
   assert.deepEqual(psf.libs, []);
-  const exe = inflatePSF(psf);
+  const exe = await inflatePSF(psf);
   const hdr = parseExe(exe);
   assert.equal(hdr.pc, 0x80010000);
   assert.match(hdr.region, /North America/);

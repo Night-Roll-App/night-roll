@@ -24,7 +24,7 @@ let vab = null;
 if (isPSF(bytes)) {
   const psf = parsePSF(bytes);
   if (psf.libs.length) console.error(`# minipsf: needs ${psf.libs.join(", ")} — its driver and bank live there; scanning this file's own data only`);
-  const exe = inflatePSF(psf);
+  const exe = await inflatePSF(psf);
   const found = scanMagic(exe);
   console.error(`# PSF v${psf.version} "${psf.tags.title || ""}" — ${found.seq.length} SEQ/SEP, ${found.vab.length} VAB in the program image${psf.crcOk ? "" : " (CRC mismatch)"}`);
   if (!found.seq.length) { console.error("# no SEQ data in the image: this driver is not libsnd, or the sequence is in a lib; route B needed"); process.exit(2); }

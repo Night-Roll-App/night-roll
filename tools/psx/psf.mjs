@@ -2,7 +2,8 @@
 // NOT play a PSF — that needs an R3000 + SPU (RESEARCH.md §5). It gets the
 // EXE out and scans it for SEQ/VAB data, which libsnd-based games carry
 // verbatim in RAM; those feed the SEQ pipeline with no emulation at all.
-import { inflateSync } from "node:zlib";
+// No top-level node import: the browser dynamic-imports this file like the
+// NSF modules and inflates with DecompressionStream("deflate") instead.
 
 export function isPSF(buf) {
   const d = new Uint8Array(buf);
@@ -45,7 +46,12 @@ export function parseExe(bytes) {
   return {pc: u32(0x10), gp: u32(0x14), textStart: u32(0x18), textSize: u32(0x1C), sp: u32(0x30), region, text: d.subarray(0x800, 0x800 + u32(0x1C))};
 }
 
-export function inflatePSF(psf) { return new Uint8Array(inflateSync(psf.program)); }
+// inflate: (Uint8Array zlib stream) -> Uint8Array | Promise<Uint8Array>;
+// defaults to Node's zlib, loaded only when needed
+export async function inflatePSF(psf, inflate = null) {
+  if (!inflate) { const z = await import("node:zlib"); inflate = b => z.inflateSync(b); }
+  return new Uint8Array(await inflate(psf.program));
+}
 
 // offsets of every "pQES" (SEQ/SEP) and "pBAV" (VAB) in a byte range
 export function scanMagic(bytes) {
