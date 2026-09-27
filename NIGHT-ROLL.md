@@ -471,15 +471,7 @@ the one safe place: `audioRebuildAtTap` runs synchronously as the first
 thing in `play()`'s tap when the engine is interrupted, closed, or
 `audioDead` (set when `resumeAudio`'s retries fail), closing the old
 context and letting `ensureAudio` make the new one in the same
-synchronous stretch.
-Fifth pass ("audio engine: running" while mute): state is not a signal,
-so the app measures — an AnalyserNode on master (`meter`, `outputRms`);
-`audioSelfCheck` runs ~1.5 s into play() and, with notes due and no
-signal, marks `audioDead` and logs "running but silent (measured at the
-output)"; the next ▶ tap replaces the engine. Starting any dictation
-(`micToggle`) stops playback and sets `audioDead` (a fresh engine after
-the mic, unconditionally); Send's `askMicOff` is `micRelease` (abort,
-never a lingering stop). Queued: a Worker for the render.
+synchronous stretch. Queued: a Worker for the render.
 
 **Big drafts (2026-09-27; Josh imported Chrono Trigger's 92 songs on the
 iPad: "quota has been exceeded", and the album "vanished" — it was under
