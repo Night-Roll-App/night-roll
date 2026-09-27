@@ -187,7 +187,29 @@ Angel (7/8 + 3/8 bars) dump full length. Import-side items:
 Approximate: pitch = written key (INSTR.DAT articulations not read yet);
 no per-note velocity in AKAO; bends counted, not applied.
 
-### AUDIO ON THE iPAD — REVERTED TO THE WORKING ENGINE 2026-09-27, FALL PARKED
+### AUDIO ON THE iPAD — WORKING AGAIN ON 5fc6e79 (2026-09-27 01:03), FALL PARKED
+
+Josh: "Everything is working now — even the Chrono Trigger stuff, and I
+can go back and forth to Final Fantasy." Zero ⚠ lines. KNOWN-GOOD =
+f733b42's engine exactly (resumeAudio: resume twice; with a dead clock
+inside a tap, rebuild the context and CONTINUE into play in that same
+tap, so the first sources start in the birth gesture) + 8e1c72d's guard
+(the synth is muted only while chip sources actually sound) + 8441c2c
+(render off the engine, PCM at 32 kHz, stale renders abort) + 9421bf9
+(0.6 s lookahead, Fall culls by tick) + Fall parked (76250d7). The
+breaker was the engine rewrites ea63c95 → 69da39f: create-and-return at
+the top of the tap instead of rebuild-then-play in the same tap.
+UNMEASURED, do not treat as fact: "a context created outside a gesture
+is mute forever" (inferred from two heavy-load incidents); the
+dictation → interrupted → mute theory (never shown to matter on this
+engine; the working build has no dictation handling). Branch
+audio-dictation stays unmerged; if ever proposed, it is ONE change with
+a specific A/B for Josh, after a stretch of normal use on 5fc6e79.
+Still open, low priority: Fall (parked), the boot pointerdown warm
+creating an engine before activation (harmless on the known-good), the
+render in a Worker, SNES echo.
+
+Earlier that night:
 
 Timeline (all the same night): CT played on f733b42 (rebuild inside a
 tap + the SNES renderer). Then Josh: Fall on CT → silence that stayed.
