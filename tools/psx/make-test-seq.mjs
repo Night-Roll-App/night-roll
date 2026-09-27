@@ -161,3 +161,76 @@ function crc32(bytes) {
   }
   return (c ^ 0xFFFFFFFF) >>> 0;
 }
+
+// ---- AKAO (Square's driver, FF7 flavour) and the minipsf/psflib pair ----
+// Byte shapes copied from the real FF7 set (INTEGRATION.md "Real rips"):
+// 0x10-byte header with a BCD timestamp, voice mask at 0x10, per-voice u16
+// offsets relative to the byte after each field, the drum map after the
+// score. `voices` maps voice number -> op bytes; `tail` follows the score.
+export function makeTestAKAO({id = 0x60, reverb = 3, voices, tail = []}) {
+  const nums = Object.keys(voices).map(Number).sort((a, b) => a - b);
+  const mask = nums.reduce((m, v) => m | (1 << v), 0);
+  const headerLen = 0x14 + 2 * nums.length;
+  const bodies = nums.map(v => Uint8Array.from(voices[v]));
+  const total = headerLen + bodies.reduce((a, b) => a + b.length, 0) + tail.length;
+  const out = new Uint8Array(total);
+  out.set([0x41, 0x4B, 0x41, 0x4F], 0);                         // "AKAO"
+  out[4] = id & 255; out[5] = id >> 8;
+  const len = total - 0x10; out[6] = len & 255; out[7] = len >> 8;
+  out[8] = reverb; out[9] = 0;
+  out.set([0x96, 0x12, 0x18, 0x22, 0x46, 0x34], 0x0A);           // 1996-12-18 22:46:34, as FF7's Prelude
+  out[0x10] = mask & 255; out[0x11] = (mask >> 8) & 255; out[0x12] = (mask >> 16) & 255; out[0x13] = 0;
+  let p = headerLen;
+  nums.forEach((v, i) => {
+    const field = 0x14 + 2 * i, rel = p - (field + 2);
+    out[field] = rel & 255; out[field + 1] = rel >> 8;
+    out.set(bodies[i], p); p += bodies[i].length;
+  });
+  out.set(tail, p);
+  return out;
+}
+
+// A PS-X EXE with `text` at `textStart`; PC/SP as given (the FF7 lib says
+// PC 0x800110C0, every mini a placeholder 0x80010000)
+export function makeExe({textStart, text, pc = 0x80010000, sp = 0x801FFFF0}) {
+  const size = Math.ceil(text.length / 2048) * 2048;
+  const exe = new Uint8Array(0x800 + size);
+  exe.set(new TextEncoder().encode("PS-X EXE"), 0);
+  const le32 = (o, v) => { exe[o] = v & 255; exe[o + 1] = (v >> 8) & 255; exe[o + 2] = (v >> 16) & 255; exe[o + 3] = (v >>> 24) & 255; };
+  le32(0x10, pc); le32(0x18, textStart); le32(0x1C, size); le32(0x30, sp);
+  exe.set(new TextEncoder().encode("Sony Computer Entertainment Inc. for North America area"), 0x4C);
+  exe.set(text, 0x800);
+  return exe;
+}
+
+// wrap an EXE as PSF1 with a [TAG] block (tags: object, in order, or the
+// raw text after "[TAG]" — real blocks repeat keys for multi-line values)
+export function makePSF(exe, tags = {}) {
+  const program = new Uint8Array(deflateSync(exe));
+  const text = typeof tags === "string" ? tags : Object.entries(tags).map(([k, v]) => `${k}=${v}\n`).join("");
+  const tag = new TextEncoder().encode("[TAG]" + text);
+  const out = new Uint8Array(16 + program.length + tag.length);
+  out.set([0x50, 0x53, 0x46, 1], 0);
+  const w32 = (o, v) => { out[o] = v & 255; out[o + 1] = (v >> 8) & 255; out[o + 2] = (v >> 16) & 255; out[o + 3] = (v >>> 24) & 255; };
+  w32(4, 0); w32(8, program.length); w32(12, crc32(program));
+  out.set(program, 16); out.set(tag, 16 + program.length);
+  return out;
+}
+
+// the FF7 pair in miniature: a lib whose text spans 0x80010000.. and a
+// mini whose text lands INSIDE that span (0x801D0000), so overlay order
+// decides what RAM holds. The lib carries a marker where the mini's text
+// will land, to prove the mini overwrote it.
+export const TEST_LIB_NAME = "Test Game.psflib";
+export function makeTestMiniPSF(akaoBytes, {libName = TEST_LIB_NAME, title = "Test Tune"} = {}) {
+  const libText = new Uint8Array(0x1C0800);          // 0x80010000 .. 0x801D0800 (overlaps the mini's page)
+  libText.set(new TextEncoder().encode("DRIVER"), 0x10C0);
+  libText.set(new TextEncoder().encode("LIBHERE!"), 0x1C0000);
+  const lib = makePSF(makeExe({textStart: 0x80010000, text: libText, pc: 0x800110C0}),
+    {comment: "Driver and soundbank data for Test Game.", game: "Test Game", psfby: "us"});
+  const miniText = new Uint8Array(0x800);
+  miniText.set(akaoBytes, 0);
+  const mini = makePSF(makeExe({textStart: 0x801D0000, text: miniText}),
+    {utf8: 1, _lib: libName, game: "Test Game", title, length: "0:10", fade: "2"});
+  return {lib, mini, libName};
+}

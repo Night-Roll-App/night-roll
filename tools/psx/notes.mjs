@@ -84,21 +84,31 @@ export function trimSeconds(result, seconds) {
 
 const fmt = x => +x.toFixed(3);
 
+// result.source (set by akao.mjs) names the format and its pitch caveat;
+// absent, the result is a SEQ
 export function toNotesTxt(result, {title = "seq"} = {}) {
-  const {notes, seq, vab, bends} = result;
+  const {notes, seq, vab, bends, source} = result;
   const {num, den} = seq.timeSigs[0];
   const lastTick = notes.reduce((m, n) => Math.max(m, n.endTick), seq.endTick);
   const bars = barBeat(seq, Math.max(0, lastTick - 1)).bar;
   const L = [];
-  L.push(`# ${title} — ${num}/${den}, ${bpmOf(seq.tempo)}bpm, ${bars} bars, ${seq.ppq} ticks/quarter (from PS1 SEQ)`);
-  for (const t of seq.tempoMap.slice(1)) { const {bar, beat} = barBeat(seq, t.tick); L.push(`# tempo ${bpmOf(t.usq)}bpm from bar ${bar} beat ${fmt(beat)}`); }
+  L.push(`# ${title} — ${num}/${den}, ${bpmOf(seq.tempo)}bpm, ${bars} bars, ${seq.ppq} ticks/quarter (from ${source ? source.label : "PS1 SEQ"})`);
+  // a tempo slide is many small steps; one line per distinct bar keeps it readable
+  let lastTempoBar = -1;
+  for (const t of seq.tempoMap.slice(1)) {
+    const {bar, beat} = barBeat(seq, t.tick);
+    if (bar === lastTempoBar) { L[L.length - 1] = L[L.length - 1].replace(/ → .*$|$/, ` → ${bpmOf(t.usq)}bpm by beat ${fmt(beat)}`); continue; }
+    L.push(`# tempo ${bpmOf(t.usq)}bpm from bar ${bar} beat ${fmt(beat)}`);
+    lastTempoBar = bar;
+  }
   for (const t of seq.timeSigs.slice(1)) { const {bar} = barBeat(seq, t.tick); L.push(`# meter ${t.num}/${t.den} from bar ${bar}`); }
   if (seq.loop) {
     const a = barBeat(seq, seq.loop.start), b = barBeat(seq, seq.loop.end);
     L.push(`# loop: bar ${a.bar} beat ${fmt(a.beat)} → bar ${b.bar} beat ${fmt(b.beat)}${seq.loop.count === 127 ? " (forever)" : " ×" + seq.loop.count}`);
   }
+  for (const w of seq.warnings || []) L.push(`# note: ${w}`);
   L.push("# Format: bar N: beat pitch duration-in-quarter-notes vN [= MIDI velocity 1-127]");
-  L.push(vab
+  L.push(source ? `# ${source.pitchNote}` : vab
     ? "# Pitch = sample root + (key − tone center); root detected from the sample, or C4 assumed where marked. Kits keep their key numbers."
     : "# Pitch is the SEQ key as written (no bank given: tone center notes unknown).");
   L.push("# Channel identity is file fact. Pitches use sharp spelling; no key is stated.");
@@ -107,7 +117,8 @@ export function toNotesTxt(result, {title = "seq"} = {}) {
   for (const [ch, evs] of [...byCh].sort((a, b) => a[0] - b[0])) {
     L.push("");
     const progs = [...new Set(evs.map(n => n.program))];
-    L.push(`## channel ${ch + 1} program ${progs.join(",")}${evs.some(n => n.drum) ? " (kit)" : ""}`);
+    const voice = evs[0].voice !== undefined && evs[0].voice !== ch ? ` (voice ${evs[0].voice})` : "";
+    L.push(`## channel ${ch + 1}${voice} program ${progs.join(",")}${evs.some(n => n.drum) ? " (kit)" : ""}`);
     if (bends[ch]) L.push(`# ${bends[ch]} pitch-bend events on this channel, not applied`);
     if (vab) for (const p of progs) {
       const sample = evs.find(n => n.program === p && n.tone);
@@ -141,8 +152,27 @@ export function makeMidi(result) {
   const tracks = [trackBytes("conductor", [], 0, metas)];
   const byCh = new Map();
   for (const n of notes) (byCh.get(n.ch) || byCh.set(n.ch, []).get(n.ch)).push(n);
-  for (const [ch, evs] of [...byCh].sort((a, b) => a[0] - b[0])) {
-    const drum = evs.every(n => n.drum);
+  // MIDI channel per source channel: SEQ channels 0..15 keep their number
+  // (file fact), except that a melodic channel 9 would land on GM drums;
+  // AKAO voices run to 24, so those beyond 15 take free channels and then
+  // share — a type-1 file keeps them apart as tracks either way
+  const used = new Set([9]);
+  const order = [...byCh].sort((a, b) => a[0] - b[0]);
+  const midiCh = new Map();
+  for (const [ch, evs] of order) if (!evs.every(n => n.drum) && ch < 16 && ch !== 9) { midiCh.set(ch, ch); used.add(ch); }
+  let spare = 0;
+  for (const [ch, evs] of order) {
+    if (evs.every(n => n.drum)) midiCh.set(ch, 9);
+    else if (!midiCh.has(ch)) {
+      let c = [...Array(16).keys()].find(k => !used.has(k));
+      if (c === undefined) { c = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15][spare++ % 15]; }
+      midiCh.set(ch, c); used.add(c);
+    }
+  }
+  // an AKAO voice can switch drum mode on and off mid-track; its kit notes
+  // go to a second MIDI track on channel 10 so neither side lies about
+  // what it is
+  const emit = (name, evs, ch) => {
     const out = [];
     for (const n of evs) {
       const p = n.drum ? n.key : n.pitch;
@@ -150,8 +180,13 @@ export function makeMidi(result) {
       const t = T(n.tick);
       out.push({t, d: Math.max(1, T(n.endTick) - t), p, v: Math.max(1, Math.min(127, n.vel))});
     }
-    const progs = [...new Set(evs.map(n => n.program))].join(",");
-    tracks.push(trackBytes(`ch ${ch + 1} prog ${progs}`, out, drum ? 9 : ch));
+    tracks.push(trackBytes(name, out, ch));
+  };
+  const progsOf = evs => [...new Set(evs.map(n => n.program))].join(",");
+  for (const [ch, evs] of order) {
+    const kit = evs.filter(n => n.drum), mel = evs.filter(n => !n.drum);
+    if (mel.length) emit(`ch ${ch + 1} prog ${progsOf(mel)}`, mel, midiCh.get(ch));
+    if (kit.length) emit(`ch ${ch + 1} prog ${progsOf(kit)}${mel.length ? " kit" : ""}`, kit, 9);
   }
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
   const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, PPQ >> 8, PPQ & 255];
