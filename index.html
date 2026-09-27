@@ -14919,7 +14919,12 @@ function aiSSE(state, chunk) { // OpenAI-style SSE → text deltas; state = {buf
     const txt = c && c.delta && c.delta.content;
     if (typeof txt === "string" && txt) out.push(txt);
     const think = c && c.delta && (c.delta.reasoning_content || c.delta.reasoning); // LM Studio streams Qwen's thinking apart; count it so the wait is visible
-    if (typeof think === "string") state.think = (state.think || 0) + think.length;
+    if (typeof think === "string") {
+      state.think = (state.think || 0) + think.length;
+      // the bridge sends whole steps ("using Bash npm test… "); LM Studio sends
+      // thinking in fragments — only a whole step becomes the visible note
+      if (/^using .+…\s*$/.test(think)) state.note = think.replace(/^using /, "").replace(/…\s*$/, "").trim();
+    }
     const tc = c && c.delta && c.delta.tool_calls; // OpenAI tools: name once, arguments in pieces, one slot per index
     if (Array.isArray(tc)) {
       state.tools = state.tools || [];
@@ -14964,7 +14969,7 @@ function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots
       const j = await r.json();
       return (j.data || []).map(m => m.id).filter(Boolean);
     },
-    async chat({system, messages, signal, onDelta, schema, onStatus, tools, onTool, job, onOpen, onRound}) {
+    async chat({system, messages, signal, onDelta, schema, onStatus, tools, onTool, job, onOpen, onRound, onNote}) {
       let model = cfg().aiModel;
       const headers = aiHeaders();
       if (job) { // the bridge keeps a job alive through a dropped connection; ■ Stop kills it explicitly
@@ -14995,11 +15000,12 @@ function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots
         }
         if (onOpen) onOpen(); // headers back = the server has the question (a drop after this is a dropped connection, not a lost question)
         const reader = r.body.getReader(), dec = new TextDecoder(), st = {buf: "", think: 0};
-        let out = "", shown = 0;
+        let out = "", shown = 0, shownNote = "";
         for (;;) {
           const {done, value} = await reader.read();
           if (done) break;
           for (const t of aiSSE(st, dec.decode(value, {stream: true}))) { out += t; onDelta(out); }
+          if (st.note && st.note !== shownNote && onNote) { shownNote = st.note; onNote(st.note); } // what Claude is doing right now (Josh, 2026-09-26: "no indication you are still doing work")
           if (!out && st.think - shown > 400 && onStatus) { shown = st.think; onStatus("thinking… (" + Math.round(st.think / 5) + " words so far — thinking is a model setting in LM Studio, not here)"); }
           if (st.error) throw new Error(st.error);
         }
@@ -15702,7 +15708,8 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
   try {
     let out = await aiProvider().chat({system: ASK_SYS, messages, signal: ctl.signal, onDelta: raw => askShowThinking(live, raw), onStatus: t => { askstatus.textContent = t; }, tools: askToolsNow(), onTool: askRunTool, job: jobs !== false ? jobId : undefined,
       onOpen: () => { delivered = true; },
-      onRound: id => { askRepending(key, cur, id); cur = id; if (live) live.dataset.job = id; }});
+      onRound: id => { askRepending(key, cur, id); cur = id; if (live) live.dataset.job = id; },
+      onNote: n => { if (!live.textContent || /^…/.test(live.textContent)) live.textContent = "… (" + n + ")"; askstatus.textContent = "working: " + n; }});
     out = out.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
     if (!out) out = "(no reply — try rephrasing)";
     askFillBubble(live, out);
@@ -15710,7 +15717,7 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
     askstatus.textContent = "";
   } catch (err) {
     const aborted = err && err.name === "AbortError";
-    const partial = live.textContent && live.textContent !== "…" ? live.textContent : "";
+    const partial = live.textContent && !/^…/.test(live.textContent) ? live.textContent : ""; // a step note ("… (reading x)") is not an answer
     const http = !!(err && /^HTTP /.test(err.message));
     if (aborted) { if (partial) askFinish(cur, partial, key); else askFail(cur, "stopped", key); askstatus.textContent = "stopped"; if (!partial) { live.classList.add("err"); live.textContent = "⚠ stopped"; } }
     else if (jobs !== false && !http && delivered) { // the connection died, not the job: the answer is still cooking on the server

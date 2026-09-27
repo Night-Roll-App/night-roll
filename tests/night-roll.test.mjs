@@ -2870,6 +2870,12 @@ test("dictation: a tapped Stop keeps onresult for Safari's late transcript; Send
   assert.equal(val(`askinput.scrollTop`), 90, "end kept in view");
 });
 
+test("Ask stream: a whole bridge step becomes the visible note; thinking fragments do not", () => {
+  const st = JSON.parse(val(`(() => { const st = {buf: ""}; aiSSE(st, 'data: {"choices":[{"delta":{"reasoning_content":"using Bash npm test… "}}]}\\n'); aiSSE(st, 'data: {"choices":[{"delta":{"reasoning_content":"Let me th"}}]}\\n'); return JSON.stringify({note: st.note, think: st.think}); })()`));
+  assert.equal(st.note, "Bash npm test", "the step, without its 'using' and ellipsis");
+  assert.ok(st.think > 0, "fragments still count toward the LM Studio wait");
+});
+
 test("Ask tools: SSE tool_calls accumulate per index; add_annotation writes through the text grammar as unsynced; read helpers", () => {
   // streamed tool call: name in one chunk, arguments split across chunks, finish_reason at the end
   const chunks = [

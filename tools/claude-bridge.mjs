@@ -306,7 +306,13 @@ function runClaude(job, body, songKey, retry = true) {
     const full = held || (holding ? "" : null);
     const call = parseToolCall(holding ? held : job.text);
     if (call) jobPush(job, {tool_calls: [{index: 0, id: "call_" + job.id, type: "function", function: {name: call.name, arguments: JSON.stringify(call.arguments)}}]}, "tool_calls");
-    else { if (holding && held) jobPush(job, {content: held}); jobPush(job, {}, "stop"); }
+    else {
+      if (holding && held) jobPush(job, {content: held});
+      // a turn that ended without words (a hung command, a cut-off) used to
+      // land as an empty reply — say what happened and where it stopped
+      if (!job.text.trim()) { const last = job.notes.filter(n => n && n !== "session restarted").pop(); jobPush(job, {content: "⚠ Claude finished without answering" + (last ? " — last step: " + last.replace(/…\s*$/, "") : "") + ". Ask again, or say \"continue\"."}); }
+      jobPush(job, {}, "stop");
+    }
     void full;
     jobEnd(job, null);
   });
