@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Roll — Privacy</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 640px; margin: 40px auto; padding: 0 20px; font: 16px/1.5 -apple-system, system-ui, sans-serif; }
+  h1 { font-size: 24px; } h2 { font-size: 18px; margin-top: 28px; }
+  code { font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>Night Roll — Privacy</h1>
+<p><em>Draft, 2026-09-27. Applies to the Night Roll website and the Night Roll iPad app.</em></p>
+
+<h2>The short version</h2>
+<p>Night Roll has no accounts, no analytics, no ads and no server of its own.
+Your songs, annotations and settings stay on your device unless you choose to
+send them somewhere: your own GitHub repository, a folder you pick, or an AI
+service you configure.</p>
+
+<h2>What stays on your device</h2>
+<ul>
+  <li>Songs you open, import or record; your annotations, drafts and settings.
+      They live in the browser's storage on that device, and in the iPad app
+      optionally in Files → On My iPad → Night Roll, if you turn that on.</li>
+  <li>Audio you record inside the app (audio tracks, dictated notes) is kept
+      with the song on the device. Nothing is uploaded unless you publish the
+      song.</li>
+</ul>
+
+<h2>What leaves your device, and only when you ask</h2>
+<ul>
+  <li><b>GitHub.</b> If you paste a GitHub token in Settings, the app talks to
+      GitHub's API with it to read and publish songs and annotations in the
+      repositories you name. The token is stored on your device and sent only
+      to GitHub. Anything you publish to a public repository is public.</li>
+  <li><b>AI (✦ Ask).</b> Off until you set it up. With the in-browser model,
+      the model file is downloaded once from a public CDN and runs on your
+      device; your questions do not leave it. With a remote backend, the app
+      sends your question, the open song's notes and your annotations to the
+      URL you entered — your own server or service, under its own terms.
+      Night Roll ships no AI key and runs no AI service.</li>
+  <li><b>Dictation.</b> The 🎤 button uses your device's built-in speech
+      recognition. On Apple devices that is Apple's speech service, under
+      Apple's terms; it may process audio on Apple's servers depending on your
+      device settings.</li>
+  <li><b>Shared links.</b> Opening a song link from someone else reads that
+      song from their public GitHub repository.</li>
+</ul>
+
+<h2>Website hosting</h2>
+<p>The website is served by GitHub Pages, and sounds and model files come from
+public CDNs. Those hosts see the ordinary requests any web page causes
+(your IP address, the files fetched). Night Roll adds no tracking to them.</p>
+
+<h2>Children</h2>
+<p>Night Roll collects no personal information from anyone, including
+children.</p>
+
+<h2>Changes and contact</h2>
+<p>This page is kept in the app's public repository; changes appear in its
+history. Questions: <a href="mailto:joshcough@gmail.com">joshcough@gmail.com</a>.</p>
+</body>
+</html>
