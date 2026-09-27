@@ -4,6 +4,19 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## APP STORE PREP — BRANCH overnight-2026-09-26, PUSHED 2026-09-27, UNMERGED
+
+Eight commits, none on main (Josh's rule that night: nothing to main):
+local Save + auto-save off by default + the recording open-end fix
+(9ae2f2f), EDITION flag + tools/package.mjs + ship guard + About
+attribution (7422bcd), bridge launchd installer (bb18c88), Publish all
+ships music+annotations+chat (d3d5aae), Bach starter album (0eb48ad),
+roadmap + notes. Merge on his word ("merge it"); vm was green on the
+branch; rebase onto main first (index.html has moved a lot since).
+Needs Josh, in order: the audio spike at the Mac with the iPad plugged
+in (~30 min); an Apple Developer account; a support email address; two
+more starter songs. Told him 2026-09-27 01:20 by inbox note and email.
+
 ## PHASE 1 — publish + links (in progress 2026-09-26)
 
 Rulings so far: step 1 done (5add982) — the one deliberate step is
