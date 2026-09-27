@@ -1314,7 +1314,10 @@ last segment (what a first Publish writes into the manifest — two
 folders with the same leaf name would share a manifest album: known
 edge). `tools/build_manifest.mjs` walks any depth (a directory with
 .mid files is an album; `songs/` collapses). NR_DIR is no longer where
-New lands, only still auto-editable.
+New lands, and since the same evening no longer editable by path
+either: a published copy is never edited in place (Josh), so
+`isComposition` needs the local draft or provenance for EVERY folder,
+Sketches included; "✎ Edit here" is the way in.
 
 **App edition reads from the configured repo (2026-09-27).** On the web
 "this site" (blank base) is Pages = the whole catalog; in the app it is

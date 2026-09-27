@@ -545,7 +545,7 @@ test("document title names the song first: '<Song> · Night Roll', bare app othe
 test("track delete/add are undo steps: delete → ⟲ restores at the same index with its notes; redo removes again", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/track-undo.mid";
+    songKey = "albums/compositions/nightroll/track-undo.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]},
                {name: "pulse2", notes: [{t: 0, d: 480, p: 64, v: 80}, {t: 480, d: 480, p: 65, v: 80}]},
@@ -588,7 +588,7 @@ test("track delete/add are undo steps: delete → ⟲ restores at the same index
 test("pencil: a second tap on the same tick+pitch adds nothing (no twins, no undo entry)", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/twin-test.mid";
+    songKey = "albums/compositions/nightroll/twin-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};
     song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; pencilVel = 80;
     trackState = [{muted: false, solo: false}];
@@ -638,7 +638,7 @@ test("gridFollowNote: the move grid follows the note you touch", () => {
 test("copy/paste carries the annotations under the selection: bands re-anchor, labels transpose, directives stay", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/anno-copy.mid";
+    songKey = "albums/compositions/nightroll/anno-copy.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [{name: "pulse1", notes: [{t: 1920, d: 480, p: 64, v: 80}, {t: 2400, d: 480, p: 67, v: 80}, {t: 2880, d: 960, p: 71, v: 80}]}]};
     song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = []; annoClipboard = [];
@@ -730,7 +730,7 @@ test("copy/paste carries the annotations under the selection: bands re-anchor, l
 test("Paste to…: the clipboard lands on a chosen track, shifted, same rhythm", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/paste-to.mid";
+    songKey = "albums/compositions/nightroll/paste-to.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [{name: "pulse1", notes: []}, {name: "pulse2", notes: []},
                {name: "triangle", notes: [{t: 0, d: 240, p: 45, v: 100}, {t: 240, d: 120, p: 45, v: 90}, {t: 360, d: 120, p: 45, v: 90}]}]};
@@ -818,7 +818,7 @@ test("composition helpers: slugify, isComposition gate, draft store round-trip",
   assert.equal(run(`slugify("")`), "untitled");
   run(`songKey = "albums/nes/final-fantasy-i/songs/town.mid";`);
   assert.equal(run(`isComposition()`), false); // chip capture: Save locked
-  run(`songKey = "albums/compositions/nightroll/test-tune.mid";`);
+  run(`songKey = "albums/compositions/nightroll/test-tune.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */`);
   assert.equal(run(`isComposition()`), true);
   // promoted out of nightroll/: no local draft on this device (git rename, or
   // a Move done elsewhere) — only a provenance note keeps it editable
@@ -830,7 +830,7 @@ test("composition helpers: slugify, isComposition gate, draft store round-trip",
   assert.equal(run(`isComposition()`), true);
   run(`rollnotes = parseRollnotes('{"version":1,"notes":[{"at":[1,1],"text":"note that merely mentions moved from"}]}').map(resolveNote);`);
   assert.equal(run(`isComposition()`), false); // anchored at line start, not a substring
-  run(`rollnotes = []; songKey = "albums/compositions/nightroll/test-tune.mid";`);
+  run(`rollnotes = []; songKey = "albums/compositions/nightroll/test-tune.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */`);
   run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80},
@@ -1041,7 +1041,7 @@ test("audio tracks: the audio: annotation round-trips and derives kind/clip onto
                      {name: "bass", notes: [{t: 0, d: 480, p: 48, v: 80}]},
                      {name: "guitar", notes: []}]};
     song.baseTempos = null; song.rawNotes = song.tracks.map(tr => tr.notes.map(n => ({...n})));
-    songKey = "albums/compositions/nightroll/audio-test.mid";
+    songKey = "albums/compositions/nightroll/audio-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     trackState = song.tracks.map(() => ({muted: false, solo: false}));
     keyRegions = []; previewSf = null; playCursor = 0; playRate = 1; rangeSel = null; loopSeg = null;
     rollnotes = parseRollnotes("[3.1]\\naudio: Guitar file=take.wav offset=0.5\\n").map(resolveNote);
@@ -1126,7 +1126,7 @@ test("loadNotes: the repo file's saved stamp becomes the song's base, so another
   run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 72, v: 80}]}]};
     song.baseTempos = null; song.rawNotes = song.tracks.map(tr => tr.notes.map(n => ({...n})));
-    songKey = "albums/compositions/nightroll/stamp-test.mid";
+    songKey = "albums/compositions/nightroll/stamp-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     trackState = song.tracks.map(() => ({muted: false, solo: false}));
     keyRegions = []; previewSf = null; playCursor = 0; playRate = 1; rangeSel = null; loopSeg = null; rollnotes = [];
     localStorage.removeItem("ff1roll-notes-" + songKey); localStorage.removeItem("ff1roll-lastsync-" + songKey);
@@ -1143,7 +1143,7 @@ test("audio tracks: an unsynced audio: note survives a reload — local notes re
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 72, v: 80}]}, {name: "take", notes: []}]};
     song.baseTempos = null; song.rawNotes = song.tracks.map(tr => tr.notes.map(n => ({...n})));
-    songKey = "albums/compositions/nightroll/audio-reload.mid";
+    songKey = "albums/compositions/nightroll/audio-reload.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     trackState = song.tracks.map(() => ({muted: false, solo: false}));
     keyRegions = []; previewSf = null; playCursor = 0; playRate = 1; rangeSel = null; loopSeg = null;
     rollnotes = [];
@@ -1257,7 +1257,7 @@ test("beat map: a take that speeds up 100→112 BPM over 16 bars gets a rising t
   run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 80}]}, {name: "take", notes: []}]};
     song.baseTempos = null; song.rawNotes = song.tracks.map(tr => tr.notes.map(n => ({...n})));
-    songKey = "albums/compositions/nightroll/beatmap-test.mid";
+    songKey = "albums/compositions/nightroll/beatmap-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     trackState = song.tracks.map(() => ({muted: false, solo: false}));
     keyRegions = []; previewSf = null; playCursor = 0; playRate = 1; rangeSel = null; loopSeg = null; editUndo = [];
     rollnotes = parseRollnotes("[1.1]\\naudio: take file=t.wav\\n").map(resolveNote); finalizeNotes();
@@ -1295,7 +1295,7 @@ test("setSongTempo writes the 1.1 tempo annotation on a composition, one undo, c
   run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 80}]}]};
     song.baseTempos = null; song.rawNotes = song.tracks.map(tr => tr.notes.map(n => ({...n})));
-    songKey = "albums/compositions/nightroll/tempo-from-take.mid";
+    songKey = "albums/compositions/nightroll/tempo-from-take.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     trackState = song.tracks.map(() => ({muted: false, solo: false}));
     keyRegions = []; previewSf = null; playCursor = 0; playRate = 1; rangeSel = null; loopSeg = null; editUndo = [];
     rollnotes = parseRollnotes("[1.1]\\ntempo: 100\\n").map(resolveNote); finalizeNotes();
@@ -1429,7 +1429,7 @@ test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore
   assert.equal(val(`!!__idb["albums/snes/chrono-trigger/frog-s-theme.mid"]`), false);
   // saveDraft with a full store: says so, does not throw
   installSong();
-  run(`songKey = "albums/compositions/nightroll/full.mid"; const realSet = localStorage.setItem.bind(localStorage);
+  run(`songKey = "albums/compositions/nightroll/full.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ const realSet = localStorage.setItem.bind(localStorage);
        localStorage.setItem = (k, v) => { if (k.startsWith("ff1roll-draft-")) { const e = new Error("QuotaExceededError"); e.name = "QuotaExceededError"; throw e; } return realSet(k, v); };
        __threw = false; try { saveDraft(); } catch (e) { __threw = true; } localStorage.setItem = realSet;`);
   assert.equal(val(`__threw`), false, "saveDraft swallowed the quota error");
@@ -1575,7 +1575,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit here", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
@@ -1599,7 +1599,7 @@ test("tempo: directives rebuild the map from the song's base; removal restores",
   assert.equal(run(`rollnotes[0].tempodir`), 60); // but the observation is recorded
   // CREATED song: the same annotation authors the tempo
   run(`
-    songKey = "albums/compositions/nightroll/tempo-test.mid";
+    songKey = "albums/compositions/nightroll/tempo-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.baseTempos = null;
     rollnotes = parseRollnotes("[1.1]\\ntimesig: 4/4\\n\\n[3.1]\\ntempo: 60\\n").map(resolveNote);
     finalizeNotes();
@@ -1707,7 +1707,7 @@ test("cross-device freshness: stamps ride saves, drafts remember their base", ()
   assert.equal(JSON.parse(unstamped).saved, undefined); // pure serialization: no stamp
   // draft carries base stamp + dirty flag; clean save flips dirty off
   run(`
-    songKey = "albums/compositions/nightroll/fresh-test.mid";
+    songKey = "albums/compositions/nightroll/fresh-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.savedStamp = 1234567;
     saveDraft();      // an edit: dirty
   `);
@@ -1779,7 +1779,7 @@ test("m3u: latin-1 playlist bytes decode, and GBS lines land on 1-based rows", (
 test("split at cursor / split in half / join — one undo step each", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/split-test.mid";
+    songKey = "albums/compositions/nightroll/split-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: [
       {t: 0, d: 960, p: 60, v: 80}, {t: 0, d: 960, p: 64, v: 80}, {t: 1920, d: 480, p: 60, v: 80}]}];
     song.rawNotes = null; chopS = 0;
@@ -1813,7 +1813,7 @@ test("split at cursor / split in half / join — one undo step each", () => {
 test("insert chord: triad and seventh at the cursor, cursor walks, one undo", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/chord-test.mid";
+    songKey = "albums/compositions/nightroll/chord-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: []}];
     song.rawNotes = null; chopS = 0; selTrack = 0;
     multiSel = []; multiSelKey = new Set(); selNote = null;
@@ -1838,7 +1838,7 @@ test("insert chord: triad and seventh at the cursor, cursor walks, one undo", ()
 test("insert progression: numerals resolve, chords land in slots, one undo", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/prog-test.mid";
+    songKey = "albums/compositions/nightroll/prog-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: []}];
     song.rawNotes = null; chopS = 0; selTrack = 0;
     multiSel = []; multiSelKey = new Set(); selNote = null;
@@ -1917,7 +1917,7 @@ test("writeMidi: drum tracks export on channel 10, others skip it", () => {
 test("redo: replays undone edits; a fresh edit clears redo history", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/redo-test.mid";
+    songKey = "albums/compositions/nightroll/redo-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}];
     song.rawNotes = null; chopS = 0; selTrack = 0;
     multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]);
@@ -1948,7 +1948,7 @@ test("redo: replays undone edits; a fresh edit clears redo history", () => {
 test("paste never stacks an identical note; unisons across tracks untouched", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/stack-test.mid";
+    songKey = "albums/compositions/nightroll/stack-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]},
                    {name: "pulse2", notes: [{t: 0, d: 480, p: 60, v: 80}]}];
     song.rawNotes = null; chopS = 0; selTrack = 0;
@@ -1972,7 +1972,7 @@ test("paste never stacks an identical note; unisons across tracks untouched", ()
 test("stranded ⧉ clones evaporate; dragged clones survive", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/sweep-test.mid";
+    songKey = "albums/compositions/nightroll/sweep-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}];
     song.rawNotes = null; chopS = 0; selTrack = 0;
     multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]);
@@ -1996,7 +1996,7 @@ test("stranded ⧉ clones evaporate; dragged clones survive", () => {
 test("notesTxtFor: text dump matches the pipeline format", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/dump-test.mid";
+    songKey = "albums/compositions/nightroll/dump-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.timesig = [4, 4];
     song.tempos = [{tick: 0, usq: 500000}];
     song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 240, p: 64, v: 80}]}];
@@ -2011,7 +2011,7 @@ test("notesTxtFor: text dump matches the pipeline format", () => {
 test("renameTrack: directives migrate (dupes included), name collisions refused", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/rn-test.mid";
+    songKey = "albums/compositions/nightroll/rn-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]},
                    {name: "pulse2", notes: []}];
     song.rawNotes = null; chopS = 0; selTrack = 0; editUndo = []; editRedo = [];
@@ -2035,7 +2035,7 @@ test("renameTrack: directives migrate (dupes included), name collisions refused"
 test("attached notes on all annotation types round-trip", () => {
   installSong();
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "t", notes: []}]};
-    songKey = "albums/compositions/nightroll/attach-test.mid";`);
+    songKey = "albums/compositions/nightroll/attach-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */`);
   run(`rollnotes = deriveNoteTypes([
     {b1: 1, q1: 1, b2: null, q2: null, text: "key: Bb?\\nwhole-tone material", added: true},
     {b1: 2, q1: 1, b2: null, q2: null, text: "tempo: 75\\nfelt right slower", added: true},
@@ -2059,7 +2059,7 @@ test("attached notes on all annotation types round-trip", () => {
 test("chord bands ride rigid moves; stale flag when notes stop matching", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/band-ride.mid";
+    songKey = "albums/compositions/nightroll/band-ride.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [{name: "pulse1", notes: [
         {t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 480, p: 64, v: 80}, {t: 0, d: 480, p: 67, v: 80}]}]};
@@ -2097,7 +2097,7 @@ test("chord bands ride rigid moves; stale flag when notes stop matching", () => 
 test("full-song move carries the whole annotation layer (intro-cut workflow)", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/carry-test.mid";
+    songKey = "albums/compositions/nightroll/carry-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [{name: "pulse1", notes: [
         {t: 1920, d: 480, p: 60, v: 80}, {t: 3840, d: 480, p: 64, v: 80}]}]};
@@ -2161,7 +2161,7 @@ test("chord quality parse/compose: bases + stacked extensions round-trip", () =>
 test("transposeTrack: whole track ±12, one undo step, drums refuse", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/oct-test.mid";
+    songKey = "albums/compositions/nightroll/oct-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [
         {name: "bass", notes: [{t: 0, d: 480, p: 40, v: 90}, {t: 480, d: 480, p: 43, v: 90}]},
@@ -2185,7 +2185,7 @@ test("transposeTrack: whole track ±12, one undo step, drums refuse", () => {
 test("divideSelection: N equal parts, triplet math exact, one undo", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/div-test.mid";
+    songKey = "albums/compositions/nightroll/div-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: [{t: 0, d: 960, p: 60, v: 90}]}]; // a half note
     song.rawNotes = null; chopS = 0; editUndo = []; editRedo = []; dupPending = null;
     multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]);
@@ -2223,7 +2223,7 @@ test("rulerSnapX: bar lines are magnetic in pixels; 16ths elsewhere", () => {
 test("Drummer: deterministic, skeleton fixed, breaks silent, one group undo", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/drummer-test.mid";
+    songKey = "albums/compositions/nightroll/drummer-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [
         {name: "pulse1", notes: [ // melody sounds in bars 1-2; bar 3 is bass-only (a break)
@@ -2281,7 +2281,7 @@ test("Drummer: deterministic, skeleton fixed, breaks silent, one group undo", ()
 test("Drummer v2: hard bit-identity, follow modes, feel tables", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/drv2-test.mid";
+    songKey = "albums/compositions/nightroll/drv2-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [
         {name: "pulse1", notes: [{t: 0, d: 3840, p: 72, v: 80}]},
@@ -2337,7 +2337,7 @@ test("Drummer v2: hard bit-identity, follow modes, feel tables", () => {
 test("Drummer: same section label = same groove, bar for bar", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/label-test.mid";
+    songKey = "albums/compositions/nightroll/label-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [
         {name: "pulse1", notes: [ // identical melodic content in bars 1-2 and 3-4
@@ -2392,7 +2392,7 @@ test("Drummer: same section label = same groove, bar for bar", () => {
 test("diatonicShift: scale-degree steps in the declared key", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/dia-test.mid";
+    songKey = "albums/compositions/nightroll/dia-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: [
       {t: 0, d: 480, p: 64, v: 80},   // E in F#m/A-major scale
       {t: 480, d: 480, p: 66, v: 80}, // F#
@@ -2414,7 +2414,7 @@ test("diatonicShift: scale-degree steps in the declared key", () => {
 test("tracks view: retrack with time offset, lane math, pencil inert", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/tracks-test.mid";
+    songKey = "albums/compositions/nightroll/tracks-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [
       {name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}]},
       {name: "pulse2", notes: []}];
@@ -2440,7 +2440,7 @@ test("tracks view: retrack with time offset, lane math, pencil inert", () => {
 test("Drummer parts: scoped reroll touches only its piece group", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/parts-test.mid";
+    songKey = "albums/compositions/nightroll/parts-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [
         {name: "pulse1", notes: [{t: 0, d: 3840, p: 72, v: 80}]},
@@ -2475,7 +2475,7 @@ test("Drummer parts: scoped reroll touches only its piece group", () => {
 test("Bassist: chord-driven, monophonic, one undo; melody-only infers", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/bass-test.mid";
+    songKey = "albums/compositions/nightroll/bass-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [
         {name: "pulse1", notes: [{t: 0, d: 1920, p: 69, v: 80}, {t: 1920, d: 1920, p: 64, v: 80}]},
@@ -2516,7 +2516,7 @@ test("Bassist inference: minor-key V, pedal stability, no wrong-root guesses", (
   // the failure classes his graveyard-ending report exposed — a harmonic-
   // minor V bar, solo pedal bars, an out-of-vocabulary chromatic bar
   run(`
-    songKey = "albums/compositions/nightroll/infer-test.mid";
+    songKey = "albums/compositions/nightroll/infer-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [
         {name: "pulse1", notes: [
@@ -2707,7 +2707,7 @@ test("HELP.md matches the help sheet (regenerate with node tools/build_help.mjs)
 test("selection editing: move, resize, copy/paste, delete — with undo restoring", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/edit-test.mid";
+    songKey = "albums/compositions/nightroll/edit-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.tracks = [{name: "pulse1", notes: [
       {t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 480, p: 64, v: 80}, {t: 0, d: 480, p: 67, v: 80}]}];
     song.rawNotes = null; chopS = 0;
@@ -2780,7 +2780,7 @@ test("Ask: SSE parser takes string chunks split anywhere, skips [DONE] and junk"
 test("Ask: span notes use the DECLARED meter's counted beat, one speller, key line by declaration", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/ask-test.mid";
+    songKey = "albums/compositions/nightroll/ask-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [{name: "pulse1", notes: [{t: 480, d: 240, p: 61, v: 80}, {t: 0, d: 480, p: 60, v: 80}]}]};
     song.rawNotes = null; chopS = 0; rollnotes = []; keyRegions = []; previewSf = null; multiSel = [];
@@ -2812,7 +2812,7 @@ test("Ask: span notes use the DECLARED meter's counted beat, one speller, key li
 
 test("Ask: history is whole until saved; only repo-held messages are shed; never throws on quota; budget trims history first", () => {
   installSong();
-  run(`songKey = "albums/compositions/nightroll/ask-cap.mid";`);
+  run(`songKey = "albums/compositions/nightroll/ask-cap.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */`);
   const KEY = "ff1roll-ask-albums/compositions/nightroll/ask-cap.mid";
   const big = "x".repeat(5000); // 60 × 5 KB = 300 KB: over the 256 KB soft cap, under nothing else
   const sixty = `(() => { const msgs = [];
@@ -2879,7 +2879,7 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
 
 test("Save & Commit: pendingSongs unions music edits, unsynced annotations and unsaved chat, open song first", () => {
   installSong();
-  run(`songKey = "albums/compositions/nightroll/p-open.mid";
+  run(`songKey = "albums/compositions/nightroll/p-open.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
        localStorage.setItem("ff1roll-draft-albums/compositions/nightroll/p-music.mid", JSON.stringify({savedStamp: 5, dirty: true, notes: []}));
        localStorage.setItem("ff1roll-draft-albums/compositions/nightroll/p-clean.mid", JSON.stringify({savedStamp: 5, dirty: false, notes: []}));
        localStorage.setItem("ff1roll-notes-albums/nes/final-fantasy-i/songs/p-notes.mid", JSON.stringify([{b1: 1, q1: 1, text: "x", added: true}]));
@@ -2913,7 +2913,7 @@ test("Compare with repo: cmpDiff — by track name, tick+pitch identity, tombsto
   assert.equal(val(`cmpDiff(${JSON.stringify(repo)}, ${JSON.stringify(repo)}).tracks.length`), 0);
   // hearing the saved copy makes the song read-only; the draft writer refuses
   installSong();
-  run(`songKey = "albums/compositions/nightroll/cmp-test.mid"; cmp = {showing: "repo", diff: {tracks: [], added: 0, removed: 0, changed: 0}};`);
+  run(`songKey = "albums/compositions/nightroll/cmp-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ cmp = {showing: "repo", diff: {tracks: [], added: 0, removed: 0, changed: 0}};`);
   assert.equal(val(`editableSong()`), false);
   run(`localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/cmp-test.mid"); saveDraft(false);`);
   assert.equal(app.store.get("ff1roll-draft-albums/compositions/nightroll/cmp-test.mid"), undefined, "no draft written while the saved copy is swapped in");
@@ -2968,7 +2968,7 @@ test("Ask tools: SSE tool_calls accumulate per index; add_annotation writes thro
   assert.equal(st.finish, "tool_calls");
   // add_annotation: chord with a range and a comment; section; loop replaces a local loop
   installSong();
-  run(`rollnotes = []; songKey = "albums/compositions/nightroll/tool-test.mid";`);
+  run(`rollnotes = []; songKey = "albums/compositions/nightroll/tool-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */`);
   const r1 = JSON.parse(val(`JSON.stringify(askAddAnnotation({kind: "chord", text: "F#m", bar: 21, beat: 1, end_bar: 21, end_beat: 4, comment: "his call"}))`));
   assert.equal(r1.ok, true); assert.equal(r1.at, "[21.1 - 21.4]");
   const n1 = JSON.parse(val(`JSON.stringify(rollnotes.map(n => ({b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2, text: n.text, chord: !!n.chord, section: !!n.section, added: !!n.added, cnote: n.cnote})))`));
@@ -2993,7 +2993,7 @@ test("Ask tools: SSE tool_calls accumulate per index; add_annotation writes thro
 
 test("Ask jobs: a pending question is stored at send time; finish/fail replace the marker; history skips it", () => {
   installSong();
-  run(`songKey = "albums/compositions/nightroll/job-test.mid";
+  run(`songKey = "albums/compositions/nightroll/job-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
        askSave([{role: "user", content: "earlier q"}, {role: "assistant", content: "earlier a"}, {role: "user", content: "in flight", t: 1, at: "bars 1–4 (view)", pending: "nr_abc"}]);`);
   const built = JSON.parse(val(`JSON.stringify(askBuildMessages(askLoad(), "in flight", "CTX", {hist: 100000}))`));
   assert.equal(built.length, 3, "history + the live question, the pending copy skipped");
@@ -3012,7 +3012,7 @@ test("Ask jobs: a pending question is stored at send time; finish/fail replace t
 
 test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply and the info strip; open sheet redraws instead; the reply follows its song", () => {
   installSong();
-  run(`songKey = "albums/compositions/nightroll/job-test.mid"; asksheet.classList.remove("on"); askBadgeOff();
+  run(`songKey = "albums/compositions/nightroll/job-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ asksheet.classList.remove("on"); askBadgeOff();
        askSave([{role: "user", content: "q", t: 1, at: "bars 1–4 (view)", pending: "nr_one"}]);
        askFinish("nr_one", "the answer");`);
   assert.equal(val(`document.getElementById("askreplybtn").style.display`), "", "badge shows when the sheet is closed");
@@ -3025,7 +3025,7 @@ test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply an
   assert.equal(val(`asklog.children.filter(c => c.className === "askmsg ai").pop().textContent`), "second", "sheet open: redrawn with the reply");
   // the song changed while the job cooked: the reply lands in the asking song's log, the badge names it
   run(`{ const mm = askLoad(); mm.push({role: "user", content: "q3", pending: "nr_three"}); askSave(mm); }
-       songKey = "albums/compositions/nightroll/other.mid"; askFinish("nr_three", "third", "ff1roll-ask-albums/compositions/nightroll/job-test.mid");`);
+       songKey = "albums/compositions/nightroll/other.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ askFinish("nr_three", "third", "ff1roll-ask-albums/compositions/nightroll/job-test.mid");`);
   assert.equal(val(`askLoad().length`), 0, "the open song's log is untouched");
   let st = JSON.parse(app.store.get("ff1roll-ask-albums/compositions/nightroll/job-test.mid"));
   assert.equal(st.msgs[st.msgs.length - 1].content, "third"); assert.equal(st.msgs[st.msgs.length - 2].pending, undefined);
@@ -3036,7 +3036,7 @@ test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply an
 
 test("Ask resume: pending questions are found across every chat; a tool round moves the marker; eviction leaves the repo marker; Publish stops at a pending question", () => {
   installSong();
-  run(`songKey = "albums/compositions/nightroll/pend-a.mid";
+  run(`songKey = "albums/compositions/nightroll/pend-a.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
        askSave([{role: "user", content: "a", t: 5, pending: "nr_a"}]);
        askSave([{role: "user", content: "g", t: 2, pending: "nr_g"}], undefined, ASK_GENERAL_KEY);
        askSave([{role: "user", content: "old q"}, {role: "assistant", content: "old a"}], {saved: 2}, "ff1roll-ask-albums/compositions/nightroll/pend-b.mid");`);
@@ -3116,10 +3116,10 @@ test("Songs README: the block lists every song as a player link; splice creates,
 
 test("Local Save: auto-save off by default; Save is the checkpoint the ● and Compare use; Revert stashes, Restore brings it back", () => {
   installSong();
-  run(`songKey = "albums/compositions/nightroll/save-test.mid"; song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}]}]; song.baseTempos = song.tempos;
-       localStorage.removeItem("ff1roll-autosave"); for (const k of ["ff1roll-draft-", "ff1roll-save-", "ff1roll-stash-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey);`);
+  run(`songKey = "albums/compositions/nightroll/save-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}]}]; song.baseTempos = song.tempos;
+       localStorage.removeItem("ff1roll-autosave"); for (const k of ["ff1roll-save-", "ff1roll-stash-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey);`);
   assert.equal(val(`autosaveOn()`), false, "off by default");
-  run(`saveDraft(false);`); // an edit: working copy, dirty vs publish
+  run(`saveDraft(false);`); // an edit: working copy, dirty vs publish (the draft IS the local copy that makes it editable)
   assert.equal(val(`songUnsaved()`), true, "never saved locally: unsaved = unpublished");
   assert.equal(val(`saveCheckpoint(true)`), true);
   assert.equal(val(`songUnsaved()`), false, "right after Save: clean");
@@ -3152,7 +3152,7 @@ test("Recording: ● opens the loop end so a take past bar 2 grows the song inst
 
 test("Publish all: isCompositionKey mirrors isComposition for a closed song; notesTxtFor renders a passed document", () => {
   run(`localStorage.setItem("ff1roll-draft-albums/compositions/other.mid", JSON.stringify({dirty: true, tracks: []}));`);
-  assert.equal(val(`isCompositionKey("albums/compositions/nightroll/x.mid")`), true);
+  assert.equal(val(`isCompositionKey("albums/compositions/nightroll/x.mid")`), false, "a Sketches song with no local copy is a published copy like any other (2026-09-27)");
   assert.equal(val(`isCompositionKey("albums/compositions/other.mid")`), true, "a draft marks it as ours");
   assert.equal(val(`isCompositionKey("albums/compositions/stranger.mid")`), false);
   assert.equal(val(`isCompositionKey("albums/nes/final-fantasy-i/songs/airship.mid")`), false);
@@ -3176,7 +3176,7 @@ test("Bassist golden fixture: applyTake extraction is byte-stable (notes, veloci
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [
       {name: "pulse1", notes: [{t: 0, d: 1920, p: 69, v: 80}, {t: 1920, d: 1920, p: 64, v: 80}, {t: 3840, d: 960, p: 67, v: 80}]},
       {name: "bass", notes: [{t: 480, d: 240, p: 45, v: 70}, {t: 4000, d: 200, p: 40, v: 70}]}]};
-    songKey = "albums/compositions/nightroll/golden.mid"; keyRegions = []; previewSf = null; playCursor = 0;
+    songKey = "albums/compositions/nightroll/golden.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ keyRegions = []; previewSf = null; playCursor = 0;
     song.rawNotes = [[{t: 0, d: 1920, p: 69, v: 80}, {t: 1920, d: 1920, p: 64, v: 80}, {t: 3840, d: 960, p: 67, v: 80}], [{t: 480, d: 240, p: 45, v: 70, ri: 0}, {t: 4000, d: 200, p: 40, v: 70, ri: 1}]];
     song.tracks[1].notes[0].ri = 0; song.tracks[1].notes[1].ri = 1;
     chopS = 0; selTrack = 0; editUndo = []; editRedo = []; dupPending = null;
@@ -3220,7 +3220,7 @@ test("Fill: parsePitch pins pitchName's octave (C4 = 60), double accidentals, MI
 test("Fill: validator — one failing fixture per rule; 6/8 beats and a chop map to the right ticks", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/fill-test.mid";
+    songKey = "albums/compositions/nightroll/fill-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
       tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}, {name: "pulse2", notes: []}]};
     song.rawNotes = [[{t: 100, d: 480, p: 60, v: 80}], []]; song.tracks[0].notes[0].ri = 0;
@@ -3327,7 +3327,7 @@ test("iPad app: every Save also writes the song into Files (a mirror, never read
   run(`globalThis.__prevFetch2 = fetch; fetch = () => Promise.reject(new Error("no network"));`);
   run(`fsRoot.handle = null; fsRoot.mode = null; fsRoot.needsGrant = false;`);
   installSong();
-  run(`song.tracks = [{name: "v1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]; songKey = "albums/compositions/nightroll/mirror-me.mid"; currentPath = songKey; rollnotes = [];
+  run(`song.tracks = [{name: "v1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]; songKey = "albums/compositions/nightroll/mirror-me.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ currentPath = songKey; rollnotes = [];
        localStorage.setItem(draftStoreKey(songKey), JSON.stringify({dirty: true, savedStamp: 0, tracks: []}));`);
   assert.equal(run(`nativeFs()`), null);
   assert.equal(await run(`filesMirror()`), false, "the web has no Files");
@@ -3344,7 +3344,7 @@ test("iPad app: every Save also writes the song into Files (a mirror, never read
   assert.equal(run(`saveCheckpoint(true)`), true);
   run(`songKey = "albums/nes/final-fantasy-i/songs/overworld.mid";`);
   assert.equal(await run(`filesMirror()`), false);
-  run(`songKey = "albums/compositions/nightroll/mirror-me.mid"; localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem(saveStoreKey(songKey));
+  run(`songKey = "albums/compositions/nightroll/mirror-me.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem(saveStoreKey(songKey));
        delete window.Capacitor; fetch = globalThis.__prevFetch2;`);
 });
 
