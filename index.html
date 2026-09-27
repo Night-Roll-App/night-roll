@@ -646,6 +646,8 @@
   .askmsg.user { background: var(--panel2); border: 1px solid var(--grid); align-self: flex-end; }
   .askmsg.ai { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; }
   .askmsg.err { color: #e66767; }
+  .askmsg.note { background: rgba(230,192,96,.10); border: 1px solid rgba(230,192,96,.5); align-self: stretch; white-space: pre-wrap; }
+  #askbtn.hasnote::after { content: " ✉"; color: #e6c060; }
   .askmsg.earlier { font-family: var(--mono); font-size: 12px; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
   /* The box grows with its text (askGrow) up to a third of the screen — a
      fixed 120px hid dictation past the second line (Josh, 2026-09-26). */
@@ -1346,6 +1348,7 @@
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
       <dt>🎤 Speak / ■ Stop</dt><dd>Tap <b>🎤 Speak</b> to dictate a question, <b>■ Stop</b> to cut a slow reply short.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
+      <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ Ask as a gold <b>✉</b> bubble (inbox), and the <b>✦ Ask</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).</dd>
       <dt>Where the model runs</dt><dd>File → Settings… → <b>AI model</b>. <b>In this browser</b>: pick a small model (0.4–4 GB), the first Ask downloads it once and it runs on this device's GPU, nothing leaves the device; Test checks WebGPU and whether it's downloaded. <b>On a server</b>: the URL of an OpenAI-compatible server — LM Studio or Ollama on this computer (<code>http://localhost:1234</code>) or on another machine on your network — plus an optional API key; <b>Test</b> lists the server's models, picks one (your last pick if the server still has it), saves, and names exactly what's wrong when it can't (server off, CORS not enabled, https page talking to an http server, no answer in 8 s). On an iPad the server must be https (Tailscale Serve). The first time you point it at a machine other than this one, it asks once before sending your notes there.</dd>
       <dt>Settings save themselves</dt><dd>Every Settings field saves itself the moment you leave it — there is no Save button and closing never loses anything.</dd>
@@ -14745,6 +14748,7 @@ function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots
       const headers = aiHeaders();
       if (job) { // the bridge keeps a job alive through a dropped connection; ■ Stop kills it explicitly
         headers["x-nr-job"] = job;
+        headers["x-nr-song"] = askSessionName(); // the bridge keeps one Claude Code session per song
         if (signal) signal.addEventListener("abort", () => { fetch(url + "/v1/jobs/" + encodeURIComponent(job), {method: "DELETE", headers: aiHeaders()}).catch(() => {}); }, {once: true});
       }
       if (!model) {
@@ -14759,6 +14763,7 @@ function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots
       let retried = false;
       for (let round = 0; round < 5; round++) {
         const body = {model, stream: true, messages: convo};
+        if (job && round) headers["x-nr-job"] = job + "-r" + round; // a new job per tool round: the same id would replay round one's tool call forever
         if (schema) body.response_format = {type: "json_schema", json_schema: {name: "take", strict: true, schema}};
         if (tools && tools.length && onTool) body.tools = tools;
         const r = await fetch(url + "/v1/chat/completions", {method: "POST", headers, body: JSON.stringify(body), signal});
@@ -15182,6 +15187,7 @@ function askLogMarkdown(msgs) { // what Save appends: one heading per question (
   for (const m of msgs) {
     const c = askStripContext(m.content).trim();
     if (m.role === "user") out += "\n### " + (m.t ? when(m.t) : "—") + (m.at ? " · " + m.at : "") + "\n\n**Josh:** " + c + "\n";
+    else if (m.role === "note") out += "\n**Mac (" + (m.m || "terminal") + "):** " + c + "\n";
     else out += "\n**AI" + (m.m ? " (" + m.m + ")" : "") + ":** " + c + "\n";
   }
   return out;
@@ -15238,6 +15244,46 @@ const asksheet = document.getElementById("asksheet");
 const asklog = document.getElementById("asklog");
 const askinput = document.getElementById("askinput");
 const askstatus = document.getElementById("askstatus");
+// ---- Notes from the Mac (2026-09-27, Josh: "I can't message you back without
+// getting out of bed"). The bridge keeps an inbox the terminal's Claude Code
+// writes to (`node tools/claude-bridge.mjs --say "…"`); the app polls it,
+// shows each note in ✦ Ask as a "note" bubble, saves it with the chat (so it
+// reaches <song>.ask.md), and lights ✉ on the Ask button until read. Only a
+// host already allowed for Ask is polled; a server without /v1/inbox (LM
+// Studio, Ollama) is asked once and left alone.
+function askSessionName() { return String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160); }
+function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
+let askInboxNo = ""; // the url that answered 404 (no inbox there)
+let askInboxTimer = null;
+function askInboxAllowed() {
+  const url = aiUrl();
+  if (!url || cfg().aiBackend === "browser" || askInboxNo === url) return false;
+  if (aiHostKind(url) === "local") return true;
+  try { return JSON.parse(localStorage.getItem("ff1roll-ai-hosts") || "[]").includes(new URL(url).host); } catch (err) { return false; }
+}
+async function askInboxPoll() {
+  if (!askInboxAllowed() || !song) return;
+  const url = aiUrl();
+  let r;
+  try { r = await fetch(url + "/v1/inbox?since=" + (+(localStorage.getItem(askInboxSeenKey()) || 0)), {headers: aiHeaders(), cache: "no-store"}); } catch (err) { return; }
+  if (r.status === 404) { askInboxNo = url; return; }
+  if (!r.ok) return;
+  let j; try { j = await r.json(); } catch (err) { return; }
+  const notes = (j && j.notes || []).filter(n => n && n.text);
+  if (!notes.length) return;
+  askNotesArrived(notes);
+  localStorage.setItem(askInboxSeenKey(), String(j.last || notes[notes.length - 1].id));
+}
+function askNotesArrived(notes) { // into the open song's chat, saved like any message; shown now if the sheet is open, else the ✉ light
+  const key = askStoreKey();
+  const msgs = askLoad();
+  for (const n of notes) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal"});
+  askSave(msgs, undefined, key);
+  if (asksheet.classList.contains("on")) { for (const n of notes) askBubble("note", askNoteLabel(n.from) + String(n.text)); }
+  else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ Ask to read it"); }
+}
+function askNoteLabel(from) { return "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; }
+function askInboxStart() { clearInterval(askInboxTimer); askInboxTimer = setInterval(() => { if (!document.hidden) askInboxPoll(); }, 60000); askInboxPoll(); }
 function askBubble(role, text) {
   const div = document.createElement("div");
   div.className = "askmsg " + role;
@@ -15253,7 +15299,7 @@ function askRender() {
   if (st.trimmed) askRenderEarlier();
   let pendingSeen = false;
   if (!msgs.length && !st.trimmed) askBubble("ai", "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
-  for (const m of msgs) { askBubble(m.role === "user" ? "user" : "ai", askStripContext(m.content)); if (m.pending) { askBubble("ai", "… (still working — the reply lands here)"); pendingSeen = true; } }
+  for (const m of msgs) { askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", m.role === "note" ? askNoteLabel(m.m) + m.content : askStripContext(m.content)); if (m.pending) { askBubble("ai", "… (still working — the reply lands here)"); pendingSeen = true; } }
   if (pendingSeen) askResumeSoon(200);
 }
 async function askRenderEarlier() { // what this device let go of after it reached the repo file
@@ -15426,10 +15472,13 @@ async function askResume() { // a pending question: fetch its job; finished → 
   pend.pending = nextId; askSave(msgs);
   await askRun({msgs, text: pend.content, sp, messages, jobId: nextId, live: live || askBubble("ai", "…"), key: askStoreKey()});
 }
-document.addEventListener("visibilitychange", () => { if (!document.hidden) askResumeSoon(300); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
+askInboxStart();
 function openAsk() {
   if (!song) return;
   askBadgeOff();
+  document.getElementById("askbtn").classList.remove("hasnote");
+  askInboxPoll();
   askRender();
   askRefresh();
   askRefreshTarget();

@@ -66,7 +66,7 @@ test("bridge: models merge from upstreams, jobs survive a dropped client, replay
   // models: shared ids get the upstream prefix
   const models = (await (await fetch(B + "/v1/models", {headers: H})).json()).data.map(m => m.id).sort();
   assert.deepEqual(models, ["beta/fake-7b", "beta/shared-id", "fake-7b", "shared-id"]);
-  assert.deepEqual(await (await fetch(B + "/v1/jobs", {headers: H})).json(), {ok: true, running: 0});
+  assert.deepEqual(await (await fetch(B + "/v1/jobs", {headers: H})).json(), {ok: true, running: 0, inbox: true});
   // a streamed job; the client drops after the first chunk
   const ctl = new AbortController();
   const r = await fetch(B + "/v1/chat/completions", {method: "POST", headers: {...H, "x-nr-job": "nr_t1"}, body: JSON.stringify({model: "fake-7b", stream: true, messages: [{role: "user", content: "count"}]}), signal: ctl.signal});
@@ -100,4 +100,19 @@ test("bridge: models merge from upstreams, jobs survive a dropped client, replay
   assert.equal(j3.status, "error"); assert.equal(j3.error, "stopped");
   // unknown job
   assert.equal((await fetch(B + "/v1/jobs/nope", {headers: H})).status, 404);
+  // the inbox: notes from the terminal, in order, ?since= skips what the app already showed; the probe advertises it
+  assert.equal((await (await fetch(B + "/v1/jobs", {headers: H})).json()).inbox, true);
+  assert.deepEqual(await (await fetch(B + "/v1/inbox", {headers: H})).json(), {last: 0, notes: []});
+  assert.equal((await fetch(B + "/v1/inbox", {method: "POST", headers: H, body: JSON.stringify({text: "  "})})).status, 400);
+  const n1 = await (await fetch(B + "/v1/inbox", {method: "POST", headers: H, body: JSON.stringify({text: "pushed the Game Boy branch", from: "terminal"})})).json();
+  assert.equal(n1.id, 1); assert.equal(n1.from, "terminal");
+  // the --say client posts to a running bridge (token from the env)
+  const say = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--say", "tests green", "--port", String(port)], {env: {...process.env, BRIDGE_TOKEN: "t0k"}, stdio: ["ignore", "pipe", "pipe"]});
+  let sayOut = ""; say.stdout.on("data", d => { sayOut += d; }); say.stderr.on("data", d => { sayOut += d; });
+  const sayCode = await new Promise(r => say.on("exit", r));
+  assert.equal(sayCode, 0, sayOut); assert.match(sayOut, /note #2 delivered/);
+  const box = await (await fetch(B + "/v1/inbox?since=1", {headers: H})).json();
+  assert.equal(box.last, 2); assert.equal(box.notes.length, 1); assert.equal(box.notes[0].text, "tests green");
+  assert.equal((await (await fetch(B + "/v1/inbox?since=2", {headers: H})).json()).notes.length, 0);
+  assert.equal((await fetch(B + "/v1/inbox")).status, 401, "the inbox is behind the token too");
 });

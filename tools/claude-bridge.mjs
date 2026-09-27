@@ -42,8 +42,23 @@
 // --jobs-dir and kept until fetched + --keep-hours (7 days at most), so a
 // bridge restart does not lose an answer.
 //
+// Sessions (2026-09-27, Josh: "I can't message you back without getting out
+// of bed, which is why I want the bridge to be able to have the model then
+// talk to you"): each song's chat is ONE Claude Code session, kept across
+// turns — the app names the song in `x-nr-song`, the bridge maps it to a
+// session id (~/.night-roll-bridge/sessions.json), starts it with
+// --session-id and continues it with --resume, and sends only the newest
+// message (Claude remembers the rest itself). A session Claude Code no
+// longer has is started over once, silently. In full mode that Claude has
+// the ListAgents/SendMessage tools, so it can carry a note to the user's
+// terminal Claude Code sessions on this Mac; the terminal answers through
+// the INBOX: `node tools/claude-bridge.mjs --say "text"` (or POST
+// /v1/inbox {text, from}) — the app shows the note in ✦ Ask and the song's
+// session sees it at the top of its next turn.
+//
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
-// GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id · GET /health.
+// GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
+// GET /v1/inbox?since=ID · POST /v1/inbox · GET /health.
 // No dependencies. Node 18+.
 
 import http from "node:http";
@@ -65,6 +80,9 @@ const TOKEN = flag("--token", process.env.BRIDGE_TOKEN || "");
 const REPO = path.resolve(flag("--repo", path.resolve(HERE, "..")));
 const JOBS_DIR = flag("--jobs-dir", process.env.BRIDGE_JOBS || path.join(os.homedir(), ".night-roll-bridge", "jobs"));
 const KEEP_MS = Math.min(7 * 24, Math.max(1, +flag("--keep-hours", 24))) * 3600 * 1000;
+const STATE_DIR = path.dirname(JOBS_DIR); // sessions.json and inbox.json live beside jobs/
+const SESSIONS_FILE = path.join(STATE_DIR, "sessions.json");
+const INBOX_FILE = path.join(STATE_DIR, "inbox.json");
 const CLAUDE_MODE = has("--no-claude") ? "off" : (flag("--claude", process.env.BRIDGE_CLAUDE || "read") === "full" ? "full" : "read");
 const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
 const TURN_MS = 20 * 60 * 1000;
@@ -76,6 +94,16 @@ for (const u of (process.env.BRIDGE_UPSTREAMS || "").split(",").map(s => s.trim(
 function parseUpstream(s) { const m = s.match(/^([\w-]+)=(.+)$/); return m ? {name: m[1], url: m[2].replace(/\/+$/, "")} : {name: "server" + (upstreams.length + 1), url: s.replace(/\/+$/, "")}; }
 const AUTO_UPSTREAMS = [{name: "lmstudio", url: "http://localhost:1234"}, {name: "ollama", url: "http://localhost:11434"}];
 
+if (has("--say")) { // a note for the app's ✦ Ask window (and the song's session): post it to the running bridge and exit
+  const text = flag("--say", "").trim();
+  if (!text) { console.error("--say needs the text of the note"); process.exit(2); }
+  const headers = {"content-type": "application/json"}; if (TOKEN) headers.authorization = "Bearer " + TOKEN;
+  fetch(`http://${HOST === "0.0.0.0" ? "127.0.0.1" : HOST}:${PORT}/v1/inbox`, {method: "POST", headers, body: JSON.stringify({text, from: flag("--from", "terminal")})})
+    .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("note #" + j.id + " delivered to the bridge"); process.exit(0); })
+    .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
+} else main();
+
+function main() {
 let claudeOk = false;
 if (CLAUDE_MODE !== "off") {
   try { claudeOk = spawnSync(CLAUDE_BIN, ["--version"], {timeout: 8000, stdio: "pipe"}).status === 0; } catch (err) { claudeOk = false; }
@@ -86,6 +114,7 @@ const BRIDGE_SYS_COMMON = `You are answering inside Night Roll's ✦ Ask chat th
 const BRIDGE_SYS_READ = `You are Claude Code running in the Night Roll repository (its working directory) with READ-ONLY tools here: you can read files and search the repo and the web, and nothing else — say so plainly if asked. Songs live under albums/**/<song>.mid with <song>.notes.txt (the notes as text — read that, not the .mid) and <song>.rollnotes.json (the user's annotations) beside them; <song>.ask.md is this chat's saved log. NIGHT-ROLL.md is the app's technical reference; CLAUDE.md holds the working rules and binds you here too: keys and analyses are the user's discoveries.`;
 const BRIDGE_SYS_FULL = `You are Claude Code running in the Night Roll repository (its working directory) with the tools and permissions this machine gives Claude Code — the same ones a terminal session has. If asked what you can do, check rather than assume, and say so plainly. Songs live under albums/**/<song>.mid with <song>.notes.txt (the notes as text — read that, not the .mid) and <song>.rollnotes.json (the user's annotations) beside them; <song>.ask.md is this chat's saved log. NIGHT-ROLL.md is the app's technical reference; CLAUDE.md holds the working rules and they bind you here too: keys and analyses are the user's discoveries; never edit anything under albums/compositions/ without the user's explicit per-instance okay; say what you are about to do before you do it; when you change code, run the vm tests under a hard timeout (perl -e 'alarm 120; exec @ARGV' npm test), never Playwright locally, commit with a message that says why, push, and tell the user the commit hash — CI and Pages take it from there.`;
 
+const BRIDGE_SYS_LINK = `MEMORY AND THE TERMINAL. This chat is one resumed Claude Code session per song: you remember this song's earlier turns yourself, so the bridge sends you only the newest message (and, on a fresh session, whatever history the app still holds). The user's other Claude Code sessions on this Mac ("the terminal") work in this same repository, and the user may be away from the Mac — in bed, on the iPad — and ask you to carry a message to the terminal or to ask it something. If you have the ListAgents and SendMessage tools: call ListAgents, pick the interactive session(s) in this repository, SendMessage each one a short note that names the song and repeats the user's words, and tell the user it was sent. If those tools are missing here, say so plainly instead. The terminal writes back through the bridge: its notes appear at the top of your next turn under NOTES FROM THE TERMINAL, and the user sees them in the app too. Never invent a reply from the terminal; if the user asks whether it answered and no note has arrived, say not yet.`;
 function toolInstructions(tools) {
   if (!tools || !tools.length) return "";
   const list = tools.map(t => { const f = t.function || {}; return `- ${f.name}: ${f.description || ""}\n  parameters: ${JSON.stringify(f.parameters || {})}`; }).join("\n");
@@ -106,6 +135,12 @@ function flatten(messages) { // OpenAI messages → one prompt; the system messa
     lines.push(`USER: ${c}`);
   }
   return {system, prompt: lines.join("\n\n") + "\n\nASSISTANT:"};
+}
+function flattenTail(messages) { // a resumed session: only what came after the last reply it gave (the newest question, plus this round's tool call + results)
+  const list = messages || [];
+  let from = 0;
+  for (let i = list.length - 1; i >= 0; i--) if (list[i].role === "assistant" && !(list[i].tool_calls && list[i].tool_calls.length)) { from = i + 1; break; }
+  return flatten(list.filter((m, i) => m.role === "system" || i >= from));
 }
 function safeJSON(s) { try { return JSON.parse(s || "{}"); } catch (err) { return {}; } }
 function parseToolCall(text) { // the whole reply is one JSON line → a tool call; anything else is prose
@@ -185,11 +220,35 @@ function sweep() { // fetched + keep, or 7 days unfetched
 setInterval(sweep, 10 * 60 * 1000).unref();
 const jobView = j => ({id: j.id, model: j.model, status: j.status, text: j.text, notes: (j.notes || []).slice(-3), error: j.error, result: j.result, started: j.started, ended: j.ended});
 
+// ---------------------------------------------------------------- sessions + inbox
+function readJSON(file, dflt) { try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch (err) { return dflt; } }
+function writeJSON(file, v) { fs.mkdirSync(path.dirname(file), {recursive: true}); fs.writeFileSync(file, JSON.stringify(v, null, 1)); }
+function songKeyOf(req, body) { // the app's x-nr-song, else the "song:" line of its context block, else one shared session
+  const h = String(req.headers["x-nr-song"] || "").replace(/[^\w./:@ -]/g, "_").trim().slice(0, 160);
+  if (h) return h;
+  for (const m of body.messages || []) { const c = typeof m.content === "string" ? m.content : ""; const mm = c.match(/^song: (.+?)(?: \(album| —|$)/m); if (mm) return mm[1].trim(); }
+  return "default";
+}
+function sessionFor(key) { const all = readJSON(SESSIONS_FILE, {}); if (!all[key]) { all[key] = {id: crypto.randomUUID(), turns: 0, noteSeen: 0, started: Date.now()}; writeJSON(SESSIONS_FILE, all); } return all[key]; }
+function sessionUpdate(key, patch) { const all = readJSON(SESSIONS_FILE, {}); all[key] = {...(all[key] || {}), ...patch, last: Date.now()}; writeJSON(SESSIONS_FILE, all); return all[key]; }
+function inboxAll() { const j = readJSON(INBOX_FILE, {last: 0, notes: []}); return j && Array.isArray(j.notes) ? j : {last: 0, notes: []}; }
+function inboxAdd(text, from) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000)}; box.notes.push(note); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
+function notesPreface(sess) { // what the terminal said since this session's last turn
+  const fresh = inboxAll().notes.filter(n => n.id > (sess.noteSeen || 0));
+  if (!fresh.length) return "";
+  const when = t => new Date(t).toTimeString().slice(0, 5);
+  return "NOTES FROM THE TERMINAL (delivered by the bridge since your last turn; the user sees them in the app too):\n" + fresh.map(n => `- [${when(n.t)} ${n.from}] ${n.text}`).join("\n") + "\n\n";
+}
+
 // ---------------------------------------------------------------- runners
-function runClaude(job, body) {
-  const {system, prompt} = flatten(body.messages);
-  const sys = BRIDGE_SYS_COMMON + "\n" + (CLAUDE_MODE === "full" ? BRIDGE_SYS_FULL : BRIDGE_SYS_READ) + (system ? "\n\nNIGHT ROLL'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
-  const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", "--append-system-prompt", sys];
+function runClaude(job, body, songKey, retry = true) {
+  const sess = sessionFor(songKey);
+  const resumed = sess.turns > 0;
+  const {system, prompt: tail} = resumed ? flattenTail(body.messages) : flatten(body.messages);
+  const prompt = notesPreface(sess) + tail;
+  const noteLast = inboxAll().last;
+  const sys = BRIDGE_SYS_COMMON + "\n" + (CLAUDE_MODE === "full" ? BRIDGE_SYS_FULL : BRIDGE_SYS_READ) + "\n" + BRIDGE_SYS_LINK + (system ? "\n\nNIGHT ROLL'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
+  const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", resumed ? "--resume" : "--session-id", sess.id, "--append-system-prompt", sys];
   if (CLAUDE_MODE !== "full") args.push("--tools", "Read", "Glob", "Grep", "WebFetch", "WebSearch");
   const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
   job.child = child;
@@ -222,7 +281,13 @@ function runClaude(job, body) {
   child.on("close", code => {
     clearTimeout(timer);
     if (job.killed) return jobEnd(job, new Error("stopped"));
+    if (!sawText && code !== 0 && resumed && retry && /session|conversation|resume/i.test(err)) { // Claude Code lost the session (cleaned up, another machine): start this song over, once
+      sessionUpdate(songKey, {id: crypto.randomUUID(), turns: 0, noteSeen: 0, started: Date.now(), lost: err.trim().slice(0, 200)});
+      job.notes.push("session restarted");
+      return runClaude(job, body, songKey, false);
+    }
     if (!sawText && code !== 0) return jobEnd(job, new Error((err || "claude exited " + code).trim().slice(0, 500)));
+    sessionUpdate(songKey, {turns: sess.turns + 1, noteSeen: noteLast});
     const full = held || (holding ? "" : null);
     const call = parseToolCall(holding ? held : job.text);
     if (call) jobPush(job, {tool_calls: [{index: 0, id: "call_" + job.id, type: "function", function: {name: call.name, arguments: JSON.stringify(call.arguments)}}]}, "tool_calls");
@@ -273,7 +338,17 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === "/health") return json(res, 200, {ok: true});
   if (!authorized(req)) return json(res, 401, {error: {message: "this bridge wants its token — Settings → key"}});
   if (req.method === "GET" && url.pathname === "/v1/models") { const {models} = await listModels(); return json(res, 200, {object: "list", data: models}); }
-  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length});
+  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true});
+  if (url.pathname === "/v1/inbox") { // notes from the terminal: the app polls with ?since=<last id it showed>
+    if (req.method === "GET") { const since = +(url.searchParams.get("since") || 0) || 0; const box = inboxAll(); return json(res, 200, {last: box.last, notes: box.notes.filter(n => n.id > since)}); }
+    if (req.method === "POST") {
+      let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+      if (!b || !String(b.text || "").trim()) return json(res, 400, {error: {message: "a note needs text"}});
+      const note = inboxAdd(String(b.text).trim(), b.from);
+      console.log(`inbox #${note.id} from ${note.from}: ${note.text.slice(0, 80)}`);
+      return json(res, 200, note);
+    }
+  }
   const jm = url.pathname.match(/^\/v1\/jobs\/([\w.-]+)$/);
   if (jm) {
     const job = loadJob(jm[1]);
@@ -291,7 +366,7 @@ const server = http.createServer(async (req, res) => {
       const target = route.get(body.model) || route.get(MODEL_CLAUDE) || [...route.values()][0];
       if (!target) return json(res, 503, {error: {message: "no model reachable: start LM Studio / Ollama, or install Claude Code"}});
       job = newJob(id, body.model || (target.claude ? MODEL_CLAUDE : target.id));
-      if (target.claude) runClaude(job, body); else runUpstream(job, body, target);
+      if (target.claude) runClaude(job, body, songKeyOf(req, body)); else runUpstream(job, body, target);
     }
     const cid = "chatcmpl-" + id;
     const finalMessage = () => job.result && job.result.tool_calls ? {role: "assistant", content: null, tool_calls: job.result.tool_calls} : {role: "assistant", content: job.text};
@@ -326,5 +401,7 @@ server.listen(PORT, HOST, async () => {
     `\n  claude code: ${claudeOk ? "yes (" + CLAUDE_MODE + ", repo " + REPO + ")" : CLAUDE_MODE === "off" ? "off" : "not installed"}` +
     `\n  upstreams:   ${(upstreams.length ? upstreams : AUTO_UPSTREAMS).map(u => u.name + "=" + u.url).join(", ")}${upstreams.length ? "" : " (auto: listed only while running)"}` +
     `\n  models now:  ${models.map(m => m.id).join(", ") || "(none reachable)"}` +
-    `\n  jobs:        ${JOBS_DIR}, kept ${KEEP_MS / 3600000}h after fetch`);
+    `\n  jobs:        ${JOBS_DIR}, kept ${KEEP_MS / 3600000}h after fetch` +
+    `\n  sessions:    ${SESSIONS_FILE} (one Claude Code session per song) · inbox: ${INBOX_FILE} (--say "text")`);
 });
+} // main

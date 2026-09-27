@@ -75,6 +75,28 @@ a computer. Folder mode already IS the persistence adapter. Spike list
 grew (recording, dictation, WebGPU). Budget 10–16 sessions. Open
 decisions for him listed at the end of the file.
 
+## BRIDGE SESSIONS + INBOX — SHIPPED 2026-09-27 (NIGHT-ROLL.md → The AI bridge → Sessions + the inbox)
+
+Josh, from bed on the iPad: "I can't message you back without getting
+out of bed, which is why I want the bridge to be able to have the model
+then talk to you." Shipped: one Claude Code session per song
+(`x-nr-song` → `--session-id`/`--resume`, tail-only prompts); that
+Claude can SendMessage the terminal sessions (full mode); the terminal
+answers with `node tools/claude-bridge.mjs --say "…"` → ✉ bubble in
+✦ Ask + ✉ on the button + the note at the top of the song session's
+next turn. Also fixed on the way: tool rounds through the bridge reused
+the job id and replayed round one's tool call. Open: nothing pushes to
+the iPad while the app is closed (ntfy app on the iPad would; ask Josh).
+
+## CONSOLE IMPORTS — ON MAIN 2026-09-27, COMMAND LINE ONLY
+
+The five overnight branches (gbs, vgm, psx, spc, n64) merged to main at
+33b185d on Josh's "no reason these couldn't be pushed to master". Each is
+`tools/<console>/` with RESEARCH.md + INTEGRATION.md + a dump CLI +
+tests in `npm test`; index.html untouched — no app button yet, nothing a
+user sees. Next real step per console: run its dump on a real file from
+Josh's collection (never committed), then the app hook per INTEGRATION.md.
+
 ## THE AI BRIDGE, FOR EVERYONE — 2026-09-26 (NIGHT-ROLL.md "✦ Ask / ✦ Fill" → The AI bridge)
 
 Josh: "I want to make sure everybody can run this with LM Studio or

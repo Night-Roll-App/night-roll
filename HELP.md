@@ -278,6 +278,9 @@ Tap **🎤 Speak** to dictate a question, **■ Stop** to cut a slow reply short
 **Slow replies**
 Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold **✦ reply** badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.
 
+**Notes from the Mac**
+On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ Ask as a gold **✉** bubble (inbox), and the **✦ Ask** button shows ✉ until you open it. Notes are saved with the chat.
+
 **The chat is part of the song**
 The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <song>.ask.md beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. **Clear chat** starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).
 

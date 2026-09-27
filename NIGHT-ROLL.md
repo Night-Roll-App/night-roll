@@ -1204,6 +1204,35 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     footer's gold `#askreplybtn` ("✦ reply", the ⚠ pattern: stays until
     tapped, opens Ask) plus one info-strip line naming the other song
     when it differs. `openAsk` clears it. Test: "Ask reply badge".
+  - **Sessions + the inbox (2026-09-27, Josh: "I can't message you back
+    without getting out of bed, which is why I want the bridge to be
+    able to have the model then talk to you").** Each song's chat is ONE
+    Claude Code session: the app sends `x-nr-song` (song key, or
+    `draft:<name>`), the bridge maps it to a uuid in
+    `~/.night-roll-bridge/sessions.json`, runs the first turn with
+    `--session-id` and every later one with `--resume`, and sends only
+    the tail after the last real reply (`flattenTail`: the new question,
+    or this round's tool call + results) — Claude remembers the rest. A
+    session Claude Code no longer has (stderr mentions session/
+    conversation) is started over once with a new id. Proven live:
+    a word remembered across two `claude -p` processes. `BRIDGE_SYS_LINK`
+    tells that Claude it can reach "the terminal" — with full tools a
+    `-p` session HAS ListAgents/SendMessage (restricted `--tools` drops
+    them), and its note arrives in the terminal session as a
+    cross-session message mid-turn. The way back is the inbox:
+    `node tools/claude-bridge.mjs --say "text" [--from who]` posts to
+    the running bridge (`POST /v1/inbox {text, from}`, kept in
+    `inbox.json`, last 200); the app polls `GET /v1/inbox?since=<id>`
+    every 60 s while visible, on Ask open and on visibility change (only
+    a host already allowed for Ask; a 404 marks the server inbox-less),
+    stores each note in the open song's chat as `role: "note"` (saved
+    like any message; the log writes `**Mac (from):**`), shows a gold ✉
+    bubble, and lights ✉ on the Ask button until opened. The song's
+    session also gets unseen notes at the top of its next prompt
+    ("NOTES FROM THE TERMINAL"), so "did the terminal answer?" is
+    answerable. `GET /v1/jobs` now says `inbox: true`. Tool rounds get
+    their own job id (`<job>-r<round>`) — the same id replayed round
+    one's tool call forever through the bridge.
   - **Security:** binds 127.0.0.1 unless `--host`; `--token` requires
     `Authorization: Bearer` (the app's Settings key); CORS open (the app
     is a static page). TLS is someone else's job: Josh uses `tailscale
@@ -1212,7 +1241,8 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   - **Tests:** tests/bridge.test.mjs runs the bridge with `--no-claude`
     against a fake upstream: model merge with prefixing, a job outliving
     a dropped client, replay on re-attach, tool_calls assembly,
-    non-stream on a finished job, kill, 404, the token gate. In `npm test`.
+    non-stream on a finished job, kill, 404, the token gate, the inbox
+    (POST/GET/since, the `--say` client, token). In `npm test`.
   - Josh's box: `node tools/claude-bridge.mjs --claude full --upstream
     lmstudio=http://localhost:1234` (LM Studio needs `lms server start
     --cors`); not persistent across reboots.

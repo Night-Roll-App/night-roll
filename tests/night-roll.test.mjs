@@ -1383,7 +1383,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Score entry",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Score entry", "inbox",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "Play album", "⏭ Next", "✕</b> to leave",
@@ -2625,6 +2625,14 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   const md = val(`askLogMarkdown([{role: "user", content: "<context>\\nctx\\n</context>\\n\\nwhat key?", t: 1758000000000, at: "bars 5–8 (ruler)"}, {role: "assistant", content: "listen to bar 6", m: "qwen/test"}])`);
   assert.match(md, /^\n### \d{4}-\d{2}-\d{2} \d{2}:\d{2} · bars 5–8 \(ruler\)\n\n\*\*Josh:\*\* what key\?\n\n\*\*AI \(qwen\/test\):\*\* listen to bar 6\n$/);
   assert.ok(!md.includes("ctx"), "log strips context too");
+  // a note from the Mac (bridge inbox) is stored as its own role, rendered as a ✉ bubble, and logged as the Mac's line
+  run(`asklog.innerHTML = ""; asksheet.classList.remove("on"); askNotesArrived([{id: 7, t: 1758000000000, from: "terminal", text: "pushed gbs-import"}]);`);
+  assert.equal(val(`askLoad().slice(-1)[0].role`), "note");
+  assert.equal(val(`askLoad().slice(-1)[0].content`), "pushed gbs-import");
+  assert.ok(val(`document.getElementById("askbtn").classList.contains("hasnote")`), "✉ lights on the Ask button while the sheet is closed");
+  run(`asksheet.classList.add("on"); askRender();`); // openAsk itself needs the target <select> the harness lacks
+  assert.ok(val(`[...asklog.children].some(d => d.className === "askmsg note" && /from the Mac: pushed gbs-import/.test(d.textContent))`), "note bubble rendered");
+  assert.match(val(`askLogMarkdown([{role: "note", content: "pushed gbs-import", m: "terminal"}])`), /\*\*Mac \(terminal\):\*\* pushed gbs-import/);
   assert.equal(val(`askLogPath()`), "albums/compositions/nightroll/ask-cap.ask.md");
   // other songs' logs: a clean one is evicted for space, one with unsaved messages never
   run(`localStorage.setItem("ff1roll-ask-a/clean.mid", JSON.stringify({lastUsed: 1, saved: 2, msgs: [{role: "user", content: "q".repeat(300000)}, {role: "assistant", content: "a"}]}));

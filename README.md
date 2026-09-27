@@ -37,7 +37,10 @@ is deployment. Built for iPad-in-bed ergonomics, works anywhere.
   edit, test and push under the repo's rules). Point Settings at the
   bridge, tap Test, pick a model from what it lists. Every turn is a job
   that survives your phone or iPad suspending the tab: leave, come back,
-  the answer is there. `--token` protects it; put TLS in front (Tailscale
+  the answer is there. With Claude Code, each song's chat is one
+  long-running session that remembers earlier turns, can carry a message
+  to the Claude Code sessions in your terminal, and shows the terminal's
+  notes back in ✦ Ask (`node tools/claude-bridge.mjs --say "…"`). `--token` protects it; put TLS in front (Tailscale
   Serve, Caddy) to reach it from a device that opens Night Roll over https.
 - **Composing** — it grew into a small DAW (2026-08): pencil/drag note entry
   on a 16th/triplet grid, multi-note selection editing (move, resize, split,
