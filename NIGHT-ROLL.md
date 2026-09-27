@@ -1364,6 +1364,41 @@ Filesystem plugins.
 autosave-on-edit in folder mode (explicit Save kept for parity and so
 Revert still means something), copying the FF1 corpus into a folder.
 
+## Jobs (footer ⏳) — captures and publishes in the background (2026-09-27)
+
+Design: capture-jobs-design.md (advisor), generalized at Josh's ask —
+"we need a general job system, and captures are just the first job".
+A job is a plain record, no bytes, no DOM: `{id, kind, title, state:
+queued|running|done|failed|cancelled|interrupted, items: [{label, st,
+pct, msg, key}], note, started, ended, err, …extra}`; `jobs` in memory,
+mirrored to localStorage `ff1roll-jobs` on every state change (pct
+throttled 250 ms via `jobsSave()`; `jobsSave(true)` is immediate).
+`JOB_KINDS[kind] = {label(job), open(job), retry(job)}` is the whole
+kind contract. API: `jobStart(kind, title, items, runner, extra)` (the
+runner gets `api`: `update(i, patch)`, `note(text)`, `done()`,
+`fail(err)`, `cancel()`, `aborted`), `jobsFind(kind, slug, live)`,
+`jobCancel(id)` (flips `aborted`; the runner ends the job),
+`jobsDismiss`, `jobsClearFinished`, `jobsOnChange(fn)`, `jobProgress(job)`
+("12/92 · Frog's Theme 40%"). UI: `#jobsbtn` in the footer beside ⚠
+(gold + count while running, dim when only finished, hidden when none),
+`#jobssheet` (`renderJobs`: Open / ✕ / ↻ per row, Clear finished). Boot:
+`jobsLoad()` turns anything still running in the mirror into
+`interrupted` (items too) and the boot line names it — this replaced the
+sessionStorage capture beacon. Producers: **capture** —
+`captureJobStart(ns, statusFn)` (Capture all = every track, a row's
+capture = a one-item job; one capture job at a time); `impCapture(n,
+api, i)` reports into its item and throws "cancelled" at the next
+progress tick when ✕ was tapped; the panel's rows keep painting (the
+panel is only hidden by ✕, `nsfSess` lives on); Open shows the panel
+while `nsfSess.slug` matches, ↻ re-runs the items not `done` in the same
+session and otherwise says to Import the same files again. **publish** —
+`publishJobStart(slug, keys, statusFn)` wraps `commitImports` (its
+status line is the job's `note`), one per folder at a time; Open goes to
+File → Open → that folder; ↻ re-publishes the drafts still there
+(`impCommitLive` is gone). Not jobs: Download audio (real-time
+playback), chip renders (already off-thread; a row per song open would
+spam the list). Later: Publish all as a job; captures in the worker.
+
 ## ✦ Ask / ✦ Fill — in-app AI (P1a + P2a + P3 shipped 2026-09-25; design: local-llm-design.md)
 
 The tutor half of the AI plan. `✦ Ask` in the top bar (hidden in listener

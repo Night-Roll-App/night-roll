@@ -1576,7 +1576,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
@@ -3542,4 +3542,49 @@ test("folder tree: one level per tap — NES › Mega Man 2 › songs; album tit
   assert.equal(run(`parentFolder("nes/mega-man-2")`), "nes");
   assert.equal(run(`parentFolder("nes")`), "");
   assert.equal(run(`groupOf("albums/nes/mega-man-2/air-man.mid")`), "Mega Man 2");
+});
+
+test("jobs: a job is a plain record mirrored to this device — progress, done, cancel, and interrupted at boot", async () => {
+  run(`jobs = []; localStorage.removeItem("ff1roll-jobs"); JOB_KINDS.test = {label: j => "Test · " + j.title, open() {}, retry() {}};
+       globalThis.__api = null; globalThis.__gate = new Promise(res => { globalThis.__open = res; });
+       jobStart("test", "three tracks", [{label: "a"}, {label: "b"}, {label: "c"}], async api => {
+         __api = api; api.update(0, {st: "running", pct: 0.4}); await __gate;
+         api.update(0, {st: "done"});
+         if (api.aborted) { api.cancel(); return; }
+         api.update(1, {st: "done"}); api.update(2, {st: "silent"});
+       }, {slug: "x"});`);
+  await run(`Promise.resolve()`);
+  assert.equal(val(`jobs.length`), 1);
+  assert.equal(run(`jobs[0].state`), "running");
+  assert.equal(run(`jobProgress(jobs[0])`), "0/3 · a 40%");
+  assert.equal(run(`jobsFind("test", "x", true).title`), "three tracks");
+  assert.equal(run(`jobsFind("test", "y", true)`), null);
+  assert.equal(run(`document.getElementById("jobsbtn").textContent`), "⏳ 1");
+  assert.equal(run(`document.getElementById("jobsbtn").style.display`), "");
+  app.tick(300); // the throttled mirror lands
+  assert.equal(JSON.parse(app.store.get("ff1roll-jobs"))[0].items[0].pct, 0.4);
+  run(`__open();`);
+  await run(`__gate`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  assert.equal(run(`jobs[0].state`), "done");
+  assert.deepEqual(val(`jobs[0].items.map(i => i.st)`), ["done", "done", "silent"]);
+  assert.equal(run(`jobProgress(jobs[0])`), "3/3");
+  assert.equal(run(`document.getElementById("jobsbtn").textContent`), "⏳", "finished: no count, dim");
+  // cancel: ✕ flips aborted; the runner ends the job as cancelled
+  run(`globalThis.__gate = new Promise(res => { globalThis.__open = res; });
+       jobStart("test", "cancel me", [{label: "a"}, {label: "b"}], async api => { api.update(0, {st: "running"}); await __gate; if (api.aborted) { api.update(0, {st: "cancelled"}); api.cancel(); return; } api.update(0, {st: "done"}); }, {slug: "c"});`);
+  await run(`Promise.resolve()`);
+  run(`jobCancel(jobs[1].id); __open();`);
+  await run(`__gate`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  assert.equal(run(`jobs[1].state`), "cancelled");
+  // clear finished
+  run(`jobsClearFinished()`);
+  assert.equal(val(`jobs.length`), 0);
+  assert.equal(run(`document.getElementById("jobsbtn").style.display`), "none");
+  // boot after a mid-run death: the mirror's running job is interrupted, with its last counts
+  app.store.set("ff1roll-jobs", JSON.stringify([{id: "z", kind: "test", title: "died", state: "running", slug: "d",
+    items: [{label: "a", st: "done"}, {label: "b", st: "running", pct: 0.7}, {label: "c", st: "queued"}], note: "", started: 1, ended: 0, err: ""}]));
+  const hit = val(`(() => { const j = jobsLoad(); return j && {state: j.state, sts: j.items.map(i => i.st)}; })()`);
+  assert.deepEqual(hit, {state: "interrupted", sts: ["done", "interrupted", "queued"]});
+  assert.equal(run(`jobProgress(jobs[0])`), "1/3 · b 70%");
+  run(`jobs = []; localStorage.removeItem("ff1roll-jobs"); delete JOB_KINDS.test;`);
 });
