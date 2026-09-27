@@ -408,3 +408,37 @@ notes (§3.4), velocity (VOL × peak envelope is a proxy: the chip has no
 velocity, only a level the driver chose). Not recoverable: any note that
 started before the dump, the main-CPU side of a port handshake, and
 tempo/meter (a grid fit, exactly as for NSF).
+
+## 6. Rendering the voice pipeline (apu-render.mjs, 2026-09-27)
+
+What the renderer follows, and where each piece comes from:
+
+- **blargg's `SPC_DSP.cpp`** (snes_spc 0.9.0 / Game_Music_Emu; the
+  cycle-accurate S-DSP most emulators embed): the per-voice clock order
+  (interpolate → envelope → apply pitch), `interpolate()`'s arithmetic —
+  three products `>> 11` summed and wrapped to int16, the fourth added,
+  clamp, `& ~1` — the `gauss[512]` table, `(output × env) >> 11 & ~1`,
+  `(out × VOL) >> 7` then `(× MVOL) >> 7` with the final clamp, the noise
+  update `feedback = (n << 13) ^ (n << 14); n = (feedback & 0x4000) ^ (n >> 1)`
+  from seed `0x4000`, PMON as `pitch += ((prev_out >> 5) × pitch) >> 10`
+  with bit 0 masked, KON polled every other sample with a 5-sample start
+  delay (not modelled — see the header). The file ships in every copy of
+  snes_spc and Game_Music_Emu; blargg's archive:
+  http://blargg.8bitalley.com/libs/audio.html.
+- **Anomie's S-DSP doc** (romhacking.net document 191): the Gaussian
+  table with the note that its four weights can sum to 2049 and overflow
+  (the wrap blargg reproduces), the envelope step rules and the 32-entry
+  rate table `dsp-state.mjs` uses, noise-clock = FLG bits 0-4 on the
+  same table.
+- **fullsnes**, "SNES APU DSP Gaussian Interpolation" / "BRR Pitch" /
+  "Noise": the same table, the 14-bit pitch (`$3FFF` max, four samples
+  per output sample at most), the `(noise × 2)` output for NON voices,
+  and "the DSP reads the sample memory as it plays" — the reason the
+  renderer can only offer the end-of-capture RAM to a streaming driver.
+
+Verified against the tables, not against a listening session with a
+reference emulator (queued): the synthetic tune's frequencies, the LFSR's
+32767-step period and first values, and on the real rips the lead
+voices' fundamentals landing on the semitone the reconstructor named
+(INTEGRATION.md §2). The echo path (EDL/EFB/FIR, §3.5) is the one
+documented S-DSP stage the renderer does not run.

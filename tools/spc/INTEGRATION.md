@@ -61,54 +61,73 @@ no usable root — a drum hit for every practical purpose (FF6 "Strago"'s
 voice 7 otherwise reads as MIDI 117). The import should route those to
 the drum channel like noise voices, rather than draw them as pitches.
 
-## 2. Chip audio — an S-DSP renderer is a bigger job than the 2A03 one
+## 2. Chip audio — the S-DSP renderer (built 2026-09-27)
 
-`tools/nsf/apu-render.mjs` turns the APU log into audio in ~400 lines
-because the NES channels are arithmetic. The S-DSP equivalent needs, per
-voice: BRR streaming with loop handling, **4-point Gaussian
-interpolation** (the chip's fixed 512-entry table — its low-pass roll-off
-is a large part of "the SNES sound"), the ADSR/GAIN envelope at sample
-rate (already in `dsp-state.mjs`), pitch modulation from the previous
-voice's output, the 15-bit noise LFSR; then per frame: main volume, the
-echo path (a ring buffer in RAM with an 8-tap FIR and feedback — RAM
-that the CPU may also be writing), and the final clamp. Roughly 2-3× the
-2A03 renderer, and every part of it audible. Two routes:
+`tools/spc/apu-render.mjs` is the SNES twin of `tools/nsf/apu-render.mjs`
+and `tools/gbs/apu-render.mjs`, with the same contract:
 
-**Route A — full S-DSP in JS (the faithful one).** Port the structure of
-blargg's `SPC_DSP` (the reference most emulators use) to a
-`tools/spc/dsp-render.mjs` that consumes the same `dspLog` plus the RAM
-snapshot. Because the log is replayed after the fact, the renderer must
-also know what RAM held at each moment for streamed samples — rare in
-practice; a first version can use the end-of-capture RAM (what
-`runSPC` already returns) and flag the few games that stream. Output:
-per-voice Float32 buffers like the NES renderer, so mute/solo gains keep
-working. Cost: a week of careful work plus a listening pass against a
-known emulator; the payoff is the console's own voice, which was the
-whole point of chip audio for NSF.
+```
+renderApu(capture, {sampleRate = 44100, onProgress, keepSamples})
+  -> {voice0 … voice7: Float32Array, sampleRate, seconds}
+```
 
-**Route B — WebAudio sample players (the quick, approximate one).** The
-capture already yields, per instrument, the decoded PCM, its loop
-points and its root. Build one `AudioBuffer` per instrument (32 kHz,
-loop points set), and for every note event schedule an
-`AudioBufferSourceNode` with `playbackRate = PITCH / 4096` (or, if roots
-were corrected, `2^((midi − rootMidi)/12)`), a `GainNode` following the
-note's `vol`/`volEnd`, and a stop at the note's end. The ADSR could be
-approximated by a `setTargetAtTime` curve from the ADSR registers
-captured at KON (attack/decay/sustain-level are all in the event's
-register snapshot if we keep it). This is exactly the "oscillator per
-note" approach that the NES side outgrew — it cannot do echo, pitch
-modulation, the Gaussian roll-off, or the 8 ms release tail precisely,
-and fast retriggers of the same voice will overlap where the chip would
-cut. But it is a day's work, it makes an imported SPC audible on the
-first day, and it plays through the SAME event list the roll shows, so
-what you hear is what you see. Recommended as the first step, with
-Route A as the "chip" button upgrade once the import flow is proven on
-real soundtracks.
+`capture` is what `runSPC`/`runSPCAsync` return (`dspLog`, `dsp0`, the
+end-of-capture `ram`, `samples`). Eight per-voice mono buffers (L and R
+folded, MVOL applied) so the app's mute/solo gains keep working; each
+goes straight into `audio.createBuffer(1, voiceN.length, sampleRate)`.
+Rendered at the chip's 32 kHz, then linearly resampled (a 60 s track
+renders in ~0.25 s in Node, ~100× realtime on real rips; yields on a
+35 ms budget through `microYield`, `onProgress(0..1)`).
 
-A middle path worth noting: Route B's sample players plus a shared
-`ConvolverNode`/`DelayNode` echo tuned from EDL/EFB/FIR gets most of the
-"SNES reverb" character for little effort, if the flat sound bothers
-the ear before Route A lands.
+**What it does, per the chip** (blargg's `SPC_DSP.cpp`, Anomie's S-DSP
+doc, fullsnes — RESEARCH.md §6): BRR streamed block by block with
+END/LOOP (`brr.mjs`'s exact decoder), the 512-entry Gaussian
+interpolation ROM with the chip's `>> 11`, int16-wrap-after-three-terms,
+clamp and `& ~1` arithmetic, 14-bit PITCH, **pitch modulation** (PMON:
+`pitch += (prev OUTX >> 5) × pitch >> 10`, bit 0 ignored), ADSR/GAIN
+envelopes and KOFF release from `dsp-state.mjs` (extended, not forked:
+`stepVoice()` runs one voice so voice v can be modulated by voice v−1's
+output of the same sample; `pos` and `onKeyOn` feed the decode-ahead
+ring), the **15-bit noise LFSR** (seed `$4000`, bit 14 = bit 0 ⊕ bit 1,
+clocked at the FLG rate) for NON voices, VOL L/R and MVOL as `>> 7`
+products with 16-bit clamps, FLG mute and soft reset, the dumped
+registers as the state at sample 0 with the dumped KON replayed by
+`spc.mjs` (voices mid-note at dump time without a KON bit stay silent,
+as in every player).
+
+**What is approximate**: KON acts on the sample of its write (the chip
+polls KON every 2 samples and starts decoding 5 later); envelope rate
+counters run per voice from KON (the `dsp-state.mjs` skew, ≤ one rate
+period); a one-shot's last ~12 samples are not pre-silenced as the chip
+does when it reads the END header early; the resampler is linear;
+per-voice buffers cannot clip the SUMMED output the way the chip's
+single main-out clamp does (the mixes below peak at −9 to −11 dBFS, so
+no track here reaches that). BRR data is read from the end-of-capture
+RAM: a driver that rewrites sample memory mid-song would render its
+final contents throughout — none of the five Square/Nintendo sets does.
+
+**What is skipped**: the echo path (ESA/EDL ring buffer in RAM, the
+8-tap FIR, EFB feedback, EVOL return). The dry signal of echo-enabled
+voices is present; the wet return is not. The hook is marked in the
+voice loop (`ECHO HOOK`). This is the audible gap: Square's mixes lean
+on echo for depth, and a flat render is what Josh hears until it lands.
+
+**Measured** (`tools/spc/render.mjs`, which writes a 16-bit WAV and
+prints per-voice RMS/peak; the check script compared each lead-voice
+note the reconstructor names against the strongest semitone in the
+rendered voice's middle 100 ms — rips stayed in the session scratchpad):
+
+| Track, 30 s | render | mix RMS / peak | lead voice | notes ≥ 150 ms whose fundamental sits on the named semitone |
+|---|---|---|---|---|
+| CT "Frog's Theme" | 240 ms (125×) | −24.0 / −9.4 dBFS | voice 1 (brass, root 883 Hz high) | 25 of 27; median +2 cents; the 2 others +1 semitone, both notes named with −26 cents (slides) |
+| FF6 "Terra" | 321 ms (94×) | −24.7 / −11.4 dBFS | voice 0 (root 1278.6 Hz high) | 35 of 35; median −8 cents (a constant offset = the root estimate is ~8 cents sharp; the render plays the chip's pitch) |
+
+Per-voice levels sit between −27 and −42 dBFS RMS; no voice is silent
+in either track and none clips. Tests: `tests/spc-render.test.mjs`
+(Gaussian table and arithmetic on known bytes, LFSR first values and
+period, the synthetic tune's four quarters by frequency, release tail,
+silent voices, length and 48 kHz/32 kHz pitch, hand-built captures for
+NON/PMON/VOL/MVOL/mute/KOFF, the 60 s timing budget).
 
 ## 3. Files and tests
 

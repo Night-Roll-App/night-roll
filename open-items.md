@@ -145,6 +145,16 @@ here. Why wait until the rest of them are done." File → Import takes a
 whole .spc set now (synth voices; no SNES renderer yet). Still open from
 the list below: the roots panel, unrar, multi-part tracks as sections.
 
+S-DSP renderer built 2026-09-27 on branch worktree-agent-a1701ba9dfec9596e
+(`tools/spc/apu-render.mjs`, contract identical to the NES/GB renderers:
+`renderApu(capture, {sampleRate, onProgress, keepSamples})` →
+`voice0..voice7`). Gaussian interpolation, BRR loop/END, ADSR/GAIN, PMON,
+noise LFSR, VOL/MVOL — measured on CT "Frog's Theme" and FF6 "Terra"
+(tools/spc/INTEGRATION.md §2). Queued: the **echo path** (EDL/EFB/FIR +
+EVOL — the audible gap; hook marked in the voice loop), a listening pass
+against a reference emulator, the app wiring (another session, against
+the contract above).
+
 FF4, FF5, FF6, Chrono Trigger, A Link to the Past: 342 .spc, all run
 clean after three fixes (long-loop root estimation, dumped-KON start,
 text-format tag byte + xid6). Import-side items the app must handle

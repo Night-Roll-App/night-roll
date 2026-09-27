@@ -7,6 +7,13 @@
 // the write log through it to find where fading notes become inaudible
 // and where one-shot samples run out.
 //
+// A third consumer, apu-render.mjs, turns the same state into sound: it
+// steps voices one at a time through stepVoice() so voice v's pitch can
+// be modulated by voice v-1's output of the same sample (PMON), reads
+// `pos` (decoded samples since KON) to place its interpolation window,
+// and hooks onKeyOn to restart its BRR decode-ahead. The envelope and
+// position arithmetic lives HERE only.
+//
 // Approximation, deliberate: each voice steps its rate counter from its
 // own KON rather than the hardware's shared phase counter, so an envelope
 // step can land up to one rate period (≤ 2048 samples = 64 ms at the
@@ -27,10 +34,12 @@ export class DspVoices {
     for (let v = 0; v < 8; v++) this.voices.push({
       v, stage: OFF, env: 0, counter: 0,
       addr: 0, nib: 0, frac: 0,       // current BRR block, sample within it, 12-bit pitch accumulator
+      pos: 0,                         // decoded-sample index since KON (block × 16 + nib), for the renderer's window
       start: 0, loop: 0, srcn: 0,
       konSample: -1, endSample: -1,   // when it was keyed on / ran out (one-shot END) in output samples
     });
     this.sample = 0;
+    this.onKeyOn = null;             // (vc) => void, after the voice's state is reset
   }
 
   // No restore from the dumped ENVX: like blargg's SPC_DSP::load, every
@@ -47,8 +56,9 @@ export class DspVoices {
   keyOn(vc) {
     const srcn = this.regs[vc.v * 16 + 4];
     const {start, loop} = this.dirEntry(srcn);
-    Object.assign(vc, {stage: ATTACK, env: 0, counter: 0, addr: start, start, loop, srcn, nib: 0, frac: 0, konSample: this.sample, endSample: -1});
+    Object.assign(vc, {stage: ATTACK, env: 0, counter: 0, addr: start, start, loop, srcn, nib: 0, frac: 0, pos: 0, konSample: this.sample, endSample: -1});
     this.regs[0x7C] &= ~(1 << vc.v); // KON clears the voice's ENDX bit
+    if (this.onKeyOn) this.onKeyOn(vc);
   }
 
   // A DSP register write, AFTER the caller stored it in regs. KON/KOFF/FLG
@@ -70,9 +80,18 @@ export class DspVoices {
   sounding(v) { return this.voices[v].stage !== OFF; }
 
   tick() { // one output sample (32 CPU cycles)
+    for (const vc of this.voices) this.stepVoice(vc, 0);
+    this.sample++;
+  }
+
+  // One voice, one output sample: envelope step, then the BRR position
+  // advance. pitchMod is the PMON term (previous voice's output >> 5,
+  // −1024..1023) — 0 without modulation. The renderer calls this per voice
+  // between its own output computations and bumps `sample` itself.
+  stepVoice(vc, pitchMod) {
     const regs = this.regs, koff = regs[0x5C];
-    for (const vc of this.voices) {
-      if (vc.stage === OFF) continue;
+    {
+      if (vc.stage === OFF) return;
       const b = vc.v * 16;
       // ---- envelope
       if (koff & (1 << vc.v)) vc.stage = RELEASE; // held in release while the bit stays set
@@ -112,10 +131,15 @@ export class DspVoices {
       if (vc.env > ENV_MAX) vc.env = ENV_MAX;
       regs[b + 8] = vc.env >> 4;
       // ---- sample position (noise voices still advance; harmless)
-      const pitch = regs[b + 2] | ((regs[b + 3] & 0x3F) << 8);
+      let pitch = regs[b + 2] | ((regs[b + 3] & 0x3F) << 8);
+      if (pitchMod) { // PMON: pitch += pitch × (prev OUTX >> 5) / 1024, kept in the 14-bit range
+        pitch += (pitchMod * pitch) >> 10;
+        if (pitch < 0) pitch = 0; else if (pitch > 0x3FFF) pitch = 0x3FFF;
+      }
       vc.frac += pitch;
       while (vc.frac >= 0x1000) {
         vc.frac -= 0x1000;
+        vc.pos++;
         if (++vc.nib === 16) {
           vc.nib = 0;
           const hdr = this.ram[vc.addr];
@@ -127,7 +151,6 @@ export class DspVoices {
         }
       }
     }
-    this.sample++;
   }
 
   due(vc, rate) { // one envelope step per RATE_PERIOD[rate] samples; rate 0 never
