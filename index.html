@@ -5665,19 +5665,13 @@ function warmContext() { // one silent sample: absorbs the fresh context's glitc
 function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // glitches the first render quantum of a fresh context. But a context iOS
   // has killed (state "closed") can never come back: rebuild + re-warm.
-  if (audio && (audio.state === "closed" || audio.state === "interrupted")) { // iOS closes a context under pressure or hands it to another audio holder; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds, synchronously, before any await
+  if (audio && audio.state === "closed") { // iOS closes a context under pressure; rebuilding it OUTSIDE a tap gives a mute one until relaunch — leave it, play()'s tap rebuilds
     if (!gestureActive()) return;
-    logErr("audio engine " + audio.state + " — replaced at the top of this tap");
-    try { audio.close().catch(() => {}); } catch (err) { /* already closed */ }
     audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; metGain = null; organWave = null;
   }
   if (audio) return;
   audio = new (window.AudioContext || window.webkitAudioContext)();
-  ensureAudio.serial = (ensureAudio.serial || 0) + 1;
-  // every birth is on the record (2026-09-27 review): a context born outside a
-  // gesture, or late inside one, runs its clock but never reaches the speaker
-  logErr("audio engine #" + ensureAudio.serial + " created (" + (gestureActive() ? "in a gesture" : "NO gesture") + "; state " + audio.state + ", " + audio.sampleRate + " Hz)");
-  audio.onstatechange = () => { const st = audio && audio.state; console.log("[audio] state:", st); if (st) logErr("audio engine state → " + st + (st === "closed" || st === "interrupted" ? " (system) — tap ▶ to replace it" : "")); };
+  audio.onstatechange = () => { console.log("[audio] state:", audio && audio.state); if (audio && audio.state === "closed") logErr("audio engine closed by the system — tap ▶ to rebuild it"); };
   master = audio.createGain();
   master.gain.value = MASTER_VOL * masterVol;
   master.connect(audio.destination);
@@ -5718,11 +5712,10 @@ async function resumeAudio() {
   if (await clockAlive()) return;
   await audio.resume().catch(() => {});
   if (await clockAlive()) return;
-  // never rebuild HERE, tap or not (2026-09-27 review): by this point the awaits
-  // above have run and iOS treats a context created now as gesture-less — it
-  // ticks and stays mute, with nothing in the log. ensureAudio, at the very
-  // top of the next tap, is the only place a dead engine is replaced.
-  asleep(tapped ? "in a tap, after the awaits" : "no gesture");
+  if (!tapped) { asleep("no gesture"); return; } // never rebuild here: see above
+  rebuildAudio("clock dead inside a tap");
+  await audio.resume().catch(() => {});
+  if (!(await clockAlive())) asleep("rebuilt inside a tap, clock still dead");
   function asleep(why) { // surfaced: consoles don't exist on an iPad — the ⚠ log carries the state
     setInfo("audio asleep — tap ▶ again");
     logErr("audio asleep (" + why + "; state " + (audio ? audio.state : "none") + ") — tap ▶ again; if it stays silent, relaunch and tell Claude this line");
