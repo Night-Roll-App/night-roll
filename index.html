@@ -650,6 +650,7 @@
   .askmsg.ai { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; }
   .askmsg.err { color: #e66767; }
   .askmsg a { color: var(--gold); word-break: break-all; }
+  #instfall { display: none; } /* Fall parked 2026-09-27: see the fallOn line */
   /* ⧉ at the end of every bubble: copying from the sheet on the iPad meant a
      long-press fight with the selection (Josh, 2026-09-26). The glyph lives
      in CSS so a bubble's textContent stays exactly its message. */
@@ -1288,7 +1289,7 @@
       <dt>Challenge?</dt><dd>Tap one of your chord bands in the ruler, then tap Challenge? — opens the evidence dialog: each label tone with its role and whether it sounds (and where), extra pitches present, the per-channel note lists, and what the namer would call the whole stack. Only when you ask; extra tones are evidence, not verdicts (a pedal point shows as "extra" — correctly).</dd>
       <dt>💬</dt><dd>Show/hide the text-note strip (the fixed slot that shows your notes as the playhead crosses them). Off frees the vertical space; setting sticks.</dd>
       <dt>🎹 Instrument panel</dt><dd>Opens a piano / guitar fretboard strip above the footer. Lasso'd and sounding notes both light in their track's color (earliest track wins a shared pitch); a lasso'd note gets a white ring for exactly as long as it sounds — so your selection visibly fires as the playhead crosses it. Tap any key or fret to hear it and see its name — plus its scale degree once a key is declared (the readout fades after a few seconds). Guitar is standard tuning, 24 frets: your lasso'd octave lights solid gold, and every OTHER octave of the same note gets a hollow gold ring — select one F♯ and every F♯ on the neck shows — and SOUNDING notes get the same treatment during playback, so hitting ▶ lights the whole neck's worth of what's playing, not just the sounding octave. A pitch that doesn't fit the neck shows octave-folded with a dashed ring and a tiny ▴/▾ pointing at its true octave.</dd>
-      <dt>▼ Fall</dt><dd>Synthesia-style view: the whole timeline turns into a vertical drop and the notes fall down into the piano keys, landing the moment they sound. Bar numbers and chord symbols ride along their lines. Lasso works here too — box the falling notes and they light up on the keys. Piano-only; tap ▼ Fall again (or the Guitar tab) to return to the roll/score.</dd>
+      <dt>▼ Fall</dt><dd><b>Parked for now</b> (2026-09-27): opening it stopped playback on the iPad, so the button is hidden until the drawing is made cheap enough; the code is all still here. When it returns — Synthesia-style view: the whole timeline turns into a vertical drop and the notes fall down into the piano keys, landing the moment they sound. Bar numbers and chord symbols ride along their lines. Lasso works here too — box the falling notes and they light up on the keys. Piano-only; tap ▼ Fall again (or the Guitar tab) to return to the roll/score.</dd>
     </dl>
 
     </div>
@@ -11067,7 +11068,10 @@ for (const tab of ["piano", "guitar"]) {
 }
 instTab = localStorage.getItem("ff1roll-inst-tab") || "piano";
 instOpen = localStorage.getItem("ff1roll-inst-open") === "1";
-fallOn = localStorage.getItem("ff1roll-inst-fall") === "1" && instTab === "piano";
+// Fall is PARKED (Josh, 2026-09-27: opening it killed playback on the iPad — the
+// per-frame full redraw starves the note scheduler; "we can re-implement it
+// later"). The code stays; the button is hidden and the view never turns on.
+fallOn = false; // was: localStorage.getItem("ff1roll-inst-fall") === "1" && instTab === "piano"
 applyInst();
 
 // ---------------------------------------------------------------- note editor
