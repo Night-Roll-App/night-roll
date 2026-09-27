@@ -326,7 +326,7 @@
     position: absolute;
     z-index: 58;
     max-width: 94vw;
-    width: 560px;
+    width: min(75vw, 1040px); /* track names were cut off at 560px on the iPad (Josh, 2026-09-27: "at least 50%") */
   }
   #importsheet.on { display: block; }
   #importsheet .metpanel {
