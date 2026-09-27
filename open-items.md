@@ -187,6 +187,37 @@ Angel (7/8 + 3/8 bars) dump full length. Import-side items:
 Approximate: pitch = written key (INSTR.DAT articulations not read yet);
 no per-note velocity in AKAO; bends counted, not applied.
 
+### AUDIO ON THE iPAD — REVERTED TO THE WORKING ENGINE 2026-09-27, FALL PARKED
+
+Timeline (all the same night): CT played on f733b42 (rebuild inside a
+tap + the SNES renderer). Then Josh: Fall on CT → silence that stayed.
+I shipped three more engine rewrites on theories (no context after an
+await; rebuild at the top of the tap; measure the output + dictation
+releases) — each made a plain relaunch worse, and Josh: "I don't know
+why you won't revert — it was working right up until the point where I
+asked about the piano Fall". A bridge session reverted the three
+(62194b2, afc203f, da44c1b, ea63c95 → 653eae0); what survives: the
+f733b42 engine (rebuild only inside a tap, gated by
+navigator.userActivation), 8441c2c (render off the engine, PCM at
+32 kHz, stale renders abort, buffers built in the Play tap), 9421bf9
+(0.6 s scheduler lookahead; Fall culls by tick), 008056e (Fall redraws
+per frame). Then, on that engine, opening Fall STILL killed sound even
+on a small FF1 song with no ⚠ line → Fall parked (76250d7: button
+hidden, never turns on). FF1 plays.
+Known, not explained: Fall's per-frame full redraw stops sound on the
+iPad and it does not return; in Chrome (simulated clock) nothing
+changes — no exception, chip sources alive, master up. The state string
+lies ("running" while mute). Needs an ON-DEVICE output measurement
+(an AnalyserNode on master read from the ⚠ log), not another theory.
+Unverified but likely real: dictation (SpeechRecognition) holds the
+iPad's audio session; micStop uses stop() and micPrev lingers until the
+next dictation.
+Rule from Josh, applied from here: when it works, stop; when it breaks
+right after my change, revert first; then one change at a time with his
+ear as the test. Order when he's ready: (1) micRelease() (abort both
+recognizers) at the top of play(); (2) the output meter as a DIAGNOSTIC
+only (log, never act); (3) Fall, after the meter says what it does.
+
 ### The import-silence bug — FIXED 2026-09-27 (NIGHT-ROLL.md "Audio context rebuild only inside a tap")
 
 Game Boy, then Chrono Trigger: imported song silent with a moving cursor,
