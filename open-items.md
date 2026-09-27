@@ -51,7 +51,15 @@ folder"). Needs Josh on the device: turn it on in Settings, Save a
 starter, find it in Files → On My iPad → Night Roll. Open in Night Roll
 also shipped (a .mid or chip file tapped in Files / Share → Night Roll
 opens as a local draft; needs Josh: tap a .mid in Files on the iPad).
-Next: TestFlight (archive + upload, privacy labels, support email).
+Also that afternoon: a Release archive of the shell succeeds
+(`xcodebuild archive`, build/NightRoll.xcarchive); privacy.html on the
+site (draft — Josh to read before the listing uses it); the overnight
+branch deleted from GitHub (local tag archive/overnight-2026-09-26 keeps
+it). TestFlight needs Josh once at appstoreconnect.apple.com: My Apps →
+＋ → New App (iOS, name Night Roll, bundle id com.joshcough.nightroll,
+SKU nightroll, English). After that the upload is a command here
+(`xcodebuild -exportArchive` + `xcrun altool --upload-app`, or Xcode →
+Distribute). Privacy labels: no data collected (see privacy.html).
 
 ## APP STORE PREP — OVERNIGHT BRANCH FULLY MERGED 2026-09-27 (afternoon)
 
