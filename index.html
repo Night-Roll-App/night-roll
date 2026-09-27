@@ -13191,7 +13191,8 @@ const CHIPS = {
             if (!akaos.length) throw new Error("no SEQ or AKAO music data in this file — a driver Night Roll cannot read yet");
             const own = ranges.find(r => r.name === parsed.fileName);
             const inOwn = own ? akaos.filter(o => o >= (own.start & 0x1FFFFF) && o < (own.start & 0x1FFFFF) + own.size) : [];
-            result = M.akaoNotes(M.parseAKAO(ram, (inOwn.length ? inOwn : akaos)[0]));
+            const table = M.findInstrDat(ram); // the driver's instrument table: each note decays as its instrument says
+            result = M.akaoNotes(M.parseAKAO(ram, (inOwn.length ? inOwn : akaos)[0]), {instr: table ? {ram, offset: table.offset} : null});
           }
           const bytes = M.makeMidi(result);
           const sq = result.seq, ppq = sq.ppq;

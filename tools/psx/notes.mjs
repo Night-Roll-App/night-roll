@@ -9,6 +9,8 @@
 // sounds at 44100 Hz — estimated from the decoded sample, assumed C4 when
 // the sample has no clear period. Both readings are kept on the note.
 import { secondsAt, barBeat, bpmOf } from "./seq.mjs";
+import { findInstrDat, readInstr, envelopeAt } from "./instr.mjs";
+export { findInstrDat, readInstr, envelopeAt }; // the app reaches them through this module
 import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
 import { pitchName } from "../nsf/notes.mjs";
 import { trackBytes } from "../nsf/midi-write.mjs";
@@ -225,6 +227,25 @@ export function makeMidi(result) {
   const {notes, seq} = result;
   const scale = PPQ / seq.ppq;
   const T = tick => Math.round(tick * scale);
+  // envelopes: from the instrument table when the capture found one (each
+  // note's level at its own end, per its instrument's SPU ADSR); a generic
+  // decay for long notes only when no table is known, said in the warnings
+  const instr = result.instr || null;
+  const recs = new Map();
+  const recOf = p => { if (!instr) return null; if (!recs.has(p)) recs.set(p, readInstr(instr.ram, instr.offset, p)); return recs.get(p); };
+  const veOf = n => {
+    const t0 = T(n.tick), d = Math.max(1, T(n.endTick) - t0), v = Math.max(1, Math.min(127, n.vel));
+    if (n.drum) return undefined;
+    if (instr) {
+      const rec = recOf(n.program);
+      if (!rec) return undefined;
+      const frac = envelopeAt(rec, secondsAt(seq, n.endTick) - secondsAt(seq, n.tick));
+      return frac < 0.97 ? Math.max(1, Math.round(v * Math.max(frac, 0.01))) : undefined;
+    }
+    return d >= PPQ * 2 ? Math.max(1, Math.round(v * 0.12)) : undefined;
+  };
+  if (!instr && notes.some(n => !n.drum && T(n.endTick) - T(n.tick) >= PPQ * 2) && !(seq.warnings || []).some(w => /no instrument table/.test(w)))
+    (seq.warnings || (seq.warnings = [])).push("no instrument table found: long notes decay to 12% by their end (a guess)");
   const metas = [];
   for (const ts of seq.timeSigs) metas.push({t: T(ts.tick), d: [0xFF, 0x58, 4, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
   for (const tm of seq.tempoMap) metas.push({t: T(tm.tick), d: [0xFF, 0x51, 3, (tm.usq >> 16) & 255, (tm.usq >> 8) & 255, tm.usq & 255]});
@@ -258,13 +279,7 @@ export function makeMidi(result) {
       if (p < 0 || p > 127) continue;
       const t = T(n.tick);
       const d = Math.max(1, T(n.endTick) - t), v = Math.max(1, Math.min(127, n.vel));
-      // the SPU's samples decay (ADSR sustain below peak) — the reader does not
-      // yet read each instrument's envelope, so a long melodic note gets a
-      // generic decay to 12% by its end (the app's ve, as chip captures carry):
-      // a bell rings and fades instead of sustaining flat ("sound like mud",
-      // Josh, FF7 You Can Hear the Cry of the Planet, 2026-09-27). Kits and
-      // short notes are untouched.
-      const ve = !n.drum && d >= PPQ * 2 ? Math.max(1, Math.round(v * 0.12)) : undefined;
+      const ve = veOf(n); // the note's level at its end, from its instrument's envelope (the app's ve, as chip captures carry)
       out.push(ve !== undefined ? {t, d, p, v, ve} : {t, d, p, v});
     }
     tracks.push(trackBytes(name, out, ch));

@@ -232,7 +232,7 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
 
 // -> the shape notes.mjs's toNotesTxt/makeMidi/trimSeconds take: {notes,
 // channels, programs, bends, seq, vab: null, source}
-export function akaoNotes(akao, {tempoDiv = TIMER_DIV_FF7, condition = 0, maxEvents = 200000} = {}) {
+export function akaoNotes(akao, {tempoDiv = TIMER_DIV_FF7, condition = 0, maxEvents = 200000, instr = null} = {}) { // instr: {ram, offset} of INSTR.DAT (tools/psx/instr.mjs), for envelopes
   const runs = akao.tracks.map((_, i) => runTrack(akao, i, {tempoDiv, condition, maxEvents}));
   const warnings = runs.flatMap(r => r.warnings);
   // tempo: any track may state it; the driver has one clock
@@ -306,7 +306,7 @@ export function akaoNotes(akao, {tempoDiv = TIMER_DIV_FF7, condition = 0, maxEve
   for (const n of notes) if (!programInfo.has(n.program)) programInfo.set(n.program, {program: n.program, drum: n.drum});
   const bends = new Array(akao.tracks.length).fill(0);
   runs.forEach((r, i) => { bends[i] = r.bends.length; });
-  return {notes, channels, programs: [...programInfo.values()], bends, seq, vab: null,
+  return {notes, channels, programs: [...programInfo.values()], bends, seq, vab: null, instr,
     source: {kind: "akao", label: "PS1 AKAO", pitchNote: "Pitch is the AKAO key as written (octave × 12 + degree + transpose; FF7 articulations are tuned so this is the sounding note for melodic instruments). Kits keep their key numbers. Notes are shown at written length; the driver keys off 2 ticks early unless legato."},
     tracks: runs.map((r, i) => ({ch: i, voice: r.voice, notes: r.notes.length, endTick: r.endTick, loop: r.loop}))};
 }

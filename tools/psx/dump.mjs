@@ -13,6 +13,7 @@ import { parseSEQ, isSEQ, bpmOf } from "./seq.mjs";
 import { parseVAB, isVAB } from "./vab.mjs";
 import { isPSF, parsePSF, loadPSFChain, assembleRam, scanMagic } from "./psf.mjs";
 import { scanAKAO, parseAKAO, akaoNotes } from "./akao.mjs";
+import { findInstrDat } from "./instr.mjs";
 import { seqNotes, trimSeconds, toNotesTxt, makeMidi } from "./notes.mjs";
 
 const args = process.argv.slice(2);
@@ -24,7 +25,7 @@ if (!file) {
 }
 
 let bytes = readFileSync(file);
-let vab = null, akao = null, tagTitle = null;
+let vab = null, akao = null, tagTitle = null, instrTable = null;
 if (isPSF(bytes)) {
   const dir = dirname(file);
   const readLib = name => {
@@ -52,13 +53,16 @@ if (isPSF(bytes)) {
     const list = inOwn.length ? inOwn : akaos;
     if (!list[pick]) { console.error(`# ${list.length} AKAO sequence(s); --akao ${pick} is out of range`); process.exit(1); }
     akao = parseAKAO(ram, list[pick]);
+    instrTable = findInstrDat(ram); // the driver's instrument table, for envelopes
+    if (instrTable) instrTable = {ram, offset: instrTable.offset};
     console.error(`# AKAO id ${akao.id} @0x${((list[pick] | 0x80000000) >>> 0).toString(16)}: ${akao.length} bytes, ${akao.tracks.length} voices (mask 0x${akao.mask.toString(16)}), reverb ${akao.reverbType}, written ${akao.timestamp}`);
   } else { console.error("# no SEQ or AKAO data in RAM: this driver is neither libsnd nor Square's; route B needed"); process.exit(2); }
 }
 
 let result, kindNote, suffix = "";
 if (akao) {
-  result = akaoNotes(akao);
+  if (instrTable) console.error(`# instrument table (INSTR.DAT) at 0x${(0x80000000 + instrTable.offset).toString(16)}: envelopes per instrument`);
+  result = akaoNotes(akao, {instr: instrTable});
   kindNote = `${result.seq.ppq} ticks/quarter, ${bpmOf(result.seq.tempo)}bpm, ${result.seq.timeSigs[0].num}/${result.seq.timeSigs[0].den}${result.seq.loop ? ", loop" : ""}`;
 } else {
   if (!isSEQ(bytes)) { console.error("not a SEQ/SEP (or PSF) file"); process.exit(1); }

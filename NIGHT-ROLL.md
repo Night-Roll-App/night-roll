@@ -1364,6 +1364,26 @@ Filesystem plugins.
 autosave-on-edit in folder mode (explicit Save kept for parity and so
 Revert still means something), copying the FF1 corpus into a folder.
 
+## PlayStation captures: envelopes from the instrument table (2026-09-27)
+
+Josh: "why isn't it looking at the instrument table?" Now it does.
+`tools/psx/instr.mjs`: `findInstrDat(ram)` locates FF7's INSTR.DAT in
+the assembled RAM by shape (64-byte records — u32 SPU address, u32 loop,
+8 ADSR bytes ar/dr/sl/sr/rr/a-mode/s-mode/r-mode, twelve u32 base
+pitches — a run of ≥ 16); `readInstr` reads a slot; `envelopeAt(rec,
+seconds)` is the SPU's ADSR as psx-spx states it (rate → shift/step,
+exponential decrease scales the step by level) through decay and
+sustain, attack taken as instant (FF7's table: ar 0 everywhere). FF7's
+table sits at 0x80166000: 93 slots used; most sustain (sr 0x7f), the
+bells fall (47: sr 0x3b → 8% in 3 s). `akaoNotes(akao, {instr})`
+carries `{ram, offset}`; `makeMidi` writes each melodic note's `ve` as
+its own instrument's level at the note's end (polyphonic aftertouch,
+the convention chip captures use), so a bell rings and fades and a pad
+holds. Only when no table is found does a generic decay apply (long
+notes → 12%), and the warnings say so. The dumper prints the table's
+address. Test: tests/psx-instr.test.mjs (synthetic table by shape; a
+sustaining and a bell envelope).
+
 ## PlayStation captures: percussion by rhythm (2026-09-27)
 
 Josh, FF7 Bombing Mission on the iPad: "all the correct notes are there
