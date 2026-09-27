@@ -416,6 +416,34 @@ file picker accepts `.gbs`; the File menu says "Import… (.mid / .nsf /
 capture path" (synthetic GBS from `tools/gbs/make-test-gbs.mjs`, no ROM
 data), the m3u test's GBS line. Offline twin: `node tools/gbs/dump.mjs`.
 
+**Super Nintendo import (2026-09-27; Josh from bed with the Chrono
+Trigger zip: "can he just get the Super Nintendo stuff merged so I can
+test it here").** The third chip behind the same panel, and the first
+PER-FILE one: an SNES set is one .spc per track (`CHIPS.spc.perFile`),
+so the picker takes every .spc picked, `openChipImport(kind, …, files)`
+parses them all, `chipTrackOrder` sorts by `parseTrackName` (disc,
+track, part; 99/999 "unlisted" last; unparsable names after), the first
+file's game/artist name the album, each row's title is the tag's
+(`spc.name`, xid6 over the 32-byte header) and its tagged length sizes
+the capture like an m3u length. `rows[n].parsed` is that row's file;
+`captureChipTrack` receives it in place of the one parsed NSF. The SPC
+runner already reconstructs (`reconstruct(capture)` → events with
+voice0–7 channels, noise as `drum`, volumes 0–127, 2 ms ticks), so
+`CHIPS.spc.run` returns `events` too and rebins them to 10 ms frames
+(the NES loop/tempo stages were tuned for ~60 fps; 2 ms ticks gave them
+150 000 frames per 300 s); `captureChipTrack` uses `res.events` when
+present; `midiOpts` = `{volMax: 127}`; drums are excluded from the snap
+gate like noise. `CHIPS.spc.tagged`: the tag's seconds ARE the length
+(intro + one pass), so the capture runs that long, the loop scan is
+skipped and the 300 s no-loop retry never fires — measured on the real
+Frog's Theme: scan 5.6 s in node (40 s+ in Chrome) for a null result. No renderer yet: `nsfSess.bytes` is null, nothing goes
+to IndexedDB or the archive, synth voices carry the songs, the panel
+status says so, and the "no NSF on this device" warning now needs an
+album.json that actually names a console file (`chipAlbumHasSource`).
+Verified in Chrome with the real Chrono Trigger set: 92 rows in order
+with tag titles, Frog's Theme captured. Test: "SPC import: a Super
+Nintendo set…" (synthetic SPC; `chipTrackOrder` on real file names).
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware

@@ -12370,8 +12370,12 @@ const CHIPS = {
   // already 0-127) on 2 ms ticks; they are rebinned to 10 ms so the NES
   // loop/tempo stages see a frame count they were tuned for. No renderer
   // yet: synth voices carry these songs, and nothing goes to the archive.
+  // tagged: the set's tags state each track's length (intro + one pass),
+  // so the capture is that long and the loop scan is skipped — on the real
+  // Chrono Trigger set the scan took 5–40 s per track, found nothing, and
+  // then the 300 s retry doubled it (an iPad tab would not survive that).
   spc: {magic: b => String.fromCharCode(...b.subarray(0, 27)) === "SNES-SPC700 Sound File Data", ext: ".spc", label: "SPC",
-        channels: [], perFile: true,
+        channels: [], perFile: true, tagged: true,
         files: ["spc/spc", "spc/notes"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
         parse: M => M.parseSPC,
         run: M => async (spc, n, seconds, onProgress) => {
@@ -12422,8 +12426,8 @@ async function captureChipTrack(kind, M, nsf, track, seconds, onProgress) { // d
   if (!events.length) return null; // silent slot (SFX banks have them)
   const t0 = Math.min(...events.map(ev => ev.startFrame));
   events = events.map(ev => ({...ev, startFrame: ev.startFrame - t0, endFrame: ev.endFrame - t0}));
-  if (onProgress) onProgress("scan"); // emulation done — the loop scan is its own beacon phase
-  const loop = await M.detectLoopAsync(events, frames - t0, null); // yielding twin: the sync scan froze the tab post-100%
+  if (onProgress && !CHIPS[kind || "nsf"].tagged) onProgress("scan"); // emulation done — the loop scan is its own beacon phase
+  const loop = CHIPS[kind || "nsf"].tagged ? null : await M.detectLoopAsync(events, frames - t0, null); // yielding twin: the sync scan froze the tab post-100%; a tagged set's length is the tag's
   let keptFrames = frames - t0;
   if (loop) { // trim to intro + one pass, timing backported from later passes
     events = M.backportTiming(events, loop.period);
@@ -12571,7 +12575,8 @@ async function impCapture(n) {
   // retry for known-short jingles — they are through-composed by nature
   const meta = (nsfSess.trackList || []).find(e => e.n === n);
   const isJingle = meta && meta.len && meta.len <= 22;
-  if (meta && meta.len) secs = Math.max(12, Math.min(300, Math.ceil(meta.len * 2.5 + 4)));
+  const tagged = !!CHIPS[nsfSess.chip || "nsf"].tagged;
+  if (meta && meta.len) secs = tagged ? Math.max(12, Math.min(300, Math.ceil(meta.len + 1))) : Math.max(12, Math.min(300, Math.ceil(meta.len * 2.5 + 4)));
   const row = nsfSess.rows[n];
   row.st.textContent = "capturing…";
   row.open.style.display = "none";
@@ -12595,7 +12600,7 @@ async function impCapture(n) {
     // the detector needs intro + TWO full passes in frame — a 35s loop with an
     // intro already busts 75s. No loop found? ONE retry straight at the 300s
     // ceiling (a doubling ladder just re-emulates the same song extra times)
-    if (cap && !cap.looped && secs < 300 && !isJingle) {
+    if (cap && !cap.looped && secs < 300 && !isJingle && !tagged) {
       secs = 300;
       beacon("retry");
       cap = await captureChipTrack(nsfSess.chip, nsfSess.M, row.parsed || nsfSess.nsf, n, secs, tick("no loop — 300s: "));
@@ -12636,7 +12641,7 @@ async function impCapture(n) {
     // the session (never the repo — *.nsf is gitignored ROM music)
     if (nsfSess.bytes) idbNsfPut(slug, nsfSess.bytes, {[base]: {n, secs: cap.secs}}, nsfSess.chip); // a per-file set has no one blob and no renderer yet
     row.st.textContent = "✓ saved · " + cap.secs.toFixed(1) + "s · " + cap.bpm + "bpm · " +
-                         (cap.looped ? "loop" : "no loop ≤" + secs + "s") +
+                         (cap.looped ? "loop" : tagged ? "tagged length" : "no loop ≤" + secs + "s") +
                          (cap.snapped ? "" : " · raw timing (tempo shifts)");
     row.open.style.display = "";
     row.cap.textContent = "↻"; // captured: tapping again re-runs and overwrites this draft

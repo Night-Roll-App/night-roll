@@ -138,7 +138,12 @@ Queued from what remains approximate:
 - File → Import hook per INTEGRATION.md §4 "What File → Import needs";
   index.html untouched by that session.
 
-### SNES (SPC) — real rips done 2026-09-27, merged 9729ffc (tools/spc/INTEGRATION.md §5)
+### SNES (SPC) — real rips done 2026-09-27, merged 9729ffc; IN THE APP the same night (NIGHT-ROLL.md "Super Nintendo import")
+
+Josh: "can he just get the Super Nintendo stuff merged so I can test it
+here. Why wait until the rest of them are done." File → Import takes a
+whole .spc set now (synth voices; no SNES renderer yet). Still open from
+the list below: the roots panel, unrar, multi-part tracks as sections.
 
 FF4, FF5, FF6, Chrono Trigger, A Link to the Past: 342 .spc, all run
 clean after three fixes (long-loop root estimation, dumped-KON start,
@@ -171,6 +176,19 @@ Angel (7/8 + 3/8 bars) dump full length. Import-side items:
 - show `seq.warnings` (conditional jumps, tempo after an opening rest).
 Approximate: pitch = written key (INSTR.DAT articulations not read yet);
 no per-note velocity in AKAO; bends counted, not applied.
+
+### N64 (USF) — real rips done 2026-09-27, merged e8ca4bb (tools/n64/INTEGRATION.md §8)
+
+Super Mario 64, Ocarina of Time (1.0 + 1.2), Majora's Mask: the USF
+sets' shared library carries the whole sparse ROM, and the sequence
+tables ARE reachable (SM64 in ROM; OoT/MM in the saved RDRAM), so the
+EAD interpreter reads real music: SM64 38/38, OoT 108/109, MM 103/118
+(the misses are ocarina songs and cutscene effects, not sequences). New
+tools/n64/usf.mjs + ead-usf.mjs; three interpreter bugs fixed (SM64
+note priority opcode, OoT/MM channel B0–BE, s8 sequence register → a
+"mm" ABI). Import-side: the picker takes the minis WITH the .usflib
+(like PS1's lib); per-game manifest keyed on the lib's NUS code; bank
+tuning not applied yet (+21 convention), drums unnamed.
 
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
