@@ -1930,6 +1930,10 @@ async function initCatalog() {
     list.sort((x, y) => x[0].localeCompare(y[0]));
   }
   CATALOG = next;
+  // every album's album.json, warmed now: isCaptureKey() reads the cache
+  // synchronously (a capture album offered as a Move target otherwise —
+  // seen in a screenshot, 2026-09-27). One small fetch per album, cached.
+  for (const songs of Object.values(next)) if (songs.length) albumMetaFor(songs[0][1]).catch(() => {});
 }
 const DRUM_LABELS = {35: "kick2", 36: "kick", 37: "stick", 38: "snare", 40: "snar2",
   41: "tomF", 42: "hat", 43: "tomL", 44: "hatP", 45: "tom", 46: "hatO",
