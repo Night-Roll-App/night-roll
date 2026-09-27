@@ -9,7 +9,8 @@ import { createApp, pev } from "./harness.mjs";
 
 function boot(name) {
   const app = createApp();
-  app.run(`createComposition(${JSON.stringify(name)}, 120, 4, 4)`);
+  // New is Untitled until Save names it (2026-09-27); the tests take the sync road to the same key
+  app.run(`createComposition(120, 4, 4); renameLocalKeys(songKey, "albums/compositions/nightroll/" + ${JSON.stringify(name)} + ".mid");`);
   app.run(`
     song.tracks[0].notes.push(
       {t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 480, p: 64, v: 80}, {t: 0, d: 480, p: 67, v: 80});

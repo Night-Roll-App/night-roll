@@ -3522,3 +3522,23 @@ test("console folders: old links and keys redirect; captures are read-only by ma
   assert.equal(run(`folderTitle("nes/mega-man-2")`), "NES › Mega Man 2");
   run(`localStorage.removeItem(draftStoreKey("albums/nes/mega-man-2/air-man.mid")); localStorage.removeItem(draftStoreKey("albums/nes/my-covers/air-man.mid")); delete albumMetaCache["albums/snes/chrono-trigger"];`);
 });
+
+test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {
+  run(`CATALOG = {"Final Fantasy I": [["Overworld", "albums/nes/final-fantasy-i/songs/overworld.mid"]],
+                 "Mega Man 2": [["Air Man", "albums/nes/mega-man-2/air-man.mid"]],
+                 "Chrono Trigger": [["Corridors of Time", "albums/snes/chrono-trigger/corridors-of-time.mid"]],
+                 "My Compositions": [["Threnody", "albums/compositions/threnody.mid"]],
+                 "Night Roll Sketches": [["Ambush", "albums/compositions/nightroll/ambush.mid"]],
+                 "Starters": [["Prelude", "albums/starters/bach-prelude-in-c.mid"]]};`);
+  const top = val(`subfolderKeys(folderTree(publishedPaths()))`);
+  assert.deepEqual(top, ["compositions", "nes", "snes", "starters"], "top level sorted by title: My Compositions, NES, SNES, Starters");
+  assert.deepEqual(val(`subfolderKeys(nodeAt(folderTree(publishedPaths()), "nes"))`), ["final-fantasy-i", "mega-man-2"]);
+  assert.equal(run(`nodeCount(nodeAt(folderTree(publishedPaths()), "nes"))`), 2);
+  assert.equal(run(`segTitle("nes")`), "NES");
+  assert.equal(run(`segTitle("nes/mega-man-2")`), "Mega Man 2");
+  assert.equal(run(`segTitle("compositions/nightroll")`), "Night Roll Sketches");
+  assert.deepEqual(val(`nodeAt(folderTree(publishedPaths()), "compositions").songs`), ["albums/compositions/threnody.mid"], "a folder holds its own songs beside its subfolders");
+  assert.equal(run(`parentFolder("nes/mega-man-2")`), "nes");
+  assert.equal(run(`parentFolder("nes")`), "");
+  assert.equal(run(`groupOf("albums/nes/mega-man-2/air-man.mid")`), "Mega Man 2");
+});

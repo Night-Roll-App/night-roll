@@ -8884,57 +8884,52 @@ function songHeader(text) { // a section line: LOCAL / PUBLISHED
 }
 function localLabel() { return "LOCAL · " + (nativeFs() ? "this iPad" : "this device"); }
 function publishedLabel() { return "PUBLISHED · " + (LINK_SONGS ? linkRepoLabel(LINK_SONGS) : folderActive() ? fsRoot.name : cfg().songsRepo); }
-function renderSongGroups() { // LOCAL folders (this device's copies), then PUBLISHED albums as folders
+function renderSongGroups() { // top: LOCAL's top-level folders, then PUBLISHED's
   document.getElementById("songsheettitle").textContent = "OPEN";
   const rows = document.getElementById("songrows");
   rows.innerHTML = "";
-  const local = localFolders();
-  const folders = Object.keys(local).sort();
-  if (folders.length) {
+  const local = folderTree(draftKeys());
+  if (subfolderKeys(local).length) {
     rows.appendChild(songHeader(localLabel()));
-    for (const f of folders) rows.appendChild(songRow(folderTitle(f) + "  (" + local[f].length + ") ›", () => renderLocalFolder(f)));
+    for (const seg of subfolderKeys(local)) rows.appendChild(songRow(segTitle(local.sub[seg].path) + "  (" + nodeCount(local.sub[seg]) + ") ›", () => renderFolder("local", local.sub[seg].path)));
   }
   rows.appendChild(songHeader(publishedLabel()));
-  for (const [group, songs] of Object.entries(CATALOG))
-    rows.appendChild(songRow(folderTitle(folderOf(songs[0][1])) + "  (" + songs.length + ") ›", () => renderSongList(group)));
+  const pub = folderTree(publishedPaths());
+  for (const seg of subfolderKeys(pub)) rows.appendChild(songRow(segTitle(pub.sub[seg].path) + "  (" + nodeCount(pub.sub[seg]) + ") ›", () => renderFolder("published", pub.sub[seg].path)));
 }
-function renderLocalFolder(folder) {
+function renderFolder(section, folder) { // one level: subfolders, then this folder's songs
+  const root = folderTree(section === "local" ? draftKeys() : publishedPaths());
+  const node = nodeAt(root, folder);
+  if (!node) return renderSongGroups();
   document.getElementById("songsheettitle").textContent = folderTitle(folder).toUpperCase();
   const rows = document.getElementById("songrows");
   rows.innerHTML = "";
-  rows.appendChild(songRow("‹ Back", renderSongGroups, true));
-  rows.appendChild(songHeader(localLabel()));
-  for (const key of localFolders()[folder] || []) {
-    rows.appendChild(songRow(songTitleOf(key) + "  · " + songStatus(key) + (key === currentPath ? "   ✓" : ""), () => {
-      songsheet.classList.remove("on");
-      openDraft(key);
-    }));
+  const up = parentFolder(folder);
+  rows.appendChild(songRow("‹ " + (up ? segTitle(up) : "Open"), () => up ? renderFolder(section, up) : renderSongGroups(), true));
+  rows.appendChild(songHeader(section === "local" ? localLabel() : publishedLabel()));
+  for (const seg of subfolderKeys(node)) rows.appendChild(songRow(segTitle(node.sub[seg].path) + "  (" + nodeCount(node.sub[seg]) + ") ›", () => renderFolder(section, node.sub[seg].path)));
+  if (section === "local") {
+    for (const key of node.songs.sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b))))
+      rows.appendChild(songRow(songTitleOf(key) + "  · " + songStatus(key) + (key === currentPath ? "   ✓" : ""), () => { songsheet.classList.remove("on"); openDraft(key); }));
+  } else {
+    for (const path of node.songs.sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)))) {
+      const local = localStorage.getItem(draftStoreKey(path)) !== null; // the tap opens the local copy (draft wins)
+      rows.appendChild(songRow(songTitleOf(path) + (local ? "  · local copy" : "") + (path === currentPath ? "   ✓" : ""), () => {
+        currentPath = path;
+        rememberLastSong(path);
+        reflectSongURL(path);
+        updateSongBtn();
+        songsheet.classList.remove("on");
+        loadSong(path).catch(e => setInfo(e.message));
+      }));
+    }
   }
 }
-function renderSongList(group) {
-  document.getElementById("songsheettitle").textContent = folderTitle(folderOf(CATALOG[group][0][1])).toUpperCase();
-  const rows = document.getElementById("songrows");
-  rows.innerHTML = "";
-  rows.appendChild(songRow("‹ Back", renderSongGroups, true));
-  rows.appendChild(songHeader(publishedLabel()));
-  for (const [title, path] of CATALOG[group]) {
-    const local = localStorage.getItem(draftStoreKey(path)) !== null; // the tap opens the local copy (draft wins)
-    const row = songRow(title + (local ? "  · local copy" : "") + (path === currentPath ? "   ✓" : ""), () => {
-      currentPath = path;
-      rememberLastSong(path);
-      reflectSongURL(path);
-      updateSongBtn();
-      songsheet.classList.remove("on");
-      loadSong(path).catch(e => setInfo(e.message));
-    });
-    rows.appendChild(row);
-  }
-}
+function renderSongList(group) { renderFolder("published", folderOf(CATALOG[group][0][1])); } // an album is its folder
 function openSongPicker() {
-  // open straight into the current song's group — one less tap for the sweep
-  const group = Object.entries(CATALOG).find(([, songs]) => songs.some(([, p]) => p === currentPath));
-  if (currentPath && localStorage.getItem("ff1roll-draft-" + currentPath)) renderLocalFolder(folderOf(currentPath)); // the local copy is what's open
-  else if (group) renderSongList(group[0]);
+  // open straight into the current song's folder — one less tap for the sweep
+  if (currentPath && localStorage.getItem("ff1roll-draft-" + currentPath)) renderFolder("local", folderOf(currentPath)); // the local copy is what's open
+  else if (currentPath && catalogHas(currentPath)) renderFolder("published", folderOf(currentPath));
   else renderSongGroups();
   songsheet.classList.add("on");
 }
@@ -12065,6 +12060,26 @@ function localFolders() { // folder → this device's copies (draft keys), sorte
   for (const k of draftKeys()) (m[folderOf(k)] || (m[folderOf(k)] = [])).push(k);
   return m;
 }
+// Real nesting (Josh, 2026-09-27: "they're not structured like folders,
+// they're just thrown all over the place"): a tree from the paths, one
+// level per tap — NES › Mega Man 2 › songs.
+function folderTree(paths) { // {sub: {seg: node}, songs: [path], path}
+  const root = {sub: {}, songs: [], path: ""};
+  for (const p of paths) {
+    let node = root;
+    for (const seg of folderOf(p).split("/").filter(Boolean))
+      node = node.sub[seg] || (node.sub[seg] = {sub: {}, songs: [], path: (node.path ? node.path + "/" : "") + seg});
+    node.songs.push(p);
+  }
+  return root;
+}
+function nodeAt(root, folder) { let n = root; for (const seg of (folder || "").split("/").filter(Boolean)) n = n && n.sub[seg]; return n || null; }
+function nodeCount(n) { return n.songs.length + Object.values(n.sub).reduce((a, c) => a + nodeCount(c), 0); }
+function segTitle(folder) { const seg = folder.split("/").pop(); return albumFolders()[folder] || FOLDER_NAMES[seg] || titleCaseSlug(seg); }
+function parentFolder(folder) { const i = folder.lastIndexOf("/"); return i < 0 ? "" : folder.slice(0, i); }
+function subfolderKeys(node) { return Object.keys(node.sub).sort((a, b) => segTitle(node.sub[a].path).localeCompare(segTitle(node.sub[b].path))); }
+function publishedPaths() { return Object.values(CATALOG).flat().map(([, p]) => p); }
+function groupOf(path) { const g = Object.entries(CATALOG).find(([, songs]) => songs.some(([, p]) => p === path)); return g ? g[0] : null; }
 function catalogHas(path) { return Object.values(CATALOG).some(songs => songs.some(([, p]) => p === path)); }
 function songStatus(key) { // the word on a LOCAL row
   if (isUnsaved(key)) return "never saved";
@@ -12489,17 +12504,16 @@ function fsubHeader(text) {
   h.textContent = text;
   filesub.appendChild(h);
 }
-function fsubAlbums() { // File → Open: LOCAL folders (this device's copies) then PUBLISHED albums as folders
+function fsubAlbums() { // File → Open, top: LOCAL's top-level folders, then PUBLISHED's
   filesub.innerHTML = "";
-  const local = localFolders();
-  const folders = Object.keys(local).sort();
-  if (folders.length) {
+  const local = folderTree(draftKeys());
+  if (subfolderKeys(local).length) {
     fsubHeader(localLabel());
-    for (const f of folders) fsubItem(folderTitle(f) + "  (" + local[f].length + ")  ›", () => fsubLocalFolder(f));
+    for (const seg of subfolderKeys(local)) fsubItem(segTitle(local.sub[seg].path) + "  (" + nodeCount(local.sub[seg]) + ")  ›", () => fsubFolder("local", local.sub[seg].path));
   }
   fsubHeader(publishedLabel());
-  for (const group of Object.keys(CATALOG))
-    fsubItem(folderTitle(folderOf(CATALOG[group][0][1])) + "  ›", () => fsubSongs(group));
+  const pub = folderTree(publishedPaths());
+  for (const seg of subfolderKeys(pub)) fsubItem(segTitle(pub.sub[seg].path) + "  (" + nodeCount(pub.sub[seg]) + ")  ›", () => fsubFolder("published", pub.sub[seg].path));
   { // build stamp: which deploy THIS tab is actually running (stale-cache tell)
     // ONE stamp: this runs on every open and every "‹ back", and each run
     // appended another line (Josh, 2026-09-27: "there's two of them … earlier three")
@@ -12513,17 +12527,32 @@ function fsubAlbums() { // File → Open: LOCAL folders (this device's copies) t
     document.getElementById("filesheet").appendChild(d);
   }
 }
-function fsubSongs(group) {
+function fsubFolder(section, folder) { // one level: subfolders, then this folder's songs
+  const root = folderTree(section === "local" ? draftKeys() : publishedPaths());
+  const node = nodeAt(root, folder);
+  if (!node) return fsubAlbums();
+  if (section === "local" && node.songs.length && node.songs.every(isCaptureKey) && !subfolderKeys(node).length)
+    return fsubImportAlbum(folder.split("/").pop()); // captures: publish-all + per-track rows
   filesub.innerHTML = "";
-  fsubItem("‹ " + folderTitle(folderOf(CATALOG[group][0][1])), fsubAlbums, true);
-  { // the only way in: from the open song when it's in this album, else from the top
+  const up = parentFolder(folder);
+  fsubItem("‹ " + (up ? segTitle(up) : "Open"), () => up ? fsubFolder(section, up) : fsubAlbums(), true);
+  fsubHeader((section === "local" ? localLabel() : publishedLabel()) + "  ·  " + folderTitle(folder));
+  for (const seg of subfolderKeys(node)) fsubItem(segTitle(node.sub[seg].path) + "  (" + nodeCount(node.sub[seg]) + ")  ›", () => fsubFolder(section, node.sub[seg].path));
+  const songs = node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
+  if (section === "local") {
+    const rerender = () => { (nodeAt(folderTree(draftKeys()), folder) || {songs: []}).songs.length ? fsubFolder("local", folder) : fsubAlbums(); };
+    for (const key of songs) draftRow(key, songTitleOf(key) + "  · " + songStatus(key), rerender);
+    return;
+  }
+  const group = songs.length && groupOf(songs[0]);
+  if (group && songs.every(p => groupOf(p) === group)) { // this folder is one album: the only way into an album run
     const here = CATALOG[group].findIndex(([, p]) => p === currentPath);
     const from = here >= 0 ? here : 0;
     fsubItem("💿  Play album" + (here >= 0 ? " from " + (here + 1) + "/" + CATALOG[group].length : ""),
              () => { closeFileMenus(); albumStart(group, from); });
   }
-  for (const [title, path] of CATALOG[group])
-    fsubItem(title + (localStorage.getItem(draftStoreKey(path)) !== null ? "  · local copy" : "") + (path === currentPath ? "   ✓" : ""), () => {
+  for (const path of songs)
+    fsubItem(songTitleOf(path) + (localStorage.getItem(draftStoreKey(path)) !== null ? "  · local copy" : "") + (path === currentPath ? "   ✓" : ""), () => {
       closeFileMenus();
       albumClear(); // picking a song by hand ends an album run
       currentPath = path;
@@ -12533,6 +12562,7 @@ function fsubSongs(group) {
       loadSong(path).catch(err => setInfo(err.message));
     });
 }
+function fsubSongs(group) { fsubFolder("published", folderOf(CATALOG[group][0][1])); } // an album is its folder
 function draftRow(key, label, rerender, extra) { // open + (optional extra) + two-tap ✕
   const row = document.createElement("div");
   row.style.cssText = "display:flex;align-items:center;gap:4px";
@@ -12561,15 +12591,7 @@ function draftRow(key, label, rerender, extra) { // open + (optional extra) + tw
   row.appendChild(del);
   filesub.appendChild(row);
 }
-function fsubLocalFolder(folder) {
-  const keys = localFolders()[folder] || [];
-  if (keys.length && keys.every(isCaptureKey)) return fsubImportAlbum(folder.split("/").pop()); // captures: publish-all + per-track rows
-  filesub.innerHTML = "";
-  fsubItem("‹ " + folderTitle(folder), fsubAlbums, true);
-  fsubHeader(localLabel());
-  const rerender = () => { (localFolders()[folder] || []).length ? fsubLocalFolder(folder) : fsubAlbums(); };
-  for (const key of localFolders()[folder] || []) draftRow(key, songTitleOf(key) + "  · " + songStatus(key), rerender);
-}
+function fsubLocalFolder(folder) { return fsubFolder("local", folder); }
 // A running "Commit album" outlives the menu: the File menu is rebuilt on
 // every open, so its progress must live outside the button (Josh,
 // 2026-09-27, minutes into the Chrono Trigger commit: "I didn't know if I
@@ -12577,7 +12599,8 @@ function fsubLocalFolder(folder) {
 let impCommitLive = null; // {slug, text} while a folder commit runs
 function fsubImportAlbum(slug) {
   filesub.innerHTML = "";
-  fsubItem("‹ " + folderTitle(folderOf((importDraftKeys().find(k => k.split("/")[2] === slug) || "albums/imports/" + slug + "/x.mid"))), fsubAlbums, true);
+  { const f = folderOf(importDraftKeys().find(k => k.split("/")[2] === slug) || "albums/imports/" + slug + "/x.mid");
+    fsubItem("‹ " + (parentFolder(f) ? segTitle(parentFolder(f)) : "Open"), () => parentFolder(f) ? fsubFolder("local", parentFolder(f)) : fsubAlbums(), true); }
   fsubHeader(localLabel());
   const keys = importDraftKeys().filter(k => k.split("/")[2] === slug);
   const all = document.createElement("button"); // whole folder in one publish
@@ -12636,8 +12659,8 @@ function fsubImportAlbum(slug) {
 }
 document.getElementById("fileopen").addEventListener("click", e => {
   const group = Object.entries(CATALOG).find(([, songs]) => songs.some(([, p]) => p === currentPath));
-  if (currentPath && localStorage.getItem("ff1roll-draft-" + currentPath)) fsubLocalFolder(folderOf(currentPath)); // the local copy is what's open
-  else if (group) fsubSongs(group[0]);
+  if (currentPath && localStorage.getItem("ff1roll-draft-" + currentPath)) fsubFolder("local", folderOf(currentPath)); // the local copy is what's open
+  else if (group) fsubFolder("published", folderOf(currentPath));
   else fsubAlbums();
   const mr = filesheet.getBoundingClientRect();
   const ir = e.currentTarget.getBoundingClientRect();
