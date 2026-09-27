@@ -101,11 +101,18 @@ export function runNSF(nsf, songIndex1Based, seconds) {
 // Unthrottled yield: background tabs clamp setTimeout to ~1/sec, which turned
 // a 1s loop scan into minutes; MessageChannel messages are macrotasks with no
 // background throttling. Node (no MessageChannel pre-15? has it) falls back.
+// In Node a port with a handler keeps the process alive forever (a render
+// that yielded once hung `node --test` and every CLI after it), so the port
+// is ref'd only while a yield is pending; browsers have no ref/unref.
 let _mc = null;
 export function microYield() {
   if (typeof MessageChannel === "undefined") return new Promise(r => setTimeout(r, 0));
-  if (!_mc) _mc = new MessageChannel();
-  return new Promise(r => { _mc.port1.onmessage = () => r(); _mc.port2.postMessage(0); });
+  if (!_mc) { _mc = new MessageChannel(); if (_mc.port1.unref) _mc.port1.unref(); }
+  return new Promise(r => {
+    if (_mc.port1.ref) _mc.port1.ref();
+    _mc.port1.onmessage = () => { if (_mc.port1.unref) _mc.port1.unref(); r(); };
+    _mc.port2.postMessage(0);
+  });
 }
 
 // Browser-friendly twin of runNSF: identical emulation, but yields to the
