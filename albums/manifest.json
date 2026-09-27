@@ -159,6 +159,15 @@
   ]
  },
  {
+  "title": "Starters",
+  "songs": [
+   {
+    "title": "Prelude in C (Bach, BWV 846)",
+    "path": "albums/starters/bach-prelude-in-c.mid"
+   }
+  ]
+ },
+ {
   "title": "Mega Man 2",
   "songs": [
    {

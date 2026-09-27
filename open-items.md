@@ -44,6 +44,48 @@ Needs Josh, in order: the audio spike at the Mac with the iPad plugged
 in (~30 min); ~~an Apple Developer account~~ (DONE 2026-09-27 morning:
 enrolled and paid); a support email address; two more starter songs.
 Told him 2026-09-27 01:20 by inbox note and email.
+**Then the native app**
+4. Phase 0.5 audio spike (needs Josh at the Mac, iPad plugged in).
+5. Phase 2 Capacitor shell (Files, "Open in Night Roll", audio session).
+6. Phase 3 TestFlight (enrollment, bundle ID, privacy labels).
+7. Phase 4 App Store ($4.99, listing, screenshots, support page).
+
+**Josh's decisions, no rush** — 8 app name (see check) · 9 the other
+two starter songs · 10 support email (tomorrow) · 11 price: done.
+
+**Loose ends** — 12 Settings text overlap on the iPad (awaiting his
+screenshot) · 13 seven edited songs live only in Brave: publish there
+or discard · 14 delete `night-roll-test-songs` whenever · 15 bridge:
+launchd always-on, per-song `--resume`, `--token`.
+
+**Other consoles (Josh, 2026-09-26: "a big selling point")** — chip
+import beyond NSF, in suggested order: Game Boy GBS (same 4-voice
+family; the NSF pipeline ports nearly as is), SNES SPC (standard dumps;
+sample-based, so notes = key-ons + pitch ratio, sample root guessed),
+Genesis VGM (FM register logs), PS1 PSF/SEQ (SEQ is MIDI-like — often
+easy), N64 USF (no standard music format; per game, hardest). Design
+item; nothing built.
+
+**Parked** — 16 Publish all shipping music + chat: DONE on the overnight
+branch · 17 Compare under a chop; saved-only tracks: left as is on
+purpose (chop shifts display ticks and re-applies from rawNotes; a
+swap under it is not worth the risk; saved-only tracks have no lane) · 18 in-browser model on the iPad (WebGPU)
+untested; Claude-by-API-key backend for users · 19 MIDI input
+(Jamstik) v1.1 · 20 on-device model runtime in the shell v1.1.
+
+**Starter content (2026-09-26 night):** `albums/starters/` holds
+Bach's Prelude in C (BWV 846) — 35 bars, three voices, 35 chord labels
+with notes on the interesting bars, six sections, key/tempo/meter —
+generated from the score's chord table and annotated by Claude as demo
+material at Josh's request (the analysis rule is about HIS music). The
+Starters album shows on the site too (public domain) and is the only
+album the packager ships. Two more starter songs are Josh's to pick.
+
+**Tonight, on the branch (Claude alone):** 1, 2, 15 (plist + token),
+16, 17, and a first cut of the classical starter (Bach, Prelude in C
+BWV 846 — 35 bars, public domain, textbook harmony) with full
+annotations as an album `albums/starters/`. Josh reviews in the
+morning; merge is his call.
 
 ## PHASE 1 — publish + links (in progress 2026-09-26)
 
