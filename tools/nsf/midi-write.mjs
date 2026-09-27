@@ -14,7 +14,7 @@ export function snapBeat(b) {
   return Math.abs(b - s16) <= Math.abs(b - s6) ? s16 : s6;
 }
 
-function vl(v) {
+export function vl(v) {
   // negative deltas never terminate (sign-preserving >>) — the loop
   // allocates unbounded memory and kills the tab. Fail loudly instead.
   if (v < 0) throw new Error("negative MIDI delta " + v + " — timing bug upstream");
@@ -24,7 +24,7 @@ function vl(v) {
   return out.reverse();
 }
 
-function trackBytes(name, notes, ch, metas = []) {
+export function trackBytes(name, notes, ch, metas = []) {
   const evs = [];
   if (name) evs.push({t: 0, d: [0xFF, 0x03, name.length, ...[...name].map(c => c.charCodeAt(0))]});
   for (const m of metas) evs.push(m);
