@@ -1,0 +1,306 @@
+{
+ "title": "Final Fantasy 4",
+ "order": 50,
+ "songs": {
+  "chocobo-chocobo": "Chocobo ~ Chocobo",
+  "cry-in-sorrow-part-1": "Cry in Sorrow (part 1)",
+  "cry-in-sorrow-part-2": "Cry in Sorrow (part 2)",
+  "down-the-well": "Down the Well",
+  "epilogue-part-1": "Epilogue (part 1)",
+  "epilogue-part-2": "Epilogue (part 2)",
+  "epilogue-part-3": "Epilogue (part 3)",
+  "giott-the-great-king": "Giott, the Great King",
+  "golbez-clad-in-dark": "Golbez, Clad in Dark",
+  "gysahl-s-whistle": "Gysahl's Whistle",
+  "hello-big-chocobo": "Hello! Big Chocobo!",
+  "hey-cid": "Hey, Cid!",
+  "hummingway-s-tune": "Hummingway's Tune",
+  "into-the-darkness": "Into the Darkness",
+  "join-the-party": "Join the Party!",
+  "land-of-dwarves": "Land of Dwarves",
+  "long-way-to-go": "Long Way to Go",
+  "main-theme-ocean": "Main Theme (Ocean)",
+  "melody-of-lute-night": "Melody of Lute (Night)",
+  "melody-of-lute": "Melody of Lute",
+  "mt-ordeals": "Mt. Ordeals",
+  "palom-and-porom": "Palom and Porom",
+  "ring-of-bomb": "Ring of Bomb",
+  "run": "Run!!!",
+  "samba-de-chocobo": "Samba de Chocobo!",
+  "somewhere-in-the-world": "Somewhere in the World",
+  "the-package-opens": "The Package Opens...",
+  "the-porno-magazine": "The Porno Magazine!",
+  "the-tower-of-babel": "The Tower of Babel",
+  "theme-of-love": "Theme of Love",
+  "tower-of-zot": "Tower of Zot",
+  "welcome-to-our-town": "Welcome to Our Town!",
+  "within-the-giant": "Within the Giant"
+ },
+ "nsf": {
+  "vault": "final-fantasy-4/",
+  "tracks": {
+   "another-moon": {
+    "n": 1,
+    "secs": 112
+   },
+   "castle-damcyan": {
+    "n": 1,
+    "secs": 67
+   },
+   "chocobo-chocobo": {
+    "n": 1,
+    "secs": 54
+   },
+   "chocobo-forest": {
+    "n": 1,
+    "secs": 17
+   },
+   "crickets": {
+    "n": 1,
+    "secs": 12
+   },
+   "cry-in-sorrow-part-1": {
+    "n": 1,
+    "secs": 12
+   },
+   "cry-in-sorrow-part-2": {
+    "n": 1,
+    "secs": 111
+   },
+   "dancing-calcobrina": {
+    "n": 1,
+    "secs": 54
+   },
+   "dancing-girls": {
+    "n": 1,
+    "secs": 13
+   },
+   "down-the-well": {
+    "n": 1,
+    "secs": 12
+   },
+   "epilogue-part-1": {
+    "n": 1,
+    "secs": 300
+   },
+   "epilogue-part-2": {
+    "n": 1,
+    "secs": 268
+   },
+   "epilogue-part-3": {
+    "n": 1,
+    "secs": 213
+   },
+   "fabul": {
+    "n": 1,
+    "secs": 112
+   },
+   "fanfare": {
+    "n": 1,
+    "secs": 32
+   },
+   "fight-1": {
+    "n": 1,
+    "secs": 99
+   },
+   "fight-2": {
+    "n": 1,
+    "secs": 127
+   },
+   "giott-the-great-king": {
+    "n": 1,
+    "secs": 65
+   },
+   "golbez-clad-in-dark": {
+    "n": 1,
+    "secs": 108
+   },
+   "good-night": {
+    "n": 1,
+    "secs": 12
+   },
+   "gysahl-s-whistle": {
+    "n": 1,
+    "secs": 12
+   },
+   "hello-big-chocobo": {
+    "n": 1,
+    "secs": 49
+   },
+   "hey-cid": {
+    "n": 1,
+    "secs": 63
+   },
+   "hummingway-s-tune": {
+    "n": 1,
+    "secs": 12
+   },
+   "illusionary-world": {
+    "n": 1,
+    "secs": 84.99
+   },
+   "into-the-darkness": {
+    "n": 1,
+    "secs": 102
+   },
+   "join-the-party": {
+    "n": 1,
+    "secs": 12
+   },
+   "kingdom-baron": {
+    "n": 1,
+    "secs": 83
+   },
+   "land-of-dwarves": {
+    "n": 1,
+    "secs": 103.99000000000001
+   },
+   "long-way-to-go": {
+    "n": 1,
+    "secs": 128
+   },
+   "lunar-subterrane": {
+    "n": 1,
+    "secs": 117
+   },
+   "main-theme-ocean": {
+    "n": 1,
+    "secs": 154
+   },
+   "main-theme": {
+    "n": 1,
+    "secs": 154.99
+   },
+   "melody-of-lute-night": {
+    "n": 1,
+    "secs": 87
+   },
+   "melody-of-lute": {
+    "n": 1,
+    "secs": 87
+   },
+   "mt-ordeals": {
+    "n": 1,
+    "secs": 95
+   },
+   "mystic-mysidia": {
+    "n": 1,
+    "secs": 86.99
+   },
+   "palom-and-porom": {
+    "n": 1,
+    "secs": 39
+   },
+   "prologue": {
+    "n": 1,
+    "secs": 108.98
+   },
+   "red-wings": {
+    "n": 1,
+    "secs": 127
+   },
+   "ring-of-bomb": {
+    "n": 1,
+    "secs": 89
+   },
+   "run": {
+    "n": 1,
+    "secs": 24
+   },
+   "rydia": {
+    "n": 1,
+    "secs": 121
+   },
+   "samba-de-chocobo": {
+    "n": 1,
+    "secs": 59
+   },
+   "serpent-road": {
+    "n": 1,
+    "secs": 29
+   },
+   "ship-ahoy": {
+    "n": 1,
+    "secs": 12
+   },
+   "somewhere-in-the-world": {
+    "n": 1,
+    "secs": 48
+   },
+   "surprise": {
+    "n": 1,
+    "secs": 12
+   },
+   "suspicion": {
+    "n": 1,
+    "secs": 53
+   },
+   "the-airship": {
+    "n": 1,
+    "secs": 46
+   },
+   "the-big-whale": {
+    "n": 1,
+    "secs": 62
+   },
+   "the-dreadful-fight": {
+    "n": 1,
+    "secs": 177
+   },
+   "the-final-battle": {
+    "n": 1,
+    "secs": 148
+   },
+   "the-lunarians": {
+    "n": 1,
+    "secs": 125
+   },
+   "the-package-opens": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-paladin": {
+    "n": 1,
+    "secs": 22
+   },
+   "the-porno-magazine": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-prelude": {
+    "n": 1,
+    "secs": 119
+   },
+   "the-tower-of-babel": {
+    "n": 1,
+    "secs": 109.98
+   },
+   "theme-of-love": {
+    "n": 1,
+    "secs": 127.99000000000001
+   },
+   "toroian-beauty": {
+    "n": 1,
+    "secs": 94
+   },
+   "tower-of-zot": {
+    "n": 1,
+    "secs": 81
+   },
+   "tranquil-beach": {
+    "n": 1,
+    "secs": 16
+   },
+   "welcome-to-our-town": {
+    "n": 1,
+    "secs": 77
+   },
+   "within-the-giant": {
+    "n": 1,
+    "secs": 124
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}
