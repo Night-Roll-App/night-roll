@@ -111,6 +111,33 @@ Plan (not built):
 - Already true: one m3u listing all songs works (parseM3u is per line;
   the merge is over picked files).
 
+### VGM / Genesis — DONE for the pipeline 2026-09-27 (branch worktree-agent-a08d6775b74a6211e)
+
+Josh: "go out and download all those other games from the web and try
+to import them and try to write unit tests for them." Sonic the Hedgehog
+(19) and Sonic 2 (31) from Zophar, command line only; bytes never in the
+repo. Full account: tools/vgm/INTEGRATION.md §4 "Real rips". Two real
+bugs, both fixed with synthetic regressions (tests/vgm.test.mjs) and the
+rips' text pinned in tests/vgm-real.test.mjs (in `npm test`):
+- FM pitch ignored the operators' MUL — Sonic's chord voice printed two
+  octaves low, its bass an octave high (the roll inverted).
+- DAC hits merged whenever drum samples overlapped (Sonic 2 Final Boss:
+  one hit in 58 s; now 337).
+Queued from what remains approximate:
+- Slide-aware merge: SMPS chromatic slide-ins split into 16 ms legato
+  grace notes; the text drops them and starts the target up to 50 ms late.
+  Fold grace notes shorter than a 32nd into the target and give it their
+  onset.
+- DAC kit without naming: in these files the 0xE0 seek offset IS the drum
+  (3–4 distinct offsets per song). Bin hits by seek offset onto 35/38/42
+  in order of first appearance — a kit map from a hardware fact.
+- Tempo seed: SMPS ticks at 60 Hz with integer frames per note; Green
+  Hill is exactly 150 (6 frames a 16th) and the fitter seeded at 120 said
+  121.66. The import should try the chip-native family (150 / 112.5 /
+  100 / 75) and show the one with the fewest off-grid onsets; Josh picks.
+- File → Import hook per INTEGRATION.md §4 "What File → Import needs";
+  index.html untouched by that session.
+
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 
 The five overnight branches (gbs, vgm, psx, spc, n64) merged to main at
