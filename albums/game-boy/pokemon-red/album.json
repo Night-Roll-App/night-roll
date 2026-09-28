@@ -1,0 +1,243 @@
+{
+ "title": "Pokémon Red",
+ "order": 50,
+ "songs": {
+  "battle-vs-gym-leader": "Battle (VS Gym Leader)",
+  "battle-vs-trainer": "Battle (VS Trainer)",
+  "battle-vs-wild-pokemon": "Battle (VS Wild Pokemon)",
+  "celadon-city-s-theme": "Celadon City's Theme",
+  "cerulean-city-s-theme": "Cerulean City's Theme",
+  "cinnabar-island-s-theme": "Cinnabar Island's Theme",
+  "into-the-hall": "Into the Hall",
+  "jigglypuff-s-song": "Jigglypuff's Song",
+  "last-battle-vs-rival": "Last Battle (VS Rival)",
+  "lavender-town-s-theme": "Lavender Town's Theme",
+  "mt-moon-cave": "Mt. Moon Cave",
+  "opening-part-1": "Opening (part 1)",
+  "opening-part-2": "Opening (part 2)",
+  "pallet-town-s-theme": "Pallet Town's Theme",
+  "pewter-city-s-theme": "Pewter City's Theme",
+  "st-anne": "St. Anne",
+  "the-road-to-cerulean-from-mt-moon": "The Road to Cerulean ~ from Mt. Moon",
+  "the-road-to-lavender-town-from-vermilion": "The Road to Lavender Town ~ from Vermilion",
+  "the-road-to-viridian-city-from-pallet": "The Road to Viridian City ~ from Pallet",
+  "to-bill-s-origin-from-cerulean": "To Bill's Origin ~ From Cerulean",
+  "trainer-appears-bad-guy-version": "Trainer Appears (Bad Guy Version)",
+  "trainer-appears-boy-version": "Trainer Appears (Boy Version)",
+  "trainer-appears-girl-version": "Trainer Appears (Girl Version)",
+  "vermilion-city-s-theme": "Vermilion City's Theme",
+  "victory-vs-gym-leader": "Victory (VS Gym Leader)",
+  "victory-vs-trainer": "Victory (VS Trainer)",
+  "victory-vs-wild-pokemon": "Victory (VS Wild Pokemon)"
+ },
+ "nsf": {
+  "vault": "pokemon-red.gbs",
+  "tracks": {
+   "battle-vs-gym-leader": {
+    "n": 22,
+    "secs": 57.77907943725586
+   },
+   "battle-vs-trainer": {
+    "n": 23,
+    "secs": 97.04072570800781
+   },
+   "battle-vs-wild-pokemon": {
+    "n": 24,
+    "secs": 47.013519287109375
+   },
+   "casino": {
+    "n": 35,
+    "secs": 39.17793273925781
+   },
+   "celadon-city-s-theme": {
+    "n": 9,
+    "secs": 30.739608764648438
+   },
+   "cerulean-city-s-theme": {
+    "n": 8,
+    "secs": 31.96182632446289
+   },
+   "cinnabar-island-s-theme": {
+    "n": 10,
+    "secs": 21.69854736328125
+   },
+   "cycling": {
+    "n": 33,
+    "secs": 34.57368850708008
+   },
+   "ending": {
+    "n": 29,
+    "secs": 299.9790687561035
+   },
+   "evolution": {
+    "n": 17,
+    "secs": 33.970951080322266
+   },
+   "guide": {
+    "n": 16,
+    "secs": 15.855342864990234
+   },
+   "into-the-hall": {
+    "n": 30,
+    "secs": 22.502197265625
+   },
+   "item-fanfare": {
+    "n": 46,
+    "secs": 11.987777709960938
+   },
+   "jigglypuff-s-song": {
+    "n": 32,
+    "secs": 21.983173370361328
+   },
+   "last-battle-vs-rival": {
+    "n": 25,
+    "secs": 74.53852844238281
+   },
+   "lavender-town-s-theme": {
+    "n": 12,
+    "secs": 299.9790687561035
+   },
+   "level-up-fanfare": {
+    "n": 48,
+    "secs": 11.987777709960938
+   },
+   "mt-moon-cave": {
+    "n": 38,
+    "secs": 83.42890548706055
+   },
+   "oak-research-lab": {
+    "n": 31,
+    "secs": 28.998367309570312
+   },
+   "ocean": {
+    "n": 34,
+    "secs": 27.876605987548828
+   },
+   "opening-part-1": {
+    "n": 1,
+    "secs": 33.987693786621094
+   },
+   "opening-part-2": {
+    "n": 2,
+    "secs": 47.465572357177734
+   },
+   "pallet-town-s-theme": {
+    "n": 4,
+    "secs": 32.14599609375
+   },
+   "pewter-city-s-theme": {
+    "n": 7,
+    "secs": 57.86279296875
+   },
+   "pokedex-fanfare-1": {
+    "n": 50,
+    "secs": 11.987777709960938
+   },
+   "pokedex-fanfare-2": {
+    "n": 51,
+    "secs": 11.987777709960938
+   },
+   "pokemon-capture-fanfare": {
+    "n": 49,
+    "secs": 11.987777709960938
+   },
+   "pokemon-center": {
+    "n": 5,
+    "secs": 28.931396484375
+   },
+   "pokemon-gym": {
+    "n": 6,
+    "secs": 31.191661834716797
+   },
+   "pokemon-mansion": {
+    "n": 39,
+    "secs": 299.9790687561035
+   },
+   "pokemon-received-fanfare": {
+    "n": 47,
+    "secs": 11.987777709960938
+   },
+   "pokemon-recovery": {
+    "n": 45,
+    "secs": 11.987777709960938
+   },
+   "pokemon-tower": {
+    "n": 40,
+    "secs": 62.986061096191406
+   },
+   "professor-oak": {
+    "n": 14,
+    "secs": 23.858356475830078
+   },
+   "rival-appears": {
+    "n": 15,
+    "secs": 17.22824478149414
+   },
+   "st-anne": {
+    "n": 13,
+    "secs": 32.14599609375
+   },
+   "sylph-company": {
+    "n": 41,
+    "secs": 60.72579574584961
+   },
+   "team-rocket-hideout": {
+    "n": 36,
+    "secs": 68.61161041259766
+   },
+   "the-last-road": {
+    "n": 21,
+    "secs": 29.83550262451172
+   },
+   "the-road-to-cerulean-from-mt-moon": {
+    "n": 19,
+    "secs": 27.173412322998047
+   },
+   "the-road-to-lavender-town-from-vermilion": {
+    "n": 20,
+    "secs": 33.451927185058594
+   },
+   "the-road-to-viridian-city-from-pallet": {
+    "n": 18,
+    "secs": 22.904022216796875
+   },
+   "to-bill-s-origin-from-cerulean": {
+    "n": 3,
+    "secs": 19.086685180664062
+   },
+   "trainer-appears-bad-guy-version": {
+    "n": 42,
+    "secs": 7.383533477783203
+   },
+   "trainer-appears-boy-version": {
+    "n": 44,
+    "secs": 8.438323974609375
+   },
+   "trainer-appears-girl-version": {
+    "n": 43,
+    "secs": 7.584445953369141
+   },
+   "vermilion-city-s-theme": {
+    "n": 11,
+    "secs": 23.506759643554688
+   },
+   "victory-vs-gym-leader": {
+    "n": 28,
+    "secs": 36.566070556640625
+   },
+   "victory-vs-trainer": {
+    "n": 26,
+    "secs": 12.657485961914062
+   },
+   "victory-vs-wild-pokemon": {
+    "n": 27,
+    "secs": 12.657485961914062
+   },
+   "viridian-forest": {
+    "n": 37,
+    "secs": 101.2598876953125
+   }
+  },
+  "chip": "gbs"
+ }
+}

@@ -4727,6 +4727,215 @@
   ]
  },
  {
+  "title": "Pokémon Red",
+  "songs": [
+   {
+    "title": "Battle (VS Gym Leader)",
+    "path": "albums/game-boy/pokemon-red/battle-vs-gym-leader.mid"
+   },
+   {
+    "title": "Battle (VS Trainer)",
+    "path": "albums/game-boy/pokemon-red/battle-vs-trainer.mid"
+   },
+   {
+    "title": "Battle (VS Wild Pokemon)",
+    "path": "albums/game-boy/pokemon-red/battle-vs-wild-pokemon.mid"
+   },
+   {
+    "title": "Casino",
+    "path": "albums/game-boy/pokemon-red/casino.mid"
+   },
+   {
+    "title": "Celadon City's Theme",
+    "path": "albums/game-boy/pokemon-red/celadon-city-s-theme.mid"
+   },
+   {
+    "title": "Cerulean City's Theme",
+    "path": "albums/game-boy/pokemon-red/cerulean-city-s-theme.mid"
+   },
+   {
+    "title": "Cinnabar Island's Theme",
+    "path": "albums/game-boy/pokemon-red/cinnabar-island-s-theme.mid"
+   },
+   {
+    "title": "Cycling",
+    "path": "albums/game-boy/pokemon-red/cycling.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/game-boy/pokemon-red/ending.mid"
+   },
+   {
+    "title": "Evolution",
+    "path": "albums/game-boy/pokemon-red/evolution.mid"
+   },
+   {
+    "title": "Guide",
+    "path": "albums/game-boy/pokemon-red/guide.mid"
+   },
+   {
+    "title": "Into the Hall",
+    "path": "albums/game-boy/pokemon-red/into-the-hall.mid"
+   },
+   {
+    "title": "Item Fanfare",
+    "path": "albums/game-boy/pokemon-red/item-fanfare.mid"
+   },
+   {
+    "title": "Jigglypuff's Song",
+    "path": "albums/game-boy/pokemon-red/jigglypuff-s-song.mid"
+   },
+   {
+    "title": "Last Battle (VS Rival)",
+    "path": "albums/game-boy/pokemon-red/last-battle-vs-rival.mid"
+   },
+   {
+    "title": "Lavender Town's Theme",
+    "path": "albums/game-boy/pokemon-red/lavender-town-s-theme.mid"
+   },
+   {
+    "title": "Level Up Fanfare",
+    "path": "albums/game-boy/pokemon-red/level-up-fanfare.mid"
+   },
+   {
+    "title": "Mt. Moon Cave",
+    "path": "albums/game-boy/pokemon-red/mt-moon-cave.mid"
+   },
+   {
+    "title": "Oak Research Lab",
+    "path": "albums/game-boy/pokemon-red/oak-research-lab.mid"
+   },
+   {
+    "title": "Ocean",
+    "path": "albums/game-boy/pokemon-red/ocean.mid"
+   },
+   {
+    "title": "Opening (part 1)",
+    "path": "albums/game-boy/pokemon-red/opening-part-1.mid"
+   },
+   {
+    "title": "Opening (part 2)",
+    "path": "albums/game-boy/pokemon-red/opening-part-2.mid"
+   },
+   {
+    "title": "Pallet Town's Theme",
+    "path": "albums/game-boy/pokemon-red/pallet-town-s-theme.mid"
+   },
+   {
+    "title": "Pewter City's Theme",
+    "path": "albums/game-boy/pokemon-red/pewter-city-s-theme.mid"
+   },
+   {
+    "title": "Pokedex Fanfare 1",
+    "path": "albums/game-boy/pokemon-red/pokedex-fanfare-1.mid"
+   },
+   {
+    "title": "Pokedex Fanfare 2",
+    "path": "albums/game-boy/pokemon-red/pokedex-fanfare-2.mid"
+   },
+   {
+    "title": "Pokemon Capture Fanfare",
+    "path": "albums/game-boy/pokemon-red/pokemon-capture-fanfare.mid"
+   },
+   {
+    "title": "Pokemon Center",
+    "path": "albums/game-boy/pokemon-red/pokemon-center.mid"
+   },
+   {
+    "title": "Pokemon Gym",
+    "path": "albums/game-boy/pokemon-red/pokemon-gym.mid"
+   },
+   {
+    "title": "Pokemon Mansion",
+    "path": "albums/game-boy/pokemon-red/pokemon-mansion.mid"
+   },
+   {
+    "title": "Pokemon Received Fanfare",
+    "path": "albums/game-boy/pokemon-red/pokemon-received-fanfare.mid"
+   },
+   {
+    "title": "Pokemon Recovery",
+    "path": "albums/game-boy/pokemon-red/pokemon-recovery.mid"
+   },
+   {
+    "title": "Pokemon Tower",
+    "path": "albums/game-boy/pokemon-red/pokemon-tower.mid"
+   },
+   {
+    "title": "Professor Oak",
+    "path": "albums/game-boy/pokemon-red/professor-oak.mid"
+   },
+   {
+    "title": "Rival Appears",
+    "path": "albums/game-boy/pokemon-red/rival-appears.mid"
+   },
+   {
+    "title": "St. Anne",
+    "path": "albums/game-boy/pokemon-red/st-anne.mid"
+   },
+   {
+    "title": "Sylph Company",
+    "path": "albums/game-boy/pokemon-red/sylph-company.mid"
+   },
+   {
+    "title": "Team Rocket Hideout",
+    "path": "albums/game-boy/pokemon-red/team-rocket-hideout.mid"
+   },
+   {
+    "title": "The Last Road",
+    "path": "albums/game-boy/pokemon-red/the-last-road.mid"
+   },
+   {
+    "title": "The Road to Cerulean ~ from Mt. Moon",
+    "path": "albums/game-boy/pokemon-red/the-road-to-cerulean-from-mt-moon.mid"
+   },
+   {
+    "title": "The Road to Lavender Town ~ from Vermilion",
+    "path": "albums/game-boy/pokemon-red/the-road-to-lavender-town-from-vermilion.mid"
+   },
+   {
+    "title": "The Road to Viridian City ~ from Pallet",
+    "path": "albums/game-boy/pokemon-red/the-road-to-viridian-city-from-pallet.mid"
+   },
+   {
+    "title": "To Bill's Origin ~ From Cerulean",
+    "path": "albums/game-boy/pokemon-red/to-bill-s-origin-from-cerulean.mid"
+   },
+   {
+    "title": "Trainer Appears (Bad Guy Version)",
+    "path": "albums/game-boy/pokemon-red/trainer-appears-bad-guy-version.mid"
+   },
+   {
+    "title": "Trainer Appears (Boy Version)",
+    "path": "albums/game-boy/pokemon-red/trainer-appears-boy-version.mid"
+   },
+   {
+    "title": "Trainer Appears (Girl Version)",
+    "path": "albums/game-boy/pokemon-red/trainer-appears-girl-version.mid"
+   },
+   {
+    "title": "Vermilion City's Theme",
+    "path": "albums/game-boy/pokemon-red/vermilion-city-s-theme.mid"
+   },
+   {
+    "title": "Victory (VS Gym Leader)",
+    "path": "albums/game-boy/pokemon-red/victory-vs-gym-leader.mid"
+   },
+   {
+    "title": "Victory (VS Trainer)",
+    "path": "albums/game-boy/pokemon-red/victory-vs-trainer.mid"
+   },
+   {
+    "title": "Victory (VS Wild Pokemon)",
+    "path": "albums/game-boy/pokemon-red/victory-vs-wild-pokemon.mid"
+   },
+   {
+    "title": "Viridian Forest",
+    "path": "albums/game-boy/pokemon-red/viridian-forest.mid"
+   }
+  ]
+ },
+ {
   "title": "Secret of Mana",
   "songs": [
    {
