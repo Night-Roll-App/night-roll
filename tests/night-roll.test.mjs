@@ -1577,7 +1577,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
-    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "game's own instrument for that track",
+    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "game's own instrument for that track",
     "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3669,6 +3669,28 @@ test("a playlist picked after the import names the open song's published album b
   assert.deepEqual(meta.songs, {"track-01": "Title", "track-02": "Overworld"});
   assert.equal(puts.filter(p => /manifest\.json/.test(p.u)).length, 1, "one manifest write");
   assert.deepEqual(val(`CATALOG["Zelda"].map(e => e[0])`), ["Title", "Overworld", "track-03"], "the in-memory catalog shows the names at once");
+});
+
+test("create mine: a public night-roll-archive under the user's account becomes their game files & instruments repo", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`saveCfg({aiBackend: "remote"}); cfg.c = null;`); // any first save freezes the defaults, Josh's archive included
+  assert.equal(val(`cfg().nsfRepo`), "joshcough/nsf-archive");
+  run(`document.getElementById("cfgsongsrepo").value = "someone/songs"; settingsPersist("cfgsongsrepo"); cfg.c = null;`);
+  run(`localStorage.setItem("ff1roll-ghtoken", "t"); globalThis.__posts = [];
+       fetch = (url, init) => { const u = String(url);
+         if (u === "https://api.github.com/user") return Promise.resolve({ok: true, json: async () => ({login: "someone"})});
+         if (u.endsWith("/repos/someone/night-roll-archive")) return Promise.resolve({ok: false, status: 404});
+         if (u.endsWith("/user/repos") && init && init.method === "POST") { globalThis.__posts.push(JSON.parse(init.body)); return Promise.resolve({ok: true, status: 201, json: async () => ({})}); }
+         return Promise.reject(new Error("unexpected " + u)); };`);
+  assert.equal(val(`cfg().nsfRepo`), "", "a user on their own songs repo starts with none");
+  const said = [];
+  app2.context.__say = t => said.push(t);
+  const full = await run(`createGameFilesRepo(__say)`);
+  assert.equal(full, "someone/night-roll-archive");
+  assert.equal(val(`cfg().nsfRepo`), "someone/night-roll-archive");
+  assert.equal(val(`cfg().nsfBase`), "https://raw.githubusercontent.com/someone/night-roll-archive/main");
+  assert.deepEqual(val(`globalThis.__posts.map(p => [p.name, p.private])`), [["night-roll-archive", false]]);
+  assert.match(said.at(-1), /created/);
 });
 
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {
