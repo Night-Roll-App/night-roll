@@ -768,6 +768,21 @@ the sample, as the PS1 path reports "sample root")? Recommendation:
 yes, for study the sounding pitch is the fact; the written key would
 go in the .notes.txt header per instrument.
 
+QUEUED (Josh, same night): tapping a note on a chip song sounds the
+synth voice, not the game's instrument ("when I press notes on Dire
+Dire Docks … it sounds them in our MIDI instrument sounds"). Chip
+audio is one pre-rendered stream per track, so a tap has nothing else
+to play. Design: the render worker keeps the set/bank loaded after a
+render; previewNote asks it for ONE note through that track's
+instrument (N64: renderN64 on a one-note result; PS1: renderSpu the
+same way) and plays the returned PCM — latency tens of ms. After the
+envelope fix and pan.
+Josh's later ear report on Dire Dire Docks (after reverb): "the notes
+on YouTube definitely have more sustain … dramatically … as if the
+notes fade over a long period and ours cut off." Handed to the agent:
+verify the envelope delay unit and the gate-end decay verbatim from
+the decomp; fix pending.
+
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
 "Before we release this for real … imports of several more games on
