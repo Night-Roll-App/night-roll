@@ -1,0 +1,469 @@
+{
+ "title": "The Legend of Zelda: Majora's Mask",
+ "order": 50,
+ "songs": {
+  "ballad-of-the-wind-fish": "Ballad of the Wind Fish",
+  "bass-guitar-session": "Bass & Guitar Session",
+  "calling-the-four-giants": "Calling the Four Giants",
+  "clock-town-day-1": "Clock Town - Day 1",
+  "clock-town-day-2": "Clock Town - Day 2",
+  "clock-town-day-3": "Clock Town - Day 3",
+  "cremia-s-wagon": "Cremia's Wagon",
+  "evan-s-piano-solo": "Evan's Piano Solo",
+  "fairy-s-fountain": "Fairy's Fountain",
+  "get-elegy-of-emptiness": "Get Elegy of Emptiness",
+  "get-oath-to-order": "Get Oath to Order",
+  "get-sonata-of-awakening": "Get Sonata of Awakening",
+  "giants-theme": "Giants' Theme",
+  "goron-s-shrine": "Goron's Shrine",
+  "kamaro-s-dance": "Kamaro's Dance",
+  "magic-hag-s-house": "Magic Hag's House",
+  "majora-s-incarnation-battle": "Majora's Incarnation Battle",
+  "majora-s-mask-battle": "Majora's Mask Battle",
+  "majora-s-mask-moon": "Majora's Mask Moon",
+  "majora-s-theme": "Majora's Theme",
+  "majora-s-wrath-battle": "Majora's Wrath Battle",
+  "mayor-s-house-council-room": "Mayor's House Council Room",
+  "mikau-s-cry-ending": "Mikau's Cry Ending",
+  "mikau-s-cry": "Mikau's Cry",
+  "minigame": "MiniGame",
+  "new-wave-bossa-nova-with-lulu": "New Wave Bossa Nova with Lulu",
+  "owl-s-theme": "Owl's Theme",
+  "recollection-of-zelda": "Recollection of Zelda",
+  "sharp-s-curse": "Sharp's Curse",
+  "song-of-healing-demo": "Song of Healing Demo",
+  "song-of-storms": "Song of Storms",
+  "staff-roll-alternate": "Staff Roll (alternate)",
+  "stone-tower-temple-illusion": "Stone Tower Temple (Illusion)",
+  "stone-tower-temple-reality": "Stone Tower Temple (Reality)",
+  "tatl-and-tael-meet-again": "Tatl and Tael Meet Again",
+  "the-giants-exit": "The Giants' Exit",
+  "treasure-box": "Treasure box",
+  "woods-of-mystery": "Woods of Mystery"
+ },
+ "nsf": {
+  "vault": "majoras-mask/",
+  "tracks": {
+   "astral-observatory": {
+    "n": 1,
+    "secs": 34.66666666666684
+   },
+   "ballad-of-the-wind-fish": {
+    "n": 1,
+    "secs": 8.888888888889017
+   },
+   "bass-guitar-session": {
+    "n": 1,
+    "secs": 34.285714285714946
+   },
+   "bass-practice-music": {
+    "n": 1,
+    "secs": 29.33333333333404
+   },
+   "battle": {
+    "n": 1,
+    "secs": 57.358490566033765
+   },
+   "boss-battle": {
+    "n": 1,
+    "secs": 76.56090935633617
+   },
+   "boss-clear": {
+    "n": 1,
+    "secs": 11.666666666666453
+   },
+   "bremen-march": {
+    "n": 1,
+    "secs": 20.00000000000009
+   },
+   "calling-the-four-giants": {
+    "n": 1,
+    "secs": 105.59488272920275
+   },
+   "catch-item": {
+    "n": 1,
+    "secs": 2.999999999999991
+   },
+   "catch-small-item": {
+    "n": 1,
+    "secs": 2.999999999999991
+   },
+   "cave": {
+    "n": 1,
+    "secs": 90.10416666666667
+   },
+   "chase-theme": {
+    "n": 1,
+    "secs": 29.199999999998862
+   },
+   "clock-tower": {
+    "n": 1,
+    "secs": 81.01626737254888
+   },
+   "clock-town-day-1": {
+    "n": 1,
+    "secs": 56.72727272726648
+   },
+   "clock-town-day-2": {
+    "n": 1,
+    "secs": 49.91999999999864
+   },
+   "clock-town-day-3": {
+    "n": 1,
+    "secs": 35.199999999998646
+   },
+   "cremia-s-wagon": {
+    "n": 1,
+    "secs": 30
+   },
+   "dancer": {
+    "n": 1,
+    "secs": 30.909226190475618
+   },
+   "deku-palace": {
+    "n": 1,
+    "secs": 68.57142857142996
+   },
+   "drum-practice-music": {
+    "n": 1,
+    "secs": 27.27272727272792
+   },
+   "dungeon-appears": {
+    "n": 1,
+    "secs": 7.999999999999954
+   },
+   "evan-s-piano-solo": {
+    "n": 1,
+    "secs": 30.545454545455286
+   },
+   "event-clear": {
+    "n": 1,
+    "secs": 8.017064331017915
+   },
+   "event-failure-1": {
+    "n": 1,
+    "secs": 4.8979591836734215
+   },
+   "event-failure-2": {
+    "n": 1,
+    "secs": 8.00000000000009
+   },
+   "fairy-s-fountain": {
+    "n": 1,
+    "secs": 27.566172442572036
+   },
+   "fanfare": {
+    "n": 1,
+    "secs": 4.243356643356625
+   },
+   "fencing-grounds": {
+    "n": 1,
+    "secs": 41.14285714285809
+   },
+   "final-hours": {
+    "n": 1,
+    "secs": 125.21739130434192
+   },
+   "gale-warp": {
+    "n": 1,
+    "secs": 8.415820931750087
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 8.346153846154019
+   },
+   "get-elegy-of-emptiness": {
+    "n": 1,
+    "secs": 32.261844484629385
+   },
+   "get-goron-lullaby": {
+    "n": 1,
+    "secs": 24.65422019973124
+   },
+   "get-heart-container": {
+    "n": 1,
+    "secs": 2.999999999999991
+   },
+   "get-mask": {
+    "n": 1,
+    "secs": 6.136363636363641
+   },
+   "get-new-wave-bossa-nova": {
+    "n": 1,
+    "secs": 27.42857142857095
+   },
+   "get-oath-to-order": {
+    "n": 1,
+    "secs": 25.45454545454589
+   },
+   "get-ocarina": {
+    "n": 1,
+    "secs": 9.064285714285754
+   },
+   "get-sonata-of-awakening": {
+    "n": 1,
+    "secs": 24.20771122223408
+   },
+   "giants-theme": {
+    "n": 1,
+    "secs": 45.636363636362084
+   },
+   "gorman-track": {
+    "n": 1,
+    "secs": 54
+   },
+   "goron-race-goal": {
+    "n": 1,
+    "secs": 3.4838709677419732
+   },
+   "goron-race": {
+    "n": 1,
+    "secs": 40.89677419354737
+   },
+   "goron-s-shrine": {
+    "n": 1,
+    "secs": 83.728260869561
+   },
+   "great-bay-coast": {
+    "n": 1,
+    "secs": 84.75
+   },
+   "great-bay-temple": {
+    "n": 1,
+    "secs": 116.36363636361007
+   },
+   "happy-mask-salesman": {
+    "n": 1,
+    "secs": 45.71428571428446
+   },
+   "horse-race-goal": {
+    "n": 1,
+    "secs": 3.4838709677419732
+   },
+   "horse-race": {
+    "n": 1,
+    "secs": 40.89677419354737
+   },
+   "house": {
+    "n": 1,
+    "secs": 27.585034013607395
+   },
+   "ikana-castle": {
+    "n": 1,
+    "secs": 95.4545454545525
+   },
+   "ikana-valley": {
+    "n": 1,
+    "secs": 99.99999999999471
+   },
+   "intro-woods": {
+    "n": 1,
+    "secs": 56.455223880594815
+   },
+   "jungle-cruise": {
+    "n": 1,
+    "secs": 56.72727272726648
+   },
+   "kamaro-s-dance": {
+    "n": 1,
+    "secs": 27.532738095237615
+   },
+   "keaton-quiz": {
+    "n": 1,
+    "secs": 79.99999999999926
+   },
+   "magic-hag-s-house": {
+    "n": 1,
+    "secs": 47.454545454541844
+   },
+   "majora-s-incarnation-battle": {
+    "n": 1,
+    "secs": 90.6666666666788
+   },
+   "majora-s-mask-battle": {
+    "n": 1,
+    "secs": 108.34173669466134
+   },
+   "majora-s-mask-moon": {
+    "n": 1,
+    "secs": 23.333333333332057
+   },
+   "majora-s-theme": {
+    "n": 1,
+    "secs": 66
+   },
+   "majora-s-wrath-battle": {
+    "n": 1,
+    "secs": 61.387096774191974
+   },
+   "marine-research-laboratory": {
+    "n": 1,
+    "secs": 43.404255319148966
+   },
+   "mayor-s-house-council-room": {
+    "n": 1,
+    "secs": 40.49999999999952
+   },
+   "middle-boss-battle": {
+    "n": 1,
+    "secs": 56.54106471403684
+   },
+   "mikau-s-cry-ending": {
+    "n": 1,
+    "secs": 4.499999999999991
+   },
+   "mikau-s-cry": {
+    "n": 1,
+    "secs": 10.98461538461567
+   },
+   "milk-bar": {
+    "n": 1,
+    "secs": 57.42857142856807
+   },
+   "minigame": {
+    "n": 1,
+    "secs": 25.945945945947013
+   },
+   "music-box-house": {
+    "n": 1,
+    "secs": 48.052083333326436
+   },
+   "new-wave-bossa-nova-with-lulu": {
+    "n": 1,
+    "secs": 0
+   },
+   "opening-demo": {
+    "n": 1,
+    "secs": 69.88805970148866
+   },
+   "owl-s-theme": {
+    "n": 1,
+    "secs": 52.66583850931672
+   },
+   "piano-practice-music": {
+    "n": 1,
+    "secs": 27.74213006331193
+   },
+   "pirate-fortress": {
+    "n": 1,
+    "secs": 73.99999999999872
+   },
+   "recollection-of-zelda": {
+    "n": 1,
+    "secs": 41.28479888905353
+   },
+   "romani-ranch": {
+    "n": 1,
+    "secs": 127.0588235294185
+   },
+   "sharp-s-curse": {
+    "n": 1,
+    "secs": 31.99999999999927
+   },
+   "shooting-gallery": {
+    "n": 1,
+    "secs": 32.100000000003014
+   },
+   "shop": {
+    "n": 1,
+    "secs": 59.99999999999606
+   },
+   "snow-mountain": {
+    "n": 1,
+    "secs": 90.75
+   },
+   "snowhead-clear": {
+    "n": 1,
+    "secs": 28.59034911448681
+   },
+   "snowhead-temple": {
+    "n": 1,
+    "secs": 135
+   },
+   "song-of-healing-demo": {
+    "n": 1,
+    "secs": 67.10415118214411
+   },
+   "song-of-storms": {
+    "n": 1,
+    "secs": 43.408333333334646
+   },
+   "southern-swamp": {
+    "n": 1,
+    "secs": 84.75
+   },
+   "staff-roll-alternate": {
+    "n": 1,
+    "secs": 252.67267502510717
+   },
+   "staff-roll": {
+    "n": 1,
+    "secs": 126.88476069723708
+   },
+   "stone-tower-temple-illusion": {
+    "n": 1,
+    "secs": 81.60000000000998
+   },
+   "stone-tower-temple-reality": {
+    "n": 1,
+    "secs": 81.60000000000998
+   },
+   "tatl-and-tael-meet-again": {
+    "n": 1,
+    "secs": 37.41420807453403
+   },
+   "termina-field": {
+    "n": 1,
+    "secs": 66.34231321839594
+   },
+   "the-giants-exit": {
+    "n": 1,
+    "secs": 34.285714285714064
+   },
+   "the-monsters-raid": {
+    "n": 1,
+    "secs": 26.00000000000077
+   },
+   "the-moon-disappears": {
+    "n": 1,
+    "secs": 30.482142857142833
+   },
+   "title-demo": {
+    "n": 1,
+    "secs": 130.74125469338668
+   },
+   "treasure-box": {
+    "n": 1,
+    "secs": 7.562109237935988
+   },
+   "woodfall-clear": {
+    "n": 1,
+    "secs": 20.590349114486852
+   },
+   "woodfall-temple": {
+    "n": 1,
+    "secs": 80.00000000000145
+   },
+   "woods-of-mystery": {
+    "n": 1,
+    "secs": 32.571428571430864
+   },
+   "zora-band": {
+    "n": 1,
+    "secs": 34.285714285714946
+   },
+   "zora-hall": {
+    "n": 1,
+    "secs": 82.3125
+   }
+  },
+  "chip": "usf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "nus-nzse-usa.usflib",
+    "file": "nus-nzse-usa.usflib"
+   }
+  ]
+ }
+}

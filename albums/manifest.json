@@ -8930,6 +8930,423 @@
   ]
  },
  {
+  "title": "The Legend of Zelda: Majora's Mask",
+  "songs": [
+   {
+    "title": "Astral Observatory",
+    "path": "albums/n64/majoras-mask/astral-observatory.mid"
+   },
+   {
+    "title": "Ballad of the Wind Fish",
+    "path": "albums/n64/majoras-mask/ballad-of-the-wind-fish.mid"
+   },
+   {
+    "title": "Bass & Guitar Session",
+    "path": "albums/n64/majoras-mask/bass-guitar-session.mid"
+   },
+   {
+    "title": "Bass Practice Music",
+    "path": "albums/n64/majoras-mask/bass-practice-music.mid"
+   },
+   {
+    "title": "Battle",
+    "path": "albums/n64/majoras-mask/battle.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/n64/majoras-mask/boss-battle.mid"
+   },
+   {
+    "title": "Boss Clear",
+    "path": "albums/n64/majoras-mask/boss-clear.mid"
+   },
+   {
+    "title": "Bremen March",
+    "path": "albums/n64/majoras-mask/bremen-march.mid"
+   },
+   {
+    "title": "Calling the Four Giants",
+    "path": "albums/n64/majoras-mask/calling-the-four-giants.mid"
+   },
+   {
+    "title": "Catch Item",
+    "path": "albums/n64/majoras-mask/catch-item.mid"
+   },
+   {
+    "title": "Catch Small Item",
+    "path": "albums/n64/majoras-mask/catch-small-item.mid"
+   },
+   {
+    "title": "Cave",
+    "path": "albums/n64/majoras-mask/cave.mid"
+   },
+   {
+    "title": "Chase Theme",
+    "path": "albums/n64/majoras-mask/chase-theme.mid"
+   },
+   {
+    "title": "Clock Tower",
+    "path": "albums/n64/majoras-mask/clock-tower.mid"
+   },
+   {
+    "title": "Clock Town - Day 1",
+    "path": "albums/n64/majoras-mask/clock-town-day-1.mid"
+   },
+   {
+    "title": "Clock Town - Day 2",
+    "path": "albums/n64/majoras-mask/clock-town-day-2.mid"
+   },
+   {
+    "title": "Clock Town - Day 3",
+    "path": "albums/n64/majoras-mask/clock-town-day-3.mid"
+   },
+   {
+    "title": "Cremia's Wagon",
+    "path": "albums/n64/majoras-mask/cremia-s-wagon.mid"
+   },
+   {
+    "title": "Dancer",
+    "path": "albums/n64/majoras-mask/dancer.mid"
+   },
+   {
+    "title": "Deku Palace",
+    "path": "albums/n64/majoras-mask/deku-palace.mid"
+   },
+   {
+    "title": "Drum Practice Music",
+    "path": "albums/n64/majoras-mask/drum-practice-music.mid"
+   },
+   {
+    "title": "Dungeon Appears",
+    "path": "albums/n64/majoras-mask/dungeon-appears.mid"
+   },
+   {
+    "title": "Evan's Piano Solo",
+    "path": "albums/n64/majoras-mask/evan-s-piano-solo.mid"
+   },
+   {
+    "title": "Event Clear",
+    "path": "albums/n64/majoras-mask/event-clear.mid"
+   },
+   {
+    "title": "Event Failure 1",
+    "path": "albums/n64/majoras-mask/event-failure-1.mid"
+   },
+   {
+    "title": "Event Failure 2",
+    "path": "albums/n64/majoras-mask/event-failure-2.mid"
+   },
+   {
+    "title": "Fairy's Fountain",
+    "path": "albums/n64/majoras-mask/fairy-s-fountain.mid"
+   },
+   {
+    "title": "Fanfare",
+    "path": "albums/n64/majoras-mask/fanfare.mid"
+   },
+   {
+    "title": "Fencing Grounds",
+    "path": "albums/n64/majoras-mask/fencing-grounds.mid"
+   },
+   {
+    "title": "Final Hours",
+    "path": "albums/n64/majoras-mask/final-hours.mid"
+   },
+   {
+    "title": "Gale Warp",
+    "path": "albums/n64/majoras-mask/gale-warp.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/n64/majoras-mask/game-over.mid"
+   },
+   {
+    "title": "Get Elegy of Emptiness",
+    "path": "albums/n64/majoras-mask/get-elegy-of-emptiness.mid"
+   },
+   {
+    "title": "Get Goron Lullaby",
+    "path": "albums/n64/majoras-mask/get-goron-lullaby.mid"
+   },
+   {
+    "title": "Get Heart Container",
+    "path": "albums/n64/majoras-mask/get-heart-container.mid"
+   },
+   {
+    "title": "Get Mask",
+    "path": "albums/n64/majoras-mask/get-mask.mid"
+   },
+   {
+    "title": "Get New Wave Bossa Nova",
+    "path": "albums/n64/majoras-mask/get-new-wave-bossa-nova.mid"
+   },
+   {
+    "title": "Get Oath to Order",
+    "path": "albums/n64/majoras-mask/get-oath-to-order.mid"
+   },
+   {
+    "title": "Get Ocarina",
+    "path": "albums/n64/majoras-mask/get-ocarina.mid"
+   },
+   {
+    "title": "Get Sonata of Awakening",
+    "path": "albums/n64/majoras-mask/get-sonata-of-awakening.mid"
+   },
+   {
+    "title": "Giants' Theme",
+    "path": "albums/n64/majoras-mask/giants-theme.mid"
+   },
+   {
+    "title": "Gorman Track",
+    "path": "albums/n64/majoras-mask/gorman-track.mid"
+   },
+   {
+    "title": "Goron Race",
+    "path": "albums/n64/majoras-mask/goron-race.mid"
+   },
+   {
+    "title": "Goron Race Goal",
+    "path": "albums/n64/majoras-mask/goron-race-goal.mid"
+   },
+   {
+    "title": "Goron's Shrine",
+    "path": "albums/n64/majoras-mask/goron-s-shrine.mid"
+   },
+   {
+    "title": "Great Bay Coast",
+    "path": "albums/n64/majoras-mask/great-bay-coast.mid"
+   },
+   {
+    "title": "Great Bay Temple",
+    "path": "albums/n64/majoras-mask/great-bay-temple.mid"
+   },
+   {
+    "title": "Happy Mask Salesman",
+    "path": "albums/n64/majoras-mask/happy-mask-salesman.mid"
+   },
+   {
+    "title": "Horse Race",
+    "path": "albums/n64/majoras-mask/horse-race.mid"
+   },
+   {
+    "title": "Horse Race Goal",
+    "path": "albums/n64/majoras-mask/horse-race-goal.mid"
+   },
+   {
+    "title": "House",
+    "path": "albums/n64/majoras-mask/house.mid"
+   },
+   {
+    "title": "Ikana Castle",
+    "path": "albums/n64/majoras-mask/ikana-castle.mid"
+   },
+   {
+    "title": "Ikana Valley",
+    "path": "albums/n64/majoras-mask/ikana-valley.mid"
+   },
+   {
+    "title": "Intro Woods",
+    "path": "albums/n64/majoras-mask/intro-woods.mid"
+   },
+   {
+    "title": "Jungle Cruise",
+    "path": "albums/n64/majoras-mask/jungle-cruise.mid"
+   },
+   {
+    "title": "Kamaro's Dance",
+    "path": "albums/n64/majoras-mask/kamaro-s-dance.mid"
+   },
+   {
+    "title": "Keaton Quiz",
+    "path": "albums/n64/majoras-mask/keaton-quiz.mid"
+   },
+   {
+    "title": "Magic Hag's House",
+    "path": "albums/n64/majoras-mask/magic-hag-s-house.mid"
+   },
+   {
+    "title": "Majora's Incarnation Battle",
+    "path": "albums/n64/majoras-mask/majora-s-incarnation-battle.mid"
+   },
+   {
+    "title": "Majora's Mask Battle",
+    "path": "albums/n64/majoras-mask/majora-s-mask-battle.mid"
+   },
+   {
+    "title": "Majora's Mask Moon",
+    "path": "albums/n64/majoras-mask/majora-s-mask-moon.mid"
+   },
+   {
+    "title": "Majora's Theme",
+    "path": "albums/n64/majoras-mask/majora-s-theme.mid"
+   },
+   {
+    "title": "Majora's Wrath Battle",
+    "path": "albums/n64/majoras-mask/majora-s-wrath-battle.mid"
+   },
+   {
+    "title": "Marine Research Laboratory",
+    "path": "albums/n64/majoras-mask/marine-research-laboratory.mid"
+   },
+   {
+    "title": "Mayor's House Council Room",
+    "path": "albums/n64/majoras-mask/mayor-s-house-council-room.mid"
+   },
+   {
+    "title": "Middle Boss Battle",
+    "path": "albums/n64/majoras-mask/middle-boss-battle.mid"
+   },
+   {
+    "title": "Mikau's Cry",
+    "path": "albums/n64/majoras-mask/mikau-s-cry.mid"
+   },
+   {
+    "title": "Mikau's Cry Ending",
+    "path": "albums/n64/majoras-mask/mikau-s-cry-ending.mid"
+   },
+   {
+    "title": "Milk Bar",
+    "path": "albums/n64/majoras-mask/milk-bar.mid"
+   },
+   {
+    "title": "MiniGame",
+    "path": "albums/n64/majoras-mask/minigame.mid"
+   },
+   {
+    "title": "Music Box House",
+    "path": "albums/n64/majoras-mask/music-box-house.mid"
+   },
+   {
+    "title": "New Wave Bossa Nova with Lulu",
+    "path": "albums/n64/majoras-mask/new-wave-bossa-nova-with-lulu.mid"
+   },
+   {
+    "title": "Opening Demo",
+    "path": "albums/n64/majoras-mask/opening-demo.mid"
+   },
+   {
+    "title": "Owl's Theme",
+    "path": "albums/n64/majoras-mask/owl-s-theme.mid"
+   },
+   {
+    "title": "Piano Practice Music",
+    "path": "albums/n64/majoras-mask/piano-practice-music.mid"
+   },
+   {
+    "title": "Pirate Fortress",
+    "path": "albums/n64/majoras-mask/pirate-fortress.mid"
+   },
+   {
+    "title": "Recollection of Zelda",
+    "path": "albums/n64/majoras-mask/recollection-of-zelda.mid"
+   },
+   {
+    "title": "Romani Ranch",
+    "path": "albums/n64/majoras-mask/romani-ranch.mid"
+   },
+   {
+    "title": "Sharp's Curse",
+    "path": "albums/n64/majoras-mask/sharp-s-curse.mid"
+   },
+   {
+    "title": "Shooting Gallery",
+    "path": "albums/n64/majoras-mask/shooting-gallery.mid"
+   },
+   {
+    "title": "Shop",
+    "path": "albums/n64/majoras-mask/shop.mid"
+   },
+   {
+    "title": "Snow Mountain",
+    "path": "albums/n64/majoras-mask/snow-mountain.mid"
+   },
+   {
+    "title": "Snowhead Clear",
+    "path": "albums/n64/majoras-mask/snowhead-clear.mid"
+   },
+   {
+    "title": "Snowhead Temple",
+    "path": "albums/n64/majoras-mask/snowhead-temple.mid"
+   },
+   {
+    "title": "Song of Healing Demo",
+    "path": "albums/n64/majoras-mask/song-of-healing-demo.mid"
+   },
+   {
+    "title": "Song of Storms",
+    "path": "albums/n64/majoras-mask/song-of-storms.mid"
+   },
+   {
+    "title": "Southern Swamp",
+    "path": "albums/n64/majoras-mask/southern-swamp.mid"
+   },
+   {
+    "title": "Staff Roll",
+    "path": "albums/n64/majoras-mask/staff-roll.mid"
+   },
+   {
+    "title": "Staff Roll (alternate)",
+    "path": "albums/n64/majoras-mask/staff-roll-alternate.mid"
+   },
+   {
+    "title": "Stone Tower Temple (Illusion)",
+    "path": "albums/n64/majoras-mask/stone-tower-temple-illusion.mid"
+   },
+   {
+    "title": "Stone Tower Temple (Reality)",
+    "path": "albums/n64/majoras-mask/stone-tower-temple-reality.mid"
+   },
+   {
+    "title": "Tatl and Tael Meet Again",
+    "path": "albums/n64/majoras-mask/tatl-and-tael-meet-again.mid"
+   },
+   {
+    "title": "Termina Field",
+    "path": "albums/n64/majoras-mask/termina-field.mid"
+   },
+   {
+    "title": "The Giants' Exit",
+    "path": "albums/n64/majoras-mask/the-giants-exit.mid"
+   },
+   {
+    "title": "The Monsters Raid",
+    "path": "albums/n64/majoras-mask/the-monsters-raid.mid"
+   },
+   {
+    "title": "The Moon Disappears",
+    "path": "albums/n64/majoras-mask/the-moon-disappears.mid"
+   },
+   {
+    "title": "Title Demo",
+    "path": "albums/n64/majoras-mask/title-demo.mid"
+   },
+   {
+    "title": "Treasure box",
+    "path": "albums/n64/majoras-mask/treasure-box.mid"
+   },
+   {
+    "title": "Woodfall Clear",
+    "path": "albums/n64/majoras-mask/woodfall-clear.mid"
+   },
+   {
+    "title": "Woodfall Temple",
+    "path": "albums/n64/majoras-mask/woodfall-temple.mid"
+   },
+   {
+    "title": "Woods of Mystery",
+    "path": "albums/n64/majoras-mask/woods-of-mystery.mid"
+   },
+   {
+    "title": "Zora Band",
+    "path": "albums/n64/majoras-mask/zora-band.mid"
+   },
+   {
+    "title": "Zora Hall",
+    "path": "albums/n64/majoras-mask/zora-hall.mid"
+   }
+  ]
+ },
+ {
   "title": "The Legend of Zelda: Ocarina of Time",
   "songs": [
    {
