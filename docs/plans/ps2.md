@@ -284,3 +284,144 @@ section:
   as part of the first instruments milestone, or held for later like the
   other consoles' rollout order (open-items: "SNES instruments next, then
   NES/GB/Genesis")?
+
+## 8. Findings (milestone 1, 2026-09-28)
+
+Real rips: `/tmp/claude-501/rips/ps2-{ffx,ico,xiii,darkcloud}/` (never
+committed). Zophar's "(EMU)" packs for **Final Fantasy X** and **Ico** were
+downloaded first, per this plan's own §6 three-game list; Ico's and (a
+third download, **XIII**, this plan's other §6 pick) both turned out NOT to
+be PSF2 at all once inspected (below), so a fourth game — **Dark Cloud** —
+was added once real-file evidence (a vgmtrans GitHub issue naming its
+`.hd`/`.bd`/`.sq` files) resolved this plan's own §7 open question about
+which third game is a confirmed Sony-stock title. Code: `tools/ps2/{psf2,
+sq,hd,capture,dump,make-test-sq}.mjs`; tests: `tests/ps2.test.mjs` (12,
+synthetic), `tests/ps2-real.test.mjs` (3, guarded on the rip dirs — all
+real minis in all three usable sets, ~240 files total). `npm test`: 100%
+green, `node --test tests/ps2.test.mjs tests/ps2-real.test.mjs` both 0
+failures.
+
+**Container (PSF2).** Confirmed byte-for-byte against real Final Fantasy X
+and Dark Cloud files, and against the reference decoder kode54/psflib's
+`psf2fs.c` (read for the spec, not copied — `tools/ps2/psf2.mjs` is fresh
+code): same 16-byte PSF header as PS1's PSF, but `programSize` is always 0
+— the whole payload is the "reserved" area, a directory tree of 48-byte
+entries (`name[36]` + `o`/`u`/`b` triple, all `u32` LE, `o` relative to the
+reserved area's own start): `u==0 && b==0 && o!=0` is a subdirectory at `o`;
+`u==0 || b==0 || o==0` is an empty file; otherwise a real file, whose block-
+compressed-size table (`ceil(u/b)` `u32`s at `o`) is followed immediately
+by that many zlib streams back to back. `_lib` works exactly like PSF1's.
+
+**Formats, settled from real files, not guessed:**
+- **Final Fantasy X — Square Enix's own driver, "BGM"/"WD".** NOT AKAO-
+  descended: reading VGMTrans's `SquarePS2Seq.cpp` shows a wholly different,
+  simpler byte-code (0x10–0x1A note-on/off variants referencing a "previous
+  key/velocity", 0x20 program change, 0x22/0x24 volume/expression, 0x5C
+  pitch bend, 0x08 one-byte BPM) — no degree/length-index encoding, no
+  per-song header block like AKAO's. This corrects the plan's §1 assumption
+  ("Square's driver evolved rather than restarted... reuse akao.mjs's
+  opcode table"): it didn't, so BGM was NOT implemented this milestone
+  (identified only, `tools/ps2/capture.mjs`'s `"bgm-unimplemented"` path),
+  per this plan's own §6 conditional. Every one of the 92 real `.minipsf2`
+  files carries its song's `.bgm` (48 ticks/quarter, 2–37 tracks) AND its
+  own `.wd` bank directly in the mini's own filesystem — the shared
+  `.psf2lib` holds only IOP driver modules (`ffx.irx`, `libsd.irx`, …), a
+  different split from Dark Cloud's (below).
+- **Ico and XIII — not PSF2 at all.** Every file in Zophar's "(EMU)" packs
+  for both titles fails `isPSF2` outright: Ico's are `GENH`-tagged (a
+  vgmstream generic-header wrapper around a raw PCM/ADPCM stream — no
+  filesystem, no sequence, just pre-rendered audio) and XIII's are Ubisoft's
+  own `SShd`/`SSbd` stream container (same idea: cinematics and level music
+  as literal decoded/decodable audio streams, one `.vag`-suffixed file
+  loose in the set too). Settles this plan's §7 open question about Ico
+  ("is Ico worth including… or would a confirmed-CSL title be a better
+  third test game") the hard way: neither title sequences its music at
+  all — both stream it — so neither could ever have been a driver-diversity
+  example for this console's "read the score" approach, regardless of which
+  driver family it nominally belongs to.
+- **Dark Cloud — Sony's own stock driver, confirmed as literal `.SQ`/
+  `.HD`/`.BD` files** inside its shared `DarkCloud.psf2lib` (169 files, all
+  at the library's root — no subdirectories at all, unlike FFX's nested
+  `music/data/` + `wave/` tree). Settles the plan's §1 "SQ vs bq" naming
+  question from two independent real sources: VGMTrans's own scanner
+  registers extensions `{"sq","hd","bd"}` (`SonyPS2Scanner.cpp`), and every
+  real Dark Cloud filename ends literally in `.SQ`/`.HD`/`.BD` — it is
+  **"sq"**, not "bq". Each mini (59 real `.psf2` files, 3+ songs' worth of
+  a single set as the milestone asks) carries only a 106-byte `psf2.ini` —
+  a literal plain-text command line, e.g. `sq.irx -r=3 -d=4096
+  -s=7A3A3752.SQ -h=75A4397E.HD -b=7881E461.BD` — naming that song's
+  triplet by filename. This is the driver-detection mechanism itself (no
+  per-game table, CLAUDE.md): `tools/ps2/capture.mjs`'s `ps2Song()` reads
+  the mini's own `psf2.ini`, parses `-s=/-h=/-b=`, and looks those names up
+  in the merged (mini+lib) filesystem.
+
+**SQ notes.** `tools/ps2/sq.mjs`, read for byte layout from VGMTrans's
+`SonyPS2Seq.cpp`/`.h`: a single interleaved multi-channel event stream with
+running status — exactly PS1 SEQ's shape — so it produces a `seq` object
+in SEQ's own shape and **reuses PS1's helpers and note pipeline completely
+unmodified**: `secondsAt`/`barBeat`/`bpmOf` (`tools/psx/seq.mjs`) and
+`seqNotes`/`toNotesTxt`/`makeMidi`/`kitify`/`channelGroups`
+(`tools/psx/notes.mjs`) all run over an SQ-parsed `seq` with zero PS2-
+specific branches — the reuse the plan's §4 asked to check for. What
+differs from PS1 SEQ, byte for byte (each with a regression test): note-off
+is one data byte only (no velocity); the *last* data byte of any event may
+carry a "next event has zero delta-time" flag in its top bit (always safe
+— every real value here is 7-bit); the tempo meta has one padding byte
+before its 3-byte value; there is no time-signature meta at all (4/4
+assumed, warned once); loop points are CC99 value 0/1 (not PS1's 20/30),
+translated to PS1's own "127 = forever" `loop.count` sentinel so
+`toNotesTxt` needs no branch.
+
+**HD/BD bank.** `tools/ps2/hd.mjs`, read for byte layout from VGMTrans's
+`SonyPS2InstrSet.cpp`/`.h` — a genuinely well-documented format in the
+*source*, if not in prose (the community thread's "almost zero
+information" holds for the wikis, not for VGMTrans's own C++). Every chunk
+tag (`Prog`/`Sset`/`Smpl`/`Vagi`) and address landed exactly where the
+header said, verified against a real Dark Cloud HD file, and its
+`bodySize` field matched its paired `.BD` file's real size exactly. One
+correction found only by sweeping every real file (not in any doc):
+**Sample and VAGInfo offset tables carry the same `0xFFFFFFFF` "unused
+slot" sentinel** the Program/SampleSet tables do — VGMTrans's own C++
+reader does not guard this, but real Dark Cloud files have unused slots in
+both tables, and an unguarded reader throws (JS `DataView` — 40 of 59 real
+songs failed until this was added). `toBank()` reshapes a parsed HD (+ the
+BD bytes) into the exact object shape `tools/psx/vab.mjs`'s `parseVAB()`
+returns, so **`tonesFor`/`vagPcm`/`estimateRoot`/`decodeAdpcm` all run
+unmodified** over PS2 Sony-format data — BD samples are the same SPU-ADPCM
+format as PS1's VAG/VAB (plan §5's prediction, confirmed).
+
+**Verification (no reference player — plan §2's BIOS blocker applies here
+too, untested this milestone).** Dark Cloud, every one of 59 real `.psf2`
+files, `node --test tests/ps2-real.test.mjs`:
+- 59/59 parse with zero warnings and zero thrown errors.
+- 50/59 carry a found loop (CC99 0/1); the rest are one-shot jingles/short
+  cues, consistent with the set's titles.
+- Every note's key is in MIDI range; every tempo is 20–300 bpm.
+- **Median tag-length ÷ measured-length ratio: 0.977** (measured = two full
+  loop passes when a loop was found, else the last note's end) — the same
+  quality bar PS1's AKAO work hit (INTEGRATION.md §7's per-game table:
+  0.998–1.113 medians). One clear outlier (`99 Unknown 5.psf2`, ratio
+  0.330) — a very short stinger where the two-pass model doesn't fit; not
+  investigated further this milestone.
+- Final Fantasy X: 92/92 real `.minipsf2` files' containers parse cleanly
+  and yield a readable `BGM ` signature + 48 ticks/quarter, uniformly (no
+  note extraction — identified-only, per this format's milestone-1 scope
+  above).
+
+**What milestone 2 (chip audio from BD samples) needs next:** the format
+work here front-loads most of milestone 2's risk — `toBank()` already
+produces a working, VAB-shaped bank whose samples decode with the existing
+`decodeAdpcm` and estimate a root with the existing `estimateRoot`, both
+unmodified. What remains: (1) extend `tools/psx/spu-render.mjs` (or a thin
+`tools/ps2/spu2-render.mjs` wrapper) for SPU2's two 24-voice cores — mainly
+panning/reverb routing, per docs/plans/ps2.md §3/§4's own prediction that
+this should be "a modest addition, not new research"; (2) the `ProgParam`/
+`SplitBlock` LFO and cross-fade fields `hd.mjs` parses but `toBank()`
+currently ignores (vibrato, velocity-crossfade between sample-set members)
+— optional polish, not required to hear something; (3) Square's BGM/WD
+format is still unimplemented — a second, unrelated reader (not a variant
+of AKAO) would need its own opcode table before FFX could be heard; (4) no
+PS2 ground-truth player exists yet (same BIOS blocker as PS1's), so the
+only cross-check available for a real render will be internal consistency
+(this milestone's tag-ratio/pitch-range checks) plus Josh's ear, exactly as
+PS1 shipped.
