@@ -667,6 +667,127 @@
   ]
  },
  {
+  "title": "Donkey Kong Country",
+  "songs": [
+   {
+    "title": "Aquatic Ambiance",
+    "path": "albums/snes/donkey-kong-country/aquatic-ambiance.mid"
+   },
+   {
+    "title": "Bad Boss Boogie",
+    "path": "albums/snes/donkey-kong-country/bad-boss-boogie.mid"
+   },
+   {
+    "title": "Bonus Lose",
+    "path": "albums/snes/donkey-kong-country/bonus-lose.mid"
+   },
+   {
+    "title": "Bonus Room Blitz",
+    "path": "albums/snes/donkey-kong-country/bonus-room-blitz.mid"
+   },
+   {
+    "title": "Bonus Room Opened!",
+    "path": "albums/snes/donkey-kong-country/bonus-room-opened.mid"
+   },
+   {
+    "title": "Bonus Win",
+    "path": "albums/snes/donkey-kong-country/bonus-win.mid"
+   },
+   {
+    "title": "Candy's Love Song",
+    "path": "albums/snes/donkey-kong-country/candy-s-love-song.mid"
+   },
+   {
+    "title": "Cave Dweller Concert",
+    "path": "albums/snes/donkey-kong-country/cave-dweller-concert.mid"
+   },
+   {
+    "title": "Cranky's Theme",
+    "path": "albums/snes/donkey-kong-country/cranky-s-theme.mid"
+   },
+   {
+    "title": "DK Island Swing",
+    "path": "albums/snes/donkey-kong-country/dk-island-swing.mid"
+   },
+   {
+    "title": "Extra Life Balloon",
+    "path": "albums/snes/donkey-kong-country/extra-life-balloon.mid"
+   },
+   {
+    "title": "Fanfare",
+    "path": "albums/snes/donkey-kong-country/fanfare.mid"
+   },
+   {
+    "title": "Fear Factory",
+    "path": "albums/snes/donkey-kong-country/fear-factory.mid"
+   },
+   {
+    "title": "Forest Frenzy",
+    "path": "albums/snes/donkey-kong-country/forest-frenzy.mid"
+   },
+   {
+    "title": "Funky's Fugue",
+    "path": "albums/snes/donkey-kong-country/funky-s-fugue.mid"
+   },
+   {
+    "title": "Gang-Plank Galleon",
+    "path": "albums/snes/donkey-kong-country/gang-plank-galleon.mid"
+   },
+   {
+    "title": "Ice Cave Chant",
+    "path": "albums/snes/donkey-kong-country/ice-cave-chant.mid"
+   },
+   {
+    "title": "K. Rool's Cacophony",
+    "path": "albums/snes/donkey-kong-country/k-rool-s-cacophony.mid"
+   },
+   {
+    "title": "Level Goal",
+    "path": "albums/snes/donkey-kong-country/level-goal.mid"
+   },
+   {
+    "title": "Life in the Mines",
+    "path": "albums/snes/donkey-kong-country/life-in-the-mines.mid"
+   },
+   {
+    "title": "Lost Life",
+    "path": "albums/snes/donkey-kong-country/lost-life.mid"
+   },
+   {
+    "title": "Mine Cart Madness",
+    "path": "albums/snes/donkey-kong-country/mine-cart-madness.mid"
+   },
+   {
+    "title": "Misty Menace",
+    "path": "albums/snes/donkey-kong-country/misty-menace.mid"
+   },
+   {
+    "title": "Northern Hemispheres",
+    "path": "albums/snes/donkey-kong-country/northern-hemispheres.mid"
+   },
+   {
+    "title": "Simian Segue",
+    "path": "albums/snes/donkey-kong-country/simian-segue.mid"
+   },
+   {
+    "title": "The Credits Concerto",
+    "path": "albums/snes/donkey-kong-country/the-credits-concerto.mid"
+   },
+   {
+    "title": "Theme",
+    "path": "albums/snes/donkey-kong-country/theme.mid"
+   },
+   {
+    "title": "Treetop Rock",
+    "path": "albums/snes/donkey-kong-country/treetop-rock.mid"
+   },
+   {
+    "title": "Voices of the Temple",
+    "path": "albums/snes/donkey-kong-country/voices-of-the-temple.mid"
+   }
+  ]
+ },
+ {
   "title": "DuckTales",
   "songs": [
    {

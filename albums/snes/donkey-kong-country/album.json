@@ -1,0 +1,138 @@
+{
+ "title": "Donkey Kong Country",
+ "order": 50,
+ "songs": {
+  "bonus-room-opened": "Bonus Room Opened!",
+  "candy-s-love-song": "Candy's Love Song",
+  "cranky-s-theme": "Cranky's Theme",
+  "dk-island-swing": "DK Island Swing",
+  "funky-s-fugue": "Funky's Fugue",
+  "gang-plank-galleon": "Gang-Plank Galleon",
+  "k-rool-s-cacophony": "K. Rool's Cacophony",
+  "life-in-the-mines": "Life in the Mines",
+  "voices-of-the-temple": "Voices of the Temple"
+ },
+ "nsf": {
+  "vault": "donkey-kong-country/",
+  "tracks": {
+   "aquatic-ambiance": {
+    "n": 1,
+    "secs": 199
+   },
+   "bad-boss-boogie": {
+    "n": 1,
+    "secs": 139
+   },
+   "bonus-lose": {
+    "n": 1,
+    "secs": 12
+   },
+   "bonus-room-blitz": {
+    "n": 1,
+    "secs": 56
+   },
+   "bonus-room-opened": {
+    "n": 1,
+    "secs": 12
+   },
+   "bonus-win": {
+    "n": 1,
+    "secs": 12
+   },
+   "candy-s-love-song": {
+    "n": 1,
+    "secs": 125
+   },
+   "cave-dweller-concert": {
+    "n": 1,
+    "secs": 300
+   },
+   "cranky-s-theme": {
+    "n": 1,
+    "secs": 109
+   },
+   "dk-island-swing": {
+    "n": 1,
+    "secs": 300
+   },
+   "extra-life-balloon": {
+    "n": 1,
+    "secs": 12
+   },
+   "fanfare": {
+    "n": 1,
+    "secs": 12
+   },
+   "fear-factory": {
+    "n": 1,
+    "secs": 230
+   },
+   "forest-frenzy": {
+    "n": 1,
+    "secs": 120
+   },
+   "funky-s-fugue": {
+    "n": 1,
+    "secs": 124
+   },
+   "gang-plank-galleon": {
+    "n": 1,
+    "secs": 181
+   },
+   "ice-cave-chant": {
+    "n": 1,
+    "secs": 196
+   },
+   "k-rool-s-cacophony": {
+    "n": 1,
+    "secs": 21
+   },
+   "level-goal": {
+    "n": 1,
+    "secs": 12
+   },
+   "life-in-the-mines": {
+    "n": 1,
+    "secs": 263
+   },
+   "lost-life": {
+    "n": 1,
+    "secs": 12
+   },
+   "mine-cart-madness": {
+    "n": 1,
+    "secs": 183
+   },
+   "misty-menace": {
+    "n": 1,
+    "secs": 257
+   },
+   "northern-hemispheres": {
+    "n": 1,
+    "secs": 241
+   },
+   "simian-segue": {
+    "n": 1,
+    "secs": 146
+   },
+   "the-credits-concerto": {
+    "n": 1,
+    "secs": 108
+   },
+   "theme": {
+    "n": 1,
+    "secs": 114
+   },
+   "treetop-rock": {
+    "n": 1,
+    "secs": 169
+   },
+   "voices-of-the-temple": {
+    "n": 1,
+    "secs": 177
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}
