@@ -1,0 +1,433 @@
+{
+ "title": "The Legend of Zelda: Link's Awakening",
+ "order": 50,
+ "songs": {
+  "angler-s-tunnel-intro": "Angler's Tunnel (intro)",
+  "angler-s-tunnel": "Angler's Tunnel",
+  "ballad-of-the-wind-fish": "Ballad of the Wind Fish",
+  "battle-with-nightmare-intro": "Battle with Nightmare (intro)",
+  "battle-with-nightmare": "Battle with Nightmare",
+  "beach-scene-intro": "Beach Scene (intro)",
+  "catfish-s-maw": "Catfish's Maw",
+  "dream-shrine-dreaming": "Dream Shrine (dreaming)",
+  "dream-shrine-intro": "Dream Shrine (intro)",
+  "eagle-s-tower-roof": "Eagle's Tower (roof)",
+  "eagle-s-tower": "Eagle's Tower",
+  "fanfare-unused": "Fanfare (unused)",
+  "get-organ-of-evening-calm": "Get Organ of Evening Calm",
+  "get-power-up": "Get Power-Up",
+  "get-sea-lily-s-bell": "Get Sea Lily's Bell",
+  "ghost-s-house": "Ghost's House",
+  "goat-s-house": "Goat's House",
+  "hidden-track-moyse-german-version": "Hidden Track: MOYSE (German Version)",
+  "house-of-chickens": "House of Chickens",
+  "inside-a-house": "Inside a House",
+  "learn-ballad-of-the-wind-fish": "Learn Ballad of the Wind Fish",
+  "learn-frog-s-song-of-soul": "Learn Frog's Song of Soul",
+  "learn-manbo-s-mambo": "Learn Manbo's Mambo",
+  "main-theme-without-intro": "Main Theme (without intro)",
+  "marin-s-song-the-end": "Marin's Song, The End",
+  "mini-boss": "Mini-Boss",
+  "mini-games": "Mini-Games",
+  "monkeys-at-work": "Monkeys at Work",
+  "mr-write-s-house": "Mr. Write's House",
+  "opening-the-wind-fish-s-egg-eight-instruments": "Opening the Wind Fish's Egg (Eight Instruments)",
+  "opening-the-wind-fish-s-egg-five-instruments": "Opening the Wind Fish's Egg (Five Instruments)",
+  "opening-the-wind-fish-s-egg-four-instruments": "Opening the Wind Fish's Egg (Four Instruments)",
+  "opening-the-wind-fish-s-egg-seven-instruments": "Opening the Wind Fish's Egg (Seven Instruments)",
+  "opening-the-wind-fish-s-egg-six-instruments": "Opening the Wind Fish's Egg (Six Instruments)",
+  "opening-the-wind-fish-s-egg-three-instruments": "Opening the Wind Fish's Egg (Three Instruments)",
+  "opening-the-wind-fish-s-egg-two-instruments": "Opening the Wind Fish's Egg (Two Instruments)",
+  "overworld-unarmed": "Overworld (unarmed)",
+  "overworld-with-intro": "Overworld (with intro)",
+  "richard-s-villa": "Richard's Villa",
+  "talking-to-the-wind-fish": "Talking to the Wind Fish",
+  "totaka-s-song-ocarina-unused": "Totaka's Song (ocarina; unused)",
+  "trouble-in-mabe-village": "Trouble in Mabe Village",
+  "wind-fish-s-egg": "Wind Fish's Egg",
+  "witch-s-house-crazy-tracy-s-house": "Witch's House, Crazy Tracy's House",
+  "zelda-theme-remix": "Zelda Theme (remix)"
+ },
+ "nsf": {
+  "vault": "links-awakening.gbs",
+  "tracks": {
+   "angler-s-tunnel-intro": {
+    "n": 76,
+    "secs": 26.989242553710938
+   },
+   "angler-s-tunnel": {
+    "n": 23,
+    "secs": 14.063873291015625
+   },
+   "animal-village": {
+    "n": 11,
+    "secs": 13.343936920166016
+   },
+   "ballad-of-the-wind-fish": {
+    "n": 63,
+    "secs": 296.17847442626953
+   },
+   "battle-with-nightmare-intro": {
+    "n": 93,
+    "secs": 8.572265625
+   },
+   "battle-with-nightmare": {
+    "n": 35,
+    "secs": 115.00564956665039
+   },
+   "beach-scene-intro": {
+    "n": 77,
+    "secs": 11.987777709960938
+   },
+   "beach-scene": {
+    "n": 78,
+    "secs": 40.81871795654297
+   },
+   "bee-scene": {
+    "n": 52,
+    "secs": 35.81264877319336
+   },
+   "boss": {
+    "n": 25,
+    "secs": 16.324138641357422
+   },
+   "bottle-grotto": {
+    "n": 21,
+    "secs": 299.9790687561035
+   },
+   "catfish-s-maw": {
+    "n": 75,
+    "secs": 56.2554931640625
+   },
+   "cave": {
+    "n": 38,
+    "secs": 16.87664794921875
+   },
+   "dream-shrine-dreaming": {
+    "n": 30,
+    "secs": 18.986228942871094
+   },
+   "dream-shrine-intro": {
+    "n": 36,
+    "secs": 11.987777709960938
+   },
+   "dream-shrine": {
+    "n": 83,
+    "secs": 17.563098907470703
+   },
+   "eagle-s-tower-roof": {
+    "n": 92,
+    "secs": 5.525093078613281
+   },
+   "eagle-s-tower": {
+    "n": 91,
+    "secs": 105.01025390625
+   },
+   "evil-eagle-intro": {
+    "n": 84,
+    "secs": 57.2098274230957
+   },
+   "face-shrine": {
+    "n": 88,
+    "secs": 51.43359375
+   },
+   "fairy-fountain": {
+    "n": 12,
+    "secs": 6.529655456542969
+   },
+   "fanfare-unused": {
+    "n": 79,
+    "secs": 11.987777709960938
+   },
+   "flying-rooster-revival": {
+    "n": 85,
+    "secs": 7.8355865478515625
+   },
+   "game-over": {
+    "n": 3,
+    "secs": 17.14453125
+   },
+   "get-conch-horn": {
+    "n": 40,
+    "secs": 21.932945251464844
+   },
+   "get-coral-triangle": {
+    "n": 44,
+    "secs": 3.214599609375
+   },
+   "get-full-moon-cello": {
+    "n": 32,
+    "secs": 26.939014434814453
+   },
+   "get-heart-container": {
+    "n": 37,
+    "secs": 6.931480407714844
+   },
+   "get-important-item": {
+    "n": 16,
+    "secs": 11.987777709960938
+   },
+   "get-instrument": {
+    "n": 27,
+    "secs": 23.975555419921875
+   },
+   "get-minor-item": {
+    "n": 59,
+    "secs": 11.987777709960938
+   },
+   "get-organ-of-evening-calm": {
+    "n": 45,
+    "secs": 23.92532730102539
+   },
+   "get-power-up": {
+    "n": 39,
+    "secs": 9.308944702148438
+   },
+   "get-sea-harp": {
+    "n": 42,
+    "secs": 23.975555419921875
+   },
+   "get-sea-lily-s-bell": {
+    "n": 41,
+    "secs": 16.97710418701172
+   },
+   "get-sword": {
+    "n": 15,
+    "secs": 16.97710418701172
+   },
+   "get-thunder-drum": {
+    "n": 46,
+    "secs": 13.980159759521484
+   },
+   "get-wind-marimba": {
+    "n": 43,
+    "secs": 16.97710418701172
+   },
+   "ghost-s-house": {
+    "n": 72,
+    "secs": 30.0029296875
+   },
+   "goat-s-house": {
+    "n": 50,
+    "secs": 8.572265625
+   },
+   "hidden-track-moyse-german-version": {
+    "n": 60,
+    "secs": 299.9790687561035
+   },
+   "house-of-chickens": {
+    "n": 87,
+    "secs": 16.072998046875
+   },
+   "inside-a-house": {
+    "n": 10,
+    "secs": 33.351470947265625
+   },
+   "instrument-room": {
+    "n": 24,
+    "secs": 3.8173370361328125
+   },
+   "kanalet-castle": {
+    "n": 19,
+    "secs": 17.345443725585938
+   },
+   "key-cavern": {
+    "n": 22,
+    "secs": 39.37884521484375
+   },
+   "learn-ballad-of-the-wind-fish": {
+    "n": 74,
+    "secs": 35.27688217163086
+   },
+   "learn-frog-s-song-of-soul": {
+    "n": 53,
+    "secs": 299.9790687561035
+   },
+   "learn-manbo-s-mambo": {
+    "n": 48,
+    "secs": 299.9790687561035
+   },
+   "link-awakens": {
+    "n": 28,
+    "secs": 14.666610717773438
+   },
+   "mabe-village": {
+    "n": 4,
+    "secs": 21.9664306640625
+   },
+   "main-theme-without-intro": {
+    "n": 13,
+    "secs": 14.4656982421875
+   },
+   "main-theme": {
+    "n": 1,
+    "secs": 20.693984985351562
+   },
+   "marin-s-song-the-end": {
+    "n": 61,
+    "secs": 279.35205459594727
+   },
+   "marin-singing": {
+    "n": 47,
+    "secs": 33.7532958984375
+   },
+   "mini-boss": {
+    "n": 80,
+    "secs": 10.71533203125
+   },
+   "mini-games": {
+    "n": 2,
+    "secs": 16.072998046875
+   },
+   "moblin-hideout": {
+    "n": 62,
+    "secs": 13.3941650390625
+   },
+   "monkeys-at-work": {
+    "n": 54,
+    "secs": 36.98463821411133
+   },
+   "mr-write-s-house": {
+    "n": 55,
+    "secs": 8.0364990234375
+   },
+   "mysterious-woods": {
+    "n": 9,
+    "secs": 48.218994140625
+   },
+   "nightmare-defeated": {
+    "n": 94,
+    "secs": 2.0593528747558594
+   },
+   "opening-the-wind-fish-s-egg-eight-instruments": {
+    "n": 71,
+    "secs": 299.9790687561035
+   },
+   "opening-the-wind-fish-s-egg-five-instruments": {
+    "n": 68,
+    "secs": 33.987693786621094
+   },
+   "opening-the-wind-fish-s-egg-four-instruments": {
+    "n": 67,
+    "secs": 33.987693786621094
+   },
+   "opening-the-wind-fish-s-egg-seven-instruments": {
+    "n": 70,
+    "secs": 299.9790687561035
+   },
+   "opening-the-wind-fish-s-egg-six-instruments": {
+    "n": 69,
+    "secs": 33.987693786621094
+   },
+   "opening-the-wind-fish-s-egg-three-instruments": {
+    "n": 66,
+    "secs": 299.9790687561035
+   },
+   "opening-the-wind-fish-s-egg-two-instruments": {
+    "n": 65,
+    "secs": 299.69444274902344
+   },
+   "overworld-unarmed": {
+    "n": 29,
+    "secs": 34.2890625
+   },
+   "overworld-with-intro": {
+    "n": 49,
+    "secs": 45.38947677612305
+   },
+   "overworld": {
+    "n": 5,
+    "secs": 44.98765182495117
+   },
+   "owl": {
+    "n": 34,
+    "secs": 4.01824951171875
+   },
+   "phone-booth": {
+    "n": 51,
+    "secs": 16.742706298828125
+   },
+   "player-select": {
+    "n": 17,
+    "secs": 7.500732421875
+   },
+   "powerful-link": {
+    "n": 73,
+    "secs": 6.42919921875
+   },
+   "prologue": {
+    "n": 26,
+    "secs": 299.9790687561035
+   },
+   "rapids-ride-house": {
+    "n": 58,
+    "secs": 19.28759765625
+   },
+   "rapids-ride": {
+    "n": 8,
+    "secs": 22.502197265625
+   },
+   "richard-s-villa": {
+    "n": 64,
+    "secs": 186.76488876342773
+   },
+   "seashell-sword": {
+    "n": 86,
+    "secs": 41.27077102661133
+   },
+   "southern-face-shrine": {
+    "n": 31,
+    "secs": 37.503662109375
+   },
+   "stairway-appears": {
+    "n": 95,
+    "secs": 7.919300079345703
+   },
+   "tail-cave": {
+    "n": 20,
+    "secs": 90.74546813964844
+   },
+   "tal-tal-mountain-range": {
+    "n": 6,
+    "secs": 93.223388671875
+   },
+   "talking-to-the-wind-fish": {
+    "n": 89,
+    "secs": 34.55694580078125
+   },
+   "totaka-s-song-ocarina-unused": {
+    "n": 56,
+    "secs": 36.934410095214844
+   },
+   "trouble-in-mabe-village": {
+    "n": 14,
+    "secs": 10.71533203125
+   },
+   "turtle-rock-awakens": {
+    "n": 57,
+    "secs": 25.114059448242188
+   },
+   "turtle-rock": {
+    "n": 90,
+    "secs": 38.67565155029297
+   },
+   "underground": {
+    "n": 33,
+    "secs": 7.23284912109375
+   },
+   "wind-fish-s-egg": {
+    "n": 18,
+    "secs": 136.82139587402344
+   },
+   "witch-s-house-crazy-tracy-s-house": {
+    "n": 7,
+    "secs": 11.719894409179688
+   },
+   "zelda-theme-remix": {
+    "n": 96,
+    "secs": 17.964923858642578
+   }
+  },
+  "chip": "gbs"
+ }
+}

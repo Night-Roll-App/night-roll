@@ -6649,6 +6649,387 @@
   ]
  },
  {
+  "title": "The Legend of Zelda: Link's Awakening",
+  "songs": [
+   {
+    "title": "Angler's Tunnel",
+    "path": "albums/game-boy/links-awakening/angler-s-tunnel.mid"
+   },
+   {
+    "title": "Angler's Tunnel (intro)",
+    "path": "albums/game-boy/links-awakening/angler-s-tunnel-intro.mid"
+   },
+   {
+    "title": "Animal Village",
+    "path": "albums/game-boy/links-awakening/animal-village.mid"
+   },
+   {
+    "title": "Ballad of the Wind Fish",
+    "path": "albums/game-boy/links-awakening/ballad-of-the-wind-fish.mid"
+   },
+   {
+    "title": "Battle with Nightmare",
+    "path": "albums/game-boy/links-awakening/battle-with-nightmare.mid"
+   },
+   {
+    "title": "Battle with Nightmare (intro)",
+    "path": "albums/game-boy/links-awakening/battle-with-nightmare-intro.mid"
+   },
+   {
+    "title": "Beach Scene",
+    "path": "albums/game-boy/links-awakening/beach-scene.mid"
+   },
+   {
+    "title": "Beach Scene (intro)",
+    "path": "albums/game-boy/links-awakening/beach-scene-intro.mid"
+   },
+   {
+    "title": "Bee Scene",
+    "path": "albums/game-boy/links-awakening/bee-scene.mid"
+   },
+   {
+    "title": "Boss",
+    "path": "albums/game-boy/links-awakening/boss.mid"
+   },
+   {
+    "title": "Bottle Grotto",
+    "path": "albums/game-boy/links-awakening/bottle-grotto.mid"
+   },
+   {
+    "title": "Catfish's Maw",
+    "path": "albums/game-boy/links-awakening/catfish-s-maw.mid"
+   },
+   {
+    "title": "Cave",
+    "path": "albums/game-boy/links-awakening/cave.mid"
+   },
+   {
+    "title": "Dream Shrine",
+    "path": "albums/game-boy/links-awakening/dream-shrine.mid"
+   },
+   {
+    "title": "Dream Shrine (dreaming)",
+    "path": "albums/game-boy/links-awakening/dream-shrine-dreaming.mid"
+   },
+   {
+    "title": "Dream Shrine (intro)",
+    "path": "albums/game-boy/links-awakening/dream-shrine-intro.mid"
+   },
+   {
+    "title": "Eagle's Tower",
+    "path": "albums/game-boy/links-awakening/eagle-s-tower.mid"
+   },
+   {
+    "title": "Eagle's Tower (roof)",
+    "path": "albums/game-boy/links-awakening/eagle-s-tower-roof.mid"
+   },
+   {
+    "title": "Evil Eagle Intro",
+    "path": "albums/game-boy/links-awakening/evil-eagle-intro.mid"
+   },
+   {
+    "title": "Face Shrine",
+    "path": "albums/game-boy/links-awakening/face-shrine.mid"
+   },
+   {
+    "title": "Fairy Fountain",
+    "path": "albums/game-boy/links-awakening/fairy-fountain.mid"
+   },
+   {
+    "title": "Fanfare (unused)",
+    "path": "albums/game-boy/links-awakening/fanfare-unused.mid"
+   },
+   {
+    "title": "Flying Rooster Revival",
+    "path": "albums/game-boy/links-awakening/flying-rooster-revival.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/game-boy/links-awakening/game-over.mid"
+   },
+   {
+    "title": "Get Conch Horn",
+    "path": "albums/game-boy/links-awakening/get-conch-horn.mid"
+   },
+   {
+    "title": "Get Coral Triangle",
+    "path": "albums/game-boy/links-awakening/get-coral-triangle.mid"
+   },
+   {
+    "title": "Get Full Moon Cello",
+    "path": "albums/game-boy/links-awakening/get-full-moon-cello.mid"
+   },
+   {
+    "title": "Get Heart Container",
+    "path": "albums/game-boy/links-awakening/get-heart-container.mid"
+   },
+   {
+    "title": "Get Important Item",
+    "path": "albums/game-boy/links-awakening/get-important-item.mid"
+   },
+   {
+    "title": "Get Instrument",
+    "path": "albums/game-boy/links-awakening/get-instrument.mid"
+   },
+   {
+    "title": "Get Minor Item",
+    "path": "albums/game-boy/links-awakening/get-minor-item.mid"
+   },
+   {
+    "title": "Get Organ of Evening Calm",
+    "path": "albums/game-boy/links-awakening/get-organ-of-evening-calm.mid"
+   },
+   {
+    "title": "Get Power-Up",
+    "path": "albums/game-boy/links-awakening/get-power-up.mid"
+   },
+   {
+    "title": "Get Sea Harp",
+    "path": "albums/game-boy/links-awakening/get-sea-harp.mid"
+   },
+   {
+    "title": "Get Sea Lily's Bell",
+    "path": "albums/game-boy/links-awakening/get-sea-lily-s-bell.mid"
+   },
+   {
+    "title": "Get Sword",
+    "path": "albums/game-boy/links-awakening/get-sword.mid"
+   },
+   {
+    "title": "Get Thunder Drum",
+    "path": "albums/game-boy/links-awakening/get-thunder-drum.mid"
+   },
+   {
+    "title": "Get Wind Marimba",
+    "path": "albums/game-boy/links-awakening/get-wind-marimba.mid"
+   },
+   {
+    "title": "Ghost's House",
+    "path": "albums/game-boy/links-awakening/ghost-s-house.mid"
+   },
+   {
+    "title": "Goat's House",
+    "path": "albums/game-boy/links-awakening/goat-s-house.mid"
+   },
+   {
+    "title": "Hidden Track: MOYSE (German Version)",
+    "path": "albums/game-boy/links-awakening/hidden-track-moyse-german-version.mid"
+   },
+   {
+    "title": "House of Chickens",
+    "path": "albums/game-boy/links-awakening/house-of-chickens.mid"
+   },
+   {
+    "title": "Inside a House",
+    "path": "albums/game-boy/links-awakening/inside-a-house.mid"
+   },
+   {
+    "title": "Instrument Room",
+    "path": "albums/game-boy/links-awakening/instrument-room.mid"
+   },
+   {
+    "title": "Kanalet Castle",
+    "path": "albums/game-boy/links-awakening/kanalet-castle.mid"
+   },
+   {
+    "title": "Key Cavern",
+    "path": "albums/game-boy/links-awakening/key-cavern.mid"
+   },
+   {
+    "title": "Learn Ballad of the Wind Fish",
+    "path": "albums/game-boy/links-awakening/learn-ballad-of-the-wind-fish.mid"
+   },
+   {
+    "title": "Learn Frog's Song of Soul",
+    "path": "albums/game-boy/links-awakening/learn-frog-s-song-of-soul.mid"
+   },
+   {
+    "title": "Learn Manbo's Mambo",
+    "path": "albums/game-boy/links-awakening/learn-manbo-s-mambo.mid"
+   },
+   {
+    "title": "Link Awakens",
+    "path": "albums/game-boy/links-awakening/link-awakens.mid"
+   },
+   {
+    "title": "Mabe Village",
+    "path": "albums/game-boy/links-awakening/mabe-village.mid"
+   },
+   {
+    "title": "Main Theme",
+    "path": "albums/game-boy/links-awakening/main-theme.mid"
+   },
+   {
+    "title": "Main Theme (without intro)",
+    "path": "albums/game-boy/links-awakening/main-theme-without-intro.mid"
+   },
+   {
+    "title": "Marin Singing",
+    "path": "albums/game-boy/links-awakening/marin-singing.mid"
+   },
+   {
+    "title": "Marin's Song, The End",
+    "path": "albums/game-boy/links-awakening/marin-s-song-the-end.mid"
+   },
+   {
+    "title": "Mini-Boss",
+    "path": "albums/game-boy/links-awakening/mini-boss.mid"
+   },
+   {
+    "title": "Mini-Games",
+    "path": "albums/game-boy/links-awakening/mini-games.mid"
+   },
+   {
+    "title": "Moblin Hideout",
+    "path": "albums/game-boy/links-awakening/moblin-hideout.mid"
+   },
+   {
+    "title": "Monkeys at Work",
+    "path": "albums/game-boy/links-awakening/monkeys-at-work.mid"
+   },
+   {
+    "title": "Mr. Write's House",
+    "path": "albums/game-boy/links-awakening/mr-write-s-house.mid"
+   },
+   {
+    "title": "Mysterious Woods",
+    "path": "albums/game-boy/links-awakening/mysterious-woods.mid"
+   },
+   {
+    "title": "Nightmare Defeated",
+    "path": "albums/game-boy/links-awakening/nightmare-defeated.mid"
+   },
+   {
+    "title": "Opening the Wind Fish's Egg (Eight Instruments)",
+    "path": "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-eight-instruments.mid"
+   },
+   {
+    "title": "Opening the Wind Fish's Egg (Five Instruments)",
+    "path": "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-five-instruments.mid"
+   },
+   {
+    "title": "Opening the Wind Fish's Egg (Four Instruments)",
+    "path": "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-four-instruments.mid"
+   },
+   {
+    "title": "Opening the Wind Fish's Egg (Seven Instruments)",
+    "path": "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-seven-instruments.mid"
+   },
+   {
+    "title": "Opening the Wind Fish's Egg (Six Instruments)",
+    "path": "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-six-instruments.mid"
+   },
+   {
+    "title": "Opening the Wind Fish's Egg (Three Instruments)",
+    "path": "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-three-instruments.mid"
+   },
+   {
+    "title": "Opening the Wind Fish's Egg (Two Instruments)",
+    "path": "albums/game-boy/links-awakening/opening-the-wind-fish-s-egg-two-instruments.mid"
+   },
+   {
+    "title": "Overworld",
+    "path": "albums/game-boy/links-awakening/overworld.mid"
+   },
+   {
+    "title": "Overworld (unarmed)",
+    "path": "albums/game-boy/links-awakening/overworld-unarmed.mid"
+   },
+   {
+    "title": "Overworld (with intro)",
+    "path": "albums/game-boy/links-awakening/overworld-with-intro.mid"
+   },
+   {
+    "title": "Owl",
+    "path": "albums/game-boy/links-awakening/owl.mid"
+   },
+   {
+    "title": "Phone Booth",
+    "path": "albums/game-boy/links-awakening/phone-booth.mid"
+   },
+   {
+    "title": "Player Select",
+    "path": "albums/game-boy/links-awakening/player-select.mid"
+   },
+   {
+    "title": "Powerful Link",
+    "path": "albums/game-boy/links-awakening/powerful-link.mid"
+   },
+   {
+    "title": "Prologue",
+    "path": "albums/game-boy/links-awakening/prologue.mid"
+   },
+   {
+    "title": "Rapids Ride",
+    "path": "albums/game-boy/links-awakening/rapids-ride.mid"
+   },
+   {
+    "title": "Rapids Ride House",
+    "path": "albums/game-boy/links-awakening/rapids-ride-house.mid"
+   },
+   {
+    "title": "Richard's Villa",
+    "path": "albums/game-boy/links-awakening/richard-s-villa.mid"
+   },
+   {
+    "title": "Seashell Sword",
+    "path": "albums/game-boy/links-awakening/seashell-sword.mid"
+   },
+   {
+    "title": "Southern Face Shrine",
+    "path": "albums/game-boy/links-awakening/southern-face-shrine.mid"
+   },
+   {
+    "title": "Stairway Appears",
+    "path": "albums/game-boy/links-awakening/stairway-appears.mid"
+   },
+   {
+    "title": "Tail Cave",
+    "path": "albums/game-boy/links-awakening/tail-cave.mid"
+   },
+   {
+    "title": "Tal Tal Mountain Range",
+    "path": "albums/game-boy/links-awakening/tal-tal-mountain-range.mid"
+   },
+   {
+    "title": "Talking to the Wind Fish",
+    "path": "albums/game-boy/links-awakening/talking-to-the-wind-fish.mid"
+   },
+   {
+    "title": "Totaka's Song (ocarina; unused)",
+    "path": "albums/game-boy/links-awakening/totaka-s-song-ocarina-unused.mid"
+   },
+   {
+    "title": "Trouble in Mabe Village",
+    "path": "albums/game-boy/links-awakening/trouble-in-mabe-village.mid"
+   },
+   {
+    "title": "Turtle Rock",
+    "path": "albums/game-boy/links-awakening/turtle-rock.mid"
+   },
+   {
+    "title": "Turtle Rock Awakens",
+    "path": "albums/game-boy/links-awakening/turtle-rock-awakens.mid"
+   },
+   {
+    "title": "Underground",
+    "path": "albums/game-boy/links-awakening/underground.mid"
+   },
+   {
+    "title": "Wind Fish's Egg",
+    "path": "albums/game-boy/links-awakening/wind-fish-s-egg.mid"
+   },
+   {
+    "title": "Witch's House, Crazy Tracy's House",
+    "path": "albums/game-boy/links-awakening/witch-s-house-crazy-tracy-s-house.mid"
+   },
+   {
+    "title": "Zelda Theme (remix)",
+    "path": "albums/game-boy/links-awakening/zelda-theme-remix.mid"
+   }
+  ]
+ },
+ {
   "title": "TMNT 2",
   "songs": [
    {
