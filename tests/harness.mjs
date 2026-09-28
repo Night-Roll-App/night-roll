@@ -78,14 +78,15 @@ function makeEl() {
     setPointerCapture: noop,
     releasePointerCapture: noop,
     focus: noop,
-    appendChild(c) { el.children.push(c); return c; },
-    append(...cs) { el.children.push(...cs); },
+    appendChild(c) { el.children.push(c); c._parent = el; return c; },
+    append(...cs) { el.children.push(...cs); cs.forEach(c => { if (c) c._parent = el; }); },
     querySelectorAll: () => [],
     cloneNode: () => makeEl(),
     getContext: () => ctx2dStub(),
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
   });
   el.click = () => el.dispatchEvent({ type: "click" });
+  el.remove = () => { if (el._parent) { const i = el._parent.children.indexOf(el); if (i >= 0) el._parent.children.splice(i, 1); } };
   return el;
 }
 

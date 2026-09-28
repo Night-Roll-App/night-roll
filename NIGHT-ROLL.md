@@ -1501,6 +1501,49 @@ expressed (both formats use their own). Tests: tests/instruments-export.test.mjs
 library through a from-scratch RIFF/SF2 reader, plus the SFZ region
 lines).
 
+Step 3: a track in Josh's own song can use one of these instruments as
+its voice. Voice id: `game:<vault folder>:<instrument id>` (e.g.
+`game:goldeneye-007:rare:bank@0x2D1AB8:prog63`) — it rides the existing
+`voice=` value of the `track:` directive, so it syncs/publishes like any
+voice; the directive parser/serializer treat it as an opaque `\S+` token,
+so the id's own colons ride along unremarked. Assigned from the voice &
+color menu's **Game instruments ›** family — one shared navigation,
+`renderGameInstNav(container, nav, opts)`, drives both it
+(`buildGameVoicePicker`) and File → 🎛 Instruments… (`renderInstSheet`);
+`nav` ({game, sub}) is each caller's own state, `opts` says how it draws
+a row and what a leaf tap does (assign + audition for the picker,
+audition alone for the sheet). Levels: games (+ an **Instruments in this
+song ›** shortcut when the open song is itself a published PS1/N64 song
+with a library) → a game's **All instruments (A–Z)** or one of its own
+songs → a leaf list, built from the shared `instAlbums` / `gameSongRows`
+/ `songInstrumentRows` / `usedInstrumentRows`. A song's own list orders
+and labels by the song's own tracks when it's the one open (`"ch 3 prog
+34 · Soft pad"`, matching a track's PS1/N64 capture-given fallback name
+— `tools/psx/notes.mjs`/`tools/n64/notes.mjs`'s `ch N prog M[,M…]` —
+against the instrument's `program`); otherwise, or for an unmatched
+instrument, it's just the name, alphabetical (natural sort,
+`usedInstruments`' rule — Josh, 2026-09-28: FF7's list, most-used-first,
+"is just a giant list"). Tapping a leaf assigns + auditions once.
+Playback (`scheduleGameNote` in index.html, beside `scheduleNote`):
+`gamePreloadForSong` (mirrors `sfPreloadForSong`, called from
+`finalizeNotes`) fetches every game voice's library and the samples its
+track's notes need; `gameWaitForSong` (mirrors `sfWaitForSong`) gives
+that a capped wait before `play()` starts. Each note renders through
+`tools/instruments/play.mjs`'s `playNote` at the note's pitch, with
+velocity and duration bucketed (8 / 50ms) for the render itself — so a
+cache hit is an exact repeat, not noise — and the rendered AudioBuffer
+itself is cached (`gameNoteCache`, same `{ctx, buf}` shape and ~300-clear
+policy as `chipPreviewCache`, so a repeat skips the render AND the
+buffer copy, not just the render). Pan: the instrument's own `pan`/region
+`pan` is ignored — `trackGain(ti)` already sits behind the track's own
+panner, same as every voice. A drum kit instrument plays its slot at the
+note's pitch — `playNote`/`regionFor`
+handle a kit's key regions the same as a melodic instrument's. A missing
+library/instrument/sample, or one still loading, never goes silent: it
+falls back to the track's own auto (NES) synth voice, with one ⚠ per
+(voice, reason) this session. Test: "game instrument voice: …" in
+tests/night-roll.test.mjs.
+
 ## Stereo — pan per track (2026-09-28)
 
 Josh: "are we getting … stereo information?" — pan was read and never

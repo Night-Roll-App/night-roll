@@ -1036,7 +1036,19 @@ presets later. (1) DONE 2026-09-28: tools/instruments/ (NIGHT-ROLL.md
 "Game instrument libraries"); all 14 PS1/N64 libraries published to the
 archive at <vault folder>/instruments/ (one commit per album, checked
 by size; ~270 MB — FF8/FF9/Chrono Cross carry a sample set per song).
-NEXT: the instrument browser, then game instruments as track voices.
+(2) DONE 2026-09-28: File → 🎛 Instruments… (NIGHT-ROLL.md "Game
+instrument libraries" step 2/3) — games, alphabetical A–Z (natural
+sort, not most-used-first — Josh: FF7's list "is just a giant list"),
+or by song, plus an "Instruments in this song" shortcut for a game song
+you have open; tap plays one. (3) DONE 2026-09-28: the voice & color
+menu's "Game instruments ›" family (same games/songs navigation) — any
+track in your own song can borrow one as its voice, recorded as the
+track: directive's voice= (game:<vault folder>:<instrument id>) so it
+syncs/publishes like any voice; playback renders through
+tools/instruments/play.mjs and caches, falling back to the track's own
+synth voice (never silent) if a library/sample can't be reached.
+NEXT: SNES instruments (from the SPC's DSP memory), then NES/GB/Genesis
+as synth presets.
 Josh's SF2 idea (same day): also WRITE each library as a standard .sf2
 (usable in any DAW), and let the app LOAD any .sf2 as voices (fan game
 fonts, a better piano than FluidR3) — ordering vs the browser is his
