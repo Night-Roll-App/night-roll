@@ -400,3 +400,16 @@ test("APU renderer: a pulse register log becomes audio at the written pitch", as
   for (const v of r2.pulse1) s2 += Math.abs(v);
   assert.ok(s2 < 1e-6, "powered-off APU is silent");
 });
+
+test("GBS runner: the player powers the APU before INIT, so a driver that never writes NR52 still sounds", () => {
+  const bytes = new Uint8Array(makeTestGBS());
+  let i = -1; for (let k = 0x70; k < bytes.length - 3; k++) if (bytes[k] === 0x3E && bytes[k + 1] === 0x80 && bytes[k + 2] === 0xE0 && bytes[k + 3] === 0x26) { i = k; break; } // the init's LD A,$80 / LDH ($26),A
+  assert.ok(i > 0, "the test tune's NR52 write is where the assembler put it");
+  bytes.fill(0x00, i, i + 4); // NOPs: the driver no longer powers anything
+  const gbs = parseGBS(bytes.buffer);
+  const {apuLog, frames, frameSec} = runGBS(gbs, 1, 3);
+  assert.deepEqual(apuLog.slice(0, 3).map(w => [w.addr, w.value]), [[0xFF26, 0x80], [0xFF24, 0x77], [0xFF25, 0xFF]], "the player's init leads the log");
+  assert.ok(!apuLog.slice(3).some(w => w.addr === 0xFF26), "the patched driver writes none");
+  const pulse1 = reconstruct(apuLog, frames, frameSec).filter(e => e.channel === "pulse1").map(e => pitchName(e.midi));
+  assert.deepEqual(pulse1, ["C4", "E4", "G4", "C5"]);
+});

@@ -58,6 +58,13 @@ function makeRun(gbs) { // shared machine state for the sync and async runners
   let ie = 0;
   const apuLog = [];                        // {frame, order, cycle, addr, value}
   let frame = 0, order = 0, frameStart = 0;
+  // The GBS player, not the driver, powers the APU before INIT (NR52 = $80,
+  // NR50 = $77, NR51 = $FF — gbsplay's init; the same rule as nsf.mjs's $4015).
+  // Tetris, Pokémon Red, Super Mario Land, Link's Awakening, Metroid II and
+  // Wario Land never write NR52 themselves and every track came back silent
+  // (2026-09-27); Kirby, which does, sees the same log after its own write.
+  io[0x26] = 0x80; io[0x24] = 0x77; io[0x25] = 0xFF;
+  for (const [a, v] of [[0xFF26, 0x80], [0xFF24, 0x77], [0xFF25, 0xFF]]) apuLog.push({frame: 0, order: order++, cycle: 0, addr: a, value: v});
 
   let cpu; // assigned below; the bus reads its cycle counter for DIV/LY
   const bus = {
