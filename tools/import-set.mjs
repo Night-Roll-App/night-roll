@@ -221,5 +221,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       if (r.status !== 0) { process.stderr.write(r.stderr); process.exitCode = 1; }
     }
     if (res.published.some(p => /FAILED/.test(p.st))) process.exitCode = 1;
-  }, err => { console.error("import-set: " + (err && err.message || err)); process.exitCode = 1; });
+    process.exit(process.exitCode || 0); // the app's timers (autosave, job mirrors) are real ones here and would keep node alive
+  }, err => { console.error("import-set: " + (err && err.message || err)); process.exit(1); });
 }
