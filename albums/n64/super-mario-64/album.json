@@ -1,5 +1,185 @@
 {
  "title": "Super Mario 64",
  "order": 50,
- "songs": {}
+ "songs": {
+  "cave-dungeon-both-variations": "Cave Dungeon (both variations)",
+  "cave-dungeon-hazy-maze": "Cave Dungeon (Hazy Maze)",
+  "dire-dire-docks-in-water": "Dire, Dire Docks (in water)",
+  "dire-dire-docks-underwater-cave": "Dire, Dire Docks (underwater cave)",
+  "dire-dire-docks": "Dire, Dire Docks",
+  "inside-the-castle-walls": "Inside the Castle Walls",
+  "koopa-s-message": "Koopa's Message",
+  "koopa-s-road": "Koopa's Road",
+  "koopa-s-theme": "Koopa's Theme",
+  "lakitu-s-message": "Lakitu's Message",
+  "merry-go-round": "Merry-Go-Round",
+  "peach-s-message": "Peach's Message",
+  "piranha-plant-s-lullaby": "Piranha Plant's Lullaby",
+  "toad-s-message": "Toad's Message"
+ },
+ "nsf": {
+  "vault": "super-mario-64/",
+  "tracks": {
+   "cave-dungeon-both-variations": {
+    "n": 1,
+    "secs": 122.84774436092673
+   },
+   "cave-dungeon-hazy-maze": {
+    "n": 1,
+    "secs": 122.84774436092673
+   },
+   "cave-dungeon": {
+    "n": 1,
+    "secs": 122.84774436092673
+   },
+   "correct-solution": {
+    "n": 1,
+    "secs": 2.9614093959731336
+   },
+   "course-clear": {
+    "n": 1,
+    "secs": 2.3076923076923017
+   },
+   "dire-dire-docks-in-water": {
+    "n": 1,
+    "secs": 90.4135338345925
+   },
+   "dire-dire-docks-underwater-cave": {
+    "n": 1,
+    "secs": 90.4135338345925
+   },
+   "dire-dire-docks": {
+    "n": 1,
+    "secs": 90.4135338345925
+   },
+   "ending-demo": {
+    "n": 1,
+    "secs": 72.78124999999825
+   },
+   "file-select": {
+    "n": 1,
+    "secs": 19.199999999999445
+   },
+   "game-start": {
+    "n": 1,
+    "secs": 2.4639423076923146
+   },
+   "haunted-house": {
+    "n": 1,
+    "secs": 104.21052631576619
+   },
+   "inside-the-castle-walls": {
+    "n": 1,
+    "secs": 61.4137931034523
+   },
+   "koopa-clear": {
+    "n": 1,
+    "secs": 2.452606635071099
+   },
+   "koopa-s-message": {
+    "n": 1,
+    "secs": 2.4999999999999982
+   },
+   "koopa-s-road": {
+    "n": 1,
+    "secs": 71.11111111110752
+   },
+   "koopa-s-theme": {
+    "n": 1,
+    "secs": 71.73913043477907
+   },
+   "lakitu-s-message": {
+    "n": 1,
+    "secs": 4.537166861091153
+   },
+   "lethal-lava-land": {
+    "n": 1,
+    "secs": 78.17819148936417
+   },
+   "looping-steps": {
+    "n": 1,
+    "secs": 14.793749999999427
+   },
+   "main-theme": {
+    "n": 1,
+    "secs": 72.21238938053907
+   },
+   "merry-go-round": {
+    "n": 1,
+    "secs": 28.89375000000229
+   },
+   "metallic-mario": {
+    "n": 1,
+    "secs": 27.75510204081831
+   },
+   "opening": {
+    "n": 1,
+    "secs": 30.601851851850356
+   },
+   "peach-s-message": {
+    "n": 1,
+    "secs": 5.603197674418654
+   },
+   "piranha-plant-s-lullaby": {
+    "n": 1,
+    "secs": 67.646484375
+   },
+   "power-star": {
+    "n": 1,
+    "secs": 4.1145833333333135
+   },
+   "powerful-mario": {
+    "n": 1,
+    "secs": 24.888888888889447
+   },
+   "race-fanfare": {
+    "n": 1,
+    "secs": 2.6874999999999956
+   },
+   "slider": {
+    "n": 1,
+    "secs": 77.14285714285596
+   },
+   "snow-mountain": {
+    "n": 1,
+    "secs": 90.9803921568458
+   },
+   "staff-roll": {
+    "n": 1,
+    "secs": 200.5606633825796
+   },
+   "stage-boss": {
+    "n": 1,
+    "secs": 42.83333333332762
+   },
+   "star-catch-fanfare": {
+    "n": 1,
+    "secs": 3.4615384615384515
+   },
+   "title-theme": {
+    "n": 1,
+    "secs": 103.26308139532922
+   },
+   "toad-s-message": {
+    "n": 1,
+    "secs": 2.1764705882352873
+   },
+   "ultimate-koopa-clear": {
+    "n": 1,
+    "secs": 24.512499999999143
+   },
+   "ultimate-koopa": {
+    "n": 1,
+    "secs": 83.3865077227632
+   }
+  },
+  "chip": "usf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "nus-nsme-usa.usflib",
+    "file": "nus-nsme-usa.usflib"
+   }
+  ]
+ }
 }

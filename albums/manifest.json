@@ -9710,8 +9710,156 @@
   "title": "Super Mario 64",
   "songs": [
    {
+    "title": "Cave Dungeon",
+    "path": "albums/n64/super-mario-64/cave-dungeon.mid"
+   },
+   {
+    "title": "Cave Dungeon (both variations)",
+    "path": "albums/n64/super-mario-64/cave-dungeon-both-variations.mid"
+   },
+   {
+    "title": "Cave Dungeon (Hazy Maze)",
+    "path": "albums/n64/super-mario-64/cave-dungeon-hazy-maze.mid"
+   },
+   {
+    "title": "Correct Solution",
+    "path": "albums/n64/super-mario-64/correct-solution.mid"
+   },
+   {
+    "title": "Course Clear",
+    "path": "albums/n64/super-mario-64/course-clear.mid"
+   },
+   {
+    "title": "Dire, Dire Docks",
+    "path": "albums/n64/super-mario-64/dire-dire-docks.mid"
+   },
+   {
+    "title": "Dire, Dire Docks (in water)",
+    "path": "albums/n64/super-mario-64/dire-dire-docks-in-water.mid"
+   },
+   {
+    "title": "Dire, Dire Docks (underwater cave)",
+    "path": "albums/n64/super-mario-64/dire-dire-docks-underwater-cave.mid"
+   },
+   {
+    "title": "Ending Demo",
+    "path": "albums/n64/super-mario-64/ending-demo.mid"
+   },
+   {
+    "title": "File Select",
+    "path": "albums/n64/super-mario-64/file-select.mid"
+   },
+   {
+    "title": "Game Start",
+    "path": "albums/n64/super-mario-64/game-start.mid"
+   },
+   {
+    "title": "Haunted House",
+    "path": "albums/n64/super-mario-64/haunted-house.mid"
+   },
+   {
+    "title": "Inside the Castle Walls",
+    "path": "albums/n64/super-mario-64/inside-the-castle-walls.mid"
+   },
+   {
+    "title": "Koopa Clear",
+    "path": "albums/n64/super-mario-64/koopa-clear.mid"
+   },
+   {
+    "title": "Koopa's Message",
+    "path": "albums/n64/super-mario-64/koopa-s-message.mid"
+   },
+   {
+    "title": "Koopa's Road",
+    "path": "albums/n64/super-mario-64/koopa-s-road.mid"
+   },
+   {
+    "title": "Koopa's Theme",
+    "path": "albums/n64/super-mario-64/koopa-s-theme.mid"
+   },
+   {
+    "title": "Lakitu's Message",
+    "path": "albums/n64/super-mario-64/lakitu-s-message.mid"
+   },
+   {
+    "title": "Lethal Lava Land",
+    "path": "albums/n64/super-mario-64/lethal-lava-land.mid"
+   },
+   {
+    "title": "Looping Steps",
+    "path": "albums/n64/super-mario-64/looping-steps.mid"
+   },
+   {
+    "title": "Main Theme",
+    "path": "albums/n64/super-mario-64/main-theme.mid"
+   },
+   {
+    "title": "Merry-Go-Round",
+    "path": "albums/n64/super-mario-64/merry-go-round.mid"
+   },
+   {
+    "title": "Metallic Mario",
+    "path": "albums/n64/super-mario-64/metallic-mario.mid"
+   },
+   {
+    "title": "Opening",
+    "path": "albums/n64/super-mario-64/opening.mid"
+   },
+   {
+    "title": "Peach's Message",
+    "path": "albums/n64/super-mario-64/peach-s-message.mid"
+   },
+   {
+    "title": "Piranha Plant's Lullaby",
+    "path": "albums/n64/super-mario-64/piranha-plant-s-lullaby.mid"
+   },
+   {
+    "title": "Power Star",
+    "path": "albums/n64/super-mario-64/power-star.mid"
+   },
+   {
+    "title": "Powerful Mario",
+    "path": "albums/n64/super-mario-64/powerful-mario.mid"
+   },
+   {
+    "title": "Race Fanfare",
+    "path": "albums/n64/super-mario-64/race-fanfare.mid"
+   },
+   {
+    "title": "Slider",
+    "path": "albums/n64/super-mario-64/slider.mid"
+   },
+   {
+    "title": "Snow Mountain",
+    "path": "albums/n64/super-mario-64/snow-mountain.mid"
+   },
+   {
+    "title": "Staff Roll",
+    "path": "albums/n64/super-mario-64/staff-roll.mid"
+   },
+   {
+    "title": "Stage Boss",
+    "path": "albums/n64/super-mario-64/stage-boss.mid"
+   },
+   {
+    "title": "Star Catch Fanfare",
+    "path": "albums/n64/super-mario-64/star-catch-fanfare.mid"
+   },
+   {
     "title": "Title Theme",
     "path": "albums/n64/super-mario-64/title-theme.mid"
+   },
+   {
+    "title": "Toad's Message",
+    "path": "albums/n64/super-mario-64/toad-s-message.mid"
+   },
+   {
+    "title": "Ultimate Koopa",
+    "path": "albums/n64/super-mario-64/ultimate-koopa.mid"
+   },
+   {
+    "title": "Ultimate Koopa Clear",
+    "path": "albums/n64/super-mario-64/ultimate-koopa-clear.mid"
    }
   ]
  },
