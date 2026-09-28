@@ -1577,7 +1577,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
-    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "game's own instrument for that track",
+    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track",
     "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3691,6 +3691,36 @@ test("create mine: a public night-roll-archive under the user's account becomes 
   assert.equal(val(`cfg().nsfBase`), "https://raw.githubusercontent.com/someone/night-roll-archive/main");
   assert.deepEqual(val(`globalThis.__posts.map(p => [p.name, p.private])`), [["night-roll-archive", false]]);
   assert.match(said.at(-1), /created/);
+});
+
+test("instruments: the sheet lists games with a library, a game's used instruments by name, and a tap plays one", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  app2.context.__play = await import("../tools/instruments/play.mjs");
+  const wav = (() => { const n = 64, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer); const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
+    w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 32000, true); dv.setUint32(28, 64000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    w(36, "data"); dv.setUint32(40, n * 2, true); for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, i % 8 < 4 ? 16000 : -16000, true); return b; })();
+  app2.context.__wav = wav;
+  run(`instPlayModule = Promise.resolve(__play); CATALOG = {"Dam Album": [["Dam", "albums/n64/goldeneye-007/dam.mid"]], "Starters": [["Prelude", "albums/starters/p.mid"]]};
+       albumMetaCache["albums/n64/goldeneye-007"] = {title: "GoldenEye 007", nsf: {vault: "goldeneye-007/", chip: "usf", tracks: {}}};
+       albumMetaCache["albums/starters"] = {title: "Starters"};
+       globalThis.__fetched = [];
+       vaultFetch = async f => { globalThis.__fetched.push(f);
+         if (f.endsWith("instruments.json")) return new TextEncoder().encode(JSON.stringify({format: "night-roll-instruments", version: 1, samples: {h1: {rate: 32000, length: 64, loop: {start: 0, end: 64}, file: "h1.wav"}},
+           instruments: [{id: "a", nameGuess: "Soft pad", kind: "melodic", used: true, usedIn: ["Dam", "Facility"], keysPlayed: {lo: 55, hi: 70, median: 62}, gain: 1, velocityCurve: "linear", envelope: {points: [[0, 1]], releaseCurve: {mode: "follow", points: [[0, 1], [0.05, 0]]}}, keyRegions: [{keyLo: 0, keyHi: 127, rootKey: 60, sample: "h1", loop: {start: 0, end: 64}}]},
+                         {id: "b", nameGuess: "Unused thing", kind: "melodic", used: false, usedIn: [], keyRegions: []}]}));
+         if (f.endsWith("h1.wav")) return __wav; throw new Error("unexpected " + f); };
+       globalThis.__srcs = 0;`);
+  await run(`renderInstGames()`);
+  assert.deepEqual(val(`[...document.getElementById("instrows").children].map(r => (r.children[0] || r).textContent)`), ["GoldenEye 007 ›"], "only games with a PS1/N64 library");
+  await run(`renderInstGame({title: "GoldenEye 007", vault: "goldeneye-007/"})`);
+  const all = val(`[...document.getElementById("instrows").children].map(r => (r.children[0] || r).textContent)`);
+  const labels = all.slice(all.lastIndexOf("‹ All games")); // the harness's innerHTML = "" keeps old children; a browser clears them
+  assert.deepEqual(labels, ["‹ All games", "▶ Soft pad  · in 2 songs"], "used instruments only, by name");
+  run(`ensureAudio(); audio.createBufferSource = () => { globalThis.__srcs++; return {connect() {}, start() {}, buffer: null}; };`);
+  const settle = async p => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } return p; }; // the audio clock check waits on the harness's fake timers
+  await settle(run(`instLibrary("goldeneye-007/").then(lib => instAudition("goldeneye-007/", lib, lib.instruments[0]))`));
+  assert.equal(val(`globalThis.__srcs`), 3, "root, fifth, octave");
+  assert.equal(val(`globalThis.__fetched.filter(f => f.endsWith(".wav")).length`), 1, "each sample fetched once");
 });
 
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {
