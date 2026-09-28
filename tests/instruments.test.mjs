@@ -14,9 +14,12 @@ import { join } from "node:path";
 import { makeTestAKAO, makeTestSampleSet, encodeAdpcm, sine, makeExe, makePSF } from "../tools/psx/make-test-seq.mjs";
 import { Adsr, OotAdsr, UPDATES_PER_SECOND, OOT_UPDATES_PER_SECOND } from "../tools/n64/render.mjs";
 import { envelopeGain } from "../tools/n64/rare.mjs";
+import { makeTestSPC, TEST_ROOT_HZ, TEST_MELODY_MIDI } from "../tools/spc/make-test-spc.mjs";
+import { DspVoices, ENV_MAX, OFF, ATTACK } from "../tools/spc/dsp-state.mjs";
 import { Library, simplify, levelAt, wavBytes, readWav, summarize, FORMAT } from "../tools/instruments/model.mjs";
 import { sm64Envelope, ootEnvelope, rareEnvelope } from "../tools/instruments/n64.mjs";
 import { spuEnvelope } from "../tools/instruments/psx.mjs";
+import { spcEnvelope, keyOnFacts, chooseEnvelope, splitDrum } from "../tools/instruments/snes.mjs";
 import { extractAlbum, writeAlbum, summary } from "../tools/instruments/extract.mjs";
 import { playNote, regionFor, envLevel } from "../tools/instruments/play.mjs";
 import { label } from "../tools/instruments/name.mjs";
@@ -94,6 +97,106 @@ test("a synthetic PS1 rip: every played articulation extracted, tuned, sampled o
       assert.ok(Math.abs(r.level) <= 1, `${r.group} level ${r.level} dB`);
     }
   } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+test("a synthetic SPC: key-ons grouped by (SRCN, ADSR/GAIN), rootKey from the P→note relation, played back as apu-render.mjs plays it", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "nr-instr-spc-"));
+  try {
+    writeFileSync(join(dir, "01 Test Tune.spc"), makeTestSPC());
+    const lib = await extractAlbum(dir, {slug: "test-game"});
+    assert.equal(lib.drivers.has("spc"), true);
+    const used = lib.instruments.filter(i => i.used);
+    assert.equal(used.length, 1, "one (SRCN, ADSR/GAIN) group: one instrument — " + used.map(i => i.id).join(","));
+    const inst = used[0];
+    assert.equal(inst.driver, "spc");
+    assert.equal(inst.kind, "melodic", "four distinct pitches, never one P repeated: not a drum");
+    assert.equal(inst.keyRegions.length, 1);
+    const r = inst.keyRegions[0];
+    assert.equal(r.keyLo, 0); assert.equal(r.keyHi, 127);
+    const theoreticalRoot = 69 + 12 * Math.log2(TEST_ROOT_HZ / 440);
+    assert.ok(Math.abs(r.rootKey - theoreticalRoot) < 0.05, `rootKey ${r.rootKey} vs the sine's own ${theoreticalRoot}`);
+    assert.deepEqual(inst.keysPlayed, {lo: Math.min(...TEST_MELODY_MIDI), hi: Math.max(...TEST_MELODY_MIDI), median: TEST_MELODY_MIDI[TEST_MELODY_MIDI.length >> 1]});
+    assert.ok(!lib.warnings.some(w => w.includes("disagree on root")), "the melody's own pitches are exact multiples of the true root: no consistency flag\n" + lib.warnings.join("\n"));
+    assert.equal(inst.envelope.raw.kind, "spc-adsr", "adsr1's bit 7 (AR15 DR7 SL7 SR0) selects ADSR, not GAIN");
+    assert.equal(Object.keys(lib.samples).length, 1, "one BRR sample");
+    const h = r.sample;
+    assert.ok(lib.samples[h].loop && lib.samples[h].loop.end > lib.samples[h].loop.start, "the sine loops whole");
+    assert.ok(typeof inst.nameGuess === "string" && inst.features && inst.features.measured);
+    // written files round-trip
+    const out = mkdtempSync(join(tmpdir(), "nr-instr-spc-out-"));
+    const w = writeAlbum(lib, out);
+    const doc = JSON.parse(readFileSync(join(w.dir, "instruments.json"), "utf8"));
+    assert.equal(doc.format, FORMAT); assert.equal(doc.songs, 1);
+    assert.ok(existsSync(join(w.dir, h + ".wav")));
+    rmSync(out, {recursive: true, force: true});
+    // the library's note against apu-render.mjs's own S-DSP simulation, note for note
+    const {rows} = await verifySong(dir, /Test Tune/);
+    assert.ok(rows.length >= 2, "notes checked: " + rows.length); // one (SRCN, ADSR/GAIN) group: one representative note, as-is + held
+    for (const r2 of rows) {
+      assert.ok(!r2.error, r2.group + ": " + r2.error);
+      assert.ok(Math.abs(r2.pitch) <= 5, `${r2.group} pitch ${r2.pitch} cents`);
+      assert.ok(r2.shape > 0.95, `${r2.group} shape ${r2.shape}`);
+      assert.ok(Math.abs(r2.level) <= 1, `${r2.group} level ${r2.level} dB`);
+    }
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+test("keyOnFacts: a KON's own ADSR/GAIN/PITCH/VOL, closed by the next KOFF or KON on the same voice", async () => {
+  const { parseSPC, runSPC } = await import("../tools/spc/spc.mjs");
+  const spc = parseSPC(makeTestSPC());
+  const cap = runSPC(spc, 2);
+  const facts = keyOnFacts(cap);
+  assert.ok(facts.length >= 4, "at least the four melody notes: " + facts.length);
+  for (const f of facts) {
+    assert.equal(f.srcn, 0); assert.equal(f.adsr1, 0xFF); assert.equal(f.adsr2, 0xE0); assert.equal(f.gain, 0);
+    assert.ok(f.endSample > f.startSample);
+  }
+  const pitches = new Set(facts.map(f => f.pitch));
+  assert.equal(pitches.size, 4, "the four melody pitches, no more");
+});
+
+test("chooseEnvelope: the majority (ADSR1, ADSR2, GAIN) wins, ties by note-seconds, the rest travel as variants", () => {
+  const k = (adsr1, adsr2, gain, secs) => ({adsr1, adsr2, gain, startSample: 0, endSample: secs * 32000});
+  const {main, variants} = chooseEnvelope([k(1, 1, 1, 1), k(1, 1, 1, 1), k(1, 1, 1, 1), k(2, 2, 2, 1), k(2, 2, 2, 1)]);
+  assert.deepEqual(main, {adsr1: 1, adsr2: 1, gain: 1, noteCount: 3, secs: 3});
+  assert.deepEqual(variants, [{adsr1: 2, adsr2: 2, gain: 2, noteCount: 2}]);
+  // a tie in count: the one with more total note-seconds
+  const tied = chooseEnvelope([k(1, 1, 1, 0.1), k(1, 1, 1, 0.1), k(2, 2, 2, 5), k(2, 2, 2, 5)]);
+  assert.deepEqual([tied.main.adsr1, tied.main.adsr2, tied.main.gain], [2, 2, 2]);
+  // one (ADSR/GAIN) only: no variants at all
+  assert.deepEqual(chooseEnvelope([k(1, 1, 1, 1), k(1, 1, 1, 1)]).variants, []);
+});
+
+test("splitDrum: a P used by a clear majority (>= half, >= 8 times) of an SRCN's key-ons is percussion; an even melodic loop never splits", () => {
+  const n = (pitch) => ({pitch});
+  // 12 hits at one P, 3 elsewhere: the one P is a strict majority — a drum, the 3 are its melodic remainder
+  const mixed = [...Array(12)].map(() => n(4096)).concat([n(4200), n(4300), n(4096 * 2)]);
+  const {drumKeyons, melodicKeyons} = splitDrum(mixed);
+  assert.equal(drumKeyons.length, 12); assert.equal(melodicKeyons.length, 3);
+  // a 4-note melodic loop repeated 20x each: no single pitch reaches half — nothing splits
+  const evenMelody = [4096, 4200, 4300, 4400].flatMap(p => Array(20).fill(n(p)));
+  const even = splitDrum(evenMelody);
+  assert.equal(even.drumKeyons.length, 0); assert.equal(even.melodicKeyons.length, 80);
+  // repeated < 8 times: too few to call percussion even if it's the whole set
+  assert.equal(splitDrum([...Array(6)].map(() => n(4096))).drumKeyons.length, 0);
+});
+
+test("spcEnvelope: DspVoices stepped in isolation matches a fresh instance sample for sample; release is the chip's fixed −8/sample ramp", () => {
+  const e = spcEnvelope(0xFF, 0xE0, 0x00); // AR15 DR7 SL7 SR0: instant attack, held sustain (sr 0 = never decays)
+  const fresh = new DspVoices(new Uint8Array(0x10000), Uint8Array.of(...new Array(128).fill(0)));
+  const regs = fresh.regs; regs[5] = 0xFF; regs[6] = 0xE0; regs[7] = 0x00;
+  const vc = fresh.voices[0]; vc.stage = ATTACK; vc.env = 0;
+  // simplify() (model.mjs) is lossy by design (within ~2% near full level, tighter near zero — see its
+  // header), and round(t, 5) rounds a 1/32000 s grid to its nearest 10 µs, so AR15's one-sample rise
+  // (the fastest the chip has) tolerates a wider band than the settled region right after it
+  for (let i = 0; i < 100; i++) { fresh.stepVoice(vc, 0); const t = (i + 1) / 32000, lv = vc.env / ENV_MAX; assert.ok(Math.abs(levelAt(e.points, t) - lv) <= Math.max(0.03, 0.06 * lv), `sample ${i}: ${levelAt(e.points, t)} vs ${lv}`); }
+  assert.equal(vc.env, ENV_MAX, "sr 0: rate period is 0, never decays — full scale held");
+  assert.equal(e.sustain, 1);
+  // release: −8/sample from full scale, independent of ADSR/GAIN — reaches 0 in ENV_MAX/8 samples
+  assert.ok(Math.abs(e.releaseCurve.points[e.releaseCurve.points.length - 1][0] - ENV_MAX / 8 / 32000) < 2 / 32000);
+  const g = spcEnvelope(0x00, 0x00, 0xD0); // GAIN mode: bit 7 of GAIN set, mode 2 (linear increase), rate period 64
+  assert.equal(g.raw.kind, "spc-gain");
+  assert.ok(levelAt(g.points, 70 / 32000) > levelAt(g.points, 1 / 32000), "GAIN linear increase ramps up after its first rate period");
 });
 
 test("envelopes: the neutral points follow each engine's own ADSR", () => {
@@ -222,6 +325,27 @@ for (const [dir, re] of REF) {
     }
   });
 }
+// SNES rips (scratch/instruments/rips/snes/<album>, downloaded/unzipped by hand — not
+// committed): pitched instruments to the same 5¢/0.95/1dB bar as PS1/N64. A `centroid`-method
+// row (compare()'s fallback when autocorrelation finds no clean period: noise-like percussion,
+// or a one-shot drum sample's natural end landing inside the analysis window) is measured but
+// not held to the pitch/level bar — spectral centroid on noise, or on a near-silent tail, isn't
+// a meaningful "wrong pitch" the way it is for a tone; shape (envelope correlation) still is.
+const SNES_RIPS = process.env.SNES_INSTRUMENT_RIPS || "scratch/instruments/rips/snes";
+const SNES_REF = [["chrono-trigger", /^chrono-trigger\.spc$/i], ["chrono-trigger", /frog-s-theme/i], ["super-mario-world", /Yoshi's Island/]];
+for (const [dir, re] of SNES_REF) {
+  test(`real rip snes/${dir} ${re.source}: pitched instruments play as apu-render.mjs plays them (5 cents, shape 0.95, 1 dB)`,
+    {skip: !existsSync(join(SNES_RIPS, dir)) && "no rip at " + join(SNES_RIPS, dir)}, async () => {
+    const {rows} = await verifySong(join(SNES_RIPS, dir), re);
+    assert.ok(rows.length >= 2);
+    for (const r of rows) {
+      assert.ok(!r.error, r.group + ": " + r.error);
+      assert.ok(r.shape > 0.95, `${r.id} key ${r.key} hold ${r.hold}: shape ${r.shape}`);
+      if (r.how === "period") assert.ok(Math.abs(r.pitch) <= 5 && Math.abs(r.level) <= 1, `${r.id} key ${r.key} hold ${r.hold}: pitch ${r.pitch} level ${r.level}`);
+    }
+  });
+}
+
 test("real rip sm64: every played instrument is in the library with its samples", {skip: !existsSync(join(RIPS, "sm64")) && "no rip"}, async () => {
   const lib = await extractAlbum(join(RIPS, "sm64"), {slug: "sm64"});
   const s = summary(lib);

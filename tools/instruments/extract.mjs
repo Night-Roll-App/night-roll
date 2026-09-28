@@ -5,7 +5,10 @@
 // PlayStation (AKAO, SEQ/VAB) and Nintendo 64 (EAD sm64/oot generations,
 // Rare) drivers' own banks, read by their capture/render readers
 // (psx.mjs, n64.mjs), put in the neutral form model.mjs documents, named by
-// measurement (name.mjs). Writes <out>/<slug>/instruments/instruments.json
+// measurement (name.mjs). SNES (snes.mjs) has no such bank to read — no
+// driver is parsed; every .spc's DSP register log is captured into one
+// shared bucket (per sample content, not per song) before any instrument
+// is built. Writes <out>/<slug>/instruments/instruments.json
 // and one <hash>.wav per distinct sample (16-bit mono at its native rate,
 // loop in a `smpl` chunk) — the paths the archive holds them at.
 //
@@ -22,6 +25,7 @@ import { fileURLToPath } from "node:url";
 import { Library, wavBytes } from "./model.mjs";
 import { psxSong, psxFiles } from "./psx.mjs";
 import { n64Song, usfFiles } from "./n64.mjs";
+import { snesSong, snesFiles, finishSnesAlbum } from "./snes.mjs";
 import { nameAll } from "./name.mjs";
 import { samplesFromLibrary } from "./play.mjs";
 
@@ -54,12 +58,24 @@ export async function extractAlbum(dir, {slug = path.basename(dir), title = "", 
     }
   } else {
     const {minis, libs} = usfFiles(dir);
-    if (!minis.length) throw new Error("no .psf/.minipsf or .miniusf files in " + dir);
-    for (const f of minis) {
-      if (only && !only.test(f)) continue;
-      try { n64Song(lib, dir, f, libs); } catch (e) { fails.push({file: f, why: e.message}); }
+    if (minis.length) {
+      for (const f of minis) {
+        if (only && !only.test(f)) continue;
+        try { n64Song(lib, dir, f, libs); } catch (e) { fails.push({file: f, why: e.message}); }
+      }
+      if (!unused) for (const [id, rec] of lib.inst) if (!rec.used) lib.inst.delete(id);
+    } else {
+      const spcs = snesFiles(dir);
+      if (!spcs.length) throw new Error("no .psf/.minipsf, .miniusf, or .spc files in " + dir);
+      // every song is captured into one shared bucket (sample hash -> its key-ons across the
+      // whole album) before any instrument is built from it — see snes.mjs's header
+      const bucket = new Map();
+      for (const f of spcs) {
+        if (only && !only.test(f)) continue;
+        try { snesSong(lib, dir, f, bucket); } catch (e) { fails.push({file: f, why: e.message}); }
+      }
+      finishSnesAlbum(lib, bucket);
     }
-    if (!unused) for (const [id, rec] of lib.inst) if (!rec.used) lib.inst.delete(id);
   }
   if (!unused) for (const [id, rec] of lib.inst) if (!rec.used) lib.inst.delete(id);
   lib.finish();

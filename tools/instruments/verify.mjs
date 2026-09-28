@@ -27,6 +27,10 @@ import { renderN64, panGains as eadPanGains, ootPanGains, N64_RATE } from "../n6
 import { panGains as rarePanGains, findRareBanks, readRareBank } from "../n64/rare.mjs";
 import { tickSeconds } from "../n64/seq-libultra.mjs";
 import { rdramOf } from "../n64/usf.mjs";
+import { parseSPC, runSPC } from "../spc/spc.mjs";
+import { renderApu } from "../spc/apu-render.mjs";
+import { resolveRoots } from "../spc/notes.mjs";
+import { keyOnFacts, spcEnvelope, splitDrum, sampleKeyOf, SPC_RATE } from "./snes.mjs";
 import { extractAlbum } from "./extract.mjs";
 import { playNote, samplesFromLibrary } from "./play.mjs";
 import { fft } from "./name.mjs";
@@ -206,12 +210,87 @@ function findN64(lib, seq, n, gen, rareBank) {
   return used.find(i => i.driver === "ead-" + gen && i.bank === b && i.program === n.inst) || used.find(i => i.driver === "ead-" + gen && i.bank === b && String(i.program) === String(n.inst));
 }
 
+// SNES: no driver to ask "what instrument is this" — the same per-song
+// grouping snes.mjs uses before an instrument is built (a drum use and a
+// melodic use of the same sample are separate candidates), picked by how
+// often each one key-onned (a drum candidate guaranteed a slot, as
+// psx/n64's pickNotes does), each rendered twice: apu-render.mjs from a
+// synthetic one-voice DSP log (KON at sample 0, KOFF at the note's real
+// hold, against the SAME song's captured ARAM — the real sample bytes),
+// and play.mjs from the library. VOL L/R (0..127) doubles as velocity, so
+// the synthetic render's VOL and playNote's vel are the same captured
+// number. verifySong only ever extracts the ONE song under test, so the
+// library's instrument identity (the sample's content hash, same as
+// extraction — snes.mjs's `sampleKeyOf`) is resolved here the same way,
+// not by this song's own SRCN numbers (which extraction no longer keys
+// on at all). A picked note whose own (ADSR1, ADSR2, GAIN) is not the
+// instrument's chosen envelope (chooseEnvelope's majority — see snes.mjs)
+// is a "variant" note: play.mjs is given a copy of the instrument with
+// THAT note's own envelope instead, so the comparison still holds
+// pitch/level/shape to the note actually played, not to the envelope the
+// library settled on; the row says so (`variant: true`) rather than
+// silently failing shape.
+async function verifySnes(dir, file, lib, maxNotes) {
+  const bytes = readFileSync(join(dir, file));
+  const spc = parseSPC(bytes);
+  const seconds = Math.max(20, Math.min((spc.tags.seconds || 45) + (spc.tags.fadeMs || 0) / 1000, 90));
+  const cap = runSPC(spc, seconds);
+  const byKey = new Map(resolveRoots(cap.instruments).map(i => [i.key, i]));
+  const facts = keyOnFacts(cap).filter(f => f.endSample - f.startSample >= SPC_RATE * 0.05);
+  const bySrcn = new Map();
+  for (const f of facts) (bySrcn.get(f.srcn) || bySrcn.set(f.srcn, []).get(f.srcn)).push(f);
+  const candidates = []; // {group, isDrum, keyons}
+  for (const [srcn, ks] of bySrcn) {
+    const {drumKeyons, melodicKeyons} = splitDrum(ks);
+    if (drumKeyons.length) candidates.push({group: `src${srcn} drum`, isDrum: true, keyons: drumKeyons});
+    if (melodicKeyons.length) candidates.push({group: `src${srcn} melodic`, isDrum: false, keyons: melodicKeyons});
+  }
+  const ranked = candidates.sort((a, b) => b.keyons.length - a.keyons.length);
+  const pick = c => { const s = c.keyons.slice().sort((a, b) => (a.endSample - a.startSample) - (b.endSample - b.startSample)); return {...c, n: s[s.length >> 1]}; };
+  const picks = ranked.slice(0, maxNotes).map(pick);
+  const drum = ranked.find(c => c.isDrum);
+  if (drum && !picks.some(p => p.isDrum)) picks[picks.length - 1] = pick(drum);
+
+  const samples = samplesFromLibrary(lib);
+  const rows = [];
+  const t2s = SPC_RATE * 2;
+  for (const {group, isDrum, n, long} of [...picks.map(p => ({...p, long: false})), ...picks.map(p => ({...p, long: true}))]) {
+    const holdSamples = long ? t2s : (n.endSample - n.startSample);
+    const hold = holdSamples / SPC_RATE;
+    const vel = Math.max(1, Math.min(127, Math.round((Math.abs(n.volL) + Math.abs(n.volR)) / 2)));
+    const dsp0 = new Uint8Array(128);
+    dsp0[0x5D] = n.dir; dsp0[4] = n.srcn; dsp0[5] = n.adsr1; dsp0[6] = n.adsr2; dsp0[7] = n.gain;
+    dsp0[0] = vel; dsp0[1] = vel; dsp0[2] = n.pitch & 0xFF; dsp0[3] = (n.pitch >> 8) & 0x3F;
+    dsp0[0x0C] = 127; dsp0[0x1C] = 127;
+    const total = holdSamples + Math.round(2 * SPC_RATE);
+    const dspLog = [{sample: 0, addr: 0x4C, value: 1}, {sample: holdSamples, addr: 0x5C, value: 1}];
+    const out = await renderApu({dspLog, dsp0, ram: cap.ram, samples: total}, {sampleRate: SPC_RATE});
+    const drv = out.voice0;
+    // the library's own classification decides playback (fixedPitch or not), not this
+    // function's locally re-derived `isDrum` — its note set (duration-filtered) can
+    // disagree with extraction's at the margin. Matched by id, built from the sample's
+    // content hash the same way extraction does (snes.mjs's sampleKeyOf + buildInstrument) —
+    // a song's own SRCN number is not part of the instrument's identity, and
+    // `keyRegions[0].sample` is model.mjs's OWN (separately computed) hash, not this one.
+    const sample = byKey.get(n.srcn + "@" + n.start.toString(16));
+    const expectedId = sample && `spc:${sampleKeyOf(sample).slice(4, 12)}:${isDrum ? "drum" : "inst"}`;
+    const inst = expectedId && lib.instruments.find(i => i.id === expectedId);
+    if (!inst) { rows.push({group, error: "not in the library"}); continue; }
+    const variant = inst.raw.adsr1 !== n.adsr1 || inst.raw.adsr2 !== n.adsr2 || inst.raw.gain !== n.gain;
+    const forPlay = variant ? {...inst, envelope: spcEnvelope(n.adsr1, n.adsr2, n.gain)} : inst;
+    const key = inst.kind === "drum-kit" ? inst.keyRegions[0].keyLo : inst.keyRegions[0].rootKey + 12 * Math.log2(n.pitch / 4096);
+    const mine = playNote(forPlay, samples, {key, vel, hold, sampleRate: SPC_RATE, tail: 2});
+    rows.push({group, long, variant, id: inst.id, name: inst.nameGuess, key: Math.round(key), vel, hold: +hold.toFixed(3), ...compare(drv, mine, SPC_RATE, hold)});
+  }
+  return rows;
+}
+
 export async function verifySong(dir, songRe, {maxNotes = 5} = {}) {
-  const files = readdirSync(dir).filter(f => /\.(mini)?(psf|usf)$/i.test(f) && songRe.test(f));
+  const files = readdirSync(dir).filter(f => (/\.(mini)?(psf|usf)$/i.test(f) || /\.spc$/i.test(f)) && songRe.test(f));
   if (!files.length) throw new Error("no song matching " + songRe + " in " + dir);
   const file = files[0];
   const lib = await extractAlbum(dir, {slug: path.basename(dir), only: new RegExp("^" + file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$")});
-  const rows = /psf$/i.test(file) ? await verifyPsx(dir, file, lib, maxNotes) : await verifyN64(dir, file, lib, maxNotes);
+  const rows = /psf$/i.test(file) ? await verifyPsx(dir, file, lib, maxNotes) : /usf$/i.test(file) ? await verifyN64(dir, file, lib, maxNotes) : await verifySnes(dir, file, lib, maxNotes);
   return {file, rows};
 }
 
@@ -220,7 +299,7 @@ export function formatRows(file, rows) {
   for (const r of rows) {
     if (r.error) { lines.push(`  ${r.group}: ${r.error}`); continue; }
     const ok = Math.abs(r.pitch) <= 5 && r.shape > 0.95 && Math.abs(r.level) <= 1;
-    lines.push(`  ${ok ? "ok  " : "FAIL"} ${r.long ? "held " : "as is"} ${r.name.padEnd(16)} ${r.id.padEnd(30)} key ${String(r.key).padStart(3)} vel ${String(r.vel).padStart(3)} hold ${r.hold.toFixed(3)}s  pitch ${r.pitch.toFixed(2)}¢ (${r.how})  shape ${r.shape.toFixed(4)}  level ${r.level.toFixed(2)} dB`);
+    lines.push(`  ${ok ? "ok  " : "FAIL"} ${r.long ? "held " : "as is"} ${r.name.padEnd(16)} ${r.id.padEnd(30)} key ${String(r.key).padStart(3)} vel ${String(r.vel).padStart(3)} hold ${r.hold.toFixed(3)}s  pitch ${r.pitch.toFixed(2)}¢ (${r.how})  shape ${r.shape.toFixed(4)}  level ${r.level.toFixed(2)} dB${r.variant ? "  [variant envelope]" : ""}`);
   }
   return lines.join("\n");
 }

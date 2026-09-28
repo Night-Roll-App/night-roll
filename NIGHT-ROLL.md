@@ -1544,6 +1544,57 @@ falls back to the track's own auto (NES) synth voice, with one ⚠ per
 (voice, reason) this session. Test: "game instrument voice: …" in
 tests/night-roll.test.mjs.
 
+SNES (`tools/instruments/snes.mjs`, 2026-09-28): a `.spc` is only the
+sound chip's own state (64 KB ARAM + DSP registers) — no game-exposed
+instrument table like PS1's INSTR.DAT or N64's tuning float, and every
+game's driver maps its own instrument numbers to the chip differently,
+so the driver is never parsed. An instrument is one SAMPLE, identified
+by its decoded BRR content hash (`sampleKeyOf`), NOT by the per-song
+SRCN number that happened to point at it — a `.spc` is one song's own
+independent ARAM snapshot (nothing like PS1/N64's shared RAM/ROM), so
+the same sample commonly loads at a different SRCN in every song that
+uses it. Every song in the album is captured first, offering samples
+and collecting key-ons into one shared bucket keyed by that hash
+(`snesSong`); only once every song is in does `finishSnesAlbum` build
+an instrument from each hash's full, album-wide key-on set. Its
+envelope is the (ADSR1, ADSR2, GAIN) the MOST of its key-ons used
+across the whole album (`chooseEnvelope`, ties by total note-seconds);
+every other combination it was ever keyed on with travels as
+`raw.envelopeVariants` — nothing is lost, but a driver that rewrites
+ADSR per note (Rare's DKC engine does this constantly) doesn't fragment
+into one instrument per note or per song the way naive grouping did at
+first (703 "instruments" from 59 samples on DKC keying by (SRCN,
+ADSR/GAIN); merging envelopes but still keying by a song's own SRCN
+got that to 274; keying by sample hash instead — this rule — gets it to
+64, next to its actual 59, with the per-song SRCN numbers kept for
+reference in `raw.srcnBySong: {songTitle: [srcn, …]}`). rootKey is the
+sample's own measured pitch (`tools/spc/notes.mjs` NSDF autocorrelation
+on the decoded BRR audio — the only ground truth, since the driver's
+intended note is never exposed), refined by averaging every key-on's
+own implied root back out of its played P, across every song that
+plays the sample; a spread > 10¢ across an instrument's key-ons is
+flagged (root estimate likely wrong-octave, or genuinely retuned per
+note). Drums: a sample keyed on with one exact P over a clear majority
+(≥ half, ≥ 8 notes) of its key-ons, album-wide, never varies pitch
+there — those key-ons become a `"drum-kit"` instrument (one fixedPitch
+region, exact P, not rounded); the sample's remaining key-ons, if any,
+are its melodic instrument — a drum use and a melodic use of the same
+sample stay separate (ids `spc:<hash8>:drum` / `spc:<hash8>:inst`). No
+velocity register on the S-DSP: a key-on's own VOL L/R (0..127) stands
+in for velocity 1:1; pan (also VOL L vs R) is left out, a performance
+fact per song, not an instrument property. Verification (`verify.mjs`'s
+`verifySnes`): a synthetic one-voice DSP log (KON at sample 0, KOFF at
+the note's real hold) against the same song's captured ARAM, compared
+to `play.mjs` — matched to the library by the same content hash (a
+song's own SRCN is never part of the instrument's identity); a picked
+note using a variant envelope is held to ITS OWN variant, not the
+instrument's chosen one. What "pitch" means for noise: `compare()`'s
+autocorrelation-based pitch check falls back to spectral centroid when
+it finds no clean period (noise-like percussion, or a one-shot drum
+sample's natural end landing inside the analysis window) — that isn't
+a meaningful "wrong pitch" the way it is for a tone, so those rows are
+held to shape/level only, not the 5¢ bar.
+
 ## Stereo — pan per track (2026-09-28)
 
 Josh: "are we getting … stereo information?" — pan was read and never

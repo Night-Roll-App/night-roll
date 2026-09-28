@@ -85,17 +85,26 @@ NIGHT-ROLL.md "Game instrument libraries" (Step 2).
 ## Game instrument libraries: SNES — DONE 2026-09-28 (not published)
 
 `tools/instruments/snes.mjs` extends extract.mjs/verify.mjs to `.spc` (an
-instrument = one SRCN, envelope = its majority ADSR/GAIN, other combos kept
-as `envelopeVariants`, drum vs melodic uses of one SRCN split apart) — see
-NIGHT-ROLL.md "Game instrument libraries" for the full design. Ran on all
-11 SNES albums with rips on disk (2427→1990 instruments after the merge
-fix, 636 samples, 5.4 MB WAV total; Chrono Trigger's 92 `.spc` downloaded
-from joshcough/nsf-archive, not locally ripped). Verified against
-apu-render.mjs on 3 songs/2 albums: every melodic note ≤ 3¢/≥0.975
-shape/≤0.43 dB; noise/short-drum rows fail only the centroid-fallback
-pitch check (shape still ≥ 0.987) — not a real pitch error, see
-NIGHT-ROLL.md. Not run through export.mjs's SF2/SFZ by ear either (same
-gap as the entry above). Not published to the archive — scratch/ only.
+instrument = one SAMPLE, identified by its content hash across the WHOLE
+album, not a song's own SRCN number; envelope = its majority ADSR/GAIN
+across every song that plays it, other combos kept as `envelopeVariants`;
+drum vs melodic uses of the same sample split apart) — see NIGHT-ROLL.md
+"Game instrument libraries" for the full design and how it got here (two
+revisions: grouping by (SRCN, ADSR/GAIN) gave Donkey Kong Country 703
+"instruments" from 59 samples; merging envelopes but still keying by a
+song's own SRCN got that to 274; keying by sample hash — since a `.spc` is
+one song's own ARAM snapshot, the same sample loads at a different SRCN in
+almost every song that uses it — got it to 64). Ran on all 11 SNES albums
+with rips on disk: 744 instruments total (was 2427, then 1990), 636
+samples, 5.4 MB WAV total, album-wide instrument:sample ratio 1.17 (Chrono
+Trigger's 92 `.spc` downloaded from joshcough/nsf-archive, not locally
+ripped). Verified against apu-render.mjs on 3 songs/2 albums, unchanged
+across all three revisions (a single-song extraction has nothing to
+merge): every melodic note ≤ 3¢/≥0.975 shape/≤0.43 dB; noise/short-drum
+rows fail only the centroid-fallback pitch check (shape still ≥ 0.987) —
+not a real pitch error, see NIGHT-ROLL.md. Not run through export.mjs's
+SF2/SFZ by ear either (same gap as the entry above). Not published to the
+archive — scratch/ only.
 
 ## Recording looped instead of growing the song — FIXED on the overnight branch (2026-09-26)
 
