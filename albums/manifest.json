@@ -2045,6 +2045,271 @@
   ]
  },
  {
+  "title": "Final Fantasy III",
+  "songs": [
+   {
+    "title": "Added Companion",
+    "path": "albums/nes/final-fantasy-iii/added-companion.mid"
+   },
+   {
+    "title": "Applause (sound effect)",
+    "path": "albums/nes/final-fantasy-iii/applause-sound-effect.mid"
+   },
+   {
+    "title": "Bahamut Flies About (sound effect)",
+    "path": "albums/nes/final-fantasy-iii/bahamut-flies-about-sound-effect.mid"
+   },
+   {
+    "title": "Battle 1",
+    "path": "albums/nes/final-fantasy-iii/battle-1.mid"
+   },
+   {
+    "title": "Battle 2",
+    "path": "albums/nes/final-fantasy-iii/battle-2.mid"
+   },
+   {
+    "title": "Beneath the Horizon (Undersea Shrine)",
+    "path": "albums/nes/final-fantasy-iii/beneath-the-horizon-undersea-shrine.mid"
+   },
+   {
+    "title": "Big Chocobo! (Fat Chocobo Discovered)",
+    "path": "albums/nes/final-fantasy-iii/big-chocobo-fat-chocobo-discovered.mid"
+   },
+   {
+    "title": "Boo (sound effect)",
+    "path": "albums/nes/final-fantasy-iii/boo-sound-effect.mid"
+   },
+   {
+    "title": "Castle of Hain",
+    "path": "albums/nes/final-fantasy-iii/castle-of-hain.mid"
+   },
+   {
+    "title": "Chocobo Forest",
+    "path": "albums/nes/final-fantasy-iii/chocobo-forest.mid"
+   },
+   {
+    "title": "Chocobos! (Chocobo Theme)",
+    "path": "albums/nes/final-fantasy-iii/chocobos-chocobo-theme.mid"
+   },
+   {
+    "title": "Crystal Cave (Into the Crystal Cave)",
+    "path": "albums/nes/final-fantasy-iii/crystal-cave-into-the-crystal-cave.mid"
+   },
+   {
+    "title": "Crystal Room",
+    "path": "albums/nes/final-fantasy-iii/crystal-room.mid"
+   },
+   {
+    "title": "Cute Little Tozas (Village of Little People, Tozas)",
+    "path": "albums/nes/final-fantasy-iii/cute-little-tozas-village-of-little-people-tozas.mid"
+   },
+   {
+    "title": "Dancer's Dance",
+    "path": "albums/nes/final-fantasy-iii/dancer-s-dance.mid"
+   },
+   {
+    "title": "Danger (sound effect)",
+    "path": "albums/nes/final-fantasy-iii/danger-sound-effect.mid"
+   },
+   {
+    "title": "Deep Under the Water (Submarine Nautilus)",
+    "path": "albums/nes/final-fantasy-iii/deep-under-the-water-submarine-nautilus.mid"
+   },
+   {
+    "title": "Elia, the Maiden of Water",
+    "path": "albums/nes/final-fantasy-iii/elia-the-maiden-of-water.mid"
+   },
+   {
+    "title": "Eternal Wind",
+    "path": "albums/nes/final-fantasy-iii/eternal-wind.mid"
+   },
+   {
+    "title": "Fall (sound effect)",
+    "path": "albums/nes/final-fantasy-iii/fall-sound-effect.mid"
+   },
+   {
+    "title": "Fanfare (Victory Fanfare)",
+    "path": "albums/nes/final-fantasy-iii/fanfare-victory-fanfare.mid"
+   },
+   {
+    "title": "Forbidden Land (Forbidden Land Eureka)",
+    "path": "albums/nes/final-fantasy-iii/forbidden-land-forbidden-land-eureka.mid"
+   },
+   {
+    "title": "Garuda Defeat",
+    "path": "albums/nes/final-fantasy-iii/garuda-defeat.mid"
+   },
+   {
+    "title": "Go Above the Clouds! (The Enterprise Flies Through the Sky)",
+    "path": "albums/nes/final-fantasy-iii/go-above-the-clouds-the-enterprise-flies-through-the-sky.mid"
+   },
+   {
+    "title": "Good Morning! (Une's Morning Exercise)",
+    "path": "albums/nes/final-fantasy-iii/good-morning-une-s-morning-exercise.mid"
+   },
+   {
+    "title": "Good Ol' Fellows (Four Old Men's Theme)",
+    "path": "albums/nes/final-fantasy-iii/good-ol-fellows-four-old-men-s-theme.mid"
+   },
+   {
+    "title": "Hazardous Short Music 1",
+    "path": "albums/nes/final-fantasy-iii/hazardous-short-music-1.mid"
+   },
+   {
+    "title": "Hazardous Short Music 2",
+    "path": "albums/nes/final-fantasy-iii/hazardous-short-music-2.mid"
+   },
+   {
+    "title": "Hazardous Short Music 3",
+    "path": "albums/nes/final-fantasy-iii/hazardous-short-music-3.mid"
+   },
+   {
+    "title": "In the Covert Town (Hidden Village of Falgabard)",
+    "path": "albums/nes/final-fantasy-iii/in-the-covert-town-hidden-village-of-falgabard.mid"
+   },
+   {
+    "title": "Item Get",
+    "path": "albums/nes/final-fantasy-iii/item-get.mid"
+   },
+   {
+    "title": "Jinn, the Fire (Jinn's Curse)",
+    "path": "albums/nes/final-fantasy-iii/jinn-the-fire-jinn-s-curse.mid"
+   },
+   {
+    "title": "Let Me Know the Truth (House of Doga and Une)",
+    "path": "albums/nes/final-fantasy-iii/let-me-know-the-truth-house-of-doga-and-une.mid"
+   },
+   {
+    "title": "Let's Play the Piano Again! (Piano Practice 2)",
+    "path": "albums/nes/final-fantasy-iii/let-s-play-the-piano-again-piano-practice-2.mid"
+   },
+   {
+    "title": "Let's Play the Piano! (Piano Practice 1)",
+    "path": "albums/nes/final-fantasy-iii/let-s-play-the-piano-piano-practice-1.mid"
+   },
+   {
+    "title": "Living Forest",
+    "path": "albums/nes/final-fantasy-iii/living-forest.mid"
+   },
+   {
+    "title": "Lute of Noah",
+    "path": "albums/nes/final-fantasy-iii/lute-of-noah.mid"
+   },
+   {
+    "title": "My Home Town (Hometown of Ur)",
+    "path": "albums/nes/final-fantasy-iii/my-home-town-hometown-of-ur.mid"
+   },
+   {
+    "title": "Opening Theme",
+    "path": "albums/nes/final-fantasy-iii/opening-theme.mid"
+   },
+   {
+    "title": "Parting with a Companion",
+    "path": "albums/nes/final-fantasy-iii/parting-with-a-companion.mid"
+   },
+   {
+    "title": "Resting at the Inn",
+    "path": "albums/nes/final-fantasy-iii/resting-at-the-inn.mid"
+   },
+   {
+    "title": "Return of the Warrior",
+    "path": "albums/nes/final-fantasy-iii/return-of-the-warrior.mid"
+   },
+   {
+    "title": "Sailing Enterprise (The Enterprise Goes Out to the Sea)",
+    "path": "albums/nes/final-fantasy-iii/sailing-enterprise-the-enterprise-goes-out-to-the-sea.mid"
+   },
+   {
+    "title": "Salonia (Megalopolis of Salonia)",
+    "path": "albums/nes/final-fantasy-iii/salonia-megalopolis-of-salonia.mid"
+   },
+   {
+    "title": "Shattering (sound effect)",
+    "path": "albums/nes/final-fantasy-iii/shattering-sound-effect.mid"
+   },
+   {
+    "title": "Shrine of Nept",
+    "path": "albums/nes/final-fantasy-iii/shrine-of-nept.mid"
+   },
+   {
+    "title": "Swift Twist",
+    "path": "albums/nes/final-fantasy-iii/swift-twist.mid"
+   },
+   {
+    "title": "The Boundless Ocean",
+    "path": "albums/nes/final-fantasy-iii/the-boundless-ocean.mid"
+   },
+   {
+    "title": "The Crystal Tower",
+    "path": "albums/nes/final-fantasy-iii/the-crystal-tower.mid"
+   },
+   {
+    "title": "The Dark Crystals",
+    "path": "albums/nes/final-fantasy-iii/the-dark-crystals.mid"
+   },
+   {
+    "title": "The Dungeon (Dungeon)",
+    "path": "albums/nes/final-fantasy-iii/the-dungeon-dungeon.mid"
+   },
+   {
+    "title": "The Everlasting World (Ending Theme) -1-",
+    "path": "albums/nes/final-fantasy-iii/the-everlasting-world-ending-theme-1.mid"
+   },
+   {
+    "title": "The Everlasting World (Ending Theme) -2-",
+    "path": "albums/nes/final-fantasy-iii/the-everlasting-world-ending-theme-2.mid"
+   },
+   {
+    "title": "The Everlasting World (Ending Theme) -3-",
+    "path": "albums/nes/final-fantasy-iii/the-everlasting-world-ending-theme-3.mid"
+   },
+   {
+    "title": "The Invincible (Giant Battleship Invincible)",
+    "path": "albums/nes/final-fantasy-iii/the-invincible-giant-battleship-invincible.mid"
+   },
+   {
+    "title": "The Prelude (Prelude)",
+    "path": "albums/nes/final-fantasy-iii/the-prelude-prelude.mid"
+   },
+   {
+    "title": "The Requiem (Requiem)",
+    "path": "albums/nes/final-fantasy-iii/the-requiem-requiem.mid"
+   },
+   {
+    "title": "The Way to the Top (The Road to the Mountain Top)",
+    "path": "albums/nes/final-fantasy-iii/the-way-to-the-top-the-road-to-the-mountain-top.mid"
+   },
+   {
+    "title": "This is the Last Battle (Last Battle) -1-",
+    "path": "albums/nes/final-fantasy-iii/this-is-the-last-battle-last-battle-1.mid"
+   },
+   {
+    "title": "This is the Last Battle (Last Battle) -2-",
+    "path": "albums/nes/final-fantasy-iii/this-is-the-last-battle-last-battle-2.mid"
+   },
+   {
+    "title": "This is the Last Battle (Last Battle) -3-",
+    "path": "albums/nes/final-fantasy-iii/this-is-the-last-battle-last-battle-3.mid"
+   },
+   {
+    "title": "Time Remains (Village of the Ancients)",
+    "path": "albums/nes/final-fantasy-iii/time-remains-village-of-the-ancients.mid"
+   },
+   {
+    "title": "Tower of Owen",
+    "path": "albums/nes/final-fantasy-iii/tower-of-owen.mid"
+   },
+   {
+    "title": "Town of Water (Town of Alm)",
+    "path": "albums/nes/final-fantasy-iii/town-of-water-town-of-alm.mid"
+   },
+   {
+    "title": "Vegies of Geasal (Geasal's Vegetables)",
+    "path": "albums/nes/final-fantasy-iii/vegies-of-geasal-geasal-s-vegetables.mid"
+   }
+  ]
+ },
+ {
   "title": "Final Fantasy Legend",
   "songs": [
    {

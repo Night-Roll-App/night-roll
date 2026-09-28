@@ -1,0 +1,319 @@
+{
+ "title": "Final Fantasy III",
+ "order": 50,
+ "songs": {
+  "applause-sound-effect": "Applause (sound effect)",
+  "bahamut-flies-about-sound-effect": "Bahamut Flies About (sound effect)",
+  "beneath-the-horizon-undersea-shrine": "Beneath the Horizon (Undersea Shrine)",
+  "big-chocobo-fat-chocobo-discovered": "Big Chocobo! (Fat Chocobo Discovered)",
+  "boo-sound-effect": "Boo (sound effect)",
+  "castle-of-hain": "Castle of Hain",
+  "chocobos-chocobo-theme": "Chocobos! (Chocobo Theme)",
+  "crystal-cave-into-the-crystal-cave": "Crystal Cave (Into the Crystal Cave)",
+  "cute-little-tozas-village-of-little-people-tozas": "Cute Little Tozas (Village of Little People, Tozas)",
+  "dancer-s-dance": "Dancer's Dance",
+  "danger-sound-effect": "Danger (sound effect)",
+  "deep-under-the-water-submarine-nautilus": "Deep Under the Water (Submarine Nautilus)",
+  "elia-the-maiden-of-water": "Elia, the Maiden of Water",
+  "fall-sound-effect": "Fall (sound effect)",
+  "fanfare-victory-fanfare": "Fanfare (Victory Fanfare)",
+  "forbidden-land-forbidden-land-eureka": "Forbidden Land (Forbidden Land Eureka)",
+  "go-above-the-clouds-the-enterprise-flies-through-the-sky": "Go Above the Clouds! (The Enterprise Flies Through the Sky)",
+  "good-morning-une-s-morning-exercise": "Good Morning! (Une's Morning Exercise)",
+  "good-ol-fellows-four-old-men-s-theme": "Good Ol' Fellows (Four Old Men's Theme)",
+  "in-the-covert-town-hidden-village-of-falgabard": "In the Covert Town (Hidden Village of Falgabard)",
+  "jinn-the-fire-jinn-s-curse": "Jinn, the Fire (Jinn's Curse)",
+  "let-me-know-the-truth-house-of-doga-and-une": "Let Me Know the Truth (House of Doga and Une)",
+  "let-s-play-the-piano-again-piano-practice-2": "Let's Play the Piano Again! (Piano Practice 2)",
+  "let-s-play-the-piano-piano-practice-1": "Let's Play the Piano! (Piano Practice 1)",
+  "lute-of-noah": "Lute of Noah",
+  "my-home-town-hometown-of-ur": "My Home Town (Hometown of Ur)",
+  "parting-with-a-companion": "Parting with a Companion",
+  "resting-at-the-inn": "Resting at the Inn",
+  "return-of-the-warrior": "Return of the Warrior",
+  "sailing-enterprise-the-enterprise-goes-out-to-the-sea": "Sailing Enterprise (The Enterprise Goes Out to the Sea)",
+  "salonia-megalopolis-of-salonia": "Salonia (Megalopolis of Salonia)",
+  "shattering-sound-effect": "Shattering (sound effect)",
+  "shrine-of-nept": "Shrine of Nept",
+  "the-dungeon-dungeon": "The Dungeon (Dungeon)",
+  "the-everlasting-world-ending-theme-1": "The Everlasting World (Ending Theme) -1-",
+  "the-everlasting-world-ending-theme-2": "The Everlasting World (Ending Theme) -2-",
+  "the-everlasting-world-ending-theme-3": "The Everlasting World (Ending Theme) -3-",
+  "the-invincible-giant-battleship-invincible": "The Invincible (Giant Battleship Invincible)",
+  "the-prelude-prelude": "The Prelude (Prelude)",
+  "the-requiem-requiem": "The Requiem (Requiem)",
+  "the-way-to-the-top-the-road-to-the-mountain-top": "The Way to the Top (The Road to the Mountain Top)",
+  "this-is-the-last-battle-last-battle-1": "This is the Last Battle (Last Battle) -1-",
+  "this-is-the-last-battle-last-battle-2": "This is the Last Battle (Last Battle) -2-",
+  "this-is-the-last-battle-last-battle-3": "This is the Last Battle (Last Battle) -3-",
+  "time-remains-village-of-the-ancients": "Time Remains (Village of the Ancients)",
+  "tower-of-owen": "Tower of Owen",
+  "town-of-water-town-of-alm": "Town of Water (Town of Alm)",
+  "vegies-of-geasal-geasal-s-vegetables": "Vegies of Geasal (Geasal's Vegetables)"
+ },
+ "nsf": {
+  "vault": "final-fantasy-iii.nsf",
+  "tracks": {
+   "added-companion": {
+    "n": 55,
+    "secs": 14.966068
+   },
+   "applause-sound-effect": {
+    "n": 62,
+    "secs": 11.966188
+   },
+   "bahamut-flies-about-sound-effect": {
+    "n": 64,
+    "secs": 6.766396
+   },
+   "battle-1": {
+    "n": 33,
+    "secs": 43.298268
+   },
+   "battle-2": {
+    "n": 43,
+    "secs": 46.548138
+   },
+   "beneath-the-horizon-undersea-shrine": {
+    "n": 16,
+    "secs": 39.531752
+   },
+   "big-chocobo-fat-chocobo-discovered": {
+    "n": 26,
+    "secs": 15.616042
+   },
+   "boo-sound-effect": {
+    "n": 63,
+    "secs": 11.966188
+   },
+   "castle-of-hain": {
+    "n": 45,
+    "secs": 48.898044
+   },
+   "chocobo-forest": {
+    "n": 46,
+    "secs": 3.199872
+   },
+   "chocobos-chocobo-theme": {
+    "n": 9,
+    "secs": 27.882218
+   },
+   "crystal-cave-into-the-crystal-cave": {
+    "n": 3,
+    "secs": 47.99808
+   },
+   "crystal-room": {
+    "n": 65,
+    "secs": 20.215858
+   },
+   "cute-little-tozas-village-of-little-people-tozas": {
+    "n": 12,
+    "secs": 30.315454
+   },
+   "dancer-s-dance": {
+    "n": 29,
+    "secs": 36.965188
+   },
+   "danger-sound-effect": {
+    "n": 60,
+    "secs": 27.965548000000002
+   },
+   "deep-under-the-water-submarine-nautilus": {
+    "n": 22,
+    "secs": 51.931256
+   },
+   "elia-the-maiden-of-water": {
+    "n": 4,
+    "secs": 47.848086
+   },
+   "eternal-wind": {
+    "n": 31,
+    "secs": 67.99728
+   },
+   "fall-sound-effect": {
+    "n": 59,
+    "secs": 12.966148
+   },
+   "fanfare-victory-fanfare": {
+    "n": 8,
+    "secs": 17.33264
+   },
+   "forbidden-land-forbidden-land-eureka": {
+    "n": 40,
+    "secs": 27.83222
+   },
+   "garuda-defeat": {
+    "n": 25,
+    "secs": 19.965868
+   },
+   "go-above-the-clouds-the-enterprise-flies-through-the-sky": {
+    "n": 11,
+    "secs": 26.6656
+   },
+   "good-morning-une-s-morning-exercise": {
+    "n": 28,
+    "secs": 17.465968
+   },
+   "good-ol-fellows-four-old-men-s-theme": {
+    "n": 10,
+    "secs": 22.782422
+   },
+   "hazardous-short-music-1": {
+    "n": 50,
+    "secs": 12.799488
+   },
+   "hazardous-short-music-2": {
+    "n": 56,
+    "secs": 12.632828
+   },
+   "hazardous-short-music-3": {
+    "n": 15,
+    "secs": 5.33312
+   },
+   "in-the-covert-town-hidden-village-of-falgabard": {
+    "n": 19,
+    "secs": 52.714558000000004
+   },
+   "item-get": {
+    "n": 24,
+    "secs": 14.966068
+   },
+   "jinn-the-fire-jinn-s-curse": {
+    "n": 13,
+    "secs": 34.298628
+   },
+   "let-me-know-the-truth-house-of-doga-and-une": {
+    "n": 39,
+    "secs": 38.565124
+   },
+   "let-s-play-the-piano-again-piano-practice-2": {
+    "n": 47,
+    "secs": 14.966068
+   },
+   "let-s-play-the-piano-piano-practice-1": {
+    "n": 53,
+    "secs": 27.965548000000002
+   },
+   "living-forest": {
+    "n": 14,
+    "secs": 27.198912
+   },
+   "lute-of-noah": {
+    "n": 5,
+    "secs": 52.964548
+   },
+   "my-home-town-hometown-of-ur": {
+    "n": 32,
+    "secs": 69.480554
+   },
+   "opening-theme": {
+    "n": 21,
+    "secs": 64.197432
+   },
+   "parting-with-a-companion": {
+    "n": 54,
+    "secs": 19.965868
+   },
+   "resting-at-the-inn": {
+    "n": 1,
+    "secs": 21.965788
+   },
+   "return-of-the-warrior": {
+    "n": 6,
+    "secs": 27.548898
+   },
+   "sailing-enterprise-the-enterprise-goes-out-to-the-sea": {
+    "n": 35,
+    "secs": 34.49862
+   },
+   "salonia-megalopolis-of-salonia": {
+    "n": 57,
+    "secs": 46.231484
+   },
+   "shattering-sound-effect": {
+    "n": 61,
+    "secs": 11.966188
+   },
+   "shrine-of-nept": {
+    "n": 23,
+    "secs": 34.565284
+   },
+   "swift-twist": {
+    "n": 27,
+    "secs": 15.766036
+   },
+   "the-boundless-ocean": {
+    "n": 58,
+    "secs": 52.364572
+   },
+   "the-crystal-tower": {
+    "n": 38,
+    "secs": 33.332
+   },
+   "the-dark-crystals": {
+    "n": 42,
+    "secs": 47.99808
+   },
+   "the-dungeon-dungeon": {
+    "n": 30,
+    "secs": 32.83202
+   },
+   "the-everlasting-world-ending-theme-1": {
+    "n": 49,
+    "secs": 299.971334
+   },
+   "the-everlasting-world-ending-theme-2": {
+    "n": 44,
+    "secs": 81.113422
+   },
+   "the-everlasting-world-ending-theme-3": {
+    "n": 48,
+    "secs": 299.971334
+   },
+   "the-invincible-giant-battleship-invincible": {
+    "n": 36,
+    "secs": 38.715118000000004
+   },
+   "the-prelude-prelude": {
+    "n": 2,
+    "secs": 41.098356
+   },
+   "the-requiem-requiem": {
+    "n": 20,
+    "secs": 30.348786
+   },
+   "the-way-to-the-top-the-road-to-the-mountain-top": {
+    "n": 34,
+    "secs": 19.899204
+   },
+   "this-is-the-last-battle-last-battle-1": {
+    "n": 51,
+    "secs": 13.74945
+   },
+   "this-is-the-last-battle-last-battle-2": {
+    "n": 52,
+    "secs": 8.033012
+   },
+   "this-is-the-last-battle-last-battle-3": {
+    "n": 41,
+    "secs": 35.348586
+   },
+   "time-remains-village-of-the-ancients": {
+    "n": 17,
+    "secs": 48.281402
+   },
+   "tower-of-owen": {
+    "n": 37,
+    "secs": 35.881898
+   },
+   "town-of-water-town-of-alm": {
+    "n": 7,
+    "secs": 56.814394
+   },
+   "vegies-of-geasal-geasal-s-vegetables": {
+    "n": 18,
+    "secs": 17.449302
+   }
+  }
+ }
+}
