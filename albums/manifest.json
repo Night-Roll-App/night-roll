@@ -1851,5 +1851,370 @@
     "path": "albums/n64/super-mario-64/title-theme.mid"
    }
   ]
+ },
+ {
+  "title": "Final Fantasy 7",
+  "songs": [
+   {
+    "title": "A Great Success",
+    "path": "albums/ps1/final-fantasy-7/a-great-success.mid"
+   },
+   {
+    "title": "A Secret Sleeping in the Deep Sea",
+    "path": "albums/ps1/final-fantasy-7/a-secret-sleeping-in-the-deep-sea.mid"
+   },
+   {
+    "title": "Aeris' Theme",
+    "path": "albums/ps1/final-fantasy-7/aeris-theme.mid"
+   },
+   {
+    "title": "Ahead on Our Way",
+    "path": "albums/ps1/final-fantasy-7/ahead-on-our-way.mid"
+   },
+   {
+    "title": "Anxious Heart",
+    "path": "albums/ps1/final-fantasy-7/anxious-heart.mid"
+   },
+   {
+    "title": "Attacking Weapon!",
+    "path": "albums/ps1/final-fantasy-7/attacking-weapon.mid"
+   },
+   {
+    "title": "Barret's Theme",
+    "path": "albums/ps1/final-fantasy-7/barret-s-theme.mid"
+   },
+   {
+    "title": "Bombing Mission",
+    "path": "albums/ps1/final-fantasy-7/bombing-mission.mid"
+   },
+   {
+    "title": "Buried in the Snow",
+    "path": "albums/ps1/final-fantasy-7/buried-in-the-snow.mid"
+   },
+   {
+    "title": "Cait Sith's Theme",
+    "path": "albums/ps1/final-fantasy-7/cait-sith-s-theme.mid"
+   },
+   {
+    "title": "Chasing the Black-Caped Man",
+    "path": "albums/ps1/final-fantasy-7/chasing-the-black-caped-man.mid"
+   },
+   {
+    "title": "Cid's Theme",
+    "path": "albums/ps1/final-fantasy-7/cid-s-theme.mid"
+   },
+   {
+    "title": "Cinco de Chocobo",
+    "path": "albums/ps1/final-fantasy-7/cinco-de-chocobo.mid"
+   },
+   {
+    "title": "Continue?",
+    "path": "albums/ps1/final-fantasy-7/continue.mid"
+   },
+   {
+    "title": "Cosmo Canyon",
+    "path": "albums/ps1/final-fantasy-7/cosmo-canyon.mid"
+   },
+   {
+    "title": "Costa del Sol",
+    "path": "albums/ps1/final-fantasy-7/costa-del-sol.mid"
+   },
+   {
+    "title": "Crazy Motorcycle Chase",
+    "path": "albums/ps1/final-fantasy-7/crazy-motorcycle-chase.mid"
+   },
+   {
+    "title": "Debut",
+    "path": "albums/ps1/final-fantasy-7/debut.mid"
+   },
+   {
+    "title": "Descendant of Shinobi",
+    "path": "albums/ps1/final-fantasy-7/descendant-of-shinobi.mid"
+   },
+   {
+    "title": "Don of the Slums",
+    "path": "albums/ps1/final-fantasy-7/don-of-the-slums.mid"
+   },
+   {
+    "title": "Electric de Chocobo",
+    "path": "albums/ps1/final-fantasy-7/electric-de-chocobo.mid"
+   },
+   {
+    "title": "Fanfare",
+    "path": "albums/ps1/final-fantasy-7/fanfare.mid"
+   },
+   {
+    "title": "Farm Boy",
+    "path": "albums/ps1/final-fantasy-7/farm-boy.mid"
+   },
+   {
+    "title": "Fiddle de Chocobo",
+    "path": "albums/ps1/final-fantasy-7/fiddle-de-chocobo.mid"
+   },
+   {
+    "title": "Fighting",
+    "path": "albums/ps1/final-fantasy-7/fighting.mid"
+   },
+   {
+    "title": "Flowers Blooming in the Church",
+    "path": "albums/ps1/final-fantasy-7/flowers-blooming-in-the-church.mid"
+   },
+   {
+    "title": "Forested Temple",
+    "path": "albums/ps1/final-fantasy-7/forested-temple.mid"
+   },
+   {
+    "title": "Fortress of the Condor",
+    "path": "albums/ps1/final-fantasy-7/fortress-of-the-condor.mid"
+   },
+   {
+    "title": "Full-Scale Attack",
+    "path": "albums/ps1/final-fantasy-7/full-scale-attack.mid"
+   },
+   {
+    "title": "Gold Saucer",
+    "path": "albums/ps1/final-fantasy-7/gold-saucer.mid"
+   },
+   {
+    "title": "Good Night, Until Tomorrow!",
+    "path": "albums/ps1/final-fantasy-7/good-night-until-tomorrow.mid"
+   },
+   {
+    "title": "Great Warrior",
+    "path": "albums/ps1/final-fantasy-7/great-warrior.mid"
+   },
+   {
+    "title": "Holding My Thoughts in My Heart",
+    "path": "albums/ps1/final-fantasy-7/holding-my-thoughts-in-my-heart.mid"
+   },
+   {
+    "title": "Honeybee Manor",
+    "path": "albums/ps1/final-fantasy-7/honeybee-manor.mid"
+   },
+   {
+    "title": "Hurry, Faster!",
+    "path": "albums/ps1/final-fantasy-7/hurry-faster.mid"
+   },
+   {
+    "title": "Hurry!",
+    "path": "albums/ps1/final-fantasy-7/hurry.mid"
+   },
+   {
+    "title": "If You Open Your Heart...",
+    "path": "albums/ps1/final-fantasy-7/if-you-open-your-heart.mid"
+   },
+   {
+    "title": "Infiltrating Shinra Tower",
+    "path": "albums/ps1/final-fantasy-7/infiltrating-shinra-tower.mid"
+   },
+   {
+    "title": "Interrupted by Fireworks",
+    "path": "albums/ps1/final-fantasy-7/interrupted-by-fireworks.mid"
+   },
+   {
+    "title": "It's Difficult to Stand on Both Feet, Isn't It?",
+    "path": "albums/ps1/final-fantasy-7/it-s-difficult-to-stand-on-both-feet-isn-t-it.mid"
+   },
+   {
+    "title": "J-E-N-O-V-A",
+    "path": "albums/ps1/final-fantasy-7/j-e-n-o-v-a.mid"
+   },
+   {
+    "title": "Jenova Absolute",
+    "path": "albums/ps1/final-fantasy-7/jenova-absolute.mid"
+   },
+   {
+    "title": "Judgement Day",
+    "path": "albums/ps1/final-fantasy-7/judgement-day.mid"
+   },
+   {
+    "title": "Life Stream",
+    "path": "albums/ps1/final-fantasy-7/life-stream.mid"
+   },
+   {
+    "title": "Lurking in the Darkness",
+    "path": "albums/ps1/final-fantasy-7/lurking-in-the-darkness.mid"
+   },
+   {
+    "title": "Main Theme of Final Fantasy VII",
+    "path": "albums/ps1/final-fantasy-7/main-theme-of-final-fantasy-vii.mid"
+   },
+   {
+    "title": "Mako Reactor",
+    "path": "albums/ps1/final-fantasy-7/mako-reactor.mid"
+   },
+   {
+    "title": "Mark of the Traitor",
+    "path": "albums/ps1/final-fantasy-7/mark-of-the-traitor.mid"
+   },
+   {
+    "title": "Mining Town",
+    "path": "albums/ps1/final-fantasy-7/mining-town.mid"
+   },
+   {
+    "title": "Off the Edge of Despair",
+    "path": "albums/ps1/final-fantasy-7/off-the-edge-of-despair.mid"
+   },
+   {
+    "title": "On That Day, 5 Years Ago",
+    "path": "albums/ps1/final-fantasy-7/on-that-day-5-years-ago.mid"
+   },
+   {
+    "title": "On the Other Side of the Mountain",
+    "path": "albums/ps1/final-fantasy-7/on-the-other-side-of-the-mountain.mid"
+   },
+   {
+    "title": "One-Winged Angel",
+    "path": "albums/ps1/final-fantasy-7/one-winged-angel.mid"
+   },
+   {
+    "title": "Opening ~ Bombing Mission",
+    "path": "albums/ps1/final-fantasy-7/opening-bombing-mission.mid"
+   },
+   {
+    "title": "Oppressed People",
+    "path": "albums/ps1/final-fantasy-7/oppressed-people.mid"
+   },
+   {
+    "title": "Parochial Town",
+    "path": "albums/ps1/final-fantasy-7/parochial-town.mid"
+   },
+   {
+    "title": "Racing Chocobos ~ Place Your Bets!",
+    "path": "albums/ps1/final-fantasy-7/racing-chocobos-place-your-bets.mid"
+   },
+   {
+    "title": "Red XIII's Theme",
+    "path": "albums/ps1/final-fantasy-7/red-xiii-s-theme.mid"
+   },
+   {
+    "title": "Reunion",
+    "path": "albums/ps1/final-fantasy-7/reunion.mid"
+   },
+   {
+    "title": "Rufus' Welcoming Ceremony",
+    "path": "albums/ps1/final-fantasy-7/rufus-welcoming-ceremony.mid"
+   },
+   {
+    "title": "Sandy Badlands",
+    "path": "albums/ps1/final-fantasy-7/sandy-badlands.mid"
+   },
+   {
+    "title": "Sending a Dream into the Universe",
+    "path": "albums/ps1/final-fantasy-7/sending-a-dream-into-the-universe.mid"
+   },
+   {
+    "title": "Shinra Corporation",
+    "path": "albums/ps1/final-fantasy-7/shinra-corporation.mid"
+   },
+   {
+    "title": "Shinra Explodes",
+    "path": "albums/ps1/final-fantasy-7/shinra-explodes.mid"
+   },
+   {
+    "title": "Staff Roll",
+    "path": "albums/ps1/final-fantasy-7/staff-roll.mid"
+   },
+   {
+    "title": "Steal the Tiny Bronco!",
+    "path": "albums/ps1/final-fantasy-7/steal-the-tiny-bronco.mid"
+   },
+   {
+    "title": "Still More Fighting",
+    "path": "albums/ps1/final-fantasy-7/still-more-fighting.mid"
+   },
+   {
+    "title": "Stolen Materia",
+    "path": "albums/ps1/final-fantasy-7/stolen-materia.mid"
+   },
+   {
+    "title": "Tango of Tears",
+    "path": "albums/ps1/final-fantasy-7/tango-of-tears.mid"
+   },
+   {
+    "title": "The Birth of God",
+    "path": "albums/ps1/final-fantasy-7/the-birth-of-god.mid"
+   },
+   {
+    "title": "The Countdown Begins",
+    "path": "albums/ps1/final-fantasy-7/the-countdown-begins.mid"
+   },
+   {
+    "title": "The Great Northern Cave",
+    "path": "albums/ps1/final-fantasy-7/the-great-northern-cave.mid"
+   },
+   {
+    "title": "The Highwind Takes to the Skies",
+    "path": "albums/ps1/final-fantasy-7/the-highwind-takes-to-the-skies.mid"
+   },
+   {
+    "title": "The Mako Cannon Fires!",
+    "path": "albums/ps1/final-fantasy-7/the-mako-cannon-fires.mid"
+   },
+   {
+    "title": "The Nightmare's Beginning",
+    "path": "albums/ps1/final-fantasy-7/the-nightmare-s-beginning.mid"
+   },
+   {
+    "title": "The Prelude",
+    "path": "albums/ps1/final-fantasy-7/the-prelude.mid"
+   },
+   {
+    "title": "The Special Pose!",
+    "path": "albums/ps1/final-fantasy-7/the-special-pose.mid"
+   },
+   {
+    "title": "Those Chosen By the Planet",
+    "path": "albums/ps1/final-fantasy-7/those-chosen-by-the-planet.mid"
+   },
+   {
+    "title": "Those Chosen By the Planet (No Intro)",
+    "path": "albums/ps1/final-fantasy-7/those-chosen-by-the-planet-no-intro.mid"
+   },
+   {
+    "title": "Tifa's Theme",
+    "path": "albums/ps1/final-fantasy-7/tifa-s-theme.mid"
+   },
+   {
+    "title": "Trail of Blood",
+    "path": "albums/ps1/final-fantasy-7/trail-of-blood.mid"
+   },
+   {
+    "title": "Turks' Theme",
+    "path": "albums/ps1/final-fantasy-7/turks-theme.mid"
+   },
+   {
+    "title": "Underneath the Rotting Pizza",
+    "path": "albums/ps1/final-fantasy-7/underneath-the-rotting-pizza.mid"
+   },
+   {
+    "title": "Waltz de Chocobo",
+    "path": "albums/ps1/final-fantasy-7/waltz-de-chocobo.mid"
+   },
+   {
+    "title": "Weapon Raid",
+    "path": "albums/ps1/final-fantasy-7/weapon-raid.mid"
+   },
+   {
+    "title": "Who Am I?",
+    "path": "albums/ps1/final-fantasy-7/who-am-i.mid"
+   },
+   {
+    "title": "Who Are You?",
+    "path": "albums/ps1/final-fantasy-7/who-are-you.mid"
+   },
+   {
+    "title": "World Crisis",
+    "path": "albums/ps1/final-fantasy-7/world-crisis.mid"
+   },
+   {
+    "title": "Wutai",
+    "path": "albums/ps1/final-fantasy-7/wutai.mid"
+   },
+   {
+    "title": "You Can Hear the Cry of the Planet",
+    "path": "albums/ps1/final-fantasy-7/you-can-hear-the-cry-of-the-planet.mid"
+   }
+  ]
  }
 ]
