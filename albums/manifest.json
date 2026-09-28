@@ -2487,6 +2487,115 @@
   ]
  },
  {
+  "title": "Ninja Gaiden II: The Dark Sword of Chaos",
+  "songs": [
+   {
+    "title": "Approaching Evil [Opening]",
+    "path": "albums/nes/ninja-gaiden-ii/approaching-evil-opening.mid"
+   },
+   {
+    "title": "Battling Precariously [2-2, 4-2, 5-1a,7-2]",
+    "path": "albums/nes/ninja-gaiden-ii/battling-precariously-2-2-4-2-5-1a-7-2.mid"
+   },
+   {
+    "title": "Blazing Inferno [4-1]",
+    "path": "albums/nes/ninja-gaiden-ii/blazing-inferno-4-1.mid"
+   },
+   {
+    "title": "Credits",
+    "path": "albums/nes/ninja-gaiden-ii/credits.mid"
+   },
+   {
+    "title": "Cruel Laughter [Pre-Maze Cutscene]",
+    "path": "albums/nes/ninja-gaiden-ii/cruel-laughter-pre-maze-cutscene.mid"
+   },
+   {
+    "title": "Cunning Enemy [Ashtar, Jaquio Battles]",
+    "path": "albums/nes/ninja-gaiden-ii/cunning-enemy-ashtar-jaquio-battles.mid"
+   },
+   {
+    "title": "Deep Within the Heart [5-1b, 7-1]",
+    "path": "albums/nes/ninja-gaiden-ii/deep-within-the-heart-5-1b-7-1.mid"
+   },
+   {
+    "title": "Determined Spirit [Tower Rises]",
+    "path": "albums/nes/ninja-gaiden-ii/determined-spirit-tower-rises.mid"
+   },
+   {
+    "title": "Domination of Darkness [3-1]",
+    "path": "albums/nes/ninja-gaiden-ii/domination-of-darkness-3-1.mid"
+   },
+   {
+    "title": "Final Confrontation [Ryu vs Jaquio]",
+    "path": "albums/nes/ninja-gaiden-ii/final-confrontation-ryu-vs-jaquio.mid"
+   },
+   {
+    "title": "Impending Doom",
+    "path": "albums/nes/ninja-gaiden-ii/impending-doom.mid"
+   },
+   {
+    "title": "Inevitable [Unused; Final Boss Battle]",
+    "path": "albums/nes/ninja-gaiden-ii/inevitable-unused-final-boss-battle.mid"
+   },
+   {
+    "title": "Irene Lives [Ending II]",
+    "path": "albums/nes/ninja-gaiden-ii/irene-lives-ending-ii.mid"
+   },
+   {
+    "title": "Lord of Darkness [Ashtar Cutscenes]",
+    "path": "albums/nes/ninja-gaiden-ii/lord-of-darkness-ashtar-cutscenes.mid"
+   },
+   {
+    "title": "Lurking Creatures [Cutscene]",
+    "path": "albums/nes/ninja-gaiden-ii/lurking-creatures-cutscene.mid"
+   },
+   {
+    "title": "Military Man [Robert Cutscene]",
+    "path": "albums/nes/ninja-gaiden-ii/military-man-robert-cutscene.mid"
+   },
+   {
+    "title": "Minions of Evil [Boss Battle]",
+    "path": "albums/nes/ninja-gaiden-ii/minions-of-evil-boss-battle.mid"
+   },
+   {
+    "title": "Motion of the Ninja [1-1, 7-2, Interlude]",
+    "path": "albums/nes/ninja-gaiden-ii/motion-of-the-ninja-1-1-7-2-interlude.mid"
+   },
+   {
+    "title": "Mysterious Foes [Cutscenes]",
+    "path": "albums/nes/ninja-gaiden-ii/mysterious-foes-cutscenes.mid"
+   },
+   {
+    "title": "Puppetmaster [Cutscenes]",
+    "path": "albums/nes/ninja-gaiden-ii/puppetmaster-cutscenes.mid"
+   },
+   {
+    "title": "Rushing Foward [2-1, 5-2, 7-2]",
+    "path": "albums/nes/ninja-gaiden-ii/rushing-foward-2-1-5-2-7-2.mid"
+   },
+   {
+    "title": "Tearful Reunion [Rescue Cutscenes]",
+    "path": "albums/nes/ninja-gaiden-ii/tearful-reunion-rescue-cutscenes.mid"
+   },
+   {
+    "title": "They Got Irene",
+    "path": "albums/nes/ninja-gaiden-ii/they-got-irene.mid"
+   },
+   {
+    "title": "Time is Critical",
+    "path": "albums/nes/ninja-gaiden-ii/time-is-critical.mid"
+   },
+   {
+    "title": "Tower of Lahja [3-2, 7-2]",
+    "path": "albums/nes/ninja-gaiden-ii/tower-of-lahja-3-2-7-2.mid"
+   },
+   {
+    "title": "Triumphant [Ending I]",
+    "path": "albums/nes/ninja-gaiden-ii/triumphant-ending-i.mid"
+   }
+  ]
+ },
+ {
   "title": "Shatterhand",
   "songs": [
    {

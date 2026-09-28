@@ -1,0 +1,138 @@
+{
+ "title": "Ninja Gaiden II: The Dark Sword of Chaos",
+ "order": 50,
+ "songs": {
+  "approaching-evil-opening": "Approaching Evil [Opening]",
+  "battling-precariously-2-2-4-2-5-1a-7-2": "Battling Precariously [2-2, 4-2, 5-1a,7-2]",
+  "blazing-inferno-4-1": "Blazing Inferno [4-1]",
+  "cruel-laughter-pre-maze-cutscene": "Cruel Laughter [Pre-Maze Cutscene]",
+  "cunning-enemy-ashtar-jaquio-battles": "Cunning Enemy [Ashtar, Jaquio Battles]",
+  "deep-within-the-heart-5-1b-7-1": "Deep Within the Heart [5-1b, 7-1]",
+  "determined-spirit-tower-rises": "Determined Spirit [Tower Rises]",
+  "domination-of-darkness-3-1": "Domination of Darkness [3-1]",
+  "final-confrontation-ryu-vs-jaquio": "Final Confrontation [Ryu vs Jaquio]",
+  "inevitable-unused-final-boss-battle": "Inevitable [Unused; Final Boss Battle]",
+  "irene-lives-ending-ii": "Irene Lives [Ending II]",
+  "lord-of-darkness-ashtar-cutscenes": "Lord of Darkness [Ashtar Cutscenes]",
+  "lurking-creatures-cutscene": "Lurking Creatures [Cutscene]",
+  "military-man-robert-cutscene": "Military Man [Robert Cutscene]",
+  "minions-of-evil-boss-battle": "Minions of Evil [Boss Battle]",
+  "motion-of-the-ninja-1-1-7-2-interlude": "Motion of the Ninja [1-1, 7-2, Interlude]",
+  "mysterious-foes-cutscenes": "Mysterious Foes [Cutscenes]",
+  "puppetmaster-cutscenes": "Puppetmaster [Cutscenes]",
+  "rushing-foward-2-1-5-2-7-2": "Rushing Foward [2-1, 5-2, 7-2]",
+  "tearful-reunion-rescue-cutscenes": "Tearful Reunion [Rescue Cutscenes]",
+  "time-is-critical": "Time is Critical",
+  "tower-of-lahja-3-2-7-2": "Tower of Lahja [3-2, 7-2]",
+  "triumphant-ending-i": "Triumphant [Ending I]"
+ },
+ "nsf": {
+  "vault": "ninja-gaiden-ii.nsf",
+  "tracks": {
+   "approaching-evil-opening": {
+    "n": 11,
+    "secs": 299.988
+   },
+   "battling-precariously-2-2-4-2-5-1a-7-2": {
+    "n": 3,
+    "secs": 47.99808
+   },
+   "blazing-inferno-4-1": {
+    "n": 5,
+    "secs": 37.33184
+   },
+   "credits": {
+    "n": 27,
+    "secs": 299.988
+   },
+   "cruel-laughter-pre-maze-cutscene": {
+    "n": 19,
+    "secs": 27.198912
+   },
+   "cunning-enemy-ashtar-jaquio-battles": {
+    "n": 8,
+    "secs": 41.598336
+   },
+   "deep-within-the-heart-5-1b-7-1": {
+    "n": 6,
+    "secs": 40.398384
+   },
+   "determined-spirit-tower-rises": {
+    "n": 21,
+    "secs": 22.399104
+   },
+   "domination-of-darkness-3-1": {
+    "n": 4,
+    "secs": 73.49706
+   },
+   "final-confrontation-ryu-vs-jaquio": {
+    "n": 20,
+    "secs": 299.988
+   },
+   "impending-doom": {
+    "n": 24,
+    "secs": 18.982574
+   },
+   "inevitable-unused-final-boss-battle": {
+    "n": 9,
+    "secs": 20.799168
+   },
+   "irene-lives-ending-ii": {
+    "n": 26,
+    "secs": 299.988
+   },
+   "lord-of-darkness-ashtar-cutscenes": {
+    "n": 16,
+    "secs": 31.732064
+   },
+   "lurking-creatures-cutscene": {
+    "n": 28,
+    "secs": 16.566004
+   },
+   "military-man-robert-cutscene": {
+    "n": 12,
+    "secs": 15.866032
+   },
+   "minions-of-evil-boss-battle": {
+    "n": 7,
+    "secs": 35.465248
+   },
+   "motion-of-the-ninja-1-1-7-2-interlude": {
+    "n": 22,
+    "secs": 28.798848
+   },
+   "mysterious-foes-cutscenes": {
+    "n": 13,
+    "secs": 44.798208
+   },
+   "puppetmaster-cutscenes": {
+    "n": 18,
+    "secs": 30.798768
+   },
+   "rushing-foward-2-1-5-2-7-2": {
+    "n": 2,
+    "secs": 50.66464
+   },
+   "tearful-reunion-rescue-cutscenes": {
+    "n": 14,
+    "secs": 49.614682
+   },
+   "they-got-irene": {
+    "n": 15,
+    "secs": 13.982774000000001
+   },
+   "time-is-critical": {
+    "n": 25,
+    "secs": 28.982174
+   },
+   "tower-of-lahja-3-2-7-2": {
+    "n": 1,
+    "secs": 32.4987
+   },
+   "triumphant-ending-i": {
+    "n": 23,
+    "secs": 25.698972
+   }
+  }
+ }
+}
