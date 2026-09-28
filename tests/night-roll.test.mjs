@@ -1577,7 +1577,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
-    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "game's own instrument for that track",
+    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "game's own instrument for that track",
     "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3644,6 +3644,31 @@ test("tap a note on a chip song: the live worker renders that one note through t
   await settle(run(`previewNote(0, 60)`));
   assert.equal(val(`globalThis.__sched`), 1, "no live worker: the synth voice");
   run(`chip.key = null; chip.pcm = null; audio = null; chipPreviewCache.clear();`);
+});
+
+test("a playlist picked after the import names the open song's published album by chip slot, in one album.json write", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`CATALOG = {"Zelda": [["track-01", "albums/nes/legend-of-zelda/track-01.mid"], ["track-02", "albums/nes/legend-of-zelda/track-02.mid"], ["track-03", "albums/nes/legend-of-zelda/track-03.mid"]]};
+       songKey = "albums/nes/legend-of-zelda/track-02.mid"; currentPath = songKey;
+       albumMetaCache["albums/nes/legend-of-zelda"] = {title: "The Legend of Zelda", nsf: {vault: "legend-of-zelda.nsf", tracks: {"track-01": {n: 1, secs: 10}, "track-02": {n: 2, secs: 10}, "track-03": {n: 3, secs: 10}}}};
+       localStorage.setItem("ff1roll-ghtoken", "t"); appConfirm = async () => true;
+       globalThis.__puts = [];
+       fetch = (url, init) => {
+         const u = String(url);
+         if (init && init.method === "PUT") { globalThis.__puts.push({u, body: JSON.parse(init.body)}); return Promise.resolve({ok: true, json: async () => ({content: {sha: "x"}})}); }
+         if (/album\.json/.test(u)) return Promise.resolve({ok: false, status: 404});
+         if (/manifest\.json/.test(u)) return Promise.resolve({ok: true, json: async () => ({sha: "m", content: btoa(JSON.stringify([{title: "Zelda", songs: [{title: "track-01", path: "albums/nes/legend-of-zelda/track-01.mid"}, {title: "track-02", path: "albums/nes/legend-of-zelda/track-02.mid"}]}]))})});
+         return Promise.reject(new Error("unexpected " + u));
+       };`);
+  const n = await run(`applyM3uToAlbum([{n: 1, title: "Title"}, {n: 2, title: "Overworld"}, {n: 9, title: "Nothing here"}])`);
+  assert.equal(n, 2, "two songs matched by slot; a slot the album lacks is skipped");
+  const puts = val(`globalThis.__puts`);
+  const album = puts.filter(p => /album\.json/.test(p.u));
+  assert.equal(album.length, 1, "one album.json write for both titles");
+  const meta = JSON.parse(Buffer.from(album[0].body.content, "base64").toString("utf8"));
+  assert.deepEqual(meta.songs, {"track-01": "Title", "track-02": "Overworld"});
+  assert.equal(puts.filter(p => /manifest\.json/.test(p.u)).length, 1, "one manifest write");
+  assert.deepEqual(val(`CATALOG["Zelda"].map(e => e[0])`), ["Title", "Overworld", "track-03"], "the in-memory catalog shows the names at once");
 });
 
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {
