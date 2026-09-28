@@ -1,0 +1,388 @@
+{
+ "title": "SaGa Frontier",
+ "order": 50,
+ "songs": {
+  "a-memory-of-childhood": "A Memory of Childhood",
+  "ancient-tomb-of-king-mu": "Ancient Tomb of King Mu",
+  "ancient-tomb-of-king-sei": "Ancient Tomb of King Sei",
+  "asellus-theme": "Asellus' Theme",
+  "back-streets-of-koorong": "Back Streets of Koorong",
+  "battle-4-alternate": "Battle 4 (Alternate)",
+  "blue-s-theme": "Blue's Theme",
+  "castle-of-needles": "Castle of Needles",
+  "confrontation-caballero-family": "Confrontation! Caballero Family",
+  "danger": "Danger!",
+  "destiny-a-law": "Destiny ~ A Law",
+  "emelia-s-theme": "Emelia's Theme",
+  "fight-alkaiser": "Fight! Alkaiser",
+  "fight-r3x": "Fight! R3X",
+  "hey-fuse": "Hey! Fuse",
+  "hq": "HQ",
+  "kylin-s-theme": "Kylin's Theme",
+  "labyrinth-of-darkness": "Labyrinth of Darkness",
+  "last-battle-asellus": "Last Battle ~ Asellus",
+  "last-battle-blue": "Last Battle ~ Blue",
+  "last-battle-emelia": "Last Battle ~ Emelia",
+  "last-battle-lute": "Last Battle ~ Lute",
+  "last-battle-red": "Last Battle ~ Red",
+  "last-battle-riki": "Last Battle ~ Riki",
+  "last-battle-t260g": "Last Battle ~ T260G",
+  "leonard-s-laboratory": "Leonard's Laboratory",
+  "let-s-swing": "Let's Swing!",
+  "light-a-lighthouse": "Light a Lighthouse...",
+  "margmel-in-ruin": "Margmel in Ruin",
+  "melody-a-tune": "Melody ~ A Tune",
+  "melody-of-time": "Melody of Time",
+  "never": "Never...",
+  "tears-of-joy": "Tears of Joy",
+  "the-opening-of-a-journey": "The Opening of a Journey",
+  "theme-of-the-cygnus": "Theme of the Cygnus",
+  "to-the-new-world": "To the New World",
+  "victory": "Victory!"
+ },
+ "nsf": {
+  "vault": "saga-frontier/",
+  "tracks": {
+   "a-memory-of-childhood": {
+    "n": 1,
+    "secs": 168.45033474999994
+   },
+   "alone": {
+    "n": 1,
+    "secs": 158.248116
+   },
+   "ancient-tomb-of-king-mu": {
+    "n": 1,
+    "secs": 83.934254
+   },
+   "ancient-tomb-of-king-sei": {
+    "n": 1,
+    "secs": 63.9026
+   },
+   "annihilation": {
+    "n": 1,
+    "secs": 21.204158625
+   },
+   "asellus-theme": {
+    "n": 1,
+    "secs": 93.99816787499995
+   },
+   "baccarat": {
+    "n": 1,
+    "secs": 106.358864
+   },
+   "back-streets-of-koorong": {
+    "n": 1,
+    "secs": 81.746672
+   },
+   "battle-1": {
+    "n": 1,
+    "secs": 72.30451487499997
+   },
+   "battle-2": {
+    "n": 1,
+    "secs": 100.15936300000001
+   },
+   "battle-3": {
+    "n": 1,
+    "secs": 119.18650075
+   },
+   "battle-4-alternate": {
+    "n": 1,
+    "secs": 112.93267199999998
+   },
+   "battle-4": {
+    "n": 1,
+    "secs": 112.93267199999998
+   },
+   "battle-5": {
+    "n": 1,
+    "secs": 93.14617575000001
+   },
+   "black-x-base": {
+    "n": 1,
+    "secs": 66.262748
+   },
+   "blue-s-theme": {
+    "n": 1,
+    "secs": 65.55044362500001
+   },
+   "blue-town": {
+    "n": 1,
+    "secs": 126.039775125
+   },
+   "booby-trap": {
+    "n": 1,
+    "secs": 64.1177210625
+   },
+   "castle-of-needles": {
+    "n": 1,
+    "secs": 91.38744974999999
+   },
+   "confrontation-caballero-family": {
+    "n": 1,
+    "secs": 51.144742
+   },
+   "contented": {
+    "n": 1,
+    "secs": 83.98781124999998
+   },
+   "danger": {
+    "n": 1,
+    "secs": 22.800064
+   },
+   "dear-my-country": {
+    "n": 1,
+    "secs": 57.45624
+   },
+   "despair": {
+    "n": 1,
+    "secs": 96.72768
+   },
+   "destiny-a-law": {
+    "n": 1,
+    "secs": 115.20417125
+   },
+   "devin": {
+    "n": 1,
+    "secs": 49.400208
+   },
+   "dungeon": {
+    "n": 1,
+    "secs": 78.06555
+   },
+   "emelia-s-theme": {
+    "n": 1,
+    "secs": 77.805312
+   },
+   "fight-alkaiser": {
+    "n": 1,
+    "secs": 148.69727999999998
+   },
+   "fight-r3x": {
+    "n": 1,
+    "secs": 62.37904
+   },
+   "fighting-machine-arena": {
+    "n": 1,
+    "secs": 84.983083
+   },
+   "finale": {
+    "n": 1,
+    "secs": 8.991539999999999
+   },
+   "hell": {
+    "n": 1,
+    "secs": 132.206476
+   },
+   "hey-fuse": {
+    "n": 1,
+    "secs": 110.298829
+   },
+   "hq": {
+    "n": 1,
+    "secs": 143.64048
+   },
+   "junk": {
+    "n": 1,
+    "secs": 73.68459975000005
+   },
+   "koorong": {
+    "n": 1,
+    "secs": 114.847612
+   },
+   "kylin-s-theme": {
+    "n": 1,
+    "secs": 75.7598
+   },
+   "labyrinth-of-darkness": {
+    "n": 1,
+    "secs": 66.179276
+   },
+   "last-battle-asellus": {
+    "n": 1,
+    "secs": 180.88425525000002
+   },
+   "last-battle-blue": {
+    "n": 1,
+    "secs": 374.7259229999999
+   },
+   "last-battle-emelia": {
+    "n": 1,
+    "secs": 160.51778299999998
+   },
+   "last-battle-lute": {
+    "n": 1,
+    "secs": 188.88107850000006
+   },
+   "last-battle-red": {
+    "n": 1,
+    "secs": 210.53898400000006
+   },
+   "last-battle-riki": {
+    "n": 1,
+    "secs": 140.60844899999998
+   },
+   "last-battle-t260g": {
+    "n": 1,
+    "secs": 250.800704
+   },
+   "leonard-s-laboratory": {
+    "n": 1,
+    "secs": 138.911696
+   },
+   "let-s-swing": {
+    "n": 1,
+    "secs": 85.734562375
+   },
+   "light-a-lighthouse": {
+    "n": 1,
+    "secs": 257.266656
+   },
+   "lummox-beat": {
+    "n": 1,
+    "secs": 92.90647375
+   },
+   "magic-kingdom": {
+    "n": 1,
+    "secs": 123.75067037500001
+   },
+   "march": {
+    "n": 1,
+    "secs": 23.323975
+   },
+   "margmel-in-ruin": {
+    "n": 1,
+    "secs": 127.0590545
+   },
+   "melody-a-tune": {
+    "n": 1,
+    "secs": 127.6598076250001
+   },
+   "melody-of-time": {
+    "n": 1,
+    "secs": 96.770862
+   },
+   "mosperiburg": {
+    "n": 1,
+    "secs": 84.612793375
+   },
+   "nakajima-manufacturer": {
+    "n": 1,
+    "secs": 43.3398
+   },
+   "never": {
+    "n": 1,
+    "secs": 108.594288
+   },
+   "next": {
+    "n": 1,
+    "secs": 8.10789025
+   },
+   "omble": {
+    "n": 1,
+    "secs": 50.017688
+   },
+   "opening-title": {
+    "n": 1,
+    "secs": 144.93226825
+   },
+   "owmi": {
+    "n": 1,
+    "secs": 99.71068862499999
+   },
+   "pursuit-1": {
+    "n": 1,
+    "secs": 3.30208
+   },
+   "pursuit-2": {
+    "n": 1,
+    "secs": 1.65104
+   },
+   "resolution": {
+    "n": 1,
+    "secs": 76.19860012499998
+   },
+   "riki": {
+    "n": 1,
+    "secs": 64.3182395625
+   },
+   "robot-2": {
+    "n": 1,
+    "secs": 119.7004
+   },
+   "shingrow": {
+    "n": 1,
+    "secs": 91.309472
+   },
+   "shudder": {
+    "n": 1,
+    "secs": 93.84178962499999
+   },
+   "shuzer": {
+    "n": 1,
+    "secs": 78.44743375
+   },
+   "standard-yorkland-song": {
+    "n": 1,
+    "secs": 136.32554666666667
+   },
+   "sunset-town": {
+    "n": 1,
+    "secs": 64.8377925
+   },
+   "tears-of-joy": {
+    "n": 1,
+    "secs": 93.728346375
+   },
+   "the-ancient-ship": {
+    "n": 1,
+    "secs": 63.3708
+   },
+   "the-opening-of-a-journey": {
+    "n": 1,
+    "secs": 95.92663466666667
+   },
+   "the-ultimate-weapon": {
+    "n": 1,
+    "secs": 108.96864
+   },
+   "theme-of-the-cygnus": {
+    "n": 1,
+    "secs": 92.901848
+   },
+   "to-the-new-world": {
+    "n": 1,
+    "secs": 35.206
+   },
+   "travelling-regions": {
+    "n": 1,
+    "secs": 20.9475735
+   },
+   "trick": {
+    "n": 1,
+    "secs": 59.76937024999999
+   },
+   "victory": {
+    "n": 1,
+    "secs": 16.681641
+   },
+   "wakatu": {
+    "n": 1,
+    "secs": 101.745408
+   },
+   "with-orlouge": {
+    "n": 1,
+    "secs": 161.18886612499995
+   }
+  },
+  "chip": "psf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "saga frontier.psflib",
+    "file": "saga-frontier.psflib"
+   }
+  ]
+ }
+}

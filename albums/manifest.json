@@ -6032,6 +6032,343 @@
   ]
  },
  {
+  "title": "SaGa Frontier",
+  "songs": [
+   {
+    "title": "A Memory of Childhood",
+    "path": "albums/ps1/saga-frontier/a-memory-of-childhood.mid"
+   },
+   {
+    "title": "Alone",
+    "path": "albums/ps1/saga-frontier/alone.mid"
+   },
+   {
+    "title": "Ancient Tomb of King Mu",
+    "path": "albums/ps1/saga-frontier/ancient-tomb-of-king-mu.mid"
+   },
+   {
+    "title": "Ancient Tomb of King Sei",
+    "path": "albums/ps1/saga-frontier/ancient-tomb-of-king-sei.mid"
+   },
+   {
+    "title": "Annihilation",
+    "path": "albums/ps1/saga-frontier/annihilation.mid"
+   },
+   {
+    "title": "Asellus' Theme",
+    "path": "albums/ps1/saga-frontier/asellus-theme.mid"
+   },
+   {
+    "title": "Baccarat",
+    "path": "albums/ps1/saga-frontier/baccarat.mid"
+   },
+   {
+    "title": "Back Streets of Koorong",
+    "path": "albums/ps1/saga-frontier/back-streets-of-koorong.mid"
+   },
+   {
+    "title": "Battle 1",
+    "path": "albums/ps1/saga-frontier/battle-1.mid"
+   },
+   {
+    "title": "Battle 2",
+    "path": "albums/ps1/saga-frontier/battle-2.mid"
+   },
+   {
+    "title": "Battle 3",
+    "path": "albums/ps1/saga-frontier/battle-3.mid"
+   },
+   {
+    "title": "Battle 4",
+    "path": "albums/ps1/saga-frontier/battle-4.mid"
+   },
+   {
+    "title": "Battle 4 (Alternate)",
+    "path": "albums/ps1/saga-frontier/battle-4-alternate.mid"
+   },
+   {
+    "title": "Battle 5",
+    "path": "albums/ps1/saga-frontier/battle-5.mid"
+   },
+   {
+    "title": "Black X Base",
+    "path": "albums/ps1/saga-frontier/black-x-base.mid"
+   },
+   {
+    "title": "Blue Town",
+    "path": "albums/ps1/saga-frontier/blue-town.mid"
+   },
+   {
+    "title": "Blue's Theme",
+    "path": "albums/ps1/saga-frontier/blue-s-theme.mid"
+   },
+   {
+    "title": "Booby Trap",
+    "path": "albums/ps1/saga-frontier/booby-trap.mid"
+   },
+   {
+    "title": "Castle of Needles",
+    "path": "albums/ps1/saga-frontier/castle-of-needles.mid"
+   },
+   {
+    "title": "Confrontation! Caballero Family",
+    "path": "albums/ps1/saga-frontier/confrontation-caballero-family.mid"
+   },
+   {
+    "title": "Contented",
+    "path": "albums/ps1/saga-frontier/contented.mid"
+   },
+   {
+    "title": "Danger!",
+    "path": "albums/ps1/saga-frontier/danger.mid"
+   },
+   {
+    "title": "Dear My Country",
+    "path": "albums/ps1/saga-frontier/dear-my-country.mid"
+   },
+   {
+    "title": "Despair",
+    "path": "albums/ps1/saga-frontier/despair.mid"
+   },
+   {
+    "title": "Destiny ~ A Law",
+    "path": "albums/ps1/saga-frontier/destiny-a-law.mid"
+   },
+   {
+    "title": "Devin",
+    "path": "albums/ps1/saga-frontier/devin.mid"
+   },
+   {
+    "title": "Dungeon",
+    "path": "albums/ps1/saga-frontier/dungeon.mid"
+   },
+   {
+    "title": "Emelia's Theme",
+    "path": "albums/ps1/saga-frontier/emelia-s-theme.mid"
+   },
+   {
+    "title": "Fight! Alkaiser",
+    "path": "albums/ps1/saga-frontier/fight-alkaiser.mid"
+   },
+   {
+    "title": "Fight! R3X",
+    "path": "albums/ps1/saga-frontier/fight-r3x.mid"
+   },
+   {
+    "title": "Fighting Machine Arena",
+    "path": "albums/ps1/saga-frontier/fighting-machine-arena.mid"
+   },
+   {
+    "title": "Finale",
+    "path": "albums/ps1/saga-frontier/finale.mid"
+   },
+   {
+    "title": "Hell",
+    "path": "albums/ps1/saga-frontier/hell.mid"
+   },
+   {
+    "title": "Hey! Fuse",
+    "path": "albums/ps1/saga-frontier/hey-fuse.mid"
+   },
+   {
+    "title": "HQ",
+    "path": "albums/ps1/saga-frontier/hq.mid"
+   },
+   {
+    "title": "Junk",
+    "path": "albums/ps1/saga-frontier/junk.mid"
+   },
+   {
+    "title": "Koorong",
+    "path": "albums/ps1/saga-frontier/koorong.mid"
+   },
+   {
+    "title": "Kylin's Theme",
+    "path": "albums/ps1/saga-frontier/kylin-s-theme.mid"
+   },
+   {
+    "title": "Labyrinth of Darkness",
+    "path": "albums/ps1/saga-frontier/labyrinth-of-darkness.mid"
+   },
+   {
+    "title": "Last Battle ~ Asellus",
+    "path": "albums/ps1/saga-frontier/last-battle-asellus.mid"
+   },
+   {
+    "title": "Last Battle ~ Blue",
+    "path": "albums/ps1/saga-frontier/last-battle-blue.mid"
+   },
+   {
+    "title": "Last Battle ~ Emelia",
+    "path": "albums/ps1/saga-frontier/last-battle-emelia.mid"
+   },
+   {
+    "title": "Last Battle ~ Lute",
+    "path": "albums/ps1/saga-frontier/last-battle-lute.mid"
+   },
+   {
+    "title": "Last Battle ~ Red",
+    "path": "albums/ps1/saga-frontier/last-battle-red.mid"
+   },
+   {
+    "title": "Last Battle ~ Riki",
+    "path": "albums/ps1/saga-frontier/last-battle-riki.mid"
+   },
+   {
+    "title": "Last Battle ~ T260G",
+    "path": "albums/ps1/saga-frontier/last-battle-t260g.mid"
+   },
+   {
+    "title": "Leonard's Laboratory",
+    "path": "albums/ps1/saga-frontier/leonard-s-laboratory.mid"
+   },
+   {
+    "title": "Let's Swing!",
+    "path": "albums/ps1/saga-frontier/let-s-swing.mid"
+   },
+   {
+    "title": "Light a Lighthouse...",
+    "path": "albums/ps1/saga-frontier/light-a-lighthouse.mid"
+   },
+   {
+    "title": "Lummox Beat",
+    "path": "albums/ps1/saga-frontier/lummox-beat.mid"
+   },
+   {
+    "title": "Magic Kingdom",
+    "path": "albums/ps1/saga-frontier/magic-kingdom.mid"
+   },
+   {
+    "title": "March",
+    "path": "albums/ps1/saga-frontier/march.mid"
+   },
+   {
+    "title": "Margmel in Ruin",
+    "path": "albums/ps1/saga-frontier/margmel-in-ruin.mid"
+   },
+   {
+    "title": "Melody ~ A Tune",
+    "path": "albums/ps1/saga-frontier/melody-a-tune.mid"
+   },
+   {
+    "title": "Melody of Time",
+    "path": "albums/ps1/saga-frontier/melody-of-time.mid"
+   },
+   {
+    "title": "Mosperiburg",
+    "path": "albums/ps1/saga-frontier/mosperiburg.mid"
+   },
+   {
+    "title": "Nakajima Manufacturer",
+    "path": "albums/ps1/saga-frontier/nakajima-manufacturer.mid"
+   },
+   {
+    "title": "Never...",
+    "path": "albums/ps1/saga-frontier/never.mid"
+   },
+   {
+    "title": "Next",
+    "path": "albums/ps1/saga-frontier/next.mid"
+   },
+   {
+    "title": "Omble",
+    "path": "albums/ps1/saga-frontier/omble.mid"
+   },
+   {
+    "title": "Opening Title",
+    "path": "albums/ps1/saga-frontier/opening-title.mid"
+   },
+   {
+    "title": "Owmi",
+    "path": "albums/ps1/saga-frontier/owmi.mid"
+   },
+   {
+    "title": "Pursuit 1",
+    "path": "albums/ps1/saga-frontier/pursuit-1.mid"
+   },
+   {
+    "title": "Pursuit 2",
+    "path": "albums/ps1/saga-frontier/pursuit-2.mid"
+   },
+   {
+    "title": "Resolution",
+    "path": "albums/ps1/saga-frontier/resolution.mid"
+   },
+   {
+    "title": "Riki",
+    "path": "albums/ps1/saga-frontier/riki.mid"
+   },
+   {
+    "title": "Robot 2",
+    "path": "albums/ps1/saga-frontier/robot-2.mid"
+   },
+   {
+    "title": "Shingrow",
+    "path": "albums/ps1/saga-frontier/shingrow.mid"
+   },
+   {
+    "title": "Shudder",
+    "path": "albums/ps1/saga-frontier/shudder.mid"
+   },
+   {
+    "title": "Shuzer",
+    "path": "albums/ps1/saga-frontier/shuzer.mid"
+   },
+   {
+    "title": "Standard Yorkland Song",
+    "path": "albums/ps1/saga-frontier/standard-yorkland-song.mid"
+   },
+   {
+    "title": "Sunset Town",
+    "path": "albums/ps1/saga-frontier/sunset-town.mid"
+   },
+   {
+    "title": "Tears of Joy",
+    "path": "albums/ps1/saga-frontier/tears-of-joy.mid"
+   },
+   {
+    "title": "The Ancient Ship",
+    "path": "albums/ps1/saga-frontier/the-ancient-ship.mid"
+   },
+   {
+    "title": "The Opening of a Journey",
+    "path": "albums/ps1/saga-frontier/the-opening-of-a-journey.mid"
+   },
+   {
+    "title": "The Ultimate Weapon",
+    "path": "albums/ps1/saga-frontier/the-ultimate-weapon.mid"
+   },
+   {
+    "title": "Theme of the Cygnus",
+    "path": "albums/ps1/saga-frontier/theme-of-the-cygnus.mid"
+   },
+   {
+    "title": "To the New World",
+    "path": "albums/ps1/saga-frontier/to-the-new-world.mid"
+   },
+   {
+    "title": "Travelling Regions",
+    "path": "albums/ps1/saga-frontier/travelling-regions.mid"
+   },
+   {
+    "title": "Trick",
+    "path": "albums/ps1/saga-frontier/trick.mid"
+   },
+   {
+    "title": "Victory!",
+    "path": "albums/ps1/saga-frontier/victory.mid"
+   },
+   {
+    "title": "Wakatu",
+    "path": "albums/ps1/saga-frontier/wakatu.mid"
+   },
+   {
+    "title": "With Orlouge",
+    "path": "albums/ps1/saga-frontier/with-orlouge.mid"
+   }
+  ]
+ },
+ {
   "title": "Secret of Mana",
   "songs": [
    {
