@@ -5726,6 +5726,83 @@
   ]
  },
  {
+  "title": "Super Mario Land",
+  "songs": [
+   {
+    "title": "Bonus Game",
+    "path": "albums/game-boy/super-mario-land/bonus-game.mid"
+   },
+   {
+    "title": "Bonus Game Walk",
+    "path": "albums/game-boy/super-mario-land/bonus-game-walk.mid"
+   },
+   {
+    "title": "Boss",
+    "path": "albums/game-boy/super-mario-land/boss.mid"
+   },
+   {
+    "title": "Ending & Credits",
+    "path": "albums/game-boy/super-mario-land/ending-credits.mid"
+   },
+   {
+    "title": "Extra Life",
+    "path": "albums/game-boy/super-mario-land/extra-life.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/game-boy/super-mario-land/game-over.mid"
+   },
+   {
+    "title": "Invincible (Can-Can)",
+    "path": "albums/game-boy/super-mario-land/invincible-can-can.mid"
+   },
+   {
+    "title": "Last Boss",
+    "path": "albums/game-boy/super-mario-land/last-boss.mid"
+   },
+   {
+    "title": "Level End",
+    "path": "albums/game-boy/super-mario-land/level-end.mid"
+   },
+   {
+    "title": "Lose Life",
+    "path": "albums/game-boy/super-mario-land/lose-life.mid"
+   },
+   {
+    "title": "Oh! Daisy",
+    "path": "albums/game-boy/super-mario-land/oh-daisy.mid"
+   },
+   {
+    "title": "Pipe Room",
+    "path": "albums/game-boy/super-mario-land/pipe-room.mid"
+   },
+   {
+    "title": "Princess Daisy",
+    "path": "albums/game-boy/super-mario-land/princess-daisy.mid"
+   },
+   {
+    "title": "World Music 1",
+    "path": "albums/game-boy/super-mario-land/world-music-1.mid"
+   },
+   {
+    "title": "World Music 2",
+    "path": "albums/game-boy/super-mario-land/world-music-2.mid"
+   },
+   {
+    "title": "World Music 3",
+    "path": "albums/game-boy/super-mario-land/world-music-3.mid"
+   },
+   {
+    "title": "World Music 4",
+    "path": "albums/game-boy/super-mario-land/world-music-4.mid"
+   },
+   {
+    "title": "World Music 5",
+    "path": "albums/game-boy/super-mario-land/world-music-5.mid"
+   }
+  ]
+ },
+ {
   "title": "Super Mario World",
   "songs": [
    {

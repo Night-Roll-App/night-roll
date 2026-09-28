@@ -1,0 +1,87 @@
+{
+ "title": "Super Mario Land",
+ "order": 50,
+ "songs": {
+  "ending-credits": "Ending & Credits",
+  "invincible-can-can": "Invincible (Can-Can)",
+  "oh-daisy": "Oh! Daisy"
+ },
+ "nsf": {
+  "vault": "super-mario-land.gbs",
+  "tracks": {
+   "bonus-game-walk": {
+    "n": 14,
+    "secs": 24.984375
+   },
+   "bonus-game": {
+    "n": 13,
+    "secs": 5
+   },
+   "boss": {
+    "n": 8,
+    "secs": 3
+   },
+   "ending-credits": {
+    "n": 6,
+    "secs": 52.875
+   },
+   "extra-life": {
+    "n": 15,
+    "secs": 11.984375
+   },
+   "game-over": {
+    "n": 18,
+    "secs": 18.984375
+   },
+   "invincible-can-can": {
+    "n": 10,
+    "secs": 15.875
+   },
+   "last-boss": {
+    "n": 9,
+    "secs": 66
+   },
+   "level-end": {
+    "n": 12,
+    "secs": 12.984375
+   },
+   "lose-life": {
+    "n": 11,
+    "secs": 11.984375
+   },
+   "oh-daisy": {
+    "n": 17,
+    "secs": 3
+   },
+   "pipe-room": {
+    "n": 7,
+    "secs": 24.5
+   },
+   "princess-daisy": {
+    "n": 16,
+    "secs": 299.984375
+   },
+   "world-music-1": {
+    "n": 1,
+    "secs": 25.96875
+   },
+   "world-music-2": {
+    "n": 2,
+    "secs": 24
+   },
+   "world-music-3": {
+    "n": 3,
+    "secs": 27
+   },
+   "world-music-4": {
+    "n": 4,
+    "secs": 19.5
+   },
+   "world-music-5": {
+    "n": 5,
+    "secs": 50
+   }
+  },
+  "chip": "gbs"
+ }
+}
