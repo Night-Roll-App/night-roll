@@ -14,6 +14,15 @@ Can Hear the Cry of the Planet" in Night Roll and a recording (YouTube):
 is the repeating motif in the same octave? Same → our renderer's octave
 is right → flip PSX_SOUNDING_ON in index.html and re-capture the PS1
 albums. Different → a renderer bug to fix first.
+Community soundfont comparison (same day, scratch/instr-compare/reports/):
+GoldenEye's GoldenEyeVault font matches 104/106 samples with identical
+loops — its ~90–100¢ sharp band is theirs (our GE render matches
+lazyusf2 within a cent). OoT's fan font loops whole samples (ours reads
+the driver's loop start). SM64's is GM-retuned on purpose. FF7's Nyx
+font: 72/93 samples byte-identical, but several MELODIC instruments
+differ by ~an octave (e.g. Synth bass −1071¢) — same open question as
+the ear check above; our PS1 side is checked only against our own
+renderer, so this is not evidence either way yet.
 
 ## Sounding-pitch offsets — DONE 2026-09-28; one disagreement to ear-check; PS1 ground truth still open
 
@@ -72,6 +81,21 @@ from-scratch RIFF/SF2 reader. Not verified by ear: `fluidsynth`/`sfizz` are
 not installed on this machine, so no rendered note was checked against the
 library's own player — an item, not a gap covered elsewhere. Docs:
 NIGHT-ROLL.md "Game instrument libraries" (Step 2).
+
+## Game instrument libraries: SNES — DONE 2026-09-28 (not published)
+
+`tools/instruments/snes.mjs` extends extract.mjs/verify.mjs to `.spc` (an
+instrument = one SRCN, envelope = its majority ADSR/GAIN, other combos kept
+as `envelopeVariants`, drum vs melodic uses of one SRCN split apart) — see
+NIGHT-ROLL.md "Game instrument libraries" for the full design. Ran on all
+11 SNES albums with rips on disk (2427→1990 instruments after the merge
+fix, 636 samples, 5.4 MB WAV total; Chrono Trigger's 92 `.spc` downloaded
+from joshcough/nsf-archive, not locally ripped). Verified against
+apu-render.mjs on 3 songs/2 albums: every melodic note ≤ 3¢/≥0.975
+shape/≤0.43 dB; noise/short-drum rows fail only the centroid-fallback
+pitch check (shape still ≥ 0.987) — not a real pitch error, see
+NIGHT-ROLL.md. Not run through export.mjs's SF2/SFZ by ear either (same
+gap as the entry above). Not published to the archive — scratch/ only.
 
 ## Recording looped instead of growing the song — FIXED on the overnight branch (2026-09-26)
 
