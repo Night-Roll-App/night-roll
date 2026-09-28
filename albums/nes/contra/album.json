@@ -1,0 +1,61 @@
+{
+ "title": "Contra",
+ "order": 50,
+ "songs": {
+  "alien-s-lair-stage-8": "Alien's Lair (Stage 8)",
+  "bases-i-ii-stages-2-4": "Bases I, II (Stages 2, 4)",
+  "energy-zone-stage-6": "Energy Zone (Stage 6)",
+  "jungle-hangar-stages-1-7": "Jungle, Hangar (Stages 1, 7)",
+  "snowfield-stage-5": "Snowfield (Stage 5)",
+  "waterfall-stage-3": "Waterfall (Stage 3)"
+ },
+ "nsf": {
+  "vault": "contra.nsf",
+  "tracks": {
+   "alien-s-lair-stage-8": {
+    "n": 6,
+    "secs": 34.298628
+   },
+   "base-boss": {
+    "n": 8,
+    "secs": 34.9986
+   },
+   "bases-i-ii-stages-2-4": {
+    "n": 7,
+    "secs": 51.197952
+   },
+   "ending": {
+    "n": 10,
+    "secs": 83.33
+   },
+   "energy-zone-stage-6": {
+    "n": 5,
+    "secs": 21.699132
+   },
+   "game-over": {
+    "n": 11,
+    "secs": 18.865912
+   },
+   "jungle-hangar-stages-1-7": {
+    "n": 2,
+    "secs": 51.197952
+   },
+   "snowfield-stage-5": {
+    "n": 4,
+    "secs": 35.198592
+   },
+   "title-screen": {
+    "n": 1,
+    "secs": 17.982614
+   },
+   "victory": {
+    "n": 9,
+    "secs": 16.865992
+   },
+   "waterfall-stage-3": {
+    "n": 3,
+    "secs": 41.598336
+   }
+  }
+ }
+}

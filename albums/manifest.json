@@ -618,6 +618,55 @@
   ]
  },
  {
+  "title": "Contra",
+  "songs": [
+   {
+    "title": "Alien's Lair (Stage 8)",
+    "path": "albums/nes/contra/alien-s-lair-stage-8.mid"
+   },
+   {
+    "title": "Base Boss",
+    "path": "albums/nes/contra/base-boss.mid"
+   },
+   {
+    "title": "Bases I, II (Stages 2, 4)",
+    "path": "albums/nes/contra/bases-i-ii-stages-2-4.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/nes/contra/ending.mid"
+   },
+   {
+    "title": "Energy Zone (Stage 6)",
+    "path": "albums/nes/contra/energy-zone-stage-6.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/nes/contra/game-over.mid"
+   },
+   {
+    "title": "Jungle, Hangar (Stages 1, 7)",
+    "path": "albums/nes/contra/jungle-hangar-stages-1-7.mid"
+   },
+   {
+    "title": "Snowfield (Stage 5)",
+    "path": "albums/nes/contra/snowfield-stage-5.mid"
+   },
+   {
+    "title": "Title Screen",
+    "path": "albums/nes/contra/title-screen.mid"
+   },
+   {
+    "title": "Victory",
+    "path": "albums/nes/contra/victory.mid"
+   },
+   {
+    "title": "Waterfall (Stage 3)",
+    "path": "albums/nes/contra/waterfall-stage-3.mid"
+   }
+  ]
+ },
+ {
   "title": "Final Fantasy 4",
   "songs": [
    {
