@@ -9139,6 +9139,7 @@ function renderSongGroups() { // top: LOCAL's top-level folders, then PUBLISHED'
   document.getElementById("songsheettitle").textContent = "OPEN";
   const rows = document.getElementById("songrows");
   rows.innerHTML = "";
+  { const sh = rows.closest ? rows.closest(".sheet") : null; if (sh) sh.scrollTop = 0; songsheet.scrollTop = 0; } // a new folder starts at its top: the ‹ row must be in reach (Josh, 2026-09-28)
   const local = folderTree(draftKeys());
   if (subfolderKeys(local).length) {
     rows.appendChild(songHeader(localLabel()));
@@ -9156,6 +9157,7 @@ function renderFolder(section, folder) { // one level: subfolders, then this fol
   document.getElementById("songsheettitle").textContent = folderTitle(folder).toUpperCase();
   const rows = document.getElementById("songrows");
   rows.innerHTML = "";
+  { const sh = rows.closest ? rows.closest(".sheet") : null; if (sh) sh.scrollTop = 0; songsheet.scrollTop = 0; } // a new folder starts at its top: the ‹ row must be in reach (Josh, 2026-09-28)
   const up = parentFolder(folder);
   rows.appendChild(songRow("‹ " + (up ? segTitle(up) : "All folders"), () => up ? renderFolder(section, up) : renderSongGroups(), true));
   rows.appendChild(songHeader(section === "local" ? localLabel() : publishedLabel()));
