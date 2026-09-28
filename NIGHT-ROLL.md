@@ -642,6 +642,24 @@ capture the same full arrangement. Also settled there: the note
 envelope and the clock match the decomp (the emulator itself runs ~5%
 slow when pulled as fast as its audio drains); the early-decay reading
 was other voices in the band.
+Rare's driver (2026-09-28, GoldenEye 007): when `locateEAD` finds no
+Nintendo tables, `sequenceOfSet` falls back to `tools/n64/rare.mjs`
+(`res.driver = "rare"`): the song table sits in the save state's RAM
+(63 × {rom, unpacked, packed}, found by shape — every song starts
+with the 1172 magic, two bytes then raw DEFLATE, inflated by a plain
+RFC 1951 decoder), the mini's track is the one RAM word it overrides
+(USF_GAMES names the address for the known lib; the override rule is
+the fallback), the bank is the SDK's ALBankFile found by header, and
+the song is the SDK's compressed MIDI (16 track offsets, division 384,
+running status, tempo/loop metas, FE replay blocks). `renderN64`
+dispatches to `renderRare`: keyBase/detune pitch, key maps, VADPCM or
+raw-16 waves, volume ramps as the envelope, dry mono. Verified against
+the real player: all 58 songs identified, isolated notes within a
+cent, onset fit 0.4–0.64. Open: the roll shows the written key (two
+programs sound an octave away), a ranged-keymap drum kit reads as
+melody, pan/reverb/vibrato, level 9–14 dB hot. Tests:
+tests/n64-rare.test.mjs (synthetic) + the guarded GE tests in
+tests/n64-real.test.mjs; INTEGRATION.md §10.
 
 **Chip render in a Worker (2026-09-27, afternoon).** The console render
 ran on the page's thread in 35 ms slices: the first Play after opening a

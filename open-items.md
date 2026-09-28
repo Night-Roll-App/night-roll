@@ -893,6 +893,16 @@ seq-libultra), read ALBank, render (the N64 renderer's sample/ADPCM
 code is reusable; the envelope model differs). The ground-truth player
 (scratch/usf2wav) renders GE for reference. Next N64 job after the
 sustain fix and the batch import review.
+SHIPPED overnight (2026-09-28 ~04:10): tools/n64/rare.mjs — the song
+table found in RAM, 1172 = raw DEFLATE, the SDK's compressed MIDI,
+the SDK bank, renderRare (NIGHT-ROLL.md "Nintendo 64 import" → Rare's
+driver; INTEGRATION.md §10). All 58 songs published as
+albums/n64/goldeneye-007 with minis + lib in the archive. Unheard by
+anyone. OPEN for Josh's ear: written vs sounding octave on programs 24
+and 44; program 58 is a drum kit by ear but shows as C2/E2 melody
+(ranged key maps defeat the single-pitch rule — the bank's percussion
+flag is absent from the rip); no pan/reverb/vibrato; level offset.
+iPad build still pending (unplugged).
 
 ## GITHUB ORG FOR NIGHT ROLL — QUEUED 2026-09-27 (Josh)
 
