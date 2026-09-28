@@ -1,0 +1,186 @@
+{
+ "title": "Parasite Eve",
+ "order": 50,
+ "songs": {
+  "a-piece-of-remain": "A Piece of Remain",
+  "across-the-view": "Across the View",
+  "escape-from-ub": "Escape From UB",
+  "gloom-and-doom": "Gloom and Doom",
+  "influence-of-deep": "Influence of Deep",
+  "main-theme-piano-solo-version": "Main Theme (Piano Solo Version)",
+  "memories-of-aya-and-eve": "Memories of Aya and Eve",
+  "memory-ii": "Memory II",
+  "memory-iii": "Memory III",
+  "omission-of-the-world": "Omission of the World",
+  "out-of-phase": "Out of Phase",
+  "phrase-of-aya": "Phrase of Aya",
+  "phrase-of-eve": "Phrase of Eve",
+  "phrase-of-mitochondria": "Phrase of Mitochondria",
+  "the-surface-of-the-water": "The Surface of the Water",
+  "theme-of-aya": "Theme of Aya",
+  "theme-of-mitochondria": "Theme of Mitochondria",
+  "ub": "UB",
+  "under-the-progress": "Under the Progress",
+  "waiting-for-something-happens": "Waiting for Something Happens",
+  "wheel-of-fortune": "Wheel of Fortune"
+ },
+ "nsf": {
+  "vault": "parasite-eve/",
+  "tracks": {
+   "a-piece-of-remain": {
+    "n": 1,
+    "secs": 36.923328
+   },
+   "across-the-view": {
+    "n": 1,
+    "secs": 49.62354075
+   },
+   "arise-within-you": {
+    "n": 1,
+    "secs": 56.911059
+   },
+   "consensus": {
+    "n": 1,
+    "secs": 56.000896
+   },
+   "escape-from-ub": {
+    "n": 1,
+    "secs": 7.619088
+   },
+   "femmes-fatales": {
+    "n": 1,
+    "secs": 143.378661
+   },
+   "force-trail": {
+    "n": 1,
+    "secs": 53.6462625
+   },
+   "gloom-and-doom": {
+    "n": 1,
+    "secs": 135.00198
+   },
+   "influence-of-deep": {
+    "n": 1,
+    "secs": 95.380149
+   },
+   "kyrie": {
+    "n": 1,
+    "secs": 100.796892
+   },
+   "main-theme-piano-solo-version": {
+    "n": 1,
+    "secs": 69.93890337500002
+   },
+   "main-theme": {
+    "n": 1,
+    "secs": 61.700007125
+   },
+   "matrix": {
+    "n": 1,
+    "secs": 72.498376
+   },
+   "memories-of-aya-and-eve": {
+    "n": 1,
+    "secs": 71.180484375
+   },
+   "memory-i": {
+    "n": 1,
+    "secs": 9.9418545
+   },
+   "memory-ii": {
+    "n": 1,
+    "secs": 23.372079
+   },
+   "memory-iii": {
+    "n": 1,
+    "secs": 32.14254
+   },
+   "missing-perspective": {
+    "n": 1,
+    "secs": 118.551828
+   },
+   "musica-mundana": {
+    "n": 1,
+    "secs": 60.00096
+   },
+   "mystery-notes": {
+    "n": 1,
+    "secs": 17.026548
+   },
+   "omission-of-the-world": {
+    "n": 1,
+    "secs": 73.845728
+   },
+   "out-of-phase": {
+    "n": 1,
+    "secs": 114.194382
+   },
+   "overture": {
+    "n": 1,
+    "secs": 66.421343
+   },
+   "phrase-of-aya": {
+    "n": 1,
+    "secs": 33.102912
+   },
+   "phrase-of-eve": {
+    "n": 1,
+    "secs": 84.49700287500002
+   },
+   "phrase-of-mitochondria": {
+    "n": 1,
+    "secs": 12.8
+   },
+   "plosive-attack": {
+    "n": 1,
+    "secs": 68.57248
+   },
+   "se-il-mio-amore-sta-vincino": {
+    "n": 1,
+    "secs": 123.43405062500004
+   },
+   "someone-calls-memorias": {
+    "n": 1,
+    "secs": 44.191841833333335
+   },
+   "sotto-voice": {
+    "n": 1,
+    "secs": 59.305555000000005
+   },
+   "the-surface-of-the-water": {
+    "n": 1,
+    "secs": 95.581338
+   },
+   "theme-of-aya": {
+    "n": 1,
+    "secs": 47.99936
+   },
+   "theme-of-mitochondria": {
+    "n": 1,
+    "secs": 51.2
+   },
+   "ub": {
+    "n": 1,
+    "secs": 9.796112
+   },
+   "under-the-progress": {
+    "n": 1,
+    "secs": 103.384288
+   },
+   "urban-noise": {
+    "n": 1,
+    "secs": 51.428064
+   },
+   "waiting-for-something-happens": {
+    "n": 1,
+    "secs": 71.07312624999994
+   },
+   "wheel-of-fortune": {
+    "n": 1,
+    "secs": 104.997648
+   }
+  },
+  "chip": "psf",
+  "perFile": true
+ }
+}
