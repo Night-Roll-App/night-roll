@@ -793,6 +793,20 @@ Josh's ear ("dramatically more sustain" on YouTube): either that
 video is not the US engine's output (OST/arranged/extended, an
 emulator audio plugin), or something neither side sees. Next: Josh
 names the video; A/B in a real USF player.
+GROUND TRUTH (same night): a real USF player built on the Mac —
+lazyusf2 (derselbst fork; kode54's repos are gone), arm64 build
+without the recompiler, `scratch/usf2wav <mini> out.wav [secs]`
+(recipe: scratch/lazyusf2/build-mac.sh; HLE ≡ LLE to −70 dB). Truth
+WAVs in scratch/truth/. Findings: (1) note length — the engine's
+notes are −40 dB by ~1 s and gone by 2 s, same as ours: Josh's
+"Soundtrack" upload is not the engine (OST mix?). (2) REAL: ours
+decays too fast in the first half second (truth −3…−8 dB at +0.3 s,
+ours −18…−25; onset→peak 0.17 s vs 0.11) — the "cut off" he hears.
+(3) REAL: our clock runs 4.7% fast vs the engine (onset fit 1.047 on
+DDD and Title). (4) Cave's octave-low intro: the engine does it too.
+(5) Title inst 3/4: silent/quiet in the truth where ours is loud —
+volume/mute handling to check. Items 2, 3, 5 handed to the renderer
+agent with the numbers; fix pending.
 
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
