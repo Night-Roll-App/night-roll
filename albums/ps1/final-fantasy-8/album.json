@@ -1,0 +1,383 @@
+{
+ "title": "Final Fantasy VIII",
+ "order": 50,
+ "songs": {
+  "cactus-jack-galbadian-anthem": "Cactus Jack (Galbadian Anthem)",
+  "celebration-irish-jig": "Celebration (Irish Jig)",
+  "celebration-rinoa-s-theme": "Celebration (Rinoa's Theme)",
+  "compression-of-time": "Compression of Time",
+  "dance-with-the-balamb-fish": "Dance with the Balamb-Fish",
+  "don-t-be-afraid-extended-intro": "Don't Be Afraid (Extended Intro)",
+  "don-t-be-afraid": "Don't Be Afraid",
+  "fisherman-s-horizon": "Fisherman's Horizon",
+  "fithos-lusec-wecos-vinosec-variation": "Fithos Lusec Wecos Vinosec (Variation)",
+  "fragments-of-memories": "Fragments of Memories",
+  "galbadia-garden-no-intro": "Galbadia Garden (No Intro)",
+  "maybe-i-m-a-lion": "Maybe I'm a Lion",
+  "mods-de-chocobo": "Mods de Chocobo",
+  "movin": "Movin'",
+  "odeka-ke-chocobo": "Odeka ke Chocobo",
+  "only-a-plank-between-one-and-perdition": "Only a Plank Between One and Perdition",
+  "roses-and-wine": "Roses and Wine",
+  "seed": "SeeD",
+  "shuffle-or-boogie": "Shuffle or Boogie",
+  "silence-and-motion": "Silence and Motion",
+  "starting-up-looped": "Starting Up (Looped)",
+  "succession-of-witches": "Succession of Witches",
+  "tears-of-the-moon-descent": "Tears of the Moon (Descent)",
+  "tears-of-the-moon": "Tears of the Moon",
+  "the-landing-demo": "The Landing (Demo)",
+  "the-man-with-the-machine-gun": "The Man With the Machine Gun",
+  "the-stage-is-set": "The Stage is Set",
+  "waltz-for-the-moon": "Waltz For the Moon"
+ },
+ "nsf": {
+  "vault": "final-fantasy-8/",
+  "tracks": {
+   "a-sacrifice": {
+    "n": 1,
+    "secs": 95.998336
+   },
+   "alto-chant": {
+    "n": 1,
+    "secs": 11.29384
+   },
+   "ami": {
+    "n": 1,
+    "secs": 131.03071050000003
+   },
+   "balamb-garden": {
+    "n": 1,
+    "secs": 98.8211
+   },
+   "bass-chant": {
+    "n": 1,
+    "secs": 21.17595
+   },
+   "blue-fields": {
+    "n": 1,
+    "secs": 85.595005375
+   },
+   "blue-sky": {
+    "n": 1,
+    "secs": 41.444691999999996
+   },
+   "breezy": {
+    "n": 1,
+    "secs": 72.06668
+   },
+   "cactus-jack-galbadian-anthem": {
+    "n": 1,
+    "secs": 87.65090499999998
+   },
+   "celebration-irish-jig": {
+    "n": 1,
+    "secs": 140.00224
+   },
+   "celebration-rinoa-s-theme": {
+    "n": 1,
+    "secs": 140.00224
+   },
+   "choir-chant": {
+    "n": 1,
+    "secs": 45.17536
+   },
+   "compression-of-time": {
+    "n": 1,
+    "secs": 134.4
+   },
+   "dance-with-the-balamb-fish": {
+    "n": 1,
+    "secs": 99.8123055
+   },
+   "dead-end": {
+    "n": 1,
+    "secs": 68.80752400000002
+   },
+   "don-t-be-afraid-extended-intro": {
+    "n": 1,
+    "secs": 98.617656
+   },
+   "don-t-be-afraid": {
+    "n": 1,
+    "secs": 87.635794
+   },
+   "drifting": {
+    "n": 1,
+    "secs": 76.797632
+   },
+   "fear": {
+    "n": 1,
+    "secs": 65.45424
+   },
+   "female-chant": {
+    "n": 1,
+    "secs": 11.29384
+   },
+   "find-your-way": {
+    "n": 1,
+    "secs": 108.8
+   },
+   "fisherman-s-horizon": {
+    "n": 1,
+    "secs": 107.024016
+   },
+   "fithos-lusec-wecos-vinosec-variation": {
+    "n": 1,
+    "secs": 168.0673975
+   },
+   "fithos-lusec-wecos-vinosec": {
+    "n": 1,
+    "secs": 127.7039495
+   },
+   "force-your-way": {
+    "n": 1,
+    "secs": 119.31528
+   },
+   "fragments-of-memories": {
+    "n": 1,
+    "secs": 91.201368
+   },
+   "galbadia-garden-no-intro": {
+    "n": 1,
+    "secs": 90.4
+   },
+   "galbadia-garden": {
+    "n": 1,
+    "secs": 124.97076000000001
+   },
+   "heresy": {
+    "n": 1,
+    "secs": 129.23498
+   },
+   "intruders": {
+    "n": 1,
+    "secs": 69.9010485
+   },
+   "jailed": {
+    "n": 1,
+    "secs": 102.85536
+   },
+   "julia": {
+    "n": 1,
+    "secs": 82.10127941666667
+   },
+   "junction": {
+    "n": 1,
+    "secs": 42.668416
+   },
+   "love-grows": {
+    "n": 1,
+    "secs": 133.711968
+   },
+   "lunatic-pandora": {
+    "n": 1,
+    "secs": 108.388
+   },
+   "male-chant": {
+    "n": 1,
+    "secs": 11.29384
+   },
+   "martial-law": {
+    "n": 1,
+    "secs": 106.001696
+   },
+   "maybe-i-m-a-lion": {
+    "n": 1,
+    "secs": 157.090176
+   },
+   "mods-de-chocobo": {
+    "n": 1,
+    "secs": 121.412048
+   },
+   "movin": {
+    "n": 1,
+    "secs": 207.464027
+   },
+   "my-mind": {
+    "n": 1,
+    "secs": 90.855568
+   },
+   "never-look-back": {
+    "n": 1,
+    "secs": 96.028799625
+   },
+   "odeka-ke-chocobo": {
+    "n": 1,
+    "secs": 38.769108
+   },
+   "only-a-plank-between-one-and-perdition": {
+    "n": 1,
+    "secs": 69.692087
+   },
+   "overture": {
+    "n": 1,
+    "secs": 213.21174466666668
+   },
+   "premonition": {
+    "n": 1,
+    "secs": 152.107487
+   },
+   "residents": {
+    "n": 1,
+    "secs": 98.284068
+   },
+   "retaliation": {
+    "n": 1,
+    "secs": 41.757253
+   },
+   "ride-on": {
+    "n": 1,
+    "secs": 89.144224
+   },
+   "rivals": {
+    "n": 1,
+    "secs": 96.003128
+   },
+   "roses-and-wine": {
+    "n": 1,
+    "secs": 62.60904
+   },
+   "seed": {
+    "n": 1,
+    "secs": 124.801872
+   },
+   "shuffle-or-boogie": {
+    "n": 1,
+    "secs": 64.001024
+   },
+   "silence-and-motion": {
+    "n": 1,
+    "secs": 180.00264
+   },
+   "slide-show-part-1": {
+    "n": 1,
+    "secs": 43.200648
+   },
+   "slide-show-part-2": {
+    "n": 1,
+    "secs": 49.020864
+   },
+   "starting-up-looped": {
+    "n": 1,
+    "secs": 17.538406
+   },
+   "starting-up": {
+    "n": 1,
+    "secs": 76.615142
+   },
+   "succession-of-witches": {
+    "n": 1,
+    "secs": 98.66568
+   },
+   "tears-of-the-moon-descent": {
+    "n": 1,
+    "secs": 46.665584
+   },
+   "tears-of-the-moon": {
+    "n": 1,
+    "secs": 69.678
+   },
+   "tell-me": {
+    "n": 1,
+    "secs": 119.99792
+   },
+   "the-castle": {
+    "n": 1,
+    "secs": 159.62541212499997
+   },
+   "the-extreme": {
+    "n": 1,
+    "secs": 230.66643999999997
+   },
+   "the-landing-demo": {
+    "n": 1,
+    "secs": 143.8197285
+   },
+   "the-landing": {
+    "n": 1,
+    "secs": 158.326168
+   },
+   "the-legendary-beast": {
+    "n": 1,
+    "secs": 203.425164
+   },
+   "the-loser": {
+    "n": 1,
+    "secs": 68.57024
+   },
+   "the-man-with-the-machine-gun": {
+    "n": 1,
+    "secs": 89.144224
+   },
+   "the-mission": {
+    "n": 1,
+    "secs": 115.55544
+   },
+   "the-oath": {
+    "n": 1,
+    "secs": 93.601404
+   },
+   "the-salt-flats": {
+    "n": 1,
+    "secs": 106.8396
+   },
+   "the-spy": {
+    "n": 1,
+    "secs": 107.29148
+   },
+   "the-stage-is-set": {
+    "n": 1,
+    "secs": 104.3484
+   },
+   "the-successor": {
+    "n": 1,
+    "secs": 217.082029
+   },
+   "the-winner": {
+    "n": 1,
+    "secs": 73.439082
+   },
+   "timber-owls": {
+    "n": 1,
+    "secs": 85.090512
+   },
+   "trust-me": {
+    "n": 1,
+    "secs": 93.601404
+   },
+   "truth": {
+    "n": 1,
+    "secs": 99.001452
+   },
+   "under-her-control": {
+    "n": 1,
+    "secs": 98.401476
+   },
+   "unrest": {
+    "n": 1,
+    "secs": 205.78214733333334
+   },
+   "waltz-for-the-moon": {
+    "n": 1,
+    "secs": 84.91620649999999
+   },
+   "where-i-belong": {
+    "n": 1,
+    "secs": 103.69080499999998
+   },
+   "wounded": {
+    "n": 1,
+    "secs": 49.500726
+   }
+  },
+  "chip": "psf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "ff8.psflib",
+    "file": "ff8.psflib"
+   }
+  ]
+ }
+}

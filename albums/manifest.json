@@ -3418,6 +3418,347 @@
   ]
  },
  {
+  "title": "Final Fantasy VIII",
+  "songs": [
+   {
+    "title": "A Sacrifice",
+    "path": "albums/ps1/final-fantasy-8/a-sacrifice.mid"
+   },
+   {
+    "title": "Alto Chant",
+    "path": "albums/ps1/final-fantasy-8/alto-chant.mid"
+   },
+   {
+    "title": "Ami",
+    "path": "albums/ps1/final-fantasy-8/ami.mid"
+   },
+   {
+    "title": "Balamb Garden",
+    "path": "albums/ps1/final-fantasy-8/balamb-garden.mid"
+   },
+   {
+    "title": "Bass Chant",
+    "path": "albums/ps1/final-fantasy-8/bass-chant.mid"
+   },
+   {
+    "title": "Blue Fields",
+    "path": "albums/ps1/final-fantasy-8/blue-fields.mid"
+   },
+   {
+    "title": "Blue Sky",
+    "path": "albums/ps1/final-fantasy-8/blue-sky.mid"
+   },
+   {
+    "title": "Breezy",
+    "path": "albums/ps1/final-fantasy-8/breezy.mid"
+   },
+   {
+    "title": "Cactus Jack (Galbadian Anthem)",
+    "path": "albums/ps1/final-fantasy-8/cactus-jack-galbadian-anthem.mid"
+   },
+   {
+    "title": "Celebration (Irish Jig)",
+    "path": "albums/ps1/final-fantasy-8/celebration-irish-jig.mid"
+   },
+   {
+    "title": "Celebration (Rinoa's Theme)",
+    "path": "albums/ps1/final-fantasy-8/celebration-rinoa-s-theme.mid"
+   },
+   {
+    "title": "Choir Chant",
+    "path": "albums/ps1/final-fantasy-8/choir-chant.mid"
+   },
+   {
+    "title": "Compression of Time",
+    "path": "albums/ps1/final-fantasy-8/compression-of-time.mid"
+   },
+   {
+    "title": "Dance with the Balamb-Fish",
+    "path": "albums/ps1/final-fantasy-8/dance-with-the-balamb-fish.mid"
+   },
+   {
+    "title": "Dead End",
+    "path": "albums/ps1/final-fantasy-8/dead-end.mid"
+   },
+   {
+    "title": "Don't Be Afraid",
+    "path": "albums/ps1/final-fantasy-8/don-t-be-afraid.mid"
+   },
+   {
+    "title": "Don't Be Afraid (Extended Intro)",
+    "path": "albums/ps1/final-fantasy-8/don-t-be-afraid-extended-intro.mid"
+   },
+   {
+    "title": "Drifting",
+    "path": "albums/ps1/final-fantasy-8/drifting.mid"
+   },
+   {
+    "title": "Fear",
+    "path": "albums/ps1/final-fantasy-8/fear.mid"
+   },
+   {
+    "title": "Female Chant",
+    "path": "albums/ps1/final-fantasy-8/female-chant.mid"
+   },
+   {
+    "title": "Find Your Way",
+    "path": "albums/ps1/final-fantasy-8/find-your-way.mid"
+   },
+   {
+    "title": "Fisherman's Horizon",
+    "path": "albums/ps1/final-fantasy-8/fisherman-s-horizon.mid"
+   },
+   {
+    "title": "Fithos Lusec Wecos Vinosec",
+    "path": "albums/ps1/final-fantasy-8/fithos-lusec-wecos-vinosec.mid"
+   },
+   {
+    "title": "Fithos Lusec Wecos Vinosec (Variation)",
+    "path": "albums/ps1/final-fantasy-8/fithos-lusec-wecos-vinosec-variation.mid"
+   },
+   {
+    "title": "Force Your Way",
+    "path": "albums/ps1/final-fantasy-8/force-your-way.mid"
+   },
+   {
+    "title": "Fragments of Memories",
+    "path": "albums/ps1/final-fantasy-8/fragments-of-memories.mid"
+   },
+   {
+    "title": "Galbadia Garden",
+    "path": "albums/ps1/final-fantasy-8/galbadia-garden.mid"
+   },
+   {
+    "title": "Galbadia Garden (No Intro)",
+    "path": "albums/ps1/final-fantasy-8/galbadia-garden-no-intro.mid"
+   },
+   {
+    "title": "Heresy",
+    "path": "albums/ps1/final-fantasy-8/heresy.mid"
+   },
+   {
+    "title": "Intruders",
+    "path": "albums/ps1/final-fantasy-8/intruders.mid"
+   },
+   {
+    "title": "Jailed",
+    "path": "albums/ps1/final-fantasy-8/jailed.mid"
+   },
+   {
+    "title": "Julia",
+    "path": "albums/ps1/final-fantasy-8/julia.mid"
+   },
+   {
+    "title": "Junction",
+    "path": "albums/ps1/final-fantasy-8/junction.mid"
+   },
+   {
+    "title": "Love Grows",
+    "path": "albums/ps1/final-fantasy-8/love-grows.mid"
+   },
+   {
+    "title": "Lunatic Pandora",
+    "path": "albums/ps1/final-fantasy-8/lunatic-pandora.mid"
+   },
+   {
+    "title": "Male Chant",
+    "path": "albums/ps1/final-fantasy-8/male-chant.mid"
+   },
+   {
+    "title": "Martial Law",
+    "path": "albums/ps1/final-fantasy-8/martial-law.mid"
+   },
+   {
+    "title": "Maybe I'm a Lion",
+    "path": "albums/ps1/final-fantasy-8/maybe-i-m-a-lion.mid"
+   },
+   {
+    "title": "Mods de Chocobo",
+    "path": "albums/ps1/final-fantasy-8/mods-de-chocobo.mid"
+   },
+   {
+    "title": "Movin'",
+    "path": "albums/ps1/final-fantasy-8/movin.mid"
+   },
+   {
+    "title": "My Mind",
+    "path": "albums/ps1/final-fantasy-8/my-mind.mid"
+   },
+   {
+    "title": "Never Look Back",
+    "path": "albums/ps1/final-fantasy-8/never-look-back.mid"
+   },
+   {
+    "title": "Odeka ke Chocobo",
+    "path": "albums/ps1/final-fantasy-8/odeka-ke-chocobo.mid"
+   },
+   {
+    "title": "Only a Plank Between One and Perdition",
+    "path": "albums/ps1/final-fantasy-8/only-a-plank-between-one-and-perdition.mid"
+   },
+   {
+    "title": "Overture",
+    "path": "albums/ps1/final-fantasy-8/overture.mid"
+   },
+   {
+    "title": "Premonition",
+    "path": "albums/ps1/final-fantasy-8/premonition.mid"
+   },
+   {
+    "title": "Residents",
+    "path": "albums/ps1/final-fantasy-8/residents.mid"
+   },
+   {
+    "title": "Retaliation",
+    "path": "albums/ps1/final-fantasy-8/retaliation.mid"
+   },
+   {
+    "title": "Ride On",
+    "path": "albums/ps1/final-fantasy-8/ride-on.mid"
+   },
+   {
+    "title": "Rivals",
+    "path": "albums/ps1/final-fantasy-8/rivals.mid"
+   },
+   {
+    "title": "Roses and Wine",
+    "path": "albums/ps1/final-fantasy-8/roses-and-wine.mid"
+   },
+   {
+    "title": "SeeD",
+    "path": "albums/ps1/final-fantasy-8/seed.mid"
+   },
+   {
+    "title": "Shuffle or Boogie",
+    "path": "albums/ps1/final-fantasy-8/shuffle-or-boogie.mid"
+   },
+   {
+    "title": "Silence and Motion",
+    "path": "albums/ps1/final-fantasy-8/silence-and-motion.mid"
+   },
+   {
+    "title": "Slide Show Part 1",
+    "path": "albums/ps1/final-fantasy-8/slide-show-part-1.mid"
+   },
+   {
+    "title": "Slide Show Part 2",
+    "path": "albums/ps1/final-fantasy-8/slide-show-part-2.mid"
+   },
+   {
+    "title": "Starting Up",
+    "path": "albums/ps1/final-fantasy-8/starting-up.mid"
+   },
+   {
+    "title": "Starting Up (Looped)",
+    "path": "albums/ps1/final-fantasy-8/starting-up-looped.mid"
+   },
+   {
+    "title": "Succession of Witches",
+    "path": "albums/ps1/final-fantasy-8/succession-of-witches.mid"
+   },
+   {
+    "title": "Tears of the Moon",
+    "path": "albums/ps1/final-fantasy-8/tears-of-the-moon.mid"
+   },
+   {
+    "title": "Tears of the Moon (Descent)",
+    "path": "albums/ps1/final-fantasy-8/tears-of-the-moon-descent.mid"
+   },
+   {
+    "title": "Tell Me",
+    "path": "albums/ps1/final-fantasy-8/tell-me.mid"
+   },
+   {
+    "title": "The Castle",
+    "path": "albums/ps1/final-fantasy-8/the-castle.mid"
+   },
+   {
+    "title": "The Extreme",
+    "path": "albums/ps1/final-fantasy-8/the-extreme.mid"
+   },
+   {
+    "title": "The Landing",
+    "path": "albums/ps1/final-fantasy-8/the-landing.mid"
+   },
+   {
+    "title": "The Landing (Demo)",
+    "path": "albums/ps1/final-fantasy-8/the-landing-demo.mid"
+   },
+   {
+    "title": "The Legendary Beast",
+    "path": "albums/ps1/final-fantasy-8/the-legendary-beast.mid"
+   },
+   {
+    "title": "The Loser",
+    "path": "albums/ps1/final-fantasy-8/the-loser.mid"
+   },
+   {
+    "title": "The Man With the Machine Gun",
+    "path": "albums/ps1/final-fantasy-8/the-man-with-the-machine-gun.mid"
+   },
+   {
+    "title": "The Mission",
+    "path": "albums/ps1/final-fantasy-8/the-mission.mid"
+   },
+   {
+    "title": "The Oath",
+    "path": "albums/ps1/final-fantasy-8/the-oath.mid"
+   },
+   {
+    "title": "The Salt Flats",
+    "path": "albums/ps1/final-fantasy-8/the-salt-flats.mid"
+   },
+   {
+    "title": "The Spy",
+    "path": "albums/ps1/final-fantasy-8/the-spy.mid"
+   },
+   {
+    "title": "The Stage is Set",
+    "path": "albums/ps1/final-fantasy-8/the-stage-is-set.mid"
+   },
+   {
+    "title": "The Successor",
+    "path": "albums/ps1/final-fantasy-8/the-successor.mid"
+   },
+   {
+    "title": "The Winner",
+    "path": "albums/ps1/final-fantasy-8/the-winner.mid"
+   },
+   {
+    "title": "Timber Owls",
+    "path": "albums/ps1/final-fantasy-8/timber-owls.mid"
+   },
+   {
+    "title": "Trust Me",
+    "path": "albums/ps1/final-fantasy-8/trust-me.mid"
+   },
+   {
+    "title": "Truth",
+    "path": "albums/ps1/final-fantasy-8/truth.mid"
+   },
+   {
+    "title": "Under Her Control",
+    "path": "albums/ps1/final-fantasy-8/under-her-control.mid"
+   },
+   {
+    "title": "Unrest",
+    "path": "albums/ps1/final-fantasy-8/unrest.mid"
+   },
+   {
+    "title": "Waltz For the Moon",
+    "path": "albums/ps1/final-fantasy-8/waltz-for-the-moon.mid"
+   },
+   {
+    "title": "Where I Belong",
+    "path": "albums/ps1/final-fantasy-8/where-i-belong.mid"
+   },
+   {
+    "title": "Wounded",
+    "path": "albums/ps1/final-fantasy-8/wounded.mid"
+   }
+  ]
+ },
+ {
   "title": "GoldenEye 007",
   "songs": [
    {
