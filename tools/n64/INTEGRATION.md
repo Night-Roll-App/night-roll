@@ -483,3 +483,82 @@ Still unverified: which preset the *ripper's* base state had (the USF
 minis all share one state, so a USF player renders every song with one
 preset — YouTube "USF" uploads will differ from the game here); the
 reverb's `framesLeftToIgnore` warm-up; vibrato (D7/D8/E3).
+
+### 9.6 Dire, Dire Docks, second listen: "dramatically more sustain on YouTube"
+
+Treated as a failing test; the envelope's time unit was the suspect. The
+JP/US source, verbatim (effects.c `adsr_update`, `ADSR_STATE_LOOP`
+default branch):
+
+```c
+#if defined(VERSION_EU) || defined(VERSION_SH) || defined(VERSION_CN)
+    if (adsr->delay >= 4) {
+        adsr->delay = adsr->delay * gAudioBufferParameters.updatesPerFrame
+        / 4;
+    }
+    ... adsr->target = adsr->target * adsr->target;
+    adsr->velocity = (adsr->target - adsr->current) / adsr->delay;
+#else
+    adsr->target = BSWAP16(adsr->envelope[adsr->envIndex].arg);
+    adsr->velocity = ((adsr->target - adsr->current) << 0x10) / adsr->delay;
+#endif
+...
+case ADSR_STATE_FADE:
+    adsr->currentHiRes += adsr->velocity;
+    adsr->current = adsr->currentHiRes >> 0x10;
+    if (--adsr->delay <= 0) { adsr->state = ADSR_STATE_LOOP; }
+```
+
+The `>= 4` guard and the `× updatesPerFrame / 4` exist only in EU/SH; JP/US
+uses the envelope's delay as a count of `adsr_update` calls. How often
+that is: `process_sequences()` (seqplayer.c) ends in `process_notes()`,
+which calls `adsr_update(&note->adsr)` for every note; `synthesis_execute`
+(synthesis.c, JP/US) is `for (i = gAudioUpdatesPerFrame; i > 0; i--) {
+... process_sequences(i - 1); ... }`, once per audio frame; the audio frame
+is one vblank (`create_next_audio_frame_task` sizes each buffer between
+`gMinAiBufferLength` and `gSamplesPerFrameTarget + SAMPLES_TO_OVERPRODUCE`,
+i.e. ~1/60 s), and heap.c sets `gSamplesPerFrameTarget = ALIGN16(gAiFrequency
+/ 60)` = 544, `gAudioUpdatesPerFrame = gSamplesPerFrameTarget / 160 + 1` = 4.
+So 240 updates/s — and data.c's comment on `gDefaultEnvelope`
+(`{ 1000, 32000 }, // stay there for 4.16 seconds`) reads the unit the same
+way. Gate end (playback.c, JP/US): `note->adsr.fadeOutVel =
+seqLayer->adsr.releaseRate * 24` (or the channel's release rate when the
+layer's is 0 — these notes: layer 0 → channel → instrument's 10), subtracted
+from the 0..32767 level once per update in `ADSR_STATE_DECAY`; the
+`0x8000 / gAudioUpdatesPerFrame` RELEASE is only for a freed layer.
+Amplitude (playback.c `process_notes`, JP/US): `scale = note->adsrVolScale;
+scale *= 4.3498e-5f; velocity = velocity * scale * scale;`. Nothing in
+render.mjs changed: it already does exactly this.
+
+The data, re-read at the ROM addresses: inst 14 @0x588460 = `00 00 7f 0a |
+00 00 09 d0 | 00.. | 00 00 08 d0 3f 00 00 00 | 00..` (lo 0, hi 127, release
+10, envelope at body+0x9D0, normal sound = sample body+0x8D0 tuning 0.5);
+envelope @0x5883A0 = `00 06 7f bc 01 2a 00 00 00 01 00 00 ff ff 00 00` =
+`[[6, 32700], [298, 0], [1, 0], hang]`; inst 15's is `[3, 32700]` then the
+same. Every instrument in the rip that plays this recording (bank 19 inst
+14/15, bank 23 inst 4, bank 37 inst 3/8) carries that `[298, 0]` step. The
+recording (tbl 0x68FD0 = ROM 0x71EAD0, 51369 samples at 16 kHz = 3.21 s,
+loop from 1.86 s to the end) does NOT decay on its own: its RMS is −6 dB at
+0.2 s, −12 dB at 0.6 s, then holds −8…−25 dB to the loop — a sustaining
+tone. So in the game as in the render it is the envelope that ends every
+note 1.24 s after onset (298/240 s), whatever the gate.
+
+Measured on the render, one note at a time (no masking by the next note),
+times from onset:
+
+| note | gate | dry −20 / −40 / −60 dB | with the water reverb (112 ms, ×0.5) |
+|---|---|---|---|
+| ch 14 #1, m59, d102, vel 55 | 0.96 s | 0.48 / 0.84 / 1.06 s | 0.52 / 1.02 / 1.36 s |
+| ch 14 #4, m74, d170, vel 74 | 1.60 s | 0.32 / 0.80 / 1.20 s | 0.44 / 0.92 / 1.36 s |
+
+(The early −20 dB is the recording's own transient: pitched up ×2.24 for
+m74, its first 0.6 s of decay passes in 0.27 s; the envelope's level²
+adds −5 dB by 0.32 s.) "Before vs after": identical — there was no unit to
+fix. What Josh has heard so far is the app build without the reverb (§9.5
+is uncommitted at the time of writing); the reverb adds 0.2–0.3 s at
+−40 dB, not a long fade. If YouTube's Dire Dire Docks really rings for
+seconds per note, it is not the US game's arithmetic as the decomp has it:
+candidates are a different mix (the OST, a re-recording, an HLE audio
+plugin whose env mixer ignores the level), or something on the playback
+side of the app (does the chip-audio path clip a track's PCM to the MIDI
+note ends for mute/solo?). Not this renderer's envelope.

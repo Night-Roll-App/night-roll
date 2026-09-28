@@ -45,6 +45,30 @@ test("VADPCM: a zero book passes residuals through; an integrator book carries h
   assert.throws(() => expandBook(9, 1, new Int16Array(72)), /not a codebook/);
 });
 
+// The unit question, settled from the decomp (re-read 2026-09-27 after Josh's
+// "notes cut off early" on Dire, Dire Docks). JP/US effects.c adsr_update,
+// ADSR_STATE_LOOP default branch — the ONLY scaling of adsr->delay is EU/SH:
+//   #if defined(VERSION_EU) || defined(VERSION_SH) || defined(VERSION_CN)
+//       if (adsr->delay >= 4) { adsr->delay = adsr->delay * gAudioBufferParameters.updatesPerFrame / 4; }
+//       ...
+//   #else
+//       adsr->target = BSWAP16(adsr->envelope[adsr->envIndex].arg);
+//       adsr->velocity = ((adsr->target - adsr->current) << 0x10) / adsr->delay;
+//   #endif
+//   case ADSR_STATE_FADE:  adsr->currentHiRes += adsr->velocity; adsr->current = adsr->currentHiRes >> 0x10;
+//                          if (--adsr->delay <= 0) adsr->state = ADSR_STATE_LOOP;
+// One call per audio update: seqplayer.c process_sequences() ends in
+// process_notes() (which calls adsr_update per note), and synthesis.c
+// synthesis_execute runs `for (i = gAudioUpdatesPerFrame; i > 0; i--) { ...
+// process_sequences(i - 1); ... }` once per 60 Hz audio frame; heap.c:
+// gSamplesPerFrameTarget = ALIGN16(gAiFrequency / 60) = 544, gAudioUpdatesPerFrame
+// = 544 / 160 + 1 = 4 → 240 updates/s (data.c agrees: gDefaultEnvelope's
+// "[1000, 32000] stay there for 4.16 seconds"). Gate end, playback.c JP/US
+// seq_channel_layer_decay_release_internal: fadeOutVel = (layer release
+// rate, or the channel's when the layer's is 0) * 24, subtracted from the
+// 0..32767 level per update (DECAY); RELEASE (0x8000 / gAudioUpdatesPerFrame)
+// only when a layer is freed. Amplitude, playback.c process_notes JP/US:
+// scale = adsrVolScale * 4.3498e-5f; velocity = velocity * scale * scale.
 test("ADSR (JP/US adsr_update): linear fades in 16.16, hang, disable, goto, and the gate-end decay at releaseRate × 24 per update", () => {
   const a = new Adsr([[2, 32700], [1, 32700], [32700, 29430], [-1, 0]]);
   assert.equal(a.update(), 16350, "half way after one of two updates");

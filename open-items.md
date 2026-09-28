@@ -781,7 +781,18 @@ Josh's later ear report on Dire Dire Docks (after reverb): "the notes
 on YouTube definitely have more sustain … dramatically … as if the
 notes fade over a long period and ours cut off." Handed to the agent:
 verify the envelope delay unit and the gate-end decay verbatim from
-the decomp; fix pending.
+the decomp. RESULT (INTEGRATION.md §9.6, verbatim quotes): JP/US uses
+the envelope delay unscaled, one adsr_update per audio update, 240/s
+(the ×updatesPerFrame/4 scaling is EU/SH/CN only); the gate-end decay
+is releaseRate×24 per update; the instrument's envelope is
+[6→32700, 298→0, 1→0, hang] for every instrument that plays this
+recording, so the game itself ends each note 1.24 s after onset — the
+recording loops and would sustain, the envelope never lets it. Render
+= the US game's arithmetic; nothing changed. UNRESOLVED against
+Josh's ear ("dramatically more sustain" on YouTube): either that
+video is not the US engine's output (OST/arranged/extended, an
+emulator audio plugin), or something neither side sees. Next: Josh
+names the video; A/B in a real USF player.
 
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
