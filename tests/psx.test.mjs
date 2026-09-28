@@ -220,3 +220,18 @@ test("dump CLI writes .notes.txt and .mid (SEQ+VH/VB, and PSF)", () => {
   run(join(dir, "tune.psf"));
   assert.match(readFileSync(join(dir, "tune.notes.txt"), "utf8"), /bar 1: 1 G4 1 v100/);
 });
+
+test("firstSEQ: a pQES whose version word no Sony tool writes is skipped and named; the next one parses", async () => {
+  const { firstSEQ } = await import("../tools/psx/seq.mjs");
+  const { makeTestSEQ } = await import("../tools/psx/make-test-seq.mjs");
+  const good = makeTestSEQ();
+  const ram = new Uint8Array(0x400);
+  ram.set([0x70, 0x51, 0x45, 0x53, 0xEB, 0xF0, 0x01, 0x01, 0xE0, 0xFF], 0x11);
+  ram.set(good, 0x100);
+  const f = firstSEQ(ram, [0x11, 0x100]);
+  assert.equal(f.offset, 0x100);
+  assert.equal(f.parsed.kind, "seq");
+  assert.deepEqual(f.skipped, [{offset: 0x11, error: "SEQ: unknown version ebf00101"}]);
+  assert.deepEqual(firstSEQ(ram, [0x11]), {offset: null, parsed: null, skipped: [{offset: 0x11, error: "SEQ: unknown version ebf00101"}]});
+  assert.equal(firstSEQ(ram, []), null);
+});

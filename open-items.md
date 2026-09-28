@@ -989,6 +989,23 @@ album.json write (NIGHT-ROLL.md → File; HELP "names the open song's
 album after the fact"). So the day a real .m3u appears, one pick names
 them; until then Josh renames by ear (File → Rename) or leaves them.
 
+## PLAYSTATION BEYOND FF7 — SHIPPED 2026-09-28
+
+The AKAO driver version comes from the file (header layout 1/2/3 by
+shape, the tick clock read from the driver code — `li a1, DIV` + `jal`),
+so FF8, FF9, Chrono Cross, Parasite Eve and SaGa Frontier parse and
+render with their own samples (tools/psx/INTEGRATION.md §7 has the
+per-game table: tag lengths match two passes to 0.998–0.999 on FF7/FF8/
+FF9/SaGa; PE and CC tags run ~10% long, the fade). SaGa Frontier's
+4-byte minis name the song by index (pickAKAO). Sony SEQ/VAB renders
+(Symphony of the Night's two sequences). One resolver for capture,
+render and worker: tools/psx/capture.mjs `psfSong`. NOT SUPPORTED, with
+the app's words: FF Tactics ("smds" sequences), Suikoden II (Konami
+KDT), Wild Arms ("pQES" v ebf00101) → "no SEQ or AKAO music data in this
+file — a driver Night Roll cannot read yet"; Mega Man X4 and most of
+SotN are XA audio streams, not sequences. None of the new sets are
+imported yet.
+
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
 "Before we release this for real … imports of several more games on

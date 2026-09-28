@@ -112,6 +112,19 @@ function parseScore(d, start, end, seq) {
   seq.endTick = tick;
 }
 
+// The first "pQES" in `offsets` that parses as a SEQ/SEP -> {offset, parsed,
+// skipped: [{offset, error}]} | null. The magic alone is not a SEQ: Wild
+// Arms' sound data carries "pQES" before a version word ebf00101 no Sony
+// tool writes; those are skipped and named, not thrown.
+export function firstSEQ(ram, offsets) {
+  const skipped = [];
+  for (const o of offsets) {
+    try { return {offset: o, parsed: parseSEQ(ram.subarray(o)), skipped}; }
+    catch (e) { skipped.push({offset: o, error: e.message}); }
+  }
+  return skipped.length ? {offset: null, parsed: null, skipped} : null;
+}
+
 // tick -> seconds through the tempo map
 export function secondsAt(seq, tick) {
   const {tempoMap, ppq} = seq;

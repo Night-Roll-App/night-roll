@@ -343,3 +343,120 @@ p/127, so l + r equals the old mono exactly (Bombing Mission, first 20 s:
 0.00 dB on all 16 tracks; a centred note is −6 dB per side, −3 dB in
 power). A pan change under a held note is not followed. `makeMidi` writes
 CC10 at tick 0 and at each note whose pan differs.
+
+## 7. AKAO generations, sample sets, SEQ/VAB render (2026-09-28)
+
+The AKAO reader no longer assumes FF7. What a rip is comes from its bytes
+(CLAUDE.md "No one-time hacks in capture engines"):
+
+- **Header layout by shape** (`akaoLayout`): 1 = 0x14 bytes (FF7, SaGa
+  Frontier: mask at 0x10, BCD timestamp at 0x0A), 2 = 0x20 (Parasite Eve:
+  zero word at 0x1C, year+month stamp), 3 = 0x40 (FF8, FF9, Chrono Cross:
+  zero words at 0x2C/0x38/0x3C, masks at 0x20 [+0x24/0x28 inside it],
+  up to 32 score channels, offsets relative to the field, length counts
+  the whole block, sample-set id at 0x14, key-split/drum tables at
+  0x30/0x34). Layouts 2/3 move 0xE0.. behind an escape byte (0xFC / 0xFE);
+  layout 3 spends 0xF0..0xFD on notes with an explicit length byte.
+- **Tick clock from the driver code** (`detectTimerDiv`): the root-counter
+  set-up `li a1, DIV` followed by `jal` (SetRCnt(0xF2000002, DIV, 0x1000)
+  in every set here). 0x43D1 in FF7; 0x44E8 (240 Hz) in SaGa Frontier,
+  Parasite Eve, FF8, FF9, Chrono Cross. A bare immediate is not enough — an
+  FF8 image holds a stray 0x43D1 in its data. When the image has no driver
+  the clock is the layout's default and the capture says **"assumed"**.
+  The first capture warning always names both, e.g. `AKAO header layout 3
+  (0x40 bytes); tick clock 0x44e8 (240.00 Hz) read from the driver code`.
+- **Which block** (`pickAKAO(ram, ranges, fileName)` → `{offset, how}`):
+  the one inside the song's own file; else, when the file only patched the
+  driver with a load immediate (SaGa Frontier's 4-byte minis: `li a0, N`),
+  index N in header-id order (N is 0-based, ids 1-based: 75 of 82 tag
+  lengths within 10%; reading N as the id matches a scatter); else the
+  first block, said so.
+- **Instruments** (`akaoInstrContext` → `result.instr`, plain data, read
+  with `akaoRecord(ctx, note)`): AKAO sample sets found by shape in the
+  image (`scanAkaoSampleSets`) — 0x10-byte articulations {sample off, loop
+  off, s16 fine, u16 unity, ADSR1, ADSR2} (FF8/9, CC), INSTR.DAT-shaped
+  0x40 records with absolute SPU addresses (SaGa Frontier, Parasite Eve),
+  or the 0x40 base-pitch shape (VGMTrans's 3.0; read, not met in these
+  sets) — the header's set first, then the set highest in SPU RAM; else
+  INSTR.DAT (FF7). Pitch for the 0x10 shape: rate = fine × 2^((key −
+  unity)/12); verified by autocorrelation on FF8 Blue Fields and FF9 Vivi's
+  Theme: measured root × fine = unity within 0.3 semitone for every tonal
+  articulation (percussion and octave-ambiguous samples aside).
+- **Key splits** (0xFC in 1.1, FC 14 in 2, FE 14 in 3): 8-byte regions; a
+  key outside every region plays the nearest region above, the last past
+  the top (VGMTrans extends the edges the same way).
+
+Score fixes found on the real sets (regression tests in psx-real):
+- `FE 0B` takes one operand byte (Chrono Cross, 122 uses: `FE 0B a3 97`);
+  read with none, `a3` ran as a volume opcode and ate the rest after it.
+- Loop break (`0xF1`, FC/FE 09) drops the repeat layer **only when it
+  leaves**. VGMTrans drops it every pass, which pops a running repeat;
+  SaGa Frontier's Koorong and FF8's Mods de Chocobo then met an unmatched
+  0xC9 and ran into the header ("unimplemented opcode 0xff at 0x10").
+  Mods de Chocobo's bass now plays its first/second ending, so its loop is
+  two of the other voices' periods (tag/2-pass 0.54: the tagger timed the
+  shorter period).
+- A branch/break that jumps back before the repeat it leaves, into played
+  bytes, is the song loop (SaGa Frontier's Koorong ends a voice that way).
+
+### Per-game results (every PSF in each downloaded set; `scratch/psx-sweep.mjs`)
+
+| Set | Driver | Captured | Renders | Tag vs 2 passes | Notes |
+|---|---|---|---|---|---|
+| FF7 (90) | AKAO layout 1, 0x43D1 | 90 | 90 (INSTR.DAT) | median 0.999, 78 within 3% | unchanged |
+| SaGa Frontier (83) | AKAO layout 1(.1), 0x44E8 | 83 | 83 (sets, `instr` shape) | median 0.998, 70 within 3% | song picked by the mini's `li a0, N` |
+| Parasite Eve (38) | AKAO layout 2, 0x44E8 | 38 | 38 (sets) | median 1.107 | tags run a flat +10–15 s over two passes (fade in the length): not a clock error — integer loop lengths (Musica Mundana 12.0 + 48.0 s); 2 files have an articulation outside the sets |
+| FF8 (84) | AKAO layout 3, 0x44E8 | 84 | 84 (sets) | median 0.998, 68 within 3% | 0x3FFFFFFF masks (Balamb Garden, The Landing) |
+| FF9 (108) | AKAO layout 3, 0x44E8 | 108 | 108 (sets) | median 0.999, 88 within 3% | 1 file with one missing articulation |
+| Chrono Cross (68) | AKAO layout 3, 0x44E8 | 68 | 68 (sets) | median 1.113 | same flat +10–15 s as Parasite Eve (the tagger's fade); 2 files with a missing articulation |
+| SotN (2 PSFs) | libsnd SEQ + VAB | 2 | 2 (VAB) | — | the rest of the set is .XA streams |
+| FF Tactics | "smds" sequences (VGMTrans FFTFormat) | 0 | 0 | — | `no SEQ or AKAO music data in this file — a driver Night Roll cannot read yet` |
+| Suikoden II | Konami KCET/KDT sequences + VAB banks | 0 | 0 | — | same message (VAB present, no SEQ) |
+| Wild Arms | own driver; "pQES" + version ebf00101 (not a Sony SEQ) + VAB | 0 | 0 | — | the app's current path throws `SEQ: unknown version ebf00101`; `firstSEQ` skips it and the message becomes the no-data one |
+| Mega Man X4 | none: CD-XA audio streams only (no PSF in the set) | — | — | — | nothing sequenced to read |
+
+### SEQ/VAB render
+
+`renderSpu(result, opts)` takes a SEQ capture with its bank —
+`seqNotes(seq, {vab})`, `result.vab` carrying the parsed VAB and its body —
+and needs nothing else (no `ram`, `table`, `bank`). Per note, every tone of
+the program whose key range holds the key (layers), each: its VAG decoded
+from the VAB body (loop by block flags), the SPU envelope from the tone's
+ADSR1/ADSR2 (`adsrRecord`, the envelope model the AKAO path uses), rate
+0x1000 × 2^((key − center + shift/128)/12) — shift is 1/128 semitone
+(VGMTrans Vab.cpp: cents = shift × 100 / 128) — level = velocity × tone
+vol × program vol × bank master vol × the channel's CC7 × CC11 (all /127,
+linear as the SPU's volume registers), pan = 64 + the tone's, the
+program's and the channel's CC10 offsets from 64, clamped, split by the
+same linear law as AKAO. `seqNotes` now records CC7/CC11 as `n.chVol` and
+CC10 as `n.pan` (so the MIDI's CC10 follows it too). Not followed: pitch
+bend, vibrato/portamento fields, reverb.
+
+### App-side contract (index.html CHIPS.psf, tools/chip-worker.mjs — not done here)
+
+`render` stays `M.renderSpu(res.result, {sampleRate, onProgress, ram:
+res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds})`.
+What `run` must return:
+
+- **AKAO**: `const pick = M.pickAKAO(ram, ranges, <the name given to
+  loadPSFChain>)`; `const table = M.findInstrDat(ram)`; `result =
+  M.akaoNotes(M.parseAKAO(ram, pick.offset), {instr: {ram, offset: table ?
+  table.offset : null}})`; `bank = result.instr && result.instr.kind ===
+  "instr-dat" ? M.findSampleBank(ram, table) : null`; refuse only when
+  `!result.instr || (result.instr.kind === "instr-dat" && !bank)`; return
+  `{result, ram, table, bank, seconds}`. `result.instr.kind ===
+  "akao-sets"` renders from the sets and ignores table/bank. (Today the
+  app refuses FF8/FF9/CC/Parasite Eve with `no instrument table or sample
+  bank in this rip — synthesized voices` and plays every SaGa Frontier
+  song as the lib's first block.) Push `pick.how` into the warnings.
+- **SEQ/VAB**: `const f = M.firstSEQ(ram, found.seq)`; when `f &&
+  f.parsed`: `result = M.seqNotes(f.parsed.sequences[0], {vab:
+  found.vab.length ? M.parseVAB(ram.subarray(found.vab[0])) : null})`;
+  refuse without a VAB; return `{result, seconds}` (ram/table/bank
+  unused). Replaces `SEQ/VAB playback is not rendered yet — synthesized
+  voices`.
+- The capture path (`CHIPS.psf.capture`) should use `pickAKAO` and
+  `firstSEQ` the same way, and pass `{instr: {ram, offset: table ?
+  table.offset : null}}` so envelopes come from the sets.
+- Module list unchanged (`psx/psf, akao, seq, vab, notes, spu-render`);
+  spu-render and notes now import akao.mjs.

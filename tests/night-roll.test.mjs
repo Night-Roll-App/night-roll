@@ -1462,7 +1462,7 @@ test("VGM import: a Genesis log goes through the capture path; gz sniff by name;
 });
 
 test("PSF import: a minipsf + psflib set captures through the sequence reader; a missing lib is named; trusted MIDI keeps long rests", async () => {
-  const M = {...(await import("../tools/psx/psf.mjs")), ...(await import("../tools/psx/akao.mjs")), ...(await import("../tools/psx/seq.mjs")), ...(await import("../tools/psx/vab.mjs")), ...(await import("../tools/psx/notes.mjs"))};
+  const M = {...(await import("../tools/psx/capture.mjs")), ...(await import("../tools/psx/psf.mjs")), ...(await import("../tools/psx/akao.mjs")), ...(await import("../tools/psx/seq.mjs")), ...(await import("../tools/psx/vab.mjs")), ...(await import("../tools/psx/notes.mjs"))};
   const T = await import("../tools/psx/make-test-seq.mjs");
   const akao = T.makeTestAKAO({voices: {0: [0xA5, 5, 0x02, 0xA0]}}); // one voice: octave, a note, end
   const {lib, mini} = T.makeTestMiniPSF(akao, {title: "Test Tune"});

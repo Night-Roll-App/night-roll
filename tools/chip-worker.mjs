@@ -36,16 +36,10 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
       const chain = await M.loadPSFChain(parsed.bytes, name => { const x = parsed.libs[name.toLowerCase()]; if (!x) throw new Error("missing library " + name); return x; }, {name: "song.minipsf", inflate});
       const {ram, ranges} = M.assembleRam(chain);
       prog(0.5);
-      const akaos = M.scanAKAO(ram);
-      if (!akaos.length) throw new Error("no AKAO music data (SEQ/VAB playback is not rendered yet)");
-      const own = ranges.find(r => r.name === "song.minipsf");
-      const inOwn = own ? akaos.filter(o => o >= (own.start & 0x1FFFFF) && o < (own.start & 0x1FFFFF) + own.size) : [];
-      const table = M.findInstrDat(ram);
-      const bank = table ? M.findSampleBank(ram, table) : null;
-      if (!table || !bank) throw new Error("no instrument table or sample bank in this rip");
-      const result = M.akaoNotes(M.parseAKAO(ram, (inOwn.length ? inOwn : akaos)[0]), {instr: {ram, offset: table.offset}});
+      const song = M.psfSong(ram, ranges, "song.minipsf"); // tools/psx/capture.mjs: SEQ/VAB or AKAO, the song the mini names
+      if (!song.renderable) throw new Error(song.why);
       prog(1);
-      return {result, ram, table, bank, seconds: secs};
+      return {result: song.result, ram, table: song.table || null, bank: song.bank || null, seconds: secs};
     },
     lead: () => 0,
     render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),

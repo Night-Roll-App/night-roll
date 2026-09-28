@@ -17,8 +17,9 @@
 // 4-tap interpolation (linear here).
 // Josh, 2026-09-27, FF7 Opening ~ Bombing Mission: "they just don't sound
 // like the same instrument … hopefully the information should be there."
-import { decodeAdpcm } from "./vab.mjs";
-import { readInstr, INSTR_STRIDE } from "./instr.mjs";
+import { decodeAdpcm, tonesFor, vagPcm } from "./vab.mjs";
+import { readInstr, adsrRecord, INSTR_STRIDE } from "./instr.mjs";
+import { akaoRecord } from "./akao.mjs";
 import { secondsAt } from "./seq.mjs";
 import { channelGroups, notePan } from "./notes.mjs";
 
@@ -97,31 +98,98 @@ class Envelope {
   }
 }
 
-// -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}}
-export async function renderSpu(result, opts = {}) {
+// A decoded sample: loop from the block flags, else from the record's loop
+// address (INSTR.DAT / sample-set records), else one-shot.
+function decodeAt(d, o, rec) {
+  let len = 16;
+  while (o + len + 16 <= d.length && !(d[o + len - 16 + 1] & 1) && len < 0x80000) len += 16;
+  const dec = decodeAdpcm(d, o, len);
+  let loopStart = dec.loopStart;
+  if (loopStart == null && !dec.oneShot && rec && rec.loop > rec.addr) loopStart = Math.floor((rec.loop - rec.addr) / 16) * 28;
+  return {pcm: dec.pcm, loopStart, loopEnd: dec.loopEnd != null ? dec.loopEnd : dec.pcm.length, oneShot: dec.oneShot || loopStart == null};
+}
+const fromVag = dec => dec && {pcm: dec.pcm, loopStart: dec.loopStart, loopEnd: dec.loopEnd != null ? dec.loopEnd : dec.pcm.length, oneShot: dec.oneShot || dec.loopStart == null};
+const clampPan = p => Math.max(0, Math.min(127, p));
+
+// The AKAO voices of one note -> [{smp, ratio, env, gain, pan}] (one layer).
+// Records come from the capture's instrument handle (result.instr — INSTR.DAT
+// or the image's AKAO sample sets, akao.mjs) or from the table the caller
+// found; pitch from the record's twelve base pitches (× 2^(octave − 6)) or,
+// for the 0x10-byte articulations, its unity key and fine tune.
+function akaoVoices(result, opts, sampleRate) {
   const {ram, table, bank} = opts;
-  if (!ram || !table) throw new Error("renderSpu needs the RAM image and the instrument table");
-  const sampleRate = opts.sampleRate || SPU_RATE;
-  const B = bank && bank.base != null ? bank.base : (findSampleBank(ram, table) || {}).base;
-  if (B == null) throw new Error("no sample bank found for this driver");
-  const d = new Uint8Array(ram);
-  const {notes, seq} = result;
-  const recs = new Map(), samples = new Map();
-  const recOf = p => { if (!recs.has(p)) recs.set(p, readInstr(d, table.offset, p)); return recs.get(p); };
+  const ctx = result.instr && result.instr.kind === "akao-sets" ? result.instr : null;
+  let d, recOf, B = null;
+  if (ctx) {
+    d = ctx.ram;
+    recOf = n => akaoRecord(ctx, n);
+  } else {
+    if (!ram || !table) throw new Error("renderSpu needs the RAM image and the instrument table");
+    d = new Uint8Array(ram);
+    B = bank && bank.base != null ? bank.base : (findSampleBank(ram, table) || {}).base;
+    if (B == null) throw new Error("no sample bank found for this driver");
+    const recs = new Map();
+    recOf = n => { const p = n.drum && n.tone && n.tone.instrument != null ? n.tone.instrument : n.program; if (!recs.has(p)) recs.set(p, readInstr(d, table.offset, p)); return recs.get(p); };
+  }
+  const samples = new Map();
   const sampleOf = rec => {
-    if (samples.has(rec.slot)) return samples.get(rec.slot);
-    const o = B + rec.addr;
-    let len = 16;
-    while (o + len + 16 <= d.length && !(d[o + len - 16 + 1] & 1) && len < 0x80000) len += 16;
-    const dec = decodeAdpcm(d, o, len);
-    let loopStart = dec.loopStart;
-    if (loopStart == null && !dec.oneShot && rec.loop > rec.addr) loopStart = Math.floor((rec.loop - rec.addr) / 16) * 28; // the table's loop address
-    const s = {pcm: dec.pcm, loopStart, loopEnd: dec.loopEnd != null ? dec.loopEnd : dec.pcm.length, oneShot: dec.oneShot || loopStart == null};
-    samples.set(rec.slot, s);
-    return s;
+    const o = rec.ramAddr != null ? rec.ramAddr : B + rec.addr;
+    if (!samples.has(o)) samples.set(o, decodeAt(d, o, rec));
+    return samples.get(o);
   };
+  return n => {
+    const rec = recOf(n);
+    if (!rec) return [];
+    const key = n.drum && n.tone && n.tone.key != null ? n.tone.key : n.key;
+    let ratio;
+    if (rec.pitches) ratio = (rec.pitches[((key % 12) + 12) % 12] || 0x1000) / 0x1000 * Math.pow(2, Math.floor(key / 12) - 6);
+    else ratio = (rec.fineMult || 1) * Math.pow(2, (key - (rec.unity != null ? rec.unity : 60)) / 12);
+    const gain = n.tone && n.tone.vol != null ? Math.min(1, n.tone.vol / 127) : 1;
+    return [{smp: sampleOf(rec), ratio: ratio * (SPU_RATE / sampleRate), env: rec, gain, pan: notePan(n)}];
+  };
+}
+
+// The libsnd voices of one note (a SEQ note through its VAB) -> every tone
+// of the program whose key range holds the key (tones layer). Per tone:
+// its VAG sample (the VAB body), its two ADSR words (instr.mjs adsrRecord:
+// the SPU envelope), pitch 0x1000 × 2^((key − center + shift/128)/12) — the
+// tone's center plays the sample at 44100 Hz, shift is fine tune in 1/128
+// semitone (VGMTrans Vab.cpp: cents = shift × 100 / 128) — and the SPU's
+// linear volumes: velocity × tone vol × program vol × bank master vol × the
+// channel's CC7·CC11; pan = the tone's, the program's and the channel's CC10
+// offsets from centre, summed.
+function vabVoices(result, sampleRate) {
+  const vab = result.vab;
+  const envs = new Map();
+  const envOf = t => { const k = t.adsr1 + ":" + t.adsr2; if (!envs.has(k)) envs.set(k, adsrRecord(t.adsr1, t.adsr2)); return envs.get(k); };
+  const master = (vab.masterVol != null ? vab.masterVol : 127) / 127;
+  return n => {
+    const prog = vab.programs[n.program];
+    if (!prog) return [];
+    const out = [];
+    for (const t of tonesFor(vab, n.program, n.key)) {
+      const smp = fromVag(vagPcm(vab, t.vag));
+      if (!smp || !smp.pcm.length) continue;
+      const ratio = Math.pow(2, (n.key - t.center + t.shift / 128) / 12) * (SPU_RATE / sampleRate);
+      const gain = Math.min(1, t.vol / 127 * (prog.mvol != null ? prog.mvol : 127) / 127 * master * (n.chVol != null ? n.chVol : 1));
+      const pan = clampPan(64 + (t.pan - 64) + ((prog.mpan != null ? prog.mpan : 64) - 64) + ((n.pan != null ? n.pan : 64) - 64));
+      out.push({smp, ratio, env: envOf(t), gain, pan});
+    }
+    return out;
+  };
+}
+
+// -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}}
+// result: an AKAO capture (akao.mjs akaoNotes; opts {ram, table, bank} when
+// its instruments are INSTR.DAT) or a SEQ capture with its VAB (notes.mjs
+// seqNotes(seq, {vab}) — result.vab carries the bank and its samples, so no
+// RAM, table or bank is needed).
+export async function renderSpu(result, opts = {}) {
+  const sampleRate = opts.sampleRate || SPU_RATE;
+  const voicesOf = result.vab ? vabVoices(result, sampleRate) : akaoVoices(result, opts, sampleRate);
+  const {notes, seq} = result;
   const groups = channelGroups(result); // [{name, notes}] exactly as makeMidi names its tracks
-  const endTick = Math.max(seq.loop ? seq.loop.end : 0, ...notes.map(n => n.endTick || n.tick));
+  let endTick = seq.loop ? seq.loop.end : 0; for (const n of notes) endTick = Math.max(endTick, n.endTick || n.tick);
   const seconds = Math.min(opts.keepSeconds || Infinity, secondsAt(seq, endTick) + 2.5);
   const N = Math.ceil(seconds * sampleRate);
   const out = {sampleRate, seconds};
@@ -129,16 +197,12 @@ export async function renderSpu(result, opts = {}) {
   for (const g of groups) {
     const l = new Float32Array(N), r = new Float32Array(N);
     for (const n of g.notes) {
-      const pan = notePan(n), gL = (127 - pan) / 127, gR = pan / 127;
-      const rec = recOf(n.drum && n.tone && n.tone.instrument != null ? n.tone.instrument : n.program);
-      if (rec) {
-        const smp = sampleOf(rec);
-        const key = n.drum && n.tone && n.tone.key != null ? n.tone.key : n.key;
-        const base = rec.pitches[((key % 12) + 12) % 12] || 0x1000;
-        const ratio = base / 0x1000 * Math.pow(2, Math.floor(key / 12) - 6) * (SPU_RATE / sampleRate);
+      for (const layer of voicesOf(n)) {
+        const {smp, ratio, env: rec} = layer;
+        const pan = layer.pan, gL = (127 - pan) / 127, gR = pan / 127;
         const t0 = secondsAt(seq, n.tick), t1 = secondsAt(seq, n.endTick);
         const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(t1 * sampleRate);
-        const toneVol = n.drum && n.tone && n.tone.vol != null ? Math.min(1, n.tone.vol / 127) : 1;
+        const toneVol = layer.gain;
         let vol = Math.max(0, Math.min(1, (n.vel || 0) / 127)) * toneVol;
         // a volume/expression change while the note sounds (n.gain: breakpoints
         // in ticks from the note's start) — the driver moves the voice's volume,

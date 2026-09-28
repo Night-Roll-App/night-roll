@@ -17,6 +17,8 @@ import { toNotesTxt, makeMidi } from "../tools/psx/notes.mjs";
 import { bpmOf, secondsAt } from "../tools/psx/seq.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
 
+const ASSUMED_V1 = "AKAO header layout 1 (0x14 bytes); tick clock 0x43d1 (243.86 Hz) assumed — the driver code is not in this image";
+
 // ---- text fixtures from the real set ----
 
 // "101 The Prelude.minipsf" [TAG] block, keys in the order Corlett wrote them
@@ -171,6 +173,7 @@ test("AKAO score: notes, ties (after a note, after a rest), octaves, transpose, 
   assert.equal(v3n[11].endTick, 532, "the last copy is clipped at the loop end");
   assert.ok(v3n[2].unrolled && !v3n[1].unrolled);
   assert.deepEqual(seq.warnings, [
+    ASSUMED_V1, // a synthetic block with no driver beside it: the clock is the layout's assumption, said so
     "tracks repeat with different periods (96, 532 ticks); shorter ones are unrolled to the longest",
     "1 track(s) with notes end without looping",
   ]);
@@ -179,7 +182,7 @@ test("AKAO score: notes, ties (after a note, after a rest), octaves, transpose, 
 
   // the text and the MIDI say where they came from
   const txt = toNotesTxt(r, {title: "akao"});
-  assert.match(txt, /^# akao — 4\/4, 86\.58bpm, 3 bars, 48 ticks\/quarter \(from PS1 AKAO\)\n# loop: bar 1 beat 1 → bar 3 beat 4\.083 \(forever\)\n# note: tracks repeat with different periods/);
+  assert.match(txt, /^# akao — 4\/4, 86\.58bpm, 3 bars, 48 ticks\/quarter \(from PS1 AKAO\)\n# loop: bar 1 beat 1 → bar 3 beat 4\.083 \(forever\)\n# note: AKAO header layout 1 \(0x14 bytes\); tick clock 0x43d1 \(243\.86 Hz\) assumed[^\n]*\n# note: tracks repeat with different periods/);
   assert.match(txt, /# Pitch is the AKAO key as written/);
   assert.match(txt, /## channel 1 program 46\nbar 1: 1 C4 1 v100, 2 E4 1 v100, 3 G4 3 v100\nbar 2: 4 C5 2\.083 v100\nbar 3: 2\.083 D4 0\.5 v100, 2\.583 D4 0\.5 v100, 3\.083 G4\+2c 1 v100/);
   assert.match(txt, /## channel 2 program 16,17,0 \(kit\)\nbar 1: 1 K24 1 v127, 2 K25 1 v127, 3 C3 1 v127/);
@@ -203,11 +206,11 @@ test("AKAO: tempo and meter stated after an opening rest belong to tick 0 (316, 
   const late = akaoNotes(parseAKAO(makeTestAKAO({voices: {0: [0xA2, 4, REST(2), 0xE8, 0x70, 0x44, 0xFD, 0x18, 0x06, 0xA5, 5, N(0, 2), 0xA0]}})));
   assert.deepEqual(late.seq.tempoMap, [{tick: 0, usq: Math.round(6e7 / akaoBpm(0x4470))}]);
   assert.deepEqual(late.seq.timeSigs, [{tick: 0, num: 6, den: 8}]);
-  assert.deepEqual(late.seq.warnings, []);
+  assert.deepEqual(late.seq.warnings, [ASSUMED_V1]);
   assert.equal(late.notes[0].tick, 4);
   const change = akaoNotes(parseAKAO(makeTestAKAO({voices: {0: [0xA5, 5, N(0, 2), 0xE8, 0x70, 0x44, N(0, 2), 0xA0]}})));
   assert.deepEqual(change.seq.tempoMap.map(t => t.tick), [0, 48]);
-  assert.deepEqual(change.seq.warnings, ["no tempo at tick 0; 120bpm assumed until the first tempo event", "no time signature at tick 0; 4/4 assumed"]);
+  assert.deepEqual(change.seq.warnings, [ASSUMED_V1, "no tempo at tick 0; 120bpm assumed until the first tempo event", "no time signature at tick 0; 4/4 assumed"]);
 });
 
 test("AKAO: staggered loop starts (echo voices) take the latest start, one period long; 0xCA forever-repeat is a loop", () => {
@@ -218,15 +221,15 @@ test("AKAO: staggered loop starts (echo voices) take the latest start, one perio
   assert.equal(r.seq.endTick, 128);
   assert.deepEqual(r.notes.filter(n => n.ch === 0).map(n => [n.tick, n.endTick]), [[0, 48], [48, 96], [96, 128]]);
   assert.deepEqual(r.notes.filter(n => n.ch === 1).map(n => [n.tick, n.endTick]), [[32, 80], [80, 128]]);
-  assert.deepEqual(r.seq.warnings, ["tracks start their loop at different ticks (0, 32); loop start is the latest"]);
+  assert.deepEqual(r.seq.warnings, [ASSUMED_V1, "tracks start their loop at different ticks (0, 32); loop start is the latest"]);
   const forever = akaoNotes(parseAKAO(makeTestAKAO({voices: {0: [0xA5, 5, 0xC8, N(0, 2), N(2, 3), 0xCA]}})));
   assert.deepEqual(forever.seq.loop, {start: 0, end: 72, count: 127});
   assert.deepEqual(forever.notes.map(n => [n.tick, n.endTick, n.pitch]), [[0, 48, 60], [48, 72, 62]]);
   // an unimplemented opcode stops that track and says so; the others go on
-  const broken = akaoNotes(parseAKAO(makeTestAKAO({voices: {0: [0xA5, 5, N(0, 2), 0xF3, N(0, 2), 0xA0], 1: [0xA5, 5, N(0, 2), 0xA0]}})));
+  const broken = akaoNotes(parseAKAO(makeTestAKAO({voices: {0: [0xA5, 5, N(0, 2), 0xFA, N(0, 2), 0xA0], 1: [0xA5, 5, N(0, 2), 0xA0]}})));
   assert.equal(broken.notes.filter(n => n.ch === 0).length, 1);
   assert.equal(broken.notes.filter(n => n.ch === 1).length, 1);
-  assert.match(broken.seq.warnings[0], /unimplemented opcode 0xf3 at 0x1b; track stopped/);
+  assert.match(broken.seq.warnings[1], /unimplemented opcode 0xfa at 0x1b; track stopped/);
 });
 
 test("tempo constant: FF7's driver runs on 0x43D1 (Tifa's tag length agrees), later AKAO games on 0x44E8", () => {
@@ -295,4 +298,141 @@ test("dump CLI: a minipsf finds its lib beside it (or via --lib), titles from th
   const res = spawnSync(process.execPath, ["tools/psx/dump.mjs", join(alone, "solo.minipsf")], {encoding: "utf8"});
   assert.notEqual(res.status, 0);
   assert.match(res.stderr, /missing library Test Game\.psflib/);
+});
+
+// ---- AKAO driver generations (2026-09-28): the file says which ----
+// Layout from the header's shape, tick clock from the driver code beside it
+// (`li a1, DIV; jal SetRCnt`), "assumed" when the image has no driver.
+import { akaoLayout, detectTimerDiv, pickAKAO, akaoInstrContext, akaoRecord } from "../tools/psx/akao.mjs";
+import { existsSync as exists, readdirSync } from "node:fs";
+
+test("AKAO layout 3 (0x40 header): voice mask at 0x20 past 24 bits, offsets from the field, length notes, FE-escaped tempo/meter, FE 0B's operand", () => {
+  const v0 = [
+    0xFE, 0x00, 0x00, 0x40,     // tempo 0x4000
+    0xFE, 0x15, 48, 4,          // 4/4
+    0xA5, 4,
+    0xF0, 24,                   // C, explicit length 24
+    N(4, 2),                    // E quarter
+    0xFE, 0x0B, 0xA3,           // one operand byte (Chrono Cross): 0xA3 is not a volume opcode here
+    REST(2),                    // rest 48
+    0xF7, 0,                    // G, length 0 -> the table's (whole note)
+    0xA0,
+  ];
+  const bytes = makeTestAKAO({layout: 3, sampleSetId: 5, voices: {0: v0, 28: [0xA0]}});
+  const L = akaoLayout(bytes);
+  assert.equal(L.version, 3); assert.equal(L.headerSize, 0x40);
+  const a = parseAKAO(bytes);
+  assert.equal(a.mask, 0x10000001);
+  assert.deepEqual(a.tracks.map(t => t.voice), [0, 28]);
+  assert.equal(a.tracks[0].offset, 0x44, "relative to the offset field itself");
+  assert.equal(a.sampleSetId, 5); assert.equal(a.timestamp, null);
+  const r = akaoNotes(a);
+  assert.deepEqual(r.notes.map(n => [n.tick, n.endTick, n.key]), [[0, 24, 48], [24, 72, 52], [120, 312, 55]]);
+  assert.equal(r.seq.warnings[0], "AKAO header layout 3 (0x40 bytes); tick clock 0x44e8 (240.00 Hz) assumed — the driver code is not in this image");
+  assert.equal(r.seq.tempoDiv, TIMER_DIV_LATER);
+  assert.equal(bpmOf(r.seq.tempoMap[0].usq), 75, "0x4000 at 240 Hz = 60 ticks/s = 75bpm");
+});
+
+test("AKAO layout 2 (0x20 header): FC-escaped ops, 6-byte drum map entries, year-month stamp", () => {
+  const v = [0xFC, 0x00, 0x00, 0x40, 0xFC, 0x15, 48, 3, 0xA5, 5, N(0, 2), 0xFC, 0x12, 0x10, 0x40, N(2, 2), 0xA0];
+  const a = parseAKAO(makeTestAKAO({layout: 2, voices: {0: v}}));
+  assert.equal(a.version, 2);
+  assert.equal(a.timestamp, "1998-02-00T00:00:00");
+  const r = akaoNotes(a);
+  assert.deepEqual(r.notes.map(n => [n.tick, n.key]), [[0, 60], [48, 62]]);
+  assert.deepEqual(r.seq.timeSigs, [{tick: 0, num: 3, den: 4}]);
+  assert.match(r.seq.warnings[0], /^AKAO header layout 2 \(0x20 bytes\); tick clock 0x44e8 \(240\.00 Hz\) assumed/);
+  assert.ok(r.notes[1].gain, "FC 12 is a volume fade under the held note");
+});
+
+test("tick clock from the driver code: `li a1, DIV` then `jal`; a bare immediate in data does not count", () => {
+  const ram = new Uint8Array(0x30000);
+  const block = makeTestAKAO({layout: 3, voices: {0: [0xFE, 0x00, 0x00, 0x40, 0xA5, 5, N(0, 2), 0xA0]}});
+  ram.set(block, 0x20000);
+  ram.set([0xE8, 0x44, 0x08, 0x34], 0x1000);                          // ori t0, zero, 0x44E8 — not the call
+  ram.set([0xE8, 0x44, 0x05, 0x34, 0, 0, 0, 0x08], 0x1100);           // ori a1, zero, 0x44E8; j (not jal)
+  assert.equal(detectTimerDiv(ram).div, null);
+  ram.set([0xD1, 0x43, 0x05, 0x24, 0x39, 0x2E, 0x01, 0x0C], 0x2000);  // addiu a1, zero, 0x43D1; jal
+  assert.equal(detectTimerDiv(ram).div, TIMER_DIV_FF7);
+  const r = akaoNotes(parseAKAO(ram, 0x20000));
+  assert.equal(r.seq.warnings[0], "AKAO header layout 3 (0x40 bytes); tick clock 0x43d1 (243.86 Hz) read from the driver code");
+  assert.equal(r.seq.tempoDiv, TIMER_DIV_FF7, "the file's clock beats the layout's assumption");
+  assert.equal(akaoNotes(parseAKAO(ram, 0x20000), {tempoDiv: TIMER_DIV_LATER}).seq.tempoDiv, TIMER_DIV_LATER, "a caller may still say");
+});
+
+test("pickAKAO: the song's own block; else a patched `li a0, N` names index N in header-id order", () => {
+  const ram = new Uint8Array(0x40000);
+  const blk = id => makeTestAKAO({id, voices: {0: [0xA5, 5, N(0, 2), 0xA0]}});
+  ram.set(blk(3), 0x10000); ram.set(blk(1), 0x10100); ram.set(blk(2), 0x10200);
+  ram.set([0x01, 0x00, 0x04, 0x24], 0x30000);                          // addiu a0, zero, 1
+  const lib = {name: "x.psflib", start: 0x80010000, size: 0x20000}, mini = {name: "s.psf", start: 0x80030000, size: 4};
+  const p = pickAKAO(ram, [lib, mini], "s.psf");
+  assert.equal(p.offset, 0x10200, "song number 1 = the second block by id (id 2)");
+  assert.match(p.how, /song number 1 loaded by the song's file: block id 2/);
+  ram.set(blk(9), 0x30100);
+  assert.deepEqual(pickAKAO(ram, [lib, {...mini, size: 0x200}], "s.psf"), {offset: 0x30100, how: "the song's own file"});
+  assert.match(pickAKAO(ram, [lib], "other.psf").how, /^the first of 4 blocks/);
+});
+
+test("loop break (0xF1) drops the repeat layer only on the pass that leaves: a first/second ending; a break back into played bytes is the song loop", () => {
+  const v = [0xA5, 5, /* 2 */ 0xC8, N(0, 2), 0xF1, 2, 3, 0, N(2, 2), 0xC9, 2, /* 11 */ N(4, 2), 0xA0];
+  const r = akaoNotes(parseAKAO(makeTestAKAO({voices: {0: v}})));
+  assert.deepEqual(r.notes.map(n => [n.tick, n.key]), [[0, 60], [48, 62], [96, 60], [144, 64]], "C D, C (break) E");
+  const back = [0xA5, 5, /* 2 */ 0xC8, N(0, 2), 0xF1, 2, 0xFA, 0xFF, N(2, 2), 0xC9, 2, 0xA0];
+  const b = akaoNotes(parseAKAO(makeTestAKAO({voices: {0: back}})));
+  assert.deepEqual(b.seq.loop, {start: 0, end: 144, count: 127});
+  assert.deepEqual(b.notes.map(n => n.key), [60, 62, 60]);
+});
+
+test("key-split program (0xFC, layout 1.1): a key outside every region plays the nearest region above, the last beyond the top", () => {
+  // regions after the score: {art, lo, hi, ar, sr, sm, rr, vol}, then a terminator ≥ 0x80
+  const body = [0xA5, 5, 0xFC, 0, 0, N(0, 2), N(11, 2), 0xA5, 7, N(0, 2), 0xA0];
+  body.splice(3, 2, body.length - 5, 0);
+  const tail = [10, 50, 70, 0, 0, 0, 0, 0, 11, 72, 80, 0, 0, 0, 0, 0, 0xFF];
+  const r = akaoNotes(parseAKAO(makeTestAKAO({voices: {0: body}, tail})));
+  assert.deepEqual(r.notes.map(n => [n.key, n.art]), [[60, 10], [71, 11], [84, 11]]);
+});
+
+// ---- real sets (PSX_PSF_DIR: a folder holding one folder per game, as
+// downloaded; CI has none and skips). Numbers recorded 2026-09-28. ----
+const PSX = process.env.PSX_PSF_DIR;
+const psxGame = d => PSX && exists(join(PSX, d)) ? join(PSX, d) : null;
+async function realCapture(dir, file) {
+  const chain = await loadPSFChain(readFileSync(join(dir, file)), n => { const p = join(dir, n); return exists(p) ? readFileSync(p) : null; }, {name: file});
+  const {ram, ranges} = assembleRam(chain);
+  return {ram, ranges, psf: parsePSF(readFileSync(join(dir, file)))};
+}
+const twoPass = s => { const e = s.loop ? s.loop.end : s.endTick, one = secondsAt(s, e); return s.loop ? secondsAt(s, s.loop.start) + 2 * (one - secondsAt(s, s.loop.start)) : one; };
+const tagSecs = t => { const m = /^(\d+):(\d+(?:\.\d+)?)/.exec(t || ""); return m ? +m[1] * 60 + +m[2] : null; };
+const REAL_AKAO = [
+  {dir: "ff7", file: "105 Tifa's Theme.minipsf", layout: 1, clock: "0x43d1", instr: "instr-dat", notes: 536},
+  {dir: "final-fantasy-viii", file: "103 Blue Fields.psf", layout: 3, clock: "0x44e8", instr: "akao-sets", notes: 1010},
+  {dir: "final-fantasy-ix", file: "105 Vivi's Theme.psf", layout: 3, clock: "0x44e8", instr: "akao-sets", notes: 902},
+  {dir: "parasite-eve", file: "103 Overture.psf", layout: 2, clock: "0x44e8", instr: "akao-sets", notes: 826},
+  {dir: "saga-frontier", file: "103 Blue's Theme.psf", layout: 1, clock: "0x44e8", instr: "akao-sets", notes: 593, id: 9},
+];
+for (const g of REAL_AKAO) {
+  test(`real AKAO (${g.dir}, ${g.file}): layout ${g.layout}, clock ${g.clock} from the driver code, two passes = the tag, every note has an articulation`, {skip: !psxGame(g.dir)}, async () => {
+    const {ram, ranges, psf} = await realCapture(psxGame(g.dir), g.file);
+    const p = pickAKAO(ram, ranges, g.file);
+    const a = parseAKAO(ram, p.offset);
+    if (g.id != null) assert.equal(a.id, g.id, p.how);
+    const table = (await import("../tools/psx/instr.mjs")).findInstrDat(ram);
+    const r = akaoNotes(a, {instr: table ? {ram, offset: table.offset} : null});
+    assert.equal(a.version, g.layout);
+    assert.match(r.seq.warnings[0], new RegExp(`tick clock ${g.clock} .* read from the driver code`));
+    assert.equal(r.notes.length, g.notes);
+    assert.equal(r.instr.kind, g.instr);
+    assert.equal(r.notes.filter(n => !akaoRecord(r.instr, n)).length, 0);
+    const ratio = tagSecs(psf.tags.length) / twoPass(r.seq);
+    assert.ok(Math.abs(ratio - 1) < 0.03, `tag ${psf.tags.length} vs two passes ${twoPass(r.seq).toFixed(1)}s`);
+  });
+}
+test("real sets: the drivers Night Roll does not read say so (FFT smds, Suikoden II KCET, Wild Arms' pQES that is not a SEQ); SotN's PSFs are SEQ+VAB", {skip: !PSX}, async () => {
+  const has = (ram, s) => { const b = new TextEncoder().encode(s); outer: for (let i = 0; i + b.length <= ram.length; i++) { for (let k = 0; k < b.length; k++) if (ram[i + k] !== b[k]) continue outer; return true; } return false; };
+  const firstPsf = d => readdirSync(d).filter(f => /\.psf$/i.test(f)).sort()[0];
+  if (psxGame("final-fantasy-tactics")) { const d = psxGame("final-fantasy-tactics"); const {ram} = await realCapture(d, firstPsf(d)); assert.equal(scanAKAO(ram).length, 0); assert.deepEqual(scanMagic(ram).seq, []); assert.ok(has(ram, "smds")); }
+  if (psxGame("suikoden-2")) { const d = psxGame("suikoden-2"); const {ram} = await realCapture(d, "1104 Suspicion.psf"); assert.deepEqual(scanMagic(ram).seq, []); assert.ok(scanMagic(ram).vab.length > 0); assert.ok(has(ram, "KCET")); }
+  if (psxGame("wild-arms")) { const d = psxGame("wild-arms"); const {ram} = await realCapture(d, "102 Hope.psf"); const {parseSEQ} = await import("../tools/psx/seq.mjs"); const s = scanMagic(ram).seq; assert.ok(s.length > 0); assert.throws(() => parseSEQ(ram.subarray(s[0])), /SEQ: unknown version ebf00101/); }
+  if (psxGame("castlevania-symphony-of-the-night")) { const d = psxGame("castlevania-symphony-of-the-night"); const {ram} = await realCapture(d, "Master Librarian.psf"); const f = scanMagic(ram); assert.equal(f.seq.length, 1); assert.equal(f.vab.length, 1); }
 });

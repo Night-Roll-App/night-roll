@@ -167,26 +167,57 @@ function crc32(bytes) {
 // 0x10-byte header with a BCD timestamp, voice mask at 0x10, per-voice u16
 // offsets relative to the byte after each field, the drum map after the
 // score. `voices` maps voice number -> op bytes; `tail` follows the score.
-export function makeTestAKAO({id = 0x60, reverb = 3, voices, tail = []}) {
+// layout 1 (0x14 header, FF7), 2 (0x20, Parasite Eve) or 3 (0x40, FF8/9 and
+// Chrono Cross) — the shapes akao.mjs akaoLayout tells apart. Layouts 1/2
+// count the length from 0x10 and point tracks from the byte after each
+// offset field; layout 3 counts the whole block and points from the field.
+// Layout 3 also carries a sample-set id at 0x14.
+export function makeTestAKAO({id = 0x60, reverb = 3, voices, tail = [], layout = 1, sampleSetId = 0}) {
   const nums = Object.keys(voices).map(Number).sort((a, b) => a - b);
-  const mask = nums.reduce((m, v) => m | (1 << v), 0);
-  const headerLen = 0x14 + 2 * nums.length;
+  const mask = nums.reduce((m, v) => (m | (1 << v)) >>> 0, 0);
+  const hdr = layout === 3 ? 0x40 : layout === 2 ? 0x20 : 0x14;
+  const headerLen = hdr + 2 * nums.length;
   const bodies = nums.map(v => Uint8Array.from(voices[v]));
   const total = headerLen + bodies.reduce((a, b) => a + b.length, 0) + tail.length;
   const out = new Uint8Array(total);
   out.set([0x41, 0x4B, 0x41, 0x4F], 0);                         // "AKAO"
   out[4] = id & 255; out[5] = id >> 8;
-  const len = total - 0x10; out[6] = len & 255; out[7] = len >> 8;
+  const len = layout === 3 ? total : total - 0x10; out[6] = len & 255; out[7] = len >> 8;
   out[8] = reverb; out[9] = 0;
-  out.set([0x96, 0x12, 0x18, 0x22, 0x46, 0x34], 0x0A);           // 1996-12-18 22:46:34, as FF7's Prelude
-  out[0x10] = mask & 255; out[0x11] = (mask >> 8) & 255; out[0x12] = (mask >> 16) & 255; out[0x13] = 0;
+  if (layout === 1) out.set([0x96, 0x12, 0x18, 0x22, 0x46, 0x34], 0x0A); // 1996-12-18 22:46:34, as FF7's Prelude
+  if (layout === 2) out.set([0x98, 0x02], 0x0A);                  // year and month only, as Parasite Eve's
+  const maskAt = layout === 3 ? 0x20 : 0x10;
+  for (let k = 0; k < 4; k++) out[maskAt + k] = (mask >>> (8 * k)) & 255;
+  if (layout === 3) { out[0x14] = sampleSetId & 255; out[0x15] = sampleSetId >> 8; }
   let p = headerLen;
   nums.forEach((v, i) => {
-    const field = 0x14 + 2 * i, rel = p - (field + 2);
+    const field = hdr + 2 * i, rel = p - (layout === 3 ? field : field + 2);
     out[field] = rel & 255; out[field + 1] = rel >> 8;
     out.set(bodies[i], p); p += bodies[i].length;
   });
   out.set(tail, p);
+  return out;
+}
+
+// An AKAO sample set in the 0x10-articulation shape (FF8/9, Chrono Cross):
+// 0x40 header (id, SPU destination, section size, first id, count), the
+// articulations {sample offset, loop offset, s16 fine, u16 unity, ADSR1,
+// ADSR2}, then the SPU-ADPCM section. arts: [{adpcm, unity, fine, adsr1, adsr2}]
+export function makeTestSampleSet({id = 0, dest = 0x10000, firstArt = 0, arts}) {
+  const offs = []; let size = 0;
+  for (const a of arts) { offs.push(size); size += a.adpcm.length; }
+  size = (size + 7) & ~7;
+  const out = new Uint8Array(0x40 + arts.length * 0x10 + size);
+  const le16 = (o, v) => { out[o] = v & 255; out[o + 1] = (v >> 8) & 255; };
+  const le32 = (o, v) => { le16(o, v & 0xFFFF); le16(o + 2, v >>> 16); };
+  out.set([0x41, 0x4B, 0x41, 0x4F], 0); le16(4, id);
+  le32(0x10, dest); le32(0x14, size); le32(0x18, firstArt); le32(0x1C, arts.length);
+  arts.forEach((a, i) => {
+    const o = 0x40 + i * 0x10;
+    le32(o, offs[i]); le32(o + 4, offs[i] + (a.loopBlock != null ? a.loopBlock * 16 : 0));
+    le16(o + 8, (a.fine || 0) & 0xFFFF); le16(o + 10, a.unity); le16(o + 12, a.adsr1 ?? 0x00FF); le16(o + 14, a.adsr2 ?? 0x5FC0);
+    out.set(a.adpcm, 0x40 + arts.length * 0x10 + offs[i]);
+  });
   return out;
 }
 

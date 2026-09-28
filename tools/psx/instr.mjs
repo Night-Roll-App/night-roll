@@ -71,3 +71,11 @@ export function envelopeAt(rec, seconds) {
   else frac = Math.max(0, 1 + step * (SAMPLE_RATE / cyc) * rem / level);
   return Math.max(0, Math.min(1, level / 0x7FFF * frac));
 }
+// the SPU's two packed ADSR registers (psx-spx "SPU ADSR") in the unpacked
+// form the table records use: ADSR1 = attack mode:1 rate:7 | decay shift:4 |
+// sustain level:4; ADSR2 = sustain mode:1 direction:1 rate:7 | release mode:1
+// shift:5. sm keeps readInstr's sense: bit1 = decrease, bit0 = exponential.
+export function adsrRecord(adsr1, adsr2) {
+  return {ar: (adsr1 >> 8) & 0x7F, am: (adsr1 >> 15) & 1, dr: (adsr1 >> 4) & 15, sl: adsr1 & 15,
+    sr: (adsr2 >> 6) & 0x7F, sm: (((adsr2 >> 14) & 1) << 1) | ((adsr2 >> 15) & 1), rr: adsr2 & 31, rm: (adsr2 >> 5) & 1};
+}

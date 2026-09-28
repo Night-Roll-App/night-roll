@@ -13,6 +13,7 @@ import { guessKit } from "../kit-guess.mjs";
 import { findInstrDat, readInstr, envelopeAt } from "./instr.mjs";
 export { findInstrDat, readInstr, envelopeAt }; // the app reaches them through this module
 import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
+import { akaoRecord } from "./akao.mjs";
 import { pitchName } from "../nsf/notes.mjs";
 import { trackBytes } from "../nsf/midi-write.mjs";
 
@@ -33,6 +34,7 @@ export function seqNotes(seq, {vab = null, drums = []} = {}) {
   const open = new Map();          // "ch:key" -> note
   const program = new Array(16).fill(0);
   const bends = new Array(16).fill(0);
+  const chVol = new Array(16).fill(127), chExpr = new Array(16).fill(127), chPan = new Array(16).fill(null);
   const roots = new Map();         // vag -> estimateRoot() | null
   const rootOf = vag => {
     if (!roots.has(vag)) roots.set(vag, estimateRoot(vagPcm(vab, vag)));
@@ -43,6 +45,10 @@ export function seqNotes(seq, {vab = null, drums = []} = {}) {
 
   for (const e of seq.events) {
     if (e.type === "program") { program[e.ch] = e.program; continue; }
+    if (e.type === "cc") { // channel volume, pan, expression: what the SPU voice's two linear volumes are set from
+      if (e.ctl === 7) chVol[e.ch] = e.value; else if (e.ctl === 11) chExpr[e.ch] = e.value; else if (e.ctl === 10) chPan[e.ch] = e.value;
+      continue;
+    }
     if (e.type === "bend") { bends[e.ch]++; continue; }
     if (e.type !== "on" && e.type !== "off") continue;
     const id = e.ch + ":" + e.key;
@@ -50,7 +56,9 @@ export function seqNotes(seq, {vab = null, drums = []} = {}) {
     if (prev) { prev.endTick = e.tick; open.delete(id); } // retrigger closes the old one
     if (e.type === "off") continue;
     const p = program[e.ch];
-    const n = {tick: e.tick, endTick: null, ch: e.ch, key: e.key, vel: e.vel, program: p, pitch: e.key, cents: 0, drum: false, tone: null, root: null};
+    const n = {tick: e.tick, endTick: null, ch: e.ch, key: e.key, vel: e.vel, program: p, pitch: e.key, cents: 0, drum: false, tone: null, root: null,
+      chVol: chVol[e.ch] * chExpr[e.ch] / (127 * 127)};
+    if (chPan[e.ch] != null) n.pan = chPan[e.ch];
     if (vab) {
       const prog = vab.programs[p];
       n.drum = drumSet.has(p) || isDrumProgram(prog);
@@ -244,12 +252,19 @@ export function makeMidi(result) {
   // decay for long notes only when no table is known, said in the warnings
   const instr = result.instr || null;
   const recs = new Map();
-  const recOf = p => { if (!instr) return null; if (!recs.has(p)) recs.set(p, readInstr(instr.ram, instr.offset, p)); return recs.get(p); };
+  // a capture's instrument handle (akao.mjs akaoInstrContext: INSTR.DAT or
+  // the image's sample sets, by the note's articulation), or a bare {ram, offset}
+  const recOf = n => {
+    if (!instr) return null;
+    if (instr.kind) return akaoRecord(instr, n);
+    if (!recs.has(n.program)) recs.set(n.program, readInstr(instr.ram, instr.offset, n.program));
+    return recs.get(n.program);
+  };
   const veOf = n => {
     const t0 = T(n.tick), d = Math.max(1, T(n.endTick) - t0), v = Math.max(1, Math.min(127, n.vel));
     if (n.drum) return undefined;
     if (instr) {
-      const rec = recOf(n.program);
+      const rec = recOf(n);
       if (!rec) return undefined;
       const frac = envelopeAt(rec, secondsAt(seq, n.endTick) - secondsAt(seq, n.tick));
       return frac < 0.97 ? Math.max(1, Math.round(v * Math.max(frac, 0.01))) : undefined;

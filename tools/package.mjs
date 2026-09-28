@@ -41,7 +41,7 @@ const RUNTIME_ENTRIES = ["chip-worker.mjs",
   "gbs/gbs.mjs", "gbs/notes.mjs", "gbs/apu-render.mjs",
   "spc/spc.mjs", "spc/notes.mjs", "spc/apu-render.mjs",
   "vgm/vgm.mjs", "vgm/notes.mjs",
-  "psx/psf.mjs", "psx/akao.mjs", "psx/seq.mjs", "psx/vab.mjs", "psx/notes.mjs", "psx/spu-render.mjs",
+  "psx/psf.mjs", "psx/akao.mjs", "psx/seq.mjs", "psx/vab.mjs", "psx/notes.mjs", "psx/spu-render.mjs", "psx/capture.mjs",
   "n64/usf.mjs", "n64/ead-usf.mjs", "n64/seq-libultra.mjs", "n64/notes.mjs", "n64/capture.mjs", "n64/vadpcm.mjs", "n64/bank.mjs", "n64/render.mjs", "n64/rare.mjs"];
 function runtimeModules() { // tools-relative paths, entry points plus every static relative import under tools/
   const seen = new Set(), todo = [...RUNTIME_ENTRIES];

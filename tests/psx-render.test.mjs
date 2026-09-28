@@ -114,3 +114,75 @@ test("stereo: the SPU's linear pan — left (127 − p)/127, right p/127 — har
   assert.ok(hex.indexOf("b1 0a 00") >= 0 && hex.indexOf("b1 0a 00") < hex.indexOf("91 48 64"), "CC10 0 at tick 0 before the first note on channel 1 (SEQ channel 2; the name meta sits between)");
   assert.match(hex, /b1 0a 40/); assert.match(hex, /b1 0a 7f/);
 });
+
+// ---- later AKAO (sample sets in the image) and libsnd SEQ+VAB (2026-09-28) ----
+import { adsrRecord } from "../tools/psx/instr.mjs";
+import { makeTestAKAO, makeTestSampleSet, makeTestSEQ, makeTestVAB, encodeAdpcm, sine } from "../tools/psx/make-test-seq.mjs";
+import { parseAKAO, akaoNotes, scanAkaoSampleSets, akaoInstrContext, akaoRecord } from "../tools/psx/akao.mjs";
+import { parseSEQ, secondsAt } from "../tools/psx/seq.mjs";
+const N = (deg, i) => deg * 11 + i; // AKAO note: degree × 11 + length index (1 = half note)
+import { parseVAB } from "../tools/psx/vab.mjs";
+import { seqNotes } from "../tools/psx/notes.mjs";
+
+// Hz of a stretch of a buffer by upward zero crossings
+function hzOf(buf, rate, t0, t1) {
+  const a = Math.floor(t0 * rate), b = Math.floor(t1 * rate);
+  let first = -1, last = -1, n = 0;
+  for (let i = a + 1; i < b; i++) if (buf[i - 1] < 0 && buf[i] >= 0) { if (first < 0) first = i; last = i; n++; }
+  return n > 1 ? (n - 1) * rate / (last - first) : 0;
+}
+
+test("adsrRecord unpacks the SPU's two ADSR words as the table records keep them", () => {
+  assert.deepEqual(adsrRecord(0x80FF, 0x5FC0), {ar: 0, am: 1, dr: 15, sl: 15, sr: 0x7F, sm: 2, rr: 0, rm: 0});
+  assert.deepEqual(adsrRecord(0x3A2F, 0xC4A5), {ar: 0x3A, am: 0, dr: 2, sl: 15, sr: 0x12, sm: 3, rr: 5, rm: 1});
+});
+
+test("AKAO sample set (0x10 articulations): a note sounds at its key through the unity key and fine tune, with no INSTR.DAT and no bank search", async () => {
+  const adpcm = encodeAdpcm(sine(261.63, 6748));                    // C4 at 44100 Hz, looped
+  const set = makeTestSampleSet({id: 7, dest: 0x20000, arts: [{adpcm, unity: 60}, {adpcm, unity: 60, fine: 0x4000}]}); // art 1: ×1.5
+  const ram = new Uint8Array(0x40000);
+  ram.set(set, 0x8000);
+  // the sequence in the same image: layout 3, naming set 7; art 0 plays C4 then C5, art 1 plays C4 (sounding G4)
+  ram.set(makeTestAKAO({layout: 3, sampleSetId: 7, voices: {0: [0xFE, 0x00, 0x00, 0x40, 0xA5, 4, 0xA1, 0, N(0, 1), 0xA5, 5, N(0, 1), 0xA1, 1, 0xA5, 4, N(0, 1), 0xA0]}}), 0x100);
+  const sets = scanAkaoSampleSets(ram);
+  assert.equal(sets.length, 1); assert.equal(sets[0].shape, "art16"); assert.equal(sets[0].id, 7);
+  const r = akaoNotes(parseAKAO(ram, 0x100));
+  assert.equal(r.instr.kind, "akao-sets", "the image the block came from supplies the sets");
+  assert.equal(akaoRecord(r.instr, r.notes[0]).unity, 60);
+  const out = await renderSpu(r, {sampleRate: 44100});
+  const buf = mono(out[channelGroups(r)[0].name]);
+  const sec = t => secondsAt(r.seq, t);
+  assert.ok(Math.abs(hzOf(buf, 44100, sec(0) + 0.1, sec(96) - 0.1) - 130.8) < 2, "key 48 (C3) on a C4 sample with unity 60 sounds an octave down");
+  assert.ok(Math.abs(hzOf(buf, 44100, sec(96) + 0.1, sec(192) - 0.1) - 261.6) < 3, "key 60 sounds the sample's own pitch");
+  assert.ok(Math.abs(hzOf(buf, 44100, sec(192) + 0.1, sec(288) - 0.1) - 196.2) < 3, "fine tune 0x4000 = ×1.5: key 48 sounds G3");
+});
+
+test("SEQ + VAB render: each tone's VAG at 0x1000 × 2^((key − center + shift/128)/12), its ADSR, tone × program × bank volume, pan offsets summed", async () => {
+  const seq = parseSEQ(makeTestSEQ()).sequences[0];
+  const render = async (patch) => {
+    const {vab: bytes} = makeTestVAB({center: 60});
+    patch && patch(bytes);
+    const result = seqNotes(seq, {vab: parseVAB(bytes)});
+    return {result, out: await renderSpu(result, {sampleRate: 44100})};
+  };
+  const {result, out} = await render();
+  const names = channelGroups(result).map(g => g.name);
+  assert.deepEqual(Object.keys(out).filter(k => out[k] && out[k].l), names, "one stereo pair per MIDI track, named alike");
+  const mel = mono(out[names[0]]);
+  // C4 (key 60 = center) for the first 0.5 s, E4 next, G4 after
+  assert.ok(Math.abs(hzOf(mel, 44100, 0.05, 0.45) - 261.6) < 3, "key = center plays the sample as recorded: " + hzOf(mel, 44100, 0.05, 0.45));
+  assert.ok(Math.abs(hzOf(mel, 44100, 0.55, 0.95) - 329.6) < 4, "E4");
+  const kit = mono(out[names[1]]); let pk = 0; for (const v of kit.subarray(0, 4410)) pk = Math.max(pk, Math.abs(v));
+  assert.ok(pk > 0.01, "the kit's noise tones sound");
+  // shift 64 = half a semitone up; tone pan 127 = right only
+  const tone0 = 0x820 + 5;
+  const {out: out2} = await render(b => { b[tone0] = 64; b[0x820 + 3] = 127; });
+  const m2 = out2[names[0]];
+  assert.ok(Math.abs(hzOf(mono(m2), 44100, 0.05, 0.45) - 261.63 * Math.pow(2, 0.5 / 12)) < 3, "shift/128 of a semitone");
+  let l = 0, r = 0; for (let i = 0; i < 22050; i++) { l += Math.abs(m2.l[i]); r += Math.abs(m2.r[i]); }
+  assert.ok(l < r * 1e-6 && r > 0, "pan 127 is all right channel");
+  // half the program volume halves the level
+  const {out: out3} = await render(b => { b[0x20 + 1] = 64; });
+  let a3 = 0, a1 = 0; const m3 = mono(out3[names[0]]); for (let i = 0; i < 22050; i++) { a3 += Math.abs(m3[i]); a1 += Math.abs(mel[i]); }
+  assert.ok(Math.abs(a3 / a1 - 64 / 127) < 0.02, "program volume is linear: " + (a3 / a1));
+});
