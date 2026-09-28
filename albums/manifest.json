@@ -2021,6 +2021,235 @@
   ]
  },
  {
+  "title": "Kirby's Adventure",
+  "songs": [
+   {
+    "title": "Battle Across the Sky",
+    "path": "albums/nes/kirbys-adventure/battle-across-the-sky.mid"
+   },
+   {
+    "title": "Bird Chirp",
+    "path": "albums/nes/kirbys-adventure/bird-chirp.mid"
+   },
+   {
+    "title": "Bonus",
+    "path": "albums/nes/kirbys-adventure/bonus.mid"
+   },
+   {
+    "title": "Bonus ~Perfect~",
+    "path": "albums/nes/kirbys-adventure/bonus-perfect.mid"
+   },
+   {
+    "title": "Boss!",
+    "path": "albums/nes/kirbys-adventure/boss.mid"
+   },
+   {
+    "title": "Butter Building ~Theme~",
+    "path": "albums/nes/kirbys-adventure/butter-building-theme.mid"
+   },
+   {
+    "title": "Choices",
+    "path": "albums/nes/kirbys-adventure/choices.mid"
+   },
+   {
+    "title": "Cloud Tops",
+    "path": "albums/nes/kirbys-adventure/cloud-tops.mid"
+   },
+   {
+    "title": "Cloud Tops ~Intro~",
+    "path": "albums/nes/kirbys-adventure/cloud-tops-intro.mid"
+   },
+   {
+    "title": "Crane Fever",
+    "path": "albums/nes/kirbys-adventure/crane-fever.mid"
+   },
+   {
+    "title": "Crane Fever ~Intense~",
+    "path": "albums/nes/kirbys-adventure/crane-fever-intense.mid"
+   },
+   {
+    "title": "Egg Catcher",
+    "path": "albums/nes/kirbys-adventure/egg-catcher.mid"
+   },
+   {
+    "title": "Egg Catcher ~Intro~",
+    "path": "albums/nes/kirbys-adventure/egg-catcher-intro.mid"
+   },
+   {
+    "title": "Epilogue",
+    "path": "albums/nes/kirbys-adventure/epilogue.mid"
+   },
+   {
+    "title": "Fanfare ~Long~",
+    "path": "albums/nes/kirbys-adventure/fanfare-long.mid"
+   },
+   {
+    "title": "Fanfare ~Short~",
+    "path": "albums/nes/kirbys-adventure/fanfare-short.mid"
+   },
+   {
+    "title": "FIRE!",
+    "path": "albums/nes/kirbys-adventure/fire.mid"
+   },
+   {
+    "title": "First You Draw a Circle...",
+    "path": "albums/nes/kirbys-adventure/first-you-draw-a-circle.mid"
+   },
+   {
+    "title": "Forest Trail",
+    "path": "albums/nes/kirbys-adventure/forest-trail.mid"
+   },
+   {
+    "title": "Forest Trail ~Intro~",
+    "path": "albums/nes/kirbys-adventure/forest-trail-intro.mid"
+   },
+   {
+    "title": "Fountain of Dreams",
+    "path": "albums/nes/kirbys-adventure/fountain-of-dreams.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/nes/kirbys-adventure/game-over.mid"
+   },
+   {
+    "title": "Goal!",
+    "path": "albums/nes/kirbys-adventure/goal.mid"
+   },
+   {
+    "title": "Grape Garden ~Theme~",
+    "path": "albums/nes/kirbys-adventure/grape-garden-theme.mid"
+   },
+   {
+    "title": "Grassy Bluff",
+    "path": "albums/nes/kirbys-adventure/grassy-bluff.mid"
+   },
+   {
+    "title": "Green Fields",
+    "path": "albums/nes/kirbys-adventure/green-fields.mid"
+   },
+   {
+    "title": "Green Fields ~Intro~",
+    "path": "albums/nes/kirbys-adventure/green-fields-intro.mid"
+   },
+   {
+    "title": "Green Greens",
+    "path": "albums/nes/kirbys-adventure/green-greens.mid"
+   },
+   {
+    "title": "Green Greens ~Intro~",
+    "path": "albums/nes/kirbys-adventure/green-greens-intro.mid"
+   },
+   {
+    "title": "Gunshot",
+    "path": "albums/nes/kirbys-adventure/gunshot.mid"
+   },
+   {
+    "title": "High Hills",
+    "path": "albums/nes/kirbys-adventure/high-hills.mid"
+   },
+   {
+    "title": "High Hills ~Intro~",
+    "path": "albums/nes/kirbys-adventure/high-hills-intro.mid"
+   },
+   {
+    "title": "Hit",
+    "path": "albums/nes/kirbys-adventure/hit.mid"
+   },
+   {
+    "title": "Hyper",
+    "path": "albums/nes/kirbys-adventure/hyper.mid"
+   },
+   {
+    "title": "Ice Cream Island ~Theme~",
+    "path": "albums/nes/kirbys-adventure/ice-cream-island-theme.mid"
+   },
+   {
+    "title": "Island Paradise",
+    "path": "albums/nes/kirbys-adventure/island-paradise.mid"
+   },
+   {
+    "title": "Island Paradise ~Intro~",
+    "path": "albums/nes/kirbys-adventure/island-paradise-intro.mid"
+   },
+   {
+    "title": "Kirby's Adventure",
+    "path": "albums/nes/kirbys-adventure/kirby-s-adventure.mid"
+   },
+   {
+    "title": "Miss!",
+    "path": "albums/nes/kirbys-adventure/miss.mid"
+   },
+   {
+    "title": "Nightmare",
+    "path": "albums/nes/kirbys-adventure/nightmare.mid"
+   },
+   {
+    "title": "Nightmare Emerges",
+    "path": "albums/nes/kirbys-adventure/nightmare-emerges.mid"
+   },
+   {
+    "title": "No Bonus",
+    "path": "albums/nes/kirbys-adventure/no-bonus.mid"
+   },
+   {
+    "title": "Open Waters",
+    "path": "albums/nes/kirbys-adventure/open-waters.mid"
+   },
+   {
+    "title": "Open Waters ~Intro~",
+    "path": "albums/nes/kirbys-adventure/open-waters-intro.mid"
+   },
+   {
+    "title": "Orange Ocean ~Theme~",
+    "path": "albums/nes/kirbys-adventure/orange-ocean-theme.mid"
+   },
+   {
+    "title": "Penalty",
+    "path": "albums/nes/kirbys-adventure/penalty.mid"
+   },
+   {
+    "title": "Quick Draw",
+    "path": "albums/nes/kirbys-adventure/quick-draw.mid"
+   },
+   {
+    "title": "Rainbow Resort ~Theme~",
+    "path": "albums/nes/kirbys-adventure/rainbow-resort-theme.mid"
+   },
+   {
+    "title": "Spring In Your Step (Bad Rip)",
+    "path": "albums/nes/kirbys-adventure/spring-in-your-step-bad-rip.mid"
+   },
+   {
+    "title": "Starry Sky",
+    "path": "albums/nes/kirbys-adventure/starry-sky.mid"
+   },
+   {
+    "title": "Starry Sky ~Intro~",
+    "path": "albums/nes/kirbys-adventure/starry-sky-intro.mid"
+   },
+   {
+    "title": "The Moon",
+    "path": "albums/nes/kirbys-adventure/the-moon.mid"
+   },
+   {
+    "title": "Tower to the Sky",
+    "path": "albums/nes/kirbys-adventure/tower-to-the-sky.mid"
+   },
+   {
+    "title": "Tower to the Sky ~Intro~",
+    "path": "albums/nes/kirbys-adventure/tower-to-the-sky-intro.mid"
+   },
+   {
+    "title": "Vegetable Valley ~Theme~",
+    "path": "albums/nes/kirbys-adventure/vegetable-valley-theme.mid"
+   },
+   {
+    "title": "Yogurt Yard ~Theme~",
+    "path": "albums/nes/kirbys-adventure/yogurt-yard-theme.mid"
+   }
+  ]
+ },
+ {
   "title": "Legend Of Zelda A Link To The Past",
   "songs": [
    {

@@ -1,0 +1,266 @@
+{
+ "title": "Kirby's Adventure",
+ "order": 50,
+ "songs": {
+  "battle-across-the-sky": "Battle Across the Sky",
+  "bonus-perfect": "Bonus ~Perfect~",
+  "boss": "Boss!",
+  "butter-building-theme": "Butter Building ~Theme~",
+  "cloud-tops-intro": "Cloud Tops ~Intro~",
+  "crane-fever-intense": "Crane Fever ~Intense~",
+  "egg-catcher-intro": "Egg Catcher ~Intro~",
+  "fanfare-long": "Fanfare ~Long~",
+  "fanfare-short": "Fanfare ~Short~",
+  "fire": "FIRE!",
+  "first-you-draw-a-circle": "First You Draw a Circle...",
+  "forest-trail-intro": "Forest Trail ~Intro~",
+  "fountain-of-dreams": "Fountain of Dreams",
+  "goal": "Goal!",
+  "grape-garden-theme": "Grape Garden ~Theme~",
+  "green-fields-intro": "Green Fields ~Intro~",
+  "green-greens-intro": "Green Greens ~Intro~",
+  "high-hills-intro": "High Hills ~Intro~",
+  "ice-cream-island-theme": "Ice Cream Island ~Theme~",
+  "island-paradise-intro": "Island Paradise ~Intro~",
+  "kirby-s-adventure": "Kirby's Adventure",
+  "miss": "Miss!",
+  "open-waters-intro": "Open Waters ~Intro~",
+  "orange-ocean-theme": "Orange Ocean ~Theme~",
+  "rainbow-resort-theme": "Rainbow Resort ~Theme~",
+  "spring-in-your-step-bad-rip": "Spring In Your Step (Bad Rip)",
+  "starry-sky-intro": "Starry Sky ~Intro~",
+  "tower-to-the-sky-intro": "Tower to the Sky ~Intro~",
+  "tower-to-the-sky": "Tower to the Sky",
+  "vegetable-valley-theme": "Vegetable Valley ~Theme~",
+  "yogurt-yard-theme": "Yogurt Yard ~Theme~"
+ },
+ "nsf": {
+  "vault": "kirbys-adventure.nsf",
+  "tracks": {
+   "battle-across-the-sky": {
+    "n": 58,
+    "secs": 12.066184
+   },
+   "bird-chirp": {
+    "n": 38,
+    "secs": 11.982854
+   },
+   "bonus-perfect": {
+    "n": 48,
+    "secs": 11.982854
+   },
+   "bonus": {
+    "n": 49,
+    "secs": 11.982854
+   },
+   "boss": {
+    "n": 13,
+    "secs": 28.798848
+   },
+   "butter-building-theme": {
+    "n": 46,
+    "secs": 6.399744
+   },
+   "choices": {
+    "n": 55,
+    "secs": 11.732864
+   },
+   "cloud-tops-intro": {
+    "n": 33,
+    "secs": 44.998200000000004
+   },
+   "cloud-tops": {
+    "n": 34,
+    "secs": 35.198592
+   },
+   "crane-fever-intense": {
+    "n": 11,
+    "secs": 10.66624
+   },
+   "crane-fever": {
+    "n": 10,
+    "secs": 25.598976
+   },
+   "egg-catcher-intro": {
+    "n": 20,
+    "secs": 19.565884
+   },
+   "egg-catcher": {
+    "n": 21,
+    "secs": 14.932736
+   },
+   "epilogue": {
+    "n": 56,
+    "secs": 74.647014
+   },
+   "fanfare-long": {
+    "n": 8,
+    "secs": 18.982574
+   },
+   "fanfare-short": {
+    "n": 9,
+    "secs": 11.982854
+   },
+   "fire": {
+    "n": 26,
+    "secs": 11.982854
+   },
+   "first-you-draw-a-circle": {
+    "n": 50,
+    "secs": 21.982454
+   },
+   "forest-trail-intro": {
+    "n": 18,
+    "secs": 44.764876
+   },
+   "forest-trail": {
+    "n": 19,
+    "secs": 41.065024
+   },
+   "fountain-of-dreams": {
+    "n": 57,
+    "secs": 51.981254
+   },
+   "game-over": {
+    "n": 12,
+    "secs": 11.982854
+   },
+   "goal": {
+    "n": 6,
+    "secs": 2.4999000000000002
+   },
+   "grape-garden-theme": {
+    "n": 36,
+    "secs": 10.66624
+   },
+   "grassy-bluff": {
+    "n": 16,
+    "secs": 25.598976
+   },
+   "green-fields-intro": {
+    "n": 1,
+    "secs": 53.16454
+   },
+   "green-fields": {
+    "n": 2,
+    "secs": 42.66496
+   },
+   "green-greens-intro": {
+    "n": 4,
+    "secs": 31.782062
+   },
+   "green-greens": {
+    "n": 5,
+    "secs": 25.382318
+   },
+   "gunshot": {
+    "n": 23,
+    "secs": 11.982854
+   },
+   "high-hills-intro": {
+    "n": 31,
+    "secs": 54.83114
+   },
+   "high-hills": {
+    "n": 32,
+    "secs": 43.99824
+   },
+   "hit": {
+    "n": 25,
+    "secs": 11.982854
+   },
+   "hyper": {
+    "n": 3,
+    "secs": 5.33312
+   },
+   "ice-cream-island-theme": {
+    "n": 45,
+    "secs": 4.266496
+   },
+   "island-paradise-intro": {
+    "n": 41,
+    "secs": 59.297628
+   },
+   "island-paradise": {
+    "n": 42,
+    "secs": 51.297948
+   },
+   "kirby-s-adventure": {
+    "n": 54,
+    "secs": 31.682066
+   },
+   "miss": {
+    "n": 40,
+    "secs": 11.982854
+   },
+   "nightmare-emerges": {
+    "n": 53,
+    "secs": 28.982174
+   },
+   "nightmare": {
+    "n": 15,
+    "secs": 35.698572
+   },
+   "no-bonus": {
+    "n": 47,
+    "secs": 13.982774000000001
+   },
+   "open-waters-intro": {
+    "n": 43,
+    "secs": 42.66496
+   },
+   "open-waters": {
+    "n": 44,
+    "secs": 34.131968
+   },
+   "orange-ocean-theme": {
+    "n": 22,
+    "secs": 19.199232000000002
+   },
+   "penalty": {
+    "n": 30,
+    "secs": 11.982854
+   },
+   "quick-draw": {
+    "n": 27,
+    "secs": 11.982854
+   },
+   "rainbow-resort-theme": {
+    "n": 7,
+    "secs": 9.599616000000001
+   },
+   "spring-in-your-step-bad-rip": {
+    "n": 17,
+    "secs": 12.799488
+   },
+   "starry-sky-intro": {
+    "n": 28,
+    "secs": 45.098196
+   },
+   "starry-sky": {
+    "n": 29,
+    "secs": 35.198592
+   },
+   "the-moon": {
+    "n": 14,
+    "secs": 42.581630000000004
+   },
+   "tower-to-the-sky-intro": {
+    "n": 51,
+    "secs": 47.83142
+   },
+   "tower-to-the-sky": {
+    "n": 52,
+    "secs": 38.398464000000004
+   },
+   "vegetable-valley-theme": {
+    "n": 35,
+    "secs": 19.199232000000002
+   },
+   "yogurt-yard-theme": {
+    "n": 37,
+    "secs": 7.466368
+   }
+  }
+ }
+}
