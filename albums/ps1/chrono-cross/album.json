@@ -1,0 +1,321 @@
+{
+ "title": "Chrono Cross",
+ "order": 50,
+ "songs": {
+  "ancient-dragon-s-fort": "Ancient Dragon's Fort",
+  "cleft-of-dimension": "Cleft of Dimension",
+  "dancing-the-tokage": "Dancing the Tokage",
+  "dead-sea-tower-of-ruin": "Dead Sea - Tower of Ruin",
+  "dragon-s-prayer": "Dragon's Prayer",
+  "dream-of-the-shore-bordering-another-world": "Dream of the Shore Bordering Another World",
+  "dream-s-creation": "Dream's Creation",
+  "earth-dragon-s-island": "Earth Dragon's Island",
+  "fairies-make-way-for-magic": "Fairies Make Way for Magic",
+  "fates-gods-of-destiny": "Fates - Gods of Destiny",
+  "gaia-s-navel": "Gaia's Navel",
+  "garden-of-the-gods": "Garden of the Gods",
+  "he-sang-of-feeling": "He Sang of Feeling",
+  "home-termina-variation": "Home Termina (Variation)",
+  "into-a-time-of-darkness": "Into a Time of Darkness",
+  "isle-of-the-damned": "Isle of the Damned",
+  "leaving-the-body": "Leaving the Body",
+  "life-faraway-promise": "Life - Faraway Promise",
+  "lost-child-of-time": "Lost Child of Time",
+  "magical-dreamers-the-wind-stars-and-waves-intro": "Magical Dreamers - The Wind, Stars, and Waves (Intro)",
+  "magical-dreamers-the-wind-stars-and-waves-main": "Magical Dreamers - The Wind, Stars, and Waves (Main)",
+  "magical-dreamers-the-wind-stars-and-waves-variation": "Magical Dreamers - The Wind, Stars, and Waves (Variation)",
+  "orphan-of-flame": "Orphan of Flame",
+  "people-seized-with-life": "People Seized with Life",
+  "reminiscence-feelings-not-erased": "Reminiscence - Feelings Not Erased",
+  "the-big-admirable-mysterious-sleight-of-hand-group": "The Big Admirable Mysterious Sleight of Hand Group",
+  "the-brink-of-death-variation": "The Brink of Death (Variation)",
+  "the-brink-of-death": "The Brink of Death",
+  "the-star-stealing-girl": "The Star-Stealing Girl",
+  "time-of-the-dreamwatch": "Time of the Dreamwatch",
+  "time-s-grasslands-home-world": "Time's Grasslands - Home World",
+  "tower-of-stars": "Tower of Stars",
+  "victory-spring-s-gift": "Victory - Spring's Gift",
+  "victory-summer-s-cry": "Victory - Summer's Cry",
+  "voyage-another-world": "Voyage - Another World",
+  "voyage-home-world": "Voyage - Home World"
+ },
+ "nsf": {
+  "vault": "chrono-cross/",
+  "tracks": {
+   "ancient-dragon-s-fort": {
+    "n": 1,
+    "secs": 126.66768
+   },
+   "another-arni-village": {
+    "n": 1,
+    "secs": 101.540604
+   },
+   "another-guldove": {
+    "n": 1,
+    "secs": 100.65101925000002
+   },
+   "another-marbule": {
+    "n": 1,
+    "secs": 81.127776
+   },
+   "another-termina": {
+    "n": 1,
+    "secs": 80.131408
+   },
+   "birds-ambience": {
+    "n": 1,
+    "secs": 1349.771596
+   },
+   "cave-ambience-2": {
+    "n": 1,
+    "secs": 2314.037024
+   },
+   "cave-ambience": {
+    "n": 1,
+    "secs": 3769.424893166667
+   },
+   "chrono-main-theme": {
+    "n": 1,
+    "secs": 89.65723
+   },
+   "chronopolis": {
+    "n": 1,
+    "secs": 165.33168
+   },
+   "cleft-of-dimension": {
+    "n": 1,
+    "secs": 71.21870045833333
+   },
+   "dancing-the-tokage": {
+    "n": 1,
+    "secs": 73.042368
+   },
+   "dead-sea-tower-of-ruin": {
+    "n": 1,
+    "secs": 97.91891385416666
+   },
+   "death-volcano": {
+    "n": 1,
+    "secs": 114.2838
+   },
+   "dragon-god": {
+    "n": 1,
+    "secs": 85.556625
+   },
+   "dragon-s-prayer": {
+    "n": 1,
+    "secs": 171.24564675000002
+   },
+   "dragonrider": {
+    "n": 1,
+    "secs": 87.542002
+   },
+   "dream-of-the-shore-bordering-another-world": {
+    "n": 1,
+    "secs": 71.13367825
+   },
+   "dream-s-creation": {
+    "n": 1,
+    "secs": 91.428992
+   },
+   "drowning-valley": {
+    "n": 1,
+    "secs": 58.868056
+   },
+   "earth-dragon-s-island": {
+    "n": 1,
+    "secs": 87.99912
+   },
+   "etude-1": {
+    "n": 1,
+    "secs": 8.10788
+   },
+   "etude-2": {
+    "n": 1,
+    "secs": 8.732862416666668
+   },
+   "fairies-make-way-for-magic": {
+    "n": 1,
+    "secs": 8.715075583333334
+   },
+   "fates-gods-of-destiny": {
+    "n": 1,
+    "secs": 94.090332
+   },
+   "frozen-flame": {
+    "n": 1,
+    "secs": 78.99530404166667
+   },
+   "gaia-s-navel": {
+    "n": 1,
+    "secs": 94.286588
+   },
+   "gale": {
+    "n": 1,
+    "secs": 93.02046945833332
+   },
+   "garden-of-the-gods": {
+    "n": 1,
+    "secs": 81.84365154166666
+   },
+   "he-sang-of-feeling": {
+    "n": 1,
+    "secs": 76.581015
+   },
+   "home-guldove": {
+    "n": 1,
+    "secs": 113.848556
+   },
+   "home-marbule": {
+    "n": 1,
+    "secs": 88.694304
+   },
+   "home-termina-variation": {
+    "n": 1,
+    "secs": 86.334148
+   },
+   "home-termina": {
+    "n": 1,
+    "secs": 112.40569649999999
+   },
+   "home-village-arni": {
+    "n": 1,
+    "secs": 94.919137
+   },
+   "hydra-marshes": {
+    "n": 1,
+    "secs": 89.454128
+   },
+   "into-a-time-of-darkness": {
+    "n": 1,
+    "secs": 2314.037024
+   },
+   "isle-of-the-damned": {
+    "n": 1,
+    "secs": 115.714818
+   },
+   "jellyfish-sea": {
+    "n": 1,
+    "secs": 78.855776
+   },
+   "leaving-the-body": {
+    "n": 1,
+    "secs": 117.75266604166669
+   },
+   "life-faraway-promise": {
+    "n": 1,
+    "secs": 217.3197425416666
+   },
+   "lost-child-of-time": {
+    "n": 1,
+    "secs": 85.831342
+   },
+   "lost-fragments": {
+    "n": 1,
+    "secs": 93.05556154166669
+   },
+   "magical-dreamers-the-wind-stars-and-waves-intro": {
+    "n": 1,
+    "secs": 29.45098695833334
+   },
+   "magical-dreamers-the-wind-stars-and-waves-main": {
+    "n": 1,
+    "secs": 111.427472
+   },
+   "magical-dreamers-the-wind-stars-and-waves-variation": {
+    "n": 1,
+    "secs": 51.428064
+   },
+   "nap": {
+    "n": 1,
+    "secs": 6.791038729166667
+   },
+   "optimism": {
+    "n": 1,
+    "secs": 71.11104
+   },
+   "orphan-of-flame": {
+    "n": 1,
+    "secs": 77.246416
+   },
+   "people-seized-with-life": {
+    "n": 1,
+    "secs": 100.72448320833333
+   },
+   "phantom-ship": {
+    "n": 1,
+    "secs": 53.332096
+   },
+   "predicament": {
+    "n": 1,
+    "secs": 85.162
+   },
+   "previously-lost-hopes": {
+    "n": 1,
+    "secs": 32.90968941666665
+   },
+   "reminiscence-feelings-not-erased": {
+    "n": 1,
+    "secs": 93.181315
+   },
+   "shadow-forest": {
+    "n": 1,
+    "secs": 93.911616
+   },
+   "the-big-admirable-mysterious-sleight-of-hand-group": {
+    "n": 1,
+    "secs": 34.285376
+   },
+   "the-brink-of-death-variation": {
+    "n": 1,
+    "secs": 76.11163775
+   },
+   "the-brink-of-death": {
+    "n": 1,
+    "secs": 76.11163775
+   },
+   "the-star-stealing-girl": {
+    "n": 1,
+    "secs": 101.6929
+   },
+   "time-of-the-dreamwatch": {
+    "n": 1,
+    "secs": 119.98046875
+   },
+   "time-s-grasslands-home-world": {
+    "n": 1,
+    "secs": 96.00144
+   },
+   "tower-of-stars": {
+    "n": 1,
+    "secs": 66.001056
+   },
+   "victory-spring-s-gift": {
+    "n": 1,
+    "secs": 22.540772958333335
+   },
+   "victory-summer-s-cry": {
+    "n": 1,
+    "secs": 21.992269708333332
+   },
+   "viper-manor": {
+    "n": 1,
+    "secs": 84.20944
+   },
+   "voyage-another-world": {
+    "n": 1,
+    "secs": 72.452992
+   },
+   "voyage-home-world": {
+    "n": 1,
+    "secs": 94.284784
+   },
+   "zelbess": {
+    "n": 1,
+    "secs": 70.201053
+   }
+  },
+  "chip": "psf",
+  "perFile": true
+ }
+}

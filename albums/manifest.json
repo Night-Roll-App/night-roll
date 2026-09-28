@@ -245,6 +245,283 @@
   ]
  },
  {
+  "title": "Chrono Cross",
+  "songs": [
+   {
+    "title": "Ancient Dragon's Fort",
+    "path": "albums/ps1/chrono-cross/ancient-dragon-s-fort.mid"
+   },
+   {
+    "title": "Another Arni Village",
+    "path": "albums/ps1/chrono-cross/another-arni-village.mid"
+   },
+   {
+    "title": "Another Guldove",
+    "path": "albums/ps1/chrono-cross/another-guldove.mid"
+   },
+   {
+    "title": "Another Marbule",
+    "path": "albums/ps1/chrono-cross/another-marbule.mid"
+   },
+   {
+    "title": "Another Termina",
+    "path": "albums/ps1/chrono-cross/another-termina.mid"
+   },
+   {
+    "title": "Birds Ambience",
+    "path": "albums/ps1/chrono-cross/birds-ambience.mid"
+   },
+   {
+    "title": "Cave Ambience",
+    "path": "albums/ps1/chrono-cross/cave-ambience.mid"
+   },
+   {
+    "title": "Cave Ambience 2",
+    "path": "albums/ps1/chrono-cross/cave-ambience-2.mid"
+   },
+   {
+    "title": "Chrono Main Theme",
+    "path": "albums/ps1/chrono-cross/chrono-main-theme.mid"
+   },
+   {
+    "title": "Chronopolis",
+    "path": "albums/ps1/chrono-cross/chronopolis.mid"
+   },
+   {
+    "title": "Cleft of Dimension",
+    "path": "albums/ps1/chrono-cross/cleft-of-dimension.mid"
+   },
+   {
+    "title": "Dancing the Tokage",
+    "path": "albums/ps1/chrono-cross/dancing-the-tokage.mid"
+   },
+   {
+    "title": "Dead Sea - Tower of Ruin",
+    "path": "albums/ps1/chrono-cross/dead-sea-tower-of-ruin.mid"
+   },
+   {
+    "title": "Death Volcano",
+    "path": "albums/ps1/chrono-cross/death-volcano.mid"
+   },
+   {
+    "title": "Dragon God",
+    "path": "albums/ps1/chrono-cross/dragon-god.mid"
+   },
+   {
+    "title": "Dragon's Prayer",
+    "path": "albums/ps1/chrono-cross/dragon-s-prayer.mid"
+   },
+   {
+    "title": "Dragonrider",
+    "path": "albums/ps1/chrono-cross/dragonrider.mid"
+   },
+   {
+    "title": "Dream of the Shore Bordering Another World",
+    "path": "albums/ps1/chrono-cross/dream-of-the-shore-bordering-another-world.mid"
+   },
+   {
+    "title": "Dream's Creation",
+    "path": "albums/ps1/chrono-cross/dream-s-creation.mid"
+   },
+   {
+    "title": "Drowning Valley",
+    "path": "albums/ps1/chrono-cross/drowning-valley.mid"
+   },
+   {
+    "title": "Earth Dragon's Island",
+    "path": "albums/ps1/chrono-cross/earth-dragon-s-island.mid"
+   },
+   {
+    "title": "Etude 1",
+    "path": "albums/ps1/chrono-cross/etude-1.mid"
+   },
+   {
+    "title": "Etude 2",
+    "path": "albums/ps1/chrono-cross/etude-2.mid"
+   },
+   {
+    "title": "Fairies Make Way for Magic",
+    "path": "albums/ps1/chrono-cross/fairies-make-way-for-magic.mid"
+   },
+   {
+    "title": "Fates - Gods of Destiny",
+    "path": "albums/ps1/chrono-cross/fates-gods-of-destiny.mid"
+   },
+   {
+    "title": "Frozen Flame",
+    "path": "albums/ps1/chrono-cross/frozen-flame.mid"
+   },
+   {
+    "title": "Gaia's Navel",
+    "path": "albums/ps1/chrono-cross/gaia-s-navel.mid"
+   },
+   {
+    "title": "Gale",
+    "path": "albums/ps1/chrono-cross/gale.mid"
+   },
+   {
+    "title": "Garden of the Gods",
+    "path": "albums/ps1/chrono-cross/garden-of-the-gods.mid"
+   },
+   {
+    "title": "He Sang of Feeling",
+    "path": "albums/ps1/chrono-cross/he-sang-of-feeling.mid"
+   },
+   {
+    "title": "Home Guldove",
+    "path": "albums/ps1/chrono-cross/home-guldove.mid"
+   },
+   {
+    "title": "Home Marbule",
+    "path": "albums/ps1/chrono-cross/home-marbule.mid"
+   },
+   {
+    "title": "Home Termina",
+    "path": "albums/ps1/chrono-cross/home-termina.mid"
+   },
+   {
+    "title": "Home Termina (Variation)",
+    "path": "albums/ps1/chrono-cross/home-termina-variation.mid"
+   },
+   {
+    "title": "Home Village Arni",
+    "path": "albums/ps1/chrono-cross/home-village-arni.mid"
+   },
+   {
+    "title": "Hydra Marshes",
+    "path": "albums/ps1/chrono-cross/hydra-marshes.mid"
+   },
+   {
+    "title": "Into a Time of Darkness",
+    "path": "albums/ps1/chrono-cross/into-a-time-of-darkness.mid"
+   },
+   {
+    "title": "Isle of the Damned",
+    "path": "albums/ps1/chrono-cross/isle-of-the-damned.mid"
+   },
+   {
+    "title": "Jellyfish Sea",
+    "path": "albums/ps1/chrono-cross/jellyfish-sea.mid"
+   },
+   {
+    "title": "Leaving the Body",
+    "path": "albums/ps1/chrono-cross/leaving-the-body.mid"
+   },
+   {
+    "title": "Life - Faraway Promise",
+    "path": "albums/ps1/chrono-cross/life-faraway-promise.mid"
+   },
+   {
+    "title": "Lost Child of Time",
+    "path": "albums/ps1/chrono-cross/lost-child-of-time.mid"
+   },
+   {
+    "title": "Lost Fragments",
+    "path": "albums/ps1/chrono-cross/lost-fragments.mid"
+   },
+   {
+    "title": "Magical Dreamers - The Wind, Stars, and Waves (Intro)",
+    "path": "albums/ps1/chrono-cross/magical-dreamers-the-wind-stars-and-waves-intro.mid"
+   },
+   {
+    "title": "Magical Dreamers - The Wind, Stars, and Waves (Main)",
+    "path": "albums/ps1/chrono-cross/magical-dreamers-the-wind-stars-and-waves-main.mid"
+   },
+   {
+    "title": "Magical Dreamers - The Wind, Stars, and Waves (Variation)",
+    "path": "albums/ps1/chrono-cross/magical-dreamers-the-wind-stars-and-waves-variation.mid"
+   },
+   {
+    "title": "Nap",
+    "path": "albums/ps1/chrono-cross/nap.mid"
+   },
+   {
+    "title": "Optimism",
+    "path": "albums/ps1/chrono-cross/optimism.mid"
+   },
+   {
+    "title": "Orphan of Flame",
+    "path": "albums/ps1/chrono-cross/orphan-of-flame.mid"
+   },
+   {
+    "title": "People Seized with Life",
+    "path": "albums/ps1/chrono-cross/people-seized-with-life.mid"
+   },
+   {
+    "title": "Phantom Ship",
+    "path": "albums/ps1/chrono-cross/phantom-ship.mid"
+   },
+   {
+    "title": "Predicament",
+    "path": "albums/ps1/chrono-cross/predicament.mid"
+   },
+   {
+    "title": "Previously Lost Hopes",
+    "path": "albums/ps1/chrono-cross/previously-lost-hopes.mid"
+   },
+   {
+    "title": "Reminiscence - Feelings Not Erased",
+    "path": "albums/ps1/chrono-cross/reminiscence-feelings-not-erased.mid"
+   },
+   {
+    "title": "Shadow Forest",
+    "path": "albums/ps1/chrono-cross/shadow-forest.mid"
+   },
+   {
+    "title": "The Big Admirable Mysterious Sleight of Hand Group",
+    "path": "albums/ps1/chrono-cross/the-big-admirable-mysterious-sleight-of-hand-group.mid"
+   },
+   {
+    "title": "The Brink of Death",
+    "path": "albums/ps1/chrono-cross/the-brink-of-death.mid"
+   },
+   {
+    "title": "The Brink of Death (Variation)",
+    "path": "albums/ps1/chrono-cross/the-brink-of-death-variation.mid"
+   },
+   {
+    "title": "The Star-Stealing Girl",
+    "path": "albums/ps1/chrono-cross/the-star-stealing-girl.mid"
+   },
+   {
+    "title": "Time of the Dreamwatch",
+    "path": "albums/ps1/chrono-cross/time-of-the-dreamwatch.mid"
+   },
+   {
+    "title": "Time's Grasslands - Home World",
+    "path": "albums/ps1/chrono-cross/time-s-grasslands-home-world.mid"
+   },
+   {
+    "title": "Tower of Stars",
+    "path": "albums/ps1/chrono-cross/tower-of-stars.mid"
+   },
+   {
+    "title": "Victory - Spring's Gift",
+    "path": "albums/ps1/chrono-cross/victory-spring-s-gift.mid"
+   },
+   {
+    "title": "Victory - Summer's Cry",
+    "path": "albums/ps1/chrono-cross/victory-summer-s-cry.mid"
+   },
+   {
+    "title": "Viper Manor",
+    "path": "albums/ps1/chrono-cross/viper-manor.mid"
+   },
+   {
+    "title": "Voyage - Another World",
+    "path": "albums/ps1/chrono-cross/voyage-another-world.mid"
+   },
+   {
+    "title": "Voyage - Home World",
+    "path": "albums/ps1/chrono-cross/voyage-home-world.mid"
+   },
+   {
+    "title": "Zelbess",
+    "path": "albums/ps1/chrono-cross/zelbess.mid"
+   }
+  ]
+ },
+ {
   "title": "Chrono Trigger",
   "songs": [
    {
