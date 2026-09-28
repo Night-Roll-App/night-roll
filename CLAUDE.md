@@ -77,6 +77,9 @@ before touching the player.
   reverb, envelopes, tempo — comes from the file or the save state,
   never from a per-game table. If a per-game table is the only way,
   it is a warning in the capture and an item in open-items, not a fix.
+  Why: the goal is every game on an engine, not the one we listened
+  to — a fix that needs to know the game means the next game with the
+  same engine is still broken.
 
 ## Where things are
 
