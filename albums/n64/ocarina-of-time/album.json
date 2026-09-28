@@ -1,0 +1,410 @@
+{
+ "title": "The Legend of Zelda: Ocarina of Time",
+ "order": 50,
+ "songs": {
+  "bolero-of-fire": "Bolero of Fire",
+  "chamber-of-sages": "Chamber of Sages",
+  "dodongo-s-cavern": "Dodongo's Cavern",
+  "escape-from-ganon-s-castle": "Escape from Ganon's Castle",
+  "escape-from-lon-lon-ranch": "Escape from Lon Lon Ranch",
+  "ganon-s-castle-bridge": "Ganon's Castle Bridge",
+  "ganon-s-castle-underground": "Ganon's Castle Underground",
+  "ganondorf-s-theme": "Ganondorf's Theme",
+  "great-fairy-s-fountain": "Great Fairy's Fountain",
+  "ingo-s-theme": "Ingo's Theme",
+  "inside-ganon-s-castle": "Inside Ganon's Castle",
+  "inside-jabu-jabu-s-belly": "Inside Jabu-Jabu's Belly",
+  "inside-the-deku-tree": "Inside the Deku Tree",
+  "kaepora-gaebora-s-theme": "Kaepora Gaebora's Theme",
+  "kotake-koume-s-theme": "Kotake & Koume's Theme",
+  "legend-of-hyrule": "Legend of Hyrule",
+  "main-menu-fairy-s-fountain": "Main Menu (Fairy's Fountain)",
+  "minuet-of-forest": "Minuet of Forest",
+  "nocturne-of-shadow": "Nocturne of Shadow",
+  "ocarina-epona-s-theme": "Ocarina ~Epona's Theme~",
+  "ocarina-of-time-zelda-s-ocarina": "Ocarina of Time ~Zelda's Ocarina~",
+  "ocarina-saria-s-song": "Ocarina ~Saria's Song~",
+  "ocarina-song-of-storms": "Ocarina ~Song of Storms~",
+  "ocarina-song-of-time": "Ocarina ~Song Of Time~",
+  "ocarina-sun-s-song": "Ocarina ~Sun's Song~",
+  "ocarina-zelda-s-lullaby": "Ocarina ~Zelda's Lullaby~",
+  "open-door-of-temple-of-time": "Open Door of Temple of Time",
+  "prelude-of-light": "Prelude of Light",
+  "requiem-of-spirit": "Requiem of Spirit",
+  "seal-of-six-sages": "Seal of Six Sages",
+  "serenade-of-water": "Serenade of Water",
+  "sheik-s-theme": "Sheik's Theme",
+  "temple-of-time": "Temple of Time",
+  "zelda-s-theme": "Zelda's Theme",
+  "zora-s-domain": "Zora's Domain"
+ },
+ "nsf": {
+  "vault": "ocarina-of-time/",
+  "tracks": {
+   "battle": {
+    "n": 1,
+    "secs": 57.600000000004535
+   },
+   "bolero-of-fire": {
+    "n": 1,
+    "secs": 18.762139128394043
+   },
+   "boss-battle": {
+    "n": 1,
+    "secs": 71.74999999998762
+   },
+   "boss-clear": {
+    "n": 1,
+    "secs": 11.666666666666453
+   },
+   "chamber-of-sages": {
+    "n": 1,
+    "secs": 91.99999999999653
+   },
+   "deku-tree": {
+    "n": 1,
+    "secs": 25.945945945945308
+   },
+   "dinosaur-boss-battle": {
+    "n": 1,
+    "secs": 63.151351351345994
+   },
+   "dodongo-s-cavern": {
+    "n": 1,
+    "secs": 90
+   },
+   "end-credits-a": {
+    "n": 1,
+    "secs": 156.48755259880372
+   },
+   "end-credits-b": {
+    "n": 1,
+    "secs": 146.68464105844774
+   },
+   "end-credits-c": {
+    "n": 1,
+    "secs": 67.98192498928552
+   },
+   "end-credits-d": {
+    "n": 1,
+    "secs": 49.39813664596066
+   },
+   "enter-ganondorf": {
+    "n": 1,
+    "secs": 15.999999999999636
+   },
+   "enter-zelda": {
+    "n": 1,
+    "secs": 4.243356643356625
+   },
+   "escape-from-ganon-s-castle": {
+    "n": 1,
+    "secs": 48.54666666666559
+   },
+   "escape-from-lon-lon-ranch": {
+    "n": 1,
+    "secs": 8.017064331017915
+   },
+   "fairy-flying": {
+    "n": 1,
+    "secs": 16.215716486903286
+   },
+   "fire-temple": {
+    "n": 1,
+    "secs": 97.69911504426167
+   },
+   "forest-temple": {
+    "n": 1,
+    "secs": 102.12765957447981
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 9.730769230769463
+   },
+   "ganon-s-castle-bridge": {
+    "n": 1,
+    "secs": 19.701492537313488
+   },
+   "ganon-s-castle-underground": {
+    "n": 1,
+    "secs": 79.20000000000944
+   },
+   "ganondorf-battle": {
+    "n": 1,
+    "secs": 66.95746455378705
+   },
+   "ganondorf-s-theme": {
+    "n": 1,
+    "secs": 31.361709401710048
+   },
+   "gerudo-valley": {
+    "n": 1,
+    "secs": 86.00000000000418
+   },
+   "get-fairy-ocarina": {
+    "n": 1,
+    "secs": 9.064285714285754
+   },
+   "get-heart-container": {
+    "n": 1,
+    "secs": 2.999999999999991
+   },
+   "get-spiritual-stone": {
+    "n": 1,
+    "secs": 14.114285714285899
+   },
+   "goron-city": {
+    "n": 1,
+    "secs": 83.728260869561
+   },
+   "great-fairy-s-fountain": {
+    "n": 1,
+    "secs": 27.566172442572036
+   },
+   "horse-race-goal": {
+    "n": 1,
+    "secs": 3.4838709677419732
+   },
+   "horse-race": {
+    "n": 1,
+    "secs": 40.89677419354737
+   },
+   "house": {
+    "n": 1,
+    "secs": 27.585034013607395
+   },
+   "hyrule-castle-courtyard": {
+    "n": 1,
+    "secs": 23.040000000000802
+   },
+   "hyrule-field-battle": {
+    "n": 1,
+    "secs": 600.0000000000523
+   },
+   "hyrule-field-main-theme": {
+    "n": 1,
+    "secs": 600.0000000000523
+   },
+   "hyrule-field-morning-theme": {
+    "n": 1,
+    "secs": 30.199999999998987
+   },
+   "hyrule-field-waiting": {
+    "n": 1,
+    "secs": 600.0000000000523
+   },
+   "hyrule-field": {
+    "n": 1,
+    "secs": 13.266666666666554
+   },
+   "ice-cavern": {
+    "n": 1,
+    "secs": 35.67567567567542
+   },
+   "ingo-s-theme": {
+    "n": 1,
+    "secs": 54
+   },
+   "inside-ganon-s-castle": {
+    "n": 1,
+    "secs": 200.59704769084408
+   },
+   "inside-jabu-jabu-s-belly": {
+    "n": 1,
+    "secs": 50.52631578947507
+   },
+   "inside-the-deku-tree": {
+    "n": 1,
+    "secs": 76.80000000000034
+   },
+   "item-catch": {
+    "n": 1,
+    "secs": 2.999999999999991
+   },
+   "kaepora-gaebora-s-theme": {
+    "n": 1,
+    "secs": 52.66583850931672
+   },
+   "kakariko-village-orchestral-version": {
+    "n": 1,
+    "secs": 92.79777546278243
+   },
+   "kakariko-village": {
+    "n": 1,
+    "secs": 95.17206285368769
+   },
+   "kokiri-forest": {
+    "n": 1,
+    "secs": 51.31034482758793
+   },
+   "kotake-koume-s-theme": {
+    "n": 1,
+    "secs": 47.454545454541844
+   },
+   "last-battle": {
+    "n": 1,
+    "secs": 94.32432432433662
+   },
+   "legend-of-hyrule": {
+    "n": 1,
+    "secs": 115.99999999999108
+   },
+   "lon-lon-ranch": {
+    "n": 1,
+    "secs": 127.0588235294185
+   },
+   "lost-woods": {
+    "n": 1,
+    "secs": 32.571428571430864
+   },
+   "main-menu-fairy-s-fountain": {
+    "n": 1,
+    "secs": 27.566172442572036
+   },
+   "market": {
+    "n": 1,
+    "secs": 40.27397260274217
+   },
+   "master-sword": {
+    "n": 1,
+    "secs": 12.244897959183847
+   },
+   "medal-get-fanfare": {
+    "n": 1,
+    "secs": 11.914285714285791
+   },
+   "meet-zelda-again": {
+    "n": 1,
+    "secs": 41.28479888905353
+   },
+   "middle-boss-battle": {
+    "n": 1,
+    "secs": 59.99999999999663
+   },
+   "mini-game": {
+    "n": 1,
+    "secs": 25.945945945947013
+   },
+   "minuet-of-forest": {
+    "n": 1,
+    "secs": 16.416666666666266
+   },
+   "nocturne-of-shadow": {
+    "n": 1,
+    "secs": 23.12142857142867
+   },
+   "ocarina-epona-s-theme": {
+    "n": 1,
+    "secs": 6.872727272727367
+   },
+   "ocarina-of-time-zelda-s-ocarina": {
+    "n": 1,
+    "secs": 29.744615225200903
+   },
+   "ocarina-saria-s-song": {
+    "n": 1,
+    "secs": 5.3333333333333375
+   },
+   "ocarina-song-of-storms": {
+    "n": 1,
+    "secs": 4.535714285714278
+   },
+   "ocarina-song-of-time": {
+    "n": 1,
+    "secs": 9.260443086325369
+   },
+   "ocarina-sun-s-song": {
+    "n": 1,
+    "secs": 5.892857142857173
+   },
+   "ocarina-zelda-s-lullaby": {
+    "n": 1,
+    "secs": 8.86699507389171
+   },
+   "open-door-of-temple-of-time": {
+    "n": 1,
+    "secs": 13.636363636363548
+   },
+   "open-treasure-box": {
+    "n": 1,
+    "secs": 7.562109237935988
+   },
+   "potion-shop": {
+    "n": 1,
+    "secs": 43.404255319148966
+   },
+   "prelude-of-light": {
+    "n": 1,
+    "secs": 15.999999999999636
+   },
+   "requiem-of-spirit": {
+    "n": 1,
+    "secs": 24.976461038960736
+   },
+   "seal-of-six-sages": {
+    "n": 1,
+    "secs": 28.05194805194894
+   },
+   "serenade-of-water": {
+    "n": 1,
+    "secs": 17.064285714286047
+   },
+   "shadow-temple": {
+    "n": 1,
+    "secs": 92.30769230768769
+   },
+   "sheik-s-theme": {
+    "n": 1,
+    "secs": 24.644094981796197
+   },
+   "shooting-gallery": {
+    "n": 1,
+    "secs": 32.100000000003014
+   },
+   "shop": {
+    "n": 1,
+    "secs": 59.99999999999606
+   },
+   "small-item-catch": {
+    "n": 1,
+    "secs": 2.999999999999991
+   },
+   "spirit-temple": {
+    "n": 1,
+    "secs": 163.5616438356534
+   },
+   "temple-of-time": {
+    "n": 1,
+    "secs": 73.86331874646807
+   },
+   "title-theme": {
+    "n": 1,
+    "secs": 77.9023775786394
+   },
+   "water-temple": {
+    "n": 1,
+    "secs": 154.4827586206531
+   },
+   "windmill-hut": {
+    "n": 1,
+    "secs": 43.20000000000126
+   },
+   "zelda-s-theme": {
+    "n": 1,
+    "secs": 41.28479888905353
+   },
+   "zora-s-domain": {
+    "n": 1,
+    "secs": 82.3125
+   }
+  },
+  "chip": "usf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "nus-czle-usa.usflib",
+    "file": "nus-czle-usa.usflib"
+   }
+  ]
+ }
+}

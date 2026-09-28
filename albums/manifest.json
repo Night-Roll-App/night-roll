@@ -8930,6 +8930,367 @@
   ]
  },
  {
+  "title": "The Legend of Zelda: Ocarina of Time",
+  "songs": [
+   {
+    "title": "Battle",
+    "path": "albums/n64/ocarina-of-time/battle.mid"
+   },
+   {
+    "title": "Bolero of Fire",
+    "path": "albums/n64/ocarina-of-time/bolero-of-fire.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/n64/ocarina-of-time/boss-battle.mid"
+   },
+   {
+    "title": "Boss Clear",
+    "path": "albums/n64/ocarina-of-time/boss-clear.mid"
+   },
+   {
+    "title": "Chamber of Sages",
+    "path": "albums/n64/ocarina-of-time/chamber-of-sages.mid"
+   },
+   {
+    "title": "Deku Tree",
+    "path": "albums/n64/ocarina-of-time/deku-tree.mid"
+   },
+   {
+    "title": "Dinosaur Boss Battle",
+    "path": "albums/n64/ocarina-of-time/dinosaur-boss-battle.mid"
+   },
+   {
+    "title": "Dodongo's Cavern",
+    "path": "albums/n64/ocarina-of-time/dodongo-s-cavern.mid"
+   },
+   {
+    "title": "End Credits A",
+    "path": "albums/n64/ocarina-of-time/end-credits-a.mid"
+   },
+   {
+    "title": "End Credits B",
+    "path": "albums/n64/ocarina-of-time/end-credits-b.mid"
+   },
+   {
+    "title": "End Credits C",
+    "path": "albums/n64/ocarina-of-time/end-credits-c.mid"
+   },
+   {
+    "title": "End Credits D",
+    "path": "albums/n64/ocarina-of-time/end-credits-d.mid"
+   },
+   {
+    "title": "Enter Ganondorf",
+    "path": "albums/n64/ocarina-of-time/enter-ganondorf.mid"
+   },
+   {
+    "title": "Enter Zelda",
+    "path": "albums/n64/ocarina-of-time/enter-zelda.mid"
+   },
+   {
+    "title": "Escape from Ganon's Castle",
+    "path": "albums/n64/ocarina-of-time/escape-from-ganon-s-castle.mid"
+   },
+   {
+    "title": "Escape from Lon Lon Ranch",
+    "path": "albums/n64/ocarina-of-time/escape-from-lon-lon-ranch.mid"
+   },
+   {
+    "title": "Fairy Flying",
+    "path": "albums/n64/ocarina-of-time/fairy-flying.mid"
+   },
+   {
+    "title": "Fire Temple",
+    "path": "albums/n64/ocarina-of-time/fire-temple.mid"
+   },
+   {
+    "title": "Forest Temple",
+    "path": "albums/n64/ocarina-of-time/forest-temple.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/n64/ocarina-of-time/game-over.mid"
+   },
+   {
+    "title": "Ganon's Castle Bridge",
+    "path": "albums/n64/ocarina-of-time/ganon-s-castle-bridge.mid"
+   },
+   {
+    "title": "Ganon's Castle Underground",
+    "path": "albums/n64/ocarina-of-time/ganon-s-castle-underground.mid"
+   },
+   {
+    "title": "Ganondorf Battle",
+    "path": "albums/n64/ocarina-of-time/ganondorf-battle.mid"
+   },
+   {
+    "title": "Ganondorf's Theme",
+    "path": "albums/n64/ocarina-of-time/ganondorf-s-theme.mid"
+   },
+   {
+    "title": "Gerudo Valley",
+    "path": "albums/n64/ocarina-of-time/gerudo-valley.mid"
+   },
+   {
+    "title": "Get Fairy Ocarina",
+    "path": "albums/n64/ocarina-of-time/get-fairy-ocarina.mid"
+   },
+   {
+    "title": "Get Heart Container",
+    "path": "albums/n64/ocarina-of-time/get-heart-container.mid"
+   },
+   {
+    "title": "Get Spiritual Stone",
+    "path": "albums/n64/ocarina-of-time/get-spiritual-stone.mid"
+   },
+   {
+    "title": "Goron City",
+    "path": "albums/n64/ocarina-of-time/goron-city.mid"
+   },
+   {
+    "title": "Great Fairy's Fountain",
+    "path": "albums/n64/ocarina-of-time/great-fairy-s-fountain.mid"
+   },
+   {
+    "title": "Horse Race",
+    "path": "albums/n64/ocarina-of-time/horse-race.mid"
+   },
+   {
+    "title": "Horse Race Goal",
+    "path": "albums/n64/ocarina-of-time/horse-race-goal.mid"
+   },
+   {
+    "title": "House",
+    "path": "albums/n64/ocarina-of-time/house.mid"
+   },
+   {
+    "title": "Hyrule Castle Courtyard",
+    "path": "albums/n64/ocarina-of-time/hyrule-castle-courtyard.mid"
+   },
+   {
+    "title": "Hyrule Field",
+    "path": "albums/n64/ocarina-of-time/hyrule-field.mid"
+   },
+   {
+    "title": "Hyrule Field Battle",
+    "path": "albums/n64/ocarina-of-time/hyrule-field-battle.mid"
+   },
+   {
+    "title": "Hyrule Field Main Theme",
+    "path": "albums/n64/ocarina-of-time/hyrule-field-main-theme.mid"
+   },
+   {
+    "title": "Hyrule Field Morning Theme",
+    "path": "albums/n64/ocarina-of-time/hyrule-field-morning-theme.mid"
+   },
+   {
+    "title": "Hyrule Field Waiting",
+    "path": "albums/n64/ocarina-of-time/hyrule-field-waiting.mid"
+   },
+   {
+    "title": "Ice Cavern",
+    "path": "albums/n64/ocarina-of-time/ice-cavern.mid"
+   },
+   {
+    "title": "Ingo's Theme",
+    "path": "albums/n64/ocarina-of-time/ingo-s-theme.mid"
+   },
+   {
+    "title": "Inside Ganon's Castle",
+    "path": "albums/n64/ocarina-of-time/inside-ganon-s-castle.mid"
+   },
+   {
+    "title": "Inside Jabu-Jabu's Belly",
+    "path": "albums/n64/ocarina-of-time/inside-jabu-jabu-s-belly.mid"
+   },
+   {
+    "title": "Inside the Deku Tree",
+    "path": "albums/n64/ocarina-of-time/inside-the-deku-tree.mid"
+   },
+   {
+    "title": "Item Catch",
+    "path": "albums/n64/ocarina-of-time/item-catch.mid"
+   },
+   {
+    "title": "Kaepora Gaebora's Theme",
+    "path": "albums/n64/ocarina-of-time/kaepora-gaebora-s-theme.mid"
+   },
+   {
+    "title": "Kakariko Village",
+    "path": "albums/n64/ocarina-of-time/kakariko-village.mid"
+   },
+   {
+    "title": "Kakariko Village Orchestral Version",
+    "path": "albums/n64/ocarina-of-time/kakariko-village-orchestral-version.mid"
+   },
+   {
+    "title": "Kokiri Forest",
+    "path": "albums/n64/ocarina-of-time/kokiri-forest.mid"
+   },
+   {
+    "title": "Kotake & Koume's Theme",
+    "path": "albums/n64/ocarina-of-time/kotake-koume-s-theme.mid"
+   },
+   {
+    "title": "Last Battle",
+    "path": "albums/n64/ocarina-of-time/last-battle.mid"
+   },
+   {
+    "title": "Legend of Hyrule",
+    "path": "albums/n64/ocarina-of-time/legend-of-hyrule.mid"
+   },
+   {
+    "title": "Lon Lon Ranch",
+    "path": "albums/n64/ocarina-of-time/lon-lon-ranch.mid"
+   },
+   {
+    "title": "Lost Woods",
+    "path": "albums/n64/ocarina-of-time/lost-woods.mid"
+   },
+   {
+    "title": "Main Menu (Fairy's Fountain)",
+    "path": "albums/n64/ocarina-of-time/main-menu-fairy-s-fountain.mid"
+   },
+   {
+    "title": "Market",
+    "path": "albums/n64/ocarina-of-time/market.mid"
+   },
+   {
+    "title": "Master Sword",
+    "path": "albums/n64/ocarina-of-time/master-sword.mid"
+   },
+   {
+    "title": "Medal Get Fanfare",
+    "path": "albums/n64/ocarina-of-time/medal-get-fanfare.mid"
+   },
+   {
+    "title": "Meet Zelda Again",
+    "path": "albums/n64/ocarina-of-time/meet-zelda-again.mid"
+   },
+   {
+    "title": "Middle Boss Battle",
+    "path": "albums/n64/ocarina-of-time/middle-boss-battle.mid"
+   },
+   {
+    "title": "Mini Game",
+    "path": "albums/n64/ocarina-of-time/mini-game.mid"
+   },
+   {
+    "title": "Minuet of Forest",
+    "path": "albums/n64/ocarina-of-time/minuet-of-forest.mid"
+   },
+   {
+    "title": "Nocturne of Shadow",
+    "path": "albums/n64/ocarina-of-time/nocturne-of-shadow.mid"
+   },
+   {
+    "title": "Ocarina ~Epona's Theme~",
+    "path": "albums/n64/ocarina-of-time/ocarina-epona-s-theme.mid"
+   },
+   {
+    "title": "Ocarina ~Saria's Song~",
+    "path": "albums/n64/ocarina-of-time/ocarina-saria-s-song.mid"
+   },
+   {
+    "title": "Ocarina ~Song of Storms~",
+    "path": "albums/n64/ocarina-of-time/ocarina-song-of-storms.mid"
+   },
+   {
+    "title": "Ocarina ~Song Of Time~",
+    "path": "albums/n64/ocarina-of-time/ocarina-song-of-time.mid"
+   },
+   {
+    "title": "Ocarina ~Sun's Song~",
+    "path": "albums/n64/ocarina-of-time/ocarina-sun-s-song.mid"
+   },
+   {
+    "title": "Ocarina ~Zelda's Lullaby~",
+    "path": "albums/n64/ocarina-of-time/ocarina-zelda-s-lullaby.mid"
+   },
+   {
+    "title": "Ocarina of Time ~Zelda's Ocarina~",
+    "path": "albums/n64/ocarina-of-time/ocarina-of-time-zelda-s-ocarina.mid"
+   },
+   {
+    "title": "Open Door of Temple of Time",
+    "path": "albums/n64/ocarina-of-time/open-door-of-temple-of-time.mid"
+   },
+   {
+    "title": "Open Treasure Box",
+    "path": "albums/n64/ocarina-of-time/open-treasure-box.mid"
+   },
+   {
+    "title": "Potion Shop",
+    "path": "albums/n64/ocarina-of-time/potion-shop.mid"
+   },
+   {
+    "title": "Prelude of Light",
+    "path": "albums/n64/ocarina-of-time/prelude-of-light.mid"
+   },
+   {
+    "title": "Requiem of Spirit",
+    "path": "albums/n64/ocarina-of-time/requiem-of-spirit.mid"
+   },
+   {
+    "title": "Seal of Six Sages",
+    "path": "albums/n64/ocarina-of-time/seal-of-six-sages.mid"
+   },
+   {
+    "title": "Serenade of Water",
+    "path": "albums/n64/ocarina-of-time/serenade-of-water.mid"
+   },
+   {
+    "title": "Shadow Temple",
+    "path": "albums/n64/ocarina-of-time/shadow-temple.mid"
+   },
+   {
+    "title": "Sheik's Theme",
+    "path": "albums/n64/ocarina-of-time/sheik-s-theme.mid"
+   },
+   {
+    "title": "Shooting Gallery",
+    "path": "albums/n64/ocarina-of-time/shooting-gallery.mid"
+   },
+   {
+    "title": "Shop",
+    "path": "albums/n64/ocarina-of-time/shop.mid"
+   },
+   {
+    "title": "Small Item Catch",
+    "path": "albums/n64/ocarina-of-time/small-item-catch.mid"
+   },
+   {
+    "title": "Spirit Temple",
+    "path": "albums/n64/ocarina-of-time/spirit-temple.mid"
+   },
+   {
+    "title": "Temple of Time",
+    "path": "albums/n64/ocarina-of-time/temple-of-time.mid"
+   },
+   {
+    "title": "Title Theme",
+    "path": "albums/n64/ocarina-of-time/title-theme.mid"
+   },
+   {
+    "title": "Water Temple",
+    "path": "albums/n64/ocarina-of-time/water-temple.mid"
+   },
+   {
+    "title": "Windmill Hut",
+    "path": "albums/n64/ocarina-of-time/windmill-hut.mid"
+   },
+   {
+    "title": "Zelda's Theme",
+    "path": "albums/n64/ocarina-of-time/zelda-s-theme.mid"
+   },
+   {
+    "title": "Zora's Domain",
+    "path": "albums/n64/ocarina-of-time/zora-s-domain.mid"
+   }
+  ]
+ },
+ {
   "title": "TMNT 2",
   "songs": [
    {
