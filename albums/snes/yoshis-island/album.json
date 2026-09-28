@@ -1,0 +1,227 @@
+{
+ "title": "Super Mario World 2: Yoshi's Island",
+ "order": 50,
+ "songs": {
+  "athletic-fuzzy-1": "Athletic (Fuzzy 1)",
+  "athletic-fuzzy-2": "Athletic (Fuzzy 2)",
+  "athletic-fuzzy-3": "Athletic (Fuzzy 3)",
+  "big-boss-no-intro": "Big Boss (No Intro)",
+  "castle-fortress": "Castle & Fortress",
+  "ending-part-1": "Ending (part 1)",
+  "ending-part-2": "Ending (part 2)",
+  "flower-garden-fuzzy-1": "Flower Garden (Fuzzy 1)",
+  "flower-garden-fuzzy-2": "Flower Garden (Fuzzy 2)",
+  "kamek-s-theme": "Kamek's Theme",
+  "luigi-is-rescued": "Luigi is Rescued",
+  "map-part-1": "Map (part 1)",
+  "map-part-2": "Map (part 2)",
+  "map-part-3": "Map (part 3)",
+  "map-part-4": "Map (part 4)",
+  "map-part-5": "Map (part 5)",
+  "map-part-6": "Map (part 6)",
+  "map-part-7": "Map (part 7)",
+  "mini-boss": "Mini-Boss",
+  "overworld-fuzzy": "Overworld (Fuzzy)",
+  "yoshi-s-island-world-6": "Yoshi's Island (World 6)",
+  "yoshi-s-island": "Yoshi's Island"
+ },
+ "nsf": {
+  "vault": "yoshis-island/",
+  "tracks": {
+   "athletic-fuzzy-1": {
+    "n": 1,
+    "secs": 12
+   },
+   "athletic-fuzzy-2": {
+    "n": 1,
+    "secs": 36
+   },
+   "athletic-fuzzy-3": {
+    "n": 1,
+    "secs": 108
+   },
+   "athletic": {
+    "n": 1,
+    "secs": 120
+   },
+   "big-boss-clear": {
+    "n": 1,
+    "secs": 12
+   },
+   "big-boss-no-intro": {
+    "n": 1,
+    "secs": 96
+   },
+   "big-boss": {
+    "n": 1,
+    "secs": 111
+   },
+   "bonus-fanfare": {
+    "n": 1,
+    "secs": 12
+   },
+   "bonus-game": {
+    "n": 1,
+    "secs": 73
+   },
+   "boss-intro": {
+    "n": 1,
+    "secs": 12
+   },
+   "bowser-clear": {
+    "n": 1,
+    "secs": 12
+   },
+   "bowser": {
+    "n": 1,
+    "secs": 156
+   },
+   "castle-fortress": {
+    "n": 1,
+    "secs": 114
+   },
+   "ending-part-1": {
+    "n": 1,
+    "secs": 187
+   },
+   "ending-part-2": {
+    "n": 1,
+    "secs": 48
+   },
+   "extra-life": {
+    "n": 1,
+    "secs": 12
+   },
+   "flower-garden-fuzzy-1": {
+    "n": 1,
+    "secs": 54
+   },
+   "flower-garden-fuzzy-2": {
+    "n": 1,
+    "secs": 27
+   },
+   "flower-garden": {
+    "n": 1,
+    "secs": 160
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 12
+   },
+   "game-start": {
+    "n": 1,
+    "secs": 12
+   },
+   "goal": {
+    "n": 1,
+    "secs": 12
+   },
+   "kamek-s-theme": {
+    "n": 1,
+    "secs": 22
+   },
+   "luigi-is-rescued": {
+    "n": 1,
+    "secs": 62
+   },
+   "map-part-1": {
+    "n": 1,
+    "secs": 18
+   },
+   "map-part-2": {
+    "n": 1,
+    "secs": 18
+   },
+   "map-part-3": {
+    "n": 1,
+    "secs": 18
+   },
+   "map-part-4": {
+    "n": 1,
+    "secs": 18
+   },
+   "map-part-5": {
+    "n": 1,
+    "secs": 18
+   },
+   "map-part-6": {
+    "n": 1,
+    "secs": 18
+   },
+   "map-part-7": {
+    "n": 1,
+    "secs": 18
+   },
+   "mario-kidnapped": {
+    "n": 1,
+    "secs": 12
+   },
+   "mini-boss": {
+    "n": 1,
+    "secs": 120
+   },
+   "nintendo-mark": {
+    "n": 1,
+    "secs": 12
+   },
+   "overworld-fuzzy": {
+    "n": 1,
+    "secs": 108
+   },
+   "overworld": {
+    "n": 1,
+    "secs": 68
+   },
+   "player-down": {
+    "n": 1,
+    "secs": 12
+   },
+   "powerful-infant": {
+    "n": 1,
+    "secs": 45
+   },
+   "room-before-boss": {
+    "n": 1,
+    "secs": 48
+   },
+   "score": {
+    "n": 1,
+    "secs": 50
+   },
+   "story-music-box": {
+    "n": 1,
+    "secs": 300
+   },
+   "training-course": {
+    "n": 1,
+    "secs": 22
+   },
+   "transform": {
+    "n": 1,
+    "secs": 12
+   },
+   "underground": {
+    "n": 1,
+    "secs": 92
+   },
+   "world-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "yoshi-s-island-world-6": {
+    "n": 1,
+    "secs": 89
+   },
+   "yoshi-s-island": {
+    "n": 1,
+    "secs": 149
+   },
+   "yoshi-start-demo": {
+    "n": 1,
+    "secs": 53
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}

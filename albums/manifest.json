@@ -5499,6 +5499,203 @@
   ]
  },
  {
+  "title": "Super Mario World 2: Yoshi's Island",
+  "songs": [
+   {
+    "title": "Athletic",
+    "path": "albums/snes/yoshis-island/athletic.mid"
+   },
+   {
+    "title": "Athletic (Fuzzy 1)",
+    "path": "albums/snes/yoshis-island/athletic-fuzzy-1.mid"
+   },
+   {
+    "title": "Athletic (Fuzzy 2)",
+    "path": "albums/snes/yoshis-island/athletic-fuzzy-2.mid"
+   },
+   {
+    "title": "Athletic (Fuzzy 3)",
+    "path": "albums/snes/yoshis-island/athletic-fuzzy-3.mid"
+   },
+   {
+    "title": "Big Boss",
+    "path": "albums/snes/yoshis-island/big-boss.mid"
+   },
+   {
+    "title": "Big Boss (No Intro)",
+    "path": "albums/snes/yoshis-island/big-boss-no-intro.mid"
+   },
+   {
+    "title": "Big Boss Clear",
+    "path": "albums/snes/yoshis-island/big-boss-clear.mid"
+   },
+   {
+    "title": "Bonus Fanfare",
+    "path": "albums/snes/yoshis-island/bonus-fanfare.mid"
+   },
+   {
+    "title": "Bonus Game",
+    "path": "albums/snes/yoshis-island/bonus-game.mid"
+   },
+   {
+    "title": "Boss Intro",
+    "path": "albums/snes/yoshis-island/boss-intro.mid"
+   },
+   {
+    "title": "Bowser",
+    "path": "albums/snes/yoshis-island/bowser.mid"
+   },
+   {
+    "title": "Bowser Clear",
+    "path": "albums/snes/yoshis-island/bowser-clear.mid"
+   },
+   {
+    "title": "Castle & Fortress",
+    "path": "albums/snes/yoshis-island/castle-fortress.mid"
+   },
+   {
+    "title": "Ending (part 1)",
+    "path": "albums/snes/yoshis-island/ending-part-1.mid"
+   },
+   {
+    "title": "Ending (part 2)",
+    "path": "albums/snes/yoshis-island/ending-part-2.mid"
+   },
+   {
+    "title": "Extra Life",
+    "path": "albums/snes/yoshis-island/extra-life.mid"
+   },
+   {
+    "title": "Flower Garden",
+    "path": "albums/snes/yoshis-island/flower-garden.mid"
+   },
+   {
+    "title": "Flower Garden (Fuzzy 1)",
+    "path": "albums/snes/yoshis-island/flower-garden-fuzzy-1.mid"
+   },
+   {
+    "title": "Flower Garden (Fuzzy 2)",
+    "path": "albums/snes/yoshis-island/flower-garden-fuzzy-2.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/snes/yoshis-island/game-over.mid"
+   },
+   {
+    "title": "Game Start",
+    "path": "albums/snes/yoshis-island/game-start.mid"
+   },
+   {
+    "title": "Goal",
+    "path": "albums/snes/yoshis-island/goal.mid"
+   },
+   {
+    "title": "Kamek's Theme",
+    "path": "albums/snes/yoshis-island/kamek-s-theme.mid"
+   },
+   {
+    "title": "Luigi is Rescued",
+    "path": "albums/snes/yoshis-island/luigi-is-rescued.mid"
+   },
+   {
+    "title": "Map (part 1)",
+    "path": "albums/snes/yoshis-island/map-part-1.mid"
+   },
+   {
+    "title": "Map (part 2)",
+    "path": "albums/snes/yoshis-island/map-part-2.mid"
+   },
+   {
+    "title": "Map (part 3)",
+    "path": "albums/snes/yoshis-island/map-part-3.mid"
+   },
+   {
+    "title": "Map (part 4)",
+    "path": "albums/snes/yoshis-island/map-part-4.mid"
+   },
+   {
+    "title": "Map (part 5)",
+    "path": "albums/snes/yoshis-island/map-part-5.mid"
+   },
+   {
+    "title": "Map (part 6)",
+    "path": "albums/snes/yoshis-island/map-part-6.mid"
+   },
+   {
+    "title": "Map (part 7)",
+    "path": "albums/snes/yoshis-island/map-part-7.mid"
+   },
+   {
+    "title": "Mario Kidnapped",
+    "path": "albums/snes/yoshis-island/mario-kidnapped.mid"
+   },
+   {
+    "title": "Mini-Boss",
+    "path": "albums/snes/yoshis-island/mini-boss.mid"
+   },
+   {
+    "title": "Nintendo Mark",
+    "path": "albums/snes/yoshis-island/nintendo-mark.mid"
+   },
+   {
+    "title": "Overworld",
+    "path": "albums/snes/yoshis-island/overworld.mid"
+   },
+   {
+    "title": "Overworld (Fuzzy)",
+    "path": "albums/snes/yoshis-island/overworld-fuzzy.mid"
+   },
+   {
+    "title": "Player Down",
+    "path": "albums/snes/yoshis-island/player-down.mid"
+   },
+   {
+    "title": "Powerful Infant",
+    "path": "albums/snes/yoshis-island/powerful-infant.mid"
+   },
+   {
+    "title": "Room Before Boss",
+    "path": "albums/snes/yoshis-island/room-before-boss.mid"
+   },
+   {
+    "title": "Score",
+    "path": "albums/snes/yoshis-island/score.mid"
+   },
+   {
+    "title": "Story Music Box",
+    "path": "albums/snes/yoshis-island/story-music-box.mid"
+   },
+   {
+    "title": "Training Course",
+    "path": "albums/snes/yoshis-island/training-course.mid"
+   },
+   {
+    "title": "Transform",
+    "path": "albums/snes/yoshis-island/transform.mid"
+   },
+   {
+    "title": "Underground",
+    "path": "albums/snes/yoshis-island/underground.mid"
+   },
+   {
+    "title": "World Complete",
+    "path": "albums/snes/yoshis-island/world-complete.mid"
+   },
+   {
+    "title": "Yoshi Start Demo",
+    "path": "albums/snes/yoshis-island/yoshi-start-demo.mid"
+   },
+   {
+    "title": "Yoshi's Island",
+    "path": "albums/snes/yoshis-island/yoshi-s-island.mid"
+   },
+   {
+    "title": "Yoshi's Island (World 6)",
+    "path": "albums/snes/yoshis-island/yoshi-s-island-world-6.mid"
+   }
+  ]
+ },
+ {
   "title": "Super Metroid",
   "songs": [
    {
