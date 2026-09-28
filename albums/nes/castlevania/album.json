@@ -1,0 +1,82 @@
+{
+ "title": "Castlevania",
+ "order": 50,
+ "songs": {
+  "black-night-final-battle": "Black Night (Final Battle)",
+  "heart-of-fire-prisonhold": "Heart of Fire (Prisonhold)",
+  "introduction-castle-gate": "Introduction (Castle Gate)",
+  "nightmare-dracula-s-quarters": "Nightmare (Dracula's Quarters)",
+  "out-of-time-upper-terrace": "Out of Time (Upper Terrace)",
+  "poison-mind-boss-theme": "Poison Mind (Boss Theme)",
+  "stalker-armory": "Stalker (Armory)",
+  "vampire-killer-courtyard": "Vampire Killer (Courtyard)",
+  "voyager-ending": "Voyager (Ending)",
+  "walking-edge-castle-swamp": "Walking Edge (Castle Swamp)",
+  "wicked-child-upper-yard": "Wicked Child (Upper Yard)"
+ },
+ "nsf": {
+  "vault": "castlevania.nsf",
+  "tracks": {
+   "black-night-final-battle": {
+    "n": 10,
+    "secs": 17.599296
+   },
+   "death": {
+    "n": 14,
+    "secs": 11.982854
+   },
+   "game-complete": {
+    "n": 13,
+    "secs": 16.982654
+   },
+   "game-over": {
+    "n": 15,
+    "secs": 16.91599
+   },
+   "heart-of-fire-prisonhold": {
+    "n": 6,
+    "secs": 57.83102
+   },
+   "introduction-castle-gate": {
+    "n": 1,
+    "secs": 21.982454
+   },
+   "nightmare-dracula-s-quarters": {
+    "n": 8,
+    "secs": 35.198592
+   },
+   "out-of-time-upper-terrace": {
+    "n": 5,
+    "secs": 31.99872
+   },
+   "poison-mind-boss-theme": {
+    "n": 9,
+    "secs": 7.466368
+   },
+   "stalker-armory": {
+    "n": 3,
+    "secs": 34.398624
+   },
+   "vampire-killer-courtyard": {
+    "n": 2,
+    "secs": 29.898804000000002
+   },
+   "victory": {
+    "n": 12,
+    "secs": 16.982654
+   },
+   "voyager-ending": {
+    "n": 11,
+    "secs": 299.988
+   },
+   "walking-edge-castle-swamp": {
+    "n": 7,
+    "secs": 41.598336
+   },
+   "wicked-child-upper-yard": {
+    "n": 4,
+    "secs": 68.16394
+   }
+  }
+ }
+}

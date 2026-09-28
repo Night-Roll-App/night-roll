@@ -180,6 +180,71 @@
   ]
  },
  {
+  "title": "Castlevania",
+  "songs": [
+   {
+    "title": "Black Night (Final Battle)",
+    "path": "albums/nes/castlevania/black-night-final-battle.mid"
+   },
+   {
+    "title": "Death",
+    "path": "albums/nes/castlevania/death.mid"
+   },
+   {
+    "title": "Game Complete",
+    "path": "albums/nes/castlevania/game-complete.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/nes/castlevania/game-over.mid"
+   },
+   {
+    "title": "Heart of Fire (Prisonhold)",
+    "path": "albums/nes/castlevania/heart-of-fire-prisonhold.mid"
+   },
+   {
+    "title": "Introduction (Castle Gate)",
+    "path": "albums/nes/castlevania/introduction-castle-gate.mid"
+   },
+   {
+    "title": "Nightmare (Dracula's Quarters)",
+    "path": "albums/nes/castlevania/nightmare-dracula-s-quarters.mid"
+   },
+   {
+    "title": "Out of Time (Upper Terrace)",
+    "path": "albums/nes/castlevania/out-of-time-upper-terrace.mid"
+   },
+   {
+    "title": "Poison Mind (Boss Theme)",
+    "path": "albums/nes/castlevania/poison-mind-boss-theme.mid"
+   },
+   {
+    "title": "Stalker (Armory)",
+    "path": "albums/nes/castlevania/stalker-armory.mid"
+   },
+   {
+    "title": "Vampire Killer (Courtyard)",
+    "path": "albums/nes/castlevania/vampire-killer-courtyard.mid"
+   },
+   {
+    "title": "Victory",
+    "path": "albums/nes/castlevania/victory.mid"
+   },
+   {
+    "title": "Voyager (Ending)",
+    "path": "albums/nes/castlevania/voyager-ending.mid"
+   },
+   {
+    "title": "Walking Edge (Castle Swamp)",
+    "path": "albums/nes/castlevania/walking-edge-castle-swamp.mid"
+   },
+   {
+    "title": "Wicked Child (Upper Yard)",
+    "path": "albums/nes/castlevania/wicked-child-upper-yard.mid"
+   }
+  ]
+ },
+ {
   "title": "Chrono Trigger",
   "songs": [
    {
