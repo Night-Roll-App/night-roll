@@ -3816,6 +3816,155 @@
   ]
  },
  {
+  "title": "Super Metroid",
+  "songs": [
+   {
+    "title": "Big Boss Confrontation 1",
+    "path": "albums/snes/super-metroid/big-boss-confrontation-1.mid"
+   },
+   {
+    "title": "Big Boss Confrontation 2",
+    "path": "albums/snes/super-metroid/big-boss-confrontation-2.mid"
+   },
+   {
+    "title": "Brinstar Overgrown with Vegetation Area",
+    "path": "albums/snes/super-metroid/brinstar-overgrown-with-vegetation-area.mid"
+   },
+   {
+    "title": "Brinstar Red Soil Swampy Area",
+    "path": "albums/snes/super-metroid/brinstar-red-soil-swampy-area.mid"
+   },
+   {
+    "title": "Chozo Statue Awakens",
+    "path": "albums/snes/super-metroid/chozo-statue-awakens.mid"
+   },
+   {
+    "title": "Continue",
+    "path": "albums/snes/super-metroid/continue.mid"
+   },
+   {
+    "title": "Crateria ~ The Space Pirates Appear",
+    "path": "albums/snes/super-metroid/crateria-the-space-pirates-appear.mid"
+   },
+   {
+    "title": "Crateria Rainstorm",
+    "path": "albums/snes/super-metroid/crateria-rainstorm.mid"
+   },
+   {
+    "title": "Crateria Underground",
+    "path": "albums/snes/super-metroid/crateria-underground.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/snes/super-metroid/ending.mid"
+   },
+   {
+    "title": "Escape",
+    "path": "albums/snes/super-metroid/escape.mid"
+   },
+   {
+    "title": "Item Acquisition Fanfare",
+    "path": "albums/snes/super-metroid/item-acquisition-fanfare.mid"
+   },
+   {
+    "title": "Item Room",
+    "path": "albums/snes/super-metroid/item-room.mid"
+   },
+   {
+    "title": "Maridia Drifting Sand Underwater Area",
+    "path": "albums/snes/super-metroid/maridia-drifting-sand-underwater-area.mid"
+   },
+   {
+    "title": "Maridia Rocky Underwater Area",
+    "path": "albums/snes/super-metroid/maridia-rocky-underwater-area.mid"
+   },
+   {
+    "title": "Mini Boss Confrontation",
+    "path": "albums/snes/super-metroid/mini-boss-confrontation.mid"
+   },
+   {
+    "title": "Mother Brain",
+    "path": "albums/snes/super-metroid/mother-brain.mid"
+   },
+   {
+    "title": "Mysterious Statue Chamber",
+    "path": "albums/snes/super-metroid/mysterious-statue-chamber.mid"
+   },
+   {
+    "title": "Norfair Ancient Ruins Area",
+    "path": "albums/snes/super-metroid/norfair-ancient-ruins-area.mid"
+   },
+   {
+    "title": "Norfair Hot Lava Area",
+    "path": "albums/snes/super-metroid/norfair-hot-lava-area.mid"
+   },
+   {
+    "title": "Opening ~ Destruction of the Space Colony",
+    "path": "albums/snes/super-metroid/opening-destruction-of-the-space-colony.mid"
+   },
+   {
+    "title": "Planet Zebes ~ Arrival on Crateria",
+    "path": "albums/snes/super-metroid/planet-zebes-arrival-on-crateria.mid"
+   },
+   {
+    "title": "Planet Zebes Explodes",
+    "path": "albums/snes/super-metroid/planet-zebes-explodes.mid"
+   },
+   {
+    "title": "Samus Aran's Appearance Fanfare",
+    "path": "albums/snes/super-metroid/samus-aran-s-appearance-fanfare.mid"
+   },
+   {
+    "title": "Samus Aran's Final Cry",
+    "path": "albums/snes/super-metroid/samus-aran-s-final-cry.mid"
+   },
+   {
+    "title": "Space Colony",
+    "path": "albums/snes/super-metroid/space-colony.mid"
+   },
+   {
+    "title": "Space Ship",
+    "path": "albums/snes/super-metroid/space-ship.mid"
+   },
+   {
+    "title": "Tension",
+    "path": "albums/snes/super-metroid/tension.mid"
+   },
+   {
+    "title": "The Space Colony Explodes",
+    "path": "albums/snes/super-metroid/the-space-colony-explodes.mid"
+   },
+   {
+    "title": "The Space Colony Explodes ~ To Planet Zebes",
+    "path": "albums/snes/super-metroid/the-space-colony-explodes-to-planet-zebes.mid"
+   },
+   {
+    "title": "Theme of Samus Aran ~ Galactic Warrior",
+    "path": "albums/snes/super-metroid/theme-of-samus-aran-galactic-warrior.mid"
+   },
+   {
+    "title": "Theme of Super Metroid",
+    "path": "albums/snes/super-metroid/theme-of-super-metroid.mid"
+   },
+   {
+    "title": "Tourian",
+    "path": "albums/snes/super-metroid/tourian.mid"
+   },
+   {
+    "title": "Unused Jingle",
+    "path": "albums/snes/super-metroid/unused-jingle.mid"
+   },
+   {
+    "title": "Wrecked Ship",
+    "path": "albums/snes/super-metroid/wrecked-ship.mid"
+   },
+   {
+    "title": "Wrecked Ship (Activated)",
+    "path": "albums/snes/super-metroid/wrecked-ship-activated.mid"
+   }
+  ]
+ },
+ {
   "title": "Tetris",
   "songs": [
    {

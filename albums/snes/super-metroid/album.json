@@ -1,0 +1,167 @@
+{
+ "title": "Super Metroid",
+ "order": 50,
+ "songs": {
+  "brinstar-overgrown-with-vegetation-area": "Brinstar Overgrown with Vegetation Area",
+  "crateria-the-space-pirates-appear": "Crateria ~ The Space Pirates Appear",
+  "opening-destruction-of-the-space-colony": "Opening ~ Destruction of the Space Colony",
+  "planet-zebes-arrival-on-crateria": "Planet Zebes ~ Arrival on Crateria",
+  "samus-aran-s-appearance-fanfare": "Samus Aran's Appearance Fanfare",
+  "samus-aran-s-final-cry": "Samus Aran's Final Cry",
+  "the-space-colony-explodes-to-planet-zebes": "The Space Colony Explodes ~ To Planet Zebes",
+  "theme-of-samus-aran-galactic-warrior": "Theme of Samus Aran ~ Galactic Warrior",
+  "theme-of-super-metroid": "Theme of Super Metroid",
+  "wrecked-ship-activated": "Wrecked Ship (Activated)"
+ },
+ "nsf": {
+  "vault": "super-metroid/",
+  "tracks": {
+   "big-boss-confrontation-1": {
+    "n": 1,
+    "secs": 65
+   },
+   "big-boss-confrontation-2": {
+    "n": 1,
+    "secs": 53
+   },
+   "brinstar-overgrown-with-vegetation-area": {
+    "n": 1,
+    "secs": 213
+   },
+   "brinstar-red-soil-swampy-area": {
+    "n": 1,
+    "secs": 238
+   },
+   "chozo-statue-awakens": {
+    "n": 1,
+    "secs": 63.940000000000005
+   },
+   "continue": {
+    "n": 1,
+    "secs": 14.950000000000001
+   },
+   "crateria-rainstorm": {
+    "n": 1,
+    "secs": 35
+   },
+   "crateria-the-space-pirates-appear": {
+    "n": 1,
+    "secs": 209
+   },
+   "crateria-underground": {
+    "n": 1,
+    "secs": 153
+   },
+   "ending": {
+    "n": 1,
+    "secs": 202.97
+   },
+   "escape": {
+    "n": 1,
+    "secs": 59
+   },
+   "item-acquisition-fanfare": {
+    "n": 1,
+    "secs": 12
+   },
+   "item-room": {
+    "n": 1,
+    "secs": 42
+   },
+   "maridia-drifting-sand-underwater-area": {
+    "n": 1,
+    "secs": 227.07
+   },
+   "maridia-rocky-underwater-area": {
+    "n": 1,
+    "secs": 167.03
+   },
+   "mini-boss-confrontation": {
+    "n": 1,
+    "secs": 124
+   },
+   "mother-brain": {
+    "n": 1,
+    "secs": 129.98
+   },
+   "mysterious-statue-chamber": {
+    "n": 1,
+    "secs": 89
+   },
+   "norfair-ancient-ruins-area": {
+    "n": 1,
+    "secs": 277
+   },
+   "norfair-hot-lava-area": {
+    "n": 1,
+    "secs": 132
+   },
+   "opening-destruction-of-the-space-colony": {
+    "n": 1,
+    "secs": 91.88
+   },
+   "planet-zebes-arrival-on-crateria": {
+    "n": 1,
+    "secs": 153
+   },
+   "planet-zebes-explodes": {
+    "n": 1,
+    "secs": 24
+   },
+   "samus-aran-s-appearance-fanfare": {
+    "n": 1,
+    "secs": 12
+   },
+   "samus-aran-s-final-cry": {
+    "n": 1,
+    "secs": 12
+   },
+   "space-colony": {
+    "n": 1,
+    "secs": 19
+   },
+   "space-ship": {
+    "n": 1,
+    "secs": 12.93
+   },
+   "tension": {
+    "n": 1,
+    "secs": 64
+   },
+   "the-space-colony-explodes-to-planet-zebes": {
+    "n": 1,
+    "secs": 27
+   },
+   "the-space-colony-explodes": {
+    "n": 1,
+    "secs": 12
+   },
+   "theme-of-samus-aran-galactic-warrior": {
+    "n": 1,
+    "secs": 239.06
+   },
+   "theme-of-super-metroid": {
+    "n": 1,
+    "secs": 192.86
+   },
+   "tourian": {
+    "n": 1,
+    "secs": 222
+   },
+   "unused-jingle": {
+    "n": 1,
+    "secs": 12
+   },
+   "wrecked-ship-activated": {
+    "n": 1,
+    "secs": 271
+   },
+   "wrecked-ship": {
+    "n": 1,
+    "secs": 267.84000000000003
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}
