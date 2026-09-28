@@ -4440,6 +4440,287 @@
   ]
  },
  {
+  "title": "Secret of Mana",
+  "songs": [
+   {
+    "title": "A Bell is Tolling",
+    "path": "albums/snes/secret-of-mana/a-bell-is-tolling.mid"
+   },
+   {
+    "title": "A Conclusion",
+    "path": "albums/snes/secret-of-mana/a-conclusion.mid"
+   },
+   {
+    "title": "A Curious Happening",
+    "path": "albums/snes/secret-of-mana/a-curious-happening.mid"
+   },
+   {
+    "title": "A Curious Tale",
+    "path": "albums/snes/secret-of-mana/a-curious-tale.mid"
+   },
+   {
+    "title": "A Wish",
+    "path": "albums/snes/secret-of-mana/a-wish.mid"
+   },
+   {
+    "title": "Ally Joins",
+    "path": "albums/snes/secret-of-mana/ally-joins.mid"
+   },
+   {
+    "title": "Boss Defeated",
+    "path": "albums/snes/secret-of-mana/boss-defeated.mid"
+   },
+   {
+    "title": "Calm Before the Storm",
+    "path": "albums/snes/secret-of-mana/calm-before-the-storm.mid"
+   },
+   {
+    "title": "Cannon Travel",
+    "path": "albums/snes/secret-of-mana/cannon-travel.mid"
+   },
+   {
+    "title": "Cannon Travel Launch",
+    "path": "albums/snes/secret-of-mana/cannon-travel-launch.mid"
+   },
+   {
+    "title": "Ceremony",
+    "path": "albums/snes/secret-of-mana/ceremony.mid"
+   },
+   {
+    "title": "Dancing Animals",
+    "path": "albums/snes/secret-of-mana/dancing-animals.mid"
+   },
+   {
+    "title": "Dancing Animals (Echo)",
+    "path": "albums/snes/secret-of-mana/dancing-animals-echo.mid"
+   },
+   {
+    "title": "Danger",
+    "path": "albums/snes/secret-of-mana/danger.mid"
+   },
+   {
+    "title": "Did You See the Ocean?",
+    "path": "albums/snes/secret-of-mana/did-you-see-the-ocean.mid"
+   },
+   {
+    "title": "Distant Thunder",
+    "path": "albums/snes/secret-of-mana/distant-thunder.mid"
+   },
+   {
+    "title": "Elemental Acquired",
+    "path": "albums/snes/secret-of-mana/elemental-acquired.mid"
+   },
+   {
+    "title": "Eternal Recurrence",
+    "path": "albums/snes/secret-of-mana/eternal-recurrence.mid"
+   },
+   {
+    "title": "Fear of the Heavens",
+    "path": "albums/snes/secret-of-mana/fear-of-the-heavens.mid"
+   },
+   {
+    "title": "Flammie Coming",
+    "path": "albums/snes/secret-of-mana/flammie-coming.mid"
+   },
+   {
+    "title": "Flammie Drum",
+    "path": "albums/snes/secret-of-mana/flammie-drum.mid"
+   },
+   {
+    "title": "Flammie Voice",
+    "path": "albums/snes/secret-of-mana/flammie-voice.mid"
+   },
+   {
+    "title": "Flight into the Unknown",
+    "path": "albums/snes/secret-of-mana/flight-into-the-unknown.mid"
+   },
+   {
+    "title": "Fond Memories",
+    "path": "albums/snes/secret-of-mana/fond-memories.mid"
+   },
+   {
+    "title": "Got an Item",
+    "path": "albums/snes/secret-of-mana/got-an-item.mid"
+   },
+   {
+    "title": "Got Weapon Orb",
+    "path": "albums/snes/secret-of-mana/got-weapon-orb.mid"
+   },
+   {
+    "title": "I Closed My Eyes",
+    "path": "albums/snes/secret-of-mana/i-closed-my-eyes.mid"
+   },
+   {
+    "title": "I Won't Forget",
+    "path": "albums/snes/secret-of-mana/i-won-t-forget.mid"
+   },
+   {
+    "title": "In the Dead of the Night",
+    "path": "albums/snes/secret-of-mana/in-the-dead-of-the-night.mid"
+   },
+   {
+    "title": "Into the Thick of it",
+    "path": "albums/snes/secret-of-mana/into-the-thick-of-it.mid"
+   },
+   {
+    "title": "Into the Thick of it (Echo)",
+    "path": "albums/snes/secret-of-mana/into-the-thick-of-it-echo.mid"
+   },
+   {
+    "title": "It Happened Late One Evening",
+    "path": "albums/snes/secret-of-mana/it-happened-late-one-evening.mid"
+   },
+   {
+    "title": "Leave Time for Love",
+    "path": "albums/snes/secret-of-mana/leave-time-for-love.mid"
+   },
+   {
+    "title": "Level Up!",
+    "path": "albums/snes/secret-of-mana/level-up.mid"
+   },
+   {
+    "title": "Magic Level Up!",
+    "path": "albums/snes/secret-of-mana/magic-level-up.mid"
+   },
+   {
+    "title": "Mara's Key",
+    "path": "albums/snes/secret-of-mana/mara-s-key.mid"
+   },
+   {
+    "title": "Menu",
+    "path": "albums/snes/secret-of-mana/menu.mid"
+   },
+   {
+    "title": "Meridian Dance",
+    "path": "albums/snes/secret-of-mana/meridian-dance.mid"
+   },
+   {
+    "title": "Midge Mallet",
+    "path": "albums/snes/secret-of-mana/midge-mallet.mid"
+   },
+   {
+    "title": "Monarch on the Shore",
+    "path": "albums/snes/secret-of-mana/monarch-on-the-shore.mid"
+   },
+   {
+    "title": "Morning is Here",
+    "path": "albums/snes/secret-of-mana/morning-is-here.mid"
+   },
+   {
+    "title": "Mysterious Moaning",
+    "path": "albums/snes/secret-of-mana/mysterious-moaning.mid"
+   },
+   {
+    "title": "Mystic Invasion",
+    "path": "albums/snes/secret-of-mana/mystic-invasion.mid"
+   },
+   {
+    "title": "New Continent Rises",
+    "path": "albums/snes/secret-of-mana/new-continent-rises.mid"
+   },
+   {
+    "title": "Now Flightless Wings",
+    "path": "albums/snes/secret-of-mana/now-flightless-wings.mid"
+   },
+   {
+    "title": "One of Them is Hope",
+    "path": "albums/snes/secret-of-mana/one-of-them-is-hope.mid"
+   },
+   {
+    "title": "Phantom and a Rose",
+    "path": "albums/snes/secret-of-mana/phantom-and-a-rose.mid"
+   },
+   {
+    "title": "Prophecy",
+    "path": "albums/snes/secret-of-mana/prophecy.mid"
+   },
+   {
+    "title": "Secret of the Arid Sands",
+    "path": "albums/snes/secret-of-mana/secret-of-the-arid-sands.mid"
+   },
+   {
+    "title": "Spirit of the Night",
+    "path": "albums/snes/secret-of-mana/spirit-of-the-night.mid"
+   },
+   {
+    "title": "Steel and Snare",
+    "path": "albums/snes/secret-of-mana/steel-and-snare.mid"
+   },
+   {
+    "title": "Still of the Night",
+    "path": "albums/snes/secret-of-mana/still-of-the-night.mid"
+   },
+   {
+    "title": "The Color of the Summer Sky",
+    "path": "albums/snes/secret-of-mana/the-color-of-the-summer-sky.mid"
+   },
+   {
+    "title": "The Curse",
+    "path": "albums/snes/secret-of-mana/the-curse.mid"
+   },
+   {
+    "title": "The Dark Star",
+    "path": "albums/snes/secret-of-mana/the-dark-star.mid"
+   },
+   {
+    "title": "The Dark Star (No Echo)",
+    "path": "albums/snes/secret-of-mana/the-dark-star-no-echo.mid"
+   },
+   {
+    "title": "The Legend",
+    "path": "albums/snes/secret-of-mana/the-legend.mid"
+   },
+   {
+    "title": "The Little Sprite",
+    "path": "albums/snes/secret-of-mana/the-little-sprite.mid"
+   },
+   {
+    "title": "The Oracle",
+    "path": "albums/snes/secret-of-mana/the-oracle.mid"
+   },
+   {
+    "title": "The Second Truth From the Left",
+    "path": "albums/snes/secret-of-mana/the-second-truth-from-the-left.mid"
+   },
+   {
+    "title": "The Wind Never Ceases",
+    "path": "albums/snes/secret-of-mana/the-wind-never-ceases.mid"
+   },
+   {
+    "title": "Together Always",
+    "path": "albums/snes/secret-of-mana/together-always.mid"
+   },
+   {
+    "title": "Unused Jingle 1",
+    "path": "albums/snes/secret-of-mana/unused-jingle-1.mid"
+   },
+   {
+    "title": "Unused Jingle 2",
+    "path": "albums/snes/secret-of-mana/unused-jingle-2.mid"
+   },
+   {
+    "title": "Victory",
+    "path": "albums/snes/secret-of-mana/victory.mid"
+   },
+   {
+    "title": "Weapon Level Up!",
+    "path": "albums/snes/secret-of-mana/weapon-level-up.mid"
+   },
+   {
+    "title": "What the Forest Taught Me",
+    "path": "albums/snes/secret-of-mana/what-the-forest-taught-me.mid"
+   },
+   {
+    "title": "Whisper and Mantra",
+    "path": "albums/snes/secret-of-mana/whisper-and-mantra.mid"
+   },
+   {
+    "title": "Whisper and Mantra (Echo)",
+    "path": "albums/snes/secret-of-mana/whisper-and-mantra-echo.mid"
+   }
+  ]
+ },
+ {
   "title": "Shadow of the Ninja",
   "songs": [
    {

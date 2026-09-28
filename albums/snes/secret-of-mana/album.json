@@ -1,0 +1,319 @@
+{
+ "title": "Secret of Mana",
+ "order": 50,
+ "songs": {
+  "a-bell-is-tolling": "A Bell is Tolling",
+  "calm-before-the-storm": "Calm Before the Storm",
+  "dancing-animals-echo": "Dancing Animals (Echo)",
+  "did-you-see-the-ocean": "Did You See the Ocean?",
+  "fear-of-the-heavens": "Fear of the Heavens",
+  "flight-into-the-unknown": "Flight into the Unknown",
+  "got-an-item": "Got an Item",
+  "i-won-t-forget": "I Won't Forget",
+  "in-the-dead-of-the-night": "In the Dead of the Night",
+  "into-the-thick-of-it-echo": "Into the Thick of it (Echo)",
+  "into-the-thick-of-it": "Into the Thick of it",
+  "leave-time-for-love": "Leave Time for Love",
+  "level-up": "Level Up!",
+  "magic-level-up": "Magic Level Up!",
+  "mara-s-key": "Mara's Key",
+  "monarch-on-the-shore": "Monarch on the Shore",
+  "morning-is-here": "Morning is Here",
+  "one-of-them-is-hope": "One of Them is Hope",
+  "phantom-and-a-rose": "Phantom and a Rose",
+  "secret-of-the-arid-sands": "Secret of the Arid Sands",
+  "spirit-of-the-night": "Spirit of the Night",
+  "steel-and-snare": "Steel and Snare",
+  "still-of-the-night": "Still of the Night",
+  "the-color-of-the-summer-sky": "The Color of the Summer Sky",
+  "the-dark-star-no-echo": "The Dark Star (No Echo)",
+  "the-second-truth-from-the-left": "The Second Truth From the Left",
+  "weapon-level-up": "Weapon Level Up!",
+  "what-the-forest-taught-me": "What the Forest Taught Me",
+  "whisper-and-mantra-echo": "Whisper and Mantra (Echo)",
+  "whisper-and-mantra": "Whisper and Mantra"
+ },
+ "nsf": {
+  "vault": "secret-of-mana/",
+  "tracks": {
+   "a-bell-is-tolling": {
+    "n": 1,
+    "secs": 160
+   },
+   "a-conclusion": {
+    "n": 1,
+    "secs": 60
+   },
+   "a-curious-happening": {
+    "n": 1,
+    "secs": 105
+   },
+   "a-curious-tale": {
+    "n": 1,
+    "secs": 141
+   },
+   "a-wish": {
+    "n": 1,
+    "secs": 98
+   },
+   "ally-joins": {
+    "n": 1,
+    "secs": 12
+   },
+   "boss-defeated": {
+    "n": 1,
+    "secs": 12
+   },
+   "calm-before-the-storm": {
+    "n": 1,
+    "secs": 218
+   },
+   "cannon-travel-launch": {
+    "n": 1,
+    "secs": 12
+   },
+   "cannon-travel": {
+    "n": 1,
+    "secs": 12
+   },
+   "ceremony": {
+    "n": 1,
+    "secs": 95
+   },
+   "dancing-animals-echo": {
+    "n": 1,
+    "secs": 133
+   },
+   "dancing-animals": {
+    "n": 1,
+    "secs": 133
+   },
+   "danger": {
+    "n": 1,
+    "secs": 243
+   },
+   "did-you-see-the-ocean": {
+    "n": 1,
+    "secs": 228
+   },
+   "distant-thunder": {
+    "n": 1,
+    "secs": 192
+   },
+   "elemental-acquired": {
+    "n": 1,
+    "secs": 12
+   },
+   "eternal-recurrence": {
+    "n": 1,
+    "secs": 171.92000000000002
+   },
+   "fear-of-the-heavens": {
+    "n": 1,
+    "secs": 94
+   },
+   "flammie-coming": {
+    "n": 1,
+    "secs": 12
+   },
+   "flammie-drum": {
+    "n": 1,
+    "secs": 12
+   },
+   "flammie-voice": {
+    "n": 1,
+    "secs": 12
+   },
+   "flight-into-the-unknown": {
+    "n": 1,
+    "secs": 154
+   },
+   "fond-memories": {
+    "n": 1,
+    "secs": 96
+   },
+   "got-an-item": {
+    "n": 1,
+    "secs": 12
+   },
+   "got-weapon-orb": {
+    "n": 1,
+    "secs": 12
+   },
+   "i-closed-my-eyes": {
+    "n": 1,
+    "secs": 33.92
+   },
+   "i-won-t-forget": {
+    "n": 1,
+    "secs": 82
+   },
+   "in-the-dead-of-the-night": {
+    "n": 1,
+    "secs": 65
+   },
+   "into-the-thick-of-it-echo": {
+    "n": 1,
+    "secs": 198
+   },
+   "into-the-thick-of-it": {
+    "n": 1,
+    "secs": 198
+   },
+   "it-happened-late-one-evening": {
+    "n": 1,
+    "secs": 53.76
+   },
+   "leave-time-for-love": {
+    "n": 1,
+    "secs": 122
+   },
+   "level-up": {
+    "n": 1,
+    "secs": 12
+   },
+   "magic-level-up": {
+    "n": 1,
+    "secs": 12
+   },
+   "mara-s-key": {
+    "n": 1,
+    "secs": 12
+   },
+   "menu": {
+    "n": 1,
+    "secs": 18
+   },
+   "meridian-dance": {
+    "n": 1,
+    "secs": 208
+   },
+   "midge-mallet": {
+    "n": 1,
+    "secs": 12
+   },
+   "monarch-on-the-shore": {
+    "n": 1,
+    "secs": 135
+   },
+   "morning-is-here": {
+    "n": 1,
+    "secs": 98.91
+   },
+   "mysterious-moaning": {
+    "n": 1,
+    "secs": 12
+   },
+   "mystic-invasion": {
+    "n": 1,
+    "secs": 62
+   },
+   "new-continent-rises": {
+    "n": 1,
+    "secs": 27.98
+   },
+   "now-flightless-wings": {
+    "n": 1,
+    "secs": 122
+   },
+   "one-of-them-is-hope": {
+    "n": 1,
+    "secs": 97
+   },
+   "phantom-and-a-rose": {
+    "n": 1,
+    "secs": 139
+   },
+   "prophecy": {
+    "n": 1,
+    "secs": 65
+   },
+   "secret-of-the-arid-sands": {
+    "n": 1,
+    "secs": 111.98
+   },
+   "spirit-of-the-night": {
+    "n": 1,
+    "secs": 156
+   },
+   "steel-and-snare": {
+    "n": 1,
+    "secs": 180
+   },
+   "still-of-the-night": {
+    "n": 1,
+    "secs": 297
+   },
+   "the-color-of-the-summer-sky": {
+    "n": 1,
+    "secs": 133
+   },
+   "the-curse": {
+    "n": 1,
+    "secs": 121
+   },
+   "the-dark-star-no-echo": {
+    "n": 1,
+    "secs": 131
+   },
+   "the-dark-star": {
+    "n": 1,
+    "secs": 131
+   },
+   "the-legend": {
+    "n": 1,
+    "secs": 156
+   },
+   "the-little-sprite": {
+    "n": 1,
+    "secs": 81
+   },
+   "the-oracle": {
+    "n": 1,
+    "secs": 173
+   },
+   "the-second-truth-from-the-left": {
+    "n": 1,
+    "secs": 269
+   },
+   "the-wind-never-ceases": {
+    "n": 1,
+    "secs": 118.95
+   },
+   "together-always": {
+    "n": 1,
+    "secs": 111
+   },
+   "unused-jingle-1": {
+    "n": 1,
+    "secs": 12
+   },
+   "unused-jingle-2": {
+    "n": 1,
+    "secs": 11.950000000000001
+   },
+   "victory": {
+    "n": 1,
+    "secs": 12
+   },
+   "weapon-level-up": {
+    "n": 1,
+    "secs": 12
+   },
+   "what-the-forest-taught-me": {
+    "n": 1,
+    "secs": 106
+   },
+   "whisper-and-mantra-echo": {
+    "n": 1,
+    "secs": 100
+   },
+   "whisper-and-mantra": {
+    "n": 1,
+    "secs": 100
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}
