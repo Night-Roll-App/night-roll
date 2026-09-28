@@ -89,7 +89,7 @@ export async function previewOne(live, p) { // p: {track, midi, vel, ticks, seco
   const ticks = Math.max(1, Math.round(p.ticks || Math.min(48, kind === "psf" ? (t.endTick - t.tick) : t.dur)));
   const note = kind === "psf"
     ? {...t, tick: 0, endTick: ticks, key: p.midi, pitch: p.midi, cents: 0, vel: p.vel || 100, gain: undefined, slide: undefined, unrolled: false}
-    : {...t, tick: 0, dur: ticks, midi: p.midi, semitone: p.midi - 21, vel: p.vel || 100, slide: undefined, gain: undefined, bend: 0};
+    : {...t, tick: 0, dur: ticks, midi: p.midi, key: p.midi, semitone: p.midi - 21, vel: p.vel || 100, slide: undefined, gain: undefined, bend: 0}; // key: Rare's renderer pitches from it (EAD from semitone) — without it every tap on a Rare song played the template note's pitch
   const one = {...inner, notes: [note], endTick: ticks, loop: null, ducked: []};
   const r = await R.render(M, {...res, result: one, seconds: p.seconds || 1.5}, {sampleRate: rate, onProgress: () => {}});
   return r[p.track] || null;

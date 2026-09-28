@@ -22,3 +22,20 @@ test("every rendering chip has an inline parse that does not throw (the worker's
     assert.equal(ok, true, k + " parse: " + ok);
   }
 });
+
+test("tap preview: the one-note copy carries the tapped pitch in every field a renderer reads", async () => {
+  // Rare's renderer pitches from `key`, EAD's from `semitone`, the MIDI from
+  // `midi`: a copy that set only some of them played every tap on a Rare
+  // song at the track's first pitch (Josh, 2026-09-28: taps "all sounded
+  // exactly the same, like the lowest note")
+  const { previewOne } = await import("../tools/chip-worker.mjs");
+  let seen = null;
+  const t = {ch: 5, inst: 63, drum: false, key: 41, midi: 41, semitone: 20, tick: 96, dur: 48, vel: 90};
+  const live = {kind: "usf", rate: 32000,
+    M: {channelGroups: () => [{name: "ch 5 inst 63", notes: [t], kit: false}]},
+    R: {render: async (M, r) => { seen = r.result.notes[0]; return {"ch 5 inst 63": new Float32Array(4)}; }},
+    res: {result: {notes: [t], tempos: [], endTick: 144}, seconds: 1}};
+  await previewOne(live, {track: "ch 5 inst 63", midi: 72, vel: 100});
+  assert.equal(seen.key, 72); assert.equal(seen.midi, 72); assert.equal(seen.semitone, 51);
+  assert.equal(seen.tick, 0);
+});
