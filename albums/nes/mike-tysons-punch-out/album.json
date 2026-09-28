@@ -1,0 +1,333 @@
+{
+ "title": "Mike Tyson's Punch-Out!!",
+ "order": 50,
+ "songs": {
+  "don-flamenco-s-theme": "Don Flamenco's Theme",
+  "get-up-little-mac": "Get Up Little Mac!!",
+  "glass-joe-s-theme": "Glass Joe's Theme",
+  "king-hippo-s-theme": "King Hippo's Theme",
+  "match-bgm": "Match BGM",
+  "moving-on-to-next-level": "Moving on to Next Level",
+  "piston-honda-s-theme": "Piston Honda's Theme",
+  "preparing-for-next-big-bout": "Preparing for Next Big Bout",
+  "punch-out-theme-reprise": "Punch Out!! Theme (Reprise)",
+  "punch-out-theme": "Punch Out!! Theme",
+  "round-1-begins": "Round 1 Begins...",
+  "se-032": "(se) ??? [032]",
+  "se-033": "(se) ??? [033]",
+  "se-034": "(se) ??? [034]",
+  "se-041": "(se) ??? [041]",
+  "se-043": "(se) ??? [043]",
+  "se-047": "(se) ??? [047]",
+  "se-048": "(se) ??? [048]",
+  "se-051": "(se) ??? [051]",
+  "se-053": "(se) ??? [053]",
+  "se-054": "(se) ??? [054]",
+  "se-055": "(se) ??? [055]",
+  "se-057": "(se) ??? [057]",
+  "se-059": "(se) ??? [059]",
+  "se-060": "(se) ??? [060]",
+  "se-061": "(se) ??? [061]",
+  "se-064": "(se) ??? [064]",
+  "se-066": "(se) ??? [066]",
+  "se-067": "(se) ??? [067]",
+  "se-068": "(se) ??? [068]",
+  "se-bell-ringing": "(se) Bell ringing",
+  "se-bell": "(se) Bell",
+  "se-blocking": "(se) Blocking",
+  "se-disappearing": "(se) Disappearing",
+  "se-dodging": "(se) Dodging",
+  "se-hard-blow-to-the-gut": "(se) Hard Blow to the Gut",
+  "se-king-hippo-s-mouth": "(se) King Hippo's Mouth",
+  "se-opponent-asked-for-more": "(se) Opponent asked for more",
+  "se-opponent-jumping-away": "(se) Opponent Jumping Away",
+  "se-opponent-knocked-out-2": "(se) Opponent Knocked Out 2",
+  "se-opponent-knocked-out": "(se) Opponent Knocked Out",
+  "se-opponent-misses-big-uppercut-blow": "(se) Opponent Misses Big Uppercut Blow",
+  "se-opponent-spitting-from-mouth": "(se) Opponent Spitting from Mouth",
+  "se-opponent-throwing-an-uppercut": "(se) Opponent throwing an Uppercut",
+  "se-opponent-throwing-swift-punches": "(se) Opponent throwing Swift Punches",
+  "se-opponent-throws-a-punch": "(se) Opponent Throws a Punch",
+  "se-punch-missed": "(se) Punch Missed",
+  "se-punching-opponent": "(se) Punching Opponent",
+  "se-punching-title-name": "(se) Punching Title Name",
+  "se-referee-announcing-tko": "(se) Referee announcing TKO",
+  "se-referee-announcing-winner": "(se) Referee Announcing Winner",
+  "se-referee-counting": "(se) Referee Counting",
+  "se-referee": "(se) Referee",
+  "se-special-punch": "(se) Special Punch",
+  "se-special-star-obtained": "(se) Special Star Obtained",
+  "se-uppercut-missed": "(se) Uppercut Missed",
+  "soda-popinski-s-theme": "Soda Popinski's Theme",
+  "the-dream-fight": "The Dream Fight!!",
+  "von-kaiser-s-theme": "Von Kaiser's Theme",
+  "warming-up-with-doc": "Warming Up with Doc",
+  "you-ve-won-the-championship-ranking": "You've Won the Championship Ranking!!",
+  "you-win": "You Win!"
+ },
+ "nsf": {
+  "vault": "mike-tysons-punch-out.nsf",
+  "tracks": {
+   "bout-winner": {
+    "n": 6,
+    "secs": 16.982654
+   },
+   "don-flamenco-s-theme": {
+    "n": 16,
+    "secs": 21.982454
+   },
+   "game-over": {
+    "n": 9,
+    "secs": 32.982014
+   },
+   "get-up-little-mac": {
+    "n": 22,
+    "secs": 5.33312
+   },
+   "glass-joe-s-theme": {
+    "n": 15,
+    "secs": 21.982454
+   },
+   "king-hippo-s-theme": {
+    "n": 17,
+    "secs": 16.982654
+   },
+   "match-bgm": {
+    "n": 23,
+    "secs": 32.33204
+   },
+   "moving-on-to-next-level": {
+    "n": 5,
+    "secs": 21.982454
+   },
+   "piston-honda-s-theme": {
+    "n": 19,
+    "secs": 21.982454
+   },
+   "preparing-for-next-big-bout": {
+    "n": 8,
+    "secs": 17.982614
+   },
+   "punch-out-theme-reprise": {
+    "n": 2,
+    "secs": 24.982334
+   },
+   "punch-out-theme": {
+    "n": 1,
+    "secs": 22.399104
+   },
+   "round-1-begins": {
+    "n": 10,
+    "secs": 13.982774000000001
+   },
+   "se-032": {
+    "n": 32,
+    "secs": 11.982854
+   },
+   "se-033": {
+    "n": 33,
+    "secs": 11.982854
+   },
+   "se-034": {
+    "n": 34,
+    "secs": 11.982854
+   },
+   "se-041": {
+    "n": 41,
+    "secs": 11.982854
+   },
+   "se-043": {
+    "n": 43,
+    "secs": 11.982854
+   },
+   "se-047": {
+    "n": 47,
+    "secs": 11.982854
+   },
+   "se-048": {
+    "n": 48,
+    "secs": 11.982854
+   },
+   "se-051": {
+    "n": 51,
+    "secs": 11.982854
+   },
+   "se-053": {
+    "n": 53,
+    "secs": 11.982854
+   },
+   "se-054": {
+    "n": 54,
+    "secs": 11.982854
+   },
+   "se-055": {
+    "n": 55,
+    "secs": 11.982854
+   },
+   "se-057": {
+    "n": 57,
+    "secs": 11.982854
+   },
+   "se-059": {
+    "n": 59,
+    "secs": 11.982854
+   },
+   "se-060": {
+    "n": 60,
+    "secs": 11.982854
+   },
+   "se-061": {
+    "n": 61,
+    "secs": 11.949522
+   },
+   "se-064": {
+    "n": 64,
+    "secs": 11.982854
+   },
+   "se-066": {
+    "n": 66,
+    "secs": 11.982854
+   },
+   "se-067": {
+    "n": 67,
+    "secs": 11.982854
+   },
+   "se-068": {
+    "n": 68,
+    "secs": 11.982854
+   },
+   "se-bell-ringing": {
+    "n": 44,
+    "secs": 11.982854
+   },
+   "se-bell": {
+    "n": 35,
+    "secs": 11.982854
+   },
+   "se-blocking": {
+    "n": 27,
+    "secs": 11.982854
+   },
+   "se-disappearing": {
+    "n": 63,
+    "secs": 11.982854
+   },
+   "se-dodging": {
+    "n": 40,
+    "secs": 11.982854
+   },
+   "se-hard-blow-to-the-gut": {
+    "n": 42,
+    "secs": 11.982854
+   },
+   "se-king-hippo-s-mouth": {
+    "n": 46,
+    "secs": 11.982854
+   },
+   "se-opponent-asked-for-more": {
+    "n": 52,
+    "secs": 11.982854
+   },
+   "se-opponent-jumping-away": {
+    "n": 58,
+    "secs": 11.982854
+   },
+   "se-opponent-knocked-out-2": {
+    "n": 49,
+    "secs": 11.982854
+   },
+   "se-opponent-knocked-out": {
+    "n": 25,
+    "secs": 11.982854
+   },
+   "se-opponent-misses-big-uppercut-blow": {
+    "n": 65,
+    "secs": 11.982854
+   },
+   "se-opponent-spitting-from-mouth": {
+    "n": 26,
+    "secs": 11.982854
+   },
+   "se-opponent-throwing-an-uppercut": {
+    "n": 28,
+    "secs": 11.982854
+   },
+   "se-opponent-throwing-swift-punches": {
+    "n": 62,
+    "secs": 11.982854
+   },
+   "se-opponent-throws-a-punch": {
+    "n": 56,
+    "secs": 11.982854
+   },
+   "se-punch-missed": {
+    "n": 29,
+    "secs": 11.982854
+   },
+   "se-punching-opponent": {
+    "n": 31,
+    "secs": 11.982854
+   },
+   "se-punching-title-name": {
+    "n": 24,
+    "secs": 11.982854
+   },
+   "se-referee-announcing-tko": {
+    "n": 38,
+    "secs": 11.982854
+   },
+   "se-referee-announcing-winner": {
+    "n": 39,
+    "secs": 11.982854
+   },
+   "se-referee-counting": {
+    "n": 37,
+    "secs": 11.982854
+   },
+   "se-referee": {
+    "n": 36,
+    "secs": 11.982854
+   },
+   "se-special-punch": {
+    "n": 45,
+    "secs": 11.982854
+   },
+   "se-special-star-obtained": {
+    "n": 50,
+    "secs": 11.982854
+   },
+   "se-uppercut-missed": {
+    "n": 30,
+    "secs": 11.982854
+   },
+   "soda-popinski-s-theme": {
+    "n": 18,
+    "secs": 20.982494
+   },
+   "the-dream-fight": {
+    "n": 13,
+    "secs": 16.982654
+   },
+   "von-kaiser-s-theme": {
+    "n": 14,
+    "secs": 16.982654
+   },
+   "warming-up-with-doc": {
+    "n": 20,
+    "secs": 26.6656
+   },
+   "you-lose": {
+    "n": 7,
+    "secs": 17.982614
+   },
+   "you-ve-won-the-championship-ranking": {
+    "n": 4,
+    "secs": 29.982134000000002
+   },
+   "you-win": {
+    "n": 21,
+    "secs": 5.33312
+   }
+  }
+ }
+}

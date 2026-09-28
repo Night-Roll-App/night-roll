@@ -2222,6 +2222,271 @@
   ]
  },
  {
+  "title": "Mike Tyson's Punch-Out!!",
+  "songs": [
+   {
+    "title": "(se) ??? [032]",
+    "path": "albums/nes/mike-tysons-punch-out/se-032.mid"
+   },
+   {
+    "title": "(se) ??? [033]",
+    "path": "albums/nes/mike-tysons-punch-out/se-033.mid"
+   },
+   {
+    "title": "(se) ??? [034]",
+    "path": "albums/nes/mike-tysons-punch-out/se-034.mid"
+   },
+   {
+    "title": "(se) ??? [041]",
+    "path": "albums/nes/mike-tysons-punch-out/se-041.mid"
+   },
+   {
+    "title": "(se) ??? [043]",
+    "path": "albums/nes/mike-tysons-punch-out/se-043.mid"
+   },
+   {
+    "title": "(se) ??? [047]",
+    "path": "albums/nes/mike-tysons-punch-out/se-047.mid"
+   },
+   {
+    "title": "(se) ??? [048]",
+    "path": "albums/nes/mike-tysons-punch-out/se-048.mid"
+   },
+   {
+    "title": "(se) ??? [051]",
+    "path": "albums/nes/mike-tysons-punch-out/se-051.mid"
+   },
+   {
+    "title": "(se) ??? [053]",
+    "path": "albums/nes/mike-tysons-punch-out/se-053.mid"
+   },
+   {
+    "title": "(se) ??? [054]",
+    "path": "albums/nes/mike-tysons-punch-out/se-054.mid"
+   },
+   {
+    "title": "(se) ??? [055]",
+    "path": "albums/nes/mike-tysons-punch-out/se-055.mid"
+   },
+   {
+    "title": "(se) ??? [057]",
+    "path": "albums/nes/mike-tysons-punch-out/se-057.mid"
+   },
+   {
+    "title": "(se) ??? [059]",
+    "path": "albums/nes/mike-tysons-punch-out/se-059.mid"
+   },
+   {
+    "title": "(se) ??? [060]",
+    "path": "albums/nes/mike-tysons-punch-out/se-060.mid"
+   },
+   {
+    "title": "(se) ??? [061]",
+    "path": "albums/nes/mike-tysons-punch-out/se-061.mid"
+   },
+   {
+    "title": "(se) ??? [064]",
+    "path": "albums/nes/mike-tysons-punch-out/se-064.mid"
+   },
+   {
+    "title": "(se) ??? [066]",
+    "path": "albums/nes/mike-tysons-punch-out/se-066.mid"
+   },
+   {
+    "title": "(se) ??? [067]",
+    "path": "albums/nes/mike-tysons-punch-out/se-067.mid"
+   },
+   {
+    "title": "(se) ??? [068]",
+    "path": "albums/nes/mike-tysons-punch-out/se-068.mid"
+   },
+   {
+    "title": "(se) Bell",
+    "path": "albums/nes/mike-tysons-punch-out/se-bell.mid"
+   },
+   {
+    "title": "(se) Bell ringing",
+    "path": "albums/nes/mike-tysons-punch-out/se-bell-ringing.mid"
+   },
+   {
+    "title": "(se) Blocking",
+    "path": "albums/nes/mike-tysons-punch-out/se-blocking.mid"
+   },
+   {
+    "title": "(se) Disappearing",
+    "path": "albums/nes/mike-tysons-punch-out/se-disappearing.mid"
+   },
+   {
+    "title": "(se) Dodging",
+    "path": "albums/nes/mike-tysons-punch-out/se-dodging.mid"
+   },
+   {
+    "title": "(se) Hard Blow to the Gut",
+    "path": "albums/nes/mike-tysons-punch-out/se-hard-blow-to-the-gut.mid"
+   },
+   {
+    "title": "(se) King Hippo's Mouth",
+    "path": "albums/nes/mike-tysons-punch-out/se-king-hippo-s-mouth.mid"
+   },
+   {
+    "title": "(se) Opponent asked for more",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-asked-for-more.mid"
+   },
+   {
+    "title": "(se) Opponent Jumping Away",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-jumping-away.mid"
+   },
+   {
+    "title": "(se) Opponent Knocked Out",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-knocked-out.mid"
+   },
+   {
+    "title": "(se) Opponent Knocked Out 2",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-knocked-out-2.mid"
+   },
+   {
+    "title": "(se) Opponent Misses Big Uppercut Blow",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-misses-big-uppercut-blow.mid"
+   },
+   {
+    "title": "(se) Opponent Spitting from Mouth",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-spitting-from-mouth.mid"
+   },
+   {
+    "title": "(se) Opponent throwing an Uppercut",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-throwing-an-uppercut.mid"
+   },
+   {
+    "title": "(se) Opponent throwing Swift Punches",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-throwing-swift-punches.mid"
+   },
+   {
+    "title": "(se) Opponent Throws a Punch",
+    "path": "albums/nes/mike-tysons-punch-out/se-opponent-throws-a-punch.mid"
+   },
+   {
+    "title": "(se) Punch Missed",
+    "path": "albums/nes/mike-tysons-punch-out/se-punch-missed.mid"
+   },
+   {
+    "title": "(se) Punching Opponent",
+    "path": "albums/nes/mike-tysons-punch-out/se-punching-opponent.mid"
+   },
+   {
+    "title": "(se) Punching Title Name",
+    "path": "albums/nes/mike-tysons-punch-out/se-punching-title-name.mid"
+   },
+   {
+    "title": "(se) Referee",
+    "path": "albums/nes/mike-tysons-punch-out/se-referee.mid"
+   },
+   {
+    "title": "(se) Referee announcing TKO",
+    "path": "albums/nes/mike-tysons-punch-out/se-referee-announcing-tko.mid"
+   },
+   {
+    "title": "(se) Referee Announcing Winner",
+    "path": "albums/nes/mike-tysons-punch-out/se-referee-announcing-winner.mid"
+   },
+   {
+    "title": "(se) Referee Counting",
+    "path": "albums/nes/mike-tysons-punch-out/se-referee-counting.mid"
+   },
+   {
+    "title": "(se) Special Punch",
+    "path": "albums/nes/mike-tysons-punch-out/se-special-punch.mid"
+   },
+   {
+    "title": "(se) Special Star Obtained",
+    "path": "albums/nes/mike-tysons-punch-out/se-special-star-obtained.mid"
+   },
+   {
+    "title": "(se) Uppercut Missed",
+    "path": "albums/nes/mike-tysons-punch-out/se-uppercut-missed.mid"
+   },
+   {
+    "title": "Bout Winner",
+    "path": "albums/nes/mike-tysons-punch-out/bout-winner.mid"
+   },
+   {
+    "title": "Don Flamenco's Theme",
+    "path": "albums/nes/mike-tysons-punch-out/don-flamenco-s-theme.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/nes/mike-tysons-punch-out/game-over.mid"
+   },
+   {
+    "title": "Get Up Little Mac!!",
+    "path": "albums/nes/mike-tysons-punch-out/get-up-little-mac.mid"
+   },
+   {
+    "title": "Glass Joe's Theme",
+    "path": "albums/nes/mike-tysons-punch-out/glass-joe-s-theme.mid"
+   },
+   {
+    "title": "King Hippo's Theme",
+    "path": "albums/nes/mike-tysons-punch-out/king-hippo-s-theme.mid"
+   },
+   {
+    "title": "Match BGM",
+    "path": "albums/nes/mike-tysons-punch-out/match-bgm.mid"
+   },
+   {
+    "title": "Moving on to Next Level",
+    "path": "albums/nes/mike-tysons-punch-out/moving-on-to-next-level.mid"
+   },
+   {
+    "title": "Piston Honda's Theme",
+    "path": "albums/nes/mike-tysons-punch-out/piston-honda-s-theme.mid"
+   },
+   {
+    "title": "Preparing for Next Big Bout",
+    "path": "albums/nes/mike-tysons-punch-out/preparing-for-next-big-bout.mid"
+   },
+   {
+    "title": "Punch Out!! Theme",
+    "path": "albums/nes/mike-tysons-punch-out/punch-out-theme.mid"
+   },
+   {
+    "title": "Punch Out!! Theme (Reprise)",
+    "path": "albums/nes/mike-tysons-punch-out/punch-out-theme-reprise.mid"
+   },
+   {
+    "title": "Round 1 Begins...",
+    "path": "albums/nes/mike-tysons-punch-out/round-1-begins.mid"
+   },
+   {
+    "title": "Soda Popinski's Theme",
+    "path": "albums/nes/mike-tysons-punch-out/soda-popinski-s-theme.mid"
+   },
+   {
+    "title": "The Dream Fight!!",
+    "path": "albums/nes/mike-tysons-punch-out/the-dream-fight.mid"
+   },
+   {
+    "title": "Von Kaiser's Theme",
+    "path": "albums/nes/mike-tysons-punch-out/von-kaiser-s-theme.mid"
+   },
+   {
+    "title": "Warming Up with Doc",
+    "path": "albums/nes/mike-tysons-punch-out/warming-up-with-doc.mid"
+   },
+   {
+    "title": "You Lose",
+    "path": "albums/nes/mike-tysons-punch-out/you-lose.mid"
+   },
+   {
+    "title": "You Win!",
+    "path": "albums/nes/mike-tysons-punch-out/you-win.mid"
+   },
+   {
+    "title": "You've Won the Championship Ranking!!",
+    "path": "albums/nes/mike-tysons-punch-out/you-ve-won-the-championship-ranking.mid"
+   }
+  ]
+ },
+ {
   "title": "Super Mario 64",
   "songs": [
    {
