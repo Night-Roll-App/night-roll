@@ -788,6 +788,91 @@
   ]
  },
  {
+  "title": "Donkey Kong Land",
+  "songs": [
+   {
+    "title": "Airship",
+    "path": "albums/game-boy/donkey-kong-land/airship.mid"
+   },
+   {
+    "title": "Boss",
+    "path": "albums/game-boy/donkey-kong-land/boss.mid"
+   },
+   {
+    "title": "Building",
+    "path": "albums/game-boy/donkey-kong-land/building.mid"
+   },
+   {
+    "title": "Cave",
+    "path": "albums/game-boy/donkey-kong-land/cave.mid"
+   },
+   {
+    "title": "Construction Site",
+    "path": "albums/game-boy/donkey-kong-land/construction-site.mid"
+   },
+   {
+    "title": "Jungle",
+    "path": "albums/game-boy/donkey-kong-land/jungle.mid"
+   },
+   {
+    "title": "Last Boss",
+    "path": "albums/game-boy/donkey-kong-land/last-boss.mid"
+   },
+   {
+    "title": "Lose Life",
+    "path": "albums/game-boy/donkey-kong-land/lose-life.mid"
+   },
+   {
+    "title": "Main Theme",
+    "path": "albums/game-boy/donkey-kong-land/main-theme.mid"
+   },
+   {
+    "title": "Map",
+    "path": "albums/game-boy/donkey-kong-land/map.mid"
+   },
+   {
+    "title": "Menu",
+    "path": "albums/game-boy/donkey-kong-land/menu.mid"
+   },
+   {
+    "title": "Mountain",
+    "path": "albums/game-boy/donkey-kong-land/mountain.mid"
+   },
+   {
+    "title": "Ship",
+    "path": "albums/game-boy/donkey-kong-land/ship.mid"
+   },
+   {
+    "title": "Sky",
+    "path": "albums/game-boy/donkey-kong-land/sky.mid"
+   },
+   {
+    "title": "Skyscraper",
+    "path": "albums/game-boy/donkey-kong-land/skyscraper.mid"
+   },
+   {
+    "title": "Snow",
+    "path": "albums/game-boy/donkey-kong-land/snow.mid"
+   },
+   {
+    "title": "Stage Clear",
+    "path": "albums/game-boy/donkey-kong-land/stage-clear.mid"
+   },
+   {
+    "title": "Submerged Ruins",
+    "path": "albums/game-boy/donkey-kong-land/submerged-ruins.mid"
+   },
+   {
+    "title": "Temple",
+    "path": "albums/game-boy/donkey-kong-land/temple.mid"
+   },
+   {
+    "title": "Waterworld",
+    "path": "albums/game-boy/donkey-kong-land/waterworld.mid"
+   }
+  ]
+ },
+ {
   "title": "DuckTales",
   "songs": [
    {
