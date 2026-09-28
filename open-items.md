@@ -1028,6 +1028,23 @@ File → Settings → GitHub (defaulted, so it never needs touching).
 Josh accepts the take-down risk (2026-09-28: "someone can ask you to
 take it down, and you might have to … I'm willing to live with that").
 
+## SUBSCRIBE TO OTHER LIBRARIES — IDEA 2026-09-28 (Josh: "not saying we should do anything about this right now")
+
+"You should also be able to specify other repos that you want to pull
+songs and instruments from … someone else does a bunch of work to import
+a bunch of other games, and they want to use both sets." Shape: your own
+songs + game-files repos are where you WRITE; any number of other
+people's pairs are read-only SOURCES; the Open sheet's catalog is already
+a union (initCatalog merges the site manifest with the bundle), so more
+sources are the same merge, labelled by owner. The one change worth doing
+EARLY: album.json's `nsf` block should record which archive holds its
+files (e.g. `nsf.repo: "joshcough/nsf-archive"`) at publish time — today
+`vault` is a path the reader resolves against ITS OWN cfg().nsfBase, so a
+subscribed album would look in the wrong archive; albums published
+before the field would need a fallback (the owner's default). Instrument
+libraries ride along (they are files in the same archive). Open question:
+two sources with the same album slug — show whose copy.
+
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
 "Before we release this for real … imports of several more games on
