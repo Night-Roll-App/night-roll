@@ -1472,6 +1472,35 @@ every sampled song. Libraries go to the game files & instruments repo
 beside each album's chip files. Performance (vibrato, bends, volume
 ramps, reverb, filters) stays with the song, not the instrument.
 
+Step 2: `export.mjs <libraryDir> --sf2 out.sf2 --sfz outDir [--used-only]`
+writes the same library as SoundFont 2 (one file, one preset per
+instrument, bank 0 programs 0..127 then bank 1…) and SFZ (one `.sfz` per
+instrument beside copies of the WAVs it uses, plus `index.txt` mapping
+program → file — SFZ has no native program-per-file mechanism, so that's
+as close as it gets to "one bank"). Either loads in any DAW/sampler, no
+Night Roll involved. Both carry key/velocity ranges, root key + fine
+tune (fractional key → semitone + cents), pan, gain, loop points, and the
+envelope's ADSR summary (attack/decay/sustain/release, as SF2 timecents
+or SFZ seconds). SFZ additionally gets the driver's exact envelope shape
+through ARIA's flex EG (`eg1_*`, from `envelope.points` + `releaseCurve`)
+— a bonus for players that honour it, not a guarantee. What neither
+format can express: the exact multi-point shape in SF2 (only the ADSR
+summary), the release curve's "resume from whatever level the key was
+released at" behaviour (`play.mjs`'s `timeAtLevel`), or an envelope
+repeat window (`envelope.repeat`) — all silently approximated by the
+ADSR summary. `--used-only` drops instruments no captured song plays
+from both formats; without it they're still written (so nothing extracted
+is lost) but the SF2 preset list — what a DAW actually browses — is
+always used-only regardless. A region with no sample in the rip
+(`missing`) is skipped; an instrument left with no playable region is
+skipped entirely. Levels are normalised per file (the loudest zone is 0 dB,
+every other keeps its ratio — each driver's gains run on its own scale, and
+SF2 can only attenuate); instruments are named by their measured name, the
+id → name map sits in the SFZ index.txt; a squared velocity curve is not
+expressed (both formats use their own). Tests: tests/instruments-export.test.mjs (a hand-built
+library through a from-scratch RIFF/SF2 reader, plus the SFZ region
+lines).
+
 ## Stereo — pan per track (2026-09-28)
 
 Josh: "are we getting … stereo information?" — pan was read and never

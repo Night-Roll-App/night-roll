@@ -4,6 +4,19 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## Game instrument libraries: SF2/SFZ export — DONE 2026-09-28
+
+`tools/instruments/export.mjs` writes any extracted library (instruments.json
++ WAVs) as SoundFont 2 and SFZ, so the instruments load in any DAW/sampler,
+not just Night Roll. Ran on all 14 real libraries into
+scratch/instruments/export/ — sizes from 1.3 MB (n64-ge) to 86 MB
+(final-fantasy-ix SF2; its SFZ set is 2579 files). tests/instruments-export.test.mjs
+(4 tests, added to `npm test`; levels normalised per file, instruments named) round-trips a synthetic library through a
+from-scratch RIFF/SF2 reader. Not verified by ear: `fluidsynth`/`sfizz` are
+not installed on this machine, so no rendered note was checked against the
+library's own player — an item, not a gap covered elsewhere. Docs:
+NIGHT-ROLL.md "Game instrument libraries" (Step 2).
+
 ## Recording looped instead of growing the song — FIXED on the overnight branch (2026-09-26)
 
 Josh's son: new song (two bars), MIDI keyboard + arpeggiator, ●, the
