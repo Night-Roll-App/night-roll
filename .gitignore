@@ -7,3 +7,5 @@ playwright-report/
 *.gbs
 dist/
 scratch/
+*.spc
+*.zip
