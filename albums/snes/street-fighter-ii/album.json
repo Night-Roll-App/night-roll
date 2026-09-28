@@ -1,0 +1,171 @@
+{
+ "title": "Street Fighter II",
+ "order": 50,
+ "songs": {
+  "balrog-jap-vega-us-europe": "Balrog (Jap)/Vega (US, Europe)",
+  "blanka-s-ending": "Blanka's Ending",
+  "chun-li-s-ending-1": "Chun Li's Ending (1)",
+  "chun-li-s-ending-2": "Chun Li's Ending (2)",
+  "continue": "Continue...?",
+  "dhalsim-s-ending": "Dhalsim's Ending",
+  "e-honda-s-ending": "E. Honda's Ending",
+  "e-honda": "E. Honda",
+  "fight": "\"Fight!\"",
+  "game-over": "Game Over!",
+  "guile-s-ending": "Guile's Ending",
+  "here-comes-a-new-challanger": "\"Here Comes A New Challanger!\"",
+  "ken-s-ending-1": "Ken's Ending (1)",
+  "ken-s-ending-2": "Ken's Ending (2)",
+  "m-bison-jap-balrog-us-europe": "M. Bison (Jap)/Balrog (US, Europe)",
+  "ryu-s-ending": "Ryu's Ending",
+  "vega-jap-m-bison-us-europe": "Vega (Jap)/M. Bison (US, Europe)",
+  "zangief-s-ending": "Zangief's Ending"
+ },
+ "nsf": {
+  "vault": "street-fighter-ii/",
+  "tracks": {
+   "balrog-jap-vega-us-europe": {
+    "n": 1,
+    "secs": 105
+   },
+   "blanka-s-ending": {
+    "n": 1,
+    "secs": 62
+   },
+   "blanka": {
+    "n": 1,
+    "secs": 114
+   },
+   "bonus-stage": {
+    "n": 1,
+    "secs": 24
+   },
+   "capcom-sound": {
+    "n": 1,
+    "secs": 12
+   },
+   "chun-li-s-ending-1": {
+    "n": 1,
+    "secs": 75
+   },
+   "chun-li-s-ending-2": {
+    "n": 1,
+    "secs": 32
+   },
+   "chun-li": {
+    "n": 1,
+    "secs": 105
+   },
+   "continue": {
+    "n": 1,
+    "secs": 22
+   },
+   "credits": {
+    "n": 1,
+    "secs": 224
+   },
+   "dhalsim-s-ending": {
+    "n": 1,
+    "secs": 34
+   },
+   "dhalsim": {
+    "n": 1,
+    "secs": 78
+   },
+   "e-honda-s-ending": {
+    "n": 1,
+    "secs": 52
+   },
+   "e-honda": {
+    "n": 1,
+    "secs": 118
+   },
+   "end-battle": {
+    "n": 1,
+    "secs": 12
+   },
+   "fight": {
+    "n": 1,
+    "secs": 12
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 12
+   },
+   "guile-s-ending": {
+    "n": 1,
+    "secs": 49
+   },
+   "guile": {
+    "n": 1,
+    "secs": 132
+   },
+   "here-comes-a-new-challanger": {
+    "n": 1,
+    "secs": 12
+   },
+   "ken-s-ending-1": {
+    "n": 1,
+    "secs": 51
+   },
+   "ken-s-ending-2": {
+    "n": 1,
+    "secs": 46
+   },
+   "ken": {
+    "n": 1,
+    "secs": 124
+   },
+   "m-bison-jap-balrog-us-europe": {
+    "n": 1,
+    "secs": 104
+   },
+   "pause": {
+    "n": 1,
+    "secs": 12
+   },
+   "player-select": {
+    "n": 1,
+    "secs": 32
+   },
+   "ranking": {
+    "n": 1,
+    "secs": 12
+   },
+   "ryu-s-ending": {
+    "n": 1,
+    "secs": 61
+   },
+   "ryu": {
+    "n": 1,
+    "secs": 98
+   },
+   "sagat": {
+    "n": 1,
+    "secs": 163.98
+   },
+   "start-battle": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-world-warrior": {
+    "n": 1,
+    "secs": 30
+   },
+   "vega-jap-m-bison-us-europe": {
+    "n": 1,
+    "secs": 132
+   },
+   "zangief-s-ending": {
+    "n": 1,
+    "secs": 24
+   },
+   "zangief": {
+    "n": 1,
+    "secs": 101
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}

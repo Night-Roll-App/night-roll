@@ -3559,6 +3559,151 @@
   ]
  },
  {
+  "title": "Street Fighter II",
+  "songs": [
+   {
+    "title": "\"Fight!\"",
+    "path": "albums/snes/street-fighter-ii/fight.mid"
+   },
+   {
+    "title": "\"Here Comes A New Challanger!\"",
+    "path": "albums/snes/street-fighter-ii/here-comes-a-new-challanger.mid"
+   },
+   {
+    "title": "Balrog (Jap)/Vega (US, Europe)",
+    "path": "albums/snes/street-fighter-ii/balrog-jap-vega-us-europe.mid"
+   },
+   {
+    "title": "Blanka",
+    "path": "albums/snes/street-fighter-ii/blanka.mid"
+   },
+   {
+    "title": "Blanka's Ending",
+    "path": "albums/snes/street-fighter-ii/blanka-s-ending.mid"
+   },
+   {
+    "title": "Bonus Stage",
+    "path": "albums/snes/street-fighter-ii/bonus-stage.mid"
+   },
+   {
+    "title": "Capcom Sound",
+    "path": "albums/snes/street-fighter-ii/capcom-sound.mid"
+   },
+   {
+    "title": "Chun Li",
+    "path": "albums/snes/street-fighter-ii/chun-li.mid"
+   },
+   {
+    "title": "Chun Li's Ending (1)",
+    "path": "albums/snes/street-fighter-ii/chun-li-s-ending-1.mid"
+   },
+   {
+    "title": "Chun Li's Ending (2)",
+    "path": "albums/snes/street-fighter-ii/chun-li-s-ending-2.mid"
+   },
+   {
+    "title": "Continue...?",
+    "path": "albums/snes/street-fighter-ii/continue.mid"
+   },
+   {
+    "title": "Credits",
+    "path": "albums/snes/street-fighter-ii/credits.mid"
+   },
+   {
+    "title": "Dhalsim",
+    "path": "albums/snes/street-fighter-ii/dhalsim.mid"
+   },
+   {
+    "title": "Dhalsim's Ending",
+    "path": "albums/snes/street-fighter-ii/dhalsim-s-ending.mid"
+   },
+   {
+    "title": "E. Honda",
+    "path": "albums/snes/street-fighter-ii/e-honda.mid"
+   },
+   {
+    "title": "E. Honda's Ending",
+    "path": "albums/snes/street-fighter-ii/e-honda-s-ending.mid"
+   },
+   {
+    "title": "End Battle",
+    "path": "albums/snes/street-fighter-ii/end-battle.mid"
+   },
+   {
+    "title": "Game Over!",
+    "path": "albums/snes/street-fighter-ii/game-over.mid"
+   },
+   {
+    "title": "Guile",
+    "path": "albums/snes/street-fighter-ii/guile.mid"
+   },
+   {
+    "title": "Guile's Ending",
+    "path": "albums/snes/street-fighter-ii/guile-s-ending.mid"
+   },
+   {
+    "title": "Ken",
+    "path": "albums/snes/street-fighter-ii/ken.mid"
+   },
+   {
+    "title": "Ken's Ending (1)",
+    "path": "albums/snes/street-fighter-ii/ken-s-ending-1.mid"
+   },
+   {
+    "title": "Ken's Ending (2)",
+    "path": "albums/snes/street-fighter-ii/ken-s-ending-2.mid"
+   },
+   {
+    "title": "M. Bison (Jap)/Balrog (US, Europe)",
+    "path": "albums/snes/street-fighter-ii/m-bison-jap-balrog-us-europe.mid"
+   },
+   {
+    "title": "Pause",
+    "path": "albums/snes/street-fighter-ii/pause.mid"
+   },
+   {
+    "title": "Player Select",
+    "path": "albums/snes/street-fighter-ii/player-select.mid"
+   },
+   {
+    "title": "Ranking",
+    "path": "albums/snes/street-fighter-ii/ranking.mid"
+   },
+   {
+    "title": "Ryu",
+    "path": "albums/snes/street-fighter-ii/ryu.mid"
+   },
+   {
+    "title": "Ryu's Ending",
+    "path": "albums/snes/street-fighter-ii/ryu-s-ending.mid"
+   },
+   {
+    "title": "Sagat",
+    "path": "albums/snes/street-fighter-ii/sagat.mid"
+   },
+   {
+    "title": "Start Battle",
+    "path": "albums/snes/street-fighter-ii/start-battle.mid"
+   },
+   {
+    "title": "The World Warrior",
+    "path": "albums/snes/street-fighter-ii/the-world-warrior.mid"
+   },
+   {
+    "title": "Vega (Jap)/M. Bison (US, Europe)",
+    "path": "albums/snes/street-fighter-ii/vega-jap-m-bison-us-europe.mid"
+   },
+   {
+    "title": "Zangief",
+    "path": "albums/snes/street-fighter-ii/zangief.mid"
+   },
+   {
+    "title": "Zangief's Ending",
+    "path": "albums/snes/street-fighter-ii/zangief-s-ending.mid"
+   }
+  ]
+ },
+ {
   "title": "Super Mario 64",
   "songs": [
    {
