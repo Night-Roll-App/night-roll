@@ -730,6 +730,17 @@ inconclusive. Not rendered: vibrato, portamento, pitch bends (N64 bends
 still ignored in the roll too), reverb, pan, synth waveforms, volume
 changes inside a note. Zelda (OoT/MM) banks: another layout, not
 started.
+Josh's first listen (same evening): Lethal Lava Land "sounds great",
+Dire Dire Docks "right instruments … notes cutting off a little bit
+early", Cave Dungeon (his list's first song) "sounds weird … sorts
+itself out after a little bit" vs YouTube. Measured: Cave Dungeon's
+intro instruments (bank 21 inst 0/6/7) render exactly an OCTAVE LOW
+(written E4 → E3; the chord likewise) until the other instruments
+enter at 3.8 s and mask it — so the Title Theme's "inst 3 an octave
+below, the console does that" was our bug, not the console's. Both
+(pitch rule, note release) handed back to the renderer agent with the
+numbers; fix pending. "Bob-omb Battlefield" is in the list as the
+rip's tag title, "Main Theme".
 PS1 — Anxious Heart (Josh: bar 1 great, bar 2 "way louder", "every
 other bar", fine from bar 10): the pad's expression fades swell inside
 held notes; the render froze each note at its note-on volume. Fixed:
