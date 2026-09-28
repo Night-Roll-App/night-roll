@@ -2944,6 +2944,14 @@ function curTick() {
 let lastSubtitle = null;
 // 2026-08-02 repo reorg: song files moved into albums/ — carry this
 // device's per-song localStorage (notes, edits, meter stash, last song) along
+// All IndexedDB traffic rides one queue (idbNsfPut, idbDraftOp below). It is
+// declared HERE, not beside them: the boot migration just under this line
+// moves drafts in IndexedDB, and a `let` 11,000 lines down is in its dead
+// zone until the script reaches it — on any device holding old song keys the
+// page died before a single handler attached (Josh, 2026-09-27, the Mac:
+// "nothing happens anywhere when I click"). See the boot-path rule in
+// NIGHT-ROLL.md.
+let _idbQueue = Promise.resolve();
 (function migrateAlbumPaths() {
   const remap = v => v.replace(/^(ff1roll-(?:notes|edits|ts)-)?midi\//, "$1albums/final-fantasy-i/songs/")
                      .replace(/^(ff1roll-(?:notes|edits|ts)-)?compositions\//, "$1albums/compositions/");
@@ -13784,7 +13792,6 @@ function idbOpen() {
     rq.onerror = () => rej(rq.error);
   });
 }
-let _idbQueue = Promise.resolve();
 function idbNsfPut(slug, bytes, trackPatch, chipKind, libs) { // libs: {name: bytes} — a set's shared library (PS1 .psflib), merged in
   // serialized: rapid captures fired concurrent read-modify-writes and lost
   // track entries — only 9 of TMNT's 24 songs reached the committed chip map

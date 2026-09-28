@@ -124,6 +124,7 @@ export function createApp(opts = {}) {
 
   const elements = new Map();
   const store = new Map();
+  for (const [k, v] of Object.entries(opts.storage || {})) store.set(k, String(v)); // keys present BEFORE boot: the migrations run against them
 
   // fake clock: setTimeout/performance.now share one timeline; tick(ms) fires
   // due timers in order (the dwell tests depend on exact ordering)

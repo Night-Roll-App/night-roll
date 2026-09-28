@@ -3545,6 +3545,23 @@ test("chip source: an unpublished capture under a console folder finds its recor
   run(`localStorage.removeItem(draftStoreKey("albums/ps1/final-fantasy-7/bombing-mission.mid")); songKey = null;`);
 });
 
+test("boot with old keys: the folder migration runs before a handler attaches — and must not crash the page", () => {
+  // the fourth-wave migration moves a capture's draft in IndexedDB through
+  // the idb queue; that queue used to be declared 11,000 lines later, so a
+  // device holding an albums/imports/ draft died at boot (Josh, 2026-09-27,
+  // the Mac and its installed app: "nothing happens anywhere when I click")
+  const seeded = createApp({storage: {
+    "ff1roll-draft-albums/imports/mega-man-2/air-man.mid": JSON.stringify({dirty: true, tracks: [], tracksRef: true}),
+    "ff1roll-notes-albums/final-fantasy-i/songs/overworld.mid": "[]",
+  }});
+  const r = code => seeded.run(code);
+  assert.equal(r(`localStorage.getItem("ff1roll-draft-albums/imports/mega-man-2/air-man.mid")`), null, "old key gone");
+  const moved = JSON.parse(r(`localStorage.getItem("ff1roll-draft-albums/nes/mega-man-2/air-man.mid")`));
+  assert.equal(moved.capture, true, "a draft from imports/ is stamped as a capture");
+  assert.equal(r(`localStorage.getItem("ff1roll-notes-albums/nes/final-fantasy-i/songs/overworld.mid")`), "[]");
+  assert.equal(r(`typeof _idbQueue`), "object", "the idb queue exists once boot is through");
+});
+
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {
   run(`CATALOG = {"Final Fantasy I": [["Overworld", "albums/nes/final-fantasy-i/songs/overworld.mid"]],
                  "Mega Man 2": [["Air Man", "albums/nes/mega-man-2/air-man.mid"]],
