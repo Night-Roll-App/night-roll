@@ -109,10 +109,16 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
   let last = null;                  // note a tie extends
   let loop = null, ended = false, events = 0;
   let volFade = null, exprFade = null;
-  const curVol = () => {
-    const at = (f, base) => !f ? base : tick >= f.end ? f.to : f.from + (f.to - f.from) * (tick - f.start) / (f.end - f.start);
-    return Math.max(1, Math.min(127, Math.round(at(volFade, vol) * at(exprFade, expr) / 127)));
-  };
+  const fadeAt = (f, base) => !f ? base : tick >= f.end ? f.to : f.from + (f.to - f.from) * (tick - f.start) / (f.end - f.start);
+  const curVol = () => Math.max(1, Math.min(127, Math.round(fadeAt(volFade, vol) * fadeAt(exprFade, expr) / 127)));
+  // the channel's loudness over time, as breakpoints (tick, 0..1): a set is a
+  // step, a fade a ramp. The driver applies these to the SOUNDING voice, so a
+  // pad that swells inside one held note must swell in the render too — a
+  // note-on snapshot (vel) made Anxious Heart's intro a stair: bar 1 at 4,
+  // bar 2 at 31 (Josh, 2026-09-27: "way louder … every other bar")
+  const gains = [{tick: 0, level: 1}];
+  const level = () => fadeAt(volFade, vol) * fadeAt(exprFade, expr) / (127 * 127);
+  const gainStep = before => { gains.push({tick, level: before}); gains.push({tick, level: level()}); };
   const tuningCents = () => tuning === 0 ? 0 : 1200 * Math.log2(1 + tuning / (tuning >= 0 ? 128 : 256));
 
   while (!ended) {
@@ -160,9 +166,10 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
       case 0xA1: case 0xF2: program = a; break;
       case 0xF4: program = a; break;                       // overlay voice: primary instrument
       case 0xA2: oneTime = a; lastDelta = a; break;
-      case 0xA3: vol = a; volFade = null; break;
-      case 0xA8: expr = a; exprFade = null; break;
-      case 0xA9: { const len = a || 256; exprFade = {start: tick, end: tick + len, from: exprFade ? curVol() : expr, to: b}; expr = b; break; }
+      case 0xA3: { const was = level(); vol = a; volFade = null; gainStep(was); break; }
+      case 0xA8: { const was = level(); expr = a; exprFade = null; gainStep(was); break; }
+      case 0xA9: { const len = a || 256; const from = fadeAt(exprFade, expr); exprFade = {start: tick, end: tick + len, from, to: b}; expr = b;
+                   gains.push({tick, level: fadeAt(volFade, vol) * from / (127 * 127)}); gains.push({tick: tick + len, level: fadeAt(volFade, vol) * b / (127 * 127)}); break; }
       case 0xA4: bendsOut.push({tick, len: a || 256, semitones: s8(b)}); break;
       case 0xA5: octave = a & 15; break;
       case 0xA6: octave = (octave + 1) & 15; break;
@@ -226,6 +233,23 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
       case 0xED: drum = null; break;
       default: break; // ADSR, LFOs, pan, reverb, noise, side-chains: no note fact
     }
+  }
+  // each note carries the slice of the automation it sounds through, relative
+  // to its own start — an unrolled copy then keeps the same shape
+  gains.sort((a, b) => a.tick - b.tick);
+  const levelAt = t => {
+    let l = gains[0].level;
+    for (let i = 0; i < gains.length; i++) {
+      const g = gains[i], nx = gains[i + 1];
+      if (g.tick > t) break;
+      l = nx && nx.tick > t && nx.tick > g.tick ? g.level + (nx.level - g.level) * (t - g.tick) / (nx.tick - g.tick) : g.level;
+    }
+    return l;
+  };
+  for (const n of notes) {
+    const inside = gains.filter(g => g.tick > n.tick && g.tick < n.endTick);
+    if (!inside.length) continue; // constant through the note: vel says it all
+    n.gain = [{t: 0, l: levelAt(n.tick)}, ...inside.map(g => ({t: g.tick - n.tick, l: g.level})), {t: n.endTick - n.tick, l: levelAt(n.endTick)}];
   }
   return {notes, tempos, timeSigs, warnings, bends: bendsOut, endTick: tick, loop, voice};
 }

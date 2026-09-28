@@ -40,3 +40,25 @@ test("renderSpu: table by shape, bank by end flags, a held note sounds at the tr
   assert.ok(rms(1000, 9000) > 0.05, "sounds while held: " + rms(1000, 9000));       // 0.5 s note at 22050 = 11025 samples
   assert.ok(rms(11025 + 4000, 11025 + 8000) < 0.005, "silent after the release: " + rms(15025, 19025));
 });
+
+test("renderSpu: a volume change inside a held note is followed sample by sample (the note's gain breakpoints)", async () => {
+  // the same rig; one note whose channel swells from silence to full while it
+  // holds — Anxious Heart's pad (Josh, 2026-09-27: bar 1 quiet, bar 2 "way
+  // louder"): the old render froze each note at its note-on volume
+  const ram = new Uint8Array(0x20000);
+  const tableAt = 0x8000, bankAt = 0x10000, spuAddr = 0x1010;
+  for (let i = 0; i < 20; i++) ram.set(record(spuAddr + i * 0x30, spuAddr + i * 0x30, [0, 0x0f, 0x0f, 0x7f, 0x05, 1, 3, 3]), tableAt + i * INSTR_STRIDE);
+  for (let i = 0; i < 20; i++) { const o = bankAt + i * 0x30; ram.set(block(4, square), o); ram.set(block(0, square), o + 16); ram.set(block(3, square), o + 32); }
+  const table = findInstrDat(ram), bank = findSampleBank(ram, table);
+  const seq = {ppq: 48, tempoMap: [{tick: 0, usq: 500000}], timeSigs: [{tick: 0, num: 4, den: 4}], loop: null, warnings: []};
+  const note = {tick: 0, endTick: 96, ch: 0, key: 72, vel: 4, program: 2, pitch: 72, cents: 0, drum: false, tone: null,
+                gain: [{t: 0, l: 0.03}, {t: 96, l: 1}]};
+  const r = await renderSpu({notes: [note], seq}, {ram, table, bank, sampleRate: 22050});
+  const buf = r["ch 1 prog 2"];
+  const rms = (a, b) => { let s = 0; for (let i = a; i < b; i++) s += buf[i] * buf[i]; return Math.sqrt(s / (b - a)); };
+  const early = rms(1000, 4000), late = rms(18000, 21000); // a 1 s note at 22050
+  assert.ok(late > early * 5, "swells while held: early " + early.toFixed(4) + " late " + late.toFixed(4));
+  const flat = await renderSpu({notes: [{...note, gain: undefined}], seq}, {ram, table, bank, sampleRate: 22050});
+  const fb = flat["ch 1 prog 2"]; let s = 0; for (let i = 18000; i < 21000; i++) s += fb[i] * fb[i];
+  assert.ok(Math.sqrt(s / 3000) < late / 5, "without the curve the note stays at its note-on volume (vel 4)");
+});

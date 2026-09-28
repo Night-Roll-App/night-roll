@@ -8,8 +8,9 @@
 // What is real here: the samples, their loop points (block flags, or the
 // table's loop address), the pitch (base pitch per degree × 2^octave, the
 // key's octave 6 = the table's), the ADSR as psx-spx states it, the per-note
-// volume from the score. What is not: pan and reverb (mono, dry), the
-// SPU's 4-tap interpolation (linear here), volume slides within a note.
+// volume from the score, including a volume/expression change inside a
+// held note (the note's gain breakpoints). What is not: pan and reverb
+// (mono, dry), the SPU's 4-tap interpolation (linear here).
 // Josh, 2026-09-27, FF7 Opening ~ Bombing Mission: "they just don't sound
 // like the same instrument … hopefully the information should be there."
 import { decodeAdpcm } from "./vab.mjs";
@@ -132,7 +133,16 @@ export async function renderSpu(result, opts = {}) {
         const ratio = base / 0x1000 * Math.pow(2, Math.floor(key / 12) - 6) * (SPU_RATE / sampleRate);
         const t0 = secondsAt(seq, n.tick), t1 = secondsAt(seq, n.endTick);
         const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(t1 * sampleRate);
-        const vol = Math.max(0, Math.min(1, (n.vel || 0) / 127)) * (n.drum && n.tone && n.tone.vol != null ? Math.min(1, n.tone.vol / 127) : 1);
+        const toneVol = n.drum && n.tone && n.tone.vol != null ? Math.min(1, n.tone.vol / 127) : 1;
+        let vol = Math.max(0, Math.min(1, (n.vel || 0) / 127)) * toneVol;
+        // a volume/expression change while the note sounds (n.gain: breakpoints
+        // in ticks from the note's start) — the driver moves the voice's volume,
+        // so the render follows it sample by sample; vel was that curve's start
+        let ramp = null, ri = 0;
+        if (n.gain && n.gain.length > 1) {
+          ramp = n.gain.map(g => ({i: Math.floor(secondsAt(seq, n.tick + g.t) * sampleRate), l: g.l * toneVol}));
+          vol = ramp[0].l;
+        }
         const env = new Envelope(rec);
         let pos = 0;
         const pcm = smp.pcm, L = pcm.length;
@@ -141,6 +151,11 @@ export async function renderSpu(result, opts = {}) {
           const lv = env.next();
           if (!env.on && lv <= 0) break;
           if (pos >= L) { if (smp.oneShot || smp.loopStart == null || smp.loopEnd <= smp.loopStart) break; pos = smp.loopStart + ((pos - smp.loopStart) % (smp.loopEnd - smp.loopStart)); }
+          if (ramp) {
+            while (ri + 1 < ramp.length && i >= ramp[ri + 1].i) ri++;
+            const g = ramp[ri], nx = ramp[ri + 1];
+            vol = nx && nx.i > g.i && i < nx.i ? g.l + (nx.l - g.l) * (i - g.i) / (nx.i - g.i) : g.l;
+          }
           const p0 = Math.floor(pos), f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : (smp.oneShot ? a : pcm[smp.loopStart != null ? smp.loopStart : 0]);
           buf[i] += (a + (b - a) * f) / 32768 * (lv / 0x7FFF) * vol * 0.5;
           pos += ratio;
