@@ -718,7 +718,17 @@ don't have that." Right: N64 has NO renderer — every song plays synth
 voices by program number. The game's samples (ADPCM in the bank, in
 the .usflib's ROM/RDRAM) are there to decode; an N64 sample renderer is
 the PS1 renderer's job again (bank table → samples → per-instrument
-envelope → renderSpu-style mix). QUEUED; not started.
+envelope → renderSpu-style mix). STARTED the same hour (agent, tools
+only: bank + VADPCM + renderer with a pitch check on the real rip); the
+app wiring follows.
+PS1 — Anxious Heart (Josh: bar 1 great, bar 2 "way louder", "every
+other bar", fine from bar 10): the pad's expression fades swell inside
+held notes; the render froze each note at its note-on volume. Fixed:
+per-note gain breakpoints, followed sample by sample (NIGHT-ROLL.md
+"PlayStation chip audio" → Volume inside a note). Measured: per-bar RMS
+went from 4 / 29 / 15 / 29 to a steady 36 (swell up, swell down).
+Re-render happens on open; no re-import needed (the render reads the
+stored files).
 
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 

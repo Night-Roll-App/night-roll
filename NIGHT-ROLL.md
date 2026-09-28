@@ -1416,6 +1416,16 @@ import + Publish, every device plays the PS1 songs with the console's
 sound, like SNES. Not rendered yet: SEQ/VAB games. Test:
 tests/psx-render.test.mjs (a synthetic rip: table, bank, one note).
 
+**Volume inside a note (same day, later).** The driver moves a sounding
+voice's volume — Anxious Heart's pad swells up over one bar and back
+down over the next by expression fades (0xA9) under held notes. The
+parser keeps each track's loudness as breakpoints and hangs the slice a
+note sounds through on it (`n.gain`, ticks from the note's start; an
+unrolled copy keeps the shape); `renderSpu` follows it sample by sample,
+`vel` being that curve's start. Before this each note froze at its
+note-on level: bar 1 near silent, bar 2 loud (Josh: "way louder … every
+other bar"). Test: "renderSpu: a volume change inside a held note …".
+
 ## PlayStation captures: envelopes from the instrument table (2026-09-27)
 
 Josh: "why isn't it looking at the instrument table?" Now it does.
