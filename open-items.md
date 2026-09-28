@@ -4,6 +4,62 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## PS1 SOUNDING PITCH — WAITS ON JOSH'S EAR (2026-09-28)
+
+The roll shows the sounding pitch for N64 (checked against a real player)
+but NOT yet for PS1: no PS1 player runs on the Mac without a Sony BIOS,
+so FF7's offsets (409 of 1091 tracks, consistent per program) are
+measured against our own renderer only. ONE CHECK unlocks it: play "You
+Can Hear the Cry of the Planet" in Night Roll and a recording (YouTube):
+is the repeating motif in the same octave? Same → our renderer's octave
+is right → flip PSX_SOUNDING_ON in index.html and re-capture the PS1
+albums. Different → a renderer bug to fix first.
+
+## Sounding-pitch offsets — DONE 2026-09-28; one disagreement to ear-check; PS1 ground truth still open
+
+`tools/sounding.mjs` measures, at capture time, when an instrument's
+sample was recorded an octave (or two) from the written key, and shifts
+the roll to show the sounding pitch (Josh's ruling). NIGHT-ROLL.md
+"Sounding-pitch offsets" has the full design, plus the 2nd-harmonic
+guard added on review (a bright sample's 2nd harmonic winning
+autocorrelation over a quieter true fundamental — this WAS a real bug,
+caught by re-checking: Bombing Mission's prog 55 was exactly this false
+positive and now measures 0; nothing else in the 90-song FF7 catalog
+uses prog 55 with a different result, so the fix isn't just papering
+over one case).
+
+**Needs Josh's ear**: a full survey of all 38 SM64 + 90 FF7 captures,
+post-hardening, found FF7 Bombing Mission (102b) still has two shifted
+channels (prog 49 −12, prog 40 +12) — disagreeing with an earlier
+informal spot check that called Bombing Mission "all 0". Both programs
+shift identically in 14 and 9 other FF7 songs respectively (cross-song
+corroboration, not noise), so this is very likely a real miss in that
+earlier spot check, not a bug in the new measurement — but it's a claim
+about what Josh hears, so it's his call, not a fact a tool should
+assert unprompted. Also open: Cave Dungeon ch 7 (bank 21 inst 7)
+measures UNSHIFTED (offset 0, corr 0.98) — disagreeing with the ground
+truth list in the task that added this feature, which grouped it with
+ch 0/6 (both −12, confirmed); INTEGRATION.md's own §9.6 text only
+computed the fundamental for inst 0/6 (inst 7 is a different recording,
+tuning 0.281 not 1.0). Test the shifted tracks by ear on a re-import of
+both albums; if Cave Dungeon ch 7 or Bombing Mission's two channels
+sound RIGHT as written (not shifted), the autocorrelation method needs
+a second look at those specific instruments.
+
+**PS1 ground truth is still unverified against a real player** (N64's
+was, against lazyusf2). Tried building kode54's Highly Experimental
+core into a WAV renderer fed our own assembled RAM image (scratch/
+psf2wav.c, scratch/psf-ram-dump.mjs — both left in scratch/, gitignored,
+for reuse) — it compiles and boots, but its BIOS synthesizer
+(`mkhebios_create`) needs a real, copyrighted Sony PS2 BIOS dump as raw
+material (it extracts genuine kernel modules from one by name); we
+don't have one and aren't getting one. So FF7's shifted programs are
+verified only against OUR OWN renderSpu, same as before — if anyone
+ever has a legitimately-owned PS2 BIOS dump, scratch/psf2wav.c is ready
+to receive it (`bios_set_image` before `psx_init`) and would let a
+future session cross-check the whole per-program table (32 entries) the
+same way N64's was checked.
+
 ## Game instrument libraries: SF2/SFZ export — DONE 2026-09-28
 
 `tools/instruments/export.mjs` writes any extracted library (instruments.json

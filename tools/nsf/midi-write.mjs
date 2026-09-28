@@ -24,6 +24,21 @@ export function vl(v) {
   return out.reverse();
 }
 
+// A track's sounding-pitch offset (tools/sounding.mjs, 2026-09-28): some
+// PS1/N64 instruments' samples were recorded an octave — occasionally two —
+// away from the written key, so the roll now shows the SOUNDING pitch,
+// shifted from what the composer typed (Josh's ruling). The shift rides in
+// the MIDI as a Text meta event (0xFF 0x01, unused anywhere else in this
+// repo) — not the track name, which stays the renderer's own group name so
+// tap-preview and the console render keep matching tracks by it. index.html's
+// parseMidi reads it back into `track.offset`, so a tap can convert the
+// roll's pitch back to the key the renderer needs (roll pitch − offset).
+export function offsetMetaEvent(offset) {
+  const text = "sounding:" + offset;
+  const bytes = [...text].map(c => c.charCodeAt(0));
+  return {t: 0, o: -2, d: [0xFF, 0x01, bytes.length, ...bytes]};
+}
+
 export function trackBytes(name, notes, ch, metas = []) {
   const evs = [];
   if (name) evs.push({t: 0, d: [0xFF, 0x03, name.length, ...[...name].map(c => c.charCodeAt(0))]});
@@ -129,6 +144,7 @@ export function makeMidiTracks(tracks, {tempos = [{t: 0, bpm: 120}], tsNum = 4, 
     const pre = tr.program == null ? [] : [{t: 0, o: -1, d: [0xC0 | (tr.ch & 15), tr.program & 0x7F]}];
     if (tr.pan != null) pre.push({t: 0, o: -0.5, d: [0xB0 | (tr.ch & 15), 10, Math.max(0, Math.min(127, Math.round(tr.pan)))]});
     for (const c of tr.cc || []) pre.push({t: c.t, o: -0.5, d: [0xB0 | (tr.ch & 15), c.cc & 0x7F, Math.max(0, Math.min(127, Math.round(c.v)))]});
+    if (tr.offset) pre.push(offsetMetaEvent(tr.offset)); // tools/sounding.mjs: the roll shows the sounding pitch, this says by how much
     out.push(trackBytes(tr.name, tr.notes, tr.ch & 15, pre));
   }
   return fileBytes(out);

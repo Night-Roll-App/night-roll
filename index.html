@@ -2059,6 +2059,7 @@ function parseMidi(buf, opts = {}) {
     const nextMagic = tn + 1 < magics.length ? magics[tn+1] : d.length;
     const end = Math.min(declaredEnd, nextMagic);
     let j = i + 8, t = 0, running = null, name = "", curDuty, curPan = null; // CC10: where the game put this channel (−1 left … +1 right)
+    let offset = 0; // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the written key by this many semitones (a Text meta, "sounding:-12")
     const open = {}, notes = [];
     const varlen = () => { let v = 0, b; do { b = d[j++]; v = (v<<7) | (b & 0x7F); } while (b & 0x80); return v; };
     try {
@@ -2070,6 +2071,7 @@ function parseMidi(buf, opts = {}) {
           const mlen = varlen();
           const data = d.subarray(j, j+mlen); j += mlen;
           if (mtype === 0x03 && !name) name = new TextDecoder("latin1").decode(data);
+          else if (mtype === 0x01) { const m = /^sounding:(-?\d+)$/.exec(new TextDecoder("latin1").decode(data)); if (m) offset = +m[1]; }
           else if (mtype === 0x51) tempos.push({tick: t, usq: data[0]<<16 | data[1]<<8 | data[2]});
           else if (mtype === 0x58) timesig = [data[0], 1 << data[1]];
           else if (mtype === 0x59 && keysig === null) keysig = {sf: data[0] > 127 ? data[0] - 256 : data[0], minor: !!data[1]};
@@ -2112,7 +2114,11 @@ function parseMidi(buf, opts = {}) {
     if (!opts.trust) for (let k = 1; k < notes.length; k++) { // FF7's Main Theme voice 2 rests 41 bars — imports are trusted
       if (notes[k].t - notes[k-1].t > 32 * 4 * ppq) { notes.length = k; break; }
     }
-    if (notes.length) tracks.push(curPan === null ? {name, notes} : {name, notes, midiPan: curPan});
+    if (notes.length) {
+      const tr = curPan === null ? {name, notes} : {name, notes, midiPan: curPan};
+      if (offset) tr.offset = offset;
+      tracks.push(tr);
+    }
   }
   tempos.sort((a,b) => a.tick - b.tick);
   if (!tempos.length || tempos[0].tick > 0) tempos.unshift({tick: 0, usq: 500000});
@@ -2142,6 +2148,7 @@ function secToTick(song, sec) {
 // ---------------------------------------------------------------- state
 let song = null;          // parsed midi
 let songKey = null;       // storage key (filename) or null for loaded files
+const PSX_SOUNDING_ON = false; // see CHIPS.psf.capture: PS1 sounding-pitch offsets wait on an ear check
 let songViewRedraw = null; // the Open sheet's current view, re-drawable after a catalog refresh
 let catalogRefreshedAt = 0; // Open re-reads the published list when it is older than this (ms)
 let trackState = [];      // {muted, solo}
@@ -7456,7 +7463,7 @@ async function previewNote(ti, pitch) {
   openMaster(); // master may be faded out from the last stop
   const tr = song && song.tracks[ti];
   if (tr && chipActive() && chipHas(tr.name) && (!tr.voice || tr.voice === "auto") && !trackIsDrums(ti)) { // a chip song: the game's own instrument, if the worker still holds the set
-    const buf = await chipPreviewBuffer(tr.name, pitch);
+    const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0);
     if (buf) { const s = audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(audio.currentTime + 0.01); return; }
   }
   scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, audio.currentTime + 0.01, 0.3);
@@ -7711,7 +7718,7 @@ let chipWorker = null; // one at a time; a new song terminates the old render; a
 const chipPreviewPending = new Map(); // req → resolve, for one-note previews answered by the live worker
 const chipPreviewCache = new Map();   // "song|track|midi" → AudioBuffer, so a repeated tap is instant
 let chipPreviewReq = 0;
-async function chipPreviewBuffer(name, midi) { // the game's own instrument for ONE note, or null (synth then)
+async function chipPreviewBuffer(name, midi, offset = 0) { // the game's own instrument for ONE note, or null (synth then). offset: tools/sounding.mjs — the roll's pitch minus this is the key the renderer needs
   if (!chipWorker || chipWorker.__key !== songKey || !audio) return null;
   const key = songKey + "|" + name + "|" + midi;
   const hit = chipPreviewCache.get(key);
@@ -7720,7 +7727,7 @@ async function chipPreviewBuffer(name, midi) { // the game's own instrument for 
   const reply = await new Promise(res => {
     const t = setTimeout(() => { chipPreviewPending.delete(req); res(null); }, 400); // a slow answer loses to the synth: a tap must sound now
     chipPreviewPending.set(req, m => { clearTimeout(t); res(m); });
-    try { chipWorker.postMessage({preview: {req, id: songKey, track: name, midi, vel: 100}}); } catch (err) { clearTimeout(t); chipPreviewPending.delete(req); res(null); }
+    try { chipWorker.postMessage({preview: {req, id: songKey, track: name, midi, vel: 100, offset}}); } catch (err) { clearTimeout(t); chipPreviewPending.delete(req); res(null); }
   });
   if (!reply || !reply.pcm) return null;
   const x = reply.pcm, st = x.l ? x : null;
@@ -12744,6 +12751,10 @@ function writeMidi(s) { // format-1 SMF: meta track (tempo + meter) + one track 
     evs.sort((a, b) => a.t - b.t || a.on - b.on); // offs before ons at the same tick
     const nm = tr.name || "track" + (ti + 1);
     const body = [...vlq(0), 0xFF, 0x03, nm.length, ...str(nm)];
+    // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the
+    // written key by tr.offset semitones — round-trips through every save
+    // (parseMidi reads it back into track.offset) so a tap keeps sounding right
+    if (tr.offset) { const txt = "sounding:" + tr.offset; body.push(...vlq(0), 0xFF, 0x01, txt.length, ...str(txt)); }
     let last = 0;
     const isKit = /drum|percussion|kit|noise/i.test(tr.name || "");
     const ch = isKit ? 9 : (ti < 9 ? ti : (ti + 1) & 15); // GM: percussion lives on ch 10 (0-indexed 9)
@@ -13776,7 +13787,7 @@ const CHIPS = {
   psf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x01, ext: ".psf", label: "PSF",
         channels: [], perFile: true, tagged: true, keepBytes: true, // the mini per track + the set's lib (below): chip audio outlives the session
         libFile: name => /\.psflib$/i.test(name),
-        files: ["psx/psf", "psx/akao", "psx/seq", "psx/vab", "psx/notes", "psx/spu-render", "psx/capture"], shared: [], own: [],
+        files: ["psx/psf", "psx/akao", "psx/seq", "psx/vab", "psx/notes", "psx/spu-render", "psx/capture"], shared: ["sounding", "note-preview"], own: [],
         // chip audio (2026-09-27): the driver's own samples, pitched per the
         // instrument table, shaped by each instrument's envelope — spu-render.mjs.
         // parse/run/render mirror the SNES contract; the lib rides in src.libs.
@@ -13800,9 +13811,30 @@ const CHIPS = {
           const readLib = n => { const f = sess && sess.libs && sess.libs[n.toLowerCase()]; if (!f) throw new Error("this song needs its library file " + n + " — pick it together with the songs"); return f.bytes; };
           const chain = await M.loadPSFChain(parsed.bytes, readLib, {name: parsed.fileName, inflate});
           const {ram, ranges} = M.assembleRam(chain);
-          if (onProgress) onProgress(0.5);
-          const result = M.psfSong(ram, ranges, parsed.fileName).result; // the same resolver the render uses
-          const bytes = M.makeMidi(result);
+          if (onProgress) onProgress(0.4);
+          const song = M.psfSong(ram, ranges, parsed.fileName); // the same resolver the render uses
+          const result = song.result;
+          // sounding-pitch offsets (2026-09-28): some instruments' samples were
+          // recorded an octave — occasionally two — from the key the composer
+          // typed, so the console sounds a different pitch than the roll shows
+          // (tools/n64/INTEGRATION.md §9.3/§9.6; Josh: "the roll should show the
+          // sounding pitch"). One held-note render per non-kit group, through
+          // the same renderSpu the console audio uses; kit groups never shift.
+          // HELD for PlayStation (2026-09-28): the N64 offsets were checked
+          // against a real player (lazyusf2); no PS1 player runs here without a
+          // Sony BIOS, so these are measured against OUR renderer only. Until
+          // Josh's ear confirms that renderer's octave (Cry of the Planet vs a
+          // recording), PS1 captures keep the written pitch — flip
+          // PSX_SOUNDING_ON once confirmed.
+          const groups = M.channelGroups(result);
+          const offsets = !PSX_SOUNDING_ON ? {} : await M.soundingOffsets(groups, (g, key) => M.renderOneNote(
+            M, "psf", result, g.name,
+            (one, o) => M.renderSpu(one, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram, table: song.table || null, bank: song.bank || null, keepSeconds: o.seconds}),
+            {key, vel: 100, ticks: 100000, seconds: 1, sampleRate: 44100}
+          ), {sampleRate: 44100});
+          const shiftWarnings = M.applySoundingOffsets(groups, offsets, "pitch");
+          if (onProgress) onProgress(0.7);
+          const bytes = M.makeMidi(result, {offsets});
           const sq = result.seq, ppq = sq.ppq;
           const tm = sq.tempoMap && sq.tempoMap.length ? sq.tempoMap : [{tick: 0, usq: 500000}];
           const secAt = tick => { let sec = 0; for (let i = 0; i < tm.length; i++) { const next = i + 1 < tm.length ? Math.min(tm[i + 1].tick, tick) : tick; if (next > tm[i].tick) sec += (next - tm[i].tick) / ppq * tm[i].usq / 1e6; if (tick <= (i + 1 < tm.length ? tm[i + 1].tick : Infinity)) break; } return sec; };
@@ -13814,7 +13846,7 @@ const CHIPS = {
           if (onProgress) onProgress(1);
           return {bytes, bpm: Math.round(6e7 / tm[0].usq * 100) / 100, secs: secAt(endTick), looped: loops, snapped: true,
                   loopAnchor: loops && sq.loop.start > 0 ? bq(sq.loop.end) : null, loopTarget: loops && sq.loop.start > 0 ? bq(sq.loop.start) : null,
-                  warnings: sq.warnings || []};
+                  warnings: [...(sq.warnings || []), ...shiftWarnings]};
         }},
   // Nintendo 64 (2026-09-27; verified on the real Super Mario 64 and Zelda
   // sets). A USF set is many .miniusf (a save-state word or two each) plus
@@ -13828,7 +13860,7 @@ const CHIPS = {
   usf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x21, ext: ".usf", label: "USF",
         channels: [], perFile: true, tagged: true, keepBytes: true,
         libFile: name => /\.usflib$/i.test(name),
-        files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes", "n64/capture", "n64/vadpcm", "n64/bank", "n64/render", "n64/rare"], shared: [], own: [], // rare: Rare's driver (GoldenEye) — sequenceOfSet falls back to it when no EAD tables are found
+        files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes", "n64/capture", "n64/vadpcm", "n64/bank", "n64/render", "n64/rare"], shared: ["sounding", "note-preview"], own: [], // rare: Rare's driver (GoldenEye) — sequenceOfSet falls back to it when no EAD tables are found
         parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
         run: M => async (parsed, n, secs, onProgress) => {
           const files = [{name: "song.miniusf", bytes: parsed.bytes}];
@@ -13846,9 +13878,23 @@ const CHIPS = {
         capture: async (M, parsed, secs, onProgress, sess) => {
           const libs = Object.values(sess && sess.libs || {}); // the lib objects persist across captures, so their parse is cached on them
           const set = M.loadUSF([{name: parsed.fileName, bytes: parsed.bytes, parsed: parsed.usf}, ...libs]);
-          if (onProgress) onProgress(0.5);
+          if (onProgress) onProgress(0.3);
           const {game, id, seq, res, present} = M.sequenceOfSet(set);
-          const bytes = M.toMidi(res, {tsNum: 4, tsDen: 4});
+          // sounding-pitch offsets (2026-09-28), same as the PS1 path: EAD's
+          // Title Theme inst 3/4 and Cave Dungeon inst 0/6/7, Rare's
+          // keyBase-shifted programs (tools/n64/INTEGRATION.md §9.3/§9.6/§10.6)
+          // — a held note per non-kit channel through the game's own bank/font
+          // (renderN64, which dispatches to renderRare for a Rare driver),
+          // before the MIDI is written. Kit groups never shift.
+          const groups = M.channelGroups(res, {tsNum: 4, tsDen: 4});
+          const offsets = await M.soundingOffsets(groups, (g, key) => M.renderOneNote(
+            M, "usf", res, g.name,
+            (one, o) => M.renderN64(one, {set, banks: seq.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: o.seconds, meter: {tsNum: 4, tsDen: 4}}),
+            {key, vel: 100, ticks: 100000, seconds: 1, sampleRate: 32000}
+          ), {sampleRate: 32000});
+          const shiftWarnings = M.applySoundingOffsets(groups, offsets, "midi");
+          if (onProgress) onProgress(0.6);
+          const bytes = M.toMidi(res, {tsNum: 4, tsDen: 4, offsets});
           const tpb = res.ticksPerBeat || 48;
           { // diagnostic (2026-09-27: the iPad scrambles Mario 64 while the Mac, running this same code, does not): the facts of this capture, into ⚠ so Copy all carries them
             let cov = 0; for (let i = 0; i < present.length; i++) cov += present[i];
@@ -13865,6 +13911,7 @@ const CHIPS = {
           if (res.ioReads) warnings.push("reads the game's io ports (" + res.ioReads + "×) — the game would steer this song");
           if (res.stubbed && res.stubbed.length) warnings.push("sound-shaping ops ignored: " + res.stubbed.join("; "));
           for (const w of res.warnings || []) warnings.push(w); // toMidi's kit guess: which drum index became which GM drum
+          for (const w of shiftWarnings) warnings.push(w);
           if (onProgress) onProgress(1);
           return {bytes, bpm: res.tempos && res.tempos[0] ? res.tempos[0].bpm : 120, secs: res.seconds, looped: loops, snapped: true,
                   loopAnchor: loops && res.loop.tick > 0 ? bq(res.loop.at) : null, loopTarget: loops && res.loop.tick > 0 ? bq(res.loop.tick) : null, warnings};
@@ -14133,6 +14180,7 @@ async function impCapture(n, api, i) { // api/i: the capture job and this track'
       savedStamp: 0, dirty: true, title: raw, capture: true, ppq: parsed.ppq, timesig: parsed.timesig || [4, 4], // capture: read-only wherever its folder sits
       tempos: parsed.tempos,
       tracks: parsed.tracks.map(tr => ({name: tr.name,
+        ...(tr.offset ? {offset: tr.offset} : {}), // tools/sounding.mjs: the roll shows the sounding pitch — carried through so a tap keeps sounding right, and so commitImports' re-serialized .mid keeps it
         notes: tr.notes.map(nt => {
           const o = {t: nt.t, d: nt.d, p: nt.p, v: nt.v};
           if (nt.ch !== undefined) o.ch = nt.ch; // noise rides ch 9 — dropping it made drums play as pitched tones

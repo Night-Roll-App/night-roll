@@ -25,6 +25,8 @@ import { tickSeconds } from "../tools/n64/seq-libultra.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
 import { findMusicTable, findRareBankFile, readRareBank, miniOverrideWords, findFxParams } from "../tools/n64/rare.mjs";
 import { toMidi, splitSlides } from "../tools/n64/notes.mjs";
+import { soundingOffsets, applySoundingOffsets } from "../tools/sounding.mjs";
+import { renderOneNote } from "../tools/note-preview.mjs";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/n64-usf-tracks.json", import.meta.url), "utf8"));
 
@@ -886,4 +888,56 @@ test("Jet Force Gemini (real rip): the song unpacked in RAM, as Donkey Kong 64's
   const set = rareSet(JFG, "02 Main Theme.miniusf"), out = sequenceOfSet(set);
   assert.deepEqual([out.seq.ram, out.res.notes.length, out.res.tempos[0].bpm], [0xB0B50, 2524, 125]);
   await rareRenderSmoke(set, out.seq, out.res);
+});
+
+// ---- sounding-pitch offsets (2026-09-28, tools/sounding.mjs): the roll
+// shows the note the composer typed; some instruments' samples were
+// recorded an octave (or two) away, so the console sounds a different
+// pitch than the roll — INTEGRATION.md §9.3/§9.6/§10.6. Ground truth
+// measured against these rips: Cave Dungeon ch 0/6/7 (bank 21 inst 0/6/7)
+// sound an octave BELOW written, Title Theme inst 3 an octave below and
+// inst 4 an octave above, Main Theme's melody (inst 0) and Dire Dire Docks
+// are correct. soundingOffsets agrees with all of these except Cave
+// Dungeon ch 7 — measured, at correlation 0.98, as NOT shifted (its sample
+// differs from ch 0/6's: a different recording, tuning 0.281 not 1.0);
+// INTEGRATION.md's own text only computed the fundamental for inst 0/6, so
+// this is reported rather than forced (Josh's call: an ear check settles it).
+async function measureSm64(mini) {
+  const {set, seq, res} = sm64Song(SM64, mini);
+  const groups = channelGroups(res, {tsNum: 4, tsDen: 4});
+  const renderFn = (one, o) => renderN64(one, {set, banks: seq.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: o.seconds, meter: {tsNum: 4, tsDen: 4}});
+  return soundingOffsets(groups, (g, key) => renderOneNote({channelGroups}, "usf", res, g.name, renderFn, {key, vel: 100, ticks: 100000, seconds: 1, sampleRate: 32000}), {sampleRate: 32000});
+}
+test("sounding offsets (real ROM): Cave Dungeon ch 0/6 an octave below written; ch 7 measures unshifted (disagrees with the summary — see comment above)", {skip: !SM64}, async () => {
+  const offsets = await measureSm64("14a Cave Dungeon.miniusf");
+  assert.equal(offsets["ch 0 inst 0"].offset, -12);
+  assert.equal(offsets["ch 6 inst 6"].offset, -12);
+  assert.equal(offsets["ch 7 inst 7"].offset, 0, "measured, not asserted as a bug — see the comment above this test");
+});
+test("sounding offsets (real ROM): Title Theme inst 3 an octave below written, inst 4 an octave above", {skip: !SM64}, async () => {
+  const offsets = await measureSm64(TITLE);
+  assert.equal(offsets["ch 3 inst 3"].offset, -12);
+  assert.equal(offsets["ch 4 inst 4"].offset, 12);
+});
+test("sounding offsets (real ROM): Main Theme's melody (inst 0) is correct — offset 0", {skip: !SM64}, async () => {
+  const offsets = await measureSm64(MAIN);
+  assert.equal(offsets["ch 0 inst 0"].offset, 0);
+});
+test("sounding offsets (real ROM): Dire Dire Docks (09a) is correct on both its channels — offset 0", {skip: !SM64}, async () => {
+  const offsets = await measureSm64("09a Dire, Dire Docks.miniusf");
+  assert.equal(offsets["ch 14 inst 14"].offset, 0);
+  assert.equal(offsets["ch 15 inst 15"].offset, 0);
+});
+test("applySoundingOffsets + toMidi (real ROM): Title Theme's shifted tracks carry the offset meta, and it round-trips through parseMidi's convention", {skip: !SM64}, async () => {
+  const {set, seq, res} = sm64Song(SM64, TITLE);
+  const groups = channelGroups(res, {tsNum: 4, tsDen: 4});
+  const before3 = groups.find(g => g.name === "ch 3 inst 3").notes[0].midi;
+  const offsets = await measureSm64(TITLE);
+  const warnings = applySoundingOffsets(groups, offsets, "midi");
+  assert.ok(warnings.some(w => /^ch 3 inst 3: written an octave above what sounds.*\(-12\)$/.test(w)), warnings.join("\n"));
+  assert.ok(warnings.some(w => /^ch 4 inst 4: written an octave below what sounds.*\(\+12\)$/.test(w)), warnings.join("\n"));
+  const after3 = groups.find(g => g.name === "ch 3 inst 3").notes[0].midi;
+  assert.equal(after3, before3 - 12); // applySoundingOffsets mutated res.notes in place, through the shared group references
+  const bytes = toMidi(res, {tsNum: 4, tsDen: 4, offsets});
+  assert.ok(bytes.length > 100);
 });

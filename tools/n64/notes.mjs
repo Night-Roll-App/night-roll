@@ -116,7 +116,11 @@ export function channelGroups(res, {tsNum = 4, tsDen = 4} = {}) {
 // conventions), with percussion the one exception: the player treats MIDI
 // channel 9 as the kit, so every kit group lands there and a melodic N64
 // channel 9 moves to a free channel.
-export function toMidi(res, {tsNum = 4, tsDen = 4} = {}) {
+// offsets: {[group.name]: {offset, ...}} from tools/sounding.mjs, already
+// APPLIED to res.notes' `midi` by applySoundingOffsets — toMidi only needs
+// it here to write the per-track meta event that says by how much
+// (offsetMetaEvent, tools/nsf/midi-write.mjs), for the tap preview to read back.
+export function toMidi(res, {tsNum = 4, tsDen = 4, offsets} = {}) {
   const scale = PPQ / TICKS_PER_BEAT;
   // slid notes become one note per landed pitch here (the render keeps the one voice); warnings/kitGuess land on `res`
   const view = {...res, notes: splitSlides(res.notes)};
@@ -137,6 +141,7 @@ export function toMidi(res, {tsNum = 4, tsDen = 4} = {}) {
       notes: g.notes.map(n => ({t: n.tick * scale, d: Math.max(1, n.dur * scale), p: g.kit ? n.gm : n.midi, v: Math.max(1, Math.min(127, n.vel))})),
       program: g.kit || g.first.inst == null ? undefined : g.first.inst & 0x7F,
       pan: g.notes.length ? panOf(g.notes[0]) : undefined, cc,
+      offset: !g.kit && offsets && offsets[g.name] ? offsets[g.name].offset : 0,
     };
   });
   return makeMidiTracks(tracks, {tempos: res.tempos.map(t => ({t: t.tick * scale, bpm: t.bpm})), tsNum, tsDen});

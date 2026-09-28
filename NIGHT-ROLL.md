@@ -1680,6 +1680,108 @@ capture's warnings ("kit guessed from rhythm: prog 37 K71 → snare, …"),
 so a wrong guess is visible in the row's ⓘ. N64 sequences already put
 drums on channel 10 with GM-ish keys (50–59); untouched.
 
+## Sounding-pitch offsets — the roll shows what you hear (2026-09-28)
+
+The sequence consoles (PS1 AKAO/SEQ, N64 EAD and Rare) write the key the
+composer TYPED into the roll, but some instruments' samples were recorded
+an octave — occasionally two — from that key, so the console sounds a
+different pitch than the roll shows (SM64 Title Theme inst 3/4,
+INTEGRATION.md §9.3; Cave Dungeon inst 0/6, §9.6; Rare's keyBase-shifted
+programs, §10.6). Josh's ruling: "the roll should show the sounding
+pitch." `tools/sounding.mjs`'s `soundingOffsets(groups, renderOne)`
+measures it — one held note per non-kit group (median played key, 1 s,
+velocity 100) through the console's own renderer, f0 by normalized
+autocorrelation over the sustained part (first 60 ms skipped, peak
+correlation ≥ 0.8, an octave-only round — a few cents of tuning drift is
+not this bug), a gap over two octaves reported as unclear rather than
+applied (autocorrelation latching onto a harmonic, not the sample's
+root). `applySoundingOffsets` shifts the WRITTEN field only (`pitch` for
+PS1, `midi` for N64 — the note field the MIDI writer reads) and returns
+one capture warning per shifted group ("ch 0 inst 0: written an octave
+above what sounds — the roll shows the sounding pitch (−12)"); the
+renderer's own fields (`key`, `semitone`) are never touched, so chip
+audio keeps rendering exactly as before. Applied at CAPTURE time, in
+`CHIPS.psf.capture` and `CHIPS.usf.capture` (index.html) — before the
+MIDI is written, so `tools/import-set.mjs` (which runs the app's own
+capture in the vm harness) gets it too, no second pipeline. Kit/drum
+groups never shift (a kit's "pitch" is a slot index, not a note).
+
+The one-held-note render (a one-note copy of the parsed sequence,
+rendered by renderSpu/renderN64) is the same recipe the tap preview
+already used (`previewOne`, 2026-09-27) — extracted into
+`tools/note-preview.mjs` (`renderOneNote`) so the capture-time probe and
+the tap preview share it rather than carrying two copies. The tap preview
+now needs to convert back: it receives the ROLL's pitch (already
+shifted), so it feeds the renderer `roll pitch − offset`. The offset
+rides from capture to a live tap session as a per-track MIDI Text meta
+event (`0xFF 0x01`, "sounding:-12" — unused elsewhere in this repo, so
+not the track name, which stays the renderer's own group name for the
+tap-preview/console-render name match); `parseMidi` reads it into
+`track.offset`, `writeMidi` re-writes it on every save so it survives
+edits and Publish (commitImports re-serializes a captured draft through
+the same `writeMidi`), and `chipPreviewBuffer`/`previewOne` (chip-worker.mjs)
+carry it through to the one held-note render.
+
+Verified against the real rips (tests/n64-real.test.mjs,
+tests/psx-real.test.mjs, N64_USF_DIR/PSX_PSF_DIR): SM64 Cave Dungeon ch
+0/6 an octave below written (ch 7's DIFFERENT sample, tuning 0.281 not
+1.0, measures unshifted at corr 0.98 — INTEGRATION.md §9.6 only computed
+the fundamental for inst 0/6, so this is reported, not forced), Title
+Theme inst 3 an octave below and inst 4 an octave above, Main Theme's
+melody and Dire Dire Docks correct; FF7 "You Can Hear the Cry of the
+Planet" prog 62 an octave above on all three of its channels. A full
+survey (all 38 SM64 + 90 FF7 captures) found 36/204 SM64 groups and
+409/1091 FF7 groups shifted — most FF7 programs' offsets repeat exactly
+across every song that uses them (32 distinct programs shift, each at
+ONE consistent offset everywhere it appears — prog 46 +12 in 35 songs,
+prog 32 +12 in 24, prog 28 −24 in 14, prog 49 −12 in 14, etc.), which is
+strong cross-song corroboration that these are real per-instrument
+sample quirks in FF7's bank, not measurement noise — including on
+Bombing Mission (prog 49/40 shifted), which disagrees with an earlier
+informal spot check ("all 0") Josh should ear-check. Added time: ~0.4 s
+per capture (one render + autocorrelation per non-kit group).
+
+**The 2nd-harmonic guard, and why native PS1 ground truth is still
+open (2026-09-28, the coordinator's review).** N64's numbers above are
+checked against lazyusf2, a real player — PS1's were only checked
+against OUR OWN renderSpu, so a renderer bug or an autocorrelation
+error could put a wrong octave in the roll and nothing would catch it.
+Tried: booting kode54's Highly Experimental core (scratch/
+Highly_Experimental/Core — the engine behind foo_psf/Audio Overload)
+directly from our own assembled RAM image (scratch/psf-ram-dump.mjs
+reuses tools/psx/psf.mjs's loadPSFChain + assembleRam byte-for-byte,
+scratch/psf2wav.c uploads it and runs psx_execute). It builds clean
+(pure portable C, no dynarec) and boots — but `mkhebios_create()`
+(the HLE BIOS synthesizer) turns out to need a REAL, copyrighted Sony
+PS2 BIOS dump as its input canvas: its "pin tbin/pin sbin/pin iopboot"
+steps extract genuine kernel modules from it by name
+(`master_bios_modinfo` → `find_romdir`), which fails outright on an
+empty buffer. Not attempting to get one. So: no native ground truth
+for PS1 this round — the files above are left in scratch/ (gitignored)
+for a future session that has a legitimately-owned dump.
+
+Instead, hardened `soundingOffsets` against the specific failure a real
+renderer bug would masquerade as: a bright/buzzy sample whose 2nd
+harmonic outweighs its fundamental can make normalized autocorrelation
+peak at HALF the true period even after the shortest-lag-first scan —
+the harmonic's own periodicity is a clean, high-correlation peak, not
+noise, just the wrong one. Fix in `autocorrelate`: after picking a lag,
+check lag×2; if ITS correlation is at least as high (not just close —
+a plain tolerance also over-fires on ordinary pure/simple tones, which
+correlate just as well at 2× their own true period, an equality that
+must NOT move the pick), prefer the longer period. Synthetic test:
+a tone at key with a 3×-louder 2nd harmonic on top now measures offset
+0, not +12 (tests/sounding.test.mjs). Re-run: SM64 unchanged (36/204,
+N64 was never exposed to this failure mode); FF7 changed by 3 groups —
+Bombing Mission's ch 10 (prog 55, +12) was exactly this false positive
+and now measures 0; program 55 does not appear shifted anywhere else in
+the catalog either, so the fix generalizes rather than papering over
+one case. Ground truth still matches exactly (Cave Dungeon, Title
+Theme, Main Theme, Dire Dire Docks, Cry of the Planet). Bombing
+Mission's remaining disagreement (prog 49 −12, prog 40 +12) stands —
+both offsets repeat identically in 14 and 9 other songs respectively,
+which the guard does not explain away.
+
 ## Jobs (footer ⏳) — captures and publishes in the background (2026-09-27)
 
 Design: capture-jobs-design.md (advisor), generalized at Josh's ask —

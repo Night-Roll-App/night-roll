@@ -13,9 +13,13 @@ import { join } from "node:path";
 import { makeTestAKAO, makeTestMiniPSF, makeExe, makePSF, TEST_LIB_NAME } from "../tools/psx/make-test-seq.mjs";
 import { parsePSF, loadPSFChain, assembleRam, scanMagic } from "../tools/psx/psf.mjs";
 import { isAKAO, scanAKAO, parseAKAO, akaoNotes, akaoBpm, AKAO_PPQ, DELTA, TIMER_DIV_FF7, TIMER_DIV_LATER } from "../tools/psx/akao.mjs";
-import { toNotesTxt, makeMidi } from "../tools/psx/notes.mjs";
+import { toNotesTxt, makeMidi, channelGroups } from "../tools/psx/notes.mjs";
 import { bpmOf, secondsAt } from "../tools/psx/seq.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
+import { psfSong } from "../tools/psx/capture.mjs";
+import { renderSpu } from "../tools/psx/spu-render.mjs";
+import { soundingOffsets, applySoundingOffsets } from "../tools/sounding.mjs";
+import { renderOneNote } from "../tools/note-preview.mjs";
 
 const ASSUMED_V1 = "AKAO header layout 1 (0x14 bytes); tick clock 0x43d1 (243.86 Hz) assumed — the driver code is not in this image";
 
@@ -435,4 +439,48 @@ test("real sets: the drivers Night Roll does not read say so (FFT smds, Suikoden
   if (psxGame("suikoden-2")) { const d = psxGame("suikoden-2"); const {ram} = await realCapture(d, "1104 Suspicion.psf"); assert.deepEqual(scanMagic(ram).seq, []); assert.ok(scanMagic(ram).vab.length > 0); assert.ok(has(ram, "KCET")); }
   if (psxGame("wild-arms")) { const d = psxGame("wild-arms"); const {ram} = await realCapture(d, "102 Hope.psf"); const {parseSEQ} = await import("../tools/psx/seq.mjs"); const s = scanMagic(ram).seq; assert.ok(s.length > 0); assert.throws(() => parseSEQ(ram.subarray(s[0])), /SEQ: unknown version ebf00101/); }
   if (psxGame("castlevania-symphony-of-the-night")) { const d = psxGame("castlevania-symphony-of-the-night"); const {ram} = await realCapture(d, "Master Librarian.psf"); const f = scanMagic(ram); assert.equal(f.seq.length, 1); assert.equal(f.vab.length, 1); }
+});
+
+// ---- sounding-pitch offsets (2026-09-28, tools/sounding.mjs) — same
+// measurement as the N64 path (tests/n64-real.test.mjs), against the real
+// FF7 AKAO rip. Ground truth: "You Can Hear the Cry of the Planet" ch
+// 8/14/15 (program 62) sound an octave ABOVE the roll; Bombing Mission was
+// only a spot check ("all 0"), not exhaustive — soundingOffsets agrees on
+// Cry of the Planet exactly, and finds two Bombing Mission channels (ch 4,
+// 9) it measures as shifted at high correlation (≥0.92); these disagree
+// with the spot check and are reported, not forced (an ear check settles
+// it, per Josh's ruling that the roll shows the sounding pitch). A third
+// (ch 10 prog 55) was a 2nd-harmonic false positive from before the guard
+// below was added — the hardened detector now measures it as 0.
+async function measureFF7(file) {
+  const dir = psxGame("ff7");
+  const {ram, ranges} = await realCapture(dir, file);
+  const song = psfSong(ram, ranges, file);
+  const result = song.result;
+  const groups = channelGroups(result);
+  const renderFn = (one, o) => renderSpu(one, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram, table: song.table || null, bank: song.bank || null, keepSeconds: o.seconds});
+  const offsets = await soundingOffsets(groups, (g, key) => renderOneNote({channelGroups}, "psf", result, g.name, renderFn, {key, vel: 100, ticks: 100000, seconds: 1, sampleRate: 44100}), {sampleRate: 44100});
+  return {result, groups, offsets};
+}
+test("sounding offsets (real rip): \"You Can Hear the Cry of the Planet\" prog 62 (ch 8/14/15) sound an octave above the roll", {skip: !psxGame("ff7")}, async () => {
+  const {offsets} = await measureFF7("318 You Can Hear the Cry of the Planet.minipsf");
+  assert.equal(offsets["ch 8 prog 62"].offset, 12);
+  assert.equal(offsets["ch 14 prog 62"].offset, 12);
+  assert.equal(offsets["ch 15 prog 62"].offset, 12);
+});
+test("sounding offsets (real rip): Bombing Mission — measured, not forced (disagrees with the spot check on 2 channels; see comment above)", {skip: !psxGame("ff7")}, async () => {
+  const {offsets} = await measureFF7("102b Bombing Mission.minipsf");
+  const shifted = Object.entries(offsets).filter(([, o]) => o.offset).map(([name, o]) => name + " " + o.offset);
+  assert.deepEqual(shifted.sort(), ["ch 4 prog 49 -12", "ch 9 prog 40 12"].sort(), shifted.join(", ") || "(none)");
+  assert.equal(offsets["ch 10 prog 55"].offset, 0, "the 2nd-harmonic guard resolves this one to 0 now");
+});
+test("applySoundingOffsets + makeMidi (real rip): Cry of the Planet's shifted tracks carry the offset meta", {skip: !psxGame("ff7")}, async () => {
+  const {result, groups, offsets} = await measureFF7("318 You Can Hear the Cry of the Planet.minipsf");
+  const before = groups.find(g => g.name === "ch 8 prog 62").notes[0].pitch;
+  const warnings = applySoundingOffsets(groups, offsets, "pitch");
+  assert.ok(warnings.some(w => /^ch 8 prog 62: written an octave below what sounds.*\(\+12\)$/.test(w)), warnings.join("\n"));
+  const after = groups.find(g => g.name === "ch 8 prog 62").notes[0].pitch;
+  assert.equal(after, before + 12);
+  const bytes = makeMidi(result, {offsets});
+  assert.ok(bytes.length > 100);
 });

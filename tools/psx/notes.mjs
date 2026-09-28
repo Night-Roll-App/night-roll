@@ -15,7 +15,7 @@ export { findInstrDat, readInstr, envelopeAt }; // the app reaches them through 
 import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
 import { akaoRecord } from "./akao.mjs";
 import { pitchName } from "../nsf/notes.mjs";
-import { trackBytes } from "../nsf/midi-write.mjs";
+import { trackBytes, offsetMetaEvent } from "../nsf/midi-write.mjs";
 
 const PPQ = 480; // Night Roll's MIDI resolution; SEQ ticks are rescaled to it
 
@@ -242,7 +242,11 @@ export function notePan(n) {
   const p = n.drum && n.tone && n.tone.pan != null ? n.tone.pan : n.pan;
   return p == null ? 64 : Math.max(0, Math.min(127, p));
 }
-export function makeMidi(result) {
+// offsets: {[group.name]: {offset, ...}} from tools/sounding.mjs, already
+// APPLIED to result.notes' `pitch` by applySoundingOffsets — makeMidi only
+// needs it here to write the per-track meta event that says by how much
+// (offsetMetaEvent), for the tap preview to read back.
+export function makeMidi(result, {offsets} = {}) {
   kitify(result);
   const {notes, seq} = result;
   const scale = PPQ / seq.ppq;
@@ -299,8 +303,9 @@ export function makeMidi(result) {
   // an AKAO voice can switch drum mode on and off mid-track; its kit notes
   // go to a second MIDI track on channel 10 so neither side lies about
   // what it is
-  const emit = (name, evs, ch) => {
+  const emit = (name, evs, ch, offset) => {
     const out = [], cc = [];
+    if (offset) cc.push(offsetMetaEvent(offset));
     // the track's pan as CC10: the first note's at tick 0, then one at every note whose pan differs from the last written
     let lastPan = null;
     for (const n of splitSlides(evs)) {
@@ -315,7 +320,7 @@ export function makeMidi(result) {
     }
     tracks.push(trackBytes(name, out, ch, cc));
   };
-  for (const g of channelGroups(result)) emit(g.name, g.notes, g.kit ? 9 : midiCh.get(g.ch));
+  for (const g of channelGroups(result)) emit(g.name, g.notes, g.kit ? 9 : midiCh.get(g.ch), !g.kit && offsets && offsets[g.name] ? offsets[g.name].offset : 0);
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
   const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, PPQ >> 8, PPQ & 255];
   for (const t of tracks) bytes.push(0x4D, 0x54, 0x72, 0x6B, ...u32(t.length), ...t);

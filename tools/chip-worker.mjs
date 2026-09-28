@@ -77,22 +77,21 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
 // from a register log and have no note to re-render, so the page keeps the
 // synth for those.
 let live = null; // {id, kind, M, R, res, rate} of the last successful render
-export async function previewOne(live, p) { // p: {track, midi, vel, ticks, seconds} → Float32Array | {l, r} | null
+// p: {track, midi, vel, ticks, seconds, offset} → Float32Array | {l, r} | null.
+// The one-note-copy-through-the-console's-own-renderer recipe lives in
+// tools/note-preview.mjs (M.renderOneNote), shared with tools/sounding.mjs's
+// capture-time pitch probe (CHIPS.psf/usf.capture in index.html) — both load
+// it the way every chip helper reaches this worker, listed in CHIPS[kind].shared.
+// offset: the track's sounding-pitch shift (tools/sounding.mjs; a captured
+// track's roll pitch = the renderer's own key + offset), so `p.midi` — the
+// ROLL's pitch — converts back to the key the renderer needs.
+export async function previewOne(live, p) {
   if (!live || !live.res || !live.res.result || !live.res.result.notes) return null;
   const {M, R, res, rate, kind} = live;
-  const inner = res.result;
-  const groups = kind === "psf" ? M.channelGroups(inner) : M.channelGroups(inner, {tsNum: 4, tsDen: 4});
-  const g = groups.find(x => x.name === p.track);
-  if (!g || !g.notes.length) return null;
-  const t = g.notes.find(x => !x.drum) || g.notes[0];
-  if (t.drum) return null; // a kit's keys are its own map: the synth's drums serve the tap
-  const ticks = Math.max(1, Math.round(p.ticks || Math.min(48, kind === "psf" ? (t.endTick - t.tick) : t.dur)));
-  const note = kind === "psf"
-    ? {...t, tick: 0, endTick: ticks, key: p.midi, pitch: p.midi, cents: 0, vel: p.vel || 100, gain: undefined, slide: undefined, unrolled: false}
-    : {...t, tick: 0, dur: ticks, midi: p.midi, key: p.midi, semitone: p.midi - 21, vel: p.vel || 100, slide: undefined, gain: undefined, bend: 0}; // key: Rare's renderer pitches from it (EAD from semitone) — without it every tap on a Rare song played the template note's pitch
-  const one = {...inner, notes: [note], endTick: ticks, loop: null, ducked: []};
-  const r = await R.render(M, {...res, result: one, seconds: p.seconds || 1.5}, {sampleRate: rate, onProgress: () => {}});
-  return r[p.track] || null;
+  if (!M.renderOneNote) return null; // an older cached module set without sounding.mjs/note-preview.mjs: no preview rather than a crash
+  const key = (p.midi || 0) - (p.offset || 0);
+  const renderFn = (one, o) => R.render(M, {...res, result: one, seconds: o.seconds}, {sampleRate: rate, onProgress: o.onProgress});
+  return M.renderOneNote(M, kind, res.result, p.track, renderFn, {key, vel: p.vel || 100, ticks: p.ticks, seconds: p.seconds || 1.5});
 }
 if (typeof self !== "undefined") self.onmessage = async e => {
   if (e.data && e.data.preview) { // one note through the game's instrument, from the last render's set
