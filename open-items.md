@@ -819,6 +819,34 @@ channels. Fixed in the parser + sequenceOfSet; captures of those two
 change, so Mario 64 needs a RE-IMPORT. Policy: all channels captured
 (the game's per-area ducking is state, not composition).
 
+## FIRST LISTEN OF THE BATCH — 2026-09-27 night (Josh, before bed)
+
+- Contra (published NES, terminal importer): "the very first note from
+  each of Pulse 1, Pulse 2, and Triangle are not being played … a high
+  hit there … could possibly be a problem game-wide … it is"; Game
+  Over: "the very first three notes of Pulse 2 don't play, all in bar
+  1". RULED OUT here: the headless capture has those notes (reconstruct
+  from frame 1/8); the headless render's pulse audio starts at 0.1 s;
+  the LIVE site in Brave renders chip audio for Game Over (all four
+  buffers, lead 0.133 s = the first onset, pulse2 energy from 0.1 s)
+  and the roll's first notes sit at 0.00/0.17/0.41 s; the square voices
+  are oscillators, not samples (so no decode gap). NOT ruled out: the
+  iPad — chip render failing there (archive fetch/token, 25 s cap) and
+  the synth scheduler dropping notes at tick 0 on the first pass, or an
+  iPad audio-start quirk. NEXT: Josh's Messages → Copy all on a Contra
+  song, and a Mac listen of the same song (does it happen in Brave?).
+- Tetris (NES): "some C2 notes on pulse 2 that are very, very long …
+  sounds horrible … all the Tetris songs sound bad … some I feel I'm
+  missing". FOUND + FIXED: pulse 2 wrote period $6B3 with the sweep
+  register 0 — the sweep unit mutes any pulse whose target period
+  passes $7FF, sweep enabled or not (shift 0 doubles: every period from
+  $400 up is silent unless negate) — the console plays nothing, our roll
+  drew 1.6 s C2 drones and the render played them. Fixed in
+  reconstruct + renderApu (tests/nsf.test.mjs "sweep mute"); all NES
+  albums re-captured and republished. "Songs missing": the NSF has 7
+  slots — that is the rip. Unverified by ear.
+- SNES/Game Boy batches: not listened to yet.
+
 ## NO ONE-TIME HACKS — AUDIT 2026-09-27 (Josh: "we should have no one-time hacks in any of our capture engines")
 
 Rule now in CLAUDE.md. Audit of tools/ (grep for game names, codes,
