@@ -403,9 +403,9 @@ inst 4 an octave low). Nothing here names an instrument.
   waveforms; listed in `warnings`, none in the two songs), pan (mono).
 - Drums whose `releaseRate` is 0 fall back to the channel's adsr as
   `note_init` says; none in bank 17/34 (all 10).
-- Only the sm64 generation is read. OoT/MM banks (16-byte table entries,
-  `codec/medium` header word in the sample struct, relocation flags) are
-  §3's other branch and are not started.
+- Only the sm64 generation is read here. OoT/MM sound fonts (16-byte
+  table entries, `codec/medium` header word in the sample struct,
+  relocation flags) are §11.
 - The ear has not heard it yet: `scratch/sm64-title.wav`,
   `scratch/sm64-main.wav` (+ per-track) are the listening checks; the
   measured pitch and RMS ranges are what the tests hold.
@@ -703,7 +703,7 @@ RAM, else renders dry with the warning "reverb state not in this rip".
 per-game tables for musical behaviour; game identity only says where to
 look).
 
-## 10. Rare (GoldenEye 007) — 2026-09-28
+## 10. Rare (GoldenEye 007; other Rare games in 10.7) — 2026-09-28
 
 A second N64 driver, `rare.mjs`, for the GoldenEye 007 USF set (NUS-NGEE-USA,
 58 minis; the rip stayed in `/tmp`, nothing of it is in the repo). Rare did
@@ -936,6 +936,115 @@ bytes per track), `ge-truth.mjs` (onset fit vs lazyusf2), `ge-pitch.mjs`
 side by side, `--tracks`), `ge-app-capture.mjs` (the app's capture contract
 in the vm harness), `ge-probe*.mjs` (the search that found the above).
 
+### 10.7 Other Rare games (2026-09-28)
+
+Four more Rare sets from Zophar (rips in `/tmp/claude-501/rips/n64-*`, none
+in the repo): Banjo-Kazooie (NBKE, 258 minis), Donkey Kong 64 (NDOP, 178),
+Diddy Kong Racing (NDYE, 103), Jet Force Gemini (NJFE, 78). Perfect Dark
+and Banjo-Tooie are not on Zophar (no page under either letter's N64
+listing). All five games play the SDK's formats — ALCSeq songs through an
+ALBankFile — but keep and pick the song four different ways:
+
+| game | where the songs are | which one the mini plays |
+| --- | --- | --- |
+| GoldenEye | RAM table `{rom, u16 unpacked, u16 packed}` → bare 1172 blocks | the one RAM word the mini overrides (0x603C) |
+| Banjo-Kazooie | RAM asset directory `{u32 offset, u32 flags}` + one ROM base → *sized* 1172 blocks (`11 72`, u32 size, stream) | an `addiu a1, zero, n` the mini patches at 0x24FFF0 |
+| Diddy Kong Racing | the SDK's own `'S1'` sequence file in RAM (offsets made absolute by alSeqFileNew) → plain ALCSeq in ROM | GPR a0 in the mini's state (offset 0x70) |
+| Donkey Kong 64, Jet Force Gemini | no table in the rip: the song the game had unpacked into its heap, in RAM | the RAM song the mini's own chunks write most of |
+
+Everything is found by shape in `rareSequenceOfSet`, tried in that order
+(`findMusicTable` → `findAssetSongTable` → `findSeqFileInRam` →
+`miniRamSequence`). Manifest entries (where-to-look only, after generic
+detection): NBKE `{kind: "ram", addr: 0x24FFF0}` and NDYE `{kind: "reg",
+reg: 4}`, used only by a mini that overrides nothing (BK's "Unused Beta
+Version 2", DKR's two Pirate Lagoon minis) — such a mini is the lib's own
+state, and nothing in one mini says where the lib keeps its number.
+
+Generic fixes the other games needed (all in rare.mjs):
+- **Loop metas' operands are raw bytes.** cseq.c reads the loop start's two
+  bytes and the loop end's six straight off `curLoc`, never through
+  `__getTrackByte`, so an `FE` among them is not a back-reference. BK's
+  Click Clock Wood Spring (song 95) ends its loop 0x1FE bytes back — the
+  old reader failed "block at 599 reaches 33090 back".
+- **RAM songs are walked, not read from their header.** alCSeqNew reads the
+  offset table once, before the state was taken; DK Rap's RAM header keeps
+  slots 10–14 of its own and slots 0–5 of the library's (another song's),
+  and DK64's Mini-Boss keeps no header word at all. `parseCSeq(…, {walk})`
+  takes the tracks back to back from 0x44, each through its FF 2F, to the
+  first that does not parse (the zeros after the song). A RAM song is a
+  division word (1..0x10000) whose word 0 is 0x44 or absent, then a track.
+- **Banks without a file header.** `findRareBanks` = every 'B1' file's banks,
+  then any struct of the ALBank's own shape (BK keeps no 'B1' word). The
+  song's bank is the one holding every program it names; header-found
+  banks sort first (GoldenEye's song index stays 0 beside a 1-instrument
+  shape match).
+- Key maps with velocityMax 0 (BK) mean no velocity limit.
+- A plain (unpacked) song with bytes missing from the rip plays what is
+  there, with a warning (DKR's Get Ready: 48 of 232 bytes never read); a
+  1172 block still needs every byte.
+
+Survey (`scratch/rare-survey.mjs <dir> [from] [count]`, sequenceOfSet on
+every mini):
+
+| game | parsed | failed, and why |
+| --- | --- | --- |
+| Banjo-Kazooie | 257 / 258 | "167 SFX Rare & Nintendo Logo (without Music)": its song (14) is not in the rip — the mini plays effects |
+| Donkey Kong 64 | 178 / 178 | — (sound-effect minis roll the library's song, with a warning; see below) |
+| Diddy Kong Racing | 103 / 103 | — |
+| Jet Force Gemini | 78 / 78 | — |
+
+Against lazyusf2 (`ge-truth.mjs` onset fit, 20 s; `rare-pitchshift.mjs`:
+long-term log spectrum of our render against the truth's, 10-cent bins
+250 Hz–6 kHz, best shift; a wrong song scores ≈0.1 at 0 c, Dam 0.88):
+
+| mini | onset r at scale 1 (next best scale) | pitch: best shift, r |
+| --- | --- | --- |
+| BK 002 Main Title | 0.58 (0.48 at ×2; control song 0.09) | 0 c, 0.81 |
+| BK 006b Spiral Mountain (Normal) | 0.72 (0.60) | +10 c, 0.79 |
+| BK 011b Mumbo's Mountain (Normal) | 0.58 (0.50) | +10 c, 0.61 |
+| DK64 002 DK Rap | 0.55 (0.38) | 0 c, 0.97 |
+| DK64 018 Jungle Japes | 0.67 (0.44) | 0 c, 0.83 |
+| DK64 s38 Mini-Boss | 0.34 (0.26) | 0 c, 0.82 |
+| DK64 001 Logo | 0.64 (0.43) | — |
+| DKR 02 Title Theme | 0.66 (0.06; control 0.05) | 0 c, 0.86 |
+| DKR 03 Options, Level Selection | 0.75 (0.09) | 0 c, 0.91 |
+| DKR 12a Pirate Lagoon | 0.76 (0.05) | 0 c, 0.89 |
+| JFG 02 Main Theme | 0.32 (0.30; control 0.09) | +10 c, 0.72 |
+| JFG 10 Cave | 0.22 (0.09) | −10 c, 0.36 |
+| JFG 17 Tawfret | 0.23 (0.24) | 0 c, 0.84 |
+
+The +10 c is BK's and JFG's output rate (21 998 / 22 018 Hz) against ours
+(22 050). The earlier pitch check (`ge-pitch.mjs`, lone onsets) finds too
+few lone notes in these songs to vote; `ge-pitch.mjs --align` shifts the
+truth by its onset lag first.
+
+Open (facts, not fixed):
+- **Variant minis set a word the roll does not use.** BK's Normal/Aquatic
+  minis patch `addiu t7, zero, 0x6FFF / 0x9000` at 0x25DAE8 (All-In-One
+  keeps the lib's); DKR's per-racer Player Select minis set RAM 0x1114E0
+  (0x800F5000 Krunch, 0x001F5000 Diddy, …). The bits look like a per-channel
+  enable mask (Spiral Mountain Normal: onsets 0.75 with channels whose bit
+  is set, 0.45 with the others, 0.72 all), but what the game does with the
+  word is not read from the file, so the roll plays every track and the
+  capture warns "this mini also sets 1 memory word the roll does not use".
+- **Which RAM song a mini that writes none plays.** DK64 holds four songs in
+  RAM (0x7DF800, 0x7E4FE0, 0x7E7900, 0x7E9820); a mini that writes none of
+  them gets the lowest (right for the Logo, r 0.64) with a warning — a
+  sound-effect mini (s01 Entrance…) looks the same, and no pointer to the
+  playing song survives in the rip.
+- **JFG fits weakly** (0.22–0.32) and eight of Cave's tracks are silent in
+  our first 20 s: the game fades tracks in and out itself (the minis carry
+  per-channel volume words); the roll is the whole score. JFG program 21
+  names keys 47–59 in a kit whose maps cover 60–68: "no sound for key" (the
+  SDK's lookup also returns none).
+- `seq.banks` indexes `findRareBanks`' list (not a bank file's); the render
+  looks it up the same way.
+
+Tools: `rare-survey.mjs`, `rare-one.mjs` (a mini's table, words, id),
+`rare-ramsongs.mjs` (RAM songs and how much the mini writes of each),
+`rare-banks.mjs`, `rare-pitchshift.mjs`; `ge-truth.mjs`, `ge-render.mjs`,
+`ge-pitch.mjs` take `N64_GE_DIR=<set>`.
+
 ### 9.9 Stereo (2026-09-28)
 
 Every EAD track is now a pair `{l, r}` (equal length; everything else in
@@ -1082,3 +1191,218 @@ few cents throughout (m67: truth `−6 −6 −6 −12 4 8 4 −16 −6`, ours
 within 6 c wherever the band holds), and the ±60 c readings only occur
 where the band is empty (other voices) — the estimator's floor, not the
 game. The ±3 c `D8 1` vibrato is what those notes have.
+
+## 11. Ocarina of Time / Majora's Mask: sound fonts and the voice (2026-09-28)
+
+The oot generation of the engine now renders. What parses, what renders,
+the numbers against the emulator, and what is still off.
+
+### 11.1 Where a rip keeps a font
+
+Tables (all in RDRAM, found by structure — ead-usf.mjs): gSoundFontTable,
+gSequenceFontTable, gSequenceTable, and **gSampleBankTable, which follows
+the sequence table directly** (OoT 1.0 @0x80114260, 7 banks; MM
+@0x801E1E40, 3). A font's counts are not in its blob: the table entry's
+three shorts carry them (`sampleBankId1 << 8 | id2`, `numInstruments << 8
+| numDrums`, `numSfx` — load.c AudioLoad_InitSoundFontMeta).
+
+The blob is in one of two places, and the rip says which:
+- **ROM pages, unrelocated** — the game DMA'd the font while the ripper
+  listened (OoT Lost Woods font 5, Hyrule Field pieces font 3, MM Clock
+  Town font 25). Words are offsets from the blob's start; a sample's
+  `sampleAddr` is an offset into sample bank `id1` (medium field 0) or
+  `id2` (1).
+- **RDRAM, relocated** — the font was resident when the state was saved
+  and the game never read it from ROM again (OoT Kokiri Forest font 15 at
+  0x801C43D0; every MM mini carries its font in its own RAM, 0x8037F5B0 or
+  0x80378720). Found at `soundFontList[id].instruments − 8`
+  (AudioLoad_RelocateFont sets `instruments = fontData + 2`); the
+  soundFontList array (0x14-byte SoundFont records) is found by matching
+  its first four bytes to the table's shorts.
+
+One reader (bank.mjs `readFont`) serves both: addresses with the KSEG0 bit
+are RDRAM, others ROM, and a pointer without it is an offset from the
+font's start — relocation undone. **ROM wins when both exist**: a
+soundFontList pointer of a font that is not loaded is stale (OoT's fonts 3
+and 9 still point at 0x801C43D8, font 15's slot). All 1822 sample
+references in OoT's ROM-copy fonts are codec 0 (VADPCM), medium 0.
+
+**The rips drop zero bytes the game read.** OoT's and MM's sample bank 1
+row carries its medium/cache bytes (`02 04`) but no address or size: it is
+{0, 0}, an alias of bank 0 (0x79470 OoT, 0x97F70 MM — the latter matches
+the base implied by MM's relocated copy, 0x54E580 − 0x4B6610).
+`readAudioTable` now reads a partly present row's missing bytes as zeros
+(a row with no byte at all is still "never read"). The same holds for the
+SynthesisReverb's unread fields and the tail bytes of a few samples
+(99.97 % present).
+
+### 11.2 Layout (oot include/audio.h, mm include/audio/soundfont.h)
+
+Instrument (0x20) {u8 isRelocated, normalRangeLo, normalRangeHi,
+adsrDecayIndex; EnvelopePoint* envelope; TunedSample low, normal, high} —
+low only when `normalRangeLo != 0`, high only when `normalRangeHi != 0x7F`
+(RelocateFont leaves the others unrelocated). Drum (0x10) {u8
+adsrDecayIndex, pan, isRelocated, pad; TunedSample; EnvelopePoint*}.
+TunedSample {Sample*, f32 tuning}. Sample (0x10) {u32 codec:4 (mm: unk:1,
+codec:3), medium:2, unk_bit26:1, isRelocated:1, size:24; sampleAddr; loop;
+book}. AdpcmLoop {start, loopEnd, count, sampleEnd/pad; s16 state[16] if
+count}. Font blob: +0 drum-offset list, +4 SoundEffect array, +8
+instrument offsets. Instrument/drum ids past the count (or an empty slot)
+are **no voice** (Audio_GetInstrumentInner / Audio_GetDrum) — sm64 falls
+back to the last one.
+
+### 11.3 The engine's rules where they differ from sm64 (render.mjs `renderOotGen`)
+
+- **Updates**: heap.c `ticksPerUpdate = ((samplesPerFrameTarget + 0x10) /
+  0xD0) + 1` with `samplesPerFrameTarget = ALIGN16(32000 / 60) = 544` → 3
+  per frame, **180/s**; Audio_ProcessNotes runs once per update
+  (synthesis.c AudioSynth_Update → AudioSeq_ProcessSequences).
+- **ADSR in floats** (effects.c Audio_AdsrUpdate): `adsr->delay *=
+  ticksPerUpdateScaled` (= 3/4, at least 1); `adsr->target =
+  SQ(arg / 32767.0f)`; linear to it. Decay: `current -= fadeOutVel`,
+  `fadeOutVel = adsrDecayTable[decayIndex]` = `256 · ticksPerUpdateInvScaled
+  / scaleInv` = 1/(3·scaleInv) per update, scaleInv 60(23−i) for i 1..15,
+  4(143−i) for 16..127, 251−i for 128..250, 0.75/0.66/0.5/0.33/0.25 for
+  251..255; index 0 never decays. With a channel sustain (D2) the decay
+  stops at `sustain · current / 256` for 128 updates, then releases.
+  Defaults: gDefaultEnvelope {1, 32000}, {1000, 32000}, hang; decayIndex 0xF0.
+- **Which envelope**: the layer's (a drum's own) unless its decay index
+  is 0, then the channel's (Audio_NoteInit; Audio_SeqLayerDecayRelease
+  likewise for the rate). Many drums carry 0 and so use the channel's.
+- **Pitch**: gPitchFrequencies = 2^((s − 39)/12) for s < 0x75; entries
+  0x75–0x7F wrap to 2^((s − 167)/12) (PITCH_BFLATNEG1 … PITCH_AFLAT0).
+  sm64's table differs up there. Resampler cap 3.99996.
+- **Level**: `velocitySquare = SQ(vel)/SQ(127)`, `appliedVolume =
+  (volume · volumeScale · fade)²`, × the ADSR's (already squared) level,
+  clamped to 1 (effects.c Audio_SequenceChannelProcessSound, playback.c
+  Audio_InitSampleState). sm64's law is vel² · vol · (env/23000)².
+- **Pan in integers**: `notePan = (newPan · weight + layerPan · (0x80 −
+  weight)) >> 7`, `& 0x7F`, gDefaultPanVolume (the same cos table) — the
+  stereo/headset tables apply only with D0 (stereoHeadsetEffects), which no
+  verified song sets.
+- **Vibrato**: gWaveSamples[2] (a sine), `1 / ((d − 1/d)·(sin + 32768)/65536
+  + 1/d)`, d = 1 + depth/4096 (Audio_GetVibratoFreqScale); same timers.
+- **Portamento**: cur 8.8, `speed = 0x20000 / (time · ticksPerUpdate)`,
+  `1 + extent·(gBendPitchOneOctaveFrequencies[v + 128] − 1)` = 2^(v/127).
+- **Per-note shaping after the resampler** (AudioSynth_ProcessNote): gain
+  (ED, UQ4.4, below 0x10 lifted to 1.0), the channel filter (8-tap Q15
+  FIR), the comb filter `y[n] = x[n − size/2] + gain/0x8000 · x[n]` (BB).
+  The filter's taps live in the sequence data (B0 points at them; B3
+  rewrites them from gLowPassFilterData/gHighPassFilterData via
+  AudioHeap_LoadFilter — a later B0 of the same address sees the rewrite;
+  B1 drops the filter). They run at the render's rate (the console's is
+  32 kHz; the app's chip rate shifts the cutoff proportionally).
+- **Reverb, from RAM — both rips have it**: gAudioCtx.synthesisReverbs[]
+  (SynthesisReverb, 0x2C8 bytes OoT / 0x2D0 MM, same prefix; ead-usf
+  `findOotReverbs`). OoT: [0] window 3072, downsample 1, volume 0x7FFF,
+  decayRatio 0x3000; [1] 3072, 0x1800, with a low-pass (gLowPassFilterData row 11).
+  MM: [0] 3072, 0x3000; [1] 5120, 0x5000, leakRtl −0x3000, leakLtr
+  0x3000 (its filterLeft/Right are null; only the *Init buffers are set).
+  Per update (synthesis.c AudioSynth_DoOneAudioUpdate): the ring's block
+  is mixed out × volume, scaled by decayRatio (`aMix(decayRatio + 0x8000)`
+  = × decayRatio/0x8000), leaked between sides, the notes' sends added
+  (reverbVol/128, the env mixer's `(reverbVol & 0x7F) · 2 << 8`; **bit 7
+  swaps the wet sides** — `aEnvMixer`'s flag, alist_envmix_nead
+  `swap_wet_LR`), filtered, saved. The channel's E5 picks the reverb.
+  Not modelled: the downsampling's own filtering (both rips run 1), the
+  sub-delay (unk_14/subDelay, 0 in both) and cross-reverb mixing
+  (mixReverbIndex −1 in both) — warned if a rip uses them.
+
+### 11.4 Capture fixes the render exposed (seq-libultra.mjs)
+
+1. **The oot `0x0n` channel delay ends the tick's run**: `channel->delay
+   = lowBits; goto exit_loop;` (oot seqplayer.c ASEQ_OP_CHAN_CDELAY; mm
+   keeps running when n = 0). The parser set the delay and kept executing,
+   so every short-delayed volume fade collapsed into one tick and layers
+   restarted early. Kokiri Forest's intro (ch 4/10/11 fading 0x7E → 0x5A
+   in 3–12-tick steps) rendered 8–10 dB quiet for 1–3 s; notes the
+   interpreter had been dropping reappear. Catalogue rows that moved (notes
+   only; tempo, loop and end ticks unchanged): OoT Title 138→221, Kokiri
+   589→597, Lost Woods 556→564, LOZ03 382→407, Kakariko 199→488, Gerudo
+   Valley 6285→6294; MM Title Demo 696→891, Clock Town 651→755, Majora's
+   Theme 619→677, Termina 1283→1394, Ballad of the Wind Fish 42→50, Staff
+   Roll 1612→1652 (fixture updated).
+2. **E8 is 8 bytes** in the oot generation (3 args, then transposition,
+   pan, weight, reverb, reverb index read inline); E7 reads the same 5 from
+   the sequence data. The parser read 3 (no verified song uses either).
+3. D2 sustain, E5 reverb index, ED gain, B0/B1/B3 filter, BB comb are now
+   recorded on the note (they were stubs).
+4. **MM's ocarina minis** (15 "Ocarina (…)" and Song of Frogs) hold a
+   pointer, 0x801F9D14, in the id word; `& 0x7F` made it sequence 0x14 and
+   the capture played Pirates' Fortress. `sequenceOfSet` now refuses an id
+   above 0xFF with that explanation.
+
+### 11.5 Against the emulator
+
+Truth tooling: **lazyusf2 (scratch/usf2wav) never delivers a sample on the
+OoT set** — HLE or LLE, `_enablecompare`/`_enablefifofull` either way
+(usf2wav now takes USF_COMPARE / USF_FIFO_FULL env overrides to try it).
+kode54's older lazyusf (scratch/lazyusf-kode54, same API; built in /tmp
+with `make CC=clang` and linked against the same usf2wav.c) plays it, and
+agrees with lazyusf2 on MM Clock Town (RMS equal, peak ±1). **Its HLE
+FILTER halves the channel filter**: the second FILTER call points t5 at
+the *state* buffer + 0x10 (zeroed), averages it with the taps and writes
+the average back over the taps (rsp_hle alist_filter) — the Title Theme's
+two low-passed channels came out 10 dB under ours in HLE and within 0.4 dB
+in **LLE**, so filtered songs are checked with `--lle`.
+
+`scratch/zelda-truth.mjs` (onset fit via truth-warp; mix level; per-track
+gains from a non-negative fit of the truth's L and R band energies — 8
+octave bands, 20 ms frames — onto our tracks'; tuning by log-spectrum
+cross-correlation in 2-cent steps, whole mix and per dominant track;
+isolated-note f0), `scratch/zelda-window.mjs` (RMS per side per window).
+30 s each, onsets at the emulator's pacing (×1.046–1.050, as SM64's §9.7):
+
+| Song (truth) | notes | level truth/ours dB | band energy explained | tracks (share > 2 %) | tuning |
+|---|---|---|---|---|---|
+| OoT Kokiri Forest (HLE; font in RAM) | 597 | −26.1 / −25.9 | 96 % | all within ±0.9 dB | 0 ¢ (corr 0.999) |
+| OoT Lost Woods (HLE; ROM font) | 564 | −20.7 / −20.6 | 97 % | ±0.5 | 0 ¢ |
+| OoT Hyrule Field piece LOZ03 (HLE) | 407 | −27.8 / −27.3 | 96 % | ±0.8 | 0 ¢ |
+| OoT Title Theme (LLE; filter, wet swap) | 221 | −25.1 / −25.1 | 94 % | ±0.4 | 0 ¢ |
+| OoT Kakariko Village (LLE; comb) | 488 | −31.8 / −31.6 | 86 % | ±0.2 | 0 ¢; isolated note 116.8/116.8 Hz |
+| MM Clock Town Day 1 (HLE) | 755 | −24.1 / −24.0 | 71 % | ch 3 0.0, ch 6 −0.1, ch 4 −0.8, ch 0 +1.2, drums −2.5 | 0 ¢ |
+| MM Termina Field (HLE; font in RAM) | 1394 | −22.4 / −22.6 | 90 % | ±0.9 | 0 ¢ |
+
+Per-side windows (Kokiri 0.1–20 s, Clock Town 0.1–28 s, Title 1–26 s) sit
+within 0.3–0.5 dB of the truth on both sides; Clock Town's drums alone (its
+0–4.3 s intro) within 0.4 dB — the −2.5 dB in its mixed fit is the fit
+trading between overlapping staccato tracks, not a level error. Reverb:
+Lost Woods explains 89 % dry, 91 % with the RAM reverb; neutral elsewhere.
+Hyrule Field Main Theme itself is sequence 2, the field *logic* (§8.3):
+no notes of its own, so the piece LOZ03 stands in for it.
+
+Catalogue sweep (`scratch/zelda-sweep.mjs`, capture + 5 s render of every
+mini): OoT 106/109 render (the three are 19a/b/c, the logic sequence); MM
+102/118 (15 ocarina minis + Song of Frogs refused, New Wave Bossa Nova with
+Lulu is a `runseq`). Warnings seen: a sample only partly read by the game
+(Shop, Market, Goron City — late notes the game cut short; silence past
+what it read), a drum past the font's count (Gale Warp: silent in the game
+too), a channel with no instrument (Temple of Time, MM Boss Battle: the
+game skips it).
+
+### 11.6 Still off / not modelled
+
+- Game-side level changes the rip does not carry (sm64's per-area ducking
+  had the mini's overlay; nothing equivalent was needed on these songs).
+- Sound output mode is not read: the default pan table is assumed (the
+  truth agrees); headset/Haas and the "strong" stereo bits are not rendered.
+- Random velocity/gate (B9/BA) and random ops read deterministic values.
+- Sound-effect voices (instrument 0x7E) and synth waves (≥ 0x80) are skipped
+  with a warning; sfx-driven ocarina songs are not sequences at all.
+- Pan and filter are sampled at note-on; volume steps under a held note are
+  followed per update, as for sm64.
+- Reverb index 1 (OoT's filtered reverb, MM's leaky one) is modelled but no
+  verified song sends to it.
+
+### 11.7 The app side (index.html CHIPS.usf / chip-worker) — nothing required
+
+`sequenceOfSet` stamps `res.gen`; `renderN64` dispatches on it and reads
+the fonts itself from `opts.set` (its RDRAM for resident fonts and the
+reverbs), so the existing `renderN64(res.result, {set, banks: seq.banks,
+…})` calls work unchanged: for the oot generation `seq.banks` is the font
+list read last-first (C6 n picks `sequenceFontTable[off + count − n]`, and
+a channel starts on the last-loaded font — the sm64 convention). bank.mjs
+now imports usf.mjs (native module imports resolve it). Visible changes:
+the "sound-shaping ops ignored" warning shrinks to E9 (note priority) on
+most songs, and the MM ocarina minis now fail the capture with "this song
+plays no sequence…" instead of importing Pirates' Fortress.

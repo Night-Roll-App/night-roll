@@ -17,7 +17,7 @@ import { parseSequence } from "../tools/n64/seq-libultra.mjs";
 import { makeTestSeq } from "../tools/n64/make-test-seq.mjs";
 import { makeTestPSF } from "../tools/psx/make-test-seq.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
-import { findAudioFiles, readBank } from "../tools/n64/bank.mjs";
+import { findAudioFiles, readBank, readFont } from "../tools/n64/bank.mjs";
 import { expandBook, decodeFrames } from "../tools/n64/vadpcm.mjs";
 import { renderN64, Vibrato } from "../tools/n64/render.mjs";
 import { channelGroups } from "../tools/n64/notes.mjs";
@@ -255,7 +255,10 @@ test("oot ABI: channel B0-BE are full opcodes with argument tables, dispatched b
     const res = parseSequence(song({abi, chan: [0xB0, 0x00, 0x60, 0xBB, 0x01, 0x00, 0x60, 0xB1, 0xB3, 0x02]}), {abi});
     assert.equal(res.notes.length, 1, abi);
     assert.equal(res.notes[0].inst, 5, abi);
-    assert.ok(res.stubbed.includes("channel oot 0xb0"), abi);
+    // B0/B1/B3/BB are the note filter and comb filter the renderer runs: B1 dropped the filter, BB's comb stands
+    assert.ok(!res.stubbed.includes("channel oot 0xb0"), abi);
+    assert.equal(res.notes[0].filter, null, abi);
+    assert.deepEqual(res.notes[0].comb, {size: 1, gain: 0x60}, abi);
   }
   // BD differs: OoT randptr takes two s16, MM's takes one — the bytes after it land differently
   const bytes = song({abi: "oot", chan: [0xBD, 0x00, 0x00, 0xC1, 0x09]});
@@ -603,6 +606,77 @@ test("SM64 per-mini ducking (real set): the three Dire Docks and three Cave Dung
 const GE = [process.env.N64_GE_DIR, "/tmp/claude-501/rips/n64-ge"].find(d => d && existsSync(join(d, "NUS-NGEE-USA.usflib")));
 const geSet = m => { const libs = readdirSync(GE).filter(n => /\.usflib$/i.test(n)).map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(GE, n)))})); return loadUSF([{name: m, bytes: new Uint8Array(readFileSync(join(GE, m)))}, ...libs]); };
 
+// ---- Ocarina of Time / Majora's Mask: sound fonts and the console voice ---
+// N64_USF_DIR/oot and /mm (or the set itself). The level anchors are
+// lazyusf's renders of these minis (scratch/usf2wav: kode54's lazyusf for
+// OoT, whose set stalls lazyusf2; lazyusf2 and it agree on MM to 0.1 dB),
+// mix RMS per side in windows of the sequence's clock — truth time =
+// t × 1.047 + offset, the emulator's audio-frame pacing (INTEGRATION.md §11).
+function zeldaDir(tag) {
+  if (!RIPS) return null;
+  const g = FIXTURE.games.find(x => x.dir === tag);
+  for (const d of [join(RIPS, tag), RIPS]) if (existsSync(d) && readdirSync(d).some(n => n.toLowerCase() === g.usflib.toLowerCase())) return d;
+  return null;
+}
+const OOT = zeldaDir("oot"), MM = zeldaDir("mm");
+function zeldaSet(dir, mini) {
+  const lib = readdirSync(dir).find(n => /\.usflib$/i.test(n));
+  return loadUSF([{name: mini, bytes: new Uint8Array(readFileSync(join(dir, mini)))}, {name: lib, bytes: new Uint8Array(readFileSync(join(dir, lib)))}]);
+}
+const sideDb = (a, sr, t0, t1) => { let s = 0, n = 0; for (let i = Math.floor(t0 * sr); i < Math.floor(t1 * sr); i++) { s += a[i] * a[i]; n++; } return 10 * Math.log10(s / n + 1e-20); };
+
+for (const [tag, dir, cases] of [
+  ["OoT", OOT, [{mini: "06 Kokiri Forest.miniusf", font: 15, source: "ram"}, {mini: "35 Lost Woods.miniusf", font: 5, source: "rom"}]],
+  ["MM", MM, [{mini: "108 Clock Town - Day 1.miniusf", font: 25, source: "rom"}, {mini: "134 Termina Field.miniusf", font: 3, source: "ram"}]]]) {
+  test(`${tag} fonts (real rip): a font the game loaded while ripping reads from the ROM pages, a resident one relocated from RDRAM; every note's voice resolves`, {skip: !dir && `no ${tag} rip`}, () => {
+    for (const c of cases) {
+      const set = zeldaSet(dir, c.mini), {loc, seq, res} = sequenceOfSet(set);
+      assert.equal(loc.gen, "oot"); assert.deepEqual(seq.banks, [c.font], c.mini);
+      const font = readFont(set, loc, c.font);
+      assert.equal(font.source, c.source, c.mini);
+      for (const n of res.notes) {
+        const v = n.drum ? font.drum(n.semitone) : font.instrument(n.inst);
+        assert.ok(v, `${c.mini}: ${n.drum ? "drum " + n.semitone : "instrument " + n.inst}`);
+        const snd = n.drum ? v.sound : font.sound(v, n.semitone);
+        assert.ok(snd && snd.sample.codec === 0 && snd.sample.dataPresent > 0.99 && snd.sample.book.order > 0, c.mini + " sample");
+      }
+    }
+  });
+}
+
+test("MM ocarina minis (real rip): the id word holds a pointer, not a sequence id — refused, not masked into sequence 0x14 (Pirates' Fortress)", {skip: !MM && "no MM rip"}, () => {
+  for (const mini of ["127 Ocarina (Song of Time).miniusf", "212 Song of Frogs.miniusf"]) {
+    assert.throws(() => sequenceOfSet(zeldaSet(MM, mini)), /plays no sequence: the game's word is 0x801f9d14/, mini);
+  }
+});
+
+test("OoT/MM render (real rips): the RAM reverbs, tracks named as the MIDI's, and every side of every window within 1 dB of lazyusf's", {skip: !OOT && !MM && "no OoT/MM rip"}, async () => {
+  const cases = [
+    OOT && {dir: OOT, mini: "06 Kokiri Forest.miniusf", scale: 1.047, off: 0.025,
+            reverbs: [[3072, 0x3000, 0, 0, false], [3072, 0x1800, 0, 0, true]],
+            // truth L/R dB: the intro's fade (ch 4/10/11 under 0x0n delays), then the band
+            windows: [[0.1, 1, -27.7, -22.4], [1, 2, -29.6, -24.9], [2, 3.2, -25.0, -20.2], [3.4, 5, -24.9, -24.4], [5, 9.9, null, null]]},
+    MM && {dir: MM, mini: "108 Clock Town - Day 1.miniusf", scale: 1.050, off: 0.035,
+           reverbs: [[3072, 0x3000, 0, 0, false], [5120, 0x5000, -0x3000, 0x3000, false]],
+           windows: [[0.1, 4.3, -34.5, -34.8], [4.5, 8, -23.7, -23.5], [8, 9.9, null, null]]},
+  ].filter(Boolean);
+  for (const c of cases) {
+    const set = zeldaSet(c.dir, c.mini), {seq, res} = sequenceOfSet(set);
+    assert.deepEqual(res.reverbs.map(r => [r.window, r.decayRatio, r.leakRtl, r.leakLtr, !!r.filterLeft]), c.reverbs, c.mini);
+    const r = await renderN64(res, {set, banks: seq.banks, keepSeconds: 10, meter: {tsNum: 4, tsDen: 4}});
+    assert.deepEqual(r.warnings, [], c.mini);
+    const names = Object.keys(r).filter(k => r[k] && r[k].l);
+    assert.deepEqual(names, channelGroups(res, {tsNum: 4, tsDen: 4}).map(g => g.name).filter(n => !r.silent.includes(n)), c.mini);
+    const L = new Float32Array(Math.ceil(r.seconds * r.sampleRate)), R = new Float32Array(L.length);
+    for (const k of names) for (let i = 0; i < L.length; i++) { L[i] += r[k].l[i]; R[i] += r[k].r[i]; }
+    for (const [t0, t1, tl, tr] of c.windows) {
+      if (tl == null) { assert.ok(sideDb(L, r.sampleRate, t0, t1) > -40, c.mini + " sounds " + t0 + "-" + t1); continue; }
+      const ol = sideDb(L, r.sampleRate, t0, t1), or = sideDb(R, r.sampleRate, t0, t1);
+      assert.ok(Math.abs(ol - tl) < 1 && Math.abs(or - tr) < 1, `${c.mini} ${t0}-${t1}s: ours ${ol.toFixed(1)}/${or.toFixed(1)} dB, lazyusf ${tl}/${tr}`);
+    }
+  }
+});
+
 test("GoldenEye (real rip): no EAD tables; the RAM song table, the mini's word, 1172 + ALCSeq → Dam's notes, tempo, division and loop", {skip: !GE && "no GoldenEye rip"}, () => {
   const set = geSet("101 Dam.miniusf");
   assert.equal(gameOfSet(set).abi, "rare");
@@ -744,4 +818,72 @@ test("SM64 level steps and vibrato (real set): the facts the sequences carry, an
   const all = readdirSync(SM64).filter(n => /\.miniusf$/i.test(n)).map(m => cap(m).res);
   assert.equal(all.reduce((k, r) => k + r.notes.filter(n => n.porta || n.slide).length, 0), 0);
   assert.ok(all.every(r => !r.stubbed.includes("layer portamento C7")));
+});
+
+// ---- Rare's other games (rare.mjs): the same SDK formats, kept differently ------
+// Rips not in the repo: N64_BK_DIR / N64_DK64_DIR / N64_DKR_DIR / N64_JFG_DIR, or the
+// scratch folders the work was done in; without them these skip. The numbers are
+// INTEGRATION.md §10's, from the rips and from lazyusf2's renders of them.
+const rareDir = (env, dir, lib) => [process.env[env], "/tmp/claude-501/rips/" + dir].find(d => d && existsSync(join(d, lib)));
+const BK = rareDir("N64_BK_DIR", "n64-banjo-kazooie", "NUS-NBKE-USA.usflib"), DK64 = rareDir("N64_DK64_DIR", "n64-donkey-kong-64", "NUS-NDOP-USA.usflib");
+const DKR = rareDir("N64_DKR_DIR", "n64-diddy-kong-racing", "NUS-NDYE-USA.usflib"), JFG = rareDir("N64_JFG_DIR", "n64-jet-force-gemini", "NUS-NJFE-USA.usflib");
+const rareSet = (dir, m) => loadUSF([{name: m, bytes: new Uint8Array(readFileSync(join(dir, m)))}, ...readdirSync(dir).filter(n => /\.usflib$/i.test(n)).map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(dir, n)))}))]);
+const rareRenderSmoke = async (set, seq, res) => {
+  const r = await renderN64(res, {set, banks: seq.banks, sampleRate: 22050, keepSeconds: 5, meter: {tsNum: 4, tsDen: 4}});
+  assert.equal(r.bankRate, 22050);
+  const tracks = Object.keys(r).filter(k => r[k] && r[k].l instanceof Float32Array);
+  assert.ok(tracks.length >= 3, "tracks sound in the first 5 s");
+  let peak = 0; for (const k of tracks) for (const v of r[k].l) peak = Math.max(peak, Math.abs(v));
+  assert.ok(peak > 0.01, "not silent");
+  return r;
+};
+
+test("Banjo-Kazooie (real rip): sized 1172 assets found through the asset directory; the li-a1 patch picks the song; the FE-in-a-loop-end song reads", {skip: !BK && "no Banjo-Kazooie rip"}, async () => {
+  const set = rareSet(BK, "002 Main Title.miniusf");
+  assert.equal(locateEAD(set).gen, null);
+  const out = sequenceOfSet(set), res = out.res;
+  assert.equal(out.driver, "rare");
+  assert.deepEqual([out.id, out.loc.table.kind, out.loc.table.count], [8, "asset", 173]);
+  assert.deepEqual([res.notes.length, res.tempos[0].bpm, res.division], [1588, 150, 384]);
+  await rareRenderSmoke(set, out.seq, res);
+  // Click Clock Wood Spring: a loop end reaching back 0x1FE bytes (its FE is a byte, not a back-reference)
+  const ccw = sequenceOfSet(rareSet(BK, "060a Click Clock Wood (Spring All-In-One).miniusf"));
+  assert.deepEqual([ccw.id, ccw.res.notes.length, ccw.res.loop], [95, 4376, {tick: 960, at: 12672}]);
+  // the beta overrides nothing: the lib's own li-a1 at the manifest's address
+  assert.equal(sequenceOfSet(rareSet(BK, "086 Click Clock Wood (Unused Beta Version 2).miniusf")).id, 73);
+  // Normal/Aquatic differ from All-In-One only in a code word the roll does not use: said, not guessed at
+  const sm = sequenceOfSet(rareSet(BK, "006b Spiral Mountain (Normal).miniusf"));
+  assert.equal(sm.id, 16);
+  assert.match(sm.res.warnings.join(" "), /also sets 1 memory word the roll does not use \(0x25dae8 = 0x240f6fff\)/);
+  assert.throws(() => sequenceOfSet(rareSet(BK, "167 SFX Rare & Nintendo Logo (without Music).miniusf")), /song 14 of the game's 173 is not in this rip/);
+});
+
+test("Donkey Kong 64 (real rip): no song table — the song unpacked in RAM, its tracks walked (the header words are absent or another song's); the mini's own chunks pick the slot", {skip: !DK64 && "no Donkey Kong 64 rip"}, async () => {
+  const set = rareSet(DK64, "002 DK Rap.miniusf"), out = sequenceOfSet(set);
+  assert.deepEqual([out.id, out.seq.ram, out.loc.table.kind], [null, 0x7DF800, "mini"]);
+  assert.deepEqual([out.res.notes.length, out.res.tempos[0].bpm, out.res.division, out.res.channels.length], [1856, 123.75, 384, 14]);
+  assert.ok(out.seq.coverage < 1, "some header words are not in the rip");
+  await rareRenderSmoke(set, out.seq, out.res);
+  const boss = sequenceOfSet(rareSet(DK64, "s38 Mini-Boss.miniusf"));
+  assert.deepEqual([boss.seq.ram, boss.res.notes.length, boss.res.tempos[0].bpm], [0x7E4FE0, 2234, 195]);
+  const logo = sequenceOfSet(rareSet(DK64, "001 Logo.miniusf"));
+  assert.deepEqual([logo.seq.ram, logo.res.notes.length], [0x7DF800, 436]);
+  assert.match(logo.res.warnings.join(" "), /writes none of the 4 songs/);
+});
+
+test("Diddy Kong Racing (real rip): the SDK 'S1' sequence file in RAM, plain ALCSeq songs in ROM, the song in a0", {skip: !DKR && "no Diddy Kong Racing rip"}, async () => {
+  const set = rareSet(DKR, "02 Title Theme.miniusf"), out = sequenceOfSet(set);
+  assert.deepEqual([out.id, out.loc.table.kind, out.loc.table.at, out.loc.table.count], [7, "S1", 0x1C4460, 66]);
+  assert.deepEqual([out.res.notes.length, out.res.tempos[0].bpm], [2881, 182]);
+  await rareRenderSmoke(set, out.seq, out.res);
+  assert.equal(sequenceOfSet(rareSet(DKR, "12a Pirate Lagoon, Treasure Caves.miniusf")).id, 65, "sets nothing: the lib's a0, by the manifest");
+  const ready = sequenceOfSet(rareSet(DKR, "05 Get Ready.miniusf"));
+  assert.deepEqual([ready.id, ready.res.notes.length], [30, 20]);
+  assert.match(ready.res.warnings.join(" "), /48 of the song's 232 bytes are not in the rip/);
+});
+
+test("Jet Force Gemini (real rip): the song unpacked in RAM, as Donkey Kong 64's", {skip: !JFG && "no Jet Force Gemini rip"}, async () => {
+  const set = rareSet(JFG, "02 Main Theme.miniusf"), out = sequenceOfSet(set);
+  assert.deepEqual([out.seq.ram, out.res.notes.length, out.res.tempos[0].bpm], [0xB0B50, 2524, 125]);
+  await rareRenderSmoke(set, out.seq, out.res);
 });

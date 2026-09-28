@@ -320,3 +320,196 @@ test("portamento in the render: the voice starts on the glide's start semitone a
   assert.ok(Math.abs(zc(l, 0.6, 0.7) - 400) <= 2, "lands on the written 2 kHz: " + zc(l, 0.6, 0.7));
   const mid = zc(l, 0.22, 0.32); assert.ok(mid > 240 && mid < 360, "and is between at a quarter of the way: " + mid);
 });
+
+// ---- the oot generation (Ocarina of Time / Majora's Mask layout) -----------
+// A set whose tables live in RDRAM like OoT's: gSoundFontTable (4 fonts),
+// gSequenceFontTable, gSequenceTable, gSampleBankTable (bank 1 a zero row =
+// alias of 0, the way the rips carry it); font 0 unrelocated in the ROM
+// pages, font 1 relocated in RDRAM at soundFontList[1].instruments − 8 —
+// and font 0's soundFontList record left pointing at font 1's slot (stale),
+// as a real rip leaves it; two SynthesisReverbs with the unread fields absent.
+import { readFont, ootFontSource, OOT_DEFAULT_ENVELOPE } from "../tools/n64/bank.mjs";
+import { locateEAD, findSoundFontList, findOotReverbs } from "../tools/n64/ead-usf.mjs";
+import { PJ64_RDRAM, swapWords } from "../tools/n64/usf.mjs";
+import { OotAdsr, ootDecayRate, ootPitch, ootPanGains, OOT_UPDATES_PER_SECOND } from "../tools/n64/render.mjs";
+import { parseSequence, ootFilterTaps } from "../tools/n64/seq-libultra.mjs";
+
+const AUDIOBANK = 0xD390, AUDIOTABLE = 0x79470, AUDIOSEQ = 0x29DE0, FONT1_RAM = 0x1C43D0, SFLIST = 0x190F60;
+// the font blob: header words, one instrument (0), a drum list with one drum, a square-wave sample
+function ootFontBlob(reloc) {
+  const b = new Uint8Array(0x100), put = (at, bytes) => b.set(bytes, at);
+  const P = off => reloc == null ? off : (0x80000000 + reloc + off) >>> 0;       // relocated: a RAM pointer
+  put(0x00, be32(P(0xC0))); put(0x04, be32(0)); put(0x08, be32(P(0x20))); put(0x0C, be32(0));
+  put(0x20, [reloc == null ? 0 : 1, 0, 127, 240, ...be32(P(0xB0)), ...be32(0), ...f32(0), ...be32(P(0x40)), ...f32(1.0), ...be32(0), ...f32(0)]);
+  // Sample: {codec 0, medium 0 (bank 1) / relocated: medium 2 (cart), isRelocated 1; size 36}; sampleAddr; loop; book
+  put(0x40, [...be32(reloc == null ? 36 : (2 << 26 | 1 << 24 | 36) >>> 0), ...be32(reloc == null ? 0 : AUDIOTABLE), ...be32(P(0x60)), ...be32(P(0x80))]);
+  put(0x60, [...be32(16), ...be32(64), ...be32(0xFFFFFFFF), ...be32(0), ...new Array(32).fill(0)]);
+  put(0x80, [...be32(2), ...be32(1)]);
+  put(0xB0, [...be16(2), ...be16(32700), ...be16(1), ...be16(32700), ...be16(32700), ...be16(29430), ...be16(0xFFFF), ...be16(0)]);
+  put(0xC0, be32(P(0xD0)));
+  put(0xD0, [0, 100, reloc == null ? 0 : 1, 0, ...be32(P(0x40)), ...f32(0.5), ...be32(P(0xB0))]);
+  return b;
+}
+function ootSet() {
+  const ram = new SparseImage(), rom = new SparseImage();
+  const table = (count, romAddr, rows) => Uint8Array.from([...be16(count), ...be16(0), ...be32(romAddr), ...new Array(8).fill(0),
+    ...rows.flatMap(r => [...be32(r.rom), ...be32(r.size), r.medium ?? 2, r.cp ?? 2, ...be16(r.s1 ?? 0), ...be16(r.s2 ?? 0), ...be16(r.s3 ?? 0)])]);
+  // fonts: sample banks 1/none, 1 instrument, 1 drum (short1 = bank1<<8 | bank2, short2 = numInst<<8 | numDrums)
+  const fontRow = i => ({rom: AUDIOBANK + i * 0x100, size: 0x100, s1: 0x01FF, s2: 0x0101, s3: 0});
+  const fonts = table(4, AUDIOBANK, [0, 1, 2, 3].map(fontRow));
+  const seqFonts = Uint8Array.from([...be16(4), ...be16(6), 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);   // seq 0 -> [0], seq 1 -> [1]
+  const seqs = table(2, AUDIOSEQ, [{rom: AUDIOSEQ, size: 0x40}, {rom: AUDIOSEQ + 0x40, size: 0x40}]);
+  const at = 0x113740; ram.write(at, fonts); ram.write(at + fonts.length, seqFonts);
+  const seqAt = at + fonts.length + seqFonts.length; ram.write(seqAt, seqs);
+  const banksAt = seqAt + seqs.length;
+  ram.write(banksAt, Uint8Array.from([...be16(2), ...be16(0), ...be32(AUDIOTABLE), ...new Array(8).fill(0), ...be32(AUDIOTABLE), ...be32(0x1000), 2, 4, 0, 0]));
+  ram.write(banksAt + 0x20 + 8, Uint8Array.from([2, 4, 0, 0]));                                     // bank 1: only the medium/cache bytes (address and size are zeros the rip left out)
+  // soundFontList: records for all four fonts; font 0's pointer is stale (font 1's slot)
+  for (let i = 0; i < 4; i++) ram.write(SFLIST + i * 0x14, Uint8Array.from([1, 1, 1, 0xFF, 0, 0, 0, 0, ...be32(0x80000000 + FONT1_RAM + 8)]));
+  ram.write(FONT1_RAM, ootFontBlob(FONT1_RAM));
+  rom.write(AUDIOBANK, ootFontBlob(null));                                                            // font 0: in the ROM pages
+  const nib = []; for (let i = 0; i < 16; i++) nib.push(i < 8 ? 7 : -7);
+  rom.write(AUDIOTABLE, Uint8Array.from([...frame(11, 0, nib), ...frame(11, 0, nib), ...frame(11, 0, nib), ...frame(11, 0, nib)]));
+  // SynthesisReverb ×2 (oot stride 0x2C8): prefix, the ring pointers, reverb 1's filter taps; the rest absent
+  const rv = (p, decay, filt) => {
+    ram.write(p, Uint8Array.from([0, 8, 0, 1, 1, 0xFF, ...be16(0x0C00), ...be16(0x3000), ...be16(0x7FFF), ...be16(decay), 0, 0]));
+    ram.write(p + 0x24, Uint8Array.from([...be32(0x0C00), ...be32(0x801A7D40 + (p & 0xFFFF)), ...be32(0x801A7D40 + (p & 0xFFFF) + 0x1800)]));
+    if (filt) { ram.write(p + 0x270, Uint8Array.from([...be32(0x801ADD80), ...be32(0x801ADD80)])); ram.write(0x1ADD80, Uint8Array.from(ootFilterTaps(1, 0).flatMap(be16))); }
+  };
+  rv(0x125648, 0x3000, false); rv(0x125648 + 0x2C8, 0x1800, true);
+  const state = new SparseImage();
+  const hdr = new Uint8Array(0x50); hdr.set([0xC8, 0xA6, 0xD8, 0x23], 0); hdr.set([0, 0, 0x40, 0], 4); state.write(0, hdr);
+  for (const r of ram.ranges) { const a = r.offset & ~3, bytes = new Uint8Array(((r.offset + r.bytes.length + 3) & ~3) - a); bytes.set(ram.read(a, bytes.length)); state.write(PJ64_RDRAM + a, swapWords(bytes)); }
+  return {rom, state};
+}
+
+test("oot fonts: counts from the table's shorts, the ROM copy unrelocated (sample bank 1 = its zero row, an alias of 0), the resident copy relocated in RDRAM; a stale soundFontList pointer never wins", () => {
+  const set = ootSet(), loc = locateEAD(set);
+  assert.equal(loc.gen, "oot");
+  assert.deepEqual(loc.sequences.map(s => s.banks), [[0], [1]]);
+  assert.ok(loc.sampleBankTable && loc.audiotable === AUDIOTABLE, "the sample bank table follows the sequence table");
+  assert.equal(findSoundFontList(ootMemoryRam(set), loc.fontTable), SFLIST);
+  const f0 = readFont(set, loc, 0), f1 = readFont(set, loc, 1);
+  assert.deepEqual([f0.source, f0.base], ["rom", AUDIOBANK], "ROM pages first: font 0's RAM record is stale");
+  assert.deepEqual([f1.source, f1.base], ["ram", 0x80000000 + FONT1_RAM], "font 1 was resident: relocated in RDRAM");
+  for (const f of [f0, f1]) {
+    assert.deepEqual([f.numInstruments, f.numDrums, f.numSfx, ...f.sampleBankIds], [1, 1, 0, 1, 0xFF]);
+    const inst = f.instruments[0];
+    assert.deepEqual([inst.normalRangeLo, inst.normalRangeHi, inst.decayIndex], [0, 127, 240]);
+    assert.deepEqual(inst.envelope, [[2, 32700], [1, 32700], [32700, 29430], [-1, 0]]);
+    assert.equal(inst.low, null, "low only when normalRangeLo != 0"); assert.equal(inst.high, null, "high only when normalRangeHi != 0x7F");
+    assert.equal(f.instrument(1), null, "no fallback past the count (Audio_GetInstrumentInner)");
+    const s = inst.normal.sample;
+    assert.deepEqual([s.codec, s.rom, s.samples, s.loop.start, s.loop.end, s.book.order, s.book.npredictors], [0, AUDIOTABLE, 64, 16, 64, 2, 1]);
+    assert.equal(f.drum(0).pan, 100); assert.equal(f.drum(0).sound.tuning, 0.5); assert.equal(f.drum(0).sound.sample, s, "shared sample record");
+    const pcm = f.pcm(s);
+    assert.equal(pcm.pcm.length, 64); assert.ok(pcm.looping);
+    assert.ok(Math.abs(pcm.pcm[3] - 14336 / 32768) < 1e-6 && Math.abs(pcm.pcm[11] + 14336 / 32768) < 1e-6);
+  }
+  assert.deepEqual([f0.instruments[0].normal.sample.relocated, f0.instruments[0].normal.sample.bankId], [false, 1]);
+  assert.deepEqual([f1.instruments[0].normal.sample.relocated, f1.instruments[0].normal.sample.medium], [true, 2]);
+  assert.throws(() => ootFontSource(set, loc, 9), /table entry/);
+});
+function ootMemoryRam(set) { return rdramOfState(set.state); }
+import { rdramOf as rdramOfFn } from "../tools/n64/usf.mjs";
+function rdramOfState(state) { return rdramOfFn(state).ram; }
+
+test("oot reverbs: SynthesisReverb found by shape with its unread fields absent; the array's stride gives the indices; the filter's taps read from RAM", () => {
+  const set = ootSet(), rv = findOotReverbs(rdramOfState(set.state));
+  assert.deepEqual(rv.map(r => [r.index, r.at, r.downsampleRate, r.window, r.volume, r.decayRatio, r.leakRtl, r.mixIndex]),
+                   [[0, 0x125648, 1, 3072, 0x7FFF, 0x3000, 0, -1], [1, 0x125648 + 0x2C8, 1, 3072, 0x7FFF, 0x1800, 0, -1]]);
+  assert.equal(rv[0].filterLeft, null);
+  assert.deepEqual(rv[1].filterLeft, [3854, 4188, 4398, 4469, 4398, 4188, 3854, 3416]);
+});
+
+test("oot ADSR (Audio_AdsrUpdate): targets (arg/32767)², delays × ticksPerUpdate/4, the decay table 1/(3·scaleInv), sustain holds 128 updates", () => {
+  assert.equal(OOT_UPDATES_PER_SECOND, 180);
+  const a = new OotAdsr([[4, 32767], [8, 16384], [-1, 0]]);
+  const lv = []; for (let i = 0; i < 12; i++) lv.push(a.update());
+  assert.ok(Math.abs(lv[2] - 1) < 1e-9, "4 × 0.75 = 3 updates to full: " + lv[2]);
+  assert.ok(Math.abs(lv[8] - (16384 / 32767) ** 2) < 1e-9, "then 8 × 0.75 = 6 updates to the squared target: " + lv[8]);
+  assert.equal(lv[11], lv[8], "hang");
+  assert.ok(Math.abs(ootDecayRate(239) - 1 / 36) < 1e-12 && Math.abs(ootDecayRate(100) - 1 / 516) < 1e-12 && Math.abs(ootDecayRate(5) - 1 / 3240) < 1e-12 && Math.abs(ootDecayRate(255) - 1 / 0.75) < 1e-12);
+  assert.equal(ootDecayRate(0), 0, "index 0 never decays");
+  a.decay(ootDecayRate(239)); a.update();                  // the flag lands at the end of this update
+  const d0 = a.update(); assert.ok(Math.abs(d0 - ((16384 / 32767) ** 2 - 1 / 36)) < 1e-9);
+  let n = 1; while (!a.done && n < 100) { a.update(); n++; } assert.ok(a.done && n < 20, "gone in " + n);
+  // sustain: decay stops at channel sustain × level/256 for 128 updates, then releases
+  const b = new OotAdsr([[1, 32767], [-1, 0]]); b.update(); b.update();
+  b.decay(ootDecayRate(250), 128); b.update();
+  let held = 0; for (let i = 0; i < 200; i++) { const v = b.update(); if (Math.abs(v - 0.5) < 1e-9) held++; }
+  assert.ok(held >= 128 && held <= 130, "held at 0.5 for " + held);
+  assert.deepEqual(OOT_DEFAULT_ENVELOPE, [[1, 32000], [1000, 32000], [-1, 0]]);
+});
+
+test("oot pitch, pan, filter taps: gPitchFrequencies wraps its last 11 entries below A0; notePan in integers; AudioHeap_LoadFilter rows", () => {
+  assert.equal(ootPitch(39), 1); assert.equal(ootPitch(3), 0.125);
+  assert.ok(Math.abs(ootPitch(0x74) - 85.42976) < 1e-3 && Math.abs(ootPitch(0x75) - 0.055681) < 1e-5 && Math.abs(ootPitch(0x7F) - 0.099213) < 1e-5);
+  // weight 128: the channel's pan alone; weight 0: the layer's (a drum's own); centre = index 64 of the cos table
+  const [l, r] = ootPanGains({pan: 0.5, panWeight: 1});
+  assert.ok(Math.abs(l - Math.cos(Math.PI / 2 * 64 / 127)) < 1e-9 && Math.abs(r - Math.cos(Math.PI / 2 * 63 / 127)) < 1e-9);
+  assert.deepEqual(ootPanGains({pan: 0.5, panWeight: 0}, {pan: 0}), [1, 0], "drum hard left");
+  assert.deepEqual(ootPanGains({pan: 0.5, panWeight: 0, noDrumPan: true, lyPan: 127 / 128}, {pan: 0}), [0, 1], "CC: the layer's pan instead");
+  assert.deepEqual(ootFilterTaps(0, 0), [0, 0, 0, 32767, 0, 0, 0, 0]);
+  assert.deepEqual(ootFilterTaps(0, 1), [-289, -291, -289, 30736, -289, -291, -289, -290]);
+  assert.deepEqual(ootFilterTaps(1, 1), [1782, 1948, 2054, 17602, 2054, 1948, 1782, 1563]);
+});
+
+// the oot channel ops the renderer needs, on a one-note song (channel at 0x20, layer at 0x40)
+function ootSong(chan, ly = [0x27, 0x60, 0x40, 0xFF], after = []) {
+  const b = new Uint8Array(0x80);
+  b.set([0xD7, 0x00, 0x01, 0x90, 0x00, 0x20, 0xFD, 0x7F, 0xFF], 0);
+  b.set([0xC1, 0x05, ...chan, 0x88, 0x00, 0x40, ...after, 0xFD, 0x7F, 0xFF], 0x20);
+  b.set(ly, 0x40);
+  return b;
+}
+test("oot capture: a short channel delay (0x0n) ends the tick's run, so volume steps under a note land n ticks apart; E5/D2/E8/ED/B0/B3/BB reach the note", () => {
+  // DF 7F, then 0x04 (cdelay 4) DF 40: the step lands 4 ticks into the note, not at its start (the fix that brought Kokiri Forest's intro fade back)
+  const res = parseSequence(ootSong([0xDF, 0x7F], [0x27, 0x60, 0x40, 0xFF], [0x04, 0xDF, 0x40]), {abi: "oot"});
+  const n = res.notes[0];
+  assert.deepEqual(n.gain.map(g => g.t), [0, 4]);
+  assert.ok(Math.abs(n.gain[1].l - 0x40 / 127) < 1e-9);
+  const p = parseSequence(ootSong([0xE5, 0x01, 0xD2, 0x80, 0xED, 0x20, 0xB0, 0x00, 0x70, 0xB3, 0x10, 0xBB, 0x08, 0x40, 0x00]), {abi: "oot"}).notes[0];
+  assert.deepEqual([p.revIdx, p.chSustain, p.chGain], [1, 0x80, 0x20]);
+  assert.deepEqual(p.filter, ootFilterTaps(1, 0), "B3 rewrote the taps B0 pointed at");
+  assert.deepEqual(p.comb, {size: 8, gain: 0x4000});
+  // E8: 3 bytes (mute, alloc, priority) then transposition, pan, pan weight, reverb, reverb index
+  const q = parseSequence(ootSong([0xE8, 0, 0, 5, 2, 0x20, 0x40, 0x30, 1]), {abi: "oot"}).notes[0];
+  assert.deepEqual([q.semitone, q.pan, q.panWeight, q.rev, q.revIdx], [41, 0.25, 0.5, 0x30, 1]);
+});
+
+test("renderN64 on the oot generation: the font's voice at gPitchFrequencies × tuning, (vel/127)²·vol²·ADSR, integer pan, the note filter, and the RAM reverb's echo", async () => {
+  const set = ootSet(), loc = locateEAD(set);
+  const B = TICKS_PER_BEAT;
+  const note = {tick: 0, dur: 2 * B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, pan: 0.5, panWeight: 1, freq: 1, chInst: 0};
+  const res = {abi: "oot", gen: "oot", tempos: [{tick: 0, bpm: 120}], endTick: 4 * B, warnings: [], notes: [note, {...note, ch: 9, drum: true, inst: 0x7F, semitone: 0, dur: B, panWeight: 0}]};
+  const r = await renderN64(res, {set, loc, banks: [0], sampleRate: 32000, reverbs: null});
+  assert.deepEqual(Object.keys(r).filter(k => r[k] && r[k].l), ["ch 4 inst 0", "ch 9 drums"]);
+  assert.deepEqual(r.warnings, []);
+  const mel = r["ch 4 inst 0"], kit = r["ch 9 drums"];
+  const rms = (a, s0, s1) => { let s = 0; for (let i = s0; i < s1; i++) s += a[i] * a[i]; return Math.sqrt(s / (s1 - s0)); };
+  const period = (a, from, n) => { let best = 0, bv = -1; for (let lag = 4; lag < 200; lag++) { let s = 0; for (let i = from; i < from + n; i++) s += a[i] * a[i + lag]; if (s > bv) { bv = s; best = lag; } } return best; };
+  assert.equal(period(mel.l, 8000, 4000), 16, "semitone 39 × tuning 1 = 2000 Hz");
+  assert.equal(period(kit.l, 800, 2000), 32, "the drum: its tuning 0.5 alone");
+  // level: the square's RMS 0.4375 × ADSR (32700/32767)² (the 32700-update fade toward 29430 has barely begun) × the centre pan's cos(π/2·64/127)
+  const want = 14336 / 32768 * (32700 / 32767) ** 2 * Math.cos(Math.PI / 2 * 64 / 127);
+  assert.ok(Math.abs(rms(mel.l, 16000, 24000) / want - 1) < 0.03, rms(mel.l, 16000, 24000) + " vs " + want);
+  const ratio = rms(kit.r, 1000, 8000) / rms(kit.l, 1000, 8000), law = Math.cos(Math.PI / 2 * 27 / 127) / Math.cos(Math.PI / 2 * 100 / 127);
+  assert.ok(Math.abs(ratio / law - 1) < 0.01, "drum pan 100 (panWeight 0): gDefaultPanVolume[27] / [100] = " + law + ", got " + ratio);
+  // the channel filter: the strongest low-pass (row 1, near an 8-sample boxcar) keeps ~0.64 of a 2 kHz fundamental and
+  // drops the square's upper harmonics (−4.6 dB in all); the identity row (tap 3 = 32767) leaves the level alone
+  const withTaps = async taps => rms((await renderN64({...res, notes: [{...note, filter: taps}]}, {set, loc, banks: [0], sampleRate: 32000, reverbs: null}))["ch 4 inst 0"].l, 16000, 24000) / rms(mel.l, 16000, 24000);
+  const lp = await withTaps(ootFilterTaps(1, 0)), id = await withTaps(ootFilterTaps(0, 0));
+  assert.ok(lp > 0.5 && lp < 0.65, "low-pass row 1: " + lp);
+  assert.ok(Math.abs(id - 1) < 0.001, "identity row: " + id);
+  // reverb 0 from RAM: a 100 ms one-shot's send comes back 3072 samples later at volume 0x7FFF, then × decayRatio 0x3000
+  const short = {...note, dur: 2, rev: 127, chRel: 255};                 // decay index 255: gone one update after its 20 ms gate
+  const rr = await renderN64({...res, notes: [short]}, {set, loc, banks: [0], sampleRate: 32000});
+  assert.equal(rr.reverbs.length, 2);
+  const dry = await renderN64({...res, notes: [short]}, {set, loc, banks: [0], sampleRate: 32000, reverbs: null});
+  const w = rr["ch 4 inst 0"].l, d = dry["ch 4 inst 0"].l, echo = new Float32Array(w.length); for (let i = 0; i < w.length; i++) echo[i] = w[i] - d[i];
+  assert.ok(rms(echo, 0, 3072) === 0, "nothing before one window");
+  const e1 = rms(echo, 3072, 3072 + 1500), e2 = rms(echo, 6144, 6144 + 1500), s0 = rms(d, 0, 1500);
+  assert.ok(Math.abs(e1 / s0 - 127 / 128) < 0.02, "first echo at the send × volume: " + e1 / s0);
+  assert.ok(Math.abs(e2 / e1 - 0x3000 / 0x8000) < 0.02, "second × decayRatio: " + e2 / e1);
+});

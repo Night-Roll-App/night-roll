@@ -29,8 +29,9 @@
 // the game never reads (sampleSize, pads, `loaded`) and unused instruments
 // are absent; reads here fill with 0 (which is what the ripper zeroed) and
 // each record says how much of it is really present.
-import { findALSeqFiles, readALSeqFile } from "./ead-usf.mjs";
+import { findALSeqFiles, readALSeqFile, readAudioTable, findSoundFontList } from "./ead-usf.mjs";
 import { expandBook, decodeSample } from "./vadpcm.mjs";
+import { rdramOf } from "./usf.mjs";
 
 // SM64 US: gDefaultEnvelope (data.c) and sequence_channel_init's release
 // rate — what a channel plays with before any instrument is set.
@@ -192,4 +193,148 @@ export function readBank(rom, files, bankId) {
     },
   };
   return bank;
+}
+
+// ---- the oot generation (Ocarina of Time, Majora's Mask) -------------------
+//
+// A sound font (oot include/audio.h, mm include/audio/soundfont.h;
+// load.c AudioLoad_RelocateFont) is a blob whose words are offsets from its
+// own start until the game relocates them into RAM pointers:
+//   +0  u32 drums      -> u32 drumOffsets[numDrums] (0 = none)
+//   +4  u32 sfx        -> SoundEffect[numSfx] (TunedSample each)
+//   +8  u32 instruments[numInstruments] (0 = none)
+//   Instrument (0x20): u8 isRelocated, normalRangeLo, normalRangeHi, adsrDecayIndex;
+//                      EnvelopePoint* envelope; TunedSample low, normal, high
+//                      (low only when normalRangeLo != 0, high only when normalRangeHi != 0x7F)
+//   Drum (0x10):       u8 adsrDecayIndex, pan, isRelocated, pad; TunedSample; EnvelopePoint*
+//   TunedSample (8):   Sample* sample; f32 tuning
+//   Sample (0x10):     u32 {codec:4 (mm: unk:1 codec:3), medium:2, unk_bit26:1, isRelocated:1,
+//                      size:24}; u8* sampleAddr; AdpcmLoop* loop; AdpcmBook* book
+// The counts are not in the blob: the font table entry's three shorts carry
+// them (bank ids, instruments<<8 | drums, sfx — AudioLoad_InitSoundFontMeta).
+// An unrelocated sample's sampleAddr is an offset into sample bank
+// sampleBankId1 (medium field 0) or sampleBankId2 (1) — entries of
+// gSampleBankTable, absolute ROM after AudioLoad_InitTable; relocated, it is
+// the absolute address and the medium field says where (cart, or RAM).
+//
+// Where the rip has the font: a font the game loaded while the ripper
+// listened is in the ROM pages (unrelocated); a font already resident when
+// the state was saved never touches the ROM again, and sits relocated in
+// RDRAM at soundFontList[id].instruments − 8. Both are read through one
+// address space here: addresses with the KSEG0 bit are RDRAM, the rest ROM,
+// and a pointer without it is an offset from the font's start — which is
+// what relocation does, undone. The ROM copy wins when both exist: the
+// soundFontList pointer of a font that is not loaded is stale (it still
+// points at whatever font last used that cache slot).
+export const OOT_DEFAULT_ENVELOPE = [[1, 32000], [1000, 32000], [-1, 0]]; // gDefaultEnvelope (oot/mm data.c)
+export const OOT_DEFAULT_DECAY_INDEX = 0xF0;                              // AudioSeq_InitSequenceChannel: adsr.decayIndex
+
+export function ootMemory(set) {
+  const {ram} = rdramOf(set.state), rom = set.rom;
+  const img = a => (a >>> 0) >= 0x80000000 ? [ram, (a >>> 0) & 0x1FFFFFFF] : [rom, a >>> 0];
+  return {ram, rom, view: byteView({read: (o, n) => { const [m, x] = img(o); return m.read(x, n); },
+                                    coverage: (o, n) => { const [m, x] = img(o); return m.coverage(x, n); }})};
+}
+
+// -> where font `fontId`'s blob is: {base (in ootMemory's address space), source: "rom" | "ram", present}
+export function ootFontSource(set, loc, fontId, mem = ootMemory(set)) {
+  const {ram, rom} = mem;
+  const fonts = readAudioTable(ram, loc.fontTable), e = fonts[fontId];
+  if (!e) throw new Error(`font ${fontId}: its table entry is not in the rip`);
+  const romCov = rom.coverage(e.rom, e.size);
+  if (romCov > 0) return {base: e.rom, size: e.size, source: "rom", present: romCov};
+  const list = loc.soundFontList !== undefined ? loc.soundFontList : (loc.soundFontList = findSoundFontList(ram, loc.fontTable));
+  if (list != null && ram.coverage(list + fontId * 0x14 + 8, 4) === 1) {
+    const ip = ram.u32(list + fontId * 0x14 + 8);
+    if ((ip >>> 24) === 0x80) { const base = (ip - 8) >>> 0; return {base, size: e.size, source: "ram", present: ram.coverage(base & 0x1FFFFFFF, e.size)}; }
+  }
+  throw new Error(`font ${fontId}: neither in the rip's ROM pages nor resident in its RDRAM`);
+}
+
+export function readFont(set, loc, fontId, {mem = ootMemory(set)} = {}) {
+  const {ram} = mem, v = mem.view;
+  const src = ootFontSource(set, loc, fontId, mem);
+  const e = loc.fontTable.entriesAt + fontId * 16;
+  const bank1 = ram.u8(e + 10), bank2 = ram.u8(e + 11), numInstruments = ram.u8(e + 12), numDrums = ram.u8(e + 13), numSfx = ram.u16(e + 14);
+  const sampleBanks = loc.sampleBankTable ? readAudioTable(ram, loc.sampleBankTable) : [];
+  const base = src.base;
+  const R = p => ((p >>> 0) >= 0x80000000 ? p : base + p) >>> 0;   // relocation, done or undone
+  const samples = new Map(), books = new Map(), loops = new Map(), envelopes = new Map(), pcmCache = new Map();
+  const bookAt = at => {
+    if (!books.has(at)) {
+      const order = v.s32(at), npredictors = v.s32(at + 4);
+      const n = 8 * Math.max(0, order) * Math.max(0, npredictors);
+      const book = new Int16Array(Math.min(n, 8 * 8 * 16));
+      for (let i = 0; i < book.length; i++) book[i] = v.s16(at + 8 + i * 2);
+      books.set(at, {at, order, npredictors, book, present: v.coverage(at, 8 + book.length * 2)});
+    }
+    return books.get(at);
+  };
+  const loopAt = at => {
+    if (!loops.has(at)) {
+      const start = v.u32(at), end = v.u32(at + 4), count = v.u32(at + 8);
+      let state = null;
+      if (count !== 0) { state = new Int16Array(16); for (let i = 0; i < 16; i++) state[i] = v.s16(at + 16 + i * 2); }
+      loops.set(at, {at, start, end, count, state, present: v.coverage(at, count ? 48 : 16)});
+    }
+    return loops.get(at);
+  };
+  const envelopeAt = at => { if (!envelopes.has(at)) envelopes.set(at, readEnvelope(v, at)); return envelopes.get(at); };
+  const sampleAt = at => {
+    if (!samples.has(at)) {
+      const w0 = v.u32(at), codec = (w0 >>> 28) & 7, medium = (w0 >>> 26) & 3, relocated = (w0 >>> 24) & 1, size = w0 & 0xFFFFFF;
+      const addr = v.u32(at + 4);
+      let dataAt = addr, bankId = null;
+      if (!relocated) {
+        bankId = medium === 0 ? bank1 : medium === 1 ? bank2 : null;
+        const sb = bankId != null ? sampleBanks[bankId] : null;
+        dataAt = sb ? (sb.rom + addr) >>> 0 : null;                  // AudioLoad_RelocateSample; media 2/3 stay unrelocated
+      }
+      const loop = loopAt(R(v.u32(at + 8))), book = bookAt(R(v.u32(at + 12)));
+      const frames = Math.ceil(loop.end / 16);
+      samples.set(at, {at, codec, medium, relocated: !!relocated, bankId, addr, rom: dataAt, size, loop, book, frames, samples: loop.end,
+                       present: v.coverage(at, 16), dataPresent: dataAt == null ? 0 : v.coverage(dataAt, Math.min(size || frames * 9, frames * 9))});
+    }
+    return samples.get(at);
+  };
+  const tuned = at => { const s = v.u32(at); return s ? {sample: sampleAt(R(s)), tuning: v.f32(at + 4)} : null; };
+  const instruments = [];
+  for (let i = 0; i < Math.min(numInstruments, 126); i++) {         // RelocateFont: ids 126, 127 are reserved
+    const off = v.u32(base + 8 + i * 4);
+    if (!off) { instruments.push(null); continue; }
+    const at = R(off);
+    const lo = v.u8(at + 1), hi = v.u8(at + 2);
+    instruments.push({index: i, at, present: v.coverage(at, 0x20), normalRangeLo: lo, normalRangeHi: hi, decayIndex: v.u8(at + 3),
+                      envelope: envelopeAt(R(v.u32(at + 4))), low: lo !== 0 ? tuned(at + 8) : null, normal: tuned(at + 16), high: hi !== 0x7F ? tuned(at + 24) : null});
+  }
+  const drums = [];
+  const dl = v.u32(base);
+  for (let i = 0; i < (dl ? numDrums : 0); i++) {
+    const off = v.u32(R(dl) + i * 4);
+    if (!off) { drums.push(null); continue; }
+    const at = R(off);
+    drums.push({index: i, at, present: v.coverage(at, 0x10), decayIndex: v.u8(at), pan: v.u8(at + 1), sound: tuned(at + 4), envelope: envelopeAt(R(v.u32(at + 12)))});
+  }
+  const sl = v.u32(base + 4), sfx = [];
+  for (let i = 0; i < (sl ? numSfx : 0); i++) sfx.push(tuned(R(sl) + i * 8));
+  return {
+    id: fontId, gen: "oot", source: src.source, base, size: src.size, present: src.present, sampleBankIds: [bank1, bank2],
+    numInstruments, numDrums, numSfx, instruments, drums, sfx,
+    samples: () => [...samples.values()],
+    pcm(rec) {
+      if (!pcmCache.has(rec.at)) {
+        if (rec.codec !== 0) throw new Error(`sample @${rec.at.toString(16)}: codec ${rec.codec} is not VADPCM`);
+        if (rec.rom == null) throw new Error(`sample @${rec.at.toString(16)}: medium ${rec.medium} was never relocated`);
+        const data = v.read(rec.rom, rec.frames * 9);
+        pcmCache.set(rec.at, decodeSample(data, 0, rec.samples, expandBook(rec.book.order, rec.book.npredictors, rec.book.book), rec.loop));
+      }
+      return pcmCache.get(rec.at);
+    },
+    // Audio_GetInstrumentInner / Audio_GetDrum: an id past the count, or an empty slot, is no voice (no fallback, unlike sm64)
+    instrument(id) { return id >= 0 && id < instruments.length ? instruments[id] : null; },
+    drum(id) { return id >= 0 && id < drums.length ? drums[id] : null; },
+    soundEffect(id) { return id >= 0 && id < sfx.length ? sfx[id] : null; },
+    // Audio_GetInstrumentTunedSample
+    sound(inst, semitone) { return semitone < inst.normalRangeLo ? inst.low : semitone <= inst.normalRangeHi ? inst.normal : inst.high; },
+  };
 }

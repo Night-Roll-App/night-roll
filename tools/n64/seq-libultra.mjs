@@ -47,10 +47,15 @@
 //   scale (DE u16/32768, D3 = 0.5·2^((s8+127)/127)), the channel's
 //   envelope/release overrides (DA, D9 — an instrument set by C1/EB
 //   replaces them, as get_instrument does) and the layer's own adsr
-//   (C6 instrument, CB envelope + release).
+//   (C6 instrument, CB envelope + release). The oot generation adds, from
+//   oot seqplayer.c: sustain (D2 → chSustain), reverb index (E5 → revIdx),
+//   gain (ED → chGain, UQ4.4), the params blocks (E8 inline / E7 from the
+//   data: transposition, pan, weight, reverb, reverb index), the note filter
+//   (B0 taps in the sequence data, B3 rewrites them from the engine's
+//   low/high-pass rows, B1 drops it → `filter`) and comb filter (BB → `comb`).
 // Stubbed (arguments consumed, effect ignored — listed in result.stubbed
-// when encountered): the mute machinery, note pools, the oot filter/random ops
-// (random ops read as 0 so output is deterministic), oot ldsample (0x1n)
+// when encountered): the mute machinery, note pools, the oot random ops
+// (read as 0 so output is deterministic), oot ldsample (0x1n)
 // and any opcode outside the tables, which throw with the offset.
 import { TICKS_PER_BEAT, SEMITONE_TO_MIDI, DEFAULT_SHORT_VEL, DEFAULT_SHORT_GATE } from "./constants.mjs";
 export { TICKS_PER_BEAT, SEMITONE_TO_MIDI };
@@ -60,6 +65,18 @@ const LAYERS = 4;
 const SPIN_LIMIT = 100000; // commands one play head may run inside a single tick before we call it stuck
 
 function state(pc) { return {pc, depth: 0, stack: [0, 0, 0, 0], loops: [0, 0, 0, 0]}; }
+
+// oot generation: the channel filter's 8 Q15 taps as AudioHeap_LoadFilter (heap.c) writes them for
+// ASEQ_OP_CHAN_FILTER's cutoffs — gLowPassFilterData[16][8] and gHighPassFilterData[15][8] (data.c),
+// a low-pass row, a high-pass row, or their average (C division: truncation toward zero)
+const LOW_PASS = [0, 0, 0, 32767, 0, 0, 0, 0, 3854, 4188, 4398, 4469, 4398, 4188, 3854, 3416, 3415, 4314, 4915, 5126, 4915, 4314, 3415, 2351, 2636, 4433, 5762, 6252, 5762, 4433, 2636, 849, 1334, 4196, 6646, 7609, 6646, 4196, 1334, -802, -265, 3421, 7292, 8944, 7292, 3421, -265, -1863, -1558, 2065, 7146, 9546, 7146, 2065, -1558, -1682, -2353, 726, 7441, 11028, 7441, 726, -2353, -697, -2252, -693, 7121, 11962, 7121, -693, -2252, 668, -1373, -1819, 6299, 12298, 6299, -1819, -1373, 1484, -213, -2740, 5843, 13680, 5843, -2740, -213, 1494, 980, -3081, 4883, 14286, 4883, -3081, 980, 590, 1769, -2973, 3866, 14981, 3866, -2973, 1769, -568, 2023, -2554, 2911, 16397, 2911, -2554, 2023, -1391, 1766, -1918, 2016, 19800, 2016, -1918, 1766, -1564, 841, -853, 863, 26829, 863, -853, 841, -820];
+const HIGH_PASS = [-289, -291, -289, 30736, -289, -291, -289, -290, -464, -467, -467, 29506, -467, -467, -464, -463, -662, -670, -672, 28101, -672, -670, -662, -656, -839, -855, -861, 26830, -861, -855, -839, -822, -996, -1024, -1038, 25685, -1038, -1024, -996, -963, -1184, -1236, -1266, 24272, -1266, -1236, -1184, -1118, -1357, -1450, -1506, 22900, -1506, -1450, -1357, -1238, -1514, -1680, -1784, 21498, -1784, -1680, -1514, -1307, -1613, -1877, -2048, 20390, -2048, -1877, -1613, -1298, -1657, -2185, -2559, 18869, -2559, -2185, -1657, -1093, -1524, -2395, -3078, 18030, -3078, -2395, -1524, -739, -1253, -2504, -3621, 17642, -3621, -2504, -1253, -367, -525, -2367, -4732, 17517, -4732, -2367, -525, 0, -34, -1762, -5706, 17503, -5706, -1762, -34, -258, -772, -3, -6985, 17240, -6985, -3, -772, -3];
+export function ootFilterTaps(lowPass, highPass) {
+  const lp = LOW_PASS.slice(8 * lowPass, 8 * lowPass + 8), hp = highPass ? HIGH_PASS.slice(8 * (highPass - 1), 8 * highPass) : null;
+  if (!hp) return lowPass ? lp : LOW_PASS.slice(0, 8);
+  if (!lowPass) return hp;
+  return lp.map((v, k) => Math.trunc((v + hp[k]) / 2));
+}
 
 export function parseSequence(input, opts = {}) {
   const {abi = "sm64", maxTicks = TICKS_PER_BEAT * 4 * 2000, maxSeconds = Infinity,
@@ -103,6 +120,11 @@ export function parseSequence(input, opts = {}) {
   const s16 = s => (u16(s) << 16) >> 16;
   const cu16 = s => { let v = u8(s); if (v & 0x80) v = ((v & 0x7F) << 8) | u8(s); return v; };
   const u16at = a => (at(a) << 8) | at(a + 1);
+  const byteAt = a => at(a); // (channelOp shadows `at` with the opcode's offset)
+  const filters = new Map();   // oot: filter taps by sequence address — the game's filter memory is the sequence's own bytes
+  // (a byte the rip lacks is a zero: the game writes this memory with B3 before it ever reads it)
+  const soft = a => a < seq.length && (!have || have[a]) ? seq[a] : 0;
+  const filterAt = a => { if (!filters.has(a)) filters.set(a, Array.from({length: 8}, (_, k) => (((soft(a + 2 * k) << 8) | soft(a + 2 * k + 1)) << 16) >> 16)); return filters.get(a); };
   const push = (s, pc) => { if (s.depth >= 4) throw new Error(`call stack overflow at ${hex(s.pc)}`); s.stack[s.depth++] = pc; };
 
   // ---- control flow shared by all three levels. `o.value` is the level's
@@ -183,6 +205,10 @@ export function parseSequence(input, opts = {}) {
             largeNotes: false, instr: null, bank: 0, dynTable: -1, io: new Array(8).fill(-1),
             // sequence_channel_init: full volume, centre pan, no bend; adsr = the default envelope until an instrument is set
             volume: 1, volumeScale: 1, pan: 0.5, panWeight: 1, freqScale: 1, envelope: null, release: null, adsrInst: null, reverb: 0,
+            // oot generation: adsr.sustain (D2) and the synthesis reverb the notes feed (E5; AudioSeq_InitSequenceChannel zeroes both)
+            sustain: 0, reverbIndex: 0,
+            // oot: the note filter (B0/B1/B3: 8 taps living in the sequence data), comb filter (BB) and gain (ED, UQ4.4)
+            filter: null, comb: null, gain: 0,
             // sequence_channel_init: vibrato rate 0x800, no extent, no delay
             vib: {rateStart: 0x800, rateTarget: 0x800, rateDelay: 0, extStart: 0, extTarget: 0, extDelay: 0, delay: 0},
             layers: new Array(LAYERS).fill(null), st: null};
@@ -320,7 +346,8 @@ export function parseSequence(input, opts = {}) {
     noteOn(L, {tick, dur: 0, ch: C.idx, layer: L.idx, semitone: pitch, drum,
                midi: drum ? null : pitch + SEMITONE_TO_MIDI, vel: L.vel, inst: instr, gate: L.noteDuration,
                bank: C.bank, vol: C.volume * C.volumeScale * player.volume, pan: C.pan, panWeight: C.panWeight, lyPan: L.pan, noDrumPan: L.noDrumPan, freq: C.freqScale, rev: C.reverb,
-               chEnv: C.envelope, chRel: C.release, chInst: C.adsrInst, lyAdsr: L.adsr,
+               chEnv: C.envelope, chRel: C.release, chInst: C.adsrInst, lyAdsr: L.adsr, chSustain: C.sustain, revIdx: C.reverbIndex,
+               filter: C.filter ? [...C.filter] : null, comb: C.comb, chGain: C.gain,
                // note_vibrato_init: a note born with no extent (start and target 0) never vibrates
                vib: C.vib.extStart || C.vib.extTarget ? {...C.vib} : null,
                porta: drum ? null : portaFor(L, pitch, delay)});
@@ -350,7 +377,7 @@ export function parseSequence(input, opts = {}) {
           // OoT dispatches full opcodes from 0xB0 (seqplayer.c "cmd >= 0xB0"), MM
           // from 0xA0; below that the low nibble/3 bits select a layer or io slot
           if (cmd > 0xC0 || (oot && cmd >= (mm ? 0xA0 : 0xB0))) { if (!flow(C, s, cmd, "channel")) channelOp(C, s, cmd); continue; }
-          channelLow(C, s, cmd);
+          if (channelLow(C, s, cmd)) break; // a short delay ends this tick's run, like FD
         }
       }
     }
@@ -360,6 +387,9 @@ export function parseSequence(input, opts = {}) {
   // set_instrument: a real instrument (< 0x7F) loads its envelope and release
   // into the channel, replacing any DA/D9 override; 0x7F (drums) and >= 0x80
   // (the synth waveforms) leave the channel's adsr as it was
+  function chanParams(C, [tr, pan, weight, rev, revIdx]) {
+    C.transposition = (tr << 24) >> 24; C.pan = pan / 128; C.panWeight = weight / 128; C.reverb = rev; C.reverbIndex = revIdx;
+  }
   function setInstr(C, id) {
     C.instr = id;
     if (id < 0x7F) { C.adsrInst = id; C.envelope = null; C.release = null; }
@@ -388,8 +418,11 @@ export function parseSequence(input, opts = {}) {
       case 0xCE: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel ldptr CE"); break;
       case 0xCF: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel stptrtoseq CF"); break;
       case 0xD4: C.reverb = u8(s); break;                                          // chan_setreverb: the wet send, 0..127
-      case 0xD0: case 0xD1: case 0xD2: case 0xD5: case 0xD6:
-      case 0xE5: case 0xE6: case 0xE9: case 0xED:
+      case 0xD2: if (oot) { C.sustain = u8(s); break; } u8(s); stub("channel sound-shaping " + hex(cmd)); break;   // oot: adsr.sustain
+      case 0xE5: if (oot) { C.reverbIndex = u8(s); break; } u8(s); stub("channel sound-shaping " + hex(cmd)); break; // oot: reverbIndex
+      case 0xED: if (oot) { C.gain = u8(s); break; } u8(s); stub("channel sound-shaping " + hex(cmd)); break;        // oot: gain (UQ4.4)
+      case 0xD0: case 0xD1: case 0xD5: case 0xD6:
+      case 0xE6: case 0xE9:
         u8(s); stub("channel sound-shaping " + hex(cmd)); break;
       case 0xD9: C.release = u8(s); break;
       case 0xDD: C.pan = u8(s) / 128; break;
@@ -408,8 +441,10 @@ export function parseSequence(input, opts = {}) {
       case 0xEE: if (!oot) throw fail("channel", cmd, at); u8(s); stub("channel bendfine EE"); break;
       case 0xDA: C.envelope = envAt(u16(s)); break;
       case 0xDB: C.transposition = s8(s); break;
-      case 0xE8: u8(s); u8(s); u8(s); stub("channel " + hex(cmd)); break;
-      case 0xE7: u16(s); stub("channel ldparams E7"); break;
+      // oot ASEQ_OP_CHAN_PARAMS / LDPARAMS: muteBehavior, noteAllocPolicy, priority, then transposition, pan,
+      // pan weight, reverb send, reverb index — inline (E8, 8 bytes) or from the sequence data at a u16 (E7)
+      case 0xE8: if (oot) { u8(s); u8(s); u8(s); chanParams(C, [u8(s), u8(s), u8(s), u8(s), u8(s)]); break; } u8(s); u8(s); u8(s); stub("channel " + hex(cmd)); break;
+      case 0xE7: if (oot) { const a = u16(s); chanParams(C, [3, 4, 5, 6, 7].map(k => byteAt(a + k))); break; } u16(s); stub("channel ldparams E7"); break;
       case 0xE4: if (C.value !== -1) { const a = dynAddr(C, C.value); push(s, s.pc); s.pc = a; } break;
       case 0xEB: C.bank = u8(s); setInstr(C, u8(s)); break;
       case 0xEC: C.vib = {rateStart: 0, rateTarget: 0, rateDelay: 0, extStart: 0, extTarget: 0, extDelay: 0, delay: 0}; C.freqScale = 1; noteVib(C); break; // chan_reset: vibrato off, bend cleared
@@ -419,6 +454,12 @@ export function parseSequence(input, opts = {}) {
         // src/audio/lib/seqplayer.c). They disagree at BD (OoT randptr s16,s16;
         // MM s16) and BE (OoT none; MM u8); OoT has no A0-AF at all.
         if (!oot || cmd < 0xA0 || cmd > 0xBE) throw fail("channel", cmd, at);
+        // the note filter: B0 points the channel at 8 s16 taps in the sequence data, B3 rewrites them
+        // there (so a later B0 of the same address sees the rewrite), B1 drops it; BB sets the comb filter
+        if (cmd === 0xB0) { const a = u16(s); C.filter = filterAt(a); break; }
+        if (cmd === 0xB1) { C.filter = null; break; }
+        if (cmd === 0xB3) { const v = u8(s); if (C.filter) C.filter.splice(0, 8, ...ootFilterTaps((v >> 4) & 0xF, v & 0xF)); break; }
+        if (cmd === 0xBB) { const size = u8(s), gain = s16(s); C.comb = size && gain ? {size, gain} : null; break; }
         const sizes = mm
           ? {0xA0: [2], 0xA1: [], 0xA2: [2], 0xA3: [], 0xA4: [1], 0xA5: [], 0xA6: [1, 2], 0xA7: [1], 0xA8: [2, 2],
              0xA9: [], 0xAA: [], 0xAB: [], 0xAC: [], 0xAD: [], 0xAE: [], 0xAF: [],
@@ -461,7 +502,8 @@ export function parseSequence(input, opts = {}) {
     }
     const lo = cmd & 0xF, l = cmd & 7;
     switch (cmd & 0xF8) {
-      case 0x00: case 0x08: C.delay = lo; return;                                  // cdelay (a break in the game; the delay check re-enters next tick)
+      // cdelay: `channel->delay = lowBits; goto exit_loop` (oot seqplayer.c); mm keeps running on a 0
+      case 0x00: case 0x08: C.delay = lo; return !(mm && lo === 0);
       case 0x10: case 0x18: throw fail("channel (ldsample)", cmd, at);
       case 0x20: case 0x28: enableChannel(lo, u16(s)); return;
       case 0x30: case 0x38: { const io = u8(s); const T = player.channels[lo]; if (T) T.io[io] = C.value; return; }

@@ -2,7 +2,7 @@
 // (the app's capture, its chip render, the worker's) used to carry their
 // own copies of the locate/id/bytes/presence steps; one function now.
 import { rdramOf } from "./usf.mjs";
-import { gameOfSet, locateEAD, miniSequenceId, findCachedSequences, findSynthesisReverb } from "./ead-usf.mjs";
+import { gameOfSet, locateEAD, miniSequenceId, findCachedSequences, findSynthesisReverb, findOotReverbs } from "./ead-usf.mjs";
 import { parseSequence } from "./seq-libultra.mjs";
 import { findAudioFiles, readBank } from "./bank.mjs";
 import { rareSequenceOfSet } from "./rare.mjs";
@@ -55,6 +55,9 @@ export function sequenceOfSet(set, {maxSeconds = 600} = {}) {
   // no EAD tables: Rare's engine (GoldenEye) keeps an SDK song table in RAM instead — rare.mjs
   if (!loc.gen) return rareSequenceOfSet(set, {game, maxSeconds});
   const raw = miniSequenceId(set, game ? game.seqId : undefined);
+  // a sequence id is a byte (bit 7 the variation); MM's ocarina minis hold a pointer in that word
+  // (0x801F9D14: the ocarina/sound-effect path, not an Audioseq sequence) — masking it would play sequence 0x14
+  if (raw != null && raw > 0xFF) throw new Error("this song plays no sequence: the game's word is 0x" + raw.toString(16) + " (the ocarina / sound-effect path, not a music sequence)");
   // bit 7 of a play_sequence id is SEQ_VARIATION: the same script, steered (SM64's title
   // theme plays its intro only with it); the table is indexed by the low 7 bits
   const id = raw == null ? null : raw & 0x7F, variation = raw == null ? 0 : raw & 0x80;
@@ -73,8 +76,12 @@ export function sequenceOfSet(set, {maxSeconds = 600} = {}) {
   for (let i = 0; i < seq.size; i++) present[i] = img.coverage(at + i, 1) ? 1 : 0;
   const res = parseSequence(seqBytes, {abi: game ? game.abi : loc.abi, present, io: null, variation, maxSeconds, stopAtLoop: true});
   res.sequenceId = id; res.variation = variation;
-  // the reverb the engine was running (from the rip's RAM; null = not in this rip, the render says so)
-  res.reverb = findSynthesisReverb(ram);
+  // which engine generation plays it: the renderer reads banks (sm64) or sound fonts (oot) by it
+  res.gen = loc.gen;
+  // the reverb the engine was running (from the rip's RAM; null / [] = not in this rip, the render says so):
+  // sm64 has one SynthesisReverb, the oot generation an array a channel picks from (E5 reverb index)
+  if (loc.gen === "oot") res.reverbs = findOotReverbs(ram);
+  else res.reverb = findSynthesisReverb(ram);
   // the game's per-area ducking for this mini: those channels never sound here, so they leave the capture
   const ducked = loc.gen === "sm64" ? duckedChannels(set, loc, seq, res) : {channels: [], marked: []};
   res.ducked = ducked.channels;

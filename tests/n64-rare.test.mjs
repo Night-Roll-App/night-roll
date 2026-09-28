@@ -9,7 +9,8 @@ import assert from "node:assert/strict";
 import zlib from "node:zlib";
 import { inflateRaw, decompress1172, is1172, parseCSeq, cseqNotes, unrollTracks, findMusicTable, miniOverrideWords, miniRareTrack,
          findRareBankFile, readRareBank, isKitInstrument, envelopeGain, renderRare, rareSequenceOfSet, ENV_FLOOR, panGains,
-         findFxParams, SdkFx, SMALLROOM_FX, attachGains } from "../tools/n64/rare.mjs";
+         findFxParams, SdkFx, SMALLROOM_FX, attachGains, parse1172, findRamSequences, miniRamSequence, findSeqFileInRam,
+         miniOverrideRegs, findRareBanks } from "../tools/n64/rare.mjs";
 import { SparseImage, PJ64_RDRAM, rdramOf } from "../tools/n64/usf.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
 import { renderN64 } from "../tools/n64/render.mjs";
@@ -436,4 +437,78 @@ test("reverb + held volume in the render: cc91 sends the voice into the effect (
   const seqRes = cseqNotes(parseCSeq(cseq([t0])));
   assert.deepEqual(seqRes.notes[0].gain, [{t: 0, l: 1}, {t: 48, l: 64 / 127}]);
   assert.match(seqRes.warnings.join(" "), /1 notes change volume while held/);
+});
+
+// ---- other Rare games: the same SDK formats, kept differently -----------------
+test("1172, two flavours: GoldenEye's bare stream, Banjo-Kazooie's u32 unpacked size before it", () => {
+  const seq = cseq([[...tempo(500000), ...note(0, 0, 60, 100, 48), ...END]]);
+  const stream = zlib.deflateRawSync(seq);
+  const sized = parse1172(cat([0x11, 0x72], be32(seq.length), stream)), bare = parse1172(cat([0x11, 0x72], stream));
+  assert.equal(sized.flavour, "sized"); assert.deepEqual([...sized.data], [...seq]);
+  assert.equal(bare.flavour, "bare"); assert.deepEqual([...bare.data], [...seq]);
+  assert.equal(parse1172(cat([0x11, 0x72], stream), seq.length).flavour, "bare", "a size from the table means the bare form");
+});
+
+test("ALCSeq: a loop end's operands are raw bytes (cseq.c reads them off curLoc) — an FE in its offset is not a back-reference", () => {
+  const body = [];
+  for (let i = 0; i < 99; i++) body.push(...note(0, 0, 60, 100, 1));
+  body.push(...note(0, 0, 62, 100, 200)); // 501 bytes: the loop end reaches back 0x1FE
+  const t0 = [...tempo(500000), 0, ...LOOPSTART, ...body, ...loopEnd(0, 0xFF, body.length), ...END];
+  const cs = parseCSeq(cseq([t0]));
+  const tr = cs.tracks[0];
+  assert.equal(tr.loopEnd.back, 0x1FE);
+  assert.equal(tr.end.how, "loop");
+  assert.equal(cseqNotes(cs).notes.length, 100);
+});
+
+test("a song unpacked in RAM: found by its division and first track with the header absent or stale; tracks walked back to back; the mini's own chunks pick among several", () => {
+  const P = n => { const a = [...n]; while (a.length % 4) a.push(0); return Uint8Array.from(a); };
+  const t0 = [...tempo(500000), ...note(0, 0, 60, 100, 48), ...END], t1 = [0, 0xC1, 3, ...note(0, 1, 64, 90, 96), ...END];
+  const songA = cseq([t0, t1]), songB = cseq([[...tempo(400000), ...note(0, 2, 67, 80, 24), ...END]]);
+  // A at 0x10000 with no header word in the rip (division onward only); B at 0x20000 whole, its offset table stale (points at 0x100)
+  const staleB = cat(be32(0x44), be32(0x100), songB.subarray(8));
+  const st = state({bytes: {[0x10040]: P(songA.subarray(0x40)), [0x20000]: P(staleB)}});
+  const {ram} = rdramOf(st);
+  const songs = findRamSequences(ram);
+  assert.deepEqual(songs.map(s => [s.addr, s.cs.division, s.cs.tracks.filter(t => t).length]), [[0x10000, 96, 2], [0x20000, 96, 1]]);
+  assert.deepEqual(songs[0].cs.offsets.slice(0, 3), [0x44, 0x44 + t0.length, 0], "walked, not read from the header");
+  assert.equal(songs[1].cs.tracks[0].events.filter(e => e.type === "note").length, 1, "the stale slot is ignored; the walk stops at the zeros after the song");
+  assert.equal(songs[0].present[0], 0, "the absent header is marked absent");
+  // the mini that wrote B's bytes plays B; one that wrote nothing gets the first, flagged
+  const chunk = (addr, n) => ({offset: PJ64_RDRAM + addr, bytes: new Uint8Array(n)});
+  assert.equal(miniRamSequence({state: st, top: {state: [chunk(0x20044, 12)]}}, ram).addr, 0x20000);
+  const none = miniRamSequence({state: st, top: {state: []}}, ram);
+  assert.deepEqual([none.addr, none.written, none.of], [0x10000, 0, 2]);
+  const out = rareSequenceOfSet({rom: new SparseImage(), state: st, top: {state: []}});
+  assert.equal(out.seq.ram, 0x10000);
+  assert.equal(out.res.notes.length, 2);
+  assert.match(out.res.warnings.join(" "), /writes none of the 2 songs/);
+  assert.match(out.res.warnings.join(" "), /no sound bank/);
+});
+
+test("the SDK sequence file in RAM ('S1', absolute ROM offsets) with the song passed in a0", () => {
+  const rom = new SparseImage(), entries = [], base = 0x100000;
+  const songs = [0, 1, 2, 3].map(k => cseq([[...tempo(500000), ...note(0, 0, 60 + k, 100, 48), ...END]]));
+  let at = base;
+  for (const sg of songs) { rom.write(at, sg); entries.push(...be32(at), ...be32(sg.length)); at += sg.length + 4; }
+  const header = [0x53, 0x31, ...be16(songs.length)];
+  const st = state({bytes: {0x5000: Uint8Array.from([...header, ...entries, 0, 0, 0, 0])}});
+  const {ram} = rdramOf(st);
+  const t = findSeqFileInRam(ram, rom);
+  assert.deepEqual([t.kind, t.at, t.count, t.entries[2].rom, t.entries[2].size], ["S1", 0x5000, 4, base + songs[0].length + songs[1].length + 8, songs[2].length]);
+  const set = {rom, state: st, top: {state: [{offset: 0x70, bytes: Uint8Array.from(le32(2))}]}};
+  assert.deepEqual(miniOverrideRegs(set), [{reg: 4, value: 2}]);
+  const out = rareSequenceOfSet(set);
+  assert.equal(out.id, 2);
+  assert.deepEqual(out.res.notes.map(n => n.midi), [62]);
+  // a mini that sets nothing: the manifest names the register, read from the lib's own state
+  st.write(0x70, Uint8Array.from(le32(3)));
+  assert.equal(rareSequenceOfSet({rom, state: st, top: {state: []}}, {game: {seqId: {kind: "reg", reg: 4}}}).id, 3);
+});
+
+test("every ALBank in RAM: the 'B1' file's first, then any of the bank's own shape (the rip may not keep the file header)", () => {
+  const P = a => (0x80000000 | a) >>> 0;
+  const st = bankState({words: {0x2000: (1 << 16), 0x2004: 32000, 0x2008: 0, 0x200C: P(0x3100)}});
+  const {ram} = rdramOf(st);
+  assert.deepEqual(findRareBanks(ram).map(b => [b.at, b.how, b.instCount, b.sampleRate]), [[0x3010, "B1", 2, 22050], [0x2000, "shape", 1, 32000]]);
 });

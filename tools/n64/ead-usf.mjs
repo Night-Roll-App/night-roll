@@ -103,8 +103,12 @@ export function readAudioTable(ram, t) {
   const entries = [];
   for (let i = 0; i < t.count; i++) {
     const e = t.entriesAt + i * 16;
-    if (ram.coverage(e, 12) < 1) { entries.push(null); continue; } // never read by the game during the rip
-    entries.push({rom: ram.u32(e), size: ram.u32(e + 4), medium: ram.u8(e + 8), cachePolicy: ram.u8(e + 9)});
+    // a row with no byte in the rip was never read by the game; one with some bytes was, and the
+    // missing ones are zeros (the rips keep only the non-zero bytes of what was read: OoT's and MM's
+    // sample bank 1 row carries its medium/cache bytes but no address or size — {0, 0}, an alias of bank 0)
+    if (ram.coverage(e, 12) === 0) { entries.push(null); continue; }
+    const b = ram.read(e, 12), w = o => ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
+    entries.push({rom: w(0), size: w(4), medium: b[8], cachePolicy: b[9]});
   }
   // size 0 = alias of entry `rom` (oot AudioLoad_GetRealTableIndex)
   return entries.map(e => e && e.size === 0 && e.rom < t.count ? {...entries[e.rom], aliasOf: e.rom} : e);
@@ -142,11 +146,19 @@ export function locateEAD(set) {
     const seqTable = tables.find(t => t !== font && t.count === n / 2);
     if (!seqTable) continue;
     const entries = readAudioTable(ram, seqTable);
+    // `banks` = the fonts in the order a channel's font command counts them: C6 n picks
+    // sequenceFontTable[off + count − n] (seqplayer.c ASEQ_OP_CHAN_FONT), i.e. the list read
+    // last-first, and a channel starts on the last-loaded font (defaultFont) = index 0 — the
+    // same convention as sm64's bank sets, so the renderer's n.bank lookup serves both
+    const row = id => { const fonts = ootFontsOf(ram, font.end, id); return {fonts, banks: fonts ? [...fonts].reverse() : null}; };
     const sequences = entries.map((e, id) => e
-      ? {id, rom: e.rom, size: e.size, coverage: rom.coverage(e.rom, e.size), aliasOf: e.aliasOf, cachePolicy: e.cachePolicy, fonts: ootFontsOf(ram, font.end, id)}
-      : {id, rom: null, size: 0, coverage: 0, fonts: ootFontsOf(ram, font.end, id)});
-    return {gen: "oot", abi: "oot", sequences, seqTable, fontTable: font, seqFontTable: font.end,
-            audioseq: seqTable.romAddr, audiobank: font.romAddr,
+      ? {id, rom: e.rom, size: e.size, coverage: rom.coverage(e.rom, e.size), aliasOf: e.aliasOf, cachePolicy: e.cachePolicy, ...row(id)}
+      : {id, rom: null, size: 0, coverage: 0, ...row(id)});
+    // gSampleBankTable follows gSequenceTable directly in `code` (OoT 1.0, 1.2 and MM US all
+    // lay the four out font, sequence-font, sequence, sample bank)
+    const sampleBankTable = tables.find(t => t.at === seqTable.end) || null;
+    return {gen: "oot", abi: "oot", sequences, seqTable, fontTable: font, seqFontTable: font.end, sampleBankTable,
+            audioseq: seqTable.romAddr, audiobank: font.romAddr, audiotable: sampleBankTable ? sampleBankTable.romAddr : null,
             otherTables: tables.filter(t => t !== font && t !== seqTable).map(t => ({at: t.at, count: t.count, romAddr: t.romAddr}))};
   }
   return {gen: null, abi: null, sequences: [], tables, alseq: sm.files};
@@ -206,6 +218,10 @@ export const USF_GAMES = {
   "nus-nzse-usa.usflib": {code: "NZSE", title: "The Legend of Zelda: Majora's Mask", abi: "mm", seqId: {kind: "ram", addr: 0x1F9B24}},
   // Rare's engine (rare.mjs): the song index is the RAM word each mini overrides (Bunker 1 is the lib's own value, so the address is named)
   "nus-ngee-usa.usflib": {code: "NGEE", title: "GoldenEye 007", abi: "rare", seqId: {kind: "ram", addr: 0x603C}},
+  // the minis patch `li a1, <song>` at 0x24FFF0 (found generically); the one that patches nothing plays the lib's own
+  "nus-nbke-usa.usflib": {code: "NBKE", title: "Banjo-Kazooie", abi: "rare", seqId: {kind: "ram", addr: 0x24FFF0}},
+  // the minis set a0 to the song (found generically); the two that set nothing play the lib's own a0
+  "nus-ndye-usa.usflib": {code: "NDYE", title: "Diddy Kong Racing", abi: "rare", seqId: {kind: "reg", reg: 4}},
 };
 export function gameOfSet(set) {
   const lib = (set.order || []).find(n => /\.usflib$/i.test(n));
@@ -237,4 +253,76 @@ export function findSynthesisReverb(ram) {
     }
   }
   return null;
+}
+
+// oot: gAudioCtx.soundFontList — one SoundFont {u8 numInstruments, numDrums,
+// sampleBankId1, sampleBankId2; u16 numSfx; Instrument** instruments; Drum**
+// drums; SoundEffect* soundEffects} (0x14 bytes) per font, filled by
+// AudioLoad_InitSoundFontMeta from the font table's three shorts (bank ids,
+// counts, sfx count). Found as the 0x14-stride array whose records agree with
+// the table on those four bytes wherever both are in the rip. A record's
+// pointers are live only for a font the game had loaded (a font loaded into
+// the same cache slot earlier leaves its stale pointer behind), so callers
+// use it only for fonts the ROM pages do not carry.
+export function findSoundFontList(ram, fontTable) {
+  const sig = i => { const e = fontTable.entriesAt + i * 16; return ram.coverage(e + 10, 4) < 1 ? null : [ram.u8(e + 12), ram.u8(e + 13), ram.u8(e + 10), ram.u8(e + 11)]; };
+  const sigs = []; for (let i = 0; i < fontTable.count; i++) sigs.push(sig(i));
+  for (const r of ram.runs()) {
+    for (let p = r.offset & ~3; p + 4 <= r.offset + r.length; p += 4) {
+      let hit = 0, miss = false;
+      for (let i = 0; i < fontTable.count && !miss; i++) {
+        const q = p + i * 0x14, s = sigs[i];
+        if (!s || ram.coverage(q, 4) < 1) continue;
+        if (ram.u8(q) === s[0] && ram.u8(q + 1) === s[1] && ram.u8(q + 2) === s[2] && ram.u8(q + 3) === s[3]) hit++; else miss = true;
+      }
+      if (!miss && hit >= 3) return p;
+    }
+  }
+  return null;
+}
+
+// oot generation: gAudioCtx.synthesisReverbs[] — SynthesisReverb (oot
+// include/audio.h, 0x2C8 bytes; mm include/audio/reverb.h, 0x2D0, same
+// prefix): {u8 resampleFlags, useReverb, framesToIgnore, curFrame, u8
+// downsampleRate, s8 mixReverbIndex, u16 windowSize (in downsampled
+// samples), s16 mixReverbStrength, s16 volume, u16 decayRatio, u16
+// downsamplePitch, s16 leakRtl, s16 leakLtr, u16 subDelay, s16 subVolume,
+// ... s32 bufSizePerChan @0x24, s16* leftRingBuf @0x28, rightRingBuf @0x2C,
+// ... s16* filterLeft @0x270, filterRight @0x274} as AudioHeap_Init fills it
+// from the session's ReverbSettings (useReverb = 8; both ring buffers
+// windowSize*2 bytes, allocated back to back). Found by that shape; fields
+// the rip does not carry read as 0 (the ripper keeps what the game read,
+// and a zero it never needed is a zero). Returns [{index, at, downsampleRate,
+// window, volume, decayRatio, leakRtl, leakLtr, subDelay, mixIndex, filterLeft,
+// filterRight}] in index order, the filters as their 8 Q15 taps or null.
+export function findOotReverbs(ram) {
+  const found = [];
+  const u16 = o => ram.coverage(o, 2) === 1 ? ram.u16(o) : 0, s16 = o => (u16(o) << 16) >> 16;
+  const u32 = o => ram.coverage(o, 4) === 1 ? ram.u32(o) : 0;
+  // a filter pointer is KSEG0 or KSEG1 (MM allocates its filters uncached)
+  const taps = ptr => { if ((ptr >>> 29) !== 4 && (ptr >>> 29) !== 5) return null; const a = ptr & 0x1FFFFFFF; if (ram.coverage(a, 16) < 1) return null; const t = []; for (let i = 0; i < 8; i++) t.push((ram.u16(a + i * 2) << 16) >> 16); return t; };
+  for (const r of ram.runs()) {
+    // the struct's unread fields are gaps, so only its first 8 bytes need share a run
+    for (let p = r.offset & ~3; p + 8 <= r.offset + r.length; p += 4) {
+      if (ram.coverage(p, 8) < 1 || ram.coverage(p + 0x28, 8) < 1) continue;
+      if (ram.u8(p + 1) !== 8 || ram.u8(p) > 1) continue;
+      const ds = ram.u8(p + 4), window = ram.u16(p + 6);
+      if (![1, 2, 4, 8].includes(ds) || window < 0x40 || window > 0x8000) continue;
+      const L = ram.u32(p + 0x28), R = ram.u32(p + 0x2C);
+      if ((L >>> 24) !== 0x80 || (R >>> 24) !== 0x80 || R - L < window * 2 || R - L > window * 2 + 0x40) continue;
+      found.push({at: p, downsampleRate: ds, window, mixIndex: (ram.u8(p + 5) << 24) >> 24, mixStrength: s16(p + 8),
+                  volume: s16(p + 0xA), decayRatio: u16(p + 0xC), leakRtl: s16(p + 0x10), leakLtr: s16(p + 0x12),
+                  subDelay: u16(p + 0x14), subVolume: s16(p + 0x16),
+                  filterLeft: taps(u32(p + 0x270)), filterRight: taps(u32(p + 0x274))});
+    }
+  }
+  // the array: records exactly one struct apart (0x2C8 oot, 0x2D0 mm); its first is index 0
+  for (let k = 0; k + 1 < found.length; k++) {
+    const stride = found[k + 1].at - found[k].at;
+    if (stride !== 0x2C8 && stride !== 0x2D0) continue;
+    const chain = [found[k]];
+    for (let j = k + 1; j < found.length && found[j].at - chain[chain.length - 1].at === stride; j++) chain.push(found[j]);
+    return chain.map((f, i) => ({...f, index: i}));
+  }
+  return found.length === 1 ? [{...found[0], index: 0}] : [];
 }

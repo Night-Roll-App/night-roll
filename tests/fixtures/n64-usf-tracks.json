@@ -23,12 +23,12 @@
       "gameDriven": {"19a Hyrule Field Main Theme.miniusf": "seq 2 NA_BGM_FIELD_LOGIC only ldseq's sequences 3-0x17 by game io; those are the LOZ03-LOZ17 tracks"},
       "tags": {"artist": "Koji Kondo", "year": "1998-11-21", "copyright": "Nintendo", "usfby": "hcs, ugetab", "genre": "Action, Adventure"},
       "tracks": [
-        {"file": "01 Title Theme.miniusf", "title": "Title Theme", "length": "2:25", "fade": "10", "seq": 30, "decomp": "NA_BGM_TITLE", "notes": 138, "bpm": 100, "loopTick": 624, "endTick": 4464},
-        {"file": "06 Kokiri Forest.miniusf", "title": "Kokiri Forest", "seq": 60, "decomp": "NA_BGM_KOKIRI", "source": "RDRAM persistent cache @0x801C0BD0 (never read from ROM during the rip)", "notes": 589, "bpm": 145, "loopTick": 960, "endTick": 5952},
-        {"file": "35 Lost Woods.miniusf", "title": "Lost Woods", "seq": 62, "decomp": "NA_BGM_SARIA_THEME", "notes": 556, "bpm": 140, "loopTick": 192, "endTick": 3648},
-        {"file": "LOZ03.miniusf", "title": "Hyrule Field", "seq": 3, "decomp": "NA_BGM_FIELD_INIT", "notes": 382, "bpm": 150, "loopTick": null, "endTick": 1592},
-        {"file": "30 Kakariko Village.miniusf", "title": "Kakariko Village", "seq": 39, "decomp": "NA_BGM_KAKARIKO_KID", "notes": 199, "bpm": 105, "loopTick": 288, "endTick": 7632},
-        {"file": "68 Gerudo Valley.miniusf", "title": "Gerudo Valley", "seq": 95, "decomp": "NA_BGM_GERUDO_VALLEY", "notes": 6285, "bpm": 120, "loopTick": 1344, "endTick": 8256}
+        {"file": "01 Title Theme.miniusf", "title": "Title Theme", "length": "2:25", "fade": "10", "seq": 30, "decomp": "NA_BGM_TITLE", "notes": 221, "bpm": 100, "loopTick": 624, "endTick": 4464},
+        {"file": "06 Kokiri Forest.miniusf", "title": "Kokiri Forest", "seq": 60, "decomp": "NA_BGM_KOKIRI", "source": "RDRAM persistent cache @0x801C0BD0 (never read from ROM during the rip)", "notes": 597, "bpm": 145, "loopTick": 960, "endTick": 5952},
+        {"file": "35 Lost Woods.miniusf", "title": "Lost Woods", "seq": 62, "decomp": "NA_BGM_SARIA_THEME", "notes": 564, "bpm": 140, "loopTick": 192, "endTick": 3648},
+        {"file": "LOZ03.miniusf", "title": "Hyrule Field", "seq": 3, "decomp": "NA_BGM_FIELD_INIT", "notes": 407, "bpm": 150, "loopTick": null, "endTick": 1592},
+        {"file": "30 Kakariko Village.miniusf", "title": "Kakariko Village", "seq": 39, "decomp": "NA_BGM_KAKARIKO_KID", "notes": 488, "bpm": 105, "loopTick": 288, "endTick": 7632},
+        {"file": "68 Gerudo Valley.miniusf", "title": "Gerudo Valley", "seq": 95, "decomp": "NA_BGM_GERUDO_VALLEY", "notes": 6294, "bpm": 120, "loopTick": 1344, "endTick": 8256}
       ]
     },
     {
@@ -39,12 +39,12 @@
       "gameDriven": {"235 Ballad of the Wind Fish.miniusf": "seq 0x54 reads io port 4 for the band; unset (-1) plays the whole band", "903 New Wave Bossa Nova with Lulu.miniusf": "seq 0x68 is 16 bytes: stio 4=1; runseq 0x4D (= track 232)"},
       "tags": {"artist": "Koji Kondo, Toru Minegishi", "year": "2000-04-27", "copyright": "Nintendo", "usfby": "hcs", "genre": "Action, Adventure"},
       "tracks": [
-        {"file": "101 Title Demo.miniusf", "title": "Title Demo", "length": "2:18", "seq": 118, "decomp": "NA_BGM_TITLE_THEME", "notes": 696, "bpm": 94, "loopTick": null, "endTick": 9792},
-        {"file": "108 Clock Town - Day 1.miniusf", "title": "Clock Town - Day 1", "seq": 21, "decomp": "NA_BGM_CLOCK_TOWN_DAY_1", "notes": 651, "bpm": 110, "loopTick": 384, "endTick": 4992},
-        {"file": "105 Majora's Theme.miniusf", "title": "Majora's Theme", "seq": 4, "decomp": "NA_BGM_MAJORAS_THEME", "notes": 619, "bpm": 80, "loopTick": 0, "endTick": 4224},
-        {"file": "134 Termina Field.miniusf", "title": "Termina Field", "seq": 2, "decomp": "NA_BGM_TERMINA_FIELD", "notes": 1283, "bpm": 120, "loopTick": 13, "endTick": 7693},
-        {"file": "235 Ballad of the Wind Fish.miniusf", "title": "Ballad of the Wind Fish", "seq": 84, "decomp": "NA_BGM_BALLAD_OF_THE_WIND_FISH", "notes": 42, "bpm": 108, "loopTick": null, "endTick": 768},
-        {"file": "253 Staff Roll.miniusf", "title": "Staff Roll", "seq": 116, "decomp": "NA_BGM_END_CREDITS", "notes": 1612, "bpm": 50, "loopTick": null, "endTick": 9793}
+        {"file": "101 Title Demo.miniusf", "title": "Title Demo", "length": "2:18", "seq": 118, "decomp": "NA_BGM_TITLE_THEME", "notes": 891, "bpm": 94, "loopTick": null, "endTick": 9792},
+        {"file": "108 Clock Town - Day 1.miniusf", "title": "Clock Town - Day 1", "seq": 21, "decomp": "NA_BGM_CLOCK_TOWN_DAY_1", "notes": 755, "bpm": 110, "loopTick": 384, "endTick": 4992},
+        {"file": "105 Majora's Theme.miniusf", "title": "Majora's Theme", "seq": 4, "decomp": "NA_BGM_MAJORAS_THEME", "notes": 677, "bpm": 80, "loopTick": 0, "endTick": 4224},
+        {"file": "134 Termina Field.miniusf", "title": "Termina Field", "seq": 2, "decomp": "NA_BGM_TERMINA_FIELD", "notes": 1394, "bpm": 120, "loopTick": 13, "endTick": 7693},
+        {"file": "235 Ballad of the Wind Fish.miniusf", "title": "Ballad of the Wind Fish", "seq": 84, "decomp": "NA_BGM_BALLAD_OF_THE_WIND_FISH", "notes": 50, "bpm": 108, "loopTick": null, "endTick": 768},
+        {"file": "253 Staff Roll.miniusf", "title": "Staff Roll", "seq": 116, "decomp": "NA_BGM_END_CREDITS", "notes": 1652, "bpm": 50, "loopTick": null, "endTick": 9793}
       ]
     }
   ]

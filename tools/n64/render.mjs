@@ -38,9 +38,9 @@
 // note-on).
 import { tickSeconds } from "./seq-libultra.mjs";
 import { channelGroups } from "./notes.mjs";
-import { findAudioFiles, readBank, DEFAULT_ENVELOPE, DEFAULT_RELEASE_RATE } from "./bank.mjs";
+import { findAudioFiles, readBank, DEFAULT_ENVELOPE, DEFAULT_RELEASE_RATE, readFont, ootMemory, OOT_DEFAULT_ENVELOPE, OOT_DEFAULT_DECAY_INDEX } from "./bank.mjs";
 import { rdramOf } from "./usf.mjs";
-import { findSynthesisReverb } from "./ead-usf.mjs";
+import { findSynthesisReverb, findOotReverbs, locateEAD } from "./ead-usf.mjs";
 import { renderRare } from "./rare.mjs";
 
 export const N64_RATE = 32000;          // freqScale 1.0 plays a sample at the output rate (32006 Hz on the US console)
@@ -148,7 +148,10 @@ export class Vibrato {
     else if (T.rateTarget !== this.rate) { if ((this.rateTimer = T.rateDelay) === 0) this.rate = T.rateTarget; }
     if (this.ext === 0) return 1;
     this.time = (this.time + this.rate) >>> 0;
-    let index = (this.time >> 10) & 0x3F, pc;
+    return this.scale((this.time >> 10) & 0x3F);
+  }
+  scale(index) {
+    let pc;
     switch (index & 0x30) {
       case 0x10: index = 31 - index; // fallthrough
       case 0x00: pc = index * 8; break;
@@ -170,6 +173,7 @@ export const noteFrequency = semitone => Math.pow(2, (semitone - 39) / 12) * (se
 // -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}, silent: [names], warnings: [...]}
 export async function renderN64(result, opts = {}) {
   if (result && result.driver === "rare") return renderRare(result, opts); // GoldenEye: the SDK synthesizer's rules, same output shape
+  if (result && result.gen === "oot") return renderOotGen(result, opts);  // Ocarina of Time / Majora's Mask: sound fonts, float ADSR
   const rom = opts.rom || (opts.set && opts.set.rom);
   if (!rom) throw new Error("renderN64 needs the set's ROM image");
   const bankIds = opts.banks && opts.banks.length ? opts.banks : null;
@@ -278,6 +282,280 @@ export async function renderN64(result, opts = {}) {
         for (let i = 0, p = 0; i < N; i++) { const r = ring[p]; buf[i] += r; ring[p] = r * G + wet[i]; if (++p === W) p = 0; }
       }
       wetL = wetR = null;
+    }
+    if (bufL) out[g.name] = {l: bufL, r: bufR}; else out.silent.push(g.name);
+  }
+  if (opts.onProgress) opts.onProgress(1);
+  return out;
+}
+
+// ---- the oot generation (Ocarina of Time, Majora's Mask) -------------------
+//
+// The same engine family with its own rules, each from the oot decomp (mm's
+// agrees wherever quoted): heap.c AudioHeap_Init / playback.c / effects.c /
+// synthesis.c. What differs from sm64:
+// - updates: ticksPerUpdate = (ALIGN16(32000/60) + 16)/0xD0 + 1 = 3 per 60 Hz
+//   frame (180/s, not 240); Audio_ProcessNotes runs once per update.
+// - ADSR in floats (Audio_AdsrUpdate): an envelope point's target is
+//   (arg/32767)², reached linearly over delay × ticksPerUpdate/4 updates (the
+//   sm64-rate delays kept in seconds); the gate-end decay subtracts
+//   adsrDecayTable[decayIndex] = 1/(ticksPerUpdate × scaleInv) per update
+//   (AudioHeap_InitAdsrDecayTable: index 1..15 → 60(23−i), 16..127 → 4(143−i),
+//   128..250 → 251−i, 251..255 → 0.75, 0.66, 0.5, 0.33, 0.25; 0 never decays)
+//   down to the channel's sustain × level/256 (D2), held 128 updates, then on.
+// - which envelope: the layer's (a drum's own) unless its decay index is 0,
+//   then the channel's (Audio_NoteInit, Audio_SeqLayerDecayRelease).
+// - pitch: gPitchFrequencies[semitone] = 2^((s − 39)/12) for s < 0x75 and
+//   2^((s − 167)/12) above (the table's last 11 entries wrap below A0).
+// - level: velocity²/127² × (volume × volumeScale × fade)² × ADSR, clamped to
+//   1 (Audio_SequenceChannelProcessSound, Audio_InitSampleState).
+// - pan: integer — notePan = (newPan × weight + layerPan × (128 − weight)) >> 7,
+//   gDefaultPanVolume[pan & 127] / [127 − pan] (the same cos table as sm64).
+// - vibrato: a sine (gWaveSamples[2]) and scale = 1/((d − 1/d)·(sin + 32768)/65536 + 1/d), d = 1 + depth/4096.
+// - reverb: one of the engine's SynthesisReverbs (the channel's E5 index), read
+//   from RAM (ead-usf findOotReverbs): each update the ring's oldest block is
+//   mixed into the output × volume, scaled by decayRatio, leaked between
+//   sides (leakRtl, leakLtr), the notes' sends (reverbVol/128) added, the
+//   8-tap Q15 low-pass run when the reverb has one, and the block saved back —
+//   out = dry + V·ring[t − W], ring[t] = filter(G·ring[t − W] + leak + wet[t]),
+//   W = windowSize × downsampleRate. Not modelled: the downsampling's own
+//   filtering, sub-delays and cross-reverb mixing (warned when a rip uses them).
+export const OOT_UPDATES_PER_SECOND = 180;
+const OOT_TICKS_PER_UPDATE = 3;
+export const ootPitch = s => Math.pow(2, ((s < 0x75 ? s : s - 128) - 39) / 12);
+export function ootDecayRate(i, tpu = OOT_TICKS_PER_UPDATE) {
+  if (!i) return 0;
+  const scaleInv = i >= 251 ? [0.75, 0.66, 0.5, 0.33, 0.25][i - 251] : i >= 128 ? 251 - i : i >= 16 ? 4 * (143 - i) : 60 * (23 - i);
+  return 1 / (tpu * scaleInv);
+}
+const O_DISABLED = 0, O_INITIAL = 1, O_START_LOOP = 2, O_LOOP = 3, O_FADE = 4, O_HANG = 5, O_DECAY = 6, O_RELEASE = 7, O_SUSTAIN = 8;
+export class OotAdsr {
+  constructor(envelope, tpu = OOT_TICKS_PER_UPDATE) { this.env = envelope; this.scaled = tpu / 4; this.state = O_INITIAL; this.current = 0; this.velocity = 0; this.delay = 0; this.index = 0; this.fadeOutVel = 0; this.sustain = 0; this.decayFlag = false; }
+  // Audio_SeqLayerDecayRelease(ADSR_STATE_DECAY): the rate and sustain now, the state at the end of the next update
+  decay(fadeOutVel, chanSustain = 0) { this.fadeOutVel = fadeOutVel; this.sustain = chanSustain * this.current / 256; this.decayFlag = true; }
+  update() {
+    const st = this.state;
+    switch (st) {
+      case O_DISABLED: return 0;
+      case O_INITIAL: case O_START_LOOP:
+        this.index = 0; this.state = O_LOOP; // fallthrough
+      case O_LOOP:
+        for (;;) {
+          const e = this.env[this.index] || [0, 0];
+          this.delay = e[0];
+          if (this.delay === 0) { this.state = O_DISABLED; break; }
+          if (this.delay === -1) { this.state = O_HANG; break; }
+          if (this.delay === -2) { this.index = e[1]; continue; }
+          if (this.delay === -3) { this.state = O_INITIAL; break; }
+          if (this.delay < 0) { this.state = O_DISABLED; break; }
+          this.delay = Math.trunc(this.delay * this.scaled) || 1;  // s16 *= f32, at least one update
+          const t = e[1] / 32767;
+          this.velocity = (t * t - this.current) / this.delay;
+          this.state = O_FADE; this.index++;
+          break;
+        }
+        if (this.state !== O_FADE) break;
+        // fallthrough
+      case O_FADE:
+        this.current += this.velocity;
+        if (--this.delay <= 0) this.state = O_LOOP;
+        break;
+      case O_HANG: break;
+      case O_DECAY: case O_RELEASE:
+        this.current -= this.fadeOutVel;
+        if (this.sustain !== 0 && st === O_DECAY) {
+          if (this.current < this.sustain) { this.current = this.sustain; this.delay = 128; this.state = O_SUSTAIN; }
+          break;
+        }
+        if (this.current < 0.00001) { this.current = 0; this.state = O_DISABLED; }
+        break;
+      case O_SUSTAIN:
+        if (--this.delay === 0) this.state = O_RELEASE;
+        break;
+    }
+    if (this.decayFlag) { this.state = O_DECAY; this.decayFlag = false; }
+    return this.current < 0 ? 0 : this.current > 1 ? 1 : this.current;
+  }
+  get done() { return this.state === O_DISABLED; }
+  get decaying() { return this.decayFlag || this.state === O_DECAY || this.state === O_RELEASE || this.state === O_SUSTAIN; }
+}
+// Audio_GetVibratoFreqScale: the sm64 timers (depth ↔ extent), a sine curve and the reciprocal law
+// gSineWaveSample (data.c): a quarter wave of 17 points, mirrored and negated to 64
+const SINE_Q = [0, 3211, 6392, 9511, 12539, 15446, 18204, 20787, 23169, 25329, 27244, 28897, 30272, 31356, 32137, 32609, 32767];
+const SINE64 = Array.from({length: 64}, (_, i) => { const q = i & 31; return (q <= 16 ? SINE_Q[q] : SINE_Q[32 - q]) * (i < 32 ? 1 : -1); });
+export class OotVibrato extends Vibrato {
+  scale(index) {
+    const d = 1 + this.ext / 4096, inv = 1 / d;
+    return 1 / ((d - inv) * (SINE64[index] + 32768) / 65536 + inv);
+  }
+}
+// Audio_GetPortamentoFreqScale: cur += speed (8.8), v = min(cur >> 8, 127), 1 + extent·(2^(v/127) − 1);
+// plain speed = 0x20000 / (time × ticksPerUpdate); special modes take the capture's glide length
+export class OotPortamento {
+  constructor(p, ups = OOT_UPDATES_PER_SECOND) {
+    this.extent = Math.pow(2, (p.end - p.start) / 12) - 1; this.cur = 0;
+    const sp = !p.special && p.time ? 0x20000 / (p.time * OOT_TICKS_PER_UPDATE) : 127 * 256 / Math.max(1e-9, p.updates * ups / UPDATES_PER_SECOND);
+    this.speed = Math.max(1, Math.min(0x7FFF, Math.trunc(sp)));
+  }
+  update() { this.cur += this.speed; const v = Math.min((this.cur >> 8) & 0xFF, 127); return 1 + this.extent * (Math.pow(2, v / 127) - 1); }
+}
+export function ootPanGains(n, drum = null) {
+  const newPan = Math.round((n.pan != null ? n.pan : 0.5) * 128), weight = Math.round((n.panWeight != null ? n.panWeight : 1) * 128);
+  const lyPan = drum && !n.noDrumPan ? drum.pan : Math.round((n.lyPan != null ? n.lyPan : 0.5) * 128);
+  const pan = ((newPan * weight + lyPan * (128 - weight)) >> 7) & 0x7F;
+  return [panVolume(pan), panVolume(127 - pan)];
+}
+// the 8-tap Q15 FIR the RSP's aFilter runs on a reverb's wet signal
+function firState(taps) { return taps ? {taps: taps.map(t => t / 32768), hist: new Float32Array(8), p: 0} : null; }
+function fir(f, x) { f.hist[f.p] = x; let y = 0; for (let k = 0; k < 8; k++) y += f.taps[k] * f.hist[(f.p - k + 8) & 7]; f.p = (f.p + 1) & 7; return y; }
+
+export async function renderOotGen(result, opts = {}) {
+  const set = opts.set;
+  if (!set) throw new Error("renderN64 (oot generation) needs the USF set: its fonts are read from the ROM pages or RDRAM");
+  const loc = opts.loc && opts.loc.gen === "oot" ? opts.loc : locateEAD(set);
+  if (loc.gen !== "oot") throw new Error("this set has no oot-generation audio tables");
+  const fontIds = opts.banks && opts.banks.length ? opts.banks : null;
+  if (!fontIds) throw new Error("renderN64 needs the sequence's font ids");
+  const sampleRate = opts.sampleRate || N64_RATE;
+  const mem = ootMemory(set);
+  const fonts = new Map();
+  const out = {sampleRate, seconds: 0, silent: [], warnings: [], reverb: null, reverbs: []};
+  const warned = new Set();
+  const warn = w => { if (!warned.has(w)) { warned.add(w); out.warnings.push(w); } };
+  const fontOf = i => { const id = fontIds[i] != null ? fontIds[i] : fontIds[0]; if (!fonts.has(id)) { try { fonts.set(id, readFont(set, loc, id, {mem})); } catch (e) { warn(e.message); fonts.set(id, null); } } return fonts.get(id); };
+  const groups = channelGroups(result, opts.meter || {});
+  // the synthesis reverbs: opts.reverbs (null = dry), else the capture's, else the rip's RAM
+  let reverbs = opts.reverbs !== undefined ? opts.reverbs : opts.reverb === null || opts.reverb === false ? null : result.reverbs;
+  if (reverbs === undefined) { try { reverbs = findOotReverbs(mem.ram); } catch { reverbs = []; } }
+  if (reverbs && !reverbs.length && opts.reverb !== null && opts.reverb !== false) warn("reverb state not in this rip");
+  reverbs = reverbs || [];
+  for (const r of reverbs) {
+    if (r.subDelay) warn(`reverb ${r.index}: sub-delay ${r.subDelay} not modelled`);
+    if (r.mixIndex !== -1 && r.mixIndex != null) warn(`reverb ${r.index}: mixing from reverb ${r.mixIndex} not modelled`);
+  }
+  out.reverbs = reverbs.map(r => ({index: r.index, window: r.window * r.downsampleRate, decayRatio: r.decayRatio, volume: r.volume, leakRtl: r.leakRtl, leakLtr: r.leakLtr, filtered: !!(r.filterLeft || r.filterRight)}));
+  out.reverb = out.reverbs[0] || null;
+  const {tempos, notes} = result;
+  const endTick = Math.max(result.endTick || 0, ...notes.map(n => n.tick + n.dur));
+  const seconds = Math.min(opts.keepSeconds || Infinity, tickSeconds(tempos, endTick) + 2.5);
+  out.seconds = seconds;
+  const N = Math.ceil(seconds * sampleRate);
+  const updateEvery = sampleRate / OOT_UPDATES_PER_SECOND;
+  const CAP = 3.99996;                                                   // Audio_NoteSetResamplingRate
+  let done = 0, total = 0;
+  for (const g of groups) total += g.notes.length;
+  for (const g of groups) {
+    let bufL = null, bufR = null;
+    const wet = new Map();                                               // reverb index -> {l, r}
+    for (const n of g.notes) {
+      done++;
+      if (opts.onProgress && (done & 31) === 0) { opts.onProgress(done / total); await new Promise(r => setTimeout(r, 0)); }
+      const t0 = tickSeconds(tempos, n.tick);
+      if (t0 >= seconds) continue;
+      const font = fontOf(n.bank || 0);
+      if (!font) continue;
+      // AudioSeq_SeqLayerProcessScriptStep4: the tuned sample, its frequency, the layer's adsr
+      let sound = null, freq = 0, layerEnv = null, layerDecay = 0, drum = null;
+      if (n.drum) {
+        drum = font.drum(n.semitone);
+        if (!drum) { warn(`drum ${n.semitone} is not in font ${font.id}`); continue; }
+        sound = drum.sound; freq = sound ? sound.tuning : 0; layerEnv = drum.envelope; layerDecay = drum.decayIndex;
+      } else {
+        if (n.inst == null) { warn(`channel ${n.ch} plays before any instrument is set (silent, as the game skips it)`); continue; }
+        if (n.inst >= 0x80) { warn(`instrument ${n.inst} on channel ${n.ch} is a synth waveform, not rendered`); continue; }
+        if (n.inst === 0x7E) { warn(`channel ${n.ch} plays the font's sound effects, not rendered`); continue; }
+        const inst = font.instrument(n.inst);
+        if (!inst) { warn(`instrument ${n.inst} is not in font ${font.id}`); continue; }
+        sound = font.sound(inst, n.porta ? Math.max(n.porta.start, n.porta.end) : n.semitone);
+        freq = sound ? ootPitch(n.porta ? n.porta.start : n.semitone) * sound.tuning : 0;
+        if (n.lyAdsr) {
+          if (n.lyAdsr.inst != null) { const li = font.instrument(n.lyAdsr.inst); if (li) { layerEnv = li.envelope; layerDecay = li.decayIndex; } }
+          else { layerEnv = n.lyAdsr.envelope; layerDecay = n.lyAdsr.releaseRate; }
+        }
+      }
+      if (!sound || !sound.sample || !(freq > 0)) continue;
+      if (sound.sample.codec !== 0) { warn(`a sample in font ${font.id} is codec ${sound.sample.codec}, not VADPCM — not rendered`); continue; }
+      // a few absent bytes are zeros the rip left out; a sample mostly absent was never read by the ripper's game
+      if (sound.sample.dataPresent < 0.9) warn(`font ${font.id}: a sample's data is mostly not in the rip (silence where it is missing)`);
+      const chInst = n.chInst != null ? font.instrument(n.chInst) : null;
+      const chEnv = n.chEnv || (chInst ? chInst.envelope : OOT_DEFAULT_ENVELOPE);
+      const chDecay = n.chRel != null ? n.chRel : chInst ? chInst.decayIndex : OOT_DEFAULT_DECAY_INDEX;
+      const envelope = layerDecay === 0 || !layerEnv ? chEnv : layerEnv;
+      const fadeOut = ootDecayRate(layerDecay === 0 ? chDecay : layerDecay);
+      const vel = Math.max(0, Math.min(127, n.vel || 0)) / 127;
+      const velSq = vel * vel;
+      let vol = n.vol != null ? n.vol : 1, level = velSq * vol * vol;
+      if (level <= 0 && !(n.gain && n.gain.some(x => x.l > 0))) continue;
+      const steps = n.gain ? n.gain.map(x => ({i: Math.floor(tickSeconds(tempos, n.tick + x.t) * sampleRate), l: x.l})) : null;
+      let gi = 0;
+      const vibChanges = n.vib && n.vibChanges ? n.vibChanges.map(c => ({...c, i: Math.floor(tickSeconds(tempos, n.tick + c.t) * sampleRate)})) : [];
+      const vib = n.vib ? new OotVibrato(n.vib, vibChanges) : null;
+      const porta = n.porta ? new OotPortamento(n.porta) : null;
+      const rv = reverbs.find(r => r.index === (n.revIdx || 0) % 4) || null;
+      const send = rv && n.rev ? (n.rev & 0x7F) / 128 : 0;
+      const [gL, gR] = ootPanGains(n, drum);
+      // the send's bit 7 reaches aEnvMixer as its swap flag: the wet sides trade places
+      const [wL, wR] = n.rev & 0x80 ? [gR, gL] : [gL, gR];
+      let smp;
+      try { smp = font.pcm(sound.sample); } catch (e) { warn(e.message); continue; }
+      const pcm = smp.pcm, L = smp.loopEnd, loopStart = smp.loopStart;
+      const baseStep = Math.min(CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
+      let step = baseStep;
+      const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(tickSeconds(tempos, n.tick + n.dur) * sampleRate);
+      const env = new OotAdsr(envelope);
+      let pos = 0, nextUpdate = i0, gPrev = 0, gNext = 0;
+      let W = null;
+      // AudioSynth_ProcessNote after the resampler: HiLoGain (UQ4.4, below 1.0 lifted to 1.0), the channel's
+      // 8-tap filter, the comb filter y[n] = x[n − size/2] + gain/0x8000 · x[n]; all at the output rate
+      const pre = n.chGain ? Math.max(0x10, n.chGain) / 16 : 1;
+      const filt = n.filter ? firState(n.filter) : null;
+      const comb = n.comb ? {d: Math.max(1, Math.round(n.comb.size / 2 * sampleRate / N64_RATE)), g: n.comb.gain / 0x8000, hist: null, p: 0} : null;
+      if (comb) comb.hist = new Float32Array(comb.d);
+      for (let i = i0; i < N; i++) {
+        if (i >= nextUpdate) {
+          if (i >= iOff && !env.decaying && !env.done) env.decay(fadeOut, n.chSustain || 0);
+          const a = env.update();
+          if (steps) { while (gi + 1 < steps.length && i >= steps[gi + 1].i) gi++; vol = steps[gi].l; level = velSq * vol * vol; }
+          if (vib || porta) {
+            let f = 1;
+            if (vib) { while (vib.ci < vibChanges.length && i >= vibChanges[vib.ci].i) vib.retarget(vibChanges[vib.ci++]); f *= vib.update(); }
+            if (porta) f *= porta.update();
+            step = Math.min(CAP * N64_RATE / sampleRate, baseStep * f);
+          }
+          gPrev = gNext; gNext = Math.min(1, level * a);
+          if (env.done && gNext <= 0 && i > i0) break;
+          nextUpdate += updateEvery;
+        }
+        if (pos >= L) { if (!smp.looping) break; pos = loopStart + (pos - loopStart) % (L - loopStart); }
+        const p0 = pos | 0, f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : smp.looping ? pcm[loopStart] : 0;
+        const gain = gNext + (gPrev - gNext) * ((nextUpdate - i) / updateEvery);
+        let x = (a + (b - a) * f) * pre;
+        if (filt) x = fir(filt, x);
+        if (comb) { const old = comb.hist[comb.p]; comb.hist[comb.p] = x; if (++comb.p === comb.d) comb.p = 0; x = old + comb.g * x; }
+        const v = x * gain;
+        if (v !== 0) {
+          if (!bufL) { bufL = new Float32Array(N); bufR = new Float32Array(N); }
+          bufL[i] += v * gL; bufR[i] += v * gR;
+          if (send) { if (!W) { W = wet.get(rv.index); if (!W) wet.set(rv.index, W = {l: new Float32Array(N), r: new Float32Array(N)}); } W.l[i] += v * send * wL; W.r[i] += v * send * wR; }
+        }
+        pos += step;
+      }
+    }
+    if (bufL) for (const [idx, w] of wet) {
+      const r = reverbs.find(x => x.index === idx);
+      const Wn = Math.max(1, Math.round(r.window * r.downsampleRate * sampleRate / N64_RATE));
+      const G = r.decayRatio / 0x8000, V = r.volume / 0x8000, lr = r.leakRtl / 0x8000, ll = r.leakLtr / 0x8000;
+      const fL = firState(r.filterLeft), fR = firState(r.filterRight);
+      const ringL = new Float32Array(Wn), ringR = new Float32Array(Wn);
+      for (let i = 0, p = 0; i < N; i++) {
+        const rl = ringL[p], rr = ringR[p];
+        bufL[i] += rl * V; bufR[i] += rr * V;
+        let wl = rl * G, wr = rr * G;
+        const wl0 = wl; wl += wr * lr; wr += wl0 * ll;               // AudioSynth_LeakReverb
+        wl += w.l[i]; wr += w.r[i];
+        ringL[p] = fL ? fir(fL, wl) : wl; ringR[p] = fR ? fir(fR, wr) : wr;
+        if (++p === Wn) p = 0;
+      }
     }
     if (bufL) out[g.name] = {l: bufL, r: bufR}; else out.silent.push(g.name);
   }

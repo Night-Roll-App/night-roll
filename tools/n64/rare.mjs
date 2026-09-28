@@ -10,6 +10,7 @@
 // arrays only, no Node imports (the inflater is here because the app's
 // capture is synchronous and DecompressionStream is not).
 import { rdramOf, PJ64_RDRAM } from "./usf.mjs";
+import { decodeLiA1, miniSequenceId } from "./ead-usf.mjs";
 import { TICKS_PER_BEAT } from "./constants.mjs";
 import { expandBook, decodeSample } from "./vadpcm.mjs";
 import { channelGroups } from "./notes.mjs";
@@ -110,13 +111,21 @@ export function inflateRaw(src, expected = 0) {
   return out.subarray(0, n);
 }
 
-// Rare's "1172" container: the two magic bytes, then the DEFLATE stream.
+// Rare's "1172" container, two flavours seen: GoldenEye's is the two magic
+// bytes then the DEFLATE stream (the song table carries the unpacked size);
+// Banjo-Kazooie's is the magic, a big-endian u32 unpacked size, then the
+// stream. parse1172 tells them apart by trying the sized form first (its
+// size word must come out exactly), then the bare one.
 export const MAGIC_1172 = [0x11, 0x72];
 export function is1172(bytes, at = 0) { return bytes.length >= at + 2 && bytes[at] === 0x11 && bytes[at + 1] === 0x72; }
-export function decompress1172(bytes, expected = 0) {
+export function parse1172(bytes, expected = 0) {
   if (!is1172(bytes)) throw new Error("not a 1172 block (magic 11 72 missing)");
-  return inflateRaw(bytes.subarray(2), expected);
+  if (expected > 0) return {data: inflateRaw(bytes.subarray(2), expected), flavour: "bare"};
+  const size = bytes.length >= 6 ? ((bytes[2] << 24) | (bytes[3] << 16) | (bytes[4] << 8) | bytes[5]) >>> 0 : 0;
+  if (size >= 8 && size <= 0x400000) { try { const d = inflateRaw(bytes.subarray(6), size); if (d.length === size) return {data: d, flavour: "sized"}; } catch { /* not that flavour */ } }
+  return {data: inflateRaw(bytes.subarray(2)), flavour: "bare"};
 }
+export function decompress1172(bytes, expected = 0) { return parse1172(bytes, expected).data; }
 
 // ---- ALCSeq (libaudio cseq.c) ------------------------------------------------
 // Header: u32 trackOffset[16] (0 = no track), u32 division (ticks per
@@ -136,18 +145,35 @@ export function decompress1172(bytes, expected = 0) {
 // (offset 624) lands one byte after its loop start, Runway track 0's
 // finite loop (19, offset 16) likewise.
 export const CSEQ_TRACKS = 16;
-export function parseCSeq(seq, {maxEvents = 200000} = {}) {
+// `walk` is for a song read out of a rip's RAM: alCSeqNew reads the offset
+// table once, before the state was taken, so the rip need not keep the
+// song's own words there — Donkey Kong 64's DK Rap mini holds only slots
+// 10–14; slots 0–5 are the library's words for another song. The tracks
+// are found instead by walking from the first (at 0x44) through each one's
+// FF 2F to the next, up to 16, stopping at the first that does not parse
+// (the zeros after the song). Walked tracks take the slots in byte order.
+export function parseCSeq(seq, {maxEvents = 200000, walk = false} = {}) {
   if (seq.length < 0x44) throw new Error("ALCSeq: shorter than its header");
   const u32 = o => ((seq[o] << 24) | (seq[o + 1] << 16) | (seq[o + 2] << 8) | seq[o + 3]) >>> 0;
-  const offsets = []; for (let i = 0; i < CSEQ_TRACKS; i++) offsets.push(u32(i * 4));
   const division = u32(0x40);
   if (!(division > 0 && division <= 0x10000)) throw new Error("ALCSeq: division " + division);
-  for (const o of offsets) if (o !== 0 && (o < 0x44 || o >= seq.length)) throw new Error("ALCSeq: track offset 0x" + o.toString(16) + " outside the sequence");
-  const tracks = offsets.map((offset, index) => offset === 0 ? null : readTrack(seq, offset, index, maxEvents));
+  let offsets = [];
+  if (walk) {
+    let loc = 0x44;
+    while (loc < seq.length && offsets.length < CSEQ_TRACKS) {
+      let t; try { t = readTrack(seq, loc, offsets.length, maxEvents, {scan: true}); } catch (e) { if (!offsets.length) throw e; break; }
+      offsets.push(loc); loc = t.next;
+    }
+    while (offsets.length < CSEQ_TRACKS) offsets.push(0);
+  } else {
+    for (let i = 0; i < CSEQ_TRACKS; i++) offsets.push(u32(i * 4));
+    for (const o of offsets) if (o !== 0 && (o < 0x44 || o >= seq.length)) throw new Error("ALCSeq: track offset 0x" + o.toString(16) + " outside the sequence");
+  }
+  const tracks = offsets.map((offset, index) => offset === 0 ? null : readTrack(seq, offset, index, maxEvents, {scan: walk}));
   return {division, offsets, tracks};
 }
 
-function readTrack(seq, offset, index, maxEvents) {
+function readTrack(seq, offset, index, maxEvents, {scan = false} = {}) {
   let loc = offset, bu = -1, buLen = 0, lastStatus = 0, tick = 0;
   const get = () => {
     if (bu >= 0) { const b = seq[bu++]; if (--buLen === 0) bu = -1; return b; }
@@ -167,19 +193,28 @@ function readTrack(seq, offset, index, maxEvents) {
   const varlen = () => { let v = 0, b, k = 0; do { b = get(); v = (v * 128) + (b & 0x7F); if (++k > 4) throw new Error(`ALCSeq track ${index}: varlen over 4 bytes`); } while (b & 0x80); return v; };
   const events = [];
   const remaining = new Map(); // finite loop ends still to jump, by their byte position
-  let end = null, loopStart = null, loopEnd = null;
-  while (events.length < maxEvents) {
+  let end = null, loopStart = null, loopEnd = null, passOver = false, steps = 0;
+  const push = e => { if (!passOver) events.push(e); };
+  while (events.length < maxEvents && steps++ < maxEvents * 4) {
     tick += varlen();
     const st = get();
     if (st === 0xFF) {
       const type = get();
-      if (type === 0x51) { const us = (get() << 16) | (get() << 8) | get(); events.push({tick, type: "tempo", us}); }
-      else if (type === 0x2E) { const num = get(), b = get(); events.push({tick, type: "loopStart", num, b, at: loc}); if (!loopStart || num === 0) loopStart = {tick, num, at: loc, index: events.length - 1}; }
+      // loop metas' operands are read straight from the track pointer (cseq.c touches curLoc, never
+      // __getTrackByte), so an FE among them is a plain byte, not a back-reference (Banjo-Kazooie's
+      // Click Clock Wood Spring ends its loop 0x1FE bytes back)
+      const raw = () => bu >= 0 ? get() : seq[loc++];
+      if (type === 0x51) { const us = (get() << 16) | (get() << 8) | get(); push({tick, type: "tempo", us}); }
+      else if (type === 0x2E) { const num = raw(), b = raw(); push({tick, type: "loopStart", num, b, at: loc}); if (!passOver && (!loopStart || num === 0)) loopStart = {tick, num, at: loc, index: events.length - 1}; }
       else if (type === 0x2D) {
-        const count = get(), current = get();
-        const back = ((get() << 24) | (get() << 16) | (get() << 8) | get()) >>> 0;
+        const count = raw(), current = raw();
+        const back = ((raw() << 24) | (raw() << 16) | (raw() << 8) | raw()) >>> 0;
         const here = loc;
-        if (count === 0xFF) { loopEnd = {tick, count, back, at: here}; events.push({tick, type: "loopEnd", count, back}); end = {tick, how: "loop"}; break; } // one pass; the loop is a fact on the result
+        if (count === 0xFF) { // one pass; the loop is a fact on the result (scan mode walks on to the track's FF 2F)
+          if (!passOver) { loopEnd = {tick, count, back, at: here}; events.push({tick, type: "loopEnd", count, back}); end = {tick, how: "loop"}; }
+          if (!scan) break;
+          passOver = true; continue;
+        }
         // finite: jump while the running count is not 0 (the body plays count+1 times)
         if (!remaining.has(here)) remaining.set(here, current);
         const left = remaining.get(here);
@@ -189,7 +224,7 @@ function readTrack(seq, offset, index, maxEvents) {
           loc = here - back; bu = -1; buLen = 0;
         } else remaining.set(here, current); // reset for an outer pass
       }
-      else if (type === 0x2F) { events.push({tick, type: "end"}); end = {tick, how: "end"}; break; }
+      else if (type === 0x2F) { if (!passOver) { events.push({tick, type: "end"}); end = {tick, how: "end"}; } break; }
       else throw new Error(`ALCSeq track ${index}: meta 0x${type.toString(16)} at tick ${tick}`);
       continue;
     }
@@ -197,17 +232,17 @@ function readTrack(seq, offset, index, maxEvents) {
     if (st & 0x80) { status = st; lastStatus = st; d1 = get(); }
     else { if (!lastStatus) throw new Error(`ALCSeq track ${index}: data byte before any status`); status = lastStatus; d1 = st; }
     const kind = status & 0xF0, ch = status & 0x0F;
-    if (kind === 0x90) { const vel = get(), dur = varlen(); events.push({tick, type: "note", ch, key: d1, vel, dur}); }
-    else if (kind === 0xC0) events.push({tick, type: "program", ch, program: d1});
-    else if (kind === 0xD0) events.push({tick, type: "pressure", ch, value: d1});
-    else if (kind === 0xB0) { const v = get(); events.push({tick, type: "control", ch, controller: d1, value: v}); }
-    else if (kind === 0xE0) { const msb = get(); events.push({tick, type: "bend", ch, value: ((msb << 7) | d1) - 8192}); }
-    else if (kind === 0x80) { const v = get(); events.push({tick, type: "noteOff", ch, key: d1, vel: v}); }
-    else if (kind === 0xA0) { const v = get(); events.push({tick, type: "polyPressure", ch, key: d1, value: v}); }
+    if (kind === 0x90) { const vel = get(), dur = varlen(); if (d1 > 127 || vel > 127) throw new Error(`ALCSeq track ${index}: note ${d1} velocity ${vel}`); push({tick, type: "note", ch, key: d1, vel, dur}); }
+    else if (kind === 0xC0) push({tick, type: "program", ch, program: d1});
+    else if (kind === 0xD0) push({tick, type: "pressure", ch, value: d1});
+    else if (kind === 0xB0) { const v = get(); push({tick, type: "control", ch, controller: d1, value: v}); }
+    else if (kind === 0xE0) { const msb = get(); push({tick, type: "bend", ch, value: ((msb << 7) | d1) - 8192}); }
+    else if (kind === 0x80) { const v = get(); push({tick, type: "noteOff", ch, key: d1, vel: v}); }
+    else if (kind === 0xA0) { const v = get(); push({tick, type: "polyPressure", ch, key: d1, value: v}); }
     else throw new Error(`ALCSeq track ${index}: status 0x${status.toString(16)} at tick ${tick}`);
   }
   if (!end) throw new Error(`ALCSeq track ${index}: ${maxEvents} events without an end`);
-  return {index, offset, events, end, loopStart, loopEnd};
+  return {index, offset, events, end, loopStart, loopEnd, next: loc};
 }
 
 // One pass of the whole song. Each track loops on its own; the song's pass
@@ -379,6 +414,140 @@ export function findMusicTable(ram, rom = null, {minEntries = 8} = {}) {
   return {at: best.at, count: best.count, entries};
 }
 
+// Diddy Kong Racing keeps the SDK's own sequence file, as alSeqFileNew left
+// it in RAM: 'S1', u16 count, then {u32 offset, u32 len} per song with the
+// offsets made absolute ROM addresses. Each song is a plain ALCSeq (or a
+// 1172 block). Found by shape: the header, then entries whose present ROM
+// bytes parse — at least three, so a stray 'S1' cannot pass.
+export function findSeqFileInRam(ram, rom) {
+  for (const r of ram.runs()) {
+    for (let p = (r.offset + 3) & ~3; p + 16 <= r.offset + r.length; p += 4) {
+      if (ram.u8(p) !== 0x53 || ram.u8(p + 1) !== 0x31) continue;
+      const count = ram.u16(p + 2);
+      if (count < 3 || count > 1024) continue;
+      const entries = [];
+      let parsed = 0, bad = 0;
+      for (let i = 0; i < count; i++) {
+        const q = p + 4 + i * 8;
+        if (ram.coverage(q, 8) < 1) { entries.push(null); continue; }
+        const at = ram.u32(q), len = ram.u32(q + 4);
+        if (!len || len > 0x40000 || at >= 0x4000000) { bad++; entries.push(null); continue; }
+        const coverage = rom.coverage(at, len);
+        entries.push({id: i, rom: at, size: len, packed: len, coverage, magic: is1172(rom.read(at, 2))});
+        if (coverage === 1 && parsed < 3) { try { const b = rom.read(at, len); parseCSeq(is1172(b) ? decompress1172(b) : b); parsed++; } catch { bad++; } }
+      }
+      if (parsed >= 3 && bad <= count / 4) return {kind: "S1", at: p, count, entries};
+    }
+  }
+  return null;
+}
+
+// Banjo-Kazooie keeps its songs as sized 1172 blocks among the game's assets,
+// and the asset directory in RAM: 8-byte entries {u32 flags; u32 offset}
+// whose offset plus one base (the assets' ROM start, found by matching the
+// entries against the blocks) is a block. The song id counts from the first
+// entry whose block the rip carries; that is where the ripper's ids landed
+// (Main Title 8, Logo 50, Game Selection 110 — checked against lazyusf2's
+// renders). An entry whose word the game never read is absent: null.
+export function findSizedSeqBlocks(rom) {
+  const out = [];
+  for (const r of rom.runs()) {
+    for (let p = r.offset; p + 8 <= r.offset + r.length; p++) {
+      const b = rom.read(p, 6);
+      if (b[0] !== 0x11 || b[1] !== 0x72) continue;
+      const size = ((b[2] << 24) | (b[3] << 16) | (b[4] << 8) | b[5]) >>> 0;
+      if (size < 0x48 || size > 0x100000) continue;
+      let data; try { data = inflateRaw(rom.read(p + 6, Math.min(0x40000, r.offset + r.length - p - 6)), size); } catch { continue; }
+      if (data.length !== size) continue;
+      const u32 = o => ((data[o] << 24) | (data[o + 1] << 16) | (data[o + 2] << 8) | data[o + 3]) >>> 0;
+      let seq = false; for (let i = 0; i < CSEQ_TRACKS; i++) if (u32(i * 4) === 0x44) { seq = true; break; }
+      if (seq) out.push({rom: p, size});
+    }
+  }
+  return out;
+}
+export function findAssetSongTable(ram, rom) {
+  const blocks = findSizedSeqBlocks(rom);
+  if (blocks.length < 3) return null;
+  const starts = new Map(blocks.map(b => [b.rom, b]));
+  const sorted = blocks.map(b => b.rom).sort((a, b) => a - b).slice(0, 4);
+  let best = null;
+  for (const r of ram.runs()) {
+    for (let p = r.offset & ~3; p + 8 <= r.offset + r.length; p += 4) {
+      const w = ram.u32(p);
+      if (w >= 0x4000000) continue;
+      for (const b of sorted) {
+        const base = b - w;
+        if (base < 0 || base > 0x1000000) continue;
+        let n = 0, q = p, last = -1;
+        while (q + 4 <= r.offset + r.length && ram.u32(q) > last && starts.has(ram.u32(q) + base)) { last = ram.u32(q); n++; q += 8; } // offsets ascend: a constant flags word cannot chain
+        if (n >= 3 && (!best || n > best.n)) best = {p, base, n};
+      }
+    }
+  }
+  if (!best) return null;
+  let first = best.p;
+  while (ram.coverage(first - 8, 4) === 1 && ram.u32(first - 8) < ram.u32(first) && starts.has(ram.u32(first - 8) + best.base)) first -= 8;
+  const at = first; // the entry begins with its offset word (its flags word follows)
+  const entries = [];
+  let gap = 0;
+  for (let i = 0; i < 4096 && gap < 64; i++) {
+    const q = at + i * 8;
+    if (ram.coverage(q, 4) < 1) { entries.push(null); gap++; continue; }
+    const blk = starts.get(ram.u32(q) + best.base);
+    if (!blk) { entries.push(null); gap++; continue; }
+    gap = 0;
+    entries.push({id: i, rom: blk.rom, size: blk.size, packed: null, coverage: 1, magic: true});
+  }
+  while (entries.length && !entries[entries.length - 1]) entries.pop();
+  return {kind: "asset", at, base: best.base, count: entries.length, entries};
+}
+
+// A song already unpacked in RAM (Donkey Kong 64's rip keeps no song table,
+// only the songs the game had loaded): a division word (1..0x10000) whose
+// header word 0 is 0x44 (the first track right after the header) or not in
+// the rip at all, followed by a track (a delta, then a status or FF), read
+// by walking its tracks (parseCSeq's `walk`: the offset words may be
+// absent or another song's — DK64's Mini-Boss keeps no header word). RAM
+// may hold several (music slots, jingles); the one the mini plays is the
+// one its own state chunks write most of, else the only one.
+const RAM_SEQ_SPAN = 0x10000;
+export function findRamSequences(ram) {
+  const out = [];
+  for (const r of ram.runs()) {
+    for (let d = (r.offset + 3) & ~3; d + 8 <= r.offset + r.length; d += 4) {
+      const p = d - 0x40;
+      if (p < 0 || ram.u8(d) || ram.u8(d + 1) > 1) continue; // division ≤ 0x1FFFF: two zero-ish high bytes
+      const div = ram.u32(d);
+      if (!(div > 0 && div <= 0x10000)) continue;
+      if (ram.coverage(p, 4) === 1 && ram.u32(p) !== 0x44) continue;
+      let q = d + 4; while (q < d + 8 && ram.u8(q) & 0x80) q++; // the first delta (a short varlen)
+      const st = ram.u8(q + 1 > d + 7 ? d + 7 : q + 1);
+      if (!(st === 0xFF || (st >= 0x80 && st < 0xF0))) continue;
+      const bytes = ram.read(p, RAM_SEQ_SPAN);
+      let cs; try { cs = parseCSeq(bytes, {walk: true}); } catch { continue; }
+      if (!cs.tracks.some(t => t && t.events.some(e => e.type === "note"))) continue;
+      const end = Math.max(...cs.tracks.filter(t => t).map(t => t.next)), present = new Uint8Array(end);
+      for (let i = 0; i < end; i++) present[i] = ram.coverage(p + i, 1);
+      out.push({addr: p, size: end, bytes: bytes.subarray(0, end), present, cs});
+      d = p + end - 4 & ~3; // past this song
+    }
+  }
+  return out;
+}
+// A mini that writes none of them (DK64's Logo is the library's own state)
+// gets the first by address — the Logo's song, by lazyusf2's render — with
+// a warning: a mini of sound effects looks the same.
+export function miniRamSequence(set, ram) {
+  const songs = findRamSequences(ram);
+  if (!songs.length) return null;
+  const chunks = ((set.top && set.top.state) || []).filter(c => c.offset >= PJ64_RDRAM).map(c => [c.offset - PJ64_RDRAM, c.bytes.length]);
+  const written = s => chunks.reduce((n, [a, len]) => n + Math.max(0, Math.min(a + len, s.addr + s.size) - Math.max(a, s.addr)), 0);
+  const ranked = songs.map(s => ({...s, of: songs.length, written: written(s)})).sort((a, b) => b.written - a.written || a.addr - b.addr);
+  if (ranked.length > 1 && ranked[0].written && ranked[0].written === ranked[1].written) throw new Error("this rip's memory holds " + songs.length + " songs and the mini writes as much of two of them (at 0x" + ranked[0].addr.toString(16) + " and 0x" + ranked[1].addr.toString(16) + ")");
+  return ranked[0];
+}
+
 // Which song a mini plays: the RAM word the mini's own save-state chunk
 // overrides (the whole difference between two minis of a set), or a
 // manifest rule {kind: "ram", addr} when the set names one. Returns the
@@ -392,11 +561,35 @@ export function miniOverrideWords(set) {
   }
   return out;
 }
+// The GPRs the mini's state sets (PJ64 keeps GPR n's low word at 0x50 + 8n):
+// Diddy Kong Racing's ripper passes the song in a0 and overrides nothing else.
+export function miniOverrideRegs(set) {
+  const out = [];
+  for (const c of (set.top && set.top.state) || []) {
+    if (c.offset < 0x50 || c.offset >= 0x150 || (c.offset - 0x50) % 8 || c.bytes.length !== 4) continue;
+    const b = c.bytes;
+    out.push({reg: (c.offset - 0x50) / 8, value: (b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0});
+  }
+  return out;
+}
+// `addiu a1, zero, n` after the saved PC (the SM64-style patch; Banjo-Kazooie's
+// ripper used it) counts too — an override word that decodes as that instruction.
 export function miniRareTrack(set, table, rule = null) {
   const {ram} = rdramOf(set.state);
-  if (rule && rule.kind === "ram" && ram.coverage(rule.addr, 4) === 1) return ram.u32(rule.addr);
-  const words = miniOverrideWords(set).filter(w => w.value < table.count);
-  return words.length === 1 ? words[0].value : null;
+  const words = miniOverrideWords(set);
+  const li = words.map(w => decodeLiA1(w.value)).filter(v => v != null && v < table.count);
+  if (li.length === 1) return li[0];
+  const small = words.filter(w => w.value < table.count);
+  if (small.length === 1) return small[0].value;
+  const regs = miniOverrideRegs(set).filter(g => g.reg >= 4 && g.reg <= 7 && g.value < table.count); // an argument register
+  if (regs.length === 1) return regs[0].value;
+  // a mini that overrides nothing plays the lib's own patch: the li-a1 at the saved PC + 4
+  if (!words.length) { let v = null; try { v = miniSequenceId(set, {kind: "li-a1"}); } catch { /* no saved PC in this state */ } if (v != null && v < table.count) return v; }
+  // a mini that overrides nothing plays the lib's own value, which only the manifest can point at
+  // (GoldenEye's Bunker 1: the word itself; Banjo-Kazooie's beta: the li-a1 there; Diddy Kong Racing: a register)
+  if (rule && rule.kind === "ram" && ram.coverage(rule.addr, 4) === 1) { const w = ram.u32(rule.addr), li = decodeLiA1(w); return li != null ? li : w; }
+  if (rule && rule.kind === "reg") { const b = set.state.read(0x50 + 8 * rule.reg, 4), v = (b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0; if (v < table.count) return v; }
+  return null;
 }
 
 // ---- the bank (RAM) ----------------------------------------------------------
@@ -438,6 +631,47 @@ export function findRareBankFile(ram) {
     }
   }
   return out;
+}
+
+// Every ALBank in RAM, with or without its file header: the 'B1' file's
+// banks, plus any struct of the bank's own shape — {u16 instCount 1..256;
+// u8 flags ≤ 3; u8 0; u32 sampleRate 8000..48000; percussion 0 or a RAM
+// pointer; instCount ascending RAM pointers, each at an instrument whose
+// first sound pointer is a RAM pointer} — because a rip keeps only the
+// words the game read after the state was taken, and alBnkfNew's
+// one-time read of the header is before that (Banjo-Kazooie's has none).
+// A song's bank index (seq.banks[0]) is an index into this list.
+export function findRareBanks(ram) {
+  const found = new Map();
+  for (const f of findRareBankFile(ram)) for (const b of f.banks) found.set(b.at, {...b, fileAt: f.at, how: "B1"});
+  const word = q => { const x = ram.read(q, 4); return ((x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3]) >>> 0; }; // absent = 0 (the percussion word often is)
+  for (const r of ram.runs()) {
+    for (let p = r.offset & ~3; p + 8 <= r.offset + r.length; p += 4) {
+      if (found.has(p)) continue;
+      const n = ram.u16(p), flags = ram.u8(p + 2), pad = ram.u8(p + 3), rate = ram.u32(p + 4), perc = word(p + 8);
+      if (n < 1 || n > 256 || flags > 3 || pad || rate < 8000 || rate > 48000 || (perc && (perc >>> 24) !== 0x80)) continue;
+      let valid = 0, prev = 0, bad = false;
+      for (let i = 0; i < n && !bad; i++) {
+        if (ram.coverage(p + 12 + i * 4, 4) < 1) continue;
+        const v = word(p + 12 + i * 4);
+        if ((v >>> 24) !== 0x80 || v <= prev) { bad = true; break; }
+        const ia = v & 0x1FFFFFFF;
+        if (ram.coverage(ia + 16, 4) === 1 && (word(ia + 16) >>> 24) !== 0x80) { bad = true; break; }
+        prev = v; valid++;
+      }
+      if (bad || valid < Math.min(n, 3)) continue;
+      found.set(p, {at: p, instCount: n, sampleRate: rate, fileAt: null, how: "shape"});
+    }
+  }
+  // header-found banks first (a file header is certain; a shape match is a guess), each group by address
+  return [...found.values()].sort((a, b) => (a.how === "B1" ? 0 : 1) - (b.how === "B1" ? 0 : 1) || a.at - b.at);
+}
+// the bank a song plays through: the one holding every program it names, else the biggest
+export function pickBank(banks, programs) {
+  if (!banks.length) return -1;
+  const covers = banks.map((b, i) => [i, programs.every(p => p < b.instCount)]).filter(([, ok]) => ok).map(([i]) => i);
+  const pool = covers.length ? covers : banks.map((_, i) => i);
+  return pool.sort((a, b) => banks[b].instCount - banks[a].instCount)[0];
 }
 
 const ptr = (ram, p) => { if (ram.coverage(p, 4) < 1) return null; const v = ram.u32(p); return (v >>> 24) === 0x80 ? v & 0x1FFFFFFF : null; };
@@ -516,7 +750,8 @@ export function readRareBank(ram, rom, bankAt) {
       for (const s of inst.sounds) {
         if (!s || !s.keymap) continue;
         const k = s.keymap;
-        if (key >= k.keyMin && key <= k.keyMax && vel >= k.velocityMin && vel <= k.velocityMax) return s;
+        const velMax = k.velocityMax || 127; // Banjo-Kazooie's maps say 0: no velocity limit (a real one is 1..127)
+        if (key >= k.keyMin && key <= k.keyMax && vel >= k.velocityMin && vel <= velMax) return s;
       }
       return null;
     },
@@ -564,22 +799,44 @@ export function isKitInstrument(inst) {
 // sequenceOfSet's fallback: the same shape it returns for EAD sets.
 export function rareSequenceOfSet(set, {game = null, maxSeconds = 600} = {}) {
   const {ram} = rdramOf(set.state);
-  const table = findMusicTable(ram, set.rom);
-  if (!table) throw new Error("no Rare music table in this rip's memory — a driver Night Roll cannot read yet");
-  const id = miniRareTrack(set, table, game && game.seqId);
-  if (id == null) throw new Error("this mini does not say which of the game's " + table.count + " songs it plays");
-  const e = table.entries[id];
-  if (!e) throw new Error("song " + id + " is past the game's table (" + table.count + " songs)");
-  if (e.coverage === 0) throw new Error("song " + id + "'s bytes are not in this rip's ROM pages");
-  const packed = set.rom.read(e.rom, e.packed);
-  const present = new Uint8Array(e.packed);
-  for (let i = 0; i < e.packed; i++) present[i] = set.rom.coverage(e.rom + i, 1) ? 1 : 0;
-  if (e.coverage < 1) throw new Error("song " + id + ": only " + Math.round(e.coverage * 100) + "% of its bytes are in the rip");
-  const bytes = decompress1172(packed, e.size);
-  const cs = parseCSeq(bytes);
-  const banks = findRareBankFile(ram);
-  const bank = banks.length ? readRareBank(ram, set.rom, banks[0].banks[0].at) : null;
+  let id = null, e = null, cs = null, present = null, seqInfo = null, table = null;
+  let own = null;
+  table = findMusicTable(ram, set.rom) || findAssetSongTable(ram, set.rom) || findSeqFileInRam(ram, set.rom);
+  if (!table) {
+    own = miniRamSequence(set, ram); // no table: the song the game had unpacked into RAM (Donkey Kong 64)
+    if (!own) throw new Error("no Rare music table and no unpacked song in this rip's memory — a driver Night Roll cannot read yet");
+    cs = own.cs; present = own.present;
+    const got = own.present.reduce((n, x) => n + x, 0);
+    seqInfo = {id: null, rom: null, ram: own.addr, size: own.size, unpacked: own.size, coverage: got / own.size};
+  } else {
+    id = miniRareTrack(set, table, game && game.seqId);
+    if (id == null) throw new Error("this mini does not say which of the game's " + table.count + " songs it plays");
+    e = table.entries[id];
+    if (!e) throw new Error(id < table.count ? "song " + id + " of the game's " + table.count + " is not in this rip (its ROM pages were never read: the mini may play sound effects only)" : "song " + id + " is past the game's table (" + table.count + " songs)");
+    if (e.coverage === 0) throw new Error("song " + id + "'s bytes are not in this rip's ROM pages");
+    const packedLen = e.packed != null ? e.packed : Math.min(0x40000, set.rom.runs().filter(r => r.offset <= e.rom && e.rom < r.offset + r.length).map(r => r.offset + r.length - e.rom)[0] || 0);
+    if (!packedLen) throw new Error("song " + id + "'s bytes are not in this rip's ROM pages");
+    const packed = set.rom.read(e.rom, packedLen);
+    present = new Uint8Array(packedLen);
+    for (let i = 0; i < packedLen; i++) present[i] = set.rom.coverage(e.rom + i, 1) ? 1 : 0;
+    // a packed song needs every byte (DEFLATE); a plain one plays what the rip kept (bytes the
+    // game never read while the rip ran: a tail past the loop, a branch not taken)
+    if (e.packed != null && e.coverage < 1 && is1172(packed)) throw new Error("song " + id + ": only " + Math.floor(e.coverage * 100) + "% of its bytes are in the rip");
+    const bytes = is1172(packed) ? decompress1172(packed, e.packed != null && e.size !== e.packed ? e.size : 0) : packed; // an S1 file's songs may be plain
+    try { cs = parseCSeq(bytes); } catch (err) { if (e.coverage < 1) throw new Error("song " + id + ": only " + Math.floor(e.coverage * 100) + "% of its bytes are in the rip, and what is there does not read (" + err.message + ")"); throw err; }
+    seqInfo = {id, rom: e.rom, size: e.packed != null ? e.packed : packedLen, unpacked: e.size, coverage: e.coverage};
+  }
+  const banks = findRareBanks(ram);
+  const programs = [...new Set(cs.tracks.filter(t => t).flatMap(t => t.events.filter(ev => ev.type === "program").map(ev => ev.program)))];
+  const bankIndex = pickBank(banks, programs);
+  const bank = bankIndex >= 0 ? readRareBank(ram, set.rom, banks[bankIndex].at) : null;
   const res = cseqNotes(cs, {maxSeconds, bendRangeOf: p => { const i = bank && bank.instrument(p); return i ? i.bendRange : 200; }});
+  if (e && e.coverage < 1 && !is1172(set.rom.read(e.rom, 2))) res.warnings.push(Math.round((1 - e.coverage) * e.packed) + " of the song's " + e.packed + " bytes are not in the rip (the game never read them while it was ripped); the roll plays what is there");
+  if (table) { // a word the mini sets beside its song number (Banjo-Kazooie's Normal/Aquatic, Diddy Kong Racing's per-racer Player Select)
+    const rest = miniOverrideWords(set).filter(w => w.value !== id && decodeLiA1(w.value) !== id);
+    if (rest.length && rest.length <= 4) res.warnings.push("this mini also sets " + rest.length + " memory word" + (rest.length > 1 ? "s" : "") + " the roll does not use (" + rest.map(w => "0x" + w.addr.toString(16) + " = 0x" + w.value.toString(16)).join(", ") + "): the roll plays every track of the song");
+  }
+  if (own && !own.written && own.of > 1) res.warnings.push("this mini writes none of the " + own.of + " songs in the rip's memory; the roll is the first (0x" + own.addr.toString(16) + "), the library's own — a mini of sound effects looks the same");
   res.sequenceId = id; res.variation = 0; res.reverb = null; res.ducked = [];
   if (bank) { // programs that are kits in this bank: their notes are slots
     const kits = new Set(bank.instruments.filter(isKitInstrument).map(i => i.index));
@@ -587,10 +844,12 @@ export function rareSequenceOfSet(set, {game = null, maxSeconds = 600} = {}) {
       for (const n of res.notes) if (kits.has(n.inst)) { n.drum = true; delete n.slide; }
       res.kits = [...kits].sort((a, b) => a - b);
     }
-  }
-  const loc = {gen: "rare", abi: "rare", sequences: table.entries.map(x => ({id: x.id, rom: x.rom, size: x.packed, unpacked: x.size, coverage: x.coverage, banks: [0]})),
-               table: {at: table.at, count: table.count}, bankFile: banks.length ? {at: banks[0].at, count: banks[0].count, banks: banks[0].banks} : null};
-  const seq = {id, rom: e.rom, size: e.packed, unpacked: e.size, coverage: e.coverage, banks: [0]};
+  } else res.warnings.push("no sound bank in this rip's memory (the roll is fine; the console render will not be)");
+  const loc = {gen: "rare", abi: "rare",
+               sequences: table ? table.entries.map((x, i) => x ? {id: i, rom: x.rom, size: x.packed, unpacked: x.size, coverage: x.coverage, banks: [bankIndex]} : {id: i, rom: null, size: 0, coverage: 0, banks: [bankIndex]}) : [],
+               table: table ? {kind: table.kind || "rom", at: table.at, count: table.count} : {kind: "mini", at: own.addr, count: 1},
+               banks: banks.map(b => ({at: b.at, instCount: b.instCount, sampleRate: b.sampleRate, how: b.how})), bankFile: banks.length ? {at: banks[bankIndex].fileAt, count: 1, banks: [banks[bankIndex]]} : null};
+  const seq = {...seqInfo, banks: [Math.max(0, bankIndex)]};
   return {game, loc, id, seq, res, present, ducked: [], driver: "rare"};
 }
 
@@ -739,9 +998,10 @@ export async function renderRare(result, opts = {}) {
   const set = opts.set;
   if (!set || !set.rom || !set.state) throw new Error("renderRare needs the set (its ROM pages and save state)");
   const {ram} = rdramOf(set.state);
-  const files = opts.bankFile || findRareBankFile(ram)[0];
-  if (!files) throw new Error("no sound bank in this rip's memory");
-  const bank = readRareBank(ram, set.rom, files.banks[0].at);
+  const list = findRareBanks(ram);
+  if (!list.length) throw new Error("no sound bank in this rip's memory");
+  const want = opts.banks && opts.banks.length ? opts.banks[0] : 0;
+  const bank = readRareBank(ram, set.rom, (list[want] || list[0]).at);
   const sampleRate = opts.sampleRate || bank.sampleRate;
   const groups = channelGroups(result, opts.meter || {});
   const {tempos, notes} = result;
