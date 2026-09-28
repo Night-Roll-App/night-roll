@@ -1,0 +1,73 @@
+{
+ "title": "Kirby's Dream Land",
+ "order": 50,
+ "songs": {
+  "spicy-food-minty-leaf": "Spicy Food, Minty Leaf"
+ },
+ "nsf": {
+  "vault": "kirbys-dream-land.gbs",
+  "tracks": {
+   "boss": {
+    "n": 8,
+    "secs": 18.7518310546875
+   },
+   "ending": {
+    "n": 5,
+    "secs": 45.00439453125
+   },
+   "game-over": {
+    "n": 12,
+    "secs": 13.980159759521484
+   },
+   "invincible": {
+    "n": 10,
+    "secs": 5.357666015625
+   },
+   "kirby-dance": {
+    "n": 13,
+    "secs": 18.986228942871094
+   },
+   "lose-life": {
+    "n": 14,
+    "secs": 11.987777709960938
+   },
+   "spicy-food-minty-leaf": {
+    "n": 9,
+    "secs": 13.3941650390625
+   },
+   "stage-1": {
+    "n": 2,
+    "secs": 32.14599609375
+   },
+   "stage-2": {
+    "n": 6,
+    "secs": 45.00439453125
+   },
+   "stage-3": {
+    "n": 4,
+    "secs": 37.503662109375
+   },
+   "stage-4": {
+    "n": 3,
+    "secs": 43.3970947265625
+   },
+   "stage-5-selection": {
+    "n": 11,
+    "secs": 3.7503662109375
+   },
+   "stage-5": {
+    "n": 7,
+    "secs": 26.788330078125
+   },
+   "stars": {
+    "n": 15,
+    "secs": 2.7792892456054688
+   },
+   "title": {
+    "n": 1,
+    "secs": 12.958854675292969
+   }
+  },
+  "chip": "gbs"
+ }
+}

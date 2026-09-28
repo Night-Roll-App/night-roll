@@ -3562,6 +3562,71 @@
   ]
  },
  {
+  "title": "Kirby's Dream Land",
+  "songs": [
+   {
+    "title": "Boss",
+    "path": "albums/game-boy/kirbys-dream-land/boss.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/game-boy/kirbys-dream-land/ending.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/game-boy/kirbys-dream-land/game-over.mid"
+   },
+   {
+    "title": "Invincible",
+    "path": "albums/game-boy/kirbys-dream-land/invincible.mid"
+   },
+   {
+    "title": "Kirby Dance",
+    "path": "albums/game-boy/kirbys-dream-land/kirby-dance.mid"
+   },
+   {
+    "title": "Lose Life",
+    "path": "albums/game-boy/kirbys-dream-land/lose-life.mid"
+   },
+   {
+    "title": "Spicy Food, Minty Leaf",
+    "path": "albums/game-boy/kirbys-dream-land/spicy-food-minty-leaf.mid"
+   },
+   {
+    "title": "Stage 1",
+    "path": "albums/game-boy/kirbys-dream-land/stage-1.mid"
+   },
+   {
+    "title": "Stage 2",
+    "path": "albums/game-boy/kirbys-dream-land/stage-2.mid"
+   },
+   {
+    "title": "Stage 3",
+    "path": "albums/game-boy/kirbys-dream-land/stage-3.mid"
+   },
+   {
+    "title": "Stage 4",
+    "path": "albums/game-boy/kirbys-dream-land/stage-4.mid"
+   },
+   {
+    "title": "Stage 5",
+    "path": "albums/game-boy/kirbys-dream-land/stage-5.mid"
+   },
+   {
+    "title": "Stage 5 Selection",
+    "path": "albums/game-boy/kirbys-dream-land/stage-5-selection.mid"
+   },
+   {
+    "title": "Stars",
+    "path": "albums/game-boy/kirbys-dream-land/stars.mid"
+   },
+   {
+    "title": "Title",
+    "path": "albums/game-boy/kirbys-dream-land/title.mid"
+   }
+  ]
+ },
+ {
   "title": "Legend Of Zelda A Link To The Past",
   "songs": [
    {
