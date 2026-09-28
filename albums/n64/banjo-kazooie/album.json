@@ -1,0 +1,1142 @@
+{
+ "title": "Banjo-Kazooie",
+ "order": 50,
+ "songs": {
+  "advent-unused-beta-song": "Advent (Unused Beta Song)",
+  "banjo-wins-the-furnace-fun-fanfare": "Banjo Wins the Furnace Fun Fanfare",
+  "boggy-s-igloo-happy": "Boggy's Igloo (Happy)",
+  "boggy-s-igloo-sad": "Boggy's Igloo (Sad)",
+  "boggy-s-race-lose": "Boggy's Race Lose",
+  "boggy-s-race-win": "Boggy's Race Win",
+  "boggy-s-race": "Boggy's Race",
+  "bottle-s-puzzle-challenge": "Bottle's Puzzle Challenge",
+  "bottles-puzzle-challenge-start": "Bottles' Puzzle Challenge Start",
+  "brentilda-s-theme": "Brentilda's Theme",
+  "bridge-to-gruntilda-s-lair": "Bridge to Gruntilda's Lair",
+  "buried-under-a-rock": "Buried under a Rock",
+  "cheato-s-theme": "Cheato's Theme",
+  "clanker-s-cavern-all-in-one": "Clanker's Cavern (All-In-One)",
+  "clanker-s-cavern-aquatic": "Clanker's Cavern (Aquatic)",
+  "clanker-s-cavern-deep-underwater": "Clanker's Cavern (Deep Underwater)",
+  "clanker-s-cavern-normal": "Clanker's Cavern (Normal)",
+  "click-clock-wood-autumn-all-in-one": "Click Clock Wood (Autumn All-In-One)",
+  "click-clock-wood-autumn-aquatic": "Click Clock Wood (Autumn, Aquatic)",
+  "click-clock-wood-autumn-normal": "Click Clock Wood (Autumn, Normal)",
+  "click-clock-wood-lobby-all-in-one": "Click Clock Wood (Lobby All-In-One)",
+  "click-clock-wood-lobby-autumn": "Click Clock Wood (Lobby, Autumn)",
+  "click-clock-wood-lobby-normal": "Click Clock Wood (Lobby, Normal)",
+  "click-clock-wood-lobby-spring": "Click Clock Wood (Lobby, Spring)",
+  "click-clock-wood-lobby-summer": "Click Clock Wood (Lobby, Summer)",
+  "click-clock-wood-lobby-winter": "Click Clock Wood (Lobby, Winter)",
+  "click-clock-wood-spring-all-in-one": "Click Clock Wood (Spring All-In-One)",
+  "click-clock-wood-spring-aquatic": "Click Clock Wood (Spring, Aquatic)",
+  "click-clock-wood-spring-normal": "Click Clock Wood (Spring, Normal)",
+  "click-clock-wood-summer": "Click Clock Wood (Summer)",
+  "click-clock-wood-unused-beta-version-1": "Click Clock Wood (Unused Beta Version 1)",
+  "click-clock-wood-unused-beta-version-2": "Click Clock Wood (Unused Beta Version 2)",
+  "click-clock-wood-winter": "Click Clock Wood (Winter)",
+  "collect-a-secret-item-fanfare": "Collect a Secret Item Fanfare",
+  "collect-all-jinjos": "Collect all Jinjos",
+  "collect-all-notes": "Collect all Notes",
+  "complete-mozand-s-song": "Complete Mozand's Song",
+  "ending-on-vacation": "Ending - On Vacation",
+  "freezeezy-peak-all-in-one": "Freezeezy Peak (All-In-One)",
+  "freezeezy-peak-aquatic": "Freezeezy Peak (Aquatic)",
+  "freezeezy-peak-normal-with-christmas-bells": "Freezeezy Peak (Normal with Christmas Bells)",
+  "freezeezy-peak-normal": "Freezeezy Peak (Normal)",
+  "furnace-fun-banjo-kazooie-question": "Furnace Fun Banjo-Kazooie Question",
+  "game-selection-1-2": "Game Selection 1 & 2",
+  "gnawty-s-house": "Gnawty's House",
+  "gobi-s-valley-all-in-one": "Gobi's Valley (All-In-One)",
+  "gobi-s-valley-aquatic": "Gobi's Valley (Aquatic)",
+  "gobi-s-valley-jinxy-s-area": "Gobi's Valley (Jinxy's Area)",
+  "gobi-s-valley-normal": "Gobi's Valley (Normal)",
+  "gruntilda-s-lair-aquatic": "Gruntilda's Lair (Aquatic)",
+  "gruntilda-s-lair-bubblegloop-swamp-freezeezy-peak-all-in-one": "Gruntilda's Lair (Bubblegloop Swamp, Freezeezy Peak All-In-One)",
+  "gruntilda-s-lair-bubblegloop-swamp": "Gruntilda's Lair (Bubblegloop Swamp)",
+  "gruntilda-s-lair-clanker-s-cavern-bubblegloop-swamp-all-in-one": "Gruntilda's Lair (Clanker's Cavern, Bubblegloop Swamp All-In-One)",
+  "gruntilda-s-lair-clanker-s-cavern": "Gruntilda's Lair (Clanker's Cavern)",
+  "gruntilda-s-lair-click-clock-wood-grunty-s-furnance-fun-all-in-one": "Gruntilda's Lair (Click Clock Wood, Grunty's Furnance Fun All-In-One)",
+  "gruntilda-s-lair-click-clock-wood": "Gruntilda's Lair (Click Clock Wood)",
+  "gruntilda-s-lair-freezeezy-peak-all-in-one": "Gruntilda's Lair (Freezeezy Peak All-In-One)",
+  "gruntilda-s-lair-freezeezy-peak": "Gruntilda's Lair (Freezeezy Peak)",
+  "gruntilda-s-lair-gobi-s-valley-all-in-one": "Gruntilda's Lair (Gobi's Valley All-In-One)",
+  "gruntilda-s-lair-gobi-s-valley-mad-monster-mansion-all-in-one": "Gruntilda's Lair (Gobi's Valley, Mad Monster Mansion All-In-One)",
+  "gruntilda-s-lair-gobi-s-valley": "Gruntilda's Lair (Gobi's Valley)",
+  "gruntilda-s-lair-grunty-s-furnace-fun": "Gruntilda's Lair (Grunty's Furnace Fun)",
+  "gruntilda-s-lair-mad-monster-mansion": "Gruntilda's Lair (Mad Monster Mansion)",
+  "gruntilda-s-lair-mumbo-s-mountain-all-in-one": "Gruntilda's Lair (Mumbo's Mountain All-In-One)",
+  "gruntilda-s-lair-mumbo-s-mountain": "Gruntilda's Lair (Mumbo's Mountain)",
+  "gruntilda-s-lair-normal": "Gruntilda's Lair (Normal)",
+  "gruntilda-s-lair-rusty-bucket-bay-mad-monster-mansion-all-in-one": "Gruntilda's Lair (Rusty Bucket Bay, Mad Monster Mansion All-In-One)",
+  "gruntilda-s-lair-rusty-bucket-bay": "Gruntilda's Lair (Rusty Bucket Bay)",
+  "gruntilda-s-lair-treasure-trove-cove-clanker-s-cavern-all-in-one": "Gruntilda's Lair (Treasure Trove Cove, Clanker's Cavern All-In-One)",
+  "gruntilda-s-lair-treasure-trove-cove-click-clock-wood-all-in-one": "Gruntilda's Lair (Treasure Trove Cove, Click Clock Wood All-In-One)",
+  "gruntilda-s-lair-treasure-trove-cove": "Gruntilda's Lair (Treasure Trove Cove)",
+  "grunty-s-beauty-steal-machine": "Grunty's Beauty Steal Machine",
+  "grunty-s-defeat": "Grunty's Defeat",
+  "grunty-s-door-opens-fanfare": "Grunty's Door Opens Fanfare",
+  "grunty-s-furnace-fun": "Grunty's Furnace Fun",
+  "inside-clanker-aquatic": "Inside Clanker (Aquatic)",
+  "inside-clanker-normal": "Inside Clanker (Normal)",
+  "inside-snipper-s-shell": "Inside Snipper's Shell",
+  "inside-the-christmas-tree": "Inside the Christmas Tree",
+  "inside-the-church": "Inside the Church",
+  "inside-the-mansion": "Inside the Mansion",
+  "inside-the-pyramid": "Inside the Pyramid",
+  "inside-the-sandcastle-all-in-one": "Inside the Sandcastle (All-In-One)",
+  "inside-the-sandcastle-aquatic": "Inside the Sandcastle (Aquatic)",
+  "inside-the-sandcastle-normal": "Inside the Sandcastle (Normal)",
+  "inside-the-toilet": "Inside the Toilet",
+  "inside-the-treetops-all-in-one": "Inside the Treetops (All-In-One)",
+  "inside-the-treetops-autumn": "Inside the Treetops (Autumn)",
+  "inside-the-treetops-spring": "Inside the Treetops (Spring)",
+  "inside-the-treetops-summer": "Inside the Treetops (Summer)",
+  "inside-the-treetops-winter": "Inside the Treetops (Winter)",
+  "inside-the-warehouse-all-in-one": "Inside the Warehouse (All-In-One)",
+  "inside-the-warehouse-aquatic": "Inside the Warehouse (Aquatic)",
+  "inside-the-warehouse-normal": "Inside the Warehouse (Normal)",
+  "king-s-sandybuzz-s-maze": "King's Sandybuzz's Maze",
+  "king-sandybutt-s-maze": "King Sandybutt's Maze",
+  "machine-room-all-in-one": "Machine Room (All-In-One)",
+  "machine-room-aquatic": "Machine Room (Aquatic)",
+  "machine-room-normal": "Machine Room (Normal)",
+  "mad-monster-mansion-all-in-one": "Mad Monster Mansion (All-In-One)",
+  "mad-monster-mansion-aquatic": "Mad Monster Mansion (Aquatic)",
+  "mad-monster-mansion-normal-with-church-bell": "Mad Monster Mansion (Normal with Church Bell)",
+  "mad-monster-mansion-normal": "Mad Monster Mansion (Normal)",
+  "mr-vile-s-game": "Mr. Vile's Game",
+  "mumbo-s-barbeque": "Mumbo's Barbeque",
+  "mumbo-s-hut": "Mumbo's Hut",
+  "mumbo-s-magic": "Mumbo's Magic",
+  "mumbo-s-mountain-all-in-one": "Mumbo's Mountain (All-In-One)",
+  "mumbo-s-mountain-aquatic": "Mumbo's Mountain (Aquatic)",
+  "mumbo-s-mountain-conga-s-patch": "Mumbo's Mountain (Conga's Patch)",
+  "mumbo-s-mountain-mumbo-s-hut": "Mumbo's Mountain (Mumbo's Hut)",
+  "mumbo-s-mountain-normal": "Mumbo's Mountain (Normal)",
+  "mumbo-s-mountain-ticker-s-tower": "Mumbo's Mountain (Ticker's Tower)",
+  "mumbo-s-raindance-unused-beta-song": "Mumbo's Raindance (Unused Beta Song)",
+  "mutie-snippets": "Mutie-Snippets",
+  "nabnut-s-house-all-in-one": "Nabnut's House (All-In-One)",
+  "nabnut-s-house-aquatic": "Nabnut's House (Aquatic)",
+  "nabnut-s-house-autumn": "Nabnut's House (Autumn)",
+  "nabnut-s-house-spring": "Nabnut's House (Spring)",
+  "nabnut-s-house-summer": "Nabnut's House (Summer)",
+  "nabnut-s-house-winter": "Nabnut's House (Winter)",
+  "nabnut-s-storeage-room": "Nabnut's Storeage Room",
+  "nintendo-rare-logo": "Nintendo & Rare Logo",
+  "rusty-bucket-bay-all-in-one": "Rusty Bucket Bay (All-In-One)",
+  "rusty-bucket-bay-aquatic": "Rusty Bucket Bay (Aquatic)",
+  "rusty-bucket-bay-normal": "Rusty Bucket Bay (Normal)",
+  "rusty-bucket-bay-whistle-puzzle": "Rusty Bucket Bay (Whistle Puzzle)",
+  "secret-fanfare-1-treasure-trove-cove-rusty-bucket-bay": "Secret Fanfare 1 (Treasure Trove Cove, Rusty Bucket Bay)",
+  "secret-fanfare-2-freezeezy-peak": "Secret Fanfare 2 (Freezeezy Peak)",
+  "secret-fanfare-3-gobi-s-valley": "Secret Fanfare 3 (Gobi's Valley)",
+  "secret-fanfare-4-mad-monster-mansion": "Secret Fanfare 4 (Mad Monster Mansion)",
+  "secret-fanfare-5-click-clock-wood": "Secret Fanfare 5 (Click Clock Wood)",
+  "sfx-bottles-challenge-pick-up": "SFX Bottles' Challenge Pick Up",
+  "sfx-bottles-challenge-put-back": "SFX Bottles' Challenge Put Back",
+  "sfx-brentilda-appears": "SFX Brentilda Appears",
+  "sfx-brentilda-dissappears": "SFX Brentilda Dissappears",
+  "sfx-correct-jingle": "SFX Correct Jingle",
+  "sfx-dingpot-warp": "SFX Dingpot Warp",
+  "sfx-jinjo-activates": "SFX Jinjo Activates",
+  "sfx-jinjonator-maximum": "SFX Jinjonator Maximum",
+  "sfx-lighthouse-winds": "SFX Lighthouse Winds",
+  "sfx-lose-oxygen": "SFX Lose Oxygen",
+  "sfx-magic-carpet-drop": "SFX Magic Carpet Drop",
+  "sfx-magic-carpet-rises": "SFX Magic Carpet Rises",
+  "sfx-patch-remove": "SFX Patch Remove",
+  "sfx-patch": "SFX Patch",
+  "sfx-pyramids": "SFX Pyramids",
+  "sfx-right": "SFX Right",
+  "sfx-transformation": "SFX Transformation",
+  "sfx-warp": "SFX Warp",
+  "sfx-wrong": "SFX Wrong",
+  "spiral-mountain-all-in-one": "Spiral Mountain (All-In-One)",
+  "spiral-mountain-aquatic": "Spiral Mountain (Aquatic)",
+  "spiral-mountain-normal": "Spiral Mountain (Normal)",
+  "ticker-s-tower": "Ticker's Tower",
+  "tooty-s-theme": "Tooty's Theme",
+  "top-of-the-lair": "Top of the Lair",
+  "treasure-trove-cove-all-in-one": "Treasure Trove Cove (All-In-One)",
+  "treasure-trove-cove-aquatic": "Treasure Trove Cove (Aquatic)",
+  "treasure-trove-cove-captain-blubber-area": "Treasure Trove Cove (Captain Blubber Area)",
+  "treasure-trove-cove-normal": "Treasure Trove Cove (Normal)",
+  "tubular-s-oujia": "Tubular's Oujia",
+  "twinklies-journey": "Twinklies' Journey",
+  "wozza-s-cave-all-in-one": "Wozza's Cave (All-In-One)",
+  "wozza-s-cave-aquatic": "Wozza's Cave (Aquatic)",
+  "wozza-s-cave-normal": "Wozza's Cave (Normal)",
+  "zubba-s-nest": "Zubba's Nest"
+ },
+ "nsf": {
+  "vault": "banjo-kazooie/",
+  "tracks": {
+   "advent-unused-beta-song": {
+    "n": 1,
+    "secs": 51.72115384615385
+   },
+   "banjo-wins-the-furnace-fun-fanfare": {
+    "n": 1,
+    "secs": 3.5234375
+   },
+   "barbeque-shock-1": {
+    "n": 1,
+    "secs": 3.4285714285714284
+   },
+   "barbeque-shock-2": {
+    "n": 1,
+    "secs": 3.4285714285714284
+   },
+   "barbeque-shock-3": {
+    "n": 1,
+    "secs": 3.4285714285714284
+   },
+   "barbeque-shock-4": {
+    "n": 1,
+    "secs": 3.4285714285714284
+   },
+   "blue-egg-max": {
+    "n": 1,
+    "secs": 1.1538461538461537
+   },
+   "boggy-s-igloo-happy": {
+    "n": 1,
+    "secs": 29.142857142857142
+   },
+   "boggy-s-igloo-sad": {
+    "n": 1,
+    "secs": 45.666666666666664
+   },
+   "boggy-s-race-lose": {
+    "n": 1,
+    "secs": 3
+   },
+   "boggy-s-race-win": {
+    "n": 1,
+    "secs": 2.925
+   },
+   "boggy-s-race": {
+    "n": 1,
+    "secs": 62.666666666666664
+   },
+   "boss-boom-box": {
+    "n": 1,
+    "secs": 55.78378378378378
+   },
+   "bottle-s-puzzle-challenge": {
+    "n": 1,
+    "secs": 81.23076923076923
+   },
+   "bottles-puzzle-challenge-start": {
+    "n": 1,
+    "secs": 1.8461538461538463
+   },
+   "brentilda-s-theme": {
+    "n": 1,
+    "secs": 50.08695652173913
+   },
+   "bridge-to-gruntilda-s-lair": {
+    "n": 1,
+    "secs": 69.81818181818181
+   },
+   "bubblegloop-swamp-interiors": {
+    "n": 1,
+    "secs": 75.11111111111111
+   },
+   "bubblegloop-swamp": {
+    "n": 1,
+    "secs": 128
+   },
+   "buried-under-a-rock": {
+    "n": 1,
+    "secs": 11.238095238095237
+   },
+   "cemetery": {
+    "n": 1,
+    "secs": 117.6
+   },
+   "cheato-s-theme": {
+    "n": 1,
+    "secs": 40
+   },
+   "christmas-lights-on": {
+    "n": 1,
+    "secs": 3.7115384615384617
+   },
+   "church-door-opens": {
+    "n": 1,
+    "secs": 4.125
+   },
+   "clanker-s-cavern-all-in-one": {
+    "n": 1,
+    "secs": 120
+   },
+   "clanker-s-cavern-aquatic": {
+    "n": 1,
+    "secs": 120
+   },
+   "clanker-s-cavern-deep-underwater": {
+    "n": 1,
+    "secs": 120
+   },
+   "clanker-s-cavern-normal": {
+    "n": 1,
+    "secs": 120
+   },
+   "click-clock-wood-autumn-all-in-one": {
+    "n": 1,
+    "secs": 123
+   },
+   "click-clock-wood-autumn-aquatic": {
+    "n": 1,
+    "secs": 123
+   },
+   "click-clock-wood-autumn-normal": {
+    "n": 1,
+    "secs": 123
+   },
+   "click-clock-wood-lobby-all-in-one": {
+    "n": 1,
+    "secs": 80.84210526315789
+   },
+   "click-clock-wood-lobby-autumn": {
+    "n": 1,
+    "secs": 80.84210526315789
+   },
+   "click-clock-wood-lobby-normal": {
+    "n": 1,
+    "secs": 80.84210526315789
+   },
+   "click-clock-wood-lobby-spring": {
+    "n": 1,
+    "secs": 80.84210526315789
+   },
+   "click-clock-wood-lobby-summer": {
+    "n": 1,
+    "secs": 80.84210526315789
+   },
+   "click-clock-wood-lobby-winter": {
+    "n": 1,
+    "secs": 80.84210526315789
+   },
+   "click-clock-wood-spring-all-in-one": {
+    "n": 1,
+    "secs": 150.85714285714286
+   },
+   "click-clock-wood-spring-aquatic": {
+    "n": 1,
+    "secs": 150.85714285714286
+   },
+   "click-clock-wood-spring-normal": {
+    "n": 1,
+    "secs": 150.85714285714286
+   },
+   "click-clock-wood-summer": {
+    "n": 1,
+    "secs": 138
+   },
+   "click-clock-wood-unused-beta-version-1": {
+    "n": 1,
+    "secs": 74.4
+   },
+   "click-clock-wood-unused-beta-version-2": {
+    "n": 1,
+    "secs": 77.33333333333333
+   },
+   "click-clock-wood-winter": {
+    "n": 1,
+    "secs": 136
+   },
+   "collect-a-secret-item-fanfare": {
+    "n": 1,
+    "secs": 3.2589285714285716
+   },
+   "collect-all-jinjos": {
+    "n": 1,
+    "secs": 5.1923076923076925
+   },
+   "collect-all-notes": {
+    "n": 1,
+    "secs": 2.066666666666667
+   },
+   "collect-blue-egg": {
+    "n": 1,
+    "secs": 0.4625
+   },
+   "collect-extra-honeycomb": {
+    "n": 1,
+    "secs": 1.4
+   },
+   "collect-extra-life": {
+    "n": 1,
+    "secs": 2.4017857142857144
+   },
+   "collect-gold-feather": {
+    "n": 1,
+    "secs": 0.75
+   },
+   "collect-honeycomb": {
+    "n": 1,
+    "secs": 0.6102941176470589
+   },
+   "collect-jigsaw-piece": {
+    "n": 1,
+    "secs": 3.8024314509762647
+   },
+   "collect-jinjo": {
+    "n": 1,
+    "secs": 3.2916666666666665
+   },
+   "collect-note": {
+    "n": 1,
+    "secs": 1
+   },
+   "collect-red-feather": {
+    "n": 1,
+    "secs": 0.7692307692307693
+   },
+   "complete-extra-honeycomb": {
+    "n": 1,
+    "secs": 3.6923076923076925
+   },
+   "complete-mozand-s-song": {
+    "n": 1,
+    "secs": 2.1818181818181817
+   },
+   "correct-fanfare": {
+    "n": 1,
+    "secs": 2.8020833333333335
+   },
+   "end-credits": {
+    "n": 1,
+    "secs": 158
+   },
+   "ending-on-vacation": {
+    "n": 1,
+    "secs": 88
+   },
+   "final-battle": {
+    "n": 1,
+    "secs": 181.33333333333334
+   },
+   "flippits-battle": {
+    "n": 1,
+    "secs": 60
+   },
+   "freezeezy-peak-all-in-one": {
+    "n": 1,
+    "secs": 119.17241379310344
+   },
+   "freezeezy-peak-aquatic": {
+    "n": 1,
+    "secs": 119.17241379310344
+   },
+   "freezeezy-peak-normal-with-christmas-bells": {
+    "n": 1,
+    "secs": 119.17241379310344
+   },
+   "freezeezy-peak-normal": {
+    "n": 1,
+    "secs": 119.17241379310344
+   },
+   "furnace-fun-banjo-kazooie-question": {
+    "n": 1,
+    "secs": 0.9765625
+   },
+   "furnace-fun-death-skull-question": {
+    "n": 1,
+    "secs": 1.3571428571428572
+   },
+   "furnace-fun-gruntilda-question": {
+    "n": 1,
+    "secs": 0.8235294117647058
+   },
+   "furnace-fun-joker": {
+    "n": 1,
+    "secs": 2.1666666666666665
+   },
+   "furnace-fun-note-question": {
+    "n": 1,
+    "secs": 0.6923076923076923
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 11.4125
+   },
+   "game-selection-1-2": {
+    "n": 1,
+    "secs": 79.32203389830508
+   },
+   "game-selection-1": {
+    "n": 1,
+    "secs": 79.32203389830508
+   },
+   "game-selection-2": {
+    "n": 1,
+    "secs": 79.32203389830508
+   },
+   "game-selection-3": {
+    "n": 1,
+    "secs": 29.548076923076923
+   },
+   "gnawty-s-house": {
+    "n": 1,
+    "secs": 66.78260869565217
+   },
+   "gobi-s-valley-all-in-one": {
+    "n": 1,
+    "secs": 129.23076923076923
+   },
+   "gobi-s-valley-aquatic": {
+    "n": 1,
+    "secs": 129.23076923076923
+   },
+   "gobi-s-valley-jinxy-s-area": {
+    "n": 1,
+    "secs": 129.23076923076923
+   },
+   "gobi-s-valley-normal": {
+    "n": 1,
+    "secs": 129.23076923076923
+   },
+   "gold-feather-max": {
+    "n": 1,
+    "secs": 1.2
+   },
+   "gruntilda-s-lair-aquatic": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-bubblegloop-swamp-freezeezy-peak-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-bubblegloop-swamp": {
+    "n": 1,
+    "secs": 118.76288659793815
+   },
+   "gruntilda-s-lair-clanker-s-cavern-bubblegloop-swamp-all-in-one": {
+    "n": 1,
+    "secs": 118.76288659793815
+   },
+   "gruntilda-s-lair-clanker-s-cavern": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-click-clock-wood-grunty-s-furnance-fun-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-click-clock-wood": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-freezeezy-peak-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-freezeezy-peak": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-gobi-s-valley-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-gobi-s-valley-mad-monster-mansion-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-gobi-s-valley": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-grunty-s-furnace-fun": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-mad-monster-mansion": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-mumbo-s-mountain-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-mumbo-s-mountain": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-rusty-bucket-bay-mad-monster-mansion-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-rusty-bucket-bay": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-treasure-trove-cove-clanker-s-cavern-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-treasure-trove-cove-click-clock-wood-all-in-one": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-treasure-trove-cove": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "grunty-falls": {
+    "n": 1,
+    "secs": 12.713235294117647
+   },
+   "grunty-s-beauty-steal-machine": {
+    "n": 1,
+    "secs": 117.33333333333333
+   },
+   "grunty-s-defeat": {
+    "n": 1,
+    "secs": 163.2
+   },
+   "grunty-s-door-opens-fanfare": {
+    "n": 1,
+    "secs": 4.01
+   },
+   "grunty-s-furnace-fun": {
+    "n": 1,
+    "secs": 145.84615384615384
+   },
+   "hissup": {
+    "n": 1,
+    "secs": 43.416666666666664
+   },
+   "hit-1": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "hit-10": {
+    "n": 1,
+    "secs": 2.3854166666666665
+   },
+   "hit-2": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "hit-3": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "hit-4": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "hit-5": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "hit-6": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "hit-7": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "hit-8": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "hit-9": {
+    "n": 1,
+    "secs": 1.3125
+   },
+   "inside-clanker-aquatic": {
+    "n": 1,
+    "secs": 128.72727272727272
+   },
+   "inside-clanker-normal": {
+    "n": 1,
+    "secs": 128.72727272727272
+   },
+   "inside-clanker": {
+    "n": 1,
+    "secs": 128.72727272727272
+   },
+   "inside-crew-quarters": {
+    "n": 1,
+    "secs": 68
+   },
+   "inside-snipper-s-shell": {
+    "n": 1,
+    "secs": 129
+   },
+   "inside-the-christmas-tree": {
+    "n": 1,
+    "secs": 38.857142857142854
+   },
+   "inside-the-church": {
+    "n": 1,
+    "secs": 181.33333333333334
+   },
+   "inside-the-mansion": {
+    "n": 1,
+    "secs": 128.7113022113022
+   },
+   "inside-the-pyramid": {
+    "n": 1,
+    "secs": 135.92391304347825
+   },
+   "inside-the-sandcastle-all-in-one": {
+    "n": 1,
+    "secs": 106.42105263157895
+   },
+   "inside-the-sandcastle-aquatic": {
+    "n": 1,
+    "secs": 106.42105263157895
+   },
+   "inside-the-sandcastle-normal": {
+    "n": 1,
+    "secs": 106.42105263157895
+   },
+   "inside-the-toilet": {
+    "n": 1,
+    "secs": 108.8
+   },
+   "inside-the-treetops-all-in-one": {
+    "n": 1,
+    "secs": 66.78260869565217
+   },
+   "inside-the-treetops-autumn": {
+    "n": 1,
+    "secs": 66.78260869565217
+   },
+   "inside-the-treetops-spring": {
+    "n": 1,
+    "secs": 66.78260869565217
+   },
+   "inside-the-treetops-summer": {
+    "n": 1,
+    "secs": 66.78260869565217
+   },
+   "inside-the-treetops-winter": {
+    "n": 1,
+    "secs": 66.78260869565217
+   },
+   "inside-the-warehouse-all-in-one": {
+    "n": 1,
+    "secs": 85.90789473684211
+   },
+   "inside-the-warehouse-aquatic": {
+    "n": 1,
+    "secs": 85.90789473684211
+   },
+   "inside-the-warehouse-normal": {
+    "n": 1,
+    "secs": 85.90789473684211
+   },
+   "jiggy-appearance": {
+    "n": 1,
+    "secs": 4.125
+   },
+   "jinjonator-appears-fanfare": {
+    "n": 1,
+    "secs": 9.6
+   },
+   "jinjonator-charges": {
+    "n": 1,
+    "secs": 72.12659101401309
+   },
+   "king-s-sandybuzz-s-maze": {
+    "n": 1,
+    "secs": 1.0208333333333333
+   },
+   "king-sandybutt-s-maze": {
+    "n": 1,
+    "secs": 60.07077480215233
+   },
+   "lose-life": {
+    "n": 1,
+    "secs": 3.685185185185185
+   },
+   "machine-room-all-in-one": {
+    "n": 1,
+    "secs": 126.96
+   },
+   "machine-room-aquatic": {
+    "n": 1,
+    "secs": 126.96
+   },
+   "machine-room-normal": {
+    "n": 1,
+    "secs": 126.96
+   },
+   "mad-monster-mansion-all-in-one": {
+    "n": 1,
+    "secs": 129.23076923076923
+   },
+   "mad-monster-mansion-aquatic": {
+    "n": 1,
+    "secs": 129.23076923076923
+   },
+   "mad-monster-mansion-normal-with-church-bell": {
+    "n": 1,
+    "secs": 129.23076923076923
+   },
+   "mad-monster-mansion-normal": {
+    "n": 1,
+    "secs": 129.23076923076923
+   },
+   "main-title": {
+    "n": 1,
+    "secs": 62.6
+   },
+   "mr-vile-s-game": {
+    "n": 1,
+    "secs": 60.759682792035726
+   },
+   "mumbo-s-barbeque": {
+    "n": 1,
+    "secs": 65.77777777777777
+   },
+   "mumbo-s-hut": {
+    "n": 1,
+    "secs": 54.666666666666664
+   },
+   "mumbo-s-magic": {
+    "n": 1,
+    "secs": 7.015625
+   },
+   "mumbo-s-mountain-all-in-one": {
+    "n": 1,
+    "secs": 126.3157894736842
+   },
+   "mumbo-s-mountain-aquatic": {
+    "n": 1,
+    "secs": 126.3157894736842
+   },
+   "mumbo-s-mountain-conga-s-patch": {
+    "n": 1,
+    "secs": 126.3157894736842
+   },
+   "mumbo-s-mountain-mumbo-s-hut": {
+    "n": 1,
+    "secs": 126.3157894736842
+   },
+   "mumbo-s-mountain-normal": {
+    "n": 1,
+    "secs": 126.3157894736842
+   },
+   "mumbo-s-mountain-ticker-s-tower": {
+    "n": 1,
+    "secs": 126.3157894736842
+   },
+   "mumbo-s-raindance-unused-beta-song": {
+    "n": 1,
+    "secs": 34.285714285714285
+   },
+   "mutie-snippets": {
+    "n": 1,
+    "secs": 60.628387979580026
+   },
+   "nabnut-s-house-all-in-one": {
+    "n": 1,
+    "secs": 81.23076923076923
+   },
+   "nabnut-s-house-aquatic": {
+    "n": 1,
+    "secs": 81.23076923076923
+   },
+   "nabnut-s-house-autumn": {
+    "n": 1,
+    "secs": 81.23076923076923
+   },
+   "nabnut-s-house-spring": {
+    "n": 1,
+    "secs": 81.23076923076923
+   },
+   "nabnut-s-house-summer": {
+    "n": 1,
+    "secs": 81.23076923076923
+   },
+   "nabnut-s-house-winter": {
+    "n": 1,
+    "secs": 81.23076923076923
+   },
+   "nabnut-s-storeage-room": {
+    "n": 1,
+    "secs": 96
+   },
+   "nintendo-rare-logo": {
+    "n": 1,
+    "secs": 11.583333333333334
+   },
+   "open-note-door-fanfare": {
+    "n": 1,
+    "secs": 4.060975609756097
+   },
+   "overture": {
+    "n": 1,
+    "secs": 207.79896713817018
+   },
+   "pause-screen": {
+    "n": 1,
+    "secs": 57.6
+   },
+   "red-feather-max": {
+    "n": 1,
+    "secs": 1.2666666666666666
+   },
+   "running-shoes-jingle": {
+    "n": 1,
+    "secs": 2.526182832482501
+   },
+   "running-shoes": {
+    "n": 1,
+    "secs": 21.472554076101257
+   },
+   "rusty-bucket-bay-all-in-one": {
+    "n": 1,
+    "secs": 114
+   },
+   "rusty-bucket-bay-aquatic": {
+    "n": 1,
+    "secs": 114
+   },
+   "rusty-bucket-bay-normal": {
+    "n": 1,
+    "secs": 114
+   },
+   "rusty-bucket-bay-whistle-puzzle": {
+    "n": 1,
+    "secs": 114
+   },
+   "secret-fanfare-1-treasure-trove-cove-rusty-bucket-bay": {
+    "n": 1,
+    "secs": 56.72727272727273
+   },
+   "secret-fanfare-2-freezeezy-peak": {
+    "n": 1,
+    "secs": 62.4
+   },
+   "secret-fanfare-3-gobi-s-valley": {
+    "n": 1,
+    "secs": 65.6842105263158
+   },
+   "secret-fanfare-4-mad-monster-mansion": {
+    "n": 1,
+    "secs": 64.8
+   },
+   "secret-fanfare-5-click-clock-wood": {
+    "n": 1,
+    "secs": 56.77272727272727
+   },
+   "sfx-bottles-challenge-pick-up": {
+    "n": 1,
+    "secs": 0.3
+   },
+   "sfx-bottles-challenge-put-back": {
+    "n": 1,
+    "secs": 0.3
+   },
+   "sfx-brentilda-appears": {
+    "n": 1,
+    "secs": 1.3854166666666667
+   },
+   "sfx-brentilda-dissappears": {
+    "n": 1,
+    "secs": 1.5833333333333333
+   },
+   "sfx-correct-jingle": {
+    "n": 1,
+    "secs": 0.96875
+   },
+   "sfx-dingpot-warp": {
+    "n": 1,
+    "secs": 4.961340206185567
+   },
+   "sfx-jinjo-activates": {
+    "n": 1,
+    "secs": 0.72
+   },
+   "sfx-jinjonator-maximum": {
+    "n": 1,
+    "secs": 17.723684210526315
+   },
+   "sfx-lighthouse-winds": {
+    "n": 1,
+    "secs": 88
+   },
+   "sfx-lose-oxygen": {
+    "n": 1,
+    "secs": 0.125
+   },
+   "sfx-magic-carpet-drop": {
+    "n": 1,
+    "secs": 4.125
+   },
+   "sfx-magic-carpet-rises": {
+    "n": 1,
+    "secs": 4.125
+   },
+   "sfx-patch-remove": {
+    "n": 1,
+    "secs": 0.42
+   },
+   "sfx-patch": {
+    "n": 1,
+    "secs": 0.42
+   },
+   "sfx-pyramids": {
+    "n": 1,
+    "secs": 4.125
+   },
+   "sfx-right": {
+    "n": 1,
+    "secs": 0.96875
+   },
+   "sfx-transformation": {
+    "n": 1,
+    "secs": 4.909090909090909
+   },
+   "sfx-warp": {
+    "n": 1,
+    "secs": 3.130298682665971
+   },
+   "sfx-wrong": {
+    "n": 1,
+    "secs": 0.6057692307692307
+   },
+   "snacker-attack": {
+    "n": 1,
+    "secs": 2
+   },
+   "snipper-battle": {
+    "n": 1,
+    "secs": 55.74193548387097
+   },
+   "spiral-mountain-all-in-one": {
+    "n": 1,
+    "secs": 126.54545454545455
+   },
+   "spiral-mountain-aquatic": {
+    "n": 1,
+    "secs": 126.54545454545455
+   },
+   "spiral-mountain-normal": {
+    "n": 1,
+    "secs": 126.54545454545455
+   },
+   "the-end": {
+    "n": 1,
+    "secs": 9.543478260869565
+   },
+   "ticker-s-tower": {
+    "n": 1,
+    "secs": 92.3076923076923
+   },
+   "tooty-s-theme": {
+    "n": 1,
+    "secs": 60.44444444444444
+   },
+   "top-of-the-lair": {
+    "n": 1,
+    "secs": 136.33333333333334
+   },
+   "treasure-trove-cove-all-in-one": {
+    "n": 1,
+    "secs": 119.04
+   },
+   "treasure-trove-cove-aquatic": {
+    "n": 1,
+    "secs": 119.04
+   },
+   "treasure-trove-cove-captain-blubber-area": {
+    "n": 1,
+    "secs": 119.04
+   },
+   "treasure-trove-cove-normal": {
+    "n": 1,
+    "secs": 119.04
+   },
+   "tubular-s-oujia": {
+    "n": 1,
+    "secs": 107
+   },
+   "twinklies-journey": {
+    "n": 1,
+    "secs": 97.92857142857143
+   },
+   "unused-1": {
+    "n": 1,
+    "secs": 0.9
+   },
+   "unused-2": {
+    "n": 1,
+    "secs": 2.7027027027027026
+   },
+   "unused-jingle": {
+    "n": 1,
+    "secs": 3.8333333333333335
+   },
+   "using-gold-feathers": {
+    "n": 1,
+    "secs": 26.322580645161292
+   },
+   "wading-boots": {
+    "n": 1,
+    "secs": 28.928571428571427
+   },
+   "world-door-open": {
+    "n": 1,
+    "secs": 3.282721962002
+   },
+   "world-puzzle-complete-fanfare": {
+    "n": 1,
+    "secs": 4.4326923076923075
+   },
+   "wozza-s-cave-all-in-one": {
+    "n": 1,
+    "secs": 43.2
+   },
+   "wozza-s-cave-aquatic": {
+    "n": 1,
+    "secs": 43.2
+   },
+   "wozza-s-cave-normal": {
+    "n": 1,
+    "secs": 43.2
+   },
+   "zoom-in": {
+    "n": 1,
+    "secs": 1.925
+   },
+   "zoom-out": {
+    "n": 1,
+    "secs": 1.925
+   },
+   "zubba-battle": {
+    "n": 1,
+    "secs": 65.68075364454502
+   },
+   "zubba-s-nest": {
+    "n": 1,
+    "secs": 90.96052631578948
+   }
+  },
+  "chip": "usf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "nus-nbke-usa.usflib",
+    "file": "nus-nbke-usa.usflib"
+   }
+  ]
+ }
+}

@@ -180,6 +180,967 @@
   ]
  },
  {
+  "title": "Banjo-Kazooie",
+  "songs": [
+   {
+    "title": "Advent (Unused Beta Song)",
+    "path": "albums/n64/banjo-kazooie/advent-unused-beta-song.mid"
+   },
+   {
+    "title": "Banjo Wins the Furnace Fun Fanfare",
+    "path": "albums/n64/banjo-kazooie/banjo-wins-the-furnace-fun-fanfare.mid"
+   },
+   {
+    "title": "Barbeque Shock 1",
+    "path": "albums/n64/banjo-kazooie/barbeque-shock-1.mid"
+   },
+   {
+    "title": "Barbeque Shock 2",
+    "path": "albums/n64/banjo-kazooie/barbeque-shock-2.mid"
+   },
+   {
+    "title": "Barbeque Shock 3",
+    "path": "albums/n64/banjo-kazooie/barbeque-shock-3.mid"
+   },
+   {
+    "title": "Barbeque Shock 4",
+    "path": "albums/n64/banjo-kazooie/barbeque-shock-4.mid"
+   },
+   {
+    "title": "Blue Egg Max",
+    "path": "albums/n64/banjo-kazooie/blue-egg-max.mid"
+   },
+   {
+    "title": "Boggy's Igloo (Happy)",
+    "path": "albums/n64/banjo-kazooie/boggy-s-igloo-happy.mid"
+   },
+   {
+    "title": "Boggy's Igloo (Sad)",
+    "path": "albums/n64/banjo-kazooie/boggy-s-igloo-sad.mid"
+   },
+   {
+    "title": "Boggy's Race",
+    "path": "albums/n64/banjo-kazooie/boggy-s-race.mid"
+   },
+   {
+    "title": "Boggy's Race Lose",
+    "path": "albums/n64/banjo-kazooie/boggy-s-race-lose.mid"
+   },
+   {
+    "title": "Boggy's Race Win",
+    "path": "albums/n64/banjo-kazooie/boggy-s-race-win.mid"
+   },
+   {
+    "title": "Boss Boom Box",
+    "path": "albums/n64/banjo-kazooie/boss-boom-box.mid"
+   },
+   {
+    "title": "Bottle's Puzzle Challenge",
+    "path": "albums/n64/banjo-kazooie/bottle-s-puzzle-challenge.mid"
+   },
+   {
+    "title": "Bottles' Puzzle Challenge Start",
+    "path": "albums/n64/banjo-kazooie/bottles-puzzle-challenge-start.mid"
+   },
+   {
+    "title": "Brentilda's Theme",
+    "path": "albums/n64/banjo-kazooie/brentilda-s-theme.mid"
+   },
+   {
+    "title": "Bridge to Gruntilda's Lair",
+    "path": "albums/n64/banjo-kazooie/bridge-to-gruntilda-s-lair.mid"
+   },
+   {
+    "title": "Bubblegloop Swamp",
+    "path": "albums/n64/banjo-kazooie/bubblegloop-swamp.mid"
+   },
+   {
+    "title": "Bubblegloop Swamp Interiors",
+    "path": "albums/n64/banjo-kazooie/bubblegloop-swamp-interiors.mid"
+   },
+   {
+    "title": "Buried under a Rock",
+    "path": "albums/n64/banjo-kazooie/buried-under-a-rock.mid"
+   },
+   {
+    "title": "Cemetery",
+    "path": "albums/n64/banjo-kazooie/cemetery.mid"
+   },
+   {
+    "title": "Cheato's Theme",
+    "path": "albums/n64/banjo-kazooie/cheato-s-theme.mid"
+   },
+   {
+    "title": "Christmas Lights On",
+    "path": "albums/n64/banjo-kazooie/christmas-lights-on.mid"
+   },
+   {
+    "title": "Church Door Opens",
+    "path": "albums/n64/banjo-kazooie/church-door-opens.mid"
+   },
+   {
+    "title": "Clanker's Cavern (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/clanker-s-cavern-all-in-one.mid"
+   },
+   {
+    "title": "Clanker's Cavern (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/clanker-s-cavern-aquatic.mid"
+   },
+   {
+    "title": "Clanker's Cavern (Deep Underwater)",
+    "path": "albums/n64/banjo-kazooie/clanker-s-cavern-deep-underwater.mid"
+   },
+   {
+    "title": "Clanker's Cavern (Normal)",
+    "path": "albums/n64/banjo-kazooie/clanker-s-cavern-normal.mid"
+   },
+   {
+    "title": "Click Clock Wood (Autumn All-In-One)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-autumn-all-in-one.mid"
+   },
+   {
+    "title": "Click Clock Wood (Autumn, Aquatic)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-autumn-aquatic.mid"
+   },
+   {
+    "title": "Click Clock Wood (Autumn, Normal)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-autumn-normal.mid"
+   },
+   {
+    "title": "Click Clock Wood (Lobby All-In-One)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-lobby-all-in-one.mid"
+   },
+   {
+    "title": "Click Clock Wood (Lobby, Autumn)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-lobby-autumn.mid"
+   },
+   {
+    "title": "Click Clock Wood (Lobby, Normal)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-lobby-normal.mid"
+   },
+   {
+    "title": "Click Clock Wood (Lobby, Spring)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-lobby-spring.mid"
+   },
+   {
+    "title": "Click Clock Wood (Lobby, Summer)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-lobby-summer.mid"
+   },
+   {
+    "title": "Click Clock Wood (Lobby, Winter)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-lobby-winter.mid"
+   },
+   {
+    "title": "Click Clock Wood (Spring All-In-One)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-spring-all-in-one.mid"
+   },
+   {
+    "title": "Click Clock Wood (Spring, Aquatic)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-spring-aquatic.mid"
+   },
+   {
+    "title": "Click Clock Wood (Spring, Normal)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-spring-normal.mid"
+   },
+   {
+    "title": "Click Clock Wood (Summer)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-summer.mid"
+   },
+   {
+    "title": "Click Clock Wood (Unused Beta Version 1)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-unused-beta-version-1.mid"
+   },
+   {
+    "title": "Click Clock Wood (Unused Beta Version 2)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-unused-beta-version-2.mid"
+   },
+   {
+    "title": "Click Clock Wood (Winter)",
+    "path": "albums/n64/banjo-kazooie/click-clock-wood-winter.mid"
+   },
+   {
+    "title": "Collect a Secret Item Fanfare",
+    "path": "albums/n64/banjo-kazooie/collect-a-secret-item-fanfare.mid"
+   },
+   {
+    "title": "Collect all Jinjos",
+    "path": "albums/n64/banjo-kazooie/collect-all-jinjos.mid"
+   },
+   {
+    "title": "Collect all Notes",
+    "path": "albums/n64/banjo-kazooie/collect-all-notes.mid"
+   },
+   {
+    "title": "Collect Blue Egg",
+    "path": "albums/n64/banjo-kazooie/collect-blue-egg.mid"
+   },
+   {
+    "title": "Collect Extra Honeycomb",
+    "path": "albums/n64/banjo-kazooie/collect-extra-honeycomb.mid"
+   },
+   {
+    "title": "Collect Extra Life",
+    "path": "albums/n64/banjo-kazooie/collect-extra-life.mid"
+   },
+   {
+    "title": "Collect Gold Feather",
+    "path": "albums/n64/banjo-kazooie/collect-gold-feather.mid"
+   },
+   {
+    "title": "Collect Honeycomb",
+    "path": "albums/n64/banjo-kazooie/collect-honeycomb.mid"
+   },
+   {
+    "title": "Collect Jigsaw Piece",
+    "path": "albums/n64/banjo-kazooie/collect-jigsaw-piece.mid"
+   },
+   {
+    "title": "Collect Jinjo",
+    "path": "albums/n64/banjo-kazooie/collect-jinjo.mid"
+   },
+   {
+    "title": "Collect Note",
+    "path": "albums/n64/banjo-kazooie/collect-note.mid"
+   },
+   {
+    "title": "Collect Red Feather",
+    "path": "albums/n64/banjo-kazooie/collect-red-feather.mid"
+   },
+   {
+    "title": "Complete Extra Honeycomb",
+    "path": "albums/n64/banjo-kazooie/complete-extra-honeycomb.mid"
+   },
+   {
+    "title": "Complete Mozand's Song",
+    "path": "albums/n64/banjo-kazooie/complete-mozand-s-song.mid"
+   },
+   {
+    "title": "Correct Fanfare",
+    "path": "albums/n64/banjo-kazooie/correct-fanfare.mid"
+   },
+   {
+    "title": "End Credits",
+    "path": "albums/n64/banjo-kazooie/end-credits.mid"
+   },
+   {
+    "title": "Ending - On Vacation",
+    "path": "albums/n64/banjo-kazooie/ending-on-vacation.mid"
+   },
+   {
+    "title": "Final Battle",
+    "path": "albums/n64/banjo-kazooie/final-battle.mid"
+   },
+   {
+    "title": "Flippits Battle",
+    "path": "albums/n64/banjo-kazooie/flippits-battle.mid"
+   },
+   {
+    "title": "Freezeezy Peak (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/freezeezy-peak-all-in-one.mid"
+   },
+   {
+    "title": "Freezeezy Peak (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/freezeezy-peak-aquatic.mid"
+   },
+   {
+    "title": "Freezeezy Peak (Normal with Christmas Bells)",
+    "path": "albums/n64/banjo-kazooie/freezeezy-peak-normal-with-christmas-bells.mid"
+   },
+   {
+    "title": "Freezeezy Peak (Normal)",
+    "path": "albums/n64/banjo-kazooie/freezeezy-peak-normal.mid"
+   },
+   {
+    "title": "Furnace Fun Banjo-Kazooie Question",
+    "path": "albums/n64/banjo-kazooie/furnace-fun-banjo-kazooie-question.mid"
+   },
+   {
+    "title": "Furnace Fun Death Skull Question",
+    "path": "albums/n64/banjo-kazooie/furnace-fun-death-skull-question.mid"
+   },
+   {
+    "title": "Furnace Fun Gruntilda Question",
+    "path": "albums/n64/banjo-kazooie/furnace-fun-gruntilda-question.mid"
+   },
+   {
+    "title": "Furnace Fun Joker",
+    "path": "albums/n64/banjo-kazooie/furnace-fun-joker.mid"
+   },
+   {
+    "title": "Furnace Fun Note Question",
+    "path": "albums/n64/banjo-kazooie/furnace-fun-note-question.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/n64/banjo-kazooie/game-over.mid"
+   },
+   {
+    "title": "Game Selection 1",
+    "path": "albums/n64/banjo-kazooie/game-selection-1.mid"
+   },
+   {
+    "title": "Game Selection 1 & 2",
+    "path": "albums/n64/banjo-kazooie/game-selection-1-2.mid"
+   },
+   {
+    "title": "Game Selection 2",
+    "path": "albums/n64/banjo-kazooie/game-selection-2.mid"
+   },
+   {
+    "title": "Game Selection 3",
+    "path": "albums/n64/banjo-kazooie/game-selection-3.mid"
+   },
+   {
+    "title": "Gnawty's House",
+    "path": "albums/n64/banjo-kazooie/gnawty-s-house.mid"
+   },
+   {
+    "title": "Gobi's Valley (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gobi-s-valley-all-in-one.mid"
+   },
+   {
+    "title": "Gobi's Valley (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/gobi-s-valley-aquatic.mid"
+   },
+   {
+    "title": "Gobi's Valley (Jinxy's Area)",
+    "path": "albums/n64/banjo-kazooie/gobi-s-valley-jinxy-s-area.mid"
+   },
+   {
+    "title": "Gobi's Valley (Normal)",
+    "path": "albums/n64/banjo-kazooie/gobi-s-valley-normal.mid"
+   },
+   {
+    "title": "Gold Feather Max",
+    "path": "albums/n64/banjo-kazooie/gold-feather-max.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-aquatic.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Bubblegloop Swamp, Freezeezy Peak All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-bubblegloop-swamp-freezeezy-peak-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Bubblegloop Swamp)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-bubblegloop-swamp.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Clanker's Cavern, Bubblegloop Swamp All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-clanker-s-cavern-bubblegloop-swamp-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Clanker's Cavern)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-clanker-s-cavern.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Click Clock Wood, Grunty's Furnance Fun All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-click-clock-wood-grunty-s-furnance-fun-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Click Clock Wood)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-click-clock-wood.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Freezeezy Peak All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-freezeezy-peak-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Freezeezy Peak)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-freezeezy-peak.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Gobi's Valley All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-gobi-s-valley-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Gobi's Valley, Mad Monster Mansion All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-gobi-s-valley-mad-monster-mansion-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Gobi's Valley)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-gobi-s-valley.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Grunty's Furnace Fun)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-grunty-s-furnace-fun.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Mad Monster Mansion)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-mad-monster-mansion.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Mumbo's Mountain All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-mumbo-s-mountain-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Mumbo's Mountain)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-mumbo-s-mountain.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Rusty Bucket Bay, Mad Monster Mansion All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-rusty-bucket-bay-mad-monster-mansion-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Rusty Bucket Bay)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-rusty-bucket-bay.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Treasure Trove Cove, Clanker's Cavern All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-treasure-trove-cove-clanker-s-cavern-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Treasure Trove Cove, Click Clock Wood All-In-One)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-treasure-trove-cove-click-clock-wood-all-in-one.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Treasure Trove Cove)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-treasure-trove-cove.mid"
+   },
+   {
+    "title": "Grunty Falls",
+    "path": "albums/n64/banjo-kazooie/grunty-falls.mid"
+   },
+   {
+    "title": "Grunty's Beauty Steal Machine",
+    "path": "albums/n64/banjo-kazooie/grunty-s-beauty-steal-machine.mid"
+   },
+   {
+    "title": "Grunty's Defeat",
+    "path": "albums/n64/banjo-kazooie/grunty-s-defeat.mid"
+   },
+   {
+    "title": "Grunty's Door Opens Fanfare",
+    "path": "albums/n64/banjo-kazooie/grunty-s-door-opens-fanfare.mid"
+   },
+   {
+    "title": "Grunty's Furnace Fun",
+    "path": "albums/n64/banjo-kazooie/grunty-s-furnace-fun.mid"
+   },
+   {
+    "title": "Hissup",
+    "path": "albums/n64/banjo-kazooie/hissup.mid"
+   },
+   {
+    "title": "Hit 1",
+    "path": "albums/n64/banjo-kazooie/hit-1.mid"
+   },
+   {
+    "title": "Hit 10",
+    "path": "albums/n64/banjo-kazooie/hit-10.mid"
+   },
+   {
+    "title": "Hit 2",
+    "path": "albums/n64/banjo-kazooie/hit-2.mid"
+   },
+   {
+    "title": "Hit 3",
+    "path": "albums/n64/banjo-kazooie/hit-3.mid"
+   },
+   {
+    "title": "Hit 4",
+    "path": "albums/n64/banjo-kazooie/hit-4.mid"
+   },
+   {
+    "title": "Hit 5",
+    "path": "albums/n64/banjo-kazooie/hit-5.mid"
+   },
+   {
+    "title": "Hit 6",
+    "path": "albums/n64/banjo-kazooie/hit-6.mid"
+   },
+   {
+    "title": "Hit 7",
+    "path": "albums/n64/banjo-kazooie/hit-7.mid"
+   },
+   {
+    "title": "Hit 8",
+    "path": "albums/n64/banjo-kazooie/hit-8.mid"
+   },
+   {
+    "title": "Hit 9",
+    "path": "albums/n64/banjo-kazooie/hit-9.mid"
+   },
+   {
+    "title": "Inside Clanker",
+    "path": "albums/n64/banjo-kazooie/inside-clanker.mid"
+   },
+   {
+    "title": "Inside Clanker (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/inside-clanker-aquatic.mid"
+   },
+   {
+    "title": "Inside Clanker (Normal)",
+    "path": "albums/n64/banjo-kazooie/inside-clanker-normal.mid"
+   },
+   {
+    "title": "Inside Crew Quarters",
+    "path": "albums/n64/banjo-kazooie/inside-crew-quarters.mid"
+   },
+   {
+    "title": "Inside Snipper's Shell",
+    "path": "albums/n64/banjo-kazooie/inside-snipper-s-shell.mid"
+   },
+   {
+    "title": "Inside the Christmas Tree",
+    "path": "albums/n64/banjo-kazooie/inside-the-christmas-tree.mid"
+   },
+   {
+    "title": "Inside the Church",
+    "path": "albums/n64/banjo-kazooie/inside-the-church.mid"
+   },
+   {
+    "title": "Inside the Mansion",
+    "path": "albums/n64/banjo-kazooie/inside-the-mansion.mid"
+   },
+   {
+    "title": "Inside the Pyramid",
+    "path": "albums/n64/banjo-kazooie/inside-the-pyramid.mid"
+   },
+   {
+    "title": "Inside the Sandcastle (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/inside-the-sandcastle-all-in-one.mid"
+   },
+   {
+    "title": "Inside the Sandcastle (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/inside-the-sandcastle-aquatic.mid"
+   },
+   {
+    "title": "Inside the Sandcastle (Normal)",
+    "path": "albums/n64/banjo-kazooie/inside-the-sandcastle-normal.mid"
+   },
+   {
+    "title": "Inside the Toilet",
+    "path": "albums/n64/banjo-kazooie/inside-the-toilet.mid"
+   },
+   {
+    "title": "Inside the Treetops (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/inside-the-treetops-all-in-one.mid"
+   },
+   {
+    "title": "Inside the Treetops (Autumn)",
+    "path": "albums/n64/banjo-kazooie/inside-the-treetops-autumn.mid"
+   },
+   {
+    "title": "Inside the Treetops (Spring)",
+    "path": "albums/n64/banjo-kazooie/inside-the-treetops-spring.mid"
+   },
+   {
+    "title": "Inside the Treetops (Summer)",
+    "path": "albums/n64/banjo-kazooie/inside-the-treetops-summer.mid"
+   },
+   {
+    "title": "Inside the Treetops (Winter)",
+    "path": "albums/n64/banjo-kazooie/inside-the-treetops-winter.mid"
+   },
+   {
+    "title": "Inside the Warehouse (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/inside-the-warehouse-all-in-one.mid"
+   },
+   {
+    "title": "Inside the Warehouse (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/inside-the-warehouse-aquatic.mid"
+   },
+   {
+    "title": "Inside the Warehouse (Normal)",
+    "path": "albums/n64/banjo-kazooie/inside-the-warehouse-normal.mid"
+   },
+   {
+    "title": "Jiggy Appearance",
+    "path": "albums/n64/banjo-kazooie/jiggy-appearance.mid"
+   },
+   {
+    "title": "Jinjonator Appears Fanfare",
+    "path": "albums/n64/banjo-kazooie/jinjonator-appears-fanfare.mid"
+   },
+   {
+    "title": "Jinjonator Charges",
+    "path": "albums/n64/banjo-kazooie/jinjonator-charges.mid"
+   },
+   {
+    "title": "King Sandybutt's Maze",
+    "path": "albums/n64/banjo-kazooie/king-sandybutt-s-maze.mid"
+   },
+   {
+    "title": "King's Sandybuzz's Maze",
+    "path": "albums/n64/banjo-kazooie/king-s-sandybuzz-s-maze.mid"
+   },
+   {
+    "title": "Lose Life",
+    "path": "albums/n64/banjo-kazooie/lose-life.mid"
+   },
+   {
+    "title": "Machine Room (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/machine-room-all-in-one.mid"
+   },
+   {
+    "title": "Machine Room (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/machine-room-aquatic.mid"
+   },
+   {
+    "title": "Machine Room (Normal)",
+    "path": "albums/n64/banjo-kazooie/machine-room-normal.mid"
+   },
+   {
+    "title": "Mad Monster Mansion (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/mad-monster-mansion-all-in-one.mid"
+   },
+   {
+    "title": "Mad Monster Mansion (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/mad-monster-mansion-aquatic.mid"
+   },
+   {
+    "title": "Mad Monster Mansion (Normal with Church Bell)",
+    "path": "albums/n64/banjo-kazooie/mad-monster-mansion-normal-with-church-bell.mid"
+   },
+   {
+    "title": "Mad Monster Mansion (Normal)",
+    "path": "albums/n64/banjo-kazooie/mad-monster-mansion-normal.mid"
+   },
+   {
+    "title": "Main Title",
+    "path": "albums/n64/banjo-kazooie/main-title.mid"
+   },
+   {
+    "title": "Mr. Vile's Game",
+    "path": "albums/n64/banjo-kazooie/mr-vile-s-game.mid"
+   },
+   {
+    "title": "Mumbo's Barbeque",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-barbeque.mid"
+   },
+   {
+    "title": "Mumbo's Hut",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-hut.mid"
+   },
+   {
+    "title": "Mumbo's Magic",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-magic.mid"
+   },
+   {
+    "title": "Mumbo's Mountain (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-mountain-all-in-one.mid"
+   },
+   {
+    "title": "Mumbo's Mountain (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-mountain-aquatic.mid"
+   },
+   {
+    "title": "Mumbo's Mountain (Conga's Patch)",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-mountain-conga-s-patch.mid"
+   },
+   {
+    "title": "Mumbo's Mountain (Mumbo's Hut)",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-mountain-mumbo-s-hut.mid"
+   },
+   {
+    "title": "Mumbo's Mountain (Normal)",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-mountain-normal.mid"
+   },
+   {
+    "title": "Mumbo's Mountain (Ticker's Tower)",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-mountain-ticker-s-tower.mid"
+   },
+   {
+    "title": "Mumbo's Raindance (Unused Beta Song)",
+    "path": "albums/n64/banjo-kazooie/mumbo-s-raindance-unused-beta-song.mid"
+   },
+   {
+    "title": "Mutie-Snippets",
+    "path": "albums/n64/banjo-kazooie/mutie-snippets.mid"
+   },
+   {
+    "title": "Nabnut's House (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/nabnut-s-house-all-in-one.mid"
+   },
+   {
+    "title": "Nabnut's House (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/nabnut-s-house-aquatic.mid"
+   },
+   {
+    "title": "Nabnut's House (Autumn)",
+    "path": "albums/n64/banjo-kazooie/nabnut-s-house-autumn.mid"
+   },
+   {
+    "title": "Nabnut's House (Spring)",
+    "path": "albums/n64/banjo-kazooie/nabnut-s-house-spring.mid"
+   },
+   {
+    "title": "Nabnut's House (Summer)",
+    "path": "albums/n64/banjo-kazooie/nabnut-s-house-summer.mid"
+   },
+   {
+    "title": "Nabnut's House (Winter)",
+    "path": "albums/n64/banjo-kazooie/nabnut-s-house-winter.mid"
+   },
+   {
+    "title": "Nabnut's Storeage Room",
+    "path": "albums/n64/banjo-kazooie/nabnut-s-storeage-room.mid"
+   },
+   {
+    "title": "Nintendo & Rare Logo",
+    "path": "albums/n64/banjo-kazooie/nintendo-rare-logo.mid"
+   },
+   {
+    "title": "Open Note Door Fanfare",
+    "path": "albums/n64/banjo-kazooie/open-note-door-fanfare.mid"
+   },
+   {
+    "title": "Overture",
+    "path": "albums/n64/banjo-kazooie/overture.mid"
+   },
+   {
+    "title": "Pause Screen",
+    "path": "albums/n64/banjo-kazooie/pause-screen.mid"
+   },
+   {
+    "title": "Red Feather Max",
+    "path": "albums/n64/banjo-kazooie/red-feather-max.mid"
+   },
+   {
+    "title": "Running Shoes",
+    "path": "albums/n64/banjo-kazooie/running-shoes.mid"
+   },
+   {
+    "title": "Running Shoes Jingle",
+    "path": "albums/n64/banjo-kazooie/running-shoes-jingle.mid"
+   },
+   {
+    "title": "Rusty Bucket Bay (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/rusty-bucket-bay-all-in-one.mid"
+   },
+   {
+    "title": "Rusty Bucket Bay (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/rusty-bucket-bay-aquatic.mid"
+   },
+   {
+    "title": "Rusty Bucket Bay (Normal)",
+    "path": "albums/n64/banjo-kazooie/rusty-bucket-bay-normal.mid"
+   },
+   {
+    "title": "Rusty Bucket Bay (Whistle Puzzle)",
+    "path": "albums/n64/banjo-kazooie/rusty-bucket-bay-whistle-puzzle.mid"
+   },
+   {
+    "title": "Secret Fanfare 1 (Treasure Trove Cove, Rusty Bucket Bay)",
+    "path": "albums/n64/banjo-kazooie/secret-fanfare-1-treasure-trove-cove-rusty-bucket-bay.mid"
+   },
+   {
+    "title": "Secret Fanfare 2 (Freezeezy Peak)",
+    "path": "albums/n64/banjo-kazooie/secret-fanfare-2-freezeezy-peak.mid"
+   },
+   {
+    "title": "Secret Fanfare 3 (Gobi's Valley)",
+    "path": "albums/n64/banjo-kazooie/secret-fanfare-3-gobi-s-valley.mid"
+   },
+   {
+    "title": "Secret Fanfare 4 (Mad Monster Mansion)",
+    "path": "albums/n64/banjo-kazooie/secret-fanfare-4-mad-monster-mansion.mid"
+   },
+   {
+    "title": "Secret Fanfare 5 (Click Clock Wood)",
+    "path": "albums/n64/banjo-kazooie/secret-fanfare-5-click-clock-wood.mid"
+   },
+   {
+    "title": "SFX Bottles' Challenge Pick Up",
+    "path": "albums/n64/banjo-kazooie/sfx-bottles-challenge-pick-up.mid"
+   },
+   {
+    "title": "SFX Bottles' Challenge Put Back",
+    "path": "albums/n64/banjo-kazooie/sfx-bottles-challenge-put-back.mid"
+   },
+   {
+    "title": "SFX Brentilda Appears",
+    "path": "albums/n64/banjo-kazooie/sfx-brentilda-appears.mid"
+   },
+   {
+    "title": "SFX Brentilda Dissappears",
+    "path": "albums/n64/banjo-kazooie/sfx-brentilda-dissappears.mid"
+   },
+   {
+    "title": "SFX Correct Jingle",
+    "path": "albums/n64/banjo-kazooie/sfx-correct-jingle.mid"
+   },
+   {
+    "title": "SFX Dingpot Warp",
+    "path": "albums/n64/banjo-kazooie/sfx-dingpot-warp.mid"
+   },
+   {
+    "title": "SFX Jinjo Activates",
+    "path": "albums/n64/banjo-kazooie/sfx-jinjo-activates.mid"
+   },
+   {
+    "title": "SFX Jinjonator Maximum",
+    "path": "albums/n64/banjo-kazooie/sfx-jinjonator-maximum.mid"
+   },
+   {
+    "title": "SFX Lighthouse Winds",
+    "path": "albums/n64/banjo-kazooie/sfx-lighthouse-winds.mid"
+   },
+   {
+    "title": "SFX Lose Oxygen",
+    "path": "albums/n64/banjo-kazooie/sfx-lose-oxygen.mid"
+   },
+   {
+    "title": "SFX Magic Carpet Drop",
+    "path": "albums/n64/banjo-kazooie/sfx-magic-carpet-drop.mid"
+   },
+   {
+    "title": "SFX Magic Carpet Rises",
+    "path": "albums/n64/banjo-kazooie/sfx-magic-carpet-rises.mid"
+   },
+   {
+    "title": "SFX Patch",
+    "path": "albums/n64/banjo-kazooie/sfx-patch.mid"
+   },
+   {
+    "title": "SFX Patch Remove",
+    "path": "albums/n64/banjo-kazooie/sfx-patch-remove.mid"
+   },
+   {
+    "title": "SFX Pyramids",
+    "path": "albums/n64/banjo-kazooie/sfx-pyramids.mid"
+   },
+   {
+    "title": "SFX Right",
+    "path": "albums/n64/banjo-kazooie/sfx-right.mid"
+   },
+   {
+    "title": "SFX Transformation",
+    "path": "albums/n64/banjo-kazooie/sfx-transformation.mid"
+   },
+   {
+    "title": "SFX Warp",
+    "path": "albums/n64/banjo-kazooie/sfx-warp.mid"
+   },
+   {
+    "title": "SFX Wrong",
+    "path": "albums/n64/banjo-kazooie/sfx-wrong.mid"
+   },
+   {
+    "title": "Snacker Attack",
+    "path": "albums/n64/banjo-kazooie/snacker-attack.mid"
+   },
+   {
+    "title": "Snipper Battle",
+    "path": "albums/n64/banjo-kazooie/snipper-battle.mid"
+   },
+   {
+    "title": "Spiral Mountain (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/spiral-mountain-all-in-one.mid"
+   },
+   {
+    "title": "Spiral Mountain (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/spiral-mountain-aquatic.mid"
+   },
+   {
+    "title": "Spiral Mountain (Normal)",
+    "path": "albums/n64/banjo-kazooie/spiral-mountain-normal.mid"
+   },
+   {
+    "title": "The End",
+    "path": "albums/n64/banjo-kazooie/the-end.mid"
+   },
+   {
+    "title": "Ticker's Tower",
+    "path": "albums/n64/banjo-kazooie/ticker-s-tower.mid"
+   },
+   {
+    "title": "Tooty's Theme",
+    "path": "albums/n64/banjo-kazooie/tooty-s-theme.mid"
+   },
+   {
+    "title": "Top of the Lair",
+    "path": "albums/n64/banjo-kazooie/top-of-the-lair.mid"
+   },
+   {
+    "title": "Treasure Trove Cove (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/treasure-trove-cove-all-in-one.mid"
+   },
+   {
+    "title": "Treasure Trove Cove (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/treasure-trove-cove-aquatic.mid"
+   },
+   {
+    "title": "Treasure Trove Cove (Captain Blubber Area)",
+    "path": "albums/n64/banjo-kazooie/treasure-trove-cove-captain-blubber-area.mid"
+   },
+   {
+    "title": "Treasure Trove Cove (Normal)",
+    "path": "albums/n64/banjo-kazooie/treasure-trove-cove-normal.mid"
+   },
+   {
+    "title": "Tubular's Oujia",
+    "path": "albums/n64/banjo-kazooie/tubular-s-oujia.mid"
+   },
+   {
+    "title": "Twinklies' Journey",
+    "path": "albums/n64/banjo-kazooie/twinklies-journey.mid"
+   },
+   {
+    "title": "Unused 1",
+    "path": "albums/n64/banjo-kazooie/unused-1.mid"
+   },
+   {
+    "title": "Unused 2",
+    "path": "albums/n64/banjo-kazooie/unused-2.mid"
+   },
+   {
+    "title": "Unused Jingle",
+    "path": "albums/n64/banjo-kazooie/unused-jingle.mid"
+   },
+   {
+    "title": "Using Gold Feathers",
+    "path": "albums/n64/banjo-kazooie/using-gold-feathers.mid"
+   },
+   {
+    "title": "Wading Boots",
+    "path": "albums/n64/banjo-kazooie/wading-boots.mid"
+   },
+   {
+    "title": "World Door Open",
+    "path": "albums/n64/banjo-kazooie/world-door-open.mid"
+   },
+   {
+    "title": "World Puzzle Complete Fanfare",
+    "path": "albums/n64/banjo-kazooie/world-puzzle-complete-fanfare.mid"
+   },
+   {
+    "title": "Wozza's Cave (All-In-One)",
+    "path": "albums/n64/banjo-kazooie/wozza-s-cave-all-in-one.mid"
+   },
+   {
+    "title": "Wozza's Cave (Aquatic)",
+    "path": "albums/n64/banjo-kazooie/wozza-s-cave-aquatic.mid"
+   },
+   {
+    "title": "Wozza's Cave (Normal)",
+    "path": "albums/n64/banjo-kazooie/wozza-s-cave-normal.mid"
+   },
+   {
+    "title": "Zoom In",
+    "path": "albums/n64/banjo-kazooie/zoom-in.mid"
+   },
+   {
+    "title": "Zoom Out",
+    "path": "albums/n64/banjo-kazooie/zoom-out.mid"
+   },
+   {
+    "title": "Zubba Battle",
+    "path": "albums/n64/banjo-kazooie/zubba-battle.mid"
+   },
+   {
+    "title": "Zubba's Nest",
+    "path": "albums/n64/banjo-kazooie/zubba-s-nest.mid"
+   }
+  ]
+ },
+ {
   "title": "Castlevania",
   "songs": [
    {
