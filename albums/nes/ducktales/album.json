@@ -1,0 +1,57 @@
+{
+ "title": "DuckTales",
+ "order": 50,
+ "songs": {
+  "bless-me-bagpipes": "Bless Me Bagpipes!",
+  "gyro-s-flying-machine": "Gyro's Flying Machine"
+ },
+ "nsf": {
+  "vault": "ducktales.nsf",
+  "tracks": {
+   "african-mines": {
+    "n": 5,
+    "secs": 30.382118000000002
+   },
+   "amazon": {
+    "n": 3,
+    "secs": 38.398464000000004
+   },
+   "bless-me-bagpipes": {
+    "n": 11,
+    "secs": 14.966068
+   },
+   "boss-battle": {
+    "n": 8,
+    "secs": 18.649254
+   },
+   "death": {
+    "n": 10,
+    "secs": 3.199872
+   },
+   "gyro-s-flying-machine": {
+    "n": 9,
+    "secs": 16.782662000000002
+   },
+   "himalayas": {
+    "n": 6,
+    "secs": 36.648534
+   },
+   "opening": {
+    "n": 1,
+    "secs": 52.797888
+   },
+   "stage-select": {
+    "n": 2,
+    "secs": 3.3332
+   },
+   "the-moon": {
+    "n": 7,
+    "secs": 49.814674000000004
+   },
+   "transylvania": {
+    "n": 4,
+    "secs": 43.981574
+   }
+  }
+ }
+}

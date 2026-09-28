@@ -667,6 +667,55 @@
   ]
  },
  {
+  "title": "DuckTales",
+  "songs": [
+   {
+    "title": "African Mines",
+    "path": "albums/nes/ducktales/african-mines.mid"
+   },
+   {
+    "title": "Amazon",
+    "path": "albums/nes/ducktales/amazon.mid"
+   },
+   {
+    "title": "Bless Me Bagpipes!",
+    "path": "albums/nes/ducktales/bless-me-bagpipes.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/nes/ducktales/boss-battle.mid"
+   },
+   {
+    "title": "Death",
+    "path": "albums/nes/ducktales/death.mid"
+   },
+   {
+    "title": "Gyro's Flying Machine",
+    "path": "albums/nes/ducktales/gyro-s-flying-machine.mid"
+   },
+   {
+    "title": "Himalayas",
+    "path": "albums/nes/ducktales/himalayas.mid"
+   },
+   {
+    "title": "Opening",
+    "path": "albums/nes/ducktales/opening.mid"
+   },
+   {
+    "title": "Stage Select",
+    "path": "albums/nes/ducktales/stage-select.mid"
+   },
+   {
+    "title": "The Moon",
+    "path": "albums/nes/ducktales/the-moon.mid"
+   },
+   {
+    "title": "Transylvania",
+    "path": "albums/nes/ducktales/transylvania.mid"
+   }
+  ]
+ },
+ {
   "title": "Final Fantasy 4",
   "songs": [
    {
