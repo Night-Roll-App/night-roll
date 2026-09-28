@@ -1059,6 +1059,20 @@ docs/adding-a-console.md (the whole checklist: rips, ground truth,
 capture, chip audio, publish, instruments, terminal import, listening
 pass, docs).
 
+## TWO PRODUCTS? — IDEA 2026-09-28 (Josh: "not sure that we should take action on it")
+
+"It's almost like we have two different products here. One is like Retro
+DAW and the other one is the Learning DAW or the Annotations DAW. Maybe
+later we rename them and ship them like that." Notes: one engine (roll,
+annotations, playback, importers) — a split is packaging, and the
+EDITION switch (web / app) already builds variants. The learning side
+needs no rips (annotations, theory tools, own songs, starters): no
+take-down exposure, easiest App Store story. The retro side carries the
+rips, game instruments and the archive — the killer feature and all the
+risk. Cost of splitting: the combination (a game song's notes read AND
+heard with its own instruments) is part of the magic. Decide at store
+time, with the org move.
+
 ## SUBSCRIBE TO OTHER LIBRARIES — IDEA 2026-09-28 (Josh: "not saying we should do anything about this right now")
 
 "You should also be able to specify other repos that you want to pull
