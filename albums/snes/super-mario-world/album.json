@@ -1,0 +1,316 @@
+{
+ "title": "Super Mario World",
+ "order": 50,
+ "songs": {
+  "athletic-hurry-yoshi": "Athletic (Hurry Yoshi)",
+  "athletic-hurry": "Athletic (Hurry)",
+  "athletic-yoshi": "Athletic (Yoshi)",
+  "bonus-game-hurry": "Bonus Game (Hurry)",
+  "boss-battle-hurry": "Boss Battle (Hurry)",
+  "bowser-s-castle-emerges": "Bowser's Castle Emerges",
+  "bowser-s-last-attack-faster": "Bowser's Last Attack (Faster)",
+  "bowser-s-last-attack": "Bowser's Last Attack",
+  "cast-list-looped": "Cast List (Looped)",
+  "egg-is-rescued": "Egg is Rescued",
+  "fade-out": "Fade Out!",
+  "forest-of-illusion": "Forest of Illusion",
+  "fortress-hurry": "Fortress (Hurry)",
+  "haunted-house-hurry": "Haunted House (Hurry)",
+  "invincible-cave-hurry": "Invincible (Cave Hurry)",
+  "invincible-cave": "Invincible (Cave)",
+  "invincible-hurry": "Invincible (Hurry)",
+  "overworld-hurry-yoshi": "Overworld (Hurry Yoshi)",
+  "overworld-hurry": "Overworld (Hurry)",
+  "overworld-yoshi": "Overworld (Yoshi)",
+  "p-switch-cave-hurry": "P-Switch (Cave Hurry)",
+  "p-switch-cave": "P-Switch (Cave)",
+  "p-switch-hurry": "P-Switch (Hurry)",
+  "p-switch": "P-Switch",
+  "peach-s-item": "Peach's Item",
+  "princess-peach-is-rescued": "Princess Peach is Rescued",
+  "secret-exit": "Secret Exit!",
+  "super-mario-bros-remix": "Super Mario Bros. Remix",
+  "swimming-hurry-yoshi": "Swimming (Hurry Yoshi)",
+  "swimming-hurry": "Swimming (Hurry)",
+  "swimming-yoshi": "Swimming (Yoshi)",
+  "the-evil-king-bowser-intro": "The Evil King Bowser (Intro)",
+  "the-yoshis-are-home": "The Yoshis are Home",
+  "underground-hurry": "Underground (Hurry)",
+  "underground-yoshi-hurry": "Underground (Yoshi Hurry)",
+  "underground-yoshi": "Underground (Yoshi)",
+  "valley-of-bowser": "Valley of Bowser",
+  "wandering-the-plains": "Wandering the Plains",
+  "yoshi-s-island": "Yoshi's Island"
+ },
+ "nsf": {
+  "vault": "super-mario-world/",
+  "tracks": {
+   "athletic-hurry-yoshi": {
+    "n": 1,
+    "secs": 65
+   },
+   "athletic-hurry": {
+    "n": 1,
+    "secs": 65
+   },
+   "athletic-yoshi": {
+    "n": 1,
+    "secs": 75
+   },
+   "athletic": {
+    "n": 1,
+    "secs": 75
+   },
+   "bonus-game-clear": {
+    "n": 1,
+    "secs": 12
+   },
+   "bonus-game-hurry": {
+    "n": 1,
+    "secs": 56
+   },
+   "bonus-game": {
+    "n": 1,
+    "secs": 64
+   },
+   "boss-battle-hurry": {
+    "n": 1,
+    "secs": 80
+   },
+   "boss-battle": {
+    "n": 1,
+    "secs": 96
+   },
+   "bowser-defeated": {
+    "n": 1,
+    "secs": 12
+   },
+   "bowser-s-castle-emerges": {
+    "n": 1,
+    "secs": 12
+   },
+   "bowser-s-last-attack-faster": {
+    "n": 1,
+    "secs": 70
+   },
+   "bowser-s-last-attack": {
+    "n": 1,
+    "secs": 75
+   },
+   "bowser-zoom-out": {
+    "n": 1,
+    "secs": 12
+   },
+   "bowser-zoom": {
+    "n": 1,
+    "secs": 12
+   },
+   "cast-list-looped": {
+    "n": 1,
+    "secs": 102
+   },
+   "cast-list": {
+    "n": 1,
+    "secs": 140
+   },
+   "course-clear": {
+    "n": 1,
+    "secs": 12
+   },
+   "egg-is-rescued": {
+    "n": 1,
+    "secs": 12
+   },
+   "fade-out": {
+    "n": 1,
+    "secs": 12
+   },
+   "forest-of-illusion": {
+    "n": 1,
+    "secs": 31
+   },
+   "fortress-clear": {
+    "n": 1,
+    "secs": 12
+   },
+   "fortress-hurry": {
+    "n": 1,
+    "secs": 114
+   },
+   "fortress": {
+    "n": 1,
+    "secs": 161
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 12
+   },
+   "haunted-house-hurry": {
+    "n": 1,
+    "secs": 109
+   },
+   "haunted-house": {
+    "n": 1,
+    "secs": 166
+   },
+   "invincible-cave-hurry": {
+    "n": 1,
+    "secs": 12
+   },
+   "invincible-cave": {
+    "n": 1,
+    "secs": 12
+   },
+   "invincible-hurry": {
+    "n": 1,
+    "secs": 12
+   },
+   "invincible": {
+    "n": 1,
+    "secs": 12
+   },
+   "nintendo-logo": {
+    "n": 1,
+    "secs": 12
+   },
+   "overworld-hurry-yoshi": {
+    "n": 1,
+    "secs": 69
+   },
+   "overworld-hurry": {
+    "n": 1,
+    "secs": 69
+   },
+   "overworld-yoshi": {
+    "n": 1,
+    "secs": 81
+   },
+   "overworld": {
+    "n": 1,
+    "secs": 81
+   },
+   "p-switch-cave-hurry": {
+    "n": 1,
+    "secs": 11.97
+   },
+   "p-switch-cave": {
+    "n": 1,
+    "secs": 13
+   },
+   "p-switch-hurry": {
+    "n": 1,
+    "secs": 12
+   },
+   "p-switch": {
+    "n": 1,
+    "secs": 13
+   },
+   "peach-s-item": {
+    "n": 1,
+    "secs": 12
+   },
+   "player-down": {
+    "n": 1,
+    "secs": 12
+   },
+   "princess-peach-is-rescued": {
+    "n": 1,
+    "secs": 18
+   },
+   "secret-exit": {
+    "n": 1,
+    "secs": 12
+   },
+   "special-world": {
+    "n": 1,
+    "secs": 29
+   },
+   "staff-roll": {
+    "n": 1,
+    "secs": 96
+   },
+   "star-road": {
+    "n": 1,
+    "secs": 23
+   },
+   "super-mario-bros-remix": {
+    "n": 1,
+    "secs": 172
+   },
+   "swimming-hurry-yoshi": {
+    "n": 1,
+    "secs": 80
+   },
+   "swimming-hurry": {
+    "n": 1,
+    "secs": 80
+   },
+   "swimming-yoshi": {
+    "n": 1,
+    "secs": 96
+   },
+   "swimming": {
+    "n": 1,
+    "secs": 96
+   },
+   "the-evil-king-bowser-intro": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-evil-king-bowser": {
+    "n": 1,
+    "secs": 93
+   },
+   "the-yoshis-are-home": {
+    "n": 1,
+    "secs": 15
+   },
+   "title": {
+    "n": 1,
+    "secs": 81
+   },
+   "underground-hurry": {
+    "n": 1,
+    "secs": 65
+   },
+   "underground-yoshi-hurry": {
+    "n": 1,
+    "secs": 65
+   },
+   "underground-yoshi": {
+    "n": 1,
+    "secs": 83
+   },
+   "underground": {
+    "n": 1,
+    "secs": 83
+   },
+   "valley-of-bowser": {
+    "n": 1,
+    "secs": 20
+   },
+   "vanilla-dome": {
+    "n": 1,
+    "secs": 39
+   },
+   "wandering-the-plains": {
+    "n": 1,
+    "secs": 28
+   },
+   "world-clear": {
+    "n": 1,
+    "secs": 14
+   },
+   "yoshi-s-island": {
+    "n": 1,
+    "secs": 21
+   },
+   "yoshi": {
+    "n": 1,
+    "secs": 12
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}

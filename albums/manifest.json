@@ -3547,6 +3547,275 @@
   ]
  },
  {
+  "title": "Super Mario World",
+  "songs": [
+   {
+    "title": "Athletic",
+    "path": "albums/snes/super-mario-world/athletic.mid"
+   },
+   {
+    "title": "Athletic (Hurry Yoshi)",
+    "path": "albums/snes/super-mario-world/athletic-hurry-yoshi.mid"
+   },
+   {
+    "title": "Athletic (Hurry)",
+    "path": "albums/snes/super-mario-world/athletic-hurry.mid"
+   },
+   {
+    "title": "Athletic (Yoshi)",
+    "path": "albums/snes/super-mario-world/athletic-yoshi.mid"
+   },
+   {
+    "title": "Bonus Game",
+    "path": "albums/snes/super-mario-world/bonus-game.mid"
+   },
+   {
+    "title": "Bonus Game (Hurry)",
+    "path": "albums/snes/super-mario-world/bonus-game-hurry.mid"
+   },
+   {
+    "title": "Bonus Game Clear",
+    "path": "albums/snes/super-mario-world/bonus-game-clear.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/snes/super-mario-world/boss-battle.mid"
+   },
+   {
+    "title": "Boss Battle (Hurry)",
+    "path": "albums/snes/super-mario-world/boss-battle-hurry.mid"
+   },
+   {
+    "title": "Bowser Defeated",
+    "path": "albums/snes/super-mario-world/bowser-defeated.mid"
+   },
+   {
+    "title": "Bowser Zoom",
+    "path": "albums/snes/super-mario-world/bowser-zoom.mid"
+   },
+   {
+    "title": "Bowser Zoom Out",
+    "path": "albums/snes/super-mario-world/bowser-zoom-out.mid"
+   },
+   {
+    "title": "Bowser's Castle Emerges",
+    "path": "albums/snes/super-mario-world/bowser-s-castle-emerges.mid"
+   },
+   {
+    "title": "Bowser's Last Attack",
+    "path": "albums/snes/super-mario-world/bowser-s-last-attack.mid"
+   },
+   {
+    "title": "Bowser's Last Attack (Faster)",
+    "path": "albums/snes/super-mario-world/bowser-s-last-attack-faster.mid"
+   },
+   {
+    "title": "Cast List",
+    "path": "albums/snes/super-mario-world/cast-list.mid"
+   },
+   {
+    "title": "Cast List (Looped)",
+    "path": "albums/snes/super-mario-world/cast-list-looped.mid"
+   },
+   {
+    "title": "Course Clear",
+    "path": "albums/snes/super-mario-world/course-clear.mid"
+   },
+   {
+    "title": "Egg is Rescued",
+    "path": "albums/snes/super-mario-world/egg-is-rescued.mid"
+   },
+   {
+    "title": "Fade Out!",
+    "path": "albums/snes/super-mario-world/fade-out.mid"
+   },
+   {
+    "title": "Forest of Illusion",
+    "path": "albums/snes/super-mario-world/forest-of-illusion.mid"
+   },
+   {
+    "title": "Fortress",
+    "path": "albums/snes/super-mario-world/fortress.mid"
+   },
+   {
+    "title": "Fortress (Hurry)",
+    "path": "albums/snes/super-mario-world/fortress-hurry.mid"
+   },
+   {
+    "title": "Fortress Clear",
+    "path": "albums/snes/super-mario-world/fortress-clear.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/snes/super-mario-world/game-over.mid"
+   },
+   {
+    "title": "Haunted House",
+    "path": "albums/snes/super-mario-world/haunted-house.mid"
+   },
+   {
+    "title": "Haunted House (Hurry)",
+    "path": "albums/snes/super-mario-world/haunted-house-hurry.mid"
+   },
+   {
+    "title": "Invincible",
+    "path": "albums/snes/super-mario-world/invincible.mid"
+   },
+   {
+    "title": "Invincible (Cave Hurry)",
+    "path": "albums/snes/super-mario-world/invincible-cave-hurry.mid"
+   },
+   {
+    "title": "Invincible (Cave)",
+    "path": "albums/snes/super-mario-world/invincible-cave.mid"
+   },
+   {
+    "title": "Invincible (Hurry)",
+    "path": "albums/snes/super-mario-world/invincible-hurry.mid"
+   },
+   {
+    "title": "Nintendo Logo",
+    "path": "albums/snes/super-mario-world/nintendo-logo.mid"
+   },
+   {
+    "title": "Overworld",
+    "path": "albums/snes/super-mario-world/overworld.mid"
+   },
+   {
+    "title": "Overworld (Hurry Yoshi)",
+    "path": "albums/snes/super-mario-world/overworld-hurry-yoshi.mid"
+   },
+   {
+    "title": "Overworld (Hurry)",
+    "path": "albums/snes/super-mario-world/overworld-hurry.mid"
+   },
+   {
+    "title": "Overworld (Yoshi)",
+    "path": "albums/snes/super-mario-world/overworld-yoshi.mid"
+   },
+   {
+    "title": "P-Switch",
+    "path": "albums/snes/super-mario-world/p-switch.mid"
+   },
+   {
+    "title": "P-Switch (Cave Hurry)",
+    "path": "albums/snes/super-mario-world/p-switch-cave-hurry.mid"
+   },
+   {
+    "title": "P-Switch (Cave)",
+    "path": "albums/snes/super-mario-world/p-switch-cave.mid"
+   },
+   {
+    "title": "P-Switch (Hurry)",
+    "path": "albums/snes/super-mario-world/p-switch-hurry.mid"
+   },
+   {
+    "title": "Peach's Item",
+    "path": "albums/snes/super-mario-world/peach-s-item.mid"
+   },
+   {
+    "title": "Player Down",
+    "path": "albums/snes/super-mario-world/player-down.mid"
+   },
+   {
+    "title": "Princess Peach is Rescued",
+    "path": "albums/snes/super-mario-world/princess-peach-is-rescued.mid"
+   },
+   {
+    "title": "Secret Exit!",
+    "path": "albums/snes/super-mario-world/secret-exit.mid"
+   },
+   {
+    "title": "Special World",
+    "path": "albums/snes/super-mario-world/special-world.mid"
+   },
+   {
+    "title": "Staff Roll",
+    "path": "albums/snes/super-mario-world/staff-roll.mid"
+   },
+   {
+    "title": "Star Road",
+    "path": "albums/snes/super-mario-world/star-road.mid"
+   },
+   {
+    "title": "Super Mario Bros. Remix",
+    "path": "albums/snes/super-mario-world/super-mario-bros-remix.mid"
+   },
+   {
+    "title": "Swimming",
+    "path": "albums/snes/super-mario-world/swimming.mid"
+   },
+   {
+    "title": "Swimming (Hurry Yoshi)",
+    "path": "albums/snes/super-mario-world/swimming-hurry-yoshi.mid"
+   },
+   {
+    "title": "Swimming (Hurry)",
+    "path": "albums/snes/super-mario-world/swimming-hurry.mid"
+   },
+   {
+    "title": "Swimming (Yoshi)",
+    "path": "albums/snes/super-mario-world/swimming-yoshi.mid"
+   },
+   {
+    "title": "The Evil King Bowser",
+    "path": "albums/snes/super-mario-world/the-evil-king-bowser.mid"
+   },
+   {
+    "title": "The Evil King Bowser (Intro)",
+    "path": "albums/snes/super-mario-world/the-evil-king-bowser-intro.mid"
+   },
+   {
+    "title": "The Yoshis are Home",
+    "path": "albums/snes/super-mario-world/the-yoshis-are-home.mid"
+   },
+   {
+    "title": "Title",
+    "path": "albums/snes/super-mario-world/title.mid"
+   },
+   {
+    "title": "Underground",
+    "path": "albums/snes/super-mario-world/underground.mid"
+   },
+   {
+    "title": "Underground (Hurry)",
+    "path": "albums/snes/super-mario-world/underground-hurry.mid"
+   },
+   {
+    "title": "Underground (Yoshi Hurry)",
+    "path": "albums/snes/super-mario-world/underground-yoshi-hurry.mid"
+   },
+   {
+    "title": "Underground (Yoshi)",
+    "path": "albums/snes/super-mario-world/underground-yoshi.mid"
+   },
+   {
+    "title": "Valley of Bowser",
+    "path": "albums/snes/super-mario-world/valley-of-bowser.mid"
+   },
+   {
+    "title": "Vanilla Dome",
+    "path": "albums/snes/super-mario-world/vanilla-dome.mid"
+   },
+   {
+    "title": "Wandering the Plains",
+    "path": "albums/snes/super-mario-world/wandering-the-plains.mid"
+   },
+   {
+    "title": "World Clear",
+    "path": "albums/snes/super-mario-world/world-clear.mid"
+   },
+   {
+    "title": "Yoshi",
+    "path": "albums/snes/super-mario-world/yoshi.mid"
+   },
+   {
+    "title": "Yoshi's Island",
+    "path": "albums/snes/super-mario-world/yoshi-s-island.mid"
+   }
+  ]
+ },
+ {
   "title": "Tetris",
   "songs": [
    {
