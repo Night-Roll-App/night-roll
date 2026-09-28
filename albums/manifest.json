@@ -3393,6 +3393,115 @@
   ]
  },
  {
+  "title": "Ninja Gaiden",
+  "songs": [
+   {
+    "title": "A Hero's End [Ending I]",
+    "path": "albums/nes/ninja-gaiden/a-hero-s-end-ending-i.mid"
+   },
+   {
+    "title": "Aftermath [Cutscene]",
+    "path": "albums/nes/ninja-gaiden/aftermath-cutscene.mid"
+   },
+   {
+    "title": "Apprehensive Moments [Cutscene, 4-3]",
+    "path": "albums/nes/ninja-gaiden/apprehensive-moments-cutscene-4-3.mid"
+   },
+   {
+    "title": "Bloody Malth [Cutscene]",
+    "path": "albums/nes/ninja-gaiden/bloody-malth-cutscene.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/nes/ninja-gaiden/boss-battle.mid"
+   },
+   {
+    "title": "Credits [Duplicate]",
+    "path": "albums/nes/ninja-gaiden/credits-duplicate.mid"
+   },
+   {
+    "title": "Depth of Wickedness [5-1, 6-5]",
+    "path": "albums/nes/ninja-gaiden/depth-of-wickedness-5-1-6-5.mid"
+   },
+   {
+    "title": "Devilish Influence [Cutscene, 6-4]",
+    "path": "albums/nes/ninja-gaiden/devilish-influence-cutscene-6-4.mid"
+   },
+   {
+    "title": "Evading the Enemy [2-1, 6-1]",
+    "path": "albums/nes/ninja-gaiden/evading-the-enemy-2-1-6-1.mid"
+   },
+   {
+    "title": "Evil Plans [Cutscene]",
+    "path": "albums/nes/ninja-gaiden/evil-plans-cutscene.mid"
+   },
+   {
+    "title": "For Your Love [Ending III]",
+    "path": "albums/nes/ninja-gaiden/for-your-love-ending-iii.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/nes/ninja-gaiden/game-over.mid"
+   },
+   {
+    "title": "Information and Coercion [Cutscene]",
+    "path": "albums/nes/ninja-gaiden/information-and-coercion-cutscene.mid"
+   },
+   {
+    "title": "It's Over [Ending II]",
+    "path": "albums/nes/ninja-gaiden/it-s-over-ending-ii.mid"
+   },
+   {
+    "title": "Jaquio Fortress [Cutscene]",
+    "path": "albums/nes/ninja-gaiden/jaquio-fortress-cutscene.mid"
+   },
+   {
+    "title": "Nowhere to Run [3-2, 6-2]",
+    "path": "albums/nes/ninja-gaiden/nowhere-to-run-3-2-6-2.mid"
+   },
+   {
+    "title": "Pushing Onward [1-1, 5-2, 6-3]",
+    "path": "albums/nes/ninja-gaiden/pushing-onward-1-1-5-2-6-3.mid"
+   },
+   {
+    "title": "Rugged Terrain [2-2, 4-1]",
+    "path": "albums/nes/ninja-gaiden/rugged-terrain-2-2-4-1.mid"
+   },
+   {
+    "title": "Seeking Truth [Cutscene, 5-3]",
+    "path": "albums/nes/ninja-gaiden/seeking-truth-cutscene-5-3.mid"
+   },
+   {
+    "title": "SFX ( Next Act )",
+    "path": "albums/nes/ninja-gaiden/sfx-next-act.mid"
+   },
+   {
+    "title": "Spawn of Evil [Cutscene]",
+    "path": "albums/nes/ninja-gaiden/spawn-of-evil-cutscene.mid"
+   },
+   {
+    "title": "Swift Ninja [Cutscene, 3-1]",
+    "path": "albums/nes/ninja-gaiden/swift-ninja-cutscene-3-1.mid"
+   },
+   {
+    "title": "The Duel [Opening]",
+    "path": "albums/nes/ninja-gaiden/the-duel-opening.mid"
+   },
+   {
+    "title": "Unbreakable Determination [4-2]",
+    "path": "albums/nes/ninja-gaiden/unbreakable-determination-4-2.mid"
+   },
+   {
+    "title": "Veil of Uncertainty [Cutscene]",
+    "path": "albums/nes/ninja-gaiden/veil-of-uncertainty-cutscene.mid"
+   },
+   {
+    "title": "Vow of Revenge [Opening II]",
+    "path": "albums/nes/ninja-gaiden/vow-of-revenge-opening-ii.mid"
+   }
+  ]
+ },
+ {
   "title": "Ninja Gaiden II: The Dark Sword of Chaos",
   "songs": [
    {
@@ -3498,6 +3607,59 @@
    {
     "title": "Triumphant [Ending I]",
     "path": "albums/nes/ninja-gaiden-ii/triumphant-ending-i.mid"
+   }
+  ]
+ },
+ {
+  "title": "Shadow of the Ninja",
+  "songs": [
+   {
+    "title": "Track 01",
+    "path": "albums/nes/shadow-of-the-ninja/track-01.mid"
+   },
+   {
+    "title": "Track 02",
+    "path": "albums/nes/shadow-of-the-ninja/track-02.mid"
+   },
+   {
+    "title": "Track 03",
+    "path": "albums/nes/shadow-of-the-ninja/track-03.mid"
+   },
+   {
+    "title": "Track 04",
+    "path": "albums/nes/shadow-of-the-ninja/track-04.mid"
+   },
+   {
+    "title": "Track 05",
+    "path": "albums/nes/shadow-of-the-ninja/track-05.mid"
+   },
+   {
+    "title": "Track 06",
+    "path": "albums/nes/shadow-of-the-ninja/track-06.mid"
+   },
+   {
+    "title": "Track 07",
+    "path": "albums/nes/shadow-of-the-ninja/track-07.mid"
+   },
+   {
+    "title": "Track 08",
+    "path": "albums/nes/shadow-of-the-ninja/track-08.mid"
+   },
+   {
+    "title": "Track 09",
+    "path": "albums/nes/shadow-of-the-ninja/track-09.mid"
+   },
+   {
+    "title": "Track 10",
+    "path": "albums/nes/shadow-of-the-ninja/track-10.mid"
+   },
+   {
+    "title": "Track 11",
+    "path": "albums/nes/shadow-of-the-ninja/track-11.mid"
+   },
+   {
+    "title": "Track 12",
+    "path": "albums/nes/shadow-of-the-ninja/track-12.mid"
    }
   ]
  },

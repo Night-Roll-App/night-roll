@@ -1,0 +1,139 @@
+{
+ "title": "Ninja Gaiden",
+ "order": 50,
+ "songs": {
+  "a-hero-s-end-ending-i": "A Hero's End [Ending I]",
+  "aftermath-cutscene": "Aftermath [Cutscene]",
+  "apprehensive-moments-cutscene-4-3": "Apprehensive Moments [Cutscene, 4-3]",
+  "bloody-malth-cutscene": "Bloody Malth [Cutscene]",
+  "credits-duplicate": "Credits [Duplicate]",
+  "depth-of-wickedness-5-1-6-5": "Depth of Wickedness [5-1, 6-5]",
+  "devilish-influence-cutscene-6-4": "Devilish Influence [Cutscene, 6-4]",
+  "evading-the-enemy-2-1-6-1": "Evading the Enemy [2-1, 6-1]",
+  "evil-plans-cutscene": "Evil Plans [Cutscene]",
+  "for-your-love-ending-iii": "For Your Love [Ending III]",
+  "information-and-coercion-cutscene": "Information and Coercion [Cutscene]",
+  "it-s-over-ending-ii": "It's Over [Ending II]",
+  "jaquio-fortress-cutscene": "Jaquio Fortress [Cutscene]",
+  "nowhere-to-run-3-2-6-2": "Nowhere to Run [3-2, 6-2]",
+  "pushing-onward-1-1-5-2-6-3": "Pushing Onward [1-1, 5-2, 6-3]",
+  "rugged-terrain-2-2-4-1": "Rugged Terrain [2-2, 4-1]",
+  "seeking-truth-cutscene-5-3": "Seeking Truth [Cutscene, 5-3]",
+  "sfx-next-act": "SFX ( Next Act )",
+  "spawn-of-evil-cutscene": "Spawn of Evil [Cutscene]",
+  "swift-ninja-cutscene-3-1": "Swift Ninja [Cutscene, 3-1]",
+  "the-duel-opening": "The Duel [Opening]",
+  "unbreakable-determination-4-2": "Unbreakable Determination [4-2]",
+  "veil-of-uncertainty-cutscene": "Veil of Uncertainty [Cutscene]",
+  "vow-of-revenge-opening-ii": "Vow of Revenge [Opening II]"
+ },
+ "nsf": {
+  "vault": "ninja-gaiden.nsf",
+  "tracks": {
+   "a-hero-s-end-ending-i": {
+    "n": 22,
+    "secs": 299.988
+   },
+   "aftermath-cutscene": {
+    "n": 21,
+    "secs": 299.988
+   },
+   "apprehensive-moments-cutscene-4-3": {
+    "n": 7,
+    "secs": 21.315814
+   },
+   "bloody-malth-cutscene": {
+    "n": 20,
+    "secs": 16.132688
+   },
+   "boss-battle": {
+    "n": 5,
+    "secs": 35.465248
+   },
+   "credits-duplicate": {
+    "n": 25,
+    "secs": 299.988
+   },
+   "depth-of-wickedness-5-1-6-5": {
+    "n": 19,
+    "secs": 27.198912
+   },
+   "devilish-influence-cutscene-6-4": {
+    "n": 13,
+    "secs": 26.132288
+   },
+   "evading-the-enemy-2-1-6-1": {
+    "n": 8,
+    "secs": 299.82134
+   },
+   "evil-plans-cutscene": {
+    "n": 18,
+    "secs": 22.399104
+   },
+   "for-your-love-ending-iii": {
+    "n": 24,
+    "secs": 299.988
+   },
+   "game-over": {
+    "n": 26,
+    "secs": 12.966148
+   },
+   "information-and-coercion-cutscene": {
+    "n": 14,
+    "secs": 41.781662
+   },
+   "it-s-over-ending-ii": {
+    "n": 23,
+    "secs": 299.988
+   },
+   "jaquio-fortress-cutscene": {
+    "n": 16,
+    "secs": 53.981174
+   },
+   "nowhere-to-run-3-2-6-2": {
+    "n": 12,
+    "secs": 65.49738
+   },
+   "pushing-onward-1-1-5-2-6-3": {
+    "n": 4,
+    "secs": 44.898204
+   },
+   "rugged-terrain-2-2-4-1": {
+    "n": 9,
+    "secs": 76.79692800000001
+   },
+   "seeking-truth-cutscene-5-3": {
+    "n": 11,
+    "secs": 44.91487
+   },
+   "sfx-next-act": {
+    "n": 3,
+    "secs": 11.982854
+   },
+   "spawn-of-evil-cutscene": {
+    "n": 17,
+    "secs": 299.988
+   },
+   "swift-ninja-cutscene-3-1": {
+    "n": 10,
+    "secs": 5.33312
+   },
+   "the-duel-opening": {
+    "n": 1,
+    "secs": 53.981174
+   },
+   "unbreakable-determination-4-2": {
+    "n": 15,
+    "secs": 43.198272
+   },
+   "veil-of-uncertainty-cutscene": {
+    "n": 6,
+    "secs": 299.82134
+   },
+   "vow-of-revenge-opening-ii": {
+    "n": 2,
+    "secs": 299.988
+   }
+  }
+ }
+}
