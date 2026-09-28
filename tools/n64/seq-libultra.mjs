@@ -49,8 +49,7 @@
 //   replaces them, as get_instrument does) and the layer's own adsr
 //   (C6 instrument, CB envelope + release).
 // Stubbed (arguments consumed, effect ignored — listed in result.stubbed
-// when encountered): portamento (C7: we keep
-// the written pitch, the game slides to it), mute machinery, note pools, the oot filter/random ops
+// when encountered): the mute machinery, note pools, the oot filter/random ops
 // (random ops read as 0 so output is deterministic), oot ldsample (0x1n)
 // and any opcode outside the tables, which throw with the offset.
 import { TICKS_PER_BEAT, SEMITONE_TO_MIDI, DEFAULT_SHORT_VEL, DEFAULT_SHORT_GATE } from "./constants.mjs";
@@ -209,7 +208,7 @@ export function parseSequence(input, opts = {}) {
     // seq_channel_layer_init defaults; note the 0x80 gate and instrument
     // 0xFF = "use the channel's"
     C.layers[l] = {ch: C, idx: l, enabled: true, finished: false, delay: 0, gate: 0, stop: false, continuous: false,
-                   transposition: 0, noteDuration: 0x80, playPct: 0, shortDefault: 0, vel: 0, instr: 0xFF, adsr: null, pan: 0.5, noDrumPan: false,
+                   transposition: 0, noteDuration: 0x80, playPct: 0, shortDefault: 0, vel: 0, instr: 0xFF, adsr: null, pan: 0.5, noDrumPan: false, porta: null,
                    note: null, st: state(pc)};
   }
   function freeLayer(C, l) {
@@ -228,6 +227,21 @@ export function parseSequence(input, opts = {}) {
     return envs.get(a);
   };
 
+  // seq_channel_layer_process_script_part4, JP/US: with a portamento mode set the voice starts on one
+  // semitone and glides to the other — modes 1/3/5 from the C7 target to the written note, 2/4 from the
+  // note to the target; `cur += speed` per update, scale = 1 + extent·(2^(min(cur,127)/127) − 1) with
+  // extent = f(end)/f(start) − 1. Special (mode & 0x80): speed = 32512·tempo / (delay·gTempoInternalToExternal·time),
+  // i.e. the glide takes time/256 of the note's delay; plain: speed = 127/time, the glide takes `time` updates.
+  function portaFor(L, semitone, delay) {
+    const P = L.porta;
+    if (!P || (P.mode & 0x7F) === 0) return null;
+    const m = P.mode & 0x7F, toNote = m === 1 || m === 3 || m === 5;
+    const start = toNote ? P.target : semitone, end = toNote ? semitone : P.target;
+    const special = !!(P.mode & 0x80);
+    // updates the glide lasts: special → delay ticks × (14360 / (tempo·48)) updates × time/256; plain → time
+    const updates = special ? delay * 14360 / (player.tempo * 48) * P.time / 256 : P.time;
+    return {mode: P.mode, start, end, updates: Math.max(1e-9, updates), special, time: P.time};
+  }
   function layerTick(L) {
     if (!L.enabled) return;
     if (L.delay > 1) {
@@ -237,6 +251,8 @@ export function parseSequence(input, opts = {}) {
       return;
     }
     if (!L.continuous) noteOff(L);
+    // seq_channel_layer_process_script_part1: portamento modes 1 and 2 are one-shot (the C7 applies to the note of its own command run)
+    if (L.porta && ((L.porta.mode & 0x7F) === 1 || (L.porta.mode & 0x7F) === 2)) L.porta = null;
     const s = L.st, C = L.ch;
     let cmd, guard = 0;
     for (;;) {
@@ -256,8 +272,11 @@ export function parseSequence(input, opts = {}) {
         case 0xC4: L.continuous = true; noteOff(L); break;     // legato on
         case 0xC5: L.continuous = false; noteOff(L); break;
         case 0xC6: L.instr = u8(s); if (L.instr < 0x7F) L.adsr = {inst: L.instr}; break; // get_instrument: the layer takes that instrument's envelope + release
-        case 0xC7: { const mode = u8(s); u8(s); if (mode & 0x80) u8(s); else cu16(s); stub("layer portamento C7"); break; }
-        case 0xC8: break;                                      // portamento off
+        // layer_portamento (seqplayer.c JP/US): mode byte (bit 0x80 = "special": the time is a u8 fraction of the
+        // note, else a compressed u16 of updates), the target semitone (transposed like a note; >= 0x80 → 0)
+        case 0xC7: { const mode = u8(s); let target = u8(s) + C.transposition + L.transposition + player.transposition; if (target >= 0x80) target = 0;
+                     const time = mode & 0x80 ? u8(s) : cu16(s); L.porta = {mode, target, time}; break; }
+        case 0xC8: L.porta = null; break;                      // layer_disableportamento
         case 0xC9: L.noteDuration = u8(s); break;              // short-note gate
         case 0xCA: L.pan = u8(s) / 128; break;                  // layer pan
         case 0xCB: { const a = u16(s); L.adsr = {envelope: envAt(a), releaseRate: u8(s)}; break; }
@@ -303,7 +322,10 @@ export function parseSequence(input, opts = {}) {
                bank: C.bank, vol: C.volume * C.volumeScale * player.volume, pan: C.pan, panWeight: C.panWeight, lyPan: L.pan, noDrumPan: L.noDrumPan, freq: C.freqScale, rev: C.reverb,
                chEnv: C.envelope, chRel: C.release, chInst: C.adsrInst, lyAdsr: L.adsr,
                // note_vibrato_init: a note born with no extent (start and target 0) never vibrates
-               vib: C.vib.extStart || C.vib.extTarget ? {...C.vib} : null});
+               vib: C.vib.extStart || C.vib.extTarget ? {...C.vib} : null,
+               porta: drum ? null : portaFor(L, pitch, delay)});
+    // mode 5: the next note glides from this one (layer->portamentoTargetNote = cmd)
+    if (!drum && L.porta && (L.porta.mode & 0x7F) === 5) L.porta.target = pitch;
   }
 
   function channelTick(C) {
@@ -553,6 +575,9 @@ export function parseSequence(input, opts = {}) {
   const byCh = m => { const o = new Map(); for (const e of m) (o.get(e.ch) || o.set(e.ch, []).get(e.ch)).push(e); return o; };
   const lv = byCh(levelEvents), vb = byCh(vibEvents);
   for (const n of notes) {
+    // the roll: a glide that lands on another pitch is one note at the landed pitch (n.slide, the shared shape);
+    // one that returns to the written pitch stays one note
+    if (n.porta && n.porta.end !== n.semitone) n.slide = [{t: 0, len: Math.max(1, Math.round(n.porta.updates * player.tempo * 48 / 14360)), to: n.porta.end - n.semitone}];
     const end = n.tick + n.dur;
     const steps = (lv.get(n.ch) || []).filter(e => e.tick > n.tick && e.tick < end);
     if (steps.length) { n.gain = [{t: 0, l: n.vol}]; for (const e of steps) if (e.level !== n.gain[n.gain.length - 1].l) n.gain.push({t: e.tick - n.tick, l: e.level}); if (n.gain.length === 1) delete n.gain; }

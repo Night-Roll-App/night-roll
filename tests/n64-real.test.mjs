@@ -740,4 +740,8 @@ test("SM64 level steps and vibrato (real set): the facts the sequences carry, an
   // what D8 1 comes to: 1 + 8/4096 × (2^(±120/127) − 1) = +3.1 cents at the peak, −1.6 at the trough, one cycle per 32 updates (7.5 Hz)
   const v = new Vibrato(vib[0].vib); const cyc = []; for (let i = 0; i < 32; i++) cyc.push(v.update());
   assert.ok(Math.abs(1200 * Math.log2(Math.max(...cyc)) - 3.13) < 0.05 && Math.abs(1200 * Math.log2(Math.min(...cyc)) + 1.63) < 0.05, "+3.1 / −1.6 cents: " + Math.max(...cyc) + " " + Math.min(...cyc));
+  // portamento (layer C7): no Super Mario 64 sequence uses it — every note's porta is null, no note is split for a glide
+  const all = readdirSync(SM64).filter(n => /\.miniusf$/i.test(n)).map(m => cap(m).res);
+  assert.equal(all.reduce((k, r) => k + r.notes.filter(n => n.porta || n.slide).length, 0), 0);
+  assert.ok(all.every(r => !r.stubbed.includes("layer portamento C7")));
 });

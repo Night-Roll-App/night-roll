@@ -10,7 +10,7 @@ import { expandBook, decodeFrames, decodeSample } from "../tools/n64/vadpcm.mjs"
 import { readBank, readEnvelope, byteView, findAudioFiles, DEFAULT_ENVELOPE } from "../tools/n64/bank.mjs";
 import { readALSeqFile } from "../tools/n64/ead-usf.mjs";
 import { SparseImage } from "../tools/n64/usf.mjs";
-import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, reverbFor, panGains, notePan, Vibrato } from "../tools/n64/render.mjs";
+import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, reverbFor, panGains, notePan, Vibrato, Portamento } from "../tools/n64/render.mjs";
 import { toMidi } from "../tools/n64/notes.mjs";
 // a track is a stereo pair {l, r}; the old checks read the mono sum
 const mono = p => { if (!p || !p.l) return p; const m = new Float32Array(p.l.length); for (let i = 0; i < m.length; i++) m[i] = p.l[i] + p.r[i]; return m; };
@@ -303,4 +303,20 @@ test("vibrato as effects.c JP/US: delay, triangle over 64 steps of the k·8 curv
   assert.ok(up > 2000 * 0.1 * 2 * 1.15 && down < 2000 * 0.1 * 2 * 0.92, "2 kHz wobbles up then down: " + up + " / " + down);
   const flat = (await renderN64({abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: 4 * B, warnings: [], notes: [{...base, vib: null}]}, {rom, banks: [0], reverb: null}))["ch 4 inst 0"].l;
   assert.ok(Math.abs(zc(flat, 0.2, 0.3) - 400) <= 2 && Math.abs(zc(flat, 0.75, 0.85) - 400) <= 2, "no extent: 2 kHz steady");
+});
+
+test("portamento in the render: the voice starts on the glide's start semitone and reaches the written pitch after `updates` updates (cur += 127/updates, 2^(cur/127))", async () => {
+  const p = new Portamento({start: 27, end: 39, updates: 48}); // an octave below, 48 updates
+  const seq = []; for (let i = 0; i < 60; i++) seq.push(p.update());
+  assert.ok(Math.abs(seq[0] - (1 + (2 - 1) * (Math.pow(2, 2 / 127) - 1))) < 1e-12, "the first update is already one step in (cur = 2.6 → v 2)");
+  assert.ok(Math.abs(seq[48] - 2) < 1e-12 && seq[59] === 2 && seq[47] < 2, "an octave up on the 49th update ((u32)cur truncates 126.99), then held");
+  const {rom} = synthRom();
+  const B = TICKS_PER_BEAT, base = {tick: 0, dur: 2 * B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, pan: 0.5, freq: 1, chInst: 0};
+  const glide = {mode: 1, start: 27, end: 39, updates: 120, special: false, time: 120}; // 0.5 s glide from an octave below
+  const r = await renderN64({abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: 2 * B, warnings: [], notes: [{...base, porta: glide}]}, {rom, banks: [0], reverb: null});
+  const zc = (a, t0, t1) => { let c = 0; for (let i = Math.floor(t0 * 32000) + 1; i < Math.floor(t1 * 32000); i++) if ((a[i - 1] < 0) !== (a[i] < 0)) c++; return c; };
+  const l = r["ch 4 inst 0"].l;
+  assert.ok(Math.abs(zc(l, 0.02, 0.12) - 200) < 25, "starts an octave down (1 kHz): " + zc(l, 0.02, 0.12));
+  assert.ok(Math.abs(zc(l, 0.6, 0.7) - 400) <= 2, "lands on the written 2 kHz: " + zc(l, 0.6, 0.7));
+  const mid = zc(l, 0.22, 0.32); assert.ok(mid > 240 && mid < 360, "and is between at a quarter of the way: " + mid);
 });

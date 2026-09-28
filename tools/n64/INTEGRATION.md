@@ -1020,3 +1020,65 @@ shows the machinery, and the truth's larger wobbles on the long ch 5
 note at 68.7 s (up to ±60 c) are not vibrato — they come with the note's
 `vibChanges` and something the render still lacks (portamento, C7, stays
 stubbed).
+
+### 9.11 Portamento (2026-09-28)
+
+The last pitch-shaping stub in the EAD path. seqplayer.c JP/US, layer
+`C7` (`layer_portamento`): `layer->portamento.mode = m64_read_u8(state);`
+then `cmd = m64_read_u8(state) + seqChannel->transposition +
+layer->transposition + seqPlayer->transposition; if (cmd >= 0x80) cmd =
+0; layer->portamentoTargetNote = cmd;` and the time: `if
+(PORTAMENTO_IS_SPECIAL(layer->portamento)) layer->portamentoTime =
+*(state->pc++);` (a u8) `else layer->portamentoTime =
+m64_read_compressed_u16(state);`. `C8` sets `mode = 0`. In
+`seq_channel_layer_process_script_part1` (the start of every command
+run) `if (PORTAMENTO_MODE(layer->portamento) == PORTAMENTO_MODE_1 ||
+... == PORTAMENTO_MODE_2) layer->portamento.mode = 0;` — modes 1 and 2
+are one-shot (they apply to the note issued in the C7's own command
+run), 3/4/5 persist. At note-on (part4, `if (layer->portamento.mode !=
+0)`): the key region is chosen by the higher of the two semitones;
+`temp_f2 = gNoteFrequencies[cmd] * tuning; temp_f12 =
+gNoteFrequencies[layer->portamentoTargetNote] * tuning;` and per mode
+`case 1/3/5: sp24 = temp_f2; freqScale = temp_f12;` (the voice starts on
+the C7 target and glides to the written note), `case 2/4: freqScale =
+temp_f2; sp24 = temp_f12;` (starts on the note, glides to the target);
+`portamento->extent = sp24 / freqScale - 1.0f; portamento->cur = 0;`
+speed: special `= 32512.0 * tempo / (layer->delay * gTempoInternalToExternal
+* portamentoTime)` — the glide lasts `time/256` of the note's delay —
+else `= 127.0 / portamentoTime` — `time` updates; `case 5:
+layer->portamentoTargetNote = cmd;` so the next note glides from this
+one. The note copies the layer's struct (`note->portamento =
+note->parentLayer->portamento`) and effects.c
+`get_portamento_freq_scale` runs per update: `p->cur += p->speed; v0 =
+(u32) p->cur; if (v0 >= 127) v0 = 127; result = 1.0 + p->extent *
+(gPitchBendFrequencyScale[v0 + 127] - 1.0)` = `1 + extent · (2^(v0/127)
+− 1)`, multiplied into the note's frequency with the vibrato
+(`frequency *= note->vibratoFreqScale * note->portamentoFreqScale`).
+
+Implemented: the parser keeps the layer's `{mode, target, time}`, clears
+one-shot modes at each command run, and gives each note `n.porta =
+{mode, start, end, updates, special, time}` (semitones; `updates` = the
+glide's length in updates, the special form converted through the note's
+delay and the tempo: delay × 14360/(tempo·48) × time/256); mode 5
+retargets the layer to the note. The render (`render.mjs Portamento`)
+starts the voice on `start`'s frequency (through the same key region /
+tuning) and applies the per-update scale. The roll: a glide that lands
+away from the written pitch (modes 2/4) carries `n.slide = [{t: 0, len,
+to}]` in the shared slide shape, so `splitSlides`/`toMidi` write one
+note at the landed pitch; a glide that returns to the written pitch
+(1/3/5) stays one note. Synthetic tests cover the modes' directions,
+one-shot vs persistent, mode 5's chaining, the special time, and a
+rendered octave glide (1 kHz → 2 kHz over 0.5 s, `(u32)cur` reaching 127
+on the 49th of 48 updates as the float truncation says).
+
+**No Super Mario 64 sequence uses C7** (survey of all 38 minis: zero
+notes with a glide; the real test pins it), and the OoT/MM rips are not
+on this machine, so the glide has no truth render to meet yet. The Cave
+Dungeon ch 5 "swings" that prompted this: with the truth aligned
+locally (×1.048 − 0.06 over 66–71 s, envelope correlation 0.93 — the
+global fit was right) the ch 5 notes' pitch tracks agree with ours to a
+few cents throughout (m67: truth `−6 −6 −6 −12 4 8 4 −16 −6`, ours
+`−8 −8 −6 −10 6 12 −8 −16 −8`; m72 within 2 c; m79 and the long m74
+within 6 c wherever the band holds), and the ±60 c readings only occur
+where the band is empty (other voices) — the estimator's floor, not the
+game. The ±3 c `D8 1` vibrato is what those notes have.

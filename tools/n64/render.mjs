@@ -158,6 +158,13 @@ export class Vibrato {
     return 1 + this.ext / 4096 * (Math.pow(2, pc / 127) - 1);
   }
 }
+// Portamento as effects.c JP/US get_portamento_freq_scale runs it per update:
+// cur += speed; v = min((u32)cur, 127); scale = 1 + extent · (gPitchBendFrequencyScale[v + 127] − 1)
+// = 1 + extent · (2^(v/127) − 1), extent = f(end)/f(start) − 1, on a voice that starts at f(start).
+export class Portamento {
+  constructor(p) { this.extent = Math.pow(2, (p.end - p.start) / 12) - 1; this.speed = 127 / p.updates; this.cur = 0; }
+  update() { this.cur += this.speed; const v = Math.min(Math.floor(this.cur), 127); return 1 + this.extent * (Math.pow(2, v / 127) - 1); }
+}
 export const noteFrequency = semitone => Math.pow(2, (semitone - 39) / 12) * (semitone >= 117 ? 0.5 : 1); // gNoteFrequencies
 
 // -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}, silent: [names], warnings: [...]}
@@ -204,7 +211,8 @@ export async function renderN64(result, opts = {}) {
         const inst = bank.instrument(n.inst);
         if (!inst) { warn(`instrument ${n.inst} is not in bank ${bank.id}`); continue; }
         sound = bank.sound(inst, n.semitone);
-        freq = sound ? noteFrequency(n.semitone) * sound.tuning : 0;
+        // with a portamento the voice starts on the glide's start semitone (part4: freqScale = gNoteFrequencies[start] × tuning)
+        freq = sound ? noteFrequency(n.porta ? n.porta.start : n.semitone) * sound.tuning : 0;
         if (n.lyAdsr) {
           if (n.lyAdsr.inst != null) { const li = bank.instrument(n.lyAdsr.inst); if (li) { layerEnv = li.envelope; layerRel = li.releaseRate; } }
           else { layerEnv = n.lyAdsr.envelope; layerRel = n.lyAdsr.releaseRate; }
@@ -227,6 +235,7 @@ export async function renderN64(result, opts = {}) {
       let gi = 0;
       const vibChanges = n.vib && n.vibChanges ? n.vibChanges.map(c => ({...c, i: Math.floor(tickSeconds(tempos, n.tick + c.t) * sampleRate)})) : [];
       const vib = n.vib ? new Vibrato(n.vib, vibChanges) : null;
+      const porta = n.porta ? new Portamento(n.porta) : null;
       const send = reverb && n.rev ? Math.min(127, n.rev) / 128 : 0; // aSetVolume(A_AUX, reverbVol << 8): wet = dry × reverbVol/128
       const [gL, gR] = panGains(notePan(n, n.drum ? bank.drum(n.semitone) : null));
       const smp = bank.pcm(sound.sample);
@@ -241,7 +250,12 @@ export async function renderN64(result, opts = {}) {
           if (i >= iOff && env.state !== DECAY && !env.done) env.decay(releaseRate);
           const level = env.update() * VOL_SCALE;
           if (steps) { while (gi + 1 < steps.length && i >= steps[gi + 1].i) gi++; base = vel * vel * steps[gi].l; }
-          if (vib) { while (vib.ci < vibChanges.length && i >= vibChanges[vib.ci].i) vib.retarget(vibChanges[vib.ci++]); step = Math.min(FREQ_CAP * N64_RATE / sampleRate, baseStep * vib.update()); }
+          if (vib || porta) { // process_notes: frequency ×= vibratoFreqScale × portamentoFreqScale
+            let f = 1;
+            if (vib) { while (vib.ci < vibChanges.length && i >= vibChanges[vib.ci].i) vib.retarget(vibChanges[vib.ci++]); f *= vib.update(); }
+            if (porta) f *= porta.update();
+            step = Math.min(FREQ_CAP * N64_RATE / sampleRate, baseStep * f);
+          }
           gPrev = gNext; gNext = Math.min(32767, base * level * level) / 32767;
           if (env.done && gNext <= 0 && i > i0) break;
           nextUpdate += updateEvery;

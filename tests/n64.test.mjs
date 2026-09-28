@@ -159,3 +159,27 @@ test("sequence variation: 0x80 reads seqVariation (0 for a plain id, the s8 -128
   assert.deepEqual(parseSequence(b, {variation: 0x80}).channels, [0, 1], "the variation bit reads back negative (s8)");
   assert.deepEqual(parseSequence(b, {variation: -1}).channels, [0, 1], "the old default (2026-09-27) played every such intro");
 });
+
+test("portamento (layer C7): modes 1/3/5 glide from the target to the written note, 2/4 from the note to the target; 1/2 are one-shot, 3/4/5 persist, 5 retargets to each note; special time is a fraction of the note", () => {
+  // one channel, one layer; the layer: C7 mode target time, then notes (large notes off: short form, 0x27 = semitone 39 + delay)
+  const song = layer => { const b = new Uint8Array(0x60);
+    b.set([0xD7, 0x00, 0x01, 0x90, 0x00, 0x20, 0xFD, 0x81, 0x00, 0xFF], 0);   // init ch 0, channel script at 0x20, wait 256
+    b.set([0xC1, 0x05, 0x90, 0x00, 0x30, 0xFD, 0x81, 0x00, 0xFF], 0x20);         // inst 5, layer at 0x30
+    b.set([...layer, 0xFF], 0x30); return parseSequence(b); };
+  // mode 2 (plain time 24 updates): the note starts at 39 and glides to 46; the next note has no portamento (one-shot)
+  let r = song([0xC7, 0x02, 0x2E, 0x18, 0x27, 0x30, 0x27, 0x30]);
+  assert.deepEqual(r.notes.map(n => n.porta && [n.porta.mode, n.porta.start, n.porta.end, n.porta.updates]), [[2, 39, 46, 24], null]);
+  assert.deepEqual(r.notes[0].slide, [{t: 0, len: Math.round(24 * 120 * 48 / 14360), to: 7}], "lands 7 semitones up: the roll's note is the landed pitch");
+  // mode 1: from the target (46) down to the written 39 — returns to the written pitch, so no slide for the roll
+  r = song([0xC7, 0x01, 0x2E, 0x18, 0x27, 0x30]);
+  assert.deepEqual([r.notes[0].porta.start, r.notes[0].porta.end, r.notes[0].slide], [46, 39, undefined]);
+  // mode 3 persists over notes; mode 5 persists and glides from the previous note
+  r = song([0xC7, 0x03, 0x2E, 0x18, 0x27, 0x30, 0x2A, 0x30, 0xC8, 0x27, 0x30]);
+  assert.deepEqual(r.notes.map(n => n.porta && [n.porta.start, n.porta.end]), [[46, 39], [46, 42], null], "C8 ends it");
+  r = song([0xC7, 0x05, 0x2E, 0x18, 0x27, 0x30, 0x2A, 0x30, 0x2E, 0x30]);
+  assert.deepEqual(r.notes.map(n => [n.porta.start, n.porta.end]), [[46, 39], [39, 42], [42, 46]], "mode 5: each note glides from the one before");
+  // special (0x80): the time byte is a fraction of the note's delay in updates (48 ticks at 120 bpm = 160.5 updates; 0x80/256 = half)
+  r = song([0xC7, 0x82, 0x2E, 0x80, 0x27, 0x30]);
+  assert.ok(Math.abs(r.notes[0].porta.updates - 48 * 14360 / (120 * 48) / 2) < 1e-9 && r.notes[0].porta.special);
+  assert.equal(r.stubbed.length, 0, "C7 is a fact now");
+});
