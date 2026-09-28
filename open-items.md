@@ -846,6 +846,19 @@ change, so Mario 64 needs a RE-IMPORT. Policy: all channels captured
   albums re-captured and republished. "Songs missing": the NSF has 7
   slots — that is the rip. Unverified by ear.
 - SNES/Game Boy batches: not listened to yet.
+BATCH OUTCOME (2026-09-28 ~03:40): 29 games via tools/import-set.mjs +
+Shadow of the Ninja and Ninja Gaiden by hand = 31 new albums on the
+site, chip files in the archive. NES 14, SNES 8, Game Boy 9. Pipeline
+fixes found by the batch: NES player writes $4015 before INIT
+(Castlevania was silent), Zophar NES playlists are H:MM:SS (every
+track was a 12 s "jingle" before), Game Boy player powers the APU
+(NR52/NR50/NR51) before INIT (six sets were silent), NSF expansion
+chips refused by name (VRC7/5B/MMC5 sets captured 2A03-only
+fragments), the sweep-unit mute (Tetris). All NES albums re-captured
+after the sweep fix (e8a5da1). FF6 and A Link to the Past skipped —
+Josh had published them in-app. iPad NOT rebuilt (unplugged): the
+web has the render fixes; the iPad's packaged render lacks the sweep
+mute until the next build. GoldenEye: agent running overnight.
 
 ## NO ONE-TIME HACKS — AUDIT 2026-09-27 (Josh: "we should have no one-time hacks in any of our capture engines")
 
