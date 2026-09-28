@@ -1577,7 +1577,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
-    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>",
+    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list",
     "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3603,6 +3603,24 @@ test("pan: the track: directive and the .mid's CC10 place a track; the directive
   assert.equal(val(`chipSilent([{l: new Float32Array(30), r: (() => { const a = new Float32Array(30); a[13] = 0.5; return a; })()}])`), false, "a live right side counts (the check samples every 13th value)");
   assert.equal(val(`chipIsPcm({l: new Float32Array(2), r: new Float32Array(2)}) && chipIsPcm(new Float32Array(2)) && !chipIsPcm({l: 1})`), true);
   run(`chip.pcm = null; chip.buffers = null; audio = null;`);
+});
+
+test("Open re-reads the published list each time it opens (once per 20 s) and redraws only when it changed", async () => {
+  // Josh, 2026-09-28: "I have to completely close the app and restart it in
+  // order for it to get new songs in the open menu"
+  let manifestFetches = 0, draws = 0;
+  run(`CATALOG = {"Starters": [["Prelude", "albums/starters/p.mid"]]}; catalogRefreshedAt = 0; currentPath = null;
+       fetch = (url) => { if (/manifest\.json/.test(String(url))) { globalThis.__mf = (globalThis.__mf || 0) + 1; return Promise.resolve({ok: true, json: async () => [{title: "Starters", songs: [{title: "Prelude", path: "albums/starters/p.mid"}]}, {title: "New Album", songs: [{title: "One", path: "albums/nes/new-album/one.mid"}]}]}); } return Promise.reject(new Error("no network")); };
+       globalThis.__mf = 0; globalThis.__draws = 0; renderSongGroups = ((orig) => () => { globalThis.__draws++; return orig(); })(renderSongGroups);`);
+  run(`openSongPicker();`);
+  await new Promise(r => setTimeout(r, 30));
+  manifestFetches = val(`globalThis.__mf`);
+  assert.equal(manifestFetches, 1, "opening the sheet re-reads the manifest");
+  assert.ok(val(`Object.keys(CATALOG).includes("New Album")`), "the new album is in the catalog");
+  run(`openSongPicker();`);
+  await new Promise(r => setTimeout(r, 30));
+  assert.equal(val(`globalThis.__mf`), 1, "a second open within 20 s does not re-read");
+  run(`songsheet.classList.remove("on");`);
 });
 
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {
