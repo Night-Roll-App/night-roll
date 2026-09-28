@@ -976,6 +976,19 @@ iPad (a fine-grained token scoped to his own repos will not), then
 Settings → GitHub on the iPad shows the new repo. 6. iPad build;
 old Pages link redirects for a while, tell the son.
 
+## TRACK NAMES FOR m3u-LESS RIPS — OPEN 2026-09-28
+
+Zelda (NES), Super Mario Bros. 3 and the Bullet-Proof Tetris came from
+Zophar rips with no .m3u; their MP3 companions are named "Track N" too,
+and the VGMPF track order does not match these rips' slot numbers (Zelda
+slot 1 is an 80 s loop, the wiki's #1 a 2:49 title). No source with
+slot numbers found; not guessing. SHIPPED the same day: a playlist
+picked on its own (no import running) names the open song's album by
+chip slot — local drafts renamed in place, a published album in one
+album.json write (NIGHT-ROLL.md → File; HELP "names the open song's
+album after the fact"). So the day a real .m3u appears, one pick names
+them; until then Josh renames by ear (File → Rename) or leaves them.
+
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
 "Before we release this for real … imports of several more games on
