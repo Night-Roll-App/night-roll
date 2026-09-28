@@ -4244,6 +4244,87 @@
   ]
  },
  {
+  "title": "Metroid II: Return of Samus",
+  "songs": [
+   {
+    "title": "Caverns 1",
+    "path": "albums/game-boy/metroid-ii/caverns-1.mid"
+   },
+   {
+    "title": "Caverns 2",
+    "path": "albums/game-boy/metroid-ii/caverns-2.mid"
+   },
+   {
+    "title": "Caverns 3",
+    "path": "albums/game-boy/metroid-ii/caverns-3.mid"
+   },
+   {
+    "title": "Caverns 4",
+    "path": "albums/game-boy/metroid-ii/caverns-4.mid"
+   },
+   {
+    "title": "Chozo ruins",
+    "path": "albums/game-boy/metroid-ii/chozo-ruins.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/game-boy/metroid-ii/ending.mid"
+   },
+   {
+    "title": "Main theme",
+    "path": "albums/game-boy/metroid-ii/main-theme.mid"
+   },
+   {
+    "title": "Metroid defeated",
+    "path": "albums/game-boy/metroid-ii/metroid-defeated.mid"
+   },
+   {
+    "title": "Metroid fight",
+    "path": "albums/game-boy/metroid-ii/metroid-fight.mid"
+   },
+   {
+    "title": "Metroid hatchling",
+    "path": "albums/game-boy/metroid-ii/metroid-hatchling.mid"
+   },
+   {
+    "title": "Metroid nest",
+    "path": "albums/game-boy/metroid-ii/metroid-nest.mid"
+   },
+   {
+    "title": "Metroid Queen area",
+    "path": "albums/game-boy/metroid-ii/metroid-queen-area.mid"
+   },
+   {
+    "title": "Metroid Queen fight",
+    "path": "albums/game-boy/metroid-ii/metroid-queen-fight.mid"
+   },
+   {
+    "title": "Metroids hatched",
+    "path": "albums/game-boy/metroid-ii/metroids-hatched.mid"
+   },
+   {
+    "title": "Missile expansion",
+    "path": "albums/game-boy/metroid-ii/missile-expansion.mid"
+   },
+   {
+    "title": "Omega Metroid area",
+    "path": "albums/game-boy/metroid-ii/omega-metroid-area.mid"
+   },
+   {
+    "title": "Samus Aran arrives",
+    "path": "albums/game-boy/metroid-ii/samus-aran-arrives.mid"
+   },
+   {
+    "title": "Title",
+    "path": "albums/game-boy/metroid-ii/title.mid"
+   },
+   {
+    "title": "Upgrade found",
+    "path": "albums/game-boy/metroid-ii/upgrade-found.mid"
+   }
+  ]
+ },
+ {
   "title": "Mike Tyson's Punch-Out!!",
   "songs": [
    {

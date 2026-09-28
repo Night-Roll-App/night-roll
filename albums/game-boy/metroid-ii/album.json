@@ -1,0 +1,101 @@
+{
+ "title": "Metroid II: Return of Samus",
+ "order": 50,
+ "songs": {
+  "chozo-ruins": "Chozo ruins",
+  "main-theme": "Main theme",
+  "metroid-defeated": "Metroid defeated",
+  "metroid-fight": "Metroid fight",
+  "metroid-hatchling": "Metroid hatchling",
+  "metroid-nest": "Metroid nest",
+  "metroid-queen-area": "Metroid Queen area",
+  "metroid-queen-fight": "Metroid Queen fight",
+  "metroids-hatched": "Metroids hatched",
+  "missile-expansion": "Missile expansion",
+  "omega-metroid-area": "Omega Metroid area",
+  "samus-aran-arrives": "Samus Aran arrives",
+  "upgrade-found": "Upgrade found"
+ },
+ "nsf": {
+  "vault": "metroid-ii.gbs",
+  "tracks": {
+   "caverns-1": {
+    "n": 5,
+    "secs": 24.662006378173828
+   },
+   "caverns-2": {
+    "n": 6,
+    "secs": 44.502113342285156
+   },
+   "caverns-3": {
+    "n": 7,
+    "secs": 299.9623260498047
+   },
+   "caverns-4": {
+    "n": 8,
+    "secs": 140.00251007080078
+   },
+   "chozo-ruins": {
+    "n": 4,
+    "secs": 55.45184326171875
+   },
+   "ending": {
+    "n": 19,
+    "secs": 299.9623260498047
+   },
+   "main-theme": {
+    "n": 3,
+    "secs": 129.1197509765625
+   },
+   "metroid-defeated": {
+    "n": 12,
+    "secs": 13.946674346923828
+   },
+   "metroid-fight": {
+    "n": 11,
+    "secs": 12.222175598144531
+   },
+   "metroid-hatchling": {
+    "n": 18,
+    "secs": 293.93495178222656
+   },
+   "metroid-nest": {
+    "n": 14,
+    "secs": 299.9623260498047
+   },
+   "metroid-queen-area": {
+    "n": 16,
+    "secs": 5.0228118896484375
+   },
+   "metroid-queen-fight": {
+    "n": 17,
+    "secs": 34.8248291015625
+   },
+   "metroids-hatched": {
+    "n": 15,
+    "secs": 299.9623260498047
+   },
+   "missile-expansion": {
+    "n": 10,
+    "secs": 11.97103500366211
+   },
+   "omega-metroid-area": {
+    "n": 13,
+    "secs": 299.9623260498047
+   },
+   "samus-aran-arrives": {
+    "n": 2,
+    "secs": 13.963417053222656
+   },
+   "title": {
+    "n": 1,
+    "secs": 299.29261779785156
+   },
+   "upgrade-found": {
+    "n": 9,
+    "secs": 18.969486236572266
+   }
+  },
+  "chip": "gbs"
+ }
+}
