@@ -741,6 +741,16 @@ below, the console does that" was our bug, not the console's. Both
 (pitch rule, note release) handed back to the renderer agent with the
 numbers; fix pending. "Bob-omb Battlefield" is in the list as the
 rip's tag title, "Main Theme".
+Main Theme (Josh): "a tiny bit off … a background rhythm instrument
+… up strokes … a little too loud compared to the original"; "the
+original is in stereo … are we getting volume information and stereo
+information?" Answer given: volume yes (velocity + channel volume;
+NOT fades inside a held note, NOT reverb), stereo no (pan is read per
+note, not applied; the render is mono). QUEUED after the octave/cut-off
+fixes: pan → a stereo render (the app's chip buffers are mono
+Float32Arrays per track; chipBuffers/chipStart would carry two
+channels), per-note volume fades (DA), reverb as a wet send. The
+too-loud up-strokes may be reverb/fade related; re-listen after pan.
 PS1 — Anxious Heart (Josh: bar 1 great, bar 2 "way louder", "every
 other bar", fine from bar 10): the pad's expression fades swell inside
 held notes; the render froze each note at its note-on volume. Fixed:
