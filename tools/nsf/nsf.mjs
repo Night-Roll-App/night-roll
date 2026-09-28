@@ -4,10 +4,21 @@
 // IS the output.
 import { CPU6502 } from "./cpu6502.mjs";
 
-export function parseNSF(buf) {
+// Expansion sound chips (header byte 0x7B, one bit each): the 2A03 pipeline
+// captures none of them, and a file that uses one keeps its lead voices
+// there — the Lagrange Point rip came back with 12 of 31 tracks silent and
+// the rest a few seconds of accompaniment (2026-09-27). Half a song
+// published is worse than none, so the parser refuses such a file by the
+// chip's name and the import panel shows that; {expansion: true} parses it
+// anyway (research, the header byte is still reported as `expansion`).
+export const NSF_EXPANSION = [[0x01, "VRC6"], [0x02, "VRC7"], [0x04, "FDS"], [0x08, "MMC5"], [0x10, "Namco 163"], [0x20, "Sunsoft 5B"]];
+export function nsfExpansion(mask) { return {mask, names: NSF_EXPANSION.filter(([bit]) => mask & bit).map(([, name]) => name)}; }
+export function parseNSF(buf, opts = {}) {
   const d = new Uint8Array(buf);
   const magic = String.fromCharCode(...d.subarray(0, 5));
   if (magic !== "NESM\x1a") throw new Error("not an NSF file");
+  const expansion = nsfExpansion(d[0x7B] & 0x3F);
+  if (expansion.names.length && !opts.expansion) throw new Error("expansion sound chip " + expansion.names.join(" + ") + " not supported");
   const str = (off, len) => {
     let s = "";
     for (let i = off; i < off + len && d[i]; i++) s += String.fromCharCode(d[i]);
@@ -28,6 +39,7 @@ export function parseNSF(buf) {
     playSpeedNTSC: u16(0x6E) || 16639, // microseconds between play calls
     banks,
     banked: banks.some(b => b !== 0),
+    expansion,
     data: d.subarray(0x80),
   };
 }

@@ -1571,7 +1571,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   const FEATURES = [
     "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
-    "Fall", "💬", "Chop", "Loop points", "Sections", "Chords",
+    "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
     "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Score entry", "inbox",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",

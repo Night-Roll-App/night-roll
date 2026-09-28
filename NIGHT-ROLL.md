@@ -1558,6 +1558,46 @@ File → Open → that folder; ↻ re-publishes the drafts still there
 playback), chip renders (already off-thread; a row per song open would
 spam the list). Later: Publish all as a job; captures in the worker.
 
+## Terminal import (tools/import-set.mjs) — 2026-09-27
+
+Import → Capture all → Publish for a whole chip-music set, from the
+terminal, so a batch of games lands in albums/ without a hand import per
+game on the iPad. NOT a second pipeline: the script runs index.html's
+inline script in the vm harness (tests/harness.mjs) and calls exactly
+what a tap would — `openPickedFiles` (the picker's sniff: the chip file
+plus every .m3u playlist, or a per-file .spc set), `captureJobStart`
+(one job, every listed track, `impCapture` per row: the same secs
+sizing, jingle rule, 300 s no-loop retry, loop: note, name-collision
+guard) and `commitImports` (`writeMidi`, `serializeNotesList`,
+`computeImportAlbumJson`). Four seams are stubbed because the vm has no
+browser: the chip modules are imported from tools/ and handed to
+`chipModules.cache`; IndexedDB is a Map (`idbNsfPutNow`/`idbNsfGet`);
+`fetch` serves the albums/ tree on disk so a second batch into an album
+merges album.json the way the app's GET does; `batchCommit` hands the
+batch back and the script writes the files. The fake clock is swapped
+for the real `setTimeout`. Titles, slugs, secs, loop notes and the
+`nsf:` block are therefore the app's own — re-importing an album this
+way and in the app gives the same files.
+
+    node tools/import-set.mjs <zip|dir|file> --slug <slug> [--title "Game Title"]
+                              [--console nes|snes|game-boy] [--publish] [--secs N] [--out <root>]
+
+One line per track (n, title, ok/failed/silent, notes, seconds, loop
+anchor → target, warnings), then the files written and, with
+`--publish`, the archive uploads: the chip files go to cfg().nsfRepo
+(joshcough/nsf-archive) at the paths `chipVaultFile` reads — `<slug>.nsf`
+/ `<slug>.gbs` whole, `<slug>/<track-slug>.spc` per file — through
+`gh api`, check-before-PUT, message "archive: <slug>". `--title` only
+rewrites album.json's title (the app's Rename would do the same); the
+manifest is rebuilt with build_manifest.mjs when writing into the repo.
+The script downloads nothing and never writes a chip file under the
+repo (*.nsf/*.gbs/*.spc/*.zip are gitignored). Captures are CPU work:
+one process at a time, a per-game `perl -e 'alarm 1200; exec @ARGV'`.
+Expansion-chip NSFs (header byte 0x7B: VRC6/VRC7/FDS/MMC5/N163/Sunsoft
+5B) are refused by `parseNSF` — the 2A03-only capture of one is missing
+its lead voices, and a half-song published is worse than none — and the
+refusal surfaces as the import error both here and in the app.
+
 ## ✦ Ask / ✦ Fill — in-app AI (P1a + P2a + P3 shipped 2026-09-25; design: local-llm-design.md)
 
 The tutor half of the AI plan. `✦ Ask` in the top bar (hidden in listener
