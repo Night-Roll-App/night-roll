@@ -4,6 +4,16 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## NES/GB INSTRUMENT FOLDERS — RULE FIXED, MOVE QUEUED (2026-09-28)
+
+24 NES/GB libraries published at <vault minus extension>/instruments/;
+that rule collides for Tetris (tetris.nsf vs tetris.gbs). The rule for
+ALL albums: vault ends in "/" → <vault>instruments/; a single-file vault
+→ <vault>.instruments/ (tetris.nsf.instruments/). QUEUED (after the PS2
+agent leaves index.html): git mv the 24 folders in the archive, teach
+instAlbums/instLibrary the rule (nsf/gbs albums join the browser),
+extract + publish TMNT 2, Final Fantasy Legend and both Tetrises.
+
 ## PS2 milestone 1 — DONE 2026-09-28: rips → notes for Sony's stock driver (SQ/HD/BD); Square's own driver (FFX, "BGM"/"WD") identified only; not wired into the app, no audio, nothing committed/pushed. See docs/plans/ps2.md §8 for findings and what milestone 2 (chip audio) needs.
 
 ## Game instrument libraries: load any SoundFont 2 — DONE 2026-09-28 (untested by ear)
