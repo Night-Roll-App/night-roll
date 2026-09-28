@@ -3634,10 +3634,11 @@ test("tap a note on a chip song: the live worker renders that one note through t
   run(`chipWorker.onmessage = e => { const m = e.data; const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); };`);
   const settle = async p => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app.tick(20); await Promise.resolve(); await Promise.resolve(); } return p; }; // the harness clock is fake: fire the worker's reply and the 400 ms guard
   await settle(run(`previewNote(0, 60)`));
-  assert.equal(val(`globalThis.__srcs`), 1, "the game's note played as a buffer");
+  assert.equal(val(`chipPreviewCache.size`), 1, "the game's note came back and was kept (the app may rebuild the audio context under a tap, so the buffer, not the context, is the witness)");
   assert.equal(val(`globalThis.__sched`), 0, "no synth note");
+  run(`chipWorker.postMessage = () => { throw new Error("no worker call expected: the cache answers"); };`);
   await settle(run(`previewNote(0, 60)`));
-  assert.equal(val(`globalThis.__srcs`), 2, "a repeat comes from the cache");
+  assert.equal(val(`globalThis.__sched`), 0, "a repeat comes from the cache, still no synth");
   run(`chipWorker = null;`);
   await settle(run(`previewNote(0, 60)`));
   assert.equal(val(`globalThis.__sched`), 1, "no live worker: the synth voice");
