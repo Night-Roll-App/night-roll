@@ -12,10 +12,18 @@
 // 4 updates per 60 Hz frame, the gate-end decay at releaseRate × 24 per
 // update, the volume law velocity² × channel volume × (envelope/23000)²,
 // the choice of envelope (note_init: the layer's unless its release rate
-// is 0, then the channel's). Not here: pan (mono), reverb, vibrato,
-// portamento, the RSP's resampler (linear interpolation instead), the
-// synth waveforms of instrument ids >= 0x80 (skipped, listed in
-// `warnings`), and volume changes during a note (the value at note-on).
+// is 0, then the channel's), and the reverb: SM64's is one feedback delay
+// line (synthesis.c synthesis_do_one_audio_update: the ring buffer's
+// oldest samples become the update's starting sound, are scaled by the
+// preset's gain, take the notes' wet sends — dry × reverbVol/128, D4 —
+// and go back into the ring), i.e. out = dry + ring[t − W], ring[t] =
+// gain·ring[t − W] + wet[t], W = the session preset's window. The preset
+// is the level's (SET_BACKGROUND_MUSIC in the decomp's level scripts, US
+// table below); a USF rip does not carry it. Not here: pan (mono),
+// vibrato, portamento, the RSP's resampler (linear interpolation
+// instead), the synth waveforms of instrument ids >= 0x80 (skipped,
+// listed in `warnings`), and volume changes during a note (the value at
+// note-on).
 import { tickSeconds } from "./seq-libultra.mjs";
 import { channelGroups } from "./notes.mjs";
 import { findAudioFiles, readBank, DEFAULT_ENVELOPE, DEFAULT_RELEASE_RATE } from "./bank.mjs";
@@ -26,6 +34,27 @@ const ADSR_DISABLE = 0, ADSR_HANG = -1, ADSR_GOTO = -2, ADSR_RESTART = -3;
 const DISABLED = 0, INITIAL = 1, LOOP = 3, FADE = 4, HANG = 5, DECAY = 6;
 const FREQ_CAP = 3.99992;               // process_notes: the resampler's ceiling
 const VOL_SCALE = 4.3498e-5;            // process_notes: adsr level → ~1/23000
+
+// gAudioSessionPresets (data.c, US): reverb window in samples at 32 kHz
+// and the ring's feedback gain /0x8000. Index = the level script's
+// settingsPreset; SM64_PRESET_OF_SEQUENCE maps a sequence id to the
+// preset its level uses (first level found in the decomp's scripts).
+export const SM64_PRESETS = [
+  {window: 0x0C00, gain: 0x2FFF}, {window: 0x0A00, gain: 0x47FF}, {window: 0x1000, gain: 0x2FFF}, {window: 0x0E00, gain: 0x3FFF},
+  {window: 0x0C00, gain: 0x4FFF}, {window: 0x0C00, gain: 0x2FFF}, {window: 0x0A00, gain: 0x47FF}, {window: 0x0800, gain: 0x37FF},
+];
+// levels/*/script.c SET_BACKGROUND_MUSIC(settingsPreset, seq); where levels
+// disagree (HOT: lll/ssl 0 and 4, SLIDE: 0 and 1) the first script listed
+// wins. Menus (SET_MENU_MUSIC) and event jingles play over preset 0.
+export const SM64_PRESET_OF_SEQUENCE = {
+  0x03: 0, 0x04: 1, 0x05: 3, 0x06: 0, 0x07: 2, 0x08: 0, 0x09: 1, 0x0A: 6, 0x0C: 4, 0x11: 0, 0x19: 2,
+};
+export function reverbFor(opts, result) {
+  if (opts.reverb === null || opts.reverb === false) return null;
+  if (opts.reverb) return opts.reverb;
+  const p = SM64_PRESET_OF_SEQUENCE[result.sequenceId != null ? result.sequenceId : opts.sequenceId];
+  return SM64_PRESETS[p != null ? p : 0];
+}
 
 // adsr_update, JP/US: the level is an s16 0..32767 stepped once per audio
 // update; a fade moves (target − current) << 16 over `delay` updates in a
@@ -80,18 +109,20 @@ export async function renderN64(result, opts = {}) {
   const banks = new Map();
   const bankOf = i => { const id = bankIds[i] != null ? bankIds[i] : bankIds[0]; if (!banks.has(id)) banks.set(id, readBank(rom, files, id)); return banks.get(id); };
   const groups = channelGroups(result, opts.meter || {});
+  const reverb = reverbFor(opts, result);
+  const W = reverb ? Math.max(1, Math.round(reverb.window * sampleRate / N64_RATE)) : 0, G = reverb ? reverb.gain / 0x8000 : 0;
   const {tempos, notes} = result;
   const endTick = Math.max(result.endTick || 0, ...notes.map(n => n.tick + n.dur));
   const seconds = Math.min(opts.keepSeconds || Infinity, tickSeconds(tempos, endTick) + 2.5);
   const N = Math.ceil(seconds * sampleRate);
-  const out = {sampleRate, seconds, silent: [], warnings: []};
+  const out = {sampleRate, seconds, silent: [], warnings: [], reverb: reverb ? {window: reverb.window, gain: reverb.gain} : null};
   const warned = new Set();
   const warn = w => { if (!warned.has(w)) { warned.add(w); out.warnings.push(w); } };
   const updateEvery = sampleRate / UPDATES_PER_SECOND;
   let done = 0, total = 0;
   for (const g of groups) total += g.notes.length;
   for (const g of groups) {
-    let buf = null; // allocated by the first note that sounds
+    let buf = null, wet = null; // allocated by the first note that sounds (wet: its reverb send, freed after the comb)
     for (const n of g.notes) {
       done++;
       if (opts.onProgress && (done & 31) === 0) { opts.onProgress(done / total); await new Promise(r => setTimeout(r, 0)); }
@@ -126,6 +157,7 @@ export async function renderN64(result, opts = {}) {
       const vel = Math.max(0, Math.min(127, n.vel || 0));
       const base = vel * vel * (n.vol != null ? n.vol : 1);
       if (base <= 0) continue;
+      const send = reverb && n.rev ? Math.min(127, n.rev) / 128 : 0; // aSetVolume(A_AUX, reverbVol << 8): wet = dry × reverbVol/128
       const smp = bank.pcm(sound.sample);
       const pcm = smp.pcm, L = smp.loopEnd, loopStart = smp.loopStart;
       const step = Math.min(FREQ_CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
@@ -144,9 +176,14 @@ export async function renderN64(result, opts = {}) {
         const p0 = pos | 0, f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : smp.looping ? pcm[loopStart] : 0;
         const gain = gNext + (gPrev - gNext) * ((nextUpdate - i) / updateEvery);
         const v = (a + (b - a) * f) * gain;
-        if (v !== 0) { if (!buf) buf = new Float32Array(N); buf[i] += v; }
+        if (v !== 0) { if (!buf) buf = new Float32Array(N); buf[i] += v; if (send) { if (!wet) wet = new Float32Array(N); wet[i] += v * send; } }
         pos += step;
       }
+    }
+    if (buf && wet) { // the ring: what went in W samples ago comes back at unity and, scaled by the gain, goes round again
+      const ring = new Float32Array(W);
+      for (let i = 0, p = 0; i < N; i++) { const r = ring[p]; buf[i] += r; ring[p] = r * G + wet[i]; if (++p === W) p = 0; }
+      wet = null;
     }
     if (buf) out[g.name] = buf; else out.silent.push(g.name);
   }

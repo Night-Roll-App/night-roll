@@ -24,5 +24,6 @@ export function sequenceOfSet(set, {maxSeconds = 600} = {}) {
   const present = new Uint8Array(seq.size);
   for (let i = 0; i < seq.size; i++) present[i] = img.coverage(at + i, 1) ? 1 : 0;
   const res = parseSequence(seqBytes, {abi: game ? game.abi : loc.abi, present, io: null, maxSeconds, stopAtLoop: true});
+  res.sequenceId = id; // the renderer picks the level's reverb preset by it
   return {game, loc, id, seq, res, present};
 }

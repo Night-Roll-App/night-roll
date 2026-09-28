@@ -751,6 +751,43 @@ fixes: pan → a stereo render (the app's chip buffers are mono
 Float32Arrays per track; chipBuffers/chipStart would carry two
 channels), per-note volume fades (DA), reverb as a wet send. The
 too-loud up-strokes may be reverb/fade related; re-listen after pan.
+RESOLVED by the agent against the decomp (same night): (1) the
+"octave low" IS the console — that sample's recording sounds C3 when
+the note says C4 (gNoteFrequencies[39] = 1.0 plays it at its native
+rate); no transposition in the script; render = console. (2) Dire Dire
+Docks' notes end by their own envelope, as in the game (no D2 sustain
+in that song). What both songs lacked was REVERB: D4 sends were
+stubbed. Now rendered as SM64's comb (window + gain per level preset
+from the decomp's level scripts — the rip carries no preset, so a USF
+player's render differs from the game here). Vibrato (D7/D8/E3) still
+stubbed. OPEN FOR JOSH: the roll shows the WRITTEN key while the
+sound is an octave lower for such instruments (Cave Dungeon inst 0/6,
+Title inst 3, and inst 4 the other way). Should the capture shift
+each instrument's notes to the SOUNDING octave (root detected from
+the sample, as the PS1 path reports "sample root")? Recommendation:
+yes, for study the sounding pitch is the fact; the written key would
+go in the .notes.txt header per instrument.
+
+## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
+
+"Before we release this for real … imports of several more games on
+all the systems and listen to basically every song … iron out every
+possible bug … find games with obscure hardware and test those … if
+they don't work, say we don't support this kind of game." The plan:
+- A matrix, per console: 3+ games each, every song listened to once,
+  a line per song (ok / report). NES: expansion audio (VRC6, VRC7,
+  N163, MMC5, FDS, Sunsoft 5B) — what tools/nsf does with each, and
+  a clear "this cartridge's extra sound chip isn't supported" if not.
+  SNES: uniform (SPC700) — stress with big sample sets. Game Boy:
+  uniform. Genesis: VGM with extra chips (YM2612+PSG only?). PS1:
+  AKAO (Square) renders; SEQ/VAB (libsnd) games capture notes but do
+  NOT render ("SEQ/VAB playback is not rendered yet") — either render
+  them or say so at import; other drivers unsupported. N64: EAD only
+  (SM64; OoT/MM bank layout not started); Rare/Factor 5/other drivers
+  unsupported — say so.
+- Every unsupported case must fail with a sentence that names the
+  chip/driver, never a silent synth fallback.
+- Josh's ear is the test; the terminal keeps the matrix here.
 PS1 — Anxious Heart (Josh: bar 1 great, bar 2 "way louder", "every
 other bar", fine from bar 10): the pad's expression fades swell inside
 held notes; the render froze each note at its note-on volume. Fixed:

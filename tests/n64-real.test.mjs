@@ -22,6 +22,7 @@ import { expandBook, decodeFrames } from "../tools/n64/vadpcm.mjs";
 import { renderN64 } from "../tools/n64/render.mjs";
 import { channelGroups } from "../tools/n64/notes.mjs";
 import { tickSeconds } from "../tools/n64/seq-libultra.mjs";
+import { sequenceOfSet } from "../tools/n64/capture.mjs";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/n64-usf-tracks.json", import.meta.url), "utf8"));
 
@@ -490,4 +491,67 @@ test("SM64 pitch (real ROM): the Main Theme melody and the Title Theme's bass so
   const i4 = isolatedCents(title.res, rt, "ch 4 inst 4", keep);
   assert.ok(i4.length >= 4);
   for (const x of i4) assert.ok(Math.abs(x.cents - 1200) < 60 && x.rAt2f > 0.9, "inst 4 midi " + x.midi + ": " + x.cents.toFixed(0) + " c, r@2f " + x.rAt2f.toFixed(2));
+});
+
+// ---- the first listens (2026-09-27): Cave Dungeon's octave, Dire Docks' tails ----
+// energy at one frequency (Goertzel), normalised by the window's energy
+function toneEnergy(buf, from, to, sr, hz) {
+  const w = 2 * Math.PI * hz / sr; let re = 0, im = 0, e = 0;
+  for (let i = from; i < to; i++) { const v = buf[i]; re += v * Math.cos(w * i); im += v * Math.sin(w * i); e += v * v; }
+  return e ? (re * re + im * im) / e : 0;
+}
+test("SM64 Cave Dungeon (real ROM): the intro instrument's recording sounds C3 at its 32 kHz tuning, so 'midi 60' renders C3 — the console's arithmetic, not a region or tuning slip", {skip: !SM64}, async () => {
+  const CAVE = "14a Cave Dungeon.miniusf";
+  const {set, loc, seq, res} = sm64Song(SM64, CAVE);
+  assert.deepEqual(seq.banks, [21]);
+  const bank = readBank(set.rom, findAudioFiles(set.rom, loc), 21);
+  for (const id of [0, 6]) { // one key region each, tuning exactly 1.0, the same one-shot recording
+    const i = bank.instrument(id);
+    assert.deepEqual([i.normalRangeLo, i.normalRangeHi, i.low, i.high, i.normal.tuning], [0, 127, null, null, 1]);
+    assert.equal(i.normal.sample, bank.instrument(0).normal.sample);
+  }
+  const rec = bank.instrument(0).normal.sample, pcm = bank.pcm(rec).pcm;
+  assert.equal(pcm.length, 41952);
+  // the recording itself, played 1:1 (freqScale 1.0 = semitone 39 = "C4"): fundamental at C3
+  const c3 = toneEnergy(pcm, 2560, 15360, 32000, 130.81), c4 = toneEnergy(pcm, 2560, 15360, 32000, 261.63), c2 = toneEnergy(pcm, 2560, 15360, 32000, 65.41);
+  assert.ok(c3 > 5 * c4 && c3 > 5 * c2, `sample energy C3 ${c3.toExponential(2)} C4 ${c4.toExponential(2)} C2 ${c2.toExponential(2)}`);
+  // and the render of channel 0's first notes (written semitone 39/44/46/49 = midi 60/65/67/70, no transposition) lands an octave below midi
+  const first = res.notes.filter(n => n.ch === 0).slice(0, 4);
+  assert.deepEqual(first.map(n => n.midi), [60, 65, 67, 70]);
+  assert.ok(first.every(n => n.rev === 0x1E && n.vol > 0.6), "channel 0: D4 0x1E reverb, DF 0x7F volume × DB");
+  const r = await renderN64(res, {set, banks: seq.banks, keepSeconds: 3, reverb: null});
+  const buf = r["ch 0 inst 0"], sr = r.sampleRate;
+  for (const n of first) {
+    const a = Math.floor((tickSeconds(res.tempos, n.tick) + 0.02) * sr), b = Math.floor((tickSeconds(res.tempos, n.tick + n.dur) + 0.08) * sr);
+    const f = 440 * Math.pow(2, (n.midi - 69) / 12);
+    const at = toneEnergy(buf, a, b, sr, f), below = toneEnergy(buf, a, b, sr, f / 2), above = toneEnergy(buf, a, b, sr, f * 2);
+    assert.ok(below > 3 * at && below > 3 * above, `midi ${n.midi}: energy at f/2 ${below.toExponential(2)} f ${at.toExponential(2)} 2f ${above.toExponential(2)}`);
+  }
+  // the app's path stamps the sequence id, which picks the underground preset (level scripts: hmc/cotmc/sl/ssl/thi 0x0004)
+  const viaApp = sequenceOfSet(set);
+  assert.equal(viaApp.res.sequenceId, 12);
+  assert.deepEqual((await renderN64(viaApp.res, {set, banks: seq.banks, keepSeconds: 1})).reverb, {window: 0x0C00, gain: 0x4FFF});
+});
+
+test("SM64 Dire, Dire Docks (real ROM): notes end by their own envelope (298 updates), no sustain op; the reverb (D4 0x32, water preset) is what carries the tail", {skip: !SM64}, async () => {
+  const DDD = "09a Dire, Dire Docks.miniusf";
+  const {set, loc, seq, res} = sm64Song(SM64, DDD);
+  assert.deepEqual([seq.id, seq.banks, res.stubbed], [5, [19], []]);
+  const bank = readBank(set.rom, findAudioFiles(set.rom, loc), 19);
+  assert.deepEqual(bank.instrument(15).envelope, [[3, 32700], [298, 0], [1, 0], [-1, 0]]);
+  assert.equal(bank.instrument(15).releaseRate, 10);
+  const n0 = res.notes.filter(n => n.ch === 15)[0];
+  assert.deepEqual([n0.midi, n0.dur, n0.rev, n0.chEnv, n0.chRel, n0.lyAdsr], [43, 149, 0x32, null, null, null]);
+  res.sequenceId = seq.id;
+  const dry = await renderN64(res, {set, banks: seq.banks, keepSeconds: 4, reverb: null});
+  const wet = await renderN64(res, {set, banks: seq.banks, keepSeconds: 4});
+  assert.deepEqual(wet.reverb, {window: 0x0E00, gain: 0x3FFF});
+  const sr = dry.sampleRate, t0 = tickSeconds(res.tempos, n0.tick);
+  const rms = (a, s0, s1) => { let s = 0; for (let i = Math.floor(s0 * sr); i < Math.floor(s1 * sr); i++) s += a[i] * a[i]; return Math.sqrt(s / ((s1 - s0) * sr)); };
+  const peak = rms(dry["ch 15 inst 15"], t0, t0 + 0.3);
+  const db = v => 20 * Math.log10(v / peak + 1e-12);
+  // the envelope has run out 1.25 s after onset (301 updates at 240/s); the next note comes at +1.8 s
+  const tailDry = db(rms(dry["ch 15 inst 15"], t0 + 1.55, t0 + 1.75)), tailWet = db(rms(wet["ch 15 inst 15"], t0 + 1.55, t0 + 1.75));
+  assert.ok(tailDry < -60, "dry: silent once the envelope has run out: " + tailDry.toFixed(0) + " dB");
+  assert.ok(tailWet > -55 && tailWet < -20, "wet: the 112 ms / ×0.5 comb still rings: " + tailWet.toFixed(0) + " dB");
 });

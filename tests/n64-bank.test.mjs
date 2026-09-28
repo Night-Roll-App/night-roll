@@ -10,7 +10,7 @@ import { expandBook, decodeFrames, decodeSample } from "../tools/n64/vadpcm.mjs"
 import { readBank, readEnvelope, byteView, findAudioFiles, DEFAULT_ENVELOPE } from "../tools/n64/bank.mjs";
 import { readALSeqFile } from "../tools/n64/ead-usf.mjs";
 import { SparseImage } from "../tools/n64/usf.mjs";
-import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND } from "../tools/n64/render.mjs";
+import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, SM64_PRESETS, SM64_PRESET_OF_SEQUENCE, reverbFor } from "../tools/n64/render.mjs";
 import { channelGroups } from "../tools/n64/notes.mjs";
 import { TICKS_PER_BEAT } from "../tools/n64/constants.mjs";
 
@@ -163,4 +163,35 @@ test("renderN64: the note sounds under notes.mjs's track name at the sample's pi
   const r3 = await renderN64({...res, notes: [{...res.notes[0], inst: 0x80}]}, {rom, banks: [0]});
   assert.deepEqual(r3.silent, ["ch 4 inst 128"]);
   assert.match(r3.warnings[0], /synth waveform/);
+});
+
+test("reverb: the note's send comes back one window later at unity, then again scaled by the gain; off when asked; presets by sequence", async () => {
+  const {rom} = synthRom({looping: false});
+  const B = TICKS_PER_BEAT;
+  const note = {tick: 0, dur: B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, pan: 0.5, freq: 1, chInst: 0, rev: 127};
+  const res = {abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: B, warnings: [], notes: [note]};
+  const dry = (await renderN64(res, {rom, banks: [0], reverb: null}))["ch 4 inst 0"];
+  const r = await renderN64(res, {rom, banks: [0], reverb: {window: 1000, gain: 0x4000}});
+  const wet = r["ch 4 inst 0"];
+  assert.deepEqual(r.reverb, {window: 1000, gain: 0x4000});
+  let peak = 0; for (let i = 0; i < 64; i++) peak = Math.max(peak, Math.abs(dry[i]));
+  assert.ok(peak > 0.05, "the one-shot sounds: " + peak);
+  for (let i = 0; i < 64; i++) {
+    assert.ok(Math.abs(wet[i] - dry[i]) < 1e-6, "dry part unchanged");
+    assert.ok(Math.abs(wet[1000 + i] - dry[i] * 127 / 128) < 1e-6, "first echo at W: reverbVol/128 of the dry signal");
+    assert.ok(Math.abs(wet[2000 + i] - dry[i] * 127 / 128 * 0.5) < 1e-6, "second echo: × gain/0x8000");
+    assert.ok(Math.abs(wet[3000 + i] - dry[i] * 127 / 128 * 0.25) < 1e-6);
+  }
+  assert.equal(dry[1000] + dry[2000], 0, "no echo without reverb");
+  // a note without a send (D4 0) adds nothing to the ring
+  const r0 = await renderN64({...res, notes: [{...note, rev: 0}]}, {rom, banks: [0], reverb: {window: 1000, gain: 0x4000}});
+  assert.equal(r0["ch 4 inst 0"][1000], 0);
+  // presets: the US table, and the level scripts' choice per sequence (water = preset 3, underground = 4, default 0)
+  assert.equal(SM64_PRESETS.length, 8);
+  assert.deepEqual(reverbFor({}, {sequenceId: 5}), {window: 0x0E00, gain: 0x3FFF});
+  assert.deepEqual(reverbFor({}, {sequenceId: 0x0C}), {window: 0x0C00, gain: 0x4FFF});
+  assert.deepEqual(reverbFor({}, {sequenceId: 2}), SM64_PRESETS[0]);
+  assert.deepEqual(reverbFor({}, {}), SM64_PRESETS[0]);
+  assert.equal(reverbFor({reverb: null}, {sequenceId: 5}), null);
+  assert.equal(SM64_PRESET_OF_SEQUENCE[0x0A], 6, "the haunted house");
 });

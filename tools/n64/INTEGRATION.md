@@ -414,3 +414,72 @@ inst 4 an octave low). Nothing here names an instrument.
   `n64/bank`, `n64/vadpcm`, `n64/render` to the module list) is not done
   here — index.html is untouched. `tests/n64-bank.test.mjs` is new and not
   yet in package.json's `test` script.
+
+### 9.5 First listens (2026-09-27, later the same day)
+
+Two ear reports, what the decomp and the ROM say, and what changed.
+
+**"Dire, Dire Docks: notes cut off a little early."** Note-off, verified
+line by line (seqplayer.c `seq_channel_layer_process_script`, playback.c
+`seq_channel_layer_decay_release_internal`, effects.c `adsr_update`,
+JP/US branches): the layer counts `delay` down and calls `note_decay` when
+`delay <= duration` (`duration = noteDuration × delay >> 8`, so `dur`
+from the parser is the sounding part; the decay is not in it); decay =
+`fadeOutVel = releaseRate × 24` per 1/240 s update until the level is
+below 100 (RELEASE at `0x8000/4` only when a layer is freed); JP/US
+`chan_setsustain` (D2) is `sustain = u8 << 8` and the note holds at
+`current × sustain / 0x10000` for `sustain/16` updates — a real hold, but
+**this song never issues D2** (`res.stubbed` is empty now). Its ch 14/15
+instruments have envelopes `[[6|3, 32700], [298, 0], [1, 0], hang]`: they
+fade to silence by themselves 1.25 s after onset, before most gates (the
+d170 notes are silent for their last 0.35 s in the game too). Measured on
+the render: −40 dB at the gate for the long notes, 1.3 s after it for a
+short one — exactly the envelope. What the render lacked was the
+**reverb**: ch 14/15 send `D4 0x32` (50/128) into the session's ring
+buffer, which the parser stubbed. Now: `rev` on every note, and
+`renderN64` runs SM64's reverb — one delay line per the RSP command
+order in `synthesis_do_one_audio_update` (the ring's oldest `W` samples
+are the update's starting sound, `aMix(0x8000 + gain)` scales them, the
+notes add dry to the output and `dry × reverbVol/128` to the wet buffer
+(`aSetVolume(A_AUX, reverbVol << 8)`), the wet buffer goes back to the
+ring). `out = dry + ring[t−W]`, `ring[t] = gain/0x8000 · ring[t−W] +
+wet[t]`. `W`/gain are the level's session preset (`gAudioSessionPresets`
+US, data.c) chosen by `SET_BACKGROUND_MUSIC(settingsPreset, seq)` in the
+decomp's level scripts — the rip carries neither the preset nor
+`gSynthesisReverb` (its 36 KB of RDRAM is code words), so
+`SM64_PRESET_OF_SEQUENCE` in render.mjs is that table: water 3 (0x0E00 =
+112 ms, ×0.5), underground 4 (96 ms, ×0.625), haunted house 6, castle 1,
+slide 1, Bowser 2, everything else 0 (96 ms, ×0.375). With it, Dire Docks'
+tail rings ~0.5 s past the envelope. `sequenceOfSet` stamps
+`res.sequenceId` so the app's render picks it up; `opts.reverb` overrides
+(`null` = dry). Per-track combs sum to the game's single one (it is
+linear), so mute/solo stay exact.
+
+**"Cave Dungeon intro sounds weird, sorts itself out."** Checked for inst
+0/6/7 of bank 21: (a) one key region each (`lo 0, hi 127`, no low/high
+sound) — nothing to choose; the decomp compares the transposed semitone
+(`instrument_get_audio_bank_sound(instrument, cmd)` right before
+`gNoteFrequencies[cmd] * sound->tuning`, seqplayer.c part 4) and so does
+`bank.sound()`; (b) tuning is read from each region's own
+`AudioBankSound` (inst 0/6: exactly 1.0, inst 7: 0.2809); (c) the pitch:
+inst 0/6's recording (tbl 0x4E930, 41952 samples, one-shot) has its
+fundamental at **130.5 Hz = C3 when played 1:1**, i.e. at semitone 39
+(`gNoteFrequencies[39] = 1.0f`, data.c) — so the console plays the
+written "midi 60" as C3, and the render does the same (energy at f/2 is
+> 3× that at f for the first four notes; test "SM64 Cave Dungeon"). The
+octave is in the recording, exactly as inst 3/4 of the Title Theme (§9.3):
+`+21` names the note the composer typed, not the note that sounds, for
+these instruments. Nothing in the pitch path was changed; the same check
+passes for the Main Theme melody (+2 c). (d) envelopes: all three are the
+instruments' own (`chInst` set, no DA/CB, no `DEFAULT_ENVELOPE`
+fallback); (e) the ch 7 chord loops its sample (12232..25019) without a
+click (largest sample step 1034/32768 over 5 s, none above 6000). What
+the intro lacked is the reverb every channel sends (`D4 0x1E..0x3C`) into
+the underground preset, and ch 5's vibrato (`D8`, still stubbed) later
+on. WAVs: `scratch/sm64-cave-5s.wav` + per track, `scratch/sm64-ddd-12s.wav`
++ per track (both now with the reverb).
+
+Still unverified: which preset the *ripper's* base state had (the USF
+minis all share one state, so a USF player renders every song with one
+preset — YouTube "USF" uploads will differ from the game here); the
+reverb's `framesLeftToIgnore` warm-up; vibrato (D7/D8/E3).

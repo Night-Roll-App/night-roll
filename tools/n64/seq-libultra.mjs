@@ -38,7 +38,7 @@
 //   sound facts the renderer (render.mjs) needs, recorded on each note as
 //   the game would apply them at note-on (sm64 seqplayer.c / effects.c):
 //   the channel's bank index (C6/EB), volume (DF /127) × volume scale
-//   (E0 /128) × the player's volume (DB, DA /127), pan (DD /128), pitch
+//   (E0 /128) × the player's volume (DB, DA /127), pan (DD /128), reverb send (D4), pitch
 //   scale (DE u16/32768, D3 = 0.5·2^((s8+127)/127)), the channel's
 //   envelope/release overrides (DA, D9 — an instrument set by C1/EB
 //   replaces them, as get_instrument does) and the layer's own adsr
@@ -167,7 +167,7 @@ export function parseSequence(input, opts = {}) {
     return {idx, enabled: false, finished: false, stopScript: false, delay: 0, value: 0, transposition: 0,
             largeNotes: false, instr: null, bank: 0, dynTable: -1, io: new Array(8).fill(-1),
             // sequence_channel_init: full volume, centre pan, no bend; adsr = the default envelope until an instrument is set
-            volume: 1, volumeScale: 1, pan: 0.5, freqScale: 1, envelope: null, release: null, adsrInst: null,
+            volume: 1, volumeScale: 1, pan: 0.5, freqScale: 1, envelope: null, release: null, adsrInst: null, reverb: 0,
             layers: new Array(LAYERS).fill(null), st: null};
   }
   function enableChannel(i, pc) {
@@ -282,7 +282,7 @@ export function parseSequence(input, opts = {}) {
     if (!drum && (pitch < 0 || pitch >= 0x80)) { L.stop = true; return; } // out of range = silent, like the game
     noteOn(L, {tick, dur: 0, ch: C.idx, layer: L.idx, semitone: pitch, drum,
                midi: drum ? null : pitch + SEMITONE_TO_MIDI, vel: L.vel, inst: instr, gate: L.noteDuration,
-               bank: C.bank, vol: C.volume * C.volumeScale * player.volume, pan: C.pan, freq: C.freqScale,
+               bank: C.bank, vol: C.volume * C.volumeScale * player.volume, pan: C.pan, freq: C.freqScale, rev: C.reverb,
                chEnv: C.envelope, chRel: C.release, chInst: C.adsrInst, lyAdsr: L.adsr});
   }
 
@@ -345,7 +345,8 @@ export function parseSequence(input, opts = {}) {
       case 0xCD: if (!oot) throw fail("channel", cmd, at); disableChannel(player.channels[u8(s)]); break;
       case 0xCE: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel ldptr CE"); break;
       case 0xCF: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel stptrtoseq CF"); break;
-      case 0xD0: case 0xD1: case 0xD2: case 0xD4: case 0xD5: case 0xD6: case 0xD7: case 0xD8:
+      case 0xD4: C.reverb = u8(s); break;                                          // chan_setreverb: the wet send, 0..127
+      case 0xD0: case 0xD1: case 0xD2: case 0xD5: case 0xD6: case 0xD7: case 0xD8:
       case 0xDC: case 0xE3: case 0xE5: case 0xE6: case 0xE9: case 0xED:
         u8(s); stub("channel sound-shaping " + hex(cmd)); break;
       case 0xD9: C.release = u8(s); break;
