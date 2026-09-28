@@ -286,7 +286,7 @@ const s16 = (lo, hi) => ((lo | (hi << 8)) << 16) >> 16;
 // key-split instrument regions at `at`: 8 bytes {articulation, low key, high
 // key, ar, sr, sustain mode, rr, volume} until a terminator (layout 3: a zero
 // word; earlier: a first byte ≥ 0x80)
-function readRegions(d, at, version) {
+export function readRegions(d, at, version) {
   const out = [];
   for (let o = at; o + 8 <= d.length; o += 8) {
     if (version >= 3 ? !u32(d, o) : d[o] >= 0x80) break;

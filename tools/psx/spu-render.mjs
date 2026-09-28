@@ -57,7 +57,7 @@ export function findSampleBank(ram, table, {maxSlots = 128} = {}) {
 // (7 − step) << max(0, 11 − shift) up, (−8 + step) << … down; exponential
 // decrease scales the step by level / 0x8000, exponential increase runs at
 // a quarter speed above 0x6000.
-class Envelope {
+export class Envelope {
   constructor(rec) { this.rec = rec; this.level = 0; this.phase = 0; this.cycle = 0; this.on = true; }
   static rate(r, up, exp, level) {
     const shift = r >> 2, stepBits = r & 3;
@@ -100,7 +100,7 @@ class Envelope {
 
 // A decoded sample: loop from the block flags, else from the record's loop
 // address (INSTR.DAT / sample-set records), else one-shot.
-function decodeAt(d, o, rec) {
+export function decodeAt(d, o, rec) {
   let len = 16;
   while (o + len + 16 <= d.length && !(d[o + len - 16 + 1] & 1) && len < 0x80000) len += 16;
   const dec = decodeAdpcm(d, o, len);
