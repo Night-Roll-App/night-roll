@@ -768,8 +768,13 @@ state machine (Cave Dungeon's D8 1 is ±3 cents — nearly inaudible, as
 the game); Open re-reads the published list; tap-to-hear the game's
 instrument (PS1/N64). GoldenEye: no modulation in the set (no
 vibrato to add); level still 10–13 dB hot vs the real player, not one
-factor. IN PROGRESS: EAD portamento (C7) — the last pitch stub; the
-truth's ±60 c swings on Cave Dungeon ch 5 are that.
+factor. DONE: EAD portamento (C7) from the decomp — no SM64 song uses
+it; the Cave Dungeon "swings" were the pitch estimator reading other
+voices between phrases. Every EAD sound-shaping op in SM64 is a fact
+now (`res.stubbed` empty). IN PROGRESS (two agents): the Zeldas' bank
+layout for the EAD renderer (OoT/MM, verified against the real
+player); the Rare driver on Banjo-Kazooie / Donkey Kong 64 / Perfect
+Dark — the no-hacks rule's test.
 RESOLVED by the agent against the decomp (same night): (1) the
 "octave low" IS the console — that sample's recording sounds C3 when
 the note says C4 (gNoteFrequencies[39] = 1.0 plays it at its native
