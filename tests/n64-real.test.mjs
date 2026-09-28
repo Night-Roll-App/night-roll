@@ -23,6 +23,8 @@ import { renderN64 } from "../tools/n64/render.mjs";
 import { channelGroups } from "../tools/n64/notes.mjs";
 import { tickSeconds } from "../tools/n64/seq-libultra.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
+import { findMusicTable, findRareBankFile, readRareBank, miniOverrideWords } from "../tools/n64/rare.mjs";
+import { toMidi } from "../tools/n64/notes.mjs";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/n64-usf-tracks.json", import.meta.url), "utf8"));
 
@@ -217,7 +219,7 @@ test("mini sequence id: `addiu a1, zero, n` after the saved PC (SM64/OoT rips) o
   for (const [k, g] of Object.entries(USF_GAMES)) {
     assert.match(k, /^nus-[a-z0-9]{4}-[a-z]{3}\.usflib$/);
     assert.equal(g.code.toLowerCase(), k.slice(4, 8));
-    assert.ok(["sm64", "oot", "mm"].includes(g.abi));
+    assert.ok(["sm64", "oot", "mm", "rare"].includes(g.abi));
   }
   assert.equal(gameOfSet({order: ["NUS-NSME-USA.usflib", "x.miniusf"]}).abi, "sm64");
   assert.equal(gameOfSet({order: ["NUS-NZSE-USA.usflib", "x.miniusf"]}).abi, "mm");
@@ -588,4 +590,105 @@ test("SM64 per-mini ducking (real set): the three Dire Docks and three Cave Dung
   assert.deepEqual([ca.res.notes.length, cb.res.notes.length, cc.res.notes.length], [2281, 2178, 2358]);
   for (const m of [TITLE, MAIN]) { const x = cap(m); assert.deepEqual(x.res.ducked, [], m); assert.ok(!(x.res.warnings || []).some(w => /ducking/.test(w))); }
   assert.equal(cap(TITLE).res.notes.length, 3910); assert.equal(cap(MAIN).res.notes.length, 1419);
+});
+
+// ---- GoldenEye 007 (Rare's engine, tools/n64/rare.mjs) -----------------------
+// The rip is not in the repo: N64_GE_DIR (or the scratch folder the work was
+// done in) holds NUS-NGEE-USA.usflib and the 58 minis; without it these skip.
+// The numbers are what INTEGRATION.md §10 records from the rip and from
+// lazyusf2's renders of it.
+const GE = [process.env.N64_GE_DIR, "/tmp/claude-501/rips/n64-ge"].find(d => d && existsSync(join(d, "NUS-NGEE-USA.usflib")));
+const geSet = m => { const libs = readdirSync(GE).filter(n => /\.usflib$/i.test(n)).map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(GE, n)))})); return loadUSF([{name: m, bytes: new Uint8Array(readFileSync(join(GE, m)))}, ...libs]); };
+
+test("GoldenEye (real rip): no EAD tables; the RAM song table, the mini's word, 1172 + ALCSeq → Dam's notes, tempo, division and loop", {skip: !GE && "no GoldenEye rip"}, () => {
+  const set = geSet("101 Dam.miniusf");
+  assert.equal(gameOfSet(set).abi, "rare");
+  assert.equal(locateEAD(set).gen, null);
+  const {ram} = rdramOf(set.state);
+  const table = findMusicTable(ram, set.rom);
+  assert.equal(table.count, 63, "62 songs + the table's first entry (never read)");
+  assert.equal(table.at, 0x2D1C14);
+  assert.equal(table.entries[9].rom, 0x41EF48); assert.equal(table.entries[9].size, 5827); assert.equal(table.entries[9].packed, 3588);
+  assert.ok(table.entries.slice(1).every(e => e.coverage === 1 && e.magic === true), "every song the ripper kept is whole and 1172-packed");
+  assert.deepEqual(miniOverrideWords(set), [{addr: 0x603C, value: 9}], "the mini overrides exactly one RAM word: the song index");
+  const out = sequenceOfSet(set);
+  assert.equal(out.driver, "rare"); assert.equal(out.id, 9); assert.deepEqual(out.seq.banks, [0]); assert.equal(out.present.length, 3588);
+  const res = out.res;
+  assert.equal(res.driver, "rare"); assert.equal(res.division, 384); assert.equal(res.ticksPerBeat, 48);
+  assert.deepEqual(res.tempos, [{tick: 0, bpm: 140}]);
+  assert.equal(res.notes.length, 1729);
+  assert.equal(res.channels.length, 15);
+  assert.deepEqual(res.loop, {tick: 2688, at: 16320}, "56 quarters in, 340 quarters long: every track shares it");
+  assert.equal(res.endTick, 16320);
+  assert.ok(Math.abs(res.seconds - 145.71) < 0.01);
+  assert.deepEqual(res.kits, [1, 8, 19, 39, 42, 45, 46, 47, 62], "the bank's single-key instruments");
+  assert.ok(res.notes.filter(n => n.drum).length > 0 && res.notes.filter(n => n.drum).every(n => n.inst === 45 && n.ch === 4), "Dam plays one of them, program 45 on channel 4");
+  assert.ok(toMidi(res, {tsNum: 4, tsDen: 4}).length > 10000);
+  // Facility and Runway: other ids, same shape
+  const fac = sequenceOfSet(geSet("102 Facility.miniusf")).res, run = sequenceOfSet(geSet("103 Runway.miniusf")).res;
+  assert.deepEqual([fac.sequenceId, fac.notes.length, fac.tempos[0].bpm, fac.loop], [7, 1400, 120, {tick: 0, at: 11520}]);
+  assert.deepEqual([run.sequenceId, run.notes.length, run.tempos[0].bpm, run.loop], [50, 3568, 125, {tick: 1152, at: 15552}]);
+  // Bunker 1 overrides nothing: its index is the lib's own word, read through the manifest address
+  assert.deepEqual(miniOverrideWords(geSet("105 Bunker 1.miniusf")), []);
+  assert.equal(sequenceOfSet(geSet("105 Bunker 1.miniusf")).id, 15);
+});
+
+test("GoldenEye (real rip): every mini parses; the bank in RAM reads through its pointers", {skip: !GE && "no GoldenEye rip"}, () => {
+  const rows = [];
+  for (const m of readdirSync(GE).filter(n => /\.miniusf$/i.test(n)).sort()) {
+    const {id, res} = sequenceOfSet(geSet(m));
+    rows.push([m, id, res.notes.length]);
+    assert.ok(res.notes.length > 0, m);
+    assert.equal(res.division, 384, m);
+  }
+  assert.equal(rows.length, 58, "the set: 101–120, 201–220 without 204, 301–319");
+  assert.equal(new Set(rows.map(r => r[1])).size, 58, "58 different songs");
+  const set = geSet("101 Dam.miniusf"), {ram} = rdramOf(set.state);
+  const files = findRareBankFile(ram);
+  assert.equal(files.length, 1);
+  assert.deepEqual(files[0].banks, [{at: 0x2D1AB8, instCount: 75, sampleRate: 22050}]);
+  const bank = readRareBank(ram, set.rom, files[0].banks[0].at);
+  assert.equal(bank.instruments.filter(i => i).length, 75);
+  assert.ok(bank.instruments.every(i => i.bendRange === 200 || i.bendRange === 1200));
+  const i58 = bank.instrument(58);
+  assert.ok(i58.sounds.length >= 2 && i58.sounds.every(s => s && s.keymap && s.wave && s.envelope));
+  assert.ok(i58.sounds.every(s => s.envelope.attackTime === null), "attackTime is never in the rip");
+  assert.ok(i58.sounds.every(s => s.wave.base >= 0x3B8000 && s.wave.base < 0x41A000), "wavetable bases are absolute ROM addresses in the sample region");
+  assert.ok(bank.pcm(i58.sounds[0].wave).pcm.length > 100);
+});
+
+test("GoldenEye (real rip): Dam's onsets fit lazyusf2's render at time scale 1 and no other", {skip: !GE && "no GoldenEye rip"}, async () => {
+  // the truth WAV is scratch/usf2wav's output (scratch/ge-render.mjs writes it); without it this only renders
+  const wav = ["/tmp/claude-501/ge/truth-101_Dam-45s.wav", "/tmp/claude-501/ge/truth-101_Dam-60s.wav"].find(f => existsSync(f));
+  const set = geSet("101 Dam.miniusf"), {seq, res} = sequenceOfSet(set);
+  const r = await renderN64(res, {set, banks: seq.banks, sampleRate: 22050, keepSeconds: 20, meter: {tsNum: 4, tsDen: 4}});
+  assert.equal(r.bankRate, 22050);
+  assert.ok(Object.keys(r).filter(k => r[k] instanceof Float32Array).length >= 8, "tracks sounded in the first 20 s");
+  assert.ok(!r.warnings.some(w => /not in the bank|no sound/.test(w)), r.warnings.join("; "));
+  if (!wav) return;
+  const b = readFileSync(wav), dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const rate = dv.getUint32(24, true), ch = dv.getUint16(22, true), n = (b.length - 44) / (2 * ch), mono = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let s = 0; for (let c = 0; c < ch; c++) s += dv.getInt16(44 + (i * ch + c) * 2, true); mono[i] = s / (ch * 32768); }
+  // onset strength: rises of the frame energy and of the high-passed energy (dB), 10 ms frames, 3-tap smoothed
+  const hop = Math.round(rate / 100), frames = Math.floor(n / hop), raw = new Float32Array(frames);
+  let pe = -90, ph = -90;
+  for (let f = 0; f < frames; f++) {
+    let e = 0, h = 0;
+    for (let i = f * hop; i < (f + 1) * hop; i++) { e += mono[i] * mono[i]; const d = mono[i] - (i ? mono[i - 1] : 0); h += d * d; }
+    const de = 10 * Math.log10(e / hop + 1e-9), dh = 10 * Math.log10(h / hop + 1e-9);
+    raw[f] = Math.max(0, de - pe) + Math.max(0, dh - ph); pe = de; ph = dh;
+  }
+  const smooth = a => { const o = new Float32Array(a.length); for (let i = 0; i < a.length; i++) o[i] = ((a[i - 1] || 0) + 2 * a[i] + (a[i + 1] || 0)) / 4; return o; };
+  const flux = smooth(raw);
+  const fit = scale => {
+    const tr0 = new Float32Array(frames);
+    for (const x of res.notes) { const f = Math.round(tickSeconds(res.tempos, x.tick) * scale * rate / hop); if (f < frames) tr0[f] += x.vel / 127; }
+    const tr = smooth(tr0);
+    let best = -1;
+    for (let lag = -20; lag <= 100; lag++) { let k = 0, sa = 0, sb = 0, saa = 0, sbb = 0, sab = 0; for (let i = Math.max(0, lag); i < frames && i - lag < frames; i++) { const a = flux[i], c = tr[i - lag]; k++; sa += a; sb += c; saa += a * a; sbb += c * c; sab += a * c; } const cov = sab / k - (sa / k) * (sb / k), va = saa / k - (sa / k) ** 2, vb = sbb / k - (sb / k) ** 2; const rr = va > 0 && vb > 0 ? cov / Math.sqrt(va * vb) : 0; if (rr > best) best = rr; }
+    return best;
+  };
+  const r1 = fit(1), r95 = fit(0.95), r105 = fit(1.05);
+  assert.ok(r1 > 0.4, "fit at scale 1: " + r1.toFixed(3));
+  assert.ok(r1 > 4 * Math.max(r95, r105), `scale 1 ${r1.toFixed(3)} vs 0.95 ${r95.toFixed(3)} / 1.05 ${r105.toFixed(3)}`);
 });

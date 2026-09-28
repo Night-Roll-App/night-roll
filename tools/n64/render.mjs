@@ -31,6 +31,7 @@ import { channelGroups } from "./notes.mjs";
 import { findAudioFiles, readBank, DEFAULT_ENVELOPE, DEFAULT_RELEASE_RATE } from "./bank.mjs";
 import { rdramOf } from "./usf.mjs";
 import { findSynthesisReverb } from "./ead-usf.mjs";
+import { renderRare } from "./rare.mjs";
 
 export const N64_RATE = 32000;          // freqScale 1.0 plays a sample at the output rate (32006 Hz on the US console)
 export const UPDATES_PER_SECOND = 240;  // gAudioUpdatesPerFrame = ALIGN16(32006 / 60) / 160 + 1 = 4, per 60 Hz frame (heap.c)
@@ -96,6 +97,7 @@ export const noteFrequency = semitone => Math.pow(2, (semitone - 39) / 12) * (se
 
 // -> {sampleRate, seconds, [trackName]: Float32Array, silent: [names], warnings: [...]}
 export async function renderN64(result, opts = {}) {
+  if (result && result.driver === "rare") return renderRare(result, opts); // GoldenEye: the SDK synthesizer's rules, same output shape
   const rom = opts.rom || (opts.set && opts.set.rom);
   if (!rom) throw new Error("renderN64 needs the set's ROM image");
   const bankIds = opts.banks && opts.banks.length ? opts.banks : null;

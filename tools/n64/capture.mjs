@@ -5,6 +5,7 @@ import { rdramOf } from "./usf.mjs";
 import { gameOfSet, locateEAD, miniSequenceId, findCachedSequences, findSynthesisReverb } from "./ead-usf.mjs";
 import { parseSequence } from "./seq-libultra.mjs";
 import { findAudioFiles, readBank } from "./bank.mjs";
+import { rareSequenceOfSet } from "./rare.mjs";
 
 // Which channels the game had ducked to silence when this mini was ripped.
 // The three "Dire, Dire Docks" minis (surface / in water / underwater cave)
@@ -51,7 +52,8 @@ export function duckedChannels(set, loc, seq, res) {
 export function sequenceOfSet(set, {maxSeconds = 600} = {}) {
   const game = gameOfSet(set);
   const loc = locateEAD(set);
-  if (!loc.gen) throw new Error("no Nintendo sequence tables in this rip — a driver Night Roll cannot read yet");
+  // no EAD tables: Rare's engine (GoldenEye) keeps an SDK song table in RAM instead — rare.mjs
+  if (!loc.gen) return rareSequenceOfSet(set, {game, maxSeconds});
   const raw = miniSequenceId(set, game ? game.seqId : undefined);
   // bit 7 of a play_sequence id is SEQ_VARIATION: the same script, steered (SM64's title
   // theme plays its intro only with it); the table is indexed by the low 7 bits

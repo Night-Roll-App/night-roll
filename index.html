@@ -13279,7 +13279,7 @@ const CHIPS = {
   usf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x21, ext: ".usf", label: "USF",
         channels: [], perFile: true, tagged: true, keepBytes: true,
         libFile: name => /\.usflib$/i.test(name),
-        files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes", "n64/capture", "n64/vadpcm", "n64/bank", "n64/render"], shared: [], own: [],
+        files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes", "n64/capture", "n64/vadpcm", "n64/bank", "n64/render", "n64/rare"], shared: [], own: [], // rare: Rare's driver (GoldenEye) — sequenceOfSet falls back to it when no EAD tables are found
         parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
         run: M => async (parsed, n, secs, onProgress) => {
           const files = [{name: "song.miniusf", bytes: parsed.bytes}];

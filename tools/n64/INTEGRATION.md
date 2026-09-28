@@ -702,3 +702,165 @@ RAM, else renders dry with the warning "reverb state not in this rip".
 `SM64_PRESET_OF_SEQUENCE` and `SM64_PRESETS` are gone (Josh's rule: no
 per-game tables for musical behaviour; game identity only says where to
 look).
+
+## 10. Rare (GoldenEye 007) — 2026-09-28
+
+A second N64 driver, `rare.mjs`, for the GoldenEye 007 USF set (NUS-NGEE-USA,
+58 minis; the rip stayed in `/tmp`, nothing of it is in the repo). Rare did
+not use Nintendo's EAD engine: `locateEAD` finds no tables (correct), and
+`sequenceOfSet` now falls through to `rareSequenceOfSet`, which returns the
+same `{game, loc, id, seq, res, present}` with `res.driver = "rare"`;
+`renderN64` dispatches such a result to `renderRare`. `USF_GAMES` gained the
+NGEE entry (abi "rare", song word at RAM 0x603C — see 10.2).
+
+### 10.1 What the rip is
+
+- ROM: 121 runs, 513 228 bytes present. `0x3B87F0..0x419790` is the sample
+  table (VADPCM and a few raw-16 samples, read by the RSP); `0x4199B0 +
+  0x1ECAC` is the whole music bank: 62 songs stored back to back, each
+  beginning `11 72`.
+- RAM: 2 057 runs, 76 572 bytes — the ripper kept individual words. The
+  song directory, the SDK bank file and the game's music state are in it.
+- Minis differ from the lib by ONE RDRAM word (0x603C: Dam 9, Facility 7,
+  Runway 0x32); Bunker 1 overrides nothing (its index, 15, is the lib's own
+  value). One mini also carries a 4-byte chunk at state offset 0x3E0 (a
+  register, below RDRAM; ignored).
+
+### 10.2 Located by structure (addresses below are what the search found on this rip)
+
+- **Song table** (`findMusicTable`): RAM 0x2D1C14, 63 entries of
+  `{u32 romAddr; u16 unpackedSize; u16 packedSize}`; entry i+1's address is
+  entry i's plus its packed size, which is how it is found (longest such
+  chain, every present song starting `11 72`). Entry 0 (0x41998C, 97/42
+  bytes) was never read by the game and is not in the ROM image; 1..62 are.
+  Right after the table (0x2D1E0C) sits the compressed copy of the current
+  song, `11 72 63 60…`.
+- **Song selector** (`miniRareTrack`): the manifest's RAM word when the set
+  is known, else the single 4-byte chunk the mini itself overrides inside
+  RDRAM (`miniOverrideWords`). Dam = 9 → entry 9 = 0x41EF48, 5827 bytes
+  unpacked from 3588 — confirmed against the lazyusf2 render (10.4).
+- **1172** (`decompress1172`): two magic bytes then a raw DEFLATE stream
+  (node's `inflateRawSync` with `Z_SYNC_FLUSH` agreed on all 62; the streams
+  do not always carry a final block, so the table's unpacked size ends the
+  decode). `inflateRaw` is a plain RFC 1951 decoder (stored/fixed/dynamic),
+  here because the app's capture is synchronous.
+- **ALCSeq** (`parseCSeq`): header `u32 trackOffset[16]; u32 division`
+  (0x44 bytes; division 384 in every GoldenEye song), then tracks of
+  varlen delta + event. Note-on = key, velocity, varlen DURATION; running
+  status; metas `FF 51 tt tt tt` (tempo, no length byte), `FF 2E n FF`
+  (loop start, n = nesting number), `FF 2D count current u32offset` (loop
+  end: offset from the END of this 8-byte event back to the byte after the
+  loop start — Dam track 0: 624 lands at 0xE7, right after the `FF 2E` at
+  0xE3; 0xFF = forever, else finite), `FF 2F` end. Replay blocks
+  `FE hi lo len`: `len` bytes re-read from `hi:lo` bytes before the 0xFE
+  byte ITSELF (both blocks in Dam's track 0, at 0x7B and 0xAD, only parse
+  musically from there; from the end of the command they do not); `FE FE`
+  is a literal. All 58 minis parse; every track ends in a forever-loop or
+  `FF 2F`.
+- **Bank** (`findRareBankFile`, `readRareBank`): ALBankFile `42 31 00 01`
+  at RAM 0x2CD860 → ALBank 0x2D1AB8: 75 instruments, flags 1, sampleRate
+  22050 (= the game's output rate; lazyusf2 reports 22047 Hz), percussion
+  pointer never read. SDK layouts exactly (`libaudio.h`): ALInstrument 16 +
+  4·soundCount (bendRange 200 or 1200 cents), ALSound {env*, keymap*,
+  wave*, pan, vol, flags}, ALEnvelope {attack, decay, release µs; aVol,
+  dVol}, ALKeyMap {velMin, velMax, keyMin, keyMax, keyBase, detune},
+  ALWaveTable {base, len, type, flags, loop*, book*}, loops with 16-word
+  state, books order 2. Wavetable bases are ABSOLUTE ROM addresses (the
+  game patched them; 0x3B87F0 = the first sample run). Rare's own ctl
+  writer laid the file out as header, envelopes, key maps, [sound,
+  wavetable, loop, book]…, instruments, bank.
+  Absent from the rip (never read by the player, so 0 here, each record
+  carries `present`): every envelope's attackTime word, instrument bytes
+  4..11 (tremolo/vibrato), the percussion pointer, loop state words.
+  Instruments whose every key map is one key (keyMin == keyMax) are kits;
+  Dam's program 45 is one (`res.kits`, notes flagged `drum`). Program 58,
+  which is a drum kit by ear (keys 36/38/40/46 on four channels), has
+  ranged key maps and is not flagged — the roll shows it as C2/E2 melody.
+
+### 10.3 The capture (`cseqNotes`)
+
+Ticks rescaled ×48/384 (exact for every event in the set; durations
+rounded, minimum 1), `res.division` kept. A note carries `ch, inst
+(program), key = semitone = midi, tick, dur, vel, bank 0, vol (cc7/127 at
+note-on), pan (cc10/128), rev (cc91), bend (wheel/8192)`. Tempo metas →
+`tempos`. Each track loops on its own: the pass ends at the last track's
+forever-loop; tracks whose forever-loop closes earlier are unrolled to
+that end (`unrollTracks` — the ambient songs layer loops of different
+lengths); finite loops (count n) are unrolled as n+1 plays, the SDK's
+in-place count-down read as `while (current != 0) { current--; jump }`.
+`res.loop` = the loop most tracks that end the pass share (Dam 2688→16320
+= 56 quarters in, 340 long); disagreements are a warning. One warning
+each for note-offs (none in the set) and aftertouch.
+
+### 10.4 Against lazyusf2 (scratch/usf2wav, `_enablecompare` honoured)
+
+Onset envelope of the truth vs our note onsets (scratch/ge-truth.mjs;
+Pearson, 10 ms frames, best lag):
+
+| song | notes | scale 1.0 | scale 0.95 / 1.05 | control |
+|---|---|---|---|---|
+| 101 Dam (id 9, 140 bpm) | 1729 | **0.640** at +10 ms | 0.029 / 0.045 | Facility's notes vs Dam: 0.065 |
+| 102 Facility (id 7, 120 bpm) | 1400 | **0.538** at +10 ms | 0.034 / 0.026 | Dam's notes vs Facility: 0.056 |
+| 103 Runway (id 50, 125 bpm) | 3568 | **0.409** at +10 ms | 0.020 / 0.022 | — |
+
+So the song ids, the tempo, the division and the tick scaling are right
+(scale 2 and 0.5 score about 0.5 — octave aliases of the same grid).
+
+The render (`renderRare`) vs the truth, 45 s each (scratch/ge-pitch.mjs):
+20 ms RMS-envelope correlation 0.69 (Dam), 0.76 (James Bond Theme), 0.74
+(Runway), 0.60 (Mission Select); our level is 9–14 dB above the truth
+before normalisation (a master/AI gain we do not model). Pitch on
+moments one of our tracks owns (autocorrelation, sub-harmonic guarded):
+ours − truth = 0, 0, −1, −1 cents (programs 24 and 44) — i.e. keyBase and
+detune are applied as the game applies them; those programs sound an
+octave from the MIDI key (truth − key = −1218 / +1207 cents), which the
+bank's keyBase explains and the roll does not show (see 10.6). Octave
+votes on lone onsets under polyphony (a noisier measure) agree with the
+truth on the majority per program (e.g. program 11, the Bond bass: 23/27;
+program 58: 7/7 in Dam).
+
+### 10.5 Playback rules used (libaudio seqp/cseqp + syn) and what is assumed
+
+- pitch = 2^(((key − keyBase)·100 + detune + bend·bendRange)/1200), sample
+  played at the bank's sampleRate (ratio 1 = that rate), linear-interpolated
+  to the requested output rate. **Verified** (10.4).
+- sound = first of the instrument's sounds whose key map holds key and
+  velocity (`__lookupSoundQuick`). Verified indirectly (pitch/octave).
+- volume = vel/127 × sampleVolume/127 × cc7/127 × instrument volume/127 ×
+  envelope (linear, the SDK's `__vsVol`). **Assumed**; overall level is
+  9–14 dB hot vs the truth and varies by song.
+- envelope: `alSynSetVol` ramps — to attackVolume over attackTime, to
+  decayVolume over decayTime (−1 = hold), to silence over releaseTime at
+  the note's end — each ramp exponential between its endpoints (floor
+  1/32767), as the envelope mixer's per-8-sample multiplier makes them.
+  **Assumed** (shape); attackTime is never in the rip, so attacks are 0.
+- pitch bend is the wheel at note-on × bendRange; not tracked during a
+  note. Pan (cc10, samplePan), reverb (cc91), tremolo/vibrato, voice
+  stealing: not rendered (pan/rev kept as facts on the notes).
+- Finite loop count = n+1 plays: from the SDK's cseq.c as remembered, not
+  checked on the truth (Runway's track 0 riff loop of 19 is the case to
+  check: one bar's difference late in the song).
+- Level: the truth's music volume (the game's setting) and the AI mix are
+  not modelled; the app normalises per capture.
+
+### 10.6 Open questions
+
+- `midi` is the sequence's key (bank tuning not applied), matching the
+  EAD path's "+21 root convention (bank tuning not applied)". For programs
+  whose keyBase is not 60 the sounding octave differs from the roll's; the
+  bank knows (keyBase per key map) — whether the roll should show sounding
+  pitch is Josh's call, as it was for Mario.
+- Program 58 (and any ranged-key-map kit) shows as melody; a rule that
+  flags "kit" from the music (one pitch per channel, many hits) would be
+  a guess, so it is not made here. `channelGroups`' single-pitch rule is
+  per instrument across channels, which this kit defeats.
+- The ripper's `length` tag = one pass + the loop (Dam 4:28 = 145.7 +
+  121.7 + fade), consistent with the loop found.
+- `tests/n64-rare.test.mjs` is new and not in package.json's test line
+  (index.html/package files were out of bounds for this session).
+
+Tools: `scratch/ge-dump.mjs` (every mini one line), `ge-loops.mjs` (loop
+bytes per track), `ge-truth.mjs` (onset fit vs lazyusf2), `ge-pitch.mjs`
+(cents, octave votes, envelope fit), `ge-render.mjs` (ours + truth WAVs
+side by side, `--tracks`), `ge-app-capture.mjs` (the app's capture contract
+in the vm harness), `ge-probe*.mjs` (the search that found the above).

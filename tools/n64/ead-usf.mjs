@@ -204,6 +204,8 @@ export const USF_GAMES = {
   "nus-nsme-usa.usflib": {code: "NSME", title: "Super Mario 64", abi: "sm64", seqId: {kind: "li-a1"}},
   "nus-czle-usa.usflib": {code: "CZLE", title: "The Legend of Zelda: Ocarina of Time", abi: "oot", seqId: {kind: "li-a1"}},
   "nus-nzse-usa.usflib": {code: "NZSE", title: "The Legend of Zelda: Majora's Mask", abi: "mm", seqId: {kind: "ram", addr: 0x1F9B24}},
+  // Rare's engine (rare.mjs): the song index is the RAM word each mini overrides (Bunker 1 is the lib's own value, so the address is named)
+  "nus-ngee-usa.usflib": {code: "NGEE", title: "GoldenEye 007", abi: "rare", seqId: {kind: "ram", addr: 0x603C}},
 };
 export function gameOfSet(set) {
   const lib = (set.order || []).find(n => /\.usflib$/i.test(n));
