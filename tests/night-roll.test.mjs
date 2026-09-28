@@ -1496,7 +1496,9 @@ test("USF import: the N64 chip is a sequence chip with its own capture; PSF 0x21
   assert.equal(val(`chipKindOf(new Uint8Array([0x50, 0x53, 0x46, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]), "x.minipsf")`), "psf", "PS1 stays PS1");
   assert.equal(val(`CHIPS.usf.libFile("NUS-NSME-USA.usflib") && !CHIPS.usf.libFile("01 Title.miniusf")`), true);
   assert.equal(val(`typeof CHIPS.usf.capture`), "function");
-  assert.equal(val(`CHIPS.usf.keepBytes`), false);
+  assert.equal(val(`CHIPS.usf.keepBytes`), true, "the mini per track persists: chip audio outlives the session");
+  assert.equal(run(`typeof CHIPS.usf.render`), "function", "the N64 renders the game's bank");
+  assert.equal(val(`CHIPS.usf.renderRate`), 32000);
 });
 
 test("chip vault meta: one file per album for NSF/GBS, a folder of per-track files for SNES", () => {

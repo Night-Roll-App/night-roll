@@ -38,7 +38,12 @@ test("sm64 ABI: pitches, onsets, gates and velocities come back exactly", () => 
   assert.equal(res.loop, null);
   assert.equal(res.truncated, false);
   assert.deepEqual(res.channels, [0, 1]);
-  assert.deepEqual(res.stubbed, ["channel sound-shaping 0xdd", "channel sound-shaping 0xdf"]);
+  assert.deepEqual(res.stubbed, [], "DF volume and DD pan are recorded now, not stubbed");
+  // the sound facts the renderer reads, as the channel script set them: DF 0x64 / 127, DD 0x40 / 128, seq DB 0x7F / 127
+  const n0 = res.notes.find(n => n.ch === 0);
+  assert.ok(Math.abs(n0.vol - 100 / 127) < 1e-9 && n0.pan === 0.5 && n0.freq === 1 && n0.bank === 0, JSON.stringify(n0));
+  assert.equal(n0.chInst, 5, "the channel's adsr comes from instrument 5 (C1)");
+  assert.equal(n0.chEnv, null); assert.equal(n0.chRel, null); assert.equal(n0.lyAdsr, null);
   assert.ok(Math.abs(tickSeconds(res.tempos, res.endTick) - 4) < 1e-9, "8 beats at 120 = 4 s");
   assert.ok(Math.abs(res.seconds - 4) < 1e-9);
 });

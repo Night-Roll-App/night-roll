@@ -17,6 +17,11 @@ import { parseSequence } from "../tools/n64/seq-libultra.mjs";
 import { makeTestSeq } from "../tools/n64/make-test-seq.mjs";
 import { makeTestPSF } from "../tools/psx/make-test-seq.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
+import { findAudioFiles, readBank } from "../tools/n64/bank.mjs";
+import { expandBook, decodeFrames } from "../tools/n64/vadpcm.mjs";
+import { renderN64 } from "../tools/n64/render.mjs";
+import { channelGroups } from "../tools/n64/notes.mjs";
+import { tickSeconds } from "../tools/n64/seq-libultra.mjs";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/n64-usf-tracks.json", import.meta.url), "utf8"));
 
@@ -338,4 +343,151 @@ test("real USF sets (N64_USF_DIR): every music sequence in the fixture parses to
       assert.equal(res.endTick, t.endTick, t.file);
     }
   }
+});
+
+// ---- the console voice on the real Super Mario 64 set --------------------
+// N64_USF_DIR may be the folder of sets (as above) or the SM64 set itself.
+function sm64Dir() {
+  if (!RIPS) return null;
+  const g = FIXTURE.games.find(x => /nsme/i.test(x.usflib));
+  for (const d of [RIPS, g && join(RIPS, g.dir), join(RIPS, "sm64"), join(RIPS, "super-mario-64")]) {
+    if (d && existsSync(d) && readdirSync(d).some(n => /^nus-nsme-usa\.usflib$/i.test(n))) return d;
+  }
+  return null;
+}
+function sm64Song(dir, mini) {
+  const libs = readdirSync(dir).filter(n => /\.usflib$/i.test(n)).map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(dir, n)))}));
+  const set = loadUSF([{name: mini, bytes: new Uint8Array(readFileSync(join(dir, mini)))}, ...libs]);
+  const loc = locateEAD(set), game = gameOfSet(set);
+  const id = miniSequenceId(set, game.seqId), seq = loc.sequences[id];
+  const bytes = set.rom.read(seq.rom, seq.size), present = new Uint8Array(seq.size);
+  for (let i = 0; i < seq.size; i++) present[i] = set.rom.coverage(seq.rom + i, 1) ? 1 : 0;
+  const res = parseSequence(bytes, {abi: game.abi, present, maxSeconds: 600, stopAtLoop: true});
+  return {set, loc, seq, res, id};
+}
+const SM64 = sm64Dir();
+const TITLE = "02 Title Theme.miniusf", MAIN = "05 Main Theme.miniusf";
+
+test("SM64 bank (real ROM): ctl/tbl located, the Title Theme's bank parses to the decomp's layout, every sample decodes, loop states are bit-exact", {skip: !SM64}, () => {
+  const {set, loc, seq} = sm64Song(SM64, TITLE);
+  const files = findAudioFiles(set.rom, loc);
+  assert.deepEqual([files.ctl.at, files.ctl.count, files.tbl.at, files.tbl.count], [0x57B720, 38, 0x593560, 38]);
+  assert.deepEqual(seq.banks, [17]);
+  const bank = readBank(set.rom, files, 17);
+  assert.deepEqual([bank.numInstruments, bank.numDrums, bank.instruments.filter(Boolean).length, bank.drums.filter(Boolean).length], [14, 64, 12, 64]);
+  assert.deepEqual([bank.ctl.rom, bank.tbl.rom], [0x585BC0, 0x6B5B00]);
+  const i0 = bank.instruments[0];
+  assert.deepEqual([i0.normalRangeLo, i0.normalRangeHi, i0.releaseRate], [19, 19, 10]);
+  assert.deepEqual(i0.envelope, [[2, 32700], [1, 32700], [32700, 29430], [-1, 0]]);
+  assert.equal(i0.low.sample, i0.high.sample, "the same sample below and above the one-key normal range");
+  assert.ok(Math.abs(bank.instruments[3].normal.tuning - 0.375) < 1e-6, "12000 Hz / 32000");
+  assert.deepEqual(bank.instruments[7].envelope, [[2, 32700], [205, 19818], [535, 0], [-1, 0]]);
+  assert.equal(bank.instrument(2), bank.instruments[1], "a missing slot falls back to the nearest lower instrument");
+  // drums: one sample at semitone-spaced tunings (index 15 = 0.5, 26 = 1.0)
+  assert.ok(Math.abs(bank.drums[15].sound.tuning - 0.5) < 1e-6 && Math.abs(bank.drums[26].sound.tuning - 1) < 1e-6);
+  assert.equal(bank.drums[3].sound.sample, bank.drums[15].sound.sample);
+  assert.ok(Math.abs(bank.drums[3].sound.tuning / bank.drums[15].sound.tuning - Math.pow(2, -1)) < 1e-3);
+  // every referenced sample: decodes to loop.end samples, finite, loud; the
+  // loop's stored state[16] equals the linear decode's frame at loop.start
+  const recs = new Map();
+  for (const i of bank.instruments) if (i) for (const so of [i.low, i.normal, i.high]) if (so) recs.set(so.sample.addr, so.sample);
+  for (const d of bank.drums) if (d && d.sound) recs.set(d.sound.sample.addr, d.sound.sample);
+  assert.equal(recs.size, 25);
+  let looping = 0;
+  for (const rec of recs.values()) {
+    assert.deepEqual([rec.book.order, rec.book.npredictors], [2, 2]);
+    assert.ok(rec.dataPresent > 0.97, "sample bytes in the rip: " + rec.dataPresent);
+    const dec = bank.pcm(rec);
+    assert.equal(dec.pcm.length, rec.loop.end);
+    assert.ok(dec.pcm.length > 1000);
+    let peak = 0; for (const v of dec.pcm) { assert.ok(Number.isFinite(v)); peak = Math.max(peak, Math.abs(v)); }
+    assert.ok(peak > 0.3 && peak <= 1, "peak " + peak);
+    if (rec.loop.count) {
+      looping++;
+      const fs = Math.floor(rec.loop.start / 16), out = new Int16Array(rec.frames * 16);
+      decodeFrames(set.rom.read(rec.rom, rec.frames * 9), 0, rec.frames, expandBook(2, 2, rec.book.book), out, 0);
+      assert.deepEqual([...out.subarray(fs * 16, fs * 16 + 16)], [...rec.loop.state], "sample " + rec.addr.toString(16));
+      assert.ok(dec.looping && dec.loopStart === rec.loop.start && dec.loopEnd === rec.loop.end);
+    }
+  }
+  assert.equal(looping, 5);
+});
+
+test("SM64 render (real ROM): the first 10 s of the Title Theme and the Main Theme sound on tracks named as the MIDI's, RMS in range", {skip: !SM64}, async () => {
+  for (const mini of [TITLE, MAIN]) {
+    const {set, seq, res} = sm64Song(SM64, mini);
+    const groups = channelGroups(res);
+    const r = await renderN64(res, {set, banks: seq.banks, keepSeconds: 10});
+    assert.equal(r.sampleRate, 32000); assert.equal(r.seconds, 10);
+    assert.deepEqual(r.warnings, [], mini);
+    const early = groups.filter(g => g.notes.some(n => tickSeconds(res.tempos, n.tick) < 9.5)).map(g => g.name);
+    assert.ok(early.length >= 6, mini + ": " + early.join(", "));
+    for (const name of early) {
+      const a = r[name];
+      assert.ok(a instanceof Float32Array && a.length === 320000, mini + " " + name);
+      let s = 0, peak = 0; for (let i = 0; i < a.length; i++) { s += a[i] * a[i]; peak = Math.max(peak, Math.abs(a[i])); }
+      const rms = Math.sqrt(s / a.length);
+      assert.ok(rms > 0.001 && rms < 0.4 && peak <= 1.5, mini + " " + name + " rms " + rms.toFixed(4) + " peak " + peak.toFixed(3));
+    }
+    for (const name of r.silent) assert.ok(!early.includes(name), mini + ": " + name + " has notes before 9.5 s but rendered silent");
+    assert.deepEqual(Object.keys(r).filter(k => r[k] instanceof Float32Array).sort(), groups.map(g => g.name).filter(n => !r.silent.includes(n)).sort(), "every buffer is a MIDI track name");
+  }
+});
+
+// The +21 question (INTEGRATION.md §4): autocorrelate isolated held notes
+// in the rendered track and compare with 440·2^((semitone+21−69)/12).
+function detectF0(buf, from, to, sr, fMin = 60, fMax = 2500) {
+  const n = to - from, x = buf.subarray(from, to);
+  if (n < sr / fMin * 2) return null;
+  let mean = 0; for (let i = 0; i < n; i++) mean += x[i]; mean /= n;
+  const minLag = Math.floor(sr / fMax), maxLag = Math.min(Math.floor(sr / fMin), n >> 1);
+  let e0 = 0; for (let i = 0; i < n; i++) e0 += (x[i] - mean) * (x[i] - mean);
+  if (e0 === 0) return null;
+  const r = new Float64Array(maxLag + 2);
+  for (let lag = minLag; lag <= maxLag + 1; lag++) { let s = 0; for (let i = 0; i + lag < n; i++) s += (x[i] - mean) * (x[i + lag] - mean); r[lag] = s / e0 * n / (n - lag); }
+  let best = -1, bestV = -Infinity;
+  for (let lag = minLag + 1; lag <= maxLag; lag++) if (r[lag] > bestV) { bestV = r[lag]; best = lag; }
+  if (best < 0 || bestV < 0.3) return null;
+  let pick = best;
+  for (let lag = minLag + 1; lag < best; lag++) if (r[lag] > 0.85 * bestV && r[lag] >= r[lag - 1] && r[lag] >= r[lag + 1]) { pick = lag; break; }
+  const a = r[pick - 1], b = r[pick], c = r[pick + 1], den = a - 2 * b + c;
+  return {hz: sr / (pick + (den ? 0.5 * (a - c) / den : 0)), corr: b, at: hz => r[Math.round(sr / hz)]};
+}
+function isolatedCents(res, r, name, keep, max = 6) {
+  const g = channelGroups(res).find(x => x.name === name), sr = r.sampleRate, buf = r[name];
+  const notes = g.notes.filter(n => tickSeconds(res.tempos, n.tick) < keep - 1).sort((a, b) => a.tick - b.tick);
+  const rows = [];
+  for (const n of notes) {
+    if (rows.length >= max || n.dur < 24) continue;
+    const t0 = tickSeconds(res.tempos, n.tick), t1 = tickSeconds(res.tempos, n.tick + n.dur);
+    if (notes.some(m => m !== n && tickSeconds(res.tempos, m.tick) < t1 && tickSeconds(res.tempos, m.tick + m.dur) + 0.15 > t0)) continue;
+    const det = detectF0(buf, Math.floor((t0 + 0.06) * sr), Math.floor(t1 * sr), sr);
+    const want = 440 * Math.pow(2, (n.midi - 69) / 12);
+    if (det) rows.push({midi: n.midi, want, hz: det.hz, cents: 1200 * Math.log2(det.hz / want), rAtF: det.at(want), rAtHalf: det.at(want / 2), rAt2f: det.at(want * 2)});
+  }
+  return rows;
+}
+test("SM64 pitch (real ROM): the Main Theme melody and the Title Theme's bass sound at semitone + 21; two Title instruments are an octave off it", {skip: !SM64}, async () => {
+  const keep = 40;
+  const main = sm64Song(SM64, MAIN), title = sm64Song(SM64, TITLE);
+  const rm = await renderN64(main.res, {set: main.set, banks: main.seq.banks, keepSeconds: keep});
+  const rt = await renderN64(title.res, {set: title.set, banks: title.seq.banks, keepSeconds: keep});
+  const median = rows => rows.map(x => x.cents).sort((a, b) => a - b)[rows.length >> 1];
+  // the melody (instrument 0 of bank 34, tuning 0.8409): within a few cents
+  const melody = isolatedCents(main.res, rm, "ch 0 inst 0", keep);
+  assert.ok(melody.length >= 1, "an isolated held melody note in 40 s");
+  for (const x of melody) assert.ok(Math.abs(x.cents) < 100, "melody midi " + x.midi + ": " + x.hz.toFixed(1) + " Hz, " + x.cents.toFixed(0) + " c");
+  assert.ok(Math.abs(median(melody)) < 25, "melody median " + median(melody).toFixed(0) + " c");
+  // the Title Theme's bass (instrument 1 of bank 17, a looping sample, tuning 1.1237): within 10 c
+  const bass = isolatedCents(title.res, rt, "ch 1 inst 1", keep).filter(x => x.rAtF > 0.5);
+  assert.ok(bass.length >= 4, "bass notes: " + bass.length);
+  assert.ok(Math.abs(median(bass)) < 25, "bass median " + median(bass).toFixed(0) + " c");
+  // instrument 3 (tuning 0.375): no period at the written pitch, a clean one an octave below
+  const i3 = isolatedCents(title.res, rt, "ch 3 inst 3", keep);
+  assert.ok(i3.length >= 4);
+  for (const x of i3) assert.ok(Math.abs(x.cents + 1200) < 60 && x.rAtHalf > 0.9 && x.rAtF < 0.5, "inst 3 midi " + x.midi + ": " + x.cents.toFixed(0) + " c, r@f " + x.rAtF.toFixed(2) + " r@f/2 " + x.rAtHalf.toFixed(2));
+  // instrument 4 (tuning 0.9439): the waveform's period is the octave above's
+  const i4 = isolatedCents(title.res, rt, "ch 4 inst 4", keep);
+  assert.ok(i4.length >= 4);
+  for (const x of i4) assert.ok(Math.abs(x.cents - 1200) < 60 && x.rAt2f > 0.9, "inst 4 midi " + x.midi + ": " + x.cents.toFixed(0) + " c, r@2f " + x.rAt2f.toFixed(2));
 });

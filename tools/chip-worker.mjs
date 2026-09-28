@@ -50,7 +50,22 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
     lead: () => 0,
     render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
     channels: null, // per song: every Float32Array the render returns
-  },
+  }
+  usf: { // Nintendo 64: the game's sound bank through n64/render.mjs; the set's lib arrives in `libs`
+    parse: M => (b, libs) => ({bytes: b, libs: libs || {}}),
+    run: async (M, parsed, n, secs, prog) => {
+      const files = [{name: "song.miniusf", bytes: parsed.bytes}];
+      for (const [name, bytes] of Object.entries(parsed.libs)) files.push({name, bytes});
+      const set = M.loadUSF(files);
+      prog(0.3);
+      const {seq, res} = M.sequenceOfSet(set);
+      prog(1);
+      return {result: res, set, banks: seq.banks, seconds: secs};
+    },
+    lead: () => 0,
+    render: (M, res, o) => M.renderN64(res.result, {set: res.set, banks: res.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds, meter: {tsNum: 4, tsDen: 4}}),
+    channels: null,
+  },,
   spc: {
     parse: M => b => M.parseSPC(b),
     run: async (M, parsed, n, secs, prog) => ({cap: await M.runSPCAsync(parsed, secs, prog)}),
@@ -70,7 +85,7 @@ self.onmessage = async e => {
     const sh = await Promise.all(shared.map(f => import("./" + f + ".mjs" + v)));
     const M = Object.assign({}, ...parts, ...sh);
     for (const k of own) for (const p of parts) if (p[k]) M[k] = p[k];
-    if (!M.renderApu && !M.renderSpu) throw new Error("no renderer for " + kind);
+    if (!M.renderApu && !M.renderSpu && !M.renderN64) throw new Error("no renderer for " + kind);
     const parsed = R.parse(M)(bytes, libs);
     const res = await R.run(M, parsed, n, secs, p => post({progress: p * 0.3}));
     const leadSec = R.lead(M, res);

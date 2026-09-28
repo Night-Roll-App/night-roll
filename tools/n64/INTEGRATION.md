@@ -276,3 +276,141 @@ the tempo/tick clock's 0.3 % frame approximation.
 - Fonts/banks per sequence are returned (`fonts`, `banks`) for a later
   instrument-name manifest; nothing decodes samples yet (§5).
 - Vault: the usflib is Nintendo's ROM data and stays private like the NSFs.
+
+## 9. Renderer (2026-09-27)
+
+Phase C of §7, built against the Super Mario 64 US set (the rip bytes
+stayed in `/tmp`; nothing of them is in the repo). Three browser-clean
+modules, a parser extension, and a shared track grouping:
+
+- `vadpcm.mjs` — `expandBook`, `decodeFrames`, `decodeSample`: the
+  decomp's `tools/aifc_decode.c` arithmetic (11-bit fixed-point inner
+  product, floored; residual weight 2048 shifted down the rows; 16-sample
+  history per frame). **Bit-exact on the real ROM:** for every looping
+  sample in banks 17 and 34 (8 samples, orders 2 × 2 predictors) the
+  bank's stored `AdpcmLoop.state[16]` equals the linear decode's outputs of
+  the frame that holds `loop.start` (not the frame before it), max
+  difference 0 — that is the history the RSP reloads at a loop restart, so
+  wrapping by index in a linear decode is what the console plays.
+- `bank.mjs` — `findAudioFiles(rom)` → `{ctl, tbl}`, `readBank(rom,
+  files, id)` → instruments/drums/samples with lazy, cached PCM
+  (`bank.pcm(sample)`), the game's lookup rules (`instrument(id)`: an id
+  past the end plays the last one, a null slot the nearest lower;
+  `drum(i)`; `sound(inst, semitone)` = key region).
+- `render.mjs` — `renderN64(result, {set|rom, banks, sampleRate = 32000,
+  keepSeconds, onProgress})` → `{sampleRate, seconds, [trackName]:
+  Float32Array, silent, warnings}`; track names are exactly
+  `notes.mjs`'s (`channelGroups(res)` is now the ONE grouping `toMidi` and
+  the renderer share). Buffers are allocated by the first sample that
+  sounds; a group that never sounds is listed in `silent`, not allocated.
+  110 s of the Title Theme (13 tracks) renders in 0.7 s in node.
+- `seq-libultra.mjs` now records on every note what the sound path needs at
+  note-on: `bank` (C6/EB index), `vol` (DF/127 × E0/128 × seq DB,DA/127),
+  `pan` (DD/128), `freq` (DE u16/32768, D3 = 0.5·2^((s8+127)/127)),
+  `chEnv`/`chRel` (DA/D9 overrides, cleared when C1/EB sets a real
+  instrument — `set_instrument` → `get_instrument` reloads the channel's
+  adsr), `chInst` (whose adsr the channel holds), `lyAdsr` (layer C6
+  instrument or CB envelope + release). DD/DF/E0/D9/DA/D3/DE/CB are no
+  longer "stubbed"; D4 (reverb) and DC (pan weight) still are.
+- `scratch/n64-render.mjs` — `node scratch/n64-render.mjs <ripdir> "<mini>"
+  out.wav [seconds] [--tracks]`, 16-bit WAV mix (peak-normalised) and
+  per-track WAVs, for listening checks.
+
+### 9.1 Layouts verified on the ROM (SM64 US, bank 17 = Title Theme)
+
+| What | Where | Read |
+|---|---|---|
+| ctl ALSeqFile | 0x57B720, rev 1, 38 entries | found by `findALSeqFiles` |
+| tbl ALSeqFile | 0x593560, rev 2, 38 entries; **entries repeat** (banks 4 and 5 share 0x5AFCD0+218928) — it maps bank → sample-set slice, so the monotonic scan skips it; `findSampleTable` finds it by count right after the ctl file's end | |
+| ctl entry 17 | 0x585BC0, 5312 bytes: `u32 14` instruments, `u32 64` drums, `u32 1`, `u32 0x19960319` (a date; unread), body at +0x10 | `bank_load_immediate`: `buf[0]`, `buf[1]`, copy from +0x10 |
+| body | +0: drums list at 0x13B0; +4…: instrument offsets 0x0E30, 0x0E50, 0, 0x0E70, … (0x20 apart; two null slots) | `patch_audio_bank` |
+| Instrument | `00 13 13 0A` + env 0xD60 + `{0x40, 4.1297} {0xC0, 2.1213} {0x40, 4.1297}` for inst 0: `loaded, lo 19, hi 19, release 10`, three `{sample offset, f32 tuning}` | size 0x20 |
+| Drum | `0A 3E 00 00` + `{0x560, 0.2102}` + env: `release 10, pan 62`, sound, envelope | size 0x10; drums 0–15 are ONE sample at 2^(i−15)/12 × 0.5 (index 15 = 0.5, 26 = 1.0 on another sample) — SM64 "drums" are pitched sample sets, index = pitch |
+| AudioBankSample | `u32 0` (unused/loaded/pad) · sampleAddr (tbl-slice offset) · loop offset · book offset · sampleSize (present only sometimes: the ripper dropped it — never read) | size 0x14 |
+| AdpcmLoop | `start, end, count, pad` + `s16 state[16]` when count ≠ 0 (count = 0xFFFFFFFF on all looping samples here); one-shot samples have only `end` present (start/count/pad absent = 0) | |
+| AdpcmBook | `order 2, npredictors 2`, 32 s16, on every sample in both banks | |
+| Envelope | `[[2,32700],[1,32700],[32700,29430],hang]` on most instruments; `[[2,32700],[205,19818],[535,0],hang]` on inst 7; `[[2,32700],[55,32700],[127,0],hang]` on inst 12 | delay 0 = disable, −1 hang, −2 goto, −3 restart (assemble_sound.py) |
+| tbl slice 17 | 0x6B5B00, 934608 bytes, 90 % in the rip | `gAlTbl->seqArray[bankId].offset` |
+
+The rip is byte-precise in a useful way: a field the game never reads
+(`sampleSize`, pads, `loaded`) or an instrument no song uses is simply
+absent, and absent reads as 0 — which is what those bytes are. `readBank`
+fills instead of throwing and records `present` per struct.
+
+### 9.2 Playback semantics used (sm64 decomp, JP/US branches)
+
+- **Pitch:** `freqScale = gNoteFrequencies[semitone] × sound.tuning`
+  (`2^((n−39)/12)`, halved above 116) for instruments; a drum's freqScale
+  is its `tuning` alone; × the channel's freqScale (DE/D3); capped at
+  3.99992 (`process_notes`). freqScale 1.0 plays a sample at the output
+  rate — 32006 Hz on the console (`osAiSetFrequency(32000)`), 32000 here
+  (0.3 cents).
+- **ADSR:** `adsr_update` in 16.16 fixed point: level 0..32767, a fade
+  moves `(target − current) << 16` over `delay` updates, an update being
+  1/4 frame — `gAudioUpdatesPerFrame = ALIGN16(32006/60)/160 + 1 = 4`
+  (heap.c) → 240 updates/s. Gate end (`seq_channel_layer_note_decay`) is a
+  DECAY at `releaseRate × 24` per update until the level drops below 100;
+  the hard RELEASE (`0x8000/4` per update, ~4 updates) only happens when a
+  layer/channel is freed, so every note end here is a decay.
+  `note_init` picks the layer's envelope unless the layer's release rate
+  is 0, then the channel's; the same rule picks the decay rate. Sustain
+  (D2) is left at 0: in JP/US `sustain = current × u8 / 0x10000` is at
+  most 127 of 32767.
+- **Volume:** `noteVelocity = vel² × channel volume × volume scale ×
+  fadeVolume` (vel undivided in JP/US), then `× (level × 4.3498e-5)²`,
+  clamped at 32767 → gain = (vel/127)² × (level/32767)² × volumes (the
+  constants multiply out to 0.9998). Pan is dropped (mono per track).
+- **Loops:** the sample ends at `loop.end` for count 0; else wraps to
+  `loop.start` (synthesis.c: `if (loopInfo->count != 0) restart`).
+
+### 9.3 The +21 question, measured
+
+Autocorrelation of isolated held notes in the rendered tracks (first
+40 s), `tests/n64-real.test.mjs` "SM64 pitch":
+
+| Track | tuning | notes | detected − (semitone+21) | correlation at f / 2f / f·½ |
+|---|---|---|---|---|
+| Main Theme `ch 0 inst 0` (the melody) | 0.8409 | m55 | **+2 c** | 0.93 / 0.41 / 0.89 |
+| Main Theme `ch 6 inst 6` (bass) | 1.2599 | m36–43 | +9…+14 c | 0.95 |
+| Title `ch 1 inst 1` (bass, looping) | 1.1237 | m36–45 | **−3…−6 c** | 1.00 |
+| Title `ch 6 inst 6` | 1.2599 | m43 | +10 c | 0.95 |
+| Title `ch 3 inst 3` | 0.375 | m55–67 | **−1205 c** (an octave below) | 0.01 / −0.4 / **0.99** |
+| Title `ch 4 inst 4` | 0.9439 | m55–67 | **+1208 c** (an octave above) | 1.00 / **1.00** / 0.95 |
+| Title `ch 5 inst 5`, `ch 7 inst 7` | 0.8409 | m60 | −585 c, r 0.95, but no correlation at f, 2f or f/2 | unresolved (inharmonic sample?) |
+| Title `ch 11 inst 11` | 1.6818 | m50 | r 0.61 | unreliable |
+
+So the +21 convention is right for the instruments a listener would
+call the melody and the bass (within 15 c — the 32000 vs 32006 Hz and
+linear interpolation account for a few), and an octave off for two Title
+Theme instruments in opposite directions: the bank's `tuning` fixes the
+sample rate, not the sample's root, exactly as §4 said. What that means
+for the MIDI's note numbers is Josh's call (the renderer now plays what
+the console plays; the notation would print inst 3 an octave high and
+inst 4 an octave low). Nothing here names an instrument.
+
+### 9.4 Assumptions and what is unverified
+
+- A channel that never issues C6/EB uses bank index 0 = `banks[0]` of
+  `locateEAD`'s reversed list = the LAST id stored = `defaultBank[0]`
+  (`load_banks_immediate` keeps the last id it loads). Both ear songs
+  have one bank; the multi-bank path (C6 → `banks[n]`) follows the 0xC6
+  handler (`gAlBankSets[off + count − n]`) but no SM64 song exercised it.
+- Volume/pan/bend are the values at note-on; a DF/DE/D3 during a held
+  note (fades, bends) is not applied to it. The sequence DA fade target
+  applies at once (fade time ignored).
+- Not rendered: vibrato (D7/D8/E1–E3), portamento (C7), reverb (D4),
+  the RSP resampler (linear here), instrument ids ≥ 0x80 (synth
+  waveforms; listed in `warnings`, none in the two songs), pan (mono).
+- Drums whose `releaseRate` is 0 fall back to the channel's adsr as
+  `note_init` says; none in bank 17/34 (all 10).
+- Only the sm64 generation is read. OoT/MM banks (16-byte table entries,
+  `codec/medium` header word in the sample struct, relocation flags) are
+  §3's other branch and are not started.
+- The ear has not heard it yet: `scratch/sm64-title.wav`,
+  `scratch/sm64-main.wav` (+ per-track) are the listening checks; the
+  measured pitch and RMS ranges are what the tests hold.
+- Wiring into the app (a `render` entry on `CHIPS.usf` passing `{set,
+  banks}` from the capture; `tools/chip-worker.mjs`'s runner; adding
+  `n64/bank`, `n64/vadpcm`, `n64/render` to the module list) is not done
+  here — index.html is untouched. `tests/n64-bank.test.mjs` is new and not
+  yet in package.json's `test` script.

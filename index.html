@@ -13268,31 +13268,32 @@ const CHIPS = {
   // tables are located in that image, the mini's save state names the
   // sequence id, and the libultra sequence interpreter yields notes in
   // 48-tick beats with a tempo map — another sequence chip: its own
-  // capture, MIDI written directly. No renderer (Phase C in the notes).
+  // capture, MIDI written directly. Chip audio (2026-09-27, evening): the
+  // game's own sound bank — VADPCM samples, key regions, envelopes — through
+  // n64/render.mjs; the mini per track + the lib once persist like the PS1's.
   usf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x21, ext: ".usf", label: "USF",
-        channels: [], perFile: true, tagged: true, keepBytes: false,
+        channels: [], perFile: true, tagged: true, keepBytes: true,
         libFile: name => /\.usflib$/i.test(name),
-        files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes"], shared: [], own: [],
+        files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes", "n64/capture", "n64/vadpcm", "n64/bank", "n64/render"], shared: [], own: [],
+        parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
+        run: M => async (parsed, n, secs, onProgress) => {
+          const files = [{name: "song.miniusf", bytes: parsed.bytes}];
+          for (const [name, bytes] of Object.entries(parsed.libs)) files.push({name, bytes}); // the lib's NAME is the game's identity (USF_GAMES)
+          const set = M.loadUSF(files);
+          if (onProgress) onProgress(0.3);
+          const {seq, res} = M.sequenceOfSet(set);
+          if (onProgress) onProgress(1);
+          return {result: res, set, banks: seq.banks, seconds: secs};
+        },
+        lead: () => 0,
+        render: (M, res, o) => M.renderN64(res.result, {set: res.set, banks: res.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds, meter: {tsNum: 4, tsDen: 4}}),
+        renderRate: 32000, // the console's own output rate
         parseAsync: M => async (bytes, name) => { const u = M.parseUSF(bytes); const t = u.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {usf: u, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: u.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
-        parse: M => () => { throw new Error("USF parses asynchronously"); },
         capture: async (M, parsed, secs, onProgress, sess) => {
           const libs = Object.values(sess && sess.libs || {}); // the lib objects persist across captures, so their parse is cached on them
           const set = M.loadUSF([{name: parsed.fileName, bytes: parsed.bytes, parsed: parsed.usf}, ...libs]);
-          const game = M.gameOfSet(set);
-          const loc = M.locateEAD(set);
-          if (!loc.gen) throw new Error("no Nintendo sequence tables in this rip — a driver Night Roll cannot read yet");
           if (onProgress) onProgress(0.5);
-          const id = M.miniSequenceId(set, game ? game.seqId : undefined);
-          const seq = id == null ? null : loc.sequences[id];
-          if (!seq) throw new Error("this song's sequence (id " + id + ") is not in the game's table");
-          const {ram} = M.rdramOf(set.state);
-          let img, at;
-          if (seq.rom != null && seq.coverage > 0) { img = set.rom; at = seq.rom; }
-          else { const c = M.findCachedSequences(ram, loc.sequences).get(id); if (!c) throw new Error("this song's sequence is not in the rip's ROM pages or memory"); img = ram; at = c.ram; }
-          const seqBytes = img.read(at, seq.size);
-          const present = new Uint8Array(seq.size);
-          for (let i = 0; i < seq.size; i++) present[i] = img.coverage(at + i, 1) ? 1 : 0;
-          const res = M.parseSequence(seqBytes, {abi: game ? game.abi : loc.abi, present, io: null, maxSeconds: 600, stopAtLoop: true});
+          const {game, id, seq, res, present} = M.sequenceOfSet(set);
           const bytes = M.toMidi(res, {tsNum: 4, tsDen: 4});
           const tpb = res.ticksPerBeat || 48;
           { // diagnostic (2026-09-27: the iPad scrambles Mario 64 while the Mac, running this same code, does not): the facts of this capture, into ⚠ so Copy all carries them

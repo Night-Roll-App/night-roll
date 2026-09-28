@@ -718,9 +718,18 @@ don't have that." Right: N64 has NO renderer — every song plays synth
 voices by program number. The game's samples (ADPCM in the bank, in
 the .usflib's ROM/RDRAM) are there to decode; an N64 sample renderer is
 the PS1 renderer's job again (bank table → samples → per-instrument
-envelope → renderSpu-style mix). STARTED the same hour (agent, tools
-only: bank + VADPCM + renderer with a pitch check on the real rip); the
-app wiring follows.
+envelope → renderSpu-style mix). SHIPPED the same evening (an agent
+built tools/n64/{vadpcm,bank,render}.mjs against the real set; the
+terminal wired CHIPS.usf + the worker; NIGHT-ROLL.md "Nintendo 64
+import" → Chip audio). RE-IMPORT Mario 64 once: the mini per track is
+stored at capture now. Open, for Josh's ear: nobody has heard the
+render yet (tests hold pitch + loudness); Title Theme inst 3 renders an
+octave below its written key and inst 4 an octave above — the console
+does that, the roll shows the written key; inst 5/7's pitch reading was
+inconclusive. Not rendered: vibrato, portamento, pitch bends (N64 bends
+still ignored in the roll too), reverb, pan, synth waveforms, volume
+changes inside a note. Zelda (OoT/MM) banks: another layout, not
+started.
 PS1 — Anxious Heart (Josh: bar 1 great, bar 2 "way louder", "every
 other bar", fine from bar 10): the pad's expression fades swell inside
 held notes; the render froze each note at its note-on volume. Fixed:

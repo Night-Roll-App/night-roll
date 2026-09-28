@@ -602,6 +602,29 @@ is a percussion sample and joins the kit as `ch N inst I kit`; a
 melodic N64 channel 9 takes the first free MIDI channel instead.
 `res.kitGuess` + a "kit guessed from rhythm" warning reach the row.
 Test: "MIDI percussion: …" in tests/n64.test.mjs.
+Chip audio (same evening): `CHIPS.usf` has parse/run/render like the
+PS1 — `run` rebuilds the set from the mini + the lib (the lib's NAME is
+the game's identity, so libs travel by name), `sequenceOfSet`
+(tools/n64/capture.mjs — one resolver for the capture, the app render
+and the worker) finds and parses the sequence, `renderN64`
+(tools/n64/render.mjs) plays it through the game's own bank:
+`tools/n64/bank.mjs` reads ctl/tbl (instruments with key regions,
+drums, envelopes, samples), `tools/n64/vadpcm.mjs` decodes VADPCM
+(bit-exact against the bank's stored loop states), the ADSR follows the
+decomp (240 updates/s, 16.16), pitch = 2^((semitone−39)/12) × tuning.
+`renderRate` 32000, `keepBytes` so the mini per track and the lib
+persist (idb + archive) exactly as PS1's. Verified on the real set:
+melody/bass within a few cents of the written pitch; Title Theme inst 3
+sounds an octave BELOW its written key and inst 4 an octave ABOVE (the
+bank's tuning fixes sample rate, not root — INTEGRATION.md §4/§9); the
+renderer plays what the console plays, the roll keeps the written key.
+Not rendered: vibrato, portamento, pitch bends, reverb, pan, synth
+waveforms (inst ≥ 0x80, warned), volume changes inside a note; OoT/MM
+banks are another layout. Tests: tests/n64-bank.test.mjs (synthetic),
+tests/n64-real.test.mjs with N64_USF_DIR (bank facts, every sample
+decodes, 10 s renders named like the MIDI, the pitch check);
+scratch/n64-render.mjs writes WAVs, scratch/usf-app-render.mjs runs the
+app's own chip path in the vm.
 
 **Chip render in a Worker (2026-09-27, afternoon).** The console render
 ran on the page's thread in 35 ms slices: the first Play after opening a

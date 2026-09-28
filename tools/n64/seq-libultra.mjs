@@ -35,10 +35,18 @@
 //             0x88 0x9n 0x98, oot CD
 //   layer:    notes 00-BF (large and short forms), C0 rest, C1 C2 C3 C4 C5
 //             C6 C9 D0-DF E0-EF
+//   sound facts the renderer (render.mjs) needs, recorded on each note as
+//   the game would apply them at note-on (sm64 seqplayer.c / effects.c):
+//   the channel's bank index (C6/EB), volume (DF /127) × volume scale
+//   (E0 /128) × the player's volume (DB, DA /127), pan (DD /128), pitch
+//   scale (DE u16/32768, D3 = 0.5·2^((s8+127)/127)), the channel's
+//   envelope/release overrides (DA, D9 — an instrument set by C1/EB
+//   replaces them, as get_instrument does) and the layer's own adsr
+//   (C6 instrument, CB envelope + release).
 // Stubbed (arguments consumed, effect ignored — listed in result.stubbed
-// when encountered): volume/pan/reverb/vibrato/envelope/bend (they shape
-// sound, not notes), portamento (C7: we keep the written pitch, the game
-// slides to it), mute machinery, note pools, the oot filter/random ops
+// when encountered): reverb/vibrato (they shape sound, not notes), the
+// player's fade time (DA's target applies at once), portamento (C7: we keep
+// the written pitch, the game slides to it), mute machinery, note pools, the oot filter/random ops
 // (random ops read as 0 so output is deterministic), oot ldsample (0x1n)
 // and any opcode outside the tables, which throw with the offset.
 import { TICKS_PER_BEAT, SEMITONE_TO_MIDI, DEFAULT_SHORT_VEL, DEFAULT_SHORT_GATE } from "./constants.mjs";
@@ -146,7 +154,7 @@ export function parseSequence(input, opts = {}) {
   }
 
   // ---- player / channels / layers
-  const player = {enabled: true, delay: 0, tempo: 120, transposition: 0, value: 0, variation: -1,
+  const player = {enabled: true, delay: 0, tempo: 120, transposition: 0, value: 0, variation: -1, volume: 1,
                   io: new Array(8).fill(-1), shortVel: -1, shortGate: -1, channels: new Array(CHANNELS).fill(null),
                   st: state(0)};
   // opts.io = {port: value}: what the game would have written before the
@@ -158,6 +166,8 @@ export function parseSequence(input, opts = {}) {
   function newChannel(idx) {
     return {idx, enabled: false, finished: false, stopScript: false, delay: 0, value: 0, transposition: 0,
             largeNotes: false, instr: null, bank: 0, dynTable: -1, io: new Array(8).fill(-1),
+            // sequence_channel_init: full volume, centre pan, no bend; adsr = the default envelope until an instrument is set
+            volume: 1, volumeScale: 1, pan: 0.5, freqScale: 1, envelope: null, release: null, adsrInst: null,
             layers: new Array(LAYERS).fill(null), st: null};
   }
   function enableChannel(i, pc) {
@@ -181,7 +191,7 @@ export function parseSequence(input, opts = {}) {
     // seq_channel_layer_init defaults; note the 0x80 gate and instrument
     // 0xFF = "use the channel's"
     C.layers[l] = {ch: C, idx: l, enabled: true, finished: false, delay: 0, gate: 0, stop: false, continuous: false,
-                   transposition: 0, noteDuration: 0x80, playPct: 0, shortDefault: 0, vel: 0, instr: 0xFF,
+                   transposition: 0, noteDuration: 0x80, playPct: 0, shortDefault: 0, vel: 0, instr: 0xFF, adsr: null,
                    note: null, st: state(pc)};
   }
   function freeLayer(C, l) {
@@ -190,6 +200,15 @@ export function parseSequence(input, opts = {}) {
     noteOff(L); L.enabled = false; L.finished = true; C.layers[l] = null;
   }
   const dynAddr = (C, slot) => u16at(C.dynTable + slot * 2);
+  const envs = new Map();
+  const envAt = a => {
+    if (!envs.has(a)) {
+      const pairs = [];
+      for (let i = 0; i < 64; i++) { const d = (u16at(a + i * 4) << 16) >> 16, v = (u16at(a + i * 4 + 2) << 16) >> 16; pairs.push([d, v]); if (d <= 0) break; }
+      envs.set(a, pairs);
+    }
+    return envs.get(a);
+  };
 
   function layerTick(L) {
     if (!L.enabled) return;
@@ -218,12 +237,12 @@ export function parseSequence(input, opts = {}) {
         case 0xC3: L.shortDefault = cu16(s); break;            // short-note default delay
         case 0xC4: L.continuous = true; noteOff(L); break;     // legato on
         case 0xC5: L.continuous = false; noteOff(L); break;
-        case 0xC6: L.instr = u8(s); break;
+        case 0xC6: L.instr = u8(s); if (L.instr < 0x7F) L.adsr = {inst: L.instr}; break; // get_instrument: the layer takes that instrument's envelope + release
         case 0xC7: { const mode = u8(s); u8(s); if (mode & 0x80) u8(s); else cu16(s); stub("layer portamento C7"); break; }
         case 0xC8: break;                                      // portamento off
         case 0xC9: L.noteDuration = u8(s); break;              // short-note gate
         case 0xCA: u8(s); stub("layer pan CA"); break;
-        case 0xCB: u16(s); u8(s); stub("layer envelope CB"); break;
+        case 0xCB: { const a = u16(s); L.adsr = {envelope: envAt(a), releaseRate: u8(s)}; break; }
         case 0xCC: break;                                      // ignore drum pan
         case 0xCD: if (!oot) throw fail("layer", cmd, s.pc - 1); u8(s); stub("layer stereo CD"); break;
         case 0xCE: if (!oot) throw fail("layer", cmd, s.pc - 1); u8(s); stub("layer bendfine CE"); break;
@@ -262,7 +281,9 @@ export function parseSequence(input, opts = {}) {
                        : semi + player.transposition + C.transposition + L.transposition;
     if (!drum && (pitch < 0 || pitch >= 0x80)) { L.stop = true; return; } // out of range = silent, like the game
     noteOn(L, {tick, dur: 0, ch: C.idx, layer: L.idx, semitone: pitch, drum,
-               midi: drum ? null : pitch + SEMITONE_TO_MIDI, vel: L.vel, inst: instr, gate: L.noteDuration});
+               midi: drum ? null : pitch + SEMITONE_TO_MIDI, vel: L.vel, inst: instr, gate: L.noteDuration,
+               bank: C.bank, vol: C.volume * C.volumeScale * player.volume, pan: C.pan, freq: C.freqScale,
+               chEnv: C.envelope, chRel: C.release, chInst: C.adsrInst, lyAdsr: L.adsr});
   }
 
   function channelTick(C) {
@@ -294,6 +315,13 @@ export function parseSequence(input, opts = {}) {
     for (const L of C.layers) if (L) layerTick(L);
   }
 
+  // set_instrument: a real instrument (< 0x7F) loads its envelope and release
+  // into the channel, replacing any DA/D9 override; 0x7F (drums) and >= 0x80
+  // (the synth waveforms) leave the channel's adsr as it was
+  function setInstr(C, id) {
+    C.instr = id;
+    if (id < 0x7F) { C.adsrInst = id; C.envelope = null; C.release = null; }
+  }
   const wrap8 = v => (v << 24) >> 24;
   const seqVal = v => oot ? wrap8(v) : v;
   function channelOp(C, s, cmd) {
@@ -302,7 +330,7 @@ export function parseSequence(input, opts = {}) {
       case 0xF2: if (oot) throw fail("channel", cmd, at); u8(s); break;            // sm64 reservenotes
       case 0xF1: if (oot) u8(s); break;                                            // sm64 unreserve / oot allocnotelist
       case 0xF0: if (!oot) throw fail("channel", cmd, at); break;                  // oot freenotelist
-      case 0xC1: C.instr = u8(s); break;
+      case 0xC1: setInstr(C, u8(s)); break;
       case 0xC2: C.dynTable = u16(s); break;
       case 0xC3: C.largeNotes = false; break;
       case 0xC4: C.largeNotes = true; break;
@@ -317,18 +345,22 @@ export function parseSequence(input, opts = {}) {
       case 0xCD: if (!oot) throw fail("channel", cmd, at); disableChannel(player.channels[u8(s)]); break;
       case 0xCE: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel ldptr CE"); break;
       case 0xCF: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel stptrtoseq CF"); break;
-      case 0xD0: case 0xD1: case 0xD2: case 0xD4: case 0xD5: case 0xD6: case 0xD7: case 0xD8: case 0xD9:
-      case 0xDC: case 0xDD: case 0xDF: case 0xE0: case 0xE3: case 0xE5: case 0xE6: case 0xE9: case 0xED:
+      case 0xD0: case 0xD1: case 0xD2: case 0xD4: case 0xD5: case 0xD6: case 0xD7: case 0xD8:
+      case 0xDC: case 0xE3: case 0xE5: case 0xE6: case 0xE9: case 0xED:
         u8(s); stub("channel sound-shaping " + hex(cmd)); break;
-      case 0xD3: u8(s); stub("channel pitch bend D3"); break;
-      case 0xDE: u16(s); stub("channel freqscale DE"); break;
+      case 0xD9: C.release = u8(s); break;
+      case 0xDD: C.pan = u8(s) / 128; break;
+      case 0xDF: C.volume = u8(s) / 127; break;
+      case 0xE0: C.volumeScale = u8(s) / 128; break;
+      case 0xD3: C.freqScale = 0.5 * Math.pow(2, (s8(s) + 127) / 127); break; // gPitchBendFrequencyScale
+      case 0xDE: C.freqScale = s16(s) / 32768; break;
       case 0xEE: if (!oot) throw fail("channel", cmd, at); u8(s); stub("channel bendfine EE"); break;
-      case 0xDA: u16(s); stub("channel envelope DA"); break;
+      case 0xDA: C.envelope = envAt(u16(s)); break;
       case 0xDB: C.transposition = s8(s); break;
       case 0xE1: case 0xE2: case 0xE8: u8(s); u8(s); u8(s); stub("channel " + hex(cmd)); break;
       case 0xE7: u16(s); stub("channel ldparams E7"); break;
       case 0xE4: if (C.value !== -1) { const a = dynAddr(C, C.value); push(s, s.pc); s.pc = a; } break;
-      case 0xEB: C.bank = u8(s); C.instr = u8(s); break;
+      case 0xEB: C.bank = u8(s); setInstr(C, u8(s)); break;
       case 0xEC: break;                                                            // vibrato reset
       default: {
         // OoT B0-BD / MM A0-BE: argument widths from each decomp's
@@ -427,8 +459,8 @@ export function parseSequence(input, opts = {}) {
           case 0xDE: player.transposition += s8(s); break;
           case 0xDD: setTempo(u8(s)); break;
           case 0xDC: setTempo(player.tempo + s8(s)); break;
-          case 0xDB: u8(s); break;                                                 // master volume
-          case 0xDA: if (oot) { u8(s); u16(s); } else u8(s); stub("sequence volume change DA"); break;
+          case 0xDB: player.volume = u8(s) / 127; break;                           // seq_setvol
+          case 0xDA: if (oot) { u8(s); u16(s); stub("sequence volume change DA"); } else player.volume = u8(s) / 127; break; // seq_changevol: the target, its fade time ignored
           case 0xD9: u8(s); break;
           case 0xD7: initChannels(u16(s)); break;
           case 0xD6: freeChannels(u16(s)); break;
