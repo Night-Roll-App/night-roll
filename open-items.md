@@ -1036,6 +1036,16 @@ File → Settings → GitHub (defaulted, so it never needs touching).
 Josh accepts the take-down risk (2026-09-28: "someone can ask you to
 take it down, and you might have to … I'm willing to live with that").
 
+## CONSOLE ORDER + GENESIS PARKED — 2026-09-28 (Josh)
+
+Instruments next: SNES (samples from each SPC's DSP memory, merged per
+album) → NES/Game Boy presets (pulse width + volume-fade shapes, named).
+Genesis: PARKED — existing capture work stays; no new Genesis work now;
+when a console is next added, Genesis goes first, following
+docs/adding-a-console.md (the whole checklist: rips, ground truth,
+capture, chip audio, publish, instruments, terminal import, listening
+pass, docs).
+
 ## SUBSCRIBE TO OTHER LIBRARIES — IDEA 2026-09-28 (Josh: "not saying we should do anything about this right now")
 
 "You should also be able to specify other repos that you want to pull
