@@ -70,6 +70,13 @@ before touching the player.
   overwrite an existing file of that name; say so instead.
 - One-file app: index.html, no build step. Match its comment style —
   comments explain constraints, not narration.
+- **No one-time hacks in capture engines** (Josh, 2026-09-27). A game's
+  identity may only select WHERE to look (a manifest entry: engine
+  dialect, where a rip keeps its song number) and only after generic
+  detection has tried. How the music sounds — channels, volumes,
+  reverb, envelopes, tempo — comes from the file or the save state,
+  never from a per-game table. If a per-game table is the only way,
+  it is a warning in the capture and an item in open-items, not a fix.
 
 ## Where things are
 

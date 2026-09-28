@@ -819,6 +819,23 @@ channels. Fixed in the parser + sequenceOfSet; captures of those two
 change, so Mario 64 needs a RE-IMPORT. Policy: all channels captured
 (the game's per-area ducking is state, not composition).
 
+## NO ONE-TIME HACKS — AUDIT 2026-09-27 (Josh: "we should have no one-time hacks in any of our capture engines")
+
+Rule now in CLAUDE.md. Audit of tools/ (grep for game names, codes,
+addresses): (1) HACK: `SM64_PRESET_OF_SEQUENCE` in tools/n64/render.mjs —
+reverb preset per Mario 64 sequence id, copied from the level scripts.
+Assigned to the renderer agent: read the engine's reverb state from
+the mini's save state; no table. (2) SOFT: `TIMER_DIV_FF7` default in
+tools/psx/akao.mjs — the AKAO tempo divisor is a driver-version
+constant defaulting to FF7's; should be chosen from the AKAO header
+(version/timestamp) with a warning when unknown. QUEUED. (3) OK:
+`USF_GAMES` in tools/n64/ead-usf.mjs — a where-to-look manifest
+(engine dialect, song-id convention) consulted after generic table
+detection; `abi` sm64/oot/mm are engine dialects, not games. (4) OK:
+tools/package.mjs FORBIDDEN is a licensing filter. The ducking fix in
+progress reads the engine's channel state from the save state (generic
+for every EAD-engine game), not a Dire Dire Docks list.
+
 ## GOLDENEYE 007 (N64, Rare) — QUEUED 2026-09-27 (Josh: "one of my favorite games of all time")
 
 Probed the USF set (/tmp/claude-501/rips/n64-ge, NUS-NGEE-USA.usflib,
