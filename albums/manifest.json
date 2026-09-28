@@ -553,281 +553,6 @@
   ]
  },
  {
-  "title": "Final Fantasy Legend",
-  "songs": [
-   {
-    "title": "Demon Cave",
-    "path": "albums/game-boy/final-fantasy-legend/demon-cave.mid"
-   },
-   {
-    "title": "Eat the Meat",
-    "path": "albums/game-boy/final-fantasy-legend/eat-the-meat.mid"
-   },
-   {
-    "title": "Epilogue",
-    "path": "albums/game-boy/final-fantasy-legend/epilogue.mid"
-   },
-   {
-    "title": "Fanfare",
-    "path": "albums/game-boy/final-fantasy-legend/fanfare.mid"
-   },
-   {
-    "title": "Fierce Battle",
-    "path": "albums/game-boy/final-fantasy-legend/fierce-battle.mid"
-   },
-   {
-    "title": "Fight",
-    "path": "albums/game-boy/final-fantasy-legend/fight.mid"
-   },
-   {
-    "title": "Forbidden Tower",
-    "path": "albums/game-boy/final-fantasy-legend/forbidden-tower.mid"
-   },
-   {
-    "title": "Furious Battle",
-    "path": "albums/game-boy/final-fantasy-legend/furious-battle.mid"
-   },
-   {
-    "title": "Hurry Up!",
-    "path": "albums/game-boy/final-fantasy-legend/hurry-up.mid"
-   },
-   {
-    "title": "Jingle #01",
-    "path": "albums/game-boy/final-fantasy-legend/jingle-01.mid"
-   },
-   {
-    "title": "Knights of the Demon World Tower",
-    "path": "albums/game-boy/final-fantasy-legend/knights-of-the-demon-world-tower.mid"
-   },
-   {
-    "title": "Main Theme",
-    "path": "albums/game-boy/final-fantasy-legend/main-theme.mid"
-   },
-   {
-    "title": "Prologue",
-    "path": "albums/game-boy/final-fantasy-legend/prologue.mid"
-   },
-   {
-    "title": "Requiem",
-    "path": "albums/game-boy/final-fantasy-legend/requiem.mid"
-   },
-   {
-    "title": "The Highest Floor",
-    "path": "albums/game-boy/final-fantasy-legend/the-highest-floor.mid"
-   },
-   {
-    "title": "Town Theme",
-    "path": "albums/game-boy/final-fantasy-legend/town-theme.mid"
-   },
-   {
-    "title": "Wipe Your Tears Away",
-    "path": "albums/game-boy/final-fantasy-legend/wipe-your-tears-away.mid"
-   }
-  ]
- },
- {
-  "title": "Mega Man 2",
-  "songs": [
-   {
-    "title": "Air Man",
-    "path": "albums/nes/mega-man-2/air-man.mid"
-   },
-   {
-    "title": "Boss Battle",
-    "path": "albums/nes/mega-man-2/boss-battle.mid"
-   },
-   {
-    "title": "Bubble Man",
-    "path": "albums/nes/mega-man-2/bubble-man.mid"
-   },
-   {
-    "title": "Crash Man",
-    "path": "albums/nes/mega-man-2/crash-man.mid"
-   },
-   {
-    "title": "Credits",
-    "path": "albums/nes/mega-man-2/credits.mid"
-   },
-   {
-    "title": "Dr. Wily Defeated!",
-    "path": "albums/nes/mega-man-2/dr-wily-defeated.mid"
-   },
-   {
-    "title": "Dr. Wily's Castle",
-    "path": "albums/nes/mega-man-2/dr-wily-s-castle.mid"
-   },
-   {
-    "title": "Dr. Wily's Castle II",
-    "path": "albums/nes/mega-man-2/dr-wily-s-castle-ii.mid"
-   },
-   {
-    "title": "Dr. Wily's Map",
-    "path": "albums/nes/mega-man-2/dr-wily-s-map.mid"
-   },
-   {
-    "title": "Enemy Chosen",
-    "path": "albums/nes/mega-man-2/enemy-chosen.mid"
-   },
-   {
-    "title": "Epilogue",
-    "path": "albums/nes/mega-man-2/epilogue.mid"
-   },
-   {
-    "title": "Flash Man",
-    "path": "albums/nes/mega-man-2/flash-man.mid"
-   },
-   {
-    "title": "Get Your Weapons Ready",
-    "path": "albums/nes/mega-man-2/get-your-weapons-ready.mid"
-   },
-   {
-    "title": "Heat Man",
-    "path": "albums/nes/mega-man-2/heat-man.mid"
-   },
-   {
-    "title": "Introduction",
-    "path": "albums/nes/mega-man-2/introduction.mid"
-   },
-   {
-    "title": "Metal Man",
-    "path": "albums/nes/mega-man-2/metal-man.mid"
-   },
-   {
-    "title": "Password Screen",
-    "path": "albums/nes/mega-man-2/password-screen.mid"
-   },
-   {
-    "title": "Quick Man",
-    "path": "albums/nes/mega-man-2/quick-man.mid"
-   },
-   {
-    "title": "Stage Select",
-    "path": "albums/nes/mega-man-2/stage-select.mid"
-   },
-   {
-    "title": "Title Screen",
-    "path": "albums/nes/mega-man-2/title-screen.mid"
-   },
-   {
-    "title": "Track 20",
-    "path": "albums/nes/mega-man-2/track-20.mid"
-   },
-   {
-    "title": "Track 23",
-    "path": "albums/nes/mega-man-2/track-23.mid"
-   },
-   {
-    "title": "Victory",
-    "path": "albums/nes/mega-man-2/victory.mid"
-   },
-   {
-    "title": "Wood Man",
-    "path": "albums/nes/mega-man-2/wood-man.mid"
-   }
-  ]
- },
- {
-  "title": "TMNT 2",
-  "songs": [
-   {
-    "title": "Boss A",
-    "path": "albums/nes/tmnt-2/boss-a.mid"
-   },
-   {
-    "title": "Boss B",
-    "path": "albums/nes/tmnt-2/boss-b.mid"
-   },
-   {
-    "title": "Boss C",
-    "path": "albums/nes/tmnt-2/boss-c.mid"
-   },
-   {
-    "title": "Credits",
-    "path": "albums/nes/tmnt-2/credits.mid"
-   },
-   {
-    "title": "Cutscene A",
-    "path": "albums/nes/tmnt-2/cutscene-a.mid"
-   },
-   {
-    "title": "Cutscene B",
-    "path": "albums/nes/tmnt-2/cutscene-b.mid"
-   },
-   {
-    "title": "Cutscene C",
-    "path": "albums/nes/tmnt-2/cutscene-c.mid"
-   },
-   {
-    "title": "Cutscene D",
-    "path": "albums/nes/tmnt-2/cutscene-d.mid"
-   },
-   {
-    "title": "Cutscene E",
-    "path": "albums/nes/tmnt-2/cutscene-e.mid"
-   },
-   {
-    "title": "Cutscene F",
-    "path": "albums/nes/tmnt-2/cutscene-f.mid"
-   },
-   {
-    "title": "Epilogue",
-    "path": "albums/nes/tmnt-2/epilogue.mid"
-   },
-   {
-    "title": "Game Over",
-    "path": "albums/nes/tmnt-2/game-over.mid"
-   },
-   {
-    "title": "Scene 1",
-    "path": "albums/nes/tmnt-2/scene-1.mid"
-   },
-   {
-    "title": "Scene 2A",
-    "path": "albums/nes/tmnt-2/scene-2a.mid"
-   },
-   {
-    "title": "Scene 2B",
-    "path": "albums/nes/tmnt-2/scene-2b.mid"
-   },
-   {
-    "title": "Scene 3A",
-    "path": "albums/nes/tmnt-2/scene-3a.mid"
-   },
-   {
-    "title": "Scene 3B & 5",
-    "path": "albums/nes/tmnt-2/scene-3b-5.mid"
-   },
-   {
-    "title": "Scene 4A",
-    "path": "albums/nes/tmnt-2/scene-4a.mid"
-   },
-   {
-    "title": "Scene 4B",
-    "path": "albums/nes/tmnt-2/scene-4b.mid"
-   },
-   {
-    "title": "Scene 6",
-    "path": "albums/nes/tmnt-2/scene-6.mid"
-   },
-   {
-    "title": "Scene 7",
-    "path": "albums/nes/tmnt-2/scene-7.mid"
-   },
-   {
-    "title": "Scene Cleared A",
-    "path": "albums/nes/tmnt-2/scene-cleared-a.mid"
-   },
-   {
-    "title": "Scene Cleared B",
-    "path": "albums/nes/tmnt-2/scene-cleared-b.mid"
-   },
-   {
-    "title": "Selection",
-    "path": "albums/nes/tmnt-2/selection.mid"
-   }
-  ]
- },
- {
   "title": "Final Fantasy 4",
   "songs": [
    {
@@ -1695,164 +1420,6 @@
   ]
  },
  {
-  "title": "Legend Of Zelda A Link To The Past",
-  "songs": [
-   {
-    "title": "Anger of the Guardians",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/anger-of-the-guardians.mid"
-   },
-   {
-    "title": "Beginning of the Journey",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/beginning-of-the-journey.mid"
-   },
-   {
-    "title": "Black Mist",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/black-mist.mid"
-   },
-   {
-    "title": "Black Mist (Storm)",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/black-mist-storm.mid"
-   },
-   {
-    "title": "Dank Dungeons",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dank-dungeons.mid"
-   },
-   {
-    "title": "Dark Golden Land",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dark-golden-land.mid"
-   },
-   {
-    "title": "Dungeon of Shadows",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dungeon-of-shadows.mid"
-   },
-   {
-    "title": "Epilogue ~ Beautiful Hyrule",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/epilogue-beautiful-hyrule.mid"
-   },
-   {
-    "title": "Forest of Mystery",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/forest-of-mystery.mid"
-   },
-   {
-    "title": "Fortune Teller",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/fortune-teller.mid"
-   },
-   {
-    "title": "Ganon's Message",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/ganon-s-message.mid"
-   },
-   {
-    "title": "Great Victory!",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/great-victory.mid"
-   },
-   {
-    "title": "Guessing-Game House",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/guessing-game-house.mid"
-   },
-   {
-    "title": "Hyrule Field Main Theme",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/hyrule-field-main-theme.mid"
-   },
-   {
-    "title": "Kakariko Village",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/kakariko-village.mid"
-   },
-   {
-    "title": "Lost Ancient Ruins",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/lost-ancient-ruins.mid"
-   },
-   {
-    "title": "Majestic Castle",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/majestic-castle.mid"
-   },
-   {
-    "title": "Majestic Castle (Storm)",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/majestic-castle-storm.mid"
-   },
-   {
-    "title": "Meeting the Maidens",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/meeting-the-maidens.mid"
-   },
-   {
-    "title": "Power of the Gods",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/power-of-the-gods.mid"
-   },
-   {
-    "title": "Priest of the Dark Order",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/priest-of-the-dark-order.mid"
-   },
-   {
-    "title": "Princess Zelda's Rescue",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/princess-zelda-s-rescue.mid"
-   },
-   {
-    "title": "Release of Ganon",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/release-of-ganon.mid"
-   },
-   {
-    "title": "Safety in the Sanctuary",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/safety-in-the-sanctuary.mid"
-   },
-   {
-    "title": "Seal of Seven Maidens",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/seal-of-seven-maidens.mid"
-   },
-   {
-    "title": "Soldiers of Kakariko Village",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/soldiers-of-kakariko-village.mid"
-   },
-   {
-    "title": "Staff Roll",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/staff-roll.mid"
-   },
-   {
-    "title": "The Goddess Appears",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-goddess-appears.mid"
-   },
-   {
-    "title": "The Prince of Darkness",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-prince-of-darkness.mid"
-   },
-   {
-    "title": "The Silly Pink Rabbit!",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-silly-pink-rabbit.mid"
-   },
-   {
-    "title": "The Silly Pink Rabbit! (Storm)",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-silly-pink-rabbit-storm.mid"
-   },
-   {
-    "title": "Time of the Falling Rain",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/time-of-the-falling-rain.mid"
-   },
-   {
-    "title": "Time of the Falling Rain (Storm)",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/time-of-the-falling-rain-storm.mid"
-   },
-   {
-    "title": "Title ~ Link to the Past",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/title-link-to-the-past.mid"
-   },
-   {
-    "title": "Unsealing the Master Sword",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/unsealing-the-master-sword.mid"
-   },
-   {
-    "title": "Unused Sound",
-    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/unused-sound.mid"
-   }
-  ]
- },
- {
-  "title": "Super Mario 64",
-  "songs": [
-   {
-    "title": "Title Theme",
-    "path": "albums/n64/super-mario-64/title-theme.mid"
-   }
-  ]
- },
- {
   "title": "Final Fantasy 7",
   "songs": [
    {
@@ -2214,6 +1781,684 @@
    {
     "title": "You Can Hear the Cry of the Planet",
     "path": "albums/ps1/final-fantasy-7/you-can-hear-the-cry-of-the-planet.mid"
+   }
+  ]
+ },
+ {
+  "title": "Final Fantasy Legend",
+  "songs": [
+   {
+    "title": "Demon Cave",
+    "path": "albums/game-boy/final-fantasy-legend/demon-cave.mid"
+   },
+   {
+    "title": "Eat the Meat",
+    "path": "albums/game-boy/final-fantasy-legend/eat-the-meat.mid"
+   },
+   {
+    "title": "Epilogue",
+    "path": "albums/game-boy/final-fantasy-legend/epilogue.mid"
+   },
+   {
+    "title": "Fanfare",
+    "path": "albums/game-boy/final-fantasy-legend/fanfare.mid"
+   },
+   {
+    "title": "Fierce Battle",
+    "path": "albums/game-boy/final-fantasy-legend/fierce-battle.mid"
+   },
+   {
+    "title": "Fight",
+    "path": "albums/game-boy/final-fantasy-legend/fight.mid"
+   },
+   {
+    "title": "Forbidden Tower",
+    "path": "albums/game-boy/final-fantasy-legend/forbidden-tower.mid"
+   },
+   {
+    "title": "Furious Battle",
+    "path": "albums/game-boy/final-fantasy-legend/furious-battle.mid"
+   },
+   {
+    "title": "Hurry Up!",
+    "path": "albums/game-boy/final-fantasy-legend/hurry-up.mid"
+   },
+   {
+    "title": "Jingle #01",
+    "path": "albums/game-boy/final-fantasy-legend/jingle-01.mid"
+   },
+   {
+    "title": "Knights of the Demon World Tower",
+    "path": "albums/game-boy/final-fantasy-legend/knights-of-the-demon-world-tower.mid"
+   },
+   {
+    "title": "Main Theme",
+    "path": "albums/game-boy/final-fantasy-legend/main-theme.mid"
+   },
+   {
+    "title": "Prologue",
+    "path": "albums/game-boy/final-fantasy-legend/prologue.mid"
+   },
+   {
+    "title": "Requiem",
+    "path": "albums/game-boy/final-fantasy-legend/requiem.mid"
+   },
+   {
+    "title": "The Highest Floor",
+    "path": "albums/game-boy/final-fantasy-legend/the-highest-floor.mid"
+   },
+   {
+    "title": "Town Theme",
+    "path": "albums/game-boy/final-fantasy-legend/town-theme.mid"
+   },
+   {
+    "title": "Wipe Your Tears Away",
+    "path": "albums/game-boy/final-fantasy-legend/wipe-your-tears-away.mid"
+   }
+  ]
+ },
+ {
+  "title": "Legend Of Zelda A Link To The Past",
+  "songs": [
+   {
+    "title": "Anger of the Guardians",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/anger-of-the-guardians.mid"
+   },
+   {
+    "title": "Beginning of the Journey",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/beginning-of-the-journey.mid"
+   },
+   {
+    "title": "Black Mist",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/black-mist.mid"
+   },
+   {
+    "title": "Black Mist (Storm)",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/black-mist-storm.mid"
+   },
+   {
+    "title": "Dank Dungeons",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dank-dungeons.mid"
+   },
+   {
+    "title": "Dark Golden Land",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dark-golden-land.mid"
+   },
+   {
+    "title": "Dungeon of Shadows",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/dungeon-of-shadows.mid"
+   },
+   {
+    "title": "Epilogue ~ Beautiful Hyrule",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/epilogue-beautiful-hyrule.mid"
+   },
+   {
+    "title": "Forest of Mystery",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/forest-of-mystery.mid"
+   },
+   {
+    "title": "Fortune Teller",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/fortune-teller.mid"
+   },
+   {
+    "title": "Ganon's Message",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/ganon-s-message.mid"
+   },
+   {
+    "title": "Great Victory!",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/great-victory.mid"
+   },
+   {
+    "title": "Guessing-Game House",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/guessing-game-house.mid"
+   },
+   {
+    "title": "Hyrule Field Main Theme",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/hyrule-field-main-theme.mid"
+   },
+   {
+    "title": "Kakariko Village",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/kakariko-village.mid"
+   },
+   {
+    "title": "Lost Ancient Ruins",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/lost-ancient-ruins.mid"
+   },
+   {
+    "title": "Majestic Castle",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/majestic-castle.mid"
+   },
+   {
+    "title": "Majestic Castle (Storm)",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/majestic-castle-storm.mid"
+   },
+   {
+    "title": "Meeting the Maidens",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/meeting-the-maidens.mid"
+   },
+   {
+    "title": "Power of the Gods",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/power-of-the-gods.mid"
+   },
+   {
+    "title": "Priest of the Dark Order",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/priest-of-the-dark-order.mid"
+   },
+   {
+    "title": "Princess Zelda's Rescue",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/princess-zelda-s-rescue.mid"
+   },
+   {
+    "title": "Release of Ganon",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/release-of-ganon.mid"
+   },
+   {
+    "title": "Safety in the Sanctuary",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/safety-in-the-sanctuary.mid"
+   },
+   {
+    "title": "Seal of Seven Maidens",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/seal-of-seven-maidens.mid"
+   },
+   {
+    "title": "Soldiers of Kakariko Village",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/soldiers-of-kakariko-village.mid"
+   },
+   {
+    "title": "Staff Roll",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/staff-roll.mid"
+   },
+   {
+    "title": "The Goddess Appears",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-goddess-appears.mid"
+   },
+   {
+    "title": "The Prince of Darkness",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-prince-of-darkness.mid"
+   },
+   {
+    "title": "The Silly Pink Rabbit!",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-silly-pink-rabbit.mid"
+   },
+   {
+    "title": "The Silly Pink Rabbit! (Storm)",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/the-silly-pink-rabbit-storm.mid"
+   },
+   {
+    "title": "Time of the Falling Rain",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/time-of-the-falling-rain.mid"
+   },
+   {
+    "title": "Time of the Falling Rain (Storm)",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/time-of-the-falling-rain-storm.mid"
+   },
+   {
+    "title": "Title ~ Link to the Past",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/title-link-to-the-past.mid"
+   },
+   {
+    "title": "Unsealing the Master Sword",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/unsealing-the-master-sword.mid"
+   },
+   {
+    "title": "Unused Sound",
+    "path": "albums/snes/legend-of-zelda-a-link-to-the-past/unused-sound.mid"
+   }
+  ]
+ },
+ {
+  "title": "Mega Man 2",
+  "songs": [
+   {
+    "title": "Air Man",
+    "path": "albums/nes/mega-man-2/air-man.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/nes/mega-man-2/boss-battle.mid"
+   },
+   {
+    "title": "Bubble Man",
+    "path": "albums/nes/mega-man-2/bubble-man.mid"
+   },
+   {
+    "title": "Crash Man",
+    "path": "albums/nes/mega-man-2/crash-man.mid"
+   },
+   {
+    "title": "Credits",
+    "path": "albums/nes/mega-man-2/credits.mid"
+   },
+   {
+    "title": "Dr. Wily Defeated!",
+    "path": "albums/nes/mega-man-2/dr-wily-defeated.mid"
+   },
+   {
+    "title": "Dr. Wily's Castle",
+    "path": "albums/nes/mega-man-2/dr-wily-s-castle.mid"
+   },
+   {
+    "title": "Dr. Wily's Castle II",
+    "path": "albums/nes/mega-man-2/dr-wily-s-castle-ii.mid"
+   },
+   {
+    "title": "Dr. Wily's Map",
+    "path": "albums/nes/mega-man-2/dr-wily-s-map.mid"
+   },
+   {
+    "title": "Enemy Chosen",
+    "path": "albums/nes/mega-man-2/enemy-chosen.mid"
+   },
+   {
+    "title": "Epilogue",
+    "path": "albums/nes/mega-man-2/epilogue.mid"
+   },
+   {
+    "title": "Flash Man",
+    "path": "albums/nes/mega-man-2/flash-man.mid"
+   },
+   {
+    "title": "Get Your Weapons Ready",
+    "path": "albums/nes/mega-man-2/get-your-weapons-ready.mid"
+   },
+   {
+    "title": "Heat Man",
+    "path": "albums/nes/mega-man-2/heat-man.mid"
+   },
+   {
+    "title": "Introduction",
+    "path": "albums/nes/mega-man-2/introduction.mid"
+   },
+   {
+    "title": "Metal Man",
+    "path": "albums/nes/mega-man-2/metal-man.mid"
+   },
+   {
+    "title": "Password Screen",
+    "path": "albums/nes/mega-man-2/password-screen.mid"
+   },
+   {
+    "title": "Quick Man",
+    "path": "albums/nes/mega-man-2/quick-man.mid"
+   },
+   {
+    "title": "Stage Select",
+    "path": "albums/nes/mega-man-2/stage-select.mid"
+   },
+   {
+    "title": "Title Screen",
+    "path": "albums/nes/mega-man-2/title-screen.mid"
+   },
+   {
+    "title": "Track 20",
+    "path": "albums/nes/mega-man-2/track-20.mid"
+   },
+   {
+    "title": "Track 23",
+    "path": "albums/nes/mega-man-2/track-23.mid"
+   },
+   {
+    "title": "Victory",
+    "path": "albums/nes/mega-man-2/victory.mid"
+   },
+   {
+    "title": "Wood Man",
+    "path": "albums/nes/mega-man-2/wood-man.mid"
+   }
+  ]
+ },
+ {
+  "title": "Super Mario 64",
+  "songs": [
+   {
+    "title": "Title Theme",
+    "path": "albums/n64/super-mario-64/title-theme.mid"
+   }
+  ]
+ },
+ {
+  "title": "Super Mario Bros. 3",
+  "songs": [
+   {
+    "title": "Track 01",
+    "path": "albums/nes/super-mario-bros-3/track-01.mid"
+   },
+   {
+    "title": "Track 02",
+    "path": "albums/nes/super-mario-bros-3/track-02.mid"
+   },
+   {
+    "title": "Track 03",
+    "path": "albums/nes/super-mario-bros-3/track-03.mid"
+   },
+   {
+    "title": "Track 04",
+    "path": "albums/nes/super-mario-bros-3/track-04.mid"
+   },
+   {
+    "title": "Track 05",
+    "path": "albums/nes/super-mario-bros-3/track-05.mid"
+   },
+   {
+    "title": "Track 06",
+    "path": "albums/nes/super-mario-bros-3/track-06.mid"
+   },
+   {
+    "title": "Track 07",
+    "path": "albums/nes/super-mario-bros-3/track-07.mid"
+   },
+   {
+    "title": "Track 08",
+    "path": "albums/nes/super-mario-bros-3/track-08.mid"
+   },
+   {
+    "title": "Track 09",
+    "path": "albums/nes/super-mario-bros-3/track-09.mid"
+   },
+   {
+    "title": "Track 10",
+    "path": "albums/nes/super-mario-bros-3/track-10.mid"
+   },
+   {
+    "title": "Track 11",
+    "path": "albums/nes/super-mario-bros-3/track-11.mid"
+   },
+   {
+    "title": "Track 12",
+    "path": "albums/nes/super-mario-bros-3/track-12.mid"
+   },
+   {
+    "title": "Track 13",
+    "path": "albums/nes/super-mario-bros-3/track-13.mid"
+   },
+   {
+    "title": "Track 14",
+    "path": "albums/nes/super-mario-bros-3/track-14.mid"
+   },
+   {
+    "title": "Track 15",
+    "path": "albums/nes/super-mario-bros-3/track-15.mid"
+   },
+   {
+    "title": "Track 16",
+    "path": "albums/nes/super-mario-bros-3/track-16.mid"
+   },
+   {
+    "title": "Track 17",
+    "path": "albums/nes/super-mario-bros-3/track-17.mid"
+   },
+   {
+    "title": "Track 18",
+    "path": "albums/nes/super-mario-bros-3/track-18.mid"
+   },
+   {
+    "title": "Track 19",
+    "path": "albums/nes/super-mario-bros-3/track-19.mid"
+   },
+   {
+    "title": "Track 20",
+    "path": "albums/nes/super-mario-bros-3/track-20.mid"
+   },
+   {
+    "title": "Track 21",
+    "path": "albums/nes/super-mario-bros-3/track-21.mid"
+   },
+   {
+    "title": "Track 22",
+    "path": "albums/nes/super-mario-bros-3/track-22.mid"
+   },
+   {
+    "title": "Track 23",
+    "path": "albums/nes/super-mario-bros-3/track-23.mid"
+   },
+   {
+    "title": "Track 24",
+    "path": "albums/nes/super-mario-bros-3/track-24.mid"
+   },
+   {
+    "title": "Track 25",
+    "path": "albums/nes/super-mario-bros-3/track-25.mid"
+   },
+   {
+    "title": "Track 26",
+    "path": "albums/nes/super-mario-bros-3/track-26.mid"
+   },
+   {
+    "title": "Track 27",
+    "path": "albums/nes/super-mario-bros-3/track-27.mid"
+   },
+   {
+    "title": "Track 28",
+    "path": "albums/nes/super-mario-bros-3/track-28.mid"
+   },
+   {
+    "title": "Track 29",
+    "path": "albums/nes/super-mario-bros-3/track-29.mid"
+   },
+   {
+    "title": "Track 30",
+    "path": "albums/nes/super-mario-bros-3/track-30.mid"
+   },
+   {
+    "title": "Track 31",
+    "path": "albums/nes/super-mario-bros-3/track-31.mid"
+   },
+   {
+    "title": "Track 32",
+    "path": "albums/nes/super-mario-bros-3/track-32.mid"
+   },
+   {
+    "title": "Track 33",
+    "path": "albums/nes/super-mario-bros-3/track-33.mid"
+   },
+   {
+    "title": "Track 34",
+    "path": "albums/nes/super-mario-bros-3/track-34.mid"
+   },
+   {
+    "title": "Track 35",
+    "path": "albums/nes/super-mario-bros-3/track-35.mid"
+   },
+   {
+    "title": "Track 36",
+    "path": "albums/nes/super-mario-bros-3/track-36.mid"
+   },
+   {
+    "title": "Track 37",
+    "path": "albums/nes/super-mario-bros-3/track-37.mid"
+   },
+   {
+    "title": "Track 38",
+    "path": "albums/nes/super-mario-bros-3/track-38.mid"
+   },
+   {
+    "title": "Track 39",
+    "path": "albums/nes/super-mario-bros-3/track-39.mid"
+   },
+   {
+    "title": "Track 40",
+    "path": "albums/nes/super-mario-bros-3/track-40.mid"
+   },
+   {
+    "title": "Track 41",
+    "path": "albums/nes/super-mario-bros-3/track-41.mid"
+   },
+   {
+    "title": "Track 42",
+    "path": "albums/nes/super-mario-bros-3/track-42.mid"
+   },
+   {
+    "title": "Track 43",
+    "path": "albums/nes/super-mario-bros-3/track-43.mid"
+   },
+   {
+    "title": "Track 44",
+    "path": "albums/nes/super-mario-bros-3/track-44.mid"
+   },
+   {
+    "title": "Track 45",
+    "path": "albums/nes/super-mario-bros-3/track-45.mid"
+   },
+   {
+    "title": "Track 46",
+    "path": "albums/nes/super-mario-bros-3/track-46.mid"
+   },
+   {
+    "title": "Track 47",
+    "path": "albums/nes/super-mario-bros-3/track-47.mid"
+   },
+   {
+    "title": "Track 48",
+    "path": "albums/nes/super-mario-bros-3/track-48.mid"
+   },
+   {
+    "title": "Track 49",
+    "path": "albums/nes/super-mario-bros-3/track-49.mid"
+   },
+   {
+    "title": "Track 50",
+    "path": "albums/nes/super-mario-bros-3/track-50.mid"
+   },
+   {
+    "title": "Track 51",
+    "path": "albums/nes/super-mario-bros-3/track-51.mid"
+   },
+   {
+    "title": "Track 52",
+    "path": "albums/nes/super-mario-bros-3/track-52.mid"
+   },
+   {
+    "title": "Track 53",
+    "path": "albums/nes/super-mario-bros-3/track-53.mid"
+   },
+   {
+    "title": "Track 54",
+    "path": "albums/nes/super-mario-bros-3/track-54.mid"
+   },
+   {
+    "title": "Track 55",
+    "path": "albums/nes/super-mario-bros-3/track-55.mid"
+   },
+   {
+    "title": "Track 56",
+    "path": "albums/nes/super-mario-bros-3/track-56.mid"
+   },
+   {
+    "title": "Track 57",
+    "path": "albums/nes/super-mario-bros-3/track-57.mid"
+   },
+   {
+    "title": "Track 58",
+    "path": "albums/nes/super-mario-bros-3/track-58.mid"
+   },
+   {
+    "title": "Track 59",
+    "path": "albums/nes/super-mario-bros-3/track-59.mid"
+   },
+   {
+    "title": "Track 60",
+    "path": "albums/nes/super-mario-bros-3/track-60.mid"
+   }
+  ]
+ },
+ {
+  "title": "TMNT 2",
+  "songs": [
+   {
+    "title": "Boss A",
+    "path": "albums/nes/tmnt-2/boss-a.mid"
+   },
+   {
+    "title": "Boss B",
+    "path": "albums/nes/tmnt-2/boss-b.mid"
+   },
+   {
+    "title": "Boss C",
+    "path": "albums/nes/tmnt-2/boss-c.mid"
+   },
+   {
+    "title": "Credits",
+    "path": "albums/nes/tmnt-2/credits.mid"
+   },
+   {
+    "title": "Cutscene A",
+    "path": "albums/nes/tmnt-2/cutscene-a.mid"
+   },
+   {
+    "title": "Cutscene B",
+    "path": "albums/nes/tmnt-2/cutscene-b.mid"
+   },
+   {
+    "title": "Cutscene C",
+    "path": "albums/nes/tmnt-2/cutscene-c.mid"
+   },
+   {
+    "title": "Cutscene D",
+    "path": "albums/nes/tmnt-2/cutscene-d.mid"
+   },
+   {
+    "title": "Cutscene E",
+    "path": "albums/nes/tmnt-2/cutscene-e.mid"
+   },
+   {
+    "title": "Cutscene F",
+    "path": "albums/nes/tmnt-2/cutscene-f.mid"
+   },
+   {
+    "title": "Epilogue",
+    "path": "albums/nes/tmnt-2/epilogue.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/nes/tmnt-2/game-over.mid"
+   },
+   {
+    "title": "Scene 1",
+    "path": "albums/nes/tmnt-2/scene-1.mid"
+   },
+   {
+    "title": "Scene 2A",
+    "path": "albums/nes/tmnt-2/scene-2a.mid"
+   },
+   {
+    "title": "Scene 2B",
+    "path": "albums/nes/tmnt-2/scene-2b.mid"
+   },
+   {
+    "title": "Scene 3A",
+    "path": "albums/nes/tmnt-2/scene-3a.mid"
+   },
+   {
+    "title": "Scene 3B & 5",
+    "path": "albums/nes/tmnt-2/scene-3b-5.mid"
+   },
+   {
+    "title": "Scene 4A",
+    "path": "albums/nes/tmnt-2/scene-4a.mid"
+   },
+   {
+    "title": "Scene 4B",
+    "path": "albums/nes/tmnt-2/scene-4b.mid"
+   },
+   {
+    "title": "Scene 6",
+    "path": "albums/nes/tmnt-2/scene-6.mid"
+   },
+   {
+    "title": "Scene 7",
+    "path": "albums/nes/tmnt-2/scene-7.mid"
+   },
+   {
+    "title": "Scene Cleared A",
+    "path": "albums/nes/tmnt-2/scene-cleared-a.mid"
+   },
+   {
+    "title": "Scene Cleared B",
+    "path": "albums/nes/tmnt-2/scene-cleared-b.mid"
+   },
+   {
+    "title": "Selection",
+    "path": "albums/nes/tmnt-2/selection.mid"
    }
   ]
  }
