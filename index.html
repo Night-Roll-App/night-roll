@@ -13227,7 +13227,6 @@ const CHIPS = {
         render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
         renderRate: 44100,
         parseAsync: M => async (bytes, name) => { const psf = M.parsePSF(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
-        parse: M => () => { throw new Error("PSF parses asynchronously"); },
         capture: async (M, parsed, secs, onProgress, sess) => {
           const inflate = psfInflater(); // no browser inflater (the vm tests): loadPSFChain falls back to node:zlib
           const readLib = n => { const f = sess && sess.libs && sess.libs[n.toLowerCase()]; if (!f) throw new Error("this song needs its library file " + n + " — pick it together with the songs"); return f.bytes; };

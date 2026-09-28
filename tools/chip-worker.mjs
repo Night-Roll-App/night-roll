@@ -50,7 +50,7 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
     lead: () => 0,
     render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
     channels: null, // per song: every Float32Array the render returns
-  }
+  },
   usf: { // Nintendo 64: the game's sound bank through n64/render.mjs; the set's lib arrives in `libs`
     parse: M => (b, libs) => ({bytes: b, libs: libs || {}}),
     run: async (M, parsed, n, secs, prog) => {
@@ -65,7 +65,7 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
     lead: () => 0,
     render: (M, res, o) => M.renderN64(res.result, {set: res.set, banks: res.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds, meter: {tsNum: 4, tsDen: 4}}),
     channels: null,
-  },,
+  },
   spc: {
     parse: M => b => M.parseSPC(b),
     run: async (M, parsed, n, secs, prog) => ({cap: await M.runSPCAsync(parsed, secs, prog)}),
