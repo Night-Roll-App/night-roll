@@ -3547,6 +3547,39 @@
   ]
  },
  {
+  "title": "Tetris",
+  "songs": [
+   {
+    "title": "Track 01",
+    "path": "albums/nes/tetris/track-01.mid"
+   },
+   {
+    "title": "Track 02",
+    "path": "albums/nes/tetris/track-02.mid"
+   },
+   {
+    "title": "Track 03",
+    "path": "albums/nes/tetris/track-03.mid"
+   },
+   {
+    "title": "Track 04",
+    "path": "albums/nes/tetris/track-04.mid"
+   },
+   {
+    "title": "Track 05",
+    "path": "albums/nes/tetris/track-05.mid"
+   },
+   {
+    "title": "Track 06",
+    "path": "albums/nes/tetris/track-06.mid"
+   },
+   {
+    "title": "Track 07",
+    "path": "albums/nes/tetris/track-07.mid"
+   }
+  ]
+ },
+ {
   "title": "The Legend of Zelda",
   "songs": [
    {
