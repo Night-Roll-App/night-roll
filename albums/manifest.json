@@ -6809,7 +6809,7 @@
   ]
  },
  {
-  "title": "Tetris",
+  "title": "Tetris (Bullet-Proof Software)",
   "songs": [
    {
     "title": "Track 01",
@@ -6838,6 +6838,39 @@
    {
     "title": "Track 07",
     "path": "albums/nes/tetris/track-07.mid"
+   }
+  ]
+ },
+ {
+  "title": "Tetris (Nintendo)",
+  "songs": [
+   {
+    "title": "B-Type: Success!",
+    "path": "albums/nes/tetris-nintendo/b-type-success.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/nes/tetris-nintendo/ending.mid"
+   },
+   {
+    "title": "High Score (Tetris Master)",
+    "path": "albums/nes/tetris-nintendo/high-score-tetris-master.mid"
+   },
+   {
+    "title": "Music 1",
+    "path": "albums/nes/tetris-nintendo/music-1.mid"
+   },
+   {
+    "title": "Music 2",
+    "path": "albums/nes/tetris-nintendo/music-2.mid"
+   },
+   {
+    "title": "Music 3",
+    "path": "albums/nes/tetris-nintendo/music-3.mid"
+   },
+   {
+    "title": "Unknown (Track 1)",
+    "path": "albums/nes/tetris-nintendo/unknown-track-1.mid"
    }
   ]
  },
