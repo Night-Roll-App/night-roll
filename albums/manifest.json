@@ -1948,6 +1948,103 @@
   ]
  },
  {
+  "title": "Final Fantasy II",
+  "songs": [
+   {
+    "title": "Ancient Castle",
+    "path": "albums/nes/final-fantasy-ii/ancient-castle.mid"
+   },
+   {
+    "title": "Battle Scene 1",
+    "path": "albums/nes/final-fantasy-ii/battle-scene-1.mid"
+   },
+   {
+    "title": "Battle Scene 2",
+    "path": "albums/nes/final-fantasy-ii/battle-scene-2.mid"
+   },
+   {
+    "title": "Castle Pandemonium",
+    "path": "albums/nes/final-fantasy-ii/castle-pandemonium.mid"
+   },
+   {
+    "title": "Chocobo Theme",
+    "path": "albums/nes/final-fantasy-ii/chocobo-theme.mid"
+   },
+   {
+    "title": "Dead Music",
+    "path": "albums/nes/final-fantasy-ii/dead-music.mid"
+   },
+   {
+    "title": "Dungeon",
+    "path": "albums/nes/final-fantasy-ii/dungeon.mid"
+   },
+   {
+    "title": "Escape!",
+    "path": "albums/nes/final-fantasy-ii/escape.mid"
+   },
+   {
+    "title": "Fanfare",
+    "path": "albums/nes/final-fantasy-ii/fanfare.mid"
+   },
+   {
+    "title": "Finale",
+    "path": "albums/nes/final-fantasy-ii/finale.mid"
+   },
+   {
+    "title": "Imperial Army Theme",
+    "path": "albums/nes/final-fantasy-ii/imperial-army-theme.mid"
+   },
+   {
+    "title": "Joining the Team",
+    "path": "albums/nes/final-fantasy-ii/joining-the-team.mid"
+   },
+   {
+    "title": "Magician's Tower",
+    "path": "albums/nes/final-fantasy-ii/magician-s-tower.mid"
+   },
+   {
+    "title": "Main Theme",
+    "path": "albums/nes/final-fantasy-ii/main-theme.mid"
+   },
+   {
+    "title": "Rebel Army Theme",
+    "path": "albums/nes/final-fantasy-ii/rebel-army-theme.mid"
+   },
+   {
+    "title": "Reunion",
+    "path": "albums/nes/final-fantasy-ii/reunion.mid"
+   },
+   {
+    "title": "Revivification",
+    "path": "albums/nes/final-fantasy-ii/revivification.mid"
+   },
+   {
+    "title": "Temptation of the Princess",
+    "path": "albums/nes/final-fantasy-ii/temptation-of-the-princess.mid"
+   },
+   {
+    "title": "The Emperor's Revival",
+    "path": "albums/nes/final-fantasy-ii/the-emperor-s-revival.mid"
+   },
+   {
+    "title": "The Prelude",
+    "path": "albums/nes/final-fantasy-ii/the-prelude.mid"
+   },
+   {
+    "title": "Town",
+    "path": "albums/nes/final-fantasy-ii/town.mid"
+   },
+   {
+    "title": "Victory",
+    "path": "albums/nes/final-fantasy-ii/victory.mid"
+   },
+   {
+    "title": "Waltz",
+    "path": "albums/nes/final-fantasy-ii/waltz.mid"
+   }
+  ]
+ },
+ {
   "title": "Final Fantasy Legend",
   "songs": [
    {

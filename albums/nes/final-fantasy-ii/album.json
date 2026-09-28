@@ -1,0 +1,108 @@
+{
+ "title": "Final Fantasy II",
+ "order": 50,
+ "songs": {
+  "escape": "Escape!",
+  "joining-the-team": "Joining the Team",
+  "magician-s-tower": "Magician's Tower",
+  "temptation-of-the-princess": "Temptation of the Princess",
+  "the-emperor-s-revival": "The Emperor's Revival"
+ },
+ "nsf": {
+  "vault": "final-fantasy-ii.nsf",
+  "tracks": {
+   "ancient-castle": {
+    "n": 13,
+    "secs": 21.182486
+   },
+   "battle-scene-1": {
+    "n": 19,
+    "secs": 42.398304
+   },
+   "battle-scene-2": {
+    "n": 20,
+    "secs": 67.297308
+   },
+   "castle-pandemonium": {
+    "n": 12,
+    "secs": 27.432236
+   },
+   "chocobo-theme": {
+    "n": 3,
+    "secs": 6.866392
+   },
+   "dead-music": {
+    "n": 23,
+    "secs": 19.799208
+   },
+   "dungeon": {
+    "n": 16,
+    "secs": 47.99808
+   },
+   "escape": {
+    "n": 27,
+    "secs": 5.649774
+   },
+   "fanfare": {
+    "n": 8,
+    "secs": 13.982774000000001
+   },
+   "finale": {
+    "n": 6,
+    "secs": 299.988
+   },
+   "imperial-army-theme": {
+    "n": 15,
+    "secs": 40.381718
+   },
+   "joining-the-team": {
+    "n": 11,
+    "secs": 15.982694
+   },
+   "magician-s-tower": {
+    "n": 14,
+    "secs": 37.99848
+   },
+   "main-theme": {
+    "n": 4,
+    "secs": 39.848406
+   },
+   "rebel-army-theme": {
+    "n": 18,
+    "secs": 31.99872
+   },
+   "reunion": {
+    "n": 26,
+    "secs": 26.982254
+   },
+   "revivification": {
+    "n": 25,
+    "secs": 6.633068
+   },
+   "temptation-of-the-princess": {
+    "n": 24,
+    "secs": 10.91623
+   },
+   "the-emperor-s-revival": {
+    "n": 5,
+    "secs": 7.99968
+   },
+   "the-prelude": {
+    "n": 1,
+    "secs": 38.448462
+   },
+   "town": {
+    "n": 17,
+    "secs": 48.598056
+   },
+   "victory": {
+    "n": 22,
+    "secs": 17.265976000000002
+   },
+   "waltz": {
+    "n": 28,
+    "secs": 16.366012
+   }
+  }
+ }
+}
