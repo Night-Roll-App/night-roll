@@ -1,0 +1,962 @@
+{
+ "title": "EarthBound",
+ "order": 50,
+ "songs": {
+  "a-flash-of-memory": "A Flash of Memory",
+  "a-good-night-s-rest": "A Good Night's Rest",
+  "ambush": "Ambush!",
+  "apple-kid-s-theme": "Apple Kid's Theme",
+  "bad-morning-to-you": "Bad Morning to You",
+  "battle-against-a-machine": "Battle Against a Machine",
+  "battle-against-a-mobile-opponent": "Battle Against a Mobile Opponent",
+  "battle-against-a-weak-opponent": "Battle Against a Weak Opponent",
+  "battle-against-a-weird-opponent": "Battle Against a Weird Opponent",
+  "battle-against-an-unsettling-opponent": "Battle Against an Unsettling Opponent",
+  "bed-and-breakfast": "Bed and Breakfast",
+  "belch-s-factory": "Belch's Factory",
+  "boris-cocktail": "Boris' Cocktail",
+  "buy-somethin-will-ya": "Buy Somethin' Will Ya!",
+  "buzz-buzz-s-demise": "Buzz Buzz's Demise",
+  "buzz-buzz-s-prophecy": "Buzz Buzz's Prophecy",
+  "caverns-of-winters": "Caverns of Winters",
+  "choose-a-file": "Choose a File",
+  "dead-end-chaos-theatre": "Dead-End Chaos Theatre",
+  "deeper-into-ness-subconscious": "Deeper into Ness' Subconscious",
+  "dr-andonuts-lab": "Dr. Andonuts' Lab",
+  "escargo-express-at-your-service": "Escargo Express at Your Service!",
+  "falling-underground": "Falling Underground!",
+  "get-on-the-bus": "Get on the Bus",
+  "giygas-intimidation": "Giygas' Intimidation",
+  "giygas-intro": "Giygas' Intro",
+  "giygas-is-fatally-wounded": "Giygas is Fatally Wounded!",
+  "giygas-is-wounded": "Giygas is Wounded!",
+  "giygas-lair": "Giygas' Lair",
+  "giygas-static": "Giygas' Static",
+  "going-down": "Going Down!",
+  "good-friends-bad-friends": "Good Friends, Bad Friends",
+  "happy-happy-is-blue": "Happy-Happy is Blue",
+  "in-dalaam-there-is-a-warrior": "In Dalaam, There is a Warrior",
+  "in-winters-there-is-a-genius": "In Winters, There is a Genius",
+  "inside-the-dungeon": "Inside the Dungeon",
+  "kraken-of-the-sea": "Kraken of the Sea",
+  "master-of-the-stars": "Master of the Stars",
+  "morning-in-the-desert": "Morning in the Desert",
+  "ness-awakens-from-the-nightmare": "Ness Awakens from the Nightmare",
+  "ness-bike": "Ness' Bike",
+  "now-let-s-go": "Now, Let's Go!",
+  "ok-ssuka": "OK 'Ssuka?",
+  "one-fateful-night": "One Fateful Night...",
+  "onett-s-arcade": "Onett's Arcade",
+  "onett-s-trumpet-player": "Onett's Trumpet Player",
+  "paula-s-theme": "Paula's Theme",
+  "pokey-means-business": "Pokey Means Business!",
+  "pokey-s-house-buzz-buzz": "Pokey's House (Buzz Buzz)",
+  "pokey-s-house": "Pokey's House",
+  "prayer-for-safety": "Prayer for Safety",
+  "runaway-five-left-the-building": "Runaway Five Left the Building!",
+  "runaway-five-on-the-move": "Runaway Five on the Move!",
+  "runaway-five-s-final-performance": "Runaway Five's Final Performance",
+  "runaway-five-the-daily-show": "Runaway Five ~ The Daily Show",
+  "runaway-five-to-the-rescue": "Runaway Five to the Rescue!",
+  "sailing-to-scaraba": "Sailing to Scaraba",
+  "sanctuary-guardian-s-challenge": "Sanctuary Guardian's Challenge",
+  "save-the-miners": "Save the Miners!",
+  "sea-of-eden": "Sea of Eden",
+  "smiles-and-tears": "Smiles and Tears",
+  "someone-s-knocking-at-the-door": "Someone's Knocking at the Door",
+  "sound-stone-fire-spring-complete": "Sound Stone ~ Fire Spring (Complete)",
+  "sound-stone-fire-spring": "Sound Stone ~ Fire Spring",
+  "sound-stone-giant-step-complete": "Sound Stone ~ Giant Step (Complete)",
+  "sound-stone-giant-step": "Sound Stone ~ Giant Step",
+  "sound-stone-lilliput-steps-complete": "Sound Stone ~ Lilliput Steps (Complete)",
+  "sound-stone-lilliput-steps": "Sound Stone ~ Lilliput Steps",
+  "sound-stone-lumine-hall-complete": "Sound Stone ~ Lumine Hall (Complete)",
+  "sound-stone-lumine-hall": "Sound Stone ~ Lumine Hall",
+  "sound-stone-magnet-hill-complete": "Sound Stone ~ Magnet Hill (Complete)",
+  "sound-stone-magnet-hill": "Sound Stone ~ Magnet Hill",
+  "sound-stone-milky-well-complete": "Sound Stone ~ Milky Well (Complete)",
+  "sound-stone-milky-well": "Sound Stone ~ Milky Well",
+  "sound-stone-no-sounds-complete": "Sound Stone ~ No Sounds (Complete)",
+  "sound-stone-no-sounds": "Sound Stone ~ No Sounds",
+  "sound-stone-pink-cloud-complete": "Sound Stone ~ Pink Cloud (Complete)",
+  "sound-stone-pink-cloud": "Sound Stone ~ Pink Cloud",
+  "sound-stone-rainy-circle-complete": "Sound Stone ~ Rainy Circle (Complete)",
+  "sound-stone-rainy-circle": "Sound Stone ~ Rainy Circle",
+  "spooky": "Spooky...",
+  "summers-eternal-tourist-trap": "Summers, Eternal Tourist Trap",
+  "sunrise-onett-theme": "Sunrise & Onett Theme",
+  "tessie-has-been-sighted": "Tessie Has Been Sighted!",
+  "tessie": "Tessie!",
+  "that-was-easy": "That Was Easy!",
+  "the-evil-giygas-attacks-part-1": "The Evil Giygas Attacks! (part 1)",
+  "the-evil-giygas-attacks-part-2": "The Evil Giygas Attacks! (part 2)",
+  "the-floating-kingdom-of-dalaam": "The Floating Kingdom of Dalaam",
+  "the-heroes-return-part-1": "The Heroes Return (part 1)",
+  "the-heroes-return-part-2": "The Heroes Return (part 2)",
+  "the-metropolis-of-fourside": "The Metropolis of Fourside",
+  "the-monkeys-maze": "The Monkeys' Maze",
+  "the-nightmare-begins": "The Nightmare Begins...",
+  "the-sphinx-s-puzzle-1": "The Sphinx's Puzzle 1",
+  "the-sphinx-s-puzzle-2": "The Sphinx's Puzzle 2",
+  "the-sphinx-s-puzzle-3": "The Sphinx's Puzzle 3",
+  "the-sphinx-s-puzzle-4": "The Sphinx's Puzzle 4",
+  "the-sphinx-s-puzzle-5": "The Sphinx's Puzzle 5",
+  "the-sphinx-s-puzzle-solved": "The Sphinx's Puzzle Solved!",
+  "the-tendas-cave": "The Tendas' Cave",
+  "threed-free-at-last": "Threed, Free at Last",
+  "threed-zombie-central": "Threed, Zombie Central",
+  "topolla-theatre-home-to-the-one-only-venus": "Topolla Theatre, Home to the One & Only Venus",
+  "venus-live": "Venus Live!",
+  "welcome-to-your-sanctuary": "Welcome to Your Sanctuary",
+  "what-a-great-picture": "What a Great Picture!",
+  "what-an-annoying-knock": "What an Annoying Knock!",
+  "whoa": "Whoa!",
+  "whoops": "Whoops!",
+  "you-defeated-the-boss": "You Defeated the Boss!",
+  "you-gained-a-level": "You Gained a Level!",
+  "you-ve-come-far-ness": "You've Come Far, Ness",
+  "you-ve-got-a-new-friend": "You've Got a New Friend!",
+  "you-win": "You Win!",
+  "your-name-please-noiseless": "Your Name, Please (Noiseless)",
+  "your-name-please": "Your Name, Please",
+  "your-sanctuary-fire-spring": "Your Sanctuary ~ Fire Spring",
+  "your-sanctuary-giant-step": "Your Sanctuary ~ Giant Step",
+  "your-sanctuary-lilliput-steps": "Your Sanctuary ~ Lilliput Steps",
+  "your-sanctuary-lumine-hall": "Your Sanctuary ~ Lumine Hall",
+  "your-sanctuary-magnet-hill": "Your Sanctuary ~ Magnet Hill",
+  "your-sanctuary-milky-well": "Your Sanctuary ~ Milky Well",
+  "your-sanctuary-pink-cloud": "Your Sanctuary ~ Pink Cloud",
+  "your-sanctuary-rainy-circle": "Your Sanctuary ~ Rainy Circle"
+ },
+ "nsf": {
+  "vault": "earthbound/",
+  "tracks": {
+   "a-bad-dream": {
+    "n": 1,
+    "secs": 78
+   },
+   "a-flash-of-memory": {
+    "n": 1,
+    "secs": 38
+   },
+   "a-good-buddy": {
+    "n": 1,
+    "secs": 11.91
+   },
+   "a-good-night-s-rest": {
+    "n": 1,
+    "secs": 12
+   },
+   "alien-invasion-1": {
+    "n": 1,
+    "secs": 72.93
+   },
+   "alien-invasion-2": {
+    "n": 1,
+    "secs": 51.94
+   },
+   "ambush": {
+    "n": 1,
+    "secs": 12
+   },
+   "apple-kid-s-theme": {
+    "n": 1,
+    "secs": 62.93
+   },
+   "bad-morning-to-you": {
+    "n": 1,
+    "secs": 22.95
+   },
+   "battle-against-a-machine": {
+    "n": 1,
+    "secs": 96
+   },
+   "battle-against-a-mobile-opponent": {
+    "n": 1,
+    "secs": 64
+   },
+   "battle-against-a-weak-opponent": {
+    "n": 1,
+    "secs": 59
+   },
+   "battle-against-a-weird-opponent": {
+    "n": 1,
+    "secs": 76
+   },
+   "battle-against-an-unsettling-opponent": {
+    "n": 1,
+    "secs": 117
+   },
+   "battle-against-belch": {
+    "n": 1,
+    "secs": 87
+   },
+   "bazaar": {
+    "n": 1,
+    "secs": 128
+   },
+   "because-i-love-you": {
+    "n": 1,
+    "secs": 223
+   },
+   "bed-and-breakfast": {
+    "n": 1,
+    "secs": 30
+   },
+   "belch-s-factory": {
+    "n": 1,
+    "secs": 123.96000000000001
+   },
+   "boris-cocktail": {
+    "n": 1,
+    "secs": 89
+   },
+   "boy-meets-girl": {
+    "n": 1,
+    "secs": 129.96
+   },
+   "burp": {
+    "n": 1,
+    "secs": 12
+   },
+   "buy-somethin-will-ya": {
+    "n": 1,
+    "secs": 64
+   },
+   "buzz-buzz-s-demise": {
+    "n": 1,
+    "secs": 12
+   },
+   "buzz-buzz-s-prophecy": {
+    "n": 1,
+    "secs": 88.89
+   },
+   "caverns-of-winters": {
+    "n": 1,
+    "secs": 78.96000000000001
+   },
+   "choose-a-file": {
+    "n": 1,
+    "secs": 61
+   },
+   "dangerous-caves": {
+    "n": 1,
+    "secs": 65.93
+   },
+   "dead-end-chaos-theatre": {
+    "n": 1,
+    "secs": 110
+   },
+   "deeper-into-ness-subconscious": {
+    "n": 1,
+    "secs": 87
+   },
+   "dr-andonuts-lab": {
+    "n": 1,
+    "secs": 79
+   },
+   "drilling": {
+    "n": 1,
+    "secs": 31
+   },
+   "eight-melodies": {
+    "n": 1,
+    "secs": 131.96
+   },
+   "enjoy-your-stay": {
+    "n": 1,
+    "secs": 27.95
+   },
+   "escargo-express-at-your-service": {
+    "n": 1,
+    "secs": 29
+   },
+   "evil-mani-mani-statue": {
+    "n": 1,
+    "secs": 12
+   },
+   "falling-underground": {
+    "n": 1,
+    "secs": 12
+   },
+   "flowing-water": {
+    "n": 1,
+    "secs": 34.93
+   },
+   "franky": {
+    "n": 1,
+    "secs": 68
+   },
+   "friendly-neighbors": {
+    "n": 1,
+    "secs": 25.97
+   },
+   "get-on-the-bus": {
+    "n": 1,
+    "secs": 89
+   },
+   "giygas-disintegrates": {
+    "n": 1,
+    "secs": 19
+   },
+   "giygas-intimidation": {
+    "n": 1,
+    "secs": 60
+   },
+   "giygas-intro": {
+    "n": 1,
+    "secs": 124
+   },
+   "giygas-is-fatally-wounded": {
+    "n": 1,
+    "secs": 19
+   },
+   "giygas-is-wounded": {
+    "n": 1,
+    "secs": 41.88
+   },
+   "giygas-lair": {
+    "n": 1,
+    "secs": 45.910000000000004
+   },
+   "giygas-static": {
+    "n": 1,
+    "secs": 12
+   },
+   "giygas-stirs": {
+    "n": 1,
+    "secs": 40
+   },
+   "going-down": {
+    "n": 1,
+    "secs": 12
+   },
+   "good-friends-bad-friends": {
+    "n": 1,
+    "secs": 232
+   },
+   "happy-happy-is-blue": {
+    "n": 1,
+    "secs": 144.95000000000002
+   },
+   "heartless-hotel": {
+    "n": 1,
+    "secs": 49
+   },
+   "hi-hi-hi": {
+    "n": 1,
+    "secs": 83.97
+   },
+   "hidden-track": {
+    "n": 1,
+    "secs": 72
+   },
+   "home-sweet-home": {
+    "n": 1,
+    "secs": 105
+   },
+   "hospital": {
+    "n": 1,
+    "secs": 112.97
+   },
+   "in-dalaam-there-is-a-warrior": {
+    "n": 1,
+    "secs": 46.980000000000004
+   },
+   "in-winters-there-is-a-genius": {
+    "n": 1,
+    "secs": 171.95000000000002
+   },
+   "inside-the-dungeon": {
+    "n": 1,
+    "secs": 44.94
+   },
+   "key-item-fanfare": {
+    "n": 1,
+    "secs": 12
+   },
+   "kraken-of-the-sea": {
+    "n": 1,
+    "secs": 164
+   },
+   "lava-springs": {
+    "n": 1,
+    "secs": 63
+   },
+   "magic-butterfly": {
+    "n": 1,
+    "secs": 12
+   },
+   "master-of-the-stars": {
+    "n": 1,
+    "secs": 12
+   },
+   "mechanical-tinkering": {
+    "n": 1,
+    "secs": 19
+   },
+   "megaton-walk": {
+    "n": 1,
+    "secs": 25
+   },
+   "moonside-swing": {
+    "n": 1,
+    "secs": 28.94
+   },
+   "morning-in-the-desert": {
+    "n": 1,
+    "secs": 21
+   },
+   "mu-training": {
+    "n": 1,
+    "secs": 28
+   },
+   "mysterious-crash": {
+    "n": 1,
+    "secs": 11.96
+   },
+   "ness-awakens-from-the-nightmare": {
+    "n": 1,
+    "secs": 40
+   },
+   "ness-bike": {
+    "n": 1,
+    "secs": 77
+   },
+   "now-let-s-go": {
+    "n": 1,
+    "secs": 12
+   },
+   "ok-ssuka": {
+    "n": 1,
+    "secs": 12
+   },
+   "oncoming-boss": {
+    "n": 1,
+    "secs": 12
+   },
+   "oncoming-foe": {
+    "n": 1,
+    "secs": 12
+   },
+   "one-fateful-night": {
+    "n": 1,
+    "secs": 38
+   },
+   "onett-buzz-buzz-1": {
+    "n": 1,
+    "secs": 76
+   },
+   "onett-buzz-buzz-2": {
+    "n": 1,
+    "secs": 39
+   },
+   "onett-buzz-buzz-3": {
+    "n": 1,
+    "secs": 198
+   },
+   "onett-night-1": {
+    "n": 1,
+    "secs": 74
+   },
+   "onett-night-2": {
+    "n": 1,
+    "secs": 77
+   },
+   "onett-night-3": {
+    "n": 1,
+    "secs": 38
+   },
+   "onett-s-arcade": {
+    "n": 1,
+    "secs": 21
+   },
+   "onett-s-trumpet-player": {
+    "n": 1,
+    "secs": 12
+   },
+   "onett-theme": {
+    "n": 1,
+    "secs": 135.97
+   },
+   "opening-credits": {
+    "n": 1,
+    "secs": 74
+   },
+   "otherworldly-foe": {
+    "n": 1,
+    "secs": 99
+   },
+   "paula-s-theme": {
+    "n": 1,
+    "secs": 64
+   },
+   "peaceful-rest-valley": {
+    "n": 1,
+    "secs": 68.94
+   },
+   "phase-distorter-failed": {
+    "n": 1,
+    "secs": 12
+   },
+   "phase-distorter-success": {
+    "n": 1,
+    "secs": 11.93
+   },
+   "phone": {
+    "n": 1,
+    "secs": 12
+   },
+   "pink-cloud-shrine": {
+    "n": 1,
+    "secs": 85.96000000000001
+   },
+   "pokey-means-business": {
+    "n": 1,
+    "secs": 212
+   },
+   "pokey-s-house-buzz-buzz": {
+    "n": 1,
+    "secs": 41
+   },
+   "pokey-s-house": {
+    "n": 1,
+    "secs": 41
+   },
+   "pokey": {
+    "n": 1,
+    "secs": 39
+   },
+   "prayer-for-safety": {
+    "n": 1,
+    "secs": 111
+   },
+   "pyramid": {
+    "n": 1,
+    "secs": 95.94
+   },
+   "rough-landing": {
+    "n": 1,
+    "secs": 12
+   },
+   "rude-awakening": {
+    "n": 1,
+    "secs": 65
+   },
+   "runaway-five-left-the-building": {
+    "n": 1,
+    "secs": 66
+   },
+   "runaway-five-on-the-move": {
+    "n": 1,
+    "secs": 78
+   },
+   "runaway-five-s-final-performance": {
+    "n": 1,
+    "secs": 71
+   },
+   "runaway-five-the-daily-show": {
+    "n": 1,
+    "secs": 61
+   },
+   "runaway-five-to-the-rescue": {
+    "n": 1,
+    "secs": 17
+   },
+   "sailing-to-scaraba": {
+    "n": 1,
+    "secs": 66
+   },
+   "sanctuary-guardian-s-challenge": {
+    "n": 1,
+    "secs": 13
+   },
+   "sanctuary-guardian": {
+    "n": 1,
+    "secs": 133
+   },
+   "saturn-valley-caverns": {
+    "n": 1,
+    "secs": 44.94
+   },
+   "save-the-miners": {
+    "n": 1,
+    "secs": 136.91
+   },
+   "sea-of-eden": {
+    "n": 1,
+    "secs": 94
+   },
+   "secret-passage": {
+    "n": 1,
+    "secs": 12
+   },
+   "smiles-and-tears": {
+    "n": 1,
+    "secs": 300
+   },
+   "snowman": {
+    "n": 1,
+    "secs": 136
+   },
+   "someone-s-knocking-at-the-door": {
+    "n": 1,
+    "secs": 34.87
+   },
+   "sound-stone-fire-spring-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-fire-spring": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-giant-step-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-giant-step": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-lilliput-steps-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-lilliput-steps": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-lumine-hall-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-lumine-hall": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-magnet-hill-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-magnet-hill": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-milky-well-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-milky-well": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-no-sounds-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-no-sounds": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-pink-cloud-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-pink-cloud": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-rainy-circle-complete": {
+    "n": 1,
+    "secs": 12
+   },
+   "sound-stone-rainy-circle": {
+    "n": 1,
+    "secs": 12
+   },
+   "spacetoneer": {
+    "n": 1,
+    "secs": 18
+   },
+   "spell-learned": {
+    "n": 1,
+    "secs": 12
+   },
+   "spooky": {
+    "n": 1,
+    "secs": 12
+   },
+   "stonehenge-base-shuts-down": {
+    "n": 1,
+    "secs": 21
+   },
+   "summers-eternal-tourist-trap": {
+    "n": 1,
+    "secs": 79.96000000000001
+   },
+   "sunrise-onett-theme": {
+    "n": 1,
+    "secs": 143
+   },
+   "super-dry-dance": {
+    "n": 1,
+    "secs": 100
+   },
+   "teleportation-end": {
+    "n": 1,
+    "secs": 11.97
+   },
+   "teleportation": {
+    "n": 1,
+    "secs": 12
+   },
+   "tessie-has-been-sighted": {
+    "n": 1,
+    "secs": 21
+   },
+   "tessie": {
+    "n": 1,
+    "secs": 86.94
+   },
+   "that-was-easy": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-cliff-that-time-forgot": {
+    "n": 1,
+    "secs": 18.97
+   },
+   "the-deep-darkness": {
+    "n": 1,
+    "secs": 145
+   },
+   "the-evil-giygas-attacks-part-1": {
+    "n": 1,
+    "secs": 29
+   },
+   "the-evil-giygas-attacks-part-2": {
+    "n": 1,
+    "secs": 15
+   },
+   "the-floating-kingdom-of-dalaam": {
+    "n": 1,
+    "secs": 133.95
+   },
+   "the-heroes-return-part-1": {
+    "n": 1,
+    "secs": 91
+   },
+   "the-heroes-return-part-2": {
+    "n": 1,
+    "secs": 119
+   },
+   "the-jolly-flying-man": {
+    "n": 1,
+    "secs": 41
+   },
+   "the-lost-underworld": {
+    "n": 1,
+    "secs": 179.95000000000002
+   },
+   "the-metropolis-of-fourside": {
+    "n": 1,
+    "secs": 195
+   },
+   "the-monkeys-maze": {
+    "n": 1,
+    "secs": 50.97
+   },
+   "the-nightmare-begins": {
+    "n": 1,
+    "secs": 13
+   },
+   "the-place": {
+    "n": 1,
+    "secs": 59
+   },
+   "the-power": {
+    "n": 1,
+    "secs": 62
+   },
+   "the-sky-runner": {
+    "n": 1,
+    "secs": 117
+   },
+   "the-sphinx-s-puzzle-1": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-sphinx-s-puzzle-2": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-sphinx-s-puzzle-3": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-sphinx-s-puzzle-4": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-sphinx-s-puzzle-5": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-sphinx-s-puzzle-solved": {
+    "n": 1,
+    "secs": 12
+   },
+   "the-submarine": {
+    "n": 1,
+    "secs": 59
+   },
+   "the-tendas-cave": {
+    "n": 1,
+    "secs": 103.95
+   },
+   "the-unforgiving-desert": {
+    "n": 1,
+    "secs": 128
+   },
+   "the-voyage-continues": {
+    "n": 1,
+    "secs": 42
+   },
+   "threed-free-at-last": {
+    "n": 1,
+    "secs": 186.97
+   },
+   "threed-zombie-central": {
+    "n": 1,
+    "secs": 75.95
+   },
+   "title-screen": {
+    "n": 1,
+    "secs": 15
+   },
+   "topolla-theatre-home-to-the-one-only-venus": {
+    "n": 1,
+    "secs": 99
+   },
+   "unidentified-falling-object": {
+    "n": 1,
+    "secs": 20
+   },
+   "unknown-jingle-1": {
+    "n": 1,
+    "secs": 12
+   },
+   "unknown-jingle-2": {
+    "n": 1,
+    "secs": 12
+   },
+   "unused-pokey-jingle": {
+    "n": 1,
+    "secs": 11.93
+   },
+   "venus-live": {
+    "n": 1,
+    "secs": 132
+   },
+   "welcome-home": {
+    "n": 1,
+    "secs": 174
+   },
+   "welcome-to-your-sanctuary": {
+    "n": 1,
+    "secs": 42.94
+   },
+   "what-a-great-picture": {
+    "n": 1,
+    "secs": 31
+   },
+   "what-an-annoying-knock": {
+    "n": 1,
+    "secs": 35
+   },
+   "whoa": {
+    "n": 1,
+    "secs": 12
+   },
+   "whoops": {
+    "n": 1,
+    "secs": 12
+   },
+   "winters-wake-up-call": {
+    "n": 1,
+    "secs": 18
+   },
+   "winters-white": {
+    "n": 1,
+    "secs": 136.92000000000002
+   },
+   "you-defeated-the-boss": {
+    "n": 1,
+    "secs": 11.98
+   },
+   "you-gained-a-level": {
+    "n": 1,
+    "secs": 15
+   },
+   "you-ve-come-far-ness": {
+    "n": 1,
+    "secs": 129
+   },
+   "you-ve-got-a-new-friend": {
+    "n": 1,
+    "secs": 11.63
+   },
+   "you-win": {
+    "n": 1,
+    "secs": 19
+   },
+   "your-name-please-noiseless": {
+    "n": 1,
+    "secs": 182
+   },
+   "your-name-please": {
+    "n": 1,
+    "secs": 182
+   },
+   "your-sanctuary-fire-spring": {
+    "n": 1,
+    "secs": 12
+   },
+   "your-sanctuary-giant-step": {
+    "n": 1,
+    "secs": 12
+   },
+   "your-sanctuary-lilliput-steps": {
+    "n": 1,
+    "secs": 12
+   },
+   "your-sanctuary-lumine-hall": {
+    "n": 1,
+    "secs": 12
+   },
+   "your-sanctuary-magnet-hill": {
+    "n": 1,
+    "secs": 12
+   },
+   "your-sanctuary-milky-well": {
+    "n": 1,
+    "secs": 12
+   },
+   "your-sanctuary-pink-cloud": {
+    "n": 1,
+    "secs": 12
+   },
+   "your-sanctuary-rainy-circle": {
+    "n": 1,
+    "secs": 12
+   },
+   "zombie-paper": {
+    "n": 1,
+    "secs": 45
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}

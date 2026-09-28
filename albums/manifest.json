@@ -837,6 +837,835 @@
   ]
  },
  {
+  "title": "EarthBound",
+  "songs": [
+   {
+    "title": "A Bad Dream",
+    "path": "albums/snes/earthbound/a-bad-dream.mid"
+   },
+   {
+    "title": "A Flash of Memory",
+    "path": "albums/snes/earthbound/a-flash-of-memory.mid"
+   },
+   {
+    "title": "A Good Buddy",
+    "path": "albums/snes/earthbound/a-good-buddy.mid"
+   },
+   {
+    "title": "A Good Night's Rest",
+    "path": "albums/snes/earthbound/a-good-night-s-rest.mid"
+   },
+   {
+    "title": "Alien Invasion 1",
+    "path": "albums/snes/earthbound/alien-invasion-1.mid"
+   },
+   {
+    "title": "Alien Invasion 2",
+    "path": "albums/snes/earthbound/alien-invasion-2.mid"
+   },
+   {
+    "title": "Ambush!",
+    "path": "albums/snes/earthbound/ambush.mid"
+   },
+   {
+    "title": "Apple Kid's Theme",
+    "path": "albums/snes/earthbound/apple-kid-s-theme.mid"
+   },
+   {
+    "title": "Bad Morning to You",
+    "path": "albums/snes/earthbound/bad-morning-to-you.mid"
+   },
+   {
+    "title": "Battle Against a Machine",
+    "path": "albums/snes/earthbound/battle-against-a-machine.mid"
+   },
+   {
+    "title": "Battle Against a Mobile Opponent",
+    "path": "albums/snes/earthbound/battle-against-a-mobile-opponent.mid"
+   },
+   {
+    "title": "Battle Against a Weak Opponent",
+    "path": "albums/snes/earthbound/battle-against-a-weak-opponent.mid"
+   },
+   {
+    "title": "Battle Against a Weird Opponent",
+    "path": "albums/snes/earthbound/battle-against-a-weird-opponent.mid"
+   },
+   {
+    "title": "Battle Against an Unsettling Opponent",
+    "path": "albums/snes/earthbound/battle-against-an-unsettling-opponent.mid"
+   },
+   {
+    "title": "Battle Against Belch",
+    "path": "albums/snes/earthbound/battle-against-belch.mid"
+   },
+   {
+    "title": "Bazaar",
+    "path": "albums/snes/earthbound/bazaar.mid"
+   },
+   {
+    "title": "Because I Love You",
+    "path": "albums/snes/earthbound/because-i-love-you.mid"
+   },
+   {
+    "title": "Bed and Breakfast",
+    "path": "albums/snes/earthbound/bed-and-breakfast.mid"
+   },
+   {
+    "title": "Belch's Factory",
+    "path": "albums/snes/earthbound/belch-s-factory.mid"
+   },
+   {
+    "title": "Boris' Cocktail",
+    "path": "albums/snes/earthbound/boris-cocktail.mid"
+   },
+   {
+    "title": "Boy Meets Girl",
+    "path": "albums/snes/earthbound/boy-meets-girl.mid"
+   },
+   {
+    "title": "Burp",
+    "path": "albums/snes/earthbound/burp.mid"
+   },
+   {
+    "title": "Buy Somethin' Will Ya!",
+    "path": "albums/snes/earthbound/buy-somethin-will-ya.mid"
+   },
+   {
+    "title": "Buzz Buzz's Demise",
+    "path": "albums/snes/earthbound/buzz-buzz-s-demise.mid"
+   },
+   {
+    "title": "Buzz Buzz's Prophecy",
+    "path": "albums/snes/earthbound/buzz-buzz-s-prophecy.mid"
+   },
+   {
+    "title": "Caverns of Winters",
+    "path": "albums/snes/earthbound/caverns-of-winters.mid"
+   },
+   {
+    "title": "Choose a File",
+    "path": "albums/snes/earthbound/choose-a-file.mid"
+   },
+   {
+    "title": "Dangerous Caves",
+    "path": "albums/snes/earthbound/dangerous-caves.mid"
+   },
+   {
+    "title": "Dead-End Chaos Theatre",
+    "path": "albums/snes/earthbound/dead-end-chaos-theatre.mid"
+   },
+   {
+    "title": "Deeper into Ness' Subconscious",
+    "path": "albums/snes/earthbound/deeper-into-ness-subconscious.mid"
+   },
+   {
+    "title": "Dr. Andonuts' Lab",
+    "path": "albums/snes/earthbound/dr-andonuts-lab.mid"
+   },
+   {
+    "title": "Drilling",
+    "path": "albums/snes/earthbound/drilling.mid"
+   },
+   {
+    "title": "Eight Melodies",
+    "path": "albums/snes/earthbound/eight-melodies.mid"
+   },
+   {
+    "title": "Enjoy Your Stay",
+    "path": "albums/snes/earthbound/enjoy-your-stay.mid"
+   },
+   {
+    "title": "Escargo Express at Your Service!",
+    "path": "albums/snes/earthbound/escargo-express-at-your-service.mid"
+   },
+   {
+    "title": "Evil Mani Mani Statue",
+    "path": "albums/snes/earthbound/evil-mani-mani-statue.mid"
+   },
+   {
+    "title": "Falling Underground!",
+    "path": "albums/snes/earthbound/falling-underground.mid"
+   },
+   {
+    "title": "Flowing Water",
+    "path": "albums/snes/earthbound/flowing-water.mid"
+   },
+   {
+    "title": "Franky",
+    "path": "albums/snes/earthbound/franky.mid"
+   },
+   {
+    "title": "Friendly Neighbors",
+    "path": "albums/snes/earthbound/friendly-neighbors.mid"
+   },
+   {
+    "title": "Get on the Bus",
+    "path": "albums/snes/earthbound/get-on-the-bus.mid"
+   },
+   {
+    "title": "Giygas Disintegrates",
+    "path": "albums/snes/earthbound/giygas-disintegrates.mid"
+   },
+   {
+    "title": "Giygas is Fatally Wounded!",
+    "path": "albums/snes/earthbound/giygas-is-fatally-wounded.mid"
+   },
+   {
+    "title": "Giygas is Wounded!",
+    "path": "albums/snes/earthbound/giygas-is-wounded.mid"
+   },
+   {
+    "title": "Giygas Stirs",
+    "path": "albums/snes/earthbound/giygas-stirs.mid"
+   },
+   {
+    "title": "Giygas' Intimidation",
+    "path": "albums/snes/earthbound/giygas-intimidation.mid"
+   },
+   {
+    "title": "Giygas' Intro",
+    "path": "albums/snes/earthbound/giygas-intro.mid"
+   },
+   {
+    "title": "Giygas' Lair",
+    "path": "albums/snes/earthbound/giygas-lair.mid"
+   },
+   {
+    "title": "Giygas' Static",
+    "path": "albums/snes/earthbound/giygas-static.mid"
+   },
+   {
+    "title": "Going Down!",
+    "path": "albums/snes/earthbound/going-down.mid"
+   },
+   {
+    "title": "Good Friends, Bad Friends",
+    "path": "albums/snes/earthbound/good-friends-bad-friends.mid"
+   },
+   {
+    "title": "Happy-Happy is Blue",
+    "path": "albums/snes/earthbound/happy-happy-is-blue.mid"
+   },
+   {
+    "title": "Heartless Hotel",
+    "path": "albums/snes/earthbound/heartless-hotel.mid"
+   },
+   {
+    "title": "Hi Hi Hi",
+    "path": "albums/snes/earthbound/hi-hi-hi.mid"
+   },
+   {
+    "title": "Hidden Track",
+    "path": "albums/snes/earthbound/hidden-track.mid"
+   },
+   {
+    "title": "Home Sweet Home",
+    "path": "albums/snes/earthbound/home-sweet-home.mid"
+   },
+   {
+    "title": "Hospital",
+    "path": "albums/snes/earthbound/hospital.mid"
+   },
+   {
+    "title": "In Dalaam, There is a Warrior",
+    "path": "albums/snes/earthbound/in-dalaam-there-is-a-warrior.mid"
+   },
+   {
+    "title": "In Winters, There is a Genius",
+    "path": "albums/snes/earthbound/in-winters-there-is-a-genius.mid"
+   },
+   {
+    "title": "Inside the Dungeon",
+    "path": "albums/snes/earthbound/inside-the-dungeon.mid"
+   },
+   {
+    "title": "Key Item Fanfare",
+    "path": "albums/snes/earthbound/key-item-fanfare.mid"
+   },
+   {
+    "title": "Kraken of the Sea",
+    "path": "albums/snes/earthbound/kraken-of-the-sea.mid"
+   },
+   {
+    "title": "Lava Springs",
+    "path": "albums/snes/earthbound/lava-springs.mid"
+   },
+   {
+    "title": "Magic Butterfly",
+    "path": "albums/snes/earthbound/magic-butterfly.mid"
+   },
+   {
+    "title": "Master of the Stars",
+    "path": "albums/snes/earthbound/master-of-the-stars.mid"
+   },
+   {
+    "title": "Mechanical Tinkering",
+    "path": "albums/snes/earthbound/mechanical-tinkering.mid"
+   },
+   {
+    "title": "Megaton Walk",
+    "path": "albums/snes/earthbound/megaton-walk.mid"
+   },
+   {
+    "title": "Moonside Swing",
+    "path": "albums/snes/earthbound/moonside-swing.mid"
+   },
+   {
+    "title": "Morning in the Desert",
+    "path": "albums/snes/earthbound/morning-in-the-desert.mid"
+   },
+   {
+    "title": "Mu Training",
+    "path": "albums/snes/earthbound/mu-training.mid"
+   },
+   {
+    "title": "Mysterious Crash",
+    "path": "albums/snes/earthbound/mysterious-crash.mid"
+   },
+   {
+    "title": "Ness Awakens from the Nightmare",
+    "path": "albums/snes/earthbound/ness-awakens-from-the-nightmare.mid"
+   },
+   {
+    "title": "Ness' Bike",
+    "path": "albums/snes/earthbound/ness-bike.mid"
+   },
+   {
+    "title": "Now, Let's Go!",
+    "path": "albums/snes/earthbound/now-let-s-go.mid"
+   },
+   {
+    "title": "OK 'Ssuka?",
+    "path": "albums/snes/earthbound/ok-ssuka.mid"
+   },
+   {
+    "title": "Oncoming Boss",
+    "path": "albums/snes/earthbound/oncoming-boss.mid"
+   },
+   {
+    "title": "Oncoming Foe",
+    "path": "albums/snes/earthbound/oncoming-foe.mid"
+   },
+   {
+    "title": "One Fateful Night...",
+    "path": "albums/snes/earthbound/one-fateful-night.mid"
+   },
+   {
+    "title": "Onett Buzz Buzz 1",
+    "path": "albums/snes/earthbound/onett-buzz-buzz-1.mid"
+   },
+   {
+    "title": "Onett Buzz Buzz 2",
+    "path": "albums/snes/earthbound/onett-buzz-buzz-2.mid"
+   },
+   {
+    "title": "Onett Buzz Buzz 3",
+    "path": "albums/snes/earthbound/onett-buzz-buzz-3.mid"
+   },
+   {
+    "title": "Onett Night 1",
+    "path": "albums/snes/earthbound/onett-night-1.mid"
+   },
+   {
+    "title": "Onett Night 2",
+    "path": "albums/snes/earthbound/onett-night-2.mid"
+   },
+   {
+    "title": "Onett Night 3",
+    "path": "albums/snes/earthbound/onett-night-3.mid"
+   },
+   {
+    "title": "Onett Theme",
+    "path": "albums/snes/earthbound/onett-theme.mid"
+   },
+   {
+    "title": "Onett's Arcade",
+    "path": "albums/snes/earthbound/onett-s-arcade.mid"
+   },
+   {
+    "title": "Onett's Trumpet Player",
+    "path": "albums/snes/earthbound/onett-s-trumpet-player.mid"
+   },
+   {
+    "title": "Opening Credits",
+    "path": "albums/snes/earthbound/opening-credits.mid"
+   },
+   {
+    "title": "Otherworldly Foe",
+    "path": "albums/snes/earthbound/otherworldly-foe.mid"
+   },
+   {
+    "title": "Paula's Theme",
+    "path": "albums/snes/earthbound/paula-s-theme.mid"
+   },
+   {
+    "title": "Peaceful Rest Valley",
+    "path": "albums/snes/earthbound/peaceful-rest-valley.mid"
+   },
+   {
+    "title": "Phase Distorter Failed",
+    "path": "albums/snes/earthbound/phase-distorter-failed.mid"
+   },
+   {
+    "title": "Phase Distorter Success",
+    "path": "albums/snes/earthbound/phase-distorter-success.mid"
+   },
+   {
+    "title": "Phone",
+    "path": "albums/snes/earthbound/phone.mid"
+   },
+   {
+    "title": "Pink Cloud Shrine",
+    "path": "albums/snes/earthbound/pink-cloud-shrine.mid"
+   },
+   {
+    "title": "Pokey",
+    "path": "albums/snes/earthbound/pokey.mid"
+   },
+   {
+    "title": "Pokey Means Business!",
+    "path": "albums/snes/earthbound/pokey-means-business.mid"
+   },
+   {
+    "title": "Pokey's House",
+    "path": "albums/snes/earthbound/pokey-s-house.mid"
+   },
+   {
+    "title": "Pokey's House (Buzz Buzz)",
+    "path": "albums/snes/earthbound/pokey-s-house-buzz-buzz.mid"
+   },
+   {
+    "title": "Prayer for Safety",
+    "path": "albums/snes/earthbound/prayer-for-safety.mid"
+   },
+   {
+    "title": "Pyramid",
+    "path": "albums/snes/earthbound/pyramid.mid"
+   },
+   {
+    "title": "Rough Landing",
+    "path": "albums/snes/earthbound/rough-landing.mid"
+   },
+   {
+    "title": "Rude Awakening",
+    "path": "albums/snes/earthbound/rude-awakening.mid"
+   },
+   {
+    "title": "Runaway Five ~ The Daily Show",
+    "path": "albums/snes/earthbound/runaway-five-the-daily-show.mid"
+   },
+   {
+    "title": "Runaway Five Left the Building!",
+    "path": "albums/snes/earthbound/runaway-five-left-the-building.mid"
+   },
+   {
+    "title": "Runaway Five on the Move!",
+    "path": "albums/snes/earthbound/runaway-five-on-the-move.mid"
+   },
+   {
+    "title": "Runaway Five to the Rescue!",
+    "path": "albums/snes/earthbound/runaway-five-to-the-rescue.mid"
+   },
+   {
+    "title": "Runaway Five's Final Performance",
+    "path": "albums/snes/earthbound/runaway-five-s-final-performance.mid"
+   },
+   {
+    "title": "Sailing to Scaraba",
+    "path": "albums/snes/earthbound/sailing-to-scaraba.mid"
+   },
+   {
+    "title": "Sanctuary Guardian",
+    "path": "albums/snes/earthbound/sanctuary-guardian.mid"
+   },
+   {
+    "title": "Sanctuary Guardian's Challenge",
+    "path": "albums/snes/earthbound/sanctuary-guardian-s-challenge.mid"
+   },
+   {
+    "title": "Saturn Valley Caverns",
+    "path": "albums/snes/earthbound/saturn-valley-caverns.mid"
+   },
+   {
+    "title": "Save the Miners!",
+    "path": "albums/snes/earthbound/save-the-miners.mid"
+   },
+   {
+    "title": "Sea of Eden",
+    "path": "albums/snes/earthbound/sea-of-eden.mid"
+   },
+   {
+    "title": "Secret Passage",
+    "path": "albums/snes/earthbound/secret-passage.mid"
+   },
+   {
+    "title": "Smiles and Tears",
+    "path": "albums/snes/earthbound/smiles-and-tears.mid"
+   },
+   {
+    "title": "Snowman",
+    "path": "albums/snes/earthbound/snowman.mid"
+   },
+   {
+    "title": "Someone's Knocking at the Door",
+    "path": "albums/snes/earthbound/someone-s-knocking-at-the-door.mid"
+   },
+   {
+    "title": "Sound Stone ~ Fire Spring",
+    "path": "albums/snes/earthbound/sound-stone-fire-spring.mid"
+   },
+   {
+    "title": "Sound Stone ~ Fire Spring (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-fire-spring-complete.mid"
+   },
+   {
+    "title": "Sound Stone ~ Giant Step",
+    "path": "albums/snes/earthbound/sound-stone-giant-step.mid"
+   },
+   {
+    "title": "Sound Stone ~ Giant Step (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-giant-step-complete.mid"
+   },
+   {
+    "title": "Sound Stone ~ Lilliput Steps",
+    "path": "albums/snes/earthbound/sound-stone-lilliput-steps.mid"
+   },
+   {
+    "title": "Sound Stone ~ Lilliput Steps (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-lilliput-steps-complete.mid"
+   },
+   {
+    "title": "Sound Stone ~ Lumine Hall",
+    "path": "albums/snes/earthbound/sound-stone-lumine-hall.mid"
+   },
+   {
+    "title": "Sound Stone ~ Lumine Hall (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-lumine-hall-complete.mid"
+   },
+   {
+    "title": "Sound Stone ~ Magnet Hill",
+    "path": "albums/snes/earthbound/sound-stone-magnet-hill.mid"
+   },
+   {
+    "title": "Sound Stone ~ Magnet Hill (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-magnet-hill-complete.mid"
+   },
+   {
+    "title": "Sound Stone ~ Milky Well",
+    "path": "albums/snes/earthbound/sound-stone-milky-well.mid"
+   },
+   {
+    "title": "Sound Stone ~ Milky Well (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-milky-well-complete.mid"
+   },
+   {
+    "title": "Sound Stone ~ No Sounds",
+    "path": "albums/snes/earthbound/sound-stone-no-sounds.mid"
+   },
+   {
+    "title": "Sound Stone ~ No Sounds (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-no-sounds-complete.mid"
+   },
+   {
+    "title": "Sound Stone ~ Pink Cloud",
+    "path": "albums/snes/earthbound/sound-stone-pink-cloud.mid"
+   },
+   {
+    "title": "Sound Stone ~ Pink Cloud (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-pink-cloud-complete.mid"
+   },
+   {
+    "title": "Sound Stone ~ Rainy Circle",
+    "path": "albums/snes/earthbound/sound-stone-rainy-circle.mid"
+   },
+   {
+    "title": "Sound Stone ~ Rainy Circle (Complete)",
+    "path": "albums/snes/earthbound/sound-stone-rainy-circle-complete.mid"
+   },
+   {
+    "title": "Spacetoneer",
+    "path": "albums/snes/earthbound/spacetoneer.mid"
+   },
+   {
+    "title": "Spell Learned",
+    "path": "albums/snes/earthbound/spell-learned.mid"
+   },
+   {
+    "title": "Spooky...",
+    "path": "albums/snes/earthbound/spooky.mid"
+   },
+   {
+    "title": "Stonehenge Base Shuts Down",
+    "path": "albums/snes/earthbound/stonehenge-base-shuts-down.mid"
+   },
+   {
+    "title": "Summers, Eternal Tourist Trap",
+    "path": "albums/snes/earthbound/summers-eternal-tourist-trap.mid"
+   },
+   {
+    "title": "Sunrise & Onett Theme",
+    "path": "albums/snes/earthbound/sunrise-onett-theme.mid"
+   },
+   {
+    "title": "Super Dry Dance",
+    "path": "albums/snes/earthbound/super-dry-dance.mid"
+   },
+   {
+    "title": "Teleportation",
+    "path": "albums/snes/earthbound/teleportation.mid"
+   },
+   {
+    "title": "Teleportation End",
+    "path": "albums/snes/earthbound/teleportation-end.mid"
+   },
+   {
+    "title": "Tessie Has Been Sighted!",
+    "path": "albums/snes/earthbound/tessie-has-been-sighted.mid"
+   },
+   {
+    "title": "Tessie!",
+    "path": "albums/snes/earthbound/tessie.mid"
+   },
+   {
+    "title": "That Was Easy!",
+    "path": "albums/snes/earthbound/that-was-easy.mid"
+   },
+   {
+    "title": "The Cliff That Time Forgot",
+    "path": "albums/snes/earthbound/the-cliff-that-time-forgot.mid"
+   },
+   {
+    "title": "The Deep Darkness",
+    "path": "albums/snes/earthbound/the-deep-darkness.mid"
+   },
+   {
+    "title": "The Evil Giygas Attacks! (part 1)",
+    "path": "albums/snes/earthbound/the-evil-giygas-attacks-part-1.mid"
+   },
+   {
+    "title": "The Evil Giygas Attacks! (part 2)",
+    "path": "albums/snes/earthbound/the-evil-giygas-attacks-part-2.mid"
+   },
+   {
+    "title": "The Floating Kingdom of Dalaam",
+    "path": "albums/snes/earthbound/the-floating-kingdom-of-dalaam.mid"
+   },
+   {
+    "title": "The Heroes Return (part 1)",
+    "path": "albums/snes/earthbound/the-heroes-return-part-1.mid"
+   },
+   {
+    "title": "The Heroes Return (part 2)",
+    "path": "albums/snes/earthbound/the-heroes-return-part-2.mid"
+   },
+   {
+    "title": "The Jolly Flying Man",
+    "path": "albums/snes/earthbound/the-jolly-flying-man.mid"
+   },
+   {
+    "title": "The Lost Underworld",
+    "path": "albums/snes/earthbound/the-lost-underworld.mid"
+   },
+   {
+    "title": "The Metropolis of Fourside",
+    "path": "albums/snes/earthbound/the-metropolis-of-fourside.mid"
+   },
+   {
+    "title": "The Monkeys' Maze",
+    "path": "albums/snes/earthbound/the-monkeys-maze.mid"
+   },
+   {
+    "title": "The Nightmare Begins...",
+    "path": "albums/snes/earthbound/the-nightmare-begins.mid"
+   },
+   {
+    "title": "The Place",
+    "path": "albums/snes/earthbound/the-place.mid"
+   },
+   {
+    "title": "The Power",
+    "path": "albums/snes/earthbound/the-power.mid"
+   },
+   {
+    "title": "The Sky Runner",
+    "path": "albums/snes/earthbound/the-sky-runner.mid"
+   },
+   {
+    "title": "The Sphinx's Puzzle 1",
+    "path": "albums/snes/earthbound/the-sphinx-s-puzzle-1.mid"
+   },
+   {
+    "title": "The Sphinx's Puzzle 2",
+    "path": "albums/snes/earthbound/the-sphinx-s-puzzle-2.mid"
+   },
+   {
+    "title": "The Sphinx's Puzzle 3",
+    "path": "albums/snes/earthbound/the-sphinx-s-puzzle-3.mid"
+   },
+   {
+    "title": "The Sphinx's Puzzle 4",
+    "path": "albums/snes/earthbound/the-sphinx-s-puzzle-4.mid"
+   },
+   {
+    "title": "The Sphinx's Puzzle 5",
+    "path": "albums/snes/earthbound/the-sphinx-s-puzzle-5.mid"
+   },
+   {
+    "title": "The Sphinx's Puzzle Solved!",
+    "path": "albums/snes/earthbound/the-sphinx-s-puzzle-solved.mid"
+   },
+   {
+    "title": "The Submarine",
+    "path": "albums/snes/earthbound/the-submarine.mid"
+   },
+   {
+    "title": "The Tendas' Cave",
+    "path": "albums/snes/earthbound/the-tendas-cave.mid"
+   },
+   {
+    "title": "The Unforgiving Desert",
+    "path": "albums/snes/earthbound/the-unforgiving-desert.mid"
+   },
+   {
+    "title": "The Voyage Continues",
+    "path": "albums/snes/earthbound/the-voyage-continues.mid"
+   },
+   {
+    "title": "Threed, Free at Last",
+    "path": "albums/snes/earthbound/threed-free-at-last.mid"
+   },
+   {
+    "title": "Threed, Zombie Central",
+    "path": "albums/snes/earthbound/threed-zombie-central.mid"
+   },
+   {
+    "title": "Title Screen",
+    "path": "albums/snes/earthbound/title-screen.mid"
+   },
+   {
+    "title": "Topolla Theatre, Home to the One & Only Venus",
+    "path": "albums/snes/earthbound/topolla-theatre-home-to-the-one-only-venus.mid"
+   },
+   {
+    "title": "Unidentified Falling Object",
+    "path": "albums/snes/earthbound/unidentified-falling-object.mid"
+   },
+   {
+    "title": "Unknown Jingle 1",
+    "path": "albums/snes/earthbound/unknown-jingle-1.mid"
+   },
+   {
+    "title": "Unknown Jingle 2",
+    "path": "albums/snes/earthbound/unknown-jingle-2.mid"
+   },
+   {
+    "title": "Unused Pokey Jingle",
+    "path": "albums/snes/earthbound/unused-pokey-jingle.mid"
+   },
+   {
+    "title": "Venus Live!",
+    "path": "albums/snes/earthbound/venus-live.mid"
+   },
+   {
+    "title": "Welcome Home",
+    "path": "albums/snes/earthbound/welcome-home.mid"
+   },
+   {
+    "title": "Welcome to Your Sanctuary",
+    "path": "albums/snes/earthbound/welcome-to-your-sanctuary.mid"
+   },
+   {
+    "title": "What a Great Picture!",
+    "path": "albums/snes/earthbound/what-a-great-picture.mid"
+   },
+   {
+    "title": "What an Annoying Knock!",
+    "path": "albums/snes/earthbound/what-an-annoying-knock.mid"
+   },
+   {
+    "title": "Whoa!",
+    "path": "albums/snes/earthbound/whoa.mid"
+   },
+   {
+    "title": "Whoops!",
+    "path": "albums/snes/earthbound/whoops.mid"
+   },
+   {
+    "title": "Winters Wake Up Call",
+    "path": "albums/snes/earthbound/winters-wake-up-call.mid"
+   },
+   {
+    "title": "Winters White",
+    "path": "albums/snes/earthbound/winters-white.mid"
+   },
+   {
+    "title": "You Defeated the Boss!",
+    "path": "albums/snes/earthbound/you-defeated-the-boss.mid"
+   },
+   {
+    "title": "You Gained a Level!",
+    "path": "albums/snes/earthbound/you-gained-a-level.mid"
+   },
+   {
+    "title": "You Win!",
+    "path": "albums/snes/earthbound/you-win.mid"
+   },
+   {
+    "title": "You've Come Far, Ness",
+    "path": "albums/snes/earthbound/you-ve-come-far-ness.mid"
+   },
+   {
+    "title": "You've Got a New Friend!",
+    "path": "albums/snes/earthbound/you-ve-got-a-new-friend.mid"
+   },
+   {
+    "title": "Your Name, Please",
+    "path": "albums/snes/earthbound/your-name-please.mid"
+   },
+   {
+    "title": "Your Name, Please (Noiseless)",
+    "path": "albums/snes/earthbound/your-name-please-noiseless.mid"
+   },
+   {
+    "title": "Your Sanctuary ~ Fire Spring",
+    "path": "albums/snes/earthbound/your-sanctuary-fire-spring.mid"
+   },
+   {
+    "title": "Your Sanctuary ~ Giant Step",
+    "path": "albums/snes/earthbound/your-sanctuary-giant-step.mid"
+   },
+   {
+    "title": "Your Sanctuary ~ Lilliput Steps",
+    "path": "albums/snes/earthbound/your-sanctuary-lilliput-steps.mid"
+   },
+   {
+    "title": "Your Sanctuary ~ Lumine Hall",
+    "path": "albums/snes/earthbound/your-sanctuary-lumine-hall.mid"
+   },
+   {
+    "title": "Your Sanctuary ~ Magnet Hill",
+    "path": "albums/snes/earthbound/your-sanctuary-magnet-hill.mid"
+   },
+   {
+    "title": "Your Sanctuary ~ Milky Well",
+    "path": "albums/snes/earthbound/your-sanctuary-milky-well.mid"
+   },
+   {
+    "title": "Your Sanctuary ~ Pink Cloud",
+    "path": "albums/snes/earthbound/your-sanctuary-pink-cloud.mid"
+   },
+   {
+    "title": "Your Sanctuary ~ Rainy Circle",
+    "path": "albums/snes/earthbound/your-sanctuary-rainy-circle.mid"
+   },
+   {
+    "title": "Zombie Paper",
+    "path": "albums/snes/earthbound/zombie-paper.mid"
+   }
+  ]
+ },
+ {
   "title": "Final Fantasy 4",
   "songs": [
    {
