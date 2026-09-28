@@ -1,0 +1,260 @@
+{
+ "title": "GoldenEye 007",
+ "order": 50,
+ "songs": {
+  "bungeee": "Bungeee!",
+  "captured-statue": "Captured! (statue)",
+  "captured-surface": "Captured! (surface)",
+  "elevator-caverns": "Elevator (caverns)",
+  "elevator-control": "Elevator (control)",
+  "frigate-beta": "Frigate (beta)",
+  "mission-death-beta": "Mission Death (beta)",
+  "multiplayer-death-beta": "Multiplayer Death (beta)",
+  "nintendo-and-rareware": "Nintendo and Rareware"
+ },
+ "nsf": {
+  "vault": "goldeneye-007/",
+  "tracks": {
+   "007-watch-theme": {
+    "n": 1,
+    "secs": 36
+   },
+   "archives-x": {
+    "n": 1,
+    "secs": 52.636986301369866
+   },
+   "archives": {
+    "n": 1,
+    "secs": 136.91542288557216
+   },
+   "aztec-x": {
+    "n": 1,
+    "secs": 56
+   },
+   "aztec": {
+    "n": 1,
+    "secs": 162.7826086956522
+   },
+   "bungeee": {
+    "n": 1,
+    "secs": 66
+   },
+   "bunker-1-x": {
+    "n": 1,
+    "secs": 54.857142857142854
+   },
+   "bunker-1": {
+    "n": 1,
+    "secs": 152
+   },
+   "bunker-2-x": {
+    "n": 1,
+    "secs": 61.44
+   },
+   "bunker-2": {
+    "n": 1,
+    "secs": 128
+   },
+   "captured-statue": {
+    "n": 1,
+    "secs": 5.305851063829787
+   },
+   "captured-surface": {
+    "n": 1,
+    "secs": 11.326923076923077
+   },
+   "caverns-x": {
+    "n": 1,
+    "secs": 54.857142857142854
+   },
+   "caverns": {
+    "n": 1,
+    "secs": 249.79591836734693
+   },
+   "citadel": {
+    "n": 1,
+    "secs": 128.4
+   },
+   "control-x": {
+    "n": 1,
+    "secs": 49.77777777777778
+   },
+   "control": {
+    "n": 1,
+    "secs": 136
+   },
+   "cradle-x": {
+    "n": 1,
+    "secs": 55.576022314615024
+   },
+   "cradle": {
+    "n": 1,
+    "secs": 121.25677595916005
+   },
+   "dam-x": {
+    "n": 1,
+    "secs": 49.54838709677419
+   },
+   "dam": {
+    "n": 1,
+    "secs": 145.71428571428572
+   },
+   "depot-x": {
+    "n": 1,
+    "secs": 50.90909090909091
+   },
+   "depot": {
+    "n": 1,
+    "secs": 136.6153846153846
+   },
+   "egypt-x": {
+    "n": 1,
+    "secs": 55.65217391304348
+   },
+   "egypt": {
+    "n": 1,
+    "secs": 162.406015037594
+   },
+   "elevator-caverns": {
+    "n": 1,
+    "secs": 31.035714285714285
+   },
+   "elevator-control": {
+    "n": 1,
+    "secs": 68.61
+   },
+   "ending-theme": {
+    "n": 1,
+    "secs": 60
+   },
+   "facility-x": {
+    "n": 1,
+    "secs": 46.22222222222222
+   },
+   "facility": {
+    "n": 1,
+    "secs": 120
+   },
+   "frigate-beta": {
+    "n": 1,
+    "secs": 12.173913043478262
+   },
+   "frigate-x": {
+    "n": 1,
+    "secs": 46.3448275862069
+   },
+   "frigate": {
+    "n": 1,
+    "secs": 134.76923076923077
+   },
+   "james-bond-theme": {
+    "n": 1,
+    "secs": 83.03356303069123
+   },
+   "jungle-x": {
+    "n": 1,
+    "secs": 46.829268292682926
+   },
+   "jungle": {
+    "n": 1,
+    "secs": 238.08
+   },
+   "mission-death-beta": {
+    "n": 1,
+    "secs": 16.75235632183908
+   },
+   "mission-death": {
+    "n": 1,
+    "secs": 13.013921901528015
+   },
+   "mission-select": {
+    "n": 1,
+    "secs": 37.89473684210526
+   },
+   "multiplayer-death-beta": {
+    "n": 1,
+    "secs": 8
+   },
+   "multiplayer-death": {
+    "n": 1,
+    "secs": 9.912170364169109
+   },
+   "nintendo-and-rareware": {
+    "n": 1,
+    "secs": 75.84
+   },
+   "runway-plane": {
+    "n": 1,
+    "secs": 11.451597695169918
+   },
+   "runway-x": {
+    "n": 1,
+    "secs": 45.354330708661415
+   },
+   "runway": {
+    "n": 1,
+    "secs": 155.52
+   },
+   "silo-x": {
+    "n": 1,
+    "secs": 54.857142857142854
+   },
+   "silo": {
+    "n": 1,
+    "secs": 140.16
+   },
+   "statue-x": {
+    "n": 1,
+    "secs": 52.36363636363637
+   },
+   "statue": {
+    "n": 1,
+    "secs": 100.40816326530613
+   },
+   "streets-x": {
+    "n": 1,
+    "secs": 57.6
+   },
+   "streets": {
+    "n": 1,
+    "secs": 164.57142857142858
+   },
+   "surface-1": {
+    "n": 1,
+    "secs": 245.76
+   },
+   "surface-2-x": {
+    "n": 1,
+    "secs": 61.11363636363637
+   },
+   "surface-2": {
+    "n": 1,
+    "secs": 153.6
+   },
+   "the-basement": {
+    "n": 1,
+    "secs": 108.31858407079646
+   },
+   "train-x": {
+    "n": 1,
+    "secs": 55.08196721311475
+   },
+   "train": {
+    "n": 1,
+    "secs": 166
+   },
+   "unsquare-water-dance": {
+    "n": 1,
+    "secs": 133.5
+   }
+  },
+  "chip": "usf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "nus-ngee-usa.usflib",
+    "file": "nus-ngee-usa.usflib"
+   }
+  ]
+ }
+}

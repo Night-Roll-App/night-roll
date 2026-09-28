@@ -3418,6 +3418,243 @@
   ]
  },
  {
+  "title": "GoldenEye 007",
+  "songs": [
+   {
+    "title": "007 Watch Theme",
+    "path": "albums/n64/goldeneye-007/007-watch-theme.mid"
+   },
+   {
+    "title": "Archives",
+    "path": "albums/n64/goldeneye-007/archives.mid"
+   },
+   {
+    "title": "Archives X",
+    "path": "albums/n64/goldeneye-007/archives-x.mid"
+   },
+   {
+    "title": "Aztec",
+    "path": "albums/n64/goldeneye-007/aztec.mid"
+   },
+   {
+    "title": "Aztec X",
+    "path": "albums/n64/goldeneye-007/aztec-x.mid"
+   },
+   {
+    "title": "Bungeee!",
+    "path": "albums/n64/goldeneye-007/bungeee.mid"
+   },
+   {
+    "title": "Bunker 1",
+    "path": "albums/n64/goldeneye-007/bunker-1.mid"
+   },
+   {
+    "title": "Bunker 1 X",
+    "path": "albums/n64/goldeneye-007/bunker-1-x.mid"
+   },
+   {
+    "title": "Bunker 2",
+    "path": "albums/n64/goldeneye-007/bunker-2.mid"
+   },
+   {
+    "title": "Bunker 2 X",
+    "path": "albums/n64/goldeneye-007/bunker-2-x.mid"
+   },
+   {
+    "title": "Captured! (statue)",
+    "path": "albums/n64/goldeneye-007/captured-statue.mid"
+   },
+   {
+    "title": "Captured! (surface)",
+    "path": "albums/n64/goldeneye-007/captured-surface.mid"
+   },
+   {
+    "title": "Caverns",
+    "path": "albums/n64/goldeneye-007/caverns.mid"
+   },
+   {
+    "title": "Caverns X",
+    "path": "albums/n64/goldeneye-007/caverns-x.mid"
+   },
+   {
+    "title": "Citadel",
+    "path": "albums/n64/goldeneye-007/citadel.mid"
+   },
+   {
+    "title": "Control",
+    "path": "albums/n64/goldeneye-007/control.mid"
+   },
+   {
+    "title": "Control X",
+    "path": "albums/n64/goldeneye-007/control-x.mid"
+   },
+   {
+    "title": "Cradle",
+    "path": "albums/n64/goldeneye-007/cradle.mid"
+   },
+   {
+    "title": "Cradle X",
+    "path": "albums/n64/goldeneye-007/cradle-x.mid"
+   },
+   {
+    "title": "Dam",
+    "path": "albums/n64/goldeneye-007/dam.mid"
+   },
+   {
+    "title": "Dam X",
+    "path": "albums/n64/goldeneye-007/dam-x.mid"
+   },
+   {
+    "title": "Depot",
+    "path": "albums/n64/goldeneye-007/depot.mid"
+   },
+   {
+    "title": "Depot X",
+    "path": "albums/n64/goldeneye-007/depot-x.mid"
+   },
+   {
+    "title": "Egypt",
+    "path": "albums/n64/goldeneye-007/egypt.mid"
+   },
+   {
+    "title": "Egypt X",
+    "path": "albums/n64/goldeneye-007/egypt-x.mid"
+   },
+   {
+    "title": "Elevator (caverns)",
+    "path": "albums/n64/goldeneye-007/elevator-caverns.mid"
+   },
+   {
+    "title": "Elevator (control)",
+    "path": "albums/n64/goldeneye-007/elevator-control.mid"
+   },
+   {
+    "title": "Ending Theme",
+    "path": "albums/n64/goldeneye-007/ending-theme.mid"
+   },
+   {
+    "title": "Facility",
+    "path": "albums/n64/goldeneye-007/facility.mid"
+   },
+   {
+    "title": "Facility X",
+    "path": "albums/n64/goldeneye-007/facility-x.mid"
+   },
+   {
+    "title": "Frigate",
+    "path": "albums/n64/goldeneye-007/frigate.mid"
+   },
+   {
+    "title": "Frigate (beta)",
+    "path": "albums/n64/goldeneye-007/frigate-beta.mid"
+   },
+   {
+    "title": "Frigate X",
+    "path": "albums/n64/goldeneye-007/frigate-x.mid"
+   },
+   {
+    "title": "James Bond Theme",
+    "path": "albums/n64/goldeneye-007/james-bond-theme.mid"
+   },
+   {
+    "title": "Jungle",
+    "path": "albums/n64/goldeneye-007/jungle.mid"
+   },
+   {
+    "title": "Jungle X",
+    "path": "albums/n64/goldeneye-007/jungle-x.mid"
+   },
+   {
+    "title": "Mission Death",
+    "path": "albums/n64/goldeneye-007/mission-death.mid"
+   },
+   {
+    "title": "Mission Death (beta)",
+    "path": "albums/n64/goldeneye-007/mission-death-beta.mid"
+   },
+   {
+    "title": "Mission Select",
+    "path": "albums/n64/goldeneye-007/mission-select.mid"
+   },
+   {
+    "title": "Multiplayer Death",
+    "path": "albums/n64/goldeneye-007/multiplayer-death.mid"
+   },
+   {
+    "title": "Multiplayer Death (beta)",
+    "path": "albums/n64/goldeneye-007/multiplayer-death-beta.mid"
+   },
+   {
+    "title": "Nintendo and Rareware",
+    "path": "albums/n64/goldeneye-007/nintendo-and-rareware.mid"
+   },
+   {
+    "title": "Runway",
+    "path": "albums/n64/goldeneye-007/runway.mid"
+   },
+   {
+    "title": "Runway Plane",
+    "path": "albums/n64/goldeneye-007/runway-plane.mid"
+   },
+   {
+    "title": "Runway X",
+    "path": "albums/n64/goldeneye-007/runway-x.mid"
+   },
+   {
+    "title": "Silo",
+    "path": "albums/n64/goldeneye-007/silo.mid"
+   },
+   {
+    "title": "Silo X",
+    "path": "albums/n64/goldeneye-007/silo-x.mid"
+   },
+   {
+    "title": "Statue",
+    "path": "albums/n64/goldeneye-007/statue.mid"
+   },
+   {
+    "title": "Statue X",
+    "path": "albums/n64/goldeneye-007/statue-x.mid"
+   },
+   {
+    "title": "Streets",
+    "path": "albums/n64/goldeneye-007/streets.mid"
+   },
+   {
+    "title": "Streets X",
+    "path": "albums/n64/goldeneye-007/streets-x.mid"
+   },
+   {
+    "title": "Surface 1",
+    "path": "albums/n64/goldeneye-007/surface-1.mid"
+   },
+   {
+    "title": "Surface 2",
+    "path": "albums/n64/goldeneye-007/surface-2.mid"
+   },
+   {
+    "title": "Surface 2 X",
+    "path": "albums/n64/goldeneye-007/surface-2-x.mid"
+   },
+   {
+    "title": "The Basement",
+    "path": "albums/n64/goldeneye-007/the-basement.mid"
+   },
+   {
+    "title": "Train",
+    "path": "albums/n64/goldeneye-007/train.mid"
+   },
+   {
+    "title": "Train X",
+    "path": "albums/n64/goldeneye-007/train-x.mid"
+   },
+   {
+    "title": "Unsquare Water Dance",
+    "path": "albums/n64/goldeneye-007/unsquare-water-dance.mid"
+   }
+  ]
+ },
+ {
   "title": "Kirby's Adventure",
   "songs": [
    {
