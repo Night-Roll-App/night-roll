@@ -851,6 +851,24 @@ Capacitor shell's remote), the bridge/CI settings, and the share-link
 base. Decide before the App Store listing (the listing's URLs point
 at whichever it is). Josh creates the org (it needs his account); the
 terminal does the moves.
+DONE by Josh the same night: org https://github.com/Night-Roll-App
+(joshcough is admin) and nightrollapp@gmail.com. MOVE CHECKLIST (run
+when Josh is not importing/publishing): 1. `gh api -X POST
+repos/joshcough/night-roll/transfer -f new_owner=Night-Roll-App` and
+the same for nsf-archive (GitHub redirects the old URLs). 2. Enable
+Pages on the org repo (Actions workflow already deploys) → new base
+https://night-roll-app.github.io/night-roll/. 3. index.html: cfg
+defaults (songsRepo joshcough/night-roll → Night-Roll-App/night-roll,
+nsfRepo joshcough/nsf-archive → Night-Roll-App/nsf-archive, nsfBase,
+raw bases in readBase, APP_BASE/share-link base, any "joshcough"
+string), tools/claude-bridge.mjs, the CI workflow, privacy.html and
+docs/app-store-listing.md URLs, README, the Capacitor shell's remote
++ build. 4. Local remotes: `git remote set-url origin
+git@github.com:Night-Roll-App/night-roll.git` here and in
+night-roll-app. 5. Josh: a GitHub token that covers org repos on the
+iPad (a fine-grained token scoped to his own repos will not), then
+Settings → GitHub on the iPad shows the new repo. 6. iPad build;
+old Pages link redirects for a while, tell the son.
 
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
