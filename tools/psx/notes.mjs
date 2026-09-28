@@ -9,6 +9,7 @@
 // sounds at 44100 Hz — estimated from the decoded sample, assumed C4 when
 // the sample has no clear period. Both readings are kept on the note.
 import { secondsAt, barBeat, bpmOf } from "./seq.mjs";
+import { guessKit } from "../kit-guess.mjs";
 import { findInstrDat, readInstr, envelopeAt } from "./instr.mjs";
 export { findInstrDat, readInstr, envelopeAt }; // the app reaches them through this module
 import { tonesFor, vagPcm, estimateRoot } from "./vab.mjs";
@@ -182,37 +183,7 @@ export function kitify(result) {
   const voices = new Map();
   for (const n of needs) { const k = n.program + ":" + n.key; (voices.get(k) || voices.set(k, {program: n.program, key: n.key, notes: []}).get(k)).notes.push(n); }
   const ts = seq.timeSigs && seq.timeSigs[0] || {num: 4, den: 4};
-  const beatTicks = seq.ppq * 4 / ts.den, barBeats = ts.num;
-  for (const v of voices.values()) {
-    let down = 0, back = 0, one = 0, on = 0;
-    for (const n of v.notes) {
-      const beat = (n.tick / beatTicks) % barBeats, whole = Math.abs(beat - Math.round(beat)) < 0.05;
-      if (!whole) continue;
-      on++;
-      const b = Math.round(beat) % barBeats;
-      if (b === 0) one++;
-      if (b % 2 === 0) down++; else back++;
-    }
-    v.count = v.notes.length; v.down = down / v.count; v.back = back / v.count; v.one = one / v.count; v.on = on / v.count;
-  }
-  const list = [...voices.values()];
-  const taken = new Set();
-  const pick = (score, gm, label) => {
-    const c = list.filter(v => !v.gm).sort((a, b) => score(b) - score(a))[0];
-    if (c && score(c) > 0) { c.gm = gm; c.label = label; taken.add(gm); }
-  };
-  pick(v => v.count >= 4 ? v.back : 0, 38, "snare");
-  pick(v => v.count >= 4 ? v.down : 0, 36, "kick");
-  pick(v => v.count >= 8 ? v.count : 0, 42, "closed hat");
-  pick(v => v.count >= 8 ? v.count : 0, 46, "open hat");
-  pick(v => v.count >= 8 ? v.count : 0, 51, "ride");
-  const rest = list.filter(v => !v.gm).sort((a, b) => a.key - b.key);
-  const toms = [41, 45, 47, 48, 50], tomNames = ["low tom", "tom", "mid tom", "high-mid tom", "high tom"];
-  let ti = 0;
-  for (const v of rest) {
-    if (v.count < 8 && v.one >= 0.5) { v.gm = 49; v.label = "crash"; continue; }
-    v.gm = toms[Math.min(ti, toms.length - 1)]; v.label = tomNames[Math.min(ti, toms.length - 1)]; ti++;
-  }
+  const list = guessKit([...voices.values()], {beatTicks: seq.ppq * 4 / ts.den, barBeats: ts.num}); // tools/kit-guess.mjs: the rhythm rules, shared with the N64 path
   for (const v of list) { for (const n of v.notes) n.gm = v.gm; guess.push({program: v.program, key: v.key, gm: v.gm, label: v.label, notes: v.count}); }
   guess.sort((a, b) => a.program - b.program || a.key - b.key);
   result.kitGuess = guess;

@@ -5,6 +5,7 @@
 import { pitchName } from "../nsf/notes.mjs";
 import { makeMidiTracks, PPQ } from "../nsf/midi-write.mjs";
 import { TICKS_PER_BEAT } from "./constants.mjs";
+import { guessKit } from "../kit-guess.mjs";
 
 const label = n => n.drum ? "D" + n.semitone : pitchName(n.midi);
 
@@ -37,22 +38,56 @@ export function toNotesTxt(res, {title = "n64", tsNum = 4, tsDen = 4} = {}) {
 }
 
 // One MIDI track per N64 channel, MIDI channel = N64 channel (identity over
-// GM conventions: a melodic N64 channel 9 stays on 9). Drum indexes land on
-// GM percussion keys 35+ so a DAW plays something; that offset is arbitrary.
+// GM conventions), with percussion the one exception: the player treats
+// MIDI channel 9 as the kit, so every drum lands there and a melodic N64
+// channel 9 moves to a free channel. Drum indexes name a slot in a bank the
+// rip does not carry, so their GM keys are guessed from rhythm
+// (tools/kit-guess.mjs) — before this they sat at 35 + index, an arbitrary
+// offset that played toms and cymbals for every hit (Josh, Mario 64's Title
+// Theme, 2026-09-27: "a disaster"). An instrument that only ever plays ONE
+// pitch, many times, is a percussion sample on a melodic channel (the same
+// rule as the PS1 path) and joins the kit as its own track. The guess is
+// written to res.kitGuess and res.warnings so the capture row can say so.
 export function toMidi(res, {tsNum = 4, tsDen = 4} = {}) {
   const scale = PPQ / TICKS_PER_BEAT;
-  const byCh = new Map();
-  for (const n of res.notes) {
-    if (!byCh.has(n.ch)) byCh.set(n.ch, []);
-    const p = n.drum ? Math.min(127, 35 + n.semitone) : n.midi;
-    if (p < 0 || p > 127) continue;
-    byCh.get(n.ch).push({t: n.tick * scale, d: Math.max(1, n.dur * scale), p, v: Math.max(1, Math.min(127, n.vel))});
+  const notes = res.notes.filter(n => n.drum ? n.semitone >= 0 : n.midi >= 0 && n.midi <= 127);
+  // one-pitch instruments: promoted to percussion
+  const byInst = new Map();
+  for (const n of notes) if (!n.drum && n.inst != null) (byInst.get(n.inst) || byInst.set(n.inst, []).get(n.inst)).push(n);
+  const percInst = new Set();
+  for (const [inst, evs] of byInst) if (evs.length >= 12 && new Set(evs.map(n => n.midi)).size === 1) percInst.add(inst);
+  const isPerc = n => n.drum || percInst.has(n.inst);
+  // voices for the guess: a drum index, or a promoted instrument's one pitch
+  const voices = new Map();
+  for (const n of notes) {
+    if (!isPerc(n)) continue;
+    const k = n.drum ? "D" + n.semitone : "I" + n.inst;
+    (voices.get(k) || voices.set(k, {id: k, key: n.drum ? n.semitone : n.midi, drum: !!n.drum, inst: n.inst, notes: []}).get(k)).notes.push(n);
   }
-  const tracks = [...byCh.keys()].sort((a, b) => a - b).map(ch => {
-    const first = res.notes.find(n => n.ch === ch);
-    const inst = first.drum ? "drums" : first.inst == null ? "" : "inst " + first.inst;
-    return {name: `ch ${ch}${inst ? " " + inst : ""}`, ch, notes: byCh.get(ch),
-            program: first.drum || first.inst == null ? undefined : first.inst & 0x7F};
+  const guess = [];
+  if (voices.size) {
+    const list = guessKit([...voices.values()], {beatTicks: TICKS_PER_BEAT * 4 / tsDen, barBeats: tsNum});
+    for (const v of list) { for (const n of v.notes) n.gm = v.gm; guess.push({id: v.id, key: v.key, gm: v.gm, label: v.label, notes: v.count}); }
+    guess.sort((a, b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+    (res.warnings || (res.warnings = [])).push("kit guessed from rhythm: " + guess.map(g => g.id + " → " + g.label).join(", "));
+  }
+  res.kitGuess = guess;
+  // tracks: per N64 channel, melodic and kit apart
+  const groups = new Map(); // "<ch>" melodic, "<ch>k" kit
+  for (const n of notes) {
+    const g = n.ch + (isPerc(n) ? "k" : "");
+    if (!groups.has(g)) groups.set(g, {ch: n.ch, kit: isPerc(n), notes: [], first: n});
+    const p = isPerc(n) ? n.gm : n.midi;
+    groups.get(g).notes.push({t: n.tick * scale, d: Math.max(1, n.dur * scale), p, v: Math.max(1, Math.min(127, n.vel))});
+  }
+  const melodicChs = new Set([...groups.values()].filter(g => !g.kit).map(g => g.ch));
+  let spare = null; // where a melodic N64 channel 9 goes: the first MIDI channel no melodic track uses
+  for (let c = 0; c < 16 && spare === null; c++) if (c !== 9 && !melodicChs.has(c)) spare = c;
+  const tracks = [...groups.values()].sort((a, b) => a.ch - b.ch || (a.kit ? 1 : 0) - (b.kit ? 1 : 0)).map(g => {
+    const first = g.first;
+    const inst = first.drum ? "drums" : first.inst == null ? "" : "inst " + first.inst + (g.kit ? " kit" : "");
+    return {name: `ch ${g.ch}${inst ? " " + inst : ""}`, ch: g.kit ? 9 : g.ch === 9 ? (spare === null ? 9 : spare) : g.ch, notes: g.notes,
+            program: g.kit || first.inst == null ? undefined : first.inst & 0x7F};
   });
   return makeMidiTracks(tracks, {tempos: res.tempos.map(t => ({t: t.tick * scale, bpm: t.bpm})), tsNum, tsDen});
 }

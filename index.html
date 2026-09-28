@@ -13301,6 +13301,7 @@ const CHIPS = {
           if (res.selfModified) warnings.push("the sequence rewrites itself while playing");
           if (res.ioReads) warnings.push("reads the game's io ports (" + res.ioReads + "×) — the game would steer this song");
           if (res.stubbed && res.stubbed.length) warnings.push("sound-shaping ops ignored: " + res.stubbed.join("; "));
+          for (const w of res.warnings || []) warnings.push(w); // toMidi's kit guess: which drum index became which GM drum
           if (onProgress) onProgress(1);
           return {bytes, bpm: res.tempos && res.tempos[0] ? res.tempos[0].bpm : 120, secs: res.seconds, looped: loops, snapped: true,
                   loopAnchor: loops && res.loop.tick > 0 ? bq(res.loop.at) : null, loopTarget: loops && res.loop.tick > 0 ? bq(res.loop.tick) : null, warnings};

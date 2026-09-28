@@ -591,6 +591,17 @@ notes / 13 tracks / 6 tempo points / `loop: 5.1`, Main Theme 1419 notes
 at 113 bpm, Dire Dire Docks 390 notes, ~150 ms each. Test: "USF import:
 …" (sniff, lib file, capture presence); the real-set run is the browser
 check and tests/n64-real.test.mjs with N64_USF_DIR.
+Percussion (same day, evening): `toMidi` puts every drum on MIDI
+channel 9 — the player's kit channel — with GM keys guessed from rhythm
+by `tools/kit-guess.mjs` (shared with the PS1 path: backbeats → snare,
+downbeats → kick, busiest → hats, the rest toms/crash); a drum index
+names a slot in a bank the rip does not carry, and the old 35 + index
+offset played toms and cymbals for every hit (Title Theme's 1459 hits:
+"a disaster"). An instrument that only ever plays one pitch, 12+ times,
+is a percussion sample and joins the kit as `ch N inst I kit`; a
+melodic N64 channel 9 takes the first free MIDI channel instead.
+`res.kitGuess` + a "kit guessed from rhythm" warning reach the row.
+Test: "MIDI percussion: …" in tests/n64.test.mjs.
 
 **Chip render in a Worker (2026-09-27, afternoon).** The console render
 ran on the page's thread in 35 ms slices: the first Play after opening a

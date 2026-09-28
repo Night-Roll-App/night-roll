@@ -699,6 +699,26 @@ mid-playback does not switch over until the next ▶ (by design since
 the mute review). Next time it happens: Messages → Copy all — the
 ⚠ lines say whether the 25 s cap fired and whether a later ▶ still
 played synth.
+N64 — Josh published Mario 64's Title Theme ("that one is a disaster").
+Diffed against the Mac's capture of the same set through the app's own
+code: identical, every note. The disaster is in the listening: the
+drum channel (1459 hits) sat at GM keys 35 + drum index, an arbitrary
+offset, so toms and cymbals played for every hit, and instrument 13
+(128 hits of one pitch) played as a synth note. Fixed: the PS1 kit
+guess is now tools/kit-guess.mjs and the N64 writer uses it (Title
+Theme: D15 kick, D17 snare, D33 closed hat, I13 open hat, the rest
+toms/ride); drums always on MIDI channel 9, a melodic N64 channel 9
+moves off it. NIGHT-ROLL.md "Nintendo 64 import" → Percussion.
+Re-import Mario 64 to hear it. Still open: channels 10 and 12 (415 and
+934 hits in a 4–7 semitone range) stay melodic under the one-pitch
+rule — if they are percussion too, the rule needs Josh's ear on them.
+Josh, same hour: "we're definitely not using the right instruments on
+Mario 64 … a drum instrument where you play notes on … we definitely
+don't have that." Right: N64 has NO renderer — every song plays synth
+voices by program number. The game's samples (ADPCM in the bank, in
+the .usflib's ROM/RDRAM) are there to decode; an N64 sample renderer is
+the PS1 renderer's job again (bank table → samples → per-instrument
+envelope → renderSpu-style mix). QUEUED; not started.
 
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 

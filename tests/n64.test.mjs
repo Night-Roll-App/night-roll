@@ -86,6 +86,38 @@ test("MIDI: type 1, conductor + one track per channel, tempo and program set", (
   assert.match(hex, /91 30 4c/, "C3 on channel 1, velocity 76");
 });
 
+test("MIDI percussion: drum indexes get GM keys by rhythm on channel 9; a one-pitch instrument joins the kit; a melodic channel 9 moves off", () => {
+  // a hand-built result: 8 bars of 4/4 at 48 ticks a beat — drum index 3 on
+  // the downbeats, index 7 on the backbeats, index 1 on every 8th; N64
+  // channel 9 plays a melody (must not land on MIDI 9); instrument 20 on
+  // channel 2 hits one pitch 32 times (a percussion sample by the rule)
+  const B = TICKS_PER_BEAT, notes = [];
+  for (let bar = 0; bar < 8; bar++) {
+    const t0 = bar * 4 * B;
+    for (const b of [0, 2]) notes.push({ch: 5, inst: 0x7F, drum: true, semitone: 3, tick: t0 + b * B, dur: B / 2, vel: 100});
+    for (const b of [1, 3]) notes.push({ch: 5, inst: 0x7F, drum: true, semitone: 7, tick: t0 + b * B, dur: B / 2, vel: 100});
+    for (let e = 0; e < 8; e++) notes.push({ch: 5, inst: 0x7F, drum: true, semitone: 1, tick: t0 + e * B / 2, dur: B / 4, vel: 80});
+    for (let e = 0; e < 4; e++) notes.push({ch: 2, inst: 20, drum: false, midi: 70, tick: t0 + e * B + B / 2, dur: B / 4, vel: 90});
+    notes.push({ch: 9, inst: 4, drum: false, midi: 60 + bar, tick: t0, dur: B, vel: 100});
+  }
+  const res = {notes, tempos: [{tick: 0, bpm: 120}], endTick: 32 * B, warnings: []};
+  const mid = toMidi(res);
+  const byId = Object.fromEntries(res.kitGuess.map(g => [g.id, g]));
+  assert.equal(byId.D3.label, "kick"); assert.equal(byId.D3.gm, 36);
+  assert.equal(byId.D7.label, "snare"); assert.equal(byId.D7.gm, 38);
+  assert.equal(byId.D1.label, "closed hat"); assert.equal(byId.D1.gm, 42);
+  assert.equal(byId.I20.label, "open hat", "the one-pitch instrument is percussion; the next-busiest voice");
+  assert.match(res.warnings.join("\n"), /kit guessed from rhythm: D1 → closed hat, D3 → kick, D7 → snare, I20 → open hat/);
+  const hex = [...mid].map(b => b.toString(16).padStart(2, "0")).join(" ");
+  assert.match(hex, /99 24 64/, "kick on MIDI channel 9 at GM 36");
+  assert.match(hex, /99 26 64/, "snare on channel 9 at GM 38");
+  assert.match(hex, /99 2e 5a/, "the promoted instrument on channel 9 at its guessed key");
+  assert.doesNotMatch(hex, /99 3c 64/, "the melody that was on N64 channel 9 is not on MIDI channel 9");
+  assert.match(hex, /90 3c 64/, "…it took the first free channel, 0");
+  const names = [...mid].map(b => String.fromCharCode(b)).join("");
+  assert.match(names, /ch 2 inst 20 kit/); assert.match(names, /ch 5 drums/); assert.match(names, /ch 9 inst 4/);
+});
+
 test("dump CLI writes .notes.txt and .mid next to the input", () => {
   const dir = mkdtempSync(join(tmpdir(), "n64-"));
   const file = join(dir, "seq.bin");
