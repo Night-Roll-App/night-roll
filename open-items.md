@@ -1006,6 +1006,28 @@ file — a driver Night Roll cannot read yet"; Mega Man X4 and most of
 SotN are XA audio streams, not sequences. None of the new sets are
 imported yet.
 
+## GAME INSTRUMENT LIBRARIES — STARTED 2026-09-28 (Josh: "a killer feature — use instruments from any game ever")
+
+Goal: any track in Josh's own songs can use an instrument from any
+imported game. Not shipped in the app (copyrighted audio); lives in the
+archive repo beside the chip files; tutorials may show importing but
+never where to download. Plan: (1) extract every PS1/N64 album's
+instruments — samples deduplicated, key regions, tuning, envelope, pan
+— and NAME them by measurement (a best guess, editable), into
+`<slug>/instruments/` in the archive (instruments.json + WAVs with
+loop points); (2) an instrument browser: pick a game, play each across
+the keyboard; (3) a track's voice can be a game instrument, recorded
+in the song's track: directive so it plays on any device; (4) SNES
+next (samples from the SPC's DSP memory), NES/GB/Genesis as synth
+presets later. (1) is with an agent now.
+
+THE ARCHIVE, for the record: joshcough/nsf-archive, PUBLIC (that is
+how other devices and Josh's son get chip audio without a token),
+~76 MB, one folder per game holding the files Publish uploads. Set in
+File → Settings → GitHub (defaulted, so it never needs touching).
+Josh accepts the take-down risk (2026-09-28: "someone can ask you to
+take it down, and you might have to … I'm willing to live with that").
+
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
 "Before we release this for real … imports of several more games on
