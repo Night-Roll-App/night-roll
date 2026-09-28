@@ -3345,6 +3345,443 @@
   ]
  },
  {
+  "title": "Final Fantasy IX",
+  "songs": [
+   {
+    "title": "A Transient Past",
+    "path": "albums/ps1/final-fantasy-9/a-transient-past.mid"
+   },
+   {
+    "title": "Aloha de Chocobo",
+    "path": "albums/ps1/final-fantasy-9/aloha-de-chocobo.mid"
+   },
+   {
+    "title": "Amarant's Theme",
+    "path": "albums/ps1/final-fantasy-9/amarant-s-theme.mid"
+   },
+   {
+    "title": "Ambush Attack",
+    "path": "albums/ps1/final-fantasy-9/ambush-attack.mid"
+   },
+   {
+    "title": "Assault of the White Dragons",
+    "path": "albums/ps1/final-fantasy-9/assault-of-the-white-dragons.mid"
+   },
+   {
+    "title": "At the South Gate Border",
+    "path": "albums/ps1/final-fantasy-9/at-the-south-gate-border.mid"
+   },
+   {
+    "title": "Awakening the Forest",
+    "path": "albums/ps1/final-fantasy-9/awakening-the-forest.mid"
+   },
+   {
+    "title": "Battle",
+    "path": "albums/ps1/final-fantasy-9/battle.mid"
+   },
+   {
+    "title": "Battle Strategy Conference",
+    "path": "albums/ps1/final-fantasy-9/battle-strategy-conference.mid"
+   },
+   {
+    "title": "Bittersweet Romance",
+    "path": "albums/ps1/final-fantasy-9/bittersweet-romance.mid"
+   },
+   {
+    "title": "Black Mage's Village",
+    "path": "albums/ps1/final-fantasy-9/black-mage-s-village.mid"
+   },
+   {
+    "title": "Black Waltz",
+    "path": "albums/ps1/final-fantasy-9/black-waltz.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/ps1/final-fantasy-9/boss-battle.mid"
+   },
+   {
+    "title": "Ceremony for the Gods",
+    "path": "albums/ps1/final-fantasy-9/ceremony-for-the-gods.mid"
+   },
+   {
+    "title": "Cid's Theme",
+    "path": "albums/ps1/final-fantasy-9/cid-s-theme.mid"
+   },
+   {
+    "title": "Cleyra Settlement",
+    "path": "albums/ps1/final-fantasy-9/cleyra-settlement.mid"
+   },
+   {
+    "title": "Cleyra's Trunk",
+    "path": "albums/ps1/final-fantasy-9/cleyra-s-trunk.mid"
+   },
+   {
+    "title": "Crossing Those Hills",
+    "path": "albums/ps1/final-fantasy-9/crossing-those-hills.mid"
+   },
+   {
+    "title": "Crystal World",
+    "path": "albums/ps1/final-fantasy-9/crystal-world.mid"
+   },
+   {
+    "title": "Dark Messenger",
+    "path": "albums/ps1/final-fantasy-9/dark-messenger.mid"
+   },
+   {
+    "title": "Dissipating Sorrow",
+    "path": "albums/ps1/final-fantasy-9/dissipating-sorrow.mid"
+   },
+   {
+    "title": "Doga and Une",
+    "path": "albums/ps1/final-fantasy-9/doga-and-une.mid"
+   },
+   {
+    "title": "Eiko's Theme",
+    "path": "albums/ps1/final-fantasy-9/eiko-s-theme.mid"
+   },
+   {
+    "title": "Esto Gaza",
+    "path": "albums/ps1/final-fantasy-9/esto-gaza.mid"
+   },
+   {
+    "title": "Eternal Harvest",
+    "path": "albums/ps1/final-fantasy-9/eternal-harvest.mid"
+   },
+   {
+    "title": "Extraction",
+    "path": "albums/ps1/final-fantasy-9/extraction.mid"
+   },
+   {
+    "title": "Fairy Battle",
+    "path": "albums/ps1/final-fantasy-9/fairy-battle.mid"
+   },
+   {
+    "title": "Fanfare",
+    "path": "albums/ps1/final-fantasy-9/fanfare.mid"
+   },
+   {
+    "title": "Far Away in the Twilight",
+    "path": "albums/ps1/final-fantasy-9/far-away-in-the-twilight.mid"
+   },
+   {
+    "title": "Feel My Blade",
+    "path": "albums/ps1/final-fantasy-9/feel-my-blade.mid"
+   },
+   {
+    "title": "Final Battle",
+    "path": "albums/ps1/final-fantasy-9/final-battle.mid"
+   },
+   {
+    "title": "Footsteps of Desire",
+    "path": "albums/ps1/final-fantasy-9/footsteps-of-desire.mid"
+   },
+   {
+    "title": "Forgotten Face",
+    "path": "albums/ps1/final-fantasy-9/forgotten-face.mid"
+   },
+   {
+    "title": "Fossil Roo",
+    "path": "albums/ps1/final-fantasy-9/fossil-roo.mid"
+   },
+   {
+    "title": "Freya's Theme",
+    "path": "albums/ps1/final-fantasy-9/freya-s-theme.mid"
+   },
+   {
+    "title": "Frontier Village Dali",
+    "path": "albums/ps1/final-fantasy-9/frontier-village-dali.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/ps1/final-fantasy-9/game-over.mid"
+   },
+   {
+    "title": "Gargan Roo",
+    "path": "albums/ps1/final-fantasy-9/gargan-roo.mid"
+   },
+   {
+    "title": "Garnet's Song 1",
+    "path": "albums/ps1/final-fantasy-9/garnet-s-song-1.mid"
+   },
+   {
+    "title": "Garnet's Song 2",
+    "path": "albums/ps1/final-fantasy-9/garnet-s-song-2.mid"
+   },
+   {
+    "title": "Garnet's Theme",
+    "path": "albums/ps1/final-fantasy-9/garnet-s-theme.mid"
+   },
+   {
+    "title": "Grieve for the Skies",
+    "path": "albums/ps1/final-fantasy-9/grieve-for-the-skies.mid"
+   },
+   {
+    "title": "Gulug Volcano",
+    "path": "albums/ps1/final-fantasy-9/gulug-volcano.mid"
+   },
+   {
+    "title": "Hidden Lips",
+    "path": "albums/ps1/final-fantasy-9/hidden-lips.mid"
+   },
+   {
+    "title": "Hunter's Chance",
+    "path": "albums/ps1/final-fantasy-9/hunter-s-chance.mid"
+   },
+   {
+    "title": "I Want to Be Your Canary",
+    "path": "albums/ps1/final-fantasy-9/i-want-to-be-your-canary.mid"
+   },
+   {
+    "title": "Ice Caverns",
+    "path": "albums/ps1/final-fantasy-9/ice-caverns.mid"
+   },
+   {
+    "title": "Iifa Tree",
+    "path": "albums/ps1/final-fantasy-9/iifa-tree.mid"
+   },
+   {
+    "title": "Immoral Melody",
+    "path": "albums/ps1/final-fantasy-9/immoral-melody.mid"
+   },
+   {
+    "title": "Ipsen's Castle",
+    "path": "albums/ps1/final-fantasy-9/ipsen-s-castle.mid"
+   },
+   {
+    "title": "Jesters of the Moon",
+    "path": "albums/ps1/final-fantasy-9/jesters-of-the-moon.mid"
+   },
+   {
+    "title": "Keeper of Time",
+    "path": "albums/ps1/final-fantasy-9/keeper-of-time.mid"
+   },
+   {
+    "title": "Kingdom of Burmecia",
+    "path": "albums/ps1/final-fantasy-9/kingdom-of-burmecia.mid"
+   },
+   {
+    "title": "Kuja's Theme",
+    "path": "albums/ps1/final-fantasy-9/kuja-s-theme.mid"
+   },
+   {
+    "title": "Kuja's Theme (Millennium Version)",
+    "path": "albums/ps1/final-fantasy-9/kuja-s-theme-millennium-version.mid"
+   },
+   {
+    "title": "Limited Time",
+    "path": "albums/ps1/final-fantasy-9/limited-time.mid"
+   },
+   {
+    "title": "Lindblum",
+    "path": "albums/ps1/final-fantasy-9/lindblum.mid"
+   },
+   {
+    "title": "Memories of That Day",
+    "path": "albums/ps1/final-fantasy-9/memories-of-that-day.mid"
+   },
+   {
+    "title": "Mistaken Love",
+    "path": "albums/ps1/final-fantasy-9/mistaken-love.mid"
+   },
+   {
+    "title": "Moogle's Theme",
+    "path": "albums/ps1/final-fantasy-9/moogle-s-theme.mid"
+   },
+   {
+    "title": "Mountain Pass",
+    "path": "albums/ps1/final-fantasy-9/mountain-pass.mid"
+   },
+   {
+    "title": "Oeilvert",
+    "path": "albums/ps1/final-fantasy-9/oeilvert.mid"
+   },
+   {
+    "title": "One Problem Settled",
+    "path": "albums/ps1/final-fantasy-9/one-problem-settled.mid"
+   },
+   {
+    "title": "Place of Memory",
+    "path": "albums/ps1/final-fantasy-9/place-of-memory.mid"
+   },
+   {
+    "title": "Prelude",
+    "path": "albums/ps1/final-fantasy-9/prelude.mid"
+   },
+   {
+    "title": "Prima Vista Band",
+    "path": "albums/ps1/final-fantasy-9/prima-vista-band.mid"
+   },
+   {
+    "title": "Protecting My Devotion",
+    "path": "albums/ps1/final-fantasy-9/protecting-my-devotion.mid"
+   },
+   {
+    "title": "Qu's Marsh",
+    "path": "albums/ps1/final-fantasy-9/qu-s-marsh.mid"
+   },
+   {
+    "title": "Queen of the Abyss",
+    "path": "albums/ps1/final-fantasy-9/queen-of-the-abyss.mid"
+   },
+   {
+    "title": "Quina's Theme",
+    "path": "albums/ps1/final-fantasy-9/quina-s-theme.mid"
+   },
+   {
+    "title": "Rebirth of the Evil Mist",
+    "path": "albums/ps1/final-fantasy-9/rebirth-of-the-evil-mist.mid"
+   },
+   {
+    "title": "Rose of May",
+    "path": "albums/ps1/final-fantasy-9/rose-of-may.mid"
+   },
+   {
+    "title": "Ruins of Madain Sari",
+    "path": "albums/ps1/final-fantasy-9/ruins-of-madain-sari.mid"
+   },
+   {
+    "title": "Run!",
+    "path": "albums/ps1/final-fantasy-9/run.mid"
+   },
+   {
+    "title": "Search for the Princess",
+    "path": "albums/ps1/final-fantasy-9/search-for-the-princess.mid"
+   },
+   {
+    "title": "Secret Library Daguerreo",
+    "path": "albums/ps1/final-fantasy-9/secret-library-daguerreo.mid"
+   },
+   {
+    "title": "Shinra March (Millennium Version)",
+    "path": "albums/ps1/final-fantasy-9/shinra-march-millennium-version.mid"
+   },
+   {
+    "title": "Slew of Love Letters",
+    "path": "albums/ps1/final-fantasy-9/slew-of-love-letters.mid"
+   },
+   {
+    "title": "Song of Memories",
+    "path": "albums/ps1/final-fantasy-9/song-of-memories.mid"
+   },
+   {
+    "title": "Song of Memories (Alternate)",
+    "path": "albums/ps1/final-fantasy-9/song-of-memories-alternate.mid"
+   },
+   {
+    "title": "Soulless Village",
+    "path": "albums/ps1/final-fantasy-9/soulless-village.mid"
+   },
+   {
+    "title": "Steiner's Stealth",
+    "path": "albums/ps1/final-fantasy-9/steiner-s-stealth.mid"
+   },
+   {
+    "title": "Steiner's Theme",
+    "path": "albums/ps1/final-fantasy-9/steiner-s-theme.mid"
+   },
+   {
+    "title": "Stolen Eyes",
+    "path": "albums/ps1/final-fantasy-9/stolen-eyes.mid"
+   },
+   {
+    "title": "Successive Battles",
+    "path": "albums/ps1/final-fantasy-9/successive-battles.mid"
+   },
+   {
+    "title": "Terra",
+    "path": "albums/ps1/final-fantasy-9/terra.mid"
+   },
+   {
+    "title": "Tetra Master",
+    "path": "albums/ps1/final-fantasy-9/tetra-master.mid"
+   },
+   {
+    "title": "The Airship, Hilda Garde",
+    "path": "albums/ps1/final-fantasy-9/the-airship-hilda-garde.mid"
+   },
+   {
+    "title": "The Castle Frozen in Time",
+    "path": "albums/ps1/final-fantasy-9/the-castle-frozen-in-time.mid"
+   },
+   {
+    "title": "The Chosen Summoner",
+    "path": "albums/ps1/final-fantasy-9/the-chosen-summoner.mid"
+   },
+   {
+    "title": "The City That Never Sleeps",
+    "path": "albums/ps1/final-fantasy-9/the-city-that-never-sleeps.mid"
+   },
+   {
+    "title": "The Four Medallions",
+    "path": "albums/ps1/final-fantasy-9/the-four-medallions.mid"
+   },
+   {
+    "title": "The Heart of Melting Magic",
+    "path": "albums/ps1/final-fantasy-9/the-heart-of-melting-magic.mid"
+   },
+   {
+    "title": "The Place I'll Return to Someday",
+    "path": "albums/ps1/final-fantasy-9/the-place-i-ll-return-to-someday.mid"
+   },
+   {
+    "title": "The Sneaky Frog and the Scoundrel",
+    "path": "albums/ps1/final-fantasy-9/the-sneaky-frog-and-the-scoundrel.mid"
+   },
+   {
+    "title": "The Sword of Doubt",
+    "path": "albums/ps1/final-fantasy-9/the-sword-of-doubt.mid"
+   },
+   {
+    "title": "Theme of Tantalus",
+    "path": "albums/ps1/final-fantasy-9/theme-of-tantalus.mid"
+   },
+   {
+    "title": "Tonight",
+    "path": "albums/ps1/final-fantasy-9/tonight.mid"
+   },
+   {
+    "title": "Two Hearts Not Captured",
+    "path": "albums/ps1/final-fantasy-9/two-hearts-not-captured.mid"
+   },
+   {
+    "title": "Ukulele de Chocobo",
+    "path": "albums/ps1/final-fantasy-9/ukulele-de-chocobo.mid"
+   },
+   {
+    "title": "Unfathomed Reminiscence",
+    "path": "albums/ps1/final-fantasy-9/unfathomed-reminiscence.mid"
+   },
+   {
+    "title": "Vamo' Alla Flamenco",
+    "path": "albums/ps1/final-fantasy-9/vamo-alla-flamenco.mid"
+   },
+   {
+    "title": "Vivi's Theme",
+    "path": "albums/ps1/final-fantasy-9/vivi-s-theme.mid"
+   },
+   {
+    "title": "Wall of Sacred Beasts",
+    "path": "albums/ps1/final-fantasy-9/wall-of-sacred-beasts.mid"
+   },
+   {
+    "title": "We Are Thieves!",
+    "path": "albums/ps1/final-fantasy-9/we-are-thieves.mid"
+   },
+   {
+    "title": "You're Not Alone!",
+    "path": "albums/ps1/final-fantasy-9/you-re-not-alone.mid"
+   },
+   {
+    "title": "Your Warmth",
+    "path": "albums/ps1/final-fantasy-9/your-warmth.mid"
+   },
+   {
+    "title": "Zidane's Theme",
+    "path": "albums/ps1/final-fantasy-9/zidane-s-theme.mid"
+   }
+  ]
+ },
+ {
   "title": "Final Fantasy Legend",
   "songs": [
    {

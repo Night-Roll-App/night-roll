@@ -1,0 +1,502 @@
+{
+ "title": "Final Fantasy IX",
+ "order": 50,
+ "songs": {
+  "aloha-de-chocobo": "Aloha de Chocobo",
+  "amarant-s-theme": "Amarant's Theme",
+  "assault-of-the-white-dragons": "Assault of the White Dragons",
+  "at-the-south-gate-border": "At the South Gate Border",
+  "awakening-the-forest": "Awakening the Forest",
+  "black-mage-s-village": "Black Mage's Village",
+  "ceremony-for-the-gods": "Ceremony for the Gods",
+  "cid-s-theme": "Cid's Theme",
+  "cleyra-s-trunk": "Cleyra's Trunk",
+  "doga-and-une": "Doga and Une",
+  "eiko-s-theme": "Eiko's Theme",
+  "far-away-in-the-twilight": "Far Away in the Twilight",
+  "footsteps-of-desire": "Footsteps of Desire",
+  "freya-s-theme": "Freya's Theme",
+  "garnet-s-song-1": "Garnet's Song 1",
+  "garnet-s-song-2": "Garnet's Song 2",
+  "garnet-s-theme": "Garnet's Theme",
+  "grieve-for-the-skies": "Grieve for the Skies",
+  "hunter-s-chance": "Hunter's Chance",
+  "i-want-to-be-your-canary": "I Want to Be Your Canary",
+  "ipsen-s-castle": "Ipsen's Castle",
+  "jesters-of-the-moon": "Jesters of the Moon",
+  "keeper-of-time": "Keeper of Time",
+  "kingdom-of-burmecia": "Kingdom of Burmecia",
+  "kuja-s-theme-millennium-version": "Kuja's Theme (Millennium Version)",
+  "kuja-s-theme": "Kuja's Theme",
+  "memories-of-that-day": "Memories of That Day",
+  "moogle-s-theme": "Moogle's Theme",
+  "place-of-memory": "Place of Memory",
+  "qu-s-marsh": "Qu's Marsh",
+  "queen-of-the-abyss": "Queen of the Abyss",
+  "quina-s-theme": "Quina's Theme",
+  "rebirth-of-the-evil-mist": "Rebirth of the Evil Mist",
+  "rose-of-may": "Rose of May",
+  "ruins-of-madain-sari": "Ruins of Madain Sari",
+  "run": "Run!",
+  "search-for-the-princess": "Search for the Princess",
+  "shinra-march-millennium-version": "Shinra March (Millennium Version)",
+  "slew-of-love-letters": "Slew of Love Letters",
+  "song-of-memories-alternate": "Song of Memories (Alternate)",
+  "song-of-memories": "Song of Memories",
+  "steiner-s-stealth": "Steiner's Stealth",
+  "steiner-s-theme": "Steiner's Theme",
+  "the-airship-hilda-garde": "The Airship, Hilda Garde",
+  "the-castle-frozen-in-time": "The Castle Frozen in Time",
+  "the-heart-of-melting-magic": "The Heart of Melting Magic",
+  "the-place-i-ll-return-to-someday": "The Place I'll Return to Someday",
+  "the-sneaky-frog-and-the-scoundrel": "The Sneaky Frog and the Scoundrel",
+  "the-sword-of-doubt": "The Sword of Doubt",
+  "theme-of-tantalus": "Theme of Tantalus",
+  "ukulele-de-chocobo": "Ukulele de Chocobo",
+  "vamo-alla-flamenco": "Vamo' Alla Flamenco",
+  "vivi-s-theme": "Vivi's Theme",
+  "wall-of-sacred-beasts": "Wall of Sacred Beasts",
+  "we-are-thieves": "We Are Thieves!",
+  "you-re-not-alone": "You're Not Alone!",
+  "zidane-s-theme": "Zidane's Theme"
+ },
+ "nsf": {
+  "vault": "final-fantasy-9/",
+  "tracks": {
+   "a-transient-past": {
+    "n": 1,
+    "secs": 153.6
+   },
+   "aloha-de-chocobo": {
+    "n": 1,
+    "secs": 90.947664
+   },
+   "amarant-s-theme": {
+    "n": 1,
+    "secs": 129.23498
+   },
+   "ambush-attack": {
+    "n": 1,
+    "secs": 62.501
+   },
+   "assault-of-the-white-dragons": {
+    "n": 1,
+    "secs": 136.717386
+   },
+   "at-the-south-gate-border": {
+    "n": 1,
+    "secs": 157.355196
+   },
+   "awakening-the-forest": {
+    "n": 1,
+    "secs": 129.601944
+   },
+   "battle-strategy-conference": {
+    "n": 1,
+    "secs": 82.50121
+   },
+   "battle": {
+    "n": 1,
+    "secs": 72.374035
+   },
+   "bittersweet-romance": {
+    "n": 1,
+    "secs": 88.733424
+   },
+   "black-mage-s-village": {
+    "n": 1,
+    "secs": 94.58591
+   },
+   "black-waltz": {
+    "n": 1,
+    "secs": 45.00066
+   },
+   "boss-battle": {
+    "n": 1,
+    "secs": 112.94144
+   },
+   "ceremony-for-the-gods": {
+    "n": 1,
+    "secs": 66.463704
+   },
+   "cid-s-theme": {
+    "n": 1,
+    "secs": 109.501606
+   },
+   "cleyra-s-trunk": {
+    "n": 1,
+    "secs": 143.997504
+   },
+   "cleyra-settlement": {
+    "n": 1,
+    "secs": 56.24925
+   },
+   "crossing-those-hills": {
+    "n": 1,
+    "secs": 139.199072
+   },
+   "crystal-world": {
+    "n": 1,
+    "secs": 102.4
+   },
+   "dark-messenger": {
+    "n": 1,
+    "secs": 163.238744
+   },
+   "dissipating-sorrow": {
+    "n": 1,
+    "secs": 94.73715
+   },
+   "doga-and-une": {
+    "n": 1,
+    "secs": 49.845996
+   },
+   "eiko-s-theme": {
+    "n": 1,
+    "secs": 103.55510208333332
+   },
+   "esto-gaza": {
+    "n": 1,
+    "secs": 114.751683
+   },
+   "eternal-harvest": {
+    "n": 1,
+    "secs": 70.153624
+   },
+   "extraction": {
+    "n": 1,
+    "secs": 28.800432
+   },
+   "fairy-battle": {
+    "n": 1,
+    "secs": 65.50034799999999
+   },
+   "fanfare": {
+    "n": 1,
+    "secs": 20.510744833333337
+   },
+   "far-away-in-the-twilight": {
+    "n": 1,
+    "secs": 168.329428
+   },
+   "feel-my-blade": {
+    "n": 1,
+    "secs": 105.07469449999999
+   },
+   "final-battle": {
+    "n": 1,
+    "secs": 48.000768
+   },
+   "footsteps-of-desire": {
+    "n": 1,
+    "secs": 119.9963
+   },
+   "forgotten-face": {
+    "n": 1,
+    "secs": 95.512092
+   },
+   "fossil-roo": {
+    "n": 1,
+    "secs": 66.463704
+   },
+   "freya-s-theme": {
+    "n": 1,
+    "secs": 163.6356
+   },
+   "frontier-village-dali": {
+    "n": 1,
+    "secs": 129.167975
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 62.095521999999995
+   },
+   "gargan-roo": {
+    "n": 1,
+    "secs": 43.99956
+   },
+   "garnet-s-song-1": {
+    "n": 1,
+    "secs": 40.63593939583333
+   },
+   "garnet-s-song-2": {
+    "n": 1,
+    "secs": 45.232243
+   },
+   "garnet-s-theme": {
+    "n": 1,
+    "secs": 140.726616
+   },
+   "grieve-for-the-skies": {
+    "n": 1,
+    "secs": 67.99932
+   },
+   "gulug-volcano": {
+    "n": 1,
+    "secs": 108.001728
+   },
+   "hidden-lips": {
+    "n": 1,
+    "secs": 22.908984
+   },
+   "hunter-s-chance": {
+    "n": 1,
+    "secs": 106.772229
+   },
+   "i-want-to-be-your-canary": {
+    "n": 1,
+    "secs": 72.772388
+   },
+   "ice-caverns": {
+    "n": 1,
+    "secs": 80.15369599999998
+   },
+   "iifa-tree": {
+    "n": 1,
+    "secs": 130.00195
+   },
+   "immoral-melody": {
+    "n": 1,
+    "secs": 126.284172
+   },
+   "ipsen-s-castle": {
+    "n": 1,
+    "secs": 51.371185125000004
+   },
+   "jesters-of-the-moon": {
+    "n": 1,
+    "secs": 181.33152
+   },
+   "keeper-of-time": {
+    "n": 1,
+    "secs": 72.00108
+   },
+   "kingdom-of-burmecia": {
+    "n": 1,
+    "secs": 108.001584
+   },
+   "kuja-s-theme-millennium-version": {
+    "n": 1,
+    "secs": 67.2
+   },
+   "kuja-s-theme": {
+    "n": 1,
+    "secs": 63.000924
+   },
+   "limited-time": {
+    "n": 1,
+    "secs": 82.284288
+   },
+   "lindblum": {
+    "n": 1,
+    "secs": 112.9384
+   },
+   "memories-of-that-day": {
+    "n": 1,
+    "secs": 63.99936
+   },
+   "mistaken-love": {
+    "n": 1,
+    "secs": 98.24658933333332
+   },
+   "moogle-s-theme": {
+    "n": 1,
+    "secs": 49.6548
+   },
+   "mountain-pass": {
+    "n": 1,
+    "secs": 105.366816
+   },
+   "oeilvert": {
+    "n": 1,
+    "secs": 59.078848
+   },
+   "one-problem-settled": {
+    "n": 1,
+    "secs": 98.66568
+   },
+   "place-of-memory": {
+    "n": 1,
+    "secs": 115.2
+   },
+   "prelude": {
+    "n": 1,
+    "secs": 96.001408
+   },
+   "prima-vista-band": {
+    "n": 1,
+    "secs": 43.500638
+   },
+   "protecting-my-devotion": {
+    "n": 1,
+    "secs": 60.631776
+   },
+   "qu-s-marsh": {
+    "n": 1,
+    "secs": 95.998336
+   },
+   "queen-of-the-abyss": {
+    "n": 1,
+    "secs": 40.0006
+   },
+   "quina-s-theme": {
+    "n": 1,
+    "secs": 129.87916
+   },
+   "rebirth-of-the-evil-mist": {
+    "n": 1,
+    "secs": 126.854944
+   },
+   "rose-of-may": {
+    "n": 1,
+    "secs": 74.771667
+   },
+   "ruins-of-madain-sari": {
+    "n": 1,
+    "secs": 104.8
+   },
+   "run": {
+    "n": 1,
+    "secs": 78.165885
+   },
+   "search-for-the-princess": {
+    "n": 1,
+    "secs": 174.64142550000003
+   },
+   "secret-library-daguerreo": {
+    "n": 1,
+    "secs": 105.107108
+   },
+   "shinra-march-millennium-version": {
+    "n": 1,
+    "secs": 68.001088
+   },
+   "slew-of-love-letters": {
+    "n": 1,
+    "secs": 76.88096300000001
+   },
+   "song-of-memories-alternate": {
+    "n": 1,
+    "secs": 157.865251
+   },
+   "song-of-memories": {
+    "n": 1,
+    "secs": 137.10902000000004
+   },
+   "soulless-village": {
+    "n": 1,
+    "secs": 86.401296
+   },
+   "steiner-s-stealth": {
+    "n": 1,
+    "secs": 73.47084
+   },
+   "steiner-s-theme": {
+    "n": 1,
+    "secs": 127.99872
+   },
+   "stolen-eyes": {
+    "n": 1,
+    "secs": 86.688463
+   },
+   "successive-battles": {
+    "n": 1,
+    "secs": 102.261432
+   },
+   "terra": {
+    "n": 1,
+    "secs": 111.601674
+   },
+   "tetra-master": {
+    "n": 1,
+    "secs": 100.174464
+   },
+   "the-airship-hilda-garde": {
+    "n": 1,
+    "secs": 120.889584
+   },
+   "the-castle-frozen-in-time": {
+    "n": 1,
+    "secs": 82.284288
+   },
+   "the-chosen-summoner": {
+    "n": 1,
+    "secs": 77.540988
+   },
+   "the-city-that-never-sleeps": {
+    "n": 1,
+    "secs": 153.602304
+   },
+   "the-four-medallions": {
+    "n": 1,
+    "secs": 72.720303
+   },
+   "the-heart-of-melting-magic": {
+    "n": 1,
+    "secs": 105.496008
+   },
+   "the-place-i-ll-return-to-someday": {
+    "n": 1,
+    "secs": 54.857984
+   },
+   "the-sneaky-frog-and-the-scoundrel": {
+    "n": 1,
+    "secs": 103.678704
+   },
+   "the-sword-of-doubt": {
+    "n": 1,
+    "secs": 88.615104
+   },
+   "theme-of-tantalus": {
+    "n": 1,
+    "secs": 60.471552
+   },
+   "tonight": {
+    "n": 1,
+    "secs": 11.534167374999999
+   },
+   "two-hearts-not-captured": {
+    "n": 1,
+    "secs": 78.26153
+   },
+   "ukulele-de-chocobo": {
+    "n": 1,
+    "secs": 63.99936
+   },
+   "unfathomed-reminiscence": {
+    "n": 1,
+    "secs": 104.8
+   },
+   "vamo-alla-flamenco": {
+    "n": 1,
+    "secs": 94.667211
+   },
+   "vivi-s-theme": {
+    "n": 1,
+    "secs": 86.11553
+   },
+   "wall-of-sacred-beasts": {
+    "n": 1,
+    "secs": 66.000968
+   },
+   "we-are-thieves": {
+    "n": 1,
+    "secs": 56.000896
+   },
+   "you-re-not-alone": {
+    "n": 1,
+    "secs": 137.14048
+   },
+   "your-warmth": {
+    "n": 1,
+    "secs": 29.454397999999998
+   },
+   "zidane-s-theme": {
+    "n": 1,
+    "secs": 169.754748
+   }
+  },
+  "chip": "psf",
+  "perFile": true
+ }
+}
