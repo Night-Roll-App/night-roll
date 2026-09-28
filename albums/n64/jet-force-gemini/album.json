@@ -1,0 +1,356 @@
+{
+ "title": "Jet Force Gemini",
+ "order": 50,
+ "songs": {
+  "departing-from-goldwood-sfx": "Departing from Goldwood (SFX)",
+  "destroying-the-asteroid": "Destroying the Asteroid",
+  "floyd-s-destruction": "Floyd's Destruction",
+  "jeff-barry-racing": "Jeff & Barry Racing",
+  "landing-on-gem-quarry": "Landing on Gem Quarry",
+  "landing-on-sekhmet-sfx": "Landing on Sekhmet (SFX)",
+  "landing-on-ss-anubis-sfx": "Landing on SS Anubis (SFX)",
+  "meeting-mizar-part-1": "Meeting Mizar (Part 1)",
+  "meeting-mizar-part-2": "Meeting Mizar (Part 2)",
+  "mizar-s-death": "Mizar's Death",
+  "mizar-s-palace": "Mizar's Palace",
+  "mizar-s-racetrack": "Mizar's Racetrack",
+  "s-s-anubis": "S.S. Anubis",
+  "something-with-a-beat": "Something with a Beat",
+  "transformation-of-tawfret": "Transformation of Tawfret",
+  "unidentified-1-sfx": "Unidentified 1 (SFX)",
+  "unidentified-2-sfx": "Unidentified 2 (SFX)",
+  "unidentified-3-sfx": "Unidentified 3 (SFX)",
+  "unidentified-4-sfx": "Unidentified 4 (SFX)",
+  "unidentified-5-sfx": "Unidentified 5 (SFX)",
+  "unidentified-6-sfx": "Unidentified 6 (SFX)",
+  "unidentified-7-sfx": "Unidentified 7 (SFX)",
+  "unidentified-8-sfx": "Unidentified 8 (SFX)",
+  "unidentified-9-sfx": "Unidentified 9 (SFX)",
+  "vela-s-capture": "Vela's Capture"
+ },
+ "nsf": {
+  "vault": "jet-force-gemini/",
+  "tracks": {
+   "activating-pyramid": {
+    "n": 1,
+    "secs": 139.58500869939473
+   },
+   "arcade-complete": {
+    "n": 1,
+    "secs": 2.0863779709253136
+   },
+   "assembling-floyd": {
+    "n": 1,
+    "secs": 14.826923076923077
+   },
+   "asteroid": {
+    "n": 1,
+    "secs": 202.28571428571428
+   },
+   "boss-death": {
+    "n": 1,
+    "secs": 29.53846153846154
+   },
+   "boss-fight": {
+    "n": 1,
+    "secs": 54.964285714285715
+   },
+   "boss-intro": {
+    "n": 1,
+    "secs": 68.67857142857143
+   },
+   "cave": {
+    "n": 1,
+    "secs": 119.23315633404593
+   },
+   "cerulean": {
+    "n": 1,
+    "secs": 217.3068219201279
+   },
+   "character-select": {
+    "n": 1,
+    "secs": 57.64705882352941
+   },
+   "death": {
+    "n": 1,
+    "secs": 6.9375
+   },
+   "departing-from-goldwood-sfx": {
+    "n": 1,
+    "secs": 67.63636363636364
+   },
+   "destroying-the-asteroid": {
+    "n": 1,
+    "secs": 22.794642857142858
+   },
+   "entering-pyramid": {
+    "n": 1,
+    "secs": 67.64233576642336
+   },
+   "eschebone": {
+    "n": 1,
+    "secs": 243.8127223857673
+   },
+   "finding-floyd-part-1": {
+    "n": 1,
+    "secs": 3.75
+   },
+   "finding-floyd-part-2": {
+    "n": 1,
+    "secs": 3.75
+   },
+   "finding-floyd-part-3": {
+    "n": 1,
+    "secs": 3.75
+   },
+   "floyd-mission": {
+    "n": 1,
+    "secs": 80.51612903225806
+   },
+   "floyd-s-destruction": {
+    "n": 1,
+    "secs": 56.58424381828637
+   },
+   "flume": {
+    "n": 1,
+    "secs": 46.98795180722892
+   },
+   "funky-disco": {
+    "n": 1,
+    "secs": 21.460093896713616
+   },
+   "gem-quarry-saved": {
+    "n": 1,
+    "secs": 115.99728629579376
+   },
+   "gemini": {
+    "n": 1,
+    "secs": 0.5806451612903226
+   },
+   "gold-bar": {
+    "n": 1,
+    "secs": 2.826923076923077
+   },
+   "goldwood": {
+    "n": 1,
+    "secs": 211.84745879594513
+   },
+   "ichor": {
+    "n": 1,
+    "secs": 183.5042735042735
+   },
+   "intro-movie": {
+    "n": 1,
+    "secs": 156.68120452884457
+   },
+   "jeff-barry-racing": {
+    "n": 1,
+    "secs": 36.92307692307692
+   },
+   "jungle": {
+    "n": 1,
+    "secs": 106.04651162790698
+   },
+   "landing-on-gem-quarry": {
+    "n": 1,
+    "secs": 88.52941176470588
+   },
+   "landing-on-sekhmet-sfx": {
+    "n": 1,
+    "secs": 39.81818181818182
+   },
+   "landing-on-ss-anubis-sfx": {
+    "n": 1,
+    "secs": 24.011363636363637
+   },
+   "large-gemini": {
+    "n": 1,
+    "secs": 0.7983870967741935
+   },
+   "level-complete": {
+    "n": 1,
+    "secs": 36.42857142857143
+   },
+   "logo-screens": {
+    "n": 1,
+    "secs": 16.397727272727273
+   },
+   "main-theme": {
+    "n": 1,
+    "secs": 109.92
+   },
+   "medal-ceremony": {
+    "n": 1,
+    "secs": 154.57291666666666
+   },
+   "medal": {
+    "n": 1,
+    "secs": 6.645833333333333
+   },
+   "meeting-lupus": {
+    "n": 1,
+    "secs": 82.7807486631016
+   },
+   "meeting-mizar-part-1": {
+    "n": 1,
+    "secs": 202.5367581238068
+   },
+   "meeting-mizar-part-2": {
+    "n": 1,
+    "secs": 74.2153902460717
+   },
+   "menu": {
+    "n": 1,
+    "secs": 198.54545454545453
+   },
+   "mines": {
+    "n": 1,
+    "secs": 190.29403426455912
+   },
+   "mizar-escapes": {
+    "n": 1,
+    "secs": 271.7487840519641
+   },
+   "mizar-s-death": {
+    "n": 1,
+    "secs": 139.0282940693381
+   },
+   "mizar-s-palace": {
+    "n": 1,
+    "secs": 214.84007878800085
+   },
+   "mizar-s-racetrack": {
+    "n": 1,
+    "secs": 72
+   },
+   "racetrack-lose": {
+    "n": 1,
+    "secs": 5.188577535715801
+   },
+   "racetrack-win": {
+    "n": 1,
+    "secs": 4.0234375
+   },
+   "rescuing-vela": {
+    "n": 1,
+    "secs": 78.27069265022509
+   },
+   "rith-essa": {
+    "n": 1,
+    "secs": 236.1025641025641
+   },
+   "s-s-anubis": {
+    "n": 1,
+    "secs": 158.5
+   },
+   "sekhmet": {
+    "n": 1,
+    "secs": 258.986996453831
+   },
+   "ship-landing-bay": {
+    "n": 1,
+    "secs": 198.54545454545453
+   },
+   "something-faster": {
+    "n": 1,
+    "secs": 70.57723577235772
+   },
+   "something-with-a-beat": {
+    "n": 1,
+    "secs": 52.06986027944112
+   },
+   "soothing-rhythms": {
+    "n": 1,
+    "secs": 101.23031496062993
+   },
+   "spacestation": {
+    "n": 1,
+    "secs": 194.4
+   },
+   "spawnship": {
+    "n": 1,
+    "secs": 180
+   },
+   "tawfret": {
+    "n": 1,
+    "secs": 226
+   },
+   "the-goldwood-invasion": {
+    "n": 1,
+    "secs": 107.62077922077923
+   },
+   "timeloop-start": {
+    "n": 1,
+    "secs": 5.1875
+   },
+   "transformation-of-tawfret": {
+    "n": 1,
+    "secs": 75.8160146516197
+   },
+   "travelling": {
+    "n": 1,
+    "secs": 42.5
+   },
+   "unidentified-1-sfx": {
+    "n": 1,
+    "secs": 67.63636363636364
+   },
+   "unidentified-1": {
+    "n": 1,
+    "secs": 36.052083333333336
+   },
+   "unidentified-2-sfx": {
+    "n": 1,
+    "secs": 198.54545454545453
+   },
+   "unidentified-2": {
+    "n": 1,
+    "secs": 178.81759917483427
+   },
+   "unidentified-3-sfx": {
+    "n": 1,
+    "secs": 65.45454545454545
+   },
+   "unidentified-3": {
+    "n": 1,
+    "secs": 103.57894736842105
+   },
+   "unidentified-4-sfx": {
+    "n": 1,
+    "secs": 19.431818181818183
+   },
+   "unidentified-5-sfx": {
+    "n": 1,
+    "secs": 18.818181818181817
+   },
+   "unidentified-6-sfx": {
+    "n": 1,
+    "secs": 67.63636363636364
+   },
+   "unidentified-7-sfx": {
+    "n": 1,
+    "secs": 69.81818181818181
+   },
+   "unidentified-8-sfx": {
+    "n": 1,
+    "secs": 67.63636363636364
+   },
+   "unidentified-9-sfx": {
+    "n": 1,
+    "secs": 24
+   },
+   "vela-s-capture": {
+    "n": 1,
+    "secs": 77.89473684210526
+   }
+  },
+  "chip": "usf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "nus-njfe-usa.usflib",
+    "file": "nus-njfe-usa.usflib"
+   }
+  ]
+ }
+}

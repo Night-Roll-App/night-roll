@@ -6761,6 +6761,323 @@
   ]
  },
  {
+  "title": "Jet Force Gemini",
+  "songs": [
+   {
+    "title": "Activating Pyramid",
+    "path": "albums/n64/jet-force-gemini/activating-pyramid.mid"
+   },
+   {
+    "title": "Arcade Complete",
+    "path": "albums/n64/jet-force-gemini/arcade-complete.mid"
+   },
+   {
+    "title": "Assembling Floyd",
+    "path": "albums/n64/jet-force-gemini/assembling-floyd.mid"
+   },
+   {
+    "title": "Asteroid",
+    "path": "albums/n64/jet-force-gemini/asteroid.mid"
+   },
+   {
+    "title": "Boss Death",
+    "path": "albums/n64/jet-force-gemini/boss-death.mid"
+   },
+   {
+    "title": "Boss Fight",
+    "path": "albums/n64/jet-force-gemini/boss-fight.mid"
+   },
+   {
+    "title": "Boss Intro",
+    "path": "albums/n64/jet-force-gemini/boss-intro.mid"
+   },
+   {
+    "title": "Cave",
+    "path": "albums/n64/jet-force-gemini/cave.mid"
+   },
+   {
+    "title": "Cerulean",
+    "path": "albums/n64/jet-force-gemini/cerulean.mid"
+   },
+   {
+    "title": "Character Select",
+    "path": "albums/n64/jet-force-gemini/character-select.mid"
+   },
+   {
+    "title": "Death",
+    "path": "albums/n64/jet-force-gemini/death.mid"
+   },
+   {
+    "title": "Departing from Goldwood (SFX)",
+    "path": "albums/n64/jet-force-gemini/departing-from-goldwood-sfx.mid"
+   },
+   {
+    "title": "Destroying the Asteroid",
+    "path": "albums/n64/jet-force-gemini/destroying-the-asteroid.mid"
+   },
+   {
+    "title": "Entering Pyramid",
+    "path": "albums/n64/jet-force-gemini/entering-pyramid.mid"
+   },
+   {
+    "title": "Eschebone",
+    "path": "albums/n64/jet-force-gemini/eschebone.mid"
+   },
+   {
+    "title": "Finding Floyd Part 1",
+    "path": "albums/n64/jet-force-gemini/finding-floyd-part-1.mid"
+   },
+   {
+    "title": "Finding Floyd Part 2",
+    "path": "albums/n64/jet-force-gemini/finding-floyd-part-2.mid"
+   },
+   {
+    "title": "Finding Floyd Part 3",
+    "path": "albums/n64/jet-force-gemini/finding-floyd-part-3.mid"
+   },
+   {
+    "title": "Floyd Mission",
+    "path": "albums/n64/jet-force-gemini/floyd-mission.mid"
+   },
+   {
+    "title": "Floyd's Destruction",
+    "path": "albums/n64/jet-force-gemini/floyd-s-destruction.mid"
+   },
+   {
+    "title": "Flume",
+    "path": "albums/n64/jet-force-gemini/flume.mid"
+   },
+   {
+    "title": "Funky Disco",
+    "path": "albums/n64/jet-force-gemini/funky-disco.mid"
+   },
+   {
+    "title": "Gem Quarry Saved",
+    "path": "albums/n64/jet-force-gemini/gem-quarry-saved.mid"
+   },
+   {
+    "title": "Gemini",
+    "path": "albums/n64/jet-force-gemini/gemini.mid"
+   },
+   {
+    "title": "Gold Bar",
+    "path": "albums/n64/jet-force-gemini/gold-bar.mid"
+   },
+   {
+    "title": "Goldwood",
+    "path": "albums/n64/jet-force-gemini/goldwood.mid"
+   },
+   {
+    "title": "Ichor",
+    "path": "albums/n64/jet-force-gemini/ichor.mid"
+   },
+   {
+    "title": "Intro Movie",
+    "path": "albums/n64/jet-force-gemini/intro-movie.mid"
+   },
+   {
+    "title": "Jeff & Barry Racing",
+    "path": "albums/n64/jet-force-gemini/jeff-barry-racing.mid"
+   },
+   {
+    "title": "Jungle",
+    "path": "albums/n64/jet-force-gemini/jungle.mid"
+   },
+   {
+    "title": "Landing on Gem Quarry",
+    "path": "albums/n64/jet-force-gemini/landing-on-gem-quarry.mid"
+   },
+   {
+    "title": "Landing on Sekhmet (SFX)",
+    "path": "albums/n64/jet-force-gemini/landing-on-sekhmet-sfx.mid"
+   },
+   {
+    "title": "Landing on SS Anubis (SFX)",
+    "path": "albums/n64/jet-force-gemini/landing-on-ss-anubis-sfx.mid"
+   },
+   {
+    "title": "Large Gemini",
+    "path": "albums/n64/jet-force-gemini/large-gemini.mid"
+   },
+   {
+    "title": "Level Complete",
+    "path": "albums/n64/jet-force-gemini/level-complete.mid"
+   },
+   {
+    "title": "Logo Screens",
+    "path": "albums/n64/jet-force-gemini/logo-screens.mid"
+   },
+   {
+    "title": "Main Theme",
+    "path": "albums/n64/jet-force-gemini/main-theme.mid"
+   },
+   {
+    "title": "Medal",
+    "path": "albums/n64/jet-force-gemini/medal.mid"
+   },
+   {
+    "title": "Medal Ceremony",
+    "path": "albums/n64/jet-force-gemini/medal-ceremony.mid"
+   },
+   {
+    "title": "Meeting Lupus",
+    "path": "albums/n64/jet-force-gemini/meeting-lupus.mid"
+   },
+   {
+    "title": "Meeting Mizar (Part 1)",
+    "path": "albums/n64/jet-force-gemini/meeting-mizar-part-1.mid"
+   },
+   {
+    "title": "Meeting Mizar (Part 2)",
+    "path": "albums/n64/jet-force-gemini/meeting-mizar-part-2.mid"
+   },
+   {
+    "title": "Menu",
+    "path": "albums/n64/jet-force-gemini/menu.mid"
+   },
+   {
+    "title": "Mines",
+    "path": "albums/n64/jet-force-gemini/mines.mid"
+   },
+   {
+    "title": "Mizar Escapes",
+    "path": "albums/n64/jet-force-gemini/mizar-escapes.mid"
+   },
+   {
+    "title": "Mizar's Death",
+    "path": "albums/n64/jet-force-gemini/mizar-s-death.mid"
+   },
+   {
+    "title": "Mizar's Palace",
+    "path": "albums/n64/jet-force-gemini/mizar-s-palace.mid"
+   },
+   {
+    "title": "Mizar's Racetrack",
+    "path": "albums/n64/jet-force-gemini/mizar-s-racetrack.mid"
+   },
+   {
+    "title": "Racetrack Lose",
+    "path": "albums/n64/jet-force-gemini/racetrack-lose.mid"
+   },
+   {
+    "title": "Racetrack Win",
+    "path": "albums/n64/jet-force-gemini/racetrack-win.mid"
+   },
+   {
+    "title": "Rescuing Vela",
+    "path": "albums/n64/jet-force-gemini/rescuing-vela.mid"
+   },
+   {
+    "title": "Rith Essa",
+    "path": "albums/n64/jet-force-gemini/rith-essa.mid"
+   },
+   {
+    "title": "S.S. Anubis",
+    "path": "albums/n64/jet-force-gemini/s-s-anubis.mid"
+   },
+   {
+    "title": "Sekhmet",
+    "path": "albums/n64/jet-force-gemini/sekhmet.mid"
+   },
+   {
+    "title": "Ship Landing Bay",
+    "path": "albums/n64/jet-force-gemini/ship-landing-bay.mid"
+   },
+   {
+    "title": "Something Faster",
+    "path": "albums/n64/jet-force-gemini/something-faster.mid"
+   },
+   {
+    "title": "Something with a Beat",
+    "path": "albums/n64/jet-force-gemini/something-with-a-beat.mid"
+   },
+   {
+    "title": "Soothing Rhythms",
+    "path": "albums/n64/jet-force-gemini/soothing-rhythms.mid"
+   },
+   {
+    "title": "Spacestation",
+    "path": "albums/n64/jet-force-gemini/spacestation.mid"
+   },
+   {
+    "title": "Spawnship",
+    "path": "albums/n64/jet-force-gemini/spawnship.mid"
+   },
+   {
+    "title": "Tawfret",
+    "path": "albums/n64/jet-force-gemini/tawfret.mid"
+   },
+   {
+    "title": "The Goldwood Invasion",
+    "path": "albums/n64/jet-force-gemini/the-goldwood-invasion.mid"
+   },
+   {
+    "title": "Timeloop Start",
+    "path": "albums/n64/jet-force-gemini/timeloop-start.mid"
+   },
+   {
+    "title": "Transformation of Tawfret",
+    "path": "albums/n64/jet-force-gemini/transformation-of-tawfret.mid"
+   },
+   {
+    "title": "Travelling",
+    "path": "albums/n64/jet-force-gemini/travelling.mid"
+   },
+   {
+    "title": "Unidentified 1",
+    "path": "albums/n64/jet-force-gemini/unidentified-1.mid"
+   },
+   {
+    "title": "Unidentified 1 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-1-sfx.mid"
+   },
+   {
+    "title": "Unidentified 2",
+    "path": "albums/n64/jet-force-gemini/unidentified-2.mid"
+   },
+   {
+    "title": "Unidentified 2 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-2-sfx.mid"
+   },
+   {
+    "title": "Unidentified 3",
+    "path": "albums/n64/jet-force-gemini/unidentified-3.mid"
+   },
+   {
+    "title": "Unidentified 3 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-3-sfx.mid"
+   },
+   {
+    "title": "Unidentified 4 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-4-sfx.mid"
+   },
+   {
+    "title": "Unidentified 5 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-5-sfx.mid"
+   },
+   {
+    "title": "Unidentified 6 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-6-sfx.mid"
+   },
+   {
+    "title": "Unidentified 7 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-7-sfx.mid"
+   },
+   {
+    "title": "Unidentified 8 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-8-sfx.mid"
+   },
+   {
+    "title": "Unidentified 9 (SFX)",
+    "path": "albums/n64/jet-force-gemini/unidentified-9-sfx.mid"
+   },
+   {
+    "title": "Vela's Capture",
+    "path": "albums/n64/jet-force-gemini/vela-s-capture.mid"
+   }
+  ]
+ },
+ {
   "title": "Kirby's Adventure",
   "songs": [
    {
