@@ -10,14 +10,17 @@
 // key's octave 6 = the table's), the ADSR as psx-spx states it, the per-note
 // volume from the score, including a volume/expression change inside a
 // held note (the note's gain breakpoints), pitch slides inside a note (the
-// note's slide targets). What is not: pan and reverb (mono, dry), the SPU's
+// note's slide targets), the pan (each track is a stereo pair {l, r}: the
+// SPU's two volume registers are linear, so a note at pan p (0..127) has
+// left (127 − p)/127 and right p/127 of its level — the pan at note-on,
+// a pan change under a held note is not followed). What is not: reverb (dry), the SPU's
 // 4-tap interpolation (linear here).
 // Josh, 2026-09-27, FF7 Opening ~ Bombing Mission: "they just don't sound
 // like the same instrument … hopefully the information should be there."
 import { decodeAdpcm } from "./vab.mjs";
 import { readInstr, INSTR_STRIDE } from "./instr.mjs";
 import { secondsAt } from "./seq.mjs";
-import { channelGroups } from "./notes.mjs";
+import { channelGroups, notePan } from "./notes.mjs";
 
 const SPU_RATE = 44100;
 
@@ -94,7 +97,7 @@ class Envelope {
   }
 }
 
-// -> {sampleRate, seconds, [trackName]: Float32Array}
+// -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}}
 export async function renderSpu(result, opts = {}) {
   const {ram, table, bank} = opts;
   if (!ram || !table) throw new Error("renderSpu needs the RAM image and the instrument table");
@@ -124,8 +127,9 @@ export async function renderSpu(result, opts = {}) {
   const out = {sampleRate, seconds};
   let done = 0, total = notes.length;
   for (const g of groups) {
-    const buf = new Float32Array(N);
+    const l = new Float32Array(N), r = new Float32Array(N);
     for (const n of g.notes) {
+      const pan = notePan(n), gL = (127 - pan) / 127, gR = pan / 127;
       const rec = recOf(n.drum && n.tone && n.tone.instrument != null ? n.tone.instrument : n.program);
       if (rec) {
         const smp = sampleOf(rec);
@@ -174,14 +178,15 @@ export async function renderSpu(result, opts = {}) {
             step = ratio * Math.pow(2, semis / 12);
           }
           const p0 = Math.floor(pos), f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : (smp.oneShot ? a : pcm[smp.loopStart != null ? smp.loopStart : 0]);
-          buf[i] += (a + (b - a) * f) / 32768 * (lv / 0x7FFF) * vol * 0.5;
+          const v = (a + (b - a) * f) / 32768 * (lv / 0x7FFF) * vol * 0.5;
+          l[i] += v * gL; r[i] += v * gR;
           pos += step;
         }
       }
       done++;
       if (opts.onProgress && (done & 63) === 0) { opts.onProgress(done / total); await new Promise(r => setTimeout(r, 0)); }
     }
-    out[g.name] = buf;
+    out[g.name] = {l, r};
   }
   if (opts.onProgress) opts.onProgress(1);
   return out;

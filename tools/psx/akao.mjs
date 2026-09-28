@@ -101,7 +101,7 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
   const visited = new Uint8Array(d.length);
   const firstTickAt = new Map();   // offset -> tick of first visit (loop start lookup)
   const notes = [], tempos = [], timeSigs = [], warnings = [], bendsOut = [];
-  let tick = 0, octave = 0, transpose = 0, program = 0, vol = 127, expr = 127, tuning = 0, drum = null;
+  let tick = 0, octave = 0, transpose = 0, program = 0, vol = 127, expr = 127, tuning = 0, drum = null, pan = 64;
   let legato = false, slur = false;
   let oneTime = null, fixedDelta = 0, lastDelta = 0;
   const loopBegin = [0, 0, 0, 0], loopCount = [0, 0, 0, 0];
@@ -145,7 +145,7 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
         let key = drum ? 24 + rel : octave * 12 + rel + transpose;
         const cents = tuningCents();
         const exact = key + cents / 100;
-        const n = {tick, endTick: tick + delta, ch: ti, voice, key, vel: curVol(), program, pitch: Math.round(exact), cents: Math.round((exact - Math.round(exact)) * 100), drum: !!drum, tone: null, root: null, legato: legato || slur};
+        const n = {tick, endTick: tick + delta, ch: ti, voice, key, vel: curVol(), program, pitch: Math.round(exact), cents: Math.round((exact - Math.round(exact)) * 100), drum: !!drum, tone: null, root: null, legato: legato || slur, pan};
         if (drum) {
           const e = drum.entries[rel];
           if (e) { n.program = e.instrument; n.tone = {instrument: e.instrument, key: e.key, vol: e.vol, pan: e.pan}; }
@@ -167,6 +167,7 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
       case 0xF4: program = a; break;                       // overlay voice: primary instrument
       case 0xA2: oneTime = a; lastDelta = a; break;
       case 0xA3: { const was = level(); vol = a; volFade = null; gainStep(was); break; }
+      case 0xAA: pan = a & 0x7F; break;                  // voice pan, 0 left .. 127 right (the SPU's linear L/R volumes)
       case 0xA8: { const was = level(); expr = a; exprFade = null; gainStep(was); break; }
       case 0xA9: { const len = a || 256; const from = fadeAt(exprFade, expr); exprFade = {start: tick, end: tick + len, from, to: b}; expr = b;
                    gains.push({tick, level: fadeAt(volFade, vol) * from / (127 * 127)}); gains.push({tick: tick + len, level: fadeAt(volFade, vol) * b / (127 * 127)}); break; }
@@ -231,7 +232,7 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
         break;
       }
       case 0xED: drum = null; break;
-      default: break; // ADSR, LFOs, pan, reverb, noise, side-chains: no note fact
+      default: break; // ADSR, LFOs, reverb, noise, side-chains: no note fact
     }
   }
   // each note carries the slice of the automation it sounds through, relative

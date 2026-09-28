@@ -8,11 +8,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import zlib from "node:zlib";
 import { inflateRaw, decompress1172, is1172, parseCSeq, cseqNotes, unrollTracks, findMusicTable, miniOverrideWords, miniRareTrack,
-         findRareBankFile, readRareBank, isKitInstrument, envelopeGain, renderRare, rareSequenceOfSet, ENV_FLOOR } from "../tools/n64/rare.mjs";
+         findRareBankFile, readRareBank, isKitInstrument, envelopeGain, renderRare, rareSequenceOfSet, ENV_FLOOR, panGains } from "../tools/n64/rare.mjs";
 import { SparseImage, PJ64_RDRAM, rdramOf } from "../tools/n64/usf.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
 import { renderN64 } from "../tools/n64/render.mjs";
-import { toMidi, channelGroups } from "../tools/n64/notes.mjs";
+import { toMidi, channelGroups, splitSlides, toNotesTxt } from "../tools/n64/notes.mjs";
 import { TICKS_PER_BEAT } from "../tools/n64/constants.mjs";
 
 const be32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
@@ -257,10 +257,10 @@ test("renderN64 dispatches a rare result to renderRare: one note at the bank's r
                notes: [{ch: 0, inst: 0, drum: false, key: 60, semitone: 60, midi: 60, tick: 0, dur: 48, vel: 127, bank: 0, vol: 1, pan: 0.5, rev: 0, bend: 0},
                        {ch: 3, inst: 0, drum: false, key: 72, semitone: 72, midi: 72, tick: 48, dur: 48, vel: 127, bank: 0, vol: 1, pan: 0.5, rev: 0, bend: 0},
                        {ch: 5, inst: 9, drum: false, key: 60, semitone: 60, midi: 60, tick: 0, dur: 48, vel: 100, bank: 0, vol: 1, pan: 0.5, rev: 0, bend: 0}]};
-  const r = await renderN64(res, {set, banks: [0], sampleRate: 22050});
+  const r = await renderN64(res, {set, banks: [0], sampleRate: 22050, stereo: false});
   assert.equal(r.sampleRate, 22050);
   assert.equal(r.bankRate, 22050);
-  assert.ok(r["ch 0 inst 0"] instanceof Float32Array && r["ch 3 inst 0"] instanceof Float32Array);
+  assert.ok(r["ch 0 inst 0"] instanceof Float32Array && r["ch 3 inst 0"] instanceof Float32Array, "stereo: false keeps the mono buffers");
   assert.deepEqual(r.silent, ["ch 5 inst 9"]);
   assert.match(r.warnings.join(" "), /program 9 .* not in the bank/);
   const a = r["ch 0 inst 0"], b = r["ch 3 inst 0"];
@@ -274,7 +274,7 @@ test("renderN64 dispatches a rare result to renderRare: one note at the bank's r
   // release: 20 ms after the note ends the track is (near) silent
   assert.ok(Math.abs(a[Math.floor(half + 22050 * 0.03)]) < 1e-3);
   // the direct entry point is the same function
-  const direct = await renderRare(res, {set, sampleRate: 22050});
+  const direct = await renderRare(res, {set, sampleRate: 22050, stereo: false});
   assert.equal(direct["ch 0 inst 0"].length, a.length);
 });
 
@@ -311,4 +311,63 @@ test("sequenceOfSet: a set without EAD tables goes to the Rare driver and comes 
   assert.ok(toMidi(res).length > 60);
   const direct = rareSequenceOfSet(set);
   assert.equal(direct.res.notes.length, 3);
+});
+
+test("pitch bends: wheel events inside a note ride it as slides; the roll splits per landed pitch; the render bends the one voice", async () => {
+  // ch0 program 0: C4 for two quarters, the wheel to +8191 (= +2 semitones at the SDK's 200-cent range) halfway; then
+  // a note that starts already bent (wheel at note-on → n.bend, no slide) and a kit note under a bend (no slide)
+  const bendTo = (v, ch = 0) => { const w = v + 8192; return [0xE0 | ch, w & 0x7F, (w >> 7) & 0x7F]; };
+  const t0 = [...tempo(500000), 0, 0xC0, 0, ...note(0, 0, 60, 100, 192), 96, ...bendTo(8191), 96, ...bendTo(0), ...note(0, 0, 64, 100, 96), 96, ...bendTo(-8192), ...note(0, 0, 64, 100, 96), ...END];
+  const t1 = [0, 0xC1, 1, ...note(0, 1, 36, 100, 192), 96, ...bendTo(8191, 1), ...END];
+  const cs = parseCSeq(cseq([t0, t1]));
+  const res = cseqNotes(cs, {bendRangeOf: p => p === 1 ? 1200 : 200});
+  const [a, b, c] = res.notes.filter(n => n.ch === 0), k = res.notes.find(n => n.ch === 1);
+  assert.deepEqual(a.slide, [{t: 48, len: 1, to: 8191 / 8192 * 2}]);
+  assert.equal(a.bend, 0);
+  assert.equal(b.slide, undefined, "the wheel returned to 0 at the note-on: no slide");
+  assert.ok(Math.abs(c.bend + 1) < 1e-9 && c.slide === undefined, "starts bent a whole tone down, nothing inside");
+  assert.deepEqual(k.slide, [{t: 48, len: 1, to: 8191 / 8192 * 12}], "range from the instrument (1200 cents)");
+  assert.match(res.warnings.join(" "), /2 notes carry pitch bends/);
+  // the roll: the first note becomes C4 then D4; the kit note keeps its slot when flagged drum
+  const split = splitSlides(res.notes);
+  assert.deepEqual(split.filter(n => n.ch === 0).map(n => [n.midi, n.tick, n.dur, !!n.slid]), [[60, 0, 48, true], [62, 48, 48, true], [64, 96, 48, false], [64, 144, 48, false]]);
+  k.drum = true;
+  assert.equal(splitSlides([k]).length, 1);
+  assert.ok(toMidi(res).length > 100);
+  assert.match(toNotesTxt(res), /D4 1 v100/);
+  // the render: one voice, its period shortening by 2^(2/12) after the bend — no second attack
+  const st = bankState(), rom = squareRom(), set = {rom, state: st, top: {state: []}};
+  const one = {...res, notes: [a]};
+  const r = await renderN64(one, {set, banks: [0], sampleRate: 22050, stereo: false});
+  const x = r["ch 0 inst 0"];
+  const zc = (from, to) => { let n = 0; for (let i = from + 1; i < to; i++) if ((x[i] >= 0) !== (x[i - 1] >= 0)) n++; return n; };
+  const before = zc(2000, 2800), after = zc(11025 + 2000, 11025 + 2800);
+  assert.ok(Math.abs(before - 200) <= 2, "period 8 before: " + before);
+  assert.ok(Math.abs(after - 200 * Math.pow(2, 2 / 12)) <= 3, "a whole tone up after: " + after);
+  let peak = 0; for (let i = 11025 - 50; i < 11025 + 50; i++) peak = Math.max(peak, Math.abs(x[i]));
+  assert.ok(peak > 0.9 * 14336 / 32768 * 100 / 127, "the voice carries through the bend at its level (velocity 100; interpolated, so a hair under the square peak): " + peak);
+});
+
+test("stereo: a track is {l, r}; the voice pan is samplePan + cc10 − 64 through libaudio's equal-power table; the mono option keeps the old buffers", async () => {
+  assert.deepEqual(panGains(0), {l: 1, r: Math.cos(127 * Math.PI / 254)});
+  assert.ok(Math.abs(panGains(0).r) < 1e-9 && Math.abs(panGains(127).l) < 1e-9 && panGains(127).r === 1);
+  const c = panGains(64); assert.ok(Math.abs(c.l - c.r) < 0.03 && Math.abs(c.l * c.l + c.r * c.r - 1) < 1e-9, "centre: equal power");
+  const st = bankState(), rom = squareRom(), set = {rom, state: st, top: {state: []}};
+  const mk = (ch, pan) => ({ch, inst: 0, drum: false, key: 60, semitone: 60, midi: 60, tick: 0, dur: 48, vel: 127, bank: 0, vol: 1, pan, rev: 0, bend: 0});
+  const res = {driver: "rare", ticksPerBeat: 48, tempos: [{tick: 0, bpm: 120}], endTick: 48, loop: null, warnings: [], notes: [mk(0, 0), mk(1, 64), mk(2, 127), mk(3, undefined)]};
+  const r = await renderN64(res, {set, banks: [0], sampleRate: 22050});
+  const rms = a => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * a[i]; return Math.sqrt(s / a.length); };
+  for (const k of ["ch 0 inst 0", "ch 1 inst 0", "ch 2 inst 0", "ch 3 inst 0"]) { assert.ok(r[k].l instanceof Float32Array && r[k].r instanceof Float32Array && r[k].l.length === r[k].r.length, k); }
+  assert.ok(rms(r["ch 0 inst 0"].r) < 1e-9 && rms(r["ch 0 inst 0"].l) > 0.1, "cc10 0: hard left");
+  assert.ok(rms(r["ch 2 inst 0"].l) < 1e-9 && rms(r["ch 2 inst 0"].r) > 0.1, "cc10 127: hard right");
+  const mid = r["ch 1 inst 0"]; assert.ok(Math.abs(rms(mid.l) / rms(mid.r) - 1) < 0.03, "cc10 64: centred");
+  assert.ok(Math.abs(rms(r["ch 3 inst 0"].l) - rms(mid.l)) < 1e-6, "no cc10 = centre");
+  // pans reported per track: the channel's cc10 and the voice pans used
+  assert.deepEqual(r.pans["ch 0 inst 0"], {cc10: 0, voice: [{pan: 0, notes: 1}]});
+  assert.deepEqual(r.pans["ch 1 inst 0"].voice, [{pan: 64, notes: 1}]);
+  // the centred voice's power equals the mono render's
+  const mono = await renderN64(res, {set, banks: [0], sampleRate: 22050, stereo: false});
+  assert.ok(mono["ch 1 inst 0"] instanceof Float32Array);
+  const m = rms(mono["ch 1 inst 0"]), sPow = Math.sqrt(rms(mid.l) ** 2 + rms(mid.r) ** 2);
+  assert.ok(Math.abs(20 * Math.log10(sPow / m)) < 0.1, "power sum of L and R = the mono level");
 });

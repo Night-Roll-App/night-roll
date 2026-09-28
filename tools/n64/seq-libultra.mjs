@@ -39,7 +39,9 @@
 //   sound facts the renderer (render.mjs) needs, recorded on each note as
 //   the game would apply them at note-on (sm64 seqplayer.c / effects.c):
 //   the channel's bank index (C6/EB), volume (DF /127) × volume scale
-//   (E0 /128) × the player's volume (DB, DA /127), pan (DD /128), reverb send (D4), pitch
+//   (E0 /128) × the player's volume (DB, DA /127), pan (DD /128) with its
+//   weight (DC /128) and the layer's own pan (CA /128, CC = keep it over the
+//   drum's), reverb send (D4), pitch
 //   scale (DE u16/32768, D3 = 0.5·2^((s8+127)/127)), the channel's
 //   envelope/release overrides (DA, D9 — an instrument set by C1/EB
 //   replaces them, as get_instrument does) and the layer's own adsr
@@ -172,7 +174,7 @@ export function parseSequence(input, opts = {}) {
     return {idx, enabled: false, finished: false, stopScript: false, delay: 0, value: 0, transposition: 0,
             largeNotes: false, instr: null, bank: 0, dynTable: -1, io: new Array(8).fill(-1),
             // sequence_channel_init: full volume, centre pan, no bend; adsr = the default envelope until an instrument is set
-            volume: 1, volumeScale: 1, pan: 0.5, freqScale: 1, envelope: null, release: null, adsrInst: null, reverb: 0,
+            volume: 1, volumeScale: 1, pan: 0.5, panWeight: 1, freqScale: 1, envelope: null, release: null, adsrInst: null, reverb: 0,
             layers: new Array(LAYERS).fill(null), st: null};
   }
   function enableChannel(i, pc) {
@@ -196,7 +198,7 @@ export function parseSequence(input, opts = {}) {
     // seq_channel_layer_init defaults; note the 0x80 gate and instrument
     // 0xFF = "use the channel's"
     C.layers[l] = {ch: C, idx: l, enabled: true, finished: false, delay: 0, gate: 0, stop: false, continuous: false,
-                   transposition: 0, noteDuration: 0x80, playPct: 0, shortDefault: 0, vel: 0, instr: 0xFF, adsr: null,
+                   transposition: 0, noteDuration: 0x80, playPct: 0, shortDefault: 0, vel: 0, instr: 0xFF, adsr: null, pan: 0.5, noDrumPan: false,
                    note: null, st: state(pc)};
   }
   function freeLayer(C, l) {
@@ -246,9 +248,9 @@ export function parseSequence(input, opts = {}) {
         case 0xC7: { const mode = u8(s); u8(s); if (mode & 0x80) u8(s); else cu16(s); stub("layer portamento C7"); break; }
         case 0xC8: break;                                      // portamento off
         case 0xC9: L.noteDuration = u8(s); break;              // short-note gate
-        case 0xCA: u8(s); stub("layer pan CA"); break;
+        case 0xCA: L.pan = u8(s) / 128; break;                  // layer pan
         case 0xCB: { const a = u16(s); L.adsr = {envelope: envAt(a), releaseRate: u8(s)}; break; }
-        case 0xCC: break;                                      // ignore drum pan
+        case 0xCC: L.noDrumPan = true; break;                  // ignore drum pan: the layer's pan instead of the drum's
         case 0xCD: if (!oot) throw fail("layer", cmd, s.pc - 1); u8(s); stub("layer stereo CD"); break;
         case 0xCE: if (!oot) throw fail("layer", cmd, s.pc - 1); u8(s); stub("layer bendfine CE"); break;
         case 0xCF: if (!oot) throw fail("layer", cmd, s.pc - 1); u8(s); stub("layer release CF"); break;
@@ -287,7 +289,7 @@ export function parseSequence(input, opts = {}) {
     if (!drum && (pitch < 0 || pitch >= 0x80)) { L.stop = true; return; } // out of range = silent, like the game
     noteOn(L, {tick, dur: 0, ch: C.idx, layer: L.idx, semitone: pitch, drum,
                midi: drum ? null : pitch + SEMITONE_TO_MIDI, vel: L.vel, inst: instr, gate: L.noteDuration,
-               bank: C.bank, vol: C.volume * C.volumeScale * player.volume, pan: C.pan, freq: C.freqScale, rev: C.reverb,
+               bank: C.bank, vol: C.volume * C.volumeScale * player.volume, pan: C.pan, panWeight: C.panWeight, lyPan: L.pan, noDrumPan: L.noDrumPan, freq: C.freqScale, rev: C.reverb,
                chEnv: C.envelope, chRel: C.release, chInst: C.adsrInst, lyAdsr: L.adsr});
   }
 
@@ -352,10 +354,11 @@ export function parseSequence(input, opts = {}) {
       case 0xCF: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel stptrtoseq CF"); break;
       case 0xD4: C.reverb = u8(s); break;                                          // chan_setreverb: the wet send, 0..127
       case 0xD0: case 0xD1: case 0xD2: case 0xD5: case 0xD6: case 0xD7: case 0xD8:
-      case 0xDC: case 0xE3: case 0xE5: case 0xE6: case 0xE9: case 0xED:
+      case 0xE3: case 0xE5: case 0xE6: case 0xE9: case 0xED:
         u8(s); stub("channel sound-shaping " + hex(cmd)); break;
       case 0xD9: C.release = u8(s); break;
       case 0xDD: C.pan = u8(s) / 128; break;
+      case 0xDC: C.panWeight = u8(s) / 128; break;                                 // chan_setpanmix: how much of the pan is the channel's (rest: the layer's / the drum's)
       case 0xDF: C.volume = u8(s) / 127; break;
       case 0xE0: C.volumeScale = u8(s) / 128; break;
       case 0xD3: C.freqScale = 0.5 * Math.pow(2, (s8(s) + 127) / 127); break; // gPitchBendFrequencyScale

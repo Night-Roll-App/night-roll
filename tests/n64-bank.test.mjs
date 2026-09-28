@@ -10,7 +10,10 @@ import { expandBook, decodeFrames, decodeSample } from "../tools/n64/vadpcm.mjs"
 import { readBank, readEnvelope, byteView, findAudioFiles, DEFAULT_ENVELOPE } from "../tools/n64/bank.mjs";
 import { readALSeqFile } from "../tools/n64/ead-usf.mjs";
 import { SparseImage } from "../tools/n64/usf.mjs";
-import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, reverbFor } from "../tools/n64/render.mjs";
+import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, reverbFor, panGains, notePan } from "../tools/n64/render.mjs";
+import { toMidi } from "../tools/n64/notes.mjs";
+// a track is a stereo pair {l, r}; the old checks read the mono sum
+const mono = p => { if (!p || !p.l) return p; const m = new Float32Array(p.l.length); for (let i = 0; i < m.length; i++) m[i] = p.l[i] + p.r[i]; return m; };
 import { findSynthesisReverb } from "../tools/n64/ead-usf.mjs";
 import { channelGroups } from "../tools/n64/notes.mjs";
 import { TICKS_PER_BEAT } from "../tools/n64/constants.mjs";
@@ -167,8 +170,8 @@ test("renderN64: the note sounds under notes.mjs's track name at the sample's pi
   assert.equal(r.sampleRate, 32000);
   assert.ok(Math.abs(r.seconds - 4.5) < 1e-9, "one pass + 2.5 s tail: " + r.seconds);
   assert.deepEqual(progress[progress.length - 1], 1);
-  const mel = r["ch 4 inst 0"], kit = r["ch 9 drums"];
-  assert.ok(mel instanceof Float32Array && kit instanceof Float32Array);
+  assert.ok(r["ch 4 inst 0"].l instanceof Float32Array && r["ch 4 inst 0"].r instanceof Float32Array && r["ch 9 drums"].l.length === r["ch 9 drums"].r.length, "stereo pairs");
+  const mel = mono(r["ch 4 inst 0"]), kit = mono(r["ch 9 drums"]);
   const rms = (a, s0, s1) => { let s = 0; for (let i = s0; i < s1; i++) s += a[i] * a[i]; return Math.sqrt(s / (s1 - s0)); };
   assert.ok(rms(mel, 8000, 30000) > 0.2, "held through the loop: " + rms(mel, 8000, 30000));       // 1 s note at 120 bpm = 32000 samples
   assert.ok(rms(mel, 32000 + 3200, 32000 + 6400) < 0.01, "quiet 0.1 s after the gate (208 × 24 per update)");
@@ -183,7 +186,7 @@ test("renderN64: the note sounds under notes.mjs's track name at the sample's pi
   // a one-shot sample stops at its end even while the note holds
   const one = synthRom({looping: false});
   const r2 = await renderN64(res, {rom: one.rom, banks: [0], reverb: null});
-  assert.ok(rms(r2["ch 4 inst 0"], 0, 64) > 0.02 && rms(r2["ch 4 inst 0"], 64, 4000) === 0, "64 samples (still in the 2-update attack) then nothing");
+  assert.ok(rms(mono(r2["ch 4 inst 0"]), 0, 64) > 0.02 && rms(mono(r2["ch 4 inst 0"]), 64, 4000) === 0, "64 samples (still in the 2-update attack) then nothing");
   // notes the renderer cannot voice are reported, not thrown
   const r3 = await renderN64({...res, notes: [{...res.notes[0], inst: 0x80}]}, {rom, banks: [0], reverb: null});
   assert.deepEqual(r3.silent, ["ch 4 inst 128"]);
@@ -195,9 +198,9 @@ test("reverb: the note's send comes back one window later at unity, then again s
   const B = TICKS_PER_BEAT;
   const note = {tick: 0, dur: B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, pan: 0.5, freq: 1, chInst: 0, rev: 127};
   const res = {abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: B, warnings: [], notes: [note]};
-  const dry = (await renderN64(res, {rom, banks: [0], reverb: null}))["ch 4 inst 0"];
+  const dry = mono((await renderN64(res, {rom, banks: [0], reverb: null}))["ch 4 inst 0"]);
   const r = await renderN64(res, {rom, banks: [0], reverb: {window: 1000, gain: 0x4000}});
-  const wet = r["ch 4 inst 0"];
+  const wet = mono(r["ch 4 inst 0"]);
   assert.deepEqual(r.reverb, {window: 1000, gain: 0x4000});
   let peak = 0; for (let i = 0; i < 64; i++) peak = Math.max(peak, Math.abs(dry[i]));
   assert.ok(peak > 0.05, "the one-shot sounds: " + peak);
@@ -210,7 +213,7 @@ test("reverb: the note's send comes back one window later at unity, then again s
   assert.equal(dry[1000] + dry[2000], 0, "no echo without reverb");
   // a note without a send (D4 0) adds nothing to the ring
   const r0 = await renderN64({...res, notes: [{...note, rev: 0}]}, {rom, banks: [0], reverb: {window: 1000, gain: 0x4000}});
-  assert.equal(r0["ch 4 inst 0"][1000], 0);
+  assert.equal(mono(r0["ch 4 inst 0"])[1000], 0);
   // the engine's SynthesisReverb (JP/US layout) found by shape in a RAM image: {u8 resampleFlags, useReverb,
   // framesLeftToIgnore, curFrame; u16 reverbGain; u16 resampleRate; s32 ×2; s32 bufSizePerChannel; s16 *left, *right}
   const ram = new SparseImage();
@@ -224,6 +227,37 @@ test("reverb: the note's send comes back one window later at unity, then again s
   assert.deepEqual(reverbFor({}, {}), {reverb: null, why: "reverb state not in this rip"});
   assert.deepEqual(reverbFor({reverb: null}, {reverb: {useReverb: 8, gain: 1, window: 1}}), {reverb: null, why: null});
   const dryByDefault = await renderN64({...res, reverb: null}, {rom, banks: [0]});
-  assert.equal(dryByDefault["ch 4 inst 0"][1000], 0);
+  assert.equal(mono(dryByDefault["ch 4 inst 0"])[1000], 0);
   assert.deepEqual(dryByDefault.warnings, ["reverb state not in this rip"]);
+});
+
+test("stereo: the console's pan law (equal-power, panIndex = (s32)(pan × 127.5) & 127) — hard left leaves the right side silent, centre sits −3 dB in each; toMidi writes the pan as CC10", async () => {
+  const {rom} = synthRom();
+  const B = TICKS_PER_BEAT;
+  const base = {tick: 0, dur: B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, freq: 1, chInst: 0};
+  const res = {abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: 4 * B, warnings: [], notes: [
+    {...base, pan: 0},                                                    // DD 0: hard left
+    {...base, tick: B, pan: 0.5},                                         // DD 0x40: centre
+    {...base, tick: 2 * B, pan: 127 / 128},                               // DD 0x7F: hard right
+    {...base, tick: 3 * B, pan: 0, panWeight: 0, lyPan: 1},               // DC 0 + CA 0x80: the layer's pan, right
+  ]};
+  const r = await renderN64(res, {rom, banks: [0], reverb: null});
+  const p = r["ch 4 inst 0"], sr = r.sampleRate;
+  const rmsAt = (a, t0, t1) => { let s = 0; for (let i = Math.floor(t0 * sr); i < Math.floor(t1 * sr); i++) s += a[i] * a[i]; return Math.sqrt(s / ((t1 - t0) * sr)); };
+  assert.ok(rmsAt(p.l, 0.05, 0.4) > 0.1 && rmsAt(p.r, 0.05, 0.4) === 0, "hard left: right silent");
+  const cl = rmsAt(p.l, 0.55, 0.9), cr = rmsAt(p.r, 0.55, 0.9);
+  assert.ok(Math.abs(20 * Math.log10(cl / cr)) < 0.2, "centre: equal within 0.2 dB: " + cl.toFixed(4) + " " + cr.toFixed(4));
+  assert.ok(Math.abs(20 * Math.log10(cl / rmsAt(p.l, 0.05, 0.4))) < 3.3 && Math.abs(20 * Math.log10(cl / rmsAt(p.l, 0.05, 0.4))) > 2.7, "centre is −3 dB per side against hard left");
+  assert.ok(rmsAt(p.r, 1.05, 1.4) > 0.1 && rmsAt(p.l, 1.05, 1.4) < 0.02 * rmsAt(p.r, 1.05, 1.4) && rmsAt(p.l, 1.05, 1.4) > 0, "DD 0x7F: index 126, left down to cos(π/2·126/127) = 1.2 % of the right");
+  assert.ok(rmsAt(p.r, 1.55, 1.9) > 0.1 && rmsAt(p.l, 1.55, 1.9) === 0, "pan weight 0: the layer's pan (CA 0x80 = 1.0 → index 127) wins");
+  assert.deepEqual(panGains(0), [1, 0]); assert.deepEqual(panGains(1).map(v => +v.toFixed(6)), [0, 1]);
+  assert.deepEqual(panGains(0.5).map(v => +v.toFixed(4)), [+Math.cos(Math.PI / 2 * 63 / 127).toFixed(4), +Math.cos(Math.PI / 2 * 64 / 127).toFixed(4)]);
+  assert.equal(notePan({pan: 0.25, panWeight: 0.5, lyPan: 0.75}), 0.5, "notePan = chan × w + layer × (1 − w)");
+  assert.equal(notePan({pan: 0.25, panWeight: 0}, {pan: 0x60}), 0.75, "a drum brings its own pan unless CC said otherwise");
+  assert.equal(notePan({pan: 0.25, panWeight: 0, lyPan: 0.5, noDrumPan: true}, {pan: 0x60}), 0.5);
+  // the MIDI: CC10 at tick 0 (the first note's 0 → 0), then at each note whose pan differs (64, 126, 127)
+  const mid = toMidi(res), hex = [...mid].map(b => b.toString(16).padStart(2, "0")).join(" ");
+  assert.ok(hex.indexOf("b4 0a 00") >= 0 && hex.indexOf("b4 0a 00") < hex.indexOf("94 3c 7f"), "CC10 0 before the first note-on (channel 4: 94; the track name meta sits between)");
+  assert.match(hex, /b4 0a 40/); assert.match(hex, /b4 0a 7e/); assert.match(hex, /b4 0a 7f/);
+  assert.equal((hex.match(/b4 0a /g) || []).length, 4, "one per change, not per note");
 });

@@ -9,6 +9,31 @@ import { guessKit } from "../kit-guess.mjs";
 
 const label = n => n.drum ? "D" + n.semitone : pitchName(n.midi);
 
+// A note with pitch bends inside it (n.slide, from the Rare driver: [{t, to}]
+// — t ticks after the note-on, `to` semitones from the note-on pitch) becomes
+// one note per landed pitch, so the roll shows where the bend went. The
+// PS1 path's splitSlides (tools/psx/notes.mjs) does the same on its own
+// note shape (endTick/pitch, whole-semitone targets); this one rounds the
+// wheel's fractional targets to the nearest semitone and merges runs that
+// land on the same one, on the N64 shape (tick/dur, midi/semitone/key).
+export function splitSlides(notes) {
+  const out = [];
+  for (const n of notes) {
+    if (!n.slide || !n.slide.length || n.drum) { out.push(n); continue; }
+    const end = n.tick + n.dur;
+    let at = n.tick, off = 0;
+    for (const sl of n.slide) {
+      const r = Math.round(sl.to);
+      if (r === off) continue;
+      const t = n.tick + sl.t;
+      if (t > at) out.push({...n, tick: at, dur: t - at, midi: n.midi + off, semitone: n.semitone + off, key: n.key != null ? n.key + off : undefined, slide: undefined, slid: true});
+      at = t; off = r;
+    }
+    if (end > at) out.push({...n, tick: at, dur: end - at, midi: n.midi + off, semitone: n.semitone + off, key: n.key != null ? n.key + off : undefined, slide: undefined, slid: true});
+  }
+  return out;
+}
+
 export function toNotesTxt(res, {title = "n64", tsNum = 4, tsDen = 4} = {}) {
   const beatsPerBar = tsNum * 4 / tsDen;
   const ticksPerBar = beatsPerBar * TICKS_PER_BEAT;
@@ -19,8 +44,10 @@ export function toNotesTxt(res, {title = "n64", tsNum = 4, tsDen = 4} = {}) {
   L.push("# Format: bar N: beat pitch duration-in-quarter-notes vN [velocity 0-127 from the note command]. Drums are D<index> (bank not read; index is not a pitch).");
   L.push("# Channel identity is sequence fact. Pitches use sharp spelling and the +21 root convention (bank tuning not applied); no key is stated.");
   if (res.loop) L.push(`# loop: returns to tick ${res.loop.tick} (beat ${(res.loop.tick / TICKS_PER_BEAT + 1).toFixed(2)}) after tick ${res.loop.at}`);
+  const split = splitSlides(res.notes);
+  if (split.length !== res.notes.length) L.push("# pitch bends inside notes: each landed pitch is written as its own note");
   const byCh = new Map();
-  for (const n of res.notes) { if (!byCh.has(n.ch)) byCh.set(n.ch, []); byCh.get(n.ch).push(n); }
+  for (const n of split) { if (!byCh.has(n.ch)) byCh.set(n.ch, []); byCh.get(n.ch).push(n); }
   for (const ch of [...byCh.keys()].sort((a, b) => a - b)) {
     const evs = byCh.get(ch);
     const insts = [...new Set(evs.map(n => n.inst))].map(i => i === 0x7F ? "drums" : i == null ? "none" : i).join(",");
@@ -91,14 +118,26 @@ export function channelGroups(res, {tsNum = 4, tsDen = 4} = {}) {
 // channel 9 moves to a free channel.
 export function toMidi(res, {tsNum = 4, tsDen = 4} = {}) {
   const scale = PPQ / TICKS_PER_BEAT;
-  const groups = channelGroups(res, {tsNum, tsDen});
+  // slid notes become one note per landed pitch here (the render keeps the one voice); warnings/kitGuess land on `res`
+  const view = {...res, notes: splitSlides(res.notes)};
+  const groups = channelGroups(view, {tsNum, tsDen});
+  res.kitGuess = view.kitGuess;
   const melodicChs = new Set(groups.filter(g => !g.kit).map(g => g.ch));
   let spare = null; // where a melodic N64 channel 9 goes: the first MIDI channel no melodic track uses
   for (let c = 0; c < 16 && spare === null; c++) if (c !== 9 && !melodicChs.has(c)) spare = c;
-  const tracks = groups.map(g => ({
-    name: g.name, ch: g.kit ? 9 : g.ch === 9 ? (spare === null ? 9 : spare) : g.ch,
-    notes: g.notes.map(n => ({t: n.tick * scale, d: Math.max(1, n.dur * scale), p: g.kit ? n.gm : n.midi, v: Math.max(1, Math.min(127, n.vel))})),
-    program: g.kit || g.first.inst == null ? undefined : g.first.inst & 0x7F,
-  }));
+  // the track's pan as CC10 (0..127, 64 centre): the first note's at tick 0, then one at each note whose pan differs.
+  // A note's pan is what the sequence set (channel pan × weight + layer pan × the rest); a drum's own bank pan is not
+  // known here, so a kit with DC 0 shows the layer default (centre) — the render pans it from the bank.
+  const panOf = n => { const w = n.panWeight != null ? n.panWeight : 1, c = n.pan != null ? n.pan : 0.5, l = n.lyPan != null ? n.lyPan : 0.5; return Math.max(0, Math.min(127, Math.round((c * w + l * (1 - w)) * 127))); };
+  const tracks = groups.map(g => {
+    const cc = []; let lastPan = null;
+    for (const n of g.notes) { const p = panOf(n); if (p !== lastPan) { if (lastPan !== null) cc.push({t: n.tick * scale, cc: 10, v: p}); lastPan = p; } }
+    return {
+      name: g.name, ch: g.kit ? 9 : g.ch === 9 ? (spare === null ? 9 : spare) : g.ch,
+      notes: g.notes.map(n => ({t: n.tick * scale, d: Math.max(1, n.dur * scale), p: g.kit ? n.gm : n.midi, v: Math.max(1, Math.min(127, n.vel))})),
+      program: g.kit || g.first.inst == null ? undefined : g.first.inst & 0x7F,
+      pan: g.notes.length ? panOf(g.notes[0]) : undefined, cc,
+    };
+  });
   return makeMidiTracks(tracks, {tempos: res.tempos.map(t => ({t: t.tick * scale, bpm: t.bpm})), tsNum, tsDen});
 }

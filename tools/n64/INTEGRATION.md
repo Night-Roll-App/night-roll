@@ -834,9 +834,43 @@ program 58: 7/7 in Dam).
   the note's end — each ramp exponential between its endpoints (floor
   1/32767), as the envelope mixer's per-8-sample multiplier makes them.
   **Assumed** (shape); attackTime is never in the rip, so attacks are 0.
-- pitch bend is the wheel at note-on × bendRange; not tracked during a
-  note. Pan (cc10, samplePan), reverb (cc91), tremolo/vibrato, voice
-  stealing: not rendered (pan/rev kept as facts on the notes).
+- pitch bends (2026-09-28, Josh: "some notes that I suspect bend higher
+  and that wasn't being honored"): the wheel events inside a note ride it
+  as `n.slide = [{t, len: 1, to}]` — t ticks after the note-on, `to`
+  semitones from the note-on pitch (the wheel at note-on stays `n.bend`),
+  range = the bank's ALInstrument.bendRange (200 or 1200 cents; the SDK's
+  only source — no GoldenEye song carries an RPN: cc 100/101/6/38 never
+  occur, only cc 7, 10, 91 do; 2062 wheel events in 20 of 58 songs). The
+  render steps the ONE voice on each event (`renderRare`, no new attack),
+  the roll gets one note per landed pitch (`notes.mjs splitSlides`, a local
+  version of the PS1 path's: fractional targets rounded to the nearest
+  semitone, runs on the same pitch merged, on the tick/dur note shape).
+  Verified on Dam (channel 10, 24 slid notes, 140 events: fast staircases
+  of ±2 semitones over 1–10 ticks at note-ons, plus held offsets):
+  log-spectrogram correlation with the truth over the bent windows 0.685
+  with the bends vs 0.544 without (522 of 555 frames closer); our bent
+  track vs our flat track at each step, 30 ms windows: mean |error| 41
+  cents (the 9 ms steps smear inside the window; on plateaus: want 200 got
+  205, want 57 got 32); the onset fit rose from 0.640 to 0.678, the
+  envelope fit 0.691 → 0.697. Wheel changes with no note under them, and
+  cc10 changes during a note, are not followed.
+- stereo (2026-09-28): each track is `{l, r}` (opts.stereo === false: the
+  mono buffers as before). Voice pan = the sound's samplePan + the
+  channel's cc10 − 64, clamped to 0..127, at note-on (seqp `__vsPan`);
+  gains from libaudio's equal-power table (syn/eqpower.c `s16
+  eqpower[128]` = 32767·cos(i·π/254); env.c `_pullSubFrame`: left =
+  eqpower[pan], right = eqpower[127 − pan]) — as remembered from the SDK
+  source, the same law as cos/sin of (p+1)·π/4 on p = pan/63.5 − 1.
+  Notes carry `pan` = cc10 as written (0..127, 64 centre). `out.pans[track]
+  = {cc10, voice: [{pan, notes}]}` says what each track used. Measured
+  (scratch/ge-pan.mjs, 45 s): Dam 14 tracks — 9 centred (L/R −0.11 dB:
+  the table's 64 is a hair right of the true centre 63.5), ch 13 cc10 40
+  → +5.4 dB left, ch 5 cc10 85 → −4.9 dB, ch 9 cc10 64 but its sounds'
+  samplePan 88/40/50 → three voice pans; Runway 16 tracks, ch 5/9 cc10 110
+  → −13.4 dB, ch 10 cc10 18 → +12.9 dB; every track's L²+R² power equals
+  its mono render (0.00 dB); the mix (L+R)/√2 vs the mono mix −0.08 dB
+  (Dam), −0.31 dB (Runway). Reverb (cc91), tremolo/vibrato, voice
+  stealing: not rendered (rev kept as a fact on the notes).
 - Finite loop count = n+1 plays: from the SDK's cseq.c as remembered, not
   checked on the truth (Runway's track 0 riff loop of 19 is the case to
   check: one bar's difference late in the song).
@@ -864,3 +898,31 @@ bytes per track), `ge-truth.mjs` (onset fit vs lazyusf2), `ge-pitch.mjs`
 (cents, octave votes, envelope fit), `ge-render.mjs` (ours + truth WAVs
 side by side, `--tracks`), `ge-app-capture.mjs` (the app's capture contract
 in the vm harness), `ge-probe*.mjs` (the search that found the above).
+
+### 9.9 Stereo (2026-09-28)
+
+Every EAD track is now a pair `{l, r}` (equal length; everything else in
+the render result unchanged). The pan is the console's: effects.c JP/US
+`layer->notePan = (layer->pan * panLayerWeight) + panFromChannel` with
+`panFromChannel = seqChannel->pan * seqChannel->panChannelWeight`,
+`panLayerWeight = 1 − panChannelWeight` (channel `DD` u8/128, weight
+`DC` u8/128 — default 1, so the channel's pan; layer `CA` u8/128; a drum
+brings `drum->pan / 128` as the layer's unless the layer said `CC`), then
+synthesis.c JP/US `note_set_vel_pan_reverb`: `panIndex = (s32)(pan *
+127.5f) & 127; volLeft = gDefaultPanVolume[panIndex]; volRight =
+gDefaultPanVolume[127 - panIndex];` with data.c `gDefaultPanVolume[i] =
+cos(π/2 · i/127)` (1.0, 0.999924, … 0.70272 at 64, … 0.012368, 0) — the
+equal-power law exactly (a centred note −3 dB per side; the app's mono sum
+of the pair is +3 dB at centre, the power sum unchanged). The value is the
+one at note-on; a DD/DC/CA under a held note is not followed. The reverb
+send is panned with the dry, one ring per side. Parser facts added per
+note: `panWeight`, `lyPan`, `noDrumPan` (DC/CA/CC were stubs).
+`toMidi` writes each track's starting pan as CC10 at tick 0 and one CC10
+at every note whose pan differs (a kit with `DC 0` shows the layer default
+64 there: the drums' own pans live in the bank, which the MIDI writer
+does not open — the render pans them).
+
+Checked on 09c Dire, Dire Docks (all eight channels), old mono vs new,
+first 20 s (`scratch/stereo-check.mjs`): power sum √(l²+r²) equals the
+old mono to 0.00 dB on every track; pans 116, 9, 59, 63, 126, 79, 47 →
+L/R −17.3, +19.0, +1.0, +0.5, −38.2, −3.4, +3.7 dB.

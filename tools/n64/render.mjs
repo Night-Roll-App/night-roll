@@ -21,7 +21,17 @@
 // (the engine's gSynthesisReverb — ead-usf.mjs findSynthesisReverb): the
 // state the game was in when ripped, one state for every song of a USF
 // set. No per-song table (Josh's rule: game identity only says where to
-// look); a rip without those RAM pages renders dry and says so. Not here: pan (mono),
+// look); a rip without those RAM pages renders dry and says so. Each track
+// is a stereo pair {l, r}: the note's pan is the channel's (DD /128) mixed
+// with the layer's or the drum's by the channel's pan weight (DC /128) —
+// effects.c JP/US `notePan = layer->pan * (1 − weight) + seqChannel->pan *
+// weight` — and synthesis.c JP/US note_set_vel_pan_reverb turns it into
+// `panIndex = (s32)(pan * 127.5f) & 127; volLeft = gDefaultPanVolume[panIndex];
+// volRight = gDefaultPanVolume[127 − panIndex]`, gDefaultPanVolume[i] being
+// cos(π/2 · i/127) (data.c) — the equal-power law, so a centred note sits
+// −3 dB in each side. The pan is the value at note-on; a DD under a held
+// note is not followed. The wet send is panned with the dry (the env mixer
+// splits both). Not here:
 // vibrato, portamento, the RSP's resampler (linear interpolation
 // instead), the synth waveforms of instrument ids >= 0x80 (skipped,
 // listed in `warnings`), and volume changes during a note (the value at
@@ -93,9 +103,26 @@ export class Adsr {
   get done() { return this.state === DISABLED; }
 }
 
+// The note's pan in 0..1 as effects.c JP/US computes notePan: the channel's
+// pan × its weight + the layer's pan × (1 − weight), the layer's being the
+// drum's own unless the layer said CC. Facts default to the game's
+// (weight 1, layer 0.5) when a note lacks them.
+export function notePan(n, drum = null) {
+  const w = n.panWeight != null ? n.panWeight : 1;
+  const chan = n.pan != null ? n.pan : 0.5;
+  const layer = drum && !n.noDrumPan ? drum.pan / 128 : n.lyPan != null ? n.lyPan : 0.5;
+  return Math.max(0, Math.min(1, chan * w + layer * (1 - w)));
+}
+// synthesis.c JP/US: panIndex = (s32)(pan * 127.5f) & 127; gDefaultPanVolume[i] = cos(π/2 · i/127)
+const panVolume = i => i >= 127 ? 0 : i <= 0 ? 1 : Math.cos(Math.PI / 2 * i / 127); // gDefaultPanVolume[i], its ends exact
+export function panGains(pan) {
+  const idx = Math.trunc(pan * 127.5) & 127;
+  return [panVolume(idx), panVolume(127 - idx)];
+}
+export const panIndex = pan => Math.trunc(pan * 127.5) & 127;
 export const noteFrequency = semitone => Math.pow(2, (semitone - 39) / 12) * (semitone >= 117 ? 0.5 : 1); // gNoteFrequencies
 
-// -> {sampleRate, seconds, [trackName]: Float32Array, silent: [names], warnings: [...]}
+// -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}, silent: [names], warnings: [...]}
 export async function renderN64(result, opts = {}) {
   if (result && result.driver === "rare") return renderRare(result, opts); // GoldenEye: the SDK synthesizer's rules, same output shape
   const rom = opts.rom || (opts.set && opts.set.rom);
@@ -121,7 +148,7 @@ export async function renderN64(result, opts = {}) {
   let done = 0, total = 0;
   for (const g of groups) total += g.notes.length;
   for (const g of groups) {
-    let buf = null, wet = null; // allocated by the first note that sounds (wet: its reverb send, freed after the comb)
+    let bufL = null, bufR = null, wetL = null, wetR = null; // allocated by the first note that sounds (wet: its reverb send, freed after the comb)
     for (const n of g.notes) {
       done++;
       if (opts.onProgress && (done & 31) === 0) { opts.onProgress(done / total); await new Promise(r => setTimeout(r, 0)); }
@@ -157,6 +184,7 @@ export async function renderN64(result, opts = {}) {
       const base = vel * vel * (n.vol != null ? n.vol : 1);
       if (base <= 0) continue;
       const send = reverb && n.rev ? Math.min(127, n.rev) / 128 : 0; // aSetVolume(A_AUX, reverbVol << 8): wet = dry × reverbVol/128
+      const [gL, gR] = panGains(notePan(n, n.drum ? bank.drum(n.semitone) : null));
       const smp = bank.pcm(sound.sample);
       const pcm = smp.pcm, L = smp.loopEnd, loopStart = smp.loopStart;
       const step = Math.min(FREQ_CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
@@ -175,16 +203,22 @@ export async function renderN64(result, opts = {}) {
         const p0 = pos | 0, f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : smp.looping ? pcm[loopStart] : 0;
         const gain = gNext + (gPrev - gNext) * ((nextUpdate - i) / updateEvery);
         const v = (a + (b - a) * f) * gain;
-        if (v !== 0) { if (!buf) buf = new Float32Array(N); buf[i] += v; if (send) { if (!wet) wet = new Float32Array(N); wet[i] += v * send; } }
+        if (v !== 0) {
+          if (!bufL) { bufL = new Float32Array(N); bufR = new Float32Array(N); }
+          bufL[i] += v * gL; bufR[i] += v * gR;
+          if (send) { if (!wetL) { wetL = new Float32Array(N); wetR = new Float32Array(N); } wetL[i] += v * send * gL; wetR[i] += v * send * gR; }
+        }
         pos += step;
       }
     }
-    if (buf && wet) { // the ring: what went in W samples ago comes back at unity and, scaled by the gain, goes round again
-      const ring = new Float32Array(W);
-      for (let i = 0, p = 0; i < N; i++) { const r = ring[p]; buf[i] += r; ring[p] = r * G + wet[i]; if (++p === W) p = 0; }
-      wet = null;
+    if (bufL && wetL) { // the ring, one per side: what went in W samples ago comes back at unity and, scaled by the gain, goes round again
+      for (const [buf, wet] of [[bufL, wetL], [bufR, wetR]]) {
+        const ring = new Float32Array(W);
+        for (let i = 0, p = 0; i < N; i++) { const r = ring[p]; buf[i] += r; ring[p] = r * G + wet[i]; if (++p === W) p = 0; }
+      }
+      wetL = wetR = null;
     }
-    if (buf) out[g.name] = buf; else out.silent.push(g.name);
+    if (bufL) out[g.name] = {l: bufL, r: bufR}; else out.silent.push(g.name);
   }
   if (opts.onProgress) opts.onProgress(1);
   return out;

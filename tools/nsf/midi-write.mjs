@@ -114,8 +114,10 @@ function fileBytes(tracks) {
 
 
 // Sources that already carry beat time (N64 sequences: exact 48ths) skip
-// the frame->beat fit above. tracks: [{name, ch, program?, notes: [{t, d, p, v}]}]
-// with t/d in PPQ ticks; tempos: [{t, bpm}] in PPQ ticks.
+// the frame->beat fit above. tracks: [{name, ch, program?, pan?, cc?, notes:
+// [{t, d, p, v}]}] with t/d in PPQ ticks; tempos: [{t, bpm}] in PPQ ticks.
+// pan (0..127, 64 centre) is written as CC10 at tick 0 before the first
+// note; cc: [{t, cc, v}] are later control changes at their ticks.
 export function makeMidiTracks(tracks, {tempos = [{t: 0, bpm: 120}], tsNum = 4, tsDen = 4} = {}) {
   const metas = [{t: 0, d: [0xFF, 0x58, 4, tsNum, Math.round(Math.log2(tsDen)), 24, 8]}];
   for (const {t, bpm} of tempos) {
@@ -125,6 +127,8 @@ export function makeMidiTracks(tracks, {tempos = [{t: 0, bpm: 120}], tsNum = 4, 
   const out = [trackBytes("conductor", [], 0, metas)];
   for (const tr of tracks) {
     const pre = tr.program == null ? [] : [{t: 0, o: -1, d: [0xC0 | (tr.ch & 15), tr.program & 0x7F]}];
+    if (tr.pan != null) pre.push({t: 0, o: -0.5, d: [0xB0 | (tr.ch & 15), 10, Math.max(0, Math.min(127, Math.round(tr.pan)))]});
+    for (const c of tr.cc || []) pre.push({t: c.t, o: -0.5, d: [0xB0 | (tr.ch & 15), c.cc & 0x7F, Math.max(0, Math.min(127, Math.round(c.v)))]});
     out.push(trackBytes(tr.name, tr.notes, tr.ch & 15, pre));
   }
   return fileBytes(out);

@@ -24,7 +24,7 @@ import { channelGroups } from "../tools/n64/notes.mjs";
 import { tickSeconds } from "../tools/n64/seq-libultra.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
 import { findMusicTable, findRareBankFile, readRareBank, miniOverrideWords } from "../tools/n64/rare.mjs";
-import { toMidi } from "../tools/n64/notes.mjs";
+import { toMidi, splitSlides } from "../tools/n64/notes.mjs";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/n64-usf-tracks.json", import.meta.url), "utf8"));
 
@@ -370,6 +370,7 @@ function sm64Song(dir, mini) {
   return {set, loc, seq, res, id};
 }
 const SM64 = sm64Dir();
+const monoMix = p => { if (!p || !p.l) return p; const m = new Float32Array(p.l.length); for (let i = 0; i < m.length; i++) m[i] = p.l[i] + p.r[i]; return m; };
 const TITLE = "02 Title Theme.miniusf", MAIN = "05 Main Theme.miniusf";
 
 test("SM64 bank (real ROM): ctl/tbl located, the Title Theme's bank parses to the decomp's layout, every sample decodes, loop states are bit-exact", {skip: !SM64}, () => {
@@ -427,14 +428,15 @@ test("SM64 render (real ROM): the first 10 s of the Title Theme and the Main The
     const early = groups.filter(g => g.notes.some(n => tickSeconds(res.tempos, n.tick) < 9.5)).map(g => g.name);
     assert.ok(early.length >= 6, mini + ": " + early.join(", "));
     for (const name of early) {
-      const a = r[name];
-      assert.ok(a instanceof Float32Array && a.length === 320000, mini + " " + name);
+      const p = r[name];
+      assert.ok(p && p.l instanceof Float32Array && p.r instanceof Float32Array && p.l.length === 320000 && p.r.length === 320000, mini + " " + name);
+      const a = new Float32Array(p.l.length); for (let i = 0; i < a.length; i++) a[i] = p.l[i] + p.r[i];
       let s = 0, peak = 0; for (let i = 0; i < a.length; i++) { s += a[i] * a[i]; peak = Math.max(peak, Math.abs(a[i])); }
       const rms = Math.sqrt(s / a.length);
       assert.ok(rms > 0.001 && rms < 0.4 && peak <= 1.5, mini + " " + name + " rms " + rms.toFixed(4) + " peak " + peak.toFixed(3));
     }
     for (const name of r.silent) assert.ok(!early.includes(name), mini + ": " + name + " has notes before 9.5 s but rendered silent");
-    assert.deepEqual(Object.keys(r).filter(k => r[k] instanceof Float32Array).sort(), groups.map(g => g.name).filter(n => !r.silent.includes(n)).sort(), "every buffer is a MIDI track name");
+    assert.deepEqual(Object.keys(r).filter(k => r[k] && r[k].l instanceof Float32Array).sort(), groups.map(g => g.name).filter(n => !r.silent.includes(n)).sort(), "every buffer is a MIDI track name");
   }
 });
 
@@ -458,7 +460,7 @@ function detectF0(buf, from, to, sr, fMin = 60, fMax = 2500) {
   return {hz: sr / (pick + (den ? 0.5 * (a - c) / den : 0)), corr: b, at: hz => r[Math.round(sr / hz)]};
 }
 function isolatedCents(res, r, name, keep, max = 6) {
-  const g = channelGroups(res).find(x => x.name === name), sr = r.sampleRate, buf = r[name];
+  const g = channelGroups(res).find(x => x.name === name), sr = r.sampleRate, buf = monoMix(r[name]);
   const notes = g.notes.filter(n => tickSeconds(res.tempos, n.tick) < keep - 1).sort((a, b) => a.tick - b.tick);
   const rows = [];
   for (const n of notes) {
@@ -523,7 +525,7 @@ test("SM64 Cave Dungeon (real ROM): the intro instrument's recording sounds C3 a
   assert.deepEqual(first.map(n => n.midi), [60, 65, 67, 70]);
   assert.ok(first.every(n => n.rev === 0x1E && n.vol > 0.6), "channel 0: D4 0x1E reverb, DF 0x7F volume × DB");
   const r = await renderN64(res, {set, banks: seq.banks, keepSeconds: 3, reverb: null});
-  const buf = r["ch 0 inst 0"], sr = r.sampleRate;
+  const buf = monoMix(r["ch 0 inst 0"]), sr = r.sampleRate;
   for (const n of first) {
     const a = Math.floor((tickSeconds(res.tempos, n.tick) + 0.02) * sr), b = Math.floor((tickSeconds(res.tempos, n.tick + n.dur) + 0.08) * sr);
     const f = 440 * Math.pow(2, (n.midi - 69) / 12);
@@ -541,7 +543,7 @@ test("SM64 Cave Dungeon (real ROM): the intro instrument's recording sounds C3 a
 test("SM64 Dire, Dire Docks (real ROM): notes end by their own envelope (298 updates), no sustain op; the reverb (D4 0x32, water preset) is what carries the tail", {skip: !SM64}, async () => {
   const DDD = "09a Dire, Dire Docks.miniusf";
   const {set, loc, seq, res} = sm64Song(SM64, DDD);
-  assert.deepEqual([seq.id, seq.banks, res.stubbed, res.variation], [5, [19], ["channel sound-shaping 0xdc"], 0]);
+  assert.deepEqual([seq.id, seq.banks, res.stubbed, res.variation], [5, [19], [], 0]); // DC (pan weight) became a fact with the stereo pass
   assert.equal(res.channels.length, 8, "the plain id (seqVariation 0) plays the full arrangement, not the harp + melody pair the old −1 default gave");
   const bank = readBank(set.rom, findAudioFiles(set.rom, loc), 19);
   assert.deepEqual(bank.instrument(15).envelope, [[3, 32700], [298, 0], [1, 0], [-1, 0]]);
@@ -553,10 +555,11 @@ test("SM64 Dire, Dire Docks (real ROM): notes end by their own envelope (298 upd
   assert.deepEqual(wet.reverb, {window: 0x0C00, gain: 0x2FFF}, "read from the set's RAM when the result carries none");
   const sr = dry.sampleRate, t0 = tickSeconds(res.tempos, n0.tick);
   const rms = (a, s0, s1) => { let s = 0; for (let i = Math.floor(s0 * sr); i < Math.floor(s1 * sr); i++) s += a[i] * a[i]; return Math.sqrt(s / ((s1 - s0) * sr)); };
-  const peak = rms(dry["ch 15 inst 15"], t0, t0 + 0.3);
+  const dryM = monoMix(dry["ch 15 inst 15"]), wetM = monoMix(wet["ch 15 inst 15"]);
+  const peak = rms(dryM, t0, t0 + 0.3);
   const db = v => 20 * Math.log10(v / peak + 1e-12);
   // the envelope has run out 1.25 s after onset (301 updates at 240/s); the next note comes at +1.8 s
-  const tailDry = db(rms(dry["ch 15 inst 15"], t0 + 1.55, t0 + 1.75)), tailWet = db(rms(wet["ch 15 inst 15"], t0 + 1.55, t0 + 1.75));
+  const tailDry = db(rms(dryM, t0 + 1.55, t0 + 1.75)), tailWet = db(rms(wetM, t0 + 1.55, t0 + 1.75));
   assert.ok(tailDry < -60, "dry: silent once the envelope has run out: " + tailDry.toFixed(0) + " dB");
   assert.ok(tailWet > -60 && tailWet < -20, "wet: the 96 ms / ×0.375 comb still rings: " + tailWet.toFixed(0) + " dB");
 });
@@ -624,6 +627,12 @@ test("GoldenEye (real rip): no EAD tables; the RAM song table, the mini's word, 
   assert.deepEqual(res.kits, [1, 8, 19, 39, 42, 45, 46, 47, 62], "the bank's single-key instruments");
   assert.ok(res.notes.filter(n => n.drum).length > 0 && res.notes.filter(n => n.drum).every(n => n.inst === 45 && n.ch === 4), "Dam plays one of them, program 45 on channel 4");
   assert.ok(toMidi(res, {tsNum: 4, tsDen: 4}).length > 10000);
+  // pitch bends: Dam's channel 10 rides the wheel (140 events); every slid note is on it
+  const slid = res.notes.filter(n => n.slide);
+  assert.equal(slid.length, 24);
+  assert.ok(slid.every(n => n.ch === 10 && n.slide.every(s => s.t > 0 && s.t < n.dur && Math.abs(s.to) <= 4.01)), "within the note, within twice the 200-cent range (relative to the note-on wheel)");
+  assert.match(res.warnings.join(" "), /24 notes carry pitch bends/);
+  assert.ok(splitSlides(res.notes).length > res.notes.length, "the roll gets the landed pitches");
   // Facility and Runway: other ids, same shape
   const fac = sequenceOfSet(geSet("102 Facility.miniusf")).res, run = sequenceOfSet(geSet("103 Runway.miniusf")).res;
   assert.deepEqual([fac.sequenceId, fac.notes.length, fac.tempos[0].bpm, fac.loop], [7, 1400, 120, {tick: 0, at: 11520}]);
@@ -663,7 +672,16 @@ test("GoldenEye (real rip): Dam's onsets fit lazyusf2's render at time scale 1 a
   const set = geSet("101 Dam.miniusf"), {seq, res} = sequenceOfSet(set);
   const r = await renderN64(res, {set, banks: seq.banks, sampleRate: 22050, keepSeconds: 20, meter: {tsNum: 4, tsDen: 4}});
   assert.equal(r.bankRate, 22050);
-  assert.ok(Object.keys(r).filter(k => r[k] instanceof Float32Array).length >= 8, "tracks sounded in the first 20 s");
+  const tracks = Object.keys(r).filter(k => r[k] && r[k].l instanceof Float32Array && r[k].r instanceof Float32Array && r[k].l.length === r[k].r.length);
+  assert.ok(tracks.length >= 8, "stereo tracks sounded in the first 20 s");
+  // Dam's channel 13 sets cc10 40 (left of centre); its track leans left, a centred track does not
+  const rms = a => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * a[i]; return Math.sqrt(s / a.length); };
+  const ch13 = tracks.find(k => k.startsWith("ch 13 "));
+  assert.equal(r.pans[ch13].cc10, 40);
+  assert.ok(rms(r[ch13].l) > 1.5 * rms(r[ch13].r), "cc10 40 leans left");
+  const ch8 = tracks.find(k => k.startsWith("ch 8 "));
+  assert.equal(r.pans[ch8].cc10, 64);
+  assert.ok(Math.abs(rms(r[ch8].l) / rms(r[ch8].r) - 1) < 0.05, "centred");
   assert.ok(!r.warnings.some(w => /not in the bank|no sound/.test(w)), r.warnings.join("; "));
   if (!wav) return;
   const b = readFileSync(wav), dv = new DataView(b.buffer, b.byteOffset, b.byteLength);

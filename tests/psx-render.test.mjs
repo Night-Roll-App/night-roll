@@ -6,7 +6,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { INSTR_STRIDE, findInstrDat } from "../tools/psx/instr.mjs";
 import { findSampleBank, renderSpu } from "../tools/psx/spu-render.mjs";
-import { channelGroups, splitSlides } from "../tools/psx/notes.mjs";
+import { channelGroups, splitSlides, makeMidi, notePan } from "../tools/psx/notes.mjs";
+// a track is a stereo pair {l, r}; the older checks read the mono sum
+const mono = p => { if (!p || !p.l) return p; const m = new Float32Array(p.l.length); for (let i = 0; i < m.length; i++) m[i] = p.l[i] + p.r[i]; return m; };
 
 const le32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
 function record(addr, loop, adsr) { // 64 bytes: addr, loop, 8 adsr, twelve base pitches (0x1000 for C, semitone steps up)
@@ -34,8 +36,8 @@ test("renderSpu: table by shape, bank by end flags, a held note sounds at the tr
   const result = {notes: [{tick: 0, endTick: 48, ch: 4, key: 72, vel: 100, program: 2, pitch: 72, cents: 0, drum: false, tone: null}], seq};
   assert.equal(channelGroups(result)[0].name, "ch 5 prog 2");
   const r = await renderSpu(result, {ram, table, bank, sampleRate: 22050});
-  const buf = r["ch 5 prog 2"];
-  assert.ok(buf instanceof Float32Array, "the channel carries the track's name");
+  assert.ok(r["ch 5 prog 2"] && r["ch 5 prog 2"].l instanceof Float32Array && r["ch 5 prog 2"].r.length === r["ch 5 prog 2"].l.length, "the channel carries the track's name, as a stereo pair");
+  const buf = mono(r["ch 5 prog 2"]);
   const rms = (a, b) => { let s = 0; for (let i = a; i < b; i++) s += buf[i] * buf[i]; return Math.sqrt(s / (b - a)); };
   assert.ok(rms(1000, 9000) > 0.05, "sounds while held: " + rms(1000, 9000));       // 0.5 s note at 22050 = 11025 samples
   assert.ok(rms(11025 + 4000, 11025 + 8000) < 0.005, "silent after the release: " + rms(15025, 19025));
@@ -54,12 +56,12 @@ test("renderSpu: a volume change inside a held note is followed sample by sample
   const note = {tick: 0, endTick: 96, ch: 0, key: 72, vel: 4, program: 2, pitch: 72, cents: 0, drum: false, tone: null,
                 gain: [{t: 0, l: 0.03}, {t: 96, l: 1}]};
   const r = await renderSpu({notes: [note], seq}, {ram, table, bank, sampleRate: 22050});
-  const buf = r["ch 1 prog 2"];
+  const buf = mono(r["ch 1 prog 2"]);
   const rms = (a, b) => { let s = 0; for (let i = a; i < b; i++) s += buf[i] * buf[i]; return Math.sqrt(s / (b - a)); };
   const early = rms(1000, 4000), late = rms(18000, 21000); // a 1 s note at 22050
   assert.ok(late > early * 5, "swells while held: early " + early.toFixed(4) + " late " + late.toFixed(4));
   const flat = await renderSpu({notes: [{...note, gain: undefined}], seq}, {ram, table, bank, sampleRate: 22050});
-  const fb = flat["ch 1 prog 2"]; let s = 0; for (let i = 18000; i < 21000; i++) s += fb[i] * fb[i];
+  const fb = mono(flat["ch 1 prog 2"]); let s = 0; for (let i = 18000; i < 21000; i++) s += fb[i] * fb[i];
   assert.ok(Math.sqrt(s / 3000) < late / 5, "without the curve the note stays at its note-on volume (vel 4)");
 });
 
@@ -81,8 +83,34 @@ test("pitch slides: the roll gets one note per landed pitch; the render bends th
   const seq = {ppq: 48, tempoMap: [{tick: 0, usq: 500000}], timeSigs: [{tick: 0, num: 4, den: 4}], loop: null, warnings: []};
   const one = {...note, key: 72, pitch: 72, endTick: 96, slide: [{t: 48, len: 3, to: 12}]}; // an octave up at the half
   const r = await renderSpu({notes: [one], seq}, {ram, table, bank, sampleRate: 22050});
-  const buf = r["ch 1 prog 2"];
+  const buf = mono(r["ch 1 prog 2"]);
   const zc = (a, b) => { let c = 0; for (let i = a + 1; i < b; i++) if ((buf[i] >= 0) !== (buf[i - 1] >= 0)) c++; return c; };
   const first = zc(2000, 9000), second = zc(13000, 20000); // 0.5 s per half at 22050
   assert.ok(second > first * 1.8 && second < first * 2.2, "an octave up doubles the zero crossings: " + first + " → " + second);
+});
+
+test("stereo: the SPU's linear pan — left (127 − p)/127, right p/127 — hard left renders silent right, centre renders equal; makeMidi carries CC10 per change", async () => {
+  const ram = new Uint8Array(0x20000);
+  const tableAt = 0x8000, bankAt = 0x10000, spuAddr = 0x1010;
+  for (let i = 0; i < 20; i++) ram.set(record(spuAddr + i * 0x30, spuAddr + i * 0x30, [0, 0x0f, 0x0f, 0x7f, 0x05, 1, 3, 3]), tableAt + i * INSTR_STRIDE);
+  for (let i = 0; i < 20; i++) { const o = bankAt + i * 0x30; ram.set(block(4, square), o); ram.set(block(0, square), o + 16); ram.set(block(3, square), o + 32); }
+  const table = findInstrDat(ram), bank = findSampleBank(ram, table);
+  const seq = {ppq: 48, tempoMap: [{tick: 0, usq: 500000}], timeSigs: [{tick: 0, num: 4, den: 4}], loop: null, warnings: [], endTick: 192};
+  // three different keys, and the kit hit on another program: the one-pitch-program kit rule must not fire here
+  const mk = (tick, pan, key = 72) => ({tick, endTick: tick + 48, ch: 1, key, vel: 100, program: 2, pitch: key, cents: 0, drum: false, tone: null, pan});
+  const result = {notes: [mk(0, 0), mk(48, 64, 74), mk(96, 127, 76), {...mk(144, 20), program: 3, drum: true, tone: {instrument: 3, key: 72, vol: 127, pan: 110}}], seq};
+  const r = await renderSpu(result, {ram, table, bank, sampleRate: 22050});
+  const names = Object.keys(r).filter(k => r[k] && r[k].l); assert.ok(names.length >= 1);
+  const rmsAt = (a, t0, t1) => { let s = 0; for (let i = Math.floor(t0 * 22050); i < Math.floor(t1 * 22050); i++) s += a[i] * a[i]; return Math.sqrt(s / ((t1 - t0) * 22050)); };
+  const mel = r["ch 2 prog 2"];
+  assert.ok(rmsAt(mel.l, 0.05, 0.45) > 0.05 && rmsAt(mel.r, 0.05, 0.45) === 0, "pan 0: right silent");
+  const cl = rmsAt(mel.l, 0.55, 0.95), cr = rmsAt(mel.r, 0.55, 0.95);
+  assert.ok(Math.abs(20 * Math.log10(cl / cr)) < 0.2, "pan 64: equal within 0.2 dB (63/127 vs 64/127)");
+  const sum = new Float32Array(mel.l.length); for (let i = 0; i < sum.length; i++) sum[i] = mel.l[i] + mel.r[i];
+  assert.ok(Math.abs(20 * Math.log10((cl + cr) / rmsAt(sum, 0.55, 0.95))) < 0.1, "linear: the sides add back to the mono level (l + r is level-neutral at any pan)");
+  assert.ok(rmsAt(mel.r, 1.05, 1.45) > 0.05 && rmsAt(mel.l, 1.05, 1.45) === 0, "pan 127: left silent");
+  assert.equal(notePan(result.notes[3]), 110, "a kit entry pans by its drum-map pan");
+  const hex = [...makeMidi(result)].map(b => b.toString(16).padStart(2, "0")).join(" ");
+  assert.ok(hex.indexOf("b1 0a 00") >= 0 && hex.indexOf("b1 0a 00") < hex.indexOf("91 48 64"), "CC10 0 at tick 0 before the first note on channel 1 (SEQ channel 2; the name meta sits between)");
+  assert.match(hex, /b1 0a 40/); assert.match(hex, /b1 0a 7f/);
 });

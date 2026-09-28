@@ -228,6 +228,12 @@ export function channelGroups(result) {
 }
 // type-1 MIDI: conductor (tempo map + meters) then one track per SEQ
 // channel; kit programs land on MIDI channel 10 (index 9)
+// A note's pan, 0..127 (64 centre): the voice's 0xAA value at note-on; a kit
+// entry's own pan from the drum map. 64 when the score never says.
+export function notePan(n) {
+  const p = n.drum && n.tone && n.tone.pan != null ? n.tone.pan : n.pan;
+  return p == null ? 64 : Math.max(0, Math.min(127, p));
+}
 export function makeMidi(result) {
   kitify(result);
   const {notes, seq} = result;
@@ -279,7 +285,9 @@ export function makeMidi(result) {
   // go to a second MIDI track on channel 10 so neither side lies about
   // what it is
   const emit = (name, evs, ch) => {
-    const out = [];
+    const out = [], cc = [];
+    // the track's pan as CC10: the first note's at tick 0, then one at every note whose pan differs from the last written
+    let lastPan = null;
     for (const n of splitSlides(evs)) {
       const p = n.drum ? (n.gm || n.key) : n.pitch;
       if (p < 0 || p > 127) continue;
@@ -287,8 +295,10 @@ export function makeMidi(result) {
       const d = Math.max(1, T(n.endTick) - t), v = Math.max(1, Math.min(127, n.vel));
       const ve = veOf(n); // the note's level at its end, from its instrument's envelope (the app's ve, as chip captures carry)
       out.push(ve !== undefined ? {t, d, p, v, ve} : {t, d, p, v});
+      const pan = notePan(n);
+      if (pan !== lastPan) { cc.push({t: lastPan === null ? 0 : t, o: -0.5, d: [0xB0 | ch, 10, pan]}); lastPan = pan; }
     }
-    tracks.push(trackBytes(name, out, ch));
+    tracks.push(trackBytes(name, out, ch, cc));
   };
   for (const g of channelGroups(result)) emit(g.name, g.notes, g.kit ? 9 : midiCh.get(g.ch));
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];

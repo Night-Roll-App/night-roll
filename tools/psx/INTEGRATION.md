@@ -331,3 +331,15 @@ would be 4:44. All 90 songs parse in ~100 ms total, zero crashes.
    `length` is Corlett's two-passes-plus-fade, not the loop.
 7. Help sheet / HELP.md / drift keyword / NIGHT-ROLL.md "PS1 import"
    paragraph as §5 lists, adding "PSF (libsnd or Square AKAO: FF7)".
+
+## Stereo (2026-09-28)
+
+`renderSpu` returns each track as a pair `{l, r}`. AKAO opcode `0xAA` (one
+operand) is the voice's pan, 0 left .. 127 right, recorded on every note
+as `n.pan` at note-on (64 when never set); a kit entry pans by its drum-map
+byte (`n.tone.pan`) — `notePan(n)` in notes.mjs. The law is the SPU's two
+linear volume registers: left = level × (127 − p)/127, right = level ×
+p/127, so l + r equals the old mono exactly (Bombing Mission, first 20 s:
+0.00 dB on all 16 tracks; a centred note is −6 dB per side, −3 dB in
+power). A pan change under a held note is not followed. `makeMidi` writes
+CC10 at tick 0 and at each note whose pan differs.

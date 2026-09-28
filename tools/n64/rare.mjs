@@ -231,17 +231,46 @@ export function unrollTracks(cs, {maxEvents = 400000} = {}) {
 // seq-libultra.mjs returns; capture.mjs documents the fields). Ticks are
 // rescaled to TICKS_PER_BEAT per quarter (the division is kept as a fact);
 // a note is {ch, inst (program), key/semitone/midi (the MIDI key), tick,
-// dur, vel, bank 0, vol (cc7/127 at note-on), pan (cc10/128), rev (cc91),
+// dur, vel, bank 0, vol (cc7/127 at note-on), pan (cc10 as written, 0..127, 64
+// centre, at note-on), rev (cc91),
 // bend (cents at note-on, from the wheel × the instrument's range later)}.
 // The song loop: every track carries its own loop-start/loop-end pair; the
 // pair most tracks share is the song's (a disagreement is a warning).
-export function cseqNotes(cs, {maxSeconds = 600} = {}) {
+// Pitch bends move the SOUNDING voice: each note carries the wheel events
+// that fall inside it as `slide` [{t, len: 1, to}] — t ticks after the
+// note-on, `to` semitones from the pitch the note started on (the wheel
+// at note-on stays `bend`, so a bend is a step and a run of events a
+// staircase, as the SDK player steps the voice on each event). The range
+// is the bank's ALInstrument.bendRange (cents) — the SDK's only source; no
+// GoldenEye song carries an RPN (cc 100/101/6/38 never occur; only cc 7,
+// 10, 91 do). The MIDI writer splits a slid note per landed pitch, the
+// renderer bends the voice.
+export function attachSlides(notes, bendsByCh, bendRangeOf = () => 200) {
+  let slid = 0;
+  for (const n of notes) {
+    if (n.drum) continue;
+    const bends = bendsByCh.get(n.ch);
+    if (!bends || !bends.length) continue;
+    const range = (bendRangeOf(n.inst) || 200) / 100, on = n.bend || 0;
+    const inside = bends.filter(b => b.tick > n.tick && b.tick < n.tick + n.dur);
+    if (!inside.length) continue;
+    const slide = [];
+    for (const b of inside) {
+      const t = b.tick - n.tick, to = (b.value / 8192 - on) * range;
+      if (slide.length && slide[slide.length - 1].t === t) slide[slide.length - 1].to = to; else slide.push({t, len: 1, to});
+    }
+    if (slide.some(x => Math.abs(x.to) > 1e-9)) { n.slide = slide; slid++; }
+  }
+  return slid;
+}
+
+export function cseqNotes(cs, {maxSeconds = 600, bendRangeOf = () => 200} = {}) {
   const scale = TICKS_PER_BEAT / cs.division;
   const T = t => Math.round(t * scale);
   const notes = [], tempoMap = new Map(), warnings = [];
   const chan = [];
   for (let c = 0; c < 16; c++) chan.push({program: null, vol: 127, pan: 64, rev: 0, bend: 0});
-  const loops = new Map();
+  const loops = new Map(), bendsByCh = new Map();
   let endTick = 0, offs = 0, poly = 0, pressure = 0;
   const tracks = unrollTracks(cs);
   const all = [];
@@ -257,14 +286,14 @@ export function cseqNotes(cs, {maxSeconds = 600} = {}) {
         else if (e.controller === 10) C.pan = e.value;
         else if (e.controller === 91) C.rev = e.value;
         break;
-      case "bend": C.bend = e.value / 8192; break;
+      case "bend": C.bend = e.value / 8192; (bendsByCh.get(e.ch) || bendsByCh.set(e.ch, []).get(e.ch)).push({tick: T(e.tick), value: e.value}); break;
       case "noteOff": offs++; break;
       case "polyPressure": poly++; break;
       case "pressure": pressure++; break;
       case "note": {
         const tick = T(e.tick), dur = Math.max(1, T(e.tick + e.dur) - tick);
         notes.push({ch: e.ch, inst: C.program, drum: false, key: e.key, semitone: e.key, midi: e.key, tick, dur, vel: e.vel,
-                    bank: 0, vol: C.vol / 127, pan: C.pan / 128, rev: C.rev, bend: C.bend});
+                    bank: 0, vol: C.vol / 127, pan: C.pan, rev: C.rev, bend: C.bend});
         break;
       }
     }
@@ -283,6 +312,8 @@ export function cseqNotes(cs, {maxSeconds = 600} = {}) {
     loop = {tick: from, at};
     if (loops.size > 1) warnings.push("tracks loop at different points: " + [...loops].map(([k, n]) => k.replace(":", "→") + "×" + n).join(", ") + " (the roll's loop is the song's)");
   }
+  const slid = attachSlides(notes, bendsByCh, bendRangeOf);
+  if (slid) warnings.push(slid + " notes carry pitch bends (the roll writes each landed pitch as its own note; the render bends the voice)");
   const tempos = [...tempoMap].map(([tick, bpm]) => ({tick, bpm: Math.round(bpm * 100) / 100})).sort((a, b) => a.tick - b.tick);
   if (!tempos.length || tempos[0].tick !== 0) tempos.unshift({tick: 0, bpm: 120});
   if (offs) warnings.push(offs + " note-off events (unused by this player, ignored)");
@@ -525,14 +556,14 @@ export function rareSequenceOfSet(set, {game = null, maxSeconds = 600} = {}) {
   if (e.coverage < 1) throw new Error("song " + id + ": only " + Math.round(e.coverage * 100) + "% of its bytes are in the rip");
   const bytes = decompress1172(packed, e.size);
   const cs = parseCSeq(bytes);
-  const res = cseqNotes(cs, {maxSeconds});
-  res.sequenceId = id; res.variation = 0; res.reverb = null; res.ducked = [];
   const banks = findRareBankFile(ram);
-  if (banks.length) { // programs that are kits in this bank: their notes are slots
-    const bank = readRareBank(ram, set.rom, banks[0].banks[0].at);
+  const bank = banks.length ? readRareBank(ram, set.rom, banks[0].banks[0].at) : null;
+  const res = cseqNotes(cs, {maxSeconds, bendRangeOf: p => { const i = bank && bank.instrument(p); return i ? i.bendRange : 200; }});
+  res.sequenceId = id; res.variation = 0; res.reverb = null; res.ducked = [];
+  if (bank) { // programs that are kits in this bank: their notes are slots
     const kits = new Set(bank.instruments.filter(isKitInstrument).map(i => i.index));
     if (kits.size) {
-      for (const n of res.notes) if (kits.has(n.inst)) n.drum = true;
+      for (const n of res.notes) if (kits.has(n.inst)) { n.drum = true; delete n.slide; }
       res.kits = [...kits].sort((a, b) => a - b);
     }
   }
@@ -582,7 +613,24 @@ export function envelopeGain(env, rate, holdSamples, out) {
   return i;
 }
 
+// Stereo: the SDK synthesizer pans each voice with libaudio's equal-power
+// table (syn/eqpower.c, `s16 eqpower[128]` = 32767·cos(i·π/254); env.c's
+// _pullSubFrame sets the mixer's left volume to eqpower[pan] and the right
+// to eqpower[127 − pan]) — i.e. gainL = cos(pan·π/254), gainR = cos((127 −
+// pan)·π/254), the same law as equal-power on p = pan/63.5 − 1. The voice's
+// pan is the sequence player's __vsPan: the sound's samplePan + the
+// channel's cc10 − 64, clamped to 0..127, taken at note-on (a cc10 change
+// during a note is not followed). Each track is {l, r}; opts.stereo ===
+// false gives the old mono buffers (the two summed with the centre law, so
+// a centred voice keeps its level).
+export const PAN_CENTER = 64;
+export function panGains(pan) {
+  const p = Math.max(0, Math.min(127, Math.round(pan)));
+  return {l: Math.cos(p * Math.PI / 254), r: Math.cos((127 - p) * Math.PI / 254)};
+}
+
 export async function renderRare(result, opts = {}) {
+  const stereo = opts.stereo !== false;
   const set = opts.set;
   if (!set || !set.rom || !set.state) throw new Error("renderRare needs the set (its ROM pages and save state)");
   const {ram} = rdramOf(set.state);
@@ -601,8 +649,10 @@ export async function renderRare(result, opts = {}) {
   let done = 0, total = 0;
   for (const g of groups) total += g.notes.length;
   let envBuf = new Float32Array(sampleRate * 8);
+  out.pans = {};
   for (const g of groups) {
-    let buf = null;
+    let bufL = null, bufR = null;
+    const pans = new Map();
     for (const n of g.notes) {
       done++;
       if (opts.onProgress && (done & 31) === 0) { opts.onProgress(done / total); await new Promise(r => setTimeout(r, 0)); }
@@ -622,6 +672,9 @@ export async function renderRare(result, opts = {}) {
       const step = ratio * bank.sampleRate / sampleRate;
       const base = (Math.max(0, Math.min(127, n.vel)) / 127) * (snd.sampleVolume / 127) * (n.vol != null ? n.vol : 1) * (inst.volume / 127);
       if (base <= 0) continue;
+      const pan = Math.max(0, Math.min(127, (snd.samplePan != null ? snd.samplePan : PAN_CENTER) + (n.pan != null ? n.pan : PAN_CENTER) - PAN_CENTER));
+      const {l: gL, r: gR} = stereo ? panGains(pan) : {l: 1, r: 0};
+      pans.set(pan, (pans.get(pan) || 0) + 1);
       const env = snd.envelope || {attackTime: 0, decayTime: -1, releaseTime: 0, attackVolume: 127, decayVolume: 127};
       const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(tickSeconds(tempos, n.tick + n.dur) * sampleRate);
       const holdSamples = Math.max(1, iOff - i0);
@@ -629,18 +682,34 @@ export async function renderRare(result, opts = {}) {
       if (envBuf.length < need) envBuf = new Float32Array(need);
       const len = envelopeGain(env, sampleRate, holdSamples, envBuf);
       const pcm = smp.pcm, L = smp.loopEnd, loopStart = smp.loopStart;
+      // pitch bends inside the note (n.slide: semitones from the note-on pitch, t ticks in) step the ONE voice — no new attack
+      let slide = null, si = 0, stepNow = step;
+      if (n.slide && n.slide.length) {
+        slide = [{i: i0, s: 0}];
+        for (const sl of n.slide) { const a = Math.floor(tickSeconds(tempos, n.tick + sl.t) * sampleRate); slide.push({i: a, s: slide[slide.length - 1].s}, {i: a + 1, s: sl.to}); }
+      }
       let pos = 0;
       for (let k = 0; k < len; k++) {
         const i = i0 + k;
         if (i >= N) break;
         if (pos >= L) { if (!smp.looping) break; pos = loopStart + (pos - loopStart) % (L - loopStart); }
+        if (slide) {
+          while (si + 1 < slide.length && i >= slide[si + 1].i) si++;
+          const g = slide[si], nx = slide[si + 1];
+          const semis = nx && nx.i > g.i && i < nx.i ? g.s + (nx.s - g.s) * (i - g.i) / (nx.i - g.i) : g.s;
+          stepNow = step * Math.pow(2, semis / 12);
+        }
         const p0 = pos | 0, f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : smp.looping ? pcm[loopStart] : 0;
         const v = (a + (b - a) * f) * base * envBuf[k];
-        if (v !== 0) { if (!buf) buf = new Float32Array(N); buf[i] += v; }
-        pos += step;
+        if (v !== 0) { if (!bufL) { bufL = new Float32Array(N); if (stereo) bufR = new Float32Array(N); } bufL[i] += v * gL; if (stereo) bufR[i] += v * gR; }
+        pos += stepNow;
       }
     }
-    if (buf) out[g.name] = buf; else out.silent.push(g.name);
+    if (bufL) {
+      out[g.name] = stereo ? {l: bufL, r: bufR} : bufL;
+      // the pans the track's voices used (voice pan = samplePan + cc10 − 64), most-used first, and the channel's cc10 at its first note
+      out.pans[g.name] = {cc10: g.first.pan != null ? g.first.pan : PAN_CENTER, voice: [...pans].sort((a, b) => b[1] - a[1]).map(([p, k]) => ({pan: p, notes: k}))};
+    } else out.silent.push(g.name);
   }
   if (opts.onProgress) opts.onProgress(1);
   return out;
