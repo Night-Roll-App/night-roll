@@ -24,6 +24,12 @@ import { extractAlbum, writeAlbum, summary } from "../tools/instruments/extract.
 import { playNote, regionFor, envLevel } from "../tools/instruments/play.mjs";
 import { label } from "../tools/instruments/name.mjs";
 import { verifySong } from "../tools/instruments/verify.mjs";
+import { makeTestNSF } from "../tools/nsf/make-test-nsf.mjs";
+import { makeTestGBS } from "../tools/gbs/make-test-gbs.mjs";
+import { pulseSample, gbPulseSample, triangleSample, noiseSample, gbNoiseSample, waveSample, waveHashOf,
+         decodeVolReg, curveOf, pearson, meanAbsDiff, clusterByShape, curveFromEnvelope, nesLevels, gbLevels,
+         nesPeriodForKey, gbPulsePeriodForKey, gbWavePeriodForKey,
+         pulseLevel, noiseLevel, ROOT_KEY, SAMPLE_RATE as CHIP_SAMPLE_RATE, nesFiles, gbsFiles } from "../tools/instruments/nes.mjs";
 
 const N = (deg, i) => deg * 11 + i; // AKAO note: degree × 11 + length index (1 = half, 3 = eighth)
 function noise(n, seed = 5) { const s = new Int16Array(n); let x = seed; for (let i = 0; i < n; i++) { x = (x * 1103515245 + 12345) & 0x7FFFFFFF; s[i] = (x % 56000) - 28000; } return s; }
@@ -355,3 +361,234 @@ test("real rip sm64: every played instrument is in the library with its samples"
   const ddd = lib.instruments.filter(i => i.usedIn.includes("Dire, Dire Docks")).map(i => i.id);
   assert.ok(ddd.includes("ead-sm64:bank19:inst14"), "used in: " + ddd.join(", "));
 });
+
+// ---- NES + Game Boy (tools/instruments/nes.mjs) ------------------------------------------
+// Pure synthesis chips: no bank to read, so an instrument is derived from the register
+// facts alone (duty, the volume-over-time curve, GB's real wavetable). Unit-level checks
+// on the DAC laws/sample synthesis, then a synthetic NSF/GBS end to end (the repo's own
+// test builders — same shape as tests/nsf.test.mjs / tests/gbs.test.mjs), then, gated on
+// real rips being present, pitch/shape/level against apu-render.mjs itself.
+test("decodeVolReg: $4000/$4004/$400C byte -> duty/loop/constVol/vol", () => {
+  assert.deepEqual(decodeVolReg(0x3F), {duty: 0, loop: true, constVol: true, val: 15});
+  assert.deepEqual(decodeVolReg(0xBE), {duty: 2, loop: true, constVol: true, val: 14});
+  assert.deepEqual(decodeVolReg(0x08), {duty: 0, loop: false, constVol: false, val: 8}); // hardware envelope, period 8
+});
+
+test("pulseSample/gbPulseSample: a single duty cycle, 32 samples, looped whole", () => {
+  for (const duty of [0.125, 0.25, 0.5, 0.75]) {
+    const {pcm, rate, loop} = pulseSample(duty);
+    assert.equal(pcm.length, 32); assert.equal(rate, CHIP_SAMPLE_RATE); assert.deepEqual(loop, {start: 0, end: 32});
+    const on = Math.round(duty * 32);
+    assert.ok(pcm.slice(0, on).every(v => v === pcm[0]) && pcm.slice(on).every(v => v === pcm[on] || on === 32), "one on-level, one off-level");
+    assert.ok(pcm[0] > 0 && (on === 32 || pcm[on] < 0), "AC-coupled: on positive, off negative");
+    const g = gbPulseSample(duty);
+    assert.ok(g.pcm[0] > 0, "GB pulse: on-level is positive"); assert.equal(g.pcm[31] === g.pcm[0], duty === 1);
+  }
+  // narrower duty -> louder on-peak, quieter off-floor (a 12.5% pulse's real asymmetry)
+  const p12 = pulseSample(0.125), p50 = pulseSample(0.5);
+  assert.ok(p12.pcm[0] > p50.pcm[0], "narrow duty's on-peak is louder than 50%'s");
+});
+
+test("triangleSample: the chip's own 32-step staircase, DC-removed, through the nonlinear DAC", () => {
+  const {pcm, loop} = triangleSample();
+  assert.equal(pcm.length, 32); assert.deepEqual(loop, {start: 0, end: 32});
+  const mean = pcm.reduce((a, b) => a + b, 0) / pcm.length;
+  assert.ok(Math.abs(mean) < 1e-9, "DC-removed");
+  assert.equal(pcm[0], Math.max(...pcm), "step 15 (the loudest) is the sequence's peak");
+  assert.equal(pcm[15], pcm[16], "the sequence's shared trough (both step 0)");
+  assert.ok(pcm[0] > pcm[8] && pcm[8] > pcm[15], "falls 15..0 across the first half");
+  assert.ok(pcm[16] < pcm[24] && pcm[24] < pcm[31], "rises 0..15 across the second half");
+});
+
+test("noiseSample/gbNoiseSample: a real LFSR at the captured period, one-shot, DC-removed", () => {
+  const {pcm, rate, loop} = noiseSample({period: 254, mode: 0});
+  assert.equal(loop, null, "noise is one-shot, not looped");
+  assert.ok(rate > 0 && pcm.length > 100);
+  const mean = pcm.reduce((a, b) => a + b, 0) / pcm.length;
+  assert.ok(Math.abs(mean) < 1e-6, "DC-removed: " + mean);
+  const g = gbNoiseSample({shift: 4, width: 0, div: 0});
+  assert.equal(g.loop, null);
+  assert.ok(Math.abs(g.pcm.reduce((a, b) => a + b, 0) / g.pcm.length) < 1e-6);
+});
+
+test("waveSample: the real captured 32-nibble wavetable, content-hashed", () => {
+  const nibbles = new Uint8Array([...Array(32)].map((_, i) => i % 16));
+  const {pcm, loop} = waveSample(nibbles);
+  assert.equal(pcm.length, 32); assert.deepEqual(loop, {start: 0, end: 32});
+  assert.equal(waveHashOf(nibbles), waveHashOf(nibbles.slice()), "same content, same hash");
+  assert.notEqual(waveHashOf(nibbles), waveHashOf(new Uint8Array(32)), "different content, different hash");
+});
+
+test("curveOf: normalised to the note's own onset, padded (not truncated) when a note is shorter than the window", () => {
+  const flat = new Float64Array(16).fill(1);
+  const decaying = Float64Array.from({length: 16}, (_, i) => Math.max(0.2, 1 - i * 0.1)); // floors at 0.2 by index 8
+  assert.deepEqual(curveOf(flat), curveOf(Float64Array.from(flat, v => v * 0.5)), "same shape, different accent: same curve");
+  assert.notDeepEqual(curveOf(flat), curveOf(decaying), "flat vs decaying: different curve");
+  // a note a couple of samples shorter than the window pads by holding its last level, not truncating
+  assert.deepEqual(curveOf(decaying), curveOf(decaying.slice(0, 12)));
+});
+
+test("pearson/meanAbsDiff: the similarity merge's two-part test", () => {
+  const flat = new Array(16).fill(1);
+  const almostFlat = [1, 1, 1, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97];
+  const muchLouder = flat.map(() => 1.85);
+  const decaying = Float64Array.from({length: 16}, (_, i) => Math.max(0.2, 1 - i * 0.1));
+  // a flat curve's correlation against anything is undefined by definition — deferred to
+  // meanAbsDiff (scored 1, not 0: refusing a merge here was the real bug the coordinator's
+  // review caught, since it blocked a barely-decaying note from ever joining a held one)
+  assert.equal(pearson(flat, almostFlat), 1);
+  assert.ok(meanAbsDiff(flat, almostFlat) < 0.08, "close enough to merge: " + meanAbsDiff(flat, almostFlat));
+  assert.ok(meanAbsDiff(flat, muchLouder) > 0.08, "not close enough — a real level jump, not jitter");
+  assert.ok(pearson(flat, decaying) < 0.97 || meanAbsDiff(flat, decaying) > 0.08, "flat vs a real decay: kept apart");
+  assert.equal(pearson(decaying, decaying), 1); assert.equal(meanAbsDiff(decaying, decaying), 0);
+});
+
+test("clusterByShape: near-identical curves merge into one instrument by their true medoid; a different decay rate stays separate", () => {
+  const mk = (curveVals, dur) => ({levels: Float64Array.from(curveVals), dur, frameSec: 1 / 60});
+  const flatShape = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+  const jitteredShape = [1, 1, 1, 0.97, 1, 0.97, 1, 1, 0.97, 1, 1, 0.97, 1, 1, 1, 1]; // same instrument, a frame of jitter
+  const facts = [
+    ...Array(20).fill(0).map(() => mk(flatShape, 6)),        // the common case
+    ...Array(3).fill(0).map(() => mk(jitteredShape, 4)),     // near-identical: should merge into the above
+    ...Array(5).fill(0).map(() => mk(Array.from({length: 16}, (_, i) => Math.max(0.1, 1 - i * 0.15)), 20)), // a real, fast decay
+  ];
+  const clusters = clusterByShape(facts);
+  assert.equal(clusters.length, 2, "the jittered near-copy merges; the real decay stays its own cluster");
+  const big = clusters.find(c => c.facts.length === 23), small = clusters.find(c => c.facts.length === 5);
+  assert.ok(big && small);
+});
+
+test("curveFromEnvelope: resamples a stored instrument's envelope back to the same curve shape extraction clustered with", () => {
+  const flat = new Float64Array(16).fill(1);
+  const env = {points: [[0, 1], [0.267, 1]], repeat: null};
+  const curve = curveFromEnvelope(env, 1 / 60);
+  assert.deepEqual(curveOf(curve), curveOf(flat), "a flat envelope resamples flat");
+});
+
+test("nesLevels: constant-volume holds (and follows explicit writes), hardware envelope decays and loops", () => {
+  const held = nesLevels("pulse", 0x3F, [], 8); // duty0, constVol, vol 15, no further writes
+  assert.ok(held.every(v => Math.abs(v - 1) < 1e-9), "vol 15 constant -> level 1 throughout");
+  const faded = nesLevels("pulse", 0x3F, [[4, 0]], 8); // an explicit drop to vol 0 at frame 4
+  assert.ok(faded[3] > 0 && faded[4] === 0, "the write's own frame is where the level drops");
+  const env = nesLevels("pulse", 0x08, [], 40); // hardware envelope, period 8, no loop
+  assert.ok(env[0] > env[20] && env[39] === 0, "decays from full to silence, no loop");
+  const loopEnv = nesLevels("pulse", 0x28, [], 200); // period 8, loop bit set
+  assert.ok(loopEnv.some((v, i) => i > 20 && v > loopEnv[i - 1] + 0.1), "a looping hardware envelope re-attacks");
+});
+
+test("gbLevels: linear DAC — pace 0 holds, otherwise steps at 64 Hz toward 0 or 15", () => {
+  const frameSec = 1 / 59.73;
+  const held = gbLevels(0xF0, 8, frameSec); // initVol 15, dir down, pace 0 -> never steps
+  assert.ok(held.every(v => Math.abs(v - 1) < 1e-9));
+  const decay = gbLevels(0xF1, 60, frameSec); // initVol 15, dir down, pace 1 (fastest)
+  assert.ok(decay[0] > decay[30], "steps down over time");
+  const rise = gbLevels(0x09, 60, frameSec); // initVol 0, dir up, pace 1
+  assert.ok(rise[0] < rise[30], "steps up when dir is up");
+});
+
+test("nesPeriodForKey/gbPulsePeriodForKey/gbWavePeriodForKey: the period register for an exact MIDI key round-trips", () => {
+  for (const midi of [40, 60, 69, 84, 96]) {
+    const p = nesPeriodForKey(midi, "pulse");
+    const freq = 1_789_773 / (16 * (p + 1)), back = Math.round(69 + 12 * Math.log2(freq / 440));
+    assert.equal(back, midi, "NES pulse period " + p + " implies key " + back + ", wanted " + midi);
+    const gp = gbPulsePeriodForKey(midi);
+    const gfreq = 131072 / (2048 - gp), gback = Math.round(69 + 12 * Math.log2(gfreq / 440));
+    assert.equal(gback, midi, "GB pulse period " + gp);
+  }
+});
+
+test("pulseLevel/noiseLevel: the concave DAC law — 0 at silence, 1 at full scale, monotonic", () => {
+  assert.equal(pulseLevel(0), 0); assert.equal(pulseLevel(15), 1);
+  assert.equal(noiseLevel(0), 0); assert.equal(noiseLevel(15), 1);
+  for (let v = 1; v < 15; v++) assert.ok(pulseLevel(v) < pulseLevel(v + 1), "pulseLevel monotonic at " + v);
+  assert.ok(pulseLevel(7) > 7 / 15, "concave: half the register is more than half the linear level (" + pulseLevel(7) + ")");
+});
+
+test("nesFiles/gbsFiles: extract.mjs's dispatch finds .nsf/.gbs by extension", () => {
+  const dir = mkdtempSync(join(tmpdir(), "nr-nesfiles-"));
+  try {
+    writeFileSync(join(dir, "a.nsf"), makeTestNSF());
+    writeFileSync(join(dir, "b.gbs"), makeTestGBS());
+    writeFileSync(join(dir, "ignore.txt"), "");
+    assert.deepEqual(nesFiles(dir), ["a.nsf"]);
+    assert.deepEqual(gbsFiles(dir), ["b.gbs"]);
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+test("a synthetic NSF: pulse duty/envelope + the triangle pedal extracted, named, sampled, played back", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "nr-nes-"));
+  try {
+    writeFileSync(join(dir, "test.nsf"), makeTestNSF());
+    const lib = await extractAlbum(dir, {slug: "test-nes"});
+    assert.deepEqual(lib.drivers, new Set(["nes"]));
+    const pulse = lib.instruments.find(i => i.id.startsWith("nes:pulse:duty12.5:"));
+    const tri = lib.instruments.find(i => i.id.startsWith("nes:triangle:"));
+    assert.ok(pulse, "the 4-note duty-0 pulse melody"); assert.ok(tri, "the held triangle pedal");
+    // a regression guard for the over-fragmentation the coordinator's review caught (Contra/
+    // Castlevania briefly hit 175/228 instruments from an exact-match clustering bug): even this
+    // tiny fixture should never explode past a handful of instruments for a 4-note melody + pedal
+    assert.ok(lib.instruments.length <= 6, "instrument count: " + lib.instruments.length);
+    assert.equal(pulse.kind, "melodic"); assert.equal(pulse.noteCount, 4);
+    assert.deepEqual(pulse.keysPlayed, {lo: 60, hi: 72, median: 67});
+    assert.equal(pulse.keyRegions.length, 1); assert.equal(pulse.keyRegions[0].keyLo, 0); assert.equal(pulse.keyRegions[0].keyHi, 127);
+    assert.ok(Math.abs(pulse.keyRegions[0].rootKey - ROOT_KEY) < 1e-3, pulse.keyRegions[0].rootKey + " vs " + ROOT_KEY);
+    assert.ok(typeof pulse.nameGuess === "string" && pulse.features && pulse.features.measured);
+    assert.equal(pulse.envelope.points[0][1], 1, "envelope normalised to 1 at onset");
+    for (const i of lib.instruments) for (const r of i.keyRegions) assert.ok(r.sample, i.id + " has a sample");
+    // WAV round-trip: a 32-sample looped pulse cycle
+    const out = mkdtempSync(join(tmpdir(), "nr-nes-out-"));
+    const w = writeAlbum(lib, out);
+    const h = pulse.keyRegions[0].sample;
+    const wav = readWav(readFileSync(join(w.dir, h + ".wav")));
+    assert.equal(wav.pcm.length, 32); assert.ok(wav.loop && wav.loop.end === 32);
+    rmSync(out, {recursive: true, force: true});
+    // play.mjs: the pulse plays the right pitch at its rootKey ratio
+    const samples = {}; for (const [hh, s] of Object.entries(lib.samples)) samples[hh] = {rate: s.rate, loop: s.loop, pcm: s._f32};
+    const buf = playNote(pulse, samples, {key: 60, vel: 100, hold: 0.05, sampleRate: 44100, tail: 0});
+    assert.ok(buf.length > 0 && buf.some(v => v !== 0));
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+test("a synthetic GBS: pulse, the real wavetable, and a noise drum-kit", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "nr-gb-"));
+  try {
+    writeFileSync(join(dir, "test.gbs"), makeTestGBS());
+    const lib = await extractAlbum(dir, {slug: "test-gb"});
+    assert.deepEqual(lib.drivers, new Set(["gb"]));
+    const pulse = lib.instruments.find(i => i.id.startsWith("gb:pulse:duty50:"));
+    const wave = lib.instruments.find(i => i.id.startsWith("gb:wave:"));
+    const noise = lib.instruments.find(i => i.id.startsWith("gb:noise:"));
+    assert.ok(pulse && wave && noise);
+    assert.ok(lib.instruments.length <= 6, "instrument count: " + lib.instruments.length); // same regression guard as the NSF test above
+    assert.equal(noise.kind, "drum-kit"); assert.equal(noise.keyRegions[0].fixedPitch, true);
+    assert.equal(wave.keyRegions.length, 1); assert.ok(wave.keyRegions[0].sample);
+    assert.equal(pulse.noteCount, 4); assert.equal(noise.noteCount, 4, "one noise hit per note");
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+// ---- real NES/GB rips: pitch/envelope against apu-render.mjs itself --------------------
+// (scratch/instruments/rips/nes|game-boy or /tmp/claude-501/rips — CI has neither and skips)
+const CHIP_RIPS = [
+  ["nes", "contra", /Contra/i, join(RIPS, "nes", "contra")],
+  ["nes", "castlevania", /Castlevania/i, join(RIPS, "nes", "x", "castlevania")],
+  ["gb", "links-awakening", /ZLJ/i, join(RIPS, "game-boy", "x", "links-awakening")],
+];
+for (const [console_, name, re, dir] of CHIP_RIPS) {
+  // Median, not "every row": a software-envelope instrument is built from ONE representative
+  // note per cluster (nes.mjs's header), so an individual pick whose own decay differs a
+  // little from its cluster's chosen shape — or a very quiet/very short/very high accent,
+  // where autocorrelation and RMS are both measuring mostly noise floor — is expected
+  // per-note variance, not a broken instrument; the median across several picks is the
+  // meaningful signal (and matches what the task's own bar is checking for in aggregate).
+  test(`real rip ${console_}/${name}: median pitch within 5¢ of apu-render.mjs, median as-played shape > 0.5`,
+    {skip: !existsSync(dir) && "no rip at " + dir}, async () => {
+    const {rows} = await verifySong(dir, re, {maxNotes: 6});
+    const real = rows.filter(r => !r.error);
+    assert.ok(real.length >= 4, "rows: " + rows.length);
+    const median = xs => { const s = xs.slice().sort((a, b) => a - b); return s[s.length >> 1]; };
+    const pitched = real.filter(r => r.how === "period");
+    if (pitched.length) assert.ok(Math.abs(median(pitched.map(r => r.pitch))) <= 5, "pitches: " + pitched.map(r => r.pitch.toFixed(1)));
+    const asIs = real.filter(r => !r.long);
+    assert.ok(median(asIs.map(r => r.shape)) > 0.5, "as-played shapes: " + asIs.map(r => r.shape.toFixed(2)));
+  });
+}

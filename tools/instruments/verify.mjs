@@ -31,6 +31,14 @@ import { parseSPC, runSPC } from "../spc/spc.mjs";
 import { renderApu } from "../spc/apu-render.mjs";
 import { resolveRoots } from "../spc/notes.mjs";
 import { keyOnFacts, spcEnvelope, splitDrum, sampleKeyOf, SPC_RATE } from "./snes.mjs";
+import { parseNSF, runNSF } from "../nsf/nsf.mjs";
+import { reconstruct as nesReconstruct } from "../nsf/notes.mjs";
+import { renderApu as renderApuNes } from "../nsf/apu-render.mjs";
+import { parseGBS, runGBS, GB_CLOCK } from "../gbs/gbs.mjs";
+import { reconstruct as gbReconstruct } from "../gbs/notes.mjs";
+import { renderApu as renderApuGb } from "../gbs/apu-render.mjs";
+import { traceReg, decodeVolReg, curveOf, pearson, meanAbsDiff, curveFromEnvelope, nesLevels, gbLevels, waveHashOf, NOISE_PERIODS, DUTY_FRAC,
+         nesPeriodForKey, gbPulsePeriodForKey, gbWavePeriodForKey, pulseLevel, noiseLevel, CORR_MIN, MAD_MAX } from "./nes.mjs";
 import { extractAlbum } from "./extract.mjs";
 import { playNote, samplesFromLibrary } from "./play.mjs";
 import { fft } from "./name.mjs";
@@ -285,12 +293,195 @@ async function verifySnes(dir, file, lib, maxNotes) {
   return rows;
 }
 
+// NES/GB: unlike PS1/N64/SNES, renderApu already keeps every channel in
+// its OWN buffer (no polyphonic mixing to undo), so the driver's honest
+// render is just that ONE channel's captured onset registers replayed
+// alone — no other channel is ever enabled, so no isolation trick beyond
+// that is needed. A length-counter reload of index 1 (raw value 254,
+// ~2.1s at the 120 Hz half-frame clock) keeps the channel enabled through
+// both the as-played and the 2s-held variants without ever re-writing the
+// envelope register (which would restart its decay). nes.mjs's own
+// extraction clusters by a SIMILARITY merge (near-identical curves join
+// one instrument, not just identical ones — see nes.mjs's header), so a
+// freshly-picked note's expected instrument isn't a pure function of its
+// own facts any more; instead `findChipInstrument` (below) does what
+// extraction itself does — finds the candidate (same channel + groupKey)
+// whose stored envelope curve correlates best with this note's own. Only
+// track 1 of a multi-track .nsf/.gbs is checked — a spot check, not a
+// full album re-derivation.
+const NES_BASE = {pulse1: 0x4000, pulse2: 0x4004, triangle: 0x4008, noise: 0x400C};
+const NES_ENABLE = {pulse1: 1, pulse2: 2, triangle: 4, noise: 8};
+const NES_HOLD_LEN = 1 << 3; // r3 length-counter index 1 (value 254, ~2.1s) written once at onset only
+
+// the library's own best match for a note's curve, among instruments sharing
+// its (console, channel, groupKey) — the SAME two-part test clusterByShape
+// merges with (correlation alone is not enough: it's undefined-by-convention
+// (scored 1) whenever either curve is flat, so among several candidates a
+// flat one can out-"correlate" a real close match — mean absolute difference,
+// not correlation, breaks the tie). Candidates outside the merge bar entirely
+// (this pick's own song plays a decay no library cluster is close enough to)
+// still get the closest one by level, so the row reports a real comparison
+// rather than "not in the library" for a note that legitimately has no twin.
+function findChipInstrument(lib, console_, channel, groupKey, curve, frameSec) {
+  const candidates = lib.instruments.filter(i => i.driver === console_ && i.raw && i.raw.channel === channel && i.raw.groupKey === groupKey);
+  let best = null, bestMad = Infinity, fallback = null, fallbackMad = Infinity;
+  for (const inst of candidates) {
+    const instCurve = curveFromEnvelope(inst.envelope, frameSec);
+    const c = pearson(curve, instCurve), m = meanAbsDiff(curve, instCurve);
+    if (m < fallbackMad) { fallbackMad = m; fallback = inst; }
+    if (c >= CORR_MIN && m <= MAD_MAX && m < bestMad) { bestMad = m; best = inst; }
+  }
+  return best || fallback;
+}
+
+async function verifyNes(dir, file, lib, maxNotes) {
+  const nsf = parseNSF(readFileSync(join(dir, file)));
+  const cap = runNSF(nsf, 1, 50);
+  const events = nesReconstruct(cap.apuLog, cap.frames, cap.frameSec).filter(e => e.endFrame - e.startFrame >= 4);
+  const groupOf = e => e.channel + (e.channel === "noise" ? ":p" + e.midi : e.channel === "triangle" ? "" : ":d" + e.duty);
+  const picks = pickNotes(events.map(n => ({n, len: n.endFrame - n.startFrame})), x => groupOf(x.n), () => true, maxNotes);
+  const capFrames16 = Math.round(2 / cap.frameSec);
+  const rows = [];
+  for (const kind of ["pulse1", "pulse2", "triangle", "noise"]) {
+    const evs = events.filter(e => e.channel === kind);
+    const volTr = traceReg(cap.apuLog, evs, () => (kind === "noise" ? 0x400C : NES_BASE[kind]));
+    const ctlTr = kind === "noise" ? traceReg(cap.apuLog, evs, () => 0x400E) : null;
+    for (const {group, n: n0} of picks) {
+      if (n0.channel !== kind) continue;
+      const i = evs.indexOf(n0);
+      for (const long of [false, true]) {
+        const hold = long ? 1.8 : Math.max(0.05, (n0.endFrame - n0.startFrame) * cap.frameSec);
+        const holdSamples = Math.round(hold * 44100), tailSamples = Math.round(0.3 * 44100);
+        const N = holdSamples + tailSamples;
+        // "frame" = sample index throughout (frameSec = 1/44100), so a
+        // release write at holdSamples lands exactly at key-off — without
+        // it the driver channel never stops, while play.mjs's own release
+        // curve always kicks in at `hold`, and comparing a still-sounding
+        // driver against an already-releasing render is not a fair "shape"
+        const release = {frame: holdSamples, addr: 0x4015, value: 0};
+        let inst, key, vel, driverBuf;
+        if (kind === "triangle") {
+          const period = nesPeriodForKey(n0.midi, "triangle"); // the period for the ROUNDED key, not the raw captured one — see nes.mjs's header on nesPeriodForKey
+          const log = [{frame: 0, addr: 0x4015, value: NES_ENABLE.triangle}, {frame: 0, addr: 0x4008, value: 0x7F},
+            {frame: 0, addr: 0x400A, value: period & 0xFF}, {frame: 0, addr: 0x400B, value: ((period >> 8) & 7) | NES_HOLD_LEN}, release];
+          driverBuf = renderApuNes(log, N, 1 / 44100, {sampleRate: 44100, keepFrames: N}).triangle;
+          inst = findChipInstrument(lib, "nes", "triangle", "tri", curveOf(new Float64Array(capFrames16).fill(1)), cap.frameSec);
+          key = n0.midi; vel = 100;
+        } else {
+          const onset = volTr[i].onset;
+          const levels = nesLevels(kind === "noise" ? "noise" : "pulse", onset, volTr[i].during, capFrames16);
+          const curve = curveOf(levels);
+          const log = [{frame: 0, addr: 0x4015, value: NES_ENABLE[kind]}, {frame: 0, addr: NES_BASE[kind], value: onset}, release];
+          let groupKey;
+          if (kind === "noise") {
+            const ctl = ctlTr[i].onset, period = NOISE_PERIODS[ctl & 0x0F], mode = (ctl >> 7) & 1;
+            groupKey = "p" + period + "m" + mode;
+            log.push({frame: 0, addr: 0x400E, value: ctl}, {frame: 0, addr: 0x400F, value: NES_HOLD_LEN});
+          } else {
+            groupKey = "duty" + DUTY_FRAC[decodeVolReg(onset).duty];
+            const period = nesPeriodForKey(n0.midi, "pulse");
+            log.push({frame: 0, addr: NES_BASE[kind] + 2, value: period & 0xFF},
+              {frame: 0, addr: NES_BASE[kind] + 3, value: ((period >> 8) & 7) | NES_HOLD_LEN});
+          }
+          inst = findChipInstrument(lib, "nes", kind, groupKey, curve, cap.frameSec);
+          driverBuf = renderApuNes(log, N, 1 / 44100, {sampleRate: 44100, keepFrames: N})[kind];
+          key = kind === "noise" ? (inst ? inst.keyRegions[0].keyLo : n0.midi) : n0.midi;
+          const dec = decodeVolReg(onset), law = kind === "noise" ? noiseLevel : pulseLevel;
+          vel = Math.max(1, Math.min(127, Math.round((dec.constVol ? law(dec.val) : 1) * 127)));
+        }
+        if (!inst) { rows.push({group, long, error: "not in the library"}); continue; }
+        const drv = driverBuf.subarray(0, N);
+        const mine = playNote(inst, samplesFromLibrary(lib), {key, vel, hold, sampleRate: 44100, tail: 0.3});
+        rows.push({group, long, id: inst.id, name: inst.nameGuess, key, vel, hold: +hold.toFixed(3), ...compare(drv, mine, 44100, hold)});
+      }
+    }
+  }
+  return rows;
+}
+
+const GB_ROUTE = {pulse1: 0x11, pulse2: 0x22, wave: 0x44, noise: 0x88};
+function gbWaveRamAt(apuLog, atFrame) { // apuLog is frame-ordered — stop once past atFrame
+  const ram = new Uint8Array(32);
+  for (const w of apuLog) {
+    if (w.frame > atFrame) break;
+    if (w.addr < 0xFF30 || w.addr > 0xFF3F) continue;
+    const i = (w.addr - 0xFF30) * 2;
+    ram[i] = w.value >> 4; ram[i + 1] = w.value & 0x0F;
+  }
+  return ram;
+}
+async function verifyGb(dir, file, lib, maxNotes) {
+  const gbs = parseGBS(readFileSync(join(dir, file)));
+  const cap = runGBS(gbs, 1, 50);
+  const events = gbReconstruct(cap.apuLog, cap.frames, cap.frameSec).filter(e => e.endFrame - e.startFrame >= 4);
+  const groupOf = e => e.channel + (e.channel === "noise" ? ":s" + e.midi : e.channel === "wave" ? "" : ":d" + e.duty);
+  const picks = pickNotes(events.map(n => ({n, len: n.endFrame - n.startFrame})), x => groupOf(x.n), () => true, maxNotes);
+  const samples = samplesFromLibrary(lib);
+  const capFrames16 = Math.round(2 / cap.frameSec);
+  const rows = [];
+  for (const kind of ["pulse1", "pulse2", "wave", "noise"]) {
+    const evs = events.filter(e => e.channel === kind);
+    const envAddr = kind === "pulse1" ? 0xFF12 : kind === "pulse2" ? 0xFF17 : kind === "noise" ? 0xFF21 : null;
+    const tr = envAddr ? traceReg(cap.apuLog, evs, () => envAddr) : null;
+    for (const {group, n: n0} of picks) {
+      if (n0.channel !== kind) continue;
+      const i = evs.indexOf(n0);
+      for (const long of [false, true]) {
+        const hold = long ? 1.8 : Math.max(0.05, (n0.endFrame - n0.startFrame) * cap.frameSec);
+        const holdSamples = Math.round(hold * 44100), tailSamples = Math.round(0.3 * 44100);
+        const renderSecs = (holdSamples + tailSamples) / 44100 + 0.02;
+        // cycle (not frame) carries the release's exact timing — see nes.mjs's
+        // header note on the same fair-comparison rule for NES's release write
+        const release = {frame: 0, cycle: Math.round((holdSamples / 44100) * GB_CLOCK), addr: 0xFF25, value: 0};
+        const log = [{frame: 0, addr: 0xFF26, value: 0x80}, {frame: 0, addr: 0xFF24, value: 0x77}, {frame: 0, addr: 0xFF25, value: GB_ROUTE[kind]}, release];
+        let inst, key, vel;
+        if (kind === "wave") {
+          const w = gbWaveRamAt(cap.apuLog, n0.startFrame);
+          const period = gbWavePeriodForKey(n0.midi, n0.waveCycles || 1); // rounded-key period — see nesPeriodForKey's header
+          for (let b = 0; b < 16; b++) log.push({frame: 0, addr: 0xFF30 + b, value: (w[b * 2] << 4) | w[b * 2 + 1]});
+          log.push({frame: 0, addr: 0xFF1A, value: 0x80}, {frame: 0, addr: 0xFF1C, value: 0x20},
+            {frame: 0, addr: 0xFF1D, value: period & 0xFF}, {frame: 0, addr: 0xFF1E, value: 0x80 | ((period >> 8) & 7)});
+          inst = findChipInstrument(lib, "gb", "wave", "wave:" + waveHashOf(w), curveOf(new Float64Array(capFrames16).fill(1)), cap.frameSec);
+          key = n0.midi; vel = Math.max(1, Math.min(127, Math.round((n0.vol ?? 15) / 15 * 127)));
+        } else if (kind === "noise") {
+          const onset = tr[i].onset;
+          log.push({frame: 0, addr: 0xFF20, value: 0}, {frame: 0, addr: 0xFF21, value: onset},
+            {frame: 0, addr: 0xFF22, value: (n0.midi << 4) | ((n0.lfsr7 || 0) << 3)}, {frame: 0, addr: 0xFF23, value: 0x80});
+          const curve = curveOf(gbLevels(onset, capFrames16, cap.frameSec));
+          const groupKey = "s" + n0.midi + "w" + (n0.lfsr7 || 0);
+          inst = findChipInstrument(lib, "gb", "noise", groupKey, curve, cap.frameSec);
+          key = inst ? inst.keyRegions[0].keyLo : n0.midi;
+          vel = Math.max(1, Math.min(127, Math.round((n0.vol ?? 15) / 15 * 127)));
+        } else {
+          const onset = tr[i].onset;
+          const base = kind === "pulse1" ? 0xFF10 : 0xFF15;
+          const period = gbPulsePeriodForKey(n0.midi); // rounded-key period — see nesPeriodForKey's header
+          log.push({frame: 0, addr: base + 1, value: n0.duty << 6}, {frame: 0, addr: base + 2, value: onset},
+            {frame: 0, addr: base + 3, value: period & 0xFF}, {frame: 0, addr: base + 4, value: 0x80 | ((period >> 8) & 7)});
+          const curve = curveOf(gbLevels(onset, capFrames16, cap.frameSec));
+          const groupKey = "duty" + DUTY_FRAC[n0.duty ?? 2];
+          inst = findChipInstrument(lib, "gb", kind, groupKey, curve, cap.frameSec);
+          key = n0.midi; vel = Math.max(1, Math.min(127, Math.round((onset >> 4) / 15 * 127)));
+        }
+        if (!inst) { rows.push({group, long, error: "not in the library"}); continue; }
+        const out = await renderApuGb(log, 1, renderSecs, {sampleRate: 44100, keepFrames: 1});
+        const drv = out[kind].subarray(0, holdSamples + tailSamples);
+        const mine = playNote(inst, samples, {key, vel, hold, sampleRate: 44100, tail: 0.3});
+        rows.push({group, long, id: inst.id, name: inst.nameGuess, key, vel, hold: +hold.toFixed(3), ...compare(drv, mine, 44100, hold)});
+      }
+    }
+  }
+  return rows;
+}
+
 export async function verifySong(dir, songRe, {maxNotes = 5} = {}) {
-  const files = readdirSync(dir).filter(f => (/\.(mini)?(psf|usf)$/i.test(f) || /\.spc$/i.test(f)) && songRe.test(f));
+  const files = readdirSync(dir).filter(f => (/\.(mini)?(psf|usf)$/i.test(f) || /\.spc$/i.test(f) || /\.(nsf|gbs)$/i.test(f)) && songRe.test(f));
   if (!files.length) throw new Error("no song matching " + songRe + " in " + dir);
   const file = files[0];
   const lib = await extractAlbum(dir, {slug: path.basename(dir), only: new RegExp("^" + file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$")});
-  const rows = /psf$/i.test(file) ? await verifyPsx(dir, file, lib, maxNotes) : /usf$/i.test(file) ? await verifyN64(dir, file, lib, maxNotes) : await verifySnes(dir, file, lib, maxNotes);
+  const rows = /psf$/i.test(file) ? await verifyPsx(dir, file, lib, maxNotes) : /usf$/i.test(file) ? await verifyN64(dir, file, lib, maxNotes)
+    : /nsf$/i.test(file) ? await verifyNes(dir, file, lib, maxNotes) : /gbs$/i.test(file) ? await verifyGb(dir, file, lib, maxNotes)
+    : await verifySnes(dir, file, lib, maxNotes);
   return {file, rows};
 }
 

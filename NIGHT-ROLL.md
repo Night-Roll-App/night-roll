@@ -1674,6 +1674,138 @@ sample's natural end landing inside the analysis window) — that isn't
 a meaningful "wrong pitch" the way it is for a tone, so those rows are
 held to shape/level only, not the 5¢ bar.
 
+NES + Game Boy (`tools/instruments/nes.mjs`, 2026-09-28): both chips are
+pure synthesis — pulse, wave (the NES triangle; a real 32-sample
+wavetable on Game Boy), noise — so there is no bank to read at all (not
+even SNES's ARAM) and no instrument-number table to avoid parsing: the
+"instrument" is derived entirely from register facts the existing,
+tested note reconstructors already expose (`tools/nsf/notes.mjs` /
+`tools/gbs/notes.mjs` `reconstruct()`: channel, duty, `vol`/`volEnd` for
+a software envelope, `waveCycles`/`lfsr7` for GB wave/noise), plus one
+small supplementary scan of the same register log (`traceReg`) for what
+`reconstruct()` leaves out because it's ambiguous for a human reading
+.notes.txt: the hardware envelope's own (period, loop) bits, and — for
+GB wave — the 32-nibble wavetable actually in RAM at trigger time.
+Identity: channel + duty (pulses) + the SHAPE of the volume-over-time
+curve — a note's level 0..1 for its first 16 frames, normalised so its
+own onset = 1 (a note's absolute starting volume is a performance fact,
+carried by its velocity, exactly the same separation PSX/N64/SNES make).
+Clustering is a SIMILARITY merge (`clusterByShape`), not exact match: a
+first version quantized the curve coarsely (nearest 0.1) and clustered by
+exact string equality, on the theory that a frame of jitter shifts a
+decay step far more often than a driver program genuinely changes — but
+a review of the first real numbers before commit (Contra 175 instruments
+from 11 songs, Castlevania 228) called it: the quantization grid was
+still too fine, AND exact-match itself could only ask "is this
+identical", never "is this close enough". Now: within each (channel, duty) group, exact-curve dedup
+first (cheap, and gives the "how common is this shape" count the next
+step needs), then greedy in descending count order — a shape joins the
+FIRST existing cluster whose seed curve it matches at Pearson correlation
+≥ 0.97 AND mean absolute difference ≤ 0.08 (both, not either: a flat
+curve's correlation against anything is undefined by convention, scored
+1 so it defers to the difference test rather than refusing to merge — an
+early version of THIS scored it 0 instead, which is what left a genuinely
+flat pulse split from a barely-decaying near-copy of itself at a mean
+difference of 0.03, well under the bar), else starts a new cluster. Once
+merging is done, each cluster's envelope comes from its TRUE medoid — the
+distinct curve among those that built it, weighted by how many notes
+each represents, with the least total distance to every other — not
+whichever note happened to seed the cluster or hold longest. Because a
+cluster's membership is now a similarity merge rather than a pure
+function of one note's own facts, verify.mjs can't recompute an
+expected instrument id independently the way SNES's verify recomputes
+sampleKeyOf's; instead it finds the best-matching instrument by curve
+(`curveFromEnvelope` resamples a stored envelope back to the same
+16-frame shape; matched by the SAME two-part test, mean difference
+breaking ties among correlated candidates) — see verify.mjs's own header.
+Every song's facts are collected into one shared bucket first (mirrors
+snes.mjs's two-phase shape), and NES noise / GB noise are always kind
+"drum-kit" (one fixedPitch region at the period/shift + mode/width the
+album played it at). The "sample": one cycle-accurate loop so play.mjs
+needs no new code — pulse: a single-cycle asymmetric on/off square at
+the duty's exact percentage, through the SAME DAC law apu-render.mjs's
+mixer applies (`pulseLevel`/`noiseLevel`: NES's mixer is concave, not
+linear vol/15) and AC-coupled (a duty's real asymmetry — a narrow duty's
+louder peak, quieter RMS — survives, not a plain symmetric ±1 square);
+triangle: the chip's own 32-step staircase through its own (also
+nonlinear) DAC curve. Both share one `ROOT_KEY`/`SAMPLE_RATE`: a
+synthesized oscillator has no native pitch to get wrong, so instead of
+fitting a root per instrument (SNES's job, for real recordings) every
+32-sample loop uses the exact key at which `SAMPLE_RATE/32` IS that
+key's frequency — resampling then reproduces any target frequency
+exactly, not approximately (verified: `nesPeriodForKey`/
+`gbPulsePeriodForKey`/`gbWavePeriodForKey` round-trip). GB wave reuses
+the same relationship, but its 32 samples ARE the real captured nibbles,
+content-hashed like a SNES BRR sample, because two songs can and do
+reuse the same wavetable. Noise: one-shot, `fixedPitch`, the LFSR
+literally simulated at the captured period/width; rootKey = fixedKey so
+playback never resamples it. GB's mixer additionally scales every
+channel by its own NR50/NR51 (master volume + panning) — a song fact,
+not this instrument's — so GB samples bake in the reference gain a full-
+stereo, max-volume song defaults to (`GB_REF_GAIN`), the same way pan is
+left out elsewhere. Envelope points: the cluster's medoid note's own
+observed curve, its longest-held member (raw driver writes for a
+software envelope, the simulated hardware-envelope decay otherwise, most
+real data either way), normalised to 1 at onset same as the clustering
+curve — an earlier version stored the representative note's own
+unnormalised level and double-counted its accent against velocity, since
+fixed. Release: every channel here cuts
+essentially at once at key-off (a driver just disables the channel or
+zeroes it) — `releaseCurve` is a flat 5ms exponential throughout.
+Verify (`verify.mjs`'s `verifyNes`/`verifyGb`): a picked real note's own
+onset registers replayed alone through `renderApu`/`renderApu` (NES/GB
+already keep every channel in its own buffer, so no isolation trick
+beyond "no other channel is ever enabled" is needed) against the SAME
+note played from the library — at the ROUNDED key's own period
+(`nesPeriodForKey` etc.), not the raw captured one, so semitone
+quantization (a captured frequency is essentially never an exact
+semitone of A440, and reconstruct() rounds to one anyway) doesn't read
+as a pitch bug; with a release write at the hold boundary so a still-
+sounding driver is never compared against an already-releasing render.
+Checked against 3 real NES albums and 1 GB album (Mega Man 2, Contra,
+Castlevania, Link's Awakening): pitch is reliably within a few cents;
+shape correlation for an as-played note is good (0.8–0.99) for most
+picks but lower for one whose own decay differs from its cluster's
+medoid, or for extrapolating a software-envelope instrument 2 seconds
+past a note only ever observed for a fraction of a second — expected
+variance from choosing one representative per cluster, not a bug (tests
+assert the MEDIAN across several picks, not every one; the similarity-
+merge rewrite barely moved these medians — MM2 0.90, Contra 0.75,
+Castlevania 0.67, Link's Awakening 0.91 before and after — because the
+DOMINANT curve in a group was usually already the pick either design
+would have chosen; what the rewrite fixed was instrument COUNT, not
+per-note fidelity). Counts, total (melodic/kits), before the
+similarity-merge rewrite → after: Mega Man 2 140 (86/54) → 109 (57/52);
+Contra 175 (167/8) → 123 (115/8); Castlevania 228 (190/38) → 164
+(126/38); Link's Awakening 111 (98/13) → 88 (75/13) — the exact-
+match bug (see above) was really two bugs, a too-fine quantization grid
+and a correlation formula that flatly refused to compare a constant
+curve against a near-constant one; fixing the second alone (before even
+touching thresholds) is what did most of this work. Contra, Castlevania
+and Link's Awakening still sit above ~60 melodic instruments — checked
+by hand (a handful of pulse-channel groups on each), and it's real
+variety, not fragmentation: e.g. Contra's pulse1 duty-75% notes include
+curves from flat-at-full to decaying to 14% to a RISING envelope
+(values above 1.0, an attack shape) with correlations against the
+dominant curve ranging −0.72 to 1.0 and mean differences from 0.03 to
+2.96 — a rich, varied instrument program across 11 songs' worth of
+music, not a clustering defect; loosening the 0.97/0.08 bar further
+risks merging genuinely different envelopes together, which is the
+thing this whole feature exists to keep apart. What doesn't fit: NES
+DPCM (a real sample channel) — the
+2A03 capture (`tools/nsf/nsf.mjs`) never logs $4010-$4013 in the first
+place, so no capture this module has seen carries DPCM facts to
+extract; a future capture adding that would need real sample extraction
+like PSX/N64, not this module's synthesis (open-items.md). An NSF using
+an expansion chip (VRC6/VRC7/FDS/MMC5/N163/5B) is rejected by the
+capture itself (`nsf.mjs`'s documented refusal), same as everywhere else
+in this repo — Gimmick, Just Breed and Lagrange Point in the archive all
+skip this way. GB pulse/noise's envelope is a plain multiplicative scale
+over a fixed on/off sample, which is exact for NES (off is always 0) but
+only approximate for GB at low volume (the DMG DAC's "off" state is
+dac(0) = −1, not 0, independent of the current volume — a minor timbral
+softening at quiet accents, not fixed).
+
 ## Stereo — pan per track (2026-09-28)
 
 Josh: "are we getting … stereo information?" — pan was read and never

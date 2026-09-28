@@ -4,6 +4,8 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## PS2 milestone 1 — DONE 2026-09-28: rips → notes for Sony's stock driver (SQ/HD/BD); Square's own driver (FFX, "BGM"/"WD") identified only; not wired into the app, no audio, nothing committed/pushed. See docs/plans/ps2.md §8 for findings and what milestone 2 (chip audio) needs.
+
 ## Game instrument libraries: load any SoundFont 2 — DONE 2026-09-28 (untested by ear)
 
 `tools/instruments/sf2.mjs` (browser-clean, no Node imports) reads any
@@ -130,6 +132,66 @@ rows fail only the centroid-fallback pitch check (shape still ≥ 0.987) —
 not a real pitch error, see NIGHT-ROLL.md. Not run through export.mjs's
 SF2/SFZ by ear either (same gap as the entry above). Not published to the
 archive — scratch/ only.
+
+## Game instrument libraries: NES + Game Boy — DONE 2026-09-28 (not published)
+
+`tools/instruments/nes.mjs` extends extract.mjs/verify.mjs to `.nsf`/`.gbs`:
+both chips are pure synthesis (pulse/wave/noise), so an instrument is
+channel + duty + the volume-curve's SHAPE, and normalised so accent rides
+on velocity, not the envelope; the "sample" is a synthesized cycle-
+accurate loop (pulse/triangle/GB noise) or, for GB wave, the real
+captured 32-nibble wavetable, content-hashed. See NIGHT-ROLL.md "Game
+instrument libraries" for the full design, including bugs found and
+fixed by verify.mjs's own numbers before this could be called done:
+(1) the exported envelope stored the representative note's own
+UNNORMALISED level, double-counting its accent against velocity — fixed
+by normalising envelope points the same way clustering's own curve
+already is; (2) GB samples were missing the DMG mixer's own gain(bit)
+scaling (routing + master volume, ~−12 dB at default settings) that
+apu-render.mjs always applies — fixed by baking in the reference gain a
+full-stereo/max-volume song defaults to; (3) a pre-commit review caught
+the first clustering design (quantize the curve to 0.1, cluster by exact
+string match) still over-fragmenting real albums (Contra 175 instruments
+from 11 songs, Castlevania 228) — replaced with a similarity merge
+(`clusterByShape`: Pearson correlation ≥ 0.97 AND mean absolute
+difference ≤ 0.08, medoid-per-cluster, see NIGHT-ROLL.md), which also
+surfaced and fixed a correlation-formula bug (a flat curve's correlation
+against anything is undefined and was scored 0, refusing to merge a
+held note with a barely-decaying near-copy of itself at a mean
+difference of 0.03 — rescored 1, deferring to the difference test).
+Counts, total, before → after the similarity-merge rewrite: Mega Man 2
+140 → 109; Contra 175 → 123; Castlevania 228 → 164; Link's Awakening
+111 → 88. Contra/Castlevania/Link's Awakening still exceed ~60 melodic
+instruments — checked by hand, and it's real per-song variety (e.g.
+Contra's pulse1 duty-75% notes span flat-at-full, decaying to 14%, and
+a RISING attack-shaped envelope, correlations against each other from
+−0.72 to 1.0), not a clustering defect; loosening the bar further risks
+merging genuinely different instruments, the opposite of the point.
+Verify median shapes barely moved from the rewrite (MM2 0.90, Contra
+0.75, Castlevania 0.67, Link's Awakening 0.91, both before and after) —
+it fixed instrument count, not per-note fidelity, which was already
+using the album's dominant curve either way. Ran on 22 of 24 real
+albums with rips on disk (Gimmick, Just Breed and Lagrange Point are
+expansion-chip NSFs the capture itself refuses, same as everywhere else
+in this repo). Verified against apu-render.mjs on 2 NES albums (Mega
+Man 2, Contra) + Castlevania + 1 GB album (Link's Awakening): pitch
+reliably within a few cents once compared at the ROUNDED key's own
+period (the raw captured one is essentially never an exact semitone —
+pure quantization noise, not a pitch bug); envelope shape correlation
+0.8–0.99 for most as-played notes, lower for an individual pick whose
+own decay differs from its cluster's medoid, or for extrapolating a
+software-envelope instrument well past a note's own observed length —
+tests hold the MEDIAN across several picks to the bar, not every single
+one (real per-note variance from choosing one representative per
+cluster, not a bug). What doesn't fit: NES DPCM (a real sample channel) — the 2A03
+capture never logs its registers in the first place, so no rip this
+module has seen carries DPCM facts to extract; would need real sample
+extraction like PSX/N64 if a capture ever adds it. GB pulse/noise's
+envelope is only approximate at low volume (the DMG DAC's "off" state
+doesn't scale with volume the way NES's does) — a minor timbral
+softening, not fixed. Not run through export.mjs's SF2/SFZ by ear, not
+published to the archive — scratch/ only (same gaps as the entries
+above).
 
 ## Recording looped instead of growing the song — FIXED on the overnight branch (2026-09-26)
 

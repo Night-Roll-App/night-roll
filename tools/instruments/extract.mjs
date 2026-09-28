@@ -26,6 +26,7 @@ import { Library, wavBytes } from "./model.mjs";
 import { psxSong, psxFiles } from "./psx.mjs";
 import { n64Song, usfFiles } from "./n64.mjs";
 import { snesSong, snesFiles, finishSnesAlbum } from "./snes.mjs";
+import { nesSong, nesFiles, gbsSong, gbsFiles, finishChipAlbum } from "./nes.mjs";
 import { nameAll } from "./name.mjs";
 import { samplesFromLibrary } from "./play.mjs";
 
@@ -66,15 +67,35 @@ export async function extractAlbum(dir, {slug = path.basename(dir), title = "", 
       if (!unused) for (const [id, rec] of lib.inst) if (!rec.used) lib.inst.delete(id);
     } else {
       const spcs = snesFiles(dir);
-      if (!spcs.length) throw new Error("no .psf/.minipsf, .miniusf, or .spc files in " + dir);
-      // every song is captured into one shared bucket (sample hash -> its key-ons across the
-      // whole album) before any instrument is built from it — see snes.mjs's header
-      const bucket = new Map();
-      for (const f of spcs) {
-        if (only && !only.test(f)) continue;
-        try { snesSong(lib, dir, f, bucket); } catch (e) { fails.push({file: f, why: e.message}); }
+      const nsfs = nesFiles(dir);
+      const gbss = gbsFiles(dir);
+      if (spcs.length) {
+        // every song is captured into one shared bucket (sample hash -> its key-ons across the
+        // whole album) before any instrument is built from it — see snes.mjs's header
+        const bucket = new Map();
+        for (const f of spcs) {
+          if (only && !only.test(f)) continue;
+          try { snesSong(lib, dir, f, bucket); } catch (e) { fails.push({file: f, why: e.message}); }
+        }
+        finishSnesAlbum(lib, bucket);
+      } else if (nsfs.length || gbss.length) {
+        // NES/GB: pure synthesis chips, no bank to read — every song's chip
+        // facts (channel, duty, the volume-over-time curve) collected into
+        // one shared bucket before any instrument is clustered from it — see
+        // nes.mjs's header
+        const bucket = [];
+        for (const f of nsfs) {
+          if (only && !only.test(f)) continue;
+          try { nesSong(lib, dir, f, bucket); } catch (e) { fails.push({file: f, why: e.message}); }
+        }
+        for (const f of gbss) {
+          if (only && !only.test(f)) continue;
+          try { gbsSong(lib, dir, f, bucket); } catch (e) { fails.push({file: f, why: e.message}); }
+        }
+        finishChipAlbum(lib, bucket);
+      } else {
+        throw new Error("no .psf/.minipsf, .miniusf, .spc, .nsf, or .gbs files in " + dir);
       }
-      finishSnesAlbum(lib, bucket);
     }
   }
   if (!unused) for (const [id, rec] of lib.inst) if (!rec.used) lib.inst.delete(id);
