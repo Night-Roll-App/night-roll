@@ -1,0 +1,497 @@
+{
+ "title": "Diddy Kong Racing",
+ "order": 50,
+ "songs": {
+  "ancient-lake-fast": "Ancient Lake (Fast)",
+  "boulder-canyon-all-in-one-fast": "Boulder Canyon (All-In-One) (Fast)",
+  "boulder-canyon-all-in-one": "Boulder Canyon (All-In-One)",
+  "boulder-canyon-inner-castle-fast": "Boulder Canyon (Inner Castle) (Fast)",
+  "boulder-canyon-inner-castle": "Boulder Canyon (Inner Castle)",
+  "boulder-canyon-outer-castle-fast": "Boulder Canyon (Outer Castle) (Fast)",
+  "boulder-canyon-outer-castle": "Boulder Canyon (Outer Castle)",
+  "boulder-canyon-outside-castle-fast": "Boulder Canyon (Outside Castle) (Fast)",
+  "boulder-canyon-outside-castle": "Boulder Canyon (Outside Castle)",
+  "crescent-island-credits-2-fast": "Crescent Island, Credits 2 (Fast)",
+  "crescent-island-credits-2": "Crescent Island, Credits 2",
+  "darkmoon-caverns-credits-fast": "Darkmoon Caverns, Credits (Fast)",
+  "darkmoon-caverns-credits": "Darkmoon Caverns, Credits",
+  "ending-2-part-2": "Ending 2 - Part 2",
+  "everfrost-peak-snowball-valley-fast": "Everfrost Peak, Snowball Valley (Fast)",
+  "everfrost-peak-snowball-valley": "Everfrost Peak, Snowball Valley",
+  "fire-mountain-darkwater-beach-icicle-pyramid-smokey-castle": "Fire Mountain, Darkwater Beach, Icicle Pyramid, Smokey Castle",
+  "first": "First!",
+  "fossil-canyon-fast": "Fossil Canyon (Fast)",
+  "frosty-village-fast": "Frosty Village (Fast)",
+  "genie-race-fast": "Genie Race (Fast)",
+  "genie-s-tip": "Genie's Tip",
+  "gets-balloon-from-genie": "Gets Balloon from Genie",
+  "greenwood-village-windmill-plains-fast": "Greenwood Village, Windmill Plains (Fast)",
+  "greenwood-village-windmill-plains": "Greenwood Village, Windmill Plains",
+  "haunted-wood-fast": "Haunted Wood (Fast)",
+  "haunted-wood-ghosts": "Haunted Wood (Ghosts)",
+  "hot-top-volcano-fast": "Hot Top Volcano (Fast)",
+  "island-all-in-one": "Island (All-In-One)",
+  "island-basic-fade-in": "Island (Basic Fade in)",
+  "island-basic": "Island (Basic)",
+  "island-dino-domain": "Island (Dino Domain)",
+  "island-dragon-forest": "Island (Dragon Forest)",
+  "island-genie": "Island (Genie)",
+  "island-sherbet-island": "Island (Sherbet Island)",
+  "island-snowflake-mountain": "Island (Snowflake Mountain)",
+  "jungle-falls-fast": "Jungle Falls (Fast)",
+  "key-opens-the-door-won-trophy": "Key Opens The Door, Won Trophy",
+  "lost-against-wizpig": "Lost Against WizPig",
+  "no-access": "No Access!",
+  "options-level-selection": "Options, Level Selection",
+  "pirate-lagoon-treasure-caves-fast": "Pirate Lagoon, Treasure Caves (Fast)",
+  "pirate-lagoon-treasure-caves": "Pirate Lagoon, Treasure Caves",
+  "player-select-all-in-one": "Player Select (All-In-One)",
+  "player-select-banjo": "Player Select (Banjo)",
+  "player-select-bumper": "Player Select (Bumper)",
+  "player-select-conker": "Player Select (Conker)",
+  "player-select-diddy": "Player Select (Diddy)",
+  "player-select-drumstick": "Player Select (Drumstick)",
+  "player-select-krunch": "Player Select (Krunch)",
+  "player-select-pipsy": "Player Select (Pipsy)",
+  "player-select-t-t": "Player Select (T.T.)",
+  "player-select-timber": "Player Select (Timber)",
+  "player-select-tiptup": "Player Select (Tiptup)",
+  "spacedust-alley-star-city-fast": "Spacedust Alley, Star City (Fast)",
+  "spacedust-alley-star-city": "Spacedust Alley, Star City",
+  "spaceport-alpha-fast": "Spaceport Alpha (Fast)",
+  "the-adventure-begins": "The Adventure begins",
+  "tt": "TT",
+  "walrus-cove-fast": "Walrus Cove (Fast)",
+  "whale-bay-fast": "Whale Bay (Fast)",
+  "wizpig-2-beginning": "WizPig 2 Beginning",
+  "wizpig-2-defeated": "WizPig 2 defeated",
+  "wizpig-lives-with-sound-effects": "WizPig lives (with Sound Effects)",
+  "wizpig-race": "WizPig Race",
+  "wizpig": "WizPig"
+ },
+ "nsf": {
+  "vault": "diddy-kong-racing/",
+  "tracks": {
+   "ancient-lake-fast": {
+    "n": 1,
+    "secs": 93.33333333333333
+   },
+   "ancient-lake": {
+    "n": 1,
+    "secs": 93.33333333333333
+   },
+   "background-effects-1": {
+    "n": 1,
+    "secs": 58.10526315789474
+   },
+   "background-effects-2": {
+    "n": 1,
+    "secs": 327.27272727272725
+   },
+   "background-effects-3": {
+    "n": 1,
+    "secs": 40
+   },
+   "boulder-canyon-all-in-one-fast": {
+    "n": 1,
+    "secs": 18.46153846153846
+   },
+   "boulder-canyon-all-in-one": {
+    "n": 1,
+    "secs": 18.46153846153846
+   },
+   "boulder-canyon-inner-castle-fast": {
+    "n": 1,
+    "secs": 18.46153846153846
+   },
+   "boulder-canyon-inner-castle": {
+    "n": 1,
+    "secs": 18.46153846153846
+   },
+   "boulder-canyon-outer-castle-fast": {
+    "n": 1,
+    "secs": 18.46153846153846
+   },
+   "boulder-canyon-outer-castle": {
+    "n": 1,
+    "secs": 18.46153846153846
+   },
+   "boulder-canyon-outside-castle-fast": {
+    "n": 1,
+    "secs": 18.46153846153846
+   },
+   "boulder-canyon-outside-castle": {
+    "n": 1,
+    "secs": 18.46153846153846
+   },
+   "crescent-island-credits-2-fast": {
+    "n": 1,
+    "secs": 93.91304347826087
+   },
+   "crescent-island-credits-2": {
+    "n": 1,
+    "secs": 93.91304347826087
+   },
+   "darkmoon-caverns-credits-fast": {
+    "n": 1,
+    "secs": 78.18181818181819
+   },
+   "darkmoon-caverns-credits": {
+    "n": 1,
+    "secs": 78.18181818181819
+   },
+   "end-boss-level-finish": {
+    "n": 1,
+    "secs": 5.979166666666667
+   },
+   "end-boss-level-start": {
+    "n": 1,
+    "secs": 24
+   },
+   "end-boss": {
+    "n": 1,
+    "secs": 72.72727272727273
+   },
+   "ending-1": {
+    "n": 1,
+    "secs": 52.075471698113205
+   },
+   "ending-2-part-2": {
+    "n": 1,
+    "secs": 56.13911290322581
+   },
+   "ending-2": {
+    "n": 1,
+    "secs": 53.83064516129032
+   },
+   "enter-end-boss-level": {
+    "n": 1,
+    "secs": 16.666666666666668
+   },
+   "everfrost-peak-snowball-valley-fast": {
+    "n": 1,
+    "secs": 100
+   },
+   "everfrost-peak-snowball-valley": {
+    "n": 1,
+    "secs": 100
+   },
+   "fire-mountain-darkwater-beach-icicle-pyramid-smokey-castle": {
+    "n": 1,
+    "secs": 151.8987341772152
+   },
+   "first": {
+    "n": 1,
+    "secs": 3.6
+   },
+   "fossil-canyon-fast": {
+    "n": 1,
+    "secs": 81.29032258064517
+   },
+   "fossil-canyon": {
+    "n": 1,
+    "secs": 81.29032258064517
+   },
+   "frosty-village-fast": {
+    "n": 1,
+    "secs": 107.23404255319149
+   },
+   "frosty-village": {
+    "n": 1,
+    "secs": 107.23404255319149
+   },
+   "genie-race-fast": {
+    "n": 1,
+    "secs": 83.47826086956522
+   },
+   "genie-race": {
+    "n": 1,
+    "secs": 83.47826086956522
+   },
+   "genie-s-tip": {
+    "n": 1,
+    "secs": 1.9453125
+   },
+   "genie": {
+    "n": 1,
+    "secs": 48
+   },
+   "get-piece-of-amulet": {
+    "n": 1,
+    "secs": 2.5833333333333335
+   },
+   "get-ready": {
+    "n": 1,
+    "secs": 3.0375
+   },
+   "gets-balloon-from-genie": {
+    "n": 1,
+    "secs": 17.22972972972973
+   },
+   "greenwood-village-windmill-plains-fast": {
+    "n": 1,
+    "secs": 78.18181818181819
+   },
+   "greenwood-village-windmill-plains": {
+    "n": 1,
+    "secs": 78.18181818181819
+   },
+   "haunted-wood-fast": {
+    "n": 1,
+    "secs": 73.125
+   },
+   "haunted-wood-ghosts": {
+    "n": 1,
+    "secs": 13.375
+   },
+   "haunted-wood": {
+    "n": 1,
+    "secs": 73.125
+   },
+   "hot-top-volcano-fast": {
+    "n": 1,
+    "secs": 99.1304347826087
+   },
+   "hot-top-volcano": {
+    "n": 1,
+    "secs": 99.1304347826087
+   },
+   "island-all-in-one": {
+    "n": 1,
+    "secs": 74.71698113207547
+   },
+   "island-basic-fade-in": {
+    "n": 1,
+    "secs": 74.71698113207547
+   },
+   "island-basic": {
+    "n": 1,
+    "secs": 74.71698113207547
+   },
+   "island-dino-domain": {
+    "n": 1,
+    "secs": 74.71698113207547
+   },
+   "island-dragon-forest": {
+    "n": 1,
+    "secs": 74.71698113207547
+   },
+   "island-genie": {
+    "n": 1,
+    "secs": 74.71698113207547
+   },
+   "island-sherbet-island": {
+    "n": 1,
+    "secs": 74.71698113207547
+   },
+   "island-snowflake-mountain": {
+    "n": 1,
+    "secs": 74.71698113207547
+   },
+   "jungle-falls-fast": {
+    "n": 1,
+    "secs": 76.36363636363636
+   },
+   "jungle-falls": {
+    "n": 1,
+    "secs": 76.36363636363636
+   },
+   "key-collected": {
+    "n": 1,
+    "secs": 1.735611510791367
+   },
+   "key-opens-the-door-won-trophy": {
+    "n": 1,
+    "secs": 11.612903225806452
+   },
+   "lost-against-end-boss": {
+    "n": 1,
+    "secs": 18.896103896103895
+   },
+   "lost-against-wizpig": {
+    "n": 1,
+    "secs": 6.03125
+   },
+   "lost": {
+    "n": 1,
+    "secs": 4.700520833333333
+   },
+   "no-access": {
+    "n": 1,
+    "secs": 2.90625
+   },
+   "options-level-selection": {
+    "n": 1,
+    "secs": 48.010416666666664
+   },
+   "pirate-lagoon-treasure-caves-fast": {
+    "n": 1,
+    "secs": 80
+   },
+   "pirate-lagoon-treasure-caves": {
+    "n": 1,
+    "secs": 80
+   },
+   "player-select-all-in-one": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-banjo": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-bumper": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-conker": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-diddy": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-drumstick": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-krunch": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-pipsy": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-t-t": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-timber": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "player-select-tiptup": {
+    "n": 1,
+    "secs": 21.0989010989011
+   },
+   "rareware-logo": {
+    "n": 1,
+    "secs": 87.12087912087912
+   },
+   "silver-coin-1": {
+    "n": 1,
+    "secs": 0.8709677419354839
+   },
+   "silver-coin-2": {
+    "n": 1,
+    "secs": 0.8709677419354839
+   },
+   "silver-coin-3": {
+    "n": 1,
+    "secs": 0.8709677419354839
+   },
+   "silver-coin-4": {
+    "n": 1,
+    "secs": 0.8709677419354839
+   },
+   "silver-coin-5": {
+    "n": 1,
+    "secs": 0.8225806451612904
+   },
+   "silver-coin-6": {
+    "n": 1,
+    "secs": 0.8225806451612904
+   },
+   "silver-coin-7": {
+    "n": 1,
+    "secs": 0.8225806451612904
+   },
+   "silver-coin-8": {
+    "n": 1,
+    "secs": 0.8225806451612904
+   },
+   "spacedust-alley-star-city-fast": {
+    "n": 1,
+    "secs": 104.34782608695652
+   },
+   "spacedust-alley-star-city": {
+    "n": 1,
+    "secs": 104.34782608695652
+   },
+   "spaceport-alpha-fast": {
+    "n": 1,
+    "secs": 76.52173913043478
+   },
+   "spaceport-alpha": {
+    "n": 1,
+    "secs": 76.52173913043478
+   },
+   "the-adventure-begins": {
+    "n": 1,
+    "secs": 61.2890625
+   },
+   "the-secret-tune": {
+    "n": 1,
+    "secs": 66.08695652173913
+   },
+   "title-theme": {
+    "n": 1,
+    "secs": 67.25274725274726
+   },
+   "trophy-race-3rd-place": {
+    "n": 1,
+    "secs": 4.010416666666667
+   },
+   "tt": {
+    "n": 1,
+    "secs": 33.80281690140845
+   },
+   "walrus-cove-fast": {
+    "n": 1,
+    "secs": 84.48979591836735
+   },
+   "walrus-cove": {
+    "n": 1,
+    "secs": 84.48979591836735
+   },
+   "whale-bay-fast": {
+    "n": 1,
+    "secs": 110.625
+   },
+   "whale-bay": {
+    "n": 1,
+    "secs": 110.625
+   },
+   "wizpig-2-beginning": {
+    "n": 1,
+    "secs": 16
+   },
+   "wizpig-2-defeated": {
+    "n": 1,
+    "secs": 40.8
+   },
+   "wizpig-lives-with-sound-effects": {
+    "n": 1,
+    "secs": 46.51881720430107
+   },
+   "wizpig-race": {
+    "n": 1,
+    "secs": 83.47826086956522
+   },
+   "wizpig": {
+    "n": 1,
+    "secs": 18
+   }
+  },
+  "chip": "usf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "nus-ndye-usa.usflib",
+    "file": "nus-ndye-usa.usflib"
+   }
+  ]
+ }
+}

@@ -1905,6 +1905,423 @@
   ]
  },
  {
+  "title": "Diddy Kong Racing",
+  "songs": [
+   {
+    "title": "Ancient Lake",
+    "path": "albums/n64/diddy-kong-racing/ancient-lake.mid"
+   },
+   {
+    "title": "Ancient Lake (Fast)",
+    "path": "albums/n64/diddy-kong-racing/ancient-lake-fast.mid"
+   },
+   {
+    "title": "Background Effects 1",
+    "path": "albums/n64/diddy-kong-racing/background-effects-1.mid"
+   },
+   {
+    "title": "Background Effects 2",
+    "path": "albums/n64/diddy-kong-racing/background-effects-2.mid"
+   },
+   {
+    "title": "Background Effects 3",
+    "path": "albums/n64/diddy-kong-racing/background-effects-3.mid"
+   },
+   {
+    "title": "Boulder Canyon (All-In-One)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-all-in-one.mid"
+   },
+   {
+    "title": "Boulder Canyon (All-In-One) (Fast)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-all-in-one-fast.mid"
+   },
+   {
+    "title": "Boulder Canyon (Inner Castle)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-inner-castle.mid"
+   },
+   {
+    "title": "Boulder Canyon (Inner Castle) (Fast)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-inner-castle-fast.mid"
+   },
+   {
+    "title": "Boulder Canyon (Outer Castle)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-outer-castle.mid"
+   },
+   {
+    "title": "Boulder Canyon (Outer Castle) (Fast)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-outer-castle-fast.mid"
+   },
+   {
+    "title": "Boulder Canyon (Outside Castle)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-outside-castle.mid"
+   },
+   {
+    "title": "Boulder Canyon (Outside Castle) (Fast)",
+    "path": "albums/n64/diddy-kong-racing/boulder-canyon-outside-castle-fast.mid"
+   },
+   {
+    "title": "Crescent Island, Credits 2",
+    "path": "albums/n64/diddy-kong-racing/crescent-island-credits-2.mid"
+   },
+   {
+    "title": "Crescent Island, Credits 2 (Fast)",
+    "path": "albums/n64/diddy-kong-racing/crescent-island-credits-2-fast.mid"
+   },
+   {
+    "title": "Darkmoon Caverns, Credits",
+    "path": "albums/n64/diddy-kong-racing/darkmoon-caverns-credits.mid"
+   },
+   {
+    "title": "Darkmoon Caverns, Credits (Fast)",
+    "path": "albums/n64/diddy-kong-racing/darkmoon-caverns-credits-fast.mid"
+   },
+   {
+    "title": "End Boss",
+    "path": "albums/n64/diddy-kong-racing/end-boss.mid"
+   },
+   {
+    "title": "End Boss Level Finish",
+    "path": "albums/n64/diddy-kong-racing/end-boss-level-finish.mid"
+   },
+   {
+    "title": "End Boss Level Start",
+    "path": "albums/n64/diddy-kong-racing/end-boss-level-start.mid"
+   },
+   {
+    "title": "Ending 1",
+    "path": "albums/n64/diddy-kong-racing/ending-1.mid"
+   },
+   {
+    "title": "Ending 2",
+    "path": "albums/n64/diddy-kong-racing/ending-2.mid"
+   },
+   {
+    "title": "Ending 2 - Part 2",
+    "path": "albums/n64/diddy-kong-racing/ending-2-part-2.mid"
+   },
+   {
+    "title": "Enter End Boss Level",
+    "path": "albums/n64/diddy-kong-racing/enter-end-boss-level.mid"
+   },
+   {
+    "title": "Everfrost Peak, Snowball Valley",
+    "path": "albums/n64/diddy-kong-racing/everfrost-peak-snowball-valley.mid"
+   },
+   {
+    "title": "Everfrost Peak, Snowball Valley (Fast)",
+    "path": "albums/n64/diddy-kong-racing/everfrost-peak-snowball-valley-fast.mid"
+   },
+   {
+    "title": "Fire Mountain, Darkwater Beach, Icicle Pyramid, Smokey Castle",
+    "path": "albums/n64/diddy-kong-racing/fire-mountain-darkwater-beach-icicle-pyramid-smokey-castle.mid"
+   },
+   {
+    "title": "First!",
+    "path": "albums/n64/diddy-kong-racing/first.mid"
+   },
+   {
+    "title": "Fossil Canyon",
+    "path": "albums/n64/diddy-kong-racing/fossil-canyon.mid"
+   },
+   {
+    "title": "Fossil Canyon (Fast)",
+    "path": "albums/n64/diddy-kong-racing/fossil-canyon-fast.mid"
+   },
+   {
+    "title": "Frosty Village",
+    "path": "albums/n64/diddy-kong-racing/frosty-village.mid"
+   },
+   {
+    "title": "Frosty Village (Fast)",
+    "path": "albums/n64/diddy-kong-racing/frosty-village-fast.mid"
+   },
+   {
+    "title": "Genie",
+    "path": "albums/n64/diddy-kong-racing/genie.mid"
+   },
+   {
+    "title": "Genie Race",
+    "path": "albums/n64/diddy-kong-racing/genie-race.mid"
+   },
+   {
+    "title": "Genie Race (Fast)",
+    "path": "albums/n64/diddy-kong-racing/genie-race-fast.mid"
+   },
+   {
+    "title": "Genie's Tip",
+    "path": "albums/n64/diddy-kong-racing/genie-s-tip.mid"
+   },
+   {
+    "title": "Get Piece Of Amulet",
+    "path": "albums/n64/diddy-kong-racing/get-piece-of-amulet.mid"
+   },
+   {
+    "title": "Get Ready",
+    "path": "albums/n64/diddy-kong-racing/get-ready.mid"
+   },
+   {
+    "title": "Gets Balloon from Genie",
+    "path": "albums/n64/diddy-kong-racing/gets-balloon-from-genie.mid"
+   },
+   {
+    "title": "Greenwood Village, Windmill Plains",
+    "path": "albums/n64/diddy-kong-racing/greenwood-village-windmill-plains.mid"
+   },
+   {
+    "title": "Greenwood Village, Windmill Plains (Fast)",
+    "path": "albums/n64/diddy-kong-racing/greenwood-village-windmill-plains-fast.mid"
+   },
+   {
+    "title": "Haunted Wood",
+    "path": "albums/n64/diddy-kong-racing/haunted-wood.mid"
+   },
+   {
+    "title": "Haunted Wood (Fast)",
+    "path": "albums/n64/diddy-kong-racing/haunted-wood-fast.mid"
+   },
+   {
+    "title": "Haunted Wood (Ghosts)",
+    "path": "albums/n64/diddy-kong-racing/haunted-wood-ghosts.mid"
+   },
+   {
+    "title": "Hot Top Volcano",
+    "path": "albums/n64/diddy-kong-racing/hot-top-volcano.mid"
+   },
+   {
+    "title": "Hot Top Volcano (Fast)",
+    "path": "albums/n64/diddy-kong-racing/hot-top-volcano-fast.mid"
+   },
+   {
+    "title": "Island (All-In-One)",
+    "path": "albums/n64/diddy-kong-racing/island-all-in-one.mid"
+   },
+   {
+    "title": "Island (Basic Fade in)",
+    "path": "albums/n64/diddy-kong-racing/island-basic-fade-in.mid"
+   },
+   {
+    "title": "Island (Basic)",
+    "path": "albums/n64/diddy-kong-racing/island-basic.mid"
+   },
+   {
+    "title": "Island (Dino Domain)",
+    "path": "albums/n64/diddy-kong-racing/island-dino-domain.mid"
+   },
+   {
+    "title": "Island (Dragon Forest)",
+    "path": "albums/n64/diddy-kong-racing/island-dragon-forest.mid"
+   },
+   {
+    "title": "Island (Genie)",
+    "path": "albums/n64/diddy-kong-racing/island-genie.mid"
+   },
+   {
+    "title": "Island (Sherbet Island)",
+    "path": "albums/n64/diddy-kong-racing/island-sherbet-island.mid"
+   },
+   {
+    "title": "Island (Snowflake Mountain)",
+    "path": "albums/n64/diddy-kong-racing/island-snowflake-mountain.mid"
+   },
+   {
+    "title": "Jungle Falls",
+    "path": "albums/n64/diddy-kong-racing/jungle-falls.mid"
+   },
+   {
+    "title": "Jungle Falls (Fast)",
+    "path": "albums/n64/diddy-kong-racing/jungle-falls-fast.mid"
+   },
+   {
+    "title": "Key Collected",
+    "path": "albums/n64/diddy-kong-racing/key-collected.mid"
+   },
+   {
+    "title": "Key Opens The Door, Won Trophy",
+    "path": "albums/n64/diddy-kong-racing/key-opens-the-door-won-trophy.mid"
+   },
+   {
+    "title": "Lost",
+    "path": "albums/n64/diddy-kong-racing/lost.mid"
+   },
+   {
+    "title": "Lost Against End Boss",
+    "path": "albums/n64/diddy-kong-racing/lost-against-end-boss.mid"
+   },
+   {
+    "title": "Lost Against WizPig",
+    "path": "albums/n64/diddy-kong-racing/lost-against-wizpig.mid"
+   },
+   {
+    "title": "No Access!",
+    "path": "albums/n64/diddy-kong-racing/no-access.mid"
+   },
+   {
+    "title": "Options, Level Selection",
+    "path": "albums/n64/diddy-kong-racing/options-level-selection.mid"
+   },
+   {
+    "title": "Pirate Lagoon, Treasure Caves",
+    "path": "albums/n64/diddy-kong-racing/pirate-lagoon-treasure-caves.mid"
+   },
+   {
+    "title": "Pirate Lagoon, Treasure Caves (Fast)",
+    "path": "albums/n64/diddy-kong-racing/pirate-lagoon-treasure-caves-fast.mid"
+   },
+   {
+    "title": "Player Select (All-In-One)",
+    "path": "albums/n64/diddy-kong-racing/player-select-all-in-one.mid"
+   },
+   {
+    "title": "Player Select (Banjo)",
+    "path": "albums/n64/diddy-kong-racing/player-select-banjo.mid"
+   },
+   {
+    "title": "Player Select (Bumper)",
+    "path": "albums/n64/diddy-kong-racing/player-select-bumper.mid"
+   },
+   {
+    "title": "Player Select (Conker)",
+    "path": "albums/n64/diddy-kong-racing/player-select-conker.mid"
+   },
+   {
+    "title": "Player Select (Diddy)",
+    "path": "albums/n64/diddy-kong-racing/player-select-diddy.mid"
+   },
+   {
+    "title": "Player Select (Drumstick)",
+    "path": "albums/n64/diddy-kong-racing/player-select-drumstick.mid"
+   },
+   {
+    "title": "Player Select (Krunch)",
+    "path": "albums/n64/diddy-kong-racing/player-select-krunch.mid"
+   },
+   {
+    "title": "Player Select (Pipsy)",
+    "path": "albums/n64/diddy-kong-racing/player-select-pipsy.mid"
+   },
+   {
+    "title": "Player Select (T.T.)",
+    "path": "albums/n64/diddy-kong-racing/player-select-t-t.mid"
+   },
+   {
+    "title": "Player Select (Timber)",
+    "path": "albums/n64/diddy-kong-racing/player-select-timber.mid"
+   },
+   {
+    "title": "Player Select (Tiptup)",
+    "path": "albums/n64/diddy-kong-racing/player-select-tiptup.mid"
+   },
+   {
+    "title": "Rareware Logo",
+    "path": "albums/n64/diddy-kong-racing/rareware-logo.mid"
+   },
+   {
+    "title": "Silver Coin 1",
+    "path": "albums/n64/diddy-kong-racing/silver-coin-1.mid"
+   },
+   {
+    "title": "Silver Coin 2",
+    "path": "albums/n64/diddy-kong-racing/silver-coin-2.mid"
+   },
+   {
+    "title": "Silver Coin 3",
+    "path": "albums/n64/diddy-kong-racing/silver-coin-3.mid"
+   },
+   {
+    "title": "Silver Coin 4",
+    "path": "albums/n64/diddy-kong-racing/silver-coin-4.mid"
+   },
+   {
+    "title": "Silver Coin 5",
+    "path": "albums/n64/diddy-kong-racing/silver-coin-5.mid"
+   },
+   {
+    "title": "Silver Coin 6",
+    "path": "albums/n64/diddy-kong-racing/silver-coin-6.mid"
+   },
+   {
+    "title": "Silver Coin 7",
+    "path": "albums/n64/diddy-kong-racing/silver-coin-7.mid"
+   },
+   {
+    "title": "Silver Coin 8",
+    "path": "albums/n64/diddy-kong-racing/silver-coin-8.mid"
+   },
+   {
+    "title": "Spacedust Alley, Star City",
+    "path": "albums/n64/diddy-kong-racing/spacedust-alley-star-city.mid"
+   },
+   {
+    "title": "Spacedust Alley, Star City (Fast)",
+    "path": "albums/n64/diddy-kong-racing/spacedust-alley-star-city-fast.mid"
+   },
+   {
+    "title": "Spaceport Alpha",
+    "path": "albums/n64/diddy-kong-racing/spaceport-alpha.mid"
+   },
+   {
+    "title": "Spaceport Alpha (Fast)",
+    "path": "albums/n64/diddy-kong-racing/spaceport-alpha-fast.mid"
+   },
+   {
+    "title": "The Adventure begins",
+    "path": "albums/n64/diddy-kong-racing/the-adventure-begins.mid"
+   },
+   {
+    "title": "The Secret Tune",
+    "path": "albums/n64/diddy-kong-racing/the-secret-tune.mid"
+   },
+   {
+    "title": "Title Theme",
+    "path": "albums/n64/diddy-kong-racing/title-theme.mid"
+   },
+   {
+    "title": "Trophy Race 3rd Place",
+    "path": "albums/n64/diddy-kong-racing/trophy-race-3rd-place.mid"
+   },
+   {
+    "title": "TT",
+    "path": "albums/n64/diddy-kong-racing/tt.mid"
+   },
+   {
+    "title": "Walrus Cove",
+    "path": "albums/n64/diddy-kong-racing/walrus-cove.mid"
+   },
+   {
+    "title": "Walrus Cove (Fast)",
+    "path": "albums/n64/diddy-kong-racing/walrus-cove-fast.mid"
+   },
+   {
+    "title": "Whale Bay",
+    "path": "albums/n64/diddy-kong-racing/whale-bay.mid"
+   },
+   {
+    "title": "Whale Bay (Fast)",
+    "path": "albums/n64/diddy-kong-racing/whale-bay-fast.mid"
+   },
+   {
+    "title": "WizPig",
+    "path": "albums/n64/diddy-kong-racing/wizpig.mid"
+   },
+   {
+    "title": "WizPig 2 Beginning",
+    "path": "albums/n64/diddy-kong-racing/wizpig-2-beginning.mid"
+   },
+   {
+    "title": "WizPig 2 defeated",
+    "path": "albums/n64/diddy-kong-racing/wizpig-2-defeated.mid"
+   },
+   {
+    "title": "WizPig lives (with Sound Effects)",
+    "path": "albums/n64/diddy-kong-racing/wizpig-lives-with-sound-effects.mid"
+   },
+   {
+    "title": "WizPig Race",
+    "path": "albums/n64/diddy-kong-racing/wizpig-race.mid"
+   }
+  ]
+ },
+ {
   "title": "Donkey Kong 64",
   "songs": [
    {
