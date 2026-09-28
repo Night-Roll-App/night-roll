@@ -1577,7 +1577,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
-    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song",
+    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
     "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3763,11 +3763,27 @@ test("instruments: a song view labels by the open song's own track (ch/prog matc
     {id: "a", nameGuess: "Soft pad", used: true, usedIn: ["Dam"], program: 1},
     {id: "b", nameGuess: "Bell", used: true, usedIn: ["Dam"], program: 2},
     {id: "c", nameGuess: "Zither", used: true, usedIn: ["Dam"], program: 9}, // no track claims prog 9 — falls to the leftover bucket
+    {id: "spc:deadbeef:inst", nameGuess: "Pluck", used: true, usedIn: ["Dam"], program: null}, // a SNES instrument: no program at all — must not crash the ch/prog match, just fall to the leftover bucket too
   ]};
   run(`globalThis.__lib = ${JSON.stringify(lib)};`);
   const rows = val(`songInstrumentRows(globalThis.__lib, "Dam", "albums/n64/goldeneye-007/dam.mid").map(r => r.label)`);
-  assert.deepEqual(rows, ["ch 1 prog 2 · Bell", "ch 2 prog 1 · Soft pad", "Zither"], "track order for the matched pair (track 1's prog 2, then track 2's prog 1), then the unmatched one plain and alphabetical");
+  assert.deepEqual(rows, ["ch 1 prog 2 · Bell", "ch 2 prog 1 · Soft pad", "Pluck", "Zither"], "track order for the matched pair, then the unmatched ones plain and alphabetical — a null-program instrument included, not thrown on");
   run(`songKey = null;`);
+});
+
+test("instAlbums: lists published albums whose game files carry an instrument library — PS1 (psf), N64 (usf), AND Super Nintendo (spc); anything else is excluded", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`CATALOG = {"GoldenEye": [["Dam", "albums/n64/goldeneye-007/dam.mid"]],
+               "Final Fantasy VII": [["Bombing Mission", "albums/ps1/final-fantasy-vii/bombing-mission.mid"]],
+               "Chrono Trigger": [["Corridors of Time", "albums/snes/chrono-trigger/corridors-of-time.mid"]],
+               "Mega Man 2": [["Dr. Wily", "albums/nes/mega-man-2/dr-wily.mid"]]};
+       albumMetaCache["albums/n64/goldeneye-007"] = {title: "GoldenEye 007", nsf: {vault: "goldeneye-007/", chip: "usf"}};
+       albumMetaCache["albums/ps1/final-fantasy-vii"] = {title: "Final Fantasy VII", nsf: {vault: "final-fantasy-vii/", chip: "psf"}};
+       albumMetaCache["albums/snes/chrono-trigger"] = {title: "Chrono Trigger", nsf: {vault: "chrono-trigger/", chip: "spc"}};
+       albumMetaCache["albums/nes/mega-man-2"] = {title: "Mega Man 2", nsf: {vault: "mega-man-2/", chip: "nsf"}};`);
+  await run(`instAlbums().then(gs => { globalThis.__titles = gs.map(g => g.title); })`);
+  assert.deepEqual(val(`globalThis.__titles`), ["Chrono Trigger", "Final Fantasy VII", "GoldenEye 007"],
+    "psf/usf/spc chips list (alphabetical); the plain nsf (NES) album does not");
 });
 
 test("game instrument voice: the track: directive round-trips a colon-heavy id, and the rename rewrite keeps it intact", () => {
@@ -3883,6 +3899,128 @@ test("game instrument voice: a missing library falls back to the track's synth v
   const before = val(`appErrors.filter(e => /no-such-game/.test(e.msg)).length`);
   run(`scheduleNote(0, {p: 64, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3);`);
   assert.equal(val(`appErrors.filter(e => /no-such-game/.test(e.msg)).length`), before, "a repeated miss doesn't spam more ⚠ lines this session");
+  run(`playing = false;`);
+});
+
+test("soundfont: File → Import… routes a .sf2 (RIFF/sfbk sniff), keeps a device copy + registers it, and reports its preset count", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const bytes = new Uint8Array(24);
+  bytes.set([0x52, 0x49, 0x46, 0x46], 0); // "RIFF"
+  bytes.set([0x73, 0x66, 0x62, 0x6b], 8); // "sfbk" — parseSf2 itself is mocked below; only sf2Magic's sniff reads real bytes
+  app2.context.__sf2bytes = bytes;
+  app2.context.__sf2 = {parseSf2: () => ({name: "Community Piano", presets: [{name: "Grand", bank: 0, program: 0}, {name: "Bright", bank: 0, program: 1}], samples: {}})};
+  run(`sf2PlayModule = Promise.resolve(__sf2);
+       globalThis.__idbPut = [];
+       idbSf2Put = (slug, b) => { globalThis.__idbPut.push([slug, b.length]); return Promise.resolve(true); };
+       localStorage.removeItem("ff1roll-sf2-index");
+       localStorage.setItem("ff1roll-ghtoken", "t"); // a repo IS configured by default (cfg().nsfRepo) — check-before-PUT says it's already there, so no further status line overwrites the result
+       // some unrelated ambient fetch (catalog/manifest polling) may also be in flight in
+       // this sandbox; only the soundfonts/ check matters to this test, so anything else
+       // just hangs (never resolves) rather than completing with an error that would
+       // overwrite noteinfo with an unrelated message
+       fetch = async url => String(url).includes("soundfonts/") ? {ok: true, arrayBuffer: async () => new ArrayBuffer(0)} : new Promise(() => {});`);
+  await run(`openPickedFiles([{name: "Community Piano.sf2", bytes: __sf2bytes}])`);
+  assert.deepEqual(val(`globalThis.__idbPut`), [["community-piano", 24]], "the raw bytes are kept on this device (IndexedDB), not just parsed and dropped");
+  assert.deepEqual(val(`sf2Registry()`), [{slug: "community-piano", name: "Community Piano"}], "the on-device index the voice menu's Soundfonts list reads");
+  assert.equal(val(`document.getElementById("noteinfo").textContent`), "✓ Community Piano: 2 presets — pick them in a track's voice menu under Soundfonts");
+  // a soundfont a song opens with resolves straight from the in-memory cache filled at import — no re-fetch
+  assert.equal(val(`sf2Fonts.has("community-piano")`), true);
+});
+
+test("soundfont: with no game files & instruments repo configured, the import still stores locally and says so, without failing", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const bytes = new Uint8Array(16);
+  bytes.set([0x52, 0x49, 0x46, 0x46], 0); bytes.set([0x73, 0x66, 0x62, 0x6b], 8);
+  app2.context.__sf2bytes = bytes;
+  app2.context.__sf2 = {parseSf2: () => ({name: "Loose Font", presets: [{name: "P", bank: 0, program: 0}], samples: {}})};
+  run(`sf2PlayModule = Promise.resolve(__sf2);
+       idbSf2Put = () => Promise.resolve(true);
+       localStorage.removeItem("ff1roll-sf2-index");
+       document.getElementById("cfgnsfrepo").value = ""; settingsPersist("cfgnsfrepo"); cfg.c = null;`);
+  assert.equal(val(`cfg().nsfRepo`), "");
+  await run(`openPickedFiles([{name: "Loose Font.sf2", bytes: __sf2bytes}])`);
+  assert.deepEqual(val(`sf2Registry().map(f => f.slug)`), ["loose-font"], "still usable on this device even with nowhere to share it");
+  assert.match(val(`document.getElementById("noteinfo").textContent`), /stays on this device.*game files.*instruments repo/);
+});
+
+test("soundfont: a garbled .sf2 (parseSf2 throws) reports the error and never reaches storage", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const bytes = new Uint8Array(12);
+  bytes.set([0x52, 0x49, 0x46, 0x46], 0); bytes.set([0x73, 0x66, 0x62, 0x6b], 8);
+  app2.context.__sf2bytes = bytes;
+  app2.context.__sf2 = {parseSf2: () => { throw new Error("SF3/compressed samples aren't supported"); }};
+  run(`sf2PlayModule = Promise.resolve(__sf2);
+       globalThis.__idbPut = [];
+       idbSf2Put = (slug, b) => { globalThis.__idbPut.push([slug, b.length]); return Promise.resolve(true); };
+       localStorage.removeItem("ff1roll-sf2-index");`);
+  await run(`openPickedFiles([{name: "bad.sf2", bytes: __sf2bytes}])`);
+  assert.match(val(`document.getElementById("noteinfo").textContent`), /⚠ bad\.sf2 didn't load: SF3\/compressed samples aren't supported/);
+  assert.deepEqual(val(`globalThis.__idbPut`), [], "nothing unparseable gets stored");
+  assert.deepEqual(val(`sf2Registry()`), []);
+});
+
+test("soundfont voice: the track: directive round-trips an sf2:<slug>:<bank>:<program> voice id", () => {
+  installSong();
+  run(`song.tracks = [{name: "lead", notes: []}];
+       songKey = "albums/compositions/nightroll/sf2-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}");
+       rollnotes = parseRollnotes("[1.1]\\ntrack: lead voice=sf2:community-piano:0:1\\n").map(resolveNote);
+       finalizeNotes();`);
+  assert.equal(val(`song.tracks[0].voice`), "sf2:community-piano:0:1");
+  assert.equal(run(`rollnotes[0].text`), "track: lead voice=sf2:community-piano:0:1");
+  run(`rollnotes = parseRollnotesJSON(JSON.stringify({version: 1, notes: [{at: [1, 1], type: "track", track: "lead", voice: "sf2:community-piano:0:1"}]})).map(resolveNote); finalizeNotes();`);
+  assert.equal(val(`song.tracks[0].voice`), "sf2:community-piano:0:1", "the JSON grammar keeps it too");
+  assert.deepEqual(val(`parseSf2Voice(song.tracks[0].voice)`), {slug: "community-piano", bank: 0, program: 1});
+  run(`songKey = null; rollnotes = [];`);
+});
+
+test("soundfont voice: scheduleNote renders each note through playNote (a preset doubles as a play.mjs inst) and caches a repeat", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  let playNoteCalls = 0;
+  app2.context.__play = {regionFor: inst => inst.keyRegions[0], playNote: () => { playNoteCalls++; return new Float32Array(20).fill(0.3); }};
+  run(`instPlayModule = Promise.resolve(__play);
+       sf2Fonts.set("myfont", Promise.resolve({name: "My Font", presets: [{name: "Lead", bank: 0, program: 5,
+         zones: [{keyLo: 0, keyHi: 127, rootKey: 60, sample: "h1"}], keyRegions: [{keyLo: 0, keyHi: 127, rootKey: 60, sample: "h1"}],
+         gain: 1, velocityCurve: "linear"}], samples: {h1: {rate: 32000, loop: null, pcm: new Float32Array(20)}}}));
+       createComposition(120, 4, 4);
+       song.tracks[0].notes = [{t: 0, d: 480, p: 64, v: 90}];
+       rollnotes = parseRollnotes("[1.1]\\ntrack: " + song.tracks[0].name + " voice=sf2:myfont:0:5\\n").map(resolveNote);
+       finalizeNotes();
+       ensureAudio(); playing = true;
+       globalThis.__srcs = 0;
+       audio.createBufferSource = () => { globalThis.__srcs++; return {connect() {}, start() {}, stop() {}, buffer: null}; };`);
+  const settle = async () => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } };
+  await settle(); // gamePreloadForSong (triggered by finalizeNotes) resolves the font from the in-memory cache + warms instPlaySync
+  run(`scheduleNote(0, {p: 64, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3);`);
+  assert.equal(val(`globalThis.__srcs`), 1, "the note played a buffer source");
+  assert.equal(playNoteCalls, 1, "rendered through playNote — the preset object itself, as a play.mjs inst");
+  run(`scheduleNote(0, {p: 64, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3);`);
+  assert.equal(val(`globalThis.__srcs`), 2, "a second source plays the repeat");
+  assert.equal(playNoteCalls, 1, "the repeat came from the cache — no second render");
+  run(`playing = false;`);
+});
+
+test("soundfont voice: a missing/unreachable soundfont falls back to the track's synth voice and logs one ⚠ line", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`vaultFetch = async f => { throw new Error("404 " + f); };
+       createComposition(120, 4, 4);
+       song.tracks[0].notes = [{t: 0, d: 480, p: 64, v: 90}];
+       rollnotes = parseRollnotes("[1.1]\\ntrack: " + song.tracks[0].name + " voice=sf2:no-such-font:0:0\\n").map(resolveNote);
+       finalizeNotes();
+       ensureAudio(); playing = true;
+       globalThis.__srcs = 0; globalThis.__oscs = 0;
+       audio.createBufferSource = () => { globalThis.__srcs++; return {connect() {}, start() {}, stop() {}, buffer: null}; };
+       const _co = audio.createOscillator.bind(audio);
+       audio.createOscillator = () => { globalThis.__oscs++; return _co(); };
+       appErrors.length = 0;`);
+  const settle = async () => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } };
+  await settle(); // the preload's fetch rejects — never populates sf2Sync for this slug
+  run(`scheduleNote(0, {p: 64, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3);`);
+  assert.equal(val(`globalThis.__srcs`), 0, "no soundfont buffer played");
+  assert.ok(val(`globalThis.__oscs`) > 0, "the note still sounds — the track's own synth voice, never silence");
+  assert.match(val(`appErrors.map(e => e.msg).join(" ")`), /⚠ soundfont no-such-font 0:0/, "one ⚠ line naming the font and preset");
+  const before = val(`appErrors.filter(e => /no-such-font/.test(e.msg)).length`);
+  run(`scheduleNote(0, {p: 64, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3);`);
+  assert.equal(val(`appErrors.filter(e => /no-such-font/.test(e.msg)).length`), before, "a repeated miss doesn't spam more ⚠ lines this session");
   run(`playing = false;`);
 });
 

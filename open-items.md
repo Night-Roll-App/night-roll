@@ -4,6 +4,31 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## Game instrument libraries: load any SoundFont 2 — DONE 2026-09-28 (untested by ear)
+
+`tools/instruments/sf2.mjs` (browser-clean, no Node imports) reads any
+.sf2 — a fan-made game font, a better piano, anything — into the same
+in-memory shape `play.mjs` already plays, resolving the real SF2
+generator rules (global zones, preset-level additive offsets, a preset
+layer's key/vel range narrowing an instrument zone's). File → Import…
+routes a .sf2 by its RIFF/sfbk header; it keeps a device copy
+(IndexedDB) and, with a game files & instruments repo configured, pushes
+it to `soundfonts/<slug>.sf2` there too (files over 50 MB ask first, over
+95 MB stay device-local only). Voice id `sf2:<slug>:<bank>:<program>`,
+assigned from the voice & color menu's new **Soundfonts ›** family;
+playback reuses `scheduleGameNote` (a shared resolver, not a copy) so a
+soundfont preset and a game instrument cache/fallback the same way. SF3
+(compressed) and 24-bit samples are refused with a clear error, not a
+garbled render. Tests: tests/instruments-sf2.test.mjs (parser round-trip
++ a hand-built font with global zones/preset offsets), "soundfont:"/
+"soundfont voice: …" in tests/night-roll.test.mjs. NIGHT-ROLL.md "Game
+instrument libraries" step 4 has the full design. Not yet: heard by
+Josh's ear against a real community SoundFont (a fan GoldenEye/OoT/FF7
+font, say) — everything above is measured against the parser's own
+round trip and a hand-built synthetic file, same gap the SF2/SFZ export
+and the SNES extractor both flagged (no `fluidsynth`/real player on this
+machine to cross-check against).
+
 ## PS1 SOUNDING PITCH — WAITS ON JOSH'S EAR (2026-09-28)
 
 The roll shows the sounding pitch for N64 (checked against a real player)

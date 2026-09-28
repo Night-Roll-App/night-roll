@@ -759,7 +759,7 @@
        registered type), while NO accept summons the photo-library sheet.
        application/octet-stream maps to the root "any data" type: Files opens
        directly and everything is selectable — the byte-sniff stays the real gate -->
-  <input type="file" id="fileinput" multiple accept="application/octet-stream,.mid,.midi,.smf,.kar,.rmi,.nsf,.gbs,.spc,.vgm,.vgz,.psf,.minipsf,.psflib,.usf,.miniusf,.usflib,.m3u,.m3u8,audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac">
+  <input type="file" id="fileinput" multiple accept="application/octet-stream,.mid,.midi,.smf,.kar,.rmi,.nsf,.gbs,.spc,.vgm,.vgz,.psf,.minipsf,.psflib,.usf,.miniusf,.usflib,.sf2,.m3u,.m3u8,audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac">
   <!-- the ＋∿ chip's own picker: audio only, so iOS opens Files (not the photo library) -->
   <input type="file" id="audioinput" multiple accept="audio/*,.wav,.mp3,.m4a,.aif,.aiff,.flac" style="display:none">
 </header>
@@ -1375,7 +1375,7 @@
     <div class="hsec" data-hsec="files">
     <dl>
       <dt>Install on the iPad</dt><dd>Safari → Share → <b>Add to Home Screen</b>. Night Roll then launches from its own icon, full screen with no browser bars, works offline (the app and any song you have opened are kept on the device; instrument sounds are kept as they are first used), and its drafts, annotations and settings live in storage Safari does not evict. Updates arrive on the next launch with a network — the page is always fetched fresh when it can be. Same for Chrome/Edge on a computer (the install icon in the address bar). File → the "build" line at the bottom of the menu says "installed" when you are running the installed copy. If offline support ever misbehaves, open the site with <code>?sw=0</code> once to turn it off on that device.</dd>
-      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has three tabs — <b>Saving</b> (auto-save, folder or Files), <b>AI</b>, <b>GitHub</b> — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF or GBS chip-music file (NES or <b>Game Boy</b>), or a set of <b>Super Nintendo</b> .spc files, <b>Genesis</b> .vgm/.vgz files, <b>PlayStation</b> .minipsf files together with their .psflib library, or <b>Nintendo 64</b> .miniusf files together with their .usflib (one file per song — multi-select the whole set; rows come in track order with the tags' titles; the Genesis header's and the PlayStation and N64 sequences' loop points become the loop: annotation; NES, Game Boy and Super Nintendo songs play through their own sound chips, the other three through synth voices for now), opens the capture panel: every track runs through the same pipeline that dumped the FF1 album (6502/APU for the NES, SM83/Game Boy APU for a .gbs — its wave channel becomes a <b>wave</b> track) — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder — and keeps going if you leave the menu: the footer strip shows its progress anywhere in the app, and reopening the folder shows the same line (just don't leave the app itself mid-upload; Safari may freeze the page), ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Publish import still pushes every import capture across all folders at once); an NSF that needs an expansion sound chip (VRC6, VRC7, FDS, MMC5, Namco 163, Sunsoft 5B) is refused by name — the NES pipeline captures only the 2A03, and those songs keep their lead voices on the extra chip), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker.</dd>
+      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has three tabs — <b>Saving</b> (auto-save, folder or Files), <b>AI</b>, <b>GitHub</b> — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF or GBS chip-music file (NES or <b>Game Boy</b>), or a set of <b>Super Nintendo</b> .spc files, <b>Genesis</b> .vgm/.vgz files, <b>PlayStation</b> .minipsf files together with their .psflib library, or <b>Nintendo 64</b> .miniusf files together with their .usflib (one file per song — multi-select the whole set; rows come in track order with the tags' titles; the Genesis header's and the PlayStation and N64 sequences' loop points become the loop: annotation; NES, Game Boy and Super Nintendo songs play through their own sound chips, the other three through synth voices for now), opens the capture panel: every track runs through the same pipeline that dumped the FF1 album (6502/APU for the NES, SM83/Game Boy APU for a .gbs — its wave channel becomes a <b>wave</b> track) — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder — and keeps going if you leave the menu: the footer strip shows its progress anywhere in the app, and reopening the folder shows the same line (just don't leave the app itself mid-upload; Safari may freeze the page), ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Publish import still pushes every import capture across all folders at once); an NSF that needs an expansion sound chip (VRC6, VRC7, FDS, MMC5, Namco 163, Sunsoft 5B) is refused by name — the NES pipeline captures only the 2A03, and those songs keep their lead voices on the extra chip); a <b>SoundFont</b> (.sf2 — a fan-made game font, a better piano, anything) is not tied to a song at all: it loads straight in (a one-line result names it and how many presets it has), a copy stays on this device (works offline, no GitHub needed) and — with a game files &amp; instruments repo configured — pushes to the archive too, so your other devices can play it; files over 50 MB ask first (GitHub itself warns past 50 MB and refuses past 100), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
       <dt>Share a song</dt><dd><b>🔗 Share link</b> in the Publish sheet hands the song's link to the share sheet (or copies it). A link is this player plus the song plus where the song lives: songs on this site need nothing more; a song published to another GitHub repo carries <code>songs=owner/repo</code>, so anyone who taps it hears that song from that repo, no setup — and you can open such links too (the breadcrumb then starts with 🔗 and the repo's name; everything is read-only there, your own songs are untouched, and nothing about the link is remembered). Publish also keeps a <b>song list in the repo's README</b> — every song as a player link, between two markers the app owns, the rest of the README untouched — so the repo page itself is the share page. The address bar is always a shareable link to the open song, and it is the song's path with no extension — …/night-roll/albums/compositions/nightroll/ambush. <b>Add .mid to the end and the same link is the MIDI file</b> (Logic opens it); take it off and it's the player again. Older ?song= links still open the player. The tab title and the link preview in Messages name the song first — "Threnody · Night Roll" — so a pasted link reads as the song, not the app.</dd>
       <dt>Data locations</dt><dd>Night Roll is configured with WHERE its data lives (Sync → "Data locations ▾"): three rows — songs (.mid, album.json, catalog), analysis (.rollnotes + docs), and NSF (chip-audio source) — each with a read base URL (blank = this site; or any raw.githubusercontent.com/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt; or local server) and an owner/repo write target. One fine-grained token, granted to every repo you write to, covers all commits; write errors name the repo they hit, and a 404 usually means the token hasn't been granted that repo. This is what lets another analyst point their own analysis repo at a shared songs corpus. Defaults: everything in this site's repo, NSFs from the public nsf-archive. In the iPad app "this site" is only the bundled starters, so reads default to the repo in Settings → GitHub (the same place Publish writes): your published songs, annotations and imports appear there once the repo is set; the starters come from the bundle either way.</dd>
       <dt>📁 Folder on this computer</dt><dd>Saving without GitHub. In File → Settings, tap <b>Choose folder…</b> and pick a folder on this computer: from then on every Save writes the song, its annotations, and its notes dump into that folder (laid out exactly like the repo — <code>albums/…/song.mid</code> beside its <code>.rollnotes.json</code>), nothing goes to GitHub, and no token is needed. The song picker lists the folder's albums alongside the site's; a song that exists in both opens from the folder. Tick <b>show only this folder's songs</b> under the folder row and the list becomes yours alone — the folder plus this device's drafts, none of the site's albums; with an empty folder the app opens straight into New song instead of Overworld. A device setting: it stays on that machine. FF1 songs still load from the site — annotate one and the annotations save to your folder. Chrome may ask for the folder again after a restart: <b>📁 Reconnect folder</b> appears at the top of the File menu (until you tap it, reads fall back to the site). <b>Forget</b> in Settings returns saves to GitHub; the files stay where they are. Needs Chrome or Edge on a computer — Safari has no way to write files, and the row says so there. In the iPad app a <code>.mid</code> or chip file tapped in Files, or sent with <b>Share → Night Roll</b>, opens here as a local draft. In the iPad app there is nothing to set: every Save also writes the song into Files on this iPad (Files → On My iPad → Night Roll, same layout), where you can copy, share or back it up, and Publish still sends it to GitHub. Brave ships the door switched off: enable <code>brave://flags/#file-system-access-api</code> and relaunch (the row tells you). Recordings that aren't yours belong here, not in a repo (see the design docs).</dd>
@@ -1464,7 +1464,7 @@
   <button class="fitem" id="fileopen">Open…</button>
   <button class="fitem" id="filenew">＋ New song…</button>
   <button class="fitem" id="fileinst">🎛 Instruments…</button>
-  <label class="fitem" for="fileinput" style="display:block">Import… (.mid / .nsf / .gbs / .spc / .vgm / .psf / .usf)</label>
+  <label class="fitem" for="fileinput" style="display:block">Import… (.mid / .nsf / .gbs / .spc / .vgm / .psf / .usf / .sf2)</label>
   <div class="fdiv"></div>
   <button class="fitem" id="filesavelocal">Save</button>
   <button class="fitem" id="filesave">Publish…</button>
@@ -6667,14 +6667,34 @@ function gameVoiceLabel(v) { // sync read for menu rows; fills in async and refr
   })().catch(() => {}); // network hiccup: stays on the id fallback
   return gameVoiceLabels.get(v);
 }
+const SF2_FAMILY = "Soundfonts"; // voiceMenuGroup's sentinel for the loaded-SoundFonts picker — a flat 2-level nav
+// (font -> its presets), not renderGameInstNav's 3-level one: a soundfont has no
+// per-song "used in" concept to browse by, just presets, so forcing it through the
+// games/songs level logic would only add a dead level, not shared behavior
+let voiceMenuSf2Slug = null; // inside SF2_FAMILY: null = pick a font; a slug = that font's presets
+const sf2VoiceLabels = new Map(); // "sf2:…" voice id -> "<font name> · <preset name>", filled as known
+function sf2VoiceLabel(v) { // same "fall back to the id, fill in async" contract as gameVoiceLabel
+  if (sf2VoiceLabels.has(v)) return sf2VoiceLabels.get(v);
+  const info = parseSf2Voice(v);
+  if (!info) return v;
+  sf2VoiceLabels.set(v, info.slug + " " + info.bank + ":" + info.program);
+  (async () => {
+    const font = await sf2Font(info.slug);
+    const preset = font.presets.find(p => p.bank === info.bank && p.program === info.program);
+    sf2VoiceLabels.set(v, (font.name || info.slug) + " · " + (preset ? preset.name : info.bank + ":" + info.program));
+    if (voiceMenuTi >= 0 && document.getElementById("voicemenu").classList.contains("on")) buildVoiceMenu(voiceMenuTi);
+  })().catch(() => {});
+  return sf2VoiceLabels.get(v);
+}
 function openVoiceMenu(ti, anchor) { // position ONCE from the chip, then show
   const menu = document.getElementById("voicemenu");
   voiceMenuTi = ti;
   // open straight into the family holding the track's current voice
   const cur = song.tracks[ti].voice || "auto";
   const home = VOICE_GROUPS.find(([, vs]) => vs.some(([id]) => id === cur));
-  voiceMenuGroup = home ? home[0] : cur.startsWith("game:") ? GAME_FAMILY : null;
+  voiceMenuGroup = home ? home[0] : cur.startsWith("game:") ? GAME_FAMILY : cur.startsWith("sf2:") ? SF2_FAMILY : null;
   voiceMenuGameVault = null; voiceMenuGameSub = null; // the games picker always opens at the games list, not drilled into one
+  voiceMenuSf2Slug = null; // same: the soundfonts picker always opens at the fonts list
   buildVoiceMenu(ti);
   const r = anchor.getBoundingClientRect();
   menu.style.left = Math.max(6, Math.min(r.left, window.innerWidth - 240)) + "px";
@@ -6703,6 +6723,7 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
   const cur = tr.voice || "auto";
   const curLabel = cur === "auto" ? "auto: " + autoVoiceLabel(ti)
     : cur.startsWith("game:") ? gameVoiceLabel(cur)
+    : cur.startsWith("sf2:") ? sf2VoiceLabel(cur)
     : (VOICES.find(([id]) => id === cur) || [, cur])[1];
   if (tr.kind === "audio" && tr.clips.length) buildClipControls(ti, menu, tr); // a clip has no instrument: placement instead
   else if (voiceMenuGroup === null) { // level 1: the instrument families
@@ -6720,8 +6741,16 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
     gb.textContent = GAME_FAMILY + "  ›" + (gholds ? "   (" + curLabel + ")" : "");
     gb.addEventListener("click", () => { voiceMenuGroup = GAME_FAMILY; voiceMenuGameVault = null; voiceMenuGameSub = null; buildVoiceMenu(ti); });
     menu.appendChild(gb);
+    const sb = document.createElement("button");
+    sb.className = "fitem";
+    const sholds = cur.startsWith("sf2:");
+    sb.textContent = SF2_FAMILY + "  ›" + (sholds ? "   (" + curLabel + ")" : "");
+    sb.addEventListener("click", () => { voiceMenuGroup = SF2_FAMILY; voiceMenuSf2Slug = null; buildVoiceMenu(ti); });
+    menu.appendChild(sb);
   } else if (voiceMenuGroup === GAME_FAMILY) { // level 2: a game, then that game's used instruments
     buildGameVoicePicker(ti, menu, tr, cur);
+  } else if (voiceMenuGroup === SF2_FAMILY) { // level 2: a loaded soundfont, then its presets
+    buildSf2VoicePicker(ti, menu, tr, cur);
   } else { // level 2: one family's instruments
     const back = document.createElement("button");
     back.className = "fitem";
@@ -6891,6 +6920,82 @@ function buildGameVoicePicker(ti, menu, tr, cur) { // GAME_FAMILY: renderGameIns
     },
     onNavigate: () => { voiceMenuGameVault = nav.game; voiceMenuGameSub = nav.sub; buildVoiceMenu(ti); },
     isCurrent: () => voiceMenuTi === ti && voiceMenuGroup === GAME_FAMILY && voiceMenuGameVault === g0 && voiceMenuGameSub === sub0,
+  }).catch(e => setInfo("⚠ " + e.message));
+}
+// SF2_FAMILY's own small 2-level nav (font -> its presets) — the SAME calling
+// convention as renderGameInstNav (rowFactory/onNavigate/isCurrent/backLabelAtTop)
+// so a caller reads the same way, but its own function: a soundfont has no
+// per-song "used in which songs" concept to browse by, only presets, so there is
+// no shared level logic to parameterise here, just a shared STYLE.
+async function renderSf2Nav(container, nav, opts) {
+  // opts: rowFactory(label, onClick, dim) -> element; presetLabel(label, preset, font) -> label;
+  // onPreset(font, slug, preset); onNavigate(); isCurrent(); fontsListLabel (the level-2
+  // back button's text); backLabelAtTop/onBackAtTop (leaves this family for its own list)
+  const go = () => { const p = opts.onNavigate(); if (p && p.catch) p.catch(e => setInfo("⚠ " + e.message)); };
+  if (!nav.slug) { // level 1: which loaded soundfont
+    if (opts.backLabelAtTop) container.appendChild(opts.rowFactory("‹ " + opts.backLabelAtTop, opts.onBackAtTop, true));
+    const fonts = sf2Registry();
+    if (!fonts.length) { container.appendChild(opts.rowFactory("No SoundFonts loaded yet — File → Import… an .sf2.", () => {}, true)); return; }
+    for (const f of fonts) container.appendChild(opts.rowFactory((f.name || f.slug) + " ›", () => { nav.slug = f.slug; go(); }));
+    return;
+  }
+  // level 2: that font's presets, bank:program name, natural sort
+  container.appendChild(opts.rowFactory("‹ " + opts.fontsListLabel, () => { nav.slug = null; go(); }, true));
+  const loading = opts.rowFactory("loading presets…", () => {}, true);
+  container.appendChild(loading);
+  let font;
+  try { font = await sf2Font(nav.slug); }
+  catch (err) { if (opts.isCurrent()) { loading.remove(); container.appendChild(opts.rowFactory("⚠ couldn't load: " + err.message, () => {}, true)); } return; }
+  if (!opts.isCurrent()) return;
+  loading.remove();
+  const rows = font.presets.slice()
+    .sort((a, b) => (a.bank + ":" + a.program).localeCompare(b.bank + ":" + b.program, undefined, {numeric: true}))
+    .map(p => ({preset: p, label: p.bank + ":" + p.program + "  " + p.name}));
+  if (!rows.length) { container.appendChild(opts.rowFactory("No presets in " + (font.name || nav.slug) + ".", () => {}, true)); return; }
+  for (const {preset, label} of rows) container.appendChild(opts.rowFactory(opts.presetLabel(label, preset, font), () => opts.onPreset(font, nav.slug, preset), false));
+}
+async function sf2AuditionPreset(font, preset) { // instAudition's own shape, but no vault fetch — the whole font (every sample it needs) is already decoded
+  ensureAudio(); await resumeAudio(); openMaster();
+  const P = await instPlayer();
+  const keys = instKeys(preset); // a preset has no "kind"/"keysPlayed" of its own: the melodic default (root/fifth/octave around middle C)
+  let t = audio.currentTime + 0.05;
+  for (const key of keys) {
+    const pcm = P.playNote(preset, font.samples, {key, vel: 100, hold: 0.3, sampleRate: audio.sampleRate, tail: 1.5});
+    if (!pcm.length) continue;
+    let peak = 0; for (let i = 0; i < pcm.length; i++) peak = Math.max(peak, Math.abs(pcm[i]));
+    if (peak > 0.9) for (let i = 0; i < pcm.length; i++) pcm[i] *= 0.9 / peak; // an audition never clips, whatever the driver's own scale
+    const buf = audio.createBuffer(1, pcm.length, audio.sampleRate);
+    buf.copyToChannel(pcm, 0);
+    const src = audio.createBufferSource(); src.buffer = buf; src.connect(master); src.start(t);
+    t += 0.38;
+  }
+}
+function buildSf2VoicePicker(ti, menu, tr, cur) { // SF2_FAMILY: renderSf2Nav; a tap assigns + auditions, same contract as buildGameVoicePicker
+  const nav = {slug: voiceMenuSf2Slug};
+  const slug0 = nav.slug; // frozen: a stale async fill from a nav the user already left must not append
+  renderSf2Nav(menu, nav, {
+    rowFactory: (label, onClick, dim) => {
+      const b = document.createElement("button");
+      b.className = "fitem";
+      if (dim) b.style.color = "var(--dim)";
+      b.textContent = label;
+      b.addEventListener("click", onClick);
+      return b;
+    },
+    presetLabel: (label, preset) => (cur === sf2VoiceId(nav.slug, preset.bank, preset.program) ? "✓ " : "   ") + label,
+    fontsListLabel: SF2_FAMILY,
+    backLabelAtTop: "Instruments",
+    onBackAtTop: () => { voiceMenuGroup = null; buildVoiceMenu(ti); },
+    onPreset: (font, slug, preset) => {
+      const voiceId = sf2VoiceId(slug, preset.bank, preset.program);
+      song.tracks[ti].voice = voiceId;
+      sf2VoiceLabels.set(voiceId, (font.name || slug) + " · " + preset.name); // known now — no id-fallback flash
+      saveVoices();
+      sf2AuditionPreset(font, preset).catch(e => setInfo("⚠ " + e.message)); // audition once, like any other pick
+      buildVoiceMenu(ti);
+    },
+    onNavigate: () => { voiceMenuSf2Slug = nav.slug; buildVoiceMenu(ti); },
+    isCurrent: () => voiceMenuTi === ti && voiceMenuGroup === SF2_FAMILY && voiceMenuSf2Slug === slug0,
   }).catch(e => setInfo("⚠ " + e.message));
 }
 function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, where, and placement of ONE piece
@@ -7205,9 +7310,21 @@ function parseGameVoice(v) { // "game:<vaultFolder>:<instId>" -> {vault, instId}
   const rest = v.slice(5), i = rest.indexOf(":");
   return i < 0 ? null : {vault: rest.slice(0, i), instId: rest.slice(i + 1)};
 }
+// A loaded .sf2's preset: "sf2:<slug>:<bank>:<program>" (the slug is always a plain
+// slugify() token — no colons — so a strict 3-part split is enough, unlike a game
+// instrument id which can carry its own colons/@ and needs the "first colon only" split above).
+function parseSf2Voice(v) {
+  if (typeof v !== "string" || !v.startsWith("sf2:")) return null;
+  const parts = v.slice(4).split(":");
+  if (parts.length !== 3) return null;
+  const bank = +parts[1], program = +parts[2];
+  return Number.isFinite(bank) && Number.isFinite(program) ? {slug: parts[0], bank, program} : null;
+}
+function sf2VoiceId(slug, bank, program) { return "sf2:" + slug + ":" + bank + ":" + program; }
 let instPlaySync = null; // tools/instruments/play.mjs, once resolved — scheduleNote needs it synchronously
 async function instPlayerReady() { return (instPlaySync = instPlaySync || await instPlayer()); }
 const gameLibSync = new Map(); // vault folder -> {lib, samples: {hash: {rate, loop, pcm}}}, filled by gamePreloadForSong
+const sf2Sync = new Map(); // slug -> parsed font ({name, presets, samples}, tools/instruments/sf2.mjs), filled by gamePreloadForSong
 function gameVoicesInSong() { // [{vault, instId, voice}] this song's tracks actually use, de-duped by voice id
   const out = [], seen = new Set();
   if (song) song.tracks.forEach(tr => {
@@ -7216,8 +7333,16 @@ function gameVoicesInSong() { // [{vault, instId, voice}] this song's tracks act
   });
   return out;
 }
+function sf2VoicesInSong() { // [{slug, bank, program, voice}] this song's tracks actually use, de-duped by voice id
+  const out = [], seen = new Set();
+  if (song) song.tracks.forEach(tr => {
+    const info = parseSf2Voice(tr.voice);
+    if (info && !seen.has(tr.voice)) { seen.add(tr.voice); out.push({slug: info.slug, bank: info.bank, program: info.program, voice: tr.voice}); }
+  });
+  return out;
+}
 const gamePreloadTokens = new Map(); // voice -> the in-flight/settled preload promise, for gameWaitForSong to await
-function gamePreloadForSong() { // warm every game voice's library + the pitches its track(s) actually play
+function gamePreloadForSong() { // warm every game/sf2 voice's library or font this song's tracks actually use
   if (!song) return;
   gameVoicesInSong().forEach(({vault, instId, voice}) => {
     if (gamePreloadTokens.has(voice)) return; // already loading/loaded this session
@@ -7236,14 +7361,24 @@ function gamePreloadForSong() { // warm every game voice's library + the pitches
       Object.assign(entry.samples, samples);
     })().catch(err => logErr("⚠ game instrument " + voice + " didn't load: " + err.message)));
   });
+  // a soundfont is one self-contained file (unlike a game library's instruments.json
+  // + many separate WAVs): sf2Font already fetches-and-parses-once (every sample it
+  // could need, decoded), so there is no per-pitch lazy step here — just load it and
+  // remember it under its slug (+ warm instPlaySync, same as the game loop above —
+  // scheduleGameNote needs it regardless of which kind of voice got it going)
+  sf2VoicesInSong().forEach(({slug, voice}) => {
+    if (gamePreloadTokens.has(voice)) return;
+    gamePreloadTokens.set(voice, Promise.all([sf2Font(slug), instPlayerReady()]).then(([font]) => { sf2Sync.set(slug, font); })
+      .catch(err => logErr("⚠ soundfont " + voice + " didn't load: " + err.message)));
+  });
 }
-async function gameWaitForSong(capMs) { // resolve when this song's game voices are ready, or at the cap
+async function gameWaitForSong(capMs) { // resolve when this song's game/sf2 voices are ready, or at the cap
   if (!song) return;
   gamePreloadForSong(); // make sure every request exists
-  const voices = gameVoicesInSong();
+  const voices = [...gameVoicesInSong(), ...sf2VoicesInSong()];
   const waits = voices.map(({voice}) => gamePreloadTokens.get(voice)).filter(Boolean);
   if (!waits.length) return;
-  setInfo("loading " + voices.length + " game instrument" + (voices.length === 1 ? "" : "s") + "…");
+  setInfo("loading " + voices.length + " instrument voice" + (voices.length === 1 ? "" : "s") + "…");
   await Promise.race([Promise.all(waits), new Promise(r => setTimeout(r, capMs))]);
 }
 // "voice|pitch|velBucket|durBucket" -> {ctx, buf: AudioBuffer} — the RENDERED
@@ -7261,16 +7396,46 @@ function gameVoiceWarn(voice, why) {
   const key = voice + "|" + why;
   if (gameVoiceWarned.has(key)) return;
   gameVoiceWarned.add(key);
+  if (typeof voice === "string" && voice.startsWith("sf2:")) {
+    const info = parseSf2Voice(voice);
+    setInfo("⚠ soundfont " + (info ? info.slug + " " + info.bank + ":" + info.program : voice) + " " + why + " — using the synth voice");
+    return;
+  }
   const info = parseGameVoice(voice);
   setInfo("⚠ game instrument " + (info ? info.vault + " · " + info.instId : voice) + " " + why + " — using the synth voice");
 }
+// {inst, samples} | {reason}: a "game:" voice's instrument (from gameLibSync) or an
+// "sf2:" voice's preset (from sf2Sync, which already doubles as a play.mjs inst —
+// tools/instruments/sf2.mjs) — the ONE thing scheduleGameNote actually needs, so it
+// stays the one caching/scheduling function for both kinds of borrowed instrument
+// (NIGHT-ROLL.md "Game instrument libraries" step 4: "reuse scheduleGameNote... by
+// giving it a resolver for sf2: ids").
+function resolveVoiceInstrument(voice) {
+  if (typeof voice === "string" && voice.startsWith("game:")) {
+    const info = parseGameVoice(voice);
+    if (!info) return {reason: "has a bad voice id"};
+    const entry = gameLibSync.get(info.vault);
+    if (!entry) return {reason: "couldn't load its library"};
+    const inst = entry.lib.instruments.find(i => i.id === info.instId);
+    if (!inst) return {reason: "instrument not found"};
+    return {inst, samples: entry.samples};
+  }
+  if (typeof voice === "string" && voice.startsWith("sf2:")) {
+    const info = parseSf2Voice(voice);
+    if (!info) return {reason: "has a bad voice id"};
+    const font = sf2Sync.get(info.slug);
+    if (!font) return {reason: "couldn't load its soundfont"};
+    const inst = font.presets.find(p => p.bank === info.bank && p.program === info.program);
+    if (!inst) return {reason: "preset not found"};
+    return {inst, samples: font.samples};
+  }
+  return {reason: "has a bad voice id"};
+}
 function scheduleGameNote(ti, n, when, durSec, voice) {
-  const info = parseGameVoice(voice);
-  const entry = info && gameLibSync.get(info.vault);
-  const inst = entry && entry.lib.instruments.find(i => i.id === info.instId);
+  const {inst, samples, reason} = resolveVoiceInstrument(voice);
   const P = instPlaySync;
-  if (!info || !P || !entry || !inst) {
-    gameVoiceWarn(voice, !info ? "has a bad voice id" : !entry ? "couldn't load its library" : !inst ? "instrument not found" : "is still loading");
+  if (!inst || !samples || !P) {
+    gameVoiceWarn(voice, reason || "is still loading");
     playSynthVoice(ti, n, when, durSec, voiceType(ti)); // the track's own default — never silence
     return;
   }
@@ -7279,7 +7444,7 @@ function scheduleGameNote(ti, n, when, durSec, voice) {
   const hit = gameNoteCache.get(key);
   let buf = hit && hit.ctx === audio ? hit.buf : null;
   if (!buf) {
-    const pcm = P.playNote(inst, entry.samples, {key: n.p, vel: velB, hold: durB / 1000, sampleRate: audio.sampleRate, tail: 3});
+    const pcm = P.playNote(inst, samples, {key: n.p, vel: velB, hold: durB / 1000, sampleRate: audio.sampleRate, tail: 3});
     if (!pcm.length) { gameVoiceWarn(voice, "has no sample for that note"); playSynthVoice(ti, n, when, durSec, voiceType(ti)); return; }
     buf = audio.createBuffer(1, pcm.length, audio.sampleRate);
     buf.copyToChannel(pcm, 0);
@@ -7318,12 +7483,12 @@ function scheduleNote(ti, n, when, durSec) {
   // (review, 2026-09-27). chip.srcs is what chipStart made; no srcs, synth plays.
   if (!n._preview && chipActive() && chip.srcs.length && song.tracks[ti] && chipHas(song.tracks[ti].name) &&
       (!song.tracks[ti].voice || song.tracks[ti].voice === "auto")) return;
-  // a game instrument voice (File → 🎛 Instruments…, assigned from the voice
-  // & color menu) renders through tools/instruments/play.mjs instead — its
-  // own function, since it neither drums nor uses the oscillator/sample path
-  // below (see "game instrument voices" above scheduleNote)
+  // a game instrument OR a loaded soundfont's preset (assigned from the voice &
+  // color menu's Game instruments/Soundfonts families) renders through
+  // tools/instruments/play.mjs instead — its own function, since it neither drums
+  // nor uses the oscillator/sample path below (see "game instrument voices" above scheduleNote)
   const gvoice = song.tracks[ti] && song.tracks[ti].voice;
-  if (typeof gvoice === "string" && gvoice.startsWith("game:")) { scheduleGameNote(ti, n, when, durSec, gvoice); return; }
+  if (typeof gvoice === "string" && (gvoice.startsWith("game:") || gvoice.startsWith("sf2:"))) { scheduleGameNote(ti, n, when, durSec, gvoice); return; }
   if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v); return; }
   let v = trackVoice(ti);
   // per-note chip timbre: NSF captures carry each pulse note's duty (the
@@ -7905,6 +8070,25 @@ async function idbAudioDelete(key) {
     await new Promise(res => { const tx = db.transaction("audio", "readwrite"); tx.objectStore("audio").delete(key); tx.oncomplete = res; tx.onerror = res; });
     db.close();
   } catch (err) { /* nothing to drop */ }
+}
+// an imported SoundFont's raw bytes, keyed by slug — same shape/reasons as idbAudioPut/Get
+// ("Game instrument libraries" step 4): this device's copy, so an sf2: voice keeps working
+// offline and without GitHub even after the tab reloads.
+async function idbSf2Put(slug, bytes) {
+  try {
+    const db = await idbOpen();
+    await new Promise((res, rej) => { const tx = db.transaction("sf2", "readwrite"); tx.objectStore("sf2").put(bytes, slug); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    db.close();
+    return true;
+  } catch (err) { return false; }
+}
+async function idbSf2Get(slug) {
+  try {
+    const db = await idbOpen();
+    const bytes = await new Promise(res => { const r = db.transaction("sf2").objectStore("sf2").get(slug); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); });
+    db.close();
+    return bytes;
+  } catch (err) { return null; }
 }
 async function audioBytesFor(key, file) { // {bytes, where} or null
   const rec = await idbAudioGet(key + "|" + file);
@@ -10923,6 +11107,7 @@ async function openPickedFiles(loaded) { // [{name, bytes}] from the picker, a d
       ? [].concat(...m3us.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true})).map(x => parseM3u(decodeM3u(x.bytes))))
       : null;
     const nsfs = rest.filter(x => chipKindOf(x.bytes, x.name));
+    const sf2s = rest.filter(x => sf2Magic(x.bytes));
     const audios = rest.filter(x => audioMagic(x.bytes));
     if (audios.length && audios.length === rest.length && !m3us.length) { // recordings → audio tracks on the open song
       audioReplaceTi = null;
@@ -10931,6 +11116,9 @@ async function openPickedFiles(loaded) { // [{name, bytes}] from the picker, a d
       if (rest.length > 1 && !CHIPS[chipKindOf(nsfs[0].bytes, nsfs[0].name)].perFile) setInfo("importing the chip file; pick MIDI files separately from other formats");
       const kind = chipKindOf(nsfs[0].bytes, nsfs[0].name);
       await openChipImport(kind, nsfs[0].bytes, nsfs[0].name, names, CHIPS[kind].perFile ? nsfs.filter(x => chipKindOf(x.bytes, x.name) === kind) : null);
+    } else if (sf2s.length) { // a SoundFont: parse, keep a device copy, push to the archive — its presets become track voices, no song open needed
+      if (sf2s.length < rest.length) setInfo("importing the SoundFont" + (sf2s.length === 1 ? "" : "s") + "; pick other formats separately");
+      for (const f of sf2s) await importSf2File(f);
     } else if (m3us.length && !rest.length) { // playlist alone: name the open session's tracks/drafts — or, with no session, the open song's album
       if (!nsfSess) await applyM3uToAlbum(names);
       else setInfo("✓ " + applyM3uNames(names) + " tracks named from the playlist" +
@@ -10995,6 +11183,53 @@ function audioMagic(b) { // wav / aiff / mp3 / m4a-mp4 / flac / ogg by their fir
   if (s(4, 4) === "ftyp") return true;
   if (s(0, 4) === "fLaC" || s(0, 4) === "OggS") return true;
   return false;
+}
+// SoundFont 2: RIFF + 'sfbk' at byte 8 (a WAV is RIFF + 'WAVE' — the same container,
+// a different four-char type tag right after the size, so this must run before
+// audioMagic would otherwise be tempted to guess by RIFF alone)
+function sf2Magic(b) {
+  if (b.length < 12) return false;
+  const s = (o, n) => String.fromCharCode(...b.subarray(o, o + n));
+  return s(0, 4) === "RIFF" && s(8, 4) === "sfbk";
+}
+const SF2_SIZE_WARN = 50e6, SF2_SIZE_REFUSE = 95e6; // GitHub itself warns over 50 MB, rejects over 100 MB in the Contents API
+// File → Import…'s .sf2 route: parse it (tools/instruments/sf2.mjs), keep a copy on
+// this device (IndexedDB, so it plays offline and even with no GitHub token at all),
+// and — a song depends on it, so it has to live somewhere every device can reach —
+// push it to the game files & instruments repo's soundfonts/<slug>.sf2, check-before-
+// PUT like every other archive file this app writes.
+async function importSf2File({name, bytes}) {
+  let font;
+  try { font = (await sf2Module()).parseSf2(bytes); }
+  catch (err) { setInfo("⚠ " + name + " didn't load: " + err.message); return; }
+  const slug = slugify(font.name || name.replace(/\.sf2$/i, "")) || "soundfont";
+  const mb = bytes.length / 1e6;
+  await idbSf2Put(slug, bytes);
+  sf2Fonts.set(slug, Promise.resolve(font));
+  sf2RegistryAdd(slug, font.name || name.replace(/\.sf2$/i, ""));
+  setInfo("✓ " + (font.name || name) + ": " + font.presets.length + " preset" + (font.presets.length === 1 ? "" : "s") + " — pick them in a track's voice menu under Soundfonts");
+  if (mb > SF2_SIZE_REFUSE) { setInfo("⚠ " + (font.name || name) + " is " + mb.toFixed(0) + " MB — over the archive's 95 MB limit, so it stays on this device only (still usable there)"); return; }
+  if (folderActive() || !cfg().nsfRepo) { if (!folderActive()) setInfo("(" + (font.name || name) + " stays on this device — set a game files & instruments repo in Settings → GitHub → advanced to share it with your other devices)"); return; }
+  const token = writeToken();
+  if (!token) { setInfo("(" + (font.name || name) + " stays on this device — add a GitHub token in Settings to share it)"); return; }
+  if (mb > SF2_SIZE_WARN) {
+    const go = await appConfirm("LARGE SOUNDFONT — " + mb.toFixed(0) + " MB", "GitHub warns about files over 50 MB in the archive. It plays fine on this device either way; uploading just makes it reach your other devices too.", "Upload to the archive", "Keep on this device only");
+    if (!go) return;
+  }
+  const file = "soundfonts/" + slug + ".sf2";
+  try {
+    const chk = await fetch(nsfURL(file) + "?t=" + Date.now(), {cache: "no-cache"});
+    if (chk.ok) return; // already there (a previous import, or another device's) — nothing to do
+    setInfo("uploading " + (font.name || name) + " (" + mb.toFixed(1) + " MB) to the archive…");
+    const put = await fetch(repoApi("nsf") + file, {method: "PUT", headers: ghHeaders(token), body: JSON.stringify({
+      message: "SoundFont " + slug + " (" + font.presets.length + " presets)", branch: "main", content: midiBase64(bytes)})});
+    if (!put.ok) throw new Error("HTTP " + put.status);
+    const verify = await fetch(nsfURL(file) + "?t=" + Date.now(), {cache: "no-cache"});
+    const verifyBytes = verify.ok ? new Uint8Array(await verify.arrayBuffer()) : null;
+    if (!verifyBytes || verifyBytes.length !== bytes.length)
+      setInfo("⚠ " + (font.name || name) + " uploaded, but the archive copy's size doesn't match yet (CDN lag?) — it should catch up shortly");
+    else setInfo("✓ " + (font.name || name) + " is in the archive — your other devices can play it now");
+  } catch (err) { setInfo("⚠ soundfont upload failed (" + err.message + ") — " + (font.name || name) + " stays on this device only"); }
 }
 function slugFile(name) { // the kv grammar is \S+: no spaces, no weirdness
   const m = name.match(/^(.*?)(\.[A-Za-z0-9]+)?$/);
@@ -13253,7 +13488,7 @@ async function instAlbums() { // [{title, vault, songs: [[songTitle, path]] (CAT
     if (!songs.length) continue;
     const meta = await albumMetaFor(songs[0][1]).catch(() => null);
     const n = meta && meta.nsf;
-    if (n && typeof n.vault === "string" && n.vault.endsWith("/") && (n.chip === "psf" || n.chip === "usf")) out.push({title: meta.title || title, vault: n.vault, songs});
+    if (n && typeof n.vault === "string" && n.vault.endsWith("/") && (n.chip === "psf" || n.chip === "usf" || n.chip === "spc")) out.push({title: meta.title || title, vault: n.vault, songs});
   }
   return out.sort((a, b) => a.title.localeCompare(b.title));
 }
@@ -13283,7 +13518,10 @@ function songInstrumentRows(lib, songTitle, path) {
       const m = /prog\s+([\d,]+)/i.exec(tr.name || "");
       if (!m) return;
       const progs = m[1].split(",").map(Number);
-      const inst = matched.find(i => leftover.has(i) && progs.includes(i.program));
+      // a SNES instrument (id "spc:<hash8>:drum|inst") has no program number at all —
+      // .includes(null) is already false, so it just falls to the alphabetical
+      // "leftover" bucket below, same as an instrument no track-name regex matched
+      const inst = matched.find(i => leftover.has(i) && i.program != null && progs.includes(i.program));
       if (inst) { leftover.delete(inst); byTrack.push({inst, label: tr.name + " · " + (inst.nameGuess || inst.id) + kitTag(inst)}); }
     });
   }
@@ -13321,6 +13559,45 @@ function instKeys(inst) { // what a tap plays: a kit's first slots; a melodic in
   if (inst.kind === "drum-kit") return inst.keyRegions.filter(r => r.sample).slice(0, 4).map(r => r.keyLo);
   const k = inst.keysPlayed && inst.keysPlayed.median != null ? Math.round(inst.keysPlayed.median) : 60;
   return [k, k + 7, k + 12];
+}
+// ------------------------------------------------ SoundFont 2 voices (2026-09-28)
+// Any .sf2 (fan-made game fonts, a better piano, anything) loaded through File →
+// Import…, its presets picked as a track's voice from the "Soundfonts ›" family —
+// NIGHT-ROLL.md "Game instrument libraries" step 4. A soundfont is one self-contained
+// binary (unlike a game library's instruments.json + many separate WAVs): parseSf2
+// decodes every sample it needs in one pass, so there is no per-pitch lazy sample
+// fetch the way instSamples does for game libraries — just fetch-or-load the bytes
+// once and parse once. Voice id: "sf2:<slug>:<bank>:<program>".
+let sf2PlayModule = null;
+function sf2Module() { return sf2PlayModule || (sf2PlayModule = import(new URL("tools/instruments/sf2.mjs", APP_BASE).href)); }
+const sf2Fonts = new Map(); // slug -> Promise<parsed font> (tools/instruments/sf2.mjs's parseSf2 result), fetched/parsed once
+// bytes: this device's IndexedDB first (an import, or a song that already loaded this
+// font once), else the game files & instruments repo's soundfonts/<slug>.sf2 (cached
+// to IndexedDB on success, same "works offline after the first load" contract as chip
+// audio's vault fetch)
+async function sf2Bytes(slug) {
+  const local = await idbSf2Get(slug);
+  if (local) return local;
+  const bytes = await vaultFetch("soundfonts/" + slug + ".sf2");
+  idbSf2Put(slug, bytes).catch(() => {});
+  return bytes;
+}
+function sf2Font(slug) {
+  if (!sf2Fonts.has(slug)) sf2Fonts.set(slug, sf2Bytes(slug).then(async b => (await sf2Module()).parseSf2(b)));
+  return sf2Fonts.get(slug);
+}
+// the on-device index of known soundfonts (name + slug only — the bytes live in
+// IndexedDB/the repo, never here): what the voice menu's "Soundfonts ›" top level
+// lists without opening IndexedDB just to read a title. A device that has never
+// imported or played a given font simply doesn't list it yet — same scope as the
+// game-instrument picker, which only ever lists PUBLISHED albums, not every game
+// that might exist somewhere.
+function sf2Registry() { try { return JSON.parse(localStorage.getItem("ff1roll-sf2-index") || "[]"); } catch (err) { return []; } }
+function sf2RegistryAdd(slug, name) {
+  const reg = sf2Registry().filter(f => f.slug !== slug);
+  reg.push({slug, name});
+  reg.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: "base"}));
+  try { localStorage.setItem("ff1roll-sf2-index", JSON.stringify(reg)); } catch (err) { /* best-effort */ }
 }
 async function instAudition(vault, lib, inst) {
   ensureAudio(); await resumeAudio(); openMaster();
@@ -13375,7 +13652,7 @@ async function renderGameInstNav(container, nav, opts) {
     loading.remove();
     if (ctx) container.appendChild(opts.rowFactory("Instruments in this song ›",
       () => { nav.game = ctx.g; nav.sub = {title: ctx.songTitle, path: ctx.path}; go(); }));
-    if (!games.length) { container.appendChild(opts.rowFactory("No published game has instruments yet (PlayStation and N64 imports get them at publish).", () => {}, true)); return; }
+    if (!games.length) { container.appendChild(opts.rowFactory("No published game has instruments yet (PlayStation, N64, and Super Nintendo imports get them at publish).", () => {}, true)); return; }
     for (const g of games) container.appendChild(opts.rowFactory(g.title + " ›", () => { nav.game = g; nav.sub = null; go(); }));
     return;
   }
@@ -14383,13 +14660,14 @@ async function batchCommit(which, files, message, h, status) {
 // redistribution. Each device imports the NSF once.
 function idbOpen() {
   return new Promise((res, rej) => {
-    const rq = indexedDB.open("ff1roll", 4); // v2: "fs" holds the local-folder handle; v3: "audio" clip bytes; v4: "drafts" = import drafts' notes
+    const rq = indexedDB.open("ff1roll", 5); // v2: "fs" holds the local-folder handle; v3: "audio" clip bytes; v4: "drafts" = import drafts' notes; v5: "sf2" = imported SoundFont bytes
     rq.onupgradeneeded = () => {
       const db = rq.result;
       if (!db.objectStoreNames.contains("nsf")) db.createObjectStore("nsf");
       if (!db.objectStoreNames.contains("fs")) db.createObjectStore("fs");
       if (!db.objectStoreNames.contains("audio")) db.createObjectStore("audio");
       if (!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts");
+      if (!db.objectStoreNames.contains("sf2")) db.createObjectStore("sf2");
     };
     rq.onsuccess = () => res(rq.result);
     rq.onerror = () => rej(rq.error);

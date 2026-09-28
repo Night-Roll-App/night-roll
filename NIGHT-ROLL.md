@@ -1544,6 +1544,85 @@ falls back to the track's own auto (NES) synth voice, with one ⚠ per
 (voice, reason) this session. Test: "game instrument voice: …" in
 tests/night-roll.test.mjs.
 
+Step 4: any SoundFont 2 (.sf2 — a fan-made game font, a better piano,
+anything, 2026-09-28) loads the SAME way, its presets becoming track
+voices alongside the extracted game libraries. `tools/instruments/sf2.mjs`
+is a plain, browser-clean SF2 reader (no Node imports — the page loads it
+the same way it loads `play.mjs`): `parseSf2(bytes)` walks the RIFF/sfbk
+chunks and resolves the SoundFont generator rules itself (spec §7-9) —
+within one level (instrument or preset) a zone's own generator overrides
+its global zone's same generator, never summed; between levels the
+instrument's absolute value and the preset's are ADDED (fineTune,
+coarseTune, pan, initialAttenuation, the volume-envelope generators);
+keyRange/velRange/sampleID/instrument/sampleModes/overridingRootKey exist
+only at the instrument level, while a preset zone's own keyRange/velRange
+instead NARROWS (intersects) the instrument zone's — how one preset
+splits across several zones by key or velocity ("layers"). The result is
+`{name, presets: [{name, bank, program, zones, keyRegions}], samples}` —
+`zones`/`keyRegions` are model.mjs's own Region shape (keyLo/keyHi/rootKey
++ fine tune/sample hash/loop/gain/pan/envelope), and a preset object
+carries `gain: 1, velocityCurve: "linear"` at its top so it doubles as a
+play.mjs `inst` with no translation step. Loop is a per-ZONE decision
+(`sampleModes` 1 or 3), not a sample-identity one — the same raw bytes can
+be looped in one zone and one-shot in another, so the sample hash's tag
+includes the effective loop, same as model.mjs's own `sampleHash`.
+Rejected with a clear error, not a garbled render: SF3 (Ogg
+Vorbis-compressed samples — its `smpl` chunk is shorter than the sample
+headers say real PCM must be) and 24-bit samples (an `sm24` chunk).
+Modulators (pmod/imod) are not applied (velocityCurve stays "linear",
+same simplification `export.mjs`'s own SF2 writer already makes); a
+stereo sample pair (two hard-panned zones, same key range) collapses to
+whichever zone comes first — play.mjs picks exactly one region per note,
+mono, same as any other borrowed instrument.
+
+Storage: an imported SoundFont is a device-local asset the SONG depends
+on, so it travels like the game files do — File → Import…'s byte sniff
+(RIFF + `sfbk` at byte 8, ahead of a WAV's RIFF + `WAVE`) routes a .sf2 to
+`importSf2File`, which parses it, keeps the raw bytes in this device's
+IndexedDB (`idbSf2Put`/`idbSf2Get`, its own "sf2" object store — works
+offline, no GitHub needed), registers it in a small on-device index
+(`sf2Registry()`, localStorage — name + slug only, so the voice menu's
+Soundfonts list doesn't have to open IndexedDB just to draw a title), and
+— with a game files & instruments repo configured and a token on file —
+pushes it to `soundfonts/<slug>.sf2` there too (check-before-PUT, same as
+every other archive file this app writes), so it reaches your other
+devices. Voice id: `sf2:<slug>:<bank>:<program>` (the slug is always a
+plain `slugify()` token, so a strict 3-part colon split resolves it —
+unlike a game instrument id, which can carry its own colons). Loading a
+song that uses one: `sf2Font(slug)` tries IndexedDB first, else
+`vaultFetch`-reads `soundfonts/<slug>.sf2` from the repo (caching it to
+IndexedDB on success); missing or unreachable falls back to the track's
+synth voice, one ⚠ per (voice, reason) — same contract as a missing game
+library. Files over 50 MB ask first (an in-app sheet, "Upload to the
+archive" / "Keep on this device only" — GitHub itself warns past 50 MB in
+the Contents API); over 95 MB is refused outright (GitHub rejects past
+100 MB) but stays fully usable on the importing device.
+
+UI: the voice & color menu's **Soundfonts ›** family (`SF2_FAMILY`) is a
+flat 2-level nav — a loaded font, then its presets (bank:program name,
+natural sort) — its own small `renderSf2Nav`, in the SAME calling
+convention as `renderGameInstNav` (rowFactory/onNavigate/isCurrent/
+backLabelAtTop) but not sharing its level logic: a soundfont has no
+per-song "used in" concept to browse by, only presets, so there is no
+shared LEVEL behavior to parameterise, just a shared STYLE. A tap assigns
++ auditions once, exactly like a game instrument pick.
+
+Playback reuses the game-voice path rather than duplicating it: a
+resolver (`resolveVoiceInstrument(voice)`) returns `{inst, samples}` for
+either a `game:` voice (from `gameLibSync`) or an `sf2:` voice (from
+`sf2Sync` — a parsed font's `presets`/`samples` already ARE that shape),
+and `scheduleGameNote` — its caching, its AudioBuffer reuse, its synth
+fallback — calls that resolver instead of hard-coding `game:` lookups.
+`gamePreloadForSong`/`gameWaitForSong` warm both kinds the same way; a
+soundfont has no per-pitch lazy sample fetch the way a game library does
+(`instSamples`) — the whole file is one download, so `parseSf2` already
+decoded every sample it could need, and preloading is just "fetch + parse
+once, remember it under its slug." Tests: tools/instruments/sf2.mjs's own
+parser round-trip + a hand-built font with global zones and preset
+offsets (tests/instruments-sf2.test.mjs); "soundfont:"/"soundfont voice:
+…" in tests/night-roll.test.mjs (import routing + storage, the directive
+round-trip, playback through play.mjs, the missing-font fallback).
+
 SNES (`tools/instruments/snes.mjs`, 2026-09-28): a `.spc` is only the
 sound chip's own state (64 KB ARAM + DSP registers) — no game-exposed
 instrument table like PS1's INSTR.DAT or N64's tuning float, and every
