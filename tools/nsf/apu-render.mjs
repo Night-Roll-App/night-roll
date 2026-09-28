@@ -192,8 +192,11 @@ export function renderApu(apuLog, frames, frameSec, opts = {}) {
       for (let i = 0; i < 2; i++) {
         const ch = p[i];
         let lvl = 0;
+        // the sweep unit's mute holds whether or not the sweep is enabled
+        // (Nesdev): a target period past $7FF silences the pulse — with shift 0
+        // that is every period from $400 up unless negate is set
         if (ch.enabled && ch.length > 0 && ch.timer >= 8 && ch.timer <= 0x7FF &&
-            !(ch.sweep.on && ch.sweep.shift > 0 && !ch.sweep.negate && sweepTarget(ch, i) > 0x7FF)) {
+            !(!ch.sweep.negate && sweepTarget(ch, i) > 0x7FF)) {
           ch.phase += cpuPerSample / (2 * (ch.timer + 1));
           if (ch.phase >= 1) { ch.seq = (ch.seq + Math.floor(ch.phase)) & 7; ch.phase %= 1; }
           if (DUTY[ch.duty][ch.seq]) lvl = envOut(ch.env);

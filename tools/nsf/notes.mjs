@@ -34,11 +34,21 @@ export function reconstruct(apuLog, frames, frameSec) {
     if (name === "triangle") return CLOCK / (32 * (c.period + 1));
     return CLOCK / (16 * (c.period + 1)); // pulses
   };
+  // the sweep unit mutes a pulse whose TARGET period would pass $7FF — even
+  // with the sweep disabled (Nesdev: "regardless of the enable flag"). With
+  // shift 0 in add mode the target is double the period, so any pulse from
+  // period $400 up is silent on the console unless negate is set; Tetris
+  // writes C2 (period $6B3, $4005 = 0) on pulse 2 and the hardware plays
+  // nothing — the roll showed 1.6 s C2 drones (Josh, 2026-09-27)
+  const sweepMuted = (name, c) => {
+    if (c.sweepNeg) return false; // negate: the target can only shrink
+    return c.period + (c.period >> (c.sweepShift || 0)) > 0x7FF;
+  };
   const audible = (name, c) => {
     if (!c.enabled) return false;
     if (name === "triangle") return c.linear > 0 && c.period > 1;
     if (name === "noise") return c.vol > 0;
-    return c.vol > 0 && c.period > 7 && c.period < 0x800;
+    return c.vol > 0 && c.period > 7 && c.period < 0x800 && !sweepMuted(name, c);
   };
 
   const update = (name, c, frame) => {
@@ -99,6 +109,8 @@ export function reconstruct(apuLog, frames, frameSec) {
         if (open[name]) { open[name].endFrame = frame; delete open[name]; }
       } else if (r === 1 && name === "noise") {
         c.period = value & 0x0F;
+      } else if (r === 1) { // $4001/$4005: sweep — negate and shift decide the mute above
+        c.sweepNeg = !!(value & 8); c.sweepShift = value & 7;
       }
       update(name, c, frame);
     }

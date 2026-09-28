@@ -63,6 +63,7 @@ function nearestMidi(f) { // closest tempered note by log distance
 function pulseLog(periods) {
   let frame = 0;
   const log = [{frame: frame++, addr: 0x4015, value: 0x01}];
+  log.push({frame, addr: 0x4001, value: 0x08}); // sweep negate: the whole period range sounds (drivers set this for low notes; without it the sweep unit mutes from $400 up)
   for (const p of periods) {
     log.push({frame, addr: 0x4000, value: 0x1F});            // constant volume, level 15
     log.push({frame, addr: 0x4002, value: p & 0xFF});
@@ -239,4 +240,24 @@ test("NSF runner: the player enables the channels before INIT, so a driver that 
   assert.ok(!apuLog.slice(1).some(w => w.addr === 0x4015), "the patched driver writes none");
   const pulse1 = reconstruct(apuLog, frames, frameSec).filter(e => e.channel === "pulse1").map(e => pitchName(e.midi));
   assert.deepEqual(pulse1, ["C4", "E4", "G4", "C5"]);
+});
+
+test("sweep mute: a pulse whose target period passes $7FF is silent in the roll and the render, sweep enabled or not; negate lifts it", () => {
+  // Tetris slot 1 writes C2 on pulse 2: period $6B3 with $4005 = 0 — the
+  // console plays nothing (the roll showed 1.6 s drones, Josh 2026-09-27)
+  const mk = sweep => [
+    {frame: 0, addr: 0x4015, value: 0x03},
+    {frame: 1, addr: 0x4005, value: sweep},
+    {frame: 1, addr: 0x4004, value: 0xB8},          // duty 50%, halt, const vol 8
+    {frame: 1, addr: 0x4006, value: 0xB3},
+    {frame: 1, addr: 0x4007, value: 0x0E},          // period $6B3 + length load
+  ];
+  const silent = reconstruct(mk(0x00), 60, 1 / 60).filter(e => e.channel === "pulse2");
+  assert.equal(silent.length, 0, "no note for a sweep-muted pitch");
+  const heard = reconstruct(mk(0x08), 60, 1 / 60).filter(e => e.channel === "pulse2");
+  assert.equal(heard.length, 1, "negate mode: the same period is a note");
+  assert.equal(heard[0].midi, 36, "C2");
+  const rms = log => { const r = renderApu(log, 60, 1 / 60, {sampleRate: 22050}); let s = 0; for (const x of r.pulse2) s += x * x; return Math.sqrt(s / r.pulse2.length); };
+  assert.ok(rms(mk(0x00)) < 1e-6, "render: silent with the sweep off");
+  assert.ok(rms(mk(0x08)) > 0.01, "render: sounds in negate mode");
 });
