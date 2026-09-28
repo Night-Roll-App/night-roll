@@ -2362,6 +2362,131 @@
   ]
  },
  {
+  "title": "The Legend of Zelda",
+  "songs": [
+   {
+    "title": "Track 01",
+    "path": "albums/nes/legend-of-zelda/track-01.mid"
+   },
+   {
+    "title": "Track 02",
+    "path": "albums/nes/legend-of-zelda/track-02.mid"
+   },
+   {
+    "title": "Track 03",
+    "path": "albums/nes/legend-of-zelda/track-03.mid"
+   },
+   {
+    "title": "Track 04",
+    "path": "albums/nes/legend-of-zelda/track-04.mid"
+   },
+   {
+    "title": "Track 05",
+    "path": "albums/nes/legend-of-zelda/track-05.mid"
+   },
+   {
+    "title": "Track 06",
+    "path": "albums/nes/legend-of-zelda/track-06.mid"
+   },
+   {
+    "title": "Track 07",
+    "path": "albums/nes/legend-of-zelda/track-07.mid"
+   },
+   {
+    "title": "Track 08",
+    "path": "albums/nes/legend-of-zelda/track-08.mid"
+   },
+   {
+    "title": "Track 09",
+    "path": "albums/nes/legend-of-zelda/track-09.mid"
+   },
+   {
+    "title": "Track 10",
+    "path": "albums/nes/legend-of-zelda/track-10.mid"
+   },
+   {
+    "title": "Track 11",
+    "path": "albums/nes/legend-of-zelda/track-11.mid"
+   },
+   {
+    "title": "Track 12",
+    "path": "albums/nes/legend-of-zelda/track-12.mid"
+   },
+   {
+    "title": "Track 13",
+    "path": "albums/nes/legend-of-zelda/track-13.mid"
+   },
+   {
+    "title": "Track 21",
+    "path": "albums/nes/legend-of-zelda/track-21.mid"
+   },
+   {
+    "title": "Track 22",
+    "path": "albums/nes/legend-of-zelda/track-22.mid"
+   },
+   {
+    "title": "Track 23",
+    "path": "albums/nes/legend-of-zelda/track-23.mid"
+   },
+   {
+    "title": "Track 24",
+    "path": "albums/nes/legend-of-zelda/track-24.mid"
+   },
+   {
+    "title": "Track 25",
+    "path": "albums/nes/legend-of-zelda/track-25.mid"
+   },
+   {
+    "title": "Track 26",
+    "path": "albums/nes/legend-of-zelda/track-26.mid"
+   },
+   {
+    "title": "Track 27",
+    "path": "albums/nes/legend-of-zelda/track-27.mid"
+   },
+   {
+    "title": "Track 28",
+    "path": "albums/nes/legend-of-zelda/track-28.mid"
+   },
+   {
+    "title": "Track 29",
+    "path": "albums/nes/legend-of-zelda/track-29.mid"
+   },
+   {
+    "title": "Track 30",
+    "path": "albums/nes/legend-of-zelda/track-30.mid"
+   },
+   {
+    "title": "Track 31",
+    "path": "albums/nes/legend-of-zelda/track-31.mid"
+   },
+   {
+    "title": "Track 32",
+    "path": "albums/nes/legend-of-zelda/track-32.mid"
+   },
+   {
+    "title": "Track 33",
+    "path": "albums/nes/legend-of-zelda/track-33.mid"
+   },
+   {
+    "title": "Track 34",
+    "path": "albums/nes/legend-of-zelda/track-34.mid"
+   },
+   {
+    "title": "Track 35",
+    "path": "albums/nes/legend-of-zelda/track-35.mid"
+   },
+   {
+    "title": "Track 36",
+    "path": "albums/nes/legend-of-zelda/track-36.mid"
+   },
+   {
+    "title": "Track 37",
+    "path": "albums/nes/legend-of-zelda/track-37.mid"
+   }
+  ]
+ },
+ {
   "title": "TMNT 2",
   "songs": [
    {
