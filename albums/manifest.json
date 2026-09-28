@@ -3962,6 +3962,143 @@
   ]
  },
  {
+  "title": "Mega Man V",
+  "songs": [
+   {
+    "title": "Boss Battle",
+    "path": "albums/game-boy/mega-man-v/boss-battle.mid"
+   },
+   {
+    "title": "Boss Defeated",
+    "path": "albums/game-boy/mega-man-v/boss-defeated.mid"
+   },
+   {
+    "title": "Dark Moon Battle Cutscene & Dr. Wily's Stage",
+    "path": "albums/game-boy/mega-man-v/dark-moon-battle-cutscene-dr-wily-s-stage.mid"
+   },
+   {
+    "title": "Dr. Light's Instructions",
+    "path": "albums/game-boy/mega-man-v/dr-light-s-instructions.mid"
+   },
+   {
+    "title": "Dr. Light's Shop",
+    "path": "albums/game-boy/mega-man-v/dr-light-s-shop.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/game-boy/mega-man-v/ending.mid"
+   },
+   {
+    "title": "Final Boss Battle",
+    "path": "albums/game-boy/mega-man-v/final-boss-battle.mid"
+   },
+   {
+    "title": "Final Boss Defeated",
+    "path": "albums/game-boy/mega-man-v/final-boss-defeated.mid"
+   },
+   {
+    "title": "Flight Cutscene",
+    "path": "albums/game-boy/mega-man-v/flight-cutscene.mid"
+   },
+   {
+    "title": "Game Over Screen",
+    "path": "albums/game-boy/mega-man-v/game-over-screen.mid"
+   },
+   {
+    "title": "Intro 1",
+    "path": "albums/game-boy/mega-man-v/intro-1.mid"
+   },
+   {
+    "title": "Intro 2 [Terra's Theme]",
+    "path": "albums/game-boy/mega-man-v/intro-2-terra-s-theme.mid"
+   },
+   {
+    "title": "Intro 3, Dr. Wily's Space Station & Sunstar Introduction",
+    "path": "albums/game-boy/mega-man-v/intro-3-dr-wily-s-space-station-sunstar-introduction.mid"
+   },
+   {
+    "title": "Jupiter's Stage",
+    "path": "albums/game-boy/mega-man-v/jupiter-s-stage.mid"
+   },
+   {
+    "title": "Mars' Stage",
+    "path": "albums/game-boy/mega-man-v/mars-stage.mid"
+   },
+   {
+    "title": "Mercury's Stage",
+    "path": "albums/game-boy/mega-man-v/mercury-s-stage.mid"
+   },
+   {
+    "title": "Neptune's Stage",
+    "path": "albums/game-boy/mega-man-v/neptune-s-stage.mid"
+   },
+   {
+    "title": "Password Screen",
+    "path": "albums/game-boy/mega-man-v/password-screen.mid"
+   },
+   {
+    "title": "Pluto's Stage",
+    "path": "albums/game-boy/mega-man-v/pluto-s-stage.mid"
+   },
+   {
+    "title": "Saturn's Stage",
+    "path": "albums/game-boy/mega-man-v/saturn-s-stage.mid"
+   },
+   {
+    "title": "Shoot'Em Up Stage",
+    "path": "albums/game-boy/mega-man-v/shoot-em-up-stage.mid"
+   },
+   {
+    "title": "Stage Select",
+    "path": "albums/game-boy/mega-man-v/stage-select.mid"
+   },
+   {
+    "title": "Stage Start",
+    "path": "albums/game-boy/mega-man-v/stage-start.mid"
+   },
+   {
+    "title": "Title Screen",
+    "path": "albums/game-boy/mega-man-v/title-screen.mid"
+   },
+   {
+    "title": "Unused Jingle 1",
+    "path": "albums/game-boy/mega-man-v/unused-jingle-1.mid"
+   },
+   {
+    "title": "Unused Jingle 2",
+    "path": "albums/game-boy/mega-man-v/unused-jingle-2.mid"
+   },
+   {
+    "title": "Unused Song 1",
+    "path": "albums/game-boy/mega-man-v/unused-song-1.mid"
+   },
+   {
+    "title": "Unused Song 2",
+    "path": "albums/game-boy/mega-man-v/unused-song-2.mid"
+   },
+   {
+    "title": "Unused Song 3",
+    "path": "albums/game-boy/mega-man-v/unused-song-3.mid"
+   },
+   {
+    "title": "Unused Song 4",
+    "path": "albums/game-boy/mega-man-v/unused-song-4.mid"
+   },
+   {
+    "title": "Uranus' Stage",
+    "path": "albums/game-boy/mega-man-v/uranus-stage.mid"
+   },
+   {
+    "title": "Venus' Stage",
+    "path": "albums/game-boy/mega-man-v/venus-stage.mid"
+   },
+   {
+    "title": "You Got a Weapon Screen",
+    "path": "albums/game-boy/mega-man-v/you-got-a-weapon-screen.mid"
+   }
+  ]
+ },
+ {
   "title": "Mega Man X",
   "songs": [
    {
