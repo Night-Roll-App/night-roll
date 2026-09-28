@@ -836,6 +836,22 @@ code is reusable; the envelope model differs). The ground-truth player
 (scratch/usf2wav) renders GE for reference. Next N64 job after the
 sustain fix and the batch import review.
 
+## GITHUB ORG FOR NIGHT ROLL — QUEUED 2026-09-27 (Josh)
+
+"We need to get a Night Roll organization or user on GitHub so that
+when people share their songs, it comes up as Night Roll instead of my
+name." Today every published song and shared link lives under
+joshcough/night-roll (and the archive under joshcough/nsf-archive), so
+a shared song shows Josh's handle. Plan: create a GitHub organization
+(e.g. nightroll), move night-roll + nsf-archive into it (GitHub
+redirects old URLs; Pages moves to nightroll.github.io/night-roll or
+a custom domain), update the app's default repos (cfg defaults in
+index.html: songsRepo, nsfRepo/nsfBase, the raw/Pages bases, the
+Capacitor shell's remote), the bridge/CI settings, and the share-link
+base. Decide before the App Store listing (the listing's URLs point
+at whichever it is). Josh creates the org (it needs his account); the
+terminal does the moves.
+
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
 "Before we release this for real … imports of several more games on
