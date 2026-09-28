@@ -1019,7 +1019,15 @@ loop points); (2) an instrument browser: pick a game, play each across
 the keyboard; (3) a track's voice can be a game instrument, recorded
 in the song's track: directive so it plays on any device; (4) SNES
 next (samples from the SPC's DSP memory), NES/GB/Genesis as synth
-presets later. (1) is with an agent now.
+presets later. (1) DONE 2026-09-28: tools/instruments/ (NIGHT-ROLL.md
+"Game instrument libraries"); all 14 PS1/N64 libraries published to the
+archive at <vault folder>/instruments/ (one commit per album, checked
+by size; ~270 MB — FF8/FF9/Chrono Cross carry a sample set per song).
+NEXT: the instrument browser, then game instruments as track voices.
+Josh's SF2 idea (same day): also WRITE each library as a standard .sf2
+(usable in any DAW), and let the app LOAD any .sf2 as voices (fan game
+fonts, a better piano than FluidR3) — ordering vs the browser is his
+call, asked.
 
 THE ARCHIVE, for the record: joshcough/nsf-archive, PUBLIC (that is
 how other devices and Josh's son get chip audio without a token),
