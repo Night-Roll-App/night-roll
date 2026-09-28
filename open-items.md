@@ -903,6 +903,19 @@ and 44; program 58 is a drum kit by ear but shows as C2/E2 melody
 (ranged key maps defeat the single-pitch rule — the bank's percussion
 flag is absent from the rip); no pan/reverb/vibrato; level offset.
 iPad build still pending (unplugged).
+~04:40 Josh (awake, in the browser, via Ask): "why is the chip audio
+unavailable for GoldenEye songs?" — his ⚠: "token can't see
+joshcough/nsf-archive (HTTP 404)". The FILE was missing: the terminal
+importer never uploaded a set's shared library (only rec.bytes and the
+per-track files), and my two "already in the archive" checks were
+wrong (`gh api --jq .sha` prints "null" on a 404 — mega-man-2.nsf was
+missing too). Fixed: both files uploaded and verified by size; the
+importer now uploads rec.libs named as commitImports does; vaultFetch
+follows the sha to the blobs API for files over 1 MB (Mario 64's lib
+is 1.2 MB — the published SM64 album has no nsf block at all, it was a
+one-song in-app publish; a full publish of Mario 64 from the iPad
+would fix that). Verified: Dam renders on the live site with Josh's
+own token, 15 chip tracks.
 
 ## GITHUB ORG FOR NIGHT ROLL — QUEUED 2026-09-27 (Josh)
 

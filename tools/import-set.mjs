@@ -198,6 +198,9 @@ export async function importSet(opts, log = console.log) {
   const uploads = [];
   if (rec && rec.bytes) uploads.push({file: meta.vault, bytes: rec.bytes});
   if (meta.perFile && rec && rec.tracks) for (const [base, t] of Object.entries(rec.tracks)) if (t && t.bytes && captured.some(r => r.key && r.key.endsWith("/" + base + ".mid"))) uploads.push({file: app.run("chipVaultFile(" + JSON.stringify(meta) + ", " + JSON.stringify(base) + ")"), bytes: t.bytes});
+  // the set's shared library (PS1 .psflib, N64 .usflib), named as commitImports names it — the first
+  // GoldenEye publish left it out and every device but this one rendered synth (2026-09-28)
+  if (rec && rec.libs) for (const [name, bytes] of Object.entries(rec.libs)) uploads.push({file: meta.vault + app.run("slugify(" + JSON.stringify(name.replace(/\.[a-z0-9]+$/i, "")) + ")") + (name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase(), bytes});
   if (opts.publish && uploads.length) {
     const repo = "joshcough/nsf-archive";
     for (const u of uploads) {
