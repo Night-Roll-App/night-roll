@@ -13444,7 +13444,7 @@ async function openChipImport(kind, bytes, name, m3uList, files) {
     const lbl = document.createElement("input"); // editable: type the real name once you recognize the tune
     lbl.type = "text";
     lbl.value = title || ("track-" + String(n).padStart(2, "0"));
-    lbl.style.cssText = "flex:2 1 200px;min-width:160px;max-width:44%;min-height:32px;font-family:var(--mono);font-size:12px"; // the name gets room but not the row: 150px cut tag titles, the first widening took too much (Josh, 2026-09-27, both)
+    lbl.style.cssText = "flex:2 1 200px;min-width:160px;max-width:40%;min-height:32px;font-family:var(--mono);font-size:12px"; // the name gets room but not the row: 150px cut tag titles, the first widening took too much (Josh, 2026-09-27, both)
     lbl.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); lbl.blur(); } });
     lbl.addEventListener("change", () => impRename(n));
     const st = document.createElement("span");
