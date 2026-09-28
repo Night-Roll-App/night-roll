@@ -1433,6 +1433,26 @@ Filesystem plugins.
 autosave-on-edit in folder mode (explicit Save kept for parity and so
 Revert still means something), copying the FF1 corpus into a folder.
 
+## Tap a note: the game's instrument (2026-09-28)
+
+Chip audio is one pre-rendered stream per track, so a tapped note had
+only the synth voice (Josh: "when I press notes on Dire Dire Docks it
+sounds them in our MIDI instrument sounds"). Now the render worker
+stays alive after a successful render (`w.__key` = its song; freed when
+the song's audio is freed) holding the loaded set, and answers
+`{preview: {req, id, track, midi, vel}}` by rendering ONE note through
+that track's instrument: `previewOne` in tools/chip-worker.mjs copies a
+template note of the track (channel, instrument, bank, pan) with the
+tapped pitch and a short duration, runs the same `R.render` on a
+one-note result, and returns the track's buffer (mono or a stereo
+pair). Sequence chips only (PS1, N64); NES/GB/SNES renders come from a
+register log, so the synth stays for those, as it does for kit tracks
+and tracks with an explicit voice. Page: `previewNote` → 
+`chipPreviewBuffer(name, midi)` (400 ms guard, then the synth; cache
+per song/track/pitch for instant repeats) → a buffer source into the
+track's gain. Test: "tap a note on a chip song …" in
+tests/night-roll.test.mjs (a fake worker answers).
+
 ## Stereo — pan per track (2026-09-28)
 
 Josh: "are we getting … stereo information?" — pan was read and never

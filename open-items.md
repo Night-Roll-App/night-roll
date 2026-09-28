@@ -783,7 +783,8 @@ to play. Design: the render worker keeps the set/bank loaded after a
 render; previewNote asks it for ONE note through that track's
 instrument (N64: renderN64 on a one-note result; PS1: renderSpu the
 same way) and plays the returned PCM — latency tens of ms. After the
-envelope fix and pan.
+envelope fix and pan. SHIPPED 2026-09-28 (NIGHT-ROLL.md "Tap a note:
+the game's instrument").
 Josh's later ear report on Dire Dire Docks (after reverb): "the notes
 on YouTube definitely have more sustain … dramatically … as if the
 notes fade over a long period and ours cut off." Handed to the agent:

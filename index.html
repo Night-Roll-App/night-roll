@@ -1304,7 +1304,7 @@
     </div>
     <div class="hsec" data-hsec="explore">
     <dl>
-      <dt>Tap a note</dt><dd>Inspector shows pitch, bar &amp; beat (counted 1e&amp;a), length, velocity, track — <b>and plays it</b>, in Roll, Score and Tracks alike. That includes chip songs: during playback the NSF render IS the track's sound, so per-note synthesis is suppressed to avoid doubling, but a tap has nothing to double and sounds a synth voice. Hearing one note at a time is the point of analysis mode.</dd>
+      <dt>Tap a note</dt><dd>Inspector shows pitch, bar &amp; beat (counted 1e&amp;a), length, velocity, track — <b>and plays it</b>, in Roll, Score and Tracks alike. That includes chip songs: during playback the NSF render IS the track's sound, so per-note synthesis is suppressed to avoid doubling, but a tap has nothing to double and sounds a synth voice. Hearing one note at a time is the point of analysis mode. On a chip song (PlayStation, N64) the tap sounds the game's own instrument for that track; other consoles and drum tracks use the synth voice.</dd>
       <dt>Copy the pitch list</dt><dd>When the lasso strip lists selected pitches, tap the text (or the ⧉ copy chip) to copy them comma-separated — after "Chord?", the chord name comes along too.</dd>
       <dt>⊞ Lasso</dt><dd>Toggle on, then drag a box over notes (works in all views). Boxes ADD to the selection — draw as many as you need. Tap any note to toggle it in or out (surgical removal of a pedal or neighbor); tap empty space to clear. Shows all the pitch names, low to high — and the <b>8va</b> button beside Chord? toggles the octave numbers: off collapses duplicates to bare pitch classes (C · E · G), the chord-reading view; the setting sticks. Drag the box up into the ruler to take the annotations there too, lane by lane — up to the chord row takes the chords, higher takes the section row as well, all the way up takes the text-note flags: the box draws over the ruler, the bands it covers get a <b>gold outline</b> (text-note flags a gold ring) for as long as the selection lives, and those ride along with ⧉ and ✂ and land with 📋; 🗑 (or Backspace) deletes them with the notes, one ⟲ restores all of it.</dd>
       <dt>◯5 Circle of fifths</dt><dd>The classic chart, live: majors outside with their signatures, relative minors inside, diminished chords at the center, and the movable degree window (IV·I·V over ii·vi·iii over vii°). Two independent motions: <b>drag the wheel</b> (or ⟲ ⟳) to spin it — put any key at 12 o'clock; <b>tap a wedge</b> to move the degree window there. Opens with the song's key on top and highlighted. Below the wheel: the window key's signature accidentals, full scale, all seven triads, and its IV/V neighbors.</dd>
@@ -7264,6 +7264,11 @@ async function previewNote(ti, pitch) {
   ensureAudio();
   await resumeAudio(); // clock is frozen until the context actually runs
   openMaster(); // master may be faded out from the last stop
+  const tr = song && song.tracks[ti];
+  if (tr && chipActive() && chipHas(tr.name) && (!tr.voice || tr.voice === "auto") && !trackIsDrums(ti)) { // a chip song: the game's own instrument, if the worker still holds the set
+    const buf = await chipPreviewBuffer(tr.name, pitch);
+    if (buf) { const s = audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(audio.currentTime + 0.01); return; }
+  }
   scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, audio.currentTime + 0.01, 0.3);
 }
 function buildSchedule() {
@@ -7423,7 +7428,7 @@ async function updateChipBtn() { // name kept for call sites; now just the auto-
            "Re-import the album's NSF once, or commit the album; playing synthesized voices meanwhile.");
   }
   if (available && chip.key !== songKey && chip.rendering !== songKey) {
-    if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; } // free the last song's audio: eight SNES voices are hundreds of MB
+    if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chipPreviewCache.clear(); if (chipWorker && chipWorker.__key !== songKey) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
     chip.rendering = songKey;
     const forKey = songKey;
     chip.renderPromise = chipRender().catch(() => false) // not renderable: synth carries the song
@@ -7512,7 +7517,29 @@ function chipPublish(forKey, kind, pcm, sampleRate, leadSec) { // the render is 
   return true;
 }
 function chipWorkerAvailable() { return typeof Worker !== "undefined" && typeof APP_BASE !== "undefined" && !!APP_BASE && !chipWorkerAvailable.broken; }
-let chipWorker = null; // one at a time; a new song terminates the old render
+let chipWorker = null; // one at a time; a new song terminates the old render; after a render it stays for previews (w.__key = its song)
+const chipPreviewPending = new Map(); // req → resolve, for one-note previews answered by the live worker
+const chipPreviewCache = new Map();   // "song|track|midi" → AudioBuffer, so a repeated tap is instant
+let chipPreviewReq = 0;
+async function chipPreviewBuffer(name, midi) { // the game's own instrument for ONE note, or null (synth then)
+  if (!chipWorker || chipWorker.__key !== songKey || !audio) return null;
+  const key = songKey + "|" + name + "|" + midi;
+  const hit = chipPreviewCache.get(key);
+  if (hit && hit.ctx === audio) return hit.buf;
+  const req = ++chipPreviewReq;
+  const reply = await new Promise(res => {
+    const t = setTimeout(() => { chipPreviewPending.delete(req); res(null); }, 400); // a slow answer loses to the synth: a tap must sound now
+    chipPreviewPending.set(req, m => { clearTimeout(t); res(m); });
+    try { chipWorker.postMessage({preview: {req, id: songKey, track: name, midi, vel: 100}}); } catch (err) { clearTimeout(t); chipPreviewPending.delete(req); res(null); }
+  });
+  if (!reply || !reply.pcm) return null;
+  const x = reply.pcm, st = x.l ? x : null;
+  const buf = audio.createBuffer(st ? 2 : 1, (st ? st.l : x).length, reply.sampleRate || audio.sampleRate);
+  if (st) { buf.copyToChannel(st.l, 0); buf.copyToChannel(st.r, 1); } else buf.copyToChannel(x, 0);
+  if (chipPreviewCache.size > 300) chipPreviewCache.clear();
+  chipPreviewCache.set(key, {ctx: audio, buf});
+  return buf;
+}
 function chipRenderInWorker(kind, src, secs, rate, forKey) {
   return new Promise(resolve => {
     if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; }
@@ -7522,9 +7549,16 @@ function chipRenderInWorker(kind, src, secs, rate, forKey) {
     chipWorker = w;
     const c = CHIPS[kind];
     const watch = setInterval(() => { if (songKey !== forKey) { finish("stale"); } }, 250); // a song change ends the render at once
-    const finish = out => { clearInterval(watch); if (chipWorker === w) chipWorker = null; try { w.terminate(); } catch (err) { /* gone */ } if (out === "stale") console.log("[chip] stale render stopped: " + forKey.split("/").pop()); resolve(out); };
+    const finish = out => { // a finished render keeps its worker (and the loaded set) for note previews; anything else ends it
+      clearInterval(watch);
+      if (out && out.pcm) { w.__key = forKey; resolve(out); return; }
+      if (chipWorker === w) chipWorker = null; try { w.terminate(); } catch (err) { /* gone */ }
+      if (out === "stale") console.log("[chip] stale render stopped: " + forKey.split("/").pop());
+      resolve(out);
+    };
     w.onmessage = e => {
       const m = e.data || {};
+      if (m.preview) { const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); return; }
       if (typeof m.progress === "number") { chip.progress = m.progress; return; }
       if (m.error) { console.warn("[chip] worker: " + m.error + " — rendering inline"); chipWorkerAvailable.broken = /no module worker|import|Failed to fetch/i.test(m.error); return finish(null); }
       if (m.done) return finish(m.done);

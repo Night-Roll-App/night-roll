@@ -1577,7 +1577,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
-    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list",
+    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "game's own instrument for that track",
     "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3621,6 +3621,27 @@ test("Open re-reads the published list each time it opens (once per 20 s) and re
   await new Promise(r => setTimeout(r, 30));
   assert.equal(val(`globalThis.__mf`), 1, "a second open within 20 s does not re-read");
   run(`songsheet.classList.remove("on");`);
+});
+
+test("tap a note on a chip song: the live worker renders that one note through the game's instrument; the synth is the fallback", async () => {
+  run(`createComposition(120, 4, 4); ensureAudio(); globalThis.__srcs = 0; globalThis.__sched = 0;
+       audio.createBufferSource = () => { globalThis.__srcs++; return {connect() {}, start() {}, stop() {}, buffer: null}; };
+       scheduleNote = () => { globalThis.__sched++; };
+       chip.key = songKey; chip.pcm = {}; chip.pcm[song.tracks[0].name] = new Float32Array(10);
+       chipWorker = {__key: songKey, postMessage(m) { const req = m.preview.req; setTimeout(() => this.onmessage({data: {preview: {req, pcm: new Float32Array(50), sampleRate: 44100}}}), 0); }, terminate() {}};
+       chipWorker.onmessage = null;`);
+  // the page's onmessage lives on the real worker; emulate the routing the page installs
+  run(`chipWorker.onmessage = e => { const m = e.data; const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); };`);
+  const settle = async p => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app.tick(20); await Promise.resolve(); await Promise.resolve(); } return p; }; // the harness clock is fake: fire the worker's reply and the 400 ms guard
+  await settle(run(`previewNote(0, 60)`));
+  assert.equal(val(`globalThis.__srcs`), 1, "the game's note played as a buffer");
+  assert.equal(val(`globalThis.__sched`), 0, "no synth note");
+  await settle(run(`previewNote(0, 60)`));
+  assert.equal(val(`globalThis.__srcs`), 2, "a repeat comes from the cache");
+  run(`chipWorker = null;`);
+  await settle(run(`previewNote(0, 60)`));
+  assert.equal(val(`globalThis.__sched`), 1, "no live worker: the synth voice");
+  run(`chip.key = null; chip.pcm = null; audio = null; chipPreviewCache.clear();`);
 });
 
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {

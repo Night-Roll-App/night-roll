@@ -75,7 +75,41 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
   },
 };
 
-self.onmessage = async e => {
+// After a render the worker stays alive with the set loaded: a tap on a note
+// asks for that ONE note through its track's instrument (Josh, 2026-09-27:
+// "when I press notes on Dire Dire Docks it sounds them in our MIDI
+// instrument sounds"). Sequence chips only (PS1, N64): a one-note copy of
+// the parsed result, rendered by the same path; NES/GB/SNES renders come
+// from a register log and have no note to re-render, so the page keeps the
+// synth for those.
+let live = null; // {id, kind, M, R, res, rate} of the last successful render
+export async function previewOne(live, p) { // p: {track, midi, vel, ticks, seconds} → Float32Array | {l, r} | null
+  if (!live || !live.res || !live.res.result || !live.res.result.notes) return null;
+  const {M, R, res, rate, kind} = live;
+  const inner = res.result;
+  const groups = kind === "psf" ? M.channelGroups(inner) : M.channelGroups(inner, {tsNum: 4, tsDen: 4});
+  const g = groups.find(x => x.name === p.track);
+  if (!g || !g.notes.length) return null;
+  const t = g.notes.find(x => !x.drum) || g.notes[0];
+  if (t.drum) return null; // a kit's keys are its own map: the synth's drums serve the tap
+  const ticks = Math.max(1, Math.round(p.ticks || Math.min(48, kind === "psf" ? (t.endTick - t.tick) : t.dur)));
+  const note = kind === "psf"
+    ? {...t, tick: 0, endTick: ticks, key: p.midi, pitch: p.midi, cents: 0, vel: p.vel || 100, gain: undefined, slide: undefined, unrolled: false}
+    : {...t, tick: 0, dur: ticks, midi: p.midi, semitone: p.midi - 21, vel: p.vel || 100, slide: undefined, gain: undefined, bend: 0};
+  const one = {...inner, notes: [note], endTick: ticks, loop: null, ducked: []};
+  const r = await R.render(M, {...res, result: one, seconds: p.seconds || 1.5}, {sampleRate: rate, onProgress: () => {}});
+  return r[p.track] || null;
+}
+if (typeof self !== "undefined") self.onmessage = async e => {
+  if (e.data && e.data.preview) { // one note through the game's instrument, from the last render's set
+    const q = e.data.preview;
+    try {
+      const x = live && live.id === q.id ? await previewOne(live, q) : null;
+      const transfer = x ? (x.l ? [x.l.buffer, x.r.buffer] : [x.buffer]) : [];
+      self.postMessage({preview: {req: q.req, pcm: x, sampleRate: live ? live.rate : 0}}, transfer);
+    } catch (err) { self.postMessage({preview: {req: q.req, pcm: null, error: String(err && err.message || err)}}); }
+    return;
+  }
   const {id, kind, files, shared, own, v, bytes, libs, n, secs, rate} = e.data;
   const post = m => self.postMessage(Object.assign({id}, m));
   try {
@@ -100,6 +134,7 @@ self.onmessage = async e => {
       if (!live) continue;
       pcm[name] = x; for (const a of parts) transfer.push(a.buffer);
     }
+    live = (kind === "psf" || kind === "usf") ? {id, kind, M, R, res, rate} : null; // kept for note previews
     post({done: {pcm, sampleRate: r.sampleRate, leadSec}}, transfer);
   } catch (err) { post({error: String(err && err.message || err)}); }
 };
