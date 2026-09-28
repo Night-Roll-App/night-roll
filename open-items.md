@@ -808,6 +808,23 @@ DDD and Title). (4) Cave's octave-low intro: the engine does it too.
 volume/mute handling to check. Items 2, 3, 5 handed to the renderer
 agent with the numbers; fix pending.
 
+## GOLDENEYE 007 (N64, Rare) — QUEUED 2026-09-27 (Josh: "one of my favorite games of all time")
+
+Probed the USF set (/tmp/claude-501/rips/n64-ge, NUS-NGEE-USA.usflib,
+60 minis, `_enablecompare: true`): `locateEAD` finds no EAD tables
+(expected — Rare did not use Nintendo's sequence player), so the app
+says "a driver Night Roll cannot read yet". The ROM image (513 KB in
+the rip) holds 10 candidate libultra ALBankFile headers ('B1'), no
+MTrk, no '1172' magic where I looked. Known shape (community tools:
+SubDrag's N64 Midi/Sound Tools): Rare's music table → 1172-compressed
+ALCSeq (the SDK's compressed MIDI) + standard ALBank ctl/tbl with
+ALEnvelope times in microseconds. Work: locate GE's music table in the
+rip, decompress, parse ALCSeq → notes (a second N64 driver beside
+seq-libultra), read ALBank, render (the N64 renderer's sample/ADPCM
+code is reusable; the envelope model differs). The ground-truth player
+(scratch/usf2wav) renders GE for reference. Next N64 job after the
+sustain fix and the batch import review.
+
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
 "Before we release this for real … imports of several more games on
