@@ -758,6 +758,18 @@ end to end. The renderers' pan (N64 EAD + Rare, PS1) and the CC10
 writes are with the two agents; until they land, tracks sit centred
 and the fader is the only pan. Re-import needed afterwards to get the
 game's pan values into the .mid.
+SHIPPED the same morning, all on the iPad: renderers' pan (N64 both
+drivers + PS1) with CC10 in the MIDI; GoldenEye bends through the
+note + one note per landed pitch in the roll; GoldenEye's own reverb
+block (found in RAM, six all-pass sections) with cc91 sends; cc7 under
+held notes (Rare) and DF/E0/DB/DA level steps under held notes (EAD;
+DA was a signed step — parser bug fixed); EAD vibrato from the decomp's
+state machine (Cave Dungeon's D8 1 is ±3 cents — nearly inaudible, as
+the game); Open re-reads the published list; tap-to-hear the game's
+instrument (PS1/N64). GoldenEye: no modulation in the set (no
+vibrato to add); level still 10–13 dB hot vs the real player, not one
+factor. IN PROGRESS: EAD portamento (C7) — the last pitch stub; the
+truth's ±60 c swings on Cave Dungeon ch 5 are that.
 RESOLVED by the agent against the decomp (same night): (1) the
 "octave low" IS the console — that sample's recording sounds C3 when
 the note says C4 (gNoteFrequencies[39] = 1.0 plays it at its native
