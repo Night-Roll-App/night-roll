@@ -7210,5 +7210,202 @@
     "path": "albums/nes/tmnt-2/selection.mid"
    }
   ]
+ },
+ {
+  "title": "Wario Land: Super Mario Land 3",
+  "songs": [
+   {
+    "title": "Bonus Menu",
+    "path": "albums/game-boy/wario-land/bonus-menu.mid"
+   },
+   {
+    "title": "Bonus Results",
+    "path": "albums/game-boy/wario-land/bonus-results.mid"
+   },
+   {
+    "title": "Bonus Select",
+    "path": "albums/game-boy/wario-land/bonus-select.mid"
+   },
+   {
+    "title": "Boss Almost Defeated",
+    "path": "albums/game-boy/wario-land/boss-almost-defeated.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/game-boy/wario-land/boss-battle.mid"
+   },
+   {
+    "title": "Boss Defeated",
+    "path": "albums/game-boy/wario-land/boss-defeated.mid"
+   },
+   {
+    "title": "End Credits",
+    "path": "albums/game-boy/wario-land/end-credits.mid"
+   },
+   {
+    "title": "File Select",
+    "path": "albums/game-boy/wario-land/file-select.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/game-boy/wario-land/game-over.mid"
+   },
+   {
+    "title": "Huntering with Bomb",
+    "path": "albums/game-boy/wario-land/huntering-with-bomb.mid"
+   },
+   {
+    "title": "Intro",
+    "path": "albums/game-boy/wario-land/intro.mid"
+   },
+   {
+    "title": "Invincible Wario",
+    "path": "albums/game-boy/wario-land/invincible-wario.mid"
+   },
+   {
+    "title": "Kitchen Island",
+    "path": "albums/game-boy/wario-land/kitchen-island.mid"
+   },
+   {
+    "title": "Last Fight",
+    "path": "albums/game-boy/wario-land/last-fight.mid"
+   },
+   {
+    "title": "Last Stage",
+    "path": "albums/game-boy/wario-land/last-stage.mid"
+   },
+   {
+    "title": "Level Selected",
+    "path": "albums/game-boy/wario-land/level-selected.mid"
+   },
+   {
+    "title": "Lose a Life",
+    "path": "albums/game-boy/wario-land/lose-a-life.mid"
+   },
+   {
+    "title": "Mt. Teapot",
+    "path": "albums/game-boy/wario-land/mt-teapot.mid"
+   },
+   {
+    "title": "Mystery Theme",
+    "path": "albums/game-boy/wario-land/mystery-theme.mid"
+   },
+   {
+    "title": "Parsley Woods",
+    "path": "albums/game-boy/wario-land/parsley-woods.mid"
+   },
+   {
+    "title": "Princess Toadstool's Statue Found",
+    "path": "albums/game-boy/wario-land/princess-toadstool-s-statue-found.mid"
+   },
+   {
+    "title": "Rice Beach",
+    "path": "albums/game-boy/wario-land/rice-beach.mid"
+   },
+   {
+    "title": "Secret Room Found",
+    "path": "albums/game-boy/wario-land/secret-room-found.mid"
+   },
+   {
+    "title": "Sherbet Land",
+    "path": "albums/game-boy/wario-land/sherbet-land.mid"
+   },
+   {
+    "title": "SS Tea Cup",
+    "path": "albums/game-boy/wario-land/ss-tea-cup.mid"
+   },
+   {
+    "title": "Stage Clear",
+    "path": "albums/game-boy/wario-land/stage-clear.mid"
+   },
+   {
+    "title": "Stage Theme I",
+    "path": "albums/game-boy/wario-land/stage-theme-i.mid"
+   },
+   {
+    "title": "Stage Theme II",
+    "path": "albums/game-boy/wario-land/stage-theme-ii.mid"
+   },
+   {
+    "title": "Stage Theme III",
+    "path": "albums/game-boy/wario-land/stage-theme-iii.mid"
+   },
+   {
+    "title": "Stage Theme IV",
+    "path": "albums/game-boy/wario-land/stage-theme-iv.mid"
+   },
+   {
+    "title": "Stage Theme IX",
+    "path": "albums/game-boy/wario-land/stage-theme-ix.mid"
+   },
+   {
+    "title": "Stage Theme V",
+    "path": "albums/game-boy/wario-land/stage-theme-v.mid"
+   },
+   {
+    "title": "Stage Theme VI",
+    "path": "albums/game-boy/wario-land/stage-theme-vi.mid"
+   },
+   {
+    "title": "Stage Theme VII",
+    "path": "albums/game-boy/wario-land/stage-theme-vii.mid"
+   },
+   {
+    "title": "Stage Theme VIII",
+    "path": "albums/game-boy/wario-land/stage-theme-viii.mid"
+   },
+   {
+    "title": "Stage Theme X",
+    "path": "albums/game-boy/wario-land/stage-theme-x.mid"
+   },
+   {
+    "title": "Stage Theme XI",
+    "path": "albums/game-boy/wario-land/stage-theme-xi.mid"
+   },
+   {
+    "title": "Stove Canyon",
+    "path": "albums/game-boy/wario-land/stove-canyon.mid"
+   },
+   {
+    "title": "Summoning the Genie",
+    "path": "albums/game-boy/wario-land/summoning-the-genie.mid"
+   },
+   {
+    "title": "Switch Activated",
+    "path": "albums/game-boy/wario-land/switch-activated.mid"
+   },
+   {
+    "title": "Syrup Castle",
+    "path": "albums/game-boy/wario-land/syrup-castle.mid"
+   },
+   {
+    "title": "That's Not What I Call a Castle!",
+    "path": "albums/game-boy/wario-land/that-s-not-what-i-call-a-castle.mid"
+   },
+   {
+    "title": "Title",
+    "path": "albums/game-boy/wario-land/title.mid"
+   },
+   {
+    "title": "Treasure Found",
+    "path": "albums/game-boy/wario-land/treasure-found.mid"
+   },
+   {
+    "title": "Unknown Jingle",
+    "path": "albums/game-boy/wario-land/unknown-jingle.mid"
+   },
+   {
+    "title": "Unknown Song 1",
+    "path": "albums/game-boy/wario-land/unknown-song-1.mid"
+   },
+   {
+    "title": "Unknown Song 2",
+    "path": "albums/game-boy/wario-land/unknown-song-2.mid"
+   },
+   {
+    "title": "World Cleared",
+    "path": "albums/game-boy/wario-land/world-cleared.mid"
+   }
+  ]
  }
 ]

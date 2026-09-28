@@ -1,0 +1,219 @@
+{
+ "title": "Wario Land: Super Mario Land 3",
+ "order": 50,
+ "songs": {
+  "huntering-with-bomb": "Huntering with Bomb",
+  "lose-a-life": "Lose a Life",
+  "mt-teapot": "Mt. Teapot",
+  "princess-toadstool-s-statue-found": "Princess Toadstool's Statue Found",
+  "ss-tea-cup": "SS Tea Cup",
+  "stage-theme-ii": "Stage Theme II",
+  "stage-theme-iii": "Stage Theme III",
+  "stage-theme-iv": "Stage Theme IV",
+  "stage-theme-ix": "Stage Theme IX",
+  "stage-theme-vi": "Stage Theme VI",
+  "stage-theme-vii": "Stage Theme VII",
+  "stage-theme-viii": "Stage Theme VIII",
+  "stage-theme-xi": "Stage Theme XI",
+  "summoning-the-genie": "Summoning the Genie",
+  "that-s-not-what-i-call-a-castle": "That's Not What I Call a Castle!"
+ },
+ "nsf": {
+  "vault": "wario-land.gbs",
+  "tracks": {
+   "bonus-menu": {
+    "n": 12,
+    "secs": 15.00146484375
+   },
+   "bonus-results": {
+    "n": 5,
+    "secs": 4.8218994140625
+   },
+   "bonus-select": {
+    "n": 42,
+    "secs": 11.97103500366211
+   },
+   "boss-almost-defeated": {
+    "n": 7,
+    "secs": 5.357666015625
+   },
+   "boss-battle": {
+    "n": 17,
+    "secs": 26.62090301513672
+   },
+   "boss-defeated": {
+    "n": 18,
+    "secs": 13.963417053222656
+   },
+   "end-credits": {
+    "n": 41,
+    "secs": 299.9623260498047
+   },
+   "file-select": {
+    "n": 38,
+    "secs": 6.42919921875
+   },
+   "game-over": {
+    "n": 36,
+    "secs": 11.97103500366211
+   },
+   "huntering-with-bomb": {
+    "n": 24,
+    "secs": 12.8583984375
+   },
+   "intro": {
+    "n": 32,
+    "secs": 299.15867614746094
+   },
+   "invincible-wario": {
+    "n": 6,
+    "secs": 33.970951080322266
+   },
+   "kitchen-island": {
+    "n": 2,
+    "secs": 34.2890625
+   },
+   "last-fight": {
+    "n": 40,
+    "secs": 39.613243103027344
+   },
+   "last-stage": {
+    "n": 30,
+    "secs": 51.43359375
+   },
+   "level-selected": {
+    "n": 43,
+    "secs": 11.97103500366211
+   },
+   "lose-a-life": {
+    "n": 8,
+    "secs": 11.97103500366211
+   },
+   "mt-teapot": {
+    "n": 19,
+    "secs": 19.8233642578125
+   },
+   "mystery-theme": {
+    "n": 45,
+    "secs": 2.14306640625
+   },
+   "parsley-woods": {
+    "n": 31,
+    "secs": 19.28759765625
+   },
+   "princess-toadstool-s-statue-found": {
+    "n": 47,
+    "secs": 19.73965072631836
+   },
+   "rice-beach": {
+    "n": 21,
+    "secs": 8.30438232421875
+   },
+   "secret-room-found": {
+    "n": 15,
+    "secs": 11.669666290283203
+   },
+   "sherbet-land": {
+    "n": 20,
+    "secs": 51.43359375
+   },
+   "ss-tea-cup": {
+    "n": 35,
+    "secs": 30.120128631591797
+   },
+   "stage-clear": {
+    "n": 13,
+    "secs": 11.97103500366211
+   },
+   "stage-theme-i": {
+    "n": 4,
+    "secs": 97.2751235961914
+   },
+   "stage-theme-ii": {
+    "n": 10,
+    "secs": 51.567535400390625
+   },
+   "stage-theme-iii": {
+    "n": 3,
+    "secs": 45.138336181640625
+   },
+   "stage-theme-iv": {
+    "n": 14,
+    "secs": 68.20978546142578
+   },
+   "stage-theme-ix": {
+    "n": 34,
+    "secs": 33.7532958984375
+   },
+   "stage-theme-v": {
+    "n": 39,
+    "secs": 30.136871337890625
+   },
+   "stage-theme-vi": {
+    "n": 27,
+    "secs": 8.84014892578125
+   },
+   "stage-theme-vii": {
+    "n": 22,
+    "secs": 28.964881896972656
+   },
+   "stage-theme-viii": {
+    "n": 9,
+    "secs": 26.235820770263672
+   },
+   "stage-theme-x": {
+    "n": 11,
+    "secs": 25.716796875
+   },
+   "stage-theme-xi": {
+    "n": 23,
+    "secs": 75.00732421875
+   },
+   "stove-canyon": {
+    "n": 33,
+    "secs": 47.06374740600586
+   },
+   "summoning-the-genie": {
+    "n": 25,
+    "secs": 26.97249984741211
+   },
+   "switch-activated": {
+    "n": 44,
+    "secs": 2.41094970703125
+   },
+   "syrup-castle": {
+    "n": 29,
+    "secs": 15.118663787841797
+   },
+   "that-s-not-what-i-call-a-castle": {
+    "n": 46,
+    "secs": 11.97103500366211
+   },
+   "title": {
+    "n": 1,
+    "secs": 7.500732421875
+   },
+   "treasure-found": {
+    "n": 28,
+    "secs": 11.97103500366211
+   },
+   "unknown-jingle": {
+    "n": 37,
+    "secs": 11.97103500366211
+   },
+   "unknown-song-1": {
+    "n": 16,
+    "secs": 58.01347732543945
+   },
+   "unknown-song-2": {
+    "n": 48,
+    "secs": 3.214599609375
+   },
+   "world-cleared": {
+    "n": 26,
+    "secs": 11.97103500366211
+   }
+  },
+  "chip": "gbs"
+ }
+}
