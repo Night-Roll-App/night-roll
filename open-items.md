@@ -729,6 +729,17 @@ per-note gain breakpoints, followed sample by sample (NIGHT-ROLL.md
 went from 4 / 29 / 15 / 29 to a steady 36 (swell up, swell down).
 Re-render happens on open; no re-import needed (the render reads the
 stored files).
+PS1 — Cry of the Planet (Josh: "just missing a bunch of notes … the
+repeating motif melody … the most important part"): the motif is one
+held D slid through +7 +5 −4 −3 +2 −7 every eighth (293 slides on each
+of three voices); pitch bends were counted and never applied, anywhere.
+Fixed for PS1: slides ride the note, the MIDI/.notes.txt split it into
+one note per landed pitch, the render bends the voice (NIGHT-ROLL.md
+"PlayStation chip audio" → Pitch slides inside a note). The roll needs
+a RE-IMPORT (the split happens at capture); the render bends on open
+either way. STILL IGNORED: N64 pitch bends (the capture warns "channel
+pitch bend"); Genesis/SNES/GB paths capture the chip's actual pitch, so
+they are not affected.
 
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 

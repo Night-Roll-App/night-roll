@@ -89,6 +89,25 @@ const fmt = x => +x.toFixed(3);
 
 // result.source (set by akao.mjs) names the format and its pitch caveat;
 // absent, the result is a SEQ
+// A note with pitch slides becomes one note per landed pitch: the slide's
+// start is the split (a 3-tick slide is a step; a long glide shows its
+// target from the moment it begins — the roll has no bend). Pitch and key
+// move together; cents stay.
+export function splitSlides(notes) {
+  const out = [];
+  for (const n of notes) {
+    if (!n.slide || !n.slide.length) { out.push(n); continue; }
+    let at = n.tick, off = 0;
+    for (const sl of n.slide) {
+      const t = n.tick + sl.t;
+      if (t > at) out.push({...n, tick: at, endTick: t, pitch: n.pitch + off, key: n.key + off, slide: undefined, slid: true});
+      at = t; off = sl.to;
+    }
+    if (n.endTick > at) out.push({...n, tick: at, endTick: n.endTick, pitch: n.pitch + off, key: n.key + off, slide: undefined, slid: true});
+  }
+  return out;
+}
+
 export function toNotesTxt(result, {title = "seq"} = {}) {
   const {notes, seq, vab, bends, source} = result;
   const {num, den} = seq.timeSigs[0];
@@ -116,13 +135,13 @@ export function toNotesTxt(result, {title = "seq"} = {}) {
     : "# Pitch is the SEQ key as written (no bank given: tone center notes unknown).");
   L.push("# Channel identity is file fact. Pitches use sharp spelling; no key is stated.");
   const byCh = new Map();
-  for (const n of notes) (byCh.get(n.ch) || byCh.set(n.ch, []).get(n.ch)).push(n);
+  for (const n of splitSlides(notes)) (byCh.get(n.ch) || byCh.set(n.ch, []).get(n.ch)).push(n);
   for (const [ch, evs] of [...byCh].sort((a, b) => a[0] - b[0])) {
     L.push("");
     const progs = [...new Set(evs.map(n => n.program))];
     const voice = evs[0].voice !== undefined && evs[0].voice !== ch ? ` (voice ${evs[0].voice})` : "";
     L.push(`## channel ${ch + 1}${voice} program ${progs.join(",")}${evs.some(n => n.drum) ? " (kit)" : ""}`);
-    if (bends[ch]) L.push(`# ${bends[ch]} pitch-bend events on this channel, not applied`);
+    if (bends[ch]) L.push(evs.some(n => n.slid) ? `# ${bends[ch]} pitch slides on this channel: each landed pitch is written as its own note` : `# ${bends[ch]} pitch-bend events on this channel, none inside a note`);
     if (vab) for (const p of progs) {
       const sample = evs.find(n => n.program === p && n.tone);
       if (!sample) { L.push(`# program ${p}: no tone answers these keys`); continue; }
@@ -261,7 +280,7 @@ export function makeMidi(result) {
   // what it is
   const emit = (name, evs, ch) => {
     const out = [];
-    for (const n of evs) {
+    for (const n of splitSlides(evs)) {
       const p = n.drum ? (n.gm || n.key) : n.pitch;
       if (p < 0 || p > 127) continue;
       const t = T(n.tick);

@@ -9,8 +9,9 @@
 // table's loop address), the pitch (base pitch per degree × 2^octave, the
 // key's octave 6 = the table's), the ADSR as psx-spx states it, the per-note
 // volume from the score, including a volume/expression change inside a
-// held note (the note's gain breakpoints). What is not: pan and reverb
-// (mono, dry), the SPU's 4-tap interpolation (linear here).
+// held note (the note's gain breakpoints), pitch slides inside a note (the
+// note's slide targets). What is not: pan and reverb (mono, dry), the SPU's
+// 4-tap interpolation (linear here).
 // Josh, 2026-09-27, FF7 Opening ~ Bombing Mission: "they just don't sound
 // like the same instrument … hopefully the information should be there."
 import { decodeAdpcm } from "./vab.mjs";
@@ -143,6 +144,16 @@ export async function renderSpu(result, opts = {}) {
           ramp = n.gain.map(g => ({i: Math.floor(secondsAt(seq, n.tick + g.t) * sampleRate), l: g.l * toneVol}));
           vol = ramp[0].l;
         }
+        // pitch slides (n.slide: semitone targets at tick offsets, each reached
+        // over len ticks) bend the ONE voice — no new attack, as the driver does
+        let slide = null, si = 0, step = ratio;
+        if (n.slide && n.slide.length) {
+          slide = [{i: i0, s: 0}];
+          for (const sl of n.slide) {
+            const a = Math.floor(secondsAt(seq, n.tick + sl.t) * sampleRate), z = Math.floor(secondsAt(seq, n.tick + sl.t + Math.max(1, sl.len)) * sampleRate);
+            slide.push({i: a, s: slide[slide.length - 1].s}); slide.push({i: Math.max(z, a + 1), s: sl.to});
+          }
+        }
         const env = new Envelope(rec);
         let pos = 0;
         const pcm = smp.pcm, L = pcm.length;
@@ -156,9 +167,15 @@ export async function renderSpu(result, opts = {}) {
             const g = ramp[ri], nx = ramp[ri + 1];
             vol = nx && nx.i > g.i && i < nx.i ? g.l + (nx.l - g.l) * (i - g.i) / (nx.i - g.i) : g.l;
           }
+          if (slide) {
+            while (si + 1 < slide.length && i >= slide[si + 1].i) si++;
+            const g = slide[si], nx = slide[si + 1];
+            const semis = nx && nx.i > g.i && i < nx.i ? g.s + (nx.s - g.s) * (i - g.i) / (nx.i - g.i) : g.s;
+            step = ratio * Math.pow(2, semis / 12);
+          }
           const p0 = Math.floor(pos), f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : (smp.oneShot ? a : pcm[smp.loopStart != null ? smp.loopStart : 0]);
           buf[i] += (a + (b - a) * f) / 32768 * (lv / 0x7FFF) * vol * 0.5;
-          pos += ratio;
+          pos += step;
         }
       }
       done++;

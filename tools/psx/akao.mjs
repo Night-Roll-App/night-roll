@@ -259,6 +259,25 @@ function runTrack(akao, ti, {tempoDiv, condition, maxEvents}) {
 export function akaoNotes(akao, {tempoDiv = TIMER_DIV_FF7, condition = 0, maxEvents = 200000, instr = null} = {}) { // instr: {ram, offset} of INSTR.DAT (tools/psx/instr.mjs), for envelopes
   const runs = akao.tracks.map((_, i) => runTrack(akao, i, {tempoDiv, condition, maxEvents}));
   const warnings = runs.flatMap(r => r.warnings);
+  // pitch slides (0xA4: by N semitones over L ticks) move the SOUNDING voice —
+  // a whole melody can ride one held note (Cry of the Planet: a D held 37
+  // bars, slid +7 +5 −4 −3 +2 −7 every eighth; Josh, 2026-09-27: "the most
+  // important part of this song" was missing). Each note carries the slides
+  // that fall inside it, relative to its start and to its own pitch (a
+  // key-on sets the pitch fresh, so the offset restarts at 0 per note); the
+  // MIDI writer splits them into notes, the renderer bends the voice.
+  // Attached BEFORE the loop unroll so every copy keeps them.
+  for (const r of runs) {
+    if (!r.bends.length) continue;
+    const bends = r.bends.slice().sort((a, b) => a.tick - b.tick);
+    for (const n of r.notes) {
+      if (n.drum) continue;
+      const inside = bends.filter(b => b.tick >= n.tick && b.tick < n.endTick);
+      if (!inside.length) continue;
+      let cum = 0;
+      n.slide = inside.map(b => { cum += b.semitones; return {t: b.tick - n.tick, len: b.len, to: cum}; }); // to: semitones from the note's pitch once the slide lands
+    }
+  }
   // tempo: any track may state it; the driver has one clock
   const tempoEvents = runs.flatMap(r => r.tempos).sort((a, b) => a.tick - b.tick);
   const tempoMap = [];
@@ -330,7 +349,8 @@ export function akaoNotes(akao, {tempoDiv = TIMER_DIV_FF7, condition = 0, maxEve
   for (const n of notes) if (!programInfo.has(n.program)) programInfo.set(n.program, {program: n.program, drum: n.drum});
   const bends = new Array(akao.tracks.length).fill(0);
   runs.forEach((r, i) => { bends[i] = r.bends.length; });
-  return {notes, channels, programs: [...programInfo.values()], bends, seq, vab: null, instr,
+  const bendEvents = runs.map(r => r.bends); // per track: {tick, len, semitones} — the renderer bends the sounding note
+  return {notes, channels, programs: [...programInfo.values()], bends, bendEvents, seq, vab: null, instr,
     source: {kind: "akao", label: "PS1 AKAO", pitchNote: "Pitch is the AKAO key as written (octave × 12 + degree + transpose; FF7 articulations are tuned so this is the sounding note for melodic instruments). Kits keep their key numbers. Notes are shown at written length; the driver keys off 2 ticks early unless legato."},
     tracks: runs.map((r, i) => ({ch: i, voice: r.voice, notes: r.notes.length, endTick: r.endTick, loop: r.loop}))};
 }

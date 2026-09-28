@@ -1426,6 +1426,21 @@ unrolled copy keeps the shape); `renderSpu` follows it sample by sample,
 note-on level: bar 1 near silent, bar 2 loud (Josh: "way louder … every
 other bar"). Test: "renderSpu: a volume change inside a held note …".
 
+**Pitch slides inside a note (same day, later).** 0xA4 slides the
+sounding voice by N semitones over L ticks; a whole melody can ride one
+held note (Cry of the Planet: a D held 37 bars, slid +7 +5 −4 −3 +2 −7
+every eighth — the motif Josh found missing). `akaoNotes` hangs the
+slides that fall inside a note on it (`n.slide`: tick offset, len, the
+cumulative semitone target; the offset restarts at each key-on, an
+assumption), before the loop unroll. `splitSlides` (tools/psx/notes.mjs)
+turns such a note into one note per landed pitch for the MIDI and the
+.notes.txt — the split is at the slide's start, so a long glide shows
+its target from the moment it begins; the roll has no bend. `renderSpu`
+bends the one voice per sample, no new attack. Bends are still counted
+in `bends`; a channel whose bends fall inside no note says so. The N64
+path still ignores its bends (capture warning "pitch bend"). Tests:
+"pitch slides: …" in tests/psx-render.test.mjs.
+
 ## PlayStation captures: envelopes from the instrument table (2026-09-27)
 
 Josh: "why isn't it looking at the instrument table?" Now it does.
