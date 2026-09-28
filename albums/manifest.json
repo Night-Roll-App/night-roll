@@ -2487,6 +2487,63 @@
   ]
  },
  {
+  "title": "Shatterhand",
+  "songs": [
+   {
+    "title": "Area A (01)",
+    "path": "albums/nes/shatterhand/area-a-01.mid"
+   },
+   {
+    "title": "Area B (03)",
+    "path": "albums/nes/shatterhand/area-b-03.mid"
+   },
+   {
+    "title": "Area C (05)",
+    "path": "albums/nes/shatterhand/area-c-05.mid"
+   },
+   {
+    "title": "Area Cleared (08)",
+    "path": "albums/nes/shatterhand/area-cleared-08.mid"
+   },
+   {
+    "title": "Area D (02)",
+    "path": "albums/nes/shatterhand/area-d-02.mid"
+   },
+   {
+    "title": "Areas E & F (06)",
+    "path": "albums/nes/shatterhand/areas-e-f-06.mid"
+   },
+   {
+    "title": "Boss Theme (07)",
+    "path": "albums/nes/shatterhand/boss-theme-07.mid"
+   },
+   {
+    "title": "Ending, Credits (0E)",
+    "path": "albums/nes/shatterhand/ending-credits-0e.mid"
+   },
+   {
+    "title": "Final Area (04)",
+    "path": "albums/nes/shatterhand/final-area-04.mid"
+   },
+   {
+    "title": "Game Over (09)",
+    "path": "albums/nes/shatterhand/game-over-09.mid"
+   },
+   {
+    "title": "Highscore (0D)",
+    "path": "albums/nes/shatterhand/highscore-0d.mid"
+   },
+   {
+    "title": "Introduction (0A)",
+    "path": "albums/nes/shatterhand/introduction-0a.mid"
+   },
+   {
+    "title": "Stage Select (0C)",
+    "path": "albums/nes/shatterhand/stage-select-0c.mid"
+   }
+  ]
+ },
+ {
   "title": "Super Mario 64",
   "songs": [
    {

@@ -1,0 +1,76 @@
+{
+ "title": "Shatterhand",
+ "order": 50,
+ "songs": {
+  "area-a-01": "Area A (01)",
+  "area-b-03": "Area B (03)",
+  "area-c-05": "Area C (05)",
+  "area-cleared-08": "Area Cleared (08)",
+  "area-d-02": "Area D (02)",
+  "areas-e-f-06": "Areas E & F (06)",
+  "boss-theme-07": "Boss Theme (07)",
+  "ending-credits-0e": "Ending, Credits (0E)",
+  "final-area-04": "Final Area (04)",
+  "game-over-09": "Game Over (09)",
+  "highscore-0d": "Highscore (0D)",
+  "introduction-0a": "Introduction (0A)",
+  "stage-select-0c": "Stage Select (0C)"
+ },
+ "nsf": {
+  "vault": "shatterhand.nsf",
+  "tracks": {
+   "area-a-01": {
+    "n": 1,
+    "secs": 71.597136
+   },
+   "area-b-03": {
+    "n": 3,
+    "secs": 39.198432000000004
+   },
+   "area-c-05": {
+    "n": 5,
+    "secs": 63.464128
+   },
+   "area-cleared-08": {
+    "n": 8,
+    "secs": 20.965828000000002
+   },
+   "area-d-02": {
+    "n": 2,
+    "secs": 61.597536
+   },
+   "areas-e-f-06": {
+    "n": 6,
+    "secs": 48.181406
+   },
+   "boss-theme-07": {
+    "n": 7,
+    "secs": 27.198912
+   },
+   "ending-credits-0e": {
+    "n": 13,
+    "secs": 91.729664
+   },
+   "final-area-04": {
+    "n": 4,
+    "secs": 59.9976
+   },
+   "game-over-09": {
+    "n": 9,
+    "secs": 41.964988
+   },
+   "highscore-0d": {
+    "n": 12,
+    "secs": 8.532992
+   },
+   "introduction-0a": {
+    "n": 10,
+    "secs": 54.964468000000004
+   },
+   "stage-select-0c": {
+    "n": 11,
+    "secs": 16.649334
+   }
+  }
+ }
+}
