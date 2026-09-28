@@ -363,7 +363,8 @@ function sm64Song(dir, mini) {
   const id = miniSequenceId(set, game.seqId), seq = loc.sequences[id];
   const bytes = set.rom.read(seq.rom, seq.size), present = new Uint8Array(seq.size);
   for (let i = 0; i < seq.size; i++) present[i] = set.rom.coverage(seq.rom + i, 1) ? 1 : 0;
-  const res = parseSequence(bytes, {abi: game.abi, present, maxSeconds: 600, stopAtLoop: true});
+  const res = parseSequence(bytes, {abi: game.abi, present, maxSeconds: 600, stopAtLoop: true}); // variation 0: the game's, for these plain ids
+  res.sequenceId = id; res.variation = 0;
   return {set, loc, seq, res, id};
 }
 const SM64 = sm64Dir();
@@ -536,7 +537,8 @@ test("SM64 Cave Dungeon (real ROM): the intro instrument's recording sounds C3 a
 test("SM64 Dire, Dire Docks (real ROM): notes end by their own envelope (298 updates), no sustain op; the reverb (D4 0x32, water preset) is what carries the tail", {skip: !SM64}, async () => {
   const DDD = "09a Dire, Dire Docks.miniusf";
   const {set, loc, seq, res} = sm64Song(SM64, DDD);
-  assert.deepEqual([seq.id, seq.banks, res.stubbed], [5, [19], []]);
+  assert.deepEqual([seq.id, seq.banks, res.stubbed, res.variation], [5, [19], ["channel sound-shaping 0xdc"], 0]);
+  assert.equal(res.channels.length, 8, "the plain id (seqVariation 0) plays the full arrangement, not the harp + melody pair the old −1 default gave");
   const bank = readBank(set.rom, findAudioFiles(set.rom, loc), 19);
   assert.deepEqual(bank.instrument(15).envelope, [[3, 32700], [298, 0], [1, 0], [-1, 0]]);
   assert.equal(bank.instrument(15).releaseRate, 10);
@@ -554,4 +556,15 @@ test("SM64 Dire, Dire Docks (real ROM): notes end by their own envelope (298 upd
   const tailDry = db(rms(dry["ch 15 inst 15"], t0 + 1.55, t0 + 1.75)), tailWet = db(rms(wet["ch 15 inst 15"], t0 + 1.55, t0 + 1.75));
   assert.ok(tailDry < -60, "dry: silent once the envelope has run out: " + tailDry.toFixed(0) + " dB");
   assert.ok(tailWet > -55 && tailWet < -20, "wet: the 112 ms / ×0.5 comb still rings: " + tailWet.toFixed(0) + " dB");
+});
+
+test("SM64 Title Theme (real ROM): the plain id skips the ritardando intro and its extra channels, as the game does; the SEQ_VARIATION id plays it", {skip: !SM64}, () => {
+  const {set, seq, res} = sm64Song(SM64, TITLE);
+  const bytes = set.rom.read(seq.rom, seq.size);
+  assert.deepEqual([...bytes.subarray(0x30, 0x36)], [0xFD, 0x01, 0x80, 0xF5, 0x00, 0x76], "delay 1; getvariation; bgez 0x76");
+  const plain = sequenceOfSet(set).res;
+  assert.deepEqual([plain.variation, plain.notes.length, plain.tempos.map(t => t.bpm), plain.loop.tick, plain.channels.length], [0, 3910, [172], 385, 9]);
+  const varied = parseSequence(bytes, {abi: "sm64", variation: 0x80, maxSeconds: 600});
+  assert.deepEqual([varied.notes.length, varied.tempos.map(t => t.bpm), varied.loop.tick, varied.channels.length], [4008, [172, 99, 90, 78, 119, 172], 769, 13]);
+  assert.equal(res.notes.length, 3910, "sm64Song follows the game's default");
 });

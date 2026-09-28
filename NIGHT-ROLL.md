@@ -625,6 +625,23 @@ tests/n64-real.test.mjs with N64_USF_DIR (bank facts, every sample
 decodes, 10 s renders named like the MIDI, the pitch check);
 scratch/n64-render.mjs writes WAVs, scratch/usf-app-render.mjs runs the
 app's own chip path in the vm.
+The sequence variation (same night, against a real USF player —
+`scratch/usf2wav`, lazyusf2, recipe in scratch/lazyusf2/build-mac.sh;
+INTEGRATION.md §9.7): a sequence can branch on the player's
+`seqVariation` (bit 7 of the id the game asks for); the parser
+defaulted it to −1, so Title Theme played its ritardando-intro table
+and Dire, Dire Docks captured only the two "surface" channels (390
+notes) instead of the eight written (1963) — the missing six are the
+sustained pads Josh heard on YouTube and not in the app. `parseSequence`
+now takes `variation` (default 0, the plain id); `sequenceOfSet` passes
+the mini's bit 7 and indexes the table by `id & 0x7F`. Policy: a
+capture carries EVERY channel the sequence writes — the game's
+per-area ducking (Dire Dire Docks' a/b/c minis mute channel sets by
+where Mario is) is game state, not composition, so the three minis now
+capture the same full arrangement. Also settled there: the note
+envelope and the clock match the decomp (the emulator itself runs ~5%
+slow when pulled as fast as its audio drains); the early-decay reading
+was other voices in the band.
 
 **Chip render in a Worker (2026-09-27, afternoon).** The console render
 ran on the page's thread in 35 ms slices: the first Play after opening a

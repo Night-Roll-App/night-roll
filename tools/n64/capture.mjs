@@ -9,7 +9,10 @@ export function sequenceOfSet(set, {maxSeconds = 600} = {}) {
   const game = gameOfSet(set);
   const loc = locateEAD(set);
   if (!loc.gen) throw new Error("no Nintendo sequence tables in this rip — a driver Night Roll cannot read yet");
-  const id = miniSequenceId(set, game ? game.seqId : undefined);
+  const raw = miniSequenceId(set, game ? game.seqId : undefined);
+  // bit 7 of a play_sequence id is SEQ_VARIATION: the same script, steered (SM64's title
+  // theme plays its intro only with it); the table is indexed by the low 7 bits
+  const id = raw == null ? null : raw & 0x7F, variation = raw == null ? 0 : raw & 0x80;
   const seq = id == null ? null : loc.sequences[id];
   if (!seq) throw new Error("this song's sequence (id " + id + ") is not in the game's table");
   const {ram} = rdramOf(set.state);
@@ -23,7 +26,7 @@ export function sequenceOfSet(set, {maxSeconds = 600} = {}) {
   const seqBytes = img.read(at, seq.size);
   const present = new Uint8Array(seq.size);
   for (let i = 0; i < seq.size; i++) present[i] = img.coverage(at + i, 1) ? 1 : 0;
-  const res = parseSequence(seqBytes, {abi: game ? game.abi : loc.abi, present, io: null, maxSeconds, stopAtLoop: true});
-  res.sequenceId = id; // the renderer picks the level's reverb preset by it
+  const res = parseSequence(seqBytes, {abi: game ? game.abi : loc.abi, present, io: null, variation, maxSeconds, stopAtLoop: true});
+  res.sequenceId = id; res.variation = variation; // the renderer picks the level's reverb preset by it
   return {game, loc, id, seq, res, present};
 }

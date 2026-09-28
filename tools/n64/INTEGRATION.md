@@ -210,7 +210,7 @@ from the same folder). All numbers are one pass to the loop jump.
 
 | Track | seq | notes | channels | tempo | length | loop → tick |
 |---|---|---|---|---|---|---|
-| SM64 Title Theme | 2 | 4008 | 13 | 172→99→90→78→119→172 | 110 s | 769 |
+| SM64 Title Theme | 2 | 3910 (was 4008: §9.7) | 9 | 172 | 103 s | 385 |
 | SM64 Main Theme (Bob-omb Battlefield) | 3 | 1419 | 7 | 113 | 72 s | 384 |
 | SM64 Staff Roll | 0x1A | 6011 | 15 | 106…53 ritardando | 201 s | none |
 | OoT Lost Woods (Saria) | 0x3E | 556 | 5 | 140 | 33 s | 192 |
@@ -562,3 +562,78 @@ candidates are a different mix (the OST, a re-recording, an HLE audio
 plugin whose env mixer ignores the level), or something on the playback
 side of the app (does the chip-audio path clip a track's PCM to the MIDI
 note ends for mute/solo?). Not this renderer's envelope.
+
+### 9.7 Against ground truth (lazyusf2 renders, 2026-09-27)
+
+`scratch/truth/*.wav` (lazyusf2, 32006 Hz) versus our renders, the three
+questions asked, and what each turned out to be.
+
+**1. "Our notes decay early."** Not the envelope. The single-note band
+plots that suggested it were reading other voices' harmonics (DDD's G4
+"plateau" at 392 Hz is the ch 15 harp's G3 second harmonic, onset 2.44 s)
+and the recording's own content at that pitch (the A3 note's 220 Hz
+partial has a notch 0.37 s into the recording — the envelope-free
+resample shows the same fall). The whole-signal test — mix RMS per 50 ms
+after every note onset, dB re the onset peak, averaged over all notes, on
+the same clock mapping — puts truth and ours within about 1 dB out to
+0.8 s on Dire Docks ch 14 (−2.1/−2.1, −2.8/−2.5, −6.1/−5.4, −8.4/−8.0,
+−11.1/−10.1, −6.7/−6.8, −8.6/−9.1, −9.0/−8.1, −11.0/−10.5), ch 15 within
+2 dB, the Main Theme within 1.5 dB, Cave Dungeon ch 0 within 2 dB
+(`scratch/n64-avgdecay.mjs`). The Adsr trace (`scratch/n64-voice.mjs`)
+shows the level at +0.30 s = 25347 → level² = −4.5 dB, which is what the
+JP/US arithmetic predicts. Nothing changed in render.mjs.
+
+**2. "The truth runs 4.7 % slow."** Not the game's clock. JP/US pacing,
+verbatim: `seqPlayer->tempo = temp * TEMPO_SCALE` (TEMPO_SCALE =
+TATUMS_PER_BEAT = 48, internal.h); per update `seqPlayer->tempoAcc +=
+seqPlayer->tempo; if (seqPlayer->tempoAcc < gTempoInternalToExternal)
+return; seqPlayer->tempoAcc -= (u16) gTempoInternalToExternal;` then one
+tick (seqplayer.c); `gTempoInternalToExternal = (u32)(updatesPerFrame *
+2880000.0f / gTatumsPerBeat / 16.713f);` = 14360 (heap.c, "In practice
+this is 300 on JP and 14360 on US"). Ticks per second at 240 updates/s and
+bpm B = 240 · 48 B / 14360 = 0.80223 B, against the nominal 48 B / 60 =
+0.8 B: the console runs **0.28 % fast** if the audio frame is 60.00 Hz
+(0.18 % at 59.94, exactly nominal at the 59.83 Hz that Nintendo's own
+16.713 ms implies). Nothing near 1.047, so `tickSeconds` and the MIDI
+tempo stay nominal (a 0.3 % question the frame rate decides, not the
+decomp). The 1.047 is the emulator's pacing: `create_next_audio_frame_task`
+sizes each audio frame between 528 and 560 samples from the AI backlog;
+pulled as fast as the AI drains, every frame is the 560 maximum, i.e.
+32006/560 = 57.15 audio frames/s instead of 60 — 1.050, tempo AND
+envelopes alike. The rip's `length=3:13` for Dire Docks (193 s) is two
+loops of 90.4 × 1.047 = 94.7 s plus a fade: the ripper timed it on that
+clock. Ours: 90.4 s per loop, ×1.0028 on the console.
+
+**3. Title Theme ch 3/4 silent in the truth at 5.6–9 s.** A parser bug,
+and a bigger one than it looked. The sequence header has `fd 01 | 80 |
+f5 00 76` at 0x30: delay 1, `seq_getvariation` (`value =
+seqPlayer->seqVariation`), `bgez 0x76`. `play_sequence` sets
+`gSequencePlayers[player].seqVariation = seqId & SEQ_VARIATION`
+(external.c) — 0 for a plain id, the s8 −128 for a `| 0x80` id — and the
+parser's register defaulted to −1, so every such branch went the
+variation way. With the game's 0 the Title Theme jumps to its third
+channel table: no ritardando intro (tempos 172→99→90→78→119→172 were the
+intro), loop at tick 385 not 769, 3910 notes on 9 channels not 4008 on
+13, ch 3/4's 0x17F/0x1FB scripts (the pitch-bend sweeps in the truth's
+silent window) never run. **Dire, Dire Docks (seq 5) branches on it
+too**: the plain id is the full 8-channel arrangement (1963 notes); the
+`| SEQ_VARIATION` id — `sa` (the Secret Aquarium) in the level scripts —
+is the harp + melody pair (390 notes) that the old default produced. The
+truth's 09a is sparser than our 8 channels for a third reason that is
+the game's, not the sequence's: `process_level_music_dynamics`
+(external.c) fades channel volume scales per area — `sMusicDynamics` for
+SEQ_LEVEL_WATER: dynamic 0 sets `volScale 0` on channels 0,1,6,9,10,11
+(mask 0x0E43; surface: harp + melody only), dynamic 1 on 6,9,10,11 (mask
+0x0E40; "in water"), dynamic 2 none ("underwater cave") — which is what
+the set's 09a/09b/09c minis are. The emulator runs that code with the
+ripper's state; we render the sequence as written (all channels). Whether
+a capture should carry the game's per-area ducking is a product question
+(the ducked channels are still the composition); the masks above are the
+data if it should. Fixed: `parseSequence({variation})` defaults to 0;
+`sequenceOfSet` passes bit 7 of the mini's id and indexes the table by
+the low 7 bits; fixture rows for Title (3910/385/14209) and DDD (1963);
+tests in n64.test.mjs (synthetic `80 FA` branch) and n64-real
+(both Title paths). One more JP/US fact: the sequence script's `value` is
+an uninitialised local (`s32 value;` in `sequence_player_process_sequence`),
+so it only carries within one tick's run; the parser keeps it across
+ticks, which is what a script would need anyway.

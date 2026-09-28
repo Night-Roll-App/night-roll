@@ -806,7 +806,18 @@ ours −18…−25; onset→peak 0.17 s vs 0.11) — the "cut off" he hears.
 DDD and Title). (4) Cave's octave-low intro: the engine does it too.
 (5) Title inst 3/4: silent/quiet in the truth where ours is loud —
 volume/mute handling to check. Items 2, 3, 5 handed to the renderer
-agent with the numbers; fix pending.
+agent with the numbers.
+RESOLVED (INTEGRATION.md §9.7): (2) early decay — no bug, the
+per-note band reading was other voices; aggregate decay within 1–2 dB
+of the truth on four songs. (3) clock — the decomp gives ×1.0028; the
+4.7% is the emulator pulled faster than real time. (5) REAL BUG, and
+the answer to "dramatically more sustain": the sequence VARIATION
+flag defaulted wrong, so Dire Dire Docks captured 2 of its 8 channels
+(390 of 1963 notes) — the missing six are the sustained pads — and
+Title Theme played its ritardando-intro table with two extra
+channels. Fixed in the parser + sequenceOfSet; captures of those two
+change, so Mario 64 needs a RE-IMPORT. Policy: all channels captured
+(the game's per-area ducking is state, not composition).
 
 ## GOLDENEYE 007 (N64, Rare) — QUEUED 2026-09-27 (Josh: "one of my favorite games of all time")
 

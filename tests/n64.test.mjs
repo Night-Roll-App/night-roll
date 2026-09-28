@@ -143,3 +143,19 @@ test("guards: unknown opcode and a delay-less spin fail with an offset", () => {
   // ...and the spin guard catches it when asked to run on
   assert.throws(() => parseSequence(Uint8Array.from([0xFB, 0x00, 0x00]), {stopAtLoop: false}), /spins without a delay/);
 });
+
+test("sequence variation: 0x80 reads seqVariation (0 for a plain id, the s8 -128 with SEQ_VARIATION); a script branches on it to pick its section", () => {
+  // `80` getvariation, `FA addr` beqz: a plain id (variation 0) jumps to the section at 0x20 (one note),
+  // a "| SEQ_VARIATION" id (0x80 → −128) falls through to the section at 0x10 (two channels).
+  // SM64's Title Theme does exactly this (fd 01 | 80 | f5 00 76): the plain id skips its ritardando intro.
+  const b = new Uint8Array(0x60);
+  b.set([0xD7, 0x00, 0x03, 0x80, 0xFA, 0x00, 0x20, 0x90, 0x00, 0x30, 0x91, 0x00, 0x40, 0xFD, 0x30, 0xFF], 0);
+  b.set([0x90, 0x00, 0x30, 0xFD, 0x30, 0xFF], 0x20);
+  b.set([0xC1, 0x05, 0x90, 0x00, 0x50, 0xFD, 0x30, 0xFF], 0x30);
+  b.set([0xC1, 0x06, 0x90, 0x00, 0x50, 0xFD, 0x30, 0xFF], 0x40);
+  b.set([0x27, 0x30, 0xFF], 0x50);
+  assert.deepEqual(parseSequence(b).channels, [0], "default: the game's 0 for a plain id");
+  assert.deepEqual(parseSequence(b, {variation: 0}).channels, [0]);
+  assert.deepEqual(parseSequence(b, {variation: 0x80}).channels, [0, 1], "the variation bit reads back negative (s8)");
+  assert.deepEqual(parseSequence(b, {variation: -1}).channels, [0, 1], "the old default (2026-09-27) played every such intro");
+});

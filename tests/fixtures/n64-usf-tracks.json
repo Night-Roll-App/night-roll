@@ -7,11 +7,11 @@
       "sequences": 35, "minis": 38, "parsed": 38,
       "tags": {"artist": "Koji Kondo", "year": "1996-06-23", "copyright": "Nintendo", "usfby": "hcs, ugetab", "genre": "Platform"},
       "tracks": [
-        {"file": "02 Title Theme.miniusf", "title": "Title Theme", "length": "3:41", "fade": "5", "seq": 2, "decomp": "02_menu_title_screen", "notes": 4008, "bpm": 172, "loopTick": 769, "endTick": 14593},
+        {"file": "02 Title Theme.miniusf", "title": "Title Theme", "length": "3:41", "fade": "5", "seq": 2, "decomp": "02_menu_title_screen", "notes": 3910, "bpm": 172, "loopTick": 385, "endTick": 14209},
         {"file": "05 Main Theme.miniusf", "title": "Main Theme", "seq": 3, "decomp": "03_level_grass", "notes": 1419, "bpm": 113, "loopTick": 384, "endTick": 6528},
         {"file": "07 Inside the Castle Walls.miniusf", "title": "Inside the Castle Walls", "seq": 4, "decomp": "04_level_inside_castle", "notes": 548, "bpm": 145, "loopTick": 20, "endTick": 7124},
         {"file": "06 Slider.miniusf", "title": "Slider", "seq": 9, "decomp": "09_level_slide", "notes": 2962, "bpm": 168, "loopTick": 384, "endTick": 10368},
-        {"file": "09a Dire, Dire Docks.miniusf", "title": "Dire, Dire Docks", "seq": 5, "decomp": "05_level_water", "notes": 390, "bpm": 133, "loopTick": 20, "endTick": 9620},
+        {"file": "09a Dire, Dire Docks.miniusf", "title": "Dire, Dire Docks", "seq": 5, "decomp": "05_level_water", "notes": 1963, "bpm": 133, "loopTick": 20, "endTick": 9620},
         {"file": "35 Staff Roll.miniusf", "title": "Staff Roll", "seq": 26, "decomp": "1A_cutscene_credits", "notes": 6011, "bpm": 106, "loopTick": null, "endTick": 16706}
       ]
     },

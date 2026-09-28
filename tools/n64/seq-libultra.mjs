@@ -21,7 +21,8 @@
 //
 // Options beyond the ABI: `present` (a byte mask from a USF rip: reading a
 // missing byte throws with its offset), `io` ({port: value} the game would
-// have written), `maxSeconds` / `maxTicks` / `stopAtLoop`. The result
+// have written), `variation` (the id's SEQ_VARIATION bit: 0 or 0x80),
+// `maxSeconds` / `maxTicks` / `stopAtLoop`. The result
 // carries `ioReads` so a caller can tell a game-driven song from a broken
 // one. Verified against the SM64 / OoT / MM catalogues (INTEGRATION.md §8).
 //
@@ -60,7 +61,7 @@ function state(pc) { return {pc, depth: 0, stack: [0, 0, 0, 0], loops: [0, 0, 0,
 
 export function parseSequence(input, opts = {}) {
   const {abi = "sm64", maxTicks = TICKS_PER_BEAT * 4 * 2000, maxSeconds = Infinity,
-         maxNotes = 250000, stopAtLoop = true, present = null, io = null} = opts;
+         maxNotes = 250000, stopAtLoop = true, present = null, io = null, variation = 0} = opts;
   if (abi !== "sm64" && abi !== "oot" && abi !== "mm") throw new Error("abi must be sm64, oot or mm, got " + abi);
   const oot = abi === "oot" || abi === "mm"; // the OoT generation; "mm" differs only in the channel A0-BE table
   const mm = abi === "mm";
@@ -154,7 +155,11 @@ export function parseSequence(input, opts = {}) {
   }
 
   // ---- player / channels / layers
-  const player = {enabled: true, delay: 0, tempo: 120, transposition: 0, value: 0, variation: -1, volume: 1,
+  // seqVariation: play_sequence sets it to `seqId & SEQ_VARIATION` (external.c) — 0 for a
+  // plain id, 0x80 read back as the s8 −128 for a "| SEQ_VARIATION" id. Scripts test it with
+  // 0x80 (getvariation) + a branch to pick a section: SM64's Title Theme skips its ritardando
+  // intro table when it is 0. The old default −1 played every such intro (2026-09-27).
+  const player = {enabled: true, delay: 0, tempo: 120, transposition: 0, value: 0, variation: (variation << 24) >> 24, volume: 1,
                   io: new Array(8).fill(-1), shortVel: -1, shortGate: -1, channels: new Array(CHANNELS).fill(null),
                   st: state(0)};
   // opts.io = {port: value}: what the game would have written before the
