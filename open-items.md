@@ -751,6 +751,13 @@ fixes: pan → a stereo render (the app's chip buffers are mono
 Float32Arrays per track; chipBuffers/chipStart would carry two
 channels), per-note volume fades (DA), reverb as a wet send. The
 too-loud up-strokes may be reverb/fade related; re-listen after pan.
+STEREO SHIPPED app-side 2026-09-28 morning (NIGHT-ROLL.md "Stereo —
+pan per track"): CC10 → midiPan, `pan=` on the track directive with a
+fader in the voice menu, a StereoPanner per track, stereo chip pairs
+end to end. The renderers' pan (N64 EAD + Rare, PS1) and the CC10
+writes are with the two agents; until they land, tracks sit centred
+and the fader is the only pan. Re-import needed afterwards to get the
+game's pan values into the .mid.
 RESOLVED by the agent against the decomp (same night): (1) the
 "octave low" IS the console — that sample's recording sounds C3 when
 the note says C4 (gNoteFrequencies[39] = 1.0 plays it at its native

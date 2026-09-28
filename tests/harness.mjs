@@ -104,7 +104,8 @@ function fakeAudio(clock) {
     createGain() { return node(); }
     createOscillator() { return node(); }
     createBufferSource() { return node(); }
-    createBuffer(ch, len) { return { getChannelData: () => new Float32Array(len || 1) }; }
+    createBuffer(ch, len) { return { numberOfChannels: ch, length: len, getChannelData: () => new Float32Array(len || 1), copyToChannel() {} }; }
+    createStereoPanner() { const n = node(); n.pan = param(); return n; }
     createPeriodicWave() { return {}; }
     // the "strings" and "bell" voices filter; without this a preview on them throws
     createBiquadFilter() { const n = node(); n.frequency = param(); n.Q = param(); n.detune = param(); return n; }

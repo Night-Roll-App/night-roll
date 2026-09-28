@@ -1433,6 +1433,34 @@ Filesystem plugins.
 autosave-on-edit in folder mode (explicit Save kept for parity and so
 Revert still means something), copying the FF1 corpus into a folder.
 
+## Stereo — pan per track (2026-09-28)
+
+Josh: "are we getting … stereo information?" — pan was read and never
+applied. Three layers, all optional per song:
+
+- **The .mid carries pan.** A chip capture's MIDI writer emits each
+  channel's pan as CC10 at the track's start (the N64 drivers' `pan`
+  fact, PS1 AKAO's pan op); `parseMidi` keeps it as `track.midiPan`
+  (−1 … +1). Nothing in the roll changes; the track menu's pan fader
+  starts there.
+- **The `track:` directive's `pan=`** (−1 … +1) overrides it — the
+  fader under the volume in the voice & color menu writes it on
+  release, exactly as `vol=` (`saveVoices`); `finalizeNotes` applies
+  it; `trackPan(ti)` = directive, else midiPan, else 0. Written as 0
+  too, so centring an imported track sticks.
+- **The audio graph**: `trackGain(ti)` → a `StereoPannerNode` per
+  track (`trackPanners`, pan = `trackPan`) → master; `updateTrackGains`
+  moves it live. Synth notes pan there. Chip audio: a renderer may hand
+  back a stereo pair `{l, r}` per track instead of a mono Float32Array
+  (`chipIsPcm`); `chipBuffers` makes a 2-channel AudioBuffer, the
+  worker transfers both halves, `chipSilent` checks both. The pair
+  passes through the centred panner unchanged; a `pan=` on a chip
+  track pans on top. Pan law in the renderers: equal-power, −3 dB per
+  side at centre, so the mono sum keeps its level.
+
+Test: "pan: the track: directive and the .mid's CC10 …" in
+tests/night-roll.test.mjs; the renderers' own tests cover the pair.
+
 ## PlayStation chip audio — the console's own samples (2026-09-27)
 
 Josh, FF7 Opening ~ Bombing Mission against the OST: "they just don't

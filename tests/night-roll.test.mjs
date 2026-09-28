@@ -1577,7 +1577,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
-    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color",
+    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>",
     "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -3585,6 +3585,24 @@ test("archive fetch: a file over 1 MB comes through the blobs API when the conte
   assert.equal(String.fromCharCode(...bytes), "BIGLIB");
   assert.ok(calls.some(u => /git\/blobs\/abc123/.test(u)), "fell through to the blob");
   run(`localStorage.removeItem("ff1roll-ghtoken"); localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
+});
+
+test("pan: the track: directive and the .mid's CC10 place a track; the directive wins; stereo chip pairs become 2-channel buffers", () => {
+  run(`createComposition(120, 4, 4); song.tracks[0].midiPan = -0.5;
+       rollnotes = parseRollnotes("[1.1]\\ntrack: " + song.tracks[0].name + " vol=0.8 pan=0.25\\n").map(resolveNote); finalizeNotes();`);
+  assert.equal(val(`song.tracks[0].pan`), 0.25, "the directive's pan");
+  assert.equal(val(`trackPan(0)`), 0.25, "the directive wins over the .mid");
+  assert.equal(run(`rollnotes[0].text`), "track: " + run(`song.tracks[0].name`) + " vol=0.8 pan=0.25", "normalized text keeps pan");
+  run(`rollnotes = []; finalizeNotes();`);
+  assert.equal(val(`song.tracks[0].pan === undefined`), true);
+  assert.equal(val(`trackPan(0)`), -0.5, "no directive: the .mid's own pan");
+  // a chip render may hand back a stereo pair per track
+  run(`audio = new window.AudioContext(); chip.pcm = {"ch 1": {l: new Float32Array(10), r: new Float32Array(10)}, "ch 2": new Float32Array(10)}; chip.pcmRate = 44100; chip.buffers = null; chip.buffersCtx = null;`);
+  assert.equal(val(`chipBuffers()["ch 1"].numberOfChannels`), 2);
+  assert.equal(val(`chipBuffers()["ch 2"].numberOfChannels`), 1);
+  assert.equal(val(`chipSilent([{l: new Float32Array(30), r: (() => { const a = new Float32Array(30); a[13] = 0.5; return a; })()}])`), false, "a live right side counts (the check samples every 13th value)");
+  assert.equal(val(`chipIsPcm({l: new Float32Array(2), r: new Float32Array(2)}) && chipIsPcm(new Float32Array(2)) && !chipIsPcm({l: 1})`), true);
+  run(`chip.pcm = null; chip.buffers = null; audio = null;`);
 });
 
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {

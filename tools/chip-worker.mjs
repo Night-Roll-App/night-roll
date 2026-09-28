@@ -91,8 +91,15 @@ self.onmessage = async e => {
     const leadSec = R.lead(M, res);
     const r = await R.render(M, res, {sampleRate: rate, onProgress: p => post({progress: 0.3 + p * 0.7})});
     const pcm = {}, transfer = [];
-    const names = R.channels || Object.keys(r).filter(k => r[k] instanceof Float32Array);
-    for (const name of names) { const a = r[name]; if (!a) continue; let live = false; for (let i = 0; i < a.length; i += 13) if (Math.abs(a[i]) > 1e-4) { live = true; break; } if (!live) continue; pcm[name] = a; transfer.push(a.buffer); }
+    const isPcm = x => x instanceof Float32Array || !!(x && x.l instanceof Float32Array && x.r instanceof Float32Array); // mono, or a stereo pair from a renderer that pans
+    const names = R.channels || Object.keys(r).filter(k => isPcm(r[k]));
+    for (const name of names) {
+      const x = r[name]; if (!x) continue;
+      const parts = x.l ? [x.l, x.r] : [x];
+      let live = false; for (const a of parts) { for (let i = 0; i < a.length && !live; i += 13) if (Math.abs(a[i]) > 1e-4) live = true; }
+      if (!live) continue;
+      pcm[name] = x; for (const a of parts) transfer.push(a.buffer);
+    }
     post({done: {pcm, sampleRate: r.sampleRate, leadSec}}, transfer);
   } catch (err) { post({error: String(err && err.message || err)}); }
 };
