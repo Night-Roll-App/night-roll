@@ -1,0 +1,154 @@
+{
+ "title": "Mega Man X",
+ "order": 50,
+ "songs": {
+  "dr-light": "Dr. Light"
+ },
+ "nsf": {
+  "vault": "mega-man-x/",
+  "tracks": {
+   "armored-armadillo": {
+    "n": 1,
+    "secs": 111
+   },
+   "boomer-kuwanger": {
+    "n": 1,
+    "secs": 128.99
+   },
+   "boss-battle": {
+    "n": 1,
+    "secs": 59
+   },
+   "boss-defeated": {
+    "n": 1,
+    "secs": 12
+   },
+   "boss-intro": {
+    "n": 1,
+    "secs": 14
+   },
+   "capcom-logo": {
+    "n": 1,
+    "secs": 12
+   },
+   "castings": {
+    "n": 1,
+    "secs": 125
+   },
+   "chill-penguin": {
+    "n": 1,
+    "secs": 82.99
+   },
+   "credits": {
+    "n": 1,
+    "secs": 103
+   },
+   "dr-light": {
+    "n": 1,
+    "secs": 31
+   },
+   "ending": {
+    "n": 1,
+    "secs": 108
+   },
+   "flame-mammoth": {
+    "n": 1,
+    "secs": 113
+   },
+   "intro-stage": {
+    "n": 1,
+    "secs": 88
+   },
+   "launch-octopus": {
+    "n": 1,
+    "secs": 103
+   },
+   "password-screen": {
+    "n": 1,
+    "secs": 73.97
+   },
+   "sigma-battle-2": {
+    "n": 1,
+    "secs": 106.98
+   },
+   "sigma-battle": {
+    "n": 1,
+    "secs": 36
+   },
+   "sigma-boss-battle": {
+    "n": 1,
+    "secs": 56
+   },
+   "sigma-fortress-1": {
+    "n": 1,
+    "secs": 123
+   },
+   "sigma-fortress-2": {
+    "n": 1,
+    "secs": 124
+   },
+   "sigma-fortress-3": {
+    "n": 1,
+    "secs": 101
+   },
+   "sigma-intro-1": {
+    "n": 1,
+    "secs": 17
+   },
+   "sigma-intro-2": {
+    "n": 1,
+    "secs": 12
+   },
+   "spark-mandrill": {
+    "n": 1,
+    "secs": 102
+   },
+   "stage-intro": {
+    "n": 1,
+    "secs": 12
+   },
+   "stage-select-1": {
+    "n": 1,
+    "secs": 18
+   },
+   "stage-select-2": {
+    "n": 1,
+    "secs": 35
+   },
+   "stigma-defeated": {
+    "n": 1,
+    "secs": 12
+   },
+   "sting-chameleon": {
+    "n": 1,
+    "secs": 68
+   },
+   "storm-eagle": {
+    "n": 1,
+    "secs": 62
+   },
+   "test-track": {
+    "n": 1,
+    "secs": 11.89
+   },
+   "title-screen": {
+    "n": 1,
+    "secs": 26
+   },
+   "weapon-screen": {
+    "n": 1,
+    "secs": 15
+   },
+   "zero-1": {
+    "n": 1,
+    "secs": 34
+   },
+   "zero-2": {
+    "n": 1,
+    "secs": 63
+   }
+  },
+  "chip": "spc",
+  "perFile": true
+ }
+}

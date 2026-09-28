@@ -2983,6 +2983,151 @@
   ]
  },
  {
+  "title": "Mega Man X",
+  "songs": [
+   {
+    "title": "Armored Armadillo",
+    "path": "albums/snes/mega-man-x/armored-armadillo.mid"
+   },
+   {
+    "title": "Boomer Kuwanger",
+    "path": "albums/snes/mega-man-x/boomer-kuwanger.mid"
+   },
+   {
+    "title": "Boss Battle",
+    "path": "albums/snes/mega-man-x/boss-battle.mid"
+   },
+   {
+    "title": "Boss Defeated",
+    "path": "albums/snes/mega-man-x/boss-defeated.mid"
+   },
+   {
+    "title": "Boss Intro",
+    "path": "albums/snes/mega-man-x/boss-intro.mid"
+   },
+   {
+    "title": "Capcom Logo",
+    "path": "albums/snes/mega-man-x/capcom-logo.mid"
+   },
+   {
+    "title": "Castings",
+    "path": "albums/snes/mega-man-x/castings.mid"
+   },
+   {
+    "title": "Chill Penguin",
+    "path": "albums/snes/mega-man-x/chill-penguin.mid"
+   },
+   {
+    "title": "Credits",
+    "path": "albums/snes/mega-man-x/credits.mid"
+   },
+   {
+    "title": "Dr. Light",
+    "path": "albums/snes/mega-man-x/dr-light.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/snes/mega-man-x/ending.mid"
+   },
+   {
+    "title": "Flame Mammoth",
+    "path": "albums/snes/mega-man-x/flame-mammoth.mid"
+   },
+   {
+    "title": "Intro Stage",
+    "path": "albums/snes/mega-man-x/intro-stage.mid"
+   },
+   {
+    "title": "Launch Octopus",
+    "path": "albums/snes/mega-man-x/launch-octopus.mid"
+   },
+   {
+    "title": "Password Screen",
+    "path": "albums/snes/mega-man-x/password-screen.mid"
+   },
+   {
+    "title": "Sigma Battle",
+    "path": "albums/snes/mega-man-x/sigma-battle.mid"
+   },
+   {
+    "title": "Sigma Battle 2",
+    "path": "albums/snes/mega-man-x/sigma-battle-2.mid"
+   },
+   {
+    "title": "Sigma Boss Battle",
+    "path": "albums/snes/mega-man-x/sigma-boss-battle.mid"
+   },
+   {
+    "title": "Sigma Fortress 1",
+    "path": "albums/snes/mega-man-x/sigma-fortress-1.mid"
+   },
+   {
+    "title": "Sigma Fortress 2",
+    "path": "albums/snes/mega-man-x/sigma-fortress-2.mid"
+   },
+   {
+    "title": "Sigma Fortress 3",
+    "path": "albums/snes/mega-man-x/sigma-fortress-3.mid"
+   },
+   {
+    "title": "Sigma Intro 1",
+    "path": "albums/snes/mega-man-x/sigma-intro-1.mid"
+   },
+   {
+    "title": "Sigma Intro 2",
+    "path": "albums/snes/mega-man-x/sigma-intro-2.mid"
+   },
+   {
+    "title": "Spark Mandrill",
+    "path": "albums/snes/mega-man-x/spark-mandrill.mid"
+   },
+   {
+    "title": "Stage Intro",
+    "path": "albums/snes/mega-man-x/stage-intro.mid"
+   },
+   {
+    "title": "Stage Select 1",
+    "path": "albums/snes/mega-man-x/stage-select-1.mid"
+   },
+   {
+    "title": "Stage Select 2",
+    "path": "albums/snes/mega-man-x/stage-select-2.mid"
+   },
+   {
+    "title": "Stigma Defeated",
+    "path": "albums/snes/mega-man-x/stigma-defeated.mid"
+   },
+   {
+    "title": "Sting Chameleon",
+    "path": "albums/snes/mega-man-x/sting-chameleon.mid"
+   },
+   {
+    "title": "Storm Eagle",
+    "path": "albums/snes/mega-man-x/storm-eagle.mid"
+   },
+   {
+    "title": "Test Track",
+    "path": "albums/snes/mega-man-x/test-track.mid"
+   },
+   {
+    "title": "Title Screen",
+    "path": "albums/snes/mega-man-x/title-screen.mid"
+   },
+   {
+    "title": "Weapon Screen",
+    "path": "albums/snes/mega-man-x/weapon-screen.mid"
+   },
+   {
+    "title": "Zero 1",
+    "path": "albums/snes/mega-man-x/zero-1.mid"
+   },
+   {
+    "title": "Zero 2",
+    "path": "albums/snes/mega-man-x/zero-2.mid"
+   }
+  ]
+ },
+ {
   "title": "Mike Tyson's Punch-Out!!",
   "songs": [
    {
