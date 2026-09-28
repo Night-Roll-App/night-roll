@@ -7307,7 +7307,16 @@ async function vaultFetch(file) {
   if (!token) throw new Error("NSF not publicly reachable and no GitHub token on this device — add one in File → Settings");
   const r = await fetch(repoApi("nsf") + file + "?ref=main", {headers: ghHeaders(token)});
   if (!r.ok) throw apiError("nsf", r, file);
-  const j = await r.json();
+  let j = await r.json();
+  // the contents API inlines files up to 1 MB only; above that it answers
+  // with an empty content and the blob's sha — Mario 64's library is 1.2 MB,
+  // so every other device fetched nothing and fell to synth. The blobs API
+  // serves the same bytes, base64, to 100 MB.
+  if (!j.content && j.sha) {
+    const b = await fetch("https://api.github.com/repos/" + repoName("nsf") + "/git/blobs/" + j.sha, {headers: ghHeaders(token)});
+    if (!b.ok) throw apiError("nsf", b, file);
+    j = await b.json();
+  }
   const bin = atob(j.content.replace(/\n/g, ""));
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);

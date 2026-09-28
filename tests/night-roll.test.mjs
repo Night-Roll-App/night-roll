@@ -3568,6 +3568,25 @@ test("boot with old keys: the folder migration runs before a handler attaches �
   assert.equal(r(`typeof _idbQueue`), "object", "the idb queue exists once boot is through");
 });
 
+test("archive fetch: a file over 1 MB comes through the blobs API when the contents API inlines nothing", async () => {
+  // Mario 64's library is 1.2 MB: the contents API answers with an empty
+  // content + sha, and every other device rendered synth (2026-09-28)
+  const calls = [];
+  run(`localStorage.setItem("ff1roll-ghtoken", "t"); saveCfg({nsfRepo: "someone/archive", nsfBase: "https://raw.githubusercontent.com/someone/archive/main"}); cfg.c = null;`);
+  app.context.fakeFetch2 = (url) => {
+    calls.push(String(url));
+    if (/raw\.githubusercontent/.test(url)) return Promise.resolve({ok: false, status: 404});
+    if (/\/contents\/big\/lib\.usflib/.test(url)) return Promise.resolve({ok: true, json: async () => ({content: "", encoding: "none", sha: "abc123", size: 1200000})});
+    if (/\/git\/blobs\/abc123$/.test(url)) return Promise.resolve({ok: true, json: async () => ({content: btoa("BIGLIB"), encoding: "base64"})});
+    return Promise.reject(new Error("unexpected " + url));
+  };
+  run(`fetch = fakeFetch2;`);
+  const bytes = await run(`vaultFetch("big/lib.usflib")`);
+  assert.equal(String.fromCharCode(...bytes), "BIGLIB");
+  assert.ok(calls.some(u => /git\/blobs\/abc123/.test(u)), "fell through to the blob");
+  run(`localStorage.removeItem("ff1roll-ghtoken"); localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
+});
+
 test("folder tree: one level per tap — NES › Mega Man 2 › songs; album titles name the leaves", () => {
   run(`CATALOG = {"Final Fantasy I": [["Overworld", "albums/nes/final-fantasy-i/songs/overworld.mid"]],
                  "Mega Man 2": [["Air Man", "albums/nes/mega-man-2/air-man.mid"]],
