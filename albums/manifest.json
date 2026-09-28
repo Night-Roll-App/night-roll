@@ -1905,6 +1905,679 @@
   ]
  },
  {
+  "title": "Donkey Kong 64",
+  "songs": [
+   {
+    "title": "100 Bananas",
+    "path": "albums/n64/donkey-kong-64/100-bananas.mid"
+   },
+   {
+    "title": "Angry Aztec",
+    "path": "albums/n64/donkey-kong-64/angry-aztec.mid"
+   },
+   {
+    "title": "Angry Aztec Barrel Course",
+    "path": "albums/n64/donkey-kong-64/angry-aztec-barrel-course.mid"
+   },
+   {
+    "title": "Angry Aztec Boss: Dogadon",
+    "path": "albums/n64/donkey-kong-64/angry-aztec-boss-dogadon.mid"
+   },
+   {
+    "title": "Angry Aztec Caves",
+    "path": "albums/n64/donkey-kong-64/angry-aztec-caves.mid"
+   },
+   {
+    "title": "Angry Aztec Lobby",
+    "path": "albums/n64/donkey-kong-64/angry-aztec-lobby.mid"
+   },
+   {
+    "title": "Angry Aztec Race",
+    "path": "albums/n64/donkey-kong-64/angry-aztec-race.mid"
+   },
+   {
+    "title": "Angry Aztec Room",
+    "path": "albums/n64/donkey-kong-64/angry-aztec-room.mid"
+   },
+   {
+    "title": "Angry Aztec Temple",
+    "path": "albums/n64/donkey-kong-64/angry-aztec-temple.mid"
+   },
+   {
+    "title": "Angry Aztec Underground",
+    "path": "albums/n64/donkey-kong-64/angry-aztec-underground.mid"
+   },
+   {
+    "title": "Baboon Balloon",
+    "path": "albums/n64/donkey-kong-64/baboon-balloon.mid"
+   },
+   {
+    "title": "Banana Fairy",
+    "path": "albums/n64/donkey-kong-64/banana-fairy.mid"
+   },
+   {
+    "title": "Banana Fairy Isle",
+    "path": "albums/n64/donkey-kong-64/banana-fairy-isle.mid"
+   },
+   {
+    "title": "Banana Fairy Photo",
+    "path": "albums/n64/donkey-kong-64/banana-fairy-photo.mid"
+   },
+   {
+    "title": "Banana Medal",
+    "path": "albums/n64/donkey-kong-64/banana-medal.mid"
+   },
+   {
+    "title": "Barrel Course Complete",
+    "path": "albums/n64/donkey-kong-64/barrel-course-complete.mid"
+   },
+   {
+    "title": "Battle Arena",
+    "path": "albums/n64/donkey-kong-64/battle-arena.mid"
+   },
+   {
+    "title": "Beach Ambience",
+    "path": "albums/n64/donkey-kong-64/beach-ambience.mid"
+   },
+   {
+    "title": "Bonus Barrel",
+    "path": "albums/n64/donkey-kong-64/bonus-barrel.mid"
+   },
+   {
+    "title": "Bonus Barrel Introduction",
+    "path": "albums/n64/donkey-kong-64/bonus-barrel-introduction.mid"
+   },
+   {
+    "title": "Boss Introduction",
+    "path": "albums/n64/donkey-kong-64/boss-introduction.mid"
+   },
+   {
+    "title": "Boss Unlock",
+    "path": "albums/n64/donkey-kong-64/boss-unlock.mid"
+   },
+   {
+    "title": "Candy's Music Store",
+    "path": "albums/n64/donkey-kong-64/candy-s-music-store.mid"
+   },
+   {
+    "title": "Chunky's Triangle Trample",
+    "path": "albums/n64/donkey-kong-64/chunky-s-triangle-trample.mid"
+   },
+   {
+    "title": "Collect Banana Token",
+    "path": "albums/n64/donkey-kong-64/collect-banana-token.mid"
+   },
+   {
+    "title": "Collect Blue-Print",
+    "path": "albums/n64/donkey-kong-64/collect-blue-print.mid"
+   },
+   {
+    "title": "Collect Bonus Token",
+    "path": "albums/n64/donkey-kong-64/collect-bonus-token.mid"
+   },
+   {
+    "title": "Collect Crystal Coconut",
+    "path": "albums/n64/donkey-kong-64/collect-crystal-coconut.mid"
+   },
+   {
+    "title": "Collect Golden Banana",
+    "path": "albums/n64/donkey-kong-64/collect-golden-banana.mid"
+   },
+   {
+    "title": "Collect Melon Piece",
+    "path": "albums/n64/donkey-kong-64/collect-melon-piece.mid"
+   },
+   {
+    "title": "Collect Multi Banana Token",
+    "path": "albums/n64/donkey-kong-64/collect-multi-banana-token.mid"
+   },
+   {
+    "title": "Collect Pearl",
+    "path": "albums/n64/donkey-kong-64/collect-pearl.mid"
+   },
+   {
+    "title": "Cranky's Lab",
+    "path": "albums/n64/donkey-kong-64/cranky-s-lab.mid"
+   },
+   {
+    "title": "Cranky's Potion",
+    "path": "albums/n64/donkey-kong-64/cranky-s-potion.mid"
+   },
+   {
+    "title": "Credits",
+    "path": "albums/n64/donkey-kong-64/credits.mid"
+   },
+   {
+    "title": "Creepy Castle",
+    "path": "albums/n64/donkey-kong-64/creepy-castle.mid"
+   },
+   {
+    "title": "Creepy Castle Ballroom",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-ballroom.mid"
+   },
+   {
+    "title": "Creepy Castle Barrel Course",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-barrel-course.mid"
+   },
+   {
+    "title": "Creepy Castle Boss: King Kut Out",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-boss-king-kut-out.mid"
+   },
+   {
+    "title": "Creepy Castle Caves",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-caves.mid"
+   },
+   {
+    "title": "Creepy Castle Dungeons",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-dungeons.mid"
+   },
+   {
+    "title": "Creepy Castle Greenhouse",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-greenhouse.mid"
+   },
+   {
+    "title": "Creepy Castle Library",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-library.mid"
+   },
+   {
+    "title": "Creepy Castle Library (Alternate)",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-library-alternate.mid"
+   },
+   {
+    "title": "Creepy Castle Lobby",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-lobby.mid"
+   },
+   {
+    "title": "Creepy Castle Mine Cart",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-mine-cart.mid"
+   },
+   {
+    "title": "Creepy Castle Museum",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-museum.mid"
+   },
+   {
+    "title": "Creepy Castle Rubbish Bin",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-rubbish-bin.mid"
+   },
+   {
+    "title": "Creepy Castle Tree Trunk",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-tree-trunk.mid"
+   },
+   {
+    "title": "Creepy Castle Wind Tower",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-wind-tower.mid"
+   },
+   {
+    "title": "Crystal Caves",
+    "path": "albums/n64/donkey-kong-64/crystal-caves.mid"
+   },
+   {
+    "title": "Crystal Caves Barrel Course",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-barrel-course.mid"
+   },
+   {
+    "title": "Crystal Caves Board Game",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-board-game.mid"
+   },
+   {
+    "title": "Crystal Caves Boss: Army Dillo",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-boss-army-dillo.mid"
+   },
+   {
+    "title": "Crystal Caves Earthquake",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-earthquake.mid"
+   },
+   {
+    "title": "Crystal Caves Igloo",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-igloo.mid"
+   },
+   {
+    "title": "Crystal Caves Indoors",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-indoors.mid"
+   },
+   {
+    "title": "Crystal Caves Lobby",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-lobby.mid"
+   },
+   {
+    "title": "Crystal Caves Race",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-race.mid"
+   },
+   {
+    "title": "Crystal Caves Rotating Room",
+    "path": "albums/n64/donkey-kong-64/crystal-caves-rotating-room.mid"
+   },
+   {
+    "title": "Defeat Boss",
+    "path": "albums/n64/donkey-kong-64/defeat-boss.mid"
+   },
+   {
+    "title": "Diddy's Guitar Gazump",
+    "path": "albums/n64/donkey-kong-64/diddy-s-guitar-gazump.mid"
+   },
+   {
+    "title": "DK Isle",
+    "path": "albums/n64/donkey-kong-64/dk-isle.mid"
+   },
+   {
+    "title": "DK Rap",
+    "path": "albums/n64/donkey-kong-64/dk-rap.mid"
+   },
+   {
+    "title": "DK's Treehouse",
+    "path": "albums/n64/donkey-kong-64/dk-s-treehouse.mid"
+   },
+   {
+    "title": "Donkey's Bongo Blast",
+    "path": "albums/n64/donkey-kong-64/donkey-s-bongo-blast.mid"
+   },
+   {
+    "title": "Ending",
+    "path": "albums/n64/donkey-kong-64/ending.mid"
+   },
+   {
+    "title": "Enguarde",
+    "path": "albums/n64/donkey-kong-64/enguarde.mid"
+   },
+   {
+    "title": "Entrance",
+    "path": "albums/n64/donkey-kong-64/entrance.mid"
+   },
+   {
+    "title": "Exit",
+    "path": "albums/n64/donkey-kong-64/exit.mid"
+   },
+   {
+    "title": "Failure",
+    "path": "albums/n64/donkey-kong-64/failure.mid"
+   },
+   {
+    "title": "Find Blue-Print",
+    "path": "albums/n64/donkey-kong-64/find-blue-print.mid"
+   },
+   {
+    "title": "Find Golden Banana",
+    "path": "albums/n64/donkey-kong-64/find-golden-banana.mid"
+   },
+   {
+    "title": "Find Melon Piece",
+    "path": "albums/n64/donkey-kong-64/find-melon-piece.mid"
+   },
+   {
+    "title": "Frantic Factory",
+    "path": "albums/n64/donkey-kong-64/frantic-factory.mid"
+   },
+   {
+    "title": "Frantic Factory Boss: Mad Jack",
+    "path": "albums/n64/donkey-kong-64/frantic-factory-boss-mad-jack.mid"
+   },
+   {
+    "title": "Frantic Factory Car Race",
+    "path": "albums/n64/donkey-kong-64/frantic-factory-car-race.mid"
+   },
+   {
+    "title": "Frantic Factory Conveyor Belt",
+    "path": "albums/n64/donkey-kong-64/frantic-factory-conveyor-belt.mid"
+   },
+   {
+    "title": "Frantic Factory Lobby",
+    "path": "albums/n64/donkey-kong-64/frantic-factory-lobby.mid"
+   },
+   {
+    "title": "Frantic Factory Production Room",
+    "path": "albums/n64/donkey-kong-64/frantic-factory-production-room.mid"
+   },
+   {
+    "title": "Frantic Factory Research and Development",
+    "path": "albums/n64/donkey-kong-64/frantic-factory-research-and-development.mid"
+   },
+   {
+    "title": "Fungi Forest Barrel Course",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-barrel-course.mid"
+   },
+   {
+    "title": "Fungi Forest Bonus Room",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-bonus-room.mid"
+   },
+   {
+    "title": "Fungi Forest Boss: Dogadon",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-boss-dogadon.mid"
+   },
+   {
+    "title": "Fungi Forest Day",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-day.mid"
+   },
+   {
+    "title": "Fungi Forest Giant Mushroom",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-giant-mushroom.mid"
+   },
+   {
+    "title": "Fungi Forest Indoors 1",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-indoors-1.mid"
+   },
+   {
+    "title": "Fungi Forest Indoors 2",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-indoors-2.mid"
+   },
+   {
+    "title": "Fungi Forest Lobby",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-lobby.mid"
+   },
+   {
+    "title": "Fungi Forest Mine Cart",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-mine-cart.mid"
+   },
+   {
+    "title": "Fungi Forest Night",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-night.mid"
+   },
+   {
+    "title": "Fungi Forest Race",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-race.mid"
+   },
+   {
+    "title": "Fungi Forest Spider",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-spider.mid"
+   },
+   {
+    "title": "Fungi Forest Tree Trunk",
+    "path": "albums/n64/donkey-kong-64/fungi-forest-tree-trunk.mid"
+   },
+   {
+    "title": "Funky's Armoury",
+    "path": "albums/n64/donkey-kong-64/funky-s-armoury.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/n64/donkey-kong-64/game-over.mid"
+   },
+   {
+    "title": "Gloomy Galleon",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon.mid"
+   },
+   {
+    "title": "Gloomy Galleon Barrel Course",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-barrel-course.mid"
+   },
+   {
+    "title": "Gloomy Galleon Boat Race",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-boat-race.mid"
+   },
+   {
+    "title": "Gloomy Galleon Boss: Puftoss",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-boss-puftoss.mid"
+   },
+   {
+    "title": "Gloomy Galleon Caves",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-caves.mid"
+   },
+   {
+    "title": "Gloomy Galleon Lobby",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-lobby.mid"
+   },
+   {
+    "title": "Gloomy Galleon Mechanical Fish",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-mechanical-fish.mid"
+   },
+   {
+    "title": "Gloomy Galleon Pearl Treasure",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-pearl-treasure.mid"
+   },
+   {
+    "title": "Gloomy Galleon Ship Ruins",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-ship-ruins.mid"
+   },
+   {
+    "title": "Gloomy Galleon Submarine",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-submarine.mid"
+   },
+   {
+    "title": "Gloomy Galleon Sunken Ship",
+    "path": "albums/n64/donkey-kong-64/gloomy-galleon-sunken-ship.mid"
+   },
+   {
+    "title": "Gorilla Gone",
+    "path": "albums/n64/donkey-kong-64/gorilla-gone.mid"
+   },
+   {
+    "title": "Happy K Lumsy",
+    "path": "albums/n64/donkey-kong-64/happy-k-lumsy.mid"
+   },
+   {
+    "title": "Hideout Helm",
+    "path": "albums/n64/donkey-kong-64/hideout-helm.mid"
+   },
+   {
+    "title": "Hideout Helm (completed)",
+    "path": "albums/n64/donkey-kong-64/hideout-helm-completed.mid"
+   },
+   {
+    "title": "Hideout Helm Bonus Barrel",
+    "path": "albums/n64/donkey-kong-64/hideout-helm-bonus-barrel.mid"
+   },
+   {
+    "title": "Hideout Helm Lobby",
+    "path": "albums/n64/donkey-kong-64/hideout-helm-lobby.mid"
+   },
+   {
+    "title": "Hunky Chunky",
+    "path": "albums/n64/donkey-kong-64/hunky-chunky.mid"
+   },
+   {
+    "title": "Instrument Refill",
+    "path": "albums/n64/donkey-kong-64/instrument-refill.mid"
+   },
+   {
+    "title": "Introduction",
+    "path": "albums/n64/donkey-kong-64/introduction.mid"
+   },
+   {
+    "title": "Jungle Ambience",
+    "path": "albums/n64/donkey-kong-64/jungle-ambience.mid"
+   },
+   {
+    "title": "Jungle Japes",
+    "path": "albums/n64/donkey-kong-64/jungle-japes.mid"
+   },
+   {
+    "title": "Jungle Japes Barrel Course",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-barrel-course.mid"
+   },
+   {
+    "title": "Jungle Japes Boss: Army Dillo",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-boss-army-dillo.mid"
+   },
+   {
+    "title": "Jungle Japes Caves",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-caves.mid"
+   },
+   {
+    "title": "Jungle Japes Caves Ambience",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-caves-ambience.mid"
+   },
+   {
+    "title": "Jungle Japes Lobby",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-lobby.mid"
+   },
+   {
+    "title": "Jungle Japes Mine Cart",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-mine-cart.mid"
+   },
+   {
+    "title": "Jungle Japes Storm",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-storm.mid"
+   },
+   {
+    "title": "Jungle Japes Underground",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-underground.mid"
+   },
+   {
+    "title": "K Rool",
+    "path": "albums/n64/donkey-kong-64/k-rool.mid"
+   },
+   {
+    "title": "K Rool Battle Introduction",
+    "path": "albums/n64/donkey-kong-64/k-rool-battle-introduction.mid"
+   },
+   {
+    "title": "K Rool Defeated",
+    "path": "albums/n64/donkey-kong-64/k-rool-defeated.mid"
+   },
+   {
+    "title": "K Rool Duel",
+    "path": "albums/n64/donkey-kong-64/k-rool-duel.mid"
+   },
+   {
+    "title": "K Rool Take-Off",
+    "path": "albums/n64/donkey-kong-64/k-rool-take-off.mid"
+   },
+   {
+    "title": "K. Lumsy",
+    "path": "albums/n64/donkey-kong-64/k-lumsy.mid"
+   },
+   {
+    "title": "K. Lumsy Key",
+    "path": "albums/n64/donkey-kong-64/k-lumsy-key.mid"
+   },
+   {
+    "title": "Krem Isle",
+    "path": "albums/n64/donkey-kong-64/krem-isle.mid"
+   },
+   {
+    "title": "Krem Isle Snide's HQ",
+    "path": "albums/n64/donkey-kong-64/krem-isle-snide-s-hq.mid"
+   },
+   {
+    "title": "Lanky's Trombone Tremor",
+    "path": "albums/n64/donkey-kong-64/lanky-s-trombone-tremor.mid"
+   },
+   {
+    "title": "Logo",
+    "path": "albums/n64/donkey-kong-64/logo.mid"
+   },
+   {
+    "title": "Lose Bonus Tokens",
+    "path": "albums/n64/donkey-kong-64/lose-bonus-tokens.mid"
+   },
+   {
+    "title": "Lose Race",
+    "path": "albums/n64/donkey-kong-64/lose-race.mid"
+   },
+   {
+    "title": "Mad Maze Maul",
+    "path": "albums/n64/donkey-kong-64/mad-maze-maul.mid"
+   },
+   {
+    "title": "Main Menu",
+    "path": "albums/n64/donkey-kong-64/main-menu.mid"
+   },
+   {
+    "title": "Mermaid Palace",
+    "path": "albums/n64/donkey-kong-64/mermaid-palace.mid"
+   },
+   {
+    "title": "Mine Cart Carnage",
+    "path": "albums/n64/donkey-kong-64/mine-cart-carnage.mid"
+   },
+   {
+    "title": "Mini Monkey",
+    "path": "albums/n64/donkey-kong-64/mini-monkey.mid"
+   },
+   {
+    "title": "Mini-Boss",
+    "path": "albums/n64/donkey-kong-64/mini-boss.mid"
+   },
+   {
+    "title": "Monkey Smash",
+    "path": "albums/n64/donkey-kong-64/monkey-smash.mid"
+   },
+   {
+    "title": "OrangSprint",
+    "path": "albums/n64/donkey-kong-64/orangsprint.mid"
+   },
+   {
+    "title": "Pause",
+    "path": "albums/n64/donkey-kong-64/pause.mid"
+   },
+   {
+    "title": "Pause Menu",
+    "path": "albums/n64/donkey-kong-64/pause-menu.mid"
+   },
+   {
+    "title": "Rambi",
+    "path": "albums/n64/donkey-kong-64/rambi.mid"
+   },
+   {
+    "title": "Rocket Barrel Boost",
+    "path": "albums/n64/donkey-kong-64/rocket-barrel-boost.mid"
+   },
+   {
+    "title": "Snide's HQ",
+    "path": "albums/n64/donkey-kong-64/snide-s-hq.mid"
+   },
+   {
+    "title": "Stealthy Snoop",
+    "path": "albums/n64/donkey-kong-64/stealthy-snoop.mid"
+   },
+   {
+    "title": "Strong Kong",
+    "path": "albums/n64/donkey-kong-64/strong-kong.mid"
+   },
+   {
+    "title": "Success",
+    "path": "albums/n64/donkey-kong-64/success.mid"
+   },
+   {
+    "title": "Tag Barrel Chunky",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-chunky.mid"
+   },
+   {
+    "title": "Tag Barrel Diddy",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-diddy.mid"
+   },
+   {
+    "title": "Tag Barrel Donkey",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-donkey.mid"
+   },
+   {
+    "title": "Tag Barrel Lanky",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-lanky.mid"
+   },
+   {
+    "title": "Tag Barrel Tiny",
+    "path": "albums/n64/donkey-kong-64/tag-barrel-tiny.mid"
+   },
+   {
+    "title": "Tiny's Saxophone Slam",
+    "path": "albums/n64/donkey-kong-64/tiny-s-saxophone-slam.mid"
+   },
+   {
+    "title": "Transformation",
+    "path": "albums/n64/donkey-kong-64/transformation.mid"
+   },
+   {
+    "title": "Troff 'n' Scoff",
+    "path": "albums/n64/donkey-kong-64/troff-n-scoff.mid"
+   },
+   {
+    "title": "Unknown",
+    "path": "albums/n64/donkey-kong-64/unknown.mid"
+   },
+   {
+    "title": "Weapon Upgrade",
+    "path": "albums/n64/donkey-kong-64/weapon-upgrade.mid"
+   },
+   {
+    "title": "Win Race",
+    "path": "albums/n64/donkey-kong-64/win-race.mid"
+   },
+   {
+    "title": "Wrinkly Kong",
+    "path": "albums/n64/donkey-kong-64/wrinkly-kong.mid"
+   }
+  ]
+ },
+ {
   "title": "Donkey Kong Country",
   "songs": [
    {

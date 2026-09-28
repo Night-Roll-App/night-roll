@@ -1,0 +1,719 @@
+{
+ "title": "Donkey Kong 64",
+ "order": 50,
+ "songs": {
+  "angry-aztec-boss-dogadon": "Angry Aztec Boss: Dogadon",
+  "candy-s-music-store": "Candy's Music Store",
+  "chunky-s-triangle-trample": "Chunky's Triangle Trample",
+  "collect-blue-print": "Collect Blue-Print",
+  "cranky-s-lab": "Cranky's Lab",
+  "cranky-s-potion": "Cranky's Potion",
+  "creepy-castle-boss-king-kut-out": "Creepy Castle Boss: King Kut Out",
+  "creepy-castle-library-alternate": "Creepy Castle Library (Alternate)",
+  "crystal-caves-boss-army-dillo": "Crystal Caves Boss: Army Dillo",
+  "diddy-s-guitar-gazump": "Diddy's Guitar Gazump",
+  "dk-isle": "DK Isle",
+  "dk-rap": "DK Rap",
+  "dk-s-treehouse": "DK's Treehouse",
+  "donkey-s-bongo-blast": "Donkey's Bongo Blast",
+  "find-blue-print": "Find Blue-Print",
+  "frantic-factory-boss-mad-jack": "Frantic Factory Boss: Mad Jack",
+  "frantic-factory-research-and-development": "Frantic Factory Research and Development",
+  "fungi-forest-boss-dogadon": "Fungi Forest Boss: Dogadon",
+  "funky-s-armoury": "Funky's Armoury",
+  "gloomy-galleon-boss-puftoss": "Gloomy Galleon Boss: Puftoss",
+  "hideout-helm-completed": "Hideout Helm (completed)",
+  "jungle-japes-boss-army-dillo": "Jungle Japes Boss: Army Dillo",
+  "k-lumsy-key": "K. Lumsy Key",
+  "k-lumsy": "K. Lumsy",
+  "k-rool-take-off": "K Rool Take-Off",
+  "krem-isle-snide-s-hq": "Krem Isle Snide's HQ",
+  "lanky-s-trombone-tremor": "Lanky's Trombone Tremor",
+  "mini-boss": "Mini-Boss",
+  "orangsprint": "OrangSprint",
+  "snide-s-hq": "Snide's HQ",
+  "tiny-s-saxophone-slam": "Tiny's Saxophone Slam",
+  "troff-n-scoff": "Troff 'n' Scoff"
+ },
+ "nsf": {
+  "vault": "donkey-kong-64/",
+  "tracks": {
+   "100-bananas": {
+    "n": 1,
+    "secs": 124.8
+   },
+   "angry-aztec-barrel-course": {
+    "n": 1,
+    "secs": 84
+   },
+   "angry-aztec-boss-dogadon": {
+    "n": 1,
+    "secs": 111
+   },
+   "angry-aztec-caves": {
+    "n": 1,
+    "secs": 201.6
+   },
+   "angry-aztec-lobby": {
+    "n": 1,
+    "secs": 69.38888888888889
+   },
+   "angry-aztec-race": {
+    "n": 1,
+    "secs": 70.8
+   },
+   "angry-aztec-room": {
+    "n": 1,
+    "secs": 62.76923076923077
+   },
+   "angry-aztec-temple": {
+    "n": 1,
+    "secs": 142.63392857142858
+   },
+   "angry-aztec-underground": {
+    "n": 1,
+    "secs": 132
+   },
+   "angry-aztec": {
+    "n": 1,
+    "secs": 141.82954545454547
+   },
+   "baboon-balloon": {
+    "n": 1,
+    "secs": 20.052083333333332
+   },
+   "banana-fairy-isle": {
+    "n": 1,
+    "secs": 86.25
+   },
+   "banana-fairy-photo": {
+    "n": 1,
+    "secs": 2.0923003347680535
+   },
+   "banana-fairy": {
+    "n": 1,
+    "secs": 18
+   },
+   "banana-medal": {
+    "n": 1,
+    "secs": 3.853484388379928
+   },
+   "barrel-course-complete": {
+    "n": 1,
+    "secs": 5.821759775538955
+   },
+   "battle-arena": {
+    "n": 1,
+    "secs": 64.00833333333334
+   },
+   "beach-ambience": {
+    "n": 1,
+    "secs": 134
+   },
+   "bonus-barrel-introduction": {
+    "n": 1,
+    "secs": 8.125
+   },
+   "bonus-barrel": {
+    "n": 1,
+    "secs": 60.93150862595
+   },
+   "boss-introduction": {
+    "n": 1,
+    "secs": 60
+   },
+   "boss-unlock": {
+    "n": 1,
+    "secs": 12.278846153846153
+   },
+   "candy-s-music-store": {
+    "n": 1,
+    "secs": 66.63157894736842
+   },
+   "chunky-s-triangle-trample": {
+    "n": 1,
+    "secs": 4.4772727272727275
+   },
+   "collect-banana-token": {
+    "n": 1,
+    "secs": 0.46153846153846156
+   },
+   "collect-blue-print": {
+    "n": 1,
+    "secs": 1.8833333333333333
+   },
+   "collect-bonus-token": {
+    "n": 1,
+    "secs": 0.6153846153846154
+   },
+   "collect-crystal-coconut": {
+    "n": 1,
+    "secs": 0.6774193548387096
+   },
+   "collect-golden-banana": {
+    "n": 1,
+    "secs": 3.875
+   },
+   "collect-melon-piece": {
+    "n": 1,
+    "secs": 0.875
+   },
+   "collect-multi-banana-token": {
+    "n": 1,
+    "secs": 1.0769230769230769
+   },
+   "collect-pearl": {
+    "n": 1,
+    "secs": 0.7426470588235294
+   },
+   "cranky-s-lab": {
+    "n": 1,
+    "secs": 62.11764705882353
+   },
+   "cranky-s-potion": {
+    "n": 1,
+    "secs": 10.157360138940057
+   },
+   "credits": {
+    "n": 1,
+    "secs": 156.8
+   },
+   "creepy-castle-ballroom": {
+    "n": 1,
+    "secs": 65.45454545454545
+   },
+   "creepy-castle-barrel-course": {
+    "n": 1,
+    "secs": 88.27586206896552
+   },
+   "creepy-castle-boss-king-kut-out": {
+    "n": 1,
+    "secs": 88
+   },
+   "creepy-castle-caves": {
+    "n": 1,
+    "secs": 79.02439024390245
+   },
+   "creepy-castle-dungeons": {
+    "n": 1,
+    "secs": 135.52941176470588
+   },
+   "creepy-castle-greenhouse": {
+    "n": 1,
+    "secs": 82.47619047619048
+   },
+   "creepy-castle-library-alternate": {
+    "n": 1,
+    "secs": 93.81818181818181
+   },
+   "creepy-castle-library": {
+    "n": 1,
+    "secs": 93.81818181818181
+   },
+   "creepy-castle-lobby": {
+    "n": 1,
+    "secs": 89.45454545454545
+   },
+   "creepy-castle-mine-cart": {
+    "n": 1,
+    "secs": 100.11428571428571
+   },
+   "creepy-castle-museum": {
+    "n": 1,
+    "secs": 115.5
+   },
+   "creepy-castle-rubbish-bin": {
+    "n": 1,
+    "secs": 57.88235294117647
+   },
+   "creepy-castle-tree-trunk": {
+    "n": 1,
+    "secs": 98.66666666666667
+   },
+   "creepy-castle-wind-tower": {
+    "n": 1,
+    "secs": 69
+   },
+   "creepy-castle": {
+    "n": 1,
+    "secs": 189.92105263157896
+   },
+   "crystal-caves-barrel-course": {
+    "n": 1,
+    "secs": 80.84210526315789
+   },
+   "crystal-caves-board-game": {
+    "n": 1,
+    "secs": 68.57142857142857
+   },
+   "crystal-caves-boss-army-dillo": {
+    "n": 1,
+    "secs": 123.24324324324324
+   },
+   "crystal-caves-earthquake": {
+    "n": 1,
+    "secs": 6.425
+   },
+   "crystal-caves-igloo": {
+    "n": 1,
+    "secs": 72
+   },
+   "crystal-caves-indoors": {
+    "n": 1,
+    "secs": 74.16666666666667
+   },
+   "crystal-caves-lobby": {
+    "n": 1,
+    "secs": 70.29166666666667
+   },
+   "crystal-caves-race": {
+    "n": 1,
+    "secs": 57.142857142857146
+   },
+   "crystal-caves-rotating-room": {
+    "n": 1,
+    "secs": 59.4
+   },
+   "crystal-caves": {
+    "n": 1,
+    "secs": 123.5
+   },
+   "defeat-boss": {
+    "n": 1,
+    "secs": 5.358333333333333
+   },
+   "diddy-s-guitar-gazump": {
+    "n": 1,
+    "secs": 4
+   },
+   "dk-isle": {
+    "n": 1,
+    "secs": 108.8
+   },
+   "dk-rap": {
+    "n": 1,
+    "secs": 216.6060606060606
+   },
+   "dk-s-treehouse": {
+    "n": 1,
+    "secs": 81.23076923076923
+   },
+   "donkey-s-bongo-blast": {
+    "n": 1,
+    "secs": 3.425
+   },
+   "ending": {
+    "n": 1,
+    "secs": 100
+   },
+   "enguarde": {
+    "n": 1,
+    "secs": 57.47222222222222
+   },
+   "entrance": {
+    "n": 1,
+    "secs": 3.6923076923076925
+   },
+   "exit": {
+    "n": 1,
+    "secs": 3.6923076923076925
+   },
+   "failure": {
+    "n": 1,
+    "secs": 3.289473684210526
+   },
+   "find-blue-print": {
+    "n": 1,
+    "secs": 2.0854165570233145
+   },
+   "find-golden-banana": {
+    "n": 1,
+    "secs": 3.25
+   },
+   "find-melon-piece": {
+    "n": 1,
+    "secs": 1.141304347826087
+   },
+   "frantic-factory-boss-mad-jack": {
+    "n": 1,
+    "secs": 116
+   },
+   "frantic-factory-car-race": {
+    "n": 1,
+    "secs": 104
+   },
+   "frantic-factory-conveyor-belt": {
+    "n": 1,
+    "secs": 57.333333333333336
+   },
+   "frantic-factory-lobby": {
+    "n": 1,
+    "secs": 93.81818181818181
+   },
+   "frantic-factory-production-room": {
+    "n": 1,
+    "secs": 110
+   },
+   "frantic-factory-research-and-development": {
+    "n": 1,
+    "secs": 116
+   },
+   "frantic-factory": {
+    "n": 1,
+    "secs": 135.27272727272728
+   },
+   "fungi-forest-barrel-course": {
+    "n": 1,
+    "secs": 59.07692307692308
+   },
+   "fungi-forest-bonus-room": {
+    "n": 1,
+    "secs": 70.08333333333333
+   },
+   "fungi-forest-boss-dogadon": {
+    "n": 1,
+    "secs": 122.18181818181819
+   },
+   "fungi-forest-day": {
+    "n": 1,
+    "secs": 155.6
+   },
+   "fungi-forest-giant-mushroom": {
+    "n": 1,
+    "secs": 66.78260869565217
+   },
+   "fungi-forest-indoors-1": {
+    "n": 1,
+    "secs": 62.9126213592233
+   },
+   "fungi-forest-indoors-2": {
+    "n": 1,
+    "secs": 81.64948453608247
+   },
+   "fungi-forest-lobby": {
+    "n": 1,
+    "secs": 67.2
+   },
+   "fungi-forest-mine-cart": {
+    "n": 1,
+    "secs": 108
+   },
+   "fungi-forest-night": {
+    "n": 1,
+    "secs": 129
+   },
+   "fungi-forest-race": {
+    "n": 1,
+    "secs": 64.8
+   },
+   "fungi-forest-spider": {
+    "n": 1,
+    "secs": 61.89147939582128
+   },
+   "fungi-forest-tree-trunk": {
+    "n": 1,
+    "secs": 59.294117647058826
+   },
+   "funky-s-armoury": {
+    "n": 1,
+    "secs": 70
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 27.428571428571427
+   },
+   "gloomy-galleon-barrel-course": {
+    "n": 1,
+    "secs": 169.26315789473685
+   },
+   "gloomy-galleon-boat-race": {
+    "n": 1,
+    "secs": 60.30769230769231
+   },
+   "gloomy-galleon-boss-puftoss": {
+    "n": 1,
+    "secs": 118.66666666666667
+   },
+   "gloomy-galleon-caves": {
+    "n": 1,
+    "secs": 128
+   },
+   "gloomy-galleon-lobby": {
+    "n": 1,
+    "secs": 72
+   },
+   "gloomy-galleon-mechanical-fish": {
+    "n": 1,
+    "secs": 62.270270270270274
+   },
+   "gloomy-galleon-pearl-treasure": {
+    "n": 1,
+    "secs": 48
+   },
+   "gloomy-galleon-ship-ruins": {
+    "n": 1,
+    "secs": 101.88888888888889
+   },
+   "gloomy-galleon-submarine": {
+    "n": 1,
+    "secs": 67.2
+   },
+   "gloomy-galleon-sunken-ship": {
+    "n": 1,
+    "secs": 72
+   },
+   "gloomy-galleon": {
+    "n": 1,
+    "secs": 165.6
+   },
+   "gorilla-gone": {
+    "n": 1,
+    "secs": 16.052083333333332
+   },
+   "happy-k-lumsy": {
+    "n": 1,
+    "secs": 10.104731329930004
+   },
+   "hideout-helm-bonus-barrel": {
+    "n": 1,
+    "secs": 64
+   },
+   "hideout-helm-completed": {
+    "n": 1,
+    "secs": 152.34782608695653
+   },
+   "hideout-helm-lobby": {
+    "n": 1,
+    "secs": 82
+   },
+   "hideout-helm": {
+    "n": 1,
+    "secs": 147.84615384615384
+   },
+   "hunky-chunky": {
+    "n": 1,
+    "secs": 57.23076923076923
+   },
+   "instrument-refill": {
+    "n": 1,
+    "secs": 3.2371794871794872
+   },
+   "introduction": {
+    "n": 1,
+    "secs": 292.375
+   },
+   "jungle-ambience": {
+    "n": 1,
+    "secs": 27.015625
+   },
+   "jungle-japes-barrel-course": {
+    "n": 1,
+    "secs": 76.8
+   },
+   "jungle-japes-boss-army-dillo": {
+    "n": 1,
+    "secs": 108
+   },
+   "jungle-japes-caves-ambience": {
+    "n": 1,
+    "secs": 96
+   },
+   "jungle-japes-caves": {
+    "n": 1,
+    "secs": 172.36363636363637
+   },
+   "jungle-japes-lobby": {
+    "n": 1,
+    "secs": 60
+   },
+   "jungle-japes-mine-cart": {
+    "n": 1,
+    "secs": 102.66666666666667
+   },
+   "jungle-japes-storm": {
+    "n": 1,
+    "secs": 62.4
+   },
+   "jungle-japes-underground": {
+    "n": 1,
+    "secs": 104.72727272727273
+   },
+   "jungle-japes": {
+    "n": 1,
+    "secs": 124.8
+   },
+   "k-lumsy-key": {
+    "n": 1,
+    "secs": 3.725
+   },
+   "k-lumsy": {
+    "n": 1,
+    "secs": 121.41176470588235
+   },
+   "k-rool-battle-introduction": {
+    "n": 1,
+    "secs": 57.6
+   },
+   "k-rool-defeated": {
+    "n": 1,
+    "secs": 37.84375
+   },
+   "k-rool-duel": {
+    "n": 1,
+    "secs": 192
+   },
+   "k-rool-take-off": {
+    "n": 1,
+    "secs": 70.58823529411765
+   },
+   "k-rool": {
+    "n": 1,
+    "secs": 34
+   },
+   "krem-isle-snide-s-hq": {
+    "n": 1,
+    "secs": 70
+   },
+   "krem-isle": {
+    "n": 1,
+    "secs": 121.84615384615384
+   },
+   "lanky-s-trombone-tremor": {
+    "n": 1,
+    "secs": 5.053571428571429
+   },
+   "logo": {
+    "n": 1,
+    "secs": 21.6
+   },
+   "lose-bonus-tokens": {
+    "n": 1,
+    "secs": 1.1477272727272727
+   },
+   "lose-race": {
+    "n": 1,
+    "secs": 23.863636363636363
+   },
+   "mad-maze-maul": {
+    "n": 1,
+    "secs": 59.2
+   },
+   "main-menu": {
+    "n": 1,
+    "secs": 66.85714285714286
+   },
+   "mermaid-palace": {
+    "n": 1,
+    "secs": 66.57142857142857
+   },
+   "mine-cart-carnage": {
+    "n": 1,
+    "secs": 62.11764705882353
+   },
+   "mini-boss": {
+    "n": 1,
+    "secs": 70.15384615384616
+   },
+   "mini-monkey": {
+    "n": 1,
+    "secs": 46.5
+   },
+   "monkey-smash": {
+    "n": 1,
+    "secs": 114.46153846153847
+   },
+   "orangsprint": {
+    "n": 1,
+    "secs": 49.371428571428574
+   },
+   "pause-menu": {
+    "n": 1,
+    "secs": 40.61538461538461
+   },
+   "pause": {
+    "n": 1,
+    "secs": 0.625
+   },
+   "rambi": {
+    "n": 1,
+    "secs": 43.885714285714286
+   },
+   "rocket-barrel-boost": {
+    "n": 1,
+    "secs": 44
+   },
+   "snide-s-hq": {
+    "n": 1,
+    "secs": 72.5
+   },
+   "stealthy-snoop": {
+    "n": 1,
+    "secs": 74.18181818181819
+   },
+   "strong-kong": {
+    "n": 1,
+    "secs": 30.545454545454547
+   },
+   "success": {
+    "n": 1,
+    "secs": 2.1416666666666666
+   },
+   "tag-barrel-chunky": {
+    "n": 1,
+    "secs": 23.863636363636363
+   },
+   "tag-barrel-diddy": {
+    "n": 1,
+    "secs": 23.863636363636363
+   },
+   "tag-barrel-donkey": {
+    "n": 1,
+    "secs": 23.863636363636363
+   },
+   "tag-barrel-lanky": {
+    "n": 1,
+    "secs": 23.863636363636363
+   },
+   "tag-barrel-tiny": {
+    "n": 1,
+    "secs": 23.863636363636363
+   },
+   "tiny-s-saxophone-slam": {
+    "n": 1,
+    "secs": 4.222222222222222
+   },
+   "transformation": {
+    "n": 1,
+    "secs": 5.916666666666667
+   },
+   "troff-n-scoff": {
+    "n": 1,
+    "secs": 73.30434782608695
+   },
+   "unknown": {
+    "n": 1,
+    "secs": 3.2276343273632286
+   },
+   "weapon-upgrade": {
+    "n": 1,
+    "secs": 1.5333333333333334
+   },
+   "win-race": {
+    "n": 1,
+    "secs": 23.863636363636363
+   },
+   "wrinkly-kong": {
+    "n": 1,
+    "secs": 21.6
+   }
+  },
+  "chip": "usf",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "nus-ndop-usa.usflib",
+    "file": "nus-ndop-usa.usflib"
+   }
+  ]
+ }
+}
