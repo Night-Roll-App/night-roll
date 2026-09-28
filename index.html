@@ -10502,7 +10502,11 @@ function decodeM3u(bytes) {
 function parseM3u(text) { // ordered [{n, title}] — playlist order IS album order
   const list = [];
   for (const line of text.split(/\r?\n/)) {
-    const m = line.match(/::(?:NSF|GBS),(\d+),(.+?),(\d+):(\d\d(?:\.\d+)?)/); // NSF and GBS rips share the line shape
+    // NSF and GBS rips share the line shape; the length is M:SS (Game Boy rips)
+    // or H:MM:SS(.fff) (every Zophar NES rip). Read as M:SS, "0:01:16" was 1 s:
+    // every track a "jingle", captured 12 s, never retried (2026-09-27, the
+    // Castlevania batch — Stalker came back 12 s of a 64 s song).
+    const m = line.match(/::(?:NSF|GBS),(\d+),(.+?),(?:(\d+):)?(\d+):(\d\d(?:\.\d+)?)/);
     if (!m) continue;
     const raw = m[2].replace(/\\,/g, ",");
     const parts = raw.split(" - ");
@@ -10514,7 +10518,7 @@ function parseM3u(text) { // ordered [{n, title}] — playlist order IS album or
     // (no track 0 in sight) still lands on the right subsong.
     const gb = m[0].includes("::GBS,");
     const title = (gb && parts.length >= 2 ? parts[0] : parts.length >= 3 ? parts.slice(2).join(" - ") : parts[parts.length - 1]).trim();
-    if (title) list.push({n: +m[1] + (gb ? 1 : 0), title, len: +m[3] * 60 + +m[4]});
+    if (title) list.push({n: +m[1] + (gb ? 1 : 0), title, len: (+m[3] || 0) * 3600 + +m[4] * 60 + +m[5]});
   }
   return list;
 }

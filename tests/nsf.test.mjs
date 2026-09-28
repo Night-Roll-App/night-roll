@@ -227,3 +227,16 @@ test("APU renderer: a pulse register log becomes audio at the written pitch", ()
   for (const x of r2.pulse1) s2 += Math.abs(x);
   assert.ok(s2 < 1e-6, "disabled channel is silent");
 });
+
+test("NSF runner: the player enables the channels before INIT, so a driver that never writes $4015 still sounds", () => {
+  const bytes = new Uint8Array(makeTestNSF());
+  const i = bytes.indexOf(0x8D, 0x80); // the init's STA $4015 (A9 0F 8D 15 40) → NOPs: the driver no longer enables anything
+  assert.equal(bytes[i + 1], 0x15); assert.equal(bytes[i + 2], 0x40);
+  bytes[i] = 0xEA; bytes[i + 1] = 0xEA; bytes[i + 2] = 0xEA;
+  const nsf = parseNSF(bytes.buffer);
+  const {apuLog, frames, frameSec} = runNSF(nsf, 1, 3);
+  assert.deepEqual(apuLog[0], {frame: 0, order: 0, addr: 0x4015, value: 0x0F}, "the player's own $4015 write leads the log");
+  assert.ok(!apuLog.slice(1).some(w => w.addr === 0x4015), "the patched driver writes none");
+  const pulse1 = reconstruct(apuLog, frames, frameSec).filter(e => e.channel === "pulse1").map(e => pitchName(e.midi));
+  assert.deepEqual(pulse1, ["C4", "E4", "G4", "C5"]);
+});

@@ -1755,6 +1755,10 @@ test("m3u playlists: track names parse from the emu-scene format", () => {
     [11, "Dr. Wily's Castle"], // escaped commas in artist survive; order = playlist order
     [12, "Dr. Wily's Castle II"],
   ]);
+  // Zophar's NES lengths are H:MM:SS(.fff): read as M:SS, "0:01:17" was 1 s and every track a 12 s "jingle" (the Castlevania batch, 2026-09-27)
+  assert.deepEqual(list.map(e => e.len), [77, 150, 76]);
+  assert.equal(val(`parseM3u("a.nsf::NSF,1,Game - Artist - Opening,0:00:52.393,,0:00:00")[0].len`), 52.393);
+  assert.equal(val(`parseM3u("a.nsf::NSF,1,Game - Artist - Long,1:02:03,,0")[0].len`), 3723);
   // a Game Boy rip's line (Zophar: one such file per track, so the picker merges them)
   // Game Boy rips (the real FFL1 lines, 2026-09-27): "Title - Artist - Game - ©year", tracks 0-BASED → title first, row n+1
   const gb = val(`parseM3u(${JSON.stringify(["DMG-SAJ.gbs::GBS,0,Prologue - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:56,,10", "DMG-SAJ.gbs::GBS,7,Town Theme - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,01:00,,10", "DMG-SAJ.gbs::GBS,15,Jingle #01 - Nobuo Uematsu - Final Fantasy Legend - ©1989-12-15 Square,00:04,,1"].join("\n"))})`);

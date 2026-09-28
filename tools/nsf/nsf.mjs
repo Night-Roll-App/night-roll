@@ -51,6 +51,11 @@ function makeRun(nsf) { // shared machine state for the sync and async runners
   const bankRegs = new Uint8Array(8);
   const apuLog = [];                          // {frame, order, addr, value}
   let frame = 0, order = 0;
+  // The NSF player, not the driver, enables the channels before INIT ($4015 =
+  // $0F per the spec's player-side init). Castlevania's driver never writes
+  // $4015 itself, so without this every track reconstructed silent (2026-09-27);
+  // drivers that do write it (FF1, MM2) see the same log after their own write.
+  apuLog.push({frame: 0, order: order++, addr: 0x4015, value: 0x0F});
 
   if (nsf.banked) {
     for (let i = 0; i < 8; i++) bankRegs[i] = nsf.banks[i];
