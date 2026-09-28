@@ -531,7 +531,9 @@ test("SM64 Cave Dungeon (real ROM): the intro instrument's recording sounds C3 a
   // the app's path stamps the sequence id, which picks the underground preset (level scripts: hmc/cotmc/sl/ssl/thi 0x0004)
   const viaApp = sequenceOfSet(set);
   assert.equal(viaApp.res.sequenceId, 12);
-  assert.deepEqual((await renderN64(viaApp.res, {set, banks: seq.banks, keepSeconds: 1})).reverb, {window: 0x0C00, gain: 0x4FFF});
+  // the reverb comes from the rip's RAM (gSynthesisReverb at 0x80220DB0): the ripper's one state, preset 0, for every song
+  assert.deepEqual(viaApp.res.reverb, {at: 0x220DB0, useReverb: 8, gain: 0x2FFF, window: 0x0C00});
+  assert.deepEqual((await renderN64(viaApp.res, {set, banks: seq.banks, keepSeconds: 1})).reverb, {window: 0x0C00, gain: 0x2FFF});
 });
 
 test("SM64 Dire, Dire Docks (real ROM): notes end by their own envelope (298 updates), no sustain op; the reverb (D4 0x32, water preset) is what carries the tail", {skip: !SM64}, async () => {
@@ -544,10 +546,9 @@ test("SM64 Dire, Dire Docks (real ROM): notes end by their own envelope (298 upd
   assert.equal(bank.instrument(15).releaseRate, 10);
   const n0 = res.notes.filter(n => n.ch === 15)[0];
   assert.deepEqual([n0.midi, n0.dur, n0.rev, n0.chEnv, n0.chRel, n0.lyAdsr], [43, 149, 0x32, null, null, null]);
-  res.sequenceId = seq.id;
   const dry = await renderN64(res, {set, banks: seq.banks, keepSeconds: 4, reverb: null});
   const wet = await renderN64(res, {set, banks: seq.banks, keepSeconds: 4});
-  assert.deepEqual(wet.reverb, {window: 0x0E00, gain: 0x3FFF});
+  assert.deepEqual(wet.reverb, {window: 0x0C00, gain: 0x2FFF}, "read from the set's RAM when the result carries none");
   const sr = dry.sampleRate, t0 = tickSeconds(res.tempos, n0.tick);
   const rms = (a, s0, s1) => { let s = 0; for (let i = Math.floor(s0 * sr); i < Math.floor(s1 * sr); i++) s += a[i] * a[i]; return Math.sqrt(s / ((s1 - s0) * sr)); };
   const peak = rms(dry["ch 15 inst 15"], t0, t0 + 0.3);
@@ -555,7 +556,7 @@ test("SM64 Dire, Dire Docks (real ROM): notes end by their own envelope (298 upd
   // the envelope has run out 1.25 s after onset (301 updates at 240/s); the next note comes at +1.8 s
   const tailDry = db(rms(dry["ch 15 inst 15"], t0 + 1.55, t0 + 1.75)), tailWet = db(rms(wet["ch 15 inst 15"], t0 + 1.55, t0 + 1.75));
   assert.ok(tailDry < -60, "dry: silent once the envelope has run out: " + tailDry.toFixed(0) + " dB");
-  assert.ok(tailWet > -55 && tailWet < -20, "wet: the 112 ms / ×0.5 comb still rings: " + tailWet.toFixed(0) + " dB");
+  assert.ok(tailWet > -60 && tailWet < -20, "wet: the 96 ms / ×0.375 comb still rings: " + tailWet.toFixed(0) + " dB");
 });
 
 test("SM64 Title Theme (real ROM): the plain id skips the ritardando intro and its extra channels, as the game does; the SEQ_VARIATION id plays it", {skip: !SM64}, () => {
@@ -567,4 +568,24 @@ test("SM64 Title Theme (real ROM): the plain id skips the ritardando intro and i
   const varied = parseSequence(bytes, {abi: "sm64", variation: 0x80, maxSeconds: 600});
   assert.deepEqual([varied.notes.length, varied.tempos.map(t => t.bpm), varied.loop.tick, varied.channels.length], [4008, [172, 99, 90, 78, 119, 172], 769, 13]);
   assert.equal(res.notes.length, 3910, "sm64Song follows the game's default");
+});
+
+test("SM64 per-mini ducking (real set): the three Dire Docks and three Cave Dungeon minis share one save state; the mini's own overlay marks the voices the game had muted", {skip: !SM64}, () => {
+  const libs = readdirSync(SM64).filter(n => /\.usflib$/i.test(n)).map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(SM64, n)))}));
+  const cap = m => sequenceOfSet(loadUSF([{name: m, bytes: new Uint8Array(readFileSync(join(SM64, m)))}, ...libs]));
+  const a = cap("09a Dire, Dire Docks.miniusf"), b = cap("09b Dire, Dire Docks (in water).miniusf"), c = cap("09c Dire, Dire Docks (underwater cave).miniusf");
+  for (const x of [a, b, c]) { assert.equal(x.id, 5); assert.equal(x.res.variation, 0); }
+  // the state word is the same in all three: one `addiu a1, zero, 5`
+  assert.deepEqual([a, b, c].map(x => x.game.seqId.kind), ["li-a1", "li-a1", "li-a1"]);
+  assert.deepEqual(a.res.channels, [14, 15]); assert.equal(a.res.notes.length, 390);
+  assert.deepEqual(a.res.ducked, [0, 1, 6, 9, 10, 11], "= sMusicDynamics[0] for SEQ_LEVEL_WATER, mask 0x0E43");
+  assert.deepEqual(a.res.warnings.filter(w => /ducking/.test(w)), ["channels 0,1,6,9,10,11 silent in this area (game ducking)"]);
+  assert.deepEqual(a.ducked.marked, [{bank: 19, inst: 0}, {bank: 19, inst: 1}, {bank: 19, inst: 6}, {bank: 19, inst: 10}, {bank: 19, inst: 11}, {bank: 19, drum: 15}, {bank: 19, drum: 17}]);
+  assert.deepEqual(b.res.channels, [0, 1, 6, 14, 15]); assert.deepEqual(b.res.ducked, [9, 10, 11]); assert.equal(b.res.notes.length, 843);
+  assert.deepEqual(c.res.channels, [0, 1, 6, 9, 10, 11, 14, 15]); assert.deepEqual(c.res.ducked, []); assert.equal(c.res.notes.length, 1963);
+  const ca = cap("14a Cave Dungeon.miniusf"), cb = cap("14b Cave Dungeon (Hazy Maze).miniusf"), cc = cap("14c Cave Dungeon (both variations).miniusf");
+  assert.deepEqual([ca.res.ducked, cb.res.ducked, cc.res.ducked], [[8], [3], []], "= UNDERGROUND dynamics 3 (0x0100) and 4 (0x0008), and none");
+  assert.deepEqual([ca.res.notes.length, cb.res.notes.length, cc.res.notes.length], [2281, 2178, 2358]);
+  for (const m of [TITLE, MAIN]) { const x = cap(m); assert.deepEqual(x.res.ducked, [], m); assert.ok(!(x.res.warnings || []).some(w => /ducking/.test(w))); }
+  assert.equal(cap(TITLE).res.notes.length, 3910); assert.equal(cap(MAIN).res.notes.length, 1419);
 });

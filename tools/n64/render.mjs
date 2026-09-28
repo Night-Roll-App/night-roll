@@ -17,9 +17,11 @@
 // oldest samples become the update's starting sound, are scaled by the
 // preset's gain, take the notes' wet sends — dry × reverbVol/128, D4 —
 // and go back into the ring), i.e. out = dry + ring[t − W], ring[t] =
-// gain·ring[t − W] + wet[t], W = the session preset's window. The preset
-// is the level's (SET_BACKGROUND_MUSIC in the decomp's level scripts, US
-// table below); a USF rip does not carry it. Not here: pan (mono),
+// gain·ring[t − W] + wet[t], W and the gain read from the rip's own RAM
+// (the engine's gSynthesisReverb — ead-usf.mjs findSynthesisReverb): the
+// state the game was in when ripped, one state for every song of a USF
+// set. No per-song table (Josh's rule: game identity only says where to
+// look); a rip without those RAM pages renders dry and says so. Not here: pan (mono),
 // vibrato, portamento, the RSP's resampler (linear interpolation
 // instead), the synth waveforms of instrument ids >= 0x80 (skipped,
 // listed in `warnings`), and volume changes during a note (the value at
@@ -27,6 +29,8 @@
 import { tickSeconds } from "./seq-libultra.mjs";
 import { channelGroups } from "./notes.mjs";
 import { findAudioFiles, readBank, DEFAULT_ENVELOPE, DEFAULT_RELEASE_RATE } from "./bank.mjs";
+import { rdramOf } from "./usf.mjs";
+import { findSynthesisReverb } from "./ead-usf.mjs";
 
 export const N64_RATE = 32000;          // freqScale 1.0 plays a sample at the output rate (32006 Hz on the US console)
 export const UPDATES_PER_SECOND = 240;  // gAudioUpdatesPerFrame = ALIGN16(32006 / 60) / 160 + 1 = 4, per 60 Hz frame (heap.c)
@@ -35,25 +39,17 @@ const DISABLED = 0, INITIAL = 1, LOOP = 3, FADE = 4, HANG = 5, DECAY = 6;
 const FREQ_CAP = 3.99992;               // process_notes: the resampler's ceiling
 const VOL_SCALE = 4.3498e-5;            // process_notes: adsr level → ~1/23000
 
-// gAudioSessionPresets (data.c, US): reverb window in samples at 32 kHz
-// and the ring's feedback gain /0x8000. Index = the level script's
-// settingsPreset; SM64_PRESET_OF_SEQUENCE maps a sequence id to the
-// preset its level uses (first level found in the decomp's scripts).
-export const SM64_PRESETS = [
-  {window: 0x0C00, gain: 0x2FFF}, {window: 0x0A00, gain: 0x47FF}, {window: 0x1000, gain: 0x2FFF}, {window: 0x0E00, gain: 0x3FFF},
-  {window: 0x0C00, gain: 0x4FFF}, {window: 0x0C00, gain: 0x2FFF}, {window: 0x0A00, gain: 0x47FF}, {window: 0x0800, gain: 0x37FF},
-];
-// levels/*/script.c SET_BACKGROUND_MUSIC(settingsPreset, seq); where levels
-// disagree (HOT: lll/ssl 0 and 4, SLIDE: 0 and 1) the first script listed
-// wins. Menus (SET_MENU_MUSIC) and event jingles play over preset 0.
-export const SM64_PRESET_OF_SEQUENCE = {
-  0x03: 0, 0x04: 1, 0x05: 3, 0x06: 0, 0x07: 2, 0x08: 0, 0x09: 1, 0x0A: 6, 0x0C: 4, 0x11: 0, 0x19: 2,
-};
+// The reverb the engine was running: {window, gain} from opts.reverb (null =
+// dry), else the rip's RAM (opts.set, or what sequenceOfSet stamped on the
+// result as result.reverb), else nothing — and the render says why.
 export function reverbFor(opts, result) {
-  if (opts.reverb === null || opts.reverb === false) return null;
-  if (opts.reverb) return opts.reverb;
-  const p = SM64_PRESET_OF_SEQUENCE[result.sequenceId != null ? result.sequenceId : opts.sequenceId];
-  return SM64_PRESETS[p != null ? p : 0];
+  if (opts.reverb === null || opts.reverb === false) return {reverb: null, why: null};
+  if (opts.reverb) return {reverb: {window: opts.reverb.window, gain: opts.reverb.gain}, why: null};
+  let st = result && result.reverb !== undefined ? result.reverb : undefined;
+  if (st === undefined && opts.set && opts.set.state) { try { st = findSynthesisReverb(rdramOf(opts.set.state).ram); } catch { st = null; } }
+  if (!st) return {reverb: null, why: "reverb state not in this rip"};
+  if (st.useReverb === 0) return {reverb: null, why: null};
+  return {reverb: {window: st.window, gain: st.gain}, why: null};
 }
 
 // adsr_update, JP/US: the level is an s16 0..32767 stepped once per audio
@@ -109,7 +105,7 @@ export async function renderN64(result, opts = {}) {
   const banks = new Map();
   const bankOf = i => { const id = bankIds[i] != null ? bankIds[i] : bankIds[0]; if (!banks.has(id)) banks.set(id, readBank(rom, files, id)); return banks.get(id); };
   const groups = channelGroups(result, opts.meter || {});
-  const reverb = reverbFor(opts, result);
+  const {reverb, why: reverbWhy} = reverbFor(opts, result);
   const W = reverb ? Math.max(1, Math.round(reverb.window * sampleRate / N64_RATE)) : 0, G = reverb ? reverb.gain / 0x8000 : 0;
   const {tempos, notes} = result;
   const endTick = Math.max(result.endTick || 0, ...notes.map(n => n.tick + n.dur));
@@ -118,6 +114,7 @@ export async function renderN64(result, opts = {}) {
   const out = {sampleRate, seconds, silent: [], warnings: [], reverb: reverb ? {window: reverb.window, gain: reverb.gain} : null};
   const warned = new Set();
   const warn = w => { if (!warned.has(w)) { warned.add(w); out.warnings.push(w); } };
+  if (reverbWhy) warn(reverbWhy);
   const updateEvery = sampleRate / UPDATES_PER_SECOND;
   let done = 0, total = 0;
   for (const g of groups) total += g.notes.length;

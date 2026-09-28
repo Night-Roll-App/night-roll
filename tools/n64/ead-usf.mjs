@@ -209,3 +209,30 @@ export function gameOfSet(set) {
   const lib = (set.order || []).find(n => /\.usflib$/i.test(n));
   return lib ? USF_GAMES[lib.split(/[\\/]/).pop().toLowerCase()] || null : null;
 }
+
+// The synthesis reverb the game was running when the rip's state was taken:
+// sm64's `struct SynthesisReverb` (synthesis.h, JP/US layout) {u8
+// resampleFlags, useReverb, framesLeftToIgnore, curFrame; u16 reverbGain;
+// u16 resampleRate; s32 nextRingBufferPos; s32 unkC; s32 bufSizePerChannel;
+// s16 *ringBuffer.left, *right; ...}, filled by heap.c audio_reset_session
+// from the level's gAudioSessionPresets row (bufSizePerChannel =
+// reverbWindowSize, reverbGain = preset->reverbGain, useReverb = 8, the two
+// ring buffers allocated windowSize*2 bytes apart). Found by that shape, not
+// by address: useReverb 8 or 0, gain 1..0x7FFF, window 0x100..0x8000, both
+// ring pointers in RDRAM and exactly window*2 apart. The SM64 US set holds
+// it at 0x80220DB0. Returns {at, useReverb, gain, window} or null when the
+// rip's RAM pages do not carry it.
+export function findSynthesisReverb(ram) {
+  for (const r of ram.runs()) {
+    for (let p = r.offset & ~3; p + 8 <= r.offset + r.length; p += 4) {
+      const use = ram.u8(p + 1);
+      if ((use !== 8 && use !== 0) || ram.u8(p + 2) > 2 || ram.u8(p + 3) > 1) continue;
+      const gain = ram.u16(p + 4);
+      if (gain === 0 || gain > 0x7FFF || ram.coverage(p + 0x10, 12) < 1) continue;
+      const window = ram.u32(p + 0x10), left = ram.u32(p + 0x14), right = ram.u32(p + 0x18);
+      if (window < 0x100 || window > 0x8000 || (left >>> 24) !== 0x80 || (right >>> 24) !== 0x80 || right - left !== window * 2) continue;
+      return {at: p, useReverb: use, gain, window};
+    }
+  }
+  return null;
+}

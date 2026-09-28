@@ -637,3 +637,68 @@ tests in n64.test.mjs (synthetic `80 FA` branch) and n64-real
 an uninitialised local (`s32 value;` in `sequence_player_process_sequence`),
 so it only carries within one tick's run; the parser keeps it across
 ticks, which is what a script would need anyway.
+
+### 9.8 Per-mini ducking and the reverb from RAM (2026-09-27)
+
+Josh, on the variation fix: "every Dire Dire Docks song … has drums now,
+and that's not real". A capture must sound like *that* mini.
+
+**What the three minis are.** 09a/09b/09c (and 14a/14b/14c) are
+byte-identical in their save state: one word each at RDRAM 0x80248B28,
+`24050005` (`addiu a1, zero, 5`). The game's per-area ducking —
+external.c `process_level_music_dynamics` → `fade_channel_volume_scale`
+→ `gSequencePlayers[player].channels[i]->volumeScale` (lines 1831/1842;
+`sMusicDynamics` rows: WATER dynamic 0 `bits2 0x0E43 → volScale2 0`,
+dynamic 1 `0x0E40 → 0`, dynamic 2 none; UNDERGROUND dynamic 3 `0x0100 →
+0`, dynamic 4 `0x0008 → 0`; the area conditions in `sDynDDD`/`sDynHMC`)
+runs on `gCurrLevelNum`/`gMarioStates[0].pos`, none of which the rip's
+36 KB of RAM carries (it is code words, a few audio globals and pointers).
+What does differ is each mini's **own ROM overlay**: single bytes zeroed
+inside bank 19's Instrument/Drum structs — the last byte of each
+AudioBankSound's tuning float. 09a: instruments 0,1,6,10,11 and drums
+15,17 (14 bytes, ROM 0x5883CF…0x5885BB); 09b: instruments 10,11 and drums
+15,17 (7 bytes); 09c: none; 14a: bank 21 instrument 8 (0x5895B7); 14b:
+instrument 3 (0x589517); 14c: none; every other SM64 mini: none. These are
+the ripper's bit-exact trim residue: a byte a mini may zero is a byte no
+sounding voice read in that mini's reference render, i.e. a record of the
+voices the game had muted. Decoded: 09a → channels 0,1,6,9,10,11 (=
+dynamic 0's 0x0E43 exactly), 09c → none (dynamic 2), 14a → channel 8 (=
+dynamic 3's 0x0100), 14b → channel 3 (= dynamic 4's 0x0008), 09b →
+channels 9,10,11 (the table's dynamic 1 would also mute 6; the mini says
+6 sounded in the ripper's reference — the mini wins, and it is what a USF
+player plays). Against the truth: the lazyusf2 09a's RMS envelope
+correlates 0.915 with our ch 14 + ch 15 alone and less with any other
+channel added (`scratch/n64-chancorr.mjs`).
+
+**Implemented.** `loadUSF` keeps the mini's parsed file as `set.top`;
+`capture.mjs duckedChannels(set, loc, seq, res)` maps the overlay's bytes
+onto the sequence's banks' Instrument (0x20) / Drum (0x10) structs, and a
+channel every one of whose voices is marked is dropped from
+`res.notes`/`res.channels`, listed in `res.ducked`, and named in
+`res.warnings` ("channels 0,1,6,9,10,11 silent in this area (game
+ducking)"). The mark is binary (the game's scales here are 0 or 127), so
+no partial volume factor arises. Results: 09a 390 notes on 14,15; 09b 843
+on 0,1,6,14,15; 09c 1963 on all eight; 14a/14b/14c 2281/2178/2358; Title
+and Main untouched.
+
+**Reverb from the rip, not a table.** The engine's `struct
+SynthesisReverb` (synthesis.h, JP/US layout: `u8 resampleFlags,
+useReverb, framesLeftToIgnore, curFrame; u16 reverbGain; u16
+resampleRate; s32 nextRingBufferPos; s32 unkC; s32 bufSizePerChannel;
+s16 *ringBuffer.left, *right`), filled by heap.c `audio_reset_session`
+(`bufSizePerChannel = reverbWindowSize; reverbGain = preset->reverbGain;
+useReverb = 8`, the two ring buffers `soundAlloc(reverbWindowSize * 2)`
+each) **is in every SM64 mini's RAM at 0x80220DB0**: `00 08 02 00 2f ff
+00 00 | .. | 00 00 0c 00 80 1d 8e 00 80 1d a6 00` → useReverb 8, gain
+0x2FFF, window 0x0C00, rings 0x801D8E00/0x801DA600 (window×2 apart), with
+the pool sizes 0x3A00/0x6D00 of the same preset row nearby. That is
+**preset 0** (96 ms, ×0.375) for every song — the ripper's one state —
+not the level presets §9.5 assumed (water 3, underground 4), and it is
+what the truth renders used. `ead-usf.mjs findSynthesisReverb(ram)` finds
+the struct by that shape (useReverb 8/0, gain, window, ring pointers
+window×2 apart), `sequenceOfSet` stamps it as `res.reverb`, `renderN64`
+takes `opts.reverb` (null = dry), else `result.reverb`, else the set's
+RAM, else renders dry with the warning "reverb state not in this rip".
+`SM64_PRESET_OF_SEQUENCE` and `SM64_PRESETS` are gone (Josh's rule: no
+per-game tables for musical behaviour; game identity only says where to
+look).

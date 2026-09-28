@@ -10,7 +10,8 @@ import { expandBook, decodeFrames, decodeSample } from "../tools/n64/vadpcm.mjs"
 import { readBank, readEnvelope, byteView, findAudioFiles, DEFAULT_ENVELOPE } from "../tools/n64/bank.mjs";
 import { readALSeqFile } from "../tools/n64/ead-usf.mjs";
 import { SparseImage } from "../tools/n64/usf.mjs";
-import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, SM64_PRESETS, SM64_PRESET_OF_SEQUENCE, reverbFor } from "../tools/n64/render.mjs";
+import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, reverbFor } from "../tools/n64/render.mjs";
+import { findSynthesisReverb } from "../tools/n64/ead-usf.mjs";
 import { channelGroups } from "../tools/n64/notes.mjs";
 import { TICKS_PER_BEAT } from "../tools/n64/constants.mjs";
 
@@ -162,7 +163,7 @@ test("renderN64: the note sounds under notes.mjs's track name at the sample's pi
                        {tick: 3 * B, dur: B / 2, ch: 4, layer: 0, semitone: 27, drum: false, midi: 48, vel: 64, inst: 0, bank: 0, vol: 1, pan: 0.5, freq: 1, chInst: 0}]};
   assert.deepEqual(channelGroups(res).map(g => g.name), ["ch 4 inst 0", "ch 9 drums"]);
   const progress = [];
-  const r = await renderN64(res, {rom, banks: [0], sampleRate: 32000, onProgress: p => progress.push(p)});
+  const r = await renderN64(res, {rom, banks: [0], sampleRate: 32000, reverb: null, onProgress: p => progress.push(p)}); // a synthetic bank carries no engine state: dry, on purpose
   assert.equal(r.sampleRate, 32000);
   assert.ok(Math.abs(r.seconds - 4.5) < 1e-9, "one pass + 2.5 s tail: " + r.seconds);
   assert.deepEqual(progress[progress.length - 1], 1);
@@ -181,15 +182,15 @@ test("renderN64: the note sounds under notes.mjs's track name at the sample's pi
   assert.deepEqual(r.silent, []); assert.deepEqual(r.warnings, []);
   // a one-shot sample stops at its end even while the note holds
   const one = synthRom({looping: false});
-  const r2 = await renderN64(res, {rom: one.rom, banks: [0]});
+  const r2 = await renderN64(res, {rom: one.rom, banks: [0], reverb: null});
   assert.ok(rms(r2["ch 4 inst 0"], 0, 64) > 0.02 && rms(r2["ch 4 inst 0"], 64, 4000) === 0, "64 samples (still in the 2-update attack) then nothing");
   // notes the renderer cannot voice are reported, not thrown
-  const r3 = await renderN64({...res, notes: [{...res.notes[0], inst: 0x80}]}, {rom, banks: [0]});
+  const r3 = await renderN64({...res, notes: [{...res.notes[0], inst: 0x80}]}, {rom, banks: [0], reverb: null});
   assert.deepEqual(r3.silent, ["ch 4 inst 128"]);
   assert.match(r3.warnings[0], /synth waveform/);
 });
 
-test("reverb: the note's send comes back one window later at unity, then again scaled by the gain; off when asked; presets by sequence", async () => {
+test("reverb: the note's send comes back one window later at unity, then again scaled by the gain; off when asked; the engine's state read from RAM, never a table", async () => {
   const {rom} = synthRom({looping: false});
   const B = TICKS_PER_BEAT;
   const note = {tick: 0, dur: B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, pan: 0.5, freq: 1, chInst: 0, rev: 127};
@@ -210,12 +211,19 @@ test("reverb: the note's send comes back one window later at unity, then again s
   // a note without a send (D4 0) adds nothing to the ring
   const r0 = await renderN64({...res, notes: [{...note, rev: 0}]}, {rom, banks: [0], reverb: {window: 1000, gain: 0x4000}});
   assert.equal(r0["ch 4 inst 0"][1000], 0);
-  // presets: the US table, and the level scripts' choice per sequence (water = preset 3, underground = 4, default 0)
-  assert.equal(SM64_PRESETS.length, 8);
-  assert.deepEqual(reverbFor({}, {sequenceId: 5}), {window: 0x0E00, gain: 0x3FFF});
-  assert.deepEqual(reverbFor({}, {sequenceId: 0x0C}), {window: 0x0C00, gain: 0x4FFF});
-  assert.deepEqual(reverbFor({}, {sequenceId: 2}), SM64_PRESETS[0]);
-  assert.deepEqual(reverbFor({}, {}), SM64_PRESETS[0]);
-  assert.equal(reverbFor({reverb: null}, {sequenceId: 5}), null);
-  assert.equal(SM64_PRESET_OF_SEQUENCE[0x0A], 6, "the haunted house");
+  // the engine's SynthesisReverb (JP/US layout) found by shape in a RAM image: {u8 resampleFlags, useReverb,
+  // framesLeftToIgnore, curFrame; u16 reverbGain; u16 resampleRate; s32 ×2; s32 bufSizePerChannel; s16 *left, *right}
+  const ram = new SparseImage();
+  ram.write(0x220DB0, Uint8Array.from([0, 8, 2, 0, 0x2F, 0xFF, 0, 0]));
+  ram.write(0x220DC0, Uint8Array.from([...be32(0x0C00), ...be32(0x801D8E00), ...be32(0x801DA600)]));
+  ram.write(0x1000, Uint8Array.from([0, 8, 0, 0, 0x3F, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...be32(0x0E00), ...be32(0x80100000), ...be32(0x80101000)])); // ring pointers not window*2 apart: not it
+  assert.deepEqual(findSynthesisReverb(ram), {at: 0x220DB0, useReverb: 8, gain: 0x2FFF, window: 0x0C00});
+  assert.deepEqual(reverbFor({}, {reverb: {at: 0x220DB0, useReverb: 8, gain: 0x2FFF, window: 0x0C00}}), {reverb: {window: 0x0C00, gain: 0x2FFF}, why: null});
+  assert.deepEqual(reverbFor({}, {reverb: {at: 0, useReverb: 0, gain: 0x2FFF, window: 0x0C00}}), {reverb: null, why: null}, "useReverb 0 = the engine had it off");
+  assert.deepEqual(reverbFor({}, {reverb: null}), {reverb: null, why: "reverb state not in this rip"});
+  assert.deepEqual(reverbFor({}, {}), {reverb: null, why: "reverb state not in this rip"});
+  assert.deepEqual(reverbFor({reverb: null}, {reverb: {useReverb: 8, gain: 1, window: 1}}), {reverb: null, why: null});
+  const dryByDefault = await renderN64({...res, reverb: null}, {rom, banks: [0]});
+  assert.equal(dryByDefault["ch 4 inst 0"][1000], 0);
+  assert.deepEqual(dryByDefault.warnings, ["reverb state not in this rip"]);
 });

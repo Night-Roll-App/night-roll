@@ -124,7 +124,9 @@ export function swapWords(bytes) {
 // Load a set: files = [{name, bytes}] with the mini FIRST; its _lib tags
 // are resolved by name (case-insensitive, basename only) against the rest.
 // Returns {rom: SparseImage (big-endian), state: SparseImage (PJ64 layout,
-// still little-endian words), tags (mini's), order (files applied)}.
+// still little-endian words), tags (mini's), order (files applied), top
+// (the mini's own parsed file: its ROM/state chunks are what this song
+// overrides in the shared library)}.
 export function loadUSF(files) {
   const base = n => n.split(/[\\/]/).pop().toLowerCase();
   const byName = new Map(files.map(f => [base(f.name), f]));
@@ -146,7 +148,7 @@ export function loadUSF(files) {
     return u;
   }
   const top = apply(files[0]);
-  return {rom, state, tags: top.tags, order};
+  return {rom, state, tags: top.tags, order, top};
 }
 
 // The PJ64 save state: RDRAM starts at 0x75C, "stored as DWORDs" (little
