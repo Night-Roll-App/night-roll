@@ -8,7 +8,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import zlib from "node:zlib";
 import { inflateRaw, decompress1172, is1172, parseCSeq, cseqNotes, unrollTracks, findMusicTable, miniOverrideWords, miniRareTrack,
-         findRareBankFile, readRareBank, isKitInstrument, envelopeGain, renderRare, rareSequenceOfSet, ENV_FLOOR, panGains } from "../tools/n64/rare.mjs";
+         findRareBankFile, readRareBank, isKitInstrument, envelopeGain, renderRare, rareSequenceOfSet, ENV_FLOOR, panGains,
+         findFxParams, SdkFx, SMALLROOM_FX, attachGains } from "../tools/n64/rare.mjs";
 import { SparseImage, PJ64_RDRAM, rdramOf } from "../tools/n64/usf.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
 import { renderN64 } from "../tools/n64/render.mjs";
@@ -370,4 +371,69 @@ test("stereo: a track is {l, r}; the voice pan is samplePan + cc10 − 64 throug
   assert.ok(mono["ch 1 inst 0"] instanceof Float32Array);
   const m = rms(mono["ch 1 inst 0"]), sPow = Math.sqrt(rms(mid.l) ** 2 + rms(mid.r) ** 2);
   assert.ok(Math.abs(20 * Math.log10(sPow / m)) < 0.1, "power sum of L and R = the mono level");
+});
+
+// the effect block as GoldenEye's RAM holds it (s32: sections, length, then 8 per section), with the zeros the rip drops
+const GE_FX = [6, 6400, 0, 160, 9830, -9830, 0, 0, 0, 0, 160, 320, 9830, -9830, 11140, 0, 0, 0x2500, 800, 2560, 16384, -16384, 4587, 0, 0, 0x3000,
+               3200, 5600, 16384, -16384, 4587, 0, 0, 0x3500, 3360, 4800, 8192, -8192, 0, 0, 0, 0x4000, 0, 5920, 13000, -13000, 0, 380, 10, 0x4500];
+
+test("reverb: the effect parameter block is found by shape in RAM (zeros absent, as the rip leaves them); a section is an all-pass with a delayed, filtered tap", () => {
+  const words = {}; GE_FX.forEach((v, i) => { if (v !== 0) words[0x23100 + i * 4] = v >>> 0; });
+  const st = state({words: {...words, 0x100: 5, 0x104: 0x2000}}), {ram} = rdramOf(st);
+  const fx = findFxParams(ram);
+  assert.ok(fx, "found");
+  assert.equal(fx.at, 0x23100); assert.equal(fx.sections, 6); assert.equal(fx.length, 6400);
+  assert.deepEqual(fx.delays[1], {input: 160, output: 320, fbcoef: 9830, ffcoef: -9830, gain: 11140, chorusRate: 0, chorusDepth: 0, lpfilter: 0x2500});
+  assert.deepEqual(fx.delays[5], {input: 0, output: 5920, fbcoef: 13000, ffcoef: -13000, gain: 0, chorusRate: 380, chorusDepth: 10, lpfilter: 0x4500});
+  assert.equal(findFxParams(rdramOf(state({words: {0x100: 5, 0x104: 0x2000}})).ram), null, "a header with no sections behind it is not a block");
+  // one gained all-pass section: an impulse comes out ff-scaled at once, then at the tap delay (output − input) at (1 − ff²)…
+  const one = {sections: 1, length: 1024, delays: [{input: 0, output: 100, fbcoef: 0x4000, ffcoef: -0x4000, gain: 0x7FFF, chorusRate: 0, chorusDepth: 0, lpfilter: 0}]};
+  const fx1 = new SdkFx(one, 22050, 22050);
+  const y = []; for (let i = 0; i < 400; i++) y.push(fx1.step(i === 0 ? 1 : 0));
+  assert.ok(Math.abs(y[0] + 0.5 * (0x7FFF / 32768)) < 1e-3, "direct path −ff: " + y[0]);
+  assert.ok(y.slice(1, 100).every(v => Math.abs(v) < 1e-9), "silent until the tap");
+  assert.ok(Math.abs(y[100] - 0.75 * (0x7FFF / 32768)) < 1e-3, "first echo at the tap delay: " + y[100]);
+  assert.ok(Math.abs(y[200] - 0.375 * (0x7FFF / 32768)) < 1e-3, "second echo through the feedback: " + y[200]);
+  // the game's block at the output rate: a tap at 320 samples through two all-passes, and energy keeps arriving past 5600
+  const fxG = new SdkFx({sections: 6, length: 6400, delays: findFxParams(ram).delays}, 22050, 22050);
+  const z = []; for (let i = 0; i < 6400; i++) z.push(fxG.step(i === 0 ? 1 : 0));
+  assert.ok(Math.abs(z[0]) > 1e-3, "the feedforward path is instant through the cascade (section 2 reads what section 1 just wrote at 160)");
+  assert.ok(z.slice(30, 160).every(v => Math.abs(v) < 1e-4) && Math.abs(z[160]) > 1e-2 && Math.abs(z[320]) > 1e-2, "then (past the low-pass's smear) section 1's tap at 160 and section 2's at 320");
+  assert.ok(z.slice(5600, 6400).some(v => Math.abs(v) > 1e-4), "the long taps ring past 5600 samples");
+  // SMALLROOM stands in only when nothing is found
+  assert.equal(SMALLROOM_FX(22050).sections, 3);
+});
+
+test("reverb + held volume in the render: cc91 sends the voice into the effect (a tail after the release, the same in both channels); off when asked; cc7 under the note steps its level", async () => {
+  const st = bankState(), rom = squareRom(), set = {rom, state: st, top: {state: []}};
+  const mk = (ch, rev, extra = {}) => ({ch, inst: 0, drum: false, key: 60, semitone: 60, midi: 60, tick: 0, dur: 24, vel: 127, bank: 0, vol: 1, pan: 64, rev, bend: 0, ...extra});
+  const res = {driver: "rare", ticksPerBeat: 48, tempos: [{tick: 0, bpm: 120}], endTick: 96, loop: null, warnings: [],
+               notes: [mk(0, 127), mk(1, 0), mk(2, 0, {dur: 48, vol: 1, gain: [{t: 0, l: 1}, {t: 24, l: 0.5}]})]};
+  const one = {sections: 1, length: 4096, delays: [{input: 0, output: 2205, fbcoef: 0, ffcoef: 0, gain: 0x7FFF, chorusRate: 0, chorusDepth: 0, lpfilter: 0}]}; // a plain 100 ms echo
+  const r = await renderN64(res, {set, banks: [0], sampleRate: 22050, fx: one});
+  const rms = (a, from, to) => { let s = 0; for (let i = from; i < to; i++) s += a[i] * a[i]; return Math.sqrt(s / (to - from)); };
+  const wet = r["ch 0 inst 0"], dry = r["ch 1 inst 0"];
+  // the note lasts 0.25 s (5512 samples) + 20 ms release; the echo of its start lands 100 ms after each moment
+  assert.ok(rms(dry.l, 6500, 7500) < 1e-4, "no send: silent after the release");
+  assert.ok(rms(wet.l, 6500, 7500) > 0.1, "sent at 127: the echo carries on 100 ms past the release: " + rms(wet.l, 6500, 7500));
+  let same = true; for (let i = 6500; i < 7500; i++) if (Math.abs(wet.l[i] - wet.r[i]) > 1e-9) same = false;
+  assert.ok(same, "the return is the same in both channels");
+  assert.deepEqual(r.reverb, {at: undefined, sections: 1, length: 4096});
+  const off = await renderN64(res, {set, banks: [0], sampleRate: 22050, reverb: null});
+  assert.ok(rms(off["ch 0 inst 0"].l, 6500, 7500) < 1e-4, "reverb: null renders dry");
+  assert.equal(off.reverb, null);
+  // cc7 halves the channel volume halfway through the third note
+  const g = r["ch 2 inst 0"];
+  const first = rms(g.l, 1000, 4000), second = rms(g.l, 6500, 9500);
+  assert.ok(Math.abs(second / first - 0.5) < 0.02, "half the level after the breakpoint: " + (second / first));
+  // attachGains from the sequence: a cc7 change inside the note, none outside
+  const notes = [{ch: 0, tick: 0, dur: 96, vol: 100 / 127}, {ch: 0, tick: 96, dur: 48, vol: 60 / 127}];
+  assert.equal(attachGains(notes, new Map([[0, [{tick: 48, value: 60}, {tick: 96, value: 60}]]])), 1);
+  assert.deepEqual(notes[0].gain, [{t: 0, l: 100 / 127}, {t: 48, l: 60 / 127}]);
+  assert.equal(notes[1].gain, undefined);
+  // the whole path: a cc7 inside a note from the bytes
+  const t0 = [...tempo(500000), 0, 0xC0, 0, 0, 0xB0, 7, 127, ...note(0, 0, 60, 100, 192), 96, 0xB0, 7, 64, ...END];
+  const seqRes = cseqNotes(parseCSeq(cseq([t0])));
+  assert.deepEqual(seqRes.notes[0].gain, [{t: 0, l: 1}, {t: 48, l: 64 / 127}]);
+  assert.match(seqRes.warnings.join(" "), /1 notes change volume while held/);
 });

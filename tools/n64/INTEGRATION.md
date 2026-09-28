@@ -869,8 +869,45 @@ program 58: 7/7 in Dam).
   samplePan 88/40/50 → three voice pans; Runway 16 tracks, ch 5/9 cc10 110
   → −13.4 dB, ch 10 cc10 18 → +12.9 dB; every track's L²+R² power equals
   its mono render (0.00 dB); the mix (L+R)/√2 vs the mono mix −0.08 dB
-  (Dam), −0.31 dB (Runway). Reverb (cc91), tremolo/vibrato, voice
-  stealing: not rendered (rev kept as a fact on the notes).
+  (Dam), −0.31 dB (Runway).
+- reverb (2026-09-28): the game's effect block for alSynNew is in RAM
+  (0x23100 and a copy at 0x3B3744 on the US rip), found by shape
+  (`findFxParams`): s32 {6 sections, 6400-sample line} then per section
+  {input, output, fbcoef, ffcoef, gain, chorusrate, chorusdepth,
+  lpfilter} — six all-passes (ffcoef = −fbcoef): taps 0→160 (0.30),
+  160→320 (0.30, gain 0.34, lp 0x2500), 800→2560 (0.50, gain 0.14, lp
+  0x3000), 3200→5600 (0.50, gain 0.14, lp 0x3500), 3360→4800 (0.25, lp
+  0x4000), 0→5920 (0.40, chorus 380/10, lp 0x4500). Zero words are absent
+  from the rip (the trimmer drops words that read the same absent) and
+  read 0. `SdkFx` runs it as libaudio's reverb.c does, as remembered: the
+  wet input saved at the line's head; per section x at head+input, y at
+  head+output, x += fb·y written back at the input tap, y += ff·x,
+  one-pole low-pass (lpfilter/0x8000, assumed), written at the output tap,
+  gain·y summed to the return; the head moves so a write at offset j is
+  read at k after k − j samples. Chorus not modelled (its section has
+  gain 0 and nothing reads past it; sections 5 and 6 are dead under this
+  reading — if the SDK adds the head input to the ring's oldest content
+  instead of overwriting it they would recirculate; unverified). Send =
+  cc91/127 per voice (alSynSetFXMix), return at 1/√2 into each channel,
+  one line per track (linear). opts.reverb null/false renders dry; a rip
+  without a block gets libaudio's SMALLROOM (as remembered) with a
+  warning. Measured (scratch/ge-fx.mjs, 45 s, fx on vs off): envelope
+  correlation Dam 0.779/0.771, Runway 0.937/0.932, Bond Theme 0.778/0.777;
+  log-spectrogram Dam 0.7795/0.7675, Runway 0.8618/0.8482, Bond
+  0.7431/0.6936 — the effect moves every song a little toward the truth,
+  most where the sends are highest.
+- volume under held notes (2026-09-28): cc7 changes inside a note ride it
+  as `n.gain = [{t, l}]` (t ticks in, l = cc7/127; the first is the
+  note-on's), stepped per sample in the render (the SDK's linear law).
+  Dam: 4 notes, Runway 2, Bond 1 (234 across the set). cc11 never occurs.
+- vibrato (2026-09-28, asked): the set has no cc1 at all (0 events in 58
+  songs; the only controllers are 7, 10, 91), so nothing to implement;
+  the wheel runs in some songs (Jungle ch 3: 187 events, Bungeee!: 511)
+  are slides and already ride the notes as bends.
+- level: after the above, ours − truth RMS = Dam +12.0 dB, Runway +12.9,
+  Bond +10.2 (was +12.2/+11.4/+8.7 on the mono mix) — not one factor;
+  no global gain applied (the app normalises a capture). Voice stealing,
+  tremolo: not rendered.
 - Finite loop count = n+1 plays: from the SDK's cseq.c as remembered, not
   checked on the truth (Runway's track 0 riff loop of 19 is the case to
   check: one bar's difference late in the song).
@@ -926,3 +963,60 @@ Checked on 09c Dire, Dire Docks (all eight channels), old mono vs new,
 first 20 s (`scratch/stereo-check.mjs`): power sum √(l²+r²) equals the
 old mono to 0.00 dB on every track; pans 116, 9, 59, 63, 126, 79, 47 →
 L/R −17.3, +19.0, +1.0, +0.5, −38.2, −3.4, +3.7 dB.
+
+### 9.10 Level changes under held notes, and vibrato (2026-09-28)
+
+**Volume.** JP/US effects.c `sequence_channel_process_sound` recomputes,
+every update, `channelVolume = seqChannel->volume * seqChannel->volumeScale
+* seqChannel->seqPlayer->fadeVolume` and for every layer with a note
+`layer->noteVelocity = layer->velocitySquare * channelVolume` — so a
+channel `DF` (`volume = u8/127`), `E0` (`volumeScale = u8/128`), sequence
+`DB` (`seq_setvol`: `fadeVolume = u8/127` at once — the timed
+`fadeRemainingFrames`/`fadeVelocity` path only runs for fades the *game*
+starts, none here) or `DA` (`seq_changevol`: `fadeVolume += (s8)u8/127`,
+clamped 0..1 in `sequence_player_process_sound`) reaches every held note
+at the next update. The parser now keeps a per-channel level timeline and
+slices it onto each note as `n.gain = [{t: ticks from the start, l:
+level}]` (steps; `n.vol` stays the note-on level and the MIDI keeps the
+note-on velocity), and the render re-reads the level per update
+(`base = vel² × level`, then the envelope's level² as before). DA was
+wrong before this (it set the level to the byte instead of adding the
+signed step). In the set: Snow Mountain (234 stepped notes, DA fade-outs
+in 1/127 steps), Looping Steps (132, +1/127 nudges), a few in the
+fanfares; the Title Theme has none. Against lazyusf2 on Snow Mountain
+ch 1 alone the stepped tail moves 1–3 dB toward the truth; the synthetic
+1 → 0.1 step renders −20.0 dB (test).
+
+**Vibrato.** seqplayer.c JP/US: `D7` → `vibratoRateStart = vibratoRateTarget
+= u8 * 32`; `D8` → `vibratoExtentTarget = u8 * 8`, start 0, change delay
+0; `E1`/`E2` → rate/extent `Start = u8*32|8, Target = u8*32|8,
+ChangeDelay = u8 * 16`; `E3` → `vibratoDelay = u8 * 16`; `EC` clears all
+of it and `freqScale`. Defaults: rate 0x800, extent 0. effects.c
+`note_vibrato_init` (JP/US): a note born with `vibratoExtentStart == 0 &&
+vibratoExtentTarget == 0` and no portamento never vibrates; otherwise
+`extent`/`rate` start at their Start (or Target when the change delay is
+0), `delay = vibratoDelay`, `curve = gVibratoCurve` (s8[16] = k·8).
+`get_vibrato_freq_scale`, per update: `delay` counts down first; the
+extent and rate each move toward the channel's current target over
+`ChangeTimer` updates (`+= (target − value) / timer`, exact on the last)
+and pick up a new target whenever it differs (through the channel's
+change delay); `time += rate; index = (time >> 10) & 0x3F`; the JP/US
+`get_vibrato_pitch_change` folds the 64 steps into a triangle (`0x00`:
+curve[index], `0x10`: curve[31 − index], `0x20`: −curve[index − 32],
+`0x30`: −curve[63 − index]) so `pitchChange` runs 0 → 120 → 0 → −120 → 0;
+`scale = 1 + extent/4096 × (gPitchBendFrequencyScale[pitchChange + 127] −
+1)` with that table `0.5 · 2^(k/127)`, i.e. `1 + extent/4096 ×
+(2^(pitchChange/127) − 1)` — asymmetric (+0.925 vs −0.481 × extent/4096).
+Period 65536/rate updates: 32 updates (7.5 Hz) at the default rate. The
+render applies it as a per-update frequency scale on the voice
+(`render.mjs Vibrato`); the roll keeps the written pitch. The parser
+records `n.vib` (the channel's rate/extent/delay state at note-on) and
+`n.vibChanges` (D7/D8/E1/E2/EC while the note holds, as target changes).
+In the set only Cave Dungeon vibrates: channels 2 and 5, `D8 1` → extent
+8 → **±3 cents** (peak +3.1, trough −1.6) at 7.5 Hz, which is why the
+lazyusf2 pitch tracks of those notes differ from a flat render by less
+than the ±4 c measurement noise; the synthetic test (extent 1016, ±23 %)
+shows the machinery, and the truth's larger wobbles on the long ch 5
+note at 68.7 s (up to ±60 c) are not vibrato — they come with the note's
+`vibChanges` and something the render still lacks (portamento, C7, stays
+stubbed).

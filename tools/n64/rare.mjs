@@ -264,13 +264,32 @@ export function attachSlides(notes, bendsByCh, bendRangeOf = () => 200) {
   return slid;
 }
 
+// Volume under a held note: cc7 changes while the note sounds ride it as
+// `gain` breakpoints [{t, l}] — t ticks after the note-on, l the channel
+// volume (cc7/127) from then on; the first is the note-on's own level (the
+// PS1 path's shape, tools/psx/akao.mjs). The player sets the voice volume
+// on the event (a step), and so does the render. cc11 never occurs in the set.
+export function attachGains(notes, volsByCh) {
+  let n = 0;
+  for (const note of notes) {
+    const vols = volsByCh.get(note.ch);
+    if (!vols || !vols.length) continue;
+    const inside = vols.filter(v => v.tick > note.tick && v.tick < note.tick + note.dur);
+    if (!inside.length) continue;
+    const gain = [{t: 0, l: note.vol}];
+    for (const v of inside) { const t = v.tick - note.tick, l = v.value / 127; if (gain[gain.length - 1].t === t) gain[gain.length - 1].l = l; else gain.push({t, l}); }
+    if (gain.some(g => Math.abs(g.l - note.vol) > 1e-9)) { note.gain = gain; n++; }
+  }
+  return n;
+}
+
 export function cseqNotes(cs, {maxSeconds = 600, bendRangeOf = () => 200} = {}) {
   const scale = TICKS_PER_BEAT / cs.division;
   const T = t => Math.round(t * scale);
   const notes = [], tempoMap = new Map(), warnings = [];
   const chan = [];
   for (let c = 0; c < 16; c++) chan.push({program: null, vol: 127, pan: 64, rev: 0, bend: 0});
-  const loops = new Map(), bendsByCh = new Map();
+  const loops = new Map(), bendsByCh = new Map(), volsByCh = new Map();
   let endTick = 0, offs = 0, poly = 0, pressure = 0;
   const tracks = unrollTracks(cs);
   const all = [];
@@ -282,7 +301,7 @@ export function cseqNotes(cs, {maxSeconds = 600, bendRangeOf = () => 200} = {}) 
       case "tempo": if (e.us > 0) tempoMap.set(T(e.tick), 6e7 / e.us); break;
       case "program": C.program = e.program; break;
       case "control":
-        if (e.controller === 7) C.vol = e.value;
+        if (e.controller === 7) { C.vol = e.value; (volsByCh.get(e.ch) || volsByCh.set(e.ch, []).get(e.ch)).push({tick: T(e.tick), value: e.value}); }
         else if (e.controller === 10) C.pan = e.value;
         else if (e.controller === 91) C.rev = e.value;
         break;
@@ -314,6 +333,8 @@ export function cseqNotes(cs, {maxSeconds = 600, bendRangeOf = () => 200} = {}) 
   }
   const slid = attachSlides(notes, bendsByCh, bendRangeOf);
   if (slid) warnings.push(slid + " notes carry pitch bends (the roll writes each landed pitch as its own note; the render bends the voice)");
+  const gained = attachGains(notes, volsByCh);
+  if (gained) warnings.push(gained + " notes change volume while held (cc7; the render follows)");
   const tempos = [...tempoMap].map(([tick, bpm]) => ({tick, bpm: Math.round(bpm * 100) / 100})).sort((a, b) => a.tick - b.tick);
   if (!tempos.length || tempos[0].tick !== 0) tempos.unshift({tick: 0, bpm: 120});
   if (offs) warnings.push(offs + " note-off events (unused by this player, ignored)");
@@ -624,6 +645,89 @@ export function envelopeGain(env, rate, holdSamples, out) {
 // false gives the old mono buffers (the two summed with the centre law, so
 // a centred voice keeps its level).
 export const PAN_CENTER = 64;
+
+// ---- the reverb: the SDK's delay-line effect --------------------------------
+// alSynNew takes the effect as an s32 parameter block {sections, length
+// (delay-line samples), then per section: input, output (tap offsets from
+// the line's head, in samples), fbcoef, ffcoef, gain (s16, 0x7FFF = 1),
+// chorusrate, chorusdepth, lpfilter} (libaudio alFxNew's custom format,
+// which the built-in SMALLROOM/BIGROOM tables use too). GoldenEye's block is
+// in RAM (twice, 0x23100 and 0x3B3744 on the US rip; words the game never
+// read are absent and read 0): 6 sections over 6400 samples, all of them
+// all-passes (ffcoef = −fbcoef): 0→160 (0.3), 160→320 (0.3, gain 0.34, lp
+// 0x2500), 800→2560 (0.5, gain 0.14, lp 0x3000), 3200→5600 (0.5, gain 0.14,
+// lp 0x3500), 3360→4800 (0.25, lp 0x4000), 0→5920 (0.397, chorus 380/10, lp
+// 0x4500). Found by that shape: findFxParams.
+//
+// How a section runs (libaudio reverb.c as remembered — the structure, not
+// a verified transcription): the wet input is saved at the line's head each
+// sample; a section reads x at head+input and y at head+output, feeds back
+// x += fbcoef·y into the line at the input tap, feeds forward y += ffcoef·x,
+// low-passes y (a one-pole, coefficient lpfilter/0x8000, assumed), writes y
+// back at the output tap and adds gain·y to the effect's output. The head
+// moves so a sample written at offset j is read at offset k after k − j
+// samples. Chorus (a resampled output tap) is not modelled — the one
+// section with it has gain 0 and nothing reads past it. The effect output
+// goes to both channels at equal power. Per track (linear, so the sum of
+// per-track returns is the return of the sum).
+export function findFxParams(ram) {
+  const s32 = p => ram.read(p, 4).reduce((a, b) => (a << 8) | b, 0) | 0;
+  let best = null;
+  for (const r of ram.runs()) {
+    for (let p = r.offset & ~3; p + 8 <= r.offset + r.length; p += 4) {
+      const sections = s32(p), length = s32(p + 4);
+      if (sections < 1 || sections > 8 || length < 0x100 || length > 0x40000 || length % 16) continue;
+      const list = [];
+      let ok = true, present = 0;
+      for (let i = 0; i < sections && ok; i++) {
+        const q = p + 8 + i * 32;
+        const [input, output, fbcoef, ffcoef, gain, chorusRate, chorusDepth, lpfilter] = [0, 4, 8, 12, 16, 20, 24, 28].map(o => s32(q + o));
+        for (let o = 0; o < 32; o += 4) if (ram.coverage(q + o, 4) === 1) present++;
+        if (input < 0 || input >= length || output <= 0 || output > length || input === output) ok = false;
+        if ([fbcoef, ffcoef, gain, lpfilter].some(v => Math.abs(v) > 0x7FFF) || chorusRate < 0 || chorusRate > 0x10000 || chorusDepth < 0 || chorusDepth > 0x1000) ok = false;
+        if (!fbcoef && !ffcoef && !gain) ok = false;
+        list.push({input, output, fbcoef, ffcoef, gain, chorusRate, chorusDepth, lpfilter});
+      }
+      if (!ok || !list.some(d => d.gain)) continue;
+      if (!best || present > best.present) best = {at: p, sections, length, delays: list, present};
+    }
+  }
+  return best;
+}
+
+// libaudio's SMALLROOM table as remembered (100 ms line, an all-pass, a
+// gained all-pass, a filtered comb), only for a rip without a block of its own
+export const SMALLROOM_FX = rate => ({at: null, sections: 3, length: Math.round(0.1 * rate) & ~15, delays: [
+  {input: 0, output: Math.round(0.054 * rate), fbcoef: 9830, ffcoef: -9830, gain: 0, chorusRate: 0, chorusDepth: 0, lpfilter: 0},
+  {input: Math.round(0.035 * rate), output: Math.round(0.073 * rate), fbcoef: 3276, ffcoef: -3276, gain: 0x3FFF, chorusRate: 0, chorusDepth: 0, lpfilter: 0},
+  {input: 0, output: Math.round(0.06 * rate), fbcoef: 5000, ffcoef: 0, gain: 0, chorusRate: 0, chorusDepth: 0, lpfilter: 0x5000}]});
+
+export class SdkFx {
+  constructor(params, rate, fxRate) {
+    const k = rate / fxRate; // the block's samples are at the game's output rate; scale the taps to the render's
+    this.length = Math.max(16, Math.round(params.length * k));
+    this.line = new Float32Array(this.length);
+    this.head = 0;
+    this.sections = params.delays.map(d => ({input: Math.round(d.input * k), output: Math.round(d.output * k), fb: d.fbcoef / 32768, ff: d.ffcoef / 32768, gain: d.gain / 32768, lp: d.lpfilter ? d.lpfilter / 32768 : 0, lpState: 0}));
+  }
+  // one input sample in, the effect's output sample out
+  step(x) {
+    const line = this.line, L = this.length, head = this.head;
+    line[head] = x;
+    let out = 0;
+    for (const d of this.sections) {
+      const pi = (head + d.input) % L, po = (head + d.output) % L;
+      let a = line[pi], y = line[po];
+      if (d.fb) { a += d.fb * y; line[pi] = a; }
+      if (d.ff) y += d.ff * a;
+      if (d.lp) { d.lpState += d.lp * (y - d.lpState); y = d.lpState; }
+      if (d.ff || d.lp) line[po] = y;
+      if (d.gain) out += d.gain * y;
+    }
+    this.head = head === 0 ? L - 1 : head - 1;
+    return out;
+  }
+}
 export function panGains(pan) {
   const p = Math.max(0, Math.min(127, Math.round(pan)));
   return {l: Math.cos(p * Math.PI / 254), r: Math.cos((127 - p) * Math.PI / 254)};
@@ -631,6 +735,7 @@ export function panGains(pan) {
 
 export async function renderRare(result, opts = {}) {
   const stereo = opts.stereo !== false;
+  const reverbOn = opts.reverb !== null && opts.reverb !== false;
   const set = opts.set;
   if (!set || !set.rom || !set.state) throw new Error("renderRare needs the set (its ROM pages and save state)");
   const {ram} = rdramOf(set.state);
@@ -646,12 +751,19 @@ export async function renderRare(result, opts = {}) {
   const out = {sampleRate, seconds, silent: [], warnings: [], reverb: null, bankRate: bank.sampleRate};
   const warned = new Set();
   const warn = w => { if (!warned.has(w)) { warned.add(w); out.warnings.push(w); } };
+  let fxParams = null;
+  if (reverbOn) {
+    fxParams = opts.fx || findFxParams(ram);
+    if (!fxParams) { fxParams = SMALLROOM_FX(bank.sampleRate); warn("no effect parameter block in this rip's memory: libaudio's SMALLROOM (as remembered) stands in"); }
+    out.reverb = {at: fxParams.at, sections: fxParams.sections, length: fxParams.length};
+  }
   let done = 0, total = 0;
   for (const g of groups) total += g.notes.length;
   let envBuf = new Float32Array(sampleRate * 8);
   out.pans = {};
+  const fxGain = Math.SQRT1_2; // the effect's return into each channel
   for (const g of groups) {
-    let bufL = null, bufR = null;
+    let bufL = null, bufR = null, wet = null;
     const pans = new Map();
     for (const n of g.notes) {
       done++;
@@ -670,8 +782,9 @@ export async function renderRare(result, opts = {}) {
       const cents = (n.key - km.keyBase) * 100 + km.detune + (n.bend || 0) * inst.bendRange;
       const ratio = Math.pow(2, cents / 1200);
       const step = ratio * bank.sampleRate / sampleRate;
-      const base = (Math.max(0, Math.min(127, n.vel)) / 127) * (snd.sampleVolume / 127) * (n.vol != null ? n.vol : 1) * (inst.volume / 127);
+      const base = (Math.max(0, Math.min(127, n.vel)) / 127) * (snd.sampleVolume / 127) * (n.gain ? 1 : n.vol != null ? n.vol : 1) * (inst.volume / 127);
       if (base <= 0) continue;
+      const send = reverbOn && n.rev ? Math.min(127, n.rev) / 127 : 0; // alSynSetFXMix: the voice into the effect at cc91/127
       const pan = Math.max(0, Math.min(127, (snd.samplePan != null ? snd.samplePan : PAN_CENTER) + (n.pan != null ? n.pan : PAN_CENTER) - PAN_CENTER));
       const {l: gL, r: gR} = stereo ? panGains(pan) : {l: 1, r: 0};
       pans.set(pan, (pans.get(pan) || 0) + 1);
@@ -682,6 +795,9 @@ export async function renderRare(result, opts = {}) {
       if (envBuf.length < need) envBuf = new Float32Array(need);
       const len = envelopeGain(env, sampleRate, holdSamples, envBuf);
       const pcm = smp.pcm, L = smp.loopEnd, loopStart = smp.loopStart;
+      // volume changes under the note (n.gain: the channel volume from t ticks in) step the voice's level
+      let gain = null, gi = 0, gNow = 1;
+      if (n.gain) gain = n.gain.map(x => ({i: Math.floor(tickSeconds(tempos, n.tick + x.t) * sampleRate), l: x.l}));
       // pitch bends inside the note (n.slide: semitones from the note-on pitch, t ticks in) step the ONE voice — no new attack
       let slide = null, si = 0, stepNow = step;
       if (n.slide && n.slide.length) {
@@ -700,10 +816,20 @@ export async function renderRare(result, opts = {}) {
           stepNow = step * Math.pow(2, semis / 12);
         }
         const p0 = pos | 0, f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : smp.looping ? pcm[loopStart] : 0;
-        const v = (a + (b - a) * f) * base * envBuf[k];
-        if (v !== 0) { if (!bufL) { bufL = new Float32Array(N); if (stereo) bufR = new Float32Array(N); } bufL[i] += v * gL; if (stereo) bufR[i] += v * gR; }
+        if (gain) { while (gi + 1 < gain.length && i >= gain[gi + 1].i) gi++; gNow = gain[gi].l; }
+        const v = (a + (b - a) * f) * base * envBuf[k] * gNow;
+        if (v !== 0) {
+          if (!bufL) { bufL = new Float32Array(N); if (stereo) bufR = new Float32Array(N); }
+          bufL[i] += v * gL; if (stereo) bufR[i] += v * gR;
+          if (send) { if (!wet) wet = new Float32Array(N); wet[i] += v * send; }
+        }
         pos += stepNow;
       }
+    }
+    if (bufL && wet) { // the effect's return, one line per track (linear: the sum of returns is the return of the sum)
+      const fx = new SdkFx(fxParams, sampleRate, bank.sampleRate);
+      for (let i = 0; i < N; i++) { const y = fx.step(wet[i]); if (y !== 0) { if (stereo) { bufL[i] += y * fxGain; bufR[i] += y * fxGain; } else bufL[i] += y; } }
+      wet = null;
     }
     if (bufL) {
       out[g.name] = stereo ? {l: bufL, r: bufR} : bufL;

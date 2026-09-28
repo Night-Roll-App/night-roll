@@ -41,14 +41,15 @@
 //   the channel's bank index (C6/EB), volume (DF /127) × volume scale
 //   (E0 /128) × the player's volume (DB, DA /127), pan (DD /128) with its
 //   weight (DC /128) and the layer's own pan (CA /128, CC = keep it over the
-//   drum's), reverb send (D4), pitch
+//   drum's), reverb send (D4), vibrato (D7/D8/E1/E2/E3/EC → `vib`, with
+//   the channel's later target changes as `vibChanges`), level steps under
+//   the note (DF/E0/DB/DA → `gain`), pitch
 //   scale (DE u16/32768, D3 = 0.5·2^((s8+127)/127)), the channel's
 //   envelope/release overrides (DA, D9 — an instrument set by C1/EB
 //   replaces them, as get_instrument does) and the layer's own adsr
 //   (C6 instrument, CB envelope + release).
 // Stubbed (arguments consumed, effect ignored — listed in result.stubbed
-// when encountered): reverb/vibrato (they shape sound, not notes), the
-// player's fade time (DA's target applies at once), portamento (C7: we keep
+// when encountered): portamento (C7: we keep
 // the written pitch, the game slides to it), mute machinery, note pools, the oot filter/random ops
 // (random ops read as 0 so output is deterministic), oot ldsample (0x1n)
 // and any opcode outside the tables, which throw with the offset.
@@ -73,6 +74,14 @@ export function parseSequence(input, opts = {}) {
   // the game read); reading one is an error, not a zero
   const have = present ? Uint8Array.from(present) : null;
   const notes = [], tempos = [], stubbed = new Set();
+  // what reaches a held note at the next update (effects.c sequence_channel_process_sound recomputes
+  // every layer's noteVelocity = velocitySquare × volume × volumeScale × fadeVolume each update; a
+  // note's vibrato reads the channel's rate/extent targets live): per channel, the level and the
+  // vibrato targets over time, sliced onto each note at the end as n.gain / n.vibChanges
+  const levelEvents = [], vibEvents = [];
+  const levelOf = C => C.volume * C.volumeScale * player.volume;
+  const noteLevel = C => { levelEvents.push({tick, ch: C.idx, level: levelOf(C)}); };
+  const noteVib = C => { vibEvents.push({tick, ch: C.idx, ...C.vib}); };
   // io ports are how the game steers a sequence (which section, which
   // band member); we never write them, so a song that reads them is
   // running a path the game would not necessarily take — count the reads
@@ -175,6 +184,8 @@ export function parseSequence(input, opts = {}) {
             largeNotes: false, instr: null, bank: 0, dynTable: -1, io: new Array(8).fill(-1),
             // sequence_channel_init: full volume, centre pan, no bend; adsr = the default envelope until an instrument is set
             volume: 1, volumeScale: 1, pan: 0.5, panWeight: 1, freqScale: 1, envelope: null, release: null, adsrInst: null, reverb: 0,
+            // sequence_channel_init: vibrato rate 0x800, no extent, no delay
+            vib: {rateStart: 0x800, rateTarget: 0x800, rateDelay: 0, extStart: 0, extTarget: 0, extDelay: 0, delay: 0},
             layers: new Array(LAYERS).fill(null), st: null};
   }
   function enableChannel(i, pc) {
@@ -290,7 +301,9 @@ export function parseSequence(input, opts = {}) {
     noteOn(L, {tick, dur: 0, ch: C.idx, layer: L.idx, semitone: pitch, drum,
                midi: drum ? null : pitch + SEMITONE_TO_MIDI, vel: L.vel, inst: instr, gate: L.noteDuration,
                bank: C.bank, vol: C.volume * C.volumeScale * player.volume, pan: C.pan, panWeight: C.panWeight, lyPan: L.pan, noDrumPan: L.noDrumPan, freq: C.freqScale, rev: C.reverb,
-               chEnv: C.envelope, chRel: C.release, chInst: C.adsrInst, lyAdsr: L.adsr});
+               chEnv: C.envelope, chRel: C.release, chInst: C.adsrInst, lyAdsr: L.adsr,
+               // note_vibrato_init: a note born with no extent (start and target 0) never vibrates
+               vib: C.vib.extStart || C.vib.extTarget ? {...C.vib} : null});
   }
 
   function channelTick(C) {
@@ -353,24 +366,31 @@ export function parseSequence(input, opts = {}) {
       case 0xCE: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel ldptr CE"); break;
       case 0xCF: if (!oot) throw fail("channel", cmd, at); u16(s); stub("channel stptrtoseq CF"); break;
       case 0xD4: C.reverb = u8(s); break;                                          // chan_setreverb: the wet send, 0..127
-      case 0xD0: case 0xD1: case 0xD2: case 0xD5: case 0xD6: case 0xD7: case 0xD8:
-      case 0xE3: case 0xE5: case 0xE6: case 0xE9: case 0xED:
+      case 0xD0: case 0xD1: case 0xD2: case 0xD5: case 0xD6:
+      case 0xE5: case 0xE6: case 0xE9: case 0xED:
         u8(s); stub("channel sound-shaping " + hex(cmd)); break;
       case 0xD9: C.release = u8(s); break;
       case 0xDD: C.pan = u8(s) / 128; break;
       case 0xDC: C.panWeight = u8(s) / 128; break;                                 // chan_setpanmix: how much of the pan is the channel's (rest: the layer's / the drum's)
-      case 0xDF: C.volume = u8(s) / 127; break;
-      case 0xE0: C.volumeScale = u8(s) / 128; break;
+      case 0xDF: C.volume = u8(s) / 127; noteLevel(C); break;
+      case 0xE0: C.volumeScale = u8(s) / 128; noteLevel(C); break;
+      // vibrato (seqplayer.c JP/US): D7 rate = u8·32 (start = target, no ramp), D8 extent target = u8·8
+      // (start 0, no ramp), E1/E2 rate/extent start, target, ramp = u8·16 updates, E3 delay = u8·16 updates
+      case 0xD7: { const r = u8(s) * 32; C.vib = {...C.vib, rateStart: r, rateTarget: r, rateDelay: 0}; noteVib(C); break; }
+      case 0xD8: C.vib = {...C.vib, extTarget: u8(s) * 8, extStart: 0, extDelay: 0}; noteVib(C); break;
+      case 0xE1: C.vib = {...C.vib, rateStart: u8(s) * 32, rateTarget: u8(s) * 32, rateDelay: u8(s) * 16}; noteVib(C); break;
+      case 0xE2: C.vib = {...C.vib, extStart: u8(s) * 8, extTarget: u8(s) * 8, extDelay: u8(s) * 16}; noteVib(C); break;
+      case 0xE3: C.vib = {...C.vib, delay: u8(s) * 16}; break;
       case 0xD3: C.freqScale = 0.5 * Math.pow(2, (s8(s) + 127) / 127); break; // gPitchBendFrequencyScale
       case 0xDE: C.freqScale = s16(s) / 32768; break;
       case 0xEE: if (!oot) throw fail("channel", cmd, at); u8(s); stub("channel bendfine EE"); break;
       case 0xDA: C.envelope = envAt(u16(s)); break;
       case 0xDB: C.transposition = s8(s); break;
-      case 0xE1: case 0xE2: case 0xE8: u8(s); u8(s); u8(s); stub("channel " + hex(cmd)); break;
+      case 0xE8: u8(s); u8(s); u8(s); stub("channel " + hex(cmd)); break;
       case 0xE7: u16(s); stub("channel ldparams E7"); break;
       case 0xE4: if (C.value !== -1) { const a = dynAddr(C, C.value); push(s, s.pc); s.pc = a; } break;
       case 0xEB: C.bank = u8(s); setInstr(C, u8(s)); break;
-      case 0xEC: break;                                                            // vibrato reset
+      case 0xEC: C.vib = {rateStart: 0, rateTarget: 0, rateDelay: 0, extStart: 0, extTarget: 0, extDelay: 0, delay: 0}; C.freqScale = 1; noteVib(C); break; // chan_reset: vibrato off, bend cleared
       default: {
         // OoT B0-BD / MM A0-BE: argument widths from each decomp's
         // sSeqInstructionArgsTable (oot src/audio/internal/seqplayer.c, mm
@@ -468,8 +488,11 @@ export function parseSequence(input, opts = {}) {
           case 0xDE: player.transposition += s8(s); break;
           case 0xDD: setTempo(u8(s)); break;
           case 0xDC: setTempo(player.tempo + s8(s)); break;
-          case 0xDB: player.volume = u8(s) / 127; break;                           // seq_setvol
-          case 0xDA: if (oot) { u8(s); u16(s); stub("sequence volume change DA"); } else player.volume = u8(s) / 127; break; // seq_changevol: the target, its fade time ignored
+          // seq_setvol: fadeVolume = u8/127 at once (a game-started fade would instead retarget it — none run here);
+          // seq_changevol: fadeVolume += (s8)/127, clamped by sequence_player_process_sound. Both reach every
+          // held note at the next update, so the channels' level timelines take a step.
+          case 0xDB: player.volume = u8(s) / 127; for (const C of player.channels) if (C) noteLevel(C); break;
+          case 0xDA: if (oot) { u8(s); u16(s); stub("sequence volume change DA"); } else { player.volume = Math.max(0, Math.min(1, player.volume + s8(s) / 127)); for (const C of player.channels) if (C) noteLevel(C); } break;
           case 0xD9: u8(s); break;
           case 0xD7: initChannels(u16(s)); break;
           case 0xD6: freeChannels(u16(s)); break;
@@ -525,6 +548,16 @@ export function parseSequence(input, opts = {}) {
   }
   for (const C of player.channels) if (C) for (const L of C.layers) if (L) noteOff(L);
   notes.sort((a, b) => a.tick - b.tick || a.ch - b.ch || a.layer - b.layer);
+  // each note carries the level steps and vibrato-target changes that land while it sounds
+  // (offsets in ticks from its start); n.vol stays the level at note-on
+  const byCh = m => { const o = new Map(); for (const e of m) (o.get(e.ch) || o.set(e.ch, []).get(e.ch)).push(e); return o; };
+  const lv = byCh(levelEvents), vb = byCh(vibEvents);
+  for (const n of notes) {
+    const end = n.tick + n.dur;
+    const steps = (lv.get(n.ch) || []).filter(e => e.tick > n.tick && e.tick < end);
+    if (steps.length) { n.gain = [{t: 0, l: n.vol}]; for (const e of steps) if (e.level !== n.gain[n.gain.length - 1].l) n.gain.push({t: e.tick - n.tick, l: e.level}); if (n.gain.length === 1) delete n.gain; }
+    if (n.vib) { const ch = (vb.get(n.ch) || []).filter(e => e.tick > n.tick && e.tick < end); if (ch.length) n.vibChanges = ch.map(e => ({t: e.tick - n.tick, rateTarget: e.rateTarget, rateDelay: e.rateDelay, extTarget: e.extTarget, extDelay: e.extDelay})); }
+  }
   if (!tempos.length || tempos[0].tick !== 0) tempos.unshift({tick: 0, bpm: 120}); // init_sequence_player default
 
   return {abi, ticksPerBeat: TICKS_PER_BEAT, notes, tempos, endTick: tick, seconds, loop,

@@ -32,7 +32,7 @@
 // −3 dB in each side. The pan is the value at note-on; a DD under a held
 // note is not followed. The wet send is panned with the dry (the env mixer
 // splits both). Not here:
-// vibrato, portamento, the RSP's resampler (linear interpolation
+// portamento, the RSP's resampler (linear interpolation
 // instead), the synth waveforms of instrument ids >= 0x80 (skipped,
 // listed in `warnings`), and volume changes during a note (the value at
 // note-on).
@@ -120,6 +120,44 @@ export function panGains(pan) {
   return [panVolume(idx), panVolume(127 - idx)];
 }
 export const panIndex = pan => Math.trunc(pan * 127.5) & 127;
+// Vibrato as effects.c JP/US runs it per update (note_vibrato_init /
+// get_vibrato_freq_scale / get_vibrato_pitch_change): `delay` updates of
+// nothing; the extent and rate each ramp from their start to the channel's
+// target over a change timer and follow later target changes the same way;
+// then `time += rate; index = (time >> 10) & 0x3F` walks a 64-step triangle
+// folded from gVibratoCurve (s8 k·8, k = 0..15: 0..120 up, back down, then
+// the same below zero), and `scale = 1 + extent/4096 ·
+// (gPitchBendFrequencyScale[pitchChange + 127] − 1)` with that table
+// 0.5·2^(k/127), i.e. 1 + extent/4096 · (2^(pitchChange/127) − 1). A note
+// born with no extent never vibrates.
+export class Vibrato {
+  constructor(vib, changes = []) {
+    this.tgt = {rateTarget: vib.rateTarget, rateDelay: vib.rateDelay, extTarget: vib.extTarget, extDelay: vib.extDelay};
+    this.extTimer = vib.extDelay; this.ext = this.extTimer === 0 ? vib.extTarget : vib.extStart;
+    this.rateTimer = vib.rateDelay; this.rate = this.rateTimer === 0 ? vib.rateTarget : vib.rateStart;
+    this.delay = vib.delay; this.time = 0; this.changes = changes; this.ci = 0;
+  }
+  // the channel's targets change while the note holds: seen at the update after their tick
+  retarget(t) { this.tgt = {rateTarget: t.rateTarget, rateDelay: t.rateDelay, extTarget: t.extTarget, extDelay: t.extDelay}; }
+  update() {
+    if (this.delay !== 0) { this.delay--; return 1; }
+    const T = this.tgt;
+    if (this.extTimer) { if (this.extTimer === 1) this.ext = T.extTarget; else this.ext += Math.trunc((T.extTarget - this.ext) / this.extTimer); this.extTimer--; }
+    else if (T.extTarget !== this.ext) { if ((this.extTimer = T.extDelay) === 0) this.ext = T.extTarget; }
+    if (this.rateTimer) { if (this.rateTimer === 1) this.rate = T.rateTarget; else this.rate += Math.trunc((T.rateTarget - this.rate) / this.rateTimer); this.rateTimer--; }
+    else if (T.rateTarget !== this.rate) { if ((this.rateTimer = T.rateDelay) === 0) this.rate = T.rateTarget; }
+    if (this.ext === 0) return 1;
+    this.time = (this.time + this.rate) >>> 0;
+    let index = (this.time >> 10) & 0x3F, pc;
+    switch (index & 0x30) {
+      case 0x10: index = 31 - index; // fallthrough
+      case 0x00: pc = index * 8; break;
+      case 0x20: pc = -(index - 0x20) * 8; break;
+      default: pc = -(63 - index) * 8; break;
+    }
+    return 1 + this.ext / 4096 * (Math.pow(2, pc / 127) - 1);
+  }
+}
 export const noteFrequency = semitone => Math.pow(2, (semitone - 39) / 12) * (semitone >= 117 ? 0.5 : 1); // gNoteFrequencies
 
 // -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}, silent: [names], warnings: [...]}
@@ -181,13 +219,20 @@ export async function renderN64(result, opts = {}) {
       const releaseRate = layerRel === 0 ? chRel : layerRel;
       // process_notes: velocity² × channel volume, × (level × 4.3498e-5)², capped at 32767 → 0..1
       const vel = Math.max(0, Math.min(127, n.vel || 0));
-      const base = vel * vel * (n.vol != null ? n.vol : 1);
-      if (base <= 0) continue;
+      let base = vel * vel * (n.vol != null ? n.vol : 1);
+      if (base <= 0 && !(n.gain && n.gain.some(g => g.l > 0))) continue;
+      // level steps under the note (n.gain: {t ticks from the start, l}): the channel's volume ×
+      // scale × the player's, re-read by the game every update — followed here per update
+      const steps = n.gain ? n.gain.map(g => ({i: Math.floor(tickSeconds(tempos, n.tick + g.t) * sampleRate), l: g.l})) : null;
+      let gi = 0;
+      const vibChanges = n.vib && n.vibChanges ? n.vibChanges.map(c => ({...c, i: Math.floor(tickSeconds(tempos, n.tick + c.t) * sampleRate)})) : [];
+      const vib = n.vib ? new Vibrato(n.vib, vibChanges) : null;
       const send = reverb && n.rev ? Math.min(127, n.rev) / 128 : 0; // aSetVolume(A_AUX, reverbVol << 8): wet = dry × reverbVol/128
       const [gL, gR] = panGains(notePan(n, n.drum ? bank.drum(n.semitone) : null));
       const smp = bank.pcm(sound.sample);
       const pcm = smp.pcm, L = smp.loopEnd, loopStart = smp.loopStart;
-      const step = Math.min(FREQ_CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
+      const baseStep = Math.min(FREQ_CAP, freq * (n.freq != null ? n.freq : 1)) * N64_RATE / sampleRate;
+      let step = baseStep;
       const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(tickSeconds(tempos, n.tick + n.dur) * sampleRate);
       const env = new Adsr(envelope);
       let pos = 0, nextUpdate = i0, gPrev = 0, gNext = 0;
@@ -195,6 +240,8 @@ export async function renderN64(result, opts = {}) {
         if (i >= nextUpdate) {
           if (i >= iOff && env.state !== DECAY && !env.done) env.decay(releaseRate);
           const level = env.update() * VOL_SCALE;
+          if (steps) { while (gi + 1 < steps.length && i >= steps[gi + 1].i) gi++; base = vel * vel * steps[gi].l; }
+          if (vib) { while (vib.ci < vibChanges.length && i >= vibChanges[vib.ci].i) vib.retarget(vibChanges[vib.ci++]); step = Math.min(FREQ_CAP * N64_RATE / sampleRate, baseStep * vib.update()); }
           gPrev = gNext; gNext = Math.min(32767, base * level * level) / 32767;
           if (env.done && gNext <= 0 && i > i0) break;
           nextUpdate += updateEvery;

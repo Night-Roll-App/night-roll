@@ -10,7 +10,7 @@ import { expandBook, decodeFrames, decodeSample } from "../tools/n64/vadpcm.mjs"
 import { readBank, readEnvelope, byteView, findAudioFiles, DEFAULT_ENVELOPE } from "../tools/n64/bank.mjs";
 import { readALSeqFile } from "../tools/n64/ead-usf.mjs";
 import { SparseImage } from "../tools/n64/usf.mjs";
-import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, reverbFor, panGains, notePan } from "../tools/n64/render.mjs";
+import { Adsr, renderN64, noteFrequency, UPDATES_PER_SECOND, reverbFor, panGains, notePan, Vibrato } from "../tools/n64/render.mjs";
 import { toMidi } from "../tools/n64/notes.mjs";
 // a track is a stereo pair {l, r}; the old checks read the mono sum
 const mono = p => { if (!p || !p.l) return p; const m = new Float32Array(p.l.length); for (let i = 0; i < m.length; i++) m[i] = p.l[i] + p.r[i]; return m; };
@@ -260,4 +260,47 @@ test("stereo: the console's pan law (equal-power, panIndex = (s32)(pan × 127.5)
   assert.ok(hex.indexOf("b4 0a 00") >= 0 && hex.indexOf("b4 0a 00") < hex.indexOf("94 3c 7f"), "CC10 0 before the first note-on (channel 4: 94; the track name meta sits between)");
   assert.match(hex, /b4 0a 40/); assert.match(hex, /b4 0a 7e/); assert.match(hex, /b4 0a 7f/);
   assert.equal((hex.match(/b4 0a /g) || []).length, 4, "one per change, not per note");
+});
+
+test("level steps under a held note (n.gain) are followed per update: a 1 → 0.1 step halfway drops the level 20 dB; vel stays the note-on value for the MIDI", async () => {
+  const {rom} = synthRom();
+  const B = TICKS_PER_BEAT;
+  const note = {tick: 0, dur: 2 * B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, pan: 0.5, freq: 1, chInst: 0,
+                gain: [{t: 0, l: 1}, {t: B, l: 0.1}]}; // DF halfway: the channel's level steps to a tenth
+  const res = {abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: 2 * B, warnings: [], notes: [note]};
+  const r = await renderN64(res, {rom, banks: [0], reverb: null}), p = r["ch 4 inst 0"];
+  const rmsAt = (a, t0, t1) => { let s = 0; for (let i = Math.floor(t0 * 32000); i < Math.floor(t1 * 32000); i++) s += a[i] * a[i]; return Math.sqrt(s / ((t1 - t0) * 32000)); };
+  const before = rmsAt(p.l, 0.1, 0.45), after = rmsAt(p.l, 0.55, 0.9);
+  assert.ok(Math.abs(20 * Math.log10(after / before) + 20) < 0.7, "−20 dB after the step: " + (20 * Math.log10(after / before)).toFixed(2));
+  const flat = (await renderN64({...res, notes: [{...note, gain: undefined}]}, {rom, banks: [0], reverb: null}))["ch 4 inst 0"];
+  assert.ok(Math.abs(20 * Math.log10(rmsAt(flat.l, 0.55, 0.9) / rmsAt(flat.l, 0.1, 0.45))) < 0.7, "without the step the second half holds");
+  const mid = toMidi(res), hex = [...mid].map(b => b.toString(16).padStart(2, "0")).join(" ");
+  assert.match(hex, /94 3c 7f/, "the MIDI keeps velocity 127: the step is the render's");
+});
+
+test("vibrato as effects.c JP/US: delay, triangle over 64 steps of the k·8 curve, scale = 1 + extent/4096·(2^(pc/127) − 1); a D8 note wobbles in the render, a note born without extent does not", async () => {
+  // rate 0x800: one triangle per 32 updates; extent 8·127 = 1016 → peak +23 % / −13.4 % (the game's asymmetric bend)
+  const v = new Vibrato({rateStart: 0x800, rateTarget: 0x800, rateDelay: 0, extStart: 0, extTarget: 1016, extDelay: 0, delay: 2});
+  assert.equal(v.update(), 1); assert.equal(v.update(), 1, "two updates of delay");
+  const seq = []; for (let i = 0; i < 32; i++) seq.push(v.update());
+  const peak = Math.max(...seq), trough = Math.min(...seq);
+  assert.ok(Math.abs(peak - (1 + 1016 / 4096 * (Math.pow(2, 120 / 127) - 1))) < 1e-9, "peak at pitchChange 120: " + peak);
+  assert.ok(Math.abs(trough - (1 + 1016 / 4096 * (Math.pow(2, -120 / 127) - 1))) < 1e-9, "trough at −120: " + trough);
+  assert.equal(seq.indexOf(peak), 7, "rate 0x800 advances the index 2 per update: pitchChange 120 (index 16, folded to the curve's 15) on the 8th update");
+  // extent ramp E2: start 0 → target 1016 over 4 updates, then steady
+  const e = new Vibrato({rateStart: 0x800, rateTarget: 0x800, rateDelay: 0, extStart: 0, extTarget: 1016, extDelay: 4, delay: 0});
+  const ramp = []; for (let i = 0; i < 6; i++) { e.update(); ramp.push(e.ext); }
+  assert.deepEqual(ramp, [254, 508, 762, 1016, 1016, 1016]);
+  // live retarget (a D8 while held) is followed at once when the channel has no change delay
+  e.retarget({rateTarget: 0x800, rateDelay: 0, extTarget: 0, extDelay: 0}); e.update(); assert.equal(e.ext, 0);
+  // in the render: zero crossings per 100 ms window swing with the pitch
+  const {rom} = synthRom();
+  const B = TICKS_PER_BEAT, base = {tick: 0, dur: 4 * B, ch: 4, layer: 0, semitone: 39, drum: false, midi: 60, vel: 127, inst: 0, bank: 0, vol: 1, pan: 0.5, freq: 1, chInst: 0};
+  const vib = {rateStart: 256, rateTarget: 256, rateDelay: 0, extStart: 0, extTarget: 1016, extDelay: 0, delay: 0}; // rate 256: one cycle per 256 updates ≈ 1.07 s
+  const r = await renderN64({abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: 4 * B, warnings: [], notes: [{...base, vib}]}, {rom, banks: [0], reverb: null});
+  const zc = (a, t0, t1) => { let c = 0; for (let i = Math.floor(t0 * 32000) + 1; i < Math.floor(t1 * 32000); i++) if ((a[i - 1] < 0) !== (a[i] < 0)) c++; return c; };
+  const l = r["ch 4 inst 0"].l, up = zc(l, 0.2, 0.3), down = zc(l, 0.75, 0.85); // +23 % at ~0.27 s, −13 % at ~0.8 s
+  assert.ok(up > 2000 * 0.1 * 2 * 1.15 && down < 2000 * 0.1 * 2 * 0.92, "2 kHz wobbles up then down: " + up + " / " + down);
+  const flat = (await renderN64({abi: "sm64", tempos: [{tick: 0, bpm: 120}], endTick: 4 * B, warnings: [], notes: [{...base, vib: null}]}, {rom, banks: [0], reverb: null}))["ch 4 inst 0"].l;
+  assert.ok(Math.abs(zc(flat, 0.2, 0.3) - 400) <= 2 && Math.abs(zc(flat, 0.75, 0.85) - 400) <= 2, "no extent: 2 kHz steady");
 });

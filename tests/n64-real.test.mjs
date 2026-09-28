@@ -19,11 +19,11 @@ import { makeTestPSF } from "../tools/psx/make-test-seq.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
 import { findAudioFiles, readBank } from "../tools/n64/bank.mjs";
 import { expandBook, decodeFrames } from "../tools/n64/vadpcm.mjs";
-import { renderN64 } from "../tools/n64/render.mjs";
+import { renderN64, Vibrato } from "../tools/n64/render.mjs";
 import { channelGroups } from "../tools/n64/notes.mjs";
 import { tickSeconds } from "../tools/n64/seq-libultra.mjs";
 import { sequenceOfSet } from "../tools/n64/capture.mjs";
-import { findMusicTable, findRareBankFile, readRareBank, miniOverrideWords } from "../tools/n64/rare.mjs";
+import { findMusicTable, findRareBankFile, readRareBank, miniOverrideWords, findFxParams } from "../tools/n64/rare.mjs";
 import { toMidi, splitSlides } from "../tools/n64/notes.mjs";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/n64-usf-tracks.json", import.meta.url), "utf8"));
@@ -632,6 +632,8 @@ test("GoldenEye (real rip): no EAD tables; the RAM song table, the mini's word, 
   assert.equal(slid.length, 24);
   assert.ok(slid.every(n => n.ch === 10 && n.slide.every(s => s.t > 0 && s.t < n.dur && Math.abs(s.to) <= 4.01)), "within the note, within twice the 200-cent range (relative to the note-on wheel)");
   assert.match(res.warnings.join(" "), /24 notes carry pitch bends/);
+  assert.equal(res.notes.filter(n => n.gain).length, 4, "cc7 moves under four held notes");
+  assert.match(res.warnings.join(" "), /4 notes change volume while held/);
   assert.ok(splitSlides(res.notes).length > res.notes.length, "the roll gets the landed pitches");
   // Facility and Runway: other ids, same shape
   const fac = sequenceOfSet(geSet("102 Facility.miniusf")).res, run = sequenceOfSet(geSet("103 Runway.miniusf")).res;
@@ -664,6 +666,11 @@ test("GoldenEye (real rip): every mini parses; the bank in RAM reads through its
   assert.ok(i58.sounds.every(s => s.envelope.attackTime === null), "attackTime is never in the rip");
   assert.ok(i58.sounds.every(s => s.wave.base >= 0x3B8000 && s.wave.base < 0x41A000), "wavetable bases are absolute ROM addresses in the sample region");
   assert.ok(bank.pcm(i58.sounds[0].wave).pcm.length > 100);
+  // the effect block the game gave alSynNew: six all-pass sections over 6400 samples, found by shape
+  const fx = findFxParams(ram);
+  assert.equal(fx.at, 0x23100); assert.equal(fx.sections, 6); assert.equal(fx.length, 6400);
+  assert.deepEqual(fx.delays.map(d => [d.input, d.output, d.fbcoef, d.gain, d.lpfilter]), [[0, 160, 9830, 0, 0], [160, 320, 9830, 11140, 0x2500], [800, 2560, 16384, 4587, 0x3000], [3200, 5600, 16384, 4587, 0x3500], [3360, 4800, 8192, 0, 0x4000], [0, 5920, 13000, 0, 0x4500]]);
+  assert.ok(fx.delays.every(d => d.ffcoef === -d.fbcoef), "every section is an all-pass");
 });
 
 test("GoldenEye (real rip): Dam's onsets fit lazyusf2's render at time scale 1 and no other", {skip: !GE && "no GoldenEye rip"}, async () => {
@@ -672,6 +679,7 @@ test("GoldenEye (real rip): Dam's onsets fit lazyusf2's render at time scale 1 a
   const set = geSet("101 Dam.miniusf"), {seq, res} = sequenceOfSet(set);
   const r = await renderN64(res, {set, banks: seq.banks, sampleRate: 22050, keepSeconds: 20, meter: {tsNum: 4, tsDen: 4}});
   assert.equal(r.bankRate, 22050);
+  assert.deepEqual(r.reverb, {at: 0x23100, sections: 6, length: 6400});
   const tracks = Object.keys(r).filter(k => r[k] && r[k].l instanceof Float32Array && r[k].r instanceof Float32Array && r[k].l.length === r[k].r.length);
   assert.ok(tracks.length >= 8, "stereo tracks sounded in the first 20 s");
   // Dam's channel 13 sets cc10 40 (left of centre); its track leans left, a centred track does not
@@ -709,4 +717,27 @@ test("GoldenEye (real rip): Dam's onsets fit lazyusf2's render at time scale 1 a
   const r1 = fit(1), r95 = fit(0.95), r105 = fit(1.05);
   assert.ok(r1 > 0.4, "fit at scale 1: " + r1.toFixed(3));
   assert.ok(r1 > 4 * Math.max(r95, r105), `scale 1 ${r1.toFixed(3)} vs 0.95 ${r95.toFixed(3)} / 1.05 ${r105.toFixed(3)}`);
+});
+
+test("SM64 level steps and vibrato (real set): the facts the sequences carry, and what they come to in the render", {skip: !SM64}, async () => {
+  const libs = readdirSync(SM64).filter(n => /\.usflib$/i.test(n)).map(n => ({name: n, bytes: new Uint8Array(readFileSync(join(SM64, n)))}));
+  const cap = m => sequenceOfSet(loadUSF([{name: m, bytes: new Uint8Array(readFileSync(join(SM64, m)))}, ...libs]));
+  // Snow Mountain: DA steps (seq_changevol, fadeVolume += s8/127) fade the held notes of channels 1/2 down in 1/127 steps
+  const snow = cap("11 Snow Mountain.miniusf").res;
+  const stepped = snow.notes.filter(n => n.gain);
+  assert.equal(stepped.length, 234); assert.deepEqual([...new Set(stepped.map(n => n.ch))].sort(), [1, 2]);
+  const n0 = stepped.find(n => n.ch === 1 && n.dur >= 48);
+  assert.ok(n0.gain.length >= 3 && n0.gain[0].t === 0 && Math.abs(n0.gain[0].l - n0.vol) < 1e-9, "the first breakpoint is the note-on level");
+  assert.ok(n0.gain.every((g, i) => i === 0 || g.l < n0.gain[i - 1].l), "and the steps go down: " + JSON.stringify(n0.gain.map(g => +g.l.toFixed(3))));
+  assert.deepEqual(cap("02 Title Theme.miniusf").res.notes.filter(n => n.gain || n.vib).length, 0, "the Title Theme has neither");
+  // Cave Dungeon: D8 on channels 2 and 5 → vibrato facts (extent 8 = D8 1, rate 0x800 = the channel default, no delay)
+  const cave = cap("14a Cave Dungeon.miniusf").res;
+  const vib = cave.notes.filter(n => n.vib);
+  assert.equal(vib.length, 9); assert.deepEqual([...new Set(vib.map(n => n.ch))].sort(), [2, 5]);
+  assert.deepEqual(vib[0].vib, {rateStart: 0x800, rateTarget: 0x800, rateDelay: 0, extStart: 0, extTarget: 8, extDelay: 0, delay: 0});
+  assert.ok(vib.some(n => n.vibChanges && n.vibChanges.length), "a D8 lands under a held note and is carried as a change");
+  assert.equal(cave.stubbed.length, 0, "D7/D8/E1/E2/E3 and DC are facts now");
+  // what D8 1 comes to: 1 + 8/4096 × (2^(±120/127) − 1) = +3.1 cents at the peak, −1.6 at the trough, one cycle per 32 updates (7.5 Hz)
+  const v = new Vibrato(vib[0].vib); const cyc = []; for (let i = 0; i < 32; i++) cyc.push(v.update());
+  assert.ok(Math.abs(1200 * Math.log2(Math.max(...cyc)) - 3.13) < 0.05 && Math.abs(1200 * Math.log2(Math.min(...cyc)) + 1.63) < 0.05, "+3.1 / −1.6 cents: " + Math.max(...cyc) + " " + Math.min(...cyc));
 });
