@@ -696,7 +696,14 @@
      future dock (steps 3-8) reuses it unmodified. */
   .overlay.docked { position: static; display: none; background: transparent; padding: 0; width: 100%; height: 100%; z-index: auto; }
   .overlay.docked.on { display: flex; }
-  .overlay.docked .sheet { width: 100%; max-width: none; height: 100%; max-height: none; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0; }
+  /* !important: sheetDrag() restores a floating sheet's saved spot as INLINE
+     transform/width/height — docked, those left the panel shifted down with
+     gaps above and below on Josh's iPad (a fresh browser had none saved) */
+  .overlay.docked .sheet { width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; transform: none !important; margin: 0 !important; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0; }
+  /* beside a dock the song is narrower: the footer keeps ONE row and scrolls
+     sideways instead of wrapping its last button onto a second line */
+  #shell.hasdock footer { flex-wrap: nowrap; overflow-x: auto; }
+  #shell.hasdock footer > * { flex: none; }
   /* #asksheet .sheet.ask (below) sets a floating-only custom width at ID+class
      specificity — beats the generic rule above, so it needs its own override
      here too (ID + .docked + .ask) to actually fill the dock while docked */
@@ -18552,6 +18559,7 @@ function wmLayoutRight() {
   dockright.classList.toggle("occupied", !!wmRightEl);
   const active = !!(wmRightEl && wmRightEl.classList.contains("on"));
   shell.style.setProperty("--dr-w", active ? wmClampSize(wm.right.w, wmInnerWidth()) + "px" : "0px");
+  if (shell.classList) shell.classList.toggle("hasdock", !!active); // the footer keeps one scrolling row beside a dock
   const btn = document.getElementById("askdock");
   btn.style.display = wmAllowed(wmInnerWidth()) ? "" : "none";
   const docked = !!(wm.right && wm.right.id === "asksheet"); // the PREF, not "live" — reflects what reopening will do even off-window
