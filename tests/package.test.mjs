@@ -31,6 +31,12 @@ test("package: builds the app edition into a temp dir with only starter albums a
   // the browser-side modules ship (Josh, 2026-09-27, in the app: "Importing a module script failed"); the node-only scripts beside them do not
   for (const f of ["tools/chip-worker.mjs", "tools/nsf/nsf.mjs", "tools/nsf/cpu6502.mjs", "tools/spc/spc.mjs", "tools/spc/apu-render.mjs", "tools/gbs/cpu-sm83.mjs", "tools/psx/psf.mjs", "tools/n64/usf.mjs"])
     assert.ok(existsSync(path.join(out, f)), f + " should ship");
+  // every module the page's CHIPS table names ships — the worker imports them by name at run time (2026-09-28:
+  // sounding/note-preview were missing and every console render on the iPad fell back to the synth)
+  const named = new Set();
+  for (const m of src.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g)) for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) named.add("tools/" + q[1] + ".mjs");
+  assert.ok(named.has("tools/sounding.mjs") && named.has("tools/note-preview.mjs") && named.size > 20, "the CHIPS lists were read");
+  for (const f of named) if (existsSync(path.join(root, f))) assert.ok(existsSync(path.join(out, f)), f + " is named in CHIPS and should ship");
   assert.ok(!files.some(f => /^tools\/(package|dump_notes|claude-bridge|at|span)\.mjs$|^tools\/nsf\/(dump|dump-all|make-test-nsf)\.mjs$/.test(f)), "no node-only tools in the output");
   rmSync(out, {recursive: true, force: true});
 });

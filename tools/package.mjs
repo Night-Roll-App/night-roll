@@ -44,8 +44,19 @@ const RUNTIME_ENTRIES = ["chip-worker.mjs",
   "psx/psf.mjs", "psx/akao.mjs", "psx/seq.mjs", "psx/vab.mjs", "psx/notes.mjs", "psx/spu-render.mjs", "psx/capture.mjs",
   "ps2/psf2.mjs", "ps2/sq.mjs", "ps2/hd.mjs", "ps2/capture.mjs",
   "n64/usf.mjs", "n64/ead-usf.mjs", "n64/seq-libultra.mjs", "n64/notes.mjs", "n64/capture.mjs", "n64/vadpcm.mjs", "n64/bank.mjs", "n64/render.mjs", "n64/rare.mjs", "instruments/play.mjs", "instruments/sf2.mjs"];
+// Every module the page's CHIPS table names (files: and shared: lists) — the
+// worker dynamic-imports them by these names, so a static scan never sees
+// them. Read from index.html itself: sounding/note-preview were missing from
+// the hand list above and every console render on the iPad fell to synth.
+function chipTableModules() {
+  const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const out = new Set();
+  for (const m of html.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g))
+    for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) out.add(q[1] + ".mjs");
+  return [...out];
+}
 function runtimeModules() { // tools-relative paths, entry points plus every static relative import under tools/
-  const seen = new Set(), todo = [...RUNTIME_ENTRIES];
+  const seen = new Set(), todo = [...RUNTIME_ENTRIES, ...chipTableModules()];
   while (todo.length) {
     const m = todo.pop();
     if (seen.has(m)) continue;
