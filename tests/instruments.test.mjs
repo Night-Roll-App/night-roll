@@ -24,6 +24,9 @@ import { extractAlbum, writeAlbum, summary, parseArgs } from "../tools/instrumen
 import { playNote, regionFor, envLevel } from "../tools/instruments/play.mjs";
 import { label } from "../tools/instruments/name.mjs";
 import { verifySong } from "../tools/instruments/verify.mjs";
+import { bankInstruments, ps2Song, ps2Files, verifyPs2Song } from "../tools/instruments/ps2.mjs";
+import { makeTestSQ, makeTestHD, makePSF2, buildPSF2Fs, fileNode } from "../tools/ps2/make-test-sq.mjs";
+import { makeTestBGM, makeTestWD } from "../tools/ps2/make-test-bgm.mjs";
 import { makeTestNSF } from "../tools/nsf/make-test-nsf.mjs";
 import { makeTestGBS } from "../tools/gbs/make-test-gbs.mjs";
 import { pulseSample, gbPulseSample, triangleSample, noiseSample, gbNoiseSample, waveSample, waveHashOf,
@@ -604,5 +607,164 @@ for (const [console_, name, re, dir] of CHIP_RIPS) {
     if (pitched.length) assert.ok(Math.abs(median(pitched.map(r => r.pitch))) <= 5, "pitches: " + pitched.map(r => r.pitch.toFixed(1)));
     const asIs = real.filter(r => !r.long);
     assert.ok(median(asIs.map(r => r.shape)) > 0.5, "as-played shapes: " + asIs.map(r => r.shape.toFixed(2)));
+  });
+}
+
+// ---- PS2 (tools/instruments/ps2.mjs): SQ/HD/BD (Sony) and BGM/WD (Square Enix) --------
+// bankInstruments() is unit-tested directly against a hand-built VAB-shaped bank (the
+// exact shape tools/ps2/hd.mjs's and tools/ps2/wd.mjs's own toBank() produce): melodic vs
+// drum-kit (isDrumProgram, reused unmodified from tools/psx/notes.mjs), fixedPitch kit
+// regions exploded one per key, and — the point of this module's whole design (its own
+// header comment) — the SAME content built from two SEPARATE bank objects (as two songs'
+// own HD/BD or WD each independently parse to) merges into ONE library entry, keyed by
+// content, not by (bank, program).
+function makeVabBank() {
+  const a = encodeAdpcm(sine(440, 2800));          // vag 1: a looped tone, rate 22050 (HD/BD-style: a real per-VAG rate)
+  const b = encodeAdpcm(sine(880, 700), {loop: false}); // vag 2: a one-shot tone, no rate field (WD-style: falls back to 44100)
+  const body = new Uint8Array(a.length + b.length);
+  body.set(a, 0); body.set(b, a.length);
+  const programs = new Array(128).fill(null);
+  programs[0] = {tones: [{min: 0, max: 127, vag: 1, center: 60, shift: 0, vol: 127, pan: 64, adsr1: 0x80FF, adsr2: 0x1FEE}], mvol: 127, mpan: 64};
+  // a drum program: 2 distinct samples, every tone's own range <= 3 keys wide (isDrumProgram's rule)
+  programs[1] = {tones: [
+    {min: 36, max: 36, vag: 1, center: 60, shift: 0, vol: 100, pan: 64, adsr1: 0x80FF, adsr2: 0x1FEE},
+    {min: 38, max: 39, vag: 2, center: 50, shift: 0, vol: 100, pan: 64, adsr1: 0x80FF, adsr2: 0x1FEE},
+  ], mvol: 127, mpan: 64};
+  return {programs, vags: [null, {offset: 0, size: a.length, rate: 22050}, {offset: a.length, size: b.length}], masterVol: 127, masterPan: 64, body};
+}
+
+test("ps2.mjs bankInstruments: melodic vs drum-kit (isDrumProgram, reused unmodified), fixedPitch kit regions exploded one per key", () => {
+  const lib = new Library({slug: "t", title: "t"});
+  const built = bankInstruments(lib, "ps2-sq", makeVabBank());
+  assert.equal(built.size, 2);
+  const p0 = built.get(0), p1 = built.get(1);
+  assert.equal(p0.drum, false); assert.equal(p0.inst.kind, "melodic"); assert.equal(p0.inst.id.startsWith("ps2:inst:"), true);
+  assert.equal(p0.inst.keyRegions.length, 1);
+  assert.deepEqual([p0.inst.keyRegions[0].keyLo, p0.inst.keyRegions[0].keyHi], [0, 127]);
+  assert.equal(p0.inst.keyRegions[0].rootKey, 60, "center 60, no fine tune");
+  assert.equal(p1.drum, true); assert.equal(p1.inst.kind, "drum-kit"); assert.equal(p1.inst.id.startsWith("ps2:kit:"), true);
+  assert.equal(p1.inst.keyRegions.length, 3, "one region per key: 36 (1 key) + 38-39 (2 keys)");
+  for (const r of p1.inst.keyRegions) {
+    assert.equal(r.keyLo, r.keyHi, "a kit region is exactly one slot");
+    assert.equal(r.fixedPitch, true);
+    assert.equal(r.fixedKey, r.rootKey, "ratio 1 always: the tone's own recorded pitch, whatever slot triggers it");
+  }
+  assert.deepEqual(p1.inst.keyRegions.map(r => r.keyLo).sort((x, y) => x - y), [36, 38, 39]);
+});
+
+test("ps2.mjs bankInstruments: the SAME content from two SEPARATE bank objects (two songs' own HD/BD or WD) merges into one instrument, not two", () => {
+  const lib = new Library({slug: "t", title: "t"});
+  const built1 = bankInstruments(lib, "ps2-sq", makeVabBank());
+  const built2 = bankInstruments(lib, "ps2-sq", makeVabBank()); // a fresh bank object, byte-identical content
+  assert.equal(lib.inst.size, 2, "not 4: the second bank's programs found the SAME library entries by content");
+  assert.equal(built1.get(0).inst, built2.get(0).inst, "same object, not a lookalike");
+  assert.equal(built1.get(1).inst, built2.get(1).inst);
+  lib.use(built1.get(0).inst, "Song A", [{key: 60, secs: 1, vel: 100}]);
+  lib.use(built2.get(0).inst, "Song B", [{key: 64, secs: 1, vel: 90}]);
+  lib.finish();
+  const inst = lib.instruments.find(i => i.id === built1.get(0).inst.id);
+  assert.deepEqual(inst.usedIn.sort(), ["Song A", "Song B"]);
+  assert.equal(inst.noteCount, 2);
+  // each sample's own rate: HD/BD-style (vag 1, .rate given) keeps it; WD-style (vag 2, no .rate) falls back to 44100
+  const melodicSample = lib.samples[inst.keyRegions[0].sample];
+  assert.equal(melodicSample.rate, 22050);
+  const kit = lib.instruments.find(i => i.kind === "drum-kit");
+  const wdRegion = kit.keyRegions.find(r => r.keyLo === 38);
+  assert.equal(lib.samples[wdRegion.sample].rate, 44100, "no .rate on this VAG: the renderer's own SPU_RATE fallback");
+});
+
+// Sony's stock driver: SQ (score) + HD/BD (bank) via a mini's psf2.ini, the exact
+// mechanism real Dark Cloud rips use (tools/ps2/make-test-sq.mjs) — end to end through
+// extractAlbum, two songs sharing one HD/BD pair (the real-file shape: Dark Cloud keeps
+// every .SQ/.HD/.BD in the shared .psf2lib), and held against renderSpu via verifyPs2Song.
+function writeSqRip(dir, {titles = ["Song One", "Song Two"]} = {}) {
+  const sq = makeTestSQ();
+  const hd = makeTestHD({baseNote: 60, adsr1: 0x80FF, adsr2: 0x1FEE, sampleRate: 22050});
+  const bd = encodeAdpcm(sine(261.63, 6748)); // a real C4-ish sine, looped: a meaningful pitch/level check, not silence
+  const lib = makePSF2(buildPSF2Fs([fileNode("TESTSEQ.SQ", sq), fileNode("TESTBANK.HD", hd), fileNode("TESTBANK.BD", bd)]), {game: "Test"});
+  writeFileSync(join(dir, "test.psf2lib"), lib);
+  const ini = "sq.irx -s=TESTSEQ.SQ -h=TESTBANK.HD -b=TESTBANK.BD\r\n";
+  titles.forEach((title, i) => {
+    const mini = makePSF2(buildPSF2Fs([fileNode("psf2.ini", new TextEncoder().encode(ini))]), {_lib: "test.psf2lib", title});
+    writeFileSync(join(dir, `0${i + 1} ${title}.psf2`), mini);
+  });
+}
+
+test("a synthetic PS2 SQ/HD/BD rip (Sony's stock driver): extracted, merged across both songs, and played back as spu-render.mjs plays it", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "nr-instr-ps2sq-"));
+  try {
+    assert.deepEqual(ps2Files(dir).sort(), []);
+    writeSqRip(dir);
+    assert.equal(ps2Files(dir).length, 2, "the shared .psf2lib is not itself a song");
+    const lib = await extractAlbum(dir, {slug: "ps2-sq-test"});
+    assert.equal(lib.drivers.has("ps2-sq"), true);
+    const used = lib.instruments.filter(i => i.used);
+    assert.equal(used.length, 1, "one program, one bank shared by both minis: one instrument — " + used.map(i => i.id).join(","));
+    const inst = used[0];
+    assert.equal(inst.driver, "ps2-sq"); assert.equal(inst.kind, "melodic");
+    assert.deepEqual(inst.usedIn.sort(), ["Song One", "Song Two"]);
+    assert.equal(inst.keyRegions[0].rootKey, 60);
+    assert.equal(lib.samples[inst.keyRegions[0].sample].rate, 22050, "HD/BD's own VAGInfoParam rate, not the PS1-style 44100 fallback");
+    const {rows} = await verifyPs2Song(dir, /Song One/);
+    assert.ok(rows.length >= 1, "notes checked: " + rows.length);
+    for (const r of rows) {
+      assert.ok(!r.error, r.group + ": " + r.error);
+      if (r.pitch != null) assert.ok(Math.abs(r.pitch) <= 5, `${r.group} pitch ${r.pitch} cents`);
+      assert.ok(r.shape > 0.95, `${r.group} shape ${r.shape}`);
+      assert.ok(Math.abs(r.level) <= 1, `${r.group} level ${r.level} dB`);
+    }
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+// Square Enix's own driver: BGM (score) + WD (bank) directly in each mini's own
+// filesystem, no ini needed (tools/ps2/make-test-bgm.mjs) — two self-contained minis
+// carrying byte-identical WD bytes (the real-file shape: several BGMs commonly share one
+// .wd), so the same instrument is expected to merge here too, and WD's own lack of a
+// per-VAG rate field is confirmed against the real wd.mjs toBank() path (not the hand-built
+// bank above).
+test("a synthetic PS2 BGM/WD rip (Square Enix's own driver): extracted, merged across both songs, rate falls back to 44100", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "nr-instr-ps2bgm-"));
+  try {
+    const bgm = makeTestBGM(), wd = makeTestWD();
+    const titles = ["BGM One", "BGM Two"];
+    titles.forEach((title, i) => {
+      const mini = makePSF2(buildPSF2Fs([fileNode(`song${i}.bgm`, bgm), fileNode(`bank${i}.wd`, wd)]), {title});
+      writeFileSync(join(dir, `0${i + 1} ${title}.minipsf2`), mini);
+    });
+    assert.equal(ps2Files(dir).length, 2);
+    const lib = await extractAlbum(dir, {slug: "ps2-bgm-test"});
+    assert.equal(lib.drivers.has("ps2-bgm"), true);
+    const used = lib.instruments.filter(i => i.used);
+    assert.equal(used.length, 1, "one WD instrument, byte-identical in both minis: one library entry — " + used.map(i => i.id).join(","));
+    const inst = used[0];
+    assert.equal(inst.driver, "ps2-bgm");
+    assert.equal(inst.kind, "melodic", "the fixture's 3 regions (0-60, 61-90, 91-127) are all wider than isDrumProgram's 3-key rule");
+    assert.deepEqual(inst.usedIn.sort(), ["BGM One", "BGM Two"]);
+    for (const r of inst.keyRegions) if (r.sample) assert.equal(lib.samples[r.sample].rate, 44100, "WD carries no per-VAG rate field");
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+// ---- real PS2 rips (ps2-darkcloud, ps2-ffx in /tmp/claude-501/rips or INSTRUMENT_RIPS) ----
+const PS2_REF = [["ps2-darkcloud", /^01 Dark Cloud Main/, "ps2-sq"], ["ps2-ffx", /^109 Battle/, "ps2-bgm"]];
+for (const [dirName, re, driverTag] of PS2_REF) {
+  test(`real rip ${dirName} ${re.source}: the library plays its notes as spu-render.mjs plays them (5 cents, shape 0.95, 1 dB)`,
+    {skip: !existsSync(join(RIPS, dirName)) && "no rip at " + join(RIPS, dirName)}, async () => {
+    const {rows} = await verifyPs2Song(join(RIPS, dirName), re, {maxNotes: 5});
+    assert.ok(rows.length >= 2, "notes checked: " + rows.length);
+    for (const r of rows) {
+      assert.ok(!r.error, r.group + ": " + r.error);
+      if (r.pitch != null) assert.ok(Math.abs(r.pitch) <= 5, `${r.group} pitch ${r.pitch} cents`);
+      assert.ok(r.shape > 0.95, `${r.group} shape ${r.shape}`);
+      assert.ok(Math.abs(r.level) <= 1, `${r.group} level ${r.level} dB`);
+    }
+  });
+}
+for (const dirName of ["ps2-darkcloud", "ps2-ffx"]) {
+  test(`real rip ${dirName}: every played instrument is in the library with its samples`, {skip: !existsSync(join(RIPS, dirName)) && "no rip"}, async () => {
+    const lib = await extractAlbum(join(RIPS, dirName), {slug: dirName});
+    const s = summary(lib);
+    assert.equal(s.skipped, 0);
+    assert.ok(s.used >= 100, "used instruments: " + s.used);
+    for (const i of lib.instruments.filter(x => x.used)) assert.ok(i.keyRegions.some(r => r.sample), i.id + " has a playable region");
   });
 }

@@ -1456,9 +1456,10 @@ tests/night-roll.test.mjs (a fake worker answers).
 ## Game instrument libraries (2026-09-28)
 
 Josh's goal: use any imported game's instruments in his own songs.
-Step 1: `tools/instruments/` extracts every PS1 (AKAO, SEQ/VAB), N64
-(EAD SM64 + OoT/MM, Rare), SNES (`.spc` DSP log) and NES/Game Boy
-(pulse/triangle/noise/wave synthesis) album's instruments into a
+Step 1: `tools/instruments/` extracts every PS1 (AKAO, SEQ/VAB), PS2
+(Sony's SQ/HD/BD, Square Enix's BGM/WD), N64 (EAD SM64 + OoT/MM, Rare),
+SNES (`.spc` DSP log) and NES/Game Boy (pulse/triangle/noise/wave
+synthesis) album's instruments into a
 driver-neutral library — `extract.mjs <ripdir> --slug <slug> --vault
 <vault> [--out dir] [--publish]` writes `<out>/<slug>/instruments/
 instruments.json` locally (instruments with key regions, root key +
@@ -1687,6 +1688,57 @@ it finds no clean period (noise-like percussion, or a one-shot drum
 sample's natural end landing inside the analysis window) — that isn't
 a meaningful "wrong pitch" the way it is for a tone, so those rows are
 held to shape/level only, not the 5¢ bar.
+
+PS2 (`tools/instruments/ps2.mjs`, 2026-09-29): every PSF2 song
+(`tools/ps2/capture.mjs`'s own `ps2Song()`, either driver) through the
+exact `vab.mjs`/`instr.mjs`/`spu-render.mjs` readers PS1's own VAB path
+already uses — both Sony's HD/BD and Square Enix's own WD `toBank()`
+(`tools/ps2/hd.mjs`, `tools/ps2/wd.mjs`) reshape into `vab.mjs`'s own
+`{programs, vags, body}` bank shape, so this module has no PS2-specific
+render math anywhere. Unlike PS1 SEQ/VAB (one bank shared by the whole
+game), PS2's bank is per-SONG — Sony's driver loads a fresh HD/BD pair
+per mini (Dark Cloud's own `psf2.ini`), and even Square Enix's own WD,
+though often shared by several BGMs, is never one album-wide table — so
+a program NUMBER is only ever a per-song accident of that bank's own
+layout, the same problem SNES's own per-song ARAM snapshot has. An
+instrument here is therefore identified by CONTENT (its region set's
+sample hashes, key ranges, gains, pan — `sigOf`), not by (bank,
+program): the id itself carries that signature, so the same instrument
+met in two different songs' banks — even from two completely separate
+bank objects — is one library entry, not two (a VAG's own content hash
+walks its raw SPU-ADPCM bytes to its own end-flagged block, the same
+self-terminating rule `decodeAdpcm()` already uses, so loop points —
+in-band — are part of the same hash with no separate tag needed).
+Percussion: `tools/psx/notes.mjs`'s own `isDrumProgram` (several one- or
+near-one-key tones on different samples), reused unmodified — the exact
+rule `seqNotes()` already applies per note for any VAB-shaped bank, PS1
+or PS2. A drum program's tones become kind `"drum-kit"`, one region per
+KEY the tone's own range covers (not one region per tone — the same
+"per-slot" shape `psx.mjs`'s own `addKit()` builds for AKAO's drum
+table, so `name.mjs`'s per-slot note counts line up), `fixedPitch` at
+the tone's own center/fine-tune — read straight from the bank's own key
+splits, no driver table needed. Sample rate: Sony's HD/BD carries each
+sample's own real rate (`hd.mjs`'s `vagInfos[].sampleRate`, 22050-44100
+Hz on real Dark Cloud files, threaded through as `vags[].rate`);
+Square Enix's WD has no such field (its VAGs always play at the fixed
+44100 Hz, same as PS1) — a sample's `rate` in the library falls back to
+44100 exactly when `spu-render.mjs`'s own `vabVoices()` would. Verified
+(`ps2.mjs`'s own `verifyPs2Song`, a smaller verify.mjs-style check kept
+in this module rather than added to verify.mjs's own driver dispatch —
+same math, smaller surface on a large, already-tested file) against
+real Dark Cloud and Final Fantasy X rips: pitch within a cent, envelope
+shape correlation 1.0, level within 0.14 dB once a note's own channel
+volume/expression (a performance fact, deliberately left off the
+instrument) is folded into the comparison the same way `renderSpu`
+folds it into the driver's own render. Real rips (2026-09-29): Dark
+Cloud (Sony's driver) — 59 songs, 230/233 instruments used (45 kits),
+590 samples, 0 skipped, 0 missing regions; Final Fantasy X (Square
+Enix's driver) — 92 songs, 660/662 instruments used (0 kits — its own
+tones' key ranges run wider than `isDrumProgram`'s 3-key rule, a file
+fact, not a gap in the rule), 2304 samples, 0 skipped, 0 missing
+regions. Both export to a valid SF2 (`export.mjs`, `sf2.mjs` parses it
+back) with no PS2-specific code in either — the driver-neutral library
+format already carries everything they need.
 
 NES + Game Boy (`tools/instruments/nes.mjs`, 2026-09-28): both chips are
 pure synthesis — pulse, wave (the NES triangle; a real 32-sample

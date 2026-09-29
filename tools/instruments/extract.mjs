@@ -34,6 +34,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Library, wavBytes, instrumentsFolder } from "./model.mjs";
 import { psxSong, psxFiles } from "./psx.mjs";
+import { ps2Song, ps2Files } from "./ps2.mjs";
 import { n64Song, usfFiles } from "./n64.mjs";
 import { snesSong, snesFiles, finishSnesAlbum } from "./snes.mjs";
 import { nesSong, nesFiles, gbsSong, gbsFiles, finishChipAlbum } from "./nes.mjs";
@@ -67,6 +68,18 @@ export async function extractAlbum(dir, {slug = path.basename(dir), title = "", 
     for (const f of psfs) {
       if (only && !only.test(f)) continue;
       try { await psxSong(lib, dir, f, {unused}); } catch (e) { fails.push({file: f, why: e.message}); }
+    }
+  } else if (ps2Files(dir).length) {
+    // psf2 (Sony's SQ/HD/BD, Square's BGM/WD — tools/ps2/): a VAB-shaped
+    // bank per song, read the same PS1 readers already trust (ps2.mjs's
+    // header). Every song's own bank is scanned (unlike PS1's one shared
+    // VAB), so `unused` is a no-op here the same way it is for PS1's own
+    // VAB path — every non-empty program is built regardless of use, and
+    // an instrument no song ever plays is dropped below by the generic
+    // `--no-unused` sweep, same as every other driver.
+    for (const f of ps2Files(dir)) {
+      if (only && !only.test(f)) continue;
+      try { await ps2Song(lib, dir, f, {unused}); } catch (e) { fails.push({file: f, why: e.message}); }
     }
   } else {
     const {minis, libs} = usfFiles(dir);
