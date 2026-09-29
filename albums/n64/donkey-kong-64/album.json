@@ -33,7 +33,18 @@
   "orangsprint": "OrangSprint",
   "snide-s-hq": "Snide's HQ",
   "tiny-s-saxophone-slam": "Tiny's Saxophone Slam",
-  "troff-n-scoff": "Troff 'n' Scoff"
+  "troff-n-scoff": "Troff 'n' Scoff",
+  "boss-unlock-2": "Boss Unlock (2)",
+  "creepy-castle-dungeons-2": "Creepy Castle Dungeons (2)",
+  "creepy-castle-dungeons-3": "Creepy Castle Dungeons (3)",
+  "jungle-japes-2": "Jungle Japes (2)",
+  "unknown-2": "Unknown (2)",
+  "unknown-3": "Unknown (3)",
+  "unknown-4": "Unknown (4)",
+  "unknown-5": "Unknown (5)",
+  "unknown-6": "Unknown (6)",
+  "unknown-7": "Unknown (7)",
+  "unknown-8": "Unknown (8)"
  },
  "nsf": {
   "vault": "donkey-kong-64/",
@@ -705,6 +716,50 @@
    "wrinkly-kong": {
     "n": 1,
     "secs": 21.6
+   },
+   "boss-unlock-2": {
+    "n": 1,
+    "secs": 64
+   },
+   "creepy-castle-dungeons-2": {
+    "n": 1,
+    "secs": 96
+   },
+   "creepy-castle-dungeons-3": {
+    "n": 1,
+    "secs": 112.94117647058823
+   },
+   "jungle-japes-2": {
+    "n": 1,
+    "secs": 129.04569892473117
+   },
+   "unknown-2": {
+    "n": 1,
+    "secs": 0.3942307692307692
+   },
+   "unknown-3": {
+    "n": 1,
+    "secs": 2.04
+   },
+   "unknown-4": {
+    "n": 1,
+    "secs": 0.6484375
+   },
+   "unknown-5": {
+    "n": 1,
+    "secs": 0.9107142857142857
+   },
+   "unknown-6": {
+    "n": 1,
+    "secs": 1.0673076923076923
+   },
+   "unknown-7": {
+    "n": 1,
+    "secs": 3.051260776086507
+   },
+   "unknown-8": {
+    "n": 1,
+    "secs": 6.893343606177817
    }
   },
   "chip": "usf",

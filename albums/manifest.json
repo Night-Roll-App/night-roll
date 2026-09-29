@@ -2726,6 +2726,10 @@
     "path": "albums/n64/donkey-kong-64/boss-unlock.mid"
    },
    {
+    "title": "Boss Unlock (2)",
+    "path": "albums/n64/donkey-kong-64/boss-unlock-2.mid"
+   },
+   {
     "title": "Candy's Music Store",
     "path": "albums/n64/donkey-kong-64/candy-s-music-store.mid"
    },
@@ -2800,6 +2804,14 @@
    {
     "title": "Creepy Castle Dungeons",
     "path": "albums/n64/donkey-kong-64/creepy-castle-dungeons.mid"
+   },
+   {
+    "title": "Creepy Castle Dungeons (2)",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-dungeons-2.mid"
+   },
+   {
+    "title": "Creepy Castle Dungeons (3)",
+    "path": "albums/n64/donkey-kong-64/creepy-castle-dungeons-3.mid"
    },
    {
     "title": "Creepy Castle Greenhouse",
@@ -3110,6 +3122,10 @@
     "path": "albums/n64/donkey-kong-64/jungle-japes.mid"
    },
    {
+    "title": "Jungle Japes (2)",
+    "path": "albums/n64/donkey-kong-64/jungle-japes-2.mid"
+   },
+   {
     "title": "Jungle Japes Barrel Course",
     "path": "albums/n64/donkey-kong-64/jungle-japes-barrel-course.mid"
    },
@@ -3292,6 +3308,34 @@
    {
     "title": "Unknown",
     "path": "albums/n64/donkey-kong-64/unknown.mid"
+   },
+   {
+    "title": "Unknown (2)",
+    "path": "albums/n64/donkey-kong-64/unknown-2.mid"
+   },
+   {
+    "title": "Unknown (3)",
+    "path": "albums/n64/donkey-kong-64/unknown-3.mid"
+   },
+   {
+    "title": "Unknown (4)",
+    "path": "albums/n64/donkey-kong-64/unknown-4.mid"
+   },
+   {
+    "title": "Unknown (5)",
+    "path": "albums/n64/donkey-kong-64/unknown-5.mid"
+   },
+   {
+    "title": "Unknown (6)",
+    "path": "albums/n64/donkey-kong-64/unknown-6.mid"
+   },
+   {
+    "title": "Unknown (7)",
+    "path": "albums/n64/donkey-kong-64/unknown-7.mid"
+   },
+   {
+    "title": "Unknown (8)",
+    "path": "albums/n64/donkey-kong-64/unknown-8.mid"
    },
    {
     "title": "Weapon Upgrade",
