@@ -16,11 +16,11 @@ import { Adsr, OotAdsr, UPDATES_PER_SECOND, OOT_UPDATES_PER_SECOND } from "../to
 import { envelopeGain } from "../tools/n64/rare.mjs";
 import { makeTestSPC, TEST_ROOT_HZ, TEST_MELODY_MIDI } from "../tools/spc/make-test-spc.mjs";
 import { DspVoices, ENV_MAX, OFF, ATTACK } from "../tools/spc/dsp-state.mjs";
-import { Library, simplify, levelAt, wavBytes, readWav, summarize, FORMAT } from "../tools/instruments/model.mjs";
+import { Library, simplify, levelAt, wavBytes, readWav, summarize, FORMAT, instrumentsFolder } from "../tools/instruments/model.mjs";
 import { sm64Envelope, ootEnvelope, rareEnvelope } from "../tools/instruments/n64.mjs";
 import { spuEnvelope } from "../tools/instruments/psx.mjs";
 import { spcEnvelope, keyOnFacts, chooseEnvelope, splitDrum } from "../tools/instruments/snes.mjs";
-import { extractAlbum, writeAlbum, summary } from "../tools/instruments/extract.mjs";
+import { extractAlbum, writeAlbum, summary, parseArgs } from "../tools/instruments/extract.mjs";
 import { playNote, regionFor, envLevel } from "../tools/instruments/play.mjs";
 import { label } from "../tools/instruments/name.mjs";
 import { verifySong } from "../tools/instruments/verify.mjs";
@@ -564,6 +564,20 @@ test("a synthetic GBS: pulse, the real wavetable, and a noise drum-kit", async (
     assert.equal(wave.keyRegions.length, 1); assert.ok(wave.keyRegions[0].sample);
     assert.equal(pulse.noteCount, 4); assert.equal(noise.noteCount, 4, "one noise hit per note");
   } finally { rmSync(dir, {recursive: true, force: true}); }
+});
+
+test("instrumentsFolder: a folder vault keeps its library inside itself; a single-file vault publishes beside the whole filename", () => {
+  assert.equal(instrumentsFolder("goldeneye-007/"), "goldeneye-007/instruments/");
+  assert.equal(instrumentsFolder("castlevania.nsf"), "castlevania.nsf.instruments/");
+  assert.equal(instrumentsFolder("tetris.nsf"), "tetris.nsf.instruments/");
+  assert.equal(instrumentsFolder("tetris.gbs"), "tetris.gbs.instruments/", "NES and GB tetris no longer collide");
+});
+
+test("extract.mjs parseArgs: --vault, and --slug alone as the old fallback", () => {
+  const withVault = parseArgs(["dir", "--slug", "tetris", "--vault", "tetris.nsf", "--publish"]);
+  assert.equal(withVault.vault, "tetris.nsf"); assert.equal(withVault.slug, "tetris"); assert.equal(withVault.publish, true);
+  const noVault = parseArgs(["dir", "--slug", "tetris", "--publish"]);
+  assert.equal(noVault.vault, null, "no --vault: the CLI falls back to <slug>/instruments/");
 });
 
 // ---- real NES/GB rips: pitch/envelope against apu-render.mjs itself --------------------

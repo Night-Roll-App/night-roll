@@ -1456,20 +1456,30 @@ tests/night-roll.test.mjs (a fake worker answers).
 ## Game instrument libraries (2026-09-28)
 
 Josh's goal: use any imported game's instruments in his own songs.
-Step 1: `tools/instruments/` extracts every PS1 (AKAO, SEQ/VAB) and N64
-(EAD SM64 + OoT/MM, Rare) album's instruments into a driver-neutral
-library — `extract.mjs <ripdir> --slug <slug> [--out dir] [--publish]`
-writes `<slug>/instruments/instruments.json` (instruments with key
-regions, root key + fine tune, the driver's exact envelope as points plus
-an ADSR summary, pan, gain, which songs use each) and one 16-bit WAV per
-distinct sample (loop and root in a `smpl` chunk, readable by any
-sampler). Names are measured guesses (`name.mjs`: attack, decay,
-brightness, harmonicity, register → Kick/Snare/Hi-hat/…/Soft pad/Lead),
-editable later. `play.mjs` plays one note from the library (what the app
-will use); `verify.mjs` checks it against the driver's own renderer —
-pitch within a cent, envelope correlation ≥ 0.99, level within 0.3 dB on
-every sampled song. Libraries go to the game files & instruments repo
-beside each album's chip files. Performance (vibrato, bends, volume
+Step 1: `tools/instruments/` extracts every PS1 (AKAO, SEQ/VAB), N64
+(EAD SM64 + OoT/MM, Rare), SNES (`.spc` DSP log) and NES/Game Boy
+(pulse/triangle/noise/wave synthesis) album's instruments into a
+driver-neutral library — `extract.mjs <ripdir> --slug <slug> --vault
+<vault> [--out dir] [--publish]` writes `<out>/<slug>/instruments/
+instruments.json` locally (instruments with key regions, root key +
+fine tune, the driver's exact envelope as points plus an ADSR summary,
+pan, gain, which songs use each) and one 16-bit WAV per distinct sample
+(loop and root in a `smpl` chunk, readable by any sampler). Names are
+measured guesses (`name.mjs`: attack, decay, brightness, harmonicity,
+register → Kick/Snare/Hi-hat/…/Soft pad/Lead), editable later.
+`play.mjs` plays one note from the library (what the app will use);
+`verify.mjs` checks it against the driver's own renderer — pitch within
+a cent, envelope correlation ≥ 0.99, level within 0.3 dB on every
+sampled song. Libraries go to the game files & instruments repo beside
+each album's chip files, at `instrumentsFolder(vault)` (model.mjs): a
+folder vault ("goldeneye-007/") keeps its library inside itself,
+`<vault>instruments/`; a single-file vault ("tetris.nsf", "tetris.gbs")
+has no folder of its own, and vault-minus-extension collides between an
+NES and a GB album sharing a base name, so it publishes beside the
+whole filename instead, `<vault>.instruments/` (e.g.
+`castlevania.nsf.instruments/instruments.json`) — `--publish` uses this
+rule when `--vault` is given, falling back to `<slug>/instruments/` only
+when it isn't (older callers). Performance (vibrato, bends, volume
 ramps, reverb, filters) stays with the song, not the instrument.
 
 Step 2: `export.mjs <libraryDir> --sf2 out.sf2 --sfz outDir [--used-only]`

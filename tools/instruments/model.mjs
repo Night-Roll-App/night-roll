@@ -37,6 +37,18 @@ import { createHash } from "node:crypto";
 export const FORMAT = "night-roll-instruments";
 export const VERSION = 1;
 
+// Where a library lives in the archive (joshcough/nsf-archive), given the
+// album's nsf.vault. A folder vault ("goldeneye-007/") keeps its instruments
+// inside itself: "goldeneye-007/instruments/". A single-file vault
+// ("tetris.nsf", "tetris.gbs") has no folder of its own to hold one — and an
+// NES and a GB album can share a base name (tetris.nsf vs tetris.gbs), so
+// "vault minus extension" collides between consoles — so its library
+// publishes beside the file, named after the whole vault filename:
+// "tetris.nsf.instruments/". Always ends in "/".
+export function instrumentsFolder(vault) {
+  return vault.endsWith("/") ? vault + "instruments/" : vault + ".instruments/";
+}
+
 // ---- envelope shapes ---------------------------------------------------------
 // Ramer–Douglas–Peucker on [t, level] points: keeps the shape within `tol`
 // near full level and within 2% (0.17 dB) of the level below that, so an

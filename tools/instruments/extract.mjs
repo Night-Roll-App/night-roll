@@ -1,5 +1,6 @@
 // tools/instruments/extract.mjs <ripdir> --slug <slug> [--out <dir>] [--title "Game"]
-//                               [--no-unused] [--only <regex>] [--publish] [--quiet]
+//                               [--no-unused] [--only <regex>] [--publish]
+//                               [--vault <vault>] [--quiet]
 //
 // Every instrument an imported game's songs play, as a sampler library: the
 // PlayStation (AKAO, SEQ/VAB) and Nintendo 64 (EAD sm64/oot generations,
@@ -10,19 +11,28 @@
 // shared bucket (per sample content, not per song) before any instrument
 // is built. Writes <out>/<slug>/instruments/instruments.json
 // and one <hash>.wav per distinct sample (16-bit mono at its native rate,
-// loop in a `smpl` chunk) — the paths the archive holds them at.
+// loop in a `smpl` chunk) locally; --publish decides where those files land
+// in the archive.
 //
-// --publish uploads that folder to the archive (joshcough/nsf-archive,
-// <slug>/instruments/…) through `gh api`, message "instruments: <slug>":
-// check before each PUT (a file already there at the same size is left;
-// instruments.json at another size is updated with its sha), then read each
-// upload back and compare its size. Nothing is downloaded; nothing is written
-// under the repo unless --out points there.
+// --publish uploads that folder to the archive (joshcough/nsf-archive)
+// through `gh api`, message "instruments: <slug>": check before each PUT (a
+// file already there at the same size is left; instruments.json at another
+// size is updated with its sha), then read each upload back and compare its
+// size. Nothing is downloaded; nothing is written under the repo unless
+// --out points there.
+//
+// The archive path is `instrumentsFolder(vault)` (model.mjs) given the
+// album's nsf.vault with --vault <vault>: a folder vault's own
+// "<vault>instruments/", or a single-file vault's "<vault>.instruments/" —
+// vault minus extension collides between an NES and a GB album with the same
+// base name (tetris.nsf vs tetris.gbs), so the library publishes beside the
+// whole filename instead. Without --vault (older callers, or a slug that
+// isn't a real vault path), it falls back to "<slug>/instruments/" as before.
 import { writeFileSync, mkdirSync, existsSync, statSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Library, wavBytes } from "./model.mjs";
+import { Library, wavBytes, instrumentsFolder } from "./model.mjs";
 import { psxSong, psxFiles } from "./psx.mjs";
 import { n64Song, usfFiles } from "./n64.mjs";
 import { snesSong, snesFiles, finishSnesAlbum } from "./snes.mjs";
@@ -31,7 +41,7 @@ import { nameAll } from "./name.mjs";
 import { samplesFromLibrary } from "./play.mjs";
 
 export function parseArgs(argv) {
-  const o = {dir: null, slug: null, out: "scratch/instruments/out", title: "", unused: true, only: null, publish: false, quiet: false};
+  const o = {dir: null, slug: null, out: "scratch/instruments/out", title: "", unused: true, only: null, publish: false, vault: null, quiet: false};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--slug") o.slug = argv[++i];
@@ -40,6 +50,7 @@ export function parseArgs(argv) {
     else if (a === "--no-unused") o.unused = false;
     else if (a === "--only") o.only = new RegExp(argv[++i], "i");
     else if (a === "--publish") o.publish = true;
+    else if (a === "--vault") o.vault = argv[++i];
     else if (a === "--quiet") o.quiet = true;
     else if (!o.dir) o.dir = a;
     else throw new Error("unexpected argument " + a);
@@ -140,14 +151,17 @@ function ghSize(p) {
   const [size, sha] = r.stdout.trim().split("\t");
   return {size: +size, sha};
 }
-export function publish(slug, dir, files, log = console.log) {
+// `folder` is where the files land in the archive, trailing "/"
+// (instrumentsFolder(vault), or "<slug>/instruments/" as a fallback — see
+// the header comment). `label` is just for the commit message.
+export function publish(folder, dir, files, label, log = console.log) {
   const out = [];
   for (const f of files) {
-    const p = `${slug}/instruments/${f}`;
+    const p = `${folder}${f}`;
     const bytes = readFileSync(path.join(dir, f));
     const have = ghSize(p);
     if (have && have.size === bytes.length) { out.push({file: p, st: "already there"}); continue; }
-    const body = {message: "instruments: " + slug, branch: "main", content: bytes.toString("base64")};
+    const body = {message: "instruments: " + label, branch: "main", content: bytes.toString("base64")};
     if (have) body.sha = have.sha; // a newer instruments.json replaces the old
     const put = spawnSync("gh", ["api", "--method", "PUT", "repos/" + REPO + "/contents/" + p, "--input", "-"], {input: JSON.stringify(body), encoding: "utf8", maxBuffer: 1 << 28});
     if (put.status !== 0) { out.push({file: p, st: "FAILED: " + (put.stderr || put.stdout).trim().split("\n")[0]}); continue; }
@@ -171,13 +185,14 @@ export function printSummary(lib, log = console.log) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const o = parseArgs(process.argv.slice(2));
-  if (!o.dir || !o.slug) { console.error("usage: extract.mjs <ripdir> --slug <slug> [--out <dir>] [--title T] [--no-unused] [--only re] [--publish]"); process.exit(2); }
+  if (!o.dir || !o.slug) { console.error("usage: extract.mjs <ripdir> --slug <slug> [--out <dir>] [--title T] [--no-unused] [--only re] [--publish] [--vault v]"); process.exit(2); }
   const t0 = Date.now();
+  const folder = o.vault ? instrumentsFolder(o.vault) : o.slug + "/instruments/";
   extractAlbum(o.dir, {slug: o.slug, title: o.title, unused: o.unused, only: o.only, log: o.quiet ? () => {} : console.log}).then(lib => {
     const w = writeAlbum(lib, o.out);
     printSummary(lib, o.quiet ? () => {} : console.log);
     console.log(`# wrote ${w.files.length} files to ${w.dir} in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-    if (o.publish) { const r = publish(o.slug, w.dir, w.files); if (r.some(x => /FAILED/.test(x.st))) process.exitCode = 1; }
-    else console.log(`# archive: ${w.files.length} files to upload with --publish (${o.slug}/instruments/…)`);
+    if (o.publish) { const r = publish(folder, w.dir, w.files, o.slug); if (r.some(x => /FAILED/.test(x.st))) process.exitCode = 1; }
+    else console.log(`# archive: ${w.files.length} files to upload with --publish (${folder}…)`);
   }, e => { console.error("extract: " + (e && e.stack || e)); process.exit(1); });
 }
