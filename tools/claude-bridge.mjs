@@ -20,7 +20,9 @@
 // Flags (env in brackets): --port N [BRIDGE_PORT, 8787] · --host H [BRIDGE_HOST,
 // 127.0.0.1] · --token T [BRIDGE_TOKEN] · --upstream name=url (repeatable)
 // [BRIDGE_UPSTREAMS, comma-separated name=url] · --no-claude · --claude read|full
-// [BRIDGE_CLAUDE, read] · --repo DIR [cwd for Claude Code, default: this repo] ·
+// [BRIDGE_CLAUDE, read] · --model M [BRIDGE_MODEL, opus: what "claude-code" runs;
+// "claude-code-opus/-sonnet/-haiku/-fable" are listed too, so the app's model
+// menu switches per chat without touching this Mac] · --repo DIR [cwd for Claude Code, default: this repo] ·
 // --jobs-dir DIR [BRIDGE_JOBS, ~/.night-roll-bridge/jobs] · --keep-hours H [24] ·
 // --state-dir DIR [beside the default jobs dir; inside a custom one].
 //
@@ -93,6 +95,11 @@ const CLAUDE_MODE = has("--no-claude") ? "off" : (flag("--claude", process.env.B
 const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
 const TURN_MS = 20 * 60 * 1000;
 const MODEL_CLAUDE = "claude-code";
+// Claude Code's own default model is whatever this Mac's settings say — the
+// bridge always passes one, so a phone in bed can pick (2026-09-28: Ask was
+// stuck on the Mac's default with no way to change it from the iPad)
+const CLAUDE_DEFAULT_MODEL = flag("--model", process.env.BRIDGE_MODEL || "opus");
+const CLAUDE_MODELS = ["opus", "sonnet", "haiku", "fable"];
 
 const upstreams = []; // [{name, url}]
 for (let i = 0; i < argv.length; i++) if (argv[i] === "--upstream" && argv[i + 1]) upstreams.push(parseUpstream(argv[++i]));
@@ -164,7 +171,10 @@ async function fetchJSON(url, opts, ms) {
 }
 async function listModels() { // {models: [{id, owned_by}], route: Map id → {upstream, id}}
   const models = [], route = new Map();
-  if (claudeOk) { models.push({id: MODEL_CLAUDE, object: "model", owned_by: "claude-code (" + CLAUDE_MODE + ")"}); route.set(MODEL_CLAUDE, {claude: true}); }
+  if (claudeOk) {
+    models.push({id: MODEL_CLAUDE, object: "model", owned_by: "claude-code (" + CLAUDE_MODE + ", " + CLAUDE_DEFAULT_MODEL + ")"}); route.set(MODEL_CLAUDE, {claude: true, model: CLAUDE_DEFAULT_MODEL});
+    for (const m of CLAUDE_MODELS) { const id = MODEL_CLAUDE + "-" + m; models.push({id, object: "model", owned_by: "claude-code (" + CLAUDE_MODE + ", " + m + ")"}); route.set(id, {claude: true, model: m}); }
+  }
   const list = upstreams.length ? upstreams : AUTO_UPSTREAMS;
   await Promise.all(list.map(async u => {
     let ids = [];
@@ -256,14 +266,14 @@ function notesPreface(sess) { // what the terminal said since this session's las
 }
 
 // ---------------------------------------------------------------- runners
-function runClaude(job, body, songKey, retry = true) {
+function runClaude(job, body, songKey, model, retry = true) {
   const sess = sessionFor(songKey);
   const resumed = sess.turns > 0;
   const {system, prompt: tail} = resumed ? flattenTail(body.messages) : flatten(body.messages);
   const prompt = notesPreface(sess) + tail;
   const noteLast = inboxAll().last;
   const sys = BRIDGE_SYS_COMMON + "\n" + (CLAUDE_MODE === "full" ? BRIDGE_SYS_FULL : BRIDGE_SYS_READ) + "\n" + BRIDGE_SYS_LINK + (system ? "\n\nNIGHT ROLL'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
-  const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", resumed ? "--resume" : "--session-id", sess.id, "--append-system-prompt", sys];
+  const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", resumed ? "--resume" : "--session-id", sess.id, "--model", model || CLAUDE_DEFAULT_MODEL, "--append-system-prompt", sys];
   if (CLAUDE_MODE !== "full") args.push("--tools", "Read", "Glob", "Grep", "WebFetch", "WebSearch");
   const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
   job.child = child;
@@ -299,7 +309,7 @@ function runClaude(job, body, songKey, retry = true) {
     if (!sawText && code !== 0 && resumed && retry && /session|conversation|resume/i.test(err)) { // Claude Code lost the session (cleaned up, another machine): start this song over, once
       sessionUpdate(songKey, {id: crypto.randomUUID(), turns: 0, noteSeen: 0, started: Date.now(), lost: err.trim().slice(0, 200)});
       job.notes.push("session restarted");
-      return runClaude(job, body, songKey, false);
+      return runClaude(job, body, songKey, model, false);
     }
     if (!sawText && code !== 0) return jobEnd(job, new Error((err || "claude exited " + code).trim().slice(0, 500)));
     sessionUpdate(songKey, {turns: sess.turns + 1, noteSeen: noteLast});
@@ -387,7 +397,7 @@ const server = http.createServer(async (req, res) => {
       const target = route.get(body.model) || route.get(MODEL_CLAUDE) || [...route.values()][0];
       if (!target) return json(res, 503, {error: {message: "no model reachable: start LM Studio / Ollama, or install Claude Code"}});
       job = newJob(id, body.model || (target.claude ? MODEL_CLAUDE : target.id));
-      if (target.claude) runClaude(job, body, songKeyOf(req, body)); else runUpstream(job, body, target);
+      if (target.claude) runClaude(job, body, songKeyOf(req, body), target.model); else runUpstream(job, body, target);
     }
     const cid = "chatcmpl-" + id;
     const finalMessage = () => job.result && job.result.tool_calls ? {role: "assistant", content: null, tool_calls: job.result.tool_calls} : {role: "assistant", content: job.text};

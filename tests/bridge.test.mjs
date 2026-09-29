@@ -116,3 +116,28 @@ test("bridge: models merge from upstreams, jobs survive a dropped client, replay
   assert.equal((await (await fetch(B + "/v1/inbox?since=2", {headers: H})).json()).notes.length, 0);
   assert.equal((await fetch(B + "/v1/inbox")).status, 401, "the inbox is behind the token too");
 });
+
+test("bridge: Claude Code always gets a model — claude-code runs the default (opus), claude-code-<m> runs <m>", async t => {
+  const {writeFileSync, readFileSync, existsSync, chmodSync} = await import("node:fs");
+  const dir = mkdtempSync(path.join(tmpdir(), "nr-bridge-claude-"));
+  const argsLog = path.join(dir, "args.log"), bin = path.join(dir, "fake-claude");
+  // a stand-in claude: --version succeeds; a -p turn records its argv and prints one result line
+  writeFileSync(bin, `#!/bin/sh\n[ "$1" = "--version" ] && exit 0\nprintf '%s\\n' "$*" >> "${argsLog}"\ncat >/dev/null\necho '{"type":"result","subtype":"success","result":"ok","is_error":false}'\n`);
+  chmodSync(bin, 0o755);
+  const port = 19000 + Math.floor(Math.random() * 1000);
+  const child = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port), "--jobs-dir", path.join(dir, "jobs")],
+    {env: {...process.env, CLAUDE_BIN: bin, BRIDGE_UPSTREAMS: "none=http://127.0.0.1:9"}, stdio: ["ignore", "pipe", "pipe"]});
+  t.after(() => { child.kill("SIGKILL"); rmSync(dir, {recursive: true, force: true}); });
+  let out = ""; child.stdout.on("data", d => { out += d; }); child.stderr.on("data", d => { out += d; });
+  for (let i = 0; i < 80 && !/jobs:/.test(out); i++) await sleep(100);
+  const base = "http://127.0.0.1:" + port;
+  const ids = (await (await fetch(base + "/v1/models")).json()).data.map(m => m.id);
+  for (const id of ["claude-code", "claude-code-opus", "claude-code-sonnet", "claude-code-haiku", "claude-code-fable"]) assert.ok(ids.includes(id), id + " listed");
+  const ask = (model, song) => fetch(base + "/v1/chat/completions", {method: "POST", headers: {"content-type": "application/json", "x-nr-song": song}, body: JSON.stringify({model, messages: [{role: "user", content: "hi"}]})}).then(r => r.text());
+  await ask("claude-code", "song-a");
+  await ask("claude-code-sonnet", "song-b");
+  for (let i = 0; i < 50 && !(existsSync(argsLog) && readFileSync(argsLog, "utf8").trim().split("\n").length >= 2); i++) await sleep(100);
+  const lines = readFileSync(argsLog, "utf8").trim().split("\n");
+  assert.ok(lines.some(l => /--model opus\b/.test(l)), "the plain id runs the default model");
+  assert.ok(lines.some(l => /--model sonnet\b/.test(l)), "the chosen model reaches Claude Code: " + lines.join(" / ").replace(/--append-system-prompt[^/]*/g, ""));
+});
