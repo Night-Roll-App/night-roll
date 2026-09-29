@@ -32,11 +32,11 @@
   "tracks": {
    "a-hero-s-end-ending-i": {
     "n": 22,
-    "secs": 299.988
+    "secs": 44.664880000000004
    },
    "aftermath-cutscene": {
     "n": 21,
-    "secs": 299.988
+    "secs": 55.397784
    },
    "apprehensive-moments-cutscene-4-3": {
     "n": 7,
@@ -52,7 +52,7 @@
    },
    "credits-duplicate": {
     "n": 25,
-    "secs": 299.988
+    "secs": 103.595856
    },
    "depth-of-wickedness-5-1-6-5": {
     "n": 19,
@@ -72,11 +72,11 @@
    },
    "for-your-love-ending-iii": {
     "n": 24,
-    "secs": 299.988
+    "secs": 53.997840000000004
    },
    "game-over": {
     "n": 26,
-    "secs": 12.966148
+    "secs": 4.599816
    },
    "information-and-coercion-cutscene": {
     "n": 14,
@@ -84,11 +84,11 @@
    },
    "it-s-over-ending-ii": {
     "n": 23,
-    "secs": 299.988
+    "secs": 68.197272
    },
    "jaquio-fortress-cutscene": {
     "n": 16,
-    "secs": 53.981174
+    "secs": 20.799168
    },
    "nowhere-to-run-3-2-6-2": {
     "n": 12,
@@ -108,11 +108,11 @@
    },
    "sfx-next-act": {
     "n": 3,
-    "secs": 11.982854
+    "secs": 3.199872
    },
    "spawn-of-evil-cutscene": {
     "n": 17,
-    "secs": 299.988
+    "secs": 46.898124
    },
    "swift-ninja-cutscene-3-1": {
     "n": 10,
@@ -120,7 +120,7 @@
    },
    "the-duel-opening": {
     "n": 1,
-    "secs": 53.981174
+    "secs": 20.33252
    },
    "unbreakable-determination-4-2": {
     "n": 15,
@@ -128,11 +128,11 @@
    },
    "veil-of-uncertainty-cutscene": {
     "n": 6,
-    "secs": 299.82134
+    "secs": 24.632348
    },
    "vow-of-revenge-opening-ii": {
     "n": 2,
-    "secs": 299.988
+    "secs": 48.99804
    }
   }
  }
