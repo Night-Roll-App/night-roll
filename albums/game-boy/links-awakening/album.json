@@ -53,7 +53,7 @@
   "tracks": {
    "angler-s-tunnel-intro": {
     "n": 76,
-    "secs": 26.989242553710938
+    "secs": 9.56008529663086
    },
    "angler-s-tunnel": {
     "n": 23,
@@ -65,7 +65,7 @@
    },
    "ballad-of-the-wind-fish": {
     "n": 63,
-    "secs": 296.17847442626953
+    "secs": 295.70967864990234
    },
    "battle-with-nightmare-intro": {
     "n": 93,
@@ -77,7 +77,7 @@
    },
    "beach-scene-intro": {
     "n": 77,
-    "secs": 11.987777709960938
+    "secs": 11.184127807617188
    },
    "beach-scene": {
     "n": 78,
@@ -85,7 +85,7 @@
    },
    "bee-scene": {
     "n": 52,
-    "secs": 35.81264877319336
+    "secs": 12.925369262695312
    },
    "boss": {
     "n": 25,
@@ -105,7 +105,7 @@
    },
    "dream-shrine-dreaming": {
     "n": 30,
-    "secs": 18.986228942871094
+    "secs": 9.978652954101562
    },
    "dream-shrine-intro": {
     "n": 36,
@@ -137,7 +137,7 @@
    },
    "fanfare-unused": {
     "n": 79,
-    "secs": 11.987777709960938
+    "secs": 2.6118621826171875
    },
    "flying-rooster-revival": {
     "n": 85,
@@ -157,7 +157,7 @@
    },
    "get-full-moon-cello": {
     "n": 32,
-    "secs": 26.939014434814453
+    "secs": 26.269306182861328
    },
    "get-heart-container": {
     "n": 37,
@@ -169,11 +169,11 @@
    },
    "get-instrument": {
     "n": 27,
-    "secs": 23.975555419921875
+    "secs": 9.241973876953125
    },
    "get-minor-item": {
     "n": 59,
-    "secs": 11.987777709960938
+    "secs": 2.5114059448242188
    },
    "get-organ-of-evening-calm": {
     "n": 45,
@@ -185,23 +185,23 @@
    },
    "get-sea-harp": {
     "n": 42,
-    "secs": 23.975555419921875
+    "secs": 23.791385650634766
    },
    "get-sea-lily-s-bell": {
     "n": 41,
-    "secs": 16.97710418701172
+    "secs": 16.357624053955078
    },
    "get-sword": {
     "n": 15,
-    "secs": 16.97710418701172
+    "secs": 7.199363708496094
    },
    "get-thunder-drum": {
     "n": 46,
-    "secs": 13.980159759521484
+    "secs": 12.255661010742188
    },
    "get-wind-marimba": {
     "n": 43,
-    "secs": 16.97710418701172
+    "secs": 16.407852172851562
    },
    "ghost-s-house": {
     "n": 72,
@@ -241,11 +241,11 @@
    },
    "learn-frog-s-song-of-soul": {
     "n": 53,
-    "secs": 299.9790687561035
+    "secs": 27.257125854492188
    },
    "learn-manbo-s-mambo": {
     "n": 48,
-    "secs": 299.9790687561035
+    "secs": 26.453475952148438
    },
    "link-awakens": {
     "n": 28,
@@ -265,7 +265,7 @@
    },
    "marin-s-song-the-end": {
     "n": 61,
-    "secs": 279.35205459594727
+    "secs": 179.34786987304688
    },
    "marin-singing": {
     "n": 47,
@@ -285,7 +285,7 @@
    },
    "monkeys-at-work": {
     "n": 54,
-    "secs": 36.98463821411133
+    "secs": 14.130844116210938
    },
    "mr-write-s-house": {
     "n": 55,
@@ -301,7 +301,7 @@
    },
    "opening-the-wind-fish-s-egg-eight-instruments": {
     "n": 71,
-    "secs": 299.9790687561035
+    "secs": 38.50822448730469
    },
    "opening-the-wind-fish-s-egg-five-instruments": {
     "n": 68,
@@ -313,7 +313,7 @@
    },
    "opening-the-wind-fish-s-egg-seven-instruments": {
     "n": 70,
-    "secs": 299.9790687561035
+    "secs": 38.50822448730469
    },
    "opening-the-wind-fish-s-egg-six-instruments": {
     "n": 69,
@@ -321,11 +321,11 @@
    },
    "opening-the-wind-fish-s-egg-three-instruments": {
     "n": 66,
-    "secs": 299.9790687561035
+    "secs": 38.50822448730469
    },
    "opening-the-wind-fish-s-egg-two-instruments": {
     "n": 65,
-    "secs": 299.69444274902344
+    "secs": 35.410823822021484
    },
    "overworld-unarmed": {
     "n": 29,
@@ -357,7 +357,7 @@
    },
    "prologue": {
     "n": 26,
-    "secs": 299.9790687561035
+    "secs": 51.98610305786133
    },
    "rapids-ride-house": {
     "n": 58,
@@ -397,7 +397,7 @@
    },
    "totaka-s-song-ocarina-unused": {
     "n": 56,
-    "secs": 36.934410095214844
+    "secs": 13.812732696533203
    },
    "trouble-in-mabe-village": {
     "n": 14,
