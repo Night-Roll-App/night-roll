@@ -106,3 +106,27 @@ test("Dark Cloud: Sony's stock SQ/HD/BD driver, picked per-song from a plain-tex
   const median = ratios[Math.floor(ratios.length / 2)];
   assert.ok(median > 0.9 && median < 1.1, `median tag/measured ratio out of range: ${median} (n=${ratios.length})`);
 });
+
+test("Final Fantasy X WD banks: every instrument's key ranges partition the keyboard — no two ranges overlap unless identical (a stereo/layer pair), none inverted (the 'first' flag set on two regions layered a second sample under 109 Battle's kick)", { skip: !has("ps2-ffx") }, async () => {
+  const { parseWD } = await import("../tools/ps2/wd.mjs");
+  const dir = join(RIPS, "ps2-ffx");
+  const seen = new Set();
+  let instruments = 0;
+  for (const name of readdirSync(dir).filter(f => f.endsWith(".minipsf2"))) {
+    const {mini} = await loadOne(dir, name);
+    const wdf = [...mini.files].find(f => f.path.endsWith(".wd"));
+    if (!wdf || seen.has(wdf.path)) continue;
+    seen.add(wdf.path);
+    const wd = parseWD(await readPSF2File(mini.psf.reserved, wdf));
+    for (const ins of wd.instruments) {
+      instruments++;
+      for (const r of ins.regions) assert.ok(r.keyLow <= r.keyHigh, `${wdf.path} instrument ${ins.index}: inverted ${r.keyLow}-${r.keyHigh}`);
+      for (let a = 0; a < ins.regions.length; a++) for (let b = a + 1; b < ins.regions.length; b++) {
+        const r = ins.regions[a], q = ins.regions[b];
+        const same = r.keyLow === q.keyLow && r.keyHigh === q.keyHigh;
+        assert.ok(same || r.keyHigh < q.keyLow || q.keyHigh < r.keyLow, `${wdf.path} instrument ${ins.index}: ${r.keyLow}-${r.keyHigh} overlaps ${q.keyLow}-${q.keyHigh}`);
+      }
+    }
+  }
+  assert.ok(instruments > 600, `read ${instruments} instruments`);
+});

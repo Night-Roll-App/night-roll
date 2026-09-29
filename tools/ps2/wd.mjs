@@ -150,8 +150,6 @@ export function parseWD(buf) {
     let prevKeyHigh = null, prevKeyLow = null;
     for (let k = 0; k < nRegions; k++) {
       const o = start + k * 0x20;
-      const flagsByte = d[o + 1];
-      const firstRegion = flagsByte & 1, lastRegion = (flagsByte >> 1) & 1;
       const sampOffset = view.getUint32(o + 4, true) & 0xFFFFFFF0; // relative to the sample section's own start (confirmed: instrument 0's first region always reads 0 here, landing exactly on sampCollOff's own 16 zero bytes)
       const adsr1 = view.getUint16(o + 0xC, true), adsr2 = view.getUint16(o + 0xE, true);
       const fineTuneByte = d[o + 0x12];
@@ -170,11 +168,22 @@ export function parseWD(buf) {
       const atten = d[o + 0x16];
       const panByte = d[o + 0x17];
 
+      // Key ranges come from the stored top keys alone. Byte 1's two low bits
+      // are NOT first/last-region markers (VGMTrans reads them that way):
+      // "109 Battle" instrument 5 sets "first" on its first TWO regions, which
+      // put both at key 0 and layered a second sample under the kick on key 35
+      // (212 hits — Josh, 2026-09-29: "obviously not using the right
+      // instruments"), and wave0024 instrument 10 sets "last" on region 4 of 8
+      // although its top keys 54,60,66,72,78,84,90,127 are one clean
+      // partition. Rule: the first region starts at key 0, each later one just
+      // above the previous top key, and a region repeating the previous top
+      // key is its stereo/layer partner (pans 0/127 — The Prelude's halves)
+      // and shares its range. Across all 92 FFX banks: no overlaps, no
+      // inverted ranges.
       let keyLow;
-      if (firstRegion) keyLow = 0;
-      else if (prevKeyLow != null) keyLow = keyHigh === prevKeyHigh ? prevKeyLow : prevKeyHigh + 1;
-      else keyLow = 0;
-      if (lastRegion) keyHigh = 0x7F;
+      if (k === 0 || prevKeyLow == null) keyLow = 0;
+      else keyLow = keyHigh === prevKeyHigh ? prevKeyLow : prevKeyHigh + 1;
+      if (k === nRegions - 1) keyHigh = 0x7F; // the last region covers the top of the keyboard
       prevKeyHigh = keyHigh; prevKeyLow = keyLow;
 
       const cents = (FINETUNE_TABLE[fineTuneByte] - 0x10000) * FINETUNE_COEFF - 50; // -50..+50 cents across the byte's full range

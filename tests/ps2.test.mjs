@@ -297,7 +297,7 @@ test("BGM: a truncated track (declared size runs past the file) is reported, not
 
 // --- WD (Square Enix's PS2 instrument bank, milestone 3) ---
 
-test("WD header + instrument pointer table + region key-range chaining: firstRegion resets to key 0, lastRegion forces key 127, two same-keyHigh regions (a stereo pair) share the SAME key-low", () => {
+test("WD header + instrument pointer table + region key ranges from the stored top keys alone (byte 1's flag bits are not first/last markers): 0-60, 61-90, then the last region covers the rest", () => {
   const bytes = makeTestWD();
   assert.ok(isWD(bytes));
   const wd = parseWD(bytes);
@@ -306,8 +306,9 @@ test("WD header + instrument pointer table + region key-range chaining: firstReg
   assert.deepEqual(wd.warnings, []);
   const [r0, r1, r2] = wd.instruments[0].regions;
   assert.deepEqual([r0.keyLow, r0.keyHigh], [0, 60]);
-  assert.deepEqual([r1.keyLow, r1.keyHigh], [61, 127], "lastRegion forces its own stored keyHigh (90) to 0x7F");
-  assert.equal(r2.degenerate, true, "a region that doesn't reset 'first' after a 'last'-flagged one chains to keyLow 128 > keyHigh — the exact shape found in a real FFX file (Blitz Ball Gamblers)");
+  assert.deepEqual([r1.keyLow, r1.keyHigh], [61, 90], "the fixture's 'last' flag on region 2 is NOT honoured: a real FFX bank sets it on region 4 of 8");
+  assert.deepEqual([r2.keyLow, r2.keyHigh], [91, 127], "the instrument's last region covers the top of the keyboard");
+  assert.ok(wd.instruments[0].regions.every(r => !r.degenerate));
 });
 
 test("WD unity key: read as a SIGNED byte, not unsigned (a real silent-track bug this caught: a raw byte of 246+ read unsigned drives the tone thousands of semitones off, decaying to nothing within a handful of samples)", () => {
@@ -328,13 +329,15 @@ test("WD finetune byte -> tools/psx/vab.mjs's shift unit (1/128 semitone): byte 
   assert.equal(wd.instruments[0].regions[0].shift, Math.round(cents * 128 / 100));
 });
 
-test("toBank() (WD): a VAB-shaped bank tools/psx/vab.mjs's tonesFor/vagPcm run over unmodified; the degenerate region is dropped (not guessed) and named in the warnings, the two real regions decode as silent (all-zero) samples", () => {
+test("toBank() (WD): a VAB-shaped bank tools/psx/vab.mjs's tonesFor/vagPcm run over unmodified; every region is a tone, and each key finds exactly one", () => {
   const wd = parseWD(makeTestWD());
   const bank = wdToBank(wd);
-  assert.equal(bank.programs[0].tones.length, 2, "the degenerate third region contributes no tone");
-  assert.match(bank.warnings.join(" "), /1 region\(s\) had an invalid key range/);
+  assert.equal(bank.programs[0].tones.length, 3);
+  assert.doesNotMatch(bank.warnings.join(" "), /invalid key range/);
+  assert.equal(tonesFor(bank, 0, 30).length, 1);
   assert.equal(tonesFor(bank, 0, 30)[0].vag, 1);
-  assert.equal(tonesFor(bank, 0, 100)[0].vag, 2);
+  assert.equal(tonesFor(bank, 0, 75).length, 1, "61-90: one region");
+  assert.equal(tonesFor(bank, 0, 100).length, 1, "91-127: one region");
 });
 
 test("ps2Song: Square Enix's own driver (a .bgm + .wd pair, found directly in the mini's own filesystem, no ini needed) parses into the SAME shape as SQ", async () => {

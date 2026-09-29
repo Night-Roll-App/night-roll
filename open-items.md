@@ -354,6 +354,15 @@ global today: view.x, playCursor); a saved layout per device; a
 phone-width fallback (everything back to one column). Do after the
 store release. Claude's view: the sheets-as-windows half is cheap and
 already started; the docked-views half is the real project.
+REOPENED 2026-09-29 (Josh): "I would really like to be able to dock the
+AI or the ask dialogue to the right hand side of the screen and see the
+song on the left." Also: rename the Ask button to AI (plan "✦ AI").
+Plan, in order: (1) dock the ✦ Ask/AI panel right, the roll takes the
+rest, a draggable divider, the split saved per device, phone width falls
+back to the floating sheet; (2) any sheet docks left/right/bottom, layout
+per device; (3) two timeline views at once (shared view.x/playCursor
+today) — last, if ever. Step 1 + the rename start after the job-system
+work lands (index.html is busy).
 
 ## QUEUED IDEA (Josh, 2026-09-27): folders above albums in Open
 
@@ -1385,7 +1394,14 @@ one note. Its bank (/wave/wave0048.wd) holds a ~895 KB sample, about 35 s
 of PS-ADPCM, and the BGM (music048.bgm) plays it with one note held 96
 quarters. The harp arpeggio is a recording inside the sample, not
 sequence data, so no reader could turn it into notes. The console-audio
-render plays the recording.
+render plays the recording. Josh's ear, same day: it is only the 8-bar
+opening of the 3:45 OST "Prelude"; the classic arpeggio (from ~0:46 on
+the OST) is missing. Checked: the WD is a stereo pair (two regions, pan
+0 and 127, ~17 s each), the rip's own comment tag says "Zanarkand City
+(Intro)", its length tag is 1:36 (the 48 s note twice), and no other of
+the 92 tracks' titles or comments is a Prelude. So the rip holds only
+the intro; the arpeggio section is not in this set (likely the OST's
+own arrangement — not verified).
 
 ## SOMEDAY / MAYBE — ideas Josh likes, none of them urgent (2026-09-28)
 

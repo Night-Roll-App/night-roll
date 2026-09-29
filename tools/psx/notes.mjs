@@ -44,6 +44,12 @@ export function seqNotes(seq, {vab = null, drums = []} = {}) {
   const programInfo = new Map();   // program -> {drum, tones seen}
 
   for (const e of seq.events) {
+    // a channel past 15 (PS2 BGM: a channel IS a track, and FFX songs run to
+    // 37) starts with the same defaults 0-15 get. Unset, its volume was
+    // undefined × undefined = NaN: the note's gain went NaN and the render
+    // wrote NaN samples ("109 Battle" channels 17-20 — Josh, 2026-09-29,
+    // "obviously not using the right instruments").
+    if (e.ch != null && chVol[e.ch] === undefined) { chVol[e.ch] = 127; chExpr[e.ch] = 127; chPan[e.ch] = null; if (program[e.ch] === undefined) program[e.ch] = 0; if (bends[e.ch] === undefined) bends[e.ch] = 0; }
     if (e.type === "program") { program[e.ch] = e.program; continue; }
     if (e.type === "cc") { // channel volume, pan, expression: what the SPU voice's two linear volumes are set from
       if (e.ctl === 7) chVol[e.ch] = e.value; else if (e.ctl === 11) chExpr[e.ch] = e.value; else if (e.ctl === 10) chPan[e.ch] = e.value;
