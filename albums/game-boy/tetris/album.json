@@ -17,7 +17,7 @@
   "unknown-jingle-02": "Unknown Jingle #02"
  },
  "nsf": {
-  "vault": "tetris.gbs",
+  "vault": "game-boy/tetris.gbs",
   "tracks": {
    "2-player-mode-danger": {
     "n": 6,

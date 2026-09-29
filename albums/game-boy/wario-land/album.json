@@ -19,7 +19,7 @@
   "that-s-not-what-i-call-a-castle": "That's Not What I Call a Castle!"
  },
  "nsf": {
-  "vault": "wario-land.gbs",
+  "vault": "game-boy/wario-land.gbs",
   "tracks": {
    "bonus-menu": {
     "n": 12,

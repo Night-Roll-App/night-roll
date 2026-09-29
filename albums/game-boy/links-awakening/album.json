@@ -49,7 +49,7 @@
   "zelda-theme-remix": "Zelda Theme (remix)"
  },
  "nsf": {
-  "vault": "links-awakening.gbs",
+  "vault": "game-boy/links-awakening.gbs",
   "tracks": {
    "angler-s-tunnel-intro": {
     "n": 76,

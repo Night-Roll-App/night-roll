@@ -8,7 +8,7 @@
   "dr-wily-s-map": "Dr. Wily's Map"
  },
  "nsf": {
-  "vault": "mega-man-2.nsf",
+  "vault": "nes/mega-man-2.nsf",
   "tracks": {
    "air-man": {
     "n": 7,

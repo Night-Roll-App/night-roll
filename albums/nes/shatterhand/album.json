@@ -17,7 +17,7 @@
   "stage-select-0c": "Stage Select (0C)"
  },
  "nsf": {
-  "vault": "shatterhand.nsf",
+  "vault": "nes/shatterhand.nsf",
   "tracks": {
    "area-a-01": {
     "n": 1,

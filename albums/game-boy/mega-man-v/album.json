@@ -19,7 +19,7 @@
   "you-got-a-weapon-screen": "You Got a Weapon Screen"
  },
  "nsf": {
-  "vault": "mega-man-v.gbs",
+  "vault": "game-boy/mega-man-v.gbs",
   "tracks": {
    "boss-battle": {
     "n": 7,

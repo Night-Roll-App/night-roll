@@ -10,7 +10,7 @@
   "waterfall-stage-3": "Waterfall (Stage 3)"
  },
  "nsf": {
-  "vault": "contra.nsf",
+  "vault": "nes/contra.nsf",
   "tracks": {
    "alien-s-lair-stage-8": {
     "n": 6,

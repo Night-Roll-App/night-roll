@@ -31,7 +31,7 @@
   "victory-vs-wild-pokemon": "Victory (VS Wild Pokemon)"
  },
  "nsf": {
-  "vault": "pokemon-red.gbs",
+  "vault": "game-boy/pokemon-red.gbs",
   "tracks": {
    "battle-vs-gym-leader": {
     "n": 22,

@@ -7,7 +7,7 @@
   "oh-daisy": "Oh! Daisy"
  },
  "nsf": {
-  "vault": "super-mario-land.gbs",
+  "vault": "game-boy/super-mario-land.gbs",
   "tracks": {
    "bonus-game-walk": {
     "n": 14,

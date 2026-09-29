@@ -5,7 +5,7 @@
   "spicy-food-minty-leaf": "Spicy Food, Minty Leaf"
  },
  "nsf": {
-  "vault": "kirbys-dream-land.gbs",
+  "vault": "game-boy/kirbys-dream-land.gbs",
   "tracks": {
    "boss": {
     "n": 8,

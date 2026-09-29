@@ -17,7 +17,7 @@
   "upgrade-found": "Upgrade found"
  },
  "nsf": {
-  "vault": "metroid-ii.gbs",
+  "vault": "game-boy/metroid-ii.gbs",
   "tracks": {
    "caverns-1": {
     "n": 5,

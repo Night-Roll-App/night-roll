@@ -44,7 +44,7 @@
   "voice-of-lavos": "Voice of Lavos"
  },
  "nsf": {
-  "vault": "chrono-trigger/",
+  "vault": "snes/chrono-trigger/",
   "tracks": {
    "a-prayer-to-the-road-that-leads": {
     "n": 1,

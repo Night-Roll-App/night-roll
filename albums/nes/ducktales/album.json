@@ -6,7 +6,7 @@
   "gyro-s-flying-machine": "Gyro's Flying Machine"
  },
  "nsf": {
-  "vault": "ducktales.nsf",
+  "vault": "nes/ducktales.nsf",
   "tracks": {
    "african-mines": {
     "n": 5,

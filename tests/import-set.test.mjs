@@ -34,14 +34,14 @@ test("import-set: a synthetic NSF with its playlist becomes albums/nes/<slug>/ a
   const meta = JSON.parse(readFileSync(path.join(dir, "album.json"), "utf8"));
   assert.equal(meta.title, "Test Tune");
   assert.deepEqual(meta.songs, {}, "the filename spells the title: no override");
-  assert.equal(meta.nsf.vault, "test-tune.nsf");
+  assert.equal(meta.nsf.vault, "nes/test-tune.nsf");
   assert.equal(meta.nsf.tracks["test-tune"].n, 1);
   assert.ok(meta.nsf.tracks["test-tune"].secs > 0 && meta.nsf.tracks["test-tune"].secs < 5, "the tail trim keeps this short, not riding the ~24s tag-derived ceiling");
   assert.equal(res.rows.length, 1);
   assert.equal(res.rows[0].st, "done");
   assert.equal(res.rows[0].title, "Test Tune");
   assert.ok(res.rows[0].notes >= 5, "the tune's notes (4 pulse + a triangle pedal), got " + res.rows[0].notes);
-  assert.deepEqual(res.uploads, ["test-tune.nsf"], "the archive path chipVaultFile reads");
+  assert.deepEqual(res.uploads, ["nes/test-tune.nsf"], "the archive path chipVaultFile reads");
   assert.ok(lines.some(l => /^  1  Test Tune/.test(l)), "one report line per track");
   assert.ok(!existsSync(path.join(out, "albums", "manifest.json")), "the manifest is build_manifest.mjs's, not the batch's");
   rmSync(src, {recursive: true, force: true}); rmSync(out, {recursive: true, force: true});

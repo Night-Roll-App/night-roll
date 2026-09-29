@@ -7,7 +7,7 @@
   "unknown-track-1": "Unknown (Track 1)"
  },
  "nsf": {
-  "vault": "tetris-nintendo.nsf",
+  "vault": "nes/tetris-nintendo.nsf",
   "tracks": {
    "b-type-success": {
     "n": 2,

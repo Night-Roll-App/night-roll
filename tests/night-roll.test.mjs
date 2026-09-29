@@ -1669,9 +1669,9 @@ test("USF import: the N64 chip is a sequence chip with its own capture; PSF 0x21
 });
 
 test("chip vault meta: one file per album for NSF/GBS, a folder of per-track files for SNES", () => {
-  assert.deepEqual(val(`chipVaultMeta("tmnt", "nsf")`), {vault: "tmnt.nsf", tracks: {}});
-  assert.deepEqual(val(`chipVaultMeta("ffl", "gbs")`), {vault: "ffl.gbs", tracks: {}, chip: "gbs"});
-  assert.deepEqual(val(`chipVaultMeta("chrono-trigger", "spc")`), {vault: "chrono-trigger/", tracks: {}, chip: "spc", perFile: true});
+  assert.deepEqual(val(`chipVaultMeta("tmnt", "nsf")`), {vault: "nes/tmnt.nsf", tracks: {}});
+  assert.deepEqual(val(`chipVaultMeta("ffl", "gbs")`), {vault: "game-boy/ffl.gbs", tracks: {}, chip: "gbs"});
+  assert.deepEqual(val(`chipVaultMeta("chrono-trigger", "spc")`), {vault: "snes/chrono-trigger/", tracks: {}, chip: "spc", perFile: true});
   assert.equal(val(`chipVaultFile({vault: "chrono-trigger/", chip: "spc", perFile: true}, "frog-s-theme")`), "chrono-trigger/frog-s-theme.spc");
   assert.equal(val(`chipVaultFile({vault: "tmnt.nsf"}, "x")`), "tmnt.nsf");
   assert.deepEqual(val(`CHIPS.spc.channels`), ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"]);

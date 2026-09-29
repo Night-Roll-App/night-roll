@@ -10,7 +10,7 @@
   "scene-4b": "Scene 4B"
  },
  "nsf": {
-  "vault": "tmnt-2.nsf",
+  "vault": "nes/tmnt-2.nsf",
   "tracks": {
    "boss-a": {
     "n": 96,

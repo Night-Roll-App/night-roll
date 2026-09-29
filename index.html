@@ -14778,7 +14778,11 @@ function chipKindOf(bytes, name) { for (const k of Object.keys(CHIPS)) if (bytes
 function chipExt(kind) { return (CHIPS[kind] || CHIPS.nsf).ext; }
 function chipVaultMeta(slug, kind) { // album.json's nsf: block for an import — one file per album, or a folder of one file per track
   const c = CHIPS[kind] || CHIPS.nsf;
-  const m = {vault: c.perFile ? slug + "/" : slug + c.ext, tracks: {}};
+  // the archive mirrors albums/: a console folder, then the album (Josh,
+  // 2026-09-29: "why is the NSF repository not following the same directory
+  // structure") — also what kept tetris.nsf and tetris.gbs from colliding
+  const dir = (CONSOLE_OF[kind || "nsf"] || "other") + "/";
+  const m = {vault: dir + (c.perFile ? slug + "/" : slug + c.ext), tracks: {}};
   if (kind && kind !== "nsf") m.chip = kind;
   if (c.perFile) m.perFile = true;
   return m;

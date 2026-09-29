@@ -3,7 +3,7 @@
  "order": 50,
  "songs": {},
  "nsf": {
-  "vault": "donkey-kong-land.gbs",
+  "vault": "game-boy/donkey-kong-land.gbs",
   "tracks": {
    "airship": {
     "n": 11,

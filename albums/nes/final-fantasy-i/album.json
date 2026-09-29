@@ -15,7 +15,7 @@
   "matoyas-cave": "Matoya's Cave"
  },
  "nsf": {
-  "vault": "ff1.nsf",
+  "vault": "nes/ff1.nsf",
   "tracks": {
    "prelude": {
     "n": 1,

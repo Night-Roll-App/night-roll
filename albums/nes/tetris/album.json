@@ -3,7 +3,7 @@
  "order": 50,
  "songs": {},
  "nsf": {
-  "vault": "tetris.nsf",
+  "vault": "nes/tetris.nsf",
   "tracks": {
    "track-01": {
     "n": 1,
