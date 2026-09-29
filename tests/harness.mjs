@@ -180,8 +180,11 @@ export function createApp(opts = {}) {
     ResizeObserver: class { observe() {} },
     requestAnimationFrame: () => 0,
     cancelAnimationFrame: noop,
-    setInterval: () => 0,
-    clearInterval: noop,
+    // intervals are a no-op unless a test opts in (opts.intervals): most suites
+    // would otherwise run every app poller; the transport tests need the scheduler
+    setInterval: opts.intervals ? (fn, ms = 0) => { const id = timerId++; const step = Math.max(1, ms);
+      const arm = at => timers.set(id, { at, fn: () => { arm(at + step); fn(); } }); arm(vnow + step); return id; } : () => 0,
+    clearInterval: opts.intervals ? (id) => timers.delete(id) : noop,
     setTimeout: (fn, ms = 0) => { const id = timerId++; timers.set(id, { at: vnow + ms, fn }); return id; },
     clearTimeout: (id) => timers.delete(id),
     performance: { now: () => vnow },

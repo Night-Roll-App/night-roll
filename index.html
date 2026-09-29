@@ -8577,15 +8577,16 @@ async function play(fromSec = 0, opts = {}) {
     document.getElementById("playbtn").textContent = "▶ …";
     return;
   }
+  const gen = ++play.gen; // a later play() supersedes this one while it waits below
   ensureAudio();
   await resumeAudio(); // await: scheduling against a frozen clock builds a stale time base
+  if (gen !== play.gen) return;
   // the console's voice is still rendering on this thread (Josh, 2026-09-27,
   // first Play on a Chrono Trigger song: "sounds weird … the cursor paused",
   // fine after Stop/⏮/Play): a synth pass under a render is starved and
   // garbled, so wait for the render instead — with its progress — and let a
   // second tap (Stop) during the wait win
   if (chip.rendering === songKey && chip.renderPromise) {
-    const gen = ++play.gen;
     document.getElementById("playbtn").textContent = "▶ …";
     const t0 = Date.now();
     while (chip.rendering === songKey && Date.now() - t0 < 25000) {
@@ -8600,6 +8601,7 @@ async function play(fromSec = 0, opts = {}) {
   buildSchedule();
   stretchEnsureAll(); // takes at a non-native rate need their stretched copies (no-op at 100% / tape-style)
   await Promise.all([sfWaitForSong(1500), gameWaitForSong(1500)]); // sampled/game voices still decoding: a short wait beats a triangle (or the synth fallback) on beat 1
+  if (gen !== play.gen) return; // superseded: only the newest play starts the transport
   playing = true;
   playOffset = fromSec;
   playT0 = audio.currentTime + 0.08; // small lead so the first notes are never in the past
@@ -8654,6 +8656,7 @@ async function play(fromSec = 0, opts = {}) {
   document.getElementById("playbtn").textContent = "■ Stop";
   albumStrip(); // un-dims on resume
   const pump = () => {
+    if (!playing) { clearInterval(schedTimer); return; } // a stopped transport schedules nothing, ends nothing
     const segLen = loopSeg.end - loopSeg.start;
     if (!schedEvents.length || segLen <= 0) return;
     const now = audio.currentTime - playT0;
@@ -8707,6 +8710,12 @@ async function play(fromSec = 0, opts = {}) {
       schedIdx++;
     }
   };
+  // one scheduler, ever: two overlapping play() calls (the album's play and a
+  // queued one) each started an interval, and the first was orphaned — stop()
+  // cleared only the second, so the orphan kept "ending" the song while the
+  // next one loaded and the album flashed through every song in a second
+  // (Josh, 2026-09-28/29, Chrono Trigger on the iPad)
+  clearInterval(schedTimer);
   schedTimer = setInterval(pump, 60);
   pump(); // schedule the first batch immediately — waiting one interval put beat 1 in the past
   followFree = false;
@@ -8733,6 +8742,7 @@ async function play(fromSec = 0, opts = {}) {
 function stop() {
   pendingPlay = false; // an explicit stop cancels a queued mid-load play
   if (recording) recFinish();
+  clearInterval(schedTimer); // even when not "playing": a scheduler must never outlive a stop
   if (!playing) { draw(); return; }
   playCursor = secToTick(song, playSec());
   playing = false;

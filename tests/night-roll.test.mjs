@@ -4239,3 +4239,30 @@ test("audio wake outside a tap: a clock that won't move is a debug line with wha
     assert.equal(val(`audio.currentTime`), 5, "the same context: nothing rebuilt");
   } finally { run(`audio = globalThis.__realAudio; gestureActive = globalThis.__realGA; appErrors.length = 0; appDebug.length = 0;`); }
 });
+
+test("album play: two overlapping play() calls leave no orphaned scheduler — after stop(), nothing advances the album (the album that flashed through every song in a second)", async () => {
+  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;`);
+  run(`song.tracks = [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 960, d: 480, p: 64, v: 80}]}]; trackState = [{muted: false, solo: false}]; songEndTick = 4 * 480;`);
+  // the harness can see a live scheduler: without stop() the album would advance
+  run(`globalThis.__p = 0; play(0, {noCountIn: true}).then(() => __p++);`);
+  for (let i = 0; i < 100 && val(`globalThis.__p`) < 1; i++) { app.tick(50); await new Promise(r => setImmediate(r)); }
+  run(`globalThis.__probe = 0; globalThis.__realPI0 = albumPlayIdx; albumPlayIdx = async () => { __probe++; };
+       albumRun = {album: "T", list: [["a", "x"], ["b", "y"]], idx: 0, passes: 2, gen: 0}; albumEndAbs = -1;`);
+  for (let i = 0; i < 3; i++) { app.tick(60); await new Promise(r => setImmediate(r)); }
+  assert.ok(val(`globalThis.__probe`) >= 1, "sanity: a live scheduler does advance an ended album");
+  run(`albumPlayIdx = globalThis.__realPI0; albumRun = null; albumEndAbs = null; stop();`);
+  run(`globalThis.__p = 0; play(0, {noCountIn: true}).then(() => __p++); play(0, {noCountIn: true}).then(() => __p++);`);
+  for (let i = 0; i < 100 && val(`globalThis.__p`) < 2; i++) { app.tick(50); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`globalThis.__p`), 2, "both plays settled");
+  assert.equal(val(`chip.srcs.length + (playing ? 1 : 0)`), 1, "one transport running, not two");
+  run(`stop();
+       globalThis.__advances = 0; globalThis.__realPI = albumPlayIdx;
+       albumPlayIdx = async () => { __advances++; };
+       albumRun = {album: "T", list: [["a", "x"], ["b", "y"]], idx: 0, passes: 2, gen: 0};
+       albumEndAbs = -1; /* the last song's end, long past — what a live scheduler would act on */`);
+  try {
+    for (let i = 0; i < 10; i++) { app.tick(60); await new Promise(r => setImmediate(r)); }
+    assert.equal(val(`globalThis.__advances`), 0, "no scheduler survives stop()");
+  } finally { run(`albumPlayIdx = globalThis.__realPI; albumRun = null; albumEndAbs = null;`); }
+});
