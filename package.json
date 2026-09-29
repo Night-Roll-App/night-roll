@@ -13,12 +13,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joshcough/night-roll.git"
+    "url": "git+https://github.com/Night-Roll-App/night-roll.git"
   },
   "bugs": {
-    "url": "https://github.com/joshcough/night-roll/issues"
+    "url": "https://github.com/Night-Roll-App/night-roll/issues"
   },
-  "homepage": "https://github.com/joshcough/night-roll#readme",
+  "homepage": "https://github.com/Night-Roll-App/night-roll#readme",
   "devDependencies": {
     "@playwright/test": "^1.62.1"
   },

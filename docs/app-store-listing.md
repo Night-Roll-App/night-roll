@@ -16,9 +16,9 @@ nothing here is final. Limits in brackets.
 
 **Age rating**: 4+ (no objectionable content; no web browsing; user-configured AI is off by default)
 
-**Support URL**: https://joshcough.github.io/night-roll/ (a support page or the repo issues can replace this later)
+**Support URL**: https://night-roll-app.github.io/night-roll/ (a support page or the repo issues can replace this later)
 
-**Privacy policy URL**: https://joshcough.github.io/night-roll/privacy.html
+**Privacy policy URL**: https://night-roll-app.github.io/night-roll/privacy.html
 
 **Copyright**: 2026 Josh Cough
 

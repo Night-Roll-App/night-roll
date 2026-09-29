@@ -5,7 +5,7 @@ Josh pastes this URL at the start of every from-bed analysis session. You
 
 ## FIRST ACTION — clone the repo. Before you read the rest of this file.
 
-    cd /home/claude && git clone --depth 1 --filter=blob:limit=1m https://github.com/joshcough/night-roll.git
+    cd /home/claude && git clone --depth 1 --filter=blob:limit=1m https://github.com/Night-Roll-App/night-roll.git
 
 Then read `night-roll/WEB-SESSION.md` locally and work from disk.
 
@@ -158,7 +158,7 @@ memory or from reading the dump by eye.
 
 ## The app, if he references it
 
-Night Roll (https://joshcough.github.io/night-roll/): piano-roll + engraved
+Night Roll (https://night-roll-app.github.io/night-roll/): piano-roll + engraved
 score of each capture, annotations from the rollnotes files, chord
 challenge, pitch-class finder, circle of fifths, instrument panel. He may
 sync annotation changes to the repo mid-session — fetch fresh rather than

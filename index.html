@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- Night Roll — copyright (c) 2026 Josh Cough. PolyForm Noncommercial License 1.0.0 (see LICENSE):
      noncommercial use, study and modification allowed; selling or republishing it is not.
-     Required Notice: Copyright Josh Cough (https://github.com/joshcough/night-roll) -->
+     Required Notice: Copyright Josh Cough (https://github.com/Night-Roll-App/night-roll) -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1059,8 +1059,8 @@
     </p>
     <p style="font-family:var(--mono);font-size:12px;margin:8px 0">
       Josh Cough &amp; Claude, 2026 ·
-      <a href="https://github.com/joshcough/night-roll" target="_blank" rel="noopener"
-         style="color:var(--gold)">github.com/joshcough/night-roll</a>
+      <a href="https://github.com/Night-Roll-App/night-roll" target="_blank" rel="noopener"
+         style="color:var(--gold)">github.com/Night-Roll-App/night-roll</a>
     </p>
   </div>
 </div>
@@ -1413,7 +1413,7 @@
     </div>
 
     <div class="row" style="justify-content:space-between">
-      <a href="https://github.com/joshcough/night-roll/blob/main/HELP.md" target="_blank" rel="noopener"
+      <a href="https://github.com/Night-Roll-App/night-roll/blob/main/HELP.md" target="_blank" rel="noopener"
          style="color:var(--gold);font-size:15px;align-self:center">Full manual&nbsp;↗</a>
     </div>
   </div>
@@ -1802,7 +1802,7 @@
       <button id="ghsaveall">Publish all</button>
       <button id="copyfile">Copy file</button>
       <button id="dlfile">Download</button>
-      <a id="repolink" href="https://github.com/joshcough/night-roll" target="_blank" rel="noopener"
+      <a id="repolink" href="https://github.com/Night-Roll-App/night-roll" target="_blank" rel="noopener"
          style="text-decoration:none"><button>Repo ↗</button></a>
       <button id="websess" class="webonly">⎘ Web session</button>
       <button id="sharelink">🔗 Share link</button>
@@ -18466,6 +18466,11 @@ function cfg() {
   if (!cfg.c) {
     let c = {};
     try { c = JSON.parse(localStorage.getItem("ff1roll-cfg") || "{}"); } catch (err) { /* corrupt: defaults */ }
+    // 2026-09-29: the repos moved to the Night-Roll-App organization. A
+    // device's saved settings name the old home; read them as the new one
+    // (GitHub redirects old paths for a while, but not forever, and not every
+    // write) — one pass, persisted by the next saveCfg.
+    for (const k of Object.keys(c)) if (typeof c[k] === "string") c[k] = c[k].replace(/joshcough\/(night-roll|nsf-archive)(?![\w.-])/g, "Night-Roll-App/$1");
     // The app edition: "this site" is the app bundle (starters only), so reads
     // default to the repo the user configured — the same place Publish writes
     // (Josh, 2026-09-27, in the app: "why didn't it show the songs that I
@@ -18476,13 +18481,13 @@ function cfg() {
     cfg.c = {
       songsBase: c.songsBase || "",
       analysisBase: c.analysisBase || "",
-      songsRepo: c.songsRepo || "joshcough/night-roll",
-      analysisRepo: c.analysisRepo || c.songsRepo || "joshcough/night-roll", // a new user's annotations go where their songs go
+      songsRepo: c.songsRepo || "Night-Roll-App/night-roll",
+      analysisRepo: c.analysisRepo || c.songsRepo || "Night-Roll-App/night-roll", // a new user's annotations go where their songs go
       // the NSF archive is Josh's (public, separate so a takedown can't touch the
       // songs repo); anyone whose songs repo is not this site's starts with none —
       // imported NSFs then stay on the device (Josh, 2026-09-26)
-      nsfRepo: c.nsfRepo !== undefined ? c.nsfRepo : ((c.songsRepo || "joshcough/night-roll") === "joshcough/night-roll" ? "joshcough/nsf-archive" : ""),
-      nsfBase: c.nsfBase || (c.nsfRepo ? "https://raw.githubusercontent.com/" + c.nsfRepo + "/main" : "https://raw.githubusercontent.com/joshcough/nsf-archive/main"),
+      nsfRepo: c.nsfRepo !== undefined ? c.nsfRepo : ((c.songsRepo || "Night-Roll-App/night-roll") === "Night-Roll-App/night-roll" ? "Night-Roll-App/nsf-archive" : ""),
+      nsfBase: c.nsfBase || (c.nsfRepo ? "https://raw.githubusercontent.com/" + c.nsfRepo + "/main" : "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main"),
       // ✦ Ask: flat fields (saveCfg is a shallow merge); the key lives apart, like the token
       aiBackend: c.aiBackend === "browser" ? "browser" : "remote",
       aiBrowserModel: c.aiBrowserModel || "Llama-3.2-1B-Instruct-q4f16_1-MLC",
@@ -19033,13 +19038,13 @@ function settingsPersist(id) {
     case "cfgaiwindow": saveCfg({aiWindow: parseInt(v("cfgaiwindow"), 10) || 8192}); break;
 
     case "cfgsongsrepo": { // annotations follow unless the advanced row split them on purpose
-      const c = cfg(), repo = v("cfgsongsrepo") || "joshcough/night-roll", patch = {songsRepo: repo};
+      const c = cfg(), repo = v("cfgsongsrepo") || "Night-Roll-App/night-roll", patch = {songsRepo: repo};
       if (c.analysisRepo === c.songsRepo) patch.analysisRepo = repo;
       // saveCfg stores every default with the first saved setting, so a new
       // user's cfg carried Josh's archive; switching to their own songs repo
       // then published their game files to a repo their token can't write
       // (Josh, 2026-09-28: "it's going to try to push to my NSF repo?")
-      if (repo !== "joshcough/night-roll" && c.nsfRepo === "joshcough/nsf-archive") { patch.nsfRepo = ""; patch.nsfBase = ""; document.getElementById("cfgnsfrepo").value = ""; }
+      if (repo !== "Night-Roll-App/night-roll" && c.nsfRepo === "Night-Roll-App/nsf-archive") { patch.nsfRepo = ""; patch.nsfBase = ""; document.getElementById("cfgnsfrepo").value = ""; }
       saveCfg(patch); ghCheckOut(""); break;
     }
     case "cfgnsfrepo": { const r = v("cfgnsfrepo"); saveCfg({nsfRepo: r, nsfBase: r ? "https://raw.githubusercontent.com/" + r + "/main" : ""}); cfg.c = null; break; }
@@ -19060,7 +19065,7 @@ function ghCheckMessage(repo, status, j) { // one line per outcome, the fix in t
 async function ghCheck() {
   const repo = (document.getElementById("cfgsongsrepo").value.trim() || cfg().songsRepo);
   const token = document.getElementById("ghtoken").value.trim() || localStorage.getItem("ff1roll-ghtoken") || "";
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { ghCheckOut("⚠ the repo is owner/repo, like joshcough/night-roll"); return; }
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { ghCheckOut("⚠ the repo is owner/repo, like Night-Roll-App/night-roll"); return; }
   if (!token) { ghCheckOut("⚠ no token yet — make one (the button) and paste it"); return; }
   ghCheckOut("checking " + repo + "…");
   try {
@@ -19131,7 +19136,7 @@ document.addEventListener("keydown", e => {
 // The link = this player + this song + where the song lives. Songs on this
 // site need nothing more (the path form); a song from another repo — a link
 // you followed, or your own Settings pointing elsewhere — carries songs=.
-const APP_REPO = "joshcough/night-roll"; // the repo this site is served from: its songs need no songs= in a link
+const APP_REPO = "Night-Roll-App/night-roll"; // the repo this site is served from: its songs need no songs= in a link
 function shareLinkFor(path, repo) {
   const u = new URL(songShareURL(path));
   const base = LINK_SONGS || (cfg().songsBase ? cfg().songsBase.replace(/\/+$/, "") : null);

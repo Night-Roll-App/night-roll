@@ -753,16 +753,16 @@ test("Paste to…: the clipboard lands on a chosen track, shifted, same rhythm",
 
 test("song links: path form in, ?song= form in (either), path form out", () => {
   installSong();
-  run(`APP_BASE = "https://joshcough.github.io/night-roll/";`); // the harness has no location; pin the base
+  run(`APP_BASE = "https://night-roll-app.github.io/night-roll/";`); // the harness has no location; pin the base
   const from = href => val(`songPathFromURL(${JSON.stringify(href)})`);
-  assert.equal(from("https://joshcough.github.io/night-roll/albums/compositions/nightroll/ambush"), "albums/compositions/nightroll/ambush.mid");
-  assert.equal(from("https://joshcough.github.io/night-roll/albums/compositions/nightroll/ambush.mid"), "albums/compositions/nightroll/ambush.mid");
-  assert.equal(from("https://joshcough.github.io/night-roll/?song=albums%2Fcompositions%2Fnightroll%2Fambush.mid"), "albums/compositions/nightroll/ambush.mid"); // old links
-  assert.equal(from("https://joshcough.github.io/night-roll/?song=albums/compositions/nightroll/ambush&perf=1"), "albums/compositions/nightroll/ambush.mid");
-  assert.equal(from("https://joshcough.github.io/night-roll/"), null);
-  assert.equal(from("https://joshcough.github.io/night-roll/?song=../etc/passwd"), null);
-  assert.equal(from("https://joshcough.github.io/night-roll/vendor/x"), null); // only albums/ is a song
-  assert.equal(val(`songShareURL("albums/compositions/nightroll/ambush.mid")`), "https://joshcough.github.io/night-roll/albums/compositions/nightroll/ambush");
+  assert.equal(from("https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush"), "albums/compositions/nightroll/ambush.mid");
+  assert.equal(from("https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush.mid"), "albums/compositions/nightroll/ambush.mid");
+  assert.equal(from("https://night-roll-app.github.io/night-roll/?song=albums%2Fcompositions%2Fnightroll%2Fambush.mid"), "albums/compositions/nightroll/ambush.mid"); // old links
+  assert.equal(from("https://night-roll-app.github.io/night-roll/?song=albums/compositions/nightroll/ambush&perf=1"), "albums/compositions/nightroll/ambush.mid");
+  assert.equal(from("https://night-roll-app.github.io/night-roll/"), null);
+  assert.equal(from("https://night-roll-app.github.io/night-roll/?song=../etc/passwd"), null);
+  assert.equal(from("https://night-roll-app.github.io/night-roll/vendor/x"), null); // only albums/ is a song
+  assert.equal(val(`songShareURL("albums/compositions/nightroll/ambush.mid")`), "https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush");
   assert.equal(val(`songShareURL("albums/nes/final-fantasy-i/songs/town.mid", "http://localhost:8735/")`), "http://localhost:8735/albums/nes/final-fantasy-i/songs/town");
 });
 
@@ -913,10 +913,10 @@ test("data-location config: defaults are legacy-identical; bases and repos route
   run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
   assert.equal(run(`songsURL("albums/manifest.json")`), "albums/manifest.json");
   assert.equal(run(`analysisURL("albums/x/songs/y.rollnotes.json")`), "albums/x/songs/y.rollnotes.json");
-  assert.equal(run(`repoApi("songs")`), "https://api.github.com/repos/joshcough/night-roll/contents/");
-  assert.equal(run(`repoApi("analysis")`), "https://api.github.com/repos/joshcough/night-roll/contents/");
-  assert.equal(run(`repoName("nsf")`), "joshcough/nsf-archive");
-  assert.equal(run(`nsfURL("ff1.nsf")`), "https://raw.githubusercontent.com/joshcough/nsf-archive/main/ff1.nsf");
+  assert.equal(run(`repoApi("songs")`), "https://api.github.com/repos/Night-Roll-App/night-roll/contents/");
+  assert.equal(run(`repoApi("analysis")`), "https://api.github.com/repos/Night-Roll-App/night-roll/contents/");
+  assert.equal(run(`repoName("nsf")`), "Night-Roll-App/nsf-archive");
+  assert.equal(run(`nsfURL("ff1.nsf")`), "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main/ff1.nsf");
   // configured: any base URL prepends (trailing slashes normalized); writes retarget
   run(`saveCfg({songsBase: "https://raw.githubusercontent.com/other/corpus/main/",
                 analysisBase: "http://localhost:8001",
@@ -924,7 +924,7 @@ test("data-location config: defaults are legacy-identical; bases and repos route
   assert.equal(run(`songsURL("albums/a.mid")`), "https://raw.githubusercontent.com/other/corpus/main/albums/a.mid");
   assert.equal(run(`analysisURL("albums/a.rollnotes.json")`), "http://localhost:8001/albums/a.rollnotes.json");
   assert.equal(run(`repoApi("analysis")`), "https://api.github.com/repos/other/my-analysis/contents/");
-  assert.equal(run(`repoApi("songs")`), "https://api.github.com/repos/joshcough/night-roll/contents/"); // unset field keeps default
+  assert.equal(run(`repoApi("songs")`), "https://api.github.com/repos/Night-Roll-App/night-roll/contents/"); // unset field keeps default
   // scope-shaped API failures name the repo and the fix
   const msg = run(`apiError("analysis", {status: 404}, "x.rollnotes.json").message`);
   assert.match(msg, /other\/my-analysis/);
@@ -3148,16 +3148,16 @@ test("Share link: songs= parses owner/repo or a base URL; the link carries it on
   assert.equal(val(`linkRepoLabel("https://raw.githubusercontent.com/alice/tunes/main")`), "alice/tunes");
   assert.equal(val(`linkRepoLabel("https://example.com/songs")`), "https://example.com/songs");
   installSong();
-  run(`APP_BASE = "https://joshcough.github.io/night-roll/"; saveCfg({songsBase: ""});`);
-  assert.equal(val(`shareLinkFor("albums/compositions/nightroll/ambush.mid")`), "https://joshcough.github.io/night-roll/albums/compositions/nightroll/ambush");
+  run(`APP_BASE = "https://night-roll-app.github.io/night-roll/"; saveCfg({songsBase: ""});`);
+  assert.equal(val(`shareLinkFor("albums/compositions/nightroll/ambush.mid")`), "https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush");
   run(`saveCfg({songsBase: "https://raw.githubusercontent.com/alice/tunes/main/"});`);
-  assert.equal(val(`shareLinkFor("albums/test/scratch.mid")`), "https://joshcough.github.io/night-roll/albums/test/scratch?songs=alice%2Ftunes");
+  assert.equal(val(`shareLinkFor("albums/test/scratch.mid")`), "https://night-roll-app.github.io/night-roll/albums/test/scratch?songs=alice%2Ftunes");
   run(`saveCfg({songsBase: ""}); songKey = null;`);
 });
 
 test("Connect GitHub: annotations follow the songs repo unless split on purpose; Check messages name the fix", () => {
   run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
-  assert.equal(val(`cfg().analysisRepo`), "joshcough/night-roll");
+  assert.equal(val(`cfg().analysisRepo`), "Night-Roll-App/night-roll");
   run(`document.getElementById("cfgsongsrepo").value = "alice/tunes"; settingsPersist("cfgsongsrepo");`); // a new user types their repo: both were the default
   assert.equal(val(`cfg().songsRepo`), "alice/tunes");
   assert.equal(val(`cfg().analysisRepo`), "alice/tunes", "annotations follow");
@@ -3169,7 +3169,7 @@ test("Connect GitHub: annotations follow the songs repo unless split on purpose;
   assert.match(val(`ghCheckMessage("a/b", 401, null)`), /rejected the token/);
   // NSF repo: Josh's archive only when the songs repo is this site's; anyone else starts device-only
   run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
-  assert.equal(val(`cfg().nsfRepo`), "joshcough/nsf-archive");
+  assert.equal(val(`cfg().nsfRepo`), "Night-Roll-App/nsf-archive");
   run(`localStorage.setItem("ff1roll-cfg", JSON.stringify({songsRepo: "alice/tunes"})); cfg.c = null;`);
   assert.equal(val(`cfg().nsfRepo`), "");
   run(`document.getElementById("cfgnsfrepo").value = "alice/nsf"; settingsPersist("cfgnsfrepo");`);
@@ -3179,15 +3179,15 @@ test("Connect GitHub: annotations follow the songs repo unless split on purpose;
 
 test("Songs README: the block lists every song as a player link; splice creates, appends, or replaces between markers only", () => {
   installSong();
-  run(`APP_BASE = "https://joshcough.github.io/night-roll/"; saveCfg({songsBase: ""});`);
+  run(`APP_BASE = "https://night-roll-app.github.io/night-roll/"; saveCfg({songsBase: ""});`);
   const albums = [{title: "Tunes", songs: [{title: "One", path: "albums/tunes/one.mid"}, {title: "Two", path: "albums/tunes/two.mid"}]}, {title: "Empty", songs: []}];
   const block = val(`songsReadmeBlock(${JSON.stringify(albums)}, "alice/tunes")`);
   assert.match(block, /^<!-- night-roll:songs -->\n## Songs — open in Night Roll/);
-  assert.match(block, /- \[One\]\(https:\/\/joshcough\.github\.io\/night-roll\/albums\/tunes\/one\?songs=alice%2Ftunes\)/);
+  assert.match(block, /- \[One\]\(https:\/\/night-roll-app\.github\.io\/night-roll\/albums\/tunes\/one\?songs=alice%2Ftunes\)/);
   assert.ok(!block.includes("Empty"), "albums with no songs are skipped");
   assert.match(block, /<!-- \/night-roll:songs -->$/);
-  const own = val(`songsReadmeBlock(${JSON.stringify(albums)}, "joshcough/night-roll")`);
-  assert.match(own, /\(https:\/\/joshcough\.github\.io\/night-roll\/albums\/tunes\/one\)/, "the site's own repo needs no songs=");
+  const own = val(`songsReadmeBlock(${JSON.stringify(albums)}, "Night-Roll-App/night-roll")`);
+  assert.match(own, /\(https:\/\/night-roll-app\.github\.io\/night-roll\/albums\/tunes\/one\)/, "the site's own repo needs no songs=");
   assert.equal(val(`spliceReadme("", "B")`), "B\n");
   assert.equal(val(`spliceReadme("# Mine\\n\\nprose\\n", "B")`), "# Mine\n\nprose\n\nB\n");
   assert.equal(val(`spliceReadme("# Mine\\n\\n<!-- night-roll:songs -->old<!-- /night-roll:songs -->\\n\\ntail\\n", "<!-- night-roll:songs -->new<!-- /night-roll:songs -->")`), "# Mine\n\n<!-- night-roll:songs -->new<!-- /night-roll:songs -->\n\ntail\n");
@@ -3470,9 +3470,9 @@ test("app edition: reads come from the configured repo; bundled starters list an
   const run2 = app2.run;
   run2(`APP_BASE = "capacitor://localhost/"; localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
   assert.equal(run2(`EDITION`), "app");
-  assert.equal(run2(`readBase("songs")`), "https://raw.githubusercontent.com/joshcough/night-roll/main");
+  assert.equal(run2(`readBase("songs")`), "https://raw.githubusercontent.com/Night-Roll-App/night-roll/main");
   assert.equal(run2(`cfg().songsBase`), "", "derived, never stored");
-  assert.equal(run2(`songsURL("albums/compositions/nightroll/a.mid")`), "https://raw.githubusercontent.com/joshcough/night-roll/main/albums/compositions/nightroll/a.mid");
+  assert.equal(run2(`songsURL("albums/compositions/nightroll/a.mid")`), "https://raw.githubusercontent.com/Night-Roll-App/night-roll/main/albums/compositions/nightroll/a.mid");
   run2(`saveCfg({songsRepo: "someone/songs", analysisRepo: "someone/songs"}); cfg.c = null;`); // Settings keeps the pair together (settingsPersist)
   assert.equal(run2(`readBase("analysis")`), "https://raw.githubusercontent.com/someone/songs/main", "annotations follow the songs repo");
   // the catalog: repo manifest ∪ bundled manifest; the repo alone, or the bundle alone, suffices
@@ -3579,9 +3579,9 @@ test("console folders: old links and keys redirect; captures are read-only by ma
   assert.equal(run(`movedPath("albums/final-fantasy-i/songs/overworld.mid")`), "albums/nes/final-fantasy-i/songs/overworld.mid");
   assert.equal(run(`movedPath("albums/imports/chrono-trigger/corridors-of-time.mid")`), "albums/snes/chrono-trigger/corridors-of-time.mid");
   assert.equal(run(`movedPath("albums/compositions/nightroll/ambush.mid")`), null);
-  run(`APP_BASE = "https://joshcough.github.io/night-roll/";`);
-  assert.equal(run(`songPathFromURL("https://joshcough.github.io/night-roll/albums/final-fantasy-i/songs/overworld")`), "albums/nes/final-fantasy-i/songs/overworld.mid", "an old link opens the moved song");
-  assert.equal(run(`songPathFromURL("https://joshcough.github.io/night-roll/?song=albums/imports/mega-man-2/air-man.mid")`), "albums/nes/mega-man-2/air-man.mid");
+  run(`APP_BASE = "https://night-roll-app.github.io/night-roll/";`);
+  assert.equal(run(`songPathFromURL("https://night-roll-app.github.io/night-roll/albums/final-fantasy-i/songs/overworld")`), "albums/nes/final-fantasy-i/songs/overworld.mid", "an old link opens the moved song");
+  assert.equal(run(`songPathFromURL("https://night-roll-app.github.io/night-roll/?song=albums/imports/mega-man-2/air-man.mid")`), "albums/nes/mega-man-2/air-man.mid");
   // where new captures land
   assert.equal(run(`impDirFor("spc")`), "albums/snes/");
   assert.equal(run(`impDirFor("gbs")`), "albums/game-boy/");
@@ -3747,7 +3747,7 @@ test("a playlist picked after the import names the open song's published album b
 test("create mine: a public night-roll-archive under the user's account becomes their game files & instruments repo", async () => {
   const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`saveCfg({aiBackend: "remote"}); cfg.c = null;`); // any first save freezes the defaults, Josh's archive included
-  assert.equal(val(`cfg().nsfRepo`), "joshcough/nsf-archive");
+  assert.equal(val(`cfg().nsfRepo`), "Night-Roll-App/nsf-archive");
   run(`document.getElementById("cfgsongsrepo").value = "someone/songs"; settingsPersist("cfgsongsrepo"); cfg.c = null;`);
   run(`localStorage.setItem("ff1roll-ghtoken", "t"); globalThis.__posts = [];
        fetch = (url, init) => { const u = String(url);
@@ -4348,4 +4348,16 @@ test("Publish sheet check: a draft whose notes match the published copy (any ord
     for (let i = 0; i < 20 && !val(`globalThis.__r2`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
     assert.equal(val(`__r2.same`), true, "a tempo-only difference is not a music edit: Publish bakes the heard tempo, the draft keeps the base");
   } finally { run(`readData = globalThis.__realRead; for (const k of ["pc-a", "pc-b", "pc-c"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
+});
+
+test("settings: a device's saved repos from before the move read as Night-Roll-App (2026-09-29); other repos are untouched", () => {
+  run(`globalThis.__saved = localStorage.getItem("ff1roll-cfg");
+       localStorage.setItem("ff1roll-cfg", JSON.stringify({songsRepo: "joshcough/night-roll", nsfRepo: "joshcough/nsf-archive", nsfBase: "https://raw.githubusercontent.com/joshcough/nsf-archive/main", analysisRepo: "joshcough/night-roll-test-songs"}));
+       cfg.c = null;`);
+  try {
+    assert.equal(val(`cfg().songsRepo`), "Night-Roll-App/night-roll");
+    assert.equal(val(`cfg().nsfRepo`), "Night-Roll-App/nsf-archive");
+    assert.equal(val(`cfg().nsfBase`), "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main");
+    assert.equal(val(`cfg().analysisRepo`), "joshcough/night-roll-test-songs", "a different repo that merely starts with the name stays");
+  } finally { run(`if (__saved === null) localStorage.removeItem("ff1roll-cfg"); else localStorage.setItem("ff1roll-cfg", __saved); cfg.c = null;`); }
 });

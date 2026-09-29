@@ -14,7 +14,7 @@
 // loop in a `smpl` chunk) locally; --publish decides where those files land
 // in the archive.
 //
-// --publish uploads that folder to the archive (joshcough/nsf-archive)
+// --publish uploads that folder to the archive (Night-Roll-App/nsf-archive)
 // through `gh api`, message "instruments: <slug>": check before each PUT (a
 // file already there at the same size is left; instruments.json at another
 // size is updated with its sha), then read each upload back and compare its
@@ -144,7 +144,7 @@ export function summary(lib) {
     wavBytes: wav, collisions: lib.collisions, droppedUnused: lib.droppedUnused || 0, drivers: [...lib.drivers]};
 }
 
-const REPO = "joshcough/nsf-archive";
+const REPO = "Night-Roll-App/nsf-archive";
 function ghSize(p) {
   const r = spawnSync("gh", ["api", "repos/" + REPO + "/contents/" + p, "--jq", "[.size, .sha] | @tsv"], {encoding: "utf8"});
   if (r.status !== 0) return null; // 404 (or no access): not there

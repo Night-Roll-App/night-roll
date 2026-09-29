@@ -4,7 +4,7 @@ The complete map of the player (`index.html`) for anyone (especially future
 Claude sessions) continuing work. User-facing feature list also lives in the
 in-app help sheet (? button). History: git log tells the build story.
 
-Live: https://joshcough.github.io/night-roll/ (GitHub Pages, main
+Live: https://night-roll-app.github.io/night-roll/ (GitHub Pages, main
 branch, root). Single file app + `vendor/vexflow.js`. No build step —
 git push is deployment (~1 min propagation; iPad may need a hard reload).
 
@@ -289,7 +289,7 @@ nonexistent). The Sync sheet opens without a loaded song so a broken
 config can always be fixed; loadNotes warns instead of rendering
 silently empty when this device previously synced annotations for a
 path the analysis location now lacks. NSFs read raw-first from the
-PUBLIC joshcough/nsf-archive (Josh's considered call, 2026-08-17 —
+PUBLIC Night-Roll-App/nsf-archive (Josh's considered call, 2026-08-17 —
 reversing the earlier never-publish stance; chip audio is tokenless
 everywhere), API+token fallback for private forks. The PHYSICAL split
 into ost-songs/ost-analysis is designed and deferred until a second
@@ -703,7 +703,7 @@ Chip audio is the DEFAULT wherever a source resolves (Josh: "a million
 times better... always use this if possible"; the chip button is the
 opt-out, preference in ff1roll-chip). Source chain, honoring the
 *.nsf gitignore (ROM music never enters the public repo): live import
-session → this device's IndexedDB cache → **joshcough/nsf-archive**,
+session → this device's IndexedDB cache → **Night-Roll-App/nsf-archive**,
 Josh's PRIVATE repo, fetched via the GitHub API with the same token
 Sync uses, then cached. album.json carries only metadata: `nsf:
 {vault: "<file>.nsf", tracks: {<base>: {n, secs}}}` — Commit import
@@ -1129,8 +1129,8 @@ chord name, key inference, or note classification; findings are Josh's.
 **A song's link is its path with no extension**, and the same path with
 `.mid` is the file (Pages serves it as audio/midi):
 
-    https://joshcough.github.io/night-roll/albums/compositions/nightroll/ambush
-    https://joshcough.github.io/night-roll/albums/compositions/nightroll/ambush.mid
+    https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush
+    https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush.mid
 
 Mechanics: `reflectSongURL` puts the path form in the address bar
 (replaceState; other query params like `?perf=1` survive). Pages has no
@@ -2183,7 +2183,7 @@ way and in the app gives the same files.
 One line per track (n, title, ok/failed/silent, notes, seconds, loop
 anchor → target, warnings), then the files written and, with
 `--publish`, the archive uploads: the chip files go to cfg().nsfRepo
-(joshcough/nsf-archive) at the paths `chipVaultFile` reads — `<slug>.nsf`
+(Night-Roll-App/nsf-archive) at the paths `chipVaultFile` reads — `<slug>.nsf`
 / `<slug>.gbs` whole, `<slug>/<track-slug>.spc` per file — through
 `gh api`, check-before-PUT, message "archive: <slug>". `--title` only
 rewrites album.json's title (the app's Rename would do the same); the
@@ -2599,7 +2599,7 @@ installed app has its own storage; a token is never shown twice).
 `commitCompositionNow` calls `writeSongsReadme(h)`: GET the manifest
 through the API, `songsReadmeBlock(albums, repo)` renders every album's
 songs as player links (`shareLinkFor(path, repo)`; `APP_REPO` =
-`joshcough/night-roll` needs no `songs=`, any other repo gets it),
+`Night-Roll-App/night-roll` needs no `songs=`, any other repo gets it),
 `spliceReadme(existing, block)` creates the README, appends the block to
 one without markers, or replaces only what sits between
 `<!-- night-roll:songs -->` and `<!-- /night-roll:songs -->`, and a PUT
