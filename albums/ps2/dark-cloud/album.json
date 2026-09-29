@@ -1,0 +1,280 @@
+{
+ "title": "Dark Cloud",
+ "order": 50,
+ "songs": {
+  "battle": "Battle!!",
+  "broken-promise-orgel-version": "Broken Promise (Orgel Version)",
+  "castle-of-dark-heaven": "Castle of Dark Heaven",
+  "dark-cloud-main-theme-broken": "Dark Cloud Main Theme (Broken)",
+  "divine-beast-dran-alternate": "Divine Beast Dran (Alternate)",
+  "duel": "DUEL",
+  "emergency-alternate": "Emergency (Alternate)",
+  "gallery-of-time": "Gallery of Time",
+  "land-of-hope": "Land of Hope",
+  "legend-of-hunter-alternate": "Legend of Hunter (Alternate)",
+  "legend-of-hunter": "Legend of Hunter",
+  "main-theme-bossa-nova-version": "Main Theme (Bossa Nova Version)",
+  "mission": "Mission!!",
+  "resurrection-of-the-dark-genie": "Resurrection of the Dark Genie",
+  "shipwreck-alternate": "Shipwreck (Alternate)",
+  "stand-up": "Stand Up!!",
+  "sun-and-moon-temple-alternate": "Sun and Moon Temple (Alternate)",
+  "sun-and-moon-temple": "Sun and Moon Temple",
+  "the-destruction-of-norune-village": "The Destruction of Norune Village",
+  "the-king-s-curse-alternate": "The King's Curse (Alternate)",
+  "the-king-s-curse": "The King's Curse",
+  "time-of-destiny": "Time of Destiny",
+  "wise-owl-forest-alternate-1": "Wise Owl Forest (Alternate 1)",
+  "wise-owl-forest-alternate-2": "Wise Owl Forest (Alternate 2)",
+  "wise-owl-forest-alternate-3": "Wise Owl Forest (Alternate 3)"
+ },
+ "nsf": {
+  "vault": "dark-cloud/",
+  "tracks": {
+   "battle": {
+    "n": 1,
+    "secs": 40.775390625
+   },
+   "black-shadow": {
+    "n": 1,
+    "secs": 101.999898
+   },
+   "broken-promise-orgel-version": {
+    "n": 1,
+    "secs": 46.1111065
+   },
+   "broken-promise": {
+    "n": 1,
+    "secs": 87.9166315
+   },
+   "brownboo": {
+    "n": 1,
+    "secs": 75.9375
+   },
+   "castle-of-dark-heaven": {
+    "n": 1,
+    "secs": 68.478165
+   },
+   "ceremony": {
+    "n": 1,
+    "secs": 179.98499663333334
+   },
+   "dark-cloud-main-theme-broken": {
+    "n": 1,
+    "secs": 89.751927
+   },
+   "demon-shaft": {
+    "n": 1,
+    "secs": 73.548316
+   },
+   "departure": {
+    "n": 1,
+    "secs": 112.59749201875002
+   },
+   "divine-beast-cave": {
+    "n": 1,
+    "secs": 62.562437437499995
+   },
+   "divine-beast-dran-alternate": {
+    "n": 1,
+    "secs": 79.91944196041666
+   },
+   "divine-beast-dran": {
+    "n": 1,
+    "secs": 79.725949
+   },
+   "duel": {
+    "n": 1,
+    "secs": 31.090878
+   },
+   "emergency-alternate": {
+    "n": 1,
+    "secs": 25.068438
+   },
+   "emergency": {
+    "n": 1,
+    "secs": 51.36975
+   },
+   "gallery-of-time": {
+    "n": 1,
+    "secs": 92.62258380416667
+   },
+   "if-you-strain-your-ears": {
+    "n": 1,
+    "secs": 78.857064
+   },
+   "land-of-hope": {
+    "n": 1,
+    "secs": 51.702057
+   },
+   "last-battle": {
+    "n": 1,
+    "secs": 46.067811074999995
+   },
+   "legend-of-hunter-alternate": {
+    "n": 1,
+    "secs": 50.948263125
+   },
+   "legend-of-hunter": {
+    "n": 1,
+    "secs": 44.72334313333333
+   },
+   "main-theme-bossa-nova-version": {
+    "n": 1,
+    "secs": 147.27339345
+   },
+   "matataki-village": {
+    "n": 1,
+    "secs": 55.4166445
+   },
+   "memories": {
+    "n": 1,
+    "secs": 65.71422
+   },
+   "mission": {
+    "n": 1,
+    "secs": 87.66372881666666
+   },
+   "moon-factory": {
+    "n": 1,
+    "secs": 144.6
+   },
+   "moon-sea": {
+    "n": 1,
+    "secs": 68.74546696875
+   },
+   "muska-lacka": {
+    "n": 1,
+    "secs": 87.1837799375
+   },
+   "norune-village": {
+    "n": 1,
+    "secs": 54.9
+   },
+   "open-your-eyes": {
+    "n": 1,
+    "secs": 47.586172
+   },
+   "queens": {
+    "n": 1,
+    "secs": 75.223848
+   },
+   "reminiscence": {
+    "n": 1,
+    "secs": 100.40273761666667
+   },
+   "resurrection-of-the-dark-genie": {
+    "n": 1,
+    "secs": 108.41135717499999
+   },
+   "shipwreck-alternate": {
+    "n": 1,
+    "secs": 58.723324
+   },
+   "shipwreck": {
+    "n": 1,
+    "secs": 61.333272
+   },
+   "stand-up": {
+    "n": 1,
+    "secs": 63.10244325
+   },
+   "sun-and-moon-temple-alternate": {
+    "n": 1,
+    "secs": 110.42160025
+   },
+   "sun-and-moon-temple": {
+    "n": 1,
+    "secs": 110.42160025
+   },
+   "take-off": {
+    "n": 1,
+    "secs": 130.47606
+   },
+   "the-black-knight": {
+    "n": 1,
+    "secs": 59.104452
+   },
+   "the-daily-life": {
+    "n": 1,
+    "secs": 59.49996628333333
+   },
+   "the-destruction-of-norune-village": {
+    "n": 1,
+    "secs": 52.503792
+   },
+   "the-forest-guardian": {
+    "n": 1,
+    "secs": 51.363585
+   },
+   "the-ice-queen": {
+    "n": 1,
+    "secs": 54.310305
+   },
+   "the-king-s-curse-alternate": {
+    "n": 1,
+    "secs": 95.116222
+   },
+   "the-king-s-curse": {
+    "n": 1,
+    "secs": 123.666543
+   },
+   "the-rowdy": {
+    "n": 1,
+    "secs": 80.7893525
+   },
+   "the-spirit-king": {
+    "n": 1,
+    "secs": 46.74781054583333
+   },
+   "the-village-festival": {
+    "n": 1,
+    "secs": 137.517719625
+   },
+   "time-of-destiny": {
+    "n": 1,
+    "secs": 99.451957
+   },
+   "two-moons": {
+    "n": 1,
+    "secs": 113.31365846666665
+   },
+   "unknown-1": {
+    "n": 1,
+    "secs": 58.285656
+   },
+   "unknown-5": {
+    "n": 1,
+    "secs": 18.3749822375
+   },
+   "wise-owl-forest-alternate-1": {
+    "n": 1,
+    "secs": 112.571316
+   },
+   "wise-owl-forest-alternate-2": {
+    "n": 1,
+    "secs": 112.571316
+   },
+   "wise-owl-forest-alternate-3": {
+    "n": 1,
+    "secs": 112.571316
+   },
+   "wise-owl-forest": {
+    "n": 1,
+    "secs": 112.571316
+   },
+   "yellow-drops": {
+    "n": 1,
+    "secs": 98.423828125
+   }
+  },
+  "chip": "psf2",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "darkcloud.psf2lib",
+    "file": "darkcloud.psf2lib"
+   }
+  ]
+ }
+}

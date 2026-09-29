@@ -1905,6 +1905,247 @@
   ]
  },
  {
+  "title": "Dark Cloud",
+  "songs": [
+   {
+    "title": "Battle!!",
+    "path": "albums/ps2/dark-cloud/battle.mid"
+   },
+   {
+    "title": "Black Shadow",
+    "path": "albums/ps2/dark-cloud/black-shadow.mid"
+   },
+   {
+    "title": "Broken Promise",
+    "path": "albums/ps2/dark-cloud/broken-promise.mid"
+   },
+   {
+    "title": "Broken Promise (Orgel Version)",
+    "path": "albums/ps2/dark-cloud/broken-promise-orgel-version.mid"
+   },
+   {
+    "title": "Brownboo",
+    "path": "albums/ps2/dark-cloud/brownboo.mid"
+   },
+   {
+    "title": "Castle of Dark Heaven",
+    "path": "albums/ps2/dark-cloud/castle-of-dark-heaven.mid"
+   },
+   {
+    "title": "Ceremony",
+    "path": "albums/ps2/dark-cloud/ceremony.mid"
+   },
+   {
+    "title": "Dark Cloud Main Theme (Broken)",
+    "path": "albums/ps2/dark-cloud/dark-cloud-main-theme-broken.mid"
+   },
+   {
+    "title": "Demon Shaft",
+    "path": "albums/ps2/dark-cloud/demon-shaft.mid"
+   },
+   {
+    "title": "Departure",
+    "path": "albums/ps2/dark-cloud/departure.mid"
+   },
+   {
+    "title": "Divine Beast Cave",
+    "path": "albums/ps2/dark-cloud/divine-beast-cave.mid"
+   },
+   {
+    "title": "Divine Beast Dran",
+    "path": "albums/ps2/dark-cloud/divine-beast-dran.mid"
+   },
+   {
+    "title": "Divine Beast Dran (Alternate)",
+    "path": "albums/ps2/dark-cloud/divine-beast-dran-alternate.mid"
+   },
+   {
+    "title": "DUEL",
+    "path": "albums/ps2/dark-cloud/duel.mid"
+   },
+   {
+    "title": "Emergency",
+    "path": "albums/ps2/dark-cloud/emergency.mid"
+   },
+   {
+    "title": "Emergency (Alternate)",
+    "path": "albums/ps2/dark-cloud/emergency-alternate.mid"
+   },
+   {
+    "title": "Gallery of Time",
+    "path": "albums/ps2/dark-cloud/gallery-of-time.mid"
+   },
+   {
+    "title": "If You Strain Your Ears",
+    "path": "albums/ps2/dark-cloud/if-you-strain-your-ears.mid"
+   },
+   {
+    "title": "Land of Hope",
+    "path": "albums/ps2/dark-cloud/land-of-hope.mid"
+   },
+   {
+    "title": "Last Battle",
+    "path": "albums/ps2/dark-cloud/last-battle.mid"
+   },
+   {
+    "title": "Legend of Hunter",
+    "path": "albums/ps2/dark-cloud/legend-of-hunter.mid"
+   },
+   {
+    "title": "Legend of Hunter (Alternate)",
+    "path": "albums/ps2/dark-cloud/legend-of-hunter-alternate.mid"
+   },
+   {
+    "title": "Main Theme (Bossa Nova Version)",
+    "path": "albums/ps2/dark-cloud/main-theme-bossa-nova-version.mid"
+   },
+   {
+    "title": "Matataki Village",
+    "path": "albums/ps2/dark-cloud/matataki-village.mid"
+   },
+   {
+    "title": "Memories",
+    "path": "albums/ps2/dark-cloud/memories.mid"
+   },
+   {
+    "title": "Mission!!",
+    "path": "albums/ps2/dark-cloud/mission.mid"
+   },
+   {
+    "title": "Moon Factory",
+    "path": "albums/ps2/dark-cloud/moon-factory.mid"
+   },
+   {
+    "title": "Moon Sea",
+    "path": "albums/ps2/dark-cloud/moon-sea.mid"
+   },
+   {
+    "title": "Muska Lacka",
+    "path": "albums/ps2/dark-cloud/muska-lacka.mid"
+   },
+   {
+    "title": "Norune Village",
+    "path": "albums/ps2/dark-cloud/norune-village.mid"
+   },
+   {
+    "title": "Open Your Eyes",
+    "path": "albums/ps2/dark-cloud/open-your-eyes.mid"
+   },
+   {
+    "title": "Queens",
+    "path": "albums/ps2/dark-cloud/queens.mid"
+   },
+   {
+    "title": "Reminiscence",
+    "path": "albums/ps2/dark-cloud/reminiscence.mid"
+   },
+   {
+    "title": "Resurrection of the Dark Genie",
+    "path": "albums/ps2/dark-cloud/resurrection-of-the-dark-genie.mid"
+   },
+   {
+    "title": "Shipwreck",
+    "path": "albums/ps2/dark-cloud/shipwreck.mid"
+   },
+   {
+    "title": "Shipwreck (Alternate)",
+    "path": "albums/ps2/dark-cloud/shipwreck-alternate.mid"
+   },
+   {
+    "title": "Stand Up!!",
+    "path": "albums/ps2/dark-cloud/stand-up.mid"
+   },
+   {
+    "title": "Sun and Moon Temple",
+    "path": "albums/ps2/dark-cloud/sun-and-moon-temple.mid"
+   },
+   {
+    "title": "Sun and Moon Temple (Alternate)",
+    "path": "albums/ps2/dark-cloud/sun-and-moon-temple-alternate.mid"
+   },
+   {
+    "title": "Take Off",
+    "path": "albums/ps2/dark-cloud/take-off.mid"
+   },
+   {
+    "title": "The Black Knight",
+    "path": "albums/ps2/dark-cloud/the-black-knight.mid"
+   },
+   {
+    "title": "The Daily Life",
+    "path": "albums/ps2/dark-cloud/the-daily-life.mid"
+   },
+   {
+    "title": "The Destruction of Norune Village",
+    "path": "albums/ps2/dark-cloud/the-destruction-of-norune-village.mid"
+   },
+   {
+    "title": "The Forest Guardian",
+    "path": "albums/ps2/dark-cloud/the-forest-guardian.mid"
+   },
+   {
+    "title": "The Ice Queen",
+    "path": "albums/ps2/dark-cloud/the-ice-queen.mid"
+   },
+   {
+    "title": "The King's Curse",
+    "path": "albums/ps2/dark-cloud/the-king-s-curse.mid"
+   },
+   {
+    "title": "The King's Curse (Alternate)",
+    "path": "albums/ps2/dark-cloud/the-king-s-curse-alternate.mid"
+   },
+   {
+    "title": "The Rowdy",
+    "path": "albums/ps2/dark-cloud/the-rowdy.mid"
+   },
+   {
+    "title": "The Spirit King",
+    "path": "albums/ps2/dark-cloud/the-spirit-king.mid"
+   },
+   {
+    "title": "The Village Festival",
+    "path": "albums/ps2/dark-cloud/the-village-festival.mid"
+   },
+   {
+    "title": "Time of Destiny",
+    "path": "albums/ps2/dark-cloud/time-of-destiny.mid"
+   },
+   {
+    "title": "Two Moons",
+    "path": "albums/ps2/dark-cloud/two-moons.mid"
+   },
+   {
+    "title": "Unknown 1",
+    "path": "albums/ps2/dark-cloud/unknown-1.mid"
+   },
+   {
+    "title": "Unknown 5",
+    "path": "albums/ps2/dark-cloud/unknown-5.mid"
+   },
+   {
+    "title": "Wise Owl Forest",
+    "path": "albums/ps2/dark-cloud/wise-owl-forest.mid"
+   },
+   {
+    "title": "Wise Owl Forest (Alternate 1)",
+    "path": "albums/ps2/dark-cloud/wise-owl-forest-alternate-1.mid"
+   },
+   {
+    "title": "Wise Owl Forest (Alternate 2)",
+    "path": "albums/ps2/dark-cloud/wise-owl-forest-alternate-2.mid"
+   },
+   {
+    "title": "Wise Owl Forest (Alternate 3)",
+    "path": "albums/ps2/dark-cloud/wise-owl-forest-alternate-3.mid"
+   },
+   {
+    "title": "Yellow Drops",
+    "path": "albums/ps2/dark-cloud/yellow-drops.mid"
+   }
+  ]
+ },
+ {
   "title": "Diddy Kong Racing",
   "songs": [
    {
