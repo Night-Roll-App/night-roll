@@ -1372,6 +1372,13 @@ navigator.audioSession.type = "playback" where WebKit supports it;
 Media Session metadata for lock-screen play/pause; (3) the Capacitor
 shell declares the Audio background mode, the reliable App Store route.
 Owner: the terminal session.
+STEP 1 (2026-09-28, night-roll-app 29a6cb6, awaiting a plugged-in build
+and his ear): the shell ALREADY set AVAudioSession .playback in
+AppDelegate; the missing piece was Info.plist UIBackgroundModes = audio,
+now added. Nothing in index.html changed. Expected: console-audio songs
+(chip buffers are scheduled whole) keep playing off-screen; synth-voiced
+songs and album advance ride the page's timers, which iOS may throttle —
+if those stop, step 2 is keeping the scheduler alive, not the engine.
 
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 
