@@ -4,6 +4,31 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## APP STORE — WHERE IT STANDS (2026-09-28; the one current list)
+
+Done: Apple Developer Program; App Store Connect record; builds 1-2
+uploaded (CURRENT_PROJECT_VERSION 3 next); icon = the original
+(afb518c); support email nightrollapp@gmail.com; org Night-Roll-App
+created; four starters (bach, fur-elise, gymnopedie-no-1,
+moonlight-sonata-1); name "Night Roll"; price $4.99; background
+playback (shell audio mode + "playback" audio session).
+
+Remains:
+1. TestFlight → internal testers → install from the TestFlight app. Josh
+   (not confirmed done).
+2. App Store Connect: privacy labels (no data collected) and the listing
+   entry from docs/app-store-listing.md. Josh.
+3. Screenshots: drafts at ~/Desktop/nightroll-screenshots/ (2752×2064).
+   Josh approves or asks; the terminal redraws.
+4. Control Center bell muting Web Audio: likely fixed by the "playback"
+   audio session (it ignores the silent switch). Josh checks: bell on,
+   play a song. Terminal fixes if it still mutes.
+5. Upload a new build with tonight's changes (build 3). Terminal.
+6. Org move (repos to Night-Roll-App): not run, on hold at Josh's word.
+   The listing's URLs follow whichever home is live at submission.
+7. APNs push: not a store blocker; after the store work (decided
+   2026-09-28).
+
 ## NES/GB INSTRUMENT FOLDERS — DONE (2026-09-28)
 
 Single-file vaults publish at <vault>.instruments/ (tetris.nsf vs
@@ -247,8 +272,7 @@ Threnody II after relaunch (repo stamp 2026-09-26 12:31 < the draft; the
 fresh install likely stamped the draft before the annotation file
 loaded) — fix in loadSongInner/saveDraft. Apple Developer Program:
 enrolled. Next: Phase 2, the real shell (Files-app storage, icon, name,
-TestFlight). Still needs Josh: a support email address; two more starter
-songs; "merge it" for the overnight branch.
+TestFlight). (Since done: support email nightrollapp@gmail.com; four starters in albums/starters; icon = the original, afb518c. Current list: APP STORE — WHERE IT STANDS, top of this file.)
 
 ## SONG ORGANIZATION — JOSH'S ANSWERS (2026-09-27 evening)
 
@@ -387,11 +411,8 @@ evening; CURRENT_PROJECT_VERSION is 3. Screenshot drafts at iPad 13"
 size (2752×2064) from the website via scratch/shots.mjs (headless
 chromium, run only while Josh is away): ~/Desktop/nightroll-screenshots/
 — 1 Overworld roll, 2 score, 3 Ambush, 4 Open tree, 5 Ask (empty), 6
-Chrono Trigger. Josh still does: TestFlight → internal testers →
-install from the TestFlight app;
-privacy labels (no data collected); the listing
-(docs/app-store-listing.md is the draft); pick an icon (three
-candidates emailed, ~/Desktop/nightroll-icons/).
+Chrono Trigger. What remains is in APP STORE — WHERE IT STANDS at the
+top of this file (the icon pick is done: the original, afb518c).
 
 ## APP STORE PREP — OVERNIGHT BRANCH FULLY MERGED 2026-09-27 (afternoon)
 
@@ -401,9 +422,7 @@ Bach starter 660b329, Publish all 2892e26, roadmap notes 54d7fbc. The
 branch can be deleted. Also that afternoon: docs/promo-video-script.md
 (agent draft, merged 232db19), the help wording on chip audio, and the
 "newer save exists" false alarm (e1dc9ba: loadNotes now records the
-file's saved stamp). Still needs Josh: a support email address (his own
-for now); two more starter songs. Next: Phase 2, the real shell (private
-repo — confirm name `night-roll-app`), then TestFlight.
+file's saved stamp). (Since done: support email nightrollapp@gmail.com; four starters in albums/starters; icon = the original, afb518c. Current list: APP STORE — WHERE IT STANDS, top of this file.)
 
 ## (history) APP STORE PREP — BRANCH overnight-2026-09-26, PUSHED 2026-09-27, UNMERGED
 
@@ -417,6 +436,7 @@ branch; rebase onto main first (index.html has moved a lot since).
 Needs Josh, in order: the audio spike at the Mac with the iPad plugged
 in (~30 min); ~~an Apple Developer account~~ (DONE 2026-09-27 morning:
 enrolled and paid); a support email address; two more starter songs.
+(Since done: support email nightrollapp@gmail.com; four starters in albums/starters; icon = the original, afb518c. Current list: APP STORE — WHERE IT STANDS, top of this file.)
 Told him 2026-09-27 01:20 by inbox note and email.
 ## ROADMAP — the whole remaining list (written 2026-09-26, end of a long day)
 
@@ -442,8 +462,8 @@ work happens on a branch (`overnight-2026-09-26`), nothing to main.
 6. Phase 3 TestFlight (enrollment, bundle ID, privacy labels).
 7. Phase 4 App Store ($4.99, listing, screenshots, support page).
 
-**Josh's decisions, no rush** — 8 app name (see check) · 9 the other
-two starter songs · 10 support email (tomorrow) · 11 price: done.
+**Josh's decisions** — all done: 8 app name "Night Roll" · 9 starters
+(four) · 10 support email nightrollapp@gmail.com · 11 price $4.99.
 
 **Loose ends** — 12 Settings text overlap on the iPad (awaiting his
 screenshot) · 13 seven edited songs live only in Brave: publish there
@@ -471,7 +491,8 @@ with notes on the interesting bars, six sections, key/tempo/meter —
 generated from the score's chord table and annotated by Claude as demo
 material at Josh's request (the analysis rule is about HIS music). The
 Starters album shows on the site too (public domain) and is the only
-album the packager ships. Two more starter songs are Josh's to pick.
+album the packager ships. Since done: four starters (bach, fur-elise,
+gymnopedie-no-1, moonlight-sonata-1).
 
 **Parked** — 16 Publish all shipping music + chat · 17 Compare under a
 chop; saved-only tracks · 18 in-browser model on the iPad (WebGPU)
@@ -1177,7 +1198,9 @@ base. Decide before the App Store listing (the listing's URLs point
 at whichever it is). Josh creates the org (it needs his account); the
 terminal does the moves.
 DONE by Josh the same night: org https://github.com/Night-Roll-App
-(joshcough is admin) and nightrollapp@gmail.com. MOVE CHECKLIST (run
+(joshcough is admin) and nightrollapp@gmail.com. THE TRANSFER HAS NOT
+RUN (Josh, 2026-09-28: "Let's not do any transfer yet"); origin is still
+joshcough/night-roll and the archive joshcough/nsf-archive. MOVE CHECKLIST (run
 when Josh is not importing/publishing): 1. `gh api -X POST
 repos/joshcough/night-roll/transfer -f new_owner=Night-Roll-App` and
 the same for nsf-archive (GitHub redirects the old URLs). 2. Enable
