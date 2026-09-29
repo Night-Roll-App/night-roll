@@ -1348,6 +1348,31 @@ either way. STILL IGNORED: N64 pitch bends (the capture warns "channel
 pitch bend"); Genesis/SNES/GB paths capture the chip's actual pitch, so
 they are not affected.
 
+## FFX "THE PRELUDE" CAPTURES AS ONE NOTE — QUEUED 2026-09-28
+
+Final Fantasy X imported (92 songs, BGM/WD). "The Prelude" came out as a
+single note over 48 s, and is the only song that did. Check whether its
+harp arpeggio is in the BGM at all (a streamed or sample-played piece?)
+or whether the BGM reader stops early. Other songs look sane (Tidus'
+Theme 1068 notes, Other World 3156).
+
+## BACKGROUND PLAYBACK — ASKED 2026-09-28 (Josh, iPad: "when I background Night Roll can we keep playing music? YouTube does")
+
+Facts from the repo: YouTube plays because it drives a real media
+element; Night Roll plays through a bare AudioContext, which iOS
+suspends when the app leaves the screen. The August silent <audio>
+keep-alive was a 2 s LOOP whose wrap seeked and stalled the iPad
+(removed c704c43); lock-screen controls were left out of album play v1
+for the same reason (NIGHT-ROLL.md "Album play"). Candidates, all
+UNVERIFIED on the device and to be tried ONE AT A TIME by ear (see the
+audio-night lessons: known-good engine, no rewrites): (1)
+navigator.audioSession.type = "playback" where WebKit supports it;
+(2) route master to a MediaStreamAudioDestinationNode feeding a real
+<audio> element that plays the live stream (no loop, no seek), plus
+Media Session metadata for lock-screen play/pause; (3) the Capacitor
+shell declares the Audio background mode, the reliable App Store route.
+Owner: the terminal session.
+
 ## CAPTURES AS BACKGROUND JOBS — QUEUED 2026-09-27 (Josh, from the iPad)
 
 Josh: "we ought to have some sort of a job system where the captures go
