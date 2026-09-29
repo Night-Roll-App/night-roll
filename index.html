@@ -3230,13 +3230,7 @@ async function loadSongInner(path) {
     } else if (d) { // draft is the newest known state
       // a draft from before the fingerprint: read the published .mid once so an
       // edit undone back to it stops counting as "edited since last save"
-      if (d.dirty && !d.pubSig && repoStamp && repoStamp === d.savedStamp) {
-        try {
-          const r = await readData("songs", path);
-          if (r.ok) { const pub = parseMidi(await r.arrayBuffer()); d.pubSig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks)}); }
-        } catch (err) { /* offline: stays "edited" until the next open */ }
-        if (d.pubSig) { d.dirty = musicSig(d) !== d.pubSig; try { draftWrite(path, d); } catch (err) { /* full: the next edit writes it */ } }
-      }
+      await draftFingerprint(path, d, repoStamp);
       openDraftDoc(d, path); return;
     }
   }
@@ -13020,6 +13014,38 @@ function draftTracks(tracks) { // the notes as a draft stores them (and as the p
 // comparison with it, not a flag that any edit sets for good — an added note
 // then undone left songs "edited" that were not (Josh, 2026-09-29).
 function musicSig(d) { return JSON.stringify([d.ppq, (d.tempos || []).map(t => [t.tick, t.usq]), d.tracks]); }
+// A draft from before the fingerprint: read the published .mid once (only when
+// the repo's stamp is the draft's base, so the .mid IS what it was copied from)
+// and let "edited" follow the comparison. true when the draft changed.
+async function draftFingerprint(path, d, repoStamp) {
+  if (!d || !d.dirty || d.pubSig || !repoStamp || repoStamp !== d.savedStamp || !d.tracks) return false;
+  try {
+    const r = await readData("songs", path);
+    if (!r.ok) return false;
+    const pub = parseMidi(await r.arrayBuffer());
+    d.pubSig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks)});
+  } catch (err) { return false; } // offline: stays "edited" until later
+  d.dirty = musicSig(d) !== d.pubSig;
+  try { draftWrite(path, d); } catch (err) { /* full: the next edit writes it */ }
+  return true;
+}
+// the Publish sheet lists songs it never opens: fingerprint their old drafts in
+// the background and redraw, so a false "edited" clears without opening each
+let fingerprintSweepDone = false;
+async function fingerprintOldDrafts() {
+  if (fingerprintSweepDone || LINK_SONGS) return;
+  fingerprintSweepDone = true;
+  let changed = false;
+  for (const key of draftKeys()) {
+    if (!syncable(key) || key === songKey) continue; // the open song fingerprints on its own open
+    let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
+    if (!d || !d.dirty || d.pubSig || !d.savedStamp || !d.tracks) continue;
+    let repoStamp = 0;
+    try { const r = await readData("analysis", key.replace(/\.mid$/, "") + ".rollnotes.json", true); if (r.ok) repoStamp = JSON.parse(await r.text()).saved || 0; } catch (err) { continue; }
+    if (await draftFingerprint(key, d, repoStamp)) changed = true;
+  }
+  if (changed && document.getElementById("syncsheet").classList.contains("on")) { renderSyncPending(); updateSyncBtn(); }
+}
 function draftDoc(clean) { // the song as this device stores it (the working copy, or a Save checkpoint)
   const d = {savedStamp: song.savedStamp || 0,
     ppq: song.ppq, timesig: song.timesig || effTs(), tempos: song.baseTempos || song.tempos,
@@ -18868,6 +18894,7 @@ function discardPending(key, idx) { // drop one never-synced note from the stash
 function openSyncSheet() { // callable even with no song loaded (bad-config recovery)
   syncReturnToList = false; // notelistSync sets it true right after this runs
   if (song) renderSyncPending();
+  fingerprintOldDrafts().catch(() => {});
   const comp = !!song && isComposition();
   const verb = folderActive() ? "Save" : "Publish"; // edits already live on the device; this is the deliberate step that puts a song where others can reach it (Josh, 2026-09-26)
   document.getElementById("ghsave").textContent = "⇪ " + verb + " song"; // one word for what it ships; the line below says what (Josh, 2026-09-25)

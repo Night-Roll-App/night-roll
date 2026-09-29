@@ -2538,7 +2538,8 @@ that only Publish cleared. `draftDoc(true)` (a copy just made, or just
 published) records the fingerprint, and Publish all records it too. A
 draft from before the fingerprint gets one the first time it opens:
 `loadSongInner` reads the published `.mid` once, when the repo's stamp
-matches the draft's base.
+matches the draft's base, and opening the Publish sheet runs the same
+check once over every listed draft (`fingerprintOldDrafts`).
 
 **Words (step 1, 5add982):** the one deliberate step that sends a song
 to the repo is **Publish** everywhere — File → Publish…, the footer

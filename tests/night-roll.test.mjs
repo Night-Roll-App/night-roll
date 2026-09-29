@@ -4283,3 +4283,22 @@ test("edited since last save: an edit undone back to the published music is not 
   assert.equal(val(`draftDirtyState(songKey)`), null);
   run(`for (const k of ["ff1roll-draft-", "ff1roll-save-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey); songKey = null;`);
 });
+
+test("edited since last save: an old draft (no fingerprint) that matches its published .mid stops counting as edited", async () => {
+  run(`globalThis.__realRead = readData;
+       const pubDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+       globalThis.__mid = writeMidi(pubDoc);
+       readData = async () => ({ok: true, arrayBuffer: async () => __mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength)});
+       const pub = parseMidi(__mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength));
+       globalThis.__same = {savedStamp: 7, dirty: true, ppq: pub.ppq, timesig: [4, 4], tempos: pub.tempos, tracks: draftTracks(pub.tracks)};
+       globalThis.__diff = {...__same, tracks: [{name: pub.tracks[0].name, notes: [{t: 0, d: 480, p: 62, v: 100}]}]};
+       globalThis.__r = null;
+       Promise.all([draftFingerprint("albums/compositions/nightroll/fp-a.mid", __same, 7), draftFingerprint("albums/compositions/nightroll/fp-b.mid", __diff, 7)]).then(x => __r = x);`);
+  for (let i = 0; i < 20 && !val(`globalThis.__r`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
+  try {
+    assert.deepEqual(val(`__r`), [true, true]);
+    assert.equal(val(`__same.dirty`), false, "same notes as the published file: not edited");
+    assert.equal(val(`__diff.dirty`), true, "a changed note: still edited");
+    assert.equal(val(`typeof __same.pubSig`), "string");
+  } finally { run(`readData = globalThis.__realRead; for (const k of ["fp-a", "fp-b"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
+});
