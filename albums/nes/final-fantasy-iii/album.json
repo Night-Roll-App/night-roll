@@ -56,11 +56,11 @@
   "tracks": {
    "added-companion": {
     "n": 55,
-    "secs": 14.966068
+    "secs": 4.816474
    },
    "applause-sound-effect": {
     "n": 62,
-    "secs": 11.966188
+    "secs": 3.0332120000000002
    },
    "bahamut-flies-about-sound-effect": {
     "n": 64,
@@ -84,7 +84,7 @@
    },
    "boo-sound-effect": {
     "n": 63,
-    "secs": 11.966188
+    "secs": 2.933216
    },
    "castle-of-hain": {
     "n": 45,
@@ -112,11 +112,11 @@
    },
    "dancer-s-dance": {
     "n": 29,
-    "secs": 36.965188
+    "secs": 13.549458
    },
    "danger-sound-effect": {
     "n": 60,
-    "secs": 27.965548000000002
+    "secs": 9.349626
    },
    "deep-under-the-water-submarine-nautilus": {
     "n": 22,
@@ -132,7 +132,7 @@
    },
    "fall-sound-effect": {
     "n": 59,
-    "secs": 12.966148
+    "secs": 3.549858
    },
    "fanfare-victory-fanfare": {
     "n": 8,
@@ -144,7 +144,7 @@
    },
    "garuda-defeat": {
     "n": 25,
-    "secs": 19.965868
+    "secs": 6.699732
    },
    "go-above-the-clouds-the-enterprise-flies-through-the-sky": {
     "n": 11,
@@ -176,7 +176,7 @@
    },
    "item-get": {
     "n": 24,
-    "secs": 14.966068
+    "secs": 4.8998040000000005
    },
    "jinn-the-fire-jinn-s-curse": {
     "n": 13,
@@ -188,11 +188,11 @@
    },
    "let-s-play-the-piano-again-piano-practice-2": {
     "n": 47,
-    "secs": 14.966068
+    "secs": 4.849806
    },
    "let-s-play-the-piano-piano-practice-1": {
     "n": 53,
-    "secs": 27.965548000000002
+    "secs": 9.49962
    },
    "living-forest": {
     "n": 14,
@@ -200,7 +200,7 @@
    },
    "lute-of-noah": {
     "n": 5,
-    "secs": 52.964548
+    "secs": 21.232484
    },
    "my-home-town-hometown-of-ur": {
     "n": 32,
@@ -212,11 +212,11 @@
    },
    "parting-with-a-companion": {
     "n": 54,
-    "secs": 19.965868
+    "secs": 6.733064
    },
    "resting-at-the-inn": {
     "n": 1,
-    "secs": 21.965788
+    "secs": 7.099716
    },
    "return-of-the-warrior": {
     "n": 6,
@@ -232,7 +232,7 @@
    },
    "shattering-sound-effect": {
     "n": 61,
-    "secs": 11.966188
+    "secs": 2.99988
    },
    "shrine-of-nept": {
     "n": 23,
@@ -260,7 +260,7 @@
    },
    "the-everlasting-world-ending-theme-1": {
     "n": 49,
-    "secs": 299.971334
+    "secs": 83.796648
    },
    "the-everlasting-world-ending-theme-2": {
     "n": 44,
@@ -268,7 +268,7 @@
    },
    "the-everlasting-world-ending-theme-3": {
     "n": 48,
-    "secs": 299.971334
+    "secs": 249.49002000000002
    },
    "the-invincible-giant-battleship-invincible": {
     "n": 36,
