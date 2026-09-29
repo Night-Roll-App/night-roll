@@ -1374,6 +1374,18 @@ is easy: whatever view is open (score / tracks / roll). Optional and
 low priority; try only if cheap and only after background playback has
 had real use.
 
+SIZED 2026-09-28 (advisor, read-only): HARD. The roll redraws on
+requestAnimationFrame, which stops when the app leaves the screen, so a
+web-only PiP window would freeze on its last frame; only the 60 ms
+scheduler interval keeps running. A web PiP also needs a tap to start
+(no auto-PiP on leaving). The advisor says canvas.captureStream() is
+broken on iOS (WebKit bug 181663); UNVERIFIED, since that bug may be old.
+Real route: a small Swift Capacitor plugin (AVPictureInPictureController +
+AVSampleBufferDisplayLayer) fed canvas frames from a timer, behind a flag,
+estimated 15-25 commits for roll only; the score view costs more (many
+canvases). First probe if wanted: a throwaway page, not index.html, that
+checks whether any PiP window appears from a canvas in the iPad app.
+
 ## BACKGROUND PLAYBACK — DONE 2026-09-28 (step 2: navigator.audioSession "playback"; Josh: "basically good enough") (Josh, iPad: "when I background Night Roll can we keep playing music? YouTube does")
 
 Facts from the repo: YouTube plays because it drives a real media
