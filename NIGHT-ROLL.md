@@ -2664,7 +2664,7 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   `applyTake` undo/mirror, target default rule, Bassist golden fixture,
   FEATURES keywords `✦ Ask` / `✦ Fill`.
 
-## Window manager (shell + docks) — build steps 1-2 of the windowing plan, 2026-09-29
+## Window manager (shell + docks) — phase A of the windowing plan, 2026-09-29
 
 open-items.md's "a real windowing system" (QUEUED IDEA, 2026-09-27,
 REOPENED 2026-09-29). **Attempt 1 (commit c322e3c) broke on the iPad**:
@@ -2685,10 +2685,14 @@ grid:
 #shell { display:grid; grid-template-columns: var(--dl-w,0px) 1fr var(--dr-w,0px);
          grid-template-rows: 1fr var(--db-h,0px); flex:1; min-height:0; }
 #songregion { grid-column:2; grid-row:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
-#dockleft   { grid-column:1; grid-row:1/3; }
+#dockleft   { grid-column:1; grid-row:1/3; position:relative; }   /* FULL-height side dock: edge to edge */
 #dockright  { grid-column:3; grid-row:1/3; position:relative; }
-#dockbottom { grid-column:1/4; grid-row:2; }
+#dockbottom { grid-column:2; grid-row:2; position:relative; display:flex; flex-direction:row; } /* inner width — see Phase A */
 ```
+
+(Phase A, below, adds `#songcenter` — `#rollwrap` plus `#dockleftinner`/
+`#dockrightinner` — nested inside `#songregion`'s own flex column, for the
+INNER side-dock mode. The grid above is otherwise unchanged from step 1.)
 
 `#songregion` wraps the app's existing top-level song flow — `header`,
 `#trackrow`, `#albumstrip`, `#cmpbar`, `#rollwrap`, `#editrow`,
@@ -2820,15 +2824,158 @@ to `0px`.
   reflected a REAL CSS custom property (`--dr-w`) the way it does a
   normal IDL one (`paddingRight`), so the stub needed the actual method
   shape.
-- **Steps 3-8 (queued, not built):** left/bottom docks (the empty
-  `#dockleft`/`#dockbottom` cells + `--dl-w`/`--db-h` exist already);
-  any sheet besides `#asksheet` docking (the CSS pattern, the
-  `sheetDrag` exclusion, and the `wmLayoutRight`-style move-a-node
-  mechanism all already generalize — a new dock needs its own
-  `wm.<side>` slot and a `wmLayoutRight`-shaped function, not a new
-  mechanism); multiple sheets sharing one dock (stacking/tabs/split) is
-  not designed; two timeline views at once (shared `view.x`/
-  `playCursor` today).
+### Phase A — left/bottom docks, INNER mode, split bottom, makeWindow() (2026-09-29)
+
+Generalizes steps 1-2 to left/right/bottom, a second mode for the side
+docks, a split bottom, and a builder function for a window's shared shape.
+Josh's model (his words): "a full window manager where I can drag these
+windows over to the right hand side or drag them to the bottom … or drag
+them to the left … like IntelliJ and VS Code." "The main panel … should
+always be in the center, and you can only put stuff around it on the left,
+right, or bottom." "We might want a window to take up the entire
+right-hand side from top to bottom, or only the portion from the ruler to
+the bottom of the roll — basically having a header and footer [of the
+song] below it from the outer context." No top dock.
+
+- **Two bands for a side dock.** FULL (the step-1/2 behaviour: the outer
+  `#dockleft`/`#dockright` grid cells, edge to edge, beside the header and
+  footer too — `grid-row:1/3`) or INNER (beside `#rollwrap` only). INNER
+  needed a real structural change: `#songregion`'s `#rollwrap` is now
+  wrapped in `#songcenter` (`display:flex; flex-direction:row; flex:1`)
+  alongside two new sibling cells, `#dockleftinner`/`#dockrightinner`
+  (`flex:0 0 var(--dli-w,0px)` / `var(--dri-w,0px)`, default closed) —
+  nested INSIDE `#songregion`'s own flex column, so a window docked there
+  narrows only the roll band; the header rows above it and the footer below
+  it still span the full song width. Everything else in `#songregion`
+  (`header`, `#trackrow`, `#albumstrip`, `#cmpbar` above; `#editrow`,
+  `#instpanel`, `#subtitle`, `footer` below) needed no wrapper of its own —
+  DOM order in the existing flex column already gives the top/bottom bands
+  their shape; only the center row (`#rollwrap`) needed wrapping. A side
+  dock's own `wm.<side>.w` is the same value in either mode — switching
+  FULL↔INNER just moves the node to the other cell and swaps which CSS var
+  (`--dl-w`/`--dr-w` vs `--dli-w`/`--dri-w`) carries the width; the OTHER
+  var is zeroed. Only a FULL dock toggles `#shell.hasdock` (the footer's
+  one-row-no-wrap treatment) — an INNER dock never touches the footer.
+- **Bottom dock: inner width by default.** `#dockbottom` moved from
+  `grid-column:1/4` (under the side docks too) to `grid-column:2` (matches
+  `#songregion` — between the side docks, under the song only). Chosen so
+  the bottom dock reads as an extension of the song's own bottom band
+  rather than a strip that runs under a side panel too; a full-width
+  bottom (edge to edge like a FULL side dock) wasn't asked for and isn't
+  built. It may hold up to two windows side by side —
+  `#dockbottom0`/`#dockbottom1`, each `flex:1 1 0` normally, split by
+  `#wmdivider-bottomsplit` (`--db-split`, clamped `[0.2, 0.8]`) once both
+  are occupied (`#dockbottom.split`). A window docks to the first open
+  slot; a third window bumps whatever was in the second, keeping the
+  first — `wmDockBottom()` (pure). Height: `--db-h`, clamped `[160, 70vh]`,
+  dragged from `#wmdivider-bottomh` along the dock's TOP edge (drag up
+  grows it). A closed window's own slot collapses (`.dockslot.shown` off)
+  so its sibling gets the space — the same "active = docked AND open"
+  rule a side dock already had; the OUTER `.occupied` class (divider
+  visibility) tracks "docked here at all," open or not, same as before.
+- **`wm` shape:** `{left?: {id, w, mode}, right?: {id, w, mode}, bottom?:
+  {ids: [id] | [id, id], h, split}}`, `mode` is `"full"` or `"inner"`.
+  Migrated twice on load: once from the pre-shell `ff1roll-aidock`
+  (`wmMigrate`, unchanged from step 2), and once more (`wmMigrateShape`,
+  pure) from the step-1/2 shape itself — a saved `{right: {id, w}}` had no
+  `mode`, and always meant FULL height, so it's backfilled on read; a
+  window is docked in at most one place — `wmDockSide`/`wmDockBottomWindow`
+  clear it from any other dock first.
+- **Pure helpers (new):** `wmClampHeight(h, innerHeight)` bounds the
+  bottom dock's height to `[160, 70% of innerHeight]`; `wmClampSplit(f)`
+  bounds the split fraction to `[0.2, 0.8]`; `wmMigrateShape(state)`;
+  `wmSetSide`/`wmClearSide`/`wmSetSideMode` (side dock state, generalizing
+  `wmSetRight`/`wmClearRight`, removed); `wmDockBottom`/`wmClearBottom`/
+  `wmSetBottomHeight`/`wmSetBottomSplit`; `wmWhereIs(state, id)` — which
+  dock (if any) claims a window, and its mode. `wmClampSize`/`wmAllowed`/
+  `wmMigrate` are unchanged from step 2.
+- **DOM functions:** `wmLayoutSide(side)` generalizes `wmLayoutRight()` to
+  either side and either mode (module state `wmSideEl.left`/`.right`
+  generalizes `wmRightEl`); `wmLayoutBottom()` is the equivalent for the
+  bottom dock's up-to-two slots (`wmBottomEls`); `wmLayoutAll()` is the one
+  entry point everything else calls — runs both sides, the bottom, sets
+  `#shell.hasdock` from the combined FULL-side state, refreshes every
+  window's Dock button, and calls `resize()` exactly once. `wmToggleRight`/
+  `wmLayoutRight` are removed; the action functions below took their place.
+- **`makeWindow(id, {dockable})`** registers a window (`WM_WINDOWS[id] =
+  {dockable}`) and, if dockable, builds its Dock button into
+  `document.getElementById(id + "-h2")` — every migrated window's `<h2>`
+  now carries that id (`#asksheet-h2`, `#notelistsheet-h2`, …; where the
+  title text itself is set dynamically — `#instsheettitle`,
+  `#pubjobtitle` — it's now a `<span>` INSIDE the `<h2>`, so reassigning
+  its `textContent` can't wipe out the appended button). makeWindow does
+  **not** build ✕, title-drag, or the `◢` grip — those were already fully
+  generic (the ✕-injection loop and `addGrips()` skip anything already
+  present; `sheetDrag`'s `.sheet > h2` selector matches any sheet's title
+  regardless of id) and are unchanged; a window not yet migrated gets
+  exactly the same ✕/drag/grip and nothing else. `#importsheet`'s own
+  title-row/`.metpanel` special case in `sheetDrag`/`addGrips` is
+  unchanged too — it isn't one of the six migrated windows.
+- **Migrated (six):** `#asksheet` (AI — already had a right-only dock, now
+  generalized), `#notelistsheet` (Notes), `#instsheet` (Instruments),
+  `#jobssheet`, `#pubjobsheet`, `#infosheet`.
+- **Not yet migrated** (keep working exactly as before, via the generic ✕/
+  drag/grip loops, with no Dock control): `#songsheet`, `#noteeditor`,
+  `#aboutsheet`, `#drumsheet`, `#trsheet`, `#insbarsheet`, `#gridsheet`,
+  `#divsheet`, `#drummersheet`, `#movesheet`, `#pastesheet`, `#chordsheet`,
+  `#helpsheet`, `#midisheet`, `#errsheet`, `#bassistsheet`,
+  `#settingssheet`, `#confirmsheet`, `#importsheet` (the one with its own
+  drag/grip special case), the voice menu, `#viewsheet`, and the various
+  anchored dropdowns/submenus.
+- **Dock control:** one shared popup, `#wmmenu` (built fresh on each open,
+  same pattern as `#voicemenu`/`#filesub`) — "Left" / "Right" / "Bottom",
+  then (once docked to a side) "Full height" / "Beside the roll", then
+  (once docked anywhere) "Float". Replaces the one-off `#askdock` text
+  toggle ("Dock"/"Float"); a window's own button now reads "Dock" or
+  "Docked: Left" / "Docked: Right (beside roll)" / "Docked: Bottom".
+  Real-browser-only (`createElement`-built rows, gated the same way the ✕/
+  grip/drag loops are) — not unit tested; tests call the action functions
+  (`wmDockSide`, `wmDockBottomWindow`, `wmSetSideModeFor`, `wmFloat`)
+  directly, the same way the step-2 tests called `wmToggleRight` instead
+  of clicking `#askdock`.
+- **Dividers:** one pair per side (`#wmdivider-left-full`/
+  `#wmdivider-left-inner`, `#wmdivider-right-full`/`#wmdivider-right-inner`)
+  — both in a pair drag the SAME `wm[side].w`, whichever cell is currently
+  showing it; shown only while that cell is `.occupied`. `wmSideDividerize
+  (divId, side)` is the one function instantiated four times. Right's
+  dividers sit on the dock's LEFT edge (drag left widens, unchanged from
+  step 2); left's sit on its RIGHT edge (drag right widens — the opposite
+  sign). Plus `#wmdivider-bottomh` (height, top edge, drag up grows it) and
+  `#wmdivider-bottomsplit` (the split, only shown with two windows).
+- **Menus/popups vs. an INNER dock.** `songRegionRight()` (unchanged) still
+  clamps correctly against a FULL dock (it shrinks `#songregion`'s own grid
+  column) and needs no change for an INNER dock either — an INNER dock only
+  narrows `#songcenter`'s internal row, not `#songregion`'s own outer rect,
+  which is exactly right: header-row menus aren't supposed to avoid a panel
+  that only sits beside the roll. No existing menu clamps against the LEFT
+  edge (everything anchors from a header/footer button and only ever
+  overflows right), so a FULL left dock needed no new clamp site either —
+  noted here in case a future one does.
+- **Tests:** `tests/night-roll.test.mjs`, "Window manager: …" — the step-2
+  pure-helper and integration tests, generalized (`wmDockSide`/`wmFloat` in
+  place of `wmToggleRight`; `document.getElementById(id+"-h2")._wmDockBtn`
+  in place of `document.getElementById("askdock")`, since the button is
+  built by `makeWindow()` rather than static markup — dynamically created
+  elements aren't reachable by id in the vm harness, only ones the app
+  itself looked up by a STATIC id and decorated in place, which is why the
+  Dock button lives at a fixed `id + "-h2"` lookup, not its own id); new
+  tests for docking left, FULL↔INNER mode switching (and that only FULL
+  toggles `hasdock`), the one-dock-at-a-time invariant, a single- and a
+  split two-window bottom dock (including a closed window's slot
+  collapsing), the left divider's opposite sign, the bottom dock's height
+  and split dividers, and the doubled migration (old `aidock` key, then
+  the pre-phase-A shape backfilling `mode`). FEATURES keyword "Window
+  controls".
+
+### Phase B (queued, not built)
+
+Drag-to-edge docking (grab a window's title and drop it on a dock zone,
+the way IntelliJ/VS Code do it) and tabs (a dock cell holding more than
+one window, only one shown at a time) — the structure is ready for both
+(a dock cell is already addressable, a window already moves between cells
+by node, `wm.bottom.ids` already holds more than one id) but neither is
+built. Also queued: two timeline views at once (shared `view.x`/
+`playCursor` today).
 
 ## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
 

@@ -440,8 +440,29 @@ drag are bolt-on scripts with special cases (why the jobs grip landed
 wrong). Migrate a few windows per commit with browser eyes; new windows
 born on it. Then drag-to-edge docking + tabs on top of it. Josh's rule:
 the song view is always the center; windows dock only left/right/bottom. Rename to "✦ AI" was already
-shipped separately (fe80df3). Steps 3-8 (left/bottom docks, other sheets
-dock, two timeline views, …) remain queued.
+shipped separately (fe80df3).
+PHASE A BUILT (2026-09-29, delegated to a subagent — token budget): left
+and bottom docks; a side dock's FULL height (edge to edge — the step-1/2
+behaviour) vs INNER (beside the roll only, the song's header/footer
+stay full width — Josh: "only the portion from the ruler to the bottom
+of the roll … a header and footer of the song below it from the outer
+context"); the bottom dock can split two windows side by side; and
+`makeWindow(id, {dockable})`, registering a window for the shared Dock
+menu (Left/Right/Bottom, then Full height/Beside the roll, then Float) —
+the ✕/drag/grip mechanisms it sits beside were already fully generic and
+are unchanged. Six windows migrated: AI, ALL NOTES, INSTRUMENTS, JOBS,
+PUBLISH, Status. 20 windows not yet migrated (list in NIGHT-ROLL.md
+"Window manager"), including `#importsheet`'s own drag/grip special case.
+`wm` pref shape gained `mode` (side docks) and `split` (bottom); migrated
+from both the pre-shell and the step-1/2 shapes. Details: NIGHT-ROLL.md
+"Window manager (shell + docks)" → "Phase A". Vm-tested (10 tests,
+`npm test` green); NOT yet browser-verified — the main session still owes
+headless screenshots at 1366x1024 (checklist in the subagent's report:
+each migrated window docked left/right/bottom, full vs inner, two windows
+split at the bottom, floating again, and a saved floating spot seeded in
+localStorage before load, since a fresh profile without one caused the
+last iPad regression) before this counts as shipped. Phase B (drag-to-
+edge docking, tabs) and two timeline views at once remain queued.
 
 ## QUEUED IDEA (Josh, 2026-09-27): folders above albums in Open
 

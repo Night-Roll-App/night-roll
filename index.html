@@ -231,7 +231,7 @@
   }
   .chip .solo.on { color: var(--gold); border-color: var(--gold); }
 
-  #rollwrap { flex: 1; position: relative; min-height: 0; }
+  #rollwrap { flex: 1; position: relative; min-height: 0; min-width: 0; }
   #cmpbar { display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-family: var(--mono); font-size: 12px;
             color: var(--text); background: var(--panel); border-bottom: 1px solid var(--grid); flex-wrap: wrap; }
   #cmpbar button { min-height: 32px; padding: 4px 10px; }
@@ -670,15 +670,23 @@
   /* ✦ AI: the in-app AI sheet. The log is the tall part; rows stay fixed. */
   .sheet.ask { height: 88dvh; width: min(680px, 100%); }
   #asksheet .sheet.ask { width: max(min(680px, 100%), 75vw); max-width: 100%; } /* three quarters of the screen, whatever rule comes later (Josh, 2026-09-27: "shrunk back to a third") */
-  /* Window manager: shell + docks (build steps 1-2 of the windowing plan —
-     open-items.md "a real windowing system", REBUILT 2026-09-29 after
-     attempt 1, c322e3c, broke on the iPad — see the comment on #shell in
-     the body markup). #songregion is ALWAYS the centered middle column
-     (Josh's rule); docks are grid cells sized by CSS vars a dock's JS sets
-     on #shell, default 0px (closed). Grid items stretch to fill their cell
-     by default, so #songregion needs no explicit height/width of its own —
-     it's pixel-identical to the old body-is-a-flex-column layout with every
-     dock at 0px. */
+  /* Window manager: shell + docks (phase A of the windowing plan —
+     open-items.md "a real windowing system"; steps 1-2, REBUILT 2026-09-29
+     after attempt 1, c322e3c, broke on the iPad — see the comment on #shell
+     in the body markup — laid the shell down; this phase adds left/bottom
+     docks, an INNER mode for the side docks, a split bottom, and
+     makeWindow()). #songregion is ALWAYS the centered middle column (Josh's
+     rule); docks are cells sized by CSS vars a dock's JS sets, default 0px
+     (closed). A FULL side dock is an outer #shell grid cell, edge to edge
+     (beside the header and footer too, grid-row 1/3); an INNER side dock is
+     nested inside #songregion's own center row (#songcenter), beside
+     #rollwrap only — the song's header rows stay above it, its footer below,
+     spanning the full width under it (Josh: "a header and footer of the song
+     below it from the outer context"). Grid/flex items stretch to fill their
+     cell by default, so nothing else about #songregion's own layout needs an
+     explicit height/width — pixel-identical to the old layout with every
+     dock at 0px. See makeWindow()/wmLayoutAll() and NIGHT-ROLL.md "Window
+     manager (shell + docks)". */
   #shell {
     display: grid;
     grid-template-columns: var(--dl-w, 0px) 1fr var(--dr-w, 0px);
@@ -687,21 +695,41 @@
     min-height: 0;
   }
   #songregion { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  #dockleft { grid-column: 1; grid-row: 1 / 3; min-width: 0; min-height: 0; }
+  #dockleft { grid-column: 1; grid-row: 1 / 3; min-width: 0; min-height: 0; position: relative; }
   #dockright { grid-column: 3; grid-row: 1 / 3; min-width: 0; min-height: 0; position: relative; }
-  #dockbottom { grid-column: 1 / 4; grid-row: 2; min-width: 0; min-height: 0; }
-  /* a docked sheet: its .overlay fills the dock cell in place (no backdrop,
-     no position:fixed — the grid column IS its reserved width) and its
-     .sheet fills the overlay, seam to seam. Generic on `.docked` so any
-     future dock (steps 3-8) reuses it unmodified. */
+  /* bottom dock: INNER width (grid-column 2, between the side docks, under
+     #songregion only — not 1/4) by default, chosen so the bottom dock reads
+     as an extension of the song's own bottom band rather than a strip that
+     runs under a side panel too; a full-width bottom is not built (phase A
+     doesn't need it — only the split-in-two case was asked for). May hold
+     two windows side by side (#dockbottom0/#dockbottom1), split by
+     #wmdivider-bottomsplit. */
+  #dockbottom { grid-column: 2; grid-row: 2; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: row; }
+  #dockbottom .dockslot { flex: 1 1 0; min-width: 0; min-height: 0; overflow: hidden; display: none; }
+  #dockbottom .dockslot.shown { display: flex; }
+  #dockbottom.split #dockbottom0.shown { flex: 0 0 calc((100% - 8px) * var(--db-split, 0.5)); }
+  #dockbottom.split #dockbottom1.shown { flex: 1 1 0; }
+  /* the center band: #rollwrap plus its two INNER side-dock cells, sized by
+     their own CSS vars (0px closed) — same "stretch to fill, pixel-identical
+     at 0px" contract as the outer docks */
+  #songcenter { display: flex; flex-direction: row; flex: 1; min-width: 0; min-height: 0; }
+  #dockleftinner  { flex: 0 0 var(--dli-w, 0px); min-width: 0; min-height: 0; position: relative; overflow: hidden; }
+  #dockrightinner { flex: 0 0 var(--dri-w, 0px); min-width: 0; min-height: 0; position: relative; overflow: hidden; }
+  /* a docked window: its .overlay fills the dock cell in place (no backdrop,
+     no position:fixed — the cell IS its reserved space) and its .sheet fills
+     the overlay, seam to seam. Generic on `.docked` so any dock (side, full
+     or inner, or bottom) reuses it unmodified. */
   .overlay.docked { position: static; display: none; background: transparent; padding: 0; width: 100%; height: 100%; z-index: auto; }
   .overlay.docked.on { display: flex; }
-  /* !important: sheetDrag() restores a floating sheet's saved spot as INLINE
-     transform/width/height — docked, those left the panel shifted down with
-     gaps above and below on Josh's iPad (a fresh browser had none saved) */
+  /* !important: sheetDrag() restores a floating window's saved spot as
+     INLINE transform/width/height — docked, those left the panel shifted
+     down with gaps above and below on Josh's iPad (a fresh browser had none
+     saved) */
   .overlay.docked .sheet { width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; transform: none !important; margin: 0 !important; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0; }
-  /* beside a dock the song is narrower: the footer keeps ONE row and scrolls
-     sideways instead of wrapping its last button onto a second line */
+  /* beside a FULL side dock the song is narrower: the footer keeps ONE row
+     and scrolls sideways instead of wrapping its last button onto a second
+     line. Only a FULL dock does this — an INNER dock only narrows the roll
+     band, not the header/footer rows, so the footer is unaffected. */
   #shell.hasdock footer { flex-wrap: nowrap; overflow-x: auto; }
   #shell.hasdock footer > * { flex: none; }
   /* #asksheet .sheet.ask (below) sets a floating-only custom width at ID+class
@@ -709,13 +737,38 @@
      here too (ID + .docked + .ask) to actually fill the dock while docked */
   #asksheet.docked .sheet.ask { width: 100%; max-width: none; height: 100%; max-height: none; }
   .overlay.docked .sheetgrip { display: none; } /* the dock's divider resizes it instead */
-  #askdock { margin-left: auto; cursor: pointer; min-height: 28px; padding: 2px 9px; font-size: 12px; }
-  /* the divider is a permanent child of #dockright (not of the sheet that's
-     docked in it — steps 3-8 can reuse the same cell for a different sheet
-     without needing their own divider markup); shown only while occupied */
-  #wmdivider { display: none; position: absolute; left: -4px; top: 0; bottom: 0; width: 8px; cursor: ew-resize; touch-action: none; z-index: 3; }
-  #dockright.occupied #wmdivider { display: block; }
-  #wmdivider:hover, #wmdivider.dragging { background: rgba(91, 120, 232, 0.35); } /* --accent, translucent */
+  /* the generic Dock control every dockable window gets (makeWindow) — the
+     spot #askdock used to sit alone, now built the same way for all six */
+  .wmdock { margin-left: auto; cursor: pointer; min-height: 28px; padding: 2px 9px; font-size: 12px; }
+  #wmmenu {
+    display: none; position: fixed; z-index: 63;
+    background: var(--panel2); border: 1px solid var(--grid); border-radius: 10px;
+    padding: 6px; min-width: 190px; max-width: 80vw;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  #wmmenu.on { display: block; }
+  #wmmenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 40px; padding: 8px 10px; font-family: var(--mono); font-size: 13px; color: var(--text); cursor: pointer; }
+  #wmmenu .fitem:active { background: var(--panel); }
+  #wmmenu .fitem.active { color: var(--accent); }
+  #wmmenu .fsep { height: 1px; background: var(--grid); margin: 5px 2px; }
+  /* dock dividers: one pair per side (full cell + inner cell) — a window
+     drags whichever one is visible; shown only while that cell is occupied
+     (something is docked there, open or not — same as the divider always
+     being there to grab even when the panel behind it happens to be closed) */
+  .wmdivider-x { display: none; position: absolute; top: 0; bottom: 0; width: 8px; cursor: ew-resize; touch-action: none; z-index: 3; }
+  .wmdivider-x:hover, .wmdivider-x.dragging { background: rgba(91, 120, 232, 0.35); } /* --accent, translucent */
+  #wmdivider-left-full, #wmdivider-left-inner { right: -4px; }
+  #wmdivider-right-full, #wmdivider-right-inner { left: -4px; }
+  #dockleft.occupied #wmdivider-left-full, #dockleftinner.occupied #wmdivider-left-inner,
+  #dockright.occupied #wmdivider-right-full, #dockrightinner.occupied #wmdivider-right-inner { display: block; }
+  /* the bottom dock: a height divider along its top edge, and (only with two
+     windows split) a width divider between them */
+  #wmdivider-bottomh { display: none; position: absolute; left: 0; right: 0; top: -4px; height: 8px; cursor: ns-resize; touch-action: none; z-index: 3; }
+  #wmdivider-bottomh:hover, #wmdivider-bottomh.dragging { background: rgba(91, 120, 232, 0.35); }
+  #dockbottom.occupied #wmdivider-bottomh { display: block; }
+  #wmdivider-bottomsplit { display: none; position: relative; flex: 0 0 8px; cursor: ew-resize; touch-action: none; z-index: 3; }
+  #wmdivider-bottomsplit:hover, #wmdivider-bottomsplit.dragging { background: rgba(91, 120, 232, 0.35); }
+  #dockbottom.split #wmdivider-bottomsplit { display: block; }
   /* sheets move: drag by the title line — the Ask sheet over the capture panel
      hid it (Josh, 2026-09-27: "I should be able to move these dialogues around") */
   .sheet > h2, #importsheet .row:first-child { cursor: move; touch-action: none; -webkit-user-select: none; user-select: none; }
@@ -822,16 +875,20 @@
 </style>
 </head>
 <body>
-<!-- Window manager shell (build steps 1-2 of the windowing plan — open-items.md
-     "a real windowing system"; attempt 1, c322e3c, tried <html> padding-right +
+<!-- Window manager shell (windowing plan phase A — open-items.md "a real
+     windowing system"; attempt 1, c322e3c, tried <html> padding-right +
      position:fixed for the AI panel and broke on the iPad: it didn't span full
      height, the roll/footer ran under it, header buttons were cut off, ⇥/⇤
      rendered empty. #shell is a 3x2 grid: #songregion (the roll/score/tracks —
      the song, ALWAYS centered, Josh's rule) is the fixed 1fr middle column;
-     #dockleft/#dockright/#dockbottom are empty cells whose track sizes are CSS
+     #dockleft/#dockright are empty FULL-height cells (edge to edge) and
+     #dockbottom an empty inner-width cell (between them), track sizes CSS
      vars (--dl-w/--dr-w/--db-h, default 0px) — a dock's JS sets the var and
-     moves a sheet's node into the cell, nothing else about #songregion's own
-     CSS changes. See NIGHT-ROLL.md "Window manager (shell + docks)". -->
+     moves a window's node into the cell. #songregion also nests #songcenter
+     (#rollwrap plus #dockleftinner/#dockrightinner, --dli-w/--dri-w) for a
+     side dock's INNER mode — beside the roll only, not the header/footer.
+     Nothing else about #songregion's own CSS changes at 0px. See
+     NIGHT-ROLL.md "Window manager (shell + docks)". -->
 <div id="shell">
 <div id="songregion">
 <header>
@@ -902,7 +959,11 @@
   <button id="cmpswap">hear the saved copy</button>
   <button id="cmpdone" aria-label="Leave compare">✕</button>
 </div>
+<div id="songcenter">
+<div id="dockleftinner"><div id="wmdivider-left-inner" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div></div>
 <div id="rollwrap"><canvas id="roll"></canvas></div>
+<div id="dockrightinner"><div id="wmdivider-right-inner" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div></div>
+</div><!-- /songcenter -->
 <div id="editrow">
 
   <div class="seg" id="modeseg">
@@ -1002,23 +1063,37 @@
   <button id="clearbtn" style="display:none">Clear edits</button>
 </footer>
 </div><!-- /songregion -->
-<div id="dockleft"></div>
-<div id="dockright">
-  <!-- generic right-dock divider (wmDrag): resizes whatever sheet is
-       currently docked here; a dock's own sheet markup carries no divider
-       of its own so any future docked sheet reuses this one unmodified -->
-  <div id="wmdivider" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div>
+<div id="dockleft">
+  <!-- generic dock divider (wmSideDividerize): resizes whatever window is
+       currently docked full-height here; a dock's own window markup carries
+       no divider of its own so any future docked window reuses this one
+       unmodified -->
+  <div id="wmdivider-left-full" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div>
 </div>
-<div id="dockbottom"></div>
+<div id="dockright">
+  <div id="wmdivider-right-full" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div>
+</div>
+<div id="dockbottom">
+  <div id="dockbottom0" class="dockslot"></div>
+  <div id="wmdivider-bottomsplit" role="separator" aria-orientation="vertical" aria-label="Resize the split bottom panels"></div>
+  <div id="dockbottom1" class="dockslot"></div>
+  <div id="wmdivider-bottomh" role="separator" aria-orientation="horizontal" aria-label="Resize the bottom panel"></div>
+</div>
 </div><!-- /shell -->
 <button id="panelshow" style="display:none;position:fixed;left:8px;bottom:8px;z-index:70;min-height:44px;box-shadow:0 4px 18px rgba(0,0,0,.5)" aria-label="Show controls">▴</button>
 
+<!-- display:contents (invisible to layout — wmLayoutAll's float step): the
+     window's own node moves into a dock while docked; this wrapper marks
+     where it lives while floating and is the target floating moves it back
+     to (see #asksheet-home below for the pattern this generalizes). -->
+<div id="instsheet-home" style="display:contents">
 <div class="overlay" id="instsheet">
   <div class="sheet help">
-    <h2 id="instsheettitle">INSTRUMENTS</h2>
+    <h2 id="instsheet-h2"><span id="instsheettitle">INSTRUMENTS</span></h2>
     <div id="instrows" style="display:flex;flex-direction:column;gap:7px"></div>
   </div>
 </div>
+</div><!-- /instsheet-home -->
 <div class="overlay" id="songsheet">
   <div class="sheet help">
     <h2 id="songsheettitle">SONGS</h2>
@@ -1116,9 +1191,10 @@
   </div>
 </div>
 
+<div id="notelistsheet-home" style="display:contents">
 <div class="overlay" id="notelistsheet">
   <div class="sheet help">
-    <h2>ALL NOTES</h2>
+    <h2 id="notelistsheet-h2">ALL NOTES</h2>
     <div id="notejump"></div>
     <div class="status" id="notelistStatus"></div>
     <div id="notelistrows" style="display:flex;flex-direction:column;gap:7px"></div>
@@ -1128,6 +1204,7 @@
     </div>
   </div>
 </div>
+</div><!-- /notelistsheet-home -->
 
 <div class="overlay" id="aboutsheet">
   <div class="sheet">
@@ -1158,13 +1235,15 @@
   </div>
 </div>
 
+<div id="infosheet-home" style="display:contents">
 <div class="overlay" id="infosheet">
   <div class="sheet">
-    <h2>Status</h2>
+    <h2 id="infosheet-h2">Status</h2>
     <p id="infosheettext" style="font-family:var(--mono);font-size:13px;line-height:1.6;
        white-space:pre-wrap;word-break:break-word;margin:8px 0"></p>
   </div>
 </div>
+</div><!-- /infosheet-home -->
 
 <div class="overlay" id="drumsheet">
   <div class="sheet">
@@ -1501,7 +1580,7 @@
       <dt>✦ AI</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ AI</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
       <dt>Move a sheet</dt><dd>Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (AI, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk to the AI; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
-      <dt>Dock right</dt><dd>Tap <b>Dock</b> beside AI to pin the sheet to the right edge as its own panel instead of a floating window — no backdrop, so you can keep working the roll (tap, edit, play) with it open, the song laid out in what's left. Drag the strip on its left edge to resize it (280px to about 60% of the window). <b>Float</b> undocks it again, right where it was. Remembered on this device — opening ✦ AI reopens it docked if you left it that way. On a phone-width window the <b>Dock</b> button is hidden and the AI sheet is always floating — there's no room to give the song.</dd>
+      <dt>Dock right (and left, and bottom)</dt><dd>Tap <b>Dock</b> beside AI, ALL NOTES, INSTRUMENTS, JOBS, PUBLISH, or Status to open its menu: <b>Left</b>, <b>Right</b>, or <b>Bottom</b> pin it to that edge instead of a floating window — no backdrop, so you can keep working the roll (tap, edit, play) with it open, the song laid out in what's left. Once docked to a side, the same menu offers <b>Full height</b> (edge to edge, beside the header and footer too) or <b>Beside the roll</b> (the header rows above and the footer below stay full width — only the roll narrows). Drag the strip on the dock's inner edge to resize it (280px to about 60% of the window). The bottom dock can hold two windows side by side — dock a second one there and a divider splits them; drag it to change the split, and drag the strip along the bottom dock's top edge to resize its height (160px to about 70% of the window). <b>Float</b> undocks a window again, right where it was. Remembered on this device — reopening a window re-docks it if you left it docked; closing one frees its space without undocking it. On a phone-width window the <b>Dock</b> button is hidden and every window is always floating — there's no room to give the song.</dd>
       <dt>⏳ Jobs</dt><dd>Captures and publishes run as background jobs: start one and close its panel — the <b>⏳</b> chip in the footer shows how many are running, tap it for the list (title, a progress bar, progress text like "12/92 · Frog's Theme 40%", and per job <b>Open</b> to get back to its panel, <b>✕</b> to cancel a running one or dismiss a finished one, <b>↻</b> to retry what is left). Done and cancelled jobs clear themselves a few seconds after they end, and the ⏳ chip itself hides once none are left; a <b>failed</b> or <b>interrupted</b> job stays until you ↻ or ✕ it — those are the ones to look at. A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job <i>interrupted</i> with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; one publish per folder; one Publish all at a time.</dd>
       <dt>Publish dialog</dt><dd>Starting a folder's publish from Open → LOCAL, or tapping <b>Publish all</b> in the Publish sheet, opens a dialog for that one job: an overall bar, a row per song (its title, and a state — <b>…</b> queued, a small bar while it runs, <b>✓</b> done, <b>⚠</b> failed with the error), the job's own note line, <b>Cancel</b> while it's running (stopping it between songs — what's already published stays published), and <b>Close</b> always. Closing it never cancels the job — reopen it from ⏳'s <b>Open</b> on that job any time. Capture jobs still open the familiar capture panel.</dd>
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
@@ -1622,6 +1701,10 @@
 </div>
 <div id="filesub"></div>
 <div id="voicemenu"></div>
+<!-- the shared Dock-control popup every dockable window opens (makeWindow) —
+     one menu, built fresh each time from wmMenuItems(), same pattern as
+     #voicemenu/#filesub -->
+<div id="wmmenu"></div>
 
 <div id="metsheet">
   <div class="metpanel">
@@ -1688,9 +1771,10 @@
   </div>
 </div>
 
+<div id="jobssheet-home" style="display:contents">
 <div class="overlay" id="jobssheet">
   <div class="sheet">
-    <h2>JOBS</h2>
+    <h2 id="jobssheet-h2">JOBS</h2>
     <div id="jobslist" style="display:flex;flex-direction:column;gap:8px"></div>
     <div class="status" id="jobshelp">Captures and publishes run here in the background. Close their panels any time; reopen from this list. A job keeps going while the app is in front; it pauses when the app is in the background and picks up where it was.</div>
     <div class="row" style="margin-top:10px">
@@ -1698,10 +1782,12 @@
     </div>
   </div>
 </div>
+</div><!-- /jobssheet-home -->
 
+<div id="pubjobsheet-home" style="display:contents">
 <div class="overlay" id="pubjobsheet">
   <div class="sheet">
-    <h2 id="pubjobtitle">PUBLISH</h2>
+    <h2 id="pubjobsheet-h2"><span id="pubjobtitle">PUBLISH</span></h2>
     <div class="row"><div class="jobbar" id="pubjobbar"><div></div></div></div>
     <div id="pubjoblist"></div>
     <div class="status" id="pubjobnote"></div>
@@ -1711,6 +1797,7 @@
     </div>
   </div>
 </div>
+</div><!-- /pubjobsheet-home -->
 
 <div class="overlay" id="errsheet">
   <div class="sheet">
@@ -1756,13 +1843,14 @@
   </div>
 </div>
 
-<!-- display:contents (invisible to layout — see wmFloat): #asksheet's node
-     moves into #dockright while docked; this wrapper marks where it lives
-     while floating and is the target wmFloat moves it back to. -->
+<!-- display:contents (invisible to layout — see wmLayoutAll's float step):
+     #asksheet's node moves into a dock while docked; this wrapper marks
+     where it lives while floating and is the target floating moves it back
+     to. Every migrated window has the same "<id>-home" wrapper now. -->
 <div id="asksheet-home" style="display:contents">
 <div class="overlay" id="asksheet">
   <div class="sheet ask">
-    <h2>AI<button id="askdock" aria-label="Dock right — pin it to the edge" title="Dock right — pin it to the edge">Dock</button></h2>
+    <h2 id="asksheet-h2">AI</h2>
     <div class="chiprow" id="askmoderow" role="tablist" aria-label="Which chat">
       <button id="askmodesong" role="tab" class="active">♪ this song</button>
       <button id="askmodegen" role="tab">✦ general</button>
@@ -18387,7 +18475,7 @@ askInboxStart();
 (function sheetDrag() {
   if (typeof document === "undefined" || !document.body) return;
   const handleFor = t => {
-    if (t.closest && t.closest("button")) return null; // never start a drag from a button tap (askdock's Dock/Float button lives inside its h2)
+    if (t.closest && t.closest("button")) return null; // never start a drag from a button tap (a window's Dock control lives inside its h2)
     const h2 = t.closest && t.closest(".sheet > h2");
     if (h2) return {handle: h2, box: h2.parentElement};
     const row = t.closest && t.closest("#importsheet .row:first-child");
@@ -18472,55 +18560,122 @@ askInboxStart();
     for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on") && !el.classList.contains("docked")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box) restore(box); } }
   }).observe(document.body, {attributes: true, attributeFilter: ["class"], subtree: true});
 })();
-// ---- Window manager: right dock (dock right / float) — build steps 1-2 of
-// the windowing plan (open-items.md, "a real windowing system", REBUILT
-// 2026-09-29 after attempt 1, c322e3c, broke on the iPad — see the #shell
-// comment in the body markup and NIGHT-ROLL.md "Window manager (shell +
-// docks)"). #shell's grid (CSS above) IS the layout mechanism now: docking
-// a sheet sets --dr-w on #shell (the grid track the CSS reads) and moves
-// the sheet's own node into #dockright — #songregion needs no code of its
-// own, it just shrinks into what the grid track leaves it, same as any
-// other grid resize. resize() — the exact function window's own "resize"
-// listener calls — runs directly from wmLayoutRight() wherever the width
-// changes, so canvas/ruler/lanes (all read wrap.clientWidth live) redraw at
-// the new size; the live ResizeObserver on #rollwrap (above, "subtitle
-// strip toggling resizes the roll") also fires on its own in a real
-// browser whenever the grid track actually changes.
+// ---- Window manager: shell + docks, phase A (open-items.md, "a real
+// windowing system"). Steps 1-2 (REBUILT 2026-09-29 after attempt 1,
+// c322e3c, broke on the iPad — see the #shell comment in the body markup and
+// NIGHT-ROLL.md "Window manager (shell + docks)") built the shell and a
+// right-only dock; this phase generalizes it to left/right/bottom, an INNER
+// mode for the side docks (beside the roll only, vs FULL height edge to
+// edge), a split bottom (two windows side by side), and makeWindow() —
+// registering a window as dockable and giving it the shared Dock control,
+// in place of the one-off #askdock button. #shell's grid + #songcenter's
+// flex row (CSS above) ARE the layout mechanism: docking sets a CSS var the
+// CSS already reads and moves the window's own node into the right cell —
+// #songregion (or its center row) needs no code of its own, it just shrinks
+// into what the track/cell leaves it, same as any other grid/flex resize.
+// resize() — the exact function window's own "resize" listener calls — runs
+// directly from wmLayoutAll() wherever a track's size changes, so
+// canvas/ruler/lanes (all read wrap.clientWidth live) redraw at the new
+// size; the live ResizeObserver on #rollwrap (above, "subtitle strip
+// toggling resizes the roll") also fires on its own in a real browser
+// whenever a track actually changes.
 //
-// wm = {right: {id, w}}, flat localStorage (ff1roll-wm), migrated once from
-// the old asksheet-only ff1roll-aidock ({docked, width}). Pure helpers
-// (wmClampSize, wmAllowed, wmMigrate, wmSetRight, wmClearRight) take no DOM
-// — the vm suite calls them directly — everything else here only uses
-// getElementById + classList/style, which the harness stubs too, so it's
-// exercised the same way the old aiDock tests exercised aiDockLayout().
+// wm = {left?: {id, w, mode}, right?: {id, w, mode}, bottom?: {ids, h,
+// split}} — mode is "full" (edge to edge, beside the header/footer too) or
+// "inner" (beside the roll only); bottom.ids holds one or two window ids
+// side by side. Flat localStorage (ff1roll-wm), migrated once from the old
+// asksheet-only ff1roll-aidock ({docked, width}), and again (wmMigrateShape)
+// from the step-1/2 shape ({right: {id, w}}, no mode — always meant FULL).
+// Pure helpers (wmClampSize, wmClampHeight, wmClampSplit, wmAllowed,
+// wmMigrate, wmMigrateShape, wmSetSide, wmClearSide, wmSetSideMode,
+// wmDockBottom, wmClearBottom, wmSetBottomHeight, wmSetBottomSplit,
+// wmWhereIs) take no DOM — the vm suite calls them directly — everything
+// else here only uses getElementById + classList/style, which the harness
+// stubs too, so the action functions (wmDockSide, wmDockBottomWindow,
+// wmSetSideModeFor, wmFloat) are exercised the same way the old right-dock
+// tests exercised wmToggleRight/wmLayoutRight. Menu/button DOM (createElement,
+// popup positioning) is real-browser-only, like sheetDrag below — not unit
+// tested, same as the ✕/grip/drag loops it sits beside.
 const WM_KEY = "ff1roll-wm";
 const WM_OLD_KEY = "ff1roll-aidock"; // pre-shell pref: {docked, width}, asksheet only
-const WM_MIN_W = 280;      // narrowest a dock's divider allows
-const WM_DEFAULT_W = 380;  // a dock's width the first time it's ever opened
-const WM_PHONE_MAX = 700;  // below this window width there is no "what's left" to give the song
+const WM_MIN_W = 280;      // narrowest a side dock's divider allows
+const WM_DEFAULT_W = 380;  // a side dock's width the first time it's ever opened
+const WM_MIN_H = 160;      // shortest the bottom dock's divider allows
+const WM_DEFAULT_H = 240;  // the bottom dock's height the first time it's ever opened
+const WM_MIN_SPLIT = 0.2;  // narrowest either half of a split bottom dock can be
+const WM_PHONE_MAX = 700;  // below this window width there is no "what's left" to give the song — no dock, any side
 
-function wmClampSize(w, innerWidth) { // pure: bounds a dock width to [280, 60% of the window]
+function wmClampSize(w, innerWidth) { // pure: bounds a side dock's width to [280, 60% of the window]
   const iw = (typeof innerWidth === "number" && innerWidth > 0) ? innerWidth : 1024;
   return Math.max(WM_MIN_W, Math.min(Math.round(iw * 0.6), Math.round(w)));
 }
-function wmAllowed(innerWidth) { return typeof innerWidth === "number" && innerWidth >= WM_PHONE_MAX; } // pure: phone width never offers a dock
-function wmMigrate(oldPref) { // pure: the old {docked, width} shape -> {right: {id, w}} | {}
+function wmClampHeight(h, innerHeight) { // pure: bounds the bottom dock's height to [160, 70% of the window]
+  const ih = (typeof innerHeight === "number" && innerHeight > 0) ? innerHeight : 768;
+  return Math.max(WM_MIN_H, Math.min(Math.round(ih * 0.7), Math.round(h)));
+}
+function wmClampSplit(f) { return Math.max(WM_MIN_SPLIT, Math.min(1 - WM_MIN_SPLIT, f)); } // pure: the fraction the bottom dock's first slot keeps
+function wmAllowed(innerWidth) { return typeof innerWidth === "number" && innerWidth >= WM_PHONE_MAX; } // pure: phone width never offers a dock, any side
+function wmMigrate(oldPref) { // pure: the pre-shell {docked, width} shape -> {right: {id, w}} | {}
   if (!oldPref || typeof oldPref !== "object" || !oldPref.docked) return {};
   const w = (typeof oldPref.width === "number" && oldPref.width > 0) ? oldPref.width : WM_DEFAULT_W;
   return {right: {id: "asksheet", w}};
 }
-function wmSetRight(state, id, w, innerWidth) { return Object.assign({}, state, {right: {id, w: wmClampSize(w, innerWidth)}}); } // pure
-function wmClearRight(state) { const next = Object.assign({}, state); delete next.right; return next; } // pure
+function wmMigrateShape(state) { // pure: the step-1/2 shape (a side dock with no `mode`, always FULL; a bottom dock — there wasn't one — with no `split`) -> phase-A shape
+  if (!state || typeof state !== "object") return {};
+  let next = state;
+  for (const side of ["left", "right"]) {
+    if (next[side] && !next[side].mode) { if (next === state) next = Object.assign({}, state); next[side] = Object.assign({}, next[side], {mode: "full"}); }
+  }
+  if (next.bottom && next.bottom.split == null) { if (next === state) next = Object.assign({}, state); next.bottom = Object.assign({}, next.bottom, {split: 0.5}); }
+  return next;
+}
+function wmSetSide(state, side, id, w, mode, innerWidth) { // pure: side is "left"|"right"
+  return Object.assign({}, state, {[side]: {id, w: wmClampSize(w, innerWidth), mode: mode === "inner" ? "inner" : "full"}});
+}
+function wmClearSide(state, side) { const next = Object.assign({}, state); delete next[side]; return next; } // pure
+function wmSetSideMode(state, side, mode) { // pure: flips full/inner in place — doesn't move the window or touch its width
+  if (!state[side]) return state;
+  return Object.assign({}, state, {[side]: Object.assign({}, state[side], {mode: mode === "inner" ? "inner" : "full"})});
+}
+function wmDockBottom(state, id, split, innerHeight) { // pure: adds `id` to the bottom dock — the first open slot, or replaces the second
+  const cur = (state.bottom && state.bottom.ids) || [];
+  const ids = cur.includes(id) ? cur : cur.length < 2 ? [...cur, id] : [cur[0], id]; // a third window bumps whatever was in the second slot
+  return Object.assign({}, state, {bottom: {
+    ids, h: wmClampHeight((state.bottom && state.bottom.h) || WM_DEFAULT_H, innerHeight),
+    split: wmClampSplit(split != null ? split : (state.bottom && state.bottom.split != null ? state.bottom.split : 0.5)),
+  }});
+}
+function wmClearBottom(state, id) { // pure: drops one id; an empty result removes the bottom key entirely
+  const ids = ((state.bottom && state.bottom.ids) || []).filter(x => x !== id);
+  const next = Object.assign({}, state);
+  if (!ids.length) { delete next.bottom; return next; }
+  next.bottom = Object.assign({}, state.bottom, {ids});
+  return next;
+}
+function wmSetBottomHeight(state, h, innerHeight) { // pure
+  if (!state.bottom) return state;
+  return Object.assign({}, state, {bottom: Object.assign({}, state.bottom, {h: wmClampHeight(h, innerHeight)})});
+}
+function wmSetBottomSplit(state, split) { // pure
+  if (!state.bottom) return state;
+  return Object.assign({}, state, {bottom: Object.assign({}, state.bottom, {split: wmClampSplit(split)})});
+}
+function wmWhereIs(state, id) { // pure: which dock (if any) currently claims `id`, and a side dock's mode
+  if (state.left && state.left.id === id) return {dock: "left", mode: state.left.mode || "full"};
+  if (state.right && state.right.id === id) return {dock: "right", mode: state.right.mode || "full"};
+  if (state.bottom && state.bottom.ids && state.bottom.ids.includes(id)) return {dock: "bottom"};
+  return null;
+}
 function wmLoad() {
   try {
     const raw = localStorage.getItem(WM_KEY);
-    if (raw != null) { const parsed = JSON.parse(raw); if (parsed && typeof parsed === "object") return parsed; }
+    if (raw != null) { const parsed = JSON.parse(raw); if (parsed && typeof parsed === "object") return wmMigrateShape(parsed); }
   } catch (err) { /* private mode */ }
   try { // migrate the old pref once, whatever it said, then forget it — never re-read after this
     const oldRaw = localStorage.getItem(WM_OLD_KEY);
     if (oldRaw != null) {
       localStorage.removeItem(WM_OLD_KEY);
-      const migrated = wmMigrate(JSON.parse(oldRaw));
+      const migrated = wmMigrateShape(wmMigrate(JSON.parse(oldRaw)));
       if (migrated.right) wmSave(migrated);
       return migrated;
     }
@@ -18530,73 +18685,325 @@ function wmLoad() {
 function wmSave(state) { try { localStorage.setItem(WM_KEY, JSON.stringify(state)); } catch (err) { /* private mode */ } }
 let wm = wmLoad();
 function wmInnerWidth() { return (typeof window !== "undefined" && window.innerWidth) || 1024; }
-// The node currently parented in #dockright (or null) — the ONE piece of
-// state wmLayoutRight can't re-derive from wm alone: once wm.right is
-// cleared (floated), nothing in `wm` says which element to move back out.
-// Tracking the element directly also makes floating idempotent and cheap
-// (no querying .docked/.parentElement, which the vm harness doesn't back
-// the same way a real DOM does).
-let wmRightEl = null;
-// Applies wm.right to the DOM: moves the docked sheet's node between
-// #dockright and its floating home (id + "-home"), sets --dr-w, and
-// redraws. The width reservation only applies while the sheet is actually
-// shown (docked AND open) — closing it (✕, backdrop, Esc) zeroes --dr-w
-// but the move itself is driven by the pref alone, so a closed sheet stays
-// parked in the dock and reopening needs no re-dock. Safe to call any time
-// (open, close, toggle, drag, or a live window resize) — idempotent.
-function wmLayoutRight() {
+function wmInnerHeight() { return (typeof window !== "undefined" && window.innerHeight) || 768; }
+// Which windows makeWindow() has registered, and whether each is dockable —
+// id -> {dockable}. The ✕/grip/drag loops further down this file (unchanged)
+// are the shared, generic mechanism every window — migrated or not — already
+// gets; this registry only adds the Dock control on top, for the six windows
+// migrated so far.
+const WM_WINDOWS = {};
+// The node currently parked in each side dock's cell (full OR inner — either
+// one — or null), like the old wmRightEl generalized: the ONE piece of state
+// wmLayoutSide can't re-derive from wm alone, since once wm[side] is cleared
+// (floated) nothing in `wm` says which element to move back out. Tracking
+// the element directly also makes floating idempotent and cheap (no querying
+// .docked/.parentElement, which the vm harness doesn't back the same way a
+// real DOM does).
+let wmSideEl = {left: null, right: null};
+let wmBottomEls = []; // same idea, for the bottom dock's slots, in slot order
+function wmSideCells(side) {
+  return side === "left" ? {full: document.getElementById("dockleft"), inner: document.getElementById("dockleftinner")}
+                          : {full: document.getElementById("dockright"), inner: document.getElementById("dockrightinner")};
+}
+// Applies wm[side] to the DOM: moves the docked window's node between its
+// dock cell (full or inner — whichever wm[side].mode says) and its floating
+// home (id + "-home"), sets --d{l,r}-w / --d{l,r}i-w, and returns whether
+// this side is a FULL dock actively reserving width (wmLayoutAll uses that
+// to narrow the footer). The width reservation only applies while the
+// window is actually shown (docked AND open) — closing it (✕, backdrop,
+// Esc) zeroes the reservation but the move itself is driven by the pref
+// alone, so a closed window stays parked and reopening needs no re-dock.
+// Safe to call any time (open, close, dock, float, mode switch, drag, or a
+// live window resize) — idempotent.
+function wmLayoutSide(side) {
   const shell = document.getElementById("shell");
-  const dockright = document.getElementById("dockright");
-  const wantId = wm.right && wm.right.id;
+  const cells = wmSideCells(side);
+  const state = wm[side];
+  const wantId = state && state.id;
   const wantEl = wantId && wmAllowed(wmInnerWidth()) && document.getElementById(wantId);
-  if (wmRightEl && wmRightEl !== wantEl) { // floating: move whatever WAS docked back to its home
-    const home = document.getElementById(wmRightEl.id + "-home");
-    if (home) home.appendChild(wmRightEl);
-    wmRightEl.classList.remove("docked");
-    wmRightEl = null;
+  const wantMode = (state && state.mode) || "full";
+  if (wmSideEl[side] && wmSideEl[side] !== wantEl) { // floating: move whatever WAS docked back to its home
+    const home = document.getElementById(wmSideEl[side].id + "-home");
+    if (home) home.appendChild(wmSideEl[side]);
+    wmSideEl[side].classList.remove("docked");
+    wmSideEl[side] = null;
   }
-  if (wantEl && wmRightEl !== wantEl) { // docking: move the wanted sheet in
-    dockright.appendChild(wantEl);
-    wantEl.classList.add("docked");
-    wmRightEl = wantEl;
+  if (wantEl) {
+    const targetCell = wantMode === "inner" ? cells.inner : cells.full;
+    if (wmSideEl[side] !== wantEl || wantEl._wmCell !== targetCell) { // docking, or switching full<->inner
+      targetCell.appendChild(wantEl);
+      wantEl.classList.add("docked");
+      wantEl._wmCell = targetCell;
+      wmSideEl[side] = wantEl;
+    }
   }
-  dockright.classList.toggle("occupied", !!wmRightEl);
-  const active = !!(wmRightEl && wmRightEl.classList.contains("on"));
-  shell.style.setProperty("--dr-w", active ? wmClampSize(wm.right.w, wmInnerWidth()) + "px" : "0px");
-  if (shell.classList) shell.classList.toggle("hasdock", !!active); // the footer keeps one scrolling row beside a dock
-  const btn = document.getElementById("askdock");
-  btn.style.display = wmAllowed(wmInnerWidth()) ? "" : "none";
-  const docked = !!(wm.right && wm.right.id === "asksheet"); // the PREF, not "live" — reflects what reopening will do even off-window
-  btn.textContent = docked ? "Float" : "Dock";
-  const label = docked ? "Float — undock the AI panel" : "Dock right — pin it to the edge";
-  btn.setAttribute("aria-label", label);
-  btn.title = label;
+  cells.full.classList.toggle("occupied", !!(state && wantMode === "full"));
+  cells.inner.classList.toggle("occupied", !!(state && wantMode === "inner"));
+  const active = !!(wmSideEl[side] && wmSideEl[side].classList.contains("on"));
+  const wpx = active ? wmClampSize(state.w, wmInnerWidth()) + "px" : "0px";
+  shell.style.setProperty(side === "left" ? "--dl-w" : "--dr-w", (active && wantMode === "full") ? wpx : "0px");
+  shell.style.setProperty(side === "left" ? "--dli-w" : "--dri-w", (active && wantMode === "inner") ? wpx : "0px");
+  return active && wantMode === "full";
+}
+// Applies wm.bottom to the DOM: moves up to two windows' nodes into
+// #dockbottom0/#dockbottom1, sets --db-h/--db-split, and toggles which
+// slot(s) actually show (a closed window's slot collapses, same "active"
+// rule as a side dock).
+function wmLayoutBottom() {
+  const shell = document.getElementById("shell");
+  const dockbottom = document.getElementById("dockbottom");
+  const slots = [document.getElementById("dockbottom0"), document.getElementById("dockbottom1")];
+  const state = wm.bottom;
+  const wantIds = (state && wmAllowed(wmInnerWidth()) && state.ids) || [];
+  const wantEls = wantIds.map(id => document.getElementById(id)).filter(Boolean);
+  for (const el of wmBottomEls) { // float anything parked here that's no longer wanted
+    if (wantEls.includes(el)) continue;
+    const home = document.getElementById(el.id + "-home");
+    if (home && el.parentNode !== home) home.appendChild(el);
+    if (el.classList.contains("docked")) el.classList.remove("docked");
+  }
+  wmBottomEls = [];
+  // touch the DOM only on a real change: classList.add/remove rewrite the
+  // class attribute even when nothing changes, SHEET_TOP's MutationObserver
+  // answers every class write with wmLayoutAll(), and the page hung forever
+  // on the first bottom dock (caught by the headless check, 2026-09-29)
+  wantEls.forEach((el, i) => {
+    if (!slots[i]) return;
+    if (el.parentNode !== slots[i]) slots[i].appendChild(el);
+    if (!el.classList.contains("docked")) el.classList.add("docked");
+    wmBottomEls.push(el);
+  });
+  const activeFlags = slots.map((slot, i) => !!(wantEls[i] && wantEls[i].classList.contains("on")));
+  slots.forEach((slot, i) => slot.classList.toggle("shown", activeFlags[i]));
+  const bothActive = activeFlags[0] && activeFlags[1];
+  dockbottom.classList.toggle("occupied", wantEls.length > 0); // something is parked here, open or not (divider visibility)
+  dockbottom.classList.toggle("split", bothActive);
+  shell.style.setProperty("--db-h", activeFlags.some(Boolean) ? wmClampHeight((state && state.h) || WM_DEFAULT_H, wmInnerHeight()) + "px" : "0px");
+  shell.style.setProperty("--db-split", String(wmClampSplit(state && state.split != null ? state.split : 0.5)));
+}
+function wmDockLabel(id) { // pure-ish (reads module state `wm`): what a window's Dock button should say
+  const where = wmWhereIs(wm, id);
+  if (!where) return "Dock";
+  if (where.dock === "bottom") return "Docked: Bottom";
+  return "Docked: " + (where.dock === "left" ? "Left" : "Right") + (where.mode === "inner" ? " (beside roll)" : "");
+}
+function wmSyncDockButtons() { // updates every dockable window's Dock button — text, and hidden at phone width (same as the old askdock button)
+  const allowed = wmAllowed(wmInnerWidth());
+  for (const id in WM_WINDOWS) {
+    if (!WM_WINDOWS[id].dockable) continue;
+    const h2 = document.getElementById(id + "-h2");
+    const btn = h2 && h2._wmDockBtn;
+    if (!btn) continue;
+    btn.style.display = allowed ? "" : "none";
+    btn.textContent = wmDockLabel(id);
+    const docked = !!wmWhereIs(wm, id);
+    const label = docked ? "Change how this window is docked, or float it" : "Dock this window — left, right, or bottom";
+    btn.setAttribute("aria-label", label);
+    btn.title = label;
+  }
+}
+// The one entry point everything else calls: lays out both side docks and
+// the bottom dock, narrows the footer beside a FULL side dock either way,
+// refreshes every Dock button's label, and runs resize() — the same path a
+// real window resize takes — exactly once.
+function wmLayoutAll() {
+  const shell = document.getElementById("shell");
+  const leftFull = wmLayoutSide("left");
+  const rightFull = wmLayoutSide("right");
+  wmLayoutBottom();
+  if (shell.classList) shell.classList.toggle("hasdock", !!(leftFull || rightFull));
+  wmSyncDockButtons();
   if (typeof resize === "function") resize(); // same path a real window resize takes
 }
-function wmToggleRight(id) {
-  const allowed = wmAllowed(wmInnerWidth());
-  const docked = !!(wm.right && wm.right.id === id);
-  if (!docked && !allowed) return; // no dock on a phone-width window
-  wm = docked ? wmClearRight(wm) : wmSetRight(wm, id, (wm.right && wm.right.w) || WM_DEFAULT_W, wmInnerWidth());
+// ---- action functions: the Dock menu (and tests) call these directly.
+// Each keeps the "a window is docked in at most one place" invariant, saves,
+// and relays through wmLayoutAll().
+function wmDockSide(id, side, mode) { // dock `id` to "left"/"right" (mode: "full" default, or "inner")
+  if (!wmAllowed(wmInnerWidth())) return; // no dock on a phone-width window
+  let next = wm;
+  const otherSide = side === "left" ? "right" : "left";
+  if (next[otherSide] && next[otherSide].id === id) next = wmClearSide(next, otherSide);
+  if (next.bottom && next.bottom.ids && next.bottom.ids.includes(id)) next = wmClearBottom(next, id);
+  const cur = next[side];
+  next = wmSetSide(next, side, id, (cur && cur.w) || WM_DEFAULT_W, mode || (cur && cur.id === id ? cur.mode : "full"), wmInnerWidth());
+  wm = next;
   wmSave(wm);
-  wmLayoutRight();
+  wmLayoutAll();
 }
-document.getElementById("askdock").addEventListener("click", () => wmToggleRight("asksheet"));
-(function wmDrag() { // the right dock's divider, on its left edge — min 280px, max 60% of the window
-  const divider = document.getElementById("wmdivider");
+function wmSetSideModeFor(id, mode) { // flip full/inner for whichever side `id` is currently docked to; a no-op if it isn't
+  const where = wmWhereIs(wm, id);
+  if (!where || (where.dock !== "left" && where.dock !== "right")) return;
+  wm = wmSetSideMode(wm, where.dock, mode);
+  wmSave(wm);
+  wmLayoutAll();
+}
+function wmDockBottomWindow(id) { // dock `id` to the bottom — the first open slot, or splits it into the second
+  if (!wmAllowed(wmInnerWidth())) return;
+  let next = wm;
+  if (next.left && next.left.id === id) next = wmClearSide(next, "left");
+  if (next.right && next.right.id === id) next = wmClearSide(next, "right");
+  next = wmDockBottom(next, id, undefined, wmInnerHeight());
+  wm = next;
+  wmSave(wm);
+  wmLayoutAll();
+}
+function wmFloat(id) { // undock `id` from wherever it is; a no-op if it's already floating
+  if (wm.left && wm.left.id === id) wm = wmClearSide(wm, "left");
+  else if (wm.right && wm.right.id === id) wm = wmClearSide(wm, "right");
+  else if (wm.bottom && wm.bottom.ids && wm.bottom.ids.includes(id)) wm = wmClearBottom(wm, id);
+  else return;
+  wmSave(wm);
+  wmLayoutAll();
+}
+// ---- makeWindow(): registers a window as dockable and gives it the shared
+// Dock control (a button in its h2, id + "-h2" — every migrated window's h2
+// carries that id; see the body markup). ✕, title-drag and the ◢ grip are
+// NOT built here — every window already gets those from the generic loops
+// further down this file (the ✕ loop, sheetDrag's `.sheet > h2` selector,
+// addGrips), unchanged; a window not yet migrated (not in this list) keeps
+// getting exactly that and nothing else. See NIGHT-ROLL.md "Window manager
+// (shell + docks)" for the not-yet-migrated list.
+function makeWindow(id, opts) {
+  WM_WINDOWS[id] = {dockable: !!(opts && opts.dockable)};
+  if (!opts || !opts.dockable) return;
+  const h2 = document.getElementById(id + "-h2");
+  if (!h2 || h2._wmDockBtn) return; // idempotent
+  const btn = document.createElement("button");
+  btn.className = "wmdock";
+  btn.setAttribute("aria-label", "Dock this window — left, right, or bottom");
+  btn.addEventListener("click", () => wmOpenMenu(id, btn));
+  h2.appendChild(btn);
+  h2._wmDockBtn = btn;
+}
+// The shared Dock popup (#wmmenu, one instance, rebuilt fresh on each open —
+// same pattern as #voicemenu/#filesub): Left / Right / Bottom, Full height /
+// Beside the roll once docked to a side, and Float once docked anywhere.
+// Real-browser only (createElement-built rows) — not unit tested, like the
+// menu/dropdown code it sits beside; tests drive wmDockSide/wmDockBottomWindow/
+// wmSetSideModeFor/wmFloat directly instead, the same way the old tests drove
+// wmToggleRight instead of clicking #askdock.
+function wmMenuItem(label, active, fn) {
+  const b = document.createElement("button");
+  b.className = "fitem" + (active ? " active" : "");
+  b.textContent = label;
+  b.addEventListener("click", () => { fn(); wmCloseMenu(); });
+  return b;
+}
+function wmOpenMenu(id, anchor) {
+  const menu = document.getElementById("wmmenu");
+  const where = wmWhereIs(wm, id);
+  const items = [
+    wmMenuItem("Left", !!(where && where.dock === "left"), () => wmDockSide(id, "left")),
+    wmMenuItem("Right", !!(where && where.dock === "right"), () => wmDockSide(id, "right")),
+    wmMenuItem("Bottom", !!(where && where.dock === "bottom"), () => wmDockBottomWindow(id)),
+  ];
+  if (where && (where.dock === "left" || where.dock === "right")) {
+    const sep = document.createElement("div"); sep.className = "fsep"; items.push(sep);
+    items.push(wmMenuItem("Full height", where.mode !== "inner", () => wmSetSideModeFor(id, "full")));
+    items.push(wmMenuItem("Beside the roll", where.mode === "inner", () => wmSetSideModeFor(id, "inner")));
+  }
+  if (where) {
+    const sep2 = document.createElement("div"); sep2.className = "fsep"; items.push(sep2);
+    items.push(wmMenuItem("Float", false, () => wmFloat(id)));
+  }
+  if (typeof menu.replaceChildren === "function") menu.replaceChildren(...items);
+  else { menu.innerHTML = ""; items.forEach(i => menu.appendChild(i)); }
+  const r = anchor.getBoundingClientRect();
+  menu.style.left = Math.max(6, Math.min(r.left, songRegionRight() - 200)) + "px";
+  menu.style.top = (r.bottom + 6) + "px";
+  menu.classList.add("on");
+}
+function wmCloseMenu() { document.getElementById("wmmenu").classList.remove("on"); }
+if (typeof document !== "undefined" && document.body) { // real browser only — dismissing the menu is not unit tested (see comment above)
+  document.addEventListener("pointerdown", e => {
+    const menu = document.getElementById("wmmenu");
+    if (menu.classList.contains("on") && !(e.target.closest && (e.target.closest("#wmmenu") || e.target.closest(".wmdock")))) wmCloseMenu();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") wmCloseMenu(); });
+}
+// ---- migrate the six windows onto the shared window shape (phase A) —
+// asksheet already had a right-only dock; the other five are new.
+makeWindow("asksheet", {dockable: true});
+makeWindow("notelistsheet", {dockable: true});
+makeWindow("instsheet", {dockable: true});
+makeWindow("jobssheet", {dockable: true});
+makeWindow("pubjobsheet", {dockable: true});
+makeWindow("infosheet", {dockable: true});
+// ---- dividers: one pair per side (full cell + inner cell — same width
+// value, wm[side].w, whichever cell is currently showing it), plus the
+// bottom dock's height (top edge) and, only with two windows, its split
+// (between them).
+function wmSideDividerize(divId, side) {
+  const divider = document.getElementById(divId);
   let drag = null;
   divider.addEventListener("pointerdown", e => {
     if (e.button && e.button !== 0) return;
-    if (!wm.right) return;
-    drag = {x0: e.clientX, w0: wm.right.w, id: e.pointerId};
+    if (!wm[side]) return;
+    drag = {x0: e.clientX, w0: wm[side].w, id: e.pointerId};
     divider.classList.add("dragging");
     try { divider.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
     e.preventDefault();
   });
   document.addEventListener("pointermove", e => {
-    if (!drag || e.pointerId !== drag.id || !wm.right) return;
-    wm = wmSetRight(wm, wm.right.id, drag.w0 - (e.clientX - drag.x0), wmInnerWidth()); // the divider is the dock's LEFT edge: dragging it left widens the dock
-    wmLayoutRight();
+    if (!drag || e.pointerId !== drag.id || !wm[side]) return;
+    const delta = e.clientX - drag.x0;
+    // right's dividers sit on the dock's LEFT edge (drag left widens); left's sit on its RIGHT edge (drag right widens)
+    const w = side === "right" ? drag.w0 - delta : drag.w0 + delta;
+    wm = wmSetSide(wm, side, wm[side].id, w, wm[side].mode, wmInnerWidth());
+    wmLayoutAll();
+  });
+  const end = e => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    divider.classList.remove("dragging");
+    drag = null;
+    wmSave(wm);
+  };
+  document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+}
+wmSideDividerize("wmdivider-left-full", "left");
+wmSideDividerize("wmdivider-left-inner", "left");
+wmSideDividerize("wmdivider-right-full", "right");
+wmSideDividerize("wmdivider-right-inner", "right");
+(function wmBottomHeightDividerize() { // along the bottom dock's top edge — drag up (negative clientY delta) grows it
+  const divider = document.getElementById("wmdivider-bottomh");
+  let drag = null;
+  divider.addEventListener("pointerdown", e => {
+    if (e.button && e.button !== 0) return;
+    if (!wm.bottom) return;
+    drag = {y0: e.clientY, h0: wm.bottom.h, id: e.pointerId};
+    divider.classList.add("dragging");
+    try { divider.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    e.preventDefault();
+  });
+  document.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id || !wm.bottom) return;
+    wm = wmSetBottomHeight(wm, drag.h0 - (e.clientY - drag.y0), wmInnerHeight());
+    wmLayoutAll();
+  });
+  const end = e => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    divider.classList.remove("dragging");
+    drag = null;
+    wmSave(wm);
+  };
+  document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+})();
+(function wmBottomSplitDividerize() { // between the bottom dock's two slots, only shown with both occupied
+  const divider = document.getElementById("wmdivider-bottomsplit");
+  let drag = null;
+  divider.addEventListener("pointerdown", e => {
+    if (e.button && e.button !== 0) return;
+    if (!wm.bottom) return;
+    const r = document.getElementById("dockbottom").getBoundingClientRect();
+    drag = {x0: e.clientX, split0: wm.bottom.split != null ? wm.bottom.split : 0.5, width: r.width || wmInnerWidth(), id: e.pointerId};
+    divider.classList.add("dragging");
+    try { divider.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    e.preventDefault();
+  });
+  document.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id || !wm.bottom) return;
+    wm = wmSetBottomSplit(wm, drag.split0 + (e.clientX - drag.x0) / Math.max(1, drag.width));
+    wmLayoutAll();
   });
   const end = e => {
     if (!drag || (e && e.pointerId !== drag.id)) return;
@@ -18607,9 +19014,9 @@ document.getElementById("askdock").addEventListener("click", () => wmToggleRight
   document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
 })();
 // growing/shrinking the window re-checks wmAllowed() live: crossing below
-// phone width mid-session floats a docked sheet (the pref itself is
+// phone width mid-session floats every docked window (the pref itself is
 // untouched — growing back re-offers and reapplies it)
-window.addEventListener("resize", wmLayoutRight);
+window.addEventListener("resize", wmLayoutAll);
 function openAsk() {
   if (!song) return;
   askBadgeOff();
@@ -18620,7 +19027,7 @@ function openAsk() {
   askRefreshTarget();
   askModeButtons(); // sets the placeholder for the mode
   asksheet.classList.add("on");
-  wmLayoutRight(); // reopens docked if it was docked (open-items.md "a real windowing system", steps 1-2)
+  wmLayoutAll(); // reopens docked if it was docked (open-items.md "a real windowing system")
   askGrow();
   askScrollEnd(); // the log was drawn while the sheet was display:none (scrollHeight 0), so every open landed at the top (Josh, 2026-09-27)
   askFocusIfKeyboard();
@@ -19537,10 +19944,10 @@ if (typeof document.querySelectorAll === "function") { // vm harness stubs docum
 // opens or closes.
 const SHEET_TOP = new MutationObserver(ms => {
   for (const m of ms) {
-    // the docked ✦ AI panel: reserve/free the right dock's width alongside
+    // any migrated, docked window: reserve/free its dock's space alongside
     // its own visibility, however it closes (✕, backdrop, Esc, or
     // reopening) — the one choke point every close path already runs through
-    if (m.target.id === "asksheet") wmLayoutRight();
+    if (WM_WINDOWS[m.target.id]) wmLayoutAll();
     if (!m.target.classList.contains("on")) { // closing: a live 🎤 inside must not keep transcribing
       if (micBtn && m.target.contains(micBtn)) micStop(true);
       continue;
