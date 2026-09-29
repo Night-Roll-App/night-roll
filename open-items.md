@@ -1415,7 +1415,27 @@ docs/adding-a-console.md (the whole checklist: rips, ground truth,
 capture, chip audio, publish, instruments, terminal import, listening
 pass, docs).
 
-## ARCHIVE BY CONSOLE — QUEUED 2026-09-29 (Josh: "why is the NSF repository not following the same directory structure")
+## SCREENSHOTS FROM THE APP TO CLAUDE — QUEUED 2026-09-29 (Josh: "I wish there would be a way for me to send you screenshots from the app itself")
+
+A 📷 in the ✦ AI panel: pick an image (an iPad screenshot from Photos —
+works in Safari and the app) or, in the iPad app, capture the app's own
+view (a small native plugin: WKWebView takeSnapshot). The image rides the
+bridge with the message (the bridge saves it under its jobs dir and puts
+the path in the prompt so Claude Code reads it). Also useful: attach
+automatically to "this looks wrong" reports.
+
+## INSTRUMENT PICKS NEED YOUR OWN COPY — ASKED 2026-09-29
+
+Josh: changing a track's instrument is a write to the song, so only on
+songs he can edit (his compositions / local copies); game captures stay
+read-only except annotations (already true: captures open read-only and
+Save As forks). Today a voice pick is stored as a track: annotation and so
+works on any song. Plan: the voice menu's instrument picks (and, pending
+his answer, volume and pan) only on editable songs, with a line pointing
+to Edit locally / Save As; colours stay free. Waiting on his answer about
+volume/pan.
+
+## ARCHIVE BY CONSOLE — DONE 2026-09-29 (Josh: "why is the NSF repository not following the same directory structure")
 
 Night-Roll-App/nsf-archive is flat (each album's vault at the root, named
 by its slug; tetris.nsf vs tetris.gbs collided). Plan: git mv into nes/,
