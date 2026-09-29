@@ -1377,13 +1377,15 @@ either way. STILL IGNORED: N64 pitch bends (the capture warns "channel
 pitch bend"); Genesis/SNES/GB paths capture the chip's actual pitch, so
 they are not affected.
 
-## FFX "THE PRELUDE" CAPTURES AS ONE NOTE — QUEUED 2026-09-28
+## FFX "THE PRELUDE" CAPTURES AS ONE NOTE — CLOSED 2026-09-29: CORRECT
 
 Final Fantasy X imported (92 songs, BGM/WD). "The Prelude" came out as a
-single note over 48 s, and is the only song that did. Check whether its
-harp arpeggio is in the BGM at all (a streamed or sample-played piece?)
-or whether the BGM reader stops early. Other songs look sane (Tidus'
-Theme 1068 notes, Other World 3156).
+single note over 48 s, and is the only song that did. Answer: the song IS
+one note. Its bank (/wave/wave0048.wd) holds a ~895 KB sample, about 35 s
+of PS-ADPCM, and the BGM (music048.bgm) plays it with one note held 96
+quarters. The harp arpeggio is a recording inside the sample, not
+sequence data, so no reader could turn it into notes. The console-audio
+render plays the recording.
 
 ## SOMEDAY / MAYBE — ideas Josh likes, none of them urgent (2026-09-28)
 
