@@ -24,8 +24,10 @@ Remains:
    audio session (it ignores the silent switch). Josh checks: bell on,
    play a song. Terminal fixes if it still mutes.
 5. Upload a new build with tonight's changes (build 3). Terminal.
-6. Org move (repos to Night-Roll-App): not run, on hold at Josh's word.
-   The listing's URLs follow whichever home is live at submission.
+6. Org move: DONE 2026-09-29 (fd26e59). Site
+   https://night-roll-app.github.io/night-roll/; the listing draft's URLs
+   follow. Josh: a GitHub token that covers Night-Roll-App repos on the
+   iPad (a fine-grained token scoped to his own account will not write).
 7. APNs push: not a store blocker; after the store work (decided
    2026-09-28).
 
@@ -1198,9 +1200,12 @@ base. Decide before the App Store listing (the listing's URLs point
 at whichever it is). Josh creates the org (it needs his account); the
 terminal does the moves.
 DONE by Josh the same night: org https://github.com/Night-Roll-App
-(joshcough is admin) and nightrollapp@gmail.com. THE TRANSFER HAS NOT
-RUN (Josh, 2026-09-28: "Let's not do any transfer yet"); origin is still
-joshcough/night-roll and the archive joshcough/nsf-archive. MOVE CHECKLIST (run
+(joshcough is admin) and nightrollapp@gmail.com. TRANSFER RUN 2026-09-29
+at Josh's go: both repos under Night-Roll-App, Pages at
+night-roll-app.github.io/night-roll (legacy build, .nojekyll), local remotes
+switched, saved device settings translated in cfg(). The old
+joshcough.github.io/night-roll address is gone (Pages does not redirect).
+MOVE CHECKLIST, as run (run
 when Josh is not importing/publishing): 1. `gh api -X POST
 repos/joshcough/night-roll/transfer -f new_owner=Night-Roll-App` and
 the same for nsf-archive (GitHub redirects the old URLs). 2. Enable
