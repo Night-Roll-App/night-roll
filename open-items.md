@@ -1358,6 +1358,20 @@ two sources with the same album slug — show whose copy.
 
 ## RELEASE GATE — QUEUED 2026-09-27 (Josh, evening)
 
+AUTOMATIC HALF DONE 2026-09-29: docs/release-sweep-2026-09-29.md (56
+real sets through the app's own import path). Fixed from it: same-title
+songs dropped "name taken" (49 N64 songs; now numbered, OoT/Banjo/DK64
+re-captured). Still open from it, not investigated: 4 Chrono Cross
+tracks 22-63 min long ("Cave Ambience" 3769 s — an ambience loop with no
+end marker?); Majora's Mask #116 "New Wave Bossa Nova with Lulu" is 0
+notes (its sequence uses the unimplemented `runseq` op); the 15 FFX
+"Hymn/Hum of the Fayth" tracks capture as one note — CHECKED: each is
+one note playing a stereo pair of samples (two regions), a sung
+recording, the same class as The Prelude; correct. SNES captures never
+report a loop (by
+design: the loop scan is skipped for tagged SPC sets). The listening
+half is still Josh's.
+
 "Before we release this for real … imports of several more games on
 all the systems and listen to basically every song … iron out every
 possible bug … find games with obscure hardware and test those … if
