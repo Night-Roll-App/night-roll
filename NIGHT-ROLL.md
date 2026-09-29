@@ -2539,7 +2539,13 @@ published) records the fingerprint, and Publish all records it too. A
 draft from before the fingerprint gets one the first time it opens:
 `loadSongInner` reads the published `.mid` once, when the repo's stamp
 matches the draft's base, and opening the Publish sheet runs the same
-check once over every listed draft (`fingerprintOldDrafts`).
+check once over every listed draft (`fingerprintOldDrafts`, also run
+once a few seconds after launch so the Publish (N) count is right). The
+check runs whenever the repo is not newer than the draft's base; an
+unstamped draft ("never saved" on a published song) adopts the repo's
+stamp only when its music is identical, so another device's newer save
+is never masked. The Publish (N) count recounts on every draft write and
+every sheet redraw.
 
 **Words (step 1, 5add982):** the one deliberate step that sends a song
 to the repo is **Publish** everywhere — File → Publish…, the footer

@@ -4302,3 +4302,23 @@ test("edited since last save: an old draft (no fingerprint) that matches its pub
     assert.equal(val(`typeof __same.pubSig`), "string");
   } finally { run(`readData = globalThis.__realRead; for (const k of ["fp-a", "fp-b"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
 });
+
+test("edited since last save: an unstamped draft ('never saved') adopts the repo's stamp only when its music is the published music", async () => {
+  run(`{ globalThis.__realRead = readData;
+       const pubDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+       globalThis.__mid = writeMidi(pubDoc);
+       readData = async () => ({ok: true, arrayBuffer: async () => __mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength)});
+       const pub = parseMidi(__mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength));
+       globalThis.__same = {savedStamp: 0, dirty: true, ppq: pub.ppq, timesig: [4, 4], tempos: pub.tempos, tracks: draftTracks(pub.tracks)};
+       globalThis.__diff = {...__same, tracks: [{name: pub.tracks[0].name, notes: [{t: 0, d: 480, p: 62, v: 100}]}]};
+       globalThis.__r = null;
+       Promise.all([draftFingerprint("albums/compositions/nightroll/fp-c.mid", __same, 9), draftFingerprint("albums/compositions/nightroll/fp-d.mid", __diff, 9)]).then(x => __r = x); }`);
+  for (let i = 0; i < 20 && !val(`globalThis.__r`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
+  try {
+    assert.deepEqual(val(`__r`), [true, false]);
+    assert.equal(val(`__same.savedStamp`), 9, "identical: it IS the published song");
+    assert.equal(val(`__same.dirty`), false);
+    assert.equal(val(`__diff.savedStamp`), 0, "different: left alone, so the newer-save question can still be asked");
+    assert.equal(val(`__diff.pubSig === undefined`), true);
+  } finally { run(`readData = globalThis.__realRead; for (const k of ["fp-c", "fp-d"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
+});

@@ -3205,6 +3205,7 @@ async function loadSongInner(path) {
       const r = await readData("analysis", path.replace(/\.mid$/, "") + ".rollnotes.json", true);
       if (r.ok) repoStamp = (JSON.parse(await r.text()).saved || 0);
     } catch (err) { /* offline / not yet saved: draft wins */ }
+    if (d && !d.savedStamp && repoStamp) await draftFingerprint(path, d, repoStamp); // unstamped but identical to the repo: adopt its stamp, no question
     if (d && repoStamp > (d.savedStamp || 0)) {
       // an album run never asks: it keeps the draft and says so (nothing is lost)
       const takeNewer = !d.dirty || (!albumRun && await appConfirm("NEWER SAVE EXISTS",
@@ -13014,18 +13015,30 @@ function draftTracks(tracks) { // the notes as a draft stores them (and as the p
 // comparison with it, not a flag that any edit sets for good — an added note
 // then undone left songs "edited" that were not (Josh, 2026-09-29).
 function musicSig(d) { return JSON.stringify([d.ppq, (d.tempos || []).map(t => [t.tick, t.usq]), d.tracks]); }
-// A draft from before the fingerprint: read the published .mid once (only when
-// the repo's stamp is the draft's base, so the .mid IS what it was copied from)
-// and let "edited" follow the comparison. true when the draft changed.
+// A draft from before the fingerprint: read the published .mid once and let
+// "edited" follow the comparison — "edited" means "differs from what is
+// published". Not when the repo is NEWER than the draft's base (that is the
+// newer-save question, asked elsewhere). The first cut also demanded equal
+// stamps, and Threnody's never were: it stayed "edited" with Compare showing
+// +0 −0 ~0 (Josh, 2026-09-29). true when the draft changed.
 async function draftFingerprint(path, d, repoStamp) {
-  if (!d || !d.dirty || d.pubSig || !repoStamp || repoStamp !== d.savedStamp || !d.tracks) return false;
+  if (!d || !d.dirty || d.pubSig || !repoStamp || !d.tracks) return false;
+  const unstamped = !d.savedStamp; // "never saved" on a song the repo HAS (Carnival, Josh 2026-09-29)
+  if (!unstamped && repoStamp > d.savedStamp) return false;
+  let sig;
   try {
     const r = await readData("songs", path);
     if (!r.ok) return false;
     const pub = parseMidi(await r.arrayBuffer());
-    d.pubSig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks)});
+    sig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks)});
   } catch (err) { return false; } // offline: stays "edited" until later
-  d.dirty = musicSig(d) !== d.pubSig;
+  const same = musicSig(d) === sig;
+  // an unstamped draft adopts the repo's stamp only when its music IS the
+  // published music; otherwise which is newer is unknown, and the newer-save
+  // question must still be asked — nothing here may mask another device's save
+  if (unstamped) { if (!same) return false; d.savedStamp = repoStamp; }
+  d.pubSig = sig;
+  d.dirty = !same;
   try { draftWrite(path, d); } catch (err) { /* full: the next edit writes it */ }
   return true;
 }
@@ -13037,15 +13050,21 @@ async function fingerprintOldDrafts() {
   fingerprintSweepDone = true;
   let changed = false;
   for (const key of draftKeys()) {
-    if (!syncable(key) || key === songKey) continue; // the open song fingerprints on its own open
+    if (!syncable(key)) continue;
     let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
-    if (!d || !d.dirty || d.pubSig || !d.savedStamp || !d.tracks) continue;
+    if (!d || !d.dirty || d.pubSig || !d.tracks) continue;
     let repoStamp = 0;
     try { const r = await readData("analysis", key.replace(/\.mid$/, "") + ".rollnotes.json", true); if (r.ok) repoStamp = JSON.parse(await r.text()).saved || 0; } catch (err) { continue; }
-    if (await draftFingerprint(key, d, repoStamp)) changed = true;
+    if (await draftFingerprint(key, d, repoStamp)) {
+      changed = true;
+      if (key === songKey && song) { song.pubSig = d.pubSig; song.savedStamp = d.savedStamp; updateSongBtn(); } // the open song: its in-memory state too
+    }
   }
-  if (changed && document.getElementById("syncsheet").classList.contains("on")) { renderSyncPending(); updateSyncBtn(); }
+  if (changed) { updateSyncBtn(); if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending(); }
 }
+// once per launch, a few seconds in (after the boot's own fetches): the
+// Publish (N) count is right before the sheet is ever opened
+if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprintOldDrafts().catch(() => {}); }, 4000);
 function draftDoc(clean) { // the song as this device stores it (the working copy, or a Save checkpoint)
   const d = {savedStamp: song.savedStamp || 0,
     ppq: song.ppq, timesig: song.timesig || effTs(), tempos: song.baseTempos || song.tempos,
@@ -13064,6 +13083,7 @@ function saveDraft(clean) { // clean=true right after a successful Publish; the 
     setInfo("⚠ storage full — edit not saved (see ⚠)");
   }
   updateSongBtn(); // the unsaved dot tracks every edit
+  updateSyncBtn(); // and the Publish (N) count: an undo back to the published music takes a song off it
   if (autosaveOn()) filesMirrorSoon(); // every edit is the save: the Files copy follows, once the edits settle
 }
 // ---- Local Save (Josh, 2026-09-26: "every single thing you do is always
@@ -18782,6 +18802,7 @@ function pendingSongs() { // every song with anything to ship, the open one firs
   return [...set].sort((a, b) => (a === songKey ? -1 : b === songKey ? 1 : 0) || a.localeCompare(b));
 }
 function renderSyncPending() {
+  updateSyncBtn(); // the count follows the list it is drawn from (Josh: "it doesn't update that number")
   const box = document.getElementById("syncpending");
   box.textContent = "";
   const line = (parent, text, cls) => {
