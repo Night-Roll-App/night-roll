@@ -14886,18 +14886,25 @@ async function impCapture(n, api, i) { // api/i: the capture job and this track'
       cap = await captureChipTrack(nsfSess.chip, nsfSess.M, row.parsed || nsfSess.nsf, n, secs, tick("no loop — 300s: "));
     }
     if (!cap) { row.st.textContent = "silent — nothing to keep"; item({st: "silent", msg: "silent"}); return; }
-    const raw = row.name.value.trim() || "track-" + String(n).padStart(2, "0");
-    const base = slugify(raw) || "track-" + String(n).padStart(2, "0");
-    const key = impDirFor(nsfSess.chip) + slug + "/" + base + ".mid";
-    // collision = two rows of THIS import fighting over one name. A draft
-    // left by an earlier import of the same album just gets overwritten —
-    // that's what re-importing means (Josh 2026-08-16, after a re-import
-    // refused every track until each old draft was deleted by hand)
-    if (nsfSess.rows.some((r, j) => r && j !== n && r.key === key)) {
-      row.st.textContent = "⚠ another captured track is already named \"" + base + "\"";
-      item({st: "failed", msg: "name taken: " + base});
-      return;
+    let raw = row.name.value.trim() || "track-" + String(n).padStart(2, "0");
+    let base = slugify(raw) || "track-" + String(n).padStart(2, "0");
+    // two rows of THIS import with one title are two songs, not a mistake:
+    // real rips name many different pieces alike (Ocarina of Time has 20
+    // "Hyrule Field"s, Banjo-Kazooie 18 "Gruntilda's Lair"s). The old guard
+    // failed the second one "name taken" and it was silently missing from
+    // the album (49 songs across three games — docs/release-sweep-2026-09-29.md).
+    // Number them instead: "Hyrule Field", "Hyrule Field (2)", …, by row
+    // order, so a re-import names them the same way. A draft left by an
+    // earlier import of the same album is still simply overwritten — that's
+    // what re-importing means (Josh 2026-08-16).
+    const dir = impDirFor(nsfSess.chip) + slug + "/";
+    const taken = k => nsfSess.rows.some((r, j) => r && j !== n && r.key === k);
+    if (taken(dir + base + ".mid")) {
+      let i = 2;
+      while (taken(dir + base + "-" + i + ".mid")) i++;
+      base = base + "-" + i; raw = raw + " (" + i + ")";
     }
+    const key = dir + base + ".mid";
     row.key = key;
     localStorage.removeItem("ff1roll-notes-" + key); // stale loop note dies with the old capture
     const parsed = parseMidi(cap.bytes.buffer, {trust: true}); // our own bytes: the corrupt-file guards (8-bar notes, 32-bar tacets) must not cut real music
