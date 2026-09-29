@@ -168,7 +168,25 @@
   "wozza-s-cave-all-in-one": "Wozza's Cave (All-In-One)",
   "wozza-s-cave-aquatic": "Wozza's Cave (Aquatic)",
   "wozza-s-cave-normal": "Wozza's Cave (Normal)",
-  "zubba-s-nest": "Zubba's Nest"
+  "zubba-s-nest": "Zubba's Nest",
+  "gruntilda-s-lair-aquatic-2": "Gruntilda's Lair (Aquatic) (2)",
+  "gruntilda-s-lair-aquatic-3": "Gruntilda's Lair (Aquatic) (3)",
+  "gruntilda-s-lair-aquatic-4": "Gruntilda's Lair (Aquatic) (4)",
+  "gruntilda-s-lair-bubblegloop-swamp-2": "Gruntilda's Lair (Bubblegloop Swamp) (2)",
+  "gruntilda-s-lair-clanker-s-cavern-2": "Gruntilda's Lair (Clanker's Cavern) (2)",
+  "gruntilda-s-lair-click-clock-wood-2": "Gruntilda's Lair (Click Clock Wood) (2)",
+  "gruntilda-s-lair-freezeezy-peak-2": "Gruntilda's Lair (Freezeezy Peak) (2)",
+  "gruntilda-s-lair-gobi-s-valley-2": "Gruntilda's Lair (Gobi's Valley) (2)",
+  "gruntilda-s-lair-mad-monster-mansion-2": "Gruntilda's Lair (Mad Monster Mansion) (2)",
+  "gruntilda-s-lair-normal-2": "Gruntilda's Lair (Normal) (2)",
+  "gruntilda-s-lair-normal-3": "Gruntilda's Lair (Normal) (3)",
+  "gruntilda-s-lair-normal-4": "Gruntilda's Lair (Normal) (4)",
+  "gruntilda-s-lair-normal-5": "Gruntilda's Lair (Normal) (5)",
+  "gruntilda-s-lair-normal-6": "Gruntilda's Lair (Normal) (6)",
+  "gruntilda-s-lair-normal-7": "Gruntilda's Lair (Normal) (7)",
+  "gruntilda-s-lair-normal-8": "Gruntilda's Lair (Normal) (8)",
+  "gruntilda-s-lair-normal-9": "Gruntilda's Lair (Normal) (9)",
+  "gruntilda-s-lair-treasure-trove-cove-2": "Gruntilda's Lair (Treasure Trove Cove) (2)"
  },
  "nsf": {
   "vault": "banjo-kazooie/",
@@ -1128,6 +1146,78 @@
    "zubba-s-nest": {
     "n": 1,
     "secs": 90.96052631578948
+   },
+   "gruntilda-s-lair-aquatic-2": {
+    "n": 1,
+    "secs": 118.76288659793815
+   },
+   "gruntilda-s-lair-aquatic-3": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-aquatic-4": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-bubblegloop-swamp-2": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-clanker-s-cavern-2": {
+    "n": 1,
+    "secs": 118.76288659793815
+   },
+   "gruntilda-s-lair-click-clock-wood-2": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-freezeezy-peak-2": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-gobi-s-valley-2": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-mad-monster-mansion-2": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal-2": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal-3": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal-4": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal-5": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal-6": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal-7": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal-8": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-normal-9": {
+    "n": 1,
+    "secs": 121.23711340206185
+   },
+   "gruntilda-s-lair-treasure-trove-cove-2": {
+    "n": 1,
+    "secs": 121.23711340206185
    }
   },
   "chip": "usf",

@@ -519,12 +519,28 @@
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-aquatic.mid"
    },
    {
+    "title": "Gruntilda's Lair (Aquatic) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-aquatic-2.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Aquatic) (3)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-aquatic-3.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Aquatic) (4)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-aquatic-4.mid"
+   },
+   {
     "title": "Gruntilda's Lair (Bubblegloop Swamp, Freezeezy Peak All-In-One)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-bubblegloop-swamp-freezeezy-peak-all-in-one.mid"
    },
    {
     "title": "Gruntilda's Lair (Bubblegloop Swamp)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-bubblegloop-swamp.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Bubblegloop Swamp) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-bubblegloop-swamp-2.mid"
    },
    {
     "title": "Gruntilda's Lair (Clanker's Cavern, Bubblegloop Swamp All-In-One)",
@@ -535,6 +551,10 @@
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-clanker-s-cavern.mid"
    },
    {
+    "title": "Gruntilda's Lair (Clanker's Cavern) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-clanker-s-cavern-2.mid"
+   },
+   {
     "title": "Gruntilda's Lair (Click Clock Wood, Grunty's Furnance Fun All-In-One)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-click-clock-wood-grunty-s-furnance-fun-all-in-one.mid"
    },
@@ -543,12 +563,20 @@
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-click-clock-wood.mid"
    },
    {
+    "title": "Gruntilda's Lair (Click Clock Wood) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-click-clock-wood-2.mid"
+   },
+   {
     "title": "Gruntilda's Lair (Freezeezy Peak All-In-One)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-freezeezy-peak-all-in-one.mid"
    },
    {
     "title": "Gruntilda's Lair (Freezeezy Peak)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-freezeezy-peak.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Freezeezy Peak) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-freezeezy-peak-2.mid"
    },
    {
     "title": "Gruntilda's Lair (Gobi's Valley All-In-One)",
@@ -563,12 +591,20 @@
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-gobi-s-valley.mid"
    },
    {
+    "title": "Gruntilda's Lair (Gobi's Valley) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-gobi-s-valley-2.mid"
+   },
+   {
     "title": "Gruntilda's Lair (Grunty's Furnace Fun)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-grunty-s-furnace-fun.mid"
    },
    {
     "title": "Gruntilda's Lair (Mad Monster Mansion)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-mad-monster-mansion.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Mad Monster Mansion) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-mad-monster-mansion-2.mid"
    },
    {
     "title": "Gruntilda's Lair (Mumbo's Mountain All-In-One)",
@@ -581,6 +617,38 @@
    {
     "title": "Gruntilda's Lair (Normal)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal-2.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal) (3)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal-3.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal) (4)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal-4.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal) (5)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal-5.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal) (6)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal-6.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal) (7)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal-7.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal) (8)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal-8.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Normal) (9)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-normal-9.mid"
    },
    {
     "title": "Gruntilda's Lair (Rusty Bucket Bay, Mad Monster Mansion All-In-One)",
@@ -601,6 +669,10 @@
    {
     "title": "Gruntilda's Lair (Treasure Trove Cove)",
     "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-treasure-trove-cove.mid"
+   },
+   {
+    "title": "Gruntilda's Lair (Treasure Trove Cove) (2)",
+    "path": "albums/n64/banjo-kazooie/gruntilda-s-lair-treasure-trove-cove-2.mid"
    },
    {
     "title": "Grunty Falls",
