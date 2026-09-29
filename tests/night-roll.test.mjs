@@ -3217,7 +3217,7 @@ test("Local Save: auto-save off by default; Save is the checkpoint the ● and C
   // auto-save on: the ● means unpublished, the checkpoint is ignored
   run(`localStorage.setItem("ff1roll-autosave", "1"); saveDraft(true);`);
   assert.equal(val(`songUnsaved()`), false);
-  run(`saveDraft(false);`); assert.equal(val(`songUnsaved()`), true);
+  run(`song.tracks[0].notes.push({t: 960, d: 480, p: 67, v: 100}); saveDraft(false);`); assert.equal(val(`songUnsaved()`), true, "a real edit after publish");
   run(`localStorage.removeItem("ff1roll-autosave"); for (const k of ["ff1roll-draft-", "ff1roll-save-", "ff1roll-stash-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey); songKey = null;`);
 });
 
@@ -4265,4 +4265,21 @@ test("album play: two overlapping play() calls leave no orphaned scheduler — a
     for (let i = 0; i < 10; i++) { app.tick(60); await new Promise(r => setImmediate(r)); }
     assert.equal(val(`globalThis.__advances`), 0, "no scheduler survives stop()");
   } finally { run(`albumPlayIdx = globalThis.__realPI; albumRun = null; albumEndAbs = null;`); }
+});
+
+test("edited since last save: an edit undone back to the published music is not an edit (a fingerprint, not a sticky flag)", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/undo-test.mid"; song.savedStamp = 5; song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}]}]; trackState = [{muted: false, solo: false}];
+       localStorage.setItem("ff1roll-draft-" + songKey, "{}");
+       draftWrite(songKey, draftDoc(true)); /* Make a local copy: clean, fingerprinted */`);
+  assert.equal(val(`draftDirtyState(songKey)`), null, "a fresh copy is not edited");
+  run(`song.tracks[0].notes.push({t: 480, d: 480, p: 64, v: 100}); saveDraft(false);`);
+  assert.equal(val(`draftDirtyState(songKey)`), "edited", "an added note is an edit");
+  run(`song.tracks[0].notes.pop(); saveDraft(false);`);
+  assert.equal(val(`draftDirtyState(songKey)`), null, "undone: back to the published music, not edited");
+  run(`song.tracks[0].notes[0].gone = true; saveDraft(false);`);
+  assert.equal(val(`draftDirtyState(songKey)`), "edited", "a deleted note is an edit");
+  run(`delete song.tracks[0].notes[0].gone; saveDraft(false);`);
+  assert.equal(val(`draftDirtyState(songKey)`), null);
+  run(`for (const k of ["ff1roll-draft-", "ff1roll-save-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey); songKey = null;`);
 });

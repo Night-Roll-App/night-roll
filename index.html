@@ -574,6 +574,11 @@
   #syncpending { font-family: var(--mono); font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 8px; }
   #syncpending .psong { padding: 4px 0 4px 10px; border-left: 2px solid transparent; }
   #syncpending .psong.open { border-left-color: var(--accent); }
+  /* each song its own block, its Open right after its name: on the iPad's wide
+     sheet a stretched name pushed Open to the far edge, and which song it
+     belonged to was a guess (Josh, 2026-09-29) */
+  #syncpending .psong + .psong { border-top: 1px solid var(--line, rgba(255,255,255,0.08)); padding-top: 8px; }
+  #syncpending .ptitle > span { flex: 0 1 auto; }
   #syncpending .ptitle { color: var(--dim); font-weight: 600; letter-spacing: 0.04em; min-height: 24px; display: flex; align-items: center; gap: 8px; }
   #syncpending .ptitle button { min-height: 32px; padding: 2px 12px; flex: none; }
   #syncpending .psong.open .ptitle { color: var(--text); }
@@ -3222,7 +3227,18 @@ async function loadSongInner(path) {
         if (isComposition() || isLocalDraft()) saveDraft(); // persist the new base with the draft's own dirty state
         return;
       }
-    } else if (d) { openDraftDoc(d, path); return; } // draft is the newest known state
+    } else if (d) { // draft is the newest known state
+      // a draft from before the fingerprint: read the published .mid once so an
+      // edit undone back to it stops counting as "edited since last save"
+      if (d.dirty && !d.pubSig && repoStamp && repoStamp === d.savedStamp) {
+        try {
+          const r = await readData("songs", path);
+          if (r.ok) { const pub = parseMidi(await r.arrayBuffer()); d.pubSig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks)}); }
+        } catch (err) { /* offline: stays "edited" until the next open */ }
+        if (d.pubSig) { d.dirty = musicSig(d) !== d.pubSig; try { draftWrite(path, d); } catch (err) { /* full: the next edit writes it */ } }
+      }
+      openDraftDoc(d, path); return;
+    }
   }
   const gen = ++loadGen;
   const res = await readData("songs", path);
@@ -12990,19 +13006,29 @@ function publishLabel(what) { // the button says where it goes; with nowhere to 
   const d = publishDest();
   return d === "github" ? "⇪ Publish " + what : d === "folder" ? "Save " + what + " to " + (fsRoot.mode === "native" ? "Files" : "folder") : "Connect GitHub to publish";
 }
+function draftTracks(tracks) { // the notes as a draft stores them (and as the published fingerprint reads them)
+  return tracks.map(tr => ({name: tr.name,
+    notes: tr.notes.filter(n => !n.gone).map(n => {
+      const o = {t: n.t, d: n.d, p: n.p, v: n.v};
+      if (n.ch !== undefined) o.ch = n.ch; // drum channel survives edit re-saves
+      if (n.duty !== undefined) o.duty = n.duty;
+      if (n.ve !== undefined) o.ve = n.ve;
+      return o;
+    })}));
+}
+// The published music's fingerprint (pubSig): "edited since last save" is a
+// comparison with it, not a flag that any edit sets for good — an added note
+// then undone left songs "edited" that were not (Josh, 2026-09-29).
+function musicSig(d) { return JSON.stringify([d.ppq, (d.tempos || []).map(t => [t.tick, t.usq]), d.tracks]); }
 function draftDoc(clean) { // the song as this device stores it (the working copy, or a Save checkpoint)
-  return {
-    savedStamp: song.savedStamp || 0, dirty: !clean,
+  const d = {savedStamp: song.savedStamp || 0,
     ppq: song.ppq, timesig: song.timesig || effTs(), tempos: song.baseTempos || song.tempos,
-    tracks: song.tracks.map(tr => ({name: tr.name,
-      notes: tr.notes.filter(n => !n.gone).map(n => {
-        const o = {t: n.t, d: n.d, p: n.p, v: n.v};
-        if (n.ch !== undefined) o.ch = n.ch; // drum channel survives edit re-saves
-        if (n.duty !== undefined) o.duty = n.duty;
-        if (n.ve !== undefined) o.ve = n.ve;
-        return o;
-      })})),
-  };
+    tracks: draftTracks(song.tracks)};
+  const sig = musicSig(d);
+  if (clean) song.pubSig = sig; // clean = this IS the published music (a copy just made, or just published)
+  d.dirty = clean ? false : song.pubSig ? sig !== song.pubSig : true; // no fingerprint yet: any edit counts, as before
+  d.pubSig = song.pubSig || null;
+  return d;
 }
 function saveDraft(clean) { // clean=true right after a successful Publish; the working copy follows every edit regardless (crash recovery)
   if (!isComposition() && !isLocalDraft()) return;
@@ -13074,6 +13100,7 @@ function openDraftDoc(d, key) {
     tracks: d.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(n => ({...n}))}))};
   setSong(parsed, key); // rollnotes ride the normal sidecar + local-notes path
   song.savedStamp = d.savedStamp || 0;
+  song.pubSig = d.pubSig || null;
   currentPath = key;
   rememberLastSong(key);
   reflectSongURL(key);
@@ -15173,7 +15200,7 @@ async function publishDraftSong(key, h) {
   if (!r3.ok) throw new Error(".notes.txt HTTP " + r3.status);
   await askCommitLog(h, key, true);
   await updateManifest(h, albums => manifestPlace(albums, null, key));
-  d.dirty = false; d.savedStamp = stamp;
+  d.dirty = false; d.savedStamp = stamp; d.pubSig = musicSig(d);
   localStorage.setItem(draftStoreKey(key), JSON.stringify(d));
   if (!autosaveOn()) localStorage.setItem(saveStoreKey(key), JSON.stringify({...d, savedAt: Date.now()})); // publishing is also a Save
   localStorage.removeItem(stashStoreKey(key));
@@ -18746,7 +18773,7 @@ function renderSyncPending() {
       block.className = "psong";
       const title = document.createElement("div");
       title.className = "ptitle";
-      const tspan = document.createElement("span"); tspan.textContent = "✦ General chat"; tspan.style.flex = "1";
+      const tspan = document.createElement("span"); tspan.textContent = "✦ General chat";
       const b = document.createElement("button");
       b.textContent = folderActive() ? "Save chat" : "Publish chat";
       b.title = "Append the unsaved general chat to " + ASK_GENERAL_LOG;
@@ -18771,7 +18798,6 @@ function renderSyncPending() {
     title.className = "ptitle";
     const tspan = document.createElement("span");
     tspan.textContent = songTitleOf(key) + (key === songKey ? " · open" : "");
-    tspan.style.flex = "1";
     title.appendChild(tspan);
     if (key !== songKey && localStorage.getItem(draftStoreKey(key)) !== null) { // music and chat commit from the open song: one tap opens it here
       const o = document.createElement("button");

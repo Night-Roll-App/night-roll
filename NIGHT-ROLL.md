@@ -2529,6 +2529,17 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
 
 ## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
 
+**"Edited since last save" is a fingerprint comparison (2026-09-29).** A
+draft stores `pubSig`, the fingerprint of the published music: ppq, the
+tempo map, and the notes as `draftTracks` writes them (`musicSig`).
+`draftDoc` sets `dirty` by comparing against it, so an edit undone back
+to the published music is not an edit; before this, any edit set a flag
+that only Publish cleared. `draftDoc(true)` (a copy just made, or just
+published) records the fingerprint, and Publish all records it too. A
+draft from before the fingerprint gets one the first time it opens:
+`loadSongInner` reads the published `.mid` once, when the repo's stamp
+matches the draft's base.
+
 **Words (step 1, 5add982):** the one deliberate step that sends a song
 to the repo is **Publish** everywhere — File → Publish…, the footer
 button (`#syncbtn`, "Publish (N)" when several songs are pending), the
