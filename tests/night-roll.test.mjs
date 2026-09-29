@@ -4344,5 +4344,8 @@ test("Publish sheet check: a draft whose notes match the published copy (any ord
     assert.equal(val(`__same.savedStamp`), 42, "never saved, identical: adopts the repo's stamp");
     assert.equal(val(`__r[1].same`), false);
     assert.match(val(`__r[1].text`), /^vs published: \+1 −1 ~0 notes/);
-  } finally { run(`readData = globalThis.__realRead; for (const k of ["pc-a", "pc-b"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
+    run(`globalThis.__r2 = null; pubCompareDraft("albums/compositions/nightroll/pc-c.mid", {...__diff, tracks: __same.tracks.map(t => ({...t})), ppq: __same.ppq, tempos: [{tick: 0, usq: 1000000}]}).then(x => __r2 = x);`);
+    for (let i = 0; i < 20 && !val(`globalThis.__r2`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
+    assert.equal(val(`__r2.text`), "vs published: tempo 60 BPM here, 120 published");
+  } finally { run(`readData = globalThis.__realRead; for (const k of ["pc-a", "pc-b", "pc-c"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
 });

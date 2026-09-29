@@ -13074,7 +13074,10 @@ async function pubCompareDraft(key, d) { // -> {same, text}
   }
   const parts = [];
   if (diff.tracks.length) parts.push("+" + diff.added + " −" + diff.removed + " ~" + diff.changed + " notes (" + diff.tracks.map(t => t.name).join(", ") + ")");
-  if (!tempoSame) parts.push("tempo map differs");
+  if (!tempoSame) { // say it in BPM: "tempo map differs" alone could not be seen (Cool B Major: 60 here, 75 published — Josh, 2026-09-29)
+    const bpm = ts => (ts || []).map(t => Math.round(6e7 / t.usq * 10) / 10).join(" → ");
+    parts.push("tempo " + bpm(d.tempos) + " BPM here, " + bpm(pub.tempos) + " published");
+  }
   return {same, text: "vs published: " + parts.join("; ")};
 }
 async function fingerprintOldDrafts() {
