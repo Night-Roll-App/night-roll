@@ -7876,7 +7876,8 @@ function chipPublish(forKey, kind, pcm, sampleRate, leadSec) { // the render is 
     return false;
   }
   chip.pcm = pcm; chip.pcmRate = sampleRate;
-  chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers)
+  chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers), unless chipPcmToBuffers can now
+  chipPcmToBuffers();
   chip.lead = leadSec;
   chip.key = forKey;
   console.log("[chip] ready: " + forKey + " — playing the console's own sound");
@@ -7950,6 +7951,30 @@ function chipBuffers() { // AudioBuffers for the live context, made from the ren
   }
   chip.buffers = out; chip.buffersCtx = audio;
   return out;
+}
+// The render as AudioBuffers right away, each track's Float32 copy dropped
+// as its buffer is made: holding both doubled the memory, and a 137 s N64
+// song (GoldenEye "Archives": 14 stereo tracks, ~470 MB) crashed Safari on a
+// phone (Josh, 2026-09-28). The AudioBuffer constructor needs no context, so
+// this does not wait for the tap that makes one; without it (old engines),
+// chipBuffers builds from pcm in the tap as before.
+function chipPcmToBuffers() {
+  if (!chip.pcm || typeof AudioBuffer !== "function") return;
+  const out = {};
+  try {
+    for (const name of Object.keys(chip.pcm)) {
+      const data = chip.pcm[name], st = data && data.l ? data : null;
+      const buf = new AudioBuffer({numberOfChannels: st ? 2 : 1, length: (st ? st.l : data).length, sampleRate: chip.pcmRate});
+      if (st) { buf.copyToChannel(st.l, 0); buf.copyToChannel(st.r, 1); } else buf.copyToChannel(data, 0);
+      out[name] = buf;
+      delete chip.pcm[name]; // this track's Float32 copy is garbage now
+    }
+  } catch (err) { // put back what was already converted, so the tap can build every track
+    for (const [name, buf] of Object.entries(out)) chip.pcm[name] = buf.numberOfChannels === 2 ? {l: buf.getChannelData(0), r: buf.getChannelData(1)} : buf.getChannelData(0);
+    console.log("[chip] AudioBuffer constructor failed, building in the tap: " + err.message);
+    return;
+  }
+  chip.buffers = out; chip.buffersCtx = null; chip.pcm = null; // chipBuffers returns these for any context
 }
 function chipStopSrcs() {
   for (const s of chip.srcs) { try { s.stop(); } catch (err) { /* already done */ } }

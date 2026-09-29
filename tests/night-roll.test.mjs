@@ -4186,3 +4186,22 @@ test("album play: loads that keep failing stop the album after ALBUM_MAX_FAILS, 
     assert.match(run(`document.getElementById("noteinfo").textContent`), /album stopped: 3 songs in a row wouldn't load/);
   } finally { run(`loadSong = globalThis.__realLoad`); }
 });
+
+test("chip render: published PCM becomes AudioBuffers at once and the Float32 copy is dropped (a 137 s N64 song crashed a phone holding both)", () => {
+  run(`globalThis.AudioBuffer = class { constructor(o) { this.numberOfChannels = o.numberOfChannels; this.length = o.length; this.sampleRate = o.sampleRate; this.ch = []; }
+         copyToChannel(a, i) { this.ch[i] = a; } getChannelData(i) { return this.ch[i]; } };
+       globalThis.__key = songKey;
+       chipPublish(songKey, "usf", {lead: {l: new Float32Array(8), r: new Float32Array(8)}, bass: new Float32Array(8)}, 32000, 0);`);
+  try {
+    assert.equal(val(`chip.pcm`), null, "no Float32 copy kept");
+    assert.deepEqual(val(`Object.keys(chip.buffers).sort()`), ["bass", "lead"]);
+    assert.equal(val(`chip.buffers.lead.numberOfChannels`), 2);
+    assert.equal(val(`chip.buffers.bass.sampleRate`), 32000);
+    assert.equal(val(`chipActive() && chipHas("lead")`), true);
+    // a constructor that fails part-way leaves every track as PCM, for the tap to build
+    run(`let n = 0; globalThis.AudioBuffer = class extends AudioBuffer { constructor(o) { if (n++) throw new Error("nope"); super(o); } };
+         chipPublish(songKey, "usf", {a: new Float32Array(4), b: new Float32Array(4)}, 32000, 0);`);
+    assert.equal(val(`chip.buffers`), null);
+    assert.deepEqual(val(`Object.keys(chip.pcm).sort()`), ["a", "b"], "the converted track is put back");
+  } finally { run(`delete globalThis.AudioBuffer; chip.pcm = null; chip.buffers = null; chip.key = null;`); }
+});
