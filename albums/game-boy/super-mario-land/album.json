@@ -11,7 +11,7 @@
   "tracks": {
    "bonus-game-walk": {
     "n": 14,
-    "secs": 24.984375
+    "secs": 8.5625
    },
    "bonus-game": {
     "n": 13,
@@ -27,11 +27,11 @@
    },
    "extra-life": {
     "n": 15,
-    "secs": 11.984375
+    "secs": 1.9375
    },
    "game-over": {
     "n": 18,
-    "secs": 18.984375
+    "secs": 6.25
    },
    "invincible-can-can": {
     "n": 10,
@@ -43,11 +43,11 @@
    },
    "level-end": {
     "n": 12,
-    "secs": 12.984375
+    "secs": 3.8125
    },
    "lose-life": {
     "n": 11,
-    "secs": 11.984375
+    "secs": 2.3125
    },
    "oh-daisy": {
     "n": 17,
@@ -59,7 +59,7 @@
    },
    "princess-daisy": {
     "n": 16,
-    "secs": 299.984375
+    "secs": 29
    },
    "world-music-1": {
     "n": 1,
