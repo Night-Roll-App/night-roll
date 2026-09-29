@@ -8689,7 +8689,7 @@ function stop() {
 // song forever" is ✕, since plain ▶ already loops). Leaving happens only on
 // actions that change WHAT is loaded: ✕, picking a song, ●, Download audio.
 // Nothing pops mid-run — a newer repo save is kept out of the way, not asked about.
-const ALBUM_PASSES = 2, ALBUM_CAP_SEC = 300, ALBUM_FADE = 1.5;
+const ALBUM_PASSES = 2, ALBUM_CAP_SEC = 300, ALBUM_FADE = 1.5, ALBUM_MAX_FAILS = 3;
 let albumRun = null, albumEndAbs = null, albumFading = false; // session only: no autoplay without a gesture, so no run survives a reload
 function albumNextIdx(idx, len) { return ((idx % len) + len) % len; } // wraps both ways
 function albumPrevIdx(idx, len) { return albumNextIdx(idx - 1, len); }
@@ -8755,11 +8755,21 @@ async function albumPlayIdx(idx) {
   const stale = () => albumRun !== run || run.gen !== gen;
   try { await loadSong(path); }
   catch (err) {
+    // a failed load skips, but only so far: when every load fails (offline, a
+    // rate-limited fetch) the skips cascaded through the whole album in a
+    // second with nothing playing (Josh, 2026-09-28, Chrono Trigger)
+    run.failures = (run.failures || 0) + 1;
+    if (stale()) return;
+    if (run.failures >= ALBUM_MAX_FAILS) {
+      albumClear();
+      setInfo("⚠ album stopped: " + ALBUM_MAX_FAILS + " songs in a row wouldn't load — last: " + title + ": " + err.message);
+      return;
+    }
     setInfo("couldn't load " + title + " — skipping: " + err.message);
-    if (!stale()) return albumPlayIdx(idx + 1);
-    return;
+    return albumPlayIdx(idx + 1);
   }
   if (stale()) return;
+  run.failures = 0;
   if (song && song.notesReady) await song.notesReady; // the loop: directive must be in before play() reads it
   if (stale()) return;
   await updateChipBtn(); // kicks the console render when there is one

@@ -4159,3 +4159,16 @@ test("jobs: a job is a plain record mirrored to this device — progress, done, 
   assert.equal(run(`jobProgress(jobs[0])`), "1/3 · b 70%");
   run(`jobs = []; localStorage.removeItem("ff1roll-jobs"); delete JOB_KINDS.test;`);
 });
+
+test("album play: loads that keep failing stop the album after ALBUM_MAX_FAILS, instead of skipping through every song", async () => {
+  run(`CATALOG = {"Test Album": [1,2,3,4,5,6,7,8].map(i => ["Song " + i, "albums/test/s" + i + ".mid"])};
+       globalThis.__loads = 0;
+       globalThis.__realLoad = loadSong;
+       loadSong = async () => { globalThis.__loads++; throw new Error("HTTP 403"); };`);
+  try {
+    await run(`albumStart("Test Album", 0)`);
+    assert.equal(val(`globalThis.__loads`), 3, "three tries, then stop — not all eight");
+    assert.equal(val(`albumRun`), null, "the album run is over");
+    assert.match(run(`document.getElementById("noteinfo").textContent`), /album stopped: 3 songs in a row wouldn't load/);
+  } finally { run(`loadSong = globalThis.__realLoad`); }
+});
