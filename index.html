@@ -13042,24 +13042,60 @@ async function draftFingerprint(path, d, repoStamp) {
   try { draftWrite(path, d); } catch (err) { /* full: the next edit writes it */ }
   return true;
 }
-// the Publish sheet lists songs it never opens: fingerprint their old drafts in
-// the background and redraw, so a false "edited" clears without opening each
-let fingerprintSweepDone = false;
-async function fingerprintOldDrafts() {
-  if (fingerprintSweepDone || LINK_SONGS) return;
-  fingerprintSweepDone = true;
-  let changed = false;
-  for (const key of draftKeys()) {
-    if (!syncable(key)) continue;
-    let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
-    if (!d || !d.dirty || d.pubSig || !d.tracks) continue;
-    let repoStamp = 0;
-    try { const r = await readData("analysis", key.replace(/\.mid$/, "") + ".rollnotes.json", true); if (r.ok) repoStamp = JSON.parse(await r.text()).saved || 0; } catch (err) { continue; }
-    if (await draftFingerprint(key, d, repoStamp)) {
-      changed = true;
-      if (key === songKey && song) { song.pubSig = d.pubSig; song.savedStamp = d.savedStamp; updateSongBtn(); } // the open song: its in-memory state too
-    }
+// The Publish sheet checks every listed draft against the PUBLISHED copy the
+// way Compare does (notes by tick+pitch, length and velocity; tempo map), not
+// by a byte fingerprint: a draft whose music matches is taken off the list
+// (and an unstamped one adopts the repo's stamp — identical music can mask
+// nothing), and one that differs says how, on its line. The strict fingerprint
+// left songs "edited" whose Compare showed +0 −0 ~0 (Josh, 2026-09-29), and
+// guessing why cost three rounds; the sheet now shows the facts.
+const pubCheck = new Map(); // key -> the line's explanation, for this launch
+let pubCheckRunning = false;
+function pubTempoKey(tempos, scale) { return JSON.stringify((tempos || []).map(t => [Math.round(t.tick * scale), t.usq])); }
+async function pubCompareDraft(key, d) { // -> {same, text}
+  let repoStamp = 0;
+  try { const r = await readData("analysis", key.replace(/\.mid$/, "") + ".rollnotes.json", true); if (r.ok) repoStamp = JSON.parse(await r.text()).saved || 0; } catch (err) { /* no annotations file: fine */ }
+  let pub;
+  try {
+    const r = await readData("songs", key, true);
+    if (!r.ok) return {same: false, text: "not in the repo yet (HTTP " + r.status + ")"};
+    pub = parseMidi(await r.arrayBuffer());
+  } catch (err) { return {same: false, text: "couldn't read the published copy: " + err.message}; }
+  const scale = d.ppq / pub.ppq;
+  const repoTracks = pub.tracks.map(t => ({name: t.name, notes: t.notes.map(n => scale === 1 ? n : {...n, t: Math.round(n.t * scale), d: Math.round(n.d * scale)})}));
+  const diff = cmpDiff(repoTracks, d.tracks);
+  const tempoSame = pubTempoKey(pub.tempos, scale) === pubTempoKey(d.tempos, 1);
+  const same = !diff.tracks.length && tempoSame;
+  if (same) {
+    d.dirty = false; d.pubSig = musicSig(d);
+    if (repoStamp && !d.savedStamp) d.savedStamp = repoStamp;
+    try { draftWrite(key, d); } catch (err) { /* full: stays listed */ }
+    return {same, text: ""};
   }
+  const parts = [];
+  if (diff.tracks.length) parts.push("+" + diff.added + " −" + diff.removed + " ~" + diff.changed + " notes (" + diff.tracks.map(t => t.name).join(", ") + ")");
+  if (!tempoSame) parts.push("tempo map differs");
+  return {same, text: "vs published: " + parts.join("; ")};
+}
+async function fingerprintOldDrafts() {
+  if (pubCheckRunning || LINK_SONGS) return;
+  pubCheckRunning = true;
+  let changed = false;
+  try {
+    for (const key of draftKeys()) {
+      if (!syncable(key)) continue;
+      let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
+      if (!d || !d.dirty) { pubCheck.delete(key); continue; }
+      if (!d.tracks) { pubCheck.set(key, "not checked: its notes live in this device's database (an import)"); continue; }
+      const r = await pubCompareDraft(key, d);
+      changed = true;
+      if (r.same) {
+        pubCheck.delete(key);
+        if (key === songKey && song) { song.pubSig = d.pubSig; song.savedStamp = d.savedStamp || song.savedStamp; updateSongBtn(); }
+      } else pubCheck.set(key, r.text);
+      logDebug("publish check " + key.split("/").pop() + ": " + (r.same ? "matches the published copy — off the list" : r.text));
+    }
+  } finally { pubCheckRunning = false; }
   if (changed) { updateSyncBtn(); if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending(); }
 }
 // once per launch, a few seconds in (after the boot's own fetches): the
@@ -18856,7 +18892,7 @@ function renderSyncPending() {
     block.appendChild(title);
     const music = draftDirtyState(key);
     if (music) {
-      const row = line(block, "♪ music " + (music === "never" ? "never saved" : "edited since last save"));
+      const row = line(block, "♪ music " + (music === "never" ? "never saved" : "edited since last save") + (pubCheck.get(key) ? " — " + pubCheck.get(key) : ""));
       if (key === songKey && music === "edited") { // what changed? the roll shows it (View → Compare with repo)
         const b = document.createElement("button");
         b.textContent = "Compare";

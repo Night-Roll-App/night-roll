@@ -2529,23 +2529,21 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
 
 ## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
 
-**"Edited since last save" is a fingerprint comparison (2026-09-29).** A
-draft stores `pubSig`, the fingerprint of the published music: ppq, the
-tempo map, and the notes as `draftTracks` writes them (`musicSig`).
-`draftDoc` sets `dirty` by comparing against it, so an edit undone back
-to the published music is not an edit; before this, any edit set a flag
-that only Publish cleared. `draftDoc(true)` (a copy just made, or just
-published) records the fingerprint, and Publish all records it too. A
-draft from before the fingerprint gets one the first time it opens:
-`loadSongInner` reads the published `.mid` once, when the repo's stamp
-matches the draft's base, and opening the Publish sheet runs the same
-check once over every listed draft (`fingerprintOldDrafts`, also run
-once a few seconds after launch so the Publish (N) count is right). The
-check runs whenever the repo is not newer than the draft's base; an
-unstamped draft ("never saved" on a published song) adopts the repo's
-stamp only when its music is identical, so another device's newer save
-is never masked. The Publish (N) count recounts on every draft write and
-every sheet redraw.
+**"Edited since last save" means "differs from the published copy" (2026-09-29).**
+A draft stores `pubSig`, a fingerprint of the published music (ppq, tempo
+map, notes; `musicSig`), and `draftDoc` compares against it, so an edit
+undone is not an edit. Because a strict fingerprint still left songs
+listed whose Compare showed +0 −0 ~0, the Publish sheet does not trust it
+alone: `fingerprintOldDrafts` (on sheet open, and once a few seconds after
+launch) compares every listed draft with the published `.mid` the way
+Compare does (`pubCompareDraft`: `cmpDiff` notes at the draft's ppq, plus
+the tempo map). Matching drafts come off the list, and an unstamped
+"never saved" one adopts the repo's stamp, since identical music masks
+nothing. Drafts that differ show why on their line, for example
+"vs published: +2 −1 ~0 notes (lead)" or "tempo map differs". Each check
+also leaves a [debug] line. The Publish (N) count recounts on every draft
+write and every sheet redraw. Note that Compare itself, with auto-save
+off, compares with the last local Save, not the published copy.
 
 **Words (step 1, 5add982):** the one deliberate step that sends a song
 to the repo is **Publish** everywhere — File → Publish…, the footer

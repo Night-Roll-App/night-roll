@@ -4322,3 +4322,27 @@ test("edited since last save: an unstamped draft ('never saved') adopts the repo
     assert.equal(val(`__diff.pubSig === undefined`), true);
   } finally { run(`readData = globalThis.__realRead; for (const k of ["fp-c", "fp-d"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
 });
+
+test("Publish sheet check: a draft whose notes match the published copy (any order, any ppq) comes off the list; one that differs says how", async () => {
+  run(`{ globalThis.__realRead = readData;
+       const pubDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}, {t: 480, d: 480, p: 64, v: 90}]}]};
+       globalThis.__mid = writeMidi(pubDoc);
+       readData = async (kind) => kind === "songs"
+         ? {ok: true, status: 200, arrayBuffer: async () => __mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength)}
+         : {ok: true, status: 200, text: async () => JSON.stringify({saved: 42})};
+       const pub = parseMidi(__mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength));
+       const name = pub.tracks[0].name;
+       /* same music at double resolution, notes in reverse order, no stamp ("never saved") */
+       globalThis.__same = {savedStamp: 0, dirty: true, ppq: pub.ppq * 2, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name, notes: [{t: 960, d: 960, p: 64, v: 90}, {t: 0, d: 960, p: 60, v: 100}]}]};
+       globalThis.__diff = {savedStamp: 42, dirty: true, ppq: pub.ppq, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name, notes: [{t: 0, d: 480, p: 60, v: 100}, {t: 480, d: 480, p: 65, v: 90}]}]};
+       globalThis.__r = null;
+       Promise.all([pubCompareDraft("albums/compositions/nightroll/pc-a.mid", __same), pubCompareDraft("albums/compositions/nightroll/pc-b.mid", __diff)]).then(x => __r = x); }`);
+  for (let i = 0; i < 20 && !val(`globalThis.__r`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
+  try {
+    assert.equal(val(`__r[0].same`), true, "same notes, other order and ppq: matches");
+    assert.equal(val(`__same.dirty`), false);
+    assert.equal(val(`__same.savedStamp`), 42, "never saved, identical: adopts the repo's stamp");
+    assert.equal(val(`__r[1].same`), false);
+    assert.match(val(`__r[1].text`), /^vs published: \+1 −1 ~0 notes/);
+  } finally { run(`readData = globalThis.__realRead; for (const k of ["pc-a", "pc-b"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
+});
