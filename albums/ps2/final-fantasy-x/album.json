@@ -1,0 +1,432 @@
+{
+ "title": "Final Fantasy X",
+ "order": 50,
+ "songs": {
+  "auron-s-theme": "Auron's Theme",
+  "brass-de-chocobo": "Brass de Chocobo",
+  "cloister-of-trials": "Cloister of Trials",
+  "daughter-of-the-high-summoner": "Daughter of the High Summoner",
+  "hum-of-the-fayth-rikku": "Hum of the Fayth (Rikku)",
+  "hum-of-the-fayth-tidus": "Hum of the Fayth (Tidus)",
+  "hurry": "Hurry!!",
+  "hymn-of-the-fayth-anima": "Hymn of the Fayth ~ Anima",
+  "hymn-of-the-fayth-bahamut": "Hymn of the Fayth ~ Bahamut",
+  "hymn-of-the-fayth-ifrit": "Hymn of the Fayth ~ Ifrit",
+  "hymn-of-the-fayth-ixion": "Hymn of the Fayth ~ Ixion",
+  "hymn-of-the-fayth-ronso-tribe": "Hymn of the Fayth ~ Ronso Tribe",
+  "hymn-of-the-fayth-shiva": "Hymn of the Fayth ~ Shiva",
+  "hymn-of-the-fayth-spira": "Hymn of the Fayth ~ Spira",
+  "hymn-of-the-fayth-valefor": "Hymn of the Fayth ~ Valefor",
+  "hymn-of-the-fayth-yojimbo": "Hymn of the Fayth ~ Yojimbo",
+  "hymn-of-the-fayth-yunalesca-alternate": "Hymn of the Fayth ~ Yunalesca (Alternate)",
+  "hymn-of-the-fayth-yunalesca": "Hymn of the Fayth ~ Yunalesca",
+  "hymn-of-the-fayth": "Hymn of the Fayth",
+  "jecht-s-theme": "Jecht's Theme",
+  "lulu-s-theme": "Lulu's Theme",
+  "mi-ihen-highroad": "Mi'ihen Highroad",
+  "my-father-s-murderer": "My Father's Murderer",
+  "other-world-alternate-1": "Other World (Alternate 1)",
+  "other-world-alternate-2": "Other World (Alternate 2)",
+  "other-world-alternate-3": "Other World (Alternate 3)",
+  "path-of-repentance": "Path of Repentance",
+  "people-of-the-far-north": "People of the Far North",
+  "ride-ze-shoopuf": "Ride ze Shoopuf?",
+  "rikku-s-theme": "Rikku's Theme",
+  "sea-of-mist": "Sea of Mist",
+  "seymour-s-ambition": "Seymour's Ambition",
+  "seymour-s-theme": "Seymour's Theme",
+  "silence-before-the-storm": "Silence Before the Storm",
+  "someday-the-dream-will-end": "Someday the Dream Will End",
+  "the-sight-of-spira": "The Sight of Spira",
+  "tidus-theme": "Tidus' Theme",
+  "time-of-judgement": "Time of Judgement",
+  "to-the-end-of-the-abyss": "To the End of the Abyss",
+  "truth-revealed-alternate": "Truth Revealed (Alternate)",
+  "victory": "Victory!",
+  "wakka-s-theme": "Wakka's Theme",
+  "welcoming-of-maester-mika": "Welcoming of Maester Mika",
+  "yuna-s-determination": "Yuna's Determination",
+  "yuna-s-theme": "Yuna's Theme"
+ },
+ "nsf": {
+  "vault": "final-fantasy-x/",
+  "tracks": {
+   "aeon-battle": {
+    "n": 1,
+    "secs": 232.5
+   },
+   "assault": {
+    "n": 1,
+    "secs": 199.772674
+   },
+   "auron-s-theme": {
+    "n": 1,
+    "secs": 140.32693477083333
+   },
+   "battle": {
+    "n": 1,
+    "secs": 101.05248
+   },
+   "besaid-island": {
+    "n": 1,
+    "secs": 140.917504
+   },
+   "blitz-ball-gamblers": {
+    "n": 1,
+    "secs": 110.76912
+   },
+   "blitz-off": {
+    "n": 1,
+    "secs": 175.51680712500004
+   },
+   "brass-de-chocobo": {
+    "n": 1,
+    "secs": 76.8
+   },
+   "brave-advancement": {
+    "n": 1,
+    "secs": 98
+   },
+   "challenge": {
+    "n": 1,
+    "secs": 161.927808
+   },
+   "cloister-of-trials": {
+    "n": 1,
+    "secs": 96.09375
+   },
+   "confrontation": {
+    "n": 1,
+    "secs": 91.428608
+   },
+   "crisis": {
+    "n": 1,
+    "secs": 107.076816
+   },
+   "darkness": {
+    "n": 1,
+    "secs": 261.818112
+   },
+   "daughter-of-the-high-summoner": {
+    "n": 1,
+    "secs": 108.8
+   },
+   "decisive-battle": {
+    "n": 1,
+    "secs": 206.04594362500006
+   },
+   "djose-temple": {
+    "n": 1,
+    "secs": 116.1435875
+   },
+   "enemy-attack": {
+    "n": 1,
+    "secs": 70.58826
+   },
+   "game-over": {
+    "n": 1,
+    "secs": 31.06371
+   },
+   "guadosalam": {
+    "n": 1,
+    "secs": 168
+   },
+   "hopeless-desire": {
+    "n": 1,
+    "secs": 102.315798
+   },
+   "hum-of-the-fayth-rikku": {
+    "n": 1,
+    "secs": 35.172405
+   },
+   "hum-of-the-fayth-tidus": {
+    "n": 1,
+    "secs": 38.068956
+   },
+   "hurry": {
+    "n": 1,
+    "secs": 70.000056
+   },
+   "hymn-of-the-fayth-anima": {
+    "n": 1,
+    "secs": 40.00002
+   },
+   "hymn-of-the-fayth-bahamut": {
+    "n": 1,
+    "secs": 40.00002
+   },
+   "hymn-of-the-fayth-ifrit": {
+    "n": 1,
+    "secs": 40.00002
+   },
+   "hymn-of-the-fayth-ixion": {
+    "n": 1,
+    "secs": 40.00002
+   },
+   "hymn-of-the-fayth-ronso-tribe": {
+    "n": 1,
+    "secs": 40.00002
+   },
+   "hymn-of-the-fayth-shiva": {
+    "n": 1,
+    "secs": 40.00002
+   },
+   "hymn-of-the-fayth-spira": {
+    "n": 1,
+    "secs": 40.00002
+   },
+   "hymn-of-the-fayth-valefor": {
+    "n": 1,
+    "secs": 42.666688
+   },
+   "hymn-of-the-fayth-yojimbo": {
+    "n": 1,
+    "secs": 40.00002
+   },
+   "hymn-of-the-fayth-yunalesca-alternate": {
+    "n": 1,
+    "secs": 41.333354
+   },
+   "hymn-of-the-fayth-yunalesca": {
+    "n": 1,
+    "secs": 41.333354
+   },
+   "hymn-of-the-fayth": {
+    "n": 1,
+    "secs": 42.666688
+   },
+   "i-can-fly": {
+    "n": 1,
+    "secs": 81.428585
+   },
+   "illusion": {
+    "n": 1,
+    "secs": 156.73472
+   },
+   "in-zanarkand": {
+    "n": 1,
+    "secs": 95.33338
+   },
+   "inflexible-determination": {
+    "n": 1,
+    "secs": 24
+   },
+   "jecht-s-theme": {
+    "n": 1,
+    "secs": 126.6315895
+   },
+   "launch": {
+    "n": 1,
+    "secs": 93.5625
+   },
+   "luca": {
+    "n": 1,
+    "secs": 197.26032
+   },
+   "lulu-s-theme": {
+    "n": 1,
+    "secs": 109.714304
+   },
+   "macalania-forest": {
+    "n": 1,
+    "secs": 90.40132470833333
+   },
+   "mi-ihen-highroad": {
+    "n": 1,
+    "secs": 98.85901766666669
+   },
+   "my-father-s-murderer": {
+    "n": 1,
+    "secs": 72
+   },
+   "nostalgia": {
+    "n": 1,
+    "secs": 87.26674841666666
+   },
+   "ominous": {
+    "n": 1,
+    "secs": 160
+   },
+   "other-world-alternate-1": {
+    "n": 1,
+    "secs": 145.03608
+   },
+   "other-world-alternate-2": {
+    "n": 1,
+    "secs": 145.03608
+   },
+   "other-world-alternate-3": {
+    "n": 1,
+    "secs": 144.4515471875
+   },
+   "oui-are-al-bhed": {
+    "n": 1,
+    "secs": 108.8
+   },
+   "path-of-repentance": {
+    "n": 1,
+    "secs": 63.692244
+   },
+   "people-of-the-far-north": {
+    "n": 1,
+    "secs": 123.870976
+   },
+   "permitted-passage": {
+    "n": 1,
+    "secs": 66.545449
+   },
+   "phantoms": {
+    "n": 1,
+    "secs": 219.310396
+   },
+   "pursuit": {
+    "n": 1,
+    "secs": 128
+   },
+   "ride-ze-shoopuf": {
+    "n": 1,
+    "secs": 108
+   },
+   "rikku-s-theme": {
+    "n": 1,
+    "secs": 107.4643663125
+   },
+   "scorching-desert": {
+    "n": 1,
+    "secs": 108
+   },
+   "sea-of-mist": {
+    "n": 1,
+    "secs": 134.736896
+   },
+   "seymour-battle": {
+    "n": 1,
+    "secs": 183.999816
+   },
+   "seymour-s-ambition": {
+    "n": 1,
+    "secs": 112.08333333333333
+   },
+   "seymour-s-theme": {
+    "n": 1,
+    "secs": 150.73333333333332
+   },
+   "silence-before-the-storm": {
+    "n": 1,
+    "secs": 169.41168
+   },
+   "someday-the-dream-will-end": {
+    "n": 1,
+    "secs": 107.949822
+   },
+   "sprouting": {
+    "n": 1,
+    "secs": 90
+   },
+   "temple-band": {
+    "n": 1,
+    "secs": 126.593472
+   },
+   "the-prelude": {
+    "n": 1,
+    "secs": 48.052083333333336
+   },
+   "the-sight-of-spira": {
+    "n": 1,
+    "secs": 130.05286825000002
+   },
+   "the-splendid-performance": {
+    "n": 1,
+    "secs": 101.542339
+   },
+   "the-summoning": {
+    "n": 1,
+    "secs": 36.7347
+   },
+   "the-unsent-laugh": {
+    "n": 1,
+    "secs": 128
+   },
+   "thunder-plains": {
+    "n": 1,
+    "secs": 112.93444775000002
+   },
+   "tidus-theme": {
+    "n": 1,
+    "secs": 150.634096
+   },
+   "time-of-judgement": {
+    "n": 1,
+    "secs": 87.613613
+   },
+   "to-the-end-of-the-abyss": {
+    "n": 1,
+    "secs": 119.387775
+   },
+   "tragedy": {
+    "n": 1,
+    "secs": 240.217234
+   },
+   "travel-agency": {
+    "n": 1,
+    "secs": 88.88892
+   },
+   "truth-revealed-alternate": {
+    "n": 1,
+    "secs": 121.82117250000002
+   },
+   "truth-revealed": {
+    "n": 1,
+    "secs": 122.71208150000001
+   },
+   "twilight": {
+    "n": 1,
+    "secs": 297.142872
+   },
+   "underground-activities": {
+    "n": 1,
+    "secs": 36
+   },
+   "underwater-ruins": {
+    "n": 1,
+    "secs": 128
+   },
+   "victory": {
+    "n": 1,
+    "secs": 40
+   },
+   "wakka-s-theme": {
+    "n": 1,
+    "secs": 136.875
+   },
+   "wandering-flames": {
+    "n": 1,
+    "secs": 128
+   },
+   "wedding": {
+    "n": 1,
+    "secs": 67.500027
+   },
+   "welcoming-of-maester-mika": {
+    "n": 1,
+    "secs": 72.452864
+   },
+   "yuna-s-determination": {
+    "n": 1,
+    "secs": 97.17191887499999
+   },
+   "yuna-s-theme": {
+    "n": 1,
+    "secs": 102.85716
+   }
+  },
+  "chip": "psf2",
+  "perFile": true,
+  "libs": [
+   {
+    "name": "ffx.psf2lib",
+    "file": "ffx.psf2lib"
+   }
+  ]
+ }
+}

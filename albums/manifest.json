@@ -6765,6 +6765,379 @@
   ]
  },
  {
+  "title": "Final Fantasy X",
+  "songs": [
+   {
+    "title": "Aeon Battle",
+    "path": "albums/ps2/final-fantasy-x/aeon-battle.mid"
+   },
+   {
+    "title": "Assault",
+    "path": "albums/ps2/final-fantasy-x/assault.mid"
+   },
+   {
+    "title": "Auron's Theme",
+    "path": "albums/ps2/final-fantasy-x/auron-s-theme.mid"
+   },
+   {
+    "title": "Battle",
+    "path": "albums/ps2/final-fantasy-x/battle.mid"
+   },
+   {
+    "title": "Besaid Island",
+    "path": "albums/ps2/final-fantasy-x/besaid-island.mid"
+   },
+   {
+    "title": "Blitz Ball Gamblers",
+    "path": "albums/ps2/final-fantasy-x/blitz-ball-gamblers.mid"
+   },
+   {
+    "title": "Blitz Off",
+    "path": "albums/ps2/final-fantasy-x/blitz-off.mid"
+   },
+   {
+    "title": "Brass de Chocobo",
+    "path": "albums/ps2/final-fantasy-x/brass-de-chocobo.mid"
+   },
+   {
+    "title": "Brave Advancement",
+    "path": "albums/ps2/final-fantasy-x/brave-advancement.mid"
+   },
+   {
+    "title": "Challenge",
+    "path": "albums/ps2/final-fantasy-x/challenge.mid"
+   },
+   {
+    "title": "Cloister of Trials",
+    "path": "albums/ps2/final-fantasy-x/cloister-of-trials.mid"
+   },
+   {
+    "title": "Confrontation",
+    "path": "albums/ps2/final-fantasy-x/confrontation.mid"
+   },
+   {
+    "title": "Crisis",
+    "path": "albums/ps2/final-fantasy-x/crisis.mid"
+   },
+   {
+    "title": "Darkness",
+    "path": "albums/ps2/final-fantasy-x/darkness.mid"
+   },
+   {
+    "title": "Daughter of the High Summoner",
+    "path": "albums/ps2/final-fantasy-x/daughter-of-the-high-summoner.mid"
+   },
+   {
+    "title": "Decisive Battle",
+    "path": "albums/ps2/final-fantasy-x/decisive-battle.mid"
+   },
+   {
+    "title": "Djose Temple",
+    "path": "albums/ps2/final-fantasy-x/djose-temple.mid"
+   },
+   {
+    "title": "Enemy Attack",
+    "path": "albums/ps2/final-fantasy-x/enemy-attack.mid"
+   },
+   {
+    "title": "Game Over",
+    "path": "albums/ps2/final-fantasy-x/game-over.mid"
+   },
+   {
+    "title": "Guadosalam",
+    "path": "albums/ps2/final-fantasy-x/guadosalam.mid"
+   },
+   {
+    "title": "Hopeless Desire",
+    "path": "albums/ps2/final-fantasy-x/hopeless-desire.mid"
+   },
+   {
+    "title": "Hum of the Fayth (Rikku)",
+    "path": "albums/ps2/final-fantasy-x/hum-of-the-fayth-rikku.mid"
+   },
+   {
+    "title": "Hum of the Fayth (Tidus)",
+    "path": "albums/ps2/final-fantasy-x/hum-of-the-fayth-tidus.mid"
+   },
+   {
+    "title": "Hurry!!",
+    "path": "albums/ps2/final-fantasy-x/hurry.mid"
+   },
+   {
+    "title": "Hymn of the Fayth",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Anima",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-anima.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Bahamut",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-bahamut.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Ifrit",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-ifrit.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Ixion",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-ixion.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Ronso Tribe",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-ronso-tribe.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Shiva",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-shiva.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Spira",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-spira.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Valefor",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-valefor.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Yojimbo",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-yojimbo.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Yunalesca",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-yunalesca.mid"
+   },
+   {
+    "title": "Hymn of the Fayth ~ Yunalesca (Alternate)",
+    "path": "albums/ps2/final-fantasy-x/hymn-of-the-fayth-yunalesca-alternate.mid"
+   },
+   {
+    "title": "I Can Fly",
+    "path": "albums/ps2/final-fantasy-x/i-can-fly.mid"
+   },
+   {
+    "title": "Illusion",
+    "path": "albums/ps2/final-fantasy-x/illusion.mid"
+   },
+   {
+    "title": "In Zanarkand",
+    "path": "albums/ps2/final-fantasy-x/in-zanarkand.mid"
+   },
+   {
+    "title": "Inflexible Determination",
+    "path": "albums/ps2/final-fantasy-x/inflexible-determination.mid"
+   },
+   {
+    "title": "Jecht's Theme",
+    "path": "albums/ps2/final-fantasy-x/jecht-s-theme.mid"
+   },
+   {
+    "title": "Launch",
+    "path": "albums/ps2/final-fantasy-x/launch.mid"
+   },
+   {
+    "title": "Luca",
+    "path": "albums/ps2/final-fantasy-x/luca.mid"
+   },
+   {
+    "title": "Lulu's Theme",
+    "path": "albums/ps2/final-fantasy-x/lulu-s-theme.mid"
+   },
+   {
+    "title": "Macalania Forest",
+    "path": "albums/ps2/final-fantasy-x/macalania-forest.mid"
+   },
+   {
+    "title": "Mi'ihen Highroad",
+    "path": "albums/ps2/final-fantasy-x/mi-ihen-highroad.mid"
+   },
+   {
+    "title": "My Father's Murderer",
+    "path": "albums/ps2/final-fantasy-x/my-father-s-murderer.mid"
+   },
+   {
+    "title": "Nostalgia",
+    "path": "albums/ps2/final-fantasy-x/nostalgia.mid"
+   },
+   {
+    "title": "Ominous",
+    "path": "albums/ps2/final-fantasy-x/ominous.mid"
+   },
+   {
+    "title": "Other World (Alternate 1)",
+    "path": "albums/ps2/final-fantasy-x/other-world-alternate-1.mid"
+   },
+   {
+    "title": "Other World (Alternate 2)",
+    "path": "albums/ps2/final-fantasy-x/other-world-alternate-2.mid"
+   },
+   {
+    "title": "Other World (Alternate 3)",
+    "path": "albums/ps2/final-fantasy-x/other-world-alternate-3.mid"
+   },
+   {
+    "title": "Oui Are Al Bhed",
+    "path": "albums/ps2/final-fantasy-x/oui-are-al-bhed.mid"
+   },
+   {
+    "title": "Path of Repentance",
+    "path": "albums/ps2/final-fantasy-x/path-of-repentance.mid"
+   },
+   {
+    "title": "People of the Far North",
+    "path": "albums/ps2/final-fantasy-x/people-of-the-far-north.mid"
+   },
+   {
+    "title": "Permitted Passage",
+    "path": "albums/ps2/final-fantasy-x/permitted-passage.mid"
+   },
+   {
+    "title": "Phantoms",
+    "path": "albums/ps2/final-fantasy-x/phantoms.mid"
+   },
+   {
+    "title": "Pursuit",
+    "path": "albums/ps2/final-fantasy-x/pursuit.mid"
+   },
+   {
+    "title": "Ride ze Shoopuf?",
+    "path": "albums/ps2/final-fantasy-x/ride-ze-shoopuf.mid"
+   },
+   {
+    "title": "Rikku's Theme",
+    "path": "albums/ps2/final-fantasy-x/rikku-s-theme.mid"
+   },
+   {
+    "title": "Scorching Desert",
+    "path": "albums/ps2/final-fantasy-x/scorching-desert.mid"
+   },
+   {
+    "title": "Sea of Mist",
+    "path": "albums/ps2/final-fantasy-x/sea-of-mist.mid"
+   },
+   {
+    "title": "Seymour Battle",
+    "path": "albums/ps2/final-fantasy-x/seymour-battle.mid"
+   },
+   {
+    "title": "Seymour's Ambition",
+    "path": "albums/ps2/final-fantasy-x/seymour-s-ambition.mid"
+   },
+   {
+    "title": "Seymour's Theme",
+    "path": "albums/ps2/final-fantasy-x/seymour-s-theme.mid"
+   },
+   {
+    "title": "Silence Before the Storm",
+    "path": "albums/ps2/final-fantasy-x/silence-before-the-storm.mid"
+   },
+   {
+    "title": "Someday the Dream Will End",
+    "path": "albums/ps2/final-fantasy-x/someday-the-dream-will-end.mid"
+   },
+   {
+    "title": "Sprouting",
+    "path": "albums/ps2/final-fantasy-x/sprouting.mid"
+   },
+   {
+    "title": "Temple Band",
+    "path": "albums/ps2/final-fantasy-x/temple-band.mid"
+   },
+   {
+    "title": "The Prelude",
+    "path": "albums/ps2/final-fantasy-x/the-prelude.mid"
+   },
+   {
+    "title": "The Sight of Spira",
+    "path": "albums/ps2/final-fantasy-x/the-sight-of-spira.mid"
+   },
+   {
+    "title": "The Splendid Performance",
+    "path": "albums/ps2/final-fantasy-x/the-splendid-performance.mid"
+   },
+   {
+    "title": "The Summoning",
+    "path": "albums/ps2/final-fantasy-x/the-summoning.mid"
+   },
+   {
+    "title": "The Unsent Laugh",
+    "path": "albums/ps2/final-fantasy-x/the-unsent-laugh.mid"
+   },
+   {
+    "title": "Thunder Plains",
+    "path": "albums/ps2/final-fantasy-x/thunder-plains.mid"
+   },
+   {
+    "title": "Tidus' Theme",
+    "path": "albums/ps2/final-fantasy-x/tidus-theme.mid"
+   },
+   {
+    "title": "Time of Judgement",
+    "path": "albums/ps2/final-fantasy-x/time-of-judgement.mid"
+   },
+   {
+    "title": "To the End of the Abyss",
+    "path": "albums/ps2/final-fantasy-x/to-the-end-of-the-abyss.mid"
+   },
+   {
+    "title": "Tragedy",
+    "path": "albums/ps2/final-fantasy-x/tragedy.mid"
+   },
+   {
+    "title": "Travel Agency",
+    "path": "albums/ps2/final-fantasy-x/travel-agency.mid"
+   },
+   {
+    "title": "Truth Revealed",
+    "path": "albums/ps2/final-fantasy-x/truth-revealed.mid"
+   },
+   {
+    "title": "Truth Revealed (Alternate)",
+    "path": "albums/ps2/final-fantasy-x/truth-revealed-alternate.mid"
+   },
+   {
+    "title": "Twilight",
+    "path": "albums/ps2/final-fantasy-x/twilight.mid"
+   },
+   {
+    "title": "Underground Activities",
+    "path": "albums/ps2/final-fantasy-x/underground-activities.mid"
+   },
+   {
+    "title": "Underwater Ruins",
+    "path": "albums/ps2/final-fantasy-x/underwater-ruins.mid"
+   },
+   {
+    "title": "Victory!",
+    "path": "albums/ps2/final-fantasy-x/victory.mid"
+   },
+   {
+    "title": "Wakka's Theme",
+    "path": "albums/ps2/final-fantasy-x/wakka-s-theme.mid"
+   },
+   {
+    "title": "Wandering Flames",
+    "path": "albums/ps2/final-fantasy-x/wandering-flames.mid"
+   },
+   {
+    "title": "Wedding",
+    "path": "albums/ps2/final-fantasy-x/wedding.mid"
+   },
+   {
+    "title": "Welcoming of Maester Mika",
+    "path": "albums/ps2/final-fantasy-x/welcoming-of-maester-mika.mid"
+   },
+   {
+    "title": "Yuna's Determination",
+    "path": "albums/ps2/final-fantasy-x/yuna-s-determination.mid"
+   },
+   {
+    "title": "Yuna's Theme",
+    "path": "albums/ps2/final-fantasy-x/yuna-s-theme.mid"
+   }
+  ]
+ },
+ {
   "title": "GoldenEye 007",
   "songs": [
    {
