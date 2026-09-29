@@ -2859,7 +2859,7 @@ function dirtySongs() { // songs with unsynced local notes on this device
 }
 function updateSyncBtn() {
   const n = pendingSongs().length;
-  document.getElementById("syncbtn").textContent = n > 1 ? "Publish (" + n + ")" : "Publish";
+  document.getElementById("syncbtn").textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one")
 }
 function serializeNotesList(list, beatsPerBar, base, stamp) {
   // one note per line: valid JSON that git-diffs like the old text format.
@@ -13014,7 +13014,12 @@ function draftTracks(tracks) { // the notes as a draft stores them (and as the p
 // The published music's fingerprint (pubSig): "edited since last save" is a
 // comparison with it, not a flag that any edit sets for good — an added note
 // then undone left songs "edited" that were not (Josh, 2026-09-29).
-function musicSig(d) { return JSON.stringify([d.ppq, (d.tempos || []).map(t => [t.tick, t.usq]), d.tracks]); }
+// Notes only, not the tempo map: Publish writes the tempo you HEAR (a tempo:
+// annotation baked in, writeMidi(song)) while the draft keeps the file's base
+// tempo, so every song with a tempo: annotation looked "edited" — Cool B Major
+// Progression, 60 in the draft's base vs 75 published and heard (Josh,
+// 2026-09-29). Tempo is an annotation, compared and listed as one.
+function musicSig(d) { return JSON.stringify([d.ppq, d.tracks]); }
 // A draft from before the fingerprint: read the published .mid once and let
 // "edited" follow the comparison — "edited" means "differs from what is
 // published". Not when the repo is NEWER than the draft's base (that is the
@@ -13051,7 +13056,6 @@ async function draftFingerprint(path, d, repoStamp) {
 // guessing why cost three rounds; the sheet now shows the facts.
 const pubCheck = new Map(); // key -> the line's explanation, for this launch
 let pubCheckRunning = false;
-function pubTempoKey(tempos, scale) { return JSON.stringify((tempos || []).map(t => [Math.round(t.tick * scale), t.usq])); }
 async function pubCompareDraft(key, d) { // -> {same, text}
   let repoStamp = 0;
   try { const r = await readData("analysis", key.replace(/\.mid$/, "") + ".rollnotes.json", true); if (r.ok) repoStamp = JSON.parse(await r.text()).saved || 0; } catch (err) { /* no annotations file: fine */ }
@@ -13064,8 +13068,7 @@ async function pubCompareDraft(key, d) { // -> {same, text}
   const scale = d.ppq / pub.ppq;
   const repoTracks = pub.tracks.map(t => ({name: t.name, notes: t.notes.map(n => scale === 1 ? n : {...n, t: Math.round(n.t * scale), d: Math.round(n.d * scale)})}));
   const diff = cmpDiff(repoTracks, d.tracks);
-  const tempoSame = pubTempoKey(pub.tempos, scale) === pubTempoKey(d.tempos, 1);
-  const same = !diff.tracks.length && tempoSame;
+  const same = !diff.tracks.length; // notes only: tempo is an annotation (see musicSig)
   if (same) {
     d.dirty = false; d.pubSig = musicSig(d);
     if (repoStamp && !d.savedStamp) d.savedStamp = repoStamp;
@@ -13073,11 +13076,7 @@ async function pubCompareDraft(key, d) { // -> {same, text}
     return {same, text: ""};
   }
   const parts = [];
-  if (diff.tracks.length) parts.push("+" + diff.added + " −" + diff.removed + " ~" + diff.changed + " notes (" + diff.tracks.map(t => t.name).join(", ") + ")");
-  if (!tempoSame) { // say it in BPM: "tempo map differs" alone could not be seen (Cool B Major: 60 here, 75 published — Josh, 2026-09-29)
-    const bpm = ts => (ts || []).map(t => Math.round(6e7 / t.usq * 10) / 10).join(" → ");
-    parts.push("tempo " + bpm(d.tempos) + " BPM here, " + bpm(pub.tempos) + " published");
-  }
+  parts.push("+" + diff.added + " −" + diff.removed + " ~" + diff.changed + " notes (" + diff.tracks.map(t => t.name).join(", ") + ")");
   return {same, text: "vs published: " + parts.join("; ")};
 }
 async function fingerprintOldDrafts() {

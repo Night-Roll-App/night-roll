@@ -2530,17 +2530,18 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
 ## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
 
 **"Edited since last save" means "differs from the published copy" (2026-09-29).**
-A draft stores `pubSig`, a fingerprint of the published music (ppq, tempo
-map, notes; `musicSig`), and `draftDoc` compares against it, so an edit
+A draft stores `pubSig`, a fingerprint of the published music (ppq and
+notes; `musicSig`; not the tempo map, since Publish bakes the heard tempo from a
+`tempo:` annotation into the .mid while the draft keeps the file's base
+tempo, and tempo is an annotation, listed as one), and `draftDoc` compares against it, so an edit
 undone is not an edit. Because a strict fingerprint still left songs
 listed whose Compare showed +0 −0 ~0, the Publish sheet does not trust it
 alone: `fingerprintOldDrafts` (on sheet open, and once a few seconds after
 launch) compares every listed draft with the published `.mid` the way
-Compare does (`pubCompareDraft`: `cmpDiff` notes at the draft's ppq, plus
-the tempo map). Matching drafts come off the list, and an unstamped
+Compare does (`pubCompareDraft`: `cmpDiff` notes at the draft's ppq). Matching drafts come off the list, and an unstamped
 "never saved" one adopts the repo's stamp, since identical music masks
 nothing. Drafts that differ show why on their line, for example
-"vs published: +2 −1 ~0 notes (lead)" or "tempo map differs". Each check
+"vs published: +2 −1 ~0 notes (lead)". Each check
 also leaves a [debug] line. The Publish (N) count recounts on every draft
 write and every sheet redraw. Note that Compare itself, with auto-save
 off, compares with the last local Save, not the published copy.

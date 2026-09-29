@@ -4346,6 +4346,6 @@ test("Publish sheet check: a draft whose notes match the published copy (any ord
     assert.match(val(`__r[1].text`), /^vs published: \+1 −1 ~0 notes/);
     run(`globalThis.__r2 = null; pubCompareDraft("albums/compositions/nightroll/pc-c.mid", {...__diff, tracks: __same.tracks.map(t => ({...t})), ppq: __same.ppq, tempos: [{tick: 0, usq: 1000000}]}).then(x => __r2 = x);`);
     for (let i = 0; i < 20 && !val(`globalThis.__r2`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
-    assert.equal(val(`__r2.text`), "vs published: tempo 60 BPM here, 120 published");
+    assert.equal(val(`__r2.same`), true, "a tempo-only difference is not a music edit: Publish bakes the heard tempo, the draft keeps the base");
   } finally { run(`readData = globalThis.__realRead; for (const k of ["pc-a", "pc-b", "pc-c"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
 });
