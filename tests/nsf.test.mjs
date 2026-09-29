@@ -303,6 +303,52 @@ test("trimSustainedTail: cuts a held tail to the ring, leaves a still-live windo
   assert.deepEqual(untouched.events, events);
 });
 
+test("trimSustainedTail: a same-pitch volume-only re-trigger after F is a ghost note, dropped — the note it continues rings to its OWN conclusion (F), not F+ring", () => {
+  // Zelda (NES) tracks 5-7 (Josh, 2026-09-29): the driver's last real
+  // register change is releasing the final note (e.g. pulse v7 -> v4) via a
+  // write that also touches the length-counter register, which reconstruct()
+  // treats as a note boundary regardless of pitch — splitting the SAME note
+  // into a real half and a same-pitch "ghost" tail. "delete that ghost note
+  // and just let that note before it ring until its own conclusion."
+  const events = [
+    {channel: "pulse2", startFrame: 0, endFrame: 40, midi: 60, vol: 7},
+    {channel: "pulse2", startFrame: 40, endFrame: 300, midi: 60, vol: 4}, // ghost: same pitch continuation
+  ];
+  const {events: kept, frames} = trimSustainedTail(events, 300, 40, 30); // F = 40
+  assert.equal(kept.length, 1, "the ghost is dropped, not just shortened");
+  assert.equal(kept[0].startFrame, 0, "the real note's onset is untouched");
+  assert.equal(kept[0].endFrame, 40, "it rings to F, its own conclusion — no ghost, no extra ring");
+  assert.equal(frames, 40, "nothing rings past F when the only later event was a ghost");
+});
+
+test("trimSustainedTail: a NEW pitch struck at/near F is a true final note — it keeps its short ring-out", () => {
+  const events = [
+    {channel: "pulse2", startFrame: 0, endFrame: 40, midi: 60, vol: 7},
+    {channel: "pulse2", startFrame: 40, endFrame: 300, midi: 64, vol: 7}, // a real attack, different pitch
+  ];
+  const {events: kept, frames} = trimSustainedTail(events, 300, 40, 30); // F = 40, ring = 30
+  assert.equal(kept.length, 2, "a genuine new note is never dropped");
+  assert.equal(kept[1].midi, 64);
+  assert.equal(kept[1].endFrame, 70, "F + ring: the short ring-out, not the rest of the capture");
+  assert.equal(frames, 70);
+});
+
+test("trimSustainedTail: ghosts are per-channel — one channel's ghost doesn't touch another channel's real ring-out", () => {
+  const events = [
+    {channel: "pulse2", startFrame: 0, endFrame: 40, midi: 60, vol: 7},
+    {channel: "pulse2", startFrame: 40, endFrame: 300, midi: 60, vol: 4}, // ghost on pulse2
+    {channel: "pulse1", startFrame: 0, endFrame: 40, midi: 72, vol: 7},
+    {channel: "pulse1", startFrame: 40, endFrame: 300, midi: 76, vol: 7}, // real final note on pulse1
+  ];
+  const {events: kept, frames} = trimSustainedTail(events, 300, 40, 30);
+  const pulse2 = kept.filter(e => e.channel === "pulse2"), pulse1 = kept.filter(e => e.channel === "pulse1");
+  assert.equal(pulse2.length, 1, "pulse2's ghost is dropped");
+  assert.equal(pulse2[0].endFrame, 40, "pulse2's real note ends at F");
+  assert.equal(pulse1.length, 2, "pulse1's real final note survives");
+  assert.equal(pulse1[1].endFrame, 70, "and keeps its own ring-out");
+  assert.equal(frames, 70, "the song's end follows the true final note that actually rings");
+});
+
 test("no-loop tail trim, synthetic NSF: a phrase held forever gets cut to a ring-out", () => {
   const nsf = parseNSF(makeTestNSF().buffer); // C4 E4 G4 C5, then C5 holds — nothing written again
   const {apuLog, frames, frameSec} = runNSF(nsf, 1, 10); // 10s — the phrase itself is over well inside 4s
@@ -366,9 +412,54 @@ test("no-loop tail trim, real rip: Legend of Zelda (NES) jingles under a bar don
       assert.equal(loop, null, "track " + track + " is confirmed non-looping (a jingle, not through-composed music)");
       const changedAt = Math.max(0, lastRegisterChangeFrame(apuLog, frames) - t0);
       const ring = Math.round(1 / frameSec);
-      const {frames: kept} = trimSustainedTail(shifted, frames - t0, changedAt, ring);
+      const {events: trimmed, frames: kept} = trimSustainedTail(shifted, frames - t0, changedAt, ring);
       const keptSec = kept * frameSec, rawSec = (frames - t0) * frameSec;
       assert.ok(keptSec < rawSec * 0.6, "track " + track + " trims meaningfully off the " + rawSec.toFixed(1) + "s ceiling, got " + keptSec.toFixed(2) + "s");
       assert.ok(keptSec < 10, "track " + track + " keeps a short capture, not a padded one, got " + keptSec.toFixed(2) + "s");
+      // ghost notes (2026-09-29): the same pitch must never split into two
+      // consecutive events at/after the trim's own boundary — that split IS
+      // the ghost (a volume-only re-trigger), and it must be gone
+      const byCh = {};
+      for (const e of trimmed) (byCh[e.channel] = byCh[e.channel] || []).push(e);
+      for (const list of Object.values(byCh)) {
+        list.sort((a, b) => a.startFrame - b.startFrame);
+        for (let i = 1; i < list.length; i++) {
+          assert.ok(!(list[i].startFrame >= changedAt && list[i].midi === list[i - 1].midi),
+            "track " + track + " channel " + list[i].channel + ": a ghost survived the trim");
+        }
+      }
     }
   });
+
+test("track 21 (real rip): a whole-song range of two very high notes (C#7, G#7 — MIDI 97/104) both survive reconstruct, the no-loop trim, and the MIDI round trip",
+  {skip: !existsSync(ZELDA_ZIP) && "no rip at " + ZELDA_ZIP},
+  () => {
+    const files = gatherFiles(ZELDA_ZIP);
+    const nsf = parseNSF(files.find(f => /\.nsf$/i.test(f.name)).bytes.buffer);
+    const {apuLog, frames, frameSec} = runNSF(nsf, 21, 8);
+    let events = reconstruct(apuLog, frames, frameSec);
+    assert.equal(events.length, 2, "two raw notes: C#7 0.33 beats, then G#7 0.83 beats");
+    assert.deepEqual(events.map(e => e.midi).sort((a, b) => a - b), [97, 104]);
+    const t0 = Math.min(...events.map(e => e.startFrame));
+    events = events.map(e => ({...e, startFrame: e.startFrame - t0, endFrame: e.endFrame - t0}));
+    const loop = detectLoop(events, frames - t0, null);
+    assert.equal(loop, null, "track 21 is a real single hit, not a loop");
+    const changedAt = Math.max(0, lastRegisterChangeFrame(apuLog, frames) - t0);
+    const {events: trimmed} = trimSustainedTail(events, frames - t0, changedAt, Math.round(1 / frameSec));
+    assert.equal(trimmed.length, 2, "the no-loop trim keeps both — G#7 is a true final note (new pitch), not a ghost");
+    const bytes = makeMidi(trimmed, {bpm: 150, tsNum: 4, tsDen: 4, frameSec});
+    const onPitches = [];
+    for (let i = 0; i + 2 < bytes.length; i++)
+      if ((bytes[i] & 0xF0) === 0x90 && bytes[i + 2] > 0) onPitches.push(bytes[i + 1]); // note-on, velocity > 0
+    assert.equal(onPitches.length, 2, "both note-ons survive the MIDI write — no pitch cap silently drops G#7");
+    assert.deepEqual(onPitches.slice().sort((a, b) => a - b), [97, 104]);
+  });
+
+test("track 37 (real rip): a real single D6 stays one note", {skip: !existsSync(ZELDA_ZIP) && "no rip at " + ZELDA_ZIP}, () => {
+  const files = gatherFiles(ZELDA_ZIP);
+  const nsf = parseNSF(files.find(f => /\.nsf$/i.test(f.name)).bytes.buffer);
+  const {apuLog, frames, frameSec} = runNSF(nsf, 37, 8);
+  const events = reconstruct(apuLog, frames, frameSec);
+  assert.equal(events.length, 1, "one real note, not split into a note + a ghost");
+  assert.equal(pitchName(events[0].midi), "D6");
+});

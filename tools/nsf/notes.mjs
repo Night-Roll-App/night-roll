@@ -328,14 +328,57 @@ export function lastRegisterChangeFrame(apuLog, frames) {
 // meaningful when no loop was found (a looping song gets its own trim from
 // detectLoop); a still-live tail (changedAt within ringFrames of the end)
 // is left untouched.
+//
+// Ghost notes (Zelda (NES) tracks 5-7, Josh 2026-09-29): the LAST real
+// register change is often the driver "releasing" the final note — dropping
+// its volume (e.g. pulse v7 -> v4) — and that write also happens to touch
+// $4003/$4007 (period-hi + length-counter reload), which reconstruct()
+// treats as a note boundary regardless of pitch ("length-counter load also
+// (re)starts the note"). The result: the SAME pitch splits into two events
+// right at F — the real note, then a same-pitch "ghost" continuation at the
+// lower volume that rings for the rest of the (pre-trim) capture. Josh's
+// ear: nothing changes there, so it isn't a note — the note before it should
+// just ring to its own conclusion (F) and stop. Detected generically at the
+// register level already established: any event on a channel that STARTS at
+// or after F and continues the SAME pitch as the note immediately before it
+// is that continuation, not a new note — drop it, and let the note it
+// continues end at F. An event with a DIFFERENT pitch at/after F is a true
+// final note (a real last-frame attack) and keeps its short ring-out.
 export function trimSustainedTail(events, frames, changedAt, ringFrames) {
-  const cut = Math.min(frames, Math.max(0, changedAt) + ringFrames);
+  const F = Math.max(0, changedAt);
+  const cut = Math.min(frames, F + ringFrames);
   if (cut >= frames) return {events, frames}; // nothing dead to cut
-  return {
-    events: events.filter(e => e.startFrame < cut)
-                  .map(e => e.endFrame > cut ? {...e, endFrame: cut} : e),
-    frames: cut,
-  };
+
+  const byChannel = new Map();
+  for (const e of events) {
+    if (!byChannel.has(e.channel)) byChannel.set(e.channel, []);
+    byChannel.get(e.channel).push(e);
+  }
+  const ghosts = new Set();
+  const endsAt = new Map(); // real note -> new endFrame (its own conclusion, F)
+  for (const list of byChannel.values()) {
+    list.sort((a, b) => a.startFrame - b.startFrame);
+    for (let i = 1; i < list.length; i++) {
+      const e = list[i], prev = list[i - 1];
+      if (e.startFrame >= F && e.midi === prev.midi && !ghosts.has(prev)) {
+        ghosts.add(e);
+        endsAt.set(prev, F);
+      }
+    }
+  }
+
+  const kept = [];
+  for (const e of events) {
+    if (ghosts.has(e) || e.startFrame >= cut) continue;
+    if (endsAt.has(e)) kept.push({...e, endFrame: endsAt.get(e)});
+    else kept.push(e.endFrame > cut ? {...e, endFrame: cut} : e);
+  }
+  // the song's own end: the last kept note's end — F if every late event was
+  // a dropped ghost (nothing rings), or the true final note's ring-out (cut)
+  // when one was struck. Chip audio re-renders to this SAME length upstream
+  // (captureChipTrack), so notes and console audio keep agreeing on the end.
+  const newFrames = kept.length ? Math.min(cut, Math.max(F, ...kept.map(e => e.endFrame))) : F;
+  return {events: kept, frames: newFrames};
 }
 
 // Backport steady-state timing: the first pass carries init latency (shop's

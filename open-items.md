@@ -4,6 +4,56 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## ZELDA (NES) EAR/EYE REPORTS — DONE 2026-09-29
+
+Four fixes from Josh's 2026-09-29 report on The Legend of Zelda (NES),
+all in tools/nsf/notes.mjs and index.html, `npm test` green (full suite,
+not just the vm files touched):
+
+1. **Ghost notes** (tracks 5-7): the no-loop tail trim's last real
+   register change is often the driver releasing the final note (a
+   volume drop) via a write that ALSO touches the length-counter
+   register, which `reconstruct()` treats as a note boundary regardless
+   of pitch — splitting one note into a real half and a same-pitch
+   "ghost" tail. `trimSustainedTail` (tools/nsf/notes.mjs) now drops any
+   event that starts at/after the trim's own frame F and continues the
+   SAME pitch as the note before it, and lets that note ring to its own
+   conclusion (F) instead. A different pitch at/near F (a real final
+   attack, e.g. track 21's G#7) still gets its short ring-out. Verified
+   against the real rip (tracks 5, 6, 7, 21, 37).
+2. **Two-bar minimum in album play**: `albumEndSec`'s "does this loop"
+   signal was just "does the segment have any notes" (true for nearly
+   every song), so a non-looping song's whole length got doubled
+   (ALBUM_PASSES) — a sub-bar jingle played all the way through two
+   bars, mostly silence, before the album advanced. `currentLoop()` now
+   reports whether it found a REAL loop: directive (`.looped`); only
+   that gates the extra pass. A genuine loop still gets its OST-CD two
+   passes.
+3. **Track 21 losing G#7 (MIDI 104)**: PMIN/PMAX (the roll's editable
+   display range) were a fixed C1..C7 (24-96) — any real note above C7
+   fell outside every bound derived from them (view fit, lane height,
+   hit-testing), so it vanished off-canvas after a zoom/tap. computeSongEnd()
+   now extends PMIN/PMAX (never shrinks them) to cover the loaded song's
+   real note range. An ordinary song sees no change.
+4. **Status line (#noteinfo/setInfo) truncation**: long messages lost
+   everything past the ellipsis with no way to read them. It now clamps
+   to 2 lines instead of 1, and tapping opens the full message in a
+   small sheet (#infosheet) — no native dialogs. A copyable message
+   (chord/note detail) keeps its existing tap-to-copy, unchanged.
+
+Also (main session, same session): FOLDER_NAMES — snes: "SNES" →
+"Super NES"; added ps2: "PlayStation 2" (missing before; the raw
+folder name "PS2" showed).
+
+Needs eyes in a browser (not done here — no local Playwright per
+CLAUDE.md, and this session doesn't push): the #infosheet sheet's
+open/close chrome (✕, backdrop tap, Esc — wired generically for every
+`.overlay`, untested by the vm harness, which stubs `document`
+without `querySelectorAll` and skips that wiring on purpose); the
+2-line clamp's look in the real footer layout; track 21 in the roll
+after a zoom/tap; Zelda tracks 5-7's audio actually stopping clean at
+the real note's end with no audible ghost.
+
 ## APP STORE — WHERE IT STANDS (2026-09-28; the one current list)
 
 Done: Apple Developer Program; App Store Connect record; builds 1-2

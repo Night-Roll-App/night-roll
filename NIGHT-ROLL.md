@@ -380,7 +380,24 @@ envelope step, a vibrato nudge, a channel disabled — keeps the window
 live, so it can only under-trim): a real ~4-bar fanfare with its own
 long dead tail (Zelda track 6) keeps its ~7.4s of music and only loses
 the padding; a looping song never reaches this branch at all (the
-loop's own trim runs instead) — grid-fit
+loop's own trim runs instead).
+
+Ghost notes (2026-09-29, same Zelda ear report, tracks 5-7): the LAST
+real register change found above is often the driver "releasing" the
+final note — dropping its volume (pulse v7 -> v4) — via a write that
+ALSO happens to touch the period-hi/length-counter register, which
+`reconstruct()` treats as a note boundary regardless of pitch. The
+result: the same pitch splits at that frame into a real note and a
+same-pitch "ghost" continuation at the lower volume, which then rode
+the old trim's ring-out as an audible (if quiet) second note nobody
+struck. `trimSustainedTail` now also drops any event that starts at or
+after the trim's own frame F and continues the SAME pitch as the note
+immediately before it on that channel — the ghost — and lets the note
+it continues end at F, its own conclusion (no extra ring). An event
+with a DIFFERENT pitch at/after F is a true final note (a real
+last-frame attack) and keeps the short ring-out as before. Still
+register-level and chip-agnostic (pitch/channel comparisons only, no
+per-game table): GBS shares the same function unmodified — grid-fit
 bpm (4/4 seed 120 — meter/tempo stay re-derivable by annotation like
 any capture), makeMidi → parseMidi → stored as a LOCAL draft under
 `albums/imports/<album-slug>/track-NN.mid`, with a hardware `loop:`

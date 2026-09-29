@@ -124,6 +124,68 @@ test("chop: start/end directives trim the displayed song and renumber", () => {
   assert.equal(val(`song.tracks[0].notes.length`), 3); // bar-1 note restored
 });
 
+test("pitch range: a song whose real notes fall outside the default C1..C7 (PMIN..PMAX) extends the range instead of cropping it away", () => {
+  // Zelda (NES) track 21, Josh 2026-09-29: two real notes at C#7/G#7 (MIDI
+  // 97/104), above the old fixed PMAX=96. dispPitchExtent()'s hi got
+  // cropped back to 96, so the note's own row fell outside every bound
+  // derived from it (view fit, lane height, hit-testing) — it showed as
+  // "C7" with a huge lane and vanished after a zoom/tap. computeSongEnd()
+  // now extends PMIN/PMAX to cover the loaded song's real range.
+  installSong();
+  run(`song.tracks = [{name: "pulse2", notes: [{t: 0, d: 160, p: 97}, {t: 240, d: 400, p: 104}]}];
+       declaredTs = null; rollnotes = []; finalizeNotes(); computeSongEnd();`);
+  assert.equal(run(`PMIN`), 24, "the low end is untouched — nothing in this song goes below C1");
+  assert.equal(run(`PMAX`), 104, "the high end extends to the real top note, not cropped to 96");
+  assert.deepEqual(val(`dispPitchExtent()`), {lo: 97, hi: 104}, "both real notes are inside the display extent");
+  assert.equal(run(`topRow()`), 104, "the top of the roll now includes the true highest note");
+  const floor = val(`rowHFloor()`);
+  assert.ok(floor > 0 && Number.isFinite(floor), "lane height stays sane (was a huge/degenerate value when hi < lo after cropping)");
+
+  // an ordinary song (entirely inside C1..C7) is unaffected — no ballooning
+  // of every song's range just because one channel over-shoots it
+  run(`song.tracks = [{name: "t", notes: [{t: 0, d: 480, p: 60}, {t: 480, d: 480, p: 64}]}];
+       computeSongEnd();`);
+  assert.equal(run(`PMIN`), 24);
+  assert.equal(run(`PMAX`), 96);
+
+  // the low end extends too, symmetrically (a real bass note below C1 is
+  // just as generic a case as an extreme-high capture)
+  run(`song.tracks = [{name: "t", notes: [{t: 0, d: 480, p: 12}, {t: 480, d: 480, p: 60}]}];
+       computeSongEnd();`);
+  assert.equal(run(`PMIN`), 12);
+  assert.equal(run(`PMAX`), 96);
+});
+
+test("status line: a message with no copy action is fully readable by tapping — #noteinfo truncates visually, but the tap always reaches the whole thing", async () => {
+  // Josh, 2026-09-29: "those messages at the bottom are not that useful
+  // because you can't always read them all" — #noteinfo ellipsis-truncated
+  // (now clamps to 2 lines) long status text with no way to see the rest.
+  installSong();
+  const long = "rendering the console's voice for Track 21… " +
+    "this status line used to lose everything past the ellipsis and there was no way to read it in full";
+  run(`setInfo(${JSON.stringify(long)});`);
+  assert.equal(run(`document.getElementById("noteinfo").textContent`), long, "the full text is always in the DOM — CSS only clips the display");
+  assert.equal(run(`document.getElementById("infosheet").classList.contains("on")`), false, "not shown until tapped");
+  run(`document.getElementById("noteinfo").dispatchEvent({type: "click"});`);
+  assert.equal(run(`document.getElementById("infosheet").classList.contains("on")`), true, "tapping the line opens it");
+  assert.equal(run(`document.getElementById("infosheettext").textContent`), long, "the sheet shows the message in full");
+  run(`document.getElementById("infosheet").classList.remove("on");`);
+
+  // a copyable message (chord/note detail) keeps its existing tap-to-copy —
+  // unrelated to the new reveal-sheet path, no behavior change there.
+  // document.querySelector isn't in the vm harness's DOM stub (the app itself
+  // skips its own querySelectorAll-based wiring under the same guard); stub
+  // it here, locally, just for the copy handler's post-copy chip update.
+  run(`globalThis.__copied = null;
+       navigator.clipboard = {writeText: async t => { globalThis.__copied = t; }};
+       document.querySelector = () => null;
+       setInfo("C major", "Cmaj7 C E G B");`);
+  run(`document.getElementById("noteinfo").dispatchEvent({type: "click"});`);
+  assert.equal(run(`document.getElementById("infosheet").classList.contains("on")`), false, "a copyable message copies, it doesn't open the sheet");
+  await new Promise(r => setImmediate(r)); // let the copy handler's microtasks finish before the test ends
+  assert.equal(run(`globalThis.__copied`), "Cmaj7 C E G B", "the existing copy-to-clipboard behavior is untouched");
+});
+
 test("6/8: beats are eighths — anchors, defaults, re-bar conversion", () => {
   installSong();
   const text = [
@@ -796,6 +858,38 @@ test("album play: pass math, album lookup, and no dialog mid-run", async () => {
   assert.equal(val(`songKey`), "albums/t/first.mid"); // the draft opened, no throw
   assert.equal(val(`song.tracks[0].notes.length`), 1);
   run(`albumRun = null; localStorage.removeItem("ff1roll-draft-albums/t/first.mid"); for (const k of Object.keys(CATALOG)) delete CATALOG[k]; songKey = null;`);
+});
+
+test("album play: a through-composed song with no loop: annotation plays once and advances — no more 'always two bars' padding on a sub-bar jingle", async () => {
+  // Josh, 2026-09-29: "all the songs that are less than one bar always play
+  // all the way through two bars … it just plays empty sound for the rest."
+  // Root cause: albumEndSec's "does this loop" signal was just "does the
+  // segment have any notes in it" (hasMaterial) — true for basically every
+  // song — so a non-looping song's whole length got doubled (ALBUM_PASSES).
+  // currentLoop() now says whether it found a REAL loop: directive; only
+  // that gates the extra pass.
+  const app2 = createApp({intervals: true}); const run2 = c => app2.run(c), val2 = c => JSON.parse(run2(`JSON.stringify(${c})`));
+  run2(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 120, p: 60, v: 80}]}]};
+        songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0; declaredTs = null; rollnotes = [];
+        trackState = [{muted: false, solo: false}]; computeSongEnd();
+        albumRun = {album: "T", list: [["a", "x"], ["b", "y"]], idx: 0, passes: 2, gen: 0};`);
+  const wholeSec = val2(`tickToSec(song, songEndTick)`);
+  run2(`globalThis.__p = 0; play(0, {noCountIn: true}).then(() => __p++);`);
+  for (let i = 0; i < 40 && val2(`globalThis.__p`) < 1; i++) { app2.tick(50); await new Promise(r => setImmediate(r)); }
+  assert.equal(val2(`loopSeg.looped`), false, "no loop: directive on this song");
+  assert.ok(Math.abs(val2(`albumEndAbs`) - wholeSec) < 1e-9, "album ends after ONE pass of a non-looping song, not two");
+  run2(`stop(); albumRun = null;`);
+
+  // a REAL loop: directive still gets its OST-CD two passes (no regression)
+  run2(`song.tracks[0].notes = [{t: 0, d: 480 * 4 * 2, p: 60, v: 80}]; // 2 bars of music
+        rollnotes = parseRollnotes("[3.1]\\nloop: 1.1\\n").map(resolveNote); finalizeNotes(); computeSongEnd();
+        albumRun = {album: "T", list: [["a", "x"], ["b", "y"]], idx: 0, passes: 2, gen: 0};`);
+  const loopSec = val2(`tickToSec(song, songEndTick)`);
+  run2(`globalThis.__p2 = 0; play(0, {noCountIn: true}).then(() => __p2++);`);
+  for (let i = 0; i < 40 && val2(`globalThis.__p2`) < 1; i++) { app2.tick(50); await new Promise(r => setImmediate(r)); }
+  assert.equal(val2(`loopSeg.looped`), true);
+  assert.ok(Math.abs(val2(`albumEndAbs`) - loopSec * 2) < 1e-9, "a genuine loop still plays its intro + ALBUM_PASSES of the body");
+  run2(`stop(); albumRun = null;`);
 });
 
 test("midiStatusLine: names the reason ● hears nothing", () => {
@@ -1653,6 +1747,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
     "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
+    "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
     "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right",
@@ -3593,7 +3688,7 @@ test("folders: a song's folder and its title come from its path; LOCAL rows say 
   assert.equal(run(`folderOf("local/test-song.mid")`), "local");
   assert.equal(run(`folderTitle("compositions/nightroll")`), "My Compositions › Night Roll Sketches");
   assert.equal(run(`folderTitle("imports/mega-man-2")`), "Imports › Mega Man 2");
-  assert.equal(run(`folderTitle("snes/chrono-trigger")`), "SNES › Chrono Trigger", "console parents by their own names");
+  assert.equal(run(`folderTitle("snes/chrono-trigger")`), "Super NES › Chrono Trigger", "console parents by their own names");
   assert.equal(run(`folderTitle("local")`), "Not saved yet");
   // status words
   run(`localStorage.setItem(draftStoreKey("albums/compositions/nightroll/ambush.mid"), JSON.stringify({dirty: true, savedStamp: 5, tracks: []}));
@@ -4203,7 +4298,7 @@ test("folder tree: one level per tap — NES › Mega Man 2 › songs; album tit
                  "Night Roll Sketches": [["Ambush", "albums/compositions/nightroll/ambush.mid"]],
                  "Starters": [["Prelude", "albums/starters/bach-prelude-in-c.mid"]]};`);
   const top = val(`subfolderKeys(folderTree(publishedPaths()))`);
-  assert.deepEqual(top, ["compositions", "nes", "snes", "starters"], "top level sorted by title: My Compositions, NES, SNES, Starters");
+  assert.deepEqual(top, ["compositions", "nes", "starters", "snes"], "top level sorted by title: My Compositions, NES, Starters, Super NES");
   assert.deepEqual(val(`subfolderKeys(nodeAt(folderTree(publishedPaths()), "nes"))`), ["final-fantasy-i", "mega-man-2"]);
   assert.equal(run(`nodeCount(nodeAt(folderTree(publishedPaths()), "nes"))`), 2);
   assert.equal(run(`segTitle("nes")`), "NES");

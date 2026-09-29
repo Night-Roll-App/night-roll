@@ -266,9 +266,13 @@
     color: var(--gold);
     min-width: 0;
     flex: 1;
-    white-space: nowrap;
+    cursor: pointer; /* always tappable: a message too long to read here opens in full (#infosheet) */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* wraps to a 2nd line before it has to truncate at all */
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    word-break: break-word;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
   #noteinfo.copyable { cursor: pointer; }
   #noteinfo .copychip {
@@ -1147,6 +1151,14 @@
   </div>
 </div>
 
+<div class="overlay" id="infosheet">
+  <div class="sheet">
+    <h2>Status</h2>
+    <p id="infosheettext" style="font-family:var(--mono);font-size:13px;line-height:1.6;
+       white-space:pre-wrap;word-break:break-word;margin:8px 0"></p>
+  </div>
+</div>
+
 <div class="overlay" id="drumsheet">
   <div class="sheet">
     <h2>DRUM PATTERN</h2>
@@ -1399,6 +1411,7 @@
     <div class="hsec" data-hsec="explore">
     <dl>
       <dt>Tap a note</dt><dd>Inspector shows pitch, bar &amp; beat (counted 1e&amp;a), length, velocity, track — <b>and plays it</b>, in Roll, Score and Tracks alike. That includes chip songs: during playback the NSF render IS the track's sound, so per-note synthesis is suppressed to avoid doubling, but a tap has nothing to double and sounds a synth voice. Hearing one note at a time is the point of analysis mode. On a chip song (PlayStation, N64) the tap sounds the game's own instrument for that track; other consoles and drum tracks use the synth voice.</dd>
+      <dt>Status line (footer)</dt><dd>Tap the gold status line at the bottom to read it in full, even a long one: it wraps to two lines before it has to clip at all, and tapping opens the whole message in a sheet — nothing it says is ever lost past an ellipsis. A message that also offers a copy (a chord name, a note's detail) keeps its own tap-to-copy instead, unchanged.</dd>
       <dt>Copy the pitch list</dt><dd>When the lasso strip lists selected pitches, tap the text (or the ⧉ copy chip) to copy them comma-separated — after "Chord?", the chord name comes along too.</dd>
       <dt>⊞ Lasso</dt><dd>Toggle on, then drag a box over notes (works in all views). Boxes ADD to the selection — draw as many as you need. Tap any note to toggle it in or out (surgical removal of a pedal or neighbor); tap empty space to clear. Shows all the pitch names, low to high — and the <b>8va</b> button beside Chord? toggles the octave numbers: off collapses duplicates to bare pitch classes (C · E · G), the chord-reading view; the setting sticks. Drag the box up into the ruler to take the annotations there too, lane by lane — up to the chord row takes the chords, higher takes the section row as well, all the way up takes the text-note flags: the box draws over the ruler, the bands it covers get a <b>gold outline</b> (text-note flags a gold ring) for as long as the selection lives, and those ride along with ⧉ and ✂ and land with 📋; 🗑 (or Backspace) deletes them with the notes, one ⟲ restores all of it.</dd>
       <dt>◯5 Circle of fifths</dt><dd>The classic chart, live: majors outside with their signatures, relative minors inside, diminished chords at the center, and the movable degree window (IV·I·V over ii·vi·iii over vii°). Two independent motions: <b>drag the wheel</b> (or ⟲ ⟳) to spin it — put any key at 12 o'clock; <b>tap a wedge</b> to move the degree window there. Opens with the song's key on top and highlighted. Below the wheel: the window key's signature accidentals, full scale, all seven triads, and its IV/V neighbors.</dd>
@@ -2405,7 +2418,17 @@ function secDepthCap() { // device pref, per song: how many section levels show
   return v === null ? 99 : Math.max(0, +v);
 }
 let sectionColors = {};     // label -> color
-const PMIN = 24, PMAX = 96; // C1..C7 display range
+// C1..C7: the default editable/display floor+ceiling — generous enough for
+// ordinary music, so pencil drags, hit-testing and rendering all gate on it.
+// computeSongEnd() EXTENDS these outward (never shrinks them) when a loaded
+// song has real notes beyond the default range (Zelda (NES) track 21, Josh
+// 2026-09-29: two notes up at C#7/G#7 — MIDI 97/104, above the old fixed
+// PMAX=96 — silently lost their lane math: dispPitchExtent()'s hi got
+// cropped back to 96, so the true top note fell outside every bound derived
+// from it, disappearing off-canvas after a zoom/tap until a fresh song load
+// (Prev/Next) recomputed things). A song entirely within C1..C7 sees no
+// change; one that isn't keeps its real range editable and visible.
+let PMIN = 24, PMAX = 96;
 
 // ---------------------------------------------------------------- edits
 function editsKey() { return songKey ? "ff1roll-edits-" + songKey : null; }
@@ -2507,6 +2530,14 @@ function computeSongEnd() { // re-run whenever the effective meter changes
   });
   const bt = barTicks();
   songEndTick = Math.max(bt, Math.ceil(lastTick / bt - 0.05) * bt);
+  // extend (never shrink) the default C1..C7 pitch range to whatever this
+  // song actually uses — see PMIN/PMAX's own comment
+  let lo = 24, hi = 96;
+  song.tracks.forEach(tr => tr.notes.forEach(n => {
+    if (n.gone) return;
+    if (n.p < lo) lo = n.p; if (n.p > hi) hi = n.p;
+  }));
+  PMIN = Math.max(0, lo); PMAX = Math.min(127, hi);
 }
 function notesBase() { return songKey ? songKey.replace(/\.midi?$/i, "") : null; } // path minus extension
 function baseName() { return notesBase() ? notesBase().split("/").pop() : "notes"; }
@@ -5080,6 +5111,9 @@ function noteLabel(ti, ni) {
          (n.d / song.ppq).toFixed(2) + "q · vel " + n.v + " · " + tname + (n.added ? " · added" : "");
 }
 let infoCopyText = null; // when set, tapping the info strip copies this
+let infoFull = "tap a note"; // the strip's un-truncated text — CSS only clips the DISPLAY (Josh, 2026-09-29:
+                           // "those messages at the bottom … you can't always read them all"); tapping
+                           // shows this in full via #infosheet when there's no copy action to run instead
 // Error log (Josh's design 2026-08-17): errors must outlive the info strip
 // (the next message overwrites it) and be findable without devtools —
 // crucial on the iPad. ⚠ appears in the footer only when something logged.
@@ -5329,6 +5363,7 @@ function setInfo(s, copyText) {
   if (/⚠|failed|error|can't|cannot|unavailable/i.test(s)) logErr(s); // warnings survive being overwritten
   const el = document.getElementById("noteinfo");
   el.textContent = s;
+  infoFull = s;
   infoCopyText = copyText || null;
   el.classList.toggle("copyable", !!infoCopyText);
   if (infoCopyText) {
@@ -5339,7 +5374,13 @@ function setInfo(s, copyText) {
   }
 }
 document.getElementById("noteinfo").addEventListener("click", async () => {
-  if (!infoCopyText) return;
+  if (!infoCopyText) { // no copy action on this message: the tap reveals it in full instead
+    if (infoFull) {
+      document.getElementById("infosheettext").textContent = infoFull;
+      document.getElementById("infosheet").classList.add("on");
+    }
+    return;
+  }
   let ok = true;
   try { await navigator.clipboard.writeText(infoCopyText); }
   catch (err) { // clipboard API denied: fall back to a hidden textarea
@@ -7929,7 +7970,12 @@ function buildSchedule() {
 }
 let exporting = false; // audio export: play ONCE, whole song, no loop
 function currentLoop() { // "loop: B.Q" = at the anchor (jump point), return to B.Q
-  const whole = {start: 0, end: tickToSec(song, songEndTick)};
+  // `looped` says whether this segment is a REAL loop body (a loop:
+  // annotation was found) as opposed to just the whole through-composed
+  // song — album play (below) uses it to decide whether repeating the
+  // segment for extra passes means anything, or would just replay a
+  // non-looping jingle and call it "two bars" (Josh, 2026-09-29)
+  const whole = {start: 0, end: tickToSec(song, songEndTick), looped: false};
   if (exporting) return whole;
   const dir = rollnotes.find(n => n.loopTo !== undefined);
   if (!dir) return whole;
@@ -7938,7 +7984,7 @@ function currentLoop() { // "loop: B.Q" = at the anchor (jump point), return to 
   // (e.g. auto-written files anchored at [1.1]) means jump at song end
   const end = dir.start > dir.loopTo
     ? Math.min(tickToSec(song, dir.start), whole.end) : whole.end;
-  return start < end ? {start, end} : whole;
+  return start < end ? {start, end, looped: true} : whole;
 }
 // ---------------------------------------------------- authentic chip audio
 // The captured APU register log rendered through the 2A03's real DSP
@@ -8838,7 +8884,7 @@ async function play(fromSec = 0, opts = {}) {
   }
   loopPass = 0;
   loopSeg = currentLoop();
-  if (fromSec >= loopSeg.end - 0.01) loopSeg = {start: 0, end: tickToSec(song, songEndTick)};
+  if (fromSec >= loopSeg.end - 0.01) loopSeg = {start: 0, end: tickToSec(song, songEndTick), looped: false};
   // only a DRAGGED ruler range cycles — tapping a section/chord band also sets
   // rangeSel (for + Note prefill) and silently outranked loop: annotations (Josh)
   const cycling = !!(rangeSel && rangeSel.cycle && !rangeSel.off && rangeSel.b > rangeSel.a);
@@ -8855,7 +8901,13 @@ async function play(fromSec = 0, opts = {}) {
   if (albumRun && !cycling) { // cycling: the song loops the cycle and the album waits
     const wi = schedEvents.findIndex(e => e.sec >= loopSeg.start);
     const hasMaterial = wi >= 0 && schedEvents[wi].sec < loopSeg.end;
-    albumEndAbs = albumEndSec(loopSeg, tickToSec(song, songEndTick), hasMaterial, albumRun.passes) - playOffset;
+    // extra passes only make sense for a REAL loop: annotation — a
+    // through-composed song with no loop (loopSeg === the whole song) has
+    // one pass, period. Gating on hasMaterial alone always extended it
+    // (any song with notes "has material"), so a sub-bar jingle played all
+    // the way through TWO bars of it — mostly silence — before the album
+    // moved on (Josh, 2026-09-29). Real loops keep their OST-CD convention.
+    albumEndAbs = albumEndSec(loopSeg, tickToSec(song, songEndTick), hasMaterial && !!loopSeg.looped, albumRun.passes) - playOffset;
   }
   updateTrackGains();
   song.tracks.forEach((_, ti) => trackGain(ti)); // pre-create so gains exist before first event
@@ -13063,8 +13115,8 @@ function isLocalDraft() { return !!songKey && songKey.startsWith("local/"); }
 // or sketches or my compositions"). Nothing moves on disk here: the tree is
 // derived from the paths songs already have. Album titles from the catalog
 // name the leaf folder; parents fall back to their segment.
-const FOLDER_NAMES = {nes: "NES", snes: "SNES", n64: "Nintendo 64", "game-boy": "Game Boy", genesis: "Genesis",
-                      ps1: "PlayStation", imports: "Imports", local: "Not saved yet"};
+const FOLDER_NAMES = {nes: "NES", snes: "Super NES", n64: "Nintendo 64", "game-boy": "Game Boy", genesis: "Genesis",
+                      ps1: "PlayStation", ps2: "PlayStation 2", imports: "Imports", local: "Not saved yet"};
 // A new (or imported) song has no folder until its first Save: it lives under
 // local/ as "Untitled N" — editable, never publishable — and Save asks for a
 // folder and a name (Josh, 2026-09-27: "it's just unnamed until you save it.

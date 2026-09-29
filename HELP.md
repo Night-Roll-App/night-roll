@@ -101,6 +101,9 @@ Solo: hide everyone else instead.
 **Tap a note**
 Inspector shows pitch, bar & beat (counted 1e&a), length, velocity, track — **and plays it**, in Roll, Score and Tracks alike. That includes chip songs: during playback the NSF render IS the track's sound, so per-note synthesis is suppressed to avoid doubling, but a tap has nothing to double and sounds a synth voice. Hearing one note at a time is the point of analysis mode. On a chip song (PlayStation, N64) the tap sounds the game's own instrument for that track; other consoles and drum tracks use the synth voice.
 
+**Status line (footer)**
+Tap the gold status line at the bottom to read it in full, even a long one: it wraps to two lines before it has to clip at all, and tapping opens the whole message in a sheet — nothing it says is ever lost past an ellipsis. A message that also offers a copy (a chord name, a note's detail) keeps its own tap-to-copy instead, unchanged.
+
 **Copy the pitch list**
 When the lasso strip lists selected pitches, tap the text (or the ⧉ copy chip) to copy them comma-separated — after "Chord?", the chord name comes along too.
 
