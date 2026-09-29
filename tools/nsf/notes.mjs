@@ -288,6 +288,56 @@ export async function detectLoopAsync(events, frames, hint = null, budgetMs = 35
   return best;
 }
 
+// No-loop tail trim: when detectLoop(Async) finds nothing, the capture runs
+// out to its seconds ceiling — but a through-composed piece (a jingle under
+// a bar, an ending fanfare) can finish its music long before that, and the
+// driver just keeps calling PLAY forever, holding the last note. Zelda (NES)
+// tracks 5-7 (Josh, 2026-09-29): ~1 beat of music, then the last pulse
+// re-attacks at a lower volume and holds 37 beats while $4000-$4017 gets
+// rewritten every frame — same value, no new information. Chip-agnostic and
+// register-level, not note-level: it works off the raw {frame, addr, value}
+// write log every capture engine already produces (NSF's $4000+, GBS's
+// $FF10+ — same shape, see tools/gbs/notes.mjs), not the reconstructed notes,
+// so it can't be fooled by reconstruct()'s own note-merging heuristics
+// (vibrato guard, slide collapse) and needs no per-chip, per-game knowledge.
+//
+// lastRegisterChangeFrame: the last frame at which ANY register write
+// carried a DIFFERENT value than the last one logged at that exact address.
+// A write that repeats the address's current value changes nothing audible
+// — pitch, volume/envelope output and enable/mute are all pure functions of
+// register VALUES, so an identical rewrite is provably silent regardless of
+// why the driver issued it. This is conservative by construction: real
+// motion of any kind — a new note, an envelope stepped down through explicit
+// writes, a vibrato nudge, a channel disabled — always differs from the
+// previous value at that address and pushes the frame out, so the function
+// can only under-detect a frozen tail, never mistake live music for one.
+export function lastRegisterChangeFrame(apuLog, frames) {
+  const last = new Map(); // addr -> last logged value
+  let changedAt = 0;
+  for (const w of apuLog) {
+    if (last.get(w.addr) !== w.value) { changedAt = w.frame; last.set(w.addr, w.value); }
+  }
+  return Math.min(changedAt, frames);
+}
+
+// Cut the dead tail: once nothing has changed for `ringFrames` past the last
+// real register change, keep a short ring-out instead of the rest of the
+// capture window. `changedAt` is in the SAME (already t0-shifted) frame
+// numbering as `events`/`frames` — callers pass lastRegisterChangeFrame's
+// result shifted by whatever they subtracted to zero the events. Only
+// meaningful when no loop was found (a looping song gets its own trim from
+// detectLoop); a still-live tail (changedAt within ringFrames of the end)
+// is left untouched.
+export function trimSustainedTail(events, frames, changedAt, ringFrames) {
+  const cut = Math.min(frames, Math.max(0, changedAt) + ringFrames);
+  if (cut >= frames) return {events, frames}; // nothing dead to cut
+  return {
+    events: events.filter(e => e.startFrame < cut)
+                  .map(e => e.endFrame > cut ? {...e, endFrame: cut} : e),
+    frames: cut,
+  };
+}
+
 // Backport steady-state timing: the first pass carries init latency (shop's
 // bar-1 chord staggers ~2 frames) and jitter; the second pass is the driver
 // in steady state. Every event with a twin one period later adopts the

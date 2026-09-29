@@ -4,11 +4,13 @@
 // code, imported — only the chip semantics live here. Hardware facts:
 // tools/gbs/RESEARCH.md §2 and §4.
 import { pitchName, toNotesTxt as nsfToNotesTxt, collapseSlides,
-         detectLoop, detectLoopAsync, backportTiming, fitBpm } from "../nsf/notes.mjs";
+         detectLoop, detectLoopAsync, backportTiming, fitBpm,
+         lastRegisterChangeFrame, trimSustainedTail } from "../nsf/notes.mjs";
 import { makeMidi as nsfMakeMidi } from "../nsf/midi-write.mjs";
 import { GB_CLOCK } from "./gbs.mjs";
 
-export { pitchName, detectLoop, detectLoopAsync, backportTiming, fitBpm };
+export { pitchName, detectLoop, detectLoopAsync, backportTiming, fitBpm,
+         lastRegisterChangeFrame, trimSustainedTail };
 
 function midiFromFreq(f) { return Math.round(69 + 12 * Math.log2(f / 440)); }
 

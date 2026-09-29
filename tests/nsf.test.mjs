@@ -3,11 +3,14 @@
 // reconstruction -> .notes.txt emission.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { makeTestNSF } from "../tools/nsf/make-test-nsf.mjs";
+import { existsSync } from "node:fs";
+import { makeTestNSF, makeTestNSFLoopingArpeggio, makeTestNSFVibratoPad } from "../tools/nsf/make-test-nsf.mjs";
 import { parseNSF, runNSF } from "../tools/nsf/nsf.mjs";
-import { reconstruct, toNotesTxt, pitchName, backportTiming } from "../tools/nsf/notes.mjs";
+import { reconstruct, toNotesTxt, pitchName, backportTiming,
+         detectLoop, lastRegisterChangeFrame, trimSustainedTail } from "../tools/nsf/notes.mjs";
 import { makeMidi } from "../tools/nsf/midi-write.mjs";
 import { renderApu } from "../tools/nsf/apu-render.mjs";
+import { gatherFiles } from "../tools/import-set.mjs";
 
 test("NSF pipeline: synthetic tune comes back note-perfect with channel identity", () => {
   const nsf = parseNSF(makeTestNSF().buffer);
@@ -261,3 +264,111 @@ test("sweep mute: a pulse whose target period passes $7FF is silent in the roll 
   assert.ok(rms(mk(0x00)) < 1e-6, "render: silent with the sweep off");
   assert.ok(rms(mk(0x08)) > 0.01, "render: sounds in negate mode");
 });
+
+// ---- no-loop tail trim (Josh, 2026-09-29: Zelda NES tracks 5-7 are jingles
+// under a bar, but with no loop found the capture held the last note out to
+// the 300s ceiling — 1 beat of music, then a re-attack at lower volume that
+// just sat there while the driver rewrote the SAME register values every
+// frame). lastRegisterChangeFrame/trimSustainedTail (tools/nsf/notes.mjs)
+// are chip-agnostic: address + value, not notes — GBS shares them unmodified
+// (tools/gbs/notes.mjs re-exports both from here).
+
+test("lastRegisterChangeFrame: identical rewrites don't move it; a genuinely different value does", () => {
+  const log = [
+    {frame: 0, addr: 0x4015, value: 0x01},
+    {frame: 1, addr: 0x4000, value: 0x3F},
+    {frame: 1, addr: 0x4002, value: 0xAB},
+    {frame: 1, addr: 0x4003, value: 0x01},
+  ];
+  // the driver keeps calling PLAY, rewriting the identical values every frame
+  for (let f = 2; f < 200; f++) log.push({frame: f, addr: 0x4000, value: 0x3F});
+  assert.equal(lastRegisterChangeFrame(log, 300), 1, "100+ identical rewrites carry no new information");
+  const withChange = [...log, {frame: 150, addr: 0x4000, value: 0x3E}]; // one real change late in the tail
+  assert.equal(lastRegisterChangeFrame(withChange, 300), 150, "a differing value at the same address updates it");
+});
+
+test("trimSustainedTail: cuts a held tail to the ring, leaves a still-live window untouched", () => {
+  const events = [
+    {channel: "pulse1", startFrame: 0, endFrame: 10, midi: 60},
+    {channel: "pulse1", startFrame: 10, endFrame: 300, midi: 64}, // holds the rest of the way
+  ];
+  const cut = trimSustainedTail(events, 300, 10, 30); // last real change at frame 10, 30-frame ring
+  assert.equal(cut.frames, 40, "kept = changedAt + ring");
+  assert.equal(cut.events.length, 2, "no event dropped, just shortened");
+  assert.equal(cut.events[1].endFrame, 40, "the held note rings for 30 frames, not the remaining 290");
+  assert.equal(cut.events[1].startFrame, 10, "the note's real onset is untouched");
+  // still changing close to the end: nothing to trim
+  const untouched = trimSustainedTail(events, 300, 280, 30);
+  assert.equal(untouched.frames, 300);
+  assert.deepEqual(untouched.events, events);
+});
+
+test("no-loop tail trim, synthetic NSF: a phrase held forever gets cut to a ring-out", () => {
+  const nsf = parseNSF(makeTestNSF().buffer); // C4 E4 G4 C5, then C5 holds — nothing written again
+  const {apuLog, frames, frameSec} = runNSF(nsf, 1, 10); // 10s — the phrase itself is over well inside 4s
+  const events = reconstruct(apuLog, frames, frameSec);
+  const changedAt = lastRegisterChangeFrame(apuLog, frames);
+  const ring = Math.round(1 / frameSec); // ~1s
+  const {events: trimmed, frames: kept} = trimSustainedTail(events, frames, changedAt, ring);
+  assert.ok(kept < frames, "the dead tail was cut");
+  const keptSec = kept * frameSec;
+  assert.ok(keptSec > 1.4 && keptSec < 3, "kept the phrase plus a short ring, got " + keptSec.toFixed(2) + "s");
+  const lastPulse = trimmed.filter(e => e.channel === "pulse1").pop();
+  assert.ok(lastPulse, "the final note survives the trim");
+  assert.equal(pitchName(lastPulse.midi), "C5", "it's still the real final note, not a different one");
+  assert.ok(lastPulse.endFrame - lastPulse.startFrame <= ring + 1, "held only a short ring, not the full silence");
+});
+
+test("no-loop tail trim, synthetic NSF: a phrase that keeps changing is left alone", () => {
+  const nsf = parseNSF(makeTestNSFLoopingArpeggio().buffer); // C4 E4 G4 C5 cycling forever
+  const {apuLog, frames, frameSec} = runNSF(nsf, 1, 10);
+  const events = reconstruct(apuLog, frames, frameSec);
+  const changedAt = lastRegisterChangeFrame(apuLog, frames);
+  const ring = Math.round(1 / frameSec);
+  const {events: trimmed, frames: kept} = trimSustainedTail(events, frames, changedAt, ring);
+  assert.equal(kept, frames, "still-live music at the end of the window is never trimmed");
+  assert.deepEqual(trimmed, events, "no event touched");
+});
+
+test("no-loop tail trim, synthetic NSF: a held note with real vibrato (period nudged, never re-triggered) is left alone", () => {
+  const nsf = parseNSF(makeTestNSFVibratoPad().buffer); // one A4 pad, ±1-unit period wobble every 30 frames
+  const {apuLog, frames, frameSec} = runNSF(nsf, 1, 20);
+  const events = reconstruct(apuLog, frames, frameSec);
+  assert.equal(events.length, 1, "reconstruct's vibrato guard keeps this ONE note, not a chain");
+  const changedAt = lastRegisterChangeFrame(apuLog, frames);
+  const ring = Math.round(1 / frameSec);
+  const {events: trimmed, frames: kept} = trimSustainedTail(events, frames, changedAt, ring);
+  assert.equal(kept, frames, "the vibrato writes are genuinely different values every 30 frames — never a frozen tail");
+  assert.deepEqual(trimmed, events);
+});
+
+const ZELDA_ZIP = "/tmp/claude-501/rips/nes/legend-of-zelda.zip";
+test("no-loop tail trim, real rip: Legend of Zelda (NES) jingles under a bar don't ride the capture out to its ceiling",
+  {skip: !existsSync(ZELDA_ZIP) && "no rip at " + ZELDA_ZIP},
+  () => {
+    const files = gatherFiles(ZELDA_ZIP);
+    const nsfFile = files.find(f => /\.nsf$/i.test(f.name));
+    assert.ok(nsfFile, "a .nsf in the zip");
+    const nsf = parseNSF(nsfFile.bytes.buffer);
+    // Josh's ear report (2026-09-29): tracks 5, 6, 7 (and more) held their
+    // last note out to the 300s ceiling instead of ending with the music.
+    // Measured here: track 5 is ~1 beat then a 37-beat held tail (2.4s kept
+    // of 20s raw); track 7 similarly (4.1s of 20s); track 6 is a real ~4-bar
+    // fanfare, NOT under a bar — its own tail still gets cut (8.4s of 20s),
+    // proving the rule preserves genuine music and only removes dead air.
+    for (const track of [5, 6, 7]) {
+      const {apuLog, frames, frameSec} = runNSF(nsf, track, 20); // same window the ear report measured with
+      const events = reconstruct(apuLog, frames, frameSec);
+      assert.ok(events.length, "track " + track + " isn't silent");
+      const t0 = Math.min(...events.map(e => e.startFrame));
+      const shifted = events.map(e => ({...e, startFrame: e.startFrame - t0, endFrame: e.endFrame - t0}));
+      const loop = detectLoop(shifted, frames - t0, null);
+      assert.equal(loop, null, "track " + track + " is confirmed non-looping (a jingle, not through-composed music)");
+      const changedAt = Math.max(0, lastRegisterChangeFrame(apuLog, frames) - t0);
+      const ring = Math.round(1 / frameSec);
+      const {frames: kept} = trimSustainedTail(shifted, frames - t0, changedAt, ring);
+      const keptSec = kept * frameSec, rawSec = (frames - t0) * frameSec;
+      assert.ok(keptSec < rawSec * 0.6, "track " + track + " trims meaningfully off the " + rawSec.toFixed(1) + "s ceiling, got " + keptSec.toFixed(2) + "s");
+      assert.ok(keptSec < 10, "track " + track + " keeps a short capture, not a padded one, got " + keptSec.toFixed(2) + "s");
+    }
+  });

@@ -359,7 +359,28 @@ track: run N seconds (panel field, default 75; the detector needs
 intro + 2 full passes in frame, so on "no loop" the window auto-doubles
 up to 300s before conceding — 2026-08-16, after MM2's ~35s stage loops
 made half the tracks read "no loop" at 75), reconstruct, loop-detect +
-trim to intro + one pass, grid-fit
+trim to intro + one pass — or, when no loop is found, the no-loop TAIL
+trim (2026-09-29, Josh: Zelda (NES) tracks 5-7 are jingles under a bar
+but held their last note out to the 300s ceiling — 1 beat of music,
+then a re-attack at lower volume sitting there while the driver
+rewrote the SAME register values every frame). `trimSustainedTail` +
+`lastRegisterChangeFrame` (tools/nsf/notes.mjs, shared unmodified by
+GBS) find the last frame at which any APU write actually carried a
+DIFFERENT value than the last one logged at that address — pitch,
+volume/envelope and enable/mute are pure functions of register
+VALUES, so an identical rewrite changes nothing audible, chip-agnostic
+and generic (no per-game table: it reads the same {frame, addr, value}
+log every capture engine already produces, NSF's $4000+ or GBS's
+$FF10+). Past that frame plus a ~1s ring-out, the capture's events and
+`secs` are both cut — the chip-audio render (`chipRender`/`renderApu`)
+re-emulates to the SAME (now short) `secs`, so the notes and the
+console's own audio always agree on where the song ends. Conservative
+by construction (a genuinely differing write anywhere — a real
+envelope step, a vibrato nudge, a channel disabled — keeps the window
+live, so it can only under-trim): a real ~4-bar fanfare with its own
+long dead tail (Zelda track 6) keeps its ~7.4s of music and only loses
+the padding; a looping song never reaches this branch at all (the
+loop's own trim runs instead) — grid-fit
 bpm (4/4 seed 120 — meter/tempo stay re-derivable by annotation like
 any capture), makeMidi → parseMidi → stored as a LOCAL draft under
 `albums/imports/<album-slug>/track-NN.mid`, with a hardware `loop:`

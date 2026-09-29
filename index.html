@@ -14702,6 +14702,17 @@ async function captureChipTrack(kind, M, nsf, track, seconds, onProgress) { // d
     keptFrames = loop.keep;
     events = events.filter(ev => ev.startFrame < loop.onsets - 3)
       .map(ev => ({...ev, endFrame: Math.min(ev.endFrame, keptFrames)}));
+  } else if (!CHIPS[kind || "nsf"].tagged && M.trimSustainedTail) {
+    // no loop found: the capture ran to its seconds ceiling, but the driver
+    // may have stopped changing anything long before that — a jingle under a
+    // bar, held out by a re-attacked tail note (Zelda NES tracks 5-7, Josh
+    // 2026-09-29: 1 beat of music, then $4000-$4017 rewritten unchanged
+    // every frame for 37 more beats). Cut the dead tail to a ~1s ring-out;
+    // any register actually differing anywhere keeps the window live.
+    const changedAt = M.lastRegisterChangeFrame(apuLog, frames) - t0;
+    const trimmed = M.trimSustainedTail(events, keptFrames, changedAt, Math.round(1 / frameSec));
+    events = trimmed.events;
+    keptFrames = trimmed.frames;
   }
   const bpm = M.fitBpm(events, frameSec, 120);
   const statedLoop = !loop && res.loopFrame != null && res.loopFrame > t0 ? res.loopFrame - t0 : null; // a log format (VGM) states its loop point; no scan needed
