@@ -70,15 +70,15 @@
   "tracks": {
    "bout-winner": {
     "n": 6,
-    "secs": 16.982654
+    "secs": 5.3831180000000005
    },
    "don-flamenco-s-theme": {
     "n": 16,
-    "secs": 21.982454
+    "secs": 7.383038
    },
    "game-over": {
     "n": 9,
-    "secs": 32.982014
+    "secs": 11.6662
    },
    "get-up-little-mac": {
     "n": 22,
@@ -86,11 +86,11 @@
    },
    "glass-joe-s-theme": {
     "n": 15,
-    "secs": 21.982454
+    "secs": 7.399704
    },
    "king-hippo-s-theme": {
     "n": 17,
-    "secs": 16.982654
+    "secs": 5.399784
    },
    "match-bgm": {
     "n": 23,
@@ -98,19 +98,19 @@
    },
    "moving-on-to-next-level": {
     "n": 5,
-    "secs": 21.982454
+    "secs": 7.383038
    },
    "piston-honda-s-theme": {
     "n": 19,
-    "secs": 21.982454
+    "secs": 7.383038
    },
    "preparing-for-next-big-bout": {
     "n": 8,
-    "secs": 17.982614
+    "secs": 6.199752
    },
    "punch-out-theme-reprise": {
     "n": 2,
-    "secs": 24.982334
+    "secs": 8.932976
    },
    "punch-out-theme": {
     "n": 1,
@@ -118,199 +118,199 @@
    },
    "round-1-begins": {
     "n": 10,
-    "secs": 13.982774000000001
+    "secs": 4.199832
    },
    "se-032": {
     "n": 32,
-    "secs": 11.982854
+    "secs": 1.049958
    },
    "se-033": {
     "n": 33,
-    "secs": 11.982854
+    "secs": 1.049958
    },
    "se-034": {
     "n": 34,
-    "secs": 11.982854
+    "secs": 1.049958
    },
    "se-041": {
     "n": 41,
-    "secs": 11.982854
+    "secs": 1.5166060000000001
    },
    "se-043": {
     "n": 43,
-    "secs": 11.982854
+    "secs": 1.08329
    },
    "se-047": {
     "n": 47,
-    "secs": 11.982854
+    "secs": 1.5166060000000001
    },
    "se-048": {
     "n": 48,
-    "secs": 11.982854
+    "secs": 2.049918
    },
    "se-051": {
     "n": 51,
-    "secs": 11.982854
+    "secs": 1.5166060000000001
    },
    "se-053": {
     "n": 53,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-054": {
     "n": 54,
-    "secs": 11.982854
+    "secs": 1.349946
    },
    "se-055": {
     "n": 55,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-057": {
     "n": 57,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-059": {
     "n": 59,
-    "secs": 11.982854
+    "secs": 1.183286
    },
    "se-060": {
     "n": 60,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-061": {
     "n": 61,
-    "secs": 11.949522
+    "secs": 1.116622
    },
    "se-064": {
     "n": 64,
-    "secs": 11.982854
+    "secs": 1.116622
    },
    "se-066": {
     "n": 66,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-067": {
     "n": 67,
-    "secs": 11.982854
+    "secs": 1.49994
    },
    "se-068": {
     "n": 68,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-bell-ringing": {
     "n": 44,
-    "secs": 11.982854
+    "secs": 2.533232
    },
    "se-bell": {
     "n": 35,
-    "secs": 11.982854
+    "secs": 2.049918
    },
    "se-blocking": {
     "n": 27,
-    "secs": 11.982854
+    "secs": 1.049958
    },
    "se-disappearing": {
     "n": 63,
-    "secs": 11.982854
+    "secs": 2.58323
    },
    "se-dodging": {
     "n": 40,
-    "secs": 11.982854
+    "secs": 1.066624
    },
    "se-hard-blow-to-the-gut": {
     "n": 42,
-    "secs": 11.982854
+    "secs": 1.283282
    },
    "se-king-hippo-s-mouth": {
     "n": 46,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-opponent-asked-for-more": {
     "n": 52,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-opponent-jumping-away": {
     "n": 58,
-    "secs": 11.982854
+    "secs": 1.383278
    },
    "se-opponent-knocked-out-2": {
     "n": 49,
-    "secs": 11.982854
+    "secs": 3.099876
    },
    "se-opponent-knocked-out": {
     "n": 25,
-    "secs": 11.982854
+    "secs": 3.099876
    },
    "se-opponent-misses-big-uppercut-blow": {
     "n": 65,
-    "secs": 11.982854
+    "secs": 2.049918
    },
    "se-opponent-spitting-from-mouth": {
     "n": 26,
-    "secs": 11.982854
+    "secs": 1.349946
    },
    "se-opponent-throwing-an-uppercut": {
     "n": 28,
-    "secs": 11.982854
+    "secs": 1.5166060000000001
    },
    "se-opponent-throwing-swift-punches": {
     "n": 62,
-    "secs": 11.982854
+    "secs": 1.383278
    },
    "se-opponent-throws-a-punch": {
     "n": 56,
-    "secs": 11.982854
+    "secs": 1.5166060000000001
    },
    "se-punch-missed": {
     "n": 29,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-punching-opponent": {
     "n": 31,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-punching-title-name": {
     "n": 24,
-    "secs": 11.982854
+    "secs": 2.049918
    },
    "se-referee-announcing-tko": {
     "n": 38,
-    "secs": 11.982854
+    "secs": 1.483274
    },
    "se-referee-announcing-winner": {
     "n": 39,
-    "secs": 11.982854
+    "secs": 1.183286
    },
    "se-referee-counting": {
     "n": 37,
-    "secs": 11.982854
+    "secs": 1.283282
    },
    "se-referee": {
     "n": 36,
-    "secs": 11.982854
+    "secs": 1.233284
    },
    "se-special-punch": {
     "n": 45,
-    "secs": 11.982854
+    "secs": 1.549938
    },
    "se-special-star-obtained": {
     "n": 50,
-    "secs": 11.982854
+    "secs": 1.2499500000000001
    },
    "se-uppercut-missed": {
     "n": 30,
-    "secs": 11.982854
+    "secs": 1.149954
    },
    "soda-popinski-s-theme": {
     "n": 18,
-    "secs": 20.982494
+    "secs": 7.383038
    },
    "the-dream-fight": {
     "n": 13,
-    "secs": 16.982654
+    "secs": 5.3831180000000005
    },
    "von-kaiser-s-theme": {
     "n": 14,
-    "secs": 16.982654
+    "secs": 5.3831180000000005
    },
    "warming-up-with-doc": {
     "n": 20,
@@ -318,11 +318,11 @@
    },
    "you-lose": {
     "n": 7,
-    "secs": 17.982614
+    "secs": 5.783102
    },
    "you-ve-won-the-championship-ranking": {
     "n": 4,
-    "secs": 29.982134000000002
+    "secs": 10.599576
    },
    "you-win": {
     "n": 21,
