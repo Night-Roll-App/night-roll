@@ -1655,7 +1655,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README",
+    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README",
     "clear themselves a few seconds", "Publish dialog",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
@@ -2933,7 +2933,7 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   assert.match(val(`askContext({t0: 0, t1: 1920, from: 1, to: 1}, {win: 8192})`), /^general chat — no song attached/);
   assert.ok(!val(`askToolsNow().some(t => t.function.name === "add_annotation")`), "no annotation tool in the general chat");
   assert.ok(val(`askToolsNow().some(t => t.function.name === "read_song")`), "reading songs still allowed");
-  assert.match(val(`askLogHeader()`), /^# ✦ Ask log — general/);
+  assert.match(val(`askLogHeader()`), /^# ✦ AI log — general/);
   run(`{ const g = askLoad(); g.push({role: "user", content: "hello general", t: 1}); askSave(g); }`);
   assert.ok(val(`JSON.stringify(pendingSongs())`).includes('"general"'), "unsaved general chat shows in the Publish list");
   assert.equal(val(`askLogPath("ff1roll-ask-" + songKey)`), "albums/compositions/nightroll/ask-cap.ask.md", "a song's log path is untouched by the mode");
@@ -3097,7 +3097,7 @@ test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply an
        askSave([{role: "user", content: "q", t: 1, at: "bars 1–4 (view)", pending: "nr_one"}]);
        askFinish("nr_one", "the answer");`);
   assert.equal(val(`document.getElementById("askreplybtn").style.display`), "", "badge shows when the sheet is closed");
-  assert.match(val(`document.getElementById("noteinfo").textContent`), /✦ Ask replied/);
+  assert.match(val(`document.getElementById("noteinfo").textContent`), /✦ AI replied/);
   run(`askBadgeOff(); asksheet.classList.add("on"); askRender();`); // what openAsk does (its target picker needs a real <select>)
   assert.equal(val(`document.getElementById("askreplybtn").style.display`), "none", "opening Ask clears the badge");
   assert.equal(val(`asklog.children.filter(c => c.className === "askmsg ai").pop().textContent`), "the answer", "the sheet shows the landed reply");

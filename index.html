@@ -663,7 +663,7 @@
   }
 
   .chiprow { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
-  /* ✦ Ask: the in-app AI sheet. The log is the tall part; rows stay fixed. */
+  /* ✦ AI: the in-app AI sheet. The log is the tall part; rows stay fixed. */
   .sheet.ask { height: 88dvh; width: min(680px, 100%); }
   #asksheet .sheet.ask { width: max(min(680px, 100%), 75vw); max-width: 100%; } /* three quarters of the screen, whatever rule comes later (Josh, 2026-09-27: "shrunk back to a third") */
   /* sheets move: drag by the title line — the Ask sheet over the capture panel
@@ -770,7 +770,7 @@
   <button id="editsheetbtn" style="display:none">Edit ▾</button>
   <button id="editherebtn" style="display:none" aria-label="Make a local copy to edit">✎ Edit locally</button>
   <button id="viewsheetbtn">View ▾</button>
-  <button id="askbtn" aria-label="Ask the AI tutor">✦ Ask</button>
+  <button id="askbtn" aria-label="Talk to the AI tutor">✦ AI</button>
   <button id="fullappbtn" style="padding:6px 10px">Full app</button>
   <span id="songcrumb"></span>
   <!-- accept threads two iOS quirks: listing only extensions grays out .nsf (no
@@ -1278,7 +1278,7 @@
       <button data-hs="editor">Editor</button>
       <button data-hs="annot">Annotations</button>
       <button data-hs="files">Files &amp; Sync</button>
-      <button data-hs="ask">✦ Ask</button>
+      <button data-hs="ask">✦ AI</button>
     </div>
 
     <div class="hsec" data-hsec="views">
@@ -1409,16 +1409,16 @@
 
     <div class="hsec" data-hsec="ask">
     <dl>
-      <dt>✦ Ask</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ Ask</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
+      <dt>✦ AI</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ AI</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
       <dt>Move a sheet</dt><dd>Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
       <dt>⏳ Jobs</dt><dd>Captures and publishes run as background jobs: start one and close its panel — the <b>⏳</b> chip in the footer shows how many are running, tap it for the list (title, a progress bar, progress text like "12/92 · Frog's Theme 40%", and per job <b>Open</b> to get back to its panel, <b>✕</b> to cancel a running one or dismiss a finished one, <b>↻</b> to retry what is left). Done and cancelled jobs clear themselves a few seconds after they end, and the ⏳ chip itself hides once none are left; a <b>failed</b> or <b>interrupted</b> job stays until you ↻ or ✕ it — those are the ones to look at. A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job <i>interrupted</i> with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; one publish per folder; one Publish all at a time.</dd>
       <dt>Publish dialog</dt><dd>Starting a folder's publish from Open → LOCAL, or tapping <b>Publish all</b> in the Publish sheet, opens a dialog for that one job: an overall bar, a row per song (its title, and a state — <b>…</b> queued, a small bar while it runs, <b>✓</b> done, <b>⚠</b> failed with the error), the job's own note line, <b>Cancel</b> while it's running (stopping it between songs — what's already published stays published), and <b>Close</b> always. Closing it never cancels the job — reopen it from ⏳'s <b>Open</b> on that job any time. Capture jobs still open the familiar capture panel.</dd>
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
       <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
-      <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
-      <dt>General chat</dt><dd>At the top of ✦ Ask, <b>♪ this song</b> / <b>✦ general</b> pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
-      <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ Ask as a gold <b>✉</b> bubble (inbox), and the <b>✦ Ask</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
+      <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ AI) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
+      <dt>General chat</dt><dd>At the top of ✦ AI, <b>♪ this song</b> / <b>✦ general</b> pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
+      <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).</dd>
       <dt>Where the model runs</dt><dd>File → Settings… → <b>AI model</b>. <b>In this browser</b>: pick a small model (0.4–4 GB), the first Ask downloads it once and it runs on this device's GPU, nothing leaves the device; Test checks WebGPU and whether it's downloaded. <b>On a server</b>: the URL of an OpenAI-compatible server — LM Studio or Ollama on this computer (<code>http://localhost:1234</code>) or on another machine on your network — plus an optional API key; <b>Test</b> lists the server's models, picks one (your last pick if the server still has it), saves, and names exactly what's wrong when it can't (server off, CORS not enabled, https page talking to an http server, no answer in 8 s). On an iPad the server must be https (Tailscale Serve). The first time you point it at a machine other than this one, it asks once before sending your notes there.</dd>
       <dt>Settings save themselves</dt><dd>Every Settings field saves itself the moment you leave it — there is no Save button and closing never loses anything.</dd>
@@ -1745,7 +1745,7 @@
     <div class="row" id="cfgaikeyrow"><span class="lbl" style="width:70px">key</span>
       <input type="password" id="cfgaikey" placeholder="API key — only if the server needs one" autocomplete="off" style="flex:1;min-height:36px" aria-label="AI API key">
       <input type="number" id="cfgaiwindow" placeholder="context" min="1024" step="1024" style="width:100px;min-height:36px" aria-label="Context window in tokens — match what the server loaded the model with"></div>
-    <div class="status cfgind" id="cfgaihelpremote">Any OpenAI-compatible server: LM Studio (turn on <b>Enable CORS</b> + <b>Serve on local network</b>) or Ollama. Test lists its models and picks one. Context = the token window the server loaded the model with (LM Studio shows it; 8192 is its default). On an iPad the server must be https (Tailscale Serve) — Help → ✦ Ask.</div>
+    <div class="status cfgind" id="cfgaihelpremote">Any OpenAI-compatible server: LM Studio (turn on <b>Enable CORS</b> + <b>Serve on local network</b>) or Ollama. Test lists its models and picks one. Context = the token window the server loaded the model with (LM Studio shows it; 8192 is its default). On an iPad the server must be https (Tailscale Serve) — Help → ✦ AI.</div>
     <div class="status cfgind" id="cfgaihelpbrowser" style="display:none">Downloads a small model once (0.4–4 GB, kept on this device; needs WebGPU — Test checks) and runs it here. Nothing leaves the device.</div>
     </div>
     <div class="cfgpane" id="cfgpane-github">
@@ -12500,7 +12500,7 @@ function micStop(discard) {
   else { nmic.classList.remove("active"); nmic.textContent = "🎤 Speak"; }
   micBtn = null;
 }
-let micBtn = null; // whichever 🎤 is live (annotation editor or ✦ Ask)
+let micBtn = null; // whichever 🎤 is live (annotation editor or ✦ AI)
 // Safari hands dictation back one segment per pause, with no space and no
 // period between segments, but it capitalizes the first word after a pause
 // (Josh, 2026-09-26: "nowAnd", "butIt"). Join segments with a space, and when
@@ -15429,7 +15429,7 @@ async function commitCompositionNow(status) { // .mid + annotations + notes.txt,
     if (!r2.ok) throw new Error(".rollnotes.json HTTP " + r2.status);
     const r3 = await putSongsText(songKey.replace(/\.mid$/, "") + ".notes.txt", notesTxtFor(), h);
     if (!r3.ok) throw new Error(".notes.txt HTTP " + r3.status);
-    await askCommitLog(h); // the ✦ Ask chat since the last save, appended to <song>.ask.md
+    await askCommitLog(h); // the ✦ AI chat since the last save, appended to <song>.ask.md
     await uploadAudioClips(h, status); // recordings ride along, next to the .mid; "local" ones never
     await updateManifest(h, albums => manifestPlace(albums, null, songKey));
     let readmeNote = "";
@@ -17221,7 +17221,7 @@ if (document.getElementById("cmpswap")) {
   document.getElementById("cmpdone").addEventListener("click", cmpExit);
 }
 
-// ---------------------------------------------------------------- ✦ Ask (in-app AI)
+// ---------------------------------------------------------------- ✦ AI (in-app AI)
 // Design: local-llm-design.md (advisor-converged, Josh's rulings 2026-09-25).
 // A tutor and, later, a generator, over ONE adapter: any OpenAI-compatible
 // server (LM Studio / Ollama, this machine or another on the network). The
@@ -17397,7 +17397,7 @@ async function aiTest(url, statusEl, btn) {
   url = (url || "").replace(/\/+$/, "");
   if (aiHostKind(url) === "bad") { say("⚠ that is not a URL — try http://localhost:1234"); return null; }
   if (location.protocol === "https:" && url.startsWith("http:") && aiHostKind(url) !== "local") {
-    say("⚠ mixed content: this page is https but the server is http — the browser blocks that. Reach the server over https (Tailscale Serve) or open Night Roll over http from that machine. See Help → ✦ Ask.");
+    say("⚠ mixed content: this page is https but the server is http — the browser blocks that. Reach the server over https (Tailscale Serve) or open Night Roll over http from that machine. See Help → ✦ AI.");
     return null;
   }
   const label = btn ? btn.textContent : "";
@@ -17523,7 +17523,7 @@ function aiBrowser() {
 }
 function aiProvider() { return cfg().aiBackend === "browser" ? aiBrowser() : Object.assign(aiRemote(), {id: "remote"}); }
 
-// ---- ✦ Ask tools (Josh, 2026-09-26): "if I propose putting an F sharp minor
+// ---- ✦ AI tools (Josh, 2026-09-26): "if I propose putting an F sharp minor
 // chord annotation on 21.1, then it should just be able to do it" — and read
 // other songs in the repo. The APP runs the tools (the model only asks), so
 // they work the same against LM Studio, the Claude bridge, or anything else
@@ -17812,8 +17812,8 @@ function askLogSong(storeKey) { return storeKey === ASK_GENERAL_KEY ? null : sto
 function askLogPath(key) { const sk = askLogKey(key); if (sk === ASK_GENERAL_KEY) return ASK_GENERAL_LOG; const song = askLogSong(sk); return song && song !== "local" ? song.replace(/\.midi?$/i, "") + ".ask.md" : null; } // beside the .mid (compositions) or the .rollnotes.json (analyzed); the general chat at the repo root
 function askLogHeader(key) {
   const sk = askLogKey(key);
-  if (sk === ASK_GENERAL_KEY) return "# ✦ Ask log — general\n\nThe chat that is not about one song (the app, the project, music in general, messages for the terminal). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
-  return "# ✦ Ask log — " + songTitleOf(askLogSong(sk)) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
+  if (sk === ASK_GENERAL_KEY) return "# ✦ AI log — general\n\nThe chat that is not about one song (the app, the project, music in general, messages for the terminal). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
+  return "# ✦ AI log — " + songTitleOf(askLogSong(sk)) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
 }
 function askLogMarkdown(msgs) { // what Save appends: one heading per question (when, which bars), the reply under it
   const two = n => String(n).padStart(2, "0");
@@ -17889,7 +17889,7 @@ const askstatus = document.getElementById("askstatus");
 // ---- Notes from the Mac (2026-09-27, Josh: "I can't message you back without
 // getting out of bed"). The bridge keeps an inbox the terminal's Claude Code
 // writes to (`node tools/claude-bridge.mjs --say "…"`); the app polls it,
-// shows each note in ✦ Ask as a "note" bubble, saves it with the chat (so it
+// shows each note in ✦ AI as a "note" bubble, saves it with the chat (so it
 // reaches <song>.ask.md), and lights ✉ on the Ask button until read. Only a
 // host already allowed for Ask is polled; a server without /v1/inbox (LM
 // Studio, Ollama) is asked once and left alone.
@@ -17927,7 +17927,7 @@ function askNotesArrived(notes) { // into the open song's chat, saved like any m
   for (const n of notes) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal"});
   askSave(msgs, undefined, key);
   if (asksheet.classList.contains("on")) { for (const n of notes) askBubble("note", askNoteLabel(n.from) + String(n.text)); }
-  else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ Ask to read it"); }
+  else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
 }
 function askNoteLabel(from) { return "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; }
 function askInboxStart() { clearInterval(askInboxTimer); askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askResume(); } }, 60000); askInboxPoll(); askResumeSoon(1500); } // at boot too: a reply that landed while the app was closed lights ✦ without opening the sheet
@@ -18074,7 +18074,7 @@ function askLanded(key, failed) {
   const b = document.getElementById("askreplybtn");
   b.style.display = "";
   const other = key !== askStoreKey() ? " in " + songTitleOf(key.replace(/^ff1roll-ask-/, "")) : "";
-  setInfo((failed ? "✦ Ask: no reply" : "✦ Ask replied") + other + " — tap ✦ reply to read it");
+  setInfo((failed ? "✦ AI: no reply" : "✦ AI replied") + other + " — tap ✦ reply to read it");
 }
 function askBadgeOff() { document.getElementById("askreplybtn").style.display = "none"; }
 async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exchange (tool rounds inside); the pending marker outlives a dropped connection
@@ -18607,7 +18607,7 @@ function cfg() {
       // imported NSFs then stay on the device (Josh, 2026-09-26)
       nsfRepo: c.nsfRepo !== undefined ? c.nsfRepo : ((c.songsRepo || "Night-Roll-App/night-roll") === "Night-Roll-App/night-roll" ? "Night-Roll-App/nsf-archive" : ""),
       nsfBase: c.nsfBase || (c.nsfRepo ? "https://raw.githubusercontent.com/" + c.nsfRepo + "/main" : "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main"),
-      // ✦ Ask: flat fields (saveCfg is a shallow merge); the key lives apart, like the token
+      // ✦ AI: flat fields (saveCfg is a shallow merge); the key lives apart, like the token
       aiBackend: c.aiBackend === "browser" ? "browser" : "remote",
       aiBrowserModel: c.aiBrowserModel || "Llama-3.2-1B-Instruct-q4f16_1-MLC",
       aiUrl: c.aiUrl || "http://localhost:1234",
