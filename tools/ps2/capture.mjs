@@ -16,12 +16,15 @@
 // magic). Its opcode table is NOT AKAO's (confirmed by reading VGMTrans's
 // SquarePS2Seq.cpp: entirely different, simpler byte codes — 0x10/0x11/
 // 0x12/0x13 note-on variants, 0x20 program change, 0x5C pitch bend, no
-// degree/length-index encoding at all), so per docs/plans/ps2.md's own
-// milestone-1 scope this format is identified and reported here, not
-// parsed into notes yet.
+// degree/length-index encoding at all) — tools/ps2/bgm.mjs and tools/ps2/
+// wd.mjs (milestone 3) read it the same way this module reads SQ/HD/BD:
+// bgmNotes() plays the same role seqNotes() does below, wd.mjs's toBank()
+// the same role hd.mjs's does.
 import { findPSF2, readPSF2File } from "./psf2.mjs";
 import { parseSQ } from "./sq.mjs";
 import { parseHD, toBank } from "./hd.mjs";
+import { parseBGM, bgmNotes } from "./bgm.mjs";
+import { parseWD, toBank as wdToBank } from "./wd.mjs";
 import { seqNotes } from "../psx/notes.mjs";
 
 async function readIni(files, miniSource, inflate) {
@@ -69,13 +72,39 @@ export async function ps2Song(files, miniSource, {inflate = null} = {}) {
       return {kind: "sq", result, bank, renderable: !!bank, why: bank ? null : "no HD/BD bank in this image", warnings, source: {sq: sName, hd: hName, bd: bName}};
     }
   }
-  // Square Enix's own driver: identified, not parsed this milestone (see
-  // module header). Report it plainly rather than throwing an opaque error.
+  // Square Enix's own driver (see module header): a mini carrying a ".bgm"
+  // names the sequence directly, no ini needed — the paired ".wd" bank is
+  // found by extension too (usually exactly one per merged mini+lib set; if
+  // more than one turns up, the one whose own header id matches the BGM's
+  // assocWDID wins).
   for (const [path, entry] of files) {
     if (/\.bgm$/i.test(path)) {
-      return {kind: "bgm-unimplemented", result: null, bank: null, renderable: false,
-        why: "Square Enix's PS2 driver (\"BGM\"/\"WD\") is identified but not parsed — docs/plans/ps2.md milestone 1 scope",
-        warnings, source: {bgm: path}};
+      const bgmBytes = await readPSF2File(entry.source.psf.reserved, entry, inflate);
+      const seq = parseBGM(bgmBytes);
+      const wdCandidates = [...files.values()].filter(e => /\.wd$/i.test(e.path));
+      let bank = null, wdName = null;
+      if (!wdCandidates.length) {
+        warnings.push(`this BGM names WD id ${seq.assocWDID} but no .wd file is in this image: sample bank has no audio bytes`);
+      } else {
+        let chosen = wdCandidates[0];
+        if (wdCandidates.length > 1) {
+          let matched = null;
+          for (const c of wdCandidates) {
+            const b = await readPSF2File(c.source.psf.reserved, c, inflate);
+            if (b.length >= 4 && new DataView(b.buffer, b.byteOffset, b.byteLength).getUint16(2, true) === seq.assocWDID) { matched = c; break; }
+          }
+          chosen = matched || chosen;
+          if (!matched) warnings.push(`${wdCandidates.length} .wd files in this image, none named WD id ${seq.assocWDID}: using ${chosen.path}`);
+        }
+        const wdBytes = await readPSF2File(chosen.source.psf.reserved, chosen, inflate);
+        const wd = parseWD(wdBytes);
+        if (wd.id !== seq.assocWDID) warnings.push(`this BGM names WD id ${seq.assocWDID}; ${chosen.path} is WD id ${wd.id} (used anyway: the only/best match in this image)`);
+        bank = wdToBank(wd);
+        wdName = chosen.path;
+      }
+      const result = bgmNotes(seq, {vab: bank});
+      (result.seq.warnings || (result.seq.warnings = [])).push(...warnings);
+      return {kind: "bgm", result, bank, renderable: !!bank, why: bank ? null : "no WD bank in this image", warnings, source: {bgm: entry.path, wd: wdName}};
     }
   }
   throw new Error("no PS2 sequence data found in this image — a driver Night Roll cannot read yet");

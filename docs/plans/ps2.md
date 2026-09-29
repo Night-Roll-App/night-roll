@@ -453,3 +453,44 @@ tools/ps2/INTEGRATION.md §4). Full account: tools/ps2/INTEGRATION.md.
 Milestone 3: Square's BGM/WD reader (its own opcode table, VGMTrans's
 `SquarePS2Seq.cpp` — confirmed NOT an AKAO variant, correcting this
 plan's own §1 guess), PS2 instruments, the listening pass.
+
+## 10. Milestone 3 — DONE 2026-09-28 (Square Enix's own driver: BGM/WD)
+
+Square's own PS2 sequence format (BGM sequence + WD wave bank, Final
+Fantasy X/X-2/XII/Kingdom Hearts) now gets the SAME treatment as Sony's
+SQ/HD/BD: notes + the console's own SPU2 sound, through the SAME pipeline
+(`tools/psx/notes.mjs`'s `seqNotes`/`makeMidi`/`channelGroups`,
+`tools/psx/spu-render.mjs`'s `renderSpu` — all reused unmodified).
+`tools/ps2/bgm.mjs` reads VGMTrans's `SquarePS2Seq.cpp` opcode table
+directly (confirmed genuinely separate from both SQ's and AKAO's — no
+degree/length-index encoding, small discrete MIDI-ish opcodes instead);
+`tools/ps2/wd.mjs` reads `WD.cpp`'s self-contained instrument bank and
+reshapes it into the same VAB-shaped object `hd.mjs`'s `toBank()`
+produces, so no new render code exists here either. Pitch bend (0x5C) is
+honored via the SAME `note.slide` representation `tools/psx/akao.mjs`'s
+own pitch-slide opcode already produces (a new `bgmNotes()` wrapper in
+`bgm.mjs` attaches it after calling `seqNotes()`, so `notes.mjs` itself
+stays untouched). Verified against all 92 real Final Fantasy X
+`.minipsf2` files: 92/92 parse, capture, and render with zero failures;
+146,477 notes; loops found in 79/92; every track renders non-silent audio
+except 5 tracks (4 songs) that are genuinely silenced by the score's own
+CC7 automation at note-on time (a file fact, not a bug — the existing
+generic SEQ/SQ behavior, no dynamic volume ramp outside AKAO); 14/14
+isolated (non-overlapping) notes checked by autocorrelation across 2
+songs measured exactly the written pitch. Three real bugs found only by
+rendering real audio end to end, not from reading the format docs: WD's
+unity-key byte must be read as SIGNED (real files carry raw bytes past
+127 for higher key splits; read unsigned the pitch ratio explodes and a
+whole track reads silent); WD's pan byte is `raw & 0x7F` uniformly, NOT
+VGMTrans's own `>127`-only formula (which discards real, varied pan data
+below 128 that all 92 real files actually carry — CLAUDE.md "the file
+wins"); and any BGM track past channel 15 that never sends its own
+program-change opcode needed an implicit program 0 (found on a real
+37-track song) — `notes.mjs` itself stays unmodified; `bgm.mjs` supplies
+the default. All three fixed, all have regression tests (synthetic
+fixture: `tools/ps2/make-test-bgm.mjs`; real-file guard:
+tests/ps2-real.test.mjs). No PS2-specific index.html changes beyond a
+one-line `files:` list addition (task scope: the `bgm-unimplemented`
+branches are now dead code, left in place). Full account, opcode table,
+and what's still open (ground truth, the ear-check pass, instruments, a
+second Square-driver title): tools/ps2/INTEGRATION.md §5-6.

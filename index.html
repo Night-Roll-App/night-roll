@@ -14145,25 +14145,26 @@ const CHIPS = {
           // PSX_SOUNDING_ON once confirmed.
           return sonySeqCapture(M, "psf", result, 44100, (one, o) => M.renderSpu(one, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram, table: song.table || null, bank: song.bank || null, keepSeconds: o.seconds}), onProgress, []);
         }},
-  // Sony PlayStation 2 (2026-09-28; milestone 2, verified on the real Dark
-  // Cloud set — docs/plans/ps2.md "Findings"). PS2's PSF2/minipsf2 is PSF's
-  // container reshaped as a small virtual filesystem (tools/ps2/psf2.mjs)
-  // instead of a flat RAM image, so there is no assembleRam step here: the
-  // mini + its .psf2lib merge into one file list, a mini's own psf2.ini (Sony's
-  // stock driver — "-s=/-h=/-b=" naming its SQ/HD/BD triplet, e.g. every real
-  // Dark Cloud song) or ".bgm" (Square Enix's own PS2 driver — Final Fantasy X
-  // and kin) picks the format, and tools/ps2/capture.mjs's ps2Song does the
-  // rest. SQ reuses PS1 SEQ's own shape byte for byte (tools/ps2/sq.mjs), so
-  // the note pipeline (seqNotes/makeMidi/channelGroups, tools/psx/notes.mjs)
-  // and the chip-audio renderer (renderSpu, tools/psx/spu-render.mjs — an HD/
-  // BD bank reshapes into a VAB-shaped bank, tools/ps2/hd.mjs's toBank(), so
-  // no PS2-specific render code exists) run over it completely unmodified.
-  // Square's BGM/WD is identified, not parsed (docs/plans/ps2.md milestone-1
-  // scope) — refused with a clear sentence rather than a silent half-import.
+  // Sony PlayStation 2 (2026-09-28; milestone 3, verified on the real Dark
+  // Cloud AND Final Fantasy X sets — docs/plans/ps2.md "Findings"). PS2's
+  // PSF2/minipsf2 is PSF's container reshaped as a small virtual filesystem
+  // (tools/ps2/psf2.mjs) instead of a flat RAM image, so there is no
+  // assembleRam step here: the mini + its .psf2lib merge into one file
+  // list, a mini's own psf2.ini (Sony's stock driver — "-s=/-h=/-b=" naming
+  // its SQ/HD/BD triplet, e.g. every real Dark Cloud song) or ".bgm" (Square
+  // Enix's own PS2 driver — Final Fantasy X and kin, its own separate
+  // opcode table — tools/ps2/bgm.mjs) picks the format, and tools/ps2/
+  // capture.mjs's ps2Song does the rest. Both drivers reuse PS1 SEQ's own
+  // shape byte for byte (tools/ps2/sq.mjs, tools/ps2/bgm.mjs), so the note
+  // pipeline (seqNotes/makeMidi/channelGroups, tools/psx/notes.mjs) and the
+  // chip-audio renderer (renderSpu, tools/psx/spu-render.mjs — an HD/BD or
+  // WD bank both reshape into a VAB-shaped bank, tools/ps2/hd.mjs's/
+  // tools/ps2/wd.mjs's toBank(), so no PS2-specific render code exists) run
+  // over either one completely unmodified.
   psf2: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x02, ext: ".psf2", label: "PSF2",
         channels: [], perFile: true, tagged: true, keepBytes: true, // the mini per track + the set's lib: chip audio outlives the session, exactly as PS1's psf
         libFile: name => /\.psf2lib$/i.test(name),
-        files: ["ps2/psf2", "ps2/sq", "ps2/hd", "ps2/capture", "psx/vab", "psx/notes", "psx/spu-render"], shared: ["sounding", "note-preview"], own: [],
+        files: ["ps2/psf2", "ps2/sq", "ps2/hd", "ps2/bgm", "ps2/wd", "ps2/capture", "psx/vab", "psx/notes", "psx/spu-render"], shared: ["sounding", "note-preview"], own: [],
         parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
         run: M => async (parsed, n, secs, onProgress) => {
           const readLib = name => { const b = parsed.libs[name.toLowerCase()]; if (!b) throw new Error("this song needs its library file " + name + " — pick it together with the songs"); return b; };

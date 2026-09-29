@@ -1956,7 +1956,7 @@ capture's warnings ("kit guessed from rhythm: prog 37 K71 → snare, …"),
 so a wrong guess is visible in the row's ⓘ. N64 sequences already put
 drums on channel 10 with GM-ish keys (50–59); untouched.
 
-## PlayStation 2 import (milestone 2, 2026-09-28)
+## PlayStation 2 import (milestone 3, 2026-09-28)
 
 PS2's PSF2/minipsf2 is PSF's container reshaped as a small virtual
 filesystem (`tools/ps2/psf2.mjs`: a directory of 48-byte entries, files
@@ -1968,40 +1968,56 @@ command line, `-s=/-h=/-b=`) is Sony's stock driver, a `.bgm` file is
 Square Enix's own driver. `CHIPS.psf2` (index.html) mirrors `CHIPS.psf`
 almost line for line — magic `PSF`+0x02, `.psf2` ext, `perFile`/`tagged`/
 `keepBytes`, the same `capture`→bar/beat/loop math, the same
-`PSX_SOUNDING_ON` flag (not a separate one) — because Sony's SQ format
-reuses PS1 SEQ's own event shape byte for byte (`tools/ps2/sq.mjs`'s own
-header comment lists every difference: one-byte note-off, a "no delta
+`PSX_SOUNDING_ON` flag (not a separate one) — because BOTH drivers reuse
+PS1 SEQ's own event shape byte for byte (`tools/ps2/sq.mjs`'s own header
+comment lists Sony's SQ differences: one-byte note-off, a "no delta
 next" bit trick, a padded tempo meta, no time-signature meta, CC99 0/1
-loop points), so `tools/psx/notes.mjs`'s whole note pipeline
-(`seqNotes`/`makeMidi`/`channelGroups`) runs over it unmodified.
-Square's BGM/WD (Final Fantasy X and kin) is identified, not parsed —
-refused with a named sentence ("Square's PS2 sequence format (BGM/WD) is
-not supported yet.") rather than a silent half-import; a different
-opcode table entirely (VGMTrans's `SquarePS2Seq.cpp`), not an AKAO
-variant as first guessed. Streamed-audio-only sets (Ico: GENH; XIII:
-Ubisoft's SShd/SSbd) are refused BY NAME at import
+loop points; `tools/ps2/bgm.mjs`'s own header comment lists Square's own
+BGM opcode table — 0x10-0x1A note variants, 0x20 program change, 0x5C
+pitch bend, one-byte BPM at 0x08, no degree/length-index encoding at
+all, NOT an AKAO variant as first guessed), so `tools/psx/notes.mjs`'s
+whole note pipeline (`seqNotes`/`makeMidi`/`channelGroups`) runs over
+either one unmodified. BGM's pitch bend is honored: `tools/ps2/bgm.mjs`'s
+own `bgmNotes()` wraps `seqNotes()` and attaches each bend inside a held
+note as a `note.slide` entry — the SAME representation
+`tools/psx/akao.mjs`'s pitch-slide opcode already produces, so
+`splitSlides()`/`renderSpu()` need no PS2-specific code either; the bend
+range (±2 semitones) is an assumption, flagged in the warnings, since
+nothing in BGM encodes a real one. Streamed-audio-only sets (Ico: GENH;
+XIII: Ubisoft's SShd/SSbd) are refused BY NAME at import
 (`streamedAudioMagic()`) before reaching any parser — neither format
 ever carried sequence data to begin with.
 
-Chip audio needed no new renderer: `tools/ps2/hd.mjs`'s `toBank()`
-reshapes an HD/BD bank into the exact object `tools/psx/vab.mjs`'s
-`parseVAB()` returns, so `tools/psx/spu-render.mjs`'s `renderSpu()` —
-unmodified, PS1's own tests unaffected — runs over PS2 Sony-format data.
-SPU2's two 24-voice cores turned out not to matter: the renderer never
-modeled discrete voices to begin with. Two real bugs turned up only once
-real Dark Cloud audio was actually rendered end to end
-(scratch/ps2-app-render.mjs), not from reading the format docs: (1) real
-HD files carry each sample's OWN native rate (22050–44100 Hz across one
-set, not PS1's fixed 44100) — `toBank()` parsed it but dropped it;
-`vabVoices()` now reads it, falling back to its old constant when absent
-(PS1 renders provably unchanged); (2) `toBank()`'s panpot fields were
-double-offset (`64 + panpot` on top of values that were ALREADY absolute
-0-127 pan, 64 = centre, the same convention `vab.mjs`'s own `tone.pan`
-uses) — every real program's panpot read exactly 64, which a true
-per-program *offset* would never do by default. Fixed; both have
-regression tests. Full findings, the verification numbers (RMS + a
-pitch sanity check with no reference player available), and milestone 3's
-list: tools/ps2/INTEGRATION.md.
+Chip audio needed no new renderer: `tools/ps2/hd.mjs`'s and
+`tools/ps2/wd.mjs`'s `toBank()`s both reshape their own bank (Sony's
+HD/BD pair; Square's self-contained WD) into the exact object
+`tools/psx/vab.mjs`'s `parseVAB()` returns, so
+`tools/psx/spu-render.mjs`'s `renderSpu()` — unmodified, PS1's own tests
+unaffected — runs over either PS2 format. SPU2's two 24-voice cores
+turned out not to matter: the renderer never modeled discrete voices to
+begin with. Real bugs turned up only once real audio was actually
+rendered end to end (scratch/ps2-app-render.mjs), not from reading the
+format docs: Sony's HD/BD (milestone 2) needed its per-sample native
+rate threaded through (`toBank()` parsed it but dropped it) and its
+panpot fields un-double-offset (every real program's panpot read exactly
+64, which a true per-program *offset* would never do by default).
+Square's WD (milestone 3) needed its unity-key byte read as SIGNED, not
+unsigned (a real Final Fantasy X file's higher key splits carry raw
+bytes past 127 — read unsigned, the derived unity key goes wildly
+negative and the note's pitch ratio explodes, decaying to nothing within
+a handful of samples: a whole track read RMS 0.0 until this was found by
+rendering it); its pan byte is read as `raw & 0x7F` uniformly, NOT
+VGMTrans's own `>127`-only formula, which collapses every raw byte 0-127
+to a flat centre — real FFX regions carry genuine, varied pan bytes
+below 128 too, which that formula would have discarded (CLAUDE.md "the
+file wins"); and any BGM track past channel 15 that never sends its own
+program-change opcode now gets an implicit program 0 at tick 0, matching
+channels 0-15's own default in `tools/psx/notes.mjs`'s `seqNotes()`
+(which stays unmodified — the default is supplied by `bgm.mjs` itself,
+since one real Final Fantasy X song has 37 tracks and would otherwise
+render one silent). All fixed; each has a regression test. Full
+findings, the sweep numbers across all 92 real Final Fantasy X songs,
+and what's still unverified: tools/ps2/INTEGRATION.md.
 
 ## Sounding-pitch offsets — the roll shows what you hear (2026-09-28)
 

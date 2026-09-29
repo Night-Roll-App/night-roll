@@ -1491,10 +1491,11 @@ test("PSF import: a minipsf + psflib set captures through the sequence reader; a
   assert.equal(val(`parseMidi(new Uint8Array(${JSON.stringify(smf)}).buffer, {trust: true}).tracks[0].notes.length`), 2, "trusted: both notes survive");
 });
 
-test("PS2 import: a minipsf2 + psf2lib set (Sony's stock SQ/HD/BD driver) captures through ps2Song; a missing lib is named; Square's BGM/WD is refused with a clear sentence", async () => {
+test("PS2 import: a minipsf2 + psf2lib set (Sony's stock SQ/HD/BD driver) captures through ps2Song; a missing lib is named; Square's own BGM/WD driver captures too (milestone 3)", async () => {
   const M = {
     ...(await import("../tools/ps2/capture.mjs")), ...(await import("../tools/ps2/psf2.mjs")),
     ...(await import("../tools/ps2/sq.mjs")), ...(await import("../tools/ps2/hd.mjs")),
+    ...(await import("../tools/ps2/bgm.mjs")), ...(await import("../tools/ps2/wd.mjs")),
     ...(await import("../tools/psx/vab.mjs")), ...(await import("../tools/psx/notes.mjs")),
     ...(await import("../tools/sounding.mjs")), ...(await import("../tools/note-preview.mjs")),
   };
@@ -1531,14 +1532,27 @@ test("PS2 import: a minipsf2 + psf2lib set (Sony's stock SQ/HD/BD driver) captur
   assert.ok(got && got.notes === T.TEST_SQ_NOTES.length, "notes from the SQ sequence: " + JSON.stringify(got));
   assert.equal(got.bpm, 120);
   assert.equal(got.looped, true, "cc99 0/1 loop points became the loop");
-  // Square Enix's own driver (a .bgm file): refused with the exact sentence, not a silent half-import
-  const bgmMini = T.makePSF2(T.buildPSF2Fs([T.fileNode("song001.bgm", new Uint8Array([0x42, 0x47, 0x4D, 0x20]))]), {title: "FFX Song"});
+  // Square Enix's own driver (a .bgm + .wd pair, found directly in the mini's
+  // own filesystem, no ini needed) — milestone 3: captures through the SAME
+  // app path, no PS2-specific branch beyond driver detection
+  const TB = await import("../tools/ps2/make-test-bgm.mjs");
+  const bgmMini = T.makePSF2(T.buildPSF2Fs([
+    T.fileNode("song007.bgm", TB.makeTestBGM()), T.fileNode("bank007.wd", TB.makeTestWD()),
+  ]), {title: "FFX Song"});
   app.context.__bgmMini = bgmMini;
   run(`__pP2 = CHIPS.psf2.parseAsync(__M)(__bgmMini, "ffx.psf2").then(p => { __bgmParsed = p; });`);
   await app.context.__pP2;
-  run(`__e3 = null; CHIPS.psf2.capture(__M, __bgmParsed, 0, () => {}, {libs: {}}).catch(e => { __e3 = String(e.message); });`);
+  run(`__cap2 = null; __e3 = null; CHIPS.psf2.capture(__M, __bgmParsed, 0, () => {}, {libs: {}}).then(c => { const parsed = parseMidi(new Uint8Array(c.bytes).buffer); __cap2 = {bpm: c.bpm, looped: c.looped, notes: parsed.tracks.reduce((a, t) => a + t.notes.length, 0)}; }).catch(e => { __e3 = String(e.stack || e); });`);
   await new Promise(r => setTimeout(r, 200));
-  assert.equal(val(`__e3`), "Square's PS2 sequence format (BGM/WD) is not supported yet.");
+  assert.equal(val(`__e3`), null, "capture threw: " + val(`__e3`));
+  const got2 = val(`__cap2`);
+  // +1: the fixture's pitch bend lands inside its third note, and
+  // splitSlides() (tools/psx/notes.mjs, reused unmodified) writes a bent
+  // note as one MIDI note per landed pitch — the SAME mechanism AKAO's own
+  // pitch slides already use, honoring BGM's 0x5C exactly as intended
+  assert.ok(got2 && got2.notes === TB.TEST_BGM_NOTES.length + 1, "notes from the BGM sequence (raw notes + 1 for the pitch-bend split): " + JSON.stringify(got2));
+  assert.equal(got2.bpm, 100);
+  assert.equal(got2.looped, true, "0x02/0x03 loop markers became the loop");
 });
 
 test("PS2: streamed-audio containers (Ico's GENH, XIII's SShd) are recognised by name, not offered to the MIDI/chip parsers", () => {

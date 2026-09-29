@@ -22,11 +22,11 @@ async function loadOne(dir, name) {
   return {sources, mini, files: mergePSF2(sources)};
 }
 
-test("Final Fantasy X: real minipsf2/psf2lib container parses cleanly for every file; Square's own driver identified as BGM/WD, not AKAO", {skip: !has("ps2-ffx")}, async () => {
+test("Final Fantasy X: real minipsf2/psf2lib container parses cleanly for every file; Square's own driver (BGM/WD) now parses into notes + a renderable bank (milestone 3)", {skip: !has("ps2-ffx")}, async () => {
   const dir = join(RIPS, "ps2-ffx");
   const names = readdirSync(dir).filter(f => f.endsWith(".minipsf2"));
   assert.ok(names.length >= 80, `expected the full set, saw ${names.length}`);
-  let bgmCount = 0;
+  let bgmCount = 0, totalNotes = 0, withLoop = 0;
   for (const name of names) {
     const {sources, mini, files} = await loadOne(dir, name);
     assert.ok(isPSF2(readFileSync(join(dir, name))));
@@ -43,10 +43,20 @@ test("Final Fantasy X: real minipsf2/psf2lib container parses cleanly for every 
     const ppqn = view.getUint16(0xE, true);
     assert.equal(ppqn, 48, `${name}: every FFX track uses 48 ticks/quarter`);
     const song = await ps2Song(files, mini);
-    assert.equal(song.kind, "bgm-unimplemented", `${name}: identified-only per milestone-1 scope`);
+    assert.equal(song.kind, "bgm", `${name}: expected Square's driver to parse, not just be identified`);
+    assert.equal(song.renderable, true, `${name}: expected a WD bank`);
+    const {seq, notes} = song.result;
+    assert.ok(notes.length > 0, `${name}: no notes captured`);
+    assert.ok(bpmOf(seq.tempo) > 20 && bpmOf(seq.tempo) < 300, `${name}: implausible tempo ${bpmOf(seq.tempo)}`);
+    const keys = notes.map(n => n.key);
+    assert.ok(Math.min(...keys) >= 0 && Math.max(...keys) <= 127, `${name}: key out of MIDI range`);
+    if (seq.loop) withLoop++;
+    totalNotes += notes.length;
     bgmCount++;
   }
   assert.equal(bgmCount, names.length);
+  assert.ok(totalNotes > 100000, `expected well over 100k notes across the whole set, got ${totalNotes}`);
+  assert.ok(withLoop > names.length / 2, `expected most songs to carry a loop, got ${withLoop}/${names.length}`);
 });
 
 test("Ico and XIII: the Zophar 'PSF2' packs for these two titles are not PSF2 containers at all (GENH / SS2 raw-stream dumps)", {skip: !has("ps2-ico") || !has("ps2-xiii")}, () => {

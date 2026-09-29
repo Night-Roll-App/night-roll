@@ -1,9 +1,11 @@
 # PS2 import — what's supported
 
 Milestone 1 (container + note extraction, 2026-09-28) is docs/plans/ps2.md
-§8 "Findings". This is milestone 2 (app wiring + chip audio, same day):
-a PS2 set imports in the app exactly like a PS1 set — notes in the roll,
-the console's own SPU2 sound where the driver is Sony's stock SQ/HD/BD.
+§8 "Findings". Milestone 2 (app wiring + chip audio, same day) added Sony's
+stock SQ/HD/BD driver end to end. This is milestone 3 (same day): Square
+Enix's own driver (BGM sequence + WD bank, Final Fantasy X and kin) now
+gets the SAME treatment — notes in the roll, the console's own SPU2 sound —
+through the exact same pipeline SQ/HD/BD already runs unmodified.
 
 ## 1. What plays, what doesn't
 
@@ -12,11 +14,14 @@ the console's own SPU2 sound where the driver is Sony's stock SQ/HD/BD.
   (`-s=/-h=/-b=`, no per-game table). Notes AND chip audio. Confirmed on
   all 59 real Dark Cloud `.psf2` files.
 - **Square Enix's own driver ("BGM"/"WD", Final Fantasy X and kin)** —
-  identified (a mini carrying a `.bgm` file), refused at import with a
-  named sentence: *"Square's PS2 sequence format (BGM/WD) is not supported
-  yet."* Its opcode table is NOT AKAO-descended (docs/plans/ps2.md §8
-  corrected the plan's own guess here) — a second reader, from scratch,
-  is milestone 3's biggest item.
+  identified directly (a mini carrying a `.bgm` file, no ini needed).
+  Notes AND chip audio, as of milestone 3 (`tools/ps2/bgm.mjs`,
+  `tools/ps2/wd.mjs`). Its opcode table is NOT AKAO-descended (docs/plans/
+  ps2.md §8 corrected the plan's own guess here) — a genuinely separate,
+  much simpler opcode table (VGMTrans's `SquarePS2Seq.cpp`), cross-checked
+  against all 92 real Final Fantasy X `.bgm` files by parsing every one to
+  its own declared end with zero leftover bytes and zero unrecognized
+  opcodes (§6).
 - **Streamed-audio sets (no sequence data at all)** — Ico's Zophar pack is
   GENH-tagged (vgmstream's generic PCM/ADPCM wrapper), XIII's is Ubisoft's
   own SShd/SSbd stream container. Both are refused BY NAME at import
@@ -29,17 +34,22 @@ the console's own SPU2 sound where the driver is Sony's stock SQ/HD/BD.
 `CHIPS.psf2` (index.html), modeled on `CHIPS.psf` (PS1) almost exactly:
 - magic `"PSF"` + version byte `0x02`; ext `.psf2`; `perFile`/`tagged`/
   `keepBytes` — a mini per track + the set's `.psf2lib` persist like PS1's.
-- `files`: `ps2/psf2`, `ps2/sq`, `ps2/hd`, `ps2/capture`, plus the PS1
-  modules the SQ/HD path reuses unmodified — `psx/vab`, `psx/notes`,
-  `psx/spu-render`. `shared`: `sounding`, `note-preview` (the same tap-to-
-  hear + sounding-pitch-probe helpers every sequence chip loads).
+- `files`: `ps2/psf2`, `ps2/sq`, `ps2/hd`, `ps2/bgm`, `ps2/wd`,
+  `ps2/capture`, plus the PS1 modules BOTH drivers reuse unmodified —
+  `psx/vab`, `psx/notes`, `psx/spu-render`. `shared`: `sounding`,
+  `note-preview` (the same tap-to-hear + sounding-pitch-probe helpers
+  every sequence chip loads).
 - `capture` mirrors `CHIPS.psf.capture` almost line for line: build the
   merged PSF2 filesystem (`loadPSF2Chain`/`mergePSF2` — a virtual-
   filesystem merge, not PS1's flat-RAM overlay), call `ps2Song()`, then
   the SAME bar/beat/loop math PS1's capture uses (identical because
-  `result.seq` is SEQ-shaped either way — tools/ps2/sq.mjs's own header
-  comment). A `bgm-unimplemented` result throws the named sentence above,
-  before any MIDI is written.
+  `result.seq` is SEQ-shaped either way — tools/ps2/sq.mjs's and
+  tools/ps2/bgm.mjs's own header comments). `ps2Song()` never returns
+  `bgm-unimplemented` any more (as of milestone 3) — the `if (song.kind
+  === "bgm-unimplemented")` lines in index.html and tools/chip-worker.mjs
+  are now dead code, left in place rather than removed (they simply never
+  fire; docs/plans/ps2.md's own milestone-3 scope note: index.html gets
+  no changes beyond the `files:` list above).
 - Sounding-pitch offsets are held behind the SAME flag as PS1
   (`PSX_SOUNDING_ON`, still `false`) — no separate PS2 flag, per this
   milestone's own scope. Flip it (for both consoles at once) once Josh's
@@ -145,32 +155,115 @@ already generic over `chip`/`perFile`/`libFile`); the archive-upload list
 named 60 files (59 `.psf2` tracks + the shared `.psf2lib`) in the same
 shape PS1/N64 sets use.
 
-## 5. What milestone 3 needs
+## 5. Milestone 3: Square Enix's own driver (BGM/WD)
 
-1. **Square Enix's BGM/WD reader** — a second, unrelated opcode table
-   (VGMTrans's `SquarePS2Seq.cpp`: 0x10-0x1A note variants referencing a
-   "previous key/velocity", 0x20 program change, 0x5C pitch bend, 0x08
-   one-byte BPM — no AKAO-style degree/length-index encoding). Needed
-   before Final Fantasy X/X-2/XII or Kingdom Hearts can be heard at all;
-   the format is otherwise a straight, no-CPU-emulation parse exactly
-   like SQ, per docs/plans/ps2.md §3.
-2. **Instruments** — tools/instruments/ is another agent's territory this
-   milestone; docs/plans/ps2.md §5 already argues VAG-in-HD/BD should
-   need little beyond an HD reader template (tools/psx/vab.mjs's own
-   tone-table reader is the closest match). NOT started here.
-3. **The ear-check pass** (CLAUDE.md's release gate) — 3+ games, once BGM/
-   WD exists so Final Fantasy X can be one of them; this is also the
-   moment to settle §3's pan/rate findings against a real ear rather than
-   only internal consistency, and to decide whether `PSX_SOUNDING_ON`
-   should flip (for PS1 AND PS2 together — same flag).
-4. **A second Sony-driver title beyond Dark Cloud** — every finding above
-   came from ONE game; the panpot/rate fixes are strongly evidenced but a
-   second `.SQ`/`.HD`/`.BD` title (this plan's own §7 open question,
-   still open) would catch anything Dark Cloud's own authoring habits
-   happen not to exercise (e.g. every real panpot value seen so far is
-   comfortably within 0-127 — no byte has forced the signed/unsigned
-   question to a real edge case yet).
-5. **Ground truth** — still blocked exactly as PS1's is (a real Sony PS2
-   BIOS dump for kode54's Highly Experimental / AOSDK's HLE core, plan
-   §2/§4); until Josh has one, "internal consistency + ear" is this
-   console's only verification path, same as PS1 today.
+`tools/ps2/bgm.mjs` (sequence) reads VGMTrans's `SquarePS2Seq.cpp` opcode
+table directly — 0x10-0x1A note-on/off variants (some referencing a
+"previous key/velocity", MIDI-style running state rather than SQ's
+running-status byte), 0x20 program change, 0x22/0x24/0x26 volume/
+expression/pan (mapped straight onto `seqNotes()`'s own generic CC7/11/10
+handling), 0x5C pitch bend (standard MIDI lsb-then-msb order — SQ's own
+0xE0 reads hi-then-lo instead, confirmed a real difference, not a typo),
+0x08 one-byte BPM, 0x02/0x03 loop begin/end with NO count field at all
+(VGMTrans's own C++ reader never actually uses these for looping — its
+loop-tracking code is commented out, cosmetic UI labels only; this reader
+assumes forever, the same sentinel PS1 SEQ/SQ use). One "channel" is one
+TRACK (not a status-byte nibble); every track shares one tick clock, same
+as a type-1 MIDI file. Two opcodes (0x29, 0x41) aren't in VGMTrans's own
+table at all — found by testing every candidate operand length against
+the two real files that use them (`110 Victory!.minipsf2`,
+`201 Yuna's Theme.minipsf2`) until the WHOLE file parsed to its declared
+end with zero leftover bytes: both take zero operand bytes.
+
+`tools/ps2/wd.mjs` (bank) reads VGMTrans's `WD.cpp`: a self-contained file
+(header, instrument pointer table, every instrument's key-split regions,
+then one sample section of concatenated PS-ADPCM — unlike HD+BD's two
+separate files). `toBank()` reshapes it into the same VAB-shaped object
+`hd.mjs`'s `toBank()` produces, so it needs no separate render path
+either. Two real bugs, found by rendering real Final Fantasy X audio end
+to end (`scratch/ps2-app-render.mjs`), not by reading the format docs:
+
+1. **Unity key must be read as a SIGNED byte.** VGMTrans's own field read
+   implies unsigned; real FFX regions for higher key splits carry raw
+   bytes past 127 (e.g. 230, 236) — read unsigned the derived unity key
+   goes hugely negative, the note's pitch ratio explodes, and the voice
+   decays to nothing within a handful of samples. Read signed, those same
+   bytes land exactly on the top of their own region's key range (a
+   plausible, intentional unity note). A whole track's RMS read `0.0`
+   until this was found.
+2. **Pan is `raw & 0x7F`, not VGMTrans's own `>127`-only formula.**
+   WD.cpp's own conversion collapses every raw byte 0-127 to a flat
+   centre and only treats 128-255 as real data. Measuring the pan byte
+   across all 92 real FFX `.wd` files found genuine, varied values below
+   128 too (0, 30, 40, 45, 50, 60, 70, 84, 90, 100, 110 — not just a
+   default), and 128-255's own real values are IDENTICAL to 0-127's once
+   the top bit is masked (128→0, 192→64, 255→127 — matching VGMTrans's
+   own `>127` formula exactly). CLAUDE.md "the file wins": VGMTrans's
+   own reader would have discarded real pan data.
+
+One more bug lives in `tools/ps2/bgm.mjs` itself, not the format: a BGM
+track past channel 15 that never sends its own 0x20 stayed `program:
+undefined` in `seqNotes()`'s fixed `Array(16)` (which pre-fills only
+channels 0-15 to program 0) — an undefined program renders silent
+(`vab.programs[undefined]` is always falsy). `tools/psx/notes.mjs` stays
+unmodified (this milestone's contract), so `bgm.mjs` now pushes an
+implicit `program 0` event at tick 0 for every track, exactly the default
+channels 0-15 already got; a real 0x20 later still overrides normally.
+Caught on `410 Challenge.minipsf2` (37 tracks) — channels 30/31 read RMS
+`0.0` until this was added.
+
+Pitch bend (0x5C) is honored: `bgm.mjs`'s own `bgmNotes()` wraps
+`seqNotes()` and turns each bend inside a held note into a `note.slide`
+entry — the same representation `tools/psx/akao.mjs`'s pitch-slide
+opcode already produces (`splitSlides()`/`renderSpu()` need nothing new).
+Unlike AKAO's slide-BY-N-semitones opcode, a MIDI-style bend is already
+an ABSOLUTE offset from centre, so each entry lands instantly (no ramp)
+at that value — a real pitch-wheel glide is just many bend events in a
+row, which this naturally reconstructs as a chain of snap points. The
+bend RANGE (±2 semitones) is an assumption — BGM has no RPN/registered-
+parameter mechanism to encode a real one — flagged in the warnings, not
+silently guessed. 35 of 92 real FFX songs use 0x5C at least once.
+
+## 6. Milestone 3 verification (2026-09-28, all 92 real Final Fantasy X songs)
+
+`node scratch/ps2-sweep-ffx.mjs` (header sanity) and a full sweep through
+the app's own `CHIPS.psf2` path (mirroring `scratch/ps2-app-render.mjs`,
+one run per song): **92/92 parse, capture, and render with zero
+failures.** 146,477 notes total; loop points found in 79/92 (the
+remaining 13 either lack a loop-end marker in the file, or lack any loop
+marker at all — a file fact, not a parser gap: `105c Other World
+(Alternate 3).minipsf2` has a loop-begin with no matching end). Every
+track in every song renders non-silent audio, with one caveat found and
+confirmed a file fact, not a bug: 5 tracks (across 4 songs) render at
+exactly RMS 0.0 because their own CC7 (channel volume) reads 0 for the
+ENTIRE note at note-on time — the same "captured once at note-on, no
+ramp" behavior the generic SEQ/SQ path already has (only AKAO's captures
+carry a dynamic volume ramp, via `note.gain`); these channels are
+genuinely silenced by the score's own automation, not by a rendering
+defect.
+
+Pitch: autocorrelation vs. the written key on ISOLATED notes only (no
+other note on the same channel overlapping in time — additive synthesis
+sums a whole channel's notes into one buffer, so a busy arpeggio
+underneath a long bass note pulls the naive "just pick the longest note"
+check toward the arpeggio's own repetition rate, a methodology trap, not
+a render bug, confirmed by re-testing with polyphony excluded) — 14/14
+isolated notes checked across 2 songs measured EXACTLY the written pitch,
+confidence 0.95-0.99. As with milestone 2, no reference player exists
+(the Sony BIOS-dump blocker, plan §2/§4), so this is internal consistency
+only, not proof against a real decoder.
+
+Unverified / still open:
+- **Ground truth** — still blocked exactly as PS1's is.
+- **The ear-check pass** (CLAUDE.md's release gate) — not run this
+  milestone; Final Fantasy X can now be one of the 3+ games once it
+  happens, alongside settling `PSX_SOUNDING_ON` (PS1 and PS2 share the
+  flag) and this milestone's own pan/unity-key findings against a real
+  ear.
+- **Instruments** (tools/instruments/) — VAG-in-WD should need little
+  beyond the WD reader this milestone already wrote (same as HD/BD);
+  NOT started here, another agent's territory.
+- **A second Square-driver title beyond Final Fantasy X** — every finding
+  above came from one game; a second BGM/WD title (Final Fantasy X-2/
+  XII, Kingdom Hearts) would catch anything FFX's own authoring habits
+  happen not to exercise.

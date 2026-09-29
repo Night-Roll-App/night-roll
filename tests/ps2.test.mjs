@@ -14,9 +14,12 @@ import {
   makeTestSQ, makeTestHD, makePSF2, buildPSF2Fs, fileNode, dirNode,
   TEST_SQ_NOTES, TEST_SQ_END,
 } from "../tools/ps2/make-test-sq.mjs";
+import { makeTestBGM, makeTestWD, TEST_BGM_NOTES, TEST_BGM_LOOP, TEST_BGM_BEND_TICK } from "../tools/ps2/make-test-bgm.mjs";
 import { isPSF2, parsePSF2, listPSF2, readPSF2File, loadPSF2Chain, mergePSF2, findPSF2 } from "../tools/ps2/psf2.mjs";
 import { isSQ, parseSQ } from "../tools/ps2/sq.mjs";
 import { parseHD, toBank, isHD } from "../tools/ps2/hd.mjs";
+import { isBGM, parseBGM, bgmNotes } from "../tools/ps2/bgm.mjs";
+import { isWD, parseWD, toBank as wdToBank } from "../tools/ps2/wd.mjs";
 import { ps2Song } from "../tools/ps2/capture.mjs";
 import { seqNotes, toNotesTxt, makeMidi } from "../tools/psx/notes.mjs";
 import { bpmOf, secondsAt } from "../tools/psx/seq.mjs";
@@ -209,13 +212,146 @@ test("ps2Song: Sony's stock driver via a mini's psf2.ini (-s=/-h=/-b=), the exac
   assert.equal(bpmOf(song.result.seq.tempo), 120);
 });
 
-test("ps2Song: Square Enix's own driver (a .bgm file) is identified and reported, not parsed, per milestone-1 scope", async () => {
-  const fakeBgm = makePSF2(buildPSF2Fs([fileNode("song001.bgm", new Uint8Array([0x42, 0x47, 0x4D, 0x20]))]), {});
-  const sources = await loadPSF2Chain(fakeBgm, () => null, {name: "mini.psf2"});
+// --- BGM (Square Enix's own PS2 sequence format, milestone 3) ---
+
+test("BGM header + track parsing: opcode table over every note-on/off variant, tempo (raw BPM, not SEQ/SQ's usq), 3/4 meter, loop begin/end with no count (assumed forever)", () => {
+  const bytes = makeTestBGM();
+  assert.ok(isBGM(bytes));
+  const seq = parseBGM(bytes);
+  assert.equal(seq.ppq, 48);
+  assert.equal(bpmOf(seq.tempo), 100);
+  assert.equal(seq.tsNum, 3);
+  assert.equal(seq.tsDen, 4);
+  assert.equal(seq.endTick, TEST_BGM_LOOP.end);
+  assert.deepEqual(seq.loop, {start: TEST_BGM_LOOP.start, end: TEST_BGM_LOOP.end, count: 127}, "0x02/0x03 carry no count at all: assumed forever, the same sentinel PS1 SEQ/SQ use");
+  assert.deepEqual(seq.warnings, [], "a clean synthetic file: no unknown-opcode/truncation warnings");
+  const notes = seq.events.filter(e => e.type === "on" || e.type === "off");
+  assert.deepEqual(notes.map(e => [e.tick, e.type, e.key, e.vel]), [
+    [0, "on", 60, 100], [48, "off", 60, 0],       // 0x11 then 0x1A
+    [48, "on", 60, 100], [72, "off", 60, 0],      // 0x10 (repeat prev key+vel) then 0x18 (prev key)
+    [72, "on", 64, 100], [120, "off", 64, 0],     // 0x12 (new key, prev vel) then 0x18
+    [120, "on", 64, 90], [168, "off", 64, 0],     // 0x13 (prev key, new vel) then 0x1A
+  ], "every note-on/off opcode variant (0x10/0x11/0x12/0x13, 0x18/0x1A) lands on the right key+velocity");
+  // "channel" is the track index, not a status-byte nibble like SEQ/SQ
+  assert.ok(notes.every(e => e.ch === 1), "the conductor track (0) carries no notes; the melodic track is index 1");
+});
+
+test("BGM: every track gets an implicit program 0 at tick 0 (a real silent-track bug this fixed: a BGM track past channel 15 that never sends its own 0x20 stayed `undefined` in seqNotes' fixed Array(16), which renders silent)", () => {
+  const seq = parseBGM(makeTestBGM());
+  const firstEventOnTrack1 = seq.events.filter(e => e.ch === 1)[0];
+  assert.deepEqual(firstEventOnTrack1, {tick: 0, type: "program", ch: 1, program: 0});
+});
+
+test("seqNotes/toNotesTxt/makeMidi (reused unmodified from tools/psx/notes.mjs) over a BGM-shaped seq", () => {
+  const seq = parseBGM(makeTestBGM());
+  const r = seqNotes(seq);
+  assert.deepEqual(r.notes.map(n => [n.tick, n.key, n.endTick - n.tick]), TEST_BGM_NOTES);
+  const txt = toNotesTxt(r, {title: "bgm-test"});
+  assert.match(txt, /^# bgm-test — 3\/4, 100bpm/);
+  assert.match(txt, /loop: bar 1 beat 1 → bar 2 beat 1\.5 \(forever\)/); // 3/4 meter at ppq 48: tick 168 = 3.5 beats = bar 2 beat 1.5
+  const mid = makeMidi(r);
+  assert.equal(String.fromCharCode(...mid.subarray(0, 4)), "MThd");
+});
+
+test("BGM pitch bend (0x5C): honored as a pitch slide (tools/psx/akao.mjs's own representation, reused unmodified) — a bend inside a held note becomes note.slide; notes.mjs itself is never touched", () => {
+  const seq = parseBGM(makeTestBGM());
+  const r = bgmNotes(seq);
+  const bentNote = r.notes.find(n => n.tick <= TEST_BGM_BEND_TICK && n.endTick > TEST_BGM_BEND_TICK);
+  assert.ok(bentNote, "the bend must fall inside a held note in this fixture");
+  assert.deepEqual(bentNote.slide, [{t: TEST_BGM_BEND_TICK - bentNote.tick, len: 1, to: -1}], "value -4096 of ±8192 at an assumed ±2-semitone range = -1 semitone, landed instantly (len 1)");
+  assert.match(r.seq.warnings.join(" "), /2 note\(s\) carry a pitch bend.*assumed ±2 semitones/);
+  // the wheel is never reset, so the NEXT note (tick 120) starts bent: a bend held from before a note applies from its first tick
+  const next = r.notes.find(n => n.tick === 120);
+  assert.deepEqual(next.slide, [{t: 0, len: 1, to: -1}]);
+  assert.equal(r.notes.filter(n => n.slide).length, 2, "the notes before the bend carry none");
+});
+
+test("splitSlides: a bend between semitones lands on the nearest whole pitch in the roll, and steps landing on the same pitch stay one note", async () => {
+  const { splitSlides } = await import("../tools/psx/notes.mjs");
+  const n = {tick: 0, endTick: 100, pitch: 60, key: 60, slide: [{t: 10, len: 1, to: 0.2}, {t: 20, len: 1, to: 0.6}, {t: 30, len: 1, to: 1.2}, {t: 40, len: 1, to: 0}]};
+  const out = splitSlides([n]).map(x => [x.tick, x.endTick, x.pitch]);
+  assert.deepEqual(out, [[0, 20, 60], [20, 40, 61], [40, 100, 60]], "0.2 stays 60; 0.6 and 1.2 both land on 61 (one note); 0 returns to 60");
+  assert.ok(splitSlides([n]).every(x => Number.isInteger(x.pitch)), "never a fractional MIDI pitch");
+});
+
+test("BGM: an unknown opcode stops the track (not a guess at its operand length) and is named in the warnings", () => {
+  const bytes = makeTestBGM();
+  const view = new DataView(bytes.buffer);
+  // find the note-off status byte 0x1A that closes the very first note (tick 48) and corrupt it
+  let idx = -1;
+  for (let i = 0x20; i < bytes.length; i++) if (bytes[i] === 0x1A) { idx = i; break; }
+  assert.ok(idx >= 0);
+  bytes[idx] = 0xEE; // not in the opcode table at all
+  const seq = parseBGM(bytes);
+  assert.match(seq.warnings.join(" "), /unknown opcode 0xee at tick \d+: track ends here/);
+});
+
+test("BGM: a truncated track (declared size runs past the file) is reported, not thrown", () => {
+  const bytes = makeTestBGM();
+  const view = new DataView(bytes.buffer);
+  const track0Size = view.getUint32(0x20, true);
+  const truncated = bytes.slice(0, 0x20 + 4 + track0Size + 4 + 3); // cut deep into track 1's own bytes
+  const seq = parseBGM(truncated);
+  assert.ok(seq.warnings.some(w => /truncated|ran out/.test(w)));
+});
+
+// --- WD (Square Enix's PS2 instrument bank, milestone 3) ---
+
+test("WD header + instrument pointer table + region key-range chaining: firstRegion resets to key 0, lastRegion forces key 127, two same-keyHigh regions (a stereo pair) share the SAME key-low", () => {
+  const bytes = makeTestWD();
+  assert.ok(isWD(bytes));
+  const wd = parseWD(bytes);
+  assert.equal(wd.numInstrs, 1);
+  assert.equal(wd.totalRegions, 3);
+  assert.deepEqual(wd.warnings, []);
+  const [r0, r1, r2] = wd.instruments[0].regions;
+  assert.deepEqual([r0.keyLow, r0.keyHigh], [0, 60]);
+  assert.deepEqual([r1.keyLow, r1.keyHigh], [61, 127], "lastRegion forces its own stored keyHigh (90) to 0x7F");
+  assert.equal(r2.degenerate, true, "a region that doesn't reset 'first' after a 'last'-flagged one chains to keyLow 128 > keyHigh — the exact shape found in a real FFX file (Blitz Ball Gamblers)");
+});
+
+test("WD unity key: read as a SIGNED byte, not unsigned (a real silent-track bug this caught: a raw byte of 246+ read unsigned drives the tone thousands of semitones off, decaying to nothing within a handful of samples)", () => {
+  const wd = parseWD(makeTestWD({unityByteSigned: -10}));
+  assert.equal(wd.instruments[0].regions[0].unityKey, 0x3A - -10, "58 - (-10) = 68, not 58-246=-188");
+});
+
+test("WD pan byte: raw & 0x7F uniformly — NOT VGMTrans's own >127-only formula, which collapses every byte 0-127 to a flat centre (found wrong by rendering real FFX files: real pan bytes vary meaningfully below 128 too)", () => {
+  const wd = parseWD(makeTestWD());
+  const [r0, r1] = wd.instruments[0].regions;
+  assert.equal(r0.pan, 64, "raw 192 & 0x7F = 64 (VGMTrans's own >127 formula agrees here)");
+  assert.equal(r1.pan, 10, "raw 10 kept as 10 — VGMTrans's own reader would flatten this to a centre 0.5");
+});
+
+test("WD finetune byte -> tools/psx/vab.mjs's shift unit (1/128 semitone): byte 0 is the table's own floor (-50 cents)", () => {
+  const wd = parseWD(makeTestWD({fineTuneByte: 0}));
+  const cents = -50; // (table[0] - 0x10000) * (100/3881) - 50 = -50 exactly
+  assert.equal(wd.instruments[0].regions[0].shift, Math.round(cents * 128 / 100));
+});
+
+test("toBank() (WD): a VAB-shaped bank tools/psx/vab.mjs's tonesFor/vagPcm run over unmodified; the degenerate region is dropped (not guessed) and named in the warnings, the two real regions decode as silent (all-zero) samples", () => {
+  const wd = parseWD(makeTestWD());
+  const bank = wdToBank(wd);
+  assert.equal(bank.programs[0].tones.length, 2, "the degenerate third region contributes no tone");
+  assert.match(bank.warnings.join(" "), /1 region\(s\) had an invalid key range/);
+  assert.equal(tonesFor(bank, 0, 30)[0].vag, 1);
+  assert.equal(tonesFor(bank, 0, 100)[0].vag, 2);
+});
+
+test("ps2Song: Square Enix's own driver (a .bgm + .wd pair, found directly in the mini's own filesystem, no ini needed) parses into the SAME shape as SQ", async () => {
+  const bgm = makeTestBGM();
+  const wd = makeTestWD();
+  const mini = makePSF2(buildPSF2Fs([fileNode("song007.bgm", bgm), fileNode("bank007.wd", wd)]), {title: "BGM Test Tune"});
+  const sources = await loadPSF2Chain(mini, () => null, {name: "mini.psf2"});
   const files = mergePSF2(sources);
   const song = await ps2Song(files, sources[0]);
-  assert.equal(song.kind, "bgm-unimplemented");
-  assert.match(song.why, /Square Enix/);
+  assert.equal(song.kind, "bgm");
+  assert.equal(song.renderable, true);
+  assert.deepEqual(song.source, {bgm: "/song007.bgm", wd: "/bank007.wd"});
+  assert.equal(song.result.notes.length, TEST_BGM_NOTES.length);
+  assert.equal(bpmOf(song.result.seq.tempo), 100);
+  // the SAME renderer PS1/SQ use, with no PS2-specific branch
+  const r = await renderSpu(song.result, {sampleRate: 44100});
+  assert.ok(Object.keys(r).some(k => r[k] && r[k].l));
 });
 
 test("ps2Song: no psf2.ini and no .bgm anywhere -> a clear, thrown error naming what Night Roll cannot read yet", async () => {

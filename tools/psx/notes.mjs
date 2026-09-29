@@ -100,16 +100,20 @@ const fmt = x => +x.toFixed(3);
 // A note with pitch slides becomes one note per landed pitch: the slide's
 // start is the split (a 3-tick slide is a step; a long glide shows its
 // target from the moment it begins — the roll has no bend). Pitch and key
-// move together; cents stay.
+// move together; cents stay. A target between semitones (a pitch-wheel bend,
+// tools/ps2/bgm.mjs) lands on the nearest one, and steps that land on the
+// same semitone stay one note — the roll holds whole MIDI pitches; the
+// console render reads n.slide itself and keeps the exact bend.
 export function splitSlides(notes) {
   const out = [];
   for (const n of notes) {
     if (!n.slide || !n.slide.length) { out.push(n); continue; }
     let at = n.tick, off = 0;
     for (const sl of n.slide) {
-      const t = n.tick + sl.t;
+      const t = n.tick + sl.t, to = Math.round(sl.to);
+      if (to === off) continue;
       if (t > at) out.push({...n, tick: at, endTick: t, pitch: n.pitch + off, key: n.key + off, slide: undefined, slid: true});
-      at = t; off = sl.to;
+      at = t; off = to;
     }
     if (n.endTick > at) out.push({...n, tick: at, endTick: n.endTick, pitch: n.pitch + off, key: n.key + off, slide: undefined, slid: true});
   }

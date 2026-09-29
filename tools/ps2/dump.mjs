@@ -39,11 +39,8 @@ if (isPSF2(bytes)) {
   console.error(`# PSF2 v${mini.psf.version} "${tagTitle || ""}"${mini.psf.libs.length ? ` + ${mini.psf.libs.join(", ")}` : ""}: ${sources.map(s => `${s.name || "self"} (${s.files.length} files)`).join(", ")}${sources.every(s => s.psf.crcOk) ? "" : " (CRC mismatch)"}`);
   const files = mergePSF2(sources);
   const song = await ps2Song(files, mini);
-  if (song.kind === "bgm-unimplemented") {
-    console.error(`# ${song.why} (${song.source.bgm})`);
-    process.exit(2);
-  }
-  console.error(`# picked: -s=${song.source.sq}${song.source.hd ? ` -h=${song.source.hd} -b=${song.source.bd}` : " (no bank named)"}`);
+  if (song.kind === "bgm") console.error(`# picked: ${song.source.bgm}${song.source.wd ? ` + ${song.source.wd}` : " (no bank named)"}`);
+  else console.error(`# picked: -s=${song.source.sq}${song.source.hd ? ` -h=${song.source.hd} -b=${song.source.bd}` : " (no bank named)"}`);
   if (song.why) console.error("# " + song.why);
   result = song.result;
   kindNote = `${result.seq.ppq} ticks/quarter, ${bpmOf(result.seq.tempo)}bpm, ${result.seq.timeSigs[0].num}/${result.seq.timeSigs[0].den}${result.seq.loop ? ", loop" : ""}`;

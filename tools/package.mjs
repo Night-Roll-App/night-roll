@@ -42,7 +42,7 @@ const RUNTIME_ENTRIES = ["chip-worker.mjs",
   "spc/spc.mjs", "spc/notes.mjs", "spc/apu-render.mjs",
   "vgm/vgm.mjs", "vgm/notes.mjs",
   "psx/psf.mjs", "psx/akao.mjs", "psx/seq.mjs", "psx/vab.mjs", "psx/notes.mjs", "psx/spu-render.mjs", "psx/capture.mjs",
-  "ps2/psf2.mjs", "ps2/sq.mjs", "ps2/hd.mjs", "ps2/capture.mjs",
+  "ps2/psf2.mjs", "ps2/sq.mjs", "ps2/hd.mjs", "ps2/bgm.mjs", "ps2/wd.mjs", "ps2/capture.mjs",
   "n64/usf.mjs", "n64/ead-usf.mjs", "n64/seq-libultra.mjs", "n64/notes.mjs", "n64/capture.mjs", "n64/vadpcm.mjs", "n64/bank.mjs", "n64/render.mjs", "n64/rare.mjs", "instruments/play.mjs", "instruments/sf2.mjs"];
 // Every module the page's CHIPS table names (files: and shared: lists) — the
 // worker dynamic-imports them by these names, so a static scan never sees
