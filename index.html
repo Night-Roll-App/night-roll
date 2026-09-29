@@ -13081,6 +13081,8 @@ async function fingerprintOldDrafts() {
   if (pubCheckRunning || LINK_SONGS) return;
   pubCheckRunning = true;
   let changed = false;
+  const sheetOn = () => document.getElementById("syncsheet").classList.contains("on");
+  if (sheetOn() && song) renderSyncPending(); // shows the "checking…" line
   try {
     for (const key of draftKeys()) {
       if (!syncable(key)) continue;
@@ -13096,7 +13098,8 @@ async function fingerprintOldDrafts() {
       logDebug("publish check " + key.split("/").pop() + ": " + (r.same ? "matches the published copy — off the list" : r.text));
     }
   } finally { pubCheckRunning = false; }
-  if (changed) { updateSyncBtn(); if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending(); }
+  updateSyncBtn();
+  if (sheetOn() && song) renderSyncPending(); // the list as checked (and the "checking…" line gone)
 }
 // once per launch, a few seconds in (after the boot's own fetches): the
 // Publish (N) count is right before the sheet is ever opened
@@ -18850,6 +18853,9 @@ function renderSyncPending() {
     parent.appendChild(row);
     return row;
   };
+  // the list shrinks when the check below finishes: say so, or it reads as a
+  // glitch ("it said five, then boom, two" — Josh, 2026-09-29)
+  if (pubCheckRunning) line(box, "checking each song against its published copy…", "pempty");
   for (const key of pendingSongs()) {
     const block = document.createElement("div");
     if (key === "general") { // the general chat ships by itself: one tap, no song involved
