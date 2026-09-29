@@ -43,15 +43,15 @@
    },
    "bird-chirp": {
     "n": 38,
-    "secs": 11.982854
+    "secs": 1.149954
    },
    "bonus-perfect": {
     "n": 48,
-    "secs": 11.982854
+    "secs": 3.799848
    },
    "bonus": {
     "n": 49,
-    "secs": 11.982854
+    "secs": 2.283242
    },
    "boss": {
     "n": 13,
@@ -95,19 +95,19 @@
    },
    "fanfare-long": {
     "n": 8,
-    "secs": 18.982574
+    "secs": 6.383078
    },
    "fanfare-short": {
     "n": 9,
-    "secs": 11.982854
+    "secs": 3.58319
    },
    "fire": {
     "n": 26,
-    "secs": 11.982854
+    "secs": 1.16662
    },
    "first-you-draw-a-circle": {
     "n": 50,
-    "secs": 21.982454
+    "secs": 7.399704
    },
    "forest-trail-intro": {
     "n": 18,
@@ -123,7 +123,7 @@
    },
    "game-over": {
     "n": 12,
-    "secs": 11.982854
+    "secs": 3.5665240000000002
    },
    "goal": {
     "n": 6,
@@ -155,7 +155,7 @@
    },
    "gunshot": {
     "n": 23,
-    "secs": 11.982854
+    "secs": 2.066584
    },
    "high-hills-intro": {
     "n": 31,
@@ -167,7 +167,7 @@
    },
    "hit": {
     "n": 25,
-    "secs": 11.982854
+    "secs": 1.849926
    },
    "hyper": {
     "n": 3,
@@ -191,11 +191,11 @@
    },
    "miss": {
     "n": 40,
-    "secs": 11.982854
+    "secs": 3.233204
    },
    "nightmare-emerges": {
     "n": 53,
-    "secs": 28.982174
+    "secs": 10.549578
    },
    "nightmare": {
     "n": 15,
@@ -203,7 +203,7 @@
    },
    "no-bonus": {
     "n": 47,
-    "secs": 13.982774000000001
+    "secs": 3.99984
    },
    "open-waters-intro": {
     "n": 43,
@@ -219,11 +219,11 @@
    },
    "penalty": {
     "n": 30,
-    "secs": 11.982854
+    "secs": 2.549898
    },
    "quick-draw": {
     "n": 27,
-    "secs": 11.982854
+    "secs": 2.699892
    },
    "rainbow-resort-theme": {
     "n": 7,
@@ -243,7 +243,7 @@
    },
    "the-moon": {
     "n": 14,
-    "secs": 42.581630000000004
+    "secs": 15.399384
    },
    "tower-to-the-sky-intro": {
     "n": 51,
