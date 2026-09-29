@@ -36,7 +36,27 @@
   "sheik-s-theme": "Sheik's Theme",
   "temple-of-time": "Temple of Time",
   "zelda-s-theme": "Zelda's Theme",
-  "zora-s-domain": "Zora's Domain"
+  "zora-s-domain": "Zora's Domain",
+  "hyrule-field-10": "Hyrule Field (10)",
+  "hyrule-field-11": "Hyrule Field (11)",
+  "hyrule-field-12": "Hyrule Field (12)",
+  "hyrule-field-13": "Hyrule Field (13)",
+  "hyrule-field-14": "Hyrule Field (14)",
+  "hyrule-field-15": "Hyrule Field (15)",
+  "hyrule-field-16": "Hyrule Field (16)",
+  "hyrule-field-17": "Hyrule Field (17)",
+  "hyrule-field-18": "Hyrule Field (18)",
+  "hyrule-field-19": "Hyrule Field (19)",
+  "hyrule-field-2": "Hyrule Field (2)",
+  "hyrule-field-20": "Hyrule Field (20)",
+  "hyrule-field-21": "Hyrule Field (21)",
+  "hyrule-field-3": "Hyrule Field (3)",
+  "hyrule-field-4": "Hyrule Field (4)",
+  "hyrule-field-5": "Hyrule Field (5)",
+  "hyrule-field-6": "Hyrule Field (6)",
+  "hyrule-field-7": "Hyrule Field (7)",
+  "hyrule-field-8": "Hyrule Field (8)",
+  "hyrule-field-9": "Hyrule Field (9)"
  },
  "nsf": {
   "vault": "ocarina-of-time/",
@@ -396,6 +416,86 @@
    "zora-s-domain": {
     "n": 1,
     "secs": 82.3125
+   },
+   "hyrule-field-10": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-11": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-12": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-13": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-14": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-15": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-16": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-17": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-18": {
+    "n": 1,
+    "secs": 13.822887773643616
+   },
+   "hyrule-field-19": {
+    "n": 1,
+    "secs": 14.01459854014593
+   },
+   "hyrule-field-2": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-20": {
+    "n": 1,
+    "secs": 13.913043478260677
+   },
+   "hyrule-field-21": {
+    "n": 1,
+    "secs": 13.913043478260677
+   },
+   "hyrule-field-3": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-4": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-5": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-6": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-7": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-8": {
+    "n": 1,
+    "secs": 12.799999999999914
+   },
+   "hyrule-field-9": {
+    "n": 1,
+    "secs": 12.799999999999914
    }
   },
   "chip": "usf",
