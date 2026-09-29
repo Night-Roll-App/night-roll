@@ -7405,6 +7405,7 @@ function buildGameVoicePicker(ti, menu, tr, cur, renderToken) { // GAME_FAMILY: 
     onInstrument: (g, lib, inst) => {
       const voiceId = gameVoiceId(g, inst);
       song.tracks[ti].voice = voiceId;
+      gameVoiceFromSet(voiceId, nav.sub); // remember the song it came from, for the drill-down next time
       gameVoiceLabels.set(voiceId, g.title + " · " + (inst.nameGuess || inst.id)); // known now — no id-fallback flash
       saveVoices();
       instAudition(g.vault, lib, inst).catch(e => setInfo("⚠ " + e.message)); // audition once, like any other pick
@@ -7447,8 +7448,31 @@ async function openGameVoiceMenuTo(ti, voiceId) {
   if (!g) return; // an unpublished/unknown vault: stay at the systems list rather than drill nowhere
   if (voiceMenuTi !== ti || !document.getElementById("voicemenu").classList.contains("on")) return; // the menu moved on
   if ((song.tracks[ti].voice || "auto") !== voiceId) return; // the pick changed before this resolved
-  voiceMenuGameSys = g.sys; voiceMenuGameVault = g; voiceMenuGameSub = "all";
+  // …and into the SONG it was picked from when this device remembers one; an
+  // instrument used in exactly one song goes there too; else the A–Z list
+  // (Josh: "it would be ideal" to land on the song, not just the album)
+  let sub = "all";
+  const from = gameVoiceFrom(voiceId);
+  if (from && g.songs.some(([, p]) => p === from.path)) sub = from;
+  else {
+    try {
+      const lib = await instLibrary(g.vault), inst = lib.instruments.find(i => i.id === info.instId);
+      const rows = inst ? g.songs.filter(([t, p]) => gameInstUsedBySong(inst, t, p)) : [];
+      if (rows.length === 1) sub = {title: rows[0][0], path: rows[0][1]};
+    } catch (e) { /* library unreachable: the A–Z list */ }
+    if (voiceMenuTi !== ti || (song.tracks[ti].voice || "auto") !== voiceId) return;
+  }
+  voiceMenuGameSys = g.sys; voiceMenuGameVault = g; voiceMenuGameSub = sub;
   buildVoiceMenu(ti);
+}
+// which game song a game voice was picked from, per device (a UI memory, not
+// song state — the voice id itself stays "game:<vault>:<id>")
+function gameVoiceFromAll() { try { return JSON.parse(localStorage.getItem("ff1roll-gamevoicefrom") || "{}"); } catch (e) { return {}; } }
+function gameVoiceFrom(voiceId) { const m = gameVoiceFromAll()[voiceId]; return m && m.path ? m : null; }
+function gameVoiceFromSet(voiceId, sub) {
+  const all = gameVoiceFromAll();
+  if (sub && sub.path) all[voiceId] = {title: sub.title, path: sub.path}; else delete all[voiceId];
+  try { localStorage.setItem("ff1roll-gamevoicefrom", JSON.stringify(all)); } catch (e) { /* private mode */ }
 }
 // SF2_FAMILY's own small 2-level nav (font -> its presets) — the SAME calling
 // convention as renderGameInstNav (rowFactory/onNavigate/isCurrent/backLabelAtTop)

@@ -4339,8 +4339,18 @@ test("game instrument voice: reopening a track's voice menu drills straight back
        openGameVoiceMenuTo(0, song.tracks[0].voice);`);
   await settle();
   const rows = val(`[...document.getElementById("voicemenu").children].map(r => r.textContent)`);
-  assert.ok(rows.includes("✓ Soft pad  · in 1 song"), "landed straight on the leaf list with the current pick marked: " + rows.join(" | "));
+  assert.ok(rows.includes("✓ Soft pad") && rows.includes("‹ GoldenEye 007"), "landed straight on a leaf list — the one song that uses it — with the current pick marked: " + rows.join(" | "));
   assert.ok(!rows.some(r => r.includes("Nintendo 64") || r === "GoldenEye 007 ›"), "no manual navigation needed — it skipped the systems/games lists: " + rows.join(" | "));
+  // the drill lands on the SONG the pick came from when this device remembers one, else on
+  // the one song that uses it; the A–Z list only when neither is known (Josh, Ambush)
+  run(`localStorage.removeItem("ff1roll-gamevoicefrom"); voiceMenuGameSub = null; openGameVoiceMenuTo(0, song.tracks[0].voice);`);
+  await settle();
+  assert.equal(val(`voiceMenuGameSub && voiceMenuGameSub.path`), "albums/n64/goldeneye-007/dam.mid", "used in exactly one song: that song");
+  run(`CATALOG["GoldenEye"].push(["Facility", "albums/n64/goldeneye-007/facility.mid"]);
+       gameVoiceFromSet(song.tracks[0].voice, {title: "Facility", path: "albums/n64/goldeneye-007/facility.mid"}); voiceMenuGameSub = null; openGameVoiceMenuTo(0, song.tracks[0].voice);`);
+  await settle();
+  assert.equal(val(`voiceMenuGameSub && voiceMenuGameSub.path`), "albums/n64/goldeneye-007/facility.mid", "a remembered song (still in the album) wins");
+  run(`localStorage.removeItem("ff1roll-gamevoicefrom");`);
 });
 
 test("game instrument voice: an OLD-form vault (no console folder, written before the archive-by-console reorg) still resolves — loads from the album's CURRENT vault, plays, marks current, and the menu drills to it (Josh's Ambush report, 2026-09-29)", async () => {
