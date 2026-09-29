@@ -1479,7 +1479,11 @@ NES and a GB album sharing a base name, so it publishes beside the
 whole filename instead, `<vault>.instruments/` (e.g.
 `castlevania.nsf.instruments/instruments.json`) — `--publish` uses this
 rule when `--vault` is given, falling back to `<slug>/instruments/` only
-when it isn't (older callers). Performance (vibrato, bends, volume
+when it isn't (older callers). The app reads the same rule
+(`instFolder` in index.html, tested against model.mjs); a track's
+`voice=game:` id drops a folder vault's trailing slash, and
+`gameVoiceVault` restores it (a `.nsf`/`.gbs` vault stays whole).
+Performance (vibrato, bends, volume
 ramps, reverb, filters) stays with the song, not the instrument.
 
 Step 2: `export.mjs <libraryDir> --sf2 out.sf2 --sfz outDir [--used-only]`

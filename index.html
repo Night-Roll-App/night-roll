@@ -6660,7 +6660,7 @@ function gameVoiceLabel(v) { // sync read for menu rows; fills in async and refr
   (async () => {
     const games = await instAlbums();
     const g = games.find(x => x.vault.replace(/\/$/, "") === info.vault);
-    const lib = await instLibrary(info.vault + "/");
+    const lib = await instLibrary(gameVoiceVault(info.vault));
     const inst = lib.instruments.find(i => i.id === info.instId);
     gameVoiceLabels.set(v, (g ? g.title : info.vault) + " · " + (inst ? (inst.nameGuess || inst.id) : info.instId));
     if (voiceMenuTi >= 0 && document.getElementById("voicemenu").classList.contains("on")) buildVoiceMenu(voiceMenuTi);
@@ -7285,7 +7285,7 @@ function drumHit(ti, p, when, vel) {
   src.stop(when + len + 0.05);
 }
 // ------------------------------------------------ game instrument voices
-// A track's voice can be an instrument from any imported PS1/N64 game (File
+// A track's voice can be an instrument from any imported game with a library (File
 // → 🎛 Instruments…'s libraries): "game:<vault folder>:<instrument id>",
 // e.g. "game:goldeneye-007:rare:bank@0x2D1AB8:prog63" — assigned from the
 // voice & color menu's "Game instruments ›" family (buildVoiceMenu). The id
@@ -7305,6 +7305,10 @@ function drumHit(ti, p, when, vel) {
 // track"). Drum kits: a kit instrument plays its slot at the note's pitch —
 // playNote/regionFor already handle a kit's keyRegions the same as a
 // melodic instrument's, so no special case is needed here.
+// the album's nsf.vault back from a voice id's vault part: gameVoiceId drops a
+// folder vault's trailing "/" ("goldeneye-007"); a single-file NES/GB vault
+// ("tetris.nsf") never had one and is already whole
+function gameVoiceVault(idVault) { return /\.(nsf|gbs)$/i.test(idVault) ? idVault : idVault + "/"; }
 function parseGameVoice(v) { // "game:<vaultFolder>:<instId>" -> {vault, instId} | null (instId itself may carry colons/@)
   if (typeof v !== "string" || !v.startsWith("game:")) return null;
   const rest = v.slice(5), i = rest.indexOf(":");
@@ -7347,7 +7351,7 @@ function gamePreloadForSong() { // warm every game/sf2 voice's library or font t
   gameVoicesInSong().forEach(({vault, instId, voice}) => {
     if (gamePreloadTokens.has(voice)) return; // already loading/loaded this session
     gamePreloadTokens.set(voice, (async () => {
-      const lib = await instLibrary(vault + "/");
+      const lib = await instLibrary(gameVoiceVault(vault));
       const inst = lib.instruments.find(i => i.id === instId);
       gameLibSync.set(vault, {lib, samples: (gameLibSync.get(vault) || {}).samples || {}});
       if (!inst) return; // scheduleGameNote falls back and warns — see above
@@ -7356,7 +7360,7 @@ function gamePreloadForSong() { // warm every game/sf2 voice's library or font t
       song.tracks.forEach(tr => { if (tr.voice === voice) for (const nn of tr.notes) if (!nn.gone) pitches.add(nn.p); });
       const hashes = new Set();
       pitches.forEach(p => { const r = P.regionFor(inst, p, 100); if (r) hashes.add(r.sample); });
-      const samples = await instSamples(vault + "/", lib, [...hashes]);
+      const samples = await instSamples(gameVoiceVault(vault), lib, [...hashes]);
       const entry = gameLibSync.get(vault);
       Object.assign(entry.samples, samples);
     })().catch(err => logErr("⚠ game instrument " + voice + " didn't load: " + err.message)));
@@ -13505,10 +13509,19 @@ async function instAlbums() { // [{title, vault, songs: [[songTitle, path]] (CAT
     if (!songs.length) continue;
     const meta = await albumMetaFor(songs[0][1]).catch(() => null);
     const n = meta && meta.nsf;
-    if (n && typeof n.vault === "string" && n.vault.endsWith("/") && (n.chip === "psf" || n.chip === "usf" || n.chip === "spc")) out.push({title: meta.title || title, vault: n.vault, songs});
+    if (n && typeof n.vault === "string" && INST_CHIPS.has(n.chip || "nsf")) out.push({title: meta.title || title, vault: n.vault, songs});
   }
   return out.sort((a, b) => a.title.localeCompare(b.title));
 }
+// the album kinds tools/instruments/extract.mjs builds libraries for (an NES
+// album.json names no chip: plain NSF is the default kind)
+const INST_CHIPS = new Set(["nsf", "gbs", "spc", "psf", "usf"]);
+// where an album's library sits in the archive — tools/instruments/model.mjs
+// instrumentsFolder, the rule the extractor publishes by: a folder vault holds
+// it inside ("goldeneye-007/instruments/"); a single-file vault beside the file
+// under its whole name ("tetris.nsf.instruments/"), since tetris.nsf and
+// tetris.gbs would collide without the extension
+function instFolder(vault) { return vault.endsWith("/") ? vault + "instruments/" : vault + ".instruments/"; }
 function gameInstUsedBySong(inst, songTitle, path) { // usedIn holds song titles (2026-09-28 schema) — matched case-insensitively against the catalog title AND the file slug, since a song's display title and its capture slug can differ
   const usedIn = inst.usedIn;
   if (!usedIn || !usedIn.length) return false;
@@ -13546,7 +13559,7 @@ function songInstrumentRows(lib, songTitle, path) {
     .map(inst => ({inst, label: (inst.nameGuess || inst.id) + kitTag(inst)}));
   return [...byTrack, ...rest];
 }
-async function currentSongGameContext() { // {g, songTitle, path} when the open song is a published PS1/N64 song with a library, else null — the "Instruments in this song" shortcut
+async function currentSongGameContext() { // {g, songTitle, path} when the open song is a published game song with a library, else null — the "Instruments in this song" shortcut
   if (!songKey) return null;
   const entry = Object.entries(CATALOG).find(([, songs]) => songs.some(([, p]) => p === songKey));
   if (!entry) return null;
@@ -13560,14 +13573,14 @@ async function currentSongGameContext() { // {g, songTitle, path} when the open 
   return g ? {g, songTitle: row[0], path: songKey} : null;
 }
 async function instLibrary(vault) {
-  if (!instLibs.has(vault)) instLibs.set(vault, vaultFetch(vault + "instruments/instruments.json").then(b => JSON.parse(new TextDecoder().decode(b))));
+  if (!instLibs.has(vault)) instLibs.set(vault, vaultFetch(instFolder(vault) + "instruments.json").then(b => JSON.parse(new TextDecoder().decode(b))));
   return instLibs.get(vault);
 }
 async function instSamples(vault, lib, hashes) { // {hash: {rate, loop, pcm}} for the samples a play needs, fetched once each
   const out = {};
   for (const h of hashes) {
     const k = vault + h;
-    if (!instWavs.has(k)) instWavs.set(k, vaultFetch(vault + "instruments/" + lib.samples[h].file).then(instDecodeWav));
+    if (!instWavs.has(k)) instWavs.set(k, vaultFetch(instFolder(vault) + lib.samples[h].file).then(instDecodeWav));
     out[h] = {rate: lib.samples[h].rate, loop: lib.samples[h].loop || null, pcm: await instWavs.get(k)};
   }
   return out;

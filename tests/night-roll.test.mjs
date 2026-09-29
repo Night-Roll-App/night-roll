@@ -3830,19 +3830,31 @@ test("instruments: a song view labels by the open song's own track (ch/prog matc
   run(`songKey = null;`);
 });
 
-test("instAlbums: lists published albums whose game files carry an instrument library — PS1 (psf), N64 (usf), AND Super Nintendo (spc); anything else is excluded", async () => {
+test("instAlbums: lists published albums whose game files carry an instrument library — NES, Game Boy, SNES, PS1, N64; a Genesis (vgm) album is excluded", async () => {
   const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`CATALOG = {"GoldenEye": [["Dam", "albums/n64/goldeneye-007/dam.mid"]],
                "Final Fantasy VII": [["Bombing Mission", "albums/ps1/final-fantasy-vii/bombing-mission.mid"]],
                "Chrono Trigger": [["Corridors of Time", "albums/snes/chrono-trigger/corridors-of-time.mid"]],
-               "Mega Man 2": [["Dr. Wily", "albums/nes/mega-man-2/dr-wily.mid"]]};
+               "Mega Man 2": [["Dr. Wily", "albums/nes/mega-man-2/dr-wily.mid"]],
+               "Tetris": [["Type A", "albums/game-boy/tetris/type-a.mid"]],
+               "Sonic": [["Green Hill", "albums/genesis/sonic/green-hill.mid"]]};
        albumMetaCache["albums/n64/goldeneye-007"] = {title: "GoldenEye 007", nsf: {vault: "goldeneye-007/", chip: "usf"}};
        albumMetaCache["albums/ps1/final-fantasy-vii"] = {title: "Final Fantasy VII", nsf: {vault: "final-fantasy-vii/", chip: "psf"}};
        albumMetaCache["albums/snes/chrono-trigger"] = {title: "Chrono Trigger", nsf: {vault: "chrono-trigger/", chip: "spc"}};
-       albumMetaCache["albums/nes/mega-man-2"] = {title: "Mega Man 2", nsf: {vault: "mega-man-2/", chip: "nsf"}};`);
+       albumMetaCache["albums/nes/mega-man-2"] = {title: "Mega Man 2", nsf: {vault: "mega-man-2.nsf"}};
+       albumMetaCache["albums/game-boy/tetris"] = {title: "Tetris", nsf: {vault: "tetris.gbs", chip: "gbs"}};
+       albumMetaCache["albums/genesis/sonic"] = {title: "Sonic", nsf: {vault: "sonic/", chip: "vgm"}};`);
   await run(`instAlbums().then(gs => { globalThis.__titles = gs.map(g => g.title); })`);
-  assert.deepEqual(val(`globalThis.__titles`), ["Chrono Trigger", "Final Fantasy VII", "GoldenEye 007"],
-    "psf/usf/spc chips list (alphabetical); the plain nsf (NES) album does not");
+  assert.deepEqual(val(`globalThis.__titles`), ["Chrono Trigger", "Final Fantasy VII", "GoldenEye 007", "Mega Man 2", "Tetris"],
+    "every console with an extractor lists (alphabetical; an NES album names no chip); Genesis does not");
+  // the folder rule matches the extractor's (tools/instruments/model.mjs)
+  const { instrumentsFolder } = await import("../tools/instruments/model.mjs");
+  for (const v of ["goldeneye-007/", "tetris.nsf", "tetris.gbs"]) assert.equal(val(`instFolder(${JSON.stringify(v)})`), instrumentsFolder(v), v);
+});
+
+test("game instrument voice: a voice id gives back its album's vault — folder vaults regain the slash, NES/GB single files stay whole", () => {
+  for (const v of ["goldeneye-007/", "tetris.nsf", "tetris.gbs"])
+    assert.equal(run(`gameVoiceVault(parseGameVoice(gameVoiceId({vault: ${JSON.stringify(v)}}, {id: "a:b"})).vault)`), v, v);
 });
 
 test("game instrument voice: the track: directive round-trips a colon-heavy id, and the rename rewrite keeps it intact", () => {
