@@ -2616,9 +2616,10 @@ in AppDelegate. That alone did not keep playing: WebKit chooses the web
 view's own audio session, and plain Web Audio gets an ambient one that iOS
 silences off-screen. `ensureAudio()` therefore sets
 `navigator.audioSession.type = "playback"` just before it creates the
-AudioContext. The engine itself is unchanged. Chip audio (buffers
-scheduled whole), synth songs and album advance all kept going in Josh's
-test. The August silent `<audio>` keep-alive loop stalled the iPad and
+AudioContext. The engine itself is unchanged. Josh's test: a Chrono
+Trigger song kept playing off-screen ("basically good enough"). Synth
+songs and album advance off-screen ride the page's timers and were not
+reported separately. The August silent `<audio>` keep-alive loop stalled the iPad and
 stays gone (c704c43).
 
 ## Installable app — PWA (Phase 0 of the iPad app plan, 2026-09-26)
