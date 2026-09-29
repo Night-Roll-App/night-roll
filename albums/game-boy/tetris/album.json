@@ -29,7 +29,7 @@
    },
    "2-player-mode-round-over": {
     "n": 5,
-    "secs": 22.987735748291016
+    "secs": 6.2282867431640625
    },
    "a-type-music-version-1-1": {
     "n": 2,
@@ -37,19 +37,19 @@
    },
    "b-type-game-level-9-high-0-ending": {
     "n": 9,
-    "secs": 14.984722137451172
+    "secs": 5.0228118896484375
    },
    "b-type-game-level-9-high-1-ending": {
     "n": 10,
-    "secs": 14.984722137451172
+    "secs": 5.0228118896484375
    },
    "b-type-game-level-9-high-2-ending": {
     "n": 11,
-    "secs": 15.98928451538086
+    "secs": 5.0228118896484375
    },
    "b-type-game-level-9-high-3-ending": {
     "n": 12,
-    "secs": 15.98928451538086
+    "secs": 5.0228118896484375
    },
    "b-type-game-level-9-high-4-5-ending": {
     "n": 14,
@@ -69,7 +69,7 @@
    },
    "game-over": {
     "n": 8,
-    "secs": 11.987777709960938
+    "secs": 2.6118621826171875
    },
    "high-score": {
     "n": 17,
@@ -77,15 +77,15 @@
    },
    "stage-clear": {
     "n": 7,
-    "secs": 11.485496520996094
+    "secs": 2.1765518188476562
    },
    "title": {
     "n": 1,
-    "secs": 299.9790687561035
+    "secs": 39.57975769042969
    },
    "unknown-jingle-02": {
     "n": 13,
-    "secs": 22.987735748291016
+    "secs": 7.4337615966796875
    }
   },
   "chip": "gbs"
