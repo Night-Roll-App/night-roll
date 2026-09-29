@@ -2627,7 +2627,7 @@ stays gone (c704c43).
 `logErr` is for problems Josh can act on and raises the ⚠ chip.
 `logDebug` is for diagnostics: audio state changes, engine rebuilds, and
 wake-up probes that found the clock not moving. It is kept in `appDebug`
-and shown or counted only with Settings → Debug log on (device-local
+and shown or counted only with Settings → Other → Debug log on (device-local
 `ff1roll-debuglog`). A line identical to the previous one becomes ×N.
 `askAppState` feeds Ask the last lines of both when the switch is on.
 `clockAlive` watches the clock for up to 500 ms; the old 40 ms probe

@@ -1356,6 +1356,41 @@ harp arpeggio is in the BGM at all (a streamed or sample-played piece?)
 or whether the BGM reader stops early. Other songs look sane (Tidus'
 Theme 1068 notes, Other World 3156).
 
+## SOMEDAY / MAYBE — ideas Josh likes, none of them urgent (2026-09-28)
+
+Josh: "these are just ideas we might want to do someday, they're not
+really that important." Do not start these unprompted.
+
+- **Picture-in-picture** (a floating roll window when the app is left).
+  Verdict from the terminal's advisor: HARD — web-only freezes off
+  screen and needs a tap; the real route is a small native iPad add-on,
+  about 15-25 commits for the roll alone, behind a switch away from the
+  audio engine; the score view costs more. Cheap first probe on offer:
+  a five-minute throwaway page to see whether the iPad shows a floating
+  window at all. Details in the PICTURE-IN-PICTURE section below.
+- **Themes** (the look is dark; other people may want another). Size
+  from the Ask session: easy-to-medium. The whole look is nine CSS
+  variables at the top of index.html and the canvas views read them
+  through one cached helper, css(); a theme = a second set of values +
+  a Settings switch (device-local pref) + cssCache reset and a redraw.
+  Work: about a dozen hard-coded colors move into variables (the error
+  red, white note text, shadows, overlays), the VexFlow score view
+  needs checking per theme, a light theme needs a taste pass on the
+  iPad (track/note colors were tuned on dark), the browser top-bar
+  color (theme-color meta). Start with two themes, dark + one light,
+  prove the switch, then add more.
+
+## TERMINAL NOTES AS iPAD NOTIFICATIONS — DECIDED 2026-09-28: WAIT FOR THE APP STORE WORK
+
+Josh asked whether the bridge's terminal notes could become iPad
+notifications. Options weighed in the Ask chat: (1) local notification
+from the shell while the app polls the inbox (only while running or
+playing); (2) a push service (ntfy/Pushover) fed by the bridge — an
+hour of work, no Apple setup, but note text transits a third party;
+(3) real APNs push, which the App Store build gets anyway (developer
+account + a small server piece). Ruling: no interim hack; do (3) with
+the App Store work. Until then the email-per-finished-item habit stands.
+
 ## PICTURE-IN-PICTURE — ASKED 2026-09-28 (Josh, right after background playback worked on the shell)
 
 Josh: "when I go to the home screen with a YouTube video playing it has
