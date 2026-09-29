@@ -1344,6 +1344,17 @@ docs/adding-a-console.md (the whole checklist: rips, ground truth,
 capture, chip audio, publish, instruments, terminal import, listening
 pass, docs).
 
+## ARCHIVE BY CONSOLE — QUEUED 2026-09-29 (Josh: "why is the NSF repository not following the same directory structure")
+
+Night-Roll-App/nsf-archive is flat (each album's vault at the root, named
+by its slug; tetris.nsf vs tetris.gbs collided). Plan: git mv into nes/,
+snes/, game-boy/, n64/, ps1/, ps2/ matching albums/; update every
+album.json nsf.vault (instrument folders follow the vault); cfg-style
+read translation for game-instrument voice ids that embed the old vault
+("game:goldeneye-007:…" in Josh's songs), so no song breaks; devices
+re-fetch each game file once under its new path (the IDB cache is keyed
+by path). After the current Zelda fixes.
+
 ## TWO PRODUCTS? — IDEA 2026-09-28 (Josh: "not sure that we should take action on it")
 
 "It's almost like we have two different products here. One is like Retro
