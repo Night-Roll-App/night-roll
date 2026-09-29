@@ -26,8 +26,9 @@ Remains:
 5. Upload a new build with tonight's changes (build 3). Terminal.
 6. Org move: DONE 2026-09-29 (fd26e59). Site
    https://night-roll-app.github.io/night-roll/; the listing draft's URLs
-   follow. Josh: a GitHub token that covers Night-Roll-App repos on the
-   iPad (a fine-grained token scoped to his own account will not write).
+   follow. Token DONE 2026-09-29: a fine-grained token owned by
+   Night-Roll-App (night-roll + nsf-archive, contents read/write), set in
+   the Mac browser, iPad Safari and the iPad app; old tokens deleted.
 7. APNs push: not a store blocker; after the store work (decided
    2026-09-28).
 
