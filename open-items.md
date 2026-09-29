@@ -1510,6 +1510,18 @@ Design done the same day by an advisor: capture-jobs-design.md (job
 model, ⏳ footer chip + jobs sheet, the import panel as a view, five
 commits in order). Implementation not started; the terminal session or
 the Ask session takes it on Josh's word.
+BUILT 2026-09-29 (Josh's four asks): finished jobs (done/cancelled) clear
+themselves ~10s after they end (failed/interrupted still stay for ↻/✕);
+real progress bars on each job row (`jobFraction`) and in the new
+publish dialog; a real publish dialog `#pubjobsheet` — one job, an
+overall bar, a row per song with its own state, Cancel while running,
+Close always never cancelling — opened by the folder Publish button in
+Open → LOCAL, by Publish all, and by the jobs list's Open on any publish
+job (replacing the old jump to File → Open → that folder); **Publish all
+is now a job** (`publishAllJobStart`, kind `publishall`), one item per
+pending song including the general chat, same publishing flow as
+before, cancellable between songs, one at a time. Still not done:
+captures in the worker (the design's last later-step).
 
 ## CONSOLE IMPORTS — ON MAIN 2026-09-27; GAME BOY IN THE APP
 

@@ -2150,11 +2150,58 @@ panel is only hidden by ✕, `nsfSess` lives on); Open shows the panel
 while `nsfSess.slug` matches, ↻ re-runs the items not `done` in the same
 session and otherwise says to Import the same files again. **publish** —
 `publishJobStart(slug, keys, statusFn)` wraps `commitImports` (its
-status line is the job's `note`), one per folder at a time; Open goes to
-File → Open → that folder; ↻ re-publishes the drafts still there
-(`impCommitLive` is gone). Not jobs: Download audio (real-time
+status line is the job's `note`), one per folder at a time; Open opens
+the publish dialog (below); ↻ re-publishes the drafts still there
+(`impCommitLive` is gone). **publishall** — `publishAllJobStart(statusFn)`
+wraps the Publish sheet's "Publish all": one item per `pendingSongs()`
+(the general chat rides along as its own item, key `"general"`), same
+per-song flow as before (`commitCompositionNow` for the open
+composition, `publishDraftSong` for another edited one, annotations +
+`askCommitLog` otherwise) — just checked against `api.aborted` between
+songs so ✕ stops it before the next one; one Publish-all job at a time
+(`jobsFind("publishall", null, true)`); `#ghsaveall`'s click handler
+starts it and opens the dialog. Not jobs: Download audio (real-time
 playback), chip renders (already off-thread; a row per song open would
-spam the list). Later: Publish all as a job; captures in the worker.
+spam the list). Later: captures in the worker.
+
+Auto-clear (2026-09-29): a job that ends `done` or `cancelled` calls
+`jobsAutoClear(id)` from `jobApi`'s `finish()`, which `setTimeout`s
+`JOBS_AUTOCLEAR_MS` (10 s) then dismisses it IF it's still in that state
+(a `↻`/manual dismiss in between is a no-op on the stale timer). `failed`
+and `interrupted` jobs never auto-clear — those are the ones to look at;
+`jobsClearFinished()` (the sheet's "Clear finished" button) still sweeps
+everything not running/queued by hand. `#jobsbtn` already hides at
+`jobs.length === 0`, so it disappears on its own once the list empties.
+
+Progress bars: `jobFraction(job)` — finished items (done/silent/failed/
+cancelled) plus the running item's own `pct`, over the item count (0 if
+running/queued with no items yet, 1 if already finished with none) —
+drives a `.jobbar` (a `<div>` with one child `<div>` whose `width%`
+`jobBarSet(bar, frac)` sets; self-healing — it appends the fill child on
+first use if the markup didn't already have one, so a bar built fresh in
+JS or read from static HTML both work). `renderJobs` draws one per row,
+beside the existing `jobProgress` text; `#jobsbtn` does NOT show a
+running job's percentage (left out: Josh's ask flagged it optional
+"only if clean", and it would fight the existing "⏳ N" running-count
+reading an existing test already locks in).
+
+Publish dialog `#pubjobsheet` (Josh's ask, 2026-09-29: the old Open
+"brought me to a weird page" — File → Open → that folder): one open
+sheet, `pubJobShown` holds the id of the job it's showing.
+`openPubJobSheet(job)` sets it and calls `renderPubJob()`, which reads
+the CURRENT job from `jobs` (so `jobsOnChange` keeps it live while
+open) — title (`job.title`, bare, no "Publish · " prefix), an overall
+`.jobbar`, a row per item (`pjname` + a `pjstate`: a small `.jobbar.sm`
+while `running`, else `pubItemIcon(it)` — `…` queued, `✓` done/silent,
+`⚠ <msg>` failed, `✕ cancelled`/`⚠ interrupted`), the job's `note` line,
+`Cancel` (`jobCancel`) shown only while running/queued, `Close` always
+— the generic `.overlay` backdrop-tap/pinned-✕ close it too, and none of
+those touch the job (closing never cancels). Opened by: `JOB_KINDS.publish.open`
+and `JOB_KINDS.publishall.open` (so the jobs list's Open on either kind
+lands here), the folder Publish button in `fsubImportAlbum` (closes the
+File menus first — they sit at a higher z-index than `.overlay`), and
+`#ghsaveall`'s click handler. Capture jobs are unchanged: `Open` still
+shows the capture panel.
 
 ## Terminal import (tools/import-set.mjs) — 2026-09-27
 

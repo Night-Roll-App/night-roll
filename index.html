@@ -559,6 +559,19 @@
   .sheet .status.ok { color: var(--gold); font-weight: 600; }
   .sheet .status.err { color: #e66767; font-weight: 600; }
   .sheet .cfgind { padding-left: 78px; }
+  /* jobs + publish dialog: one bar shape shared by both sheets (Josh, 2026-09-29) */
+  .jobbar { flex: 1; min-width: 40px; height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; }
+  .jobbar > div { height: 100%; width: 0%; background: var(--gold); border-radius: 3px; transition: width 0.15s linear; }
+  .jobbar.sm { max-width: 56px; height: 4px; }
+  #jobssheet .jobbody { display: flex; flex-direction: column; gap: 4px; }
+  #jobssheet .jobbarrow { display: flex; align-items: center; gap: 6px; }
+  .jobprog { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  #pubjoblist { font-family: var(--mono); font-size: 13px; color: var(--text); display: flex; flex-direction: column; gap: 6px; }
+  #pubjoblist .pubjobrow { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+  #pubjoblist .pjname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #pubjoblist .pjstate { font-size: 12px; display: flex; align-items: center; gap: 6px; flex: none; max-width: 55%; }
+  #pubjoblist .pjstate.fail { color: #e66767; white-space: normal; text-align: right; }
+  #pubjoblist .pjstate.done { color: var(--gold); }
   #cfgtabs button { flex: 1; border: 0; border-radius: 0; min-height: 36px; background: transparent; color: var(--dim); font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; }
   #cfgtabs button.on { background: var(--grid); color: var(--text); }
   #settingssheet .cfgpane { display: none; flex-direction: column; gap: 10px; }
@@ -1399,7 +1412,8 @@
       <dt>✦ Ask</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ Ask</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
       <dt>Move a sheet</dt><dd>Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
-      <dt>⏳ Jobs</dt><dd>Captures and publishes run as background jobs: start one and close its panel — the <b>⏳</b> chip in the footer shows how many are running, tap it for the list (title, progress like "12/92 · Frog's Theme 40%", and per job <b>Open</b> to get back to its panel, <b>✕</b> to cancel a running one or dismiss a finished one, <b>↻</b> to retry what is left). A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job <i>interrupted</i> with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; publishes one per folder.</dd>
+      <dt>⏳ Jobs</dt><dd>Captures and publishes run as background jobs: start one and close its panel — the <b>⏳</b> chip in the footer shows how many are running, tap it for the list (title, a progress bar, progress text like "12/92 · Frog's Theme 40%", and per job <b>Open</b> to get back to its panel, <b>✕</b> to cancel a running one or dismiss a finished one, <b>↻</b> to retry what is left). Done and cancelled jobs clear themselves a few seconds after they end, and the ⏳ chip itself hides once none are left; a <b>failed</b> or <b>interrupted</b> job stays until you ↻ or ✕ it — those are the ones to look at. A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job <i>interrupted</i> with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; one publish per folder; one Publish all at a time.</dd>
+      <dt>Publish dialog</dt><dd>Starting a folder's publish from Open → LOCAL, or tapping <b>Publish all</b> in the Publish sheet, opens a dialog for that one job: an overall bar, a row per song (its title, and a state — <b>…</b> queued, a small bar while it runs, <b>✓</b> done, <b>⚠</b> failed with the error), the job's own note line, <b>Cancel</b> while it's running (stopping it between songs — what's already published stays published), and <b>Close</b> always. Closing it never cancels the job — reopen it from ⏳'s <b>Open</b> on that job any time. Capture jobs still open the familiar capture panel.</dd>
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
       <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ Ask) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
@@ -1591,6 +1605,19 @@
     <div class="status" id="jobshelp">Captures and publishes run here in the background. Close their panels any time; reopen from this list. A job keeps going while the app is in front; it pauses when the app is in the background and picks up where it was.</div>
     <div class="row" style="margin-top:10px">
       <button id="jobsclear">Clear finished</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="pubjobsheet">
+  <div class="sheet">
+    <h2 id="pubjobtitle">PUBLISH</h2>
+    <div class="row"><div class="jobbar" id="pubjobbar"><div></div></div></div>
+    <div id="pubjoblist"></div>
+    <div class="status" id="pubjobnote"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="pubjobcancel" style="display:none">Cancel</button>
+      <button id="pubjobclose">Close</button>
     </div>
   </div>
 </div>
@@ -5006,6 +5033,20 @@ function jobProgress(job) { // "12/92 · Frog's Theme 40%"
   const cur = items.find(it => it.st === "running" || it.st === "interrupted");
   return (items.length > 1 ? done + "/" + items.length : "") + (cur ? (items.length > 1 ? " · " : "") + cur.label + (cur.pct ? " " + Math.round(cur.pct * 100) + "%" : "") : "") + (job.note ? (items.length > 1 || cur ? " — " : "") + job.note : "");
 }
+function jobFraction(job) { // 0..1: finished items + the running item's own pct, over the item count — what the bar draws
+  const items = job.items || [];
+  if (!items.length) return job.state === "running" || job.state === "queued" ? 0 : 1;
+  const done = items.filter(it => it.st === "done" || it.st === "silent" || it.st === "failed" || it.st === "cancelled").length;
+  const cur = items.find(it => it.st === "running" || it.st === "interrupted");
+  return Math.max(0, Math.min(1, (done + (cur ? (cur.pct || 0) : 0)) / items.length));
+}
+const JOBS_AUTOCLEAR_MS = 10000; // Josh, 2026-09-29: done/cancelled jobs clear themselves a few seconds after they end; failed/interrupted stay until looked at
+function jobsAutoClear(id) {
+  setTimeout(() => {
+    const j = jobs.find(x => x.id === id);
+    if (j && (j.state === "done" || j.state === "cancelled")) jobsDismiss(id);
+  }, JOBS_AUTOCLEAR_MS);
+}
 function jobStart(kind, title, items, runner, extra) { // runner(api) is async; api.aborted flips on ✕
   const job = Object.assign({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind, title, state: "running",
     items: items.map(it => ({label: it.label, st: "queued", pct: 0, msg: "", key: it.key || null})),
@@ -5018,7 +5059,7 @@ function jobStart(kind, title, items, runner, extra) { // runner(api) is async; 
 }
 function jobApi(job) {
   const ctl = jobControls[job.id] || (jobControls[job.id] = {aborted: false});
-  const finish = (state, err) => { job.state = state; job.ended = Date.now(); if (err) job.err = String(err && err.message || err); delete jobControls[job.id]; jobsSave(true); jobsNotify(); };
+  const finish = (state, err) => { job.state = state; job.ended = Date.now(); if (err) job.err = String(err && err.message || err); delete jobControls[job.id]; jobsSave(true); jobsNotify(); if (state === "done" || state === "cancelled") jobsAutoClear(job.id); };
   return {
     job,
     get aborted() { return ctl.aborted; },
@@ -5046,6 +5087,12 @@ function updateJobsBtn() {
   b.style.color = running ? "var(--gold)" : "var(--dim)";
   b.setAttribute("aria-label", running ? running + " running — open the jobs list" : rest + " finished — open the jobs list");
 }
+function jobBarSet(bar, frac) { // self-healing: appends its fill div on first use, so a bar built fresh in JS or read from static markup both work
+  if (!bar) return;
+  let fill = bar.children && bar.children[0];
+  if (!fill) { fill = document.createElement("div"); bar.appendChild(fill); }
+  fill.style.width = Math.round(Math.max(0, Math.min(1, frac)) * 100) + "%";
+}
 function renderJobs() {
   const list = document.getElementById("jobslist");
   list.innerHTML = "";
@@ -5055,9 +5102,21 @@ function renderJobs() {
     const row = document.createElement("div");
     row.className = "row";
     const body = document.createElement("span");
+    body.className = "jobbody";
     body.style.cssText = "flex:1;min-width:0;font-size:13px";
     const word = {running: "⏳", queued: "· queued", done: "✓", failed: "✗ failed", cancelled: "✕ cancelled", interrupted: "⚠ interrupted"}[job.state] || job.state;
-    body.textContent = (kind.label ? kind.label(job) : job.title) + "  " + word + (jobProgress(job) ? "  " + jobProgress(job) : "") + (job.err ? "  " + job.err : "");
+    const line = document.createElement("div");
+    line.textContent = (kind.label ? kind.label(job) : job.title) + "  " + word + (job.err ? "  " + job.err : "");
+    body.appendChild(line);
+    const barrow = document.createElement("div");
+    barrow.className = "jobbarrow";
+    const bar = document.createElement("div");
+    bar.className = "jobbar";
+    jobBarSet(bar, jobFraction(job));
+    barrow.appendChild(bar);
+    const prog = jobProgress(job);
+    if (prog) { const p = document.createElement("span"); p.className = "jobprog"; p.textContent = prog; barrow.appendChild(p); }
+    body.appendChild(barrow);
     row.appendChild(body);
     const btn = (label, fn, aria) => { const b = document.createElement("button"); b.textContent = label; b.style.minHeight = "36px"; if (aria) b.setAttribute("aria-label", aria); b.addEventListener("click", fn); row.appendChild(b); };
     if (kind.open) btn("Open", () => { document.getElementById("jobssheet").classList.remove("on"); kind.open(job); });
@@ -5069,10 +5128,68 @@ function renderJobs() {
     list.appendChild(row);
   }
 }
+// ---- the publish dialog (#pubjobsheet): one open sheet, showing whichever
+// publish job's id sits in pubJobShown — a row per item (song), an overall
+// bar, the job's note line. Closing it never touches the job (Josh, 2026-09-29:
+// "it brought me to a weird page" about the old Open → File → Open → folder).
+let pubJobShown = null;
+function openPubJobSheet(job) {
+  pubJobShown = job.id;
+  renderPubJob();
+  document.getElementById("pubjobsheet").classList.add("on");
+}
+function pubItemIcon(it) {
+  if (it.st === "done" || it.st === "silent") return {cls: "done", text: "✓"};
+  if (it.st === "failed") return {cls: "fail", text: "⚠ " + (it.msg || "failed")};
+  if (it.st === "cancelled") return {cls: "", text: "✕ cancelled"};
+  if (it.st === "interrupted") return {cls: "", text: "⚠ interrupted"};
+  return {cls: "", text: "…"};
+}
+function renderPubJob() {
+  const sheet = document.getElementById("pubjobsheet");
+  const job = jobs.find(j => j.id === pubJobShown);
+  if (!job) { sheet.classList.remove("on"); return; }
+  document.getElementById("pubjobtitle").textContent = job.title || "Publish";
+  jobBarSet(document.getElementById("pubjobbar"), jobFraction(job));
+  document.getElementById("pubjobnote").textContent = job.note || "";
+  const list = document.getElementById("pubjoblist");
+  list.innerHTML = "";
+  for (const it of job.items || []) {
+    const row = document.createElement("div");
+    row.className = "pubjobrow";
+    const name = document.createElement("span");
+    name.className = "pjname";
+    name.textContent = it.label;
+    row.appendChild(name);
+    if (it.st === "running") {
+      const bar = document.createElement("div");
+      bar.className = "jobbar sm";
+      jobBarSet(bar, it.pct || 0);
+      const state = document.createElement("span");
+      state.className = "pjstate";
+      state.appendChild(bar);
+      row.appendChild(state);
+    } else {
+      const {cls, text} = pubItemIcon(it);
+      const state = document.createElement("span");
+      state.className = "pjstate" + (cls ? " " + cls : "");
+      state.textContent = text;
+      row.appendChild(state);
+    }
+    list.appendChild(row);
+  }
+  const running = job.state === "running" || job.state === "queued";
+  document.getElementById("pubjobcancel").style.display = running ? "" : "none";
+}
 if (typeof document !== "undefined" && document.getElementById("jobsbtn")) {
   document.getElementById("jobsbtn").addEventListener("click", () => { renderJobs(); document.getElementById("jobssheet").classList.add("on"); });
   document.getElementById("jobsclear").addEventListener("click", () => { jobsClearFinished(); renderJobs(); });
-  jobsOnChange(() => { if (document.getElementById("jobssheet").classList.contains("on")) renderJobs(); });
+  document.getElementById("pubjobcancel").addEventListener("click", () => { if (pubJobShown) jobCancel(pubJobShown); renderPubJob(); });
+  document.getElementById("pubjobclose").addEventListener("click", () => document.getElementById("pubjobsheet").classList.remove("on"));
+  jobsOnChange(() => {
+    if (document.getElementById("jobssheet").classList.contains("on")) renderJobs();
+    if (document.getElementById("pubjobsheet").classList.contains("on")) renderPubJob();
+  });
 }
 // Two levels (Josh, 2026-09-28: "these errors are genuinely not helpful …
 // maybe a debug mode"). logErr: something went wrong that he can act on —
@@ -13625,8 +13742,8 @@ function publishJobStart(slug, keys, statusFn) {
 }
 JOB_KINDS.publish = {
   label: j => "Publish · " + j.title,
-  open: j => { if (j.slug) { document.getElementById("filesheetbtn").click(); fsubImportAlbum(j.slug); } else setInfo(j.title + ": " + (j.note || j.state)); },
-  retry: j => { const keys = (j.keys || []).filter(k => importDraftKeys().includes(k)); if (!keys.length) { setInfo(j.title + ": nothing left to publish"); return; } publishJobStart(j.slug, keys, setInfo); },
+  open: j => openPubJobSheet(j), // the publish dialog (Josh, 2026-09-29: the old jump to File → Open → folder "brought me to a weird page")
+  retry: j => { const keys = (j.keys || []).filter(k => importDraftKeys().includes(k)); if (!keys.length) { setInfo(j.title + ": nothing left to publish"); return; } const job = publishJobStart(j.slug, keys, setInfo); if (job) openPubJobSheet(job); },
 };
 function fsubImportAlbum(slug) {
   filesub.innerHTML = "";
@@ -13650,6 +13767,8 @@ function fsubImportAlbum(slug) {
     const job = publishJobStart(slug, keys, status);
     if (!job) return;
     all.disabled = true;
+    closeFileMenus(); // Josh's ask (3a): starting a folder publish from File → Open opens the dialog, not a bare status line
+    openPubJobSheet(job);
     const off = jobsOnChange(() => { if (job.state === "running") return; off(); importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); });
   });
   filesub.appendChild(all);
@@ -19293,52 +19412,75 @@ document.getElementById("ghsave").addEventListener("click", async e => {
   finally { btn.disabled = false; }
 });
 // sync every song with unsynced local notes, not just the loaded one — a key
-// sweep touches many songs in one sitting and shouldn't strand work per-song
-document.getElementById("ghsaveall").addEventListener("click", async e => {
-  const btn = e.currentTarget;
+// sweep touches many songs in one sitting and shouldn't strand work per-song.
+// Publish all as a job (Josh's ask 4, 2026-09-29): one item per pending song
+// (the general chat rides along as its own item, same as before) — the exact
+// same per-song flow, just wrapped so it reports progress and can be
+// cancelled between songs; the publish dialog is the same one folder
+// publishes use. One Publish-all job at a time.
+function publishAllJobStart(statusFn) {
+  const pending = pendingSongs();
+  if (!pending.length) { statusFn && statusFn("Nothing pending on this device."); return null; }
+  if (jobsFind("publishall", null, true)) { statusFn && statusFn("Publish all is already running — tap ⏳"); return null; }
+  const items = pending.map(key => ({label: key === "general" ? "General chat" : songTitleOf(key), key}));
+  return jobStart("publishall", "Publish all", items, async api => {
+    const token = writeToken();
+    if (!token) throw new Error("No GitHub token stored yet — add one in File → Settings.");
+    const h = ghHeaders(token);
+    let failed = 0;
+    for (let i = 0; i < pending.length; i++) {
+      if (api.aborted) { for (let j = i; j < pending.length; j++) api.update(j, {st: "cancelled"}); api.cancel(); return; }
+      const key = pending[i], short = items[i].label;
+      api.update(i, {st: "running", pct: 0});
+      api.note("Publishing " + short + "…");
+      try {
+        if (key === "general") { // the general chat rides Publish all too
+          await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY);
+        } else if (key === songKey && song && isComposition()) { // the open song: its full flow
+          const sub = {textContent: ""}; await commitCompositionNow(sub);
+          if (/failed/i.test(sub.textContent)) throw new Error(sub.textContent.replace(/^.*failed: /i, ""));
+        } else if (isCompositionKey(key) && draftDirtyState(key)) { // another composition edited here: music + annotations + notes.txt + chat
+          await publishDraftSong(key, h);
+        } else { // annotations and chat only (analyzed songs, or nothing musical pending)
+          let notes = []; try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { notes = []; }
+          if (notes.length) {
+            const {path, content, stamp} = await buildRollnotesFor(key);
+            const r = await putRollnotes(path, content, h);
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            if (key === songKey) markCurrentSongSynced(content, stamp, {keepDraft: true});
+            else { localStorage.removeItem("ff1roll-notes-" + key); recordLastSync(key, content); }
+          }
+          await askCommitLog(h, key, isCompositionKey(key));
+        }
+        api.update(i, {st: "done", pct: 1});
+      } catch (err) {
+        failed++;
+        api.update(i, {st: "failed", msg: err.message});
+      }
+    }
+    await initCatalog().catch(() => {});
+    updateSyncBtn();
+    updateSongBtn();
+    renderSyncPending();
+    const msg = failed ? failed + " of " + pending.length + " failed to publish" : "Published " + pending.length + " ✓";
+    api.note(msg);
+    statusFn && statusFn(msg);
+    if (failed) throw new Error(msg);
+  });
+}
+JOB_KINDS.publishall = {
+  label: j => j.title,
+  open: j => openPubJobSheet(j),
+  retry: j => { const job = publishAllJobStart(setInfo); if (job) openPubJobSheet(job); },
+};
+document.getElementById("ghsaveall").addEventListener("click", () => {
   const status = document.getElementById("syncstatus");
   const token = takeToken(status);
   if (!token) return;
-  const pending = pendingSongs();
-  if (!pending.length) { status.textContent = "Nothing pending on this device."; return; }
-  btn.disabled = true;
-  const h = ghHeaders(token);
-  const results = [];
-  for (const key of pending) {
-    if (key === "general") { // the general chat rides Publish all too
-      try { await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY); results.push("general chat ✓"); } catch (err) { results.push("general chat ✗ " + err.message); }
-      continue;
-    }
-    const short = key.split("/").pop().replace(/\.midi?$/i, "");
-    status.textContent = "Publishing " + short + "… " + results.join("  ");
-    try {
-      if (key === songKey && song && isComposition()) { // the open song: its full flow
-        const sub = {textContent: ""}; await commitCompositionNow(sub);
-        if (/failed/i.test(sub.textContent)) throw new Error(sub.textContent.replace(/^.*failed: /i, ""));
-      } else if (isCompositionKey(key) && draftDirtyState(key)) { // another composition edited here: music + annotations + notes.txt + chat
-        await publishDraftSong(key, h);
-      } else { // annotations and chat only (analyzed songs, or nothing musical pending)
-        let notes = []; try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { notes = []; }
-        if (notes.length) {
-          const {path, content, stamp} = await buildRollnotesFor(key);
-          const r = await putRollnotes(path, content, h);
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          if (key === songKey) markCurrentSongSynced(content, stamp, {keepDraft: true});
-          else { localStorage.removeItem("ff1roll-notes-" + key); recordLastSync(key, content); }
-        }
-        await askCommitLog(h, key, isCompositionKey(key));
-      }
-      results.push(short + " ✓");
-    } catch (err) {
-      results.push(short + " ✗ " + err.message);
-    }
-  }
-  await initCatalog().catch(() => {});
-  updateSyncBtn();
-  updateSongBtn();
-  renderSyncPending();
-  status.textContent = results.join("  ");
-  btn.disabled = false;
+  const job = publishAllJobStart(s => { status.textContent = s; });
+  if (!job) return;
+  document.getElementById("syncsheet").classList.remove("on");
+  openPubJobSheet(job);
 });
 
 if (typeof document !== "undefined" && document.body && document.body.dataset) document.body.dataset.edition = EDITION; // the vm harness has no body

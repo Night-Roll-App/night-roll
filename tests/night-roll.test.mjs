@@ -1656,6 +1656,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
     "✦ Ask", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README",
+    "clear themselves a few seconds", "Publish dialog",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -4172,6 +4173,120 @@ test("jobs: a job is a plain record mirrored to this device — progress, done, 
   assert.deepEqual(hit, {state: "interrupted", sts: ["done", "interrupted", "queued"]});
   assert.equal(run(`jobProgress(jobs[0])`), "1/3 · b 70%");
   run(`jobs = []; localStorage.removeItem("ff1roll-jobs"); delete JOB_KINDS.test;`);
+});
+
+test("jobs: done/cancelled jobs clear themselves ~10s after they end; failed and interrupted never auto-clear", async () => {
+  run(`jobs = []; localStorage.removeItem("ff1roll-jobs"); JOB_KINDS.test = {label: j => "Test · " + j.title, open() {}, retry() {}};
+       jobStart("test", "ok", [{label: "a"}], async api => { api.update(0, {st: "done"}); }, {slug: "ac1"});`);
+  await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  assert.equal(val(`jobs.length`), 1);
+  assert.equal(run(`jobs[0].state`), "done");
+  app.tick(9999);
+  assert.equal(val(`jobs.length`), 1, "not yet — under 10s");
+  app.tick(2);
+  assert.equal(val(`jobs.length`), 0, "a finished job clears itself");
+  assert.deepEqual(JSON.parse(app.store.get("ff1roll-jobs") || "[]"), [], "cleared from the localStorage mirror too");
+  // cancelled clears the same way
+  run(`globalThis.__gate = new Promise(res => { globalThis.__open = res; });
+       jobStart("test", "cancel", [{label: "a"}], async api => { api.update(0, {st: "running"}); await __gate; api.update(0, {st: "cancelled"}); api.cancel(); }, {slug: "ac2"});`);
+  await run(`Promise.resolve()`);
+  run(`jobCancel(jobs[0].id); __open();`);
+  await run(`__gate`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  assert.equal(run(`jobs[0].state`), "cancelled");
+  app.tick(10000);
+  assert.equal(val(`jobs.length`), 0, "a cancelled job clears itself too");
+  // failed and interrupted are the ones to look at — they never auto-clear
+  run(`jobStart("test", "boom", [{label: "a"}], async api => { throw new Error("nope"); }, {slug: "ac3"});`);
+  await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  assert.equal(run(`jobs[0].state`), "failed");
+  app.tick(60000);
+  assert.equal(val(`jobs.length`), 1, "a failed job stays until ↻ or ✕");
+  app.store.set("ff1roll-jobs", JSON.stringify([{id: "int1", kind: "test", title: "died", state: "running", slug: "d",
+    items: [{label: "a", st: "running", pct: 0.5}], note: "", started: 1, ended: 0, err: ""}]));
+  run(`jobsLoad()`);
+  assert.equal(val(`jobs.find(j => j.id === "int1").state`), "interrupted");
+  app.tick(60000);
+  assert.equal(val(`jobs.some(j => j.id === "int1")`), true, "an interrupted job stays too");
+  run(`jobs = []; localStorage.removeItem("ff1roll-jobs"); delete JOB_KINDS.test;`);
+});
+
+test("jobs: jobFraction — finished items plus the running item's own pct, over the item count (what the bar draws)", () => {
+  const frac = (state, items) => val(`jobFraction({state: ${JSON.stringify(state)}, items: ${JSON.stringify(items)}})`);
+  assert.equal(frac("running", [{st: "done"}, {st: "running", pct: 0.5}, {st: "queued"}]), 0.5);
+  assert.equal(frac("queued", [{st: "queued"}, {st: "queued"}]), 0);
+  assert.equal(frac("done", [{st: "done"}, {st: "silent"}]), 1);
+  assert.equal(frac("failed", [{st: "done"}, {st: "failed", msg: "x"}]), 1, "a failed item still counts as finished for the bar");
+  assert.equal(frac("running", []), 0, "no items yet: an empty bar while running");
+  assert.equal(frac("done", []), 1, "no items: a full bar once finished");
+});
+
+test("publish dialog: renders from a job record — title, overall bar, a row per item, note line, Cancel while running", () => {
+  run(`document.getElementById("pubjoblist").children.length = 0; // the stub's innerHTML = "" doesn't clear .children (see the ✦ Ask log tests) — reset before every render check
+   jobs = [{id: "pj1", kind: "publish", title: "Chrono Trigger", slug: "chrono-trigger", state: "running",
+    items: [{label: "Corridors of Time", st: "done", pct: 1, msg: "", key: "a"},
+            {label: "Frog's Theme", st: "running", pct: 0.4, msg: "", key: "b"},
+            {label: "Battle 1", st: "queued", pct: 0, msg: "", key: "c"}],
+    note: "Publishing Frog's Theme…", started: 1, ended: 0, err: ""}];
+   openPubJobSheet(jobs[0]);`);
+  assert.equal(run(`document.getElementById("pubjobsheet").classList.contains("on")`), true);
+  assert.equal(run(`document.getElementById("pubjobtitle").textContent`), "Chrono Trigger");
+  assert.equal(run(`document.getElementById("pubjobnote").textContent`), "Publishing Frog's Theme…");
+  assert.equal(run(`document.getElementById("pubjobbar").children[0].style.width`), Math.round(((1 + 0.4) / 3) * 100) + "%");
+  // the stub has no live textContent bubbling from children, so read each row's own name/state spans
+  const rows = val(`document.getElementById("pubjoblist").children.map(r => ({name: r.children[0].textContent, state: r.children[1].textContent}))`);
+  assert.equal(rows.length, 3, "one row per item");
+  assert.equal(rows[0].name, "Corridors of Time"); assert.equal(rows[0].state, "✓");
+  assert.equal(rows[1].name, "Frog's Theme"); assert.equal(rows[1].state, "", "the running row's state holds a bar, not text");
+  assert.equal(rows[2].name, "Battle 1"); assert.equal(rows[2].state, "…");
+  assert.equal(run(`document.getElementById("pubjoblist").children[1].children[1].children[0].children[0].style.width`), "40%", "the running row's own mini bar");
+  assert.equal(run(`document.getElementById("pubjobcancel").style.display`), "", "Cancel shows while running");
+  // a failed item shows its error text; not running any more: no Cancel
+  run(`document.getElementById("pubjoblist").children.length = 0;
+       jobs[0].items[1] = {label: "Frog's Theme", st: "failed", pct: 0, msg: "HTTP 500", key: "b"};
+       jobs[0].state = "failed"; jobs[0].err = "1 of 3 failed"; renderPubJob();`);
+  const rows2 = val(`document.getElementById("pubjoblist").children.map(r => ({name: r.children[0].textContent, state: r.children[1].textContent}))`);
+  assert.match(rows2[1].state, /⚠.*HTTP 500/);
+  assert.equal(run(`document.getElementById("pubjobcancel").style.display`), "none");
+  run(`document.getElementById("pubjobsheet").classList.remove("on"); jobs = [];`);
+});
+
+test("jobs list Open on a publish job opens the publish dialog — not the old jump into File → Open → folder", () => {
+  run(`document.getElementById("pubjoblist").children.length = 0;
+   filesub.children.length = 0;
+   jobs = [{id: "pjopen", kind: "publish", title: "12 tracks", slug: null, state: "done",
+    items: [{label: "12 tracks", st: "done", pct: 1, msg: "", key: null}], note: "", started: 1, ended: 2, err: ""}];
+   JOB_KINDS.publish.open(jobs[0]);`);
+  assert.equal(run(`document.getElementById("pubjobsheet").classList.contains("on")`), true);
+  assert.equal(run(`document.getElementById("pubjobtitle").textContent`), "12 tracks");
+  assert.equal(val(`filesub.children.length`), 0, "the old File → Open → folder jump never ran");
+  run(`document.getElementById("pubjobsheet").classList.remove("on"); jobs = [];`);
+});
+
+test("Publish all: creates a job with one item per pending song (general chat included), one at a time", async () => {
+  run(`jobs = jobs.filter(j => j.kind !== "publishall"); localStorage.removeItem("ff1roll-jobs");
+       globalThis.__realPending = pendingSongs;
+       globalThis.__realWriteToken = writeToken;
+       writeToken = () => null; // no token: the runner fails before touching any song — keeps this test off the network
+       pendingSongs = () => [];`);
+  assert.equal(val(`publishAllJobStart(() => {})`), null, "nothing pending: no job");
+  run(`pendingSongs = () => ["general", "albums/compositions/nightroll/pa-one.mid", "albums/nes/final-fantasy-i/songs/pa-two.mid"];
+       globalThis.__job = publishAllJobStart(() => {});`);
+  assert.equal(val(`__job.kind`), "publishall");
+  assert.equal(val(`__job.title`), "Publish all");
+  const label2 = val(`songTitleOf("albums/compositions/nightroll/pa-one.mid")`);
+  const label3 = val(`songTitleOf("albums/nes/final-fantasy-i/songs/pa-two.mid")`);
+  assert.deepEqual(val(`__job.items.map(i => ({label: i.label, key: i.key, st: i.st}))`), [
+    {label: "General chat", key: "general", st: "queued"},
+    {label: label2, key: "albums/compositions/nightroll/pa-one.mid", st: "queued"},
+    {label: label3, key: "albums/nes/final-fantasy-i/songs/pa-two.mid", st: "queued"},
+  ]);
+  assert.equal(val(`publishAllJobStart(() => {})`), null, "one Publish-all job at a time");
+  await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  assert.equal(val(`__job.state`), "failed");
+  assert.match(val(`__job.err`), /No GitHub token/);
+  run(`pendingSongs = globalThis.__realPending; writeToken = globalThis.__realWriteToken;
+       jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");
+       delete globalThis.__job; delete globalThis.__realPending; delete globalThis.__realWriteToken;`);
 });
 
 test("album play: loads that keep failing stop the album after ALBUM_MAX_FAILS, instead of skipping through every song", async () => {
