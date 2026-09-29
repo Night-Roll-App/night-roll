@@ -1,5 +1,8 @@
 # graveyard-3.mid — 4/4, 96bpm, 26 bars
 # Format: bar N: beat pitch duration-in-quarter-notes
+# duration is GATE TIME (how long the chip held the note), NOT a notated value.
+# RHYTHM comes from ONSET SPACING (the beat column), never from duration:
+# staccato eighths gate at ~0.33 and are still eighths, not triplets.
 # Pitches use sharp spelling; the true key is Josh's to discover — this file states no key.
 
 ## track 1 (pulse1)
@@ -8,10 +11,6 @@ bar 2: 1 F#5 0.5, 1.5 E5 0.5, 2 C#5 0.5, 2.5 D5 0.5, 3 B4 0.5, 3.5 C#5 0.5, 4 A4
 bar 3: 1 F#5 0.5, 1.5 E5 0.5, 2 C#5 0.5, 2.5 D5 0.5, 3 A4 0.5, 3.5 F#4 0.5, 4 C5 0.5, 4.5 C#5 0.5
 bar 4: 1 F#5 0.5, 1.5 E5 0.5, 2 C#5 0.5, 2.5 D5 0.5, 3 C#5 0.5, 3.5 D5 0.5, 4 D5 0.5, 4.5 C#5 0.5
 bar 5: 1 F#5 0.5, 1.5 E5 0.5, 2 F#5 0.5, 2.5 G#5 0.5, 3 A5 0.5, 3.5 F#5 1.5
-bar 6: 1 A4 4
-bar 7: 1 A4 0.5, 1.5 B4 0.5, 2 B4 0.5, 2.5 C#5 0.5, 3 C#5 0.5, 3.5 D5 0.5, 4 D5 1
-bar 8: 1 G#4 2, 3 G#4 0.33, 3.33 A4 0.33, 3.67 B4 0.33, 4 C#5 0.33, 4.33 D5 0.33, 4.67 C#5 0.33
-bar 9: 1 E5 0.5, 1.5 D5 0.5, 2 C#5 3
 bar 10: 1 A4 4
 bar 11: 1 A4 0.5, 1.5 B4 0.5, 2 B4 0.5, 2.5 C#5 0.5, 3 C#5 0.5, 3.5 D5 0.5, 4 D5 1
 bar 12: 1 G#4 2, 3 G#4 0.33, 3.33 A4 0.33, 3.67 B4 0.33, 4 C#5 0.33, 4.33 D5 0.33, 4.67 C#5 0.33
