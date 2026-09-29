@@ -3115,69 +3115,87 @@ test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply an
   run(`asksheet.classList.remove("on"); askBadgeOff(); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/job-test.mid"); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/other.mid"); songKey = null;`);
 });
 
-test("AI dock: toggling sets the pref, a docked class, reserves the song area's width (resize() runs, the same path a window resize takes), and undock restores it", () => {
-  run(`window.innerWidth = 1200; asksheet.classList.add("on"); aiDock = {docked: false, width: 360}; aiDockLayout();`);
-  assert.equal(val(`aiDockAllowed()`), true, "wide window: docking offered");
-  assert.equal(val(`document.getElementById("askdock").style.display`), "", "the dock control shows at desktop width");
-  run(`aiDockToggle()`);
-  assert.equal(val(`aiDock.docked`), true);
-  assert.equal(val(`asksheet.classList.contains("docked")`), true);
-  assert.equal(val(`document.documentElement.classList.contains("ai-docked")`), true);
-  assert.equal(val(`document.documentElement.style.paddingRight`), "360px", "the song area gives up exactly the panel's width");
-  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-aidock")).docked`), true, "persisted");
-  // resize() — the same function a real window resize calls — ran: canvas.width was recomputed, not left stale
-  run(`canvas.width = -1; aiDockLayout();`);
-  assert.notEqual(val(`canvas.width`), -1, "resize() ran when docking, the same path window resize takes");
-  // undock: today's floating sheet exactly — the reservation and the shape class both let go
-  run(`aiDockToggle()`);
-  assert.equal(val(`aiDock.docked`), false);
-  assert.equal(val(`asksheet.classList.contains("docked")`), false);
-  assert.equal(val(`document.documentElement.classList.contains("ai-docked")`), false);
-  assert.equal(val(`document.documentElement.style.paddingRight`), "", "the full width comes back");
-  run(`asksheet.classList.remove("on"); aiDock = {docked: false, width: 360}; window.innerWidth = undefined;`);
+test("Window manager: pure helpers — wmClampSize, wmAllowed, wmMigrate", () => {
+  assert.equal(val(`wmClampSize(200, 1000)`), 280, "floor");
+  assert.equal(val(`wmClampSize(1000, 1000)`), 600, "60% ceiling");
+  assert.equal(val(`wmClampSize(400, 1000)`), 400, "within bounds, unchanged");
+  assert.equal(val(`wmClampSize(400, 0)`), 400, "a bogus innerWidth falls back to 1024 (60% = 614)");
+  assert.equal(val(`wmAllowed(699)`), false);
+  assert.equal(val(`wmAllowed(700)`), true);
+  assert.deepEqual(val(`wmMigrate(null)`), {});
+  assert.deepEqual(val(`wmMigrate({docked: false, width: 500})`), {}, "not docked: nothing to migrate");
+  assert.deepEqual(val(`wmMigrate({docked: true, width: 500})`), {right: {id: "asksheet", w: 500}});
+  assert.deepEqual(val(`wmMigrate({docked: true})`), {right: {id: "asksheet", w: 380}}, "no saved width: the default");
 });
 
-test("AI dock: phone width refuses — the control hides and toggling has no effect; a saved docked pref is kept but not applied until the window widens again", () => {
-  run(`window.innerWidth = 500; asksheet.classList.add("on"); aiDock = {docked: false, width: 360}; aiDockLayout();`);
-  assert.equal(val(`aiDockAllowed()`), false);
-  assert.equal(val(`document.getElementById("askdock").style.display`), "none", "no dock control on a phone-width window");
-  run(`aiDockToggle()`);
-  assert.equal(val(`aiDock.docked`), false, "toggling at phone width does nothing");
+test("Window manager: docking right sets the pref, a docked class, reserves --dr-w on #shell (resize() runs, the same path a window resize takes), and floating restores it", () => {
+  run(`window.innerWidth = 1200; asksheet.classList.add("on"); wm = {}; wmLayoutRight();`);
+  assert.equal(val(`wmAllowed(window.innerWidth)`), true, "wide window: docking offered");
+  assert.equal(val(`document.getElementById("askdock").style.display`), "", "the dock control shows at desktop width");
+  assert.equal(val(`document.getElementById("askdock").textContent`), "Dock");
+  run(`wmToggleRight("asksheet")`);
+  assert.equal(val(`wm.right.id`), "asksheet");
+  assert.equal(val(`wm.right.w`), 380, "first dock uses the default width");
+  assert.equal(val(`asksheet.classList.contains("docked")`), true);
+  assert.equal(val(`document.getElementById("dockright").classList.contains("occupied")`), true);
+  assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "380px", "the song area gives up exactly the dock's width");
+  assert.equal(val(`document.getElementById("askdock").textContent`), "Float");
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).right.id`), "asksheet", "persisted");
+  // resize() — the same function a real window resize calls — ran: canvas.width was recomputed, not left stale
+  run(`canvas.width = -1; wmLayoutRight();`);
+  assert.notEqual(val(`canvas.width`), -1, "resize() ran when docking, the same path window resize takes");
+  // float: today's floating sheet exactly — the reservation and the shape class both let go
+  run(`wmToggleRight("asksheet")`);
+  assert.equal(val(`!!wm.right`), false);
   assert.equal(val(`asksheet.classList.contains("docked")`), false);
-  run(`aiDock = {docked: true, width: 400}; aiDockLayout();`); // a pref saved on a wide window, opened later on a narrow one
+  assert.equal(val(`document.getElementById("dockright").classList.contains("occupied")`), false);
+  assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "0px", "the full width comes back");
+  run(`asksheet.classList.remove("on"); wm = {}; wmLayoutRight(); window.innerWidth = undefined;`);
+});
+
+test("Window manager: phone width refuses — the dock control hides and toggling has no effect; a saved right-dock pref is kept but not applied until the window widens again", () => {
+  run(`window.innerWidth = 500; asksheet.classList.add("on"); wm = {}; wmLayoutRight();`);
+  assert.equal(val(`wmAllowed(window.innerWidth)`), false);
+  assert.equal(val(`document.getElementById("askdock").style.display`), "none", "no dock control on a phone-width window");
+  run(`wmToggleRight("asksheet")`);
+  assert.equal(val(`!!wm.right`), false, "toggling at phone width does nothing");
+  assert.equal(val(`asksheet.classList.contains("docked")`), false);
+  run(`wm = {right: {id: "asksheet", w: 400}}; wmLayoutRight();`); // a pref saved on a wide window, opened later on a narrow one
   assert.equal(val(`asksheet.classList.contains("docked")`), false, "the pref says docked but the window is too narrow");
-  assert.equal(val(`document.documentElement.style.paddingRight`), "", "no reservation at phone width");
+  assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "0px", "no reservation at phone width");
   run(`window.innerWidth = 1200;`);
   app.winDispatch({type: "resize"}); // widening re-offers and reapplies the saved pref live
   assert.equal(val(`asksheet.classList.contains("docked")`), true);
-  assert.equal(val(`document.documentElement.style.paddingRight`), "400px");
-  run(`asksheet.classList.remove("on"); aiDock = {docked: false, width: 360}; window.innerWidth = undefined;`);
+  assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "400px");
+  run(`asksheet.classList.remove("on"); wm = {}; wmLayoutRight(); window.innerWidth = undefined;`);
 });
 
-test("AI dock: the divider drags the panel width, clamped to [280, 60% of the window], and persists only on release", () => {
-  run(`window.innerWidth = 1000; aiDock = {docked: true, width: 360}; asksheet.classList.add("on"); aiDockLayout();`);
-  app.dispatch("askdockdivider", {type: "pointerdown", clientX: 700, pointerId: 7, button: 0});
-  app.docDispatch({type: "pointermove", clientX: 600, pointerId: 7}); // dragged left 100 — the panel widens by 100
-  assert.equal(val(`aiDock.width`), 460);
-  assert.equal(val(`document.documentElement.style.paddingRight`), "460px");
+test("Window manager: the right dock's divider drags its width, clamped to [280, 60% of the window], and persists only on release", () => {
+  run(`window.innerWidth = 1000; wm = {right: {id: "asksheet", w: 360}}; asksheet.classList.add("on"); wmLayoutRight();`);
+  app.dispatch("wmdivider", {type: "pointerdown", clientX: 700, pointerId: 7, button: 0});
+  app.docDispatch({type: "pointermove", clientX: 600, pointerId: 7}); // dragged left 100 — the dock widens by 100
+  assert.equal(val(`wm.right.w`), 460);
+  assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "460px");
   app.docDispatch({type: "pointermove", clientX: 0, pointerId: 7}); // past the 60%-of-window ceiling (600px here)
-  assert.equal(val(`aiDock.width`), 600, "clamped to 60% of the window");
+  assert.equal(val(`wm.right.w`), 600, "clamped to 60% of the window");
   app.docDispatch({type: "pointermove", clientX: 900, pointerId: 7}); // past the 280px floor
-  assert.equal(val(`aiDock.width`), 280, "clamped to the 280px floor");
-  assert.equal(val(`localStorage.getItem("ff1roll-aidock") === null || JSON.parse(localStorage.getItem("ff1roll-aidock")).width !== 280`), true, "not saved mid-drag");
+  assert.equal(val(`wm.right.w`), 280, "clamped to the 280px floor");
+  assert.equal(val(`(() => { const p = JSON.parse(localStorage.getItem("ff1roll-wm") || "{}"); return !p.right || p.right.w !== 280; })()`), true, "not saved mid-drag");
   app.docDispatch({type: "pointerup", pointerId: 7});
-  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-aidock")).width`), 280, "saved on release");
-  run(`asksheet.classList.remove("on"); aiDock = {docked: false, width: 360}; window.innerWidth = undefined;`);
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).right.w`), 280, "saved on release");
+  run(`asksheet.classList.remove("on"); wm = {}; wmLayoutRight(); window.innerWidth = undefined;`);
 });
 
-test("AI dock: the pref survives a reload", () => {
+test("Window manager: the right-dock pref survives a reload, and migrates once from the old ff1roll-aidock pref", () => {
   const app2 = createApp({storage: {"ff1roll-aidock": JSON.stringify({docked: true, width: 420})}});
   const run2 = c => app2.run(c), val2 = c => JSON.parse(app2.run(`JSON.stringify(${c})`));
-  assert.equal(val2(`aiDock.docked`), true);
-  assert.equal(val2(`aiDock.width`), 420);
-  run2(`window.innerWidth = 1200; asksheet.classList.add("on"); aiDockLayout();`);
-  assert.equal(val2(`asksheet.classList.contains("docked")`), true, "reopens docked, from the saved pref");
-  assert.equal(val2(`document.documentElement.style.paddingRight`), "420px");
+  assert.equal(val2(`wm.right.id`), "asksheet", "migrated from the old asksheet-only pref");
+  assert.equal(val2(`wm.right.w`), 420);
+  assert.equal(val2(`localStorage.getItem("ff1roll-aidock")`), null, "the old key is forgotten once migrated");
+  assert.equal(JSON.parse(app2.store.get("ff1roll-wm")).right.w, 420, "written under the new key");
+  run2(`window.innerWidth = 1200; asksheet.classList.add("on"); wmLayoutRight();`);
+  assert.equal(val2(`asksheet.classList.contains("docked")`), true, "reopens docked, from the migrated pref");
+  assert.equal(val2(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "420px");
 });
 
 test("Ask resume: pending questions are found across every chat; a tool round moves the marker; eviction leaves the repo marker; Publish stops at a pending question", () => {

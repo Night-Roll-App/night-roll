@@ -58,10 +58,27 @@ function makeClassList() {
   };
 }
 
+// a plain {} let every existing test read/write style.paddingRight etc.
+// directly, but the window manager (build steps 1-2) sets CSS custom
+// properties (--dr-w) via the real setProperty()/getPropertyValue() API —
+// unlike a normal IDL property, those are NOT reflected by a bare object
+// key, so the stub needs the same three methods a real CSSStyleDeclaration
+// has, backed by the same plain object every other style read/write uses.
+function makeStyle() {
+  const store = {};
+  return new Proxy(store, {
+    get: (t, k) => (k === "setProperty" ? (name, v) => { t[name] = v; }
+      : k === "getPropertyValue" ? (name) => (t[name] !== undefined ? String(t[name]) : "")
+      : k === "removeProperty" ? (name) => { const old = t[name]; delete t[name]; return old === undefined ? "" : String(old); }
+      : t[k]),
+    set: (t, k, v) => ((t[k] = v), true),
+  });
+}
+
 function makeEl() {
   const el = listenable({
     children: [],
-    style: {},
+    style: makeStyle(),
     dataset: {},
     classList: makeClassList(),
     value: "",

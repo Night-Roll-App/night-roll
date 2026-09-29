@@ -2647,96 +2647,171 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   `applyTake` undo/mirror, target default rule, Bassist golden fixture,
   FEATURES keywords `✦ Ask` / `✦ Fill`.
 
-## Docked AI panel (build step 1 of the windowing plan, 2026-09-29)
+## Window manager (shell + docks) — build steps 1-2 of the windowing plan, 2026-09-29
 
-Step 1 of open-items.md's "a real windowing system" (QUEUED IDEA,
-2026-09-27, REOPENED 2026-09-29): `#asksheet` can pin to the right edge
-as a real panel instead of a floating `.overlay` — no backdrop, the roll
-stays fully usable (tap, edit, play) while it's open. Code sits right
-after `sheetDrag()` in index.html, under `// ---- ✦ AI panel docking`.
+open-items.md's "a real windowing system" (QUEUED IDEA, 2026-09-27,
+REOPENED 2026-09-29). **Attempt 1 (commit c322e3c) broke on the iPad**:
+it reserved width with `<html>` `padding-right` and made `#asksheet`
+`position:fixed` — the panel didn't span full height, the roll canvas
+and footer ran under it, header buttons were cut off, the ⇥/⇤ glyphs
+rendered empty on iOS. Steps 1-2 replace that mechanism entirely with a
+real shell. Josh's rule that shaped the redesign: the main panel (roll /
+score / tracks — the song) is ALWAYS in the center; windows dock only
+left, right or bottom around it.
 
-- **The layout mechanism — one rule, every strip follows it.** `aiDockLayout()`
-  sets `document.documentElement.style.paddingRight` (the `<html>` element,
-  not `<body>` — see below) to the panel's clamped width; `<body>` is a
-  block child of `<html>` with no explicit width, so its content box — and
-  every flex child in it (`header`, `#trackrow`, `#rollwrap`, `#editrow`,
-  `footer`, …) — shrinks into what's left with this ONE line. No per-view
-  special-casing: `#rollwrap { flex: 1 }` and `align-items: stretch` (the
-  flex-column default) do the rest. The panel itself is
-  `#asksheet.on.docked` (CSS, ID beats `.overlay.on`'s two classes so it
-  overrides display/position/padding/background without touching that
-  rule): `position: fixed; inset: 0 0 0 auto;` at the JS-set pixel width —
-  its own box IS the panel, so there's no dead backdrop area outside it to
-  swallow a tap meant for the song. Scoped to `.on` too, or the pref alone
-  (closed) would force it visible.
-- **Redraw:** `resize()` — the exact function `window`'s own `"resize"`
-  listener already calls — runs directly from `aiDockLayout()` on every
-  open/toggle/drag/live-window-resize. It reads `wrap.clientWidth`, which
-  in a real browser already reflects the `<html>` padding by the time
-  `resize()` runs (synchronous layout), so the roll/score/tracks canvas,
-  the ruler, the lanes, and the follow-the-playhead math (`wrap.clientWidth`
-  read live everywhere, never cached) all follow with zero extra wiring.
-  `new ResizeObserver(resize).observe(wrap)` also fires on its own in a
-  real browser whenever the reservation changes the layout — `aiDockLayout()`
-  calling `resize()` directly is belt-and-suspenders (and the ONLY path in
-  the vm suite, where `ResizeObserver` is a no-op stub).
-- **Why `<html>`, not `<body>`:** the vm harness (tests/harness.mjs)
-  stubs `document.documentElement` but deliberately has no `document.body`
-  — `sheetDrag()` and a few other real-browser-only blocks use
-  `!document.body` as their "is this a real browser" guard and bail out
-  early in tests. Reserving on `<body>` instead would have made the whole
-  feature untestable (or worse, silently broken those guards if `body`
-  were added to the stub — tried it, it does: `addGrips()` then hits
-  `document.querySelectorAll`, which the harness doesn't have either, and
-  the app fails to boot in every test). `<html>` has no such meaning
-  attached and reserves the identical width for the identical reason.
-- **Pref:** `ff1roll-aidock` = `{docked, width}`, flat localStorage, loaded
-  once into `let aiDock` at parse time (not the boot-path early block —
-  nothing `setSong`/`editableSong`/`renderViewMenu` read touches it; it's
-  read only when Ask opens or the dock control is used). `aiDockClampW`
-  bounds width to `[280, 60vw]`; `aiDockAllowed()` is `window.innerWidth
-  >= 700` — below that the `⇥` control hides (CSS `display:none`,
-  `aiDockLayout`) and Ask is always the floating sheet, pref or no pref.
-  Shrinking the window live below 700 un-docks (the `window` `"resize"`
-  listener re-runs `aiDockLayout()`), widening it back re-applies the
-  saved pref without asking again.
-- **Divider:** `#askdockdivider`, a sibling of `.sheet.ask` inside
-  `#asksheet`, `position:absolute; left:-4px` on the panel's own fixed
-  box — dragging it left (toward center) widens the panel. Same
+### Step 1 — the shell (no behaviour change)
+
+`#shell` (body markup, right after `<body>`) is a 3-column x 2-row CSS
+grid:
+
+```
+#shell { display:grid; grid-template-columns: var(--dl-w,0px) 1fr var(--dr-w,0px);
+         grid-template-rows: 1fr var(--db-h,0px); flex:1; min-height:0; }
+#songregion { grid-column:2; grid-row:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
+#dockleft   { grid-column:1; grid-row:1/3; }
+#dockright  { grid-column:3; grid-row:1/3; position:relative; }
+#dockbottom { grid-column:1/4; grid-row:2; }
+```
+
+`#songregion` wraps the app's existing top-level song flow — `header`,
+`#trackrow`, `#albumstrip`, `#cmpbar`, `#rollwrap`, `#editrow`,
+`#instpanel`, `#subtitle`, `footer` — unchanged internally (still
+`display:flex; flex-direction:column`, the same rules `#rollwrap { flex:
+1 }` etc. that used to hang off `<body>`). Grid items stretch to fill
+their cell by default, so `#songregion` needs no explicit height/width
+of its own: with every dock's CSS var at its `0px` default the layout is
+pixel-identical to the old body-is-a-flex-column page. `#panelshow` (the
+floating "show controls" button, `position:fixed`) moved out to a body
+sibling of `#shell` — fixed positioning doesn't care about DOM ancestry
+here (no transform/filter/perspective on `#shell` or `#songregion`
+creates a new containing block), it only needed to stop breaking up the
+song-flow element list. `.overlay` sheets/menus (`#asksheet`,
+`#settingssheet`, `#viewsheet`, the voice menu, …) stay body children
+outside `#shell` for now, positioned as before (`position:absolute;
+inset:0` for modals, or JS-anchored `style.left/top` for dropdowns) —
+true full-viewport modals are meant to cover the docks too.
+
+### Step 2 — the right dock
+
+Docking a sheet moves ITS OWN NODE into `#dockright` and sets `--dr-w`
+(px, clamped `[280, 60vw]`, default 380) on `#shell`; floating moves it
+back to a `display:contents` "home" wrapper at its original body
+position (`<id>-home`, e.g. `#asksheet-home` — invisible to layout, so
+floating restores the exact original DOM slot) and clears `--dr-w` back
+to `0px`.
+
+- **wm state.** `let wm = {right: {id, w}}` (or `{}`), flat localStorage
+  key `ff1roll-wm`, migrated once from the old `ff1roll-aidock`
+  (`{docked, width}`, asksheet-only) — `wmLoad()` reads the new key
+  first, and only on a miss reads the old key, migrates it via
+  `wmMigrate()`, saves under the new key, and (whether or not it had
+  `docked: true`) removes the old key so it's never read again.
+- **Pure helpers — no DOM, directly unit-tested:** `wmClampSize(w,
+  innerWidth)` bounds a width to `[280, 60% of innerWidth]` (falls back
+  to `innerWidth = 1024` for a bogus/missing value); `wmAllowed(innerWidth)`
+  is `innerWidth >= 700` (the phone-width cutoff — below it there's no
+  "what's left" to give the song); `wmMigrate(oldPref)`,
+  `wmSetRight(state, id, w, innerWidth)`, `wmClearRight(state)` are pure
+  state transitions on the `{right: {id, w}}` shape.
+- **`wmLayoutRight()`** is the one function that touches the DOM — moves
+  nodes, sets classes/CSS vars, and redraws. It tracks `let wmRightEl`
+  (module state: the node currently parented in `#dockright`, or
+  `null`) as the source of truth for "what's docked right now" — once
+  `wm.right` is cleared there's nothing in `wm` left to say which
+  element to float back out, so the element reference itself is kept
+  separately. Safe to call any time (open, close, toggle, drag, or a
+  live window resize) — idempotent; float-then-dock only actually moves
+  nodes when the wanted element differs from `wmRightEl`.
+  - `dockright.classList.toggle("occupied", !!wmRightEl)` shows/hides
+    the dock's divider (`#dockright.occupied #wmdivider`).
+  - the width reservation (`--dr-w`) only applies while the docked
+    sheet is actually shown (docked AND `.on`) — closing it (✕,
+    backdrop, Esc) sets `--dr-w` back to `0px` (the song gets the width
+    back) but `wmRightEl`/`wm.right` are untouched, so the node stays
+    parked in `#dockright` and reopening needs no re-dock.
+  - `resize()` — the exact function `window`'s own `"resize"` listener
+    calls — runs at the end of every `wmLayoutRight()`. It reads
+    `wrap.clientWidth`, which in a real browser already reflects the
+    grid's new column width by the time `resize()` runs (synchronous
+    layout), so the roll/score/tracks canvas, the ruler, the lanes, and
+    the follow-the-playhead math all follow with zero extra wiring. The
+    existing `new ResizeObserver(resize).observe(wrap)` (from "subtitle
+    strip toggling resizes the roll") also fires on its own in a real
+    browser whenever the grid track actually changes size —
+    `wmLayoutRight()` calling `resize()` directly is belt-and-suspenders
+    (and the ONLY path in the vm suite, where `ResizeObserver` is a
+    no-op stub).
+- **CSS.** `.overlay.docked` (generic — any future docked sheet reuses
+  it unmodified): `position:static; background:transparent; padding:0;
+  width/height:100%; z-index:auto`, `.overlay.docked.on { display:flex }`,
+  `.overlay.docked .sheet { width/height:100%; max-width/max-height:none;
+  border-radius:0; ... }`, `.overlay.docked .sheetgrip { display:none }`
+  (the dock's divider resizes it instead). A sheet with its own
+  floating-width override at ID+class specificity (`#asksheet .sheet.ask`,
+  "three quarters of the screen") needs its own matching docked override
+  too (`#asksheet.docked .sheet.ask`) — the generic class-only rule can't
+  outrank an ID selector.
+- **Divider:** `#wmdivider`, a *permanent* child of `#dockright` markup
+  (not of whatever sheet is docked in it — so a future sheet reusing the
+  cell needs no divider of its own), `position:absolute; left:-4px` —
+  dragging it left (toward center) widens the dock. Same
   pointerdown/pointermove/pointerup shape as `sheetDrag`'s own `◢` grip;
-  width is applied live on every `pointermove` and saved once on release.
-- **Everything else about the sheet works unchanged while docked** — chat
-  log scroll, input, song/general switch, jobs polling, the notes-from-
-  the-Mac badge — since docking only ever touches `#asksheet`'s own box
-  and CSS class, never its children. `sheetDrag()` is told to leave a
-  docked sheet alone (`.overlay.docked` early-return in its pointerdown
-  handler, plus a button exclusion in `handleFor` so the ⇥/⇤ button inside
-  `<h2>` doesn't start a title-drag) and its `restore()`-on-open
-  (position/size from `ff1roll-sheetpos-<id>`) is skipped for a docked
-  sheet so undocking (which drops the `docked` class) triggers exactly one
-  `restore()` and returns to the floating spot/size, unchanged.
-- **Close paths:** `SHEET_TOP` (the existing per-overlay `MutationObserver`
-  that resets scroll position on open) gained one line —
-  `if (m.target.id === "asksheet") aiDockLayout();` — the single choke
-  point every close already runs through (✕, backdrop tap, Esc, or
-  reopening), so the reservation always matches visibility however it
-  closes. Real-browser-only, like the rest of that block; tests call
-  `aiDockLayout()`/`aiDockToggle()` directly instead.
-- **Phone width:** the `⇥` control hides; the panel is always the floating
-  sheet. Not e2e-verified (no e2e in this repo's workflow) — vm-tested via
-  `window.innerWidth`.
-- **Tests:** `tests/night-roll.test.mjs`, "AI dock: …" (four tests) —
-  toggle sets the pref/class/reservation and undock restores it, phone
-  width refuses and re-offers live on resize, the divider clamps and
-  saves only on release, the pref survives a reload (`createApp` with
-  storage). FEATURES keyword "Dock right".
-- **Step 2 reuse:** any future docked sheet needs only: give it a dock
-  control, toggle a `.docked` class on its `.overlay` id, and call
-  something like `aiDockLayout()` scoped to that sheet — the CSS pattern
-  (`#id.on.docked`), the `sheetDrag` exclusions (already generic on
-  `.overlay.docked`), and the `<html>`-padding mechanism all already
-  generalize. Multiple docked sheets sharing the edge (stacking, split
-  width) is not designed yet.
+  width applied live on every `pointermove`, saved once on release.
+- **Dock control:** a text button, `id="askdock"`, inside `#asksheet`'s
+  `<h2>` — "Dock" / "Float" (no exotic glyphs; ⇥/⇤ rendered empty on
+  iOS, attempt 1's bug). The sheet's title reads "AI" (it said "ASK" on
+  the iPad even after the button itself was renamed to "✦ AI").
+- **`sheetDrag()` stays out of a docked sheet** — `.overlay.docked`
+  early-return in its `pointerdown` handler (generic, was already this
+  way from attempt 1) plus a button exclusion in `handleFor` so the
+  Dock/Float button inside `<h2>` doesn't start a title-drag.
+- **Close paths:** `SHEET_TOP` (the existing per-overlay
+  `MutationObserver` that resets scroll position on open) calls
+  `wmLayoutRight()` on any `#asksheet` class mutation — the one choke
+  point every close path already runs through (✕, backdrop tap, Esc, or
+  reopening). Real-browser-only, like the rest of that block (guarded on
+  `document.querySelectorAll`); tests call `wmLayoutRight()`/
+  `wmToggleRight()` directly instead.
+- **Phone width (<700px):** the dock control hides; the sheet is always
+  floating. Crossing that width live (the `window` `"resize"` listener
+  re-runs `wmLayoutRight()`) floats a docked sheet immediately; the pref
+  itself is untouched, so widening back re-docks it without asking
+  again. Not e2e-verified (no e2e in this repo's workflow) — vm-tested
+  via `window.innerWidth`.
+- **Anchored menus vs. the dock.** A menu/dropdown positioned from a
+  header button (`openVoiceMenu`, the metronome popup, View/Edit menus,
+  the file submenu, the capture panel's centering) used to clamp against
+  raw `window.innerWidth` — with the right dock open, that let one open
+  spilling under it. `songRegionRight()` (defined right after `const
+  wrap = …`) returns `#songregion`'s own right edge (falls back to
+  `window.innerWidth` if the element or its rect is unavailable, e.g.
+  the vm harness) and every such clamp site uses it instead. True
+  `.overlay` modals (centered, full-viewport backdrop) are unaffected —
+  they're meant to cover the docks too. The `?perf=1` debug HUD's two
+  `position:fixed; right:…` elements (a real-browser-only, guarded block)
+  compute their `right` offset the same way, so they sit over the song
+  region instead of under the dock.
+- **Tests:** `tests/night-roll.test.mjs`, "Window manager: …" — pure
+  helpers (`wmClampSize`/`wmAllowed`/`wmMigrate`) tested directly with no
+  DOM; docking sets the pref/class/`--dr-w` and floating restores it
+  (`resize()` ran); phone width refuses and re-offers live on resize;
+  the divider clamps and saves only on release; the pref survives a
+  reload and migrates once from `ff1roll-aidock`. FEATURES keyword
+  "Dock right". The vm harness (`tests/harness.mjs`) grew a
+  `setProperty`/`getPropertyValue`/`removeProperty` shim on every
+  element's `style` stub — a bare `style.foo = …` object property never
+  reflected a REAL CSS custom property (`--dr-w`) the way it does a
+  normal IDL one (`paddingRight`), so the stub needed the actual method
+  shape.
+- **Steps 3-8 (queued, not built):** left/bottom docks (the empty
+  `#dockleft`/`#dockbottom` cells + `--dl-w`/`--db-h` exist already);
+  any sheet besides `#asksheet` docking (the CSS pattern, the
+  `sheetDrag` exclusion, and the `wmLayoutRight`-style move-a-node
+  mechanism all already generalize — a new dock needs its own
+  `wm.<side>` slot and a `wmLayoutRight`-shaped function, not a new
+  mechanism); multiple sheets sharing one dock (stacking/tabs/split) is
+  not designed; two timeline views at once (shared `view.x`/
+  `playCursor` today).
 
 ## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
 

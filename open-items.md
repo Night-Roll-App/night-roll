@@ -363,16 +363,35 @@ back to the floating sheet; (2) any sheet docks left/right/bottom, layout
 per device; (3) two timeline views at once (shared view.x/playCursor
 today) — last, if ever. Step 1 + the rename start after the job-system
 work lands (index.html is busy).
-STEP 1 BUILT (2026-09-29): the ✦ AI panel docks right (⇥ in its title
-row, ⇤ to float again), draggable divider (280px–60vw), per-device pref
-(`ff1roll-aidock`), phone width (<700) falls back to the floating sheet.
-Mechanism: `<html>` reserves the panel's width (`padding-right`) so
-header/track chips/roll·score·tracks/footer all reflow with one rule;
-`resize()` runs the same path a real window resize does. Details +
-step-2 reuse notes: NIGHT-ROLL.md "Docked AI panel". Needs eyes in a real
-browser (Chrome + iPad) — not yet browser-verified. Rename to "✦ AI" was
-already shipped separately (fe80df3). Step 2 (any sheet docks) and step 3
-(two timeline views) remain queued.
+STEP 1 BUILT then REBUILT (2026-09-29): the first build (c322e3c) used
+`<html>` padding-right + `#asksheet.on.docked{position:fixed}` and broke
+on the iPad — the panel didn't span full height, the roll/footer ran
+under it, header buttons were cut off, the ⇥/⇤ glyphs rendered empty.
+Replaced with a real shell: `#shell` (display:grid, 3 columns x 2 rows)
+wraps the song's existing top-level flow in `#songregion` (always the
+center column/cell, Josh's rule) with empty `#dockleft`/`#dockright`/
+`#dockbottom` cells sized by CSS vars (`--dl-w`/`--dr-w`/`--db-h`,
+default 0px). STEPS 1-2 BUILT: docking the ✦ AI panel moves its node into
+`#dockright` and sets `--dr-w` (the grid track, not `<html>` padding);
+floating moves it back and clears the var. Draggable divider (280px–
+60vw), text "Dock"/"Float" button (no glyphs — they render empty on
+iOS), sheet title reads "AI". Per-device pref `ff1roll-wm` =
+`{right: {id, w}}` (migrated once from the old `ff1roll-aidock`), phone
+width (<700) falls back to the floating sheet and crossing that width
+live floats it. `resize()` runs the same path a real window resize does.
+Details + step-3-8 reuse notes: NIGHT-ROLL.md "Window manager (shell +
+docks)". Browser-verified headless at 1366x1024 (2026-09-29): docked,
+song region 986 + dock 380 = 1366, roll and footer end at 986, panel full
+height; floating restores 1366; iPad check is Josh's. NEXT (Josh, via
+Ask, 2026-09-29): one window builder (wrapWindow/openWindow) giving every
+window the same title (left), ✕ (right), title drag, ◢ corner grip and a
+dock option — 26 hand-written .overlay/.sheet blocks today, the grip and
+drag are bolt-on scripts with special cases (why the jobs grip landed
+wrong). Migrate a few windows per commit with browser eyes; new windows
+born on it. Then drag-to-edge docking + tabs on top of it. Josh's rule:
+the song view is always the center; windows dock only left/right/bottom. Rename to "✦ AI" was already
+shipped separately (fe80df3). Steps 3-8 (left/bottom docks, other sheets
+dock, two timeline views, …) remain queued.
 
 ## QUEUED IDEA (Josh, 2026-09-27): folders above albums in Open
 
