@@ -1356,7 +1356,25 @@ harp arpeggio is in the BGM at all (a streamed or sample-played piece?)
 or whether the BGM reader stops early. Other songs look sane (Tidus'
 Theme 1068 notes, Other World 3156).
 
-## BACKGROUND PLAYBACK — ASKED 2026-09-28 (Josh, iPad: "when I background Night Roll can we keep playing music? YouTube does")
+## PICTURE-IN-PICTURE — ASKED 2026-09-28 (Josh, right after background playback worked on the shell)
+
+Josh: "when I go to the home screen with a YouTube video playing it has
+a small window I can swipe to the side or make smaller — can we do
+that?" PiP is a video feature. Candidates, UNVERIFIED on the iPad:
+(1) canvas.captureStream() into a hidden <video>, then
+webkitSetPresentationMode("picture-in-picture") from a tap — shows the
+roll/cursor in the floating window; (2) native AVPictureInPictureController
+from the shell with a sample-buffer layer fed from the web view — big.
+Risk to weigh first: a <video> element beside the audio engine we just
+stabilized (the engine rewrites on 2026-09-27 all went mute); try only
+after background playback has had real use, one step, by ear. Josh's ruling (2026-09-28, "none of this is actually necessary, but
+add it to the open items and if it isn't too difficult maybe we can
+try"): the window shows the piano ROLL and nothing else. Later, if that
+is easy: whatever view is open (score / tracks / roll). Optional and
+low priority; try only if cheap and only after background playback has
+had real use.
+
+## BACKGROUND PLAYBACK — DONE 2026-09-28 (step 2: navigator.audioSession "playback"; Josh: "basically good enough") (Josh, iPad: "when I background Night Roll can we keep playing music? YouTube does")
 
 Facts from the repo: YouTube plays because it drives a real media
 element; Night Roll plays through a bare AudioContext, which iOS

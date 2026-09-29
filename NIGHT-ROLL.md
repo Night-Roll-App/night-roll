@@ -2608,6 +2608,19 @@ says so in the status line instead of failing. The cfg keys
 values and the mirror-tree fallbacks; nothing writes them from the UI
 any more.
 
+## Background playback (2026-09-28, confirmed by ear in the iPad app)
+
+Two halves, both needed. The shell (~/work/ff/night-roll-app) declares
+Info.plist `UIBackgroundModes = audio` and sets AVAudioSession `.playback`
+in AppDelegate. That alone did not keep playing: WebKit chooses the web
+view's own audio session, and plain Web Audio gets an ambient one that iOS
+silences off-screen. `ensureAudio()` therefore sets
+`navigator.audioSession.type = "playback"` just before it creates the
+AudioContext. The engine itself is unchanged. Chip audio (buffers
+scheduled whole), synth songs and album advance all kept going in Josh's
+test. The August silent `<audio>` keep-alive loop stalled the iPad and
+stays gone (c704c43).
+
 ## Installable app — PWA (Phase 0 of the iPad app plan, 2026-09-26)
 
 `app.webmanifest` (NOT `albums/manifest.json`, the song catalog) +
