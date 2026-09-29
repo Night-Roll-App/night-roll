@@ -726,12 +726,9 @@
      down with gaps above and below on Josh's iPad (a fresh browser had none
      saved) */
   .overlay.docked .sheet { width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; transform: none !important; margin: 0 !important; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0; }
-  /* beside a FULL side dock the song is narrower: the footer keeps ONE row
-     and scrolls sideways instead of wrapping its last button onto a second
-     line. Only a FULL dock does this — an INNER dock only narrows the roll
-     band, not the header/footer rows, so the footer is unaffected. */
-  #shell.hasdock footer { flex-wrap: nowrap; overflow-x: auto; }
-  #shell.hasdock footer > * { flex: none; }
+  /* (a one-row sideways-scrolling footer beside a full-height dock clipped its
+     last chip, ⏳, in half on Josh's iPad; the footer wraps instead — a hidden
+     control is worse than a second row. New docks start "Beside the roll".) */
   /* #asksheet .sheet.ask (below) sets a floating-only custom width at ID+class
      specificity — beats the generic rule above, so it needs its own override
      here too (ID + .docked + .ask) to actually fill the dock while docked */
@@ -755,19 +752,28 @@
      drags whichever one is visible; shown only while that cell is occupied
      (something is docked there, open or not — same as the divider always
      being there to grab even when the panel behind it happens to be closed) */
-  .wmdivider-x { display: none; position: absolute; top: 0; bottom: 0; width: 8px; cursor: ew-resize; touch-action: none; z-index: 3; }
-  .wmdivider-x:hover, .wmdivider-x.dragging { background: rgba(91, 120, 232, 0.35); } /* --accent, translucent */
-  #wmdivider-left-full, #wmdivider-left-inner { right: -4px; }
-  #wmdivider-right-full, #wmdivider-right-inner { left: -4px; }
+  /* Dividers: a visible 2 px line with a centred grip, inside a 40 px touch
+     zone (Josh, on the iPad: he could not see or find the 8 px invisible
+     strips). The zone straddles the seam, 20 px each side. */
+  .wmdivider-x { display: none; position: absolute; top: 0; bottom: 0; width: 40px; cursor: ew-resize; touch-action: none; z-index: 3;
+    background: linear-gradient(to right, transparent 19px, var(--wmline) 19px, var(--wmline) 21px, transparent 21px); }
+  .wmdivider-x::after { content: ""; position: absolute; top: 50%; left: 50%; width: 6px; height: 44px; margin: -22px 0 0 -3px; border-radius: 3px; background: var(--wmgrip); }
+  .wmdivider-x:hover, .wmdivider-x.dragging { --wmline: var(--accent); --wmgrip: var(--accent); }
+  #wmdivider-left-full, #wmdivider-left-inner { right: -20px; }
+  #wmdivider-right-full, #wmdivider-right-inner { left: -20px; }
   #dockleft.occupied #wmdivider-left-full, #dockleftinner.occupied #wmdivider-left-inner,
   #dockright.occupied #wmdivider-right-full, #dockrightinner.occupied #wmdivider-right-inner { display: block; }
-  /* the bottom dock: a height divider along its top edge, and (only with two
-     windows split) a width divider between them */
-  #wmdivider-bottomh { display: none; position: absolute; left: 0; right: 0; top: -4px; height: 8px; cursor: ns-resize; touch-action: none; z-index: 3; }
-  #wmdivider-bottomh:hover, #wmdivider-bottomh.dragging { background: rgba(91, 120, 232, 0.35); }
+  #wmdivider-bottomh { display: none; position: absolute; left: 0; right: 0; top: -20px; height: 40px; cursor: ns-resize; touch-action: none; z-index: 3;
+    background: linear-gradient(to bottom, transparent 19px, var(--wmline) 19px, var(--wmline) 21px, transparent 21px); }
+  #wmdivider-bottomh::after { content: ""; position: absolute; top: 50%; left: 50%; width: 44px; height: 6px; margin: -3px 0 0 -22px; border-radius: 3px; background: var(--wmgrip); }
+  #wmdivider-bottomh:hover, #wmdivider-bottomh.dragging { --wmline: var(--accent); --wmgrip: var(--accent); }
   #dockbottom.occupied #wmdivider-bottomh { display: block; }
-  #wmdivider-bottomsplit { display: none; position: relative; flex: 0 0 8px; cursor: ew-resize; touch-action: none; z-index: 3; }
-  #wmdivider-bottomsplit:hover, #wmdivider-bottomsplit.dragging { background: rgba(91, 120, 232, 0.35); }
+  #wmdivider-bottomsplit { display: none; position: relative; flex: 0 0 14px; cursor: ew-resize; touch-action: none; z-index: 3;
+    background: linear-gradient(to right, transparent 6px, var(--wmline) 6px, var(--wmline) 8px, transparent 8px); }
+  #wmdivider-bottomsplit::before { content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -13px; } /* 40 px touch zone */
+  #wmdivider-bottomsplit::after { content: ""; position: absolute; top: 50%; left: 50%; width: 6px; height: 44px; margin: -22px 0 0 -3px; border-radius: 3px; background: var(--wmgrip); }
+  #wmdivider-bottomsplit:hover, #wmdivider-bottomsplit.dragging { --wmline: var(--accent); --wmgrip: var(--accent); }
+  #shell { --wmline: rgba(154, 163, 199, 0.35); --wmgrip: rgba(154, 163, 199, 0.6); }
   #dockbottom.split #wmdivider-bottomsplit { display: block; }
   /* sheets move: drag by the title line — the Ask sheet over the capture panel
      hid it (Josh, 2026-09-27: "I should be able to move these dialogues around") */
@@ -7058,6 +7064,7 @@ let voiceMenuTi = -1;
 let voiceMenuGroup = null; // null = family list; a title = that family's instruments
 const GAME_FAMILY = "Game instruments"; // voiceMenuGroup's sentinel for the games picker (never a real VOICE_GROUPS title)
 let voiceMenuGameVault = null; // inside GAME_FAMILY: null = pick a game; {title, vault, songs} = that game's menu/leaf level
+let voiceMenuGameSys = null; // the games picker's console level (a FOLDER_NAMES key), null = the systems list
 let voiceMenuGameSub = null; // inside a chosen game: null = its menu (all instruments + songs); "all" = the A–Z leaf list; {title, path} = one song's leaf list
 const gameVoiceLabels = new Map(); // "game:…" voice id -> "<Game title> · <nameGuess>", filled as known
 function gameVoiceLabel(v) { // sync read for menu rows; fills in async and refreshes the open menu once known — "fall back to the id" (spec) until then
@@ -7101,7 +7108,7 @@ function openVoiceMenu(ti, anchor) { // position ONCE from the chip, then show
   const cur = song.tracks[ti].voice || "auto";
   const home = VOICE_GROUPS.find(([, vs]) => vs.some(([id]) => id === cur));
   voiceMenuGroup = home ? home[0] : cur.startsWith("game:") ? GAME_FAMILY : cur.startsWith("sf2:") ? SF2_FAMILY : null;
-  voiceMenuGameVault = null; voiceMenuGameSub = null; // the games picker always opens at the games list, not drilled into one
+  voiceMenuGameVault = null; voiceMenuGameSub = null; voiceMenuGameSys = null; // the games picker always opens at the systems list, not drilled into one
   voiceMenuSf2Slug = null; // same: the soundfonts picker always opens at the fonts list
   buildVoiceMenu(ti);
   const r = anchor.getBoundingClientRect();
@@ -7147,7 +7154,7 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
     gb.className = "fitem";
     const gholds = cur.startsWith("game:");
     gb.textContent = GAME_FAMILY + "  ›" + (gholds ? "   (" + curLabel + ")" : "");
-    gb.addEventListener("click", () => { voiceMenuGroup = GAME_FAMILY; voiceMenuGameVault = null; voiceMenuGameSub = null; buildVoiceMenu(ti); });
+    gb.addEventListener("click", () => { voiceMenuGroup = GAME_FAMILY; voiceMenuGameVault = null; voiceMenuGameSub = null; voiceMenuGameSys = null; buildVoiceMenu(ti); });
     menu.appendChild(gb);
     const sb = document.createElement("button");
     sb.className = "fitem";
@@ -7303,8 +7310,8 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
 }
 function gameVoiceId(g, inst) { return "game:" + g.vault.replace(/\/$/, "") + ":" + inst.id; }
 function buildGameVoicePicker(ti, menu, tr, cur) { // GAME_FAMILY: renderGameInstNav shared with File → 🎛 Instruments…; a tap assigns + auditions
-  const nav = {game: voiceMenuGameVault, sub: voiceMenuGameSub};
-  const g0 = nav.game, sub0 = nav.sub; // frozen: a stale async fill from a nav the user already left must not append
+  const nav = {sys: voiceMenuGameSys, game: voiceMenuGameVault, sub: voiceMenuGameSub};
+  const g0 = nav.game, sub0 = nav.sub, sys0 = nav.sys; // frozen: a stale async fill from a nav the user already left must not append
   renderGameInstNav(menu, nav, {
     rowFactory: (label, onClick, dim) => {
       const b = document.createElement("button");
@@ -7326,8 +7333,8 @@ function buildGameVoicePicker(ti, menu, tr, cur) { // GAME_FAMILY: renderGameIns
       instAudition(g.vault, lib, inst).catch(e => setInfo("⚠ " + e.message)); // audition once, like any other pick
       buildVoiceMenu(ti);
     },
-    onNavigate: () => { voiceMenuGameVault = nav.game; voiceMenuGameSub = nav.sub; buildVoiceMenu(ti); },
-    isCurrent: () => voiceMenuTi === ti && voiceMenuGroup === GAME_FAMILY && voiceMenuGameVault === g0 && voiceMenuGameSub === sub0,
+    onNavigate: () => { voiceMenuGameSys = nav.sys; voiceMenuGameVault = nav.game; voiceMenuGameSub = nav.sub; buildVoiceMenu(ti); },
+    isCurrent: () => voiceMenuTi === ti && voiceMenuGroup === GAME_FAMILY && voiceMenuGameVault === g0 && voiceMenuGameSub === sub0 && voiceMenuGameSys === sys0,
   }).catch(e => setInfo("⚠ " + e.message));
 }
 // SF2_FAMILY's own small 2-level nav (font -> its presets) — the SAME calling
@@ -14078,10 +14085,23 @@ async function instAlbums() { // [{title, vault, songs: [[songTitle, path]] (CAT
     if (!songs.length) continue;
     const meta = await albumMetaFor(songs[0][1]).catch(() => null);
     const n = meta && meta.nsf;
-    if (n && typeof n.vault === "string" && INST_CHIPS.has(n.chip || "nsf")) out.push({title: meta.title || title, vault: n.vault, songs});
+    if (n && typeof n.vault === "string" && INST_CHIPS.has(n.chip || "nsf")) out.push({title: meta.title || title, vault: n.vault, songs, sys: String(songs[0][1]).split("/")[1]});
   }
-  return out.sort((a, b) => a.title.localeCompare(b.title));
+  return out.sort((a, b) => titleCompare(a.title, b.title));
 }
+// Titles in reading order: a trailing Roman numeral sorts as its number, so
+// Final Fantasy I, II, III, IV, V … X — plain A–Z put IV before IX and V after
+// Legend, and Josh could not find IV and V in the list (2026-09-29)
+function romanValue(r) {
+  const v = {I: 1, V: 5, X: 10, L: 50};
+  let n = 0;
+  for (let i = 0; i < r.length; i++) { const a = v[r[i]], b = v[r[i + 1]] || 0; n += a < b ? -a : a; }
+  return n;
+}
+function titleSortKey(t) { return String(t).replace(/\b([IVXL]+)\b(?=\s*(?:$|[:(\-–]))/, (m, r) => String(romanValue(r)).padStart(3, "0")); }
+function titleCompare(a, b) { return titleSortKey(a).localeCompare(titleSortKey(b), undefined, {numeric: true, sensitivity: "base"}); }
+// the systems list's order: console generations, the albums/ folder keys
+const INST_SYS_ORDER = ["nes", "game-boy", "snes", "n64", "ps1", "ps2"];
 // the album kinds tools/instruments/extract.mjs builds libraries for (an NES
 // album.json names no chip: plain NSF is the default kind)
 const INST_CHIPS = new Set(["nsf", "gbs", "spc", "psf", "psf2", "usf"]);
@@ -14249,10 +14269,16 @@ async function renderGameInstNav(container, nav, opts) {
     const games = await instAlbums();
     if (!opts.isCurrent()) return;
     loading.remove();
-    if (ctx) container.appendChild(opts.rowFactory("Instruments in this song ›",
-      () => { nav.game = ctx.g; nav.sub = {title: ctx.songTitle, path: ctx.path}; go(); }));
-    if (!games.length) { container.appendChild(opts.rowFactory("No published game has instruments yet (PlayStation, N64, and Super Nintendo imports get them at publish).", () => {}, true)); return; }
-    for (const g of games) container.appendChild(opts.rowFactory(g.title + " ›", () => { nav.game = g; nav.sub = null; go(); }));
+    if (!games.length) { container.appendChild(opts.rowFactory("No published game has instruments yet.", () => {}, true)); return; }
+    if (!nav.sys) { // level 0: which system (Josh: organized "by game system … like the rest of the folders")
+      if (ctx) container.appendChild(opts.rowFactory("Instruments in this song ›",
+        () => { nav.sys = ctx.g.sys; nav.game = ctx.g; nav.sub = {title: ctx.songTitle, path: ctx.path}; go(); }));
+      const present = [...new Set(games.map(g => g.sys))].sort((a, b) => (INST_SYS_ORDER.indexOf(a) + 1 || 99) - (INST_SYS_ORDER.indexOf(b) + 1 || 99));
+      for (const sys of present) container.appendChild(opts.rowFactory((FOLDER_NAMES[sys] || sys) + " ›", () => { nav.sys = sys; go(); }));
+      return;
+    }
+    container.appendChild(opts.rowFactory("‹ All systems", () => { nav.sys = null; go(); }, true));
+    for (const g of games.filter(x => x.sys === nav.sys)) container.appendChild(opts.rowFactory(g.title + " ›", () => { nav.game = g; nav.sub = null; go(); }));
     return;
   }
   const g = nav.game;
@@ -14283,7 +14309,7 @@ async function renderGameInstNav(container, nav, opts) {
   }
   for (const {inst, label} of list) container.appendChild(opts.rowFactory(opts.instrumentLabel(label, inst, g), () => opts.onInstrument(g, lib, inst, label), false));
 }
-let instNav = {game: null, sub: null}; // File → 🎛 Instruments…'s own nav state
+let instNav = {sys: null, game: null, sub: null}; // File → 🎛 Instruments…'s own nav state
 let instNavToken = 0;
 async function renderInstSheet() { // returns once drawn (tests can await it); the fileinst click below doesn't need to
   const rows = document.getElementById("instrows"); rows.innerHTML = "";
@@ -14306,7 +14332,7 @@ async function renderInstSheet() { // returns once drawn (tests can await it); t
 document.getElementById("fileinst").addEventListener("click", () => {
   closeFileMenus();
   document.getElementById("instsheet").classList.add("on");
-  instNav = {game: null, sub: null};
+  instNav = {sys: null, game: null, sub: null};
   renderInstSheet();
 });
 document.getElementById("fileopen").addEventListener("click", e => {
@@ -18723,9 +18749,15 @@ function wmLayoutSide(side) {
   const wantEl = wantId && wmAllowed(wmInnerWidth()) && document.getElementById(wantId);
   const wantMode = (state && state.mode) || "full";
   if (wmSideEl[side] && wmSideEl[side] !== wantEl) { // floating: move whatever WAS docked back to its home
-    const home = document.getElementById(wmSideEl[side].id + "-home");
-    if (home) home.appendChild(wmSideEl[side]);
-    wmSideEl[side].classList.remove("docked");
+    // …unless another dock holds it now: moving the AI from Right to Left
+    // docked it left (left lays out first), then this Right pass sent it home,
+    // leaving an empty reserved strip and a floating panel (Josh's iPad,
+    // 2026-09-29: "docking left does not work at all")
+    if (!wmWhereIs(wm, wmSideEl[side].id)) {
+      const home = document.getElementById(wmSideEl[side].id + "-home");
+      if (home && wmSideEl[side].parentNode !== home) home.appendChild(wmSideEl[side]);
+      if (wmSideEl[side].classList.contains("docked")) wmSideEl[side].classList.remove("docked");
+    }
     wmSideEl[side] = null;
   }
   if (wantEl) {
@@ -18758,6 +18790,7 @@ function wmLayoutBottom() {
   const wantEls = wantIds.map(id => document.getElementById(id)).filter(Boolean);
   for (const el of wmBottomEls) { // float anything parked here that's no longer wanted
     if (wantEls.includes(el)) continue;
+    if (wmWhereIs(wm, el.id)) continue; // moved to a side dock: that dock placed it
     const home = document.getElementById(el.id + "-home");
     if (home && el.parentNode !== home) home.appendChild(el);
     if (el.classList.contains("docked")) el.classList.remove("docked");
@@ -18814,6 +18847,7 @@ function wmLayoutAll() {
   if (shell.classList) shell.classList.toggle("hasdock", !!(leftFull || rightFull));
   wmSyncDockButtons();
   if (typeof resize === "function") resize(); // same path a real window resize takes
+  if (typeof askScrollEnd === "function" && wmWhereIs(wm, "asksheet")) askScrollEnd(); // re-parenting must not strand the chat mid-scroll
 }
 // ---- action functions: the Dock menu (and tests) call these directly.
 // Each keeps the "a window is docked in at most one place" invariant, saves,
@@ -18825,7 +18859,7 @@ function wmDockSide(id, side, mode) { // dock `id` to "left"/"right" (mode: "ful
   if (next[otherSide] && next[otherSide].id === id) next = wmClearSide(next, otherSide);
   if (next.bottom && next.bottom.ids && next.bottom.ids.includes(id)) next = wmClearBottom(next, id);
   const cur = next[side];
-  next = wmSetSide(next, side, id, (cur && cur.w) || WM_DEFAULT_W, mode || (cur && cur.id === id ? cur.mode : "full"), wmInnerWidth());
+  next = wmSetSide(next, side, id, (cur && cur.w) || WM_DEFAULT_W, mode || (cur && cur.id === id ? cur.mode : "inner"), wmInnerWidth()); // a new dock starts beside the roll: header and footer keep the full width
   wm = next;
   wmSave(wm);
   wmLayoutAll();
@@ -19952,12 +19986,16 @@ const SHEET_TOP = new MutationObserver(ms => {
       if (micBtn && m.target.contains(micBtn)) micStop(true);
       continue;
     }
+    // only a sheet that has just OPENED starts at its top: docking, undocking
+    // and switching sides rewrite the class too, and reset the AI chat to its
+    // first message every time (Josh, 2026-09-29, the docked AI panel)
+    if (/(^|\s)on(\s|$)/.test(m.oldValue || "")) continue;
     const sh = m.target.querySelector(".sheet");
     if (sh) sh.scrollTop = 0;
   }
 });
 for (const ov of document.querySelectorAll(".overlay")) {
-  SHEET_TOP.observe(ov, {attributes: true, attributeFilter: ["class"]}); // incl. confirm
+  SHEET_TOP.observe(ov, {attributes: true, attributeFilter: ["class"], attributeOldValue: true}); // incl. confirm
   if (MODAL_KEEP.has(ov.id)) continue;
   // pointerdown, and only when the backdrop ITSELF is the target — a drag that
   // starts inside the sheet and releases outside must not count as a dismiss

@@ -3271,9 +3271,11 @@ test("Window manager: docking right (full height) sets the pref, a docked class,
   assert.equal(val(`document.getElementById("asksheet-h2")._wmDockBtn.style.display`), "", "the Dock control shows at desktop width");
   assert.equal(val(`document.getElementById("asksheet-h2")._wmDockBtn.textContent`), "Dock");
   run(`wmDockSide("asksheet", "right")`);
+  assert.equal(val(`wm.right.mode`), "inner", "a new dock starts beside the roll (header and footer keep the full width)");
+  run(`wmFloat("asksheet"); wmDockSide("asksheet", "right", "full")`);
   assert.equal(val(`wm.right.id`), "asksheet");
   assert.equal(val(`wm.right.w`), 380, "first dock uses the default width");
-  assert.equal(val(`wm.right.mode`), "full", "full height by default");
+  assert.equal(val(`wm.right.mode`), "full");
   assert.equal(val(`asksheet.classList.contains("docked")`), true);
   assert.equal(val(`document.getElementById("dockright").classList.contains("occupied")`), true);
   assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "380px", "the song area gives up exactly the dock's width");
@@ -3296,7 +3298,7 @@ test("Window manager: docking right (full height) sets the pref, a docked class,
 
 test("Window manager: dock left, and beside-the-roll (inner) mode narrows only the roll band, not the footer", () => {
   run(`window.innerWidth = 1200; document.getElementById("notelistsheet").classList.add("on"); wm = {}; wmLayoutAll();`);
-  run(`wmDockSide("notelistsheet", "left")`);
+  run(`wmDockSide("notelistsheet", "left", "full")`);
   assert.equal(val(`wm.left.id`), "notelistsheet");
   assert.equal(val(`wm.left.mode`), "full");
   assert.equal(val(`document.getElementById("dockleft").classList.contains("occupied")`), true);
@@ -4109,13 +4111,16 @@ test("instruments: the sheet lists games with a library; a game's menu is All in
     const fresh = all.slice(seen); seen = all.length; return fresh;
   };
   // no song open: no shortcut
-  run(`songKey = null; instNav = {game: null, sub: null};`);
+  run(`songKey = null; instNav = {sys: null, game: null, sub: null};`);
   await run(`renderInstSheet()`);
-  assert.deepEqual(rowLabels(), ["GoldenEye 007 ›"], "only games with a PS1/N64 library; no shortcut without an open game song");
+  assert.deepEqual(rowLabels(), ["Nintendo 64 ›"], "level 0 is the systems that have a library (Josh: organized by game system); no shortcut without an open game song");
+  run(`instNav = {sys: "n64", game: null, sub: null};`);
+  await run(`renderInstSheet()`);
+  assert.deepEqual(rowLabels(), ["‹ All systems", "GoldenEye 007 ›"], "a system lists its games");
   // a game song open: the shortcut leads
-  run(`songKey = "albums/n64/goldeneye-007/dam.mid"; instNav = {game: null, sub: null};`);
+  run(`songKey = "albums/n64/goldeneye-007/dam.mid"; instNav = {sys: null, game: null, sub: null};`);
   await run(`renderInstSheet()`);
-  assert.deepEqual(rowLabels(), ["Instruments in this song ›", "GoldenEye 007 ›"], "the shortcut appears only for a game song, and leads");
+  assert.deepEqual(rowLabels(), ["Instruments in this song ›", "Nintendo 64 ›"], "the shortcut appears only for a game song, and leads");
   run(`songKey = null;`);
   // the game's menu: All instruments (A–Z, natural sort — not most-used-first), then its songs in album order
   await run(`instAlbums().then(gs => { globalThis.__g = gs[0]; })`);
@@ -4229,8 +4234,9 @@ test("game instrument voice: the voice & color menu's Game instruments picker (g
     run(`(() => { const row = [...document.getElementById("voicemenu").children].find(r => r.textContent === ${JSON.stringify(text)}); if (!row) throw new Error("no row " + ${JSON.stringify(text)}); row.click(); })();`);
     await settle();
   };
-  run(`voiceMenuTi = 0; voiceMenuGroup = "Game instruments"; voiceMenuGameVault = null; voiceMenuGameSub = null; buildVoiceMenu(0);`);
+  run(`voiceMenuTi = 0; voiceMenuGroup = "Game instruments"; voiceMenuGameVault = null; voiceMenuGameSub = null; voiceMenuGameSys = null; buildVoiceMenu(0);`);
   await settle();
+  await clickByText("Nintendo 64 ›"); // systems first (Josh: organized by game system)
   await clickByText("GoldenEye 007 ›");
   await clickByText("All instruments (A–Z) ›");
   await clickByText("   Soft pad  · in 1 song");
@@ -4787,4 +4793,10 @@ test("settings: a device's saved repos from before the move read as Night-Roll-A
     assert.equal(val(`cfg().nsfBase`), "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main");
     assert.equal(val(`cfg().analysisRepo`), "joshcough/night-roll-test-songs", "a different repo that merely starts with the name stays");
   } finally { run(`if (__saved === null) localStorage.removeItem("ff1roll-cfg"); else localStorage.setItem("ff1roll-cfg", __saved); cfg.c = null;`); }
+});
+
+test("titles sort in reading order: a trailing Roman numeral counts as its number (Final Fantasy I … X)", () => {
+  const t = ["Final Fantasy X", "Final Fantasy IV", "Final Fantasy IX", "Final Fantasy Legend", "Final Fantasy V", "Final Fantasy I", "Final Fantasy VII", "Chrono Trigger"];
+  assert.deepEqual(val(`${JSON.stringify(t)}.sort(titleCompare)`),
+    ["Chrono Trigger", "Final Fantasy I", "Final Fantasy IV", "Final Fantasy V", "Final Fantasy VII", "Final Fantasy IX", "Final Fantasy X", "Final Fantasy Legend"]);
 });
