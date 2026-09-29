@@ -1642,7 +1642,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -4210,4 +4210,32 @@ test("audio: the page asks WebKit for a 'playback' audio session before its Audi
   const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const i = src.indexOf('navigator.audioSession.type = "playback"'), j = src.indexOf("audio = new (window.AudioContext || window.webkitAudioContext)()");
   assert.ok(i > 0 && j > i, "set before the context is created");
+});
+
+test("⚠ log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on", () => {
+  run(`appErrors.length = 0; appDebug.length = 0; localStorage.removeItem("ff1roll-debuglog");
+       logErr("same thing"); logErr("same thing"); logErr("same thing"); logDebug("probe detail");`);
+  assert.equal(val(`appErrors.length`), 1);
+  assert.equal(val(`appErrors[0].n`), 3);
+  assert.match(val(`logLine(appErrors[0])`), /same thing  ×3$/);
+  assert.equal(run(`document.getElementById("errbtn").textContent`), "⚠ 1", "the debug line is kept but not counted");
+  run(`localStorage.setItem("ff1roll-debuglog", "1"); errChip();`);
+  assert.equal(run(`document.getElementById("errbtn").textContent`), "⚠ 2", "with the switch on it is counted and shown");
+  assert.match(val(`logLines().map(logLine).join("|")`), /\[debug\] probe detail/);
+  run(`localStorage.removeItem("ff1roll-debuglog"); appErrors.length = 0; appDebug.length = 0; errChip();`);
+});
+
+test("audio wake outside a tap: a clock that won't move is a debug line with what was measured, never an ⚠ error or a rebuild", async () => {
+  run(`appErrors.length = 0; appDebug.length = 0;
+       globalThis.__realAudio = audio;
+       audio = {state: "running", currentTime: 5, resume: async () => {}, close: async () => {}};
+       globalThis.__realGA = gestureActive; gestureActive = () => false;`);
+  try {
+    run(`globalThis.__woke = false; resumeAudio().then(() => { globalThis.__woke = true; })`);
+    for (let i = 0; i < 40 && !val(`globalThis.__woke`); i++) { app.tick(50); await new Promise(r => setImmediate(r)); }
+    assert.equal(val(`globalThis.__woke`), true, "the probe finished");
+    assert.equal(val(`appErrors.length`), 0, "no ⚠ error");
+    assert.match(val(`appDebug.map(x => x.msg).join("|")`), /clock not moving, no tap to wake it \(state running, clock 5\.000s → 5\.000s over \d+ ms, app (visible|hidden), (playing|stopped)\)/);
+    assert.equal(val(`audio.currentTime`), 5, "the same context: nothing rebuilt");
+  } finally { run(`audio = globalThis.__realAudio; gestureActive = globalThis.__realGA; appErrors.length = 0; appDebug.length = 0;`); }
 });

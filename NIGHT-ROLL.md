@@ -2622,6 +2622,20 @@ songs and album advance off-screen ride the page's timers and were not
 reported separately. The August silent `<audio>` keep-alive loop stalled the iPad and
 stays gone (c704c43).
 
+## The ⚠ log: two levels (2026-09-28)
+
+`logErr` is for problems Josh can act on and raises the ⚠ chip.
+`logDebug` is for diagnostics: audio state changes, engine rebuilds, and
+wake-up probes that found the clock not moving. It is kept in `appDebug`
+and shown or counted only with Settings → Debug log on (device-local
+`ff1roll-debuglog`). A line identical to the previous one becomes ×N.
+`askAppState` feeds Ask the last lines of both when the switch is on.
+`clockAlive` watches the clock for up to 500 ms; the old 40 ms probe
+called a healthy context dead on return from the background, which
+logged "audio asleep ×7" while the music played on. On return, a context
+that is running and playing is left alone, and only one wake runs at a
+time; a rebuild still happens only inside a tap.
+
 ## Installable app — PWA (Phase 0 of the iPad app plan, 2026-09-26)
 
 `app.webmanifest` (NOT `albums/manifest.json`, the song catalog) +
