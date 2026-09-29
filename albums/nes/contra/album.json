@@ -34,7 +34,7 @@
    },
    "game-over": {
     "n": 11,
-    "secs": 18.865912
+    "secs": 6.599736
    },
    "jungle-hangar-stages-1-7": {
     "n": 2,
@@ -46,11 +46,11 @@
    },
    "title-screen": {
     "n": 1,
-    "secs": 17.982614
+    "secs": 6.0664240000000005
    },
    "victory": {
     "n": 9,
-    "secs": 16.865992
+    "secs": 4.733144
    },
    "waterfall-stage-3": {
     "n": 3,
