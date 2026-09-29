@@ -5939,6 +5939,12 @@ function ensureAudio() { // one context for the app's lifetime — iOS Safari
     audio = null; master = null; pulse25 = null; pulse12 = null; trackGains = []; trackPanners = []; metGain = null; organWave = null;
   }
   if (audio) return;
+  // WebKit picks the page's audio session itself: plain Web Audio gets an
+  // "ambient" one, which iOS silences the moment the app leaves the screen
+  // (the shell's AVAudioSession .playback and its audio background mode were
+  // not enough — Josh, 2026-09-28, Chrono Trigger stopped on leaving).
+  // "playback" is a music player's session: it keeps going off-screen.
+  try { if (navigator.audioSession && navigator.audioSession.type !== "playback") navigator.audioSession.type = "playback"; } catch (err) { console.log("[audio] audioSession: " + err.message); }
   audio = new (window.AudioContext || window.webkitAudioContext)();
   audio.onstatechange = () => { console.log("[audio] state:", audio && audio.state); if (audio && audio.state === "closed") logErr("audio engine closed by the system — tap ▶ to rebuild it"); };
   master = audio.createGain();

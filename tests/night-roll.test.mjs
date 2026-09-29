@@ -4205,3 +4205,9 @@ test("chip render: published PCM becomes AudioBuffers at once and the Float32 co
     assert.deepEqual(val(`Object.keys(chip.pcm).sort()`), ["a", "b"], "the converted track is put back");
   } finally { run(`delete globalThis.AudioBuffer; chip.pcm = null; chip.buffers = null; chip.key = null;`); }
 });
+
+test("audio: the page asks WebKit for a 'playback' audio session before its AudioContext, so iOS keeps playing off-screen", () => {
+  const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const i = src.indexOf('navigator.audioSession.type = "playback"'), j = src.indexOf("audio = new (window.AudioContext || window.webkitAudioContext)()");
+  assert.ok(i > 0 && j > i, "set before the context is created");
+});
