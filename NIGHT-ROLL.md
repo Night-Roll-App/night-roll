@@ -2626,6 +2626,97 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   `applyTake` undo/mirror, target default rule, Bassist golden fixture,
   FEATURES keywords `✦ Ask` / `✦ Fill`.
 
+## Docked AI panel (build step 1 of the windowing plan, 2026-09-29)
+
+Step 1 of open-items.md's "a real windowing system" (QUEUED IDEA,
+2026-09-27, REOPENED 2026-09-29): `#asksheet` can pin to the right edge
+as a real panel instead of a floating `.overlay` — no backdrop, the roll
+stays fully usable (tap, edit, play) while it's open. Code sits right
+after `sheetDrag()` in index.html, under `// ---- ✦ AI panel docking`.
+
+- **The layout mechanism — one rule, every strip follows it.** `aiDockLayout()`
+  sets `document.documentElement.style.paddingRight` (the `<html>` element,
+  not `<body>` — see below) to the panel's clamped width; `<body>` is a
+  block child of `<html>` with no explicit width, so its content box — and
+  every flex child in it (`header`, `#trackrow`, `#rollwrap`, `#editrow`,
+  `footer`, …) — shrinks into what's left with this ONE line. No per-view
+  special-casing: `#rollwrap { flex: 1 }` and `align-items: stretch` (the
+  flex-column default) do the rest. The panel itself is
+  `#asksheet.on.docked` (CSS, ID beats `.overlay.on`'s two classes so it
+  overrides display/position/padding/background without touching that
+  rule): `position: fixed; inset: 0 0 0 auto;` at the JS-set pixel width —
+  its own box IS the panel, so there's no dead backdrop area outside it to
+  swallow a tap meant for the song. Scoped to `.on` too, or the pref alone
+  (closed) would force it visible.
+- **Redraw:** `resize()` — the exact function `window`'s own `"resize"`
+  listener already calls — runs directly from `aiDockLayout()` on every
+  open/toggle/drag/live-window-resize. It reads `wrap.clientWidth`, which
+  in a real browser already reflects the `<html>` padding by the time
+  `resize()` runs (synchronous layout), so the roll/score/tracks canvas,
+  the ruler, the lanes, and the follow-the-playhead math (`wrap.clientWidth`
+  read live everywhere, never cached) all follow with zero extra wiring.
+  `new ResizeObserver(resize).observe(wrap)` also fires on its own in a
+  real browser whenever the reservation changes the layout — `aiDockLayout()`
+  calling `resize()` directly is belt-and-suspenders (and the ONLY path in
+  the vm suite, where `ResizeObserver` is a no-op stub).
+- **Why `<html>`, not `<body>`:** the vm harness (tests/harness.mjs)
+  stubs `document.documentElement` but deliberately has no `document.body`
+  — `sheetDrag()` and a few other real-browser-only blocks use
+  `!document.body` as their "is this a real browser" guard and bail out
+  early in tests. Reserving on `<body>` instead would have made the whole
+  feature untestable (or worse, silently broken those guards if `body`
+  were added to the stub — tried it, it does: `addGrips()` then hits
+  `document.querySelectorAll`, which the harness doesn't have either, and
+  the app fails to boot in every test). `<html>` has no such meaning
+  attached and reserves the identical width for the identical reason.
+- **Pref:** `ff1roll-aidock` = `{docked, width}`, flat localStorage, loaded
+  once into `let aiDock` at parse time (not the boot-path early block —
+  nothing `setSong`/`editableSong`/`renderViewMenu` read touches it; it's
+  read only when Ask opens or the dock control is used). `aiDockClampW`
+  bounds width to `[280, 60vw]`; `aiDockAllowed()` is `window.innerWidth
+  >= 700` — below that the `⇥` control hides (CSS `display:none`,
+  `aiDockLayout`) and Ask is always the floating sheet, pref or no pref.
+  Shrinking the window live below 700 un-docks (the `window` `"resize"`
+  listener re-runs `aiDockLayout()`), widening it back re-applies the
+  saved pref without asking again.
+- **Divider:** `#askdockdivider`, a sibling of `.sheet.ask` inside
+  `#asksheet`, `position:absolute; left:-4px` on the panel's own fixed
+  box — dragging it left (toward center) widens the panel. Same
+  pointerdown/pointermove/pointerup shape as `sheetDrag`'s own `◢` grip;
+  width is applied live on every `pointermove` and saved once on release.
+- **Everything else about the sheet works unchanged while docked** — chat
+  log scroll, input, song/general switch, jobs polling, the notes-from-
+  the-Mac badge — since docking only ever touches `#asksheet`'s own box
+  and CSS class, never its children. `sheetDrag()` is told to leave a
+  docked sheet alone (`.overlay.docked` early-return in its pointerdown
+  handler, plus a button exclusion in `handleFor` so the ⇥/⇤ button inside
+  `<h2>` doesn't start a title-drag) and its `restore()`-on-open
+  (position/size from `ff1roll-sheetpos-<id>`) is skipped for a docked
+  sheet so undocking (which drops the `docked` class) triggers exactly one
+  `restore()` and returns to the floating spot/size, unchanged.
+- **Close paths:** `SHEET_TOP` (the existing per-overlay `MutationObserver`
+  that resets scroll position on open) gained one line —
+  `if (m.target.id === "asksheet") aiDockLayout();` — the single choke
+  point every close already runs through (✕, backdrop tap, Esc, or
+  reopening), so the reservation always matches visibility however it
+  closes. Real-browser-only, like the rest of that block; tests call
+  `aiDockLayout()`/`aiDockToggle()` directly instead.
+- **Phone width:** the `⇥` control hides; the panel is always the floating
+  sheet. Not e2e-verified (no e2e in this repo's workflow) — vm-tested via
+  `window.innerWidth`.
+- **Tests:** `tests/night-roll.test.mjs`, "AI dock: …" (four tests) —
+  toggle sets the pref/class/reservation and undock restores it, phone
+  width refuses and re-offers live on resize, the divider clamps and
+  saves only on release, the pref survives a reload (`createApp` with
+  storage). FEATURES keyword "Dock right".
+- **Step 2 reuse:** any future docked sheet needs only: give it a dock
+  control, toggle a `.docked` class on its `.overlay` id, and call
+  something like `aiDockLayout()` scoped to that sheet — the CSS pattern
+  (`#id.on.docked`), the `sheetDrag` exclusions (already generic on
+  `.overlay.docked`), and the `<html>`-padding mechanism all already
+  generalize. Multiple docked sheets sharing the edge (stacking, split
+  width) is not designed yet.
+
 ## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
 
 **"Edited since last save" means "differs from the published copy" (2026-09-29).**

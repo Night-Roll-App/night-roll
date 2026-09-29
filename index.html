@@ -666,14 +666,38 @@
   /* ✦ AI: the in-app AI sheet. The log is the tall part; rows stay fixed. */
   .sheet.ask { height: 88dvh; width: min(680px, 100%); }
   #asksheet .sheet.ask { width: max(min(680px, 100%), 75vw); max-width: 100%; } /* three quarters of the screen, whatever rule comes later (Josh, 2026-09-27: "shrunk back to a third") */
+  /* Docked ✦ AI panel (build step 1 of the windowing plan — open-items.md
+     "a real windowing system", REOPENED 2026-09-29): pins the sheet to the
+     right edge as a real panel instead of a centered floating overlay, no
+     backdrop, so it never blocks the roll. #asksheet.on.docked's own box IS
+     the panel (fixed, exactly its reserved width) — there is no dead
+     backdrop area outside it to swallow a tap meant for the song. The ID
+     selector outranks .overlay.on so this wins without touching that rule;
+     scoped to .on too, or the pref alone would force the closed panel
+     visible. aiDockLayout() reserves the same width on <html>
+     (padding-right — not <body>, so the vm harness can exercise it; see
+     aiDockLayout) so header/track chips/roll/footer all reflow into what's
+     left with one mechanism — see NIGHT-ROLL.md "Docked AI panel". */
+  #asksheet.on.docked { position: fixed; inset: 0 0 0 auto; background: transparent; padding: 0; display: flex; align-items: stretch; justify-content: stretch; z-index: 15; }
+  #asksheet.docked .sheet.ask { width: 100%; max-width: none; height: 100%; max-height: none; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0; }
+  #asksheet.docked .sheetgrip { display: none; } /* the divider resizes it instead */
+  #askdock { margin-left: auto; cursor: pointer; min-height: 28px; padding: 2px 9px; font-size: 12px; }
+  #askdockdivider { display: none; }
+  #asksheet.on.docked #askdockdivider { display: block; position: absolute; left: -4px; top: 0; bottom: 0; width: 8px; cursor: ew-resize; touch-action: none; z-index: 3; }
+  #askdockdivider:hover, #askdockdivider.dragging { background: rgba(91, 120, 232, 0.35); } /* --accent, translucent */
   /* sheets move: drag by the title line — the Ask sheet over the capture panel
      hid it (Josh, 2026-09-27: "I should be able to move these dialogues around") */
   .sheet > h2, #importsheet .row:first-child { cursor: move; touch-action: none; -webkit-user-select: none; user-select: none; }
   .sheet.dragging { transition: none; }
   /* ◢ resize grip: a real element (a pseudo-element gets no pointer events),
-     sticky at the end of the scroll box so it stays visible at the corner */
+     sticky at the end of the scroll box so it stays visible at the corner.
+     order: 9999 (Josh, iPad, 2026-09-29): addGrips appends it once at boot,
+     so a sheet whose content grows later (Publish's job rows) pushes the
+     grip out of last-child position in the flex column — it surfaced
+     two-thirds of the way down instead of the bottom-right corner. order
+     pins it last regardless of what appends after it, in every .sheet. */
   .sheetgrip { position: sticky; bottom: -16px; align-self: flex-end; flex: none; width: 26px; height: 26px; margin: -8px -12px -12px 0;
-               cursor: nwse-resize; touch-action: none; color: var(--dim); font-size: 16px; line-height: 26px; text-align: center; opacity: .7; z-index: 2; }
+               cursor: nwse-resize; touch-action: none; color: var(--dim); font-size: 16px; line-height: 26px; text-align: center; opacity: .7; z-index: 2; order: 9999; }
   #importsheet .sheetgrip { margin: -4px -8px -8px 0; bottom: -12px; }
   #asklog { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
             -webkit-user-select: text; user-select: text; min-height: 80px; }
@@ -1412,6 +1436,7 @@
       <dt>✦ AI</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ AI</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
       <dt>House rules</dt><dd>Hints and direction first. It confirms or refines a guess you've made, and it tells you outright only when you insist or say you give up. General theory questions it answers directly. What it never does: reveal a key you haven't set, annotate on its own initiative, or answer a question you didn't ask.</dd>
       <dt>Move a sheet</dt><dd>Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (ASK, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk in Ask; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
+      <dt>⇥ Dock right</dt><dd>Tap <b>⇥</b> beside ASK to pin the sheet to the right edge as its own panel instead of a floating window — no backdrop, so you can keep working the roll (tap, edit, play) with it open, the song laid out in what's left. Drag the strip on its left edge to resize it (280px to about 60% of the window). <b>⇤</b> floats it again, right where it was. Remembered on this device — opening ✦ AI reopens it docked if you left it that way. On a phone-width window <b>⇥</b> is hidden and Ask is always the floating sheet — there's no room to give the song.</dd>
       <dt>⏳ Jobs</dt><dd>Captures and publishes run as background jobs: start one and close its panel — the <b>⏳</b> chip in the footer shows how many are running, tap it for the list (title, a progress bar, progress text like "12/92 · Frog's Theme 40%", and per job <b>Open</b> to get back to its panel, <b>✕</b> to cancel a running one or dismiss a finished one, <b>↻</b> to retry what is left). Done and cancelled jobs clear themselves a few seconds after they end, and the ⏳ chip itself hides once none are left; a <b>failed</b> or <b>interrupted</b> job stays until you ↻ or ✕ it — those are the ones to look at. A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job <i>interrupted</i> with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; one publish per folder; one Publish all at a time.</dd>
       <dt>Publish dialog</dt><dd>Starting a folder's publish from Open → LOCAL, or tapping <b>Publish all</b> in the Publish sheet, opens a dialog for that one job: an overall bar, a row per song (its title, and a state — <b>…</b> queued, a small bar while it runs, <b>✓</b> done, <b>⚠</b> failed with the error), the job's own note line, <b>Cancel</b> while it's running (stopping it between songs — what's already published stays published), and <b>Close</b> always. Closing it never cancels the job — reopen it from ⏳'s <b>Open</b> on that job any time. Capture jobs still open the familiar capture panel.</dd>
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
@@ -1667,8 +1692,11 @@
 </div>
 
 <div class="overlay" id="asksheet">
+  <!-- resizes the docked panel (aiDockDrag); hidden while floating — the CSS
+       grip + drag-by-title handle the floating sheet instead -->
+  <div id="askdockdivider" role="separator" aria-orientation="vertical" aria-label="Resize the AI panel"></div>
   <div class="sheet ask">
-    <h2>ASK</h2>
+    <h2>ASK<button id="askdock" aria-label="Dock right — pin it to the edge" title="Dock right — pin it to the edge">⇥</button></h2>
     <div class="chiprow" id="askmoderow" role="tablist" aria-label="Which chat">
       <button id="askmodesong" role="tab" class="active">♪ this song</button>
       <button id="askmodegen" role="tab">✦ general</button>
@@ -13846,7 +13874,7 @@ async function instAlbums() { // [{title, vault, songs: [[songTitle, path]] (CAT
 }
 // the album kinds tools/instruments/extract.mjs builds libraries for (an NES
 // album.json names no chip: plain NSF is the default kind)
-const INST_CHIPS = new Set(["nsf", "gbs", "spc", "psf", "usf"]);
+const INST_CHIPS = new Set(["nsf", "gbs", "spc", "psf", "psf2", "usf"]);
 // where an album's library sits in the archive — tools/instruments/model.mjs
 // instrumentsFolder, the rule the extractor publishes by: a folder vault holds
 // it inside ("goldeneye-007/instruments/"); a single-file vault beside the file
@@ -18215,10 +18243,11 @@ askInboxStart();
 (function sheetDrag() {
   if (typeof document === "undefined" || !document.body) return;
   const handleFor = t => {
+    if (t.closest && t.closest("button")) return null; // never start a drag from a button tap (askdock's ⇥ lives inside its h2)
     const h2 = t.closest && t.closest(".sheet > h2");
     if (h2) return {handle: h2, box: h2.parentElement};
     const row = t.closest && t.closest("#importsheet .row:first-child");
-    if (row && !(t.closest("button"))) return {handle: row, box: document.getElementById("importsheet")};
+    if (row) return {handle: row, box: document.getElementById("importsheet")};
     return null;
   };
   let drag = null, size = null;
@@ -18227,6 +18256,9 @@ askInboxStart();
   addGrips();
   document.addEventListener("pointerdown", e => {
     if (e.button && e.button !== 0) return;
+    // a docked sheet (the ✦ AI panel; any sheet in step 2) is fixed by the
+    // dock, not by drag-and-resize — its divider resizes it instead
+    if (e.target.closest && e.target.closest(".overlay.docked")) return;
     const grip = e.target.closest && e.target.closest(".sheetgrip");
     if (grip) {
       const box = grip.parentElement.classList.contains("metpanel") ? document.getElementById("importsheet") : grip.parentElement;
@@ -18290,11 +18322,99 @@ askInboxStart();
     if (drag && (!e || e.pointerId === drag.id)) { drag.box.classList.remove("dragging"); remember(drag.box); drag = null; }
   };
   document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
-  // a sheet opens where you left it (or centered, the first time) when its overlay turns on
+  // a sheet opens where you left it (or centered, the first time) when its
+  // overlay turns on — a docked sheet skips this, the dock lays it out instead
   if (typeof MutationObserver === "function") new MutationObserver(muts => {
-    for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box) restore(box); } }
+    for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on") && !el.classList.contains("docked")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box) restore(box); } }
   }).observe(document.body, {attributes: true, attributeFilter: ["class"], subtree: true});
 })();
+// ---- ✦ AI panel docking (dock right / float) — build step 1 of the
+// windowing plan (open-items.md, "a real windowing system", REOPENED
+// 2026-09-29): the AI sheet pins to the right edge as a real panel
+// instead of a floating overlay, and the song area lays out in what's
+// left. One mechanism a step-2 sheet can reuse: <html> reserves the
+// panel's pixel width (padding-right, not <body> — see aiDockLayout) so
+// header/track chips/roll·score·tracks/footer all reflow with this ONE
+// rule, the panel itself is position:fixed over that reservation
+// (#asksheet.on.docked, CSS above), and resize() — the exact function
+// window's own "resize" listener calls — is invoked directly wherever the
+// width changes, so the canvas, ruler, lanes and the follow-the-playhead
+// math (all read wrap.clientWidth live already) redraw at the new width
+// with no per-view special-casing. See NIGHT-ROLL.md "Docked AI panel".
+const AI_DOCK_KEY = "ff1roll-aidock";
+const AI_DOCK_MIN_W = 280;    // narrowest the divider allows
+const AI_DOCK_MIN_WIN = 700;  // below this window width there is no "what's left" to give the song — docking is not offered
+let aiDock = {docked: false, width: 360};
+try {
+  const raw = JSON.parse(localStorage.getItem(AI_DOCK_KEY) || "null");
+  if (raw && typeof raw === "object") {
+    if (typeof raw.docked === "boolean") aiDock.docked = raw.docked;
+    if (typeof raw.width === "number" && raw.width > 0) aiDock.width = raw.width;
+  }
+} catch (err) { /* private mode */ }
+function aiDockSave() { try { localStorage.setItem(AI_DOCK_KEY, JSON.stringify(aiDock)); } catch (err) { /* private mode */ } }
+function aiDockMaxW() { const iw = (typeof window !== "undefined" && window.innerWidth) || 1024; return Math.round(iw * 0.6); }
+function aiDockClampW(w) { return Math.max(AI_DOCK_MIN_W, Math.min(aiDockMaxW(), Math.round(w))); }
+function aiDockAllowed() { return typeof window !== "undefined" && window.innerWidth >= AI_DOCK_MIN_WIN; } // phone width: no dock control, floating sheet as today
+// Applies the current pref to the DOM. The <html> width reservation only
+// applies while the panel is actually shown (open AND docked) — closing it
+// (✕, backdrop, Esc, or ✦ AI again) gives the full width straight back;
+// #asksheet keeps the "docked" SHAPE class whenever the pref says docked,
+// open or not, so it reopens already docked. Safe to call any time (open,
+// toggle, drag, or a live window resize) — idempotent.
+function aiDockLayout() {
+  const pref = aiDock.docked && aiDockAllowed();
+  const open = asksheet.classList.contains("on");
+  const active = pref && open;
+  const w = aiDockClampW(aiDock.width);
+  // <html>, not <body>: the vm harness stubs documentElement but not body
+  // (sheetDrag's own real-browser guard depends on body being absent there)
+  document.documentElement.classList.toggle("ai-docked", active);
+  document.documentElement.style.paddingRight = active ? w + "px" : "";
+  asksheet.classList.toggle("docked", pref);
+  asksheet.style.width = active ? w + "px" : "";
+  const btn = document.getElementById("askdock");
+  btn.style.display = aiDockAllowed() ? "" : "none";
+  btn.textContent = pref ? "⇤" : "⇥";
+  const label = pref ? "Float — undock the AI panel" : "Dock right — pin it to the edge";
+  btn.setAttribute("aria-label", label);
+  btn.title = label;
+  if (typeof resize === "function") resize(); // same path a real window resize takes
+}
+function aiDockToggle() {
+  if (!aiDock.docked && !aiDockAllowed()) return; // no dock on a phone-width window
+  aiDock.docked = !aiDock.docked;
+  aiDockSave();
+  aiDockLayout();
+}
+document.getElementById("askdock").addEventListener("click", aiDockToggle);
+(function aiDockDrag() { // the divider on the panel's left edge — min 280px, max 60% of the window
+  const divider = document.getElementById("askdockdivider");
+  let drag = null;
+  divider.addEventListener("pointerdown", e => {
+    if (e.button && e.button !== 0) return;
+    drag = {x0: e.clientX, w0: aiDock.width, id: e.pointerId};
+    divider.classList.add("dragging");
+    try { divider.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    e.preventDefault();
+  });
+  document.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    aiDock.width = aiDockClampW(drag.w0 - (e.clientX - drag.x0)); // the divider is the panel's LEFT edge: dragging it left widens the panel
+    aiDockLayout();
+  });
+  const end = e => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    divider.classList.remove("dragging");
+    drag = null;
+    aiDockSave();
+  };
+  document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+})();
+// growing/shrinking the window re-checks aiDockAllowed() live: crossing
+// below phone width mid-session un-docks (the pref itself is untouched —
+// growing back re-offers and reapplies it)
+window.addEventListener("resize", () => { if (asksheet.classList.contains("on")) aiDockLayout(); });
 function openAsk() {
   if (!song) return;
   askBadgeOff();
@@ -18305,6 +18425,7 @@ function openAsk() {
   askRefreshTarget();
   askModeButtons(); // sets the placeholder for the mode
   asksheet.classList.add("on");
+  aiDockLayout(); // reopens docked if it was docked (open-items.md "a real windowing system", step 1)
   askGrow();
   askScrollEnd(); // the log was drawn while the sheet was display:none (scrollHeight 0), so every open landed at the top (Josh, 2026-09-27)
   askFocusIfKeyboard();
@@ -19221,6 +19342,10 @@ if (typeof document.querySelectorAll === "function") { // vm harness stubs docum
 // opens or closes.
 const SHEET_TOP = new MutationObserver(ms => {
   for (const m of ms) {
+    // the docked ✦ AI panel: reserve/free the body's width alongside its own
+    // visibility, however it closes (✕, backdrop, Esc, or reopening) — the
+    // one choke point every close path already runs through
+    if (m.target.id === "asksheet") aiDockLayout();
     if (!m.target.classList.contains("on")) { // closing: a live 🎤 inside must not keep transcribing
       if (micBtn && m.target.contains(micBtn)) micStop(true);
       continue;

@@ -363,6 +363,16 @@ back to the floating sheet; (2) any sheet docks left/right/bottom, layout
 per device; (3) two timeline views at once (shared view.x/playCursor
 today) — last, if ever. Step 1 + the rename start after the job-system
 work lands (index.html is busy).
+STEP 1 BUILT (2026-09-29): the ✦ AI panel docks right (⇥ in its title
+row, ⇤ to float again), draggable divider (280px–60vw), per-device pref
+(`ff1roll-aidock`), phone width (<700) falls back to the floating sheet.
+Mechanism: `<html>` reserves the panel's width (`padding-right`) so
+header/track chips/roll·score·tracks/footer all reflow with one rule;
+`resize()` runs the same path a real window resize does. Details +
+step-2 reuse notes: NIGHT-ROLL.md "Docked AI panel". Needs eyes in a real
+browser (Chrome + iPad) — not yet browser-verified. Rename to "✦ AI" was
+already shipped separately (fe80df3). Step 2 (any sheet docks) and step 3
+(two timeline views) remain queued.
 
 ## QUEUED IDEA (Josh, 2026-09-27): folders above albums in Open
 

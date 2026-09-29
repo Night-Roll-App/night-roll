@@ -1655,7 +1655,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README",
+    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right",
     "clear themselves a few seconds", "Publish dialog",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
@@ -3115,6 +3115,71 @@ test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply an
   run(`asksheet.classList.remove("on"); askBadgeOff(); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/job-test.mid"); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/other.mid"); songKey = null;`);
 });
 
+test("AI dock: toggling sets the pref, a docked class, reserves the song area's width (resize() runs, the same path a window resize takes), and undock restores it", () => {
+  run(`window.innerWidth = 1200; asksheet.classList.add("on"); aiDock = {docked: false, width: 360}; aiDockLayout();`);
+  assert.equal(val(`aiDockAllowed()`), true, "wide window: docking offered");
+  assert.equal(val(`document.getElementById("askdock").style.display`), "", "the dock control shows at desktop width");
+  run(`aiDockToggle()`);
+  assert.equal(val(`aiDock.docked`), true);
+  assert.equal(val(`asksheet.classList.contains("docked")`), true);
+  assert.equal(val(`document.documentElement.classList.contains("ai-docked")`), true);
+  assert.equal(val(`document.documentElement.style.paddingRight`), "360px", "the song area gives up exactly the panel's width");
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-aidock")).docked`), true, "persisted");
+  // resize() — the same function a real window resize calls — ran: canvas.width was recomputed, not left stale
+  run(`canvas.width = -1; aiDockLayout();`);
+  assert.notEqual(val(`canvas.width`), -1, "resize() ran when docking, the same path window resize takes");
+  // undock: today's floating sheet exactly — the reservation and the shape class both let go
+  run(`aiDockToggle()`);
+  assert.equal(val(`aiDock.docked`), false);
+  assert.equal(val(`asksheet.classList.contains("docked")`), false);
+  assert.equal(val(`document.documentElement.classList.contains("ai-docked")`), false);
+  assert.equal(val(`document.documentElement.style.paddingRight`), "", "the full width comes back");
+  run(`asksheet.classList.remove("on"); aiDock = {docked: false, width: 360}; window.innerWidth = undefined;`);
+});
+
+test("AI dock: phone width refuses — the control hides and toggling has no effect; a saved docked pref is kept but not applied until the window widens again", () => {
+  run(`window.innerWidth = 500; asksheet.classList.add("on"); aiDock = {docked: false, width: 360}; aiDockLayout();`);
+  assert.equal(val(`aiDockAllowed()`), false);
+  assert.equal(val(`document.getElementById("askdock").style.display`), "none", "no dock control on a phone-width window");
+  run(`aiDockToggle()`);
+  assert.equal(val(`aiDock.docked`), false, "toggling at phone width does nothing");
+  assert.equal(val(`asksheet.classList.contains("docked")`), false);
+  run(`aiDock = {docked: true, width: 400}; aiDockLayout();`); // a pref saved on a wide window, opened later on a narrow one
+  assert.equal(val(`asksheet.classList.contains("docked")`), false, "the pref says docked but the window is too narrow");
+  assert.equal(val(`document.documentElement.style.paddingRight`), "", "no reservation at phone width");
+  run(`window.innerWidth = 1200;`);
+  app.winDispatch({type: "resize"}); // widening re-offers and reapplies the saved pref live
+  assert.equal(val(`asksheet.classList.contains("docked")`), true);
+  assert.equal(val(`document.documentElement.style.paddingRight`), "400px");
+  run(`asksheet.classList.remove("on"); aiDock = {docked: false, width: 360}; window.innerWidth = undefined;`);
+});
+
+test("AI dock: the divider drags the panel width, clamped to [280, 60% of the window], and persists only on release", () => {
+  run(`window.innerWidth = 1000; aiDock = {docked: true, width: 360}; asksheet.classList.add("on"); aiDockLayout();`);
+  app.dispatch("askdockdivider", {type: "pointerdown", clientX: 700, pointerId: 7, button: 0});
+  app.docDispatch({type: "pointermove", clientX: 600, pointerId: 7}); // dragged left 100 — the panel widens by 100
+  assert.equal(val(`aiDock.width`), 460);
+  assert.equal(val(`document.documentElement.style.paddingRight`), "460px");
+  app.docDispatch({type: "pointermove", clientX: 0, pointerId: 7}); // past the 60%-of-window ceiling (600px here)
+  assert.equal(val(`aiDock.width`), 600, "clamped to 60% of the window");
+  app.docDispatch({type: "pointermove", clientX: 900, pointerId: 7}); // past the 280px floor
+  assert.equal(val(`aiDock.width`), 280, "clamped to the 280px floor");
+  assert.equal(val(`localStorage.getItem("ff1roll-aidock") === null || JSON.parse(localStorage.getItem("ff1roll-aidock")).width !== 280`), true, "not saved mid-drag");
+  app.docDispatch({type: "pointerup", pointerId: 7});
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-aidock")).width`), 280, "saved on release");
+  run(`asksheet.classList.remove("on"); aiDock = {docked: false, width: 360}; window.innerWidth = undefined;`);
+});
+
+test("AI dock: the pref survives a reload", () => {
+  const app2 = createApp({storage: {"ff1roll-aidock": JSON.stringify({docked: true, width: 420})}});
+  const run2 = c => app2.run(c), val2 = c => JSON.parse(app2.run(`JSON.stringify(${c})`));
+  assert.equal(val2(`aiDock.docked`), true);
+  assert.equal(val2(`aiDock.width`), 420);
+  run2(`window.innerWidth = 1200; asksheet.classList.add("on"); aiDockLayout();`);
+  assert.equal(val2(`asksheet.classList.contains("docked")`), true, "reopens docked, from the saved pref");
+  assert.equal(val2(`document.documentElement.style.paddingRight`), "420px");
+});
+
 test("Ask resume: pending questions are found across every chat; a tool round moves the marker; eviction leaves the repo marker; Publish stops at a pending question", () => {
   installSong();
   run(`songKey = "albums/compositions/nightroll/pend-a.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
@@ -3852,16 +3917,18 @@ test("instAlbums: lists published albums whose game files carry an instrument li
                "Chrono Trigger": [["Corridors of Time", "albums/snes/chrono-trigger/corridors-of-time.mid"]],
                "Mega Man 2": [["Dr. Wily", "albums/nes/mega-man-2/dr-wily.mid"]],
                "Tetris": [["Type A", "albums/game-boy/tetris/type-a.mid"]],
-               "Sonic": [["Green Hill", "albums/genesis/sonic/green-hill.mid"]]};
+               "Sonic": [["Green Hill", "albums/genesis/sonic/green-hill.mid"]],
+               "Dark Cloud": [["Balance Valley", "albums/ps2/dark-cloud/balance-valley.mid"]]};
        albumMetaCache["albums/n64/goldeneye-007"] = {title: "GoldenEye 007", nsf: {vault: "goldeneye-007/", chip: "usf"}};
        albumMetaCache["albums/ps1/final-fantasy-vii"] = {title: "Final Fantasy VII", nsf: {vault: "final-fantasy-vii/", chip: "psf"}};
        albumMetaCache["albums/snes/chrono-trigger"] = {title: "Chrono Trigger", nsf: {vault: "chrono-trigger/", chip: "spc"}};
        albumMetaCache["albums/nes/mega-man-2"] = {title: "Mega Man 2", nsf: {vault: "mega-man-2.nsf"}};
        albumMetaCache["albums/game-boy/tetris"] = {title: "Tetris", nsf: {vault: "tetris.gbs", chip: "gbs"}};
-       albumMetaCache["albums/genesis/sonic"] = {title: "Sonic", nsf: {vault: "sonic/", chip: "vgm"}};`);
+       albumMetaCache["albums/genesis/sonic"] = {title: "Sonic", nsf: {vault: "sonic/", chip: "vgm"}};
+       albumMetaCache["albums/ps2/dark-cloud"] = {title: "Dark Cloud", nsf: {vault: "dark-cloud/", chip: "psf2"}};`);
   await run(`instAlbums().then(gs => { globalThis.__titles = gs.map(g => g.title); })`);
-  assert.deepEqual(val(`globalThis.__titles`), ["Chrono Trigger", "Final Fantasy VII", "GoldenEye 007", "Mega Man 2", "Tetris"],
-    "every console with an extractor lists (alphabetical; an NES album names no chip); Genesis does not");
+  assert.deepEqual(val(`globalThis.__titles`), ["Chrono Trigger", "Dark Cloud", "Final Fantasy VII", "GoldenEye 007", "Mega Man 2", "Tetris"],
+    "every console with an extractor lists (alphabetical; an NES album names no chip); a psf2 (PS2) album lists too; Genesis does not");
   // the folder rule matches the extractor's (tools/instruments/model.mjs)
   const { instrumentsFolder } = await import("../tools/instruments/model.mjs");
   for (const v of ["goldeneye-007/", "tetris.nsf", "tetris.gbs"]) assert.equal(val(`instFolder(${JSON.stringify(v)})`), instrumentsFolder(v), v);
