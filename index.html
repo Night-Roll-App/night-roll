@@ -614,6 +614,13 @@
   .sheet.help dl { margin: 0; }
   .sheet.help dt { font-family: var(--mono); font-size: 15px; color: var(--text); margin-top: 7px; }
   .sheet.help dd { font-size: 15px; color: var(--dim); margin: 1px 0 0 0; line-height: 1.45; }
+  /* Import hub (docs/import-hub-design.md): dragging a file over the panel
+     highlights it — the ONLY drop target in the app, so no ambiguity about
+     where a drop lands. */
+  #importhub.dragover .sheet { outline: 2px dashed var(--gold); outline-offset: -6px; background: rgba(230, 192, 96, 0.06); }
+  #importhub .sheet dt { margin-top: 12px; }
+  #importhub .sheet dt:first-child { margin-top: 0; }
+  #importhub .sheet dd .row { margin-top: 6px; }
 
   .noterow {
     display: flex;
@@ -725,7 +732,16 @@
      INLINE transform/width/height — docked, those left the panel shifted
      down with gaps above and below on Josh's iPad (a fresh browser had none
      saved) */
-  .overlay.docked .sheet { width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; transform: none !important; margin: 0 !important; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0; }
+  .overlay.docked .sheet { width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; transform: none !important; margin: 0 !important; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0;
+    overflow: hidden; min-height: 0; } /* the SHEET itself never scrolls as one block while docked (unlike floating,
+    where .sheet/.sheet.help's own overflow-y:auto scrolls everything together, ✕ pinned by position:sticky) — a short
+    dock (240px default) cut off the input row/buttons below a tall log otherwise. Header rows and trailing button
+    rows keep their natural size; the one designated scrolling body per window (below) is flex:1 + min-height:0, so
+    IT shrinks and scrolls while the header and the input/button rows stay put. */
+  #asksheet.docked #asklog, #instsheet.docked #instrows, #notelistsheet.docked #notelistrows,
+  #jobssheet.docked #jobslist, #pubjobsheet.docked #pubjoblist, #infosheet.docked #infosheettext {
+    flex: 1; min-height: 0; overflow-y: auto;
+  }
   /* (a one-row sideways-scrolling footer beside a full-height dock clipped its
      last chip, ⏳, in half on Josh's iPad; the footer wraps instead — a hidden
      control is worse than a second row. New docks start "Beside the roll".) */
@@ -1568,7 +1584,8 @@
     <div class="hsec" data-hsec="files">
     <dl>
       <dt>Install on the iPad</dt><dd>Safari → Share → <b>Add to Home Screen</b>. Night Roll then launches from its own icon, full screen with no browser bars, works offline (the app and any song you have opened are kept on the device; instrument sounds are kept as they are first used), and its drafts, annotations and settings live in storage Safari does not evict. Updates arrive on the next launch with a network — the page is always fetched fresh when it can be. Same for Chrome/Edge on a computer (the install icon in the address bar). File → the "build" line at the bottom of the menu says "installed" when you are running the installed copy. If offline support ever misbehaves, open the site with <code>?sw=0</code> once to turn it off on that device.</dd>
-      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has four tabs — <b>Saving</b> (auto-save, folder or Files), <b>AI</b>, <b>GitHub</b>, <b>Other</b> (the debug log) — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… (multi-select capable; byte-sniffs each pick: MIDI files — .mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — ask where they belong: <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like NSF captures, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (note: commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved); an NSF or GBS chip-music file (NES or <b>Game Boy</b>), or a set of <b>Super Nintendo</b> .spc files, <b>Genesis</b> .vgm/.vgz files, <b>PlayStation</b> .minipsf files together with their .psflib library, <b>PlayStation 2</b> .psf2/.minipsf2 files together with their .psf2lib library (Sony's own SQ/HD/BD driver; Square Enix's PS2 driver — Final Fantasy X's BGM/WD — is identified but not supported yet, and PS2 sets that are only streamed audio, e.g. Ico or XIII, are refused at import as not note data), or <b>Nintendo 64</b> .miniusf files together with their .usflib (one file per song — multi-select the whole set; rows come in track order with the tags' titles; the Genesis header's and the PlayStation, PlayStation 2 and N64 sequences' loop points become the loop: annotation; NES, Game Boy, Super Nintendo, PlayStation, PlayStation 2 and N64 songs play through their own sound chips (Square Enix's PS2 driver excepted — synth voices, unsupported this milestone), Genesis through synth voices for now), opens the capture panel: every track runs through the same pipeline that dumped the FF1 album (6502/APU for the NES, SM83/Game Boy APU for a .gbs — its wave channel becomes a <b>wave</b> track) — loop detected and trimmed, tempo grid-fitted, hardware loop point recorded as a loop: annotation; the capture window auto-doubles (75 → 150 → 300s) when no loop fits, since the detector needs the intro plus two full passes — and lands as a LOCAL draft under an Import album; names load automatically from the rip's .m3u playlist when you pick it with the NSF (or pick the .m3u alone afterward — even already-captured drafts rename in place); otherwise audition each capture and type its real name right in the panel row — "Dr. Wily's Castle" replaces "track-15" instantly, punctuation preserved through to the song picker; Chip audio is automatic — whenever the app can reach a song's NSF (live import session, this device's cache, or the public archive), it renders the captured register log through the NES 2A03's actual sound hardware (duty sequencers, envelopes, noise LFSR — the console's own voice, not our oscillator approximation) and ▶ plays that; there's no button and nothing to enable. Mute/solo stay live per track, the speed slider acts tape-style, and picking an explicit instrument in a track's voice menu overrides the chip for that track (auto = chip); in Open → drafts each import album is its own FOLDER (tap in for its tracks: ⇪ on a track commits just that song to its album, "⇪ Commit album" pushes the whole folder — and keeps going if you leave the menu: the footer strip shows its progress anywhere in the app, and reopening the folder shows the same line (just don't leave the app itself mid-upload; Safari may freeze the page), ✕ tap-twice discards a dud, and the ✕ on the folder row itself discards the entire album's drafts at once; re-capturing a track — or re-importing the whole NSF, maybe with a longer capture window — simply overwrites the old drafts; File → Publish import still pushes every import capture across all folders at once); an NSF that needs an expansion sound chip (VRC6, VRC7, FDS, MMC5, Namco 163, Sunsoft 5B) is refused by name — the NES pipeline captures only the 2A03, and those songs keep their lead voices on the extra chip); a <b>SoundFont</b> (.sf2 — a fan-made game font, a better piano, anything) is not tied to a song at all: it loads straight in (a one-line result names it and how many presets it has), a copy stays on this device (works offline, no GitHub needed) and — with a game files &amp; instruments repo configured — pushes to the archive too, so your other devices can play it; files over 50 MB ask first (GitHub itself warns past 50 MB and refuses past 100), Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
+      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has four tabs — <b>Saving</b> (auto-save, folder or Files), <b>AI</b>, <b>GitHub</b>, <b>Other</b> (the debug log) — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… opens the <b>import hub</b> (below) — one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches); a drop target in the hub takes dragged files too, Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
+      <dt>Import…</dt><dd>File → Import… opens the <b>import hub</b>: one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches, whichever section you tapped from); a drop target in the hub takes dragged files too. <b>MIDI</b> (.mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — multi-select capable): ask where they belong — <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like a chip capture, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved). <b>NES</b>: the .nsf, plus its .m3u if the rip has one (track names) — an NSF that needs an expansion sound chip (VRC6, VRC7, FDS, MMC5, Namco 163, Sunsoft 5B) is refused by name ("expansion sound chip &lt;names&gt; not supported") — the NES pipeline captures only the 2A03, and those songs keep their lead voices on the extra chip. <b>Game Boy</b>: the .gbs, plus its .m3u, same rule. <b>Super NES</b>: every .spc of the album, picked together — tagged lengths, so the loop scan is skipped. <b>Genesis</b>: .vgm/.vgz — synth voices only, no console-audio render yet. <b>PlayStation</b>: every .minipsf plus the one .psflib, picked together — reads Sony's own SEQ/VAB driver and Square's AKAO (Final Fantasy VII/VIII/IX, Chrono Cross); both play the console's own audio. <b>PlayStation 2</b>: every .minipsf2/.psf2 plus the one .psf2lib, picked together — reads Sony's stock driver (SQ/HD/BD) and Square Enix's own (BGM/WD — Final Fantasy X); both play the console's own audio. A PS2 set that's only streamed audio (Ico, XIII) is refused: "this is streamed audio, not note data — Night Roll reads sequence data (notes), not pre-rendered streams". <b>Nintendo 64</b>: every .miniusf plus the one .usflib. For NES, Game Boy, PlayStation, PlayStation 2 and Nintendo 64: a playlist (.m3u) picked on its own, later, names an open song's album (or, mid-capture, renames an already-open session's tracks). Every chip pick opens the capture panel: the same pipeline that dumped the FF1 album runs the track — loop detected and trimmed, tempo grid-fitted, the hardware loop point recorded as a loop: annotation (the capture window auto-doubles, 75 → 150 → 300s, when no loop fits) — and lands as a LOCAL draft under an album named for the game; audition and rename each one, ⇪ Commit a track or the whole album — it keeps going if you leave the menu, and it all keeps running in the background (⏳ Jobs) if you close the panel too — File → Publish import still pushes every import capture across all folders at once. <b>Chip audio is automatic</b>: whenever the app can reach a song's NSF/GBS/etc. (the live import session, this device's cache, or the public archive), NES, Game Boy, PlayStation, PlayStation 2 and Nintendo 64 songs render through the console's own sound hardware; Genesis and Super NES play through synth voices for now. <b>SoundFont</b>: one .sf2 (a fan-made game font, a better piano, anything) — not tied to a song at all: it loads straight in, a copy stays on this device (works offline, no GitHub needed) and, with a game files &amp; instruments repo configured, pushes to the archive too so your other devices can play it; files over 50 MB ask first (GitHub itself warns past 50 MB, refuses past 100). <b>New song from a recording</b>: one .wav/.mp3/.m4a/.aif/.flac becomes a brand-new song — <b>Untitled N</b>, 4/4 at 120 bpm with three empty note tracks waiting (Edit → Pencil to write against it; ♩ Tempo from this take reads the clip's real tempo whenever you're ready) — it lives on this device until Save.</dd>
       <dt>Share a song</dt><dd><b>🔗 Share link</b> in the Publish sheet hands the song's link to the share sheet (or copies it). A link is this player plus the song plus where the song lives: songs on this site need nothing more; a song published to another GitHub repo carries <code>songs=owner/repo</code>, so anyone who taps it hears that song from that repo, no setup — and you can open such links too (the breadcrumb then starts with 🔗 and the repo's name; everything is read-only there, your own songs are untouched, and nothing about the link is remembered). Publish also keeps a <b>song list in the repo's README</b> — every song as a player link, between two markers the app owns, the rest of the README untouched — so the repo page itself is the share page. The address bar is always a shareable link to the open song, and it is the song's path with no extension — …/night-roll/albums/compositions/nightroll/ambush. <b>Add .mid to the end and the same link is the MIDI file</b> (Logic opens it); take it off and it's the player again. Older ?song= links still open the player. The tab title and the link preview in Messages name the song first — "Threnody · Night Roll" — so a pasted link reads as the song, not the app.</dd>
       <dt>Data locations</dt><dd>Night Roll is configured with WHERE its data lives (Sync → "Data locations ▾"): three rows — songs (.mid, album.json, catalog), analysis (.rollnotes + docs), and NSF (chip-audio source) — each with a read base URL (blank = this site; or any raw.githubusercontent.com/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt; or local server) and an owner/repo write target. One fine-grained token, granted to every repo you write to, covers all commits; write errors name the repo they hit, and a 404 usually means the token hasn't been granted that repo. This is what lets another analyst point their own analysis repo at a shared songs corpus. Defaults: everything in this site's repo, NSFs from the public nsf-archive. In the iPad app "this site" is only the bundled starters, so reads default to the repo in Settings → GitHub (the same place Publish writes): your published songs, annotations and imports appear there once the repo is set; the starters come from the bundle either way.</dd>
       <dt>📁 Folder on this computer</dt><dd>Saving without GitHub. In File → Settings, tap <b>Choose folder…</b> and pick a folder on this computer: from then on every Save writes the song, its annotations, and its notes dump into that folder (laid out exactly like the repo — <code>albums/…/song.mid</code> beside its <code>.rollnotes.json</code>), nothing goes to GitHub, and no token is needed. The song picker lists the folder's albums alongside the site's; a song that exists in both opens from the folder. Tick <b>show only this folder's songs</b> under the folder row and the list becomes yours alone — the folder plus this device's drafts, none of the site's albums; with an empty folder the app opens straight into New song instead of Overworld. A device setting: it stays on that machine. FF1 songs still load from the site — annotate one and the annotations save to your folder. Chrome may ask for the folder again after a restart: <b>📁 Reconnect folder</b> appears at the top of the File menu (until you tap it, reads fall back to the site). <b>Forget</b> in Settings returns saves to GitHub; the files stay where they are. Needs Chrome or Edge on a computer — Safari has no way to write files, and the row says so there. In the iPad app a <code>.mid</code> or chip file tapped in Files, or sent with <b>Share → Night Roll</b>, opens here as a local draft. In the iPad app there is nothing to set: every Save also writes the song into Files on this iPad (Files → On My iPad → Night Roll, same layout), where you can copy, share or back it up, and Publish still sends it to GitHub. Brave ships the door switched off: enable <code>brave://flags/#file-system-access-api</code> and relaunch (the row tells you). Recordings that aren't yours belong here, not in a repo (see the design docs).</dd>
@@ -1660,7 +1677,7 @@
   <button class="fitem" id="fileopen">Open…</button>
   <button class="fitem" id="filenew">＋ New song…</button>
   <button class="fitem" id="fileinst">🎛 Instruments…</button>
-  <label class="fitem" for="fileinput" style="display:block">Import… (.mid / .nsf / .gbs / .spc / .vgm / .psf / .psf2 / .usf / .sf2)</label>
+  <button class="fitem" id="fileimporthub">Import…</button>
   <div class="fdiv"></div>
   <button class="fitem" id="filesavelocal">Save</button>
   <button class="fitem" id="filesave">Publish…</button>
@@ -1758,6 +1775,43 @@
     </div>
     <div class="row" id="metbeats" style="gap:6px;flex-wrap:wrap"></div>
     <div class="meta" style="margin:2px 0 0">tap a beat: accent → normal → silent · closing this panel does NOT stop the click</div>
+  </div>
+</div>
+
+<!-- Import hub (docs/import-hub-design.md): File → Import… opens this instead of
+     the bare <label for="fileinput"> that used to list every extension in a row.
+     One shared #fileinput underneath every "Choose files…" button (data-kind only
+     changes which section's status line updates before the picker opens) — a file
+     picked from the "wrong" section still falls through to openPickedFiles' own
+     byte-sniff and routes correctly, same as always. Not a dockable window
+     (makeWindow("importhub", {dockable: false})): a one-shot picker, not a panel
+     you'd want pinned open while working the roll, unlike Notes/Instruments/Jobs. -->
+<div class="overlay" id="importhub">
+  <div class="sheet help">
+    <h2 id="importhub-h2">IMPORT…</h2>
+    <dl>
+      <dt>MIDI</dt><dd>.mid / .midi / .smf / .kar / .rmi (even RIFF-wrapped) → a song — <b>Keep local</b> (this device only) or <b>Create album</b> for several at once.
+        <div class="row"><button class="fitem" id="ihMidi" data-kind="midi">Choose files…</button></div></dd>
+      <dt>NES</dt><dd>The .nsf, plus its .m3u if the rip has one (names the tracks) — or drop the .m3u on its own, later, to name an already-open album's tracks. Not supported: expansion-chip games (VRC6, VRC7, FDS, MMC5, Namco 163, Sunsoft 5B) — refused by name, "expansion sound chip &lt;names&gt; not supported". Captures run in the background (⏳ Jobs) — this window can be closed once one starts.
+        <div class="row"><button class="fitem" id="ihNes" data-kind="nes">Choose files…</button></div></dd>
+      <dt>Game Boy</dt><dd>The .gbs, plus its .m3u, same rule as NES — and the same background capture.
+        <div class="row"><button class="fitem" id="ihGb" data-kind="gb">Choose files…</button></div></dd>
+      <dt>Super NES</dt><dd>Every .spc of the album, picked together.
+        <div class="row"><button class="fitem" id="ihSnes" data-kind="snes">Choose files…</button></div></dd>
+      <dt>Genesis</dt><dd>.vgm / .vgz. Synth voices only — no console-audio render yet.
+        <div class="row"><button class="fitem" id="ihGenesis" data-kind="genesis">Choose files…</button></div></dd>
+      <dt>PlayStation</dt><dd>Every .minipsf plus the one .psflib, picked together. Reads Sony's standard driver (SEQ/VAB) and Square's AKAO (Final Fantasy VII/VIII/IX, Chrono Cross) — both play the console's own audio.
+        <div class="row"><button class="fitem" id="ihPs1" data-kind="ps1">Choose files…</button></div></dd>
+      <dt>PlayStation 2</dt><dd>Every .minipsf2/.psf2 plus the one .psf2lib, picked together. Reads Sony's standard driver (SQ/HD/BD) and Square Enix's own (BGM/WD — Final Fantasy X) — both play the console's own audio. Streamed-audio rips (Ico, XIII) are refused: "this is streamed audio, not note data — Night Roll reads sequence data (notes), not pre-rendered streams".
+        <div class="row"><button class="fitem" id="ihPs2" data-kind="ps2">Choose files…</button></div></dd>
+      <dt>Nintendo 64</dt><dd>The .miniusf files plus the one .usflib.
+        <div class="row"><button class="fitem" id="ihN64" data-kind="n64">Choose files…</button></div></dd>
+      <dt>SoundFont</dt><dd>One .sf2 — its presets become track voices, not tied to a song.
+        <div class="row"><button class="fitem" id="ihSf2" data-kind="sf2">Choose files…</button></div></dd>
+      <dt>New song from a recording</dt><dd>One .wav / .mp3 / .m4a / .aif / .flac → a new song — Untitled until Save, 4/4 at 120 bpm; ♩ Tempo from this take afterwards reads the real tempo off the clip.
+        <div class="row"><button class="fitem" id="ihAudio" data-kind="audio">Choose files…</button></div></dd>
+    </dl>
+    <div class="status" id="importhubstatus">Drop files anywhere on this panel, or use a section's Choose files… above.</div>
   </div>
 </div>
 
@@ -7061,6 +7115,17 @@ function pluckBuffer(p) {
   return buf;
 }
 let voiceMenuTi = -1;
+// bumped once at the top of every buildVoiceMenu() call — the ONE thing that
+// invalidates every OTHER in-flight async render regardless of whether its
+// own nav snapshot (g0/sub0/sys0 below) happens to still match: three
+// independent things can each call buildVoiceMenu() on the same open menu —
+// the initial open, gameVoiceLabel's own async refresh once a label
+// resolves, and (Josh's Ambush report fix, 2026-09-29) openGameVoiceMenuTo's
+// drill — and a nav-state-only guard lets two of them land on the SAME
+// state (e.g. both re-render the same leaf list) without either one ever
+// clearing the OTHER's rows, since only buildVoiceMenu's own synchronous
+// entry clears the menu, not each async continuation.
+let voiceMenuRenderToken = 0;
 let voiceMenuGroup = null; // null = family list; a title = that family's instruments
 const GAME_FAMILY = "Game instruments"; // voiceMenuGroup's sentinel for the games picker (never a real VOICE_GROUPS title)
 let voiceMenuGameVault = null; // inside GAME_FAMILY: null = pick a game; {title, vault, songs} = that game's menu/leaf level
@@ -7073,9 +7138,10 @@ function gameVoiceLabel(v) { // sync read for menu rows; fills in async and refr
   if (!info) return v;
   gameVoiceLabels.set(v, info.instId);
   (async () => {
+    const realVault = await resolveGameVault(info.vault); // an old, pre-reorg vault resolves to its album's current one
     const games = await instAlbums();
-    const g = games.find(x => x.vault.replace(/\/$/, "") === info.vault);
-    const lib = await instLibrary(gameVoiceVault(info.vault));
+    const g = games.find(x => x.vault.replace(/\/$/, "") === realVault);
+    const lib = await instLibrary(gameVoiceVault(realVault));
     const inst = lib.instruments.find(i => i.id === info.instId);
     gameVoiceLabels.set(v, (g ? g.title : info.vault) + " · " + (inst ? (inst.nameGuess || inst.id) : info.instId));
     if (voiceMenuTi >= 0 && document.getElementById("voicemenu").classList.contains("on")) buildVoiceMenu(voiceMenuTi);
@@ -7108,9 +7174,10 @@ function openVoiceMenu(ti, anchor) { // position ONCE from the chip, then show
   const cur = song.tracks[ti].voice || "auto";
   const home = VOICE_GROUPS.find(([, vs]) => vs.some(([id]) => id === cur));
   voiceMenuGroup = home ? home[0] : cur.startsWith("game:") ? GAME_FAMILY : cur.startsWith("sf2:") ? SF2_FAMILY : null;
-  voiceMenuGameVault = null; voiceMenuGameSub = null; voiceMenuGameSys = null; // the games picker always opens at the systems list, not drilled into one
+  voiceMenuGameVault = null; voiceMenuGameSub = null; voiceMenuGameSys = null; // the games picker always opens at the systems list, not drilled into one — UNLESS the current voice is a game voice, which drills straight back to it (below)
   voiceMenuSf2Slug = null; // same: the soundfonts picker always opens at the fonts list
   buildVoiceMenu(ti);
+  if (voiceMenuGroup === GAME_FAMILY && cur.startsWith("game:")) openGameVoiceMenuTo(ti, cur); // Josh, 2026-09-29: reopening a track's voice menu should drill straight back to the instrument he picked, not the systems list
   const r = anchor.getBoundingClientRect();
   menu.style.left = Math.max(6, Math.min(r.left, songRegionRight() - 240)) + "px";
   menu.style.top = (r.bottom + 6) + "px";
@@ -7122,6 +7189,7 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
   // menu to the corner (Josh's iPad report 2026-08-15)
   const menu = document.getElementById("voicemenu");
   menu.innerHTML = "";
+  const renderToken = ++voiceMenuRenderToken; // invalidates every OTHER in-flight async render on this menu — see its own declaration
   const tr = song.tracks[ti];
   const head = document.createElement("div");
   head.style.cssText = "display:flex;align-items:center;gap:6px;padding:2px 4px 2px 10px";
@@ -7163,7 +7231,7 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
     sb.addEventListener("click", () => { voiceMenuGroup = SF2_FAMILY; voiceMenuSf2Slug = null; buildVoiceMenu(ti); });
     menu.appendChild(sb);
   } else if (voiceMenuGroup === GAME_FAMILY) { // level 2: a game, then that game's used instruments
-    buildGameVoicePicker(ti, menu, tr, cur);
+    buildGameVoicePicker(ti, menu, tr, cur, renderToken);
   } else if (voiceMenuGroup === SF2_FAMILY) { // level 2: a loaded soundfont, then its presets
     buildSf2VoicePicker(ti, menu, tr, cur);
   } else { // level 2: one family's instruments
@@ -7309,9 +7377,18 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
   }
 }
 function gameVoiceId(g, inst) { return "game:" + g.vault.replace(/\/$/, "") + ":" + inst.id; }
-function buildGameVoicePicker(ti, menu, tr, cur) { // GAME_FAMILY: renderGameInstNav shared with File → 🎛 Instruments…; a tap assigns + auditions
+function buildGameVoicePicker(ti, menu, tr, cur, renderToken) { // GAME_FAMILY: renderGameInstNav shared with File → 🎛 Instruments…; a tap assigns + auditions
   const nav = {sys: voiceMenuGameSys, game: voiceMenuGameVault, sub: voiceMenuGameSub};
-  const g0 = nav.game, sub0 = nav.sub, sys0 = nav.sys; // frozen: a stale async fill from a nav the user already left must not append
+  const curInfo = parseGameVoice(cur);
+  // an OLD annotation's game: voice has no console folder (Josh's Ambush
+  // report, 2026-09-29) — compare resolved vaults + instrument ids, never
+  // the raw voice string against a freshly-built one (gameVoiceId always
+  // uses the album's CURRENT vault, which an old voice string never
+  // matches). resolvedGameVaultSync stays synchronous here on purpose — see
+  // its own comment for the render race an earlier, awaited version of this
+  // reopened.
+  const curVault = curInfo ? resolvedGameVaultSync(curInfo.vault) : null;
+  const isCurrentVoice = (g, inst) => !!curInfo && curInfo.instId === inst.id && g.vault.replace(/\/$/, "") === curVault;
   renderGameInstNav(menu, nav, {
     rowFactory: (label, onClick, dim) => {
       const b = document.createElement("button");
@@ -7321,7 +7398,7 @@ function buildGameVoicePicker(ti, menu, tr, cur) { // GAME_FAMILY: renderGameIns
       b.addEventListener("click", onClick);
       return b;
     },
-    instrumentLabel: (label, inst, g) => (cur === gameVoiceId(g, inst) ? "✓ " : "   ") + label,
+    instrumentLabel: (label, inst, g) => (isCurrentVoice(g, inst) ? "✓ " : "   ") + label,
     gamesListLabel: GAME_FAMILY,
     backLabelAtTop: "Instruments",
     onBackAtTop: () => { voiceMenuGroup = null; buildVoiceMenu(ti); },
@@ -7334,8 +7411,44 @@ function buildGameVoicePicker(ti, menu, tr, cur) { // GAME_FAMILY: renderGameIns
       buildVoiceMenu(ti);
     },
     onNavigate: () => { voiceMenuGameSys = nav.sys; voiceMenuGameVault = nav.game; voiceMenuGameSub = nav.sub; buildVoiceMenu(ti); },
-    isCurrent: () => voiceMenuTi === ti && voiceMenuGroup === GAME_FAMILY && voiceMenuGameVault === g0 && voiceMenuGameSub === sub0 && voiceMenuGameSys === sys0,
+    // every navigation, pick, or family switch calls buildVoiceMenu() again,
+    // which bumps voiceMenuRenderToken (see its own declaration) — so this
+    // alone is a strictly stronger "has the user left this render" check
+    // than comparing sys/game/sub, which only caught a CHANGED nav, not a
+    // second concurrent render of the SAME one (the render-race Josh's
+    // Ambush report exposed)
+    isCurrent: () => voiceMenuRenderToken === renderToken,
+  }).then(() => {
+    if (voiceMenuRenderToken !== renderToken) return; // a later render already took over this menu
+    // whichever level just drew, if it's the leaf list holding the track's
+    // current pick, the ✓ row is marked already (instrumentLabel above) —
+    // bring it into view too, so reopening the menu doesn't leave it scrolled
+    // off (Josh, 2026-09-29: it "really needs to" drill back to his pick)
+    const row = [...menu.querySelectorAll(".fitem")].find(b => b.textContent.startsWith("✓ "));
+    if (row && row.scrollIntoView) row.scrollIntoView({block: "nearest"});
   }).catch(e => setInfo("⚠ " + e.message));
+}
+// Josh, 2026-09-29: picking a Final Fantasy IV instrument, closing the menu,
+// then reopening it landed back at the systems list instead of where he'd
+// drilled to — "it really needs to" go straight back. Resolves the track's
+// current game: voice (through resolveGameVault, so a pre-archive-reorg
+// voice with no console folder still matches) to {sys, game, sub: "all"} and
+// jumps the (already-open, already at the systems list) menu straight there.
+// Async — instAlbums()/resolveGameVault are a network/CATALOG read — so it's
+// guarded against the track's voice or the open menu having moved on by the
+// time it resolves, the same way gameVoiceLabel's own async fill guards
+// against a stale rebuild.
+async function openGameVoiceMenuTo(ti, voiceId) {
+  const info = parseGameVoice(voiceId);
+  if (!info) return;
+  const realVault = await resolveGameVault(info.vault);
+  const games = await instAlbums();
+  const g = games.find(x => x.vault.replace(/\/$/, "") === realVault);
+  if (!g) return; // an unpublished/unknown vault: stay at the systems list rather than drill nowhere
+  if (voiceMenuTi !== ti || !document.getElementById("voicemenu").classList.contains("on")) return; // the menu moved on
+  if ((song.tracks[ti].voice || "auto") !== voiceId) return; // the pick changed before this resolved
+  voiceMenuGameSys = g.sys; voiceMenuGameVault = g; voiceMenuGameSub = "all";
+  buildVoiceMenu(ti);
 }
 // SF2_FAMILY's own small 2-level nav (font -> its presets) — the SAME calling
 // convention as renderGameInstNav (rowFactory/onNavigate/isCurrent/backLabelAtTop)
@@ -7729,6 +7842,49 @@ function parseGameVoice(v) { // "game:<vaultFolder>:<instId>" -> {vault, instId}
   const rest = v.slice(5), i = rest.indexOf(":");
   return i < 0 ? null : {vault: rest.slice(0, i), instId: rest.slice(i + 1)};
 }
+// A game: voice written before the archive-by-console reorganization
+// (2026-09-29) has a vault with no console folder ("final-fantasy-7",
+// "ff1.nsf") — game files then lived at the archive root. Every album's
+// nsf.vault is now "<console>/<old vault>" (e.g. "ps1/final-fantasy-7/",
+// "nes/ff1.nsf"), so the OLD idVault 404s against instLibrary. Never rewrite
+// the annotation (Josh's picks are his) — resolve it to its album's CURRENT
+// vault at read time instead: idVault itself when it already matches an
+// album directly (already current, or simply unknown to instAlbums at all),
+// else the vault of the instAlbums() entry whose vault, with its console
+// prefix stripped, equals idVault (trailing "/" for a folder vault, the
+// whole filename for a single-file one). Every caller that loads/labels/
+// compares a game voice goes through this first.
+async function resolveGameVault(idVault) {
+  const games = await instAlbums();
+  if (games.some(g => g.vault.replace(/\/$/, "") === idVault)) return idVault;
+  const hit = games.find(g => {
+    const slash = g.vault.indexOf("/");
+    return slash >= 0 && g.vault.slice(slash + 1).replace(/\/$/, "") === idVault;
+  });
+  return hit ? hit.vault.replace(/\/$/, "") : idVault;
+}
+// Sync read of resolveGameVault, for the voice menu's per-row "is this the
+// current pick" comparison — fills in async and refreshes the open menu once
+// known, the SAME "fall back until known" contract as gameVoiceLabel/
+// sf2VoiceLabel. Kept synchronous on the CALLER's side deliberately:
+// buildGameVoicePicker races against a SECOND buildVoiceMenu() call when the
+// menu auto-drills on open (openGameVoiceMenuTo calls buildVoiceMenu once for
+// the systems list, then again once it resolves where to drill) — gating
+// buildGameVoicePicker's own render on a new top-level await reopened that
+// race (an old vault's leaf list appeared ON TOP OF the stale systems list,
+// only under the full test suite's timing, not in isolation). The fallback
+// (the raw idVault) already matches directly for an ALREADY-current vault —
+// the common case — so only an old, pre-reorg vault ever shows unmarked for
+// one render before the refresh catches it up.
+const gameVaultResolved = new Map(); // idVault -> resolved current vault
+function resolvedGameVaultSync(idVault) {
+  if (gameVaultResolved.has(idVault)) return gameVaultResolved.get(idVault);
+  resolveGameVault(idVault).then(v => {
+    gameVaultResolved.set(idVault, v);
+    if (voiceMenuTi >= 0 && document.getElementById("voicemenu").classList.contains("on")) buildVoiceMenu(voiceMenuTi);
+  }).catch(() => {});
+  return idVault;
+}
 // A loaded .sf2's preset: "sf2:<slug>:<bank>:<program>" (the slug is always a plain
 // slugify() token — no colons — so a strict 3-part split is enough, unlike a game
 // instrument id which can carry its own colons/@ and needs the "first colon only" split above).
@@ -7766,7 +7922,8 @@ function gamePreloadForSong() { // warm every game/sf2 voice's library or font t
   gameVoicesInSong().forEach(({vault, instId, voice}) => {
     if (gamePreloadTokens.has(voice)) return; // already loading/loaded this session
     gamePreloadTokens.set(voice, (async () => {
-      const lib = await instLibrary(gameVoiceVault(vault));
+      const realVault = await resolveGameVault(vault); // an old, pre-reorg vault resolves to its album's current one — gameLibSync stays keyed by the ORIGINAL vault below, so every reader (resolveVoiceInstrument) keeps finding it under the id it parsed
+      const lib = await instLibrary(gameVoiceVault(realVault));
       const inst = lib.instruments.find(i => i.id === instId);
       gameLibSync.set(vault, {lib, samples: (gameLibSync.get(vault) || {}).samples || {}});
       if (!inst) return; // scheduleGameNote falls back and warns — see above
@@ -7775,7 +7932,7 @@ function gamePreloadForSong() { // warm every game/sf2 voice's library or font t
       song.tracks.forEach(tr => { if (tr.voice === voice) for (const nn of tr.notes) if (!nn.gone) pitches.add(nn.p); });
       const hashes = new Set();
       pitches.forEach(p => { const r = P.regionFor(inst, p, 100); if (r) hashes.add(r.sample); });
-      const samples = await instSamples(gameVoiceVault(vault), lib, [...hashes]);
+      const samples = await instSamples(gameVoiceVault(realVault), lib, [...hashes]);
       const entry = gameLibSync.get(vault);
       Object.assign(entry.samples, samples);
     })().catch(err => logErr("⚠ game instrument " + voice + " didn't load: " + err.message)));
@@ -11570,6 +11727,60 @@ document.getElementById("fileinput").addEventListener("change", async e => {
   } catch (err) { setInfo("could not import: " + err.message); }
   e.target.value = ""; // allow re-picking the same file
 });
+// ---- Import hub (docs/import-hub-design.md): File → Import… opens one screen,
+// one section per format, instead of the old <label for="fileinput"> that just
+// listed every extension in a row. Every section's Choose files… calls the SAME
+// #fileinput.click() — a data-kind on the button only changes the status line's
+// wording before the native picker opens; a file picked from the "wrong" section
+// still falls through to openPickedFiles' own byte-sniff and routes correctly.
+// a function, not a const object literal: FOLDER_NAMES is declared later in
+// this same script (below the folders/save-form code) — evaluating its
+// lookups here at top-level, at parse time, would hit the TDZ; a function
+// body only reads FOLDER_NAMES once actually called, well after boot
+function importHubLabel(kind) {
+  return {midi: "MIDI", nes: FOLDER_NAMES.nes, gb: FOLDER_NAMES["game-boy"],
+    snes: FOLDER_NAMES.snes, genesis: FOLDER_NAMES.genesis, ps1: FOLDER_NAMES.ps1, ps2: FOLDER_NAMES.ps2,
+    n64: FOLDER_NAMES.n64, sf2: "SoundFont", audio: "recording"}[kind];
+}
+document.getElementById("fileimporthub").addEventListener("click", () => {
+  closeFileMenus();
+  document.getElementById("importhubstatus").textContent = "Drop files anywhere on this panel, or use a section's Choose files… above.";
+  document.getElementById("importhub").classList.add("on");
+});
+// by id, not document.querySelectorAll("[data-kind]") — the vm harness's
+// document stub has no querySelectorAll, only getElementById (NIGHT-ROLL.md/
+// CLAUDE.md: the harness strings-match the hub's markup instead)
+for (const [id, kind] of [["ihMidi", "midi"], ["ihNes", "nes"], ["ihGb", "gb"], ["ihSnes", "snes"],
+                          ["ihGenesis", "genesis"], ["ihPs1", "ps1"], ["ihPs2", "ps2"], ["ihN64", "n64"],
+                          ["ihSf2", "sf2"], ["ihAudio", "audio"]]) {
+  document.getElementById(id).addEventListener("click", () => {
+    document.getElementById("importhubstatus").textContent = "choose your " + importHubLabel(kind) + " file(s)…";
+    document.getElementById("fileinput").click();
+  });
+}
+// the drop target (phase 2 of the design): dragover/drop on #importhub only,
+// feeding the dropped files to the same openPickedFiles the picker uses —
+// its own comment above already anticipated a drop.
+document.getElementById("importhub").addEventListener("dragover", e => {
+  e.preventDefault();
+  document.getElementById("importhub").classList.add("dragover");
+});
+document.getElementById("importhub").addEventListener("dragleave", e => {
+  if (e.target === document.getElementById("importhub")) document.getElementById("importhub").classList.remove("dragover");
+});
+document.getElementById("importhub").addEventListener("drop", async e => {
+  e.preventDefault();
+  document.getElementById("importhub").classList.remove("dragover");
+  const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
+  if (!files.length) return;
+  stop();
+  try {
+    const loaded = [];
+    for (const f of files) loaded.push({name: f.name, bytes: new Uint8Array(await f.arrayBuffer())});
+    await openPickedFiles(loaded);
+  } catch (err) { setInfo("could not import: " + err.message); }
+  closeFileMenus();
+});
 async function openPickedFiles(loaded) { // [{name, bytes}] from the picker, a drop, or a file handed to the iPad app
   {
     const isM3u = x => /\.m3u8?$/i.test(x.name);
@@ -11589,9 +11800,12 @@ async function openPickedFiles(loaded) { // [{name, bytes}] from the picker, a d
     // "Findings, milestone 1"): refused by name at import, not a MIDI parse
     // error. Format identification only (no game table — CLAUDE.md).
     const streamed = nsfs.length ? [] : rest.filter(x => streamedAudioMagic(x.bytes));
-    if (audios.length && audios.length === rest.length && !m3us.length) { // recordings → audio tracks on the open song
+    if (audios.length && audios.length === rest.length && !m3us.length) { // recordings → a new song (Import hub's "New song from a recording", no song open) or a track on the open one (the ＋∿ chip's own #audioinput never reaches here)
+      const freshSong = !song;
+      if (freshSong) createComposition(120, 4, 4);
       audioReplaceTi = null;
       await importAudioFiles(audios.map(x => ({name: x.name, bytes: x.bytes, type: ""})));
+      if (freshSong) setInfo("new song — Edit → Pencil to write notes against the recording. It lives on this device until Save.");
     } else if (nsfs.length) { // a chip-music file (NSF or GBS) is an album by itself
       if (rest.length > 1 && !CHIPS[chipKindOf(nsfs[0].bytes, nsfs[0].name)].perFile) setInfo("importing the chip file; pick MIDI files separately from other formats");
       const kind = chipKindOf(nsfs[0].bytes, nsfs[0].name);
@@ -13860,6 +14074,7 @@ function closeFileMenus() {
   filesub.classList.remove("on");
   document.getElementById("editsheet").classList.remove("on");
   document.getElementById("viewsheet").classList.remove("on");
+  document.getElementById("importhub").classList.remove("on");
 }
 function fsubItem(label, onTap, dim) {
   const b = document.createElement("button");
@@ -14758,7 +14973,6 @@ const CHIPS = {
           const mini = chain.find(s => s.name === "song.minipsf2");
           if (onProgress) onProgress(0.3);
           const song = await M.ps2Song(files, mini, {inflate: psfInflater()});
-          if (song.kind === "bgm-unimplemented") throw new Error("Square's PS2 sequence format (BGM/WD) is not supported yet.");
           if (!song.renderable) throw new Error((song.why || "no HD/BD bank in this image") + " — synthesized voices");
           if (onProgress) onProgress(1);
           return {result: song.result, seconds: secs};
@@ -14779,7 +14993,6 @@ const CHIPS = {
           const mini = chain.find(s => s.name === parsed.fileName);
           if (onProgress) onProgress(0.3);
           const song = await M.ps2Song(files, mini, {inflate});
-          if (song.kind === "bgm-unimplemented") throw new Error("Square's PS2 sequence format (BGM/WD) is not supported yet.");
           const result = song.result;
           // the SAME sounding-pitch flag as PS1 (PSX_SOUNDING_ON), held off pending the same ear check
           return sonySeqCapture(M, "psf2", result, 48000, (one, o) => M.renderSpu(one, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: o.seconds}), onProgress, song.warnings || []);
@@ -18963,6 +19176,10 @@ makeWindow("instsheet", {dockable: true});
 makeWindow("jobssheet", {dockable: true});
 makeWindow("pubjobsheet", {dockable: true});
 makeWindow("infosheet", {dockable: true});
+// the import hub (docs/import-hub-design.md): a one-shot picker, not a panel
+// worth pinning open while working the roll — registered so it's a known
+// window (WM_WINDOWS), but not dockable, so it gets no Dock button.
+makeWindow("importhub", {dockable: false});
 // ---- dividers: one pair per side (full cell + inner cell — same width
 // value, wm[side].w, whichever cell is currently showing it), plus the
 // bottom dock's height (top edge) and, only with two windows, its split

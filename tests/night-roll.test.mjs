@@ -1316,6 +1316,30 @@ test("audio import helpers: byte sniff, file slugs, mono WAV encoder", () => {
   assert.match(run(`tempoFromPeaks(__flat, ${bucketSec}, 0, 12).err`), /no beats/);
 });
 
+test("Import hub: 'New song from a recording' — a picked audio file with no song open creates one first (createComposition, then importAudioFiles)", async () => {
+  const wav = (() => {
+    const n = 32, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer);
+    const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
+    w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE");
+    w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, 44100, true); dv.setUint32(28, 88200, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    w(36, "data"); dv.setUint32(40, n * 2, true);
+    return b;
+  })();
+  app.context.__take = wav;
+  run(`song = null; songKey = null;`); // as if opened straight from the hub, nothing open yet
+  await run(`openPickedFiles([{name: "riff idea.wav", bytes: __take}])`);
+  assert.equal(val(`!!song`), true, "a song now exists");
+  assert.deepEqual(val(`song.timesig`), [4, 4]);
+  assert.equal(val(`song.tempos[0].usq`), 500000, "120 bpm");
+  assert.equal(val(`song.tracks.filter(t => t.kind !== "audio").length`), 3, "the three empty note tracks createComposition seeds stay");
+  const audioTrack = val(`song.tracks.find(t => t.kind === "audio")`);
+  assert.ok(audioTrack, "the recording landed as its own track");
+  assert.equal(audioTrack.clips[0].file, "riff-idea.wav");
+  assert.equal(run(`infoFull`), "new song — Edit → Pencil to write notes against the recording. It lives on this device until Save.");
+  run(`song = null; songKey = null; rollnotes = []; editUndo = [];`);
+});
+
 test("wsolaStretch: half speed doubles the length and keeps the pitch; double speed halves it", () => {
   const sr = 8000, n = sr * 1, sine = new Float32Array(n);
   for (let i = 0; i < n; i++) sine[i] = Math.sin(2 * Math.PI * 440 * i / sr);
@@ -1745,7 +1769,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -1755,6 +1779,35 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
+});
+
+test("Import hub (docs/import-hub-design.md): the File menu opens it, all ten sections are there in order, and the refusal strings match the real ones", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  // File menu: the old <label for="fileinput"> listing every extension is gone,
+  // replaced by a button that opens the hub
+  assert.doesNotMatch(html, /<label class="fitem" for="fileinput"/, "the old bare label is gone");
+  assert.match(html, /<button class="fitem" id="fileimporthub">Import…<\/button>/);
+  const hub = html.slice(html.indexOf('id="importhub"'), html.indexOf('id="midisheet"'));
+  assert.ok(hub.length > 200, "the hub markup is there");
+  // ten sections, in the design doc's order
+  const order = ["MIDI", "NES", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2",
+                 "Nintendo 64", "SoundFont", "New song from a recording"];
+  const positions = order.map(t => hub.indexOf("<dt>" + t + "</dt>"));
+  for (const [i, p] of positions.entries()) assert.ok(p >= 0, order[i] + " is a section");
+  for (let i = 1; i < positions.length; i++) assert.ok(positions[i] > positions[i - 1], order[i] + " comes after " + order[i - 1]);
+  // the console section titles are exactly FOLDER_NAMES' words — no invented alternate spelling to drift from it
+  for (const [k, title] of [["nes", "NES"], ["game-boy", "Game Boy"], ["snes", "Super NES"], ["genesis", "Genesis"],
+                             ["ps1", "PlayStation"], ["ps2", "PlayStation 2"], ["n64", "Nintendo 64"]])
+    assert.equal(run(`FOLDER_NAMES[${JSON.stringify(k)}]`), title, k);
+  // every section has its own Choose files… button, tagged by kind, sharing #fileinput
+  for (const kind of ["midi", "nes", "gb", "snes", "genesis", "ps1", "ps2", "n64", "sf2", "audio"])
+    assert.match(hub, new RegExp('data-kind="' + kind + '">Choose files…</button>'), kind);
+  // the refusal strings match the real ones the app throws/shows (not paraphrased)
+  assert.match(hub, /expansion sound chip &lt;names&gt; not supported/);
+  assert.match(hub, /this is streamed audio, not note data — Night Roll reads sequence data \(notes\), not pre-rendered streams/);
+  // the drop target and the non-dockable window registration
+  assert.match(html, /document\.getElementById\("importhub"\)\.addEventListener\("drop"/);
+  assert.match(html, /makeWindow\("importhub", \{dockable: false\}\)/);
 });
 
 test("tempo: directives rebuild the map from the song's base; removal restores", () => {
@@ -4243,6 +4296,93 @@ test("game instrument voice: the voice & color menu's Game instruments picker (g
   assert.equal(val(`song.tracks[0].voice`), "game:goldeneye-007:rare:bank@0x2D1AB8:prog63", "the picker wrote the game: voice, id colons and all");
   assert.match(val(`rollnotes.find(n => n.trackdir).text`), /voice=game:goldeneye-007:rare:bank@0x2D1AB8:prog63/, "synced as the track: directive");
   assert.ok(val(`globalThis.__srcs`) > 0, "assigning auditions it once");
+});
+
+test("game instrument voice: reopening a track's voice menu drills straight back to the instrument it's set to, not the systems list (Josh, 2026-09-29)", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const wav = (() => { const n = 64, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer); const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
+    w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 32000, true); dv.setUint32(28, 64000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    w(36, "data"); dv.setUint32(40, n * 2, true); for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, i % 8 < 4 ? 16000 : -16000, true); return b; })();
+  app2.context.__wav = wav;
+  app2.context.__play = { regionFor: (inst) => inst.keyRegions[0], playNote: () => new Float32Array(10).fill(0.4) };
+  run(`instPlayModule = Promise.resolve(__play);
+       CATALOG = {"GoldenEye": [["Dam", "albums/n64/goldeneye-007/dam.mid"]]};
+       albumMetaCache["albums/n64/goldeneye-007"] = {title: "GoldenEye 007", nsf: {vault: "goldeneye-007/", chip: "usf", tracks: {}}};
+       vaultFetch = async f => {
+         if (f.endsWith("instruments.json")) return new TextEncoder().encode(JSON.stringify({format: "night-roll-instruments", version: 1,
+           samples: {h1: {rate: 32000, loop: null, file: "h1.wav"}},
+           instruments: [{id: "rare:bank@0x2D1AB8:prog63", nameGuess: "Soft pad", kind: "melodic", used: true, usedIn: ["Dam"],
+             keyRegions: [{keyLo: 0, keyHi: 127, rootKey: 60, sample: "h1"}]}]}));
+         if (f.endsWith("h1.wav")) return __wav;
+         throw new Error("unexpected " + f);
+       };
+       createComposition(120, 4, 4);
+       // a real track: directive, not a bare field assignment: finalizeNotes()
+       // re-derives every track's voice from rollnotes, and a later, unrelated
+       // re-finalize (this harness's fake clock ticks drive some of the app's
+       // own background passes) would otherwise wipe a voice with no
+       // annotation behind it
+       rollnotes = rollnotes.concat(parseRollnotes("[1.1]\\ntrack: pulse1 voice=game:goldeneye-007:rare:bank@0x2D1AB8:prog63\\n").map(resolveNote));
+       finalizeNotes();`); // already picked earlier, as if the menu is being reopened
+  const settle = async () => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } };
+  // openVoiceMenu's own state setup (systems list — GAME_FAMILY, everything
+  // else null, "on" already showing before the async drill resolves), then
+  // the drill it now triggers on top — no manual "Nintendo 64 ›" navigation.
+  // (Not calling buildVoiceMenu(0) here too, the way openVoiceMenu itself
+  // does right before starting the drill: the vm harness's own #voicemenu
+  // stub has no real innerHTML clearing — see harness.mjs's makeEl — so a
+  // second, unrelated build would just pile its rows on top of this one's
+  // rather than replace them, which a real browser's menu.innerHTML = ""
+  // never does; the drill itself is exactly as good a proof either way.)
+  run(`voiceMenuTi = 0; voiceMenuGroup = "Game instruments"; voiceMenuGameVault = null; voiceMenuGameSub = null; voiceMenuGameSys = null;
+       document.getElementById("voicemenu").classList.add("on");
+       openGameVoiceMenuTo(0, song.tracks[0].voice);`);
+  await settle();
+  const rows = val(`[...document.getElementById("voicemenu").children].map(r => r.textContent)`);
+  assert.ok(rows.includes("✓ Soft pad  · in 1 song"), "landed straight on the leaf list with the current pick marked: " + rows.join(" | "));
+  assert.ok(!rows.some(r => r.includes("Nintendo 64") || r === "GoldenEye 007 ›"), "no manual navigation needed — it skipped the systems/games lists: " + rows.join(" | "));
+});
+
+test("game instrument voice: an OLD-form vault (no console folder, written before the archive-by-console reorg) still resolves — loads from the album's CURRENT vault, plays, marks current, and the menu drills to it (Josh's Ambush report, 2026-09-29)", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const wav = (() => { const n = 64, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer); const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
+    w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 32000, true); dv.setUint32(28, 64000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    w(36, "data"); dv.setUint32(40, n * 2, true); for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, i % 8 < 4 ? 16000 : -16000, true); return b; })();
+  app2.context.__wav = wav;
+  app2.context.__play = { regionFor: (inst) => inst.keyRegions[0], playNote: () => new Float32Array(10).fill(0.4) };
+  run(`instPlayModule = Promise.resolve(__play);
+       CATALOG = {"GoldenEye": [["Dam", "albums/n64/goldeneye-007/dam.mid"]]};
+       // the album's nsf.vault is the CURRENT, post-reorg one (console-prefixed)
+       albumMetaCache["albums/n64/goldeneye-007"] = {title: "GoldenEye 007", nsf: {vault: "n64/goldeneye-007/", chip: "usf", tracks: {}}};
+       vaultFetch = async f => {
+         if (f === "n64/goldeneye-007/instruments/instruments.json") return new TextEncoder().encode(JSON.stringify({format: "night-roll-instruments", version: 1,
+           samples: {h1: {rate: 32000, loop: null, file: "h1.wav"}},
+           instruments: [{id: "a", nameGuess: "Soft pad", kind: "melodic", used: true, usedIn: ["Dam"],
+             keyRegions: [{keyLo: 0, keyHi: 127, rootKey: 60, sample: "h1"}]}]}));
+         if (f.endsWith("h1.wav")) return __wav;
+         throw new Error("unexpected " + f);
+       };
+       createComposition(120, 4, 4);
+       // OLD form: no console folder, as it was saved before the reorg — a
+       // real track: directive, not a bare field assignment (see the
+       // "reopening…" test above for why)
+       rollnotes = rollnotes.concat(parseRollnotes("[1.1]\\ntrack: pulse1 voice=game:goldeneye-007:a\\n").map(resolveNote));
+       finalizeNotes();
+       gamePreloadForSong();`);
+  const settle = async () => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } };
+  await settle();
+  // loaded via the album's CURRENT vault, cached under the ORIGINAL (old) voice-string vault key
+  assert.equal(val(`gameLibSync.get("goldeneye-007") && gameLibSync.get("goldeneye-007").lib.instruments[0].id`), "a",
+    "the library loaded from n64/goldeneye-007/instruments/instruments.json and cached under the OLD vault key resolveVoiceInstrument still looks it up by");
+  // plays: resolveVoiceInstrument (scheduleGameNote's own gate) finds it, not the synth fallback
+  assert.equal(val(`resolveVoiceInstrument("game:goldeneye-007:a").inst.id`), "a");
+  // the menu: marks it current AND drills straight to it, comparing resolved vaults + instrument ids, not the raw (old) voice string
+  run(`voiceMenuTi = 0; voiceMenuGroup = "Game instruments"; voiceMenuGameVault = null; voiceMenuGameSub = null; voiceMenuGameSys = null;
+       document.getElementById("voicemenu").classList.add("on");
+       openGameVoiceMenuTo(0, song.tracks[0].voice);`);
+  await settle();
+  const rows = val(`[...document.getElementById("voicemenu").children].map(r => r.textContent)`);
+  assert.ok(rows.some(r => r.startsWith("✓ ") && r.includes("Soft pad")), "marked current and drilled straight to it: " + rows.join(" | "));
 });
 
 test("game instrument voice: scheduleNote renders each note through playNote and caches a repeat", async () => {

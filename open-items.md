@@ -4,6 +4,56 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## IMPORT HUB — DONE 2026-09-29 (docs/import-hub-design.md, Josh: "I still hate the file import line")
+
+All three phases, built exactly to the reviewed design. `npm test` green
+(full suite, not just the vm files touched).
+
+1. **The hub.** File → Import… (`#fileimporthub`) opens `#importhub`, one
+   screen with a section per format — MIDI, NES, Game Boy, Super NES,
+   Genesis, PlayStation, PlayStation 2, Nintendo 64, SoundFont, New song
+   from a recording — each saying exactly what it needs and its own
+   `Choose files…`, all sharing the existing `#fileinput` (its accept list
+   and byte-sniff untouched; a pick from the "wrong" section still routes
+   correctly). Non-dockable window (`makeWindow("importhub", {dockable:
+   false})` — a one-shot picker, not a panel worth pinning open).
+2. **Drop target.** `dragover`/`drop` on `#importhub` only, feeding
+   `openPickedFiles` like any pick; a dashed-gold highlight while dragging.
+3. **New song from a recording.** `openPickedFiles`'s audio branch now
+   calls `createComposition(120, 4, 4)` first when no song is open, before
+   `importAudioFiles` — previously a recording pick with nothing open
+   silently did nothing (`importAudioFiles` returns early on `!song`).
+
+Cleanups that rode along: `CHIPS.psf2`'s two dead `bgm-unimplemented`
+throws removed from index.html (tools/ untouched, out of scope); help
+sheet's Import… paragraph shrank behind a new dedicated entry covering all
+ten kinds, two outdated PS2 claims removed; "Super Nintendo" → "Super NES"
+in help text and the FEATURES drift list. Full writeup: NIGHT-ROLL.md
+"Import hub".
+
+**Also this session — the ✦ AI panel (and every migrated window) docked
+short cut off its input row.** `.overlay.docked .sheet` no longer scrolls
+as one block; the one scrolling body per window (`#asklog`, `#instrows`,
+`#notelistrows`, `#jobslist`, `#pubjoblist`, `#infosheettext`) flexes and
+scrolls on its own, so the header and the input/button rows always stay
+visible at any dock height. NIGHT-ROLL.md "Docked-short content flexes".
+
+**Also this session — reopening a track's voice menu now drills back to
+the picked instrument** instead of resetting to the systems list (Josh's
+report: he picked a Final Fantasy IV instrument, closed the menu, reopened
+it, and it didn't drill back down — "it really needs to"). Exposed and
+fixed a render-race between three things that can each rebuild the same
+open popup (`voiceMenuRenderToken`) and closed the old-vault gap the
+archive-by-console move left open (see "ARCHIVE BY CONSOLE" below).
+NIGHT-ROLL.md "Reopening the menu drills back to the pick" /
+"Render races on the SAME popup".
+
+**Needs eyes in a browser** (not done here, no local Playwright per
+CLAUDE.md): the File menu's new Import… button and the hub open/scrolled;
+the drop-target highlight; a real drag-and-drop pick; the new-song-from-a-
+recording result; the ✦ AI panel docked bottom at 240px with its input
+visible; the voice menu's auto-drill on a real device.
+
 ## ZELDA (NES) EAR/EYE REPORTS — DONE 2026-09-29
 
 Four fixes from Josh's 2026-09-29 report on The Legend of Zelda (NES),
@@ -1432,8 +1482,10 @@ read-only except annotations (already true: captures open read-only and
 Save As forks). Today a voice pick is stored as a track: annotation and so
 works on any song. Plan: the voice menu's instrument picks (and, pending
 his answer, volume and pan) only on editable songs, with a line pointing
-to Edit locally / Save As; colours stay free. Waiting on his answer about
-volume/pan.
+to Edit locally / Save As; colours stay free. PARKED by Josh ("I wouldn't want to think about it right now"): two
+options — lock instrument/volume/pan on songs he can't edit (his first
+answer: lock volume and pan too), or allow changes and have Save offer to
+make his own copy. Nothing changes until he picks.
 
 ## ARCHIVE BY CONSOLE — DONE 2026-09-29 (Josh: "why is the NSF repository not following the same directory structure")
 
@@ -1445,6 +1497,20 @@ read translation for game-instrument voice ids that embed the old vault
 ("game:goldeneye-007:…" in Josh's songs), so no song breaks; devices
 re-fetch each game file once under its new path (the IDB cache is keyed
 by path). After the current Zelda fixes.
+
+**Read translation actually landed 2026-09-29** (the plan above named it,
+but it wasn't shipped when the archive moved — Josh's Ambush song surfaced
+it: he picked a Final Fantasy VII instrument, and the pick fell back to
+synth because `gameVoiceVault("final-fantasy-7")` still resolved to the
+pre-move path). `resolveGameVault(idVault)` (index.html) resolves an old,
+prefix-less vault to its album's current one via `instAlbums()`, matching
+by stripping the console prefix; every game-voice reader goes through it
+(`gamePreloadForSong`, `gameVoiceLabel`) or its sync counterpart
+`resolvedGameVaultSync` (the voice menu's own current-voice marking/drill —
+kept synchronous on purpose, see NIGHT-ROLL.md "Render races on the SAME
+popup"). `gameLibSync`/`gamePreloadTokens` stay keyed by the ORIGINAL vault
+throughout, so nothing about the in-memory caches changed shape. Test:
+"game instrument voice: an OLD-form vault …" in tests/night-roll.test.mjs.
 
 ## TWO PRODUCTS? — IDEA 2026-09-28 (Josh: "not sure that we should take action on it")
 

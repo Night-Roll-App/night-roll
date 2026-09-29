@@ -1597,6 +1597,63 @@ falls back to the track's own auto (NES) synth voice, with one ⚠ per
 (voice, reason) this session. Test: "game instrument voice: …" in
 tests/night-roll.test.mjs.
 
+**Reopening the menu drills back to the pick (Josh's Ambush report,
+2026-09-29).** Before this, `openVoiceMenu` always reset the games picker
+to the systems list, even when the track's current voice WAS a game one —
+picking a Final Fantasy IV instrument, closing the menu, then reopening it
+landed back at the top, not where he'd drilled to. `openGameVoiceMenuTo(ti,
+voiceId)` resolves the current `game:` voice to `{sys, game, sub: "all"}`
+(via `instAlbums()`, matching by vault) and jumps the already-open menu
+straight to that leaf list; `openVoiceMenu` calls it right after its own
+synchronous `buildVoiceMenu`, so the systems list shows for one frame before
+the drill lands (async — it's a CATALOG/network read). Guarded against the
+track's voice or the open menu having moved on by the time it resolves, the
+same way `gameVoiceLabel`'s own async fill guards a stale rebuild.
+`buildGameVoicePicker`'s `instrumentLabel` now marks the current row by
+comparing **resolved vaults + instrument ids**, never the raw voice string
+against a freshly-built one (`gameVoiceId` always uses the album's current
+vault). The leaf row scrolls into view once drawn.
+
+**Render races on the SAME popup (2026-09-29).** Three independent things
+can each call `buildVoiceMenu()` on the one open `#voicemenu`: the initial
+open, `gameVoiceLabel`'s own async label-refresh, and now
+`openGameVoiceMenuTo`'s drill. The existing staleness guard
+(`voiceMenuGameVault`/`Sub`/`Sys` compared against a frozen snapshot) only
+catches a CHANGED nav — two renders landing on the SAME state (e.g. both
+re-drawing the same leaf list) could both pass and both append, since only
+`buildVoiceMenu`'s own synchronous entry clears the menu, not each async
+continuation. `voiceMenuRenderToken` (bumped once at the top of every
+`buildVoiceMenu` call) fixes this: `buildGameVoicePicker`'s `isCurrent`
+check is just `voiceMenuRenderToken === renderToken`, strictly stronger
+than the nav-state comparison it replaced, since EVERY navigation, pick, or
+family switch already calls `buildVoiceMenu` again.
+
+**Old vaults, from before the archive-by-console reorganization
+(2026-09-29).** A `game:` voice picked before archive-by-console (game
+files then lived at the archive root) has a vault with no console folder
+("final-fantasy-7", "ff1.nsf"); every album's `nsf.vault` is now
+`"<console>/<old vault>"` (e.g. `"ps1/final-fantasy-7/"`,
+`"nes/ff1.nsf"`), so the old vault 404s against `instLibrary`. Never
+rewritten (Josh's picks are his) — resolved at read time instead:
+`resolveGameVault(idVault)` (async — an `instAlbums()`/CATALOG read)
+returns `idVault` itself when it already matches an album directly
+(already current, or simply unknown), else the vault of the `instAlbums()`
+entry whose vault, with its console prefix stripped, equals `idVault`.
+Every game-voice reader goes through it first — `gamePreloadForSong`,
+`gameVoiceLabel` — except `buildGameVoicePicker`'s own per-row "is this the
+current voice" check, which uses `resolvedGameVaultSync` (a sync read,
+same "fall back to the id, fill in async, refresh once known" contract as
+`gameVoiceLabel`/`sf2VoiceLabel`) deliberately: gating that render on a
+NEW top-level await reopened the render-race above (an old vault's leaf
+list would draw fine in isolation but not under the full test suite's
+timing — the race was real, just narrow). `gameLibSync` and
+`gamePreloadTokens` stay keyed by the voice string's ORIGINAL (possibly
+old) vault throughout — only the actual `instLibrary`/`instSamples` fetch
+URLs go through the resolved, current one — so `resolveVoiceInstrument`
+(scheduleGameNote's own gate) keeps finding it under the same key it
+parsed from `tr.voice`. Test: "game instrument voice: an OLD-form vault …"
+in tests/night-roll.test.mjs.
+
 Step 4: any SoundFont 2 (.sf2 — a fan-made game font, a better piano,
 anything, 2026-09-28) loads the SAME way, its presets becoming track
 voices alongside the extracted game libraries. `tools/instruments/sf2.mjs`
@@ -2967,6 +3024,30 @@ song] below it from the outer context." No top dock.
   the pre-phase-A shape backfilling `mode`). FEATURES keyword "Window
   controls".
 
+### Docked-short content flexes; the header and input/button rows stay put (2026-09-29)
+
+The bottom dock's default height (240px, `WM_DEFAULT_H`) cut off the ✦ AI
+panel's input row, Speak/Send and Clear chat when it docked there — `.sheet`
+(and `.sheet.help`) normally scroll AS ONE BLOCK when floating (`overflow-y:
+auto`, the ✕ staying visible via `position:sticky`), which is fine when the
+sheet has plenty of room, but at a short dock height the block simply
+overflowed past the bottom, taking the input with it. `.overlay.docked
+.sheet` now adds `overflow: hidden; min-height: 0` — the sheet itself never
+scrolls while docked, it's exactly the dock's height — and each migrated
+window's ONE scrolling body element gets `flex: 1; min-height: 0;
+overflow-y: auto` scoped to `.docked` (`#asksheet.docked #asklog`,
+`#instsheet.docked #instrows`, `#notelistsheet.docked #notelistrows`,
+`#jobssheet.docked #jobslist`, `#pubjobsheet.docked #pubjoblist`,
+`#infosheet.docked #infosheettext`). Every other row (the header `<h2>`,
+chip rows, the input row, the button row) keeps its natural size as an
+ordinary flex child of `.sheet`'s existing `display: flex; flex-direction:
+column` — the body element is the ONLY one that shrinks, all the way to 0
+if the dock is short enough, so the input/button rows are guaranteed to
+stay visible at any dock height. `#asklog`'s own `min-height: 80px` (a
+sensible floor while floating, where there's room to spare) does not apply
+while docked — the docked-scoped rule's higher specificity wins over it,
+letting the log shrink past 80px if that's what it takes.
+
 ### Phase B (queued, not built)
 
 Drag-to-edge docking (grab a window's title and drop it on a dock zone,
@@ -3321,11 +3402,18 @@ an `AUDIO_STRIP_H` (18 px) band folded into `RULER_H` when the song has
 audio. Chip label and lane header carry " ∿".
 
 **UX.** `＋∿` chip (own `#audioinput`, `accept="audio/*"…` so iOS opens
-Files) and File → Import… (`audioMagic` sniff: RIFF/WAVE, FORM/AIFF,
-ID3, MPEG sync, ftyp, fLaC, OggS) → `importAudioFiles()`: locked songs
-are refused with the Save As hint; > 20 MB (`AUDIO_SIZE_GATE`) asks
-"store as 16-bit mono WAV" (`monoWavBytes`) vs as-is; lands at the
-cursor's bar as a new track named from the slug; one group undo. The
+Files) and the import hub's **New song from a recording** section (below;
+`audioMagic` sniff: RIFF/WAVE, FORM/AIFF, ID3, MPEG sync, ftyp, fLaC, OggS)
+→ `importAudioFiles()`: locked songs are refused with the Save As hint; a
+pick with NO song open creates one first (`createComposition(120, 4, 4)`,
+2026-09-29 — `openPickedFiles`'s audio branch checks `!song` before calling
+`importAudioFiles`, so the recording lands on a fresh `Untitled N`, 4/4 at
+120 bpm, rather than silently doing nothing) with its own final status
+line ("new song — Edit → Pencil to write notes against the recording. It
+lives on this device until Save."), overriding `importAudioFiles`'s own
+per-file message; > 20 MB (`AUDIO_SIZE_GATE`) asks "store as 16-bit mono
+WAV" (`monoWavBytes`) vs as-is; lands at the cursor's bar as a new track
+named from the slug; one group undo. The
 voice menu becomes the **recording sheet** (`buildClipControls`) for an
 audio track: starts ±bar/±beat, offset ±10/±100 ms, ⇤ Align first sound
 (first peak bucket over 0.02), Replace file…, ☐ someone else's
@@ -3381,3 +3469,85 @@ a waveform in the roll, a dedicated audio repo (bytes go
 where the song goes: folder or songs repo — Josh's ruling pending),
 Save As / Move to… carrying `.audio/` along (they copy the annotation;
 the bytes must be re-imported until that lands), orphan cleanup.
+
+## Import hub (docs/import-hub-design.md, 2026-09-29)
+
+Josh: "I still hate the file import line. It lists all the extensions.
+Maybe we make file import have its own dialog and then it can tell you how
+or what you need to import for each system that we support." File →
+Import… (`#fileimporthub`, replacing the old `<label for="fileinput">` that
+just listed every extension) opens `#importhub`, a non-dockable window
+(`makeWindow("importhub", {dockable: false})` — a one-shot picker, not a
+panel worth pinning open while working the roll, unlike Notes/Instruments/
+Jobs/Publish/AI/Status) built as an ordinary `.overlay` > `.sheet.help`, so
+it gets the generic ✕/backdrop-dismiss/Esc/drag/resize-grip treatment for
+free, same as any other sheet — nothing bespoke to wire.
+
+**One screen, one section per format**, `dl`/`dt`/`dd` rhythm like the help
+sheet, in this order: MIDI, NES, Game Boy, Super NES, Genesis, PlayStation,
+PlayStation 2, Nintendo 64, SoundFont, New song from a recording. Each
+section's own `<dt>` text is the exact wording `FOLDER_NAMES` uses for that
+console (NES, Super NES, Game Boy, Nintendo 64, PlayStation, PlayStation 2,
+Genesis) — hardcoded to match rather than rendered from the object at
+runtime (a vm test cross-checks the two so they can't drift silently), since
+the section titles are otherwise static markup with no per-game content to
+justify a JS render pass. Each section names exactly what it needs (a
+playlist alongside the chip file, which library file rides with a chip
+sequence set, which refusal it gives and why) and ends in its own `Choose
+files…` button (`data-kind="nes"` etc., ids `ihMidi`/`ihNes`/`ihGb`/
+`ihSnes`/`ihGenesis`/`ihPs1`/`ihPs2`/`ihN64`/`ihSf2`/`ihAudio`).
+
+**One shared `#fileinput` underneath every button** — its `accept` list,
+the `application/octet-stream` entry, and its comment are all unchanged
+(Files still opens with every extension selectable; the byte-sniff in
+`openPickedFiles` is still the real gate). `data-kind` only changes
+`#importhubstatus`'s wording before the native picker opens
+(`importHubLabel(kind)`, a lookup FUNCTION rather than a top-level const —
+`FOLDER_NAMES` is declared later in the same inline script, so building the
+label map eagerly at parse time would hit the TDZ; a function body only
+reads it once actually called, well after boot). A file picked from the
+"wrong" section still falls through to `openPickedFiles`'s own sniff and
+routes correctly — nothing about which button was tapped is threaded
+through to the routing logic, by design. `closeFileMenus()` now also closes
+`#importhub`, so a successful pick (the `#fileinput` `change` handler)
+dismisses the hub the same way it already dismissed the File menu.
+
+**Drop target (phase 2).** `dragover`/`drop` on `#importhub` only (not the
+whole page — this app has never had drag-and-drop before), feeding the
+dropped files straight to `openPickedFiles`, exactly like a `#fileinput`
+pick. `.dragover` (added on `dragover`, cleared on `dragleave`/`drop`) gets
+a dashed gold outline + a faint gold wash on the sheet
+(`#importhub.dragover .sheet`).
+
+**New song from a recording (phase 3).** No separate code path — the hub's
+own section is documented under "Audio tracks — recordings as tracks", its
+UX paragraph; the short version: `openPickedFiles`'s existing "recordings →
+audio tracks" branch now calls `createComposition(120, 4, 4)` first when no
+song is open, then `importAudioFiles` as before, with its own final status
+line replacing `importAudioFiles`'s per-file one.
+
+**Cleanups that rode along:** `CHIPS.psf2`'s two dead `if (song.kind ===
+"bgm-unimplemented") throw …` lines (index.html only — `ps2Song` never
+returns that kind since milestone 3; tools/ps2/INTEGRATION.md already
+called them out as dead but left in place — Josh's call this time was to
+actually remove them from index.html, while `tools/chip-worker.mjs`'s copy
+is untouched, out of scope for an app-only change). Help sheet: the File
+entry's Import… paragraph shrank to a one-line pointer at the hub; a new
+`<dt>Import…</dt>` entry covers all ten kinds (and is what `tools/
+build_help.mjs` mirrors into HELP.md). Two outdated claims removed along
+the way: PS2's Square Enix driver "identified but not supported yet" (it
+plays, milestone 3) and "Square Enix's PS2 driver excepted — synth voices"
+(same). "Super Nintendo" in help text and the FEATURES drift-guard list
+became "Super NES", matching `FOLDER_NAMES` and the archive-by-console
+folder names.
+
+**Tests:** `tests/night-roll.test.mjs` — a string-match test reads
+index.html directly (the vm harness has no `document.body`/
+`querySelectorAll`, so this can't drive the real ✕/drag/drop wiring) and
+checks the File menu button, the ten sections in order, every `Choose
+files…`'s `data-kind`, the two refusal strings verbatim (not paraphrased),
+the drop-target listener, and the `makeWindow` registration; a separate
+test drives `openPickedFiles` with a synthetic WAV and no song open,
+confirming the fresh composition's meter/tempo/seed tracks, the audio
+track's clip, and the exact final status line. FEATURES keyword: "New song
+from a recording" (and "import hub").
