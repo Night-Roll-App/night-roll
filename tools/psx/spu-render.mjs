@@ -170,7 +170,13 @@ function vabVoices(result, sampleRate) {
     for (const t of tonesFor(vab, n.program, n.key)) {
       const smp = fromVag(vagPcm(vab, t.vag));
       if (!smp || !smp.pcm.length) continue;
-      const ratio = Math.pow(2, (n.key - t.center + t.shift / 128) / 12) * (SPU_RATE / sampleRate);
+      // PS2's HD/BD bank (tools/ps2/hd.mjs toBank()) carries each VAG's own
+      // native sample rate (read from the file, not assumed) — real Dark
+      // Cloud samples run 22050-44100 Hz, not all at PS1's fixed 44100.
+      // PS1 VABs have no such field (vagPcm/vab.vags never set `.rate`), so
+      // this falls back to SPU_RATE and PS1 renders are unchanged.
+      const vagRate = (vab.vags[t.vag] && vab.vags[t.vag].rate) || SPU_RATE;
+      const ratio = Math.pow(2, (n.key - t.center + t.shift / 128) / 12) * (vagRate / sampleRate);
       const gain = Math.min(1, t.vol / 127 * (prog.mvol != null ? prog.mvol : 127) / 127 * master * (n.chVol != null ? n.chVol : 1));
       const pan = clampPan(64 + (t.pan - 64) + ((prog.mpan != null ? prog.mpan : 64) - 64) + ((n.pan != null ? n.pan : 64) - 64));
       out.push({smp, ratio, env: envOf(t), gain, pan});

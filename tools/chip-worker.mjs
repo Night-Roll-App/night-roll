@@ -45,6 +45,25 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
     render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
     channels: null, // per song: every Float32Array the render returns
   },
+  psf2: { // PlayStation 2: Sony's SQ/HD/BD driver through the SAME spu-render.mjs as PS1 (an HD/BD bank reshapes into
+          // a VAB-shaped bank, tools/ps2/hd.mjs toBank() — no PS2-specific render code); the set's lib arrives in `libs`
+    parse: M => (b, libs) => ({bytes: b, libs: libs || {}}),
+    run: async (M, parsed, n, secs, prog) => {
+      const inflate = typeof DecompressionStream !== "undefined" ? async b => new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer()) : null;
+      const chain = await M.loadPSF2Chain(parsed.bytes, name => { const x = parsed.libs[name.toLowerCase()]; if (!x) throw new Error("missing library " + name); return x; }, {name: "song.minipsf2", inflate});
+      const files = M.mergePSF2(chain);
+      const mini = chain.find(s => s.name === "song.minipsf2");
+      prog(0.3);
+      const song = await M.ps2Song(files, mini, {inflate});
+      if (song.kind === "bgm-unimplemented") throw new Error("Square's PS2 sequence format (BGM/WD) is not supported yet.");
+      if (!song.renderable) throw new Error(song.why || "no HD/BD bank in this image");
+      prog(1);
+      return {result: song.result, seconds: secs};
+    },
+    lead: () => 0,
+    render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds}),
+    channels: null, // per song: every Float32Array the render returns
+  },
   usf: { // Nintendo 64: the game's sound bank through n64/render.mjs; the set's lib arrives in `libs`
     parse: M => (b, libs) => ({bytes: b, libs: libs || {}}),
     run: async (M, parsed, n, secs, prog) => {
@@ -127,7 +146,7 @@ if (typeof self !== "undefined") self.onmessage = async e => {
       if (!live) continue;
       pcm[name] = x; for (const a of parts) transfer.push(a.buffer);
     }
-    live = (kind === "psf" || kind === "usf") ? {id, kind, M, R, res, rate} : null; // kept for note previews
+    live = (kind === "psf" || kind === "psf2" || kind === "usf") ? {id, kind, M, R, res, rate} : null; // kept for note previews
     post({done: {pcm, sampleRate: r.sampleRate, leadSec}}, transfer);
   } catch (err) { post({error: String(err && err.message || err)}); }
 };

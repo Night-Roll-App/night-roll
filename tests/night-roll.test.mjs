@@ -1491,6 +1491,65 @@ test("PSF import: a minipsf + psflib set captures through the sequence reader; a
   assert.equal(val(`parseMidi(new Uint8Array(${JSON.stringify(smf)}).buffer, {trust: true}).tracks[0].notes.length`), 2, "trusted: both notes survive");
 });
 
+test("PS2 import: a minipsf2 + psf2lib set (Sony's stock SQ/HD/BD driver) captures through ps2Song; a missing lib is named; Square's BGM/WD is refused with a clear sentence", async () => {
+  const M = {
+    ...(await import("../tools/ps2/capture.mjs")), ...(await import("../tools/ps2/psf2.mjs")),
+    ...(await import("../tools/ps2/sq.mjs")), ...(await import("../tools/ps2/hd.mjs")),
+    ...(await import("../tools/psx/vab.mjs")), ...(await import("../tools/psx/notes.mjs")),
+    ...(await import("../tools/sounding.mjs")), ...(await import("../tools/note-preview.mjs")),
+  };
+  const T = await import("../tools/ps2/make-test-sq.mjs");
+  const sq = T.makeTestSQ();
+  const hd = T.makeTestHD();
+  const bd = new Uint8Array(32);
+  const LIB_NAME = "test.psf2lib";
+  const lib = T.makePSF2(T.buildPSF2Fs([T.fileNode("TESTSEQ.SQ", sq), T.fileNode("TESTBANK.HD", hd), T.fileNode("TESTBANK.BD", bd)]), {game: "Test"});
+  const ini = "sq.irx -r=3 -d=4096 -s=TESTSEQ.SQ -h=TESTBANK.HD -b=TESTBANK.BD\r\n";
+  const mini = T.makePSF2(T.buildPSF2Fs([T.fileNode("psf2.ini", new TextEncoder().encode(ini))]), {_lib: LIB_NAME, title: "Test Tune 2", length: "0:04"});
+  assert.equal(val(`chipKindOf(new Uint8Array(${JSON.stringify([...mini.subarray(0, 12)])}), "song.psf2")`), "psf2");
+  assert.equal(val(`chipKindOf(new Uint8Array([0x50, 0x53, 0x46, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]), "x.minipsf")`), "psf", "PS1 stays PS1 (version byte 0x01)");
+  assert.equal(val(`CONSOLE_OF.psf2`), "ps2");
+  assert.equal(val(`CHIPS.psf2.libFile(${JSON.stringify(LIB_NAME)}) && !CHIPS.psf2.libFile("song.psf2")`), true);
+  assert.equal(val(`CHIPS.psf2.renderRate`), 48000);
+  assert.equal(run(`typeof CHIPS.psf2.render`), "function", "PS2 renders through the same renderSpu as PS1 — no PS2-specific chip audio code");
+  app.context.__M = M;
+  app.context.__mini = mini; app.context.__lib = lib;
+  run(`__pP = CHIPS.psf2.parseAsync(__M)(__mini, "song.psf2").then(p => { __parsed = p; });`);
+  await app.context.__pP;
+  assert.equal(val(`__parsed.name`), "Test Tune 2");
+  assert.deepEqual(val(`__parsed.libs`), [LIB_NAME]);
+  // without the lib: a named error, no crash
+  run(`__e1 = null; CHIPS.psf2.capture(__M, __parsed, 0, () => {}, {libs: {}}).catch(e => { __e1 = String(e.message); });`);
+  await new Promise(r => setTimeout(r, 200));
+  assert.match(val(`__e1`), new RegExp(`needs its library file ${LIB_NAME.replace(".", "\\.")}`));
+  // with the lib: a MIDI with the melody, through the SQ/HD/BD path exactly as a real Dark Cloud song
+  app.context.__libName = LIB_NAME;
+  run(`__cap = null; __e2 = null; CHIPS.psf2.capture(__M, __parsed, 0, () => {}, {libs: {[__libName.toLowerCase()]: {bytes: __lib}}}).then(c => { const parsed = parseMidi(new Uint8Array(c.bytes).buffer); __cap = {bpm: c.bpm, secs: c.secs, looped: c.looped, notes: parsed.tracks.reduce((a, t) => a + t.notes.length, 0), tracks: parsed.tracks.length}; }).catch(e => { __e2 = String(e.stack || e); });`);
+  await new Promise(r => setTimeout(r, 1500));
+  assert.equal(val(`__e2`), null, "capture threw: " + val(`__e2`));
+  const got = val(`__cap`);
+  assert.ok(got && got.notes === T.TEST_SQ_NOTES.length, "notes from the SQ sequence: " + JSON.stringify(got));
+  assert.equal(got.bpm, 120);
+  assert.equal(got.looped, true, "cc99 0/1 loop points became the loop");
+  // Square Enix's own driver (a .bgm file): refused with the exact sentence, not a silent half-import
+  const bgmMini = T.makePSF2(T.buildPSF2Fs([T.fileNode("song001.bgm", new Uint8Array([0x42, 0x47, 0x4D, 0x20]))]), {title: "FFX Song"});
+  app.context.__bgmMini = bgmMini;
+  run(`__pP2 = CHIPS.psf2.parseAsync(__M)(__bgmMini, "ffx.psf2").then(p => { __bgmParsed = p; });`);
+  await app.context.__pP2;
+  run(`__e3 = null; CHIPS.psf2.capture(__M, __bgmParsed, 0, () => {}, {libs: {}}).catch(e => { __e3 = String(e.message); });`);
+  await new Promise(r => setTimeout(r, 200));
+  assert.equal(val(`__e3`), "Square's PS2 sequence format (BGM/WD) is not supported yet.");
+});
+
+test("PS2: streamed-audio containers (Ico's GENH, XIII's SShd) are recognised by name, not offered to the MIDI/chip parsers", () => {
+  const genh = new Uint8Array([0x47, 0x45, 0x4E, 0x48, 2, 0, 0, 0]); // "GENH"
+  const sshd = new Uint8Array([0x53, 0x53, 0x68, 0x64, 0x18, 0, 0, 0]); // "SShd"
+  assert.equal(val(`streamedAudioMagic(new Uint8Array(${JSON.stringify([...genh])}))`), true);
+  assert.equal(val(`streamedAudioMagic(new Uint8Array(${JSON.stringify([...sshd])}))`), true);
+  assert.equal(val(`streamedAudioMagic(new Uint8Array(${JSON.stringify([...genh])}).subarray(0, 3))`), false, "too short to carry the magic");
+  assert.equal(val(`chipKindOf(new Uint8Array(${JSON.stringify([...genh])}), "03 - Impression.GENH")`), null, "not any chip format — the streamed-audio check runs first in openPickedFiles");
+});
+
 test("USF import: the N64 chip is a sequence chip with its own capture; PSF 0x21 sniff; lib file", () => {
   assert.equal(val(`chipKindOf(new Uint8Array([0x50, 0x53, 0x46, 0x21, 0, 0, 0, 0, 0, 0, 0, 0]), "01 Title.miniusf")`), "usf");
   assert.equal(val(`chipKindOf(new Uint8Array([0x50, 0x53, 0x46, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]), "x.minipsf")`), "psf", "PS1 stays PS1");
@@ -1578,7 +1637,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
+    "Import…", "NSF", "Game Boy", "Super Nintendo", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",

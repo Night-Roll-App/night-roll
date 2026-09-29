@@ -1952,6 +1952,53 @@ capture's warnings ("kit guessed from rhythm: prog 37 K71 → snare, …"),
 so a wrong guess is visible in the row's ⓘ. N64 sequences already put
 drums on channel 10 with GM-ish keys (50–59); untouched.
 
+## PlayStation 2 import (milestone 2, 2026-09-28)
+
+PS2's PSF2/minipsf2 is PSF's container reshaped as a small virtual
+filesystem (`tools/ps2/psf2.mjs`: a directory of 48-byte entries, files
+as a per-block zlib table) instead of PS1's flat RAM image — so there is
+no `assembleRam` step; the mini + its `.psf2lib` merge into one file
+list, `tools/ps2/capture.mjs`'s `ps2Song()` picks the driver from the
+FILES THEMSELVES (no per-game table): a mini's own `psf2.ini` (a literal
+command line, `-s=/-h=/-b=`) is Sony's stock driver, a `.bgm` file is
+Square Enix's own driver. `CHIPS.psf2` (index.html) mirrors `CHIPS.psf`
+almost line for line — magic `PSF`+0x02, `.psf2` ext, `perFile`/`tagged`/
+`keepBytes`, the same `capture`→bar/beat/loop math, the same
+`PSX_SOUNDING_ON` flag (not a separate one) — because Sony's SQ format
+reuses PS1 SEQ's own event shape byte for byte (`tools/ps2/sq.mjs`'s own
+header comment lists every difference: one-byte note-off, a "no delta
+next" bit trick, a padded tempo meta, no time-signature meta, CC99 0/1
+loop points), so `tools/psx/notes.mjs`'s whole note pipeline
+(`seqNotes`/`makeMidi`/`channelGroups`) runs over it unmodified.
+Square's BGM/WD (Final Fantasy X and kin) is identified, not parsed —
+refused with a named sentence ("Square's PS2 sequence format (BGM/WD) is
+not supported yet.") rather than a silent half-import; a different
+opcode table entirely (VGMTrans's `SquarePS2Seq.cpp`), not an AKAO
+variant as first guessed. Streamed-audio-only sets (Ico: GENH; XIII:
+Ubisoft's SShd/SSbd) are refused BY NAME at import
+(`streamedAudioMagic()`) before reaching any parser — neither format
+ever carried sequence data to begin with.
+
+Chip audio needed no new renderer: `tools/ps2/hd.mjs`'s `toBank()`
+reshapes an HD/BD bank into the exact object `tools/psx/vab.mjs`'s
+`parseVAB()` returns, so `tools/psx/spu-render.mjs`'s `renderSpu()` —
+unmodified, PS1's own tests unaffected — runs over PS2 Sony-format data.
+SPU2's two 24-voice cores turned out not to matter: the renderer never
+modeled discrete voices to begin with. Two real bugs turned up only once
+real Dark Cloud audio was actually rendered end to end
+(scratch/ps2-app-render.mjs), not from reading the format docs: (1) real
+HD files carry each sample's OWN native rate (22050–44100 Hz across one
+set, not PS1's fixed 44100) — `toBank()` parsed it but dropped it;
+`vabVoices()` now reads it, falling back to its old constant when absent
+(PS1 renders provably unchanged); (2) `toBank()`'s panpot fields were
+double-offset (`64 + panpot` on top of values that were ALREADY absolute
+0-127 pan, 64 = centre, the same convention `vab.mjs`'s own `tone.pan`
+uses) — every real program's panpot read exactly 64, which a true
+per-program *offset* would never do by default. Fixed; both have
+regression tests. Full findings, the verification numbers (RMS + a
+pitch sanity check with no reference player available), and milestone 3's
+list: tools/ps2/INTEGRATION.md.
+
 ## Sounding-pitch offsets — the roll shows what you hear (2026-09-28)
 
 The sequence consoles (PS1 AKAO/SEQ, N64 EAD and Rare) write the key the

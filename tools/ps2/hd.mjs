@@ -49,13 +49,13 @@ export function parseHD(buf) {
     const base = progAddr + paddr;
     const splitBlockAddr = base + u32(base);
     const nSplit = u8(base + 4), sizeSplitBlock = u8(base + 5);
-    const progVolume = u8(base + 6), progPanpot = i8(base + 7), progTranspose = i8(base + 8), progDetune = i8(base + 9);
+    const progVolume = u8(base + 6), progPanpot = u8(base + 7), progTranspose = i8(base + 8), progDetune = i8(base + 9);
     const splits = [];
     for (let s = 0; s < nSplit; s++) {
       const so = splitBlockAddr + s * sizeSplitBlock; // sizeSplitBlock is 20 in every real file seen (VGMTrans asserts this)
       splits.push({
         sampleSetIndex: u16(so), rangeLow: u8(so + 2), rangeHigh: u8(so + 4),
-        panpot: i8(so + 17), transpose: i8(so + 18), detune: i8(so + 19),
+        panpot: u8(so + 17), transpose: i8(so + 18), detune: i8(so + 19),
       });
     }
     programs.push({index: i, volume: progVolume, panpot: progPanpot, transpose: progTranspose, detune: progDetune, splits});
@@ -87,7 +87,7 @@ export function parseHD(buf) {
     const so = sampAddr + rel;
     samples.push({
       vagIndex: u16(so), velLow: u8(so + 2), velHigh: u8(so + 4),
-      baseNote: u8(so + 11), detune: i8(so + 12), panpot: i8(so + 13),
+      baseNote: u8(so + 11), detune: i8(so + 12), panpot: u8(so + 13),
       volume: u8(so + 16), adsr1: u16(so + 18), adsr2: u16(so + 20),
     });
   }
@@ -122,7 +122,11 @@ export function toBank(hd, bd) {
     let next = null;
     for (let j = i + 1; j < vagInfos.length; j++) if (vagInfos[j]) { next = vagInfos[j]; break; }
     const size = (next ? next.offset : bd ? bd.length : v.offset) - v.offset;
-    vags.push({index: i + 1, offset: v.offset, size: Math.max(0, size)});
+    // rate: this VAG's own native sample rate (real Dark Cloud files carry
+    // 22050-44100 Hz, not one fixed console rate) — tools/psx/spu-render.mjs's
+    // vabVoices() reads it (falling back to its own SPU_RATE constant for
+    // PS1 VABs, which have no such field) so pitch is correct per sample.
+    vags.push({index: i + 1, offset: v.offset, size: Math.max(0, size), rate: v.sampleRate});
   }
   const bankPrograms = new Array(128).fill(null);
   for (const prog of programs) {
@@ -138,11 +142,19 @@ export function toBank(hd, bd) {
         tones.push({
           min: split.rangeLow, max: high, vag: samp.vagIndex + 1, // +1: this module's 1-based vags[]
           center: samp.baseNote, shift: (split.transpose + samp.detune / 100) * 128, // both are semitone-ish offsets folded into vab.mjs's 1/128-semitone `shift` unit
-          vol: samp.volume, pan: 64 + split.panpot, adsr1: samp.adsr1, adsr2: samp.adsr2,
+          // pan/mpan are ALREADY absolute 0-127 values, 64 = centre — the same
+          // convention tools/psx/vab.mjs's own tone.pan/program.mpan use (a
+          // raw byte, no added offset). Found by real data, not the field's
+          // name: every real Dark Cloud program's panpot reads exactly 64 (a
+          // genuine per-program offset would default to 0, not a constant
+          // non-zero value), and split panpot values cluster symmetrically
+          // AROUND 64 (e.g. 10/64/116), not around 0 — adding another 64 here
+          // (this module's first cut) hard-panned nearly every note right.
+          vol: samp.volume, pan: split.panpot, adsr1: samp.adsr1, adsr2: samp.adsr2,
         });
       }
     }
-    bankPrograms[prog.index] = {index: prog.index, tones, mvol: prog.volume, mpan: 64 + prog.panpot};
+    bankPrograms[prog.index] = {index: prog.index, tones, mvol: prog.volume, mpan: prog.panpot};
   }
   return {programs: bankPrograms, vags, body: bd || null, warnings: hd.warnings, _pcm: new Map()};
 }

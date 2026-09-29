@@ -95,11 +95,15 @@ function offsetChunk(creator, type, paramBlocks) {
 
 // --- HD: one program, one split covering the whole keyboard, one sample,
 // one VAG-info entry pointing at offset 0 in a (synthetic, silent) BD. ---
-export function makeTestHD({baseNote = 60, adsr1 = 0x80FF, adsr2 = 0x1FEE} = {}) {
+export function makeTestHD({baseNote = 60, adsr1 = 0x80FF, adsr2 = 0x1FEE, sampleRate = 0} = {}) {
   const vers = chunk("IECS", "sreV", [...le32(16), ...le16(0), 1, 1]);
 
   // VAGInfoParam (8 bytes): vagOffsetAddr(u32) + sampleRate(u16) + attribute(u8) + reserved(u8)
-  const vagInfoParam = [...le32(0), ...le16(0), 0 /* SCEHD_VAG_1SHOT */, 0];
+  // sampleRate defaults to 0 (matching most of this fixture's existing
+  // callers/tests): tools/ps2/hd.mjs's toBank() carries it through as each
+  // vag's `rate`, and tools/psx/spu-render.mjs treats a falsy rate as "use
+  // the renderer's own SPU_RATE" — so 0 here is "unspecified", not "silent".
+  const vagInfoParam = [...le32(0), ...le16(sampleRate), 0 /* SCEHD_VAG_1SHOT */, 0];
   // SampleParam (42 bytes) — offsets cross-checked against SonyPS2InstrSet.cpp's addChild calls
   const sampleParam = [
     ...le16(0) /* vagIndex */, 0 /* velRangeLow */, 0 /* velCrossFade */, 127 /* velRangeHigh */,

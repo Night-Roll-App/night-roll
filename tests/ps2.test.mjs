@@ -21,6 +21,8 @@ import { ps2Song } from "../tools/ps2/capture.mjs";
 import { seqNotes, toNotesTxt, makeMidi } from "../tools/psx/notes.mjs";
 import { bpmOf, secondsAt } from "../tools/psx/seq.mjs";
 import { pitchName } from "../tools/nsf/notes.mjs";
+import { renderSpu } from "../tools/psx/spu-render.mjs";
+import { estimateRoot, tonesFor } from "../tools/psx/vab.mjs";
 
 test("PSF2 container: header, nested directories, per-block zlib, [TAG]", async () => {
   const inner = new TextEncoder().encode("hello psf2 filesystem");
@@ -130,6 +132,63 @@ test("HD: a 0xFFFFFFFF sentinel in the Sample/VAGInfo offset tables (real Dark C
   // the guard added nothing wrong for the common case (the sentinel path
   // itself is exercised end to end against real files in ps2-real.test.mjs)
   assert.doesNotThrow(() => parseHD(hd));
+});
+
+test("toBank(): pan/mpan are absolute 0-127 values (64 = centre, tools/psx/vab.mjs's own convention) — NOT an offset added to 64", () => {
+  // regression guard for a real bug found against real Dark Cloud files: a
+  // program's panpot byte reads exactly 64 in EVERY real program (a true
+  // per-program OFFSET would default to 0, not a constant non-zero value),
+  // and split panpot values cluster symmetrically AROUND 64 (e.g. 10/64/116
+  // across real songs), not around 0 — this module's first cut added
+  // another 64 on top, hard-panning nearly every note right.
+  const hd = makeTestHD(); // the fixture's panpot bytes are 0 (program AND split)
+  const bank = toBank(parseHD(hd), new Uint8Array(32));
+  assert.equal(bank.programs[0].mpan, 0, "prog.panpot=0 must read as pan 0 (hard left), not 64+0=64 (centre)");
+  assert.equal(tonesFor(bank, 0, 60)[0].pan, 0, "split.panpot=0 must read as pan 0, not 64");
+});
+
+test("toBank(): each VAG's own native sample rate (real Dark Cloud files carry 22050-44100 Hz, not one fixed rate) rides through to the VAB-shaped bank", () => {
+  const hd = makeTestHD({sampleRate: 22050});
+  const bank = toBank(parseHD(hd), new Uint8Array(32));
+  assert.equal(bank.vags[1].rate, 22050);
+  // the milestone-1 fixture (sampleRate omitted, i.e. 0 — an "unspecified"
+  // HD file) must still fall back cleanly, not carry a bogus 0 Hz forward
+  const bankNoRate = toBank(parseHD(makeTestHD()), new Uint8Array(32));
+  assert.equal(bankNoRate.vags[1].rate, 0);
+});
+
+test("renderSpu (reused unmodified from PS1): a VAG's own native rate is honored for pitch — omitting it (a PS1-style bank) falls back to 44100 exactly as before, an octave off if the sample is really 22050 Hz", async () => {
+  // a 3-block loop of one 28-sample square wave (14 samples high, 14 low —
+  // the same fixture tools/psx/spu-render.mjs's own test suite (tests/
+  // psx-render.test.mjs) uses to make a period the autocorrelator can find):
+  // its DECODED period is 28 samples at whatever rate it is played back at —
+  // `ratio` (native rate ÷ output rate) is what turns that into an output
+  // frequency, so getting the native rate wrong shifts the measured pitch.
+  const nib = []; for (let i = 0; i < 28; i++) nib.push(i < 14 ? 7 : 9); // shift0/filter0: 7 -> +28672, 9 -> -28672 (sign-extended)
+  const block = flags => { const b = [0x00, flags]; for (let i = 0; i < 28; i += 2) b.push((nib[i] & 15) | ((nib[i + 1] & 15) << 4)); return b; };
+  const bd = new Uint8Array([...block(4), ...block(0), ...block(3)]); // loop start, middle, end+loop-forever
+  const bankShape = rate => ({
+    programs: (() => { const p = new Array(128).fill(null); p[0] = {index: 0, tones: [{min: 0, max: 127, vag: 1, center: 60, shift: 0, vol: 127, pan: 64, adsr1: 0x80FF, adsr2: 0x1FEE}], mvol: 127, mpan: 64}; return p; })(),
+    vags: [null, {index: 1, offset: 0, size: bd.length, rate}],
+    body: bd, masterVol: 127, masterPan: 64, warnings: [], _pcm: new Map(),
+  });
+  const seq = {ppq: 48, tempoMap: [{tick: 0, usq: 500000}], timeSigs: [{tick: 0, num: 4, den: 4}], loop: null, warnings: []};
+  const note = {tick: 0, endTick: 384, ch: 0, key: 60, vel: 100, program: 0, pitch: 60, cents: 0, drum: false, tone: null}; // 2s at 120bpm/48ppq
+  const OUT_RATE = 44100;
+  const hzOf = async rate => {
+    const result = {notes: [note], seq, vab: bankShape(rate)};
+    const r = await renderSpu(result, {sampleRate: OUT_RATE});
+    const track = Object.values(r).find(v => v && v.l);
+    const pcm = new Float32Array(track.l.length); for (let i = 0; i < pcm.length; i++) pcm[i] = track.l[i] + track.r[i];
+    const root = estimateRoot({pcm, loopStart: null, loopEnd: null, oneShot: true}, OUT_RATE);
+    assert.ok(root, "a period should be found: " + JSON.stringify(root));
+    return root.hz;
+  };
+  const corrected = await hzOf(22050);   // this VAG's real native rate (< the 44100 output rate): ratio 0.5, period 56 samples
+  const noRate = await hzOf(undefined);  // a PS1-style bank (vagPcm/vab.vags never carry `.rate`): falls back to spu-render.mjs's own SPU_RATE (44100), unchanged from before this milestone
+  assert.ok(Math.abs(corrected - 787.5) / 787.5 < 0.05, "44100/56: " + corrected);
+  assert.ok(Math.abs(noRate - 1575) / 1575 < 0.05, "the old, unmodified PS1 behavior: 44100/28: " + noRate);
+  assert.ok(Math.abs(noRate / corrected - 2) < 0.05, "not threading the native rate through sounds a full octave sharp: " + noRate + " vs " + corrected);
 });
 
 test("ps2Song: Sony's stock driver via a mini's psf2.ini (-s=/-h=/-b=), the exact mechanism real Dark Cloud minis use", async () => {

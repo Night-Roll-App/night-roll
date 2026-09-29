@@ -16,6 +16,28 @@ extract + publish TMNT 2, Final Fantasy Legend and both Tetrises.
 
 ## PS2 milestone 1 — DONE 2026-09-28: rips → notes for Sony's stock driver (SQ/HD/BD); Square's own driver (FFX, "BGM"/"WD") identified only; not wired into the app, no audio, nothing committed/pushed. See docs/plans/ps2.md §8 for findings and what milestone 2 (chip audio) needs.
 
+## PS2 milestone 2 — DONE 2026-09-28: a PS2 set imports like a PS1 set —
+CHIPS.psf2 (index.html), the ps2 worker runner, tools/package.mjs; chip
+audio through the SAME tools/psx/spu-render.mjs as PS1 (zero PS2-specific
+render code — an HD/BD bank reshapes into a VAB-shaped bank). Two real
+bugs found only by rendering real Dark Cloud audio end to end (not
+guessed): a per-VAG native sample rate real HD files carry (22050-44100
+Hz) that toBank() parsed but dropped, and a pan double-offset (every real
+program's panpot byte reads exactly 64 = an ABSOLUTE pan value, 64 =
+centre — the same convention vab.mjs's own tone.pan uses — not an offset
+to add 64 to). Both fixed with regression tests. `npm test`: still 100%
+green (psx suites unaffected — same renderer, unmodified). Verified: 59/59
+real Dark Cloud songs via tools/import-set.mjs to a scratch dir (not
+published); 3 songs' full app capture+render path (notes, loop, per-track
+RMS > 0) via scratch/ps2-app-render.mjs — pitch checks are inconclusive
+(no PS2 reference player exists; see tools/ps2/INTEGRATION.md §4/§5 for
+the numbers and why). NOT committed/pushed (per this agent's brief). Not
+done: Square's BGM/WD reader (FFX etc. still refused by name, a distinct
+opcode table, not AKAO-descended after all), PS2 instruments, the
+listening pass. Docs: tools/ps2/INTEGRATION.md (new), NIGHT-ROLL.md
+"PlayStation 2 import", help sheet + HELP.md + drift keyword ("PlayStation
+2"), docs/plans/ps2.md status line.
+
 ## Game instrument libraries: load any SoundFont 2 — DONE 2026-09-28 (untested by ear)
 
 `tools/instruments/sf2.mjs` (browser-clean, no Node imports) reads any

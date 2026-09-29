@@ -425,3 +425,31 @@ PS2 ground-truth player exists yet (same BIOS blocker as PS1's), so the
 only cross-check available for a real render will be internal consistency
 (this milestone's tag-ratio/pitch-range checks) plus Josh's ear, exactly as
 PS1 shipped.
+
+## 9. Milestone 2 — DONE 2026-09-28 (app wiring + chip audio)
+
+A PS2 set now imports in the app exactly like a PS1 set: `CHIPS.psf2`
+(index.html), a `psf2` worker runner (tools/chip-worker.mjs),
+`tools/package.mjs`'s runtime manifest, Square's BGM/WD refused with a
+named sentence, streamed-audio-only sets (Ico's GENH, XIII's SShd/SSbd)
+refused by name at import. §8's prediction held: (1) above (two-core
+voice handling) turned out to need NOTHING — `renderSpu()` never modeled
+discrete hardware voices to begin with, so there was nothing to double;
+`tools/psx/spu-render.mjs` runs over PS2 data with zero PS2-specific
+branches, PS1's own tests unaffected. (2) (LFO/cross-fade) and (3)
+(BGM/WD) are still open, per above. Two REAL bugs turned up only once
+real Dark Cloud audio was actually rendered end to end, not from reading
+format docs further: `toBank()` parsed each VAG's own native sample rate
+(real files: 22050-44100 Hz) but dropped it before this milestone, always
+assuming PS1's fixed 44100; and `toBank()`'s panpot fields were double-
+offset (`64 + panpot` on top of values that were already absolute 0-127
+pan, matching `vab.mjs`'s own `tone.pan` convention) — every real
+program's panpot byte reads exactly 64, silencing/hard-panning nearly
+every track until found and fixed. Both fixed, both have regression
+tests. Verified on all 59 real Dark Cloud songs (tools/import-set.mjs, a
+scratch dir, not published) and 3 songs' full render (per-track RMS > 0;
+pitch checks inconclusive without a reference player — see
+tools/ps2/INTEGRATION.md §4). Full account: tools/ps2/INTEGRATION.md.
+Milestone 3: Square's BGM/WD reader (its own opcode table, VGMTrans's
+`SquarePS2Seq.cpp` — confirmed NOT an AKAO variant, correcting this
+plan's own §1 guess), PS2 instruments, the listening pass.
