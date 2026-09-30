@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -4913,6 +4913,24 @@ test("Publish rows: every song gets Open / Publish / Revert; a row's Publish is 
   assert.equal(val(`hasStash("${A}")`), true, "stashed first: Restore unsaved copy can undo it");
   run(`pendingSongs = globalThis.__realPending; writeToken = globalThis.__realWriteToken; appConfirm = globalThis.__realConfirm;
        for (const k of ["${A}", "${B}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-stash-"]) localStorage.removeItem(pre + k);`);
+});
+
+test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands in the message box; the panel steps aside for the shot", async () => {
+  run(`globalThis.__realFetch = globalThis.fetch; globalThis.__realAiUrl = aiUrl; globalThis.__realRaf = globalThis.requestAnimationFrame;
+       aiUrl = () => "http://bridge.test"; globalThis.requestAnimationFrame = f => f();
+       globalThis.__hiddenDuring = null; globalThis.__posted = null;
+       window.Capacitor = {Plugins: {Screenshot: {capture: async () => { __hiddenDuring = document.getElementById("asksheet").style.visibility; return {jpeg: "/9j/4A=="}; }}}};
+       globalThis.fetch = async (u, o) => { __posted = {u, type: o.headers["content-type"], n: o.body.length, first: o.body[0]}; return {ok: true, status: 200, json: async () => ({path: "/Users/x/shots/a.jpg"})}; };
+       askinput.value = "why is bar 3 red";`);
+  try {
+    await run(`askShotTake()`);
+    assert.deepEqual(val(`__posted`), {u: "http://bridge.test/v1/shot", type: "image/jpeg", n: 4, first: 0xFF});
+    assert.equal(val(`__hiddenDuring`), "hidden", "the floating panel is out of the picture");
+    assert.equal(val(`document.getElementById("asksheet").style.visibility`), "", "and back after");
+    assert.equal(val(`askinput.value`), "why is bar 3 red\n(screenshot: /Users/x/shots/a.jpg)");
+  } finally {
+    run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; globalThis.requestAnimationFrame = __realRaf; delete window.Capacitor; askinput.value = "";`);
+  }
 });
 
 test("album play: loads that keep failing stop the album after ALBUM_MAX_FAILS, instead of skipping through every song", async () => {

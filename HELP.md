@@ -314,6 +314,9 @@ At the top of ✦ AI, **♪ this song** / **✦ general** pick which chat you ar
 **Notes from the Mac**
 On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold **✉** bubble (inbox), and the **✦ AI** button shows ✉ until you open it. Notes are saved with the chat.
 
+**📷 Screenshot to Claude**
+On the Claude Code bridge, tap **📷** beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a (screenshot: …) line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.
+
 **The chat is part of the song**
 The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <song>.ask.md beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. **Clear chat** starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).
 

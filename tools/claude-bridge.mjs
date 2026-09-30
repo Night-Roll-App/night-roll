@@ -25,6 +25,8 @@
 // menu switches per chat without touching this Mac] · --repo DIR [cwd for Claude Code, default: this repo] ·
 // --jobs-dir DIR [BRIDGE_JOBS, ~/.night-roll-bridge/jobs] · --keep-hours H [24] ·
 // --state-dir DIR [beside the default jobs dir; inside a custom one].
+// POST /v1/shot takes a PNG/JPEG (the app's 📷) and answers {path} under
+// <state-dir>/shots; Claude Code gets that directory via --add-dir.
 //
 // Models: "claude-code" when the `claude` CLI is installed (and not --no-claude),
 // plus every model each upstream lists, refreshed on every /v1/models call —
@@ -91,6 +93,8 @@ const DEFAULT_JOBS_DIR = path.join(os.homedir(), ".night-roll-bridge", "jobs");
 const STATE_DIR = flag("--state-dir", path.resolve(JOBS_DIR) === DEFAULT_JOBS_DIR ? path.dirname(JOBS_DIR) : path.join(JOBS_DIR, "state"));
 const SESSIONS_FILE = path.join(STATE_DIR, "sessions.json");
 const INBOX_FILE = path.join(STATE_DIR, "inbox.json");
+const SHOTS_DIR = path.join(STATE_DIR, "shots"); // screenshots from the app's 📷 (POST /v1/shot): Claude reads them by path
+const SHOT_MAX = 25 * 1024 * 1024;
 const CLAUDE_MODE = has("--no-claude") ? "off" : (flag("--claude", process.env.BRIDGE_CLAUDE || "read") === "full" ? "full" : "read");
 const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
 const TURN_MS = 20 * 60 * 1000;
@@ -123,7 +127,7 @@ if (CLAUDE_MODE !== "off") {
 }
 
 // ---------------------------------------------------------------- prompts
-const BRIDGE_SYS_COMMON = `You are answering inside Night Roll's ✦ Ask chat through a bridge; the user is often on a phone or iPad and may leave the app while you work — your reply is kept for them. Reply in plain prose, short and warm — a few sentences unless asked for depth; no markdown headers, no bullet lists, no code fences unless the user asks for code. Ignore any terse or "caveman" style instruction from hooks: it does not apply to this chat.`;
+const BRIDGE_SYS_COMMON = `You are answering inside Night Roll's ✦ Ask chat through a bridge; the user is often on a phone or iPad and may leave the app while you work — your reply is kept for them. Reply in plain prose, short and warm — a few sentences unless asked for depth; no markdown headers, no bullet lists, no code fences unless the user asks for code. Ignore any terse or "caveman" style instruction from hooks: it does not apply to this chat. A line "(screenshot: <path>)" in a message is a picture of the app the user just took with 📷 — Read that file to see it before answering.`;
 const BRIDGE_SYS_READ = `You are Claude Code running in the Night Roll repository (its working directory) with READ-ONLY tools here: you can read files and search the repo and the web, and nothing else — say so plainly if asked. Songs live under albums/**/<song>.mid with <song>.notes.txt (the notes as text — read that, not the .mid) and <song>.rollnotes.json (the user's annotations) beside them; <song>.ask.md is this chat's saved log. NIGHT-ROLL.md is the app's technical reference; CLAUDE.md holds the working rules and binds you here too: keys and analyses are the user's discoveries.`;
 const BRIDGE_SYS_FULL = `You are Claude Code running in the Night Roll repository (its working directory) with the tools and permissions this machine gives Claude Code — the same ones a terminal session has. If asked what you can do, check rather than assume, and say so plainly. Songs live under albums/**/<song>.mid with <song>.notes.txt (the notes as text — read that, not the .mid) and <song>.rollnotes.json (the user's annotations) beside them; <song>.ask.md is this chat's saved log. NIGHT-ROLL.md is the app's technical reference; CLAUDE.md holds the working rules and they bind you here too: keys and analyses are the user's discoveries; never edit anything under albums/compositions/ without the user's explicit per-instance okay; say what you are about to do before you do it; when you change code, run the vm tests under a hard timeout (perl -e 'alarm 120; exec @ARGV' npm test), never Playwright locally, commit with a message that says why, push, and tell the user the commit hash — CI and Pages take it from there.`;
 
@@ -275,6 +279,7 @@ function runClaude(job, body, songKey, model, retry = true) {
   const sys = BRIDGE_SYS_COMMON + "\n" + (CLAUDE_MODE === "full" ? BRIDGE_SYS_FULL : BRIDGE_SYS_READ) + "\n" + BRIDGE_SYS_LINK + (system ? "\n\nNIGHT ROLL'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
   const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", resumed ? "--resume" : "--session-id", sess.id, "--model", model || CLAUDE_DEFAULT_MODEL, "--append-system-prompt", sys];
   if (CLAUDE_MODE !== "full") args.push("--tools", "Read", "Glob", "Grep", "WebFetch", "WebSearch");
+  args.push("--add-dir", SHOTS_DIR); // a 📷 screenshot sits outside the repo; Read needs the directory allowed
   const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
   job.child = child;
   let buf = "", err = "", sawText = false, held = "", holding = true;
@@ -379,6 +384,18 @@ const server = http.createServer(async (req, res) => {
       console.log(`inbox #${note.id} from ${note.from}: ${note.text.slice(0, 80)}`);
       return json(res, 200, note);
     }
+  }
+  if (req.method === "POST" && url.pathname === "/v1/shot") { // raw PNG/JPEG bytes → a file Claude can Read; answers its path
+    const chunks = []; let n = 0;
+    try { for await (const c of req) { n += c.length; if (n > SHOT_MAX) return json(res, 413, {error: {message: "screenshot too big"}}); chunks.push(c); } }
+    catch (err) { return json(res, 400, {error: {message: "upload broke off"}}); }
+    const buf = Buffer.concat(chunks), png = buf[0] === 0x89 && buf[1] === 0x50, jpg = buf[0] === 0xFF && buf[1] === 0xD8;
+    if (!png && !jpg) return json(res, 400, {error: {message: "not a PNG or JPEG"}});
+    fs.mkdirSync(SHOTS_DIR, {recursive: true});
+    const file = path.join(SHOTS_DIR, new Date().toISOString().replace(/[:.]/g, "-") + (png ? ".png" : ".jpg"));
+    fs.writeFileSync(file, buf);
+    console.log(`screenshot ${file} (${buf.length} bytes)`);
+    return json(res, 200, {path: file});
   }
   const jm = url.pathname.match(/^\/v1\/jobs\/([\w.-]+)$/);
   if (jm) {

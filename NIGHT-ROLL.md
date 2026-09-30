@@ -2660,6 +2660,15 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     footer's gold `#askreplybtn` ("✦ reply", the ⚠ pattern: stays until
     tapped, opens Ask) plus one info-strip line naming the other song
     when it differs. `openAsk` clears it. Test: "Ask reply badge".
+  - **📷 screenshots (2026-09-29):** `#askshot`, shown once the bridge's
+    inbox answers (only the bridge has one). `askShotCapture`: the iPad
+    shell's native `Screenshot.capture()` (a Capacitor plugin in the
+    shell's AppDelegate.swift — WKWebView `takeSnapshot`, JPEG) or, in a
+    browser, one frame of `getDisplayMedia` on this tab. `askShotTake`
+    hides a floating AI panel for the shot, POSTs the bytes to
+    `/v1/shot`, and appends `(screenshot: <path>)` to the message box.
+    The bridge saves under `<state-dir>/shots`, passes `--add-dir` so
+    Claude can Read there, and its system prompt says what the line means.
   - **Sessions + the inbox (2026-09-27, Josh: "I can't message you back
     without getting out of bed, which is why I want the bridge to be
     able to have the model then talk to you").** Each song's chat is ONE

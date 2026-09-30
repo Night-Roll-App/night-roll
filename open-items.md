@@ -462,9 +462,13 @@ whether the tool or the app owns the order.
    job) / Revert (in-app confirm). Open no longer needs a draft.
 5. DONE: Album links: the URL holds the album during album play;
    opening it shows the album ready; one Play tap runs it.
-6. Camera button in the AI panel: send a screenshot of the app through
+6. BUILT (needs the bridge restarted + the iPad build; Josh tries it): Camera button in the AI panel: send a screenshot of the app through
    the bridge (Josh: "I wish there would be a way for me to send you
    screenshots from the app itself").
+
+7. Breadcrumb says Published or Local first (Josh via Ask, 2026-09-29):
+   "Published › SNES › Final Fantasy 4 › Song" / "Local › Night Roll
+   Sketches › Song"; the word never truncates, the folder/title does.
 
 Queued, not now: the close guard ("SAVE CHANGES TO <song>?" on song
 switch); delete leftover recordings on song delete/revert; two timeline
