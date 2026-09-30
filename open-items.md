@@ -525,6 +525,14 @@ the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
 ## QUEUE (2026-09-29, the order Josh approved)
+NEXT (Josh via Ask, 2026-09-30 17:19): every message to a Claude bridge
+backend (song/Ask tabs AND the ⌨ Terminal tab) carries a context block so he
+never copies/pastes: the open song (title, path, published/local, view,
+cursor bar.beat, playing/paused); NEW ⚠ errors (+ [debug] when Debug log is
+on) and NEW setInfo status lines since his last message, labelled "new since
+your last message". A per-chat "seen up to id" cursor marks them read: the ⚠
+badge and Status count reset to 0, lines go grey, history stays readable.
+Starts when the P1 or chip-memory builder frees index.html.
 
 1. DONE: window manager phase B (drag-to-dock, tabs, Status not
    dockable, near-full divider). Josh (via Ask, 20:52): "really happy
