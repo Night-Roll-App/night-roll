@@ -335,7 +335,8 @@ test("finger pencil: fast stroke adds nothing; a tap or a dwell adds a note (the
   expect(await notes(page)).toHaveLength(5);
 });
 
-test("Apple Pencil pencil: a stroke places a note at once, no dwell (2026-09-29)", async ({ page }) => {
+test("Apple Pencil pencil (setting on): a stroke places a note at once, no dwell", async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem("ff1roll-peninstant", "1"));
   await page.evaluate(() => document.querySelector('#modeseg button[data-mode="pencil"]').click());
   await page.evaluate(() => { view.pxq = 600; clampView(); draw(); });
   const spot = await noteXY(page, 480, 70); // empty row

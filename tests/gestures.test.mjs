@@ -272,9 +272,9 @@ test("insertTime: slide, stretch straddlers, leave exact-enders; one undo", () =
   assert.deepEqual(rn2.sort((a,b)=>a-b), [5, 8, 9], "one undo restores annotations");
 });
 
-test("gesture: the Apple Pencil grabs a note at once — no dwell (device pref, default on)", () => {
+test("gesture: with the setting on, the Apple Pencil grabs a note at once — no dwell (default off)", () => {
   const app = boot("vm-gest-pen");
-  app.run(`mode = "select"; view.pxq = 600; clampView(); draw(); localStorage.removeItem("ff1roll-peninstant");`);
+  app.run(`mode = "select"; view.pxq = 600; clampView(); draw(); localStorage.setItem("ff1roll-peninstant", "1");`);
   const start = noteXY(app, 240, 64);
   const pen = (type, x, y) => app.dispatch("roll",
     pev(type, { pointerId: 9, pointerType: "pen", clientX: x, clientY: y }));
@@ -284,4 +284,31 @@ test("gesture: the Apple Pencil grabs a note at once — no dwell (device pref, 
   for (let i = 1; i <= 4; i++) pen("pointermove", start.x + (px16 / 4) * i, start.y); // fast, no dwell
   pen("pointerup", start.x + px16, start.y);
   assert.notDeepEqual(notes(app).map(n => n.t), before, "a pencil stroke on a note moves it");
+});
+
+test("gesture: a stale drag (a lift the canvas never heard) can't turn the next touch into a pinch (Josh, 2026-09-30: every drag zoomed)", () => {
+  const app = boot("vm-gest-stale");
+  app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);
+  const f = (type, id, x, y, primary) => app.dispatch("roll",
+    pev(type, { pointerId: id, clientX: x, clientY: y, pointerType: "touch", isPrimary: primary }));
+  f("pointerdown", 1, 300, 200, true); // …and its pointerup never arrives
+  const pxq0 = app.run(`view.pxq`);
+  f("pointerdown", 2, 400, 200, true); // a NEW gesture's first finger
+  for (let i = 1; i <= 4; i++) f("pointermove", 2, 400 - i * 30, 200, true);
+  f("pointerup", 2, 280, 200, true);
+  assert.equal(app.run(`!!pinch`), false, "no pinch");
+  assert.equal(app.run(`view.pxq`), pxq0, "a one-finger drag doesn't zoom");
+});
+
+test("gesture: palm rejection — a touch while the Pencil is down is ignored, not a pinch", () => {
+  const app = boot("vm-gest-palm");
+  app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);
+  const pxq0 = app.run(`view.pxq`);
+  app.dispatch("roll", pev("pointerdown", { pointerId: 5, clientX: 300, clientY: 200, pointerType: "pen", isPrimary: true }));
+  app.dispatch("roll", pev("pointerdown", { pointerId: 6, clientX: 600, clientY: 500, pointerType: "touch", isPrimary: true }));
+  assert.equal(app.run(`drag && drag.id`), 5, "the Pencil's stroke survives the palm");
+  app.dispatch("roll", pev("pointermove", { pointerId: 5, clientX: 250, clientY: 200, pointerType: "pen", isPrimary: true }));
+  app.dispatch("roll", pev("pointerup", { pointerId: 5, clientX: 250, clientY: 200, pointerType: "pen", isPrimary: true }));
+  assert.equal(app.run(`!!pinch`), false);
+  assert.equal(app.run(`view.pxq`), pxq0);
 });

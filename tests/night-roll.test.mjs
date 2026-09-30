@@ -1849,7 +1849,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -1866,6 +1866,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
+    "an estimated key is named as an estimate",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -5458,11 +5459,11 @@ test("chat tabs by capability: ⌨ Terminal only when the bridge says a terminal
   run(`askCaps = {bridge: false, terminal: false};`);
 });
 
-test("Apple Pencil grabs and draws without the dwell (a device pref, default on); fingers still dwell", () => {
+test("Apple Pencil can grab and draw without the dwell (a device pref, default off); fingers always dwell", () => {
   run(`localStorage.removeItem("ff1roll-peninstant");`);
-  assert.equal(val(`penInstant()`), true, "default on");
-  run(`localStorage.setItem("ff1roll-peninstant", "0");`);
-  assert.equal(val(`penInstant()`), false);
+  assert.equal(val(`penInstant()`), false, "default OFF (2026-09-30: Josh pans with a stylus)");
+  run(`localStorage.setItem("ff1roll-peninstant", "1");`);
+  assert.equal(val(`penInstant()`), true);
   run(`localStorage.removeItem("ff1roll-peninstant");`);
   assert.match(readFileSync(new URL("../index.html", import.meta.url), "utf8"), /const instantGrab = e\.pointerType === "mouse" \|\| \(e\.pointerType === "pen" && penInstant\(\)\)/);
 });
@@ -5535,6 +5536,13 @@ test("⌨ Terminal model pickers: shown on the Terminal tab with the bridge; a c
     await run(`askTermModelsLoad()`);
     assert.equal(val(`document.getElementById("asktermmodels").style.display`), "none", "only on the Terminal tab");
   } finally { run(`globalThis.fetch = __real.fetch; aiUrl = __real.aiUrl; askCaps = {bridge: false, terminal: false};`); }
+});
+
+test("a ruler range can be cleared: first tap outside fades it, the next removes it; Esc removes it", () => {
+  installSong();
+  const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(src, /if \(rangeSel\.off && pos\.y < BASE_RULER_H\) \{ rangeSel = null;/, "a tap outside a faded range removes it");
+  assert.match(src, /e\.key === "Escape" && rangeSel\) \{ rangeSel = null;/, "Esc removes it");
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
@@ -5825,4 +5833,130 @@ test("P3: Learning keeps the plain 'not set (C)' / '4/4?' defaults untouched —
   assert.equal(learn.run(`document.getElementById("lcdmeter").textContent`), "4/4?");
   assert.equal(learn.run(`document.getElementById("keyunset").textContent`), "key: not set (C)");
   assert.equal(learn.run(`document.getElementById("keysetest").style.display`), "none");
+});
+
+// ---------------------------------------------------------------- P4: ✦ Ask
+// follows the mode (Josh's spec, 2026-09-30). ASK_SYS split into a shared
+// BASE plus a per-mode RULE, picked at send time by askSys(); askContext /
+// askSpanNotes build their key line from DATA (never the DOM, never a leak
+// of Normal's "(estimated)" wording into Learning); the welcome bubble and
+// the general-chat tutor-rule line are per-mode text.
+function mkAsk(mode, extra) {
+  const a = createApp({storage: {"ff1roll-mode": mode}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}]}]};
+    songKey = "midi/test.mid"; songEndTick = 4 * 480; playCursor = 0; playing = false; playRate = 1; viewMode = "roll";
+    trackState = [{muted: false, solo: false}]; rollnotes = []; keyRegions = []; declaredTs = null; previewSf = null; multiSel = [];
+    askAppState = () => "app: stub";
+    finalizeNotes();
+    ${extra || ""}
+  `);
+  return a;
+}
+
+test("P4: askSys() shares the BASE text and picks RULE_LEARNING or RULE_NORMAL by appMode()", () => {
+  const a = mkAsk("learning");
+  const learnSys = a.run(`askSys()`);
+  assert.match(learnSys, /THE RULE: discoveries are the user's\./, "Learning gets yesterday's THE RULE paragraph, verbatim");
+  assert.doesNotMatch(learnSys, /Answer music questions directly/, "Learning never gets RULE_NORMAL");
+  assert.match(learnSys, /the resident music-theory tutor inside Night Roll/, "shared BASE intro");
+  assert.match(learnSys, /Each user message carries a <context> block/, "shared BASE context paragraph");
+
+  a.run(`setAppMode("normal")`);
+  const normalSys = a.run(`askSys()`);
+  assert.match(normalSys, /Answer music questions directly — name keys, chords, cadences and form when asked; say how sure you are; the key line may be an estimate, call it one\./);
+  assert.doesNotMatch(normalSys, /THE RULE: discoveries are the user's\./, "Normal never gets RULE_LEARNING");
+  assert.match(normalSys, /the resident music-theory tutor inside Night Roll/, "same shared BASE");
+});
+
+test("P4: askContext (Learning) is BYTE-IDENTICAL to before the ASK_SYS/askContext split (golden snapshot, fixed song)", () => {
+  const a = mkAsk("learning");
+  const ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.equal(ctx, `song: test — a locked capture the user is studying
+meter: 4/4 (beat = quarter), tempo: 120 bpm, 1 bars
+tracks: melody
+view: roll, paused; cursor: bar 1 beat 1
+key state: key: not set (C) — 'not set' means the user has NOT discovered the key; do not reveal it
+app: stub
+the user's annotations (.rollnotes):
+{ "version": 1, "song": "test", "notes": [
+
+] }
+
+notes in bars 1–1:
+# Format: bar N: beat pitch duration, … — beat = the counted beat of the declared meter (4/4: 4 beats per bar, 1 = the downbeat); duration in the same unit.
+# duration is GATE TIME (how long the note was held), NOT a notated value; RHYTHM comes from ONSET SPACING (the beat column): staccato notes gating at 0.33 are still eighths, not triplets.
+# Pitches use sharp spelling; the true key is the user's to discover — this block states no key.
+
+## track 1 (melody)
+bar 1: 1 C4 1, 2 E4 1`);
+});
+
+test("P4: Learning never calls estimateKey from askContext/askSpanNotes (spy); Normal reaches it for an undeclared key/span", () => {
+  const a = mkAsk("learning", `
+    globalThis.__estCalls = 0;
+    const __orig = estimateKey;
+    estimateKey = function() { globalThis.__estCalls++; return __orig(); };
+  `);
+  a.run(`askContext(askSpan(), askBudget());`);
+  assert.equal(a.run(`__estCalls`), 0, "Learning: not one call site reaches estimateKey");
+
+  a.run(`setAppMode("normal"); finalizeNotes();`);
+  a.run(`askContext(askSpan(), askBudget());`);
+  assert.ok(a.run(`__estCalls`) > 0, "Normal: the same context build now estimates");
+});
+
+test("P4: askContext (Normal) states declared-vs-estimated plainly, carries a 'mode: normal' line, and names the lasso chord", () => {
+  const a = mkAsk("normal");
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /^key state: estimated \S+ \(Krumhansl, confidence [\d.]+\)$/m, "nothing declared: the estimate, labelled");
+  assert.match(ctx, /^mode: normal$/m, "Learning carries no such line — see the golden snapshot test");
+
+  a.run(`keyRegions = [{start: 0, end: null, sf: 0, name: "C", b1: 1, b2: null}];`);
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /^key state: declared C$/m, "a real key: annotation reads as declared, not estimated");
+
+  a.run(`
+    keyRegions = [];
+    multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}];
+    multiSelSf = 0;
+  `);
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /^lasso-selected notes: C4 E4 — chord: C \(no 5th\)$/m, "Normal names the chord itself, like the selection strip does");
+});
+
+test("P4: askContext (Learning) never names the lasso chord; the general chat context and the ✦ AI welcome bubble carry per-mode text", () => {
+  const learn = mkAsk("learning", `multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelSf = 0;`);
+  const learnCtx = learn.run(`askContext(askSpan(), askBudget())`);
+  assert.match(learnCtx, /^lasso-selected notes: C4 E4 — do not name this chord unless the user has guessed or insists$/m);
+
+  // general chat: no song attached, but the tutor-rule line and the mode
+  // line still follow appMode()
+  const learnGeneral = learn.run(`(() => { askGeneral = true; try { return askContext({t0: 0, t1: 1920, from: 1, to: 1}, askBudget()); } finally { askGeneral = false; } })()`);
+  assert.match(learnGeneral, /The tutor rule about the user's own discoveries still holds for music questions\./);
+  assert.doesNotMatch(learnGeneral, /^mode: normal$/m);
+
+  const normal = mkAsk("normal");
+  const normalGeneral = normal.run(`(() => { askGeneral = true; try { return askContext({t0: 0, t1: 1920, from: 1, to: 1}, askBudget()); } finally { askGeneral = false; } })()`);
+  assert.match(normalGeneral, /The tutor rule about answering music questions directly still holds\./);
+  assert.match(normalGeneral, /^mode: normal$/m);
+
+  // welcome bubble (askRender, first open, no messages yet)
+  learn.run(`asksheet.classList.add("on"); askSetMode("song"); askRender();`);
+  assert.match(learn.run(`asklog.children[0].textContent`), /I'll point you toward things before I name them/);
+  normal.run(`asksheet.classList.add("on"); askSetMode("song"); askRender();`);
+  assert.match(normal.run(`asklog.children[0].textContent`), /I'll answer directly — keys, chords, cadences, form — and say how sure I am\./);
+});
+
+test("P4: askSpanNotes (Normal) spells by the key ESTIMATE when nothing is declared, and says so in the header", () => {
+  const a = mkAsk("normal");
+  const txt = a.run(`askSpanNotes(0, barTicks())`);
+  assert.match(txt, /# Pitches are spelled by the Normal-mode key ESTIMATE \(C, Krumhansl — unconfirmed\)\./);
+  assert.match(txt, /bar 1: 1 C4 1, 2 E4 1/, "spelled through the estimate's sf (0, sharp-side C major)");
+
+  // Learning: unchanged (never reaches the estimate branch)
+  const learn = mkAsk("learning");
+  const learnTxt = learn.run(`askSpanNotes(0, barTicks())`);
+  assert.match(learnTxt, /# Pitches use sharp spelling; the true key is the user's to discover — this block states no key\./);
 });

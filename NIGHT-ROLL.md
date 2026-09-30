@@ -4093,9 +4093,69 @@ import in both modes, the K-S estimate (a C major scale → C, an A
 harmonic minor scale → Am), the Learning-never-calls-estimateKey spy, and
 the LCD/keysel-label/"Set this key" flow.
 
-Deliberately NOT built (parked, see open-items.md): P4 (Ask AI reading
-`appMode()` to change its own tutoring rules — right now Ask's existing
-"don't reveal the key" instruction just happens to keep working because
-Learning's labels are unchanged; it does NOT yet know about Normal) and
-P5 beyond the help sheet / FEATURES keyword / this section (a dedicated
-"Analyze ▸" menu for Normal, further Ask-context work).
+Deliberately NOT built until P4 (below): a dedicated "Analyze ▸" menu for
+Normal is still parked (see open-items.md).
+
+**P4 — ✦ Ask AI follows the mode (2026-09-30).** `ASK_SYS` split into a
+shared `ASK_SYS_BASE1`/`ASK_SYS_BASE2` (the tutor's identity, the
+`<context>` block's shape, its four app tools — unchanged text) plus a
+per-mode RULE paragraph: `RULE_LEARNING` is yesterday's whole "THE RULE:
+discoveries are the user's…" paragraph, verbatim; `RULE_NORMAL` is new
+("Answer music questions directly — name keys, chords, cadences and form
+when asked; say how sure you are; the key line may be an estimate, call
+it one."). `askSys()` concatenates BASE1 + the mode's RULE + BASE2,
+picked by `appMode()` at SEND time (never cached — the device-global mode
+can flip between messages), and replaced every read of the old `ASK_SYS`
+constant: `askRun`'s system prompt, `askEstimate`'s token estimate, and
+`askTakePrompt` (✦ Fill).
+
+`askContext`/`askSpanNotes` (the per-request `<context>` block) go
+through the same P3 discipline as every other display call site —
+Learning never reaches `estimateKey()` (spy-tested) — but now build their
+key line from DATA instead of reading `#keyunset`'s live label, because
+that label's Normal-mode text ("key: G minor (estimated) — tap to set")
+had leaked straight into the tutor's context unlabelled as an estimate.
+`keyLabelState()` factors the label's own computation out of
+`finalizeNotes` (which now just assigns `unsetOpt.textContent =
+keyLabelState().text`) so `askContext`'s Learning line can call the SAME
+function and get byte-identical text without touching the DOM. Normal
+builds its own line instead — `askKeyStateLine()` returns "key state:
+declared <name>" when a real `key:` annotation governs, else "key state:
+estimated <name> (Krumhansl, confidence <c>)" from `estimateKey()`, else
+"key state: undetermined — not enough notes yet to estimate". An
+`askModeLine()` adds a bare "mode: normal" line right after it — Learning
+adds no such line at all, and that absence is itself the convention the
+bridge's system prompt now documents (see below). The lasso line follows
+`refreshSelInfo`'s own P1 split: Normal names the chord straight into the
+context ("lasso-selected notes: C4 E4 — chord: C (no 5th)", via the same
+`nameChord()`); Learning is unchanged ("…— do not name this chord unless
+the user has guessed or insists"). `askSpanNotes` gets the matching
+treatment: when nothing is declared over the whole span AND the mode is
+Normal, it spells the notes through `estimateKey()`'s `sf` (per note,
+falling back only where nothing is actually declared there) and says so
+in the header comment ("# Pitches are spelled by the Normal-mode key
+ESTIMATE (C, Krumhansl — unconfirmed)."); Learning's header and spelling
+are untouched. The general chat (`askGeneral`, no song attached) carries
+its own per-mode tutor-rule sentence and the same "mode: normal" line
+when applicable. The welcome bubble (first open, no messages yet) and
+the general-chat opening bubble are the two remaining per-mode UI texts;
+Settings → Other's Learning-mode checkbox description was already
+per-mode from P0.
+
+`tools/claude-bridge.mjs`'s `BRIDGE_SYS_READ`/`BRIDGE_SYS_FULL` no longer
+say "keys and analyses are the user's discoveries" (that was Learning
+only, hardcoded) — both now say `BRIDGE_SYS_MODE`: "the app's context has
+a mode line: learning = hint, never name keys/chords/meter; normal =
+answer directly. No mode line = learning." An older app build that
+predates modes never sends the line at all, so it still reads as
+Learning — safe by construction, no version check needed.
+
+Tests: a golden-snapshot test pins `askContext`'s ENTIRE Learning output
+for a fixed song, captured before this landed, so any future accidental
+leak into Learning fails loudly; a spy test proves `askContext`/
+`askSpanNotes` never call `estimateKey()` in Learning and do in Normal;
+separate tests cover `askSys()`'s BASE/RULE split, the Normal
+declared/estimated/undetermined key-state line, the mode line, the lasso
+chord line, the estimate-spelled `askSpanNotes`, the general-chat
+per-mode text, and the welcome bubble's two texts. Help sheet's "House
+rules" `<dt>` (✦ AI tab) and the FEATURES drift keyword done.
