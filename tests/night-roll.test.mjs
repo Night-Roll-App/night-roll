@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -5200,6 +5200,25 @@ test("the unsent AI message survives: saved per chat, back after a relaunch, cle
   run(`askinput.value = ""; askDraftClear(); askDraftSave();`);
   assert.equal(val(`localStorage.getItem("ff1roll-askdraft-ff1roll-ask-albums/test/draft.mid")`), null);
   run(`localStorage.removeItem("ff1roll-askdraft-" + ASK_GENERAL_KEY); askGeneral = false; askDraftKey = null;`);
+});
+
+test("count-in: ● counts in from any bar and the playhead waits at its start; plain playback mid-song doesn't count in", async () => {
+  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
+       trackState = [{muted: false, solo: false}]; songEndTick = 32 * 480; met.countIn = true;`);
+  const lead = async (rec) => {
+    run(`recording = ${rec}; globalThis.__p = 0; play(4, {}).then(() => __p++);`);
+    for (let i = 0; i < 100 && val(`globalThis.__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+    const got = val(`({lead: playT0 - audio.currentTime, at: playSec()})`);
+    run(`stop(); recording = false;`);
+    return got;
+  };
+  try {
+    const plain = await lead(false), rec = await lead(true);
+    assert.ok(plain.lead < 0.5, "playback from bar 3: no count-in (" + plain.lead + ")");
+    assert.ok(rec.lead > 1.5, "recording from bar 3: a bar of lead-in at 120 bpm (" + rec.lead + ")");
+    assert.ok(Math.abs(rec.at - 4) < 0.01, "and the playhead waits at 4 s, not before it (" + rec.at + ")");
+  } finally { run(`met.countIn = false; recording = false;`); }
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

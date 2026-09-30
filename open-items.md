@@ -514,6 +514,16 @@ published/imported songs' music. Two options on the table: (a) the
 notes are set in stone, only annotations edit; (b) editing makes a
 personal copy. He leaned toward locking both kinds.
 
+## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff")
+(a) count-in from anywhere + one-tap metronome · (b) mute/solo silence
+only, saved with the song (track: annotation; hide stays separate) ·
+(c) Pencil draws/edits instantly, fingers navigate · (d) keyboard
+shortcuts + Select All / Duplicate · (e) undo coverage · (f) selecting a
+note doesn't move the playhead (maybe a pref). Save model (#1): advisor
+drafting 2–3 models for his ruling — build nothing until he picks. Next
+tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
+his son used it on a MacBook), record without snapping, Quantize.
+
 ## FORMATS AUDIT (advisor, 2026-09-29; Josh: "all that stuff is suspect … how do normal DAWs save everything about the song?") — nothing built
 
 Top findings, highest risk first:

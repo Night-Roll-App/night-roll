@@ -42,7 +42,7 @@ In File → Open…, every album has a **💿 Play album** row at the top (it st
 Any meter (1–12 over 2/4/8/16 — bpm counts the denominator beat), tap each beat cell to cycle accent → normal → silent, subdivisions in 2/3/4, slider or tap-tempo. Three modes: **free-running** (its own clock); **follow song** — clicks ride the song's own grid, phase-perfect on the declared meter through tempo changes, speed slider, and loops; **trial meter** — click a meter of YOUR choosing over the real music to A/B candidates by ear (the "shift accents" ‹ › slides the pattern's starting beat, since a right meter can sit offset). Settings stick.
 
 **Count-in**
-Optional one-bar click lead-in, only when play starts from bar 1 beat 1 — never mid-song, never when the song loops back around.
+Optional one-bar click lead-in. Playing counts in only from bar 1 beat 1 — never mid-song, never when the song loops back around; **recording (●) counts in from wherever it starts**, so a punch-in at bar 17 gets its bar of clicks too.
 
 **⏮**
 Back to bar 1.

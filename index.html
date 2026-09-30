@@ -1547,7 +1547,7 @@
       <dt>Playing in the background</dt><dd>In the installed iPad app, music keeps playing when you leave the app or lock the screen: start a song or an album, then switch away. Come back to see where it is.</dd>
       <dt>💿 Play album</dt><dd>In File → Open…, every album has a <b>💿 Play album</b> row at the top (it starts from the song you have open when that song is in the album). The album plays straight through like a record — each song gets its intro plus two passes of its loop, fades, and the next one loads (the console's own sound is waited for while it renders) — and wraps around to the first song forever. While it plays, a 💿 strip under the transport shows <b>3/19</b>, the song, and what's next, with <b>⏮ Prev</b>, <b>⏭ Next</b>, and <b>✕</b> to leave. ▶, ■, ⏮ and Space work on the current song exactly as always (■ just pauses the album; ▶ picks it back up). Picking another song, ●, or Download audio also leaves. No dialog will interrupt a run: a song with a newer save on the repo plays from this device's draft and says so. Editing while it plays is fine. Keep the screen on — locking the iPad pauses it, and unlocking picks up where it stopped. While a run is on, the address bar carries it too (<code>?album=</code>) — opening that link reopens with the strip up, run armed, same song selected, and nothing playing yet; the first ▶ plays it as an album pass, same as picking 💿 Play album.</dd>
       <dt>⏱ Metronome</dt><dd>Any meter (1–12 over 2/4/8/16 — bpm counts the denominator beat), tap each beat cell to cycle accent → normal → silent, subdivisions in 2/3/4, slider or tap-tempo. Three modes: <b>free-running</b> (its own clock); <b>follow song</b> — clicks ride the song's own grid, phase-perfect on the declared meter through tempo changes, speed slider, and loops; <b>trial meter</b> — click a meter of YOUR choosing over the real music to A/B candidates by ear (the "shift accents" ‹ › slides the pattern's starting beat, since a right meter can sit offset). Settings stick.</dd>
-      <dt>Count-in</dt><dd>Optional one-bar click lead-in, only when play starts from bar 1 beat 1 — never mid-song, never when the song loops back around.</dd>
+      <dt>Count-in</dt><dd>Optional one-bar click lead-in. Playing counts in only from bar 1 beat 1 — never mid-song, never when the song loops back around; <b>recording (●) counts in from wherever it starts</b>, so a punch-in at bar 17 gets its bar of clicks too.</dd>
       <dt>⏮</dt><dd>Back to bar 1.</dd>
       <dt>Speed slider</dt><dd>25–200% of the song's own tempo, for close listening or instrument practice — pitch stays true; only time stretches. Applies when you let go; keeps its setting across songs. A 100% button appears whenever you're off native — tap to snap back.</dd>
       <dt>Scroll while playing</dt><dd>Scrolling away suspends the auto-follow camera so you can study any spot; it latches back on when the playhead reaches what you're looking at.</dd>
@@ -3341,7 +3341,7 @@ function sectionPathAt(tick) {
                   .sort((a, b) => a.depth - b.depth).map(s => s.text).join(" › ");
 }
 function playSec() { // current position on the song timeline, seconds
-  const s = Math.max(0, audio.currentTime - playT0 + playOffset); // playT0 starts slightly ahead
+  const s = Math.max(0, audio.currentTime - playT0) + playOffset; // playT0 starts slightly ahead; a count-in holds the playhead at its start, even mid-song
   if (!loopSeg || loopSeg.end <= loopSeg.start) return s;
   return s < loopSeg.end ? s : loopSeg.start + (s - loopSeg.end) % (loopSeg.end - loopSeg.start);
 }
@@ -9347,10 +9347,13 @@ async function play(fromSec = 0, opts = {}) {
   // starts from 1.1 — never mid-song, and loops can't retrigger it because
   // wraps never re-enter play(). Implemented by pushing playT0 one bar out
   // and clicking the gap; playSec() clamps at 0, so the playhead waits.
-  if (met.countIn && !opts.noCountIn && fromSec < 1e-6 && song && songEndTick > 0) { // album tracks never count in
+  // ● counts in from wherever it starts (DAW habit, 2026-09-29: punch-in at
+  // bar 17 had no lead-in); plain playback keeps the 1.1-only rule
+  if (met.countIn && !opts.noCountIn && (fromSec < 1e-6 || recording) && song && songEndTick > 0) { // album tracks never count in
     ensureMetGain();
     const beats = beatsPerBarDisp();
-    const beatSec = tickToSec(song, beatTicks());
+    const t0 = secToTick(song, fromSec);
+    const beatSec = tickToSec(song, t0 + beatTicks()) - tickToSec(song, t0); // the tempo where it starts
     playT0 += beats * beatSec;
     for (let b = 0; b < beats; b++)
       metClick(playT0 - (beats - b) * beatSec, b === 0 ? 2 : 1);
