@@ -470,6 +470,15 @@ whether the tool or the app owns the order.
    "Published › SNES › Final Fantasy 4 › Song" / "Local › Night Roll
    Sketches › Song"; the word never truncates, the folder/title does.
 
+8. NEXT: "What is Claude Code doing" status (Josh via Ask, 2026-09-29:
+   "I wish I had a way to see what Claude Code was working on from
+   here"). `claude-bridge.mjs --status "…"` stores one current line + the
+   last ~10 with times; the app shows it as a quiet strip atop the
+   general chat and a "Now: …" row in ⏳, refreshed by the 60 s inbox
+   poll and on open, Recent on tap; plus the last few commit subjects
+   from origin/main. Set at each real step (start, tests, pushed, iPad
+   build); cleared when idle.
+
 Queued, not now: the close guard ("SAVE CHANGES TO <song>?" on song
 switch); delete leftover recordings on song delete/revert; two timeline
 views at once.

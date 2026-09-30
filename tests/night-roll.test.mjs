@@ -4919,7 +4919,7 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
   run(`globalThis.__realFetch = globalThis.fetch; globalThis.__realAiUrl = aiUrl; globalThis.__realRaf = globalThis.requestAnimationFrame;
        aiUrl = () => "http://bridge.test"; globalThis.requestAnimationFrame = f => f();
        globalThis.__hiddenDuring = null; globalThis.__posted = null;
-       window.Capacitor = {Plugins: {Screenshot: {capture: async () => { __hiddenDuring = document.getElementById("asksheet").style.visibility; return {jpeg: "/9j/4A=="}; }}}};
+       window.Capacitor = {isNativePlatform: () => true, Plugins: {Screenshot: {capture: async () => { __hiddenDuring = document.getElementById("asksheet").style.visibility; return {jpeg: "/9j/4A=="}; }}}};
        globalThis.fetch = async (u, o) => { __posted = {u, type: o.headers["content-type"], n: o.body.length, first: o.body[0]}; return {ok: true, status: 200, json: async () => ({path: "/Users/x/shots/a.jpg"})}; };
        askinput.value = "why is bar 3 red";`);
   try {
@@ -4928,8 +4928,8 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
     assert.equal(val(`__hiddenDuring`), "hidden", "the floating panel is out of the picture");
     assert.equal(val(`document.getElementById("asksheet").style.visibility`), "", "and back after");
     assert.equal(val(`askinput.value`), "why is bar 3 red\n(screenshot: /Users/x/shots/a.jpg)");
-    // the shell's own plugin isn't in Capacitor.Plugins: registerPlugin reaches it (iPad, 2026-09-29: "this browser can't take a screenshot")
-    run(`window.Capacitor = {isNativePlatform: () => true, Plugins: {}, registerPlugin: n => n === "Screenshot" ? {capture: async () => ({jpeg: "/9j/4A=="})} : null}; __posted = null; askinput.value = "";`);
+    // the shell's own plugin isn't in Capacitor.Plugins, and native-bridge.js has no registerPlugin: nativePromise reaches it (iPad, 2026-09-29: "this browser can't take a screenshot")
+    run(`window.Capacitor = {isNativePlatform: () => true, Plugins: {}, nativePromise: async (pl, m) => pl === "Screenshot" && m === "capture" ? {jpeg: "/9j/4A=="} : null}; __posted = null; askinput.value = "";`);
     await run(`askShotTake()`);
     assert.equal(val(`__posted && __posted.type`), "image/jpeg");
   } finally {

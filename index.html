@@ -18572,12 +18572,23 @@ function askShotShow(on) { const b = document.getElementById("askshot"); if (b) 
 function askShotLine(path) { return "(screenshot: " + path + ")"; }
 function b64Bytes(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
 async function askShotCapture() { // -> {bytes, mime}
-  // the shell registers Screenshot itself (registerPluginInstance), and such a
-  // plugin isn't in Capacitor.Plugins — registerPlugin reaches it by name
+  // the shell's own plugin (registered in its AppDelegate.swift): native-bridge.js
+  // has no registerPlugin (that's @capacitor/core, which this page doesn't
+  // load), and Capacitor.Plugins may lack it — nativePromise reaches any
+  // registered plugin by name, and a missing one answers "not implemented"
   const C = typeof window !== "undefined" && window.Capacitor;
-  const nat = C && (C.Plugins && C.Plugins.Screenshot || (C.isNativePlatform && C.isNativePlatform() && C.registerPlugin && C.registerPlugin("Screenshot")));
-  if (nat) { const r = await nat.capture(); return {bytes: b64Bytes(r.jpeg), mime: "image/jpeg"}; }
-  if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) throw new Error("this browser can't take a screenshot");
+  const native = !!(C && C.isNativePlatform && C.isNativePlatform());
+  logDebug("📷 Capacitor: " + typeof C + ", native: " + native + ", Plugins: " + (C && C.Plugins ? Object.keys(C.Plugins).join(",") : "none") +
+           ", nativePromise: " + typeof (C && C.nativePromise) + ", registerPlugin: " + typeof (C && C.registerPlugin));
+  if (native) {
+    const r = C.Plugins && C.Plugins.Screenshot ? await C.Plugins.Screenshot.capture()
+      : C.nativePromise ? await C.nativePromise("Screenshot", "capture", {})
+      : null;
+    if (!r) throw new Error("the app has no screenshot bridge (no Plugins.Screenshot, no nativePromise)");
+    if (!r.jpeg) throw new Error("the app's screenshot came back empty");
+    return {bytes: b64Bytes(r.jpeg), mime: "image/jpeg"};
+  }
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) throw new Error("this browser can't take a screenshot (not the app: Capacitor " + (C ? "present, not native" : "missing") + "; no getDisplayMedia)");
   const stream = await navigator.mediaDevices.getDisplayMedia({video: {displaySurface: "browser"}, audio: false, preferCurrentTab: true});
   try {
     const v = document.createElement("video");
