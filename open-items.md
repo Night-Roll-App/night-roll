@@ -559,6 +559,14 @@ files' markers/lyrics/programs/CCs verbatim. RULING FOR JOSH (later, not
 blocking): the two publish paths write different tempo maps (baked
 tempo: annotations vs base) — which is right?
 
+## NEEDS JOSH'S RULING (not blocking): annotations file format v2 (FORMATS AUDIT #3)
+.rollnotes.json is JSON wrapped round a text grammar (unknown kinds of note
+are silently dropped by an older app; version still 1; no schema). The fix
+(typed fields, version 2, keep unknown fields) would REWRITE every
+annotation file on its next publish — a one-way change to his data, so it
+waits for his yes. Plan when he says go: a v2 reader that still reads v1,
+write v2 only for songs he edits, a JSON Schema in docs/.
+
 ## PAUSED 2026-09-30 10:20: re-capturing every capture album through the shared MIDI writer
 PS2 (FFX, Dark Cloud) and all six PS1 re-captures were REVERTED: the new
 writer used each note's capture channel, and a console voice number that
