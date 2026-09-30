@@ -152,29 +152,46 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
 // from a register log and have no note to re-render, so the page keeps the
 // synth for those.
 let live = null; // {id, kind, M, R, res, rate} of the last successful render
-// p: {track, midi, vel, ticks, seconds, offset} → Float32Array | {l, r} | null.
-// The one-note-copy-through-the-console's-own-renderer recipe lives in
-// tools/note-preview.mjs (M.renderOneNote), shared with tools/sounding.mjs's
-// capture-time pitch probe (CHIPS.psf/usf.capture in index.html) — both load
-// it the way every chip helper reaches this worker, listed in CHIPS[kind].shared.
+// p: {track, midi, vel, ticks, seconds, offset, tick, ppq} → {pcm: Float32Array
+// | {l, r} | null, prog} | null. The one-note-copy-through-the-console's-own-
+// renderer recipe lives in tools/note-preview.mjs (M.renderOneNote), shared
+// with tools/sounding.mjs's capture-time pitch probe (CHIPS.psf/usf.capture
+// in index.html) — both load it the way every chip helper reaches this
+// worker, listed in CHIPS[kind].shared.
 // offset: the track's sounding-pitch shift (tools/sounding.mjs; a captured
 // track's roll pitch = the renderer's own key + offset), so `p.midi` — the
 // ROLL's pitch — converts back to the key the renderer needs.
+// tick/ppq: the tapped note's own roll tick and the song's ppq (index.html's
+// `song.ppq`) — M.seqTickOf (tools/note-preview.mjs) turns them into the
+// SEQUENCE tick the template note must be sounding at, so a tap on a later
+// note in a track whose program changes mid-track (Josh's ear: FF7 "You Can
+// Hear the Cry of the Planet", 2026-09-30) hears that later program instead
+// of the group's first, always. `prog` on the return is the template note's
+// own program/instrument (psf: `program`; usf: `inst`), for the page's
+// preview cache key — undefined when no tick was given or none resolved.
 export async function previewOne(live, p) {
   if (!live || !live.res || !live.res.result || !live.res.result.notes) return null;
   const {M, R, res, rate, kind} = live;
   if (!M.renderOneNote) return null; // an older cached module set without sounding.mjs/note-preview.mjs: no preview rather than a crash
   const key = (p.midi || 0) - (p.offset || 0);
+  const at = M.seqTickOf ? M.seqTickOf(kind, res.result, p.tick, p.ppq) : undefined;
   const renderFn = (one, o) => R.render(M, {...res, result: one, seconds: o.seconds}, {sampleRate: rate, onProgress: o.onProgress});
-  return M.renderOneNote(M, kind, res.result, p.track, renderFn, {key, vel: p.vel || 100, ticks: p.ticks, seconds: p.seconds || 1.5});
+  const pcm = await M.renderOneNote(M, kind, res.result, p.track, renderFn, {key, vel: p.vel || 100, ticks: p.ticks, seconds: p.seconds || 1.5, at});
+  let prog;
+  if (at != null && M.findTemplateNote) {
+    const t = M.findTemplateNote(M, kind, res.result, p.track, at);
+    if (t) prog = t.program != null ? t.program : t.inst;
+  }
+  return {pcm, prog};
 }
 if (typeof self !== "undefined") self.onmessage = async e => {
   if (e.data && e.data.preview) { // one note through the game's instrument, from the last render's set
     const q = e.data.preview;
     try {
       const x = live && live.id === q.id ? await previewOne(live, q) : null;
-      const transfer = x ? (x.l ? [x.l.buffer, x.r.buffer] : [x.buffer]) : [];
-      self.postMessage({preview: {req: q.req, pcm: x, sampleRate: live ? live.rate : 0}}, transfer);
+      const pcm = x ? x.pcm : null;
+      const transfer = pcm ? (pcm.l ? [pcm.l.buffer, pcm.r.buffer] : [pcm.buffer]) : [];
+      self.postMessage({preview: {req: q.req, pcm, sampleRate: live ? live.rate : 0, prog: x ? x.prog : undefined}}, transfer);
     } catch (err) { self.postMessage({preview: {req: q.req, pcm: null, error: String(err && err.message || err)}}); }
     return;
   }

@@ -2099,6 +2099,19 @@ test("planChipRender: refuses when even the floor (22050, mono) can't fit; chipS
 // a full app restart. A failed render was leaving something behind. Own
 // createApp: this test swaps out CHIPS.nsf.run/.render/.lead to force a
 // failure and then a clean success, so it must not bleed into other tests.
+test("a worker that errors once doesn't send the rest of the session onto the main thread (FF7 froze 90 s after Challenge failed, 2026-09-30)", async () => {
+  const a = createApp();
+  a.run(`
+    APP_BASE = "http://x/"; chipWorkerAvailable.broken = false; songKey = "albums/ps1/x/a.mid";
+    globalThis.Worker = class { postMessage() { this.onerror && this.onerror({message: "boom"}); } terminate() {} }; /* fires after the handlers are attached — the vm has no running timers */
+  `);
+  assert.equal(await a.run(`chipRenderInWorker("nsf", {bytes: new Uint8Array(1)}, 1, 44100, songKey)`), null, "this render falls back");
+  assert.equal(a.run(`chipWorkerAvailable()`), true, "the next song still gets a worker");
+  a.run(`globalThis.Worker = class { constructor() { throw new Error("no module workers"); } };`);
+  await a.run(`chipRenderInWorker("nsf", {bytes: new Uint8Array(1)}, 1, 44100, songKey)`);
+  assert.equal(a.run(`chipWorkerAvailable()`), false, "a browser with no module workers at all still latches");
+});
+
 test("chip render failure cleans up completely (worker/pcm/buffers/module cache) so the NEXT song's render is unaffected", async () => {
   const a = createApp();
   // The vm harness has no dynamic import() (no importModuleDynamic callback
@@ -5029,6 +5042,40 @@ test("tap a note on a chip song: the live worker renders that one note through t
   await settle(run(`previewNote(0, 60)`));
   assert.equal(val(`globalThis.__sched`), 1, "no live worker: the synth voice");
   run(`chip.key = null; chip.pcm = null; audio = null; chipPreviewCache.clear();`);
+});
+
+test("preview cache key: two taps at the same pitch but different ticks (a track whose program changes mid-track) never share a buffer; a repeat tap at the same tick hits cache without a new worker call", async () => {
+  // FF7 "You Can Hear the Cry of the Planet" (Josh's ear, 2026-09-30): a
+  // track like "ch 1 prog 51,46" plays prog 51 for a while then prog 46.
+  // Before this fix chipPreviewCache keyed only "song|track|midi" — a tap on
+  // ANY note at pitch 60 always answered from whichever program happened to
+  // render (and cache) FIRST, even after findTemplateNote itself started
+  // honoring the tapped tick. The key must carry the resolved program too.
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`createComposition(120, 4, 4); ensureAudio(); globalThis.__srcs = 0; globalThis.__sched = 0; globalThis.__calls = [];
+       audio.createBufferSource = () => { globalThis.__srcs++; return {connect() {}, start() {}, stop() {}, buffer: null}; };
+       scheduleNote = () => { globalThis.__sched++; };
+       chip.key = songKey; chip.pcm = {}; chip.pcm[song.tracks[0].name] = new Float32Array(10);
+       chipWorker = {__key: songKey, postMessage(m) {
+         globalThis.__calls.push(m.preview.tick);
+         const req = m.preview.req, tick = m.preview.tick, prog = tick === 100 ? 51 : 46;
+         setTimeout(() => this.onmessage({data: {preview: {req, pcm: new Float32Array(50), sampleRate: 44100, prog}}}), 0);
+       }, terminate() {}};
+       chipWorker.onmessage = e => { const m = e.data; const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); };`);
+  const settle = async p => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } return p; };
+  await settle(run(`previewNote(0, 60, 100)`)); // tick 100: resolves to prog 51
+  assert.deepEqual(val(`globalThis.__calls`), [100], "the first tap at a new tick always asks the worker");
+  assert.equal(val(`chipPreviewCache.size`), 1);
+  assert.ok(val(`[...chipPreviewCache.keys()][0].endsWith("|p51")`), "keyed by the resolved program: " + val(`[...chipPreviewCache.keys()]`));
+  await settle(run(`previewNote(0, 60, 100)`)); // same tick again: the cache answers, no new worker call
+  assert.deepEqual(val(`globalThis.__calls`), [100], "a repeat tap at the SAME tick never re-asks the worker");
+  assert.equal(val(`globalThis.__sched`), 0, "still no synth fallback");
+  await settle(run(`previewNote(0, 60, 200)`)); // tick 200: same pitch, but the OTHER program — must NOT reuse tick 100's buffer
+  assert.deepEqual(val(`globalThis.__calls`), [100, 200], "a different tick (different program) asks the worker again");
+  assert.equal(val(`chipPreviewCache.size`), 2, "a second, DISTINCT cache entry — never the prog-51 buffer answering a prog-46 tap");
+  assert.ok(val(`[...chipPreviewCache.keys()].some(k => k.endsWith("|p46"))`), "the second entry is keyed by ITS OWN program: " + val(`[...chipPreviewCache.keys()]`));
+  assert.equal(val(`globalThis.__sched`), 0, "no synth fallback at any point");
+  run(`chip.key = null; chip.pcm = null; audio = null; chipPreviewCache.clear(); chipPreviewProgAt.clear();`);
 });
 
 test("a playlist picked after the import names the open song's published album by chip slot, in one album.json write", async () => {

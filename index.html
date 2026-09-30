@@ -5098,7 +5098,7 @@ function toggleSel(hit) { // lasso-mode tap on a note: in/out of the selection
   } else {
     multiSel.push(hit);
     multiSelKey.add(k);
-    previewNote(hit.ti, song.tracks[hit.ti].notes[hit.ni].p);
+    previewNote(hit.ti, song.tracks[hit.ti].notes[hit.ni].p, song.tracks[hit.ti].notes[hit.ni].t);
   }
   refreshSelInfo();
 }
@@ -6738,12 +6738,12 @@ function placePencilNote(pp) { // deferred pencil: called by the dwell timer or 
   // a note already at this tick+pitch: tapping it again must not stack a twin
   // (Josh, 2026-09-12) — hand back the existing one so a drag still stretches it
   const dup = tr.notes.findIndex(n => !n.gone && n.t === pp.t && n.p === pp.pitch);
-  if (dup >= 0) { previewNote(selTrack, pp.pitch); return {ti: selTrack, ni: dup, t: pp.t, snap: pp.snap, existing: true}; }
+  if (dup >= 0) { previewNote(selTrack, pp.pitch, pp.t); return {ti: selTrack, ni: dup, t: pp.t, snap: pp.snap, existing: true}; }
   const added = !isComposition();
   tr.notes.push({t: pp.t, d: pp.snap, p: pp.pitch, v: pencilVel, added});
   if (song.rawNotes) song.rawNotes[selTrack].push({t: pp.t + chopS, d: pp.snap, p: pp.pitch, v: pencilVel, added});
   pushUndo({kind: "add", ti: selTrack, ni: tr.notes.length - 1});
-  previewNote(selTrack, pp.pitch);
+  previewNote(selTrack, pp.pitch, pp.t);
   draw();
   return {ti: selTrack, ni: tr.notes.length - 1, t: pp.t, snap: pp.snap};
 }
@@ -6943,7 +6943,7 @@ canvas.addEventListener("pointerdown", e => {
         // (Josh, 2026-08-22: "sometimes I did [hold] and it was still difficult")
         const k = d.noteEdit.items.length;
         setInfo("✊ grabbed " + k + " note" + (k === 1 ? "" : "s") + " — drag to move");
-        previewNote(d.noteEdit.items[0].ti, d.noteEdit.items[0].n.p); // audible arm cue
+        previewNote(d.noteEdit.items[0].ti, d.noteEdit.items[0].n.p, d.noteEdit.items[0].n.t); // audible arm cue
       }
       else if (d.pendingPencil) { d.pencil = placePencilNote(d.pendingPencil); d.pendingPencil = null; }
       draw();
@@ -7319,7 +7319,7 @@ function tap(pos) {
       selTrack = hit.ti;
       gridFollowNote(song.tracks[hit.ti].notes[hit.ni]);
       renderTrackbar();
-      previewNote(hit.ti, song.tracks[hit.ti].notes[hit.ni].p);
+      previewNote(hit.ti, song.tracks[hit.ti].notes[hit.ni].p, song.tracks[hit.ti].notes[hit.ni].t);
       setInfo(noteLabel(hit.ti, hit.ni));
       draw();
       return;
@@ -7438,13 +7438,13 @@ function tap(pos) {
     const {t, snap} = pencilCellAt(tick);
     const tr = song.tracks[selTrack];
     if (tr.kind === "audio") { setInfo("that track is a recording — pick a MIDI track to pencil on"); return; }
-    if (tr.notes.some(n => !n.gone && n.t === t && n.p === pitch)) { previewNote(selTrack, pitch); return; } // no twins
+    if (tr.notes.some(n => !n.gone && n.t === t && n.p === pitch)) { previewNote(selTrack, pitch, t); return; } // no twins
     const added = !isComposition(); // in a composition the note IS the song, not an overlay
     tr.notes.push({t, d: snap, p: pitch, v: pencilVel, added});
     if (song.rawNotes) song.rawNotes[selTrack].push({t: t + chopS, d: snap, p: pitch, v: pencilVel, added});
     pushUndo({kind: "add", ti: selTrack, ni: tr.notes.length - 1});
     saveEdits();
-    previewNote(selTrack, pitch);
+    previewNote(selTrack, pitch, t);
     setInfo(noteLabel(selTrack, tr.notes.length - 1));
     draw();
     return;
@@ -7467,7 +7467,7 @@ function tap(pos) {
     if (noteTapMovesCursor()) playCursor = n.t; // off by default: selecting never moves the playhead (DAW habit, 2026-09-29); + Note anchors at the tapped note either way
     setInfo(noteLabel(hit.ti, hit.ni));
     reflectSelVel(); // the vol slider doubles as the velocity readout
-    previewNote(hit.ti, n.p);
+    previewNote(hit.ti, n.p, n.t);
     updateSubtitle();
   } else setInfo("—");
   draw();
@@ -9354,13 +9354,13 @@ function playSynthVoice(ti, n, when, durSec, v) {
   o.start(when);
   o.stop(end + 0.05);
 }
-async function previewNote(ti, pitch) {
+async function previewNote(ti, pitch, tick) { // tick: the tapped note's own .t, when there IS one (a roll/score tap, a pencil placement) — lets a chip tap hear the program actually playing there, not always the track's first (FF7 "You Can Hear the Cry of the Planet", 2026-09-30). Omit it for a bare pitch (piano strip, live MIDI in) — same as before.
   ensureAudio();
   await resumeAudio(); // clock is frozen until the context actually runs
   openMaster(); // master may be faded out from the last stop
   const tr = song && song.tracks[ti];
   if (tr && chipActive() && chipHas(tr.name) && (!tr.voice || tr.voice === "auto") && !trackIsDrums(ti)) { // a chip song: the game's own instrument, if the worker still holds the set
-    const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0);
+    const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, tick, song.ppq);
     if (buf) { const s = audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(audio.currentTime + 0.01); return; }
   }
   scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, audio.currentTime + 0.01, 0.3);
@@ -9818,7 +9818,7 @@ async function chipRender() {
 function chipCleanupAfterFailure(kind) {
   chipStopSrcs();
   chip.pcm = null; chip.buffers = null; chip.buffersCtx = null; chip.pan = null;
-  chipPreviewCache.clear();
+  chipPreviewCache.clear(); chipPreviewProgAt.clear();
   if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } // the next render makes a fresh one
   if (kind && chipModules.cache) delete chipModules.cache[kind]; // re-import next time, never a once-rejected/partial module set
 }
@@ -9840,25 +9840,44 @@ function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan) { // the rende
 function chipWorkerAvailable() { return typeof Worker !== "undefined" && typeof APP_BASE !== "undefined" && !!APP_BASE && !chipWorkerAvailable.broken; }
 let chipWorker = null; // one at a time; a new song terminates the old render; after a render it stays for previews (w.__key = its song)
 const chipPreviewPending = new Map(); // req → resolve, for one-note previews answered by the live worker
-const chipPreviewCache = new Map();   // "song|track|midi" → AudioBuffer, so a repeated tap is instant
+const chipPreviewCache = new Map();   // "song|track|midi[|p<prog>]" → AudioBuffer, so a repeated tap is instant
+const chipPreviewProgAt = new Map();  // "song|track|tick" → the program/instrument a previewed tick resolved to, so the NEXT tap at that tick can build its cache key without waiting on the worker
 let chipPreviewReq = 0;
-async function chipPreviewBuffer(name, midi, offset = 0) { // the game's own instrument for ONE note, or null (synth then). offset: tools/sounding.mjs — the roll's pitch minus this is the key the renderer needs
+// the game's own instrument for ONE note, or null (synth then). offset:
+// tools/sounding.mjs — the roll's pitch minus this is the key the renderer
+// needs. tick/ppq: the tapped note's own roll tick + song.ppq — several
+// chip tracks change program mid-track ("ch 1 prog 51,46"), so a tap late
+// in such a track must hear that later program, not always the track's
+// first (Josh's ear: FF7 "You Can Hear the Cry of the Planet", 2026-09-30).
+// Passed straight through to the worker (chip-worker.mjs previewOne), which
+// resolves them to the right template note via M.seqTickOf/findTemplateNote
+// (tools/note-preview.mjs) — this function stays kind-agnostic. Undefined
+// tick (a piano-strip key press, live MIDI input — no note at all) keeps
+// today's behavior exactly: the track's first program, keyed without a tick.
+async function chipPreviewBuffer(name, midi, offset = 0, tick, ppq) {
   if (!chipWorker || chipWorker.__key !== songKey || !audio) return null;
-  const key = songKey + "|" + name + "|" + midi;
+  const known = tick != null && chipPreviewProgAt.get(songKey + "|" + name + "|" + tick);
+  const key = songKey + "|" + name + "|" + midi + (known ? "|p" + known : "");
   const hit = chipPreviewCache.get(key);
   if (hit && hit.ctx === audio) return hit.buf;
   const req = ++chipPreviewReq;
   const reply = await new Promise(res => {
     const t = setTimeout(() => { chipPreviewPending.delete(req); res(null); }, 400); // a slow answer loses to the synth: a tap must sound now
     chipPreviewPending.set(req, m => { clearTimeout(t); res(m); });
-    try { chipWorker.postMessage({preview: {req, id: songKey, track: name, midi, vel: 100, offset}}); } catch (err) { clearTimeout(t); chipPreviewPending.delete(req); res(null); }
+    try { chipWorker.postMessage({preview: {req, id: songKey, track: name, midi, vel: 100, offset, tick, ppq}}); } catch (err) { clearTimeout(t); chipPreviewPending.delete(req); res(null); }
   });
   if (!reply || !reply.pcm) return null;
   const x = reply.pcm, st = x.l ? x : null;
   const buf = audio.createBuffer(st ? 2 : 1, (st ? st.l : x).length, reply.sampleRate || audio.sampleRate);
   if (st) { buf.copyToChannel(st.l, 0); buf.copyToChannel(st.r, 1); } else buf.copyToChannel(x, 0);
-  if (chipPreviewCache.size > 300) chipPreviewCache.clear();
-  chipPreviewCache.set(key, {ctx: audio, buf});
+  // key by the template's own program/instrument, not the raw tick: every
+  // note under the same program shares one buffer, and a cached prog-51
+  // buffer can never answer a prog-46 tap (the bug: findTemplateNote always
+  // took the group's FIRST note, so every tick shared one wrong-program key)
+  if (tick != null && reply.prog != null) chipPreviewProgAt.set(songKey + "|" + name + "|" + tick, reply.prog);
+  const finalKey = songKey + "|" + name + "|" + midi + (reply.prog != null ? "|p" + reply.prog : "");
+  if (chipPreviewCache.size > 300) { chipPreviewCache.clear(); chipPreviewProgAt.clear(); }
+  chipPreviewCache.set(finalKey, {ctx: audio, buf});
   return buf;
 }
 function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
@@ -9882,10 +9901,10 @@ function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
       if (m.preview) { const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); return; }
       if (typeof m.progress === "number") { chip.progress = m.progress; return; }
       if (m.debug) { logDebug(m.debug); return; } // the worker's own budget-plan line (planChipRender ran in there, not here)
-      if (m.error) { console.warn("[chip] worker (" + workerUrl + "): " + m.error + " — rendering inline"); chipWorkerAvailable.broken = /no module worker|import|Failed to fetch/i.test(m.error); return finish(null); }
+      if (m.error) { console.warn("[chip] worker (" + workerUrl + "): " + m.error + " — rendering inline"); return finish(null); } // this render only: a latched flag sent every later song of the session onto the main thread (FF7 froze 90 s after Challenge's failure, 2026-09-30)
       if (m.done) return finish(m.done);
     };
-    w.onerror = err => { console.warn("[chip] worker failed (" + workerUrl + "): " + (err && err.message || "error") + " — rendering inline"); chipWorkerAvailable.broken = true; finish(null); };
+    w.onerror = err => { console.warn("[chip] worker failed (" + workerUrl + "): " + (err && err.message || "error") + " — rendering inline"); finish(null); }; // this render only — only a constructor that throws (no module workers at all) latches
     const bytes = src.bytes instanceof Uint8Array ? src.bytes.slice() : new Uint8Array(src.bytes).slice(); // a copy: the record keeps its own
     const libs = {}, transfer = [bytes.buffer];
     for (const [name, b] of Object.entries(src.libs || {})) { const c2 = b instanceof Uint8Array ? b.slice() : new Uint8Array(b).slice(); libs[name] = c2; transfer.push(c2.buffer); } // a set's shared library (PS1, N64)
@@ -11456,13 +11475,13 @@ function scorePencil(pos) {
   const {t, snap} = pencilCellAt(scorePencilTick(pos.x));
   selTrack = st.ti;
   const tr = song.tracks[st.ti];
-  if (tr.notes.some(n => !n.gone && n.t === t && n.p === pitch)) { previewNote(st.ti, pitch); return; } // no twins
+  if (tr.notes.some(n => !n.gone && n.t === t && n.p === pitch)) { previewNote(st.ti, pitch, t); return; } // no twins
   const added = !isComposition();
   tr.notes.push({t, d: snap, p: pitch, v: pencilVel, added});
   if (song.rawNotes) song.rawNotes[st.ti].push({t: t + chopS, d: snap, p: pitch, v: pencilVel, added});
   pushUndo({kind: "add", ti: st.ti, ni: tr.notes.length - 1});
   saveEdits();
-  previewNote(st.ti, pitch);
+  previewNote(st.ti, pitch, t);
   renderTrackbar();
   buildScoreModel();
   setInfo(noteLabel(st.ti, tr.notes.length - 1));
@@ -11508,7 +11527,7 @@ function scoreTap(pos) {
         if (selNote) {
           setInfo(noteLabel(selNote.ti, selNote.ni));
           reflectSelVel(); // the vol slider doubles as the velocity readout
-          previewNote(g.ti, g.pitches[g.pitches.length - 1]);
+          previewNote(g.ti, g.pitches[g.pitches.length - 1], g.tick);
         }
         updateSubtitle(); draw();
         return;

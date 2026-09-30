@@ -59,3 +59,50 @@ test("tap preview: a shifted track's offset converts the roll's pitch back to th
   await previewOne(live, {track: "ch 0 inst 0", midi: 72, offset: -12, vel: 100}); // roll shows 72 (sounding); the console's own key is 84
   assert.equal(seen.midi, 84); assert.equal(seen.key, 84); assert.equal(seen.semitone, 63);
 });
+
+// FF7 (PS1) "You Can Hear the Cry of the Planet" (Josh's ear, 2026-09-30):
+// choir/voice tracks sound right in playback, but TAPPING a note plays the
+// WRONG instrument. Several of this song's tracks change program mid-track
+// ("ch 1 prog 51,46", "ch 2 prog 50,31", ...) — findTemplateNote always took
+// the group's FIRST non-drum note, so a tap anywhere in such a track was
+// rendered with the FIRST program forever, however far into the track the
+// tapped note actually fell.
+test("findTemplateNote: without `at`, the group's first note; with `at` in a later program's span, THAT note", async () => {
+  const { findTemplateNote } = await import("../tools/note-preview.mjs");
+  const early = {ch: 0, program: 51, drum: false, tick: 0, endTick: 400, key: 60, pitch: 60, vel: 90};
+  const late  = {ch: 0, program: 46, drum: false, tick: 500, endTick: 900, key: 64, pitch: 64, vel: 90};
+  const M = {channelGroups: () => [{name: "ch 1 prog 51,46", notes: [early, late], ch: 0, kit: false}]};
+  const first = findTemplateNote(M, "psf", {}, "ch 1 prog 51,46");
+  assert.equal(first.program, 51, "no `at`: unchanged — the group's first note");
+  const inSecond = findTemplateNote(M, "psf", {}, "ch 1 prog 51,46", 600); // inside `late`'s [500,900) span
+  assert.equal(inSecond.program, 46, "`at` inside the SECOND note's span: its program, not the first");
+  const nearFirst = findTemplateNote(M, "psf", {}, "ch 1 prog 51,46", 50); // inside `early`'s span
+  assert.equal(nearFirst.program, 51, "`at` inside the first note's own span still finds it (not just nearest-by-distance)");
+});
+
+test("seqTickOf: a roll tick converts to the sequence's own tick space — PS1 by seq.ppq, N64 by the fixed TICKS_PER_BEAT", async () => {
+  const { seqTickOf } = await import("../tools/note-preview.mjs");
+  // PS1: makeMidi writes T(tick) = round(tick * 480 / seq.ppq); inverted here
+  assert.equal(seqTickOf("psf", {seq: {ppq: 48}}, 6000, 480), 600, "480-ppq roll tick 6000 at a 48-ppq sequence: tick 600");
+  assert.equal(seqTickOf("psf", {seq: {}}, 6000, 480), undefined, "no seq.ppq to convert with: undefined, not a guess");
+  assert.equal(seqTickOf("psf", {seq: {ppq: 48}}, undefined, 480), undefined, "no tick given: undefined");
+  // N64: toMidi writes tick * 480 / TICKS_PER_BEAT (48, fixed) — same scale, no seq.ppq needed
+  assert.equal(seqTickOf("usf", {}, 4800, 480), 480, "480-ppq roll tick 4800 at TICKS_PER_BEAT=48: tick 480");
+});
+
+test("tap preview: previewOne resolves the template's program/instrument for the page's cache key, from the tapped tick", async () => {
+  const { previewOne } = await import("../tools/chip-worker.mjs");
+  const { renderOneNote, findTemplateNote, seqTickOf } = await import("../tools/note-preview.mjs");
+  const early = {ch: 0, program: 51, drum: false, tick: 0, endTick: 400, key: 60, pitch: 60, cents: 0, vel: 90};
+  const late  = {ch: 0, program: 46, drum: false, tick: 500, endTick: 900, key: 64, pitch: 64, cents: 0, vel: 90};
+  const live = {kind: "psf", rate: 44100,
+    M: {channelGroups: () => [{name: "ch 1 prog 51,46", notes: [early, late], ch: 0, kit: false}], renderOneNote, findTemplateNote, seqTickOf},
+    R: {render: async () => ({"ch 1 prog 51,46": new Float32Array(4)})},
+    res: {result: {notes: [early, late], seq: {ppq: 48}, tempos: [], endTick: 900}, seconds: 1}};
+  // roll tick 6000 at song ppq 480, seq.ppq 48 -> sequence tick 600, inside `late`'s span
+  const reply = await previewOne(live, {track: "ch 1 prog 51,46", midi: 64, vel: 100, tick: 6000, ppq: 480});
+  assert.ok(reply.pcm, "still renders audio");
+  assert.equal(reply.prog, 46, "resolves the SECOND program from the tapped tick, not the first");
+  const noTick = await previewOne(live, {track: "ch 1 prog 51,46", midi: 64, vel: 100}); // no tick: e.g. a piano-strip key press
+  assert.equal(noTick.prog, undefined, "no tick given: no program resolved either (today's behavior)");
+});
