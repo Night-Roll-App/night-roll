@@ -460,7 +460,7 @@ whether the tool or the app owns the order.
    on a synth song.
 4. DONE: Publish window: every row gets Open / Publish (that song only, as a
    job) / Revert (in-app confirm). Open no longer needs a draft.
-5. Album links (ACTIVE): the URL holds the album during album play;
+5. DONE: Album links: the URL holds the album during album play;
    opening it shows the album ready; one Play tap runs it.
 6. Camera button in the AI panel: send a screenshot of the app through
    the bridge (Josh: "I wish there would be a way for me to send you

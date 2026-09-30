@@ -1773,7 +1773,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Score entry", "inbox",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
-    "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave",
+    "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
     "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
@@ -5006,6 +5006,51 @@ test("album play: two overlapping play() calls leave no orphaned scheduler — a
     for (let i = 0; i < 10; i++) { app.tick(60); await new Promise(r => setImmediate(r)); }
     assert.equal(val(`globalThis.__advances`), 0, "no scheduler survives stop()");
   } finally { run(`albumPlayIdx = globalThis.__realPI; albumRun = null; albumEndAbs = null;`); }
+});
+
+test("album links: reflectSongURL adds ?album= while a run is on, and albumClear drops it again (Josh, 2026-09-29)", () => {
+  run(`APP_BASE = "https://night-roll-app.github.io/night-roll/"; // the harness has no location; pin the base
+       CATALOG = {"Test Album": [["Song 1", "albums/test/s1.mid"], ["Song 2", "albums/test/s2.mid"]]};
+       albumRun = null; currentPath = "albums/test/s1.mid";
+       globalThis.__lastURL = null;
+       globalThis.location = {href: "https://night-roll-app.github.io/night-roll/?perf=1&album=Stale", hash: ""};
+       globalThis.history = {replaceState: (a, b, u) => { globalThis.__lastURL = String(u); }};`);
+  try {
+    run(`reflectSongURL("albums/test/s1.mid")`);
+    let u = new URL(run(`globalThis.__lastURL`));
+    assert.equal(u.searchParams.get("album"), null, "no run on: a stale ?album= from the incoming URL doesn't stick");
+    assert.equal(u.searchParams.get("perf"), "1", "other params still survive");
+
+    run(`albumRun = {album: "Test Album", list: CATALOG["Test Album"], idx: 0, passes: ALBUM_PASSES, gen: 0};
+         reflectSongURL("albums/test/s1.mid")`);
+    u = new URL(run(`globalThis.__lastURL`));
+    assert.equal(u.searchParams.get("album"), "Test Album", "a run is on: the link carries it");
+
+    run(`albumClear()`); // the run is over
+    u = new URL(run(`globalThis.__lastURL`));
+    assert.equal(u.searchParams.get("album"), null, "albumClear reflects the current song again, without it");
+    assert.equal(val(`albumRun`), null);
+  } finally {
+    run(`delete globalThis.location; delete globalThis.history; delete globalThis.__lastURL; CATALOG = {}; albumRun = null;`);
+  }
+});
+
+test("album links: a boot ?album= arms albumRun (no play) only when the song that opened is actually in that album's list", () => {
+  run(`CATALOG = {"Test Album": [["Song 1", "albums/test/s1.mid"], ["Song 2", "albums/test/s2.mid"]]}; albumRun = null;`);
+  try {
+    run(`armAlbumLink("Test Album", "albums/test/s2.mid")`);
+    assert.deepEqual(val(`({album: albumRun.album, idx: albumRun.idx, passes: albumRun.passes, gen: albumRun.gen, len: albumRun.list.length})`),
+      {album: "Test Album", idx: 1, passes: val(`ALBUM_PASSES`), gen: 0, len: 2}, "armed at the linked song's own index, ready to run — not started");
+
+    run(`albumRun = null; armAlbumLink("No Such Album", "albums/test/s1.mid")`);
+    assert.equal(val(`albumRun`), null, "unknown album name: silently ignored");
+
+    run(`armAlbumLink("Test Album", "albums/other/song.mid")`);
+    assert.equal(val(`albumRun`), null, "song not in the named album's list: silently ignored");
+
+    run(`armAlbumLink(null, "albums/test/s1.mid")`);
+    assert.equal(val(`albumRun`), null, "no album param at all: no-op");
+  } finally { run(`CATALOG = {}; albumRun = null;`); }
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

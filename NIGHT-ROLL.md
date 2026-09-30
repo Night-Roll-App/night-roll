@@ -1184,6 +1184,21 @@ as a `<base>` element, so relative loads (vendor/soundfonts, albums/,
 the dynamic `tools/nsf` imports, `songsBase` default "") keep resolving
 against the app, not the song path, after the address bar changes.
 
+**Album links (2026-09-29):** while `albumRun` is set, `reflectSongURL`
+also sets `?album=<CATALOG name>` on top of the song link (dropped again,
+`album` never carried over stale, once `albumClear`/`albumLeave` end the
+run — both now call `reflectSongURL(currentPath)` themselves). Opening
+such a link waits for the catalog like a song link does (`boot`), then
+calls `armAlbumLink(album, currentPath)`: if the album name is in
+`CATALOG` and the song that resolved is actually in its list, it sets
+`albumRun` (`albumStart`'s own shape, `idx` at that song) and calls
+`albumStrip()` — armed, NOT playing (no autoplay without a tap). An
+unknown album, or a song from elsewhere, is a silent no-op; the song
+still opens. `play()` already reads `albumRun` however it got set (see
+the `loopSeg`/`albumEndAbs` block), so the first ▶ after such a link
+counts passes and advances exactly like `albumPlayIdx`'s own play — no
+special-casing needed for "armed but not yet playing."
+
 Tab title and `og:title` are "<Song> · Night Roll" (setDocTitle): set
 synchronously from the URL at script start, refined by updateSongBtn
 once the catalog supplies the display title. Preview fetchers that run
@@ -1222,6 +1237,9 @@ three-state repeat button). Rulings, all shipped:
   picking a song in Open…, ● record, Download audio (`albumClear`).
 - An armed cycle range makes the song loop the cycle and the album wait
   ("cycling — album waits" in the strip; `play()` sets no end).
+- **A link can arm a run before any tap** (2026-09-29): `?album=` on the
+  address bar, `armAlbumLink` — see "Shareable links" above for the
+  boot/reflect mechanics.
 
 **Ending a song (unchanged):** every song wraps forever on its own and
 chip audio loops in hardware, so `albumEndSec` supplies the ending —
