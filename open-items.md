@@ -559,6 +559,17 @@ files' markers/lyrics/programs/CCs verbatim. RULING FOR JOSH (later, not
 blocking): the two publish paths write different tempo maps (baked
 tempo: annotations vs base) — which is right?
 
+## AWAITS JOSH'S EAR: FFX pitches after a fresh capture (2026-09-30)
+The gated re-capture refused FFX: 4 songs come out at different pitches
+from today's PS2 pipeline than when first captured — Blitz Off (a part
+85→38, others 52→50), Hurry (a track 67→60), Ominous (74→62), Welcoming
+of Maester Mika (64→56). The pipeline's pitch handling changed since
+(wd.mjs key ranges, held bends). Which is right is his ear's call: play
+the published song vs a fresh capture (I can put the fresh ones on a
+branch/preview). Separately DONE: 5 FFX songs (Blitz Off, Assault,
+Challenge, Other World ×2) moved off the drum channel with identical
+notes (71bba3b) — the OLD writer wrapped a 25th+ track onto channel 10.
+
 ## NEEDS JOSH'S RULING (not blocking): annotations file format v2 (FORMATS AUDIT #3)
 .rollnotes.json is JSON wrapped round a text grammar (unknown kinds of note
 are silently dropped by an older app; version still 1; no schema). The fix
