@@ -6,28 +6,24 @@ session start alongside the quiz.)
 
 
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
-Q1. FFX by ear: 4 songs play at different pitches in a fresh capture
-    (Blitz Off, Hurry, Ominous, Welcoming of Maester Mika). Published or
-    fresh — which is right? (I'll put the fresh ones on a preview when you
-    want to compare.)
-Q2. Archive move: make the archive token (resource owner joshcough, only
-    the archive repo, Contents read+write) and say "go".
-Q3. Annotations v2 migration: converting the annotation files of YOUR
-    songs (albums/compositions) to the new format — does that count as
-    editing your songs (needs your yes per song), or is one yes for the
-    format change enough?
-Q4. The rule table (what each kind of song may do) — being drafted now;
-    you check it before anything is rewritten.
+Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
+    different pitches in a fresh capture (Blitz Off, Hurry, Ominous,
+    Welcoming of Maester Mika). Published or fresh — which is right?
+Q2. (ASK LATER) Archive move: make the archive token (resource owner
+    joshcough, only the archive repo, Contents read+write) and say "go".
+Q4. The rule table (what each kind of song may do) — an advisor is
+    drafting it, now also weighing Josh's idea: "your copy is yours —
+    edit anything, a re-capture restores"; he checks the recommendation.
 Q5. May I add a redirect so the bare address night-roll-app.github.io
     lands on the app? (One tiny public repo in the org,
     Night-Roll-App.github.io, holding a redirect page.) Answered part: the
-    "site down" was the bare address without /night-roll/ — the app lives
-    only at https://night-roll-app.github.io/night-roll/
+    "site down" was the bare address without /night-roll/.
 Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
 for build 3.
-DONE: annotations → JSON v2 (yes); tempo baked into the .mid only on your
+DONE: Q3 — converting his songs' annotation files to v2 is NOT editing
+his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
 own songs; "Publish all" = one publish per song; explicit song origins.
 
 ## IMPORT HUB — DONE 2026-09-29 (docs/import-hub-design.md, Josh: "I still hate the file import line")
