@@ -18572,7 +18572,10 @@ function askShotShow(on) { const b = document.getElementById("askshot"); if (b) 
 function askShotLine(path) { return "(screenshot: " + path + ")"; }
 function b64Bytes(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
 async function askShotCapture() { // -> {bytes, mime}
-  const nat = typeof window !== "undefined" && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Screenshot;
+  // the shell registers Screenshot itself (registerPluginInstance), and such a
+  // plugin isn't in Capacitor.Plugins — registerPlugin reaches it by name
+  const C = typeof window !== "undefined" && window.Capacitor;
+  const nat = C && (C.Plugins && C.Plugins.Screenshot || (C.isNativePlatform && C.isNativePlatform() && C.registerPlugin && C.registerPlugin("Screenshot")));
   if (nat) { const r = await nat.capture(); return {bytes: b64Bytes(r.jpeg), mime: "image/jpeg"}; }
   if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) throw new Error("this browser can't take a screenshot");
   const stream = await navigator.mediaDevices.getDisplayMedia({video: {displaySurface: "browser"}, audio: false, preferCurrentTab: true});

@@ -4928,6 +4928,10 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
     assert.equal(val(`__hiddenDuring`), "hidden", "the floating panel is out of the picture");
     assert.equal(val(`document.getElementById("asksheet").style.visibility`), "", "and back after");
     assert.equal(val(`askinput.value`), "why is bar 3 red\n(screenshot: /Users/x/shots/a.jpg)");
+    // the shell's own plugin isn't in Capacitor.Plugins: registerPlugin reaches it (iPad, 2026-09-29: "this browser can't take a screenshot")
+    run(`window.Capacitor = {isNativePlatform: () => true, Plugins: {}, registerPlugin: n => n === "Screenshot" ? {capture: async () => ({jpeg: "/9j/4A=="})} : null}; __posted = null; askinput.value = "";`);
+    await run(`askShotTake()`);
+    assert.equal(val(`__posted && __posted.type`), "image/jpeg");
   } finally {
     run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; globalThis.requestAnimationFrame = __realRaf; delete window.Capacitor; askinput.value = "";`);
   }
