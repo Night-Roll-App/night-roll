@@ -1532,7 +1532,7 @@
 
     <div class="hsec" data-hsec="views">
     <dl>
-      <dt>⇄ Compare with repo</dt><dd>View → <b>Compare with repo</b> (or the <b>Compare</b> button on a song's "music edited" line in the Publish sheet) fetches the song's last save and outlines every difference on the roll: <b>gold</b> = a note only in your version, <b>red</b> = a note only in the saved copy, both on a note whose length or velocity changed; <b>dashed</b> outlines mark notes that are not in the version you are hearing. The bar above the roll counts them and its button swaps which version plays — <b>hear the saved copy</b> swaps its notes in (the song is read-only until you swap back; nothing is written, your draft stays yours), <b>hear your version</b> swaps them back. ✕ on the bar leaves compare. Works on your own songs with a save behind them; turn a chop off first.</dd>
+      <dt>⇄ Compare with repo</dt><dd>View → <b>Compare with repo</b> (or the <b>Compare</b> button on a song's "music edited" line in the Publish sheet) fetches the song's published copy and outlines every difference on the roll: <b>gold</b> = a note only in your version, <b>red</b> = a note only in the published copy, both on a note whose length or velocity changed; <b>dashed</b> outlines mark notes that are not in the version you are hearing. The bar above the roll counts them and its button swaps which version plays — <b>hear the published copy</b> swaps its notes in (the song is read-only until you swap back; nothing is written, your draft stays yours), <b>hear your version</b> swaps them back. ✕ on the bar leaves compare. Works on your own songs that have been published; turn a chop off first.</dd>
       <dt>▾ Hide controls</dt><dd>The ▾ at the footer's left folds the bottom controls (edit row + footer) away so small screens show music instead of buttons — a floating ▴ brings them back. Phones start folded automatically; your explicit choice is remembered per device.</dd>
       <dt>Closing a sheet</dt><dd>Every sheet closes three ways: tap the dimmed area outside it, tap the <b>✕ pinned to its top-right</b> (it stays put while a long sheet scrolls, so the notes list never makes you scroll to the bottom to get out), or press <b>Esc</b>. Esc closes the topmost one, so stacked sheets unstack one at a time. Saving or sending closes the sheet for you. The only exception is a confirm box — it asked a question, so it waits for an answer.</dd>
       <dt>𝄞 Score / ▦ Roll</dt><dd>Switch between piano roll and engraved sheet music. Same timeline, same everything else. Your choice is remembered.</dd>
@@ -1571,7 +1571,7 @@
     </div>
     <div class="hsec" data-hsec="tracks">
     <dl>
-      <dt>Track chips (top)</dt><dd>Tap a chip to select its track. <b>M</b> mutes — hides the track and silences it together, instantly, even mid-playback; tap M again to bring it back. <b>S</b> solos (only soloed tracks play). One tap each, any time. Tap the selected chip AGAIN for the voice &amp; color menu, organized by family: NES / waves (pulses, triangle, sine, saw; auto = the classic assignment, and its menu row SAYS what it resolves to for this track — "auto: pulse 50%", or "auto: chip" when the game's own sound is available), then real sampled instruments — Keys &amp; mallets (piano, electric piano, harpsichord, celesta, music box, vibraphone, marimba, glockenspiel), Guitar &amp; bass, Strings (solo violin/viola/cello/contrabass, the full section, pizzicato, harp), Winds (flute, piccolo, clarinet, oboe, saxes), Brass (trumpet, trombone, french horn, tuba, section), Organ &amp; choir — 36 FluidR3 soundfont instruments, each fetched only when a track uses it and cached after, and loudness-matched to the chip voices automatically — a violin at the same velocity as a pulse now sits at the same level, so velocity stays a musical choice instead of a mixing workaround. Last in the list, <b>Game instruments ›</b> borrows a voice from any published PS1/N64 game's library (File → 🎛 Instruments…, same source): a shortcut to <b>Instruments in this song</b> leads first when the open song is itself a game song with one, then every other game — tap in for <b>All instruments (A–Z)</b> or one of its songs (labelled by the track it plays on, when that's the song you have open), tap an instrument to hear it and assign it in one go. The menu row shows it as "GoldenEye 007 · Soft pad"; playback renders the note through the game's own sample, caching repeats, and never goes silent — a library or sample that can't be reached falls back to the track's own synth voice. Tap a family to open it, ‹ to go back; the menu opens in the current voice's family — and its color — the wide bar at the bottom shows the track's current color and opens a full color picker (any color at all), and a <b>vol</b> fader above it sets the track's own volume (0–150%), live while you drag — the mixer answer when one instrument dominates. On your own songs the menu also RENAMES the track (type a name, tap Rename): voice, color, and volume settings migrate with it, and Save bakes the name into the .mid. Name a track "drums" (or "kit"/"percussion") and it becomes a drum track. Both save as a normal synced annotation ("track: pulse1 voice=piano") — playback and display only, the MIDI is never touched. Many tracks wrap onto more rows; a ▾ appears beside the last chip when they overflow — first row always shows, ▾ reveals the rest, ▴ tucks them away (the transport stays pinned to the top row). The ◂ at the far left slides the whole chip cluster away when the row feels busy; ▸ brings it back (remembered). ▶ Play and ⏮ sit on this row; the 𝄞/▦ view toggle lives bottom-left in the footer. <b>Pan</b>: a left–right fader under the volume in the same menu; let go and it is saved as <code>pan=</code> on the track's annotation. An imported song's tracks arrive where the game put them (the .mid carries each channel's pan), and its chip audio is rendered in stereo from the same values.</dd>
+      <dt>Track chips (top)</dt><dd>Tap a chip to select its track. <b>M</b> mutes — the track goes silent and its notes dim, but they stay on screen and editable. <b>S</b> solos (only soloed tracks play). <b>H</b> hides the track's notes (and their score staff) without silencing them — the way to lasso or read around one part. One tap each, any time, even mid-playback, and <b>the song remembers them</b> (saved with its annotations, like voice and volume). Tap the selected chip AGAIN for the voice &amp; color menu, organized by family: NES / waves (pulses, triangle, sine, saw; auto = the classic assignment, and its menu row SAYS what it resolves to for this track — "auto: pulse 50%", or "auto: chip" when the game's own sound is available), then real sampled instruments — Keys &amp; mallets (piano, electric piano, harpsichord, celesta, music box, vibraphone, marimba, glockenspiel), Guitar &amp; bass, Strings (solo violin/viola/cello/contrabass, the full section, pizzicato, harp), Winds (flute, piccolo, clarinet, oboe, saxes), Brass (trumpet, trombone, french horn, tuba, section), Organ &amp; choir — 36 FluidR3 soundfont instruments, each fetched only when a track uses it and cached after, and loudness-matched to the chip voices automatically — a violin at the same velocity as a pulse now sits at the same level, so velocity stays a musical choice instead of a mixing workaround. Last in the list, <b>Game instruments ›</b> borrows a voice from any published PS1/N64 game's library (File → 🎛 Instruments…, same source): a shortcut to <b>Instruments in this song</b> leads first when the open song is itself a game song with one, then every other game — tap in for <b>All instruments (A–Z)</b> or one of its songs (labelled by the track it plays on, when that's the song you have open), tap an instrument to hear it and assign it in one go. The menu row shows it as "GoldenEye 007 · Soft pad"; playback renders the note through the game's own sample, caching repeats, and never goes silent — a library or sample that can't be reached falls back to the track's own synth voice. Tap a family to open it, ‹ to go back; the menu opens in the current voice's family — and its color — the wide bar at the bottom shows the track's current color and opens a full color picker (any color at all), and a <b>vol</b> fader above it sets the track's own volume (0–150%), live while you drag — the mixer answer when one instrument dominates. On your own songs the menu also RENAMES the track (type a name, tap Rename): voice, color, and volume settings migrate with it, and Save bakes the name into the .mid. Name a track "drums" (or "kit"/"percussion") and it becomes a drum track. Both save as a normal synced annotation ("track: pulse1 voice=piano") — playback and display only, the MIDI is never touched. Many tracks wrap onto more rows; a ▾ appears beside the last chip when they overflow — first row always shows, ▾ reveals the rest, ▴ tucks them away (the transport stays pinned to the top row). The ◂ at the far left slides the whole chip cluster away when the row feels busy; ▸ brings it back (remembered). ▶ Play and ⏮ sit on this row; the 𝄞/▦ view toggle lives bottom-left in the footer. <b>Pan</b>: a left–right fader under the volume in the same menu; let go and it is saved as <code>pan=</code> on the track's annotation. An imported song's tracks arrive where the game put them (the .mid carries each channel's pan), and its chip audio is rendered in stereo from the same values.</dd>
       <dt>S</dt><dd>Solo: hide everyone else instead.</dd>
     </dl>
 
@@ -1644,7 +1644,7 @@
     <div class="hsec" data-hsec="files">
     <dl>
       <dt>Install on the iPad</dt><dd>Safari → Share → <b>Add to Home Screen</b>. Night Roll then launches from its own icon, full screen with no browser bars, works offline (the app and any song you have opened are kept on the device; instrument sounds are kept as they are first used), and its drafts, annotations and settings live in storage Safari does not evict. Updates arrive on the next launch with a network — the page is always fetched fresh when it can be. Same for Chrome/Edge on a computer (the install icon in the address bar). File → the "build" line at the bottom of the menu says "installed" when you are running the installed copy. If offline support ever misbehaves, open the site with <code>?sw=0</code> once to turn it off on that device.</dd>
-      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has four tabs — <b>Saving</b> (auto-save, folder or Files), <b>AI</b>, <b>GitHub</b>, <b>Other</b> (the debug log) — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips, led by <b>Published</b> or <b>Local</b> — the same meaning as Open's two sections — then its folder: <i>Published › Final Fantasy I › Battle Scene</i>), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Revert to repo copy… (the escape hatch: discards THIS device's draft, unsynced annotations, and deletions for the open song, then loads the repo's last save — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… opens the <b>import hub</b> (below) — one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches); a drop target in the hub takes dragged files too, Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Save is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>unsaved</b> (exists only on this device), <b>saved to Night Roll Sketches</b> (committed, this row is just your local copy), or <b>edited since save</b> (local changes not yet committed). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
+      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has four tabs — <b>Saving</b> (folder or Files), <b>AI</b>, <b>GitHub</b>, <b>Other</b> (the debug log) — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips, led by <b>Published</b> or <b>Local</b> — the same meaning as Open's two sections — then its folder: <i>Published › Final Fantasy I › Battle Scene</i>), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save Version</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save Version (⌘S: a dated snapshot of the music AND annotations, kept on this device only — File → Versions… lists them), Publish (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Versions… (the published copy at the top when there is one, then this device's dated versions newest first — <b>Go back to this</b> on any row: your current state is kept as a version first, so nothing is thrown away, then that version becomes what you see — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… opens the <b>import hub</b> (below) — one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches); a drop target in the hub takes dragged files too, Download .mid (exports any song, works in Logic), Download audio (records the app's own sound by playing the song through once — loop off, keep quiet hands during the take; saves .m4a on Safari / .webm on Chrome, both shareable anywhere including iMessage). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Publish is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>never saved</b> (exists only on this device, no folder yet), <b>not published</b> (a local copy with no published counterpart), <b>published</b> (matches the published copy), <b>changed since publish</b> (local edits not yet published), or <b>annotations changed here</b> (only the notes differ). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
       <dt>Import…</dt><dd>File → Import… opens the <b>import hub</b>: one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches, whichever section you tapped from); a drop target in the hub takes dragged files too. <b>MIDI</b> (.mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — multi-select capable): ask where they belong — <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like a chip capture, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved). <b>NES</b>: the .nsf, plus its .m3u if the rip has one (track names) — an NSF that needs an expansion sound chip (VRC6, VRC7, FDS, MMC5, Namco 163, Sunsoft 5B) is refused by name ("expansion sound chip &lt;names&gt; not supported") — the NES pipeline captures only the 2A03, and those songs keep their lead voices on the extra chip. <b>Game Boy</b>: the .gbs, plus its .m3u, same rule. <b>Super NES</b>: every .spc of the album, picked together — tagged lengths, so the loop scan is skipped. <b>Genesis</b>: .vgm/.vgz — synth voices only, no console-audio render yet. <b>PlayStation</b>: every .minipsf plus the one .psflib, picked together — reads Sony's own SEQ/VAB driver and Square's AKAO (Final Fantasy VII/VIII/IX, Chrono Cross); both play the console's own audio. <b>PlayStation 2</b>: every .minipsf2/.psf2 plus the one .psf2lib, picked together — reads Sony's stock driver (SQ/HD/BD) and Square Enix's own (BGM/WD — Final Fantasy X); both play the console's own audio. A PS2 set that's only streamed audio (Ico, XIII) is refused: "this is streamed audio, not note data — Night Roll reads sequence data (notes), not pre-rendered streams". <b>Nintendo 64</b>: every .miniusf plus the one .usflib. For NES, Game Boy, PlayStation, PlayStation 2 and Nintendo 64: a playlist (.m3u) picked on its own, later, names an open song's album (or, mid-capture, renames an already-open session's tracks). Every chip pick opens the capture panel: the same pipeline that dumped the FF1 album runs the track — loop detected and trimmed, tempo grid-fitted, the hardware loop point recorded as a loop: annotation (the capture window auto-doubles, 75 → 150 → 300s, when no loop fits) — and lands as a LOCAL draft under an album named for the game; audition and rename each one, ⇪ Commit a track or the whole album — it keeps going if you leave the menu, and it all keeps running in the background (⏳ Jobs) if you close the panel too — File → Publish import still pushes every import capture across all folders at once. <b>Chip audio is automatic</b>: whenever the app can reach a song's NSF/GBS/etc. (the live import session, this device's cache, or the public archive), NES, Game Boy, PlayStation, PlayStation 2 and Nintendo 64 songs render through the console's own sound hardware; Genesis and Super NES play through synth voices for now. <b>SoundFont</b>: one .sf2 (a fan-made game font, a better piano, anything) — not tied to a song at all: it loads straight in, a copy stays on this device (works offline, no GitHub needed) and, with a game files &amp; instruments repo configured, pushes to the archive too so your other devices can play it; files over 50 MB ask first (GitHub itself warns past 50 MB, refuses past 100). <b>New song from a recording</b>: one .wav/.mp3/.m4a/.aif/.flac becomes a brand-new song — <b>Untitled N</b>, 4/4 at 120 bpm with three empty note tracks waiting (Edit → Pencil to write against it; ♩ Tempo from this take reads the clip's real tempo whenever you're ready) — it lives on this device until Save.</dd>
       <dt>Share a song</dt><dd><b>🔗 Share link</b> in the Publish sheet hands the song's link to the share sheet (or copies it). A link is this player plus the song plus where the song lives: songs on this site need nothing more; a song published to another GitHub repo carries <code>songs=owner/repo</code>, so anyone who taps it hears that song from that repo, no setup — and you can open such links too (the breadcrumb then starts with 🔗 and the repo's name; everything is read-only there, your own songs are untouched, and nothing about the link is remembered). Publish also keeps a <b>song list in the repo's README</b> — every song as a player link, between two markers the app owns, the rest of the README untouched — so the repo page itself is the share page. The address bar is always a shareable link to the open song, and it is the song's path with no extension — …/night-roll/albums/compositions/nightroll/ambush. <b>Add .mid to the end and the same link is the MIDI file</b> (Logic opens it); take it off and it's the player again. Older ?song= links still open the player. The tab title and the link preview in Messages name the song first — "Threnody · Night Roll" — so a pasted link reads as the song, not the app.</dd>
       <dt>Data locations</dt><dd>Night Roll is configured with WHERE its data lives (Sync → "Data locations ▾"): three rows — songs (.mid, album.json, catalog), analysis (.rollnotes + docs), and NSF (chip-audio source) — each with a read base URL (blank = this site; or any raw.githubusercontent.com/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt; or local server) and an owner/repo write target. One fine-grained token, granted to every repo you write to, covers all commits; write errors name the repo they hit, and a 404 usually means the token hasn't been granted that repo. This is what lets another analyst point their own analysis repo at a shared songs corpus. Defaults: everything in this site's repo, NSFs from the public nsf-archive. In the iPad app "this site" is only the bundled starters, so reads default to the repo in Settings → GitHub (the same place Publish writes): your published songs, annotations and imports appear there once the repo is set; the starters come from the bundle either way.</dd>
@@ -1653,8 +1653,8 @@
       <dt>Debug log</dt><dd>File → Settings → Other → <b>Debug log</b> shows diagnostic lines in ⚠ Messages, marked [debug]: audio wake-ups after you leave the app, engine rebuilds, audio state changes. Off, only real problems raise the ⚠ chip. A message that repeats shows once, with ×N. Turn it on when chasing a silence, so Claude can see what the audio engine measured.</dd>
       <dt>⚠ Messages</dt><dd><b>Copy all</b> puts the whole log on the clipboard for pasting to Claude. Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
-      <dt>Save and Auto-save</dt><dd>A published song is never edited in place: you edit this device's <b>local copy</b>. When a song of yours has no copy here, <b>✎ Edit locally</b> sits where Edit ▾ would be — it asks, then makes the copy, and the edit tools appear. By default (auto-save off) your edits live in a <b>working copy</b> on this device: it follows every change so nothing is lost to a crash, but it is not <i>saved</i> until you choose File → <b>Save</b> (⌘S). Save is your checkpoint: the gold ● means "changed since your last Save", <b>Revert to last save…</b> goes back to it, and <b>Compare with last save</b> shows the difference on the roll. Revert is undoable — the working copy is stashed first and File → <b>Restore unsaved copy…</b> brings it back until your next Save or Publish. Settings → SAVING → <b>Auto-save</b> switches to the other way: every edit is the save and the ● means unpublished. Publish is a separate step in both modes, and publishing also saves.</dd>
-      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and the footer button open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since the last save, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. Every song's row has the same three buttons: tap <b>Open</b> to open it here, <b>Publish</b> to publish that song only (a job — ⏳ shows it), <b>Revert</b> to drop this device's changes to it after asking (File → Restore unsaved copy undoes it; a song never published has no Revert — there is no published copy to go back to). <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
+      <dt>Save Version and Versions…</dt><dd>A published song is never edited in place: you edit this device's <b>local copy</b>. When a song of yours has no copy here, <b>✎ Edit locally</b> sits where Edit ▾ would be — tap it and the local copy is made right away, no confirmation, with a footer note: <i>editing your copy on this device — Publish sends it</i>. Every edit is kept automatically, on this device, the moment you make it — there is no auto-save switch to turn on; nothing is ever lost to a crash. File → <b>Save Version</b> (⌘S) additionally adds a DATED snapshot of the music AND the annotations to this device's history for the song — the status line says "Version saved — only on this iPad" (or "this device" outside the app); the first Save Version of an Untitled song still asks for a folder and a name. File → <b>Versions…</b> lists them newest first, plus the <b>Published copy</b> at the top when the song has one — tap <b>Go back to this</b> on any row: your current state is kept as a version first (labelled "Before going back"), so nothing is ever thrown away, then that version becomes what you see. The gold <b>●</b> after the title means <i>not published yet</i> (music, annotations, or chat) — Save Version never clears it, only <b>Publish</b> does. Not connected anywhere (no GitHub token or repo, no local folder)? Neither the ● nor the footer Publish button shows — your work is still kept automatically, and File → <b>Publish…</b> still opens and explains how to connect.</dd>
+      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and the footer button open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since publish, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. Every song's row has the same three buttons: tap <b>Open</b> to open it here, <b>Publish</b> to publish that song only (a job — ⏳ shows it), <b>Revert</b> to drop this device's changes to it after asking (your current state is kept as a version first — File → Versions… brings it back; a song never published has no Revert — there is no published copy to go back to). <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
     </dl>
     </div>
 
@@ -1669,10 +1669,11 @@
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
       <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ AI) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
-      <dt>General chat</dt><dd>At the top of ✦ AI, <b>♪ this song</b> / <b>✦ general</b> pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
+      <dt>General chat</dt><dd>At the top of ✦ AI, <b>♪ this song</b> / <b>✦ Ask</b> / <b>⌨ Terminal</b> (only with the Claude Code bridge) pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
-      <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, a quiet <b>Now: …</b> line at the top of the <b>✦ general</b> chat shows the terminal's current step (set with <code>claude-bridge.mjs --status "…"</code>, cleared when idle), with how long ago it changed; the same line appears in <b>⏳ Jobs</b> no matter which chat you're in. Tap the strip for <b>Recent</b>: its last ~10 lines, plus the last 3 commit subjects from the repo.</dd>
+      <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, a quiet <b>Now: …</b> line at the top of the <b>✦ Ask</b> and <b>⌨ Terminal</b> chats shows the terminal's current step (set with <code>claude-bridge.mjs --status "…"</code>, cleared when idle), with how long ago it changed; the same line appears in <b>⏳ Jobs</b> no matter which chat you're in. Tap the strip for <b>Recent</b>: its last ~10 lines, plus the last 3 commit subjects from the repo.</dd>
       <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a <code>(screenshot: …)</code> line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.</dd>
+      <dt>⌨ Terminal tab</dt><dd>The ⌨ Terminal tab in ✦ AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. 📷 works the same. If the Mac can't be reached, the message goes back into the box.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).</dd>
       <dt>Where the model runs</dt><dd>File → Settings… → <b>AI model</b>. <b>In this browser</b>: pick a small model (0.4–4 GB), the first Ask downloads it once and it runs on this device's GPU, nothing leaves the device; Test checks WebGPU and whether it's downloaded. <b>On a server</b>: the URL of an OpenAI-compatible server — LM Studio or Ollama on this computer (<code>http://localhost:1234</code>) or on another machine on your network — plus an optional API key; <b>Test</b> lists the server's models, picks one (your last pick if the server still has it), saves, and names exactly what's wrong when it can't (server off, CORS not enabled, https page talking to an http server, no answer in 8 s). On an iPad the server must be https (Tailscale Serve). The first time you point it at a machine other than this one, it asks once before sending your notes there.</dd>
       <dt>Settings save themselves</dt><dd>Every Settings field saves itself the moment you leave it — there is no Save button and closing never loses anything.</dd>
@@ -1741,12 +1742,11 @@
   <button class="fitem" id="fileinst">🎛 Instruments…</button>
   <button class="fitem" id="fileimporthub">Import…</button>
   <div class="fdiv"></div>
-  <button class="fitem" id="filesavelocal">Save</button>
+  <button class="fitem" id="filesavelocal">Save Version</button>
   <button class="fitem" id="filesave">Publish…</button>
   <button class="fitem" id="filesaveas">Save As…</button>
   <button class="fitem" id="filerename">Rename…</button>
-  <button class="fitem" id="filerevert">Revert to repo copy…</button>
-  <button class="fitem" id="filerestore" style="display:none">Restore unsaved copy…</button>
+  <button class="fitem" id="filerevert">Versions…</button>
   <button class="fitem" id="fileimpcommit" style="display:none">Publish import</button>
   <div class="fdiv"></div>
   <button class="fitem" id="filedlmid">Download .mid</button>
@@ -1786,6 +1786,16 @@
 </div>
 <div id="filesub"></div>
 <div id="voicemenu"></div>
+<!-- File → Versions… (Model B, 2026-09-29): the published copy (when there
+     is one) then this device's dated versions, newest first; makeWindow()
+     registers it non-dockable, like Status/the import hub — a browsing
+     sheet, not a panel worth pinning open. -->
+<div class="overlay" id="versionssheet">
+  <div class="sheet">
+    <h2 id="versionssheet-h2">VERSIONS</h2>
+    <div id="versionsrows"></div>
+  </div>
+</div>
 <!-- the shared Dock-control popup every dockable window opens (makeWindow) —
      one menu, built fresh each time from wmMenuItems(), same pattern as
      #voicemenu/#filesub -->
@@ -1976,7 +1986,8 @@
     <h2 id="asksheet-h2">AI</h2>
     <div class="chiprow" id="askmoderow" role="tablist" aria-label="Which chat">
       <button id="askmodesong" role="tab" class="active">♪ this song</button>
-      <button id="askmodegen" role="tab">✦ general</button>
+      <button id="askmodegen" role="tab">✦ Ask</button>
+      <button id="askmodeterm" role="tab" style="display:none" title="Straight to Claude Code in the Mac's terminal — the session that builds Night Roll">⌨ Terminal</button>
     </div>
     <div class="status" id="asknowstrip" style="display:none;cursor:pointer" role="button" tabindex="0" aria-label="What Claude Code is doing — tap for recent"></div>
     <div id="asknowrecent" style="display:none"></div>
@@ -2027,9 +2038,7 @@
       <button id="cfgtab-github">GitHub</button>
       <button id="cfgtab-other">Other</button></div>
     <div class="cfgpane on" id="cfgpane-saving">
-    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
-      <input type="checkbox" id="cfgautosave" style="width:20px;height:20px"> Auto-save: every edit is the save</label></div>
-    <div class="status cfgind" id="cfgautosavehelp">Off (the usual way): edits stay in a working copy until File → Save (⌘S); the ● means changed since your last Save; Revert goes back to it, undoably. Nothing is lost either way — the working copy survives a crash. Publish is a separate step in both modes.</div>
+    <div class="status cfgind">Every edit is kept on this device automatically — there's no switch for it. File → <b>Save Version</b> (⌘S) adds a dated snapshot (music + annotations); File → <b>Versions…</b> lists them, and the published copy. <b>Publish</b> is the separate, deliberate step that shares a song.</div>
     <div class="row" id="filesrow" style="display:none"><span class="lbl" style="width:70px">Files</span>
       <span id="fileshelp" style="flex:1;font-size:13px"></span></div>
     <!-- local folder: Chrome/Edge desktop only; hidden text explains elsewhere -->
@@ -2803,9 +2812,7 @@ function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
     case "key": n.text = "key: " + (j.key || "") + att; break;
     case "timesig": n.text = "timesig: " + (j.timesig || "") + att; break;
     case "tempo": n.text = "tempo: " + j.bpm + att; break;
-    case "track": n.text = "track: " + (j.track || "") +
-      (j.voice ? " voice=" + j.voice : "") + (j.color ? " color=" + j.color : "") +
-      (j.vol !== undefined ? " vol=" + j.vol : "") + (j.pan !== undefined ? " pan=" + j.pan : "") + att; break;
+    case "track": n.text = trackDirText({name: j.track || "", voice: j.voice, color: j.color, vol: j.vol, pan: j.pan, mute: j.mute, solo: j.solo, hide: j.hide}) + att; break;
     case "loop": n.text = "loop: " + (j.loop || "") + att; break;
     case "audio": n.text = audioDirText({track: j.track || "", file: j.file || "", offset: j.offset || 0, len: j.len || null, local: !!j.local}) + att; break;
     case "chop": n.text = "chop: " + (j.chop || ""); break;
@@ -2866,10 +2873,10 @@ function deriveNoteTypes(out) {
         if (k === "color") d.color = v;
         if (k === "vol") d.vol = Math.min(1.5, Math.max(0, parseFloat(v)));
         if (k === "pan") d.pan = Math.min(1, Math.max(-1, parseFloat(v))); // −1 left … +1 right; overrides the .mid's CC10
+        if (k === "mute" || k === "solo" || k === "hide") d[k] = v === "1"; // saved with the song, the DAW way (2026-09-29)
       }
       n.trackdir = d;
-      n.text = "track: " + d.name + (d.voice ? " voice=" + d.voice : "") + (d.color ? " color=" + d.color : "") +
-               (d.vol !== undefined && isFinite(d.vol) ? " vol=" + d.vol : "") + (d.pan !== undefined && isFinite(d.pan) ? " pan=" + d.pan : "");
+      n.text = trackDirText(d);
     } else delete n.trackdir;
     // "audio: <track> file=<slug> offset=<sec> local=1" — a clip on a named
     // track; the anchor is where file second `offset` sounds (see NIGHT-ROLL.md
@@ -2915,6 +2922,7 @@ function noteToJSON(n) { // enriched-or-stashed note -> schema entry (text prefi
       if (k === "color") j.color = v;
       if (k === "vol") j.vol = parseFloat(v);
       if (k === "pan") j.pan = parseFloat(v);
+      if ((k === "mute" || k === "solo" || k === "hide") && v === "1") j[k] = true;
     }
     return withNote(j);
   }
@@ -3068,6 +3076,7 @@ function finalizeNotes() {
   }
   if (song) { // track: directives — per-track voice & color, synced like any note
     song.tracks.forEach(tr => { delete tr.voice; delete tr.color; delete tr.vol; delete tr.pan; }); // pan: the directive's; the .mid's own stays in midiPan
+    trackState.forEach(st => { st.muted = false; st.solo = false; st.hidden = false; }); // the directives below say otherwise
     laneOverride = null; // "lane: N" directive — the kit lane's pinned row, synced like any note
     { // duplicate track: directives accumulate (upsert removes a SYNCED copy
       // in memory only; the repo file resurrects it on load — web-session
@@ -3087,6 +3096,7 @@ function finalizeNotes() {
       if (n.trackdir.color) song.tracks[ti].color = n.trackdir.color;
       if (n.trackdir.vol !== undefined) song.tracks[ti].vol = n.trackdir.vol;
       if (n.trackdir.pan !== undefined) song.tracks[ti].pan = n.trackdir.pan;
+      if (trackState[ti]) Object.assign(trackState[ti], {muted: !!n.trackdir.mute, solo: !!n.trackdir.solo, hidden: !!n.trackdir.hide});
     }
     applyAudioDirs(); // audio: directives — kind/clip derived onto named tracks the same way
     updateTrackGains(); // live nodes follow re-applied faders immediately
@@ -3232,8 +3242,11 @@ function dirtySongs() { // songs with unsynced local notes on this device
                    localStorage.getItem("ff1roll-draft-" + k) !== null));
 }
 function updateSyncBtn() {
+  const btn = document.getElementById("syncbtn");
+  if (!connected()) { btn.style.display = "none"; return; } // Model B: not connected anywhere = no footer Publish button
+  btn.style.display = "";
   const n = pendingSongs().length;
-  document.getElementById("syncbtn").textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one")
+  btn.textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one"); shows even at N=0 once connected
 }
 function serializeNotesList(list, beatsPerBar, base, stamp) {
   // one note per line: valid JSON that git-diffs like the old text format.
@@ -3669,7 +3682,7 @@ function renderTrackbar() {
   song.tracks.forEach((tr, ti) => {
     const chip = document.createElement("div");
     const st = trackState[ti] || (trackState[ti] = {muted: false, solo: false});
-    chip.className = "chip" + (st.muted ? " muted" : "") + (ti === selTrack ? " selected" : "");
+    chip.className = "chip" + (st.muted || st.hidden ? " muted" : "") + (ti === selTrack ? " selected" : "");
     chip.dataset.ti = String(ti); // which track this chip belongs to — the tap-away closer (below) needs it to tell "the menu's own chip" from "a different track"
     chip.setAttribute("role", "button");
     chip.tabIndex = 0;
@@ -3683,21 +3696,26 @@ function renderTrackbar() {
     solo.textContent = "S";
     solo.addEventListener("click", e => {
       e.stopPropagation();
-      trackState[ti].solo = !trackState[ti].solo;
-      renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw();
+      trackToggle(ti, "solo");
     });
-    // dedicated mute: one tap, any selection state — hides the track AND
-    // silences it together (trackAudible gates both). The old gesture (tap a
-    // selected chip) made mute depend on invisible state; chip body = select only
+    // M silences, S solos, H hides — three separate things, as in a DAW
+    // (2026-09-29: M used to hide AND silence; muting the bass lost sight of it)
     const mute = document.createElement("span");
     mute.className = "solo" + (trackState[ti].muted ? " on" : "");
     mute.textContent = "M";
     mute.addEventListener("click", e => {
       e.stopPropagation();
-      trackState[ti].muted = !trackState[ti].muted;
-      renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw();
+      trackToggle(ti, "muted");
     });
-    chip.append(dot, label, mute, solo);
+    const hide = document.createElement("span");
+    hide.className = "solo" + (trackState[ti].hidden ? " on" : "");
+    hide.textContent = "H";
+    hide.title = "Hide this track's notes (still plays unless muted)";
+    hide.addEventListener("click", e => {
+      e.stopPropagation();
+      trackToggle(ti, "hidden");
+    });
+    chip.append(dot, label, mute, solo, hide);
     chip.addEventListener("click", e => {
       if (ti === selTrack) { openVoiceMenu(ti, chip); return; } // second tap: voice & color
       // a first tap on a DIFFERENT track must not leave the old track's voice
@@ -3798,10 +3816,17 @@ document.getElementById("trackmore").addEventListener("click", () => {
   });
   apply(localStorage.getItem("ff1roll-tracks-hidden") === "1");
 }
-function trackAudible(ti) {
+function trackAudible(ti) { // what you HEAR: mute and solo (they never hide notes — DAW habit, 2026-09-29)
   const anySolo = trackState.some(s => s.solo);
   return anySolo ? trackState[ti].solo : !trackState[ti].muted;
 }
+function trackToggle(ti, what) { // M / S / H from a chip or a lane header: the song remembers it (track: annotation)
+  const st = trackState[ti] || (trackState[ti] = {muted: false, solo: false});
+  st[what] = !st[what];
+  if (song && song.tracks[ti]) saveTrackDir(ti); // finalizeNotes re-applies it, then renders
+  renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw();
+}
+function trackShown(ti) { return !(trackState[ti] && trackState[ti].hidden); } // what you SEE and can select: H on the chip
 
 // ---------------------------------------------------------------- drawing
 function resize() {
@@ -3973,8 +3998,9 @@ function drawFull(skipCursor) {
 
   // notes
   song.tracks.forEach((tr, ti) => {
-    if (!trackAudible(ti)) return; // hidden = gone, not dimmed
+    if (!trackShown(ti)) return; // hidden = gone; muted = dimmed (still visible, still editable)
     const color = trackColor(ti);
+    const dim = trackAudible(ti) ? 1 : 0.3;
     for (let ni = 0; ni < tr.notes.length; ni++) {
       const n = tr.notes[ni];
       if (n.gone) continue;
@@ -3983,7 +4009,7 @@ function drawFull(skipCursor) {
       if (x + w < RULER_W || x > W) continue;
       const y = RULER_H + (topRow() - noteRow(ti, n.p)) * rowH - view.y;
       if (y < RULER_H - rowH || y > H) continue;
-      ctx.globalAlpha = 0.55 + 0.45 * (n.v / 127);
+      ctx.globalAlpha = (0.55 + 0.45 * (n.v / 127)) * dim;
       if (findPc !== null && n.p % 12 !== findPc) ctx.globalAlpha *= 0.15; // finder: non-matches recede
       ctx.fillStyle = color;
       ctx.beginPath();
@@ -4183,7 +4209,7 @@ function finalizeLasso() {
     const tiLo = trackLaneAt(y0), tiHi = trackLaneAt(y1);
     const lo = tiLo < 0 ? 0 : tiLo, hi = tiHi < 0 ? song.tracks.length - 1 : tiHi;
     for (let ti = lo; ti <= hi; ti++) {
-      if (!trackAudible(ti)) continue;
+      if (!trackShown(ti)) continue;
       song.tracks[ti].notes.forEach((n, ni) => {
         if (!n.gone && n.t < t1 && n.t + n.d > t0) addSel(ti, ni);
       });
@@ -4215,7 +4241,7 @@ function finalizeLasso() {
     const rHi = topRow() - Math.floor((y0 - RULER_H + view.y) / view.rowH);
     const rLo = topRow() - Math.floor((y1 - RULER_H + view.y) / view.rowH);
     song.tracks.forEach((tr, ti) => {
-      if (!trackAudible(ti)) return;
+      if (!trackShown(ti)) return;
       tr.notes.forEach((n, ni) => {
         const rw = noteRow(ti, n.p);
         if (!n.gone && rw >= rLo && rw <= rHi && n.t < t1 && n.t + n.d > t0) addSel(ti, ni);
@@ -5299,7 +5325,7 @@ function joinSelection() { // ⁀: merge selected notes of the same track+pitch 
 function hitNote(pos) {
   const {tick, pitch} = posToTickPitch(pos);
   for (let ti = song.tracks.length - 1; ti >= 0; ti--) {
-    if (!trackAudible(ti)) continue;
+    if (!trackShown(ti)) continue;
     const tr = song.tracks[ti];
     for (let ni = 0; ni < tr.notes.length; ni++) {
       const n = tr.notes[ni];
@@ -5849,13 +5875,11 @@ canvas.addEventListener("pointerdown", e => {
       const g = laneGeom(ti);
       const ly = p.y - g.y0;
       if (ly >= 22 && ly <= 42 && p.x >= 8 && p.x <= 30) { // M
-        trackState[ti].muted = !trackState[ti].muted;
-        renderTrackbar(); updateTrackGains(); draw();
+        trackToggle(ti, "muted");
         drag = null; return;
       }
       if (ly >= 22 && ly <= 42 && p.x >= 34 && p.x <= 56) { // S
-        trackState[ti].solo = !trackState[ti].solo;
-        renderTrackbar(); updateTrackGains(); draw();
+        trackToggle(ti, "solo");
         drag = null; return;
       }
       if (g.lh >= 56 && ly >= 22 && ly <= 42 && p.x >= 56 && p.x <= 126) { // fader
@@ -7133,25 +7157,27 @@ function trackColor(ti) {
   const c = song && song.tracks[ti] && song.tracks[ti].color;
   return c || TRACK_COLORS[ti % TRACK_COLORS.length];
 }
-function saveVoices() { // upsert this track's "track:" directive — a normal
-  // synced annotation (Josh, 2026-08-15): voice & color are song truths
-  const ti = voiceMenuTi;
+// the one spelling of a "track:" directive — parse, JSON import, rename and
+// save all build it here, so a new field can't be dropped by one of them
+function trackDirText(d) {
+  return "track: " + d.name + (d.voice && d.voice !== "auto" ? " voice=" + d.voice : "") + (d.color ? " color=" + d.color : "") +
+    (d.vol !== undefined && isFinite(d.vol) ? " vol=" + d.vol : "") + (d.pan !== undefined && isFinite(d.pan) ? " pan=" + d.pan : "") +
+    (d.mute ? " mute=1" : "") + (d.solo ? " solo=1" : "") + (d.hide ? " hide=1" : "");
+}
+function saveVoices() { saveTrackDir(voiceMenuTi); }
+function saveTrackDir(ti) { // upsert this track's "track:" directive — a normal
+  // synced annotation (Josh, 2026-08-15): voice & color are song truths; so
+  // are mute / solo / hide (2026-09-29: DAWs save them with the project)
   const tr = song.tracks[ti];
   const name = tr.name || "tr" + (ti + 1);
-  const chosen = {voice: tr.voice, color: tr.color, vol: tr.vol, pan: tr.pan};
+  const st = trackState[ti] || {};
+  const d = {name, voice: tr.voice, color: tr.color, vol: tr.vol !== 1 ? tr.vol : undefined, pan: tr.pan,
+             mute: !!st.muted, solo: !!st.solo, hide: !!st.hidden};
   rollnotes.forEach(n => { if (n.trackdir && n.trackdir.name.toLowerCase() === name.toLowerCase()) tombstone(n); });
   rollnotes = rollnotes.filter(n => !(n.trackdir && n.trackdir.name.toLowerCase() === name.toLowerCase()));
-  const parts = [];
-  if (chosen.voice && chosen.voice !== "auto") parts.push("voice=" + chosen.voice);
-  if (chosen.color) parts.push("color=" + chosen.color);
-  if (chosen.vol !== undefined && chosen.vol !== 1) parts.push("vol=" + chosen.vol);
-  if (chosen.pan !== undefined) parts.push("pan=" + chosen.pan); // 0 is written too: it overrides a .mid's own pan
-  if (parts.length) {
-    rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null,
-      text: "track: " + name + " " + parts.join(" "),
-      trackdir: {name, voice: chosen.voice, color: chosen.color, vol: chosen.vol, pan: chosen.pan}, added: true}));
-  }
-  finalizeNotes(); // re-applies (or reverts) voice/color from the directives
+  const text = trackDirText(d); // 0 pan is written too: it overrides a .mid's own pan
+  if (text !== "track: " + name) rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null, text, trackdir: d, added: true}));
+  finalizeNotes(); // re-applies (or reverts) voice/color/mute/solo/hide from the directives
   saveLocalNotes();
   updateSyncBtn();
 }
@@ -9751,7 +9777,7 @@ function buildScoreModel() {
   const sf0 = sfAt(0);
   const staves = [];
   song.tracks.forEach((tr, ti) => {
-    if (trackIsDrums(ti) || !trackAudible(ti) || tr.kind === "audio") return; // no staff for a clip
+    if (trackIsDrums(ti) || !trackShown(ti) || tr.kind === "audio") return; // no staff for a clip
     // compositions keep empty tracks visible — the stave must exist before
     // its first note can be entered on it
     if (!tr.notes.length && !isComposition()) return;
@@ -9821,7 +9847,7 @@ function buildScoreModel() {
   // the kit staff — ALWAYS at the bottom (Josh's ruling), percussion clef,
   // hands and feet as separate voices so stems read up/down at a glance
   song.tracks.forEach((tr, ti) => {
-    if (!trackIsDrums(ti) || !trackAudible(ti)) return;
+    if (!trackIsDrums(ti) || !trackShown(ti)) return;
     if (!tr.notes.length) return;
     const streams = {hands: new Map(), feet: new Map()};
     for (let ni = 0; ni < tr.notes.length; ni++) {
@@ -10354,12 +10380,12 @@ function updateSongBtn() { // breadcrumb: Album › Title, with the real path di
   songtitleEl.appendChild(title);
   const chat = askUnsavedCount();
   const unsaved = songUnsaved();
-  if (unsaved || chat) { // unsaved edits or chat: the gold dot every editor uses
+  if ((unsaved || chat) && connected()) { // "not published yet": hidden entirely when nothing is connected (Model B) — a local-only user's work is always kept, Versions are the save points
     const dot = document.createElement("span");
     dot.textContent = "\u00a0●";
     dot.className = "crumbdot";
     dot.style.color = "var(--gold)";
-    dot.setAttribute("aria-label", unsaved ? (autosaveOn() ? "Unpublished changes" : "Changed since your last Save") : chat + " chat messages not saved");
+    dot.setAttribute("aria-label", unsaved ? "Unpublished changes" : chat + " chat messages not saved");
     songtitleEl.appendChild(dot);
   }
 }
@@ -10680,7 +10706,7 @@ keysetBtn.addEventListener("click", () => {
 // gain straight to the destination, so it survives song stop()'s master fade
 // and can click OVER a playing song — a poor man's meter audition.
 const met = Object.assign({bpm: 120, num: 4, den: 4, sub: 1, accents: [2, 1, 1, 1], on: false,
-                           follow: "free", nudge: 0, countIn: false},
+                           follow: "song", nudge: 0, countIn: false}, // follow the song by default (Josh, 2026-09-29: a free 120 clicked out of time with the song)
                           JSON.parse(localStorage.getItem("ff1roll-met") || "{}"));
 met.on = false;
 let metGain = null, metTimer = 0, metNext = 0, metIdx = 0, metLastWhen = -1;
@@ -10962,10 +10988,7 @@ function renameTrack(ti, newName) { // compositions/local drafts only — analys
     }
     if (!n.trackdir || n.trackdir.name.toLowerCase() !== oldName.toLowerCase()) continue;
     n.trackdir.name = newName;
-    n.text = "track: " + newName + (n.trackdir.voice ? " voice=" + n.trackdir.voice : "") +
-             (n.trackdir.color ? " color=" + n.trackdir.color : "") +
-             (n.trackdir.vol !== undefined && isFinite(n.trackdir.vol) ? " vol=" + n.trackdir.vol : "") +
-             (n.trackdir.pan !== undefined && isFinite(n.trackdir.pan) ? " pan=" + n.trackdir.pan : "");
+    n.text = trackDirText(n.trackdir);
     n.added = true; // the migrated directive must persist and sync
   }
   finalizeNotes();
@@ -11625,7 +11648,7 @@ findsel.addEventListener("change", () => {
   let count = 0;
   const chans = new Set();
   if (song) song.tracks.forEach((tr, ti) => {
-    if (!trackAudible(ti) || trackIsDrums(ti)) return;
+    if (!trackShown(ti) || trackIsDrums(ti)) return;
     for (const n of tr.notes) if (!n.gone && n.p % 12 === findPc) { count++; chans.add(tr.name || "track " + (ti + 1)); }
   });
   const sf = sfDeclaredAt(curTick());
@@ -11653,7 +11676,7 @@ function chordEvidence(sec) {
   const pitches = new Set();
   const byTrack = [];
   song.tracks.forEach((tr, ti) => {
-    if (!trackAudible(ti) || trackIsDrums(ti)) return;
+    if (!trackShown(ti) || trackIsDrums(ti)) return;
     const ps = new Set();
     for (const n of tr.notes) {
       if (!n.gone && n.t < sec.end && n.t + n.d > sec.start) { pitches.add(n.p); ps.add(n.p); }
@@ -12896,7 +12919,7 @@ function drawFall(W, H) {
   // frame (9 ms median, 100 ms spikes on the Mac, worse on the iPad)
   const tick0 = secToTick(song, Math.max(0, nowSec - 0.5)), tick1 = secToTick(song, nowSec + FALL_WINDOW + 0.5);
   song.tracks.forEach((tr, ti) => {
-    if (!trackAudible(ti) || trackIsDrums(ti)) return;
+    if (!trackShown(ti) || trackIsDrums(ti)) return;
     const color = trackColor(ti);
     tr.notes.forEach((n, ni) => {
       if (n.gone || n.t > tick1 || n.t + n.d < tick0) return;
@@ -13735,7 +13758,8 @@ function chosenFolder(sel, inp) { // the select, or the typed folder; null = not
   return folderFromInput(inp.value);
 }
 function renameLocalKeys(oldKey, newKey) { // every per-song key on this device rides along; the open song follows
-  for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-save-", "ff1roll-stash-"]) {
+  migrateVersions(oldKey); // fold any pre-versions checkpoint/stash in under the OLD key first, so a rename can't strand them
+  for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-versions-"]) {
     const v = localStorage.getItem(pre + oldKey);
     if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
   }
@@ -13750,13 +13774,13 @@ function renameLocalKeys(oldKey, newKey) { // every per-song key on this device 
     updateEditBtnVis();
   }
 }
-async function saveSongAs(folder, name) { // first Save of an Untitled song: it gets a folder and a name, then a checkpoint
+async function saveSongAs(folder, name) { // first Save Version of an Untitled song: it gets a folder and a name, then its first version
   if (!song || !isUnsaved(songKey)) return false;
   const newKey = "albums/" + folder + "/" + slugify(name) + ".mid";
   if (localStorage.getItem(draftStoreKey(newKey)) !== null) { // Josh: "if you already have a local version, it could maybe overwrite that one"
     const ok = await appConfirm("REPLACE " + songTitleOf(newKey).toUpperCase() + "?", "A local copy with that name already exists in " + folderTitle(folder) + ". Replace it with this song?", "Replace", "Keep both");
     if (!ok) return false;
-    for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-save-"]) localStorage.removeItem(pre + newKey);
+    for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-versions-"]) localStorage.removeItem(pre + newKey);
     idbDraftDelete(newKey);
   }
   renameLocalKeys(songKey, newKey);
@@ -13765,7 +13789,7 @@ async function saveSongAs(folder, name) { // first Save of an Untitled song: it 
     if (d) { d.title = name.trim(); localStorage.setItem(draftStoreKey(newKey), JSON.stringify(d)); }
   } catch (err) { /* the slug will do */ }
   localStorage.setItem("ff1roll-lastfolder", folder);
-  saveCheckpoint(true);
+  saveVersion(true);
   updateSongBtn();
   setInfo("saved as " + name.trim() + " in " + folderTitle(folder) + " — Publish sends it to " + (publishDest() === "folder" ? fsRoot.name : "GitHub"));
   return true;
@@ -13968,50 +13992,90 @@ function saveDraft(clean) { // clean=true right after a successful Publish; the 
   }
   updateSongBtn(); // the unsaved dot tracks every edit
   updateSyncBtn(); // and the Publish (N) count: an undo back to the published music takes a song off it
-  if (autosaveOn()) filesMirrorSoon(); // every edit is the save: the Files copy follows, once the edits settle
+  filesMirrorSoon(); // the Files copy follows, once the edits settle — every edit is kept, always (Model B)
 }
-// ---- Local Save (Josh, 2026-09-26: "every single thing you do is always
-// saved, that kind of sucks … not the way it works in Logic"). With auto-save
-// OFF (the default) the working copy still follows every edit — nothing is
-// ever lost to a crash — but it is not "saved": File → Save (⌘S) copies it to
-// a checkpoint, the ● means "changed since that Save", Revert goes back to it
-// (undoably: the working copy is stashed first, File → Restore unsaved copy
-// brings it back), and Compare compares against it. Publish implies Save.
-// With auto-save ON every edit is the save: the old behaviour, ● = unpublished.
-function autosaveOn() { return localStorage.getItem("ff1roll-autosave") === "1"; }
-function saveStoreKey(key) { return "ff1roll-save-" + key; }
-function stashStoreKey(key) { return "ff1roll-stash-" + key; }
-function songDocSig(d) { return JSON.stringify([d.ppq, d.timesig, d.tempos, d.tracks]); }
-function lastSaveDoc(key) { try { return JSON.parse(localStorage.getItem(saveStoreKey(key || songKey)) || "null"); } catch (err) { return null; } }
-function songUnsaved() { // what the ● means: auto-save off → changed since the last Save (since Publish when never saved); on → unpublished
-  if (!song || !isComposition()) return false;
-  if (autosaveOn()) return songDirtyFlag();
-  const cp = lastSaveDoc();
-  return cp ? songDocSig(draftDoc(false)) !== songDocSig(cp) : songDirtyFlag();
+// ---- Versions (Model B, Josh picked 2026-09-29: "always kept, plus
+// versions" — Logic/GarageBand style; A was "every single thing you do is
+// always saved, that kind of sucks … not the way it works in Logic" turned
+// into a smaller first step, then this). Autosave is no longer a choice —
+// autosaveOn() stays only so a stray caller still reads "on". The working
+// copy already follows every edit (crash-proof); File → Save Version (⌘S)
+// additionally snapshots music AND annotations, dated, into this device's
+// own history for the song; File → Versions… lists them (newest last on
+// disk, newest FIRST on screen) plus the published copy; going back to any
+// of them pushes the CURRENT state as a version first ("Before going back"),
+// so nothing is ever thrown away. The gold ● means "not published yet" —
+// only Publish clears it (songUnsaved, below); Save Version never does.
+function autosaveOn() { return true; }
+function versionsStoreKey(key) { return "ff1roll-versions-" + key; }
+function readVersionsRaw(key) {
+  try { const v = JSON.parse(localStorage.getItem(versionsStoreKey(key)) || "[]"); return Array.isArray(v) ? v : []; }
+  catch (err) { return []; }
 }
-function saveCheckpoint(quiet) { // File → Save / ⌘S
-  if (song && isUnsaved(songKey)) { if (!quiet) openSaveForm("save"); return false; } // first Save: folder + name
-  if (!song || !songKey || !isComposition()) { if (!quiet) setInfo("Save works on your own songs — this one is a capture; Save As forks it"); return false; }
-  if (cmp && cmp.showing === "repo") { if (!quiet) setInfo("you're hearing the repo copy — switch back to your version first"); return false; }
-  const d = draftDoc(!songDirtyFlag()); d.savedAt = Date.now();
-  localStorage.setItem(saveStoreKey(songKey), JSON.stringify(d));
-  localStorage.removeItem(stashStoreKey(songKey));
-  updateSongBtn();
-  filesMirror(); // the iPad app: the copy in Files follows every Save
-  if (!quiet) setInfo("saved on this device" + (songDirtyFlag() ? " — Publish sends it to the repo" : ""));
+function writeVersionsRaw(key, list) { localStorage.setItem(versionsStoreKey(key), JSON.stringify(list.slice(-20))); }
+// Migration (additive — nothing is dropped before it is copied over): the
+// first time this device reads or writes a song's versions, an old Save
+// checkpoint (ff1roll-save-<key>, MUSIC ONLY) becomes a version, and a
+// stashed working copy (ff1roll-stash-<key>) becomes one too; then both
+// retire. Runs every time (cheap: two localStorage reads when there is
+// nothing left to migrate) so a key touched before Versions shipped is
+// caught whenever it is next opened.
+function migrateVersions(key) {
+  const list = readVersionsRaw(key);
+  let changed = false;
+  const saveRaw = localStorage.getItem("ff1roll-save-" + key);
+  if (saveRaw !== null) {
+    try {
+      const d = JSON.parse(saveRaw);
+      list.push({at: d.savedAt || Date.now(), label: "Saved (before versions)",
+                 draft: {ppq: d.ppq, timesig: d.timesig, tempos: d.tempos, tracks: d.tracks}, notes: null});
+    } catch (err) { /* corrupt checkpoint: nothing worth carrying over */ }
+    localStorage.removeItem("ff1roll-save-" + key);
+    changed = true;
+  }
+  const stashRaw = localStorage.getItem("ff1roll-stash-" + key);
+  if (stashRaw !== null) {
+    try {
+      const st = JSON.parse(stashRaw);
+      let draft = null; try { draft = st.draft ? JSON.parse(st.draft) : null; } catch (err) { draft = null; }
+      if (draft) {
+        let notes = null; try { notes = st.notes ? JSON.parse(st.notes) : null; } catch (err) { notes = null; }
+        list.push({at: st.at || Date.now(), label: "Unsaved copy (before versions)", draft, notes});
+      }
+    } catch (err) { /* corrupt stash: nothing worth carrying over */ }
+    localStorage.removeItem("ff1roll-stash-" + key);
+    changed = true;
+  }
+  if (changed) writeVersionsRaw(key, list);
+  return list;
+}
+function readVersions(key) { return migrateVersions(key); } // newest LAST (disk order); callers reverse for display
+// snapshot THIS DEVICE's current draft + annotations for key, under label;
+// false when there is nothing local to snapshot (no draft — an unedited
+// published song, or a capture with no music draft at all)
+function pushVersion(key, label) {
+  const list = migrateVersions(key); // legacy checkpoint/stash join the list first, so a fresh push never outranks or drops them
+  const draftRaw = localStorage.getItem(draftStoreKey(key));
+  if (draftRaw === null) return false;
+  let draft = null; try { draft = JSON.parse(draftRaw); } catch (err) { return false; }
+  let notes = null; try { const n = localStorage.getItem("ff1roll-notes-" + key); notes = n ? JSON.parse(n) : null; } catch (err) { notes = null; }
+  list.push({at: Date.now(), label, draft, notes, ts: localStorage.getItem("ff1roll-ts-" + key) || null});
+  writeVersionsRaw(key, list);
   return true;
 }
-function stashWorking(key) { // before a Revert: what Restore unsaved copy brings back
-  const draft = localStorage.getItem(draftStoreKey(key)), notes = localStorage.getItem("ff1roll-notes-" + key);
-  if (draft || notes) localStorage.setItem(stashStoreKey(key), JSON.stringify({draft, notes, at: Date.now()}));
+function songUnsaved() { // what the ● means: "not published yet" — only Publish clears it; Save Version never does
+  if (!song || !isComposition()) return false;
+  return songDirtyFlag();
 }
-function hasStash(key) { return localStorage.getItem(stashStoreKey(key || songKey)) !== null; }
-function restoreStash(key) { // Restore unsaved copy: the stashed working copy becomes the working copy again
-  let st = null; try { st = JSON.parse(localStorage.getItem(stashStoreKey(key)) || "null"); } catch (err) { st = null; }
-  if (!st) return false;
-  if (st.draft) localStorage.setItem(draftStoreKey(key), st.draft); else localStorage.removeItem(draftStoreKey(key));
-  if (st.notes) localStorage.setItem("ff1roll-notes-" + key, st.notes); else localStorage.removeItem("ff1roll-notes-" + key);
-  localStorage.removeItem(stashStoreKey(key));
+function saveVersion(quiet) { // File → Save Version / ⌘S
+  if (song && isUnsaved(songKey)) { if (!quiet) openSaveForm("save"); return false; } // first Save Version of an Untitled song: folder + name first
+  if (!song || !songKey || !isComposition()) { if (!quiet) setInfo("Save Version works on your own songs — this one is a capture; Save As forks it"); return false; }
+  if (cmp && cmp.showing === "repo") { if (!quiet) setInfo("you're hearing the published copy — switch back to your version first"); return false; }
+  saveDraft(false); // the working copy is what gets versioned; make sure it's current first
+  const n = readVersions(songKey).length + 1;
+  pushVersion(songKey, "Version " + n);
+  filesMirror(); // the iPad app: the copy in Files follows every Save Version
+  if (!quiet) setInfo("Version saved — only on this " + (EDITION === "app" ? "iPad" : "device"));
   return true;
 }
 function draftKeys() {
@@ -14141,7 +14205,7 @@ function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2-char s
   };
   const base = {vwScore: "𝄞  Score view", vwListener: "📻  Listener mode", vwTracksView: "▤  Tracks view", vwTracks: "◂  Tracks", vwEdit: "🛠  Edit toolbar",
                 vwFooter: "▦  Bottom bar", vwInst: "🎹  Instrument panel", vwSub: "💬  Notes strip",
-                vwCompare: "⇄  Compare with " + (song && songKey && !autosaveOn() && lastSaveDoc() ? "last save" : "repo")}; // no folderActive() here: its const is declared after the boot-time menu render (TDZ)
+                vwCompare: "⇄  Compare with repo"};
   for (const [id, label] of Object.entries(base)) document.getElementById(id).textContent = label;
   set("vwScore", viewMode === "score");
   set("vwTracksView", viewMode === "tracks");
@@ -14273,12 +14337,10 @@ document.getElementById("editsheetbtn").addEventListener("click", e => {
   proxy("emBassist", () => openBassist());
   proxy("emAskFill", () => openFill());
 }
-function fileMenuSaveLabels() { // Save / Revert / Restore read the auto-save switch and this song's checkpoint + stash
+function fileMenuSaveLabels() { // Save Version: your own local songs only. Versions…: any open song with a repo path (browsing/going back to the published copy also works on a read-only capture with local annotation edits)
   const comp = !!song && isComposition() && !LINK_SONGS;
-  const cp = comp && !autosaveOn() ? lastSaveDoc() : null;
-  document.getElementById("filesavelocal").style.display = comp && !autosaveOn() ? "" : "none";
-  document.getElementById("filerevert").textContent = cp ? "Revert to last save…" : (folderActive() ? "Revert to saved copy…" : "Revert to repo copy…");
-  document.getElementById("filerestore").style.display = comp && hasStash() ? "" : "none";
+  document.getElementById("filesavelocal").style.display = comp ? "" : "none";
+  document.getElementById("filerevert").style.display = !!song && !!songKey && !songKey.startsWith("local/") && !LINK_SONGS ? "" : "none";
 }
 document.getElementById("filesheetbtn").addEventListener("click", e => {
   if (filesheet.classList.contains("on")) { closeFileMenus(); return; }
@@ -14289,7 +14351,7 @@ document.getElementById("filesheetbtn").addEventListener("click", e => {
   document.getElementById("filesaveasform").style.display = "none";
   document.getElementById("filerenameform").style.display = "none";
   document.getElementById("filemoverow").style.display = isComposition() ? "" : "none";
-  document.getElementById("filesavelocal").textContent = song && isUnsaved(songKey) ? "Save…" : "Save";
+  document.getElementById("filesavelocal").textContent = song && isUnsaved(songKey) ? "Save Version…" : "Save Version";
   if (isComposition()) { // move targets: any folder of yours, or a new one
     const sel = document.getElementById("fmdest");
     // name the current home first — a dropdown holding only the OTHER album
@@ -14838,7 +14900,7 @@ document.getElementById("fncreate").addEventListener("click", () => {
   createComposition(+document.getElementById("fnbpm").value || 120,
                     +document.getElementById("fnnum").value, +document.getElementById("fnden").value);
   document.getElementById("filesheet").classList.remove("on");
-  setInfo("new song — Edit → Pencil to write. It lives on this device as " + songTitleOf(songKey) + " until File → Save names it and picks its folder.");
+  setInfo("new song — Edit → Pencil to write. It lives on this device as " + songTitleOf(songKey) + " until File → Save Version names it and picks its folder.");
 });
 // return key in the name fields = the primary action (iOS keyboards
 // otherwise cost an extra tap: the first one just dismisses the keyboard)
@@ -14960,40 +15022,31 @@ async function renameRepoTitles(titles, h) { // {key: title} for songs of ONE al
     return changed;
   });
 }
-document.getElementById("editherebtn").addEventListener("click", async () => {
+document.getElementById("editherebtn").addEventListener("click", () => editHereNow());
+// ✎ Edit locally, no confirm (Josh, 2026-09-29 — Model B): editherebtn IS
+// the "start editing" gesture on your own published song with no local
+// copy yet (it sits where Edit ▾ would be — updateEditBtnVis hides the
+// real edit row/tools until a local copy exists). Tapping it now makes the
+// copy silently, with a footer notice instead of asking first.
+function editHereNow() {
   if (!song || !ownFolderPath(songKey) || isComposition()) return;
-  const ok = await appConfirm("EDIT " + songTitleOf(songKey).toUpperCase() + "?",
-    "This is the published copy. Editing makes a local copy on this device; File → Publish sends it back to GitHub when you are ready.",
-    "Make a local copy", "Cancel");
-  if (!ok) return;
   draftWrite(songKey, draftDoc(true)); // clean: nothing changed yet; the first edit marks it
   updateEditBtnVis();
   updateSongBtn();
-  setInfo("local copy made — edit away; File → Publish sends it to GitHub");
-});
-document.getElementById("filesavelocal").addEventListener("click", () => { if (song && isUnsaved(songKey)) { openSaveForm("save"); return; } closeFileMenus(); saveCheckpoint(); });
-document.getElementById("filerestore").addEventListener("click", async () => {
-  closeFileMenus();
-  if (!songKey || !hasStash()) return;
-  const ok = await appConfirm("RESTORE UNSAVED COPY", "Brings back the working copy you had before the last Revert (music and any unsynced annotations), replacing what is open now.", "Restore", "Cancel");
-  if (!ok) return;
-  const k = songKey;
-  if (!restoreStash(k)) return;
-  editUndo = []; editRedo = [];
-  openDraft(k);
-  setInfo("restored — your unsaved copy is back");
-});
-function dropLocalSong(key) { // Revert to repo copy's discard: stashed first, so Restore unsaved copy can undo it
-  stashWorking(key);
+  setInfo("editing your copy on this device — Publish sends it");
+}
+document.getElementById("filesavelocal").addEventListener("click", () => { if (song && isUnsaved(songKey)) { openSaveForm("save"); return; } closeFileMenus(); saveVersion(); });
+function dropLocalSong(key) { // Revert to repo copy's discard: the current state is saved as a version first ("Before going back"), so nothing is lost
+  pushVersion(key, "Before going back"); // migrates any pre-versions checkpoint/stash too; a no-op when there's nothing local yet
   for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-",
-                     "ff1roll-tombs-", "ff1roll-lastsync-", "ff1roll-save-"])
+                     "ff1roll-tombs-", "ff1roll-lastsync-"])
     localStorage.removeItem(pre + key);
   idbDraftDelete(key);
 }
 async function revertSongToRepo(key) { // a Publish row's Revert: any pending song, open or not
   const ok = await appConfirm("REVERT " + songTitleOf(key).toUpperCase() + "?",
     "Discards this device's changes to this song — music, unsynced annotations, deletions. " +
-    "The published copy becomes what you see. File → Restore unsaved copy undoes this until your next Save or Publish.",
+    "The published copy becomes what you see. Your current state is kept as a version first — File → Versions… brings it back.",
     "Revert", "Cancel");
   if (!ok) return;
   dropLocalSong(key);
@@ -15004,40 +15057,88 @@ async function revertSongToRepo(key) { // a Publish row's Revert: any pending so
   if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending();
   setInfo("reverted " + songTitleOf(key) + " — this device now has the published copy");
 }
-document.getElementById("filerevert").addEventListener("click", async () => {
+document.getElementById("filerevert").addEventListener("click", () => {
   if (!songKey) { setInfo("open a song first"); return; }
-  if (songKey.startsWith("local/")) { setInfo("local imports have no repo copy to revert to"); return; }
-  const cp = isComposition() && !autosaveOn() ? lastSaveDoc() : null;
-  if (cp) { // Revert to last save: the checkpoint becomes the working copy; the working copy waits in the stash
-    const ok = await appConfirm("REVERT TO LAST SAVE",
-      "Goes back to your last Save on this device, dropping the edits since. File → Restore unsaved copy undoes this until your next Save or Publish.",
-      "Revert to last save", "Cancel");
-    if (!ok) return;
-    const k = songKey;
-    stashWorking(k);
-    const d = {...cp}; delete d.savedAt;
-    localStorage.setItem(draftStoreKey(k), JSON.stringify(d));
-    editUndo = []; editRedo = [];
-    openDraft(k);
-    setInfo("reverted to your last save — File → Restore unsaved copy brings the edits back");
-    return;
-  }
-  // the escape hatch (Josh, 2026-08-20): drop EVERYTHING this device thinks it
-  // knows about the song — draft, local annotations, deletions, sync stamps —
-  // and load the repo's last save as the truth. Since 2026-09-26 the working
-  // copy is stashed first, so File → Restore unsaved copy can undo it.
-  const ok = await appConfirm("REVERT TO REPO COPY",
-    "Discards this device's draft, unsynced annotations, and deletions for THIS song. " +
-    "The repo's last save becomes what you see. File → Restore unsaved copy undoes this until your next Save or Publish.",
-    "Revert — use the repo's copy", "Cancel");
-  if (!ok) return;
-  dropLocalSong(songKey);
-  editUndo = []; editRedo = [];
-  const k = songKey;
-  songKey = null; // force a clean load path
-  await loadSong(k);
-  setInfo("reverted — this device now shows the repo's copy of the song");
+  if (songKey.startsWith("local/")) { setInfo("local imports have no repo copy to go back to"); return; }
+  closeFileMenus();
+  openVersionsSheet();
 });
+// ---- Versions… sheet (File menu, replaces the old Revert to last save… /
+// Revert to repo copy… / Restore unsaved copy…): the published copy (when
+// there is one) at the top, then this device's dated versions newest first.
+// "Go back to this" on any row pushes the CURRENT state as a version first
+// ("Before going back"), so a wrong tap never loses anything.
+function versionLabel(v) { // "Version 3 · Sep 29 14:02" / a migrated or manual label as-is
+  const d = new Date(v.at);
+  const stamp = d.toLocaleDateString(undefined, {month: "short", day: "numeric"}) + " " +
+                d.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
+  return v.label + " · " + stamp;
+}
+function openVersionsSheet() {
+  document.getElementById("versionssheet").classList.add("on");
+  renderVersionsSheet();
+}
+function renderVersionsSheet() {
+  const box = document.getElementById("versionsrows");
+  box.textContent = "";
+  const key = songKey;
+  const row = (label, onGoBack) => {
+    const r = document.createElement("div");
+    r.className = "noterow";
+    const body = document.createElement("span");
+    body.className = "body";
+    body.textContent = label;
+    r.appendChild(body);
+    if (onGoBack) {
+      const b = document.createElement("button");
+      b.className = "fitem";
+      b.style.cssText = "flex:none;width:auto";
+      b.textContent = "Go back to this";
+      b.addEventListener("click", onGoBack);
+      r.appendChild(b);
+    }
+    box.appendChild(r);
+    return r;
+  };
+  if (!key) { row("open a song first"); return; }
+  if (catalogHas(key)) row("Published copy", () => goBackToPublished(key));
+  const list = readVersions(key);
+  if (!list.length && !catalogHas(key)) row("Nothing saved here yet — File → Save Version to start.");
+  for (let i = list.length - 1; i >= 0; i--) { // newest first on screen
+    const v = list[i];
+    row(versionLabel(v), () => goBackToVersion(key, i));
+  }
+}
+async function goBackToVersion(key, idx) {
+  const list = readVersions(key);
+  const v = list[idx];
+  if (!v) return;
+  const label = versionLabel(v);
+  const ok = await appConfirm("GO BACK TO " + label.toUpperCase() + "?",
+    "Your current state is kept as a version first.", "Go back to this", "Cancel");
+  if (!ok) return;
+  pushVersion(key, "Before going back"); // list[idx] is still valid after this: pushVersion only appends
+  localStorage.setItem(draftStoreKey(key), JSON.stringify(v.draft));
+  if (v.notes) localStorage.setItem("ff1roll-notes-" + key, JSON.stringify(v.notes)); else localStorage.removeItem("ff1roll-notes-" + key);
+  if (v.ts) localStorage.setItem("ff1roll-ts-" + key, v.ts); else localStorage.removeItem("ff1roll-ts-" + key);
+  editUndo = []; editRedo = [];
+  if (key === songKey) await openDraft(key);
+  document.getElementById("versionssheet").classList.remove("on");
+  setInfo("back to " + label + " — your previous state is saved as a version too");
+}
+async function goBackToPublished(key) {
+  const ok = await appConfirm("GO BACK TO THE PUBLISHED COPY?",
+    "Your current state is kept as a version first.", "Go back to this", "Cancel");
+  if (!ok) return;
+  dropLocalSong(key);
+  pubCheck.delete(key);
+  editUndo = []; editRedo = [];
+  if (key === songKey) { songKey = null; await loadSong(key); }
+  updateSyncBtn();
+  updateSongBtn();
+  document.getElementById("versionssheet").classList.remove("on");
+  setInfo("back to the published copy — your previous state is saved as a version too");
+}
 document.getElementById("filedlaudio").addEventListener("click", async () => {
   // records the app's real output by playing the song once (loop disabled):
   // m4a on Safari, webm on Chrome — both shareable everywhere. True MP3 would
@@ -16190,17 +16291,15 @@ async function publishDraftSong(key, h) {
   await updateManifest(h, albums => manifestPlace(albums, null, key));
   d.dirty = false; d.savedStamp = stamp; d.pubSig = musicSig(d);
   localStorage.setItem(draftStoreKey(key), JSON.stringify(d));
-  if (!autosaveOn()) localStorage.setItem(saveStoreKey(key), JSON.stringify({...d, savedAt: Date.now()})); // publishing is also a Save
-  localStorage.removeItem(stashStoreKey(key));
   localStorage.removeItem("ff1roll-notes-" + key);
   recordLastSync(key, content);
 }
 async function commitCompositionNow(status) { // .mid + annotations + notes.txt, one flow
-  if (cmp && cmp.showing === "repo") { status.textContent = "You are hearing the saved copy — switch back to your version first (the compare bar)."; return; }
+  if (cmp && cmp.showing === "repo") { status.textContent = "You are hearing the published copy — switch back to your version first (the compare bar)."; return; }
   sweepStrandedClones(); // never commit invisible stacks
   const token = writeToken();
   if (!token) { status.textContent = "No GitHub token stored yet — add one in File → Settings."; return; }
-  status.textContent = (folderActive() ? "Saving " : "Publishing ") + songKey + " (.mid + annotations)…";
+  status.textContent = "Publishing " + songKey + " (.mid + annotations)…";
   try {
     const h = ghHeaders(token);
     const r1 = await putMidAt(songKey, h);
@@ -16217,13 +16316,11 @@ async function commitCompositionNow(status) { // .mid + annotations + notes.txt,
     let readmeNote = "";
     try { await writeSongsReadme(h); } catch (err) { readmeNote = " (the repo's song list didn't update: " + err.message + ")"; } // the song is published either way
     markCurrentSongSynced(content, stamp);
-    if (!autosaveOn()) saveCheckpoint(true); // publishing is also a Save
-    else filesMirror();
-    localStorage.removeItem(stashStoreKey(songKey));
+    filesMirror(); // the iPad app: the copy in Files follows every Publish
     await initCatalog().catch(() => {});
     updateSongBtn();
     renderSyncPending();
-    status.textContent = folderActive() ? "Saved ✓ to " + fsRoot.name + " — song and annotations together."
+    status.textContent = folderActive() ? "Published ✓ to " + fsRoot.name + " — song and annotations together."
                                         : "Published ✓ — song and annotations together (Pages takes ~1 min)." + readmeNote;
   } catch (err) { status.textContent = "Publish failed: " + err.message; }
 }
@@ -17842,7 +17939,7 @@ document.addEventListener("keydown", e => {
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   const grid = moveSnapTicks(); // 16ths, or triplet steps while a T duration is active
   const meta = e.metaKey || e.ctrlKey;
-  if (meta && e.key.toLowerCase() === "s") { e.preventDefault(); if (!autosaveOn()) saveCheckpoint(); else setInfo("auto-save is on: every edit is already saved (Settings → Saving)"); return; }
+  if (meta && e.key.toLowerCase() === "s") { e.preventDefault(); saveVersion(); return; }
   if (meta && e.key.toLowerCase() === "c") {
     const k = copySelection();
     if (k) { setInfo("copied " + clipSummary() + " — ⌘V pastes at the playhead"); e.preventDefault(); }
@@ -17913,16 +18010,13 @@ async function cmpEnter() {
   if (!song || !songKey || !isComposition()) { setInfo("compare works on your own saved songs"); return; }
   if (chopS > 0 || chopE !== null) { setInfo("turn the chop off first — compare looks at the whole song"); return; }
   const key = songKey;
-  const cp = !autosaveOn() ? lastSaveDoc() : null; // auto-save off: the baseline is your last Save, when there is one
-  let parsed;
-  if (cp) parsed = {ppq: cp.ppq, tracks: cp.tracks};
-  else {
-    setInfo("fetching the saved copy…");
-    let res = null;
-    try { res = await readData("songs", key, true); } catch (err) { res = null; }
-    if (!res || !res.ok) { setInfo("no saved copy of this song " + (folderActive() ? "in the folder" : "in the repo") + " yet"); return; }
-    parsed = parseMidi(await res.arrayBuffer());
-  }
+  // Model B: Save Version is device-local history, not a publish baseline —
+  // Compare always reads against the published copy.
+  setInfo("fetching the published copy…");
+  let res = null;
+  try { res = await readData("songs", key, true); } catch (err) { res = null; }
+  if (!res || !res.ok) { setInfo("no published copy of this song " + (folderActive() ? "in the folder" : "in the repo") + " yet"); return; }
+  const parsed = parseMidi(await res.arrayBuffer());
   if (!song || songKey !== key) return; // he moved on while it loaded
   const scale = song.ppq / parsed.ppq; // same lineage, but be safe
   const repo = parsed.tracks.map(t => ({name: t.name, notes: t.notes.map(n => scale === 1 ? {...n} : {...n, t: Math.round(n.t * scale), d: Math.round(n.d * scale)})}));
@@ -17988,7 +18082,7 @@ function drawCompare(ppt, rowH, W, H) { // outlines only: red = the saved copy's
   const mine = cmp.showing === "mine";
   ctx.globalAlpha = 1; ctx.lineWidth = 2;
   for (const t of cmp.diff.tracks) {
-    if (t.ti < 0 || !trackAudible(t.ti)) continue;
+    if (t.ti < 0 || !trackShown(t.ti)) continue;
     ctx.strokeStyle = "#e66767"; ctx.setLineDash(mine ? [4, 3] : []);
     for (const n of t.removed) stroke(n, t.ti);
     for (const c of t.changed) stroke(c.was, t.ti);
@@ -18515,26 +18609,39 @@ const ASK_LOCAL_SOFT = 256 * 1024, ASK_TOTAL_CAP = 512 * 1024;
 // toggle at the top of the sheet picks; the choice is a device preference.
 const ASK_GENERAL_KEY = "ff1roll-ask-general";
 const ASK_GENERAL_LOG = "ask/general.ask.md";
-let askGeneral = false;
-try { askGeneral = localStorage.getItem("ff1roll-ask-mode") === "general"; } catch (err) { askGeneral = false; }
-function askSetMode(general) {
-  askGeneral = !!general;
-  try { localStorage.setItem("ff1roll-ask-mode", askGeneral ? "general" : "song"); } catch (err) { /* private mode */ }
+// Terminal (Josh, 2026-09-29: "can messages typed in the AI panel go
+// straight into your terminal session?"): a third chat whose Send posts to
+// the bridge's /v1/terminal queue, which the terminal's Claude Code watches;
+// its replies come back as inbox notes and land in this tab. No song
+// context, no model call here. An addition beside the Ask tabs, not the
+// default (Josh is evaluating it: Ask answers at once while I build). It rides the general chat's
+// UI (askGeneral stays true: no span row, no Fill), with its own store.
+const ASK_TERMINAL_KEY = "ff1roll-ask-terminal";
+let askGeneral = false, askTerminal = false;
+let askCaps = {bridge: false, terminal: false}; // what the configured backend can do (askStatusPoll detects; askTabsApply shows)
+try { const m = localStorage.getItem("ff1roll-ask-mode"); askTerminal = m === "terminal"; askGeneral = askTerminal || m === "general"; } catch (err) { askGeneral = askTerminal = false; }
+function askSetMode(mode) { // "terminal" | "song" | "general" (a boolean still means general/song)
+  if (mode === true) mode = "general"; else if (mode === false) mode = "song";
+  askTerminal = mode === "terminal"; askGeneral = askTerminal || mode === "general";
+  try { localStorage.setItem("ff1roll-ask-mode", mode); } catch (err) { /* private mode */ }
   askModeButtons();
 }
 function askModeButtons() {
-  const a = document.getElementById("askmodesong"), b = document.getElementById("askmodegen");
+  const a = document.getElementById("askmodesong"), b = document.getElementById("askmodegen"), c = document.getElementById("askmodeterm");
   if (!a || !b) return;
-  a.classList.toggle("active", !askGeneral); b.classList.toggle("active", askGeneral);
-  a.setAttribute("aria-selected", String(!askGeneral)); b.setAttribute("aria-selected", String(askGeneral));
+  const gen = askGeneral && !askTerminal;
+  a.classList.toggle("active", !askGeneral); b.classList.toggle("active", gen);
+  a.setAttribute("aria-selected", String(!askGeneral)); b.setAttribute("aria-selected", String(gen));
+  if (c) { c.classList.toggle("active", askTerminal); c.setAttribute("aria-selected", String(askTerminal)); }
   // the tab names the song: the sheet covers the title behind it (Josh, 2026-09-27)
   try { const t = songKey ? songTitleOf(songKey) : (typeof baseName === "function" ? baseName() : ""); a.textContent = "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song"); } catch (err) { a.textContent = "♪ this song"; }
   const spanrow = document.getElementById("askspanrow"); if (spanrow) spanrow.style.display = askGeneral ? "none" : "";
   const fillrow = document.getElementById("askfill"); if (fillrow && askGeneral) fillrow.style.display = "none";
-  if (typeof askinput !== "undefined" && askinput) askinput.placeholder = askGeneral ? "Anything — the app, the project, music in general, a message for the terminal…" : "Ask about what you're looking at…";
+  if (typeof askinput !== "undefined" && askinput && askTerminal) askinput.placeholder = "Tell the terminal what to build or fix…";
+  else if (typeof askinput !== "undefined" && askinput) askinput.placeholder = askGeneral ? "Anything — the app, the project, music in general" + (askCaps.bridge ? ", a message for the terminal…" : "…") : "Ask about what you're looking at…";
   if (typeof askStatusRender === "function") askStatusRender(); // the "Now:" strip shows only in general mode
 }
-function askStoreKey() { return askGeneral ? ASK_GENERAL_KEY : "ff1roll-ask-" + (songKey || "local"); }
+function askStoreKey() { return askTerminal ? ASK_TERMINAL_KEY : askGeneral ? ASK_GENERAL_KEY : "ff1roll-ask-" + (songKey || "local"); }
 // The chat is his session record (Josh, 2026-09-25): it lives here whole
 // until the song's Save appends it to <song>.ask.md, and only messages the
 // repo file already holds ever leave this device. `saved` counts those from
@@ -18705,12 +18812,18 @@ async function askInboxPoll() {
   askNotesArrived(notes);
   localStorage.setItem(askInboxSeenKey(), String(j.last || notes[notes.length - 1].id));
 }
-function askNotesArrived(notes) { // into the open song's chat, saved like any message; shown now if the sheet is open, else the ✉ light
-  const key = askStoreKey();
-  const msgs = askLoad();
-  for (const n of notes) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal"});
-  askSave(msgs, undefined, key);
-  if (asksheet.classList.contains("on")) { for (const n of notes) askBubble("note", askNoteLabel(n.from) + String(n.text)); askNoteSeen(); }
+function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab (its answers); others to the open chat — saved like any message; shown now if that chat is on screen, else the ✉ light
+  const toTerm = n => !n.from || n.from === "terminal";
+  for (const key of [ASK_TERMINAL_KEY, null]) {
+    const mine = notes.filter(n => key ? toTerm(n) : !toTerm(n));
+    if (!mine.length) continue;
+    const k = key || askStoreKey(), msgs = askStore(k).msgs;
+    for (const n of mine) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal"});
+    askSave(msgs, undefined, k);
+  }
+  const shown = asksheet.classList.contains("on") ? notes.filter(n => (toTerm(n) ? ASK_TERMINAL_KEY : askStoreKey()) === askStoreKey()) : [];
+  if (shown.length) { for (const n of shown) askBubble("note", askNoteLabel(n.from) + String(n.text)); askNoteSeen(); }
+  if (shown.length === notes.length) return;
   else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
 }
 // ---- "Now: …" (2026-09-29, Josh: "I wish I had a way to see what Claude
@@ -18741,13 +18854,30 @@ async function askStatusPoll() {
   const url = aiUrl();
   if (askStatusNo === url) return;
   let r;
-  try { r = await fetch(url + "/v1/status", {headers: aiHeaders(), cache: "no-store"}); } catch (err) { return; }
-  if (r.status === 404) { askStatusNo = url; askStatusNow = null; askStatusRender(); return; }
+  try { r = await fetch(url + "/v1/status", {headers: aiHeaders(), cache: "no-store"}); } catch (err) { askCaps = {...askCaps, terminal: false}; askTabsApply(); return; } // bridge down: no one to read the Terminal tab
+  if (r.status === 404) { askStatusNo = url; askStatusNow = null; askCaps = {bridge: false, terminal: false}; askStatusRender(); askTabsApply(); return; }
   if (!r.ok) return;
   let j; try { j = await r.json(); } catch (err) { return; }
   askStatusNow = (j && j.now) || null;
   askStatusRecent = (j && j.recent) || [];
+  askCaps = {bridge: true, terminal: !!(j && j.terminal)};
   askStatusRender();
+  askTabsApply();
+}
+// which chat tabs this setup can use (Josh, 2026-09-29: "not everyone can
+// support the new tabs"). Detected, never a setting: ⌨ Terminal only while
+// the bridge says a terminal session is reading its queue (the store app's
+// users have no bridge, so it never shows for them — EDITION can't tell,
+// Josh's own iPad runs the store build); ✦ Ask (the song-free chat) for any configured
+// backend; ♪ song as ever. A tab that disappears falls back to ♪ — each
+// chat keeps its own unsent draft, so nothing is lost.
+function askTabsVisible(c) { return {song: true, general: !!c.backend, terminal: !!(c.backend && c.bridge && c.terminal)}; }
+function askTabsApply() {
+  const v = askTabsVisible({backend: cfg().aiBackend === "browser" || !!aiUrl(), bridge: askCaps.bridge, terminal: askCaps.terminal});
+  const g = document.getElementById("askmodegen"), t = document.getElementById("askmodeterm");
+  if (g) g.style.display = v.general ? "" : "none";
+  if (t) t.style.display = v.terminal ? "" : "none";
+  if ((askTerminal && !v.terminal) || (askGeneral && !askTerminal && !v.general)) { askSetMode("song"); if (asksheet.classList.contains("on")) askRender(); }
 }
 function askStatusRender() {
   const strip = document.getElementById("asknowstrip");
@@ -18974,7 +19104,8 @@ function askRender() {
   const msgs = st.msgs;
   if (st.trimmed) askRenderEarlier();
   let pendingSeen = false;
-  if (!msgs.length && !st.trimmed && askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
+  if (!msgs.length && !st.trimmed && askTerminal) askBubble("ai", "This goes straight to Claude Code in the Mac's terminal — the session that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.");
+  else if (!msgs.length && !st.trimmed && askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
   else if (!msgs.length && !st.trimmed) askBubble("ai", "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
   for (const m of msgs) { askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", m.role === "note" ? askNoteLabel(m.m) + m.content : askStripContext(m.content)); if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; } }
   if (pendingSeen) askResumeSoon(200);
@@ -19111,10 +19242,35 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
     document.getElementById("asksend").disabled = false;
   }
 }
+let askTerminalFast = 0, askTerminalTimer = null;
+async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac's Claude Code; the reply comes back as a note
+  const key = ASK_TERMINAL_KEY, msgs = askStore(key).msgs;
+  msgs.push({role: "user", content: text, t: Date.now()});
+  askSave(msgs, undefined, key);
+  askinput.value = ""; askShotSet(null); askDraftClear(); askGrow(); askComposing(false);
+  askBubble("user", text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
+  askstatus.textContent = "sending to the terminal…";
+  try {
+    const r = await fetch(aiUrl() + "/v1/terminal", {method: "POST", headers: aiHeaders(), body: JSON.stringify({text})});
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status);
+    askstatus.textContent = j.now && j.now.text ? "sent — the terminal is working: " + j.now.text : "sent — the terminal will answer here";
+    askTerminalFast = Date.now() + 15 * 60000; // its answer shouldn't wait for the 60 s poll
+    if (!askTerminalTimer) askTerminalTimer = setInterval(() => {
+      if (Date.now() > askTerminalFast) { clearInterval(askTerminalTimer); askTerminalTimer = null; return; }
+      if (!document.hidden) { askInboxPoll(); askStatusPoll(); }
+    }, 5000);
+  } catch (err) { // not queued: say so and give the words back, never lose them
+    msgs.pop(); askSave(msgs, undefined, key); askRender();
+    askinput.value = text; askGrow();
+    askstatus.textContent = "⚠ not sent — the Mac's bridge didn't answer (" + err.message + "); your message is back in the box";
+  }
+}
 async function askSend() {
   const typed = askinput.value.trim();
   if ((!typed && !askShotPending) || askBusy || !song) return;
   const text = askShotOutgoing(typed);
+  if (askTerminal) return askTerminalSend(text);
   if (cfg().aiBackend !== "browser" && !(await aiHostOk(aiUrl()))) { askstatus.textContent = "not sent"; return; }
   const sp = askSpan();
   askSpanFrozen = sp;
@@ -19897,6 +20053,7 @@ makeWindow("infosheet", {dockable: false});
 // worth pinning open while working the roll — registered so it's a known
 // window (WM_WINDOWS), but not dockable, so it gets no Dock button.
 makeWindow("importhub", {dockable: false});
+makeWindow("versionssheet", {dockable: false});
 // ---- dividers: one pair per side (full cell + inner cell — same width
 // value, wm[side].w, whichever cell is currently showing it), plus the
 // bottom dock's height (top edge) and, only with two windows, its split
@@ -20013,6 +20170,7 @@ function openAsk() {
   if (!song) return;
   askBadgeOff();
   askNoteSeen();
+  askTabsApply(); // Settings may have changed the backend since
   askInboxPoll();
   askStatusPoll();
   askRender();
@@ -20031,9 +20189,9 @@ function askFocusIfKeyboard() { // a touch screen's keyboard took half the sheet
   askinput.focus();
 }
 document.getElementById("askbtn").addEventListener("click", openAsk);
-for (const [id, general] of [["askmodesong", false], ["askmodegen", true]]) document.getElementById(id).addEventListener("click", () => {
-  if (askGeneral === general) return;
-  askSetMode(general);
+for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
+  if ((askTerminal ? "terminal" : askGeneral ? "general" : "song") === mode) return;
+  askSetMode(mode);
   askRender(); askRefresh(); askRefreshTarget();
 });
 document.getElementById("asknowstrip").addEventListener("click", askStatusToggle);
@@ -20584,7 +20742,7 @@ function renderFolderUI() {
     forget.style.display = "none";
   } else if (fsRoot.handle) {
     nameEl.textContent = (fsRoot.needsGrant ? "⚠ reconnect: " : "📁 ") + fsRoot.name +
-      (fsRoot.needsGrant ? " (Chrome needs a fresh OK)" : " — every Save writes here, nothing goes to GitHub");
+      (fsRoot.needsGrant ? " (Chrome needs a fresh OK)" : " — every Publish writes here, nothing goes to GitHub");
     pick.textContent = fsRoot.needsGrant ? "Reconnect" : "Change folder…";
     pick.style.display = "";
     forget.style.display = fsRoot.mode === "opfs" ? "none" : "";
@@ -20597,8 +20755,9 @@ function renderFolderUI() {
   recon.style.display = fsRoot.handle && fsRoot.needsGrant ? "" : "none";
   document.getElementById("folderonlyrow").style.display = folderActive() ? "" : "none";
   document.getElementById("folderonly").checked = localStorage.getItem("ff1roll-folderonly") === "1";
-  document.getElementById("filesave").textContent = folderActive() ? "Save to folder…" : "Publish…";
-  document.getElementById("filerevert").textContent = folderActive() ? "Revert to saved copy…" : "Revert to repo copy…";
+  document.getElementById("filesave").textContent = folderActive() ? "Publish to folder…" : "Publish…";
+  updateSyncBtn();
+  updateSongBtn();
 }
 async function folderAfterChange(msg) { // the catalog and the open song both depend on where data lives
   renderFolderUI();
@@ -20709,7 +20868,7 @@ function renderSyncPending() {
       title.className = "ptitle";
       const tspan = document.createElement("span"); tspan.textContent = "✦ General chat";
       const b = document.createElement("button");
-      b.textContent = folderActive() ? "Save chat" : "Publish chat";
+      b.textContent = "Publish chat";
       b.title = "Append the unsaved general chat to " + ASK_GENERAL_LOG;
       b.addEventListener("click", async () => {
         const status = document.getElementById("syncstatus");
@@ -20766,11 +20925,11 @@ function renderSyncPending() {
     block.appendChild(title);
     const music = draftDirtyState(key);
     if (music) {
-      const row = line(block, "♪ music " + (music === "never" ? "never saved" : "edited since last save") + (pubCheck.get(key) ? " — " + pubCheck.get(key) : ""));
+      const row = line(block, "♪ music " + (music === "never" ? "never published" : "edited since publish") + (pubCheck.get(key) ? " — " + pubCheck.get(key) : ""));
       if (key === songKey && music === "edited") { // what changed? the roll shows it (View → Compare with repo)
         const b = document.createElement("button");
         b.textContent = "Compare";
-        b.title = "Outline every note that differs from the saved copy on the roll";
+        b.title = "Outline every note that differs from the published copy on the roll";
         b.style.marginLeft = "auto";
         b.addEventListener("click", () => { syncsheet.classList.remove("on"); cmpEnter(); });
         row.appendChild(b);
@@ -20804,7 +20963,7 @@ function renderSyncPending() {
   }
   const all = document.getElementById("ghsaveall");
   const n = pendingSongs().length;
-  all.textContent = (folderActive() ? "Save all (" : "Publish all (") + n + ")";
+  all.textContent = "Publish all (" + n + ")";
   all.style.display = n > 1 ? "" : "none";
 }
 function discardPending(key, idx) { // drop one never-synced note from the stash
@@ -20827,8 +20986,7 @@ function openSyncSheet() { // callable even with no song loaded (bad-config reco
   if (song) renderSyncPending();
   fingerprintOldDrafts().catch(() => {});
   const comp = !!song && isComposition();
-  const verb = folderActive() ? "Save" : "Publish"; // edits already live on the device; this is the deliberate step that puts a song where others can reach it (Josh, 2026-09-26)
-  document.getElementById("ghsave").textContent = "⇪ " + verb + " song"; // one word for what it ships; the line below says what (Josh, 2026-09-25)
+  document.getElementById("ghsave").textContent = "⇪ Publish song"; // edits already live on the device; this is the deliberate step that puts a song where others can reach it (Josh, 2026-09-26) — one word for what it ships, in folder mode too (Model B, 2026-09-29): Save is Save Version now, never Publish's word
   document.getElementById("repolink").href = "https://github.com/" + cfg().songsRepo;
   // the status line starts empty (Josh, 2026-09-25: the buttons are clear on
   // their own) and speaks only for progress, results, or a missing prerequisite
@@ -20861,7 +21019,6 @@ function openSettingsSheet() {
   cfgShowPane(localStorage.getItem("ff1roll-cfgpane") || "saving");
   document.getElementById("ghtoken").value = localStorage.getItem("ff1roll-ghtoken") || "";
   document.getElementById("cfgsongsrepo").value = c.songsRepo;
-  document.getElementById("cfgautosave").checked = autosaveOn();
   document.getElementById("cfgdebuglog").checked = debugLogOn();
   ghCheckOut("");
   if (localStorage.getItem("ff1roll-ghtoken")) ghCheck(); // one small GET: "connected" shows without a tap
@@ -20884,9 +21041,8 @@ function settingsPersist(id) {
   const v = el => document.getElementById(el).value.trim();
   const keep = (k, val) => { if (val) localStorage.setItem(k, val); else localStorage.removeItem(k); };
   switch (id) {
-    case "ghtoken": keep("ff1roll-ghtoken", v("ghtoken")); ghCheckOut(""); break;
+    case "ghtoken": keep("ff1roll-ghtoken", v("ghtoken")); ghCheckOut(""); updateSyncBtn(); updateSongBtn(); break; // connecting/disconnecting GitHub changes whether the footer Publish button and ● show (Model B)
     case "cfgdebuglog": { try { if (document.getElementById("cfgdebuglog").checked) localStorage.setItem("ff1roll-debuglog", "1"); else localStorage.removeItem("ff1roll-debuglog"); } catch (err) { /* private mode: stays off */ } errChip(); break; }
-    case "cfgautosave": { const on = document.getElementById("cfgautosave").checked; if (on) localStorage.setItem("ff1roll-autosave", "1"); else localStorage.removeItem("ff1roll-autosave"); updateSongBtn(); setInfo(on ? "auto-save on: every edit is the save; the ● means unpublished" : "auto-save off: File → Save (⌘S) is your checkpoint; the ● means changed since it"); break; }
     case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); askModelCache = null; break;
     case "cfgaibackend": saveCfg({aiBackend: v("cfgaibackend") === "browser" ? "browser" : "remote"}); aiBackendRows(); break;
     case "cfgaibrowsermodel": saveCfg({aiBrowserModel: v("cfgaibrowsermodel") || "Llama-3.2-1B-Instruct-q4f16_1-MLC"}); break;
@@ -21124,6 +21280,12 @@ function recordLastSync(key, text) {
 // folder mode needs no token: the write helpers never reach GitHub. The
 // placeholder keeps every guard and ghHeaders() call shape-compatible.
 function writeToken() { return localStorage.getItem("ff1roll-ghtoken") || (folderActive() ? "folder" : null); }
+// "connected" (Model B, 2026-09-29): a GitHub token or a local folder —
+// anything Publish could actually send to. Not connected: the footer
+// Publish button and the ● both hide (a local-only user's work is always
+// kept regardless; Versions are the save points), and File → Publish…
+// still opens, explaining how to connect.
+function connected() { return !!writeToken(); }
 function takeToken(status) {
   const token = document.getElementById("ghtoken").value.trim() ||
                 localStorage.getItem("ff1roll-ghtoken") || "";
@@ -21152,7 +21314,7 @@ document.getElementById("ghsave").addEventListener("click", async e => {
     if (!r.ok) throw new Error("HTTP " + r.status + (r.status === 401 || r.status === 403 ? " — check token scope" : ""));
     await askCommitLog(ghHeaders(token)); // chat rides with the annotations
     markCurrentSongSynced(content, stamp);
-    status.textContent = folderActive() ? "Saved ✓ to " + fsRoot.name + "."
+    status.textContent = folderActive() ? "Published ✓ to " + fsRoot.name + "."
                                         : "Published ✓ (GitHub Pages takes ~1 min to serve the new file.)";
     setTimeout(() => { // done — close, and return to the notes list if that's where we came from
       syncsheet.classList.remove("on");

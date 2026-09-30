@@ -514,7 +514,7 @@ published/imported songs' music. Two options on the table: (a) the
 notes are set in stone, only annotations edit; (b) editing makes a
 personal copy. He leaned toward locking both kinds.
 
-## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff")
+## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff") — (a) DONE, (b) DONE (M silences + dims, S solos, H hides; all saved in track: annotations); metronome follows the song by default; ⏱ toggles, ⚙ settings
 (a) count-in from anywhere + one-tap metronome · (b) mute/solo silence
 only, saved with the song (track: annotation; hide stays separate) ·
 (c) Pencil draws/edits instantly, fingers navigate · (d) keyboard
@@ -524,7 +524,52 @@ drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
 
-## SAVE MODEL — JOSH PICKED B (2026-09-29 22:49): autosave on; ⌘S = dated version; Publish separate. BUILDING.
+## NEXT: AI SESSION CONTROLS (Josh via Ask, 2026-09-29 23:21–23:23)
+The general bridge session is at 172 turns; the app's Clear chat only
+clears this device's log and never tells the bridge, so the same Claude
+session keeps being resumed and growing.
+1. Clear chat really resets: DELETE /v1/sessions/<key> (or x-nr-fresh) →
+   the bridge starts a new session id; .ask.md log and inbox kept.
+2. Compact (⋯ beside Clear chat): the bridge runs the session's
+   compaction (claude -p --resume <id> "/compact" or equivalent); show
+   before/after size. In-app confirm.
+3. Usage line per chat tab: "172 turns · ~N k tokens · $X" from the
+   stream-json result events (usage + total_cost_usd) summed per session;
+   hint to Compact past ~40 turns; maybe auto-compact general past ~60.
+4. Plan-quota %: only if the claude CLI exposes it non-interactively
+   (check /usage, /status, local files); otherwise say so and skip.
+5. Visible only with the Claude Code bridge advertising it (same
+   capability check as ⌨ Terminal); never for LM Studio/Ollama users.
+
+## LEARNING vs NORMAL MODE — PLANNED (advisor, 2026-09-29; build after the save model)
+Learning = today (nothing volunteered; Ask AI hints). Normal = keys,
+meters, chord names shown (estimates marked "~"/"estimated"; never
+written as annotations without a tap). One device-global switch: View ▾
+"🎓 Learning mode" + Settings → Other. Default: a device with existing
+Night Roll prefs → Learning (Josh's Mac + iPad); a fresh install → Normal.
+~15 hiding places inventoried (keyunset/"not set (C)", LCD "C?"/"4/4?",
+sharp spelling, score key sig, degrees, find:, ◯5, Chord?, Check labels,
+Ask's ASK_SYS/askContext/welcome, bridge prompt). Lasso chord naming is
+free (nameChord exists); the key needs a new estimateKey (Krumhansl–
+Schmuckler, ~30 lines). Build: P0 plumbing (harness + e2e pinned to
+Learning FIRST) · P1 lasso chord · P2 meter/labels (+ Normal imports
+write file timesig/key) · P3 estimateKey + sfShownAt · P4 Ask per mode ·
+P5 docs · P6 later: Normal "Analyze ▸".
+NEEDS JOSH (his rulings): (1) the CLAUDE.md "Keys/analyses" rule gets a
+scope — proposed: "Learning mode is the law … Normal mode (other users,
+one device switch) may show keys, meters and chord names, labelled as
+estimates, never written without a tap, never leaking into Learning or
+repo files; Claude sessions with Josh follow Learning rules regardless."
+(2) should a MIDI file's own meter/key be applied on import in Learning
+too? JOSH RULED (23:09, his words via Ask): "you have to determine the meter
+by reading the music; there's no way we should tell them this song is in
+3/4 or 6/8." Learning: an imported file's METER and KEY are neither
+applied nor shown (the usual "4/4?" / not-set defaults; the file's values
+kept as unrevealed data); TEMPO applies. Normal applies all three.
+(1) DONE: CLAUDE.md reworded ("Learning mode is the law") — Josh gave
+permission directly in the terminal, 2026-09-29.
+
+## SAVE MODEL B — SHIPPED 2026-09-29: always kept; ⌘S = Save Version (music + annotations, last 20, device-local); File → Versions… (Go back to this keeps a "Before going back"); Publish separate; not connected = no Publish button, no ●; ✎ Edit locally without a confirm.
 Also decided (Josh: decide, don't ask): metronome = tap ⏱ toggles the
 click, a small ⚙ beside it opens settings; ✎ Edit locally happens on the
 first edit with a footer notice, no confirm.
@@ -1917,6 +1962,26 @@ really that important." Do not start these unprompted.
   a store edition: the bridge gives an agent the repo and a token — the
   EDITION flag already keeps it out of Night Roll's store build). Needs a
   Mac running the bridge + Claude Code (+ Tailscale for remote). Not now.
+- **Automatic analysis for people who want the answers** (Josh, 2026-09-29, on
+  Learning vs Normal mode: "most people just want everything handed to
+  them… most people go to sites to have the analysis done for them
+  automatically, and then they just read the analysis — maybe something
+  we could build eventually"). A Normal-mode tool: key, chords per bar,
+  sections/form, cadences, shown on demand (a button, never ambient; in
+  Learning mode it stays off and the AI keeps not revealing). Josh feels
+  strongly about the Learning-mode split itself; this is the follow-on.
+- **Learning mode, grown into a curriculum** (Josh, 2026-09-29: "we can build
+  in music theory quizzes, rhythm games where you learn to read rhythm,
+  all sorts of stuff — this could really help you learn music and theory
+  if we go slow and develop the right features"). Seeds already in the
+  project: the tutor rules (derive, don't be told), glossary.md's
+  "encountered vs demonstrated" ledger, the session-start quiz habit, the
+  score renderer, the Ask tutor. Candidate features, each a small
+  on-demand tool: quizzes drawn from the learner's OWN annotated songs
+  (name this interval / chord / cadence in bars 9-12), rhythm-reading
+  drills on the score view, ear training against the app's own synth,
+  a progress ledger that promotes a concept only on demonstration. Not
+  now; needs the Learning/Normal mode split first.
 - **Themes** (the look is dark; other people may want another). Size
   from the Ask session: easy-to-medium. The whole look is nine CSS
   variables at the top of index.html and the canvas views read them

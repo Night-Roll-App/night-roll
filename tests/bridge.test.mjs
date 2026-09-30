@@ -66,7 +66,7 @@ test("bridge: models merge from upstreams, jobs survive a dropped client, replay
   // models: shared ids get the upstream prefix
   const models = (await (await fetch(B + "/v1/models", {headers: H})).json()).data.map(m => m.id).sort();
   assert.deepEqual(models, ["beta/fake-7b", "beta/shared-id", "fake-7b", "shared-id"]);
-  assert.deepEqual(await (await fetch(B + "/v1/jobs", {headers: H})).json(), {ok: true, running: 0, inbox: true});
+  assert.deepEqual(await (await fetch(B + "/v1/jobs", {headers: H})).json(), {ok: true, running: 0, inbox: true, terminal: false});
   // a streamed job; the client drops after the first chunk
   const ctl = new AbortController();
   const r = await fetch(B + "/v1/chat/completions", {method: "POST", headers: {...H, "x-nr-job": "nr_t1"}, body: JSON.stringify({model: "fake-7b", stream: true, messages: [{role: "user", content: "count"}]}), signal: ctl.signal});

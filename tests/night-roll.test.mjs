@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -1775,12 +1775,12 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Revert to repo copy", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
+    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
@@ -3076,11 +3076,13 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   assert.ok(!md.includes("ctx"), "log strips context too");
   // a note from the Mac (bridge inbox) is stored as its own role, rendered as a ✉ bubble, and logged as the Mac's line
   run(`asklog.innerHTML = ""; asksheet.classList.remove("on"); askNotesArrived([{id: 7, t: 1758000000000, from: "terminal", text: "pushed gbs-import"}]);`);
-  assert.equal(val(`askLoad().slice(-1)[0].role`), "note");
-  assert.equal(val(`askLoad().slice(-1)[0].content`), "pushed gbs-import");
+  // the terminal's notes are its answers: they land in the ⌨ Terminal tab (2026-09-29)
+  assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].role`), "note");
+  assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].content`), "pushed gbs-import");
   assert.ok(val(`document.getElementById("askbtn").classList.contains("hasnote")`), "✉ lights on the Ask button while the sheet is closed");
-  run(`asksheet.classList.add("on"); askRender();`); // openAsk itself needs the target <select> the harness lacks
-  assert.ok(val(`[...asklog.children].some(d => d.className === "askmsg note" && /from the Mac: pushed gbs-import/.test(d.textContent))`), "note bubble rendered");
+  run(`asksheet.classList.add("on"); askSetMode("terminal"); askRender();`); // openAsk itself needs the target <select> the harness lacks
+  assert.ok(val(`[...asklog.children].some(d => d.className === "askmsg note" && /from the Mac: pushed gbs-import/.test(d.textContent))`), "note bubble rendered in the Terminal tab");
+  run(`askSetMode("song"); localStorage.removeItem(ASK_TERMINAL_KEY);`);
   assert.match(val(`askLogMarkdown([{role: "note", content: "pushed gbs-import", m: "terminal"}])`), /\*\*Mac \(terminal\):\*\* pushed gbs-import/);
   // the general chat: its own key, session name, log path, no song context, no annotation tool; back to the song afterwards
   run(`askSetMode(true);`);
@@ -3695,31 +3697,85 @@ test("Songs README: the block lists every song as a player link; splice creates,
   run(`saveCfg({songsBase: ""}); songKey = null;`);
 });
 
-test("Local Save: auto-save off by default; Save is the checkpoint the ● and Compare use; Revert stashes, Restore brings it back", () => {
+test("Versions (Model B): autosave is always on; Save Version snapshots music + annotations, dated, capped at 20; ● = not published, only Publish clears it", () => {
   installSong();
   run(`songKey = "albums/compositions/nightroll/save-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}]}]; song.baseTempos = song.tempos;
-       localStorage.removeItem("ff1roll-autosave"); for (const k of ["ff1roll-save-", "ff1roll-stash-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey);`);
-  assert.equal(val(`autosaveOn()`), false, "off by default");
+       for (const k of ["ff1roll-versions-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey);`);
+  assert.equal(val(`autosaveOn()`), true, "no switch — everything is always kept");
   run(`saveDraft(false);`); // an edit: working copy, dirty vs publish (the draft IS the local copy that makes it editable)
-  assert.equal(val(`songUnsaved()`), true, "never saved locally: unsaved = unpublished");
-  assert.equal(val(`saveCheckpoint(true)`), true);
-  assert.equal(val(`songUnsaved()`), false, "right after Save: clean");
-  assert.ok(val(`lastSaveDoc().savedAt > 0`));
-  run(`song.tracks[0].notes.push({t: 480, d: 480, p: 64, v: 100}); saveDraft(false);`);
-  assert.equal(val(`songUnsaved()`), true, "an edit after Save: unsaved");
-  assert.equal(val(`songDocSig(lastSaveDoc()) === songDocSig(draftDoc(false))`), false);
-  // Revert to last save = stash the working copy, restore the checkpoint
-  run(`stashWorking(songKey); localStorage.setItem(draftStoreKey(songKey), JSON.stringify(lastSaveDoc()));`);
-  assert.equal(val(`hasStash()`), true);
-  assert.equal(val(`JSON.parse(localStorage.getItem(draftStoreKey(songKey))).tracks[0].notes.length`), 1);
-  assert.equal(val(`restoreStash(songKey)`), true);
-  assert.equal(val(`JSON.parse(localStorage.getItem(draftStoreKey(songKey))).tracks[0].notes.length`), 2, "the stashed working copy is back");
-  assert.equal(val(`hasStash()`), false);
-  // auto-save on: the ● means unpublished, the checkpoint is ignored
-  run(`localStorage.setItem("ff1roll-autosave", "1"); saveDraft(true);`);
-  assert.equal(val(`songUnsaved()`), false);
-  run(`song.tracks[0].notes.push({t: 960, d: 480, p: 67, v: 100}); saveDraft(false);`); assert.equal(val(`songUnsaved()`), true, "a real edit after publish");
-  run(`localStorage.removeItem("ff1roll-autosave"); for (const k of ["ff1roll-draft-", "ff1roll-save-", "ff1roll-stash-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey); songKey = null;`);
+  assert.equal(val(`songUnsaved()`), true, "not published yet");
+  assert.equal(val(`saveVersion(true)`), true);
+  assert.equal(val(`songUnsaved()`), true, "Save Version never clears the ●");
+  assert.equal(val(`readVersions(songKey).length`), 1);
+  assert.equal(val(`readVersions(songKey)[0].label`), "Version 1");
+  assert.equal(val(`readVersions(songKey)[0].draft.tracks[0].notes.length`), 1);
+  run(`song.tracks[0].notes.push({t: 480, d: 480, p: 64, v: 100}); saveDraft(false); saveVersion(true);`);
+  assert.equal(val(`readVersions(songKey).length`), 2, "a second, dated version");
+  assert.equal(val(`readVersions(songKey)[1].label`), "Version 2");
+  assert.equal(val(`readVersions(songKey)[1].draft.tracks[0].notes.length`), 2, "the newer version has the later state");
+  assert.equal(val(`readVersions(songKey)[0].draft.tracks[0].notes.length`), 1, "the first version is untouched");
+  assert.ok(val(`readVersions(songKey)[1].at >= readVersions(songKey)[0].at`), "newest last on disk");
+  // capped at the last 20
+  run(`for (let i = 0; i < 25; i++) pushVersion(songKey, "V" + i);`);
+  assert.equal(val(`readVersions(songKey).length`), 20, "capped at 20");
+  assert.equal(val(`readVersions(songKey)[19].label`), "V24", "the newest 20 survive");
+  run(`for (const k of ["ff1roll-draft-", "ff1roll-versions-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey); songKey = null;`);
+});
+
+test("Versions: migration folds an old checkpoint and stash in on first read, then retires them; Go back to a version pushes \"Before going back\" first", async () => {
+  const key = "albums/compositions/nightroll/versions-migrate.mid";
+  const T = `[{tick: 0, usq: 500000, sec: 0}]`;
+  run(`localStorage.setItem(draftStoreKey("${key}"), JSON.stringify({dirty: true, ppq: 480, timesig: [4, 4], tempos: ${T}, tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}]}]}));
+       for (const k of ["ff1roll-versions-", "ff1roll-notes-", "ff1roll-save-", "ff1roll-stash-"]) localStorage.removeItem(k + "${key}");
+       localStorage.setItem("ff1roll-save-${key}", JSON.stringify({ppq: 480, timesig: [4, 4], tempos: ${T}, tracks: [{name: "pulse1", notes: []}], savedAt: 111}));
+       localStorage.setItem("ff1roll-stash-${key}", JSON.stringify({draft: JSON.stringify({ppq: 480, timesig: [4, 4], tempos: ${T}, tracks: [{name: "pulse1", notes: [{t: 0, d: 240, p: 62, v: 90}]}]}), notes: null, at: 222}));`);
+  const list0 = val(`readVersions("${key}")`);
+  assert.equal(list0.length, 2, "the old checkpoint and stash both became versions");
+  assert.equal(list0[0].label, "Saved (before versions)");
+  assert.equal(list0[0].draft.tracks[0].notes.length, 0);
+  assert.equal(list0[1].label, "Unsaved copy (before versions)");
+  assert.equal(list0[1].draft.tracks[0].notes.length, 1);
+  assert.equal(val(`localStorage.getItem("ff1roll-save-${key}")`), null, "the legacy checkpoint retires");
+  assert.equal(val(`localStorage.getItem("ff1roll-stash-${key}")`), null, "the legacy stash retires");
+  // Go back to version 0 ("Saved (before versions)"): the current state is pushed first
+  run(`globalThis.__realConfirm = appConfirm; appConfirm = async () => true; songKey = "${key}";`);
+  await run(`goBackToVersion("${key}", 0)`);
+  const list1 = val(`readVersions("${key}")`);
+  assert.equal(list1.length, 3, "the current state was pushed as a version too");
+  assert.equal(list1[2].label, "Before going back");
+  assert.equal(list1[2].draft.tracks[0].notes.length, 1, "what was open before going back");
+  assert.equal(val(`JSON.parse(localStorage.getItem(draftStoreKey("${key}"))).tracks[0].notes.length`), 0, "now showing the version gone back to");
+  run(`appConfirm = globalThis.__realConfirm; delete globalThis.__realConfirm;
+       for (const k of ["ff1roll-draft-", "ff1roll-versions-", "ff1roll-notes-"]) localStorage.removeItem(k + "${key}"); songKey = null;`);
+});
+
+test("Model B: not connected anywhere hides the footer Publish button and the ●; a token or a folder brings them back", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/connected-test.mid"; localStorage.setItem(draftStoreKey(songKey), JSON.stringify({dirty: true, ppq: 480, tracks: []}));
+       globalThis.__realToken = localStorage.getItem("ff1roll-ghtoken"); localStorage.removeItem("ff1roll-ghtoken");
+       fsRoot.handle = null; fsRoot.mode = null; fsRoot.needsGrant = false; currentPath = songKey;`);
+  assert.equal(val(`connected()`), false);
+  run(`updateSyncBtn(); updateSongBtn();`);
+  assert.equal(val(`document.getElementById("syncbtn").style.display`), "none", "no Publish button unconnected");
+  assert.equal(val(`[...document.getElementById("songcrumb").children].some(c => c.className === "crumbdot")`), false, "no ● unconnected");
+  run(`localStorage.setItem("ff1roll-ghtoken", "t"); updateSyncBtn(); updateSongBtn();`);
+  assert.equal(val(`connected()`), true);
+  assert.notEqual(val(`document.getElementById("syncbtn").style.display`), "none", "Publish button back, connected");
+  assert.equal(val(`[...document.getElementById("songcrumb").children].some(c => c.className === "crumbdot")`), true, "● back, connected");
+  run(`if (globalThis.__realToken) localStorage.setItem("ff1roll-ghtoken", globalThis.__realToken); else localStorage.removeItem("ff1roll-ghtoken"); delete globalThis.__realToken;
+       localStorage.removeItem(draftStoreKey(songKey)); currentPath = null; songKey = null; updateSyncBtn();`);
+});
+
+test("✎ Edit locally: no confirm — the first tap makes the local copy silently", () => {
+  installSong();
+  run(`CATALOG = {"Final Fantasy I": [["Overworld", "albums/nes/final-fantasy-i/songs/overworld.mid"]]};
+       songKey = "albums/graveyard-stuff/theirs.mid"; localStorage.removeItem(draftStoreKey(songKey));
+       globalThis.__realConfirm = appConfirm; appConfirm = async () => { throw new Error("editHereNow must not confirm"); };`);
+  assert.equal(val(`isComposition()`), false, "no local copy yet");
+  run(`editHereNow()`);
+  assert.equal(val(`isComposition()`), true, "the local copy exists now, with no confirm asked");
+  run(`appConfirm = globalThis.__realConfirm; delete globalThis.__realConfirm;
+       localStorage.removeItem(draftStoreKey(songKey)); songKey = null;`);
 });
 
 test("Recording: ● opens the loop end so a take past bar 2 grows the song instead of wrapping", () => {
@@ -3921,11 +3977,11 @@ test("iPad app: every Save also writes the song into Files (a mirror, never read
   assert.deepEqual(files, ["albums/compositions/nightroll/mirror-me.mid", "albums/compositions/nightroll/mirror-me.notes.txt", "albums/compositions/nightroll/mirror-me.rollnotes.json"]);
   const midB64 = app.context.capFs.files.get("albums/compositions/nightroll/mirror-me.mid");
   assert.equal(Buffer.from(midB64, "base64").subarray(0, 4).toString("latin1"), "MThd");
-  // Save writes it; a read-only song never does
-  assert.equal(run(`saveCheckpoint(true)`), true);
+  // Save Version writes it; a read-only song never does
+  assert.equal(run(`saveVersion(true)`), true);
   run(`songKey = "albums/nes/final-fantasy-i/songs/overworld.mid";`);
   assert.equal(await run(`filesMirror()`), false);
-  run(`songKey = "albums/compositions/nightroll/mirror-me.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem(saveStoreKey(songKey));
+  run(`songKey = "albums/compositions/nightroll/mirror-me.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ localStorage.removeItem(draftStoreKey(songKey)); localStorage.removeItem("ff1roll-versions-" + songKey);
        delete window.Capacitor; fetch = globalThis.__prevFetch2;`);
 });
 
@@ -4042,7 +4098,7 @@ test("save names the song: New makes Untitled N under local/; Save picks folder 
   assert.equal(run(`editableSong()`), true, "editable before it has a name");
   assert.equal(run(`isComposition()`), false, "not publishable yet");
   assert.equal(run(`songStatus(songKey)`), "never saved");
-  assert.equal(run(`saveCheckpoint(true)`), false, "a quiet Save cannot name it");
+  assert.equal(run(`saveVersion(true)`), false, "a quiet Save Version cannot name it");
   // a second New song numbers up
   run(`createComposition(100, 3, 4)`);
   assert.equal(run(`songKey`), "local/untitled-2.mid");
@@ -4062,7 +4118,7 @@ test("save names the song: New makes Untitled N under local/; Save picks folder 
   assert.equal(run(`folderTitle(folderOf(songKey))`), "Graveyard Stuff");
   assert.equal(run(`albumTitleFor(songKey)`), "Graveyard Stuff", "the manifest album a Publish would create");
   assert.equal(run(`localStorage.getItem(draftStoreKey("local/untitled-2.mid"))`), null, "the Untitled key is gone");
-  assert.ok(app.store.has("ff1roll-save-albums/graveyard-stuff/ambush-3.mid"), "checkpointed");
+  assert.ok(app.store.has("ff1roll-versions-albums/graveyard-stuff/ambush-3.mid"), "its first Version was saved");
   // Move of a never-published song: this device only, no token needed
   run(`localStorage.setItem("ff1roll-ghtoken", "t");`);
   await run(`moveComposition("albums/nes/covers/")`);
@@ -4913,9 +4969,9 @@ test("Publish rows: every song gets Open / Publish / Revert; a row's Publish is 
   assert.notEqual(val(`localStorage.getItem(draftStoreKey("${A}"))`), null, "Cancel keeps it");
   run(`appConfirm = async () => true;`); await run(`revertSongToRepo("${A}")`);
   assert.equal(val(`localStorage.getItem(draftStoreKey("${A}"))`), null, "reverted: this device's copy is gone");
-  assert.equal(val(`hasStash("${A}")`), true, "stashed first: Restore unsaved copy can undo it");
+  assert.equal(val(`readVersions("${A}").slice(-1)[0].label`), "Before going back", "current state kept as a version first, so File → Versions… can undo it");
   run(`pendingSongs = globalThis.__realPending; writeToken = globalThis.__realWriteToken; appConfirm = globalThis.__realConfirm;
-       for (const k of ["${A}", "${B}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-stash-"]) localStorage.removeItem(pre + k);`);
+       for (const k of ["${A}", "${B}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-versions-"]) localStorage.removeItem(pre + k);`);
 });
 
 test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands in the message box; the panel steps aside for the shot", async () => {
@@ -5256,6 +5312,58 @@ test("⏱ toggles the click in one tap; ⚙ opens the settings", async () => {
     run(`document.getElementById("metcfg").dispatchEvent({type: "click"});`);
     assert.equal(val(`document.getElementById("metsheet").classList.contains("on")`), true, "⚙ opens the settings");
   } finally { run(`metStart = __realStart; metHalt = __realHalt; document.getElementById("metsheet").classList.remove("on"); met.on = false;`); }
+});
+
+test("M silences but still shows, H hides but still plays, and the song remembers both (track: annotation)", () => {
+  installSong();
+  run(`songKey = "albums/test/mute.mid"; song.tracks = [{name: "bass", notes: [{t: 0, d: 480, p: 40, v: 90}]}]; trackState = [{muted: false, solo: false, hidden: false}]; rollnotes = [];`);
+  run(`trackToggle(0, "muted");`);
+  assert.equal(val(`trackAudible(0)`), false, "muted: silent");
+  assert.equal(val(`trackShown(0)`), true, "muted: still on screen");
+  run(`trackToggle(0, "muted"); trackToggle(0, "hidden");`);
+  assert.equal(val(`trackAudible(0)`), true, "hidden: still plays");
+  assert.equal(val(`trackShown(0)`), false, "hidden: off screen");
+  const name = val(`song.tracks[0].name || "tr1"`);
+  assert.match(val(`rollnotes.find(n => n.trackdir).text`), new RegExp("^track: " + name + ".* hide=1$"), "written into the track: annotation");
+  run(`trackState[0].hidden = false; finalizeNotes();`); // what a reload does: the directive re-applies
+  assert.equal(val(`trackState[0].hidden`), true, "the song remembers it");
+  run(`trackToggle(0, "hidden");`);
+  assert.equal(val(`rollnotes.some(n => n.trackdir && / hide=1/.test(n.text))`), false, "un-hidden: gone from the annotation");
+  assert.equal(val(`noteToJSON(resolveNote({b1: 1, q1: 1, text: "track: bass mute=1 solo=1"})).mute`), true, "the JSON file keeps it");
+});
+
+test("⌨ Terminal tab: Send queues it on the bridge; a failure gives the words back; the terminal's notes land in this tab", async () => {
+  installSong();
+  run(`songKey = "albums/test/term.mid"; localStorage.removeItem(ASK_TERMINAL_KEY); askSetMode("terminal");
+       globalThis.__real = {fetch: globalThis.fetch, aiUrl}; aiUrl = () => "http://bridge.test"; globalThis.__posts = [];
+       globalThis.fetch = async (u, o) => { __posts.push({u, body: o && o.body}); return {ok: true, status: 200, json: async () => ({id: 1, now: {text: "building X"}})}; };
+       askinput.value = "fix the footer";`);
+  try {
+    await run(`askSend()`);
+    assert.equal(val(`__posts[0].u`), "http://bridge.test/v1/terminal");
+    assert.equal(JSON.parse(val(`__posts[0].body`)).text, "fix the footer");
+    assert.match(val(`askstatus.textContent`), /the terminal is working: building X/);
+    assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].content`), "fix the footer");
+    run(`globalThis.fetch = async () => { throw new Error("Load failed"); }; askinput.value = "second";`);
+    await run(`askSend()`);
+    assert.equal(val(`askinput.value`), "second", "not sent: the words come back");
+    assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.length`), 1);
+    run(`askSetMode("song"); askNotesArrived([{id: 9, from: "terminal", text: "done: footer fixed"}, {id: 10, from: "ask", text: "a tutor note"}]);`);
+    assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].content`), "done: footer fixed", "the terminal's answer is in the Terminal tab");
+    assert.equal(val(`askLoad().slice(-1)[0].content`), "a tutor note", "others still go to the open chat");
+  } finally {
+    run(`globalThis.fetch = __real.fetch; aiUrl = __real.aiUrl; clearInterval(askTerminalTimer); askTerminalTimer = null; askSetMode("song"); localStorage.removeItem(ASK_TERMINAL_KEY); localStorage.removeItem(askStoreKey());`);
+  }
+});
+
+test("chat tabs by capability: ⌨ Terminal only when the bridge says a terminal session is reading; ✦ general with any backend; a vanished tab falls back to ♪", () => {
+  assert.deepEqual(val(`askTabsVisible({backend: false, bridge: false, terminal: false})`), {song: true, general: false, terminal: false});
+  assert.deepEqual(val(`askTabsVisible({backend: true, bridge: false, terminal: false})`), {song: true, general: true, terminal: false});
+  assert.deepEqual(val(`askTabsVisible({backend: true, bridge: true, terminal: false})`), {song: true, general: true, terminal: false});
+  assert.deepEqual(val(`askTabsVisible({backend: true, bridge: true, terminal: true})`), {song: true, general: true, terminal: true});
+  run(`askSetMode("terminal"); askCaps = {bridge: true, terminal: false}; askTabsApply();`);
+  assert.equal(val(`askTerminal || askGeneral`), false, "the Terminal tab went away: back on ♪");
+  run(`askCaps = {bridge: false, terminal: false};`);
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

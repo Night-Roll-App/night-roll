@@ -70,7 +70,7 @@
 //
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
-// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET|POST /v1/app-state · GET /health.
+// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET|POST /v1/app-state · GET|POST /v1/terminal · GET /health.
 // No dependencies. Node 18+.
 
 import http from "node:http";
@@ -281,6 +281,14 @@ function inboxAdd(text, from) { const box = inboxAll(); const note = {id: ++box.
 // what Claude Code was working on from here"): one current line (null when
 // idle) plus the last 10 it ever said, each with a timestamp. Clearing only
 // blanks `now` — `recent` is history and never shrinks from a clear.
+// the app's Terminal tab (Josh, 2026-09-29: "can messages typed in the AI
+// panel go straight into your terminal session?"): a queue the terminal's
+// Claude Code watches (GET ?since=), answered through the inbox (--say)
+const TERMINAL_FILE = path.join(STATE_DIR, "terminal.json");
+let terminalPolledAt = 0; // the terminal session's watcher GETs /v1/terminal every few seconds: recent = someone is there to read the tab
+const terminalReachable = () => Date.now() - terminalPolledAt < 90000;
+function terminalAll() { const j = readJSON(TERMINAL_FILE, {last: 0, msgs: []}); return j && Array.isArray(j.msgs) ? j : {last: 0, msgs: []}; }
+function terminalAdd(text, shot) { const box = terminalAll(); const m = {id: ++box.last, t: Date.now(), text: String(text || "").slice(0, 8000), shot: shot ? String(shot).slice(0, 500) : null}; box.msgs.push(m); box.msgs = box.msgs.slice(-200); writeJSON(TERMINAL_FILE, box); return m; }
 function statusAll() { const j = readJSON(STATUS_FILE, {now: null, recent: []}); return j && Array.isArray(j.recent) ? j : {now: null, recent: []}; }
 function statusSet(text) {
   const box = statusAll();
@@ -402,7 +410,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === "/health") return json(res, 200, {ok: true});
   if (!authorized(req)) return json(res, 401, {error: {message: "this bridge wants its token — Settings → key"}});
   if (req.method === "GET" && url.pathname === "/v1/models") { const {models} = await listModels(); return json(res, 200, {object: "list", data: models}); }
-  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true});
+  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true, terminal: terminalReachable()});
   if (url.pathname === "/v1/inbox") { // notes from the terminal: the app polls with ?since=<last id it showed>
     if (req.method === "GET") { const since = +(url.searchParams.get("since") || 0) || 0; const box = inboxAll(); return json(res, 200, {last: box.last, notes: box.notes.filter(n => n.id > since)}); }
     if (req.method === "POST") {
@@ -411,6 +419,16 @@ const server = http.createServer(async (req, res) => {
       const note = inboxAdd(String(b.text).trim(), b.from);
       console.log(`inbox #${note.id} from ${note.from}: ${note.text.slice(0, 80)}`);
       return json(res, 200, note);
+    }
+  }
+  if (url.pathname === "/v1/terminal") { // POST from the app's Terminal tab; GET ?since=ID from the terminal session's watcher
+    if (req.method === "GET") { terminalPolledAt = Date.now(); const since = +(url.searchParams.get("since") || 0) || 0; const box = terminalAll(); return json(res, 200, {last: box.last, msgs: box.msgs.filter(m => m.id > since)}); }
+    if (req.method === "POST") {
+      let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+      if (!b || (!String(b.text || "").trim() && !b.shot)) return json(res, 400, {error: {message: "a message needs text"}});
+      const m = terminalAdd(b.text, b.shot);
+      console.log(`terminal #${m.id}: ${m.text.slice(0, 80)}`);
+      return json(res, 200, {...m, now: statusAll().now});
     }
   }
   if (url.pathname === "/v1/app-state") { // the app says Josh is typing/dictating in ✦ AI; a build waits rather than relaunch under him (2026-09-29). In memory; stale after 2 min
@@ -422,7 +440,7 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/v1/status") { // "what Claude Code is doing" — GET for the app's poll, POST from --status or a session announcing a step
-    if (req.method === "GET") { const box = statusAll(); return json(res, 200, {now: box.now, recent: box.recent}); }
+    if (req.method === "GET") { const box = statusAll(); return json(res, 200, {now: box.now, recent: box.recent, terminal: terminalReachable()}); } // terminal: the app shows ⌨ Terminal only while a session reads it
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       const box = statusSet(b && b.text);

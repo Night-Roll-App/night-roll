@@ -304,9 +304,11 @@ state and commits it to this repo via the GitHub Contents API
 another composition edited on this device through `publishDraftSong`
 (the draft becomes the .mid via `writeMidi`, annotations via
 `buildRollnotesFor`, `notesTxtFor(doc, key)`, `askCommitLog(h, key,
-true)`, the manifest entry; then the draft is marked clean, a Save
-checkpoint written when auto-save is off, the stash and notes stash
-cleared); annotation-only and chat-only songs through `putRollnotes` /
+true)`, the manifest entry; then the draft is marked clean and the notes
+stash cleared — Publish no longer touches Save Version history (Model B,
+below: a Save Version checkpoint used to be written here when auto-save
+was off; auto-save is always on now and Versions are separate from
+Publish)); annotation-only and chat-only songs through `putRollnotes` /
 `askCommitLog(h, key, isCompositionKey(key))`. `isCompositionKey`
 mirrors `isComposition` for a closed song. The pending list's Open
 button stays as a convenience; "open it to commit" is gone.
@@ -1310,8 +1312,9 @@ needed. The folder's layout mirrors the repo exactly
 - UI: Settings sheet row `#folderrow` (`Choose folder…` / `Change
   folder…` / `Reconnect` / `Forget`; on Safari/iPad the row says it
   needs Chrome or Edge on a computer). `renderFolderUI()` also relabels
-  File → "Save (to folder)" and "Revert to saved copy…". Status lines
-  say "Saved ✓ to <folder>" instead of the Pages wait.
+  File → Publish… as "Publish to folder…" (Model B, below: folder mode
+  says Publish too now, never Save — that word means Save Version).
+  Status lines say "Published ✓ to <folder>" instead of the Pages wait.
 - `?folder=opfs` swaps `navigator.storage.getDirectory()` in as the
   root: same interface, no picker, not persisted. Playwright
   (`tests/e2e/folder.spec.mjs`, chromium only) and browser checks use it.
@@ -1324,9 +1327,10 @@ Settings checkbox (Save → Files, Publish bypassed). Josh read it as
 saved locally and up on GitHub", so the mode is gone: `filesMirror()`
 writes .mid + .rollnotes.json + .notes.txt at the song's path into the
 app's Documents through `nativeDirHandle` (passed as the `root` of
-`folderWrite`/`fsDirFor`) on every `saveCheckpoint`, after a Publish
-with auto-save on, and 2 s after edits settle with auto-save on
-(`filesMirrorSoon`). It is a visible copy, never read back; reads,
+`folderWrite`/`fsDirFor`) on every `saveVersion` (⌘S), after every
+Publish, and 2 s after every edit settles (`filesMirrorSoon`, now
+unconditional — Model B, below, retired the auto-save switch this
+paragraph originally gated on). It is a visible copy, never read back; reads,
 `folderActive()` and Publish are untouched; the Settings row is one
 sentence (`#filesrow`/`#fileshelp`). `nativeDirHandle` stays the
 adapter; the desktop picker/OPFS roots are unchanged. The older
@@ -1417,17 +1421,20 @@ ones on purpose (they run first, wave four moves their output).
 New asks tempo/meter only and creates `local/untitled-N.mid`
 (`untitledKey()`; `isUnsaved(key)` = under local/, which also covers
 imported MIDIs): editable via `isLocalDraft`, never publishable
-(`syncable` skips local/), row word "never saved". Save (⌘S, File →
-"Save…") on an unsaved song opens the Save form instead of
-checkpointing (`openSaveForm("save")` inside the File menu: `#fsfolder`
+(`syncable` skips local/), row word "never saved". Save Version (⌘S,
+File → "Save Version…" — "Save…" before Model B, below) on an unsaved
+song opens the Save form instead of versioning
+(`openSaveForm("save")` inside the File menu: `#fsfolder`
 = `fillFolderSelect` over `folderChoices()` — this device's folders ∪
 the repo's, own folders only, last-used (`ff1roll-lastfolder`) first,
 plus "New folder…" → `#fsnewfolder`, `folderFromInput` slugifies each
 segment and refuses `RESERVED_FOLDERS`); `saveSongAs(folder, name)`
 asks before replacing an existing local copy (Josh: "overwrite that
 one"), `renameLocalKeys(old, new)` carries every per-song key
-(draft/notes/ts/edits/save/stash + IDB) and the open song, the typed
-name lands in the draft's `title`, then `saveCheckpoint(true)`. Save
+(draft/notes/ts/edits/versions + IDB — versions/save/stash before Model
+B) and the open song, the typed
+name lands in the draft's `title`, then `saveVersion(true)` (its first
+Version). Save
 As shares the form (`mode: "fork"`, `forkCurrentSong(name, folder)`).
 Move to… lists every folder (or a new one) and moves a never-published
 song on this device only (`moveComposition` returns after
@@ -1443,7 +1450,8 @@ edge). `tools/build_manifest.mjs` walks any depth (a directory with
 New lands, and since the same evening no longer editable by path
 either: a published copy is never edited in place (Josh), so
 `isComposition` needs the local draft or provenance for EVERY folder,
-Sketches included; "✎ Edit locally" is the way in.
+Sketches included; "✎ Edit locally" is the way in (no confirm since Model
+B, below: tapping it makes the copy right away).
 
 **App edition reads from the configured repo (2026-09-27).** On the web
 "this site" (blank base) is Pages = the whole catalog; in the app it is
@@ -1486,8 +1494,10 @@ doors share it — then deletes the Inbox copy. vm test: fake App +
 Filesystem plugins.
 
 **Not done:** Safari fallback (a downloadable project bundle),
-autosave-on-edit in folder mode (explicit Save kept for parity and so
-Revert still means something), copying the FF1 corpus into a folder.
+autosave-on-edit-INTO-THE-FOLDER (every edit still stays device-local
+until a deliberate Publish to folder…, same as GitHub mode — Model B,
+below, made autosave-of-the-working-copy universal, but never changed
+what triggers a folder write), copying the FF1 corpus into a folder.
 
 ## Tap a note: the game's instrument (2026-09-28)
 
@@ -2329,8 +2339,9 @@ starts it and opens the dialog. A Publish-sheet row's own **Publish**
 passes `onlyKeys: [key]` — the same job, one item, titled "Publish
 <song>". Each row also has **Open** (draft → `openDraft`, else
 `loadSong`) and **Revert** (`revertSongToRepo`: appConfirm, then
-`dropLocalSong` — the same stash-then-discard File → Revert to repo copy
-uses; hidden on a never-published song, which has no repo copy). Not jobs: Download audio (real-time
+`dropLocalSong` — pushes the current state as a "Before going back"
+version first, Model B below, then discards; hidden on a never-published
+song, which has no repo copy). Not jobs: Download audio (real-time
 playback), chip renders (already off-thread; a row per song open would
 spam the list). Later: captures in the worker.
 
@@ -3276,17 +3287,18 @@ Compare does (`pubCompareDraft`: `cmpDiff` notes at the draft's ppq). Matching d
 nothing. Drafts that differ show why on their line, for example
 "vs published: +2 −1 ~0 notes (lead)". Each check
 also leaves a [debug] line. The Publish (N) count recounts on every draft
-write and every sheet redraw. Note that Compare itself, with auto-save
-off, compares with the last local Save, not the published copy.
+write and every sheet redraw. Compare (`cmpEnter`) always fetches the
+published copy now (Model B, below, superseding the auto-save-dependent
+baseline this paragraph originally described).
 
 **Words (step 1, 5add982):** the one deliberate step that sends a song
 to the repo is **Publish** everywhere — File → Publish…, the footer
 button (`#syncbtn`, "Publish (N)" when several songs are pending), the
 PUBLISH sheet, ⇪ Publish song / Publish all, "Publishing…" /
-"Published ✓" ("Save…" wording in folder mode). Drafts still land on the
-device by themselves; Revert to repo copy is unchanged. Josh's open
-design point: a user who never publishes has no checkpoint — a
-Logic-style local Save is queued (open-items).
+"Published ✓" (folder mode says the same words now — see Model B). Drafts
+still land on the device by themselves. Josh's open design point from
+this step — "a user who never publishes has no checkpoint — a
+Logic-style local Save is queued" — is Model B, below.
 
 **Share links (step 2):** a link = this player + the song + where the
 song lives. `?songs=owner/repo` (or a full base URL) puts the page in
@@ -3466,8 +3478,9 @@ Josh: "I have seven songs where it says the notes are changed, but I
 don't know what things have changed." Option 3 of three (the others,
 queued: a what-changed list in Save & Commit; an undoable Revert).
 
-- **Entry:** View → "⇄ Compare with repo" ("saved copy" in folder mode;
-  dimmed unless the open song is a composition with a key), or the
+- **Entry:** View → "⇄ Compare with repo" (same words in folder mode
+  since Model B, below; dimmed unless the open song is a composition
+  with a key), or the
   **Compare** button on the open song's "♪ music edited" line in Save &
   Commit. `cmpEnter` reads the saved .mid through `readData("songs", key,
   bust)` (folder first, then the site — the same door every load uses),
@@ -3753,3 +3766,157 @@ test drives `openPickedFiles` with a synthetic WAV and no song open,
 confirming the fresh composition's meter/tempo/seed tracks, the audio
 track's clip, and the exact final status line. FEATURES keyword: "New song
 from a recording" (and "import hub").
+
+## Save model — "Model B": always kept, plus Versions (2026-09-29)
+
+Josh picked B (open-items "SAVE MODEL — JOSH PICKED B"): "always kept,
+plus versions" — Logic/GarageBand's model — over A ("everything is kept;
+Publish sends it", no local history) and C ("Save publishes", rejected —
+conflicts with Publish being deliberate). Retires the auto-save switch,
+the single Save checkpoint, and the stash-based Revert/Restore pair that
+`saveCheckpoint`/`stashWorking`/`restoreStash`/`hasStash`/`lastSaveDoc`
+implemented (2026-09-26 — see "Local Save" comments in the old diff);
+replaces them with a per-song list of dated, device-local Versions.
+
+**Always kept, no switch.** `autosaveOn()` now just `return true` —
+kept (not deleted) only so a stray caller still reads "on"; nothing
+calls it for real anymore. The Settings → Saving pane lost the Auto-save
+checkbox and its help text; it's one static sentence now. The working
+copy (`saveDraft`) behaves exactly as it always did with auto-save off:
+every edit lands in the draft immediately (crash-proof), and
+`filesMirrorSoon()` (the iPad Files copy) now runs unconditionally
+instead of only when auto-save was on.
+
+**Versions.** `ff1roll-versions-<key>` is a JSON array, newest LAST on
+disk (capped to the last 20 by `writeVersionsRaw`'s `slice(-20)`), each
+entry `{at, label, draft, notes, ts}` — `draft` and `notes` are the
+PARSED objects (not re-stringified), `ts` is `ff1roll-ts-<key>`'s display
+beats-per-bar override when one exists. `readVersions(key)` /
+`migrateVersions(key)` (same function; `readVersions` is the public
+name) is the one door in: it first migrates any pre-Model-B state for
+that key — `ff1roll-save-<key>` (the old MUSIC-ONLY checkpoint) becomes a
+version labelled "Saved (before versions)", `ff1roll-stash-<key>` (the
+old pre-Revert stash) becomes "Unsaved copy (before versions)" — then
+deletes those two legacy keys. Migration is additive (nothing is dropped
+before it's copied) and runs on every read, so it's a no-op once a key
+has no legacy state left. `pushVersion(key, label)` migrates first, then
+snapshots THIS DEVICE's current draft + `ff1roll-notes-<key>` under
+`label`; it returns `false` (nothing pushed) when there's no local draft
+for `key` at all (an unedited published song, or a capture with no music
+draft) — used both by `saveVersion` and, as a side effect, by
+`dropLocalSong`.
+
+**Save Version** (`saveVersion(quiet)`, File → "Save Version…" / ⌘S —
+`saveCheckpoint` renamed, same call shape): on an Untitled song it opens
+the Save form first (`openSaveForm("save")`, unchanged — still asks for
+a folder and a name; `saveSongAs` calls `saveVersion(true)` for the
+song's first Version once named). Otherwise it re-saves the draft
+(`saveDraft(false)`) so the snapshot is current, then
+`pushVersion(songKey, "Version " + N)` where N is the next number, then
+`filesMirror()`. Status line: "Version saved — only on this " + ("iPad"
+when `EDITION === "app"`, else "device"). **Never clears the ●** — see
+below.
+
+**File → Versions…** (`#filerevert`, relabeled from "Revert to repo
+copy…"/"Revert to last save…"/"Revert to saved copy…" — one word now in
+every mode) opens `#versionssheet` (`openVersionsSheet` /
+`renderVersionsSheet`; registered `makeWindow("versionssheet",
+{dockable: false})`, same as Status/the import hub — a browsing sheet,
+not a panel worth pinning open). Visible whenever a song is open with a
+repo-shaped key (`!!song && !!songKey && !songKey.startsWith("local/") &&
+!LINK_SONGS`) — not composition-gated, so it also works on a read-only
+capture with local annotation edits (`revertSongToRepo`'s old escape
+hatch folded in here as "Published copy"). Rows: **Published copy**
+first, when `catalogHas(key)`, then this device's versions newest FIRST
+on screen (the array is newest-last on disk; the sheet iterates
+backwards). Each row's **Go back to this** (`goBackToVersion(key, idx)` /
+`goBackToPublished(key)`) confirms ("Your current state is kept as a
+version first."), then — critically — `pushVersion(key, "Before going
+back")` BEFORE touching anything, so a wrong tap never loses work; going
+back to a device Version writes its `draft`/`notes`/`ts` over the
+current ones and (when it's the open song) `openDraft`s it; going back to
+the Published copy reuses `dropLocalSong` + `loadSong`, same as before.
+Undo/redo reset either way (`editUndo = editRedo = []`), matching the old
+Revert's contract.
+
+**`dropLocalSong(key)`** (the shared discard under Revert-to-repo-copy,
+used by both the Publish sheet's per-row Revert (`revertSongToRepo`) and
+Versions'"Go back to the Published copy") no longer `stashWorking`s —
+it `pushVersion(key, "Before going back")` instead (a no-op when there's
+no local draft to snapshot), then clears
+draft/notes/ts/edits/tombs/lastsync (not `save`/`stash` — migration
+already retired those, and not `versions` — history survives a revert).
+`revertSongToRepo`'s confirm dialog wording follows: "your current state
+is kept as a version first — File → Versions… brings it back" replaces
+the old "File → Restore unsaved copy undoes this."
+
+**✎ Edit locally, no confirm.** `editherebtn`'s click now calls
+`editHereNow()` directly — no `appConfirm`. It's the same silent-copy
+logic as before (`draftWrite(songKey, draftDoc(true))`, clean) with a
+`setInfo` footer notice ("editing your copy on this device — Publish
+sends it") instead of asking first; `editherebtn` sits where Edit ▾
+would be on a published song of yours with no local copy, so tapping it
+IS the "start editing" gesture — there's no separate pencil/Edit ▾
+entry point in that state (the real edit row doesn't exist until this
+runs; `updateEditBtnVis` gates it on `isComposition()`).
+
+**The ● (`songUnsaved`, `updateSongBtn`) means "not published yet".**
+Simplified to just `songDirtyFlag()` — the old auto-save-off branch
+(compare against the checkpoint via `songDocSig`/`lastSaveDoc`) is gone;
+Save Version never touches `d.dirty`, so it never clears the ●; only a
+successful Publish does (via `draftDoc(true)`/`publishDraftSong`
+resetting `dirty`). `songDocSig` itself is gone (no more checkpoint to
+compare against).
+
+**Not connected → no ●, no footer Publish button.** New predicate
+`connected()` = `!!writeToken()` (a GitHub token, OR `folderActive()`,
+which `writeToken()` already folds in as `"folder"`) — "anything Publish
+could actually send to." `updateSongBtn` only appends the `.crumbdot`
+when `(unsaved || chat) && connected()`; `updateSyncBtn` sets
+`#syncbtn`'s `style.display = "none"` outright when `!connected()` (it
+used to never hide). Both are re-run wherever "connected" can change:
+`settingsPersist("ghtoken")` and the end of `renderFolderUI()` (folder
+connect/forget/reconnect, and the boot-time restore). File → Publish…
+still opens unconditionally either way — the sheet explains how to
+connect.
+
+**Compare always reads the published copy.** `cmpEnter`'s old
+`!autosaveOn() ? lastSaveDoc() : null` baseline is gone (autosave being
+universal made it always `null` anyway); it always fetches from
+`readData("songs", key, true)` now. The View menu's label is the static
+"⇄ Compare with repo" in every mode (folder mode used to say "saved
+copy"; Publish did too — see next).
+
+**Wording, everywhere "Save" meant "Publish" in folder mode:**
+`renderFolderUI`'s `#filesave` text ("Save to folder…" → "Publish to
+folder…"), the Publish sheet's per-song "Save chat"/"Publish chat"
+button (now always "Publish chat"), `#ghsaveall`'s "Save all ("/"Publish
+all (" (now always "Publish all ("), `openSyncSheet`'s `verb`
+("Save"/"Publish" → always "Publish song"), and the status lines
+("Saving …"/"Saved ✓ to …" → "Publishing …"/"Published ✓ to …"). Folder
+mode and GitHub mode now use exactly the same words for the same
+deliberate action; only the destination differs ("to folder" / to the
+repo).
+
+**Help sheet + FEATURES drift guard:** the "Save and Auto-save" `<dt>`
+became "Save Version and Versions…", rewritten for this model; the File
+`<dt>`'s New-song/Save/Revert clauses and its LOCAL-row status words
+(now matching `songStatus`'s actual strings: never saved / not published
+/ published / changed since publish / annotations changed here); the
+Publish `<dt>`'s Revert clause and "since the last save" → "since
+publish"; the Compare `<dt>`'s "last save" → "published copy" throughout.
+FEATURES (`tests/night-roll.test.mjs`) swapped "Auto-save" → "kept
+automatically", "Restore unsaved copy" → "Before going back", "Revert to
+repo copy" → "Go back to this", and added "Save Version" / "Versions…".
+
+**Tests:** a rewritten "Versions (Model B)" test (was "Local Save")
+covers `saveVersion` storing music + annotations, never clearing the ●,
+and the 20-version cap; a new migration + go-back test seeds legacy
+`ff1roll-save-`/`ff1roll-stash-` keys and checks both the migrated labels
+and that going back pushes "Before going back" first; a new "not
+connected" test drives `connected()`/`updateSyncBtn`/`updateSongBtn`
+directly (the vm harness has no `document.body`/`querySelectorAll` — see
+the Import hub tests note above — so it reads `#syncbtn`'s `style.display`
+and walks `#songcrumb`'s `.children` for a `.crumbdot`, not
+`querySelector`); a new `editHereNow` test makes `appConfirm` throw, to
+prove the no-confirm claim.
