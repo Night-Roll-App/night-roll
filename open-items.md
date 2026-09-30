@@ -834,9 +834,27 @@ Ranked, most annoying first (effort S/M/L):
    undoable; undo is wiped on song switch. S.
 9. Tapping a note moves the play cursor (DAWs: selection never moves
    the playhead). S (maybe a device pref).
-10. Audio export is real-time MediaRecorder (m4a/webm), no WAV, browser
-    download; the shell's Share plugin is unused; an armed cycle may loop
-    the bounce (inferred). M (OfflineAudioContext → WAV → Share).
+10. DONE (2026-09-30, branch `offline-export`): Download audio now
+    bounces OFFLINE via OfflineAudioContext (renderSongOffline) —
+    intro + one pass, loop/cycle both ignored (the real-time path's
+    "an armed cycle may loop the bounce" quirk is not inherited: the
+    offline path always renders the whole song from 0, matching the
+    documented "loop off"), through the same voice/chip/sampled/
+    game-instrument/clip code live playback uses. 16-bit WAV (own
+    encoder, no dependency). iPad app: hands the file to the native
+    share sheet via @capacitor/share (Capacitor.nativePromise, cache
+    dir via @capacitor/filesystem) — Files/Messages/AirDrop/etc.
+    instead of a bare browser download. Real-time MediaRecorder
+    (m4a/webm) kept as the fallback for a browser with no
+    OfflineAudioContext, refactored unchanged into recordRealtimeAudio.
+    Tests: wavEncode header/samples, offline-vs-fallback selection,
+    native Filesystem→Share call shape (tests/night-roll.test.mjs).
+    See NIGHT-ROLL.md "Audio export — Download audio". Open question:
+    should the real-time fallback path ALSO stop respecting an armed
+    ruler cycle (today it still can, via play()'s own `cycling` branch —
+    pre-existing, not touched here) for full parity between the two
+    paths? Low stakes since the fallback only fires without
+    OfflineAudioContext, essentially never in practice.
 11. No mixer view, no meters, no track reorder. M / S–M.
 12. Fixed px fonts (iOS Text Size ignored), canvas has no VoiceOver;
     songs loop forever at the end. L / M / S.
