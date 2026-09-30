@@ -19350,6 +19350,7 @@ async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac
   const key = ASK_TERMINAL_KEY, msgs = askStore(key).msgs;
   msgs.push({role: "user", content: text, t: Date.now()});
   askSave(msgs, undefined, key);
+  askMicOff(); // a live 🎤 writes its transcript back after we clear the box (Josh, 2026-09-30: the text stayed after Send)
   askinput.value = ""; askShotSet(null); askDraftClear(); askGrow(); askComposing(false);
   askBubble("user", text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
   askstatus.textContent = "sending to the terminal…";
