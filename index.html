@@ -8838,7 +8838,7 @@ async function updateChipBtnInner() { // name kept for call sites; now just the 
     if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chipPreviewCache.clear(); if (chipWorker && chipWorker.__key !== songKey) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
     chip.rendering = songKey;
     const forKey = songKey;
-    chip.renderPromise = chipRender().catch(err => { chip.fail = {key: forKey, why: "the console render failed (" + (err && err.message || err) + ")"}; if (songKey === forKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again"); logDebug("render failed: " + chip.fail.why); return false; }) // not renderable: synth carries the song, and says so
+    chip.renderPromise = chipRender().catch(err => { chip.fail = {key: forKey, why: "the console render failed for " + songTitleOf(forKey) + " (" + (err && err.message || err) + ")"}; if (songKey === forKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again"); logDebug("render failed: " + chip.fail.why); return false; }) // not renderable: synth carries the song, and says so
       .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
   }
 }
