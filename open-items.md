@@ -24,14 +24,11 @@ Q5. May I add a redirect so the bare address night-roll-app.github.io
     "site down" was the bare address without /night-roll/.
 Q6. Imported MIDI files: editable with tempo baking, like a copy
     (recommended, and today's behaviour) — or locked like a capture?
-Q8. The machine-written "forked from X" / "moved from X" notes (6 files):
-    move them into the file's origin header and drop them from the notes
-    list (recommended) — or keep them visible too?
 Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
 for build 3.
-DONE: Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
+DONE: Q8 — yes (2026-09-30): the machine-written "forked from"/"moved from" notes move into the v2 origin header; he approved fixing the 6 files ("I would like to fix the songs") — done in the P5 batch migration so the origin is kept, not lost. Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
 his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
 own songs; "Publish all" = one publish per song; explicit song origins.
 
