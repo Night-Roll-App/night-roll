@@ -528,6 +528,15 @@ his son used it on a MacBook), record without snapping, Quantize.
 Also decided (Josh: decide, don't ask): metronome = tap ⏱ toggles the
 click, a small ⚙ beside it opens settings; ✎ Edit locally happens on the
 first edit with a footer notice, no confirm.
+Follow-up decided (advisor, Josh asked 22:53): menu says "Save Version"
+(⌘S), never plain "Save"; status "Version saved — only on this iPad";
+"Versions…" beside it; "Publish…" keeps its word with a subtitle ("to
+GitHub" / "to folder <name>"). Footer Publish (N) shows only when GitHub
+or a folder is connected AND N > 0; Publish… always in File (unconnected:
+the sheet says how to connect). ● = not published yet (music,
+annotations or chat); only Publish clears it; hidden when nothing is
+connected (a local-only user's work is always kept; Versions are the
+save points).
 (Advisor notes:)
 Verified: Save (⌘S) checkpoints MUSIC ONLY (annotations not saved, not
 shown by ●, not reverted); ● has three meanings; "Save" means a fourth
