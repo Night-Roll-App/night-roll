@@ -84,7 +84,7 @@ The speed slider folded into a **percentage button** — tap to open the slider,
 Beside Play, Logic-style: live bar and beat (counted in the declared meter's beats), the tempo at the cursor from the song's own tempo map (scaled by the speed slider), and the declared meter and key. Undeclared stays honest: meter reads "4/4?", key reads "C?" (the display default), a stored tonic reads "B♭?". On your own songs the tempo segment is tappable too — it opens a Tempo change annotation ("tempo: 120" at a bar/beat; the map applies from there, so mid-song tempo changes work; Save writes the full map into the .mid). On analyzed songs the same annotation is an OBSERVATION — it records that the music changes tempo there and leaves playback untouched (the capture's timing is measured fact). Every readout is a door: tap the tempo to open the tempo annotation governing the cursor (or declare the first one), tap the meter to open the time signature, tap the key to open the key change ruling the cursor — a stored partial opens its own note with the tonic already filled.
 
 **Blue cursor**
-Play starts here. Tap the bar ruler to place it, or drag its handle (triangle under the ruler). Tapping any note also moves it there.
+Play starts here. Tap the bar ruler to place it, or drag its handle (triangle under the ruler). Tapping a note selects it **without moving the cursor**, the DAW way, so Space still plays from where you were; **+ Note** anchors at the note you tapped. (Settings → Other brings back tap-to-move.)
 
 ### NO SOUND ON iPAD?
 

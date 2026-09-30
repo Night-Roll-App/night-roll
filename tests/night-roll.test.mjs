@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -5403,6 +5403,15 @@ test("undo covers track changes: a mute or a voice change is one ⟲ step", () =
   assert.equal(val(`trackState[0].muted`), true, "redo mutes again");
   run(`song.tracks[0].voice = "square"; voiceMenuTi = 0; saveVoices(); editUndoPop();`);
   assert.notEqual(val(`song.tracks[0].voice || "auto"`), "square", "⟲ takes the voice back");
+});
+
+test("tapping a note leaves the playhead alone by default; the old tap-to-move is a device pref", () => {
+  run(`localStorage.removeItem("ff1roll-notetapcursor");`);
+  assert.equal(val(`noteTapMovesCursor()`), false);
+  run(`localStorage.setItem("ff1roll-notetapcursor", "1");`);
+  assert.equal(val(`noteTapMovesCursor()`), true);
+  run(`localStorage.removeItem("ff1roll-notetapcursor");`);
+  assert.match(val(`String(openEditor)`), /const at0 = !note && selNote/, "+ Note anchors at the tapped note");
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

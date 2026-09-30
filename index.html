@@ -1562,7 +1562,7 @@
       <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — one place for every hide/show: 𝄞 Score view, ◂ Tracks, 🛠 Edit toolbar, ▦ Bottom bar, 🎹 Instrument panel, 💬 Notes strip, and ▸ Section levels with −/+ steppers (shows "2 of 3"; the gutter chevron still one-tap cycles). ✓ means visible; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else. Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
       <dt>Speed &amp; volume buttons</dt><dd>The speed slider folded into a <b>percentage button</b> — tap to open the slider, tap anywhere else and it folds back (the reset chip appears when off-native). Beside it, <b>🔊</b> is a master volume the same way: tap, slide (10–200%), tap away; the setting sticks per device and the button shows the number when it's not 100%.</dd>
       <dt>LCD readout</dt><dd>Beside Play, Logic-style: live bar and beat (counted in the declared meter's beats), the tempo at the cursor from the song's own tempo map (scaled by the speed slider), and the declared meter and key. Undeclared stays honest: meter reads "4/4?", key reads "C?" (the display default), a stored tonic reads "B♭?". On your own songs the tempo segment is tappable too — it opens a Tempo change annotation ("tempo: 120" at a bar/beat; the map applies from there, so mid-song tempo changes work; Save writes the full map into the .mid). On analyzed songs the same annotation is an OBSERVATION — it records that the music changes tempo there and leaves playback untouched (the capture's timing is measured fact). Every readout is a door: tap the tempo to open the tempo annotation governing the cursor (or declare the first one), tap the meter to open the time signature, tap the key to open the key change ruling the cursor — a stored partial opens its own note with the tonic already filled.</dd>
-      <dt>Blue cursor</dt><dd>Play starts here. Tap the bar ruler to place it, or drag its handle (triangle under the ruler). Tapping any note also moves it there.</dd>
+      <dt>Blue cursor</dt><dd>Play starts here. Tap the bar ruler to place it, or drag its handle (triangle under the ruler). Tapping a note selects it <b>without moving the cursor</b>, the DAW way, so Space still plays from where you were; <b>+ Note</b> anchors at the note you tapped. (Settings → Other brings back tap-to-move.)</dd>
     </dl>
 
         <h3>NO SOUND ON iPAD?</h3>
@@ -2097,6 +2097,9 @@
     <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgpeninstant" style="width:20px;height:20px"> Apple Pencil draws and grabs at once</label></div>
     <div class="status cfgind">On: the Pencil places, grabs and moves notes the moment it touches — no hold; fingers still hold to grab and swipe to scroll. Off: the Pencil behaves like a finger.</div>
+    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+      <input type="checkbox" id="cfgnotetapcursor" style="width:20px;height:20px"> Tapping a note moves the play cursor to it</label></div>
+    <div class="status cfgind">Off (the DAW way): selecting a note leaves the playhead where it is, so Space plays from where you were. + Note still anchors at the note you tapped.</div>
     </div>
   </div>
 </div>
@@ -6492,7 +6495,7 @@ function tap(pos) {
   selNote = hit;
   if (hit) {
     const n = song.tracks[hit.ti].notes[hit.ni];
-    playCursor = n.t; // note tap re-anchors the cursor (and + Note)
+    if (noteTapMovesCursor()) playCursor = n.t; // off by default: selecting never moves the playhead (DAW habit, 2026-09-29); + Note anchors at the tapped note either way
     setInfo(noteLabel(hit.ti, hit.ni));
     reflectSelVel(); // the vol slider doubles as the velocity readout
     previewNote(hit.ti, n.p);
@@ -13349,8 +13352,11 @@ function openEditor(note, presetType) {
   editingNote = note || null;
   fillBarBeatSelects();
   const bt = barTicks();
-  let b1 = Math.floor(playCursor / bt) + 1;
-  let q1 = snapBeat((playCursor % bt) / beatTicks() + 1);
+  // a tapped note anchors a new note: tapping no longer moves the cursor
+  // (DAW habit, 2026-09-29), and tap-a-note → + Note is how Josh annotates
+  const at0 = !note && selNote && song.tracks[selNote.ti] && song.tracks[selNote.ti].notes[selNote.ni] ? song.tracks[selNote.ti].notes[selNote.ni].t : playCursor;
+  let b1 = Math.floor(at0 / bt) + 1;
+  let q1 = snapBeat((at0 % bt) / beatTicks() + 1);
   let b2 = "", q2 = "";
   if (!note && rangeSel) { // prefill the from/to fields from the ruler selection
     b1 = Math.floor(rangeSel.a / bt) + 1;
@@ -13373,7 +13379,7 @@ function openEditor(note, presetType) {
   document.getElementById("ntype").value = type;
   if (type === "tempo") {
     let usq = song.tempos[0].usq;
-    for (const tp of song.tempos) { if (tp.tick <= playCursor) usq = tp.usq; else break; }
+    for (const tp of song.tempos) { if (tp.tick <= at0) usq = tp.usq; else break; }
     document.getElementById("ntempo").value =
       note && note.tempodir !== undefined ? String(note.tempodir) : String(Math.round(6e7 / usq));
   }
@@ -21082,6 +21088,7 @@ function openSettingsSheet() {
   document.getElementById("cfgsongsrepo").value = c.songsRepo;
   document.getElementById("cfgdebuglog").checked = debugLogOn();
   document.getElementById("cfgpeninstant").checked = penInstant();
+  document.getElementById("cfgnotetapcursor").checked = noteTapMovesCursor();
   ghCheckOut("");
   if (localStorage.getItem("ff1roll-ghtoken")) ghCheck(); // one small GET: "connected" shows without a tap
   document.getElementById("cfgnsfrepo").value = c.nsfRepo;
@@ -21099,12 +21106,14 @@ function openSettingsSheet() {
 // Autosave: each field persists itself on change, so there is nothing to lose
 // on Close/✕/backdrop/Esc and no Save to find (Josh, 2026-09-25). A blank
 // token/key removes the stored one; blank locations fall back to defaults.
+function noteTapMovesCursor() { try { return localStorage.getItem("ff1roll-notetapcursor") === "1"; } catch (err) { return false; } }
 function penInstant() { try { return localStorage.getItem("ff1roll-peninstant") !== "0"; } catch (err) { return true; } }
 function settingsPersist(id) {
   const v = el => document.getElementById(el).value.trim();
   const keep = (k, val) => { if (val) localStorage.setItem(k, val); else localStorage.removeItem(k); };
   switch (id) {
     case "ghtoken": keep("ff1roll-ghtoken", v("ghtoken")); ghCheckOut(""); updateSyncBtn(); updateSongBtn(); break; // connecting/disconnecting GitHub changes whether the footer Publish button and ● show (Model B)
+    case "cfgnotetapcursor": { try { localStorage.setItem("ff1roll-notetapcursor", document.getElementById("cfgnotetapcursor").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
     case "cfgpeninstant": { try { localStorage.setItem("ff1roll-peninstant", document.getElementById("cfgpeninstant").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
     case "cfgdebuglog": { try { if (document.getElementById("cfgdebuglog").checked) localStorage.setItem("ff1roll-debuglog", "1"); else localStorage.removeItem("ff1roll-debuglog"); } catch (err) { /* private mode: stays off */ } errChip(); break; }
     case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); askModelCache = null; break;

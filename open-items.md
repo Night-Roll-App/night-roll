@@ -514,7 +514,7 @@ published/imported songs' music. Two options on the table: (a) the
 notes are set in stone, only annotations edit; (b) editing makes a
 personal copy. He leaned toward locking both kinds.
 
-## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff") — (a) DONE, (b) DONE (M silences + dims, S solos, H hides; all saved in track: annotations); metronome follows the song by default; ⏱ toggles, ⚙ settings; (c) DONE: the Apple Pencil grabs/draws at once (Settings → Other to turn off), fingers still dwell; (d) DONE: Return/K/C/R/⌘←→, ⌘A, ⌘X, ⌘D; (e) DONE for track changes (voice/color/vol/pan/M/S/H are ⟲ steps) — undo across song switches NOT done on purpose: entries hold note indexes that a reopened draft renumbers (setSong's comment); would need identity-keyed entries
+## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff") — (a) DONE, (b) DONE (M silences + dims, S solos, H hides; all saved in track: annotations); metronome follows the song by default; ⏱ toggles, ⚙ settings; (c) DONE: the Apple Pencil grabs/draws at once (Settings → Other to turn off), fingers still dwell; (d) DONE: Return/K/C/R/⌘←→, ⌘A, ⌘X, ⌘D; (e) DONE for track changes (voice/color/vol/pan/M/S/H are ⟲ steps) — undo across song switches NOT done on purpose: entries hold note indexes that a reopened draft renumbers (setSong's comment); would need identity-keyed entries; (f) DONE: a note tap leaves the playhead alone (Settings → Other restores), + Note anchors at the tapped note
 (a) count-in from anywhere + one-tap metronome · (b) mute/solo silence
 only, saved with the song (track: annotation; hide stays separate) ·
 (c) Pencil draws/edits instantly, fingers navigate · (d) keyboard
