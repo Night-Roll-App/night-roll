@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -4931,6 +4931,21 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
   } finally {
     run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; globalThis.requestAnimationFrame = __realRaf; delete window.Capacitor; askinput.value = "";`);
   }
+});
+
+test("breadcrumb: Published or Local first, as Open's sections mean them; the word is its own span so it never truncates", () => {
+  const P = "albums/test/crumb/one.mid";
+  run(`globalThis.__realCat = CATALOG; CATALOG = {"Crumb Album": [["One", "${P}"]]}; currentPath = "${P}"; localStorage.removeItem("ff1roll-draft-${P}"); updateSongBtn();`);
+  // the harness's innerHTML = "" leaves children: each check re-renders onto an emptied list
+  const parts = () => val(`(() => { const el = document.getElementById("songcrumb"); el.children.length = 0; updateSongBtn(); return el.children.map(c => c.textContent); })()`);
+  try {
+    assert.deepEqual(parts().slice(0, 2), ["Published\u00a0›\u00a0", "Crumb Album\u00a0›\u00a0"]);
+    run(`localStorage.setItem("ff1roll-draft-${P}", "{}"); updateSongBtn();`);
+    assert.equal(parts()[0], "Local\u00a0›\u00a0", "a copy on this device is Local, even of a published song");
+    run(`currentPath = "local/imported.mid"; updateSongBtn();`);
+    assert.equal(parts()[0], "Local\u00a0›\u00a0");
+    assert.equal(parts().length, 2, "no folder to show: Local › title, not Local › Local");
+  } finally { run(`localStorage.removeItem("ff1roll-draft-${P}"); CATALOG = __realCat; currentPath = null; updateSongBtn();`); }
 });
 
 test("album play: loads that keep failing stop the album after ALBUM_MAX_FAILS, instead of skipping through every song", async () => {

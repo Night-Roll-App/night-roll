@@ -466,7 +466,7 @@ whether the tool or the app owns the order.
    the bridge (Josh: "I wish there would be a way for me to send you
    screenshots from the app itself").
 
-7. Breadcrumb says Published or Local first (Josh via Ask, 2026-09-29):
+7. DONE: Breadcrumb says Published or Local first (Josh via Ask, 2026-09-29):
    "Published › SNES › Final Fantasy 4 › Song" / "Local › Night Roll
    Sketches › Song"; the word never truncates, the folder/title does.
 
