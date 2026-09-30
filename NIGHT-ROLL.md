@@ -3994,3 +3994,108 @@ the Import hub tests note above — so it reads `#syncbtn`'s `style.display`
 and walks `#songcrumb`'s `.children` for a `.crumbdot`, not
 `querySelector`); a new `editHereNow` test makes `appConfirm` throw, to
 prove the no-confirm claim.
+
+## Learning / Normal mode (P0-P3, 2026-09-30)
+
+CLAUDE.md: "Keys/analyses are Josh's discoveries — Learning mode is the
+law." Learning is the app's default posture and volunteers nothing about
+meter, key, or chord names. Normal exists for other users on their own
+device and shows the same things as labelled ESTIMATES — never written as
+a real annotation until a tap says so. One device-global switch, not a
+per-song setting.
+
+**`appMode()`** returns `"learning"` or `"normal"`, backed by `let
+APP_MODE` and the device pref `ff1roll-mode`. Both live in the EARLY boot
+block (right after `"use strict"`, well above the `state` section) because
+`setSong`/`updateLCD`/`renderViewMenu` all read it during boot — see
+`boot-path-tdz-check` in Claude's memory: three boot bricks already
+shipped from new state landing below where boot reads it. Migration runs
+once, at that same point: an explicit `ff1roll-mode` is never touched
+again; otherwise `hasExistingNightRollPrefs()` (checks `ff1roll-lastsong`,
+`ff1roll-cfg`, `ff1roll-ghtoken`, and — via `Object.keys(localStorage)`,
+not `.length`/`.key(i)`, which the vm harness doesn't stub — any
+`ff1roll-notes-*`/`ff1roll-draft-*`) picks Learning for a device that's
+already been used, Normal for a fresh install. `setAppMode(mode)` flips it
+live and persists; `applyMode()` is the UI-refresh side effect (View ▾
+checkmark, `body.dataset.mode`, the LCD 🎓 badge, `cfglearning` checkbox,
+re-running `finalizeNotes()` so labels catch up) — boot itself never calls
+it, only the two interactive toggles (View ▾ → 🎓 Learning mode; Settings
+→ Other) do.
+
+**P1 — lasso chord.** `refreshSelInfo()` branches on `appMode()`: Normal
+names the lassoed chord straight into the selection strip (`nameChord`
+already existed) and hides Chord?; the ⧉ copy text carries the name too.
+Learning is unchanged — Chord? stays, so naming it is still the user's
+discovery.
+
+**P2 — meter/key labels + imports.** Nothing new needed for "no `?` on a
+declared meter" — writing a real `timesig:`/`key:` annotation already
+clears the old default, in either mode. `localMidiOpen` and the batch
+`midcreate` importer both call `seedImportAnnotations(key, parsed)` before
+`draftWrite`: Normal only, it writes the file's own `parsed.timesig` and
+`parsed.keysig` ({sf, minor} from the MIDI meta) straight into this
+device's local-notes storage (`ff1roll-notes-<key>`, same shape
+`saveLocalNotes` uses) at bar 1 — BEFORE the draft is opened, so
+`loadNotes`'s normal local-notes merge picks it up with no race against
+the async song load. Learning applies neither (Josh's ruling via Ask,
+2026-09-29: "you have to determine the meter by reading the music;
+there's no way we should tell them this song is in 3/4 or 6/8" — METER and
+KEY stay unrevealed data; TEMPO was never gated here, since it's the
+actual playback tempo map, not a ruling about the music). `effTs()` still
+never reads `song.timesig` directly — only the annotation.
+
+**P3 — `estimateKey()` + `sfShownAt()`/`keyNameShownAt()`.** A duration-
+weighted pitch-class census of non-drum, non-audio-clip notes, correlated
+against the 24 Krumhansl-Schmuckler major/minor key profiles
+(`KS_MAJOR_PROFILE`/`KS_MINOR_PROFILE`); best correlation wins, spelled
+through the existing `keyNameFor(pc, mode)`. Cached per song
+(`_keyEstCache`), invalidated by a cheap note-census signature
+(`keyEstimateSig()`) rather than hooking every edit site. `estimateKey()`
+is Normal-only BY CONSTRUCTION — every call site is gated by `appMode()`
+before it's ever reached, never inside `estimateKey()` itself, so Learning
+never calls it at all (a spy test proves zero calls). The two shown-value
+functions are the single choke point every display call site now goes
+through instead of the declared-only `sfDeclaredAt`/`keyNameAt`:
+- `sfShownAt(tick)` — declared (or the key-dial preview), else the Normal
+  estimate's `sf`, else `null`. `sfAt(tick)` = `sfShownAt(tick) ?? 0`
+  (unchanged default for every existing call site — spelling, the score's
+  key signature, `refreshSelInfo`'s lasso spelling, the ◯5 dial's open
+  key, `spellPc`'s default arg).
+- `keyNameShownAt(tick)` — `keyNameAt(tick)`, else the Normal estimate's
+  `name`, else `null`. Used alongside `sfShownAt` at the piano/guitar
+  degree readout (`instTap`) and the `find:` picker (`refreshFindSel` +
+  its `change` handler).
+`sfDeclaredAt`/`keyNameAt` themselves are untouched — anything that means
+"only what Josh actually declared" (chord-evidence/Challenge?, the AI
+context, transpose-by-degree) still uses them and is unaffected by mode.
+
+LCD: undeclared + no stored partial + Normal shows the estimate with a
+tilde (`"Gm~"`) instead of `"C?"` — same honesty convention as the
+meter's `"4/4?"`. The key picker's placeholder option (`#keyunset`)
+reads `"key: G minor (estimated) — tap to set"` in that same state, with
+a `#keysetest` "Set this key" button beside `#keysel` that promotes the
+estimate to a real `key:` annotation (same `dropLocalKeyAt` + push +
+`finalizeNotes`/`saveLocalNotes` pattern as the existing tonic/mode
+picker) — still only on a tap. Learning never reaches any of this: the
+plain `"not set (C)"` / `"4/4?"` / `"C?"` defaults are byte-for-byte what
+they were before this landed.
+
+**Tests:** `tests/harness.mjs`'s `createApp()` pins `ff1roll-mode:
+"learning"` by default when no `storage` option is passed, so the whole
+pre-existing suite (and the shared `app` at the top of
+night-roll.test.mjs) keeps exercising Learning unchanged; a test that
+wants Normal or the migration itself passes its own `storage`.
+`tests/e2e/helpers.mjs`'s `openApp` and the two OPFS specs'
+own `open()` (`audio.spec.mjs`, `folder.spec.mjs`) pin the same pref via
+`addInitScript` before `page.goto`, for the same reason. New unit tests
+cover the migration table, both modes' lasso-chord behavior, a MIDI
+import in both modes, the K-S estimate (a C major scale → C, an A
+harmonic minor scale → Am), the Learning-never-calls-estimateKey spy, and
+the LCD/keysel-label/"Set this key" flow.
+
+Deliberately NOT built (parked, see open-items.md): P4 (Ask AI reading
+`appMode()` to change its own tutoring rules — right now Ask's existing
+"don't reveal the key" instruction just happens to keep working because
+Learning's labels are unchanged; it does NOT yet know about Normal) and
+P5 beyond the help sheet / FEATURES keyword / this section (a dedicated
+"Analyze ▸" menu for Normal, further Ask-context work).

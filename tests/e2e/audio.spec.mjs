@@ -15,6 +15,9 @@ async function wipe(page) {
   });
 }
 async function open(page) {
+  // pin Learning (P0): this spec predates modes; a fresh Playwright context
+  // has empty localStorage, which would migrate to Normal otherwise.
+  await page.addInitScript(() => { try { localStorage.setItem("ff1roll-mode", "learning"); } catch (e) {} });
   await page.route(/^(?!.*localhost)/, r => r.abort());
   await page.goto(OPFS);
   await page.waitForFunction(() => { try { return !!song; } catch (e) { return false; } }, null, { timeout: 15000 });

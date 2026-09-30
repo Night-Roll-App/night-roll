@@ -143,6 +143,13 @@ export function createApp(opts = {}) {
 
   const elements = new Map();
   const store = new Map();
+  // Learning/Normal mode (P0): the existing suite predates modes and exercises
+  // Learning behavior throughout, so createApp() with NO explicit storage
+  // pins ff1roll-mode=learning up front — same effect as "this device already
+  // has Night Roll prefs" without depending on the migration heuristic. A
+  // test that wants to exercise the migration itself (or Normal mode) passes
+  // its own `storage`, which skips this default entirely.
+  if (!opts.storage) store.set("ff1roll-mode", "learning");
   for (const [k, v] of Object.entries(opts.storage || {})) store.set(k, String(v)); // keys present BEFORE boot: the migrations run against them
 
   // fake clock: setTimeout/performance.now share one timeline; tick(ms) fires
@@ -165,6 +172,13 @@ export function createApp(opts = {}) {
 
   const documentEl = listenable({
     documentElement: makeEl(),
+    // NO `body` and NO `querySelectorAll` here, on purpose: several boot-time
+    // blocks (sheetDrag's `!document.body` check; SHEET_TOP's own
+    // `typeof document.querySelectorAll === "function"` check, explicitly
+    // commented "vm harness stubs document") use their ABSENCE as the
+    // "are we in the vm harness" sentinel. Giving document a real body
+    // silently turned both on and crashed boot on MutationObserver /
+    // unstubbed querySelector — this cost real time to trace, so: don't.
     getElementById(id) {
       // .id matches a real DOM element's own id attribute — the window
       // manager's Phase B tab groups read an element's `.id` back (to match

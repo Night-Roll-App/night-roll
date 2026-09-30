@@ -6,6 +6,9 @@ Everything here is also in the app: File → Help.
 
 ## Views
 
+**🎓 Learning mode**
+Tap it in **View ▾ → 🎓 Learning mode** (or Settings → Other) to switch off. **On** (the default on a device that's been used for analysis before): meter, key and chord names stay undeclared until you work them out yourself — a lasso still lists the notes, Chord? stays hidden so you name it first, and the LCD reads the usual "4/4?" / "C?" until you've earned the real answer. **Off (Normal)**: lasso'd chords name themselves, an unset meter/key shows a labelled **estimate** (LCD "Gm~", the key picker's "estimated — tap to set") instead of the plain default — estimates are never written as a real annotation until you tap "Set this key". A little 🎓 in the LCD marks Learning; the toggle is one device-global switch, not per song.
+
 **⇄ Compare with repo**
 View → **Compare with repo** (or the **Compare** button on a song's "music edited" line in the Publish sheet) fetches the song's published copy and outlines every difference on the roll: **gold** = a note only in your version, **red** = a note only in the published copy, both on a note whose length or velocity changed; **dashed** outlines mark notes that are not in the version you are hearing. The bar above the roll counts them and its button swaps which version plays — **hear the published copy** swaps its notes in (the song is read-only until you swap back; nothing is written, your draft stays yours), **hear your version** swaps them back. ✕ on the bar leaves compare. Works on your own songs that have been published; turn a chop off first.
 

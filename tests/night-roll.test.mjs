@@ -1849,7 +1849,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -5655,4 +5655,174 @@ test("titles sort in reading order: a trailing Roman numeral counts as its numbe
   const t = ["Final Fantasy X", "Final Fantasy IV", "Final Fantasy IX", "Final Fantasy Legend", "Final Fantasy V", "Final Fantasy I", "Final Fantasy VII", "Chrono Trigger"];
   assert.deepEqual(val(`${JSON.stringify(t)}.sort(titleCompare)`),
     ["Chrono Trigger", "Final Fantasy I", "Final Fantasy IV", "Final Fantasy V", "Final Fantasy VII", "Final Fantasy IX", "Final Fantasy X", "Final Fantasy Legend"]);
+});
+
+// ============================================================================
+// Learning / Normal mode (P0-P3, 2026-09-30) — CLAUDE.md: "Keys/analyses are
+// Josh's discoveries — Learning mode is the law." Learning volunteers
+// nothing; Normal (other users, one device switch) shows meter/key/chords
+// as labelled estimates, never written without a tap. These tests build
+// their OWN createApp() instances (rather than the shared `app`/`run` above)
+// so each can pin its own ff1roll-mode; the shared instance stays Learning
+// throughout (harness.mjs default), which is why the rest of this file was
+// unaffected by this feature landing.
+function valOf(a, code) { return JSON.parse(a.run(`JSON.stringify(${code})`)); }
+
+test("P0 migration: absent+existing Night Roll prefs -> learning; absent+none -> normal; explicit mode is never overwritten", () => {
+  const fresh = createApp({storage: {}});
+  assert.equal(fresh.run(`appMode()`), "normal", "fresh install, nothing on the device: Normal");
+  assert.equal(fresh.run(`localStorage.getItem("ff1roll-mode")`), "normal", "the resolved mode is persisted so it isn't re-derived next boot");
+
+  for (const [key, val0] of [["ff1roll-lastsong", "albums/x.mid"], ["ff1roll-cfg", "{}"], ["ff1roll-ghtoken", "tok"],
+                             ["ff1roll-notes-albums/x.mid", "[]"], ["ff1roll-draft-albums/x.mid", "{}"]]) {
+    const a = createApp({storage: {[key]: val0}});
+    assert.equal(a.run(`appMode()`), "learning", "existing " + key + ": Learning");
+  }
+
+  const keptNormal = createApp({storage: {"ff1roll-mode": "normal", "ff1roll-lastsong": "albums/x.mid"}});
+  assert.equal(keptNormal.run(`appMode()`), "normal", "an explicit mode stands even with prior prefs on the device");
+  const keptLearning = createApp({storage: {"ff1roll-mode": "learning"}});
+  assert.equal(keptLearning.run(`appMode()`), "learning");
+});
+
+test("P0: setAppMode flips appMode() live and persists it (index.html's own body.dataset.mode write is guarded on document.body — absent by design in this vm harness, same sentinel sheetDrag/SHEET_TOP use to detect it, see harness.mjs)", () => {
+  const normal = createApp({storage: {}});
+  assert.equal(normal.run(`appMode()`), "normal");
+  normal.run(`setAppMode("learning")`);
+  assert.equal(normal.run(`localStorage.getItem("ff1roll-mode")`), "learning");
+  assert.equal(normal.run(`appMode()`), "learning");
+});
+
+test("P1 lasso chord: Normal auto-names the chord in the selection strip and hides Chord?; Learning leaves it for the user to reveal", () => {
+  const mk = mode => {
+    const a = createApp({storage: {"ff1roll-mode": mode}});
+    a.run(`
+      song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+              tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 480, p: 64, v: 80}, {t: 0, d: 480, p: 67, v: 80}]}]};
+      songKey = "midi/test.mid"; keyRegions = []; rollnotes = []; declaredTs = [4, 4]; previewSf = null;
+      trackState = [{muted: false, solo: false}]; selNote = null;
+      multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}, {ti: 0, ni: 2}];
+      multiSelKey = new Set(["0:0", "0:1", "0:2"]);
+      selOctaves = false;
+      refreshSelInfo();
+    `);
+    return a;
+  };
+  const learn = mk("learning");
+  assert.equal(learn.run(`document.getElementById("chordbtn").style.display`), "", "Learning: Chord? stays offered");
+  assert.equal(learn.run(`document.getElementById("chordbtn").textContent`), "Chord?");
+  assert.ok(!/→/.test(learn.run(`document.getElementById("noteinfo").textContent`)), "Learning: no chord name volunteered in the strip");
+
+  const normal = mk("normal");
+  assert.equal(normal.run(`document.getElementById("chordbtn").style.display`), "none", "Normal: nothing to reveal — it's already named");
+  assert.match(normal.run(`document.getElementById("noteinfo").textContent`), /→\s*C\b/, "Normal: the strip names the chord itself");
+});
+
+test("P2 MIDI import: Normal writes timesig:/key: annotations at bar 1 from the file's meta; Learning writes neither (tempo isn't gated — it's the playback tempo map, not a discovery)", () => {
+  const parsedWaltz = {ppq: 480, timesig: [3, 4], keysig: {sf: 2, minor: false}, // D major
+                        tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []};
+  const learn = createApp({storage: {"ff1roll-mode": "learning"}});
+  learn.run(`localMidiOpen(${JSON.stringify(parsedWaltz)}, "waltz.mid")`);
+  assert.equal(learn.run(`localStorage.getItem("ff1roll-notes-local/waltz.mid")`), null,
+    "Learning: an imported file's own meter/key are neither applied nor shown");
+
+  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+  normal.run(`localMidiOpen(${JSON.stringify(parsedWaltz)}, "waltz.mid")`);
+  const seeded = JSON.parse(normal.run(`localStorage.getItem("ff1roll-notes-local/waltz.mid")`));
+  assert.ok(seeded.some(n => n.text === "timesig: 3/4"), "Normal: the file's own meter lands as a declared annotation");
+  const keyNote = seeded.find(n => /^key:/.test(n.text));
+  assert.ok(keyNote, "Normal: the file's own key lands as a declared annotation");
+  assert.equal(keyNote.text, "key: D");
+  assert.equal(keyNote.keydir, 2);
+
+  // a minor-key file spells through the relative-minor math (keysig.minor: true)
+  const parsedMinor = {ppq: 480, timesig: [4, 4], keysig: {sf: -2, minor: true}, // Bb signature, minor -> G minor
+                        tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []};
+  const normal2 = createApp({storage: {"ff1roll-mode": "normal"}});
+  normal2.run(`localMidiOpen(${JSON.stringify(parsedMinor)}, "elegy.mid")`);
+  const seeded2 = JSON.parse(normal2.run(`localStorage.getItem("ff1roll-notes-local/elegy.mid")`));
+  const keyNote2 = seeded2.find(n => /^key:/.test(n.text));
+  assert.equal(keyNote2.text, "key: Gm");
+  assert.equal(keyNote2.keydir, -2);
+});
+
+test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", () => {
+  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+  const cMajor = [60, 62, 64, 65, 67, 69, 71, 72].map(p => ({t: (p - 60) * 480, d: 480, p, v: 80}));
+  normal.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "melody", notes: ${JSON.stringify(cMajor)}}]};
+    songKey = "midi/test.mid";
+  `);
+  const cEst = valOf(normal, `estimateKey()`);
+  assert.equal(cEst.name, "C");
+  assert.equal(cEst.sf, 0);
+
+  const aHarmMinor = [57, 59, 60, 62, 64, 65, 68, 69].map((p, i) => ({t: i * 480, d: 480, p, v: 80})); // A B C D E F G# A
+  normal.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "melody", notes: ${JSON.stringify(aHarmMinor)}}]};
+    songKey = "midi/test2.mid";
+  `);
+  const amEst = valOf(normal, `estimateKey()`);
+  assert.equal(amEst.name, "Am");
+  assert.equal(amEst.sf, 0);
+});
+
+test("P3: Learning never calls estimateKey (spy) — sfShownAt/keyNameShownAt/updateLCD all gate on appMode() before touching it; Normal reaches it", () => {
+  const learn = createApp({storage: {"ff1roll-mode": "learning"}});
+  learn.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}, {t: 960, d: 480, p: 67, v: 80}]}]};
+    songKey = "midi/test.mid"; songEndTick = 4 * 480 * 4; playCursor = 0; rollnotes = []; keyRegions = []; declaredTs = [4, 4];
+    globalThis.__estCalls = 0;
+    const __orig = estimateKey;
+    estimateKey = function() { globalThis.__estCalls++; return __orig(); };
+  `);
+  assert.equal(learn.run(`appMode()`), "learning");
+  learn.run(`sfShownAt(0); keyNameShownAt(0); updateLCD();`);
+  assert.equal(learn.run(`__estCalls`), 0, "Learning: not one display call site reaches estimateKey");
+  learn.run(`setAppMode("normal");`);
+  learn.run(`sfShownAt(0);`);
+  assert.ok(learn.run(`__estCalls`) > 0, "Normal: the same call site now estimates");
+});
+
+test("P3: Normal mode, nothing declared — LCD shows the estimate with '~', the keysel label offers to 'Set this key', which writes a real key: annotation", () => {
+  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+  normal.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 55, v: 80}]}]};
+    songKey = "midi/test.mid"; songEndTick = 4 * 480 * 4; playCursor = 0;
+    rollnotes = []; keyRegions = []; declaredTs = [4, 4]; previewSf = null;
+    estimateKey = () => ({sf: -2, name: "Gm", conf: 0.9}); // stubbed: this test is about the LABEL, not the K-S math
+    finalizeNotes();
+    updateLCD();
+  `);
+  assert.equal(normal.run(`document.getElementById("lcdkey").textContent`), "Gm~");
+  assert.equal(normal.run(`document.getElementById("keyunset").textContent`), "key: G minor (estimated) — tap to set");
+  assert.equal(normal.run(`document.getElementById("keysetest").style.display`), "");
+
+  normal.run(`document.getElementById("keysetest").click();`);
+  const anno = valOf(normal, `rollnotes.find(n => n.keydir !== undefined)`);
+  assert.equal(anno.text, "key: Gm");
+  assert.equal(anno.keydir, -2);
+  assert.equal(normal.run(`document.getElementById("keysetest").style.display`), "none", "promoted: nothing left to offer");
+  assert.equal(normal.run(`document.getElementById("keyunset").textContent`), "key: Gm ✓");
+});
+
+test("P3: Learning keeps the plain 'not set (C)' / '4/4?' defaults untouched — no estimate leaks into the label or the LCD", () => {
+  const learn = createApp({storage: {"ff1roll-mode": "learning"}});
+  learn.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 55, v: 80}]}]};
+    songKey = "midi/test.mid"; songEndTick = 4 * 480 * 4; playCursor = 0;
+    rollnotes = []; keyRegions = []; declaredTs = null; previewSf = null;
+    estimateKey = () => ({sf: -2, name: "Gm", conf: 0.9}); // even if it COULD estimate, Learning must not call it
+    finalizeNotes();
+    updateLCD();
+  `);
+  assert.equal(learn.run(`document.getElementById("lcdkey").textContent`), "C?");
+  assert.equal(learn.run(`document.getElementById("lcdmeter").textContent`), "4/4?");
+  assert.equal(learn.run(`document.getElementById("keyunset").textContent`), "key: not set (C)");
+  assert.equal(learn.run(`document.getElementById("keysetest").style.display`), "none");
 });

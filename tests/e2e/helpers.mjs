@@ -2,6 +2,11 @@
 // composition, seed notes, and translate ticks/pitches to canvas pixels.
 // No token is ever stored — every repo-write path stays inert by design.
 export async function openApp(page) {
+  // Learning/Normal mode (P0): a genuinely fresh browser profile (empty
+  // localStorage, the e2e default) would migrate to Normal — these specs
+  // predate modes and assume Learning's "nothing volunteered" defaults
+  // throughout, so pin it before the app's own boot-time migration ever runs.
+  await page.addInitScript(() => { try { localStorage.setItem("ff1roll-mode", "learning"); } catch (e) {} });
   // headless chromium stalls ~20s constructing a real AudioContext (no audio
   // device) — one stall per pointerdown that previews a note. Gesture tests
   // don't need sound: stub the whole WebAudio surface with inert fakes.

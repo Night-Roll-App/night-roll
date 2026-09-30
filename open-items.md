@@ -632,7 +632,21 @@ exact before/after, a chat with no session yet is zeros not a 404).
 NIGHT-ROLL.md "AI session controls"; help sheet "Session usage and
 Compact" + FEATURES drift keyword.
 
-## LEARNING vs NORMAL MODE — PLANNED (advisor, 2026-09-29; build after the save model)
+## LEARNING vs NORMAL MODE — P0-P3 SHIPPED 2026-09-30 (advisor, 2026-09-29; build after the save model)
+P0-P3 built as one change set: appMode()/ff1roll-mode + migration (early
+boot block), P1 lasso chord auto-names in Normal, P2 MIDI import writes
+timesig:/key: annotations in Normal only (tempo always applied — never
+gated, it's the playback map not a discovery), P3 estimateKey
+(Krumhansl-Schmuckler) + sfShownAt/keyNameShownAt route every display
+call site (spelling, score key sig, degrees, find:, ◯5, LCD "Gm~", the
+keysel "estimated — tap to set" label + Set-this-key button). Learning
+never calls estimateKey (spy-tested). Tests: harness.mjs/e2e helpers pin
+Learning by default so the existing suite is unaffected. Help sheet +
+FEATURES keyword + NIGHT-ROLL.md section done (see its "Learning / Normal
+mode" section for the full writeup). NOT built (parked): P4 (Ask AI
+reading appMode() — its "don't reveal the key" instruction still works
+for Learning by coincidence, but doesn't know about Normal yet) and P6
+(Normal's "Analyze ▸" menu). Browser-verify + push still needed.
 Learning = today (nothing volunteered; Ask AI hints). Normal = keys,
 meters, chord names shown (estimates marked "~"/"estimated"; never
 written as annotations without a tap). One device-global switch: View ▾
