@@ -620,6 +620,17 @@ test("writeMidi (index.html) and writeSongMidi (tools/nsf/midi-write.mjs) agree 
     // 20 tracks: channel-collision edge case
     {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
      tracks: [...Array(20)].map((_, i) => ({name: "v" + i, notes: [{t: 0, d: 240, p: 60 + i, v: 80}]}))},
+    // docs/declared-vs-learner-spec.md C4: a foreign file's OWN source —
+    // written verbatim with the "source:file" marker; s.timesig/s.keysig
+    // (both present here too) must be IGNORED entirely in this branch
+    {ppq: 480, timesig: [4, 4], keysig: {sf: -3, minor: true}, tempos: [{tick: 0, usq: 500000}],
+     source: {timesigs: [{tick: 0, num: 3, den: 4}, {tick: 5760, num: 4, den: 4}],
+              keysigs: [{tick: 0, sf: 2, minor: false}]},
+     tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]},
+    // a foreign file with NEITHER a 0x58 nor a 0x59 of its own: none written,
+    // only the marker — the empty lists themselves must still round-trip
+    {ppq: 480, tempos: [{tick: 0, usq: 500000}], source: {timesigs: [], keysigs: []},
+     tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]},
   ];
   for (const [i, s] of fixtures.entries()) {
     const app = bytesFromApp(s), tools = Array.from(writeSongMidi(s));
@@ -672,6 +683,233 @@ test("writeMidi: 20 tracks don't collide on channel 10 (0-indexed 9) unless they
   const drums = back.find(t => t.name === "drums");
   assert.deepEqual(drums.chs, [9], "the drum track lands on channel 10");
   for (const t of back) if (t.name !== "drums") assert.ok(!t.chs.includes(9), t.name + " landed on the drum channel: " + t.chs);
+});
+
+// ---- docs/declared-vs-learner-spec.md, phase 1 (C1-C9): the file's own
+// meter/key labels (source) are kept apart from what he declares; an
+// on-demand Check vs file compares them, in his declared terms only.
+test("parseMidi: collects the file's own 0x58/0x59 HISTORY in file order (source), round-tripping through the \"source:file\" marker alone (no {foreign} opt needed on the re-read); the singular timesig is now the FIRST 0x58, not the last", () => {
+  installSong();
+  const s = {ppq: 480, tempos: [{tick: 0, usq: 500000}],
+    source: {timesigs: [{tick: 0, num: 3, den: 4}, {tick: 5760, num: 4, den: 4}],
+             keysigs: [{tick: 0, sf: 2, minor: false}, {tick: 11520, sf: 1, minor: true}]},
+    tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]};
+  const back = val(`parseMidi(writeMidi(${JSON.stringify(s)}).buffer)`); // no opts — the marker alone must be enough
+  assert.deepEqual(back.source.timesigs, s.source.timesigs);
+  assert.deepEqual(back.source.keysigs, s.source.keysigs);
+  assert.deepEqual(back.timesig, [3, 4], "singular timesig is the FIRST 0x58 (was the last)");
+  assert.deepEqual(back.keysig, {sf: 2, minor: false}, "singular keysig is (still) the first 0x59");
+});
+
+test("parseMidi: no source, no marker (a plain capture/composition) → source is null, never an empty object; a foreign file with NEITHER a 0x58 nor a 0x59 still gets an empty-but-present source", () => {
+  installSong();
+  const plain = {ppq: 480, timesig: [4, 4], keysig: {sf: -3, minor: true}, tempos: [{tick: 0, usq: 500000}],
+    tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]};
+  assert.equal(val(`parseMidi(writeMidi(${JSON.stringify(plain)}).buffer)`).source, null);
+  const empty = {ppq: 480, tempos: [{tick: 0, usq: 500000}], source: {timesigs: [], keysigs: []},
+    tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]};
+  const back = val(`parseMidi(writeMidi(${JSON.stringify(empty)}).buffer)`);
+  assert.deepEqual(back.source, {timesigs: [], keysigs: []});
+  assert.deepEqual(back.timesig, [4, 4], "no 0x58 at all: the default fallback");
+  assert.equal(back.keysig, null);
+});
+
+test("Import round trip: song.source carries the file's OWN meter/key history through his edits, draftDoc, and a republish — his key:/timesig: annotations never touch it, and a Save Version + go back keeps it", () => {
+  installSong();
+  const src = {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]}; // the FILE's own label: 3/4, D major
+  run(`
+    song.source = ${JSON.stringify(src)};
+    song.tracks = [{name: "melody", notes: [{t: 0, d: 480, p: 62, v: 80}]}];
+    songKey = "local/import-round-trip.mid";
+    rollnotes = []; keyRegions = []; declaredTs = null;
+    for (const k of ["ff1roll-draft-", "ff1roll-versions-"]) localStorage.removeItem(k + songKey);
+  `);
+  // his own answers — declaring them must never touch the file's own record
+  run(`
+    rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "key: Gm", keydir: -2, added: true}));
+    rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "timesig: 6/8", tsdir: [6, 8], added: true}));
+    finalizeNotes();
+  `);
+  assert.deepEqual(val(`song.source`), src, "declaring his own key/meter never touches the file's own source");
+  const draft = val(`draftDoc(false)`);
+  assert.deepEqual(draft.source, src, "draftDoc carries the file's source through his edits");
+  const reparsed = val(`parseMidi(writeMidi(draftDoc(false)).buffer)`);
+  assert.deepEqual(reparsed.source, src, "the republished file's OWN history is unchanged — no Gm 0x59, no 6/8 0x58");
+  assert.deepEqual(reparsed.keysig, {sf: 2, minor: false}, "the FILE's key signature, not his declared Gm");
+  assert.deepEqual(reparsed.timesig, [3, 4], "the FILE's meter, not his declared 6/8");
+  // Save Version, then go back
+  run(`draftWrite(songKey, draftDoc(false)); pushVersion(songKey, "V1");`);
+  const versions = val(`readVersions(songKey)`);
+  assert.deepEqual(versions[versions.length - 1].draft.source, src, "a pushed version keeps source");
+  run(`song.source = null; openDraftDoc(readVersions(songKey)[readVersions(songKey).length - 1].draft, songKey);`);
+  assert.deepEqual(val(`song.source`), src, "source survives going back to a version");
+  run(`for (const k of ["ff1roll-draft-", "ff1roll-versions-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey); songKey = null;`);
+});
+
+test("Import: writes NO ff1roll-notes-* in either mode (the P2 Normal auto-seed is gone, superseded by source — declared-vs-learner-spec.md C5); the file's own label rides along as draft.source instead, in BOTH modes", () => {
+  const parsedWaltz = {ppq: 480, timesig: [3, 4], keysig: {sf: 2, minor: false}, // D major
+                        source: {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]},
+                        tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []};
+  for (const mode of ["learning", "normal"]) {
+    const a = createApp({storage: {"ff1roll-mode": mode}});
+    a.run(`localMidiOpen(${JSON.stringify(parsedWaltz)}, "waltz.mid")`);
+    assert.equal(a.run(`localStorage.getItem("ff1roll-notes-local/waltz.mid")`), null, mode + ": no annotation seeded from the file");
+    const draft = JSON.parse(a.run(`localStorage.getItem("ff1roll-draft-local/waltz.mid")`));
+    assert.deepEqual(draft.source, parsedWaltz.source, mode + ": the file's own label still rides along as draft.source");
+  }
+});
+
+test("declaredTsForKey: the ff1roll-ts-<key> stash, else a stored timesig: annotation, else undeclared — for a song that is not the one open right now (Publish all, the ✦ AI read_song tool)", () => {
+  const a = createApp({storage: {}});
+  assert.equal(valOf(a, `declaredTsForKey("albums/x.mid")`), null);
+  a.run(`localStorage.setItem("ff1roll-ts-albums/x.mid", "6/8");`);
+  assert.deepEqual(valOf(a, `declaredTsForKey("albums/x.mid")`), [6, 8]);
+  a.run(`localStorage.removeItem("ff1roll-ts-albums/x.mid");
+         localStorage.setItem("ff1roll-notes-albums/x.mid", JSON.stringify([{text: "timesig: 5/4"}]));`);
+  assert.deepEqual(valOf(a, `declaredTsForKey("albums/x.mid")`), [5, 4]);
+});
+
+test("notesTxtFor / notesTxtForDoc: NEVER the file's own meter — Learning, a source of 3/4 and no annotation: the header has no '3/4', is flagged '(not declared)', and bars still run on 4/4", () => {
+  installSong();
+  run(`
+    song.source = {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: []};
+    song.timesig = [3, 4]; // even the RAW field says 3/4 — the header must still never use it
+    song.tracks = [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}];
+    songKey = "midi/test.mid"; declaredTs = null;
+  `);
+  const header = val(`notesTxtFor().split("\\n")[0]`);
+  assert.ok(!header.includes("3/4"), "the file's own meter must not leak into the header: " + header);
+  assert.match(header, /4\/4\? \(not declared\)/);
+  const header2 = val(`notesTxtForDoc(song, "Some Song", null, null, null, songKey).split("\\n")[0]`);
+  assert.ok(!header2.includes("3/4"), "notesTxtForDoc: same leak, same fix: " + header2);
+  run(`song.source = null; declaredTs = null;`);
+});
+
+test("checkMeterVsFile: one case per state", () => {
+  installSong();
+  run(`song.tracks = [{name: "t", notes: []}]; songEndTick = 1920;`);
+  run(`song.source = null; declaredTs = [4, 4];`);
+  assert.equal(val(`checkMeterVsFile().state`), "nofile", "no source at all");
+  run(`song.source = {timesigs: [], keysigs: []};`);
+  assert.equal(val(`checkMeterVsFile().state`), "nofile", "source present, but no 0x58 in the file");
+  run(`song.source = {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: []}; declaredTs = null;`);
+  assert.equal(val(`checkMeterVsFile().state`), "noanswer", "the file has a meter; he hasn't declared one");
+  run(`declaredTs = [3, 4];`);
+  let r = val(`checkMeterVsFile()`);
+  assert.equal(r.state, "match");
+  assert.deepEqual(r.file, {num: 3, den: 4});
+  run(`declaredTs = [4, 4];`);
+  assert.equal(val(`checkMeterVsFile().state`), "differs");
+  run(`song.source = {timesigs: [{tick: 0, num: 3, den: 4}, {tick: 1920, num: 4, den: 4}], keysigs: []}; declaredTs = [4, 4];`);
+  assert.equal(val(`checkMeterVsFile().state`), "partial-match", "the file changes meter mid-song; his one declared meter matches only part of it");
+  run(`song.source = null; declaredTs = null;`);
+});
+
+test("checkKeyVsFile: one case per state, plus a tonic-only partial (mode?) compares tonic only", () => {
+  installSong();
+  run(`song.tracks = [{name: "t", notes: []}]; songEndTick = 1920;`);
+  run(`song.source = null; rollnotes = []; keyRegions = [];`);
+  assert.equal(val(`checkKeyVsFile().state`), "nofile", "no source at all");
+  run(`song.source = {timesigs: [], keysigs: []};`);
+  assert.equal(val(`checkKeyVsFile().state`), "nofile", "source present, but no 0x59 in the file");
+  run(`song.source = {timesigs: [], keysigs: [{tick: 0, sf: 2, minor: false}]};`); // the file's own label: D major
+  run(`rollnotes = []; keyRegions = [];`);
+  assert.equal(val(`checkKeyVsFile().state`), "noanswer", "the file has a key; he hasn't declared one");
+  run(`keyRegions = [{start: 0, end: null, name: "D", sf: 2, b1: 1, b2: null}];`);
+  let r = val(`checkKeyVsFile()`);
+  assert.equal(r.state, "match");
+  assert.equal(r.file.name, "D");
+  run(`keyRegions = [{start: 0, end: null, name: "Gm", sf: -2, b1: 1, b2: null}];`);
+  assert.equal(val(`checkKeyVsFile().state`), "differs");
+  run(`keyRegions = [{start: 3840, end: null, name: "D", sf: 2, b1: 3, b2: null}];`);
+  assert.equal(val(`checkKeyVsFile().state`), "partial-match", "his declared key only covers part of the song (starts at bar 3)");
+  run(`keyRegions = []; rollnotes = [{start: 0, keypartial: "D"}];`); // "mode?" — tonic stored, not applied
+  r = val(`checkKeyVsFile()`);
+  assert.equal(r.state, "match");
+  assert.equal(r.tonicOnly, true, "a tonic-only partial compares tonic only");
+  run(`rollnotes = [{start: 0, keypartial: "F"}];`);
+  r = val(`checkKeyVsFile()`);
+  assert.equal(r.state, "differs");
+  assert.equal(r.tonicOnly, true);
+  run(`song.source = null; rollnotes = []; keyRegions = []; songEndTick = 0;`);
+});
+
+test("Check vs file — Learning: the status text is EXACTLY the generic line (no file value, no estimate, ever); estimateKey is never called by either button", () => {
+  const a = createApp({storage: {"ff1roll-mode": "learning"}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            source: {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]},
+            tracks: [{name: "t", notes: []}]};
+    songKey = "midi/test.mid"; songEndTick = 1920; declaredTs = null; rollnotes = []; keyRegions = [];
+    globalThis.__estCalls = 0;
+    const __orig = estimateKey;
+    estimateKey = function() { globalThis.__estCalls++; return __orig(); };
+  `);
+  a.run(`runKeyCheck()`);
+  assert.equal(a.run(`document.getElementById("notelistStatus").textContent`),
+    "Set your key first — this compares your answer with the file's own label.");
+  a.run(`runMeterCheck()`);
+  assert.equal(a.run(`document.getElementById("notelistStatus").textContent`),
+    "Set your meter first — this compares your answer with the file's own label.");
+  assert.equal(a.run(`globalThis.__estCalls`), 0, "Learning must never run estimateKey");
+  // the match/differs branches too — still no leak
+  a.run(`declaredTs = [3, 4]; keyRegions = [{start: 0, end: null, name: "D", sf: 2, b1: 1, b2: null}];`);
+  a.run(`runKeyCheck();`);
+  const keyText = a.run(`document.getElementById("notelistStatus").textContent`);
+  assert.equal(keyText, "Your key matches the file's own label.");
+  a.run(`runMeterCheck();`);
+  const meterText = a.run(`document.getElementById("notelistStatus").textContent`);
+  assert.equal(meterText, "Your meter matches the file's own label.");
+  assert.equal(a.run(`globalThis.__estCalls`), 0, "still zero — Learning never runs the estimate, match or not");
+});
+
+test("Check vs file — Normal: the text states the file's own value (+ the note-census estimate, for key); \"Use the file's\" writes only when tapped", () => {
+  const a = createApp({storage: {"ff1roll-mode": "normal"}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            source: {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]},
+            tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 62, v: 80}, {t: 480, d: 480, p: 66, v: 80}, {t: 960, d: 480, p: 69, v: 80}]}]};
+    songKey = "midi/test.mid"; songEndTick = 1920; declaredTs = null; rollnotes = []; keyRegions = []; playCursor = 0;
+    estimateKey = () => ({sf: -1, name: "F", conf: 0.42}); // stubbed: this test is about the WIRING, not the K-S math
+  `);
+  const keyText = a.run(`runKeyCheck(); document.getElementById("notelistStatus").textContent`);
+  assert.match(keyText, /The file says: D\./, keyText);
+  assert.match(keyText, /Estimate from the notes: F \(confidence 0\.42\)\./, keyText);
+  const meterText = a.run(`runMeterCheck(); document.getElementById("notelistStatus").textContent`);
+  assert.match(meterText, /The file says: 3\/4\./, meterText);
+  assert.equal(a.run(`rollnotes.length`), 0, "no annotation written just from Check vs file");
+  a.run(`useFileKey()`);
+  assert.equal(a.run(`rollnotes.some(n => n.text === "key: D")`), true, "Use the file's key writes it, one tap");
+  a.run(`useFileMeter()`); // meter: prefills the editor only — Save still runs the existing re-bar warning
+  assert.equal(a.run(`document.getElementById("ntsnum").value`), "3");
+  assert.equal(a.run(`document.getElementById("ntsden").value`), "4");
+  assert.equal(a.run(`declaredTs`), null, "opening the prefilled editor alone writes nothing — only Save does");
+});
+
+test("Check vs file: the button appears the same on a sourced song and on a plain capture (no source) — every song's KEY and METER group headers carry it", () => {
+  for (const hasSource of [true, false]) {
+    const a = createApp({storage: {"ff1roll-mode": "normal"}});
+    a.run(`
+      song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+              ${hasSource ? "source: {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]}," : ""}
+              tracks: [{name: "t", notes: []}]};
+      songKey = "midi/test.mid"; songEndTick = 1920; rollnotes = []; keyRegions = []; declaredTs = null;
+      renderNoteList();
+    `);
+    const found = JSON.parse(a.run(`JSON.stringify((() => {
+      const rows = document.getElementById("notelistrows");
+      const out = {};
+      for (const box of rows.children) {
+        if (box.dataset && (box.dataset.type === "KEY" || box.dataset.type === "METER")) {
+          const head = box.children.find(c => c.className === "ghead");
+          out[box.dataset.type] = !!(head && head.children.some(b => b.textContent === "Check vs file"));
+        }
+      }
+      return out;
+    })())`));
+    assert.equal(found.KEY, true, "KEY header has Check vs file (source=" + hasSource + ")");
+    assert.equal(found.METER, true, "METER header has Check vs file (source=" + hasSource + ")");
+  }
 });
 
 test("document title names the song first: '<Song> · Night Roll', bare app otherwise", () => {
@@ -1866,7 +2104,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
-    "an estimated key is named as an estimate",
+    "an estimated key is named as an estimate", "Check vs file",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -2321,6 +2559,7 @@ test("notesTxtFor: text dump matches the pipeline format", () => {
   run(`
     songKey = "albums/compositions/nightroll/dump-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song.timesig = [4, 4];
+    declaredTs = [4, 4]; // notesTxtFor's header states HIS declared meter, never the file's own raw field (declared-vs-learner-spec.md C8)
     song.tempos = [{tick: 0, usq: 500000}];
     song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 240, p: 64, v: 80}]}];
   `);
@@ -2328,7 +2567,7 @@ test("notesTxtFor: text dump matches the pipeline format", () => {
   assert.ok(txt.startsWith("# dump-test.mid — 4/4, 120bpm, 1 bars"), txt.split("\n")[0]);
   assert.ok(txt.includes("## track 1 (pulse1)"));
   assert.ok(txt.includes("bar 1: 1 C4 1, 2 E4 0.5"));
-  run(`songKey = null;`);
+  run(`songKey = null; declaredTs = null;`);
 });
 
 test("renameTrack: directives migrate (dupes included), name collisions refused", () => {
@@ -3306,8 +3545,10 @@ test("Ask tools: SSE tool_calls accumulate per index; add_annotation writes thro
   assert.ok(n2.some(n => n.text === "plain prose" && n.q1 === 2.5));
   assert.throws(() => run(`askAddAnnotation({kind: "chord", text: "", bar: 1, beat: 1})`), /empty text/);
   // read helpers
+  // no key passed: nothing declared for this probe doc — the header says so,
+  // never the doc's own raw timesig field (declared-vs-learner-spec.md C8)
   const txt = val(`notesTxtForDoc({ppq: 480, timesig: [4, 4], tempos: [{usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}, {t: 1920, d: 240, p: 64, v: 100}]}]}, "Probe", 2, 2)`);
-  assert.match(txt, /^# Probe — 4\/4, 120bpm, 2 bars \(bars 2–2 shown\)/);
+  assert.match(txt, /^# Probe — 4\/4\? \(not declared\), 120bpm, 2 bars \(bars 2–2 shown\)/);
   assert.match(txt, /bar 2: 1 E4 0\.5/); assert.ok(!txt.includes("bar 1:"));
   run(`CATALOG["Probe Album"] = [["Ambush", "albums/x/ambush.mid"]];`);
   assert.equal(val(`askSongPath("ambush")`), "albums/x/ambush.mid");
@@ -3879,9 +4120,14 @@ test("Publish all: isCompositionKey mirrors isComposition for a closed song; not
   assert.equal(val(`isCompositionKey("albums/compositions/stranger.mid")`), false);
   assert.equal(val(`isCompositionKey("albums/nes/final-fantasy-i/songs/airship.mid")`), false);
   run(`localStorage.removeItem("ff1roll-draft-albums/compositions/other.mid");`);
+  // this song isn't open, so the header states HIS declared meter for that
+  // key (the ff1roll-ts-<key> stash — see declaredTsForKey), never the
+  // passed document's own raw timesig field (declared-vs-learner-spec.md C8)
+  run(`localStorage.setItem("ff1roll-ts-albums/x/waltz.mid", "3/4");`);
   const txt = val(`notesTxtFor({ppq: 480, timesig: [3, 4], tempos: [{usq: 600000}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 67, v: 100}]}]}, "albums/x/waltz.mid")`);
   assert.match(txt, /^# waltz\.mid — 3\/4, 100bpm, 1 bars/);
   assert.match(txt, /## track 1 \(lead\)\nbar 1: 1 G4 1/);
+  run(`localStorage.removeItem("ff1roll-ts-albums/x/waltz.mid");`);
   assert.equal(val(`askLogPath("albums/x/waltz.mid")`), "albums/x/waltz.ask.md");
 });
 
@@ -5742,34 +5988,6 @@ test("P1 lasso chord: Normal auto-names the chord in the selection strip and hid
   const normal = mk("normal");
   assert.equal(normal.run(`document.getElementById("chordbtn").style.display`), "none", "Normal: nothing to reveal — it's already named");
   assert.match(normal.run(`document.getElementById("noteinfo").textContent`), /→\s*C\b/, "Normal: the strip names the chord itself");
-});
-
-test("P2 MIDI import: Normal writes timesig:/key: annotations at bar 1 from the file's meta; Learning writes neither (tempo isn't gated — it's the playback tempo map, not a discovery)", () => {
-  const parsedWaltz = {ppq: 480, timesig: [3, 4], keysig: {sf: 2, minor: false}, // D major
-                        tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []};
-  const learn = createApp({storage: {"ff1roll-mode": "learning"}});
-  learn.run(`localMidiOpen(${JSON.stringify(parsedWaltz)}, "waltz.mid")`);
-  assert.equal(learn.run(`localStorage.getItem("ff1roll-notes-local/waltz.mid")`), null,
-    "Learning: an imported file's own meter/key are neither applied nor shown");
-
-  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
-  normal.run(`localMidiOpen(${JSON.stringify(parsedWaltz)}, "waltz.mid")`);
-  const seeded = JSON.parse(normal.run(`localStorage.getItem("ff1roll-notes-local/waltz.mid")`));
-  assert.ok(seeded.some(n => n.text === "timesig: 3/4"), "Normal: the file's own meter lands as a declared annotation");
-  const keyNote = seeded.find(n => /^key:/.test(n.text));
-  assert.ok(keyNote, "Normal: the file's own key lands as a declared annotation");
-  assert.equal(keyNote.text, "key: D");
-  assert.equal(keyNote.keydir, 2);
-
-  // a minor-key file spells through the relative-minor math (keysig.minor: true)
-  const parsedMinor = {ppq: 480, timesig: [4, 4], keysig: {sf: -2, minor: true}, // Bb signature, minor -> G minor
-                        tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []};
-  const normal2 = createApp({storage: {"ff1roll-mode": "normal"}});
-  normal2.run(`localMidiOpen(${JSON.stringify(parsedMinor)}, "elegy.mid")`);
-  const seeded2 = JSON.parse(normal2.run(`localStorage.getItem("ff1roll-notes-local/elegy.mid")`));
-  const keyNote2 = seeded2.find(n => /^key:/.test(n.text));
-  assert.equal(keyNote2.text, "key: Gm");
-  assert.equal(keyNote2.keydir, -2);
 });
 
 test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", () => {

@@ -4028,21 +4028,25 @@ already existed) and hides Chord?; the ⧉ copy text carries the name too.
 Learning is unchanged — Chord? stays, so naming it is still the user's
 discovery.
 
-**P2 — meter/key labels + imports.** Nothing new needed for "no `?` on a
-declared meter" — writing a real `timesig:`/`key:` annotation already
-clears the old default, in either mode. `localMidiOpen` and the batch
-`midcreate` importer both call `seedImportAnnotations(key, parsed)` before
-`draftWrite`: Normal only, it writes the file's own `parsed.timesig` and
-`parsed.keysig` ({sf, minor} from the MIDI meta) straight into this
-device's local-notes storage (`ff1roll-notes-<key>`, same shape
-`saveLocalNotes` uses) at bar 1 — BEFORE the draft is opened, so
-`loadNotes`'s normal local-notes merge picks it up with no race against
-the async song load. Learning applies neither (Josh's ruling via Ask,
-2026-09-29: "you have to determine the meter by reading the music;
-there's no way we should tell them this song is in 3/4 or 6/8" — METER and
-KEY stay unrevealed data; TEMPO was never gated here, since it's the
-actual playback tempo map, not a ruling about the music). `effTs()` still
-never reads `song.timesig` directly — only the annotation.
+**P2 — meter/key labels + imports (revised 2026-09-30).** An imported
+file's own labels are SOURCE DATA, kept apart from the learner's answers
+(docs/declared-vs-learner-spec.md). parseMidi(…, {foreign: true}) returns
+`source: {timesigs, keysigs}` — every 0x58/0x59 in file order (`timesig`
+is now the FIRST 0x58); the draft carries `source` through draftDoc,
+openDraftDoc, forkCurrentSong, commitImports, publishDraftSong, versions.
+writeMidi AND writeSongMidi write `source` verbatim (none if the file had
+none) plus a conductor Text meta `source:file`, ignoring song.timesig/
+keysig; without `source` (captures, songs made here) the bytes are as
+before. The learner's key:/timesig: annotations never reach the .mid.
+Nothing seeds annotations on import in either mode (the old Normal seed
+wrote without a tap — a rule break; removed). ☰ Notes → KEY / METER
+headers → **Check vs file** (checkKeyVsFile / checkMeterVsFile, on demand
+only, on every song so seeing it reveals nothing): match / differs
+("labels can be wrong") / partial-match / noanswer / nofile. Learning
+never shows the file's value or runs estimateKey; Normal adds "The file
+says: …", the estimate, and "Use the file's". notes.txt's header states
+HIS declared meter (declaredTsForKey), never the file's — "4/4? (not
+declared)" when he hasn't. `effTs()` still never reads `song.timesig`.
 
 **P3 — `estimateKey()` + `sfShownAt()`/`keyNameShownAt()`.** A duration-
 weighted pitch-class census of non-drum, non-audio-clip notes, correlated

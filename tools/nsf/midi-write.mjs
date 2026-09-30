@@ -162,10 +162,23 @@ function textMetaEvent(type, text) {
 export function writeSongMidi(song) {
   const metaEvs = [];
   for (const tp of song.tempos || []) metaEvs.push({t: tp.tick, o: 0, d: [0xFF, 0x51, 3, (tp.usq >> 16) & 255, (tp.usq >> 8) & 255, tp.usq & 255]});
-  const timesigs = song.timesigs && song.timesigs.length ? song.timesigs
-    : [{tick: 0, num: (song.timesig || [4, 4])[0], den: (song.timesig || [4, 4])[1]}];
-  for (const ts of timesigs) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 4, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
-  if (song.keysig) metaEvs.push({t: 0, o: 2, d: [0xFF, 0x59, 2, song.keysig.sf & 255, song.keysig.minor ? 1 : 0]});
+  // song.source (docs/declared-vs-learner-spec.md C4): a foreign file's OWN
+  // 0x58/0x59 history, kept verbatim at their original ticks — none if it had
+  // none — with a "source:file" marker so a re-parse of this output round-
+  // trips the distinction; song.timesig/song.keysig are ignored entirely in
+  // this branch. No source: byte-identical to before (every chip capture,
+  // every composition made here — nothing invented, Learning mode is the
+  // law). index.html's writeMidi is the hand-port of this same split.
+  if (song.source) {
+    for (const ts of song.source.timesigs || []) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 4, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
+    for (const ks of song.source.keysigs || []) metaEvs.push({t: ks.tick, o: 2, d: [0xFF, 0x59, 2, ks.sf & 255, ks.minor ? 1 : 0]});
+    metaEvs.push({t: 0, o: -1, d: textMetaEvent(0x01, "source:file")});
+  } else {
+    const timesigs = song.timesigs && song.timesigs.length ? song.timesigs
+      : [{tick: 0, num: (song.timesig || [4, 4])[0], den: (song.timesig || [4, 4])[1]}];
+    for (const ts of timesigs) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 4, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
+    if (song.keysig) metaEvs.push({t: 0, o: 2, d: [0xFF, 0x59, 2, song.keysig.sf & 255, song.keysig.minor ? 1 : 0]});
+  }
   metaEvs.sort((a, b) => a.t - b.t || a.o - b.o);
   const conductor = [];
   let lastT = 0;

@@ -247,6 +247,9 @@ Songs display in C until YOU set the key. First dropdown is the tonic pitch only
 **mode? (partial keys)**
 Know the tonic but not the mode yet? Choose "mode?" and Store writes "key: B♭?" — recorded, listed under KEY in ☰ Notes, but NOT applied: no signature, no respelling, until you return with the mode. The dropdown label always says which state the song is in.
 
+**Check vs file**
+In ☰ Notes, the KEY and METER groups each carry a **Check vs file** button — on every song, capture or composition alike, tapping it never reveals anything by itself. It compares what YOU declared against the label some MIDI files carry on their own (a game rip's own meta, an export from another program) and reports one of: your answer matches, the file's label says something else, it matches for only part of the song, you haven't set an answer yet to compare, or this file carries no label of its own — file labels can be wrong (many programs default to C major / 4/4), so a difference is a nudge to listen again, not a correction. In Normal mode it also states the file's own value plainly and — for key — the note-census estimate, plus a one-tap **Use the file's** button (key: adopts it as a declared key: immediately; meter: opens the meter editor pre-filled with it, same re-bar confirmation as any other meter change). Learning mode never shows the file's value or runs the estimate here — the check only ever says whether your own answer matches, never what the answer is.
+
 ## Files & Sync
 
 **Install on the iPad**

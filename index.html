@@ -1625,6 +1625,7 @@
     <dl>
       <dt>key: picker</dt><dd>Songs display in C until YOU set the key. First dropdown is the tonic pitch only; black keys offer three options — fused "A♯/B♭" (spelling undecided) or either asserted spelling. Second dropdown is the mode (major, minor, and the church modes). With both set, the signature previews live — the right key makes most accidentals vanish — and the button writes it ("Set Gm @ bar 1"). Set a different key mid-song for key changes; the score draws the new signature there.</dd>
       <dt>mode? (partial keys)</dt><dd>Know the tonic but not the mode yet? Choose "mode?" and Store writes "key: B♭?" — recorded, listed under KEY in ☰ Notes, but NOT applied: no signature, no respelling, until you return with the mode. The dropdown label always says which state the song is in.</dd>
+      <dt>Check vs file</dt><dd>In ☰ Notes, the KEY and METER groups each carry a <b>Check vs file</b> button — on every song, capture or composition alike, tapping it never reveals anything by itself. It compares what YOU declared against the label some MIDI files carry on their own (a game rip's own meta, an export from another program) and reports one of: your answer matches, the file's label says something else, it matches for only part of the song, you haven't set an answer yet to compare, or this file carries no label of its own — file labels can be wrong (many programs default to C major / 4/4), so a difference is a nudge to listen again, not a correction. In Normal mode it also states the file's own value plainly and — for key — the note-census estimate, plus a one-tap <b>Use the file's</b> button (key: adopts it as a declared key: immediately; meter: opens the meter editor pre-filled with it, same re-bar confirmation as any other meter change). Learning mode never shows the file's value or runs the estimate here — the check only ever says whether your own answer matches, never what the answer is.</dd>
     </dl>
 
 
@@ -2511,7 +2512,17 @@ function parseMidi(buf, opts = {}) {
   const tracks = [];
   const tempos = []; // {tick, usq}
   let timesig = [4, 4];
+  let timesigSeen = false; // docs/declared-vs-learner-spec.md C1: the SINGULAR timesig is the FIRST 0x58 now (was the last — a file that changes meter used to keep only its final one)
   let keysig = null; // {sf, minor}
+  // The file's own labels, kept verbatim regardless of what the app's
+  // annotations later say (docs/declared-vs-learner-spec.md, "declared vs
+  // learner"): every 0x58/0x59 in file order. `source` is built at the end,
+  // populated when the caller says this file is foreign (opts.foreign) OR
+  // the file already carries this app's own "source:file" marker (a round
+  // trip — see sawSourceMarker below) — never for a plain in-house capture.
+  const srcTimesigs = [];
+  const srcKeysigs = [];
+  let sawSourceMarker = false;
   // Track boundaries by MTrk magic scan — some files (ff1battle) have corrupt
   // track-length headers, so the declared length can't be trusted alone.
   const magics = [];
@@ -2536,10 +2547,22 @@ function parseMidi(buf, opts = {}) {
           const mlen = varlen();
           const data = d.subarray(j, j+mlen); j += mlen;
           if (mtype === 0x03 && !name) name = decodeMetaText(data);
-          else if (mtype === 0x01) { const m = /^sounding:(-?\d+)$/.exec(decodeMetaText(data)); if (m) offset = +m[1]; }
+          else if (mtype === 0x01) {
+            const text = decodeMetaText(data);
+            const m = /^sounding:(-?\d+)$/.exec(text);
+            if (m) offset = +m[1];
+            else if (text === "source:file") sawSourceMarker = true; // writeMidi/writeSongMidi's own round-trip marker (conductor track, tick 0)
+          }
           else if (mtype === 0x51) tempos.push({tick: t, usq: data[0]<<16 | data[1]<<8 | data[2]});
-          else if (mtype === 0x58) timesig = [data[0], 1 << data[1]];
-          else if (mtype === 0x59 && keysig === null) keysig = {sf: data[0] > 127 ? data[0] - 256 : data[0], minor: !!data[1]};
+          else if (mtype === 0x58) {
+            srcTimesigs.push({tick: t, num: data[0], den: 1 << data[1]});
+            if (!timesigSeen) { timesig = [data[0], 1 << data[1]]; timesigSeen = true; } // FIRST 0x58 wins now, not last
+          }
+          else if (mtype === 0x59) {
+            const ks = {tick: t, sf: data[0] > 127 ? data[0] - 256 : data[0], minor: !!data[1]};
+            srcKeysigs.push(ks);
+            if (keysig === null) keysig = {sf: ks.sf, minor: ks.minor};
+          }
           else if (mtype === 0x2F) break; // end of track — anything after is junk (corrupt files)
         } else if (b === 0xF0 || b === 0xF7) {
           j++; const mlen = varlen(); j += mlen;
@@ -2593,7 +2616,12 @@ function parseMidi(buf, opts = {}) {
     if (k > 0) sec += (tempos[k].tick - tempos[k-1].tick) / ppq * tempos[k-1].usq / 1e6;
     tempos[k].sec = sec;
   }
-  return {ppq, tracks, tempos, timesig, keysig};
+  // source: the file's own 0x58/0x59 history, kept only when this parse is
+  // known-foreign (an import) or the file round-trips our own marker — never
+  // for a plain capture, so writeMidi/writeSongMidi stay byte-identical for
+  // everything already in the catalog (docs/declared-vs-learner-spec.md C1).
+  const source = (opts.foreign || sawSourceMarker) ? {timesigs: srcTimesigs, keysigs: srcKeysigs} : null;
+  return {ppq, tracks, tempos, timesig, keysig, source};
 }
 let playRate = 1; // practice-tempo multiplier (chosen bpm / native); 1 = native
 function tickToSec(song, tick) {
@@ -10836,6 +10864,133 @@ function estimateKey() {
   _keyEstCache = {songKey, sig, result};
   return result;
 }
+// ---- checkKeyVsFile / checkMeterVsFile (docs/declared-vs-learner-spec.md
+// C6) — pure. HIS declared answer only (never the estimate, never run in
+// Learning: CLAUDE.md, "Learning mode is the law") against the file's OWN
+// label (song.source — see parseMidi). states: match | differs |
+// partial-match | noanswer | nofile. A tonic-only partial (keypartial)
+// compares tonic pitch class only, never mode (item C6). No source, or a
+// source with an empty list (no 0x58/0x59 in the file) is "nofile" — a game
+// capture and a song made here always land here, since they carry no source
+// at all.
+function fileKeyAt(tick) { // the file's own declared key at a tick, or null
+  if (!song || !song.source || !song.source.keysigs || !song.source.keysigs.length) return null;
+  let cur = song.source.keysigs[0];
+  for (const k of song.source.keysigs) { if (k.tick <= tick) cur = k; else break; }
+  const pcMajor = ((7 * cur.sf) % 12 + 12) % 12;
+  const pc = cur.minor ? (((pcMajor - 3) % 12) + 12) % 12 : pcMajor;
+  const full = keyNameFor(pc, cur.minor ? "minor" : "major");
+  return {pc, minor: cur.minor, sf: full ? full.sf : cur.sf, name: full ? full.name : null};
+}
+function fileMeterAt(tick) { // the file's own declared meter at a tick, or null
+  if (!song || !song.source || !song.source.timesigs || !song.source.timesigs.length) return null;
+  let cur = song.source.timesigs[0];
+  for (const ts of song.source.timesigs) { if (ts.tick <= tick) cur = ts; else break; }
+  return {num: cur.num, den: cur.den};
+}
+function tonicPcFromName(name) { // reverses tonicLabel()/partialNameOf()'s stored string back to a pitch class
+  for (let pc = 0; pc < 12; pc++) if (TONIC_SPELL[pc].join("/") === name || TONIC_SPELL[pc].includes(name)) return pc;
+  return null;
+}
+function checkKeyVsFile() {
+  if (!song || !song.source || !song.source.keysigs || !song.source.keysigs.length) return {state: "nofile"};
+  const partial = rollnotes.find(n => n.keypartial);
+  if (!keyRegions.length) {
+    if (!partial) return {state: "noanswer", file: fileKeyAt(0)}; // Normal still states the file's value here — see runKeyCheck
+    const fk = fileKeyAt(partial.start);
+    const pc = tonicPcFromName(partial.keypartial);
+    const match = fk && pc !== null && fk.pc === pc;
+    return {state: match ? "match" : "differs", tonicOnly: true, file: fk};
+  }
+  const bt = barTicks(), end = Math.max(bt, songEndTick);
+  const sorted = [...keyRegions].sort((a, b) => a.start - b.start);
+  let matched = 0;
+  for (const r of sorted) { const fk = fileKeyAt(r.start); if (fk && fk.name === r.name) matched++; }
+  // coverage: does a declared key actually govern the WHOLE song, with no
+  // gap? An open region (no end) governs until the next one starts (or the
+  // song's end, if it's the last); a ranged one must reach that same point.
+  const coversAll = sorted[0].start <= 0 && sorted.every((r, i) => {
+    const nextStart = i + 1 < sorted.length ? sorted[i + 1].start : end;
+    return r.end === null || r.end >= nextStart;
+  });
+  const file = fileKeyAt(sorted[0].start);
+  if (matched === sorted.length && coversAll) return {state: "match", file};
+  if (matched === 0) return {state: "differs", file};
+  return {state: "partial-match", file};
+}
+function checkMeterVsFile() {
+  if (!song || !song.source || !song.source.timesigs || !song.source.timesigs.length) return {state: "nofile"};
+  const list = song.source.timesigs;
+  const file = {num: list[0].num, den: list[0].den};
+  if (!declaredTs) return {state: "noanswer", file}; // Normal still states the file's value here — see runMeterCheck
+  const same = ts => ts.num === declaredTs[0] && ts.den === declaredTs[1];
+  if (list.every(same)) return {state: "match", file};
+  if (list.some(same)) return {state: "partial-match", file};
+  return {state: "differs", file};
+}
+// ---- ☰ Notes' "Check vs file" button (C7) — the KEY and METER group
+// headers, on EVERY song. Learning: fileCheckLine's text NEVER contains the
+// file's value or runs estimateKey (spy-tested); Normal states the file's
+// value plainly (+ the note-census estimate, for key) and offers a one-tap
+// "Use the file's" action.
+function fileCheckLine(r, kind) { // same wording for key and meter (spec: "meter: same lines")
+  const noun = kind === "key" ? "key" : "meter";
+  if (r.state === "nofile") return "This song's file carries no " + noun + " label of its own — nothing to compare (game captures and songs made here never do).";
+  if (r.state === "noanswer") return "Set your " + noun + " first — this compares your answer with the file's own label.";
+  if (r.state === "match") return r.tonicOnly
+    ? "Your tonic matches the file's label; add the mode to check the whole key."
+    : "Your " + noun + " matches the file's own label.";
+  if (r.state === "partial-match") return "Matches the file's label for part of the song — labels can be wrong.";
+  return "The file's label says something else — labels can be wrong (many programs write C major / 4/4 by default). Listen again, or keep yours.";
+}
+function runKeyCheck() {
+  const r = checkKeyVsFile();
+  let text = fileCheckLine(r, "key");
+  if (appMode() === "normal" && r.file) {
+    text += " The file says: " + r.file.name + ".";
+    const est = estimateKey();
+    if (est) text += " Estimate from the notes: " + est.name + " (confidence " + (Math.round(est.conf * 100) / 100) + ").";
+  }
+  const status = document.getElementById("notelistStatus");
+  if (status) status.textContent = text;
+  return r;
+}
+function runMeterCheck() {
+  const r = checkMeterVsFile();
+  let text = fileCheckLine(r, "meter");
+  if (appMode() === "normal" && r.file) text += " The file says: " + r.file.num + "/" + r.file.den + ".";
+  const status = document.getElementById("notelistStatus");
+  if (status) status.textContent = text;
+  return r;
+}
+// Normal-only, one tap — same "declared, not just previewed" pattern as
+// #keysetest (which promotes the ESTIMATE); this promotes the FILE's key.
+function useFileKey() {
+  if (!song || !songKey) return;
+  const r = checkKeyVsFile();
+  if (!r.file || !r.file.name) return;
+  const bar = Math.floor(playCursor / barTicks()) + 1;
+  dropLocalKeyAt(bar);
+  const fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + r.file.name, keydir: r.file.sf, added: true};
+  rollnotes.push(resolveNote(fresh));
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  lastSubtitle = undefined;
+  updateSubtitle();
+  draw();
+  setInfo("key set to " + r.file.name + " at bar " + bar + " (from the file's label — unsynced — Sync to commit)");
+}
+// Normal-only: prefills the meter editor and stops — Save still runs the
+// existing two-tap re-bar warning (a meter change re-anchors every
+// annotation), so nothing is written just from this tap.
+function useFileMeter() {
+  const r = checkMeterVsFile();
+  if (!r.file) return;
+  openEditor(null, "timesig");
+  document.getElementById("ntsnum").value = String(r.file.num);
+  document.getElementById("ntsden").value = String(r.file.den);
+}
 function keyNameShownAt(tick) { // keyNameAt (declared), else the Normal estimate's name, else null
   const d = keyNameAt(tick);
   if (d !== null) return d;
@@ -11787,7 +11942,10 @@ function renderNoteList() {
       if (g.match(remaining[i])) { mine.push(remaining[i]); remaining.splice(i--, 1); }
     }
     counts.set(g, mine.length);
-    if (!mine.length && g.type !== "note") continue; // hide empty groups; Text notes always shows (its + adds one)
+    // hide empty groups; Text notes always shows (its + adds one), and KEY/
+    // METER always show too — Check vs file works on every song, even one
+    // with no key/meter declared yet (docs/declared-vs-learner-spec.md C7)
+    if (!mine.length && g.type !== "note" && g.title !== "KEY" && g.title !== "METER") continue;
     const box = document.createElement("div");
     box.className = "notegroup";
     box.dataset.type = g.title; // the jump bar scrolls to this
@@ -11822,6 +11980,39 @@ function renderNoteList() {
         draw();
       });
       head.appendChild(chk);
+    }
+    if (g.title === "KEY" || g.title === "METER") {
+      // Check vs file (docs/declared-vs-learner-spec.md C7): on EVERY song —
+      // seeing the button reveals nothing by itself, so it's never gated by
+      // mode or by whether this song even carries a source. Learning never
+      // shows the file's value or runs estimateKey (CLAUDE.md); Normal adds
+      // the file's own value (+ the estimate, for key) and a one-tap "use
+      // the file's" action.
+      const chk = document.createElement("button");
+      chk.className = "gadd";
+      chk.style.width = "auto";
+      chk.style.padding = "0 8px";
+      chk.textContent = "Check vs file";
+      const useBtn = document.createElement("button");
+      useBtn.className = "gadd";
+      useBtn.style.width = "auto";
+      useBtn.style.padding = "0 8px";
+      useBtn.style.display = "none";
+      chk.addEventListener("click", e => {
+        e.stopPropagation();
+        const r = g.title === "KEY" ? runKeyCheck() : runMeterCheck();
+        if (appMode() === "normal" && r.file) {
+          useBtn.textContent = g.title === "KEY" ? "Use the file's (" + r.file.name + ")" : "Use the file's (" + r.file.num + "/" + r.file.den + ")";
+          useBtn.style.display = "";
+        } else useBtn.style.display = "none";
+      });
+      useBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        if (g.title === "KEY") useFileKey(); else useFileMeter();
+        useBtn.style.display = "none";
+      });
+      head.appendChild(chk);
+      head.appendChild(useBtn);
     }
     head.appendChild(add);
     const grows = document.createElement("div");
@@ -12397,7 +12588,7 @@ async function openPickedFiles(loaded) { // [{name, bytes}] from the picker, a d
     } else if (streamed.length && streamed.length === rest.length) {
       setInfo("this is streamed audio, not note data — Night Roll reads sequence data (notes), not pre-rendered streams");
     } else {
-      pendingMidis = loaded.map(x => ({name: x.name, parsed: parseMidi(x.bytes.buffer)})); // sniffed: MThd found anywhere
+      pendingMidis = loaded.map(x => ({name: x.name, parsed: parseMidi(x.bytes.buffer, {trust: true, foreign: true})})); // sniffed: MThd found anywhere; foreign: carries its own source (declared-vs-learner-spec.md C2)
       document.getElementById("miditle").textContent =
         "IMPORT " + loaded.length + " MIDI FILE" + (loaded.length === 1 ? "" : "S");
       document.getElementById("midlocal").style.display = loaded.length === 1 ? "" : "none";
@@ -12425,7 +12616,7 @@ async function nativeOpenUrl(url) {
   stop();
   closeFileMenus();
   try {
-    if (!chipKindOf(bytes, name) && !audioMagic(bytes) && !streamedAudioMagic(bytes) && !/\.m3u8?$/i.test(name)) localMidiOpen(parseMidi(bytes.buffer), name);
+    if (!chipKindOf(bytes, name) && !audioMagic(bytes) && !streamedAudioMagic(bytes) && !/\.m3u8?$/i.test(name)) localMidiOpen(parseMidi(bytes.buffer, {trust: true, foreign: true}), name);
     else await openPickedFiles([{name, bytes}]);
   } catch (err) { setInfo("could not import " + name + ": " + err.message); return false; }
   if (/\/Inbox\//.test(url)) fs.deleteFile({path: url}).catch(() => {});
@@ -12621,10 +12812,11 @@ document.getElementById("midcreate").addEventListener("click", () => {
     const base = slugify(name.replace(/\.(midi?|smf|kar|rmi)$/i, ""));
     const key = "albums/" + slug + "/" + base + ".mid"; // MIDI files: a folder of the user's own, editable, published like any song
     if (!firstKey) firstKey = key;
-    seedImportAnnotations(key, parsed);
     draftWrite(key, {
       savedStamp: 0, dirty: true, title: name.replace(/\.(midi?|smf|kar|rmi)$/i, ""),
-      ppq: parsed.ppq, timesig: parsed.timesig || [4, 4], tempos: parsed.tempos,
+      ppq: parsed.ppq, timesig: parsed.timesig || [4, 4],
+      ...(parsed.source ? {source: parsed.source} : {}), // the file's OWN meter/key history, kept apart from what he later declares (docs/declared-vs-learner-spec.md)
+      tempos: parsed.tempos,
       tracks: parsed.tracks.map(tr => ({name: tr.name,
         ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
         ...(tr.offset ? {offset: tr.offset} : {}),
@@ -12644,40 +12836,20 @@ document.getElementById("midcreate").addEventListener("click", () => {
   setInfo(count + " song" + (count === 1 ? "" : "s") + " in album \"" + alb +
           "\" — Open → LOCAL to audition/rename, ⇪ Publish sends it to the songs repo.");
 });
-// P2: a MIDI file's own meter/key meta, applied at import — Normal only.
-// Josh's ruling (via Ask, 2026-09-29): "you have to determine the meter by
-// reading the music; there's no way we should tell them this song is in 3/4
-// or 6/8." So in Learning neither is applied or shown (the usual "4/4?" /
-// "not set" defaults; the file's own values are simply never read into an
-// annotation). Tempo is NOT gated here — it was never a "discovery": it's
-// the actual playback tempo map (draftWrite above always stores it), not a
-// ruling about the music's meter or key. Writes straight to this device's
-// local-notes storage (the same shape saveLocalNotes uses) BEFORE the draft
-// is opened, so loadNotes picks the seed up on its normal local-notes merge
-// pass — no race with the async song load (see saveLocalNotes/loadNotes).
-function seedImportAnnotations(key, parsed) {
-  if (appMode() !== "normal") return;
-  const notes = [];
-  if (parsed.timesig) {
-    const [num, den] = parsed.timesig;
-    notes.push({b1: 1, q1: 1, b2: null, q2: null, text: "timesig: " + num + "/" + den});
-  }
-  if (parsed.keysig) {
-    const pcMajor = ((7 * parsed.keysig.sf) % 12 + 12) % 12;
-    const pc = parsed.keysig.minor ? (((pcMajor - 3) % 12) + 12) % 12 : pcMajor;
-    const full = keyNameFor(pc, parsed.keysig.minor ? "minor" : "major");
-    if (full) notes.push({b1: 1, q1: 1, b2: null, q2: null, text: "key: " + full.name, keydir: full.sf});
-  }
-  if (notes.length) { try { localStorage.setItem("ff1roll-notes-" + key, JSON.stringify(notes)); } catch (e) {} }
-}
+// The Normal auto-seed that used to write the file's own meter/key straight
+// into a real annotation at import (P2, 2026-09-29) is GONE
+// (docs/declared-vs-learner-spec.md C5, superseding that ruling): the file's
+// own labels now live apart, in source (see parseMidi/checkKeyVsFile/
+// checkMeterVsFile), never written as his answer just because Normal mode is
+// on. An import writes NO ff1roll-notes-* in either mode.
 function localMidiOpen(parsed, name) {
   // a local MIDI becomes a device-local draft (Josh's report 2026-08-15:
   // switching songs used to lose it with no way back) — reopen from
   // Open → drafts; ✕ there to let it go; never synced to the repo
   const key = "local/" + slugify(name.replace(/\.(midi?|smf|kar|rmi)$/i, "")) + ".mid";
-  seedImportAnnotations(key, parsed);
   draftWrite(key, {
     savedStamp: 0, dirty: true, title: name, ppq: parsed.ppq, timesig: parsed.timesig || [4, 4],
+    ...(parsed.source ? {source: parsed.source} : {}), // the file's OWN meter/key history, kept apart from what he later declares (docs/declared-vs-learner-spec.md)
     tempos: parsed.tempos,
     tracks: parsed.tracks.map(tr => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // CC10 in the dropped file — survives to the republished copy
@@ -14306,6 +14478,7 @@ if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprint
 function draftDoc(clean) { // the song as this device stores it (the working copy, or a Save checkpoint)
   const d = {savedStamp: song.savedStamp || 0,
     ppq: song.ppq, timesig: song.timesig || effTs(), tempos: song.baseTempos || song.tempos,
+    ...(song.source ? {source: song.source} : {}), // the file's OWN meter/key history rides along with every save (docs/declared-vs-learner-spec.md)
     tracks: draftTracks(song.tracks)};
   const sig = musicSig(d);
   if (clean) song.pubSig = sig; // clean = this IS the published music (a copy just made, or just published)
@@ -14420,6 +14593,7 @@ async function openDraft(key) {
 function openDraftDoc(d, key) {
   stop(); // a looping chip buffer would otherwise play the OLD song under the new roll
   const parsed = {ppq: d.ppq, timesig: d.timesig,
+    ...(d.source ? {source: d.source} : {}), // the file's OWN meter/key history (docs/declared-vs-learner-spec.md) — carried through so Check vs file still works after a reopen
     tempos: d.tempos.map(t => ({...t})),
     tracks: d.tracks.map(tr => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // so previewing a draft sounds the way the publish will
@@ -14459,13 +14633,25 @@ function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key) + one 
 
   const metaEvs = [];
   for (const tp of s.tempos || []) metaEvs.push({t: tp.tick, o: 0, d: [0xFF, 0x51, 0x03, ...u32(tp.usq).slice(1)]});
-  const timesigs = s.timesigs && s.timesigs.length ? s.timesigs
-    : [{tick: 0, num: (s.timesig || [4, 4])[0], den: (s.timesig || [4, 4])[1]}];
-  for (const ts of timesigs) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 0x04, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
-  // key signature: ONLY when the song already declared one (parseMidi read it
-  // back from a file that already had it, e.g. via tools/fix_keysigs.py) —
-  // never invented here. Learning mode is the law: keys are Josh's discoveries.
-  if (s.keysig) metaEvs.push({t: 0, o: 2, d: [0xFF, 0x59, 0x02, s.keysig.sf & 255, s.keysig.minor ? 1 : 0]});
+  // s.source (docs/declared-vs-learner-spec.md C4): a foreign file's OWN
+  // 0x58/0x59 history, kept verbatim at their original ticks — none if it had
+  // none — with a "source:file" marker so a re-parse of this output round-
+  // trips the distinction; s.timesig/s.keysig are ignored entirely in this
+  // branch. No source: byte-identical to before (every capture, every
+  // composition made here — nothing invented, Learning mode is the law).
+  if (s.source) {
+    for (const ts of s.source.timesigs || []) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 0x04, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
+    for (const ks of s.source.keysigs || []) metaEvs.push({t: ks.tick, o: 2, d: [0xFF, 0x59, 0x02, ks.sf & 255, ks.minor ? 1 : 0]});
+    metaEvs.push({t: 0, o: -1, d: textMeta(0x01, "source:file")});
+  } else {
+    const timesigs = s.timesigs && s.timesigs.length ? s.timesigs
+      : [{tick: 0, num: (s.timesig || [4, 4])[0], den: (s.timesig || [4, 4])[1]}];
+    for (const ts of timesigs) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 0x04, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
+    // key signature: ONLY when the song already declared one (parseMidi read it
+    // back from a file that already had it, e.g. via tools/fix_keysigs.py) —
+    // never invented here. Learning mode is the law: keys are Josh's discoveries.
+    if (s.keysig) metaEvs.push({t: 0, o: 2, d: [0xFF, 0x59, 0x02, s.keysig.sf & 255, s.keysig.minor ? 1 : 0]});
+  }
   metaEvs.sort((a, b) => a.t - b.t || a.o - b.o);
   const t0 = [];
   let lastT = 0;
@@ -14538,6 +14724,7 @@ function forkCurrentSong(name, folder) { // Save As: a copy in the folder you ch
   const notesText = serializeRollnotes(); // inherit — ruled 2026-08-14
   const origin = songKey || "local file";
   const parsed = {ppq: song.ppq, timesig: song.timesig || effTs(),
+    ...(song.source ? {source: song.source} : {}), // Save As keeps the file's OWN meter/key history too (docs/declared-vs-learner-spec.md)
     tempos: song.tempos.map(t => ({...t})),
     tracks: song.tracks.map((tr, ti) => ({name: tr.name,
       ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // a capture's own CC10 — Save As shouldn't silently strip it
@@ -16461,7 +16648,7 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
       const base = key.split("/").pop().replace(/\.mid$/, "");
       titles[key] = impDisplayTitle(d, base);
       songFiles.push({path: key,
-        b64: midiBase64(writeMidi({ppq: d.ppq, timesig: d.timesig, tempos: d.tempos, tracks: d.tracks}))});
+        b64: midiBase64(writeMidi({ppq: d.ppq, timesig: d.timesig, ...(d.source ? {source: d.source} : {}), tempos: d.tempos, tracks: d.tracks}))});
       let local = [];
       try { local = LINK_SONGS ? [] : JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { /* none */ }
       if (local.length) {
@@ -16596,18 +16783,41 @@ document.getElementById("fileimpcommit").addEventListener("click", e => {
     btn.textContent = publishLabel("import (" + n + ")");
   });
 });
+// HIS declared meter for a song that may not be the one open right now
+// (Publish all's other-song draft, the ✦ AI read_song tool) — NEVER the
+// file's own label (docs/declared-vs-learner-spec.md C8: that leaked into
+// notes.txt's header even in Learning). Preference: the "ff1roll-ts-<key>"
+// stash setSong() writes at load (see there), else a stored "timesig:"
+// annotation for that key; neither exists = undeclared, same as a fresh song.
+function declaredTsForKey(key) {
+  if (!key) return null;
+  const stash = localStorage.getItem("ff1roll-ts-" + key);
+  if (stash) { const m = /^(\d+)\/(\d+)$/.exec(stash); if (m) return [+m[1], +m[2]]; }
+  let local = null;
+  try { local = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "null"); } catch (err) { local = null; }
+  if (Array.isArray(local)) {
+    const tsNote = local.find(n => /^timesig:\s*\d+\s*\/\s*\d+/.test(n.text || ""));
+    if (tsNote) { const m = /^timesig:\s*(\d+)\s*\/\s*(\d+)/.exec(tsNote.text); if (m) return [+m[1], +m[2]]; }
+  }
+  return null;
+}
 function notesTxtFor(doc, key) { // defaults to the open song; Publish all passes another song's draft // the web-session dump: claude.ai reads text, not .mid binaries
   doc = doc || song; key = key || songKey;
   const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   const pn = p => NAMES[p % 12] + (Math.floor(p / 12) - 1);
-  const ts = doc.timesig || [4, 4];
+  // the meter HE declared, never doc.timesig (the file's own raw label) —
+  // the live variable for the song that's actually open, else the best
+  // record this device has for a different one (see declaredTsForKey)
+  const declared = (song && key === songKey) ? declaredTs : declaredTsForKey(key);
+  const ts = declared || [4, 4];
+  const tsLabel = declared ? declared[0] + "/" + declared[1] : "4/4? (not declared)";
   const bt = ts[0] * 4 / ts[1] * doc.ppq;
   let end = 0;
   doc.tracks.forEach(t => t.notes.forEach(n => { if (!n.gone) end = Math.max(end, n.t + n.d); }));
   const nBars = Math.ceil(end / bt - 0.05);
   const fmt = x => x.toFixed(2).replace(/\.?0+$/, "");
   const L = [];
-  L.push("# " + (key || "song").split("/").pop() + " — " + ts[0] + "/" + ts[1] + ", " +
+  L.push("# " + (key || "song").split("/").pop() + " — " + tsLabel + ", " +
          Math.round(6e7 / doc.tempos[0].usq) + "bpm, " + nBars + " bars");
   L.push("# Format: bar N: beat pitch duration-in-quarter-notes");
   // gate-vs-notated: the 08-25 web session read 0.33 gates as triplets and
@@ -16676,7 +16886,7 @@ function isCompositionKey(key) { // isComposition() for a song that is not open 
 // come through buildRollnotesFor; the chat through askCommitLog(key).
 async function publishDraftSong(key, h) {
   const d = JSON.parse(localStorage.getItem(draftStoreKey(key)));
-  const doc = {ppq: d.ppq, timesig: d.timesig, tempos: d.tempos.map(t => ({...t})),
+  const doc = {ppq: d.ppq, timesig: d.timesig, ...(d.source ? {source: d.source} : {}), tempos: d.tempos.map(t => ({...t})),
                tracks: d.tracks.map(tr => ({name: tr.name,
                  ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
                  ...(tr.offset ? {offset: tr.offset} : {}),
@@ -18859,17 +19069,21 @@ function askAddAnnotation(a) { // the same text grammar the editor and the files
   if (typeof updateSyncBtn === "function") updateSyncBtn();
   return {ok: true, at: head, text: fresh.text, unsynced: true, note: "written on this device; Publish sends it with the song — the user can discard it in the Publish sheet"};
 }
-function notesTxtForDoc(doc, name, fromBar, toBar, maxChars) { // notesTxtFor's shape for ANOTHER song (no key stated, sharp spelling)
+function notesTxtForDoc(doc, name, fromBar, toBar, maxChars, key) { // notesTxtFor's shape for ANOTHER song (no key stated, sharp spelling)
   const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   const pn = p => NAMES[p % 12] + (Math.floor(p / 12) - 1);
-  const ts = doc.timesig || [4, 4];
+  // HIS declared meter, never doc.timesig (the file's own raw label) — see
+  // declaredTsForKey and notesTxtFor's matching fix (C8)
+  const declared = (song && key && key === songKey) ? declaredTs : declaredTsForKey(key);
+  const ts = declared || [4, 4];
+  const tsLabel = declared ? declared[0] + "/" + declared[1] : "4/4? (not declared)";
   const bt = ts[0] * 4 / ts[1] * doc.ppq;
   let end = 0;
   doc.tracks.forEach(t => t.notes.forEach(n => { if (!n.gone) end = Math.max(end, n.t + n.d); }));
   const nBars = Math.ceil(end / bt - 0.05);
   const b0 = Math.max(0, (fromBar || 1) - 1), b1 = Math.min(nBars, toBar || nBars);
   const fmt = x => x.toFixed(2).replace(/\.?0+$/, "");
-  const L = ["# " + name + " — " + ts[0] + "/" + ts[1] + ", " + Math.round(6e7 / doc.tempos[0].usq) + "bpm, " + nBars + " bars" + (b0 || b1 < nBars ? " (bars " + (b0 + 1) + "–" + b1 + " shown)" : ""),
+  const L = ["# " + name + " — " + tsLabel + ", " + Math.round(6e7 / doc.tempos[0].usq) + "bpm, " + nBars + " bars" + (b0 || b1 < nBars ? " (bars " + (b0 + 1) + "–" + b1 + " shown)" : ""),
              "# Format: bar N: beat pitch duration-in-quarter-notes; duration is GATE TIME, rhythm comes from onset spacing; sharp spelling, no key stated"];
   let size = L.join("\n").length, cut = null;
   doc.tracks.forEach((tr, ti) => {
@@ -18901,7 +19115,7 @@ async function askRunTool(name, a) {
     const res = await readData("songs", path);
     if (!res.ok) throw new Error("could not read " + path);
     const doc = parseMidi(await res.arrayBuffer());
-    return notesTxtForDoc(doc, songTitleOf(path), a.from_bar, a.to_bar, 6000);
+    return notesTxtForDoc(doc, songTitleOf(path), a.from_bar, a.to_bar, 6000, path);
   }
   if (name === "read_notes") {
     const path = askSongPath(a && a.path);

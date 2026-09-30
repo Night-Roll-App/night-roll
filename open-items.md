@@ -535,7 +535,7 @@ Debug log (Settings → Other) lines "song open: console source …" say
 which path ran. A song with no console source at all still plays synth
 without a warning. If it recurs, get the Debug-log lines from Josh.
 
-## NEXT (after P4): THE FILE'S OWN LABELS vs THE LEARNER'S ANSWERS (Josh, 2026-09-30 08:41)
+## PHASE 1 DONE 2026-09-30: THE FILE'S OWN LABELS vs THE LEARNER'S ANSWERS (Josh, 2026-09-30 08:41) — phase 2 (keep foreign metas verbatim) and the tempo ruling still open
 Spec: docs/declared-vs-learner-spec.md (advisor). Today: his answers never
 reach the .mid (good); but import DROPS the file's key label, keeps only
 the file's LAST meter, notes.txt leaks the file's meter in Learning, and
