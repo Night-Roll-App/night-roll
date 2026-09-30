@@ -83,7 +83,6 @@ function makeEl() {
     classList: makeClassList(),
     value: "",
     textContent: "",
-    innerHTML: "",
     placeholder: "",
     disabled: false,
     tabIndex: 0,
@@ -101,6 +100,16 @@ function makeEl() {
     cloneNode: () => makeEl(),
     getContext: () => ctx2dStub(),
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
+  });
+  // a real innerHTML assignment replaces the whole subtree — the Mixer (and
+  // anything else that queries .children after a re-render, e.g. `wrap.innerHTML
+  // = ""; tracks.forEach(t => wrap.appendChild(...))`) needs that reflected here
+  // too, not just the string kept for its own sake; a bare data property left
+  // .children stale across a second render
+  let _innerHTML = "";
+  Object.defineProperty(el, "innerHTML", {
+    get: () => _innerHTML,
+    set: (v) => { _innerHTML = v; el.children = []; },
   });
   el.click = () => el.dispatchEvent({ type: "click" });
   el.remove = () => { if (el._parent) { const i = el._parent.children.indexOf(el); if (i >= 0) el._parent.children.splice(i, 1); } };
@@ -132,6 +141,17 @@ function fakeAudio(clock) {
     createMediaStreamDestination() { return { stream: {} }; }
     decodeAudioData() { return Promise.resolve({ getChannelData: () => new Float32Array(1),
       duration: 0.01, length: 1, sampleRate: 44100 }); }
+    // the Mixer's per-track/master meters (ensureMixerMeters): silence in,
+    // silence out — getByteTimeDomainData fills the DC midpoint (128), same
+    // as a real analyser reading true silence, so mixerMeterRms() reads 0
+    createAnalyser() {
+      const n = node();
+      n.fftSize = 2048;
+      n.frequencyBinCount = 1024;
+      n.getByteTimeDomainData = (buf) => buf.fill(128);
+      n.getByteFrequencyData = (buf) => buf.fill(0);
+      return n;
+    }
   };
 }
 

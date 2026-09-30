@@ -102,6 +102,9 @@ Tap a chip to select its track. **M** mutes — the track goes silent and its no
 **S**
 Solo: hide everyone else instead.
 
+**🎚 Mixer window**
+Tap **View ▾ → 🎚 Mixer** (hardware key **X**, Logic's mixer key, outside a text field) for a DAW-style mixer: one strip per track, side by side, scrolling sideways inside its own window if there are more than fit — the page itself never scrolls sideways. Each strip is the color dot and name, **M / S / H** (same as the track chips), a vertical **volume fader** and a live **level meter** beside it, and a **pan** slider below — every change writes the same track: annotation as the voice & color menu's fader and pan, so it's one ⟲ step and it sticks. A **MASTER** strip at the end is the same 🔊 control the header has. **Drag a strip by its name** to reorder it — track order follows the .mid, so this changes playback/export order too (on your own songs only; a capture's order shows read-only); dragging is one ⟲ step that puts every track back exactly where it was, annotations (voice/color/mute/solo) stay with the track by name regardless of where it moves. The meters cost nothing while the Mixer is closed — they only start running once it's open.
+
 ## Explore
 
 **Tap a note**

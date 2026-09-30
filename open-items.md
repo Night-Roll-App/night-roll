@@ -873,7 +873,17 @@ Ranked, most annoying first (effort S/M/L):
     pre-existing, not touched here) for full parity between the two
     paths? Low stakes since the fallback only fires without
     OfflineAudioContext, essentially never in practice.
-11. No mixer view, no meters, no track reorder. M / S–M.
+11. DONE 2026-09-30 (implemented, NOT yet committed/pushed — Josh or the
+    terminal session should review and commit): Mixer window — a strip
+    per track (fader, pan, M/S/H, a live RMS meter) plus a master strip,
+    scrolling sideways inside its own dockable window (makeWindow,
+    View ▾ → 🎚 Mixer, hardware key X); drag a strip by its name to
+    reorder song.tracks itself (the .mid's own order — editable songs
+    only, one ⟲ step, name-keyed annotations ride along untouched).
+    Meters build nothing while closed. See NIGHT-ROLL.md "Mixer — a real
+    DAW mixer window". tests/night-roll.test.mjs: strips write track: as
+    one ⟲, reorder is one ⟲ and refuses on a non-editable song, meters
+    off-while-closed, View ▾/hardware key both toggle it.
 12. Fixed px fonts (iOS Text Size ignored), canvas has no VoiceOver;
     songs loop forever at the end. L / M / S.
 Already matches convention (don't touch): Space play/stop; ruler-drag

@@ -2042,6 +2042,104 @@ applied. Three layers, all optional per song:
 Test: "pan: the track: directive and the .mid's CC10 …" in
 tests/night-roll.test.mjs; the renderers' own tests cover the pair.
 
+## Mixer — a real DAW mixer window (open-items.md DAW CONVENTIONS REVIEW
+item 11, 2026-09-30)
+
+"a mixer with every channel side by side (fader, pan, M/S, a level meter)
+and drag-to-reorder tracks" (advisor round, 2026-09-29). `#mixersheet`
+(`renderMixer` in index.html) is a `makeWindow("mixersheet", {dockable:
+true})` window — Dock left/right/bottom like any of the six other migrated
+windows (Window manager, above); View ▾ → 🎚 Mixer or the hardware key
+<b>X</b> (Logic's mixer key, guarded the same way K/C/R already are — not
+while typing) call `toggleMixer()`. `#mixerstrips` holds one
+`.mixerstrip` per `song.tracks[ti]` plus a `.mixermaster` strip, laid out
+in a single row that scrolls HORIZONTALLY INSIDE the window (`overflow-x:
+auto` on `#mixerstrips`, not on `#shell`/the page) — the phone-width
+requirement from the DAW review.
+
+- **Nothing new to persist.** A strip's fader/pan write `tr.vol`/`tr.pan`
+  live on `input` (same 0–1.5 / −1…1 ranges as the voice & color menu's own
+  fader/pan) and `saveTrackDir(ti)` on `change` — the exact function the
+  voice menu and the track chips' M/S/H already call. `mixerStripEl(tr,
+  ti, canReorder)` builds the DOM once per `renderMixer()`, no separate
+  state shape; a fader/pan/M/S/H change re-renders the whole Mixer (cheap:
+  a handful of tracks) rather than patch just the one strip, the same
+  tradeoff `renderTrackbar()` already makes.
+- **Meters.** An `AnalyserNode` per track, tapped AFTER `trackGains[ti]`
+  (`trackGains[ti].connect(an)` — a second destination; `connect()`
+  doesn't remove the node's existing route to its panner/master, so
+  tapping never changes what you hear) plus one on `master`. Built lazily,
+  ONLY while `#mixersheet` has `.on` (`ensureMixerMeters`, idempotent —
+  safe to call from the meter loop itself, a track added mid-session, or
+  `ensureAudio()` finally firing on the first tap after the Mixer was
+  already open) and torn down the instant it closes
+  (`teardownMixerMeters`, hooked into `SHEET_TOP`'s existing closing
+  branch — the same choke point that already stops a live 🎤 dictation, so
+  ✕/backdrop/Esc/re-docking all tear the meters down, not just
+  `closeMixer()`). `ensureMixerMeters` also calls `trackGain(ti)` itself
+  (idempotent) so every strip gets a meter the moment the Mixer opens, not
+  only the tracks that have already played. RMS at ~30fps
+  (`mixerMeterLoop`, a `requestAnimationFrame` loop throttled by
+  timestamp delta, not a `setInterval`) sets each `.mixermeterfill`'s CSS
+  height. `mixerMeterRunning` (not "is the rAF id truthy") is the loop's
+  own on/off flag — a real `requestAnimationFrame` id can be validly 0,
+  and the vm harness's inert stub always returns 0, so id-as-boolean would
+  re-schedule a duplicate loop on every call.
+- **Track reorder — the .mid's own order.** `reorderTrack(from, to)`
+  drags a strip (by its name — future: a track chip too) to move
+  `song.tracks[from]` to index `to`, i.e. this changes playback/export
+  order, unlike mute/solo/color/pan/hide which live in the name-keyed
+  `track:` annotation and never depend on array position. Only on
+  `editableSong()` — a capture or a published-not-local song has no drag
+  handler on its strips at all, so the order shows read-only, per spec.
+  ONE ⟲ step: a full snapshot of every `ti`-indexed array a reorder
+  touches — `song.tracks`, `trackState`, `trackGains`, `trackPanners`,
+  `song.rawNotes` — shallow (`.slice()`; no note array is cloned, just the
+  per-track SLOTS) and reused as-is for undo/redo (`applyEditEntry`'s
+  `"trackReorder"` case just reassigns the four arrays from the stored
+  snapshot, rather than re-deriving the move), the same LIFO trick
+  `trackRemove`/`trackInsert` already lean on (`addTrackUndoable`'s own
+  comment): nothing OLDER on the undo stack is reachable until THIS entry
+  is undone first, so an older entry's own `ti`s are still valid once that
+  happens. `selTrack`/`selNote.ti`/`selClip.ti` are remapped (not just
+  cleared) so the selection follows its track across the move; `multiSel`
+  (transient lasso selection) is safely cleared, same as every other
+  track-structure change. `saveDraft()` runs directly inside both
+  `reorderTrack()` and the undo/redo branch (not left to `saveEdits()`,
+  whose own `saveDraft()` call is composition-only) — reorder is spec'd to
+  work on a local draft too (`isLocalDraft()`), and `saveDraft()` itself
+  already no-ops for anything that isn't a composition or a local draft.
+- **`ti`-indexed state found while building this, and how reorder handles
+  each:** `trackState`/`trackGains`/`trackPanners` — REWRITTEN in
+  lockstep (`moveInSameOrder`, a splice-move: remove at `from`, reinsert
+  at `to`; self-inverse via `moveInSameOrder(arr, to, from)`) and also
+  captured whole in the undo snapshot; `song.rawNotes` — same, when
+  present; `selTrack`/`selNote.ti`/`selClip.ti` — REMAPPED (not cleared)
+  via a small `ti => …` closure so the user's selection stays on the same
+  track; `multiSel`/`multiSelKey` — SAFELY CLEARED (lasso selection is
+  transient everywhere else in the app too); `editUndo`/`editRedo` older
+  entries — left alone (the LIFO argument above); `pendingEdit`, `selNote`
+  set mid-drag, `recTake` — none of these can be live during a Mixer
+  strip drag (no note-edit or recording gesture runs at the same time as
+  a pointer-drag on a Mixer strip's name), so they're untouched by design,
+  not by omission.
+- **Tests** (`tests/night-roll.test.mjs`, "Mixer …"): strips reflect
+  tracks (fader/pan/M/S/H write `track:` as one ⟲); reorder is one ⟲,
+  refuses on a non-editable song, and keeps voice/color with their track
+  by object identity (not swapped in place); meters build nothing while
+  closed and tear down on close; View ▾ and the hardware key X both
+  toggle it; a source-string check that `#mixerstrips` (not the sheet or
+  the page) carries `overflow-x: auto`. FEATURES keywords "Mixer window",
+  "Drag a strip by its name". The vm harness's `innerHTML = ""` now
+  clears `.children` too (a real assignment replaces the subtree) —
+  needed once Mixer tests re-render and re-query the same container
+  twice; one pre-existing instruments-sheet test that had worked around
+  the old stale-children behavior (its own comment named the bug) lost
+  that workaround since it's no longer needed. `createAnalyser()` was
+  added to both `tests/harness.mjs`'s and `tests/e2e/helpers.mjs`'s
+  fake `AudioContext` (silence in, silence out — `getByteTimeDomainData`
+  fills 128, the DC midpoint).
+
 ## PlayStation chip audio — the console's own samples (2026-09-27)
 
 Josh, FF7 Opening ~ Bombing Mission against the OST: "they just don't

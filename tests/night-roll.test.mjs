@@ -2168,6 +2168,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "an estimated key is named as an estimate", "Check vs file",
     "Snap while recording", "Quantize (Q)", "Also quantize note ends", "Recording keeps what you played",
     "A MIDI keyboard works on the iPad app too",
+    "Mixer window", "Drag a strip by its name",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -4803,13 +4804,11 @@ test("instruments: the sheet lists games with a library; a game's menu is All in
              {id: "d", nameGuess: "Unused thing", kind: "melodic", used: false, usedIn: [], keyRegions: []}]}));
          if (f.endsWith("h1.wav")) return __wav; throw new Error("unexpected " + f); };
        globalThis.__srcs = 0;`);
-  // the harness's innerHTML = "" keeps old children (a browser clears them) — each check reads only the
-  // rows appended SINCE it last checked, by count
-  let seen = 0;
-  const rowLabels = () => {
-    const all = val(`[...document.getElementById("instrows").children].map(r => (r.children[0] || r).textContent)`);
-    const fresh = all.slice(seen); seen = all.length; return fresh;
-  };
+  // renderInstSheet() does rows.innerHTML = "" before it repopulates (the
+  // harness's innerHTML setter clears .children too, matching a real
+  // browser), so each check sees only the CURRENT render's rows
+  const rowLabels = () =>
+    val(`[...document.getElementById("instrows").children].map(r => (r.children[0] || r).textContent)`);
   // no song open: no shortcut
   run(`songKey = null; instNav = {sys: null, game: null, sub: null};`);
   await run(`renderInstSheet()`);
@@ -5867,6 +5866,138 @@ test("undo covers track changes: a mute or a voice change is one ⟲ step", () =
   assert.equal(val(`trackState[0].muted`), true, "redo mutes again");
   run(`song.tracks[0].voice = "square"; voiceMenuTi = 0; saveVoices(); editUndoPop();`);
   assert.notEqual(val(`song.tracks[0].voice || "auto"`), "square", "⟲ takes the voice back");
+});
+
+test("Mixer window: a strip per track (color dot, name, M/S/H, fader, meter, pan) plus a MASTER strip; the fader and pan write the same track: annotation as one ⟲ step", () => {
+  installSong();
+  run(`
+    songKey = "local/mixer1.mid";
+    song.tracks = [{name: "bass", notes: [], vol: 1, pan: 0}, {name: "lead", notes: []}];
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}];
+    rollnotes = []; editUndo = []; editRedo = []; selTrack = 0; multiSel = []; multiSelKey = new Set();
+    renderMixer();
+  `);
+  assert.equal(val(`document.getElementById("mixerstrips").children.length`), 3, "2 tracks + MASTER");
+  assert.equal(val(`document.getElementById("mixerstrips").children[2].className`), "mixerstrip mixermaster");
+  assert.equal(val(`document.getElementById("mixerstrips").children[0].dataset.ti`), "0");
+  // the fader: live while dragging (input), persisted as track: on release (change) — same contract as the voice menu's own fader
+  run(`
+    const strip0 = document.getElementById("mixerstrips").children[0];
+    const fbox0 = strip0.children.find(c => c.className === "mixerfaderbox");
+    const fader0 = fbox0.children.find(c => c.className === "mixerfaderwrap").children[0];
+    fader0.value = "0.5";
+    fader0.dispatchEvent({type: "input"});
+  `);
+  assert.equal(val(`song.tracks[0].vol`), 0.5, "live while dragging");
+  assert.equal(val(`editUndo.length`), 0, "not yet persisted");
+  run(`
+    const strip0b = document.getElementById("mixerstrips").children[0];
+    const fader0b = strip0b.children.find(c => c.className === "mixerfaderbox").children.find(c => c.className === "mixerfaderwrap").children[0];
+    fader0b.dispatchEvent({type: "change"});
+  `);
+  assert.equal(val(`editUndo.length`), 1, "released: one ⟲ step");
+  assert.match(val(`rollnotes.find(n => n.trackdir && n.trackdir.name === "bass").text`), /vol=0\.5/);
+  // pan: strip 1 ("lead")
+  run(`
+    const strip1 = document.getElementById("mixerstrips").children[1];
+    const pan1 = strip1.children.find(c => c.className === "mixerpan");
+    pan1.value = "-1";
+    pan1.dispatchEvent({type: "input"});
+  `);
+  assert.equal(val(`song.tracks[1].pan`), -1, "live while dragging");
+  run(`
+    const strip1b = document.getElementById("mixerstrips").children[1];
+    strip1b.children.find(c => c.className === "mixerpan").dispatchEvent({type: "change"});
+  `);
+  assert.match(val(`rollnotes.find(n => n.trackdir && n.trackdir.name === "lead").text`), /pan=-1/);
+  // M/S/H reuse trackToggle exactly (the chip's own M/S/H) — click M on strip 0
+  run(`
+    const strip0c = document.getElementById("mixerstrips").children[0];
+    const btns0 = strip0c.children.find(c => c.className === "mixerbtns" || c.className.indexOf("mixerbtns") === 0);
+    btns0.children[0].dispatchEvent({type: "click"}); // M
+  `);
+  assert.equal(val(`trackState[0].muted`), true);
+});
+
+test("Mixer: track reorder (drag a strip) is one ⟲ step, reflects in .mid track order, and keeps every track's own name-keyed annotations with it — only on an editable song", () => {
+  installSong();
+  run(`
+    songKey = "albums/test/reorder-ro.mid"; // NOT editable (not local/, not a composition)
+    song.tracks = [{name: "a", notes: [], voice: "square"}, {name: "b", notes: [], voice: "triangle"}];
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}]; editUndo = [];
+  `);
+  assert.equal(val(`reorderTrack(0, 1)`), false, "refused: not editableSong()");
+  assert.deepEqual(val(`song.tracks.map(t => t.name)`), ["a", "b"], "order untouched");
+  run(`
+    songKey = "local/reorder.mid";
+    song.tracks = [{name: "a", notes: [], voice: "square", color: "#111111"},
+                   {name: "b", notes: [], voice: "triangle", color: "#222222"},
+                   {name: "c", notes: [], voice: "sine", color: "#333333"}];
+    trackState = [{muted: false, solo: false}, {muted: true, solo: false}, {muted: false, solo: true}];
+    trackGains = ["gA", "gB", "gC"]; trackPanners = ["pA", "pB", "pC"];
+    selTrack = 1; selNote = {ti: 2, ni: 0}; selClip = null;
+    editUndo = []; editRedo = []; multiSel = [{ti: 1, ni: 0}]; multiSelKey = new Set(["1_0"]);
+  `);
+  assert.equal(val(`reorderTrack(0, 2)`), true, "drag track 0 (a) to the end");
+  assert.deepEqual(val(`song.tracks.map(t => t.name)`), ["b", "c", "a"], "the .mid's own order changed");
+  // every track's own voice/color rode along WITH it (name-keyed, but also
+  // just because the same object moved — the point is nothing got swapped)
+  assert.deepEqual(val(`song.tracks.map(t => t.voice)`), ["triangle", "sine", "square"]);
+  assert.deepEqual(val(`song.tracks.map(t => t.color)`), ["#222222", "#333333", "#111111"]);
+  // ti-indexed parallel arrays moved in lockstep
+  assert.deepEqual(val(`trackState.map(s => s.muted)`), [true, false, false]);
+  assert.deepEqual(val(`trackGains`), ["gB", "gC", "gA"]);
+  assert.deepEqual(val(`trackPanners`), ["pB", "pC", "pA"]);
+  // selection follows its track: selTrack was 1 (b), now at 0; selNote was ti 2 (c), now at 1
+  assert.equal(val(`selTrack`), 0);
+  assert.equal(val(`selNote.ti`), 1);
+  // transient lasso selection: safely cleared, same as trackInsert/trackRemove already do
+  assert.equal(val(`multiSel.length`), 0);
+  // one ⟲ step restores the exact old order, including selection and the parallel arrays
+  assert.equal(val(`editUndo.length`), 1);
+  run(`editUndoPop();`);
+  assert.deepEqual(val(`song.tracks.map(t => t.name)`), ["a", "b", "c"], "⟲ restores the old order");
+  assert.equal(val(`selTrack`), 1);
+  assert.equal(val(`selNote.ti`), 2);
+  assert.deepEqual(val(`trackGains`), ["gA", "gB", "gC"]);
+  run(`editRedoPop();`);
+  assert.deepEqual(val(`song.tracks.map(t => t.name)`), ["b", "c", "a"], "⟳ redoes the move");
+});
+
+test("Mixer meters: no AnalyserNode exists while the Mixer is closed; opening builds one per track (tapped after trackGains[ti]) plus a master one, closing tears them all down", () => {
+  installSong();
+  run(`
+    songKey = "local/meters.mid";
+    song.tracks = [{name: "a", notes: []}]; trackState = [{muted: false, solo: false}];
+    rollnotes = []; ensureAudio();
+  `);
+  assert.equal(val(`mixerAnalysers.length`), 0, "nothing built yet");
+  assert.equal(val(`mixerMasterAnalyser`), null);
+  run(`mixerMeterLoop();`); // a stray rAF tick with the sheet closed must not build anything
+  assert.equal(val(`mixerAnalysers.filter(Boolean).length`), 0, "closed: meters never start");
+  assert.equal(val(`mixerMeterRunning`), false);
+  run(`openMixer();`);
+  assert.ok(val(`!!mixerAnalysers[0]`), "opened: a per-track analyser exists");
+  assert.ok(val(`!!mixerMasterAnalyser`), "and a master one");
+  assert.equal(val(`mixerMeterRunning`), true, "the meter loop is scheduled");
+  run(`closeMixer();`);
+  assert.equal(val(`mixerAnalysers.length`), 0, "closed: torn down");
+  assert.equal(val(`mixerMasterAnalyser`), null);
+  assert.equal(val(`mixerMeterRunning`), false, "the loop stopped rescheduling itself");
+});
+
+test("Mixer: View ▾ → 🎚 Mixer and the hardware key X both toggle it; phone width scrolls #mixerstrips, not the page", () => {
+  installSong();
+  run(`song.tracks = [{name: "a", notes: []}]; trackState = [{muted: false, solo: false}]; songKey = "local/vwmixer.mid";`);
+  run(`document.getElementById("mixersheet").classList.remove("on");`);
+  run(`document.getElementById("vwMixer").dispatchEvent({type: "click"});`);
+  assert.equal(val(`mixerIsOpen()`), true, "View ▾ → Mixer opens it");
+  run(`document.getElementById("vwMixer").dispatchEvent({type: "click"});`);
+  assert.equal(val(`mixerIsOpen()`), false, "tapping it again closes it");
+  app.docDispatch({type: "keydown", key: "x"});
+  assert.equal(val(`mixerIsOpen()`), true, "hardware key X opens it (Logic's mixer key)");
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /#mixerstrips \{[^}]*overflow-x: auto/, "the strips scroll sideways inside their own window");
 });
 
 test("tapping a note leaves the playhead alone by default; the old tap-to-move is a device pref", () => {

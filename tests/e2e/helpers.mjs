@@ -29,6 +29,13 @@ export async function openApp(page) {
       createBiquadFilter() { const n = node(); n.frequency = param(); n.Q = param(); n.detune = param(); return n; }
       createDynamicsCompressor() { const n = node(); n.threshold = param(); n.knee = param(); n.ratio = param(); n.attack = param(); n.release = param(); return n; }
       decodeAudioData(buf) { return Promise.resolve({ getChannelData: () => new Float32Array(1), duration: 0.01, length: 1, sampleRate: 44100 }); }
+      createAnalyser() { // the Mixer's meters (see tests/harness.mjs's own copy — kept in step)
+        const n = node();
+        n.fftSize = 2048; n.frequencyBinCount = 1024;
+        n.getByteTimeDomainData = (buf) => buf.fill(128);
+        n.getByteFrequencyData = (buf) => buf.fill(0);
+        return n;
+      }
     }
     window.AudioContext = FakeCtx;
     window.webkitAudioContext = FakeCtx;
