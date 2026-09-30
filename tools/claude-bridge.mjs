@@ -307,7 +307,18 @@ function songKeyOf(req, body) { // the app's x-nr-song, else the "song:" line of
 // "result" event); GET /v1/sessions/:key sums them for the app's per-tab
 // line. lastCompact holds the most recent compaction's exact before/after
 // (compact_boundary's own numbers, not our running sum).
-function sessionFor(key) { const all = readJSON(SESSIONS_FILE, {}); if (!all[key]) { all[key] = {id: crypto.randomUUID(), turns: 0, noteSeen: 0, started: Date.now(), tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0, costUsd: 0, lastCompact: null}; writeJSON(SESSIONS_FILE, all); } return all[key]; }
+function sessionFor(key) {
+  const all = readJSON(SESSIONS_FILE, {});
+  // a row with no id has nothing to --resume: every turn failed at once with
+  // "claude reported an error" (2026-09-30 — a Compact wrote its usage into a
+  // row a concurrent write had dropped). Start a fresh session, keep the rest.
+  if (!all[key] || !all[key].id) {
+    all[key] = {tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0, costUsd: 0, lastCompact: null, ...(all[key] || {}),
+                id: crypto.randomUUID(), turns: 0, noteSeen: (all[key] && all[key].noteSeen) || 0, started: Date.now()};
+    writeJSON(SESSIONS_FILE, all);
+  }
+  return all[key];
+}
 function sessionUpdate(key, patch) { const all = readJSON(SESSIONS_FILE, {}); all[key] = {...(all[key] || {}), ...patch, last: Date.now()}; writeJSON(SESSIONS_FILE, all); return all[key]; }
 function sessionUsageView(s) { // {turns, tokens, cost} — s may be undefined (never asked anything yet)
   if (!s) return {turns: 0, tokens: 0, cost: 0, lastCompact: null};
@@ -524,7 +535,7 @@ const server = http.createServer(async (req, res) => {
       const before = sessionUsageView(sess);
       try {
         const r = await runCompact(sess.id, b.model);
-        sessionUpdate(key, {turns: 1, tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0, costUsd: (sess.costUsd || 0) + r.cost, lastCompact: {at: Date.now(), preTokens: r.preTokens, postTokens: r.postTokens, cost: r.cost}});
+        sessionUpdate(key, {id: sess.id /* the compacted session — never lost to a concurrent rewrite */, turns: 1, tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0, costUsd: (sess.costUsd || 0) + r.cost, lastCompact: {at: Date.now(), preTokens: r.preTokens, postTokens: r.postTokens, cost: r.cost}});
         return json(res, 200, {ok: true, turnsBefore: before.turns, turnsAfter: 1, tokensBefore: r.preTokens != null ? r.preTokens : before.tokens, tokensAfter: r.postTokens, cost: r.cost});
       } catch (err) { return json(res, 500, {error: {message: String((err && err.message) || err).slice(0, 500)}}); }
     }
