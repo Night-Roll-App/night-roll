@@ -525,6 +525,14 @@ drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
 
+## RUNNING 2026-09-30: re-capturing every capture album through the shared MIDI writer
+So published songs get back the pan / duty / envelope data the old writer
+dropped (FORMATS AUDIT #1). One push per album, only existing .mid files
+replaced, annotations untouched (tmp/recapture-writer.sh). Skipped: FF1
+(pipeline-written, already carries duty; Josh's annotations), and albums
+whose rip isn't on this Mac: Chrono Trigger, FF4, FF5, Mega Man 2, TMNT 2,
+Final Fantasy Legend — re-download their rips to include them.
+
 ## AWAITS JOSH'S EAR: other apps' audio (2026-09-30)
 YouTube stopped the moment he switched to Night Roll: the page asked
 WebKit for a "playback" audio session (doesn't mix) when the audio engine
