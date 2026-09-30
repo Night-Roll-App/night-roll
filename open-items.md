@@ -506,6 +506,11 @@ whether the tool or the app owns the order.
     buildScoreModel/clampView can clamp it; views independent.
 
 (The close guard below is moot since save model B: every edit is kept, nothing to lose on a song switch.)
+(Leftover-recording cleanup: PARKED on purpose 2026-09-30 — under save
+model B a Version can reference a recording, so deleting "orphaned" bytes
+on revert/delete would break going back to that version. Needs a
+reference count across versions first; only disk space is at stake.)
+(Copyright + license line in index.html's header: already there.)
 Queued, not now: the close guard ("SAVE CHANGES TO <song>?" on song
 switch); delete leftover recordings on song delete/revert; two timeline
 views at once.
