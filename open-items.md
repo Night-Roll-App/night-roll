@@ -48,6 +48,15 @@ archive-by-console move left open (see "ARCHIVE BY CONSOLE" below).
 NIGHT-ROLL.md "Reopening the menu drills back to the pick" /
 "Render races on the SAME popup".
 
+**Also this session — a track's voice menu could stay open on the WRONG
+track** (Josh's report, traced): tapping a different track's chip while
+its neighbor's voice menu was open didn't close it — the tap-away closer
+exempted every chip, not just the one the menu belonged to, and the chip
+click handler only closed anything on a SECOND tap of the already-selected
+track. Fixed both; covered by a real-browser e2e test (`tests/e2e/
+editor.spec.mjs`, CI-only) since the fix lives inside a `pointerdown`/
+`.closest()` chain the vm harness can't drive.
+
 **Needs eyes in a browser** (not done here, no local Playwright per
 CLAUDE.md): the File menu's new Import… button and the hub open/scrolled;
 the drop-target highlight; a real drag-and-drop pick; the new-song-from-a-
@@ -438,6 +447,34 @@ in in-app order, `node tools/build_manifest.mjs` would re-sort them —
 the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
+## QUEUE (2026-09-29, the order Josh approved)
+
+1. DONE: window manager phase B (drag-to-dock, tabs, Status not
+   dockable, near-full divider). Josh (via Ask, 20:52): "really happy
+   with the docking as it is" — NO more window-manager scope beyond
+   what's built.
+2. Renaming a song keeps its unpublished recording (`idbAudioMove` in
+   `renameLocalKeys`, beside `idbDraftMove`).
+3. Background playback skipping: schedule further ahead while
+   `document.hidden` (the pump's 0.6 s look-ahead). Own build; ear test
+   on a synth song.
+4. Publish window: every row gets Open / Publish (that song only, as a
+   job) / Revert (in-app confirm). Open no longer needs a draft.
+5. Album links (ACTIVE): the URL holds the album during album play;
+   opening it shows the album ready; one Play tap runs it.
+6. Camera button in the AI panel: send a screenshot of the app through
+   the bridge (Josh: "I wish there would be a way for me to send you
+   screenshots from the app itself").
+
+Queued, not now: the close guard ("SAVE CHANGES TO <song>?" on song
+switch); delete leftover recordings on song delete/revert; two timeline
+views at once.
+
+PARKED (Josh: "I wouldn't want to think about it right now"): locking
+published/imported songs' music. Two options on the table: (a) the
+notes are set in stone, only annotations edit; (b) editing makes a
+personal copy. He leaned toward locking both kinds.
+
 ## QUEUED IDEA (Josh, 2026-09-27 evening): a real windowing system
 
 "A full-on windowing system like you would find in IntelliJ or VS
@@ -511,8 +548,55 @@ headless screenshots at 1366x1024 (checklist in the subagent's report:
 each migrated window docked left/right/bottom, full vs inner, two windows
 split at the bottom, floating again, and a saved floating spot seeded in
 localStorage before load, since a fresh profile without one caused the
-last iPad regression) before this counts as shipped. Phase B (drag-to-
-edge docking, tabs) and two timeline views at once remain queued.
+last iPad regression) before this counts as shipped.
+PHASE B BUILT (2026-09-29, delegated to a subagent — token budget): drag-
+to-dock (grab a dockable window's title, drag it to an edge — a highlight
+shows the zone, full-height on the outer half of a side edge, beside-the-
+roll on the inner half, bottom along the bottom edge; release to dock,
+or in the middle to float; dragging a DOCKED window's title undocks it
+and continues the same drag) and tab groups (dropping a second window on
+an occupied side joins it as a tab — a small strip of chips above the
+docked window(s), one shown at a time; tapping a chip switches; closing a
+tab's window just drops its chip from the strip, same "close never
+undocks" rule every dock already had). `wm`'s side shape gained `ids`/
+`active` (was a single `id`) — migrated once more on load
+(`wmMigrateShapeB`). Also: `#infosheet` (Status) is no longer dockable
+(a one-shot status reveal isn't worth pinning open) — five windows
+dockable now, not six. Details, the zone/full-inner-split reasoning, and
+the two self-correcting fixups (an independently-reopened background tab
+wins over a stale active; a closed active promotes an open sibling):
+NIGHT-ROLL.md "Window manager" → "Phase B". Vm-tested (pure `wmZoneFor`,
+the tab-group state transitions, migration, plus every phase-A
+integration test updated to the new shape — `npm test` green, 194
+passing). NOT yet browser-verified — the main session still owes headless
+screenshots/pointer-drag checks at 1366x1024 (checklist in the
+subagent's report): a real pointer drag of the AI window's title to each
+edge docks it correctly; dragging a docked window out floats it under the
+finger; two windows dropped on one side make a tab group, switching
+works, and closing/reopening a tab behaves; the existing phase-A
+assertions (panel at its edge, roll never under a dock, footer's last
+chip visible) still hold. `tests/e2e/docking.spec.mjs` has the
+Playwright side of this (CI-only, not run locally). Two timeline views at
+once remains queued; a tab chip's own close ("x") button, and a visual
+cue for a background tab before it's reopened, are new small queued
+items (NIGHT-ROLL.md "Phase B").
+VERIFIED + SHIPPED (2026-09-29): headless pointer drags at 1366x1024 —
+left edge (full), pulled back to the middle (floats), right inner half,
+bottom, right outer; Notes dropped on the right joins as a tab (2 chips,
+AI + ALL NOTES). Fix during review: the strip listed only OPEN members,
+so switching tabs (which closes the other) hid it — it now lists every
+member, a chip tap opens its window, and ✕ on a grouped window removes
+it from the group (`wmCloseWindow`). Window-manager scope CLOSED by Josh.
+ALSO (Josh, iPad, same session): the divider's max size was a flat 60%/
+70% of the window — docked Right, Beside the roll, he hit it before the
+panel covered the song. Raised to `innerWidth`/`innerHeight` minus a 32px
+grab strip (never so little the divider itself is lost off-screen), left
+and bottom alike; double-tap a divider to reset it to the default size.
+Confirmed (a new vm test, not a fix needed) that the roll/score canvas
+already handles a sliver width/height without dividing by zero —
+`pxqFloor`/`rowHFloor` were already defensive. Needs the same headless
+check as above: drag the right divider nearly to the window's own edge
+and back, and double-tap it.
 
 ## QUEUED IDEA (Josh, 2026-09-27): folders above albums in Open
 
@@ -1654,6 +1738,17 @@ really that important." Do not start these unprompted.
   audio engine; the score view costs more. Cheap first probe on offer:
   a five-minute throwaway page to see whether the iPad shows a floating
   window at all. Details in the PICTURE-IN-PICTURE section below.
+- **Album links** (Josh, 2026-09-29, from the iPad): while an album plays,
+  the address bar should hold the ALBUM's link, so he can share it and
+  the recipient gets the whole album playing — "or maybe they have to
+  press play, but then it plays the whole album". Notes from the Ask
+  session: song links already exist (the address bar carries the song's
+  path with no extension, reflectSongURL); an album link would be the
+  album's path (or ?album=…) and open in album-run mode on the first
+  song with ▶ ready. iOS and Chrome refuse autoplay without a tap, so a
+  visible "Play album" tap is the honest behavior. Link-mode
+  (read-only songs from another repo) needs the same handling. Small to
+  medium.
 - **Themes** (the look is dark; other people may want another). Size
   from the Ask session: easy-to-medium. The whole look is nine CSS
   variables at the top of index.html and the canvas views read them

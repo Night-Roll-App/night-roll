@@ -166,7 +166,10 @@ export function createApp(opts = {}) {
   const documentEl = listenable({
     documentElement: makeEl(),
     getElementById(id) {
-      if (!elements.has(id)) elements.set(id, makeEl());
+      // .id matches a real DOM element's own id attribute — the window
+      // manager's Phase B tab groups read an element's `.id` back (to match
+      // it against wm[side].ids) the same way a real browser would
+      if (!elements.has(id)) { const el = makeEl(); el.id = id; elements.set(id, el); }
       return elements.get(id);
     },
     createElement: () => makeEl(),

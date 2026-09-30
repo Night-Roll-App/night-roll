@@ -1774,7 +1774,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll",
+    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
     "clear themselves a few seconds", "Publish dialog",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
@@ -3263,15 +3263,16 @@ test("Ask reply badge: a reply landing with the sheet closed lights ✦ reply an
   run(`asksheet.classList.remove("on"); askBadgeOff(); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/job-test.mid"); localStorage.removeItem("ff1roll-ask-albums/compositions/nightroll/other.mid"); songKey = null;`);
 });
 
-test("Window manager: pure helpers — wmClampSize, wmClampHeight, wmClampSplit, wmAllowed, wmMigrate, wmMigrateShape", () => {
+test("Window manager: pure helpers — wmClampSize, wmClampHeight, wmClampSplit, wmAllowed, wmMigrate, wmMigrateShape, wmMigrateShapeB", () => {
   assert.equal(val(`wmClampSize(200, 1000)`), 280, "floor");
-  assert.equal(val(`wmClampSize(1000, 1000)`), 600, "60% ceiling");
+  assert.equal(val(`wmClampSize(1000, 1000)`), 968, "ceiling: the window minus a 32px grab strip of the song's edge");
   assert.equal(val(`wmClampSize(400, 1000)`), 400, "within bounds, unchanged");
-  assert.equal(val(`wmClampSize(400, 0)`), 400, "a bogus innerWidth falls back to 1024 (60% = 614)");
+  assert.equal(val(`wmClampSize(400, 0)`), 400, "a bogus innerWidth falls back to 1024 (ceiling 992)");
+  assert.equal(val(`wmClampSize(1000, 300)`), 280, "a window narrower than floor+gap: the floor still wins (never below 280)");
   assert.equal(val(`wmClampHeight(100, 1000)`), 160, "floor");
-  assert.equal(val(`wmClampHeight(1000, 1000)`), 700, "70% ceiling");
+  assert.equal(val(`wmClampHeight(1000, 1000)`), 968, "ceiling: the window minus the 32px grab strip");
   assert.equal(val(`wmClampHeight(300, 1000)`), 300, "within bounds, unchanged");
-  assert.equal(val(`wmClampHeight(300, 0)`), 300, "a bogus innerHeight falls back to 768 (70% = 538)");
+  assert.equal(val(`wmClampHeight(300, 0)`), 300, "a bogus innerHeight falls back to 768 (ceiling 736)");
   assert.equal(val(`wmClampSplit(0.05)`), 0.2, "floor");
   assert.equal(val(`wmClampSplit(0.95)`), 0.8, "ceiling");
   assert.equal(val(`wmClampSplit(0.5)`), 0.5, "unchanged");
@@ -3285,37 +3286,84 @@ test("Window manager: pure helpers — wmClampSize, wmClampHeight, wmClampSplit,
   assert.deepEqual(val(`wmMigrateShape({right: {id: "asksheet", w: 420}})`), {right: {id: "asksheet", w: 420, mode: "full"}}, "the step-1/2 shape had no mode — it always meant full height");
   assert.deepEqual(val(`wmMigrateShape({left: {id: "x", w: 300, mode: "inner"}})`), {left: {id: "x", w: 300, mode: "inner"}}, "already phase-A shaped: unchanged");
   assert.deepEqual(val(`wmMigrateShape({bottom: {ids: ["x"], h: 240}})`), {bottom: {ids: ["x"], h: 240, split: 0.5}}, "backfills the default split");
+  // Phase B: a phase-A side ({id, w, mode}, one window) -> a phase-B tab group ({ids, active, w, mode})
+  assert.deepEqual(val(`wmMigrateShapeB(null)`), {});
+  assert.deepEqual(val(`wmMigrateShapeB({right: {id: "asksheet", w: 420, mode: "full"}})`), {right: {ids: ["asksheet"], active: "asksheet", w: 420, mode: "full"}});
+  assert.deepEqual(val(`wmMigrateShapeB({left: {ids: ["a", "b"], active: "b", w: 300, mode: "inner"}})`), {left: {ids: ["a", "b"], active: "b", w: 300, mode: "inner"}}, "already phase-B shaped: unchanged");
+  assert.deepEqual(val(`wmMigrateShapeB({bottom: {ids: ["a", "b"], h: 240, split: 0.5}})`), {bottom: {ids: ["a", "b"], h: 240, split: 0.5}}, "the bottom dock never had a single-id shape — untouched");
 });
 
-test("Window manager: pure state transitions — wmSetSide/wmClearSide/wmSetSideMode, wmDockBottom/wmClearBottom/wmSetBottomHeight/wmSetBottomSplit, wmWhereIs", () => {
-  let s = val(`wmSetSide({}, "left", "notelistsheet", 300, "full", 1000)`);
-  assert.deepEqual(s, {left: {id: "notelistsheet", w: 300, mode: "full"}});
-  s = val(`wmSetSide({}, "left", "notelistsheet", 300, "inner", 1000)`);
+test("Window manager: pure state transitions — wmSetSide/wmClearSide/wmSetSideMode/wmSetSideWidth, wmAddSideTab/wmRemoveSideTab/wmSetActiveSideTab (tab groups), wmDockBottom/wmClearBottom/wmSetBottomHeight/wmSetBottomSplit, wmWhereIs", () => {
+  let s = val(`wmSetSide({}, "left", ["notelistsheet"], "notelistsheet", 300, "full", 1000)`);
+  assert.deepEqual(s, {left: {ids: ["notelistsheet"], active: "notelistsheet", w: 300, mode: "full"}});
+  s = val(`wmSetSide({}, "left", ["notelistsheet"], "notelistsheet", 300, "inner", 1000)`);
   assert.equal(s.left.mode, "inner");
-  s = val(`wmSetSide({}, "left", "notelistsheet", 300, "bogus", 1000)`);
+  s = val(`wmSetSide({}, "left", ["notelistsheet"], "notelistsheet", 300, "bogus", 1000)`);
   assert.equal(s.left.mode, "full", "an unrecognized mode falls back to full");
-  assert.deepEqual(val(`wmClearSide({left: {id: "x", w: 300, mode: "full"}, right: {id: "y", w: 300, mode: "full"}}, "left")`), {right: {id: "y", w: 300, mode: "full"}});
-  assert.deepEqual(val(`wmSetSideMode({right: {id: "x", w: 300, mode: "full"}}, "right", "inner")`), {right: {id: "x", w: 300, mode: "inner"}});
+  assert.deepEqual(val(`wmClearSide({left: {ids: ["x"], active: "x", w: 300, mode: "full"}, right: {ids: ["y"], active: "y", w: 300, mode: "full"}}, "left")`), {right: {ids: ["y"], active: "y", w: 300, mode: "full"}});
+  assert.deepEqual(val(`wmSetSideMode({right: {ids: ["x"], active: "x", w: 300, mode: "full"}}, "right", "inner")`), {right: {ids: ["x"], active: "x", w: 300, mode: "inner"}});
   assert.deepEqual(val(`wmSetSideMode({}, "right", "inner")`), {}, "nothing docked there: no-op");
+  assert.equal(val(`wmSetSideWidth({left: {ids: ["x"], active: "x", w: 300, mode: "full"}}, "left", 500, 1000)`).left.w, 500);
+  assert.deepEqual(val(`wmSetSideWidth({}, "left", 500, 1000)`), {}, "nothing docked there: no-op");
+
+  // a fresh group starts one-tab, beside the roll, at the default width
+  let g = val(`wmAddSideTab({}, "right", "asksheet", 1000)`);
+  assert.deepEqual(g.right, {ids: ["asksheet"], active: "asksheet", w: 380, mode: "inner"});
+  // dropping a SECOND window on the same side joins the group as the new active tab — width/mode carry over unchanged
+  g = val(`wmAddSideTab({right: {ids: ["asksheet"], active: "asksheet", w: 420, mode: "full"}}, "right", "instsheet", 1000)`);
+  assert.deepEqual(g.right, {ids: ["asksheet", "instsheet"], active: "instsheet", w: 420, mode: "full"});
+  // re-adding a member already in the group just brings it back to the front, no duplicate
+  g = val(`wmAddSideTab({right: {ids: ["asksheet", "instsheet"], active: "instsheet", w: 420, mode: "full"}}, "right", "asksheet", 1000)`);
+  assert.deepEqual(g.right.ids, ["asksheet", "instsheet"]);
+  assert.equal(g.right.active, "asksheet");
+
+  // leaving a group: the middle of three, the fallback active when it WAS on top, and the last one closes the side entirely
+  g = val(`wmRemoveSideTab({right: {ids: ["a", "b", "c"], active: "b", w: 300, mode: "full"}}, "right", "b")`);
+  assert.deepEqual(g.right, {ids: ["a", "c"], active: "a", w: 300, mode: "full"}, "the active tab left — a fallback is picked");
+  g = val(`wmRemoveSideTab({right: {ids: ["a", "b"], active: "a", w: 300, mode: "full"}}, "right", "b")`);
+  assert.equal(g.right.active, "a", "a background tab left — the active one is untouched");
+  assert.deepEqual(val(`wmRemoveSideTab({right: {ids: ["a"], active: "a", w: 300, mode: "full"}}, "right", "a")`), {}, "the last tab left: the side key is dropped entirely");
+  assert.deepEqual(val(`wmRemoveSideTab({}, "right", "a")`), {}, "nothing there: no-op");
+  assert.deepEqual(val(`wmRemoveSideTab({right: {ids: ["a"], active: "a", w: 300, mode: "full"}}, "right", "z")`).right.ids, ["a"], "not a member: no-op");
+
+  assert.equal(val(`wmSetActiveSideTab({right: {ids: ["a", "b"], active: "a", w: 300, mode: "full"}}, "right", "b")`).right.active, "b");
+  assert.deepEqual(val(`wmSetActiveSideTab({right: {ids: ["a", "b"], active: "a", w: 300, mode: "full"}}, "right", "z")`).right.active, "a", "not a member: no-op");
 
   let b = val(`wmDockBottom({}, "jobssheet", undefined, 1000)`);
   assert.deepEqual(b.bottom, {ids: ["jobssheet"], h: 240, split: 0.5}, "first window: default height and split");
   b = val(`wmDockBottom({bottom: {ids: ["jobssheet"], h: 300, split: 0.5}}, "infosheet", undefined, 1000)`);
   assert.deepEqual(b.bottom.ids, ["jobssheet", "infosheet"], "second window: the open second slot");
   b = val(`wmDockBottom({bottom: {ids: ["jobssheet", "infosheet"], h: 300, split: 0.5}}, "pubjobsheet", undefined, 1000)`);
-  assert.deepEqual(b.bottom.ids, ["jobssheet", "pubjobsheet"], "a third window bumps the second slot, keeps the first");
+  assert.deepEqual(b.bottom.ids, ["jobssheet", "pubjobsheet"], "a third window bumps the second slot, keeps the first — the bottom dock stays a split, never a tab group");
   b = val(`wmDockBottom({bottom: {ids: ["jobssheet"], h: 300, split: 0.5}}, "jobssheet", undefined, 1000)`);
   assert.deepEqual(b.bottom.ids, ["jobssheet"], "already there: no duplicate");
   assert.deepEqual(val(`wmClearBottom({bottom: {ids: ["a", "b"], h: 300, split: 0.5}}, "a")`).bottom.ids, ["b"]);
   assert.deepEqual(val(`wmClearBottom({bottom: {ids: ["a"], h: 300, split: 0.5}}, "a")`), {}, "empty result: the bottom key is dropped entirely");
-  assert.equal(val(`wmSetBottomHeight({bottom: {ids: ["a"], h: 240, split: 0.5}}, 1000, 1000)`).bottom.h, 700, "clamped");
+  assert.equal(val(`wmSetBottomHeight({bottom: {ids: ["a"], h: 240, split: 0.5}}, 1000, 1000)`).bottom.h, 968, "clamped to the window minus the 32px grab strip");
   assert.deepEqual(val(`wmSetBottomHeight({}, 500, 1000)`), {}, "nothing docked at the bottom: no-op");
   assert.equal(val(`wmSetBottomSplit({bottom: {ids: ["a", "b"], h: 240, split: 0.5}}, 0.05)`).bottom.split, 0.2, "clamped");
 
-  const wmState = {left: {id: "notelistsheet", w: 300, mode: "inner"}, bottom: {ids: ["jobssheet", "infosheet"], h: 240, split: 0.5}};
+  const wmState = {left: {ids: ["notelistsheet"], active: "notelistsheet", w: 300, mode: "inner"}, bottom: {ids: ["jobssheet", "infosheet"], h: 240, split: 0.5}};
   assert.deepEqual(val(`wmWhereIs(${JSON.stringify(wmState)}, "notelistsheet")`), {dock: "left", mode: "inner"});
   assert.deepEqual(val(`wmWhereIs(${JSON.stringify(wmState)}, "infosheet")`), {dock: "bottom"});
   assert.equal(val(`wmWhereIs(${JSON.stringify(wmState)}, "instsheet")`), null, "not docked anywhere");
+});
+
+test("Window manager: wmZoneFor (drag-to-dock) — which edge a pointer sits over, given the song region's rect, and the full/inner split preview within a side zone", () => {
+  const rect = {left: 0, top: 0, width: 1000, height: 800}; // 15% width = 150px, 15% height = 120px
+  assert.equal(val(`wmZoneFor(500, 400, ${JSON.stringify(rect)})`), null, "dead center: float");
+  assert.deepEqual(val(`wmZoneFor(10, 400, ${JSON.stringify(rect)})`), {side: "left", mode: "full"}, "near the screen edge: full height");
+  assert.deepEqual(val(`wmZoneFor(140, 400, ${JSON.stringify(rect)})`), {side: "left", mode: "inner"}, "just past the boundary, near the roll: beside the roll");
+  assert.deepEqual(val(`wmZoneFor(990, 400, ${JSON.stringify(rect)})`), {side: "right", mode: "full"});
+  assert.deepEqual(val(`wmZoneFor(860, 400, ${JSON.stringify(rect)})`), {side: "right", mode: "inner"});
+  assert.deepEqual(val(`wmZoneFor(500, 790, ${JSON.stringify(rect)})`), {side: "bottom"}, "near the bottom edge — no full/inner split there");
+  assert.deepEqual(val(`wmZoneFor(500, 10, ${JSON.stringify(rect)})`), null, "no top dock — the top edge is never a zone");
+  // a corner resolves to whichever edge the pointer is proportionally closer
+  // to: (5, 795) is 0.5% in from the left but 0.625% up from the bottom —
+  // the smaller fraction (left) wins
+  assert.deepEqual(val(`wmZoneFor(5, 795, ${JSON.stringify(rect)})`), {side: "left", mode: "full"});
+  assert.equal(val(`wmZoneFor(500, 400, null)`), null, "no rect: never a zone");
+  assert.equal(val(`wmZoneFor(500, 400, {left: 0, top: 0, width: 0, height: 0})`), null, "a zero-size rect: never a zone");
 });
 
 test("Window manager: docking right (full height) sets the pref, a docked class, reserves --dr-w on #shell (resize() runs, the same path a window resize takes), and floating restores it", () => {
@@ -3326,7 +3374,8 @@ test("Window manager: docking right (full height) sets the pref, a docked class,
   run(`wmDockSide("asksheet", "right")`);
   assert.equal(val(`wm.right.mode`), "inner", "a new dock starts beside the roll (header and footer keep the full width)");
   run(`wmFloat("asksheet"); wmDockSide("asksheet", "right", "full")`);
-  assert.equal(val(`wm.right.id`), "asksheet");
+  assert.deepEqual(val(`wm.right.ids`), ["asksheet"]);
+  assert.equal(val(`wm.right.active`), "asksheet");
   assert.equal(val(`wm.right.w`), 380, "first dock uses the default width");
   assert.equal(val(`wm.right.mode`), "full");
   assert.equal(val(`asksheet.classList.contains("docked")`), true);
@@ -3335,7 +3384,7 @@ test("Window manager: docking right (full height) sets the pref, a docked class,
   assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dri-w")`), "0px", "full mode: the inner track stays closed");
   assert.equal(val(`document.getElementById("shell").classList.contains("hasdock")`), true, "a FULL side dock narrows the footer");
   assert.equal(val(`document.getElementById("asksheet-h2")._wmDockBtn.textContent`), "Docked: Right");
-  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).right.id`), "asksheet", "persisted");
+  assert.deepEqual(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).right.ids`), ["asksheet"], "persisted");
   // resize() — the same function a real window resize calls — ran: canvas.width was recomputed, not left stale
   run(`canvas.width = -1; wmLayoutAll();`);
   assert.notEqual(val(`canvas.width`), -1, "resize() ran when docking, the same path window resize takes");
@@ -3352,7 +3401,7 @@ test("Window manager: docking right (full height) sets the pref, a docked class,
 test("Window manager: dock left, and beside-the-roll (inner) mode narrows only the roll band, not the footer", () => {
   run(`window.innerWidth = 1200; document.getElementById("notelistsheet").classList.add("on"); wm = {}; wmLayoutAll();`);
   run(`wmDockSide("notelistsheet", "left", "full")`);
-  assert.equal(val(`wm.left.id`), "notelistsheet");
+  assert.deepEqual(val(`wm.left.ids`), ["notelistsheet"]);
   assert.equal(val(`wm.left.mode`), "full");
   assert.equal(val(`document.getElementById("dockleft").classList.contains("occupied")`), true);
   assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dl-w")`), "380px");
@@ -3372,10 +3421,10 @@ test("Window manager: dock left, and beside-the-roll (inner) mode narrows only t
 test("Window manager: a window docks in at most one place — right then bottom clears the right slot; two windows split the bottom dock", () => {
   run(`window.innerWidth = 1200;
        document.getElementById("jobssheet").classList.add("on");
-       document.getElementById("infosheet").classList.add("on");
+       document.getElementById("pubjobsheet").classList.add("on");
        wm = {}; wmLayoutAll();`);
   run(`wmDockSide("jobssheet", "right")`);
-  assert.equal(val(`wm.right.id`), "jobssheet");
+  assert.deepEqual(val(`wm.right.ids`), ["jobssheet"]);
   run(`wmDockBottomWindow("jobssheet")`);
   assert.equal(val(`!!wm.right`), false, "docking it to the bottom undocked it from the right");
   assert.deepEqual(val(`wm.bottom.ids`), ["jobssheet"]);
@@ -3383,8 +3432,8 @@ test("Window manager: a window docks in at most one place — right then bottom 
   assert.equal(val(`document.getElementById("dockbottom1").classList.contains("shown")`), false);
   assert.equal(val(`document.getElementById("dockbottom").classList.contains("split")`), false, "one window: not split");
   assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--db-h")`), "240px");
-  run(`wmDockBottomWindow("infosheet")`); // the second slot
-  assert.deepEqual(val(`wm.bottom.ids`), ["jobssheet", "infosheet"]);
+  run(`wmDockBottomWindow("pubjobsheet")`); // the second slot
+  assert.deepEqual(val(`wm.bottom.ids`), ["jobssheet", "pubjobsheet"]);
   assert.equal(val(`document.getElementById("dockbottom1").classList.contains("shown")`), true);
   assert.equal(val(`document.getElementById("dockbottom").classList.contains("split")`), true);
   // closing one frees its space — its own slot collapses, not its sibling's
@@ -3392,7 +3441,7 @@ test("Window manager: a window docks in at most one place — right then bottom 
   assert.equal(val(`document.getElementById("dockbottom0").classList.contains("shown")`), false, "closed: its slot collapses");
   assert.equal(val(`document.getElementById("dockbottom1").classList.contains("shown")`), true, "the open one keeps its space");
   assert.equal(val(`document.getElementById("dockbottom").classList.contains("occupied")`), true, "still parked (closed, not floated) — the height divider stays reachable");
-  run(`document.getElementById("infosheet").classList.remove("on"); document.getElementById("jobssheet").classList.remove("on"); wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
+  run(`document.getElementById("pubjobsheet").classList.remove("on"); document.getElementById("jobssheet").classList.remove("on"); wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
 });
 
 test("Window manager: phone width refuses on every side — the Dock control hides and docking has no effect; a saved dock is kept but not applied until the window widens again", () => {
@@ -3402,7 +3451,7 @@ test("Window manager: phone width refuses on every side — the Dock control hid
   run(`wmDockSide("asksheet", "right")`);
   assert.equal(val(`!!wm.right`), false, "docking at phone width does nothing");
   assert.equal(val(`asksheet.classList.contains("docked")`), false);
-  run(`wm = {right: {id: "asksheet", w: 400, mode: "full"}}; wmLayoutAll();`); // a pref saved on a wide window, opened later on a narrow one
+  run(`wm = {right: {ids: ["asksheet"], active: "asksheet", w: 400, mode: "full"}}; wmLayoutAll();`); // a pref saved on a wide window, opened later on a narrow one
   assert.equal(val(`asksheet.classList.contains("docked")`), false, "the pref says docked but the window is too narrow");
   assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "0px", "no reservation at phone width");
   run(`window.innerWidth = 1200;`);
@@ -3412,24 +3461,33 @@ test("Window manager: phone width refuses on every side — the Dock control hid
   run(`asksheet.classList.remove("on"); wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
 });
 
-test("Window manager: the right dock's divider drags its width, clamped to [280, 60% of the window], and persists only on release", () => {
-  run(`window.innerWidth = 1000; wm = {right: {id: "asksheet", w: 360, mode: "full"}}; asksheet.classList.add("on"); wmLayoutAll();`);
+test("Window manager: the right dock's divider drags its width, clamped to [280, innerWidth - 32], double-taps reset to the default width, and persists only on release", () => {
+  run(`window.innerWidth = 1000; wm = {right: {ids: ["asksheet"], active: "asksheet", w: 360, mode: "full"}}; asksheet.classList.add("on"); wmLayoutAll();`);
   app.dispatch("wmdivider-right-full", {type: "pointerdown", clientX: 700, pointerId: 7, button: 0});
   app.docDispatch({type: "pointermove", clientX: 600, pointerId: 7}); // dragged left 100 — the dock widens by 100
   assert.equal(val(`wm.right.w`), 460);
   assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "460px");
-  app.docDispatch({type: "pointermove", clientX: 0, pointerId: 7}); // past the 60%-of-window ceiling (600px here)
-  assert.equal(val(`wm.right.w`), 600, "clamped to 60% of the window");
+  app.docDispatch({type: "pointermove", clientX: 0, pointerId: 7}); // dragged nearly the full window — clamped to innerWidth (1000) minus the 32px grab strip, not a flat 60%
+  assert.equal(val(`wm.right.w`), 968, "clamped to the window minus a 32px grab strip of the song's edge");
   app.docDispatch({type: "pointermove", clientX: 900, pointerId: 7}); // past the 280px floor
   assert.equal(val(`wm.right.w`), 280, "clamped to the 280px floor");
   assert.equal(val(`(() => { const p = JSON.parse(localStorage.getItem("ff1roll-wm") || "{}"); return !p.right || p.right.w !== 280; })()`), true, "not saved mid-drag");
   app.docDispatch({type: "pointerup", pointerId: 7});
   assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).right.w`), 280, "saved on release");
+  // double-tap the divider (two pointerdowns within 350ms, no drag in between) resets to the default width
+  app.tick(500); // clear the "recent tap" state the drag above left behind
+  app.dispatch("wmdivider-right-full", {type: "pointerdown", clientX: 900, pointerId: 11, button: 0});
+  app.docDispatch({type: "pointerup", pointerId: 11});
+  app.tick(100); // well within the 350ms double-tap window
+  app.dispatch("wmdivider-right-full", {type: "pointerdown", clientX: 900, pointerId: 12, button: 0});
+  assert.equal(val(`wm.right.w`), 380, "double-tap: back to the default width");
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).right.w`), 380, "saved immediately, no release needed");
+  app.docDispatch({type: "pointerup", pointerId: 12});
   run(`asksheet.classList.remove("on"); wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
 });
 
 test("Window manager: the left dock's divider widens on a rightward drag (the opposite sign from the right dock)", () => {
-  run(`window.innerWidth = 1000; wm = {left: {id: "notelistsheet", w: 360, mode: "full"}}; document.getElementById("notelistsheet").classList.add("on"); wmLayoutAll();`);
+  run(`window.innerWidth = 1000; wm = {left: {ids: ["notelistsheet"], active: "notelistsheet", w: 360, mode: "full"}}; document.getElementById("notelistsheet").classList.add("on"); wmLayoutAll();`);
   app.dispatch("wmdivider-left-full", {type: "pointerdown", clientX: 300, pointerId: 8, button: 0});
   app.docDispatch({type: "pointermove", clientX: 400, pointerId: 8}); // dragged right 100 — the LEFT dock widens by 100 (opposite of the right dock's divider)
   assert.equal(val(`wm.left.w`), 460);
@@ -3438,18 +3496,29 @@ test("Window manager: the left dock's divider widens on a rightward drag (the op
   run(`document.getElementById("notelistsheet").classList.remove("on"); wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
 });
 
-test("Window manager: the bottom dock's height and split dividers drag and clamp, and persist only on release", () => {
+test("Window manager: the bottom dock's height and split dividers drag and clamp, double-tap resets the height, and persist only on release", () => {
   run(`window.innerWidth = 1000; window.innerHeight = 1000;
-       wm = {bottom: {ids: ["jobssheet", "infosheet"], h: 240, split: 0.5}};
+       wm = {bottom: {ids: ["jobssheet", "pubjobsheet"], h: 240, split: 0.5}};
        document.getElementById("jobssheet").classList.add("on");
-       document.getElementById("infosheet").classList.add("on");
+       document.getElementById("pubjobsheet").classList.add("on");
        wmLayoutAll();`);
   app.dispatch("wmdivider-bottomh", {type: "pointerdown", clientY: 500, pointerId: 9, button: 0});
   app.docDispatch({type: "pointermove", clientY: 400, pointerId: 9}); // dragged up 100 — the dock GROWS by 100 (its divider is on the top edge)
   assert.equal(val(`wm.bottom.h`), 340);
   assert.equal(val(`document.getElementById("shell").style.getPropertyValue("--db-h")`), "340px");
+  app.docDispatch({type: "pointermove", clientY: -600, pointerId: 9}); // dragged up nearly the whole window — clamped to innerHeight (1000) minus the 32px grab strip, not a flat 70%
+  assert.equal(val(`wm.bottom.h`), 968, "clamped to the window minus a 32px grab strip of the song's edge");
   app.docDispatch({type: "pointerup", pointerId: 9});
-  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).bottom.h`), 340, "saved on release");
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).bottom.h`), 968, "saved on release");
+  // double-tap the height divider (two pointerdowns within 350ms, no drag in between) resets to the default height
+  app.tick(500); // clear the "recent tap" state the drag above left behind
+  app.dispatch("wmdivider-bottomh", {type: "pointerdown", clientY: 500, pointerId: 13, button: 0});
+  app.docDispatch({type: "pointerup", pointerId: 13});
+  app.tick(100);
+  app.dispatch("wmdivider-bottomh", {type: "pointerdown", clientY: 500, pointerId: 14, button: 0});
+  assert.equal(val(`wm.bottom.h`), 240, "double-tap: back to the default height");
+  assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).bottom.h`), 240, "saved immediately, no release needed");
+  app.docDispatch({type: "pointerup", pointerId: 14});
   // the split divider: getBoundingClientRect is stubbed to a fixed 800px-wide rect in the vm harness
   app.dispatch("wmdivider-bottomsplit", {type: "pointerdown", clientX: 400, pointerId: 10, button: 0});
   app.docDispatch({type: "pointermove", clientX: 480, pointerId: 10}); // +80/800 = +0.1
@@ -3459,14 +3528,31 @@ test("Window manager: the bottom dock's height and split dividers drag and clamp
   assert.equal(val(`wm.bottom.split`), 0.8, "clamped");
   app.docDispatch({type: "pointerup", pointerId: 10});
   assert.equal(val(`JSON.parse(localStorage.getItem("ff1roll-wm")).bottom.split`), 0.8, "saved on release");
-  run(`document.getElementById("jobssheet").classList.remove("on"); document.getElementById("infosheet").classList.remove("on");
+  run(`document.getElementById("jobssheet").classList.remove("on"); document.getElementById("pubjobsheet").classList.remove("on");
        wm = {}; wmLayoutAll(); window.innerWidth = undefined; window.innerHeight = undefined;`);
 });
 
-test("Window manager: the pref survives a reload, migrates once from the old ff1roll-aidock pref, and once more from the pre-phase-A shape (backfilling mode: full)", () => {
+test("Window manager: a dock dragged to its new, much higher ceiling leaves the roll a sliver, not zero — resize() and the zoom floors stay finite and never throw", () => {
+  installSong();
+  run(`song.tracks = [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 80}]}]; computeSongEnd(); fitView();`);
+  assert.ok(Number.isFinite(val(`pxqFloor()`)) && val(`pxqFloor()`) > 0, "sane before shrinking");
+  assert.ok(Number.isFinite(val(`rowHFloor()`)) && val(`rowHFloor()`) > 0, "sane before shrinking");
+  // the roll's own wrap, shrunk to the grab-strip's worth of room a maxed-out
+  // dock leaves it (WM_EDGE_GAP, 32px) — never all the way to 0
+  run(`wrap.clientWidth = 32; wrap.clientHeight = 32; canvas.width = -1; canvas.height = -1;`);
+  assert.doesNotThrow(() => run(`resize(); clampView();`));
+  assert.ok(Number.isFinite(val(`canvas.width`)) && val(`canvas.width`) >= 0, "canvas.width stays sane at a sliver width: " + val(`canvas.width`));
+  assert.ok(Number.isFinite(val(`canvas.height`)) && val(`canvas.height`) >= 0, "canvas.height stays sane at a sliver height: " + val(`canvas.height`));
+  assert.ok(Number.isFinite(val(`pxqFloor()`)) && val(`pxqFloor()`) >= 8, "pxqFloor never divides out to 0/NaN/Infinity at a sliver width: " + val(`pxqFloor()`));
+  assert.ok(Number.isFinite(val(`rowHFloor()`)) && val(`rowHFloor()`) >= 4, "rowHFloor never divides out to 0/NaN/Infinity at a sliver height: " + val(`rowHFloor()`));
+  run(`wrap.clientWidth = 800; wrap.clientHeight = 600; songKey = null;`); // restore the harness default for every test after this one
+});
+
+test("Window manager: the pref survives a reload, migrates once from the old ff1roll-aidock pref, once more from the pre-phase-A shape (backfilling mode: full), and once more from the phase-A shape (backfilling ids/active — Phase B)", () => {
   const app2 = createApp({storage: {"ff1roll-aidock": JSON.stringify({docked: true, width: 420})}});
   const run2 = c => app2.run(c), val2 = c => JSON.parse(app2.run(`JSON.stringify(${c})`));
-  assert.equal(val2(`wm.right.id`), "asksheet", "migrated from the old asksheet-only pref");
+  assert.deepEqual(val2(`wm.right.ids`), ["asksheet"], "migrated from the old asksheet-only pref");
+  assert.equal(val2(`wm.right.active`), "asksheet");
   assert.equal(val2(`wm.right.w`), 420);
   assert.equal(val2(`wm.right.mode`), "full", "backfilled: the pre-phase-A shape always meant full height");
   assert.equal(val2(`localStorage.getItem("ff1roll-aidock")`), null, "the old key is forgotten once migrated");
@@ -3478,6 +3564,46 @@ test("Window manager: the pref survives a reload, migrates once from the old ff1
   // a step-1/2 pref (already under the new key, but with no mode) also gets the mode backfilled on load
   const app3 = createApp({storage: {"ff1roll-wm": JSON.stringify({right: {id: "asksheet", w: 500}})}});
   assert.equal(JSON.parse(app3.run(`JSON.stringify(wm.right)`)).mode, "full");
+  // a phase-A pref (mode already backfilled, but still {id}, one window) also gets ids/active backfilled on load
+  const app4 = createApp({storage: {"ff1roll-wm": JSON.stringify({left: {id: "notelistsheet", w: 300, mode: "inner"}})}});
+  assert.deepEqual(JSON.parse(app4.run(`JSON.stringify(wm.left)`)), {ids: ["notelistsheet"], active: "notelistsheet", w: 300, mode: "inner"});
+});
+
+test("Window manager: tab groups (Phase B) — dropping a second window on an occupied side joins it as a tab; tapping/re-dropping a tab switches which one shows; floating is the only way out of the group", () => {
+  run(`window.innerWidth = 1200;
+       document.getElementById("notelistsheet").classList.add("on");
+       document.getElementById("instsheet").classList.add("on");
+       wm = {}; wmLayoutAll();`);
+  run(`wmDockSide("notelistsheet", "left", "full")`);
+  assert.deepEqual(val(`wm.left.ids`), ["notelistsheet"]);
+  assert.equal(val(`document.getElementById("dockleft-tabs").classList.contains("on")`), false, "a group of one shows no strip");
+  run(`wmDockSide("instsheet", "left")`); // dropped on the SAME (occupied) side: joins as a new tab, not a replacement
+  assert.deepEqual(val(`wm.left.ids`), ["notelistsheet", "instsheet"], "both windows are members now");
+  assert.equal(val(`wm.left.active`), "instsheet", "the one just dropped is the active (shown) tab");
+  assert.equal(val(`wm.left.mode`), "full", "the group's mode is unchanged by adding a tab");
+  assert.equal(val(`document.getElementById("instsheet").classList.contains("on")`), true, "the new tab is shown");
+  assert.equal(val(`document.getElementById("notelistsheet").classList.contains("on")`), false, "the sibling it replaced as active is closed — only one tab may show in the shared cell");
+  assert.equal(val(`document.getElementById("dockleft-tabs").classList.contains("on")`), true, "two members: the strip shows both tabs, open or not — a closed-away tab must stay reachable (the headless check caught the old rule hiding it)");
+  // reopen the background tab: wmDockSide handles "tap an existing tab" the same way (bring it to the front)
+  run(`document.getElementById("notelistsheet").classList.add("on"); wmDockSide("notelistsheet", "left")`);
+  assert.equal(val(`wm.left.active`), "notelistsheet");
+  assert.equal(val(`document.getElementById("notelistsheet").classList.contains("on")`), true);
+  assert.equal(val(`document.getElementById("instsheet").classList.contains("on")`), false, "switching tabs closes the one it replaced");
+  assert.equal(val(`document.getElementById("dockleft-tabs").classList.contains("on")`), true, "one open at a time, but the strip still offers both tabs");
+  // reopening a BACKGROUND member via its OWN header button (not the tab UI
+  // — just its `on` class, directly) must still bring it forward, not get
+  // silently re-closed as "a second window opened by mistake"
+  run(`document.getElementById("instsheet").classList.add("on"); wmLayoutAll();`);
+  assert.equal(val(`wm.left.active`), "instsheet", "the newly-opened one wins over the old active");
+  assert.equal(val(`document.getElementById("instsheet").classList.contains("on")`), true);
+  assert.equal(val(`document.getElementById("notelistsheet").classList.contains("on")`), false, "the previous active is closed to keep exactly one tab visible");
+  // floating is the only way OUT of the group — closing never is (same invariant as a single-window dock)
+  run(`document.getElementById("notelistsheet").classList.remove("on"); wmLayoutAll();`);
+  assert.deepEqual(val(`wm.left.ids`), ["notelistsheet", "instsheet"], "closed, not floated — still a member");
+  run(`wmFloat("instsheet")`);
+  assert.deepEqual(val(`wm.left.ids`), ["notelistsheet"], "floating drops it from the group");
+  run(`document.getElementById("notelistsheet").classList.remove("on"); document.getElementById("instsheet").classList.remove("on");
+       wm = {}; wmLayoutAll(); window.innerWidth = undefined;`);
 });
 
 test("Ask resume: pending questions are found across every chat; a tool round moves the marker; eviction leaves the repo marker; Publish stops at a pending question", () => {

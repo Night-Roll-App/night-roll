@@ -461,3 +461,16 @@ test("phone-size boot: song loads with the panel folded (no TDZ bricks) @smoke",
   expect(await page.evaluate(() => localStorage.getItem("ff1roll-listener"))).toBe("0");
   await ctx.close();
 });
+
+test("voice menu: tapping a different track's chip closes the menu instead of leaving it open on the old track (Josh, traced 2026-09-29)", async ({ page }) => {
+  // a first tap on the ALREADY-selected track (track 0, the default) is a
+  // "second tap" by the chip's own logic — it opens the voice menu directly
+  await page.click("#trackrow .chip:nth-child(1)");
+  await expect(page.locator("#voicemenu")).toHaveClass(/(^|\s)on(\s|$)/);
+  // a first tap on a DIFFERENT track's chip must close the stale menu, not
+  // leave it open still pointing at track 0 (the tap-away closer used to
+  // exempt every chip, not just the one the menu belongs to)
+  await page.click("#trackrow .chip:nth-child(2)");
+  await expect(page.locator("#voicemenu")).not.toHaveClass(/(^|\s)on(\s|$)/);
+  expect(await page.evaluate(() => selTrack)).toBe(1);
+});

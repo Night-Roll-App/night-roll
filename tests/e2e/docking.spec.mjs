@@ -8,7 +8,9 @@
 import { test, expect } from "@playwright/test";
 import { openApp } from "./helpers.mjs";
 
-const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "pubjobsheet", "infosheet"];
+// infosheet (Status) is registered but NOT dockable (Josh, 2026-09-29) — a
+// one-shot reveal for a truncated status line, same as the import hub
+const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "pubjobsheet"];
 
 test.use({ viewport: { width: 1366, height: 1024 } });
 
@@ -80,4 +82,106 @@ test("two windows share the bottom, side by side", async ({ page }) => {
   expect(overlaps(a, n)).toBe(false);
   expect(overlaps(a, roll) || overlaps(n, roll)).toBe(false);
   expect(Math.abs(a.t - n.t)).toBeLessThanOrEqual(1);
+});
+
+// ---- Phase B: drag-to-dock (a real pointer drag) + tab groups + the
+// widened divider ceiling (Josh, 2026-09-29, iPad: "drag the divider nearly
+// all the way across to hide the roll for a minute, then drag back").
+
+async function dragTitleTo(page, id, x, y) {
+  const h2 = await page.locator(`#${id}-h2`).boundingBox();
+  await page.mouse.move(h2.x + h2.width / 2, h2.y + h2.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x, y, { steps: 12 }); // past both the 8px drag threshold and, usually, into a zone
+  await page.waitForTimeout(50);
+}
+
+test("drag-to-dock: dragging the AI window's title into the left edge zone docks it left; dragging a docked window's title back into the middle floats it", async ({ page }) => {
+  await setup(page);
+  await page.evaluate(() => document.getElementById("asksheet").classList.add("on"));
+  await page.waitForTimeout(150);
+  await dragTitleTo(page, "asksheet", 20, 512); // deep in the left 15% zone (1366*0.15≈205px), past its own half-boundary too: FULL height
+  await expect(page.locator("#wmdropzone")).toHaveClass(/(^|\s)on(\s|$)/);
+  await page.mouse.up();
+  await page.waitForTimeout(150);
+  await expect(page.locator("#wmdropzone")).not.toHaveClass(/(^|\s)on(\s|$)/);
+  expect(await page.evaluate(() => wmWhereIs(wm, "asksheet"))).toEqual({dock: "left", mode: "full"});
+  const p = await box(page, "#asksheet .sheet"), roll = await box(page, "#roll");
+  expect(p.l).toBeLessThanOrEqual(1);
+  expect(p.t).toBeLessThanOrEqual(1);
+  expect(overlaps(p, roll)).toBe(false);
+
+  // drag the now-DOCKED window's title back out into the middle: it undocks
+  // and continues under the finger, then floats where it's released
+  await dragTitleTo(page, "asksheet", 683, 512); // dead center — no zone
+  expect(await page.evaluate(() => !!wm.left)).toBe(false); // undocked as soon as the drag crossed the threshold, before release
+  await page.mouse.up();
+  await page.waitForTimeout(150);
+  expect(await page.evaluate(() => !!wmWhereIs(wm, "asksheet"))).toBe(false);
+  const f = await box(page, "#asksheet .sheet");
+  expect(Math.abs((f.l + f.r) / 2 - 683)).toBeLessThan(40); // landed roughly where it was dropped, not snapped back to its old spot
+});
+
+test("drag-to-dock: dragging the AI window's title into the bottom edge zone docks it to the bottom", async ({ page }) => {
+  await setup(page);
+  await page.evaluate(() => document.getElementById("asksheet").classList.add("on"));
+  await page.waitForTimeout(150);
+  await dragTitleTo(page, "asksheet", 683, 1010); // deep in the bottom 15% zone (1024*0.15≈154px)
+  await expect(page.locator("#wmdropzone")).toHaveClass(/(^|\s)on(\s|$)/);
+  await page.mouse.up();
+  await page.waitForTimeout(150);
+  expect(await page.evaluate(() => wmWhereIs(wm, "asksheet").dock)).toBe("bottom");
+  const p = await box(page, "#asksheet .sheet"), roll = await box(page, "#roll");
+  expect(p.b).toBeGreaterThanOrEqual(1024 - 1);
+  expect(overlaps(p, roll)).toBe(false);
+});
+
+test("drag-to-dock: two windows dropped on the same side form a tab group; tapping a tab switches which one shows", async ({ page }) => {
+  await setup(page);
+  await page.evaluate(() => { document.getElementById("asksheet").classList.add("on"); wmDockSide("asksheet", "left", "full"); });
+  await page.waitForTimeout(150);
+  await page.evaluate(() => { document.getElementById("notelistsheet").classList.add("on"); wmDockSide("notelistsheet", "left"); }); // dropped on the SAME (occupied) side: joins as a tab
+  await page.waitForTimeout(150);
+  expect(await page.evaluate(() => wm.left.ids)).toEqual(["asksheet", "notelistsheet"]);
+  expect(await page.evaluate(() => wm.left.active)).toBe("notelistsheet");
+  const strip = page.locator("#dockleft-tabs");
+  await expect(strip).toHaveClass(/(^|\s)on(\s|$)/);
+  const tabs = strip.locator(".wmtab");
+  await expect(tabs).toHaveCount(2);
+  const nBefore = await box(page, "#notelistsheet .sheet"), rollBefore = await box(page, "#roll");
+  expect(overlaps(nBefore, rollBefore)).toBe(false);
+  // tap the OTHER (inactive) tab — asksheet's, first in ids order
+  await tabs.nth(0).click();
+  await page.waitForTimeout(50);
+  expect(await page.evaluate(() => wm.left.active)).toBe("asksheet");
+  expect(await page.evaluate(() => document.getElementById("notelistsheet").classList.contains("on"))).toBe(false);
+  const p = await box(page, "#asksheet .sheet"), roll = await box(page, "#roll");
+  expect(p.l).toBeLessThanOrEqual(1);
+  expect(overlaps(p, roll)).toBe(false);
+});
+
+test("the right dock's divider drags to a much higher ceiling than the old 60% (nearly hiding the roll, never quite to 0), and double-tapping it resets to the default width", async ({ page }) => {
+  await setup(page);
+  await page.evaluate(() => { document.getElementById("asksheet").classList.add("on"); wmDockSide("asksheet", "right", "full"); });
+  await page.waitForTimeout(150);
+  const divider = page.locator("#wmdivider-right-full");
+  const db = await divider.boundingBox();
+  await page.mouse.move(db.x + db.width / 2, db.y + db.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(10, db.y + db.height / 2, { steps: 12 }); // dragged nearly to the window's own left edge
+  await page.mouse.up();
+  await page.waitForTimeout(150);
+  const w = await page.evaluate(() => wm.right.w);
+  expect(w).toBeGreaterThan(1000); // far past the old 60%-of-1366 (≈820) ceiling
+  const roll = await box(page, "#roll");
+  expect(roll.w).toBeGreaterThan(10); // a grab strip of the roll survives — never fully hidden
+  expect(await page.evaluate(() => document.getElementById("asksheet").getBoundingClientRect().width)).toBeGreaterThan(1000);
+  // double-tap the divider (two quick taps, no drag in between): resets to the default width
+  const db2 = await divider.boundingBox();
+  const cx = db2.x + db2.width / 2, cy = db2.y + db2.height / 2;
+  await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.up();
+  await page.waitForTimeout(100);
+  await page.mouse.down(); await page.mouse.up();
+  await page.waitForTimeout(150);
+  expect(await page.evaluate(() => wm.right.w)).toBe(380);
 });

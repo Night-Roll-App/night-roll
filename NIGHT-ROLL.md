@@ -2970,7 +2970,12 @@ song] below it from the outer context." No top dock.
   unchanged too — it isn't one of the six migrated windows.
 - **Migrated (six):** `#asksheet` (AI — already had a right-only dock, now
   generalized), `#notelistsheet` (Notes), `#instsheet` (Instruments),
-  `#jobssheet`, `#pubjobsheet`, `#infosheet`.
+  `#jobssheet`, `#pubjobsheet`, `#infosheet`. **`#infosheet` (Status) was
+  un-migrated to non-dockable in Phase B** (Josh, 2026-09-29) — a one-shot
+  reveal for a truncated status line isn't a panel worth pinning open while
+  working the roll; it's still registered with `makeWindow` (so it's a known
+  window) but `{dockable: false}`, same as the import hub, so it gets no Dock
+  control. Five windows are actually dockable now.
 - **Not yet migrated** (keep working exactly as before, via the generic ✕/
   drag/grip loops, with no Dock control): `#songsheet`, `#noteeditor`,
   `#aboutsheet`, `#drumsheet`, `#trsheet`, `#insbarsheet`, `#gridsheet`,
@@ -3048,15 +3053,170 @@ sensible floor while floating, where there's room to spare) does not apply
 while docked — the docked-scoped rule's higher specificity wins over it,
 letting the log shrink past 80px if that's what it takes.
 
-### Phase B (queued, not built)
+### Phase B — drag-to-dock and tab groups (2026-09-29)
 
-Drag-to-edge docking (grab a window's title and drop it on a dock zone,
-the way IntelliJ/VS Code do it) and tabs (a dock cell holding more than
-one window, only one shown at a time) — the structure is ready for both
-(a dock cell is already addressable, a window already moves between cells
-by node, `wm.bottom.ids` already holds more than one id) but neither is
-built. Also queued: two timeline views at once (shared `view.x`/
-`playCursor` today).
+Josh's model, in his words: "a full window manager where I can drag these
+windows over to the right hand side or drag them to the bottom … or drag
+them to the left." Two pieces: **drag-to-dock** (grab a window's title and
+drop it on a dock zone, the way IntelliJ/VS Code do it) and **tabs** (a
+side dock cell holding more than one window, only one shown at a time). The
+bottom dock is untouched — it stays a two-slot split, never a tab group
+("the bottom's two halves stay a split," Josh).
+
+- **`wm` shape, extended:** a side's slot is now a tab group — `{ids: [id,
+  …], active, w, mode}` (was `{id, w, mode}`, one window). `ids` is every
+  window ever dropped on that side, in tab order, unchanged by opening or
+  closing (see "closing a tab" below); `active` is which one is actually
+  parented in the dock cell and shown right now. Migrated once more on load
+  (`wmMigrateShapeB`, pure) from the phase-A `{id}` shape, chained after the
+  existing `wmMigrateShape` (mode backfill) in `wmLoad`. The bottom dock's
+  shape (`{ids, h, split}`) is unchanged — it never had a single-id shape to
+  migrate from.
+- **Pure helpers (new):** `wmSetSide(state, side, ids, active, w, mode,
+  innerWidth)` replaces a side's whole group (signature changed from the
+  phase-A `(state, side, id, w, mode, innerWidth)`); `wmAddSideTab(state,
+  side, id, innerWidth)` adds `id` as a new, active tab to an existing group
+  (width/mode carry over), or starts a fresh one-tab group (default width,
+  beside the roll) if the side was empty; `wmRemoveSideTab(state, side, id)`
+  is the ONLY way a window leaves a group (closing never does — see below);
+  it picks a fallback `active` if `id` was on top, and drops the side key
+  entirely once its last tab leaves; `wmSetActiveSideTab(state, side, id)`
+  brings one tab to the front (a no-op if it isn't a member);
+  `wmSetSideWidth(state, side, w, innerWidth)` replaces the old `wmSetSide`
+  as the divider drag's own helper (width only, ids/active/mode untouched).
+  `wmWhereIs` now checks group membership (`ids.includes(id)`) instead of a
+  single `id ===` — any tab in a group counts, active or not.
+- **`wmDockSide(id, side, mode)` does double duty.** Dropping a window on an
+  EMPTY side starts a fresh group; dropping on an OCCUPIED side (the same
+  call, from the Dock menu, a drag, or a tab click) adds it as a new,
+  active tab instead of replacing the group — Josh: "drag them... it takes
+  up the whole bottom" was about the BOTTOM dock's existing two-slot
+  replace behavior; sides now form a growing tab group instead. Tapping an
+  existing tab (or re-dropping a window already in the group) is the exact
+  same call (`id` already a member → `wmSetActiveSideTab` instead of
+  `wmAddSideTab`) — one code path for "join" and "switch." Whichever tab
+  becomes active, `wmDockSide` explicitly closes (`classList.remove("on")`)
+  whichever sibling was showing before it — exactly one tab may be visible
+  in the shared cell at a time.
+- **Every group member stays parked in the cell, not just the active one**
+  (`wmLayoutSide`, `wmSideMembers[side]` — an array now, generalizing the
+  old single-element `wmSideEl`). Only the active one gets `on`; visibility
+  is entirely CSS-driven off that (`.overlay.docked.on{display:flex}` vs
+  the base `.overlay.docked{display:none}`), so switching tabs is nothing
+  more than toggling `on` on two elements already sitting in the cell — no
+  reparenting on every switch. Two self-correcting fixups run on every
+  layout pass (so reopening a group member through its OWN header button —
+  not the tab UI — still behaves sanely): if more than one member is
+  simultaneously `on` (two independent header-button opens), the one that
+  ISN'T the recorded `active` wins and becomes the new active (reopening a
+  background tab brings IT forward, it doesn't just get silently re-closed
+  as "a second window opened by mistake"); if `active` itself is closed but
+  a sibling is open, that sibling is promoted — otherwise closing the front
+  tab would strand the whole group with no way back in except the Dock menu.
+- **✕ on a grouped window leaves the group** (`wmCloseWindow`, revised in
+  review 2026-09-29). Switching tabs closes the other member, so a strip
+  of only OPEN members vanished the moment you switched — the group
+  looked like one window. Now the strip lists EVERY member, a chip tap
+  opens its window and makes it active, and ✕ on a member of a 2+ group
+  removes it from `ids` (the next member shows). A lone docked window's
+  ✕ still just closes it and it stays docked for next time.
+- **The tab strip** (`wmLayoutTabs`, one persistent element per side —
+  `#dockleft-tabs`/`#dockright-tabs`, moved between the full/inner cell the
+  same way the windows themselves are) shows one chip per member,
+  labelled from the window's own `<h2>` text (`wmWindowTitle`, minus the
+  Dock button `makeWindow` appended to it); tapping a chip calls
+  `wmDockSide(id, side)` — the same "join/switch" path a drop does. "A
+  group of one shows no strip" (`ids.length <= 1`) — refined further: a
+  group where fewer than two members are currently open shows no strip
+  either, since there'd be nothing to switch to. CSS: the cell became a
+  flex column (`display:flex; flex-direction:column`) — the strip
+  (`order:0`, natural height) sits above the docked window(s) (`.overlay.
+  docked`, `order:1; flex:1 1 auto`, `height:auto` in place of the old
+  hardcoded `height:100%` — flex:1 fills exactly the same space when
+  there's no strip to share the column with).
+- **Drag-to-dock.** `sheetDrag()`'s title-drag (previously blocked entirely
+  on a docked sheet — "stays out of a docked sheet," phase A) now also arms
+  on a DOCKED window's title; a plain tap still does nothing (an 8px move
+  threshold, the app's existing gesture-threshold convention, reused here —
+  gates BOTH the undock and the zone highlight, so a tap never rips a
+  window out of its dock). Past the threshold: if the drag started on a
+  docked window, `wmFloat(id)` undocks it, then the drag re-baselines from
+  the box's newly-floating (centered) position so it continues exactly
+  under the finger instead of jumping to center. On every move past the
+  threshold, `wmZoneFor(x, y, rect)` (pure — `rect` is `#songregion`'s live
+  bounding rect) reports which dock zone the pointer is over: `null` in the
+  middle (float), `{side: "bottom"}` near the bottom edge, or `{side:
+  "left"|"right", mode: "full"|"inner"}` within 15% of a side edge — chosen
+  as ">= 15% of the song region's width/height at each edge," Josh's own
+  number. **The full/inner split, resolved:** within a side's zone, the
+  half nearer the SCREEN EDGE means Full height, the half nearer the roll
+  means Beside the roll — chosen (Josh: "or pick a clearer affordance and
+  say why") because it reads the same way the drag itself feels: drag
+  further out for "more" (the whole height), stop just past the boundary
+  for "less" (beside the roll only). A corner resolves to whichever edge
+  the pointer is proportionally closer to (compares fractions of each
+  axis, not raw pixels). `#wmdropzone` (a single translucent, `pointer-
+  events:none` highlight, positioned by `wmShowDropZone` from `wmZoneFor`'s
+  result — the outer/inner half of `#songregion`'s rect for a side zone,
+  using `#songcenter`'s rect instead for the Beside-the-roll height) tracks
+  the live zone; releasing over one docks there (`wmDockSide`/
+  `wmDockBottomWindow` — dropping on an occupied side joins its tab group,
+  same as the Dock menu); releasing in the middle floats it (today's
+  behavior, unchanged).
+- **The Dock menu is unchanged** and stays the non-drag way in (its own
+  action-function calls — `wmDockSide`, `wmDockBottomWindow`,
+  `wmSetSideModeFor`, `wmFloat` — are the same ones drag-to-dock and the
+  tab strip call). At phone width every window still floats — no dock
+  zones, no Dock control, same as phase A.
+- **`#infosheet` (Status) is no longer dockable** (Josh, 2026-09-29,
+  alongside this phase): `makeWindow("infosheet", {dockable: false})` — a
+  one-shot reveal for a truncated status line isn't a panel worth pinning
+  open while working the roll, the same reasoning as the import hub. Five
+  windows are dockable now, not six.
+- **Tests:** `tests/night-roll.test.mjs`, "Window manager: …" — new pure
+  tests for `wmZoneFor` (every zone, the full/inner split, a corner, no
+  rect, a zero-size rect) and the tab helpers (`wmAddSideTab`/
+  `wmRemoveSideTab`/`wmSetActiveSideTab`/`wmSetSideWidth`), plus
+  `wmMigrateShapeB`; an integration test for tab groups (joining, switching
+  by re-dropping, the two self-correcting fixups, floating as the only way
+  out); every phase-A integration test updated to the `{ids, active}`
+  shape. FEATURES keywords "tab group", "Drag-to-dock". The vm harness
+  (`tests/harness.mjs`) grew `.id` on every element `getElementById` vivifies
+  (a real DOM element's `.id` always matches the id it was fetched by; the
+  stub never set it, and tab-group code reads an element's own `.id` back
+  to match it against `wm[side].ids`). `tests/e2e/docking.spec.mjs`
+  (CI-only) covers the real pointer drag: dragging the AI window's title to
+  each edge/zone docks it there; dragging a docked window out floats it;
+  two windows on one side make a tab group and switching works; the
+  WINDOWS fixture list dropped `infosheet`.
+- **A much higher divider ceiling** (Josh, 2026-09-29, iPad: docked Right,
+  Beside the roll, he hit the old 60%/70% cap before the panel covered the
+  song — he wants to "drag the divider nearly all the way across to hide
+  the roll for a minute, then drag back"). `wmClampSize`/`wmClampHeight`'s
+  ceiling changed from a flat 60%/70% of the window to `innerWidth`/
+  `innerHeight` minus `WM_EDGE_GAP` (32px) — a side or the bottom dock can
+  now cover nearly the whole window, leaving only a thin grab strip of the
+  song's edge, never so little the divider itself could be dragged
+  off-screen. The floor (280px / 160px) is unchanged. **Double-tap a
+  divider to reset it** to the default width/height (350ms, the app's own
+  double-tap window, reused — same constant as the roll's own tap-vs-drag
+  gesture) — cheap to add alongside the width-drag handler, so it rode
+  along. **Canvas safety at a sliver width/height:** `pxqFloor()`/
+  `rowHFloor()` were already defensive (`Math.max`/`Math.min` clamps, no
+  division BY the shrinking dimension — only a numerator that goes
+  negative and gets floored) — confirmed, not changed, by a new vm test
+  that shrinks `wrap` to 32×32 and calls `resize()`/`clampView()`,
+  asserting no throw and finite, sane numbers throughout. FEATURES keyword
+  "double-tap the strip". `tests/e2e/docking.spec.mjs` (CI-only) drags the
+  right divider nearly to the window's own left edge and back, and
+  double-taps it to reset.
+- **Also queued:** two timeline views at once (shared `view.x`/
+  `playCursor` today); a real close-button ("x") on a tab chip to remove it
+  from the group outright (today: drag it out, or Float from the Dock
+  menu); reopening an inactive tab's window through its own header button
+  bringing it forward is handled (see the self-correcting fixups above),
+  but there's no VISUAL cue in the tab strip that a background tab exists
+  until it's opened.
 
 ## Publish + share links (Phase 1 of the iPad app plan, 2026-09-26)
 
