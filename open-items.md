@@ -11,10 +11,13 @@ Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     Welcoming of Maester Mika). Published or fresh — which is right?
 Q2. (ASK LATER) Archive move: make the archive token (resource owner
     joshcough, only the archive repo, Contents read+write) and say "go".
-Q4. Captures: LOCKED (notes can't change; Save As makes your editable
-    copy in one tap — the advisor's recommendation) or YOURS (edit the
-    capture itself, tempo notes bake into it, a re-capture restores it —
-    Josh's idea)? Plan: docs/provenance-plan.md.
+Q4. Captures: LOCKED + "✎ Make it mine" (recommended: the edit button on
+    a capture makes your own editable copy in one tap, no form — tempo
+    bakes, everything is yours; the capture stays the faithful game
+    recording; you'd only hear edits on synth anyway, since captures play
+    the game's own sound) — or YOURS IN PLACE (edit the capture itself; a
+    re-capture restores — unreliable: 6 rips aren't on the Mac, and FFX
+    shows the pipeline can shift pitches)? Plan: docs/provenance-plan.md.
 Q5. May I add a redirect so the bare address night-roll-app.github.io
     lands on the app? (One tiny public repo in the org,
     Night-Roll-App.github.io, holding a redirect page.) Answered part: the

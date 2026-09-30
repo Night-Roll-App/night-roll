@@ -43,3 +43,17 @@ tombstones, markPublished, tempo in dirty) · P3 v2 reader + version guard
 P4 · P4 stored origin + v2 writer · P5 batch migration (Josh: format
 conversion isn't editing — no per-song approval) · P6 tools + docs.
 Anchors stay [bar, beat] (readable, diffable; re-bar conversion exists).
+
+## Addendum (advisor, after Josh's "your copy is yours" idea)
+Recommendation: captures stay locked; the edit button on a capture/starter
+becomes "✎ Make it mine" — makeItMine() = forkCurrentSong(title,
+lastFolder || "my-covers") with no form, origin {kind: copy, fromKind:
+capture}. Reasons against editing in place: edits would only sound on synth
+(captures play chip audio); re-capture isn't a reliable undo (6 rips not on
+the Mac; the pipeline changes — FFX); published captures are shared as "the
+game's music"; a wrong note is a pipeline bug to fix at the source.
+Migration (Josh ruled format conversion isn't editing): ONE batch of every
+annotations file incl. compositions, via tools/migrate-rollnotes-v2.mjs
+(harness-backed; round-trip deepEqual or refuse; --dry-run default; one
+commit per album) — only after P3 (v2 reader + version guard) is on every
+device incl. an iPad rebuild.
