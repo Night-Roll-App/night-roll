@@ -231,7 +231,26 @@ meter dialog; the chosen meter is written as HIS timesig directive) at
 to compositions/ proper happens via Claude Code on request. A
 composition is the standard .mid + .rollnotes pair: writeMidi() (in-page
 format-1 SMF writer, round-trip tested against parseMidi) produces the
-.mid; File→Save PUTs both via the GitHub API. **Chip captures are
+.mid; File→Save PUTs both via the GitHub API. **writeMidi is a
+synchronous hand port of tools/nsf/midi-write.mjs's `writeSongMidi`**
+(2026-09-30, open-items.md "FORMATS AUDIT" #1-2, branch
+shared-midi-writer) — the ONE writer's logic, kept in two places because
+writeMidi runs inside plain click handlers and the vm test harness
+(tests/harness.mjs), neither of which can `import()` (no
+`importModuleDynamically` in the harness's vm context, and no build step
+to bundle the module in). Both emit CC10 pan (`tr.midiPan`), CC70 duty
+(`n.duty`), aftertouch decay (`n.ve`), per-note channel (`n.ch`, else the
+track's own — drums stay on channel 10, 15 melodic channels cycle for the
+rest so 16+ tracks never collide with drums), a key signature ONLY when
+the song already declared one (never invented — Learning mode is the
+law), and track names as proper VLQ-length UTF-8 (not the old one-byte
+length + &255 mask, which corrupted >127-byte or non-Latin-1 names).
+tests/night-roll.test.mjs ("writeMidi / writeSongMidi agree byte-for-byte"
++ round-trip tests) pins the two ports together; touching one without the
+other reintroduces the drift the audit found — commitImports silently
+dropping pan/duty/aftertouch/channel from every published capture. It
+still does NOT carry generic CCs, program changes, or multiple meters —
+see "Chip captures are locked" below. **Chip captures are
 locked** — Save refuses anything outside nightroll/ (regenerable
 pipeline output; a stray thumb must not corrupt the corpus) — but
 File→Save As forks ANY song into nightroll/ with rollnotes inherited

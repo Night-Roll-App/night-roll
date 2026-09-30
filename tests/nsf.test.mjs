@@ -540,18 +540,19 @@ test("terminal import (tools/import-set.mjs) and the app's own capture (captureJ
     assert.deepEqual(a, b, "track " + name + ": pitch/start/duration/velocity identical between the terminal's import and the app's own capture");
   }
 
-  // TODO / KNOWN DIFFERENCE (not a path divergence — open-items.md "FORMATS
-  // AUDIT" #1, 2026-09-29): commitImports' publish step re-encodes every
-  // draft through index.html's generic writeMidi (~L14093), which has no
-  // CC70 (duty) / CC10 (pan) / aftertouch (decay) support — so the per-note
-  // duty that tools/nsf/midi-write.mjs's makeMidi wrote into the CAPTURE
-  // (trackBytes, ~L48-53) survives in the pre-publish draft but is silently
-  // dropped from the committed .mid. This happens IDENTICALLY on both paths
-  // (both call the very same commitImports/writeMidi) — the terminal and the
-  // app do not disagree about it, so it is asserted here as a known,
-  // shared loss rather than "fixed" on either side.
+  // FIXED (open-items.md "FORMATS AUDIT" #1-2, closed on branch
+  // shared-midi-writer): commitImports' publish step used to re-encode every
+  // draft through index.html's OWN partial writeMidi, which had no CC70
+  // (duty) / CC10 (pan) / aftertouch (decay) support — so the per-note duty
+  // that tools/nsf/midi-write.mjs's makeMidi wrote into the CAPTURE
+  // (trackBytes, ~L48-53) survived in the pre-publish draft but was silently
+  // dropped from the committed .mid. writeMidi is now a faithful, tested hand
+  // port of tools/nsf/midi-write.mjs's writeSongMidi (the ONE writer's logic,
+  // duplicated because writeMidi must stay synchronous — see writeMidi's own
+  // comment in index.html) and the draft-building call sites carry duty/ve/ch
+  // through to it, so duty now survives publish on both paths identically.
   for (const tr of draftB.tracks) assert.ok(tr.notes.every(n => n.duty !== undefined),
     "pre-publish draft keeps per-note duty (captured via tools/nsf/midi-write.mjs)");
-  for (const tr of parsedA.tracks) assert.ok(tr.notes.every(n => n.duty === undefined),
-    "published .mid has already lost duty on this path too — writeMidi never emits CC70 (index.html ~L14093)");
+  for (const tr of parsedA.tracks) assert.ok(tr.notes.every(n => n.duty !== undefined),
+    "published .mid keeps per-note duty too — writeMidi now emits CC70 (index.html's writeMidi)");
 });

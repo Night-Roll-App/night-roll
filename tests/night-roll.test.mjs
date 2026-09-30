@@ -4,6 +4,7 @@ import test from "node:test";
 import { readFileSync, existsSync } from "node:fs";
 import assert from "node:assert/strict";
 import { createApp } from "./harness.mjs";
+import { writeSongMidi } from "../tools/nsf/midi-write.mjs";
 
 const app = createApp();
 const run = (code) => app.run(code);
@@ -589,6 +590,88 @@ test("composition: writeMidi round-trips through the app's own parser", () => {
   assert.deepEqual(back.names, ["pulse1", "triangle"]);
   assert.deepEqual(back.notes[0], [[0, 240, 70, 96], [240, 480, 74, 52]]);
   assert.deepEqual(back.notes[1], [[0, 960, 46, 80]]); // gone note not written
+});
+
+// ---- shared writer parity (open-items.md "FORMATS AUDIT" #1-2, closed on
+// branch shared-midi-writer): index.html's writeMidi is a synchronous hand
+// port of tools/nsf/midi-write.mjs's writeSongMidi (writeMidi can't dynamic-
+// import it — see writeMidi's own comment). These tests pin the two ports
+// together and lock in what commitImports used to lose on every publish.
+const bytesFromApp = songObj => val(`Array.from(writeMidi(${JSON.stringify(songObj)}))`);
+
+test("writeMidi (index.html) and writeSongMidi (tools/nsf/midi-write.mjs) agree byte-for-byte", () => {
+  installSong();
+  const fixtures = [
+    // plain composition, no CCs
+    {ppq: 480, timesig: [6, 8], tempos: [{tick: 0, usq: 500000}],
+     tracks: [{name: "pulse1", notes: [{t: 0, d: 240, p: 70, v: 96}, {t: 240, d: 480, p: 74, v: 52}]},
+              {name: "triangle", notes: [{t: 0, d: 960, p: 46, v: 80}]}]},
+    // pan, duty, aftertouch, per-note channel, a drum track, a key signature
+    {ppq: 480, timesig: [4, 4], keysig: {sf: -3, minor: true}, tempos: [{tick: 0, usq: 500000}, {tick: 1920, usq: 400000}],
+     tracks: [
+       {name: "pulse1", midiPan: -0.5, offset: -12,
+        notes: [{t: 0, d: 240, p: 60, v: 100, duty: 1}, {t: 240, d: 240, p: 62, v: 90, duty: 2, ve: 40}]},
+       {name: "noise/drums", notes: [{t: 0, d: 120, p: 36, v: 100, ch: 9}, {t: 120, d: 120, p: 38, v: 90, ch: 9}]},
+       {name: "lead", midiPan: 1, notes: [{t: 0, d: 480, p: 67, v: 100, ch: 3}]},
+     ]},
+    // a >127-byte, non-ASCII name (VLQ length + UTF-8, not the old &255 mask)
+    {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+     tracks: [{name: "café waltz — 円 ".repeat(10).slice(0, 180), notes: [{t: 0, d: 480, p: 60, v: 80}]}]},
+    // 20 tracks: channel-collision edge case
+    {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+     tracks: [...Array(20)].map((_, i) => ({name: "v" + i, notes: [{t: 0, d: 240, p: 60 + i, v: 80}]}))},
+  ];
+  for (const [i, s] of fixtures.entries()) {
+    const app = bytesFromApp(s), tools = Array.from(writeSongMidi(s));
+    assert.deepEqual(app, tools, "fixture " + i + " diverges between the two writers");
+  }
+});
+
+test("writeMidi round-trip: CC10 pan, CC70 duty, aftertouch (ve) and per-note channel survive", () => {
+  installSong();
+  const back = val(`(() => {
+    const s = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [{name: "pulse1", midiPan: -0.5,
+        notes: [{t: 0, d: 240, p: 60, v: 100, duty: 1, ch: 3}, {t: 240, d: 240, p: 62, v: 90, duty: 2, ve: 40, ch: 3}]}]};
+    const parsed = parseMidi(writeMidi(s).buffer);
+    return {midiPan: parsed.tracks[0].midiPan,
+            notes: parsed.tracks[0].notes.map(n => [n.duty, n.ve === undefined ? null : n.ve, n.ch])};
+  })()`);
+  assert.ok(Math.abs(back.midiPan - (-0.5)) < 0.02, "pan: " + back.midiPan);
+  assert.deepEqual(back.notes, [[1, null, 3], [2, 40, 3]]);
+});
+
+test("writeMidi: key signature round-trips only when the song already declared one (never invented — Learning mode is the law)", () => {
+  installSong();
+  const withKey = val(`parseMidi(writeMidi({ppq: 480, timesig: [4, 4], keysig: {sf: -3, minor: true},
+    tempos: [{tick: 0, usq: 500000}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}).buffer).keysig`);
+  assert.deepEqual(withKey, {sf: -3, minor: true});
+  const noKey = val(`parseMidi(writeMidi({ppq: 480, timesig: [4, 4],
+    tempos: [{tick: 0, usq: 500000}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}).buffer).keysig`);
+  assert.equal(noKey, null, "no keysig field on the song → none written, none invented");
+});
+
+test("writeMidi: a 200-char track name round-trips (VLQ length, not a single byte)", () => {
+  installSong();
+  const name = "A very long, hand-typed track name that keeps going well past the old one-byte length limit of 127 characters, all the way out here — ".repeat(2).slice(0, 200);
+  assert.equal(name.length, 200);
+  const back = val(`parseMidi(writeMidi({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+    tracks: [{name: ${JSON.stringify(name)}, notes: [{t: 0, d: 480, p: 60, v: 80}]}]}).buffer).tracks[0].name`);
+  assert.equal(back, name);
+});
+
+test("writeMidi: 20 tracks don't collide on channel 10 (0-indexed 9) unless they're actually drums", () => {
+  installSong();
+  const s = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+    tracks: [...[...Array(20)].map((_, i) => ({name: "v" + i, notes: [{t: 0, d: 240, p: 60, v: 80}]})),
+             {name: "drums", notes: [{t: 0, d: 120, p: 36, v: 100}]}]};
+  const back = val(`(() => {
+    const p = parseMidi(writeMidi(${JSON.stringify(s)}).buffer);
+    return p.tracks.map(t => ({name: t.name, chs: [...new Set(t.notes.map(n => n.ch))]}));
+  })()`);
+  const drums = back.find(t => t.name === "drums");
+  assert.deepEqual(drums.chs, [9], "the drum track lands on channel 10");
+  for (const t of back) if (t.name !== "drums") assert.ok(!t.chs.includes(9), t.name + " landed on the drum channel: " + t.chs);
 });
 
 test("document title names the song first: '<Song> · Night Roll', bare app otherwise", () => {

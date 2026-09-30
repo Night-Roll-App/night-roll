@@ -120,11 +120,89 @@ export function makeMidi(events, {bpm, tsNum = 4, tsDen = 4, frameSec, snap = tr
   return fileBytes(tracks);
 }
 
-function fileBytes(tracks) {
+function fileBytes(tracks, ppq = PPQ) {
   const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
-  const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, PPQ >> 8, PPQ & 255];
+  const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, 0, tracks.length, ppq >> 8, ppq & 255];
   for (const t of tracks) bytes.push(0x4D, 0x54, 0x72, 0x6B, ...u32(t.length), ...t);
   return new Uint8Array(bytes);
+}
+
+// ---------------------------------------------------------------- shared song writer
+// The ONE SMF writer for the app's "song document" shape — index.html's live
+// `song` object AND every on-device draft (compositions, pre-publish import
+// captures): {ppq, timesig: [num, den], timesigs?: [{tick, num, den}, …],
+// keysig?: {sf, minor}, tempos: [{tick, usq}], tracks: [{name, notes: [{t, d,
+// p, v, gone?, duty?, ve?, ch?}], offset?, midiPan?}]}. open-items.md "FORMATS
+// AUDIT" #1-2 (2026-09-29): index.html's OWN writeMidi used to be a separate,
+// partial writer — commitImports re-encoded every capture through it and
+// silently dropped CC10 pan, CC70 duty, the aftertouch envelope and per-note
+// channel; it also wrote no key signature, a one-byte (not VLQ) track-name
+// length, and masked names to &255 instead of UTF-8.
+//
+// index.html's writeMidi is a synchronous, byte-for-byte HAND PORT of this
+// function, not a caller of it: writeMidi runs inside plain (non-async) click
+// handlers and inside the vm test harness (tests/harness.mjs), which has no
+// `importModuleDynamically` callback, so a real `import()` inside it throws —
+// dynamic import is not an option here without giving up the one-file-app,
+// no-build-step rule. tests/night-roll.test.mjs ("writeMidi / writeSongMidi
+// agree byte-for-byte") pins the two together; touching this function without
+// touching the port (and that test) reintroduces the drift the audit found.
+//
+// keysig is round-tripped ONLY when the song already carries one (read back
+// by index.html's parseMidi from a file that already declared it, e.g. via
+// tools/fix_keysigs.py) — never invented. Learning mode is the law: Josh's
+// keys are his discoveries, not a tool's.
+const NON_DRUM_CH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15]; // 15 melodic channels; 9 stays drums-only whatever the track count (the old ti<9?ti:(ti+1)&15 formula collided past 16 tracks)
+export function isKitTrackName(name) { return /drum|percussion|kit|noise/i.test(name || ""); }
+function trackChannel(ti, isKit) { return isKit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length]; }
+function textMetaEvent(type, text) {
+  const b = Array.from(new TextEncoder().encode(text)); // bytes are UTF-8 — the de-facto choice for MIDI text metas
+  return [0xFF, type, ...vl(b.length), ...b]; // VLQ length: a >127-byte name no longer corrupts the file
+}
+export function writeSongMidi(song) {
+  const metaEvs = [];
+  for (const tp of song.tempos || []) metaEvs.push({t: tp.tick, o: 0, d: [0xFF, 0x51, 3, (tp.usq >> 16) & 255, (tp.usq >> 8) & 255, tp.usq & 255]});
+  const timesigs = song.timesigs && song.timesigs.length ? song.timesigs
+    : [{tick: 0, num: (song.timesig || [4, 4])[0], den: (song.timesig || [4, 4])[1]}];
+  for (const ts of timesigs) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 4, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
+  if (song.keysig) metaEvs.push({t: 0, o: 2, d: [0xFF, 0x59, 2, song.keysig.sf & 255, song.keysig.minor ? 1 : 0]});
+  metaEvs.sort((a, b) => a.t - b.t || a.o - b.o);
+  const conductor = [];
+  let lastT = 0;
+  for (const e of metaEvs) { conductor.push(...vl(Math.max(0, e.t - lastT)), ...e.d); lastT = Math.max(lastT, e.t); }
+  conductor.push(0, 0xFF, 0x2F, 0);
+  const tracks = [conductor];
+  (song.tracks || []).forEach((tr, ti) => {
+    const isKit = isKitTrackName(tr.name);
+    const ch0 = trackChannel(ti, isKit);
+    const evs = [{t: 0, o: -3, d: textMetaEvent(0x03, tr.name || "track" + (ti + 1))}];
+    // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the
+    // written key by tr.offset semitones — round-trips through every save
+    if (tr.offset) evs.push({t: 0, o: -2, d: textMetaEvent(0x01, "sounding:" + tr.offset)});
+    // CC10 = the .mid's OWN pan (a chip capture's channel); the "track:"
+    // annotation's pan (tr.pan) overrides it at playback but lives in
+    // rollnotes, never here — this is only what survives with no annotation
+    if (tr.midiPan !== undefined) {
+      const v = Math.max(0, Math.min(127, Math.round(tr.midiPan * 63 + 64)));
+      evs.push({t: 0, o: -1, d: [0xB0 | ch0, 10, v]});
+    }
+    let lastDuty = null;
+    for (const n of tr.notes || []) {
+      if (n.gone) continue;
+      const ch = n.ch !== undefined ? (n.ch & 15) : ch0;
+      if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
+      evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
+      if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});
+      evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, n.p & 127, 64]});
+    }
+    evs.sort((a, b) => a.t - b.t || a.o - b.o);
+    const body = [];
+    let last = 0;
+    for (const e of evs) { body.push(...vl(Math.max(0, e.t - last)), ...e.d); last = Math.max(last, e.t); }
+    body.push(0, 0xFF, 0x2F, 0);
+    tracks.push(body);
+  });
+  return fileBytes(tracks, song.ppq || PPQ);
 }
 
 
