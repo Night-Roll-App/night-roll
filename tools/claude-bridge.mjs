@@ -534,6 +534,17 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, note);
     }
   }
+  if (url.pathname === "/v1/terminal-prefs") { // the Terminal tab's model pickers (Josh, 2026-09-30): which model the terminal session gives its advisors and builders
+    const PREFS = path.join(STATE_DIR, "terminal-prefs.json"), ok = ["opus", "sonnet", "haiku", "fable"];
+    const cur = readJSON(PREFS, {advisor: "opus", builder: "sonnet"});
+    if (req.method === "GET") return json(res, 200, cur);
+    if (req.method === "POST") {
+      let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+      for (const k of ["advisor", "builder"]) if (b && ok.includes(b[k])) cur[k] = b[k];
+      writeJSON(PREFS, cur);
+      return json(res, 200, cur);
+    }
+  }
   if (url.pathname === "/v1/terminal") { // POST from the app's Terminal tab; GET ?since=ID from the terminal session's watcher
     if (req.method === "GET") { terminalPolledAt = Date.now(); const since = +(url.searchParams.get("since") || 0) || 0; const box = terminalAll(); return json(res, 200, {last: box.last, msgs: box.msgs.filter(m => m.id > since)}); }
     if (req.method === "POST") {

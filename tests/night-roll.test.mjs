@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -3082,7 +3082,7 @@ test("Ask: history is whole until saved; only repo-held messages are shed; never
   assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].content`), "pushed gbs-import");
   assert.ok(val(`document.getElementById("askbtn").classList.contains("hasnote")`), "✉ lights on the Ask button while the sheet is closed");
   run(`asksheet.classList.add("on"); askSetMode("terminal"); askRender();`); // openAsk itself needs the target <select> the harness lacks
-  assert.ok(val(`[...asklog.children].some(d => d.className === "askmsg note" && /from the Mac: pushed gbs-import/.test(d.textContent))`), "note bubble rendered in the Terminal tab");
+  assert.ok(val(`[...asklog.children].filter(d => d.className === "askmsg note").map(d => d.textContent)`).some(x => /^(\d\d:\d\d|[A-Z][a-z]{2} \d+ \d\d:\d\d) · .*from the Mac: pushed gbs-import/.test(x)), "note bubble rendered in the Terminal tab, with its time");
   run(`askSetMode("song"); localStorage.removeItem(ASK_TERMINAL_KEY);`);
   assert.match(val(`askLogMarkdown([{role: "note", content: "pushed gbs-import", m: "terminal"}])`), /\*\*Mac \(terminal\):\*\* pushed gbs-import/);
   // the general chat: its own key, session name, log path, no song context, no annotation tool; back to the song afterwards
@@ -5435,6 +5435,23 @@ test("⌨ Terminal stays while the terminal is busy: liveness is a line in the t
   assert.equal(val(`askTerminal`), true, "still on the Terminal tab");
   assert.match(val(`document.getElementById("asknowstrip").textContent`), /^queued — the terminal is busy/);
   run(`askCaps = {bridge: false, terminal: false, terminalLive: false}; askSetMode("song");`);
+});
+
+test("⌨ Terminal model pickers: shown on the Terminal tab with the bridge; a change is saved on the bridge", async () => {
+  run(`globalThis.__real = {fetch: globalThis.fetch, aiUrl}; aiUrl = () => "http://bridge.test"; globalThis.__posts = [];
+       globalThis.fetch = async (u, o) => { if (o && o.method === "POST") __posts.push(JSON.parse(o.body)); return {ok: true, status: 200, json: async () => ({advisor: "opus", builder: "sonnet"})}; };
+       askSetMode("terminal"); askCaps = {bridge: true, terminal: true, terminalLive: true};`);
+  try {
+    await run(`askTermModelsLoad()`);
+    assert.equal(val(`document.getElementById("asktermmodels").style.display`), "");
+    assert.equal(val(`document.getElementById("asktermbuilder").value`), "sonnet");
+    run(`document.getElementById("asktermbuilder").value = "opus"; document.getElementById("asktermbuilder").dispatchEvent({type: "change", target: document.getElementById("asktermbuilder")});`);
+    await run(`Promise.resolve()`);
+    assert.deepEqual(val(`__posts`), [{builder: "opus"}]);
+    run(`askSetMode("song");`);
+    await run(`askTermModelsLoad()`);
+    assert.equal(val(`document.getElementById("asktermmodels").style.display`), "none", "only on the Terminal tab");
+  } finally { run(`globalThis.fetch = __real.fetch; aiUrl = __real.aiUrl; askCaps = {bridge: false, terminal: false};`); }
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

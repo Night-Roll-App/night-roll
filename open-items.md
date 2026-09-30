@@ -534,7 +534,7 @@ playing) → Play (YouTube pauses) → Stop. ALSO re-check background play
 (lock the iPad mid-album). If audio goes wrong: revert this one commit
 (iPad audio known-good rule).
 
-## NEXT (after session controls): MODEL PICKERS IN THE ⌨ TERMINAL TAB (Josh, 2026-09-30)
+## DONE 2026-09-30: MODEL PICKERS IN THE ⌨ TERMINAL TAB (Josh, 2026-09-30) — the terminal session reads GET /v1/terminal-prefs before each Agent launch
 "I should also have the ability to change the model from here … the
 advisor's model and any sub task models." Two pickers in the Terminal
 tab — Advisors (read-only reviews) and Builders (implementation agents):

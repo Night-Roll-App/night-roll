@@ -1684,7 +1684,7 @@
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, a small chip at the top right always says what the terminal's Claude Code is doing — <b>Claude: working: …</b> or <b>Claude: idle</b> — refreshed every 10 seconds; tap it for the last ten steps with their times and the latest commits. The same line sits at the top of every ✦ AI tab and in ⏳ Jobs. Without the bridge (LM Studio, no AI) none of it appears.</dd>
       <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a <code>(screenshot: …)</code> line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.</dd>
-      <dt>⌨ Terminal tab</dt><dd>The ⌨ Terminal tab in ✦ AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. 📷 works the same. If the Mac can't be reached, the message goes back into the box.</dd>
+      <dt>⌨ Terminal tab</dt><dd>Two pickers at its top choose the model the terminal gives its <b>advisors</b> (read-only reviews) and its <b>builders</b> (the agents that write code) — Opus, Sonnet, Haiku or Fable; the terminal session's own model is set at the Mac (/model). The ⌨ Terminal tab in ✦ AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. 📷 works the same. If the Mac can't be reached, the message goes back into the box.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved) — on the Claude Code bridge it also tells the Mac to really start over: without this, the same long-running Claude session kept being resumed underneath a cleared-looking chat.</dd>
       <dt>Session usage and Compact</dt><dd>On the Claude Code bridge, a small line under ✦ AI's tab strip says <b>"N turns · ~Nk tokens · $N.NN"</b> for the chat you're in (♪ this song or ✦ Ask — not ⌨ Terminal, which has no session of its own), refreshed after every reply and whenever you switch tabs; past 40 turns it adds <b>"— long, Compact saves tokens"</b>. Tap <b>Compact</b> beside Clear chat (in-app confirm) to have the bridge summarize this chat's memory on the Mac and shrink it — the status line then reads <b>"compacted: 172 → 1 turns · ~24k → ~3k tokens"</b>, the exact before/after the Mac measured. Compact only affects the Mac's memory of the conversation, never your saved messages or the .ask.md log. The <b>plan usage</b> line in ✦ AI's Recent (tap the <b>Now:</b> strip) shows this account's own subscription usage — this session and this week — when the bridge has seen it.</dd>
       <dt>Where the model runs</dt><dd>File → Settings… → <b>AI model</b>. <b>In this browser</b>: pick a small model (0.4–4 GB), the first Ask downloads it once and it runs on this device's GPU, nothing leaves the device; Test checks WebGPU and whether it's downloaded. <b>On a server</b>: the URL of an OpenAI-compatible server — LM Studio or Ollama on this computer (<code>http://localhost:1234</code>) or on another machine on your network — plus an optional API key; <b>Test</b> lists the server's models, picks one (your last pick if the server still has it), saves, and names exactly what's wrong when it can't (server off, CORS not enabled, https page talking to an http server, no answer in 8 s). On an iPad the server must be https (Tailscale Serve). The first time you point it at a machine other than this one, it asks once before sending your notes there.</dd>
@@ -2003,6 +2003,10 @@
     </div>
     <div class="status" id="asknowstrip" style="display:none;cursor:pointer" role="button" tabindex="0" aria-label="What Claude Code is doing — tap for recent"></div>
     <div id="asknowrecent" style="display:none"></div>
+    <div class="row" id="asktermmodels" style="display:none;gap:6px;flex-wrap:wrap">
+      <span class="status">advisors</span><select id="asktermadvisor" aria-label="Model for the terminal's advisors"></select>
+      <span class="status">builders</span><select id="asktermbuilder" aria-label="Model for the terminal's builders"></select>
+    </div>
     <div class="status" id="asksessionline" style="display:none"></div>
     <div id="asklog"></div>
     <div class="chiprow" id="asktakes"></div>
@@ -18733,6 +18737,7 @@ function askModeButtons() {
   a.classList.toggle("active", !askGeneral); b.classList.toggle("active", gen);
   a.setAttribute("aria-selected", String(!askGeneral)); b.setAttribute("aria-selected", String(gen));
   if (c) { c.classList.toggle("active", askTerminal); c.setAttribute("aria-selected", String(askTerminal)); }
+  if (typeof askTermModelsLoad === "function") askTermModelsLoad();
   // the tab names the song: the sheet covers the title behind it (Josh, 2026-09-27)
   try { const t = songKey ? songTitleOf(songKey) : (typeof baseName === "function" ? baseName() : ""); a.textContent = "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song"); } catch (err) { a.textContent = "♪ this song"; }
   const spanrow = document.getElementById("askspanrow"); if (spanrow) spanrow.style.display = askGeneral ? "none" : "";
@@ -18922,7 +18927,7 @@ function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab
     askSave(msgs, undefined, k);
   }
   const shown = asksheet.classList.contains("on") ? notes.filter(n => (toTerm(n) ? ASK_TERMINAL_KEY : askStoreKey()) === askStoreKey()) : [];
-  if (shown.length) { for (const n of shown) askBubble("note", askNoteLabel(n.from) + String(n.text)); askNoteSeen(); }
+  if (shown.length) { for (const n of shown) askBubble("note", askClock(n.t) + askNoteLabel(n.from) + String(n.text)); askNoteSeen(); }
   if (shown.length === notes.length) return;
   else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
 }
@@ -18984,6 +18989,7 @@ function askTabsApply() {
   const g = document.getElementById("askmodegen"), t = document.getElementById("askmodeterm");
   if (g) g.style.display = v.general ? "" : "none";
   if (t) t.style.display = v.terminal ? "" : "none";
+  askTermModelsLoad();
   if ((askTerminal && !v.terminal) || (askGeneral && !askTerminal && !v.general)) { askSetMode("song"); if (asksheet.classList.contains("on")) askRender(); }
 }
 // ---- AI session controls (open-items.md "NEXT: AI SESSION CONTROLS",
@@ -19199,6 +19205,13 @@ function askShotOutgoing(text) { // what Send sends: the note, then the shot's l
 document.getElementById("askshot").addEventListener("click", askShotTake);
 document.getElementById("askshotx").addEventListener("click", () => { askShotSet(null); askstatus.textContent = ""; });
 document.getElementById("askshotimg").addEventListener("click", e => e.target.classList.toggle("big"));
+// when each note from the Mac (and each Terminal message) was sent — Josh,
+// 2026-09-30: "I want timestamps on the messages that you sent back to me"
+function askClock(t) {
+  if (!t) return "";
+  const d = new Date(t), now = new Date(), hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  return (d.toDateString() === now.toDateString() ? hm : d.toLocaleDateString(undefined, {month: "short", day: "numeric"}) + " " + hm) + " · ";
+}
 function askNoteLabel(from) { return "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; }
 function askInboxStart() { clearInterval(askInboxTimer); askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askStatusPoll(); askResume(); } }, 60000); askInboxPoll(); askStatusPoll(); askResumeSoon(1500); } // at boot too: a reply that landed while the app was closed lights ✦ without opening the sheet
 function askBubble(role, text) {
@@ -19295,7 +19308,7 @@ function askRender() {
   if (!msgs.length && !st.trimmed && askTerminal) askBubble("ai", "This goes straight to Claude Code in the Mac's terminal — the session that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.");
   else if (!msgs.length && !st.trimmed && askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
   else if (!msgs.length && !st.trimmed) askBubble("ai", "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
-  for (const m of msgs) { askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", m.role === "note" ? askNoteLabel(m.m) + m.content : askStripContext(m.content)); if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; } }
+  for (const m of msgs) { askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", m.role === "note" ? askClock(m.t) + askNoteLabel(m.m) + m.content : (askTerminal && m.role === "user" ? askClock(m.t) : "") + askStripContext(m.content)); if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; } }
   if (pendingSeen) askResumeSoon(200);
 }
 async function askRenderEarlier() { // what this device let go of after it reached the repo file
@@ -19431,6 +19444,27 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
     document.getElementById("asksend").disabled = false;
   }
 }
+// which model the terminal session gives its advisors (read-only reviews)
+// and builders (implementation agents) — Josh, 2026-09-30: "change the
+// advisor's model and any sub task models". Kept on the bridge, read by the
+// terminal session before each launch. Its OWN model is Claude Code's /model.
+const TERM_MODELS = [["opus", "Opus"], ["sonnet", "Sonnet"], ["haiku", "Haiku"], ["fable", "Fable"]];
+async function askTermModelsLoad() {
+  const row = document.getElementById("asktermmodels");
+  if (!row) return;
+  row.style.display = askTerminal && askCaps.terminal ? "" : "none";
+  if (!askTerminal || !askCaps.terminal) return;
+  let j = null; try { const r = await fetch(aiUrl() + "/v1/terminal-prefs", {headers: aiHeaders(), cache: "no-store"}); if (r.ok) j = await r.json(); } catch (err) { /* keep what's shown */ }
+  for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) {
+    const sel = document.getElementById(id);
+    if (!sel.children.length) for (const [v, label] of TERM_MODELS) { const o = document.createElement("option"); o.value = v; o.textContent = label; sel.appendChild(o); }
+    if (j && j[k]) sel.value = j[k];
+  }
+}
+for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
+  try { await fetch(aiUrl() + "/v1/terminal-prefs", {method: "POST", headers: aiHeaders(), body: JSON.stringify({[k]: e.target.value})}); askstatus.textContent = k + "s will use " + e.target.value; }
+  catch (err) { askstatus.textContent = "⚠ couldn't reach the bridge: " + err.message; }
+});
 let askTerminalFast = 0, askTerminalTimer = null;
 async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac's Claude Code; the reply comes back as a note
   const key = ASK_TERMINAL_KEY, msgs = askStore(key).msgs;
@@ -19438,7 +19472,7 @@ async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac
   askSave(msgs, undefined, key);
   askMicOff(); // a live 🎤 writes its transcript back after we clear the box (Josh, 2026-09-30: the text stayed after Send)
   askinput.value = ""; askShotSet(null); askDraftClear(); askGrow(); askComposing(false);
-  askBubble("user", text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
+  askBubble("user", askClock(Date.now()) + text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
   askstatus.textContent = "sending to the terminal…";
   try {
     const r = await fetch(aiUrl() + "/v1/terminal", {method: "POST", headers: aiHeaders(), body: JSON.stringify({text})});
