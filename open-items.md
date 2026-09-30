@@ -505,6 +505,7 @@ whether the tool or the app owns the order.
     Per-view {zoom, x, y} saved on switch, restored before
     buildScoreModel/clampView can clamp it; views independent.
 
+(The close guard below is moot since save model B: every edit is kept, nothing to lose on a song switch.)
 Queued, not now: the close guard ("SAVE CHANGES TO <song>?" on song
 switch); delete leftover recordings on song delete/revert; two timeline
 views at once.
@@ -569,7 +570,8 @@ Minify/obfuscate: skip (hours to undo; breaks one-file/no-build, harness,
 readable iPad traces; the IPA is a zip anyway). Real protection: LICENSE
 is PolyForm Noncommercial (792e432 — close any stale "awaiting his yes"
 line), add a copyright/license line to index.html's header, one-time
-secrets scan (`git log -p | grep -E 'ghp_|github_pat_|sk-'`), maybe a
+secrets scan (DONE 2026-09-30: night-roll and the archive's full
+history — no GitHub, Anthropic or AWS tokens), maybe a
 "Night Roll" trademark search before marketing. Bigger legal risk: the
 game-music archive (DMCA; Apple review) — decide at App Store launch
 with TWO PRODUCTS (store edition without rips?). At launch, optional:
@@ -1095,7 +1097,7 @@ an EDITION flag hides token/data-locations/Web-session in the app
 edition, perf HUD stays; GitHub is reframed as the **Publish** feature
 with player links (for him and every user); everything public for now
 (a web app's code is its deployed page anyway); a noncommercial license
-(PolyForm NC) to block republishing — awaiting his yes; AI tiers:
+(PolyForm NC) to block republishing — DONE (792e432); AI tiers:
 on-device runtime in the shell (v1.1), Claude by API key, a bridge on
 a computer. Folder mode already IS the persistence adapter. Spike list
 grew (recording, dictation, WebGPU). Budget 10–16 sessions. Open
