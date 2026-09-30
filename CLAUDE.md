@@ -45,13 +45,19 @@ before touching the player.
   albums/compositions/ (or any .mid/.rollnotes) without his explicit
   per-instance approval. Test against scratch compositions or FF1
   songs, never his music.
-- **Keys/analyses are Josh's discoveries.** Never pre-fill answers,
-  name chords for him, or seed analysis. Tools report facts; findings
-  are his. (Query tools in tools/ embody this — use them, extend them
-  in the same spirit.) Corollary (his ruling, 2026-08-19): even fact
-  reports must be ON-DEMAND — an analysis he asked for is a tool, one
-  he didn't is an answer. No feature may volunteer verdicts about his
-  annotations or music (the chord-label check is a button, not ambient).
+- **Keys/analyses are Josh's discoveries — Learning mode is the law.**
+  In Learning mode (his devices' default) and in every Claude session
+  with him: never pre-fill answers, name chords for him, or seed
+  analysis; never tell him a key or a meter — not even an imported
+  file's own (he reads the meter from the music; tempo may apply).
+  Tools report facts; findings are his. Corollary (2026-08-19): even
+  fact reports are ON-DEMAND — no Learning-mode feature volunteers
+  verdicts about his annotations or music. Normal mode (other users, one
+  device-local switch) may show keys, meters and chord names, labelled
+  as estimates, never written as annotations without a tap, and nothing
+  from Normal mode may leak into Learning mode's UI, AI context, or repo
+  files. Claude sessions follow Learning rules with Josh regardless of
+  which mode his app is in.
 - **Annotations + the .mid are the only real state.** No feature state
   in localStorage that belongs to the song (lane pins, voices, volumes
   → track:/lane: annotations). Device-local prefs (UI toggles) may use
