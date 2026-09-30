@@ -318,7 +318,7 @@ At the top of ✦ AI, **♪ this song** / **✦ Ask** / **⌨ Terminal** (only w
 On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold **✉** bubble (inbox), and the **✦ AI** button shows ✉ until you open it. Notes are saved with the chat.
 
 **What Claude Code is doing now**
-On the Claude Code bridge, a quiet **Now: …** line at the top of the **✦ Ask** and **⌨ Terminal** chats shows the terminal's current step (set with claude-bridge.mjs --status "…", cleared when idle), with how long ago it changed; the same line appears in **⏳ Jobs** no matter which chat you're in. Tap the strip for **Recent**: its last ~10 lines, plus the last 3 commit subjects from the repo.
+On the Claude Code bridge, a small chip at the top right always says what the terminal's Claude Code is doing — **Claude: working: …** or **Claude: idle** — refreshed every 10 seconds; tap it for the last ten steps with their times and the latest commits. The same line sits at the top of every ✦ AI tab and in ⏳ Jobs. Without the bridge (LM Studio, no AI) none of it appears.
 
 **📷 Screenshot to Claude**
 On the Claude Code bridge, tap **📷** beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a (screenshot: …) line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.

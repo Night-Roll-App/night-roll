@@ -93,7 +93,7 @@
        centered in THAT space, not the viewport (mirroring the cluster on the
        right wasted ~280px and still truncated long titles on iPad portrait) */
     position: absolute;
-    left: 270px;
+    left: 380px; /* past NIGHT // ROLL + File + View + ✦ AI (270 predated ✦ AI: the title ran under it) */
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
@@ -164,6 +164,14 @@
   .lcdseg.tappable:active { background: var(--panel); border-radius: 5px; }
   #timectl { display: flex; align-items: center; gap: 10px; padding-right: 12px; flex: none; margin-top: 6px; min-height: 44px; }
   #timectl #metbtn { min-height: 34px; padding: 4px 10px; }
+  /* what Claude Code is doing, always in view while the bridge is there
+     (Josh, 2026-09-30: "so he doesn't have to ask"); the title gives it room */
+  #nowchip { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); max-width: 22vw; font-family: var(--mono); font-size: 11px;
+             color: var(--dim); background: none; border: 1px solid var(--grid); border-radius: 12px; padding: 3px 10px; min-height: 26px;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2; }
+  #nowchip.working { color: var(--text); border-color: var(--accent); }
+  body.nowchip #songcrumb { right: calc(22vw + 20px); }
+  @media (max-width: 700px) { #nowchip { display: none !important; } body.nowchip #songcrumb { right: 10px; } }
   #playbtn.loading { opacity: 0.7; } /* loading its sound: tappable (queues the play), not yet ▶ */
   #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 12px; }
   select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -975,6 +983,7 @@
   <button id="askbtn" aria-label="Talk to the AI tutor">✦ AI</button>
   <button id="fullappbtn" style="padding:6px 10px">Full app</button>
   <span id="songcrumb"></span>
+  <button id="nowchip" style="display:none" aria-label="What Claude Code is doing — tap for recent steps"></button>
   <!-- accept threads two iOS quirks: listing only extensions grays out .nsf (no
        registered type), while NO accept summons the photo-library sheet.
        application/octet-stream maps to the root "any data" type: Files opens
@@ -1673,7 +1682,7 @@
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ AI) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
       <dt>General chat</dt><dd>At the top of ✦ AI, <b>♪ this song</b> / <b>✦ Ask</b> / <b>⌨ Terminal</b> (only with the Claude Code bridge) pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
-      <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, a quiet <b>Now: …</b> line at the top of the <b>✦ Ask</b> and <b>⌨ Terminal</b> chats shows the terminal's current step (set with <code>claude-bridge.mjs --status "…"</code>, cleared when idle), with how long ago it changed; the same line appears in <b>⏳ Jobs</b> no matter which chat you're in. Tap the strip for <b>Recent</b>: its last ~10 lines, plus the last 3 commit subjects from the repo.</dd>
+      <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, a small chip at the top right always says what the terminal's Claude Code is doing — <b>Claude: working: …</b> or <b>Claude: idle</b> — refreshed every 10 seconds; tap it for the last ten steps with their times and the latest commits. The same line sits at the top of every ✦ AI tab and in ⏳ Jobs. Without the bridge (LM Studio, no AI) none of it appears.</dd>
       <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a <code>(screenshot: …)</code> line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.</dd>
       <dt>⌨ Terminal tab</dt><dd>The ⌨ Terminal tab in ✦ AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. 📷 works the same. If the Mac can't be reached, the message goes back into the box.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).</dd>
@@ -18955,13 +18964,25 @@ function askTabsApply() {
   if (t) t.style.display = v.terminal ? "" : "none";
   if ((askTerminal && !v.terminal) || (askGeneral && !askTerminal && !v.general)) { askSetMode("song"); if (asksheet.classList.contains("on")) askRender(); }
 }
+function askStatusIdle() { return !askStatusNow || !askStatusNow.text || /^idle\b/i.test(askStatusNow.text); }
+function askStatusLine() { // "working: …" or "idle", from the bridge's current line
+  if (askStatusIdle()) return "idle" + (askStatusNow && askStatusNow.text && /^idle\W+(.+)/i.test(askStatusNow.text) ? " — " + askStatusNow.text.replace(/^idle\W+/i, "") : "");
+  return "working: " + askStatusNow.text;
+}
 function askStatusRender() {
   const strip = document.getElementById("asknowstrip");
-  if (strip) {
-    const show = !!(askGeneral && askStatusNow && askStatusNow.text);
+  if (strip) { // every tab, whenever the bridge is there (was the song-free chat only)
+    const show = askCaps.bridge;
     strip.style.display = show ? "" : "none";
-    if (show) strip.textContent = "Now: " + askStatusNow.text + " · " + askAgeText(askStatusNow.t);
+    if (show) strip.textContent = "Claude Code " + askStatusLine() + (askStatusNow && askStatusNow.t ? " · " + askAgeText(askStatusNow.t) : "");
     if (!show) askStatusRecentShow(false);
+  }
+  const chip = document.getElementById("nowchip");
+  if (chip) {
+    chip.style.display = askCaps.bridge ? "" : "none";
+    if (typeof document !== "undefined" && document.body && document.body.classList) document.body.classList.toggle("nowchip", askCaps.bridge);
+    chip.textContent = "Claude: " + askStatusLine();
+    chip.classList.toggle("working", !askStatusIdle());
   }
   const jobsnow = document.getElementById("jobsnow");
   if (jobsnow) {
@@ -18991,6 +19012,12 @@ function askStatusRecentShow(on) {
     el.appendChild(d);
   }
 }
+document.getElementById("nowchip").addEventListener("click", () => { openAsk(); askStatusRecentShow(true); askStatusFetchCommits(); });
+// live while the bridge is there and the app is on screen: every 10 s (the
+// inbox keeps its own 60 s pace)
+// (askStatusPoll asks only an allowed host, and never again after a 404 —
+// so for LM Studio or no AI at all this costs one request, then nothing)
+if (typeof window !== "undefined") setInterval(() => { if (!document.hidden) askStatusPoll(); }, 10000);
 function askStatusToggle() { askStatusRecentShow(!askStatusRecentOpen); if (askStatusRecentOpen) askStatusFetchCommits(); }
 async function askStatusFetchCommits() { // origin/main's last 3 subjects, public+unauthenticated, at most once per 5 min; silent on any failure
   if (askStatusCommits && Date.now() - askStatusCommitsAt < 5 * 60000) return;

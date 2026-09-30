@@ -524,6 +524,21 @@ drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
 
+## ARCHIVE MOVE — WAITS ON JOSH'S GO, tomorrow, needs his token change
+Prepared on branch `archive-to-joshcough` (e23a2bf, pushed, NOT merged):
+Night-Roll-App/nsf-archive → joshcough/night-roll-archive (the name the
+app's "create mine" already uses). The branch has the new defaults, a
+read fallback to the old raw URL, and a second optional "Archive token"
+in Settings → GitHub. The exact steps (a–e) are in that branch's
+open-items. In short, for Josh:
+1. GitHub → Settings → Developer settings → Fine-grained tokens → new
+   token, resource owner joshcough, only the archive repo, Contents:
+   read and write.
+2. Keep the main token (resource owner Night-Roll-App, night-roll,
+   Contents: read and write).
+3. Say go: I transfer + rename the repo, merge the branch, build the
+   iPad; he pastes the archive token into Settings → GitHub.
+
 ## PRIVATE REPO / PROTECTION — ADVISOR (2026-09-29; Josh: "am I being overly cautious?")
 Verdict: now nothing; stay public. Pages sites are always public (the
 served index.html is downloadable); Pages from a private org repo needs

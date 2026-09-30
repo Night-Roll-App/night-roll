@@ -5002,7 +5002,7 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
   }
 });
 
-test("status: /v1/status is polled like the inbox — Now strip in general chat only, a Now row in Jobs always, null hides both, a 404 stops asking", async () => {
+test("status: /v1/status is polled like the inbox — the strip shows in EVERY tab and a header chip while the bridge is there; no current line = idle; a 404 hides it and stops asking", async () => {
   installSong();
   // other boot-scheduled fetches (catalog/manifest) can still land on a later
   // microtask turn once a real `fetch` exists — filter to /v1/status so they
@@ -5010,7 +5010,7 @@ test("status: /v1/status is polled like the inbox — Now strip in general chat 
   // own default fetch does
   run(`globalThis.__realFetch = globalThis.fetch; globalThis.__realAiUrl = aiUrl;
        aiUrl = () => "http://localhost:8788"; // "local": askInboxAllowed needs no host allow-listing
-       askStatusNow = null; askStatusRecent = []; askStatusNo = ""; askGeneral = false;
+       askStatusNow = null; askStatusRecent = []; askStatusNo = ""; askGeneral = false; askCaps = {bridge: false, terminal: false};
        globalThis.__calls = 0;
        globalThis.fetch = async (u) => { if (!String(u).includes("/v1/status")) return Promise.reject(new Error("no network in tests"));
          __calls++; return {ok: true, status: 200,
@@ -5020,19 +5020,16 @@ test("status: /v1/status is polled like the inbox — Now strip in general chat 
     await run(`askStatusPoll()`);
     assert.equal(val(`__calls`), 1);
     assert.equal(val(`askStatusNow.text`), "running tests");
-    // ♪ this song is showing: the strip stays hidden even though a value arrived
-    assert.equal(val(`document.getElementById("asknowstrip").style.display`), "none");
-    // the Jobs row is not gated by chat mode
-    assert.equal(val(`document.getElementById("jobsnow").style.display`), "");
-    assert.equal(val(`document.getElementById("jobsnow").textContent`), "Now: running tests");
-    run(`askGeneral = true; askStatusRender();`);
+    // ♪ this song is showing: the strip shows there too now (Josh, 2026-09-30: every tab)
     assert.equal(val(`document.getElementById("asknowstrip").style.display`), "");
-    assert.equal(val(`document.getElementById("asknowstrip").textContent`), "Now: running tests · 3m ago");
-    // a null "now" hides both, even in general mode
+    assert.equal(val(`document.getElementById("asknowstrip").textContent`), "Claude Code working: running tests · 3m ago");
+    assert.equal(val(`document.getElementById("nowchip").textContent`), "Claude: working: running tests", "and the header chip");
+    assert.equal(val(`document.getElementById("jobsnow").textContent`), "Now: running tests");
+    // no current line: idle, still shown (the bridge is there)
     run(`globalThis.fetch = async (u) => !String(u).includes("/v1/status") ? Promise.reject(new Error("no network in tests"))
          : {ok: true, status: 200, json: async () => ({now: null, recent: []})};`);
     await run(`askStatusPoll()`);
-    assert.equal(val(`document.getElementById("asknowstrip").style.display`), "none");
+    assert.equal(val(`document.getElementById("nowchip").textContent`), "Claude: idle");
     assert.equal(val(`document.getElementById("jobsnow").style.display`), "none");
     // a 404 marks this url status-less, like the inbox's askInboxNo — never asked again
     run(`globalThis.__calls2 = 0;
@@ -5041,8 +5038,9 @@ test("status: /v1/status is polled like the inbox — Now strip in general chat 
     await run(`askStatusPoll()`);
     await run(`askStatusPoll()`);
     assert.equal(val(`__calls2`), 1);
+    assert.equal(val(`document.getElementById("nowchip").style.display`), "none", "no bridge: no chip");
   } finally {
-    run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl;
+    run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; askCaps = {bridge: false, terminal: false};
          askStatusNow = null; askStatusRecent = []; askStatusNo = ""; askGeneral = false; songKey = null; song = null;`);
   }
 });
