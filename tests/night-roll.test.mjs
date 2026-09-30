@@ -7221,3 +7221,88 @@ test("Publish: removing a baked tempo note removes it on republish — the base 
   const withoutTempo = a.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...(await folderBytes(a, KEY))])}).buffer, {trust: true}).tempos)`);
   assert.deepEqual(JSON.parse(withoutTempo).map(t => t.usq), [500000], "back to the base tempo — the baked event is GONE, not just un-refreshed");
 });
+
+// ---- moveComposition through the one publish function (Josh's ruling: a
+// moved song is byte-identical to publishing it at the new path) ----
+test("Move (published, folder mode): the moved .mid is byte-identical to publishSong's own output, the tombstoned note is dropped, old paths are gone", async () => {
+  const oldKey = "albums/compositions/nightroll/zz-test-move.mid";
+  const newDir = "albums/compositions/zz-moved/";
+  const newBase = newDir + "zz-test-move";
+  const newKey = newBase + ".mid";
+
+  const a = pubApp();
+  useFakeFolder(a, "move-a");
+  // a previously-published rollnotes.json at the OLD path: one section to
+  // keep, one tombstoned on this device (same shape as the tomb-test above)
+  const already = '{ "version": 1, "song": "zz-test-move", "notes": [\n' +
+    '  {"at":[1,1],"type":"section","label":"Keep"},\n' +
+    '  {"at":[5,1],"type":"section","label":"Drop"}\n] }\n';
+  await a.run(`folderWrite(${JSON.stringify(oldKey.replace(/\.mid$/, ".rollnotes.json"))}, ${JSON.stringify(already)})`);
+  const dropIdentity = a.run(`noteIdentity(parseRollnotes(${JSON.stringify(already)})[1])`);
+  a.run(`localStorage.setItem("ff1roll-tombs-" + ${JSON.stringify(oldKey)}, JSON.stringify([${JSON.stringify(dropIdentity)}]));`);
+
+  openComposition(a, oldKey, {tempoNoteBpm: 150});
+  a.run(`CATALOG = ${JSON.stringify({"Night Roll Sketches": [["Zz Test Move", oldKey]]})};`); // published: the move goes through the repo (publishSong), not a local-only rename
+
+  await a.run(`moveComposition(${JSON.stringify(newDir)})`);
+
+  assert.equal(a.run(`songKey`), newKey, "the open song follows the move");
+  const midMoved = await folderBytes(a, newKey);
+  assert.ok(midMoved, "a .mid landed at the new path");
+
+  // old paths are gone
+  for (const p of [oldKey, oldKey.replace(/\.mid$/, ".rollnotes.json"), oldKey.replace(/\.mid$/, ".notes.txt")]) {
+    assert.equal(await folderBytes(a, p), null, p + " no longer exists");
+  }
+
+  // the deleted note did not come back at the new path
+  const annoMoved = JSON.parse(await folderText(a, newBase + ".rollnotes.json"));
+  const labels = annoMoved.notes.map(n => n.label).filter(Boolean);
+  assert.deepEqual(labels, ["Keep"], "the tombstoned note was not republished at the new path");
+
+  // byte-identical to what publishSong writes fresh, for the SAME song, at the SAME new path
+  const b = pubApp();
+  useFakeFolder(b, "move-b");
+  openComposition(b, newKey, {tempoNoteBpm: 150});
+  await b.run(`publishSong(${JSON.stringify(newKey)}, ghHeaders("folder"), () => {})`);
+  const midDirect = await folderBytes(b, newKey);
+  assert.deepEqual([...midMoved], [...midDirect], "the moved .mid is byte-identical to publishSong's own output for the same song — moveComposition writes through the same door");
+});
+
+test("Move (published, folder mode): publishSong failing leaves the old files in place and restores songKey / local keys", async () => {
+  const oldKey = "albums/compositions/nightroll/zz-test-move-fail.mid";
+  const newDir = "albums/compositions/zz-moved-fail/";
+  const newKey = newDir + "zz-test-move-fail.mid";
+
+  const a = pubApp();
+  useFakeFolder(a, "move-fail");
+  // the old path already has real published files — the state a failed move must leave untouched
+  const seedDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+    tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+  const seedBytes = JSON.parse(a.run(`JSON.stringify(Array.from(writeMidi(${JSON.stringify(seedDoc)})))`)); // JSON round-trip: a vm-realm array breaks deepEqual against a native one
+  await a.run(`folderWrite(${JSON.stringify(oldKey)}, new Uint8Array(${JSON.stringify(seedBytes)}))`);
+  const oldAnno = '{ "version": 1, "song": "zz-test-move-fail", "notes": [] }\n';
+  await a.run(`folderWrite(${JSON.stringify(oldKey.replace(/\.mid$/, ".rollnotes.json"))}, ${JSON.stringify(oldAnno)})`);
+  await a.run(`folderWrite(${JSON.stringify(oldKey.replace(/\.mid$/, ".notes.txt"))}, "old notes\\n")`);
+
+  openComposition(a, oldKey, {tempoNoteBpm: 150});
+  a.run(`CATALOG = ${JSON.stringify({"Night Roll Sketches": [["Zz Test Move Fail", oldKey]]})};`); // published
+  // force publishSong's .mid write to fail (a GitHub/folder write error is the
+  // realistic failure mode) — same top-level binding publishSong calls, so the
+  // override takes effect without touching any app state the move itself reads
+  a.run(`putMidAt = async () => ({ok: false, status: 500});`);
+
+  await a.run(`moveComposition(${JSON.stringify(newDir)})`);
+
+  assert.match(a.run(`document.getElementById("filestatus").textContent`), /Move failed/, "the failure is reported");
+  assert.equal(a.run(`songKey`), oldKey, "songKey restored to the old path — the device isn't left pointing at a path with no files");
+  // the old files are exactly as they were
+  assert.deepEqual([...(await folderBytes(a, oldKey))], seedBytes, "the old .mid is untouched");
+  assert.equal(await folderText(a, oldKey.replace(/\.mid$/, ".rollnotes.json")), oldAnno, "the old annotations are untouched");
+  assert.equal(await folderText(a, oldKey.replace(/\.mid$/, ".notes.txt")), "old notes\n", "the old notes.txt is untouched");
+  // nothing landed at the new path
+  assert.equal(await folderBytes(a, newKey), null, "no .mid at the new path");
+  // the draft rode back to the old key too (renameLocalKeys is symmetric)
+  assert.notEqual(a.run(`localStorage.getItem(draftStoreKey(${JSON.stringify(oldKey)}))`), null, "the draft is back under the OLD key");
+  assert.equal(a.run(`localStorage.getItem(draftStoreKey(${JSON.stringify(newKey)}))`), null, "nothing left behind under the new key");
+});

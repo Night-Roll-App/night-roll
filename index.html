@@ -15086,7 +15086,8 @@ function chosenFolder(sel, inp) { // the select, or the typed folder; null = not
 }
 function renameLocalKeys(oldKey, newKey) { // every per-song key on this device rides along; the open song follows
   migrateVersions(oldKey); // fold any pre-versions checkpoint/stash in under the OLD key first, so a rename can't strand them
-  for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-versions-"]) {
+  for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-versions-",
+                     "ff1roll-tombs-"]) { // a deletion of a synced note must stay dead at the new path too (moveComposition)
     const v = localStorage.getItem(pre + oldKey);
     if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
   }
@@ -18134,16 +18135,46 @@ async function moveComposition(destDir) {
   fileStatus("Moving to " + destDir + "…");
   try {
     const h = ghHeaders(token);
-    const r1 = await putMidAt(newKey, h);
-    if (!r1.ok) throw new Error(".mid HTTP " + r1.status);
-    const stamp = Date.now();
-    const content = serializeRollnotesStamped(stamp);
-    const r2 = await putRollnotes(newKey.replace(/\.mid$/, "") + ".rollnotes.json", content, h);
-    if (!r2.ok) throw new Error(".rollnotes.json HTTP " + r2.status);
-    // saveSong writes THREE files; Move used to carry two, stranding the dump
-    // at the old path until the next Save backfilled it (Josh, 2026-09-06)
-    const r3 = await putSongsText(newKey.replace(/\.mid$/, "") + ".notes.txt", notesTxtFor(), h);
-    if (!r3.ok) throw new Error(".notes.txt HTTP " + r3.status);
+    // publishSong reads annotations from DISK at the given key (plus this
+    // device's still-local additions) — the same merge for every song, open
+    // or not. The old path's disk file is about to disappear from under it,
+    // so snapshot its current, already-tombstone-filtered note set now,
+    // while it's still readable at oldKey — otherwise a move would silently
+    // drop every already-published annotation that wasn't still locally
+    // pending (Bugs found in this refactor: annotationsFor(newKey) finds
+    // nothing on disk at a path nothing has ever been published to yet).
+    const priorNotes = await annotationsFor(oldKey);
+    const origLocalNotes = localStorage.getItem("ff1roll-notes-" + oldKey); // restored verbatim if the publish below fails
+    // every per-song key (draft, local notes, tombstones, midSig) rides to
+    // newKey FIRST, so publishSong below is publishing the open song at its
+    // new path — one publish function, no hand-written writes here (Josh's
+    // ruling: a moved song is byte-identical to publishing it at the new path)
+    renameLocal();
+    // seed newKey's local-additions bucket with the COMPLETE snapshot above
+    // (overwriting whatever renameLocal() just carried over, which was only
+    // ever the still-unsynced subset) — mergeLocalAdditions re-derives each
+    // one the same way a genuine unsynced note would be, so annotationsFor
+    // (newKey) inside publishSong reproduces the full set.
+    const seed = priorNotes.map(n => ({b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2, text: n.text,
+      section: n.section || undefined, chord: n.chord || undefined, cnote: n.cnote || undefined, keydir: n.keydir}));
+    if (seed.length) localStorage.setItem("ff1roll-notes-" + newKey, JSON.stringify(seed));
+    else localStorage.removeItem("ff1roll-notes-" + newKey);
+    try {
+      const d = JSON.parse(localStorage.getItem(draftStoreKey(newKey)) || "null");
+      // the rename carried the OLD path's midSig along; left alone,
+      // publishSong would see "already matches" and skip writing the .mid
+      // at newKey, leaving the move mid-less. Clearing it makes publishSong
+      // treat the .mid as never-written here.
+      if (d && d.midSig !== undefined) { delete d.midSig; localStorage.setItem(draftStoreKey(newKey), JSON.stringify(d)); }
+    } catch (err) { /* no draft to clear */ }
+    try {
+      await publishSong(newKey, h, m => fileStatus(m));
+    } catch (err) {
+      renameLocalKeys(newKey, oldKey); // failed before any delete — the old files are intact; undo the rename so the device still points at a path that has them
+      // renameLocalKeys just carried the FULL snapshot back under "ff1roll-notes-" + oldKey (it followed the "ff1roll-notes-" prefix); oldKey's own disk file already had the ones that weren't local-only, so put back exactly what was there before this attempt, not the superset
+      if (origLocalNotes === null) localStorage.removeItem("ff1roll-notes-" + oldKey); else localStorage.setItem("ff1roll-notes-" + oldKey, origLocalNotes);
+      throw err;
+    }
     // a delete that silently fails is how a Move becomes two copies of a song
     const left = [];
     for (const p of [oldKey,
@@ -18153,8 +18184,6 @@ async function moveComposition(destDir) {
       if (!await deleteRepoFile(p, h)) left.push(p.split("/").pop());
     }
     await updateManifest(h, albums => manifestPlace(albums, oldKey, newKey));
-    renameLocal();
-    markCurrentSongSynced(content, stamp);
     await initCatalog().catch(() => {});
     updateSongBtn();
     fileStatus(left.length

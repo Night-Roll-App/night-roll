@@ -49,6 +49,15 @@ or not (Josh's ruling: "Publish all must behave exactly like publishing
 the open song"). `tests/night-roll.test.mjs` ("Publish: …", 5 new tests)
 pin the fixed behavior; `npm test` green (full suite).
 
+Move now publishes through publishSong too (2026-09-30): a moved song is
+byte-identical to publishing it at the new path, deleted notes stay deleted
+(tombstones now ride every rename, Save As included), and a failed publish
+undoes the rename before any old file is deleted. Two tests.
+QUEUED (pre-existing, not blocking): a move leaves the song's published
+audio clips at the old `<key>.audio/` dir — the moved song's clip
+references point at an empty dir. Moves also write manifest.json twice
+(harmless).
+
 Bugs fixed (docs/provenance-plan.md "Bugs found"):
 - Publish all wrote the un-baked tempo map for a not-open song (the open
   song's own Publish baked it) — the two diverged. Fixed: `bakeTempos`
