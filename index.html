@@ -8745,6 +8745,21 @@ async function idbAudioDelete(key) {
     db.close();
   } catch (err) { /* nothing to drop */ }
 }
+// a rename carries the song's recordings (keys "<songKey>|<file>") to the new key;
+// without this an unpublished take was orphaned under the old name
+async function idbAudioMove(oldKey, newKey) {
+  try {
+    const db = await idbOpen();
+    await new Promise((res, rej) => {
+      const tx = db.transaction("audio", "readwrite"), st = tx.objectStore("audio");
+      const r = st.openCursor(IDBKeyRange.bound(oldKey + "|", oldKey + "|\uffff"));
+      r.onsuccess = () => { const c = r.result; if (!c) return; st.put(c.value, newKey + c.key.slice(oldKey.length)); c.delete(); c.continue(); };
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
+    });
+    db.close();
+  } catch (err) { /* nothing stored */ }
+}
 // an imported SoundFont's raw bytes, keyed by slug — same shape/reasons as idbAudioPut/Get
 // ("Game instrument libraries" step 4): this device's copy, so an sf2: voice keeps working
 // offline and without GitHub even after the tab reloads.
@@ -13542,6 +13557,7 @@ function renameLocalKeys(oldKey, newKey) { // every per-song key on this device 
     if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
   }
   idbDraftMove(oldKey, newKey);
+  idbAudioMove(oldKey, newKey);
   if (songKey === oldKey) {
     songKey = newKey;
     currentPath = newKey;

@@ -453,7 +453,7 @@ whether the tool or the app owns the order.
    dockable, near-full divider). Josh (via Ask, 20:52): "really happy
    with the docking as it is" — NO more window-manager scope beyond
    what's built.
-2. Renaming a song keeps its unpublished recording (`idbAudioMove` in
+2. DONE: Renaming a song keeps its unpublished recording (`idbAudioMove` in
    `renameLocalKeys`, beside `idbDraftMove`).
 3. Background playback skipping: schedule further ahead while
    `document.hidden` (the pump's 0.6 s look-ahead). Own build; ear test

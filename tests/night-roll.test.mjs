@@ -1546,6 +1546,12 @@ test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore
   run(`renameImportDraft("albums/snes/chrono-trigger/frog-s-theme.mid", "Frog");`);
   assert.equal(val(`!!__idb["albums/snes/chrono-trigger/frog.mid"]`), true, "notes followed the rename");
   assert.equal(val(`!!__idb["albums/snes/chrono-trigger/frog-s-theme.mid"]`), false);
+  // renaming carries the song's unpublished recordings too (Josh, 2026-09-29: a renamed song lost its take)
+  run(`__moved = []; const realAM = idbAudioMove; idbAudioMove = (a, b) => { __moved.push([a, b]); return Promise.resolve(); };
+       renameLocalKeys("albums/snes/chrono-trigger/frog.mid", "albums/snes/chrono-trigger/frog-2.mid"); idbAudioMove = realAM;`);
+  assert.deepEqual(val(`__moved`), [["albums/snes/chrono-trigger/frog.mid", "albums/snes/chrono-trigger/frog-2.mid"]]);
+  assert.match(val(`idbAudioMove.toString()`), /IDBKeyRange\.bound\(oldKey \+ "\|"/, "moves every <songKey>|<file> key, only this song's");
+  run(`__idb["albums/snes/chrono-trigger/frog.mid"] = __idb["albums/snes/chrono-trigger/frog-2.mid"]; delete __idb["albums/snes/chrono-trigger/frog-2.mid"];`);
   // saveDraft with a full store: says so, does not throw
   installSong();
   run(`songKey = "albums/compositions/nightroll/full.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ const realSet = localStorage.setItem.bind(localStorage);
