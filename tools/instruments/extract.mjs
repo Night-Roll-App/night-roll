@@ -14,7 +14,7 @@
 // loop in a `smpl` chunk) locally; --publish decides where those files land
 // in the archive.
 //
-// --publish uploads that folder to the archive (Night-Roll-App/nsf-archive)
+// --publish uploads that folder to the archive (joshcough/night-roll-archive)
 // through `gh api`, message "instruments: <slug>": check before each PUT (a
 // file already there at the same size is left; instruments.json at another
 // size is updated with its sha), then read each upload back and compare its

@@ -37,7 +37,7 @@ import { createHash } from "node:crypto";
 export const FORMAT = "night-roll-instruments";
 export const VERSION = 1;
 
-// Where a library lives in the archive (Night-Roll-App/nsf-archive), given the
+// Where a library lives in the archive (joshcough/night-roll-archive), given the
 // album's nsf.vault. A folder vault ("goldeneye-007/") keeps its instruments
 // inside itself: "goldeneye-007/instruments/". A single-file vault
 // ("tetris.nsf", "tetris.gbs") has no folder of its own to hold one — and an

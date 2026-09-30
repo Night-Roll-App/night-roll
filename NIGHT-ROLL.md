@@ -289,12 +289,58 @@ nonexistent). The Sync sheet opens without a loaded song so a broken
 config can always be fixed; loadNotes warns instead of rendering
 silently empty when this device previously synced annotations for a
 path the analysis location now lacks. NSFs read raw-first from the
-PUBLIC Night-Roll-App/nsf-archive (Josh's considered call, 2026-08-17 —
+PUBLIC joshcough/night-roll-archive (Josh's considered call, 2026-08-17 —
 reversing the earlier never-publish stance; chip audio is tokenless
-everywhere), API+token fallback for private forks. The PHYSICAL split
+everywhere; moved back out of the Night-Roll-App org and onto Josh's own
+account 2026-09-30 — see "GAME FILES & INSTRUMENTS ARCHIVE" below), a
+second, optional "archive token" for writes there when its owner differs
+from the songs repo's, API+token fallback for private forks. The PHYSICAL split
 into ost-songs/ost-analysis is designed and deferred until a second
 analyst exists — see the plan in open-items; the mirror-tree layout
 (rollnotes at identical relative paths) makes it a pure git move.
+
+**GAME FILES & INSTRUMENTS ARCHIVE** (moved 2026-09-30, branch
+`archive-to-joshcough`): `cfg().nsfRepo`/`nsfBase` point at
+`joshcough/night-roll-archive` by default — Josh's own account, not the
+Night-Roll-App org that `night-roll` (the songs repo, the app itself)
+lives under. Deliberate split: the archive holds chip rips and extracted
+instruments (nes/, snes/, game-boy/, n64/, ps1/, ps2/, soundfonts/,
+`*.instruments/`) — a takedown notice against ROM-derived content can
+only reach Josh's own account, never the org that publishes the app and
+its Pages site. The name isn't console-specific on purpose (it predates
+this move as the app's own "create mine" default for any user — see
+`createGameFilesRepo()`/`night-roll-archive` in index.html — so Josh's
+own archive now matches the convention every other user already gets).
+Two-hop config migration in `cfg()` handles every era a saved device
+might still be on: `joshcough/{night-roll,nsf-archive}` (pre-org) →
+`Night-Roll-App/{night-roll,nsf-archive}` (the 2026-09-29 org move) →
+`joshcough/night-roll-archive` for the archive alone (this move; `night-
+roll` stays under the org). `vaultFetch` also retries the pre-move raw
+URL (`NSF_ARCHIVE_OLD_BASE`, index.html) once before falling to the
+API+token path — GitHub's docs say a transfer redirects git/API/web
+requests, but that's not stated for `raw.githubusercontent.com`
+specifically, and this repo's own Pages move already proved not every
+surface follows a transfer (the pre-move `joshcough.github.io/night-roll`
+address went dead outright, not redirected — see open-items.md's org-move
+notes), so the fallback is kept as a safety net rather than trusting the
+redirect blind.
+
+A fine-grained GitHub token covers repos under ONE account, so a songs
+repo and an archive repo under different accounts can't share one when
+they don't belong to the same owner (Josh's own case again: `night-roll`
+under Night-Roll-App, the archive under `joshcough`). Settings → GitHub
+→ advanced adds a second, optional **archive token**
+(`ff1roll-ghtoken-archive` in localStorage, same device-local pattern as
+the main token) — `archiveWriteToken()` returns it when set, else falls
+back to the main token (`writeToken()`), so a single-owner setup needs
+nothing extra. It signs ONLY archive writes: the chip-file/library
+uploads in `commitImports`, the soundfont upload in `importSf2File`, and
+its own Check button (`ghArchiveCheck()`) — reads stay tokenless (the
+archive is public) with the same API+token fallback as before. The
+Node-side tools (`tools/import-set.mjs --publish`, `tools/instruments/
+extract.mjs --publish`) go through `gh api` directly instead — whatever
+account `gh` is authenticated as covers both repos for Josh, so they
+carry no separate archive-token concept.
 
 **Sync / Save & Commit sheet:** serializes the full current rollnotes
 state and commits it to this repo via the GitHub Contents API
@@ -742,10 +788,11 @@ like the NES four; missing channels are skipped.
 Chip audio is the DEFAULT wherever a source resolves (Josh: "a million
 times better... always use this if possible"; the chip button is the
 opt-out, preference in ff1roll-chip). Source chain, honoring the
-*.nsf gitignore (ROM music never enters the public repo): live import
-session → this device's IndexedDB cache → **Night-Roll-App/nsf-archive**,
-Josh's PRIVATE repo, fetched via the GitHub API with the same token
-Sync uses, then cached. album.json carries only metadata: `nsf:
+*.nsf gitignore (ROM music never enters the songs repo): live import
+session → this device's IndexedDB cache → **joshcough/night-roll-archive**
+(PUBLIC — see "GAME FILES & INSTRUMENTS ARCHIVE" below), read raw-first,
+API+token fallback with the archive token when set, else the main one,
+then cached. album.json carries only metadata: `nsf:
 {vault: "<file>.nsf", tracks: {<base>: {n, secs}}}` — Commit import
 writes it and uploads the album's NSF to the archive; FF1's album.json
 maps all 19 tracks to ff1.nsf, so the whole analysis album plays with
@@ -2411,7 +2458,7 @@ way and in the app gives the same files.
 One line per track (n, title, ok/failed/silent, notes, seconds, loop
 anchor → target, warnings), then the files written and, with
 `--publish`, the archive uploads: the chip files go to cfg().nsfRepo
-(Night-Roll-App/nsf-archive) at the paths `chipVaultFile` reads — `<slug>.nsf`
+(joshcough/night-roll-archive) at the paths `chipVaultFile` reads — `<slug>.nsf`
 / `<slug>.gbs` whole, `<slug>/<track-slug>.spc` per file — through
 `gh api`, check-before-PUT, message "archive: <slug>". `--title` only
 rewrites album.json's title (the app's Rename would do the same); the

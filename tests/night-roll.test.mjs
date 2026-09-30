@@ -1009,8 +1009,8 @@ test("data-location config: defaults are legacy-identical; bases and repos route
   assert.equal(run(`analysisURL("albums/x/songs/y.rollnotes.json")`), "albums/x/songs/y.rollnotes.json");
   assert.equal(run(`repoApi("songs")`), "https://api.github.com/repos/Night-Roll-App/night-roll/contents/");
   assert.equal(run(`repoApi("analysis")`), "https://api.github.com/repos/Night-Roll-App/night-roll/contents/");
-  assert.equal(run(`repoName("nsf")`), "Night-Roll-App/nsf-archive");
-  assert.equal(run(`nsfURL("ff1.nsf")`), "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main/ff1.nsf");
+  assert.equal(run(`repoName("nsf")`), "joshcough/night-roll-archive");
+  assert.equal(run(`nsfURL("ff1.nsf")`), "https://raw.githubusercontent.com/joshcough/night-roll-archive/main/ff1.nsf");
   // configured: any base URL prepends (trailing slashes normalized); writes retarget
   run(`saveCfg({songsBase: "https://raw.githubusercontent.com/other/corpus/main/",
                 analysisBase: "http://localhost:8001",
@@ -1780,7 +1780,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
+    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "archive token", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
@@ -3672,7 +3672,7 @@ test("Connect GitHub: annotations follow the songs repo unless split on purpose;
   assert.match(val(`ghCheckMessage("a/b", 401, null)`), /rejected the token/);
   // NSF repo: Josh's archive only when the songs repo is this site's; anyone else starts device-only
   run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
-  assert.equal(val(`cfg().nsfRepo`), "Night-Roll-App/nsf-archive");
+  assert.equal(val(`cfg().nsfRepo`), "joshcough/night-roll-archive");
   run(`localStorage.setItem("ff1roll-cfg", JSON.stringify({songsRepo: "alice/tunes"})); cfg.c = null;`);
   assert.equal(val(`cfg().nsfRepo`), "");
   run(`document.getElementById("cfgnsfrepo").value = "alice/nsf"; settingsPersist("cfgnsfrepo");`);
@@ -4217,6 +4217,40 @@ test("archive fetch: a file over 1 MB comes through the blobs API when the conte
   run(`localStorage.removeItem("ff1roll-ghtoken"); localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
 });
 
+test("archive fetch: a device on the new archive (joshcough/night-roll-archive) falls back to the pre-move raw URL (Night-Roll-App/nsf-archive) before trying the API/token", async () => {
+  const calls = [];
+  run(`localStorage.removeItem("ff1roll-ghtoken"); saveCfg({nsfRepo: "joshcough/night-roll-archive", nsfBase: "https://raw.githubusercontent.com/joshcough/night-roll-archive/main"}); cfg.c = null;`);
+  app.context.fakeFetch3 = (url) => {
+    calls.push(String(url));
+    if (/raw\.githubusercontent\.com\/joshcough\/night-roll-archive/.test(url)) return Promise.resolve({ok: false, status: 404});
+    if (/raw\.githubusercontent\.com\/Night-Roll-App\/nsf-archive\/main\/oldfile\.nsf/.test(url)) return Promise.resolve({ok: true, arrayBuffer: async () => new TextEncoder().encode("OLDDATA").buffer});
+    return Promise.reject(new Error("unexpected " + url));
+  };
+  run(`fetch = fakeFetch3;`);
+  const bytes = await run(`vaultFetch("oldfile.nsf")`);
+  assert.equal(Buffer.from(bytes).toString(), "OLDDATA");
+  assert.ok(calls.some(u => /joshcough\/night-roll-archive/.test(u)), "tried the configured (new) base first");
+  assert.ok(calls.some(u => /Night-Roll-App\/nsf-archive/.test(u)), "fell back to the pre-move base rather than going straight to the API");
+  run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
+});
+
+test("archive fetch: a device already on the pre-move base doesn't retry itself (no doubled request)", async () => {
+  const calls = [];
+  // cfg()'s own read-time migration rewrites Night-Roll-App/nsf-archive to
+  // the new home on every load (real devices auto-upgrade this way, so this
+  // exact base can't actually survive a saveCfg + reload) — poke the cached
+  // cfg.c directly to still exercise the "already there" branch in vaultFetch.
+  run(`localStorage.removeItem("ff1roll-ghtoken"); cfg(); cfg.c.nsfRepo = "Night-Roll-App/nsf-archive"; cfg.c.nsfBase = "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main";`);
+  app.context.fakeFetch4 = (url) => {
+    calls.push(String(url));
+    return Promise.resolve({ok: false, status: 404});
+  };
+  run(`fetch = fakeFetch4;`);
+  await assert.rejects(() => run(`vaultFetch("nope.nsf")`), /no GitHub token/);
+  assert.equal(calls.length, 1, "the base already IS the fallback URL — one request, not two");
+  run(`localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
+});
+
 test("pan: the track: directive and the .mid's CC10 place a track; the directive wins; stereo chip pairs become 2-channel buffers", () => {
   run(`createComposition(120, 4, 4); song.tracks[0].midiPan = -0.5;
        rollnotes = parseRollnotes("[1.1]\\ntrack: " + song.tracks[0].name + " vol=0.8 pan=0.25\\n").map(resolveNote); finalizeNotes();`);
@@ -4304,7 +4338,7 @@ test("a playlist picked after the import names the open song's published album b
 test("create mine: a public night-roll-archive under the user's account becomes their game files & instruments repo", async () => {
   const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`saveCfg({aiBackend: "remote"}); cfg.c = null;`); // any first save freezes the defaults, Josh's archive included
-  assert.equal(val(`cfg().nsfRepo`), "Night-Roll-App/nsf-archive");
+  assert.equal(val(`cfg().nsfRepo`), "joshcough/night-roll-archive");
   run(`document.getElementById("cfgsongsrepo").value = "someone/songs"; settingsPersist("cfgsongsrepo"); cfg.c = null;`);
   run(`localStorage.setItem("ff1roll-ghtoken", "t"); globalThis.__posts = [];
        fetch = (url, init) => { const u = String(url);
@@ -4686,6 +4720,56 @@ test("soundfont: with no game files & instruments repo configured, the import st
   await run(`openPickedFiles([{name: "Loose Font.sf2", bytes: __sf2bytes}])`);
   assert.deepEqual(val(`sf2Registry().map(f => f.slug)`), ["loose-font"], "still usable on this device even with nowhere to share it");
   assert.match(val(`document.getElementById("noteinfo").textContent`), /stays on this device.*game files.*instruments repo/);
+});
+
+test("soundfont upload: the archive token, when set, signs the archive PUT — not the main token", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const bytes = new Uint8Array(24);
+  bytes.set([0x52, 0x49, 0x46, 0x46], 0); bytes.set([0x73, 0x66, 0x62, 0x6b], 8);
+  app2.context.__sf2bytes = bytes;
+  app2.context.__sf2 = {parseSf2: () => ({name: "Shared Font", presets: [{name: "P", bank: 0, program: 0}], samples: {}})};
+  run(`sf2PlayModule = Promise.resolve(__sf2);
+       idbSf2Put = () => Promise.resolve(true);
+       localStorage.removeItem("ff1roll-sf2-index");
+       localStorage.setItem("ff1roll-ghtoken", "main-token");
+       localStorage.setItem("ff1roll-ghtoken-archive", "archive-token");
+       globalThis.__auths = [];
+       fetch = async (url, init) => {
+         if (init && init.method === "PUT") { globalThis.__auths.push(init.headers.Authorization); return {ok: true, json: async () => ({})}; }
+         return {ok: false, status: 404}; // check-before-PUT: not there yet; the post-upload verify GET: don't care
+       };`);
+  await run(`openPickedFiles([{name: "Shared Font.sf2", bytes: __sf2bytes}])`);
+  assert.deepEqual(val(`globalThis.__auths`), ["Bearer archive-token"], "the archive upload used the archive token, not the main one");
+});
+
+test("soundfont upload: no archive token set — the archive PUT falls back to the main token (single-owner setups keep working)", async () => {
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const bytes = new Uint8Array(24);
+  bytes.set([0x52, 0x49, 0x46, 0x46], 0); bytes.set([0x73, 0x66, 0x62, 0x6b], 8);
+  app2.context.__sf2bytes = bytes;
+  app2.context.__sf2 = {parseSf2: () => ({name: "Solo Font", presets: [{name: "P", bank: 0, program: 0}], samples: {}})};
+  run(`sf2PlayModule = Promise.resolve(__sf2);
+       idbSf2Put = () => Promise.resolve(true);
+       localStorage.removeItem("ff1roll-sf2-index");
+       localStorage.setItem("ff1roll-ghtoken", "main-token");
+       localStorage.removeItem("ff1roll-ghtoken-archive");
+       globalThis.__auths = [];
+       fetch = async (url, init) => {
+         if (init && init.method === "PUT") { globalThis.__auths.push(init.headers.Authorization); return {ok: true, json: async () => ({})}; }
+         return {ok: false, status: 404};
+       };`);
+  await run(`openPickedFiles([{name: "Solo Font.sf2", bytes: __sf2bytes}])`);
+  assert.deepEqual(val(`globalThis.__auths`), ["Bearer main-token"], "no archive token: the main token covers the archive write too");
+});
+
+test("archiveWriteToken(): the archive token when set, else writeToken()'s (main token, or \"folder\" in folder mode)", () => {
+  run(`localStorage.removeItem("ff1roll-ghtoken"); localStorage.removeItem("ff1roll-ghtoken-archive"); fsRoot.handle = null; fsRoot.mode = null;`);
+  assert.equal(val(`archiveWriteToken()`), null, "nothing connected");
+  run(`localStorage.setItem("ff1roll-ghtoken", "main-token");`);
+  assert.equal(val(`archiveWriteToken()`), "main-token", "falls back to the main token");
+  run(`localStorage.setItem("ff1roll-ghtoken-archive", "archive-token");`);
+  assert.equal(val(`archiveWriteToken()`), "archive-token", "the archive token wins when set");
+  run(`localStorage.removeItem("ff1roll-ghtoken"); localStorage.removeItem("ff1roll-ghtoken-archive");`);
 });
 
 test("soundfont: a garbled .sf2 (parseSf2 throws) reports the error and never reaches storage", async () => {
@@ -5477,15 +5561,31 @@ test("Publish sheet check: a draft whose notes match the published copy (any ord
   } finally { run(`readData = globalThis.__realRead; for (const k of ["pc-a", "pc-b", "pc-c"]) localStorage.removeItem("ff1roll-draft-albums/compositions/nightroll/" + k + ".mid");`); }
 });
 
-test("settings: a device's saved repos from before the move read as Night-Roll-App (2026-09-29); other repos are untouched", () => {
+test("settings: a device's saved repos from before either move read as today's homes (2026-09-29, both hops); other repos are untouched", () => {
+  // hop 1 (the org move): joshcough/* -> Night-Roll-App/* — songs stays there.
+  // hop 2 (the archive move back out): Night-Roll-App/nsf-archive ->
+  // joshcough/night-roll-archive — a device stuck on the PRE-org value takes
+  // both hops in one read (joshcough/nsf-archive -> Night-Roll-App/nsf-archive
+  // -> joshcough/night-roll-archive), never stalling at the org's ex-archive.
   run(`globalThis.__saved = localStorage.getItem("ff1roll-cfg");
        localStorage.setItem("ff1roll-cfg", JSON.stringify({songsRepo: "joshcough/night-roll", nsfRepo: "joshcough/nsf-archive", nsfBase: "https://raw.githubusercontent.com/joshcough/nsf-archive/main", analysisRepo: "joshcough/night-roll-test-songs"}));
        cfg.c = null;`);
   try {
     assert.equal(val(`cfg().songsRepo`), "Night-Roll-App/night-roll");
-    assert.equal(val(`cfg().nsfRepo`), "Night-Roll-App/nsf-archive");
-    assert.equal(val(`cfg().nsfBase`), "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main");
+    assert.equal(val(`cfg().nsfRepo`), "joshcough/night-roll-archive");
+    assert.equal(val(`cfg().nsfBase`), "https://raw.githubusercontent.com/joshcough/night-roll-archive/main");
     assert.equal(val(`cfg().analysisRepo`), "joshcough/night-roll-test-songs", "a different repo that merely starts with the name stays");
+  } finally { run(`if (__saved === null) localStorage.removeItem("ff1roll-cfg"); else localStorage.setItem("ff1roll-cfg", __saved); cfg.c = null;`); }
+});
+
+test("settings: a device caught mid-way (already on Night-Roll-App/nsf-archive from the org move) lands on the archive's new home too", () => {
+  run(`globalThis.__saved = localStorage.getItem("ff1roll-cfg");
+       localStorage.setItem("ff1roll-cfg", JSON.stringify({songsRepo: "Night-Roll-App/night-roll", nsfRepo: "Night-Roll-App/nsf-archive", nsfBase: "https://raw.githubusercontent.com/Night-Roll-App/nsf-archive/main"}));
+       cfg.c = null;`);
+  try {
+    assert.equal(val(`cfg().songsRepo`), "Night-Roll-App/night-roll", "the songs repo isn't part of this move");
+    assert.equal(val(`cfg().nsfRepo`), "joshcough/night-roll-archive");
+    assert.equal(val(`cfg().nsfBase`), "https://raw.githubusercontent.com/joshcough/night-roll-archive/main");
   } finally { run(`if (__saved === null) localStorage.removeItem("ff1roll-cfg"); else localStorage.setItem("ff1roll-cfg", __saved); cfg.c = null;`); }
 });
 

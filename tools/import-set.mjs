@@ -17,7 +17,7 @@
 // it). Everything else — slugs, titles, loop notes, secs — is the app's.
 //
 // --publish uploads the chip files to the archive (cfg().nsfRepo, i.e.
-// Night-Roll-App/nsf-archive) at the paths chipVaultFile would read them from,
+// joshcough/night-roll-archive) at the paths chipVaultFile would read them from,
 // check-before-PUT, through `gh api` (no token handling here). Nothing is
 // downloaded by this script and no chip file is ever written under the repo.
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, mkdtempSync, rmSync, existsSync } from "node:fs";
@@ -202,7 +202,7 @@ export async function importSet(opts, log = console.log) {
   // GoldenEye publish left it out and every device but this one rendered synth (2026-09-28)
   if (rec && rec.libs) for (const [name, bytes] of Object.entries(rec.libs)) uploads.push({file: meta.vault + app.run("slugify(" + JSON.stringify(name.replace(/\.[a-z0-9]+$/i, "")) + ")") + (name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase(), bytes});
   if (opts.publish && uploads.length) {
-    const repo = "Night-Roll-App/nsf-archive";
+    const repo = "joshcough/night-roll-archive";
     for (const u of uploads) {
       const chk = spawnSync("gh", ["api", "repos/" + repo + "/contents/" + u.file, "--jq", ".sha"], {encoding: "utf8"});
       if (chk.status === 0) { published.push({file: u.file, st: "already there"}); continue; }

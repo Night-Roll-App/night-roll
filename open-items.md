@@ -4,6 +4,55 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## ARCHIVE MOVE — WAITS ON JOSH'S GO, tomorrow, needs his token change
+
+The game-file archive (chip rips + extracted instruments — nes/, snes/,
+game-boy/, n64/, ps1/, ps2/, soundfonts/, `*.instruments/`) moves BACK out
+of the Night-Roll-App org to Josh's own account, renamed
+`night-roll-archive` (not NES-specific — it already holds every console;
+matches the name the app's own "create mine" already gives any other
+user's archive). `night-roll` (the songs repo, the app itself, Pages) is
+NOT part of this move and stays under Night-Roll-App. Why: separates the
+org that publishes the app from the repo carrying the DMCA/takedown risk
+(see "PRIVATE REPO / PROTECTION — ADVISOR" below — "Bigger legal risk: the
+game-music archive"). Branch `archive-to-joshcough` is built, tested
+(`npm test` green), and committed, NOT pushed or merged — no GitHub repo
+was transferred, renamed, or touched; only read-only `gh api` calls were
+run to confirm today's names. Ordered steps, run in this order:
+
+(a) **Josh creates the archive token** on GitHub
+    (https://github.com/settings/personal-access-tokens/new): resource
+    owner `joshcough`, repository access → only the archive repo (still
+    named `nsf-archive` until step b renames it, or `night-roll-archive`
+    after), permission **Contents: Read and write**. Keep/update the
+    existing main token too — it stays scoped to Night-Roll-App
+    (`night-roll`; it can keep listing the org's `nsf-archive` if GitHub
+    doesn't let him unselect it, no harm — that repo is leaving the org).
+(b) **Transfer + rename on GitHub** (the archive only — never `night-roll`):
+    ```
+    gh api -X POST repos/Night-Roll-App/nsf-archive/transfer -f new_owner=joshcough
+    gh api -X PATCH repos/joshcough/nsf-archive -f name=night-roll-archive
+    ```
+    (equivalently, on github.com: the repo's Settings → Danger Zone →
+    Transfer ownership → `joshcough`; then, once it lands, Settings →
+    repository name → `night-roll-archive`.) The archive has no Pages
+    site, so there's no Pages base to re-point. Verify after: `gh api
+    repos/joshcough/night-roll-archive` succeeds and its raw files still
+    serve (`curl -I https://raw.githubusercontent.com/joshcough/night-roll-archive/main/<any known file>`).
+(c) **Merge branch `archive-to-joshcough`, push, build the iPad**: `git
+    checkout main && git merge archive-to-joshcough && git push` (or a
+    PR, if preferred); confirm CI green (`gh run watch` — never local
+    Playwright); then build the iPad app.
+(d) **Paste the archive token into Settings → GitHub → advanced →
+    archive token**, tap its Check — should read "✓ connected —
+    joshcough/night-roll-archive, the token can publish there".
+(e) **Verify**: open a PS1, N64, or NES song and confirm it plays the
+    console's own voice (not a synthesized fallback — proves the archive
+    read still resolves, either the new raw URL directly or the old-URL
+    fallback while GitHub's redirect is still warm); then run one small
+    test import and Publish it, confirming the upload lands in
+    `joshcough/night-roll-archive` (not a 404/403 from a stale token).
+
 ## IMPORT HUB — DONE 2026-09-29 (docs/import-hub-design.md, Josh: "I still hate the file import line")
 
 All three phases, built exactly to the reviewed design. `npm test` green
