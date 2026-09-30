@@ -11,10 +11,13 @@ session start alongside the quiz.)
    which is right? (section "AWAITS JOSH'S EAR: FFX pitches")
 2. Archive move to joshcough/night-roll-archive: make the archive token,
    say go (section "ARCHIVE MOVE").
-3. Annotations format v2: a one-way rewrite of his annotation files — yes
-   or not now? (section "NEEDS JOSH'S RULING")
-4. Tempo: the two publish paths write different tempo maps (baked tempo:
-   annotations vs the base map) — which is right?
+3. DECIDED 2026-09-30 (Josh, in the terminal): annotations go to proper
+   JSON v2 ("rewrite the files one more time — big deal").
+4. DECIDED: tempo annotations are baked into the .mid ONLY on songs he
+   wrote; analysis songs' music never changes. "Publish all" = the same
+   one publish function per song (today's two paths are a bug). And: an
+   explicit ORIGIN per song + one rule table for what each may do — being
+   planned; Josh checks the table before anything is rewritten.
 5. Ear/hands tests: YouTube keeps playing until ▶; background play when
    locked; a MIDI keyboard plugged into the iPad (● to record).
 6. App Store: TestFlight install, privacy labels + listing, screenshots,
