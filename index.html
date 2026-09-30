@@ -684,7 +684,11 @@
   .mixerfader::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grid); }
   .mixerfader::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
   .mixervlbl { font-family: var(--mono); font-size: 10px; color: var(--dim); }
-  .mixerpan { width: 100%; height: 22px; }
+  .mixerpan { width: 100%; height: 22px; -webkit-appearance: none; appearance: none; background: transparent; } /* same look as the faders, not the browser's default */
+  .mixerpan::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--grid); }
+  .mixerpan::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
+  .mixerpan::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grid); }
+  .mixerpan::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
   .mixerplbl { font-family: var(--mono); font-size: 10px; color: var(--dim); min-height: 12px; }
 
   .noterow {
