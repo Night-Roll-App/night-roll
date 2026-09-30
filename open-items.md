@@ -525,6 +525,18 @@ drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
 
+## NEXT (after P4): THE FILE'S OWN LABELS vs THE LEARNER'S ANSWERS (Josh, 2026-09-30 08:41)
+Spec: docs/declared-vs-learner-spec.md (advisor). Today: his answers never
+reach the .mid (good); but import DROPS the file's key label, keeps only
+the file's LAST meter, notes.txt leaks the file's meter in Learning, and
+Normal's import seeds annotations without a tap (rule break). Build: keep
+the file's labels as a `source` record (draft + .mid, verbatim); his
+answers annotations only; an on-demand "Check vs file" in ☰ Notes (KEY /
+METER) — Learning never reveals the file's value. Phase 2: keep foreign
+files' markers/lyrics/programs/CCs verbatim. RULING FOR JOSH (later, not
+blocking): the two publish paths write different tempo maps (baked
+tempo: annotations vs base) — which is right?
+
 ## RUNNING 2026-09-30: re-capturing every capture album through the shared MIDI writer
 So published songs get back the pan / duty / envelope data the old writer
 dropped (FORMATS AUDIT #1). One push per album, only existing .mid files
