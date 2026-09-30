@@ -2424,6 +2424,16 @@ function parseMidi(buf, opts = {}) {
   let i = 0;
   const u32 = p => (d[p]<<24 | d[p+1]<<16 | d[p+2]<<8 | d[p+3]) >>> 0;
   const u16 = p => d[p]<<8 | d[p+1];
+  // writeMidi now writes text metas (track name, sounding offset) as UTF-8
+  // (open-items.md "FORMATS AUDIT" #2 — non-Latin-1 names were mangled by the
+  // old &255 masking); decode UTF-8 first and fall back to latin1 only when
+  // the bytes aren't valid UTF-8, so every already-published .mid (all ASCII
+  // in this catalog — verified against every albums/**/*.mid track name)
+  // keeps reading exactly as before.
+  const decodeMetaText = bytes => {
+    try { return new TextDecoder("utf-8", {fatal: true}).decode(bytes); }
+    catch (err) { return new TextDecoder("latin1").decode(bytes); }
+  };
   // find MThd wherever it sits — .rmi wraps SMF in a RIFF header, and some
   // exports carry junk prefixes; requiring byte 0 rejected real MIDI files
   let h = -1;
@@ -2460,8 +2470,8 @@ function parseMidi(buf, opts = {}) {
           const mtype = d[j+1]; j += 2;
           const mlen = varlen();
           const data = d.subarray(j, j+mlen); j += mlen;
-          if (mtype === 0x03 && !name) name = new TextDecoder("latin1").decode(data);
-          else if (mtype === 0x01) { const m = /^sounding:(-?\d+)$/.exec(new TextDecoder("latin1").decode(data)); if (m) offset = +m[1]; }
+          if (mtype === 0x03 && !name) name = decodeMetaText(data);
+          else if (mtype === 0x01) { const m = /^sounding:(-?\d+)$/.exec(decodeMetaText(data)); if (m) offset = +m[1]; }
           else if (mtype === 0x51) tempos.push({tick: t, usq: data[0]<<16 | data[1]<<8 | data[2]});
           else if (mtype === 0x58) timesig = [data[0], 1 << data[1]];
           else if (mtype === 0x59 && keysig === null) keysig = {sf: data[0] > 127 ? data[0] - 256 : data[0], minor: !!data[1]};
@@ -12410,7 +12420,10 @@ document.getElementById("midcreate").addEventListener("click", () => {
     draftWrite(key, {
       savedStamp: 0, dirty: true, title: name.replace(/\.(midi?|smf|kar|rmi)$/i, ""),
       ppq: parsed.ppq, timesig: parsed.timesig || [4, 4], tempos: parsed.tempos,
-      tracks: parsed.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(nt => {
+      tracks: parsed.tracks.map(tr => ({name: tr.name,
+        ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
+        ...(tr.offset ? {offset: tr.offset} : {}),
+        notes: tr.notes.map(nt => {
         const o = {t: nt.t, d: nt.d, p: nt.p, v: nt.v};
         if (nt.ch !== undefined) o.ch = nt.ch;
         if (nt.duty !== undefined) o.duty = nt.duty;
@@ -12434,7 +12447,10 @@ function localMidiOpen(parsed, name) {
   draftWrite(key, {
     savedStamp: 0, dirty: true, title: name, ppq: parsed.ppq, timesig: parsed.timesig || [4, 4],
     tempos: parsed.tempos,
-    tracks: parsed.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(nt => {
+    tracks: parsed.tracks.map(tr => ({name: tr.name,
+      ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // CC10 in the dropped file — survives to the republished copy
+      ...(tr.offset ? {offset: tr.offset} : {}),
+      notes: tr.notes.map(nt => {
       const o = {t: nt.t, d: nt.d, p: nt.p, v: nt.v};
       if (nt.ch !== undefined) o.ch = nt.ch; // drums live on ch 9 — must survive the round-trip
       if (nt.duty !== undefined) o.duty = nt.duty; // chip timbre survives too
@@ -13946,14 +13962,19 @@ function publishLabel(what) { // the button says where it goes; with nowhere to 
   return d === "github" ? "⇪ Publish " + what : d === "folder" ? "Save " + what + " to " + (fsRoot.mode === "native" ? "Files" : "folder") : "Connect GitHub to publish";
 }
 function draftTracks(tracks) { // the notes as a draft stores them (and as the published fingerprint reads them)
-  return tracks.map(tr => ({name: tr.name,
-    notes: tr.notes.filter(n => !n.gone).map(n => {
-      const o = {t: n.t, d: n.d, p: n.p, v: n.v};
-      if (n.ch !== undefined) o.ch = n.ch; // drum channel survives edit re-saves
-      if (n.duty !== undefined) o.duty = n.duty;
-      if (n.ve !== undefined) o.ve = n.ve;
-      return o;
-    })}));
+  return tracks.map(tr => {
+    const o = {name: tr.name,
+      notes: tr.notes.filter(n => !n.gone).map(n => {
+        const on = {t: n.t, d: n.d, p: n.p, v: n.v};
+        if (n.ch !== undefined) on.ch = n.ch; // drum channel survives edit re-saves
+        if (n.duty !== undefined) on.duty = n.duty;
+        if (n.ve !== undefined) on.ve = n.ve;
+        return on;
+      })};
+    if (tr.midiPan !== undefined) o.midiPan = tr.midiPan; // the .mid's own CC10 (a chip capture's channel) — writeMidi re-emits it
+    if (tr.offset) o.offset = tr.offset; // tools/sounding.mjs
+    return o;
+  });
 }
 // The published music's fingerprint (pubSig): "edited since last save" is a
 // comparison with it, not a flag that any edit sets for good — an added note
@@ -14168,7 +14189,10 @@ function openDraftDoc(d, key) {
   stop(); // a looping chip buffer would otherwise play the OLD song under the new roll
   const parsed = {ppq: d.ppq, timesig: d.timesig,
     tempos: d.tempos.map(t => ({...t})),
-    tracks: d.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(n => ({...n}))}))};
+    tracks: d.tracks.map(tr => ({name: tr.name,
+      ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // so previewing a draft sounds the way the publish will
+      ...(tr.offset ? {offset: tr.offset} : {}),
+      notes: tr.notes.map(n => ({...n}))}))};
   setSong(parsed, key); // rollnotes ride the normal sidecar + local-notes path
   song.savedStamp = d.savedStamp || 0;
   song.pubSig = d.pubSig || null;
@@ -14177,43 +14201,75 @@ function openDraftDoc(d, key) {
   reflectSongURL(key);
   updateSongBtn();
 }
-function writeMidi(s) { // format-1 SMF: meta track (tempo + meter) + one track per voice
+function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key) + one track per voice.
+  // ONE writer, in two forms (open-items.md "FORMATS AUDIT" #1-2): this hand
+  // port and tools/nsf/midi-write.mjs's writeSongMidi (the pipeline's own
+  // writer, already shared by every chip capture — trackBytes/fileBytes).
+  // writeMidi must stay SYNCHRONOUS — it runs inside plain click handlers and
+  // inside the vm test harness (tests/harness.mjs), which has no
+  // importModuleDynamically callback, so `import()` throws there — so it
+  // can't dynamic-import that module, and there's no build step to bundle it
+  // in. tests/night-roll.test.mjs ("writeMidi / writeSongMidi agree
+  // byte-for-byte") pins the two together; touching one without the other
+  // (and that test) reintroduces the drift the audit found: commitImports
+  // silently dropped CC10 pan, CC70 duty, the aftertouch envelope and
+  // per-note channel from every published capture.
   const u32 = n => [n >>> 24 & 255, n >>> 16 & 255, n >>> 8 & 255, n & 255];
   const u16 = n => [n >>> 8 & 255, n & 255];
   const vlq = n => { const b = [n & 0x7F]; while ((n >>= 7) > 0) b.unshift((n & 0x7F) | 0x80); return b; };
-  const str = t => [...t].map(c => c.charCodeAt(0) & 255);
+  const utf8 = t => Array.from(new TextEncoder().encode(t)); // text events are bytes; UTF-8 is the de-facto choice
+  const str = t => utf8(t); // ASCII-only structural strings ("MThd"/"MTrk") — same bytes either way
+  const textMeta = (type, text) => { const b = utf8(text); return [0xFF, type, ...vlq(b.length), ...b]; }; // VLQ length: a >127-byte name no longer corrupts the file
   const track = body => [...str("MTrk"), ...u32(body.length), ...body];
+  const NON_DRUM_CH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15]; // 15 melodic channels; 9 stays drums-only whatever the track count (the old ti<9?ti:(ti+1)&15 formula collided past 16 tracks)
+  const isKit = name => /drum|percussion|kit|noise/i.test(name || "");
+  const trackCh = (ti, kit) => kit ? 9 : NON_DRUM_CH[ti % NON_DRUM_CH.length];
+
+  const metaEvs = [];
+  for (const tp of s.tempos || []) metaEvs.push({t: tp.tick, o: 0, d: [0xFF, 0x51, 0x03, ...u32(tp.usq).slice(1)]});
+  const timesigs = s.timesigs && s.timesigs.length ? s.timesigs
+    : [{tick: 0, num: (s.timesig || [4, 4])[0], den: (s.timesig || [4, 4])[1]}];
+  for (const ts of timesigs) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 0x04, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
+  // key signature: ONLY when the song already declared one (parseMidi read it
+  // back from a file that already had it, e.g. via tools/fix_keysigs.py) —
+  // never invented here. Learning mode is the law: keys are Josh's discoveries.
+  if (s.keysig) metaEvs.push({t: 0, o: 2, d: [0xFF, 0x59, 0x02, s.keysig.sf & 255, s.keysig.minor ? 1 : 0]});
+  metaEvs.sort((a, b) => a.t - b.t || a.o - b.o);
   const t0 = [];
   let lastT = 0;
-  for (const tp of [...s.tempos].sort((a, b) => a.tick - b.tick)) {
-    t0.push(...vlq(Math.max(0, tp.tick - lastT)), 0xFF, 0x51, 0x03, ...u32(tp.usq).slice(1));
-    lastT = Math.max(lastT, tp.tick);
-  }
-  const ts = s.timesig || [4, 4];
-  t0.push(...vlq(0), 0xFF, 0x58, 0x04, ts[0], Math.round(Math.log2(ts[1])), 24, 8);
+  for (const e of metaEvs) { t0.push(...vlq(Math.max(0, e.t - lastT)), ...e.d); lastT = Math.max(lastT, e.t); }
   t0.push(...vlq(0), 0xFF, 0x2F, 0x00);
   const out = [track(t0)];
   s.tracks.forEach((tr, ti) => {
-    const evs = [];
-    for (const n of tr.notes) {
-      if (n.gone) continue;
-      evs.push({t: n.t, on: 1, p: n.p, v: n.v || 80});
-      evs.push({t: n.t + n.d, on: 0, p: n.p, v: 0});
-    }
-    evs.sort((a, b) => a.t - b.t || a.on - b.on); // offs before ons at the same tick
-    const nm = tr.name || "track" + (ti + 1);
-    const body = [...vlq(0), 0xFF, 0x03, nm.length, ...str(nm)];
+    const kit = isKit(tr.name);
+    const ch0 = trackCh(ti, kit);
+    const evs = [{t: 0, o: -3, d: textMeta(0x03, tr.name || "track" + (ti + 1))}];
     // tools/sounding.mjs: the roll shows the sounding pitch, shifted from the
     // written key by tr.offset semitones — round-trips through every save
     // (parseMidi reads it back into track.offset) so a tap keeps sounding right
-    if (tr.offset) { const txt = "sounding:" + tr.offset; body.push(...vlq(0), 0xFF, 0x01, txt.length, ...str(txt)); }
-    let last = 0;
-    const isKit = /drum|percussion|kit|noise/i.test(tr.name || "");
-    const ch = isKit ? 9 : (ti < 9 ? ti : (ti + 1) & 15); // GM: percussion lives on ch 10 (0-indexed 9)
-    for (const e of evs) {
-      body.push(...vlq(e.t - last), (e.on ? 0x90 : 0x80) | ch, e.p & 127, e.on ? (e.v & 127) : 64);
-      last = e.t;
+    if (tr.offset) evs.push({t: 0, o: -2, d: textMeta(0x01, "sounding:" + tr.offset)});
+    // CC10 = the .mid's OWN pan (a chip capture's channel); the "track:"
+    // annotation's pan (tr.pan) overrides it at playback (trackPan()) but
+    // lives in rollnotes, never here — this is only what survives with no
+    // annotation set
+    if (tr.midiPan !== undefined) evs.push({t: 0, o: -1, d: [0xB0 | ch0, 10, Math.max(0, Math.min(127, Math.round(tr.midiPan * 63 + 64)))]});
+    let lastDuty = null;
+    for (const n of tr.notes) {
+      if (n.gone) continue;
+      const ch = n.ch !== undefined ? (n.ch & 15) : ch0; // per-note channel (captures: noise/drums) else the track's own
+      // duty (chip timbre) rides as CC70 ahead of the note it changes on —
+      // parseMidi reads it back; other DAWs just see a sound controller
+      if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
+      evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
+      // decay target as polyphonic aftertouch right after the on — parseMidi
+      // reads it back as the note's end volume; DAWs see key pressure
+      if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});
+      evs.push({t: n.t + n.d, o: 0, d: [0x80 | ch, n.p & 127, 64]});
     }
+    evs.sort((a, b) => a.t - b.t || a.o - b.o); // offs (o=0) before duty (0.5) before ons (1) before aftertouch (1.5) at the same tick
+    const body = [];
+    let last = 0;
+    for (const e of evs) { body.push(...vlq(Math.max(0, e.t - last)), ...e.d); last = Math.max(last, e.t); }
     body.push(...vlq(0), 0xFF, 0x2F, 0x00);
     out.push(track(body));
   });
@@ -14252,8 +14308,16 @@ function forkCurrentSong(name, folder) { // Save As: a copy in the folder you ch
   const parsed = {ppq: song.ppq, timesig: song.timesig || effTs(),
     tempos: song.tempos.map(t => ({...t})),
     tracks: song.tracks.map((tr, ti) => ({name: tr.name,
+      ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // a capture's own CC10 — Save As shouldn't silently strip it
+      ...(tr.offset ? {offset: tr.offset} : {}),
       notes: (song.rawNotes ? song.rawNotes[ti] : tr.notes) // raw: chop stays a view
-        .filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p, v: n.v}))}))};
+        .filter(n => !n.gone).map(n => {
+          const o = {t: n.t, d: n.d, p: n.p, v: n.v};
+          if (n.ch !== undefined) o.ch = n.ch;
+          if (n.duty !== undefined) o.duty = n.duty;
+          if (n.ve !== undefined) o.ve = n.ve;
+          return o;
+        })}))};
   setSong(parsed, key);
   currentPath = key;
   rememberLastSong(key);
@@ -15859,6 +15923,7 @@ async function impCapture(n, api, i) { // api/i: the capture job and this track'
       tempos: parsed.tempos,
       tracks: parsed.tracks.map(tr => ({name: tr.name,
         ...(tr.offset ? {offset: tr.offset} : {}), // tools/sounding.mjs: the roll shows the sounding pitch — carried through so a tap keeps sounding right, and so commitImports' re-serialized .mid keeps it
+        ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // CC10 — the capture's own channel pan (open-items.md "FORMATS AUDIT" #1: commitImports used to drop this)
         notes: tr.notes.map(nt => {
           const o = {t: nt.t, d: nt.d, p: nt.p, v: nt.v};
           if (nt.ch !== undefined) o.ch = nt.ch; // noise rides ch 9 — dropping it made drums play as pitched tones
@@ -16377,7 +16442,10 @@ function isCompositionKey(key) { // isComposition() for a song that is not open 
 async function publishDraftSong(key, h) {
   const d = JSON.parse(localStorage.getItem(draftStoreKey(key)));
   const doc = {ppq: d.ppq, timesig: d.timesig, tempos: d.tempos.map(t => ({...t})),
-               tracks: d.tracks.map(tr => ({name: tr.name, notes: tr.notes.map(n => ({...n}))}))};
+               tracks: d.tracks.map(tr => ({name: tr.name,
+                 ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
+                 ...(tr.offset ? {offset: tr.offset} : {}),
+                 notes: tr.notes.map(n => ({...n}))}))};
   const r1 = await putMidAt(key, h, writeMidi(doc));
   if (!r1.ok) throw new Error(".mid HTTP " + r1.status);
   const {path, content, stamp} = await buildRollnotesFor(key);

@@ -681,18 +681,39 @@ Open question with it: does "✎ Edit locally" keep its ask-first confirm?
 Stale wording list (help + UI strings, ~20 places incl. "Sync") is in
 the advisor's report — fix it together with whichever model he picks.
 
-## FORMATS AUDIT (advisor, 2026-09-29; Josh: "all that stuff is suspect … how do normal DAWs save everything about the song?") — nothing built
+## FORMATS AUDIT (advisor, 2026-09-29; Josh: "all that stuff is suspect … how do normal DAWs save everything about the song?") — #1-2 DONE on branch shared-midi-writer (2026-09-30); rest not built
 
 Top findings, highest risk first:
-1. Imports LOSE data on publish: commitImports re-encodes captures with
-   the app's writeMidi, dropping CC10 pan, CC70 duty, aftertouch envelopes
-   and per-note channel the capture writer produced (0 of ~3,400 published
-   capture .mids carry pan or aftertouch). Fix: ONE shared SMF writer
-   (app + tools/nsf/midi-write.mjs).
-2. writeMidi is a partial SMF writer: no key signature (0x59), one meter
-   only, no program changes, no markers; track names >127 bytes corrupt
-   the file (length written as one byte, not a VLQ); non-Latin-1 names
-   mangled; channels collide past 16 tracks.
+1. DONE (branch shared-midi-writer, 2026-09-30). Imports used to LOSE data
+   on publish: commitImports re-encoded captures with the app's writeMidi,
+   dropping CC10 pan, CC70 duty, aftertouch envelopes and per-note channel
+   the capture writer produced. Fix: ONE writer's logic — index.html's
+   writeMidi is now a tested, byte-for-byte hand port of
+   tools/nsf/midi-write.mjs's new writeSongMidi (it can't dynamic-import
+   that module: writeMidi runs inside plain click handlers and the vm test
+   harness, neither of which can `import()`, and there's no build step to
+   bundle it in — see writeMidi's own comment in index.html). The
+   draft-building call sites (import capture, dropped-MIDI-file import,
+   openDraftDoc, forkCurrentSong/Save As, publishDraftSong) now carry
+   tr.midiPan/offset and n.ch/duty/ve through to it too — the pan was
+   being dropped a step before writeMidi ever ran. Old published capture
+   .mids (already missing pan/aftertouch) are unaffected — nothing was
+   re-published; next re-import/re-capture of the same source will carry
+   them. tests/night-roll.test.mjs: writer parity + round-trip tests;
+   tests/nsf.test.mjs's parity test TODO updated (duty now survives).
+2. DONE (branch shared-midi-writer, 2026-09-30), same fix. writeMidi now
+   writes a key signature (0x59) ONLY when the song already declared one
+   (round-tripped from a file that had it, e.g. via tools/fix_keysigs.py —
+   never invented, Learning mode is the law); track names are proper
+   VLQ-length UTF-8 (a >127-byte name no longer corrupts the file;
+   non-Latin-1 names no longer mangled — parseMidi decodes UTF-8 with a
+   latin1 fallback, so every already-published name, all ASCII, still
+   reads exactly as before); per-note channel (n.ch) survives, else a
+   track falls back to one of 15 cycled melodic channels that never
+   collide with the drum channel (9), whatever the track count. STILL
+   open: one meter per song (matches the app's existing "one meter per
+   song" model — not attempted), no program changes, no markers — none
+   of these were asked for on this branch.
 3. .rollnotes.json is JSON wrapped round a regex text grammar: unknown
    types become empty notes (an old build silently drops a newer file's
    data); version still 1 since audio/lane/vol/pan were added; no JSON
