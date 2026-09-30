@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -5241,6 +5241,18 @@ test("✦ AI: a stream cut before the first byte is not 'not delivered' — the 
   } finally {
     run(`aiProvider = __real.aiProvider; askJobsSupported = __real.askJobsSupported; globalThis.fetch = __real.fetch; aiUrl = __real.aiUrl; localStorage.removeItem(askStoreKey());`);
   }
+});
+
+test("⏱ toggles the click in one tap; ⚙ opens the settings", async () => {
+  run(`globalThis.__realStart = metStart; globalThis.__realHalt = metHalt; metStart = async () => { met.on = true; }; metHalt = () => { met.on = false; }; met.on = false;`);
+  try {
+    run(`document.getElementById("metbtn").dispatchEvent({type: "click"});`);
+    assert.equal(val(`met.on`), true, "one tap: on");
+    run(`document.getElementById("metbtn").dispatchEvent({type: "click"});`);
+    assert.equal(val(`met.on`), false, "second tap: off");
+    run(`document.getElementById("metcfg").dispatchEvent({type: "click"});`);
+    assert.equal(val(`document.getElementById("metsheet").classList.contains("on")`), true, "⚙ opens the settings");
+  } finally { run(`metStart = __realStart; metHalt = __realHalt; document.getElementById("metsheet").classList.remove("on"); met.on = false;`); }
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

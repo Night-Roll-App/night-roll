@@ -164,6 +164,7 @@
   .lcdseg.tappable:active { background: var(--panel); border-radius: 5px; }
   #timectl { display: flex; align-items: center; gap: 10px; padding-right: 12px; flex: none; margin-top: 6px; min-height: 44px; }
   #timectl #metbtn { min-height: 34px; padding: 4px 10px; }
+  #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 12px; }
   select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; min-width: 74px; }
   button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -379,7 +380,7 @@
   /* listener mode (phones default): the app is a PLAYER — roll + transport only */
   body.listener #filesheetbtn, body.listener #editsheetbtn, body.listener #viewsheetbtn,
   body.listener #trackzone, body.listener #editrow, body.listener footer,
-  body.listener #panelshow, body.listener #metbtn, body.listener #recbtn,
+  body.listener #panelshow, body.listener #metbtn, body.listener #metcfg, body.listener #recbtn,
   body.listener #instpanel, body.listener #subtitle, body.listener #askbtn { display: none !important; }
   #fullappbtn { display: none; }
   body.listener #fullappbtn { display: inline-block; }
@@ -1001,7 +1002,7 @@
     </div>
   </div>
   <div id="timectl">
-    <button id="metbtn" aria-label="Metronome">⏱</button>
+    <button id="metbtn" aria-label="Metronome on/off">⏱</button><button id="metcfg" aria-label="Metronome settings" title="Metronome settings">⚙</button>
     <button id="speedbtn" aria-label="Playback speed">100%</button>
     <div id="speedpop" style="display:none;align-items:center;gap:6px">
       <input type="range" id="speedsl" min="25" max="200" step="5" value="100"
@@ -1546,7 +1547,7 @@
       <dt>▶ Play / ■ Stop</dt><dd>NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them). While a song is still loading its sound — the console's voice, game or SoundFont instruments, a recording — ▶ shows <b>⏳ 42%</b> and waits; it turns back into ▶ Play when everything is ready (a load that fails lets you play anyway and says why).</dd>
       <dt>Playing in the background</dt><dd>In the installed iPad app, music keeps playing when you leave the app or lock the screen: start a song or an album, then switch away. Come back to see where it is.</dd>
       <dt>💿 Play album</dt><dd>In File → Open…, every album has a <b>💿 Play album</b> row at the top (it starts from the song you have open when that song is in the album). The album plays straight through like a record — each song gets its intro plus two passes of its loop, fades, and the next one loads (the console's own sound is waited for while it renders) — and wraps around to the first song forever. While it plays, a 💿 strip under the transport shows <b>3/19</b>, the song, and what's next, with <b>⏮ Prev</b>, <b>⏭ Next</b>, and <b>✕</b> to leave. ▶, ■, ⏮ and Space work on the current song exactly as always (■ just pauses the album; ▶ picks it back up). Picking another song, ●, or Download audio also leaves. No dialog will interrupt a run: a song with a newer save on the repo plays from this device's draft and says so. Editing while it plays is fine. Keep the screen on — locking the iPad pauses it, and unlocking picks up where it stopped. While a run is on, the address bar carries it too (<code>?album=</code>) — opening that link reopens with the strip up, run armed, same song selected, and nothing playing yet; the first ▶ plays it as an album pass, same as picking 💿 Play album.</dd>
-      <dt>⏱ Metronome</dt><dd>Any meter (1–12 over 2/4/8/16 — bpm counts the denominator beat), tap each beat cell to cycle accent → normal → silent, subdivisions in 2/3/4, slider or tap-tempo. Three modes: <b>free-running</b> (its own clock); <b>follow song</b> — clicks ride the song's own grid, phase-perfect on the declared meter through tempo changes, speed slider, and loops; <b>trial meter</b> — click a meter of YOUR choosing over the real music to A/B candidates by ear (the "shift accents" ‹ › slides the pattern's starting beat, since a right meter can sit offset). Settings stick.</dd>
+      <dt>⏱ Metronome</dt><dd><b>Tap ⏱ to turn the click on or off</b>; <b>⚙</b> beside it opens the settings. Any meter (1–12 over 2/4/8/16 — bpm counts the denominator beat), tap each beat cell to cycle accent → normal → silent, subdivisions in 2/3/4, slider or tap-tempo. Three modes: <b>free-running</b> (its own clock); <b>follow song</b> — clicks ride the song's own grid, phase-perfect on the declared meter through tempo changes, speed slider, and loops; <b>trial meter</b> — click a meter of YOUR choosing over the real music to A/B candidates by ear (the "shift accents" ‹ › slides the pattern's starting beat, since a right meter can sit offset). Settings stick.</dd>
       <dt>Count-in</dt><dd>Optional one-bar click lead-in. Playing counts in only from bar 1 beat 1 — never mid-song, never when the song loops back around; <b>recording (●) counts in from wherever it starts</b>, so a punch-in at bar 17 gets its bar of clicks too.</dd>
       <dt>⏮</dt><dd>Back to bar 1.</dd>
       <dt>Speed slider</dt><dd>25–200% of the song's own tempo, for close listening or instrument practice — pitch stays true; only time stretches. Applies when you let go; keeps its setting across songs. A 100% button appears whenever you're off native — tap to snap back.</dd>
@@ -10828,10 +10829,13 @@ function metHalt() {
   metBuildCells();
   applyMetMode();
 }
-document.getElementById("metbtn").addEventListener("click", e => {
+// ⏱ is a one-tap click toggle, the DAW habit (Logic's K); ⚙ beside it opens
+// the settings (Josh, 2026-09-29: three taps to turn the click on was too many)
+document.getElementById("metbtn").addEventListener("click", () => met.on ? metHalt() : metStart());
+document.getElementById("metcfg").addEventListener("click", () => {
   const sheet = document.getElementById("metsheet");
   if (sheet.classList.contains("on")) { sheet.classList.remove("on"); return; }
-  const r = e.currentTarget.getBoundingClientRect();
+  const r = document.getElementById("metbtn").getBoundingClientRect();
   sheet.style.top = (r.bottom + 6) + "px";
   sheet.classList.add("on");
   // right-anchor near the button, clamped on-screen
