@@ -106,6 +106,9 @@
   /* Published/Local never truncates; the folder and the title do (Josh, 2026-09-29) */
   #songcrumb > span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   #songcrumb > .crumbwhere, #songcrumb > .crumbdot { flex: none; }
+  #askshotimg { height: 44px; max-width: 80px; object-fit: cover; border-radius: 4px; border: 1px solid var(--grid); cursor: zoom-in; }
+  #askshotimg.big { height: auto; max-width: 100%; cursor: zoom-out; }
+  #askshotchip:has(#askshotimg.big) { flex-wrap: wrap; }
   #trackrow {
     display: flex;
     align-items: flex-start; /* chips may wrap to more rows; transport stays pinned to the first */
@@ -579,6 +582,13 @@
   #pubjoblist .pjstate { font-size: 12px; display: flex; align-items: center; gap: 6px; flex: none; max-width: 55%; }
   #pubjoblist .pjstate.fail { color: #e66767; white-space: normal; text-align: right; }
   #pubjoblist .pjstate.done { color: var(--gold); }
+  /* the AI panel's "Now:" strip (2026-09-29): what Claude Code is doing,
+     general chat only — one quiet line, ellipsis so a phone width never
+     scrolls sideways; tap opens the Recent list beneath it. */
+  #asknowstrip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #asknowrecent { font-family: var(--mono); font-size: 11px; color: var(--dim); display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
+  #asknowrecent .asknowitem { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jobsnow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #cfgtabs button { flex: 1; border: 0; border-radius: 0; min-height: 36px; background: transparent; color: var(--dim); font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; }
   #cfgtabs button.on { background: var(--grid); color: var(--text); }
   #settingssheet .cfgpane { display: none; flex-direction: column; gap: 10px; }
@@ -1518,7 +1528,7 @@
     </div>
     <div class="hsec" data-hsec="playback">
     <dl>
-      <dt>▶ Play / ■ Stop</dt><dd>NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them).</dd>
+      <dt>▶ Play / ■ Stop</dt><dd>NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them). While a song is still loading its sound — the console's voice, game or SoundFont instruments, a recording — ▶ shows <b>⏳ 42%</b> and waits; it turns back into ▶ Play when everything is ready (a load that fails lets you play anyway and says why).</dd>
       <dt>Playing in the background</dt><dd>In the installed iPad app, music keeps playing when you leave the app or lock the screen: start a song or an album, then switch away. Come back to see where it is.</dd>
       <dt>💿 Play album</dt><dd>In File → Open…, every album has a <b>💿 Play album</b> row at the top (it starts from the song you have open when that song is in the album). The album plays straight through like a record — each song gets its intro plus two passes of its loop, fades, and the next one loads (the console's own sound is waited for while it renders) — and wraps around to the first song forever. While it plays, a 💿 strip under the transport shows <b>3/19</b>, the song, and what's next, with <b>⏮ Prev</b>, <b>⏭ Next</b>, and <b>✕</b> to leave. ▶, ■, ⏮ and Space work on the current song exactly as always (■ just pauses the album; ▶ picks it back up). Picking another song, ●, or Download audio also leaves. No dialog will interrupt a run: a song with a newer save on the repo plays from this device's draft and says so. Editing while it plays is fine. Keep the screen on — locking the iPad pauses it, and unlocking picks up where it stopped. While a run is on, the address bar carries it too (<code>?album=</code>) — opening that link reopens with the strip up, run armed, same song selected, and nothing playing yet; the first ▶ plays it as an album pass, same as picking 💿 Play album.</dd>
       <dt>⏱ Metronome</dt><dd>Any meter (1–12 over 2/4/8/16 — bpm counts the denominator beat), tap each beat cell to cycle accent → normal → silent, subdivisions in 2/3/4, slider or tap-tempo. Three modes: <b>free-running</b> (its own clock); <b>follow song</b> — clicks ride the song's own grid, phase-perfect on the declared meter through tempo changes, speed slider, and loops; <b>trial meter</b> — click a meter of YOUR choosing over the real music to A/B candidates by ear (the "shift accents" ‹ › slides the pattern's starting beat, since a right meter can sit offset). Settings stick.</dd>
@@ -1645,6 +1655,7 @@
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ AI) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
       <dt>General chat</dt><dd>At the top of ✦ AI, <b>♪ this song</b> / <b>✦ general</b> pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
+      <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, a quiet <b>Now: …</b> line at the top of the <b>✦ general</b> chat shows the terminal's current step (set with <code>claude-bridge.mjs --status "…"</code>, cleared when idle), with how long ago it changed; the same line appears in <b>⏳ Jobs</b> no matter which chat you're in. Tap the strip for <b>Recent</b>: its last ~10 lines, plus the last 3 commit subjects from the repo.</dd>
       <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a <code>(screenshot: …)</code> line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).</dd>
       <dt>Where the model runs</dt><dd>File → Settings… → <b>AI model</b>. <b>In this browser</b>: pick a small model (0.4–4 GB), the first Ask downloads it once and it runs on this device's GPU, nothing leaves the device; Test checks WebGPU and whether it's downloaded. <b>On a server</b>: the URL of an OpenAI-compatible server — LM Studio or Ollama on this computer (<code>http://localhost:1234</code>) or on another machine on your network — plus an optional API key; <b>Test</b> lists the server's models, picks one (your last pick if the server still has it), saves, and names exactly what's wrong when it can't (server off, CORS not enabled, https page talking to an http server, no answer in 8 s). On an iPad the server must be https (Tailscale Serve). The first time you point it at a machine other than this one, it asks once before sending your notes there.</dd>
@@ -1870,6 +1881,7 @@
 <div class="overlay" id="jobssheet">
   <div class="sheet">
     <h2 id="jobssheet-h2">JOBS</h2>
+    <div class="status" id="jobsnow" style="display:none"></div>
     <div id="jobslist" style="display:flex;flex-direction:column;gap:8px"></div>
     <div class="status" id="jobshelp">Captures and publishes run here in the background. Close their panels any time; reopen from this list. A job keeps going while the app is in front; it pauses when the app is in the background and picks up where it was.</div>
     <div class="row" style="margin-top:10px">
@@ -1950,6 +1962,8 @@
       <button id="askmodesong" role="tab" class="active">♪ this song</button>
       <button id="askmodegen" role="tab">✦ general</button>
     </div>
+    <div class="status" id="asknowstrip" style="display:none;cursor:pointer" role="button" tabindex="0" aria-label="What Claude Code is doing — tap for recent"></div>
+    <div id="asknowrecent" style="display:none"></div>
     <div id="asklog"></div>
     <div class="chiprow" id="asktakes"></div>
     <div class="row" id="askspanrow">
@@ -1961,6 +1975,11 @@
       <span class="lbl">fill onto</span>
       <select id="asktarget" aria-label="Target track for Fill"></select>
       <span class="status" id="asktargetstatus" style="flex:1"></span>
+    </div>
+    <div class="row" id="askshotchip" style="display:none">
+      <img id="askshotimg" alt="the screenshot to send" title="tap to see it larger">
+      <span class="status" style="flex:1">📷 screenshot — sent with your next message</span>
+      <button id="askshotx" aria-label="Remove the screenshot">✕</button>
     </div>
     <div class="row">
       <textarea id="askinput" placeholder="Ask about what you're looking at…" aria-label="Your question"></textarea>
@@ -3841,7 +3860,7 @@ function playbackFrame() {
   }
   // playhead overlay — same geometry as drawFull's, clipped below the ruler
   const tick = secToTick(song, playSec());
-  const x = RULER_W + tick * pxPerTick() - view.x;
+  const x = viewMode === "score" && scoreModel ? scoreTickToX(tick) : RULER_W + tick * pxPerTick() - view.x; // the score spaces by noteheads, not ticks
   const H = wrap.clientHeight;
   if (x >= RULER_W) {
     ctx.fillStyle = css("--gold");
@@ -3863,7 +3882,7 @@ function drawFull(skipCursor) {
   ctx.fillRect(0, 0, W, H);
   if (fallActive()) { drawFall(W, H); return; }
   if (viewMode === "score" && VF && scoreModel) {
-    drawScore(W, H);
+    drawScore(W, H, skipCursor);
     drawRuler(W, H);
     return;
   }
@@ -7058,6 +7077,7 @@ function sfPreloadForSong() { // warm every pitch a sampled track actually plays
     ps.add(69); // the preview pitch
     ps.forEach(p => sfDecode(file, p));
   });
+  playGateKick();
 }
 async function sfWaitForSong(capMs) { // resolve when this song's sampled pitches are decoded, or at the cap
   if (!song) return;
@@ -8024,6 +8044,7 @@ function gamePreloadForSong() { // warm every game/sf2 voice's library or font t
     gamePreloadTokens.set(voice, Promise.all([sf2Font(slug), instPlayerReady()]).then(([font]) => { sf2Sync.set(slug, font); })
       .catch(err => logErr("⚠ soundfont " + voice + " didn't load: " + err.message)));
   });
+  playGateKick(); // the tokens exist now: ▶ waits for them
 }
 async function gameWaitForSong(capMs) { // resolve when this song's game/sf2 voices are ready, or at the cap
   if (!song) return;
@@ -8439,7 +8460,68 @@ function updateChipBtn() {
   const key = songKey, p = updateChipBtnInner();
   chip.resolving = {key, p};
   p.catch(() => {}).finally(() => { if (chip.resolving && chip.resolving.p === p) chip.resolving = null; });
+  playGateKick();
   return p;
+}
+// ---- ▶ waits for the song (Josh, 2026-09-29: "the play button should not
+// even be enabled until everything is loaded … once it hits 100% it turns
+// into the regular Play button"). playGate() is the one synchronous answer:
+// null = ready, else {pct, what}. The ticker runs only while something loads
+// and stops itself; ▶ is disabled only after PLAY_GATE_GRACE so a song with
+// nothing to load never flashes, and never for longer than PLAY_GATE_MAX — a
+// load that hangs must not strand him (synth carries it, and the log says so).
+const PLAY_GATE_GRACE = 150, PLAY_GATE_MAX = 30000;
+const gateSettled = new WeakSet(), gateWatched = new WeakSet();
+function gatePending(tok) { // a promise's state, synchronously, from the first time we see it
+  if (!tok || gateSettled.has(tok)) return false;
+  if (!gateWatched.has(tok)) { gateWatched.add(tok); Promise.resolve(tok).catch(() => {}).finally(() => gateSettled.add(tok)); }
+  return true;
+}
+function playGate() {
+  if (!song || !songKey) return null;
+  if (songLoading) return {pct: 0, what: "the song"};
+  if (chip.rendering === songKey) return {pct: chip.progress || 0, what: "the console's voice"};
+  if (chip.resolving && chip.resolving.key === songKey) return {pct: 0, what: "the console file"};
+  let total = 0, waiting = 0;
+  try {
+    for (const {voice} of [...gameVoicesInSong(), ...sf2VoicesInSong()]) { total++; if (gatePending(gamePreloadTokens.get(voice))) waiting++; }
+    song.tracks.forEach((tr, ti) => {
+      const file = sfFileFor(trackVoice(ti)), bank = file && sfBank[file];
+      if (!bank) return;
+      const ps = new Set(tr.notes.filter(n => !n.gone).map(n => n.p));
+      for (const p of ps) { total++; if (!bank.buffers[p] && bank.pending[p]) waiting++; }
+    });
+    forEachClip(c => { total++; const e = audioBufCache.get(audioCacheKey(c.file)); if (e && e.status === "decoding") waiting++; });
+  } catch (err) { return null; } // a half-built song: never block ▶ on our own bookkeeping
+  return waiting ? {pct: (total - waiting) / total, what: "instruments"} : null;
+}
+let playGateTimer = null, playGateSince = 0, playGateShown = false;
+function playGateKick() {
+  if (playGateTimer || typeof document === "undefined") return;
+  playGateSince = Date.now();
+  playGateTick();
+  if (playGateTimer === null && playGateActive()) playGateTimer = setInterval(playGateTick, 200);
+}
+function playGateActive() { return !playing && !!playGate(); }
+function playGateTick() {
+  const btn = document.getElementById("playbtn");
+  const g = playing ? null : playGate(), late = Date.now() - playGateSince;
+  if (g && late > PLAY_GATE_MAX) logErr("still loading " + g.what + " after " + PLAY_GATE_MAX / 1000 + " s — ▶ is on anyway (synthesized voices where it isn't ready)");
+  if (g && late <= PLAY_GATE_MAX) {
+    if (late < PLAY_GATE_GRACE) return;
+    btn.disabled = true;
+    btn.textContent = "⏳ " + Math.round(g.pct * 100) + "%";
+    btn.title = "loading " + g.what + " — ▶ Play when it's ready";
+    playGateShown = true;
+    return;
+  }
+  clearInterval(playGateTimer); playGateTimer = null;
+  if (playGateShown) { playGateShown = false; btn.disabled = false; btn.title = ""; if (!playing) btn.textContent = "▶ Play"; }
+}
+async function playGateWait(capMs) { // album advance: the same gate, awaited
+  playGateKick();
+  const t0 = Date.now();
+  while (playGate() && Date.now() - t0 < capMs) await new Promise(r => setTimeout(r, 200));
 }
 async function updateChipBtnInner() { // name kept for call sites; now just the auto-render kick
   // "the chip button should not even have to exist" (Josh, 2026-08-17): chip
@@ -8845,6 +8927,7 @@ async function audioEnsureFile(file) { // resolve + decode one file; every piece
   if (audioBufCache.has(ck)) return;
   const entry = {buffer: null, peaks: null, dur: 0, status: "decoding", where: null};
   audioBufCache.set(ck, entry);
+  playGateKick();
   const apply = () => { // the clip objects may have been rebuilt by a later finalizeNotes: find them by file
     if (songKey !== key || !song) return;
     forEachClip(c => { if (c.file === file)
@@ -9522,6 +9605,8 @@ async function albumPlayIdx(idx) {
     await Promise.race([audioReady(), new Promise(r => setTimeout(r, 15000))]);
     if (stale()) return;
   }
+  await playGateWait(15000); // instruments too: the same gate ▶ shows
+  if (stale()) return;
   await play(0, {noCountIn: true});
 }
 function albumAdvance() { // from the scheduler timer, once the pass count is spent; idempotent
@@ -9990,7 +10075,7 @@ function scoreXToTick(x) { // inverse, coarse: linear within measure
   return Math.max(0, t);
 }
 
-function drawScore(W, H) {
+function drawScore(W, H, skipCursor) { // skipCursor: playbackFrame's cached scene — the overlay draws the playhead
   const m = scoreModel;
   const ppt = pxPerTick();
   const mw = m.bt * ppt;
@@ -10045,6 +10130,7 @@ function drawScore(W, H) {
     ctx.moveTo(x - 11, RULER_H); ctx.lineTo(x + 11, RULER_H); ctx.lineTo(x, RULER_H + 14);
     ctx.fill();
   };
+  if (skipCursor) return; // a playhead baked into the cache stayed as a second gold line (Josh, 2026-09-29, score view)
   if (playing) {
     const x = scoreTickToX(secToTick(song, playSec()));
     ctx.fillStyle = css("--gold");
@@ -10346,6 +10432,7 @@ function openSongPicker() {
 }
 document.getElementById("playbtn").addEventListener("click", () => {
   if (!song) return; // first song still fetching
+  if (!playing && playGateShown) return; // loading: a tap does not queue a play (Josh: it sounded bad)
   playing ? stop() : play(playCursor > 0 ? tickToSec(song, playCursor) : 0); // in an album run this is pause/resume — the run stays
 });
 document.getElementById("rwbtn").addEventListener("click", () => {
@@ -18400,6 +18487,7 @@ function askModeButtons() {
   const spanrow = document.getElementById("askspanrow"); if (spanrow) spanrow.style.display = askGeneral ? "none" : "";
   const fillrow = document.getElementById("askfill"); if (fillrow && askGeneral) fillrow.style.display = "none";
   if (typeof askinput !== "undefined" && askinput) askinput.placeholder = askGeneral ? "Anything — the app, the project, music in general, a message for the terminal…" : "Ask about what you're looking at…";
+  if (typeof askStatusRender === "function") askStatusRender(); // the "Now:" strip shows only in general mode
 }
 function askStoreKey() { return askGeneral ? ASK_GENERAL_KEY : "ff1roll-ask-" + (songKey || "local"); }
 // The chat is his session record (Josh, 2026-09-25): it lives here whole
@@ -18577,8 +18665,91 @@ function askNotesArrived(notes) { // into the open song's chat, saved like any m
   const msgs = askLoad();
   for (const n of notes) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal"});
   askSave(msgs, undefined, key);
-  if (asksheet.classList.contains("on")) { for (const n of notes) askBubble("note", askNoteLabel(n.from) + String(n.text)); }
+  if (asksheet.classList.contains("on")) { for (const n of notes) askBubble("note", askNoteLabel(n.from) + String(n.text)); askNoteSeen(); }
   else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
+}
+// ---- "Now: …" (2026-09-29, Josh: "I wish I had a way to see what Claude
+// Code was working on from here; right now I just wait until it sends me a
+// message"). The bridge keeps one current line (`node tools/claude-bridge.mjs
+// --status "…"`, cleared by --status "" or --status-clear) plus its last 10
+// with times; piggybacked on the same 60 s/on-open poll as the inbox (same
+// host gate, same 404-once). Shown as a quiet strip atop the GENERAL chat
+// only (a song's chat is about the song, not the terminal) and as a "Now:"
+// row in ⏳ Jobs regardless of chat mode; tap the strip for the Recent list,
+// which also fetches origin/main's last 3 commit subjects (public API, no
+// token) at most once per 5 minutes.
+let askStatusNow = null; // {text, t} | null
+let askStatusRecent = []; // last 10 {text, t}, oldest first
+let askStatusNo = ""; // the url that answered 404 (no /v1/status there)
+let askStatusRecentOpen = false;
+let askStatusCommits = null; // cached commit subjects, or null before the first fetch
+let askStatusCommitsAt = 0;
+function askAgeText(t) { // "3m ago" — coarse, no need for seconds precision once past a minute
+  const s = Math.max(0, Math.round((Date.now() - (t || 0)) / 1000));
+  if (s < 60) return s + "s ago";
+  const m = Math.round(s / 60); if (m < 60) return m + "m ago";
+  const h = Math.round(m / 60); if (h < 24) return h + "h ago";
+  return Math.round(h / 24) + "d ago";
+}
+async function askStatusPoll() {
+  if (!askInboxAllowed() || !song) return; // same gate as the inbox: a host allowed for Ask, and a song open (Ask itself needs one)
+  const url = aiUrl();
+  if (askStatusNo === url) return;
+  let r;
+  try { r = await fetch(url + "/v1/status", {headers: aiHeaders(), cache: "no-store"}); } catch (err) { return; }
+  if (r.status === 404) { askStatusNo = url; askStatusNow = null; askStatusRender(); return; }
+  if (!r.ok) return;
+  let j; try { j = await r.json(); } catch (err) { return; }
+  askStatusNow = (j && j.now) || null;
+  askStatusRecent = (j && j.recent) || [];
+  askStatusRender();
+}
+function askStatusRender() {
+  const strip = document.getElementById("asknowstrip");
+  if (strip) {
+    const show = !!(askGeneral && askStatusNow && askStatusNow.text);
+    strip.style.display = show ? "" : "none";
+    if (show) strip.textContent = "Now: " + askStatusNow.text + " · " + askAgeText(askStatusNow.t);
+    if (!show) askStatusRecentShow(false);
+  }
+  const jobsnow = document.getElementById("jobsnow");
+  if (jobsnow) {
+    const showJ = !!(askStatusNow && askStatusNow.text);
+    jobsnow.style.display = showJ ? "" : "none";
+    if (showJ) jobsnow.textContent = "Now: " + askStatusNow.text;
+  }
+}
+function askStatusRecentShow(on) {
+  askStatusRecentOpen = !!on;
+  const el = document.getElementById("asknowrecent");
+  if (!el) return;
+  el.style.display = on ? "" : "none";
+  if (!on) return;
+  el.innerHTML = "";
+  for (const n of askStatusRecent.slice().reverse()) {
+    const d = document.createElement("div");
+    d.className = "asknowitem";
+    d.textContent = askAgeText(n.t) + " — " + n.text;
+    el.appendChild(d);
+  }
+  for (const subj of askStatusCommits || []) {
+    const d = document.createElement("div");
+    d.className = "asknowitem";
+    d.textContent = "commit: " + subj;
+    el.appendChild(d);
+  }
+}
+function askStatusToggle() { askStatusRecentShow(!askStatusRecentOpen); if (askStatusRecentOpen) askStatusFetchCommits(); }
+async function askStatusFetchCommits() { // origin/main's last 3 subjects, public+unauthenticated, at most once per 5 min; silent on any failure
+  if (askStatusCommits && Date.now() - askStatusCommitsAt < 5 * 60000) return;
+  askStatusCommitsAt = Date.now();
+  try {
+    const r = await fetch("https://api.github.com/repos/Night-Roll-App/night-roll/commits?per_page=3");
+    if (!r.ok) return;
+    const j = await r.json();
+    askStatusCommits = (Array.isArray(j) ? j : []).map(c => c && c.commit && c.commit.message ? c.commit.message.split("\n")[0] : "").filter(Boolean);
+    if (askStatusRecentOpen) askStatusRecentShow(true);
+  } catch (err) { /* silent — the strip still has the bridge's own Recent */ }
 }
 // ---- 📷 (Josh, 2026-09-29: "I wish there would be a way for me to send you
 // screenshots from the app itself"). The iPad shell's native snapshot
@@ -18623,7 +18794,7 @@ async function askShotCapture() { // -> {bytes, mime}
 async function askShotTake() {
   const url = aiUrl(), sheet = document.getElementById("asksheet");
   const aside = !sheet.classList.contains("docked");
-  askstatus.textContent = "📷 taking…";
+  askstatus.textContent = aside ? "📷 taking…" : ""; // docked, the panel is IN the picture: no stale "taking…" in it
   if (aside) sheet.style.visibility = "hidden";
   let shot;
   try {
@@ -18636,15 +18807,34 @@ async function askShotTake() {
     const r = await fetch(url + "/v1/shot", {method: "POST", headers: {...aiHeaders(), "content-type": shot.mime}, body: shot.bytes});
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.path) throw new Error(j.error && j.error.message || "HTTP " + r.status);
-    askinput.value = (askinput.value.trim() ? askinput.value.trim() + "\n" : "") + askShotLine(j.path);
-    askGrow();
-    askstatus.textContent = "📷 attached — say what to look at, then Send";
-    askinput.focus();
+    askShotSet(j.path, shot);
+    askstatus.textContent = "📷 attached — Send, with a note if you like";
+    // no focus: the keyboard stays down (Josh, 2026-09-29: the path in the box
+    // summoned it and cluttered what he was writing)
   } catch (err) { askstatus.textContent = "📷 not sent: " + err.message; }
 }
+// the attached shot rides as a chip above the box, never text in it; Send
+// adds the "(screenshot: …)" line to the outgoing message only
+let askShotPending = null; // {path, url}
+function askShotSet(path, shot) {
+  if (askShotPending && askShotPending.url) { try { URL.revokeObjectURL(askShotPending.url); } catch (e) {} }
+  askShotPending = path ? {path, url: null} : null;
+  const chip = document.getElementById("askshotchip"), img = document.getElementById("askshotimg");
+  if (path && shot && typeof URL !== "undefined" && URL.createObjectURL && typeof Blob !== "undefined") {
+    try { askShotPending.url = URL.createObjectURL(new Blob([shot.bytes], {type: shot.mime})); img.src = askShotPending.url; } catch (e) {}
+  }
+  img.classList.remove("big");
+  chip.style.display = path ? "" : "none";
+}
+function askShotOutgoing(text) { // what Send sends: the note, then the shot's line; the box never holds it
+  if (!askShotPending) return text;
+  return (text || "(screenshot only)") + "\n" + askShotLine(askShotPending.path);
+}
 document.getElementById("askshot").addEventListener("click", askShotTake);
+document.getElementById("askshotx").addEventListener("click", () => { askShotSet(null); askstatus.textContent = ""; });
+document.getElementById("askshotimg").addEventListener("click", e => e.target.classList.toggle("big"));
 function askNoteLabel(from) { return "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; }
-function askInboxStart() { clearInterval(askInboxTimer); askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askResume(); } }, 60000); askInboxPoll(); askResumeSoon(1500); } // at boot too: a reply that landed while the app was closed lights ✦ without opening the sheet
+function askInboxStart() { clearInterval(askInboxTimer); askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askStatusPoll(); askResume(); } }, 60000); askInboxPoll(); askStatusPoll(); askResumeSoon(1500); } // at boot too: a reply that landed while the app was closed lights ✦ without opening the sheet
 function askBubble(role, text) {
   const div = document.createElement("div");
   div.className = "askmsg " + role;
@@ -18831,8 +19021,9 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
   }
 }
 async function askSend() {
-  const text = askinput.value.trim();
-  if (!text || askBusy || !song) return;
+  const typed = askinput.value.trim();
+  if ((!typed && !askShotPending) || askBusy || !song) return;
+  const text = askShotOutgoing(typed);
   if (cfg().aiBackend !== "browser" && !(await aiHostOk(aiUrl()))) { askstatus.textContent = "not sent"; return; }
   const sp = askSpan();
   askSpanFrozen = sp;
@@ -18846,8 +19037,9 @@ async function askSend() {
   askSave(msgs);
   askMicOff(); // a live 🎤 would write its transcript back into the box after we clear it
   askinput.value = "";
+  askShotSet(null);
   askGrow();
-  askBubble("user", text);
+  askBubble("user", text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
   const live = askBubble("ai", "…");
   live.dataset.job = jobId; // askResume finds THIS bubble by job, never "the last ai bubble"
   await askRun({msgs, text, sp, messages, jobId, live, key: askStoreKey()});
@@ -19718,15 +19910,20 @@ wmSideDividerize("wmdivider-right-inner", "right");
 // phone width mid-session floats every docked window (the pref itself is
 // untouched — growing back re-offers and reapplies it)
 window.addEventListener("resize", wmLayoutAll);
+function askNoteSeen() { // the notes are on screen: the ✉ light and its footer line go (Josh, 2026-09-29: it stayed up with the panel open)
+  document.getElementById("askbtn").classList.remove("hasnote");
+  if (/^✉ a note from your Mac/.test(infoFull || "")) setInfo("");
+}
 function openAsk() {
   if (!song) return;
   askBadgeOff();
-  document.getElementById("askbtn").classList.remove("hasnote");
+  askNoteSeen();
   askInboxPoll();
+  askStatusPoll();
   askRender();
   askRefresh();
   askRefreshTarget();
-  askModeButtons(); // sets the placeholder for the mode
+  askModeButtons(); // sets the placeholder for the mode (and the "Now:" strip)
   asksheet.classList.add("on");
   wmLayoutAll(); // reopens docked if it was docked (open-items.md "a real windowing system")
   askGrow();
@@ -19744,6 +19941,7 @@ for (const [id, general] of [["askmodesong", false], ["askmodegen", true]]) docu
   askSetMode(general);
   askRender(); askRefresh(); askRefreshTarget();
 });
+document.getElementById("asknowstrip").addEventListener("click", askStatusToggle);
 document.getElementById("askreplybtn").addEventListener("click", openAsk);
 document.getElementById("askgear").addEventListener("click", () => { asksheet.classList.remove("on"); openSettingsSheet(); });
 document.getElementById("askclear").addEventListener("click", async () => { // Clear = new session; unsaved messages are the one thing it can destroy

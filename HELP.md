@@ -30,7 +30,7 @@ The score stops zooming out where its busiest bar would overflow — engraved no
 ## Playback
 
 **▶ Play / ■ Stop**
-NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them).
+NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them). While a song is still loading its sound — the console's voice, game or SoundFont instruments, a recording — ▶ shows **⏳ 42%** and waits; it turns back into ▶ Play when everything is ready (a load that fails lets you play anyway and says why).
 
 **Playing in the background**
 In the installed iPad app, music keeps playing when you leave the app or lock the screen: start a song or an album, then switch away. Come back to see where it is.
@@ -313,6 +313,9 @@ At the top of ✦ AI, **♪ this song** / **✦ general** pick which chat you ar
 
 **Notes from the Mac**
 On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold **✉** bubble (inbox), and the **✦ AI** button shows ✉ until you open it. Notes are saved with the chat.
+
+**What Claude Code is doing now**
+On the Claude Code bridge, a quiet **Now: …** line at the top of the **✦ general** chat shows the terminal's current step (set with claude-bridge.mjs --status "…", cleared when idle), with how long ago it changed; the same line appears in **⏳ Jobs** no matter which chat you're in. Tap the strip for **Recent**: its last ~10 lines, plus the last 3 commit subjects from the repo.
 
 **📷 Screenshot to Claude**
 On the Claude Code bridge, tap **📷** beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a (screenshot: …) line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.

@@ -470,7 +470,7 @@ whether the tool or the app owns the order.
    "Published › SNES › Final Fantasy 4 › Song" / "Local › Night Roll
    Sketches › Song"; the word never truncates, the folder/title does.
 
-8. NEXT (first): Play waits for the song (Josh, 2026-09-29: "the play button
+8. DONE: Play waits for the song (Josh, 2026-09-29: "the play button
    should not even be enabled until everything is loaded … once it hits
    100% it turns into the regular Play button"). ▶ disabled with a
    percentage while the chip source is found/fetched/rendered, song
@@ -479,14 +479,31 @@ whether the tool or the app owns the order.
    (synth fallback); a tap during loading does not queue a play; album
    auto-advance waits the same way. No modal. (Stopgap shipped: play()
    waits on chip.resolving.)
-9. "What is Claude Code doing" status (Josh via Ask, 2026-09-29:
-   "I wish I had a way to see what Claude Code was working on from
-   here"). `claude-bridge.mjs --status "…"` stores one current line + the
-   last ~10 with times; the app shows it as a quiet strip atop the
-   general chat and a "Now: …" row in ⏳, refreshed by the 60 s inbox
-   poll and on open, Recent on tap; plus the last few commit subjects
-   from origin/main. Set at each real step (start, tests, pushed, iPad
-   build); cleared when idle.
+9. BUILT (vm tests green; not yet browser-verified or pushed): "What is
+   Claude Code doing" status (Josh via Ask, 2026-09-29: "I wish I had a
+   way to see what Claude Code was working on from here"). `claude-bridge.mjs
+   --status "…"` (`--status ""` / `--status-clear` clears) stores one
+   current line + the last 10 with times (`status.json` beside
+   `inbox.json`); GET/POST `/v1/status`. The app shows it as a quiet strip
+   atop the general chat and a "Now: …" row in ⏳ (always), piggybacked on
+   the 60 s inbox poll and on open; tap for Recent (last ~10 + the last 3
+   commit subjects from origin/main, fetched at most every 5 min). Nobody
+   is calling `--status` yet at real steps (start, tests, pushed, iPad
+   build) — that's the next wiring, once Josh has tried the strip.
+
+10. AI panel at narrow dock widths (Josh's screenshot, 2026-09-29): below
+    ~360 px the input goes full width with Speak / 📷 / Send in one row
+    under it; the dock pill shortens to "Right ▸" (full text as its
+    aria-label); tabs don't stack. Low priority.
+11. FIXED (drawScore ignored skipCursor, so the cached scene kept a baked
+    playhead and the overlay drew a second at roll geometry): Score view, playing: two gold playheads with ruler triangles (bar 1
+    ~1.1 and bar 2 beat 1) — a ghost of the play-start or a stale frame?
+    If intended, make it look different (thin, dim, dashed).
+
+12. Each view keeps its own zoom + scroll (Josh, 2026-09-29): Roll →
+    Tracks → Score → Roll lost a fully zoomed-out roll (33 bars → ~6).
+    Per-view {zoom, x, y} saved on switch, restored before
+    buildScoreModel/clampView can clamp it; views independent.
 
 Queued, not now: the close guard ("SAVE CHANGES TO <song>?" on song
 switch); delete leftover recordings on song delete/revert; two timeline

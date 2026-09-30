@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -1781,7 +1781,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
     "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Auto-save", "Restore unsaved copy", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
-    "clear themselves a few seconds", "Publish dialog",
+    "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -4927,13 +4927,64 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
     assert.deepEqual(val(`__posted`), {u: "http://bridge.test/v1/shot", type: "image/jpeg", n: 4, first: 0xFF});
     assert.equal(val(`__hiddenDuring`), "hidden", "the floating panel is out of the picture");
     assert.equal(val(`document.getElementById("asksheet").style.visibility`), "", "and back after");
-    assert.equal(val(`askinput.value`), "why is bar 3 red\n(screenshot: /Users/x/shots/a.jpg)");
+    assert.equal(val(`askinput.value`), "why is bar 3 red", "the box keeps only what he wrote (a chip holds the shot)");
+    assert.equal(val(`askShotOutgoing("why is bar 3 red")`), "why is bar 3 red\n(screenshot: /Users/x/shots/a.jpg)");
+    assert.equal(val(`askShotOutgoing("")`), "(screenshot only)\n(screenshot: /Users/x/shots/a.jpg)");
+    assert.equal(val(`document.getElementById("askshotchip").style.display`), "");
+    run(`document.getElementById("askshotx").dispatchEvent({type: "click"});`);
+    assert.equal(val(`askShotPending`), null, "✕ drops it");
+    assert.equal(val(`askShotOutgoing("hi")`), "hi");
     // the shell's own plugin isn't in Capacitor.Plugins, and native-bridge.js has no registerPlugin: nativePromise reaches it (iPad, 2026-09-29: "this browser can't take a screenshot")
     run(`window.Capacitor = {isNativePlatform: () => true, Plugins: {}, nativePromise: async (pl, m) => pl === "Screenshot" && m === "capture" ? {jpeg: "/9j/4A=="} : null}; __posted = null; askinput.value = "";`);
     await run(`askShotTake()`);
     assert.equal(val(`__posted && __posted.type`), "image/jpeg");
   } finally {
     run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; globalThis.requestAnimationFrame = __realRaf; delete window.Capacitor; askinput.value = "";`);
+  }
+});
+
+test("status: /v1/status is polled like the inbox — Now strip in general chat only, a Now row in Jobs always, null hides both, a 404 stops asking", async () => {
+  installSong();
+  // other boot-scheduled fetches (catalog/manifest) can still land on a later
+  // microtask turn once a real `fetch` exists — filter to /v1/status so they
+  // don't inflate the call count, and reject anything else like the harness's
+  // own default fetch does
+  run(`globalThis.__realFetch = globalThis.fetch; globalThis.__realAiUrl = aiUrl;
+       aiUrl = () => "http://localhost:8788"; // "local": askInboxAllowed needs no host allow-listing
+       askStatusNow = null; askStatusRecent = []; askStatusNo = ""; askGeneral = false;
+       globalThis.__calls = 0;
+       globalThis.fetch = async (u) => { if (!String(u).includes("/v1/status")) return Promise.reject(new Error("no network in tests"));
+         __calls++; return {ok: true, status: 200,
+         json: async () => ({now: {text: "running tests", t: Date.now() - 3 * 60000},
+                              recent: [{text: "a", t: 1}, {text: "running tests", t: Date.now() - 3 * 60000}]})}; };`);
+  try {
+    await run(`askStatusPoll()`);
+    assert.equal(val(`__calls`), 1);
+    assert.equal(val(`askStatusNow.text`), "running tests");
+    // ♪ this song is showing: the strip stays hidden even though a value arrived
+    assert.equal(val(`document.getElementById("asknowstrip").style.display`), "none");
+    // the Jobs row is not gated by chat mode
+    assert.equal(val(`document.getElementById("jobsnow").style.display`), "");
+    assert.equal(val(`document.getElementById("jobsnow").textContent`), "Now: running tests");
+    run(`askGeneral = true; askStatusRender();`);
+    assert.equal(val(`document.getElementById("asknowstrip").style.display`), "");
+    assert.equal(val(`document.getElementById("asknowstrip").textContent`), "Now: running tests · 3m ago");
+    // a null "now" hides both, even in general mode
+    run(`globalThis.fetch = async (u) => !String(u).includes("/v1/status") ? Promise.reject(new Error("no network in tests"))
+         : {ok: true, status: 200, json: async () => ({now: null, recent: []})};`);
+    await run(`askStatusPoll()`);
+    assert.equal(val(`document.getElementById("asknowstrip").style.display`), "none");
+    assert.equal(val(`document.getElementById("jobsnow").style.display`), "none");
+    // a 404 marks this url status-less, like the inbox's askInboxNo — never asked again
+    run(`globalThis.__calls2 = 0;
+         globalThis.fetch = async (u) => { if (!String(u).includes("/v1/status")) return Promise.reject(new Error("no network in tests"));
+           __calls2++; return {ok: false, status: 404, json: async () => ({})}; };`);
+    await run(`askStatusPoll()`);
+    await run(`askStatusPoll()`);
+    assert.equal(val(`__calls2`), 1);
+  } finally {
+    run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl;
+         askStatusNow = null; askStatusRecent = []; askStatusNo = ""; askGeneral = false; songKey = null; song = null;`);
   }
 });
 
@@ -5104,6 +5155,21 @@ test("chip: Play right after a launch waits while the console file is still bein
   assert.equal(val(`playing`), true, "resolved (no source here): plays");
   assert.equal(val(`chip.resolving`), null, "and the marker is cleared");
   run(`stop();`);
+});
+
+test("▶ waits for the song: disabled with a percentage while the console voice renders, a tap does nothing, then back to ▶ Play (Josh, 2026-09-29)", () => {
+  installSong();
+  run(`songKey = "albums/test/gate.mid"; chip.rendering = null; chip.resolving = null; playing = false;`);
+  assert.equal(val(`playGate()`), null, "nothing loading: no gate, no flash");
+  run(`chip.rendering = songKey; chip.progress = 0.42; playGateKick(); playGateSince -= 1000; playGateTick();`);
+  assert.equal(val(`document.getElementById("playbtn").disabled`), true);
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "⏳ 42%");
+  run(`globalThis.__played = 0; globalThis.__realPlay = play; play = async () => { __played++; }; document.getElementById("playbtn").dispatchEvent({type: "click"});`);
+  assert.equal(val(`__played`), 0, "a tap while loading does not queue a play");
+  run(`chip.rendering = null; playGateTick();`);
+  assert.equal(val(`document.getElementById("playbtn").disabled`), false);
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "▶ Play");
+  run(`play = __realPlay; clearInterval(playGateTimer); playGateTimer = null;`);
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

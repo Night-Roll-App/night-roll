@@ -2669,6 +2669,16 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     `/v1/shot`, and appends `(screenshot: <path>)` to the message box.
     The bridge saves under `<state-dir>/shots`, passes `--add-dir` so
     Claude can Read there, and its system prompt says what the line means.
+  - **"Now:" status (2026-09-29, Josh: "I wish I had a way to see what
+    Claude Code was working on from here").** `--status "text"` (or POST
+    `/v1/status {text}`) sets one current line + keeps the last 10 with
+    timestamps in `status.json` beside `inbox.json`; `--status ""` /
+    `--status-clear` blanks the current line only. `GET /v1/status` →
+    `{now, recent}`. Piggybacked on `askInboxPoll`'s 60 s/on-open cadence
+    (`askStatusPoll`, same host gate, same 404-once): a strip atop the
+    general chat only (`askStatusRender`), a "Now:" row in ⏳ Jobs always,
+    tap for Recent (`askStatusToggle`) plus the last 3 commit subjects
+    from origin/main (unauthenticated GitHub API, cached 5 min).
   - **Sessions + the inbox (2026-09-27, Josh: "I can't message you back
     without getting out of bed, which is why I want the bridge to be
     able to have the model then talk to you").** Each song's chat is ONE

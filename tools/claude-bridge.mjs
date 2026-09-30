@@ -61,9 +61,16 @@
 // /v1/inbox {text, from}) — the app shows the note in ✦ Ask and the song's
 // session sees it at the top of its next turn.
 //
+// Status line (2026-09-29, Josh: "I wish I had a way to see what Claude Code
+// was working on from here; right now I just wait until it sends me a
+// message"): `node tools/claude-bridge.mjs --status "text"` (or POST
+// /v1/status {text}) sets a current one-liner and keeps the last 10 with
+// timestamps; `--status ""` or `--status-clear` clears the current line
+// (history stays) — the app shows it atop the general chat and in ⏳ Jobs.
+//
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
-// GET /v1/inbox?since=ID · POST /v1/inbox · GET /health.
+// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET /health.
 // No dependencies. Node 18+.
 
 import http from "node:http";
@@ -93,6 +100,7 @@ const DEFAULT_JOBS_DIR = path.join(os.homedir(), ".night-roll-bridge", "jobs");
 const STATE_DIR = flag("--state-dir", path.resolve(JOBS_DIR) === DEFAULT_JOBS_DIR ? path.dirname(JOBS_DIR) : path.join(JOBS_DIR, "state"));
 const SESSIONS_FILE = path.join(STATE_DIR, "sessions.json");
 const INBOX_FILE = path.join(STATE_DIR, "inbox.json");
+const STATUS_FILE = path.join(STATE_DIR, "status.json");
 const SHOTS_DIR = path.join(STATE_DIR, "shots"); // screenshots from the app's 📷 (POST /v1/shot): Claude reads them by path
 const SHOT_MAX = 25 * 1024 * 1024;
 const CLAUDE_MODE = has("--no-claude") ? "off" : (flag("--claude", process.env.BRIDGE_CLAUDE || "read") === "full" ? "full" : "read");
@@ -117,6 +125,12 @@ if (has("--say")) { // a note for the app's ✦ Ask window (and the song's sessi
   const headers = {"content-type": "application/json"}; if (TOKEN) headers.authorization = "Bearer " + TOKEN;
   fetch(`http://${HOST === "0.0.0.0" ? "127.0.0.1" : HOST}:${PORT}/v1/inbox`, {method: "POST", headers, body: JSON.stringify({text, from: flag("--from", "terminal")})})
     .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("note #" + j.id + " delivered to the bridge"); process.exit(0); })
+    .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
+} else if (has("--status") || has("--status-clear")) { // "what Claude Code is doing" (2026-09-29): post it to the running bridge and exit, mirroring --say
+  const text = has("--status-clear") ? "" : flag("--status", "").trim();
+  const headers = {"content-type": "application/json"}; if (TOKEN) headers.authorization = "Bearer " + TOKEN;
+  fetch(`http://${HOST === "0.0.0.0" ? "127.0.0.1" : HOST}:${PORT}/v1/status`, {method: "POST", headers, body: JSON.stringify({text})})
+    .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log(text ? "status set" : "status cleared"); process.exit(0); })
     .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
 } else main();
 
@@ -262,6 +276,19 @@ function sessionFor(key) { const all = readJSON(SESSIONS_FILE, {}); if (!all[key
 function sessionUpdate(key, patch) { const all = readJSON(SESSIONS_FILE, {}); all[key] = {...(all[key] || {}), ...patch, last: Date.now()}; writeJSON(SESSIONS_FILE, all); return all[key]; }
 function inboxAll() { const j = readJSON(INBOX_FILE, {last: 0, notes: []}); return j && Array.isArray(j.notes) ? j : {last: 0, notes: []}; }
 function inboxAdd(text, from) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000)}; box.notes.push(note); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
+// "what Claude Code is doing" (2026-09-29, Josh: "I wish I had a way to see
+// what Claude Code was working on from here"): one current line (null when
+// idle) plus the last 10 it ever said, each with a timestamp. Clearing only
+// blanks `now` — `recent` is history and never shrinks from a clear.
+function statusAll() { const j = readJSON(STATUS_FILE, {now: null, recent: []}); return j && Array.isArray(j.recent) ? j : {now: null, recent: []}; }
+function statusSet(text) {
+  const box = statusAll();
+  const trimmed = String(text || "").trim();
+  if (trimmed) { const entry = {text: trimmed.slice(0, 4000), t: Date.now()}; box.now = entry; box.recent.push(entry); box.recent = box.recent.slice(-10); }
+  else box.now = null;
+  writeJSON(STATUS_FILE, box);
+  return box;
+}
 function notesPreface(sess) { // what the terminal said since this session's last turn
   const fresh = inboxAll().notes.filter(n => n.id > (sess.noteSeen || 0));
   if (!fresh.length) return "";
@@ -383,6 +410,15 @@ const server = http.createServer(async (req, res) => {
       const note = inboxAdd(String(b.text).trim(), b.from);
       console.log(`inbox #${note.id} from ${note.from}: ${note.text.slice(0, 80)}`);
       return json(res, 200, note);
+    }
+  }
+  if (url.pathname === "/v1/status") { // "what Claude Code is doing" — GET for the app's poll, POST from --status or a session announcing a step
+    if (req.method === "GET") { const box = statusAll(); return json(res, 200, {now: box.now, recent: box.recent}); }
+    if (req.method === "POST") {
+      let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+      const box = statusSet(b && b.text);
+      console.log(box.now ? `status: ${box.now.text.slice(0, 80)}` : "status cleared");
+      return json(res, 200, {now: box.now, recent: box.recent});
     }
   }
   if (req.method === "POST" && url.pathname === "/v1/shot") { // raw PNG/JPEG bytes → a file Claude can Read; answers its path
