@@ -3,14 +3,18 @@
 // reconstruction -> .notes.txt emission.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, writeFileSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { makeTestNSF, makeTestNSFLoopingArpeggio, makeTestNSFVibratoPad } from "../tools/nsf/make-test-nsf.mjs";
 import { parseNSF, runNSF } from "../tools/nsf/nsf.mjs";
 import { reconstruct, toNotesTxt, pitchName, backportTiming,
          detectLoop, lastRegisterChangeFrame, trimSustainedTail } from "../tools/nsf/notes.mjs";
 import { makeMidi } from "../tools/nsf/midi-write.mjs";
 import { renderApu } from "../tools/nsf/apu-render.mjs";
-import { gatherFiles } from "../tools/import-set.mjs";
+import { gatherFiles, importSet } from "../tools/import-set.mjs";
+import { createApp } from "./harness.mjs";
 
 test("NSF pipeline: synthetic tune comes back note-perfect with channel identity", () => {
   const nsf = parseNSF(makeTestNSF().buffer);
@@ -462,4 +466,92 @@ test("track 37 (real rip): a real single D6 stays one note", {skip: !existsSync(
   const events = reconstruct(apuLog, frames, frameSec);
   assert.equal(events.length, 1, "one real note, not split into a note + a ghost");
   assert.equal(pitchName(events[0].midi), "D6");
+});
+
+// ---- terminal vs app capture parity (2026-09-29, Josh: "are the imports the
+// terminal runs identical to the imports the app runs? I sure hope it's just
+// running the same code.") It is: tools/import-set.mjs runs index.html's own
+// inline script in this same vm harness (tests/harness.mjs) and calls
+// openPickedFiles / captureJobStart / commitImports — not a second pipeline
+// (see that file's own header comment). This test drives those same two
+// entry points completely independently of one another — the real terminal
+// tool (importSet) on one side, and the app's own capture function driven
+// directly through the harness (openPickedFiles -> captureJobStart, exactly
+// what tapping "Capture all" runs) on the other — and asserts the captured
+// notes agree, so a future edit to either side can't silently drift without
+// this test catching it. Fixture: the repo's own synthetic looping NSF (no
+// albums/compositions file is ever touched; the terminal path writes its
+// output to a scratch tmp directory).
+test("terminal import (tools/import-set.mjs) and the app's own capture (captureJobStart) agree note-for-note on a synthetic NSF", async () => {
+  const nsfBytes = makeTestNSFLoopingArpeggio(); // one track (pulse1), loops well inside the capture window
+  const SLUG = "captest", SECS = 10; // impCapture clamps the window to a 10s floor regardless of what's asked (index.html's impCapture) — requesting less proves nothing extra
+
+  // ---- path A: the real terminal entry point, unmodified, writing to a scratch dir (never the repo tree)
+  const tmp = mkdtempSync(path.join(tmpdir(), "nr-nsf-parity-"));
+  const nsfPath = path.join(tmp, "test-song.nsf");
+  writeFileSync(nsfPath, Buffer.from(nsfBytes));
+  const outA = path.join(tmp, "out");
+  const resA = await importSet({src: nsfPath, slug: SLUG, secs: SECS, out: outA}, () => {});
+  assert.ok(resA.files.some(f => f.endsWith("track-01.mid")), "the terminal published track-01.mid: " + resA.files.join(", "));
+  const midPathA = path.join(outA, "albums", "nes", SLUG, "track-01.mid");
+
+  // ---- path B: the app's own capture function, driven directly through the
+  // vm harness — NOT through import-set.mjs. The only stand-ins are what a
+  // real browser supplies natively and the vm can't: real timers (impCapture
+  // yields on a bare setTimeout) and the chip modules (chipModules() dynamic-
+  // imports them off Pages; there's no fetch/module loader in the vm) —
+  // loaded here from the SAME files on disk, assembled the SAME way
+  // chipModules() does for a chip with no `shared`/`own` entries (nsf has
+  // neither, so this is just Object.assign of the four files, in order).
+  const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+  const modUrls = ["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"]
+    .map(f => pathToFileURL(path.join(ROOT, "tools", f + ".mjs")).href);
+  const mods = await Promise.all(modUrls.map(u => import(u)));
+  const app = createApp();
+  const C = app.context;
+  C.setTimeout = setTimeout; C.clearTimeout = clearTimeout;
+  C.__M = Object.assign({}, ...mods);
+  C.__loaded = [{name: "test-song.nsf", bytes: new Uint8Array(nsfBytes)}];
+  app.run("chipModules.cache = {nsf: __M}");
+  app.el("impslug").value = SLUG;
+  app.el("impsecs").value = String(SECS);
+  await app.run("openPickedFiles(__loaded)");
+  assert.ok(app.run("!!nsfSess"), "the app opened an import session");
+  const jobId = app.run("(() => { const j = captureJobStart(nsfSess.trackList.map(x => x.n), () => {}); return j ? j.id : null; })()");
+  assert.ok(jobId, "capture job started");
+  while (app.run("jobs.find(j => j.id === " + JSON.stringify(jobId) + ").state") === "running")
+    await new Promise(r => setTimeout(r, 20));
+  const keyB = app.run("nsfSess.rows[1].key");
+  assert.ok(keyB, "track 1 captured a draft");
+  const draftB = JSON.parse(app.store.get("ff1roll-draft-" + keyB));
+  assert.ok(draftB && draftB.tracks && draftB.tracks.some(t => t.notes.length), "sanity: the app's own path actually captured notes");
+
+  // ---- compare: parse the terminal's PUBLISHED .mid with the app's own
+  // parseMidi (the same function either way — used here only as a reader,
+  // not part of what's being compared)
+  C.__midA = new Uint8Array(readFileSync(midPathA));
+  const parsedA = JSON.parse(app.run("JSON.stringify(parseMidi(__midA.buffer, {trust: true}))"));
+  const simplify = notes => notes.map(n => ({t: n.t, d: n.d, p: n.p, v: n.v})).sort((a, b) => a.t - b.t || a.p - b.p);
+  assert.equal(parsedA.tracks.length, draftB.tracks.length, "same track count");
+  assert.deepEqual(parsedA.tracks.map(t => t.name).sort(), draftB.tracks.map(t => t.name).sort(), "same track names");
+  for (const name of draftB.tracks.map(t => t.name)) {
+    const a = simplify(parsedA.tracks.find(t => t.name === name).notes);
+    const b = simplify(draftB.tracks.find(t => t.name === name).notes);
+    assert.deepEqual(a, b, "track " + name + ": pitch/start/duration/velocity identical between the terminal's import and the app's own capture");
+  }
+
+  // TODO / KNOWN DIFFERENCE (not a path divergence — open-items.md "FORMATS
+  // AUDIT" #1, 2026-09-29): commitImports' publish step re-encodes every
+  // draft through index.html's generic writeMidi (~L14093), which has no
+  // CC70 (duty) / CC10 (pan) / aftertouch (decay) support — so the per-note
+  // duty that tools/nsf/midi-write.mjs's makeMidi wrote into the CAPTURE
+  // (trackBytes, ~L48-53) survives in the pre-publish draft but is silently
+  // dropped from the committed .mid. This happens IDENTICALLY on both paths
+  // (both call the very same commitImports/writeMidi) — the terminal and the
+  // app do not disagree about it, so it is asserted here as a known,
+  // shared loss rather than "fixed" on either side.
+  for (const tr of draftB.tracks) assert.ok(tr.notes.every(n => n.duty !== undefined),
+    "pre-publish draft keeps per-note duty (captured via tools/nsf/midi-write.mjs)");
+  for (const tr of parsedA.tracks) assert.ok(tr.notes.every(n => n.duty === undefined),
+    "published .mid has already lost duty on this path too — writeMidi never emits CC70 (index.html ~L14093)");
 });
