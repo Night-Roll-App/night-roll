@@ -11873,7 +11873,17 @@ function parseM3u(text) { // ordered [{n, title}] — playlist order IS album or
     const m = line.match(/::(?:NSF|GBS),(\d+),(.+?),(?:(\d+):)?(\d+):(\d\d(?:\.\d+)?)/);
     if (!m) continue;
     const raw = m[2].replace(/\\,/g, ",");
-    const parts = raw.split(" - ");
+    // split only OUTSIDE brackets: "Bloody Tears (Street - Day time BGM)" is
+    // one title, not "Bloody Tears (Street" + "Day time BGM)" (Castlevania II,
+    // 2026-09-29 — the song came out as "Day time BGM)")
+    const parts = []; let depth = 0, cur = "";
+    for (let i = 0; i < raw.length; i++) {
+      const ch = raw[i];
+      if ("([{".includes(ch)) depth++; else if (")]}".includes(ch)) depth = Math.max(0, depth - 1);
+      if (depth === 0 && raw.startsWith(" - ", i)) { parts.push(cur); cur = ""; i += 2; continue; }
+      cur += ch;
+    }
+    parts.push(cur);
     // two scenes, two layouts (the real FFL1 rip, 2026-09-27): NSF lines are
     // "Game - Artist - Title" with 1-based tracks; GBS lines are "Title -
     // Artist - Game - ©1989-12-15 Square" with 0-BASED tracks (gbsplay's

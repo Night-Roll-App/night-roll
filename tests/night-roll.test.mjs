@@ -1986,6 +1986,9 @@ test("m3u playlists: track names parse from the emu-scene format", () => {
   // Zophar's NES lengths are H:MM:SS(.fff): read as M:SS, "0:01:17" was 1 s and every track a 12 s "jingle" (the Castlevania batch, 2026-09-27)
   assert.deepEqual(list.map(e => e.len), [77, 150, 76]);
   assert.equal(val(`parseM3u("a.nsf::NSF,1,Game - Artist - Opening,0:00:52.393,,0:00:00")[0].len`), 52.393);
+  // a dash INSIDE brackets belongs to the title (Castlevania II's "Bloody Tears (Street - Day time BGM)")
+  assert.equal(val(`parseM3u("cv2.nsf::NSF,2,Bloody Tears (Street - Day time BGM),0:00:59.888,,")[0].title`), "Bloody Tears (Street - Day time BGM)");
+  assert.equal(val(`parseM3u("a.nsf::NSF,1,Game - Artist - Boss (Phase 1 - Rage),0:01:00,,")[0].title`), "Boss (Phase 1 - Rage)");
   assert.equal(val(`parseM3u("a.nsf::NSF,1,Game - Artist - Long,1:02:03,,0")[0].len`), 3723);
   // a Game Boy rip's line (Zophar: one such file per track, so the picker merges them)
   // Game Boy rips (the real FFL1 lines, 2026-09-27): "Title - Artist - Game - ©year", tracks 0-BASED → title first, row n+1
