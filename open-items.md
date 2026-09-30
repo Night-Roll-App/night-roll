@@ -53,10 +53,10 @@ Move now publishes through publishSong too (2026-09-30): a moved song is
 byte-identical to publishing it at the new path, deleted notes stay deleted
 (tombstones now ride every rename, Save As included), and a failed publish
 undoes the rename before any old file is deleted. Two tests.
-QUEUED (pre-existing, not blocking): a move leaves the song's published
-audio clips at the old `<key>.audio/` dir — the moved song's clip
-references point at an empty dir. Moves also write manifest.json twice
-(harmless).
+Audio clips now move with the song (copied before any old file is deleted).
+Left: a move made with no token stays local; clips that exist only in the
+repo aren't carried forward when it's published later. Moves also write
+manifest.json twice (harmless).
 
 Bugs fixed (docs/provenance-plan.md "Bugs found"):
 - Publish all wrote the un-baked tempo map for a not-open song (the open

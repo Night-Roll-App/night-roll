@@ -7306,3 +7306,39 @@ test("Move (published, folder mode): publishSong failing leaves the old files in
   assert.notEqual(a.run(`localStorage.getItem(draftStoreKey(${JSON.stringify(oldKey)}))`), null, "the draft is back under the OLD key");
   assert.equal(a.run(`localStorage.getItem(draftStoreKey(${JSON.stringify(newKey)}))`), null, "nothing left behind under the new key");
 });
+
+test("Move (published, folder mode): a published audio clip rides along — new dir has the bytes, gone from the old, the reference resolves", async () => {
+  const oldKey = "albums/compositions/nightroll/zz-test-move-clip.mid";
+  const newDir = "albums/compositions/zz-moved-clip/";
+  const newKey = newDir + "zz-test-move-clip.mid";
+  const oldClip = "albums/compositions/nightroll/zz-test-move-clip.audio/take.wav";
+  const newClip = newDir + "zz-test-move-clip.audio/take.wav";
+  const clipBytes = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  const a = pubApp();
+  useFakeFolder(a, "move-clip");
+  // the published clip: already at the OLD dir, never on this device's IndexedDB (a prior session's recording)
+  await a.run(`folderWrite(${JSON.stringify(oldClip)}, new Uint8Array(${JSON.stringify(clipBytes)}))`);
+
+  openComposition(a, oldKey, {tempoNoteBpm: 150});
+  a.run(`
+    const clipNote = resolveNote(deriveNoteTypes([{b1: 1, q1: 1, b2: null, q2: null, text: "audio: lead file=take.wav"}])[0]);
+    clipNote.added = true;
+    rollnotes.push(clipNote);
+    finalizeNotes(); saveLocalNotes(); saveDraft(false);
+  `);
+  assert.equal(a.run(`song.tracks[0].clips[0].file`), "take.wav", "the clip is on the open song before the move");
+  a.run(`CATALOG = ${JSON.stringify({"Night Roll Sketches": [["Zz Test Move Clip", oldKey]]})};`); // published: the move goes through publishSong
+
+  await a.run(`moveComposition(${JSON.stringify(newDir)})`);
+
+  assert.equal(a.run(`songKey`), newKey, "the open song follows the move");
+  assert.equal(await folderBytes(a, oldClip), null, "the clip is gone from the old dir");
+  assert.deepEqual([...(await folderBytes(a, newClip))], clipBytes, "the clip's bytes landed at the new dir, byte-identical");
+
+  // the reference resolves: audioBytesFor derives the dir from the song's OWN (now new) key
+  const resolvedJSON = await a.run(`audioBytesFor(songKey, "take.wav").then(r => JSON.stringify({where: r.where, bytes: Array.from(new Uint8Array(r.bytes))}))`);
+  const resolved = JSON.parse(resolvedJSON);
+  assert.equal(resolved.where, "folder", "resolved from the song's own (new) folder dir");
+  assert.deepEqual(resolved.bytes, clipBytes, "same bytes, read back through the normal resolution path");
+});

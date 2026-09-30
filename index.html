@@ -18108,6 +18108,55 @@ async function deleteRepoFile(path, h) { // tolerate absence: never-synced draft
   if (r.status === 409) r = await del(); // same one-retry shape as putMidAt
   return r.ok;
 }
+// filenames under <key>.audio/, folder or repo; [] if the dir doesn't exist
+// (a song with no clips, or one never published). fsDirFor is the existing
+// folder helper — its "parent dir of a path's last segment" shape gives us
+// the .audio/ dir handle itself when the path we hand it ends in a throwaway
+// segment; repo mode reads the same GitHub contents API putMidAt/deleteRepoFile
+// use, un-PUT/DELETEd, which lists a directory's entries when given one.
+async function audioDirFiles(key, h) {
+  const dir = audioDirFor(key);
+  if (folderActive()) {
+    try {
+      const {dir: dh} = await fsDirFor(dir + "/x", false);
+      const out = [];
+      for await (const [name, fh] of dh.entries()) if (fh.kind === "file") out.push(name);
+      return out;
+    } catch (err) { return []; } // no .audio/ dir yet
+  }
+  try {
+    const r = await fetch(repoApi("songs") + dir + "?ref=main", {headers: h, cache: "no-store"});
+    if (!r.ok) return [];
+    const j = await r.json();
+    return Array.isArray(j) ? j.filter(e => e.type === "file").map(e => e.name) : [];
+  } catch (err) { return []; }
+}
+// clips are addressed only by filename — audioDirFor(key) derives WHERE they
+// live from the song's own key, so a moved song's clips must physically move
+// with it or every audio: reference resolves against an empty new directory
+// (Bugs found 2026-09-30, moveComposition — the clip stayed at the old dir).
+// Runs after publishSong, which may already have uploaded a locally-held clip
+// straight to the new path (from this device's IndexedDB, via renameLocal's
+// idbAudioMove) — skip those, never double-upload. Must throw on any failure
+// BEFORE the caller's delete loop runs: the old clips are never removed out
+// from under a song that still needs them (same "old song stays whole" rule
+// as the publishSong failure path above).
+async function copyAudioClips(oldKey, newKey, h, report) {
+  const files = await audioDirFiles(oldKey, h);
+  for (const file of files) {
+    try {
+      const there = await readData("songs", audioDirFor(newKey) + "/" + file, true);
+      if (there.ok) continue; // publishSong's uploadAudioClipsFor already put this one at the new path
+    } catch (err) { /* not there yet — copy it below */ }
+    const src = await readData("songs", audioDirFor(oldKey) + "/" + file, true);
+    if (!src.ok) throw new Error(file + ": couldn't read the clip to copy it");
+    const bytes = new Uint8Array(await src.arrayBuffer());
+    report((folderActive() ? "writing " : "uploading ") + file + " (" + (bytes.length / 1e6).toFixed(1) + " MB)…");
+    const r = await putMidAt(audioDirFor(newKey) + "/" + file, h, bytes); // same PUT shape: any bytes
+    if (!r.ok) throw new Error(file + " HTTP " + r.status);
+  }
+  return files; // every clip that was at the old dir — the caller's delete loop removes them all next
+}
 async function moveComposition(destDir) {
   const oldKey = songKey;
   const newKey = destDir + oldKey.split("/").pop();
@@ -18167,10 +18216,12 @@ async function moveComposition(destDir) {
       // treat the .mid as never-written here.
       if (d && d.midSig !== undefined) { delete d.midSig; localStorage.setItem(draftStoreKey(newKey), JSON.stringify(d)); }
     } catch (err) { /* no draft to clear */ }
+    let clipFiles = [];
     try {
       await publishSong(newKey, h, m => fileStatus(m));
+      clipFiles = await copyAudioClips(oldKey, newKey, h, m => fileStatus(m)); // clips ride along — still before any old file is deleted
     } catch (err) {
-      renameLocalKeys(newKey, oldKey); // failed before any delete — the old files are intact; undo the rename so the device still points at a path that has them
+      renameLocalKeys(newKey, oldKey); // failed before any delete — the old files (and clips) are intact; undo the rename so the device still points at a path that has them
       // renameLocalKeys just carried the FULL snapshot back under "ff1roll-notes-" + oldKey (it followed the "ff1roll-notes-" prefix); oldKey's own disk file already had the ones that weren't local-only, so put back exactly what was there before this attempt, not the superset
       if (origLocalNotes === null) localStorage.removeItem("ff1roll-notes-" + oldKey); else localStorage.setItem("ff1roll-notes-" + oldKey, origLocalNotes);
       throw err;
@@ -18180,7 +18231,8 @@ async function moveComposition(destDir) {
     for (const p of [oldKey,
                      oldKey.replace(/\.mid$/, ".rollnotes.json"),
                      oldKey.replace(/\.mid$/, ".notes.txt"),
-                     oldKey.replace(/\.mid$/, ".rollnotes")]) { // last one: legacy, if any
+                     oldKey.replace(/\.mid$/, ".rollnotes"), // last one: legacy, if any
+                     ...clipFiles.map(f => audioDirFor(oldKey) + "/" + f)]) {
       if (!await deleteRepoFile(p, h)) left.push(p.split("/").pop());
     }
     await updateManifest(h, albums => manifestPlace(albums, oldKey, newKey));
