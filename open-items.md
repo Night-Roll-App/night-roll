@@ -1465,6 +1465,34 @@ docs/adding-a-console.md (the whole checklist: rips, ground truth,
 capture, chip audio, publish, instruments, terminal import, listening
 pass, docs).
 
+## SAVE / PUBLISH / STORAGE — ADVISOR DECISIONS 2026-09-29 (Josh: "if the decision is to do something, put it in open-items and DON'T do it now")
+
+1. CLOSE GUARD — DO (narrow). Today nothing guards a switch: loadSong()
+   runs straight from the picker. Build: when switching to another song
+   via Open/the picker while the ● shows (songUnsaved() and auto-save
+   off), an in-app sheet "SAVE CHANGES TO <song>?" with Save (then
+   switch) and Don't Save (switch), dismiss = stay. Skip it for a
+   never-saved Untitled song and when there is no ●. Never on album
+   auto-advance (a running album cannot stop for a sheet), never on
+   backgrounding (iOS gives no chance to ask). No "Keep working copy"
+   button: the working copy is kept regardless. Needs a two-action sheet
+   (appConfirm is OK/Cancel only).
+2. AUTO-PUBLISH ON SAVE — DO NOTHING. It reverses Josh's own ruling that
+   Publish stays separate from Save; the songs repo is public; every save
+   would be commits; it would hit the newer-save-from-another-device path
+   far more often, unattended. If ever built: default off.
+3. RECORDING STORAGE — DO (cleanup). No duplication: clip bytes live once
+   in IndexedDB (store "audio", key songKey|file); the working copy, Save
+   checkpoint and stash hold only the text naming the file. The gap:
+   idbAudioDelete is never called. So deleting a song, or Revert to repo
+   copy, leaves its recordings on the device forever, and Rename/Save
+   As/Move (renameLocalKeys) does not move them — a renamed song with an
+   unpublished recording can lose its clip. Build: idbAudioMove beside
+   idbDraftMove in renameLocalKeys; idbAudioDelete for each clip when a
+   song is deleted and on Revert to repo copy; optionally a one-time sweep
+   of audio entries whose song no longer exists. The rename case is a
+   real data-loss bug: do it before the rest.
+
 ## SCREENSHOTS FROM THE APP TO CLAUDE — QUEUED 2026-09-29 (Josh: "I wish there would be a way for me to send you screenshots from the app itself")
 
 A 📷 in the ✦ AI panel: pick an image (an iPad screenshot from Photos —
