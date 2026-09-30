@@ -586,6 +586,7 @@
      general chat only — one quiet line, ellipsis so a phone width never
      scrolls sideways; tap opens the Recent list beneath it. */
   #asknowstrip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #asknowstrip.open { white-space: normal; }
   #asknowrecent { font-family: var(--mono); font-size: 11px; color: var(--dim); display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
   #asknowrecent .asknowitem { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jobsnow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -881,7 +882,7 @@
     #askmoderow { flex-wrap: nowrap; }
     #askmoderow button { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   }
-  #askinput { font-family: var(--sans); font-size: 15px; flex: 1; min-height: 44px; max-height: 33dvh;
+  #askinput { font-family: var(--sans); font-size: 15px; flex: 1; min-height: 44px; max-height: min(33dvh, calc(6lh + 20px)); /* ~6 lines, then it scrolls: the chat log keeps the panel (Josh, 2026-09-29: dictation grew it to 17 lines) */
               resize: none; width: auto; overflow-y: auto; }
   .chiprow button {
     font-family: var(--mono);
@@ -18748,6 +18749,7 @@ function askStatusRender() {
 }
 function askStatusRecentShow(on) {
   askStatusRecentOpen = !!on;
+  const strip = document.getElementById("asknowstrip"); if (strip) strip.classList.toggle("open", !!on); // tapped: the whole line, not the ellipsis
   const el = document.getElementById("asknowrecent");
   if (!el) return;
   el.style.display = on ? "" : "none";
