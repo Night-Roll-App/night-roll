@@ -5,23 +5,30 @@ answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
 
-## WAITING ON JOSH (2026-09-30, everything else in the queue is done)
-1. FFX by ear: a fresh capture plays 4 songs at different pitches (Blitz
-   Off, Hurry, Ominous, Welcoming of Maester Mika) — published vs fresh,
-   which is right? (section "AWAITS JOSH'S EAR: FFX pitches")
-2. Archive move to joshcough/night-roll-archive: make the archive token,
-   say go (section "ARCHIVE MOVE").
-3. DECIDED 2026-09-30 (Josh, in the terminal): annotations go to proper
-   JSON v2 ("rewrite the files one more time — big deal").
-4. DECIDED: tempo annotations are baked into the .mid ONLY on songs he
-   wrote; analysis songs' music never changes. "Publish all" = the same
-   one publish function per song (today's two paths are a bug). And: an
-   explicit ORIGIN per song + one rule table for what each may do — being
-   planned; Josh checks the table before anything is rewritten.
-5. Ear/hands tests: YouTube keeps playing until ▶; background play when
-   locked; a MIDI keyboard plugged into the iPad (● to record).
-6. App Store: TestFlight install, privacy labels + listing, screenshots,
-   go for build 3.
+## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
+Q1. FFX by ear: 4 songs play at different pitches in a fresh capture
+    (Blitz Off, Hurry, Ominous, Welcoming of Maester Mika). Published or
+    fresh — which is right? (I'll put the fresh ones on a preview when you
+    want to compare.)
+Q2. Archive move: make the archive token (resource owner joshcough, only
+    the archive repo, Contents read+write) and say "go".
+Q3. Annotations v2 migration: converting the annotation files of YOUR
+    songs (albums/compositions) to the new format — does that count as
+    editing your songs (needs your yes per song), or is one yes for the
+    format change enough?
+Q4. The rule table (what each kind of song may do) — being drafted now;
+    you check it before anything is rewritten.
+Q5. The website address: which exact address did you open? And may I add
+    two redirects (two tiny public repos) so the old address
+    joshcough.github.io/night-roll and night-roll-app.github.io both land
+    on the app? The real address is
+    https://night-roll-app.github.io/night-roll/
+Not questions, just checks when you can: YouTube keeps playing until ▶;
+background play with the iPad locked; a MIDI keyboard on the iPad (●).
+App Store: TestFlight install, privacy labels + listing, screenshots, go
+for build 3.
+DONE: annotations → JSON v2 (yes); tempo baked into the .mid only on your
+own songs; "Publish all" = one publish per song; explicit song origins.
 
 ## IMPORT HUB — DONE 2026-09-29 (docs/import-hub-design.md, Josh: "I still hate the file import line")
 
