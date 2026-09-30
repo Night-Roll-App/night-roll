@@ -3639,6 +3639,11 @@ function setSong(parsed, key) {
   setInfo("tap a note");
   draw();
   song.notesReady = loadNotes(); // awaited by anything that must see the loop: directive before playing
+  // the AI panel stays open (docked) across song changes: its ♪ tab and log
+  // follow the song, not just on open (Josh, 2026-09-29: "Another Arni
+  // Village" over Termina). By id: boot reaches here before asksheet's const.
+  const ask = document.getElementById("asksheet");
+  if (ask && ask.classList.contains("on")) { try { askModeButtons(); askRender(); } catch (err) { /* too early in boot: openAsk renders it */ } }
 }
 
 // ---------------------------------------------------------------- track chips
@@ -11797,10 +11802,18 @@ function applyViewMode() {
   clampView();
   draw();
 }
+// each view keeps its own zoom and scroll, per song, this session (Josh,
+// 2026-09-29: a fully zoomed-out roll came back from Score at ~6 bars —
+// Score raises pxq to what engraving can space). Restored BEFORE
+// applyViewMode, whose clamps would otherwise act on the other view's numbers.
+const viewSaved = new Map(); // songKey|mode -> {x, y, pxq, rowH}
 function setViewMode(m) {
   if (m === "score" && !VF) { setInfo("score engine failed to load"); return; }
+  if (songKey) viewSaved.set(songKey + "|" + viewMode, {...view});
   viewMode = m;
   localStorage.setItem("ff1roll-view", viewMode);
+  const sv = songKey && viewSaved.get(songKey + "|" + m);
+  if (sv) Object.assign(view, sv);
   applyViewMode();
 }
 viewbtn.addEventListener("click", () => {

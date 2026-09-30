@@ -5172,6 +5172,20 @@ test("▶ waits for the song: disabled with a percentage while the console voice
   run(`play = __realPlay; clearInterval(playGateTimer); playGateTimer = null;`);
 });
 
+test("each view keeps its own zoom and scroll: Roll → Tracks → Roll comes back as it was (Josh, 2026-09-29)", () => {
+  installSong();
+  run(`songKey = "albums/test/zoom.mid"; viewMode = "roll"; applyViewMode();`);
+  const roll = val(`view.pxq`);
+  run(`setViewMode("tracks"); view.pxq = view.pxq * 3; clampView();`);
+  const tracks = val(`view.pxq`);
+  assert.notEqual(tracks, roll, "sanity: the tracks view zoomed differently");
+  run(`setViewMode("roll");`);
+  assert.equal(val(`view.pxq`), roll, "the roll's zoom came back");
+  run(`setViewMode("tracks");`);
+  assert.equal(val(`view.pxq`), tracks, "and the tracks' too");
+  run(`setViewMode("roll"); viewSaved.clear();`);
+});
+
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
   const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;

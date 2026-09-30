@@ -500,7 +500,7 @@ whether the tool or the app owns the order.
     ~1.1 and bar 2 beat 1) — a ghost of the play-start or a stale frame?
     If intended, make it look different (thin, dim, dashed).
 
-12. Each view keeps its own zoom + scroll (Josh, 2026-09-29): Roll →
+12. DONE: Each view keeps its own zoom + scroll (Josh, 2026-09-29): Roll →
     Tracks → Score → Roll lost a fully zoomed-out roll (33 bars → ~6).
     Per-view {zoom, x, y} saved on switch, restored before
     buildScoreModel/clampView can clamp it; views independent.
@@ -1788,6 +1788,21 @@ really that important." Do not start these unprompted.
   visible "Play album" tap is the honest behavior. Link-mode
   (read-only songs from another repo) needs the same handling. Small to
   medium.
+- **The dev loop as a reusable kit** (Josh, 2026-09-29, after the 📷 screenshots
+  worked: "this AI thing should be a plug-in for all iPad apps… someone
+  could sit there working on the app, sending screenshots back to the AI
+  and telling it what's wrong — an amazingly cool feature"). What is
+  already generic: the native Screenshot plugin (WKWebView snapshot →
+  JPEG), the bridge (per-app Claude Code session, inbox notes, jobs, the
+  shots folder, --say/--status), the in-app panel (docked chat, 📷
+  thumbnail chip, dictation, "Now:" status strip), and the wireless
+  install step (devicectl over Wi-Fi). What it needs to be a kit: split
+  the panel + plugin out of index.html into a package for Capacitor /
+  WKWebView apps; a Swift package version for native apps; a config for
+  the bridge (which repo, which session); developer builds ONLY (never in
+  a store edition: the bridge gives an agent the repo and a token — the
+  EDITION flag already keeps it out of Night Roll's store build). Needs a
+  Mac running the bridge + Claude Code (+ Tailscale for remote). Not now.
 - **Themes** (the look is dark; other people may want another). Size
   from the Ask session: easy-to-medium. The whole look is nine CSS
   variables at the top of index.html and the canvas views read them
