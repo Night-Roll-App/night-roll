@@ -5186,6 +5186,22 @@ test("each view keeps its own zoom and scroll: Roll → Tracks → Roll comes ba
   run(`setViewMode("roll"); viewSaved.clear();`);
 });
 
+test("the unsent AI message survives: saved per chat, back after a relaunch, cleared on Send (Josh, 2026-09-29: dictation lost to reinstalls)", () => {
+  installSong();
+  run(`songKey = "albums/test/draft.mid"; askGeneral = false; askDraftKey = null; askinput.value = ""; askRender();
+       askinput.value = "a long dictated paragraph"; askDraftSave();`);
+  assert.equal(JSON.parse(val(`localStorage.getItem("ff1roll-askdraft-ff1roll-ask-albums/test/draft.mid")`)).text, "a long dictated paragraph");
+  run(`askGeneral = true; askRender();`);
+  assert.equal(val(`askinput.value`), "", "the general chat has its own (empty) box");
+  run(`askinput.value = "for the terminal"; askDraftSave(); askGeneral = false; askRender();`);
+  assert.equal(val(`askinput.value`), "a long dictated paragraph", "back on the song: its message");
+  run(`askDraftKey = null; askinput.value = ""; askRender();`); // what a relaunch looks like
+  assert.equal(val(`askinput.value`), "a long dictated paragraph", "after a relaunch");
+  run(`askinput.value = ""; askDraftClear(); askDraftSave();`);
+  assert.equal(val(`localStorage.getItem("ff1roll-askdraft-ff1roll-ask-albums/test/draft.mid")`), null);
+  run(`localStorage.removeItem("ff1roll-askdraft-" + ASK_GENERAL_KEY); askGeneral = false; askDraftKey = null;`);
+});
+
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
   const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;

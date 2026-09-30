@@ -514,6 +514,79 @@ published/imported songs' music. Two options on the table: (a) the
 notes are set in stone, only annotations edit; (b) editing makes a
 personal copy. He leaned toward locking both kinds.
 
+## FORMATS AUDIT (advisor, 2026-09-29; Josh: "all that stuff is suspect … how do normal DAWs save everything about the song?") — nothing built
+
+Top findings, highest risk first:
+1. Imports LOSE data on publish: commitImports re-encodes captures with
+   the app's writeMidi, dropping CC10 pan, CC70 duty, aftertouch envelopes
+   and per-note channel the capture writer produced (0 of ~3,400 published
+   capture .mids carry pan or aftertouch). Fix: ONE shared SMF writer
+   (app + tools/nsf/midi-write.mjs).
+2. writeMidi is a partial SMF writer: no key signature (0x59), one meter
+   only, no program changes, no markers; track names >127 bytes corrupt
+   the file (length written as one byte, not a VLQ); non-Latin-1 names
+   mangled; channels collide past 16 tracks.
+3. .rollnotes.json is JSON wrapped round a regex text grammar: unknown
+   types become empty notes (an old build silently drops a newer file's
+   data); version still 1 since audio/lane/vol/pan were added; no JSON
+   Schema; editability hangs on a prose "moved from" note.
+4. Same fact in several places: meter (.mid, timesig: note, ff1roll-ts-,
+   draft), tempo (.mid baked vs draft base), titles (album.json vs
+   manifest.json, both written by the app AND build_manifest).
+5. Device state spread over ~12 key prefixes in three shapes; the local
+   Save checkpoint leaves out annotations; localStorage's quota caps songs.
+6. Outside assets referenced by storage path (game: ids broke once in the
+   archive move) and sf2: by slug with no content hash.
+How DAWs save: one project package (Logic .logicx / GarageBand .band are
+folders; DAWproject is a zip of project.xml + metadata + media): one
+versioned document (tracks, instrument state, mixer, automation, tempo +
+meter maps, markers, metadata) + an audio pool folder; undo, window
+layout and caches are NOT saved. Night Roll song package sketch:
+<song>/ song.mid (full SMF from the shared writer) · song.rollnotes.json
+(v2, typed fields, schema) · audio/ · refs.json (pinned outside assets
+with hashes) · ask.md · notes.txt (generated); device-local: working
+copy + checkpoint (with annotations) in ONE IndexedDB record per song.
+Migration order: shared writer → rollnotes v2 (reads v1) → one device
+record → folder layout (flat albums stay readable).
+KEEP as is: .audio/ pool, the game-instrument JSON+WAV master with
+SF2/SFZ export, the archive repo tier, device prefs local, .ask.md.
+
+## DAW CONVENTIONS REVIEW (advisor, 2026-09-29; Josh: "rival the best DAWs") — nothing built
+
+Ranked, most annoying first (effort S/M/L):
+1. Three save verbs (Save / Publish / Sync), auto-save off by default,
+   and the help contradicts itself on what Save and ● mean. DAWs save
+   continuously; sharing is separate. S (help) / S (auto-save on) / M (one model).
+2. No external MIDI keyboard on the iPad (no Web MIDI; the shell has no
+   CoreMIDI plugin); recording snaps to the grid as it goes; no Quantize
+   command afterwards. M–L (CoreMIDI plugin) / M (raw take + Quantize).
+3. Count-in only from bar 1; the metronome is a sheet, not a one-tap
+   toggle. S.
+4. Mute also HIDES a track and solo hides the rest; neither is saved
+   with the song. DAWs: mute/solo silence only (hide is separate) and
+   persist. S–M (track: annotation).
+5. Apple Pencil treated as a finger (160 ms dwell; a fast stroke pans).
+   iPadOS apps: pencil draws/edits instantly, fingers navigate. S–M.
+6. Thin hardware-keyboard coverage: no Return (to start), ⌘X, ⌘A, ⌘D,
+   C (cycle), K (metronome), R (record), zoom keys. S.
+7. No Select All, no Duplicate/Repeat. S.
+8. Undo gaps: voice/color/volume/pan changes and mute/solo aren't
+   undoable; undo is wiped on song switch. S.
+9. Tapping a note moves the play cursor (DAWs: selection never moves
+   the playhead). S (maybe a device pref).
+10. Audio export is real-time MediaRecorder (m4a/webm), no WAV, browser
+    download; the shell's Share plugin is unused; an armed cycle may loop
+    the bounce (inferred). M (OfflineAudioContext → WAV → Share).
+11. No mixer view, no meters, no track reorder. M / S–M.
+12. Fixed px fonts (iOS Text Size ignored), canvas has no VoiceOver;
+    songs loop forever at the end. L / M / S.
+Already matches convention (don't touch): Space play/stop; ruler-drag
+cycle; pinch per axis + two-finger pan; catch-mode playhead follow;
+unlimited undo for notes/annotations; chase on mid-song start; snap to
+the grabbed note's grid; dockable sheets, Esc closes, no native dialogs.
+Stale help: "∿ Audio tracks" says trimming/splitting and pitch-keeping
+slowdown are "Not yet" — both exist.
+
 ## QUEUED IDEA (Josh, 2026-09-27 evening): a real windowing system
 
 "A full-on windowing system like you would find in IntelliJ or VS

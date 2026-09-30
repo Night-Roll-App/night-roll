@@ -18853,7 +18853,9 @@ function askShotSet(path, shot) {
     try { askShotPending.url = URL.createObjectURL(new Blob([shot.bytes], {type: shot.mime})); img.src = askShotPending.url; } catch (e) {}
   }
   img.classList.remove("big");
+  img.style.display = askShotPending && askShotPending.url ? "" : "none";
   chip.style.display = path ? "" : "none";
+  if (typeof askDraftSaveSoon === "function") askDraftSaveSoon();
 }
 function askShotOutgoing(text) { // what Send sends: the note, then the shot's line; the box never holds it
   if (!askShotPending) return text;
@@ -18907,7 +18909,49 @@ async function askCopyText(text, b) {
   else setInfo("⚠ couldn't copy — select the text in the bubble instead");
   return ok;
 }
+// the unsent message survives a relaunch (Josh, 2026-09-29: five dictated
+// paragraphs lost today to the app reinstalling under him). Per chat, device-
+// local (a composer draft is not the song's state); cleared on Send.
+function askDraftStore(key) { return "ff1roll-askdraft-" + key; }
+let askDraftKey = null, askDraftTimer = null;
+function askDraftSave() {
+  clearTimeout(askDraftTimer); askDraftTimer = null;
+  if (!askDraftKey) return;
+  try {
+    const text = askinput.value;
+    if (!text.trim() && !askShotPending) localStorage.removeItem(askDraftStore(askDraftKey));
+    else localStorage.setItem(askDraftStore(askDraftKey), JSON.stringify({text, shot: askShotPending ? askShotPending.path : null}));
+  } catch (err) { /* storage full or private: the box itself still holds it */ }
+}
+function askDraftSaveSoon() { clearTimeout(askDraftTimer); askDraftTimer = setTimeout(askDraftSave, 300); askComposing(!!askinput.value.trim()); }
+// tell the Mac's bridge he's composing, so a build waits instead of
+// relaunching the app under him; at most every 20 s, and "done" on Send/blur
+let askComposingAt = 0, askComposingOn = false;
+function askComposing(on) {
+  if (on && askComposingOn && Date.now() - askComposingAt < 20000) return;
+  if (!on && !askComposingOn) return;
+  askComposingOn = on; askComposingAt = Date.now();
+  if (!askInboxAllowed() || askInboxNo === aiUrl()) return;
+  const mic = typeof micBtn !== "undefined" && micBtn === document.getElementById("askmic");
+  fetch(aiUrl() + "/v1/app-state", {method: "POST", headers: aiHeaders(), body: JSON.stringify({composing: on, mic})}).catch(() => {});
+}
+function askDraftLoad() { // the panel now shows a different chat: its own unsent message comes back
+  const key = askStoreKey();
+  if (key === askDraftKey) return;
+  if (askDraftKey) askDraftSave(); // the chat we're leaving keeps what was in the box
+  askDraftKey = key;
+  let d = null; try { d = JSON.parse(localStorage.getItem(askDraftStore(key)) || "null"); } catch (err) { d = null; }
+  askinput.value = d && d.text || "";
+  askShotSet(d && d.shot || null); // the path survives; the thumbnail doesn't (the bytes are on the Mac)
+  askGrow();
+}
+function askDraftClear() { clearTimeout(askDraftTimer); askDraftTimer = null; try { localStorage.removeItem(askDraftStore(askStoreKey())); } catch (err) { /* nothing stored */ } }
+if (typeof document !== "undefined" && document.addEventListener) {
+  document.addEventListener("visibilitychange", () => { if (document.hidden) askDraftSave(); });
+  if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", askDraftSave);
+}
 function askRender() {
+  askDraftLoad();
   asklog.innerHTML = "";
   const st = askStore();
   const msgs = st.msgs;
@@ -19067,7 +19111,9 @@ async function askSend() {
   askMicOff(); // a live 🎤 would write its transcript back into the box after we clear it
   askinput.value = "";
   askShotSet(null);
+  askDraftClear();
   askGrow();
+  askComposing(false);
   askBubble("user", text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
   const live = askBubble("ai", "…");
   live.dataset.job = jobId; // askResume finds THIS bubble by job, never "the last ai bubble"
@@ -19987,8 +20033,10 @@ function askGrow() { // size the box to its text (CSS caps it) and keep the end 
   askinput.style.height = "auto";
   askinput.style.height = askinput.scrollHeight + "px";
   askinput.scrollTop = askinput.scrollHeight;
+  askDraftSaveSoon(); // typing and dictation both land here
 }
 askinput.addEventListener("input", askGrow);
+askinput.addEventListener("blur", () => { if (!(typeof micBtn !== "undefined" && micBtn === document.getElementById("askmic"))) askComposing(false); }); // the draft is saved; a build may go ahead
 document.getElementById("askmic").addEventListener("click", () => {
   if (!SPEECH) { askstatus.textContent = "no speech recognition in this browser — the keyboard mic still works"; return; }
   micToggle(document.getElementById("askmic"), askinput, s2 => { askstatus.textContent = s2; });

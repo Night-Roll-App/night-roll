@@ -70,7 +70,7 @@
 //
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
-// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET /health.
+// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET|POST /v1/app-state · GET /health.
 // No dependencies. Node 18+.
 
 import http from "node:http";
@@ -101,6 +101,7 @@ const STATE_DIR = flag("--state-dir", path.resolve(JOBS_DIR) === DEFAULT_JOBS_DI
 const SESSIONS_FILE = path.join(STATE_DIR, "sessions.json");
 const INBOX_FILE = path.join(STATE_DIR, "inbox.json");
 const STATUS_FILE = path.join(STATE_DIR, "status.json");
+let appState = null; // {composing, mic, t} — POST /v1/app-state from the app
 const SHOTS_DIR = path.join(STATE_DIR, "shots"); // screenshots from the app's 📷 (POST /v1/shot): Claude reads them by path
 const SHOT_MAX = 25 * 1024 * 1024;
 const CLAUDE_MODE = has("--no-claude") ? "off" : (flag("--claude", process.env.BRIDGE_CLAUDE || "read") === "full" ? "full" : "read");
@@ -410,6 +411,14 @@ const server = http.createServer(async (req, res) => {
       const note = inboxAdd(String(b.text).trim(), b.from);
       console.log(`inbox #${note.id} from ${note.from}: ${note.text.slice(0, 80)}`);
       return json(res, 200, note);
+    }
+  }
+  if (url.pathname === "/v1/app-state") { // the app says Josh is typing/dictating in ✦ AI; a build waits rather than relaunch under him (2026-09-29). In memory; stale after 2 min
+    if (req.method === "GET") { const fresh = appState && Date.now() - appState.t < 120000; return json(res, 200, fresh ? appState : {composing: false}); }
+    if (req.method === "POST") {
+      let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+      appState = {composing: !!(b && b.composing), mic: !!(b && b.mic), t: Date.now()};
+      return json(res, 200, appState);
     }
   }
   if (url.pathname === "/v1/status") { // "what Claude Code is doing" — GET for the app's poll, POST from --status or a session announcing a step
