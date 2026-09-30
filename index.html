@@ -966,23 +966,26 @@
   .askmsg.note { background: rgba(230,192,96,.10); border: 1px solid rgba(230,192,96,.5); align-self: stretch; white-space: pre-wrap; }
   #askbtn.hasnote::after { content: " ✉"; color: #e6c060; }
   .askmsg.earlier { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
-  /* The box grows with its text (askGrow) up to a third of the screen — a
-     fixed 120px hid dictation past the second line (Josh, 2026-09-26). */
-  /* a narrow docked AI panel (Josh's screenshot, 2026-09-29: the box shrank to one
-     line with Send on its own row, the Dock pill wrapped): below 380px the box
-     takes the full width and the buttons share one row under it; the pill says
-     "Right ▸"; the two chat tabs stay on one line */
+  /* The box grows with its text (askGrow) up to ~8 lines — a fixed 120px hid
+     dictation past the second line (Josh, 2026-09-26). */
+  /* the message box is ALWAYS its own full-width row, Speak/📷/Send (and
+     whatever else shares #askinputrow) in a row beneath it — docked beside
+     the roll at ~700px it used to squeeze the box down to ~300px showing
+     ~5 lines, cramped next to the buttons (Josh, iPad, 2026-09-30). Was
+     narrow-width-only (below 380px); now unconditional at every width. */
+  #askinputrow { flex-wrap: wrap; }
+  #askinputrow #askinput { flex: 1 1 100%; }
+  #askinputrow button { flex: 1 1 0; white-space: nowrap; }
+  /* a narrow docked AI panel (Josh's screenshot, 2026-09-29): the Dock pill
+     wrapped, the two chat tabs need to stay on one line */
   #asksheet .sheet { container-type: inline-size; }
   @container (max-width: 380px) {
-    #askinputrow { flex-wrap: wrap; }
-    #askinputrow #askinput { flex: 1 1 100%; }
-    #askinputrow button { flex: 1 1 0; white-space: nowrap; }
     #asksheet-h2 .wmdockbtn, #asksheet-h2 button[data-short] { font-size: 0; }
     #asksheet-h2 button[data-short]::after { content: attr(data-short); font-size: 0.75rem; }
     #askmoderow { flex-wrap: nowrap; }
     #askmoderow button { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   }
-  #askinput { font-family: var(--sans); font-size: 0.9375rem; flex: 1; min-height: 44px; max-height: min(33dvh, calc(6lh + 20px)); /* ~6 lines, then it scrolls: the chat log keeps the panel (Josh, 2026-09-29: dictation grew it to 17 lines) */
+  #askinput { font-family: var(--sans); font-size: 0.9375rem; flex: 1; min-height: calc(4lh + 20px); max-height: min(44dvh, calc(8lh + 20px)); /* own full-width row now (above): ~4 lines to start, grows to ~8, then scrolls — the chat log keeps the panel (Josh, 2026-09-29: dictation grew it to 17 lines) */
               resize: none; width: auto; overflow-y: auto; }
   .chiprow button {
     font-family: var(--mono);

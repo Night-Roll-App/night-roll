@@ -538,9 +538,8 @@ renderOneNote, chipPreviewCache ~L9677) — so find why these voices miss it:
 fell back to synth (log which path played), or findTemplateNote picked the
 wrong program/sample for the track. Fallback idea if the one-note render
 can't match: play a slice of the track's rendered buffer at the note.
-UI (Josh via Ask): the AI panel's message box always on its own full-width
-row, buttons beneath; min ~4 lines, grows to ~8 then scrolls. Layout —
-browser-verify before push.
+DONE 2026-09-30: the AI message box is on its own full-width row, buttons
+beneath; ~4 lines, grows to ~8, then scrolls (browser-checked at a 700 px dock).
 AFTER THE BUDGET FIX (2026-09-30, Josh asked how Logic handles big songs):
 stream the console render like a sampler — render ~10–20 s chunks just ahead
 of the playhead, mix non-soloed tracks to one stereo bus, keep per-track
