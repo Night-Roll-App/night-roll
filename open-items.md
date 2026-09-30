@@ -525,6 +525,16 @@ drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
 
+## DONE 2026-09-30: a console voice that fails to load says why; ▶ retries
+Josh: "sometimes the instruments never load" (▶ enabled at once, synth,
+no error). A lookup that FAILS (album info didn't load, the console file
+or library didn't download, the render threw) now sets chip.fail with the
+reason, shows "⚠ the console voice didn't load: <why> — tap ▶ to try
+again", and the next ▶ re-runs the lookup (the ⏳ gate then waits for it).
+Debug log (Settings → Other) lines "song open: console source …" say
+which path ran. A song with no console source at all still plays synth
+without a warning. If it recurs, get the Debug-log lines from Josh.
+
 ## NEXT (after P4): THE FILE'S OWN LABELS vs THE LEARNER'S ANSWERS (Josh, 2026-09-30 08:41)
 Spec: docs/declared-vs-learner-spec.md (advisor). Today: his answers never
 reach the .mid (good); but import DROPS the file's key label, keeps only

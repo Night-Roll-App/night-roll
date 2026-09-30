@@ -5545,6 +5545,24 @@ test("a ruler range can be cleared: first tap outside fades it, the next removes
   assert.match(src, /e\.key === "Escape" && rangeSel\) \{ rangeSel = null;/, "Esc removes it");
 });
 
+test("a console voice that FAILED to load says why, and the next ▶ retries it (Josh, 2026-09-30: sometimes instruments never load, silently)", async () => {
+  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`)); // its own app: earlier tests stub chipSource on the shared one
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}; keyRegions = []; previewSf = null; playCursor = 0; trackState = [{muted: false, solo: false}]; songEndTick = 4 * 480;`);
+  run(`songKey = "albums/snes/test-album/song.mid"; chip.fail = null; globalThis.__realMeta = albumMetaFor; globalThis.__realFetch = globalThis.fetch;
+       globalThis.__realRD = readData; readData = async () => { throw new Error("Load failed"); }; for (const k of Object.keys(albumMetaCache)) delete albumMetaCache[k]; albumMetaFor.lastFail = null;`);
+  try {
+    await run(`updateChipBtn()`);
+    assert.match(val(`chip.fail && chip.fail.why`), /album's info didn't load/);
+    assert.match(val(`document.getElementById("noteinfo").textContent`), /the console voice didn't load: .* tap ▶ to try again/);
+    run(`globalThis.__retries = 0; globalThis.__realUCB = updateChipBtn; updateChipBtn = () => { __retries++; return Promise.resolve(); };`);
+    run(`play(0, {noCountIn: true}).catch(() => {});`);
+    await run(`Promise.resolve()`);
+    assert.equal(val(`__retries`), 1, "▶ retried the lookup");
+    assert.equal(val(`chip.fail`), null);
+    run(`updateChipBtn = __realUCB; stop();`);
+  } finally { run(`readData = __realRD; chip.fail = null; albumMetaFor.lastFail = null;`); }
+});
+
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
   const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;

@@ -8580,8 +8580,8 @@ async function albumMetaFor(key) {
       // must not poison the tab — it made committed songs silently play synth
       // while drafts played chip (Josh's side-by-side, 2026-08-17)
       if (r.ok) albumMetaCache[dir] = await r.json();
-      else return null;
-    } catch (err) { return null; }
+      else { if (r.status !== 404) albumMetaFor.lastFail = {dir, why: "HTTP " + r.status}; return null; } // 404 = no album.json (a composition): not a failure
+    } catch (err) { albumMetaFor.lastFail = {dir, why: err.message || "offline"}; return null; }
   }
   return albumMetaCache[dir];
 }
@@ -8622,6 +8622,8 @@ async function chipSource() { // {bytes, n, secs} for the current song, or null
   // this device already has the bytes? (import happened here, or vault cached)
   const im = songKey.match(/^albums\/imports\/([^/]+)\//);
   const meta = await albumMetaFor(songKey);
+  const dir0 = (songKey.match(/^(albums\/.+?)\/(?:songs\/)?[^/]+\.mid$/) || [])[1];
+  if (!meta && albumMetaFor.lastFail && albumMetaFor.lastFail.dir === dir0) chip.fail = {key: songKey, why: "the album's info didn't load (" + albumMetaFor.lastFail.why + ")"};
   // the record's slug: a published album names it (nsf.vault); an unpublished
   // capture has no album.json, so its folder IS the slug (impTrackKey builds
   // albums/<console>/<slug>/…). Only the legacy imports/ prefix was checked
@@ -8645,7 +8647,7 @@ async function chipSource() { // {bytes, n, secs} for the current song, or null
       if (perFile) { bytes = await vaultFetch(chipVaultFile(meta.nsf, base)); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
       else { bytes = await vaultFetch(meta.nsf.vault); if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {}, kind); }
     } catch (err) { // say WHY and stand down to synthesized voices — never a stuck banner
-      setInfo("⚠ chip audio unavailable: " + err.message + " (synthesized voices for now)");
+      chip.fail = {key: songKey, why: "the console file didn't download (" + err.message + ")"};
       return null;
     }
   }
@@ -8656,7 +8658,7 @@ async function chipSource() { // {bytes, n, secs} for the current song, or null
     try {
       for (const l of meta.nsf.libs) { const b = await vaultFetch(meta.nsf.vault + l.file); if (b) libs[l.name] = b; }
       if (Object.keys(libs).length) idbNsfPut(slug, null, {}, kind, libs);
-    } catch (err) { setInfo("⚠ chip audio unavailable: " + err.message + " (synthesized voices for now)"); return null; }
+    } catch (err) { chip.fail = {key: songKey, why: "the console's sound library didn't download (" + err.message + ")"}; return null; }
   }
   return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind, libs: libs || {}};
 }
@@ -8743,7 +8745,13 @@ async function updateChipBtnInner() { // name kept for call sites; now just the 
   // audio simply plays when a source resolves. Per-track override lives in
   // the voice menu — auto = the console own sound, an explicit instrument
   // swaps that track to synthesis.
+  if (chip.fail && chip.fail.key === songKey) chip.fail = null; // this attempt starts clean
   const available = chipTrackNo() !== null || (await chipSource()) !== null;
+  logDebug("song open: console source " + (available ? "found" : chip.fail && chip.fail.key === songKey ? "FAILED — " + chip.fail.why : "none (synth voices)"));
+  // a lookup that FAILED (not "this song has none") must never pass for synth
+  // silently (Josh, 2026-09-30: "sometimes the instruments never load"): say
+  // why; the next ▶ tries again
+  if (!available && chip.fail && chip.fail.key === songKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again");
   // an import capture with NO reachable NSF plays synthesized — say so ONCE,
   // loudly enough to find (Josh listened to synth for an hour believing it
   // was the chip, 2026-08-17): the ⚠ log names the fix
@@ -8758,7 +8766,7 @@ async function updateChipBtnInner() { // name kept for call sites; now just the 
     if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chipPreviewCache.clear(); if (chipWorker && chipWorker.__key !== songKey) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
     chip.rendering = songKey;
     const forKey = songKey;
-    chip.renderPromise = chipRender().catch(() => false) // not renderable: synth carries the song
+    chip.renderPromise = chipRender().catch(err => { chip.fail = {key: forKey, why: "the console render failed (" + (err && err.message || err) + ")"}; if (songKey === forKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again"); logDebug("render failed: " + chip.fail.why); return false; }) // not renderable: synth carries the song, and says so
       .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
   }
 }
@@ -9502,6 +9510,11 @@ async function play(fromSec = 0, opts = {}) {
     return;
   }
   const gen = ++play.gen; // a later play() supersedes this one while it waits below
+  if (chip.fail && chip.fail.key === songKey) { // the last attempt failed: ▶ is the retry
+    logDebug("play: retrying the console voice (" + chip.fail.why + ")");
+    setInfo("trying the console voice again…");
+    chip.fail = null; updateChipBtn();
+  }
   ensureAudio();
   audioSessionType("playback"); // now Night Roll is the music: other apps pause, and it keeps playing off-screen
   await resumeAudio(); // await: scheduling against a frozen clock builds a stale time base
