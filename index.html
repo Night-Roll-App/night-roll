@@ -9309,7 +9309,7 @@ async function play(fromSec = 0, opts = {}) {
       const abs = (loopPass === 0 ? e.sec
                                   : loopSeg.end + (loopPass - 1) * segLen + (e.sec - loopSeg.start))
                   - playOffset; // seconds after playT0
-      if (abs >= now + 0.6) break; // 0.6 s of lookahead: a long frame (Fall on a 1500-note SNES song, an iPad) must not starve the pump — at 0.2 s it dropped notes as "in the past" and went silent (Josh, 2026-09-27)
+      if (abs >= now + (document.hidden ? 8 : 0.6)) break; // hidden: the OS throttles this timer to a second or worse, so notes land "in the past" and skip (Josh, 2026-09-29, background play); schedule 8 s ahead instead. Visible: 0.6 s of lookahead: a long frame (Fall on a 1500-note SNES song, an iPad) must not starve the pump — at 0.2 s it dropped notes as "in the past" and went silent (Josh, 2026-09-27)
       if (albumEndAbs !== null && abs >= albumEndAbs) break; // the pass count is spent: nothing past the end
       if (abs >= -0.05) {
         let d = e.dur;

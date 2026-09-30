@@ -4982,6 +4982,25 @@ test("album play: two overlapping play() calls leave no orphaned scheduler — a
   } finally { run(`albumPlayIdx = globalThis.__realPI; albumRun = null; albumEndAbs = null;`); }
 });
 
+test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
+  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
+       song.tracks = [{name: "t", notes: [{t: 0, d: 240, p: 60, v: 80}, {t: 2400, d: 240, p: 62, v: 80}, {t: 4800, d: 240, p: 64, v: 80}]}]; /* 0 s, 2.5 s, 5 s */
+       trackState = [{muted: false, solo: false}]; songEndTick = 16 * 480;
+       globalThis.__realSN = scheduleNote; globalThis.__sched = []; scheduleNote = (ti, n, at, d) => { __sched.push(n.p); };`);
+  const playFor = async hidden => {
+    run(`document.hidden = ${hidden}; __sched = []; globalThis.__p = 0; play(0, {noCountIn: true}).then(() => __p++);`);
+    for (let i = 0; i < 100 && val(`globalThis.__p`) < 1; i++) { app.tick(50); await new Promise(r => setImmediate(r)); }
+    for (let i = 0; i < 3; i++) { app.tick(60); await new Promise(r => setImmediate(r)); }
+    const got = val(`__sched`); run(`stop();`); return got;
+  };
+  try {
+    const shown = await playFor(false), hidden = await playFor(true);
+    assert.ok(!shown.includes(64), "visible: 0.6 s ahead only — the 5 s note waits");
+    assert.ok(hidden.includes(62) && hidden.includes(64), "hidden: the next 8 s are already scheduled: " + JSON.stringify(hidden));
+  } finally { run(`scheduleNote = globalThis.__realSN; document.hidden = false;`); }
+});
+
 test("edited since last save: an edit undone back to the published music is not an edit (a fingerprint, not a sticky flag)", () => {
   installSong();
   run(`songKey = "albums/compositions/nightroll/undo-test.mid"; song.savedStamp = 5; song.tracks = [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 100}]}]; trackState = [{muted: false, solo: false}];

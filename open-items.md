@@ -455,7 +455,7 @@ whether the tool or the app owns the order.
    what's built.
 2. DONE: Renaming a song keeps its unpublished recording (`idbAudioMove` in
    `renameLocalKeys`, beside `idbDraftMove`).
-3. Background playback skipping: schedule further ahead while
+3. BUILT, awaits Josh's ear (lock the iPad mid-song, synth song): Background playback skipping: schedule further ahead while
    `document.hidden` (the pump's 0.6 s look-ahead). Own build; ear test
    on a synth song.
 4. Publish window: every row gets Open / Publish (that song only, as a
