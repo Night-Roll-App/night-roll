@@ -200,7 +200,7 @@ Tap **🗑** in the edit row — every selected note goes at once. Delete key do
 Select notes, tap **➗**, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.
 
 **Undo**
-Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step. Keyboard: **⌘Z** undoes, **⇧⌘Z** (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.
+Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step, and so is every track change: **voice, color, volume, pan, M / S / H**. Keyboard: **⌘Z** undoes, **⇧⌘Z** (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.
 
 ## Annotations
 

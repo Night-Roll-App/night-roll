@@ -1639,7 +1639,7 @@
       <dt>Velocity</dt><dd>The <b>vol slider</b> in the edit row (1–127, the number beside it shows the value) sets the pencil's loudness — and with notes selected in Select mode, dragging it adjusts ALL of them live, brightness tracking the drag, committing one ⟲ step when you let go. Tap a selection (or a single note) and the slider jumps to its current velocity — and when every selected note shares one velocity, the selection readout says so ("… 6 notes · vel 80").</dd>
       <dt>Delete</dt><dd>Tap <b>🗑</b> in the edit row — every selected note goes at once. Delete key does the same.</dd>
       <dt>Divide (➗)</dt><dd>Select notes, tap <b>➗</b>, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.</dd>
-      <dt>Undo</dt><dd>Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.</dd>
+      <dt>Undo</dt><dd>Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.</dd>
     </dl>
     </div>
     <div class="hsec" data-hsec="files">
@@ -7204,6 +7204,9 @@ function saveTrackDir(ti) { // upsert this track's "track:" directive — a norm
   const st = trackState[ti] || {};
   const d = {name, voice: tr.voice, color: tr.color, vol: tr.vol !== 1 ? tr.vol : undefined, pan: tr.pan,
              mute: !!st.muted, solo: !!st.solo, hide: !!st.hidden};
+  // one ⟲ step (DAW review, 2026-09-29: a stray fader drag or voice tap
+  // couldn't be taken back): the directives as they were, before this change
+  pushUndo({kind: "anno", json: annoSnapshot()});
   rollnotes.forEach(n => { if (n.trackdir && n.trackdir.name.toLowerCase() === name.toLowerCase()) tombstone(n); });
   rollnotes = rollnotes.filter(n => !(n.trackdir && n.trackdir.name.toLowerCase() === name.toLowerCase()));
   const text = trackDirText(d); // 0 pan is written too: it overrides a .mid's own pan
