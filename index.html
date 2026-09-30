@@ -945,6 +945,22 @@
   .askmsg .askcopy::before { content: "⧉"; }
   .askmsg .askcopy.done { opacity: 1; color: var(--gold); }
   .askmsg .askcopy.done::before { content: "✓ copied"; }
+  /* generic ⧉ Copy (askCopyText handles the clipboard + the .done flash;
+     .copybtn is the visual, decoupled from .askmsg so any read-only sheet
+     can use it — Josh couldn't copy the Status window, 2026-09-30) */
+  .copybtn { min-height: 26px; padding: 0 7px; font-size: 0.8125rem; line-height: 24px; opacity: .7; border-color: transparent; flex: none; }
+  .copybtn::before { content: "⧉ Copy"; }
+  .copybtn.sm { min-height: 20px; padding: 0 5px; font-size: 0.75rem; line-height: 18px; margin-left: 6px; }
+  .copybtn.sm::before { content: "⧉"; }
+  .copybtn.done { opacity: 1; color: var(--gold); }
+  .copybtn.done::before { content: "✓ copied"; }
+  .copybtn.sm.done::before { content: "✓"; }
+  /* read-only text areas Josh needs to select/copy from: none of these had
+     it (2026-09-30 — "I can't copy from the Status window") */
+  #infosheettext, #versionsrows .body, #jobslist .jobbody, #pubjoblist .pjname,
+  #pubjoblist .pjstate, #pubjobnote, #jobsnow, #impstatus {
+    user-select: text; -webkit-user-select: text;
+  }
   #askmoderow { gap: 6px; margin-bottom: 4px; }
   #askmoderow button { min-height: 30px; padding: 3px 12px; font-size: 0.75rem; }
   .askmsg.note { background: rgba(230,192,96,.10); border: 1px solid rgba(230,192,96,.5); align-self: stretch; white-space: pre-wrap; }
@@ -1090,6 +1106,7 @@
   <button id="filesheetbtn">File ▾</button>
   <button id="editsheetbtn" style="display:none">Edit ▾</button>
   <button id="editherebtn" style="display:none" aria-label="Make a local copy to edit">✎ Edit locally</button>
+  <button id="makeitminebtn" style="display:none" aria-label="Make an editable copy of this locked song">✎ Make it mine</button>
   <button id="viewsheetbtn">View ▾</button>
   <button id="askbtn" aria-label="Talk to the AI tutor">✦ AI</button>
   <button id="fullappbtn" style="padding:6px 10px">Full app</button>
@@ -1453,7 +1470,10 @@
 <div id="infosheet-home" style="display:contents">
 <div class="overlay" id="infosheet">
   <div class="sheet">
-    <h2 id="infosheet-h2">Status</h2>
+    <div class="row" style="align-items:center;gap:8px">
+      <h2 id="infosheet-h2" style="flex:1;margin:0">Status</h2>
+      <button class="copybtn" id="infosheetcopy" type="button" aria-label="Copy this message"></button>
+    </div>
     <p id="infosheettext" style="font-family:var(--mono);font-size:0.8125rem;line-height:1.6;
        white-space:pre-wrap;word-break:break-word;margin:8px 0"></p>
   </div>
@@ -1811,7 +1831,7 @@
     <div class="hsec" data-hsec="files">
     <dl>
       <dt>Install on the iPad</dt><dd>Safari → Share → <b>Add to Home Screen</b>. Night Roll then launches from its own icon, full screen with no browser bars, works offline (the app and any song you have opened are kept on the device; instrument sounds are kept as they are first used), and its drafts, annotations and settings live in storage Safari does not evict. Updates arrive on the next launch with a network — the page is always fetched fresh when it can be. Same for Chrome/Edge on a computer (the install icon in the address bar). File → the "build" line at the bottom of the menu says "installed" when you are running the installed copy. If offline support ever misbehaves, open the site with <code>?sw=0</code> once to turn it off on that device.</dd>
-      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has four tabs — <b>Saving</b> (folder or Files), <b>AI</b>, <b>GitHub</b>, <b>Other</b> (the debug log) — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips, led by <b>Published</b> or <b>Local</b> — the same meaning as Open's two sections — then its folder: <i>Published › Final Fantasy I › Battle Scene</i>), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save Version</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save Version (⌘S: a dated snapshot of the music AND annotations, kept on this device only — File → Versions… lists them), Publish (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Versions… (the published copy at the top when there is one, then this device's dated versions newest first — <b>Go back to this</b> on any row: your current state is kept as a version first, so nothing is thrown away, then that version becomes what you see — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… opens the <b>import hub</b> (below) — one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches); a drop target in the hub takes dragged files too, Download .mid (exports any song, works in Logic), Download audio (bounces the song to a 16-bit WAV <b>offline</b> — faster than real time, silent to you, no need to keep quiet hands: the song once through, loop off regardless of an armed cycle, through the same voices/chip/sampled/game-instrument/recording paths playback uses. On the iPad app it hands the file straight to the <b>share sheet</b> — Files, Messages, AirDrop, anywhere; in a browser it downloads. A browser with no offline renderer falls back to today's real-time capture instead — m4a on Safari / webm on Chrome, still loop off, still shareable anywhere including iMessage — and says why it fell back). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Publish is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>never saved</b> (exists only on this device, no folder yet), <b>not published</b> (a local copy with no published counterpart), <b>published</b> (matches the published copy), <b>changed since publish</b> (local edits not yet published), or <b>annotations changed here</b> (only the notes differ). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
+      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has four tabs — <b>Saving</b> (folder or Files), <b>AI</b>, <b>GitHub</b>, <b>Other</b> (the debug log) — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips, led by <b>Published</b> or <b>Local</b> — the same meaning as Open's two sections — then its folder: <i>Published › Final Fantasy I › Battle Scene</i>), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save Version</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save Version (⌘S: a dated snapshot of the music AND annotations, kept on this device only — File → Versions… lists them), Publish (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), <b>✎ Make it mine</b> (a capture or bundled starter shows this where Edit ▾ would be, instead of Save As's form: one tap, no folder or name to pick — forks a copy straight into My Covers, or the folder you last used, annotations inherited the same way Save As's does; a name clash gets a number, "Overworld" → "Overworld 2" — the capture or starter itself is never touched), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Versions… (the published copy at the top when there is one, then this device's dated versions newest first — <b>Go back to this</b> on any row: your current state is kept as a version first, so nothing is thrown away, then that version becomes what you see — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… opens the <b>import hub</b> (below) — one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches); a drop target in the hub takes dragged files too, Download .mid (exports any song, works in Logic), Download audio (bounces the song to a 16-bit WAV <b>offline</b> — faster than real time, silent to you, no need to keep quiet hands: the song once through, loop off regardless of an armed cycle, through the same voices/chip/sampled/game-instrument/recording paths playback uses. On the iPad app it hands the file straight to the <b>share sheet</b> — Files, Messages, AirDrop, anywhere; in a browser it downloads. A browser with no offline renderer falls back to today's real-time capture instead — m4a on Safari / webm on Chrome, still loop off, still shareable anywhere including iMessage — and says why it fell back). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Publish is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>never saved</b> (exists only on this device, no folder yet), <b>not published</b> (a local copy with no published counterpart), <b>published</b> (matches the published copy), <b>changed since publish</b> (local edits not yet published), or <b>annotations changed here</b> (only the notes differ). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
       <dt>Import…</dt><dd>File → Import… opens the <b>import hub</b>: one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches, whichever section you tapped from); a drop target in the hub takes dragged files too. <b>MIDI</b> (.mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — multi-select capable): ask where they belong — <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like a chip capture, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved). <b>NES</b>: the .nsf, plus its .m3u if the rip has one (track names) — an NSF that needs an expansion sound chip (VRC6, VRC7, FDS, MMC5, Namco 163, Sunsoft 5B) is refused by name ("expansion sound chip &lt;names&gt; not supported") — the NES pipeline captures only the 2A03, and those songs keep their lead voices on the extra chip. <b>Game Boy</b>: the .gbs, plus its .m3u, same rule. <b>Super NES</b>: every .spc of the album, picked together — tagged lengths, so the loop scan is skipped. <b>Genesis</b>: .vgm/.vgz — synth voices only, no console-audio render yet. <b>PlayStation</b>: every .minipsf plus the one .psflib, picked together — reads Sony's own SEQ/VAB driver and Square's AKAO (Final Fantasy VII/VIII/IX, Chrono Cross); both play the console's own audio. <b>PlayStation 2</b>: every .minipsf2/.psf2 plus the one .psf2lib, picked together — reads Sony's stock driver (SQ/HD/BD) and Square Enix's own (BGM/WD — Final Fantasy X); both play the console's own audio. A PS2 set that's only streamed audio (Ico, XIII) is refused: "this is streamed audio, not note data — Night Roll reads sequence data (notes), not pre-rendered streams". <b>Nintendo 64</b>: every .miniusf plus the one .usflib. For NES, Game Boy, PlayStation, PlayStation 2 and Nintendo 64: a playlist (.m3u) picked on its own, later, names an open song's album (or, mid-capture, renames an already-open session's tracks). Every chip pick opens the capture panel: the same pipeline that dumped the FF1 album runs the track — loop detected and trimmed, tempo grid-fitted, the hardware loop point recorded as a loop: annotation (the capture window auto-doubles, 75 → 150 → 300s, when no loop fits) — and lands as a LOCAL draft under an album named for the game; audition and rename each one, ⇪ Commit a track or the whole album — it keeps going if you leave the menu, and it all keeps running in the background (⏳ Jobs) if you close the panel too — File → Publish import still pushes every import capture across all folders at once. <b>Chip audio is automatic</b>: whenever the app can reach a song's NSF/GBS/etc. (the live import session, this device's cache, or the public archive), NES, Game Boy, PlayStation, PlayStation 2 and Nintendo 64 songs render through the console's own sound hardware; Genesis and Super NES play through synth voices for now. <b>SoundFont</b>: one .sf2 (a fan-made game font, a better piano, anything) — not tied to a song at all: it loads straight in, a copy stays on this device (works offline, no GitHub needed) and, with a game files &amp; instruments repo configured, pushes to the archive too so your other devices can play it; files over 50 MB ask first (GitHub itself warns past 50 MB, refuses past 100). <b>New song from a recording</b>: one .wav/.mp3/.m4a/.aif/.flac becomes a brand-new song — <b>Untitled N</b>, 4/4 at 120 bpm with three empty note tracks waiting (Edit → Pencil to write against it; ♩ Tempo from this take reads the clip's real tempo whenever you're ready) — it lives on this device until Save.</dd>
       <dt>Share a song</dt><dd><b>🔗 Share link</b> in the Publish sheet hands the song's link to the share sheet (or copies it). A link is this player plus the song plus where the song lives: songs on this site need nothing more; a song published to another GitHub repo carries <code>songs=owner/repo</code>, so anyone who taps it hears that song from that repo, no setup — and you can open such links too (the breadcrumb then starts with 🔗 and the repo's name; everything is read-only there, your own songs are untouched, and nothing about the link is remembered). Publish also keeps a <b>song list in the repo's README</b> — every song as a player link, between two markers the app owns, the rest of the README untouched — so the repo page itself is the share page. The address bar is always a shareable link to the open song, and it is the song's path with no extension — …/night-roll/albums/compositions/nightroll/ambush. <b>Add .mid to the end and the same link is the MIDI file</b> (Logic opens it); take it off and it's the player again. Older ?song= links still open the player. The tab title and the link preview in Messages name the song first — "Threnody · Night Roll" — so a pasted link reads as the song, not the app.</dd>
       <dt>Data locations</dt><dd>Night Roll is configured with WHERE its data lives (Sync → "Data locations ▾"): three rows — songs (.mid, album.json, catalog), analysis (.rollnotes + docs), and NSF (chip-audio source) — each with a read base URL (blank = this site; or any raw.githubusercontent.com/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt; or local server) and an owner/repo write target. One fine-grained token, granted to every repo you write to, covers all commits; write errors name the repo they hit, and a 404 usually means the token hasn't been granted that repo. This is what lets another analyst point their own analysis repo at a shared songs corpus. Defaults: everything in this site's repo, NSFs from the public nsf-archive. In the iPad app "this site" is only the bundled starters, so reads default to the repo in Settings → GitHub (the same place Publish writes): your published songs, annotations and imports appear there once the repo is set; the starters come from the bundle either way.</dd>
@@ -2314,6 +2334,7 @@
       <button class="primary" id="impall">Capture all</button>
       <button id="impcommit">Publish kept tracks</button>
       <span class="lbl" id="impstatus" style="flex:1;min-width:0"></span>
+      <button class="copybtn sm" id="impstatuscopy" type="button" aria-label="Copy this message" style="display:none"></button>
     </div>
     <div id="implist"></div>
     <div class="meta" style="margin:2px 0 0;white-space:normal;margin-left:0;line-height:1.4">captures are LOCAL copies — audition each, ✕ the duds in Open → drafts, then Commit pushes the keepers to the repo</div>
@@ -3094,7 +3115,11 @@ function updateClearBtn() {
 function updateEditBtnVis() { // the edit ROW exists only on songs made in the app
   // (or local .mid loads) — never on the FF captures (Josh, 2026-08-15)
   if (typeof updateChipBtn === "function") updateChipBtn(); // chip-audio offer follows the song
-  const editable = isComposition() || isLocalDraft() || (!!song && songKey === null);
+  // P1 (docs/provenance-plan.md): was its own isComposition()||isLocalDraft()
+  // ||songKey===null, missing the link-mode/compare-repo guards editableSong()
+  // has — one of the "three copies disagree" bugs the plan found; now the
+  // same call, so a linked song or the repo side of Compare hides the row here too.
+  const editable = editableSong();
   if (!editable && mode !== null && mode !== "select") { // leaving an editable song mid-pencil
     mode = null;
     for (const x of document.querySelectorAll("#modeseg button"))
@@ -3112,6 +3137,11 @@ function updateEditBtnVis() { // the edit ROW exists only on songs made in the a
   // a published song of the user's own, with no local copy here: offer to make one (Josh, 2026-09-27: ask first)
   document.getElementById("editherebtn").style.display =
     !editable && !!song && ownFolderPath(songKey) && !LINK_SONGS && !(cmp && cmp.showing === "repo") ? "" : "none";
+  // a capture or starter: never "edit here" (nothing of yours to pull down) —
+  // "✎ Make it mine" forks one instead, no form (Q4, docs/provenance-plan.md)
+  const origin = song && songKey ? originOf(songKey) : null;
+  document.getElementById("makeitminebtn").style.display =
+    !editable && !!song && (origin === "capture" || origin === "starter") && !LINK_SONGS && !(cmp && cmp.showing === "repo") ? "" : "none";
 }
 
 // ---------------------------------------------------------------- rollnotes
@@ -3416,6 +3446,27 @@ function bakeTempos(base, notes, ppq) {
     sorted[i].sec = sec;
   }
   return sorted;
+}
+// Pure, same shape as bakeTempos (docs/provenance-plan.md Q9 — a declared
+// meter bakes wherever tempo bakes): base timesig events (the file's own,
+// un-declared) + resolved notes (only n.tsdir/n.start are read) -> a new
+// [{tick, num, den}] list, baked fresh from the same base every publish,
+// never accumulated. Today there's only ever ONE timesig: annotation (the
+// editor keeps "one meter per song" — declaring a new one replaces it,
+// re-barring), so in practice this returns either the base unchanged (no
+// declaration: "written back verbatim", Q6) or one event at the
+// declaration's own tick — written as a list, not a single pair, so a
+// future multi-meter song and an import's own pre-declaration history
+// (base) both round-trip correctly.
+function bakeMeter(base, notes) {
+  const dirs = notes.filter(n => n.tsdir).sort((a, b) => a.start - b.start);
+  if (!dirs.length) return base.map(t => ({...t}));
+  const evs = base.filter(t => t.tick < dirs[0].start).map(t => ({tick: t.tick, num: t.num, den: t.den}));
+  if (!evs.length) evs.push({tick: 0, num: dirs[0].tsdir[0], den: dirs[0].tsdir[1]});
+  for (const d of dirs) evs.push({tick: Math.max(0, Math.round(d.start)), num: d.tsdir[0], den: d.tsdir[1]});
+  const byTick = new Map();
+  for (const e of evs) byTick.set(e.tick, e); // same tick: the directive wins
+  return [...byTick.values()].sort((a, b) => a.tick - b.tick);
 }
 function finalizeNotes() {
   // adopt any declared meter FIRST, then re-resolve every anchor under it —
@@ -5614,7 +5665,7 @@ function posToTickPitch(pos) { // pitch is a DISPLAY ROW (kit lane rows sit abov
 // requests, 2026-08-17: move lasso'd notes in pitch/time, resize many at
 // once, copy chords). Works on editable songs; drag on the roll or arrow
 // keys — keyboard covers everything, easier on the hands than dragging.
-function editableSong() { return !!song && !LINK_SONGS && (isComposition() || isLocalDraft() || songKey === null) && !(cmp && cmp.showing === "repo"); } // hearing the saved copy, or someone else's song = read-only
+function editableSong() { return !!song && !LINK_SONGS && canEditMusic(songKey) && !(cmp && cmp.showing === "repo"); } // hearing the saved copy, or someone else's song = read-only
 function selEditItems() { // the notes an edit applies to: lasso selection, else the tapped note
   const out = [];
   if (multiSel.length) for (const {ti, ni} of multiSel) {
@@ -6345,6 +6396,12 @@ function renderJobs() {
     const line = document.createElement("div");
     line.textContent = (kind.label ? kind.label(job) : job.title) + "  " + word + (job.err ? "  " + job.err : "");
     body.appendChild(line);
+    if (job.err) { // a failed job's error text, selectable above (.jobbody) but easy to miss on the iPad — Copy it directly
+      const cp = document.createElement("button");
+      cp.className = "copybtn sm"; cp.type = "button"; cp.setAttribute("aria-label", "Copy this error");
+      cp.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(job.err, cp); });
+      line.appendChild(cp);
+    }
     const barrow = document.createElement("div");
     barrow.className = "jobbarrow";
     const bar = document.createElement("div");
@@ -6412,6 +6469,12 @@ function renderPubJob() {
       state.className = "pjstate" + (cls ? " " + cls : "");
       state.textContent = text;
       row.appendChild(state);
+      if (it.st === "failed" && it.msg) { // the failure text, copyable (same need as a job's .jobbody error)
+        const cp = document.createElement("button");
+        cp.className = "copybtn sm"; cp.type = "button"; cp.setAttribute("aria-label", "Copy this error");
+        cp.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(it.msg, cp); });
+        row.appendChild(cp);
+      }
     }
     list.appendChild(row);
   }
@@ -6531,6 +6594,13 @@ document.getElementById("noteinfo").addEventListener("click", async () => {
   }
   const chip = document.querySelector("#noteinfo .copychip");
   if (chip) chip.textContent = ok ? "✓ copied" : "✗ copy failed";
+});
+// the Status window itself (#infosheet) had no way to copy its text at all
+// (Josh, 2026-09-30: "I can't copy from the Status window") — the info strip
+// already copies SOME messages (infoCopyText above); this covers the rest.
+document.getElementById("infosheetcopy").addEventListener("click", ev => {
+  ev.stopPropagation();
+  askCopyText(infoFull || document.getElementById("infosheettext").textContent, document.getElementById("infosheetcopy"));
 });
 
 // ---------------------------------------------------------------- gestures
@@ -9301,7 +9371,11 @@ function currentLoop() { // "loop: B.Q" = at the anchor (jump point), return to 
 // (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
 // oscillator per note, hardware envelopes, real noise. Available while the
 // import session that captured the current draft is still open.
-const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: []}; // no toggle: chip audio is automatic wherever a source resolves
+const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null}; // no toggle: chip audio is automatic wherever a source resolves
+// pan: {name: -1..1}, set only for a track the memory budget (below) downmixed
+// from a genuinely stereo render to mono — chipStart reapplies it so the
+// audible result is unchanged; absent/null for every other track (normal pan
+// — trackPan/trackPanners, the mixer's own per-track control — still applies).
 function chipTrackNo() { // NSF track number from the LIVE import session
   if (!songKey || !nsfSess) return null;
   for (let n = 1; n < nsfSess.rows.length; n++)
@@ -9508,10 +9582,21 @@ async function updateChipBtnInner() { // name kept for call sites; now just the 
            "Re-import the album's NSF once, or commit the album; playing synthesized voices meanwhile.");
   }
   if (available && chip.key !== songKey && chip.rendering !== songKey) {
-    if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chipPreviewCache.clear(); if (chipWorker && chipWorker.__key !== songKey) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
+    if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chip.pan = null; chipPreviewCache.clear(); if (chipWorker && chipWorker.__key !== songKey) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
     chip.rendering = songKey;
     const forKey = songKey;
-    chip.renderPromise = chipRender().catch(err => { chip.fail = {key: forKey, why: "the console render failed for " + songTitleOf(forKey) + " (" + (err && err.message || err) + ")"}; if (songKey === forKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again"); logDebug("render failed: " + chip.fail.why); return false; }) // not renderable: synth carries the song, and says so
+    chip.renderPromise = chipRender().catch(err => {
+      // name + message (a module-load failure now names its path — fix 2),
+      // and the heap if the browser exposes it: a real 404 vs an allocation
+      // failure used to look identical in this one line (Josh's iPad, FF7
+      // failing the same way Challenge just had, 2026-09-30)
+      const heap = (typeof performance !== "undefined" && performance.memory && performance.memory.usedJSHeapSize) ? " · heap " + Math.round(performance.memory.usedJSHeapSize / 1e6) + " MB" : "";
+      const detail = (err && err.name ? err.name + ": " : "") + (err && err.message || err);
+      chip.fail = {key: forKey, why: "the console render failed for " + songTitleOf(forKey) + " (" + detail + ")" + heap};
+      if (songKey === forKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again");
+      logDebug("render failed: " + chip.fail.why);
+      return false;
+    }) // not renderable: synth carries the song, and says so
       .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
   }
 }
@@ -9523,6 +9608,83 @@ async function updateChipBtnInner() { // name kept for call sites; now just the 
 // too). Now: build aside, and only publish if this song is still open. A
 // render whose every channel came out silent is refused with a ⚠ line
 // naming the song — synth carries it, and the log says why.
+// ---- console-render memory budget (2026-09-30; FFX "Challenge" reproduced:
+// PS2's own driver, 30 tracks, 163 s, stereo 48 kHz = 1.88 GB of Float32 —
+// the iPad's WKWebView killed the content process for it: black screen, fast
+// reload). Generic across every chip (no per-game table, per CLAUDE.md): the
+// plan only sees track count / seconds / sample rate / channels, picked
+// BEFORE the render runs so the peak allocation itself never happens.
+// Dropping entirely-silent tracks is the existing post-render step
+// (chipSilent, below) — this only shapes what IS rendered.
+const CHIP_BUDGET_APP = 600_000_000;  // the iPad app (WKWebView) — measured well below what crashed Challenge
+const CHIP_BUDGET_WEB = 2_000_000_000; // desktop/browser — GoldenEye (N64) on a phone crashed around here (chipPcmToBuffers' comment, 2026-09-28)
+const CHIP_RATE_STEPS = [48000, 32000, 24000, 22050]; // resampled by the renderer's own sampleRate option; 22050 is the floor — never lower
+function chipRenderBudget() { return (typeof EDITION !== "undefined" && EDITION === "app") ? CHIP_BUDGET_APP : CHIP_BUDGET_WEB; }
+// Pure: the cheapest combination (mono, then a lower sample rate) that fits
+// the budget, in the order CLAUDE.md's fix asked for — (a) drop silent
+// tracks is handled elsewhere (this can't know which tracks are silent
+// before they're rendered); (b) mono; (c) a lower rate, 48k→32k→24k→22050.
+// {tracks, seconds, sampleRate, channels, budget} → {rate, mono, channels, bytes, refuse}
+function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
+  const bytesAt = (rate, ch) => Math.ceil(tracks * ch * rate * seconds * 4);
+  let rate = sampleRate, mono = false, ch = channels;
+  let bytes = bytesAt(rate, ch);
+  if (bytes <= budget) return {rate, mono, channels: ch, bytes};
+  if (ch > 1) { // (b) mono: half the bytes, no quality loss when the pan turns out static (chipStaticPan, at render time)
+    mono = true; ch = 1;
+    bytes = bytesAt(rate, ch);
+    if (bytes <= budget) return {rate, mono, channels: ch, bytes};
+  }
+  for (const step of CHIP_RATE_STEPS) { // (c) lower the rate, never below 22050 (the last step)
+    if (step >= rate) continue;
+    rate = step;
+    bytes = bytesAt(rate, ch);
+    if (bytes <= budget) return {rate, mono, channels: ch, bytes};
+  }
+  return {rate, mono, channels: ch, bytes, refuse: true}; // floor hit and still over budget: the caller refuses the render, synth carries the song
+}
+// A sequence chip (psf/psf2/usf: CHIPS[kind].channels === []) doesn't know its
+// own track count until the sequence is parsed (res.result) — register chips
+// (nsf/gbs/spc) have a fixed channel list. `.ch` is the note's source channel
+// (channelGroups, tools/psx/notes.mjs and its N64/PS2 equivalents) — one
+// output track per distinct channel, the same count the render will produce.
+function chipEstimateTracks(kind, res) {
+  const fixed = CHIPS[kind] && CHIPS[kind].channels;
+  if (fixed && fixed.length) return fixed.length;
+  const notes = res && res.result && res.result.notes;
+  if (Array.isArray(notes) && notes.length) return Math.max(1, new Set(notes.map(n => n.ch)).size);
+  return 8; // an unfamiliar per-song shape: a conservative guess — only shifts the rate a notch, never wrong-sizes the actual render
+}
+// Downmix a stereo render pair to mono IF its pan is static across the whole
+// track (varies < ~0.08 pan units between sampled windows) — null keeps it
+// stereo (the fix's own rule: "if pan varies per note, keep stereo for that
+// track only"). windows: rms energy per ~512-sample block, sampled every
+// stride blocks so a multi-minute track doesn't scan every sample.
+function chipStaticPan(l, r) {
+  const n = Math.min(l.length, r.length);
+  if (!n) return 0;
+  const win = 512, stride = Math.max(1, Math.floor(n / (win * 4000)));
+  const pans = [];
+  for (let start = 0; start + win <= n; start += win * stride) {
+    let el = 0, er = 0;
+    for (let i = start; i < start + win; i++) { el += l[i] * l[i]; er += r[i] * r[i]; }
+    if (el < 1e-9 && er < 1e-9) continue; // silence here says nothing about pan
+    pans.push(Math.max(-1, Math.min(1, Math.atan2(Math.sqrt(er), Math.sqrt(el)) * 4 / Math.PI - 1)));
+  }
+  if (pans.length < 2) return 0; // too little signal to tell: treat as centred
+  const lo = Math.min(...pans), hi = Math.max(...pans);
+  return hi - lo > 0.08 ? null : pans.reduce((a, b) => a + b, 0) / pans.length;
+}
+// The exact inverse of the equal-power law trackPanners (chipStart) applies
+// at playback, so a static-pan track sounds identical after the round trip:
+// mono = the louder channel divided back out by its own gain at this pan.
+function chipDownmixStatic(l, r, pan) {
+  const gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4);
+  const useL = gl >= gr, src = useL ? l : r, g = useL ? gl : gr, inv = g > 1e-6 ? 1 / g : 0;
+  const mono = new Float32Array(src.length);
+  for (let i = 0; i < src.length; i++) mono[i] = src[i] * inv;
+  return mono;
+}
 function chipSilent(chans) { // (Float32Array | {l, r})[] → true when nothing in any of them is above the noise floor
   for (const c of chans) for (const a of (c && c.l ? [c.l, c.r] : [c])) { if (!a) continue; for (let i = 0; i < a.length; i += 13) if (Math.abs(a[i]) > 1e-4) return false; }
   return true;
@@ -9544,46 +9706,88 @@ async function chipRender() {
   const secs = Math.ceil(src.secs + 1);
   const rate = CHIPS[kind].renderRate || (audio ? audio.sampleRate : 44100);
   chip.progress = 0;
-  // Off the main thread when the browser can (module workers: every current
-  // Safari/Chrome): the page stays fluid, the first Play after opening a
-  // song no longer plays over a render, and a song change just terminates
-  // the worker. The inline path below is the fallback.
-  if (chipWorkerAvailable()) {
-    const w = await chipRenderInWorker(kind, src, secs, rate, forKey);
-    if (w === "stale") return false;
-    if (w) { return chipPublish(forKey, kind, w.pcm, w.sampleRate, w.leadSec); }
-    // a worker failure falls through to the inline render, once, and says so
+  // A failure past this point (module load, emulation, render, or the memory
+  // budget refusing) must not poison the NEXT song's render (Josh's iPad,
+  // 2026-09-30: Challenge crashed, then FF7 — a different chip kind —
+  // failed the same way until a full app restart: whatever Challenge left
+  // allocated was starving later dynamic import()s). Every real throw out of
+  // this function goes through chipCleanupAfterFailure first. A "stale
+  // render" (superseded by a song change) is NOT a failure — those are
+  // caught inline below and return false without touching anything.
+  try {
+    const budget = chipRenderBudget();
+    if (chipWorkerAvailable()) {
+      // Off the main thread when the browser can (module workers: every
+      // current Safari/Chrome): the page stays fluid, the first Play after
+      // opening a song no longer plays over a render, and a song change just
+      // terminates the worker. The inline path below is the fallback.
+      const w = await chipRenderInWorker(kind, src, secs, rate, forKey, budget);
+      if (w === "stale") return false;
+      if (w) { return chipPublish(forKey, kind, w.pcm, w.sampleRate, w.leadSec, w.pan); }
+      // a worker failure falls through to the inline render, once, and says so
+    }
+    const M = await chipModules(kind);
+    const nsfParsed = CHIPS[kind].parse(M)(src.bytes, src);
+    if (!M.renderApu && !M.renderSpu) return false; // no renderer for this chip (yet): synth carries the song
+    // a song opened on top of this one aborts the render at its next progress
+    // tick — several quick opens used to leave several renders running to the
+    // end (memory, and a starved audio thread: Josh, 2026-09-27)
+    const alive = () => { if (songKey !== forKey) throw new Error("stale render: " + forKey.split("/").pop()); };
+    let res;
+    try {
+      res = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
+        p => { alive(); chip.progress = p * 0.3; console.log("[chip] emulating " + Math.round(p * 100) + "%"); });
+    } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
+    const {frameSec} = res;
+    // song time zero = first onset (the capture's trim) — find it the same way; a sequence chip says 0 itself
+    let leadSec = 0;
+    if (CHIPS[kind].lead) leadSec = CHIPS[kind].lead(M, res);
+    else { const ev = res.events || M.reconstruct(res.apuLog, res.frames, frameSec); leadSec = (ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0) * frameSec; }
+    // the memory budget (planChipRender, above): known track count + this
+    // chip's own channel count (stereo-capable chips only — CHIPS[kind].stereo)
+    // decide the render's OWN sample rate/channels BEFORE it allocates anything
+    const plan = planChipRender({tracks: chipEstimateTracks(kind, res), seconds: secs, sampleRate: rate, channels: CHIPS[kind].stereo ? 2 : 1, budget});
+    if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
+    if (plan.rate !== rate || plan.mono) logDebug(songTitleOf(forKey) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)");
+    const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
+    let r;
+    try {
+      r = await render(M, res, {sampleRate: plan.rate,
+        onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
+    } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
+    if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
+    const pcm = {}, pan = {};
+    const names = CHIPS[kind].channels.length ? CHIPS[kind].channels : Object.keys(r).filter(k => chipIsPcm(r[k])); // a sequence chip names its channels per song
+    for (const name of names) {
+      const v = r[name]; r[name] = null;
+      if (!v || chipSilent([v])) continue; // a voice the song never uses keeps nothing
+      if (plan.mono && v.l && v.r) { // downmix ONLY what the budget needed to shrink, and only where the pan holds still
+        const p = chipStaticPan(v.l, v.r);
+        if (p !== null) { pcm[name] = chipDownmixStatic(v.l, v.r, p); pan[name] = p; continue; }
+      }
+      pcm[name] = v;
+    }
+    return chipPublish(forKey, kind, pcm, r.sampleRate, leadSec, pan);
+  } catch (err) {
+    chipCleanupAfterFailure(kind);
+    throw err;
   }
-  const M = await chipModules(kind);
-  const nsfParsed = CHIPS[kind].parse(M)(src.bytes, src);
-  if (!M.renderApu && !M.renderSpu) return false; // no renderer for this chip (yet): synth carries the song
-  // a song opened on top of this one aborts the render at its next progress
-  // tick — several quick opens used to leave several renders running to the
-  // end (memory, and a starved audio thread: Josh, 2026-09-27)
-  const alive = () => { if (songKey !== forKey) throw new Error("stale render: " + forKey.split("/").pop()); };
-  let res;
-  try {
-    res = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
-      p => { alive(); chip.progress = p * 0.3; console.log("[chip] emulating " + Math.round(p * 100) + "%"); });
-  } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
-  const {frameSec} = res;
-  // song time zero = first onset (the capture's trim) — find it the same way; a sequence chip says 0 itself
-  let leadSec = 0;
-  if (CHIPS[kind].lead) leadSec = CHIPS[kind].lead(M, res);
-  else { const ev = res.events || M.reconstruct(res.apuLog, res.frames, frameSec); leadSec = (ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0) * frameSec; }
-  const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
-  let r;
-  try {
-    r = await render(M, res, {sampleRate: rate,
-      onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
-  } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
-  if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
-  const pcm = {};
-  const names = CHIPS[kind].channels.length ? CHIPS[kind].channels : Object.keys(r).filter(k => chipIsPcm(r[k])); // a sequence chip names its channels per song
-  for (const name of names) { if (r[name] && !chipSilent([r[name]])) pcm[name] = r[name]; r[name] = null; } // a voice the song never uses keeps nothing
-  return chipPublish(forKey, kind, pcm, r.sampleRate, leadSec);
 }
-function chipPublish(forKey, kind, pcm, sampleRate, leadSec) { // the render is in: keep it for the song it was made for
+// A render that threw (module load, emulation, render, or the memory budget
+// refusing) must not leave anything behind for the NEXT song to trip over —
+// this is what a full app restart used to be needed for (2026-09-30: Challenge
+// failed, then FF7 — a different chip entirely — failed the same
+// "Importing a module script failed", until restart). Idempotent: safe to
+// call with nothing to clean up (a second failure in a row, or a refuse with
+// no worker ever started).
+function chipCleanupAfterFailure(kind) {
+  chipStopSrcs();
+  chip.pcm = null; chip.buffers = null; chip.buffersCtx = null; chip.pan = null;
+  chipPreviewCache.clear();
+  if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } // the next render makes a fresh one
+  if (kind && chipModules.cache) delete chipModules.cache[kind]; // re-import next time, never a once-rejected/partial module set
+}
+function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan) { // the render is in: keep it for the song it was made for
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
   if (!Object.keys(pcm).length) {
     logErr("chip render came out silent for " + forKey.split("/").pop() + " (" + CHIPS[kind].label + ") — playing synthesized voices; tell Claude the song name");
@@ -9591,6 +9795,7 @@ function chipPublish(forKey, kind, pcm, sampleRate, leadSec) { // the render is 
   }
   chip.pcm = pcm; chip.pcmRate = sampleRate;
   chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers), unless chipPcmToBuffers can now
+  chip.pan = pan && Object.keys(pan).length ? pan : null; // per-track static pan the memory budget downmixed to mono (planChipRender/chipStaticPan)
   chipPcmToBuffers();
   chip.lead = leadSec;
   chip.key = forKey;
@@ -9621,12 +9826,12 @@ async function chipPreviewBuffer(name, midi, offset = 0) { // the game's own ins
   chipPreviewCache.set(key, {ctx: audio, buf});
   return buf;
 }
-function chipRenderInWorker(kind, src, secs, rate, forKey) {
+function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
   return new Promise(resolve => {
     if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; }
-    let w;
-    try { w = new Worker(new URL("tools/chip-worker.mjs?v=" + Date.now(), APP_BASE).href, {type: "module"}); }
-    catch (err) { chipWorkerAvailable.broken = true; console.warn("[chip] no module worker here: rendering inline (" + err.message + ")"); return resolve(null); }
+    let w, workerUrl;
+    try { workerUrl = new URL("tools/chip-worker.mjs?v=" + Date.now(), APP_BASE).href; w = new Worker(workerUrl, {type: "module"}); }
+    catch (err) { chipWorkerAvailable.broken = true; console.warn("[chip] no module worker (" + workerUrl + "): " + err.message + " — rendering inline"); return resolve(null); }
     chipWorker = w;
     const c = CHIPS[kind];
     const watch = setInterval(() => { if (songKey !== forKey) { finish("stale"); } }, 250); // a song change ends the render at once
@@ -9641,14 +9846,15 @@ function chipRenderInWorker(kind, src, secs, rate, forKey) {
       const m = e.data || {};
       if (m.preview) { const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); return; }
       if (typeof m.progress === "number") { chip.progress = m.progress; return; }
-      if (m.error) { console.warn("[chip] worker: " + m.error + " — rendering inline"); chipWorkerAvailable.broken = /no module worker|import|Failed to fetch/i.test(m.error); return finish(null); }
+      if (m.debug) { logDebug(m.debug); return; } // the worker's own budget-plan line (planChipRender ran in there, not here)
+      if (m.error) { console.warn("[chip] worker (" + workerUrl + "): " + m.error + " — rendering inline"); chipWorkerAvailable.broken = /no module worker|import|Failed to fetch/i.test(m.error); return finish(null); }
       if (m.done) return finish(m.done);
     };
-    w.onerror = err => { console.warn("[chip] worker failed: " + (err && err.message || "error") + " — rendering inline"); chipWorkerAvailable.broken = true; finish(null); };
+    w.onerror = err => { console.warn("[chip] worker failed (" + workerUrl + "): " + (err && err.message || "error") + " — rendering inline"); chipWorkerAvailable.broken = true; finish(null); };
     const bytes = src.bytes instanceof Uint8Array ? src.bytes.slice() : new Uint8Array(src.bytes).slice(); // a copy: the record keeps its own
     const libs = {}, transfer = [bytes.buffer];
     for (const [name, b] of Object.entries(src.libs || {})) { const c2 = b instanceof Uint8Array ? b.slice() : new Uint8Array(b).slice(); libs[name] = c2; transfer.push(c2.buffer); } // a set's shared library (PS1, N64)
-    w.postMessage({id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, n: src.n, secs, rate}, transfer);
+    w.postMessage({id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, n: src.n, secs, rate, budget, title: songTitleOf(forKey)}, transfer);
   });
 }
 function chipActive() { return chip.key === songKey && !!(chip.pcm || chip.buffers); }
@@ -9709,7 +9915,16 @@ function chipStart(fromSec) {
       src.loopStart = Math.min(chip.lead + loopSeg.start * playRate, buffer.duration);
       src.loopEnd = Math.min(chip.lead + loopSeg.end * playRate, buffer.duration);
     }
-    src.connect(trackGain(ti));
+    // a track the memory budget downmixed from stereo to mono (planChipRender,
+    // chip.pan) gets ITS OWN panner here, upstream of trackGain/trackPanners
+    // (the mixer's own per-track pan, untouched) — bakes the console's
+    // original static pan back in so the audible result is unchanged
+    let node = src;
+    if (chip.pan && chip.pan[name] !== undefined && audio.createStereoPanner) {
+      const p = audio.createStereoPanner(); p.pan.value = chip.pan[name];
+      src.connect(p); node = p;
+    }
+    node.connect(trackGain(ti));
     src.start(playT0, Math.min(chip.lead + fromSec * playRate, buffer.duration));
     if (albumEndAbs !== null) src.stop(playT0 + albumEndAbs); // the hardware loop still wraps; album play just ends it
     chip.srcs.push(src);
@@ -14977,6 +15192,13 @@ function ownFolderPath(key) { return !!key && key.startsWith("albums/") && !READ
 // then start editing it"): editable = this device holds the local copy (the
 // draft), or the song carries provenance. Sketches are no exception now.
 function isComposition() { // the local copy, nothing else (a "forked from"/"moved from" note is history, not a key — Josh, Graveyard 2, 2026-09-27)
+  // P1 (docs/provenance-plan.md): left as-is on purpose, not routed through
+  // originOf/RULES — this is also the "is this song's own note ARRAY the
+  // song, not an overlay" test every `isAdd = !isComposition()` site relies
+  // on, orthogonal to editability/origin; it happens to equal "a local draft
+  // exists and RULES[originOf(key)].writesMid" for every key that reaches
+  // here (ownFolderPath already excludes capture/starter), so no behavior
+  // changes either way — rewriting the body would only add risk for it.
   return ownFolderPath(songKey) && localStorage.getItem(draftStoreKey(songKey)) !== null;
 }
 // Josh's ruling (2026-09-30, docs/provenance-plan.md): tempo: annotations
@@ -14987,7 +15209,60 @@ function isComposition() { // the local copy, nothing else (a "forked from"/"mov
 // today's predicate, built from the existing "his song" checks; P1's origin
 // model (docs/provenance-plan.md) replaces it with a stored origin.
 function bakesTempo(key) {
-  return !!key && (key.startsWith("local/") || ownFolderPath(key)) && localStorage.getItem(draftStoreKey(key)) !== null;
+  return !!key && (key.startsWith("local/") || ownFolderPath(key)) && localStorage.getItem(draftStoreKey(key)) !== null && rulesFor(key).bakeTempo;
+}
+// ---- P1 (docs/provenance-plan.md): one origin per song, one rule table ----
+// composition (made in Night Roll) · copy (Save As/Move; carries a "forked
+// from"/"moved from" note — Q8: still a plain annotation today, not a
+// stored field, until the notes move into a v2 header) · import (a MIDI
+// file brought in; its own labels kept in `source`, docs/declared-vs-
+// learner-spec.md) · capture (game pipeline, FF1 included) · starter
+// (bundled pieces). Built from what already exists (paths, draft fields,
+// isCaptureKey, bundledPath) — P4 replaces this with a stored origin.
+function hasProvenanceNote(key) { // same "live vs stashed" pattern as declaredTsForKey
+  let list = (song && key === songKey) ? rollnotes : null;
+  if (!list) { try { list = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "null"); } catch (err) { list = null; } }
+  return Array.isArray(list) && list.some(n => PROVENANCE_RE.test(n.text || ""));
+}
+function originOf(key) {
+  if (!key) return "composition"; // no key at all yet (songKey === null: a freshly loaded file with nowhere to live) — same footing as a fresh composition
+  if (isCaptureKey(key)) return "capture";
+  if (bundledPath(key)) return "starter";
+  if (key.startsWith("local/") || ownFolderPath(key)) {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
+    if (d && d.source) return "import";
+    if (hasProvenanceNote(key)) return "copy";
+  }
+  return "composition"; // default: his own — also an own-folder path with no local draft yet (nothing published-only can tell copy/import apart without fetching the file; P4 stores it instead)
+}
+// Rule table (docs/provenance-plan.md, Josh's rulings 2026-09-30 Q4/Q6/Q9):
+// editNotes = pencil/track edits allowed; bakeTempo/bakeMeter = a tempo:/
+// timesig: annotation writes into the published .mid; writesMid = Publish
+// ever puts bytes at this key's .mid path at all (false for capture/
+// starter: their .mid is written once, at capture commit, never again).
+// composition/copy/import are identical today — Josh's "your copy is
+// yours" alternative for captures was NOT taken; captures/starters stay
+// locked and get "✎ Make it mine" instead (the addendum, below).
+const RULES = {
+  composition: {editNotes: true, bakeTempo: true, bakeMeter: true, writesMid: true},
+  copy: {editNotes: true, bakeTempo: true, bakeMeter: true, writesMid: true},
+  import: {editNotes: true, bakeTempo: true, bakeMeter: true, writesMid: true},
+  capture: {editNotes: false, bakeTempo: false, bakeMeter: false, writesMid: false},
+  starter: {editNotes: false, bakeTempo: false, bakeMeter: false, writesMid: false},
+};
+function rulesFor(key) { return RULES[originOf(key)]; }
+// ONE editable test (P1): every "is this song mine to edit" check calls
+// this now — it used to be three copies (updateEditBtnVis, editableSong,
+// askContext) that disagreed on link mode and compare-repo mode (Bugs
+// found, docs/provenance-plan.md).
+function canEditMusic(key) {
+  if (!key) return true; // songKey === null: nothing saved yet, always editable
+  if (key.startsWith("local/")) return true; // never published; this device's only copy — same as isLocalDraft(), no draft-exists gate (it's the only copy there IS)
+  return localStorage.getItem(draftStoreKey(key)) !== null && rulesFor(key).editNotes;
+}
+function bakesMeter(key) { // Q9: a declared meter bakes wherever tempo bakes — same domain as bakesTempo
+  return !!key && (key.startsWith("local/") || ownFolderPath(key)) && localStorage.getItem(draftStoreKey(key)) !== null && rulesFor(key).bakeMeter;
 }
 // The two albums the app itself named; every other folder is titled by its
 // last segment (album.json can override on the repo side)
@@ -15224,7 +15499,7 @@ function draftTracks(tracks) { // the notes as a draft stores them (and as the p
 // SAME (un-baked) convention on both sides of its own comparison, so this
 // stayed safe to widen to include tempo (docs/provenance-plan.md P2: a
 // tempo-only edit must republish the .mid, which needs tempo IN the sig).
-function musicSig(d) { return JSON.stringify([d.ppq, d.tracks, d.tempos]); }
+function musicSig(d) { return JSON.stringify([d.ppq, d.tracks, d.tempos, d.timesigs]); } // d.timesigs: Q9's baked meter (docs/provenance-plan.md) — undefined on anything that doesn't bake one, so this widens musicSig exactly the way adding tempos did (Bugs found): a meter-only change now republishes the .mid too
 // A draft from before the fingerprint: read the published .mid once and let
 // "edited" follow the comparison — "edited" means "differs from what is
 // published". Not when the repo is NEWER than the draft's base (that is the
@@ -15497,8 +15772,15 @@ function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key) + one 
   // trips the distinction; s.timesig/s.keysig are ignored entirely in this
   // branch. No source: byte-identical to before (every capture, every
   // composition made here — nothing invented, Learning mode is the law).
+  // s.timesigs (plural, docs/provenance-plan.md Q9): publishSong's own baked
+  // meter — present only on an import (source present) whose origin bakes
+  // meter, i.e. only when HE declared one. It overrides s.source.timesigs
+  // (the file's own verbatim history) for what's actually WRITTEN, same as
+  // a tempo: annotation already overrides an import's own tempo map above;
+  // absent (no declaration), s.source.timesigs is written verbatim — Q6.
   if (s.source) {
-    for (const ts of s.source.timesigs || []) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 0x04, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
+    const timesigs = s.timesigs && s.timesigs.length ? s.timesigs : (s.source.timesigs || []);
+    for (const ts of timesigs) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 0x04, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
     for (const ks of s.source.keysigs || []) metaEvs.push({t: ks.tick, o: 2, d: [0xFF, 0x59, 0x02, ks.sf & 255, ks.minor ? 1 : 0]});
     metaEvs.push({t: 0, o: -1, d: textMeta(0x01, "source:file")});
     for (const mt of s.source.metas || []) {
@@ -15622,6 +15904,14 @@ function forkCurrentSong(name, folder) { // Save As: a copy in the folder you ch
     text: "forked from " + origin, added: true}));
   finalizeNotes();
   saveLocalNotes();
+  // Bug found (docs/provenance-plan.md, while building "Make it mine"): a
+  // freshly forked key has no draft yet and isn't local/ either, so
+  // saveDraft()'s own isComposition() gate silently no-ops on this very
+  // first save — the fork would never actually become editable. Same
+  // bootstrap "✎ Edit locally" (editHereNow) already needs for a published
+  // song with no local copy; draftDoc(false) — not (true) — since this
+  // fork has no published counterpart at its new path to call itself clean.
+  draftWrite(key, draftDoc(false));
   saveDraft();
   updateSongBtn();
   draw();
@@ -15878,8 +16168,11 @@ document.getElementById("filesheetbtn").addEventListener("click", e => {
     document.getElementById("filerename").textContent =
       t ? "Rename “" + (t.length > 18 ? t.slice(0, 17) + "…" : t) + "”…" : "Rename…";
   }
-  fileStatus(song && isUnsaved(songKey) ? "not saved yet — Save names it and picks its folder"
-             : isComposition() ? "your song — editable" : "read-only here — Save As makes an editable copy in a folder of yours");
+  { const origin = song && songKey ? originOf(songKey) : null;
+    fileStatus(song && isUnsaved(songKey) ? "not saved yet — Save names it and picks its folder"
+               : isComposition() ? "your song — editable"
+               : (origin === "capture" || origin === "starter") ? "read-only here — ✎ Make it mine (or Save As…) makes an editable copy"
+               : "read-only here — Save As makes an editable copy in a folder of yours"); }
   const r = e.currentTarget.getBoundingClientRect();
   filesheet.style.left = Math.max(6, r.left) + "px";
   filesheet.style.top = (r.bottom + 4) + "px";
@@ -16543,6 +16836,34 @@ function editHereNow() {
   updateSongBtn();
   setInfo("editing your copy on this device — Publish sends it");
 }
+document.getElementById("makeitminebtn").addEventListener("click", () => makeItMine());
+// "Overworld" -> "Overworld 2", "Overworld 3"… on a name clash in the target
+// folder — Make it mine is one tap with no name prompt to catch it first,
+// unlike Save As (Josh's ruling, docs/provenance-plan.md addendum).
+function forkClashTitle(folder, title) {
+  const dir = "albums/" + folder + "/";
+  const taken = new Set([...publishedPaths(), ...draftKeys()]
+    .filter(p => p.startsWith(dir))
+    .map(p => p.slice(dir.length).replace(/\.midi?$/i, "")));
+  let n = 1, slug = slugify(title);
+  while (taken.has(slug)) { n++; slug = slugify(title + " " + n); }
+  return n === 1 ? title : title + " " + n;
+}
+// "✎ Make it mine" (Q4, docs/provenance-plan.md addendum, "your copy is
+// yours"): the ONE tap that forks a capture or starter, replacing the
+// generic "read-only here — Save As…" message those used to get with no
+// quick affordance of their own. No form: forkCurrentSong(title, folder)
+// straight to the last folder used (or my-covers/ the first time), same
+// as Save As under the hood — the capture/starter itself is never touched.
+function makeItMine() {
+  if (!song || !songKey) return;
+  const origin = originOf(songKey);
+  if (origin !== "capture" && origin !== "starter") return; // everything else already has Edit locally/Save As
+  const folder = localStorage.getItem("ff1roll-lastfolder") || "my-covers";
+  const title = forkClashTitle(folder, songTitleOf(songKey));
+  forkCurrentSong(title, folder);
+  setInfo("made your own copy — \"" + title + "\" in " + folderTitle(folder) + " — fully editable; Publish sends it.");
+}
 document.getElementById("filesavelocal").addEventListener("click", () => { if (song && isUnsaved(songKey)) { openSaveForm("save"); return; } closeFileMenus(); saveVersion(); });
 function dropLocalSong(key) { // Revert to repo copy's discard: the current state is saved as a version first ("Before going back"), so nothing is lost
   pushVersion(key, "Before going back"); // migrates any pre-versions checkpoint/stash too; a no-op when there's nothing local yet
@@ -16984,7 +17305,7 @@ const CHIPS = {
         },
         lead: () => 0, // the capture's MIDI keeps the score's own rests: song time zero is tick 0
         render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
-        renderRate: 44100,
+        renderRate: 44100, stereo: true, // renderSpu always returns {l, r} per track (tools/psx/spu-render.mjs)
         parseAsync: M => async (bytes, name) => { const psf = M.parsePSF(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
         capture: async (M, parsed, secs, onProgress, sess) => {
           const inflate = psfInflater(); // no browser inflater (the vm tests): loadPSFChain falls back to node:zlib
@@ -17047,6 +17368,7 @@ const CHIPS = {
         // vabVoices() branch needs nothing else.
         render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds}),
         renderRate: 48000, // PSF2's own native rate (PSF1/PS1's is 44100 — docs/plans/ps2.md §3)
+        stereo: true, // the same renderSpu as PS1 (FFX "Challenge" reproduced here — 30 tracks, 163 s, 1.88 GB at this rate)
         parseAsync: M => async (bytes, name) => { const psf = M.parsePSF2(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
         capture: async (M, parsed, secs, onProgress, sess) => {
           const inflate = psfInflater(); // ps2/psf2.mjs's own default (node:zlib) covers the vm tests when this is null
@@ -17086,6 +17408,7 @@ const CHIPS = {
         lead: () => 0,
         render: (M, res, o) => M.renderN64(res.result, {set: res.set, banks: res.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds, meter: {tsNum: 4, tsDen: 4}}),
         renderRate: 32000, // the console's own output rate
+        stereo: true, // n64/render.mjs always returns {l, r} per track (the GoldenEye crash this file already documents, chipPcmToBuffers below)
         parseAsync: M => async (bytes, name) => { const u = M.parseUSF(bytes); const t = u.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {usf: u, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: u.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
         capture: async (M, parsed, secs, onProgress, sess) => {
           const libs = Object.values(sess && sess.libs || {}); // the lib objects persist across captures, so their parse is cached on them
@@ -17187,8 +17510,17 @@ async function chipModules(kind) {
     // froze Josh's iPad tab an hour after the async fix shipped)
     const v = "?v=" + Date.now();
     const c = CHIPS[kind];
-    const parts = await Promise.all(c.files.map(f => f.startsWith("?") ? import("./tools/" + f.slice(1) + ".mjs" + v).catch(() => ({})) : import("./tools/" + f + ".mjs" + v)));
-    const shared = await Promise.all(c.shared.map(f => import("./tools/" + f + ".mjs" + v)));
+    // WebKit's own failure ("Importing a module script failed.") names
+    // nothing — an iPad black-screen on FFX "Challenge" traced back to this
+    // (Josh, 2026-09-30) with no file to blame. Name the path in the rethrow;
+    // an optional file ("?" prefix — a renderer not shipped yet) still falls
+    // back to {} silently, same as before. A rejection here never reaches
+    // chipModules.cache[kind] below (the throw skips that assignment), so a
+    // failed import is retried fresh next time, never cached as broken.
+    const loadOne = (f, opt) => { const path = "./tools/" + (opt ? f.slice(1) : f) + ".mjs" + v;
+      return import(path).catch(err => { if (opt) return {}; throw new Error("couldn't load module tools/" + (opt ? f.slice(1) : f) + ".mjs: " + (err && err.message || err)); }); };
+    const parts = await Promise.all(c.files.map(f => loadOne(f, f.startsWith("?"))));
+    const shared = await Promise.all(c.shared.map(f => loadOne(f, false)));
     const M = Object.assign({}, ...parts, ...shared);
     for (const k of c.own) for (const part of parts) if (part[k]) M[k] = part[k];
     chipModules.cache[kind] = M;
@@ -17339,8 +17671,14 @@ async function openChipImport(kind, bytes, name, m3uList, files) {
 }
 function openNsfImport(bytes, name, m3uList) { return openChipImport("nsf", bytes, name, m3uList); }
 const impStatus = s => {
-  if (/⚠|failed|error|can't|cannot/i.test(s)) logErr(s);
+  const err = /⚠|failed|error|can't|cannot/i.test(s);
+  if (err) logErr(s);
   document.getElementById("impstatus").textContent = s;
+  const cp = document.getElementById("impstatuscopy"); // read-only status line, easy to lose on the iPad — Copy when it's an error
+  if (cp) {
+    cp.style.display = err ? "" : "none";
+    cp.onclick = ev => { ev.stopPropagation(); askCopyText(s, cp); };
+  }
 };
 // display name for a committed import: the typed title verbatim ("Dr. Wily's
 // Castle") — a bare slug just gets prettified ("airship" -> "Airship")
@@ -18028,6 +18366,15 @@ async function publishSong(key, h, report) {
       const resolved = notes.map(n => resolveNoteWith({...n}, d.ppq, ts)); // d's OWN meter — never the globally open song's
       doc = {ppq: d.ppq, timesig: d.timesig, ...(d.source ? {source: d.source} : {}),
              tempos: bakeTempos(d.tempos, resolved, d.ppq), // d.tempos is the un-baked base (draftDoc's convention) — baked fresh every publish, never accumulated, so removing a tempo: note removes its baked event
+             // Q9 (docs/provenance-plan.md): a declared meter bakes wherever
+             // tempo bakes. Base = d's OWN [num,den] as a one-event list (the
+             // file's own label, or his declared default on a fresh
+             // composition — "one meter per song" today, so that's always
+             // the whole un-baked base); bakeMeter returns it UNCHANGED when
+             // there's no timesig: note (Q6: an import's own label written
+             // back verbatim), or the declared meter's event otherwise —
+             // baked fresh every publish, never accumulated, same as tempo.
+             ...(bakesMeter(key) ? {timesigs: bakeMeter([{tick: 0, num: ts[0], den: ts[1]}], resolved)} : {}),
              tracks: d.tracks.map(tr => ({name: tr.name,
                ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
                ...(tr.offset ? {offset: tr.offset} : {}),
@@ -20633,7 +20980,7 @@ function askContext(sp, budget) { // the ONE block per request; never stored
     (appMode() === "normal" ? "\nmode: normal" : "") + "\n" + askAppState();
   const bt = barTicks(), qt = beatTicks(), ts = effTs();
   const tick = curTick();
-  const own = isComposition() || isLocalDraft() || songKey === null;
+  const own = editableSong(); // P1: was missing the link-mode/compare-repo guards editableSong() has (Bugs found, docs/provenance-plan.md) — a linked/compare-repo song now correctly tells the tutor it's locked, like everywhere else
   const tempo = song.tempos.reduce((acc, t) => (t.tick <= sp.t0 ? t : acc), song.tempos[0]);
   const L = [];
   L.push("song: " + baseName() + (songKey && songKey.startsWith("albums/") ? " (album: " + songKey.split("/")[1] + ")" : "") +

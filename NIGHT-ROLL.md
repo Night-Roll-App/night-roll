@@ -360,6 +360,70 @@ docs/provenance-plan.md for what that drift broke.
   - `isCompositionKey` mirrors `isComposition` for a closed song. The
     pending list's Open button stays as a convenience; "open it to
     commit" is gone.
+
+**Origins, RULES, "Make it mine", meter baking (2026-09-30,
+docs/provenance-plan.md P1, Josh's rulings Q4/Q6/Q9):** `originOf(key)` is
+the ONE place that classifies a song — `composition` (made in Night
+Roll) · `copy` (Save As/Move; a "forked from"/"moved from" note — Q8:
+still a plain annotation today, not a stored field, until it moves into
+a v2 header) · `import` (a MIDI file brought in; its own labels kept in
+`source`) · `capture` (game pipeline, FF1 included) · `starter` (bundled
+pieces) — built from what already exists (`isCaptureKey`, `bundledPath`,
+`ownFolderPath`, a draft's `source` field, a "forked from" note in the
+open song's rollnotes or the `ff1roll-notes-<key>` local stash), since
+nothing is stored yet (P4). `RULES[origin]` is a table of `{editNotes,
+bakeTempo, bakeMeter, writesMid}`; `rulesFor(key)` looks it up.
+`canEditMusic(key)` — `!key` (songKey === null) or a `local/` key is
+always editable; otherwise a local draft AND `rulesFor(key).editNotes`
+— is the ONE "is this mine to edit" test every such check now calls;
+`editableSong()` is `canEditMusic(songKey)` plus the link-mode/
+compare-repo guards. Before P1 there were **three copies of that test**
+that disagreed on those two guards — `updateEditBtnVis`'s own `editable`
+and `askContext`'s `own` were missing them (editableSong() had them) —
+now all three call `editableSong()`. `bakesTempo`/the new `bakesMeter`
+route through `rulesFor` too (unchanged domain: `local/` or his own
+folder, with a draft — captures/starters were never in that domain by
+construction). Annotations are a separate door, never gated on
+editability (Learning mode's law) — a capture refuses note/track edits
+but still takes any annotation.
+
+Captures and starters STAY locked (Josh took the plan's addendum, not
+his own "your copy is yours" alternative): the edit affordance they get
+instead is **"✎ Make it mine"** — a header button beside "✎ Edit
+locally" (shown when `!editableSong()` and the origin is capture/
+starter), one tap, no form: `makeItMine()` calls the same
+`forkCurrentSong(title, folder)` Save As uses, titled after the song's
+own display title and filed into `my-covers/` (or the last folder
+used) — `forkClashTitle` numbers a name clash ("Overworld" → "Overworld
+2") by checking both the published catalog and this device's drafts in
+that folder. The capture/starter itself is never touched. Bug found
+building this: `forkCurrentSong` called `saveDraft()` at the end, but
+`saveDraft`'s own `isComposition()` gate requires a draft to ALREADY
+exist — a brand-new own-folder key has none yet, so the very first fork
+silently wrote nothing; fixed with an explicit `draftWrite(key,
+draftDoc(false))` first (the same bootstrap `editHereNow` already needed
+for "✎ Edit locally"). This affects every Save As, not just Make it
+mine.
+
+Meter baking (Q9 — "a declared meter bakes wherever tempo bakes"):
+`publishSong`'s doc build adds `timesigs: bakeMeter(base, notes)` when
+`bakesMeter(key)`, `base` being the draft's own `[num, den]` as a
+one-event list (today's model allows only one `timesig:` annotation per
+song — declaring a new one re-bars). `bakeMeter` mirrors `bakeTempos`
+exactly: pure, baked fresh from the SAME base every publish, never
+accumulated — no declaration returns the base unchanged ("written back
+verbatim," Q6, for an import's own label), one declared returns one
+event at its tick. `musicSig` now includes `d.timesigs` (undefined where
+nothing bakes one), so a meter-only edit republishes the .mid, the same
+fix tempo's baking got. `writeMidi`/`writeSongMidi`'s `s.source` branch
+(an import's own verbatim 0x58/0x59 history) already ignored
+`s.timesig`/`s.timesigs` — it now checks `s.timesigs` FIRST and falls
+back to `s.source.timesigs` only when absent, so a declared meter
+overrides an import's own label the same way a `tempo:` note already
+overrides an import's own tempo map (that part of `s.source` was never
+verbatim to begin with); the non-source branch already read
+`s.timesigs` (pre-existing parity infrastructure, apparently built for
+something else — unused everywhere until now).
 Rebuilt 2026-09-25 (Josh: "there should be song sections"):
 `pendingSongs()` is the union of `dirtySongs()` (unsynced annotation
 stashes), drafts whose `dirty` is set (`draftDirtyState`: "edited" since

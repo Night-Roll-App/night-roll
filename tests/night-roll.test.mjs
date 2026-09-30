@@ -2026,6 +2026,137 @@ test("chip render: a silent render is detected; a render for a song no longer op
   assert.equal(val(`chipWorkerAvailable()`), false, "the vm has no Worker: the inline path stays"); // the browser path is verified in Chrome
 });
 
+// Memory budget (2026-09-30): FFX "Challenge" reproduced on the iPad — PS2's
+// own driver, 30 tracks, 163 s, stereo 48 kHz = 1.88 GB of Float32, killed the
+// WKWebView content process (black screen, fast reload). planChipRender is
+// pure — no render, no audio — so the real numbers from that crash are the
+// fixture: it must shrink the render to fit the iPad's budget, and leave a
+// small NES song untouched everywhere else.
+test("planChipRender: FFX Challenge (30 tracks, 163s, 48kHz stereo) fits the iPad app's budget at 24 kHz mono; a small NES song is unchanged", () => {
+  // EDITION is a `const` in the live script (a separate app instance picks
+  // the product build's edition — tools/package.mjs), so the iPad-app case
+  // goes through its OWN createApp rather than reassigning it here.
+  const appA = createApp({edition: "app"});
+  const appPlan = JSON.parse(appA.run(`JSON.stringify(planChipRender({tracks: 30, seconds: 163, sampleRate: 48000, channels: 2, budget: chipRenderBudget()}))`));
+  assert.equal(appA.run(`EDITION`), "app");
+  assert.equal(appPlan.mono, true, "mono first, per the fix's own order");
+  assert.equal(appPlan.rate, 24000, "48k mono alone (626 MB) is still over the 600 MB iPad budget; 24k mono (~469 MB) fits");
+  assert.ok(!appPlan.refuse, "fits without refusing");
+  assert.ok(appPlan.bytes <= 600_000_000, "under the iPad budget: " + appPlan.bytes);
+
+  // the same song off the iPad app (desktop/browser, ~2 GB budget): the raw
+  // 1.88 GB already fits under 2 GB, so the plan changes nothing at all —
+  // this is the case Chrome played fine (NIGHT-ROLL.md, chip.buffers verified there)
+  const webPlan = val(`planChipRender({tracks: 30, seconds: 163, sampleRate: 48000, channels: 2, budget: chipRenderBudget()})`);
+  assert.equal(webPlan.mono, false);
+  assert.equal(webPlan.rate, 48000);
+  assert.ok(webPlan.bytes <= 2_000_000_000);
+
+  // a small NES song (4 fixed mono channels, a 60s capture, 44.1 kHz): the
+  // plan must leave it alone everywhere — this is the "don't regress the
+  // common case" half of the fix
+  const nesPlan = val(`planChipRender({tracks: 4, seconds: 60, sampleRate: 44100, channels: 1, budget: chipRenderBudget()})`);
+  assert.equal(nesPlan.rate, 44100);
+  assert.equal(nesPlan.mono, false);
+  assert.ok(!nesPlan.refuse);
+  assert.ok(nesPlan.bytes < 50_000_000, "a tiny render: " + nesPlan.bytes);
+});
+
+test("planChipRender: refuses when even the floor (22050, mono) can't fit; chipStaticPan/chipDownmixStatic round-trip a constant pan", () => {
+  const tiny = val(`planChipRender({tracks: 60, seconds: 300, sampleRate: 48000, channels: 2, budget: 1000})`);
+  assert.equal(tiny.refuse, true);
+  assert.equal(tiny.rate, 22050, "still walks every step down to the floor before giving up");
+
+  // a genuinely static pan (L louder than R the whole way through, by a
+  // constant ratio): detected, and the downmix inverts back to the original
+  run(`(() => {
+    const n = 4000, pan = -0.4;
+    const gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4);
+    const l = new Float32Array(n), r = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const s = Math.sin(i * 0.05); l[i] = s * gl; r[i] = s * gr; }
+    __l = l; __r = r;
+  })()`);
+  const detected = run(`chipStaticPan(__l, __r)`);
+  assert.ok(Math.abs(detected - (-0.4)) < 0.02, "recovers the pan it was built with: " + detected);
+  run(`__mono = chipDownmixStatic(__l, __r, ${detected})`);
+  const maxErr = val(`Math.max(...Array.from(__l, (v, i) => Math.abs(v - __mono[i] * Math.cos((${detected} + 1) * Math.PI / 4))))`);
+  assert.ok(maxErr < 1e-6, "the downmix inverts exactly: L reconstructs from mono*gainL, error " + maxErr);
+
+  // pan that actually moves (a note panned hard left, the next hard right):
+  // chipStaticPan must say so by returning null, not average it away
+  run(`(() => {
+    const n = 4000;
+    const l = new Float32Array(n), r = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const s = Math.sin(i * 0.05); if (i < n / 2) { l[i] = s; r[i] = 0; } else { l[i] = 0; r[i] = s; } }
+    __l2 = l; __r2 = r;
+  })()`);
+  assert.equal(run(`chipStaticPan(__l2, __r2)`), null, "a real pan move keeps the track stereo, per the fix's own rule");
+});
+
+// The FF7-after-Challenge bug (Josh's iPad, 2026-09-30): Challenge (PS2)
+// failed to render, and every song after it — including FF7, a DIFFERENT
+// chip entirely — failed the same "Importing a module script failed" until
+// a full app restart. A failed render was leaving something behind. Own
+// createApp: this test swaps out CHIPS.nsf.run/.render/.lead to force a
+// failure and then a clean success, so it must not bleed into other tests.
+test("chip render failure cleans up completely (worker/pcm/buffers/module cache) so the NEXT song's render is unaffected", async () => {
+  const a = createApp();
+  // The vm harness has no dynamic import() (no importModuleDynamic callback
+  // on this context) — every other chip test in this file works around it
+  // the same way: import the real modules in THIS (the test file's) realm
+  // and inject them, rather than letting chipModules() try to import() for
+  // real (see "NSF import: in-app capture runs the real pipeline", above).
+  const M = {
+    ...(await import("../tools/nsf/nsf.mjs")),
+    ...(await import("../tools/nsf/notes.mjs")),
+    ...(await import("../tools/nsf/midi-write.mjs")),
+    ...(await import("../tools/nsf/apu-render.mjs")),
+  };
+  a.context.__M = M;
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};
+    songKey = "albums/nes/x/song-a.mid";
+    chip.key = null; chip.pcm = {stale: new Float32Array(4)}; chip.buffers = {stale: {}}; chip.pan = {stale: 0.2};
+    chipPreviewCache.set("stale", {buf: {}});
+    chipSource = () => Promise.resolve({bytes: new Uint8Array([1]), n: 1, secs: 1, chip: "nsf", libs: {}});
+    chipModules.cache = {nsf: __M}; // modules already "loaded" — the failure below is the RENDER, not the import
+    CHIPS.nsf.parse = () => () => ({}); // the fake src.bytes below isn't a real NSF — only .run's failure is under test here
+    CHIPS.nsf.run = () => async () => { throw new Error("forced render failure (test)"); };
+  `);
+  let threw = null;
+  try { await a.run(`chipRender()`); } catch (err) { threw = err && err.message; }
+  assert.equal(threw, "forced render failure (test)", "the failure still propagates (the caller's .catch sets chip.fail from it)");
+  assert.equal(a.run(`chip.pcm`), null, "the FAILED render's leftovers are gone too, not just kept from being added to");
+  assert.equal(a.run(`chip.buffers`), null);
+  assert.equal(a.run(`chip.pan`), null);
+  assert.equal(a.run(`chipPreviewCache.size`), 0, "stale one-note previews cleared — they're keyed by song, but the buffers they reference are gone");
+  assert.equal(a.run(`chipWorker`), null, "the next render makes a fresh worker");
+  assert.equal(a.run(`chipModules.cache.nsf`), undefined, "modules re-import next time — never cached from a run that then failed");
+
+  // a second render, same page, same chip kind: succeeds cleanly — this is
+  // the actual regression (FF7 failing AFTER Challenge, not in isolation).
+  // chipModules.cache re-populates here standing in for the real import()
+  // the browser would redo (the vm can't); CHIPS.nsf.run/.render/.lead are
+  // swapped the same way to avoid needing a real playable NSF fixture.
+  a.run(`
+    chipModules.cache = {nsf: __M};
+    CHIPS.nsf.run = () => async (parsed, n, secs, onProgress) => { onProgress(1); return {apuLog: [], frames: 1, frameSec: 1}; };
+    CHIPS.nsf.render = (M, res, o) => ({pulse1: new Float32Array(10).fill(0.5), sampleRate: o.sampleRate});
+    CHIPS.nsf.lead = () => 0;
+    songKey = "albums/nes/x/song-b.mid";
+  `);
+  const ok = await a.run(`chipRender()`);
+  assert.equal(ok, true, "the next song renders fine — nothing from the failed one was left pinned");
+  assert.equal(a.run(`chip.key`), "albums/nes/x/song-b.mid");
+  // chip.buffers stays null here — this vm has no global AudioBuffer
+  // constructor (chipPcmToBuffers no-ops; chipBuffers() builds lazily from
+  // chip.pcm in the real play() tap instead, same as the "a note preview
+  // sounds on a chip song" test above stubs it manually) — chip.pcm is the
+  // real proof this render's output landed
+  assert.equal(a.run(`chip.pcm.pulse1.length`), 10, "this render's PCM is what's kept, not the failed one's");
+  assert.ok(a.run(`!!chipModules.cache.nsf`), "modules re-imported successfully for the next render");
+});
+
 test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore them; a full localStorage never throws out of saveDraft", async () => {
   // the vm has no indexedDB: stand one in, and fake the store the helpers use
   run(`globalThis.indexedDB = {}; __idb = {};
@@ -2293,7 +2424,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Snap while recording", "Quantize (Q)", "Also quantize note ends", "Recording keeps what you played",
     "A MIDI keyboard works on the iPad app too",
     "Mixer window", "Drag a strip by its name",
-    "Text size",
+    "Text size", "Make it mine",
     "Analyze ▸",
     "VoiceOver",
   ];
@@ -7220,6 +7351,139 @@ test("Publish: removing a baked tempo note removes it on republish — the base 
   await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
   const withoutTempo = a.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...(await folderBytes(a, KEY))])}).buffer, {trust: true}).tempos)`);
   assert.deepEqual(JSON.parse(withoutTempo).map(t => t.usq), [500000], "back to the base tempo — the baked event is GONE, not just un-refreshed");
+});
+
+// ---- P1: origins, RULES, "Make it mine", meter baking (docs/provenance-plan.md) ----
+test("originOf: one of composition|copy|import|capture|starter, from what exists today", () => {
+  const a = pubApp();
+  a.run(`albumMetaCache["albums/nes/mega-man-2"] = {nsf: true};`);
+  assert.equal(a.run(`originOf("albums/nes/mega-man-2/air-man.mid")`), "capture", "album.json's nsf block");
+  assert.equal(a.run(`originOf("albums/imports/tmnt-2/x.mid")`), "capture", "the legacy pre-move imports folder");
+  assert.equal(a.run(`originOf("albums/starters/fur-elise.mid")`), "starter");
+  assert.equal(a.run(`originOf(null)`), "composition", "no key at all yet (songKey === null) — same footing as a fresh composition");
+  a.run(`localStorage.setItem(draftStoreKey("albums/compositions/nightroll/x.mid"), JSON.stringify({dirty: true, tracks: []}));`);
+  assert.equal(a.run(`originOf("albums/compositions/nightroll/x.mid")`), "composition", "own folder, a local draft, no source, no provenance note");
+  a.run(`
+    localStorage.setItem(draftStoreKey("albums/my-covers/overworld.mid"), JSON.stringify({dirty: true, tracks: []}));
+    localStorage.setItem("ff1roll-notes-albums/my-covers/overworld.mid", JSON.stringify([{b1: 1, q1: 1, text: "forked from albums/nes/mega-man-2/air-man.mid"}]));
+  `);
+  assert.equal(a.run(`originOf("albums/my-covers/overworld.mid")`), "copy", "a 'forked from' note in the local stash (Q8: still a plain annotation)");
+  a.run(`localStorage.setItem(draftStoreKey("local/brought-in.mid"), JSON.stringify({dirty: true, tracks: [], source: {timesigs: [], keysigs: []}}));`);
+  assert.equal(a.run(`originOf("local/brought-in.mid")`), "import", "a draft carrying the foreign file's own source (declared-vs-learner-spec.md)");
+});
+
+test("RULES: a capture refuses note/track edits (canEditMusic/editableSong false) but still accepts annotations", () => {
+  const a = pubApp();
+  const KEY = "albums/nes/mega-man-2/air-man.mid";
+  a.run(`
+    albumMetaCache["albums/nes/mega-man-2"] = {nsf: true};
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+            tracks: [{name: "a", notes: []}, {name: "b", notes: []}]};
+    songKey = ${JSON.stringify(KEY)};
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}];
+    editUndo = []; rollnotes = [];
+  `);
+  assert.equal(a.run(`originOf(songKey)`), "capture");
+  assert.equal(a.run(`RULES.capture.editNotes`), false);
+  assert.equal(a.run(`canEditMusic(songKey)`), false);
+  assert.equal(a.run(`editableSong()`), false);
+  assert.equal(a.run(`reorderTrack(0, 1)`), false, "a note/track edit is refused on a capture");
+  assert.deepEqual(JSON.parse(a.run(`JSON.stringify(song.tracks.map(t => t.name))`)), ["a", "b"], "order untouched");
+  // annotations are a different door, never gated on editability (Learning
+  // mode's law: annotate anything, edit only your own songs) — Q4 leaves
+  // this exactly as it was.
+  a.run(`
+    const n = resolveNote(deriveNoteTypes([{b1: 1, q1: 1, text: "just a note"}])[0]);
+    n.added = true;
+    rollnotes.push(n);
+    finalizeNotes();
+  `);
+  assert.deepEqual(JSON.parse(a.run(`JSON.stringify(rollnotes.map(n => n.text))`)), ["just a note"], "the annotation landed despite the capture being locked for notes/tracks");
+});
+
+test("makeItMine: forks a capture into my-covers/<slug>.mid with a clash suffix, leaving the capture's own files untouched", async () => {
+  const KEY = "albums/nes/mega-man-2/air-man.mid";
+  const a = pubApp();
+  useFakeFolder(a, "mim");
+  const capDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+    tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+  const capBytes = a.run(`Array.from(writeMidi(${JSON.stringify(capDoc)}))`);
+  await a.run(`folderWrite(${JSON.stringify(KEY)}, new Uint8Array(${JSON.stringify(capBytes)}))`);
+  a.run(`
+    albumMetaCache["albums/nes/mega-man-2"] = {nsf: true};
+    CATALOG = ${JSON.stringify({"Mega Man 2": [["Air Man", KEY]]})};
+    song = ${JSON.stringify(capDoc)};
+    songKey = ${JSON.stringify(KEY)};
+    currentPath = songKey;
+    trackState = [{muted: false, solo: false}];
+    rollnotes = [];
+  `);
+  assert.equal(a.run(`originOf(songKey)`), "capture");
+  a.run(`makeItMine();`);
+  assert.equal(a.run(`songKey`), "albums/my-covers/air-man.mid", "one tap, no form: my-covers/ + the capture's own display title, slugged");
+  assert.equal(a.run(`originOf(songKey)`), "copy");
+  assert.equal(a.run(`canEditMusic(songKey)`), true, "the fork is fully editable");
+
+  // forking the SAME capture again hits the name already taken in my-covers/
+  a.run(`songKey = ${JSON.stringify(KEY)}; song = ${JSON.stringify(capDoc)}; currentPath = songKey; rollnotes = [];`);
+  a.run(`makeItMine();`);
+  assert.equal(a.run(`songKey`), "albums/my-covers/air-man-2.mid", "a name clash gets a numeric suffix (\"Overworld\" -> \"Overworld 2\")");
+
+  const capAfter = await folderBytes(a, KEY);
+  assert.deepEqual([...capAfter], [...capBytes.map(Number)], "Make it mine never touches the capture's own .mid");
+});
+
+test("Publish: a declared meter bakes into a composition's .mid wherever tempo bakes; a capture's own meter is untouched", async () => {
+  const KEY = "albums/compositions/nightroll/meter-test.mid";
+  const a = pubApp();
+  useFakeFolder(a, "meter");
+  openComposition(a, KEY);
+  a.run(`
+    const n = resolveNote(deriveNoteTypes([{b1: 1, q1: 1, text: "timesig: 3/4"}])[0]);
+    n.added = true;
+    rollnotes.push(n);
+    finalizeNotes(); saveLocalNotes(); saveDraft(false);
+  `);
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const mid = await folderBytes(a, KEY);
+  const ts = JSON.parse(a.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...mid])}).buffer, {trust: true}).timesig)`));
+  assert.deepEqual(ts, [3, 4], "the declared meter baked into the .mid's own time signature");
+
+  const capKey = "albums/nes/mega-man-2/meter-cap.mid";
+  const capDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+    tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+  const capBytes = a.run(`Array.from(writeMidi(${JSON.stringify(capDoc)}))`);
+  await a.run(`folderWrite(${JSON.stringify(capKey)}, new Uint8Array(${JSON.stringify(capBytes)}))`);
+  a.run(`
+    albumMetaCache["albums/nes/mega-man-2"] = {nsf: true};
+    localStorage.setItem("ff1roll-notes-" + ${JSON.stringify(capKey)}, JSON.stringify([{b1: 1, q1: 1, text: "timesig: 3/4"}]));
+  `);
+  await a.run(`publishSong(${JSON.stringify(capKey)}, ghHeaders("folder"), () => {})`);
+  const capAfter = await folderBytes(a, capKey);
+  assert.deepEqual([...capAfter], [...capBytes.map(Number)], "a capture's .mid is untouched — a meter note there is an observation, never baked");
+});
+
+test("Publish: removing a declared meter note removes its baked event on republish — recomputed fresh every time, never accumulated", async () => {
+  const KEY = "albums/compositions/nightroll/meter-ratchet.mid";
+  const a = pubApp();
+  useFakeFolder(a, "meter-ratchet");
+  openComposition(a, KEY);
+  a.run(`
+    const n = resolveNote(deriveNoteTypes([{b1: 1, q1: 1, text: "timesig: 6/8"}])[0]);
+    n.added = true;
+    rollnotes.push(n);
+    finalizeNotes(); saveLocalNotes(); saveDraft(false);
+  `);
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const withMeter = JSON.parse(a.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...(await folderBytes(a, KEY))])}).buffer, {trust: true}).timesig)`));
+  assert.deepEqual(withMeter, [6, 8], "baked while the note stands");
+
+  const anno = await folderText(a, "albums/compositions/nightroll/meter-ratchet.rollnotes.json");
+  const identity = a.run(`noteIdentity(parseRollnotes(${JSON.stringify(anno)}).find(n => n.tsdir))`);
+  a.run(`localStorage.setItem("ff1roll-tombs-" + ${JSON.stringify(KEY)}, JSON.stringify([${JSON.stringify(identity)}]));`);
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const withoutMeter = JSON.parse(a.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...(await folderBytes(a, KEY))])}).buffer, {trust: true}).timesig)`));
+  assert.deepEqual(withoutMeter, [4, 4], "back to the base meter — the baked event is gone, not just un-refreshed");
 });
 
 // ---- moveComposition through the one publish function (Josh's ruling: a

@@ -8,11 +8,64 @@
 // voice as transferables. The page keeps the old inline path as a fallback
 // for browsers without module workers.
 //
-//   postMessage({id, kind, files, shared, own, v, bytes, libs?, n, secs, rate})   libs: {name: bytes} for a set's shared library (PS1)
+//   postMessage({id, kind, files, shared, own, v, bytes, libs?, n, secs, rate, budget, title})
+//     libs: {name: bytes} for a set's shared library (PS1); budget: the memory
+//     budget in bytes (chipRenderBudget, index.html — the page knows EDITION,
+//     the worker doesn't); title: the song name, for the one-line debug note
 //   ← {id, progress}            0..1 while emulating (0–0.3) and rendering (0.3–1)
-//   ← {id, done: {pcm: {name: Float32Array}, sampleRate, leadSec}}
+//   ← {id, debug: "message"}    the budget plan changed the render (rate/mono) — logDebug it on the page
+//   ← {id, done: {pcm: {name: Float32Array}, sampleRate, leadSec, pan: {name: -1..1}}}
 //   ← {id, error: "message"}
 // Stopping a render = terminate() from the page; nothing to unwind here.
+//
+// Memory budget (2026-09-30; FFX "Challenge" reproduced on the iPad — PS2's
+// own driver, 30 tracks, 163 s, stereo 48 kHz = 1.88 GB of Float32, killed
+// the WKWebView content process). planChipRender/chipEstimateTracks/
+// chipStaticPan/chipDownmixStatic mirror index.html's copy exactly (a worker
+// can't import from the page's inline script) — keep the two in step.
+const CHIP_RATE_STEPS = [48000, 32000, 24000, 22050]; // resampled by the renderer's own sampleRate option; 22050 is the floor
+function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
+  const bytesAt = (rate, ch) => Math.ceil(tracks * ch * rate * seconds * 4);
+  let rate = sampleRate, mono = false, ch = channels;
+  let bytes = bytesAt(rate, ch);
+  if (bytes <= budget) return {rate, mono, channels: ch, bytes};
+  if (ch > 1) { mono = true; ch = 1; bytes = bytesAt(rate, ch); if (bytes <= budget) return {rate, mono, channels: ch, bytes}; }
+  for (const step of CHIP_RATE_STEPS) {
+    if (step >= rate) continue;
+    rate = step; bytes = bytesAt(rate, ch);
+    if (bytes <= budget) return {rate, mono, channels: ch, bytes};
+  }
+  return {rate, mono, channels: ch, bytes, refuse: true};
+}
+function chipEstimateTracksW(R, res) {
+  const fixed = R.channels;
+  if (fixed && fixed.length) return fixed.length;
+  const notes = res && res.result && res.result.notes;
+  if (Array.isArray(notes) && notes.length) return Math.max(1, new Set(notes.map(n => n.ch)).size);
+  return 8;
+}
+function chipStaticPan(l, r) {
+  const n = Math.min(l.length, r.length);
+  if (!n) return 0;
+  const win = 512, stride = Math.max(1, Math.floor(n / (win * 4000)));
+  const pans = [];
+  for (let start = 0; start + win <= n; start += win * stride) {
+    let el = 0, er = 0;
+    for (let i = start; i < start + win; i++) { el += l[i] * l[i]; er += r[i] * r[i]; }
+    if (el < 1e-9 && er < 1e-9) continue;
+    pans.push(Math.max(-1, Math.min(1, Math.atan2(Math.sqrt(er), Math.sqrt(el)) * 4 / Math.PI - 1)));
+  }
+  if (pans.length < 2) return 0;
+  const lo = Math.min(...pans), hi = Math.max(...pans);
+  return hi - lo > 0.08 ? null : pans.reduce((a, b) => a + b, 0) / pans.length;
+}
+function chipDownmixStatic(l, r, pan) {
+  const gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4);
+  const useL = gl >= gr, src = useL ? l : r, g = useL ? gl : gr, inv = g > 1e-6 ? 1 / g : 0;
+  const mono = new Float32Array(src.length);
+  for (let i = 0; i < src.length; i++) mono[i] = src[i] * inv;
+  return mono;
+}
 
 const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS table, minus the app
   nsf: {
@@ -44,6 +97,7 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
     lead: () => 0,
     render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
     channels: null, // per song: every Float32Array the render returns
+    stereo: true, // renderSpu always returns {l, r} per track (tools/psx/spu-render.mjs)
   },
   psf2: { // PlayStation 2: Sony's SQ/HD/BD driver through the SAME spu-render.mjs as PS1 (an HD/BD bank reshapes into
           // a VAB-shaped bank, tools/ps2/hd.mjs toBank() — no PS2-specific render code); the set's lib arrives in `libs`
@@ -63,6 +117,7 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
     lead: () => 0,
     render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds}),
     channels: null, // per song: every Float32Array the render returns
+    stereo: true, // the same renderSpu as PS1
   },
   usf: { // Nintendo 64: the game's sound bank through n64/render.mjs; the set's lib arrives in `libs`
     parse: M => (b, libs) => ({bytes: b, libs: libs || {}}),
@@ -78,6 +133,7 @@ const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS tabl
     lead: () => 0,
     render: (M, res, o) => M.renderN64(res.result, {set: res.set, banks: res.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds, meter: {tsNum: 4, tsDen: 4}}),
     channels: null,
+    stereo: true, // n64/render.mjs always returns {l, r} per track
   },
   spc: {
     parse: M => b => M.parseSPC(b),
@@ -122,21 +178,29 @@ if (typeof self !== "undefined") self.onmessage = async e => {
     } catch (err) { self.postMessage({preview: {req: q.req, pcm: null, error: String(err && err.message || err)}}); }
     return;
   }
-  const {id, kind, files, shared, own, v, bytes, libs, n, secs, rate} = e.data;
+  const {id, kind, files, shared, own, v, bytes, libs, n, secs, rate, budget, title} = e.data;
   const post = m => self.postMessage(Object.assign({id}, m));
   try {
     const R = RUNNERS[kind];
     if (!R) throw new Error("no worker runner for " + kind);
-    const parts = await Promise.all(files.map(f => f.startsWith("?") ? import("./" + f.slice(1) + ".mjs" + v).catch(() => ({})) : import("./" + f + ".mjs" + v)));
-    const sh = await Promise.all(shared.map(f => import("./" + f + ".mjs" + v)));
+    const loadOne = (f, opt) => { const path = "./" + (opt ? f.slice(1) : f) + ".mjs" + v;
+      return import(path).catch(err => { if (opt) return {}; throw new Error("couldn't load module tools/" + (opt ? f.slice(1) : f) + ".mjs: " + (err && err.message || err)); }); };
+    const parts = await Promise.all(files.map(f => loadOne(f, f.startsWith("?"))));
+    const sh = await Promise.all(shared.map(f => loadOne(f, false)));
     const M = Object.assign({}, ...parts, ...sh);
     for (const k of own) for (const p of parts) if (p[k]) M[k] = p[k];
     if (!M.renderApu && !M.renderSpu && !M.renderN64) throw new Error("no renderer for " + kind);
     const parsed = R.parse(M)(bytes, libs);
     const res = await R.run(M, parsed, n, secs, p => post({progress: p * 0.3}));
     const leadSec = R.lead(M, res);
-    const r = await R.render(M, res, {sampleRate: rate, onProgress: p => post({progress: 0.3 + p * 0.7})});
-    const pcm = {}, transfer = [];
+    // memory budget (planChipRender, above): the render's OWN sample rate/
+    // channels, decided before it allocates anything — mirrors index.html's
+    // inline path exactly (the worker can't call the page's copy)
+    const plan = planChipRender({tracks: chipEstimateTracksW(R, res), seconds: secs, sampleRate: rate, channels: R.stereo ? 2 : 1, budget: budget || 2_000_000_000});
+    if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
+    if (plan.rate !== rate || plan.mono) post({debug: (title || id) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)"});
+    const r = await R.render(M, res, {sampleRate: plan.rate, onProgress: p => post({progress: 0.3 + p * 0.7})});
+    const pcm = {}, pan = {}, transfer = [];
     const isPcm = x => x instanceof Float32Array || !!(x && x.l instanceof Float32Array && x.r instanceof Float32Array); // mono, or a stereo pair from a renderer that pans
     const names = R.channels || Object.keys(r).filter(k => isPcm(r[k]));
     for (const name of names) {
@@ -144,9 +208,13 @@ if (typeof self !== "undefined") self.onmessage = async e => {
       const parts = x.l ? [x.l, x.r] : [x];
       let live = false; for (const a of parts) { for (let i = 0; i < a.length && !live; i += 13) if (Math.abs(a[i]) > 1e-4) live = true; }
       if (!live) continue;
+      if (plan.mono && x.l && x.r) { // downmix ONLY what the budget needed to shrink, and only where the pan holds still
+        const p = chipStaticPan(x.l, x.r);
+        if (p !== null) { const mono = chipDownmixStatic(x.l, x.r, p); pcm[name] = mono; pan[name] = p; transfer.push(mono.buffer); continue; }
+      }
       pcm[name] = x; for (const a of parts) transfer.push(a.buffer);
     }
-    live = (kind === "psf" || kind === "psf2" || kind === "usf") ? {id, kind, M, R, res, rate} : null; // kept for note previews
-    post({done: {pcm, sampleRate: r.sampleRate, leadSec}}, transfer);
+    live = (kind === "psf" || kind === "psf2" || kind === "usf") ? {id, kind, M, R, res, rate: plan.rate} : null; // kept for note previews
+    post({done: {pcm, sampleRate: r.sampleRate, leadSec, pan}}, transfer);
   } catch (err) { post({error: String(err && err.message || err)}); }
 };

@@ -180,8 +180,14 @@ export function writeSongMidi(song) {
   // this branch. No source: byte-identical to before (every chip capture,
   // every composition made here — nothing invented, Learning mode is the
   // law). index.html's writeMidi is the hand-port of this same split.
+  // song.timesigs (plural, docs/provenance-plan.md Q9): publishSong's own
+  // baked meter, present only on an import whose declared meter overrides
+  // the file's own verbatim history for what's written (Q6: absent, the
+  // file's own source.timesigs writes back verbatim) — same override tempo
+  // already gets above. index.html's writeMidi mirrors this split too.
   if (song.source) {
-    for (const ts of song.source.timesigs || []) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 4, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
+    const timesigs = song.timesigs && song.timesigs.length ? song.timesigs : (song.source.timesigs || []);
+    for (const ts of timesigs) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 4, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
     for (const ks of song.source.keysigs || []) metaEvs.push({t: ks.tick, o: 2, d: [0xFF, 0x59, 2, ks.sf & 255, ks.minor ? 1 : 0]});
     metaEvs.push({t: 0, o: -1, d: textMetaEvent(0x01, "source:file")});
     for (const mt of song.source.metas || []) {
