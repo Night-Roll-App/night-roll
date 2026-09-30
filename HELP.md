@@ -335,6 +335,9 @@ Your question is saved the moment you send it, so you can close the sheet or lea
 **General chat**
 At the top of ✦ AI, **♪ this song** / **✦ Ask** / **⌨ Terminal** (only with the Claude Code bridge) pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a **Publish chat** button (Publish all includes it). The choice is remembered on this device.
 
+**New since your last message**
+On the Claude Code bridge, every message you send — ♩ this song, ✦ Ask, or ⌨ Terminal — carries what’s changed since your last one in THAT chat: any new ⚠ messages, any new status-line readouts (footer/Status window), and on ✦ Ask/⌨ Terminal (which have no song context of their own) which song is open, its view, and your cursor. You never copy an error or a status line over by hand, and a line already sent is never repeated.
+
 **Notes from the Mac**
 On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold **✉** bubble (inbox), and the **✦ AI** button shows ✉ until you open it. Notes are saved with the chat.
 

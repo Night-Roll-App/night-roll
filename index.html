@@ -1858,6 +1858,7 @@
       <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
       <dt>Slow replies</dt><dd>Your question is saved the moment you send it, so you can close the sheet or leave the app while a slow reply cooks: on the Claude Code bridge the answer keeps coming and lands when you come back (on other servers a dropped connection is reported so you can ask again). Close the sheet and keep working on the song: when the reply lands, a gold <b>✦ reply</b> badge appears in the footer, where ⚠ reports errors, and the info strip says so — tap the badge (or ✦ AI) to read it. The reply goes to the song you asked from, even if you have moved to another one.</dd>
       <dt>General chat</dt><dd>At the top of ✦ AI, <b>♪ this song</b> / <b>✦ Ask</b> / <b>⌨ Terminal</b> (only with the Claude Code bridge) pick which chat you are in. The general chat is not about any one song — the app, the project, music in general, messages for the terminal — so it carries no song context, cannot add annotations, and keeps its own memory on the bridge. Its log is a repo-level file (ask/general.ask.md) that the PUBLISH sheet ships with a <b>Publish chat</b> button (Publish all includes it). The choice is remembered on this device.</dd>
+      <dt>New since your last message</dt><dd>On the Claude Code bridge, every message you send — ♩ this song, ✦ Ask, or ⌨ Terminal — carries what’s changed since your last one in THAT chat: any new ⚠ messages, any new status-line readouts (footer/Status window), and on ✦ Ask/⌨ Terminal (which have no song context of their own) which song is open, its view, and your cursor. You never copy an error or a status line over by hand, and a line already sent is never repeated.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, a small chip at the top right always says what the terminal's Claude Code is doing — <b>Claude: working: …</b> or <b>Claude: idle</b> — refreshed every 10 seconds; tap it for the last ten steps with their times and the latest commits. The same line sits at the top of every ✦ AI tab and in ⏳ Jobs. Without the bridge (LM Studio, no AI) none of it appears.</dd>
       <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a <code>(screenshot: …)</code> line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.</dd>
@@ -6497,21 +6498,32 @@ if (typeof document !== "undefined" && document.getElementById("jobsbtn")) {
 // rebuilds) — kept, but shown and counted only with Settings → Debug log on.
 // A line identical to the one before it is counted (×N), not repeated.
 const appDebug = [];
+// log line ids (2026-09-30, bridge context block): a plain incrementing
+// counter, NOT the sort-by-time position — a repeat bumps `t` on the SAME
+// entry (below) without a new id, so "new since cursor X" (askSeenGet/
+// askNewSinceLines) can filter by id even when a repeat's timestamp would
+// otherwise reorder it past the cursor.
+let logSeq = 0;
 function debugLogOn() { try { return localStorage.getItem("ff1roll-debuglog") === "1"; } catch (err) { return false; } }
 function logPush(list, msg) {
   const last = list[list.length - 1], m = String(msg);
   if (last && last.msg === m) { last.n = (last.n || 1) + 1; last.t = new Date(); }
-  else { list.push({t: new Date(), msg: m}); if (list.length > 200) list.shift(); }
+  // mode: normal-mode-only content (a key/chord/meter estimate) must never
+  // leak into a Learning-mode bridge context (CLAUDE.md hard rule) — tagged
+  // at push time so askNewSinceLines can drop it, whatever the text says
+  else { list.push({id: ++logSeq, t: new Date(), msg: m, mode: appMode()}); if (list.length > 200) list.shift(); }
 }
 function logLines() { // what the ⚠ sheet and chip show: errors, plus debug lines when the switch is on, in time order
   const all = debugLogOn() ? [...appErrors, ...appDebug.map(x => ({...x, debug: true}))] : [...appErrors];
   return all.sort((a, b) => a.t - b.t);
 }
-function errChip() {
+function errChip() { // the number shown is UNREAD (new since the last chat message sent to a bridge backend, any chat — askSeenMax); Mark-as-read, 2026-09-30
   const b = document.getElementById("errbtn");
   if (!b) return;
-  const n = logLines().length;
-  b.style.display = n ? "" : "none";
+  const lines = logLines();
+  const max = askSeenMax().err;
+  const n = lines.filter(l => l.id > max).length;
+  b.style.display = lines.length ? "" : "none";
   b.textContent = "⚠ " + n;
 }
 function logErr(msg) { logPush(appErrors, msg); errChip(); }
@@ -6523,11 +6535,21 @@ window.addEventListener("unhandledrejection", e =>
   logErr("unhandled: " + (e.reason && e.reason.message || e.reason)));
 document.getElementById("errbtn").addEventListener("click", () => {
   const lines = logLines();
-  document.getElementById("errlist").textContent = lines.length ? lines.reverse().map(logLine).join("\n\n") : "No messages.";
+  const max = askSeenMax().err; // Mark-as-read (2026-09-30): grey out lines already included in a "New since…" bridge context block, in ANY chat
+  const list = document.getElementById("errlist");
+  list.innerHTML = "";
+  if (!lines.length) list.textContent = "No messages.";
+  else for (const x of lines.slice().reverse()) {
+    const d = document.createElement("div");
+    d.style.marginBottom = "0.6em";
+    d.textContent = logLine(x);
+    if (x.id <= max) d.style.color = "var(--dim)";
+    list.appendChild(d);
+  }
   document.getElementById("errsheet").classList.add("on");
 });
-document.getElementById("errcopy").addEventListener("click", async () => { // the whole log, newest first, for pasting to Claude (Josh, 2026-09-27)
-  const text = document.getElementById("errlist").textContent;
+document.getElementById("errcopy").addEventListener("click", async () => { // the whole log, newest first, for pasting to Claude (Josh, 2026-09-27) — built from the data, not the rendered DOM (errlist is now one div per line, so its own textContent runs the lines together)
+  const text = logLines().slice().reverse().map(logLine).join("\n\n") || "No messages.";
   const b = document.getElementById("errcopy");
   try { await navigator.clipboard.writeText(text); b.textContent = "Copied ✓"; }
   catch (err) { b.textContent = "⚠ couldn't copy"; }
@@ -6557,8 +6579,21 @@ function srAnnounce(text) {
   if (elapsed >= 250) { if (srTimer) { clearTimeout(srTimer); srTimer = null; } emit(); }
   else { if (srTimer) clearTimeout(srTimer); srTimer = setTimeout(emit, 250 - elapsed); }
 }
+// Status history (2026-09-30, bridge context block — Josh: every message to
+// the Mac should carry what changed since his last one): setInfo kept no
+// history before this, just the current line (infoFull) the strip and
+// #infosheet showed. A small capped ring buffer, ids like appErrors/appDebug
+// so askNewSinceLines can filter "new since a chat's cursor" the same way.
+const STATUS_HISTORY_CAP = 50;
+let statusHistory = []; // {id, t (Date.now()), text, mode} oldest first
+let statusSeq = 0;
 function setInfo(s, copyText) {
   if (/⚠|failed|error|can't|cannot|unavailable/i.test(s)) logErr(s); // warnings survive being overwritten
+  // mode tagged at push time, same reason as logPush above: a Normal-mode
+  // status line (a chord/key name the selection strip shows) must never
+  // surface in a Learning-mode bridge context later in the same session
+  statusHistory.push({id: ++statusSeq, t: Date.now(), text: s, mode: appMode()});
+  if (statusHistory.length > STATUS_HISTORY_CAP) statusHistory.shift();
   const el = document.getElementById("noteinfo");
   el.textContent = s;
   srAnnounce(s);
@@ -11506,6 +11541,16 @@ function songTitleOf(path) {
   } catch (err) { /* corrupt draft */ }
   return titleCaseSlug(base);
 }
+// Published or Local, meaning what Open's two sections mean: a copy on this
+// device is Local, even of a published song (Josh, 2026-09-29). Shared by
+// updateSongBtn's breadcrumb below and askOpenSongLine (the bridge context
+// block's compact song summary for the general/Terminal tabs, which have no
+// other song context) — one wording, never duplicated (Josh, 2026-09-30).
+function songWhereLabel(path) {
+  const group = Object.entries(CATALOG).find(([, songs]) => songs.some(([, p]) => p === path));
+  const local = localStorage.getItem("ff1roll-draft-" + path) !== null;
+  return (LINK_SONGS ? "🔗 " + linkRepoLabel(LINK_SONGS) + " › " : "") + (local || !group ? "Local" : "Published");
+}
 function updateSongBtn() { // breadcrumb: Album › Title, with the real path dimmed after
   songtitleEl.innerHTML = "";
   setDocTitle(currentPath ? songTitleOf(currentPath) : null);
@@ -11513,12 +11558,10 @@ function updateSongBtn() { // breadcrumb: Album › Title, with the real path di
   const group = Object.entries(CATALOG).find(([, songs]) => songs.some(([, p]) => p === currentPath));
   const local = localStorage.getItem("ff1roll-draft-" + currentPath) !== null;
   const folder = group ? group[0] : local ? folderTitle(folderOf(currentPath)) : null;
-  // Published or Local first, meaning what Open's two sections mean: a copy
-  // on this device is Local, even of a published song (Josh, 2026-09-29)
   const where = document.createElement("span");
   where.className = "crumbwhere";
   where.style.color = "var(--dim)";
-  where.textContent = (LINK_SONGS ? "🔗 " + linkRepoLabel(LINK_SONGS) + " › " : "") + (local || !group ? "Local" : "Published") + "\u00a0›\u00a0"; // nbsp: a flex item drops its edge spaces
+  where.textContent = songWhereLabel(currentPath) + "\u00a0›\u00a0"; // nbsp: a flex item drops its edge spaces
   songtitleEl.appendChild(where);
   if (folder) {
     const crumb = document.createElement("span");
@@ -20974,10 +21017,56 @@ function askKeyStateLine() {
   return est ? "key state: estimated " + est.name + " (Krumhansl, confidence " + (Math.round(est.conf * 100) / 100) + ")"
              : "key state: undetermined — not enough notes yet to estimate";
 }
+function askViewCursorLine(bt, qt, tick) { // shared by the song chat's own line (below) and askOpenSongLine (general/Terminal's compact summary) — one wording, never duplicated
+  return "view: " + viewMode + (playing ? ", playing" : ", paused") + (playRate !== 1 ? " at " + Math.round(playRate * 100) + "% speed" : "") +
+         "; cursor: bar " + (Math.floor(tick / bt) + 1) + " beat " + (Math.round(((tick % bt) / qt + 1) * 100) / 100);
+}
+// General/Terminal chats carry no per-song context of their own (askGeneral's
+// branch below says so explicitly) — but a song may still be open behind
+// them, and Josh never wants to have to say which one or copy its facts over
+// (2026-09-30). Compact on purpose: title, path, published/local, view,
+// cursor — not the meter/annotations/notes bulk the song chat's own context
+// already carries.
+function askOpenSongLine() {
+  if (!songKey || !song) return null;
+  return "open song: " + songTitleOf(songKey) + " (" + songKey + ", " + songWhereLabel(songKey) + ") — " + askViewCursorLine(barTicks(), beatTicks(), curTick());
+}
+// "New since your last message:" (2026-09-30, Josh via the iPad Ask — every
+// bridge message should carry what changed since his last one, so he never
+// has to copy/paste an error or a status line over by hand). Per-chat cursor
+// (askSeenGet/askSeenAdvance, below) so each chat only sees what's NEW to
+// IT — a line already sent in that chat never repeats. Capped and
+// oldest-first-dropped (askCapLines) to keep it cheap; omitted entirely when
+// there's nothing new, so an ordinary turn costs nothing extra.
+function askCapLines(arr, n, fmt) {
+  const shown = arr.slice(-n), older = arr.length - shown.length;
+  return shown.map(fmt).join("\n") + (older > 0 ? "\n(+" + older + " older)" : "");
+}
+function askNewSinceLines(key) {
+  const seen = askSeenGet(key);
+  // Learning is the law (CLAUDE.md): a line pushed while the device was in
+  // Normal mode (a chord/key/meter estimate the selection strip or LCD
+  // showed) must never reach a Learning-mode context, whatever it says —
+  // dropped here by its OWN tag (logPush/setInfo), not by guessing from text
+  const hideNormal = appMode() !== "normal";
+  const errs = logLines().filter(l => l.id > seen.err && (!hideNormal || l.mode !== "normal"));
+  const stats = statusHistory.filter(s => s.id > seen.status && (!hideNormal || s.mode !== "normal"));
+  const L = [];
+  if (errs.length) L.push("new ⚠ messages (" + errs.length + "):\n" + askCapLines(errs, 20, logLine));
+  if (stats.length) L.push("new status lines (" + stats.length + "):\n" + askCapLines(stats, 20, s => new Date(s.t).toLocaleTimeString() + "  " + s.text));
+  return L.length ? "New since your last message:\n" + L.join("\n") : null;
+}
 function askContext(sp, budget) { // the ONE block per request; never stored
-  if (askGeneral) return "general chat — no song attached. The user opened the general Ask: for the app, the project, music in general, or a message for the terminal; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. " +
-    (appMode() === "normal" ? "The tutor rule about answering music questions directly still holds." : "The tutor rule about the user's own discoveries still holds for music questions.") +
-    (appMode() === "normal" ? "\nmode: normal" : "") + "\n" + askAppState();
+  if (askGeneral) {
+    let s = "general chat — no song attached. The user opened the general Ask: for the app, the project, music in general, or a message for the terminal; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. " +
+      (appMode() === "normal" ? "The tutor rule about answering music questions directly still holds." : "The tutor rule about the user's own discoveries still holds for music questions.") +
+      (appMode() === "normal" ? "\nmode: normal" : "") + "\n" + askAppState();
+    const openLine = askOpenSongLine();
+    if (openLine) s += "\n" + openLine;
+    const ns = askNewSinceLines(askStoreKey());
+    if (ns) s += "\n" + ns;
+    return s;
+  }
   const bt = barTicks(), qt = beatTicks(), ts = effTs();
   const tick = curTick();
   const own = editableSong(); // P1: was missing the link-mode/compare-repo guards editableSong() has (Bugs found, docs/provenance-plan.md) — a linked/compare-repo song now correctly tells the tutor it's locked, like everywhere else
@@ -20988,8 +21077,7 @@ function askContext(sp, budget) { // the ONE block per request; never stored
   L.push("meter: " + ts[0] + "/" + ts[1] + " (beat = " + (ts[1] === 8 ? "eighth" : ts[1] === 16 ? "sixteenth" : ts[1] === 2 ? "half note" : "quarter") + "), tempo: " +
          Math.round(6e7 / tempo.usq) + " bpm, " + Math.max(1, Math.ceil(songEndTick / bt)) + " bars");
   L.push("tracks: " + song.tracks.map((t, i) => (t.name || "track " + (i + 1)) + (trackIsDrums(i) ? " (drums)" : "") + (trackAudible(i) ? "" : " (muted)")).join(", "));
-  L.push("view: " + viewMode + (playing ? ", playing" : ", paused") + (playRate !== 1 ? " at " + Math.round(playRate * 100) + "% speed" : "") +
-         "; cursor: bar " + (Math.floor(tick / bt) + 1) + " beat " + (Math.round(((tick % bt) / qt + 1) * 100) / 100));
+  L.push(askViewCursorLine(bt, qt, tick));
   L.push(askKeyStateLine());
   const modeLine = askModeLine();
   if (modeLine) L.push(modeLine);
@@ -21005,6 +21093,8 @@ function askContext(sp, budget) { // the ONE block per request; never stored
   const annoCap = budget.anno * ASK_CPT;
   L.push("the user's annotations (.rollnotes):\n" + (anno.length > annoCap ? anno.slice(0, annoCap) + "\n# (annotations cut here to fit the window)" : anno));
   L.push("notes in bars " + sp.from + "–" + sp.to + ":\n" + askSpanNotes(sp.t0, sp.t1, budget.span * ASK_CPT));
+  const ns = askNewSinceLines(askStoreKey());
+  if (ns) L.push(ns);
   return L.join("\n");
 }
 function askBudget() { // profiles keyed to the window (tokens); LM Studio loads at 4–8k by default, WebLLM's prebuilts are 4096
@@ -21064,6 +21154,45 @@ function askModeButtons() {
   if (typeof askStatusRender === "function") askStatusRender(); // the "Now:" strip shows only in general mode
 }
 function askStoreKey() { return askTerminal ? ASK_TERMINAL_KEY : askGeneral ? ASK_GENERAL_KEY : "ff1roll-ask-" + (songKey || "local"); }
+// ---- seen-cursor for the "New since your last message:" bridge context
+// (2026-09-30). Per chat (song key / general / terminal — askStoreKey()
+// already tells them apart, so its value doubles as the cursor's own key),
+// "seen up to id" for both logs. Device-local localStorage is right: it's UI
+// state (what THIS device has already told the bridge), not song state.
+function askSeenKey(key) { return (key || askStoreKey()) + "-seen"; }
+function askSeenGet(key) {
+  try {
+    const j = JSON.parse(localStorage.getItem(askSeenKey(key)) || "null");
+    if (j && typeof j === "object") return {err: j.err || 0, status: j.status || 0};
+  } catch (err) { /* corrupt: nothing seen yet */ }
+  return {err: 0, status: 0};
+}
+function askMaxErrId() { let m = 0; for (const l of appErrors) if (l.id > m) m = l.id; for (const l of appDebug) if (l.id > m) m = l.id; return m; }
+function askMaxStatusId() { return statusHistory.length ? statusHistory[statusHistory.length - 1].id : 0; }
+// Mark-as-read watermark (2026-09-30): the HIGH-WATER MARK across every
+// chat's own cursor — once a line has gone out in ANY chat's context block,
+// it's "already sent" for the app's own ⚠ badge/sheet and Status window too
+// (errChip, the #errsheet render, and #infosheet would use this), never only
+// the chat Josh happens to have open.
+function askSeenMaxKey() { return "ff1roll-ask-seen-max"; }
+function askSeenMax() {
+  try {
+    const j = JSON.parse(localStorage.getItem(askSeenMaxKey()) || "null");
+    if (j && typeof j === "object") return {err: j.err || 0, status: j.status || 0};
+  } catch (err) { /* corrupt: nothing marked read yet */ }
+  return {err: 0, status: 0};
+}
+function askSeenSet(key, seen) {
+  try { localStorage.setItem(askSeenKey(key), JSON.stringify(seen)); } catch (err) { /* private mode */ }
+  const m = askSeenMax();
+  const next = {err: Math.max(m.err, seen.err || 0), status: Math.max(m.status, seen.status || 0)};
+  if (next.err !== m.err || next.status !== m.status) try { localStorage.setItem(askSeenMaxKey(), JSON.stringify(next)); } catch (err) { /* private mode */ }
+}
+// Called once a message has actually gone out (askSend/askTerminalSend) —
+// never from askContext itself (askResume rebuilds context for a tool-call
+// round on the SAME question; that must not advance the cursor, or its own
+// new-since block would eat itself).
+function askSeenAdvance(key) { askSeenSet(key, {err: askMaxErrId(), status: askMaxStatusId()}); }
 // The chat is his session record (Josh, 2026-09-25): it lives here whole
 // until the song's Save appends it to <song>.ask.md, and only messages the
 // repo file already holds ever leave this device. `saved` counts those from
@@ -21785,16 +21914,31 @@ for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builde
   catch (err) { askstatus.textContent = "⚠ couldn't reach the bridge: " + err.message; }
 });
 let askTerminalFast = 0, askTerminalTimer = null;
+// The Terminal tab has no model call of its own (no askContext/askBuildMessages)
+// — this is its ONLY context builder. Same two pieces as the general chat's
+// "New since your last message:" addendum, minus the music-tutor framing
+// text, which doesn't apply here (Josh, 2026-09-30).
+function askTerminalContext() {
+  const parts = [];
+  const openLine = askOpenSongLine();
+  if (openLine) parts.push(openLine);
+  const ns = askNewSinceLines(ASK_TERMINAL_KEY);
+  if (ns) parts.push(ns);
+  return parts.length ? parts.join("\n") : null;
+}
 async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac's Claude Code; the reply comes back as a note
   const key = ASK_TERMINAL_KEY, msgs = askStore(key).msgs;
-  msgs.push({role: "user", content: text, t: Date.now()});
+  const ctx = askTerminalContext(); // built BEFORE the cursor advances, so it still sees everything new
+  const bodyText = ctx ? "<context>\n" + ctx + "\n</context>\n\n" + text : text;
+  askSeenAdvance(key);
+  msgs.push({role: "user", content: text, t: Date.now()}); // stored/shown WITHOUT the context block, like every other chat (askStripContext strips it back out of history elsewhere; the terminal's own store never carries it at all)
   askSave(msgs, undefined, key);
   askMicOff(); // a live 🎤 writes its transcript back after we clear the box (Josh, 2026-09-30: the text stayed after Send)
   askinput.value = ""; askShotSet(null); askDraftClear(); askGrow(); askComposing(false);
   askBubble("user", askClock(Date.now()) + text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
   askstatus.textContent = "sending to the terminal…";
   try {
-    const r = await fetch(aiUrl() + "/v1/terminal", {method: "POST", headers: aiHeaders(), body: JSON.stringify({text})});
+    const r = await fetch(aiUrl() + "/v1/terminal", {method: "POST", headers: aiHeaders(), body: JSON.stringify({text: bodyText})});
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status);
     askstatus.textContent = j.now && j.now.text ? "sent — the terminal is working: " + j.now.text : "sent — the terminal will answer here";
@@ -21821,6 +21965,7 @@ async function askSend() {
   const budget = askBudget();
   const msgs = askLoad();
   const ctx = askContext(sp, budget);
+  askSeenAdvance(askStoreKey()); // "New since your last message:" cursor — never inside askContext itself, which askResume also calls to rebuild the SAME question's context mid-tool-round
   const messages = askBuildMessages(msgs, text, ctx, budget);
   const jobId = askJobId();
   msgs.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp), pending: jobId}); // saved NOW: closing the sheet or leaving the app cannot lose it

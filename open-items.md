@@ -547,14 +547,26 @@ of the playhead, mix non-soloed tracks to one stereo bus, keep per-track
 buffers only for tracks being muted/soloed, free behind the playhead. Whole-
 song all-tracks buffers (1.9 GB for FFX Challenge) become the exception
 ("freeze"). Report peak memory before/after.
-NEXT (Josh via Ask, 2026-09-30 17:19): every message to a Claude bridge
-backend (song/Ask tabs AND the ⌨ Terminal tab) carries a context block so he
-never copies/pastes: the open song (title, path, published/local, view,
-cursor bar.beat, playing/paused); NEW ⚠ errors (+ [debug] when Debug log is
-on) and NEW setInfo status lines since his last message, labelled "new since
-your last message". A per-chat "seen up to id" cursor marks them read: the ⚠
-badge and Status count reset to 0, lines go grey, history stays readable.
-Starts when the P1 or chip-memory builder frees index.html.
+DONE (Josh via Ask, 2026-09-30 17:19, shipped 2026-09-30): every message to a
+Claude bridge backend (♪ song, ✦ Ask, ⌨ Terminal) carries a "New since your
+last message:" block so he never copies/pastes: NEW ⚠ errors (+ [debug] when
+Debug log is on) and NEW setInfo status lines since his last message in THAT
+chat, each capped at 20 lines/"(+N older)"; ✦ Ask/⌨ Terminal (no song context
+of their own) also get a compact open-song line (title, path, published/
+local, view, cursor bar.beat, playing/paused) reusing the song chat's own
+wording. Per-chat "seen up to id" cursor (askSeenKey/askSeenAdvance,
+localStorage, device-local) advances right after a send. Mark-as-read: a
+cross-chat watermark (askSeenMax) drives the ⚠ badge (now shows UNREAD, not
+total) and greys already-sent lines in the ⚠ Messages sheet. Learning mode is
+the law: every logged line is tagged with the mode active when it was pushed,
+and a Learning-mode build drops anything tagged Normal, whatever it says —
+tested (mode-switch mid-session). askContext/askTerminalContext,
+NIGHT-ROLL.md, help sheet, 6 new tests ("P7 bridge context" in
+tests/night-roll.test.mjs). QUEUED, not done here: the Status window
+(#infosheet) still shows only the current message (no history/grey/unread
+count) — its 2026-09-29 test pins tapping it to reveal infoFull byte-for-byte,
+and giving it the same treatment as the ⚠ sheet needs that contract
+renegotiated first.
 
 1. DONE: window manager phase B (drag-to-dock, tabs, Status not
    dockable, near-full divider). Josh (via Ask, 20:52): "really happy

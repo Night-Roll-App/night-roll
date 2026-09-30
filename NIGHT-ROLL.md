@@ -3000,6 +3000,58 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     still ships the SONG's chat even while the general tab is showing
     (`askCommitLog` picks the song key unless given the general one).
     Test: the general-chat block in the "Ask: history is whole…" test.
+  - **"New since your last message:" bridge context (2026-09-30, Josh via
+    the iPad Ask)** — every message to a Claude bridge backend (♪ song,
+    ✦ general, ⌨ Terminal) carries what changed since Josh's last message
+    in THAT chat, so he never copies/pastes an error or a status line by
+    hand: (1) a compact **open song** line — title, path, published/local,
+    view, cursor — on ✦ general/⌨ Terminal only (♪ song's own `askContext`
+    already carries the full song); `askOpenSongLine`/`askViewCursorLine`
+    (the view+cursor wording is shared with the song chat's own context
+    line, never duplicated) and `songWhereLabel` (also shared with the
+    `#songcrumb` breadcrumb's Published/Local wording). (2) NEW `⚠`
+    messages since then (`logLines()`, so debug lines only join with
+    Settings → Debug log on, same gate as the ⚠ sheet/chip). (3) NEW
+    status lines — `setInfo` had no history before this; it now keeps a
+    capped ring buffer (`statusHistory`, last 50, `{id, t, text, mode}`).
+    `askNewSinceLines(key)` builds the "New since your last message:"
+    block (omitted entirely when nothing's new); each section caps at 20
+    lines, newest last, then `(+N older)` (`askCapLines`). Appended inside
+    `askContext` (♪ song and ✦ general both call it); the ⌨ Terminal tab
+    has no model call at all, so `askTerminalContext()` is its own
+    builder, prepended to the POSTed `/v1/terminal` text as
+    `<context>…</context>` — same wrapper as every other chat, but the
+    STORED/shown message stays the plain typed text (never the context;
+    `askStripContext` already did this for the others).
+    **Seen-cursor:** per chat (`askSeenKey` = `askStoreKey() + "-seen"` —
+    one localStorage scalar per song key / general / terminal, `{err,
+    status}` ids), advanced by `askSeenAdvance` right after the outgoing
+    context is built (`askSend`/`askTerminalSend`) — NEVER inside
+    `askContext` itself, which `askResume` also calls to rebuild the SAME
+    question's context mid-tool-round; advancing there would make a
+    line vanish before it was ever actually sent. Device-local
+    localStorage is correct here: it's UI state (what THIS device has
+    told the bridge), not song state. **Mark-as-read:** a second
+    watermark (`askSeenMaxKey`/`askSeenMax`, the high-water mark across
+    every chat's own cursor) drives the ⚠ badge (`errChip` now shows
+    UNREAD, not total) and greys out already-sent lines in the ⚠
+    Messages sheet — a line is "read" once ANY chat has sent it, not
+    only the one Josh has open. (The Status window, `#infosheet`, keeps
+    its existing single-message reveal — a 2026-09-29 test
+    (`"status line: a message with no copy action…"`) pins tapping it to
+    show `infoFull` byte-for-byte; giving it the same history/grey
+    treatment would need that contract renegotiated first — queued in
+    open-items.md, not done here.) **Learning mode is the law:** both
+    `logPush` and `setInfo` tag each new entry with `appMode()` at push
+    time; `askNewSinceLines` drops every Normal-tagged line while
+    building a Learning context, whatever the text says — a Normal-mode
+    chord/key/meter estimate shown once on this device must never
+    surface in a Learning bridge message later in the same session, even
+    after a live mode switch. Tests: the "P7 bridge context" block in
+    tests/night-roll.test.mjs (new ⚠/status returned, a send's cursor
+    advance clears them, a fresh error afterward shows alone, the
+    debug-pref gate, the mode-leak guard, the 20-line/`(+N older)` cap,
+    the open-song line, and `askTerminalContext`'s own POSTed text).
   - **Security:** binds 127.0.0.1 unless `--host`; `--token` requires
     `Authorization: Bearer` (the app's Settings key); CORS open (the app
     is a static page). TLS is someone else's job: Josh uses `tailscale

@@ -2417,7 +2417,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
+    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
     "an estimated key is named as an estimate", "Check vs file",
@@ -6102,7 +6102,16 @@ test("⌨ Terminal tab: Send queues it on the bridge; a failure gives the words 
   try {
     await run(`askSend()`);
     assert.equal(val(`__posts[0].u`), "http://bridge.test/v1/terminal");
-    assert.equal(JSON.parse(val(`__posts[0].body`)).text, "fix the footer");
+    // the posted text now carries the bridge context block (2026-09-30: every
+    // message to a bridge backend does, so Josh never copies/pastes it) —
+    // the typed words are always the tail, after it; the STORED/shown
+    // message (asserted below) stays the plain typed text, same as every
+    // other chat
+    const term0 = JSON.parse(val(`__posts[0].body`)).text;
+    assert.ok(term0.endsWith("fix the footer"), "the typed text is the tail");
+    assert.match(term0, /^<context>\n[\s\S]*\n<\/context>\n\nfix the footer$/, "wrapped like every other chat's <context> block");
+    assert.match(term0, /open song: Term \(albums\/test\/term\.mid, Local\)/, "the Terminal tab used to omit the open song; now it's here");
+    assert.match(term0, /New since your last message:/, "new ⚠\/status lines since this chat's last send");
     assert.match(val(`askstatus.textContent`), /the terminal is working: building X/);
     assert.equal(val(`askStore(ASK_TERMINAL_KEY).msgs.slice(-1)[0].content`), "fix the footer");
     run(`globalThis.fetch = async () => { throw new Error("Load failed"); }; askinput.value = "second";`);
@@ -6762,6 +6771,86 @@ test("P4: askSpanNotes (Normal) spells by the key ESTIMATE when nothing is decla
   const learn = mkAsk("learning");
   const learnTxt = learn.run(`askSpanNotes(0, barTicks())`);
   assert.match(learnTxt, /# Pitches use sharp spelling; the true key is the user's to discover — this block states no key\./);
+});
+
+// ----------------------------- P7: bridge context block — "New since your
+// last message:" (2026-09-30, Josh via the iPad Ask): every message to a
+// Claude bridge backend (song/general/Terminal) carries the open song
+// (general/Terminal only — the song chat already has its own, fuller
+// version), new ⚠/status lines since THAT chat's last send, and never a
+// Normal-mode-only line in a Learning context. askSeenAdvance is what
+// askSend/askTerminalSend call right after building the outgoing context —
+// exercised directly here, same effect as a real send.
+test("P7 bridge context: the builder returns song + new ⚠ + new status; a send's cursor-advance clears them; a fresh error after that shows alone", () => {
+  const a = mkAsk("learning");
+  a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];`);
+  a.run(`logErr("boom"); setInfo("hello status");`);
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /^song: /, "still the ordinary song context");
+  assert.match(ctx, /New since your last message:\nnew ⚠ messages \(1\):\n.*boom.*\nnew status lines \(1\):\n.*hello status/s);
+
+  a.run(`askSeenAdvance(askStoreKey())`); // what a real Send does right after building this same ctx
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.doesNotMatch(ctx, /New since your last message:/, "immediately after a send, nothing is new yet");
+
+  a.run(`logErr("fresh only")`);
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /New since your last message:\nnew ⚠ messages \(1\):\n.*fresh only/);
+  assert.doesNotMatch(ctx, /boom/, "the old (already-sent) error never repeats");
+  a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];`);
+});
+
+test("P7 bridge context: debug lines join 'new ⚠ messages' only with Settings → Debug log on, same gate as the ⚠ sheet/chip", () => {
+  const a = mkAsk("learning");
+  a.run(`localStorage.removeItem(askSeenKey()); localStorage.removeItem("ff1roll-debuglog"); appErrors.length = 0; appDebug.length = 0;`);
+  a.run(`logDebug("probe only")`);
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.doesNotMatch(ctx, /New since your last message:/, "debug line stays out with the pref off");
+  a.run(`localStorage.setItem("ff1roll-debuglog", "1")`);
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /New since your last message:\nnew ⚠ messages \(1\):\n.*\[debug\] probe only/);
+  a.run(`localStorage.removeItem("ff1roll-debuglog"); appErrors.length = 0; appDebug.length = 0;`);
+});
+
+test("P7 bridge context: Learning never surfaces a ⚠/status line pushed while the device was in Normal mode, whatever it says (CLAUDE.md hard rule — Learning mode is the law)", () => {
+  const normal = mkAsk("normal");
+  normal.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];
+              setInfo("C major"); logErr("normal-mode only error");`);
+  normal.run(`setAppMode("learning"); finalizeNotes();`); // the SAME device, switched mid-session
+  const ctx = normal.run(`askContext(askSpan(), askBudget())`);
+  assert.doesNotMatch(ctx, /C major/, "a Normal-mode status line never reaches a Learning context");
+  assert.doesNotMatch(ctx, /normal-mode only error/, "same for a Normal-mode-tagged ⚠ line");
+  assert.doesNotMatch(ctx, /New since your last message:/, "nothing left to show once the only new lines are Normal-tagged");
+});
+
+test("P7 bridge context: 'New since' caps each section at 20 lines, newest last, then '(+N older)' — a flood stays cheap", () => {
+  const a = mkAsk("learning");
+  a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];
+         for (let i = 0; i < 25; i++) logErr("err " + i);`);
+  const ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /new ⚠ messages \(25\):/);
+  assert.match(ctx, /err 24\n\(\+5 older\)/, "newest last, then the older-count line");
+  assert.doesNotMatch(ctx, /err 0\D/, "the oldest 5 were dropped");
+  assert.doesNotMatch(ctx, /err 4\D/);
+  assert.match(ctx, /err 5\D/, "the 20 kept start right after the dropped ones");
+  a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0;`);
+});
+
+test("P7 bridge context: general/Terminal get the compact 'open song' line (title, path, published/local, view, cursor) the song chat already carries in full", () => {
+  const a = mkAsk("learning");
+  const ctx = a.run(`(() => { askGeneral = true; try { return askContext({t0: 0, t1: 1920, from: 1, to: 1}, askBudget()); } finally { askGeneral = false; } })()`);
+  assert.match(ctx, /open song: Test \(midi\/test\.mid, Local\) — view: roll, paused; cursor: bar 1 beat 1/);
+});
+
+test("P7 bridge context: askTerminalContext (the Terminal tab's own builder — no model call, so no askContext) carries the open song + New-since, omitting whichever is empty", () => {
+  const a = mkAsk("learning");
+  a.run(`localStorage.removeItem(askSeenKey(ASK_TERMINAL_KEY)); appErrors.length = 0; appDebug.length = 0; statusHistory = [];`);
+  assert.equal(a.run(`askTerminalContext()`), "open song: Test (midi/test.mid, Local) — view: roll, paused; cursor: bar 1 beat 1", "nothing new yet: just the open song");
+  a.run(`logErr("term boom")`);
+  const ctx = a.run(`askTerminalContext()`);
+  assert.match(ctx, /^open song: Test/);
+  assert.match(ctx, /New since your last message:\nnew ⚠ messages \(1\):\n.*term boom/);
+  a.run(`localStorage.removeItem(askSeenKey(ASK_TERMINAL_KEY)); appErrors.length = 0; appDebug.length = 0;`);
 });
 
 // ------------------------------------------- P6: Analyze ▸ (Normal-mode VIEW layer)
