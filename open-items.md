@@ -919,8 +919,36 @@ Ranked, most annoying first (effort S/M/L):
     DAW mixer window". tests/night-roll.test.mjs: strips write track: as
     one ⟲, reorder is one ⟲ and refuses on a non-editable song, meters
     off-while-closed, View ▾/hardware key both toggle it.
-12. Fixed px fonts (iOS Text Size ignored), canvas has no VoiceOver;
-    songs loop forever at the end. L / M / S.
+12. Fixed px fonts (iOS Text Size ignored) — DONE 2026-09-30 (implemented,
+    NOT yet committed/pushed — Josh or the terminal session should review
+    and commit): every font-size in the CSS and in JS-built inline
+    styles/cssText converted px→rem (N/16), off a `:root` `--ts *
+    --userscale` multiplier on `html`'s font-size (both default 1, so
+    default renders BYTE-IDENTICAL to the old fixed px — confirmed by a
+    pixel diff, 0 changed pixels at 1366×1024 and 820×1180, well inside
+    the ≤0.1% allowance). `--ts` reads iOS Dynamic Type via
+    `-apple-system-body` (WebKit only, CSS.supports-gated — a boot script
+    right after `</style>`, before first paint); `--userscale` is a new
+    Settings → Other <b>Text size</b> device pref (Small/Default/Large/
+    Larger → 0.9/1/1.15/1.3) for a browser that doesn't carry Dynamic Type
+    through. Layout (padding, grid, canvas) untouched on purpose — only
+    text scales; a control that would clip grows via min-height instead.
+    Reviewing the Larger-setting screenshots by eye found and fixed one
+    real overlap: the header's `#songcrumb` (song title/breadcrumb) had a
+    fixed `left: 380px` calibrated to clear the File/View/✦AI button
+    cluster at default size — those buttons' TEXT grows with the buttons'
+    (fixed-padding) box, so at Larger + a narrow viewport (820px) the
+    crumb's "Published › …" overlapped "✦ AI"; `left` is now `23.75rem`
+    (the same value, scaling with the same root multiplier as the text
+    pushing on it). No other clipping/overlap found across the header,
+    footer, track chips, transport LCD, File menu, Settings (incl. the
+    new Other row), ✦ AI panel, or Mixer (its 74px-wide strip name still
+    ellipsizes a bit sooner — that's the EXISTING ellipsis mechanism on a
+    deliberately-unscaled fixed-width box, not new clipping). Canvas text
+    (ctx.font — roll/score labels, instrument panel, circle of fifths)
+    stays literal px, not part of this system yet. See NIGHT-ROLL.md
+    "Text size — iOS Dynamic Type". Canvas has no VoiceOver; songs loop
+    forever at the end — still open. M / S.
 Already matches convention (don't touch): Space play/stop; ruler-drag
 cycle; pinch per axis + two-finger pan; catch-mode playhead follow;
 unlimited undo for notes/annotations; chase on mid-song start; snap to

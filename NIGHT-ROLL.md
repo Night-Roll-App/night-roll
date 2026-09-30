@@ -4522,3 +4522,70 @@ declared/estimated/undetermined key-state line, the mode line, the lasso
 chord line, the estimate-spelled `askSpanNotes`, the general-chat
 per-mode text, and the welcome bubble's two texts. Help sheet's "House
 rules" `<dt>` (✦ AI tab) and the FEATURES drift keyword done.
+
+## Text size — iOS Dynamic Type (DAW review item 12, 2026-09-30)
+
+open-items.md "DAW CONVENTIONS REVIEW" #12: every `font-size` in the CSS
+was a fixed px, so iOS's Settings → Accessibility → Display & Text Size →
+Larger Text did nothing (Logic for iPad honours it). Goal: text scales
+with the system's text size, zero visual change at the default size.
+
+**The root scale.** `:root` carries two custom properties, `--ts` (iOS
+Dynamic Type factor) and `--userscale` (the device pref below), both
+default `1`; `html { font-size: calc(16px * var(--ts) * var(--userscale)); }`
+is the only place either is read. Every `font-size` in the stylesheet and
+in JS-built inline styles/`cssText` (row labels, chip buttons, the mixer
+strips — anywhere a node is built at runtime, not just the `<style>`
+block) is `N/16` **rem** instead of `Npx` — 16px was already the implicit
+browser default, so at `--ts: 1; --userscale: 1` every rem resolves to
+the exact px it replaced: pixel-identical at default size, by
+construction, not by testing alone. Layout — padding, the grid, the
+roll/score canvas — was deliberately left in px; only text scales, so
+nothing shifts position. A control whose text would now overflow a fixed
+height uses `min-height` instead of `height` and grows rather than clips
+(pre-existing convention here, just now load-bearing).
+
+**iOS Dynamic Type.** A `<script id="ts-boot">` right after `</style>`
+(before `<body>`, so no flash) feature-detects `CSS.supports("font",
+"-apple-system-body")` — true only in WebKit/Safari — and if so appends a
+hidden probe span with `font: -apple-system-body`, reads its computed
+`font-size`, and sets `--ts` to that value divided by 17 (the size
+`-apple-system-body` resolves to at Dynamic Type's own default, "Large"):
+1 at the OS default, above 1 when the user has turned Larger Text up.
+Clamped to `[0.8, 1.6]` — Dynamic Type's accessibility sizes run past 3×
+the default, which would break the transport LCD and track chips long
+before it helped anyone read them; the clamp is a safety net, not a
+design target, and CLAUDE.md's "let it grow" still applies within it.
+Elsewhere (desktop browsers, anything that doesn't understand the
+`-apple-system-body` keyword) `--ts` never gets set by the script, so it
+stays at the stylesheet's own default of `1` — no behavior change.
+
+**Device pref.** File → Settings → Other → **Text size** (a `<select>`:
+Small/Default/Large/Larger → 0.9/1/1.15/1.3) is the second, manual dial —
+for a browser that doesn't carry Dynamic Type through, or to go further
+than it offers. `ff1roll-textsize` in localStorage (device-local UI pref,
+not song state — CLAUDE.md); `textSizePref()`/`applyTextSize(v)` next to
+the other Settings → Other getters (`penInstant`, `recSnapOn`, …),
+`settingsPersist`'s `"cfgtextsize"` case applies it live via
+`--userscale`. The SAME boot script also reads this pref and sets
+`--userscale` before first paint (independently of `--ts` — the two
+multiply, they don't compete), so a non-default choice doesn't flash in
+at load.
+
+**Canvas text is out of scope here.** `ctx.font`/`ictx.font` (roll/score
+labels, the instrument panel, the circle of fifths — grep for `\.font =
+"…px "`) draws with literal px sizes picked per context (down to 7-8px
+for dense rows) and does not participate in `--ts`/`--userscale` yet;
+noted in the `:root` comment, not fixed. Canvas text also has no
+VoiceOver (open-items.md #12's other half) — still open.
+
+Tests: `tests/night-roll.test.mjs` asserts no `font-size:\s*\d+px`
+survives in the CSS/JS except the one documented exception (`font-size:
+0`, an icon-hiding trick where the unit doesn't matter), and that the
+`--userscale` pref multiplies the root size. Verified with one-off
+Playwright-chromium screenshot scripts (not `npx playwright test` — see
+CLAUDE.md, full E2E is CI-only) at 1366×1024 and 820×1180: default-size
+before/after screenshots of the main screen (a song open) diffed
+pixel-by-pixel — see the report for the exact match result — then the
+"Larger" (1.3×) setting reviewed by eye for clipping/overlap across the
+header, footer, track chips, transport LCD, and sheets.

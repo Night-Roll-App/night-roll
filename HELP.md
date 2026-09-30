@@ -282,6 +282,9 @@ A recording — a guitar take, a vocal, a phone memo, a DAW bounce — as a trac
 **Debug log**
 File → Settings → Other → **Debug log** shows diagnostic lines in ⚠ Messages, marked [debug]: audio wake-ups after you leave the app, engine rebuilds, audio state changes. Off, only real problems raise the ⚠ chip. A message that repeats shows once, with ×N. Turn it on when chasing a silence, so Claude can see what the audio engine measured.
 
+**Text size**
+Night Roll's own text follows your device's text size — an iPhone/iPad's Settings → Accessibility → Display & Text Size → Larger Text carries straight through (Safari's Dynamic Type), no setup needed. File → Settings → Other → **Text size** (Small/Default/Large/Larger) is a second, app-level dial for a browser that doesn't carry Dynamic Type through, or to go past what it offers — it scales the TEXT only: buttons, rows and the roll/score canvas stay the size they are, so nothing you tap moves.
+
 **⚠ Messages**
 **Copy all** puts the whole log on the clipboard for pasting to Claude. Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.
 

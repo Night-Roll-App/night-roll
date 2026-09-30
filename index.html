@@ -33,7 +33,20 @@
     --gold: #E4C36A;
     --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    /* Text-size root (DAW review item 12, 2026-09-30): every font-size in this
+       file is N/16 rem so the default render is byte-identical to the old
+       fixed px — only the ROOT size moves. --ts follows iOS Dynamic Type
+       (set by the boot script below, via -apple-system-body; WebKit only —
+       everywhere else it stays 1); --userscale is the Settings → Other
+       "Text size" device pref (Small/Default/Large/Larger, also 1 by
+       default). Layout (padding, grid, canvas) is NOT in rem on purpose —
+       only text grows; a control that would clip instead grows via
+       min-height. Canvas-drawn text (ctx.font, roll/score labels) is not
+       part of this system yet and stays literal px — noted, not fixed here. */
+    --ts: 1;
+    --userscale: 1;
   }
+  html { font-size: calc(16px * var(--ts) * var(--userscale)); }
   /* touch-action: manipulation kills iOS Safari's double-tap page zoom on
      every element (the no-zoom viewport meta is ignored); canvases override
      to none below so app gestures own them completely */
@@ -62,7 +75,7 @@
   }
   .brand {
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: 0.14em;
     color: var(--gold);
     white-space: nowrap;
@@ -70,7 +83,7 @@
   .brand span { color: var(--dim); }
   select, button, label.filebtn {
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 0.8125rem;
     background: var(--panel2);
     color: var(--text);
     border: 1px solid var(--grid);
@@ -81,19 +94,23 @@
   }
   select { max-width: 44vw; }
   header { position: relative; }
-  #recbtn { color: #e66767; font-size: 15px; }
+  #recbtn { color: #e66767; font-size: 0.9375rem; }
   #recbtn.rec { background: #e66767; color: #151520; animation: recblink 1.2s ease-in-out infinite; }
   @keyframes recblink { 50% { opacity: 0.55; } }
   #songcrumb {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 0.75rem;
     letter-spacing: 0.06em;
     color: var(--gold);
     /* everything right of the brand + File cluster belongs to the title —
        centered in THAT space, not the viewport (mirroring the cluster on the
        right wasted ~280px and still truncated long titles on iPad portrait) */
     position: absolute;
-    left: 380px; /* past NIGHT // ROLL + File + View + ✦ AI (270 predated ✦ AI: the title ran under it) */
+    left: 23.75rem; /* 380px at default text size — past NIGHT // ROLL + File + View + ✦ AI
+      (270 predated ✦ AI: the title ran under it). rem, not px: those buttons' TEXT scales
+      with --ts/--userscale (their padding doesn't), so their rendered right edge moves —
+      a fixed 380px let a Larger Text size overlap "✦ AI" with "Published" (DAW review
+      item 12, 2026-09-30: found in the Larger-setting screenshot review, narrow viewport). */
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
@@ -156,31 +173,31 @@
     min-width: 44px;
   }
   .lcdseg:last-child { border-right: 0; }
-  .lcdbig { font-family: var(--mono); font-size: 19px; line-height: 1.05; color: #dfe6ff; }
-  .lcdmid { font-family: var(--mono); font-size: 12px; line-height: 1.3; color: #dfe6ff; }
+  .lcdbig { font-family: var(--mono); font-size: 1.1875rem; line-height: 1.05; color: #dfe6ff; }
+  .lcdmid { font-family: var(--mono); font-size: 0.75rem; line-height: 1.3; color: #dfe6ff; }
   .lcdmid.lcdkey { color: var(--gold); }
-  .lcdlbl { font-family: var(--mono); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+  .lcdlbl { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
   .lcdseg.tappable { cursor: pointer; }
   .lcdseg.tappable:active { background: var(--panel); border-radius: 5px; }
   #timectl { display: flex; align-items: center; gap: 10px; padding-right: 12px; flex: none; margin-top: 6px; min-height: 44px; }
   #timectl #metbtn { min-height: 34px; padding: 4px 10px; }
   /* what Claude Code is doing, always in view while the bridge is there
      (Josh, 2026-09-30: "so he doesn't have to ask"); the title gives it room */
-  #nowchip { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); max-width: 22vw; font-family: var(--mono); font-size: 11px;
+  #nowchip { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); max-width: 22vw; font-family: var(--mono); font-size: 0.6875rem;
              color: var(--dim); background: none; border: 1px solid var(--grid); border-radius: 12px; padding: 3px 10px; min-height: 26px;
              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2; }
   #nowchip.working { color: var(--text); border-color: var(--accent); }
   body.nowchip #songcrumb { right: calc(22vw + 20px); }
   @media (max-width: 700px) { #nowchip { display: none !important; } body.nowchip #songcrumb { right: 10px; } }
   #playbtn.loading { opacity: 0.7; } /* loading its sound: tappable (queues the play), not yet ▶ */
-  #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 12px; }
+  #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 0.75rem; }
   select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; min-width: 74px; }
   button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   button:disabled { opacity: 0.4; cursor: default; }
   .meta {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 0.6875rem;
     color: var(--dim);
     margin-left: auto;
     white-space: nowrap;
@@ -226,7 +243,7 @@
     align-items: center;
     gap: 7px;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 0.75rem;
     padding: 7px 11px;
     border: 1px solid var(--grid);
     border-radius: 16px;
@@ -239,7 +256,7 @@
   .chip.muted { opacity: 0.35; }
   .chip.selected { border-color: var(--gold); }
   .chip .solo {
-    font-size: 10px;
+    font-size: 0.625rem;
     color: var(--dim);
     border: 1px solid var(--grid);
     border-radius: 4px;
@@ -248,7 +265,7 @@
   .chip .solo.on { color: var(--gold); border-color: var(--gold); }
 
   #rollwrap { flex: 1; position: relative; min-height: 0; min-width: 0; }
-  #cmpbar { display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-family: var(--mono); font-size: 12px;
+  #cmpbar { display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-family: var(--mono); font-size: 0.75rem;
             color: var(--text); background: var(--panel); border-bottom: 1px solid var(--grid); flex-wrap: wrap; }
   #cmpbar button { min-height: 32px; padding: 4px 10px; }
   #cmpbar .gold { color: var(--gold); } #cmpbar .red { color: #e66767; }
@@ -278,7 +295,7 @@
   }
   #noteinfo {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 0.75rem;
     color: var(--gold);
     min-width: 0;
     flex: 1;
@@ -292,7 +309,7 @@
   }
   #noteinfo.copyable { cursor: pointer; }
   #noteinfo .copychip {
-    font-size: 10px;
+    font-size: 0.625rem;
     color: var(--dim);
     border: 1px solid var(--grid);
     border-radius: 8px;
@@ -308,7 +325,7 @@
   #instfall { min-height: 32px; padding: 5px 12px; }
   #instinfo {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 0.75rem;
     color: var(--gold);
     min-width: 0;
     flex: 1;
@@ -339,7 +356,7 @@
     gap: 8px;
   }
   #metsheet .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  #metsheet .lbl { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  #metsheet .lbl { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); }
 
   #importsheet {
     display: none;
@@ -360,10 +377,10 @@
     gap: 8px;
   }
   #importsheet .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  #importsheet .lbl { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  #importsheet .lbl { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); }
   #implist { max-height: 42vh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
   #implist .row { flex-wrap: nowrap; }
-  #implist .st { font-family: var(--mono); font-size: 11px; line-height: 1.35; color: var(--dim); flex: 3 1 160px; min-width: 0; white-space: normal; }
+  #implist .st { font-family: var(--mono); font-size: 0.6875rem; line-height: 1.35; color: var(--dim); flex: 3 1 160px; min-width: 0; white-space: normal; }
 
   #editsheet, #viewsheet {
     display: none;
@@ -378,7 +395,7 @@
     box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
   }
   #editsheet.on, #viewsheet.on { display: block; }
-  #editsheet .fitem, #viewsheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 8px 10px; font-family: var(--mono); font-size: 13px; color: var(--text); cursor: pointer; }
+  #editsheet .fitem, #viewsheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #editsheet .fitem:active, #viewsheet .fitem:active { background: var(--panel); }
   #drummersheet .sheet { width: min(720px, 100%); } /* the range row wraps at 560 (Josh, from bed) */
   /* the chat: three quarters of the screen on a tablet — half was hard to
@@ -436,9 +453,9 @@
     box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
   }
   #voicemenu.on { display: block; }
-  #voicemenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 40px; padding: 8px 10px; font-family: var(--mono); font-size: 13px; color: var(--text); cursor: pointer; white-space: pre; }
+  #voicemenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 40px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; white-space: pre; }
   #voicemenu .fitem:active { background: var(--panel); }
-  #filesub .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 9px 12px; font-family: var(--mono); font-size: 13px; color: var(--text); cursor: pointer; }
+  #filesub .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 9px 12px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #filesub .fitem:active { background: var(--panel); }
   #filesheet .fitem {
     display: block;
@@ -450,18 +467,18 @@
     min-height: 42px;
     padding: 9px 12px;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: var(--text);
     cursor: pointer;
   }
   #filesheet .fitem:active { background: var(--panel); }
   #filesheet .fdiv, #editsheet .fdiv, #viewsheet .fdiv { border-top: 1px solid var(--grid); margin: 4px 6px; }
   #filesheet .row { display: flex; gap: 8px; align-items: center; padding: 6px 8px; flex-wrap: wrap; }
-  #filesheet .status { font-family: var(--mono); font-size: 11px; color: var(--dim); padding: 4px 10px 6px; max-width: 300px; white-space: pre-wrap; }
+  #filesheet .status { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); padding: 4px 10px 6px; max-width: 300px; white-space: pre-wrap; }
 
   .metbeat {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 0.75rem;
     width: 38px;
     min-height: 44px;
     border-radius: 6px;
@@ -474,17 +491,17 @@
   .metbeat.l0 { opacity: 0.3; }
   .metbeat.now { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-  #cofdetail { font-family: var(--mono); font-size: 12px; line-height: 1.7; margin-top: 8px; white-space: pre-wrap; }
+  #cofdetail { font-family: var(--mono); font-size: 0.75rem; line-height: 1.7; margin-top: 8px; white-space: pre-wrap; }
   #cofdetail b { color: var(--gold); }
 
-  .chline { font-family: var(--mono); font-size: 13px; padding: 3px 0; }
-  .chline.chhead { color: var(--dim); font-size: 11px; letter-spacing: 0.09em; margin-top: 12px; text-transform: uppercase; }
+  .chline { font-family: var(--mono); font-size: 0.8125rem; padding: 3px 0; }
+  .chline.chhead { color: var(--dim); font-size: 0.6875rem; letter-spacing: 0.09em; margin-top: 12px; text-transform: uppercase; }
   .chline.ok { color: var(--gold); }
   .chline.bad { color: #e66767; }
   .chline.warn { color: var(--accent); }
   .chline.dim { color: var(--dim); }
   .seg button { border: none; border-radius: 0; min-height: 36px; padding: 6px 11px; }
-  .hint { font-size: 11px; color: var(--dim); font-family: var(--mono); }
+  .hint { font-size: 0.6875rem; color: var(--dim); font-family: var(--mono); }
 
   #subtitle {
     /* constant-height slot: shown for the whole song when it has text notes,
@@ -499,7 +516,7 @@
     background: var(--panel2);
     border-top: 1px solid var(--grid);
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1.5;
     color: var(--gold);
     white-space: pre-wrap;
@@ -507,13 +524,13 @@
     user-select: text;
   }
   #subtitle.on { display: block; }
-  #subtitle .where { color: var(--dim); font-size: 11px; display: block; margin-bottom: 2px; }
+  #subtitle .where { color: var(--dim); font-size: 0.6875rem; display: block; margin-bottom: 2px; }
   #subtitle .hl {
     position: absolute;
     top: 8px;
     right: 10px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 0.6875rem;
     padding: 4px 8px;
     min-height: 28px;
     border-radius: 5px;
@@ -550,9 +567,9 @@
     position: sticky; top: 0; align-self: flex-end; z-index: 2;
     min-width: 40px; min-height: 40px; margin: -6px -6px -16px 0;
     background: var(--panel); border: 1px solid var(--grid); border-radius: 8px;
-    color: var(--dim); font-family: var(--mono); font-size: 14px;
+    color: var(--dim); font-family: var(--mono); font-size: 0.875rem;
   }
-  .sheet h2 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; color: var(--dim); font-weight: 600; }
+  .sheet h2 { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.12em; color: var(--dim); font-weight: 600; }
   /* the pinned ✕ is prepended above the title; pull the title up onto its row
      (✕ = 40px tall with a -16px bottom margin, + the 10px gap) — Josh, 2026-09-25:
      "a lot of room at the top" */
@@ -560,7 +577,7 @@
   .sheet .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .sheet input[type=number], .sheet input[type=password], .sheet input[type=text], .sheet textarea {
     font-family: var(--mono);
-    font-size: 14px;
+    font-size: 0.875rem;
     background: var(--bg);
     color: var(--text);
     border: 1px solid var(--grid);
@@ -570,9 +587,9 @@
   .sheet input[type=number] { width: 64px; }
   .sheet input[type=password] { flex: 1; min-width: 0; }
   .sheet textarea { width: 100%; min-height: 84px; resize: vertical; }
-  .sheet .lbl { font-family: var(--mono); font-size: 11px; color: var(--dim); }
-  #filesheet .lbl { font-family: var(--mono); font-size: 13px; color: var(--text); } /* match the .fitem rows */
-  .sheet .status { font-family: var(--mono); font-size: 11px; color: var(--dim); min-height: 14px; }
+  .sheet .lbl { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+  #filesheet .lbl { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); } /* match the .fitem rows */
+  .sheet .status { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); min-height: 14px; }
   /* Settings: the Test result is its own line and looks like a result — gold ✓ /
      red ⚠, bold — never the help paragraph's gray (Josh, 2026-09-25: "I don't
      see anything happening at all") */
@@ -585,11 +602,11 @@
   .jobbar.sm { max-width: 56px; height: 4px; }
   #jobssheet .jobbody { display: flex; flex-direction: column; gap: 4px; }
   #jobssheet .jobbarrow { display: flex; align-items: center; gap: 6px; }
-  .jobprog { font-family: var(--mono); font-size: 11px; color: var(--dim); }
-  #pubjoblist { font-family: var(--mono); font-size: 13px; color: var(--text); display: flex; flex-direction: column; gap: 6px; }
+  .jobprog { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+  #pubjoblist { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); display: flex; flex-direction: column; gap: 6px; }
   #pubjoblist .pubjobrow { display: flex; align-items: center; gap: 8px; min-height: 28px; }
   #pubjoblist .pjname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #pubjoblist .pjstate { font-size: 12px; display: flex; align-items: center; gap: 6px; flex: none; max-width: 55%; }
+  #pubjoblist .pjstate { font-size: 0.75rem; display: flex; align-items: center; gap: 6px; flex: none; max-width: 55%; }
   #pubjoblist .pjstate.fail { color: #e66767; white-space: normal; text-align: right; }
   #pubjoblist .pjstate.done { color: var(--gold); }
   /* the AI panel's "Now:" strip (2026-09-29): what Claude Code is doing,
@@ -597,22 +614,22 @@
      scrolls sideways; tap opens the Recent list beneath it. */
   #asknowstrip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #asknowstrip.open { white-space: normal; }
-  #asknowrecent { font-family: var(--mono); font-size: 11px; color: var(--dim); display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
+  #asknowrecent { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
   #asknowrecent .asknowitem { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jobsnow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #cfgtabs button { flex: 1; border: 0; border-radius: 0; min-height: 36px; background: transparent; color: var(--dim); font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; }
+  #cfgtabs button { flex: 1; border: 0; border-radius: 0; min-height: 36px; background: transparent; color: var(--dim); font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; }
   #cfgtabs button.on { background: var(--grid); color: var(--text); }
   #settingssheet .cfgpane { display: none; flex-direction: column; gap: 10px; }
   #settingssheet .cfgpane.on { display: flex; }
-  .sheet .cfgsec { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--dim); margin-top: 6px; }
-  .sheet select { font-family: var(--mono); font-size: 14px; background: var(--bg); color: var(--text); border: 1px solid var(--grid); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+  .sheet .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin-top: 6px; }
+  .sheet select { font-family: var(--mono); font-size: 0.875rem; background: var(--bg); color: var(--text); border: 1px solid var(--grid); border-radius: 6px; padding: 6px 8px; min-width: 0; }
   .sheet details summary { min-height: 36px; display: flex; align-items: center; cursor: pointer; list-style: none; }
   .sheet details summary::-webkit-details-marker { display: none; }
   .sheet details[open] summary { color: var(--text); }
   .sheet details .row { margin-top: 8px; }
   /* Save & Commit: one block per song with anything pending; the open song
      first with a bar. 12px in --text — this list IS the sheet (Josh, 2026-09-25) */
-  #syncpending { font-family: var(--mono); font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 8px; }
+  #syncpending { font-family: var(--mono); font-size: 0.75rem; color: var(--text); display: flex; flex-direction: column; gap: 8px; }
   #syncpending .psong { padding: 4px 0 4px 10px; border-left: 2px solid transparent; }
   #syncpending .psong.open { border-left-color: var(--accent); }
   /* each song its own block, its Open right after its name: on the iPad's wide
@@ -630,14 +647,14 @@
   .sheet.help { max-height: 82dvh; overflow-y: auto; -webkit-user-select: text; user-select: text; }
   .sheet.help h3 {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 0.6875rem;
     letter-spacing: 0.12em;
     color: var(--gold);
     margin-top: 6px;
   }
   .sheet.help dl { margin: 0; }
-  .sheet.help dt { font-family: var(--mono); font-size: 15px; color: var(--text); margin-top: 7px; }
-  .sheet.help dd { font-size: 15px; color: var(--dim); margin: 1px 0 0 0; line-height: 1.45; }
+  .sheet.help dt { font-family: var(--mono); font-size: 0.9375rem; color: var(--text); margin-top: 7px; }
+  .sheet.help dd { font-size: 0.9375rem; color: var(--dim); margin: 1px 0 0 0; line-height: 1.45; }
   /* Import hub (docs/import-hub-design.md): dragging a file over the panel
      highlights it — the ONLY drop target in the app, so no ambiguity about
      where a drop lands. */
@@ -663,12 +680,12 @@
   .mixerstrip.dropafter { box-shadow: 3px 0 0 var(--gold) inset; }
   .mixerstrip.mixermaster { border-color: var(--accent); background: var(--panel); }
   .mixername { display: flex; align-items: center; gap: 5px; max-width: 100%;
-    font-family: var(--mono); font-size: 11px; color: var(--text); cursor: grab;
+    font-family: var(--mono); font-size: 0.6875rem; color: var(--text); cursor: grab;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mixerstrip.mixermaster .mixername { cursor: default; justify-content: center; letter-spacing: 0.08em; color: var(--dim); }
   .mixername .dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
   .mixerbtns { display: flex; gap: 4px; }
-  .mixerbtns .solo { font-size: 10px; color: var(--dim); border: 1px solid var(--grid);
+  .mixerbtns .solo { font-size: 0.625rem; color: var(--dim); border: 1px solid var(--grid);
     border-radius: 4px; padding: 3px 6px; background: none; min-height: 26px; min-width: 22px; }
   .mixerbtns .solo.on { color: var(--gold); border-color: var(--gold); }
   .mixerfaderbox { display: flex; align-items: flex-end; gap: 6px; height: 130px; }
@@ -683,13 +700,13 @@
     border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
   .mixerfader::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grid); }
   .mixerfader::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
-  .mixervlbl { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+  .mixervlbl { font-family: var(--mono); font-size: 0.625rem; color: var(--dim); }
   .mixerpan { width: 100%; height: 22px; -webkit-appearance: none; appearance: none; background: transparent; } /* same look as the faders, not the browser's default */
   .mixerpan::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--grid); }
   .mixerpan::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
   .mixerpan::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grid); }
   .mixerpan::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
-  .mixerplbl { font-family: var(--mono); font-size: 10px; color: var(--dim); min-height: 12px; }
+  .mixerplbl { font-family: var(--mono); font-size: 0.625rem; color: var(--dim); min-height: 12px; }
 
   .noterow {
     display: flex;
@@ -705,14 +722,14 @@
   .noterow .where {
     flex: 0 0 auto; /* never squeezed by a long attached note */
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 0.6875rem;
     color: var(--gold);
     white-space: nowrap;
     min-width: 72px;
   }
   .noterow .kind {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 0.625rem;
     padding: 2px 7px;
     border-radius: 9px;
     border: 1px solid var(--grid);
@@ -728,17 +745,17 @@
   .noterow .body {
     flex: 0 1 auto;   /* sizes to the label; only shrinks when nothing else can */
     min-width: 0;
-    font-size: 12px;
+    font-size: 0.75rem;
     color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .noterow .unsynced { flex: 0 0 auto; font-family: var(--mono); font-size: 10px; color: var(--dim); white-space: nowrap; }
+  .noterow .unsynced { flex: 0 0 auto; font-family: var(--mono); font-size: 0.625rem; color: var(--dim); white-space: nowrap; }
   .noterow .cnote {
     flex: 1 1 0;      /* takes the leftover, and ellipsises inside it */
     min-width: 0;
-    font-family: var(--mono); font-size: 10px; color: var(--gold);
+    font-family: var(--mono); font-size: 0.625rem; color: var(--gold);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
@@ -833,7 +850,7 @@
      currently open (nothing to switch to). */
   .wmtabs { display: none; order: 0; flex: 0 0 auto; gap: 2px; padding: 4px 4px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .wmtabs.on { display: flex; }
-  .wmtab { min-height: 34px; padding: 4px 10px; font-family: var(--mono); font-size: 12px; border: 1px solid var(--grid); border-bottom: none; border-radius: 6px 6px 0 0; background: var(--panel); color: var(--dim); cursor: pointer; white-space: nowrap; }
+  .wmtab { min-height: 34px; padding: 4px 10px; font-family: var(--mono); font-size: 0.75rem; border: 1px solid var(--grid); border-bottom: none; border-radius: 6px 6px 0 0; background: var(--panel); color: var(--dim); cursor: pointer; white-space: nowrap; }
   .wmtab.active { color: var(--text); background: var(--panel2); border-color: var(--dim); }
   /* Phase B: the drag-to-dock highlight (wmShowDropZone/wmZoneFor) — shown
      over whichever zone a dragged, dockable window's title is currently
@@ -844,7 +861,7 @@
   #wmdropzone.on { display: block; }
   /* the generic Dock control every dockable window gets (makeWindow) — the
      spot #askdock used to sit alone, now built the same way for all six */
-  .wmdock { margin-left: auto; cursor: pointer; min-height: 28px; padding: 2px 9px; font-size: 12px; }
+  .wmdock { margin-left: auto; cursor: pointer; min-height: 28px; padding: 2px 9px; font-size: 0.75rem; }
   #wmmenu {
     display: none; position: fixed; z-index: 63;
     background: var(--panel2); border: 1px solid var(--grid); border-radius: 10px;
@@ -852,7 +869,7 @@
     box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
   }
   #wmmenu.on { display: block; }
-  #wmmenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 40px; padding: 8px 10px; font-family: var(--mono); font-size: 13px; color: var(--text); cursor: pointer; }
+  #wmmenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 40px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #wmmenu .fitem:active { background: var(--panel); }
   #wmmenu .fitem.active { color: var(--accent); }
   #wmmenu .fsep { height: 1px; background: var(--grid); margin: 5px 2px; }
@@ -895,14 +912,14 @@
      two-thirds of the way down instead of the bottom-right corner. order
      pins it last regardless of what appends after it, in every .sheet. */
   .sheetgrip { position: sticky; bottom: -16px; align-self: flex-end; flex: none; width: 26px; height: 26px; margin: -8px -12px -12px 0;
-               cursor: nwse-resize; touch-action: none; color: var(--dim); font-size: 16px; line-height: 26px; text-align: center; opacity: .7; z-index: 2; order: 9999;
+               cursor: nwse-resize; touch-action: none; color: var(--dim); font-size: 1rem; line-height: 26px; text-align: center; opacity: .7; z-index: 2; order: 9999;
                margin-top: auto; } /* flex auto-margin trick (Josh, iPad): a sheet resized
                taller than its content otherwise leaves the grip stranded right after the
                last row instead of at the bottom — auto consumes the leftover column space */
   #importsheet .sheetgrip { margin: -4px -8px -8px 0; margin-top: auto; bottom: -12px; }
   #asklog { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
             -webkit-user-select: text; user-select: text; min-height: 80px; }
-  .askmsg { font-size: 17px; line-height: 1.5; padding: 10px 13px; border-radius: 10px; /* 14 was too small to read on the iPad (Josh, 2026-09-27) */
+  .askmsg { font-size: 1.0625rem; line-height: 1.5; padding: 10px 13px; border-radius: 10px; /* 14 was too small to read on the iPad (Josh, 2026-09-27) */
             white-space: pre-wrap; max-width: 92%; }
   .askmsg.user { background: var(--panel2); border: 1px solid var(--grid); align-self: flex-end; }
   .askmsg.ai { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; }
@@ -912,15 +929,15 @@
   /* ⧉ at the end of every bubble: copying from the sheet on the iPad meant a
      long-press fight with the selection (Josh, 2026-09-26). The glyph lives
      in CSS so a bubble's textContent stays exactly its message. */
-  .askmsg .askcopy { float: right; margin: 0 -4px -2px 8px; min-height: 26px; padding: 0 7px; font-size: 13px; line-height: 24px; opacity: .55; border-color: transparent; }
+  .askmsg .askcopy { float: right; margin: 0 -4px -2px 8px; min-height: 26px; padding: 0 7px; font-size: 0.8125rem; line-height: 24px; opacity: .55; border-color: transparent; }
   .askmsg .askcopy::before { content: "⧉"; }
   .askmsg .askcopy.done { opacity: 1; color: var(--gold); }
   .askmsg .askcopy.done::before { content: "✓ copied"; }
   #askmoderow { gap: 6px; margin-bottom: 4px; }
-  #askmoderow button { min-height: 30px; padding: 3px 12px; font-size: 12px; }
+  #askmoderow button { min-height: 30px; padding: 3px 12px; font-size: 0.75rem; }
   .askmsg.note { background: rgba(230,192,96,.10); border: 1px solid rgba(230,192,96,.5); align-self: stretch; white-space: pre-wrap; }
   #askbtn.hasnote::after { content: " ✉"; color: #e6c060; }
-  .askmsg.earlier { font-family: var(--mono); font-size: 12px; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
+  .askmsg.earlier { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
   /* The box grows with its text (askGrow) up to a third of the screen — a
      fixed 120px hid dictation past the second line (Josh, 2026-09-26). */
   /* a narrow docked AI panel (Josh's screenshot, 2026-09-29: the box shrank to one
@@ -933,15 +950,15 @@
     #askinputrow #askinput { flex: 1 1 100%; }
     #askinputrow button { flex: 1 1 0; white-space: nowrap; }
     #asksheet-h2 .wmdockbtn, #asksheet-h2 button[data-short] { font-size: 0; }
-    #asksheet-h2 button[data-short]::after { content: attr(data-short); font-size: 12px; }
+    #asksheet-h2 button[data-short]::after { content: attr(data-short); font-size: 0.75rem; }
     #askmoderow { flex-wrap: nowrap; }
     #askmoderow button { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   }
-  #askinput { font-family: var(--sans); font-size: 15px; flex: 1; min-height: 44px; max-height: min(33dvh, calc(6lh + 20px)); /* ~6 lines, then it scrolls: the chat log keeps the panel (Josh, 2026-09-29: dictation grew it to 17 lines) */
+  #askinput { font-family: var(--sans); font-size: 0.9375rem; flex: 1; min-height: 44px; max-height: min(33dvh, calc(6lh + 20px)); /* ~6 lines, then it scrolls: the chat log keeps the panel (Josh, 2026-09-29: dictation grew it to 17 lines) */
               resize: none; width: auto; overflow-y: auto; }
   .chiprow button {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 0.75rem;
     padding: 6px 9px;
     min-width: 34px;
     border: 1px solid var(--grid);
@@ -962,7 +979,7 @@
   #notejump button {
     min-height: 34px; padding: 0 10px; border-radius: 8px;
     border: 1px solid var(--grid); background: transparent;
-    color: var(--dim); font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--dim); font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.06em;
   }
   #notejump button.has { color: var(--fg); border-color: var(--dim); }
   .notegroup { margin-top: 10px; scroll-margin-top: 52px; }
@@ -972,7 +989,7 @@
     align-items: center;
     gap: 8px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 0.6875rem;
     color: var(--dim);
     letter-spacing: 0.08em;
     margin-bottom: 6px;
@@ -980,7 +997,7 @@
   .notegroup .ghead .gadd {
     margin-left: auto;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 0.75rem;
     padding: 3px 10px;
     border: 1px solid var(--grid);
     border-radius: 8px;
@@ -991,16 +1008,44 @@
   .notegroup .grows { display: flex; flex-direction: column; gap: 7px; }
 #progpanel{max-height:56dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
 .prow{padding:8px 2px;border-bottom:1px solid #2a2a3a}
-.prow b{color:var(--gold);font-size:14px}
-.prow .pchords{display:block;font-family:var(--mono);font-size:15px;margin:2px 0}
-.prow .pnum{display:block;font-family:var(--mono);font-size:12px;opacity:.65}
-.prow small{display:block;font-size:12px;opacity:.75;line-height:1.35}
+.prow b{color:var(--gold);font-size:0.875rem}
+.prow .pchords{display:block;font-family:var(--mono);font-size:0.9375rem;margin:2px 0}
+.prow .pnum{display:block;font-family:var(--mono);font-size:0.75rem;opacity:.65}
+.prow small{display:block;font-size:0.75rem;opacity:.75;line-height:1.35}
 #helptabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
-#helptabs button{min-height:40px;padding:8px 14px;border-radius:8px;background:#242433;color:#cfcfe0;border:1px solid #3a3a4e;font-size:14px}
+#helptabs button{min-height:40px;padding:8px 14px;border-radius:8px;background:#242433;color:#cfcfe0;border:1px solid #3a3a4e;font-size:0.875rem}
 #helptabs button.on{background:var(--gold);color:#151520;border-color:var(--gold);font-weight:600}
 .sheet.help .hsec{display:none}
 .sheet.help .hsec.on{display:block}
 </style>
+<script id="ts-boot">
+// id="ts-boot" above keeps tests/harness.mjs's bare "<script>\n" extraction
+// pinned to the main app script below, not this one.
+// Runs before <body> so there's no flash. Sets --userscale from the device
+// pref immediately (works everywhere); measures --ts from -apple-system-body
+// only where CSS.supports says it's understood (WebKit/Safari) — everything
+// else keeps the CSS default of 1, byte-identical to the old fixed px sizes.
+// 17 is -apple-system-body's own size at Dynamic Type's default ("Large");
+// clamped so the largest accessibility sizes (which run past 3x) grow text
+// without wrecking the densest chrome (transport LCD, track chips).
+(function() {
+  var root = document.documentElement;
+  try {
+    var pref = localStorage.getItem("ff1roll-textsize");
+    if (pref) root.style.setProperty("--userscale", pref);
+  } catch (e) {}
+  try {
+    if (window.CSS && CSS.supports && CSS.supports("font", "-apple-system-body")) {
+      var probe = document.createElement("span");
+      probe.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden;font:-apple-system-body;";
+      root.appendChild(probe);
+      var px = parseFloat(getComputedStyle(probe).fontSize);
+      root.removeChild(probe);
+      if (px && isFinite(px)) root.style.setProperty("--ts", String(Math.max(0.8, Math.min(1.6, px / 17))));
+    }
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <!-- Window manager shell (windowing plan phase A — open-items.md "a real
@@ -1358,25 +1403,25 @@
 <div class="overlay" id="aboutsheet">
   <div class="sheet">
     <h2>NIGHT // ROLL</h2>
-    <p style="font-family:var(--mono);font-size:13px;line-height:1.7;margin:8px 0">
+    <p style="font-family:var(--mono);font-size:0.8125rem;line-height:1.7;margin:8px 0">
       The chiptune DAW that teaches you composition — a piano roll and an
       engraved score over one timeline, authentic 2A03 chip audio, and an
       annotation layer that lives with the notes.<span class="webonly"> This
       site is where it was built: by studying the Final Fantasy I soundtrack,
       captured note-for-note from the actual NES sound chip.</span>
     </p>
-    <p style="font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--dim);margin:8px 0">
+    <p style="font-family:var(--mono);font-size:0.75rem;line-height:1.7;color:var(--dim);margin:8px 0">
       House rule: keys, meters, and chords are the analyst's discoveries.
       The app displays evidence and records verdicts — it never decides
       them for you.
     </p>
     <p class="meta" id="aboutstats" style="margin:8px 0"></p>
-    <p style="font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--dim);margin:8px 0">
+    <p style="font-family:var(--mono);font-size:0.6875rem;line-height:1.6;color:var(--dim);margin:8px 0">
       Sounds: FluidR3_GM by Frank Wen (MIT), via Benjamin Gleitzman's midi-js-soundfonts (MIT).
       Notation: VexFlow (MIT). Night Roll itself: PolyForm Noncommercial 1.0.0 — free for
       personal and noncommercial use; selling or republishing it is not permitted.
     </p>
-    <p style="font-family:var(--mono);font-size:12px;margin:8px 0">
+    <p style="font-family:var(--mono);font-size:0.75rem;margin:8px 0">
       Josh Cough &amp; Claude, 2026 ·
       <a href="https://github.com/Night-Roll-App/night-roll" target="_blank" rel="noopener"
          style="color:var(--gold)">github.com/Night-Roll-App/night-roll</a>
@@ -1388,7 +1433,7 @@
 <div class="overlay" id="infosheet">
   <div class="sheet">
     <h2 id="infosheet-h2">Status</h2>
-    <p id="infosheettext" style="font-family:var(--mono);font-size:13px;line-height:1.6;
+    <p id="infosheettext" style="font-family:var(--mono);font-size:0.8125rem;line-height:1.6;
        white-space:pre-wrap;word-break:break-word;margin:8px 0"></p>
   </div>
 </div>
@@ -1433,13 +1478,13 @@
     at the point stays put. Notes, sections, chords, the loop — all carried. One ⟲ undoes it.</p>
     <div class="row" style="align-items:center;gap:8px">
       <span class="meta">At&nbsp; bar</span>
-      <input id="insb" type="number" min="1" step="1" inputmode="numeric" style="width:64px;min-height:44px;text-align:center;font-size:17px">
+      <input id="insb" type="number" min="1" step="1" inputmode="numeric" style="width:64px;min-height:44px;text-align:center;font-size:1.0625rem">
       <span class="meta">beat</span>
-      <input id="insq" type="number" min="1" step="any" inputmode="decimal" style="width:70px;min-height:44px;text-align:center;font-size:17px">
+      <input id="insq" type="number" min="1" step="any" inputmode="decimal" style="width:70px;min-height:44px;text-align:center;font-size:1.0625rem">
     </div>
     <div class="row" style="align-items:center;gap:8px;margin-top:8px">
       <span class="meta">Insert</span>
-      <input id="insn" type="number" min="1" step="1" inputmode="numeric" value="1" style="width:64px;min-height:44px;text-align:center;font-size:17px">
+      <input id="insn" type="number" min="1" step="1" inputmode="numeric" value="1" style="width:64px;min-height:44px;text-align:center;font-size:1.0625rem">
       <div class="chiprow" id="insunit" style="flex:1"></div>
     </div>
     <div class="row" style="margin-top:10px">
@@ -1458,10 +1503,10 @@
     <div class="row" style="margin-top:10px;align-items:center;gap:8px">
       <span class="meta" style="white-space:normal">Anchor:&nbsp; bar</span>
       <input id="gridab" type="number" min="1" step="1" inputmode="numeric"
-             style="width:64px;min-height:44px;text-align:center;font-size:17px">
+             style="width:64px;min-height:44px;text-align:center;font-size:1.0625rem">
       <span class="meta">beat</span>
       <input id="gridaq" type="number" min="1" step="any" inputmode="decimal"
-             style="width:70px;min-height:44px;text-align:center;font-size:17px">
+             style="width:70px;min-height:44px;text-align:center;font-size:1.0625rem">
     </div>
     <p class="meta" id="gridanchor" style="margin:10px 0 0;white-space:normal"></p>
     <div class="row" style="margin-top:10px">
@@ -1490,7 +1535,7 @@
     a raw take that's close but not glued to the grid. One ⟲ undoes the whole selection.</p>
     <div class="chiprow" id="quantchips"></div>
     <div class="row" style="align-items:center;gap:8px;margin-top:8px">
-      <label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer">
+      <label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer">
         <input type="checkbox" id="quantends" style="width:20px;height:20px"> also quantize note ends (lengths adjust)</label>
     </div>
   </div>
@@ -1566,7 +1611,7 @@
 <div class="overlay" id="confirmsheet" style="z-index:80">
   <div class="sheet">
     <h2 id="cfTitle">CONFIRM</h2>
-    <p id="cfBody" style="white-space:pre-wrap;font-size:15px;line-height:1.45"></p>
+    <p id="cfBody" style="white-space:pre-wrap;font-size:0.9375rem;line-height:1.45"></p>
     <div class="row" style="margin-top:10px">
       <button class="primary" id="cfOk">OK</button>
       <button id="cfCancel" style="margin-left:auto">Cancel</button>
@@ -1738,6 +1783,7 @@
       <dt>📁 Folder on this computer</dt><dd>Saving without GitHub. In File → Settings, tap <b>Choose folder…</b> and pick a folder on this computer: from then on every Save writes the song, its annotations, and its notes dump into that folder (laid out exactly like the repo — <code>albums/…/song.mid</code> beside its <code>.rollnotes.json</code>), nothing goes to GitHub, and no token is needed. The song picker lists the folder's albums alongside the site's; a song that exists in both opens from the folder. Tick <b>show only this folder's songs</b> under the folder row and the list becomes yours alone — the folder plus this device's drafts, none of the site's albums; with an empty folder the app opens straight into New song instead of Overworld. A device setting: it stays on that machine. FF1 songs still load from the site — annotate one and the annotations save to your folder. Chrome may ask for the folder again after a restart: <b>📁 Reconnect folder</b> appears at the top of the File menu (until you tap it, reads fall back to the site). <b>Forget</b> in Settings returns saves to GitHub; the files stay where they are. Needs Chrome or Edge on a computer — Safari has no way to write files, and the row says so there. In the iPad app a <code>.mid</code> or chip file tapped in Files, or sent with <b>Share → Night Roll</b>, opens here as a local draft. In the iPad app there is nothing to set: every Save also writes the song into Files on this iPad (Files → On My iPad → Night Roll, same layout), where you can copy, share or back it up, and Publish still sends it to GitHub. Brave ships the door switched off: enable <code>brave://flags/#file-system-access-api</code> and relaunch (the row tells you). Recordings that aren't yours belong here, not in a repo (see the design docs).</dd>
       <dt>∿ Audio tracks (recordings)</dt><dd>A recording — a guitar take, a vocal, a phone memo, a DAW bounce — as a track next to your MIDI voices. Tap the <b>＋∿</b> chip in the track bar (compositions and local drafts; File → Import… also recognizes audio files) and pick wav, aiff, mp3, or m4a. The clip lands at the cursor's bar as a new track named after the file, with the usual chip: M, S, color, fader, rename, ✕ Delete track. Leading silence is trimmed on arrival, so the take's FIRST SOUND sits on that bar (the status line says how much it trimmed). It plays in time with the song, loops with it (a clip longer than the notes extends the song's end), and is in the exported audio. <b>Slow it down and the pitch stays put</b>: at any speed but 100% the take is re-rendered (time-stretched, the way a slow-downer app does it) in the background — the lane says "⏳ preparing 50% (pitch kept)…" for a moment, then it plays in tune with your notes; a device toggle in the recording sheet turns that off for tape-style, slower = lower, like chip audio. Fine for guitar and voice down to about 40%; grainier below. <b>Tracks view</b> shows the waveform; <b>tap the clip</b> to select it (the status line says file, length, where its bytes are, and where it starts), <b>tap again to play from its start</b>, and in <b>Select</b> mode <b>hold and drag</b> to slide it in time (16th snap, one ⟲ undoes; with no tool armed a drag pans, as with notes). Every other view shows a thin ∿ strip under the ruler marking where the recording plays. <b>Pieces:</b> a recording can be cut into pieces that move on their own. <b>✂ Split at cursor</b> (the edit row's ✂, Edit ▾, or the recording sheet) cuts the selected piece where the play cursor is; <b>trim</b> by dragging a selected piece's left or right edge in Select (left trim keeps the sound where it is); <b>Erase</b> tap on a piece removes just that piece (the track stays); each piece drags separately. One ⟲ undoes any of it. Tap the selected chip for the <b>recording sheet</b> (‹ prev / next › step between pieces): nudge <b>starts</b> by a bar, a beat, or a 16th, <b>offset</b> by 10 ms or 100 ms (how far into the file the piece starts — the last hair of alignment), <b>⇤ Align first sound</b> (re-trims leading silence to the current anchor), <b>♩ Tempo from this take</b> (reads the beat spacing of the piece — its waveform's onsets, autocorrelated over 40–240 BPM — and offers the tempo it hears plus half and double, with how strong the read is; tap one and it becomes the song's tempo at bar 1, one ⟲ undoes; your notes keep their bar positions, so the grid moves to meet the take, which is the point; needs about four seconds of steady playing, and your own songs only — captures keep their measured tempo), <b>♩♩ Map the bars to this take</b> (the other direction: the GRID bends to the recording — it finds the beats through the whole piece, groups them into bars by the meter, and shows what it found: how many bars, the tempo range, and where the first downbeat sits; <b>Apply</b> writes one tempo change per bar from the piece's bar onward so every bar line lands on a downbeat it heard, wobble and all; <b>◀ downbeat / downbeat ▶</b> shift which beat counts as bar 1 when it guessed wrong — the correction Logic's Smart Tempo asks for too; the piece must start on a bar line, and a first downbeat that isn't at the piece's start means a pickup: shift, or trim the piece to the downbeat first; one ⟲ removes the whole map), <b>✂ Split at cursor</b>, <b>🗑 Remove piece</b>, <b>Replace file…</b>, and <b>☐ someone else's recording</b>: tick it for a band's track you play along with and it is never uploaded — GitHub removes such files on a rights holder's notice, and a public site is distribution. Storage: until you Save, the bytes live on this device only (the sheet says so; Safari can evict browser storage after a week away, so Save soon); Save writes them beside the song as <code>&lt;song&gt;.audio/&lt;file&gt;</code> — into your folder in folder mode, into the songs repo otherwise. Files over 20 MB get one question: <b>store as 16-bit mono WAV</b> (lossless for a mono source, half a stereo bounce) or import as-is. m4a/mp3 note: Safari and Chrome trim the encoder's lead-in differently, so millisecond alignment is honest only for WAV/AIFF. Not yet: recording from the mic, trimming or splitting a clip, looping a clip by itself, keeping pitch when slowing down, iPad/Safari playback of webm.</dd>
       <dt>Debug log</dt><dd>File → Settings → Other → <b>Debug log</b> shows diagnostic lines in ⚠ Messages, marked [debug]: audio wake-ups after you leave the app, engine rebuilds, audio state changes. Off, only real problems raise the ⚠ chip. A message that repeats shows once, with ×N. Turn it on when chasing a silence, so Claude can see what the audio engine measured.</dd>
+      <dt>Text size</dt><dd>Night Roll's own text follows your device's text size — an iPhone/iPad's Settings → Accessibility → Display &amp; Text Size → Larger Text carries straight through (Safari's Dynamic Type), no setup needed. File → Settings → Other → <b>Text size</b> (Small/Default/Large/Larger) is a second, app-level dial for a browser that doesn't carry Dynamic Type through, or to go past what it offers — it scales the TEXT only: buttons, rows and the roll/score canvas stay the size they are, so nothing you tap moves.</dd>
       <dt>⚠ Messages</dt><dd><b>Copy all</b> puts the whole log on the clipboard for pasting to Claude. Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
       <dt>Save Version and Versions…</dt><dd>A published song is never edited in place: you edit this device's <b>local copy</b>. When a song of yours has no copy here, <b>✎ Edit locally</b> sits where Edit ▾ would be — tap it and the local copy is made right away, no confirmation, with a footer note: <i>editing your copy on this device — Publish sends it</i>. Every edit is kept automatically, on this device, the moment you make it — there is no auto-save switch to turn on; nothing is ever lost to a crash. File → <b>Save Version</b> (⌘S) additionally adds a DATED snapshot of the music AND the annotations to this device's history for the song — the status line says "Version saved — only on this iPad" (or "this device" outside the app); the first Save Version of an Untitled song still asks for a folder and a name. File → <b>Versions…</b> lists them newest first, plus the <b>Published copy</b> at the top when the song has one — tap <b>Go back to this</b> on any row: your current state is kept as a version first (labelled "Before going back"), so nothing is ever thrown away, then that version becomes what you see. The gold <b>●</b> after the title means <i>not published yet</i> (music, annotations, or chat) — Save Version never clears it, only <b>Publish</b> does. Not connected anywhere (no GitHub token or repo, no local folder)? Neither the ● nor the footer Publish button shows — your work is still kept automatically, and File → <b>Publish…</b> still opens and explains how to connect.</dd>
@@ -1771,7 +1817,7 @@
 
     <div class="row" style="justify-content:space-between">
       <a href="https://github.com/Night-Roll-App/night-roll/blob/main/HELP.md" target="_blank" rel="noopener"
-         style="color:var(--gold);font-size:15px;align-self:center">Full manual&nbsp;↗</a>
+         style="color:var(--gold);font-size:0.9375rem;align-self:center">Full manual&nbsp;↗</a>
     </div>
   </div>
 </div>
@@ -1793,7 +1839,7 @@
   <button class="fitem" id="vwGrid">▦  Grid…</button>
   <div class="fdiv" id="vwLevelsDiv"></div>
   <div id="vwLevelsRow" style="display:flex;align-items:center;gap:4px;padding:2px 4px">
-    <span id="vwLevelsLbl" style="flex:1;font-family:var(--mono);font-size:13px;padding:6px"></span>
+    <span id="vwLevelsLbl" style="flex:1;font-family:var(--mono);font-size:0.8125rem;padding:6px"></span>
     <button id="vwLevelsMinus" style="min-height:38px;min-width:44px">−</button>
     <button id="vwLevelsPlus" style="min-height:38px;min-width:44px">+</button>
   </div>
@@ -1896,13 +1942,13 @@
 <div id="metsheet">
   <div class="metpanel">
     <div class="row" style="align-items:center">
-      <h2 style="margin:0;font-size:13px;letter-spacing:.1em">METRONOME</h2>
+      <h2 style="margin:0;font-size:0.8125rem;letter-spacing:.1em">METRONOME</h2>
       <button id="metclose" style="margin-left:auto;min-height:32px;padding:4px 10px">✕</button>
     </div>
     <div class="row">
       <button class="primary" id="metgo">▶ Start</button>
       <button id="mettap">Tap tempo</button>
-      <span class="meta" id="metbpmlbl" style="margin-left:auto;font-size:15px;color:var(--gold)">120 bpm</span>
+      <span class="meta" id="metbpmlbl" style="margin-left:auto;font-size:0.9375rem;color:var(--gold)">120 bpm</span>
     </div>
     <div class="row"><input type="range" id="metbpm" min="30" max="260" value="120" style="flex:1;height:40px"></div>
     <div class="row">
@@ -2138,14 +2184,14 @@
     <div class="cfgpane on" id="cfgpane-saving">
     <div class="status cfgind">Every edit is kept on this device automatically — there's no switch for it. File → <b>Save Version</b> (⌘S) adds a dated snapshot (music + annotations); File → <b>Versions…</b> lists them, and the published copy. <b>Publish</b> is the separate, deliberate step that shares a song.</div>
     <div class="row" id="filesrow" style="display:none"><span class="lbl" style="width:70px">Files</span>
-      <span id="fileshelp" style="flex:1;font-size:13px"></span></div>
+      <span id="fileshelp" style="flex:1;font-size:0.8125rem"></span></div>
     <!-- local folder: Chrome/Edge desktop only; hidden text explains elsewhere -->
     <div class="row" id="folderrow"><span class="lbl" style="width:70px">folder</span>
-      <span id="foldername" style="flex:1;font-size:13px">not set — saves go to GitHub</span>
+      <span id="foldername" style="flex:1;font-size:0.8125rem">not set — saves go to GitHub</span>
       <button id="folderpick">Choose folder…</button>
       <button id="folderforget" style="display:none">Forget</button></div>
     <div class="row" id="folderonlyrow" style="display:none;padding-left:80px">
-      <label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer">
+      <label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer">
         <input type="checkbox" id="folderonly" style="width:20px;height:20px"> show only this folder's songs (your own list — nothing from the site)</label></div>
     </div>
     <div class="cfgpane" id="cfgpane-ai">
@@ -2188,21 +2234,29 @@
     <div class="status cfgind" id="cfgnsfstatus">When you publish an imported game, its game files and the instruments pulled from them go to this repo — separate from your songs, public so every device (and anyone you share with) hears the game's own sound. Blank: they stay on this device only.</div>
     </div>
     <div class="cfgpane" id="cfgpane-other">
-    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+    <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfglearning" style="width:20px;height:20px"> 🎓 Learning mode</label></div>
     <div class="status cfgind">On: meter, key and chord names stay undeclared until you work them out yourself — Ask AI still helps, nothing is volunteered. Off (Normal): they're shown as labelled estimates, never written as annotations without a tap.</div>
-    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+    <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgdebuglog" style="width:20px;height:20px"> Debug log: show diagnostic lines (audio wake-ups, engine rebuilds) in ⚠</label></div>
     <div class="status cfgind">For chasing a problem with Claude. Off, only real problems raise the ⚠ chip; on, the ⚠ sheet also shows what the audio engine measured, marked [debug].</div>
-    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+    <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgpeninstant" style="width:20px;height:20px"> Apple Pencil draws and grabs at once</label></div>
     <div class="status cfgind">On: the Pencil places, grabs and moves notes the moment it touches — no hold; fingers still hold to grab and swipe to scroll. Off: the Pencil behaves like a finger.</div>
-    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+    <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgnotetapcursor" style="width:20px;height:20px"> Tapping a note moves the play cursor to it</label></div>
     <div class="status cfgind">Off (the DAW way): selecting a note leaves the playhead where it is, so Space plays from where you were. + Note still anchors at the note you tapped.</div>
-    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+    <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgrecsnap" style="width:20px;height:20px"> Snap while recording</label></div>
     <div class="status cfgind">Off (the DAW way — Logic, GarageBand, Cubasis): ● Record keeps exactly what you played, on- or off-grid. On: every key restores today's behavior, snapping starts and durations to the move grid as you play. Either way, <b>Q Quantize</b> straightens a take afterward, undoably.</div>
+    <div class="row"><span class="lbl" style="width:70px">Text size</span>
+      <select id="cfgtextsize" aria-label="Text size" style="flex:1;min-height:36px">
+        <option value="0.9">Small</option>
+        <option value="1">Default</option>
+        <option value="1.15">Large</option>
+        <option value="1.3">Larger</option>
+      </select></div>
+    <div class="status cfgind">Scales Night Roll's own text, not its layout — buttons, rows and the canvas stay the same size, only the type inside grows. An iPhone/iPad's Settings → Accessibility → Display &amp; Text Size → Larger Text already carries through on its own (Safari's Dynamic Type); use this for a browser that doesn't, or to go further.</div>
     </div>
   </div>
 </div>
@@ -2210,7 +2264,7 @@
 <div id="importsheet">
   <div class="metpanel">
     <div class="row" style="align-items:center">
-      <h2 id="imptitle" style="margin:0;font-size:13px;letter-spacing:.1em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">NSF IMPORT</h2>
+      <h2 id="imptitle" style="margin:0;font-size:0.8125rem;letter-spacing:.1em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">NSF IMPORT</h2>
       <button id="impclose" style="min-height:32px;padding:4px 10px">✕</button>
     </div>
     <div class="row">
@@ -6145,7 +6199,7 @@ function renderJobs() {
     row.className = "row";
     const body = document.createElement("span");
     body.className = "jobbody";
-    body.style.cssText = "flex:1;min-width:0;font-size:13px";
+    body.style.cssText = "flex:1;min-width:0;font-size:0.8125rem";
     const word = {running: "⏳", queued: "· queued", done: "✓", failed: "✗ failed", cancelled: "✕ cancelled", interrupted: "⚠ interrupted"}[job.state] || job.state;
     const line = document.createElement("div");
     line.textContent = (kind.label ? kind.label(job) : job.title) + "  " + word + (job.err ? "  " + job.err : "");
@@ -7985,7 +8039,7 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
   const head = document.createElement("div");
   head.style.cssText = "display:flex;align-items:center;gap:6px;padding:2px 4px 2px 10px";
   const hlbl = document.createElement("span");
-  hlbl.style.cssText = "font-family:var(--mono);font-size:11px;color:var(--dim);flex:1";
+  hlbl.style.cssText = "font-family:var(--mono);font-size:0.6875rem;color:var(--dim);flex:1";
   hlbl.textContent = (tr.name || "track " + (ti + 1)) + (tr.kind === "audio" ? " — recording" : " — voice & color");
   const close = document.createElement("button");
   close.style.cssText = "min-height:32px;padding:2px 10px;flex:none";
@@ -8074,7 +8128,7 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
   const vw = document.createElement("div");
   vw.style.cssText = "padding:8px 10px 0;display:flex;align-items:center;gap:8px";
   const vlbl = document.createElement("span");
-  vlbl.style.cssText = "font-family:var(--mono);font-size:11px;color:var(--dim);flex:none";
+  vlbl.style.cssText = "font-family:var(--mono);font-size:0.6875rem;color:var(--dim);flex:none";
   const fader = document.createElement("input");
   fader.type = "range";
   fader.min = "0"; fader.max = "1.5"; fader.step = "0.05";
@@ -8095,7 +8149,7 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
     const pw = document.createElement("div");
     pw.style.cssText = "padding:6px 10px 0;display:flex;align-items:center;gap:8px";
     const plbl = document.createElement("span");
-    plbl.style.cssText = "font-family:var(--mono);font-size:11px;color:var(--dim);flex:none;min-width:58px";
+    plbl.style.cssText = "font-family:var(--mono);font-size:0.6875rem;color:var(--dim);flex:none;min-width:58px";
     const pf = document.createElement("input");
     pf.type = "range"; pf.min = "-1"; pf.max = "1"; pf.step = "0.05";
     pf.value = String(trackPan(ti));
@@ -8113,7 +8167,7 @@ function buildVoiceMenu(ti) { // content only — picks refresh in place; every
     ow.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 10px";
     const olbl = document.createElement("span");
     olbl.textContent = "octave";
-    olbl.style.cssText = "font-size:12px;color:var(--dim)";
+    olbl.style.cssText = "font-size:0.75rem;color:var(--dim)";
     const mk = (txt, dP) => {
       const b = document.createElement("button");
       b.textContent = txt;
@@ -8347,7 +8401,7 @@ function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, whe
   selClip = {ti, ci};
   const line = (txt, dim) => {
     const d = document.createElement("div");
-    d.style.cssText = "padding:4px 10px;font-family:var(--mono);font-size:11px;color:" + (dim ? "var(--dim)" : "var(--text)") + ";white-space:normal";
+    d.style.cssText = "padding:4px 10px;font-family:var(--mono);font-size:0.6875rem;color:" + (dim ? "var(--dim)" : "var(--text)") + ";white-space:normal";
     d.textContent = txt;
     menu.appendChild(d);
     return d;
@@ -8361,7 +8415,7 @@ function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, whe
     for (const [txt, d] of [["‹ prev piece", -1], ["next piece ›", 1]]) {
       const b = document.createElement("button");
       b.textContent = txt;
-      b.style.cssText = "flex:1;min-height:34px;font-size:12px";
+      b.style.cssText = "flex:1;min-height:34px;font-size:0.75rem";
       b.disabled = ci + d < 0 || ci + d >= tr.clips.length;
       b.addEventListener("click", () => { selClip = {ti, ci: ci + d}; buildVoiceMenu(ti); draw(); });
       pr.appendChild(b);
@@ -8372,13 +8426,13 @@ function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, whe
     const r = document.createElement("div");
     r.style.cssText = "display:flex;align-items:center;gap:4px;padding:4px 10px";
     const l = document.createElement("span");
-    l.style.cssText = "font-size:11px;color:var(--dim);flex:none;width:64px";
+    l.style.cssText = "font-size:0.6875rem;color:var(--dim);flex:none;width:64px";
     l.textContent = label;
     r.appendChild(l);
     for (const [txt, fn] of btns) {
       const b = document.createElement("button");
       b.textContent = txt;
-      b.style.cssText = "flex:1;min-height:36px;padding:2px 4px;font-size:12px";
+      b.style.cssText = "flex:1;min-height:36px;padding:2px 4px;font-size:0.75rem";
       b.addEventListener("click", () => { fn(); buildVoiceMenu(ti); });
       r.appendChild(b);
     }
@@ -8423,10 +8477,10 @@ function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, whe
       const t = clipTempo(c);
       const rowEl = document.createElement("div");
       rowEl.style.cssText = "padding:2px 10px 6px";
-      if (t.err) { rowEl.style.cssText += ";font-size:11px;color:var(--dim)"; rowEl.textContent = "♩ " + t.err; }
+      if (t.err) { rowEl.style.cssText += ";font-size:0.6875rem;color:var(--dim)"; rowEl.textContent = "♩ " + t.err; }
       else {
         const lbl = document.createElement("div");
-        lbl.style.cssText = "font-size:11px;color:var(--dim);padding-bottom:4px";
+        lbl.style.cssText = "font-size:0.6875rem;color:var(--dim);padding-bottom:4px";
         lbl.textContent = "≈ " + t.bpm + " BPM (" + t.level + " read) · song is " + Math.round(6e7 / song.tempos[0].usq * 10) / 10 + " · or half / double:";
         rowEl.appendChild(lbl);
         const btns = document.createElement("div");
@@ -8434,7 +8488,7 @@ function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, whe
         for (const v of [t.bpm, t.alts[0], t.alts[1]]) {
           const b = document.createElement("button");
           b.textContent = "set " + v;
-          b.style.cssText = "flex:1;min-height:36px;font-size:12px" + (v === t.bpm ? ";font-weight:bold" : "");
+          b.style.cssText = "flex:1;min-height:36px;font-size:0.75rem" + (v === t.bpm ? ";font-weight:bold" : "");
           b.addEventListener("click", () => { if (setSongTempo(v)) setInfo("song tempo set to " + v + " BPM from " + c.file + " — one ⟲ undoes it"); buildVoiceMenu(ti); });
           btns.appendChild(b);
         }
@@ -8455,9 +8509,9 @@ function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, whe
       const m = clipBeatMap(c, shift);
       const box = document.createElement("div");
       box.style.cssText = "padding:2px 10px 6px";
-      if (m.err) { box.style.cssText += ";font-size:11px;color:var(--dim)"; box.textContent = "♩♩ " + m.err; bm.replaceWith(box); return; }
+      if (m.err) { box.style.cssText += ";font-size:0.6875rem;color:var(--dim)"; box.textContent = "♩♩ " + m.err; bm.replaceWith(box); return; }
       const lbl = document.createElement("div");
-      lbl.style.cssText = "font-size:11px;color:var(--dim);padding-bottom:4px;white-space:normal";
+      lbl.style.cssText = "font-size:0.6875rem;color:var(--dim);padding-bottom:4px;white-space:normal";
       lbl.textContent = "found " + m.bars.length + " bar" + (m.bars.length === 1 ? "" : "s") + " · " + m.bpmRange[0] + "–" + m.bpmRange[1] +
         " BPM (median " + m.median + ", " + m.conf + " read)" + (m.offBars ? " · ⚠ " + m.offBars + " bar" + (m.offBars === 1 ? " looks" : "s look") + " off — try a downbeat shift" : "") +
         " · first downbeat " + m.firstBeatSec.toFixed(2) + "s into the piece" + (m.firstBeatSec > 0.12 ? " (⚠ not at its start — a pickup? shift, or trim the piece to the downbeat)" : "");
@@ -8473,7 +8527,7 @@ function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, whe
         ["downbeat ▶", () => { shift++; redo(); }]]) {
         const b = document.createElement("button");
         b.textContent = txt;
-        b.style.cssText = "flex:1;min-height:36px;font-size:12px" + (bold ? ";font-weight:bold" : "");
+        b.style.cssText = "flex:1;min-height:36px;font-size:0.75rem" + (bold ? ";font-weight:bold" : "");
         b.addEventListener("click", fn);
         btns.appendChild(b);
       }
@@ -8493,7 +8547,7 @@ function buildClipControls(ti, menu, tr) { // the audio track's sheet: what, whe
     ["🗑 Remove piece", "this piece goes; the track and its other pieces stay", () => { deleteClip(ti, ci); if (tr.clips && tr.clips.length) { selClip = {ti, ci: Math.min(ci, tr.clips.length - 1)}; buildVoiceMenu(ti); } else document.getElementById("voicemenu").classList.remove("on"); }]]) {
     const b = document.createElement("button");
     b.textContent = txt; b.title = title;
-    b.style.cssText = "flex:1;min-height:36px;font-size:12px";
+    b.style.cssText = "flex:1;min-height:36px;font-size:0.75rem";
     b.addEventListener("click", fn);
     cutRow.appendChild(b);
   }
@@ -15392,7 +15446,7 @@ function openGridSheet() {
     const b = document.createElement("button");
     b.textContent = String(n);
     b.className = "chip" + (gridDiv === n ? " selected" : "");
-    b.style.cssText = "min-width:52px;min-height:44px;font-size:17px;justify-content:center" +
+    b.style.cssText = "min-width:52px;min-height:44px;font-size:1.0625rem;justify-content:center" +
       (gridDiv === n ? ";background:var(--gold);color:#111;font-weight:700" : "");
     b.addEventListener("click", () => { gridDiv = n; syncDurSeg(); draw(); openGridSheet(); });
     row.appendChild(b);
@@ -16974,7 +17028,7 @@ async function openChipImport(kind, bytes, name, m3uList, files) {
     const lbl = document.createElement("input"); // editable: type the real name once you recognize the tune
     lbl.type = "text";
     lbl.value = title || ("track-" + String(n).padStart(2, "0"));
-    lbl.style.cssText = "flex:2 1 200px;min-width:160px;max-width:40%;min-height:32px;font-family:var(--mono);font-size:12px"; // the name gets room but not the row: 150px cut tag titles, the first widening took too much (Josh, 2026-09-27, both)
+    lbl.style.cssText = "flex:2 1 200px;min-width:160px;max-width:40%;min-height:32px;font-family:var(--mono);font-size:0.75rem"; // the name gets room but not the row: 150px cut tag titles, the first widening took too much (Josh, 2026-09-27, both)
     lbl.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); lbl.blur(); } });
     lbl.addEventListener("change", () => impRename(n));
     const st = document.createElement("span");
@@ -19170,7 +19224,7 @@ document.getElementById("divbtn").addEventListener("click", () => {
     for (const n of [2, 3, 4, 5, 6, 7]) {
       const b = document.createElement("button");
       b.textContent = String(n);
-      b.style.cssText = "flex:1;min-height:44px;font-size:17px";
+      b.style.cssText = "flex:1;min-height:44px;font-size:1.0625rem";
       b.addEventListener("click", () => {
         const k = divideSelection(n);
         document.getElementById("divsheet").classList.remove("on");
@@ -19189,7 +19243,7 @@ document.getElementById("quantbtn").addEventListener("click", () => {
     for (const pct of [100, 75, 50]) {
       const b = document.createElement("button");
       b.textContent = pct + "%";
-      b.style.cssText = "flex:1;min-height:44px;font-size:17px";
+      b.style.cssText = "flex:1;min-height:44px;font-size:1.0625rem";
       b.addEventListener("click", () => {
         const alsoEnds = document.getElementById("quantends").checked;
         const k = quantizeSelection(pct / 100, alsoEnds);
@@ -22022,7 +22076,7 @@ async function askFill() {
     live.textContent = summary;
     if (result.why) { // his ruling: the reasoning stays behind a tap
       const b = document.createElement("button");
-      b.type = "button"; b.textContent = "why?"; b.style.cssText = "margin-left:8px;min-height:28px;padding:2px 8px;font-size:12px";
+      b.type = "button"; b.textContent = "why?"; b.style.cssText = "margin-left:8px;min-height:28px;padding:2px 8px;font-size:0.75rem";
       b.addEventListener("click", () => { b.replaceWith(document.createTextNode("\n" + result.why)); });
       live.appendChild(b);
     }
@@ -22630,6 +22684,7 @@ function openSettingsSheet() {
   document.getElementById("cfgpeninstant").checked = penInstant();
   document.getElementById("cfgnotetapcursor").checked = noteTapMovesCursor();
   document.getElementById("cfgrecsnap").checked = recSnapOn();
+  document.getElementById("cfgtextsize").value = textSizePref();
   ghCheckOut("");
   if (localStorage.getItem("ff1roll-ghtoken")) ghCheck(); // one small GET: "connected" shows without a tap
   document.getElementById("cfgnsfrepo").value = c.nsfRepo;
@@ -22656,6 +22711,12 @@ function penInstant() { try { return localStorage.getItem("ff1roll-peninstant") 
 // keeps what you played, no input snap; a Quantize command snaps afterward,
 // undoably). On restores the old always-snapped recording input.
 function recSnapOn() { try { return localStorage.getItem("ff1roll-recsnap") === "1"; } catch (err) { return false; } }
+// Settings → Other → Text size (DAW review item 12, 2026-09-30): multiplies
+// the root rem size (--userscale in the :root font-size calc, boot script
+// applies it before first paint too). "1" (Default) is a no-op — same as
+// never having set it.
+function textSizePref() { try { return localStorage.getItem("ff1roll-textsize") || "1"; } catch (err) { return "1"; } }
+function applyTextSize(v) { try { document.documentElement.style.setProperty("--userscale", v); } catch (err) {} }
 function settingsPersist(id) {
   const v = el => document.getElementById(el).value.trim();
   const keep = (k, val) => { if (val) localStorage.setItem(k, val); else localStorage.removeItem(k); };
@@ -22665,6 +22726,7 @@ function settingsPersist(id) {
     case "cfgnotetapcursor": { try { localStorage.setItem("ff1roll-notetapcursor", document.getElementById("cfgnotetapcursor").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
     case "cfgpeninstant": { try { localStorage.setItem("ff1roll-peninstant", document.getElementById("cfgpeninstant").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
     case "cfgrecsnap": { try { localStorage.setItem("ff1roll-recsnap", document.getElementById("cfgrecsnap").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
+    case "cfgtextsize": { const tv = v("cfgtextsize") || "1"; try { localStorage.setItem("ff1roll-textsize", tv); } catch (err) { /* private mode */ } applyTextSize(tv); break; }
     case "cfgdebuglog": { try { if (document.getElementById("cfgdebuglog").checked) localStorage.setItem("ff1roll-debuglog", "1"); else localStorage.removeItem("ff1roll-debuglog"); } catch (err) { /* private mode: stays off */ } errChip(); break; }
     case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); askModelCache = null; break;
     case "cfgaibackend": saveCfg({aiBackend: v("cfgaibackend") === "browser" ? "browser" : "remote"}); aiBackendRows(); break;

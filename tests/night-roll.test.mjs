@@ -2293,9 +2293,45 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Snap while recording", "Quantize (Q)", "Also quantize note ends", "Recording keeps what you played",
     "A MIDI keyboard works on the iPad app too",
     "Mixer window", "Drag a strip by its name",
+    "Text size",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
+});
+
+test("Text size (DAW review item 12): no fixed-px font-size survives the CSS/JS except the documented allow-list", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  // Every font-size that names a px size directly must have been converted to
+  // rem (N/16) so it scales with the --ts/--userscale root multiplier — see
+  // NIGHT-ROLL.md "Text size — iOS Dynamic Type". The one allowed exception
+  // is the unitless "font-size: 0" icon-hiding trick (#asksheet-h2, .wmdockbtn)
+  // where the unit is irrelevant (0px === 0rem); canvas-drawn text
+  // (ctx.font/ictx.font — roll/score labels, the instrument panel, the circle
+  // of fifths) uses the CSS `font` shorthand, not `font-size`, so it never
+  // matches this pattern and is out of scope, noted in the :root comment.
+  const offenders = [...html.matchAll(/font-size:\s*[0-9.]+px/g)].map(m => m[0]);
+  assert.deepEqual(offenders, [], "fixed-px font-size left unconverted: " + offenders.join(", "));
+  assert.match(html, /font-size:\s*0\s*[;"]/, "the one documented allow-list exception (font-size: 0) should still be there");
+});
+
+test("Text size: the root scale is rem-based off --ts/--userscale (both default 1, so default = 16px, byte-identical to the old fixed px)", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /--ts:\s*1;/);
+  assert.match(html, /--userscale:\s*1;/);
+  assert.match(html, /html\s*\{\s*font-size:\s*calc\(16px\s*\*\s*var\(--ts\)\s*\*\s*var\(--userscale\)\)/);
+});
+
+test("Text size: Settings → Other's Text size select persists the pref and applies it live as --userscale (the root multiplier)", () => {
+  installSong();
+  app.el("cfgtextsize").value = "1.3";
+  run(`settingsPersist("cfgtextsize")`);
+  assert.equal(app.store.get("ff1roll-textsize"), "1.3", "persisted to localStorage (device pref, not song state)");
+  assert.equal(val(`document.documentElement.style.getPropertyValue("--userscale")`), "1.3");
+  assert.equal(val(`textSizePref()`), "1.3");
+  // back to Default (1) — settingsPersist keeps applying live, not just on first set
+  app.el("cfgtextsize").value = "1";
+  run(`settingsPersist("cfgtextsize")`);
+  assert.equal(val(`document.documentElement.style.getPropertyValue("--userscale")`), "1");
 });
 
 test("Import hub (docs/import-hub-design.md): the File menu opens it, all ten sections are there in order, and the refusal strings match the real ones", () => {
