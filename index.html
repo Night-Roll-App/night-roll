@@ -15842,10 +15842,13 @@ async function renderSongOffline() {
       if (dur > 0) scheduleNote(e.ti, e.n, e.sec, dur);
     }
   } catch (err) { renderErr = err; }
-  if (!renderErr) { try { renderedBuffer = await oac.startRendering(); } catch (err) { renderErr = err; } }
+  // put the live globals back BEFORE the (seconds-long) render: the nodes are
+  // already wired into the offline graph, and a note preview, a ▶ tap or the
+  // playhead during the render must see the live context, not this one
   ({audio, master, trackGains, trackPanners, pulse25, pulse12, organWave,
     playing, playT0, playOffset, loopPass, loopSeg, albumEndAbs} = saved);
   chip.buffers = saved.chipBuffers; chip.buffersCtx = saved.chipBuffersCtx;
+  if (!renderErr) { try { renderedBuffer = await oac.startRendering(); } catch (err) { renderErr = err; } }
   if (renderErr) return {ok: false, why: "the offline render failed (" + (renderErr && renderErr.message || renderErr) + ")"};
   return {ok: true, buffer: renderedBuffer};
 }
