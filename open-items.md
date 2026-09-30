@@ -11,13 +11,24 @@ Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     Welcoming of Maester Mika). Published or fresh — which is right?
 Q2. (ASK LATER) Archive move: make the archive token (resource owner
     joshcough, only the archive repo, Contents read+write) and say "go".
-Q4. The rule table (what each kind of song may do) — an advisor is
-    drafting it, now also weighing Josh's idea: "your copy is yours —
-    edit anything, a re-capture restores"; he checks the recommendation.
+Q4. Captures: LOCKED (notes can't change; Save As makes your editable
+    copy in one tap — the advisor's recommendation) or YOURS (edit the
+    capture itself, tempo notes bake into it, a re-capture restores it —
+    Josh's idea)? Plan: docs/provenance-plan.md.
 Q5. May I add a redirect so the bare address night-roll-app.github.io
     lands on the app? (One tiny public repo in the org,
     Night-Roll-App.github.io, holding a redirect page.) Answered part: the
     "site down" was the bare address without /night-roll/.
+Q6. Imported MIDI files: editable with tempo baking, like a copy
+    (recommended, and today's behaviour) — or locked like a capture?
+Q7. Your Logic exports — compositions/CM6-G7b9.mid and
+    nightroll/KeyChangeTest-07-26.mid: composition or import?
+Q8. The machine-written "forked from X" / "moved from X" notes (6 files):
+    move them into the file's origin header and drop them from the notes
+    list (recommended) — or keep them visible too?
+Q9. Your own songs: tempo notes will bake into the .mid. Should a meter
+    you declare on YOUR song bake in too (so Logic sees it)? Today the
+    .mid keeps the New-song meter. (On analysis songs, never.)
 Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
