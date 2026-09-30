@@ -565,8 +565,11 @@ writer used each note's capture channel, and a console voice number that
 mapped to MIDI channel 10 put melodic parts on the drum channel (Josh:
 "the entire album … really bad"). Fixed in both writers (only a kit track
 may use channel 10) with a test. NES / Game Boy / SNES re-captures were
-clean (scanned: 0 affected) and stay. Before resuming PS/N64: re-capture
-one album into a scratch dir and scan it (tmp/scan9.mjs) + a listen.
+clean (scanned: 0 affected) and stay. Verified the fix on a scratch FF7
+re-capture: 90/90 songs with IDENTICAL notes to the published ones, 0 on
+channel 10. PS1/PS2/N64 resumed 2026-09-30 with a GATE (tmp/
+recapture-writer2.sh): an album commits only if every song's notes equal
+the published ones and nothing melodic is on channel 10.
 (Original entry:)
 So published songs get back the pan / duty / envelope data the old writer
 dropped (FORMATS AUDIT #1). One push per album, only existing .mid files
