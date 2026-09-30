@@ -1,0 +1,56 @@
+{
+ "title": "Castlevania II: Simon's Quest",
+ "order": 50,
+ "songs": {
+  "a-requiem-ending": "A Requiem (Ending)",
+  "bloody-tears-street-day-time-bgm": "Bloody Tears (Street - Day time BGM)",
+  "dwelling-of-doom-mansion-bgm": "Dwelling of Doom (Mansion BGM)",
+  "game-over-game-over": "Game Over (Game Over)",
+  "last-boss-last-boss-bgm": "Last Boss (Last Boss BGM)",
+  "message-of-darkness-naming-bgm": "Message of Darkness (Naming BGM)",
+  "monster-dance-night-bgm": "Monster Dance (Night BGM)",
+  "the-silence-of-the-daylight-town-stage-bgm": "The Silence of The Daylight (Town Stage BGM)",
+  "within-these-castle-walls-castle-bgm": "Within These Castle Walls (Castle BGM)"
+ },
+ "nsf": {
+  "vault": "nes/castlevania-ii.nsf",
+  "tracks": {
+   "a-requiem-ending": {
+    "n": 9,
+    "secs": 91.063024
+   },
+   "bloody-tears-street-day-time-bgm": {
+    "n": 2,
+    "secs": 37.33184
+   },
+   "dwelling-of-doom-mansion-bgm": {
+    "n": 4,
+    "secs": 25.432316
+   },
+   "game-over-game-over": {
+    "n": 7,
+    "secs": 5.066464
+   },
+   "last-boss-last-boss-bgm": {
+    "n": 6,
+    "secs": 8.532992
+   },
+   "message-of-darkness-naming-bgm": {
+    "n": 8,
+    "secs": 15.99936
+   },
+   "monster-dance-night-bgm": {
+    "n": 3,
+    "secs": 23.599056
+   },
+   "the-silence-of-the-daylight-town-stage-bgm": {
+    "n": 1,
+    "secs": 34.131968
+   },
+   "within-these-castle-walls-castle-bgm": {
+    "n": 5,
+    "secs": 19.199232000000002
+   }
+  }
+ }
+}

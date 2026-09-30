@@ -1278,6 +1278,47 @@
   ]
  },
  {
+  "title": "Castlevania II: Simon's Quest",
+  "songs": [
+   {
+    "title": "A Requiem (Ending)",
+    "path": "albums/nes/castlevania-ii/a-requiem-ending.mid"
+   },
+   {
+    "title": "Bloody Tears (Street - Day time BGM)",
+    "path": "albums/nes/castlevania-ii/bloody-tears-street-day-time-bgm.mid"
+   },
+   {
+    "title": "Dwelling of Doom (Mansion BGM)",
+    "path": "albums/nes/castlevania-ii/dwelling-of-doom-mansion-bgm.mid"
+   },
+   {
+    "title": "Game Over (Game Over)",
+    "path": "albums/nes/castlevania-ii/game-over-game-over.mid"
+   },
+   {
+    "title": "Last Boss (Last Boss BGM)",
+    "path": "albums/nes/castlevania-ii/last-boss-last-boss-bgm.mid"
+   },
+   {
+    "title": "Message of Darkness (Naming BGM)",
+    "path": "albums/nes/castlevania-ii/message-of-darkness-naming-bgm.mid"
+   },
+   {
+    "title": "Monster Dance (Night BGM)",
+    "path": "albums/nes/castlevania-ii/monster-dance-night-bgm.mid"
+   },
+   {
+    "title": "The Silence of The Daylight (Town Stage BGM)",
+    "path": "albums/nes/castlevania-ii/the-silence-of-the-daylight-town-stage-bgm.mid"
+   },
+   {
+    "title": "Within These Castle Walls (Castle BGM)",
+    "path": "albums/nes/castlevania-ii/within-these-castle-walls-castle-bgm.mid"
+   }
+  ]
+ },
+ {
   "title": "Chrono Cross",
   "songs": [
    {
