@@ -4679,8 +4679,7 @@ at load.
 labels, the instrument panel, the circle of fifths — grep for `\.font =
 "…px "`) draws with literal px sizes picked per context (down to 7-8px
 for dense rows) and does not participate in `--ts`/`--userscale` yet;
-noted in the `:root` comment, not fixed. Canvas text also has no
-VoiceOver (open-items.md #12's other half) — still open.
+noted in the `:root` comment, not fixed.
 
 Tests: `tests/night-roll.test.mjs` asserts no `font-size:\s*\d+px`
 survives in the CSS/JS except the one documented exception (`font-size:
@@ -4692,3 +4691,158 @@ before/after screenshots of the main screen (a song open) diffed
 pixel-by-pixel — see the report for the exact match result — then the
 "Larger" (1.3×) setting reviewed by eye for clipping/overlap across the
 header, footer, track chips, transport LCD, and sheets.
+
+## VoiceOver — first pass (open-items.md DAW review item 12's other half,
+2026-09-30)
+
+The roll/score/tracks canvas has no accessibility tree of its own — it's
+one opaque `<canvas>` to a screen reader. This is a first pass at making
+the surrounding app usable non-visually, not a full non-visual editor
+(there is still no way to read or edit a note's pitch/time by keyboard
+alone, only to know what's selected and hear it named — see "Still open"
+below).
+
+**Icon-only controls.** Found systematically: a scan (`node -e` one-off,
+the same shape now checked by the test below) over every `<button>` in
+index.html — static markup and the JS that builds the dynamic ones
+(track-chip M/S/H, mixer strips, the chord-picker) — for a tag whose
+rendered text has no real word in it (`/[A-Za-z]{2,}/`) and no
+`aria-label`. ~23 static offenders got a label (💬 Notes strip, 🎹
+Instrument panel, ✕ Close, ⟲/⟳ circle-of-fifths rotation, the Mixer's
+−/+ section-level steppers, the metronome's ‹/› "shift accents" nudges,
+100% speed-reset, 📷 the AI panel's screenshot button, …). Toggle groups
+(Select/Pencil/Erase, note value × modifier, ♮/♯/♭, M/S/H) got
+`aria-pressed`/`aria-checked` kept in step with the `.active`/`.on` class
+that already drove the look — one line added beside each existing
+`classList.toggle`, not a parallel mechanism.
+
+**Track chip M/S/H** (`renderTrackbar`, and the Mixer's `mkBtn`) were
+bare `<span>`s with only a click listener — no role, no keyboard path,
+no name. Now `role="button"`, `tabIndex`, `aria-pressed`, and an
+`aria-label` that names the TRACK, not just the letter ("Mute lead"),
+since VoiceOver reads several of these in a row with no visual context
+to disambiguate them. A `<span>`/`<div role="button">` gets no built-in
+Enter/Space activation the way a real `<button>` does, so one delegated
+`document` keydown listener (beside the existing Escape/Space/Enter
+shortcut handlers) maps Enter/Space to `.click()` for any focused
+`role="button"` element — covers the chip itself, M/S/H, the mixer strip
+name, the "what's Claude doing" strip, and anything built the same way
+later. The existing Space-for-play/stop and Enter-for-rewind global
+shortcuts were widened to skip role="button" elements too, so activating
+a toggle with the keyboard doesn't ALSO trigger play/stop or rewind.
+
+**Tab strips** (`#helptabs`, the insrument-panel Piano/Guitar tabs, the
+Insert Chord/Progression tabs, Settings' Saving/AI/GitHub/Other tabs;
+the ✦ AI song/general/terminal tabs already had this) get
+`role="tablist"` on the container, `role="tab"`/`aria-selected` on each
+button, updated wherever the existing tab-switch code already toggles
+the `.active`/`.on` class. `tools/build_help.mjs`'s regex for the help
+tabs (`<button data-hs="(\w+)">…`) was loosened to `data-hs="(\w+)"[^>]*>`
+so the new `role`/`aria-selected` attributes between `data-hs` and `>`
+don't break HELP.md generation.
+
+**The canvas** (`#roll`) carries `role="application"` (not `role="img"`:
+it owns extensive custom keyboard shortcuts — arrows, Enter, Space, ⌘-
+combos — that `role="img"` would hand to the screen reader's own
+navigation instead) and `tabindex="0"`, reachable by Tab like any other
+control. `updateCanvasA11y()`, called at the top of every `drawFull()`
+(cheap — a handful of multiplies and a string build, no throttling
+needed since `aria-label` isn't announced on its own until the user
+explores the element), keeps its `aria-label` current: the song title,
+which of Roll/Tracks/Score is showing, the visible bar range computed
+from `view.x`/`pxPerTick()`/`RULER_W` the same way the ruler draws it,
+and the track count.
+
+**The live region** (`#srlive`, `aria-live="polite"` `aria-atomic="true"`,
+`.sr-only` at the top of `<body>`) is the app's one channel for telling a
+screen reader what just happened, funneled through a single function,
+`srAnnounce(text)` (defined next to `setInfo`): de-duped on identical
+text, throttled to one DOM write per 250ms (a `setTimeout` that always
+fires with the LAST text of a burst, never a stale middle one) so a
+drag's flurry of status-line updates doesn't queue an announcement per
+frame. Two callers:
+- `setInfo()` (the footer `#noteinfo` status line — same function that
+  already carries the selected note/chord readout, section/chord taps,
+  every "one ⟲ undoes it" confirmation) passes its own text straight
+  through. This is also how Learning mode's law — nothing spoken that
+  the screen doesn't already show — holds for free here: `#srlive` is
+  never anything other than the exact string `#noteinfo` just got, so a
+  Learning-mode chord selection (which `refreshSelInfo`'s
+  `appMode() === "normal"` branch keeps un-named on screen) is
+  structurally un-nameable in the live region too, not filtered
+  after the fact.
+- `play()`/`stop()` directly (transport state doesn't route through
+  `setInfo`): `srAnnounce("Playing")` when the transport starts (plus
+  the song title during album play), `srAnnounce("Stopped at bar … beat
+  …")` on stop, reading the SAME `#lcdbar`/`#lcdbeat` text
+  `updateSubtitle()`/`updateLCD()` just wrote to the LCD — never
+  recomputed independently.
+
+**Sheets** (every `.overlay`, including `confirmsheet`) get
+`role="dialog"`, `aria-labelledby` pointing at the sheet's own `<h2>`/
+`<h3>` (assigned an id if it didn't have one), and `aria-modal` kept
+live by the same `SHEET_TOP` `MutationObserver` that already watches
+every overlay's class for the scroll-reset behavior — `"true"` only
+while open AND not docked (a docked panel sits beside the roll, not over
+it; `aria-modal="true"` there would wrongly tell a screen reader
+everything else on the page is inert). Opening a sheet remembers
+`document.activeElement` on the overlay node, then — deferred one
+`requestAnimationFrame` so a sheet's own open-time focus (the rename
+sheet's text input, already-existing code) wins if it set one — moves
+focus to the first focusable control inside, or the `.sheet` itself
+(given `tabIndex = -1` if it had none, so it's a focus target but never
+in the Tab order on its own). Closing (✕, backdrop, Esc — all three
+already ran through this observer) returns focus to whatever was
+remembered. All of this lives inside the existing `if (typeof
+document.querySelectorAll === "function")` guard (the vm harness
+deliberately leaves it undefined — see harness.mjs), so it is
+real-browser-only, verified with the Playwright accessibility-snapshot
+script below, not the vm suite.
+
+**Focus ring.** `select:focus-visible, button:focus-visible` (already
+existed) widened to `input, textarea, a, [tabindex], [role="button"],
+canvas` — `:focus-visible` only lights up on keyboard focus, so it costs
+zero pixels in a mouse/touch/default screenshot (confirmed: the before/
+after pixel diff below is 0 outside the focus-ring screenshot, same
+guarantee the Text-size work used).
+
+Tests (`tests/night-roll.test.mjs`, "VoiceOver:" prefix): a static scan
+(mirrors the `node -e` scan above) that no symbol-only `<button>` lacks
+an `aria-label`, with an explicit two-entry allow-list for the regex's
+own false positives (`#analyzeadopt` ships empty and is always filled
+with real words before it's shown; the chord-root buttons' rendered text
+is a real note name, invisible to a regex that can't evaluate the
+template string that builds them); `srAnnounce`'s de-dupe/throttle
+behavior; `setInfo` mirrors into `#srlive`; `play()`/`stop()` announce
+correctly; a Learning-mode lasso-over-a-triad test asserts `#srlive`
+equals `#noteinfo` exactly and contains no chord-quality word or the
+Normal-mode "→" arrow, then the same notes in Normal mode assert the
+opposite (the chord IS named, on screen and in the live region alike);
+track-chip M/S/H are real toggles with per-track labels; the canvas
+`aria-label` names the song/view/bars/tracks. DOM-wide behavior (tab
+strips, dialog roles, focus management) is gated behind
+`document.querySelectorAll`, undefined in the vm harness by design, so
+it's covered instead by a one-off Playwright script dumping
+`page.accessibility.snapshot()` and a focus-ring screenshot — not
+`npx playwright test` (CLAUDE.md: full E2E is CI-only).
+
+Also: `tests/harness.mjs`'s `makeEl()` gained a real attribute store
+(`setAttribute`/`getAttribute`/`hasAttribute`/`removeAttribute`) in
+place of a `setAttribute: noop` that silently dropped everything — the
+prior stub meant no vm test could ever have asserted on an
+`aria-*`/`role` attribute set at runtime. Purely additive: nothing in
+index.html called `.getAttribute(` before this, so no existing test's
+behavior depends on the old no-op.
+
+**Still open** (not this pass): reading or editing a note's pitch/time
+by keyboard alone (today Tab reaches every CONTROL, but the notes
+themselves live only on the canvas, described in aggregate via the
+live region, not individually addressable); canvas-drawn text
+(instrument panel, circle of fifths, roll/score labels) has no
+alternative text at all, same gap the Text-size work left for
+`ctx.font`; Escape-stack and backdrop-tap dismissal aren't
+screen-reader-specific gaps but weren't re-verified with VoiceOver on;
+the non-`.overlay` popups (`#metsheet`, `#voicemenu`, `#wmmenu`,
+`#speedpop`/`#volpop`) got no focus management, only `#metsheet` got a
+static `role="dialog"`/`aria-labelledby` — they're small anchored
+popups, not full sheets, and were out of scope for this pass.

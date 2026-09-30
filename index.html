@@ -189,9 +189,21 @@
   #nowchip.working { color: var(--text); border-color: var(--accent); }
   body.nowchip #songcrumb { right: calc(22vw + 20px); }
   @media (max-width: 700px) { #nowchip { display: none !important; } body.nowchip #songcrumb { right: 10px; } }
+  .overlay > .sheet:focus { outline: none; } /* focused for VoiceOver on open, not a control */
   #playbtn.loading { opacity: 0.7; } /* loading its sound: tappable (queues the play), not yet ▶ */
   #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 0.75rem; }
-  select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  select:focus-visible, button:focus-visible,
+  input:focus-visible, textarea:focus-visible, a:focus-visible,
+  [tabindex]:focus-visible, [role="button"]:focus-visible,
+  canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* VoiceOver first pass (2026-09-30): visually hidden but still reachable
+     by a screen reader — the standard clip-to-1px technique, not
+     display:none (which VoiceOver/NVDA both skip entirely). Zero visible
+     pixels, so it can't show up in a before/after screenshot diff. */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; min-width: 74px; }
   button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   button:disabled { opacity: 0.4; cursor: default; }
@@ -1048,6 +1060,15 @@
 </script>
 </head>
 <body>
+<!-- VoiceOver first pass (open-items.md DAW review item 12's other half,
+     2026-09-30): the roll/score/tracks canvas has no accessibility tree of
+     its own, so a screen-reader user needs to be TOLD what changed instead
+     of seeing it. One offscreen aria-live region, one choke point
+     (srAnnounce, defined with setInfo below) — play/stop, the bar.beat
+     playback stops on, and note-selection/status-line text all funnel
+     through it. Visually hidden (not display:none — VoiceOver/NVDA both
+     ignore a display:none live region), so it costs zero layout pixels. -->
+<div id="srlive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 <!-- Window manager shell (windowing plan phase A — open-items.md "a real
      windowing system"; attempt 1, c322e3c, tried <html> padding-right +
      position:fixed for the AI panel and broke on the iPad: it didn't span full
@@ -1109,7 +1130,7 @@
       <input type="range" id="speedsl" min="25" max="200" step="5" value="100"
              aria-label="Playback speed">
       <span class="meta" id="speedlbl" style="margin-left:0">100%</span>
-      <button id="speedreset" style="display:none;min-height:32px;padding:4px 9px">100%</button>
+      <button id="speedreset" style="display:none;min-height:32px;padding:4px 9px" aria-label="Reset playback speed to 100%">100%</button>
     </div>
     <button id="volbtn" aria-label="Master volume">🔊</button>
     <div id="volpop" style="display:none;align-items:center;gap:6px">
@@ -1136,38 +1157,38 @@
 </div>
 <div id="songcenter">
 <div id="dockleftinner"><div id="wmdivider-left-inner" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div></div>
-<div id="rollwrap"><canvas id="roll"></canvas></div>
+<div id="rollwrap"><canvas id="roll" role="application" tabindex="0" aria-label="Night Roll — no song open"></canvas></div>
 <div id="dockrightinner"><div id="wmdivider-right-inner" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div></div>
 </div><!-- /songcenter -->
 <div id="editrow">
 
-  <div class="seg" id="modeseg">
-    <button data-mode="select">Select</button>
-    <button data-mode="pencil">Pencil</button>
-    <button data-mode="erase">Erase</button>
+  <div class="seg" id="modeseg" role="radiogroup" aria-label="Edit mode">
+    <button data-mode="select" role="radio" aria-checked="false">Select</button>
+    <button data-mode="pencil" role="radio" aria-checked="false">Pencil</button>
+    <button data-mode="erase" role="radio" aria-checked="false">Erase</button>
   </div>
-  <div class="seg" id="durseg" style="display:none">
-    <button data-nv="1">1</button>
-    <button data-nv="2">2</button>
-    <button data-nv="4">4</button>
-    <button data-nv="8" class="active">8</button>
-    <button data-nv="16">16</button>
-    <button data-nv="32">32</button>
-    <button data-mod="1" class="active" aria-label="Plain">—</button>
-    <button data-mod="1.5" aria-label="Dotted">·</button>
-    <button data-mod="0.6666666666666666" aria-label="Triplet">T</button>
-    <button id="gridchip" data-grid="1" style="display:none" aria-label="Custom grid" title="custom grid rules — tap to change or turn off">▦</button>
+  <div class="seg" id="durseg" style="display:none" role="group" aria-label="Note value and modifier">
+    <button data-nv="1" aria-label="Whole note" aria-pressed="false">1</button>
+    <button data-nv="2" aria-label="Half note" aria-pressed="false">2</button>
+    <button data-nv="4" aria-label="Quarter note" aria-pressed="false">4</button>
+    <button data-nv="8" class="active" aria-label="Eighth note" aria-pressed="true">8</button>
+    <button data-nv="16" aria-label="Sixteenth note" aria-pressed="false">16</button>
+    <button data-nv="32" aria-label="Thirty-second note" aria-pressed="false">32</button>
+    <button data-mod="1" class="active" aria-label="Plain" aria-pressed="true">—</button>
+    <button data-mod="1.5" aria-label="Dotted" aria-pressed="false">·</button>
+    <button data-mod="0.6666666666666666" aria-label="Triplet" aria-pressed="false">T</button>
+    <button id="gridchip" data-grid="1" style="display:none" aria-label="Custom grid" title="custom grid rules — tap to change or turn off" aria-pressed="false">▦</button>
   </div>
   <div class="seg" id="velseg" style="display:none;align-items:center;gap:6px;padding:0 8px">
     <span class="lbl">vol</span>
     <input type="range" id="velslider" min="8" max="127" value="80" style="width:110px" aria-label="Velocity">
     <span class="lbl" id="velval" style="min-width:26px;text-align:right">80</span>
   </div>
-  <div class="seg" id="accseg" style="display:none">
-    <button data-acc="key" class="active">key</button>
-    <button data-acc="0">♮</button>
-    <button data-acc="1">♯</button>
-    <button data-acc="-1">♭</button>
+  <div class="seg" id="accseg" style="display:none" role="radiogroup" aria-label="Pencil accidental">
+    <button data-acc="key" class="active" role="radio" aria-checked="true">key</button>
+    <button data-acc="0" role="radio" aria-checked="false" aria-label="Natural">♮</button>
+    <button data-acc="1" role="radio" aria-checked="false" aria-label="Sharp">♯</button>
+    <button data-acc="-1" role="radio" aria-checked="false" aria-label="Flat">♭</button>
   </div>
   <button id="undobtn" aria-label="Undo">⟲</button>
   <button id="redobtn" aria-label="Redo">⟳</button>
@@ -1195,19 +1216,19 @@
 <div id="instpanel">
   <div id="instwrap"><canvas id="instcanvas"></canvas></div>
   <div id="instbar">
-    <div class="seg">
-      <button id="insttab-piano" class="active">Piano</button>
-      <button id="insttab-guitar">Guitar</button>
+    <div class="seg" role="tablist" aria-label="Instrument panel view">
+      <button id="insttab-piano" class="active" role="tab" aria-selected="true">Piano</button>
+      <button id="insttab-guitar" role="tab" aria-selected="false">Guitar</button>
     </div>
-    <button id="instfall">▼ Fall</button>
+    <button id="instfall" aria-pressed="false">▼ Fall</button>
     <div id="instinfo">tap a key</div>
   </div>
 </div>
 <div id="subtitle"></div>
 <footer>
-  <button id="viewbtn" aria-label="Toggle score view">𝄞 Score</button>
-  <button id="lassobtn">⊞ Lasso</button>
-  <button id="instbtn">🎹</button>
+  <button id="viewbtn" aria-label="Switch to Score view">𝄞 Score</button>
+  <button id="lassobtn" aria-pressed="false">⊞ Lasso</button>
+  <button id="instbtn" aria-label="Instrument panel" aria-pressed="false">🎹</button>
   <select id="findsel" aria-label="Highlight a pitch class" style="max-width:110px">
     <option value="">find: off</option>
   </select>
@@ -1230,7 +1251,7 @@
   <button id="keyset" style="display:none">Set</button>
   <button id="cofbtn" aria-label="Circle of fifths">◯5</button>
   <div id="noteinfo">tap a note</div>
-  <button id="subbtn">💬</button>
+  <button id="subbtn" aria-label="Notes strip" aria-pressed="true">💬</button>
   <button id="listbtn">☰ Notes</button>
   <button id="notebtn">+ Note</button>
   <button id="syncbtn">Publish</button>
@@ -1634,9 +1655,9 @@
 <div class="overlay" id="chordsheet">
   <div class="sheet">
     <h2>INSERT</h2>
-    <div class="row" style="gap:6px;margin-bottom:8px">
-      <button id="chtab-chord" class="primary">Chord</button>
-      <button id="chtab-prog">Progression</button>
+    <div class="row" style="gap:6px;margin-bottom:8px" role="tablist" aria-label="Insert kind">
+      <button id="chtab-chord" class="primary" role="tab" aria-selected="true">Chord</button>
+      <button id="chtab-prog" role="tab" aria-selected="false">Progression</button>
     </div>
     <div id="chchordpane">
     <div id="chroots" class="row" style="flex-wrap:wrap;gap:4px"></div>
@@ -1658,15 +1679,15 @@
 <div class="overlay" id="helpsheet">
   <div class="sheet help">
     <h2>NIGHT ROLL — WHAT YOU CAN DO</h2>
-    <div id="helptabs">
-      <button data-hs="views">Views</button>
-      <button data-hs="playback">Playback</button>
-      <button data-hs="tracks">Tracks</button>
-      <button data-hs="explore">Explore</button>
-      <button data-hs="editor">Editor</button>
-      <button data-hs="annot">Annotations</button>
-      <button data-hs="files">Files &amp; Sync</button>
-      <button data-hs="ask">✦ AI</button>
+    <div id="helptabs" role="tablist" aria-label="Help topic">
+      <button data-hs="views" role="tab" aria-selected="true">Views</button>
+      <button data-hs="playback" role="tab" aria-selected="false">Playback</button>
+      <button data-hs="tracks" role="tab" aria-selected="false">Tracks</button>
+      <button data-hs="explore" role="tab" aria-selected="false">Explore</button>
+      <button data-hs="editor" role="tab" aria-selected="false">Editor</button>
+      <button data-hs="annot" role="tab" aria-selected="false">Annotations</button>
+      <button data-hs="files" role="tab" aria-selected="false">Files &amp; Sync</button>
+      <button data-hs="ask" role="tab" aria-selected="false">✦ AI</button>
     </div>
 
     <div class="hsec" data-hsec="views">
@@ -1680,6 +1701,7 @@
       <dt>Drag / pinch</dt><dd>One finger pans; two fingers zoom — spread horizontally to stretch time, vertically to grow/shrink the pitch rows (roll only). Two fingers moving TOGETHER pan — and that works with pencil or select armed; anything the first finger started is rolled back the instant the second finger lands. With an Apple Pencil (or one finger), <b>hold to grab</b>: dwell about a quarter second on a note before it drags, and the pencil tool only places a note on a clean tap or a dwell — a fast passing stroke always PANS, so sweeping across the song never moves a note or plants a stray one. A mouse grabs instantly (pressing a mouse button is already deliberate); the <b>Apple Pencil</b> can too — Settings → Other → "Apple Pencil draws and grabs at once" (off by default: with it on, a Pencil swipe that starts on a note moves the note instead of scrolling). Songs open fitted to the screen. In score view, scroll fully left to see the clefs and key signature.</dd>
       <dt>Roll zoom-out limit</dt><dd>Pinch-out stops once the whole song is in view — per axis: when every bar fits, further pinch-out only reveals pitch; when every note is visible — plus a few rows of breathing room above and below, so the top notes never sit against the ruler — it stops. Opening a song lands exactly on this limit.</dd>
       <dt>Score zoom limit</dt><dd>The score stops zooming out where its busiest bar would overflow — engraved notes can't shrink. Mute dense tracks to zoom out further, or use the Roll for the bird's-eye view.</dd>
+      <dt>VoiceOver (first pass)</dt><dd>The roll/score/tracks canvas is a screen reader's one blind spot in Night Roll — this is a first pass, not a full non-visual editor. Every icon-only button (⏮ ▶ ⏱ ⚙ ✦ 📷 ⟲ ⟳ ⧉ 📋 ✂ ➗, track chip M/S/H, mixer strips, sheet ✕s…) has a real label, and toggles report their on/off state. An offscreen strip announces play/stop, the bar.beat where playback stopped, and the selected note(s) or chord — always the SAME words the footer status line already shows, never more (Learning mode's rule holds here too: nothing is spoken that the screen doesn't already say). The canvas itself carries a label naming the open song, which view, the visible bars, and the track count. Every sheet is a labelled dialog; opening one moves focus in, closing it gives focus back to whatever you opened it from. Tab reaches every control, with a visible focus ring.</dd>
     </dl>
 
     </div>
@@ -1853,8 +1875,8 @@
   <div class="fdiv" id="vwLevelsDiv"></div>
   <div id="vwLevelsRow" style="display:flex;align-items:center;gap:4px;padding:2px 4px">
     <span id="vwLevelsLbl" style="flex:1;font-family:var(--mono);font-size:0.8125rem;padding:6px"></span>
-    <button id="vwLevelsMinus" style="min-height:38px;min-width:44px">−</button>
-    <button id="vwLevelsPlus" style="min-height:38px;min-width:44px">+</button>
+    <button id="vwLevelsMinus" style="min-height:38px;min-width:44px" aria-label="Fewer section levels shown">−</button>
+    <button id="vwLevelsPlus" style="min-height:38px;min-width:44px" aria-label="More section levels shown">+</button>
   </div>
   <div class="fdiv"></div>
   <button class="fitem" id="vwAnalyze">🔍  Analyze ▸</button>
@@ -1953,11 +1975,11 @@
      #voicemenu/#filesub -->
 <div id="wmmenu"></div>
 
-<div id="metsheet">
+<div id="metsheet" role="dialog" aria-labelledby="metsheet-h2">
   <div class="metpanel">
     <div class="row" style="align-items:center">
-      <h2 style="margin:0;font-size:0.8125rem;letter-spacing:.1em">METRONOME</h2>
-      <button id="metclose" style="margin-left:auto;min-height:32px;padding:4px 10px">✕</button>
+      <h2 id="metsheet-h2" style="margin:0;font-size:0.8125rem;letter-spacing:.1em">METRONOME</h2>
+      <button id="metclose" style="margin-left:auto;min-height:32px;padding:4px 10px" aria-label="Close">✕</button>
     </div>
     <div class="row">
       <button class="primary" id="metgo">▶ Start</button>
@@ -1986,9 +2008,9 @@
         <option value="trial">trial meter over song</option>
       </select>
       <span id="metnudgewrap" style="display:none">
-        <button id="metnudgeL" style="min-height:34px;padding:4px 10px">‹</button>
+        <button id="metnudgeL" style="min-height:34px;padding:4px 10px" aria-label="Shift accents earlier">‹</button>
         <span class="lbl">shift accents</span>
-        <button id="metnudgeR" style="min-height:34px;padding:4px 10px">›</button>
+        <button id="metnudgeR" style="min-height:34px;padding:4px 10px" aria-label="Shift accents later">›</button>
       </span>
     </div>
     <div class="row">
@@ -2137,9 +2159,9 @@
   <div class="sheet ask">
     <h2 id="asksheet-h2">AI</h2>
     <div class="chiprow" id="askmoderow" role="tablist" aria-label="Which chat">
-      <button id="askmodesong" role="tab" class="active">♪ this song</button>
-      <button id="askmodegen" role="tab">✦ Ask</button>
-      <button id="askmodeterm" role="tab" style="display:none" title="Straight to Claude Code in the Mac's terminal — the session that builds Night Roll">⌨ Terminal</button>
+      <button id="askmodesong" role="tab" class="active" aria-selected="true">♪ this song</button>
+      <button id="askmodegen" role="tab" aria-selected="false">✦ Ask</button>
+      <button id="askmodeterm" role="tab" aria-selected="false" style="display:none" title="Straight to Claude Code in the Mac's terminal — the session that builds Night Roll">⌨ Terminal</button>
     </div>
     <div class="status" id="asknowstrip" style="display:none;cursor:pointer" role="button" tabindex="0" aria-label="What Claude Code is doing — tap for recent"></div>
     <div id="asknowrecent" style="display:none"></div>
@@ -2168,7 +2190,7 @@
     <div class="row" id="askinputrow">
       <textarea id="askinput" placeholder="Ask about what you're looking at…" aria-label="Your question"></textarea>
       <button id="askmic">🎤 Speak</button>
-      <button id="askshot" style="display:none" title="Send a picture of the app to Claude">📷</button>
+      <button id="askshot" style="display:none" title="Send a picture of the app to Claude" aria-label="Send a picture of the app to Claude">📷</button>
       <button class="primary" id="asksend">Send</button>
       <button id="askfill" style="display:none" aria-label="Ask the AI to write notes into the range">✦ Fill</button>
     </div>
@@ -2190,11 +2212,11 @@
          panes behind tabs (Josh, 2026-09-27, on the iPad: one long sheet had
          texts running into each other — "this dialogue is getting unwieldy");
          the last tab is remembered on the device. -->
-    <div class="seg" id="cfgtabs">
-      <button id="cfgtab-saving" class="on">Saving</button>
-      <button id="cfgtab-ai">AI</button>
-      <button id="cfgtab-github">GitHub</button>
-      <button id="cfgtab-other">Other</button></div>
+    <div class="seg" id="cfgtabs" role="tablist" aria-label="Settings section">
+      <button id="cfgtab-saving" class="on" role="tab" aria-selected="true">Saving</button>
+      <button id="cfgtab-ai" role="tab" aria-selected="false">AI</button>
+      <button id="cfgtab-github" role="tab" aria-selected="false">GitHub</button>
+      <button id="cfgtab-other" role="tab" aria-selected="false">Other</button></div>
     <div class="cfgpane on" id="cfgpane-saving">
     <div class="status cfgind">Every edit is kept on this device automatically — there's no switch for it. File → <b>Save Version</b> (⌘S) adds a dated snapshot (music + annotations); File → <b>Versions…</b> lists them, and the published copy. <b>Publish</b> is the separate, deliberate step that shares a song.</div>
     <div class="row" id="filesrow" style="display:none"><span class="lbl" style="width:70px">Files</span>
@@ -2279,7 +2301,7 @@
   <div class="metpanel">
     <div class="row" style="align-items:center">
       <h2 id="imptitle" style="margin:0;font-size:0.8125rem;letter-spacing:.1em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">NSF IMPORT</h2>
-      <button id="impclose" style="min-height:32px;padding:4px 10px">✕</button>
+      <button id="impclose" style="min-height:32px;padding:4px 10px" aria-label="Close">✕</button>
     </div>
     <div class="row">
       <span class="lbl">album</span>
@@ -2305,8 +2327,8 @@
     <div id="cofdetail"></div>
     <div id="cofprogslot"></div>
     <div class="row" style="margin-top:10px">
-      <button id="cofccw">⟲</button>
-      <button id="cofcw">⟳</button>
+      <button id="cofccw" aria-label="Rotate the circle of fifths counterclockwise">⟲</button>
+      <button id="cofcw" aria-label="Rotate the circle of fifths clockwise">⟳</button>
       <button id="cofprogbtn">Progressions</button>
     </div>
   </div>
@@ -4068,35 +4090,38 @@ function renderTrackbar() {
     chip.dataset.ti = String(ti); // which track this chip belongs to — the tap-away closer (below) needs it to tell "the menu's own chip" from "a different track"
     chip.setAttribute("role", "button");
     chip.tabIndex = 0;
+    const trName = (tr.name || "track " + (ti + 1));
+    chip.setAttribute("aria-label", trName + (ti === selTrack ? " — selected, activate again for voice & color" : " — select"));
     const dot = document.createElement("span");
     dot.className = "dot";
     dot.style.background = trackColor(ti);
     const label = document.createElement("span");
     label.textContent = (tr.name || "tr" + (ti+1)).slice(0, 18) + (tr.kind === "audio" ? " ∿" : "");
-    const solo = document.createElement("span");
-    solo.className = "solo" + (trackState[ti].solo ? " on" : "");
-    solo.textContent = "S";
-    solo.addEventListener("click", e => {
-      e.stopPropagation();
-      trackToggle(ti, "solo");
-    });
     // M silences, S solos, H hides — three separate things, as in a DAW
     // (2026-09-29: M used to hide AND silence; muting the bass lost sight of it)
-    const mute = document.createElement("span");
-    mute.className = "solo" + (trackState[ti].muted ? " on" : "");
-    mute.textContent = "M";
-    mute.addEventListener("click", e => {
-      e.stopPropagation();
-      trackToggle(ti, "muted");
-    });
-    const hide = document.createElement("span");
-    hide.className = "solo" + (trackState[ti].hidden ? " on" : "");
-    hide.textContent = "H";
+    // Each is a real toggle for VoiceOver: role=button (a <span> gets no
+    // built-in keyboard activation — the delegated Enter/Space listener
+    // above handles that), tabindex so Tab reaches it independently of the
+    // chip, and aria-pressed kept in step with the .on class that already
+    // drives the look.
+    const mkToggle = (glyph, on, label2, key) => {
+      const s = document.createElement("span");
+      s.className = "solo" + (on ? " on" : "");
+      s.textContent = glyph;
+      s.setAttribute("role", "button");
+      s.tabIndex = 0;
+      s.setAttribute("aria-label", label2 + " " + trName);
+      s.setAttribute("aria-pressed", String(on));
+      s.addEventListener("click", e => {
+        e.stopPropagation();
+        trackToggle(ti, key);
+      });
+      return s;
+    };
+    const mute = mkToggle("M", trackState[ti].muted, "Mute", "muted");
+    const solo = mkToggle("S", trackState[ti].solo, "Solo", "solo");
+    const hide = mkToggle("H", trackState[ti].hidden, "Hide", "hidden");
     hide.title = "Hide this track's notes (still plays unless muted)";
-    hide.addEventListener("click", e => {
-      e.stopPropagation();
-      trackToggle(ti, "hidden");
-    });
     chip.append(dot, label, mute, solo, hide);
     chip.addEventListener("click", e => {
       if (ti === selTrack) { openVoiceMenu(ti, chip); return; } // second tap: voice & color
@@ -4293,6 +4318,9 @@ function mixerStripEl(tr, ti, canReorder) {
   const name = document.createElement("div");
   name.className = "mixername";
   if (canReorder) name.title = "Drag to reorder";
+  name.setAttribute("role", "button");
+  name.tabIndex = 0;
+  name.setAttribute("aria-label", "Select " + (tr.name || "track " + (ti + 1)) + (ti === selTrack ? " (selected)" : ""));
   const dot = document.createElement("span");
   dot.className = "dot";
   dot.style.background = trackColor(ti);
@@ -4312,7 +4340,8 @@ function mixerStripEl(tr, ti, canReorder) {
     const b = document.createElement("button");
     b.className = "solo" + (on ? " on" : "");
     b.textContent = txt;
-    b.setAttribute("aria-label", label2);
+    b.setAttribute("aria-label", label2 + " " + (tr.name || "track " + (ti + 1)));
+    b.setAttribute("aria-pressed", String(on));
     b.addEventListener("click", e => { e.stopPropagation(); trackToggle(ti, key); renderMixer(); });
     return b;
   };
@@ -4334,7 +4363,7 @@ function mixerStripEl(tr, ti, canReorder) {
   fader.type = "range"; fader.className = "mixerfader";
   fader.min = "0"; fader.max = "1.5"; fader.step = "0.05";
   fader.value = String(trackVol(ti));
-  fader.setAttribute("aria-label", "Track volume");
+  fader.setAttribute("aria-label", (tr.name || "Track " + (ti + 1)) + " volume");
   faderwrap.appendChild(fader);
   fbox.append(meter, faderwrap);
   strip.appendChild(fbox);
@@ -4354,7 +4383,7 @@ function mixerStripEl(tr, ti, canReorder) {
   pan.type = "range"; pan.className = "mixerpan";
   pan.min = "-1"; pan.max = "1"; pan.step = "0.05";
   pan.value = String(trackPan(ti));
-  pan.setAttribute("aria-label", "Track pan");
+  pan.setAttribute("aria-label", (tr.name || "Track " + (ti + 1)) + " pan");
   const plbl = document.createElement("div");
   plbl.className = "mixerplbl";
   plbl.textContent = mixerPanLabel(trackPan(ti));
@@ -4623,7 +4652,35 @@ function playbackFrame() {
     phLastX = x;
   } else phLastX = null;
 }
+// VoiceOver first pass: the roll/score/tracks canvas is one opaque element to
+// a screen reader (role="application" on #roll, set in the markup — it owns
+// its own keyboard shortcuts, so VoiceOver must not intercept arrow keys the
+// way it would for role="img"). aria-label is the only description it gets:
+// song, which of the three views, the visible bar range, and the track
+// count — recomputed every draw (cheap: a few multiplies and a string),
+// never announced on its own (aria-label isn't a live region — nothing reads
+// it aloud until the user explores the element), so no throttling needed
+// here the way srAnnounce needs it.
+function updateCanvasA11y() {
+  const el = typeof document !== "undefined" && document.getElementById("roll");
+  if (!el) return;
+  // idempotent — cheap to re-set every call, and it keeps the role/tabindex
+  // set here in JS (not only in the static markup) so a vm test can see it
+  // the same way a real browser would
+  el.setAttribute("role", "application");
+  el.tabIndex = 0;
+  if (!song) { el.setAttribute("aria-label", "Night Roll — no song open"); return; }
+  const title = currentPath ? songTitleOf(currentPath) : "untitled song";
+  const viewName = viewMode === "score" ? "Score" : viewMode === "tracks" ? "Tracks" : "Roll";
+  const ppt = pxPerTick(), bt = barTicks();
+  const W = Math.max(0, ((wrap && wrap.clientWidth) || 0) - RULER_W);
+  const barFrom = Math.max(1, Math.floor(view.x / ppt / bt) + 1);
+  const barTo = Math.max(barFrom, Math.floor((view.x + W) / ppt / bt) + 1);
+  const nt = song.tracks.length;
+  el.setAttribute("aria-label", title + " — " + viewName + " view, bars " + barFrom + "–" + barTo + ", " + nt + " track" + (nt === 1 ? "" : "s"));
+}
 function drawFull(skipCursor) {
+  updateCanvasA11y();
   if (instOpen) drawInst(); // panel repaints on every app repaint (incl. playback frames)
   if (typeof updateEditButtons === "function") updateEditButtons(); // cached — cheap on every frame
   if (!song) return;
@@ -6391,10 +6448,30 @@ document.getElementById("errclear").addEventListener("click", () => {
   document.getElementById("errbtn").style.display = "none";
   document.getElementById("errsheet").classList.remove("on");
 });
+// VoiceOver live region (#srlive, top of <body>). One function, two callers:
+// setInfo (below — the status line IS the selected-note/chord readout, so
+// routing its own text through here for free satisfies Learning mode's law
+// that nothing spoken may name a key/chord the screen doesn't already show:
+// it's the exact same string) and play()/stop() (transport state never
+// touches setInfo). De-duped on identical text, throttled to one update per
+// 250ms so a drag's flurry of setInfo calls doesn't queue an announcement
+// per frame — the last text in a burst always wins.
+let srLastText = "", srLastAt = -1e9, srTimer = null;
+function srAnnounce(text) {
+  if (typeof document === "undefined" || !text || text === srLastText) return;
+  const el = document.getElementById("srlive");
+  if (!el) return;
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const emit = () => { srLastText = text; srLastAt = now; el.textContent = text; };
+  const elapsed = now - srLastAt;
+  if (elapsed >= 250) { if (srTimer) { clearTimeout(srTimer); srTimer = null; } emit(); }
+  else { if (srTimer) clearTimeout(srTimer); srTimer = setTimeout(emit, 250 - elapsed); }
+}
 function setInfo(s, copyText) {
   if (/⚠|failed|error|can't|cannot|unavailable/i.test(s)) logErr(s); // warnings survive being overwritten
   const el = document.getElementById("noteinfo");
   el.textContent = s;
+  srAnnounce(s);
   infoFull = s;
   infoCopyText = copyText || null;
   el.classList.toggle("copyable", !!infoCopyText);
@@ -10251,6 +10328,7 @@ async function play(fromSec = 0, opts = {}) {
   }
   const wrapIdx = schedEvents.findIndex(e => e.sec >= loopSeg.start);
   document.getElementById("playbtn").textContent = "■ Stop";
+  srAnnounce("Playing" + (albumRun && currentPath ? " — " + songTitleOf(currentPath) : ""));
   albumStrip(); // un-dims on resume
   const pump = () => {
     if (!playing) { clearInterval(schedTimer); return; } // a stopped transport schedules nothing, ends nothing
@@ -10363,6 +10441,10 @@ function stop() {
     setTimeout(() => old.forEach(g => g && g.disconnect()), 400);
   }
   updateSubtitle();
+  // same text the LCD just wrote (updateSubtitle -> updateLCD, above) — never
+  // recomputed independently, so Learning mode's "nothing spoken the screen
+  // doesn't already show" holds for the bar.beat readout too
+  srAnnounce("Stopped at bar " + document.getElementById("lcdbar").textContent + " beat " + document.getElementById("lcdbeat").textContent);
   draw();
 }
 // ---------------------------------------------------------------- album play
@@ -12357,6 +12439,8 @@ const PROG_LIB = [
     panel.style.display = prog ? "block" : "none";
     tabC.classList.toggle("primary", !prog);
     tabP.classList.toggle("primary", prog);
+    tabC.setAttribute("aria-selected", String(!prog));
+    tabP.setAttribute("aria-selected", String(prog));
   };
   tabC.addEventListener("click", () => setTab(false));
   tabP.addEventListener("click", () => setTab(true));
@@ -12693,7 +12777,10 @@ document.getElementById("notelistAdd").addEventListener("click", () => {
 function showHelpTab(name) {
   const sheet = document.getElementById("helpsheet");
   if (!sheet.querySelector('.hsec[data-hsec="' + name + '"]')) name = "views";
-  for (const b of sheet.querySelectorAll("#helptabs button")) b.classList.toggle("on", b.dataset.hs === name);
+  for (const b of sheet.querySelectorAll("#helptabs button")) {
+    b.classList.toggle("on", b.dataset.hs === name);
+    b.setAttribute("aria-selected", String(b.dataset.hs === name));
+  }
   for (const sec of sheet.querySelectorAll(".hsec")) sec.classList.toggle("on", sec.dataset.hsec === name);
   try { localStorage.setItem("ff1roll-helptab", name); } catch (e) {}
 }
@@ -12755,6 +12842,7 @@ const lassobtn = document.getElementById("lassobtn");
 lassobtn.addEventListener("click", () => {
   lassoMode = !lassoMode;
   lassobtn.classList.toggle("active", lassoMode);
+  lassobtn.setAttribute("aria-pressed", String(lassoMode));
   clearMultiSel();
   setInfo(lassoMode ? "lasso: drag across notes to identify them" : "tap a note");
   draw();
@@ -12924,6 +13012,7 @@ const viewbtn = document.getElementById("viewbtn");
 function applyViewMode() {
   // the button shows the NEXT view in the Roll -> Tracks -> Score cycle
   viewbtn.textContent = viewMode === "roll" ? "▤ Tracks" : viewMode === "tracks" ? "𝄞 Score" : "▦ Roll";
+  viewbtn.setAttribute("aria-label", "Switch to " + (viewMode === "roll" ? "Tracks" : viewMode === "tracks" ? "Score" : "Roll") + " view");
   RULER_W = viewMode === "tracks" ? TRACKS_GUTTER : RULER_W_ROLL;
   // score entry (2026-08-15): Edit works in both views; ♮♯♭ is score-only
   document.getElementById("accseg").style.display =
@@ -12964,7 +13053,10 @@ document.getElementById("accseg").addEventListener("click", e => {
   const b = e.target.closest("button");
   if (!b) return;
   pencilAcc = b.dataset.acc;
-  for (const x of document.querySelectorAll("#accseg button")) x.classList.toggle("active", x === b);
+  for (const x of document.querySelectorAll("#accseg button")) {
+    x.classList.toggle("active", x === b);
+    x.setAttribute("aria-checked", String(x === b));
+  }
 });
 // .m3u track-name playlists (the emu-scene convention: NSF rips ship with
 // one). Zero-typing names (Josh, 2026-08-17 — hands hurt; data entry that a
@@ -13485,7 +13577,10 @@ document.getElementById("modeseg").addEventListener("click", e => {
   // tapping the active tool AGAIN turns it off (Josh: sometimes you just want
   // to drag the song around without accidentally moving a note)
   mode = b.dataset.mode === mode ? null : b.dataset.mode;
-  for (const x of document.querySelectorAll("#modeseg button")) x.classList.toggle("active", x.dataset.mode === mode);
+  for (const x of document.querySelectorAll("#modeseg button")) {
+    x.classList.toggle("active", x.dataset.mode === mode);
+    x.setAttribute("aria-checked", String(x.dataset.mode === mode));
+  }
   // duration chips show in Select too: there they are the MOVE grid (T = triplet
   // steps), so changing it doesn't cost a trip through Pencil (Josh, 2026-09-12)
   document.getElementById("durseg").style.display = mode === "pencil" || mode === "select" ? "" : "none";
@@ -13518,11 +13613,12 @@ function syncDurSeg() {
   // "everything moves in quarters" with nothing on screen to say why)
   seg.title = gridDiv ? "custom grid " + gridDiv + "/bar rules — pencil taps and moves use its cells (▦ chip to change or turn off)" : "";
   const gc = document.getElementById("gridchip");
-  if (gc) { gc.style.display = gridDiv ? "" : "none"; gc.textContent = "▦" + (gridDiv || ""); gc.classList.toggle("active", !!gridDiv); }
+  if (gc) { gc.style.display = gridDiv ? "" : "none"; gc.textContent = "▦" + (gridDiv || ""); gc.classList.toggle("active", !!gridDiv); gc.setAttribute("aria-pressed", String(!!gridDiv)); }
   for (const x of document.querySelectorAll("#durseg button")) {
     if (x.dataset.grid) continue;
-    x.classList.toggle("active", !gridDiv && (x.dataset.nv ? +x.dataset.nv === pencilNV
-                                                           : parseFloat(x.dataset.mod) === pencilMod));
+    const on = !gridDiv && (x.dataset.nv ? +x.dataset.nv === pencilNV : parseFloat(x.dataset.mod) === pencilMod);
+    x.classList.toggle("active", on);
+    x.setAttribute("aria-pressed", String(on));
     x.style.opacity = gridDiv ? "0.45" : "";
   }
 }
@@ -14144,9 +14240,13 @@ const instFallBtn = document.getElementById("instfall");
 function applyInst() {
   document.getElementById("instpanel").classList.toggle("on", instOpen);
   instbtn.classList.toggle("active", instOpen);
+  instbtn.setAttribute("aria-pressed", String(instOpen));
   document.getElementById("insttab-piano").classList.toggle("active", instTab === "piano");
+  document.getElementById("insttab-piano").setAttribute("aria-selected", String(instTab === "piano"));
   document.getElementById("insttab-guitar").classList.toggle("active", instTab === "guitar");
+  document.getElementById("insttab-guitar").setAttribute("aria-selected", String(instTab === "guitar"));
   instFallBtn.classList.toggle("active", fallOn);
+  instFallBtn.setAttribute("aria-pressed", String(fallOn));
   if (instOpen) instResize(); // canvas had zero size while display:none
 }
 instbtn.addEventListener("click", () => {
@@ -14173,10 +14273,12 @@ document.getElementById("websess").addEventListener("click", async e => {
 });
 const subbtn = document.getElementById("subbtn");
 subbtn.classList.toggle("active", subOn);
+subbtn.setAttribute("aria-pressed", String(subOn));
 subbtn.addEventListener("click", () => {
   subOn = !subOn;
   localStorage.setItem("ff1roll-sub", subOn ? "1" : "0");
   subbtn.classList.toggle("active", subOn);
+  subbtn.setAttribute("aria-pressed", String(subOn));
   updateSubtitle();
 });
 instFallBtn.addEventListener("click", () => {
@@ -15564,7 +15666,7 @@ document.addEventListener("keydown", e => {
     clampView(); draw(); e.preventDefault(); return;
   }
   if (meta || e.shiftKey) return;
-  if (e.key === "Enter" && t && t.tagName === "BUTTON") return; // Return on a focused button presses it
+  if (e.key === "Enter" && t && (t.tagName === "BUTTON" || t.getAttribute("role") === "button")) return; // Return on a focused button (real or role=button) presses it
   if (e.key === "Enter") { document.getElementById("rwbtn").click(); e.preventDefault(); return; }
   if (k === "k") { document.getElementById("metbtn").click(); e.preventDefault(); return; }
   if (k === "x") { toggleMixer(); e.preventDefault(); return; } // Logic's mixer key
@@ -15576,11 +15678,24 @@ document.addEventListener("keydown", e => {
     e.preventDefault(); return;
   }
 });
+// VoiceOver/keyboard (2026-09-30): the app's own role="button" elements
+// (track-chip M/S/H, the chip itself, the "what's Claude doing" strip, …)
+// are <span>/<div>, not real <button>s — a browser gives those no built-in
+// Enter/Space activation the way it does a <button>. One delegated listener
+// covers every one of them, present and future, the same way SHEET_TOP is
+// the one choke point for every sheet.
+document.addEventListener("keydown", e => {
+  if ((e.key !== "Enter" && e.key !== " ") || e.repeat) return;
+  const t = e.target;
+  if (!t || t.tagName === "BUTTON" || t.getAttribute("role") !== "button") return;
+  e.preventDefault();
+  t.click();
+});
 document.addEventListener("keydown", e => { // space = play/stop, Logic-style
   if (e.code !== "Space" || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" ||
-            t.isContentEditable || t.tagName === "BUTTON")) return; // typing/tabbing wins
+            t.isContentEditable || t.tagName === "BUTTON" || t.getAttribute("role") === "button")) return; // typing/tabbing wins
   if (!song) return;
   e.preventDefault(); // page must not scroll
   if (playing) stop(); else document.getElementById("playbtn").click();
@@ -22937,6 +23052,7 @@ function cfgShowPane(name) { // one pane at a time; the choice is a device pref
   for (const p of CFG_PANES) {
     document.getElementById("cfgpane-" + p).classList.toggle("on", p === name);
     document.getElementById("cfgtab-" + p).classList.toggle("on", p === name);
+    document.getElementById("cfgtab-" + p).setAttribute("aria-selected", String(p === name));
   }
   try { localStorage.setItem("ff1roll-cfgpane", name); } catch (err) { /* private mode */ }
 }
@@ -23071,6 +23187,12 @@ if (typeof document.querySelectorAll === "function") { // vm harness stubs docum
 // opens or closes.
 const SHEET_TOP = new MutationObserver(ms => {
   for (const m of ms) {
+    // VoiceOver (2026-09-30): a docked window sits beside the roll like a
+    // panel, not over it — aria-modal="true" would tell a screen reader
+    // everything else on the page is inert, which is false while docked.
+    // Recomputed on every class write (open/close AND dock-side changes all
+    // touch the class), so it never goes stale.
+    m.target.setAttribute("aria-modal", m.target.classList.contains("on") && !m.target.classList.contains("docked") ? "true" : "false");
     // any migrated, docked window: reserve/free its dock's space alongside
     // its own visibility, however it closes (✕, backdrop, Esc, or
     // reopening) — the one choke point every close path already runs through
@@ -23078,6 +23200,16 @@ const SHEET_TOP = new MutationObserver(ms => {
     if (!m.target.classList.contains("on")) { // closing: a live 🎤 inside must not keep transcribing
       if (micBtn && m.target.contains(micBtn)) micStop(true);
       if (m.target.id === "mixersheet") teardownMixerMeters(); // ✕/backdrop/Esc all end here too — no cost while closed
+      // VoiceOver: give focus back to whatever opened this sheet (a button
+      // in most cases) — otherwise focus is left on a now-hidden node and a
+      // screen reader user loses their place. Deferred repeat closes (the
+      // Escape handler below, or a second class write before this one even
+      // ran) leave nothing to restore — harmless no-op.
+      if (m.target._srReturnFocus) {
+        const back = m.target._srReturnFocus;
+        m.target._srReturnFocus = null;
+        if (typeof back.focus === "function") try { back.focus(); } catch (err) {}
+      }
       continue;
     }
     // only a sheet that has just OPENED starts at its top: docking, undocking
@@ -23091,10 +23223,43 @@ const SHEET_TOP = new MutationObserver(ms => {
     }
     const sh = m.target.querySelector(".sheet");
     if (sh) sh.scrollTop = 0;
+    // VoiceOver: remember who had focus, then move focus INTO the sheet —
+    // deferred one frame so a sheet's own open-time focus (e.g. rename's
+    // text input, already existing code) wins if it set one; only step in
+    // when nothing in the sheet already has focus.
+    m.target._srReturnFocus = (typeof document !== "undefined" && document.activeElement && document.activeElement !== document.body) ? document.activeElement : null;
+    const target = m.target;
+    requestAnimationFrame(() => {
+      if (!target.classList.contains("on")) return; // closed again before the frame landed
+      if (document.activeElement && document.activeElement !== document.body && target.contains(document.activeElement)) return; // the sheet already focused itself
+      // the SHEET itself, never a field inside it: focusing a text box pops
+      // the iPad keyboard every time a sheet opens (Josh already fought an
+      // unwanted keyboard in ✦ AI); VoiceOver still announces the dialog
+      const sh2 = target.querySelector(".sheet");
+      const land = sh2 || target;
+      if (land && !land.hasAttribute("tabindex")) land.setAttribute("tabindex", "-1");
+      if (land && typeof land.focus === "function") try { land.focus({preventScroll: true}); } catch (err) {}
+    });
   }
 });
 for (const ov of document.querySelectorAll(".overlay")) {
   SHEET_TOP.observe(ov, {attributes: true, attributeFilter: ["class"], attributeOldValue: true}); // incl. confirm
+  // VoiceOver: every overlay is a dialog (confirmsheet included — it's the
+  // one MODAL_KEEP exempts from backdrop/Esc dismissal, not from being a
+  // dialog), labelled by its own heading so a screen reader announces WHICH
+  // sheet just opened instead of a bare "dialog". aria-modal is kept live by
+  // the observer above (docked vs. floating can change after open).
+  ov.setAttribute("role", "dialog");
+  ov.setAttribute("aria-modal", "true");
+  const sh0 = ov.querySelector(".sheet");
+  if (sh0) {
+    if (!(sh0.tabIndex >= 0)) sh0.tabIndex = -1; // a focus target with nothing else inside, never in the Tab order itself
+    const h = sh0.querySelector("h2, h3");
+    if (h) {
+      if (!h.id) h.id = ov.id + "-srlabel";
+      ov.setAttribute("aria-labelledby", h.id);
+    }
+  }
   if (MODAL_KEEP.has(ov.id)) continue;
   // pointerdown, and only when the backdrop ITSELF is the target — a drag that
   // starts inside the sheet and releases outside must not count as a dismiss

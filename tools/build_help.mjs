@@ -24,7 +24,10 @@ function inline(t) {
 export function buildHelp(html) {
   const sheet = html.slice(html.indexOf('id="helpsheet"'), html.indexOf('id="filesheet"'));
   const tabs = {};
-  for (const m of sheet.matchAll(/<button data-hs="(\w+)">([\s\S]*?)<\/button>/g))
+  // [^>]* (2026-09-30, VoiceOver first pass): the tabs now carry role="tab"
+  // aria-selected="…" between data-hs and the closing '>' — tolerate any
+  // attributes there instead of requiring data-hs to be the last one.
+  for (const m of sheet.matchAll(/<button data-hs="(\w+)"[^>]*>([\s\S]*?)<\/button>/g))
     tabs[m[1]] = inline(m[2]);
   const secs = [...sheet.matchAll(/<div class="hsec" data-hsec="(\w+)">([\s\S]*?)\n    <\/div>/g)];
   const order = Object.keys(tabs); // tab-bar order, not DOM order

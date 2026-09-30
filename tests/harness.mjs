@@ -76,6 +76,13 @@ function makeStyle() {
 }
 
 function makeEl() {
+  // real attribute store (2026-09-30, VoiceOver first pass): aria-label/
+  // aria-pressed/role/etc. are set via setAttribute in app code, not as IDL
+  // properties like textContent/value, so a vm test asserting on them needs
+  // setAttribute to actually stick rather than the old no-op — nothing
+  // before this read attributes back (no .getAttribute( in index.html), so
+  // this is purely additive.
+  const attrs = new Map();
   const el = listenable({
     children: [],
     style: makeStyle(),
@@ -90,7 +97,10 @@ function makeEl() {
     height: 0,
     clientWidth: 800,
     clientHeight: 600,
-    setAttribute: noop,
+    setAttribute(k, v) { attrs.set(k, String(v)); },
+    getAttribute(k) { return attrs.has(k) ? attrs.get(k) : null; },
+    hasAttribute(k) { return attrs.has(k); },
+    removeAttribute(k) { attrs.delete(k); },
     setPointerCapture: noop,
     releasePointerCapture: noop,
     focus: noop,

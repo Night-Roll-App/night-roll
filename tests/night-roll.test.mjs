@@ -2295,6 +2295,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Mixer window", "Drag a strip by its name",
     "Text size",
     "Analyze ▸",
+    "VoiceOver",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6876,4 +6877,165 @@ test("Download audio: deliverAudioFile writes the file via Filesystem then calls
   assert.deepEqual([calls[1][0], calls[1][1]], ["Share", "share"]);
   assert.deepEqual(calls[1][2].files, ["file:///cache/song.wav"], "shares the URI Filesystem.writeFile handed back");
   assert.equal(calls[1][2].title, "song.wav");
+});
+
+// ---------------------------------------------------------------- VoiceOver
+// first pass (open-items.md DAW review item 12's other half, 2026-09-30):
+// the roll/score canvas has no accessibility tree, so the app narrates
+// through #srlive (an offscreen aria-live region) instead. These tests cover
+// the vm-testable slice — the static button scan, and the srAnnounce/setInfo/
+// play/stop wiring. Everything DOM-wide (tab strips, dialog roles, focus
+// management — gated behind `typeof document.querySelectorAll === "function"`,
+// which the vm harness deliberately leaves undefined) is real-browser-only;
+// see the one-off Playwright accessibility snapshot instead.
+
+test("VoiceOver: no symbol-only <button> lacks an aria-label (scan, explicit allow-list)", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  // Two known-safe false positives for a regex that can't evaluate JS:
+  //  - #analyzeadopt ships empty in the markup; analyzeText() always fills it
+  //    with a real word ("Adopt this chord"/"Adopt this key") before it's
+  //    ever shown.
+  //  - the chord-root buttons are built from a template string
+  //    ('<button data-root="' + i + '">' + r + '</button>') whose rendered
+  //    text is a real note name (CHORD_ROOTS: "C", "C♯/D♭", …) — the scan
+  //    sees the literal `' + r + '` from the JS source, not what renders.
+  const ALLOW = new Set(["analyzeadopt", 'data-root="\' + i + \'"']);
+  const re = /<button\b([^>]*)>([\s\S]*?)<\/button>/g;
+  const offenders = [];
+  let m;
+  while ((m = re.exec(html))) {
+    const attrs = m[1];
+    const inner = m[2].replace(/<[^>]*>/g, "").trim();
+    const hasLabel = /aria-label=/.test(attrs);
+    const hasWord = /[A-Za-z]{2,}/.test(inner); // a real word: VoiceOver reads the text content fine on its own
+    if (hasLabel || hasWord) continue;
+    const idMatch = attrs.match(/id="([^"]+)"/);
+    const key = idMatch ? idMatch[1] : (attrs.match(/data-root="[^"]*"/) || [attrs.trim()])[0];
+    if (ALLOW.has(key)) continue;
+    offenders.push(key + " → " + JSON.stringify(inner));
+  }
+  assert.deepEqual(offenders, [], "symbol-only buttons with no aria-label: " + offenders.join(", "));
+});
+
+test("VoiceOver: setInfo (the status line / selected-note readout) mirrors into #srlive — same text, never more", () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  r(`setInfo("C4 · E4 · G4  (3 notes)")`);
+  assert.equal(a.el("srlive").textContent, "C4 · E4 · G4  (3 notes)");
+  assert.equal(a.el("srlive").textContent, a.el("noteinfo").textContent, "never more than what the footer shows");
+});
+
+test("VoiceOver: srAnnounce de-dupes identical text and throttles bursts to the LAST text, not every intermediate one", () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  r(`srAnnounce("first")`);
+  assert.equal(a.el("srlive").textContent, "first");
+  r(`srAnnounce("first")`); // identical: no-op, nothing new to say
+  assert.equal(a.el("srlive").textContent, "first");
+  // a burst within the 250ms window: only the LAST of these should land
+  r(`srAnnounce("second"); srAnnounce("third"); srAnnounce("fourth");`);
+  assert.equal(a.el("srlive").textContent, "first", "throttled: nothing new has landed yet");
+  a.tick(260);
+  assert.equal(a.el("srlive").textContent, "fourth", "the burst's last text wins, not a stale middle one");
+});
+
+function installTransportSong(r) {
+  r(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920, d: 480, p: 62, v: 80}]}]};
+     songKey = "midi/test.mid"; currentPath = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
+     trackState = [{muted: false, solo: false}]; songEndTick = 4 * 480;`);
+}
+
+test("VoiceOver: play() announces \"Playing\"; stop() announces the bar.beat it stopped at, read from the SAME LCD text on screen", async () => {
+  const a = createApp({intervals: true});
+  const r = (c) => a.run(c), v = (c) => JSON.parse(r(`JSON.stringify(${c})`));
+  // let the one-shot boot IIFE's catalog fetch (rejects — no network in
+  // tests) finish and write its own setInfo/srAnnounce ("catalog failed to
+  // load…") BEFORE this test starts caring about #srlive, or it can land
+  // between play()'s "Playing" and this assertion and clobber it
+  for (let i = 0; i < 10; i++) { a.tick(50); await new Promise(res => setImmediate(res)); }
+  installTransportSong(r);
+  // fire-and-poll, not a direct `await` on the vm's own promise (the
+  // harness's fake clock only advances on tick() — an outer `await` never
+  // pumps it, so a cross-realm await on play()'s promise here hangs; see
+  // the "background play" test above for the same pattern)
+  r(`globalThis.__p = 0; play(0, {noCountIn: true}).then(() => { globalThis.__p = 1; });`);
+  for (let i = 0; i < 100 && v(`globalThis.__p`) < 1; i++) { a.tick(50); await new Promise(res => setImmediate(res)); }
+  assert.equal(v(`globalThis.__p`), 1, "play() settled");
+  assert.equal(a.el("srlive").textContent, "Playing");
+  a.tick(500);
+  r(`stop()`);
+  const lcdBar = a.el("lcdbar").textContent, lcdBeat = a.el("lcdbeat").textContent;
+  assert.equal(a.el("srlive").textContent, "Stopped at bar " + lcdBar + " beat " + lcdBeat);
+});
+
+test("VoiceOver, Learning mode: the live region never names a key/chord the screen doesn't show (lasso over C E G)", () => {
+  // createApp() with no explicit storage pins Learning mode (harness.mjs) —
+  // this IS the "Learning song" the task asks for.
+  const learn = createApp();
+  const rl = (c) => learn.run(c);
+  rl(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+             tracks: [{name: "t", notes: [
+               {t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 480, p: 64, v: 80}, {t: 0, d: 480, p: 67, v: 80}]}]};
+      songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
+      trackState = [{muted: false, solo: false, hidden: false}];
+      multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}, {ti: 0, ni: 2}];
+      refreshSelInfo();`);
+  assert.equal(learn.run(`appMode()`), "learning");
+  const heard = learn.el("srlive").textContent;
+  const shown = learn.el("noteinfo").textContent;
+  assert.equal(heard, shown, "the live region is exactly the footer text — never more");
+  assert.ok(!/→/.test(heard), "Normal mode's chord arrow never appears in Learning: " + heard);
+  for (const word of ["maj", "min", "dim", "aug", "sus"]) {
+    assert.ok(!heard.toLowerCase().includes(word), "no chord quality spoken in Learning: " + heard);
+  }
+
+  // Normal mode, same notes: the chord IS named — and the live region still
+  // says exactly what the footer says, just more of it (the arrow + name).
+  const norm = createApp({storage: {"ff1roll-mode": "normal"}});
+  const rn = (c) => norm.run(c);
+  rn(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+             tracks: [{name: "t", notes: [
+               {t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 480, p: 64, v: 80}, {t: 0, d: 480, p: 67, v: 80}]}]};
+      songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
+      trackState = [{muted: false, solo: false, hidden: false}];
+      multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}, {ti: 0, ni: 2}];
+      refreshSelInfo();`);
+  assert.equal(norm.run(`appMode()`), "normal");
+  assert.equal(norm.el("srlive").textContent, norm.el("noteinfo").textContent);
+  assert.match(norm.el("srlive").textContent, /→/, "Normal mode DOES name the chord, on screen and in the live region alike");
+});
+
+test("VoiceOver: track-chip Mute/Solo/Hide are real toggles (role=button, aria-pressed, per-track aria-label) — not bare text spans", () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  installTransportSong(r);
+  r(`selTrack = 0; renderTrackbar();`);
+  const chip = a.el("trackbar").children[0];
+  assert.equal(chip.getAttribute("role"), "button");
+  assert.ok(chip.getAttribute("aria-label").includes("lead"));
+  const [, , mute, solo, hide] = chip.children; // dot, label, mute, solo, hide
+  for (const el of [mute, solo, hide]) {
+    assert.equal(el.getAttribute("role"), "button", el.textContent);
+    assert.equal(el.tabIndex, 0, el.textContent);
+    assert.ok(el.getAttribute("aria-label").includes("lead"), el.textContent + " names the track");
+  }
+  assert.equal(mute.getAttribute("aria-pressed"), "false");
+  mute.dispatchEvent({type: "click"});
+  r(`renderTrackbar()`); // trackToggle doesn't re-render itself; the app's own click handlers do
+  const chip2 = a.el("trackbar").children[0];
+  const mute2 = chip2.children[2];
+  assert.equal(mute2.getAttribute("aria-pressed"), "true", "aria-pressed tracks the .on class trackToggle already drives");
+});
+
+test("VoiceOver: the roll canvas carries a live aria-label naming the song, view, visible bars, and track count", () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  installTransportSong(r);
+  r(`view = {x: 0, y: 0, pxq: 56, rowH: 13}; viewMode = "roll"; updateCanvasA11y();`);
+  assert.equal(a.el("roll").getAttribute("role"), "application");
+  const label = a.el("roll").getAttribute("aria-label");
+  assert.match(label, /Roll view/);
+  assert.match(label, /1 track/);
+  assert.match(label, /bars? 1/);
 });

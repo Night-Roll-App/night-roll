@@ -968,8 +968,47 @@ Ranked, most annoying first (effort S/M/L):
     deliberately-unscaled fixed-width box, not new clipping). Canvas text
     (ctx.font — roll/score labels, instrument panel, circle of fifths)
     stays literal px, not part of this system yet. See NIGHT-ROLL.md
-    "Text size — iOS Dynamic Type". Canvas has no VoiceOver; songs loop
-    forever at the end — still open. M / S.
+    "Text size — iOS Dynamic Type". Songs loop forever at the end —
+    still open. M / S.
+
+    VoiceOver half — FIRST PASS DONE 2026-09-30 (implemented, NOT yet
+    committed/pushed — Josh or the terminal session should review and
+    commit): every icon-only control now has a real `aria-label`
+    (~23 static buttons found by a systematic scan, plus the dynamically
+    built track-chip M/S/H and mixer strips), toggles carry
+    `aria-pressed`/`aria-checked`, and every tab strip is
+    `role="tablist"`/`role="tab"`/`aria-selected`. The canvas (`#roll`)
+    is `role="application"` (keeps its own keyboard shortcuts instead of
+    handing them to VoiceOver's navigation) with a live `aria-label`
+    naming the song, view, visible bars, and track count. A new offscreen
+    `#srlive` region announces play/stop, the bar.beat playback stopped
+    at, and the selected note/chord — always the exact text the footer
+    status line (`#noteinfo`) already shows, never more, because both
+    are driven by the one `setInfo`/`srAnnounce` choke point (this is
+    also why Learning mode's "never name what the screen doesn't show"
+    rule holds here automatically, verified by a test with a lasso'd
+    triad in both modes). Every sheet is a labelled dialog with focus
+    moved in on open and returned to the opener on close. Visible
+    `:focus-visible` ring widened from button/select to every
+    interactive element. Tests (vm, `tests/night-roll.test.mjs`
+    "VoiceOver:" prefix): the button-label scan, srAnnounce's throttle/
+    de-dupe, setInfo→srlive mirroring, play()/stop() announcements, the
+    Learning-vs-Normal chord-naming test, track-chip toggle semantics,
+    canvas aria-label. DOM-wide behavior (tab strips, dialog roles, focus
+    management — gated behind `document.querySelectorAll`, undefined on
+    purpose in the vm harness) verified instead with a one-off Playwright
+    accessibility-snapshot script + a focus-ring screenshot (0 pixels
+    changed outside the ring itself). See NIGHT-ROLL.md "VoiceOver —
+    first pass". Still open, NOT this pass: reading/editing a note's
+    pitch or time by keyboard alone (notes are still only on the canvas,
+    described in aggregate, not individually addressable); canvas-drawn
+    text (instrument panel, circle of fifths, roll/score labels) has no
+    alternative text; the non-`.overlay` popups (`#metsheet` — got a
+    static dialog role only, no focus management — `#voicemenu`,
+    `#wmmenu`, speed/volume popovers) are out of scope, being small
+    anchored popups rather than full sheets. A full non-visual editor
+    (keyboard-only note entry/editing, a VoiceOver rotor over the
+    timeline) is real future work, not started.
 Already matches convention (don't touch): Space play/stop; ruler-drag
 cycle; pinch per axis + two-finger pan; catch-mode playhead follow;
 unlimited undo for notes/annotations; chase on mid-song start; snap to

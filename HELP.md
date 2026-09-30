@@ -33,6 +33,9 @@ Pinch-out stops once the whole song is in view — per axis: when every bar fits
 **Score zoom limit**
 The score stops zooming out where its busiest bar would overflow — engraved notes can't shrink. Mute dense tracks to zoom out further, or use the Roll for the bird's-eye view.
 
+**VoiceOver (first pass)**
+The roll/score/tracks canvas is a screen reader's one blind spot in Night Roll — this is a first pass, not a full non-visual editor. Every icon-only button (⏮ ▶ ⏱ ⚙ ✦ 📷 ⟲ ⟳ ⧉ 📋 ✂ ➗, track chip M/S/H, mixer strips, sheet ✕s…) has a real label, and toggles report their on/off state. An offscreen strip announces play/stop, the bar.beat where playback stopped, and the selected note(s) or chord — always the SAME words the footer status line already shows, never more (Learning mode's rule holds here too: nothing is spoken that the screen doesn't already say). The canvas itself carries a label naming the open song, which view, the visible bars, and the track count. Every sheet is a labelled dialog; opening one moves focus in, closing it gives focus back to whatever you opened it from. Tab reaches every control, with a visible focus ring.
+
 ## Playback
 
 **▶ Play / ■ Stop**
