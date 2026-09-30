@@ -867,6 +867,20 @@
   .askmsg.earlier { font-family: var(--mono); font-size: 12px; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
   /* The box grows with its text (askGrow) up to a third of the screen — a
      fixed 120px hid dictation past the second line (Josh, 2026-09-26). */
+  /* a narrow docked AI panel (Josh's screenshot, 2026-09-29: the box shrank to one
+     line with Send on its own row, the Dock pill wrapped): below 380px the box
+     takes the full width and the buttons share one row under it; the pill says
+     "Right ▸"; the two chat tabs stay on one line */
+  #asksheet .sheet { container-type: inline-size; }
+  @container (max-width: 380px) {
+    #askinputrow { flex-wrap: wrap; }
+    #askinputrow #askinput { flex: 1 1 100%; }
+    #askinputrow button { flex: 1 1 0; white-space: nowrap; }
+    #asksheet-h2 .wmdockbtn, #asksheet-h2 button[data-short] { font-size: 0; }
+    #asksheet-h2 button[data-short]::after { content: attr(data-short); font-size: 12px; }
+    #askmoderow { flex-wrap: nowrap; }
+    #askmoderow button { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
   #askinput { font-family: var(--sans); font-size: 15px; flex: 1; min-height: 44px; max-height: 33dvh;
               resize: none; width: auto; overflow-y: auto; }
   .chiprow button {
@@ -1981,7 +1995,7 @@
       <span class="status" style="flex:1">📷 screenshot — sent with your next message</span>
       <button id="askshotx" aria-label="Remove the screenshot">✕</button>
     </div>
-    <div class="row">
+    <div class="row" id="askinputrow">
       <textarea id="askinput" placeholder="Ask about what you're looking at…" aria-label="Your question"></textarea>
       <button id="askmic">🎤 Speak</button>
       <button id="askshot" style="display:none" title="Send a picture of the app to Claude">📷</button>
@@ -19635,6 +19649,7 @@ function wmDockLabel(id) { // pure-ish (reads module state `wm`): what a window'
   if (where.dock === "bottom") return "Docked: Bottom";
   return "Docked: " + (where.dock === "left" ? "Left" : "Right") + (where.mode === "inner" ? " (beside roll)" : "");
 }
+function wmDockShort(id) { const w = wmWhereIs(wm, id); return !w ? "Dock" : w.dock === "bottom" ? "Bottom ▸" : (w.dock === "left" ? "Left ▸" : "Right ▸"); }
 function wmSyncDockButtons() { // updates every dockable window's Dock button — text, and hidden at phone width (same as the old askdock button)
   const allowed = wmAllowed(wmInnerWidth());
   for (const id in WM_WINDOWS) {
@@ -19644,6 +19659,7 @@ function wmSyncDockButtons() { // updates every dockable window's Dock button �
     if (!btn) continue;
     btn.style.display = allowed ? "" : "none";
     btn.textContent = wmDockLabel(id);
+    btn.dataset.short = wmDockShort(id); // a narrow dock shows this instead (CSS container query)
     const docked = !!wmWhereIs(wm, id);
     const label = docked ? "Change how this window is docked, or float it" : "Dock this window — left, right, or bottom";
     btn.setAttribute("aria-label", label);

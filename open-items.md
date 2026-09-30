@@ -491,7 +491,7 @@ whether the tool or the app owns the order.
    is calling `--status` yet at real steps (start, tests, pushed, iPad
    build) — that's the next wiring, once Josh has tried the strip.
 
-10. AI panel at narrow dock widths (Josh's screenshot, 2026-09-29): below
+10. DONE: AI panel at narrow dock widths (Josh's screenshot, 2026-09-29): below
     ~360 px the input goes full width with Speak / 📷 / Send in one row
     under it; the dock pill shortens to "Right ▸" (full text as its
     aria-label); tabs don't stack. Low priority.
