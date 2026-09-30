@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -4887,6 +4887,32 @@ test("Publish all: creates a job with one item per pending song (general chat in
   run(`pendingSongs = globalThis.__realPending; writeToken = globalThis.__realWriteToken;
        jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");
        delete globalThis.__job; delete globalThis.__realPending; delete globalThis.__realWriteToken;`);
+});
+
+test("Publish rows: every song gets Open / Publish / Revert; a row's Publish is a one-song job; Revert drops this device's copy (not on a never-published song)", async () => {
+  const A = "albums/compositions/nightroll/row-a.mid", B = "albums/compositions/nightroll/row-b.mid";
+  run(`jobs = jobs.filter(j => j.kind !== "publishall"); localStorage.removeItem("ff1roll-jobs");
+       globalThis.__realPending = pendingSongs; globalThis.__realWriteToken = writeToken; globalThis.__realConfirm = appConfirm;
+       writeToken = () => null;
+       pendingSongs = () => ["${A}", "${B}"];
+       localStorage.setItem(draftStoreKey("${A}"), JSON.stringify({dirty: true, savedStamp: 5, ppq: 480, tracks: []}));
+       localStorage.setItem(draftStoreKey("${B}"), JSON.stringify({dirty: true, savedStamp: 0, ppq: 480, tracks: []}));
+       localStorage.setItem("ff1roll-notes-${A}", "[]");
+       renderSyncPending();`);
+  const rows = val(`[...document.getElementById("syncpending").children].filter(b => b.className.startsWith("psong")).map(b => [...b.children[0].children].slice(1).map(c => c.textContent))`);
+  assert.deepEqual(rows, [["Open", "Publish", "Revert"], ["Open", "Publish"]], "B was never published: no Revert");
+  run(`globalThis.__job = publishAllJobStart(() => {}, ["${B}"]);`);
+  assert.deepEqual(val(`__job.items.map(i => i.key)`), [B], "only that song");
+  assert.equal(val(`__job.title`), "Publish " + val(`songTitleOf("${B}")`));
+  await run(`Promise.resolve()`); await run(`Promise.resolve()`); await run(`Promise.resolve()`);
+  run(`jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");`);
+  run(`appConfirm = async () => false;`); await run(`revertSongToRepo("${A}")`);
+  assert.notEqual(val(`localStorage.getItem(draftStoreKey("${A}"))`), null, "Cancel keeps it");
+  run(`appConfirm = async () => true;`); await run(`revertSongToRepo("${A}")`);
+  assert.equal(val(`localStorage.getItem(draftStoreKey("${A}"))`), null, "reverted: this device's copy is gone");
+  assert.equal(val(`hasStash("${A}")`), true, "stashed first: Restore unsaved copy can undo it");
+  run(`pendingSongs = globalThis.__realPending; writeToken = globalThis.__realWriteToken; appConfirm = globalThis.__realConfirm;
+       for (const k of ["${A}", "${B}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-stash-"]) localStorage.removeItem(pre + k);`);
 });
 
 test("album play: loads that keep failing stop the album after ALBUM_MAX_FAILS, instead of skipping through every song", async () => {

@@ -458,7 +458,7 @@ whether the tool or the app owns the order.
 3. BUILT, awaits Josh's ear (lock the iPad mid-song, synth song): Background playback skipping: schedule further ahead while
    `document.hidden` (the pump's 0.6 s look-ahead). Own build; ear test
    on a synth song.
-4. Publish window: every row gets Open / Publish (that song only, as a
+4. DONE: Publish window: every row gets Open / Publish (that song only, as a
    job) / Revert (in-app confirm). Open no longer needs a draft.
 5. Album links (ACTIVE): the URL holds the album during album play;
    opening it shows the album ready; one Play tap runs it.

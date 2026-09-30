@@ -2307,7 +2307,12 @@ composition, `publishDraftSong` for another edited one, annotations +
 `askCommitLog` otherwise) — just checked against `api.aborted` between
 songs so ✕ stops it before the next one; one Publish-all job at a time
 (`jobsFind("publishall", null, true)`); `#ghsaveall`'s click handler
-starts it and opens the dialog. Not jobs: Download audio (real-time
+starts it and opens the dialog. A Publish-sheet row's own **Publish**
+passes `onlyKeys: [key]` — the same job, one item, titled "Publish
+<song>". Each row also has **Open** (draft → `openDraft`, else
+`loadSong`) and **Revert** (`revertSongToRepo`: appConfirm, then
+`dropLocalSong` — the same stash-then-discard File → Revert to repo copy
+uses; hidden on a never-published song, which has no repo copy). Not jobs: Download audio (real-time
 playback), chip renders (already off-thread; a row per song open would
 spam the list). Later: captures in the worker.
 

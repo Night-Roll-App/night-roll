@@ -1625,7 +1625,7 @@
       <dt>⚠ Messages</dt><dd><b>Copy all</b> puts the whole log on the clipboard for pasting to Claude. Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
       <dt>Save and Auto-save</dt><dd>A published song is never edited in place: you edit this device's <b>local copy</b>. When a song of yours has no copy here, <b>✎ Edit locally</b> sits where Edit ▾ would be — it asks, then makes the copy, and the edit tools appear. By default (auto-save off) your edits live in a <b>working copy</b> on this device: it follows every change so nothing is lost to a crash, but it is not <i>saved</i> until you choose File → <b>Save</b> (⌘S). Save is your checkpoint: the gold ● means "changed since your last Save", <b>Revert to last save…</b> goes back to it, and <b>Compare with last save</b> shows the difference on the roll. Revert is undoable — the working copy is stashed first and File → <b>Restore unsaved copy…</b> brings it back until your next Save or Publish. Settings → SAVING → <b>Auto-save</b> switches to the other way: every edit is the save and the ● means unpublished. Publish is a separate step in both modes, and publishing also saves.</dd>
-      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and the footer button open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since the last save, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
+      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and the footer button open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since the last save, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. Every song's row has the same three buttons: tap <b>Open</b> to open it here, <b>Publish</b> to publish that song only (a job — ⏳ shows it), <b>Revert</b> to drop this device's changes to it after asking (File → Restore unsaved copy undoes it; a song never published has no Revert — there is no published copy to go back to). <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
     </dl>
     </div>
 
@@ -14800,6 +14800,27 @@ document.getElementById("filerestore").addEventListener("click", async () => {
   openDraft(k);
   setInfo("restored — your unsaved copy is back");
 });
+function dropLocalSong(key) { // Revert to repo copy's discard: stashed first, so Restore unsaved copy can undo it
+  stashWorking(key);
+  for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-",
+                     "ff1roll-tombs-", "ff1roll-lastsync-", "ff1roll-save-"])
+    localStorage.removeItem(pre + key);
+  idbDraftDelete(key);
+}
+async function revertSongToRepo(key) { // a Publish row's Revert: any pending song, open or not
+  const ok = await appConfirm("REVERT " + songTitleOf(key).toUpperCase() + "?",
+    "Discards this device's changes to this song — music, unsynced annotations, deletions. " +
+    "The published copy becomes what you see. File → Restore unsaved copy undoes this until your next Save or Publish.",
+    "Revert", "Cancel");
+  if (!ok) return;
+  dropLocalSong(key);
+  pubCheck.delete(key);
+  if (key === songKey) { editUndo = []; editRedo = []; songKey = null; await loadSong(key); }
+  updateSyncBtn();
+  updateSongBtn();
+  if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending();
+  setInfo("reverted " + songTitleOf(key) + " — this device now has the published copy");
+}
 document.getElementById("filerevert").addEventListener("click", async () => {
   if (!songKey) { setInfo("open a song first"); return; }
   if (songKey.startsWith("local/")) { setInfo("local imports have no repo copy to revert to"); return; }
@@ -14827,12 +14848,7 @@ document.getElementById("filerevert").addEventListener("click", async () => {
     "The repo's last save becomes what you see. File → Restore unsaved copy undoes this until your next Save or Publish.",
     "Revert — use the repo's copy", "Cancel");
   if (!ok) return;
-  const k0 = songKey;
-  stashWorking(k0);
-  for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-",
-                     "ff1roll-tombs-", "ff1roll-lastsync-", "ff1roll-save-"])
-    localStorage.removeItem(pre + songKey);
-  idbDraftDelete(songKey);
+  dropLocalSong(songKey);
   editUndo = []; editRedo = [];
   const k = songKey;
   songKey = null; // force a clean load path
@@ -20307,12 +20323,35 @@ function renderSyncPending() {
     const tspan = document.createElement("span");
     tspan.textContent = songTitleOf(key) + (key === songKey ? " · open" : "");
     title.appendChild(tspan);
-    if (key !== songKey && localStorage.getItem(draftStoreKey(key)) !== null) { // music and chat commit from the open song: one tap opens it here
+    // every row: Open / Publish / Revert (Josh, 2026-09-29) — the same three
+    // on every song, not Open only when a draft happened to exist
+    if (key !== songKey) {
       const o = document.createElement("button");
       o.textContent = "Open";
-      o.title = "Open this song (its music and chat commit from here)";
-      o.addEventListener("click", () => { openDraft(key).then(openSyncSheet); });
+      o.title = "Open this song here";
+      o.addEventListener("click", () => {
+        (localStorage.getItem(draftStoreKey(key)) !== null ? openDraft(key) : loadSong(key)).then(openSyncSheet);
+      });
       title.appendChild(o);
+    }
+    const pb = document.createElement("button");
+    pb.textContent = "Publish";
+    pb.title = "Publish this song only (a job — ⏳ shows it)";
+    pb.addEventListener("click", () => {
+      const status = document.getElementById("syncstatus");
+      if (!takeToken(status)) return; // same gate as Publish all
+      const job = publishAllJobStart(t => { status.textContent = t; }, [key]);
+      if (!job) return;
+      document.getElementById("syncsheet").classList.remove("on");
+      openPubJobSheet(job);
+    });
+    title.appendChild(pb);
+    if (draftDirtyState(key) !== "never") { // a never-published song has no repo copy: Revert would delete it
+      const rb = document.createElement("button");
+      rb.textContent = "Revert";
+      rb.title = "Drop this device's changes to this song; the published copy becomes what you see";
+      rb.addEventListener("click", () => revertSongToRepo(key));
+      title.appendChild(rb);
     }
     block.appendChild(title);
     const music = draftDirtyState(key);
@@ -20719,12 +20758,13 @@ document.getElementById("ghsave").addEventListener("click", async e => {
 // same per-song flow, just wrapped so it reports progress and can be
 // cancelled between songs; the publish dialog is the same one folder
 // publishes use. One Publish-all job at a time.
-function publishAllJobStart(statusFn) {
-  const pending = pendingSongs();
+function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's Publish — the same flow for just those songs
+  const pending = onlyKeys ? pendingSongs().filter(k => onlyKeys.includes(k)) : pendingSongs();
   if (!pending.length) { statusFn && statusFn("Nothing pending on this device."); return null; }
-  if (jobsFind("publishall", null, true)) { statusFn && statusFn("Publish all is already running — tap ⏳"); return null; }
+  if (jobsFind("publishall", null, true)) { statusFn && statusFn("A publish is already running — tap ⏳"); return null; }
   const items = pending.map(key => ({label: key === "general" ? "General chat" : songTitleOf(key), key}));
-  return jobStart("publishall", "Publish all", items, async api => {
+  const jobTitle = onlyKeys && pending.length === 1 ? "Publish " + items[0].label : "Publish all";
+  return jobStart("publishall", jobTitle, items, async api => {
     const token = writeToken();
     if (!token) throw new Error("No GitHub token stored yet — add one in File → Settings.");
     const h = ghHeaders(token);
