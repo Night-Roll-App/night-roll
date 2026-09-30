@@ -1536,7 +1536,7 @@
       <dt>▾ Hide controls</dt><dd>The ▾ at the footer's left folds the bottom controls (edit row + footer) away so small screens show music instead of buttons — a floating ▴ brings them back. Phones start folded automatically; your explicit choice is remembered per device.</dd>
       <dt>Closing a sheet</dt><dd>Every sheet closes three ways: tap the dimmed area outside it, tap the <b>✕ pinned to its top-right</b> (it stays put while a long sheet scrolls, so the notes list never makes you scroll to the bottom to get out), or press <b>Esc</b>. Esc closes the topmost one, so stacked sheets unstack one at a time. Saving or sending closes the sheet for you. The only exception is a confirm box — it asked a question, so it waits for an answer.</dd>
       <dt>𝄞 Score / ▦ Roll</dt><dd>Switch between piano roll and engraved sheet music. Same timeline, same everything else. Your choice is remembered.</dd>
-      <dt>Drag / pinch</dt><dd>One finger pans; two fingers zoom — spread horizontally to stretch time, vertically to grow/shrink the pitch rows (roll only). Two fingers moving TOGETHER pan — and that works with pencil or select armed; anything the first finger started is rolled back the instant the second finger lands. With an Apple Pencil (or one finger), <b>hold to grab</b>: dwell about a quarter second on a note before it drags, and the pencil tool only places a note on a clean tap or a dwell — a fast passing stroke always PANS, so sweeping across the song never moves a note or plants a stray one. A mouse grabs instantly (pressing a mouse button is already deliberate). Songs open fitted to the screen. In score view, scroll fully left to see the clefs and key signature.</dd>
+      <dt>Drag / pinch</dt><dd>One finger pans; two fingers zoom — spread horizontally to stretch time, vertically to grow/shrink the pitch rows (roll only). Two fingers moving TOGETHER pan — and that works with pencil or select armed; anything the first finger started is rolled back the instant the second finger lands. With an Apple Pencil (or one finger), <b>hold to grab</b>: dwell about a quarter second on a note before it drags, and the pencil tool only places a note on a clean tap or a dwell — a fast passing stroke always PANS, so sweeping across the song never moves a note or plants a stray one. A mouse grabs instantly (pressing a mouse button is already deliberate), and so does the <b>Apple Pencil</b>: it places, grabs and moves notes the moment it touches, while fingers keep the hold-to-grab and swipe to scroll (Settings → Other turns this off). Songs open fitted to the screen. In score view, scroll fully left to see the clefs and key signature.</dd>
       <dt>Roll zoom-out limit</dt><dd>Pinch-out stops once the whole song is in view — per axis: when every bar fits, further pinch-out only reveals pitch; when every note is visible — plus a few rows of breathing room above and below, so the top notes never sit against the ruler — it stops. Opening a song lands exactly on this limit.</dd>
       <dt>Score zoom limit</dt><dd>The score stops zooming out where its busiest bar would overflow — engraved notes can't shrink. Mute dense tracks to zoom out further, or use the Roll for the bird's-eye view.</dd>
     </dl>
@@ -2093,6 +2093,9 @@
     <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgdebuglog" style="width:20px;height:20px"> Debug log: show diagnostic lines (audio wake-ups, engine rebuilds) in ⚠</label></div>
     <div class="status cfgind">For chasing a problem with Claude. Off, only real problems raise the ⚠ chip; on, the ⚠ sheet also shows what the audio engine measured, marked [debug].</div>
+    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+      <input type="checkbox" id="cfgpeninstant" style="width:20px;height:20px"> Apple Pencil draws and grabs at once</label></div>
+    <div class="status cfgind">On: the Pencil places, grabs and moves notes the moment it touches — no hold; fingers still hold to grab and swipe to scroll. Off: the Pencil behaves like a finger.</div>
     </div>
   </div>
 </div>
@@ -5820,7 +5823,10 @@ canvas.addEventListener("pointerdown", e => {
     return;
   }
   const p = evtPos(e);
-  const instantGrab = e.pointerType === "mouse"; // pen/finger must dwell; a mouse press is already deliberate
+  // a mouse press is deliberate; so is an Apple Pencil touch (iPadOS habit:
+  // the pen draws, fingers navigate — 2026-09-29; device pref, default on).
+  // A finger still dwells: a fast finger stroke pans
+  const instantGrab = e.pointerType === "mouse" || (e.pointerType === "pen" && penInstant());
   let lasso = lassoMode && !!song && (fallActive() || p.y >= RULER_H) &&
               !cursorHandleHit(p); // the triangle outranks the lasso (Josh, 2026-08-22)
   let noteEdit = null, pendingEdit = null;
@@ -21020,6 +21026,7 @@ function openSettingsSheet() {
   document.getElementById("ghtoken").value = localStorage.getItem("ff1roll-ghtoken") || "";
   document.getElementById("cfgsongsrepo").value = c.songsRepo;
   document.getElementById("cfgdebuglog").checked = debugLogOn();
+  document.getElementById("cfgpeninstant").checked = penInstant();
   ghCheckOut("");
   if (localStorage.getItem("ff1roll-ghtoken")) ghCheck(); // one small GET: "connected" shows without a tap
   document.getElementById("cfgnsfrepo").value = c.nsfRepo;
@@ -21037,11 +21044,13 @@ function openSettingsSheet() {
 // Autosave: each field persists itself on change, so there is nothing to lose
 // on Close/✕/backdrop/Esc and no Save to find (Josh, 2026-09-25). A blank
 // token/key removes the stored one; blank locations fall back to defaults.
+function penInstant() { try { return localStorage.getItem("ff1roll-peninstant") !== "0"; } catch (err) { return true; } }
 function settingsPersist(id) {
   const v = el => document.getElementById(el).value.trim();
   const keep = (k, val) => { if (val) localStorage.setItem(k, val); else localStorage.removeItem(k); };
   switch (id) {
     case "ghtoken": keep("ff1roll-ghtoken", v("ghtoken")); ghCheckOut(""); updateSyncBtn(); updateSongBtn(); break; // connecting/disconnecting GitHub changes whether the footer Publish button and ● show (Model B)
+    case "cfgpeninstant": { try { localStorage.setItem("ff1roll-peninstant", document.getElementById("cfgpeninstant").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
     case "cfgdebuglog": { try { if (document.getElementById("cfgdebuglog").checked) localStorage.setItem("ff1roll-debuglog", "1"); else localStorage.removeItem("ff1roll-debuglog"); } catch (err) { /* private mode: stays off */ } errChip(); break; }
     case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); askModelCache = null; break;
     case "cfgaibackend": saveCfg({aiBackend: v("cfgaibackend") === "browser" ? "browser" : "remote"}); aiBackendRows(); break;

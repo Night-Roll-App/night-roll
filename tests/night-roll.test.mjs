@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -5364,6 +5364,15 @@ test("chat tabs by capability: ⌨ Terminal only when the bridge says a terminal
   run(`askSetMode("terminal"); askCaps = {bridge: true, terminal: false}; askTabsApply();`);
   assert.equal(val(`askTerminal || askGeneral`), false, "the Terminal tab went away: back on ♪");
   run(`askCaps = {bridge: false, terminal: false};`);
+});
+
+test("Apple Pencil grabs and draws without the dwell (a device pref, default on); fingers still dwell", () => {
+  run(`localStorage.removeItem("ff1roll-peninstant");`);
+  assert.equal(val(`penInstant()`), true, "default on");
+  run(`localStorage.setItem("ff1roll-peninstant", "0");`);
+  assert.equal(val(`penInstant()`), false);
+  run(`localStorage.removeItem("ff1roll-peninstant");`);
+  assert.match(readFileSync(new URL("../index.html", import.meta.url), "utf8"), /const instantGrab = e\.pointerType === "mouse" \|\| \(e\.pointerType === "pen" && penInstant\(\)\)/);
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

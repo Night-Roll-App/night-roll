@@ -103,12 +103,13 @@ test("gesture: cycle highlight stretches by its edges, both directions", () => {
   assert.equal(app.run(`rangeSel.a`), 720);
 });
 
-test("gesture: pen fast stroke pans; a dwell cold-grabs; selected = instant", () => {
+test("gesture: finger fast stroke pans; a dwell cold-grabs; selected = instant", () => {
   const app = boot("vm-gest-dwell");
   app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);
   const start = noteXY(app, 240, 64);
+  // a finger dwells; the Apple Pencil grabs at once (2026-09-29 — next test)
   const pen = (type, x, y) => app.dispatch("roll",
-    pev(type, { pointerId: 7, pointerType: "pen", clientX: x, clientY: y }));
+    pev(type, { pointerId: 7, pointerType: "touch", clientX: x, clientY: y }));
   // fast stroke over an unselected note: pans, nothing moves, no selection churn
   pen("pointerdown", start.x, start.y);
   for (let i = 1; i <= 5; i++) pen("pointermove", start.x - i * 30, start.y);
@@ -269,4 +270,18 @@ test("insertTime: slide, stretch straddlers, leave exact-enders; one undo", () =
   assert.deepEqual(notes(app).map(n => n.t), [0, 5 * 1920], "one undo restores notes");
   const rn2 = JSON.parse(app.run(`JSON.stringify(rollnotes.filter(n => n.section).map(n => n.b2))`));
   assert.deepEqual(rn2.sort((a,b)=>a-b), [5, 8, 9], "one undo restores annotations");
+});
+
+test("gesture: the Apple Pencil grabs a note at once — no dwell (device pref, default on)", () => {
+  const app = boot("vm-gest-pen");
+  app.run(`mode = "select"; view.pxq = 600; clampView(); draw(); localStorage.removeItem("ff1roll-peninstant");`);
+  const start = noteXY(app, 240, 64);
+  const pen = (type, x, y) => app.dispatch("roll",
+    pev(type, { pointerId: 9, pointerType: "pen", clientX: x, clientY: y }));
+  const px16 = app.run(`(240 / song.ppq) * view.pxq`);
+  const before = notes(app).map(n => n.t);
+  pen("pointerdown", start.x, start.y);
+  for (let i = 1; i <= 4; i++) pen("pointermove", start.x + (px16 / 4) * i, start.y); // fast, no dwell
+  pen("pointerup", start.x + px16, start.y);
+  assert.notDeepEqual(notes(app).map(n => n.t), before, "a pencil stroke on a note moves it");
 });

@@ -514,7 +514,7 @@ published/imported songs' music. Two options on the table: (a) the
 notes are set in stone, only annotations edit; (b) editing makes a
 personal copy. He leaned toward locking both kinds.
 
-## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff") — (a) DONE, (b) DONE (M silences + dims, S solos, H hides; all saved in track: annotations); metronome follows the song by default; ⏱ toggles, ⚙ settings
+## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff") — (a) DONE, (b) DONE (M silences + dims, S solos, H hides; all saved in track: annotations); metronome follows the song by default; ⏱ toggles, ⚙ settings; (c) DONE: the Apple Pencil grabs/draws at once (Settings → Other to turn off), fingers still dwell
 (a) count-in from anywhere + one-tap metronome · (b) mute/solo silence
 only, saved with the song (track: annotation; hide stays separate) ·
 (c) Pencil draws/edits instantly, fingers navigate · (d) keyboard
@@ -523,6 +523,26 @@ note doesn't move the playhead (maybe a pref). Save model (#1): advisor
 drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
+
+## PRIVATE REPO / PROTECTION — ADVISOR (2026-09-29; Josh: "am I being overly cautious?")
+Verdict: now nothing; stay public. Pages sites are always public (the
+served index.html is downloadable); Pages from a private org repo needs
+GitHub Team ($4/mo/seat) — and private CI gets ~3,000 Actions min/mo
+(check `gh run list` durations first). Songs + nsf-archive must stay
+public (tokenless raw fetches, share links, README list, the iPad app).
+Minify/obfuscate: skip (hours to undo; breaks one-file/no-build, harness,
+readable iPad traces; the IPA is a zip anyway). Real protection: LICENSE
+is PolyForm Noncommercial (792e432 — close any stale "awaiting his yes"
+line), add a copyright/license line to index.html's header, one-time
+secrets scan (`git log -p | grep -E 'ghp_|github_pat_|sk-'`), maybe a
+"Night Roll" trademark search before marketing. Bigger legal risk: the
+game-music archive (DMCA; Apple review) — decide at App Store launch
+with TWO PRODUCTS (store edition without rips?). At launch, optional:
+code repo private on Team + songs in their own public repo (songsRepo/
+analysisRepo settings already separate; APP_REPO, shareLinkFor,
+README target change once). What private WOULD hide: the design docs
+and roadmap (NIGHT-ROLL.md, open-items.md) — Josh's instinct is right
+for those, not for the code.
 
 ## NEXT: AI SESSION CONTROLS (Josh via Ask, 2026-09-29 23:21–23:23)
 The general bridge session is at 172 turns; the app's Clear chat only
