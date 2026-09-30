@@ -1556,6 +1556,7 @@
       <dt>🎸 Bassist</dt><dd>The 🎸 beside 🎲 (behind ⋯, or Edit ▾ → Bassist…) generates a bassline for the range onto a track you pick (defaults to a NEW bass track unless an empty one exists — it never silently overwrites your notes; the status line says exactly what it replaces). PITCHES COME FROM YOUR DECLARED CHORDS — chord tones, slash basses honored (C♯/F walks to the F), N.C. bars pedal the key root; gaps ride the last chord. With ONLY a melody and no chords, it sketches the melody's harmony internally (duration-weighted, strong beats count more) and plays bass under that sketch — the sketch is never shown or written anywhere, and different seeds read the melody differently, which is the idea machine — declared chords always win bar-by-bar, inference only fills the unannotated gaps. The bass PLAYS THROUGH your Break sections (a Break is bass-alone by your own device). Styles: <b>chug</b> (root 8ths), <b>pump</b> (root–fifth), <b>arp</b> (chord tones cycling), <b>walk</b> (approach notes INTO each coming chord — the leading-tone move, mechanized), <b>riff</b> (rhythm copied from the follow source: the kick, any track, or the chord changes). busy 1–5, octave 1–3, strictly monophonic (NES-legal), same take chips / one-⟲ replace / same-label-sections-restate contract as the Drummer.</dd>
       <dt>⊞ Insert bars</dt><dd>Edit ▾ → Insert bars… opens a gap anywhere in the song: pick the spot (bar + beat, decimals fine), how much (a count of <b>bars</b>, <b>beats</b>, or <b>16ths</b>), and Insert. Everything from that point onward — notes, sections, chords, keys, the loop point — slides right together. A section that starts before the point and is still open there STRETCHES to span the gap; one that ends exactly at the point stays put (stretch it yourself if you want it covering the new bars). One ⟲ undoes the whole thing.</dd>
       <dt>Space</dt><dd>Play / stop, Logic-style — anywhere except while typing in a text field. With a hardware keyboard on iPad too.</dd>
+      <dt>Hardware keyboard</dt><dd>Logic's keys: <b>Return</b> back to the start (or the cycle's start), <b>K</b> click on/off, <b>C</b> cycle on/off, <b>R</b> record, <b>⌘← / ⌘→</b> zoom out / in around the cursor. Editing: <b>⌘A</b> selects every visible note, <b>⌘C / ⌘X / ⌘V</b> copy, cut, paste at the playhead, <b>⌘D</b> duplicates the selection right after itself (whole bars when it's longer than a beat — press again to keep repeating), <b>⌘Z / ⇧⌘Z</b> undo / redo, <b>⌘S</b> Save Version, arrows move, ⇧ an octave, ⌥ resizes, Delete removes.</dd>
       <dt>▦ Grid</dt><dd>Notes move and resize on a 16th grid, or on triplet steps while a <b>T</b> duration is active — and the duration chips stay visible in <b>Select</b>, where they are that move grid, so changing it never means a trip through Pencil. Touching a note <b>picks up its grid</b> automatically: grab a triplet note and moves go in triplet steps, grab a straight one and they go in 16ths; tap a chip afterwards to override. View ▾ → <b>Grid…</b> opens a sheet: tap a number of <b>lines per bar</b> (say 10) and the roll redraws instantly with that many lines in each bar — and pencil entry, note drags and resizes all SNAP to those lines. Pure view-and-snap aid: no note moves, no annotation changes, the time signature stays what it is. This is how a figure the duration buttons can't spell — ten even notes across a 4/4 bar, each 0.4 beats — becomes pencil-drag from line to line; with a grid armed, a pencil tap lays down one cell — in the roll, the fall view and the score alike — so 6 lines per bar pencils quarter-note triplets and 12 pencils eighth triplets without touching the duration chips (they dim while a grid rules, and a <b>▦N</b> chip appears at the end of the row naming the grid — tap it for the sheet; opening another song turns the grid off). Set the <b>anchor</b> right in the sheet — bar and beat, and the beat takes decimals for sub-beat starts (2.5 = the "and" of 2, 2.25 = the second sixteenth) — and the lines run from there (14.2, say), so a figure beginning mid-bar gets its lines exactly where its notes go, continuing bar after bar on that phase across the whole song. Bar lines stay drawn for orientation but stop being snap targets while the grid is armed; a bar line falling between cells is expected, not a bug. <b>Off</b> returns to the meter's own grid (16ths, or triplet steps while a T duration is armed). Transient by design: set it, enter the passage, set it back.</dd>
       <dt>📻 Listener mode</dt><dd>Phones open as a PLAYER: the roll, ⏮ ▶, the readouts, speed and volume — everything else hidden, including the section/chord bands and the notes strip (unreadably small on a phone anyway), because a shared song link is for listening, not editing. A <b>Full app</b> button in the header brings the whole DAW back on that device (and View ▾ → Listener mode folds it away again, on any device). Send someone a ?song= link and their phone just… plays it.</dd>
       <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — one place for every hide/show: 𝄞 Score view, ◂ Tracks, 🛠 Edit toolbar, ▦ Bottom bar, 🎹 Instrument panel, 💬 Notes strip, and ▸ Section levels with −/+ steppers (shows "2 of 3"; the gutter chevron still one-tap cycles). ✓ means visible; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else. Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
@@ -5086,6 +5087,30 @@ function pasteClipboard(atTick, opts = {}) {
   if (viewMode === "score") buildScoreModel();
   draw();
   return added.length + annoClipboard.length;
+}
+function selectAllNotes() { // ⌘A: every visible note (hidden tracks stay out — H means out of reach)
+  if (!song) return 0;
+  multiSel = [];
+  song.tracks.forEach((tr, ti) => { if (!trackShown(ti) || tr.kind === "audio") return; tr.notes.forEach((n, ni) => { if (!n.gone) multiSel.push({ti, ni}); }); });
+  multiSelKey = new Set(multiSel.map(({ti, ni}) => ti + ":" + ni));
+  selNote = null; lassoAnno = null;
+  if (typeof refreshSelInfo === "function") refreshSelInfo();
+  draw();
+  return multiSel.length;
+}
+function duplicateSelection() { // ⌘D: a copy right after the selection, the clipboard untouched (Logic's repeat)
+  const items = selEditItems();
+  if (!items.length || !editableSong()) return 0;
+  const t0 = Math.min(...items.map(({n}) => n.t)), end = Math.max(...items.map(({n}) => n.t + n.d));
+  // the repeat period: whole bars for anything longer than a beat ("repeat
+  // this bar four times" is the loop-composing move), else whole beats
+  const unit = end - t0 > beatTicks() ? barTicks() : beatTicks();
+  const step = Math.max(unit, Math.ceil((end - t0) / unit) * unit);
+  const keep = [noteClipboard, annoClipboard];
+  copySelection(); annoClipboard = [];
+  const k = pasteClipboard(t0 + step);
+  [noteClipboard, annoClipboard] = keep;
+  return k;
 }
 function lassoedAnnos() { return lassoAnno ? rollnotes.filter(n => annoInLasso(n, lassoAnno)) : []; }
 function deleteSelection() { // notes AND the lasso'd annotations (Josh, 2026-09-13) — one undo step
@@ -14270,6 +14295,27 @@ document.getElementById("gridclose").addEventListener("click", () => {
   document.getElementById("gridsheet").classList.remove("on");
   setInfo(gridDiv ? "grid: " + gridDiv + " lines/bar — View ▾ → Grid to change" : "grid off");
 });
+// the rest of Logic's transport keys (DAW review, 2026-09-29: muscle memory
+// failed silently): Return = to the start, K = click on/off, C = cycle
+// on/off, R = record, ⌘← / ⌘→ = zoom out / in around the cursor. Any song.
+document.addEventListener("keydown", e => {
+  if (!song || e.repeat || e.altKey) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  const meta = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
+  if (meta && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+    const f = e.key === "ArrowRight" ? 1.25 : 0.8, ppt0 = pxPerTick(), cx = RULER_W + playCursor * ppt0 - view.x;
+    view.pxq = Math.min(400, Math.max(viewMode === "score" ? minPxq() : pxqFloor(), view.pxq * f));
+    view.x = playCursor * pxPerTick() + RULER_W - cx; // the cursor stays where it was on screen
+    clampView(); draw(); e.preventDefault(); return;
+  }
+  if (meta || e.shiftKey) return;
+  if (e.key === "Enter" && t && t.tagName === "BUTTON") return; // Return on a focused button presses it
+  if (e.key === "Enter") { document.getElementById("rwbtn").click(); e.preventDefault(); return; }
+  if (k === "k") { document.getElementById("metbtn").click(); e.preventDefault(); return; }
+  if (k === "c" && rangeSel && rangeSel.cycle && rangeSel.b > rangeSel.a) { rangeSel.off = !rangeSel.off; setInfo(rangeSel.off ? "cycle off" : "cycle on"); draw(); e.preventDefault(); return; }
+  if (k === "r") { const rb = document.getElementById("recbtn"); if (rb && rb.offsetParent !== null) { rb.click(); e.preventDefault(); } return; }
+});
 document.addEventListener("keydown", e => { // space = play/stop, Logic-style
   if (e.code !== "Space" || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target;
@@ -17962,6 +18008,12 @@ document.addEventListener("keydown", e => {
     return;
   }
   if (meta && e.key.toLowerCase() === "y") { editRedoPop(); e.preventDefault(); return; }
+  if (meta && e.key.toLowerCase() === "a") { const k = selectAllNotes(); setInfo(k + " notes selected"); e.preventDefault(); return; }
+  if (meta && e.key.toLowerCase() === "x") { // cut = copy, then delete — one ⌘Z brings the notes back
+    if (copySelection()) { const s = clipSummary(); deleteSelection(); setInfo("cut " + s + " — ⌘V pastes at the playhead"); e.preventDefault(); }
+    return;
+  }
+  if (meta && e.key.toLowerCase() === "d") { if (duplicateSelection()) setInfo("duplicated — ⌘D again repeats it"); e.preventDefault(); return; }
   if (meta) return; // don't eat browser shortcuts
   if (e.key === "Backspace" || e.key === "Delete") {
     if (deleteSelection()) e.preventDefault();

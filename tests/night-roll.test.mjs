@@ -1766,7 +1766,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "and so does the <b>Apple Pencil</b>", "<b>⌘D</b> duplicates the selection", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -5373,6 +5373,23 @@ test("Apple Pencil grabs and draws without the dwell (a device pref, default on)
   assert.equal(val(`penInstant()`), false);
   run(`localStorage.removeItem("ff1roll-peninstant");`);
   assert.match(readFileSync(new URL("../index.html", import.meta.url), "utf8"), /const instantGrab = e\.pointerType === "mouse" \|\| \(e\.pointerType === "pen" && penInstant\(\)\)/);
+});
+
+test("⌘A selects every visible note; ⌘D repeats a bar-long selection one bar later, clipboard untouched", () => {
+  installSong();
+  run(`songKey = "local/dup.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}");
+       song.tracks = [{name: "a", notes: [{t: 0, d: 480, p: 60, v: 90}, {t: 960, d: 480, p: 64, v: 90}]}, {name: "b", notes: [{t: 0, d: 1920, p: 40, v: 90}]}];
+       trackState = [{muted: false, solo: false, hidden: false}, {muted: false, solo: false, hidden: true}]; multiSel = []; multiSelKey = new Set(); selNote = null; editUndo = [];`);
+  try {
+    assert.equal(val(`selectAllNotes()`), 2, "the hidden track stays out");
+    run(`noteClipboard = [{dt: 0, p: 99, d: 1, v: 1, ti: 0}];`);
+    assert.ok(val(`duplicateSelection()`) > 0);
+    const ts = val(`song.tracks[0].notes.filter(n => !n.gone).map(n => n.t).sort((a, b) => a - b)`);
+    assert.deepEqual(ts, [0, 960, 1920, 2880], "the copy starts one bar (1920 ticks) later");
+    assert.equal(val(`noteClipboard[0].p`), 99, "the clipboard is untouched");
+    run(`editUndoPop();`);
+    assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 2, "one ⌘Z takes it back");
+  } finally { run(`localStorage.removeItem("ff1roll-draft-" + songKey);`); }
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
