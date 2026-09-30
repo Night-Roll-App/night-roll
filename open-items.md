@@ -525,6 +525,12 @@ the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
 ## QUEUE (2026-09-29, the order Josh approved)
+AFTER THE BUDGET FIX (2026-09-30, Josh asked how Logic handles big songs):
+stream the console render like a sampler — render ~10–20 s chunks just ahead
+of the playhead, mix non-soloed tracks to one stereo bus, keep per-track
+buffers only for tracks being muted/soloed, free behind the playhead. Whole-
+song all-tracks buffers (1.9 GB for FFX Challenge) become the exception
+("freeze"). Report peak memory before/after.
 NEXT (Josh via Ask, 2026-09-30 17:19): every message to a Claude bridge
 backend (song/Ask tabs AND the ⌨ Terminal tab) carries a context block so he
 never copies/pastes: the open song (title, path, published/local, view,
