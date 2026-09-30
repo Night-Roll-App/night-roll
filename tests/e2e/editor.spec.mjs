@@ -313,12 +313,12 @@ test("pen: fast stroke over a note pans; a dwell grabs it (hold-to-drag)", async
   expect((await notes(page)).map(n => n.t)).toEqual([240, 240, 240]);
 });
 
-test("pen pencil: fast stroke adds nothing; a tap or a dwell adds a note", async ({ page }) => {
+test("finger pencil: fast stroke adds nothing; a tap or a dwell adds a note (the Apple Pencil draws at once — next test)", async ({ page }) => {
   await page.evaluate(() => document.querySelector('#modeseg button[data-mode="pencil"]').click());
   await page.evaluate(() => { view.pxq = 600; clampView(); draw(); });
   const spot = await noteXY(page, 480, 70); // empty row
   const pen = (type, x, y) => page.evaluate(([tp, px, py]) => {
-    canvas.dispatchEvent(new PointerEvent(tp, { pointerId: 8, pointerType: "pen",
+    canvas.dispatchEvent(new PointerEvent(tp, { pointerId: 8, pointerType: "touch",
       clientX: px, clientY: py, isPrimary: true, bubbles: true }));
   }, [type, x, y]);
   await pen("pointerdown", spot.x, spot.y); // fast sweep: no note
@@ -333,6 +333,20 @@ test("pen pencil: fast stroke adds nothing; a tap or a dwell adds a note", async
   await page.waitForTimeout(320);
   await pen("pointerup", spot2.x, spot2.y);
   expect(await notes(page)).toHaveLength(5);
+});
+
+test("Apple Pencil pencil: a stroke places a note at once, no dwell (2026-09-29)", async ({ page }) => {
+  await page.evaluate(() => document.querySelector('#modeseg button[data-mode="pencil"]').click());
+  await page.evaluate(() => { view.pxq = 600; clampView(); draw(); });
+  const spot = await noteXY(page, 480, 70); // empty row
+  const pen = (type, x, y) => page.evaluate(([tp, px, py]) => {
+    canvas.dispatchEvent(new PointerEvent(tp, { pointerId: 9, pointerType: "pen",
+      clientX: px, clientY: py, isPrimary: true, bubbles: true }));
+  }, [type, x, y]);
+  await pen("pointerdown", spot.x, spot.y);
+  for (let i = 1; i <= 3; i++) await pen("pointermove", spot.x + i * 10, spot.y);
+  await pen("pointerup", spot.x + 30, spot.y);
+  expect(await notes(page)).toHaveLength(4);
 });
 
 test("ruler taps keep the lasso; ➗ divides into triplets", async ({ page }) => {
@@ -465,12 +479,13 @@ test("phone-size boot: song loads with the panel folded (no TDZ bricks) @smoke",
 test("voice menu: tapping a different track's chip closes the menu instead of leaving it open on the old track (Josh, traced 2026-09-29)", async ({ page }) => {
   // a first tap on the ALREADY-selected track (track 0, the default) is a
   // "second tap" by the chip's own logic — it opens the voice menu directly
-  await page.click("#trackrow .chip:nth-child(1)");
+  // the chip's NAME: its middle is now the M/S/H buttons (H joined 2026-09-29)
+  await page.click("#trackrow .chip:nth-child(1) > span:nth-child(2)");
   await expect(page.locator("#voicemenu")).toHaveClass(/(^|\s)on(\s|$)/);
   // a first tap on a DIFFERENT track's chip must close the stale menu, not
   // leave it open still pointing at track 0 (the tap-away closer used to
   // exempt every chip, not just the one the menu belongs to)
-  await page.click("#trackrow .chip:nth-child(2)");
+  await page.click("#trackrow .chip:nth-child(2) > span:nth-child(2)");
   await expect(page.locator("#voicemenu")).not.toHaveClass(/(^|\s)on(\s|$)/);
   expect(await page.evaluate(() => selTrack)).toBe(1);
 });
