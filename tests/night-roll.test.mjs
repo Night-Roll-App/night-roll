@@ -5221,6 +5221,28 @@ test("count-in: ● counts in from any bar and the playhead waits at its start; 
   } finally { run(`met.countIn = false; recording = false;`); }
 });
 
+test("✦ AI: a stream cut before the first byte is not 'not delivered' — the bridge is asked; found carries on, 404 fails (Josh, 2026-09-29)", async () => {
+  installSong();
+  run(`songKey = "albums/test/deliv.mid"; askGeneral = false; localStorage.removeItem(askStoreKey());
+       globalThis.__real = {aiProvider, askJobsSupported, fetch: globalThis.fetch, aiUrl};
+       aiUrl = () => "http://bridge.test"; askJobsSupported = async () => true;
+       aiProvider = () => ({chat: async () => { throw new Error("Load failed"); }});
+       globalThis.__jobStatus = 200;
+       globalThis.fetch = async (u) => ({ok: __jobStatus === 200, status: __jobStatus, json: async () => ({status: "running", notes: []})});
+       const msgs = askLoad(); msgs.push({role: "user", content: "hi", t: Date.now(), pending: "job_x"}); askSave(msgs);`);
+  try {
+    await run(`askRun({msgs: askLoad(), text: "hi", sp: askSpan(), messages: [], jobId: "job_x", live: askBubble("ai", "…"), key: askStoreKey()})`);
+    assert.equal(val(`askLoad().some(m => m.pending === "job_x")`), true, "still pending: not declared lost");
+    assert.equal(val(`askLoad().some(m => /not delivered/.test(m.content || ""))`), false);
+    run(`__jobStatus = 404;`);
+    await run(`askResume()`);
+    assert.equal(val(`askLoad().some(m => m.pending === "job_x")`), false, "the bridge never had it: now it fails");
+    assert.equal(val(`askLoad().some(m => /never reached it/.test(m.content || ""))`), true);
+  } finally {
+    run(`aiProvider = __real.aiProvider; askJobsSupported = __real.askJobsSupported; globalThis.fetch = __real.fetch; aiUrl = __real.aiUrl; localStorage.removeItem(askStoreKey());`);
+  }
+});
+
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
   const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;

@@ -19086,9 +19086,10 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
       askstatus.textContent = "the live stream was cut (Safari does that when the app leaves the screen) — the reply keeps cooking on the Mac; checking every few seconds";
       live.textContent = "… (still working — reopen or come back to see it)";
       askResumeSoon(3000);
-    } else if (jobs !== false && !http && !delivered) { // the question never reached the Mac: say so, keep it in the log
-      live.classList.add("err"); live.textContent = "⚠ not delivered — the Mac couldn't be reached; ask again when the connection is back";
-      askFail(cur, "not delivered — the Mac couldn't be reached; ask again", key); askstatus.textContent = "";
+    } else if (jobs !== false && !http && !delivered) { // no sign it arrived — but a relaunch cuts the stream before the first byte even when the Mac HAS it (Josh, 2026-09-29): keep it pending and ask the bridge (askResume: found → carries on, 404 → really not delivered)
+      live.textContent = "… (checking whether the Mac got it)";
+      askstatus.textContent = "";
+      askResumeSoon(2000);
     } else { live.classList.add("err"); live.textContent = "⚠ " + err.message + " — check File → Settings… → AI model, and Test"; askFail(cur, err.message, key); askstatus.textContent = ""; }
   } finally {
     askBusy = null;

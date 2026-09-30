@@ -524,6 +524,28 @@ drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
 
+## SAVE MODEL — JOSH PICKED B (2026-09-29 22:49): autosave on; ⌘S = dated version; Publish separate. BUILDING.
+Also decided (Josh: decide, don't ask): metronome = tap ⏱ toggles the
+click, a small ⚙ beside it opens settings; ✎ Edit locally happens on the
+first edit with a footer notice, no confirm.
+(Advisor notes:)
+Verified: Save (⌘S) checkpoints MUSIC ONLY (annotations not saved, not
+shown by ●, not reverted); ● has three meanings; "Save" means a fourth
+thing in folder mode; the Publish sheet's "edited since last save"
+means since Publish.
+A. "Everything is kept; Publish sends it": Auto-save always; Save goes;
+   "Throw away my changes" / "Bring back my changes". S.
+B. "Always kept, plus versions" (Logic/GarageBand): ⌘S = Save Version
+   (music AND annotations, dated, device-local, last ~20); File →
+   Versions… lists them + the published copy; going back keeps a
+   "Before going back" version; Publish separate; ● = not published. M.
+   (Recommended; A is a smaller first step toward it.)
+C. "Save puts it in the repo": ⌘S publishes. Conflicts with his rule
+   that publishing is deliberate. S–M.
+Open question with it: does "✎ Edit locally" keep its ask-first confirm?
+Stale wording list (help + UI strings, ~20 places incl. "Sync") is in
+the advisor's report — fix it together with whichever model he picks.
+
 ## FORMATS AUDIT (advisor, 2026-09-29; Josh: "all that stuff is suspect … how do normal DAWs save everything about the song?") — nothing built
 
 Top findings, highest risk first:
