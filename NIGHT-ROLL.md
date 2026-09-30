@@ -3546,6 +3546,65 @@ take is in the working copy immediately. ● can only be armed from a
 stop (● while rolling = stop), so the check in `play()` covers every
 path.
 
+## Raw recording + Quantize (2026-09-30)
+
+DAW convention (Logic, GarageBand, Cubasis, Josh's advisor review
+`open-items.md` "DAW CONVENTIONS REVIEW" item 2): recording keeps what
+you played; a separate Quantize command snaps it afterward, undoably.
+Night Roll's recording used to snap every note-on/note-off to the move
+grid AS it recorded — fine for exact playing, punishing for anything
+looser (a MIDI keyboard's natural feel, a fast run).
+
+- **`recSnap(t)`** (index.html) is the one chokepoint both `recNoteOn`
+  (the start) and `recNoteOff` (the end) run every tick through. Default
+  (`recSnapOn()` false): raw — `Math.max(0, Math.round(t))`, an integer
+  tick, no grid. `recSnapOn()` true: the old behavior, `Math.round(t /
+  g) * g` against `moveSnapTicks()`. A raw take's minimum note length
+  floors at the app's usual shortest-editable-note number (`Math.max(24,
+  Math.round(song.ppq / 8))`, the same number `resizeSelection` uses) so
+  a very fast tap can't leave a zero/negative-length note; a snapped
+  take's minimum stays one grid step, unchanged.
+- **The pref**: `recSnapOn()` reads `localStorage["ff1roll-recsnap"]`
+  (default off — not present). Settings → Other → **Snap while
+  recording** (`#cfgrecsnap`, wired through the pane's existing generic
+  `change` → `settingsPersist(id)` door, same pattern as `cfgpeninstant`/
+  `cfgnotetapcursor`). This is a DEVICE pref, not song state (an input
+  behavior, not something the song remembers).
+- **Quantize (`quantizeSelection(strength, alsoEnds)`, index.html, beside
+  `divideSelection`)**: a command on the SELECTION (`selEditItems()`),
+  same door as nudge/divide/transpose. For each note: `snap(t) =
+  Math.max(0, Math.round(t / g) * g)` against the current
+  `moveSnapTicks()` grid; `blend(raw, target) = Math.round(raw + (target
+  - raw) * strength)` — `strength` 1/0.75/0.5 (the sheet's 100%/75%/50%
+  chips) moves the note exactly onto the line, or partway there.
+  `alsoEnds` (a sheet checkbox, off by default) additionally quantizes
+  each note's END the same way and resizes `n.d` to match; off, only the
+  start moves and the played duration survives untouched — most raw
+  takes want their durations kept and only the onsets straightened.
+  Routes through the existing `selEditApply(items, mutate)` helper
+  (mutate + one `{kind: "mod"}` `pushUndo` + persist + redraw) — the
+  SAME one-undo-step machinery divide/nudge/transpose already use, so
+  Quantize needed no new undo kind.
+- **Exposure**: edit-row `#quantbtn` ("Q Quantize", behind `⋯`, beside
+  ➗/⁀ — same `#morewrap` section, same `updateEditButtons` gate as
+  divbtn/trbtn: grayed with nothing selected), `Edit ▾ → #emQuantize`
+  (proxies the button, same pattern as `emDivide`), and hardware key
+  **Q** in the Logic keys handler beside K/C/R — `editableSong()` is
+  checked right in the key handler (not inside `quantizeSelection`
+  alone, so a read-only song gets an immediate "Quantize works on your
+  own songs" instead of opening a sheet that can't do anything). The
+  strength sheet (`#quantsheet`, `#quantchips`) is built once on first
+  open, same lazy-build pattern as `#divchips`/`#trchips`.
+- **Help**: `● Record`'s entry now says recording keeps what you
+  played and names the pref and Q; a new `Quantize (Q)` entry sits
+  beside `Divide (➗)`; the Hardware keyboard and Edit menu entries list
+  Q too.
+- Not done: the hardware-key Q obviously needs a connected keyboard on
+  the iPad (no on-screen equivalent needed — the Q Quantize button
+  covers touch already); iPad CoreMIDI (item 2's other half — a real
+  MIDI keyboard on the iPad itself) is unrelated and still open (see
+  open-items.md).
+
 ## Compare with repo (2026-09-25)
 
 Josh: "I have seven songs where it says the notes are changed, but I

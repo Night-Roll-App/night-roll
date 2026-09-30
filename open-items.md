@@ -520,15 +520,17 @@ published/imported songs' music. Two options on the table: (a) the
 notes are set in stone, only annotations edit; (b) editing makes a
 personal copy. He leaned toward locking both kinds.
 
-## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff") — (a) DONE, (b) DONE (M silences + dims, S solos, H hides; all saved in track: annotations); metronome follows the song by default; ⏱ toggles, ⚙ settings; (c) DONE: the Apple Pencil grabs/draws at once (Settings → Other to turn off), fingers still dwell; (d) DONE: Return/K/C/R/⌘←→, ⌘A, ⌘X, ⌘D; (e) DONE for track changes (voice/color/vol/pan/M/S/H are ⟲ steps) — undo across song switches NOT done on purpose: entries hold note indexes that a reopened draft renumbers (setSong's comment); would need identity-keyed entries; (f) DONE: a note tap leaves the playhead alone (Settings → Other restores), + Note anchors at the tapped note
+## DAW WORK ORDER (Josh via Ask, 2026-09-29: "Can we start working on this stuff") — (a) DONE, (b) DONE (M silences + dims, S solos, H hides; all saved in track: annotations); metronome follows the song by default; ⏱ toggles, ⚙ settings; (c) DONE: the Apple Pencil grabs/draws at once (Settings → Other to turn off), fingers still dwell; (d) DONE: Return/K/C/R/⌘←→, ⌘A, ⌘X, ⌘D; (e) DONE for track changes (voice/color/vol/pan/M/S/H are ⟲ steps) — undo across song switches NOT done on purpose: entries hold note indexes that a reopened draft renumbers (setSong's comment); would need identity-keyed entries; (f) DONE: a note tap leaves the playhead alone (Settings → Other restores), + Note anchors at the tapped note; (g) DONE 2026-09-30: recording keeps what you played by default (raw, no input snap) — Settings → Other → "Snap while recording" (off by default) restores the old always-snapped input; a new Q Quantize command (edit row, Edit ▾, hardware key Q) snaps the selection afterward, 100/75/50% strength, optional "also quantize note ends", one ⟲ step (reuses selEditApply's mod/batch undo, same as divide/nudge/transpose). tests/night-roll.test.mjs: raw off-grid start, the pref restoring snap, and the quantize strength/undo behavior.
 (a) count-in from anywhere + one-tap metronome · (b) mute/solo silence
 only, saved with the song (track: annotation; hide stays separate) ·
 (c) Pencil draws/edits instantly, fingers navigate · (d) keyboard
 shortcuts + Select All / Duplicate · (e) undo coverage · (f) selecting a
-note doesn't move the playhead (maybe a pref). Save model (#1): advisor
-drafting 2–3 models for his ruling — build nothing until he picks. Next
-tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
-his son used it on a MacBook), record without snapping, Quantize.
+note doesn't move the playhead (maybe a pref) · (g) raw recording +
+Quantize. Save model (#1): advisor drafting 2–3 models for his ruling —
+build nothing until he picks. Still open: iPad CoreMIDI plugin (Web MIDI
+already works in desktop browsers — his son used it on a MacBook; no
+on-screen substitute needed, only the connected-keyboard case is
+blocked).
 
 ## DONE 2026-09-30: a console voice that fails to load says why; ▶ retries
 Josh: "sometimes the instruments never load" (▶ enabled at once, synth,
@@ -818,8 +820,8 @@ Ranked, most annoying first (effort S/M/L):
    and the help contradicts itself on what Save and ● mean. DAWs save
    continuously; sharing is separate. S (help) / S (auto-save on) / M (one model).
 2. No external MIDI keyboard on the iPad (no Web MIDI; the shell has no
-   CoreMIDI plugin); recording snaps to the grid as it goes; no Quantize
-   command afterwards. M–L (CoreMIDI plugin) / M (raw take + Quantize).
+   CoreMIDI plugin). M–L (CoreMIDI plugin) — still open.
+   DONE 2026-09-30: raw take + Quantize (see "DAW WORK ORDER" (g) below).
 3. Count-in only from bar 1; the metronome is a sheet, not a one-tap
    toggle. S.
 4. Mute also HIDES a track and solo hides the rest; neither is saved

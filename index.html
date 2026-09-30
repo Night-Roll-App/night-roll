@@ -1099,6 +1099,7 @@
   <button id="fillbtn" aria-label="Fill the range with the AI (✦ Fill)">✦</button>
   <button id="divbtn" aria-label="Divide selected notes into equal parts">➗</button>
   <button id="joinbtn" aria-label="Join selected notes">⁀</button>
+  <button id="quantbtn" aria-label="Quantize selected notes to the grid">Q Quantize</button>
   </span>
 </div>
 <div id="instpanel">
@@ -1426,6 +1427,21 @@
   </div>
 </div>
 
+<div class="overlay" id="quantsheet">
+  <div class="sheet">
+    <h2>QUANTIZE</h2>
+    <p class="meta" style="margin:0 0 8px;white-space:normal">Snaps each selected note's start to the current grid
+    (the same grid Move and Pencil use — 16ths, triplet steps with a T duration active, or 32nds once the song
+    has any). <b>100%</b> lands exactly on the line; <b>75%/50%</b> is a softer nudge, partway there — good for
+    a raw take that's close but not glued to the grid. One ⟲ undoes the whole selection.</p>
+    <div class="chiprow" id="quantchips"></div>
+    <div class="row" style="align-items:center;gap:8px;margin-top:8px">
+      <label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer">
+        <input type="checkbox" id="quantends" style="width:20px;height:20px"> also quantize note ends (lengths adjust)</label>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="drummersheet">
   <div class="sheet">
     <h2>DRUMMER</h2>
@@ -1569,7 +1585,7 @@
       <dt>🎸 Bassist</dt><dd>The 🎸 beside 🎲 (behind ⋯, or Edit ▾ → Bassist…) generates a bassline for the range onto a track you pick (defaults to a NEW bass track unless an empty one exists — it never silently overwrites your notes; the status line says exactly what it replaces). PITCHES COME FROM YOUR DECLARED CHORDS — chord tones, slash basses honored (C♯/F walks to the F), N.C. bars pedal the key root; gaps ride the last chord. With ONLY a melody and no chords, it sketches the melody's harmony internally (duration-weighted, strong beats count more) and plays bass under that sketch — the sketch is never shown or written anywhere, and different seeds read the melody differently, which is the idea machine — declared chords always win bar-by-bar, inference only fills the unannotated gaps. The bass PLAYS THROUGH your Break sections (a Break is bass-alone by your own device). Styles: <b>chug</b> (root 8ths), <b>pump</b> (root–fifth), <b>arp</b> (chord tones cycling), <b>walk</b> (approach notes INTO each coming chord — the leading-tone move, mechanized), <b>riff</b> (rhythm copied from the follow source: the kick, any track, or the chord changes). busy 1–5, octave 1–3, strictly monophonic (NES-legal), same take chips / one-⟲ replace / same-label-sections-restate contract as the Drummer.</dd>
       <dt>⊞ Insert bars</dt><dd>Edit ▾ → Insert bars… opens a gap anywhere in the song: pick the spot (bar + beat, decimals fine), how much (a count of <b>bars</b>, <b>beats</b>, or <b>16ths</b>), and Insert. Everything from that point onward — notes, sections, chords, keys, the loop point — slides right together. A section that starts before the point and is still open there STRETCHES to span the gap; one that ends exactly at the point stays put (stretch it yourself if you want it covering the new bars). One ⟲ undoes the whole thing.</dd>
       <dt>Space</dt><dd>Play / stop, Logic-style — anywhere except while typing in a text field. With a hardware keyboard on iPad too.</dd>
-      <dt>Hardware keyboard</dt><dd>Logic's keys: <b>Return</b> back to the start (or the cycle's start), <b>K</b> click on/off, <b>C</b> cycle on/off, <b>R</b> record, <b>⌘← / ⌘→</b> zoom out / in around the cursor. Editing: <b>⌘A</b> selects every visible note, <b>⌘C / ⌘X / ⌘V</b> copy, cut, paste at the playhead, <b>⌘D</b> duplicates the selection right after itself (whole bars when it's longer than a beat — press again to keep repeating), <b>⌘Z / ⇧⌘Z</b> undo / redo, <b>⌘S</b> Save Version, arrows move, ⇧ an octave, ⌥ resizes, Delete removes.</dd>
+      <dt>Hardware keyboard</dt><dd>Logic's keys: <b>Return</b> back to the start (or the cycle's start), <b>K</b> click on/off, <b>C</b> cycle on/off, <b>R</b> record, <b>Q</b> quantizes the selection, <b>⌘← / ⌘→</b> zoom out / in around the cursor. Editing: <b>⌘A</b> selects every visible note, <b>⌘C / ⌘X / ⌘V</b> copy, cut, paste at the playhead, <b>⌘D</b> duplicates the selection right after itself (whole bars when it's longer than a beat — press again to keep repeating), <b>⌘Z / ⇧⌘Z</b> undo / redo, <b>⌘S</b> Save Version, arrows move, ⇧ an octave, ⌥ resizes, Delete removes.</dd>
       <dt>▦ Grid</dt><dd>Notes move and resize on a 16th grid, or on triplet steps while a <b>T</b> duration is active — and the duration chips stay visible in <b>Select</b>, where they are that move grid, so changing it never means a trip through Pencil. Touching a note <b>picks up its grid</b> automatically: grab a triplet note and moves go in triplet steps, grab a straight one and they go in 16ths; tap a chip afterwards to override. View ▾ → <b>Grid…</b> opens a sheet: tap a number of <b>lines per bar</b> (say 10) and the roll redraws instantly with that many lines in each bar — and pencil entry, note drags and resizes all SNAP to those lines. Pure view-and-snap aid: no note moves, no annotation changes, the time signature stays what it is. This is how a figure the duration buttons can't spell — ten even notes across a 4/4 bar, each 0.4 beats — becomes pencil-drag from line to line; with a grid armed, a pencil tap lays down one cell — in the roll, the fall view and the score alike — so 6 lines per bar pencils quarter-note triplets and 12 pencils eighth triplets without touching the duration chips (they dim while a grid rules, and a <b>▦N</b> chip appears at the end of the row naming the grid — tap it for the sheet; opening another song turns the grid off). Set the <b>anchor</b> right in the sheet — bar and beat, and the beat takes decimals for sub-beat starts (2.5 = the "and" of 2, 2.25 = the second sixteenth) — and the lines run from there (14.2, say), so a figure beginning mid-bar gets its lines exactly where its notes go, continuing bar after bar on that phase across the whole song. Bar lines stay drawn for orientation but stop being snap targets while the grid is armed; a bar line falling between cells is expected, not a bug. <b>Off</b> returns to the meter's own grid (16ths, or triplet steps while a T duration is armed). Transient by design: set it, enter the passage, set it back.</dd>
       <dt>📻 Listener mode</dt><dd>Phones open as a PLAYER: the roll, ⏮ ▶, the readouts, speed and volume — everything else hidden, including the section/chord bands and the notes strip (unreadably small on a phone anyway), because a shared song link is for listening, not editing. A <b>Full app</b> button in the header brings the whole DAW back on that device (and View ▾ → Listener mode folds it away again, on any device). Send someone a ?song= link and their phone just… plays it.</dd>
       <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — one place for every hide/show: 𝄞 Score view, ◂ Tracks, 🛠 Edit toolbar, ▦ Bottom bar, 🎹 Instrument panel, 💬 Notes strip, and ▸ Section levels with −/+ steppers (shows "2 of 3"; the gutter chevron still one-tap cycles). ✓ means visible; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else. Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
@@ -1633,7 +1649,7 @@
     <div class="hsec" data-hsec="editor">
     <dl>
       <dt>Edit row</dt><dd>On your own songs (never on captures) a dedicated row appears above the footer: Select / Pencil / Erase (tap the active tool again to turn it OFF — then dragging only pans, and no note can be grabbed by accident), durations 32nd–whole incl. dotted, plus 16· (dotted 16th) and 8T/16T triplets — picking a triplet also switches the snap grid to triplet steps, and the grid only goes 32nd-fine when the song actually CONTAINS 32nds — to add the first one, pencil it on the beat (the grid upgrades the moment it exists) and drag it where it belongs (Logic's grid-division trick: your 4/4 stays 4/4, entry just lands on thirds until you pick a straight duration again), p/mf/f velocity, the ♮♯♭ accidental segment in score view, and ⟲ undo.</dd>
-      <dt>● Record</dt><dd>On your own songs: tap the chip of the track you want to record onto, then ● beside Play arms the take — the 🎹 panel opens, ● blinks red, the transport rolls (count-in applies), and every key you play lands on that track at the playhead — hold a key for a long note, slide across keys for runs — or play a REAL MIDI device (a Jamstik, a keyboard): the browser's MIDI input records with your actual velocities, chords included (Chrome/Edge on the computer; Safari/iPad has no Web MIDI). Starts and durations snap to the move grid (16ths, or triplet steps with a T duration active). ● again or ■ stops; the whole take is one ⟲ step. ● also says what it sees in the status line: your MIDI inputs by name; <b>no MIDI inputs found</b> when nothing is plugged in or the browser can't see it (Chrome lists what it sees at chrome://settings/content/midiDevices); <b>MIDI blocked</b> when the permission prompt was dismissed — allow it from the icon in the address bar and reload; or <b>no Web MIDI</b> on Safari.</dd>
+      <dt>● Record</dt><dd>On your own songs: tap the chip of the track you want to record onto, then ● beside Play arms the take — the 🎹 panel opens, ● blinks red, the transport rolls (count-in applies), and every key you play lands on that track at the playhead — hold a key for a long note, slide across keys for runs — or play a REAL MIDI device (a Jamstik, a keyboard): the browser's MIDI input records with your actual velocities, chords included (Chrome/Edge on the computer; Safari/iPad has no Web MIDI). <b>Recording keeps what you played</b> (Logic/GarageBand/Cubasis convention): starts and durations land exactly where you played them, on- or off-grid, not snapped — Settings → Other → <b>Snap while recording</b> (default off) restores the old always-on-the-grid input for anyone who wants it. Either way, straighten a take afterward with <b>Q Quantize</b> (below) instead of fighting the grid while playing. ● again or ■ stops; the whole take is one ⟲ step. ● also says what it sees in the status line: your MIDI inputs by name; <b>no MIDI inputs found</b> when nothing is plugged in or the browser can't see it (Chrome lists what it sees at chrome://settings/content/midiDevices); <b>MIDI blocked</b> when the permission prompt was dismissed — allow it from the icon in the address bar and reload; or <b>no Web MIDI</b> on Safari.</dd>
       <dt>Pencil drag</dt><dd>In Pencil mode, tap places one grid-unit of note — or <b>keep dragging</b> and the note stretches under your finger, snapped to the duration grid. The duration picker is <b>note value × modifier</b>: pick 1/2/4/8/16/32 (whole through 32nd), then — (plain), · (dotted), or T (triplet) — every duration a staff can write, two taps. A tap lands the note in the CELL you touch: press anywhere in a gap and the note starts at that gap's gridline, no edge-hunting.</dd>
       <dt>Drum chart (score view)</dt><dd>The kit renders as a real percussion staff at the BOTTOM of the score: percussion clef, positions are roles not pitches (kick in the bottom space, snare in the third, toms by size, hats above the top line), x-noteheads for hats and cymbals, stems up for hands and down for feet. Read-only for now — kit entry lives in the roll's drum lane; lasso and tap work on the chart like anywhere else.</dd>
       <dt>Score entry</dt><dd>Pencil and Erase work on the engraved score too: tap a staff position and the note lands there — the stave you tap picks the track, the height picks the pitch (ledger lines included), and the key signature supplies sharps/flats automatically. The key/♮/♯/♭ segment overrides the signature when you want an accidental. Erase taps a notehead out.</dd>
@@ -1649,10 +1665,11 @@
       <dt>Unsaved dot</dt><dd>A gold <b>●</b> after the title means the song has edits that haven't been published — it appears the moment you change anything and clears when Publish sheet succeeds (the Save sheet's title says which state you're in, too).</dd>
       <dt>🎲 Drummer</dt><dd>The 🎲 beside 🥁 in the edit row (also Edit ▾ → Drummer…) generates a kit part for a bar range (prefilled from the ruler selection if one is armed, else the section under the cursor). It reads the structure YOU declared: a fixed backbeat skeleton (kick on 1, meter-aware snares) that seeds never move, hats whose loudness always stays under the snare, kicks that follow the bass track's offbeats, accents on chord-change downbeats, a snare on the bass's LONG notes (the agogic accent), fills from a small vocabulary before section boundaries and the loop target (crash on the arrival), and SILENCE in breaks — a bar where only the bass plays, or a section labeled "break", gets no drums at all. Each take REPLACES the range's kit notes and is exactly one ⟲ step, so your hand-placed drums come back with one undo. 🎲 again rerolls; the take chips replay any earlier take exactly (seed, energy, and range all remembered). Five knobs, Logic's split: <b>busy</b> (1–5) is density — hat subdivisions, ghosts, how eagerly kicks chase the bass; <b>hard</b> (1–5) is loudness — one uniform velocity shift across the whole kit, hats never dropping back below audible; <b>fills</b> (off–5) alone decides how often fills fire and how big (1–2 the quiet vocabulary, 4–5 runs/tom-drops/the full-bar buildup); <b>follow</b> picks what the kick listens to — <b>any track, by name</b> (its offbeat onsets and long notes, probabilistic; defaults to the detected bass) · <b>chords</b> (a kick exactly on every DECLARED chord change, deterministic, capped 4/bar) · <b>off</b> (skeleton and fills only); <b>feel</b> sets the backbeat rate — <b>half</b> (one big snare mid-bar, thinner hats: the slow-heavy read) · <b>double</b> (kick every beat, snare every offbeat 8th: the skank/D-beat read — bass-follow stands down, every slot is owned). The <b>parts</b> chips scope a reroll — kick, snare, hats, and <b>fills</b> (a role, not a pitch: the whole fill-and-crash layer at your section boundaries, snare runs and tom drops included). Toggle any combination: all four = the normal full roll; "I love these snares, reroll just the kick" = tap snare and hats and fills off; <b>fills alone</b> rerolls just the boundary bars (with fills set to off, that STRIPS the fills and lays plain groove — a de-fill). With the fills chip off the fills knob dims (nothing to control) and kept pieces stay byte-identical, hats capping under your real snares. Take chips now show their recipe (busy/hard/fills, ½ or 2× for feel, part initials when scoped) and still replay exactly. Layout: busy and hard are 1–5 segment rows (how much / how loud), fills off–5 and feel sit below, follow and parts under those — the long explanation you used to scroll past lives here in Help now. Two more rules: <b>sections sharing an EXACT label share their groove</b> — label two spans "A1" and the drums restate bar-for-bar (fills and crashes still vary: a fill is commentary on what comes next), so the same-label-same-color convention now also means same-drums; and at fills 4–5 the vocabulary opens its <b>metal tier</b> — a 16th-rate tom run down the kit, a full-bar crash-in kit fall, and a double-kick burst — weighted so big fills dominate the top of the knob.</dd>
       <dt>✦ Fill</dt><dd>Stuck on a few bars? The ✦ beside 🎸 (behind ⋯, or Edit ▾ → Fill with AI…) opens the Ask sheet with a <b>fill onto</b> row: the range is the ruler selection if one is armed, else the bars in view, and the target defaults to a NEW track unless an existing track is empty there — it never silently overwrites your notes; the status line says exactly what a take replaces (by onset; a note sustaining in from before the range survives). Type what you want ("chords under the melody", "a walking line into the V", or nothing — it will fit something), then tap <b>✦ Fill</b> instead of Send. The model answers in the ruler's own bars and beats, the app checks every note (inside the range, a real pitch, in a playable register) and sends bad takes back for a fix up to three times, then the notes land IMMEDIATELY on the target track as one ⟲ step — exactly the Drummer's and Bassist's contract: play it, and one undo brings back what was there. Take chips (up to 8, this session) re-apply any earlier try; Fill again for another. If your ask leaves it unsure — stacked chords or one note at a time? — it asks instead of guessing; answer with Send, then Fill again. Its one-line reasoning stays behind a <b>why?</b> tap (naming what it did is your job first). Only on your own songs; never drums (that's the Drummer's); nothing it writes becomes an annotation.</dd>
-      <dt>Edit menu</dt><dd>An <b>Edit ▾</b> menu appears beside File on songs you can edit: ⟲ Undo, ⟳ Redo, ⧉ Copy, ✂ Cut, 📋 Paste at cursor, 📋 Paste to… (another track, another octave), 🗑 Delete, 🔪 Split, ⇅ Transpose (chromatic, octave, and in-key moves live in its sheet), ♫ Insert chord, ⇄ Move to track, 🥁 Drum pattern, 🎲 Drummer, ➗ Divide, ⁀ Join — the same actions as the edit-row icons, labeled. The row itself keeps the heavy-use tools up front and folds the rest behind <b>⋯</b> (tap to expand; the choice sticks per device) — so pencil mode's duration picker fits on one iPad row again. Redo replays what Undo took back; making any new edit clears the Redo history (standard editor behavior).</dd>
+      <dt>Edit menu</dt><dd>An <b>Edit ▾</b> menu appears beside File on songs you can edit: ⟲ Undo, ⟳ Redo, ⧉ Copy, ✂ Cut, 📋 Paste at cursor, 📋 Paste to… (another track, another octave), 🗑 Delete, 🔪 Split, ⇅ Transpose (chromatic, octave, and in-key moves live in its sheet), ♫ Insert chord, ⇄ Move to track, 🥁 Drum pattern, 🎲 Drummer, ➗ Divide, ⁀ Join, Q Quantize — the same actions as the edit-row icons, labeled. The row itself keeps the heavy-use tools up front and folds the rest behind <b>⋯</b> (tap to expand; the choice sticks per device) — so pencil mode's duration picker fits on one iPad row again. Redo replays what Undo took back; making any new edit clears the Redo history (standard editor behavior).</dd>
       <dt>Velocity</dt><dd>The <b>vol slider</b> in the edit row (1–127, the number beside it shows the value) sets the pencil's loudness — and with notes selected in Select mode, dragging it adjusts ALL of them live, brightness tracking the drag, committing one ⟲ step when you let go. Tap a selection (or a single note) and the slider jumps to its current velocity — and when every selected note shares one velocity, the selection readout says so ("… 6 notes · vel 80").</dd>
       <dt>Delete</dt><dd>Tap <b>🗑</b> in the edit row — every selected note goes at once. Delete key does the same.</dd>
       <dt>Divide (➗)</dt><dd>Select notes, tap <b>➗</b>, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.</dd>
+      <dt>Quantize (Q)</dt><dd>Select notes, tap <b>Q Quantize</b> (behind ⋯, Edit ▾, or the <b>Q</b> key) and pick a strength — <b>100%</b> snaps each note's start exactly onto the current grid (the same grid Move/Pencil use: 16ths, triplet steps with a T duration active, or 32nds once the song has any); <b>75%/50%</b> moves it only partway there, a soft nudge for a take that's close but not glued down. <b>Also quantize note ends</b> additionally snaps each note's END and resizes to match — off by default, so a raw take's durations stay as played and only the onsets straighten. This is Logic's Quantize command: it acts on a selection AFTER the fact, undoably (one ⟲ step for the whole batch) — recording itself keeps what you played (see ● Record); Quantize is how you straighten it out when you want to.</dd>
       <dt>Undo</dt><dd>Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.</dd>
     </dl>
     </div>
@@ -1740,6 +1757,7 @@
   <button class="fitem" id="emSplit">🔪  Split at cursor</button>
   <button class="fitem" id="emDivide">➗  Divide into…</button>
   <button class="fitem" id="emJoin">⁀  Join notes</button>
+  <button class="fitem" id="emQuantize">Q  Quantize…</button>
   <button class="fitem" id="emMove">⇄  Move to track…</button>
   <button class="fitem" id="emTranspose">⇅  Transpose…</button>
   <button class="fitem" id="emInsertBars">⊞  Insert bars…</button>
@@ -2126,6 +2144,9 @@
     <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgnotetapcursor" style="width:20px;height:20px"> Tapping a note moves the play cursor to it</label></div>
     <div class="status cfgind">Off (the DAW way): selecting a note leaves the playhead where it is, so Space plays from where you were. + Note still anchors at the note you tapped.</div>
+    <div class="row"><label style="font-size:13px;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
+      <input type="checkbox" id="cfgrecsnap" style="width:20px;height:20px"> Snap while recording</label></div>
+    <div class="status cfgind">Off (the DAW way — Logic, GarageBand, Cubasis): ● Record keeps exactly what you played, on- or off-grid. On: every key restores today's behavior, snapping starts and durations to the move grid as you play. Either way, <b>Q Quantize</b> straightens a take afterward, undoably.</div>
     </div>
   </div>
 </div>
@@ -5441,6 +5462,29 @@ function divideSelection(nParts) { // ➗: each selected note becomes N equal no
   if (viewMode === "score") buildScoreModel();
   draw();
   return items.length;
+}
+// Q Quantize: a command on the SELECTION, separate from recording (DAW
+// convention — Logic's Q). Snaps each note's start toward the current grid
+// (the same grid Move/Pencil use); strength 1 = exactly on the line, 0.75/0.5
+// = partway there (a soft nudge for a take that's close but not glued down).
+// alsoEnds additionally quantizes each note's END the same way and resizes
+// to match — off by default, since most raw takes want their durations kept
+// and only the onsets straightened. One selEditApply call = one ⟲ step for
+// the whole selection, same mod/batch undo pattern as nudge/divide/transpose.
+function quantizeSelection(strength, alsoEnds) {
+  if (!editableSong()) return 0;
+  const items = selEditItems();
+  if (!items.length) return 0;
+  const g = moveSnapTicks();
+  const snap = t => Math.max(0, Math.round(t / g) * g);
+  const blend = (raw, target) => Math.round(raw + (target - raw) * strength);
+  const ok = selEditApply(items, n => {
+    const t0 = n.t, end0 = n.t + n.d;
+    const newT = Math.max(0, blend(t0, snap(t0)));
+    if (alsoEnds) n.d = Math.max(1, blend(end0, snap(end0)) - newT);
+    n.t = newT;
+  });
+  return ok ? items.length : 0;
 }
 function splitSelectionAt(tick) { // ✂ with the cursor inside: cut there
   if (!editableSong()) return 0;
@@ -13245,8 +13289,14 @@ function instTap(e, dragging) {
 }
 // ---- record (Josh, 2026-08-18): ● rides the transport; while it runs, keys
 // tapped on this panel land as notes on the SELECTED track at the playhead.
-// Key-down starts the note, key-up (or sliding to another key) ends it;
-// starts/durations snap to the move grid; the whole take is ONE undo step.
+// Key-down starts the note, key-up (or sliding to another key) ends it; the
+// whole take is ONE undo step. DAW convention (Logic/GarageBand/Cubasis,
+// 2026-09-30): recording keeps RAW timing by default — no input snap — same
+// as a real MIDI keyboard or this on-screen panel; Settings → Other →
+// "Snap while recording" (default off) restores the old always-snapped
+// input for anyone who wants it. Straighten a raw take afterward with Q
+// Quantize (undoable, strength-adjustable) instead of fighting the grid
+// while playing.
 let recording = false, recTake = [], recPending = new Map(); // pointerId → {p, tick}
 // While ● is armed the transport must not wrap at the song's end: a new song is
 // two bars, and Josh's son's arpeggiator take looped onto bars 1–2 instead of
@@ -13254,7 +13304,16 @@ let recording = false, recTake = [], recPending = new Map(); // pointerId → {p
 // the scheduler never re-arms a pass, and recFinish's computeSongEnd lets the
 // song end where the take ended.
 function recOpenEnded(seg) { return {start: seg ? seg.start : 0, end: Infinity}; }
-function recSnap(t) { const g = moveSnapTicks(); return Math.max(0, Math.round(t / g) * g); }
+// RAW by default (recSnapOn() off): the exact tick played, just rounded to
+// an integer — no grid involved. recSnapOn() on: the old snap-to-grid
+// behavior, for anyone who prefers it. Both recNoteOn's start and
+// recNoteOff's end run through this SAME function, so a snapped take still
+// can't land a zero-length note between two adjacent grid lines.
+function recSnap(t) {
+  if (!recSnapOn()) return Math.max(0, Math.round(t));
+  const g = moveSnapTicks();
+  return Math.max(0, Math.round(t / g) * g);
+}
 function recNoteOn(pid, p, vel) {
   recNoteOff(pid); // sliding to a new key closes the old one
   recPending.set(pid, {p, vel, tick: recSnap(secToTick(song, playSec()))});
@@ -13263,9 +13322,13 @@ function recNoteOff(pid) {
   const pend = recPending.get(pid);
   if (!pend) return;
   recPending.delete(pid);
-  const g = moveSnapTicks();
-  const end = Math.round(secToTick(song, playSec()) / g) * g;
-  const d = Math.max(g, end - pend.tick);
+  const end = recSnap(secToTick(song, playSec()));
+  // a snapped take's minimum is one grid step (unchanged); a raw take's
+  // minimum is the app's usual shortest-editable-note floor (resizeSelection
+  // uses the same number) — a very fast tap must not leave a zero/negative
+  // length note behind.
+  const minD = recSnapOn() ? moveSnapTicks() : Math.max(24, Math.round(song.ppq / 8));
+  const d = Math.max(minD, end - pend.tick);
   const tr = song.tracks[selTrack], isAdd = !isComposition();
   const vv = pend.vel !== undefined ? pend.vel : pencilVel;
   tr.notes.push({t: pend.tick, d, p: pend.p, v: vv, added: isAdd});
@@ -14846,6 +14909,10 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && rangeSel) { rangeSel = null; setInfo("range cleared"); draw(); return; }
   if (k === "c" && rangeSel && rangeSel.cycle && rangeSel.b > rangeSel.a) { rangeSel.off = !rangeSel.off; setInfo(rangeSel.off ? "cycle off" : "cycle on"); draw(); e.preventDefault(); return; }
   if (k === "r") { const rb = document.getElementById("recbtn"); if (rb && rb.offsetParent !== null) { rb.click(); e.preventDefault(); } return; }
+  if (k === "q") { // Logic's Q: quantize the selection — only on your own songs
+    if (editableSong()) document.getElementById("quantbtn").click(); else setInfo("Quantize works on your own songs");
+    e.preventDefault(); return;
+  }
 });
 document.addEventListener("keydown", e => { // space = play/stop, Logic-style
   if (e.code !== "Space" || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -14912,6 +14979,7 @@ document.getElementById("editsheetbtn").addEventListener("click", e => {
   proxy("emSplit", () => document.getElementById("splitbtn").click());
   proxy("emDivide", () => document.getElementById("divbtn").click());
   proxy("emJoin", () => document.getElementById("joinbtn").click());
+  proxy("emQuantize", () => document.getElementById("quantbtn").click());
   proxy("emMove", () => document.getElementById("movebtn").click());
   proxy("emTranspose", () => document.getElementById("trbtn").click());
   proxy("emInsertBars", () => { if (editableSong()) openInsertBars(); else setInfo("Insert bars works on your own songs"); });
@@ -18409,6 +18477,26 @@ document.getElementById("divbtn").addEventListener("click", () => {
   }
   document.getElementById("divsheet").classList.add("on");
 });
+document.getElementById("quantbtn").addEventListener("click", () => {
+  if (!selEditItems().length) { setInfo("select notes first — then Q quantizes them to the grid"); return; }
+  const row = document.getElementById("quantchips");
+  if (!row.children.length) {
+    for (const pct of [100, 75, 50]) {
+      const b = document.createElement("button");
+      b.textContent = pct + "%";
+      b.style.cssText = "flex:1;min-height:44px;font-size:17px";
+      b.addEventListener("click", () => {
+        const alsoEnds = document.getElementById("quantends").checked;
+        const k = quantizeSelection(pct / 100, alsoEnds);
+        document.getElementById("quantsheet").classList.remove("on");
+        setInfo(k ? "quantized " + k + " note" + (k === 1 ? "" : "s") + " at " + pct + "% (one ⟲ undoes)"
+                  : "nothing to quantize");
+      });
+      row.appendChild(b);
+    }
+  }
+  document.getElementById("quantsheet").classList.add("on");
+});
 document.getElementById("cutbtn").addEventListener("click", () => {
   const k = cutSelection();
   if (!k) { setInfo("nothing selected — lasso or tap notes first"); return; }
@@ -18446,7 +18534,8 @@ function updateEditButtons() { // disabled = "this can't do anything right now"
   set("redobtn", st[1]); set("emRedo", st[1]);
   set("splitbtn", st[5]); set("emSplit", st[5]);
   for (const id of ["joinbtn", "emJoin", "movebtn", "emMove",
-                    "divbtn", "emDivide", "trbtn", "emTranspose"]) set(id, st[2]);
+                    "divbtn", "emDivide", "trbtn", "emTranspose",
+                    "quantbtn", "emQuantize"]) set(id, st[2]);
   for (const id of ["copybtn", "emDup", "cutbtn", "emCut", "delbtn", "emDelete"]) set(id, st[4]); // these also act on lasso'd annotations, notes or not
   set("pastebtn", st[3]); set("emPaste", st[3]); set("emPasteTo", st[3]);
 }
@@ -21819,6 +21908,7 @@ function openSettingsSheet() {
   document.getElementById("cfgdebuglog").checked = debugLogOn();
   document.getElementById("cfgpeninstant").checked = penInstant();
   document.getElementById("cfgnotetapcursor").checked = noteTapMovesCursor();
+  document.getElementById("cfgrecsnap").checked = recSnapOn();
   ghCheckOut("");
   if (localStorage.getItem("ff1roll-ghtoken")) ghCheck(); // one small GET: "connected" shows without a tap
   document.getElementById("cfgnsfrepo").value = c.nsfRepo;
@@ -21841,6 +21931,10 @@ function noteTapMovesCursor() { try { return localStorage.getItem("ff1roll-notet
 // an instant grab turned a swipe that started on a note into a move. Back to
 // last night's behaviour; the setting stays for anyone who wants it on.
 function penInstant() { try { return localStorage.getItem("ff1roll-peninstant") === "1"; } catch (err) { return false; } }
+// OFF by default (2026-09-30, DAW convention — Logic/GarageBand/Cubasis: recording
+// keeps what you played, no input snap; a Quantize command snaps afterward,
+// undoably). On restores the old always-snapped recording input.
+function recSnapOn() { try { return localStorage.getItem("ff1roll-recsnap") === "1"; } catch (err) { return false; } }
 function settingsPersist(id) {
   const v = el => document.getElementById(el).value.trim();
   const keep = (k, val) => { if (val) localStorage.setItem(k, val); else localStorage.removeItem(k); };
@@ -21849,6 +21943,7 @@ function settingsPersist(id) {
     case "cfglearning": setAppMode(document.getElementById("cfglearning").checked ? "learning" : "normal"); applyMode(); break;
     case "cfgnotetapcursor": { try { localStorage.setItem("ff1roll-notetapcursor", document.getElementById("cfgnotetapcursor").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
     case "cfgpeninstant": { try { localStorage.setItem("ff1roll-peninstant", document.getElementById("cfgpeninstant").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
+    case "cfgrecsnap": { try { localStorage.setItem("ff1roll-recsnap", document.getElementById("cfgrecsnap").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
     case "cfgdebuglog": { try { if (document.getElementById("cfgdebuglog").checked) localStorage.setItem("ff1roll-debuglog", "1"); else localStorage.removeItem("ff1roll-debuglog"); } catch (err) { /* private mode: stays off */ } errChip(); break; }
     case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); askModelCache = null; break;
     case "cfgaibackend": saveCfg({aiBackend: v("cfgaibackend") === "browser" ? "browser" : "remote"}); aiBackendRows(); break;

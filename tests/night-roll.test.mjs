@@ -2105,6 +2105,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
     "an estimated key is named as an estimate", "Check vs file",
+    "Snap while recording", "Quantize (Q)", "Also quantize note ends", "Recording keeps what you played",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -2767,6 +2768,68 @@ test("divideSelection: N equal parts, triplet math exact, one undo", () => {
   for (let i = 1; i < 5; i++) assert.equal(five[i].t, five[i - 1].t + five[i - 1].d); // seamless
   assert.equal(five[4].t + five[4].d, 480); // total span unchanged
   run(`songKey = null; multiSel = []; multiSelKey = new Set();`);
+});
+
+test("quantizeSelection: strength blends toward the grid, ends stay put unless asked, one undo restores all", () => {
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/quant-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable */
+    song.tracks = [{name: "pulse1", notes: [{t: 96, d: 200, p: 64, v: 90}]}]; // off the 120-tick 16th grid
+    song.rawNotes = null; chopS = 0; editUndo = []; editRedo = []; dupPending = null;
+    multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]);
+  `);
+  // 100%: start lands exactly on the grid (120), duration untouched (ends aren't quantized by default)
+  assert.equal(val(`quantizeSelection(1, false)`), 1);
+  assert.deepEqual(val(`({t: song.tracks[0].notes[0].t, d: song.tracks[0].notes[0].d})`), {t: 120, d: 200});
+  run(`editUndoPop()`); // one ⟲ restores the whole selection
+  assert.deepEqual(val(`({t: song.tracks[0].notes[0].t, d: song.tracks[0].notes[0].d})`), {t: 96, d: 200});
+  // 50%: halfway between the raw start (96) and the grid line (120) = 108
+  run(`multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]);`);
+  assert.equal(val(`quantizeSelection(0.5, false)`), 1);
+  assert.equal(val(`song.tracks[0].notes[0].t`), 108);
+  run(`editUndoPop()`);
+  assert.equal(val(`song.tracks[0].notes[0].t`), 96);
+  // also-quantize-ends: the end (96+200=296) snaps to 240 too, so duration follows (240-120=120)
+  run(`multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]);`);
+  assert.equal(val(`quantizeSelection(1, true)`), 1);
+  assert.deepEqual(val(`({t: song.tracks[0].notes[0].t, d: song.tracks[0].notes[0].d})`), {t: 120, d: 120});
+  run(`editUndoPop()`);
+  assert.deepEqual(val(`({t: song.tracks[0].notes[0].t, d: song.tracks[0].notes[0].d})`), {t: 96, d: 200});
+  run(`songKey = null; multiSel = []; multiSelKey = new Set();`);
+});
+
+test("recording: raw by default (keeps an off-grid start); the Snap while recording pref restores snap-to-grid input", () => {
+  installSong();
+  run(`
+    createComposition(120, 4, 4); // a real editable composition: pulse1/pulse2/triangle, ppq 480, 120 bpm — a fresh song has no 32nds, so the grid is a plain 16th (120 ticks)
+    ensureAudio(); selTrack = 0; playOffset = 0; loopSeg = null; playing = true;
+    playT0 = audio.currentTime; // baseline: playSec() reads 0 right now
+    recording = true; recTake = []; recPending = new Map(); editUndo = []; editRedo = [];
+    localStorage.removeItem("ff1roll-recsnap"); // default: OFF
+  `);
+  app.tick(100); // playSec() = 0.1s -> tick = 0.1 * (1e6/500000*480) = 96 (off the 120-tick grid)
+  run(`recNoteOn("k1", 64, 90)`);
+  app.tick(200); // playSec() = 0.3s -> tick = 288 (also off-grid)
+  run(`recNoteOff("k1")`);
+  assert.deepEqual(val(`({t: song.tracks[0].notes[0].t, d: song.tracks[0].notes[0].d, p: song.tracks[0].notes[0].p})`),
+    {t: 96, d: 192, p: 64}, "raw timing: neither the start nor the end landed on the 120-tick grid");
+  run(`recFinish(); // one ⟲ step for the whole take, like a normal recording stop`);
+  assert.equal(val(`editUndo[editUndo.length - 1].kind`), "addBatch");
+  run(`editUndoPop();`);
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 0, "⟲ removes the raw take too");
+  // now the pref: Settings → Other → Snap while recording, ON
+  run(`
+    localStorage.setItem("ff1roll-recsnap", "1");
+    recording = true; recTake = []; recPending = new Map();
+    playT0 = audio.currentTime;
+  `);
+  app.tick(100); // same raw tick (96) — snap should pull it to 120
+  run(`recNoteOn("k2", 67, 90)`);
+  app.tick(200); // raw 288 — snap should pull it to 240
+  run(`recNoteOff("k2")`);
+  const snapped = val(`song.tracks[0].notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p}))`);
+  assert.deepEqual(snapped, [{t: 120, d: 120, p: 67}], "the pref restores today's snap-to-grid recording");
+  run(`recFinish(); localStorage.removeItem("ff1roll-recsnap"); recording = false; playing = false; songKey = null;`);
 });
 
 test("rulerSnapX: bar lines are magnetic in pixels; 16ths elsewhere", () => {
