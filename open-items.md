@@ -4,6 +4,22 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+
+## WAITING ON JOSH (2026-09-30, everything else in the queue is done)
+1. FFX by ear: a fresh capture plays 4 songs at different pitches (Blitz
+   Off, Hurry, Ominous, Welcoming of Maester Mika) — published vs fresh,
+   which is right? (section "AWAITS JOSH'S EAR: FFX pitches")
+2. Archive move to joshcough/night-roll-archive: make the archive token,
+   say go (section "ARCHIVE MOVE").
+3. Annotations format v2: a one-way rewrite of his annotation files — yes
+   or not now? (section "NEEDS JOSH'S RULING")
+4. Tempo: the two publish paths write different tempo maps (baked tempo:
+   annotations vs the base map) — which is right?
+5. Ear/hands tests: YouTube keeps playing until ▶; background play when
+   locked; a MIDI keyboard plugged into the iPad (● to record).
+6. App Store: TestFlight install, privacy labels + listing, screenshots,
+   go for build 3.
+
 ## IMPORT HUB — DONE 2026-09-29 (docs/import-hub-design.md, Josh: "I still hate the file import line")
 
 All three phases, built exactly to the reviewed design. `npm test` green
