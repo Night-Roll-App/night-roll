@@ -1516,6 +1516,18 @@
   </div>
 </div>
 
+<div class="overlay" id="analyzesheet">
+  <div class="sheet">
+    <h2>ANALYZE</h2>
+    <p class="meta" id="analyzetext" style="margin:0 0 8px;white-space:normal"></p>
+    <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+      <button id="analyzeadopt"></button>
+      <button id="analyzeadoptall" style="display:none">Adopt all chords</button>
+      <button id="analyzeclose" style="margin-left:auto">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="divsheet">
   <div class="sheet">
     <h2>DIVIDE INTO</h2>
@@ -1660,6 +1672,7 @@
     <div class="hsec" data-hsec="views">
     <dl>
       <dt>🎓 Learning mode</dt><dd>Tap it in <b>View ▾ → 🎓 Learning mode</b> (or Settings → Other) to switch off. <b>On</b> (the default on a device that's been used for analysis before): meter, key and chord names stay undeclared until you work them out yourself — a lasso still lists the notes, Chord? stays hidden so you name it first, and the LCD reads the usual "4/4?" / "C?" until you've earned the real answer. <b>Off (Normal)</b>: lasso'd chords name themselves, an unset meter/key shows a labelled <b>estimate</b> (LCD "Gm~", the key picker's "estimated — tap to set") instead of the plain default — estimates are never written as a real annotation until you tap "Set this key". A little 🎓 in the LCD marks Learning; the toggle is one device-global switch, not per song.</dd>
+      <dt>🔍 Analyze ▸</dt><dd><b>Normal mode only</b> (View ▾ → 🔍 Analyze ▸ — the item is absent in Learning, same as every other Learning hiding place). Toggling it on draws a dashed "analysis" layer on the roll, below the real section/chord bands: a per-bar chord name inferred from every harmony track (drums excluded, same reader the Bassist's internal sketch uses) plus a whole-song key estimate — labelled as an estimate, never written anywhere until you say so. Tap a dashed band to open it: <b>Adopt</b> writes that one chord/key as a real annotation through the usual write path (one ⟲ undoes it); a chord band also offers <b>Adopt all chords</b>. Off by default every session; switching to Learning turns it off immediately, mid-computation or not.</dd>
       <dt>⇄ Compare with repo</dt><dd>View → <b>Compare with repo</b> (or the <b>Compare</b> button on a song's "music edited" line in the Publish sheet) fetches the song's published copy and outlines every difference on the roll: <b>gold</b> = a note only in your version, <b>red</b> = a note only in the published copy, both on a note whose length or velocity changed; <b>dashed</b> outlines mark notes that are not in the version you are hearing. The bar above the roll counts them and its button swaps which version plays — <b>hear the published copy</b> swaps its notes in (the song is read-only until you swap back; nothing is written, your draft stays yours), <b>hear your version</b> swaps them back. ✕ on the bar leaves compare. Works on your own songs that have been published; turn a chop off first.</dd>
       <dt>▾ Hide controls</dt><dd>The ▾ at the footer's left folds the bottom controls (edit row + footer) away so small screens show music instead of buttons — a floating ▴ brings them back. Phones start folded automatically; your explicit choice is remembered per device.</dd>
       <dt>Closing a sheet</dt><dd>Every sheet closes three ways: tap the dimmed area outside it, tap the <b>✕ pinned to its top-right</b> (it stays put while a long sheet scrolls, so the notes list never makes you scroll to the bottom to get out), or press <b>Esc</b>. Esc closes the topmost one, so stacked sheets unstack one at a time. Saving or sending closes the sheet for you. The only exception is a confirm box — it asked a question, so it waits for an answer.</dd>
@@ -1844,6 +1857,7 @@
     <button id="vwLevelsPlus" style="min-height:38px;min-width:44px">+</button>
   </div>
   <div class="fdiv"></div>
+  <button class="fitem" id="vwAnalyze">🔍  Analyze ▸</button>
   <button class="fitem" id="vwLearning">🎓  Learning mode</button>
 </div>
 <div id="editsheet">
@@ -2471,12 +2485,21 @@ if (typeof document !== "undefined" && document.body) {
 // checkbox) — boot itself never calls this, it just reads APP_MODE above.
 function applyMode() {
   if (typeof document === "undefined") return;
-  document.body.dataset.mode = APP_MODE;
+  if (document.body) document.body.dataset.mode = APP_MODE; // vm harness has no body (sentinel) — see tests/harness.mjs
   const badge = document.getElementById("lcdmode");
   if (badge) badge.style.display = APP_MODE === "learning" ? "" : "none";
   const cb = document.getElementById("cfglearning");
   if (cb) cb.checked = APP_MODE === "learning";
   if (typeof _keyEstCache !== "undefined") _keyEstCache = null; // stale conf/label from the other mode
+  // P6: Learning is the law — the Analyze layer (and any pending debounced
+  // recompute of it) must stop existing the instant the mode flips, not
+  // just stop being drawn (the spy test proves bsInferTimeline/estimateKey
+  // never fire for it in Learning).
+  if (typeof APP_MODE !== "undefined" && APP_MODE === "learning" && typeof analysisOn !== "undefined") {
+    if (typeof _analysisTimer !== "undefined" && _analysisTimer) { clearTimeout(_analysisTimer); _analysisTimer = null; }
+    analysisOn = false;
+    analysisBands = {chords: [], key: null};
+  }
   if (typeof song !== "undefined" && song) {
     finalizeNotes(); // rebuilds keyunset label + keysetest visibility for the new mode
     if (typeof updateSubtitle === "function") updateSubtitle();
@@ -2961,6 +2984,16 @@ const AUDIO_STRIP_H = 18; // the "a recording plays here" band under the ruler (
 let RULER_W = RULER_W_ROLL; // widens to the header column in tracks view (set ONLY in applyViewMode)
 let RULER_H = BASE_RULER_H; // grows when section lanes exist
 let secMaxDepth = 0; // deepest section nesting in this song (set per finalize)
+// ---- P6: Analyze layer state (View ▾ → Analyze, Normal mode only) ----
+// A VIEW, not data: nothing here is an annotation until Adopt writes one.
+// Off by default EVERY session (never persisted) — appMode() === "learning"
+// forces it off immediately (applyMode()) and analysisBands empty, so a
+// stray toggle can never survive a mode flip or a reload into Learning.
+let analysisOn = false;
+let analysisBands = {chords: [], key: null}; // computed by computeAnalysisLayer()
+let analysisChordLane = null, analysisKeyLane = null; // lane indices below the section/chord rows (set by finalizeNotes)
+let _analysisTimer = null; // debounced recompute on note edits (saveEdits)
+let analyzeTarget = null; // the band the Analyze sheet is currently open on
 function setSecDepth(next) { // clamped stepper (the wrap-around cycle read as awkward)
   next = Math.max(0, Math.min(secMaxDepth - 1, next));
   if (next >= secMaxDepth - 1) localStorage.removeItem("ff1roll-secdepth-" + songKey);
@@ -3013,6 +3046,7 @@ function saveEdits() {
   // label review is on-demand only (Josh, 2026-08-19: unsolicited verdicts are
   // not in the spirit of the project) — edits just retire any review flags
   rollnotes.forEach(n => { if (n.stale) delete n.stale; });
+  scheduleAnalysisRecompute(); // P6: Normal-only view layer — recompute on note edits, debounced; no-op when off
   if (isComposition()) { // composition: the notes ARE the song — draft it whole
     saveDraft();
     computeSongEnd();
@@ -3477,7 +3511,18 @@ function finalizeNotes() {
   for (const c of chGroup) c.lane = listenerMode ? null : secRows + c.depth;
   for (const s of secs)
     if (!(s.text in sectionColors)) sectionColors[s.text] = TRACK_COLORS[ci++ % TRACK_COLORS.length];
-  RULER_H = BASE_RULER_H + (secRows + (listenerMode ? 0 : chRows)) * LANE_H +
+  // P6: the Analyze layer's own rows, appended BELOW every section/chord
+  // row — never interleaved with them, same "own row" discipline as
+  // sections-vs-chords above. Normal + toggled on only; Learning (or the
+  // layer being off) contributes zero rows, same as an empty annotation group.
+  analysisChordLane = analysisKeyLane = null;
+  let analysisRows = 0;
+  if (analysisOn && appMode() === "normal" && !listenerMode) {
+    const rowsSoFar = secRows + chRows;
+    if (analysisBands.chords.length) { analysisChordLane = rowsSoFar + analysisRows; analysisRows++; }
+    if (analysisBands.key) { analysisKeyLane = rowsSoFar + analysisRows; analysisRows++; }
+  }
+  RULER_H = BASE_RULER_H + (secRows + (listenerMode ? 0 : chRows) + analysisRows) * LANE_H +
             (songHasAudio() ? AUDIO_STRIP_H : 0); // clip spans ride under the ruler in every view
 }
 async function loadNotes() {
@@ -3970,6 +4015,14 @@ function setSong(parsed, key) {
   dupPending = null; // clone bookkeeping never crosses songs
   rangeSel = null; // a ruler range is meaningless in a different song
   tapBand = {n: null, t: 0};
+  // P6: the Analyze layer is a per-song VIEW computation — a different song
+  // means stale bands, so it goes off rather than carry the wrong song's
+  // reading (same "off by default" discipline as a fresh session)
+  if (_analysisTimer) { clearTimeout(_analysisTimer); _analysisTimer = null; }
+  analysisOn = false;
+  analysisBands = {chords: [], key: null};
+  analysisChordLane = analysisKeyLane = null;
+  analyzeTarget = null;
   drTakes = []; drActive = -1; // Drummer takes replay against THIS song's notes
   declaredTs = null; // meter resets to neutral until this song's notes declare one
   selNote = null;
@@ -5437,6 +5490,10 @@ function drawRuler(W, H) {
     ctx.fillText((n.stale ? "⚠ " : "") + n.text + (n.cnote ? " ✱" : ""), Math.max(x, RULER_W) + 5, y + 11);
     ctx.restore();
   }
+  // P6: the Analyze layer draws AFTER the real section/chord bands, in its
+  // own rows below them (analysisChordLane/analysisKeyLane, set by
+  // finalizeNotes) — dashed/outlined so it never reads as a real annotation.
+  if (analysisOn && appMode() === "normal") drawAnalysisLayer(tickX, W);
   for (const n of rollnotes) {
     if (n.section || n.chord || n.chopdir) continue; // chop anchors are raw-space: no flag
     const x = RULER_W + n.start * ppt - view.x;
@@ -7129,6 +7186,20 @@ function tap(pos) {
         }
         updateSubtitle(); draw();
         return;
+      }
+      // P6: the Analyze layer's own rows sit below the real section/chord
+      // ones (never the same lane index) — a tap here opens the Adopt
+      // sheet; it never touches rollnotes/rangeSel/tapBand itself.
+      if (analysisOn && appMode() === "normal") {
+        if (analysisChordLane !== null && lane === analysisChordLane) {
+          const c = analysisBands.chords.find(b => tick >= b.start && tick < b.end);
+          if (c) { openAnalyzeSheet({kind: "chord", start: c.start, end: c.end, text: c.text}); return; }
+        }
+        if (analysisKeyLane !== null && lane === analysisKeyLane && analysisBands.key &&
+            tick >= analysisBands.key.start && tick < analysisBands.key.end) {
+          openAnalyzeSheet({kind: "key", start: analysisBands.key.start, end: analysisBands.key.end, text: analysisBands.key.name});
+          return;
+        }
       }
     }
     let hitMark = null;
@@ -15412,12 +15483,17 @@ function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2-char s
   };
   const base = {vwScore: "𝄞  Score view", vwListener: "📻  Listener mode", vwTracksView: "▤  Tracks view", vwMixer: "🎚  Mixer", vwTracks: "◂  Tracks", vwEdit: "🛠  Edit toolbar",
                 vwFooter: "▦  Bottom bar", vwInst: "🎹  Instrument panel", vwSub: "💬  Notes strip",
-                vwCompare: "⇄  Compare with repo", vwLearning: "🎓  Learning mode"};
+                vwCompare: "⇄  Compare with repo", vwAnalyze: "🔍  Analyze ▸", vwLearning: "🎓  Learning mode"};
   for (const [id, label] of Object.entries(base)) document.getElementById(id).textContent = label;
   set("vwScore", viewMode === "score");
   set("vwTracksView", viewMode === "tracks");
   set("vwMixer", mixerIsOpen());
   set("vwCompare", !!cmp, !(song && songKey && isComposition())); // dimmed where there is nothing to compare against
+  // P6: Normal-mode only — the item is ABSENT (not dimmed) in Learning, same
+  // discipline as every other Learning-mode hiding place (CLAUDE.md).
+  const vwA = document.getElementById("vwAnalyze");
+  vwA.style.display = analysisAvailable() ? "" : "none";
+  if (analysisAvailable()) set("vwAnalyze", analysisOn);
   set("vwLearning", appMode() === "learning");
   set("vwListener", listenerMode);
   set("vwTracks", !document.getElementById("trackslide").classList.contains("off"));
@@ -15530,6 +15606,14 @@ document.getElementById("viewsheetbtn").addEventListener("click", e => {
   on("vwTracksView", () => setViewMode(viewMode === "tracks" ? "roll" : "tracks"));
   on("vwMixer", () => toggleMixer());
   on("vwLearning", () => { setAppMode(appMode() === "learning" ? "normal" : "learning"); applyMode(); });
+  on("vwAnalyze", () => { // Normal-only (the item is absent otherwise) — compute on toggle, never per frame
+    if (!analysisAvailable() || !song) return;
+    analysisOn = !analysisOn;
+    if (analysisOn) computeAnalysisLayer(); else { if (_analysisTimer) { clearTimeout(_analysisTimer); _analysisTimer = null; } analysisBands = {chords: [], key: null}; }
+    finalizeNotes();
+    clampView();
+    draw();
+  });
   on("vwCompare", () => { document.getElementById("viewsheet").classList.remove("on"); if (cmp) cmpExit(); else cmpEnter(); });
   on("vwTracks", () => document.getElementById("tracktoggle").click());
   on("vwEdit", () => { editrowHidden = !editrowHidden; applyChrome(); });
@@ -15540,6 +15624,21 @@ document.getElementById("viewsheetbtn").addEventListener("click", e => {
   on("vwLevelsMinus", () => setSecDepth(Math.min(secDepthCap(), secMaxDepth - 1) - 1));
   on("vwLevelsPlus", () => setSecDepth(Math.min(secDepthCap(), secMaxDepth - 1) + 1));
 }
+// P6: the Analyze sheet — opened by tapping a band in the Analyze layer
+// (tap()); Adopt writes ONE annotation (or all chords) through the existing
+// write path, Cancel just closes (nothing is written by looking).
+document.getElementById("analyzeadopt").addEventListener("click", () => {
+  if (!analyzeTarget) return;
+  if (analyzeTarget.kind === "chord") adoptChordBand(analyzeTarget);
+  else adoptKeyRegion({start: analyzeTarget.start, end: analyzeTarget.end, text: analyzeTarget.text,
+                        name: analyzeTarget.text, sf: analysisBands.key ? analysisBands.key.sf : 0});
+  document.getElementById("analyzesheet").classList.remove("on");
+});
+document.getElementById("analyzeadoptall").addEventListener("click", () => {
+  adoptAllChords();
+  document.getElementById("analyzesheet").classList.remove("on");
+});
+document.getElementById("analyzeclose").addEventListener("click", () => document.getElementById("analyzesheet").classList.remove("on"));
 document.addEventListener("pointerdown", e => { // tap-away closes the View menu
   const vs = document.getElementById("viewsheet");
   if (vs.classList.contains("on") && !vs.contains(e.target) && e.target.id !== "viewsheetbtn")
@@ -18529,6 +18628,174 @@ function chordAt(tl, t) {
 function nextChange(tl, t) {
   for (const e of tl) if (e.t > t && (e.bassPc !== (chordAt(tl, t) || {}).bassPc || e.lookahead)) return e;
   return null;
+}
+// ---- P6: Analyze ▸ — Normal-mode-only VIEW layer (View ▾ → Analyze) ----
+// Per-bar chord names + a whole-song key estimate, drawn dashed/outlined on
+// the roll like the section/chord bands but never IN rollnotes — nothing is
+// written until a tap Adopts a specific band (or "Adopt all chords"), same
+// "estimate vs declared" discipline as P3's LCD "Gm~". Learning never
+// reaches any of this — appMode() gates the one entry point below, same
+// discipline as estimateKey's own call sites (spy-tested).
+function analysisAvailable() { return appMode() === "normal"; }
+function harmonyTrackIndices() { // non-drum, non-audio (.kind) tracks — chord evidence only, never the kit
+  const out = [];
+  song.tracks.forEach((tr, ti) => { if (!trackIsDrums(ti) && tr.kind !== "audio") out.push(ti); });
+  return out;
+}
+function computeAnalysisLayer() { // called on toggle-on and (debounced) on note edits — never per frame
+  if (!song || !analysisAvailable()) { analysisBands = {chords: [], key: null}; return; }
+  const bt = barTicks(), end = Math.max(bt, songEndTick);
+  const tis = harmonyTrackIndices();
+  const chords = [];
+  if (tis.length) {
+    // bsInferTimeline is the Bassist's own harmonic-sketch reader — reused
+    // here for the same reason it exists there: a duration+metric-weighted
+    // census restricted to plausible triads reads a melody line's implied
+    // harmony far better than "whatever pitches are stacked on the downbeat".
+    // seedRng always returns 0: the Bassist varies among equally-plausible
+    // readings for a fresh take each roll; a displayed estimate has no
+    // "roll again" and must be deterministic, so this always takes the
+    // single best-scored candidate (top[0]).
+    const timeline = bsInferTimeline(0, end, tis, () => 0);
+    for (const entry of timeline) {
+      const pcSet = new Set(entry.tones);
+      const pitches = [], all = [];
+      for (const ti of tis) for (const n of song.tracks[ti].notes) {
+        if (n.gone || n.t >= entry.end || n.t + n.d <= entry.t) continue;
+        all.push(n.p);
+        if (pcSet.has(((n.p % 12) + 12) % 12)) pitches.push(n.p);
+      }
+      if (!pitches.length) continue;
+      // when EVERY note in the bar is a clean chord by itself, that's the
+      // answer: the Bassist's scoring ties relative major/minor (C after C
+      // beats Am on smoothness), and filtering to its winner threw away the A
+      // of a plain A–C–E bar, labelling it "C (no 5th)" (2026-09-30)
+      const whole = nameChord(all, sfShownAt(entry.t));
+      if (whole && !/no standard chord match|one pitch class|no 5th|\?/.test(whole)) { chords.push({start: entry.t, end: entry.end, text: whole}); continue; }
+      // the REAL sounding pitches (not the candidate's bare pitch classes)
+      // go through nameChord — the same namer the lasso/chord-evidence use —
+      // so the label's inversion/bass reads off the actual notes, not an
+      // assumed root position.
+      const label = nameChord(pitches, sfShownAt(entry.t));
+      if (label && !label.includes("no standard chord match")) chords.push({start: entry.t, end: entry.end, text: label});
+    }
+  }
+  // Key: one region for the whole song (the documented "cheap" fallback —
+  // a true per-8-bar window would need its own duration-weighted census per
+  // window; one call reuses estimateKey() exactly as every other Normal
+  // display site does, with its own cache, instead of a second K-S
+  // implementation). estimateKey() is Normal-only by construction; this
+  // function's own analysisAvailable() gate above means Learning never
+  // reaches this line either (spy-tested alongside bsInferTimeline).
+  const est = estimateKey();
+  analysisBands = {chords, key: est ? {start: 0, end, name: est.name, sf: est.sf, conf: est.conf} : null};
+}
+function scheduleAnalysisRecompute() { // debounced: note edits, not per frame (P6 spec)
+  if (!analysisOn || !analysisAvailable()) return; // off, or Learning: nothing to recompute, nothing scheduled
+  if (_analysisTimer) clearTimeout(_analysisTimer);
+  _analysisTimer = setTimeout(() => {
+    _analysisTimer = null;
+    if (!analysisOn || !analysisAvailable() || !song) return; // flipped off/Learning during the debounce window
+    computeAnalysisLayer();
+    finalizeNotes();
+    draw();
+  }, 400);
+}
+function drawAnalysisLayer(tickX, W) { // dashed/outlined — visually distinct from the solid section/chord bands
+  const drawBand = (lane, start, end, text) => {
+    if (lane === null) return;
+    const x = tickX(start), w = tickX(end) - x;
+    if (x + w < RULER_W || x > W) return;
+    const y = BASE_RULER_H + lane * LANE_H;
+    ctx.save();
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = css("--gold");
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(Math.max(x, RULER_W) + 1, y + 1, w - 3 - Math.max(0, RULER_W - x), LANE_H - 3);
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.rect(Math.max(x, RULER_W), y, w - 2 - Math.max(0, RULER_W - x), LANE_H);
+    ctx.clip();
+    ctx.fillStyle = css("--dim");
+    ctx.font = "10px " + css("--mono");
+    ctx.fillText("🔍 analysis: " + text, Math.max(x, RULER_W) + 5, y + 11);
+    ctx.restore();
+  };
+  for (const c of analysisBands.chords) drawBand(analysisChordLane, c.start, c.end, c.text);
+  if (analysisBands.key) drawBand(analysisKeyLane, analysisBands.key.start, analysisBands.key.end, analysisBands.key.name + "~");
+}
+// ---- Adopt: the ONLY path that turns an analysis band into a real
+// annotation — same annoSnapshot/pushUndo("anno") pattern as every other
+// one-tap write (saveTrackDir, useFileKey, keysetest), so ⟲ takes it right
+// back out in one step.
+function adoptChordBand(entry) {
+  if (!song) return;
+  if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  const fresh = {text: entry.text, chord: true, added: true};
+  setAnchorBQ(fresh, entry.start);
+  setEndBQ(fresh, entry.end);
+  const annoBefore = annoSnapshot();
+  dropSupersededBy(fresh);
+  rollnotes.push(resolveNote(fresh));
+  pushUndo({kind: "anno", json: annoBefore});
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  lastSubtitle = undefined;
+  updateSubtitle();
+  draw();
+  setInfo("chord " + entry.text + " adopted at bar " + fresh.b1 + " (from Analyze — unsynced — Sync to commit)");
+}
+function adoptAllChords() {
+  if (!song || !analysisBands.chords.length) return;
+  if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  const annoBefore = annoSnapshot();
+  let n = 0;
+  for (const entry of analysisBands.chords) {
+    const fresh = {text: entry.text, chord: true, added: true};
+    setAnchorBQ(fresh, entry.start);
+    setEndBQ(fresh, entry.end);
+    dropSupersededBy(fresh);
+    rollnotes.push(resolveNote(fresh));
+    n++;
+  }
+  pushUndo({kind: "anno", json: annoBefore}); // every band adopted here is ONE ⟲ step, not N
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  lastSubtitle = undefined;
+  updateSubtitle();
+  draw();
+  setInfo(n + " chord" + (n === 1 ? "" : "s") + " adopted from Analyze (unsynced — Sync to commit)");
+}
+function adoptKeyRegion(region) {
+  if (!song) return;
+  if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  const bar = Math.floor(region.start / barTicks()) + 1;
+  const annoBefore = annoSnapshot();
+  dropLocalKeyAt(bar); // anchor-level: same convention as keysetest/useFileKey
+  const fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + region.name, keydir: region.sf, added: true};
+  rollnotes.push(resolveNote(fresh));
+  pushUndo({kind: "anno", json: annoBefore});
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  lastSubtitle = undefined;
+  updateSubtitle();
+  draw();
+  setInfo("key set to " + region.name + " at bar " + bar + " (from Analyze — unsynced — Sync to commit)");
+}
+function openAnalyzeSheet(target) { // target: {kind:"chord"|"key", start, end, text}
+  analyzeTarget = target;
+  const isChord = target.kind === "chord";
+  document.getElementById("analyzetext").textContent =
+    (isChord ? "Chord (analysis estimate): " + target.text : "Key (analysis estimate): " + target.text) +
+    " — an estimate, not written as an annotation until you adopt it.";
+  document.getElementById("analyzeadopt").textContent = isChord ? "Adopt this chord" : "Adopt this key";
+  document.getElementById("analyzeadoptall").style.display = isChord && analysisBands.chords.length > 1 ? "" : "none";
+  document.getElementById("analyzesheet").classList.add("on");
 }
 function bsGenerate(seed, opts) { // the Bassist: strictly monophonic, chord-driven
   const {style = "chug", busy = 3, oct = 2, follow = "auto", followTi, targetTi,

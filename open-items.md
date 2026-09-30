@@ -745,9 +745,30 @@ tools/claude-bridge.mjs's BRIDGE_SYS_READ/FULL swapped "keys and analyses
 are the user's discoveries" for the mode-line convention ("no mode line
 = learning" — older app builds stay safe by construction). Help sheet
 "House rules" dt + FEATURES keyword + NIGHT-ROLL.md's P4 writeup done.
-Six new tests in tests/night-roll.test.mjs (search "P4:"). NOT built
-(parked): P6 (Normal's "Analyze ▸" menu). Browser-verify + push still
-needed for P4, same as P0-P3 below.
+Six new tests in tests/night-roll.test.mjs (search "P4:"). Browser-verify
++ push still needed for P4, same as P0-P3 below.
+P6 BUILT 2026-09-30 (not yet browser-verified/pushed): Normal-only View ▾
+→ "🔍 Analyze ▸" — a dashed/outlined VIEW layer on the roll (below the real
+section/chord bands), never written to rollnotes. Per-bar chords reuse
+bsInferTimeline (all non-drum tracks, seedRng pinned to the top-scored
+candidate for determinism) + nameChord (on the real sounding pitches, not
+bare pitch classes, so inversions read correctly); key is ONE whole-song
+region reusing estimateKey() as-is (the spec's "cheap else one per song"
+fallback — a real per-8-bar window would need a second K-S census
+implementation). Off every session by default; a song change or a flip to
+Learning (applyMode()) turns it off at once and cancels any pending
+debounced recompute (saveEdits() schedules one, 400ms, on note edits —
+never per frame). Tap a band to Adopt it (writes chord:/key: through the
+usual annoSnapshot/pushUndo("anno") path, one ⟲ step) or, from a chord
+band, Adopt all chords (every pending band, still one ⟲ step). Fixed a
+latent harness gap while testing: applyMode() wrote document.body.dataset
+unconditionally, and the vm harness deliberately has no document.body (its
+own "vm harness" sentinel) — guarded, no behavior change in a real browser.
+Tests: search "P6" in tests/night-roll.test.mjs (Learning absence + spy on
+bsInferTimeline/estimateKey, Normal C-F-G-C fixture, mode-flip-cancels-
+debounce, Adopt/Adopt-all undo-step counts, notes.txt/askContext
+untouched). Help sheet "views" dt + FEATURES keyword + NIGHT-ROLL.md's P6
+section done. NOT done: browser-verify (screenshot) + push.
 Learning = today (nothing volunteered; Ask AI hints). Normal = keys,
 meters, chord names shown (estimates marked "~"/"estimated"; never
 written as annotations without a tap). One device-global switch: View ▾
@@ -760,7 +781,7 @@ free (nameChord exists); the key needs a new estimateKey (Krumhansl–
 Schmuckler, ~30 lines). Build: P0 plumbing (harness + e2e pinned to
 Learning FIRST) · P1 lasso chord · P2 meter/labels (+ Normal imports
 write file timesig/key) · P3 estimateKey + sfShownAt · P4 Ask per mode ·
-P5 docs · P6 later: Normal "Analyze ▸".
+P5 docs · P6 Normal "Analyze ▸" (built 2026-09-30 — see the P6 writeup above).
 NEEDS JOSH (his rulings): (1) the CLAUDE.md "Keys/analyses" rule gets a
 scope — proposed: "Learning mode is the law … Normal mode (other users,
 one device switch) may show keys, meters and chord names, labelled as

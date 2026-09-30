@@ -2294,6 +2294,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "A MIDI keyboard works on the iPad app too",
     "Mixer window", "Drag a strip by its name",
     "Text size",
+    "Analyze ▸",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6624,6 +6625,141 @@ test("P4: askSpanNotes (Normal) spells by the key ESTIMATE when nothing is decla
   const learn = mkAsk("learning");
   const learnTxt = learn.run(`askSpanNotes(0, barTicks())`);
   assert.match(learnTxt, /# Pitches use sharp spelling; the true key is the user's to discover — this block states no key\./);
+});
+
+// ------------------------------------------- P6: Analyze ▸ (Normal-mode VIEW layer)
+// A per-bar chord reading (bsInferTimeline + nameChord, reused as-is) and a
+// whole-song key estimate (estimateKey, reused as-is), drawn as a dashed
+// layer — never in rollnotes until a tap Adopts a band. See NIGHT-ROLL.md.
+function analyzeFixture(bars) { // bars: array of [pc, pc, pc] triads (root, third, fifth), one whole-note bar each, on one non-drum track
+  const bt = 480 * 4;
+  const mk = (t, p) => ({t, d: bt, p, v: 80});
+  const notes = bars.flatMap((triad, i) => {
+    let prev = -1; // stack each pc UPWARD from the last — root position, never a pc that wraps below the root
+    const pitches = triad.map(pc => { let p = 60 + pc; while (p <= prev) p += 12; prev = p; return p; });
+    return pitches.map(p => mk(i * bt, p));
+  });
+  return {bt, script: `
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "harmony", notes: ${JSON.stringify(notes)}}]};
+    songKey = "midi/test.mid"; songEndTick = ${bars.length * bt}; playCursor = 0;
+    rollnotes = []; keyRegions = []; declaredTs = [4, 4]; editUndo = []; editRedo = [];
+  `};
+}
+// C, F, G, C — root-position triads, one per bar
+const CFGC = analyzeFixture([[0, 4, 7], [5, 9, 0], [7, 11, 2], [0, 4, 7]]);
+
+test("P6 Analyze layer: a plain A–C–E bar after C reads Am, not \"C (no 5th)\" (the relative-major tie, 2026-09-30)", () => {
+  const f = analyzeFixture([[0, 4, 7], [9, 0, 4], [5, 9, 0], [7, 11, 2]]); // C, Am, F, G
+  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+  normal.run(f.script + `renderViewMenu(); document.getElementById("vwAnalyze").click();`);
+  const chords = valOf(normal, `analysisBands.chords.map(c => c.text)`);
+  assert.equal(chords[1], "Am", "bar 2: " + chords[1]);
+  assert.deepEqual(chords, ["C", "Am", "F", "G"]);
+});
+
+test("P6 Analyze layer: Learning has no menu item and never calls bsInferTimeline/estimateKey (spy)", () => {
+  const learn = createApp({storage: {"ff1roll-mode": "learning"}});
+  learn.run(CFGC.script + `
+    renderViewMenu();
+    globalThis.__bsCalls = 0; globalThis.__keCalls = 0;
+    const __bs0 = bsInferTimeline, __ke0 = estimateKey;
+    bsInferTimeline = function() { globalThis.__bsCalls++; return __bs0.apply(null, arguments); };
+    estimateKey = function() { globalThis.__keCalls++; return __ke0.apply(null, arguments); };
+  `);
+  assert.equal(learn.run(`document.getElementById("vwAnalyze").style.display`), "none", "Learning: the menu item is absent");
+  // even a stray/programmatic tap on the hidden button, and a note-edit's
+  // debounced hook, must not reach either function
+  learn.run(`document.getElementById("vwAnalyze").click(); saveEdits();`);
+  assert.equal(learn.run(`analysisOn`), false, "the hidden button's own handler refuses to turn it on in Learning");
+  assert.equal(learn.run(`__bsCalls`), 0, "Learning: bsInferTimeline never called");
+  assert.equal(learn.run(`__keCalls`), 0, "Learning: estimateKey never called");
+  // defense in depth: even a direct call (state corrupted some other way) is gated inside the function itself
+  learn.run(`analysisOn = true; computeAnalysisLayer();`);
+  assert.equal(learn.run(`__bsCalls`), 0);
+  assert.equal(learn.run(`__keCalls`), 0);
+  assert.deepEqual(valOf(learn, `analysisBands`), {chords: [], key: null});
+});
+
+test("P6 Analyze layer: Normal — toggling the menu item computes per-bar chords for a fixture (C–F–G–C bars → C, F, G, C)", () => {
+  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+  normal.run(CFGC.script + `renderViewMenu();`);
+  assert.equal(normal.run(`document.getElementById("vwAnalyze").style.display`), "", "Normal: the menu item is present");
+  assert.equal(normal.run(`analysisOn`), false, "off by default this session");
+  normal.run(`document.getElementById("vwAnalyze").click();`); // the real entry point — toggles AND computes
+  assert.equal(normal.run(`analysisOn`), true);
+  const chords = valOf(normal, `analysisBands.chords.map(c => c.text)`);
+  assert.deepEqual(chords, ["C", "F", "G", "C"]);
+  assert.deepEqual(valOf(normal, `analysisBands.chords.map(c => [c.start, c.end])`),
+    [[0, 1920], [1920, 3840], [3840, 5760], [5760, 7680]]);
+  // one lane below the (empty) section/chord rows, and the roll GREW to fit it
+  assert.equal(normal.run(`analysisChordLane`), 0);
+  assert.ok(normal.run(`RULER_H`) > normal.run(`BASE_RULER_H`), "RULER_H grew to fit the analysis row");
+  // toggling off drops the bands and the row
+  normal.run(`document.getElementById("vwAnalyze").click();`);
+  assert.equal(normal.run(`analysisOn`), false);
+  assert.deepEqual(valOf(normal, `analysisBands`), {chords: [], key: null});
+  assert.equal(normal.run(`analysisChordLane`), null);
+});
+
+test("P6 Analyze layer: switching to Learning turns the layer off immediately and clears any pending debounced recompute", () => {
+  const app = createApp({storage: {"ff1roll-mode": "normal"}});
+  app.run(CFGC.script + `
+    document.getElementById("vwAnalyze").click();
+    globalThis.__bsCalls = 0;
+    const __bs0 = bsInferTimeline;
+    bsInferTimeline = function() { globalThis.__bsCalls++; return __bs0.apply(null, arguments); };
+    song.tracks[0].notes.push({t: 0, d: 10, p: 71, v: 80, added: true}); // a note edit while the layer is on
+    saveEdits(); // schedules the debounced recompute — has NOT fired yet (setTimeout)
+    setAppMode("learning"); applyMode(); // flips before the debounce timer would fire
+  `);
+  assert.equal(app.run(`analysisOn`), false, "Learning forces the layer off at once");
+  assert.deepEqual(valOf(app, `analysisBands`), {chords: [], key: null});
+  assert.equal(app.run(`_analysisTimer`), null, "the pending debounce timer was cancelled, not just ignored");
+  assert.equal(app.run(`__bsCalls`), 0, "the scheduled recompute never ran — the mode flip stopped it, not just its output");
+});
+
+test("P6 Analyze layer: Adopt writes ONE chord: annotation as a single ⟲ step; Adopt all chords adopts every band as ONE step too", () => {
+  const a = createApp({storage: {"ff1roll-mode": "normal"}});
+  a.run(CFGC.script + `document.getElementById("vwAnalyze").click();`);
+  assert.equal(a.run(`rollnotes.length`), 0);
+  assert.equal(a.run(`editUndo.length`), 0);
+
+  // single Adopt, through the real tap → sheet → button path
+  a.run(`openAnalyzeSheet({kind: "chord", start: analysisBands.chords[0].start, end: analysisBands.chords[0].end, text: analysisBands.chords[0].text});`);
+  assert.equal(a.run(`document.getElementById("analyzesheet").classList.contains("on")`), true);
+  a.run(`document.getElementById("analyzeadopt").click();`);
+  assert.equal(a.run(`document.getElementById("analyzesheet").classList.contains("on")`), false, "the sheet closes on Adopt");
+  assert.equal(a.run(`rollnotes.filter(n => n.chord).length`), 1);
+  const first = valOf(a, `rollnotes.find(n => n.chord)`);
+  assert.equal(first.text, "C");
+  assert.equal(first.b1, 1);
+  assert.equal(a.run(`editUndo.length`), 1, "one ⟲ step");
+  assert.equal(a.run(`editUndo[0].kind`), "anno");
+
+  // ⟲ takes it right back out, in one step
+  a.run(`editUndoPop();`);
+  assert.equal(a.run(`rollnotes.filter(n => n.chord).length`), 0);
+  a.run(`editRedoPop();`); // redo restores it, still one entry
+  assert.equal(a.run(`rollnotes.filter(n => n.chord).length`), 1);
+
+  // Adopt all chords: the remaining 4 bands (including the one already
+  // adopted, which simply replaces itself — dropSupersededBy) as ONE step
+  a.run(`editUndo = []; editRedo = [];`);
+  a.run(`adoptAllChords();`);
+  assert.equal(a.run(`rollnotes.filter(n => n.chord).length`), 4, "one chord band per bar, C-F-G-C");
+  assert.equal(a.run(`editUndo.length`), 1, "all four bands land as ONE ⟲ step, not four");
+  assert.deepEqual(valOf(a, `rollnotes.filter(n => n.chord).sort((x,y)=>x.b1-y.b1).map(n => n.text)`), ["C", "F", "G", "C"]);
+});
+
+test("P6 Analyze layer: notes.txt (serializeRollnotes) and askContext are byte-identical with the layer on or off — it's a view, not data", () => {
+  const a = mkAsk("normal", CFGC.script);
+  const notesBefore = a.run(`serializeRollnotes()`);
+  const ctxBefore = a.run(`askContext({t0: 0, t1: barTicks(), from: 1, to: 1}, askBudget())`);
+  a.run(`document.getElementById("vwAnalyze").click();`); // layer on, bands computed
+  assert.ok(a.run(`analysisBands.chords.length`) > 0, "sanity: the layer actually computed something");
+  assert.equal(a.run(`serializeRollnotes()`), notesBefore, "notes.txt is unaffected by the layer");
+  assert.equal(a.run(`askContext({t0: 0, t1: barTicks(), from: 1, to: 1}, askBudget())`), ctxBefore, "askContext is unaffected by the layer");
 });
 
 // ---------------------------------------------------- Download audio (offline WAV bounce)

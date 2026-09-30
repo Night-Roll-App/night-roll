@@ -4523,6 +4523,109 @@ chord line, the estimate-spelled `askSpanNotes`, the general-chat
 per-mode text, and the welcome bubble's two texts. Help sheet's "House
 rules" `<dt>` (✦ AI tab) and the FEATURES drift keyword done.
 
+## P6 — Analyze ▸: a Normal-only VIEW layer (2026-09-30)
+
+open-items.md's parked "P6: Normal's 'Analyze ▸' menu". A dedicated View ▾
+item, present only in Normal (`analysisAvailable()` = `appMode() ===
+"normal"`; the button is `style.display = "none"` in Learning — ABSENT, not
+dimmed, same convention as every other Learning hiding place), that draws a
+dashed/outlined "analysis" layer on the roll: a per-bar chord reading plus a
+whole-song key estimate. It is a VIEW, computed into `analysisBands`
+(`{chords: [{start, end, text}], key: {start, end, name, sf, conf} | null}`)
+— nothing is written to `rollnotes` until a tap Adopts a specific band.
+
+**Off by default, every session.** `analysisOn` is a plain `let`, never
+persisted to `localStorage` — a reload always starts with the layer off,
+even in Normal. A song change (`setSong`) also resets it and clears any
+pending debounce timer, since a different song's bands would otherwise
+flash stale for a frame. Switching to Learning (`applyMode()`, from either
+the View ▾ toggle or Settings) forces `analysisOn = false`, empties
+`analysisBands`, and cancels `_analysisTimer` — the debounced recompute
+(below) is stopped, not just its result hidden, so the spy test can prove
+`bsInferTimeline`/`estimateKey` are never called for it in Learning.
+
+**Chords: `bsInferTimeline` + `nameChord`, both reused as-is.**
+`computeAnalysisLayer()` calls `bsInferTimeline(0, songEndTick, harmonyTis,
+() => 0)` — the SAME reader the Bassist's internal harmonic sketch uses
+(duration+metric-weighted PC census per bar, restricted to plausible
+triads), over every non-drum, non-audio track (`harmonyTrackIndices()`;
+drums excluded, per spec). The `seedRng` is `() => 0` instead of a real
+PRNG: the Bassist varies among equally-plausible readings for a fresh take
+each roll, but a displayed estimate has no "roll again" and must be
+deterministic, so this always takes the single best-scored candidate
+(`top[0]`). For each bar `bsInferTimeline` returns, the REAL sounding
+pitches (with real octaves, not the candidate's bare pitch classes) whose
+pitch class is one of the candidate's `tones` are collected from the same
+harmony tracks and passed to `nameChord(pitches, sfShownAt(entry.t))` — the
+identical namer the lasso selection and chord-band evidence already use —
+so the label's bass/inversion reads off the actual notes rather than
+assuming root position. A bar with no recognizable match ("no standard
+chord match") is dropped, not shown.
+
+**Key: one region per song, reusing `estimateKey()` exactly.** The spec
+allows "windowed per 8 bars if cheap, else one per song" — a true per-8-bar
+window would need its own duration-weighted census loop per window (a
+second, parallel Krumhansl-Schmuckler implementation next to `estimateKey`'s
+own, doubling the surface any future K-S fix has to touch). One call to the
+existing `estimateKey()` — same cache, same call-site discipline as every
+other Normal display site (the LCD "Gm~", the keysel label) — was chosen
+over that duplication; the whole song is one region,
+`{start: 0, end: songEndTick, name, sf, conf}`.
+
+**Rows.** `finalizeNotes()` appends the layer's own rows BELOW every
+section/chord row (`analysisChordLane`, then `analysisKeyLane` — set to
+`null` when off or empty, same "own row, own group" discipline as
+sections-vs-chords), and grows `RULER_H` to fit them, gated on `analysisOn
+&& appMode() === "normal" && !listenerMode`. `drawRuler` draws them AFTER
+the real bands, dashed (`ctx.setLineDash`) and labelled "🔍 analysis: …" —
+visually distinct from the solid section/chord fill. A tap in `tap()`
+hit-tests the two lane indices and opens the Analyze sheet
+(`openAnalyzeSheet`); it never touches `rollnotes`, `rangeSel` or `tapBand`.
+
+**Adopt: the one path to a real annotation.** `#analyzesheet` (an ordinary
+`.overlay`/`.sheet`, so it gets the generic ✕/Esc-close for free) offers
+**Adopt** (`adoptChordBand`/`adoptKeyRegion` — `setAnchorBQ`/`setEndBQ` to
+convert the band's ticks to b/q, `dropSupersededBy`/`dropLocalKeyAt` so a
+re-adopt replaces rather than duplicates, then the same
+`annoSnapshot()`-before / `pushUndo({kind: "anno", ...})`-after pattern as
+`saveTrackDir`/every other one-tap annotation write) and, on a chord band,
+**Adopt all chords** (`adoptAllChords` — every pending chord band written in
+the SAME loop, ONE `pushUndo` after all of them, so ⟲ takes the whole batch
+back out in a single step, not N). Nothing is written by opening the sheet
+or by Cancel.
+
+**Recompute: on toggle, and debounced on note edits — never per frame.**
+Toggling the View ▾ item calls `computeAnalysisLayer()` synchronously.
+`saveEdits()` (the one hook every note add/erase/move/generator already
+calls) also calls `scheduleAnalysisRecompute()`, which no-ops when the layer
+is off or the mode isn't Normal, else debounces 400ms before recomputing +
+`finalizeNotes()` + `draw()` — a burst of edits (a generator's whole batch)
+recomputes once, not once per note. Annotation-only edits (Adopt itself)
+do NOT retrigger it — `analysisBands` simply keeps showing what it showed,
+consistent with "a view, not live data."
+
+**`document.body` guard (harness fix, not a behavior change).**
+`applyMode()` used to write `document.body.dataset.mode` unconditionally;
+the vm test harness deliberately has no `document.body` (its own "are we in
+the vm harness" sentinel — see `tests/harness.mjs`), so `applyMode()` could
+never be called from a test before this. Guarded to `if (document.body)
+...`, same convention the harness already documents elsewhere, so the P6
+mode-switch spy test can call it directly.
+
+Tests (`tests/night-roll.test.mjs`, search "P6"): Learning has no menu item
+and a spy proves `bsInferTimeline`/`estimateKey` are never called (even a
+stray click on the hidden button, `saveEdits()`, or a direct
+`computeAnalysisLayer()` call after forcing `analysisOn = true` — gated
+inside the function itself, not just at the call sites); Normal toggling
+computes a C–F–G–C fixture correctly (root-position triads, one per bar);
+switching to Learning mid-debounce cancels the pending timer AND the
+function never runs; Adopt writes one `chord:` annotation as one ⟲ step,
+⟲/⟳ round-trip it, and Adopt all chords lands four bands as one step;
+`serializeRollnotes()` (notes.txt) and `askContext` are byte-identical with
+the layer on or off. Help sheet's "views" `<dt>`, FEATURES keyword,
+NIGHT-ROLL.md (here) and open-items.md (P6 done) written. NOT done:
+browser-verify (screenshot) and push — see the session report.
+
 ## Text size — iOS Dynamic Type (DAW review item 12, 2026-09-30)
 
 open-items.md "DAW CONVENTIONS REVIEW" #12: every `font-size` in the CSS
