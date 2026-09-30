@@ -5934,6 +5934,19 @@ test("a console voice that FAILED to load says why, and the next ▶ retries it 
   } finally { run(`readData = __realRD; chip.fail = null; albumMetaFor.lastFail = null;`); }
 });
 
+test("the writer keeps melodic tracks off the drum channel even when a capture's voice number says 10 (FFX / PS1 played parts as drums, 2026-09-30)", async () => {
+  const M = await import("../tools/nsf/midi-write.mjs");
+  const song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [
+    {name: "ch 12 prog 2", notes: [{t: 0, d: 480, p: 85, v: 90, ch: 9}]},
+    {name: "drums", notes: [{t: 0, d: 120, p: 38, v: 90, ch: 9}]}]};
+  for (const bytes of [M.writeSongMidi(song), new Uint8Array(val(`Array.from(writeMidi(${JSON.stringify(song)}))`))]) {
+    const back = JSON.parse(run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...bytes])}).buffer, {trust: true}).tracks.map(t => ({name: t.name, ch: t.notes[0].ch, p: t.notes[0].p})))`));
+    assert.notEqual(back[0].ch, 9, "the melodic part is not on the drum channel");
+    assert.equal(back[0].p, 85, "and keeps its pitch");
+    assert.equal(back[1].ch, 9, "the kit still is");
+  }
+});
+
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
   const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;

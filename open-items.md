@@ -559,7 +559,15 @@ files' markers/lyrics/programs/CCs verbatim. RULING FOR JOSH (later, not
 blocking): the two publish paths write different tempo maps (baked
 tempo: annotations vs base) — which is right?
 
-## RUNNING 2026-09-30: re-capturing every capture album through the shared MIDI writer
+## PAUSED 2026-09-30 10:20: re-capturing every capture album through the shared MIDI writer
+PS2 (FFX, Dark Cloud) and all six PS1 re-captures were REVERTED: the new
+writer used each note's capture channel, and a console voice number that
+mapped to MIDI channel 10 put melodic parts on the drum channel (Josh:
+"the entire album … really bad"). Fixed in both writers (only a kit track
+may use channel 10) with a test. NES / Game Boy / SNES re-captures were
+clean (scanned: 0 affected) and stay. Before resuming PS/N64: re-capture
+one album into a scratch dir and scan it (tmp/scan9.mjs) + a listen.
+(Original entry:)
 So published songs get back the pan / duty / envelope data the old writer
 dropped (FORMATS AUDIT #1). One push per album, only existing .mid files
 replaced, annotations untouched (tmp/recapture-writer.sh). Skipped: FF1

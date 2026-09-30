@@ -202,7 +202,9 @@ export function writeSongMidi(song) {
     let lastDuty = null;
     for (const n of tr.notes || []) {
       if (n.gone) continue;
-      const ch = n.ch !== undefined ? (n.ch & 15) : ch0;
+      // channel 10 is the drum channel: only a kit track may use it, whatever
+      // voice number a console capture carries (FFX / PS1, 2026-09-30)
+      const ch = n.ch !== undefined && ((n.ch & 15) !== 9 || isKit) ? (n.ch & 15) : ch0;
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
       evs.push({t: n.t, o: 1, d: [0x90 | ch, n.p & 127, (n.v || 80) & 127]});
       if (n.ve !== undefined) evs.push({t: n.t, o: 1.5, d: [0xA0 | ch, n.p & 127, n.ve & 127]});

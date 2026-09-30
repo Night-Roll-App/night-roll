@@ -14792,7 +14792,11 @@ function writeMidi(s) { // format-1 SMF: meta track (tempo + meter + key) + one 
     let lastDuty = null;
     for (const n of tr.notes) {
       if (n.gone) continue;
-      const ch = n.ch !== undefined ? (n.ch & 15) : ch0; // per-note channel (captures: noise/drums) else the track's own
+      // per-note channel (captures: noise/drums) else the track's own — but
+      // channel 10 is the DRUM channel: a console's voice number that lands
+      // there on a melodic track made FFX and the PS1 albums play parts as
+      // drums (2026-09-30); only a kit track may use it
+      const ch = n.ch !== undefined && ((n.ch & 15) !== 9 || kit) ? (n.ch & 15) : ch0;
       // duty (chip timbre) rides as CC70 ahead of the note it changes on —
       // parseMidi reads it back; other DAWs just see a sound controller
       if (n.duty !== undefined && n.duty !== lastDuty) { evs.push({t: n.t, o: 0.5, d: [0xB0 | ch, 70, n.duty]}); lastDuty = n.duty; }
