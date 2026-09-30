@@ -547,17 +547,33 @@ Debug log (Settings → Other) lines "song open: console source …" say
 which path ran. A song with no console source at all still plays synth
 without a warning. If it recurs, get the Debug-log lines from Josh.
 
-## PHASE 1 DONE 2026-09-30: THE FILE'S OWN LABELS vs THE LEARNER'S ANSWERS (Josh, 2026-09-30 08:41) — phase 2 (keep foreign metas verbatim) and the tempo ruling still open
+## PHASE 1 + PHASE 2 DONE 2026-09-30: THE FILE'S OWN LABELS vs THE LEARNER'S ANSWERS (Josh, 2026-09-30 08:41) — the tempo ruling still open
 Spec: docs/declared-vs-learner-spec.md (advisor). Today: his answers never
 reach the .mid (good); but import DROPS the file's key label, keeps only
 the file's LAST meter, notes.txt leaks the file's meter in Learning, and
 Normal's import seeds annotations without a tap (rule break). Build: keep
 the file's labels as a `source` record (draft + .mid, verbatim); his
 answers annotations only; an on-demand "Check vs file" in ☰ Notes (KEY /
-METER) — Learning never reveals the file's value. Phase 2: keep foreign
-files' markers/lyrics/programs/CCs verbatim. RULING FOR JOSH (later, not
-blocking): the two publish paths write different tempo maps (baked
-tempo: annotations vs base) — which is right?
+METER) — Learning never reveals the file's value.
+
+Phase 2 (spec "B"): the REST of a foreign file — text/copyright/
+instrument-name/lyric/marker/cue metas, extra track-name metas, program
+changes, channel pressure, pitch bend, every CC but 10 (pan)/70 (duty, and
+only for a non-foreign parse — a foreign file's CC70/poly aftertouch are
+never read as chip duty/envelope), SysEx, and empty tracks (e.g. the
+conductor's own name/text) — now rides along too, verbatim, per original
+track, as `source.metas`; both writers (index.html's writeMidi,
+tools/nsf/midi-write.mjs's writeSongMidi) re-attach a track's raw events by
+its ORIGINAL index (`tr.srcIndex`, set at import — never by name, so a
+rename keeps them and a delete drops them), and merge an originally-empty
+track's events into the written meta/conductor track since it was never a
+Night Roll track a delete could apply to. No UI anywhere reads
+source.metas (markers/lyrics/text stay the composer's own analysis,
+preserved not displayed, same as Phase 1's key/meter labels). Docs:
+NIGHT-ROLL.md "P2 phase 2". `npm test` green, full suite.
+
+RULING FOR JOSH (later, not blocking): the two publish paths write
+different tempo maps (baked tempo: annotations vs base) — which is right?
 
 ## AWAITS JOSH'S EAR: FFX pitches after a fresh capture (2026-09-30)
 The gated re-capture refused FFX: 4 songs come out at different pitches

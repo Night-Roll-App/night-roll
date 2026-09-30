@@ -4378,6 +4378,35 @@ says: …", the estimate, and "Use the file's". notes.txt's header states
 HIS declared meter (declaredTsForKey), never the file's — "4/4? (not
 declared)" when he hasn't. `effTs()` still never reads `song.timesig`.
 
+**P2 phase 2 — the rest of a foreign file, kept verbatim
+(docs/declared-vs-learner-spec.md "B").** Phase 1 only kept 0x58/0x59;
+everything else Night Roll doesn't model — text/copyright/instrument-name/
+lyric/marker/cue metas (0x01 non-`sounding:`, 0x02, 0x04-0x07), extra
+track-name metas, program changes (0xC0), channel pressure (0xD0), pitch
+bend (0xE0), every CC but 10 (pan, always owned) and 70 (duty — owned only
+when NOT foreign; a foreign file's CC70/poly aftertouch (0xA0) are just
+some other program's controller/pressure data, never chip duty/envelope,
+so they're kept as raw events instead of being read onto the note) and
+SysEx — now rides along too, per original track, in `source.metas`:
+`[{index, events: [{t, bytes}]}]` for a track that had notes (matched back
+to a CURRENT Night Roll track by `tr.srcIndex`, the ORIGINAL file track
+number recorded at import — never by name, so a rename doesn't orphan the
+events; a track the user deletes takes its raw events with it, since no
+surviving track carries that index), or `{index, empty: true, name?,
+events}` for an original track with NO notes at all (e.g. the conductor's
+own name/text) — never a Night Roll track, so deletion can't apply; it
+always survives, merged into the written meta/conductor track. `metas` is
+left off `source` entirely when there's nothing in it, so every file phase
+1 already covered writes byte-identical. Both writers (`writeMidi`,
+`writeSongMidi`) build a `bySrcIndex` map from the CURRENT `s.tracks`,
+attach each track's own events before its notes, and merge unmatched
+`empty` entries into the meta track — same split, same order, in both
+(the shared-writer parity test covers a `source.metas` fixture too).
+Markers/lyrics/text are the composer's own analysis, same as a key or
+meter label: no UI reads `source.metas` anywhere in this phase, Learning
+or Normal — preserved only, never displayed (a later "Check sections vs
+file markers" would follow the Check-vs-file pattern, not this one).
+
 **P3 — `estimateKey()` + `sfShownAt()`/`keyNameShownAt()`.** A duration-
 weighted pitch-class census of non-drum, non-audio-clip notes, correlated
 against the 24 Krumhansl-Schmuckler major/minor key profiles

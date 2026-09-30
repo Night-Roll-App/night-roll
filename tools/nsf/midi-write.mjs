@@ -160,6 +160,17 @@ function textMetaEvent(type, text) {
   return [0xFF, type, ...vl(b.length), ...b]; // VLQ length: a >127-byte name no longer corrupts the file
 }
 export function writeSongMidi(song) {
+  // phase 2 (docs/declared-vs-learner-spec.md "B"): a foreign file's raw
+  // leftovers — matched back to the CURRENT track holding the same original
+  // srcIndex (never by name, so a rename doesn't orphan them; a track the
+  // catalog no longer has — deleted — simply gets no match, so its events
+  // are dropped with it). An `empty: true` entry never had a Night Roll
+  // track to delete (e.g. the conductor's own name/text) — it always
+  // survives, merged into the meta/conductor track below. index.html's
+  // writeMidi is the hand-port of this same split.
+  const bySrcIndex = new Map();
+  (song.tracks || []).forEach((tr, ti) => { if (tr.srcIndex !== undefined) bySrcIndex.set(tr.srcIndex, ti); });
+  const extraByTrack = new Map(); // current track index -> [{t, o, d}]
   const metaEvs = [];
   for (const tp of song.tempos || []) metaEvs.push({t: tp.tick, o: 0, d: [0xFF, 0x51, 3, (tp.usq >> 16) & 255, (tp.usq >> 8) & 255, tp.usq & 255]});
   // song.source (docs/declared-vs-learner-spec.md C4): a foreign file's OWN
@@ -173,6 +184,17 @@ export function writeSongMidi(song) {
     for (const ts of song.source.timesigs || []) metaEvs.push({t: ts.tick, o: 1, d: [0xFF, 0x58, 4, ts.num, Math.round(Math.log2(ts.den)), 24, 8]});
     for (const ks of song.source.keysigs || []) metaEvs.push({t: ks.tick, o: 2, d: [0xFF, 0x59, 2, ks.sf & 255, ks.minor ? 1 : 0]});
     metaEvs.push({t: 0, o: -1, d: textMetaEvent(0x01, "source:file")});
+    for (const mt of song.source.metas || []) {
+      if (mt.empty) {
+        if (mt.name) metaEvs.push({t: 0, o: 3, d: textMetaEvent(0x03, mt.name)});
+        for (const ev of mt.events) metaEvs.push({t: ev.t, o: 3, d: ev.bytes});
+      } else {
+        const ti = bySrcIndex.get(mt.index);
+        if (ti === undefined) continue; // the track was deleted — its raw events go with it
+        const list = extraByTrack.get(ti) || []; extraByTrack.set(ti, list);
+        for (const ev of mt.events) list.push({t: ev.t, o: 0.75, d: ev.bytes});
+      }
+    }
   } else {
     const timesigs = song.timesigs && song.timesigs.length ? song.timesigs
       : [{tick: 0, num: (song.timesig || [4, 4])[0], den: (song.timesig || [4, 4])[1]}];
@@ -199,6 +221,7 @@ export function writeSongMidi(song) {
       const v = Math.max(0, Math.min(127, Math.round(tr.midiPan * 63 + 64)));
       evs.push({t: 0, o: -1, d: [0xB0 | ch0, 10, v]});
     }
+    for (const ev of (extraByTrack.get(ti) || [])) evs.push(ev); // phase 2: this track's raw leftovers, verbatim
     let lastDuty = null;
     for (const n of tr.notes || []) {
       if (n.gone) continue;

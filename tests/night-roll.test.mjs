@@ -4,7 +4,7 @@ import test from "node:test";
 import { readFileSync, existsSync } from "node:fs";
 import assert from "node:assert/strict";
 import { createApp } from "./harness.mjs";
-import { writeSongMidi } from "../tools/nsf/midi-write.mjs";
+import { writeSongMidi, trackBytes } from "../tools/nsf/midi-write.mjs";
 
 const app = createApp();
 const run = (code) => app.run(code);
@@ -631,6 +631,16 @@ test("writeMidi (index.html) and writeSongMidi (tools/nsf/midi-write.mjs) agree 
     // only the marker — the empty lists themselves must still round-trip
     {ppq: 480, tempos: [{tick: 0, usq: 500000}], source: {timesigs: [], keysigs: []},
      tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]},
+    // docs/declared-vs-learner-spec.md "B"/phase 2: source.metas — a raw
+    // event matched to a surviving track by srcIndex, and an `empty: true`
+    // entry (an original track with no notes) merged into the meta track
+    {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+     source: {timesigs: [], keysigs: [],
+       metas: [
+         {index: 0, empty: true, name: "Conductor", events: [{t: 0, bytes: [0xFF, 0x02, 3, 0xC2, 0xA9, 0x20]}]}, // copyright, no track of its own
+         {index: 1, events: [{t: 0, bytes: [0xB0, 7, 100]}, {t: 240, bytes: [0xFF, 0x06, 5, 0x56, 0x65, 0x72, 0x73, 0x65]}]}, // CC7 + a marker, on the surviving track
+       ]},
+     tracks: [{name: "pulse1", srcIndex: 1, notes: [{t: 0, d: 480, p: 60, v: 80}]}]},
   ];
   for (const [i, s] of fixtures.entries()) {
     const app = bytesFromApp(s), tools = Array.from(writeSongMidi(s));
@@ -757,6 +767,120 @@ test("Import: writes NO ff1roll-notes-* in either mode (the P2 Normal auto-seed 
     const draft = JSON.parse(a.run(`localStorage.getItem("ff1roll-draft-local/waltz.mid")`));
     assert.deepEqual(draft.source, parsedWaltz.source, mode + ": the file's own label still rides along as draft.source");
   }
+});
+
+// ---- docs/declared-vs-learner-spec.md, phase 2 ("B" — what phase 1 left
+// behind): everything else a foreign file carries — text/copyright/
+// instrument/lyric/marker/cue metas, extra track-name metas, program
+// changes, channel pressure, pitch bend, every CC but 10/70, SysEx, and
+// empty tracks (e.g. the conductor's own name/text) — rides along verbatim
+// in source.metas, matched back to a Night Roll track by its ORIGINAL
+// index (srcIndex), never by name. A hand-built multi-track SMF (trackBytes
+// already lets a track carry arbitrary raw events via its `metas` param)
+// stands in for "some other program's export" — real foreign bytes, not
+// anything Night Roll would itself produce.
+function foreignFileBytes(trackSpecs, ppq = 480) {
+  const bodies = trackSpecs.map(({name, notes = [], ch = 0, metas = []}) => trackBytes(name, notes, ch, metas));
+  const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
+  const bytes = [0x4D, 0x54, 0x68, 0x64, ...u32(6), 0, 1, bodies.length >> 8, bodies.length & 255, ppq >> 8, ppq & 255];
+  for (const b of bodies) bytes.push(0x4D, 0x54, 0x72, 0x6B, ...u32(b.length), ...b);
+  return new Uint8Array(bytes);
+}
+const foreignTxt = s => [...s].map(c => c.charCodeAt(0));
+const foreignMeta = (t, type, s) => { const b = foreignTxt(s); return {t, d: [0xFF, type, b.length, ...b]}; };
+
+test("parseMidi/writeMidi: a foreign file's raw leftovers — markers, lyrics, a program change, pitch bend, CC7/11/64, SysEx, a copyright meta, an empty conductor track with a name, and an extra track-name meta — survive import, an edit, and a republish, at the same ticks, on the same track", () => {
+  installSong();
+  const sysexData = [0x7D, 0x01, 0x02, 0xF7]; // arbitrary manufacturer id + payload + terminator
+  const bytes = foreignFileBytes([
+    {name: "Conductor", notes: [], ch: 0, metas: [foreignMeta(0, 0x02, "© Foreign Corp")]}, // empty track: a name + copyright, never a Night Roll track
+    {name: "Melody", ch: 1, notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 62, v: 80}], metas: [
+      foreignMeta(0, 0x06, "Verse 1"),           // marker
+      foreignMeta(480, 0x05, "la"),              // lyric
+      foreignMeta(0, 0x03, "Lead (extra)"),      // extra track-name meta — the FIRST 0x03 (from trackBytes' own name param) is "Melody"
+      {t: 0, d: [0xC0 | 1, 40]},                 // program change
+      {t: 240, d: [0xE0 | 1, 0, 80]},            // pitch bend
+      {t: 0, d: [0xB0 | 1, 7, 100]},             // CC7 volume
+      {t: 0, d: [0xB0 | 1, 11, 90]},             // CC11 expression
+      {t: 480, d: [0xB0 | 1, 64, 127]},          // CC64 sustain
+      {t: 0, d: [0xF0, sysexData.length, ...sysexData]}, // SysEx
+    ]},
+  ]);
+  const imported = val(`parseMidi(new Uint8Array(${JSON.stringify([...bytes])}).buffer, {trust: true, foreign: true})`);
+  const has = (list, pred) => list.some(pred);
+  const check = (doc, label) => {
+    const melody = doc.tracks.find(t => t.name === "Melody");
+    assert.ok(melody, label + ": the melody track is there");
+    assert.notEqual(melody.srcIndex, undefined, label + ": a foreign track carries its original index");
+    assert.ok(doc.source && doc.source.metas, label + ": source.metas is present");
+    const mm = doc.source.metas.find(m => m.index === melody.srcIndex && !m.empty);
+    assert.ok(mm, label + ": the melody track's raw leftovers are recorded under its own index");
+    assert.ok(has(mm.events, e => e.t === 0 && e.bytes[1] === 0x06), label + ": marker at tick 0");
+    assert.ok(has(mm.events, e => e.t === 480 && e.bytes[1] === 0x05), label + ": lyric at tick 480");
+    assert.ok(has(mm.events, e => e.t === 0 && e.bytes[1] === 0x03), label + ": the extra track-name meta");
+    assert.ok(has(mm.events, e => e.t === 0 && (e.bytes[0] & 0xF0) === 0xC0), label + ": program change at tick 0");
+    assert.ok(has(mm.events, e => e.t === 240 && (e.bytes[0] & 0xF0) === 0xE0), label + ": pitch bend at tick 240");
+    assert.ok(has(mm.events, e => e.t === 0 && e.bytes[1] === 7), label + ": CC7 at tick 0");
+    assert.ok(has(mm.events, e => e.t === 0 && e.bytes[1] === 11), label + ": CC11 at tick 0");
+    assert.ok(has(mm.events, e => e.t === 480 && e.bytes[1] === 64), label + ": CC64 at tick 480");
+    assert.ok(has(mm.events, e => e.t === 0 && e.bytes[0] === 0xF0), label + ": SysEx at tick 0");
+    const cond = doc.source.metas.find(m => m.empty);
+    assert.ok(cond, label + ": the empty conductor track survives");
+    assert.equal(cond.name, "Conductor", label + ": its own name survives");
+    assert.ok(has(cond.events, e => e.bytes[1] === 0x02), label + ": the copyright meta survives");
+    return melody;
+  };
+  check(imported, "on import");
+
+  // edit a note (his edits win) — the raw leftovers must not move or vanish
+  imported.tracks.find(t => t.name === "Melody").notes[0].p += 2;
+  const raw2 = val(`Array.from(writeMidi(${JSON.stringify(imported)}))`);
+  const reparsed = val(`parseMidi(new Uint8Array(${JSON.stringify(raw2)}).buffer)`); // no opts — the "source:file" marker alone carries it, same as phase 1
+  const melody2 = check(reparsed, "after writeMidi + reparse");
+  assert.equal(melody2.notes[0].p, 62, "his edit stuck");
+  // the shared writer (tools/nsf/midi-write.mjs) must agree, byte-for-byte
+  assert.deepEqual(raw2, Array.from(writeSongMidi(imported)), "writeMidi and writeSongMidi diverge on a foreign file's raw leftovers");
+});
+
+test("CC70 / poly aftertouch: chip data (duty/ve) for a non-foreign parse; raw events, never duty/ve, for a foreign one", () => {
+  installSong();
+  const bytes = foreignFileBytes([
+    {name: "lead", ch: 0, notes: [{t: 0, d: 480, p: 60, v: 80}], metas: [
+      {t: 0, o: 0, d: [0xB0, 70, 2]},    // CC70, BEFORE the note-on it colors — chip duty for a non-foreign file only
+      {t: 0, o: 1.5, d: [0xA0, 60, 50]}, // poly aftertouch, AFTER the note-on it follows — envelope decay target for a non-foreign file only
+    ]},
+  ]);
+  const nonForeign = val(`parseMidi(new Uint8Array(${JSON.stringify([...bytes])}).buffer, {trust: true})`);
+  assert.equal(nonForeign.tracks[0].notes[0].duty, 2, "non-foreign: CC70 read as duty");
+  assert.equal(nonForeign.tracks[0].notes[0].ve, 50, "non-foreign: aftertouch read as the envelope end");
+  assert.equal(nonForeign.source, null, "non-foreign: no source at all");
+  const foreign = val(`parseMidi(new Uint8Array(${JSON.stringify([...bytes])}).buffer, {trust: true, foreign: true})`);
+  assert.equal(foreign.tracks[0].notes[0].duty, undefined, "foreign: CC70 is NOT read as duty");
+  assert.equal(foreign.tracks[0].notes[0].ve, undefined, "foreign: aftertouch is NOT read as the envelope end");
+  const mm = foreign.source.metas.find(m => m.index === foreign.tracks[0].srcIndex && !m.empty);
+  assert.ok(mm.events.some(e => e.bytes[0] === 0xB0 && e.bytes[1] === 70), "foreign: CC70 kept as a raw event instead");
+  assert.ok(mm.events.some(e => e.bytes[0] === 0xA0), "foreign: poly aftertouch kept as a raw event instead");
+});
+
+test("a deleted track's raw metas are dropped with it; a renamed track keeps them (matched by srcIndex, not name)", () => {
+  installSong();
+  const bytes = foreignFileBytes([
+    {name: "one", ch: 0, notes: [{t: 0, d: 480, p: 60, v: 80}], metas: [foreignMeta(0, 0x06, "keep me")]},
+    {name: "two", ch: 1, notes: [{t: 0, d: 480, p: 64, v: 80}], metas: [foreignMeta(0, 0x06, "drop me")]},
+  ]);
+  const imported = val(`parseMidi(new Uint8Array(${JSON.stringify([...bytes])}).buffer, {trust: true, foreign: true})`);
+  const one = imported.tracks.find(t => t.name === "one"), two = imported.tracks.find(t => t.name === "two");
+  // rename "one", delete "two" entirely
+  one.name = "renamed";
+  const edited = {...imported, tracks: [one]};
+  const raw = val(`Array.from(writeMidi(${JSON.stringify(edited)}))`);
+  const reparsed = val(`parseMidi(new Uint8Array(${JSON.stringify(raw)}).buffer)`);
+  assert.equal(reparsed.tracks.length, 1, "the deleted track is gone");
+  const renamed = reparsed.tracks.find(t => t.name === "renamed");
+  assert.ok(renamed, "the renamed track is there");
+  const mm = reparsed.source.metas.find(m => m.index === renamed.srcIndex && !m.empty);
+  assert.ok(mm && mm.events.some(e => e.bytes.slice(-7).join(",") === foreignTxt("keep me").join(",")), "the renamed track kept its own raw events (matched by index, not name)");
+  assert.ok(!(reparsed.source.metas || []).some(m => m.events && m.events.some(e => e.bytes.slice(-7).join(",") === foreignTxt("drop me").join(","))), "the deleted track's raw events did not survive");
 });
 
 test("declaredTsForKey: the ff1roll-ts-<key> stash, else a stored timesig: annotation, else undeclared — for a song that is not the one open right now (Publish all, the ✦ AI read_song tool)", () => {
