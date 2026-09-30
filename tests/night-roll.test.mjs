@@ -7622,6 +7622,75 @@ test("Publish: removing a declared meter note removes its baked event on republi
   assert.deepEqual(withoutMeter, [4, 4], "back to the base meter — the baked event is gone, not just un-refreshed");
 });
 
+// draftFingerprint special-cases baked tempo (bakesTempo) when comparing a
+// draft's un-baked base against the published .mid — widened (this bug fix)
+// to do the SAME for a baked meter (bakesMeter), or a meter-only edit on
+// his own song never showed as edited in the Publish sheet until published.
+test("draftFingerprint: a published composition's declared meter, with no local meter edit, reads as NOT edited", async () => {
+  const KEY = "albums/compositions/nightroll/fp-meter-same.mid";
+  run(`{ globalThis.__realRead = readData;
+       const pubDoc = {ppq: 480, timesig: [3, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+       globalThis.__mid = writeMidi(pubDoc);
+       readData = async (kind) => kind === "songs"
+         ? {ok: true, arrayBuffer: async () => __mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength)}
+         : {ok: false, status: 404}; // no rollnotes sidecar: annotationsFor sees no notes at all
+       const pub = parseMidi(__mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength));
+       localStorage.setItem(draftStoreKey(${JSON.stringify(KEY)}), "{}"); // marks it his-song, same gate bakesTempo/bakesMeter both use
+       globalThis.__d = {savedStamp: 9, dirty: true, ppq: pub.ppq, timesig: [3, 4], tempos: pub.tempos, tracks: draftTracks(pub.tracks)};
+       globalThis.__r = null;
+       draftFingerprint(${JSON.stringify(KEY)}, __d, 9).then(x => __r = x); }`);
+  for (let i = 0; i < 20 && !val(`globalThis.__r`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
+  try {
+    assert.equal(val(`__r`), true);
+    assert.equal(val(`__d.dirty`), false, "the draft's own 3/4 bakes to the same meter already in the published .mid");
+  } finally { run(`readData = globalThis.__realRead; localStorage.removeItem(draftStoreKey(${JSON.stringify(KEY)})); localStorage.removeItem("ff1roll-notes-" + ${JSON.stringify(KEY)});`); }
+});
+
+test("draftFingerprint: an unsynced timesig: note that would bake a DIFFERENT meter reads as edited", async () => {
+  const KEY = "albums/compositions/nightroll/fp-meter-diff.mid";
+  run(`{ globalThis.__realRead = readData;
+       const pubDoc = {ppq: 480, timesig: [3, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+       globalThis.__mid = writeMidi(pubDoc);
+       readData = async (kind) => kind === "songs"
+         ? {ok: true, arrayBuffer: async () => __mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength)}
+         : {ok: false, status: 404};
+       const pub = parseMidi(__mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength));
+       localStorage.setItem(draftStoreKey(${JSON.stringify(KEY)}), "{}");
+       // an unpublished timesig: 4/4 — same music, same tempo, only the meter changed
+       localStorage.setItem("ff1roll-notes-" + ${JSON.stringify(KEY)}, JSON.stringify([{b1: 1, q1: 1, text: "timesig: 4/4"}]));
+       globalThis.__d = {savedStamp: 9, dirty: true, ppq: pub.ppq, timesig: [3, 4], tempos: pub.tempos, tracks: draftTracks(pub.tracks)};
+       globalThis.__r = null;
+       draftFingerprint(${JSON.stringify(KEY)}, __d, 9).then(x => __r = x); }`);
+  for (let i = 0; i < 20 && !val(`globalThis.__r`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
+  try {
+    assert.equal(val(`__r`), true);
+    assert.equal(val(`__d.dirty`), true, "the meter note would bake to 4/4 — the published .mid still says 3/4");
+  } finally { run(`readData = globalThis.__realRead; localStorage.removeItem(draftStoreKey(${JSON.stringify(KEY)})); localStorage.removeItem("ff1roll-notes-" + ${JSON.stringify(KEY)});`); }
+});
+
+test("draftFingerprint: the baked-tempo comparison (Cool B Major Progression bug) still passes now that the annotations fetch is shared with meter", async () => {
+  const KEY = "albums/compositions/nightroll/fp-tempo-shared.mid";
+  run(`{ globalThis.__realRead = readData;
+       const pubDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: Math.round(6e7 / 150), sec: 0}], tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+       globalThis.__mid = writeMidi(pubDoc);
+       readData = async (kind) => kind === "songs"
+         ? {ok: true, arrayBuffer: async () => __mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength)}
+         : {ok: false, status: 404};
+       const pub = parseMidi(__mid.buffer.slice(__mid.byteOffset, __mid.byteOffset + __mid.byteLength));
+       localStorage.setItem(draftStoreKey(${JSON.stringify(KEY)}), "{}");
+       localStorage.setItem("ff1roll-notes-" + ${JSON.stringify(KEY)}, JSON.stringify([{b1: 1, q1: 1, text: "tempo: 150"}]));
+       // the draft's OWN base tempo map is the un-baked default (60 usq-flavor);
+       // only the tempo: note, baked fresh, should reproduce the published 150bpm
+       globalThis.__d = {savedStamp: 9, dirty: true, ppq: pub.ppq, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: draftTracks(pub.tracks)};
+       globalThis.__r = null;
+       draftFingerprint(${JSON.stringify(KEY)}, __d, 9).then(x => __r = x); }`);
+  for (let i = 0; i < 20 && !val(`globalThis.__r`); i++) { app.tick(10); await new Promise(r => setImmediate(r)); }
+  try {
+    assert.equal(val(`__r`), true);
+    assert.equal(val(`__d.dirty`), false, "baked fresh, the tempo: note matches what's actually published");
+  } finally { run(`readData = globalThis.__realRead; localStorage.removeItem(draftStoreKey(${JSON.stringify(KEY)})); localStorage.removeItem("ff1roll-notes-" + ${JSON.stringify(KEY)});`); }
+});
+
 // ---- moveComposition through the one publish function (Josh's ruling: a
 // moved song is byte-identical to publishing it at the new path) ----
 test("Move (published, folder mode): the moved .mid is byte-identical to publishSong's own output, the tombstoned note is dropped, old paths are gone", async () => {

@@ -15580,20 +15580,33 @@ async function draftFingerprint(path, d, repoStamp) {
     const r = await readData("songs", path);
     if (!r.ok) return false;
     const pub = parseMidi(await r.arrayBuffer());
-    sig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks)});
+    // pub.timesig is parseMidi's singular field (the FIRST 0x58 event) — for
+    // a non-foreign file that's the whole story, since a composition/copy/
+    // import bakes at most one meter for the whole song (bakeMeter's own
+    // comment: "one meter per song"); same one-event shape bakeMeter
+    // produces, so it lines up with dTimesigs below. Only compared when
+    // this song's origin bakes a meter at all (bakesMeter) — the same gate
+    // publishSong itself uses for whether timesigs gets written.
+    sig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks),
+      ...(bakesMeter(path) ? {timesigs: [{tick: 0, num: pub.timesig[0], den: pub.timesig[1]}]} : {})});
   } catch (err) { return false; } // offline: stays "edited" until later
   // pub.tempos is already baked (it's what's in the file); d.tempos is the
   // draft's un-baked base (see draftDoc) — bake it the same way before
   // comparing, or a song with an active tempo: annotation always disagrees
-  // with itself here (the Cool B Major Progression bug, one level up).
-  let dTempos = d.tempos;
-  if (bakesTempo(path)) {
+  // with itself here (the Cool B Major Progression bug, one level up). Same
+  // idea for meter (Q9, docs/provenance-plan.md): d.timesig is the draft's
+  // un-baked base pair — bake it with the SAME notes fetch (bakesTempo and
+  // bakesMeter always agree per RULES, so one annotationsFor covers both).
+  let dTempos = d.tempos, dTimesigs;
+  if (bakesTempo(path) || bakesMeter(path)) {
     try {
-      const notes = (await annotationsFor(path)).map(n => resolveNoteWith({...n}, d.ppq, d.timesig || [4, 4]));
-      dTempos = bakeTempos(d.tempos, notes, d.ppq);
+      const ts = d.timesig || [4, 4];
+      const notes = (await annotationsFor(path)).map(n => resolveNoteWith({...n}, d.ppq, ts));
+      if (bakesTempo(path)) dTempos = bakeTempos(d.tempos, notes, d.ppq);
+      if (bakesMeter(path)) dTimesigs = bakeMeter([{tick: 0, num: ts[0], den: ts[1]}], notes);
     } catch (err) { /* fetch hiccup: compare on the un-baked base — worst case, the newer-save question gets asked once more */ }
   }
-  const same = musicSig({ppq: d.ppq, tracks: d.tracks, tempos: dTempos}) === sig;
+  const same = musicSig({ppq: d.ppq, tracks: d.tracks, tempos: dTempos, timesigs: dTimesigs}) === sig;
   // an unstamped draft adopts the repo's stamp only when its music IS the
   // published music; otherwise which is newer is unknown, and the newer-save
   // question must still be asked — nothing here may mask another device's save

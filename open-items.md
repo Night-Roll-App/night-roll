@@ -525,6 +525,13 @@ the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
 ## QUEUE (2026-09-29, the order Josh approved)
+RULING (Josh, 2026-09-30 evening, replaces Q4's one-tap/no-form detail):
+the capture's header button is "✎ Edit"; it opens an in-app sheet to copy
+the song locally, with a Name field defaulting to the song's title. (Captures
+stay locked; the copy is the editable one.) Also: the header must never
+overlap — the crumb/title gets its own space and truncates, the Claude status
+chip (upper right) can't cover it; Settings tabs never disappear before the
+content (they wrap or scroll).
 SMALL (P1 builder, 2026-09-30): the Publish sheet's "edited since publish"
 check (draftFingerprint/pubCompareDraft ~L15336) special-cases tempo baking
 but not meter — a meter-only edit may not show as edited until published.
