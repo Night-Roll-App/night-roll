@@ -1782,6 +1782,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
     "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
+    "Session usage and Compact", "long, Compact saves tokens", "plan usage",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -3182,8 +3183,8 @@ test("dictation: a tapped Stop keeps onresult for Safari's late transcript; Send
        micRec = _rec2; micBtn = document.getElementById("askmic"); askMicOff();`);
   assert.equal(val(`_rec2.stopped`), true);
   assert.equal(val(`_rec2.onresult`), null, "Send discards the late result");
-  assert.equal(val(`micPrev === _rec`), true, "a discarded stop does not replace the remembered one");
-  run(`micPrev = null;`);
+  assert.equal(val(`micPrev`), null, "Send also silences the earlier stopped session (its late words would refill the box — 2026-09-30)");
+  assert.equal(val(`_rec.onresult`), null);
   run(`askinput.scrollHeight = 90; askinput.value = "a b c";`);
   app.dispatch("askinput", { type: "input" });
   assert.equal(val(`askinput.style.height`), "90px", "box sized to its text");
@@ -5413,6 +5414,20 @@ test("tapping a note leaves the playhead alone by default; the old tap-to-move i
   assert.equal(val(`noteTapMovesCursor()`), true);
   run(`localStorage.removeItem("ff1roll-notetapcursor");`);
   assert.match(val(`String(openEditor)`), /const at0 = !note && selNote/, "+ Note anchors at the tapped note");
+});
+
+test("Send after ■ Stop: the stopped dictation's late words can't refill the emptied box", () => {
+  run(`globalThis.__late = {onresult: () => { askinput.value = "late words"; }, abort() {}}; micPrev = __late; askinput.value = "sent"; askMicOff(); askinput.value = "";`);
+  assert.equal(val(`micPrev`), null);
+  run(`if (__late.onresult) __late.onresult({});`);
+  assert.equal(val(`askinput.value`), "", "the late transcript was disconnected");
+});
+
+test("⌨ Terminal stays while the terminal is busy: liveness is a line in the tab, never a reason to hide it (Josh, 2026-09-30)", () => {
+  run(`askSetMode("terminal"); askCaps = {bridge: true, terminal: true, terminalLive: false}; askTabsApply(); askStatusRender();`);
+  assert.equal(val(`askTerminal`), true, "still on the Terminal tab");
+  assert.match(val(`document.getElementById("asknowstrip").textContent`), /^queued — the terminal is busy/);
+  run(`askCaps = {bridge: false, terminal: false, terminalLive: false}; askSetMode("song");`);
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {

@@ -524,6 +524,16 @@ drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
 
+## NEXT (after session controls): MODEL PICKERS IN THE ⌨ TERMINAL TAB (Josh, 2026-09-30)
+"I should also have the ability to change the model from here … the
+advisor's model and any sub task models." Two pickers in the Terminal
+tab — Advisors (read-only reviews) and Builders (implementation agents):
+Opus / Sonnet / Haiku / Fable — stored on the bridge (GET/POST
+/v1/terminal-prefs); the terminal session reads them before every
+Agent launch. The terminal session's OWN model can't be switched
+remotely (Claude Code's /model, typed at the Mac). The Ask tabs already
+have their model menu (claude-code-opus/-sonnet/-haiku/-fable).
+
 ## ARCHIVE MOVE — WAITS ON JOSH'S GO, tomorrow, needs his token change
 Prepared on branch `archive-to-joshcough` (e23a2bf, pushed, NOT merged):
 Night-Roll-App/nsf-archive → joshcough/night-roll-archive (the name the
@@ -559,22 +569,48 @@ README target change once). What private WOULD hide: the design docs
 and roadmap (NIGHT-ROLL.md, open-items.md) — Josh's instinct is right
 for those, not for the code.
 
-## NEXT: AI SESSION CONTROLS (Josh via Ask, 2026-09-29 23:21–23:23)
-The general bridge session is at 172 turns; the app's Clear chat only
-clears this device's log and never tells the bridge, so the same Claude
-session keeps being resumed and growing.
-1. Clear chat really resets: DELETE /v1/sessions/<key> (or x-nr-fresh) →
-   the bridge starts a new session id; .ask.md log and inbox kept.
-2. Compact (⋯ beside Clear chat): the bridge runs the session's
-   compaction (claude -p --resume <id> "/compact" or equivalent); show
-   before/after size. In-app confirm.
-3. Usage line per chat tab: "172 turns · ~N k tokens · $X" from the
-   stream-json result events (usage + total_cost_usd) summed per session;
-   hint to Compact past ~40 turns; maybe auto-compact general past ~60.
-4. Plan-quota %: only if the claude CLI exposes it non-interactively
-   (check /usage, /status, local files); otherwise say so and skip.
-5. Visible only with the Claude Code bridge advertising it (same
-   capability check as ⌨ Terminal); never for LM Studio/Ollama users.
+## AI SESSION CONTROLS — DONE 2026-09-30 (Josh via Ask, 2026-09-29 23:21–23:23)
+The general bridge session was at 172 turns; the app's Clear chat only
+cleared this device's log and never told the bridge, so the same Claude
+session kept being resumed and growing. Built exactly as scoped:
+1. Clear chat really resets: DELETE /v1/sessions/<key> drops that key's
+   session id in sessions.json — the next turn starts a brand new Claude
+   Code session (a fresh --session-id, never --resume); .ask.md and the
+   inbox untouched. The app's Clear chat (after its existing confirm)
+   calls it whenever the backend is the bridge.
+2. Compact: POST /v1/sessions/<key>/compact runs the REAL `/compact` slash
+   command non-interactively — `claude -p --resume <id> … "/compact"` —
+   verified against a live throwaway session first; no summarize-into-a-
+   new-session fallback was needed. Its stream emits a `compact_boundary`
+   line with the exact before/after context size (pre_tokens/post_tokens),
+   which the endpoint returns as-is. App: a **Compact** button beside
+   Clear chat (in-app confirm), status line "compacted: 172 → 1 turns ·
+   ~24k → ~3k tokens".
+3. Usage per chat tab: the bridge sums each turn's stream-json "result"
+   event (usage.input_tokens/output_tokens/cache_read_input_tokens/
+   cache_creation_input_tokens, total_cost_usd — the real field names,
+   found the same way) into sessions.json; GET /v1/sessions/<key> →
+   {turns, tokens, cost}. App: a line under the tab strip, "N turns ·
+   ~Nk tokens · $N.NN", hint "— long, Compact saves tokens" past 40
+   turns; refreshed after every reply and on tab switch.
+4. Plan-quota %: exposed for free — every turn's stream-json (and
+   /compact's) already carries a top-level `rate_limit_event` line with
+   this account's five-hour and seven-day utilization, no extra `/usage`
+   call needed. Bridge keeps the last one seen; GET /v1/status returns it
+   as `quota`. App shows it once, in ✦ AI's Recent (tap the Now: strip):
+   "plan usage: N% this session · N% this week".
+5. Visible only with the Claude Code bridge: askCaps now carries
+   `sessions` (from /v1/status's new `sessions: true`, also added to
+   /v1/jobs), gating the usage line, Compact button, and the plan-quota
+   line — LM Studio/Ollama users never see any of it.
+Files: tools/claude-bridge.mjs (sessionFor/sessionUpdate usage fields,
+recordQuota, runCompact, the /v1/sessions/:key(/compact) routes); index.html
+(#asksessionline, #askcompact, askSessionRefresh/askSessionRender,
+the Clear chat and Compact handlers). Tests: tests/bridge.test.mjs (usage
+accumulation, DELETE really resets to a fresh --session-id, compact's
+exact before/after, a chat with no session yet is zeros not a 404).
+NIGHT-ROLL.md "AI session controls"; help sheet "Session usage and
+Compact" + FEATURES drift keyword.
 
 ## LEARNING vs NORMAL MODE — PLANNED (advisor, 2026-09-29; build after the save model)
 Learning = today (nothing volunteered; Ask AI hints). Normal = keys,

@@ -2719,6 +2719,61 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     answerable. `GET /v1/jobs` now says `inbox: true`. Tool rounds get
     their own job id (`<job>-r<round>`) — the same id replayed round
     one's tool call forever through the bridge.
+  - **AI session controls (2026-09-30, open-items.md, Josh via Ask: "the
+    same Claude session keeps being resumed and growing").** Clear chat
+    used to only clear the device's local log — the bridge kept resuming
+    the same underlying Claude Code session, unbounded. `DELETE
+    /v1/sessions/:key` drops that key's row in sessions.json, so the next
+    turn's `runClaude` sees no session and starts fresh (`--session-id`,
+    never `--resume`); `.ask.md` and the inbox are untouched. The app's
+    Clear chat calls it (best-effort, after its usual confirm) whenever
+    the backend is the bridge.
+    **Usage:** every turn's stream-json already carries a `"result"` event
+    with `usage.input_tokens/output_tokens/cache_read_input_tokens/
+    cache_creation_input_tokens` and `total_cost_usd` — the real field
+    names, read straight off a live turn against a throwaway session
+    (`claude -p --session-id <uuid> "say hi" --model haiku`) before
+    building this. `runClaude` sums them into each session's row
+    (`tokensIn/tokensOut/cacheRead/cacheCreate/costUsd`); `GET
+    /v1/sessions/:key` → `{turns, tokens, cost}`. App: a line under ✦ AI's
+    tab strip, "N turns · ~Nk tokens · $N.NN" (`askSessionRefresh`,
+    refreshed after every reply and on tab switch), "— long, Compact saves
+    tokens" past 40 turns.
+    **Compact:** `POST /v1/sessions/:key/compact` runs the REAL `/compact`
+    slash command non-interactively — `claude -p --resume <id>
+    --output-format stream-json … "/compact"` — confirmed against a live
+    throwaway session first (it works; no summarize-into-a-new-session
+    fallback was needed). Its stream emits `{"type":"system","subtype":
+    "compact_boundary","compact_metadata":{pre_tokens,post_tokens,…}}` —
+    the EXACT before/after context size Claude Code itself measured — plus
+    a closing `"result"` line with that compaction's own `total_cost_usd`.
+    `runCompact` (tools/claude-bridge.mjs) parses both and the endpoint
+    resets that session's running usage counters to a fresh baseline
+    (turns → 1) while `costUsd` keeps accumulating (money actually spent
+    doesn't un-spend). App: a **Compact** button beside Clear chat
+    (`#askcompact`, in-app confirm via `appConfirm`, never a native
+    dialog), status line "compacted: 172 → 1 turns · ~24k → ~3k tokens"
+    using the exact numbers back from the endpoint.
+    **Plan-quota %:** turns out every turn's stream-json (and `/compact`'s)
+    already carries a top-level `{"type":"rate_limit_event","rate_limit_
+    info":{"unifiedWindows":{"five_hour":{utilization,resetsAt},
+    "seven_day":{…}}}}` line for free — no extra `/usage` call needed (a
+    `claude -p --resume <id> "/usage"` call was also tried and DOES work
+    non-interactively, returning a structured `usage_report.rate_limits`
+    too, but the free per-turn event makes a dedicated call unnecessary).
+    The bridge keeps the last one seen as `lastQuota` (`recordQuota`,
+    module-scope — this account's own usage, not per-song) and returns it
+    as `quota` on `GET /v1/status`. App shows it once, in ✦ AI's Recent
+    (tap the Now: strip): "plan usage: N% this session · N% this week".
+    **Visibility:** `askCaps.sessions` (from `/v1/status`'s new `sessions:
+    true`, echoed on `/v1/jobs` too) gates the usage line, Compact button,
+    and the plan-quota line — off for LM Studio/Ollama, and never on the
+    ⌨ Terminal tab (it has no per-chat Claude Code session of its own).
+    Tests: tests/bridge.test.mjs's second (fake-claude) test — usage sums
+    across turns with the real field names, a chat nobody's asked
+    anything in yet reads as zeros not a 404, DELETE really starts the
+    next turn on a fresh `--session-id`, and Compact's response carries
+    the fake `compact_boundary`'s exact pre/post tokens.
   - **General chat (2026-09-27, Josh via the bridge: "some sort of main
     ask section that's not per song").** `askGeneral` (device pref
     `ff1roll-ask-mode`) is picked by the ♪ this song / ✦ general toggle at

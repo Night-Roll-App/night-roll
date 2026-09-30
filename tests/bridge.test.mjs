@@ -66,7 +66,7 @@ test("bridge: models merge from upstreams, jobs survive a dropped client, replay
   // models: shared ids get the upstream prefix
   const models = (await (await fetch(B + "/v1/models", {headers: H})).json()).data.map(m => m.id).sort();
   assert.deepEqual(models, ["beta/fake-7b", "beta/shared-id", "fake-7b", "shared-id"]);
-  assert.deepEqual(await (await fetch(B + "/v1/jobs", {headers: H})).json(), {ok: true, running: 0, inbox: true, terminal: false});
+  assert.deepEqual(await (await fetch(B + "/v1/jobs", {headers: H})).json(), {ok: true, running: 0, inbox: true, terminal: true, terminalLive: false, sessions: true});
   // a streamed job; the client drops after the first chunk
   const ctl = new AbortController();
   const r = await fetch(B + "/v1/chat/completions", {method: "POST", headers: {...H, "x-nr-job": "nr_t1"}, body: JSON.stringify({model: "fake-7b", stream: true, messages: [{role: "user", content: "count"}]}), signal: ctl.signal});
@@ -122,7 +122,22 @@ test("bridge: Claude Code always gets a model — claude-code runs the default (
   const dir = mkdtempSync(path.join(tmpdir(), "nr-bridge-claude-"));
   const argsLog = path.join(dir, "args.log"), bin = path.join(dir, "fake-claude");
   // a stand-in claude: --version succeeds; a -p turn records its argv and prints one result line
-  writeFileSync(bin, `#!/bin/sh\n[ "$1" = "--version" ] && exit 0\nprintf '%s\\n' "$*" >> "${argsLog}"\ncat >/dev/null\necho '{"type":"result","subtype":"success","result":"ok","is_error":false}'\n`);
+  // (with usage + total_cost_usd, the real field names read off a live turn); a "/compact" turn
+  // instead prints a compact_boundary line with the exact before/after token counts
+  writeFileSync(bin, `#!/bin/sh
+[ "$1" = "--version" ] && exit 0
+printf '%s\\n' "$*" >> "${argsLog}"
+cat >/dev/null
+case "$*" in
+  *"/compact"*)
+    echo '{"type":"system","subtype":"compact_boundary","compact_metadata":{"pre_tokens":24000,"post_tokens":3000}}'
+    echo '{"type":"result","subtype":"success","result":"","is_error":false,"total_cost_usd":0.01}'
+    ;;
+  *)
+    echo '{"type":"result","subtype":"success","result":"ok","is_error":false,"total_cost_usd":0.002,"usage":{"input_tokens":5,"output_tokens":7,"cache_read_input_tokens":100,"cache_creation_input_tokens":50}}'
+    ;;
+esac
+`);
   chmodSync(bin, 0o755);
   const port = 19000 + Math.floor(Math.random() * 1000);
   const child = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port), "--jobs-dir", path.join(dir, "jobs")],
@@ -140,4 +155,30 @@ test("bridge: Claude Code always gets a model — claude-code runs the default (
   const lines = readFileSync(argsLog, "utf8").trim().split("\n");
   assert.ok(lines.some(l => /--model opus\b/.test(l)), "the plain id runs the default model");
   assert.ok(lines.some(l => /--model sonnet\b/.test(l)), "the chosen model reaches Claude Code: " + lines.join(" / ").replace(/--append-system-prompt[^/]*/g, ""));
+
+  // AI session controls (open-items.md "NEXT: AI SESSION CONTROLS"): usage
+  // accumulates per session from each turn's real field names (input_tokens/
+  // output_tokens/cache_read_input_tokens/cache_creation_input_tokens, total_cost_usd)
+  const usageA = await (await fetch(base + "/v1/sessions/song-a")).json();
+  assert.deepEqual(usageA, {turns: 1, tokens: 5 + 7 + 100 + 50, cost: 0.002, lastCompact: null});
+  const usageB = await (await fetch(base + "/v1/sessions/song-b")).json();
+  assert.equal(usageB.turns, 1); assert.equal(usageB.tokens, 162); assert.equal(usageB.cost, 0.002);
+  // a chat nobody has asked anything in yet: zeros, not a 404
+  assert.deepEqual(await (await fetch(base + "/v1/sessions/never-asked")).json(), {turns: 0, tokens: 0, cost: 0, lastCompact: null});
+  // Clear chat really resets: DELETE drops the session id — the next turn starts a brand new Claude Code session (a fresh --session-id, not --resume)
+  assert.deepEqual(await (await fetch(base + "/v1/sessions/song-a", {method: "DELETE"})).json(), {ok: true});
+  assert.deepEqual(await (await fetch(base + "/v1/sessions/song-a")).json(), {turns: 0, tokens: 0, cost: 0, lastCompact: null});
+  await ask("claude-code", "song-a");
+  for (let i = 0; i < 50 && readFileSync(argsLog, "utf8").trim().split("\n").length < 3; i++) await sleep(100);
+  const lines2 = readFileSync(argsLog, "utf8").trim().split("\n");
+  assert.equal(lines2.filter(l => /--session-id\b/.test(l)).length, 3, "song-a and song-b's own first turns plus song-a's cleared restart: three fresh --session-id, never --resume for any of them: " + lines2.join(" / ").replace(/--append-system-prompt[^/]*/g, ""));
+  // Compact: the real `/compact` against the resumed session id, reporting the exact before/after token counts (compact_boundary's own numbers)
+  const comp = await (await fetch(base + "/v1/sessions/song-b/compact", {method: "POST", headers: {"content-type": "application/json"}, body: "{}"})).json();
+  assert.deepEqual(comp, {ok: true, turnsBefore: 1, turnsAfter: 1, tokensBefore: 24000, tokensAfter: 3000, cost: 0.01});
+  const afterCompact = await (await fetch(base + "/v1/sessions/song-b")).json();
+  assert.equal(afterCompact.turns, 1); assert.equal(afterCompact.tokens, 0, "the running usage sum resets to the new baseline after a compact");
+  assert.equal(afterCompact.cost, 0.012, "cost is money actually spent — it keeps accumulating, compact included");
+  assert.deepEqual(afterCompact.lastCompact, {at: afterCompact.lastCompact.at, preTokens: 24000, postTokens: 3000, cost: 0.01});
+  // compacting a chat with no session yet: 404, not a crash
+  assert.equal((await fetch(base + "/v1/sessions/never-asked/compact", {method: "POST"})).status, 404);
 });

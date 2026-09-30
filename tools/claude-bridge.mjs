@@ -70,8 +70,31 @@
 //
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
-// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET|POST /v1/app-state · GET|POST /v1/terminal · GET /health.
+// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET|POST /v1/app-state · GET|POST /v1/terminal ·
+// GET|DELETE /v1/sessions/:key (usage {turns, tokens, cost, lastCompact}; DELETE drops the
+// session id so the next turn starts fresh — Clear chat's backend reset) ·
+// POST /v1/sessions/:key/compact (runs `/compact` non-interactively on that
+// song's Claude Code session; {preTokens, postTokens, cost, turnsBefore, turnsAfter}) · GET /health.
 // No dependencies. Node 18+.
+//
+// AI session controls (2026-09-30, open-items.md "NEXT: AI SESSION CONTROLS",
+// Josh via Ask: "the same Claude session keeps being resumed and growing").
+// Each song's session (sessions.json) now also accumulates usage from every
+// turn's stream-json "result" event: usage.input_tokens/output_tokens/
+// cache_read_input_tokens/cache_creation_input_tokens and total_cost_usd —
+// the real field names, found by running `claude -p --session-id <uuid> …`
+// against a throwaway session and reading its stream. GET /v1/sessions/:key
+// sums them into {turns, tokens, cost}, for the app's per-tab usage line.
+// Compaction: `claude -p --resume <id> … "/compact"` DOES run non-interactively
+// (confirmed against a live throwaway session) and emits a
+// `{"type":"system","subtype":"compact_boundary","compact_metadata":{pre_tokens,
+// post_tokens,…}}` line with the exact before/after context size, so no
+// summarize-into-a-new-session fallback was needed. Plan-quota %: every turn
+// (and /compact) also emits a top-level `{"type":"rate_limit_event",
+// "rate_limit_info":{unifiedWindows:{five_hour,seven_day}}}` line — free,
+// no extra call — kept as the bridge's last-seen `lastQuota` and surfaced on
+// GET /v1/status as `quota` (this account's own bridge-wide usage, not
+// per-session).
 
 import http from "node:http";
 import {spawn, spawnSync} from "node:child_process";
@@ -267,14 +290,37 @@ const jobView = j => ({id: j.id, model: j.model, status: j.status, text: j.text,
 // ---------------------------------------------------------------- sessions + inbox
 function readJSON(file, dflt) { try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch (err) { return dflt; } }
 function writeJSON(file, v) { fs.mkdirSync(path.dirname(file), {recursive: true}); fs.writeFileSync(file, JSON.stringify(v, null, 1)); }
+function sanitizeSongKey(raw) { return String(raw || "").replace(/[^\w./:@ -]/g, "_").trim().slice(0, 160); } // the one rule for what a session key looks like — shared by the chat path (x-nr-song) and the /v1/sessions/:key path, so the same song always lands on the same row
 function songKeyOf(req, body) { // the app's x-nr-song, else the "song:" line of its context block, else one shared session
-  const h = String(req.headers["x-nr-song"] || "").replace(/[^\w./:@ -]/g, "_").trim().slice(0, 160);
+  const h = sanitizeSongKey(req.headers["x-nr-song"]);
   if (h) return h;
   for (const m of body.messages || []) { const c = typeof m.content === "string" ? m.content : ""; const mm = c.match(/^song: (.+?)(?: \(album| —|$)/m); if (mm) return mm[1].trim(); }
   return "default";
 }
-function sessionFor(key) { const all = readJSON(SESSIONS_FILE, {}); if (!all[key]) { all[key] = {id: crypto.randomUUID(), turns: 0, noteSeen: 0, started: Date.now()}; writeJSON(SESSIONS_FILE, all); } return all[key]; }
+// Usage (2026-09-30): tokensIn/tokensOut/cacheRead/cacheCreate/costUsd
+// accumulate across every turn (runClaude reads them from the stream's
+// "result" event); GET /v1/sessions/:key sums them for the app's per-tab
+// line. lastCompact holds the most recent compaction's exact before/after
+// (compact_boundary's own numbers, not our running sum).
+function sessionFor(key) { const all = readJSON(SESSIONS_FILE, {}); if (!all[key]) { all[key] = {id: crypto.randomUUID(), turns: 0, noteSeen: 0, started: Date.now(), tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0, costUsd: 0, lastCompact: null}; writeJSON(SESSIONS_FILE, all); } return all[key]; }
 function sessionUpdate(key, patch) { const all = readJSON(SESSIONS_FILE, {}); all[key] = {...(all[key] || {}), ...patch, last: Date.now()}; writeJSON(SESSIONS_FILE, all); return all[key]; }
+function sessionUsageView(s) { // {turns, tokens, cost} — s may be undefined (never asked anything yet)
+  if (!s) return {turns: 0, tokens: 0, cost: 0, lastCompact: null};
+  const tokens = (s.tokensIn || 0) + (s.tokensOut || 0) + (s.cacheRead || 0) + (s.cacheCreate || 0);
+  return {turns: s.turns || 0, tokens, cost: Math.round((s.costUsd || 0) * 10000) / 10000, lastCompact: s.lastCompact || null};
+}
+// Plan-quota % (open-items.md item 4): every turn's stream-json ALREADY
+// carries a top-level rate_limit_event — no extra "/usage" call needed —
+// {rate_limit_info:{unifiedWindows:{five_hour:{utilization,resetsAt},
+// seven_day:{utilization,resetsAt}}}}. Bridge-wide (one Claude Code account),
+// not per-song: kept as the last one seen, surfaced on GET /v1/status.
+let lastQuota = null; // {fiveHour:{pct,resetsAt}, sevenDay:{pct,resetsAt}, at} | null (never seen one yet)
+function recordQuota(info) {
+  const w = info && info.unifiedWindows;
+  if (!w) return;
+  const pct = win => win && typeof win.utilization === "number" ? {pct: Math.round(win.utilization * 100), resetsAt: win.resetsAt || null} : null;
+  lastQuota = {fiveHour: pct(w.five_hour), sevenDay: pct(w.seven_day), at: Date.now()};
+}
 function inboxAll() { const j = readJSON(INBOX_FILE, {last: 0, notes: []}); return j && Array.isArray(j.notes) ? j : {last: 0, notes: []}; }
 function inboxAdd(text, from) { const box = inboxAll(); const note = {id: ++box.last, t: Date.now(), from: String(from || "terminal").slice(0, 40), text: String(text).slice(0, 4000)}; box.notes.push(note); box.notes = box.notes.slice(-200); writeJSON(INBOX_FILE, box); return note; }
 // "what Claude Code is doing" (2026-09-29, Josh: "I wish I had a way to see
@@ -318,7 +364,7 @@ function runClaude(job, body, songKey, model, retry = true) {
   args.push("--add-dir", SHOTS_DIR); // a 📷 screenshot sits outside the repo; Read needs the directory allowed
   const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
   job.child = child;
-  let buf = "", err = "", sawText = false, held = "", holding = true;
+  let buf = "", err = "", sawText = false, held = "", holding = true, turnUsage = null;
   const text = t => { // hold the first characters back: a one-line tool call must not stream as prose
     if (!holding) return jobPush(job, {content: t});
     held += t; const lead = held.trimStart();
@@ -339,7 +385,10 @@ function runClaude(job, body, songKey, model, retry = true) {
       } else if (j.type === "result") {
         if (j.is_error && !sawText) err = j.result || j.error || "claude reported an error";
         if (!sawText && typeof j.result === "string" && j.result) { sawText = true; text(j.result); }
-      }
+        // usage (2026-09-30): the real field names, read off a live turn —
+        // input_tokens/output_tokens/cache_read_input_tokens/cache_creation_input_tokens, total_cost_usd
+        if (j.usage) turnUsage = {in: j.usage.input_tokens || 0, out: j.usage.output_tokens || 0, cacheRead: j.usage.cache_read_input_tokens || 0, cacheCreate: j.usage.cache_creation_input_tokens || 0, cost: j.total_cost_usd || 0};
+      } else if (j.type === "rate_limit_event") recordQuota(j.rate_limit_info); // plan-quota %: free, rides every turn already
     }
   });
   child.stderr.on("data", d => { err += d.toString(); });
@@ -353,7 +402,14 @@ function runClaude(job, body, songKey, model, retry = true) {
       return runClaude(job, body, songKey, model, false);
     }
     if (!sawText && code !== 0) return jobEnd(job, new Error((err || "claude exited " + code).trim().slice(0, 500)));
-    sessionUpdate(songKey, {turns: sess.turns + 1, noteSeen: noteLast});
+    sessionUpdate(songKey, {
+      turns: sess.turns + 1, noteSeen: noteLast,
+      tokensIn: (sess.tokensIn || 0) + (turnUsage ? turnUsage.in : 0),
+      tokensOut: (sess.tokensOut || 0) + (turnUsage ? turnUsage.out : 0),
+      cacheRead: (sess.cacheRead || 0) + (turnUsage ? turnUsage.cacheRead : 0),
+      cacheCreate: (sess.cacheCreate || 0) + (turnUsage ? turnUsage.cacheCreate : 0),
+      costUsd: (sess.costUsd || 0) + (turnUsage ? turnUsage.cost : 0),
+    });
     const full = held || (holding ? "" : null);
     const call = parseToolCall(holding ? held : job.text);
     if (call) jobPush(job, {tool_calls: [{index: 0, id: "call_" + job.id, type: "function", function: {name: call.name, arguments: JSON.stringify(call.arguments)}}]}, "tool_calls");
@@ -368,6 +424,40 @@ function runClaude(job, body, songKey, model, retry = true) {
     jobEnd(job, null);
   });
   child.stdin.end(prompt);
+}
+// Compact (open-items.md "NEXT: AI SESSION CONTROLS" #2): `claude -p --resume
+// <id> … "/compact"` runs the real slash command non-interactively — verified
+// against a live throwaway session (2026-09-30) — and its stream emits a
+// `{"type":"system","subtype":"compact_boundary","compact_metadata":{pre_tokens,
+// post_tokens,…}}` line with the EXACT before/after context size, plus a
+// closing "result" line with total_cost_usd for this compaction turn. No
+// summarize-into-a-new-session fallback needed. Not a chat job (nothing to
+// stream to the app; the Compact button awaits this directly).
+function runCompact(sessionId, model) {
+  return new Promise((resolve, reject) => {
+    const args = ["-p", "--resume", sessionId, "--output-format", "stream-json", "--include-partial-messages", "--verbose", "--model", model || CLAUDE_DEFAULT_MODEL, "/compact"];
+    const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
+    let buf = "", err = "", pre = null, post = null, cost = 0, sawResult = false;
+    const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("compact took longer than 3 min")); }, 3 * 60 * 1000);
+    child.stdout.on("data", d => {
+      buf += d.toString(); const lines = buf.split("\n"); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        let j; try { j = JSON.parse(line); } catch (e) { continue; }
+        if (j.type === "system" && j.subtype === "compact_boundary" && j.compact_metadata) { pre = j.compact_metadata.pre_tokens; post = j.compact_metadata.post_tokens; }
+        else if (j.type === "rate_limit_event") recordQuota(j.rate_limit_info);
+        else if (j.type === "result") { sawResult = true; cost = j.total_cost_usd || 0; if (j.is_error) err = j.result || j.error || "compact failed"; }
+      }
+    });
+    child.stderr.on("data", d => { err += d.toString(); });
+    child.on("error", e => { clearTimeout(timer); reject(e); });
+    child.on("close", code => {
+      clearTimeout(timer);
+      if (!sawResult || pre == null) return reject(new Error((err || "claude exited " + code).trim().slice(0, 500) || "no compaction happened"));
+      resolve({preTokens: pre, postTokens: post, cost});
+    });
+    child.stdin.end();
+  });
 }
 async function runUpstream(job, body, target) { // forward to an OpenAI server, streaming; the job keeps the chunks
   const ctl = new AbortController();
@@ -410,7 +500,30 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === "/health") return json(res, 200, {ok: true});
   if (!authorized(req)) return json(res, 401, {error: {message: "this bridge wants its token — Settings → key"}});
   if (req.method === "GET" && url.pathname === "/v1/models") { const {models} = await listModels(); return json(res, 200, {object: "list", data: models}); }
-  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true, terminal: terminalReachable()});
+  if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true, terminal: true, terminalLive: terminalReachable(), sessions: true});
+  const sm = url.pathname.match(/^\/v1\/sessions\/([^/]+)(\/compact)?$/); // AI session controls (open-items.md): usage + Clear-really-resets + Compact
+  if (sm) {
+    const key = sanitizeSongKey(decodeURIComponent(sm[1])) || "default"; // the exact rule songKeyOf applies to x-nr-song, so the same song always lands on the same row
+    if (!sm[2] && req.method === "GET") { const all = readJSON(SESSIONS_FILE, {}); return json(res, 200, sessionUsageView(all[key])); }
+    if (!sm[2] && req.method === "DELETE") { // Clear chat really resets: drop the session id so the next turn starts a new Claude Code session; .ask.md and the inbox are untouched
+      const all = readJSON(SESSIONS_FILE, {});
+      if (all[key]) { delete all[key]; writeJSON(SESSIONS_FILE, all); }
+      return json(res, 200, {ok: true});
+    }
+    if (sm[2] && req.method === "POST") {
+      if (!claudeOk) return json(res, 503, {error: {message: "no Claude Code here to compact"}});
+      const all = readJSON(SESSIONS_FILE, {});
+      const sess = all[key];
+      if (!sess) return json(res, 404, {error: {message: "no session yet for this chat — nothing to compact"}});
+      let b = {}; try { b = JSON.parse(await readBody(req) || "{}"); } catch (err) { /* default model */ }
+      const before = sessionUsageView(sess);
+      try {
+        const r = await runCompact(sess.id, b.model);
+        sessionUpdate(key, {turns: 1, tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0, costUsd: (sess.costUsd || 0) + r.cost, lastCompact: {at: Date.now(), preTokens: r.preTokens, postTokens: r.postTokens, cost: r.cost}});
+        return json(res, 200, {ok: true, turnsBefore: before.turns, turnsAfter: 1, tokensBefore: r.preTokens != null ? r.preTokens : before.tokens, tokensAfter: r.postTokens, cost: r.cost});
+      } catch (err) { return json(res, 500, {error: {message: String((err && err.message) || err).slice(0, 500)}}); }
+    }
+  }
   if (url.pathname === "/v1/inbox") { // notes from the terminal: the app polls with ?since=<last id it showed>
     if (req.method === "GET") { const since = +(url.searchParams.get("since") || 0) || 0; const box = inboxAll(); return json(res, 200, {last: box.last, notes: box.notes.filter(n => n.id > since)}); }
     if (req.method === "POST") {
@@ -440,7 +553,7 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/v1/status") { // "what Claude Code is doing" — GET for the app's poll, POST from --status or a session announcing a step
-    if (req.method === "GET") { const box = statusAll(); return json(res, 200, {now: box.now, recent: box.recent, terminal: terminalReachable()}); } // terminal: the app shows ⌨ Terminal only while a session reads it
+    if (req.method === "GET") { const box = statusAll(); return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(), sessions: true, quota: lastQuota}); } // terminal: the app shows ⌨ Terminal only while a session reads it; sessions/quota: gates Compact + the usage line + the plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       const box = statusSet(b && b.text);

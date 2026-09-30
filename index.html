@@ -1685,7 +1685,8 @@
       <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, a small chip at the top right always says what the terminal's Claude Code is doing — <b>Claude: working: …</b> or <b>Claude: idle</b> — refreshed every 10 seconds; tap it for the last ten steps with their times and the latest commits. The same line sits at the top of every ✦ AI tab and in ⏳ Jobs. Without the bridge (LM Studio, no AI) none of it appears.</dd>
       <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a <code>(screenshot: …)</code> line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.</dd>
       <dt>⌨ Terminal tab</dt><dd>The ⌨ Terminal tab in ✦ AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. 📷 works the same. If the Mac can't be reached, the message goes back into the box.</dd>
-      <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved).</dd>
+      <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved) — on the Claude Code bridge it also tells the Mac to really start over: without this, the same long-running Claude session kept being resumed underneath a cleared-looking chat.</dd>
+      <dt>Session usage and Compact</dt><dd>On the Claude Code bridge, a small line under ✦ AI's tab strip says <b>"N turns · ~Nk tokens · $N.NN"</b> for the chat you're in (♪ this song or ✦ Ask — not ⌨ Terminal, which has no session of its own), refreshed after every reply and whenever you switch tabs; past 40 turns it adds <b>"— long, Compact saves tokens"</b>. Tap <b>Compact</b> beside Clear chat (in-app confirm) to have the bridge summarize this chat's memory on the Mac and shrink it — the status line then reads <b>"compacted: 172 → 1 turns · ~24k → ~3k tokens"</b>, the exact before/after the Mac measured. Compact only affects the Mac's memory of the conversation, never your saved messages or the .ask.md log. The <b>plan usage</b> line in ✦ AI's Recent (tap the <b>Now:</b> strip) shows this account's own subscription usage — this session and this week — when the bridge has seen it.</dd>
       <dt>Where the model runs</dt><dd>File → Settings… → <b>AI model</b>. <b>In this browser</b>: pick a small model (0.4–4 GB), the first Ask downloads it once and it runs on this device's GPU, nothing leaves the device; Test checks WebGPU and whether it's downloaded. <b>On a server</b>: the URL of an OpenAI-compatible server — LM Studio or Ollama on this computer (<code>http://localhost:1234</code>) or on another machine on your network — plus an optional API key; <b>Test</b> lists the server's models, picks one (your last pick if the server still has it), saves, and names exactly what's wrong when it can't (server off, CORS not enabled, https page talking to an http server, no answer in 8 s). On an iPad the server must be https (Tailscale Serve). The first time you point it at a machine other than this one, it asks once before sending your notes there.</dd>
       <dt>Settings save themselves</dt><dd>Every Settings field saves itself the moment you leave it — there is no Save button and closing never loses anything.</dd>
       <dt>Asking it to act</dt><dd>"put an F#m chord annotation on 21.1", "mark bars 6–12 as section A", "set a tempo of 192 at bar 6" — it writes exactly that annotation (unsynced, with a ✕ in the Publish sheet like your own). "compare this to ambush" makes it read that song's notes and annotations from the repo.</dd>
@@ -2002,6 +2003,7 @@
     </div>
     <div class="status" id="asknowstrip" style="display:none;cursor:pointer" role="button" tabindex="0" aria-label="What Claude Code is doing — tap for recent"></div>
     <div id="asknowrecent" style="display:none"></div>
+    <div class="status" id="asksessionline" style="display:none"></div>
     <div id="asklog"></div>
     <div class="chiprow" id="asktakes"></div>
     <div class="row" id="askspanrow">
@@ -2029,6 +2031,7 @@
     <div class="row">
       <span class="status" id="askstatus" style="flex:1"></span>
       <button id="askstop" style="display:none">■ Stop reply</button>
+      <button id="askcompact" style="display:none" title="Summarize this chat's memory on the bridge and shrink it">Compact</button>
       <button id="askclear">Clear chat</button>
     </div>
   </div>
@@ -18703,7 +18706,7 @@ const ASK_GENERAL_LOG = "ask/general.ask.md";
 // UI (askGeneral stays true: no span row, no Fill), with its own store.
 const ASK_TERMINAL_KEY = "ff1roll-ask-terminal";
 let askGeneral = false, askTerminal = false;
-let askCaps = {bridge: false, terminal: false}; // what the configured backend can do (askStatusPoll detects; askTabsApply shows)
+let askCaps = {bridge: false, terminal: false, sessions: false}; // what the configured backend can do (askStatusPoll detects; askTabsApply shows). sessions: the bridge's Clear-really-resets/Compact/usage-line trio (askSessionRender gates on it)
 try { const m = localStorage.getItem("ff1roll-ask-mode"); askTerminal = m === "terminal"; askGeneral = askTerminal || m === "general"; } catch (err) { askGeneral = askTerminal = false; }
 function askSetMode(mode) { // "terminal" | "song" | "general" (a boolean still means general/song)
   if (mode === true) mode = "general"; else if (mode === false) mode = "song";
@@ -18927,6 +18930,11 @@ let askStatusNo = ""; // the url that answered 404 (no /v1/status there)
 let askStatusRecentOpen = false;
 let askStatusCommits = null; // cached commit subjects, or null before the first fetch
 let askStatusCommitsAt = 0;
+// Plan-quota % (open-items.md "NEXT: AI SESSION CONTROLS" #4): every turn's
+// stream-json already carries it (a rate_limit_event line, free — no extra
+// "/usage" call), so the bridge just remembers the last one and hands it back
+// on /v1/status. {fiveHour:{pct,resetsAt}, sevenDay:{pct,resetsAt}} | null.
+let askQuota = null;
 function askAgeText(t) { // "3m ago" — coarse, no need for seconds precision once past a minute
   const s = Math.max(0, Math.round((Date.now() - (t || 0)) / 1000));
   if (s < 60) return s + "s ago";
@@ -18939,15 +18947,17 @@ async function askStatusPoll() {
   const url = aiUrl();
   if (askStatusNo === url) return;
   let r;
-  try { r = await fetch(url + "/v1/status", {headers: aiHeaders(), cache: "no-store"}); } catch (err) { askCaps = {...askCaps, terminal: false}; askTabsApply(); return; } // bridge down: no one to read the Terminal tab
-  if (r.status === 404) { askStatusNo = url; askStatusNow = null; askCaps = {bridge: false, terminal: false}; askStatusRender(); askTabsApply(); return; }
+  try { r = await fetch(url + "/v1/status", {headers: aiHeaders(), cache: "no-store"}); } catch (err) { askCaps = {...askCaps, terminalLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
+  if (r.status === 404) { askStatusNo = url; askStatusNow = null; askCaps = {bridge: false, terminal: false, sessions: false}; askStatusRender(); askTabsApply(); askSessionRender(); return; }
   if (!r.ok) return;
   let j; try { j = await r.json(); } catch (err) { return; }
   askStatusNow = (j && j.now) || null;
   askStatusRecent = (j && j.recent) || [];
-  askCaps = {bridge: true, terminal: !!(j && j.terminal)};
+  askQuota = (j && j.quota) || null;
+  askCaps = {bridge: true, terminal: !!(j && j.terminal), terminalLive: !!(j && (j.terminalLive !== undefined ? j.terminalLive : j.terminal)), sessions: !!(j && j.sessions)};
   askStatusRender();
   askTabsApply();
+  askSessionRefresh();
 }
 // which chat tabs this setup can use (Josh, 2026-09-29: "not everyone can
 // support the new tabs"). Detected, never a setting: ⌨ Terminal only while
@@ -18964,6 +18974,59 @@ function askTabsApply() {
   if (t) t.style.display = v.terminal ? "" : "none";
   if ((askTerminal && !v.terminal) || (askGeneral && !askTerminal && !v.general)) { askSetMode("song"); if (asksheet.classList.contains("on")) askRender(); }
 }
+// ---- AI session controls (open-items.md "NEXT: AI SESSION CONTROLS",
+// 2026-09-30, Josh via Ask: "the same Claude session keeps being resumed and
+// growing"). Only with the Claude Code bridge (askCaps.sessions, from
+// /v1/status — never LM Studio/Ollama) and never on the ⌨ Terminal tab (that
+// queue has no per-chat Claude Code session of its own). One cache per chat
+// key so switching tabs shows the right numbers without re-fetching every
+// render; refreshed on open, after each reply lands, and on tab switch.
+let askSessionCache = {}; // key → {turns, tokens, cost, lastCompact} | null (never fetched)
+function askSessionLine(u) {
+  const k = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n);
+  let s = u.turns + " turn" + (u.turns === 1 ? "" : "s") + " · ~" + k(u.tokens) + " tokens" + (u.cost ? " · $" + u.cost.toFixed(2) : "");
+  if (u.turns > 40) s += " — long, Compact saves tokens";
+  return s;
+}
+function askCompactModelName() { const m = /^claude-code-(opus|sonnet|haiku|fable)$/.exec(askModelName()); return m ? m[1] : undefined; } // the bridge's compact runs the Claude CLI directly — it wants "opus", not "claude-code-opus"; plain "claude-code" omits it, so the bridge's own default model applies
+function askSessionRender() {
+  const line = document.getElementById("asksessionline"), btn = document.getElementById("askcompact");
+  const show = askCaps.bridge && askCaps.sessions && !askTerminal && song;
+  if (line) line.style.display = show ? "" : "none";
+  if (btn) btn.style.display = show ? "" : "none";
+  if (!show) return;
+  const u = askSessionCache[askSessionName()];
+  if (line) line.textContent = u ? askSessionLine(u) : "";
+  if (btn) btn.disabled = !u || !u.turns;
+}
+async function askSessionRefresh() {
+  if (!askCaps.bridge || !askCaps.sessions || askTerminal || !song) { askSessionRender(); return; }
+  const key = askSessionName();
+  try {
+    const r = await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key), {headers: aiHeaders(), cache: "no-store"});
+    if (!r.ok) return;
+    askSessionCache[key] = await r.json();
+  } catch (err) { return; } // unreachable right now: keep showing the last numbers we had
+  askSessionRender();
+}
+document.getElementById("askcompact").addEventListener("click", async () => {
+  const key = askSessionName();
+  const u = askSessionCache[key];
+  if (!u || !u.turns) return;
+  const yes = await appConfirm("Compact chat", "Summarize this chat's memory on the bridge and shrink it — " + askSessionLine(u) + " now. This can't be undone.", "Compact", "Cancel");
+  if (!yes) return;
+  const btn = document.getElementById("askcompact");
+  btn.disabled = true;
+  askstatus.textContent = "compacting…";
+  try {
+    const r = await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key) + "/compact", {method: "POST", headers: aiHeaders(), body: JSON.stringify({model: askCompactModelName()})});
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j.error && j.error.message) || "HTTP " + r.status);
+    const k = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n);
+    askstatus.textContent = "compacted: " + j.turnsBefore + " → " + j.turnsAfter + " turns · ~" + k(j.tokensBefore) + " → ~" + k(j.tokensAfter) + " tokens";
+  } catch (err) { askstatus.textContent = "⚠ Compact failed — " + err.message; }
+  await askSessionRefresh();
+});
 function askStatusIdle() { return !askStatusNow || !askStatusNow.text || /^idle\b/i.test(askStatusNow.text); }
 function askStatusLine() { // "working: …" or "idle", from the bridge's current line
   if (askStatusIdle()) return "idle" + (askStatusNow && askStatusNow.text && /^idle\W+(.+)/i.test(askStatusNow.text) ? " — " + askStatusNow.text.replace(/^idle\W+/i, "") : "");
@@ -18974,7 +19037,8 @@ function askStatusRender() {
   if (strip) { // every tab, whenever the bridge is there (was the song-free chat only)
     const show = askCaps.bridge;
     strip.style.display = show ? "" : "none";
-    if (show) strip.textContent = "Claude Code " + askStatusLine() + (askStatusNow && askStatusNow.t ? " · " + askAgeText(askStatusNow.t) : "");
+    if (show) strip.textContent = (askTerminal && askCaps.terminal && !askCaps.terminalLive ? "queued — the terminal is busy; your message waits. " : "") +
+      "Claude Code " + askStatusLine() + (askStatusNow && askStatusNow.t ? " · " + askAgeText(askStatusNow.t) : "");
     if (!show) askStatusRecentShow(false);
   }
   const chip = document.getElementById("nowchip");
@@ -18999,6 +19063,15 @@ function askStatusRecentShow(on) {
   el.style.display = on ? "" : "none";
   if (!on) return;
   el.innerHTML = "";
+  if (askQuota && (askQuota.fiveHour || askQuota.sevenDay)) { // plan-quota %: this account's own usage, not this song's — shown once, in Recent
+    const d = document.createElement("div");
+    d.className = "asknowitem";
+    const parts = [];
+    if (askQuota.fiveHour) parts.push(askQuota.fiveHour.pct + "% this session");
+    if (askQuota.sevenDay) parts.push(askQuota.sevenDay.pct + "% this week");
+    d.textContent = "plan usage: " + parts.join(" · ");
+    el.appendChild(d);
+  }
   for (const n of askStatusRecent.slice().reverse()) {
     const d = document.createElement("div");
     d.className = "asknowitem";
@@ -19298,6 +19371,7 @@ function askFail(jobId, note, key) { // no reply will come: keep the question, s
 // footer gets a gold ✦ badge, the ⚠ way: it stays until tapped, and the info
 // strip says so once. Tapping opens Ask.
 function askLanded(key, failed) {
+  askSessionRefresh(); // a turn just landed on the bridge: its usage/turns grew
   if (asksheet.classList.contains("on") && key === askStoreKey()) { askRender(); return; }
   const b = document.getElementById("askreplybtn");
   b.style.display = "";
@@ -20277,6 +20351,7 @@ function openAsk() {
   askTabsApply(); // Settings may have changed the backend since
   askInboxPoll();
   askStatusPoll();
+  askSessionRefresh();
   askRender();
   askRefresh();
   askRefreshTarget();
@@ -20296,7 +20371,7 @@ document.getElementById("askbtn").addEventListener("click", openAsk);
 for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
   if ((askTerminal ? "terminal" : askGeneral ? "general" : "song") === mode) return;
   askSetMode(mode);
-  askRender(); askRefresh(); askRefreshTarget();
+  askRender(); askRefresh(); askRefreshTarget(); askSessionRefresh();
 });
 document.getElementById("asknowstrip").addEventListener("click", askStatusToggle);
 document.getElementById("askreplybtn").addEventListener("click", openAsk);
@@ -20305,10 +20380,27 @@ document.getElementById("askclear").addEventListener("click", async () => { // C
   const n = askUnsavedCount();
   if (n && !(await appConfirm("Clear chat", n + " message" + (n === 1 ? " is" : "s are") + " not in the repo yet — Save the song first to keep " + (n === 1 ? "it" : "them") + ". Clear anyway?", "Clear", "Keep"))) return;
   localStorage.removeItem(askStoreKey()); askRender(); updateSongBtn();
+  // Clear really resets (open-items.md "NEXT: AI SESSION CONTROLS" #1, Josh:
+  // "the app's Clear chat only clears this device's log and never tells the
+  // bridge, so the same Claude session keeps being resumed and growing"):
+  // drop the bridge's session id too, when the backend is the bridge —
+  // best-effort, never blocks the local clear above
+  if (askCaps.bridge && askCaps.sessions && !askTerminal) {
+    const key = askSessionName();
+    delete askSessionCache[key];
+    try { await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key), {method: "DELETE", headers: aiHeaders()}); } catch (err) { /* the local clear already happened; the bridge just keeps resuming the old one */ }
+    askSessionRender();
+  }
 });
 document.getElementById("asksend").addEventListener("click", askSend);
 document.getElementById("askstop").addEventListener("click", () => { if (askBusy) askBusy.abort(); });
-function askMicOff() { if (micBtn === document.getElementById("askmic")) micStop(true); } // Send clears the box: a late result must not refill it
+function askMicOff() { // Send clears the box: a late result must not refill it
+  if (micBtn === document.getElementById("askmic")) micStop(true);
+  // ■ Stop leaves the stopped session's onresult attached (Safari's final
+  // words arrive after stop) — a Send right after it must silence that too,
+  // or the late transcript lands in the emptied box (Josh, 2026-09-30)
+  if (micPrev) { micPrev.onresult = null; try { micPrev.abort(); } catch (err) { /* already gone */ } micPrev = null; }
+}
 function askGrow() { // size the box to its text (CSS caps it) and keep the end in view
   askinput.style.height = "auto";
   askinput.style.height = askinput.scrollHeight + "px";
