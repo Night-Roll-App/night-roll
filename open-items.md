@@ -11,24 +11,15 @@ Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     Welcoming of Maester Mika). Published or fresh — which is right?
 Q2. (ASK LATER) Archive move: make the archive token (resource owner
     joshcough, only the archive repo, Contents read+write) and say "go".
-Q4. Captures: LOCKED + "✎ Make it mine" (recommended: the edit button on
-    a capture makes your own editable copy in one tap, no form — tempo
-    bakes, everything is yours; the capture stays the faithful game
-    recording; you'd only hear edits on synth anyway, since captures play
-    the game's own sound) — or YOURS IN PLACE (edit the capture itself; a
-    re-capture restores — unreliable: 6 rips aren't on the Mac, and FFX
-    shows the pipeline can shift pitches)? Plan: docs/provenance-plan.md.
 Q5. May I add a redirect so the bare address night-roll-app.github.io
     lands on the app? (One tiny public repo in the org,
     Night-Roll-App.github.io, holding a redirect page.) Answered part: the
     "site down" was the bare address without /night-roll/.
-Q6. Imported MIDI files: editable with tempo baking, like a copy
-    (recommended, and today's behaviour) — or locked like a capture?
 Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
 for build 3.
-DONE: Q8 — yes (2026-09-30): the machine-written "forked from"/"moved from" notes move into the v2 origin header; he approved fixing the 6 files ("I would like to fix the songs") — done in the P5 batch migration so the origin is kept, not lost. Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
+DONE: Q4 — yes (2026-09-30): captures stay locked (notes/tracks); annotating them directly is unchanged; "✎ Make it mine" makes an editable copy in one tap at a new path (my-covers/overworld.mid; a clash → "Overworld 2"). Q6 — yes: imports edit like copies (tempo + meter bake; the file's own labels written back verbatim). Q8 — yes (2026-09-30): the machine-written "forked from"/"moved from" notes move into the v2 origin header; he approved fixing the 6 files ("I would like to fix the songs") — done in the P5 batch migration so the origin is kept, not lost. Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
 his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
 own songs; "Publish all" = one publish per song; explicit song origins.
 
