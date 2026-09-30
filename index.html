@@ -3673,6 +3673,7 @@ function saveLocalNotes() {
   if (local.length) localStorage.setItem(notesStoreKey(), JSON.stringify(local));
   else localStorage.removeItem(notesStoreKey());
   updateSyncBtn();
+  if (typeof updateSongBtn === "function") updateSongBtn(); // the ● counts unpublished annotations (songUnsaved)
 }
 function dirtySongs() { // songs with unsynced local notes on this device
   return Object.keys(localStorage)
@@ -15413,7 +15414,7 @@ function pushVersion(key, label) {
 }
 function songUnsaved() { // what the ● means: "not published yet" — only Publish clears it; Save Version never does
   if (!song || !isComposition()) return false;
-  return songDirtyFlag();
+  return songDirtyFlag() || localStorage.getItem("ff1roll-notes-" + songKey) !== null; // unpublished annotations count too: a tempo note changes what Publish bakes into the .mid
 }
 function saveVersion(quiet) { // File → Save Version / ⌘S
   if (song && isUnsaved(songKey)) { if (!quiet) openSaveForm("save"); return false; } // first Save Version of an Untitled song: folder + name first

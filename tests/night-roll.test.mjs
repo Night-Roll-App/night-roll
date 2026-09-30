@@ -4320,6 +4320,11 @@ test("Versions (Model B): autosave is always on; Save Version snapshots music + 
   assert.equal(val(`songUnsaved()`), true, "not published yet");
   assert.equal(val(`saveVersion(true)`), true);
   assert.equal(val(`songUnsaved()`), true, "Save Version never clears the ●");
+  run(`localStorage.setItem("ff1roll-draft-" + songKey, JSON.stringify({dirty: false}));`);
+  assert.equal(val(`songUnsaved()`), false, "clean music, no local annotations");
+  run(`localStorage.setItem("ff1roll-notes-" + songKey, "[]");`);
+  assert.equal(val(`songUnsaved()`), true, "an unpublished annotation (a tempo note bakes into the .mid) shows the ● too");
+  run(`localStorage.removeItem("ff1roll-notes-" + songKey); saveDraft(false);`);
   assert.equal(val(`readVersions(songKey).length`), 1);
   assert.equal(val(`readVersions(songKey)[0].label`), "Version 1");
   assert.equal(val(`readVersions(songKey)[0].draft.tracks[0].notes.length`), 1);
