@@ -524,6 +524,16 @@ drafting 2–3 models for his ruling — build nothing until he picks. Next
 tier: iPad CoreMIDI plugin (Web MIDI already works in desktop browsers —
 his son used it on a MacBook), record without snapping, Quantize.
 
+## AWAITS JOSH'S EAR: other apps' audio (2026-09-30)
+YouTube stopped the moment he switched to Night Roll: the page asked
+WebKit for a "playback" audio session (doesn't mix) when the audio engine
+was created on the first tap. Now "ambient" (mixes) until Play or the
+metronome, "playback" while playing, back to "ambient" on Stop (not
+mid-album, not off-screen). Test: YouTube playing → open Night Roll (keeps
+playing) → Play (YouTube pauses) → Stop. ALSO re-check background play
+(lock the iPad mid-album). If audio goes wrong: revert this one commit
+(iPad audio known-good rule).
+
 ## NEXT (after session controls): MODEL PICKERS IN THE ⌨ TERMINAL TAB (Josh, 2026-09-30)
 "I should also have the ability to change the model from here … the
 advisor's model and any sub task models." Two pickers in the Terminal

@@ -5093,10 +5093,17 @@ test("chip render: published PCM becomes AudioBuffers at once and the Float32 co
   } finally { run(`delete globalThis.AudioBuffer; chip.pcm = null; chip.buffers = null; chip.key = null;`); }
 });
 
-test("audio: the page asks WebKit for a 'playback' audio session before its AudioContext, so iOS keeps playing off-screen", () => {
-  const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const i = src.indexOf('navigator.audioSession.type = "playback"'), j = src.indexOf("audio = new (window.AudioContext || window.webkitAudioContext)()");
-  assert.ok(i > 0 && j > i, "set before the context is created");
+test("audio session: 'ambient' (mixes with YouTube etc.) until Night Roll plays; 'playback' while playing or clicking (so iOS keeps it going off-screen); back to ambient on Stop — not mid-album, not off-screen", () => {
+  run(`globalThis.__navAS = navigator.audioSession; navigator.audioSession = {type: "auto"};`);
+  try {
+    run(`audioSessionType("ambient");`);
+    assert.equal(val(`navigator.audioSession.type`), "ambient");
+    const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    const i = src.indexOf('audioSessionType("ambient");\n  audio = new'), j = src.indexOf('audioSessionType("playback"); // now Night Roll is the music');
+    assert.ok(i > 0, "ambient is set before the context is created");
+    assert.ok(j > src.indexOf("async function play("), "play() asks for playback");
+    assert.match(src, /if \(!albumRun && !document\.hidden && !met\.on\) audioSessionType\("ambient"\)/, "Stop mixes again, but not mid-album or off-screen");
+  } finally { run(`navigator.audioSession = __navAS;`); }
 });
 
 test("⚠ log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on", () => {

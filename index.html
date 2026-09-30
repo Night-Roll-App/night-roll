@@ -6527,6 +6527,7 @@ function warmContext() { // one silent sample: absorbs the fresh context's glitc
   src.connect(master);
   src.start();
 }
+function audioSessionType(t) { try { if (navigator.audioSession && navigator.audioSession.type !== t) navigator.audioSession.type = t; } catch (err) { console.log("[audio] audioSession: " + err.message); } }
 function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // glitches the first render quantum of a fresh context. But a context iOS
   // has killed (state "closed") can never come back: rebuild + re-warm.
@@ -6540,7 +6541,11 @@ function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // (the shell's AVAudioSession .playback and its audio background mode were
   // not enough — Josh, 2026-09-28, Chrono Trigger stopped on leaving).
   // "playback" is a music player's session: it keeps going off-screen.
-  try { if (navigator.audioSession && navigator.audioSession.type !== "playback") navigator.audioSession.type = "playback"; } catch (err) { console.log("[audio] audioSession: " + err.message); }
+  // …but only while Night Roll actually PLAYS (Josh, 2026-09-30: switching
+  // in from YouTube stopped it at once — "playback" doesn't mix, and the
+  // context is made on the first tap anywhere). Idle and note previews:
+  // "ambient", which mixes; play() / the metronome ask for "playback".
+  audioSessionType("ambient");
   audio = new (window.AudioContext || window.webkitAudioContext)();
   audio.onstatechange = () => { logDebug("audio state: " + (audio && audio.state) + (document.hidden ? " (app hidden)" : "")); if (audio && audio.state === "closed") logErr("audio engine closed by the system — tap ▶ to rebuild it"); };
   master = audio.createGain();
@@ -9393,6 +9398,7 @@ async function play(fromSec = 0, opts = {}) {
   }
   const gen = ++play.gen; // a later play() supersedes this one while it waits below
   ensureAudio();
+  audioSessionType("playback"); // now Night Roll is the music: other apps pause, and it keeps playing off-screen
   await resumeAudio(); // await: scheduling against a frozen clock builds a stale time base
   if (gen !== play.gen) return;
   // the console's voice is still rendering on this thread (Josh, 2026-09-27,
@@ -9578,6 +9584,10 @@ function stop() {
   if (!playing) { draw(); return; }
   playCursor = secToTick(song, playSec());
   playing = false;
+  // back to mixing — except mid-album (the next song's play() follows at once)
+  // or off-screen (an "ambient" session is silenced there, and that is where
+  // background album play lives), or while the click is running
+  if (!albumRun && !document.hidden && !met.on) audioSessionType("ambient");
   chipStopSrcs();
   audioStopSrcs(); // a 3-minute clip would otherwise keep rendering into a disconnected gain
   clearInterval(schedTimer);
@@ -10879,6 +10889,7 @@ function ensureMetGain() {
 }
 async function metStart() {
   ensureAudio();
+  audioSessionType("playback");
   await resumeAudio();
   ensureMetGain();
   met.on = true;
@@ -10891,6 +10902,7 @@ async function metStart() {
 }
 function metHalt() {
   met.on = false;
+  if (!playing && !document.hidden) audioSessionType("ambient");
   clearInterval(metTimer);
   document.getElementById("metgo").textContent = "▶ Start";
   document.getElementById("metbtn").classList.remove("active");
