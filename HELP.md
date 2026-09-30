@@ -30,7 +30,7 @@ The score stops zooming out where its busiest bar would overflow — engraved no
 ## Playback
 
 **▶ Play / ■ Stop**
-NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them). While a song is still loading its sound — the console's voice, game or SoundFont instruments, a recording — ▶ shows **⏳ 42%** and waits; it turns back into ▶ Play when everything is ready (a load that fails lets you play anyway and says why).
+NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them). While a song is still loading its sound — the console's voice, game or SoundFont instruments, a recording — ▶ shows **⏳ 42%** and waits; tap it then and it plays **by itself the moment the sound is ready** (tap again to cancel); a load that fails lets you play anyway and says why.
 
 **Playing in the background**
 In the installed iPad app, music keeps playing when you leave the app or lock the screen: start a song or an album, then switch away. Come back to see where it is.

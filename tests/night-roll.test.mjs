@@ -5216,17 +5216,20 @@ test("chip: Play right after a launch waits while the console file is still bein
   run(`stop();`);
 });
 
-test("▶ waits for the song: disabled with a percentage while the console voice renders, a tap does nothing, then back to ▶ Play (Josh, 2026-09-29)", () => {
+test("▶ waits for the song: a percentage while the console voice renders; a tap queues the play, a second cancels; loaded → it plays by itself (Josh, 2026-09-30)", () => {
   installSong();
   run(`songKey = "albums/test/gate.mid"; chip.rendering = null; chip.resolving = null; playing = false;`);
   assert.equal(val(`playGate()`), null, "nothing loading: no gate, no flash");
   run(`chip.rendering = songKey; chip.progress = 0.42; playGateKick(); playGateSince -= 1000; playGateTick();`);
-  assert.equal(val(`document.getElementById("playbtn").disabled`), true);
+  assert.equal(val(`document.getElementById("playbtn").classList.contains("loading")`), true);
   assert.equal(val(`document.getElementById("playbtn").textContent`), "⏳ 42%");
   run(`globalThis.__played = 0; globalThis.__realPlay = play; play = async () => { __played++; }; document.getElementById("playbtn").dispatchEvent({type: "click"});`);
-  assert.equal(val(`__played`), 0, "a tap while loading does not queue a play");
-  run(`chip.rendering = null; playGateTick();`);
-  assert.equal(val(`document.getElementById("playbtn").disabled`), false);
+  assert.equal(val(`__played`), 0, "a tap while loading doesn't play yet…");
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "⏳ 42% · will play", "…it queues");
+  run(`document.getElementById("playbtn").dispatchEvent({type: "click"});`);
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "⏳ 42%", "a second tap cancels");
+  run(`document.getElementById("playbtn").dispatchEvent({type: "click"}); chip.rendering = null; playGateTick();`);
+  assert.equal(val(`__played`), 1, "loaded: the queued play starts by itself");
   assert.equal(val(`document.getElementById("playbtn").textContent`), "▶ Play");
   run(`play = __realPlay; clearInterval(playGateTimer); playGateTimer = null;`);
 });

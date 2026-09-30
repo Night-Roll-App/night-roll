@@ -164,6 +164,7 @@
   .lcdseg.tappable:active { background: var(--panel); border-radius: 5px; }
   #timectl { display: flex; align-items: center; gap: 10px; padding-right: 12px; flex: none; margin-top: 6px; min-height: 44px; }
   #timectl #metbtn { min-height: 34px; padding: 4px 10px; }
+  #playbtn.loading { opacity: 0.7; } /* loading its sound: tappable (queues the play), not yet ▶ */
   #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 12px; }
   select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; min-width: 74px; }
@@ -1544,7 +1545,7 @@
     </div>
     <div class="hsec" data-hsec="playback">
     <dl>
-      <dt>▶ Play / ■ Stop</dt><dd>NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them). While a song is still loading its sound — the console's voice, game or SoundFont instruments, a recording — ▶ shows <b>⏳ 42%</b> and waits; it turns back into ▶ Play when everything is ready (a load that fails lets you play anyway and says why).</dd>
+      <dt>▶ Play / ■ Stop</dt><dd>NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them). While a song is still loading its sound — the console's voice, game or SoundFont instruments, a recording — ▶ shows <b>⏳ 42%</b> and waits; tap it then and it plays <b>by itself the moment the sound is ready</b> (tap again to cancel); a load that fails lets you play anyway and says why.</dd>
       <dt>Playing in the background</dt><dd>In the installed iPad app, music keeps playing when you leave the app or lock the screen: start a song or an album, then switch away. Come back to see where it is.</dd>
       <dt>💿 Play album</dt><dd>In File → Open…, every album has a <b>💿 Play album</b> row at the top (it starts from the song you have open when that song is in the album). The album plays straight through like a record — each song gets its intro plus two passes of its loop, fades, and the next one loads (the console's own sound is waited for while it renders) — and wraps around to the first song forever. While it plays, a 💿 strip under the transport shows <b>3/19</b>, the song, and what's next, with <b>⏮ Prev</b>, <b>⏭ Next</b>, and <b>✕</b> to leave. ▶, ■, ⏮ and Space work on the current song exactly as always (■ just pauses the album; ▶ picks it back up). Picking another song, ●, or Download audio also leaves. No dialog will interrupt a run: a song with a newer save on the repo plays from this device's draft and says so. Editing while it plays is fine. Keep the screen on — locking the iPad pauses it, and unlocking picks up where it stopped. While a run is on, the address bar carries it too (<code>?album=</code>) — opening that link reopens with the strip up, run armed, same song selected, and nothing playing yet; the first ▶ plays it as an album pass, same as picking 💿 Play album.</dd>
       <dt>⏱ Metronome</dt><dd><b>Tap ⏱ to turn the click on or off</b>; <b>⚙</b> beside it opens the settings. Any meter (1–12 over 2/4/8/16 — bpm counts the denominator beat), tap each beat cell to cycle accent → normal → silent, subdivisions in 2/3/4, slider or tap-tempo. Three modes: <b>free-running</b> (its own clock); <b>follow song</b> — clicks ride the song's own grid, phase-perfect on the declared meter through tempo changes, speed slider, and loops; <b>trial meter</b> — click a meter of YOUR choosing over the real music to A/B candidates by ear (the "shift accents" ‹ › slides the pattern's starting beat, since a right meter can sit offset). Settings stick.</dd>
@@ -3655,6 +3656,7 @@ function setSong(parsed, key) {
   selClip = null;
   stretchCache.clear(); // stretched takes belong to one song
   editUndo = []; // undo history belongs to ONE song — stale entries would mutate the wrong notes
+  playGateTick.queued = false; // a play queued while the last song loaded is not for this one
   trackState = song.tracks.map(() => ({muted: false, solo: false}));
   selTrack = 0;
   loadEdits();
@@ -8590,17 +8592,24 @@ function playGateActive() { return !playing && !!playGate(); }
 function playGateTick() {
   const btn = document.getElementById("playbtn");
   const g = playing ? null : playGate(), late = Date.now() - playGateSince;
-  if (g && late > PLAY_GATE_MAX) logErr("still loading " + g.what + " after " + PLAY_GATE_MAX / 1000 + " s — ▶ is on anyway (synthesized voices where it isn't ready)");
-  if (g && late <= PLAY_GATE_MAX) {
+  const timedOut = g && late > PLAY_GATE_MAX;
+  if (timedOut) { logErr("still loading " + g.what + " after " + PLAY_GATE_MAX / 1000 + " s — ▶ is on anyway (synthesized voices where it isn't ready)"); playGateTick.queued = false; }
+  if (g && !timedOut) {
     if (late < PLAY_GATE_GRACE) return;
-    btn.disabled = true;
-    btn.textContent = "⏳ " + Math.round(g.pct * 100) + "%";
-    btn.title = "loading " + g.what + " — ▶ Play when it's ready";
+    // not .disabled: a tap while loading QUEUES the play (Josh, 2026-09-30:
+    // "it should start by itself the moment loading finishes"); tap again to cancel
+    btn.classList.add("loading");
+    btn.textContent = "⏳ " + Math.round(g.pct * 100) + "%" + (playGateTick.queued ? " · will play" : "");
+    btn.title = "loading " + g.what + (playGateTick.queued ? " — plays when ready (tap to cancel)" : " — tap to play when it's ready");
     playGateShown = true;
     return;
   }
   clearInterval(playGateTimer); playGateTimer = null;
-  if (playGateShown) { playGateShown = false; btn.disabled = false; btn.title = ""; if (!playing) btn.textContent = "▶ Play"; }
+  if (playGateShown) {
+    playGateShown = false; btn.classList.remove("loading"); btn.title = ""; if (!playing) btn.textContent = "▶ Play";
+    if (playGateTick.queued && !playing && song) { playGateTick.queued = false; play(playCursor > 0 ? tickToSec(song, playCursor) : 0); }
+  }
+  playGateTick.queued = false;
 }
 async function playGateWait(capMs) { // album advance: the same gate, awaited
   playGateKick();
@@ -10519,7 +10528,7 @@ function openSongPicker() {
 }
 document.getElementById("playbtn").addEventListener("click", () => {
   if (!song) return; // first song still fetching
-  if (!playing && playGateShown) return; // loading: a tap does not queue a play (Josh: it sounded bad)
+  if (!playing && playGateShown) { playGateTick.queued = !playGateTick.queued; playGateTick(); return; } // loading: the tap queues (or cancels) the play; it starts when the sound is ready
   playing ? stop() : play(playCursor > 0 ? tickToSec(song, playCursor) : 0); // in an album run this is pause/resume — the run stays
 });
 document.getElementById("rwbtn").addEventListener("click", () => {
