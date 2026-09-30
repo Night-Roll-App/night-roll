@@ -38,7 +38,7 @@ test.describe("local folder mode", () => {
       await saveSongAs("compositions/nightroll", "e2e-folder");
       song.tracks[0].notes.push({ t: 0, d: 480, p: 60, v: 80 });
       saveDraft();
-      await commitCompositionNow({ textContent: "" });
+      await publishSong(songKey, ghHeaders("folder"), () => {}); // docs/provenance-plan.md P2: commitCompositionNow -> the one publish function
     });
     const written = await page.evaluate(async k => {
       const mid = await folderRead(k);

@@ -40,6 +40,55 @@ DONE: Q3 — converting his songs' annotation files to v2 is NOT editing
 his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
 own songs; "Publish all" = one publish per song; explicit song origins.
 
+## docs/provenance-plan.md P0 + P2 — DONE 2026-09-30: ONE publish function; the bugs it fixes
+
+`publishSong(key, h, report)` replaces `commitCompositionNow` +
+`publishDraftSong` + the inline annotations-only branch — the Publish
+button and Publish all now call the SAME function for every song, open
+or not (Josh's ruling: "Publish all must behave exactly like publishing
+the open song"). `tests/night-roll.test.mjs` ("Publish: …", 5 new tests)
+pin the fixed behavior; `npm test` green (full suite).
+
+Bugs fixed (docs/provenance-plan.md "Bugs found"):
+- Publish all wrote the un-baked tempo map for a not-open song (the open
+  song's own Publish baked it) — the two diverged. Fixed: `bakeTempos`
+  (pure, lifted out of `finalizeNotes`) runs for every song's publish,
+  open or not, from the draft's stored un-baked base.
+- Publish all re-published a tombstoned (locally-deleted) synced note,
+  because it never subtracted tombstones for a not-open song.
+  `annotationsFor(key)` (factored out of `loadNotes`' merge) does now.
+- Publish all skipped recordings, the README, and the iPad Files mirror
+  for every song but the open one. Fixed: `uploadAudioClipsFor`/
+  `filesMirrorFor` run per song; the README moves to once per JOB
+  (`writeSongsReadme`, called once after the loop) instead of never.
+- A captured-but-not-yet-committed draft in a console folder (not just
+  `albums/imports/`) passed `syncable()`/`dirtySongs()`, so its
+  annotations could try to publish before its .mid existed. Fixed:
+  both now exclude any `isCaptureKey` draft still on this device.
+- An Untitled (`local/`) song's tempo: note never baked into playback —
+  `isComposition()`/`isCompositionKey` require a repo path. New
+  `bakesTempo(key)` (local/ OR his own folder, with a draft) is the
+  playback-baking gate; `isComposition()`/`isCompositionKey` stay the
+  narrower "does this key ever get a .mid PUBLISHED" gate.
+- `musicSig` ignored the tempo map, so a tempo-only edit never
+  republished the .mid. Fixed: `musicSig` now includes it — every
+  EXISTING caller already agreed on the un-baked convention on both
+  sides of its own comparison, so this was safe to widen; `publishSong`
+  passes it the BAKED doc, and stores that under a separate `midSig`
+  field so the (un-baked) `pubSig` the "edited since last save" UI
+  relies on elsewhere is untouched.
+- The tempo-baking ratchet (a removed tempo: note's baked event never
+  went away): `bakeTempos` recomputes from the stored un-baked base on
+  every call, never accumulates — confirmed by a test that publishes,
+  deletes the tempo note, republishes, and checks the baked event is
+  gone, not just stale.
+
+Not done (deferred, matches the plan): P1's stored-origin model (today's
+predicates — `isComposition`/`isCompositionKey`/`bakesTempo` — are used
+as-is); the un-baked base still lives only in the local draft, not the
+file itself (P4's v2 header); "three copies of the editable? test
+disagree" (P1); the tools/ scripts that read the legacy text grammar.
+
 ## IMPORT HUB — DONE 2026-09-29 (docs/import-hub-design.md, Josh: "I still hate the file import line")
 
 All three phases, built exactly to the reviewed design. `npm test` green

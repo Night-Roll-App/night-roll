@@ -7039,3 +7039,180 @@ test("VoiceOver: the roll canvas carries a live aria-label naming the song, view
   assert.match(label, /1 track/);
   assert.match(label, /bars? 1/);
 });
+
+// ---- docs/provenance-plan.md P0/P2: one publish function per song ----
+// publishSong(key, h, report) is the single door both the Publish button and
+// Publish all use, for every song, open or not. Folder mode (no GitHub token,
+// no fetch stubbing) exercises the real reads/writes — folderRead/folderWrite
+// are the same calls a repo publish makes, just to a fake directory.
+function pubApp() { return createApp(); }
+function useFakeFolder(a, name) {
+  a.context.fakeRoot = fakeDir(name);
+  a.run(`fsRoot.handle = fakeRoot; fsRoot.name = ${JSON.stringify(name)}; fsRoot.mode = "picker"; fsRoot.needsGrant = false;`);
+}
+async function folderBytes(a, path) {
+  const f = await a.run(`folderRead(${JSON.stringify(path)})`);
+  return f ? new Uint8Array(await f.arrayBuffer()) : null;
+}
+async function folderText(a, path) {
+  const f = await a.run(`folderRead(${JSON.stringify(path)})`);
+  return f ? await f.text() : null;
+}
+// seeds a composition-shaped draft directly in localStorage — what a PRIOR
+// session's saveDraft would have left for a song that isn't open right now.
+// tempos/tracks default to a fixed two-note tune at a fixed base tempo so
+// every caller gets byte-comparable output.
+function seedDraft(a, key, {tempos, tracks, tempoNoteBpm, source} = {}) {
+  const draft = {dirty: true, savedStamp: 0, ppq: 480, timesig: [4, 4],
+    tempos: tempos || [{tick: 0, usq: 500000, sec: 0}],
+    tracks: tracks || [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}, {t: 480, d: 480, p: 64, v: 90}]}],
+    ...(source ? {source} : {})};
+  a.run(`
+    localStorage.removeItem(draftStoreKey(${JSON.stringify(key)}));
+    localStorage.removeItem("ff1roll-notes-" + ${JSON.stringify(key)});
+    localStorage.removeItem("ff1roll-tombs-" + ${JSON.stringify(key)});
+    localStorage.setItem(draftStoreKey(${JSON.stringify(key)}), ${JSON.stringify(JSON.stringify(draft))});
+  `);
+  if (tempoNoteBpm) a.run(`localStorage.setItem("ff1roll-notes-" + ${JSON.stringify(key)},
+    JSON.stringify([{b1: 1, q1: 1, text: "tempo: " + ${tempoNoteBpm}}]));`);
+}
+// opens KEY live (song/songKey/rollnotes), with the SAME base tune seedDraft
+// uses, an optional pending tempo: annotation, and a draft on this device
+// already (marks it isComposition — the local-copy predicate) — then
+// flushes to the draft the way a real edit session would, so the "open" and
+// "not open" paths start from the identical stored state.
+function openComposition(a, key, {tempoNoteBpm} = {}) {
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}, {t: 480, d: 480, p: 64, v: 90}]}]};
+    songKey = ${JSON.stringify(key)};
+    keyRegions = []; previewSf = null; playCursor = 0;
+    trackState = [{muted: false, solo: false}];
+    localStorage.setItem(draftStoreKey(songKey), "{}"); // marks the local copy as ours (isComposition)
+    rollnotes = [];
+  `);
+  if (tempoNoteBpm) a.run(`
+    const n = resolveNote(deriveNoteTypes([{b1: 1, q1: 1, text: "tempo: " + ${tempoNoteBpm}}])[0]);
+    n.added = true;
+    rollnotes.push(n);
+  `);
+  a.run(`finalizeNotes(); saveLocalNotes(); saveDraft(false);`);
+}
+
+test("Publish: the same song published open and not open — byte-identical .mid and notes.txt, annotations identical but for the stamp", async () => {
+  const KEY = "albums/compositions/nightroll/twin.mid";
+
+  const A = pubApp();
+  useFakeFolder(A, "A");
+  openComposition(A, KEY, {tempoNoteBpm: 150});
+  await A.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const midA = await folderBytes(A, KEY);
+  const annoA = JSON.parse(await folderText(A, "albums/compositions/nightroll/twin.rollnotes.json"));
+  const notesA = await folderText(A, "albums/compositions/nightroll/twin.notes.txt");
+
+  const B = pubApp();
+  useFakeFolder(B, "B");
+  seedDraft(B, KEY, {tempoNoteBpm: 150}); // the SAME song, but never opened this session
+  await B.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const midB = await folderBytes(B, KEY);
+  const annoB = JSON.parse(await folderText(B, "albums/compositions/nightroll/twin.rollnotes.json"));
+  const notesB = await folderText(B, "albums/compositions/nightroll/twin.notes.txt");
+
+  assert.ok(midA && midB, "both runs wrote a .mid");
+  assert.deepEqual([...midA], [...midB], "byte-identical .mid, published open or not");
+  delete annoA.saved; delete annoB.saved;
+  assert.deepEqual(annoA, annoB, "identical annotations, stamp aside");
+  assert.equal(notesA, notesB, "identical notes.txt");
+  // and the tempo: annotation is BAKED into the .mid for his own song (150 bpm = 400000 usq)
+  const tempos = A.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...midA])}).buffer, {trust: true}).tempos)`);
+  assert.deepEqual(JSON.parse(tempos).map(t => t.usq), [Math.round(6e7 / 150)], "the baked map, not the file's base tempo");
+});
+
+test("Publish: a capture's tempo: annotations are observations, never baked — its .mid tempo map is untouched", async () => {
+  const KEY = "albums/nes/mega-man-2/air-man.mid";
+  const a = pubApp();
+  useFakeFolder(a, "cap");
+  // the published capture: two measured tempo events already in the file
+  const capDoc = {ppq: 480, timesig: [4, 4],
+    tempos: [{tick: 0, usq: 500000, sec: 0}, {tick: 960, usq: 400000, sec: 1}],
+    tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
+  const capBytes = a.run(`Array.from(writeMidi(${JSON.stringify(capDoc)}))`);
+  await a.run(`folderWrite(${JSON.stringify(KEY)}, new Uint8Array(${JSON.stringify(capBytes)}))`);
+  // committed: isCaptureKey says so via album.json's nsf block, not a local draft
+  a.run(`albumMetaCache["albums/nes/mega-man-2"] = {nsf: true};`);
+  a.run(`localStorage.setItem("ff1roll-notes-" + ${JSON.stringify(KEY)},
+    JSON.stringify([{b1: 3, q1: 1, text: "tempo: 999"}]));`); // an OBSERVATION, not an authored tempo
+  assert.equal(a.run(`isCaptureKey(${JSON.stringify(KEY)})`), true);
+  assert.equal(a.run(`isCompositionKey(${JSON.stringify(KEY)})`), false, "a capture is never his-song for publish");
+
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const midAfter = await folderBytes(a, KEY);
+  assert.deepEqual([...midAfter], [...capBytes.map(Number)], "the .mid byte-for-byte unchanged — publish never touches a capture's music");
+  const anno = JSON.parse(await folderText(a, "albums/nes/mega-man-2/air-man.rollnotes.json"));
+  assert.ok(anno.notes.some(n => n.bpm === 999), "the tempo: note DID publish as an annotation");
+});
+
+test("Publish: a deleted synced note isn't re-published, and its tombstone clears", async () => {
+  const KEY = "albums/nes/final-fantasy-i/songs/tomb-test.mid"; // an analyzed song: annotations only, no music draft
+  const a = pubApp();
+  useFakeFolder(a, "tomb");
+  const already = '{ "version": 1, "song": "tomb-test", "notes": [\n' +
+    '  {"at":[1,1],"type":"section","label":"Intro"},\n' +
+    '  {"at":[5,1],"type":"section","label":"Verse"}\n] }\n';
+  await a.run(`folderWrite(${JSON.stringify("albums/nes/final-fantasy-i/songs/tomb-test.rollnotes.json")}, ${JSON.stringify(already)})`);
+  // this device deleted "Intro" (a synced note) without adding anything new —
+  // dirtySongs() never even sees this song (no ff1roll-notes- entry), but a
+  // row's own Publish (or Publish all) still reaches it via pendingSongs'
+  // draft-dirty union — publishSong must not need a local addition to push
+  // a deletion.
+  const identity = a.run(`noteIdentity(parseRollnotes(${JSON.stringify(already)})[0])`);
+  a.run(`localStorage.setItem("ff1roll-tombs-" + ${JSON.stringify(KEY)}, JSON.stringify([${JSON.stringify(identity)}]));`);
+
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const anno = JSON.parse(await folderText(a, "albums/nes/final-fantasy-i/songs/tomb-test.rollnotes.json"));
+  assert.deepEqual(anno.notes.map(n => n.label), ["Verse"], "Intro did not come back");
+  assert.equal(a.run(`localStorage.getItem("ff1roll-tombs-" + ${JSON.stringify(KEY)})`), null, "its tombstone cleared — the pushed file IS the post-deletion state");
+});
+
+test("Publish: an Untitled (local/) song's tempo note plays — baking is not limited to songs with a repo path", () => {
+  const a = pubApp();
+  const KEY = "local/untitled-1.mid";
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "lead", notes: []}]};
+    songKey = ${JSON.stringify(KEY)};
+    keyRegions = []; previewSf = null; playCursor = 0;
+    trackState = [{muted: false, solo: false}];
+    localStorage.setItem(draftStoreKey(songKey), "{}");
+    rollnotes = [];
+  `);
+  assert.equal(a.run(`bakesTempo(songKey)`), true, "local/ is his-song for baking, even with no repo path");
+  a.run(`
+    const n = resolveNote(deriveNoteTypes([{b1: 3, q1: 1, text: "tempo: 200"}])[0]);
+    n.added = true;
+    rollnotes.push(n);
+    finalizeNotes();
+  `);
+  const tempos = JSON.parse(a.run(`JSON.stringify(song.tempos)`));
+  assert.ok(tempos.some(t => t.usq === Math.round(6e7 / 200)), "the tempo: note baked into PLAYBACK — song.tempos — for an Untitled song too");
+});
+
+test("Publish: removing a baked tempo note removes it on republish — the base is recomputed fresh every time, never accumulated", async () => {
+  const KEY = "albums/compositions/nightroll/ratchet.mid";
+  const a = pubApp();
+  useFakeFolder(a, "ratchet");
+  openComposition(a, KEY, {tempoNoteBpm: 180});
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const withTempo = a.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...(await folderBytes(a, KEY))])}).buffer, {trust: true}).tempos)`);
+  assert.deepEqual(JSON.parse(withTempo).map(t => t.usq), [Math.round(6e7 / 180)], "baked while the note stands");
+
+  // delete the (now-synced) tempo: note — a tombstone, exactly like deleting
+  // it from the open roll would leave, not just clearing local additions
+  // (that bucket only ever held never-yet-synced notes; this one published)
+  const anno = await folderText(a, "albums/compositions/nightroll/ratchet.rollnotes.json");
+  const identity = a.run(`noteIdentity(parseRollnotes(${JSON.stringify(anno)}).find(n => n.tempodir !== undefined))`);
+  a.run(`localStorage.setItem("ff1roll-tombs-" + ${JSON.stringify(KEY)}, JSON.stringify([${JSON.stringify(identity)}]));`);
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+  const withoutTempo = a.run(`JSON.stringify(parseMidi(new Uint8Array(${JSON.stringify([...(await folderBytes(a, KEY))])}).buffer, {trust: true}).tempos)`);
+  assert.deepEqual(JSON.parse(withoutTempo).map(t => t.usq), [500000], "back to the base tempo — the baked event is GONE, not just un-refreshed");
+});

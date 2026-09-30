@@ -77,7 +77,7 @@ test.describe("audio tracks", () => {
     await page.evaluate(() => editUndoPop());
     expect(await page.evaluate(() => song.tracks[song.tracks.length - 1].clips.length)).toBe(1);
     // Save: the bytes land in <song>.audio/ next to the .mid, and the clip knows it
-    await page.evaluate(async () => { await commitCompositionNow({ textContent: "" }); });
+    await page.evaluate(async () => { await publishSong(songKey, ghHeaders("folder"), () => {}); }); // docs/provenance-plan.md P2: commitCompositionNow -> the one publish function
     const saved = await page.evaluate(async () => {
       const f = await folderRead("albums/compositions/nightroll/e2e-audio.audio/tone.wav");
       const rn = await folderRead("albums/compositions/nightroll/e2e-audio.rollnotes.json");

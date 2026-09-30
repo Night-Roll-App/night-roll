@@ -318,19 +318,48 @@ analyst exists — see the plan in open-items; the mirror-tree layout
 **Sync / Save & Commit sheet:** serializes the full current rollnotes
 state and commits it to this repo via the GitHub Contents API
 (fine-grained token, stored in browser localStorage, never in the repo).
-**Publish all (2026-09-26, overnight branch):** publishes everything
-`pendingSongs()` lists — the open song through `commitCompositionNow`;
-another composition edited on this device through `publishDraftSong`
-(the draft becomes the .mid via `writeMidi`, annotations via
-`buildRollnotesFor`, `notesTxtFor(doc, key)`, `askCommitLog(h, key,
-true)`, the manifest entry; then the draft is marked clean and the notes
-stash cleared — Publish no longer touches Save Version history (Model B,
-below: a Save Version checkpoint used to be written here when auto-save
-was off; auto-save is always on now and Versions are separate from
-Publish)); annotation-only and chat-only songs through `putRollnotes` /
-`askCommitLog(h, key, isCompositionKey(key))`. `isCompositionKey`
-mirrors `isComposition` for a closed song. The pending list's Open
-button stays as a convenience; "open it to commit" is gone.
+**ONE publish function per song (2026-09-30, docs/provenance-plan.md P2,
+Josh's ruling: "Publish all must behave exactly like publishing the open
+song"):** `publishSong(key, h, report)` is now the only place that writes
+a `.rollnotes.json` (and, for his own songs, a `.mid`) for Publish — both
+the footer/File → Publish button (`ghsave`) and Publish all
+(`publishAllJobStart`) call it, for every song, whether it's the open one
+or not. It replaced three separate flows (`commitCompositionNow` for the
+open song, `publishDraftSong` for another edited one, an inline
+annotations-only branch) that had drifted apart — see "Bugs found" in
+docs/provenance-plan.md for what that drift broke.
+  - `hisMusic` (internal): `isComposition()`/`isCompositionKey(key)` — his
+    own folder, with a local draft. Only his songs get a `.mid` write;
+    captures/starters/analysis songs publish annotations only, same as
+    before, and the .mid is untouched even when a tempo: note changed.
+  - `doc` is read back from the draft via `draftRead(key)` — for the OPEN
+    song, `saveDraft(false)` runs FIRST so it's reading the same shape
+    either way; this is what makes the two paths byte-identical.
+  - The tempo map is baked fresh every call via `bakeTempos(base, notes,
+    ppq)` (a pure function, also used by `finalizeNotes` for playback) —
+    never accumulated, so removing a tempo: note removes its baked event
+    on the next publish. `musicSig` now includes the tempo map, so a
+    tempo-only edit republishes the .mid (it used to be ignored — see
+    "Bugs found"); the .mid write itself is gated on a SEPARATE `midSig`
+    field in the draft (the legacy `pubSig`, used by the "edited since
+    last save" UI elsewhere, deliberately stays un-baked — see musicSig's
+    own comment for why the two must not be conflated).
+  - Annotations come from `annotationsFor(key)` — the repo file plus this
+    device's local additions, MINUS tombstones (the same merge
+    `loadNotes` does for the open song, factored out so it works for a
+    key that isn't open). `markPublished(key, stamp, content, opts)`
+    clears that key's tombstones, resets `added` flags, and updates
+    `pubSig`/`midSig`/`savedStamp` on its draft — for the open song and
+    any other, alike; `markCurrentSongSynced` is now a thin wrapper
+    over it.
+  - Recordings (`uploadAudioClipsFor`) and the iPad Files mirror
+    (`filesMirrorFor`) now run for every song publishSong touches, not
+    just the open one. The README (`writeSongsReadme`) moved OUT of
+    publishSong entirely — the job that calls it (ghsave's handler,
+    `publishAllJobStart`) writes it once at the end, not once per song.
+  - `isCompositionKey` mirrors `isComposition` for a closed song. The
+    pending list's Open button stays as a convenience; "open it to
+    commit" is gone.
 Rebuilt 2026-09-25 (Josh: "there should be song sections"):
 `pendingSongs()` is the union of `dirtySongs()` (unsynced annotation
 stashes), drafts whose `dirty` is set (`draftDirtyState`: "edited" since

@@ -3393,6 +3393,30 @@ function resolveNote(n) {
   n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || beatsPerBarDisp()) * beatTicks() : null;
   return n;
 }
+// Pure: base tempo events (un-baked — the file's own, before any tempo:
+// annotation) + resolved notes (only n.tempodir/n.start are read) + ppq ->
+// a new tempo map with sec offsets filled in. Lifted out of finalizeNotes
+// (docs/provenance-plan.md P2) so playback (finalizeNotes, below) and
+// publish (publishSong) bake the SAME way from the SAME base every time —
+// recomputed from scratch on every call, never accumulated, so removing a
+// tempo: annotation removes its baked event instead of leaving it behind
+// (the "ratchet" bug).
+function bakeTempos(base, notes, ppq) {
+  const dirs = notes.filter(n => n.tempodir !== undefined).sort((a, b) => a.start - b.start);
+  if (!dirs.length) return base.map(t => ({...t}));
+  const evs = base.filter(t => t.tick < dirs[0].start).map(t => ({tick: t.tick, usq: t.usq}));
+  if (!evs.length) evs.push({tick: 0, usq: Math.round(6e7 / dirs[0].tempodir)});
+  for (const d of dirs) evs.push({tick: Math.max(0, Math.round(d.start)), usq: Math.round(6e7 / d.tempodir)});
+  const byTick = new Map();
+  for (const e of evs) byTick.set(e.tick, e); // same tick: the directive wins
+  const sorted = [...byTick.values()].sort((a, b) => a.tick - b.tick);
+  let sec = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0) sec += (sorted[i].tick - sorted[i - 1].tick) / ppq * sorted[i - 1].usq / 1e6;
+    sorted[i].sec = sec;
+  }
+  return sorted;
+}
 function finalizeNotes() {
   // adopt any declared meter FIRST, then re-resolve every anchor under it —
   // at load, resolveNote ran under neutral 4/4 before the file's timesig was
@@ -3430,28 +3454,13 @@ function finalizeNotes() {
     if (lm) n.loopTo = (+lm[1] - 1) * bt + ((lm[2] ? +lm[2] : 1) - 1) * beatTicks();
     else delete n.loopTo;
   }
-  if (song && isComposition()) { // Josh's ruling (2026-08-15): on CREATED songs a
-    // tempo: annotation authors the tempo — it rebuilds the map. On ANALYZED
-    // songs the same annotation is an observation ("the song changes tempo
-    // here") and must not touch playback: captures' timing is measured.
-    const dirs = rollnotes.filter(n => n.tempodir !== undefined).sort((a, b) => a.start - b.start);
+  if (song && bakesTempo(songKey)) { // Josh's ruling (2026-08-15, widened 2026-09-30): on
+    // songs HE WROTE a tempo: annotation authors the tempo — it rebuilds the
+    // map. On ANALYZED songs (captures, starters, corpora) the same
+    // annotation is an observation ("the song changes tempo here") and must
+    // not touch playback: captures' timing is measured.
     if (!song.baseTempos) song.baseTempos = song.tempos.map(t => ({...t}));
-    if (dirs.length) {
-      const evs = song.baseTempos.filter(t => t.tick < dirs[0].start).map(t => ({tick: t.tick, usq: t.usq}));
-      if (!evs.length) evs.push({tick: 0, usq: Math.round(6e7 / dirs[0].tempodir)});
-      for (const d of dirs) evs.push({tick: Math.max(0, Math.round(d.start)), usq: Math.round(6e7 / d.tempodir)});
-      const byTick = new Map();
-      for (const e of evs) byTick.set(e.tick, e); // same tick: the directive wins
-      const sorted = [...byTick.values()].sort((a, b) => a.tick - b.tick);
-      let sec = 0;
-      for (let i = 0; i < sorted.length; i++) {
-        if (i > 0) sec += (sorted[i].tick - sorted[i - 1].tick) / song.ppq * sorted[i - 1].usq / 1e6;
-        sorted[i].sec = sec;
-      }
-      song.tempos = sorted;
-    } else {
-      song.tempos = song.baseTempos.map(t => ({...t}));
-    }
+    song.tempos = bakeTempos(song.baseTempos, rollnotes, song.ppq);
   }
   if (song) { // track: directives — per-track voice & color, synced like any note
     song.tracks.forEach(tr => { delete tr.voice; delete tr.color; delete tr.vol; delete tr.pan; }); // pan: the directive's; the .mid's own stays in midiPan
@@ -3574,10 +3583,7 @@ async function loadNotes() {
         // device tripped "newer save exists" on its first edit (Josh, the
         // fresh Xcode shell, Threnody II, 2026-09-27)
         try { const j = JSON.parse(text); if (j && typeof j.saved === "number" && song && j.saved > (song.savedStamp || 0)) song.savedStamp = j.saved; } catch (err) { /* legacy text format carries no stamp */ }
-        try { // subtract tombstoned deletions (they only die for real on Sync)
-          const tombs = new Set(JSON.parse(localStorage.getItem(tombKey()) || "[]"));
-          if (tombs.size) rollnotes = rollnotes.filter(n => !tombs.has(noteIdentity(n)));
-        } catch (err) {}
+        rollnotes = subtractTombstones(rollnotes, songKey); // (they only die for real on Sync)
       }
       else if (localStorage.getItem("ff1roll-lastsync-" + songKey)) {
         // this device SYNCED annotations for this path before, yet the analysis
@@ -3588,28 +3594,75 @@ async function loadNotes() {
       }
     } catch (err) { /* no sidecar */ }
     if (gen !== loadGen) return;
-    try {
-      const local = JSON.parse(localStorage.getItem(notesStoreKey()) || "[]");
-      for (const n of local) {
-        const dup = rollnotes.some(r => r.b1 === n.b1 && r.q1 === n.q1 && r.text === n.text);
-        if (dup) continue;
-        const km = (n.text || "").match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i); // re-derive flag (older saves lack it)
-        if (km && n.keydir === undefined) {
-          const sf = keyNameToSf(km[1].trim());
-          if (sf !== null) n.keydir = sf;
-        }
-        // text is the truth: re-derive every directive (track:, audio:, tempo:,
-        // timesig:) exactly as the sidecar's notes were — saveLocalNotes keeps
-        // only the text, so an unsynced audio: note came back with no clip
-        const derived = deriveNoteTypes([{...n, added: true}])[0] || {...n, added: true};
-        rollnotes.push(resolveNote(derived));
-      }
-    } catch (err) { /* corrupted local notes */ }
+    const before = rollnotes.length;
+    rollnotes = mergeLocalAdditions(rollnotes, songKey);
+    for (let i = before; i < rollnotes.length; i++) resolveNote(rollnotes[i]); // only the newly-merged ones need it — the rest were resolved above
   }
   finalizeNotes();
   buildScoreModel(); // key regions may have changed spelling/signatures
   updateSubtitle();
   draw();
+}
+// subtract tombstoned deletions (docs/provenance-plan.md P2: factored out of
+// loadNotes so publishSong can build the same merge for a song that is not
+// open — Bugs found: Publish all re-published a deleted synced note because
+// it never subtracted tombstones for a not-open song)
+function subtractTombstones(notes, key) {
+  try {
+    const tombs = new Set(JSON.parse(localStorage.getItem(tombKeyFor(key)) || "[]"));
+    if (tombs.size) return notes.filter(n => !tombs.has(noteIdentity(n)));
+  } catch (err) {}
+  return notes;
+}
+// this device's local (never-synced) additions, merged onto `notes` in place
+// (and returned) — factored out of loadNotes' local-notes loop, same re-
+// derivation (track:/audio:/tempo:/timesig: directives, key: flag) so an
+// unsynced audio: note isn't silently missing its clip when built for a
+// song that isn't open
+function mergeLocalAdditions(notes, key) {
+  let local = [];
+  try { local = LINK_SONGS ? [] : JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); }
+  catch (err) { /* corrupted local notes */ }
+  for (const n of local) {
+    if (notes.some(r => r.b1 === n.b1 && r.q1 === n.q1 && r.text === n.text)) continue;
+    const km = (n.text || "").match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i); // re-derive flag (older saves lack it)
+    if (km && n.keydir === undefined) {
+      const sf = keyNameToSf(km[1].trim());
+      if (sf !== null) n.keydir = sf;
+    }
+    const derived = deriveNoteTypes([{...n, added: true}])[0] || {...n, added: true};
+    notes.push(derived);
+  }
+  return notes;
+}
+// repo file + this device's local additions, minus tombstones — the same
+// merge loadNotes does for the open song, for any key (docs/provenance-
+// plan.md P2: publishSong builds every pending song's annotations this way,
+// open or not). No CDN-bridge/stamp-adoption here (those only matter for
+// the song actually being opened right now); a caller that needs those uses
+// loadNotes instead.
+async function annotationsFor(key) {
+  const base = key.replace(/\.midi?$/i, "");
+  let notes = [];
+  try {
+    let res = await readData("analysis", base + ".rollnotes.json", true);
+    if (!res.ok) res = await readData("analysis", base + ".rollnotes", true); // legacy
+    if (res.ok) notes = parseRollnotes(await res.text());
+  } catch (err) { /* no sidecar yet */ }
+  notes = subtractTombstones(notes, key);
+  notes = mergeLocalAdditions(notes, key);
+  notes.sort((a, b) => (a.b1 - b.b1) || (a.q1 - b.q1));
+  return notes; // NOT resolved: resolveNote reads the OPEN song's meter (barTicks/beatTicks), which may not be key's own — a caller that needs .start (bakeTempos) resolves against key's own ppq/timesig itself (resolveNoteWith)
+}
+// resolveNote, but against an explicit ppq/timesig instead of the globally
+// open song's — for filling in a NOT-open song's own .start/.end (bakeTempos
+// needs it to place tempo: directives; annotationsFor itself never resolves,
+// since serialization doesn't need ticks at all).
+function resolveNoteWith(n, ppq, ts) {
+  const bt = ts[0] * 4 / ts[1] * ppq, qt = ppq * 4 / ts[1];
+  n.start = (n.b1 - 1) * bt + (n.q1 - 1) * qt;
+  n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || ts[0]) * qt : null;
+  return n;
 }
 function saveLocalNotes() {
   if (!notesStoreKey()) return;
@@ -3625,12 +3678,7 @@ function dirtySongs() { // songs with unsynced local notes on this device
   return Object.keys(localStorage)
     .filter(k => k.startsWith("ff1roll-notes-"))
     .map(k => k.slice("ff1roll-notes-".length))
-    // uncommitted import captures ride Commit import, not Sync — a sidecar
-    // without its .mid in the repo would be an orphan; local/ files have no
-    // repo path at all, their annotations stay on this device
-    .filter(k => !k.startsWith("local/") &&
-                 !(k.startsWith("albums/imports/") &&
-                   localStorage.getItem("ff1roll-draft-" + k) !== null));
+    .filter(syncable); // same exclusions as syncable() below (local/, uncommitted captures)
 }
 function updateSyncBtn() {
   const btn = document.getElementById("syncbtn");
@@ -3649,7 +3697,7 @@ function serializeNotesList(list, beatsPerBar, base, stamp) {
   // sf-organ2 and square25 both live for pulse2, 2026-09-06) — the resurrection
   // path was never pinned down. Deduping at serialization makes the mechanism
   // moot: every writer goes through here (commit, Move, Copy, Download, and
-  // buildRollnotesFor, which merges another song's repo copy with local notes
+  // annotationsFor, which merges another song's repo copy with local notes
   // and is itself a plausible source), so no path can emit two.
   const lastFor = new Map();
   for (const n of list) if (n.trackdir) lastFor.set(n.trackdir.name.toLowerCase(), n);
@@ -3666,28 +3714,6 @@ function serializeNotesList(list, beatsPerBar, base, stamp) {
 }
 function serializeRollnotes() { return serializeNotesList(rollnotes, beatsPerBarDisp(), baseName()); }
 function serializeRollnotesStamped(stamp) { return serializeNotesList(rollnotes, beatsPerBarDisp(), baseName(), stamp); }
-// serialize another song's sidecar + this device's local additions, without
-// loading it: its meter was stashed in localStorage when it was last open
-async function buildRollnotesFor(key) {
-  const base = key.replace(/\.midi?$/i, "");
-  let notes = [];
-  try {
-    let res = await readData("analysis", base + ".rollnotes.json");
-    if (!res.ok) res = await readData("analysis", base + ".rollnotes"); // legacy
-    if (res.ok) notes = parseRollnotes(await res.text());
-  } catch (err) { /* no sidecar yet */ }
-  let local = [];
-  try { local = LINK_SONGS ? [] : JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); }
-  catch (err) { /* corrupted */ }
-  for (const n of local) {
-    if (!notes.some(r => r.b1 === n.b1 && r.q1 === n.q1 && r.text === n.text)) notes.push(n);
-  }
-  notes.sort((a, b) => (a.b1 - b.b1) || (a.q1 - b.q1));
-  const beats = +(localStorage.getItem("ff1roll-ts-" + key) || "4").split("/")[0] || 4;
-  const stamp = Date.now();
-  return {path: base + ".rollnotes.json", stamp,
-          content: serializeNotesList(notes, beats, base.split("/").pop(), stamp)};
-}
 // A new key at a bar REPLACES the key there — never two keys at one point
 // (Josh's rule, 2026-08-25, after setting "F mixolydian" over airship's
 // committed "key F" produced both). Two defects were in the old predicate:
@@ -14878,7 +14904,8 @@ document.getElementById("ndelete").addEventListener("click", () => {
 // tombstones (2026-08-19, handoff item): deletions of SYNCED annotations get
 // a persistence path — identities recorded per song, subtracted at load,
 // cleared when a Sync commits the post-deletion file as the new canon
-function tombKey() { return "ff1roll-tombs-" + songKey; }
+function tombKey() { return tombKeyFor(songKey); }
+function tombKeyFor(key) { return "ff1roll-tombs-" + key; } // parameterized: publishSong clears a not-open song's tombstones too (Bugs found, docs/provenance-plan.md)
 function noteIdentity(n) { return JSON.stringify(noteToJSON(n)); }
 // Editing a SYNCED annotation replaces it with a local copy; without a
 // tombstone the repo original came back on reload underneath the rename
@@ -14901,7 +14928,8 @@ function tombstone(n) {
     localStorage.setItem(tombKey(), JSON.stringify(t));
   } catch (err) {}
 }
-function clearTombstones() { if (songKey) localStorage.removeItem(tombKey()); }
+function clearTombstones() { clearTombstonesFor(songKey); }
+function clearTombstonesFor(key) { if (key) localStorage.removeItem(tombKeyFor(key)); }
 // ---------------------------------------------------------------- sync
 const syncsheet = document.getElementById("syncsheet");
 // -------------------------------------- compositions (File: New / Save / Save As)
@@ -14949,6 +14977,16 @@ function ownFolderPath(key) { return !!key && key.startsWith("albums/") && !READ
 // draft), or the song carries provenance. Sketches are no exception now.
 function isComposition() { // the local copy, nothing else (a "forked from"/"moved from" note is history, not a key — Josh, Graveyard 2, 2026-09-27)
   return ownFolderPath(songKey) && localStorage.getItem(draftStoreKey(songKey)) !== null;
+}
+// Josh's ruling (2026-09-30, docs/provenance-plan.md): tempo: annotations
+// bake into the .mid only for songs HE WROTE — compositions, copies, local
+// drafts (Untitled songs count too, unlike isComposition()/isCompositionKey,
+// which have no repo path for local/ and so don't apply here). Captures and
+// starters never bake — their tempo is measured, not authored. This is
+// today's predicate, built from the existing "his song" checks; P1's origin
+// model (docs/provenance-plan.md) replaces it with a stored origin.
+function bakesTempo(key) {
+  return !!key && (key.startsWith("local/") || ownFolderPath(key)) && localStorage.getItem(draftStoreKey(key)) !== null;
 }
 // The two albums the app itself named; every other folder is titled by its
 // last segment (album.json can override on the repo side)
@@ -15175,12 +15213,16 @@ function draftTracks(tracks) { // the notes as a draft stores them (and as the p
 // The published music's fingerprint (pubSig): "edited since last save" is a
 // comparison with it, not a flag that any edit sets for good — an added note
 // then undone left songs "edited" that were not (Josh, 2026-09-29).
-// Notes only, not the tempo map: Publish writes the tempo you HEAR (a tempo:
-// annotation baked in, writeMidi(song)) while the draft keeps the file's base
-// tempo, so every song with a tempo: annotation looked "edited" — Cool B Major
-// Progression, 60 in the draft's base vs 75 published and heard (Josh,
-// 2026-09-29). Tempo is an annotation, compared and listed as one.
-function musicSig(d) { return JSON.stringify([d.ppq, d.tracks]); }
+// Signs whatever tempo map it's given — it does NOT bake one itself (it has
+// no notes to bake from). A caller comparing a draft's un-baked base against
+// the published .mid's baked map must bake the base first (see
+// draftFingerprint) or the two sides disagree about nothing that changed —
+// that was the Cool B Major Progression bug (Josh, 2026-09-29): 60 in the
+// draft's base vs 75 published and heard. Every OTHER caller here signs the
+// SAME (un-baked) convention on both sides of its own comparison, so this
+// stayed safe to widen to include tempo (docs/provenance-plan.md P2: a
+// tempo-only edit must republish the .mid, which needs tempo IN the sig).
+function musicSig(d) { return JSON.stringify([d.ppq, d.tracks, d.tempos]); }
 // A draft from before the fingerprint: read the published .mid once and let
 // "edited" follow the comparison — "edited" means "differs from what is
 // published". Not when the repo is NEWER than the draft's base (that is the
@@ -15198,7 +15240,18 @@ async function draftFingerprint(path, d, repoStamp) {
     const pub = parseMidi(await r.arrayBuffer());
     sig = musicSig({ppq: pub.ppq, tempos: pub.tempos, tracks: draftTracks(pub.tracks)});
   } catch (err) { return false; } // offline: stays "edited" until later
-  const same = musicSig(d) === sig;
+  // pub.tempos is already baked (it's what's in the file); d.tempos is the
+  // draft's un-baked base (see draftDoc) — bake it the same way before
+  // comparing, or a song with an active tempo: annotation always disagrees
+  // with itself here (the Cool B Major Progression bug, one level up).
+  let dTempos = d.tempos;
+  if (bakesTempo(path)) {
+    try {
+      const notes = (await annotationsFor(path)).map(n => resolveNoteWith({...n}, d.ppq, d.timesig || [4, 4]));
+      dTempos = bakeTempos(d.tempos, notes, d.ppq);
+    } catch (err) { /* fetch hiccup: compare on the un-baked base — worst case, the newer-save question gets asked once more */ }
+  }
+  const same = musicSig({ppq: d.ppq, tracks: d.tracks, tempos: dTempos}) === sig;
   // an unstamped draft adopts the repo's stamp only when its music IS the
   // published music; otherwise which is newer is unknown, and the newer-save
   // question must still be asked — nothing here may mask another device's save
@@ -17897,17 +17950,17 @@ async function putSongsText(path, text, h) { // text sibling files in the songs 
 // <song>.audio/<file> (folder or repo). Marked "someone else's recording"
 // (local=1) = never — see wave-tracks-design.md §14 (DMCA: GitHub removes
 // content on notice; a public Pages URL is distribution).
-async function uploadAudioClips(h, status) {
+async function uploadAudioClips(h, report) {
   if (!song) return;
   const files = new Map(); // one upload per file, however many pieces use it
   forEachClip(c => { if (!files.has(c.file)) files.set(c.file, c); });
   for (const [file, c] of files) {
-    if (c.local) { status.textContent = file + ": kept local (someone else's recording)"; continue; }
+    if (c.local) { report(file + ": kept local (someone else's recording)"); continue; }
     if (c.where === "folder" || c.where === "repo") continue; // already with the song
     const rec = await idbAudioGet(songKey + "|" + file);
     if (!rec || !rec.bytes) continue; // nothing on this device to send
     const bytes = new Uint8Array(rec.bytes);
-    status.textContent = (folderActive() ? "writing " : "uploading ") + file + " (" + (bytes.length / 1e6).toFixed(1) + " MB)…";
+    report((folderActive() ? "writing " : "uploading ") + file + " (" + (bytes.length / 1e6).toFixed(1) + " MB)…");
     const r = await putMidAt(audioDirFor(songKey) + "/" + file, h, bytes); // same PUT shape: any bytes
     if (!r.ok) throw new Error(file + " HTTP " + r.status);
     const where = folderActive() ? "folder" : "repo";
@@ -17916,65 +17969,103 @@ async function uploadAudioClips(h, status) {
     if (e) e.where = where;
   }
 }
+// same job, for a song that is NOT open (Publish all's other-song leg —
+// Bugs found, docs/provenance-plan.md: Publish all used to skip recordings
+// entirely for a song that wasn't open). No live clip cache to consult for
+// "already uploaded" here, so it asks the destination directly; `notes` is
+// this song's annotations (annotationsFor(key)), read for their audio:
+// directives instead of a live song's tracks.
+async function uploadAudioClipsFor(key, notes, h, report) {
+  if (key === songKey && song) return uploadAudioClips(h, report);
+  const files = new Map();
+  for (const n of notes) if (n.audiodir && n.audiodir.file && !files.has(n.audiodir.file)) files.set(n.audiodir.file, n.audiodir);
+  for (const [file, d] of files) {
+    if (d.local) { report(file + ": kept local (someone else's recording)"); continue; }
+    try { const r = await readData("songs", audioDirFor(key) + "/" + file, true); if (r.ok) continue; } // already with the song
+    catch (err) { /* treat as not-yet-uploaded */ }
+    const rec = await idbAudioGet(key + "|" + file);
+    if (!rec || !rec.bytes) continue; // nothing on this device to send
+    const bytes = new Uint8Array(rec.bytes);
+    report((folderActive() ? "writing " : "uploading ") + file + " (" + (bytes.length / 1e6).toFixed(1) + " MB)…");
+    const r2 = await putMidAt(audioDirFor(key) + "/" + file, h, bytes);
+    if (!r2.ok) throw new Error(file + " HTTP " + r2.status);
+  }
+}
 function isCompositionKey(key) { // isComposition() for a song that is not open (no rollnotes to consult: the draft decides)
   return ownFolderPath(key) && localStorage.getItem(draftStoreKey(key)) !== null;
 }
-// Publish all reaches songs that are NOT open (Josh, 2026-09-26: it used to
-// push their annotations only and say "open it to commit"). The device's
-// draft is the song: it becomes the .mid, the notes.txt and the manifest
-// entry exactly as commitCompositionNow does for the open song; annotations
-// come through buildRollnotesFor; the chat through askCommitLog(key).
-async function publishDraftSong(key, h) {
-  const d = JSON.parse(localStorage.getItem(draftStoreKey(key)));
-  const doc = {ppq: d.ppq, timesig: d.timesig, ...(d.source ? {source: d.source} : {}), tempos: d.tempos.map(t => ({...t})),
-               tracks: d.tracks.map(tr => ({name: tr.name,
-                 ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
-                 ...(tr.offset ? {offset: tr.offset} : {}),
-                 ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
-                 notes: tr.notes.map(n => ({...n}))}))};
-  const r1 = await putMidAt(key, h, writeMidi(doc));
-  if (!r1.ok) throw new Error(".mid HTTP " + r1.status);
-  const {path, content, stamp} = await buildRollnotesFor(key);
-  const r2 = await putRollnotes(path, content, h);
+// ---- ONE publish function per song (Josh's ruling, 2026-09-30,
+// docs/provenance-plan.md P2: "Publish all must behave exactly like
+// publishing the open song — one publish function per song"). Both the
+// Publish button (ghsave, below) and Publish all (publishAllJobStart) call
+// this, for every song, open or not — it is the only place that writes a
+// .mid or a .rollnotes.json for Publish. doc = the open song, after
+// saveDraft flushes it to its draft (so both paths read the SAME shape back
+// out of storage below) — or a not-open song's existing draft — or null for
+// an analyzed song with no music draft to publish (annotations only; its
+// .mid is never touched here, per Josh's ruling in the plan: captures and
+// starters write their .mid once, at capture commit, never again).
+async function publishSong(key, h, report) {
+  report = report || (() => {});
+  const isOpen = key === songKey && !!song;
+  if (isOpen) {
+    if (cmp && cmp.showing === "repo") throw new Error("You are hearing the published copy — switch back to your version first (the compare bar).");
+    sweepStrandedClones(); // never publish invisible stacks
+    saveDraft(false); // the open song's edits land in its draft, same as any other song's, before it's read back below
+  }
+  const hisMusic = isOpen ? isComposition() : isCompositionKey(key); // never local/ — it has no repo path to publish a .mid to (bakesTempo, playback-only, is the wider one)
+  const notes = await annotationsFor(key); // repo file + local additions, tombstones subtracted (Bugs found: a tombstoned note republished)
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { stored = null; }
+
+  let doc = null;
+  if (hisMusic && stored) {
+    const d = await draftRead(key); // whole draft, notes included (tracksRef drafts read through to IndexedDB)
+    if (d && d.tracks) {
+      const ts = d.timesig || [4, 4];
+      const resolved = notes.map(n => resolveNoteWith({...n}, d.ppq, ts)); // d's OWN meter — never the globally open song's
+      doc = {ppq: d.ppq, timesig: d.timesig, ...(d.source ? {source: d.source} : {}),
+             tempos: bakeTempos(d.tempos, resolved, d.ppq), // d.tempos is the un-baked base (draftDoc's convention) — baked fresh every publish, never accumulated, so removing a tempo: note removes its baked event
+             tracks: d.tracks.map(tr => ({name: tr.name,
+               ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
+               ...(tr.offset ? {offset: tr.offset} : {}),
+               ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how source.metas reattaches after edits
+               notes: tr.notes.map(n => ({...n}))}))};
+    }
+  }
+
+  let wroteMid = false, midSig = null;
+  const stamp = Date.now();
+  if (doc) {
+    midSig = musicSig(doc); // now includes the baked tempo map: a tempo-only change republishes (Bugs found)
+    if (!stored.midSig || stored.midSig !== midSig) { // never published, or music/baked-tempo changed since
+      report("writing the .mid…");
+      const r1 = await putMidAt(key, h, writeMidi(doc));
+      if (!r1.ok) throw new Error(".mid HTTP " + r1.status);
+      wroteMid = true;
+    }
+  }
+
+  const beats = isOpen ? beatsPerBarDisp() : ((declaredTsForKey(key) || [4])[0]);
+  const base = key.replace(/\.midi?$/i, ""), title = base.split("/").pop();
+  const content = serializeNotesList(notes, beats, title, stamp);
+  report("publishing annotations…");
+  const r2 = await putRollnotes(base + ".rollnotes.json", content, h);
   if (!r2.ok) throw new Error(".rollnotes.json HTTP " + r2.status);
-  const r3 = await putSongsText(key.replace(/\.midi?$/i, "") + ".notes.txt", notesTxtFor(doc, key), h);
-  if (!r3.ok) throw new Error(".notes.txt HTTP " + r3.status);
-  await askCommitLog(h, key, true);
-  await updateManifest(h, albums => manifestPlace(albums, null, key));
-  d.dirty = false; d.savedStamp = stamp; d.pubSig = musicSig(d);
-  localStorage.setItem(draftStoreKey(key), JSON.stringify(d));
-  localStorage.removeItem("ff1roll-notes-" + key);
-  recordLastSync(key, content);
-}
-async function commitCompositionNow(status) { // .mid + annotations + notes.txt, one flow
-  if (cmp && cmp.showing === "repo") { status.textContent = "You are hearing the published copy — switch back to your version first (the compare bar)."; return; }
-  sweepStrandedClones(); // never commit invisible stacks
-  const token = writeToken();
-  if (!token) { status.textContent = "No GitHub token stored yet — add one in File → Settings."; return; }
-  status.textContent = "Publishing " + songKey + " (.mid + annotations)…";
-  try {
-    const h = ghHeaders(token);
-    const r1 = await putMidAt(songKey, h);
-    if (!r1.ok) throw new Error(".mid HTTP " + r1.status);
-    const stamp = Date.now();
-    const content = serializeRollnotesStamped(stamp);
-    const r2 = await putRollnotes(songKey.replace(/\.mid$/, "") + ".rollnotes.json", content, h);
-    if (!r2.ok) throw new Error(".rollnotes.json HTTP " + r2.status);
-    const r3 = await putSongsText(songKey.replace(/\.mid$/, "") + ".notes.txt", notesTxtFor(), h);
+
+  if (hisMusic && doc) {
+    const r3 = await putSongsText(base + ".notes.txt", notesTxtFor(doc, key), h);
     if (!r3.ok) throw new Error(".notes.txt HTTP " + r3.status);
-    await askCommitLog(h); // the ✦ AI chat since the last save, appended to <song>.ask.md
-    await uploadAudioClips(h, status); // recordings ride along, next to the .mid; "local" ones never
-    await updateManifest(h, albums => manifestPlace(albums, null, songKey));
-    let readmeNote = "";
-    try { await writeSongsReadme(h); } catch (err) { readmeNote = " (the repo's song list didn't update: " + err.message + ")"; } // the song is published either way
-    markCurrentSongSynced(content, stamp);
-    filesMirror(); // the iPad app: the copy in Files follows every Publish
-    await initCatalog().catch(() => {});
-    updateSongBtn();
-    renderSyncPending();
-    status.textContent = folderActive() ? "Published ✓ to " + fsRoot.name + " — song and annotations together."
-                                        : "Published ✓ — song and annotations together (Pages takes ~1 min)." + readmeNote;
-  } catch (err) { status.textContent = "Publish failed: " + err.message; }
+  }
+
+  await askCommitLog(h, isOpen ? undefined : key, hisMusic); // the ✦ AI chat since the last save, appended to <song>.ask.md
+
+  if (hisMusic) await uploadAudioClipsFor(key, notes, h, report); // recordings ride along, next to the .mid; "local" ones never (Bugs found: Publish all skipped this for a not-open song)
+  if (wroteMid) await updateManifest(h, albums => manifestPlace(albums, null, key));
+  if (hisMusic && doc) { if (isOpen) await filesMirror(); else await filesMirrorFor(key, doc, content).catch(() => {}); } // the iPad app: the Files copy follows every Publish, not just the open song's (Bugs found)
+
+  markPublished(key, stamp, content, {midSig: doc ? midSig : undefined});
+  return {wroteMid};
 }
 document.getElementById("filesave").addEventListener("click", () => {
   // one door for both modes (Josh, 2026-08-18): Save opens the sync sheet, which
@@ -22644,6 +22735,24 @@ async function filesMirror() {
   }
 }
 function filesMirrorSoon() { clearTimeout(filesMirrorT); filesMirrorT = setTimeout(filesMirror, 2000); } // auto-save: after the edits settle
+// same job, for a song that is NOT open (Publish all's other-song leg —
+// Bugs found, docs/provenance-plan.md: Publish all skipped the iPad Files
+// mirror for every song but the open one). doc/content are what publishSong
+// just built and wrote to the repo — reused here rather than rebuilt so the
+// two copies can't drift. Best-effort like filesMirror, but quietly: this
+// runs inside a batch job, not a single song's own status line.
+async function filesMirrorFor(key, doc, content) {
+  const fs = nativeFs();
+  if (!fs || !key) return false;
+  const root = nativeDirHandle(fs, "");
+  const base = key.replace(/\.mid$/, "");
+  try {
+    await folderWrite(key, writeMidi(doc), root);
+    await folderWrite(base + ".rollnotes.json", content, root);
+    await folderWrite(base + ".notes.txt", notesTxtFor(doc, key), root);
+    return true;
+  } catch (err) { return false; }
+}
 async function folderPermission(request) { // "granted" | "prompt" | "denied"; OPFS has no permission model
   const h = fsRoot.handle;
   if (!h) return "denied";
@@ -22871,9 +22980,14 @@ function draftDirtyState(key) { // "never" (no save yet) | "edited" (since the l
     return d.savedStamp ? "edited" : "never";
   } catch (err) { return null; }
 }
-function syncable(key) { // same exclusions as dirtySongs: local/ has no repo path; import captures ride Commit import
+function syncable(key) { // local/ has no repo path; an uncommitted capture draft (any console
+  // folder, not just albums/imports/ — Bugs found, docs/provenance-plan.md
+  // P0: a captured-but-uncommitted song's loop:/etc. annotations passed this
+  // and could publish before the .mid existed) rides its own Commit, not Sync.
+  // Once committed the draft is gone (isCaptureKey still says locked, via
+  // album.json, but draftStoreKey(key) is null) and annotations sync normally.
   return !key.startsWith("local/") &&
-         !(key.startsWith("albums/imports/") && localStorage.getItem("ff1roll-draft-" + key) !== null);
+         !(isCaptureKey(key) && localStorage.getItem(draftStoreKey(key)) !== null);
 }
 function pendingSongs() { // every song with anything to ship, the open one first
   const set = new Set(dirtySongs());
@@ -23380,22 +23494,50 @@ async function putRollnotes(path, content, headers) { // PUT with one stale-sha 
   if (r.status === 409) r = await putOnce();
   return r;
 }
-function markCurrentSongSynced(content, stamp, opts) { // opts.keepDraft: annotations went up without the .mid
-  clearTombstones(); // the pushed file IS the post-deletion state
-  rollnotes.forEach(n => n.added = false); // now canonical in the repo
-  saveLocalNotes();
-  // Pages deploys lag the commit by ~1 min; a reload in that window fetches
-  // the PRE-sync file and the notes look gone. Keep the EXACT pushed content
-  // as a bridge — loadNotes prefers it while fresh and the CDN disagrees.
-  recordLastSync(songKey, content || serializeRollnotes());
-  if (stamp) {
-    song.savedStamp = stamp; // cross-device freshness beacon
-    if (isComposition() && !(opts && opts.keepDraft)) saveDraft(true); // draft now clean, based on this save
+// The post-publish state update, for the open song and any other, alike
+// (docs/provenance-plan.md P2 — Bugs found: Publish all never did any of
+// this for a song that wasn't open, so its tombstones never cleared and its
+// draft never learned it had been published). opts.keepDraft: annotations
+// went up without the .mid (an analyzed song). opts.midSig: publishSong's
+// baked signature of what it just wrote (or would have written) — stored
+// separately from the legacy (un-baked) pubSig below, which several OTHER
+// comparisons (draftDoc, pubCompareDraft, draftFingerprint) already agree on.
+function markPublished(key, stamp, content, opts) {
+  opts = opts || {};
+  clearTombstonesFor(key); // the pushed file IS the post-deletion state
+  if (key === songKey && song) {
+    rollnotes.forEach(n => n.added = false); // now canonical in the repo
+    saveLocalNotes();
+    // Pages deploys lag the commit by ~1 min; a reload in that window fetches
+    // the PRE-sync file and the notes look gone. Keep the EXACT pushed content
+    // as a bridge — loadNotes prefers it while fresh and the CDN disagrees.
+    recordLastSync(key, content || serializeRollnotes());
+    if (stamp) {
+      song.savedStamp = stamp; // cross-device freshness beacon
+      if (isComposition() && !opts.keepDraft) saveDraft(true); // draft now clean, based on this save
+    }
+    if (opts.midSig !== undefined) { // patch in the baked signature saveDraft(true) doesn't know about
+      let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
+      if (d) { d.midSig = opts.midSig; try { draftWrite(key, d); } catch (err) {} }
+    }
+    lastSubtitle = undefined;
+    updateSubtitle();
+    draw();
+  } else {
+    recordLastSync(key, content || "");
+    localStorage.removeItem("ff1roll-notes-" + key); // this device's local additions are now canonical in the repo file
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
+    if (d) {
+      d.dirty = false;
+      if (stamp) d.savedStamp = stamp;
+      d.pubSig = musicSig({ppq: d.ppq, tracks: d.tracks, tempos: d.tempos}); // legacy, un-baked convention (see musicSig) — matters the next time this song is opened (openDraftDoc reads it)
+      if (opts.midSig !== undefined) d.midSig = opts.midSig;
+      try { draftWrite(key, d); } catch (err) { /* full: the next edit writes it */ }
+    }
   }
-  lastSubtitle = undefined;
-  updateSubtitle();
-  draw();
 }
+function markCurrentSongSynced(content, stamp, opts) { markPublished(songKey, stamp, content, opts); } // opts.keepDraft: annotations went up without the .mid
 function recordLastSync(key, text) {
   try { localStorage.setItem("ff1roll-lastsync-" + key, JSON.stringify({t: Date.now(), text})); }
   catch (err) { /* storage full: the bridge is best-effort */ }
@@ -23420,9 +23562,23 @@ function takeToken(status) {
 document.getElementById("ghsave").addEventListener("click", async e => {
   const btn = e.currentTarget;
   const status = document.getElementById("syncstatus");
-  if (song && isComposition()) { // writing mode: the ONE button ships everything
+  if (song && isComposition()) { // writing mode: the ONE button ships everything, via the one publish function
     btn.disabled = true;
-    try { await commitCompositionNow(status); } finally { btn.disabled = false; }
+    status.textContent = "Publishing " + songKey + " (.mid + annotations)…";
+    try {
+      const token = writeToken();
+      if (!token) { status.textContent = "No GitHub token stored yet — add one in File → Settings."; return; }
+      const h = ghHeaders(token);
+      await publishSong(songKey, h, m => status.textContent = m);
+      let readmeNote = "";
+      try { await writeSongsReadme(h); } catch (err) { readmeNote = " (the repo's song list didn't update: " + err.message + ")"; } // the song is published either way
+      await initCatalog().catch(() => {});
+      updateSongBtn();
+      renderSyncPending();
+      status.textContent = folderActive() ? "Published ✓ to " + fsRoot.name + " — song and annotations together."
+                                          : "Published ✓ — song and annotations together (Pages takes ~1 min)." + readmeNote;
+    } catch (err) { status.textContent = "Publish failed: " + err.message; }
+    finally { btn.disabled = false; }
     return;
   }
   const token = takeToken(status);
@@ -23431,12 +23587,7 @@ document.getElementById("ghsave").addEventListener("click", async e => {
   btn.disabled = true;
   status.textContent = "Publishing…";
   try {
-    const stamp = Date.now();
-    const content = serializeRollnotesStamped(stamp);
-    const r = await putRollnotes(notesBase() + ".rollnotes.json", content, ghHeaders(token));
-    if (!r.ok) throw new Error("HTTP " + r.status + (r.status === 401 || r.status === 403 ? " — check token scope" : ""));
-    await askCommitLog(ghHeaders(token)); // chat rides with the annotations
-    markCurrentSongSynced(content, stamp);
+    await publishSong(songKey, ghHeaders(token), m => status.textContent = m); // annotations only: publishSong's own hisMusic check skips the .mid
     status.textContent = folderActive() ? "Published ✓ to " + fsRoot.name + "."
                                         : "Published ✓ (GitHub Pages takes ~1 min to serve the new file.)";
     setTimeout(() => { // done — close, and return to the notes list if that's where we came from
@@ -23463,37 +23614,22 @@ function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's Publish
     const token = writeToken();
     if (!token) throw new Error("No GitHub token stored yet — add one in File → Settings.");
     const h = ghHeaders(token);
-    let failed = 0;
+    let failed = 0, anyPublished = false;
     for (let i = 0; i < pending.length; i++) {
       if (api.aborted) { for (let j = i; j < pending.length; j++) api.update(j, {st: "cancelled"}); api.cancel(); return; }
       const key = pending[i], short = items[i].label;
       api.update(i, {st: "running", pct: 0});
       api.note("Publishing " + short + "…");
       try {
-        if (key === "general") { // the general chat rides Publish all too
-          await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY);
-        } else if (key === songKey && song && isComposition()) { // the open song: its full flow
-          const sub = {textContent: ""}; await commitCompositionNow(sub);
-          if (/failed/i.test(sub.textContent)) throw new Error(sub.textContent.replace(/^.*failed: /i, ""));
-        } else if (isCompositionKey(key) && draftDirtyState(key)) { // another composition edited here: music + annotations + notes.txt + chat
-          await publishDraftSong(key, h);
-        } else { // annotations and chat only (analyzed songs, or nothing musical pending)
-          let notes = []; try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { notes = []; }
-          if (notes.length) {
-            const {path, content, stamp} = await buildRollnotesFor(key);
-            const r = await putRollnotes(path, content, h);
-            if (!r.ok) throw new Error("HTTP " + r.status);
-            if (key === songKey) markCurrentSongSynced(content, stamp, {keepDraft: true});
-            else { localStorage.removeItem("ff1roll-notes-" + key); recordLastSync(key, content); }
-          }
-          await askCommitLog(h, key, isCompositionKey(key));
-        }
+        if (key === "general") await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY); // the general chat rides Publish all too — no song, so the one publish function doesn't apply
+        else { await publishSong(key, h, m => api.note(short + ": " + m)); anyPublished = true; }
         api.update(i, {st: "done", pct: 1});
       } catch (err) {
         failed++;
         api.update(i, {st: "failed", msg: err.message});
       }
     }
+    if (anyPublished) try { await writeSongsReadme(h); } catch (err) { /* never fatal for the publish itself — the README is best-effort */ } // once per job, not once per song (Bugs found, docs/provenance-plan.md)
     await initCatalog().catch(() => {});
     updateSyncBtn();
     updateSongBtn();
