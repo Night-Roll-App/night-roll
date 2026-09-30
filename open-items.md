@@ -594,7 +594,7 @@ annotation file on its next publish — a one-way change to his data, so it
 waits for his yes. Plan when he says go: a v2 reader that still reads v1,
 write v2 only for songs he edits, a JSON Schema in docs/.
 
-## PAUSED 2026-09-30 10:20: re-capturing every capture album through the shared MIDI writer
+## DONE 2026-09-30: every capture album re-captured through the shared MIDI writer (FFX excepted — its fresh capture changes pitches; awaits Josh's ear)
 PS2 (FFX, Dark Cloud) and all six PS1 re-captures were REVERTED: the new
 writer used each note's capture channel, and a console voice number that
 mapped to MIDI channel 10 put melodic parts on the drum channel (Josh:
