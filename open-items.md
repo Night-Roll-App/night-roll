@@ -18,11 +18,11 @@ Q3. Annotations v2 migration: converting the annotation files of YOUR
     format change enough?
 Q4. The rule table (what each kind of song may do) — being drafted now;
     you check it before anything is rewritten.
-Q5. The website address: which exact address did you open? And may I add
-    two redirects (two tiny public repos) so the old address
-    joshcough.github.io/night-roll and night-roll-app.github.io both land
-    on the app? The real address is
-    https://night-roll-app.github.io/night-roll/
+Q5. May I add a redirect so the bare address night-roll-app.github.io
+    lands on the app? (One tiny public repo in the org,
+    Night-Roll-App.github.io, holding a redirect page.) Answered part: the
+    "site down" was the bare address without /night-roll/ — the app lives
+    only at https://night-roll-app.github.io/night-roll/
 Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
