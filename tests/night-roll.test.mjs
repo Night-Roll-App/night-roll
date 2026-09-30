@@ -1227,6 +1227,67 @@ test("midiStatusLine: names the reason ● hears nothing", () => {
   run(`midiAccess = null; delete navigator.requestMIDIAccess;`);
 });
 
+test("CoreMidi bridge (iPad app, no Web MIDI in a WKWebView): native note bytes drive recNoteOn/recNoteOff exactly like Web MIDI's midimessage", async () => {
+  installSong();
+  run(`
+    createComposition(120, 4, 4); // ppq 480, 120 bpm — same fixture as the raw-recording test
+    ensureAudio(); selTrack = 0; playOffset = 0; loopSeg = null; playing = true;
+    playT0 = audio.currentTime;
+    recording = true; recTake = []; recPending = new Map(); editUndo = []; editRedo = [];
+    midiReady = false; nativeMidiNames = []; midiErr = null;
+    globalThis.__midiCb = null;
+    window.Capacitor = {
+      isNativePlatform: () => true,
+      Plugins: { CoreMidi: {
+        addListener: (name, cb) => { if (name === "midi") __midiCb = cb; },
+        start: async () => ({ok: true}),
+        list: async () => ({sources: ["MPK Mini iPad"]}),
+      } },
+    };
+  `);
+  run(`initWebMidi()`); // no Web MIDI in the harness's navigator either — this MUST take the native path
+  await new Promise(r => setImmediate(r)); // let start().then(list) resolve
+  assert.equal(val(`typeof __midiCb`), "function", "CoreMidi's addListener wired a callback");
+  assert.match(run(`document.getElementById("noteinfo").textContent`), /MIDI keyboard connected: MPK Mini iPad/);
+  assert.match(run(`midiStatusLine()`), /MIDI in: MPK Mini iPad — play/);
+
+  app.tick(100); // playSec() = 0.1s -> tick 96 (off-grid, same as the raw Web MIDI recording test)
+  run(`__midiCb({data: [0x90, 64, 90], source: "MPK Mini iPad"})`); // note-on, ch 0
+  app.tick(200); // playSec() = 0.3s -> tick 288
+  run(`__midiCb({data: [0x80, 64, 0], source: "MPK Mini iPad"})`); // note-off
+  assert.deepEqual(val(`({t: song.tracks[0].notes[0].t, d: song.tracks[0].notes[0].d, p: song.tracks[0].notes[0].p})`),
+    {t: 96, d: 192, p: 64}, "native CoreMidi bytes recorded the same note the raw Web MIDI path would");
+  run(`recFinish();`);
+  assert.equal(val(`editUndo[editUndo.length - 1].kind`), "addBatch");
+  run(`editUndoPop();`);
+
+  // the fallback path: no Plugins.CoreMidi wrapper (a build where the JS
+  // export somehow didn't land) — Capacitor.addListener/nativePromise are
+  // the same underlying primitive the generated wrapper itself calls
+  run(`
+    recording = false; playing = false; midiReady = false; nativeMidiNames = []; midiErr = null;
+    globalThis.__midiCb2 = null; globalThis.__started = false;
+    window.Capacitor = {
+      isNativePlatform: () => true,
+      Plugins: {},
+      addListener: (pl, name, cb) => { if (pl === "CoreMidi" && name === "midi") __midiCb2 = cb; },
+      nativePromise: async (pl, m) => {
+        if (pl !== "CoreMidi") return null;
+        if (m === "start") { __started = true; return {ok: true}; }
+        if (m === "list") return {sources: ["USB MIDI Keyboard"]};
+        return null;
+      },
+    };
+  `);
+  run(`initWebMidi()`);
+  await new Promise(r => setImmediate(r));
+  assert.equal(val(`__started`), true, "nativePromise fallback started the bridge");
+  assert.equal(val(`typeof __midiCb2`), "function", "Capacitor.addListener fallback wired a callback");
+  assert.match(run(`midiStatusLine()`), /MIDI in: USB MIDI Keyboard — play/);
+
+  run(`recording = false; playing = false; midiReady = false; nativeMidiNames = []; midiErr = null; delete window.Capacitor; songKey = null;`);
+});
+
 test("composition helpers: slugify, isComposition gate, draft store round-trip", () => {
   installSong();
   assert.equal(run(`slugify("  My New Song! ")`), "my-new-song");
@@ -2106,6 +2167,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
     "an estimated key is named as an estimate", "Check vs file",
     "Snap while recording", "Quantize (Q)", "Also quantize note ends", "Recording keeps what you played",
+    "A MIDI keyboard works on the iPad app too",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));

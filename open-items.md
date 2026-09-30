@@ -527,10 +527,15 @@ only, saved with the song (track: annotation; hide stays separate) ·
 shortcuts + Select All / Duplicate · (e) undo coverage · (f) selecting a
 note doesn't move the playhead (maybe a pref) · (g) raw recording +
 Quantize. Save model (#1): advisor drafting 2–3 models for his ruling —
-build nothing until he picks. Still open: iPad CoreMIDI plugin (Web MIDI
-already works in desktop browsers — his son used it on a MacBook; no
-on-screen substitute needed, only the connected-keyboard case is
-blocked).
+build nothing until he picks. iPad CoreMIDI plugin: DONE 2026-09-30 (Web
+MIDI already works in desktop browsers — his son used it on a MacBook;
+the iPad's WKWebView has neither, so the CoreMidiPlugin in night-roll-app
+ios/App/App/AppDelegate.swift bridges a keyboard plugged into the iPad —
+one MIDIClient + input port, connects every source, reconnects on setup
+changes; running status expanded native-side; index.html's initWebMidi
+picks Web MIDI or the native bridge automatically and both land in the
+same midiMessage()). NEEDS JOSH'S TEST with a real keyboard on the iPad —
+untested on hardware.
 
 ## DONE 2026-09-30: a console voice that fails to load says why; ▶ retries
 Josh: "sometimes the instruments never load" (▶ enabled at once, synth,

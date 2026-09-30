@@ -1649,7 +1649,7 @@
     <div class="hsec" data-hsec="editor">
     <dl>
       <dt>Edit row</dt><dd>On your own songs (never on captures) a dedicated row appears above the footer: Select / Pencil / Erase (tap the active tool again to turn it OFF — then dragging only pans, and no note can be grabbed by accident), durations 32nd–whole incl. dotted, plus 16· (dotted 16th) and 8T/16T triplets — picking a triplet also switches the snap grid to triplet steps, and the grid only goes 32nd-fine when the song actually CONTAINS 32nds — to add the first one, pencil it on the beat (the grid upgrades the moment it exists) and drag it where it belongs (Logic's grid-division trick: your 4/4 stays 4/4, entry just lands on thirds until you pick a straight duration again), p/mf/f velocity, the ♮♯♭ accidental segment in score view, and ⟲ undo.</dd>
-      <dt>● Record</dt><dd>On your own songs: tap the chip of the track you want to record onto, then ● beside Play arms the take — the 🎹 panel opens, ● blinks red, the transport rolls (count-in applies), and every key you play lands on that track at the playhead — hold a key for a long note, slide across keys for runs — or play a REAL MIDI device (a Jamstik, a keyboard): the browser's MIDI input records with your actual velocities, chords included (Chrome/Edge on the computer; Safari/iPad has no Web MIDI). <b>Recording keeps what you played</b> (Logic/GarageBand/Cubasis convention): starts and durations land exactly where you played them, on- or off-grid, not snapped — Settings → Other → <b>Snap while recording</b> (default off) restores the old always-on-the-grid input for anyone who wants it. Either way, straighten a take afterward with <b>Q Quantize</b> (below) instead of fighting the grid while playing. ● again or ■ stops; the whole take is one ⟲ step. ● also says what it sees in the status line: your MIDI inputs by name; <b>no MIDI inputs found</b> when nothing is plugged in or the browser can't see it (Chrome lists what it sees at chrome://settings/content/midiDevices); <b>MIDI blocked</b> when the permission prompt was dismissed — allow it from the icon in the address bar and reload; or <b>no Web MIDI</b> on Safari.</dd>
+      <dt>● Record</dt><dd>On your own songs: tap the chip of the track you want to record onto, then ● beside Play arms the take — the 🎹 panel opens, ● blinks red, the transport rolls (count-in applies), and every key you play lands on that track at the playhead — hold a key for a long note, slide across keys for runs — or play a REAL MIDI device (a Jamstik, a keyboard): the browser's MIDI input records with your actual velocities, chords included (Chrome/Edge on the computer; Safari in a browser has no Web MIDI). <b>A MIDI keyboard works on the iPad app too</b> — its WKWebView has no Web MIDI either, so the app ships its own native MIDI bridge instead (CoreMIDI under the hood); plug the keyboard in and it shows up here exactly like a computer's would, no browser needed. <b>Recording keeps what you played</b> (Logic/GarageBand/Cubasis convention): starts and durations land exactly where you played them, on- or off-grid, not snapped — Settings → Other → <b>Snap while recording</b> (default off) restores the old always-on-the-grid input for anyone who wants it. Either way, straighten a take afterward with <b>Q Quantize</b> (below) instead of fighting the grid while playing. ● again or ■ stops; the whole take is one ⟲ step. ● also says what it sees in the status line: your MIDI inputs by name; <b>no MIDI inputs found</b> when nothing is plugged in or the browser can't see it (Chrome lists what it sees at chrome://settings/content/midiDevices); <b>MIDI blocked</b> when the permission prompt was dismissed — allow it from the icon in the address bar and reload; or <b>no Web MIDI</b> on Safari.</dd>
       <dt>Pencil drag</dt><dd>In Pencil mode, tap places one grid-unit of note — or <b>keep dragging</b> and the note stretches under your finger, snapped to the duration grid. The duration picker is <b>note value × modifier</b>: pick 1/2/4/8/16/32 (whole through 32nd), then — (plain), · (dotted), or T (triplet) — every duration a staff can write, two taps. A tap lands the note in the CELL you touch: press anywhere in a gap and the note starts at that gap's gridline, no edge-hunting.</dd>
       <dt>Drum chart (score view)</dt><dd>The kit renders as a real percussion staff at the BOTTOM of the score: percussion clef, positions are roles not pitches (kick in the bottom space, snare in the third, toms by size, hats above the top line), x-noteheads for hats and cymbals, stems up for hands and down for feet. Read-only for now — kit entry lives in the roll's drum lane; lasso and tap work on the chart like anywhere else.</dd>
       <dt>Score entry</dt><dd>Pencil and Erase work on the engraved score too: tap a staff position and the note lands there — the stave you tap picks the track, the height picks the pitch (ledger lines included), and the key signature supplies sharps/flats automatically. The key/♮/♯/♭ segment overrides the signature when you want an accidental. Erase taps a notehead out.</dd>
@@ -13350,15 +13350,39 @@ function recFinish() { // called from stop(): close pendings, commit the take
   }
   recTake = [];
 }
-// Web MIDI (Josh has a Jamstik — MIDI guitar): real note-ons with real
+// MIDI (Josh has a Jamstik — MIDI guitar): real note-ons with real
 // velocities, chords included. Notes PREVIEW through the selected track's
 // voice any time MIDI is connected; while ● is armed they also record.
-// Chrome/Edge only (Safari has no Web MIDI — so desktop, not the iPad).
+// Two paths land in the SAME midiMessage(): Web MIDI (Chrome/Edge, desktop
+// — Safari has none, so not the browser-iPad) and, on the iPad app, the
+// shell's own CoreMidi plugin (ios/App/App/AppDelegate.swift's
+// CoreMidiPlugin — the WKWebView has no Web MIDI at all).
 let midiReady = false, midiAccess = null, midiErr = null;
+let nativeMidiNames = []; // CoreMidi source names, once the iPad app has connected any
+// One MIDI message's bytes (status, data1, data2?) — Web MIDI's
+// MIDIMessageEvent.data is already exactly this shape; CoreMidiPlugin
+// expands running status on the native side so its "midi" events are too.
+function midiMessage(data) {
+  const [st, note, vel] = data;
+  const cmd = st & 0xf0;
+  if (cmd === 0x90 && vel > 0) {
+    if (recording && playing) recNoteOn("midi" + note + (st & 15), note, vel);
+    previewNote(selTrack, note);
+    instFlash = {p: note, until: performance.now() + 300}; // light the panel key
+    if (instOpen) drawInst();
+  } else if (cmd === 0x80 || (cmd === 0x90 && vel === 0)) {
+    recNoteOff("midi" + note + (st & 15));
+  }
+}
 // What ● can tell you about MIDI right now — the old path swallowed every
 // failure, so a blocked permission, Safari, or an unplugged device all
 // looked identical: nothing (Josh's MPK Mini, 2026-09-12)
 function midiStatusLine() {
+  if (nativeMidiNames.length) return "MIDI in: " + nativeMidiNames.join(", ") + " — play, and ● records it";
+  const C = typeof window !== "undefined" && window.Capacitor;
+  if (C && C.isNativePlatform && C.isNativePlatform())
+    return midiErr ? "MIDI blocked: " + (midiErr.message || midiErr)
+                    : "no MIDI inputs found — plug a MIDI keyboard into the iPad";
   if (typeof navigator === "undefined" || !navigator.requestMIDIAccess)
     return "this browser has no Web MIDI (Safari) — use Chrome or Edge on the computer";
   if (midiErr) return "MIDI blocked: " + (midiErr.message || midiErr) + " — allow MIDI for this site from the icon in the address bar, then reload";
@@ -13368,22 +13392,14 @@ function midiStatusLine() {
                       : "no MIDI inputs found — plug the device in (or check chrome://settings/content/midiDevices)";
 }
 function initWebMidi() {
-  if (midiReady || !navigator.requestMIDIAccess) return;
+  if (midiReady) return;
+  const C = typeof window !== "undefined" && window.Capacitor;
+  if (C && C.isNativePlatform && C.isNativePlatform()) { initCoreMidi(C); return; }
+  if (!navigator.requestMIDIAccess) return;
   midiReady = true;
   navigator.requestMIDIAccess({sysex: false}).then(access => {
     midiAccess = access;
-    const hook = input => input.addEventListener("midimessage", e => {
-      const [st, note, vel] = e.data;
-      const cmd = st & 0xf0;
-      if (cmd === 0x90 && vel > 0) {
-        if (recording && playing) recNoteOn("midi" + note + (st & 15), note, vel);
-        previewNote(selTrack, note);
-        instFlash = {p: note, until: performance.now() + 300}; // light the panel key
-        if (instOpen) drawInst();
-      } else if (cmd === 0x80 || (cmd === 0x90 && vel === 0)) {
-        recNoteOff("midi" + note + (st & 15));
-      }
-    });
+    const hook = input => input.addEventListener("midimessage", e => midiMessage(e.data));
     for (const input of access.inputs.values()) hook(input);
     access.addEventListener("statechange", e => {
       if (e.port.type === "input" && e.port.state === "connected") hook(e.port);
@@ -13393,8 +13409,47 @@ function initWebMidi() {
     if (names.length || recording) setInfo(midiStatusLine()); // silence at first tap unless there's a device or ● is waiting
   }).catch(err => { midiErr = err; midiReady = false; setInfo(midiStatusLine()); }); // retry on the next tap
 }
+// The iPad app: WKWebView has no Web MIDI, so a keyboard reaches this page
+// through the shell's own CoreMidi plugin instead (registered next to 📷's
+// Screenshot in MainViewController.capacitorDidLoad — same mechanism, see
+// askShotCapture's comment). Capacitor auto-generates Plugins.CoreMidi
+// (addListener + start/stop/list) once a plugin is registered natively, so
+// that's the normal path; Capacitor.addListener/nativePromise underneath it
+// is the same primitive the generated wrapper itself calls, so it's a real
+// fallback (not a guess) if the wrapper object is ever missing.
+function initCoreMidi(C) {
+  if (midiReady) return;
+  midiReady = true;
+  const plugin = C.Plugins && C.Plugins.CoreMidi;
+  const listen = (name, cb) => plugin && plugin.addListener ? plugin.addListener(name, cb)
+    : C.addListener ? C.addListener("CoreMidi", name, cb) : null;
+  const call = (method, opts) => plugin && plugin[method] ? plugin[method](opts || {})
+    : C.nativePromise ? C.nativePromise("CoreMidi", method, opts || {})
+    : Promise.reject(new Error("no CoreMidi bridge"));
+  if (!(plugin && plugin.addListener) && !C.addListener) { midiReady = false; return; } // truly nothing to call: leave midiReady false so a later tap retries
+  listen("midi", e => {
+    if (!e || !Array.isArray(e.data)) return;
+    if (e.source && !nativeMidiNames.includes(e.source)) {
+      nativeMidiNames.push(e.source);
+      setInfo("MIDI keyboard connected: " + e.source);
+    }
+    midiMessage(e.data);
+  });
+  call("start").then(() => call("list")).then(r => {
+    const names = r && r.sources || [];
+    if (names.length) {
+      nativeMidiNames = names;
+      setInfo("MIDI keyboard connected: " + names.join(", "));
+    }
+  }).catch(err => { midiErr = err; setInfo(midiStatusLine()); });
+}
 document.addEventListener("pointerdown", function midiWarm() {
   document.removeEventListener("pointerdown", midiWarm);
+  // the iPad app's native MIDI bridge starts only when ● asks for it — never
+  // on the first touch, where an untested native path failing would cost
+  // the whole app (2026-09-30, the plugin is new and unheard on a device)
+  const C = typeof window !== "undefined" && window.Capacitor;
+  if (C && C.isNativePlatform && C.isNativePlatform()) return;
   initWebMidi(); // permission prompt wants a user gesture
 }, {capture: true});
 document.getElementById("recbtn").addEventListener("click", async () => {

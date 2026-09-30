@@ -3600,11 +3600,93 @@ looser (a MIDI keyboard's natural feel, a fast run).
   played and names the pref and Q; a new `Quantize (Q)` entry sits
   beside `Divide (➗)`; the Hardware keyboard and Edit menu entries list
   Q too.
-- Not done: the hardware-key Q obviously needs a connected keyboard on
-  the iPad (no on-screen equivalent needed — the Q Quantize button
+- Not done (at the time): the hardware-key Q needs a connected keyboard
+  on the iPad (no on-screen equivalent needed — the Q Quantize button
   covers touch already); iPad CoreMIDI (item 2's other half — a real
-  MIDI keyboard on the iPad itself) is unrelated and still open (see
-  open-items.md).
+  MIDI keyboard on the iPad itself) was still open — see the next
+  section, now done.
+
+## iPad CoreMIDI bridge (2026-09-30)
+
+Josh's son records from a MIDI keyboard via Web MIDI on a MacBook
+(`initWebMidi`, `navigator.requestMIDIAccess`) — that already worked.
+The iPad app wraps the page in a Capacitor WKWebView, which implements
+NO Web MIDI at all (not even the empty-inputs case Safari-the-browser
+gives you); a keyboard plugged into the iPad did nothing. Fixed with a
+native bridge, the same shape as 📷's Screenshot plugin.
+
+- **Native** (`night-roll-app` repo, `ios/App/App/AppDelegate.swift`):
+  `CoreMidiPlugin` (`@objc(CoreMidiPlugin)`, `CAPPlugin` + `CAPBridgedPlugin`,
+  `jsName = "CoreMidi"`), registered in `MainViewController
+  .capacitorDidLoad` right beside `ScreenshotPlugin`. One `MIDIClientRef`
+  + one `MIDIPortRef` (`MIDIClientCreateWithBlock` /
+  `MIDIInputPortCreateWithBlock` — block-based, no C read-proc juggling),
+  connected to every `MIDIGetSource(i)` on `start()` and reconnected on
+  `kMIDIMsgSetupChanged` (a keyboard plugged in mid-session shows up
+  without restarting the bridge) — `connectedSources: Set<MIDIEndpointRef>`
+  skips sources already connected so a setup-changed storm doesn't double-
+  wire one. `stop()` disposes the port + client. `list()` returns source
+  display names.
+  `handle(packetList:srcConnRefCon:)` walks the `MIDIPacketList` with
+  `MIDIPacketNext` on a pointer INTO the original buffer (never a copy of
+  a `MIDIPacket` — the struct's fixed 256-byte `data` tuple means a copy's
+  "next packet" arithmetic lands in unrelated memory; `MemoryLayout
+  .offset(of: \MIDIPacketList.packet)` finds the real field offset instead
+  of hand-coding the platform's struct padding). CoreMIDI delivers raw
+  wire bytes, which may use running status (repeated status bytes
+  dropped) — Web MIDI's `MIDIMessageEvent.data` never does, so `expand()`
+  turns each packet into complete 1–3 byte messages (per-source running
+  status, `runningStatus: [MIDIEndpointRef: UInt8]`) before calling
+  `notifyListeners("midi", data: ["data": [Int], "source": name])` once
+  per message, on the main queue. Compiles clean at the project's iOS 15
+  deployment target (`xcodebuild … build`, no install/run).
+- **Web** (`index.html`, `initWebMidi`/`initCoreMidi`): both paths land in
+  one `midiMessage(data)` (status/note/vel — the exact shape
+  `MIDIMessageEvent.data` already had) so recording, preview and the
+  instrument panel are identical either way. `initWebMidi` checks
+  `Capacitor.isNativePlatform()` FIRST — the old guard bailed immediately
+  on `!navigator.requestMIDIAccess`, which is also true in the iPad app's
+  WKWebView, so native has to be checked before that. `initCoreMidi`
+  prefers `Capacitor.Plugins.CoreMidi.addListener`/`.start`/`.list` (the
+  JS Capacitor auto-generates once a plugin is `registerPluginInstance`d
+  natively — confirmed by reading `JSExport.exportJS` in the Capacitor iOS
+  package: `registerPluginInstance` calls it directly, so the wrapper
+  exists as a `WKUserScript` before the page's own script runs, same as
+  Screenshot's `Plugins.Screenshot` already relied on); falls back to the
+  bare `Capacitor.addListener("CoreMidi", "midi", cb)` /
+  `Capacitor.nativePromise("CoreMidi", "start", {})` primitives
+  (`native-bridge.js`'s `initEvents`/`initNativeBridge` — the same calls
+  the generated wrapper itself makes, not a guess) if the wrapper object
+  is ever missing. `nativeMidiNames` (module-level) tracks connected
+  source names, seeded from `list()` right after `start()` resolves and
+  grown from each event's `source` field; `setInfo("MIDI keyboard
+  connected: " + name)` on first sight. `midiStatusLine()` branches on
+  native-with-names before the Web MIDI checks.
+- **Tests**: `tests/night-roll.test.mjs`, "CoreMidi bridge" — a stubbed
+  `window.Capacitor` (`Plugins.CoreMidi.addListener/start/list`, then
+  separately the `Capacitor.addListener`/`nativePromise` fallback with an
+  empty `Plugins`) delivers note-on/off bytes through the captured
+  listener callback and asserts the SAME `{t, d, p}` a raw Web MIDI
+  recording would produce (cross-checked against the raw-recording test's
+  own numbers). Swift isn't unit-tested by the vm harness — running-status
+  expansion is native-only code, so it's covered by the compile check,
+  not `npm test`.
+- **Help**: `● Record`'s entry gets a sentence — "A MIDI keyboard works on
+  the iPad app too" (also the drift-guard keyword in
+  `tests/night-roll.test.mjs`'s FEATURES list).
+- **Not done**: real-hardware test — Josh needs to plug an actual MIDI
+  keyboard into the iPad and try it (open-items.md, DAW item 2). Bluetooth
+  MIDI is untested and the app's `Info.plist` has no
+  `NSBluetoothAlwaysUsageDescription`; a wired/USB-C keyboard needs none,
+  but a BLE MIDI device would likely need that key added before CoreMIDI
+  can see it. Reconnect-on-setup-changed doesn't prune
+  `connectedSources` when a source disappears, so an unplugged-then-
+  replugged device with the SAME `MIDIEndpointRef` (CoreMIDI usually
+  reuses it for the same physical port) is fine, but a genuinely new
+  endpoint ref for what's "the same" keyboard would connect as expected
+  since it isn't in the set yet — the risk is only a leaked entry for a
+  ref that's gone for good, which just means one fewer relevant no-op
+  connect attempt on the next setup-changed, not a functional bug.
 
 ## Compare with repo (2026-09-25)
 
