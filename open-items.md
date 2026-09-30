@@ -470,7 +470,16 @@ whether the tool or the app owns the order.
    "Published › SNES › Final Fantasy 4 › Song" / "Local › Night Roll
    Sketches › Song"; the word never truncates, the folder/title does.
 
-8. NEXT: "What is Claude Code doing" status (Josh via Ask, 2026-09-29:
+8. NEXT (first): Play waits for the song (Josh, 2026-09-29: "the play button
+   should not even be enabled until everything is loaded … once it hits
+   100% it turns into the regular Play button"). ▶ disabled with a
+   percentage while the chip source is found/fetched/rendered, song
+   soundfont/game voices decode, audio clips decode; songs with nothing
+   to load never flash disabled; a failed load enables Play and says why
+   (synth fallback); a tap during loading does not queue a play; album
+   auto-advance waits the same way. No modal. (Stopgap shipped: play()
+   waits on chip.resolving.)
+9. "What is Claude Code doing" status (Josh via Ask, 2026-09-29:
    "I wish I had a way to see what Claude Code was working on from
    here"). `claude-bridge.mjs --status "…"` stores one current line + the
    last ~10 with times; the app shows it as a quiet strip atop the

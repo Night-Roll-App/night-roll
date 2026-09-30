@@ -8431,7 +8431,17 @@ async function chipSource() { // {bytes, n, secs} for the current song, or null
   }
   return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind, libs: libs || {}};
 }
-async function updateChipBtn() { // name kept for call sites; now just the auto-render kick
+// Right after a launch the source resolve (album meta, this device's store,
+// the archive) takes seconds, and chip.rendering is only set after it: a Play
+// in that window went out on synth voices (Josh, 2026-09-29, Chrono Cross,
+// twice after a reload). chip.resolving lets play() wait for the decision.
+function updateChipBtn() {
+  const key = songKey, p = updateChipBtnInner();
+  chip.resolving = {key, p};
+  p.catch(() => {}).finally(() => { if (chip.resolving && chip.resolving.p === p) chip.resolving = null; });
+  return p;
+}
+async function updateChipBtnInner() { // name kept for call sites; now just the auto-render kick
   // "the chip button should not even have to exist" (Josh, 2026-08-17): chip
   // audio simply plays when a source resolves. Per-track override lives in
   // the voice menu — auto = the console own sound, an explicit instrument
@@ -9202,6 +9212,15 @@ async function play(fromSec = 0, opts = {}) {
   // fine after Stop/⏮/Play): a synth pass under a render is starved and
   // garbled, so wait for the render instead — with its progress — and let a
   // second tap (Stop) during the wait win
+  if (chip.resolving && chip.resolving.key === songKey && chip.rendering !== songKey) { // still finding the console file: the render hasn't started yet
+    logDebug("play: waiting for the console file to resolve");
+    document.getElementById("playbtn").textContent = "▶ …";
+    setInfo("loading the console's voice…");
+    await Promise.race([chip.resolving.p.catch(() => {}), new Promise(r => setTimeout(r, 25000))]);
+    if (gen !== play.gen || playing) return;
+    setInfo("");
+  }
+  logDebug("play: " + (chip.rendering === songKey ? "waiting for the console render" : chip.key === songKey ? "console voice ready" : "synth voices (no console source)"));
   if (chip.rendering === songKey && chip.renderPromise) {
     document.getElementById("playbtn").textContent = "▶ …";
     const t0 = Date.now();
@@ -18609,7 +18628,7 @@ async function askShotTake() {
   let shot;
   try {
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    shot = await askShotCapture();
+    shot = await Promise.race([askShotCapture(), new Promise((_, rej) => setTimeout(() => rej(new Error("screenshot timed out")), 10000))]); // a native call that never answers must not leave "taking…" up forever
   } catch (err) { askstatus.textContent = "📷 " + (err && err.message || "no screenshot"); return; }
   finally { if (aside) sheet.style.visibility = ""; }
   askstatus.textContent = "📷 sending…";

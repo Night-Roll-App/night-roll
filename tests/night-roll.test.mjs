@@ -5090,6 +5090,22 @@ test("album links: a boot ?album= arms albumRun (no play) only when the song tha
   } finally { run(`CATALOG = {}; albumRun = null;`); }
 });
 
+test("chip: Play right after a launch waits while the console file is still being found (Chrono Cross played on synth, 2026-09-29)", async () => {
+  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
+       trackState = [{muted: false, solo: false}]; songEndTick = 4 * 480;
+       globalThis.__release = null; chipSource = () => new Promise(r => { __release = () => r(null); });
+       updateChipBtn(); globalThis.__p = 0; play(0, {noCountIn: true}).then(() => __p++);`);
+  assert.equal(val(`!!chip.resolving && chip.resolving.key === songKey`), true, "the resolve is tracked");
+  for (let i = 0; i < 10; i++) { app.tick(50); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`playing`), false, "no transport while the source is unresolved");
+  run(`__release();`);
+  for (let i = 0; i < 100 && val(`globalThis.__p`) < 1; i++) { app.tick(50); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`playing`), true, "resolved (no source here): plays");
+  assert.equal(val(`chip.resolving`), null, "and the marker is cleared");
+  run(`stop();`);
+});
+
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
   const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
