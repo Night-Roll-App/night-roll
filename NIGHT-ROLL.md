@@ -2360,9 +2360,10 @@ passes `onlyKeys: [key]` — the same job, one item, titled "Publish
 `loadSong`) and **Revert** (`revertSongToRepo`: appConfirm, then
 `dropLocalSong` — pushes the current state as a "Before going back"
 version first, Model B below, then discards; hidden on a never-published
-song, which has no repo copy). Not jobs: Download audio (real-time
-playback), chip renders (already off-thread; a row per song open would
-spam the list). Later: captures in the worker.
+song, which has no repo copy). Not jobs: Download audio (an offline
+bounce, faster than real time — see "Audio export" below — or its
+real-time fallback), chip renders (already off-thread; a row per song
+open would spam the list). Later: captures in the worker.
 
 Auto-clear (2026-09-29): a job that ends `done` or `cancelled` calls
 `jobsAutoClear(id)` from `jobApi`'s `finish()`, which `setTimeout`s
@@ -3817,6 +3818,96 @@ a waveform in the roll, a dedicated audio repo (bytes go
 where the song goes: folder or songs repo — Josh's ruling pending),
 Save As / Move to… carrying `.audio/` along (they copy the annotation;
 the bytes must be re-imported until that lands), orphan cleanup.
+
+## Audio export — Download audio (2026-09-30, offline bounce)
+
+DAW convention (GarageBand, Cubasis, BandLab): bounce OFFLINE — faster
+than real time, to a file, handed to the share sheet — not a real-time
+recording of the speaker output. `renderSongOffline()` (index.html,
+just above the `filedlaudio` click handler) drives the exact same
+voice code live playback does: `buildSchedule`, `scheduleNote`,
+`chipStart`, `drumHit`, `scheduleClip`, `scheduleGameNote` all read
+`audio`/`master`/`trackGains`/`trackPanners` as module globals rather
+than taking a context parameter, so `renderSongOffline` points those
+globals at a fresh `OfflineAudioContext` for one synchronous scheduling
+pass — the same trick `ensureAudio()`/`rebuildAudio()` already use when
+the LIVE context itself is rebuilt (periodic waves `pulse25`/`pulse12`/
+`organWave` are tied to the context that made them, which is why those
+three get reset on every context swap too). Nothing is awaited between
+the swap-in and `oac.startRendering()`, so no other code ever observes
+the globals mid-swap; every saved value (`audio`, `master`,
+`trackGains`, `trackPanners`, `pulse25`, `pulse12`, `organWave`,
+`playing`, `playT0`, `playOffset`, `loopPass`, `loopSeg`,
+`albumEndAbs`) is restored afterward whether the render succeeded or
+threw. `chip.buffers`/`chip.buffersCtx` are saved and restored too, but
+deliberately NOT reset before the render: `chipBuffers()` already
+rebuilds against whichever context `audio` names when the two disagree
+(how a live rebuild picks up a stale chip cache today), and the common
+case (`chipPcmToBuffers`, AudioBuffer built straight from the render's
+PCM) sets `buffersCtx = null` — "good in any context" — so nulling it
+here would have thrown away the only copy of the console audio once
+its Float32 source (`chip.pcm`) is already freed.
+
+**Scope: the whole song, once, no loop, no cycle.** `loopSeg` is set
+directly to `{start: 0, end: tickToSec(song, songEndTick), looped:
+false}` rather than going through `currentLoop()`/`play()`'s `cycling`
+branch — Download audio has always been documented as loop-off
+regardless of an armed ruler cycle (a live real-time capture technically
+DOES still consult `rangeSel.cycle`, an inherited quirk of reusing
+`play()` for the MediaRecorder path — the offline path does not
+inherit it). Duration = `tickToSec(song, songEndTick) / playRate + 1`,
+the same tail pad (`+1`) the real-time capture has always used so a
+release isn't chopped.
+
+**Readiness.** `offlineWaitForAssets(capMs)` mirrors `play()`'s
+preflight (the chip resolve/render wait, `sfWaitForSong`,
+`gameWaitForSong`) and adds a wait `play()` doesn't need: audio-clip
+decode and time-stretch. Live playback can leave a clip silent for one
+pass and catch up on the next (`scheduleClip`: "still stretching:
+silent this pass, it joins the next"); an offline bounce gets exactly
+one pass, so this waits (poll, 8 s cap) for every clip file's decode
+(`audioBufCache`) and, at a non-native rate with pitch-keep on, its
+stretched copy (`stretchCache`) before scheduling.
+
+**What renders offline vs falls back.** Every voice kind an
+`OfflineAudioContext` can build a node graph for renders this way —
+oscillator/pulse/organ/piano/strings/bell/pluck synths, sampled
+instruments (`sfDecode`'s buffers, already decoded via a throwaway
+OfflineAudioContext — see "Decode" above — and an `AudioBuffer` plays
+in any context regardless of which one decoded it), the drum kit,
+game-instrument/soundfont voices (`scheduleGameNote`'s PCM comes from a
+synchronous JS renderer, `tools/instruments/play.mjs`, not the audio
+context), console/chip audio (`chip.pcm` is a plain `Float32Array` from
+`tools/nsf/apu-render.mjs`, a pure emulator, never context-bound), and
+audio clips/recordings. None of this is actually tied to the live
+context — the engine was already built context-agnostic for the
+no-user-gesture decode path (`decodeAudioBytes`, `sfDecodeCtx`). The
+one real hard case is a browser with no `OfflineAudioContext` at all;
+`renderSongOffline` returns `{ok: false, why}` and the click handler
+falls back to `recordRealtimeAudio()` — today's MediaRecorder path
+(m4a on Safari, webm on Chrome), refactored out of the old
+`filedlaudio` handler unchanged in behavior. A song whose sample/clip
+assets simply aren't ready within the 8 s cap still renders (same
+triangle-fallback / silent-this-pass behavior live playback has) rather
+than aborting to the real-time path — that's ordinary asset-not-ready
+fallback, not a voice kind the offline context can't render.
+
+**Encoding.** `wavEncode(numChannels, sampleRate, channelData)` is a
+plain 16-bit PCM WAV writer (RIFF/WAVE/fmt /data, no compression, no
+dependency) — `audioBufferToWav(buf)` calls it with an `AudioBuffer`'s
+channels. Samples are truncated toward zero (`setInt16`'s own
+conversion), not rounded.
+
+**Delivery.** `deliverAudioFile(blob, name)`: in the iPad app
+(`Capacitor.isNativePlatform()`), writes the file via the Filesystem
+plugin's cache directory then calls the share sheet — both through
+`nativeCall(plugin, method, args)`, which reaches `Plugins.Filesystem`
+directly when the shell exposes it (it does, for the local-folder
+backend's `nativeFs()`) and `Capacitor.nativePromise(plugin, method,
+args)` otherwise (how 📷 Screenshot reaches its own plugin — this page
+loads no `@capacitor/core`, so there's no `registerPlugin`, and
+`@capacitor/share` has no JS shim here, so Share always goes through
+`nativePromise`). In a browser: `<a download>`, same as Download .mid.
 
 ## Import hub (docs/import-hub-design.md, 2026-09-29)
 

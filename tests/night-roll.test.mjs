@@ -2096,7 +2096,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -6258,4 +6258,120 @@ test("P4: askSpanNotes (Normal) spells by the key ESTIMATE when nothing is decla
   const learn = mkAsk("learning");
   const learnTxt = learn.run(`askSpanNotes(0, barTicks())`);
   assert.match(learnTxt, /# Pitches use sharp spelling; the true key is the user's to discover — this block states no key\./);
+});
+
+// ---------------------------------------------------- Download audio (offline WAV bounce)
+// 16-bit PCM WAV, straight header-field/sample checks against the spec (no
+// rounding: setInt16 truncates toward zero — see wavEncode).
+function pcmEncode16(s) { // mirrors wavEncode's per-sample math exactly
+  s = Math.max(-1, Math.min(1, s));
+  const raw = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  return (raw < 0 ? Math.ceil(raw) : Math.floor(raw)) || 0; // decoded bytes can't carry a sign on zero — normalize -0
+}
+
+test("Download audio: wavEncode's header fields, byte length, and full-scale/half/silent samples", () => {
+  const bytes = val(`Array.from(wavEncode(1, 8000, [new Float32Array([1, -1, 0.5, -0.5, 0])]))`);
+  assert.equal(bytes.length, 44 + 5 * 2, "44-byte header + 5 mono 16-bit frames");
+  const str = (a, b) => String.fromCharCode(...bytes.slice(a, b));
+  const u16 = o => bytes[o] | (bytes[o + 1] << 8);
+  const u32 = o => (bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0;
+  const i16 = o => { const v = u16(o); return v >= 0x8000 ? v - 0x10000 : v; };
+  assert.equal(str(0, 4), "RIFF"); assert.equal(str(8, 12), "WAVE");
+  assert.equal(str(12, 16), "fmt "); assert.equal(str(36, 40), "data");
+  assert.equal(u32(4), 36 + 10, "RIFF chunk size = 36 + data size");
+  assert.equal(u32(16), 16, "fmt chunk size (PCM)");
+  assert.equal(u16(20), 1, "audio format: PCM");
+  assert.equal(u16(22), 1, "channel count");
+  assert.equal(u32(24), 8000, "sample rate");
+  assert.equal(u32(28), 8000 * 1 * 2, "byte rate = sampleRate * blockAlign");
+  assert.equal(u16(32), 2, "block align");
+  assert.equal(u16(34), 16, "bits per sample");
+  assert.equal(u32(40), 10, "data chunk size");
+  assert.deepEqual([i16(44), i16(46), i16(48), i16(50), i16(52)], [32767, -32768, 16383, -16384, 0],
+    "full-scale, negative full-scale, half, negative half, silence");
+});
+
+test("Download audio: wavEncode interleaves stereo as L,R,L,R… and round-trips a sine exactly", () => {
+  const N = 16;
+  const bytes = val(`(() => {
+    const l = new Float32Array(${N}), r = new Float32Array(${N});
+    for (let i = 0; i < ${N}; i++) { l[i] = Math.sin(2 * Math.PI * i / ${N}); r[i] = -l[i]; }
+    return Array.from(wavEncode(2, 44100, [l, r]));
+  })()`);
+  assert.equal(bytes.length, 44 + N * 2 * 2, "stereo, 16-bit: 4 bytes/frame");
+  const i16 = o => { const v = bytes[o] | (bytes[o + 1] << 8); return v >= 0x8000 ? v - 0x10000 : v; };
+  for (let i = 0; i < N; i++) {
+    const s = Math.sin(2 * Math.PI * i / N);
+    assert.equal(i16(44 + i * 4), pcmEncode16(s), "left, frame " + i);
+    assert.equal(i16(44 + i * 4 + 2), pcmEncode16(-s), "right (negated), same frame " + i);
+  }
+});
+
+function installOfflineTestSong(r) {
+  r(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []};
+    songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
+    song.tracks = [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}]}];
+    trackState = [{muted: false, solo: false}];
+    songEndTick = 4 * 480; playRate = 1;
+  `);
+}
+
+test("Download audio: renderSongOffline renders through OfflineAudioContext when one exists, and restores the live engine's globals untouched", async () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  installOfflineTestSong(r);
+  assert.equal(r(`typeof window.OfflineAudioContext`), "function", "the harness stubs one by default, like every real browser");
+  const audioBefore = r(`audio`), masterBefore = r(`master`);
+  const off = await r(`renderSongOffline()`);
+  assert.equal(off.ok, true, off.why);
+  assert.equal(off.buffer.numberOfChannels, 2, "stereo render");
+  assert.ok(off.buffer.sampleRate > 0);
+  // 2 bars @ 120bpm = 2s, + the same 1s tail pad the real-time capture always used
+  const expectedFrames = Math.ceil(3 * off.buffer.sampleRate);
+  assert.equal(off.buffer.length, expectedFrames, "intro + one pass, no loop, + 1s tail — same math as the real-time capture's lenSec");
+  assert.equal(r(`audio`), audioBefore, "the live audio context is exactly what it was before — the offline pass never leaked out");
+  assert.equal(r(`master`), masterBefore);
+  assert.equal(r(`playing`), false, "the transport is left stopped, not mid-render");
+});
+
+test("Download audio: renderSongOffline falls back with a reason when there is no OfflineAudioContext", async () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  installOfflineTestSong(r);
+  r(`window.__savedOAC = window.OfflineAudioContext; window.__savedWOAC = window.webkitOfflineAudioContext;
+     window.OfflineAudioContext = undefined; window.webkitOfflineAudioContext = undefined;`);
+  try {
+    const off = await r(`renderSongOffline()`);
+    assert.equal(off.ok, false);
+    assert.match(off.why, /OfflineAudioContext/);
+  } finally {
+    r(`window.OfflineAudioContext = window.__savedOAC; window.webkitOfflineAudioContext = window.__savedWOAC;`);
+  }
+});
+
+test("Download audio: deliverAudioFile writes the file via Filesystem then calls Share.share, both through nativePromise, when Capacitor is native", async () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  r(`
+    globalThis.__calls = [];
+    window.Capacitor = {
+      isNativePlatform: () => true,
+      nativePromise: async (plugin, method, args) => {
+        globalThis.__calls.push([plugin, method, args]);
+        if (plugin === "Filesystem" && method === "writeFile") return {uri: "file:///cache/" + args.path};
+        return {activityType: ""};
+      },
+    };
+  `);
+  await r(`deliverAudioFile(new Blob(["abc"], {type: "audio/wav"}), "song.wav")`);
+  const calls = JSON.parse(r(`JSON.stringify(globalThis.__calls)`));
+  assert.equal(calls.length, 2, "Filesystem.writeFile then Share.share");
+  assert.deepEqual([calls[0][0], calls[0][1]], ["Filesystem", "writeFile"]);
+  assert.equal(calls[0][2].path, "song.wav");
+  assert.equal(calls[0][2].directory, "CACHE");
+  assert.equal(Buffer.from(calls[0][2].data, "base64").toString(), "abc", "the file's bytes round-trip through base64");
+  assert.deepEqual([calls[1][0], calls[1][1]], ["Share", "share"]);
+  assert.deepEqual(calls[1][2].files, ["file:///cache/song.wav"], "shares the URI Filesystem.writeFile handed back");
+  assert.equal(calls[1][2].title, "song.wav");
 });

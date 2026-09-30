@@ -135,6 +135,28 @@ function fakeAudio(clock) {
   };
 }
 
+// OfflineAudioContext is real (and cheap — no audio device) in every browser
+// the app actually ships to, so it's on by default here too: renderSongOffline
+// (Download audio's offline bounce) picks it up the same way live code does. A
+// test that needs the "no OfflineAudioContext" fallback branch deletes
+// window.OfflineAudioContext/webkitOfflineAudioContext for its own duration
+// and restores it after. Not mirrored to tests/e2e/helpers.mjs: headless
+// Chromium's own OfflineAudioContext already works with no audio device, so
+// e2e never needed a fake one.
+function fakeOfflineAudio(FakeCtx) {
+  return class FakeOfflineCtx extends FakeCtx {
+    constructor(channels = 2, length = 1, sampleRate = 44100) {
+      super();
+      this._channels = channels; this._length = Math.max(1, length); this.sampleRate = sampleRate;
+    }
+    startRendering() {
+      const {_channels: numberOfChannels, _length: length, sampleRate} = this;
+      return Promise.resolve({ numberOfChannels, length, sampleRate,
+        getChannelData: () => new Float32Array(length) });
+    }
+  };
+}
+
 export function createApp(opts = {}) {
   const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
   const m = html.match(/<script>\n([\s\S]*?)<\/script>/); // inline script only (vendor tag has src=)
@@ -193,6 +215,9 @@ export function createApp(opts = {}) {
   const FakeCtx = fakeAudio(clock);
   windowEl.AudioContext = FakeCtx;
   windowEl.webkitAudioContext = FakeCtx;
+  const FakeOfflineCtx = fakeOfflineAudio(FakeCtx);
+  windowEl.OfflineAudioContext = FakeOfflineCtx;
+  windowEl.webkitOfflineAudioContext = FakeOfflineCtx;
 
   const sandbox = {
     console,
