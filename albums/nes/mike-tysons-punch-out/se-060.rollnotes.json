@@ -1,3 +1,3 @@
-{ "version": 1, "song": "se-060", "saved": 1790564351715, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "se-060", "origin": {"kind":"capture"}, "stamp": 1790564351715, "notes": [
   {"at":[1,1],"type":"track","track":"tr2","voice":"sine"}
 ] }
