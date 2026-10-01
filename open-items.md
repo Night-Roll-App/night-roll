@@ -594,13 +594,13 @@ before it would crowd the title (NIGHT-ROLL.md "Header layout"); Settings
 tabs scroll horizontally instead of disappearing before the content
 (NIGHT-ROLL.md "Settings sheet: tabs scroll"). Browser-verify at 1376 and
 1024 px with a right dock open still owed (not done from this session).
-SMALL (P1 builder, 2026-09-30): the Publish sheet's "edited since publish"
+DONE (4cd9768) SMALL (P1 builder, 2026-09-30): the Publish sheet's "edited since publish"
 check (draftFingerprint/pubCompareDraft ~L15336) special-cases tempo baking
 but not meter — a meter-only edit may not show as edited until published.
 EAR CHECK (2026-09-30): on the iPad, FFX Challenge now renders mono at
 24 kHz to fit 600 MB (was 1.9 GB stereo 48 kHz → killed). Josh's ear decides
 whether that's acceptable until the streamed render lands.
-BUG (Josh's ear, 2026-09-30 17:57, FF7 "You Can Hear the Cry of the
+DONE (25cab92: the tap uses the instrument sounding at that note) BUG (Josh's ear, 2026-09-30 17:57, FF7 "You Can Hear the Cry of the
 Planet"): choir/human-voice parts sound right in playback but a TAPPED note
 sounds wrong. PS1 already has a console tap preview (tools/note-preview.mjs
 renderOneNote, chipPreviewCache ~L9677) — so find why these voices miss it:
