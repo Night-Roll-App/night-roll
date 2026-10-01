@@ -1152,6 +1152,26 @@ line-per-change:
 ] }
 ```
 
+**v2 (P3, 2026-10-01, docs/annotations-v2.md + its JSON Schema):** same
+shape plus a header — `format: "night-roll-annotations"`, `version: 2`,
+optional `origin` ({kind: composition|copy|import|capture|starter, from?,
+movedFrom?, at?} — structured form of the `"forked from <path>"`/
+`"moved from <path>"` notes below), `stamp` (v1's `saved`, renamed so a v2
+reader can't confuse the two). `notes` is byte-identical to v1's — same
+per-entry schema, same deriver. **The reader (every device) accepts v1 and
+v2 transparently as of 2026-10-01; the writer still writes v1** (P4 switches
+it, then P5 migrates every existing file — Josh's ruling: that rewrite is a
+format conversion, not editing his songs). A file whose `version` is higher
+than this app understands (or whose `format` it doesn't recognize) opens
+READ-ONLY: `rollnotesReadOnly`/`rollnotesLockReason` (index.html, set in
+`loadNotes`) carry the ⚠ "written by a newer Night Roll" state for the open
+song, and `annotationsFor` — the one function every publish/Move reads
+through before writing — throws on it, so Publish/Publish all/Move refuse
+with that message. Tools: `tools/query-lib.mjs`'s `loadSong` surfaces
+`rollnotesVersion`/`rollnotesReadOnly`/`rollnotesOrigin` on its `doc` for
+the same reason — nothing rewrites a `.rollnotes.json` today, but the P5
+migration tool will have to check it.
+
 Source fields only: `at`/`to` are [bar, beat] (beats may be fractional;
 `to` beat omitted = end of bar), `type` + its value field(s), free
 `text` (or `note` attached to a chord). Derived data (ticks, band

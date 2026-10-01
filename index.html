@@ -3178,6 +3178,9 @@ let mixerStripEls = [];       // per-track strip <div>, for the drag-to-reorder 
 let mixerDrag = null;         // {from, id, x0, to, before} while a strip drags to reorder
 let songEndTick = 0;     // end of the last bar containing any note
 let rollnotes = [];      // {b1,q1,b2,q2,start,end,text,added}
+let rollnotesReadOnly = false; // P3 (docs/annotations-v2.md): true when the OPEN song's .rollnotes.json declares a version/format newer than this app understands — notes still display, but nothing may publish/overwrite the file
+let rollnotesLockReason = null; // the ⚠ message to show for the above
+let rollnotesOrigin = null;    // the open song's v2 header.origin, or null (v1/legacy/no file yet) — surfaces "forked from"/"moved from" the same way a provenance NOTE used to (hasProvenanceNote, below)
 let playCursor = 0;      // tick
 let editingNote = null;  // rollnote being edited, or null for new
 let rangeSel = null;     // {a, b} ticks — ruler-drag selection for + Note
@@ -3427,11 +3430,36 @@ function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
   }
   return n;
 }
+// .rollnotes v2 (docs/annotations-v2.md, P3 2026-10-01): same top-level
+// shape as v1 ({version, song, notes}) plus a header carried as extra top-
+// level fields — format, origin, stamp. Only the header is new; "notes" is
+// the SAME per-entry schema v1 already writes (noteToJSON/jsonToRawNote), so
+// a v2 file runs through the exact same deriver as v1 — this function below
+// returns identical in-memory notes for a v1/v2 twin. origin.from/movedFrom
+// is where a v2 file states what a "forked from"/"moved from" NOTE used to
+// (hasProvenanceNote/originOf, below, read it off the returned array).
+// Writer stays v1 until P4; this is the reader + version guard.
+const ROLLNOTES_FORMAT = "night-roll-annotations";
+const ROLLNOTES_MAX_VERSION = 2; // highest version this app can read/write; higher = refuse to publish/overwrite (the version guard)
+const ROLLNOTES_LOCK_MSG = "⚠ this song's annotations were written by a newer Night Roll — update the app before editing";
 function parseRollnotesJSON(text) {
   let doc;
   try { doc = JSON.parse(text); } catch (err) { return []; }
-  if (!doc || !Array.isArray(doc.notes)) return [];
-  return deriveNoteTypes(doc.notes.map(jsonToRawNote));
+  if (!doc || typeof doc !== "object") return [];
+  const version = typeof doc.version === "number" ? doc.version : 1;
+  // v2+ declares its format explicitly; an unrecognized format at version 2+
+  // is exactly as untrustworthy as a too-high version number — both lock it.
+  // Checked BEFORE the notes-array shape (below), so a future format that
+  // doesn't even carry a "notes" array still locks instead of silently
+  // reading as empty.
+  const unknownFormat = version >= 2 && doc.format !== undefined && doc.format !== ROLLNOTES_FORMAT;
+  const tooNew = version > ROLLNOTES_MAX_VERSION || unknownFormat;
+  const out = Array.isArray(doc.notes) ? deriveNoteTypes(doc.notes.map(jsonToRawNote)) : [];
+  out.version = version;
+  out.origin = (doc.origin && typeof doc.origin === "object") ? doc.origin : null;
+  out.readOnly = tooNew;
+  out.lockReason = tooNew ? ROLLNOTES_LOCK_MSG : null;
+  return out;
 }
 function deriveNoteTypes(out) {
   out.forEach(n => {
@@ -3806,6 +3834,7 @@ function finalizeNotes() {
 async function loadNotes() {
   const gen = loadGen; // abandon if another song starts loading mid-fetch
   rollnotes = [];
+  rollnotesReadOnly = false; rollnotesLockReason = null; rollnotesOrigin = null;
   if (songKey) {
     try {
       // ?t= busts the Pages CDN (it caches ~10 min; a reload right after
@@ -3824,13 +3853,21 @@ async function loadNotes() {
         }
       } catch (err) { /* corrupt bridge: ignore */ }
       if (text !== null) {
-        rollnotes = parseRollnotes(text).map(resolveNote);
+        const parsed = parseRollnotes(text); // version/origin/readOnly live on THIS array (props a later .map/.filter won't carry) — read them now
+        rollnotesReadOnly = !!parsed.readOnly;
+        rollnotesLockReason = parsed.lockReason || null;
+        rollnotesOrigin = parsed.origin || null;
+        rollnotes = parsed.map(resolveNote);
         // the file's save stamp is the base this device's draft derives from.
         // It was only ever set by THIS device's own Publish, so any other
         // device tripped "newer save exists" on its first edit (Josh, the
         // fresh Xcode shell, Threnody II, 2026-09-27)
         try { const j = JSON.parse(text); if (j && typeof j.saved === "number" && song && j.saved > (song.savedStamp || 0)) song.savedStamp = j.saved; } catch (err) { /* legacy text format carries no stamp */ }
         rollnotes = subtractTombstones(rollnotes, songKey); // (they only die for real on Sync)
+        // version guard (docs/annotations-v2.md P3): a file written by a
+        // newer Night Roll opens read-only — never silently, so he isn't
+        // puzzled when an edit later refuses to publish
+        if (rollnotesReadOnly) setInfo(rollnotesLockReason);
       }
       else if (localStorage.getItem("ff1roll-lastsync-" + songKey)) {
         // this device SYNCED annotations for this path before, yet the analysis
@@ -3896,6 +3933,11 @@ async function annotationsFor(key) {
     if (!res.ok) res = await readData("analysis", base + ".rollnotes", true); // legacy
     if (res.ok) notes = parseRollnotes(await res.text());
   } catch (err) { /* no sidecar yet */ }
+  // version guard (docs/annotations-v2.md P3): this is the ONE place every
+  // publish/move reads a not-necessarily-open song's existing annotations
+  // before writing — refusing here, before any merge or write, is what
+  // "refuses to publish/overwrite" means for a file a newer Night Roll wrote
+  if (notes.readOnly) throw new Error(notes.lockReason || ROLLNOTES_LOCK_MSG);
   notes = subtractTombstones(notes, key);
   notes = mergeLocalAdditions(notes, key);
   notes.sort((a, b) => (a.b1 - b.b1) || (a.q1 - b.q1));
@@ -16102,6 +16144,12 @@ function bakesTempo(key) {
 // (bundled pieces). Built from what already exists (paths, draft fields,
 // isCaptureKey, bundledPath) — P4 replaces this with a stored origin.
 function hasProvenanceNote(key) { // same "live vs stashed" pattern as declaredTsForKey
+  // v2 (docs/annotations-v2.md): the open song's header.origin.from/movedFrom
+  // says the same thing a "forked from"/"moved from" NOTE used to — checked
+  // first so a v2 file needs no such note at all (P5 moves the real ones
+  // there; today's files still carry the note, which the fallback below
+  // still finds for a not-open key, where only local additions are stashed).
+  if (song && key === songKey && rollnotesOrigin && (rollnotesOrigin.from || rollnotesOrigin.movedFrom)) return true;
   let list = (song && key === songKey) ? rollnotes : null;
   if (!list) { try { list = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "null"); } catch (err) { list = null; } }
   return Array.isArray(list) && list.some(n => PROVENANCE_RE.test(n.text || ""));
@@ -19558,6 +19606,11 @@ async function moveComposition(destDir) {
   const oldKey = songKey;
   const newKey = destDir + oldKey.split("/").pop();
   if (newKey === oldKey) { fileStatus("Already there."); return; }
+  // version guard (docs/annotations-v2.md P3): a Move republishes the
+  // annotations at the new path (annotationsFor would refuse this itself,
+  // below — checked here too, early, so the failure shows a clear message
+  // instead of a silently-rejected promise)
+  if (rollnotesReadOnly) { fileStatus(rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; }
   // Leaving nightroll/ loses the by-directory editability, so the song
   // carries its provenance with it (the draft rename below is device-local)
   if (oldKey.startsWith(NR_DIR) && !rollnotes.some(n => n.text === "moved from " + oldKey)) {
@@ -21879,6 +21932,7 @@ const ASK_TOOLS = [
 function askAddAnnotation(a) { // the same text grammar the editor and the files use: one line, parsed by parseRollnotes
   if (!song || !songKey) throw new Error("no song open");
   if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
+  if (rollnotesReadOnly) throw new Error(rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
   const bar = Math.max(1, Math.round(+a.bar || 1)), beat = Math.max(1, +a.beat || 1);
   const eb = a.end_bar ? Math.max(bar, Math.round(+a.end_bar)) : null;
   const eq = eb && a.end_beat ? Math.max(1, +a.end_beat) : null;
@@ -21944,6 +21998,7 @@ function askAnnotationStructural(n) { // meter/chop/track/audio/lane: song-struc
   return !!(n.tsdir || n.chopdir || n.trackdir || n.audiodir || /^lane:\s*-?\d+\s*$/i.test(n.text || ""));
 }
 function askEditAnnotation(a) {
+  if (rollnotesReadOnly) throw new Error(rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
   a = a || {};
   const n = askFindAnnotation(a);
   if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — change it in the app's own editor, not here");
@@ -21979,6 +22034,7 @@ function askEditAnnotation(a) {
   return {ok: true, at: head, text: fresh.text, note: "edited in place"};
 }
 function askDeleteAnnotation(a) {
+  if (rollnotesReadOnly) throw new Error(rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
   const n = askFindAnnotation(a || {});
   if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — remove it in the app's own editor, not here");
   const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];

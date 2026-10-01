@@ -42,13 +42,19 @@ export function loadSong(arg, {dedupe = true} = {}) {
     song = parseMidi(new Uint8Array(midiBytes).buffer);
     song.rawNotes = null; chopS = 0; chopE = null;
     songKey = ${JSON.stringify(path.relative(ROOT, midPath))};
-    rollnotes = rollnotesText ? parseRollnotesJSON(rollnotesText).map(resolveNote) : [];
+    const parsedRn = rollnotesText ? parseRollnotesJSON(rollnotesText) : [];
+    const rnVersion = parsedRn.version, rnReadOnly = !!parsedRn.readOnly, rnOrigin = parsedRn.origin || null;
+    rollnotes = parsedRn.map(resolveNote);
     finalizeNotes();
     let end = 0;
     song.tracks.forEach(t => t.notes.forEach(n => { if (!n.gone) end = Math.max(end, n.t + n.d); }));
     return JSON.stringify({
       ppq: song.ppq, timesig: effTs(), bpm: Math.round(6e7 / song.tempos[0].usq),
       barTicks: barTicks(), beatTicks: beatTicks(), endTick: end,
+      // docs/annotations-v2.md P3: a tool that would REWRITE this file (none
+      // does yet — P5's migration tool will) must check rollnotesReadOnly
+      // first and refuse, same as the app's own publish guard
+      rollnotesVersion: rnVersion, rollnotesReadOnly: rnReadOnly, rollnotesOrigin: rnOrigin,
       tracks: song.tracks.map(tr => ({name: tr.name || "",
         notes: tr.notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p, v: n.v}))})),
       rollnotes: rollnotes.map(n => ({text: n.text, note: n.cnote, b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2,

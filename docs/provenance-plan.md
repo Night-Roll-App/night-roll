@@ -56,9 +56,28 @@ in P0/P2) + "✎ Make it mine" + meter baking (Q9)** — see NIGHT-ROLL.md
 "Origins, RULES, 'Make it mine', meter baking" and
 tests/night-roll.test.mjs's "P1:" tests · P2 one publishSong (bakeTempos
 pure, annotationsFor with tombstones, markPublished, tempo in dirty) — DONE
-· P3 v2 reader + version guard (refuse to publish a newer-version file) +
-schema, then an iPad build before P4 · P4 stored origin + v2 writer · P5
-batch migration (Josh: format conversion isn't editing — no per-song
+· **P3 DONE (2026-10-01): v2 reader + version guard + schema** — see
+docs/annotations-v2.md + docs/annotations-v2.schema.json,
+NIGHT-ROLL.md's ".rollnotes format" (the v2 paragraph) and
+tests/night-roll.test.mjs's "annotations v2" tests. `parseRollnotesJSON`
+reads v1 and v2 transparently; `rollnotesReadOnly`/`rollnotesLockReason`
+(index.html) lock a song whose file declares a version this app doesn't
+understand (or an unrecognized `format`); `annotationsFor` — the one
+function every publish and Move reads through — throws on it, so
+Publish/Publish all/Move refuse with the ⚠ message; the ✦ Ask tool's
+add/edit/delete_annotation refuse the same way. `hasProvenanceNote`/
+`originOf` now read a v2 file's `origin.from`/`origin.movedFrom` first,
+falling back to the legacy note-text scan. Writer still writes v1 — **next:
+an iPad build with this reader before P4 ever writes a v2 file** (so no
+device meets one it can't read). tools/query-lib.mjs's `loadSong` exposes
+`rollnotesVersion`/`rollnotesReadOnly`/`rollnotesOrigin` for the same
+guard, for whenever a tool writes one (none does yet). Known gap, not
+fixed here (small, pre-existing risk — flagging for P4/P5): the in-app
+note editor and chord/section dialogs don't yet check
+`rollnotesReadOnly` before `dropSupersededBy`/`rollnotes.push` — a locked
+song's local edits still land in-memory and in `localStorage`, just can
+never publish (annotationsFor refuses). · P4 stored origin + v2 writer ·
+P5 batch migration (Josh: format conversion isn't editing — no per-song
 approval) · P6 tools + docs.
 Anchors stay [bar, beat] (readable, diffable; re-bar conversion exists).
 

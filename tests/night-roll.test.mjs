@@ -8465,3 +8465,92 @@ test("Move (published, folder mode): a published audio clip rides along — new 
   assert.equal(resolved.where, "folder", "resolved from the song's own (new) folder dir");
   assert.deepEqual(resolved.bytes, clipBytes, "same bytes, read back through the normal resolution path");
 });
+
+// ---- P3: .rollnotes v2 reader + version guard (docs/annotations-v2.md) ----
+test("parseRollnotesJSON: a v2 fixture (header + origin) parses to the exact same notes as its v1 twin", () => {
+  const notes = [
+    {at: [1, 1], type: "timesig", timesig: "6/8"},
+    {at: [1, 1], type: "key", key: "Bb"},
+    {at: [1, 1], to: [4, 6], type: "section", label: "A — home"},
+    {at: [5, 3], to: [5, 4], type: "chord", chord: "G7/B", note: "no 5th"},
+    {at: [3, 1], type: "tempo", bpm: 90},
+    {at: [25, 1], type: "loop", loop: "2.1"},
+    {at: [6, 2.5], text: "Plain prose observation."},
+  ];
+  const v1 = JSON.stringify({version: 1, song: "menu", notes});
+  const v2 = JSON.stringify({format: "night-roll-annotations", version: 2, song: "menu",
+    origin: {kind: "copy", from: "albums/nes/mega-man-2/air-man.mid", at: "2026-10-01T00:00:00.000Z"},
+    stamp: 1759296000000, notes});
+  const a1 = val(`parseRollnotesJSON(${JSON.stringify(v1)}).map(n => ({...n}))`);
+  const a2 = val(`parseRollnotesJSON(${JSON.stringify(v2)}).map(n => ({...n}))`);
+  assert.deepEqual(a2, a1, "same notes array, v1 or v2 header");
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v1)}).version`), 1);
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v2)}).version`), 2);
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v2)}).readOnly`), false, "a recognized v2 file is fully read-write");
+  assert.deepEqual(val(`parseRollnotesJSON(${JSON.stringify(v2)}).origin`),
+    {kind: "copy", from: "albums/nes/mega-man-2/air-man.mid", at: "2026-10-01T00:00:00.000Z"});
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(v1)}).origin`), null, "v1 carries no origin header");
+});
+
+test("version guard (docs/annotations-v2.md P3): version > 2, or version >= 2 with an unrecognized format, parses read-only with the 'newer Night Roll' message", () => {
+  const tooNew = JSON.stringify({format: "night-roll-annotations", version: 3, song: "menu",
+    notes: [{at: [1, 1], text: "from the future"}]});
+  const badFormat = JSON.stringify({format: "some-other-app", version: 2, song: "menu",
+    notes: [{at: [1, 1], text: "hi"}]});
+  const okV1 = JSON.stringify({version: 1, song: "menu", notes: [{at: [1, 1], text: "hi"}]});
+  const noVersion = JSON.stringify({song: "menu", notes: [{at: [1, 1], text: "hi"}]}); // legacy-shaped: never locked
+  for (const doc of [tooNew, badFormat]) {
+    assert.equal(run(`parseRollnotesJSON(${JSON.stringify(doc)}).readOnly`), true, doc);
+    assert.match(run(`parseRollnotesJSON(${JSON.stringify(doc)}).lockReason`), /newer Night Roll/, doc);
+  }
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(okV1)}).readOnly`), false);
+  assert.equal(run(`parseRollnotesJSON(${JSON.stringify(noVersion)}).readOnly`), false);
+});
+
+test("rollnotesReadOnly (docs/annotations-v2.md P3): a locked song refuses the Ask tool's add/edit/delete_annotation", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/future.mid"; rollnotes = [];
+       rollnotesReadOnly = true;
+       rollnotesLockReason = "⚠ this song's annotations were written by a newer Night Roll — update the app before editing";`);
+  assert.throws(() => run(`askAddAnnotation({bar: 1, beat: 1, text: "nope"})`), /newer Night Roll/);
+  assert.throws(() => run(`askEditAnnotation({bar: 1, beat: 1, text: "nope"})`), /newer Night Roll/);
+  assert.throws(() => run(`askDeleteAnnotation({bar: 1, beat: 1})`), /newer Night Roll/);
+  // sanity: the guard is what's blocking it — an ordinary (unlocked) song isn't affected
+  run(`rollnotesReadOnly = false;`);
+  assert.doesNotThrow(() => run(`askAddAnnotation({bar: 1, beat: 1, text: "ok"})`));
+});
+
+test("hasProvenanceNote/originOf (docs/annotations-v2.md P3): the open song's v2 origin.from/movedFrom count the same as a legacy 'forked from'/'moved from' note", () => {
+  installSong();
+  run(`songKey = "albums/my-covers/overworld.mid"; rollnotes = []; rollnotesOrigin = null;
+       localStorage.setItem(draftStoreKey(songKey), JSON.stringify({dirty: true, tracks: []}));`);
+  assert.equal(run(`hasProvenanceNote(songKey)`), false, "no origin, no legacy note: nothing to find");
+  assert.equal(run(`originOf(songKey)`), "composition");
+  run(`rollnotesOrigin = {kind: "copy", from: "albums/nes/mega-man-2/air-man.mid"};`);
+  assert.equal(run(`hasProvenanceNote(songKey)`), true, "v2 origin.from counts");
+  assert.equal(run(`originOf(songKey)`), "copy");
+  run(`rollnotesOrigin = {kind: "copy", movedFrom: "albums/compositions/nightroll/old.mid"};`);
+  assert.equal(run(`hasProvenanceNote(songKey)`), true, "v2 origin.movedFrom counts");
+  // a v1/legacy file (no origin header, just the old provenance NOTE) still falls back — unchanged
+  run(`rollnotesOrigin = null;
+       rollnotes = [resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "forked from albums/nes/mega-man-2/air-man.mid"})];`);
+  assert.equal(run(`hasProvenanceNote(songKey)`), true, "legacy note-text fallback still works");
+  assert.equal(run(`originOf(songKey)`), "copy");
+});
+
+test("publishSong/annotationsFor (docs/annotations-v2.md P3): refuses to publish or overwrite a song whose .rollnotes.json was written by a newer Night Roll", async () => {
+  const KEY = "albums/compositions/nightroll/zz-test-version-guard.mid";
+  const RN = KEY.replace(/\.mid$/, ".rollnotes.json");
+  const a = pubApp();
+  useFakeFolder(a, "version-guard");
+  openComposition(a, KEY);
+  const futureDoc = JSON.stringify({format: "night-roll-annotations", version: 99, song: "zz-test-version-guard",
+    notes: [{at: [1, 1], text: "written by a Night Roll from the future"}]});
+  await a.run(`folderWrite(${JSON.stringify(RN)}, ${JSON.stringify(futureDoc)})`);
+
+  await assert.rejects(a.run(`annotationsFor(${JSON.stringify(KEY)})`), /newer Night Roll/);
+  await assert.rejects(a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`), /newer Night Roll/);
+  // nothing was written — not the .mid, not a rewritten .rollnotes.json
+  assert.equal(await folderBytes(a, KEY), null, "no .mid was published");
+  assert.equal(await folderText(a, RN), futureDoc, "the future file is untouched, byte-identical");
+});

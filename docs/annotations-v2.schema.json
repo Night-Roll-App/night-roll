@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://night-roll/schemas/annotations-v2.schema.json",
+  "title": "Night Roll .rollnotes.json (v2)",
+  "description": "docs/annotations-v2.md — v1 plus a header (format/origin/stamp); notes keep the exact v1 per-entry schema.",
+  "type": "object",
+  "required": ["version", "notes"],
+  "properties": {
+    "format": {
+      "const": "night-roll-annotations",
+      "description": "Required from version 2 on. A version >= 2 document with any other (or missing) format is unreadable — the app opens it read-only and refuses to publish/overwrite it."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1 (no format field) = the original flat shape. 2 = this schema. > 2 = a future format this app cannot read; opens read-only, refuses to publish/overwrite."
+    },
+    "song": {
+      "type": "string",
+      "description": "The song's base filename (no extension) — matches v1."
+    },
+    "stamp": {
+      "type": "integer",
+      "description": "Epoch ms this file was saved — the cross-device freshness beacon (NIGHT-ROLL.md). Called 'saved' in v1; 'stamp' here so a v2 reader never confuses the two."
+    },
+    "origin": {
+      "type": "object",
+      "description": "Where this song comes from — structured form of the legacy 'forked from <path>' / 'moved from <path>' notes (docs/provenance-plan.md). Optional: absent on a file nothing has recorded provenance for yet.",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["composition", "copy", "import", "capture", "starter"]
+        },
+        "from": {
+          "type": "string",
+          "description": "Repo path this song was copied/forked from."
+        },
+        "movedFrom": {
+          "type": "string",
+          "description": "Repo path this song was moved from (its own identity continues; see moveComposition in index.html)."
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 timestamp the origin was recorded."
+        }
+      },
+      "additionalProperties": true
+    },
+    "notes": {
+      "type": "array",
+      "description": "One entry per array element so the file still git-diffs line-per-change. Every entry is the SAME schema v1 writes.",
+      "items": { "$ref": "#/$defs/note" }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "anchor": {
+      "type": "array",
+      "description": "[bar, beat]. beat omitted = 1. Anchors stay [bar, beat] — never raw ticks (docs/provenance-plan.md).",
+      "prefixItems": [
+        { "type": "number", "minimum": 1 },
+        { "type": "number", "minimum": 0 }
+      ],
+      "minItems": 1,
+      "maxItems": 2
+    },
+    "note": {
+      "type": "object",
+      "description": "One annotation. 'type' selects the directive; its value field(s) are required for that type. No 'type' = a plain text note.",
+      "required": ["at"],
+      "properties": {
+        "at": { "$ref": "#/$defs/anchor" },
+        "to": {
+          "$ref": "#/$defs/anchor",
+          "description": "End anchor for a ranged note (section/chord spans, etc). Omitted beat = end of bar."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane"]
+        },
+        "text": { "type": "string", "description": "Plain prose note — only when 'type' is absent." },
+        "note": { "type": "string", "description": "Attached comment on any typed directive or a chord (cnote)." },
+        "label": { "type": "string", "description": "type: section — the band's label." },
+        "chord": { "type": "string", "description": "type: chord — the symbol (lasso chord-namer vocabulary)." },
+        "key": { "type": "string", "description": "type: key — e.g. 'Bb', 'Gm', 'D dorian', or 'Bb?' (tonic-only, partial)." },
+        "timesig": { "type": "string", "description": "type: timesig — e.g. '6/8'." },
+        "bpm": { "type": "number", "exclusiveMinimum": 0, "description": "type: tempo." },
+        "track": { "type": "string", "description": "type: track or audio — the track name (or trN index)." },
+        "voice": { "type": "string", "description": "type: track — voice override." },
+        "color": { "type": "string", "description": "type: track — color override, e.g. '#0aa2c0'." },
+        "vol": { "type": "number", "minimum": 0, "maximum": 1.5, "description": "type: track." },
+        "pan": { "type": "number", "minimum": -1, "maximum": 1, "description": "type: track." },
+        "mute": { "type": "boolean", "description": "type: track." },
+        "solo": { "type": "boolean", "description": "type: track." },
+        "hide": { "type": "boolean", "description": "type: track." },
+        "loop": { "type": "string", "description": "type: loop — the jump target as 'bar.beat'." },
+        "file": { "type": "string", "description": "type: audio — the recorded clip's filename." },
+        "offset": { "type": "number", "minimum": 0, "description": "type: audio — seconds into the file where this piece starts." },
+        "len": { "type": "number", "exclusiveMinimum": 0, "description": "type: audio — seconds of the file this piece plays; absent = the rest." },
+        "local": { "type": "boolean", "description": "type: audio — this device's local recording, never synced." },
+        "chop": { "type": "string", "enum": ["start", "end"], "description": "type: chop — non-destructive trim in RAW capture coordinates." },
+        "lane": { "type": "integer", "description": "type: lane." }
+      },
+      "additionalProperties": false
+    }
+  }
+}
