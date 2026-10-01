@@ -4443,8 +4443,39 @@ In FF4 "Cry in Sorrow (part 1)" (SNES), touching notes plays the generic synth (
 ## 2026-09-30 22:37 Josh (via Ask): track colors too similar in the roll
 In FF4 "Cry in Sorrow (part 1)" (SNES) voice0 and voice2 (and likely neighbours among voice0-voice6) are hard to tell apart by color; he can't tell which is the melody. "I wish we could do something about that." Wants clearly distinguishable per-track colors, at least within one song (SNES/console captures with 7-8 voices first).
 
-## 2026-09-30 23:36 Josh (via Ask): let the Ask chat EDIT existing annotations
-add_annotation can only add new ones. Josh wants the Ask chat to edit an existing annotation when he asks (e.g. put a numeral + explanation into an existing chord's note field instead of adding a separate overlapping note; change a chord's text/range; remove a note it added). Needs: an edit_annotation tool (find by bar/beat/kind, change text/comment/range) and a delete_annotation tool, in the app's Ask tool set and the bridge's tool prompt. Same per-instance rule: only when he explicitly asks; never overwrite his own words without being told to. Cleanup he's waiting on: 4 notes the Ask chat added to cry-in-sorrow-part-1 (numerals i / bVII / bVI plus a summary) should be folded into the chord note fields and removed once this exists.
+## 2026-09-30 23:36/23:40 Ask chat: edit_annotation, delete_annotation, publish_song — DONE 2026-10-01
+Shipped all three (ASK_TOOLS/askRunTool, index.html): `edit_annotation` and
+`delete_annotation` target an EXISTING annotation by `id` (the `<context>`
+block's annotations listing now tags each entry with its index into
+`rollnotes` — `askAnnotationsText`/`dedupedNotesWithIndex`, good for the one
+turn that read it) or by `bar`+`beat`(+`match_text` to disambiguate);
+ambiguous or missing → an error asking which, never a guess
+(`askFindAnnotation`). Edit rebuilds the line through the same grammar
+add_annotation uses (kind/comment default to the existing note's own), then
+tombstones the original and pushes the fresh one — the annotation count is
+unchanged, so it's an in-place text change, never a duplicate. Delete uses
+the same tombstone path the note editor's own Delete button uses, so
+Publish drops a synced one for good. Both refuse a structural directive
+(meter/chop/track/audio/lane) — out of scope, has re-barring side effects;
+use the app's own editor for those. `publish_song` runs the exact per-song
+sequence the footer Publish button runs for the open song, refuses with a
+reason when not connected or no song is open. All three: explicit-ask-only
+(same rule as add_annotation), not offered in the general chat (no open
+song — `ASK_SONG_ONLY_TOOLS`). No ⟲ undo entry — the note editor's own
+Save/Delete don't push one either today, so this adds no new asymmetry.
+Docs: NIGHT-ROLL.md "Tools" section (new sub-bullets) + "General chat";
+help sheet ✦ AI entry + FEATURES drift keyword "add, edit, delete, or
+publish"; HELP.md rebuilt. Tests: tests/night-roll.test.mjs — id/bar+beat
+targeting, ambiguous-target error, in-place edit (no new annotation),
+tombstone-on-delete (synced) vs no-tombstone (never-synced), structural
+directives refused, general-chat filtering, publish_song calls the
+(stubbed) publish path and refuses when not connected. Full suite green.
+Still owed, NOT done here (needs a live session with the song open — I only
+shipped the tool, I didn't run it against his real file): the
+cry-in-sorrow-part-1 cleanup itself (4 Ask-added numeral/summary notes to
+fold into their chord note fields and remove) — his 23:47 ruling still
+applies when that happens (keep his own words, APPEND the numeral+
+explanation after them; Bbm has no note yet, so it just gets the numeral).
 
 ## Albums in GAME order — DONE 2026-09-30
 Two-part item, both parts shipped. Part 1 (commit 2bfffc95):
@@ -4469,6 +4500,5 @@ switch present + tap flips the pref and redraws, Next/Prev follow whichever
 order is shown. Full npm test green (night-roll.test.mjs 329/329,
 album-order.test.mjs 10/10, whole chain exit 0).
 
-## 2026-09-30 23:40 Josh (via Ask): "publish this song" as an Ask tool
-I cannot publish: annotations I add live unsynced on his device, and only the app's Publish can send them. Josh wants to say "publish this song" in the Ask chat and have it done, like a push command. Needs a publish_song tool in the app's Ask tool set (publishes the open song only, same function as the Publish sheet's per-song Publish, runs as a job, reports success/failure back to the chat). Only when he explicitly asks. Pairs with the edit_annotation/delete_annotation request above; he is waiting to publish cry-in-sorrow-part-1 (his chords + the numeral notes).
-- 23:47 Josh's ruling for the cleanup above: keep his own words in note fields and APPEND after them (Gbmaj9 keeps his surprise note, numeral+explanation added after); Bbm has no note yet, so it just gets the numeral.
+(2026-09-30 23:40 "publish this song" as an Ask tool, and its 23:47 cleanup
+ruling, are folded into the 23:36/23:40 DONE entry above.)

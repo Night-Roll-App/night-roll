@@ -2654,7 +2654,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message",
+    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message", "add, edit, delete, or publish",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
     "an estimated key is named as an estimate", "Check vs file",
@@ -4254,6 +4254,74 @@ test("Ask tools: SSE tool_calls accumulate per index; add_annotation writes thro
   assert.equal(val(`askSongPath("Ambush")`), "albums/x/ambush.mid");
   assert.throws(() => val(`askSongPath("nothing-here")`), /list_songs/);
   run(`delete CATALOG["Probe Album"]; rollnotes = []; localStorage.removeItem("ff1roll-notes-albums/compositions/nightroll/tool-test.mid"); songKey = null;`);
+});
+
+test("Ask tools: edit_annotation/delete_annotation target by id or bar+beat(+match_text); ambiguous/missing target and structural directives refuse; the general chat gets none of them", () => {
+  installSong();
+  run(`rollnotes = []; songKey = "albums/compositions/nightroll/edit-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
+       askAddAnnotation({kind: "chord", text: "F#m", bar: 21, beat: 1});
+       askAddAnnotation({kind: "note", text: "first note", bar: 5, beat: 1});
+       askAddAnnotation({kind: "note", text: "second note", bar: 5, beat: 1});`);
+  assert.equal(val(`rollnotes.length`), 3);
+  // the id the context block would list for each annotation is just its index — dedupedNotesWithIndex's own contract
+  assert.deepEqual(val(`dedupedNotesWithIndex(rollnotes).map(e => e.i)`), [0, 1, 2]);
+  // two plain notes share 5.1: an edit naming only bar+beat is an error, never a guess
+  assert.throws(() => run(`askEditAnnotation({bar: 5, beat: 1, text: "x"})`), /more than one annotation/);
+  // match_text narrows it — text changes IN PLACE, no new annotation appears
+  run(`askEditAnnotation({bar: 5, beat: 1, match_text: "second", text: "second note, now with a ii-V"})`);
+  assert.equal(val(`rollnotes.length`), 3, "edit changes text in place — no new annotation");
+  assert.ok(val(`rollnotes.some(n => n.text === "second note, now with a ii-V")`));
+  assert.ok(!val(`rollnotes.some(n => n.text === "second note")`), "the old text is gone, not left beside the new one");
+  // edit by id: the chord keeps its symbol and position, picks up a comment
+  const chordId = val(`rollnotes.findIndex(n => n.chord)`);
+  run(`askEditAnnotation({id: ${chordId}, text: "F#m", comment: "borrowed from D major"})`);
+  let chord = val(`rollnotes.find(n => n.chord)`);
+  assert.equal(chord.text, "F#m"); assert.equal(chord.cnote, "borrowed from D major"); assert.equal(chord.b1, 21); assert.equal(chord.q1, 1);
+  // edit can also move it, on request
+  run(`askEditAnnotation({id: rollnotes.findIndex(n => n.chord), text: "F#m", new_bar: 22, new_beat: 3})`);
+  chord = val(`rollnotes.find(n => n.chord)`);
+  assert.equal(chord.b1, 22); assert.equal(chord.q1, 3);
+  assert.equal(val(`rollnotes.length`), 3, "still no new annotation — the move is the same one in place");
+  // bad id, no target, and no match both refuse clearly
+  assert.throws(() => run(`askEditAnnotation({id: 99, text: "x"})`), /no annotation with id/);
+  assert.throws(() => run(`askEditAnnotation({text: "x"})`), /say which annotation/);
+  assert.throws(() => run(`askEditAnnotation({bar: 1, beat: 1, text: "x"})`), /no annotation at bar 1 beat 1/);
+  assert.throws(() => run(`askEditAnnotation({id: 0, text: ""})`), /empty text/);
+  // delete via the editor's own path: an "added" (never-synced) note needs no tombstone
+  run(`askDeleteAnnotation({bar: 22, beat: 3, match_text: "F#m"})`);
+  assert.equal(val(`rollnotes.length`), 2);
+  assert.ok(!val(`rollnotes.some(n => n.chord)`));
+  assert.equal(val(`JSON.parse(localStorage.getItem(tombKeyFor(songKey)) || "[]").length`), 0, "never-synced annotations need no tombstone");
+  // a SYNCED annotation (added: false, as a freshly loaded repo copy is): deleting it tombstones, so a reload/Publish can't resurrect it
+  run(`rollnotes.push(resolveNote(deriveNoteTypes([{b1: 9, q1: 1, text: "section: B"}])[0])); rollnotes[rollnotes.length - 1].added = false; finalizeNotes();`);
+  run(`askDeleteAnnotation({bar: 9, beat: 1, match_text: "B"})`);
+  assert.equal(val(`JSON.parse(localStorage.getItem(tombKeyFor(songKey)) || "[]").length`), 1, "a synced delete is tombstoned");
+  // structural directives (meter/chop/track/audio/lane) are out of scope — a clear refusal, never a silent mutate
+  run(`rollnotes.push(resolveNote(deriveNoteTypes([{b1: 1, q1: 1, text: "timesig: 6/8"}])[0])); finalizeNotes();`);
+  assert.throws(() => run(`askEditAnnotation({bar: 1, beat: 1, text: "4/4"})`), /structural directive/);
+  assert.throws(() => run(`askDeleteAnnotation({bar: 1, beat: 1})`), /structural directive/);
+  // not in the general chat: no open song to annotate, edit, delete or publish there
+  run(`askGeneral = true;`);
+  for (const t of ["add_annotation", "edit_annotation", "delete_annotation", "publish_song"]) assert.ok(!val(`askToolsNow().some(t => t.function.name === ${JSON.stringify(t)})`), t + " hidden in the general chat");
+  assert.ok(val(`askToolsNow().some(t => t.function.name === "read_song")`), "reading songs still allowed");
+  run(`askGeneral = false;
+       localStorage.removeItem(tombKeyFor(songKey)); rollnotes = []; localStorage.removeItem("ff1roll-notes-" + songKey);
+       localStorage.removeItem("ff1roll-draft-" + songKey); songKey = null;`);
+});
+
+test("Ask tools: publish_song runs the same publish path the footer button uses, against the open song; refuses when the device isn't connected", async () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/pub-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */ localStorage.removeItem("ff1roll-ghtoken");`);
+  await assert.rejects(() => run(`askPublishSong()`), /not connected/, "no GitHub token, no folder: refuses and says why");
+  run(`localStorage.setItem("ff1roll-ghtoken", "tok");
+       window.__origPublishSong = publishSong; window.__publishCalls = [];
+       publishSong = async (key, h, report) => { window.__publishCalls.push(key); report("writing the .mid…"); return {wroteMid: true}; };`);
+  const r = await run(`askPublishSong()`);
+  assert.equal(r.ok, true);
+  assert.match(r.message, /pub-test\.mid/);
+  assert.deepEqual(val(`window.__publishCalls`), ["albums/compositions/nightroll/pub-test.mid"], "the SAME function the footer button calls, against the open song's own key");
+  run(`publishSong = window.__origPublishSong; window.__origPublishSong = undefined; window.__publishCalls = undefined;
+       localStorage.removeItem("ff1roll-ghtoken"); localStorage.removeItem("ff1roll-draft-" + songKey); songKey = null;`);
 });
 
 test("Ask jobs: a pending question is stored at send time; finish/fail replace the marker; history skips it", () => {
@@ -7300,7 +7368,7 @@ tracks: melody
 view: roll, paused; cursor: bar 1 beat 1
 key state: key: not set (C) — 'not set' means the user has NOT discovered the key; do not reveal it
 app: stub
-the user's annotations (.rollnotes):
+the user's annotations (.rollnotes) — each entry's "id" is this turn's handle for edit_annotation/delete_annotation:
 { "version": 1, "song": "test", "notes": [
 
 ] }

@@ -90,7 +90,6 @@ function makeEl() {
     dataset: {},
     classList: makeClassList(),
     value: "",
-    textContent: "",
     placeholder: "",
     disabled: false,
     tabIndex: 0,
@@ -107,6 +106,7 @@ function makeEl() {
     focus: noop,
     appendChild(c) { el.children.push(c); c._parent = el; return c; },
     append(...cs) { el.children.push(...cs); cs.forEach(c => { if (c) c._parent = el; }); },
+    prepend(...cs) { el.children.unshift(...cs); cs.forEach(c => { if (c) c._parent = el; }); },
     querySelectorAll: () => [],
     cloneNode: () => makeEl(),
     getContext: () => ctx2dStub(),
@@ -121,6 +121,15 @@ function makeEl() {
   Object.defineProperty(el, "innerHTML", {
     get: () => _innerHTML,
     set: (v) => { _innerHTML = v; el.children = []; },
+  });
+  // same reasoning as innerHTML above (2026-10-01): a real `el.textContent =
+  // "…"` replaces every child node too — renderSyncPending's own clear
+  // (`box.textContent = ""`) relied on that and, as a bare data property,
+  // silently left `.children` to accumulate across repeated renders
+  let _textContent = "";
+  Object.defineProperty(el, "textContent", {
+    get: () => _textContent,
+    set: (v) => { _textContent = v; el.children = []; },
   });
   // <select>.options (2026-09-30, the ✎ Edit sheet's folder picker):
   // index.html reads `.options` on every <select> stub (findsel, fsfolder,

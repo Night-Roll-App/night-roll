@@ -3300,6 +3300,42 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   add_annotation to what the user asked for in words — his rule: the
   model never volunteers a reading, it writes what he dictates. Fill's
   schema path sends no tools. The browser (WebLLM) backend ignores them.
+  - **edit_annotation / delete_annotation / publish_song (2026-10-01,
+    open-items).** Same "only on explicit ask, never guesses" rule as
+    add_annotation. Targeting an EXISTING annotation: `askFindAnnotation`
+    takes either `id` (an index into `rollnotes`, the same one the
+    `<context>` block's annotations listing now carries per entry — see
+    below) or `bar`+`beat`(+`match_text` to disambiguate); zero or more
+    than one match is a thrown error ("more than one annotation at bar …
+    — say which"), never a guess. `askEditAnnotation` rebuilds the line
+    through the SAME grammar as add_annotation (so kind/comment default
+    to the existing note's own, only what's given changes), then
+    `retireEdited` (tombstones a synced original so it can't come back on
+    reload) + push the fresh one — net annotation count is unchanged, so
+    an edit changes text IN PLACE, never leaves a duplicate beside it.
+    `askDeleteAnnotation` calls `tombstone` + filters it out — the exact
+    path the note editor's own ndelete button uses. Both refuse a
+    structural directive (meter/chop/track/audio/lane —
+    `askAnnotationStructural`): those carry side effects (re-barring,
+    anchor-shifting every other annotation) this tool scope doesn't
+    attempt; the app's own editor is still the way to change them.
+    `askPublishSong` is literally the footer Publish button's own
+    sequence for the open song (`publishSong` +, for his own songs,
+    `writeSongsReadme` + `initCatalog`/`updateSongBtn`/
+    `renderSyncPending`), gated on `connected()` (a GitHub token or a
+    local folder) and `songKey`/`LINK_SONGS`, so a tool-run publish and a
+    tapped one behave identically. None of the three push an undo entry
+    — neither does the note editor's own Save/Delete today, so this
+    doesn't add a new asymmetry.
+  - **Context ids (2026-10-01):** `dedupedNotesWithIndex` (factored out
+    of `serializeNotesList`, which now calls it too — same dedup, same
+    output) tags each surviving annotation with its index into
+    `rollnotes`; `askAnnotationsText` (what `askContext` now sends
+    instead of `serializeRollnotes`) is that same JSON with one `"id": N`
+    per entry. The id is only good for the ONE turn that read it — an
+    edit/delete re-sorts `rollnotes` (`finalizeNotes`), so a second
+    edit/delete in the same reply should target by `bar`+`beat`+
+    `match_text` instead of a now-stale id.
 - **The AI bridge (`tools/claude-bridge.mjs`, `npm run bridge`; 2026-09-26,
   generalized the same day — Josh: "I want to make sure everybody can run
   this with LM Studio or Claude Code or both, or Ollama").** A
@@ -3457,8 +3493,9 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     the top of the sheet. In general mode: store key `ff1roll-ask-general`
     (`ASK_GENERAL_KEY`), bridge session name `general` (so it is one more
     entry in sessions.json), `askContext` is one sentence saying no song
-    is attached, `askToolsNow()` drops add_annotation, the span/fill rows
-    hide, and the log is the repo-level `ask/general.ask.md`
+    is attached, `askToolsNow()` drops add_annotation/edit_annotation/
+    delete_annotation/publish_song (`ASK_SONG_ONLY_TOOLS`), the span/fill
+    rows hide, and the log is the repo-level `ask/general.ask.md`
     (`ASK_GENERAL_LOG`; `askLogPath/askLogHeader/askCommitLog` take a key).
     Publishing: `pendingSongs()` lists "general" when it has unsaved
     messages; the PUBLISH sheet renders it as its own block with a

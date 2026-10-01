@@ -1952,7 +1952,7 @@
 
     <div class="hsec" data-hsec="ask">
     <dl>
-      <dt>✦ AI</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ AI</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter.</dd>
+      <dt>✦ AI</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ AI</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter. Say the word and it will also <b>add, edit, delete, or publish</b> an annotation — never on its own; ask it to change or take back the wrong one and it edits or deletes that exact annotation in place (never a duplicate left beside it), and asking it to publish runs the same Publish the footer button does.</dd>
       <dt>House rules</dt><dd><b>🎓 Learning mode</b> (Settings → Other): hints and direction first — it confirms or refines a guess you've made, and tells you outright only when you insist or say you give up; general theory questions it answers directly; it never reveals a key you haven't set. <b>Normal mode</b>: it answers music questions directly — keys, chords, cadences, form — and says how sure it is; an estimated key is named as an estimate, not a fact. Either mode, it never annotates on its own initiative or answers a question you didn't ask.</dd>
       <dt>Move a sheet</dt><dd>Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (AI, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk to the AI; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
       <dt>Dock right (and left, and bottom)</dt><dd>Tap <b>Dock</b> beside AI, ALL NOTES, INSTRUMENTS, JOBS, or PUBLISH to open its menu: <b>Left</b>, <b>Right</b>, or <b>Bottom</b> pin it to that edge instead of a floating window — no backdrop, so you can keep working the roll (tap, edit, play) with it open, the song laid out in what's left. Once docked to a side, the same menu offers <b>Full height</b> (edge to edge, beside the header and footer too) or <b>Beside the roll</b> (the header rows above and the footer below stay full width — only the roll narrows). Drag the strip on the dock's inner edge to resize it — 280px up to nearly the whole window, leaving only a thin strip of the song's edge showing, so you can shove the roll out of the way for a minute and drag back (double-tap the strip to reset it to the default width). Dropping a window's title on a side that already holds one makes a <b>tab group</b> there — a small strip of tabs above it, one shown at a time; tap a tab to switch, and closing a tab's window just drops its chip from the strip (it's still docked — reopen it and the chip comes back). The bottom dock can hold two windows side by side — dock a second one there and a divider splits them; drag it to change the split, and drag the strip along the bottom dock's top edge to resize its height (160px up to nearly the whole window, same double-tap-to-reset). <b>Float</b> undocks a window again, right where it was — or just drag a docked window's title back out into the middle. <b>Drag-to-dock:</b> instead of the menu, grab a window's title and drag it to an edge — a highlight shows where it'll land (the outer part of a side edge for full height, the inner part for beside the roll); let go to dock there, or in the middle to float. Remembered on this device — reopening a window re-docks it if you left it docked; closing one frees its space without undocking it. On a phone-width window the <b>Dock</b> button is hidden and every window is always floating — there's no room to give the song.</dd>
@@ -3935,33 +3935,46 @@ function updateSyncBtn() {
   const n = pendingSongs().length;
   btn.textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one"); shows even at N=0 once connected
 }
-function serializeNotesList(list, beatsPerBar, base, stamp) {
-  // one note per line: valid JSON that git-diffs like the old text format.
-  // stamp (epoch ms) marks WHEN this state was saved — the cross-device
-  // freshness beacon (Josh, 2026-08-16); omitted for pure serialization.
-  // Duplicate track: directives are dropped HERE, on the write side, last-wins
-  // per track name. finalizeNotes has done the same on the read side since
-  // 2026-08-18, but the repo file kept accumulating anyway (Josh found
-  // sf-organ2 and square25 both live for pulse2, 2026-09-06) — the resurrection
-  // path was never pinned down. Deduping at serialization makes the mechanism
-  // moot: every writer goes through here (commit, Move, Copy, Download, and
-  // annotationsFor, which merges another song's repo copy with local notes
-  // and is itself a plausible source), so no path can emit two.
+// Duplicate track: directives are dropped HERE, on the write side, last-wins
+// per track name. finalizeNotes has done the same on the read side since
+// 2026-08-18, but the repo file kept accumulating anyway (Josh found
+// sf-organ2 and square25 both live for pulse2, 2026-09-06) — the resurrection
+// path was never pinned down. Deduping at serialization makes the mechanism
+// moot: every writer goes through here (commit, Move, Copy, Download, and
+// annotationsFor, which merges another song's repo copy with local notes
+// and is itself a plausible source), so no path can emit two. Factored out
+// (P5, 2026-09-30) so the ✦ AI context block can list this SAME set, each
+// entry tagged with its index into `list` — askFindAnnotation's id.
+function dedupedNotesWithIndex(list) {
   const lastFor = new Map();
   for (const n of list) if (n.trackdir) lastFor.set(n.trackdir.name.toLowerCase(), n);
   const seenAudio = new Set(); // audio: pieces — many per track; only an exact twin drops
-  const deduped = list.filter(n => {
+  return list.map((n, i) => ({n, i})).filter(({n}) => {
     if (n.trackdir) return lastFor.get(n.trackdir.name.toLowerCase()) === n;
     if (n.audiodir) { const k = n.b1 + ":" + n.q1 + ":" + n.text; if (seenAudio.has(k)) return false; seenAudio.add(k); }
     return true;
   });
-  const rows = deduped.map(n => "  " + JSON.stringify(noteToJSON(n)));
+}
+function serializeNotesList(list, beatsPerBar, base, stamp) {
+  // one note per line: valid JSON that git-diffs like the old text format.
+  // stamp (epoch ms) marks WHEN this state was saved — the cross-device
+  // freshness beacon (Josh, 2026-08-16); omitted for pure serialization.
+  const rows = dedupedNotesWithIndex(list).map(({n}) => "  " + JSON.stringify(noteToJSON(n)));
   return '{ "version": 1, "song": ' + JSON.stringify(base) +
          (stamp ? ', "saved": ' + stamp : "") + ', "notes": [\n' +
          rows.join(",\n") + "\n] }\n";
 }
 function serializeRollnotes() { return serializeNotesList(rollnotes, beatsPerBarDisp(), baseName()); }
 function serializeRollnotesStamped(stamp) { return serializeNotesList(rollnotes, beatsPerBarDisp(), baseName(), stamp); }
+// Same set serializeRollnotes would publish, each entry tagged with an "id"
+// (its index into `rollnotes`) — edit_annotation/delete_annotation target by
+// it. Only stable for the one Ask turn that reads this context block: an
+// edit re-sorts rollnotes (finalizeNotes), so a SECOND tool call in the same
+// reply should re-target by bar/beat/match_text instead of a now-stale id.
+function askAnnotationsText() {
+  const rows = dedupedNotesWithIndex(rollnotes).map(({n, i}) => "  " + JSON.stringify(Object.assign({id: i}, noteToJSON(n))));
+  return '{ "version": 1, "song": ' + JSON.stringify(baseName()) + ', "notes": [\n' + rows.join(",\n") + "\n] }\n";
+}
 // A new key at a bar REPLACES the key there — never two keys at one point
 // (Josh's rule, 2026-08-25, after setting "F mixolydian" over airship's
 // committed "key F" produced both). Two defects were in the old predicate:
@@ -21535,7 +21548,7 @@ const RULE_LEARNING = `THE RULE: discoveries are the user's. Default to hints, q
 const RULE_NORMAL = `Answer music questions directly — name keys, chords, cadences and form when asked; say how sure you are; the key line may be an estimate, call it one.`;
 const ASK_SYS_BASE2 = `Each user message carries a <context> block: the song, the meter, the cursor, any lasso-selected pitches, the user's own annotations (their established discoveries — build on them), and the notes of the bars in view. Bar and beat numbers are the user's ruler: "bar 9 beat 2" is the counted beat of the declared meter (in 6/8 there are six beats per bar). Refer to locations that way. The key-state line says whether the user has set a key; if it is not set, the key is undiscovered — do not name it. If the song is the user's own composition, it is editable and they may ask what they wrote — still lead with a hint. Say "not sure" when you are not sure. Never invent notes that are not in the context.
 
-What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing. You see only that block; you cannot open other songs, files, the repo or the web, and you cannot run anything — say so plainly when asked, and never claim the user must paste things. You have four app tools: add_annotation writes ONE annotation the user asked for, in their words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note) — use it only when they explicitly ask you to annotate or mark something, never to volunteer your own reading, and say what you wrote in one short line; list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. The app's ✦ Fill button (separate from this chat) writes notes into a range when the user uses it; this chat writes no notes. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
+What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing. You see only that block; you cannot open other songs, files, the repo or the web, and you cannot run anything — say so plainly when asked, and never claim the user must paste things. You have seven app tools, all of them ONLY when the user explicitly asks for that exact action, never on your own initiative: add_annotation writes ONE annotation in the user's words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note); edit_annotation changes an EXISTING annotation's text (and, if asked, where it sits) — target it by the "id" its context entry carries, or by its bar, beat and current text if the id has gone stale; delete_annotation removes one existing annotation the same way; all three say what they did in one short line, and if the target is ambiguous they ask which rather than guess. publish_song runs this song's Publish (the same one the footer button does) and reports what happened — it refuses when the device isn't connected (no GitHub token, no folder) or nothing here can be published, and says why. list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. The app's ✦ Fill button (separate from this chat) writes notes into a range when the user uses it; this chat writes no notes outside what add_annotation/edit_annotation do on request. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
 function askSys() { return ASK_SYS_BASE1 + "\n\n" + (appMode() === "normal" ? RULE_NORMAL : RULE_LEARNING) + "\n\n" + ASK_SYS_BASE2; }
 
 let askBusy = null;       // AbortController (or {abort}) while a reply streams
@@ -21840,6 +21853,23 @@ const ASK_TOOLS = [
       end_bar: {type: "integer", minimum: 1, description: "optional: the last bar the annotation spans"}, end_beat: {type: "number", minimum: 1, description: "optional: the last beat it spans (omit = end of that bar)"},
       comment: {type: "string", description: "optional: a note attached to the annotation, in the user's words"}},
       required: ["kind", "text", "bar", "beat"]}}},
+  {type: "function", function: {name: "edit_annotation", description: "Change an EXISTING annotation's text (and, optionally, where it sits). Only when the user explicitly asks you to edit, change, rename, move or correct one — never on your own initiative. Target it by id (from this turn's context block) or by its current bar+beat (+match_text if more than one annotation shares that bar.beat); an ambiguous target is an error, never a guess.",
+    parameters: {type: "object", properties: {
+      id: {type: "integer", minimum: 0, description: "the annotation's \"id\" exactly as the context block lists it — the surest target; stale after an earlier tool call in the SAME reply changes the annotations, so use bar/beat/match_text for a second edit in one turn"},
+      bar: {type: "integer", minimum: 1, description: "the annotation's CURRENT bar — with beat, used to find it when id is omitted or stale"},
+      beat: {type: "number", minimum: 1, description: "the annotation's CURRENT counted beat"},
+      match_text: {type: "string", description: "the annotation's current text — disambiguates when more than one annotation shares that bar.beat"},
+      text: {type: "string", description: "the new symbol, label, key, bpm, bar.beat, or prose — in the user's words"},
+      comment: {type: "string", description: "optional: replaces the note attached to the annotation; omit to leave the existing one"},
+      new_bar: {type: "integer", minimum: 1, description: "optional: moves the annotation to this bar"}, new_beat: {type: "number", minimum: 1, description: "optional: moves it to this beat"},
+      new_end_bar: {type: "integer", minimum: 1, description: "optional: changes the last bar it spans"}, new_end_beat: {type: "number", minimum: 1, description: "optional: changes the last beat it spans"}},
+      required: ["text"]}}},
+  {type: "function", function: {name: "delete_annotation", description: "Remove ONE existing annotation. Only when the user explicitly asks you to delete, remove or take back one — never on your own initiative. Give id, or bar+beat (+match_text if more than one annotation shares that bar.beat); an ambiguous target is an error, never a guess.",
+    parameters: {type: "object", properties: {
+      id: {type: "integer", minimum: 0, description: "the annotation's \"id\" exactly as the context block lists it"},
+      bar: {type: "integer", minimum: 1, description: "the annotation's current bar — with beat, used when id is omitted or stale"}, beat: {type: "number", minimum: 1, description: "the annotation's current counted beat"},
+      match_text: {type: "string", description: "its current text — disambiguates when more than one annotation shares that bar.beat"}}}}},
+  {type: "function", function: {name: "publish_song", description: "Publish the open song — the same Publish the footer button runs (song + annotations, or annotations only for a locked capture). Only when the user explicitly says to publish. Refuses, with a reason, when the device isn't connected or there is nothing here to publish.", parameters: {type: "object", properties: {}}}},
   {type: "function", function: {name: "list_songs", description: "List the songs available in this Night Roll (albums, titles, paths) — use when the user refers to another song.", parameters: {type: "object", properties: {}}}},
   {type: "function", function: {name: "read_song", description: "Read another song's notes (or a bar range of it) in the same text format as the context block. Use only when the user asks about another song.",
     parameters: {type: "object", properties: {path: {type: "string", description: "the song path from list_songs"}, from_bar: {type: "integer", minimum: 1}, to_bar: {type: "integer", minimum: 1}}, required: ["path"]}}},
@@ -21870,6 +21900,122 @@ function askAddAnnotation(a) { // the same text grammar the editor and the files
   if (typeof updateSongBtn === "function") updateSongBtn();
   if (typeof updateSyncBtn === "function") updateSyncBtn();
   return {ok: true, at: head, text: fresh.text, unsynced: true, note: "written on this device; Publish sends it with the song — the user can discard it in the Publish sheet"};
+}
+// edit_annotation/delete_annotation (2026-10-01, open-items): targeting for
+// an EXISTING annotation, robust the way the issue asked — by id (this
+// turn's context listing, dedupedNotesWithIndex's index into rollnotes) or
+// by bar+beat+match_text. Never guesses: 0 or >1 candidates is an error.
+function askFindAnnotation(a) {
+  if (!song || !songKey) throw new Error("no song open");
+  if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
+  a = a || {};
+  if (a.id !== undefined && a.id !== null && a.id !== "") {
+    const id = Math.round(+a.id);
+    if (!(id >= 0 && id < rollnotes.length)) throw new Error("no annotation with id " + a.id + " — it may be stale (another edit in this reply re-sorts them); use bar+beat instead");
+    return rollnotes[id];
+  }
+  if (a.bar === undefined || a.beat === undefined) throw new Error("say which annotation: its id from the context, or its bar and beat");
+  const bar = Math.max(1, Math.round(+a.bar)), beat = Math.max(1, +a.beat);
+  let cands = rollnotes.filter(n => n.b1 === bar && Math.abs((n.q1 || 1) - beat) < 1e-6);
+  if (a.match_text) {
+    const t = String(a.match_text).trim().toLowerCase();
+    const narrowed = cands.filter(n => (n.text || "").toLowerCase().includes(t));
+    if (narrowed.length) cands = narrowed;
+  }
+  if (!cands.length) throw new Error("no annotation at bar " + bar + " beat " + beat + (a.match_text ? " matching \"" + a.match_text + "\"" : ""));
+  if (cands.length > 1) throw new Error("more than one annotation at bar " + bar + " beat " + beat + ": " +
+    cands.map(n => JSON.stringify((n.text || "").split("\n")[0])).join(", ") + " — say which (match_text, or its id from the context)");
+  return cands[0];
+}
+function askNoteKind(n) { // the add_annotation "kind" this existing note was written as
+  if (n.section) return "section";
+  if (n.chord) return "chord";
+  if (n.keydir !== undefined || n.keypartial) return "key";
+  if (n.tempodir !== undefined) return "tempo";
+  if (n.loopTo !== undefined) return "loop";
+  return "note";
+}
+function askNoteValue(n, kind) { // the "text" add_annotation would need to reproduce n's own value — chord/section store the bare symbol/label; key/tempo/loop carry a "kind: " prefix
+  if (kind === "note") return n.text || "";
+  const m = (n.text || "").match(/^[a-z]+:\s*(.+)$/is);
+  return m ? m[1].trim() : (n.text || "");
+}
+function askAnnotationStructural(n) { // meter/chop/track/audio/lane: song-structure directives, not annotations — out of scope for edit/delete_annotation (see NIGHT-ROLL.md ✦ AI)
+  return !!(n.tsdir || n.chopdir || n.trackdir || n.audiodir || /^lane:\s*-?\d+\s*$/i.test(n.text || ""));
+}
+function askEditAnnotation(a) {
+  a = a || {};
+  const n = askFindAnnotation(a);
+  if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — change it in the app's own editor, not here");
+  const kind = askNoteKind(n);
+  const bar = a.new_bar !== undefined ? Math.max(1, Math.round(+a.new_bar)) : n.b1;
+  const beat = a.new_beat !== undefined ? Math.max(1, +a.new_beat) : (n.q1 || 1);
+  const eb = a.new_end_bar !== undefined ? Math.max(bar, Math.round(+a.new_end_bar)) : (n.b2 || null);
+  const eq = eb !== null ? (a.new_end_beat !== undefined ? Math.max(1, +a.new_end_beat) : (eb === n.b2 ? (n.q2 || null) : null)) : null;
+  const text = String(a.text || "").trim();
+  if (!text) throw new Error("empty text");
+  const comment = a.comment !== undefined ? String(a.comment).trim() : (n.cnote || "");
+  const line = (kind === "note" ? text : kind + ": " + text) + (comment ? "\n" + comment : "");
+  const head = "[" + bar + "." + beat + (eb ? " - " + eb + (eq ? "." + eq : "") : "") + "]";
+  const parsed = parseRollnotes(head + "\n" + line);
+  if (!parsed.length) throw new Error("could not parse that annotation");
+  const fresh = parsed[0];
+  fresh.added = true;
+  if (kind === "key") dropLocalKeyAt(bar, beat); // anchor-level: only a key at the (possibly new) exact beat is replaced
+  retireEdited(n); // tombstones a synced original (so it can't come back on reload) and drops it — same path the note editor's own Save uses on an edit
+  const isLoop = nn => nn.loopTo !== undefined || /^loop:/i.test(nn.text || "");
+  if (isLoop(fresh)) rollnotes = rollnotes.filter(nn => !(nn.added && isLoop(nn))); // one loop point per song
+  dropSupersededBy(fresh);
+  rollnotes.push(resolveNote(fresh));
+  finalizeNotes();
+  saveLocalNotes();
+  if (typeof buildScoreModel === "function") buildScoreModel();
+  if (typeof clampView === "function") clampView();
+  lastSubtitle = undefined;
+  if (typeof updateSubtitle === "function") updateSubtitle();
+  if (typeof draw === "function") draw();
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof updateSyncBtn === "function") updateSyncBtn();
+  return {ok: true, at: head, text: fresh.text, note: "edited in place"};
+}
+function askDeleteAnnotation(a) {
+  const n = askFindAnnotation(a || {});
+  if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — remove it in the app's own editor, not here");
+  const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];
+  tombstone(n); // synced notes need the deletion to survive a reload — same path the note editor's own Delete uses
+  rollnotes = rollnotes.filter(x => x !== n);
+  finalizeNotes();
+  saveLocalNotes();
+  if (typeof buildScoreModel === "function") buildScoreModel();
+  if (typeof clampView === "function") clampView();
+  lastSubtitle = undefined;
+  if (typeof updateSubtitle === "function") updateSubtitle();
+  if (typeof draw === "function") draw();
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof updateSyncBtn === "function") updateSyncBtn();
+  return {ok: true, at, text, note: "deleted"};
+}
+// publish_song (2026-10-01): the exact per-song flow the footer's Publish
+// button runs (#ghsave's "writing mode" branch for his own songs; the plain
+// annotations-only branch otherwise) — never a parallel path, so a tool-run
+// publish and a tapped one behave identically.
+async function askPublishSong() {
+  if (!song || !songKey) throw new Error("no song open");
+  if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
+  if (!connected()) throw new Error("not connected — add a GitHub token, or choose a local folder, in File → Settings first");
+  const token = writeToken();
+  const h = ghHeaders(token);
+  const hisMusic = isComposition();
+  let status = "";
+  await publishSong(songKey, h, m => { status = m; });
+  if (hisMusic) {
+    try { await writeSongsReadme(h); } catch (err) { status = "published, but the repo's song list didn't update: " + err.message; }
+  }
+  try { await initCatalog(); } catch (err) { /* best-effort refresh */ }
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof renderSyncPending === "function") renderSyncPending();
+  const where = folderActive() ? ("to " + fsRoot.name) : "(GitHub Pages takes ~1 min to serve it)";
+  return {ok: true, message: "Published " + songKey + " " + where + (hisMusic ? " — song and annotations together." : " — annotations.")};
 }
 function notesTxtForDoc(doc, name, fromBar, toBar, maxChars, key) { // notesTxtFor's shape for ANOTHER song (no key stated, sharp spelling)
   const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -21911,6 +22057,9 @@ function askSongPath(p) { // accept a path, a title, or a bare name
 }
 async function askRunTool(name, a) {
   if (name === "add_annotation") return askAddAnnotation(a || {});
+  if (name === "edit_annotation") return askEditAnnotation(a || {});
+  if (name === "delete_annotation") return askDeleteAnnotation(a || {});
+  if (name === "publish_song") return askPublishSong();
   if (name === "list_songs") return Object.entries(CATALOG).map(([album, songs]) => ({album, songs: songs.map(([title, path]) => ({title, path}))}));
   if (name === "read_song") {
     const path = askSongPath(a && a.path);
@@ -22083,9 +22232,9 @@ function askContext(sp, budget) { // the ONE block per request; never stored
       ? "lasso-selected notes: " + names + " — chord: " + nameChord(pitches, multiSelSf)
       : "lasso-selected notes: " + names + " — do not name this chord unless the user has guessed or insists");
   }
-  const anno = serializeRollnotes();
+  const anno = askAnnotationsText();
   const annoCap = budget.anno * ASK_CPT;
-  L.push("the user's annotations (.rollnotes):\n" + (anno.length > annoCap ? anno.slice(0, annoCap) + "\n# (annotations cut here to fit the window)" : anno));
+  L.push("the user's annotations (.rollnotes) — each entry's \"id\" is this turn's handle for edit_annotation/delete_annotation:\n" + (anno.length > annoCap ? anno.slice(0, annoCap) + "\n# (annotations cut here to fit the window)" : anno));
   L.push("notes in bars " + sp.from + "–" + sp.to + ":\n" + askSpanNotes(sp.t0, sp.t1, budget.span * ASK_CPT));
   const ns = askNewSinceLines(askStoreKey());
   if (ns) L.push(ns);
@@ -22339,7 +22488,8 @@ const askstatus = document.getElementById("askstatus");
 // host already allowed for Ask is polled; a server without /v1/inbox (LM
 // Studio, Ollama) is asked once and left alone.
 function askSessionName() { return askGeneral ? "general" : String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160); }
-function askToolsNow() { return askGeneral ? ASK_TOOLS.filter(t => t.function.name !== "add_annotation") : ASK_TOOLS; } // no song to annotate in the general chat
+const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song"]; // no open song in the general chat
+function askToolsNow() { return askGeneral ? ASK_TOOLS.filter(t => !ASK_SONG_ONLY_TOOLS.includes(t.function.name)) : ASK_TOOLS; }
 function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
 let askInboxNo = ""; // the url that answered 404 (no inbox there)
 let askInboxTimer = null;
