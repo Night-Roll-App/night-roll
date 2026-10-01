@@ -1,3 +1,3 @@
-{ "version": 1, "song": "chrono-main-theme", "saved": 1790613509963, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "chrono-main-theme", "origin": {"kind":"capture"}, "stamp": 1790613509963, "notes": [
   {"at":[66,1],"type":"loop","loop":"2.1"}
 ] }

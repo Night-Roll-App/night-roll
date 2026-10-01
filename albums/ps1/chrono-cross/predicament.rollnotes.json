@@ -1,3 +1,3 @@
-{ "version": 1, "song": "predicament", "saved": 1790613510018, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "predicament", "origin": {"kind":"capture"}, "stamp": 1790613510018, "notes": [
   {"at":[45,1],"type":"loop","loop":"13.1"}
 ] }

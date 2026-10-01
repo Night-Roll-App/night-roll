@@ -1,3 +1,3 @@
-{ "version": 1, "song": "home-marbule", "saved": 1790613509992, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "home-marbule", "origin": {"kind":"capture"}, "stamp": 1790613509992, "notes": [
   {"at":[35,1],"type":"loop","loop":"11.1"}
 ] }

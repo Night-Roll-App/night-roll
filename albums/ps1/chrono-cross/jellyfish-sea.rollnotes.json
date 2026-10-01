@@ -1,3 +1,3 @@
-{ "version": 1, "song": "jellyfish-sea", "saved": 1790613510006, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "jellyfish-sea", "origin": {"kind":"capture"}, "stamp": 1790613510006, "notes": [
   {"at":[24,1],"type":"loop","loop":"2.1"}
 ] }

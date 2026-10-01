@@ -1,3 +1,3 @@
-{ "version": 1, "song": "home-termina-variation", "saved": 1790613509994, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "home-termina-variation", "origin": {"kind":"capture"}, "stamp": 1790613509994, "notes": [
   {"at":[34,1],"type":"loop","loop":"2.1"}
 ] }

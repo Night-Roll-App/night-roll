@@ -1,3 +1,3 @@
-{ "version": 1, "song": "magical-dreamers-the-wind-stars-and-waves-main", "saved": 1790613510011, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "magical-dreamers-the-wind-stars-and-waves-main", "origin": {"kind":"capture"}, "stamp": 1790613510011, "notes": [
   {"at":[53,1],"type":"loop","loop":"29.1"}
 ] }
