@@ -1,3 +1,3 @@
-{ "version": 1, "song": "shoot-em-up-stage", "saved": 1790564295302, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "shoot-em-up-stage", "origin": {"kind":"capture"}, "stamp": 1790564295302, "notes": [
   {"at":[25,1.5],"type":"loop","loop":"5.1.5"}
 ] }

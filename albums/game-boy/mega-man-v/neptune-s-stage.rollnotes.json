@@ -1,3 +1,3 @@
-{ "version": 1, "song": "neptune-s-stage", "saved": 1790564295300, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "neptune-s-stage", "origin": {"kind":"capture"}, "stamp": 1790564295300, "notes": [
   {"at":[37,2],"type":"loop","loop":"5.2"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "dr-light-s-shop", "saved": 1790564295290, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "dr-light-s-shop", "origin": {"kind":"capture"}, "stamp": 1790564295290, "notes": [
   {"at":[11,3.5],"type":"loop","loop":"3.3.5"}
 ] }
