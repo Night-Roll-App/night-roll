@@ -1,3 +1,3 @@
-{ "version": 1, "song": "the-daily-life", "saved": 1790640664858, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "the-daily-life", "origin": {"kind":"capture"}, "stamp": 1790640664858, "notes": [
   {"at":[29,4],"type":"loop","loop":"5.4"}
 ] }

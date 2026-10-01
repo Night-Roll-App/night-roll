@@ -1,3 +1,3 @@
-{ "version": 1, "song": "wise-owl-forest", "saved": 1790640664882, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "wise-owl-forest", "origin": {"kind":"capture"}, "stamp": 1790640664882, "notes": [
   {"at":[49,3],"type":"loop","loop":"9.3"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "matataki-village", "saved": 1790640664842, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "matataki-village", "origin": {"kind":"capture"}, "stamp": 1790640664842, "notes": [
   {"at":[15,5],"type":"loop","loop":"3.5"}
 ] }

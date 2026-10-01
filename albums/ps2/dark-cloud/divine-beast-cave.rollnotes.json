@@ -1,3 +1,3 @@
-{ "version": 1, "song": "divine-beast-cave", "saved": 1790640664826, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "divine-beast-cave", "origin": {"kind":"capture"}, "stamp": 1790640664826, "notes": [
   {"at":[17,4],"type":"loop","loop":"1.4"}
 ] }
