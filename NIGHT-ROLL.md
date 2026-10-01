@@ -1353,10 +1353,17 @@ sync (GitHub Contents API, 409 retry) · key dial · help sheet.
 
 ## Tracks/Arrange view (advisor-designed, 2026-08-22)
 
-Third viewMode ("tracks"; footer v2, 2026-09-30: the Roll/Tracks/Score
-switch is a 3-way segment — viewseg{roll,tracks,score} — inside ⋯ More →
-VIEW, current mode lit; the old cycling #viewbtn is a hidden, inert node
-now. View ▾ still has its own direct rows too). RULER_W is now a LET —
+Third viewMode ("tracks"; footer v2 tweaks, 2026-09-30, Josh after using
+footer v2: "I use it a lot in analysis" — brought back from the first
+footer v2 pass, which had hidden it, betting View ▾'s Tracks/Score items
+alone would cover it). The Roll/Tracks/Score switch is a 3-way segment —
+viewSeg{roll,tracks,score}, ids viewsegroll/viewsegtracks/viewsegscore —
+now #viewbtn itself: the FIRST item in the footer's left group (before ⊞
+Lasso/🎹), current mode lit via button.active. View ▾ has the same switch
+again too, now its own VIEW group at the top of a restructured four-group
+menu (VIEW radio → PANELS → DISPLAY → MODE, each with a .cfgsec label like
+⋯ More's; renderViewMenu/#viewsheet) — separate DOM nodes
+(vwRoll/vwTracksView/vwScore), same setViewMode() calls. RULER_W is now a LET —
 148 in tracks (the header column), 46 elsewhere — set ONLY in
 applyViewMode; every gutter/time consumer keys off it. Time axis is
 the roll's shared map, so ruler/sections/cycle/bar-magnet/playhead/
@@ -1493,20 +1500,70 @@ SIGNATURE sections dropped, ⋯ More itself promoted to a real window.
   Score; the key/mode pickers duplicated the LCD key: tap → the
   governing key: annotation's own editor, which has always had its
   own tonic/mode pickers, #nkeysel/#nkeymode, in #noteeditor). The
-  nodes stay in the DOM inside a `display:none` `#hiddenmorerows`
-  container (sibling of `#moresheet-home`) — `applyViewMode()`,
+  KEY SIGNATURE nodes stay in the DOM inside a `display:none`
+  `#hiddenmorerows` container (sibling of `#moresheet-home`) —
   `refreshKeysetLabel()`, `refreshKeyPreview()`, and the keyset/
   keysetest click handlers are all unchanged, and still work on these
   hidden nodes; P3's key tests still drive `#keysetest` by id
-  directly. `#viewbtn` (already hidden from the first footer v2 pass)
-  now points its aria-label at View ▾ instead of the segment, since
-  that's gone too.
+  directly. (The VIEW segment itself didn't stay dropped — see
+  "View switcher restored" below, same day: Josh used the footer for
+  one day without it and asked for it back.)
 - Help sheet: the ⋯ More entry describes the window behavior and that
-  Publish/the view switch moved out; `key: picker` (the FEATURES drift
-  keyword, kept verbatim) now reads "key: picker — now the key on the
-  transport display" and points at tapping the LCD key chip instead of
+  Publish moved out; `key: picker` (the FEATURES drift keyword, kept
+  verbatim) now reads "key: picker — now the key on the transport
+  display" and points at tapping the LCD key chip instead of
   describing pickers that no longer have a seat in the UI.
 - `tests/e2e/docking.spec.mjs` WINDOWS gained `"moresheet"` (CI only).
+
+#### View switcher restored, View ▾ regrouped (Josh, 2026-09-30, same day, after using footer v2 for a day)
+
+**Superseded 2026-10-01 (c045382):** the footer's 3-way segment was "way too big" (Josh) — `#viewbtn` is ONE cycling button again (Roll → Tracks → Score, label = the next view; `viewSeg` and the `viewseg*` ids are gone). The View ▾ regrouping below stands.
+
+"Put the view changer button back in the bottom left — I use it a lot
+in analysis." The bet in the tweaks pass above (View ▾'s Tracks/Score
+items alone would cover it) didn't hold.
+
+- **#viewbtn** is no longer the retired hidden node — it's now the
+  `.seg` container itself: `<div class="seg" id="viewbtn"
+  role="radiogroup">`, first item in the footer's left group, before
+  ⊞ Lasso/🎹. Its three children are the SAME ids/object the
+  `#hiddenmorerows`-era segment used — `viewsegroll`/`viewsegtracks`/
+  `viewsegscore`, still the `viewSeg` object, still driven by the same
+  `applyViewMode()`/`setViewMode()` — only the markup's location
+  changed, so no JS changed. Each button is icon + `.ftxt` label (▦
+  Roll / ▤ Tracks / 𝄞 Score), collapsing to bare glyphs past ~420px
+  like the rest of the footer (`footer .ftxt` container query). `.seg
+  button`'s own 36px min-height is below the footer's 44px touch
+  floor, so a `footer .seg button { min-height: 44px; }` rule wins on
+  class-count specificity.
+- **`#hiddenmorerows`** now holds only the key picker — its comment
+  no longer mentions VIEW.
+- **View ▾ (#viewsheet) regrouped into four sections**, each with a
+  `.cfgsec` label like ⋯ More's own (that rule is now `#moresheet
+  .cfgsec, #viewsheet .cfgsec`): **VIEW** (▦ Roll — new, ▤ Tracks
+  view, 𝄞 Score view — a radio, one ✓ at a time: clicking any of the
+  three now calls `setViewMode(mode)` directly, no more toggle-to-roll
+  on the other two), **PANELS** (🎹 Instrument panel, 💬 Notes strip,
+  🎚 Mixer, ◂ Tracks — the side panel/window controls), **DISPLAY**
+  (🛠 Edit toolbar, ▦ Bottom bar, ▦ Grid…, ▸ Section levels — what the
+  roll itself shows or snaps to), **MODE** (🔍 Analyze ▸, ⇄ Compare
+  with repo, 🎓 Learning mode, 📻 Listener mode — last, Listener mode
+  being Josh's own example of a "mode"). These are separate DOM nodes
+  from the footer segment (`vwRoll`/`vwTracksView`/`vwScore`), same
+  `setViewMode()` calls; `renderViewMenu()` gained a `vwRoll` entry
+  (`set("vwRoll", viewMode === "roll")`) alongside the existing
+  `vwScore`/`vwTracksView` checks.
+- Help sheet: the "View ▾ menu" entry (FEATURES drift keyword, kept
+  verbatim) now walks all four groups by name; the "▤ Tracks view" and
+  "Track chips (top)" entries' stray mentions of "the 𝄞/▦ view toggle"
+  (a cycling single button, no longer what ships) now describe the
+  segmented control.
+- Tests: `#viewbtn` is visible (not `display:none`/`aria-hidden`/
+  `tabindex="-1"`) and sits before `#lassobtn`; clicking any of its
+  three buttons drives `viewMode`; `#viewsheet`'s four `.cfgsec`
+  groups are in VIEW/PANELS/DISPLAY/MODE order and every item falls in
+  the right one (incl. Listener mode last); `#vwRoll` exists and
+  clicking it switches to roll and shows the ✓.
 
 ## Bassist (advisor-designed, 2026-08-23)
 

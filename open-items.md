@@ -51,6 +51,33 @@ right) with a 6-note lasso, then commit + push (this session didn't
 commit/push per its instructions). Nothing blocking; not yet verified in a
 real browser.
 
+## View switcher restored + View ▾ regrouped — DONE (shipped ee0e69e; the 3-way segment replaced by one cycling button in c045382, Josh: "way too big")
+
+Josh, 2026-09-30, after a day on footer v2: "Put the view changer button
+back in the bottom left — I use it a lot in analysis," and "there's a
+Score view and a Tracks view but no Roll view, and Listener mode is stuck
+between them — look hard at the ordering." Built by a delegated session
+(plan-then-delegate), NOT committed/pushed per its instructions:
+
+- #viewbtn is live again: a ▦ Roll / ▤ Tracks / 𝄞 Score segmented control,
+  first item in the footer's left group (before ⊞ Lasso/🎹). Same
+  viewsegroll/tracks/score ids and viewSeg object the hidden #moresheet-era
+  segment used — only its markup location changed.
+- View ▾ (#viewsheet) regrouped into four .cfgsec-labelled sections: VIEW
+  (▦ Roll — new — / ▤ Tracks view / 𝄞 Score view, a radio) → PANELS (🎹
+  Instrument panel, 💬 Notes strip, 🎚 Mixer, ◂ Tracks) → DISPLAY (🛠 Edit
+  toolbar, ▦ Bottom bar, ▦ Grid…, ▸ Section levels) → MODE (🔍 Analyze ▸,
+  ⇄ Compare with repo, 🎓 Learning mode, 📻 Listener mode — last).
+- Docs: NIGHT-ROLL.md ("View switcher restored, View ▾ regrouped"
+  subsection, under Footer v2), HELP.md rebuilt (`node
+  tools/build_help.mjs`), FEATURES drift keywords intact.
+- Tests: `npm test` green except one pre-existing failure in "Game order"
+  (album-list ordering, tests/night-roll.test.mjs:6394) — unrelated to this
+  change (confirmed via `git diff` — nothing touched there) and inside the
+  area the other concurrent session was actively building (album list
+  ordering/album play/manifest); not this session's to fix.
+
+
 ## Annotations v2 — DONE 2026-10-01: P3 reader (34ea078), P4 writer (d8c84ce), P5 batch: 1195/1196 files converted, one commit per album; graveyard-3 waits on Q10. Tool: tools/migrate-rollnotes-v2.mjs.
 
 ## docs/provenance-plan.md P0 + P2 — DONE 2026-09-30: ONE publish function; the bugs it fixes
