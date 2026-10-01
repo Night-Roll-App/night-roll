@@ -549,6 +549,16 @@ the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
 ## QUEUE (2026-09-29, the order Josh approved)
+DONE 2026-09-30 — FOOTER v2 TWEAKS (Josh, 2026-09-30 ~22:45, after using it):
+Footer right-group push (Publish back on the bar before ⋯ More), ⋯ More
+dropped VIEW and KEY SIGNATURE (View ▾'s own Tracks/Score and the LCD key's
+tap-to-edit cover both — nodes kept hidden for the code/tests that still
+drive them by id), ⋯ More promoted to a real window (makeWindow, dockable,
+remembered position). Help sheet + HELP.md updated (the `key: picker` FEATURES
+keyword now points at the transport display). tests/night-roll.test.mjs: new
+footer-markup test; tests/e2e/docking.spec.mjs WINDOWS gained "moresheet".
+See NIGHT-ROLL.md "Footer v2 tweaks (Josh, 2026-09-30, after using it)".
+(He also found the Mixer and likes it.)
 PS2 PARKED (Josh, 2026-09-30 ~21:55: "we're spending a lot of money on it…
 I never even played FFX… just do whatever you think is best"). Finishing
 only what protects every console: the OOM crash fix + import recovery, and
@@ -4429,3 +4439,6 @@ longer crashes and that a subsequent song's import recovers on its own.
 
 ## 2026-09-30 22:35 Josh (via Ask): tapped notes must use the EXACT game sound
 In FF4 "Cry in Sorrow (part 1)" (SNES), touching notes plays the generic synth ("midi sounds"), not the game sound. He wants every console tap preview (SNES first, then Genesis/N64/NES/GB/PS) to play the real chip/sample voice for that track at that note; it breaks his analysis concentration when it differs. Earlier PS1 fix (25cab929) covered PS1 only.
+
+## 2026-09-30 22:37 Josh (via Ask): track colors too similar in the roll
+In FF4 "Cry in Sorrow (part 1)" (SNES) voice0 and voice2 (and likely neighbours among voice0-voice6) are hard to tell apart by color; he can't tell which is the melody. "I wish we could do something about that." Wants clearly distinguishable per-track colors, at least within one song (SNES/console captures with 7-8 voices first).

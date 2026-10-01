@@ -5269,6 +5269,83 @@ test("tap a note on a chip song: the live worker renders that one note through t
   run(`chip.key = null; chip.pcm = null; audio = null; chipPreviewCache.clear();`);
 });
 
+test("tap a note on a REGISTER chip song (nsf/gbs/spc): no per-note renderer, so the tap slices the track's own already-rendered buffer", async () => {
+  // FF4 SNES "Cry in Sorrow (part 1)" (Josh, 2026-09-30): tapping a note
+  // played the generic synth, not the game sound. Each register-chip track
+  // is one hardware voice — chip.buffers[track] already has this exact
+  // note's sound; this is the slice math (chipNoteSlice), not a re-render.
+  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  run(`createComposition(120, 4, 4); ensureAudio(); // ppq 480, 120bpm: tick 480 = one quarter = 0.5s
+       chipWorker = null; // no live worker: chipPreviewBuffer must come back null fast, same as any register-chip song
+       chip.key = songKey; chip.lead = 2; chip.pcm = null;
+       chip.buffers = {}; chip.buffers[song.tracks[0].name] = {duration: 100, _tag: "orig"};
+       globalThis.__srcStarts = []; globalThis.__tgCalls = []; globalThis.__sched = 0;
+       const _trackGain = trackGain; trackGain = (ti) => { globalThis.__tgCalls.push(ti); return _trackGain(ti); };
+       audio.createBufferSource = () => ({ buffer: null, connect(t) { return t; }, disconnect() {},
+         start(w, o, d) { globalThis.__srcStarts.push({offset: o, dur: d, buffer: this.buffer}); }, stop() {} });
+       scheduleNote = () => { globalThis.__sched++; };`);
+  const settle = async p => { for (let i = 0; i < 40; i++) { await Promise.resolve(); app2.tick(20); await Promise.resolve(); await Promise.resolve(); } return p; }; // the harness clock is fake: let clockAlive's own 50ms probes actually fire
+
+  // existing (recorded) note, a later note far enough away that the tail hits its own +250ms cap, not the next note
+  run(`song.tracks[0].notes = [{t: 0, d: 240, p: 60, v: 100}, {t: 4800, d: 240, p: 64, v: 100}];`); // next note 5s later
+  await settle(run(`previewNote(0, 60, 0)`));
+  let starts = val(`globalThis.__srcStarts`);
+  assert.equal(starts.length, 1, "one buffer source, no synth");
+  assert.equal(val(`globalThis.__sched`), 0);
+  assert.equal(starts[0].buffer._tag, "orig", "the SAME buffer object — no copy");
+  assert.equal(starts[0].offset, 2, "offset = chip.lead + note start seconds (2 + 0)");
+  assert.ok(Math.abs(starts[0].dur - 0.5) < 1e-9, "duration = note length (0.25s) + the 250ms release cap: " + starts[0].dur);
+  assert.deepEqual(val(`globalThis.__tgCalls`), [0], "connected via trackGain(ti)");
+
+  // a next note sooner than the 250ms cap: the tail stops at ITS start instead
+  run(`globalThis.__srcStarts = []; song.tracks[0].notes = [{t: 0, d: 240, p: 60, v: 100}, {t: 288, d: 240, p: 64, v: 100}];`); // next note at 0.3s, note ends at 0.25s — 50ms gap
+  await settle(run(`previewNote(0, 60, 0)`));
+  starts = val(`globalThis.__srcStarts`);
+  assert.equal(starts.length, 1);
+  assert.ok(Math.abs(starts[0].dur - 0.3) < 1e-9, "duration stops at the NEXT note's start (0.3s), shorter than the 250ms cap would allow: " + starts[0].dur);
+
+  // no buffers for this track yet (render not done, or dropped silent): synth
+  run(`globalThis.__srcStarts = []; globalThis.__sched = 0; chip.buffers = {};`);
+  await settle(run(`previewNote(0, 60, 0)`));
+  assert.equal(val(`globalThis.__srcStarts.length`), 0);
+  assert.equal(val(`globalThis.__sched`), 1, "no rendered track buffer: the synth fallback");
+
+  // placing a NEW note (added: true — a pencil placement/MIDI-in, not part of the capture): nothing was rendered there, synth
+  run(`chip.buffers[song.tracks[0].name] = {duration: 100, _tag: "orig"};
+       song.tracks[0].notes = [{t: 0, d: 240, p: 60, v: 100, added: true}];
+       globalThis.__srcStarts = []; globalThis.__sched = 0;`);
+  await settle(run(`previewNote(0, 60, 0)`));
+  assert.equal(val(`globalThis.__srcStarts.length`), 0);
+  assert.equal(val(`globalThis.__sched`), 1, "a newly placed note falls to the synth, same as today");
+
+  // an explicit voice overrides the chip for this track, same as chipStart/the existing gate
+  run(`song.tracks[0].notes = [{t: 0, d: 240, p: 60, v: 100}]; song.tracks[0].voice = "piano";
+       globalThis.__srcStarts = []; globalThis.__sched = 0;`);
+  await settle(run(`previewNote(0, 60, 0)`));
+  assert.equal(val(`globalThis.__srcStarts.length`), 0);
+  assert.equal(val(`globalThis.__sched`), 1, "explicit voice: synth, not the chip slice");
+  run(`song.tracks[0].voice = undefined;`);
+
+  // stream mode: the chunk covering the note IS cached — slice it just the same
+  run(`chip.pcm = null; chip.buffers = null; chip.stream = {cache: new Map(), tracks: [song.tracks[0].name], silent: new Set()};
+       chip.stream.cache.set(1, {buffers: {[song.tracks[0].name]: {duration: 100, _tag: "chunk"}}}); // idx 1 == floor((lead=2 + 0)/CHIP_STREAM_CHUNK_SEC=2)
+       song.tracks[0].notes = [{t: 0, d: 240, p: 60, v: 100}];
+       globalThis.__srcStarts = []; globalThis.__sched = 0;`);
+  await settle(run(`previewNote(0, 60, 0)`));
+  starts = val(`globalThis.__srcStarts`);
+  assert.equal(starts.length, 1, "stream mode, chunk cached: still a slice, not the synth");
+  assert.equal(starts[0].buffer._tag, "chunk");
+  assert.equal(starts[0].offset, 0, "the note starts exactly at this chunk's own start (idx*CHUNK_SEC == lead)");
+  assert.equal(val(`globalThis.__sched`), 0);
+
+  // stream mode: the chunk ISN'T cached yet — synth, never a request to the worker
+  run(`chip.stream.cache.clear(); globalThis.__srcStarts = []; globalThis.__sched = 0;`);
+  await settle(run(`previewNote(0, 60, 0)`));
+  assert.equal(val(`globalThis.__srcStarts.length`), 0);
+  assert.equal(val(`globalThis.__sched`), 1, "stream mode, chunk not cached: the synth, not a new worker request");
+  run(`chip.key = null; chip.pcm = null; chip.buffers = null; chip.stream = null; audio = null;`);
+});
+
 test("preview cache key: two taps at the same pitch but different ticks (a track whose program changes mid-track) never share a buffer; a repeat tap at the same tick hits cache without a new worker call", async () => {
   // FF7 "You Can Hear the Cry of the Planet" (Josh's ear, 2026-09-30): a
   // track like "ch 1 prog 51,46" plays prog 51 for a while then prog 46.
@@ -6861,6 +6938,32 @@ test("8va (footer v2, 2026-09-30): an always-visible toggle in ⋯ More — reac
   a.run(`document.getElementById("octbtn").click();`); // toggles selOctaves and re-renders
   assert.match(a.run(`document.getElementById("octbtn").textContent`), /^✓ 8va/, "on: checkmark");
   assert.equal(a.run(`selOctaves`), true);
+});
+
+test("footer v2 tweaks (2026-09-30): Publish is back on the footer bar (before ⋯ More), and ⋯ More's own markup no longer holds the VIEW segment or the key picker", () => {
+  // this is a markup-shape check, not a DOM-structure one — the vm harness's
+  // document stub (tests/harness.mjs) vivifies elements by id on first
+  // getElementById() with no real parent/child tree, so "X is inside the
+  // footer" can only be asked of the raw HTML text, the same way the
+  // "help sheet"/"Import hub" drift guards above do.
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const footer = html.slice(html.indexOf("<footer>"), html.indexOf("</footer>"));
+  assert.match(footer, /id="syncbtn"/, "Publish (#syncbtn) is a direct footer button again");
+  assert.match(footer, /id="moresheetbtn"/, "⋯ More is still the footer's last button");
+  const order = ["lassobtn", "instbtn", "footerspacer", "listbtn", "notebtn", "syncbtn", "moresheetbtn"]
+    .map(id => id === "footerspacer" ? footer.indexOf('class="footerspacer"') : footer.indexOf('id="' + id + '"'));
+  for (let i = 1; i < order.length; i++) assert.ok(order[i - 1] < order[i], "footer order: " + order);
+  const more = html.slice(html.indexOf('id="moresheet"'), html.indexOf("<!-- /moresheet-home -->"));
+  assert.doesNotMatch(more, /id="keysel"/, "the key picker left ⋯ More's own markup (it's a hidden node elsewhere now)");
+  assert.doesNotMatch(more, /id="viewseg"/, "the VIEW segment left ⋯ More's own markup (it's a hidden node elsewhere now)");
+  assert.doesNotMatch(more, /id="syncbtn"/, "Publish isn't also still inside ⋯ More");
+  assert.match(more, /id="octbtn"/, "8va stays in ⋯ More");
+  assert.match(more, /id="findsel"/, "find: stays in ⋯ More");
+  assert.match(more, /id="cofbtn"/, "◯5 stays in ⋯ More");
+  assert.match(more, /id="jobsbtn"/, "⏳ Jobs stays in ⋯ More");
+  // the hidden nodes exist somewhere in the page, for the code/tests that still drive them by id
+  assert.match(html, /id="keysel"/);
+  assert.match(html, /id="viewseg"/);
 });
 
 test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", () => {

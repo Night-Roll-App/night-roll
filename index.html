@@ -134,6 +134,8 @@
      real priority instead of "both shrink together" — crumbfolder's
      flex-shrink is 1000x crumbtitle's, so the folder gives up its width
      first and the title only starts truncating once the folder's gone). */
+  /* the SONG heading only when a job is listed under it (Publish moved back to the bar) */
+  #morerows:not(:has(#jobsbtn:not([style*="display: none"]):not([style*="display:none"])) ) .moresong { display: none; }
   #songcrumb > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   #songcrumb > .crumbwhere, #songcrumb > .crumbdot { flex: none; }
   #songcrumb > .crumbfolder { flex: 0 1000 auto; } /* never GROWS: a growing folder pushed the title to the far right */
@@ -445,54 +447,31 @@
     max-width: 92vw;
     box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
   }
-  /* ⋯ More sheet (footer v2, 2026-09-30): styled/positioned like #viewsheet
-     (a dropdown pinned under the button, JS-placed in moresheetbtn's click
-     handler) on a tablet/desktop; a phone gets a full-width bottom sheet
-     instead — there's no room beside the button for a 230px dropdown. */
-  #moresheet {
-    display: none;
-    position: absolute;
-    z-index: 60;
-    background: var(--panel2);
-    border: 1px solid var(--grid);
-    border-radius: 10px;
-    padding: 6px;
-    min-width: 260px;
-    max-width: 92vw;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
-  }
-  #moresheet.on { display: block; }
+  /* ⋯ More (footer v2 tweaks, 2026-09-30): promoted from a bespoke pinned
+     dropdown to a real window — `.overlay`/`.sheet` (shared rules above)
+     now does display/position/the phone layout/the backdrop-tap-to-close,
+     same as AI/Instruments/Notes/Jobs/Publish. Only the touch-sized rows
+     inside it (44px targets — these buttons/selects started life in the
+     dropdown, denser than the shared `.sheet` default) keep their own rules. */
   #moresheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 44px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #moresheet .fitem:active { background: var(--panel); }
   #moresheet .fdiv { border-top: 1px solid var(--grid); margin: 4px 6px; }
-  /* #moresheet is NOT a `.sheet` (same bespoke-dropdown paradigm as
-     #editsheet/#viewsheet) — the shared .sheet/.cfgsec/.lbl/.status rules
-     don't reach in, so section labels and the key-signature blurb get their
-     own small rule set here. */
   #moresheet .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin: 6px 10px 2px; }
   #moresheet .cfgsec:first-child { margin-top: 0; }
-  #moresheet .lbl { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); }
-  #moresheet .status { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); padding: 0 10px 6px; }
   #moresheet .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 10px; min-height: 44px; }
-  #moresheet select, #moresheet button { min-height: 44px; }
-  #moresheet .seg { margin: 0 10px 4px; }
-  #moresheet .seg button { min-height: 44px; flex: 1; }
-  @media (max-width: 480px) {
-    #moresheet {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      top: auto !important;
-      width: 100%;
-      max-width: 100%;
-      max-height: 70vh;
-      border-radius: 10px 10px 0 0;
-      padding-bottom: max(6px, env(safe-area-inset-bottom));
-    }
-  }
+  /* select only, not `button` — every actual button in here is already
+     `.fitem` (44px, above); a bare `#moresheet button` would also catch the
+     auto-added `.sheetx`/`.wmdock` (ID specificity beats their own class
+     rules) and blow up the ✕/Dock controls past every other window's. */
+  #moresheet select { min-height: 44px; }
+  /* the one designated scrolling body while docked (same convention as
+     #asklog/#instrows/#notelistrows/#jobslist/#pubjoblist/#infosheettext
+     above) — #moresheet-h2 stays put, #morerows shrinks and scrolls */
+  #moresheet.docked #morerows { flex: 1; min-height: 0; overflow-y: auto; }
+  /* footer v2 tweaks (2026-09-30): pushes the RIGHT group (☰ Notes…⋯ More)
+     to the bar's far end, leaving ⊞ Lasso/🎹 at the left — see the footer
+     markup comment. */
+  .footerspacer { margin-left: auto; }
   #editsheet.on, #viewsheet.on { display: block; }
   #editsheet .fitem, #viewsheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #editsheet .fitem:active, #viewsheet .fitem:active { background: var(--panel); }
@@ -1352,23 +1331,37 @@
     <div id="noteinfo">tap a note</div>
     <button id="chordbtn" style="display:none">Chord?</button>
   </div>
-  <!-- #viewbtn: superseded by the VIEW segment in #moresheet (below) — kept
-       as a hidden node only in case anything still asks for it by id. -->
-  <button id="viewbtn" style="display:none" aria-hidden="true" tabindex="-1" aria-label="View (retired — see the VIEW segment in ⋯ More)"></button>
+  <!-- #viewbtn: superseded first by the VIEW segment in #moresheet, then
+       (footer v2 tweaks, 2026-09-30) that segment's own UI dropped too —
+       View ▾ already has Tracks/Score, so the footer never needed a second
+       switch. Kept as a hidden node only in case anything still asks for it
+       by id. -->
+  <button id="viewbtn" style="display:none" aria-hidden="true" tabindex="-1" aria-label="View (retired — see View ▾)"></button>
   <!-- #subbtn: superseded by View ▾ → 💬 Notes strip (toggleSubtitle) — kept
        as a hidden node so vwSub's own display-state reads still work. -->
   <button id="subbtn" style="display:none" aria-hidden="true" tabindex="-1" aria-pressed="true" aria-label="Notes strip">💬</button>
   <button id="lassobtn" aria-pressed="false"><span aria-hidden="true">⊞</span> <span class="ftxt">Lasso</span></button>
   <button id="instbtn" aria-label="Instrument panel" aria-pressed="false">🎹</button>
+  <!-- footer v2 tweaks (2026-09-30, Josh's usage note after the first pass):
+       LEFT group ends here (Lasso/🎹) — this spacer's margin-left:auto pushes
+       itself and every sibling after it to the bar's right end, so the RIGHT
+       group (Notes/+ Note/conditional ⚠-✦ reply-Clear edits/Publish/⋯ More)
+       reads as a group without hardcoding each button's own margin. -->
+  <div class="footerspacer" aria-hidden="true"></div>
   <button id="listbtn">☰ Notes</button>
   <button id="notebtn">+ Note</button>
   <button id="errbtn" style="display:none;color:#e66767" aria-label="Errors">⚠</button>
   <button id="askreplybtn" style="display:none;color:var(--gold)" aria-label="An Ask reply is ready — open it">✦ reply</button>
   <button id="clearbtn" style="display:none">Clear edits</button>
-  <!-- ⋯ More: always last — opens #moresheet (View/8va/find/◯5/key/Publish/Jobs).
-       #morebadge mirrors #jobsbtn's own running count while a job runs, so
-       the ⏳ is reachable even with the sheet closed. -->
-  <button id="moresheetbtn" aria-label="More — view, selection, key and song tools"><span aria-hidden="true">⋯</span> <span class="ftxt">More</span><span id="morebadge" style="display:none;color:var(--gold)"></span></button>
+  <!-- Publish (footer v2 tweaks, 2026-09-30): back on the bar — Josh was used
+       to it here; it had moved into ⋯ More with the rest of the rarely-used
+       tools. Same #syncbtn, same updateSyncBtn() display/text logic, just a
+       different parent element. -->
+  <button id="syncbtn">Publish</button>
+  <!-- ⋯ More: always last — opens #moresheet, now a real window (makeWindow)
+       — 8va/find/◯5/Jobs. #morebadge mirrors #jobsbtn's own running count
+       while a job runs, so the ⏳ is reachable even with the window closed. -->
+  <button id="moresheetbtn" aria-label="More — selection, highlight and background-jobs tools"><span aria-hidden="true">⋯</span> <span class="ftxt">More</span><span id="morebadge" style="display:none;color:var(--gold)"></span></button>
 </footer>
 </div><!-- /songregion -->
 <div id="dockleft">
@@ -1856,11 +1849,11 @@
     </div>
     <div class="hsec" data-hsec="explore">
     <dl>
-      <dt>Tap a note</dt><dd>Inspector shows pitch, bar &amp; beat (counted 1e&amp;a), length, velocity, track — <b>and plays it</b>, in Roll, Score and Tracks alike. That includes chip songs: during playback the NSF render IS the track's sound, so per-note synthesis is suppressed to avoid doubling, but a tap has nothing to double and sounds a synth voice. Hearing one note at a time is the point of analysis mode. On a chip song (PlayStation, N64) the tap sounds the game's own instrument for that track; other consoles and drum tracks use the synth voice.</dd>
+      <dt>Tap a note</dt><dd>Inspector shows pitch, bar &amp; beat (counted 1e&amp;a), length, velocity, track — <b>and plays it</b>, in Roll, Score and Tracks alike. That includes chip songs: during playback the console render IS the track's sound, so per-note synthesis is suppressed to avoid doubling, but a tap has nothing to double and sounds the game's own instrument instead, wherever it can. On PlayStation/N64 the worker renders that one note fresh through the game's own instrument for that track. NES/Game Boy/SNES have no per-note renderer (a register log, not a sequence) — each track is one hardware voice, so the tap instead slices that exact moment out of the track's own already-rendered sound, release tail and all. A brand-new note you've just placed (nothing was rendered where it now sits), a drum hit, or a track given an explicit voice all still play the synth. Hearing one note at a time is the point of analysis mode.</dd>
       <dt>Status line (footer)</dt><dd>The footer's own first line (2026-09-30: its own row, <b>Chord?</b> at its right end when there's a selection to reveal in Normal mode — nothing else shares the row with it any more). Tap it to read it in full, even a long one: it wraps to two lines before it has to clip at all, and tapping opens the whole message in a sheet — nothing it says is ever lost past an ellipsis. A message that also offers a copy (a chord name, a note's detail) keeps its own tap-to-copy instead, unchanged.</dd>
       <dt>Copy the pitch list</dt><dd>When the lasso strip lists selected pitches, tap the text (or the ⧉ copy chip) to copy them comma-separated — after "Chord?", the chord name comes along too.</dd>
       <dt>⊞ Lasso</dt><dd>Toggle on, then drag a box over notes (works in all views). Boxes ADD to the selection — draw as many as you need. Tap any note to toggle it in or out (surgical removal of a pedal or neighbor); tap empty space to clear. Shows all the pitch names, low to high — and <b>⋯ More → SELECTION READOUT → 8va</b> (an always-on toggle now, reachable with no selection too) switches the octave numbers: off collapses duplicates to bare pitch classes (C · E · G), the chord-reading view; the setting sticks, and <b>Chord?</b> (Normal mode, with a selection) sits at the status line's own right end. Drag the box up into the ruler to take the annotations there too, lane by lane — up to the chord row takes the chords, higher takes the section row as well, all the way up takes the text-note flags: the box draws over the ruler, the bands it covers get a <b>gold outline</b> (text-note flags a gold ring) for as long as the selection lives, and those ride along with ⧉ and ✂ and land with 📋; 🗑 (or Backspace) deletes them with the notes, one ⟲ restores all of it.</dd>
-      <dt>⋯ More</dt><dd>Tap the footer's <b>⋯ More</b> (always its last button) for the tools used rarely enough that they don't need a permanent seat on the main row: <b>VIEW</b> (Roll/Tracks/Score), <b>SELECTION READOUT</b> (8va), <b>HIGHLIGHT</b> (find:, ◯5 Circle of fifths), <b>KEY SIGNATURE</b> (the key/mode pickers and Set), and <b>SONG</b> (Publish, ⏳ Jobs). A gold <b>⏳N</b> badge on the button itself mirrors a running job even with the sheet closed. Tap anywhere outside it to close, same as View ▾ — a native key/mode picker open underneath is exempt, so choosing from it doesn't close the sheet out from under you.</dd>
+      <dt>⋯ More</dt><dd>Tap the footer's <b>⋯ More</b> (right end of the bar, next to Publish) for the tools used rarely enough that they don't need a permanent seat on the row: <b>SELECTION READOUT</b> (8va), <b>HIGHLIGHT</b> (find:, ◯5 Circle of fifths), and <b>SONG</b>'s ⏳ Jobs. A gold <b>⏳N</b> badge on the button itself mirrors a running job even with the window closed. 2026-09-30 tweaks: it's a real window now, like <b>✦ AI</b>/🎹/☰ Notes — movable by its title bar, resizable, dockable left/right/bottom, its position remembered; floating, tapping outside it closes it, same as any of those; docked, it stays put while you work the roll around it. Publish and the Roll/Tracks/Score switch moved back out — Publish onto the footer bar itself, the view switch is View ▾'s job alone now.</dd>
       <dt>◯5 Circle of fifths</dt><dd><b>⋯ More → HIGHLIGHT → ◯5</b>. The classic chart, live: majors outside with their signatures, relative minors inside, diminished chords at the center, and the movable degree window (IV·I·V over ii·vi·iii over vii°). Two independent motions: <b>drag the wheel</b> (or ⟲ ⟳) to spin it — put any key at 12 o'clock; <b>tap a wedge</b> to move the degree window there. Opens with the song's key on top and highlighted. Below the wheel: the window key's signature accidentals, full scale, all seven triads, and its IV/V neighbors.</dd>
       <dt>find: (pitch finder)</dt><dd><b>⋯ More → HIGHLIGHT → find:</b>. Pick a pitch class in the dropdown and every occurrence lights up across all visible channels — everything else dims, so nothing lit means a confident zero. Works by pitch class (find B♭ catches A#), shows the count and channels in the strip, and labels the degree when a key is set. Made for mode-hunting: chasing the one accidental that separates two candidate modes.</dd>
       <dt>Chord?</dt><dd>After a lasso: reveals what chord those notes make. Hidden by default so you can name it first.</dd>
@@ -1888,8 +1881,8 @@
 
     <h3>KEYS</h3>
     <dl>
-      <dt>key: picker</dt><dd><b>⋯ More → KEY SIGNATURE</b> (with a fixed line under the pickers: "Tells Night Roll how to spell sharps/flats, draw the signature and number scale degrees. Never changes the sound."). Songs display in C until YOU set the key. First dropdown is the tonic pitch only; black keys offer three options — fused "A♯/B♭" (spelling undecided) or either asserted spelling. Second dropdown is the mode (major, minor, and the church modes). With both set, the signature previews live — the right key makes most accidentals vanish — and the button writes it ("Set Gm @ bar 1"). Set a different key mid-song for key changes; the score draws the new signature there.</dd>
-      <dt>mode? (partial keys)</dt><dd><b>⋯ More → KEY SIGNATURE</b>. Know the tonic but not the mode yet? Choose "mode?" and Store writes "key: B♭?" — recorded, listed under KEY in ☰ Notes, but NOT applied: no signature, no respelling, until you return with the mode. The dropdown label always says which state the song is in.</dd>
+      <dt>key: picker — now the key on the transport display</dt><dd>2026-09-30 tweaks: the footer's own key/mode pickers are gone — they duplicated the LCD's own key reading. Tap <b>the key on the transport display</b> (next to the meter) to open its governing key: annotation, or a blank one at bar 1 if none is declared yet (same as + Note, type Key). Songs display in C until YOU set the key. First dropdown is the tonic pitch only; black keys offer three options — fused "A♯/B♭" (spelling undecided) or either asserted spelling. Second dropdown is the mode (major, minor, and the church modes). Save writes it ("key: Gm"). Set a different key mid-song for key changes; the score draws the new signature there.</dd>
+      <dt>mode? (partial keys)</dt><dd>Same two dropdowns as the key picker above — tap <b>the key on the transport display</b>, or + Note, type Key. Know the tonic but not the mode yet? Leave the mode dropdown on "mode?" and Save writes "key: B♭?" — recorded, listed under KEY in ☰ Notes, but NOT applied: no signature, no respelling, until you return with the mode.</dd>
       <dt>Check vs file</dt><dd>In ☰ Notes, the KEY and METER groups each carry a <b>Check vs file</b> button — on every song, capture or composition alike, tapping it never reveals anything by itself. It compares what YOU declared against the label some MIDI files carry on their own (a game rip's own meta, an export from another program) and reports one of: your answer matches, the file's label says something else, it matches for only part of the song, you haven't set an answer yet to compare, or this file carries no label of its own — file labels can be wrong (many programs default to C major / 4/4), so a difference is a nudge to listen again, not a correction. In Normal mode it also states the file's own value plainly and — for key — the note-census estimate, plus a one-tap <b>Use the file's</b> button (key: adopts it as a declared key: immediately; meter: opens the meter editor pre-filled with it, same re-bar confirmation as any other meter change). Learning mode never shows the file's value or runs the estimate here — the check only ever says whether your own answer matches, never what the answer is.</dd>
     </dl>
 
@@ -1998,35 +1991,56 @@
   <button class="fitem" id="vwAnalyze">🔍  Analyze ▸</button>
   <button class="fitem" id="vwLearning">🎓  Learning mode</button>
 </div>
-<!-- ⋯ More sheet (footer v2, Option A v2, 2026-09-30): everything the footer
-     used to hold directly but Josh rarely taps (2026-09-30 usage note) —
-     same ids, same handlers, moved wholesale. Positioned/closed like
-     #viewsheet (moresheetbtn's click handler, the outside-tap listener near
-     viewsheet's own — both below). No render-on-open step needed: unlike
-     View ▾'s on/off rows, every control here already keeps itself current
-     the moment its own state changes (renderOctBtn, applyViewMode,
-     updateSyncBtn, updateJobsBtn, keysel's own listeners), open or closed. -->
-<div id="moresheet">
-  <div class="cfgsec">VIEW</div>
+<!-- ⋯ More sheet (footer v2, 2026-09-30; promoted to a real WINDOW in the
+     2026-09-30 tweaks pass): what's left once Publish moved back to the bar
+     and VIEW/KEY SIGNATURE dropped from the UI (below) — 8va, find:, ◯5,
+     Jobs. A real window now (makeWindow("moresheet", {dockable: true}),
+     further down this file) — movable by its title bar, resizable,
+     dockable left/right/bottom, remembered position, like AI/Instruments/
+     Notes/Jobs/Publish. #moresheet-home is its floating anchor (same
+     pattern as #asksheet-home etc.) — wmLayoutSide moves the node here
+     whenever it isn't parked in a dock. No render-on-open step needed:
+     every control here already keeps itself current the moment its own
+     state changes (renderOctBtn, updateJobsBtn, findsel's own listeners),
+     open or closed. -->
+<div id="moresheet-home" style="display:contents">
+<div class="overlay" id="moresheet">
+  <div class="sheet">
+    <h2 id="moresheet-h2">MORE</h2>
+    <div id="morerows" style="display:flex;flex-direction:column;gap:2px">
+      <div class="cfgsec">SELECTION READOUT</div>
+      <button class="fitem" id="octbtn" aria-label="Toggle octave numbers in the selection readout">8va  Show octave numbers (F#3 vs F#)</button>
+      <div class="fdiv"></div>
+      <div class="cfgsec">HIGHLIGHT</div>
+      <div class="row">
+        <span class="lbl" style="flex:1">find: Light up one pitch everywhere in the song</span>
+        <select id="findsel" aria-label="Highlight a pitch class" style="max-width:140px">
+          <option value="">find: off</option>
+        </select>
+      </div>
+      <button class="fitem" id="cofbtn" aria-label="Circle of fifths">◯5  Circle of fifths</button>
+      <div class="fdiv moresong"></div>
+      <div class="cfgsec moresong">SONG</div>
+      <button class="fitem" id="jobsbtn" style="display:none;color:var(--gold)" aria-label="Jobs — captures and publishes running in the background">⏳</button>
+    </div>
+  </div>
+</div>
+</div><!-- /moresheet-home -->
+<!-- VIEW and KEY SIGNATURE (footer v2 tweaks, 2026-09-30, Josh): dropped
+     from the ⋯ More UI — View ▾ already has Tracks/Score (the segment here
+     duplicated it), and the key/mode pickers duplicated the LCD key (tap →
+     the governing key: annotation's own editor, which has always had its
+     own tonic/mode pickers, #nkeysel/#nkeymode). The nodes stay in the DOM,
+     just never shown: applyViewMode() still writes viewSeg's classes/aria,
+     the key-picker code (keysel/keymode/keyset/keysetest, refreshKeysetLabel,
+     refreshKeyPreview) still reads/writes these ids, and tests still drive
+     #keysetest directly — none of that code changed, only its UI reachability. -->
+<div id="hiddenmorerows" style="display:none" aria-hidden="true">
   <div class="seg" id="viewseg" role="radiogroup" aria-label="View">
     <button id="viewsegroll" role="radio" aria-checked="true">Roll</button>
     <button id="viewsegtracks" role="radio" aria-checked="false">Tracks</button>
     <button id="viewsegscore" role="radio" aria-checked="false">Score</button>
   </div>
-  <div class="fdiv"></div>
-  <div class="cfgsec">SELECTION READOUT</div>
-  <button class="fitem" id="octbtn" aria-label="Toggle octave numbers in the selection readout">8va  Show octave numbers (F#3 vs F#)</button>
-  <div class="fdiv"></div>
-  <div class="cfgsec">HIGHLIGHT</div>
-  <div class="row">
-    <span class="lbl" style="flex:1">find: Light up one pitch everywhere in the song</span>
-    <select id="findsel" aria-label="Highlight a pitch class" style="max-width:140px">
-      <option value="">find: off</option>
-    </select>
-  </div>
-  <button class="fitem" id="cofbtn" aria-label="Circle of fifths">◯5  Circle of fifths</button>
-  <div class="fdiv"></div>
-  <div class="cfgsec">KEY SIGNATURE</div>
   <div class="row">
     <select id="keysel" aria-label="Key tonic">
       <option value="" id="keyunset">key: not set (C)</option>
@@ -2045,10 +2059,6 @@
     <button id="keysetest" style="display:none" title="Write the estimated key as a declared key: annotation at this bar">Set this key</button>
   </div>
   <div class="status cfgind">Tells Night Roll how to spell sharps/flats, draw the signature and number scale degrees. Never changes the sound.</div>
-  <div class="fdiv"></div>
-  <div class="cfgsec">SONG</div>
-  <button class="fitem" id="syncbtn">Publish</button>
-  <button class="fitem" id="jobsbtn" style="display:none;color:var(--gold)" aria-label="Jobs — captures and publishes running in the background">⏳</button>
 </div>
 <div id="editsheet">
   <button class="fitem" id="emUndo">⟲  Undo</button>
@@ -9529,6 +9539,34 @@ async function previewNote(ti, pitch, tick) { // tick: the tapped note's own .t,
   if (tr && chipActive() && chipHas(tr.name) && (!tr.voice || tr.voice === "auto") && !trackIsDrums(ti)) { // a chip song: the game's own instrument, if the worker still holds the set
     const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, tick, song.ppq);
     if (buf) { const s = audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(audio.currentTime + 0.01); return; }
+    // register chips (nsf/gbs/spc): chipPreviewBuffer above always comes back
+    // null — no per-note renderer, a register log has no note to re-render
+    // (tools/chip-worker.mjs's own comment). But each track IS one hardware
+    // voice, monophonic, so the song's own rendered track buffer already
+    // holds exactly this note's sound — slice it instead of the generic
+    // synth (Josh, FF4 SNES "Cry in Sorrow (part 1)", 2026-09-30: "tapping a
+    // note plays the generic synth, not the game sound").
+    const slice = chipNoteSlice(tr, pitch, tick);
+    if (slice) {
+      const src = audio.createBufferSource();
+      src.buffer = slice.buf;
+      const g = audio.createGain(); // ~5ms fade in/out: a slice starts/ends mid-waveform, not at a zero-crossing
+      const when = audio.currentTime + 0.01;
+      const fade = Math.min(0.005, slice.dur / 2);
+      g.gain.setValueAtTime(0, when);
+      g.gain.linearRampToValueAtTime(1, when + fade);
+      g.gain.setValueAtTime(1, Math.max(when + fade, when + slice.dur - fade));
+      g.gain.linearRampToValueAtTime(0, when + slice.dur);
+      src.connect(g);
+      // same path chipStart uses from here down: [chip.pan panner, if this
+      // track was downmixed to mono] -> trackGain(ti), so volume/pan/mute match playback
+      let node = g;
+      if (chip.pan && chip.pan[tr.name] !== undefined && audio.createStereoPanner) { const p = audio.createStereoPanner(); p.pan.value = chip.pan[tr.name]; g.connect(p); node = p; }
+      node.connect(trackGain(ti));
+      src.onended = () => { try { src.disconnect(); g.disconnect(); if (node !== g) node.disconnect(); } catch (err) {} };
+      src.start(when, slice.offset, slice.dur); // a lone extra source — never touches chip.srcs, so a tap mid-playback can't fight the playing sources
+      return;
+    }
   }
   scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, audio.currentTime + 0.01, 0.3);
 }
@@ -10563,6 +10601,47 @@ function chipStreamScheduleChunk(idx, entry, when, offset, dur) {
     st.srcs.push(src);
   }
   st.scheduled.add(idx + "@" + Math.round(when * 1000));
+}
+// previewNote's register-chip path (nsf/gbs/spc — above, chipPreviewBuffer
+// has no per-note renderer for these). Finds the tapped note — tick+pitch
+// exact match, not erased, and not `added` (a pencil placement/MIDI-in note
+// has nothing rendered where it now sits; `added` is unset only on notes
+// the import itself captured — rollnotes.added's own convention) — and
+// returns the slice of its track's render that sounds it: {buf, offset,
+// dur}, all in BUFFER seconds (start()'s offset/duration are always
+// seconds, whatever the buffer's sample rate — no resampling here).
+// Native/"tape" position = chip.lead + tickToSec(song, tick) * playRate,
+// same identity chipStart's own single looping source relies on (tickToSec
+// already divides by playRate; this multiplies it back out). The slice runs
+// from the note's own start to its end + a short release tail — up to the
+// NEXT note on this track, or +250ms, whichever comes first.
+// Stream mode (chip.stream): only answers from a chunk chipStreamPump has
+// ALREADY cached — this never requests one from the worker. "else synth" is
+// simpler, and the chunks around the playhead are usually already there.
+function chipNoteSlice(tr, pitch, tick) {
+  if (tick == null) return null;
+  const n = tr.notes.find(nn => !nn.gone && nn.t === tick && nn.p === pitch && !nn.added);
+  if (!n) return null;
+  const startTape = chip.lead + tickToSec(song, n.t) * playRate;
+  const noteEndTape = chip.lead + tickToSec(song, n.t + n.d) * playRate;
+  let next = null;
+  for (const o of tr.notes) if (!o.gone && o !== n && o.t > n.t && (next === null || o.t < next.t)) next = o;
+  const endTape = Math.min(noteEndTape + 0.25, next ? chip.lead + tickToSec(song, next.t) * playRate : Infinity);
+  if (chip.stream) {
+    const idx = chipStreamIdxForTapeSec(startTape);
+    const entry = chip.stream.cache.get(idx);
+    const buf = entry && entry.buffers[tr.name];
+    if (!buf) return null; // not cached yet: the synth answers now, same as an unready whole render
+    const chunkTapeStart = idx * CHIP_STREAM_CHUNK_SEC;
+    const offset = Math.min(Math.max(0, startTape - chunkTapeStart), buf.duration);
+    const dur = Math.max(0.02, Math.min(endTape - chunkTapeStart, buf.duration) - offset);
+    return {buf, offset, dur};
+  }
+  const buf = chipBuffers()[tr.name];
+  if (!buf) return null; // the render isn't done yet, or this track was dropped silent
+  const offset = Math.min(startTape, buf.duration);
+  const dur = Math.max(0.02, Math.min(endTape, buf.duration) - offset);
+  return {buf, offset, dur};
 }
 // The ~60ms pump (play(), below) calls this FIRST, every tick, while
 // chip.stream is this song's live session: requests chunks up to a horizon
@@ -16880,38 +16959,23 @@ document.addEventListener("pointerdown", e => { // tap-away closes the View menu
   if (vs.classList.contains("on") && !vs.contains(e.target) && e.target.id !== "viewsheetbtn")
     vs.classList.remove("on");
 }, {capture: true});
-// ⋯ More sheet (footer v2, Option A v2, 2026-09-30): same positioned-dropdown
-// paradigm as View ▾ (above) on a tablet/desktop — the phone media query
-// overrides position to a full-width bottom sheet, same .on toggle either way.
-document.getElementById("moresheetbtn").addEventListener("click", e => {
+// ⋯ More (footer v2 tweaks, 2026-09-30): a real window now (makeWindow,
+// below) instead of a positioned dropdown — toggles #moresheet open/closed;
+// wmLayoutAll() re-activates its tab if it's parked in a side/bottom dock
+// (the same "reopening a background tab brings it forward" promotion every
+// other window's own open button already relies on — see wmLayoutSide).
+// Its own outside-tap close is GONE: floating, it's a modal overlay like
+// every other window (tapping the backdrop closes it, same generic
+// behavior, no special-casing needed — a native <select>'s picker never
+// hits the backdrop so there's nothing to exempt); docked, there's no
+// backdrop at all, so working the roll around it leaves it open.
+document.getElementById("moresheetbtn").addEventListener("click", () => {
   const sheet = document.getElementById("moresheet");
-  if (sheet.classList.contains("on")) { closeFileMenus(); return; }
+  if (sheet.classList.contains("on")) { sheet.classList.remove("on"); wmLayoutAll(); return; }
   closeFileMenus();
-  // moresheetbtn lives in the FOOTER, not the header like View ▾ — the
-  // dropdown opens UPWARD from it, anchored by `bottom` (not `top`, which
-  // every other sheet uses from a header button with room below). Phones
-  // (≤480px, the CSS media query's own breakpoint) skip this entirely and
-  // get the full-width bottom sheet instead — setting inline left/top here
-  // would fight that layout, since inline style beats an un-!important rule.
-  if (window.innerWidth > 480) {
-    const r = e.currentTarget.getBoundingClientRect();
-    sheet.style.top = "auto";
-    sheet.style.left = Math.max(6, Math.min(r.right - 260, songRegionRight() - 266)) + "px";
-    sheet.style.bottom = (window.innerHeight - r.top + 6) + "px";
-  }
   sheet.classList.add("on");
+  wmLayoutAll();
 });
-document.addEventListener("pointerdown", e => { // tap-away closes ⋯ More — but
-  // NOT a native <select> picker: iOS renders that picker's wheel outside
-  // this DOM entirely, so choosing an option in findsel/keysel/keymode can
-  // land a stray pointerdown whose target isn't contained in #moresheet —
-  // without this exemption that closed the sheet out from under the pick.
-  const ms = document.getElementById("moresheet");
-  if (!ms.classList.contains("on")) return;
-  if (ms.contains(e.target) || e.target.id === "moresheetbtn") return;
-  if (e.target.tagName === "SELECT" || (document.activeElement && document.activeElement.tagName === "SELECT" && ms.contains(document.activeElement))) return;
-  ms.classList.remove("on");
-}, {capture: true});
 document.getElementById("editsheetbtn").addEventListener("click", e => {
   const sheet = document.getElementById("editsheet");
   if (sheet.classList.contains("on")) { closeFileMenus(); return; }
@@ -17012,7 +17076,6 @@ function closeFileMenus() {
   filesub.classList.remove("on");
   document.getElementById("editsheet").classList.remove("on");
   document.getElementById("viewsheet").classList.remove("on");
-  document.getElementById("moresheet").classList.remove("on");
   document.getElementById("importhub").classList.remove("on");
 }
 function fsubItem(label, onTap, dim) {
@@ -23520,8 +23583,9 @@ if (typeof document !== "undefined" && document.body) { // real browser only —
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape") wmCloseMenu(); });
 }
-// ---- migrate the six windows onto the shared window shape (phase A) —
-// asksheet already had a right-only dock; the other five are new. infosheet
+// ---- migrate the windows onto the shared window shape (phase A, extended
+// footer v2 tweaks 2026-09-30 for #moresheet) — asksheet already had a
+// right-only dock; the rest are new. infosheet
 // (Status, the full-message reader) is registered but NOT dockable (Josh,
 // 2026-09-29) — a one-shot reveal for a truncated status line isn't a panel
 // worth pinning open while working the roll, same reasoning as the import
@@ -23533,6 +23597,9 @@ makeWindow("instsheet", {dockable: true});
 makeWindow("jobssheet", {dockable: true});
 makeWindow("pubjobsheet", {dockable: true});
 makeWindow("mixersheet", {dockable: true}); // Logic-style: dockable to the bottom
+// ⋯ More (footer v2 tweaks, 2026-09-30): the seventh window — see the
+// #moresheet markup comment and the footer's moresheetbtn handler below.
+makeWindow("moresheet", {dockable: true});
 makeWindow("infosheet", {dockable: false});
 // the import hub (docs/import-hub-design.md): a one-shot picker, not a panel
 // worth pinning open while working the roll — registered so it's a known

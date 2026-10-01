@@ -1386,6 +1386,59 @@ Tracks-Roll-Score switch/◯5/Publish/⏳ Jobs RARELY):
   "⊞ Lasso"/"⋯ More" to bare glyphs (aria-labels unchanged).
 - `footer button, footer select { min-height: 44px; }`.
 
+#### Footer v2 tweaks (Josh, 2026-09-30, after using it)
+
+After a day's use: Publish back on the bar, ⋯ More's VIEW and KEY
+SIGNATURE sections dropped, ⋯ More itself promoted to a real window.
+
+- **Footer line 2 groups**: LEFT = ⊞ Lasso, 🎹. A `.footerspacer`
+  (`margin-left: auto`) pushes everything after it to the bar's far
+  end — RIGHT = ☰ Notes, + Note, then ⚠/✦ reply/Clear edits only when
+  they apply, **Publish** (#syncbtn — back from #moresheet, same
+  `updateSyncBtn()` display/text logic untouched), **⋯ More always
+  last**.
+- **#moresheet is a real window now** (`makeWindow("moresheet",
+  {dockable: true})`, the seventh alongside AI/Instruments/Notes/
+  Jobs/Publish-dialog/Mixer): `.overlay` > `.sheet` > `h2#moresheet-h2`
+  + `#morerows` (the one designated scrolling body while docked, same
+  convention as `#asklog`/`#instrows`/etc.), wrapped in a
+  `#moresheet-home` floating anchor. Gets the generic ✕/drag/resize/
+  dock-button/remembered-position machinery for free — no bespoke
+  dropdown CSS or positioning JS left. moresheetbtn's click handler is
+  now a plain toggle + `wmLayoutAll()` (re-activates its tab if it's
+  parked in a dock, same "reopening a background tab" promotion every
+  other window's own open button already relies on). Its old bespoke
+  outside-tap closer (with the native-`<select>` exemption hack) is
+  gone — floating, it's a modal overlay like every other window
+  (backdrop tap closes it, generically, via the shared
+  `.overlay`/`SHEET_TOP` machinery, `MODAL_KEEP` unchanged); docked,
+  there's no backdrop, so it stays open while you work the roll
+  around it. No longer in `closeFileMenus()` (same as every other
+  dockable window — only the transient File/Edit/View dropdowns and
+  the non-dockable import hub are).
+- **⋯ More now holds only**: SELECTION READOUT (#octbtn, 8va),
+  HIGHLIGHT (#findsel, #cofbtn), SONG (#jobsbtn only — Publish moved
+  out).
+- **VIEW (viewseg) and KEY SIGNATURE (keysel/keymode/keyset/
+  keysetest) dropped from the UI** (Josh: View ▾ already has Tracks/
+  Score; the key/mode pickers duplicated the LCD key: tap → the
+  governing key: annotation's own editor, which has always had its
+  own tonic/mode pickers, #nkeysel/#nkeymode, in #noteeditor). The
+  nodes stay in the DOM inside a `display:none` `#hiddenmorerows`
+  container (sibling of `#moresheet-home`) — `applyViewMode()`,
+  `refreshKeysetLabel()`, `refreshKeyPreview()`, and the keyset/
+  keysetest click handlers are all unchanged, and still work on these
+  hidden nodes; P3's key tests still drive `#keysetest` by id
+  directly. `#viewbtn` (already hidden from the first footer v2 pass)
+  now points its aria-label at View ▾ instead of the segment, since
+  that's gone too.
+- Help sheet: the ⋯ More entry describes the window behavior and that
+  Publish/the view switch moved out; `key: picker` (the FEATURES drift
+  keyword, kept verbatim) now reads "key: picker — now the key on the
+  transport display" and points at tapping the LCD key chip instead of
+  describing pickers that no longer have a seat in the UI.
+- `tests/e2e/docking.spec.mjs` WINDOWS gained `"moresheet"` (CI only).
+
 ## Bassist (advisor-designed, 2026-08-23)
 
 bsGenerate(seed, opts) mirrors the Drummer's contract: seeded takes,
@@ -1928,13 +1981,46 @@ that track's instrument: `previewOne` in tools/chip-worker.mjs copies a
 template note of the track (channel, instrument, bank, pan) with the
 tapped pitch and a short duration, runs the same `R.render` on a
 one-note result, and returns the track's buffer (mono or a stereo
-pair). Sequence chips only (PS1, N64); NES/GB/SNES renders come from a
-register log, so the synth stays for those, as it does for kit tracks
-and tracks with an explicit voice. Page: `previewNote` → 
+pair). Sequence chips only (PS1, N64) — a register log (NES/GB/SNES)
+has no note to re-render this way. Page: `previewNote` →
 `chipPreviewBuffer(name, midi)` (400 ms guard, then the synth; cache
 per song/track/pitch for instant repeats) → a buffer source into the
 track's gain. Test: "tap a note on a chip song …" in
 tests/night-roll.test.mjs (a fake worker answers).
+
+**Register chips (nsf/gbs/spc), 2026-09-30:** `chipPreviewBuffer`
+always comes back null for these — no per-note renderer — so they fell
+to the synth too (Josh, FF4 SNES "Cry in Sorrow (part 1)": "tapping a
+note plays the generic synth, not the game sound"). But each track IS
+one hardware voice/channel, monophonic, so the song's own rendered
+track buffer (`chip.buffers[track]`, or the matching cached chunk in
+stream mode) already holds exactly that note's sound, start to
+release — no re-render needed, just a slice. `chipNoteSlice(tr, pitch,
+tick)` (index.html, by chipStreamScheduleChunk) finds the tapped note
+(exact tick+pitch match, not erased, not `added` — a pencil
+placement/MIDI-in note has nothing rendered where it now sits, since
+`chip.buffers` is the ORIGINAL capture) and returns `{buf, offset,
+dur}`: offset/duration in BUFFER seconds (`start()`'s offset/duration
+are always seconds, whatever the buffer's own sample rate). Native
+("tape") position = `chip.lead + tickToSec(song, tick) * playRate` —
+the same identity `chipStart`'s own single looping source relies on.
+The slice runs from the note's own start to its end + a short release
+tail: up to the NEXT note on the same track, or +250ms, whichever is
+sooner. `previewNote` wires it through the SAME path `chipStart` uses
+from there down (`[chip.pan panner, if this track was downmixed to
+mono] → trackGain(ti)`, so volume/pan/mute match playback) plus its own
+~5ms fade-in/out gain (a slice starts/ends mid-waveform, not at a
+zero-crossing) — an `AudioBufferSourceNode` sharing the existing
+buffer, `start(when, offset, duration)`, never a copy, and never added
+to `chip.srcs` (a lone extra source; a tap mid-playback can't fight the
+ones already playing). Stream mode (`chip.stream`, Settings → Other,
+default off): only answers from a chunk `chipStreamPump` has ALREADY
+cached — never requests one from the worker; no cached chunk (or no
+rendered buffer at all yet — the render isn't done, or the idle sweep
+dropped this track silent) falls to the synth, same as today. An
+explicit voice or a drum track still plays the synth, same gate as the
+sequence-chip path above. Test: "tap a note on a REGISTER chip song …"
+in tests/night-roll.test.mjs.
 
 ## Game instrument libraries (2026-09-28)
 

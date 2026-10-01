@@ -9,8 +9,9 @@ import { test, expect } from "@playwright/test";
 import { openApp } from "./helpers.mjs";
 
 // infosheet (Status) is registered but NOT dockable (Josh, 2026-09-29) — a
-// one-shot reveal for a truncated status line, same as the import hub
-const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "pubjobsheet"];
+// one-shot reveal for a truncated status line, same as the import hub.
+// moresheet (footer v2 tweaks, 2026-09-30): ⋯ More became a real window too.
+const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "pubjobsheet", "moresheet"];
 
 test.use({ viewport: { width: 1366, height: 1024 } });
 
