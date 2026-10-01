@@ -11,6 +11,10 @@ Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     Welcoming of Maester Mika). Published or fresh — which is right?
 Q2. (ASK LATER) Archive move: make the archive token (resource owner
     joshcough, only the archive repo, Contents read+write) and say "go".
+Q10. graveyard-3 has TWO "forked from" notes (graveyard.mid and graveyard-2.mid).
+    The new format keeps one origin. Which one is it really copied from? (Likely
+    graveyard-2 — the other looks like a leftover from copying a copy.) Until you
+    answer, it stays in the old format (reads fine) with both notes visible.
 Q5. May I add a redirect so the bare address night-roll-app.github.io
     lands on the app? (One tiny public repo in the org,
     Night-Roll-App.github.io, holding a redirect page.) Answered part: the
@@ -46,6 +50,8 @@ QUEUED: step 6 — Josh's own browser check at 1376px and ~1030px (AI docked
 right) with a 6-note lasso, then commit + push (this session didn't
 commit/push per its instructions). Nothing blocking; not yet verified in a
 real browser.
+
+## Annotations v2 — DONE 2026-10-01: P3 reader (34ea078), P4 writer (d8c84ce), P5 batch: 1195/1196 files converted, one commit per album; graveyard-3 waits on Q10. Tool: tools/migrate-rollnotes-v2.mjs.
 
 ## docs/provenance-plan.md P0 + P2 — DONE 2026-09-30: ONE publish function; the bugs it fixes
 
