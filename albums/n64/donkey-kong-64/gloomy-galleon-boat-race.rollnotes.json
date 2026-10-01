@@ -1,3 +1,3 @@
-{ "version": 1, "song": "gloomy-galleon-boat-race", "saved": 1790616454064, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "gloomy-galleon-boat-race", "origin": {"kind":"capture"}, "stamp": 1790616454064, "notes": [
   {"at":[50,1],"type":"loop","loop":"4.1"}
 ] }

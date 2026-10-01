@@ -1,3 +1,3 @@
-{ "version": 1, "song": "k-rool-battle-introduction", "saved": 1790616454098, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "k-rool-battle-introduction", "origin": {"kind":"capture"}, "stamp": 1790616454098, "notes": [
   {"at":[25,1],"type":"loop","loop":"5.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "funky-s-armoury", "saved": 1790616454061, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "funky-s-armoury", "origin": {"kind":"capture"}, "stamp": 1790616454061, "notes": [
   {"at":[31,3.5],"type":"loop","loop":"1.3.5"}
 ] }

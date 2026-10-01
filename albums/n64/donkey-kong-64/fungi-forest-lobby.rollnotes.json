@@ -1,3 +1,3 @@
-{ "version": 1, "song": "fungi-forest-lobby", "saved": 1790616454052, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "fungi-forest-lobby", "origin": {"kind":"capture"}, "stamp": 1790616454052, "notes": [
   {"at":[36,1],"type":"loop","loop":"2.1"}
 ] }

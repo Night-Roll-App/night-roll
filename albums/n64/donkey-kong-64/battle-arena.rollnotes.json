@@ -1,3 +1,3 @@
-{ "version": 1, "song": "battle-arena", "saved": 1790616453989, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "battle-arena", "origin": {"kind":"capture"}, "stamp": 1790616453989, "notes": [
   {"at":[41,1],"type":"loop","loop":"3.1"}
 ] }

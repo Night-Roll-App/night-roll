@@ -1,3 +1,3 @@
-{ "version": 1, "song": "fungi-forest-day", "saved": 1790616454050, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "fungi-forest-day", "origin": {"kind":"capture"}, "stamp": 1790616454050, "notes": [
   {"at":[82,1],"type":"loop","loop":"2.1"}
 ] }

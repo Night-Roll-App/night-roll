@@ -1,3 +1,3 @@
-{ "version": 1, "song": "candy-s-music-store", "saved": 1790616453993, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "candy-s-music-store", "origin": {"kind":"capture"}, "stamp": 1790616453993, "notes": [
   {"at":[27,2.5],"type":"loop","loop":"1.2.5"}
 ] }

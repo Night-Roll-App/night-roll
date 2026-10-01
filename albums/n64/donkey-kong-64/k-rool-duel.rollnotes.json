@@ -1,3 +1,3 @@
-{ "version": 1, "song": "k-rool-duel", "saved": 1790616454103, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "k-rool-duel", "origin": {"kind":"capture"}, "stamp": 1790616454103, "notes": [
   {"at":[149,1],"type":"loop","loop":"3.1"}
 ] }

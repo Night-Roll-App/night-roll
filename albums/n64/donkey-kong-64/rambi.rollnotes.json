@@ -1,3 +1,3 @@
-{ "version": 1, "song": "rambi", "saved": 1790616454119, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "rambi", "origin": {"kind":"capture"}, "stamp": 1790616454119, "notes": [
   {"at":[33,1],"type":"loop","loop":"3.1"}
 ] }

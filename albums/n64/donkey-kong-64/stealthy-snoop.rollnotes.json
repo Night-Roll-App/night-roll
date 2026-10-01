@@ -1,3 +1,3 @@
-{ "version": 1, "song": "stealthy-snoop", "saved": 1790616454122, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "stealthy-snoop", "origin": {"kind":"capture"}, "stamp": 1790616454122, "notes": [
   {"at":[35,1],"type":"loop","loop":"1.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "boss-unlock-2", "saved": 1790710368859, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "boss-unlock-2", "origin": {"kind":"capture"}, "stamp": 1790710368859, "notes": [
   {"at":[33,1],"type":"loop","loop":"1.1"}
 ] }
