@@ -1,3 +1,3 @@
-{ "version": 1, "song": "someone-calls-memorias", "saved": 1790613826379, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "someone-calls-memorias", "origin": {"kind":"capture"}, "stamp": 1790613826379, "notes": [
   {"at":[22,2],"type":"loop","loop":"1.2"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "phrase-of-eve", "saved": 1790613826375, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "phrase-of-eve", "origin": {"kind":"capture"}, "stamp": 1790613826375, "notes": [
   {"at":[218,1],"type":"loop","loop":"8.1"}
 ] }

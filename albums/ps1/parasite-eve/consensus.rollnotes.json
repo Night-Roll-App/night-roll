@@ -1,3 +1,3 @@
-{ "version": 1, "song": "consensus", "saved": 1790613826352, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "consensus", "origin": {"kind":"capture"}, "stamp": 1790613826352, "notes": [
   {"at":[29,1],"type":"loop","loop":"5.1"}
 ] }

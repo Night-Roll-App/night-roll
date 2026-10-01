@@ -1,3 +1,3 @@
-{ "version": 1, "song": "theme-of-aya", "saved": 1790613826381, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "theme-of-aya", "origin": {"kind":"capture"}, "stamp": 1790613826381, "notes": [
   {"at":[33,1],"type":"loop","loop":"25.1"}
 ] }

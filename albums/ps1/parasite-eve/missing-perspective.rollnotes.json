@@ -1,3 +1,3 @@
-{ "version": 1, "song": "missing-perspective", "saved": 1790613826368, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "missing-perspective", "origin": {"kind":"capture"}, "stamp": 1790613826368, "notes": [
   {"at":[42,1],"type":"loop","loop":"15.1"}
 ] }
