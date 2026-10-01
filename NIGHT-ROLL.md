@@ -1284,8 +1284,10 @@ sync (GitHub Contents API, 409 retry) · key dial · help sheet.
 
 ## Tracks/Arrange view (advisor-designed, 2026-08-22)
 
-Third viewMode ("tracks"; viewbtn cycles Roll -> Tracks -> Score, label
-shows the NEXT view; View ▾ has direct rows). RULER_W is now a LET —
+Third viewMode ("tracks"; footer v2, 2026-09-30: the Roll/Tracks/Score
+switch is a 3-way segment — viewseg{roll,tracks,score} — inside ⋯ More →
+VIEW, current mode lit; the old cycling #viewbtn is a hidden, inert node
+now. View ▾ still has its own direct rows too). RULER_W is now a LET —
 148 in tracks (the header column), 46 elsewhere — set ONLY in
 applyViewMode; every gutter/time consumer keys off it. Time axis is
 the roll's shared map, so ruler/sections/cycle/bar-magnet/playhead/
@@ -1308,6 +1310,12 @@ editrowHidden/footerHidden (device-local; migrated from the old
 combined ff1roll-panelhide key, preserving the phones-start-folded
 default). editrow shows iff editable (.on class) AND !editrowHidden
 (inline style) — never write editrow.style.display anywhere else.
+footer folding (footer v2, 2026-09-30) is a CLASS, not style.display:
+`footer.classList.toggle("folded", footerHidden)` — CSS `footer.folded >
+:not(#readline) { display: none; }` hides only line 2 (the buttons),
+never #readline (the readout, #noteinfo + #chordbtn) — a folded footer
+still says what's selected. Listener mode's own `body.listener footer`
+rule still hides the whole footer, readout included (phones are PLAYERS).
 INVARIANT: the header never hides; View ▾ is always reachable, and a
 hidden footer always floats the ▴ restore (which shows both). The
 View ▾ menu stays open across toggle taps (batch hiding); every item
@@ -1332,6 +1340,51 @@ persists "0"); View ▾ → 📻 Listener mode folds it back on any device.
 applyListener() is the one class writer, called from applyChrome's
 boot read and the two toggles; it early-returns when document.body is
 absent (vm harness).
+
+### Footer v2 — Option A v2 (docs/footer-redesign-plan.md, 2026-09-30)
+
+A 6-note lasso chord outgrew the footer at ~1030px (iPad, AI docked
+full-height right) — 20-odd children fighting one row. Fix, by usage
+(Josh: ⊞ Lasso/+ Note/☰ Notes/the readout USED A LOT; 8va/find:/the
+Tracks-Roll-Score switch/◯5/Publish/⏳ Jobs RARELY):
+
+- **#readline** (order:-1; flex:1 1 100%; its own `display:flex` row) —
+  #noteinfo (flex:1 1 0, same 2-line clamp, tap → #infosheet, ⧉ copy)
+  + #chordbtn at its right end. Replaces the old #noteinfo
+  order:-1/flex:1 1 100% hotfix (3d60818) directly on #noteinfo.
+- Footer line 2 (the actual buttons): ⊞ Lasso, 🎹, ☰ Notes, + Note,
+  then ⚠/✦ reply/Clear edits only when they apply, **⋯ More always
+  last**. Folding (`footer.folded`) hides this line only — see Chrome
+  visibility above.
+- **#moresheet** (new, styled/positioned like #editsheet/#viewsheet —
+  a dropdown pinned under #moresheetbtn via its click handler,
+  `songRegionRight()`-clamped; the outside-tap pointerdown closer
+  EXEMPTS a native `<select>` so iOS's own picker UI, rendered outside
+  this DOM, can't close the sheet out from under a pick; phones
+  (≤480px) get a `position:fixed` full-width bottom sheet instead, via
+  a plain media query — the JS skips inline positioning there so it
+  doesn't fight the CSS). Section labels reuse the (previously unused)
+  `.cfgsec` rule. Rows, same ids/handlers, just moved:
+  - VIEW: viewseg{roll,tracks,score} (3-way, replaces the cycling
+    #viewbtn — #viewbtn itself is now a hidden, inert node).
+  - SELECTION READOUT: #octbtn (8va) — now **always visible** (no more
+    show/hide in refreshSelInfo; `renderOctBtn()` just renders its ✓
+    prefix + `.primary` class, same convention as renderViewMenu's
+    checkmarks, so it's reachable with nothing selected).
+  - HIGHLIGHT: #findsel, #cofbtn (◯5).
+  - KEY SIGNATURE: #keysel/#keymode/#keyset/#keysetest + a fixed
+    explanation line (spelling/signature/degrees, never the sound).
+  - SONG: #syncbtn (Publish), #jobsbtn (⏳ Jobs).
+  - #morebadge (inside #moresheetbtn) mirrors #jobsbtn's own running
+    count as a gold badge — `updateJobsBtn()` writes both, #jobsbtn's
+    own text/display logic untouched (its tests stay green).
+- **💬 retired from the footer**: #subbtn is a hidden, inert node;
+  View ▾ → 💬 Notes strip calls the extracted `toggleSubtitle()`
+  directly (used to be `subbtn.click()`).
+- Container query on `footer` itself (`container-type: inline-size`):
+  `@container (max-width: 420px)` drops the `.ftxt` label span in
+  "⊞ Lasso"/"⋯ More" to bare glyphs (aria-labels unchanged).
+- `footer button, footer select { min-height: 44px; }`.
 
 ## Bassist (advisor-designed, 2026-08-23)
 

@@ -23,6 +23,30 @@ DONE: Q4 — yes (2026-09-30): captures stay locked (notes/tracks); annotating t
 his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
 own songs; "Publish all" = one publish per song; explicit song origins.
 
+## docs/footer-redesign-plan.md Option A v2 — steps 1-5 DONE 2026-09-30, not pushed
+
+Built per spec, delegated to Sonnet (plan-then-delegate): #readline
+wrapper (readout + Chord? as the footer's own first line, replacing the
+3d60818 hotfix CSS); footer line 2 trimmed to ⊞ Lasso/🎹/☰ Notes/+ Note +
+conditional ⚠/✦ reply/Clear edits, ⋯ More always last with a gold ⏳N
+badge; new #moresheet (VIEW segment replacing the cycling #viewbtn,
+SELECTION READOUT's 8va now always-visible, HIGHLIGHT's find:/◯5, KEY
+SIGNATURE's picker+mode+Set+explanation, SONG's Publish/⏳ Jobs) styled
+like #viewsheet on tablet/desktop, a full-width bottom sheet on phones,
+outside-tap close exempting native `<select>` pickers; 💬 out of the
+footer (toggleSubtitle(), View ▾ only); folding is a class now
+(`footer.folded > :not(#readline)`), footer controls 44px, a container
+query drops "⊞ Lasso"/"⋯ More" to glyphs under ~420px. Docs (NIGHT-ROLL.md,
+this file, docs/footer-redesign-plan.md) + HELP.md updated; `npm test`
+green (vm suite — see tests/night-roll.test.mjs's new "8va" / jobs-badge
+tests, tests/e2e/editor.spec.mjs's fold-class update, tests/e2e/
+docking.spec.mjs's #noteinfo-width check, CI only).
+
+QUEUED: step 6 — Josh's own browser check at 1376px and ~1030px (AI docked
+right) with a 6-note lasso, then commit + push (this session didn't
+commit/push per its instructions). Nothing blocking; not yet verified in a
+real browser.
+
 ## docs/provenance-plan.md P0 + P2 — DONE 2026-09-30: ONE publish function; the bugs it fixes
 
 `publishSong(key, h, report)` replaces `commitCompositionNow` +
@@ -4402,3 +4426,6 @@ Aeon Battle just also tripped it. Write-up: NIGHT-ROLL.md "Aeon Battle
 crash + recovery"; tests: tests/chip-worker.test.mjs, tests/night-roll.test.mjs.
 Still owed: Josh re-running Aeon Battle on a real build to confirm it no
 longer crashes and that a subsequent song's import recovers on its own.
+
+## 2026-09-30 22:35 Josh (via Ask): tapped notes must use the EXACT game sound
+In FF4 "Cry in Sorrow (part 1)" (SNES), touching notes plays the generic synth ("midi sounds"), not the game sound. He wants every console tap preview (SNES first, then Genesis/N64/NES/GB/PS) to play the real chip/sample voice for that track at that note; it breaks his analysis concentration when it differs. Earlier PS1 fix (25cab929) covered PS1 only.

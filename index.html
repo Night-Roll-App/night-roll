@@ -331,17 +331,24 @@
     background: var(--panel);
     border-top: 1px solid var(--grid);
     flex-wrap: wrap;
+    container-type: inline-size; /* footer v2 (2026-09-30): the "⊞ Lasso"/"⋯ More" labels drop to glyphs past ~420px */
   }
+  /* Folding (View ▾ → Bottom bar; phones default): hide only line 2, the
+     individual buttons — #readline (the readout) stays up always. Replaces
+     footer.style.display="none" in applyChrome, which hid the readout too. */
+  footer.folded > :not(#readline) { display: none; }
+  /* footer v2 (2026-09-30, Option A v2): the readout's own full-width first
+     line — a flex row so #chordbtn can sit at its right end. Replaces the
+     old #noteinfo order:-1/flex:1 1 100% hotfix (3d60818) directly on
+     #noteinfo; #noteinfo itself is just the first (growing) cell now. */
+  #readline { order: -1; flex: 1 1 100%; display: flex; align-items: center; gap: 8px; }
+  footer button, footer select { min-height: 44px; }
   #noteinfo {
     font-family: var(--mono);
     font-size: 0.75rem;
     color: var(--gold);
     min-width: 0;
-    /* its own full-width first line, buttons on the row below: squeezed
-       between 13 controls a lassoed chord read "F#3 · A#3 ·…" (Josh,
-       2026-09-30, mid-analysis) */
-    flex: 1 1 100%;
-    order: -1;
+    flex: 1 1 0;
     cursor: pointer; /* always tappable: a message too long to read here opens in full (#infosheet) */
     display: -webkit-box;
     -webkit-line-clamp: 2; /* wraps to a 2nd line before it has to truncate at all */
@@ -359,6 +366,7 @@
     padding: 1px 7px;
     margin-left: 8px;
   }
+  @container (max-width: 420px) { footer .ftxt { display: none; } }
   .seg { display: flex; border: 1px solid var(--grid); border-radius: 6px; overflow: hidden; }
 
   #instpanel { display: none; flex-shrink: 0; background: var(--panel); border-top: 1px solid var(--grid); }
@@ -436,6 +444,54 @@
     min-width: 230px;
     max-width: 92vw;
     box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  /* ⋯ More sheet (footer v2, 2026-09-30): styled/positioned like #viewsheet
+     (a dropdown pinned under the button, JS-placed in moresheetbtn's click
+     handler) on a tablet/desktop; a phone gets a full-width bottom sheet
+     instead — there's no room beside the button for a 230px dropdown. */
+  #moresheet {
+    display: none;
+    position: absolute;
+    z-index: 60;
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 260px;
+    max-width: 92vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  #moresheet.on { display: block; }
+  #moresheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 44px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
+  #moresheet .fitem:active { background: var(--panel); }
+  #moresheet .fdiv { border-top: 1px solid var(--grid); margin: 4px 6px; }
+  /* #moresheet is NOT a `.sheet` (same bespoke-dropdown paradigm as
+     #editsheet/#viewsheet) — the shared .sheet/.cfgsec/.lbl/.status rules
+     don't reach in, so section labels and the key-signature blurb get their
+     own small rule set here. */
+  #moresheet .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin: 6px 10px 2px; }
+  #moresheet .cfgsec:first-child { margin-top: 0; }
+  #moresheet .lbl { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); }
+  #moresheet .status { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); padding: 0 10px 6px; }
+  #moresheet .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 10px; min-height: 44px; }
+  #moresheet select, #moresheet button { min-height: 44px; }
+  #moresheet .seg { margin: 0 10px 4px; }
+  #moresheet .seg button { min-height: 44px; flex: 1; }
+  @media (max-width: 480px) {
+    #moresheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: auto !important;
+      width: 100%;
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 10px 10px 0 0;
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
+    }
   }
   #editsheet.on, #viewsheet.on { display: block; }
   #editsheet .fitem, #viewsheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
@@ -1288,39 +1344,31 @@
 </div>
 <div id="subtitle"></div>
 <footer>
-  <button id="viewbtn" aria-label="Switch to Score view">𝄞 Score</button>
-  <button id="lassobtn" aria-pressed="false">⊞ Lasso</button>
+  <!-- Line 1 (footer v2, Option A v2, 2026-09-30): the readout + Chord? at
+       its right end — #readline's order:-1 (CSS) keeps this up top
+       regardless of where it sits in the markup, and footer.folded leaves
+       it up when line 2 folds away. -->
+  <div id="readline">
+    <div id="noteinfo">tap a note</div>
+    <button id="chordbtn" style="display:none">Chord?</button>
+  </div>
+  <!-- #viewbtn: superseded by the VIEW segment in #moresheet (below) — kept
+       as a hidden node only in case anything still asks for it by id. -->
+  <button id="viewbtn" style="display:none" aria-hidden="true" tabindex="-1" aria-label="View (retired — see the VIEW segment in ⋯ More)"></button>
+  <!-- #subbtn: superseded by View ▾ → 💬 Notes strip (toggleSubtitle) — kept
+       as a hidden node so vwSub's own display-state reads still work. -->
+  <button id="subbtn" style="display:none" aria-hidden="true" tabindex="-1" aria-pressed="true" aria-label="Notes strip">💬</button>
+  <button id="lassobtn" aria-pressed="false"><span aria-hidden="true">⊞</span> <span class="ftxt">Lasso</span></button>
   <button id="instbtn" aria-label="Instrument panel" aria-pressed="false">🎹</button>
-  <select id="findsel" aria-label="Highlight a pitch class" style="max-width:110px">
-    <option value="">find: off</option>
-  </select>
-  <button id="octbtn" style="display:none" aria-label="Toggle octave numbers in the selection readout">8va</button>
-  <button id="chordbtn" style="display:none">Chord?</button>
-  <select id="keysel" aria-label="Key tonic">
-    <option value="" id="keyunset">key: not set (C)</option>
-  </select>
-  <button id="keysetest" style="display:none" title="Write the estimated key as a declared key: annotation at this bar">Set this key</button>
-  <select id="keymode" aria-label="Key mode" style="display:none">
-    <option value="">mode?</option>
-    <option value="major">major</option>
-    <option value="minor">minor</option>
-    <option value="dorian">dorian</option>
-    <option value="phrygian">phrygian</option>
-    <option value="lydian">lydian</option>
-    <option value="mixolydian">mixolydian</option>
-    <option value="locrian">locrian</option>
-  </select>
-  <button id="keyset" style="display:none">Set</button>
-  <button id="cofbtn" aria-label="Circle of fifths">◯5</button>
-  <div id="noteinfo">tap a note</div>
-  <button id="subbtn" aria-label="Notes strip" aria-pressed="true">💬</button>
   <button id="listbtn">☰ Notes</button>
   <button id="notebtn">+ Note</button>
-  <button id="syncbtn">Publish</button>
   <button id="errbtn" style="display:none;color:#e66767" aria-label="Errors">⚠</button>
-  <button id="jobsbtn" style="display:none;color:var(--gold)" aria-label="Jobs — captures and publishes running in the background">⏳</button>
   <button id="askreplybtn" style="display:none;color:var(--gold)" aria-label="An Ask reply is ready — open it">✦ reply</button>
   <button id="clearbtn" style="display:none">Clear edits</button>
+  <!-- ⋯ More: always last — opens #moresheet (View/8va/find/◯5/key/Publish/Jobs).
+       #morebadge mirrors #jobsbtn's own running count while a job runs, so
+       the ⏳ is reachable even with the sheet closed. -->
+  <button id="moresheetbtn" aria-label="More — view, selection, key and song tools"><span aria-hidden="true">⋯</span> <span class="ftxt">More</span><span id="morebadge" style="display:none;color:var(--gold)"></span></button>
 </footer>
 </div><!-- /songregion -->
 <div id="dockleft">
@@ -1809,14 +1857,15 @@
     <div class="hsec" data-hsec="explore">
     <dl>
       <dt>Tap a note</dt><dd>Inspector shows pitch, bar &amp; beat (counted 1e&amp;a), length, velocity, track — <b>and plays it</b>, in Roll, Score and Tracks alike. That includes chip songs: during playback the NSF render IS the track's sound, so per-note synthesis is suppressed to avoid doubling, but a tap has nothing to double and sounds a synth voice. Hearing one note at a time is the point of analysis mode. On a chip song (PlayStation, N64) the tap sounds the game's own instrument for that track; other consoles and drum tracks use the synth voice.</dd>
-      <dt>Status line (footer)</dt><dd>Tap the gold status line at the bottom to read it in full, even a long one: it wraps to two lines before it has to clip at all, and tapping opens the whole message in a sheet — nothing it says is ever lost past an ellipsis. A message that also offers a copy (a chord name, a note's detail) keeps its own tap-to-copy instead, unchanged.</dd>
+      <dt>Status line (footer)</dt><dd>The footer's own first line (2026-09-30: its own row, <b>Chord?</b> at its right end when there's a selection to reveal in Normal mode — nothing else shares the row with it any more). Tap it to read it in full, even a long one: it wraps to two lines before it has to clip at all, and tapping opens the whole message in a sheet — nothing it says is ever lost past an ellipsis. A message that also offers a copy (a chord name, a note's detail) keeps its own tap-to-copy instead, unchanged.</dd>
       <dt>Copy the pitch list</dt><dd>When the lasso strip lists selected pitches, tap the text (or the ⧉ copy chip) to copy them comma-separated — after "Chord?", the chord name comes along too.</dd>
-      <dt>⊞ Lasso</dt><dd>Toggle on, then drag a box over notes (works in all views). Boxes ADD to the selection — draw as many as you need. Tap any note to toggle it in or out (surgical removal of a pedal or neighbor); tap empty space to clear. Shows all the pitch names, low to high — and the <b>8va</b> button beside Chord? toggles the octave numbers: off collapses duplicates to bare pitch classes (C · E · G), the chord-reading view; the setting sticks. Drag the box up into the ruler to take the annotations there too, lane by lane — up to the chord row takes the chords, higher takes the section row as well, all the way up takes the text-note flags: the box draws over the ruler, the bands it covers get a <b>gold outline</b> (text-note flags a gold ring) for as long as the selection lives, and those ride along with ⧉ and ✂ and land with 📋; 🗑 (or Backspace) deletes them with the notes, one ⟲ restores all of it.</dd>
-      <dt>◯5 Circle of fifths</dt><dd>The classic chart, live: majors outside with their signatures, relative minors inside, diminished chords at the center, and the movable degree window (IV·I·V over ii·vi·iii over vii°). Two independent motions: <b>drag the wheel</b> (or ⟲ ⟳) to spin it — put any key at 12 o'clock; <b>tap a wedge</b> to move the degree window there. Opens with the song's key on top and highlighted. Below the wheel: the window key's signature accidentals, full scale, all seven triads, and its IV/V neighbors.</dd>
-      <dt>find: (pitch finder)</dt><dd>Pick a pitch class in the footer dropdown and every occurrence lights up across all visible channels — everything else dims, so nothing lit means a confident zero. Works by pitch class (find B♭ catches A#), shows the count and channels in the strip, and labels the degree when a key is set. Made for mode-hunting: chasing the one accidental that separates two candidate modes.</dd>
+      <dt>⊞ Lasso</dt><dd>Toggle on, then drag a box over notes (works in all views). Boxes ADD to the selection — draw as many as you need. Tap any note to toggle it in or out (surgical removal of a pedal or neighbor); tap empty space to clear. Shows all the pitch names, low to high — and <b>⋯ More → SELECTION READOUT → 8va</b> (an always-on toggle now, reachable with no selection too) switches the octave numbers: off collapses duplicates to bare pitch classes (C · E · G), the chord-reading view; the setting sticks, and <b>Chord?</b> (Normal mode, with a selection) sits at the status line's own right end. Drag the box up into the ruler to take the annotations there too, lane by lane — up to the chord row takes the chords, higher takes the section row as well, all the way up takes the text-note flags: the box draws over the ruler, the bands it covers get a <b>gold outline</b> (text-note flags a gold ring) for as long as the selection lives, and those ride along with ⧉ and ✂ and land with 📋; 🗑 (or Backspace) deletes them with the notes, one ⟲ restores all of it.</dd>
+      <dt>⋯ More</dt><dd>Tap the footer's <b>⋯ More</b> (always its last button) for the tools used rarely enough that they don't need a permanent seat on the main row: <b>VIEW</b> (Roll/Tracks/Score), <b>SELECTION READOUT</b> (8va), <b>HIGHLIGHT</b> (find:, ◯5 Circle of fifths), <b>KEY SIGNATURE</b> (the key/mode pickers and Set), and <b>SONG</b> (Publish, ⏳ Jobs). A gold <b>⏳N</b> badge on the button itself mirrors a running job even with the sheet closed. Tap anywhere outside it to close, same as View ▾ — a native key/mode picker open underneath is exempt, so choosing from it doesn't close the sheet out from under you.</dd>
+      <dt>◯5 Circle of fifths</dt><dd><b>⋯ More → HIGHLIGHT → ◯5</b>. The classic chart, live: majors outside with their signatures, relative minors inside, diminished chords at the center, and the movable degree window (IV·I·V over ii·vi·iii over vii°). Two independent motions: <b>drag the wheel</b> (or ⟲ ⟳) to spin it — put any key at 12 o'clock; <b>tap a wedge</b> to move the degree window there. Opens with the song's key on top and highlighted. Below the wheel: the window key's signature accidentals, full scale, all seven triads, and its IV/V neighbors.</dd>
+      <dt>find: (pitch finder)</dt><dd><b>⋯ More → HIGHLIGHT → find:</b>. Pick a pitch class in the dropdown and every occurrence lights up across all visible channels — everything else dims, so nothing lit means a confident zero. Works by pitch class (find B♭ catches A#), shows the count and channels in the strip, and labels the degree when a key is set. Made for mode-hunting: chasing the one accidental that separates two candidate modes.</dd>
       <dt>Chord?</dt><dd>After a lasso: reveals what chord those notes make. Hidden by default so you can name it first.</dd>
       <dt>Challenge?</dt><dd>Tap one of your chord bands in the ruler, then tap Challenge? — opens the evidence dialog: each label tone with its role and whether it sounds (and where), extra pitches present, the per-channel note lists, and what the namer would call the whole stack. Only when you ask; extra tones are evidence, not verdicts (a pedal point shows as "extra" — correctly).</dd>
-      <dt>💬</dt><dd>Show/hide the text-note strip (the fixed slot that shows your notes as the playhead crosses them). Off frees the vertical space; setting sticks.</dd>
+      <dt>💬</dt><dd><b>View ▾ → 💬 Notes strip</b> (2026-09-30: out of the footer — it's the only control for this now). Show/hide the text-note strip (the fixed slot that shows your notes as the playhead crosses them). Off frees the vertical space; setting sticks.</dd>
       <dt>🎹 Instrument panel</dt><dd>Opens a piano / guitar fretboard strip above the footer. Lasso'd and sounding notes both light in their track's color (earliest track wins a shared pitch); a lasso'd note gets a white ring for exactly as long as it sounds — so your selection visibly fires as the playhead crosses it. Tap any key or fret to hear it and see its name — plus its scale degree once a key is declared (the readout fades after a few seconds). Guitar is standard tuning, 24 frets: your lasso'd octave lights solid gold, and every OTHER octave of the same note gets a hollow gold ring — select one F♯ and every F♯ on the neck shows — and SOUNDING notes get the same treatment during playback, so hitting ▶ lights the whole neck's worth of what's playing, not just the sounding octave. A pitch that doesn't fit the neck shows octave-folded with a dashed ring and a tiny ▴/▾ pointing at its true octave.</dd>
       <dt>▼ Fall</dt><dd><b>Parked for now</b> (2026-09-27): opening it stopped playback on the iPad, so the button is hidden until the drawing is made cheap enough; the code is all still here. When it returns — Synthesia-style view: the whole timeline turns into a vertical drop and the notes fall down into the piano keys, landing the moment they sound. Bar numbers and chord symbols ride along their lines. Lasso works here too — box the falling notes and they light up on the keys. Piano-only; tap ▼ Fall again (or the Guitar tab) to return to the roll/score.</dd>
     </dl>
@@ -1839,8 +1888,8 @@
 
     <h3>KEYS</h3>
     <dl>
-      <dt>key: picker</dt><dd>Songs display in C until YOU set the key. First dropdown is the tonic pitch only; black keys offer three options — fused "A♯/B♭" (spelling undecided) or either asserted spelling. Second dropdown is the mode (major, minor, and the church modes). With both set, the signature previews live — the right key makes most accidentals vanish — and the button writes it ("Set Gm @ bar 1"). Set a different key mid-song for key changes; the score draws the new signature there.</dd>
-      <dt>mode? (partial keys)</dt><dd>Know the tonic but not the mode yet? Choose "mode?" and Store writes "key: B♭?" — recorded, listed under KEY in ☰ Notes, but NOT applied: no signature, no respelling, until you return with the mode. The dropdown label always says which state the song is in.</dd>
+      <dt>key: picker</dt><dd><b>⋯ More → KEY SIGNATURE</b> (with a fixed line under the pickers: "Tells Night Roll how to spell sharps/flats, draw the signature and number scale degrees. Never changes the sound."). Songs display in C until YOU set the key. First dropdown is the tonic pitch only; black keys offer three options — fused "A♯/B♭" (spelling undecided) or either asserted spelling. Second dropdown is the mode (major, minor, and the church modes). With both set, the signature previews live — the right key makes most accidentals vanish — and the button writes it ("Set Gm @ bar 1"). Set a different key mid-song for key changes; the score draws the new signature there.</dd>
+      <dt>mode? (partial keys)</dt><dd><b>⋯ More → KEY SIGNATURE</b>. Know the tonic but not the mode yet? Choose "mode?" and Store writes "key: B♭?" — recorded, listed under KEY in ☰ Notes, but NOT applied: no signature, no respelling, until you return with the mode. The dropdown label always says which state the song is in.</dd>
       <dt>Check vs file</dt><dd>In ☰ Notes, the KEY and METER groups each carry a <b>Check vs file</b> button — on every song, capture or composition alike, tapping it never reveals anything by itself. It compares what YOU declared against the label some MIDI files carry on their own (a game rip's own meta, an export from another program) and reports one of: your answer matches, the file's label says something else, it matches for only part of the song, you haven't set an answer yet to compare, or this file carries no label of its own — file labels can be wrong (many programs default to C major / 4/4), so a difference is a nudge to listen again, not a correction. In Normal mode it also states the file's own value plainly and — for key — the note-census estimate, plus a one-tap <b>Use the file's</b> button (key: adopts it as a declared key: immediately; meter: opens the meter editor pre-filled with it, same re-bar confirmation as any other meter change). Learning mode never shows the file's value or runs the estimate here — the check only ever says whether your own answer matches, never what the answer is.</dd>
     </dl>
 
@@ -1888,7 +1937,7 @@
       <dt>⚠ Messages</dt><dd><b>Copy all</b> puts the whole log on the clipboard for pasting to Claude. Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
       <dt>Save Version and Versions…</dt><dd>A published song is never edited in place: you edit this device's <b>local copy</b>. When a song of yours has no copy here, <b>✎ Edit locally</b> sits where Edit ▾ would be — tap it and the local copy is made right away, no confirmation, with a footer note: <i>editing your copy on this device — Publish sends it</i>. Every edit is kept automatically, on this device, the moment you make it — there is no auto-save switch to turn on; nothing is ever lost to a crash. File → <b>Save Version</b> (⌘S) additionally adds a DATED snapshot of the music AND the annotations to this device's history for the song — the status line says "Version saved — only on this iPad" (or "this device" outside the app); the first Save Version of an Untitled song still asks for a folder and a name. File → <b>Versions…</b> lists them newest first, plus the <b>Published copy</b> at the top when the song has one — tap <b>Go back to this</b> on any row: your current state is kept as a version first (labelled "Before going back"), so nothing is ever thrown away, then that version becomes what you see. The gold <b>●</b> after the title means <i>not published yet</i> (music, annotations, or chat) — Save Version never clears it, only <b>Publish</b> does. Not connected anywhere (no GitHub token or repo, no local folder)? Neither the ● nor the footer Publish button shows — your work is still kept automatically, and File → <b>Publish…</b> still opens and explains how to connect.</dd>
-      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and the footer button open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since publish, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. Every song's row has the same three buttons: tap <b>Open</b> to open it here, <b>Publish</b> to publish that song only (a job — ⏳ shows it), <b>Revert</b> to drop this device's changes to it after asking (your current state is kept as a version first — File → Versions… brings it back; a song never published has no Revert — there is no published copy to go back to). <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
+      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and <b>⋯ More → SONG → Publish</b> open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since publish, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. Every song's row has the same three buttons: tap <b>Open</b> to open it here, <b>Publish</b> to publish that song only (a job — ⏳ shows it), <b>Revert</b> to drop this device's changes to it after asking (your current state is kept as a version first — File → Versions… brings it back; a song never published has no Revert — there is no published copy to go back to). <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
     </dl>
     </div>
 
@@ -1898,7 +1947,7 @@
       <dt>House rules</dt><dd><b>🎓 Learning mode</b> (Settings → Other): hints and direction first — it confirms or refines a guess you've made, and tells you outright only when you insist or say you give up; general theory questions it answers directly; it never reveals a key you haven't set. <b>Normal mode</b>: it answers music questions directly — keys, chords, cadences, form — and says how sure it is; an estimated key is named as an estimate, not a fact. Either mode, it never annotates on its own initiative or answers a question you didn't ask.</dd>
       <dt>Move a sheet</dt><dd>Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (AI, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk to the AI; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
       <dt>Dock right (and left, and bottom)</dt><dd>Tap <b>Dock</b> beside AI, ALL NOTES, INSTRUMENTS, JOBS, or PUBLISH to open its menu: <b>Left</b>, <b>Right</b>, or <b>Bottom</b> pin it to that edge instead of a floating window — no backdrop, so you can keep working the roll (tap, edit, play) with it open, the song laid out in what's left. Once docked to a side, the same menu offers <b>Full height</b> (edge to edge, beside the header and footer too) or <b>Beside the roll</b> (the header rows above and the footer below stay full width — only the roll narrows). Drag the strip on the dock's inner edge to resize it — 280px up to nearly the whole window, leaving only a thin strip of the song's edge showing, so you can shove the roll out of the way for a minute and drag back (double-tap the strip to reset it to the default width). Dropping a window's title on a side that already holds one makes a <b>tab group</b> there — a small strip of tabs above it, one shown at a time; tap a tab to switch, and closing a tab's window just drops its chip from the strip (it's still docked — reopen it and the chip comes back). The bottom dock can hold two windows side by side — dock a second one there and a divider splits them; drag it to change the split, and drag the strip along the bottom dock's top edge to resize its height (160px up to nearly the whole window, same double-tap-to-reset). <b>Float</b> undocks a window again, right where it was — or just drag a docked window's title back out into the middle. <b>Drag-to-dock:</b> instead of the menu, grab a window's title and drag it to an edge — a highlight shows where it'll land (the outer part of a side edge for full height, the inner part for beside the roll); let go to dock there, or in the middle to float. Remembered on this device — reopening a window re-docks it if you left it docked; closing one frees its space without undocking it. On a phone-width window the <b>Dock</b> button is hidden and every window is always floating — there's no room to give the song.</dd>
-      <dt>⏳ Jobs</dt><dd>Captures and publishes run as background jobs: start one and close its panel — the <b>⏳</b> chip in the footer shows how many are running, tap it for the list (title, a progress bar, progress text like "12/92 · Frog's Theme 40%", and per job <b>Open</b> to get back to its panel, <b>✕</b> to cancel a running one or dismiss a finished one, <b>↻</b> to retry what is left). Done and cancelled jobs clear themselves a few seconds after they end, and the ⏳ chip itself hides once none are left; a <b>failed</b> or <b>interrupted</b> job stays until you ↻ or ✕ it — those are the ones to look at. A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job <i>interrupted</i> with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; one publish per folder; one Publish all at a time.</dd>
+      <dt>⏳ Jobs</dt><dd><b>⋯ More → SONG → ⏳ Jobs</b> (⋯ More itself carries a matching gold <b>⏳N</b> badge while one runs, reachable with the sheet closed). Captures and publishes run as background jobs: start one and close its panel — tap <b>⏳</b> for the list (title, a progress bar, progress text like "12/92 · Frog's Theme 40%", and per job <b>Open</b> to get back to its panel, <b>✕</b> to cancel a running one or dismiss a finished one, <b>↻</b> to retry what is left). Done and cancelled jobs clear themselves a few seconds after they end, and the ⏳ chip itself hides once none are left; a <b>failed</b> or <b>interrupted</b> job stays until you ↻ or ✕ it — those are the ones to look at. A job never cancels because you closed its panel; it pauses while the app is in the background and picks up where it was. If the page dies mid-run, the next open marks the job <i>interrupted</i> with its last counts: ↻ re-runs the tracks not yet saved when the same files are still open, and says to Import them again otherwise (saved tracks are kept and skipped). One capture at a time; one publish per folder; one Publish all at a time.</dd>
       <dt>Publish dialog</dt><dd>Starting a folder's publish from Open → LOCAL, or tapping <b>Publish all</b> in the Publish sheet, opens a dialog for that one job: an overall bar, a row per song (its title, and a state — <b>…</b> queued, a small bar while it runs, <b>✓</b> done, <b>⚠</b> failed with the error), the job's own note line, <b>Cancel</b> while it's running (stopping it between songs — what's already published stays published), and <b>Close</b> always. Closing it never cancels the job — reopen it from ⏳'s <b>Open</b> on that job any time. Capture jobs still open the familiar capture panel.</dd>
       <dt>⧉ copy / links</dt><dd>Every bubble ends with a small <b>⧉</b>: tap it to copy that message whole, ready to paste anywhere (it says ✓ copied for a moment). Web addresses in a bubble are tappable and open in Safari, in a new tab, so a link the AI gives you is one tap away.</dd>
       <dt>🎤 Speak / ■ Stop listening / ■ Stop reply</dt><dd>Tap <b>🎤 Speak</b> to dictate a question; while it listens the same button reads <b>■ Stop listening</b> (your words still land in the box). The other stop, <b>■ Stop reply</b> beside Clear chat, cuts a slow reply short and re-enables Send — Send stays disabled while a reply is cooking.</dd>
@@ -1948,6 +1997,58 @@
   <div class="fdiv"></div>
   <button class="fitem" id="vwAnalyze">🔍  Analyze ▸</button>
   <button class="fitem" id="vwLearning">🎓  Learning mode</button>
+</div>
+<!-- ⋯ More sheet (footer v2, Option A v2, 2026-09-30): everything the footer
+     used to hold directly but Josh rarely taps (2026-09-30 usage note) —
+     same ids, same handlers, moved wholesale. Positioned/closed like
+     #viewsheet (moresheetbtn's click handler, the outside-tap listener near
+     viewsheet's own — both below). No render-on-open step needed: unlike
+     View ▾'s on/off rows, every control here already keeps itself current
+     the moment its own state changes (renderOctBtn, applyViewMode,
+     updateSyncBtn, updateJobsBtn, keysel's own listeners), open or closed. -->
+<div id="moresheet">
+  <div class="cfgsec">VIEW</div>
+  <div class="seg" id="viewseg" role="radiogroup" aria-label="View">
+    <button id="viewsegroll" role="radio" aria-checked="true">Roll</button>
+    <button id="viewsegtracks" role="radio" aria-checked="false">Tracks</button>
+    <button id="viewsegscore" role="radio" aria-checked="false">Score</button>
+  </div>
+  <div class="fdiv"></div>
+  <div class="cfgsec">SELECTION READOUT</div>
+  <button class="fitem" id="octbtn" aria-label="Toggle octave numbers in the selection readout">8va  Show octave numbers (F#3 vs F#)</button>
+  <div class="fdiv"></div>
+  <div class="cfgsec">HIGHLIGHT</div>
+  <div class="row">
+    <span class="lbl" style="flex:1">find: Light up one pitch everywhere in the song</span>
+    <select id="findsel" aria-label="Highlight a pitch class" style="max-width:140px">
+      <option value="">find: off</option>
+    </select>
+  </div>
+  <button class="fitem" id="cofbtn" aria-label="Circle of fifths">◯5  Circle of fifths</button>
+  <div class="fdiv"></div>
+  <div class="cfgsec">KEY SIGNATURE</div>
+  <div class="row">
+    <select id="keysel" aria-label="Key tonic">
+      <option value="" id="keyunset">key: not set (C)</option>
+    </select>
+    <select id="keymode" aria-label="Key mode" style="display:none">
+      <option value="">mode?</option>
+      <option value="major">major</option>
+      <option value="minor">minor</option>
+      <option value="dorian">dorian</option>
+      <option value="phrygian">phrygian</option>
+      <option value="lydian">lydian</option>
+      <option value="mixolydian">mixolydian</option>
+      <option value="locrian">locrian</option>
+    </select>
+    <button id="keyset" style="display:none">Set</button>
+    <button id="keysetest" style="display:none" title="Write the estimated key as a declared key: annotation at this bar">Set this key</button>
+  </div>
+  <div class="status cfgind">Tells Night Roll how to spell sharps/flats, draw the signature and number scale degrees. Never changes the sound.</div>
+  <div class="fdiv"></div>
+  <div class="cfgsec">SONG</div>
+  <button class="fitem" id="syncbtn">Publish</button>
+  <button class="fitem" id="jobsbtn" style="display:none;color:var(--gold)" aria-label="Jobs — captures and publishes running in the background">⏳</button>
 </div>
 <div id="editsheet">
   <button class="fitem" id="emUndo">⟲  Undo</button>
@@ -5164,9 +5265,13 @@ function reflectSelVel() { // slider face shows the selection's velocity
   if (sl) { sl.value = v; document.getElementById("velval").textContent = v; }
 }
 function refreshSelInfo() { // one source of truth for the selection readout
+  // 8va (footer v2, 2026-09-30): moved into ⋯ More → SELECTION READOUT as an
+  // always-visible toggle (Josh's usage note: it's reached with no lasso
+  // selection too, to set the sticky preference ahead of time) — no more
+  // show/hide here, just its checked state, rendered every call.
+  renderOctBtn();
   if (!multiSel.length) {
     document.getElementById("chordbtn").style.display = "none";
-    document.getElementById("octbtn").style.display = "none";
     setInfo("lasso: nothing selected");
     draw();
     return;
@@ -5195,12 +5300,15 @@ function refreshSelInfo() { // one source of truth for the selection readout
     cb.textContent = "Chord?";
     cb.style.display = "";
   }
-  const ob = document.getElementById("octbtn");
-  ob.style.display = "";
-  ob.classList.toggle("primary", selOctaves);
   draw();
 }
 let selOctaves = localStorage.getItem("ff1roll-seloct") !== "0"; // 8va: octave numbers in the readout
+function renderOctBtn() { // ✓ = selOctaves on — same convention as renderViewMenu's checkmarks
+  const ob = document.getElementById("octbtn");
+  ob.textContent = (selOctaves ? "✓ " : "   ") + "8va  Show octave numbers (F#3 vs F#)";
+  ob.classList.toggle("primary", selOctaves);
+}
+renderOctBtn(); // boot: correct checkmark before any selection ever runs refreshSelInfo
 document.getElementById("octbtn").addEventListener("click", () => {
   selOctaves = !selOctaves;
   localStorage.setItem("ff1roll-seloct", selOctaves ? "1" : "0");
@@ -6429,6 +6537,11 @@ function updateJobsBtn() {
   b.textContent = "⏳" + (running ? " " + running : "");
   b.style.color = running ? "var(--gold)" : "var(--dim)";
   b.setAttribute("aria-label", running ? running + " running — open the jobs list" : rest + " finished — open the jobs list");
+  // footer v2 (2026-09-30): ⋯ More carries the same running count as a gold
+  // badge so it's reachable with the sheet (and #jobsbtn inside it) closed —
+  // #jobsbtn itself is untouched above, same text/display logic its tests check.
+  const mb = document.getElementById("morebadge");
+  if (mb) { mb.style.display = running ? "" : "none"; mb.textContent = running ? " ⏳" + running : ""; }
 }
 function jobBarSet(bar, frac) { // self-healing: appends its fill div on first use, so a bar built fresh in JS or read from static markup both work
   if (!bar) return;
@@ -13835,7 +13948,10 @@ function applyListener() {
 }
 function applyChrome() {
   document.getElementById("editrow").style.display = editrowHidden ? "none" : "";
-  document.querySelector("footer").style.display = footerHidden ? "none" : "";
+  // footer v2 (2026-09-30): a class, not style.display="none" — folding
+  // must hide only line 2 (footer.folded > :not(#readline)), never the
+  // readout; listener mode still hides the whole footer (its own CSS rule).
+  document.querySelector("footer").classList.toggle("folded", footerHidden);
   document.getElementById("panelshow").style.display = footerHidden ? "" : "none";
   localStorage.setItem("ff1roll-editrow-hidden", editrowHidden ? "1" : "0");
   localStorage.setItem("ff1roll-footer-hidden", footerHidden ? "1" : "0");
@@ -13875,11 +13991,18 @@ function applyChrome() {
   document.getElementById("panelshow").addEventListener("click", () => { editrowHidden = footerHidden = false; applyChrome(); });
   if (editrowHidden || footerHidden) applyChrome();
 }
-const viewbtn = document.getElementById("viewbtn");
+// footer v2 (2026-09-30): the cycling #viewbtn is superseded by the
+// Roll/Tracks/Score 3-way segment in #moresheet (Josh's usage note: the
+// Tracks/Roll/Score switch was RARELY used — it belongs behind ⋯ More, not
+// cycling a single button on the main row). #viewbtn itself is kept as a
+// hidden, inert node (see the footer markup) only in case anything still
+// looks it up by id.
+const viewSeg = {roll: document.getElementById("viewsegroll"), tracks: document.getElementById("viewsegtracks"), score: document.getElementById("viewsegscore")};
 function applyViewMode() {
-  // the button shows the NEXT view in the Roll -> Tracks -> Score cycle
-  viewbtn.textContent = viewMode === "roll" ? "▤ Tracks" : viewMode === "tracks" ? "𝄞 Score" : "▦ Roll";
-  viewbtn.setAttribute("aria-label", "Switch to " + (viewMode === "roll" ? "Tracks" : viewMode === "tracks" ? "Score" : "Roll") + " view");
+  for (const [m, b] of Object.entries(viewSeg)) {
+    b.classList.toggle("active", viewMode === m);
+    b.setAttribute("aria-checked", String(viewMode === m));
+  }
   RULER_W = viewMode === "tracks" ? TRACKS_GUTTER : RULER_W_ROLL;
   // score entry (2026-08-15): Edit works in both views; ♮♯♭ is score-only
   document.getElementById("accseg").style.display =
@@ -13909,9 +14032,7 @@ function setViewMode(m) {
   if (sv) Object.assign(view, sv);
   applyViewMode();
 }
-viewbtn.addEventListener("click", () => {
-  setViewMode(viewMode === "roll" ? "tracks" : viewMode === "tracks" ? "score" : "roll");
-});
+for (const m of Object.keys(viewSeg)) viewSeg[m].addEventListener("click", () => setViewMode(m));
 
 // (editOn is declared early, with the view state — the phone boot path calls
 // renderViewMenu before this file's later sections ran; TDZ here bricked
@@ -15138,16 +15259,21 @@ document.getElementById("websess").addEventListener("click", async e => {
   catch { e.target.textContent = "✗ copy failed"; }
   setTimeout(() => { e.target.textContent = "⎘ Web session"; }, 1800);
 });
+// #subbtn retired from the footer (footer v2, 2026-09-30): View ▾ → 💬 Notes
+// strip is the only control now — vwSub calls this directly instead of
+// clicking a hidden button. #subbtn itself stays as a hidden, inert node
+// (kept in the footer markup) only so anything still reading its
+// active/aria-pressed state for the old on/off visuals keeps working.
 const subbtn = document.getElementById("subbtn");
 subbtn.classList.toggle("active", subOn);
 subbtn.setAttribute("aria-pressed", String(subOn));
-subbtn.addEventListener("click", () => {
+function toggleSubtitle() {
   subOn = !subOn;
   localStorage.setItem("ff1roll-sub", subOn ? "1" : "0");
   subbtn.classList.toggle("active", subOn);
   subbtn.setAttribute("aria-pressed", String(subOn));
   updateSubtitle();
-});
+}
 instFallBtn.addEventListener("click", () => {
   fallOn = !fallOn;
   if (fallOn) { // fall is piano-only and needs the keys visible
@@ -16729,7 +16855,7 @@ document.getElementById("viewsheetbtn").addEventListener("click", e => {
   on("vwEdit", () => { editrowHidden = !editrowHidden; applyChrome(); });
   on("vwFooter", () => { footerHidden = !footerHidden; applyChrome(); });
   on("vwInst", () => document.getElementById("instbtn").click());
-  on("vwSub", () => document.getElementById("subbtn").click());
+  on("vwSub", () => toggleSubtitle());
   on("vwGrid", () => { document.getElementById("viewsheet").classList.remove("on"); openGridSheet(); });
   on("vwLevelsMinus", () => setSecDepth(Math.min(secDepthCap(), secMaxDepth - 1) - 1));
   on("vwLevelsPlus", () => setSecDepth(Math.min(secDepthCap(), secMaxDepth - 1) + 1));
@@ -16753,6 +16879,38 @@ document.addEventListener("pointerdown", e => { // tap-away closes the View menu
   const vs = document.getElementById("viewsheet");
   if (vs.classList.contains("on") && !vs.contains(e.target) && e.target.id !== "viewsheetbtn")
     vs.classList.remove("on");
+}, {capture: true});
+// ⋯ More sheet (footer v2, Option A v2, 2026-09-30): same positioned-dropdown
+// paradigm as View ▾ (above) on a tablet/desktop — the phone media query
+// overrides position to a full-width bottom sheet, same .on toggle either way.
+document.getElementById("moresheetbtn").addEventListener("click", e => {
+  const sheet = document.getElementById("moresheet");
+  if (sheet.classList.contains("on")) { closeFileMenus(); return; }
+  closeFileMenus();
+  // moresheetbtn lives in the FOOTER, not the header like View ▾ — the
+  // dropdown opens UPWARD from it, anchored by `bottom` (not `top`, which
+  // every other sheet uses from a header button with room below). Phones
+  // (≤480px, the CSS media query's own breakpoint) skip this entirely and
+  // get the full-width bottom sheet instead — setting inline left/top here
+  // would fight that layout, since inline style beats an un-!important rule.
+  if (window.innerWidth > 480) {
+    const r = e.currentTarget.getBoundingClientRect();
+    sheet.style.top = "auto";
+    sheet.style.left = Math.max(6, Math.min(r.right - 260, songRegionRight() - 266)) + "px";
+    sheet.style.bottom = (window.innerHeight - r.top + 6) + "px";
+  }
+  sheet.classList.add("on");
+});
+document.addEventListener("pointerdown", e => { // tap-away closes ⋯ More — but
+  // NOT a native <select> picker: iOS renders that picker's wheel outside
+  // this DOM entirely, so choosing an option in findsel/keysel/keymode can
+  // land a stray pointerdown whose target isn't contained in #moresheet —
+  // without this exemption that closed the sheet out from under the pick.
+  const ms = document.getElementById("moresheet");
+  if (!ms.classList.contains("on")) return;
+  if (ms.contains(e.target) || e.target.id === "moresheetbtn") return;
+  if (e.target.tagName === "SELECT" || (document.activeElement && document.activeElement.tagName === "SELECT" && ms.contains(document.activeElement))) return;
+  ms.classList.remove("on");
 }, {capture: true});
 document.getElementById("editsheetbtn").addEventListener("click", e => {
   const sheet = document.getElementById("editsheet");
@@ -16854,6 +17012,7 @@ function closeFileMenus() {
   filesub.classList.remove("on");
   document.getElementById("editsheet").classList.remove("on");
   document.getElementById("viewsheet").classList.remove("on");
+  document.getElementById("moresheet").classList.remove("on");
   document.getElementById("importhub").classList.remove("on");
 }
 function fsubItem(label, onTap, dim) {

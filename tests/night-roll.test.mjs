@@ -2640,7 +2640,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "⋯ More",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -5831,6 +5831,10 @@ test("jobs: a job is a plain record mirrored to this device — progress, done, 
   assert.equal(run(`jobsFind("test", "y", true)`), null);
   assert.equal(run(`document.getElementById("jobsbtn").textContent`), "⏳ 1");
   assert.equal(run(`document.getElementById("jobsbtn").style.display`), "");
+  // footer v2 (2026-09-30): ⋯ More carries a matching gold badge so the
+  // running count is reachable with the sheet (and #jobsbtn inside it) closed
+  assert.equal(run(`document.getElementById("morebadge").textContent`), " ⏳1");
+  assert.equal(run(`document.getElementById("morebadge").style.display`), "");
   app.tick(300); // the throttled mirror lands
   assert.equal(JSON.parse(app.store.get("ff1roll-jobs"))[0].items[0].pct, 0.4);
   run(`__open();`);
@@ -5839,6 +5843,7 @@ test("jobs: a job is a plain record mirrored to this device — progress, done, 
   assert.deepEqual(val(`jobs[0].items.map(i => i.st)`), ["done", "done", "silent"]);
   assert.equal(run(`jobProgress(jobs[0])`), "3/3");
   assert.equal(run(`document.getElementById("jobsbtn").textContent`), "⏳", "finished: no count, dim");
+  assert.equal(run(`document.getElementById("morebadge").style.display`), "none", "⋯ More's badge is only for a RUNNING count, same as #jobsbtn's own dimming");
   // cancel: ✕ flips aborted; the runner ends the job as cancelled
   run(`globalThis.__gate = new Promise(res => { globalThis.__open = res; });
        jobStart("test", "cancel me", [{label: "a"}, {label: "b"}], async api => { api.update(0, {st: "running"}); await __gate; if (api.aborted) { api.update(0, {st: "cancelled"}); api.cancel(); return; } api.update(0, {st: "done"}); }, {slug: "c"});`);
@@ -6836,6 +6841,26 @@ test("P1 lasso chord: Normal auto-names the chord in the selection strip and hid
   const normal = mk("normal");
   assert.equal(normal.run(`document.getElementById("chordbtn").style.display`), "none", "Normal: nothing to reveal — it's already named");
   assert.match(normal.run(`document.getElementById("noteinfo").textContent`), /→\s*C\b/, "Normal: the strip names the chord itself");
+});
+
+test("8va (footer v2, 2026-09-30): an always-visible toggle in ⋯ More — reachable with no lasso selection, unlike Chord?", () => {
+  const a = createApp({storage: {"ff1roll-mode": "learning"}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "melody", notes: []}]};
+    songKey = "midi/test.mid"; keyRegions = []; rollnotes = []; declaredTs = [4, 4]; previewSf = null;
+    trackState = [{muted: false, solo: false}]; selNote = null; multiSel = []; multiSelKey = new Set();
+    refreshSelInfo(); // "lasso: nothing selected" — the old code hid #octbtn right here
+  `);
+  assert.equal(a.run(`document.getElementById("chordbtn").style.display`), "none", "Chord? still needs a selection to mean anything");
+  assert.notEqual(a.run(`document.getElementById("octbtn").style.display`), "none", "8va stays reachable with nothing selected");
+  assert.match(a.run(`document.getElementById("octbtn").textContent`), /8va\s+Show octave numbers \(F#3 vs F#\)/);
+  // the checkmark tracks selOctaves, same convention as renderViewMenu's ✓ rows
+  a.run(`selOctaves = false; refreshSelInfo();`);
+  assert.match(a.run(`document.getElementById("octbtn").textContent`), /^\s{3}8va/, "off: no checkmark");
+  a.run(`document.getElementById("octbtn").click();`); // toggles selOctaves and re-renders
+  assert.match(a.run(`document.getElementById("octbtn").textContent`), /^✓ 8va/, "on: checkmark");
+  assert.equal(a.run(`selOctaves`), true);
 });
 
 test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", () => {

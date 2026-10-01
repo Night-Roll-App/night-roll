@@ -48,6 +48,12 @@ for (const id of WINDOWS) {
       expect(p.w, `${side}/${mode}: a real width`).toBeGreaterThan(200);
       expect(overlaps(p, roll), `${side}/${mode}: roll and dock do not overlap`).toBe(false);
       expect(await footerLastVisible(page), `${side}/${mode}: the footer's last chip is fully visible`).toBe(true);
+      // footer v2 (2026-09-30): #noteinfo (the readout, #readline's growing
+      // cell) must not be squeezed down to nothing by a narrowed #songregion —
+      // the bug a 6-note lasso chord hit at ~1030px before the readout got
+      // its own full-width line.
+      const ni = await box(page, "#noteinfo"), foot = await box(page, "footer");
+      expect(ni.w, `${side}/${mode}: #noteinfo is at least 60% of the footer's width`).toBeGreaterThanOrEqual(foot.w * 0.6);
     }
     await page.evaluate(i => { wmFloat(i); wmDockBottomWindow(i); }, id);
     await page.waitForTimeout(150);

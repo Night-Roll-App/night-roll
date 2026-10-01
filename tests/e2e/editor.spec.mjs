@@ -455,7 +455,11 @@ test("phone-size boot: song loads with the panel folded (no TDZ bricks) @smoke",
   await page.goto("/index.html", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => { try { return !!song; } catch (e) { return false; } }, null, { timeout: 15000 });
   expect(errors).toEqual([]);
-  expect(await page.evaluate(() => document.querySelector("footer").style.display)).toBe("none"); // folded
+  // footer v2 (2026-09-30): folding is a class now (footer.folded > :not(#readline)
+  // {display:none}), not style.display="none" — it must hide only line 2, never
+  // the #readline readout (listener mode's own !important rule hides the whole
+  // footer here too, checked separately below once that's turned off).
+  expect(await page.evaluate(() => document.querySelector("footer").classList.contains("folded"))).toBe(true); // folded
   // listener mode: phone boots as a PLAYER — chrome hidden, transport + Full app visible
   expect(await page.evaluate(() => document.body.classList.contains("listener"))).toBe(true);
   const vis = id => page.evaluate(i => {
@@ -474,6 +478,12 @@ test("phone-size boot: song loads with the panel folded (no TDZ bricks) @smoke",
   expect(await page.evaluate(() => document.body.classList.contains("listener"))).toBe(false);
   expect(await vis("filesheetbtn")).toBe(true);
   expect(await page.evaluate(() => localStorage.getItem("ff1roll-listener"))).toBe("0");
+  // footer v2: listener mode is off now, but the footer is still FOLDED (its
+  // own separate pref) — line 2's buttons hide, but #readline/#noteinfo (the
+  // readout) must stay up, same as ▴ #panelshow needing it to say why it's there.
+  expect(await page.evaluate(() => document.querySelector("footer").classList.contains("folded"))).toBe(true);
+  expect(await vis("noteinfo")).toBe(true);
+  expect(await vis("lassobtn")).toBe(false);
   await ctx.close();
 });
 

@@ -37,7 +37,8 @@ Tracks/Roll/Score switch, ◯5, Publish, ⏳ jobs.
 Option B: today's hotfix only. Option C: readout row at the top under the
 transport (fights the album strip; three top rows already).
 
-## Build steps (each shippable)
+## Build steps (each shippable) — v1's list, superseded by v2 below once
+Josh picked A = Option A v2 (2026-09-30):
 1. Hotfix — DONE (3d60818). Add a docking e2e check: #noteinfo ≥ 60% of
    footer width in every dock mode.
 2. #infobar + move #noteinfo/#octbtn/#chordbtn; applyChrome pref
@@ -47,6 +48,38 @@ transport (fights the album strip; three top rows already).
 4. Declutter: 💬 out, Publish → File ▾, glyph collapse + tips.
 5. 44 px targets; re-check footerLastVisible in all four dock modes.
 6. Docs + iPad browser check with the AI docked full-height and beside-the-roll.
+
+## Build steps v2 (Option A v2) — 1-5 DONE (2026-09-30), not yet pushed
+1. **#readline** — DONE. #noteinfo (flex:1 1 0, same 2-line clamp) +
+   #chordbtn at its right end, order:-1/flex:1 1 100% on the wrapper, not
+   #noteinfo directly. Replaces the 3d60818 hotfix CSS.
+2. **Footer line 2 trimmed to what's USED A LOT** — DONE. ⊞ Lasso, 🎹,
+   ☰ Notes, + Note, then ⚠/✦ reply/Clear edits only when they apply, ⋯ More
+   always last (gold ⏳N badge mirrors #jobsbtn while a job runs).
+3. **#moresheet** — DONE. VIEW (viewseg 3-way, replaces the cycling
+   #viewbtn) · SELECTION READOUT (8va, now always-visible — no more
+   show/hide in refreshSelInfo) · HIGHLIGHT (find:, ◯5) · KEY SIGNATURE
+   (picker + mode + Set + the fixed "never changes the sound" line) · SONG
+   (Publish, ⏳ Jobs). Styled/positioned like #viewsheet (JS-anchored
+   dropdown, clamped by songRegionRight()) on tablet/desktop; a phone
+   (≤480px) gets a full-width bottom sheet instead. Outside-tap close
+   exempts a native `<select>` so iOS's own picker can't close it mid-pick.
+   All ids kept — every handler and test still fires where it always did.
+4. **💬 out of the footer** — DONE. #subbtn is a hidden, inert node; View ▾
+   → 💬 Notes strip calls the extracted `toggleSubtitle()` directly.
+5. **Folding + sizing** — DONE. `footer.folded > :not(#readline)` (a class,
+   not `footer.style.display="none"`) — editor.spec.mjs:458 now asserts the
+   class, plus a new check that #noteinfo stays visible while folded.
+   `footer button, footer select { min-height: 44px; }`. A container query
+   on `footer` (`@container (max-width: 420px)`) drops the "⊞ Lasso"/
+   "⋯ More" labels (a `.ftxt` span) to bare glyphs, aria-labels unchanged.
+   docking.spec.mjs: #noteinfo ≥ 60% of the footer's width, all four dock
+   modes (was already step 1's ask — folded in here since it's the same
+   "narrow footer" guard).
+6. Not done yet: Josh's own browser check (1376px and ~1030px/AI docked
+   right, a 6-note lasso) — this session doesn't run Playwright or
+   claude-in-chrome for its own verification pass; NIGHT-ROLL.md/
+   open-items.md are updated, HELP.md rebuilt (`node tools/build_help.mjs`).
 
 Constraints: srlive must equal #noteinfo (tests ~7422/7484); drift keywords
 "Lasso", "Chord?", "8va", "find:", "Circle of fifths", "key: picker",
