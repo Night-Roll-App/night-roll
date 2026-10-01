@@ -11,10 +11,6 @@ Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     Welcoming of Maester Mika). Published or fresh — which is right?
 Q2. (ASK LATER) Archive move: make the archive token (resource owner
     joshcough, only the archive repo, Contents read+write) and say "go".
-Q10. graveyard-3 has TWO "forked from" notes (graveyard.mid and graveyard-2.mid).
-    The new format keeps one origin. Which one is it really copied from? (Likely
-    graveyard-2 — the other looks like a leftover from copying a copy.) Until you
-    answer, it stays in the old format (reads fine) with both notes visible.
 Q5. May I add a redirect so the bare address night-roll-app.github.io
     lands on the app? (One tiny public repo in the org,
     Night-Roll-App.github.io, holding a redirect page.) Answered part: the
@@ -23,7 +19,7 @@ Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
 for build 3.
-DONE: Q4 — yes (2026-09-30): captures stay locked (notes/tracks); annotating them directly is unchanged; "✎ Make it mine" makes an editable copy in one tap at a new path (my-covers/overworld.mid; a clash → "Overworld 2"). Q6 — yes: imports edit like copies (tempo + meter bake; the file's own labels written back verbatim). Q8 — yes (2026-09-30): the machine-written "forked from"/"moved from" notes move into the v2 origin header; he approved fixing the 6 files ("I would like to fix the songs") — done in the P5 batch migration so the origin is kept, not lost. Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
+DONE: Q10 — graveyard-3 was copied from graveyard-2 (Josh, 2026-10-01); the leftover "forked from graveyard.mid" note dropped, file converted to v2 with origin.from graveyard-2 — all 1196 files are v2 now. Q4 — yes (2026-09-30): captures stay locked (notes/tracks); annotating them directly is unchanged; "✎ Make it mine" makes an editable copy in one tap at a new path (my-covers/overworld.mid; a clash → "Overworld 2"). Q6 — yes: imports edit like copies (tempo + meter bake; the file's own labels written back verbatim). Q8 — yes (2026-09-30): the machine-written "forked from"/"moved from" notes move into the v2 origin header; he approved fixing the 6 files ("I would like to fix the songs") — done in the P5 batch migration so the origin is kept, not lost. Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
 his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
 own songs; "Publish all" = one publish per song; explicit song origins.
 
@@ -78,7 +74,7 @@ between them — look hard at the ordering." Built by a delegated session
   ordering/album play/manifest); not this session's to fix.
 
 
-## Annotations v2 — DONE 2026-10-01: P3 reader (34ea078), P4 writer (d8c84ce), P5 batch: 1195/1196 files converted, one commit per album; graveyard-3 waits on Q10. Tool: tools/migrate-rollnotes-v2.mjs.
+## Annotations v2 — DONE 2026-10-01: P3 reader (34ea078), P4 writer (d8c84ce), P5 batch: 1195/1196 files converted, one commit per album; graveyard-3 converted after Q10 — 1196/1196. Tool: tools/migrate-rollnotes-v2.mjs.
 
 ## docs/provenance-plan.md P0 + P2 — DONE 2026-09-30: ONE publish function; the bugs it fixes
 
