@@ -1,3 +1,3 @@
-{ "version": 1, "song": "metroid-queen-area", "saved": 1790564613667, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "metroid-queen-area", "origin": {"kind":"capture"}, "stamp": 1790564613667, "notes": [
   {"at":[3,2.5],"type":"loop","loop":"1.1.5"}
 ] }
