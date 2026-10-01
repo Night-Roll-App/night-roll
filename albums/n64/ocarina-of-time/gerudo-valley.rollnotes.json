@@ -1,3 +1,3 @@
-{ "version": 1, "song": "gerudo-valley", "saved": 1790615112865, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "gerudo-valley", "origin": {"kind":"capture"}, "stamp": 1790615112865, "notes": [
   {"at":[44,1],"type":"loop","loop":"8.1"}
 ] }

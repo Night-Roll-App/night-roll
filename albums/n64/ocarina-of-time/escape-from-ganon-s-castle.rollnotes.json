@@ -1,3 +1,3 @@
-{ "version": 1, "song": "escape-from-ganon-s-castle", "saved": 1790615112856, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "escape-from-ganon-s-castle", "origin": {"kind":"capture"}, "stamp": 1790615112856, "notes": [
   {"at":[26,1.5],"type":"loop","loop":"14.1.5"}
 ] }

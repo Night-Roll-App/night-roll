@@ -1,3 +1,3 @@
-{ "version": 1, "song": "kakariko-village-orchestral-version", "saved": 1790615112873, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "kakariko-village-orchestral-version", "origin": {"kind":"capture"}, "stamp": 1790615112873, "notes": [
   {"at":[40,4],"type":"loop","loop":"2.3"}
 ] }

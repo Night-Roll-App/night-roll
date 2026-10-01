@@ -1,3 +1,3 @@
-{ "version": 1, "song": "lost-woods", "saved": 1790615112878, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "lost-woods", "origin": {"kind":"capture"}, "stamp": 1790615112878, "notes": [
   {"at":[20,1],"type":"loop","loop":"2.1"}
 ] }

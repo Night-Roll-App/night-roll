@@ -1,3 +1,3 @@
-{ "version": 1, "song": "water-temple", "saved": 1790615112887, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "water-temple", "origin": {"kind":"capture"}, "stamp": 1790615112887, "notes": [
   {"at":[57,1],"type":"loop","loop":"5.1"}
 ] }
