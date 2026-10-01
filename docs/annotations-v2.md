@@ -1,9 +1,11 @@
-# .rollnotes v2 (P3, docs/provenance-plan.md)
+# .rollnotes v2 (P3 + P4, docs/provenance-plan.md)
 
-Status: **reader + version guard shipped (2026-10-01). Writer still writes
-v1** — P4 switches it. This doc defines the v2 shape so every device can
-read it before any device ever writes one. JSON Schema:
-docs/annotations-v2.schema.json.
+Status: **reader + version guard shipped 2026-10-01 (P3). Writer shipped
+2026-10-01 (P4): every path that writes a `.rollnotes.json` now writes
+v2, with a stored `origin` header where one is known.** This doc defines
+the v2 shape; JSON Schema: docs/annotations-v2.schema.json. Next:
+**P5**, the one-time batch migration of every file P4's natural
+publish-time upgrade doesn't reach on its own.
 
 ## Why
 
@@ -115,18 +117,68 @@ notes.
 both keep working, on either format, indefinitely (the fallback never goes
 away; not every file will ever be rewritten).
 
-## Writer (not yet — P4)
+## Writer (shipped — P4, 2026-10-01)
 
-Still v1 (`serializeNotesList`, index.html) as of this doc. P4 switches it
-to write v2 with a real `origin`; P5 is the one-time batch migration of
-every existing file (Josh's ruling: format conversion isn't editing — see
-docs/provenance-plan.md's addendum, and open-items.md for the six files he
-specifically wants fixed).
+`serializeNotesList(list, beatsPerBar, base, stamp, origin)` (index.html)
+now always writes v2 — `format`/`version: 2`, plus `origin` when one is
+given (omitted entirely when there isn't one, same as v1 never had the
+field). `serializeRollnotes()`/`serializeRollnotesStamped(stamp)` pass the
+OPEN song's `rollnotesOrigin` (the header `loadNotes` parsed in, or
+whatever a fork/move/new-composition just set — see below) automatically.
+It is a pure function: the same list/stamp/origin always produces
+byte-identical JSON — no comparison against a previously-published file
+happens anywhere in this path, same as v1's `saved` stamp never did one
+either (so a publish with no real change still bumps the stamp, exactly
+as before; "no churn" means re-serializing is a fixed point, not that the
+app diffs before writing).
+
+Every path that writes a `.rollnotes.json` goes through it: `publishSong`
+(Publish/Publish all/Move — every song, open or not), `commitImports`
+(the import batch commit), the iPad Files mirror
+(`filesMirror`/`filesMirrorFor`), and Copy/Download (Sync sheet). A v1
+file upgrades to v2 the first time the app PUBLISHES that song — its
+`notes` come out byte-for-byte the same, only the header is new; reading
+a v1 file and never publishing writes nothing (P5 is the batch migration
+for files that are never republished on their own — Josh's ruling: format
+conversion isn't editing — see docs/provenance-plan.md's addendum, and
+open-items.md for the six files he specifically wants fixed).
+
+**Stored origin.** `origin.kind`/`from`/`movedFrom` are set where they're
+created, never re-derived: `forkCurrentSong` → `{kind: "copy", from:
+<source path>, at}`; `moveComposition` → keeps `kind`, sets `movedFrom`
+(first move out of nightroll/ only, same trigger the note it replaces
+had); `createComposition` → `{kind: "composition", at}`; `commitImports`
+→ `{kind: "import", at}`. None of these write a `"forked from <path>"`/
+`"moved from <path>"` NOTE into `rollnotes` any more (Q8) — old files
+still carry the note and this app still reads it forever
+(`hasProvenanceNote`'s `PROVENANCE_RE` fallback). A song not yet
+published stashes its origin in
+`localStorage["ff1roll-origin-" + key]` (`setOrigin`/`pendingOrigin`,
+index.html — carried along by `renameLocalKeys` like every other
+per-song key); `publishSong` writes whatever's ALREADY on disk for that
+key (`annotationsFor(key).origin` — preserved through
+`subtractTombstones` now, which used to drop it) when there is one, else
+that pending stash (`originFor(key, notes)`) — so an origin is set once
+and rides forward unchanged through every later publish, never
+re-guessed. `originOf(key)` checks the OPEN song's `rollnotesOrigin.kind`
+FIRST, before any of P1's path/draft/note sniffing — a stored header
+settles it outright once a song has one.
+
+**Closing P3's known gap.** Every MANUAL annotation edit now refuses on a
+locked (too-new) song before it ever lands in `rollnotes`/localStorage,
+the same `ROLLNOTES_LOCK_MSG` the ✦ Ask tool and Publish/Move already
+used: the note editor's Save/Delete (`#nsave`/`#ndelete` — this is also
+where the chord/section/key dialogs and + Note land, one shared editor),
+lasso-selected-annotation paste (`pasteAnnotations`), the chord tool
+(`insertChordAt`, which writes a chord BAND alongside the notes), and
+Analyze → Adopt (`adoptChordBand`/`adoptAllChords`).
 
 ## Round-trip guarantees (tested, tests/night-roll.test.mjs)
 
 - v1 → parse → serialize → byte-identical (pre-existing coverage,
   unchanged by this doc).
+- v2 → parse → serialize (same stamp, same origin) → byte-identical,
+  origin header included — "P4" tests.
 - A v2 fixture and its v1 twin (same `notes`, only the header differs) →
   parse → identical in-memory notes.
 - A v3 fixture (or any `version` > 2, or a `version` ≥ 2 file with an

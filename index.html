@@ -3438,7 +3438,7 @@ function jsonToRawNote(j) { // schema entry -> the raw shape the deriver expects
 // returns identical in-memory notes for a v1/v2 twin. origin.from/movedFrom
 // is where a v2 file states what a "forked from"/"moved from" NOTE used to
 // (hasProvenanceNote/originOf, below, read it off the returned array).
-// Writer stays v1 until P4; this is the reader + version guard.
+// Writer is v2 as of P4 (docs/provenance-plan.md) — serializeNotesList below.
 const ROLLNOTES_FORMAT = "night-roll-annotations";
 const ROLLNOTES_MAX_VERSION = 2; // highest version this app can read/write; higher = refuse to publish/overwrite (the version guard)
 const ROLLNOTES_LOCK_MSG = "⚠ this song's annotations were written by a newer Night Roll — update the app before editing";
@@ -3894,7 +3894,17 @@ async function loadNotes() {
 function subtractTombstones(notes, key) {
   try {
     const tombs = new Set(JSON.parse(localStorage.getItem(tombKeyFor(key)) || "[]"));
-    if (tombs.size) return notes.filter(n => !tombs.has(noteIdentity(n)));
+    if (tombs.size) {
+      const out = notes.filter(n => !tombs.has(noteIdentity(n)));
+      // .filter returns a plain new array — carry the custom properties
+      // parseRollnotesJSON hangs off the array (version/origin/readOnly/
+      // lockReason) along with it, so a not-open annotationsFor(key) (P4,
+      // docs/annotations-v2.md) still sees the file's own origin header
+      // after tombstones are subtracted, not just when nothing was dropped.
+      out.version = notes.version; out.origin = notes.origin;
+      out.readOnly = notes.readOnly; out.lockReason = notes.lockReason;
+      return out;
+    }
   } catch (err) {}
   return notes;
 }
@@ -3997,17 +4007,29 @@ function dedupedNotesWithIndex(list) {
     return true;
   });
 }
-function serializeNotesList(list, beatsPerBar, base, stamp) {
+// P4 (docs/annotations-v2.md): the writer. Always v2 now — format + version
+// + an optional origin header, same per-note "notes" array v1 always wrote
+// (byte-identical per-entry shape; only the header is new). `origin`, when
+// given, is written verbatim as the header's "origin" field — callers pass
+// the open song's rollnotesOrigin (serializeRollnotes/Stamped, below) or
+// whatever publishSong resolved for a not-open song (annotationsFor's own
+// disk-read origin, falling back to a locally-pending one — see originFor).
+// Pure function: same list/stamp/origin in, byte-identical JSON out, every
+// time (round-trip tests, docs/annotations-v2.md "byte stability") — no
+// comparison against any previously-published file happens here or in any
+// caller, same as v1's "saved" stamp always was.
+function serializeNotesList(list, beatsPerBar, base, stamp, origin) {
   // one note per line: valid JSON that git-diffs like the old text format.
   // stamp (epoch ms) marks WHEN this state was saved — the cross-device
   // freshness beacon (Josh, 2026-08-16); omitted for pure serialization.
   const rows = dedupedNotesWithIndex(list).map(({n}) => "  " + JSON.stringify(noteToJSON(n)));
-  return '{ "version": 1, "song": ' + JSON.stringify(base) +
-         (stamp ? ', "saved": ' + stamp : "") + ', "notes": [\n' +
+  return '{ "format": ' + JSON.stringify(ROLLNOTES_FORMAT) + ', "version": 2, "song": ' + JSON.stringify(base) +
+         (origin ? ', "origin": ' + JSON.stringify(origin) : "") +
+         (stamp ? ', "stamp": ' + stamp : "") + ', "notes": [\n' +
          rows.join(",\n") + "\n] }\n";
 }
-function serializeRollnotes() { return serializeNotesList(rollnotes, beatsPerBarDisp(), baseName()); }
-function serializeRollnotesStamped(stamp) { return serializeNotesList(rollnotes, beatsPerBarDisp(), baseName(), stamp); }
+function serializeRollnotes() { return serializeNotesList(rollnotes, beatsPerBarDisp(), baseName(), undefined, rollnotesOrigin); }
+function serializeRollnotesStamped(stamp) { return serializeNotesList(rollnotes, beatsPerBarDisp(), baseName(), stamp, rollnotesOrigin); }
 // Same set serializeRollnotes would publish, each entry tagged with an "id"
 // (its index into `rollnotes`) — edit_annotation/delete_annotation target by
 // it. Only stable for the one Ask turn that reads this context block: an
@@ -6129,6 +6151,7 @@ function cutSelection() { // ✂: copy, then delete — notes and lasso'd annota
   return k;
 }
 function pasteAnnotations(t0, dP) { // re-anchored copies; chord labels transpose with a pitch shift (band-ride rule)
+  if (rollnotesReadOnly) { setInfo(rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; } // P4 (docs/annotations-v2.md): closes P3's gap — lasso'd annotations never land locally on a locked song
   for (const a of annoClipboard) {
     if (t0 + a.dt < 0) continue; // a band that began before the first copied note, pasted at the very start
     const arr = [jsonToRawNote(a.json)];
@@ -13363,6 +13386,10 @@ function stampChordBand(tick, durTicks, sym) { // the matching ruler annotation
 }
 function insertChordAt(tick, rootPc, qual, oct, durQ) {
   if (!editableSong()) return 0;
+  // P4 (docs/annotations-v2.md): closes P3's gap — this tool writes a chord
+  // BAND (an annotation, stampChordBand below) along with the notes; a
+  // locked song refuses the whole gesture rather than leave the band out
+  if (rollnotesReadOnly) { setInfo(rollnotesLockReason || ROLLNOTES_LOCK_MSG); return 0; }
   const annoBefore = annoSnapshot(); // the ruler band undoes with the notes (Josh, 2026-09-12)
   const ivs = (CHORD_QUALS.find(([q]) => q === qual) || CHORD_QUALS[0])[1];
   const snap = Math.max(1, Math.round(song.ppq * (durQ || pencilDur)));
@@ -15899,6 +15926,11 @@ document.getElementById("ntext").addEventListener("keydown", e => {
   }
 });
 document.getElementById("nsave").addEventListener("click", () => {
+  // P4 (docs/annotations-v2.md): closes P3's known gap — every manual
+  // annotation edit refuses on a locked (newer-than-this-app) song, same
+  // message as the Ask tool's add/edit_annotation, instead of landing
+  // in-memory/localStorage with no way to ever publish it
+  if (rollnotesReadOnly) { document.getElementById("nstatus").textContent = rollnotesLockReason || ROLLNOTES_LOCK_MSG; return; }
   micStop(true); // the text is read now; a late result would land in a closed editor
   const type = editorType();
   const text = document.getElementById("ntext").value.trim();
@@ -16000,6 +16032,8 @@ document.getElementById("nsave").addEventListener("click", () => {
   draw();
 });
 document.getElementById("ndelete").addEventListener("click", () => {
+  // P4 (docs/annotations-v2.md): closes P3's known gap — see #nsave's own guard
+  if (rollnotesReadOnly) { document.getElementById("nstatus").textContent = rollnotesLockReason || ROLLNOTES_LOCK_MSG; return; }
   // deleting the meter directive re-bars back to neutral 4/4 — same two-tap
   // warning + anchor conversion as declaring one, never a silent move
   if (editingNote && editingNote.tsdir) {
@@ -16156,6 +16190,11 @@ function hasProvenanceNote(key) { // same "live vs stashed" pattern as declaredT
 }
 function originOf(key) {
   if (!key) return "composition"; // no key at all yet (songKey === null: a freshly loaded file with nowhere to live) — same footing as a fresh composition
+  // P4 (docs/annotations-v2.md): the open song's stored header wins outright
+  // when it says something — the whole point of moving provenance out of a
+  // note players read is that the app can trust it directly, no more
+  // sniffing paths/drafts/legacy notes for a song that already says what it is.
+  if (song && key === songKey && rollnotesOrigin && rollnotesOrigin.kind) return rollnotesOrigin.kind;
   if (isCaptureKey(key)) return "capture";
   if (bundledPath(key)) return "starter";
   if (key.startsWith("local/") || ownFolderPath(key)) {
@@ -16164,8 +16203,23 @@ function originOf(key) {
     if (d && d.source) return "import";
     if (hasProvenanceNote(key)) return "copy";
   }
-  return "composition"; // default: his own — also an own-folder path with no local draft yet (nothing published-only can tell copy/import apart without fetching the file; P4 stores it instead)
+  return "composition"; // default: his own — also an own-folder path with no local draft yet (nothing published-only can tell copy/import apart without fetching the file; a stored header settles it from here on)
 }
+// P4: this song's provenance, set once at creation (fork/move/compose) and
+// carried locally until the first Publish writes it into the v2 header for
+// real (annotationsFor's own disk-read origin then takes over — see
+// originFor, used by publishSong/commitImports). renameLocalKeys carries the
+// key along with every other per-song local state.
+function pendingOriginKey(key) { return "ff1roll-origin-" + key; }
+function setOrigin(key, origin) { if (key) try { localStorage.setItem(pendingOriginKey(key), JSON.stringify(origin)); } catch (err) {} }
+function pendingOrigin(key) { try { return JSON.parse(localStorage.getItem(pendingOriginKey(key)) || "null"); } catch (err) { return null; } }
+// the origin to WRITE for `key` on this publish: the file's own stored
+// origin if it already has one (never re-derived, so a prior fork/move's
+// header rides forward unchanged through every later publish), else
+// whatever this device stashed locally at creation time (a fork/move/
+// composition never yet published) — `notes` is annotationsFor(key)'s
+// return, whose .origin now survives subtractTombstones (above).
+function originFor(key, notes) { return (notes && notes.origin) || pendingOrigin(key) || null; }
 // Rule table (docs/provenance-plan.md, Josh's rulings 2026-09-30 Q4/Q6/Q9):
 // editNotes = pencil/track edits allowed; bakeTempo/bakeMeter = a tempo:/
 // timesig: annotation writes into the published .mid; writesMid = Publish
@@ -16295,7 +16349,7 @@ function chosenFolder(sel, inp) { // the select, or the typed folder; null = not
 function renameLocalKeys(oldKey, newKey) { // every per-song key on this device rides along; the open song follows
   migrateVersions(oldKey); // fold any pre-versions checkpoint/stash in under the OLD key first, so a rename can't strand them
   for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-versions-",
-                     "ff1roll-tombs-"]) { // a deletion of a synced note must stay dead at the new path too (moveComposition)
+                     "ff1roll-tombs-", "ff1roll-origin-"]) { // a deletion of a synced note must stay dead at the new path too (moveComposition); origin rides too (P4, docs/annotations-v2.md)
     const v = localStorage.getItem(pre + oldKey);
     if (v !== null) { localStorage.setItem(pre + newKey, v); localStorage.removeItem(pre + oldKey); }
   }
@@ -16316,7 +16370,7 @@ async function saveSongAs(folder, name) { // first Save Version of an Untitled s
   if (localStorage.getItem(draftStoreKey(newKey)) !== null) { // Josh: "if you already have a local version, it could maybe overwrite that one"
     const ok = await appConfirm("REPLACE " + songTitleOf(newKey).toUpperCase() + "?", "A local copy with that name already exists in " + folderTitle(folder) + ". Replace it with this song?", "Replace", "Keep both");
     if (!ok) return false;
-    for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-versions-"]) localStorage.removeItem(pre + newKey);
+    for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-", "ff1roll-versions-", "ff1roll-origin-"]) localStorage.removeItem(pre + newKey);
     idbDraftDelete(newKey);
   }
   renameLocalKeys(songKey, newKey);
@@ -16887,6 +16941,11 @@ function createComposition(bpm, num, den) { // Untitled until the first Save nam
   // the meter is HIS declaration (he chose it in the dialog) — record it
   rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null,
     text: "timesig: " + num + "/" + den, tsdir: [num, den], added: true}));
+  // P4 (docs/annotations-v2.md): a new composition's origin, stored in the
+  // v2 header from its first publish on — nothing to derive later, unlike
+  // copy/import which read it back off a note or a draft's source today
+  rollnotesOrigin = {kind: "composition", at: new Date().toISOString()};
+  setOrigin(key, rollnotesOrigin);
   finalizeNotes();
   saveLocalNotes(); // async loadNotes rebuild re-reads this stash
   saveDraft();
@@ -16896,7 +16955,7 @@ function createComposition(bpm, num, den) { // Untitled until the first Save nam
 function forkCurrentSong(name, folder) { // Save As: a copy in the folder you chose (the last used one by default)
   const key = "albums/" + (folder || localStorage.getItem("ff1roll-lastfolder") || NR_DIR.slice(7, -1)) + "/" + slugify(name) + ".mid";
   if (folder) localStorage.setItem("ff1roll-lastfolder", folder);
-  const notesText = serializeRollnotes(); // inherit — ruled 2026-08-14
+  const notesText = serializeRollnotes(); // inherit — ruled 2026-08-14 (notes only; the copy's own origin is set below, never the source's)
   const origin = songKey || "local file";
   const parsed = {ppq: song.ppq, timesig: song.timesig || effTs(),
     ...(song.source ? {source: song.source} : {}), // Save As keeps the file's OWN meter/key history too (docs/declared-vs-learner-spec.md)
@@ -16919,8 +16978,11 @@ function forkCurrentSong(name, folder) { // Save As: a copy in the folder you ch
   reflectSongURL(key);
   updateSongBtn();
   rollnotes = parseRollnotes(notesText).map(n => Object.assign(n, {added: true})).map(resolveNote);
-  rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null,
-    text: "forked from " + origin, added: true}));
+  // P4 (docs/annotations-v2.md, Q8): provenance goes in the v2 header now,
+  // not a "forked from <path>" note in the notes a person reads — stashed
+  // locally (setOrigin) until the first Publish writes it for real (originFor).
+  rollnotesOrigin = {kind: "copy", from: origin, at: new Date().toISOString()};
+  setOrigin(key, rollnotesOrigin);
   finalizeNotes();
   saveLocalNotes();
   // Bug found (docs/provenance-plan.md, while building "Make it mine"): a
@@ -19180,11 +19242,17 @@ async function commitImports(status, keys) { // ONE commit for the whole batch
       titles[key] = impDisplayTitle(d, base);
       songFiles.push({path: key,
         b64: midiBase64(writeMidi({ppq: d.ppq, timesig: d.timesig, ...(d.source ? {source: d.source} : {}), tempos: d.tempos, tracks: d.tracks}))});
+      // P4 (docs/annotations-v2.md): stash the origin regardless of whether
+      // this commit writes a .rollnotes.json below (no local notes yet) —
+      // publishSong's originFor falls back to this for the song's first
+      // EVER annotations publish, whenever that happens.
+      const importOrigin = {kind: "import", at: new Date().toISOString()};
+      setOrigin(key, importOrigin);
       let local = [];
       try { local = LINK_SONGS ? [] : JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { /* none */ }
       if (local.length) {
         const stamp = Date.now();
-        const content = serializeNotesList(local, 4, base, stamp);
+        const content = serializeNotesList(local, 4, base, stamp, importOrigin);
         analysisFiles.push({path: key.replace(/\.mid$/, "") + ".rollnotes.json", text: content});
         bridges.push({key, stamp, content});
       }
@@ -19495,7 +19563,10 @@ async function publishSong(key, h, report) {
 
   const beats = isOpen ? beatsPerBarDisp() : ((declaredTsForKey(key) || [4])[0]);
   const base = key.replace(/\.midi?$/i, ""), title = base.split("/").pop();
-  const content = serializeNotesList(notes, beats, title, stamp);
+  // P4 (docs/annotations-v2.md): the v2 header's origin — whatever's already
+  // on disk for this song (never re-derived once set), else what this
+  // device stashed at creation (fork/move/composition never yet published)
+  const content = serializeNotesList(notes, beats, title, stamp, originFor(key, notes));
   report("publishing annotations…");
   const r2 = await putRollnotes(base + ".rollnotes.json", content, h);
   if (!r2.ok) throw new Error(".rollnotes.json HTTP " + r2.status);
@@ -19612,12 +19683,15 @@ async function moveComposition(destDir) {
   // instead of a silently-rejected promise)
   if (rollnotesReadOnly) { fileStatus(rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; }
   // Leaving nightroll/ loses the by-directory editability, so the song
-  // carries its provenance with it (the draft rename below is device-local)
-  if (oldKey.startsWith(NR_DIR) && !rollnotes.some(n => n.text === "moved from " + oldKey)) {
-    rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null,
-      text: "moved from " + oldKey, added: true}));
-    finalizeNotes();
-    saveLocalNotes();
+  // carries its provenance with it (the draft rename below is device-local).
+  // P4 (docs/annotations-v2.md, Q8): movedFrom goes in the v2 header now,
+  // not a "moved from <path>" note — kind is kept as-is (a moved copy is
+  // still a copy, a moved composition still a composition); only the FIRST
+  // move out of nightroll/ is recorded, same as the note it replaces never
+  // got overwritten by a later move either.
+  if (oldKey.startsWith(NR_DIR) && !(rollnotesOrigin && rollnotesOrigin.movedFrom)) {
+    rollnotesOrigin = {...(rollnotesOrigin || {kind: originOf(oldKey)}), movedFrom: oldKey, at: new Date().toISOString()};
+    setOrigin(oldKey, rollnotesOrigin); // rides to newKey with every other per-song local key (renameLocalKeys, below)
   }
   const token = writeToken();
   const renameLocal = () => renameLocalKeys(oldKey, newKey); // every per-song key rides along
@@ -20471,6 +20545,7 @@ function drawAnalysisLayer(tickX, W) { // dashed/outlined — visually distinct 
 function adoptChordBand(entry) {
   if (!song) return;
   if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  if (rollnotesReadOnly) { setInfo(rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; } // P4 (docs/annotations-v2.md): closes P3's gap
   const fresh = {text: entry.text, chord: true, added: true};
   setAnchorBQ(fresh, entry.start);
   setEndBQ(fresh, entry.end);
@@ -20489,6 +20564,7 @@ function adoptChordBand(entry) {
 function adoptAllChords() {
   if (!song || !analysisBands.chords.length) return;
   if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  if (rollnotesReadOnly) { setInfo(rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; } // P4 (docs/annotations-v2.md): closes P3's gap
   const annoBefore = annoSnapshot();
   let n = 0;
   for (const entry of analysisBands.chords) {

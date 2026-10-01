@@ -80,7 +80,8 @@ test("rollnotes round-trip: parse → serialize → parse is stable", () => {
   const twice = run(`serializeRollnotes()`);
   assert.equal(twice, once);
   const doc = JSON.parse(once);
-  assert.equal(doc.version, 1);
+  assert.equal(doc.format, "night-roll-annotations"); // P4 (docs/annotations-v2.md): the writer is v2 now
+  assert.equal(doc.version, 2);
   const secN = doc.notes.find(x => x.type === "section");
   assert.deepEqual([secN.at, secN.to, secN.label.startsWith("A")], [[1, 1], [4, 4], true]);
   assert.ok(doc.notes.some(x => x.type === "key" && x.key === "G" && x.at[0] === 5));
@@ -2893,9 +2894,9 @@ test("cross-device freshness: stamps ride saves, drafts remember their base", ()
   installSong();
   run(`rollnotes = parseRollnotes("[1.1]\\ntimesig: 4/4\\n");`);
   const stamped = run(`serializeRollnotesStamped(1234567)`);
-  assert.equal(JSON.parse(stamped).saved, 1234567);
+  assert.equal(JSON.parse(stamped).stamp, 1234567); // v2 (docs/annotations-v2.md P4): "stamp", not v1's "saved"
   const unstamped = run(`serializeRollnotes()`);
-  assert.equal(JSON.parse(unstamped).saved, undefined); // pure serialization: no stamp
+  assert.equal(JSON.parse(unstamped).stamp, undefined); // pure serialization: no stamp
   // draft carries base stamp + dirty flag; clean save flips dirty off
   run(`
     songKey = "albums/compositions/nightroll/fresh-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
@@ -7992,6 +7993,7 @@ function openComposition(a, key, {tempoNoteBpm} = {}) {
     trackState = [{muted: false, solo: false}];
     localStorage.setItem(draftStoreKey(songKey), "{}"); // marks the local copy as ours (isComposition)
     rollnotes = [];
+    rollnotesOrigin = null; // P4 (docs/annotations-v2.md): real loadNotes() always resets this on open; this helper stands in for that
   `);
   if (tempoNoteBpm) a.run(`
     const n = resolveNote(deriveNoteTypes([{b1: 1, q1: 1, text: "tempo: " + ${tempoNoteBpm}}])[0]);
@@ -8022,7 +8024,7 @@ test("Publish: the same song published open and not open — byte-identical .mid
 
   assert.ok(midA && midB, "both runs wrote a .mid");
   assert.deepEqual([...midA], [...midB], "byte-identical .mid, published open or not");
-  delete annoA.saved; delete annoB.saved;
+  delete annoA.stamp; delete annoB.stamp; // v2 (docs/annotations-v2.md P4): "stamp", not v1's "saved"
   assert.deepEqual(annoA, annoB, "identical annotations, stamp aside");
   assert.equal(notesA, notesB, "identical notes.txt");
   // and the tempo: annotation is BAKED into the .mid for his own song (150 bpm = 400000 usq)
@@ -8183,6 +8185,7 @@ test("✎ Edit: opens the 'Edit a copy' sheet (name defaults to the title, folde
     currentPath = songKey;
     trackState = [{muted: false, solo: false}];
     rollnotes = [];
+    rollnotesOrigin = null; // P4 (docs/annotations-v2.md): real loadNotes() always resets this on open; this helper stands in for that
   `);
   openCapture();
   assert.equal(a.run(`originOf(songKey)`), "capture");
@@ -8553,4 +8556,133 @@ test("publishSong/annotationsFor (docs/annotations-v2.md P3): refuses to publish
   // nothing was written — not the .mid, not a rewritten .rollnotes.json
   assert.equal(await folderBytes(a, KEY), null, "no .mid was published");
   assert.equal(await folderText(a, RN), futureDoc, "the future file is untouched, byte-identical");
+});
+
+// ---- P4: .rollnotes v2 writer + stored origin (docs/annotations-v2.md, docs/provenance-plan.md) ----
+test("serializeNotesList (docs/annotations-v2.md P4): writes v2 — format/version, and every note still matches the schema's required shape", () => {
+  installSong();
+  run(`rollnotes = parseRollnotes("[1.1 - 4.4]\\nsection: A\\n\\n[5.1]\\nkey: G\\n\\n[3.1]\\ntempo: 90\\n").map(resolveNote);`);
+  const doc = JSON.parse(run(`serializeRollnotesStamped(1700000000000)`));
+  assert.equal(doc.format, "night-roll-annotations");
+  assert.equal(doc.version, 2);
+  assert.equal(typeof doc.song, "string");
+  assert.equal(doc.stamp, 1700000000000);
+  assert.ok(Array.isArray(doc.notes) && doc.notes.length === 3);
+  const TYPES = ["section", "chord", "key", "timesig", "tempo", "track", "loop", "audio", "chop", "lane"];
+  for (const n of doc.notes) { // docs/annotations-v2.schema.json's $defs.note: "at" required, "type" (if present) is one of these
+    assert.ok(Array.isArray(n.at) && n.at.length >= 1 && n.at.length <= 2, JSON.stringify(n));
+    if (n.type !== undefined) assert.ok(TYPES.includes(n.type), JSON.stringify(n));
+  }
+});
+
+test("v2 round-trip (docs/annotations-v2.md P4): parse → serialize (origin included) is a byte-identical fixed point", () => {
+  installSong();
+  run(`
+    rollnotes = parseRollnotes("[1.1 - 4.4]\\nsection: A\\n\\n[3.1]\\nkey: G\\n").map(resolveNote);
+    rollnotesOrigin = {kind: "copy", from: "albums/nes/mega-man-2/air-man.mid", at: "2026-10-01T00:00:00.000Z"};
+  `);
+  const once = run(`serializeRollnotesStamped(1759296000000)`);
+  run(`
+    const __parsed = parseRollnotesJSON(${JSON.stringify(once)});
+    rollnotes = __parsed.map(resolveNote);
+    rollnotesOrigin = __parsed.origin;
+  `);
+  const twice = run(`serializeRollnotesStamped(1759296000000)`);
+  assert.equal(twice, once, "re-serializing an unchanged v2 doc, origin included, is byte-identical — no churn on a no-op publish");
+  const doc = JSON.parse(once);
+  assert.deepEqual(doc.origin, {kind: "copy", from: "albums/nes/mega-man-2/air-man.mid", at: "2026-10-01T00:00:00.000Z"});
+});
+
+test("originOf (docs/annotations-v2.md P4): the stored header's origin.kind wins outright, even where the legacy path-sniffing derivation would land on something else", () => {
+  installSong();
+  run(`songKey = "albums/my-covers/stamped-import.mid"; rollnotes = [];
+       localStorage.removeItem(draftStoreKey(songKey)); // no draft, no d.source — the legacy derivation falls through to "composition"
+       rollnotesOrigin = {kind: "import", at: "2026-10-01T00:00:00.000Z"};`);
+  assert.equal(run(`originOf(songKey)`), "import", "the stored header settles it — no draft/source sniffing needed");
+});
+
+test("forkCurrentSong (docs/annotations-v2.md P4): writes origin.from in the v2 header, never a 'forked from' note — and publishes that way", async () => {
+  const SRC = "albums/compositions/nightroll/zz-fork-origin-src.mid";
+  const NEW = "albums/my-covers/zz-fork-origin-dest.mid";
+  const a = pubApp();
+  useFakeFolder(a, "fork-origin");
+  openComposition(a, SRC);
+  a.run(`forkCurrentSong("Zz Fork Origin Dest", "my-covers")`);
+  assert.equal(a.run(`songKey`), NEW, "the fork is open at its new path");
+  const origin = JSON.parse(a.run(`JSON.stringify(rollnotesOrigin)`));
+  assert.equal(origin.kind, "copy");
+  assert.equal(origin.from, SRC);
+  assert.ok(origin.at, "a timestamp was recorded");
+  assert.ok(!JSON.parse(a.run(`JSON.stringify(rollnotes.map(n => n.text || ""))`)).some(t => /^forked from /.test(t)), "no legacy provenance note was written into the notes a person reads");
+
+  await a.run(`publishSong(${JSON.stringify(NEW)}, ghHeaders("folder"), () => {})`);
+  const anno = JSON.parse(await folderText(a, "albums/my-covers/zz-fork-origin-dest.rollnotes.json"));
+  assert.deepEqual(anno.origin, {kind: "copy", from: SRC, at: origin.at});
+  assert.ok(!(anno.notes || []).some(n => n.text && /^forked from /.test(n.text)));
+});
+
+test("moveComposition (docs/annotations-v2.md P4): writes origin.movedFrom in the v2 header, keeping kind — never a 'moved from' note", async () => {
+  const oldKey = "albums/compositions/nightroll/zz-move-origin.mid";
+  const newDir = "albums/compositions/zz-moved-origin/";
+  const newKey = newDir + "zz-move-origin.mid";
+  const a = pubApp();
+  useFakeFolder(a, "move-origin");
+  openComposition(a, oldKey, {tempoNoteBpm: 150});
+  a.run(`CATALOG = ${JSON.stringify({"Night Roll Sketches": [["Zz Move Origin", oldKey]]})};`); // published: the move goes through publishSong
+
+  await a.run(`moveComposition(${JSON.stringify(newDir)})`);
+
+  assert.equal(a.run(`songKey`), newKey);
+  const origin = JSON.parse(a.run(`JSON.stringify(rollnotesOrigin)`));
+  assert.equal(origin.kind, "composition", "kind is kept as whatever it already was — a moved composition is still a composition");
+  assert.equal(origin.movedFrom, oldKey);
+  assert.ok(!JSON.parse(a.run(`JSON.stringify(rollnotes.map(n => n.text || ""))`)).some(t => /^moved from /.test(t)), "no legacy provenance note was written");
+
+  const anno = JSON.parse(await folderText(a, newDir + "zz-move-origin.rollnotes.json"));
+  assert.deepEqual(anno.origin, {kind: "composition", movedFrom: oldKey, at: origin.at});
+});
+
+test("Publish (docs/annotations-v2.md P4): a v1 file comes out v2 on its very next publish, notes unchanged", async () => {
+  const KEY = "albums/nes/final-fantasy-i/songs/zz-v1-upgrade.mid"; // an analyzed song: annotations only, no music draft (same shape as the tomb-test/version-guard tests above)
+  const RN = KEY.replace(/\.mid$/, ".rollnotes.json");
+  const a = pubApp();
+  useFakeFolder(a, "v1-upgrade");
+  const v1 = '{ "version": 1, "song": "zz-v1-upgrade", "notes": [\n' +
+    '  {"at":[1,1],"type":"section","label":"Intro"},\n' +
+    '  {"at":[5,1],"type":"key","key":"G"}\n] }\n';
+  await a.run(`folderWrite(${JSON.stringify(RN)}, ${JSON.stringify(v1)})`);
+
+  await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
+
+  const anno = JSON.parse(await folderText(a, RN));
+  assert.equal(anno.format, "night-roll-annotations");
+  assert.equal(anno.version, 2);
+  assert.deepEqual(anno.notes, [{at: [1, 1], type: "section", label: "Intro"}, {at: [5, 1], type: "key", key: "G"}],
+    "the same notes, byte-for-byte the same per-entry shape v1 always wrote — only the header changed");
+});
+
+test("manual annotation writes (docs/annotations-v2.md P4): refuse on a locked song — closes P3's known gap (note editor Save/Delete, paste, Adopt)", () => {
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/zz-locked-editor.mid";
+    rollnotes = [resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "existing"})];
+    rollnotesReadOnly = true;
+    rollnotesLockReason = ROLLNOTES_LOCK_MSG;
+    editingNote = rollnotes[0];
+  `);
+  run(`document.getElementById("nsave").click();`);
+  assert.equal(run(`rollnotes.length`), 1, "Save wrote nothing on a locked song");
+  assert.match(run(`document.getElementById("nstatus").textContent`), /newer Night Roll/);
+
+  run(`document.getElementById("nstatus").textContent = ""; document.getElementById("ndelete").click();`);
+  assert.equal(run(`rollnotes.length`), 1, "Delete removed nothing on a locked song");
+  assert.match(run(`document.getElementById("nstatus").textContent`), /newer Night Roll/);
+
+  run(`annoClipboard = [{dt: 0, len: null, json: {at: [2, 1], text: "pasted"}}]; pasteAnnotations(0, 0);`);
+  assert.equal(run(`rollnotes.length`), 1, "a lasso'd-annotation paste landed nothing on a locked song");
+
+  run(`adoptChordBand({text: "C", start: 0, end: 480});`);
+  assert.equal(run(`rollnotes.length`), 1, "Adopt wrote nothing on a locked song");
+
+  run(`rollnotesReadOnly = false; annoClipboard = [];`); // leave globals clean for any test that runs after this one
 });

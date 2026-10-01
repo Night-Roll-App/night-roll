@@ -67,18 +67,37 @@ function every publish and Move reads through — throws on it, so
 Publish/Publish all/Move refuse with the ⚠ message; the ✦ Ask tool's
 add/edit/delete_annotation refuse the same way. `hasProvenanceNote`/
 `originOf` now read a v2 file's `origin.from`/`origin.movedFrom` first,
-falling back to the legacy note-text scan. Writer still writes v1 — **next:
-an iPad build with this reader before P4 ever writes a v2 file** (so no
-device meets one it can't read). tools/query-lib.mjs's `loadSong` exposes
+falling back to the legacy note-text scan. Writer still wrote v1 at this
+point — the iPad build with this reader shipped before P4 below ever
+wrote a v2 file (so no device meets one it can't read).
+tools/query-lib.mjs's `loadSong` exposes
 `rollnotesVersion`/`rollnotesReadOnly`/`rollnotesOrigin` for the same
-guard, for whenever a tool writes one (none does yet). Known gap, not
-fixed here (small, pre-existing risk — flagging for P4/P5): the in-app
-note editor and chord/section dialogs don't yet check
-`rollnotesReadOnly` before `dropSupersededBy`/`rollnotes.push` — a locked
-song's local edits still land in-memory and in `localStorage`, just can
-never publish (annotationsFor refuses). · P4 stored origin + v2 writer ·
-P5 batch migration (Josh: format conversion isn't editing — no per-song
-approval) · P6 tools + docs.
+guard. Known gap at the time, closed in P4 below: the in-app note editor
+and chord/section dialogs didn't yet check `rollnotesReadOnly` before
+`dropSupersededBy`/`rollnotes.push`.
+· **P4 DONE (2026-10-01): stored origin + v2 writer** — see
+docs/annotations-v2.md ("Writer" + "Stored origin"), NIGHT-ROLL.md's
+".rollnotes format" (the P4 paragraphs) and tests/night-roll.test.mjs's
+"P4:" tests. `serializeNotesList`/`serializeRollnotes`/
+`serializeRollnotesStamped` write v2 (`format`/`version: 2`, optional
+`origin`) through every writer (`publishSong`, `commitImports`, the iPad
+Files mirror, Copy/Download) — a pure, byte-stable function, same as v1's
+`saved` stamp always was. `forkCurrentSong`/`moveComposition`/
+`createComposition`/`commitImports` now set `origin.kind`/`from`/
+`movedFrom` directly instead of writing a `"forked from"`/`"moved from"`
+note (Q8); a not-yet-published song's origin stashes in
+`localStorage["ff1roll-origin-" + key]` until its first Publish writes it
+for real, and every later publish re-reads whatever's already on disk
+(`originFor`) rather than re-deriving it. `originOf(key)` now checks the
+open song's stored `rollnotesOrigin.kind` first, outright, before P1's
+path/draft/note derivation runs. P3's known gap is closed: the note
+editor Save/Delete, chord/section/key dialogs, lasso-annotation paste,
+the chord tool, and Analyze → Adopt all refuse on a locked song now, the
+same `ROLLNOTES_LOCK_MSG` Publish/Move/the Ask tool already used. A v1
+file upgrades to v2 the next time the app publishes that song (notes
+unchanged) — reading one and never publishing writes nothing. ·
+**P5 batch migration** (Josh: format conversion isn't editing — no
+per-song approval) · P6 tools + docs.
 Anchors stay [bar, beat] (readable, diffable; re-bar conversion exists).
 
 ## Addendum (advisor, after Josh's "your copy is yours" idea) — TAKEN, built in P1

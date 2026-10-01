@@ -260,9 +260,12 @@ see "Chip captures are locked" below. **Chip captures are
 locked** — Save refuses anything outside nightroll/ (regenerable
 pipeline output; a stray thumb must not corrupt the corpus) — but
 File→Save As forks ANY song into nightroll/ with rollnotes inherited
-verbatim plus a "forked from <path>" note (drift is Josh's to own, no
-app warnings — ruled). Cross-device freshness (2026-08-16): every repo write stamps the
-rollnotes with 'saved' (epoch ms); drafts remember the stamp they're
+verbatim plus provenance recording where it came from (drift is Josh's to
+own, no app warnings — ruled) — a `"forked from <path>"` note through
+2026-09-30; P4 (2026-10-01, docs/annotations-v2.md) moved that into the v2
+file's `origin.from` header instead (see "Stored origin" above); old files
+still carry (and this app still reads) the note. Cross-device freshness (2026-08-16): every repo write stamps the
+rollnotes with 'saved' (epoch ms; v2 calls the same field `stamp`); drafts remember the stamp they're
 based on plus a dirty flag. Load compares — newer repo + clean draft
 switches to the repo silently; newer repo + dirty draft asks (keep
 draft / take newer save); otherwise the draft wins as before. Offline
@@ -284,11 +287,13 @@ tightening): nightroll/ is always editable; a song elsewhere under
 compositions/ is editable only with a local draft on THIS device or a
 provenance note at the top of the rollnotes — "forked from <path>"
 (written by Save As) or "moved from <path>" (written by Move when it
-leaves nightroll/, 2026-09-07). The note is what survives devices and
-git; a draft is one machine's. Josh's Logic exports under compositions/
+leaves nightroll/, 2026-09-07) through 2026-09-30; P4 writes `origin.from`/
+`origin.movedFrom` in the v2 header instead (hasProvenanceNote/originOf
+read either). The note (or header) is what survives devices and git; a
+draft is one machine's. Josh's Logic exports under compositions/
 have neither and stay locked (writeMidi would strip their CCs/programs).
-**Promoting a sketch by hand (git mv) MUST add the "moved from" note
-too** — Threnody was promoted by rename on 2026-09-07 and came up locked
+**Promoting a sketch by hand (git mv) MUST add the "moved from" note (or
+origin.movedFrom) too** — Threnody was promoted by rename on 2026-09-07 and came up locked
 on the machine that wrote it. **Score-side entry SHIPPED same day** (the promised
 follow-up): Pencil/Erase work in score view — the tapped stave picks the
 track, the vertical position picks the diatonic step (calibrated at
@@ -377,7 +382,10 @@ a v2 header) · `import` (a MIDI file brought in; its own labels kept in
 pieces) — built from what already exists (`isCaptureKey`, `bundledPath`,
 `ownFolderPath`, a draft's `source` field, a "forked from" note in the
 open song's rollnotes or the `ff1roll-notes-<key>` local stash), since
-nothing is stored yet (P4). `RULES[origin]` is a table of `{editNotes,
+nothing is stored yet (P1; **P4 now stores it — see "Stored origin (P4)"
+above: the open song's `rollnotesOrigin.kind`, when present, is checked
+FIRST and wins outright, before any of this P1 derivation runs**).
+`RULES[origin]` is a table of `{editNotes,
 bakeTempo, bakeMeter, writesMid}`; `rulesFor(key)` looks it up.
 `canEditMusic(key)` — `!key` (songKey === null) or a `local/` key is
 always editable; otherwise a local draft AND `rulesFor(key).editNotes`
@@ -1152,25 +1160,60 @@ line-per-change:
 ] }
 ```
 
-**v2 (P3, 2026-10-01, docs/annotations-v2.md + its JSON Schema):** same
-shape plus a header — `format: "night-roll-annotations"`, `version: 2`,
-optional `origin` ({kind: composition|copy|import|capture|starter, from?,
-movedFrom?, at?} — structured form of the `"forked from <path>"`/
-`"moved from <path>"` notes below), `stamp` (v1's `saved`, renamed so a v2
-reader can't confuse the two). `notes` is byte-identical to v1's — same
-per-entry schema, same deriver. **The reader (every device) accepts v1 and
-v2 transparently as of 2026-10-01; the writer still writes v1** (P4 switches
-it, then P5 migrates every existing file — Josh's ruling: that rewrite is a
-format conversion, not editing his songs). A file whose `version` is higher
-than this app understands (or whose `format` it doesn't recognize) opens
-READ-ONLY: `rollnotesReadOnly`/`rollnotesLockReason` (index.html, set in
-`loadNotes`) carry the ⚠ "written by a newer Night Roll" state for the open
-song, and `annotationsFor` — the one function every publish/Move reads
-through before writing — throws on it, so Publish/Publish all/Move refuse
-with that message. Tools: `tools/query-lib.mjs`'s `loadSong` surfaces
-`rollnotesVersion`/`rollnotesReadOnly`/`rollnotesOrigin` on its `doc` for
-the same reason — nothing rewrites a `.rollnotes.json` today, but the P5
-migration tool will have to check it.
+**v2 (P3 reader 2026-10-01, P4 writer 2026-10-01, docs/annotations-v2.md +
+its JSON Schema):** same shape plus a header — `format:
+"night-roll-annotations"`, `version: 2`, optional `origin` ({kind:
+composition|copy|import|capture|starter, from?, movedFrom?, at?} —
+structured form of the `"forked from <path>"`/`"moved from <path>"` notes
+below), `stamp` (v1's `saved`, renamed so a v2 reader can't confuse the
+two). `notes` is byte-identical to v1's — same per-entry schema, same
+deriver. **The reader (every device) accepts v1 and v2 transparently; the
+writer is v2 as of P4** — `serializeNotesList`/`serializeRollnotes`/
+`serializeRollnotesStamped` (index.html) now take an `origin` to put in the
+header and always emit `format`/`version: 2`; every path that writes a
+`.rollnotes.json` goes through it (`publishSong`, `commitImports`, the
+iPad Files mirror, Copy/Download). A v1 file upgrades to v2 the next time
+the app PUBLISHES that song (natural migration, notes unchanged) — reading
+one and never publishing writes nothing; **P5** is the one-time batch
+migration of every file that's never republished on its own (Josh's
+ruling: a format conversion, not editing his songs). A file whose
+`version` is higher than this app understands (or whose `format` it
+doesn't recognize) opens READ-ONLY: `rollnotesReadOnly`/
+`rollnotesLockReason` (index.html, set in `loadNotes`) carry the ⚠
+"written by a newer Night Roll" state for the open song, and
+`annotationsFor` — the one function every publish/Move reads through
+before writing — throws on it, so Publish/Publish all/Move refuse with
+that message; as of P4 every MANUAL annotation edit path refuses the same
+way before it ever lands in `rollnotes`/localStorage — the note editor's
+Save/Delete, the chord/section/key dialogs (all one editor, `#nsave`/
+`#ndelete`), lasso paste (`pasteAnnotations`), the chord tool
+(`insertChordAt`), and Analyze → Adopt (`adoptChordBand`/
+`adoptAllChords`) — closing the gap P3 flagged (only the ✦ Ask tool and
+Publish/Move refused before). Tools: `tools/query-lib.mjs`'s `loadSong`
+surfaces `rollnotesVersion`/`rollnotesReadOnly`/`rollnotesOrigin` on its
+`doc` for the same reason; `tools/import-set.mjs` runs the in-app
+`commitImports` through the vm harness, so it gets the v2 writer for free.
+
+**Stored origin (P4):** `origin.kind`/`from`/`movedFrom` are now set where
+they're KNOWN, not derived from a note — `forkCurrentSong` (Save As/✎ Edit
+a copy/"Make it mine") sets `{kind: "copy", from: <source path>, at}`;
+`moveComposition` sets `movedFrom` (keeping whatever `kind` the song
+already had) the first time a song leaves nightroll/; `createComposition`
+sets `{kind: "composition", at}`; `commitImports` sets `{kind: "import",
+at}`. None of these write a `"forked from"`/`"moved from"` NOTE into
+`rollnotes` any more (Q8) — a song not yet published stashes its pending
+origin in `localStorage["ff1roll-origin-" + key]` (`setOrigin`/
+`pendingOrigin`, carried by `renameLocalKeys` like every other per-song
+key); `publishSong` writes whatever's ALREADY on the file on disk
+(`annotationsFor(key).origin`, preserved through `subtractTombstones` now)
+if there is one, else that pending stash (`originFor(key, notes)`) — so a
+song's origin is set once and rides forward unchanged through every later
+publish. `originOf(key)` now checks the OPEN song's stored
+`rollnotesOrigin.kind` FIRST, before any of the old path/draft/note
+sniffing — a v2 file's header settles it outright. The legacy
+`"forked from <path>"`/`"moved from <path>"` note text (and
+`hasProvenanceNote`'s fallback scan for it) still reads forever, for every
+file P4 doesn't touch until it next publishes.
 
 Source fields only: `at`/`to` are [bar, beat] (beats may be fractional;
 `to` beat omitted = end of bar), `type` + its value field(s), free

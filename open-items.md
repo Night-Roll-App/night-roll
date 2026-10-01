@@ -105,6 +105,35 @@ as-is); the un-baked base still lives only in the local draft, not the
 file itself (P4's v2 header); "three copies of the editable? test
 disagree" (P1); the tools/ scripts that read the legacy text grammar.
 
+## docs/provenance-plan.md P3 + P4 — DONE 2026-10-01: .rollnotes v2, reader then writer
+
+P3 (reader + version guard, shipped first so no device ever meets a v2
+file it can't read) then P4 (writer) — see docs/annotations-v2.md,
+docs/annotations-v2.schema.json, NIGHT-ROLL.md's ".rollnotes format", and
+tests/night-roll.test.mjs's "annotations v2"/"P4:" tests. `npm test`
+green (full suite).
+
+P4: `serializeNotesList`/`serializeRollnotes`/`serializeRollnotesStamped`
+write v2 (`format`/`version: 2`, optional `origin`) through every writer
+(`publishSong`, `commitImports`, the iPad Files mirror, Copy/Download) —
+a v1 file upgrades to v2 the next time the app publishes it, notes
+unchanged. `forkCurrentSong`/`moveComposition`/`createComposition`/
+`commitImports` now set `origin.kind`/`from`/`movedFrom` directly instead
+of writing a `"forked from"`/`"moved from"` note (Q8, DONE — six existing
+files get it in P5); a not-yet-published song's origin stashes in
+`localStorage["ff1roll-origin-" + key]` until the first Publish writes it
+for real, and every later publish re-reads whatever's already on disk
+rather than re-deriving it. `originOf(key)` checks a stored
+`rollnotesOrigin.kind` first, outright. Closed P3's known gap: the note
+editor Save/Delete, chord/section/key dialogs, lasso-annotation paste,
+the chord tool, and Analyze → Adopt all refuse on a locked (too-new) song
+now, same message Publish/Move/the Ask tool already used.
+
+Next: **P5**, the one-time batch migration of every file P4's
+natural publish-time upgrade doesn't reach on its own (not done here —
+Q3 ruling already covers it: format conversion isn't editing, no
+per-song approval needed).
+
 ## IMPORT HUB — DONE 2026-09-29 (docs/import-hub-design.md, Josh: "I still hate the file import line")
 
 All three phases, built exactly to the reviewed design. `npm test` green
