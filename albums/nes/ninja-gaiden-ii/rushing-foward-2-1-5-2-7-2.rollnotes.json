@@ -1,3 +1,3 @@
-{ "version": 1, "song": "rushing-foward-2-1-5-2-7-2", "saved": 1790564444248, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "rushing-foward-2-1-5-2-7-2", "origin": {"kind":"capture"}, "stamp": 1790564444248, "notes": [
   {"at":[39,1],"type":"loop","loop":"3.1"}
 ] }
