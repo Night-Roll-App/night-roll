@@ -23,6 +23,136 @@ DONE: Q10 — graveyard-3 was copied from graveyard-2 (Josh, 2026-10-01); the le
 his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
 own songs; "Publish all" = one publish per song; explicit song origins.
 
+## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
+Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
+wash" using the hardware NOISE generator as a texture, not a drum — but
+`tools/spc/notes.mjs` called EVERY NON voice a GM drum unconditionally,
+so it got named "drums" and `index.html`'s `drumHit` turned each ~4s
+swell into a bright 45ms click.
+
+Fixed, generic (not FF4-specific): `reconstruct()` now classifies each
+NON voice after the fact — `classifyNoiseVoices`, `DRUM_MIN_HITS` (8) and
+`DRUM_MAX_MEDIAN_DUR_SEC` (0.5), same kind of rhythm evidence
+`tools/kit-guess.mjs` uses — documented in `tools/spc/INTEGRATION.md` §6
+and NIGHT-ROLL.md. A voice that doesn't qualify keeps its own `voiceN`
+track (never folded into the merged "drums" track) and its pitch is
+unchanged. `drumHit` also stopped collapsing a long captured duration
+(≥1s) to the fixed 45ms tick — it now sustains a decaying noise burst
+over the real length (capped at 8s). Tests: `tests/spc.test.mjs` ("NON
+voice classification: …", 3 cases) and `tests/night-roll.test.mjs`
+("drumHit: a long captured duration…"). `npm test`: 345/347 (2
+pre-existing failures are the concurrent footer-builder session's
+#syncbtn/#viewbtn work, confirmed unrelated — not this change's).
+
+Scanned every SNES capture album for a published "drums" track (the only
+songs rule 1 can possibly affect): 14 songs across chrono-trigger,
+final-fantasy-4, final-fantasy-6. 12 RECLASSIFY to a texture voice (the
+unconditional-drum rule was wrong almost everywhere it fired):
+chrono-trigger/{blackbird-outside, earthquake, last-battle, ocean-waves,
+quiet-beach, tsunami, voice-of-lavos} (all 7 of CT's "drums" songs),
+final-fantasy-4/{main-theme-ocean, the-package-opens, tranquil-beach}
+(all 3 of FF4's), final-fantasy-6/{blazing-fire, quiet-beach} (2 of 4).
+Unchanged, stay real drums: final-fantasy-6/{the-phantom-train, train}
+(train-wheel rhythm, ~32-34 short regular hits — correctly still a kit).
+
+Dry-run re-capture (scratch/snes-drum-audit/{audit,recapture_final,
+midi-read}.mjs — rip zips from /tmp/claude-501/rips/snes, capture
+`secs` read from each album.json's `nsf.tracks[song].secs` so the window
+matches what was actually captured) produced new .mid files for all 12 in
+scratch/snes-drum-audit/final/ — NOT written to albums/. Per-song note
+EVENT COUNTS match the published files exactly for all 12 (confirms the
+classifier only moves notes between tracks/channels, never adds, drops,
+or retimes one — provable from the code too: `classifyNoiseVoices` only
+clears `e.drum` after reconstruction, touching nothing else). 3 of the 12
+(blackbird-outside, ocean-waves, tranquil-beach) come out byte-identical
+to the published .mid outright. The other 9 match in count and are close
+(a handful of ticks) but not byte-identical: some published songs were
+originally captured with `snap:false` ("raw hardware timing" — confirmed
+by reproducing voice-of-lavos and the-package-opens byte-exact with
+`snap:false`, and tranquil-beach byte-exact with `snap:true`), a
+per-song call this session can't recover from the repo. That choice is
+orthogonal to this fix (it's `makeMidi`'s existing `snap` option, applied
+the same way to every voice in a song) — not something rule 1 touches.
+
+Before applying: run a REAL re-capture through the app's own import flow
+(File → Import → Super NES, same pipeline that made the published
+albums — the browser path knows each song's actual historical capture
+length/snap choice; this session's CLI approximation doesn't) for the 12
+songs above, then gate it the same way the 2026-09-30 PS1/PS2 effort did
+(notes equal the published ones, nothing melodic lands on channel 9) —
+tmp/recapture-writer.sh/-writer2.sh no longer exist in the tree (that was
+a one-off; this session didn't recreate it). I did NOT touch albums/.
+
+Also found, not fixed (out of scope — no SPC console-audio renderer
+exists yet): `index.html`'s SPC import still says "synth voices; no
+console audio yet" (`CHIPS.spc.files` lists `"?spc/apu-render"` as
+optional/unused). If/when one lands, its PCM would be keyed per-voice
+("voice0".."voice7", `tools/spc/apu-render.mjs`) but a drum-classified
+voice's MIDI track is the single merged "drums" name — `chipHas()` would
+need a name-mapping fix before a drum track could play real console
+audio, same as every other kind already does. Noted in
+`tools/spc/INTEGRATION.md` §6.
+
+## docs/chrome-density-plan.md steps 1-3 DONE 2026-10-01, not committed/pushed
+
+Built per spec (CLAUDE.md shipping checklist; this session was told not to
+commit/push — that's the parent terminal session's call after Josh's
+browser check):
+
+1. Claude status out of the header: #nowchip (markup/CSS/JS) is gone; the
+   AI window's #asknowstrip keeps the full line, now line-clamped to 2
+   rows instead of truncating to 1. ✦ AI (#askbtn) gets a `working` class
+   (pulsing ::before dot — ::after stays .hasnote's ✉) and an aria-label
+   ("Talk to the AI tutor — Claude Code is working: …") on the same
+   bridge-connected-and-not-idle condition the old chip used. Help's
+   "What Claude Code is doing now" dd rewritten (dt kept verbatim).
+2. 🎓 Learning tag: #modepill, a gold pill at the header's right end
+   (where #nowchip sat), visible only in Learning mode, collapsing to the
+   bare 🎓 under the header's ~860px container width (same compact-icon
+   trick #nowchip used). Tap opens View ▾ (viewsheetbtn.click()) — never
+   toggles the mode; in Listener mode it stays visible (Learning/Listener
+   are independent switches) but is inert, since View ▾ itself is hidden
+   there. #lcdmode removed from the LCD; boot + applyMode() point at
+   #modepill instead. Help's "🎓 Learning mode" dd now describes the tag.
+3. Track chips: H off the chip. renderTrackbar only appends the H toggle
+   when the track IS hidden (lit gold, aria-pressed=true; one tap unhides
+   via the same trackToggle(ti, "hidden")) — otherwise the chip is just
+   dot/name/M/S, ~24px narrower. Hiding itself now starts from a new
+   "Hide notes" toggle (#vmhide, aria-pressed) in the chip's voice menu
+   header row (buildVoiceMenu); the Mixer keeps its own always-visible H.
+   Help's "H hides the track" sentence rewritten to say where the toggle
+   lives now (kept the exact phrase, added FEATURES keyword "lit H").
+
+tests/night-roll.test.mjs: the status test (~6256) now asserts
+#askbtn.working + its aria-label instead of #nowchip; the VoiceOver chip
+test split into a not-hidden case (4 children) and a hidden case (5th =
+lit H); added a #vmhide toggle test. `node tools/build_help.mjs` run
+after the help edits. `npm test` green (vm suite only — CLAUDE.md: no
+local Playwright).
+
+4. DONE 2026-10-01 (second builder, same session) — Notes popover: ☰ Notes
+   ▴ (#listbtn) opens a drop-up (#notesmenu: + New note/#notebtn, ☰ All
+   notes/#notesall). Scope grew mid-build (Josh): the footer's view button
+   (#viewbtn) and ⋯ More (#moresheet) became drop-ups too, same shared
+   openDropUp()/closeDropUp() helper — #viewbtn's own label now names the
+   CURRENT view ("▦ Roll ▴"), and ⋯ More is no longer a dockable window
+   (out of makeWindow()/docking.spec's WINDOWS; a stale docked "moresheet"
+   id is purged from wm on load).
+5. DONE 2026-10-01 — Readout inline + fitReadline: #readline back in the
+   button row (flex: 1 1 300px; .footerspacer dropped), fitReadline()
+   (ResizeObserver + a MutationObserver, both vm-harness-guarded) adds
+   .ownrow under a 300px leftover. docking.spec's readout check: #noteinfo
+   ≥ 300px OR (#readline.ownrow AND #noteinfo ≥ 60% of the footer).
+
+Full writeup: NIGHT-ROLL.md "Chrome density pass (2026-10-01)" §4-5;
+docs/chrome-density-plan.md build order marked done through step 5.
+`node tools/build_help.mjs` run after the help edits.
+
+STILL QUEUED: Josh's own browser check at 1376px and ~1030px (6-note
+lasso, a hidden track, Learning on/off) — then commit + push (parent
+terminal session's call, per instructions; this sub-session did not
+commit/push and ran no Playwright).
+
 ## docs/footer-redesign-plan.md Option A v2 — steps 1-5 DONE 2026-09-30, not pushed
 
 Built per spec, delegated to Sonnet (plan-then-delegate): #readline

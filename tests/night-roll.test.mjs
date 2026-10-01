@@ -2641,7 +2641,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "⋯ More",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "⋯ More", "+ New note",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -6253,7 +6253,7 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
   }
 });
 
-test("status: /v1/status is polled like the inbox — the strip shows in EVERY tab and a header chip while the bridge is there; no current line = idle; a 404 hides it and stops asking", async () => {
+test("status: /v1/status is polled like the inbox — the strip shows in EVERY tab and ✦ AI pulses while the bridge is working; no current line = idle (no pulse); a 404 hides the strip, drops the pulse, and stops asking", async () => {
   installSong();
   // other boot-scheduled fetches (catalog/manifest) can still land on a later
   // microtask turn once a real `fetch` exists — filter to /v1/status so they
@@ -6274,13 +6274,17 @@ test("status: /v1/status is polled like the inbox — the strip shows in EVERY t
     // ♪ this song is showing: the strip shows there too now (Josh, 2026-09-30: every tab)
     assert.equal(val(`document.getElementById("asknowstrip").style.display`), "");
     assert.equal(val(`document.getElementById("asknowstrip").textContent`), "Claude Code working: running tests · 3m ago");
-    assert.equal(val(`document.getElementById("nowchip").textContent`), "Claude: working: running tests", "and the header chip");
+    // Chrome density pass (2026-10-01): the header chip is gone — ✦ AI gets
+    // the "working" class (a pulsing dot) and a status aria-label instead.
+    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), true, "and ✦ AI pulses");
+    assert.equal(val(`document.getElementById("askbtn").getAttribute("aria-label")`), "Talk to the AI tutor — Claude Code is working: running tests");
     assert.equal(val(`document.getElementById("jobsnow").textContent`), "Now: running tests");
-    // no current line: idle, still shown (the bridge is there)
+    // no current line: idle, still shown (the bridge is there) — but no pulse
     run(`globalThis.fetch = async (u) => !String(u).includes("/v1/status") ? Promise.reject(new Error("no network in tests"))
          : {ok: true, status: 200, json: async () => ({now: null, recent: []})};`);
     await run(`askStatusPoll()`);
-    assert.equal(val(`document.getElementById("nowchip").textContent`), "Claude: idle");
+    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), false, "idle: no dot");
+    assert.equal(val(`document.getElementById("askbtn").getAttribute("aria-label")`), "Talk to the AI tutor");
     assert.equal(val(`document.getElementById("jobsnow").style.display`), "none");
     // a 404 marks this url status-less, like the inbox's askInboxNo — never asked again
     run(`globalThis.__calls2 = 0;
@@ -6289,7 +6293,8 @@ test("status: /v1/status is polled like the inbox — the strip shows in EVERY t
     await run(`askStatusPoll()`);
     await run(`askStatusPoll()`);
     assert.equal(val(`__calls2`), 1);
-    assert.equal(val(`document.getElementById("nowchip").style.display`), "none", "no bridge: no chip");
+    assert.equal(val(`document.getElementById("asknowstrip").style.display`), "none", "no bridge: no strip");
+    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), false, "no bridge: no dot");
   } finally {
     run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; askCaps = {bridge: false, terminal: false};
          askStatusNow = null; askStatusRecent = []; askStatusNo = ""; askGeneral = false; songKey = null; song = null;`);
@@ -7162,23 +7167,26 @@ test("8va (footer v2, 2026-09-30): an always-visible toggle in ⋯ More — reac
   assert.equal(a.run(`selOctaves`), true);
 });
 
-test("footer v2 tweaks (2026-09-30): Publish is back on the footer bar (before ⋯ More), and ⋯ More's own markup no longer holds the VIEW segment or the key picker", () => {
+test("footer v2 tweaks (2026-09-30) → chrome density pass (2026-10-01): Publish is back on the footer bar (before ⋯ More), and ⋯ More's own markup no longer holds the VIEW segment or the key picker", () => {
   // this is a markup-shape check, not a DOM-structure one — the vm harness's
   // document stub (tests/harness.mjs) vivifies elements by id on first
   // getElementById() with no real parent/child tree, so "X is inside the
   // footer" can only be asked of the raw HTML text, the same way the
   // "help sheet"/"Import hub" drift guards above do.
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const footer = html.slice(html.indexOf("<footer>"), html.indexOf("</footer>"));
+  const footer = html.slice(html.indexOf("<footer"), html.indexOf("</footer>"));
   assert.match(footer, /id="syncbtn"/, "Publish (#syncbtn) is a direct footer button again");
   assert.match(footer, /id="moresheetbtn"/, "⋯ More is still the footer's last button");
-  const order = ["viewbtn", "lassobtn", "instbtn", "footerspacer", "listbtn", "notebtn", "syncbtn", "moresheetbtn"]
-    .map(id => id === "footerspacer" ? footer.indexOf('class="footerspacer"') : footer.indexOf('id="' + id + '"'));
+  // #notebtn moved OUT of the footer into #notesmenu (the ☰ Notes ▴ drop-up,
+  // below) — it's no longer a direct footer child, so it's not in this order
+  const order = ["viewbtn", "lassobtn", "instbtn", "readline", "listbtn", "syncbtn", "moresheetbtn"]
+    .map(id => footer.indexOf('id="' + id + '"'));
   for (let i = 1; i < order.length; i++) assert.ok(order[i - 1] < order[i], "footer order: " + order);
-  const more = html.slice(html.indexOf('id="moresheet"'), html.indexOf("<!-- /moresheet-home -->"));
+  const more = html.slice(html.indexOf('id="moresheet"'), html.indexOf("<!-- KEY SIGNATURE"));
   assert.doesNotMatch(more, /id="keysel"/, "the key picker left ⋯ More's own markup (it's a hidden node elsewhere now)");
   assert.doesNotMatch(more, /id="viewbtn"/, "the VIEW segment was never in ⋯ More's own markup (it's visible in the footer now)");
   assert.doesNotMatch(more, /id="syncbtn"/, "Publish isn't also still inside ⋯ More");
+  assert.match(more, /class="dropup"/, "⋯ More is a drop-up (chrome density pass, 2026-10-01), not a dockable window");
   assert.match(more, /id="octbtn"/, "8va stays in ⋯ More");
   assert.match(more, /id="findsel"/, "find: stays in ⋯ More");
   assert.match(more, /id="cofbtn"/, "◯5 stays in ⋯ More");
@@ -7187,9 +7195,29 @@ test("footer v2 tweaks (2026-09-30): Publish is back on the footer bar (before �
   assert.match(html, /id="keysel"/);
 });
 
-test("#viewbtn (2026-09-30, Josh after using footer v2: 'I use it a lot in analysis'): a visible Roll/Tracks/Score segmented control, first in the footer's left group", () => {
+test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a whole window popping up and it's just unnecessary — just do it as a reverse drop-down'): no longer a dockable window — makeWindow() is never called for it, and a stale docked/tabbed 'moresheet' id from before this change is purged from wm on load", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const footer = html.slice(html.indexOf("<footer>"), html.indexOf("</footer>"));
+  assert.doesNotMatch(html, /makeWindow\("moresheet"/, "moresheet is never registered with makeWindow() any more");
+  assert.doesNotMatch(html, /id="moresheet-h2"/, "no title bar — no Dock button, no ✕/drag/resize machinery (that's all `.overlay`-only, and #moresheet isn't one any more)");
+
+  const staleWm = JSON.stringify({right: {ids: ["moresheet", "asksheet"], active: "asksheet", w: 380, mode: "full"}});
+  const stale = createApp({storage: {"ff1roll-wm": staleWm}});
+  const purged = JSON.parse(stale.run(`localStorage.getItem("ff1roll-wm")`));
+  assert.ok(!purged.right.ids.includes("moresheet"), "a stale docked moresheet id is purged on load: " + JSON.stringify(purged));
+  assert.ok(purged.right.ids.includes("asksheet"), "its tab-mate is untouched");
+
+  // opens/closes like #listbtn/#viewbtn — a plain toggle, no wmLayoutAll() dependency
+  installSong();
+  run(`closeDropUp();`); // a stray open drop-up from an earlier test on this shared app would flip the first toggle the wrong way
+  run(`document.getElementById("moresheetbtn").click();`);
+  assert.equal(val(`document.getElementById("moresheet").classList.contains("on")`), true, "opens the drop-up");
+  run(`document.getElementById("moresheetbtn").click();`);
+  assert.equal(val(`document.getElementById("moresheet").classList.contains("on")`), false, "tapping the trigger again toggles it closed");
+});
+
+test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up from now on'): a drop-up (▦ Roll / ▤ Tracks / 𝄞 Score), first in the footer's left group, its own label naming the CURRENT view", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const footer = html.slice(html.indexOf("<footer"), html.indexOf("</footer>"));
   const viewbtn = footer.slice(footer.indexOf('id="viewbtn"'), footer.indexOf('id="subbtn"'));
   assert.doesNotMatch(viewbtn, /display:\s*none/, "#viewbtn is visible, not the old hidden/inert node");
   // (the ▦/▤/𝄞 glyph spans are aria-hidden="true" by design — decorative icons
@@ -7197,25 +7225,70 @@ test("#viewbtn (2026-09-30, Josh after using footer v2: 'I use it a lot in analy
   // container's own opening tag, not the whole slice)
   assert.doesNotMatch(viewbtn.slice(0, viewbtn.indexOf(">")), /aria-hidden="true"/, "#viewbtn is reachable, not aria-hidden");
   assert.doesNotMatch(viewbtn, /tabindex="-1"/, "#viewbtn's buttons are focusable, not the old inert node");
-  assert.doesNotMatch(viewbtn, /viewseg/, "one cycling button again, not the 3-way segment (Josh, 2026-10-01: 'way too big')");
+  assert.doesNotMatch(viewbtn, /viewseg/, "one drop-up button, not the 3-way segment (Josh, 2026-10-01: 'way too big')");
   assert.ok(footer.indexOf('id="viewbtn"') < footer.indexOf('id="lassobtn"'), "view switch sits before ⊞ Lasso");
   assert.ok(footer.indexOf('id="lassobtn"') < footer.indexOf('id="instbtn"'), "⊞ Lasso sits before 🎹");
+  assert.match(html, /id="viewswitchmenu" class="dropup"/, "#viewswitchmenu is a drop-up, same pattern as #notesmenu/#moresheet");
 
-  // the switch actually drives the view
+  // click opens the drop-up (never changes the view by itself); picking a row sets the mode and closes it
   const a = createApp();
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
     songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; viewMode = "score"; applyViewMode();
     document.getElementById("viewbtn").click();
   `);
-  assert.equal(a.run(`viewMode`), "roll", "score → roll: the button cycles roll → tracks → score → roll");
-  a.run(`document.getElementById("viewbtn").click();`);
+  assert.equal(a.run(`document.getElementById("viewswitchmenu").classList.contains("on")`), true, "opens the drop-up");
+  assert.equal(a.run(`viewMode`), "score", "opening the drop-up never changes the view by itself");
+  assert.match(a.run(`document.getElementById("viewbtn").textContent`), /^𝄞 Score ▴$/, "the button's own label names the CURRENT view, not the next one");
+  a.run(`document.getElementById("vsRoll").click();`);
+  assert.equal(a.run(`viewMode`), "roll", "picking a row sets the mode");
+  assert.equal(a.run(`document.getElementById("viewswitchmenu").classList.contains("on")`), false, "picking a row closes the drop-up");
+  assert.match(a.run(`document.getElementById("viewbtn").textContent`), /^▦ Roll ▴$/);
+  a.run(`document.getElementById("viewbtn").click(); document.getElementById("vsTracks").click();`);
   assert.equal(a.run(`viewMode`), "tracks");
+});
+
+test("☰ Notes ▴ (chrome density pass, 2026-10-01): a drop-up holding + New note (#notebtn, same id/handler as before — openEditor(null)) and ☰ All notes (#notesall, openNoteList() extracted from #listbtn's old direct handler)", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /id="notesmenu" class="dropup"/, "#notesmenu is a drop-up");
+  const menu = html.slice(html.indexOf('id="notesmenu"'), html.indexOf('id="notesmenu"') + html.slice(html.indexOf('id="notesmenu"')).indexOf("</div>"));
+  assert.match(menu, /id="notebtn"/, "+ New note (#notebtn) lives inside the drop-up now");
+  assert.match(menu, /id="notesall"/, "☰ All notes (#notesall) lives inside the drop-up");
+  assert.ok(menu.indexOf('id="notebtn"') < menu.indexOf('id="notesall"'), "+ New note sits above ☰ All notes");
+
+  installSong();
+  run(`closeDropUp();`); // a stray open drop-up from an earlier test on this shared app would flip the first toggle the wrong way
+  run(`document.getElementById("listbtn").click();`);
+  assert.equal(val(`document.getElementById("notesmenu").classList.contains("on")`), true, "#listbtn opens the drop-up");
+  run(`document.getElementById("notebtn").click();`);
+  assert.equal(val(`document.getElementById("noteeditor").classList.contains("on")`), true, "+ New note still opens the editor (openEditor(null))");
+  run(`document.getElementById("ncancel").click(); closeDropUp(); document.getElementById("listbtn").click(); document.getElementById("notesall").click();`);
+  assert.equal(val(`document.getElementById("notelistsheet").classList.contains("on")`), true, "☰ All notes opens the note list (openNoteList())");
+  run(`document.getElementById("notelistsheet").classList.remove("on");`);
+});
+
+test("fitReadline (chrome density pass, 2026-10-01): #readline gets .ownrow under a 300px leftover and loses it at/above 300px (stub widths)", () => {
+  installSong();
+  const stub = (id, w) => run(`document.getElementById(${JSON.stringify(id)}).getBoundingClientRect = () => ({width: ${w}, left: 0, top: 0, height: 44});`);
+  stub("footer", 900);
+  for (const id of ["viewbtn", "lassobtn", "instbtn", "listbtn", "syncbtn", "moresheetbtn"]) stub(id, 80);
+  for (const id of ["errbtn", "askreplybtn", "clearbtn"]) run(`document.getElementById(${JSON.stringify(id)}).style.display = "none";`);
+  // 900 - 24 (pad) - 6*80 (used) - 6*8 (gaps) = 348 leftover — at/above 300
+  run(`fitReadline();`);
+  assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), false, "348px leftover: inline, no .ownrow");
+
+  stub("footer", 700); // 700 - 24 - 480 - 48 = 148 leftover — under 300
+  run(`fitReadline();`);
+  assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), true, "148px leftover: crushed, .ownrow added");
+
+  stub("footer", 900); // back to the roomy case: .ownrow comes back OFF
+  run(`fitReadline();`);
+  assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), false, "widened back out: .ownrow removed");
 });
 
 test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them'): a Roll item exists, and the menu is grouped View / Panels / Display / Mode", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const sheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf('<div id="moresheet-home"'));
+  const sheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf('<div id="moresheet"'));
   assert.match(sheet, /id="vwRoll"/, "Roll is a real View ▾ item now");
   // group order: VIEW, PANELS, DISPLAY, MODE — each item falls after its
   // section's .cfgsec label and before the next one
@@ -7909,7 +7982,7 @@ test("VoiceOver, Learning mode: the live region never names a key/chord the scre
   assert.match(norm.el("srlive").textContent, /→/, "Normal mode DOES name the chord, on screen and in the live region alike");
 });
 
-test("VoiceOver: track-chip Mute/Solo/Hide are real toggles (role=button, aria-pressed, per-track aria-label) — not bare text spans", () => {
+test("VoiceOver: track-chip Mute/Solo are real toggles (role=button, aria-pressed, per-track aria-label) — not bare text spans; not-hidden chip has no Hide toggle at all (Chrome density pass, 2026-10-01: H off the chip)", () => {
   const a = createApp();
   const r = (c) => a.run(c);
   installTransportSong(r);
@@ -7917,8 +7990,9 @@ test("VoiceOver: track-chip Mute/Solo/Hide are real toggles (role=button, aria-p
   const chip = a.el("trackbar").children[0];
   assert.equal(chip.getAttribute("role"), "button");
   assert.ok(chip.getAttribute("aria-label").includes("lead"));
-  const [, , mute, solo, hide] = chip.children; // dot, label, mute, solo, hide
-  for (const el of [mute, solo, hide]) {
+  assert.equal(chip.children.length, 4, "dot, label, mute, solo — no H while the track isn't hidden");
+  const [, , mute, solo] = chip.children;
+  for (const el of [mute, solo]) {
     assert.equal(el.getAttribute("role"), "button", el.textContent);
     assert.equal(el.tabIndex, 0, el.textContent);
     assert.ok(el.getAttribute("aria-label").includes("lead"), el.textContent + " names the track");
@@ -7929,6 +8003,44 @@ test("VoiceOver: track-chip Mute/Solo/Hide are real toggles (role=button, aria-p
   const chip2 = a.el("trackbar").children[0];
   const mute2 = chip2.children[2];
   assert.equal(mute2.getAttribute("aria-pressed"), "true", "aria-pressed tracks the .on class trackToggle already drives");
+});
+
+test("VoiceOver: a hidden track's chip grows a 5th toggle — lit H, aria-pressed=true, one tap unhides via the same trackToggle(ti, \"hidden\")", () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  installTransportSong(r);
+  r(`selTrack = 0; trackState[0].hidden = true; renderTrackbar();`);
+  const chip = a.el("trackbar").children[0];
+  assert.equal(chip.children.length, 5, "dot, label, mute, solo, H");
+  const hide = chip.children[4];
+  assert.equal(hide.getAttribute("role"), "button");
+  assert.equal(hide.tabIndex, 0);
+  assert.ok(hide.getAttribute("aria-label").includes("lead"), "names the track");
+  assert.equal(hide.getAttribute("aria-pressed"), "true", "lit — the chip only shows H while hidden");
+  hide.dispatchEvent({type: "click"});
+  r(`renderTrackbar()`);
+  assert.equal(a.el("trackbar").children[0].children.length, 4, "one tap unhides — H drops off the chip again");
+  assert.equal(a.run(`trackState[0].hidden`), false);
+});
+
+test("voice menu: #vmhide (chip's voice menu header row) toggles trackState[ti].hidden — where Hide moved off the chip", () => {
+  const a = createApp();
+  const r = (c) => a.run(c);
+  installTransportSong(r);
+  r(`selTrack = 0; buildVoiceMenu(0);`);
+  // #vmhide is built fresh by createElement + an id SET in app code, never
+  // routed through document.getElementById — the vm harness's getElementById
+  // only ever resolves ids it has itself handed out (see tests/harness.mjs),
+  // so (like the chip's own M/S/H spans) it's reached positionally: the
+  // voice menu's head row is [name label, #vmhide, ✕ close].
+  const vmhide = () => a.run(`document.getElementById("voicemenu").children[0].children[1]`);
+  assert.equal(vmhide().getAttribute("aria-pressed"), "false");
+  vmhide().dispatchEvent({type: "click"});
+  assert.equal(a.run(`trackState[0].hidden`), true, "trackToggle(0, \"hidden\")");
+  assert.equal(vmhide().getAttribute("aria-pressed"), "true", "buildVoiceMenu(ti) re-renders the menu after the toggle");
+  vmhide().dispatchEvent({type: "click"});
+  assert.equal(a.run(`trackState[0].hidden`), false);
+  assert.equal(vmhide().getAttribute("aria-pressed"), "false");
 });
 
 test("VoiceOver: the roll canvas carries a live aria-label naming the song, view, visible bars, and track count", () => {

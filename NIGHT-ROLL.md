@@ -5671,3 +5671,193 @@ never clipped by `.seg`, so only the tab ROW vanished). Fixed narrowly
 still rely on): `overflow-x: auto` and each button `flex: 0 0 auto;
 min-width: 72px` — the row scrolls horizontally to reach whichever tab
 doesn't fit, instead of `display:none`-ing it out of existence.
+
+## Chrome density pass (2026-10-01)
+
+Josh's screenshot (2026-10-01 14:37): the 🎓 badge was too small to read,
+the Claude-status chip crowded the crumb, H made every track chip wide,
+and the footer's readout row cost roll height. An advisor round brought
+in Logic Pro's pattern for the same problem — rows hold only what's
+constantly used, a toggle that's mostly off shouldn't cost width when
+it's off, background work gets its own panel rather than living in the
+main bar — written up in `docs/chrome-density-plan.md`. Steps 1-3 shipped
+this pass; 4 (Notes popover) and 5 (readout inline + `fitReadline`) are
+still queued.
+
+**1. Claude status out of the header.** `#nowchip` — the
+`position`-then-`flex` header chip from the 2026-09-30 layout pass above
+— is gone entirely (markup, CSS including its `@container` compact form,
+the `askStatusRender()` lines that wrote it, its own click handler). The
+AI window's `#asknowstrip` is now the only place the full status line
+shows: it was single-line ellipsis, now `display: -webkit-box;
+-webkit-line-clamp: 2` so a long "queued — the terminal is busy…" line
+gets a second row instead of being cut off (`.open`, from tapping the
+strip for Recent, drops the clamp with `display: block`). In its place,
+`askStatusRender()` toggles a `working` class on `#askbtn` (✦ AI) under
+the exact condition that used to show the chip at all — `askCaps.bridge
+&& !askStatusIdle()` — and sets its `aria-label` to `"Talk to the AI
+tutor — Claude Code is working: " + askStatusNow.text`, or back to the
+plain `"Talk to the AI tutor"` when idle or bridgeless. `.working::before`
+draws a small pulsing accent dot (`::after` was already spoken for —
+`#askbtn.hasnote`'s ✉ — so the dot lives on the other pseudo-element);
+`#askbtn { position: relative }` anchors it. Net: the header carries one
+small live signal instead of a whole truncating status line, and the
+real text lives where there's room for two lines of it.
+
+**2. 🎓 Learning tag.** `#lcdmode` (the 1-glyph `.lcdlbl` badge that used
+to sit in the LCD) is gone; in its place, `#modepill` is a real gold
+pill — `🎓 Learning` — in the exact header flex slot `#nowchip` used to
+occupy (the header's right end, after `#songcrumb`), shown only when
+`appMode() === "learning"` (boot's early `document.getElementById`
+block and `applyMode()` both write its `display`, same as `#lcdmode`
+did). It reuses `#nowchip`'s old compact-icon `@container (max-width:
+860px)` trick — `.pilltext` (`Learning`) hides, the pill shrinks to a
+26px square showing the bare 🎓 at `1rem` instead of the pill's normal
+`0.75rem`, so it's actually legible collapsed (Josh's screenshot
+complaint). Tapping it never flips the mode — it calls
+`document.getElementById("viewsheetbtn").click()`, the same as tapping
+View ▾ itself, landing on the same menu where `🎓 Learning mode` already
+lives as a real toggle. Learning and Listener are independent switches
+(a phone can be both), so the pill stays visible in Listener mode even
+though `body.listener` hides `#viewsheetbtn` — the click handler checks
+`listenerMode` and no-ops, and `body.listener #modepill { cursor:
+default }` is the only visual nod to "this doesn't do anything right
+now," rather than another `display: none` special case.
+
+**3. Track chips: H off the chip.** `renderTrackbar()`'s chips used to
+always carry 5 children (dot, name, M, S, H); H now only renders — as a
+5th child, lit gold via the same `.solo.on` look M/S already use,
+`aria-pressed="true"` — when the track IS hidden, via the same
+`mkToggle`/`trackToggle(ti, "hidden")` path as before. A visible, not-yet-
+hidden chip is 4 children, ~24px narrower. Hiding a track for the first
+time starts instead from a new `"Hide notes"` toggle, `#vmhide`
+(`aria-pressed`, `.active` when on), added to `buildVoiceMenu()`'s header
+row between the track-name label and the ✕ close button — it calls the
+same `trackToggle(ti, "hidden")` and then re-renders the menu
+(`buildVoiceMenu(ti)`) so its own pressed state stays in sync. The
+Mixer's per-strip H (`renderMixer()`'s `mkBtn`) is untouched — it was
+never crowding anything, so it keeps the always-visible M/S/H row DAW
+conventions expect there.
+
+Tests: `tests/night-roll.test.mjs`'s status test now asserts
+`#askbtn.classList.contains("working")` and its `aria-label` instead of
+`#nowchip`'s text/display; the old single VoiceOver chip test split into
+a not-hidden case (asserts exactly 4 children) and a hidden case (5th
+child, `aria-pressed="true"`, one click drops it back to 4); a new test
+drives `#vmhide` directly and checks `trackState[ti].hidden` both ways.
+Help: the "What Claude Code is doing now" dd was rewritten around ✦ AI's
+dot instead of a chip (dt text kept verbatim — FEATURES drift guard); the
+"🎓 Learning mode" dd now names the header tag instead of "a little 🎓 in
+the LCD"; the "H hides the track" sentence (kept verbatim) now says it's
+reached from the voice menu or the Mixer, with a new "lit H" FEATURES
+keyword for the chip's own behavior while hidden.
+
+**4. Drop-ups: ☰ Notes ▴, the view switcher, and ⋯ More.** Josh's own
+term (2026-10-01): "the reverse of a drop-down menu like the File menu —
+it drops upwards." One shared pair of functions,
+`openDropUp(btn, menu)`/`closeDropUp()` (beside `closeFileMenus()`, which
+now closes whichever drop-up is open too, and vice versa — `openDropUp`
+calls `closeFileMenus()` first), opens a `.dropup` positioned the same
+way `#editsheet`/`#viewsheet` are (`left` clamped to `songRegionRight()`)
+but anchored by `bottom` (`wmInnerHeight() - r.top + 6`) instead of `top`,
+so it opens upward from its trigger. `.dropup`/`.dropup.on`/`.dropup
+.fitem`/`.fdiv`/`.cfgsec`/`.row`/`select` (CSS) replace the old
+`#moresheet`-specific rules — `#viewswitchmenu`, `#notesmenu` and
+`#moresheet` all just carry `class="dropup"` now. A shared `pointerdown`
+listener closes the open drop-up on an outside tap, exempting the three
+trigger buttons by id (`#viewbtn, #listbtn, #moresheetbtn` — their own
+click handler does the toggle-closed, via a `was` check in `openDropUp`)
+and anything inside the open menu itself (so a native `<select>` inside
+it, `#findsel`, and its iOS picker stay safe — the containment check
+alone covers it, no special-casing needed).
+
+- **☰ Notes ▴** (`#listbtn`): replaces the separate ☰ Notes / + Note pair.
+  `#notesmenu` holds two rows — `#notebtn` (`"+ New note"`, the SAME node/
+  id/handler as before, just moved and relabeled — still `openEditor(null)`
+  unconditionally, Josh 2026-08-25's "always a new note" rule) and
+  `#notesall` (`"☰ All notes"`, new — calls the extracted `openNoteList()`,
+  pulled out of `#listbtn`'s own old direct click handler, which now just
+  opens the drop-up).
+- **The view switcher** (`#viewbtn`): a drop-up (`#viewswitchmenu`: `▦
+  Roll` / `▤ Tracks` / `𝄞 Score`, `renderViewSwitch()` puts a `✓` on the
+  current one — same convention as `renderViewMenu`'s checkmarks)
+  replaces the cycling button from the 2026-10-01 "way too big" 3-way-
+  segment revert (above). `applyViewMode()` now sets `#viewbtn`'s own
+  label to the CURRENT view plus `▴` (`"▦ Roll ▴"`), not the next one —
+  picking a row calls `setViewMode(m)` and closes the drop-up. View ▾'s
+  own Roll/Tracks/Score radio (`#vwRoll` etc.) is unchanged and still
+  there as the findable path; help's "▤ Tracks view" and "View ▾ menu"
+  dds reworded from "cycles Roll → Tracks → Score" / "cycles through" to
+  name the drop-up.
+- **⋯ More** (`#moresheetbtn`): Josh, same session, after seeing the
+  Notes popover: "do it that way with the ⋯ More button as well — the
+  More button has a whole window popping up and it's just unnecessary;
+  just do it as a reverse drop-down." Un-migrated from the 2026-09-30
+  tweaks pass's dockable window back to a drop-up: `#moresheet` dropped
+  its `.overlay`/`.sheet`/`h2#moresheet-h2` wrapper and the
+  `#moresheet-home` floating anchor entirely (its `#morerows` child — the
+  one with the `SELECTION READOUT`/`HIGHLIGHT`/`SONG` rows — is now a
+  direct child of `#moresheet` itself), lost its `makeWindow("moresheet",
+  {dockable: true})` registration (so it's out of `WM_WINDOWS`, gets no
+  Dock button, and the generic `.overlay` ✕/drag/resize/backdrop-tap
+  machinery no longer applies to it at all), and is OUT of
+  `tests/e2e/docking.spec.mjs`'s `WINDOWS` list. A device that had it
+  docked or tabbed from the window-era is handled gracefully: right after
+  `wm = wmLoad()`, a short pure migration (`wmRemoveSideTab`/
+  `wmClearBottom`, no DOM — safe at module-eval time in the vm harness
+  too) drops a stale `"moresheet"` id from `wm.left`/`wm.right`/`wm.bottom`
+  and re-saves, and the dead `ff1roll-sheetpos-moresheet` localStorage key
+  (the old floating window's remembered position) is removed too. The
+  `#morebadge` gold `⏳N` badge on `#moresheetbtn` itself is untouched —
+  still mirrors `#jobsbtn`'s running-job count with the menu closed, same
+  `updateJobsBtn()` logic as before. Help: the "⋯ More" dd rewritten
+  around the drop-up instead of "a real window … movable … dockable";
+  FEATURES' "⋯ More" keyword kept verbatim (the dt).
+
+**5. `#readline`, back in the button row.** `docs/chrome-density-plan.md`
+step 4b. The readout (`#readline`: `#noteinfo` + `#chordbtn`) moves out
+of its own guaranteed first line and into the button row itself, between
+the left group (view drop-up / ⊞ Lasso / 🎹) and the right group (☰ Notes
+▴ / conditional ⚠-✦ reply-Clear edits / Publish / ⋯ More) — markup-wise,
+right after `#instbtn`. `#readline { flex: 1 1 300px; min-width: 300px }`
+(CSS) replaces the old unconditional `order: -1; flex: 1 1 100%` — the
+`.footerspacer` div (`margin-left: auto`, used to split the left/right
+groups) is gone too, since `#readline`'s own flex-grow does that job now.
+`fitReadline()` adds `.ownrow` (`order: -1; flex: 1 1 100%; min-width: 0`
+— today's own-row layout, unchanged) whenever what's left for `#readline`
+drops under 300px: it sums `getBoundingClientRect().width` for the
+footer's other visible buttons BY ID (`viewbtn`, `lassobtn`, `instbtn`,
+`listbtn`, `errbtn`, `askreplybtn`, `clearbtn`, `syncbtn`,
+`moresheetbtn` — not a `.children` traversal, since the vm harness never
+builds a real `#footer`→children DOM tree, only vivifies elements by id)
+against the footer's own width, minus a fixed padding/gap allowance — not
+pixel-perfect, good enough for a yes/no at the 300px line, and exactly
+what the stubbed-`getBoundingClientRect` vm tests drive. It runs from a
+`ResizeObserver` on `#footer` (catches the footer's own width changing —
+window resize, a side dock opening) and a `MutationObserver` on the
+footer's children's `style`/`class` attributes (catches buttons
+appearing/disappearing — ⚠/✦ reply/Clear edits, folding), both guarded
+`if (typeof document !== "undefined" && document.body)` (real browser
+only, same convention as the `wmdock` menu's own dismissal listener) —
+plus `typeof ResizeObserver`/`MutationObserver === "function"` checks,
+and an unconditional `fitReadline()` call right after, which IS safe
+under the vm harness (every element it touches is auto-vivified with a
+default stubbed rect) and covers the case `applyChrome()` isn't called at
+boot (nothing folded). `applyChrome()` itself now calls `fitReadline()`
+too, since folding/unfolding line 2 wholesale changes the leftover.
+`tests/e2e/docking.spec.mjs`'s readout check changed from a flat "#noteinfo
+≥ 60% of the footer" to "#noteinfo ≥ 300px OR (#readline.ownrow AND
+#noteinfo ≥ 60% of the footer)" — either a real inline readout or a
+roomy own-row one passes; `tests/e2e/editor.spec.mjs`'s folding
+assertions (~458/482) were re-checked and need no change — `#readline`'s
+id and the `footer.folded > :not(#readline)` CSS rule are untouched.
+
+Help: the "▤ Tracks view" dd and the "View ▾ menu" dd's own cross-
+reference both reworded to name the view drop-up instead of a cycling
+button (see "4." above); the "+ Note"/"☰ Notes" dts merged into one
+"☰ Notes ▴" dt/dd (touch first — the drop-up and its two rows — no
+keyboard equivalent exists to list after it); the "⋯ More" dd rewritten
+around the drop-up. FEATURES gained a "+ New note" keyword (the merged
+dd's own bold label for `#notebtn`); every other FEATURES keyword this
+pass's rewording touched ("⋯ More", "8va", "find:", "Circle of fifths")
+stayed in the new text, verbatim or as a substring.

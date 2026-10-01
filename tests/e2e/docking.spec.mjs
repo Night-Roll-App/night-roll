@@ -10,8 +10,10 @@ import { openApp } from "./helpers.mjs";
 
 // infosheet (Status) is registered but NOT dockable (Josh, 2026-09-29) — a
 // one-shot reveal for a truncated status line, same as the import hub.
-// moresheet (footer v2 tweaks, 2026-09-30): ⋯ More became a real window too.
-const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "pubjobsheet", "moresheet"];
+// moresheet was a real window too (footer v2 tweaks, 2026-09-30) — back to a
+// drop-up, never dockable (chrome density pass, 2026-10-01, Josh: "a whole
+// window popping up and it's just unnecessary"), so it's OUT of this list.
+const WINDOWS = ["asksheet", "notelistsheet", "instsheet", "jobssheet", "pubjobsheet"];
 
 test.use({ viewport: { width: 1366, height: 1024 } });
 
@@ -49,12 +51,19 @@ for (const id of WINDOWS) {
       expect(p.w, `${side}/${mode}: a real width`).toBeGreaterThan(200);
       expect(overlaps(p, roll), `${side}/${mode}: roll and dock do not overlap`).toBe(false);
       expect(await footerLastVisible(page), `${side}/${mode}: the footer's last chip is fully visible`).toBe(true);
-      // footer v2 (2026-09-30): #noteinfo (the readout, #readline's growing
-      // cell) must not be squeezed down to nothing by a narrowed #songregion —
-      // the bug a 6-note lasso chord hit at ~1030px before the readout got
-      // its own full-width line.
+      // footer v2 (2026-09-30) → chrome density pass (2026-10-01): #noteinfo
+      // (the readout, #readline's growing cell) must not be squeezed down to
+      // nothing by a narrowed #songregion — the bug a 6-note lasso chord hit
+      // at ~1030px. #readline sits inline in the button row now (flex: 1 1
+      // 300px) and only drops to its own full-width line (.ownrow) when
+      // fitReadline() finds under 300px left for it — so the honest check is
+      // either shape: a real 300px+ readout inline, OR its own full row at a
+      // substantial share of the footer.
       const ni = await box(page, "#noteinfo"), foot = await box(page, "footer");
-      expect(ni.w, `${side}/${mode}: #noteinfo is at least 60% of the footer's width`).toBeGreaterThanOrEqual(foot.w * 0.6);
+      const ownrow = await page.evaluate(() => document.getElementById("readline").classList.contains("ownrow"));
+      const wide = ni.w >= 300;
+      const ownRowWide = ownrow && ni.w >= foot.w * 0.6;
+      expect(wide || ownRowWide, `${side}/${mode}: #noteinfo ≥ 300px, or its own row at ≥ 60% of the footer (ownrow=${ownrow}, ni.w=${ni.w}, foot.w=${foot.w})`).toBe(true);
     }
     await page.evaluate(i => { wmFloat(i); wmDockBottomWindow(i); }, id);
     await page.waitForTimeout(150);
