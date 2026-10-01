@@ -1,3 +1,3 @@
-{ "version": 1, "song": "moogle-s-theme", "saved": 1790613266242, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "moogle-s-theme", "origin": {"kind":"capture"}, "stamp": 1790613266242, "notes": [
   {"at":[31,1],"type":"loop","loop":"3.1"}
 ] }

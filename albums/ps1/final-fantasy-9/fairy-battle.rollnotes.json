@@ -1,3 +1,3 @@
-{ "version": 1, "song": "fairy-battle", "saved": 1790613266215, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "fairy-battle", "origin": {"kind":"capture"}, "stamp": 1790613266215, "notes": [
   {"at":[38,1],"type":"loop","loop":"2.1"}
 ] }

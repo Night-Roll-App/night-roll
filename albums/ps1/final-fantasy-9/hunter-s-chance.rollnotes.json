@@ -1,3 +1,3 @@
-{ "version": 1, "song": "hunter-s-chance", "saved": 1790613266232, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "hunter-s-chance", "origin": {"kind":"capture"}, "stamp": 1790613266232, "notes": [
   {"at":[131,2.5],"type":"loop","loop":"9.1"}
 ] }

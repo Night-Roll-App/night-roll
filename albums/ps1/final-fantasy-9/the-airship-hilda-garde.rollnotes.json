@@ -1,3 +1,3 @@
-{ "version": 1, "song": "the-airship-hilda-garde", "saved": 1790613266271, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "the-airship-hilda-garde", "origin": {"kind":"capture"}, "stamp": 1790613266271, "notes": [
   {"at":[69,1],"type":"loop","loop":"9.1"}
 ] }

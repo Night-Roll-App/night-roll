@@ -1,3 +1,3 @@
-{ "version": 1, "song": "shinra-march-millennium-version", "saved": 1790613266258, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "shinra-march-millennium-version", "origin": {"kind":"capture"}, "stamp": 1790613266258, "notes": [
   {"at":[35,1],"type":"loop","loop":"9.1"}
 ] }

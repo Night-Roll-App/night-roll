@@ -1,3 +1,3 @@
-{ "version": 1, "song": "qu-s-marsh", "saved": 1790613266249, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "qu-s-marsh", "origin": {"kind":"capture"}, "stamp": 1790613266249, "notes": [
   {"at":[29,1],"type":"loop","loop":"5.1"}
 ] }

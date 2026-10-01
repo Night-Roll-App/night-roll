@@ -1,3 +1,3 @@
-{ "version": 1, "song": "vamo-alla-flamenco", "saved": 1790613266284, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "vamo-alla-flamenco", "origin": {"kind":"capture"}, "stamp": 1790613266284, "notes": [
   {"at":[72,1],"type":"loop","loop":"13.1"}
 ] }

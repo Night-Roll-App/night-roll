@@ -1,3 +1,3 @@
-{ "version": 1, "song": "garnet-s-theme", "saved": 1790613266226, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "garnet-s-theme", "origin": {"kind":"capture"}, "stamp": 1790613266226, "notes": [
   {"at":[87,1],"type":"loop","loop":"21.1"}
 ] }
