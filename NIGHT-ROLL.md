@@ -935,6 +935,154 @@ plus one test running the REAL `createSpuStream` through the full protocol
 over tests/psx-stream.test.mjs's AKAO/table fixture, overlap-add matching
 `renderSpu`'s own output within 1e-6).
 
+**Aeon Battle crash + recovery (2026-09-30, before step 3 — Josh's iPad, open-
+items.md "2026-09-30 21:40").** FFX "Aeon Battle" (PS2) crashed the app (out
+of memory); after the reload, EVERY console song failed "couldn't load
+module tools/ps2/psf2.mjs: Importing a module script failed" ×3 until a full
+app restart. Two separate bugs, both fixed without touching step 3's own
+work (which was in progress on the same day):
+- **The crash itself**: the memory budget (`planChipRender`) only ever
+  checked KEPT bytes, but step 0 had already proven the worker's PEAK on the
+  mono plan is ~3x kept for a kind with no stream hook — `R.render` hands
+  back the WHOLE stereo pair for every group in one non-streamed call, and a
+  mono downmix copy is then made while that stereo original is STILL
+  referenced. For a kind that DOES have a stream hook (psf/psf2 — the kinds
+  that actually crashed), `renderStreamed` (tools/chip-worker.mjs) /
+  `chipRenderStreamed` (index.html's inline fallback, kept in step) now
+  render into the FINAL kept buffers chunk by chunk (1s chunks) instead of
+  calling `R.render` once: peak ≈ kept + one chunk. A plan.mono decision
+  still needs to see a track's WHOLE pan history, so there are two passes
+  over the stream only when mono is needed (chipStaticPan's own windowed
+  sampling run per chunk instead of over a whole-track buffer this never
+  allocates — a chunk whose own window already shows movement marks the
+  track stereo outright, the same safe direction as the original check);
+  either pass reuses ONE stream object (`seek(0)` between them) since psf/
+  psf2 have no per-frame emulation step to redo. `planChipRender` grew a
+  `canStream` flag (true for psf/psf2, both call sites: the worker's bottom
+  `self.onmessage` and index.html's `chipRender`) — a kind WITHOUT a stream
+  hook still gets the OLD (3x-honest) admission check for its mono step, so
+  a "mono fits" verdict there now actually respects the real budget instead
+  of only the kept-bytes estimate; `bytes` itself still reports the kept
+  estimate either way. Tests: tests/chip-worker.test.mjs — `renderStreamed`
+  on `RUNNERS.fakestream`'s own deterministic signal (a genuinely constant
+  per-track pan, one permanently-silent track) keeps peak within 10% of
+  kept; `planChipRender` on Aeon-Battle-sized numbers (32 tracks, ~280s)
+  always reaches a verdict that respects a 600 MB budget, canStream true or
+  false, never a false "fits".
+- **The recovery**: after a crash the content process can still be
+  recovering, so the FIRST import after it fails even for a kind never
+  involved — a transient failure that shouldn't need a restart to clear.
+  `loadM` (tools/chip-worker.mjs, now used by BOTH the worker's whole-render
+  handler and `handleStream` — the whole-render handler no longer carries
+  its own duplicate loader) and `chipModules` (index.html) each retry the
+  WHOLE set once, inline, with a fresh cache-buster (never the identical
+  failed URL), logging `err.name`/`err.message`/the module path/
+  `performance.memory` (when present) before retrying; neither ever caches a
+  failed import either way, so a second failure still gets a clean retry
+  next time. `chipRenderInWorker` already fell back to the inline path on
+  ANY worker failure (one existing behavior this didn't need to change).
+  Tests: tests/chip-worker.test.mjs and tests/night-roll.test.mjs — an
+  `importFn` test seam (no real file can be made to fail once then succeed)
+  confirms one retry with a fresh buster on a first failure, the retried
+  result is used and cached, and two failures in a row still throws
+  (naming the path) without caching the failure.
+
+**Stream mode: the page scheduler (2026-09-30, docs/streamed-render-plan.md
+step 3 — default OFF).** Step 2's chip-worker.mjs protocol wired into the
+page, behind a switch: with it off, chipRender/chipPublish/chipPcmToBuffers/
+chipStart/planChipRender (the whole-render path) are not called any
+differently than before this step and `chip.stream` stays null forever —
+every existing iPad-audio behavior is untouched. Settings → Other → **Chip
+stream** (beside Debug log): off/auto/on, `ff1roll-chipstream`, overridden
+per-tab by `?chipstream=on|off` (`PERF_FLAGS`, the same hand-rolled
+`location.search` reader `?dpr`/`?scene` already use — works in the vm test
+sandbox, which has no real `location`). "Auto" behaves like "off" until a
+later step defines it (stream only where the whole render would downgrade
+or refuse). The page never hardcodes which chip kinds qualify (CLAUDE.md:
+no per-kind table in a capture engine) — `chipRenderAuto` (chip.renderPromise's
+entry point, replacing a bare `chipRender()` call) tries `chipStreamOpen()`
+first when the switch is on, and falls back to the existing `chipRender()`
+on ANY failure (a `{stream:{error}}` reply, a worker that won't start, a
+song that changed underneath it) — today that fallback is the only path for
+every kind but psf/psf2, since the worker is the one place that knows which
+kinds have a stream hook.
+
+`chipStreamOpen` opens (or reuses) `chipWorker`, posts `{stream:{…}}`, and
+resolves once `{ready}` arrives AND the first window is cached — the
+chunks covering the play-from position + 1, so a brand-new render never
+makes the very first ▶ wait on the network/worker for its first sound, same
+contract `chipRender`'s own promise already had. `chipSegments(fromSec,
+loopSeg, playRate, lead, albumEndAbs, playT0)` is the pure tape-time mapping
+this all runs on — generalizing chipStart's own "tape time = chip.lead +
+songSec × playRate" (the identity a single native-looping AudioBufferSourceNode
+already relies on at a constant `playbackRate`) from one big loopable buffer
+to a RUN of small per-chunk buffers: segment 0 plays the current pass's
+remainder (a resume mid-loop chases its own tail, same as the note
+scheduler), every segment after repeats the WHOLE loop body — a hard splice
+at the wrap, no crossfade between passes, same as `src.loop` today — and
+album end truncates. `chip.stream = {key, gen, rate, chunkFrames, overlap,
+tracks, seconds, frames, leadSec, silent:Set, cache:Map(idx->{buffers,bytes,
+pinned}), pinnedIdx:Set, scheduled:Set, waiters:Map, bytes, peakBytes, live,
+srcs}`. `chipActive()`/`chipHas()` read it alongside `chip.pcm`/`chip.buffers`
+(`chipHas` in stream mode: listed in `chip.stream.tracks` and not in
+`chip.stream.silent` — the idle sweep's own report); the synth guard in
+`scheduleNote` (the `!n._preview && chipActive() && …` line) reads
+`chip.stream.live` instead of `chip.srcs.length` when in stream mode — same
+"no real source yet, let the synth carry it" contract either way.
+
+`play()`'s existing ~60ms pump calls `chipStreamPump(audio.currentTime)`
+FIRST, every tick, whenever `chip.stream` is this song's live session (gated
+internally on `playing`/the open song, so a stray tick after `stop()` is
+harmless): it asks `chipSegments` for the segments up to a horizon (~7s
+visible, ~12s `document.hidden` — the OS throttles timers in a hidden tab,
+same reasoning as the note scheduler's own lookahead), requests any needed
+chunk indices not yet cached (`{want}`, contiguous runs batched into one
+message), and for every cached chunk inside the tick's own scheduling
+window schedules an `AudioBufferSourceNode` — `src -> [chip.pan panner, if
+any] -> trackGain(ti)`, the EXACT wiring `chipStart` already uses — at
+`when = segment.when + max(0, chunkTapeStart - segment.tapeFrom) / playRate`,
+`offset`/`duration` trimmed to the segment's own span (a mid-chunk resume,
+or a hard splice at a loop wrap/album end never bleeds into the next
+segment). Overlap-add between adjacent chunks' baked fades (step 2) needs no
+special handling here — both chunks are simply scheduled at their own
+natural tape alignment and the Web Audio graph sums them. Evicts cached
+chunks behind the playhead (one chunk of slack for the overlap tail still
+sounding) to keep memory bounded over an arbitrarily long play, and keeps
+the chunks covering `[loopSeg.start, loopSeg.start + 2s]` PINNED (requested
+ahead of need, never evicted) so a loop wrap never waits on the worker.
+`chipStreamStart(fromSec)` replaces `chipStart(fromSec)` in stream mode:
+no new render — the existing cache is kept (a replay from elsewhere can
+reuse it) — just stops the old sources, bumps `gen` (cancelling any
+in-flight `{want}`/`{idle}` for the position being left; a `{seek}` message
+keeps the worker's own sequential-reuse bookkeeping honest too), and pumps
+once synchronously for the first window. `chipStopSrcs` (stop()'s existing
+call site, unchanged) now also stops `chip.stream.srcs` and clears
+`chip.stream.live` — keeping the cache, per the plan's own words.
+
+Tests: tests/night-roll.test.mjs — `chipSegments`'s own boundary math
+(a chunk-boundary crossing, loop wrap + the next pass starting back-to-back,
+album-end truncation, count-in's `playT0` shift, 50% speed, `chip.lead`
+offset, degenerate inputs); `chipStreamIdxForTapeSec` (a seek to 90s is
+chunk 45, 2s chunks); the synth guard reading `chip.stream.live` and a
+silent-track report re-enabling synth for that one track; and a full
+protocol exercise with a synchronous FAKE worker — switch off posts no
+`{stream}` message at all, a `{stream:{error}}` falls back to the whole
+render, a successful open's sources connect through `trackGain(ti)`, the
+cache stays bounded (< 30 chunks held) over a simulated 200s play, and a
+seek to 90s posts its `{seek}`/first `{want}` at chunk 45. The vm's fake
+AudioContext (tests/harness.mjs, mirrored in tests/e2e/helpers.mjs) gained
+a `playbackRate` param on its buffer-source node — `chipStart` itself had
+never been exercised end-to-end through the harness before (existing chip
+tests stub `chip.buffers`/`chip.srcs` directly), so this is the first thing
+to need it.
+
+Not yet covered here (flagged for Josh before flipping the switch for real):
+the actual overlap-add math (step 2's own tests already cover that chunk
+shape in isolation; nothing here re-verifies it survives real scheduling
+jitter) and the `{idle}` sweep's re-check cadence (today: once, right after
+the first window lands — a track that goes silent only much later in a
+long song won't be caught until a later step adds a periodic recheck).
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware

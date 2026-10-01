@@ -1883,6 +1883,7 @@
       <dt>📁 Folder on this computer</dt><dd>Saving without GitHub. In File → Settings, tap <b>Choose folder…</b> and pick a folder on this computer: from then on every Save writes the song, its annotations, and its notes dump into that folder (laid out exactly like the repo — <code>albums/…/song.mid</code> beside its <code>.rollnotes.json</code>), nothing goes to GitHub, and no token is needed. The song picker lists the folder's albums alongside the site's; a song that exists in both opens from the folder. Tick <b>show only this folder's songs</b> under the folder row and the list becomes yours alone — the folder plus this device's drafts, none of the site's albums; with an empty folder the app opens straight into New song instead of Overworld. A device setting: it stays on that machine. FF1 songs still load from the site — annotate one and the annotations save to your folder. Chrome may ask for the folder again after a restart: <b>📁 Reconnect folder</b> appears at the top of the File menu (until you tap it, reads fall back to the site). <b>Forget</b> in Settings returns saves to GitHub; the files stay where they are. Needs Chrome or Edge on a computer — Safari has no way to write files, and the row says so there. In the iPad app a <code>.mid</code> or chip file tapped in Files, or sent with <b>Share → Night Roll</b>, opens here as a local draft. In the iPad app there is nothing to set: every Save also writes the song into Files on this iPad (Files → On My iPad → Night Roll, same layout), where you can copy, share or back it up, and Publish still sends it to GitHub. Brave ships the door switched off: enable <code>brave://flags/#file-system-access-api</code> and relaunch (the row tells you). Recordings that aren't yours belong here, not in a repo (see the design docs).</dd>
       <dt>∿ Audio tracks (recordings)</dt><dd>A recording — a guitar take, a vocal, a phone memo, a DAW bounce — as a track next to your MIDI voices. Tap the <b>＋∿</b> chip in the track bar (compositions and local drafts; File → Import… also recognizes audio files) and pick wav, aiff, mp3, or m4a. The clip lands at the cursor's bar as a new track named after the file, with the usual chip: M, S, color, fader, rename, ✕ Delete track. Leading silence is trimmed on arrival, so the take's FIRST SOUND sits on that bar (the status line says how much it trimmed). It plays in time with the song, loops with it (a clip longer than the notes extends the song's end), and is in the exported audio. <b>Slow it down and the pitch stays put</b>: at any speed but 100% the take is re-rendered (time-stretched, the way a slow-downer app does it) in the background — the lane says "⏳ preparing 50% (pitch kept)…" for a moment, then it plays in tune with your notes; a device toggle in the recording sheet turns that off for tape-style, slower = lower, like chip audio. Fine for guitar and voice down to about 40%; grainier below. <b>Tracks view</b> shows the waveform; <b>tap the clip</b> to select it (the status line says file, length, where its bytes are, and where it starts), <b>tap again to play from its start</b>, and in <b>Select</b> mode <b>hold and drag</b> to slide it in time (16th snap, one ⟲ undoes; with no tool armed a drag pans, as with notes). Every other view shows a thin ∿ strip under the ruler marking where the recording plays. <b>Pieces:</b> a recording can be cut into pieces that move on their own. <b>✂ Split at cursor</b> (the edit row's ✂, Edit ▾, or the recording sheet) cuts the selected piece where the play cursor is; <b>trim</b> by dragging a selected piece's left or right edge in Select (left trim keeps the sound where it is); <b>Erase</b> tap on a piece removes just that piece (the track stays); each piece drags separately. One ⟲ undoes any of it. Tap the selected chip for the <b>recording sheet</b> (‹ prev / next › step between pieces): nudge <b>starts</b> by a bar, a beat, or a 16th, <b>offset</b> by 10 ms or 100 ms (how far into the file the piece starts — the last hair of alignment), <b>⇤ Align first sound</b> (re-trims leading silence to the current anchor), <b>♩ Tempo from this take</b> (reads the beat spacing of the piece — its waveform's onsets, autocorrelated over 40–240 BPM — and offers the tempo it hears plus half and double, with how strong the read is; tap one and it becomes the song's tempo at bar 1, one ⟲ undoes; your notes keep their bar positions, so the grid moves to meet the take, which is the point; needs about four seconds of steady playing, and your own songs only — captures keep their measured tempo), <b>♩♩ Map the bars to this take</b> (the other direction: the GRID bends to the recording — it finds the beats through the whole piece, groups them into bars by the meter, and shows what it found: how many bars, the tempo range, and where the first downbeat sits; <b>Apply</b> writes one tempo change per bar from the piece's bar onward so every bar line lands on a downbeat it heard, wobble and all; <b>◀ downbeat / downbeat ▶</b> shift which beat counts as bar 1 when it guessed wrong — the correction Logic's Smart Tempo asks for too; the piece must start on a bar line, and a first downbeat that isn't at the piece's start means a pickup: shift, or trim the piece to the downbeat first; one ⟲ removes the whole map), <b>✂ Split at cursor</b>, <b>🗑 Remove piece</b>, <b>Replace file…</b>, and <b>☐ someone else's recording</b>: tick it for a band's track you play along with and it is never uploaded — GitHub removes such files on a rights holder's notice, and a public site is distribution. Storage: until you Save, the bytes live on this device only (the sheet says so; Safari can evict browser storage after a week away, so Save soon); Save writes them beside the song as <code>&lt;song&gt;.audio/&lt;file&gt;</code> — into your folder in folder mode, into the songs repo otherwise. Files over 20 MB get one question: <b>store as 16-bit mono WAV</b> (lossless for a mono source, half a stereo bounce) or import as-is. m4a/mp3 note: Safari and Chrome trim the encoder's lead-in differently, so millisecond alignment is honest only for WAV/AIFF. Not yet: recording from the mic, trimming or splitting a clip, looping a clip by itself, keeping pitch when slowing down, iPad/Safari playback of webm.</dd>
       <dt>Debug log</dt><dd>File → Settings → Other → <b>Debug log</b> shows diagnostic lines in ⚠ Messages, marked [debug]: audio wake-ups after you leave the app, engine rebuilds, audio state changes. Off, only real problems raise the ⚠ chip. A message that repeats shows once, with ×N. Turn it on when chasing a silence, so Claude can see what the audio engine measured.</dd>
+      <dt>Chip stream (experimental)</dt><dd>File → Settings → Other → <b>Chip stream</b>, beside Debug log: <b>Off</b> (default) is today's behavior — a PlayStation/PlayStation 2 song's console audio renders whole before it plays. <b>On</b> streams it instead, a couple of seconds at a time, so a big song (FFX "Challenge") can't crash the page's memory holding the whole thing at once; any failure for a song falls back to the whole render automatically. <b>Auto</b> behaves like Off for now (a later version streams only where the whole render would have to downgrade quality or refuse). A device setting — the switch doesn't change what you hear, only how it gets there.</dd>
       <dt>Text size</dt><dd>Night Roll's own text follows your device's text size — an iPhone/iPad's Settings → Accessibility → Display &amp; Text Size → Larger Text carries straight through (Safari's Dynamic Type), no setup needed. File → Settings → Other → <b>Text size</b> (Small/Default/Large/Larger) is a second, app-level dial for a browser that doesn't carry Dynamic Type through, or to go past what it offers — it scales the TEXT only: buttons, rows and the roll/score canvas stay the size they are, so nothing you tap moves.</dd>
       <dt>⚠ Messages</dt><dd><b>Copy all</b> puts the whole log on the clipboard for pasting to Claude. Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
@@ -2343,6 +2344,13 @@
     <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgdebuglog" style="width:20px;height:20px"> Debug log: show diagnostic lines (audio wake-ups, engine rebuilds) in ⚠</label></div>
     <div class="status cfgind">For chasing a problem with Claude. Off, only real problems raise the ⚠ chip; on, the ⚠ sheet also shows what the audio engine measured, marked [debug].</div>
+    <div class="row"><span class="lbl" style="width:70px">Chip stream</span>
+      <select id="cfgchipstream" aria-label="Chip audio streaming" style="flex:1;min-height:36px">
+        <option value="off">Off</option>
+        <option value="auto">Auto</option>
+        <option value="on">On</option>
+      </select></div>
+    <div class="status cfgind">Experimental (docs/streamed-render-plan.md): console audio for a PlayStation/PlayStation 2 song arrives a couple of seconds at a time instead of rendering the whole song up front — the fix for a big song (FFX "Challenge") crashing the iPad's memory. <b>Off</b> (default): today's whole-render behavior, unchanged. <b>On</b>: stream mode for every song whose chip supports it; any failure falls back to the whole render for that song. <b>Auto</b> behaves like Off for now.</div>
     <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgpeninstant" style="width:20px;height:20px"> Apple Pencil draws and grabs at once</label></div>
     <div class="status cfgind">On: the Pencil places, grabs and moves notes the moment it touches — no hold; fingers still hold to grab and swipe to scroll. Off: the Pencil behaves like a finger.</div>
@@ -9259,7 +9267,7 @@ function scheduleNote(ti, n, when, durSec) {
   // chip.key, which muted the synth here while chipStart never ran — cursor
   // moving, nothing heard, on the SNES song and on the NES song after it
   // (review, 2026-09-27). chip.srcs is what chipStart made; no srcs, synth plays.
-  if (!n._preview && chipActive() && chip.srcs.length && song.tracks[ti] && chipHas(song.tracks[ti].name) &&
+  if (!n._preview && chipActive() && (chip.stream ? chip.stream.live : chip.srcs.length) && song.tracks[ti] && chipHas(song.tracks[ti].name) &&
       (!song.tracks[ti].voice || song.tracks[ti].voice === "auto")) return;
   // a game instrument OR a loaded soundfont's preset (assigned from the voice &
   // color menu's Game instruments/Soundfonts families) renders through
@@ -9452,7 +9460,13 @@ function currentLoop() { // "loop: B.Q" = at the anchor (jump point), return to 
 // (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
 // oscillator per note, hardware envelopes, real noise. Available while the
 // import session that captured the current draft is still open.
-const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null}; // no toggle: chip audio is automatic wherever a source resolves
+const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null}; // no toggle: chip audio is automatic wherever a source resolves
+// stream: non-null only in stream mode (docs/streamed-render-plan.md step 3,
+// chipStreamOpen) — {key, gen, rate, chunkFrames, overlap, tracks, seconds,
+// frames, leadSec, silent:Set, cache:Map(idx->{buffers,bytes,pinned}),
+// pinnedIdx:Set, scheduled:Set, waiters:Map(idx->[fn]), bytes, peakBytes,
+// live, srcs:[]}. chip.pcm/chip.buffers stay null for a song playing from
+// chip.stream — chipActive()/chipHas() read all three.
 // pan: {name: -1..1}, set only for a track the memory budget (below) downmixed
 // from a genuinely stereo render to mono — chipStart reapplies it so the
 // audible result is unchanged; absent/null for every other track (normal pan
@@ -9666,7 +9680,7 @@ async function updateChipBtnInner() { // name kept for call sites; now just the 
     if (chip.key && chip.key !== songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chip.pan = null; chipPreviewCache.clear(); if (chipWorker && chipWorker.__key !== songKey) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
     chip.rendering = songKey;
     const forKey = songKey;
-    chip.renderPromise = chipRender().catch(err => {
+    chip.renderPromise = chipRenderAuto().catch(err => {
       // name + message (a module-load failure now names its path — fix 2),
       // and the heap if the browser exposes it: a real 404 vs an allocation
       // failure used to look identical in this one line (Josh's iPad, FF7
@@ -9705,22 +9719,36 @@ function chipRenderBudget() { return (typeof EDITION !== "undefined" && EDITION 
 // the budget, in the order CLAUDE.md's fix asked for — (a) drop silent
 // tracks is handled elsewhere (this can't know which tracks are silent
 // before they're rendered); (b) mono; (c) a lower rate, 48k→32k→24k→22050.
-// {tracks, seconds, sampleRate, channels, budget} → {rate, mono, channels, bytes, refuse}
-function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
+// {tracks, seconds, sampleRate, channels, budget, canStream} → {rate, mono, channels, bytes, refuse}
+// canStream (2026-09-30, Aeon Battle crash — open-items.md "2026-09-30 21:40",
+// mirrors tools/chip-worker.mjs's own copy — keep the two in step): a kind
+// with a stream hook (CHIPS[kind].stream, today psf/psf2) renders mono
+// straight into the final kept buffer chunk by chunk (chipRenderStreamed,
+// below) — its peak is kept + one chunk. A kind with no stream hook still
+// renders the WHOLE stereo pair in one call, THEN downmixes while that
+// original is still referenced — its real peak for the mono step is the
+// stereo pair (2x) + the mono copy (1x) ≈ 3x kept (step 0 measured the
+// multiplier). The budget used to compare `budget` against kept alone for
+// EVERY kind, so a "mono fits" verdict for a non-streaming kind could still
+// crash for real; the mono step's admission check below uses the honest
+// (3x-aware) estimate when canStream is falsy. `bytes` itself stays the kept
+// estimate either way (what's reported/logged elsewhere).
+function planChipRender({tracks, seconds, sampleRate, channels, budget, canStream}) {
   const bytesAt = (rate, ch) => Math.ceil(tracks * ch * rate * seconds * 4);
+  const monoFits = (rate, ch, keptBytes) => keptBytes + (canStream ? 0 : bytesAt(rate, ch)) <= budget; // + the stereo original a non-streaming render still holds
   let rate = sampleRate, mono = false, ch = channels;
   let bytes = bytesAt(rate, ch);
   if (bytes <= budget) return {rate, mono, channels: ch, bytes};
   if (ch > 1) { // (b) mono: half the bytes, no quality loss when the pan turns out static (chipStaticPan, at render time)
     mono = true; ch = 1;
     bytes = bytesAt(rate, ch);
-    if (bytes <= budget) return {rate, mono, channels: ch, bytes};
+    if (monoFits(rate, channels, bytes)) return {rate, mono, channels: ch, bytes};
   }
   for (const step of CHIP_RATE_STEPS) { // (c) lower the rate, never below 22050 (the last step)
     if (step >= rate) continue;
     rate = step;
     bytes = bytesAt(rate, ch);
-    if (bytes <= budget) return {rate, mono, channels: ch, bytes};
+    if (mono ? monoFits(rate, channels, bytes) : bytes <= budget) return {rate, mono, channels: ch, bytes};
   }
   return {rate, mono, channels: ch, bytes, refuse: true}; // floor hit and still over budget: the caller refuses the render, synth carries the song
 }
@@ -9785,6 +9813,85 @@ function chipIsPcm(x) { return x instanceof Float32Array || !!(x && x.l instance
 async function chipAlbumHasSource() { // an SNES import has no console file at all: no warning is due
   try { const meta = await albumMetaFor(songKey); return !!(meta && meta.nsf); } catch (err) { return false; }
 }
+// 2026-09-30 (Aeon Battle crash, open-items.md "2026-09-30 21:40"): mirrors
+// tools/chip-worker.mjs's own renderStreamed — keep the two in step (the
+// worker can't import from this inline script). Used by chipRender() below
+// INSTEAD of a plain CHIPS[kind].render() call whenever the kind has a
+// `.stream` hook (today psf/psf2): renders into the FINAL kept buffers chunk
+// by chunk, so a mono downmix copy never coexists with the whole stereo
+// original for the whole song (peak ≈ kept + one chunk, not ~3x kept — see
+// planChipRender's own comment for the budget-honesty half of this fix).
+const CHIP_STREAMED_RENDER_CHUNK_SEC = 1;
+async function chipRenderStreamed(M, kindDef, res, {sampleRate, plan, onProgress}) {
+  const streamObj = kindDef.stream(M, res, {sampleRate});
+  const names = streamObj.tracks;
+  const total = streamObj.frames;
+  const chunkFrames = Math.max(1, Math.round(sampleRate * CHIP_STREAMED_RENDER_CHUNK_SEC));
+  const pan = {};
+  if (plan.mono) {
+    const acc = {}; for (const n of names) acc[n] = {pans: [], moved: false, sawAudio: false};
+    for (let done = 0; done < total; ) {
+      const n = Math.min(chunkFrames, total - done);
+      const r = streamObj.render(n);
+      for (const name of names) {
+        const t = r[name];
+        if (!t || !t.l || acc[name].moved) continue;
+        if (chipSilent([t])) continue;
+        const p = chipStaticPan(t.l, t.r);
+        if (p === null) { acc[name].moved = true; continue; }
+        acc[name].pans.push(p); acc[name].sawAudio = true;
+      }
+      done += n;
+    }
+    for (const name of names) {
+      const a = acc[name];
+      if (a.moved || !a.sawAudio) { pan[name] = null; continue; }
+      if (a.pans.length < 2) { pan[name] = a.pans[0] || 0; continue; }
+      const lo = Math.min(...a.pans), hi = Math.max(...a.pans);
+      pan[name] = hi - lo > 0.08 ? null : a.pans.reduce((x, y) => x + y, 0) / a.pans.length;
+    }
+    streamObj.seek(0);
+  }
+  const outMono = {}, outL = {}, outR = {};
+  let offset = 0, peakChunkBytes = 0;
+  for (let done = 0; done < total; ) {
+    const n = Math.min(chunkFrames, total - done);
+    const r = streamObj.render(n);
+    let chunkBytes = 0;
+    for (const name of names) {
+      const t = r[name]; if (!t) continue;
+      if (t.l) {
+        chunkBytes += t.l.byteLength + t.r.byteLength;
+        if (plan.mono && pan[name] !== null && pan[name] !== undefined) {
+          if (!outMono[name]) outMono[name] = new Float32Array(total);
+          const m = chipDownmixStatic(t.l, t.r, pan[name]);
+          outMono[name].set(m, offset);
+          chunkBytes += m.byteLength;
+        } else {
+          if (!outL[name]) { outL[name] = new Float32Array(total); outR[name] = new Float32Array(total); }
+          outL[name].set(t.l, offset); outR[name].set(t.r, offset);
+        }
+      } else {
+        if (!outMono[name]) outMono[name] = new Float32Array(total);
+        outMono[name].set(t, offset);
+        chunkBytes += t.byteLength;
+      }
+    }
+    peakChunkBytes = Math.max(peakChunkBytes, chunkBytes);
+    offset += n; done += n;
+    if (onProgress) onProgress(offset / total);
+  }
+  const pcm = {}, panOut = {}; let keptBytes = 0;
+  for (const name of names) {
+    const v = outMono[name] ? outMono[name] : (outL[name] ? {l: outL[name], r: outR[name]} : null);
+    if (!v) continue;
+    if (chipSilent([v])) continue;
+    pcm[name] = v;
+    keptBytes += v.l ? (v.l.byteLength + v.r.byteLength) : v.byteLength;
+    if (outMono[name] && pan[name] !== null && pan[name] !== undefined) panOut[name] = pan[name];
+  }
+  return {pcm, pan: panOut, peakBytes: keptBytes + peakChunkBytes, keptBytes, sampleRate: streamObj.sampleRate, groups: names.length};
+}
 async function chipRender() {
   const forKey = songKey;
   const src = await chipSource();
@@ -9839,9 +9946,19 @@ async function chipRender() {
     // chip's own channel count (stereo-capable chips only — CHIPS[kind].stereo)
     // decide the render's OWN sample rate/channels BEFORE it allocates anything
     const tracks = chipEstimateTracks(kind, res, M);
-    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: CHIPS[kind].stereo ? 2 : 1, budget});
+    const canStream = !!CHIPS[kind].stream;
+    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: CHIPS[kind].stereo ? 2 : 1, budget, canStream});
     if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
     if (plan.rate !== rate || plan.mono) logDebug(songTitleOf(forKey) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)");
+    if (canStream) { // chunk by chunk, straight into the kept buffers (2026-09-30: peak ≈ kept + one chunk, not ~3x — chipRenderStreamed's own comment)
+      let out;
+      try {
+        out = await chipRenderStreamed(M, CHIPS[kind], res, {sampleRate: plan.rate,
+          plan, onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
+      } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
+      if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
+      return chipPublish(forKey, kind, out.pcm, out.sampleRate, leadSec, out.pan, {peakBytes: out.peakBytes, keptBytes: out.keptBytes, tracks, groups: out.groups});
+    }
     const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
     let r;
     try {
@@ -10001,8 +10118,11 @@ function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
     w.postMessage({id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, n: src.n, secs, rate, budget, title: songTitleOf(forKey)}, transfer);
   });
 }
-function chipActive() { return chip.key === songKey && !!(chip.pcm || chip.buffers); }
-function chipHas(name) { return !!((chip.pcm && chip.pcm[name]) || (chip.buffers && chip.buffers[name])); } // this track name has console audio
+function chipActive() { return chip.key === songKey && !!(chip.pcm || chip.buffers || chip.stream); }
+function chipHas(name) { // this track name has console audio
+  if (chip.stream) return chip.stream.tracks.includes(name) && !chip.stream.silent.has(name); // stream mode (step 3): listed and not reported silent by the idle sweep
+  return !!((chip.pcm && chip.pcm[name]) || (chip.buffers && chip.buffers[name]));
+}
 function chipBuffers() { // AudioBuffers for the live context, made from the render's PCM — called from play()'s tap only
   if (chip.buffers && chip.buffersCtx === audio) return chip.buffers;
   if (!chip.pcm || !audio) return chip.buffers || {};
@@ -10043,6 +10163,16 @@ function chipPcmToBuffers() {
 function chipStopSrcs() {
   for (const s of chip.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
   chip.srcs = [];
+  // stream mode (docs/streamed-render-plan.md step 3): stop the per-chunk
+  // sources chipStreamPump scheduled, but keep chip.stream.cache — the same
+  // chunks are good for the next play() from anywhere already cached, and a
+  // fresh render would throw away work for nothing. One call site (stop()
+  // already calls chipStopSrcs) covers both paths.
+  if (chip.stream) {
+    for (const s of chip.stream.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
+    chip.stream.srcs = [];
+    chip.stream.live = false;
+  }
 }
 function chipStart(fromSec) {
   chipStopSrcs();
@@ -10073,6 +10203,346 @@ function chipStart(fromSec) {
     if (albumEndAbs !== null) src.stop(playT0 + albumEndAbs); // the hardware loop still wraps; album play just ends it
     chip.srcs.push(src);
   }
+}
+// -------------------------------------------- chip stream mode (step 3) ---
+// docs/streamed-render-plan.md step 3 — a SECOND way to get console audio
+// playing, added entirely behind a switch that defaults OFF. With the
+// switch off, nothing above this comment runs any differently than before
+// this step (chipRender/chipPublish/chipPcmToBuffers/chipStart/
+// planChipRender are untouched and chip.stream stays null forever). On, for
+// a song whose chip kind streams — today only psf/psf2
+// (tools/chip-worker.mjs RUNNERS' own R.stream hook) — console audio arrives
+// a couple of seconds at a time instead of being rendered (and held) whole
+// up front; see the plan doc for why (FFX "Challenge" on PS2, 1.88 GB of
+// Float32, killed the iPad's WKWebView). The page never hardcodes which
+// kinds qualify (CLAUDE.md: no per-game/per-kind table in a capture engine)
+// — it just tries, and the worker's own {stream:{error:"no stream for
+// <kind>"}} reply for every other kind is the fallback signal.
+//
+// Settings → Other's three-way control (next to Debug log) persists
+// ff1roll-chipstream: off|auto|on, overridden per-tab by ?chipstream=on|off
+// (A/B — PERF_FLAGS, the same hand-rolled location.search reader ?dpr/
+// ?scene already use, so this works in the vm test sandbox too, which has
+// no real `location`). "auto" behaves exactly like "off" until step 5
+// defines it (stream only where whole-render would downgrade or refuse) —
+// the UI already offers the three-way choice so turning auto on later needs
+// no new control.
+function chipStreamMode() {
+  const u = PERF_FLAGS.get("chipstream");
+  if (u === "on" || u === "off") return u;
+  try { const v = localStorage.getItem("ff1roll-chipstream"); if (v === "on" || v === "off" || v === "auto") return v; } catch (err) { /* private mode: off */ }
+  return "off";
+}
+function chipStreamWanted() { return chipStreamMode() === "on"; } // "auto" == "off" for now (step 5)
+
+const CHIP_STREAM_CHUNK_SEC = 2;        // C in seconds of tape time (chunkFrames = this * the render's own sample rate — tools/chip-worker.mjs's own default chunk size)
+const CHIP_STREAM_OVERLAP = 256;        // O, in frames — tools/chip-worker.mjs's own default
+const CHIP_STREAM_HORIZON_VISIBLE = 7;  // seconds of context time chipStreamPump requests/schedules ahead
+const CHIP_STREAM_HORIZON_HIDDEN = 12;  // document.hidden: the OS throttles timers, so a hidden tab asks further ahead (same reasoning as the note scheduler's own 8s hidden lookahead)
+const CHIP_STREAM_PIN_LOOKAHEAD = 2;    // seconds of tape past loopSeg.start kept pinned so a wrap never waits
+
+// Pure tape-time mapping for stream-mode scheduling (chipStreamPump, below)
+// — the same "tape time = chip.lead + songSec × playRate" chipStart already
+// uses for one native-looping AudioBuffer's src.start()/loopStart/loopEnd,
+// generalized to a RUN of small per-chunk buffers. fromSec/loopSeg.start/
+// loopSeg.end are in the scheduler's own "sec" domain (play()'s playSec(),
+// tickToSec — already divided by playRate), NOT native/tape seconds; a
+// context-time span therefore equals the SAME span in this "sec" domain
+// (the /playRate baked into "sec" and the ×playRate baked into tape time
+// cancel — the identity chipStart's single looping source already relies on
+// via a constant playbackRate), while tape position itself is `lead +
+// sec × playRate`.
+// Returns [{when, tapeFrom, tapeTo}, …] — `when` is CONTEXT time, in the
+// domain the `playT0` argument is given in (the caller supplies whatever
+// anchor is current: a fresh audio.currentTime each pump tick, or a fixed
+// playT0 for a one-shot computation/test). Segment 0 runs from `fromSec`
+// (so a resume mid-loop plays its own remainder — the existing note
+// scheduler's own chase behavior) to loopSeg.end; every segment after
+// repeats the WHOLE loop body [loopSeg.start, loopSeg.end) — a hard splice
+// at the wrap, no crossfade between passes, same as src.loop today. A
+// through-composed song (loopSeg.looped falsy) gets exactly one segment.
+// albumEndAbs (seconds after `playT0`, or null) truncates the last segment
+// and drops anything past it — same rule play()'s own pump already applies
+// to note scheduling. Stops once CHIP_SEG_HORIZON_SEC of context time
+// beyond `playT0` is covered: generous margin over the pump's own largest
+// lookahead (12s hidden), so one call always returns enough for one pump
+// tick even for a pathologically short loop (the FF1 triangle ear test);
+// CHIP_SEG_MAX_SEGMENTS is a safety valve against a zero-length loop
+// looping this function forever.
+const CHIP_SEG_HORIZON_SEC = 20;
+const CHIP_SEG_MAX_SEGMENTS = 512;
+function chipSegments(fromSec, loopSeg, playRate, lead, albumEndAbs, playT0) {
+  const out = [];
+  if (!loopSeg || !(loopSeg.end > loopSeg.start) || !(playRate > 0)) return out;
+  let when = playT0, songFrom = fromSec;
+  while (out.length < CHIP_SEG_MAX_SEGMENTS) {
+    const songTo = loopSeg.end;
+    if (songTo <= songFrom) break; // at/past the loop end with no wrap to reach from here
+    let tapeFrom = lead + songFrom * playRate, tapeTo = lead + songTo * playRate;
+    let segDur = songTo - songFrom; // context-time span (see the identity above)
+    const absStart = when - playT0;
+    if (albumEndAbs !== null) {
+      if (absStart >= albumEndAbs - 1e-9) break; // the pass count is spent: nothing past the end
+      if (absStart + segDur > albumEndAbs) { segDur = albumEndAbs - absStart; tapeTo = tapeFrom + segDur * playRate; }
+    }
+    if (segDur <= 0) break;
+    out.push({when, tapeFrom, tapeTo});
+    when += segDur;
+    if (albumEndAbs !== null && when - playT0 >= albumEndAbs - 1e-9) break;
+    if (!loopSeg.looped) break; // through-composed: one pass, no wrap (play()'s own rule)
+    if (when - playT0 >= CHIP_SEG_HORIZON_SEC) break; // enough for one pump tick's lookahead
+    songFrom = loopSeg.start; // every repeat after the first plays the WHOLE loop body
+  }
+  return out;
+}
+
+function chipStreamIdxForTapeSec(tapeSec) { return Math.max(0, Math.floor(tapeSec / CHIP_STREAM_CHUNK_SEC)); } // rate cancels: chunkFrames/rate == CHIP_STREAM_CHUNK_SEC
+
+// {id, kind, files, shared, own, v, bytes, libs, secs, rate} -> a Promise of
+// {tracks, seconds, sampleRate, frames, leadSec} (ready) or {error}. Mirrors
+// chipRenderInWorker's own lifecycle (one worker at a time in `chipWorker`,
+// terminated on a song change, previews answered the same way afterward) —
+// the difference is the message shape posted ({stream} instead of the whole
+// payload) and that this worker KEEPS running after "ready": {chunk}/
+// {silent} replies to later {want}/{idle} calls land on the SAME onmessage,
+// installed once, for the rest of this song's stream session.
+function chipStreamOpenWorker(kind, src, secs, rate, forKey) {
+  return new Promise(resolve => {
+    if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; }
+    let w, workerUrl;
+    try { workerUrl = new URL("tools/chip-worker.mjs?v=" + Date.now(), APP_BASE).href; w = new Worker(workerUrl, {type: "module"}); }
+    catch (err) { chipWorkerAvailable.broken = true; console.warn("[chip] no module worker (" + workerUrl + "): " + err.message + " — stream mode unavailable this render"); return resolve({error: String(err && err.message || err)}); }
+    chipWorker = w;
+    const c = CHIPS[kind];
+    let settled = false;
+    const watch = setInterval(() => { if (songKey !== forKey) finish({error: "stale render: " + forKey.split("/").pop()}); }, 250); // a song change ends this attempt at once, same as chipRenderInWorker
+    const finish = out => {
+      if (settled) return; settled = true;
+      clearInterval(watch);
+      if (!out || out.error) { if (chipWorker === w) chipWorker = null; try { w.terminate(); } catch (err) { /* gone */ } }
+      else w.__key = forKey; // kept alive afterward for previews, same as a finished whole render
+      resolve(out);
+    };
+    w.onmessage = e => { // installed once; handles the open reply AND every later {chunk}/{silent}/{preview} for this session's whole life
+      const m = e.data || {};
+      if (m.preview) { const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); return; }
+      if (m.ready) { finish(m.ready); return; }
+      if (m.stream && m.stream.error) { finish({error: m.stream.error}); return; }
+      if (m.chunk) { chipStreamOnChunk(m.chunk); return; }
+      if (m.silent) { chipStreamOnSilent(m.silent); return; }
+    };
+    w.onerror = err => finish({error: String(err && err.message || "worker error")});
+    const bytes = src.bytes instanceof Uint8Array ? src.bytes.slice() : new Uint8Array(src.bytes).slice(); // a copy: the record keeps its own
+    const libs = {}, transfer = [bytes.buffer];
+    for (const [name, b] of Object.entries(src.libs || {})) { const c2 = b instanceof Uint8Array ? b.slice() : new Uint8Array(b).slice(); libs[name] = c2; transfer.push(c2.buffer); }
+    w.postMessage({stream: {id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, secs, rate,
+      chunkFrames: CHIP_STREAM_CHUNK_SEC * rate, overlap: CHIP_STREAM_OVERLAP}}, transfer);
+  });
+}
+// {chunk:{id, gen, idx, frames, tracks}} -> AudioBuffers in chip.stream.cache
+// (the same "build the AudioBuffer once, drop the Float32" move
+// chipPcmToBuffers makes for the whole-render path). A chunk for a superseded
+// song or an old gen (a seek bumped it) is silently dropped — the worker may
+// still have one in flight when either happens.
+function chipStreamOnChunk(c) {
+  const st = chip.stream;
+  if (!st || st.key !== c.id || st.gen !== c.gen) return;
+  const buffers = {}; let bytes = 0;
+  for (const [name, data] of Object.entries(c.tracks)) {
+    const stereo = data && data.l ? data : null;
+    const len = stereo ? stereo.l.length : (data ? data.length : 0);
+    if (!len) continue;
+    let buf = null;
+    try { buf = (typeof AudioBuffer === "function") ? new AudioBuffer({numberOfChannels: stereo ? 2 : 1, length: len, sampleRate: st.rate})
+      : (audio && audio.createBuffer(stereo ? 2 : 1, len, st.rate)); } catch (err) { buf = audio && audio.createBuffer(stereo ? 2 : 1, len, st.rate); }
+    if (!buf) continue;
+    if (stereo) { buf.copyToChannel(stereo.l, 0); buf.copyToChannel(stereo.r, 1); bytes += stereo.l.byteLength + stereo.r.byteLength; }
+    else { buf.copyToChannel(data, 0); bytes += data.byteLength; }
+    buffers[name] = buf;
+  }
+  st.cache.set(c.idx, {buffers, bytes, pinned: st.pinnedIdx.has(c.idx)});
+  st.bytes = 0; for (const e of st.cache.values()) st.bytes += e.bytes;
+  st.peakBytes = Math.max(st.peakBytes, st.bytes);
+  const waiters = st.waiters.get(c.idx);
+  if (waiters) { st.waiters.delete(c.idx); waiters.forEach(fn => fn()); }
+}
+// {silent:{id, names}} -> chip.stream.silent, a live Set — chipHas() (and so
+// scheduleNote's chip guard) reads it the instant it updates: a track the
+// idle sweep found never audible lets the synth voice back in, same as the
+// whole-render path dropping a silent track from chip.pcm entirely.
+function chipStreamOnSilent(s) {
+  const st = chip.stream;
+  if (!st || st.key !== s.id) return;
+  st.silent = new Set(s.names);
+}
+function chipStreamRequestRange(from, to) {
+  const st = chip.stream;
+  if (!st || !chipWorker) return;
+  const need = [];
+  for (let i = from; i <= to; i++) if (!st.cache.has(i)) need.push(i);
+  if (!need.length) return;
+  let i = 0;
+  while (i < need.length) { // contiguous runs in one {want} call
+    let j = i; while (j + 1 < need.length && need[j + 1] === need[j] + 1) j++;
+    chipWorker.postMessage({want: {id: st.key, gen: st.gen, from: need[i], to: need[j]}});
+    i = j + 1;
+  }
+}
+function chipStreamWaitFor(idx) {
+  const st = chip.stream;
+  if (!st) return Promise.resolve();
+  if (st.cache.has(idx)) return Promise.resolve();
+  return new Promise(resolve => { if (!st.waiters.has(idx)) st.waiters.set(idx, []); st.waiters.get(idx).push(resolve); });
+}
+// Pins the chunks covering [loopSeg.start, loopSeg.start + lookahead] (and
+// requests them if they aren't cached yet) so a loop wrap never has to wait
+// on the worker; un-pins everything when there's no loop to wrap to. Cheap
+// to call every pump tick — it only touches the pin set, not the network/
+// worker traffic, beyond the one request for chunks not yet on hand.
+function chipStreamPinLoopStart() {
+  const st = chip.stream;
+  if (!st) return;
+  const idxSet = new Set();
+  if (loopSeg && loopSeg.looped) {
+    const tapeStart = chip.lead + loopSeg.start * playRate;
+    const idxFrom = chipStreamIdxForTapeSec(tapeStart);
+    const idxTo = chipStreamIdxForTapeSec(tapeStart + CHIP_STREAM_PIN_LOOKAHEAD * playRate);
+    for (let idx = idxFrom; idx <= idxTo; idx++) idxSet.add(idx);
+    chipStreamRequestRange(idxFrom, idxTo);
+  }
+  st.pinnedIdx = idxSet;
+  for (const [idx, entry] of st.cache) entry.pinned = idxSet.has(idx);
+}
+// Frees cached chunks behind the playhead (never a pinned one) — the
+// memory-bounded half of streaming: a long play never holds more than a few
+// chunks' worth at once. One chunk of slack behind the current index: its
+// overlap tail may still be sounding (the fade-out half of the crossfade).
+function chipStreamEvict(curSec) {
+  const st = chip.stream;
+  if (!st) return;
+  const curIdx = chipStreamIdxForTapeSec(chip.lead + curSec * playRate);
+  for (const [idx, entry] of st.cache) if (!entry.pinned && idx < curIdx - 1) st.cache.delete(idx);
+  st.bytes = 0; for (const e of st.cache.values()) st.bytes += e.bytes;
+}
+function chipStreamScheduled(idx, when) { return chip.stream.scheduled.has(idx + "@" + Math.round(when * 1000)); }
+// Schedules one AudioBufferSourceNode per track for chunk `idx`'s buffer,
+// wired EXACTLY like chipStart's own sources (src -> [chip.pan panner, if
+// any] -> trackGain(ti)) so mute/solo/volume/pan and the Mixer meters all
+// keep working unchanged. `when`/`offset`/`dur` are already resolved by the
+// caller (chipStreamPump) to the exact slice of this chunk's buffer that
+// belongs to the current segment — see the comment there for the formula.
+function chipStreamScheduleChunk(idx, entry, when, offset, dur) {
+  const st = chip.stream;
+  for (const [name, buffer] of Object.entries(entry.buffers)) {
+    const ti = song.tracks.findIndex(tr => (tr.name || "") === name);
+    if (ti < 0) continue;
+    const vv = song.tracks[ti].voice;
+    if (vv && vv !== "auto") continue; // explicit instrument choice overrides the chip for this track, same as chipStart
+    const src = audio.createBufferSource();
+    src.buffer = buffer;
+    src.playbackRate.value = playRate;
+    let node = src;
+    if (chip.pan && chip.pan[name] !== undefined && audio.createStereoPanner) { const p = audio.createStereoPanner(); p.pan.value = chip.pan[name]; src.connect(p); node = p; }
+    node.connect(trackGain(ti));
+    const startAt = Math.max(when, audio.currentTime + 0.003);
+    if (dur > 0) src.start(startAt, offset, dur); else src.start(startAt, offset);
+    src.onended = () => { const i = st.srcs.indexOf(src); if (i >= 0) st.srcs.splice(i, 1); };
+    st.srcs.push(src);
+  }
+  st.scheduled.add(idx + "@" + Math.round(when * 1000));
+}
+// The ~60ms pump (play(), below) calls this FIRST, every tick, while
+// chip.stream is this song's live session: requests chunks up to a horizon
+// (visible/hidden — the OS throttles timers in a hidden tab, same reasoning
+// as the note scheduler's own lookahead), schedules any newly-arrived ones
+// that fall inside THIS tick's scheduling window, evicts played chunks, and
+// keeps the loop's own start pinned. Safe to call when not playing or
+// between songs — every real action below is gated on chip.stream actually
+// being this song's live session.
+function chipStreamPump(nowCtx) {
+  const st = chip.stream;
+  if (!playing || !st || st.key !== songKey) return;
+  const horizon = (typeof document !== "undefined" && document.hidden) ? CHIP_STREAM_HORIZON_HIDDEN : CHIP_STREAM_HORIZON_VISIBLE;
+  const until = nowCtx + horizon;
+  const curSec = playSec();
+  const albumEndRel = albumEndAbs === null ? null : albumEndAbs - (nowCtx - playT0);
+  const segs = chipSegments(curSec, loopSeg, playRate, chip.lead, albumEndRel, nowCtx);
+  let anyLive = false;
+  for (const seg of segs) {
+    if (seg.when >= until) break;
+    const idxFrom = chipStreamIdxForTapeSec(seg.tapeFrom);
+    const idxTo = chipStreamIdxForTapeSec(Math.max(seg.tapeFrom, seg.tapeTo - 1e-9));
+    chipStreamRequestRange(idxFrom, idxTo);
+    for (let idx = idxFrom; idx <= idxTo; idx++) {
+      const entry = st.cache.get(idx);
+      if (!entry) continue; // not back from the worker yet — the next tick retries
+      const chunkTapeStart = idx * CHIP_STREAM_CHUNK_SEC;
+      const when = seg.when + Math.max(0, chunkTapeStart - seg.tapeFrom) / playRate;
+      if (when >= until) continue; // this tick's window doesn't reach it yet
+      if (chipStreamScheduled(idx, when)) continue; // already scheduled on an earlier tick
+      const offset = Math.max(0, seg.tapeFrom - chunkTapeStart); // mid-chunk resume (a seek that doesn't land on a chunk boundary)
+      const dur = Math.max(0, seg.tapeTo - Math.max(seg.tapeFrom, chunkTapeStart)); // trims the LAST chunk of a segment at the loop wrap / album end: a hard splice, no bleed into the next segment
+      chipStreamScheduleChunk(idx, entry, when, offset, dur);
+      anyLive = true;
+    }
+  }
+  if (anyLive) st.live = true;
+  chipStreamEvict(curSec);
+  chipStreamPinLoopStart();
+}
+// Replaces chipStart(fromSec) in stream mode: no new render, no `{stream}`
+// message — the cache from chipStreamOpen keeps whatever it already has (a
+// replay from a different spot can reuse cached chunks; chipStreamPump's own
+// eviction keeps memory bounded going forward). Bumping gen cancels any
+// `{want}`/`{idle}` still in flight for the position this is leaving.
+function chipStreamStart(fromSec) {
+  const st = chip.stream;
+  if (!st) return;
+  for (const s of st.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
+  st.srcs = []; st.scheduled = new Set(); st.live = false;
+  st.gen++;
+  if (chipWorker) chipWorker.postMessage({seek: {id: st.key, gen: st.gen, idx: chipStreamIdxForTapeSec(chip.lead + fromSec * playRate)}});
+  chipStreamPump(audio.currentTime);
+}
+// Entry point for chip.renderPromise (replaces a bare chipRender() call):
+// stream mode first when the switch is on, the existing whole-render path
+// otherwise OR as the fallback from any stream failure — exactly the
+// behavior before this step when the switch is off. chipStreamOpen resolves
+// once {ready} has arrived AND the first window (the chunks covering the
+// play-from position, +1) is cached, so playGate/album-play's wait on
+// chip.renderPromise sees the same "worth waiting for" contract either path.
+async function chipStreamOpen() {
+  const forKey = songKey;
+  const src = await chipSource();
+  if (!src) return false;
+  const kind = src.chip || "nsf";
+  const secs = Math.ceil(src.secs + 1);
+  const rate = CHIPS[kind].renderRate || (audio ? audio.sampleRate : 44100);
+  const w = await chipStreamOpenWorker(kind, src, secs, rate, forKey);
+  if (songKey !== forKey) return false; // stale: a later song is open now
+  if (!w || w.error) { logDebug("chip stream: " + (w && w.error || "no worker") + " — falling back to the whole render"); return false; }
+  chip.stream = {
+    key: forKey, gen: 0, rate: w.sampleRate, chunkFrames: CHIP_STREAM_CHUNK_SEC * w.sampleRate, overlap: CHIP_STREAM_OVERLAP,
+    tracks: w.tracks, seconds: w.seconds, frames: w.frames, leadSec: w.leadSec,
+    silent: new Set(), cache: new Map(), pinnedIdx: new Set(), scheduled: new Set(), waiters: new Map(),
+    bytes: 0, peakBytes: 0, live: false, srcs: [],
+  };
+  chip.lead = w.leadSec; chip.key = forKey; chip.buffers = null; chip.pcm = null; chip.pan = null;
+  const fromSec = (typeof song !== "undefined" && song && typeof playCursor !== "undefined" && playCursor > 0) ? tickToSec(song, playCursor) : 0;
+  const idx0 = chipStreamIdxForTapeSec(chip.lead + fromSec * playRate);
+  chipStreamRequestRange(idx0, idx0 + 1);
+  await chipStreamWaitFor(idx0);
+  if (songKey !== forKey || !chip.stream || chip.stream.key !== forKey) return false; // superseded while waiting
+  if (chipWorker) chipWorker.postMessage({idle: {id: forKey}}); // one state-only sweep so an all-silent track re-enables synth promptly, not only after it happens to fall inside a rendered window
+  console.log("[chip] stream ready: " + forKey + " — playing the console's own sound (stream mode)");
+  return true;
+}
+async function chipRenderAuto() { // chip.renderPromise's entry point — see chipStreamOpen's own comment
+  if (chipStreamWanted()) {
+    const ok = await chipStreamOpen();
+    if (ok) return true;
+  }
+  return chipRender();
 }
 // ---------------------------------------------------- audio tracks (clips)
 // A recording as a track (Josh's son, 2026-09-15: "I wouldn't use it unless
@@ -10700,7 +11170,7 @@ async function play(fromSec = 0, opts = {}) {
   }
   updateTrackGains();
   song.tracks.forEach((_, ti) => trackGain(ti)); // pre-create so gains exist before first event
-  if (chipActive()) chipStart(fromSec); // authentic audio rides the same transport
+  if (chipActive()) { if (chip.stream) chipStreamStart(fromSec); else chipStart(fromSec); } // authentic audio rides the same transport
   schedIdx = schedEvents.findIndex(e => e.sec >= fromSec);
   if (schedIdx < 0) schedIdx = schedEvents.length;
   // chase: a note the cursor lands mid-way through still plays its remainder —
@@ -10717,6 +11187,7 @@ async function play(fromSec = 0, opts = {}) {
   srAnnounce("Playing" + (albumRun && currentPath ? " — " + songTitleOf(currentPath) : ""));
   albumStrip(); // un-dims on resume
   const pump = () => {
+    if (chip.stream) chipStreamPump(audio.currentTime); // first (docs/streamed-render-plan.md step 3): independent of schedEvents/loopSeg's note-scheduling below, and gated internally on `playing`/the open song, so it's safe even on a stray tick after stop()
     if (!playing) { clearInterval(schedTimer); return; } // a stopped transport schedules nothing, ends nothing
     const segLen = loopSeg.end - loopSeg.start;
     if (!schedEvents.length || segLen <= 0) return;
@@ -17495,6 +17966,7 @@ const CHIPS = {
         },
         lead: () => 0, // the capture's MIDI keeps the score's own rests: song time zero is tick 0
         render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
+        stream: (M, res, o) => M.createSpuStream(res.result, {sampleRate: o.sampleRate, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}), // mirrors tools/chip-worker.mjs's RUNNERS.psf — chipRenderStreamed (the inline fallback's own copy) and stream mode (chipStreamOpen) both use this
         renderRate: 44100, stereo: true, // renderSpu always returns {l, r} per track (tools/psx/spu-render.mjs)
         parseAsync: M => async (bytes, name) => { const psf = M.parsePSF(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
         capture: async (M, parsed, secs, onProgress, sess) => {
@@ -17557,6 +18029,7 @@ const CHIPS = {
         // bank})), the same field PS1's SEQ/VAB path uses — renderSpu's
         // vabVoices() branch needs nothing else.
         render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds}),
+        stream: (M, res, o) => M.createSpuStream(res.result, {sampleRate: o.sampleRate, keepSeconds: res.seconds}), // mirrors tools/chip-worker.mjs's RUNNERS.psf2
         renderRate: 48000, // PSF2's own native rate (PSF1/PS1's is 44100 — docs/plans/ps2.md §3)
         stereo: true, // the same renderSpu as PS1 (FFX "Challenge" reproduced here — 30 tracks, 163 s, 1.88 GB at this rate)
         parseAsync: M => async (bytes, name) => { const psf = M.parsePSF2(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
@@ -17691,15 +18164,12 @@ function chipVaultMeta(slug, kind) { // album.json's nsf: block for an import �
   return m;
 }
 function chipVaultFile(meta, base) { return meta.perFile ? meta.vault + base + chipExt(meta.chip) : meta.vault; } // where a track's console file lives in the archive
-async function chipModules(kind) {
+async function chipModules(kind, importFn) { // importFn: test-only override of real dynamic import() (tests/night-roll.test.mjs — no real file can be made to fail once then succeed)
   kind = kind || "nsf";
   chipModules.cache = chipModules.cache || {};
   if (!chipModules.cache[kind]) {
-    // ?v busts the Pages CDN per page load — a stale pipeline module next to
-    // a fresh index.html reintroduced fixed bugs (the sync-runner fallback
-    // froze Josh's iPad tab an hour after the async fix shipped)
-    const v = "?v=" + Date.now();
     const c = CHIPS[kind];
+    const doImport = importFn || (path => import(path));
     // WebKit's own failure ("Importing a module script failed.") names
     // nothing — an iPad black-screen on FFX "Challenge" traced back to this
     // (Josh, 2026-09-30) with no file to blame. Name the path in the rethrow;
@@ -17707,12 +18177,33 @@ async function chipModules(kind) {
     // back to {} silently, same as before. A rejection here never reaches
     // chipModules.cache[kind] below (the throw skips that assignment), so a
     // failed import is retried fresh next time, never cached as broken.
-    const loadOne = (f, opt) => { const path = "./tools/" + (opt ? f.slice(1) : f) + ".mjs" + v;
-      return import(path).catch(err => { if (opt) return {}; throw new Error("couldn't load module tools/" + (opt ? f.slice(1) : f) + ".mjs: " + (err && err.message || err)); }); };
-    const parts = await Promise.all(c.files.map(f => loadOne(f, f.startsWith("?"))));
-    const shared = await Promise.all(c.shared.map(f => loadOne(f, false)));
-    const M = Object.assign({}, ...parts, ...shared);
-    for (const k of c.own) for (const part of parts) if (part[k]) M[k] = part[k];
+    // One retry, INLINE, with a fresh buster (2026-09-30, Aeon Battle crash —
+    // open-items.md "2026-09-30 21:40": after the crash, EVERY console song
+    // failed "Importing a module script failed" ×3 until a full app restart —
+    // the content process was still recovering, so the first import after a
+    // crash fails even for a kind never involved in it; a transient failure
+    // shouldn't need a restart to clear). ?v busts the Pages CDN per page
+    // load too — a stale pipeline module next to a fresh index.html
+    // reintroduced fixed bugs (the sync-runner fallback froze Josh's iPad tab
+    // an hour after the async fix shipped) — the retry's OWN buster must
+    // differ from the first attempt's, never the identical (possibly still-
+    // bad) URL.
+    const loadOnce = async v => {
+      const loadOne = (f, opt) => { const path = "./tools/" + (opt ? f.slice(1) : f) + ".mjs" + v;
+        return doImport(path).catch(err => { if (opt) return {}; throw Object.assign(new Error("couldn't load module tools/" + (opt ? f.slice(1) : f) + ".mjs: " + (err && err.name ? err.name + ": " : "") + (err && err.message || err)), {_path: path}); }); };
+      const parts = await Promise.all(c.files.map(f => loadOne(f, f.startsWith("?"))));
+      const shared = await Promise.all(c.shared.map(f => loadOne(f, false)));
+      return {parts, shared};
+    };
+    let got;
+    try { got = await loadOnce("?v=" + Date.now()); }
+    catch (err) {
+      const heap = (typeof performance !== "undefined" && performance.memory && performance.memory.usedJSHeapSize) ? " · heap " + Math.round(performance.memory.usedJSHeapSize / 1e6) + " MB" : "";
+      logDebug("module load failed (" + (err._path || "?") + "): " + err.message + heap + " — retrying once");
+      got = await loadOnce("?v=" + Date.now() + "-r"); // a fresh buster — never the exact same (possibly still-failing) URL
+    }
+    const M = Object.assign({}, ...got.parts, ...got.shared);
+    for (const k of c.own) for (const part of got.parts) if (part[k]) M[k] = part[k];
     chipModules.cache[kind] = M;
   }
   return chipModules.cache[kind];
@@ -23898,6 +24389,7 @@ function openSettingsSheet() {
   document.getElementById("cfgsongsrepo").value = c.songsRepo;
   document.getElementById("cfglearning").checked = appMode() === "learning";
   document.getElementById("cfgdebuglog").checked = debugLogOn();
+  document.getElementById("cfgchipstream").value = chipStreamMode();
   document.getElementById("cfgpeninstant").checked = penInstant();
   document.getElementById("cfgnotetapcursor").checked = noteTapMovesCursor();
   document.getElementById("cfgrecsnap").checked = recSnapOn();
@@ -23945,6 +24437,7 @@ function settingsPersist(id) {
     case "cfgrecsnap": { try { localStorage.setItem("ff1roll-recsnap", document.getElementById("cfgrecsnap").checked ? "1" : "0"); } catch (err) { /* private mode */ } break; }
     case "cfgtextsize": { const tv = v("cfgtextsize") || "1"; try { localStorage.setItem("ff1roll-textsize", tv); } catch (err) { /* private mode */ } applyTextSize(tv); break; }
     case "cfgdebuglog": { try { if (document.getElementById("cfgdebuglog").checked) localStorage.setItem("ff1roll-debuglog", "1"); else localStorage.removeItem("ff1roll-debuglog"); } catch (err) { /* private mode: stays off */ } errChip(); break; }
+    case "cfgchipstream": { const sv = v("cfgchipstream") || "off"; try { localStorage.setItem("ff1roll-chipstream", sv); } catch (err) { /* private mode: stays off */ } break; }
     case "cfgaikey": keep("ff1roll-aikey", v("cfgaikey")); askModelCache = null; break;
     case "cfgaibackend": saveCfg({aiBackend: v("cfgaibackend") === "browser" ? "browser" : "remote"}); aiBackendRows(); break;
     case "cfgaibrowsermodel": saveCfg({aiBrowserModel: v("cfgaibrowsermodel") || "Llama-3.2-1B-Instruct-q4f16_1-MLC"}); break;

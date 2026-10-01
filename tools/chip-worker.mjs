@@ -69,16 +69,35 @@
 //     checkpoint optimization is a todo, not needed for correctness today).
 //   ← {silent: {id, names}}
 const CHIP_RATE_STEPS = [48000, 32000, 24000, 22050]; // resampled by the renderer's own sampleRate option; 22050 is the floor
-export function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
+// canStream (2026-09-30, Aeon Battle crash — open-items.md "2026-09-30 21:40"):
+// a kind with a stream hook (R.stream — today psf/psf2, tools/psx/spu-render.mjs
+// createSpuStream) renders mono straight into the FINAL kept buffer, chunk by
+// chunk (renderStreamed, below) — its peak is kept + one chunk. A kind with NO
+// stream hook still calls R.render once, which hands back the WHOLE stereo
+// pair for every group; a mono downmix copy is then made while that stereo
+// original is still referenced (tallyChipRender's own comment) — ITS peak for
+// the mono step is the stereo pair (2x) + the mono copy (1x) ≈ 3x kept. The
+// budget used to compare `budget` against kept alone for every kind, so a
+// "mono fits" verdict for a non-streaming kind could still crash for real
+// (step 0 measured the multiplier; Aeon Battle, PS2, reproduced it on the
+// iPad). The MONO step's admission check below uses the honest (3x-aware)
+// estimate for a non-streaming kind; `bytes` itself stays the kept estimate
+// (what's reported/logged elsewhere) either way.
+export function planChipRender({tracks, seconds, sampleRate, channels, budget, canStream}) {
   const bytesAt = (rate, ch) => Math.ceil(tracks * ch * rate * seconds * 4);
+  const monoFits = (rate, ch, keptBytes) => keptBytes + (canStream ? 0 : bytesAt(rate, ch)) <= budget; // + the stereo original a non-streaming render still holds
   let rate = sampleRate, mono = false, ch = channels;
   let bytes = bytesAt(rate, ch);
   if (bytes <= budget) return {rate, mono, channels: ch, bytes};
-  if (ch > 1) { mono = true; ch = 1; bytes = bytesAt(rate, ch); if (bytes <= budget) return {rate, mono, channels: ch, bytes}; }
+  if (ch > 1) {
+    mono = true; ch = 1;
+    bytes = bytesAt(rate, ch);
+    if (monoFits(rate, channels, bytes)) return {rate, mono, channels: ch, bytes};
+  }
   for (const step of CHIP_RATE_STEPS) {
     if (step >= rate) continue;
     rate = step; bytes = bytesAt(rate, ch);
-    if (bytes <= budget) return {rate, mono, channels: ch, bytes};
+    if (mono ? monoFits(rate, channels, bytes) : bytes <= budget) return {rate, mono, channels: ch, bytes};
   }
   return {rate, mono, channels: ch, bytes, refuse: true};
 }
@@ -159,6 +178,100 @@ export function tallyChipRender(r, names, plan) {
   }
   return {pcm, pan, transfer, peakBytes, keptBytes};
 }
+
+// 2026-09-30 (Aeon Battle crash, open-items.md "2026-09-30 21:40"): tallyChipRender
+// above still costs ~3x kept on the mono plan for a stream-capable kind — it
+// is handed `r`, ALREADY the whole non-streamed render, and only tallies what
+// that call already allocated. This renders into the FINAL kept buffers chunk
+// by chunk instead (R.stream — today only psf/psf2's M.createSpuStream, step
+// 1c) so the stereo original and a mono downmix copy are never BOTH held for
+// the whole song at once: peak ≈ kept + one chunk's own temporary buffers.
+// Two passes over the stream only when the plan needs a mono decision — PASS
+// 1 decides each track's static pan from per-CHUNK windows (chipStaticPan's
+// own windowed sampling, run once per chunk instead of once over a whole-
+// track buffer this never allocates — a chunk whose OWN window already shows
+// movement marks the track stereo outright, same safe direction as the
+// original whole-track check; otherwise the per-chunk readings are spread-
+// checked across the whole song exactly as chipStaticPan's own single-call
+// version does) before PASS 2 (or the only pass, when the plan keeps stereo)
+// accumulates the real output. Both passes reuse ONE stream object
+// (`seek(0)` between them) — psf/psf2 have no per-frame emulation step to
+// redo, so re-seeking costs nothing like re-parsing would. A track that ends
+// up entirely silent is dropped afterward, same as the whole-render path.
+const CHIP_STREAMED_RENDER_CHUNK_SEC = 1;
+export async function renderStreamed(M, R, res, {sampleRate, plan, onProgress}) {
+  const streamObj = R.stream(M, res, {sampleRate});
+  const names = streamObj.tracks;
+  const total = streamObj.frames;
+  const chunkFrames = Math.max(1, Math.round(sampleRate * CHIP_STREAMED_RENDER_CHUNK_SEC));
+  const pan = {}; // name -> a number (downmix to mono at this pan) | null (stays stereo, or a register/mono-only group)
+  if (plan.mono) {
+    const acc = {}; for (const n of names) acc[n] = {pans: [], moved: false, sawAudio: false};
+    for (let done = 0; done < total; ) {
+      const n = Math.min(chunkFrames, total - done);
+      const r = streamObj.render(n);
+      for (const name of names) {
+        const t = r[name];
+        if (!t || !t.l || acc[name].moved) continue; // a register/mono-only group never downmixes; a track already known to move needs no more chunks
+        if (!isLiveTrack(t)) continue; // silence here says nothing about pan, same rule chipStaticPan's own caller used
+        const p = chipStaticPan(t.l, t.r);
+        if (p === null) { acc[name].moved = true; continue; }
+        acc[name].pans.push(p); acc[name].sawAudio = true;
+      }
+      done += n;
+    }
+    for (const name of names) {
+      const a = acc[name];
+      if (a.moved || !a.sawAudio) { pan[name] = null; continue; }
+      if (a.pans.length < 2) { pan[name] = a.pans[0] || 0; continue; }
+      const lo = Math.min(...a.pans), hi = Math.max(...a.pans);
+      pan[name] = hi - lo > 0.08 ? null : a.pans.reduce((x, y) => x + y, 0) / a.pans.length;
+    }
+    streamObj.seek(0);
+  }
+  const outMono = {}, outL = {}, outR = {};
+  let offset = 0, peakChunkBytes = 0;
+  for (let done = 0; done < total; ) {
+    const n = Math.min(chunkFrames, total - done);
+    const r = streamObj.render(n);
+    let chunkBytes = 0;
+    for (const name of names) {
+      const t = r[name]; if (!t) continue;
+      if (t.l) {
+        chunkBytes += t.l.byteLength + t.r.byteLength;
+        if (plan.mono && pan[name] !== null && pan[name] !== undefined) {
+          if (!outMono[name]) outMono[name] = new Float32Array(total);
+          const m = chipDownmixStatic(t.l, t.r, pan[name]);
+          outMono[name].set(m, offset);
+          chunkBytes += m.byteLength;
+        } else {
+          if (!outL[name]) { outL[name] = new Float32Array(total); outR[name] = new Float32Array(total); }
+          outL[name].set(t.l, offset); outR[name].set(t.r, offset);
+        }
+      } else {
+        if (!outMono[name]) outMono[name] = new Float32Array(total);
+        outMono[name].set(t, offset);
+        chunkBytes += t.byteLength;
+      }
+    }
+    peakChunkBytes = Math.max(peakChunkBytes, chunkBytes);
+    offset += n; done += n;
+    if (onProgress) onProgress(offset / total);
+  }
+  const pcm = {}, panOut = {}, transfer = [];
+  let keptBytes = 0;
+  for (const name of names) {
+    let v = outMono[name] ? outMono[name] : (outL[name] ? {l: outL[name], r: outR[name]} : null);
+    if (!v) continue;
+    if (chipSilentStreamed(v)) continue; // never audible: drop it, same as the whole-render path
+    pcm[name] = v;
+    if (v.l) { keptBytes += v.l.byteLength + v.r.byteLength; transfer.push(v.l.buffer, v.r.buffer); }
+    else { keptBytes += v.byteLength; transfer.push(v.buffer); }
+    if (outMono[name] && pan[name] !== null && pan[name] !== undefined) panOut[name] = pan[name];
+  }
+  return {pcm, pan: panOut, transfer, peakBytes: keptBytes + peakChunkBytes, keptBytes, sampleRate: streamObj.sampleRate, groups: names.length};
+}
+function chipSilentStreamed(v) { const parts = v.l ? [v.l, v.r] : [v]; for (const a of parts) for (let i = 0; i < a.length; i += 13) if (Math.abs(a[i]) > 1e-4) return false; return true; }
 
 export const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS table, minus the app
   nsf: {
@@ -251,13 +364,33 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
 // check — a fake test kind has no M.renderApu/renderSpu/renderN64 at all,
 // and a stream kind doesn't need one either (R.stream is M.createSpuStream,
 // called directly by RUNNERS.psf/psf2 above).
-async function loadM(files, shared, own, v) {
-  const loadOne = (f, opt) => { const path = "./" + (opt ? f.slice(1) : f) + ".mjs" + (v || "");
-    return import(path).catch(err => { if (opt) return {}; throw new Error("couldn't load module tools/" + (opt ? f.slice(1) : f) + ".mjs: " + (err && err.message || err)); }); };
-  const parts = await Promise.all((files || []).map(f => loadOne(f, f.startsWith("?"))));
-  const sh = await Promise.all((shared || []).map(f => loadOne(f, false)));
-  const M = Object.assign({}, ...parts, ...sh);
-  for (const k of (own || [])) for (const p of parts) if (p[k]) M[k] = p[k];
+// Retries the WHOLE set once, with a fresh buster, before giving up (2026-09-30,
+// Aeon Battle crash — open-items.md "2026-09-30 21:40": after the crash, every
+// console song failed "couldn't load module tools/ps2/psf2.mjs: Importing a
+// module script failed" ×3 until a full app restart — the CDN/content process
+// was still recovering, so the FIRST import after a crash fails even for a
+// kind that was never involved; a transient failure shouldn't need a restart
+// to clear). Never caches a failed import either way — the caller's own
+// per-kind cache (chipModules.cache / the `live`/module-load sites below)
+// only ever stores the RESOLVED value.
+export async function loadM(files, shared, own, v, importFn) { // importFn: test-only override of real dynamic import() (tests/chip-worker.test.mjs — no real file can be made to fail once then succeed)
+  const doImport = importFn || (path => import(path));
+  const loadOnce = async vv => {
+    const loadOne = (f, opt) => { const path = "./" + (opt ? f.slice(1) : f) + ".mjs" + (vv || "");
+      return doImport(path).catch(err => { if (opt) return {}; throw Object.assign(new Error("couldn't load module tools/" + (opt ? f.slice(1) : f) + ".mjs: " + (err && err.name ? err.name + ": " : "") + (err && err.message || err)), {_path: path}); }); };
+    const parts = await Promise.all((files || []).map(f => loadOne(f, f.startsWith("?"))));
+    const sh = await Promise.all((shared || []).map(f => loadOne(f, false)));
+    return {parts, sh};
+  };
+  let got;
+  try { got = await loadOnce(v); }
+  catch (err) {
+    const heap = (typeof performance !== "undefined" && performance.memory && performance.memory.usedJSHeapSize) ? " · heap " + Math.round(performance.memory.usedJSHeapSize / 1e6) + " MB" : "";
+    console.warn("[chip-worker] module load failed (" + (err._path || "?") + "): " + err.message + heap + " — retrying once");
+    got = await loadOnce((v || "") + "-r" + Date.now()); // a fresh buster — never retry the exact same (possibly cached-as-failed) URL
+  }
+  const M = Object.assign({}, ...got.parts, ...got.sh);
+  for (const k of (own || [])) for (const p of got.parts) if (p[k]) M[k] = p[k];
   return M;
 }
 
@@ -493,12 +626,7 @@ if (typeof self !== "undefined") self.onmessage = async e => {
   try {
     const R = RUNNERS[kind];
     if (!R) throw new Error("no worker runner for " + kind);
-    const loadOne = (f, opt) => { const path = "./" + (opt ? f.slice(1) : f) + ".mjs" + v;
-      return import(path).catch(err => { if (opt) return {}; throw new Error("couldn't load module tools/" + (opt ? f.slice(1) : f) + ".mjs: " + (err && err.message || err)); }); };
-    const parts = await Promise.all(files.map(f => loadOne(f, f.startsWith("?"))));
-    const sh = await Promise.all(shared.map(f => loadOne(f, false)));
-    const M = Object.assign({}, ...parts, ...sh);
-    for (const k of own) for (const p of parts) if (p[k]) M[k] = p[k];
+    const M = await loadM(files, shared, own, v); // retries once on a failed import (Aeon Battle crash, 2026-09-30) — see loadM's own comment
     if (!M.renderApu && !M.renderSpu && !M.renderN64) throw new Error("no renderer for " + kind);
     const parsed = R.parse(M)(bytes, libs);
     const res = await R.run(M, parsed, n, secs, p => post({progress: p * 0.3}));
@@ -507,14 +635,21 @@ if (typeof self !== "undefined") self.onmessage = async e => {
     // channels, decided before it allocates anything — mirrors index.html's
     // inline path exactly (the worker can't call the page's copy)
     const tracks = chipEstimateTracksW(R, res, M);
-    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: R.stereo ? 2 : 1, budget: budget || 2_000_000_000});
+    const canStream = !!R.stream;
+    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: R.stereo ? 2 : 1, budget: budget || 2_000_000_000, canStream});
     if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
     if (plan.rate !== rate || plan.mono) post({debug: (title || id) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)"});
-    const r = await R.render(M, res, {sampleRate: plan.rate, onProgress: p => post({progress: 0.3 + p * 0.7})});
-    const isPcm = x => x instanceof Float32Array || !!(x && x.l instanceof Float32Array && x.r instanceof Float32Array); // mono, or a stereo pair from a renderer that pans
-    const names = R.channels || Object.keys(r).filter(k => isPcm(r[k]));
-    const {pcm, pan, transfer, peakBytes, keptBytes} = tallyChipRender(r, names, plan);
+    let pcm, pan, transfer, peakBytes, keptBytes, outRate, groups;
+    if (canStream) { // chunk by chunk, straight into the kept buffers (2026-09-30: peak ≈ kept + one chunk, not ~3x — see renderStreamed's own comment)
+      const out = await renderStreamed(M, R, res, {sampleRate: plan.rate, plan, onProgress: p => post({progress: 0.3 + p * 0.7})});
+      ({pcm, pan, transfer, peakBytes, keptBytes, groups} = out); outRate = out.sampleRate;
+    } else {
+      const r = await R.render(M, res, {sampleRate: plan.rate, onProgress: p => post({progress: 0.3 + p * 0.7})});
+      const isPcm = x => x instanceof Float32Array || !!(x && x.l instanceof Float32Array && x.r instanceof Float32Array); // mono, or a stereo pair from a renderer that pans
+      const names = R.channels || Object.keys(r).filter(k => isPcm(r[k]));
+      ({pcm, pan, transfer, peakBytes, keptBytes} = tallyChipRender(r, names, plan)); outRate = r.sampleRate; groups = names.length;
+    }
     live = (kind === "psf" || kind === "psf2" || kind === "usf") ? {id, kind, M, R, res, rate: plan.rate} : null; // kept for note previews
-    post({done: {pcm, sampleRate: r.sampleRate, leadSec, pan, debug: {peakBytes, keptBytes, tracks, groups: names.length}}}, transfer);
+    post({done: {pcm, sampleRate: outRate, leadSec, pan, debug: {peakBytes, keptBytes, tracks, groups}}}, transfer);
   } catch (err) { post({error: String(err && err.message || err)}); }
 };

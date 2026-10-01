@@ -14,7 +14,7 @@ export async function openApp(page) {
     const param = () => ({ value: 0, setValueAtTime(v) { this.value = v; }, cancelScheduledValues() {},
       linearRampToValueAtTime(v) { this.value = v; }, exponentialRampToValueAtTime(v) { this.value = v; } });
     const node = () => ({ connect() { return node(); }, disconnect() {}, start() {}, stop() {},
-      gain: param(), frequency: param(), buffer: null, type: "sine",
+      gain: param(), frequency: param(), buffer: null, type: "sine", playbackRate: param(), // chipStart/chipStreamScheduleChunk set this on a buffer source
       addEventListener() {}, setPeriodicWave() {} });
     class FakeCtx {
       constructor() { this.state = "running"; this.sampleRate = 44100; this.destination = node(); this._t0 = performance.now(); }

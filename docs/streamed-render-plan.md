@@ -170,11 +170,76 @@ list up front; only the sample renderers cost gigabytes, and all can stream.
    (exported from there for reuse) run through the full protocol
    (`handleStream` + `handleWant` over every chunk) — overlap-add of the
    replies equals `renderSpu`'s own whole-song output within 1e-6.
-3. Page scheduler behind the switch, default off. vm tests of chipSegments
-   (boundaries, loop wrap + pin, album end, count-in, 50% speed, seek order,
-   bounded cache, trackGain wiring). Josh A/B by link: FF1 triangle (ticks),
-   FF7 pad, Frog's Theme loop, mute/solo mid-play, ruler seek, locked-screen
-   album play, Challenge at full quality.
+
+**Out-of-band fix (2026-09-30, before step 3 landed — Josh's iPad crashed on
+FFX "Aeon Battle", PS2, then every console song failed to import until a
+full restart; open-items.md "2026-09-30 21:40").** Two bugs, not numbered
+steps here, fixed without touching the work above: (a) the memory budget
+only checked KEPT bytes, but a non-streaming kind's mono step really peaks
+at ~3x kept (step 0's own finding) — a stream-capable kind (psf/psf2, the
+ones that crashed) now renders straight into the kept buffers chunk by
+chunk (`renderStreamed`/`chipRenderStreamed`, peak ≈ kept + one chunk), and
+`planChipRender` grew a `canStream` flag so a kind WITHOUT that yet gets the
+honest (3x-aware) admission check instead of trusting kept bytes alone;
+(b) `loadM`/`chipModules` each retry a failed module import once, inline,
+with a fresh buster, before giving up — a transient post-crash failure no
+longer needs a restart to clear. Full write-up: NIGHT-ROLL.md "Aeon Battle
+crash + recovery".
+
+3. DONE (2026-09-30). Settings → Other → Chip stream: off/auto/on
+   (`ff1roll-chipstream`) + `?chipstream=` override (`PERF_FLAGS`); "auto" ==
+   "off" until step 5. `chipRenderAuto` (chip.renderPromise's entry point)
+   tries `chipStreamOpen()` first when on, falling back to the existing
+   `chipRender()` on ANY failure — today's only path for every kind but
+   psf/psf2 (the worker alone knows which kinds have a stream hook; the page
+   never hardcodes it). `chipStreamOpen` opens/reuses `chipWorker`, posts
+   `{stream}`, resolves once `{ready}` AND the first window (the chunks
+   covering the play-from position + 1) are cached. `chipSegments(fromSec,
+   loopSeg, playRate, lead, albumEndAbs, playT0)` is the pure tape-time
+   mapping (generalizing chipStart's own "tape time = lead + songSec ×
+   playRate" from one big loopable buffer to a run of small per-chunk ones):
+   segment 0 plays the current pass's remainder, every segment after
+   repeats the whole loop body (a hard splice at the wrap, no crossfade —
+   same as `src.loop` today), album end truncates. `chip.stream = {key, gen,
+   rate, chunkFrames, overlap, tracks, …, silent:Set, cache:Map(idx->
+   {buffers,bytes,pinned}), pinnedIdx:Set, scheduled:Set, waiters:Map,
+   bytes, peakBytes, live, srcs}`; `chipActive`/`chipHas` read it alongside
+   chip.pcm/chip.buffers; the synth guard in `scheduleNote` reads
+   `chip.stream.live` instead of `chip.srcs.length` in stream mode. The
+   existing ~60ms pump calls `chipStreamPump(audio.currentTime)` first every
+   tick: requests chunks up to a horizon (~7s visible/~12s hidden), schedules
+   `AudioBufferSourceNode`s for any cached chunk inside the tick's window
+   (`src -> [chip.pan panner] -> trackGain(ti)`, chipStart's own wiring),
+   evicts played chunks (one chunk of slack), and keeps
+   `[loopSeg.start, loopSeg.start+2s]` pinned so a wrap never waits.
+   `chipStreamStart(fromSec)` replaces `chipStart` in stream mode — no new
+   render, the cache is kept, just stops old sources, bumps `gen` (cancels
+   in-flight `{want}`/`{idle}`, posts `{seek}`), and pumps once synchronously.
+   `chipStopSrcs` (stop()'s existing call site) now also stops
+   `chip.stream.srcs`/clears `.live`, keeping the cache.
+   Tests: tests/night-roll.test.mjs — chipSegments' own boundary math
+   (chunk-boundary crossing, loop wrap + back-to-back next pass, album-end
+   truncation, count-in's playT0 shift, 50% speed, lead offset, degenerate
+   inputs); chipStreamIdxForTapeSec (a seek to 90s is chunk 45); the synth
+   guard reading chip.stream.live + a silent-track report re-enabling synth
+   for that track; a full protocol exercise with a synchronous FAKE worker
+   (switch off posts no {stream} message; a {stream:{error}} falls back to
+   the whole render; a successful open's sources connect through
+   trackGain(ti); the cache stays bounded, <30 chunks, over a simulated
+   200s play; a seek to 90s posts its {seek}/first {want} at chunk 45).
+   tests/harness.mjs's (and tests/e2e/helpers.mjs's, kept in step) fake
+   AudioContext gained a `playbackRate` param on its buffer-source node —
+   chipStart itself had never been exercised end-to-end through the harness
+   before (existing chip tests stub chip.buffers/chip.srcs directly instead).
+   Not covered yet (flagged for Josh before flipping the switch for real):
+   overlap-add surviving REAL scheduling jitter (step 2's own tests only
+   cover the chunk shape in isolation) and the {idle} sweep's re-check
+   cadence (today: once, right after the first window — a track gone silent
+   only much later in a long song isn't caught until a later step adds a
+   periodic recheck). Josh still owes an A/B listen by link: FF1 triangle
+   (ticks), FF7 pad, Frog's Theme loop, mute/solo mid-play, ruler seek,
+   locked-screen album play, Challenge at full quality — none of that has
+   happened yet, this step is page-logic + vm tests only.
 4. Offline export in stream mode (worker {mix}; StereoPanner formulas).
 5. Default "auto": stream only where whole mode would downgrade/refuse.
 6. (optional) bus mode while hidden / over budget.

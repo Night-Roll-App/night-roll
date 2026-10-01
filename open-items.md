@@ -525,6 +525,24 @@ the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
 ## QUEUE (2026-09-29, the order Josh approved)
+PS2 PARKED (Josh, 2026-09-30 ~21:55: "we're spending a lot of money on it…
+I never even played FFX… just do whatever you think is best"). Finishing
+only what protects every console: the OOM crash fix + import recovery, and
+the streamed player (step 3, default off). PARKED until he asks: FFX ch30/31
+no-instrument rule (his M/mute ear test is optional), Q1 FFX pitches,
+FFX/Dark Cloud tuning, streaming steps 1a/1b/1d/1e/4/5/6.
+FFX CHANNELS WITH NO INSTRUMENT (Josh's ear, 2026-09-30, Challenge ch 30
+"sticks out like a sore thumb" vs the game on YouTube): the BGM tracks have
+notes but never a program change (0x20) — Challenge ch30/31, Hurry!! ch14,
+Djose Temple ch9/12, Tragedy ch11. tools/ps2/bgm.mjs parseTrack defaults
+them to program 0 (to stop silence) — an unvalidated guess, now known wrong
+for ch30. Research (2026-09-30): no source documents it. VGMTrans emits no program
+for such a track (implicit MIDI 0, same as ours); 0x60 is a common init
+flag (775 uses, 773 on tracks that DO get 0x20) — not the answer. Two
+generic candidates: (a) program 0 (today), (b) the driver never sounds a
+voice with no instrument → silence. EAR TEST for Josh: mute ch 30 + ch 31
+(M) in Challenge and compare to the game recording. If muted matches, the
+rule becomes "no 0x20 → silent + a capture warning" for all 6 channels.
 DONE 2026-09-30 (Josh's ruling that evening, replaces Q4's one-tap/no-form
 detail): the capture's header button is "✎ Edit" (renamed from "✎ Make it
 mine", `#makeitminebtn` id unchanged); it opens the "Edit a copy" sheet
@@ -4364,3 +4382,23 @@ his downloads: `review-handoff-2026-08-07.md` (code/tool review) and
 - (Done recently, for orientation: Night Roll player, .rollnotes + sync,
   sections/arrangement lanes, range-select ruler drag, grouped dropdown
   with compositions/, CVD-safe track palette, rewind + Edit toggle.)
+
+## 2026-09-30 21:40 — from Josh via Ask: Aeon Battle crash, then no console sound anywhere
+Josh: "Aeon Battle just crashed the app and it reloaded, and now none of the sounds are working — so you haven't solved this generally." Context: PS2 album, aeon-battle, build 09/30 21:36. ⚠ log: "the console render failed for Aeon Battle (Error: couldn't load module tools/ps2/psf2.mjs: Importing a module script failed.) — tap ▶ to try again" x3. After the OOM crash + reload, every console song is silent, and retrying keeps failing on the psf2.mjs import. Wants: (1) the memory budget to prevent the crash for ALL big PS2 songs, not just Challenge; (2) after a crash/reload the module import must recover (looks like a failed dynamic import is cached, or the module is missing from the iPad bundle/cache). Please diagnose from the Aeon Battle numbers (held + peak) and tell him.
+
+**RESOLVED (code) 2026-09-30, not yet confirmed on his iPad — needs a real
+build + Aeon Battle re-test, not just vm tests:** (1) psf/psf2 now render
+chunk-by-chunk straight into the kept buffers (`renderStreamed`/
+`chipRenderStreamed`) instead of holding the whole stereo render and a mono
+copy at once — peak ≈ kept + one chunk, not ~3x; `planChipRender` also
+budgets honestly (3x-aware) for any OTHER chip kind that doesn't have this
+yet, so a "fits" verdict never trusts kept bytes alone. (2) `loadM`/
+`chipModules` each retry a failed import once, inline, with a fresh
+cache-buster, before giving up — a transient post-crash failure should no
+longer need a full restart to clear. Diagnosis: the crash itself (not the
+import failure) is what starved later imports — Challenge-sized numbers
+(1.88 GB) already pointed at the SAME mono-plan 3x-peak bug step 0 found;
+Aeon Battle just also tripped it. Write-up: NIGHT-ROLL.md "Aeon Battle
+crash + recovery"; tests: tests/chip-worker.test.mjs, tests/night-roll.test.mjs.
+Still owed: Josh re-running Aeon Battle on a real build to confirm it no
+longer crashes and that a subsequent song's import recovers on its own.

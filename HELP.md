@@ -288,6 +288,9 @@ A recording — a guitar take, a vocal, a phone memo, a DAW bounce — as a trac
 **Debug log**
 File → Settings → Other → **Debug log** shows diagnostic lines in ⚠ Messages, marked [debug]: audio wake-ups after you leave the app, engine rebuilds, audio state changes. Off, only real problems raise the ⚠ chip. A message that repeats shows once, with ×N. Turn it on when chasing a silence, so Claude can see what the audio engine measured.
 
+**Chip stream (experimental)**
+File → Settings → Other → **Chip stream**, beside Debug log: **Off** (default) is today's behavior — a PlayStation/PlayStation 2 song's console audio renders whole before it plays. **On** streams it instead, a couple of seconds at a time, so a big song (FFX "Challenge") can't crash the page's memory holding the whole thing at once; any failure for a song falls back to the whole render automatically. **Auto** behaves like Off for now (a later version streams only where the whole render would have to downgrade quality or refuse). A device setting — the switch doesn't change what you hear, only how it gets there.
+
 **Text size**
 Night Roll's own text follows your device's text size — an iPhone/iPad's Settings → Accessibility → Display & Text Size → Larger Text carries straight through (Safari's Dynamic Type), no setup needed. File → Settings → Other → **Text size** (Small/Default/Large/Larger) is a second, app-level dial for a browser that doesn't carry Dynamic Type through, or to go past what it offers — it scales the TEXT only: buttons, rows and the roll/score canvas stay the size they are, so nothing you tap moves.
 

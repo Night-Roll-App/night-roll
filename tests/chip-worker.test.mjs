@@ -7,7 +7,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createApp } from "./harness.mjs";
-import { createStreamState, handleStream, handleWant, handleSeek, RUNNERS } from "../tools/chip-worker.mjs";
+import { createStreamState, handleStream, handleWant, handleSeek, RUNNERS, renderStreamed, planChipRender, loadM } from "../tools/chip-worker.mjs";
 import { createSpuStream, renderSpu } from "../tools/psx/spu-render.mjs";
 import { buildAkaoResult } from "./psx-stream.test.mjs";
 
@@ -344,4 +344,76 @@ test("stream protocol: the REAL createSpuStream (PS1 fixture) assembled from win
       assert.ok(Math.abs(recon[name].r[i] - oracle[name].r[i]) < 1e-6, `${name}.r[${i}]`);
     }
   }
+});
+
+// Aeon Battle (FFX, PS2) crashed the iPad's WKWebView (out of memory) — the
+// memory budget checked KEPT bytes, but step 0 had already proven the
+// worker's PEAK on the mono plan is ~3x kept (the whole stereo render held
+// at once + a downmix copy made while it's still referenced). renderStreamed
+// fixes this for a stream-capable kind (psf/psf2) by accumulating straight
+// into the kept buffers, chunk by chunk, instead of tallying an
+// already-whole-rendered `r`. RUNNERS.fakestream's own signal (tests/
+// chip-worker.test.mjs, above) has a perfectly constant per-track pan ratio
+// (r = l * 0.9) and one permanently-silent track — exactly what a mono-plan
+// downmix decision needs.
+test("renderStreamed: a chunked mono render keeps peak within 10% of kept — the Aeon Battle crash fix (2026-09-30)", async () => {
+  const sampleRate = 8000, seconds = 60, frames = sampleRate * seconds; // 60s: a chunk (1s) is ~1.7% of the total, well under the 10% margin
+  const tracks = ["a", "b", "c", "d", "silent"]; // "silent" is wired permanently silent by makeFakeStream's own valueAt rule (the last track)
+  const res = {tracks, frames, sampleRate};
+  const plan = {mono: true, rate: sampleRate};
+  const progresses = [];
+  const out = await renderStreamed({}, RUNNERS.fakestream, res, {sampleRate, plan, onProgress: p => progresses.push(p)});
+  assert.ok(out.peakBytes <= out.keptBytes * 1.1, `peak ${out.peakBytes} vs kept ${out.keptBytes}`);
+  assert.ok(out.keptBytes > 0, "something was actually kept");
+  assert.equal("silent" in out.pcm, false, "the permanently-silent track is dropped, same as the whole-render path");
+  for (const name of ["a", "b", "c", "d"]) {
+    assert.ok(out.pcm[name] instanceof Float32Array, name + ": downmixed to mono (a genuinely static pan)");
+    assert.ok(Math.abs(out.pan[name]) <= 1, name + "'s pan is a real number");
+  }
+  assert.ok(progresses.length > 1 && progresses.at(-1) > 0.99, "progress reaches ~1 across several chunks");
+});
+
+test("planChipRender: an Aeon-Battle-sized PS2 render (30+ tracks, ~280s) always reaches a verdict that respects the real budget — never a false 'fits' (2026-09-30)", () => {
+  // the real app: psf2 streams (canStream: true) — renderStreamed's own peak
+  // guarantee (kept + one chunk) means the ordinary kept-bytes check is
+  // already honest for it
+  const streamed = planChipRender({tracks: 32, seconds: 280, sampleRate: 48000, channels: 2, budget: 600_000_000, canStream: true});
+  assert.ok(streamed.refuse || streamed.bytes <= 600_000_000, "canStream verdict respects the budget: " + JSON.stringify(streamed));
+
+  // a kind with no stream hook yet: the honest (3x-aware) mono check must
+  // shrink further or refuse rather than trusting a "mono fits" verdict that
+  // would actually crash for real (the ORIGINAL bug — bytes alone said this fits)
+  const whole = planChipRender({tracks: 32, seconds: 280, sampleRate: 48000, channels: 2, budget: 600_000_000, canStream: false});
+  assert.ok(whole.refuse || whole.bytes <= 600_000_000, "canStream:false verdict respects the budget: " + JSON.stringify(whole));
+  if (!whole.refuse && whole.mono) {
+    const stereoOriginal = Math.ceil(32 * 2 * whole.rate * 280 * 4); // what a non-streaming render still holds while downmixing
+    assert.ok(whole.bytes + stereoOriginal <= 600_000_000, "the REAL peak (kept + the stereo original) fits, not just kept bytes");
+  }
+});
+
+// loadM (2026-09-30, Aeon Battle crash recovery — open-items.md "2026-09-30
+// 21:40"): after the crash, every console song failed "couldn't load module
+// tools/ps2/psf2.mjs: Importing a module script failed" ×3 until a full app
+// restart — the content process was still recovering, so the FIRST import
+// after a crash failed even for a kind never involved in it. One retry with
+// a fresh buster, inline, clears a transient failure without needing a
+// restart. importFn is a test-only seam (no real file can be made to fail
+// once then succeed) — production call sites never pass it, so they always
+// get the real dynamic import().
+test("loadM: an import that fails once then succeeds retries with a fresh buster — never the identical failed URL", async () => {
+  let calls = 0; const seenPaths = [];
+  const fakeImport = async path => {
+    seenPaths.push(path); calls++;
+    if (calls === 1) throw new Error("Importing a module script failed.");
+    return {hello: "world"};
+  };
+  const M = await loadM(["psx/psf"], [], [], "?v=123", fakeImport);
+  assert.equal(M.hello, "world", "the retried import's result is used");
+  assert.equal(calls, 2, "one retry, not more");
+  assert.notEqual(seenPaths[0], seenPaths[1], "the retry uses a fresh buster");
+});
+
+test("loadM: when BOTH attempts fail, it still throws, naming the module path", async () => {
+  const fakeImport = async () => { throw new Error("boom"); };
+  await assert.rejects(() => loadM(["psx/psf"], [], [], "?v=1", fakeImport), /couldn't load module tools\/psx\/psf\.mjs/);
 });

@@ -2037,7 +2037,13 @@ test("planChipRender: FFX Challenge (30 tracks, 163s, 48kHz stereo) fits the iPa
   // the product build's edition — tools/package.mjs), so the iPad-app case
   // goes through its OWN createApp rather than reassigning it here.
   const appA = createApp({edition: "app"});
-  const appPlan = JSON.parse(appA.run(`JSON.stringify(planChipRender({tracks: 30, seconds: 163, sampleRate: 48000, channels: 2, budget: chipRenderBudget()}))`));
+  // canStream: true — Challenge is PS2/psf2, a stream-capable kind (R.stream,
+  // tools/chip-worker.mjs) — chipRenderStreamed/renderStreamed render mono
+  // straight into the kept buffer, so the honest (3x-aware) admission check
+  // below doesn't apply to it. A kind with no stream hook needs the stricter
+  // check instead — see "a non-streaming kind's mono step budgets for its
+  // real (3x) peak", below.
+  const appPlan = JSON.parse(appA.run(`JSON.stringify(planChipRender({tracks: 30, seconds: 163, sampleRate: 48000, channels: 2, budget: chipRenderBudget(), canStream: true}))`));
   assert.equal(appA.run(`EDITION`), "app");
   assert.equal(appPlan.mono, true, "mono first, per the fix's own order");
   assert.equal(appPlan.rate, 24000, "48k mono alone (626 MB) is still over the 600 MB iPad budget; 24k mono (~469 MB) fits");
@@ -2091,6 +2097,187 @@ test("planChipRender: refuses when even the floor (22050, mono) can't fit; chipS
     __l2 = l; __r2 = r;
   })()`);
   assert.equal(run(`chipStaticPan(__l2, __r2)`), null, "a real pan move keeps the track stereo, per the fix's own rule");
+});
+
+// docs/streamed-render-plan.md step 3: chipSegments is the pure tape-time
+// mapping stream-mode scheduling (chipStreamPump) is built on — every other
+// step-3 behavior (chunk requests, scheduling, pinning) derives from its
+// output, so its own boundary math is tested in isolation here, with no
+// worker, audio, or song involved at all.
+test("chipSegments: boundary math, loop wrap, album end, count-in shift, 50% speed, lead offset (pure)", () => {
+  // through-composed (no loop): exactly one segment, fromSec..loopSeg.end
+  let segs = val(`chipSegments(5, {start: 0, end: 20, looped: false}, 1, 0, null, 100)`);
+  assert.deepEqual(segs, [{when: 100, tapeFrom: 5, tapeTo: 20}], "one pass, no wrap");
+
+  // a loop: segment 0 plays the REMAINDER of the current pass (a resume
+  // mid-loop chases its own tail, same as the note scheduler); segment 1
+  // repeats the WHOLE loop body, starting right where segment 0 ends
+  segs = val(`chipSegments(8, {start: 2, end: 10, looped: true}, 1, 0, null, 100)`);
+  assert.ok(segs.length >= 2, "at least the remainder + one repeat: " + JSON.stringify(segs));
+  assert.deepEqual(segs[0], {when: 100, tapeFrom: 8, tapeTo: 10}, "remainder of the current pass (2s left)");
+  assert.deepEqual(segs[1], {when: 102, tapeFrom: 2, tapeTo: 10}, "next pass is the WHOLE loop body (8s), back to back with segment 0 — a hard splice, no crossfade");
+
+  // album end (seconds after playT0) truncates the only segment, and drops anything past it
+  segs = val(`chipSegments(0, {start: 0, end: 100, looped: true}, 1, 0, 4, 0)`);
+  assert.deepEqual(segs, [{when: 0, tapeFrom: 0, tapeTo: 4}], "cut off at the album's end, not the loop's");
+
+  // 50% speed: the TAPE span doubles (read at half rate), context duration
+  // (the domain fromSec/loopSeg are already in) is untouched
+  segs = val(`chipSegments(0, {start: 0, end: 10, looped: false}, 0.5, 0, null, 0)`);
+  assert.deepEqual(segs, [{when: 0, tapeFrom: 0, tapeTo: 5}]);
+
+  // chip.lead shifts tape position only, never context time
+  segs = val(`chipSegments(0, {start: 0, end: 10, looped: false}, 1, 3, null, 0)`);
+  assert.deepEqual(segs, [{when: 0, tapeFrom: 3, tapeTo: 13}]);
+
+  // count-in: playT0 shifted out by a bar of clicks (play()'s own math) —
+  // chipSegments just carries whatever playT0 it's given straight through
+  segs = val(`chipSegments(0, {start: 0, end: 5, looped: false}, 1, 0, null, 2.5)`);
+  assert.equal(segs[0].when, 2.5, "every segment's `when` is relative to the playT0 passed in");
+
+  // degenerate inputs never hang or throw
+  assert.deepEqual(val(`chipSegments(0, null, 1, 0, null, 0)`), [], "no loopSeg at all");
+  assert.deepEqual(val(`chipSegments(0, {start: 5, end: 5, looped: true}, 1, 0, null, 0)`), [], "a zero-length loop");
+});
+
+test("chipStreamIdxForTapeSec: chunk index for a tape position (2s chunks, rate cancels) — a seek to 90s lands on chunk 45", () => {
+  assert.equal(val(`chipStreamIdxForTapeSec(90)`), 45);
+  assert.equal(val(`chipStreamIdxForTapeSec(0)`), 0);
+  assert.equal(val(`chipStreamIdxForTapeSec(1.999)`), 0);
+  assert.equal(val(`chipStreamIdxForTapeSec(2)`), 1);
+});
+
+// chipHas()/chipActive() and scheduleNote's chip guard (docs/streamed-
+// render-plan.md step 3): reads chip.stream.live instead of chip.srcs.length
+// in stream mode, same idiom as "a note preview sounds on a chip song"
+// (above) which exercises the whole-render side of this exact guard.
+test("chip stream mode: the synth guard reads chip.stream.live; a silent-track report re-enables synth for that track", () => {
+  installSong();
+  run(`song.tracks = [{name: "pulse1", notes: []}];
+       trackState = [{muted: false, solo: false}];
+       songKey = "albums/ps1/x/song.mid";
+       chip.key = songKey; chip.pcm = null; chip.buffers = null;
+       chip.stream = {tracks: ["pulse1"], silent: new Set(), live: false, srcs: []};
+       ensureAudio(); playing = true;`);
+  assert.equal(val(`chipActive()`), true, "chip is active for this song (chip.stream counts, same as chip.pcm/chip.buffers)");
+  assert.equal(val(`chipHas("pulse1")`), true);
+  run(`_gains = 0; const _cgStream = audio.createGain.bind(audio); audio.createGain = () => { _gains++; return _cgStream(); };`); // own name: the shared vm realm keeps top-level const bindings live across run() calls — "a note preview sounds on a chip song" (below) declares its own _cg
+
+  run(`_gains = 0; scheduleNote(0, {p: 60, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3)`);
+  assert.ok(val(`_gains`) > 0, "chip.stream.live is false (no chunk scheduled yet): the synth plays, never silence");
+
+  run(`_gains = 0; chip.stream.live = true; scheduleNote(0, {p: 60, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3)`);
+  assert.equal(val(`_gains`), 0, "chip.stream.live is true: the chip buffer IS the sound, synth suppressed");
+
+  run(`_gains = 0; chip.stream.silent.add("pulse1"); scheduleNote(0, {p: 60, v: 90, ch: 0}, audio.currentTime + 0.01, 0.3)`);
+  assert.ok(val(`_gains`) > 0, "the idle sweep reported this track silent: chipHas() says no, synth re-enabled");
+  assert.equal(val(`chipActive() && chipHas("pulse1")`), false);
+
+  run(`playing = false; chip.key = null; chip.stream = null; songKey = null; song.tracks[0].voice = undefined;`);
+});
+
+// Full protocol exercise for docs/streamed-render-plan.md step 3, own
+// createApp() (mutates chipWorker/Worker/CHIPS.psf — the same isolation
+// every other worker test in this file uses). The FAKE worker answers every
+// message SYNCHRONOUSLY (same convention as "a worker that errors once…",
+// above): the vm's setTimeout is a fake clock that only moves on an explicit
+// tick(), so an async reply would need one; a real reply is async, but
+// nothing here depends on that — only on the MESSAGES exchanged and the
+// page-side state they produce.
+test("chip stream mode: switch off uses chipRender untouched; on, a {stream:{error}} falls back to it; a successful open schedules sources via trackGain(ti), bounds its cache over a long play, and a seek requests the right chunk first", async () => {
+  const a = createApp();
+  // One FAKE worker, synchronous (same convention as "a worker that errors
+  // once…", above — the vm's setTimeout is a fake clock that only moves on
+  // an explicit tick(), so an async reply would need one; nothing here
+  // depends on real async timing). It answers EVERY shape chipWorkerAvailable()
+  // being true can route to it: the plain whole-render message too (no
+  // wrapper key) — a worker IS available once globalThis.Worker exists, so
+  // the switch-off case and the stream-error fallback both still go through
+  // chipRenderInWorker, not the inline path, same as the real app.
+  a.run(`
+    APP_BASE = "http://x/"; chipWorkerAvailable.broken = false;
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1"}, {name: "pulse2"}]};
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}];
+    songKey = "albums/ps1/x/song.mid";
+    chipSource = () => Promise.resolve({bytes: new Uint8Array([1]), n: 1, secs: 200, chip: "psf", libs: {}});
+    CHIPS.psf.parse = () => () => ({}); CHIPS.psf.run = () => async () => ({result: {}, seconds: 10});
+    CHIPS.psf.render = (M, res, o) => ({pulse1: new Float32Array(10).fill(0.4), sampleRate: o.sampleRate});
+    CHIPS.psf.lead = () => 0;
+    globalThis.__msgs = [];
+    globalThis.__streamErr = null; // set to a string to make a {stream} reply an error instead of {ready}
+    class FakeWorker {
+      constructor() { this._onmsg = null; this.chunkFrames = 0; }
+      set onmessage(fn) { this._onmsg = fn; }
+      get onmessage() { return this._onmsg; }
+      postMessage(m) {
+        globalThis.__msgs.push(m);
+        if (m.stream) {
+          this.chunkFrames = m.stream.chunkFrames;
+          if (globalThis.__streamErr) { this._onmsg({data: {stream: {id: m.stream.id, error: globalThis.__streamErr}}}); return; }
+          this._onmsg({data: {ready: {id: m.stream.id, tracks: ["pulse1", "pulse2"], seconds: 200, sampleRate: m.stream.rate, frames: Math.round(200 * m.stream.rate), leadSec: 0}}});
+        } else if (m.want) {
+          for (let idx = m.want.from; idx <= m.want.to; idx++) {
+            const tracks = {pulse1: new Float32Array(this.chunkFrames).fill(0.3), pulse2: new Float32Array(this.chunkFrames).fill(0.3)};
+            this._onmsg({data: {chunk: {id: m.want.id, gen: m.want.gen, idx, frames: this.chunkFrames, tracks}}});
+          }
+        } else if (m.idle) { this._onmsg({data: {silent: {id: m.idle.id, names: []}}}); }
+        else if (m.seek) { /* no reply needed */ }
+        else if (m.preview) { this._onmsg({data: {preview: {req: m.preview.req, pcm: null}}}); }
+        else { // the plain whole-render shape ({id, kind, files, …}, no wrapper key)
+          this._onmsg({data: {id: m.id, done: {pcm: {pulse1: new Float32Array(10).fill(0.4)}, sampleRate: 44100, leadSec: 0, pan: {}, debug: {peakBytes: 40, keptBytes: 40, tracks: 1, groups: 1}}}});
+        }
+      }
+      terminate() {}
+    }
+    globalThis.Worker = FakeWorker;
+  `);
+
+  // --- switch OFF: chipRenderAuto never even opens a {stream} session -----
+  assert.equal(await a.run(`chipRenderAuto()`), true, "renders fine (through the worker's own whole-render reply)");
+  assert.equal(a.run(`__msgs.filter(m => m.stream).length`), 0, "no {stream} message while the switch is off");
+  assert.equal(a.run(`chip.pcm.pulse1.length`), 10, "the whole-render path, byte-for-byte as before this step");
+  assert.equal(a.run(`chip.stream`), null);
+
+  // --- switch ON, a worker that answers {stream:{error}}: falls back too --
+  a.run(`localStorage.setItem("ff1roll-chipstream", "on"); globalThis.__streamErr = "no stream for psf (test)";
+         chip.pcm = null; chip.key = null; chip.stream = null; songKey = "albums/ps1/x/song2.mid";`);
+  assert.equal(await a.run(`chipRenderAuto()`), true, "still succeeds — via the fallback");
+  assert.equal(a.run(`chip.stream`), null, "stream mode never got far enough to publish");
+  assert.equal(a.run(`chip.pcm.pulse1.length`), 10);
+
+  // --- a working stream open (deterministic, synchronous) -----------------
+  a.run(`globalThis.__streamErr = null; chip.pcm = null; chip.key = null; chip.stream = null; songKey = "albums/ps1/x/song3.mid"; playCursor = 0;`);
+  assert.equal(await a.run(`chipRenderAuto()`), true, "stream mode opened");
+  assert.ok(a.run(`!!chip.stream`), "chip.stream is the live session");
+  assert.ok(a.run(`chip.stream.cache.has(0)`), "the first window (chunk 0, covering the play-from position) is already cached when chip.renderPromise resolves");
+
+  // --- sources connect to trackGain(ti), same wiring as chipStart ---------
+  a.run(`
+    ensureAudio();
+    playing = true; loopSeg = {start: 0, end: 200, looped: true}; playT0 = 0; playOffset = 0; playRate = 1; albumEndAbs = null;
+    globalThis.__gainsSeen = [];
+    const _tg = trackGain; globalThis.trackGain = ti => { globalThis.__gainsSeen.push(ti); return _tg(ti); };
+    chipStreamStart(0);
+  `);
+  assert.ok(a.run(`chip.stream.srcs.length`) > 0, "at least one AudioBufferSourceNode scheduled");
+  assert.deepEqual(JSON.parse(a.run(`JSON.stringify([...new Set(__gainsSeen)].sort())`)), [0, 1], "both tracks' sources connected via trackGain(ti)");
+  assert.equal(a.run(`chip.stream.live`), true, "the synth guard's own flag follows a real chunk landing");
+
+  // --- cache stays bounded over a long play (200 s) -----------------------
+  // real audio.currentTime never advances in the vm (no tick()); playT0 is
+  // walked backward instead so playSec() (audio.currentTime - playT0) reads
+  // as if `t` seconds had really elapsed, while nowCtx (= audio.currentTime,
+  // always 0 here) stays the honest anchor chipStreamPump expects.
+  a.run(`for (let t = 0; t < 200; t += 0.5) { playT0 = -t; chipStreamPump(0); }`);
+  const cacheSize = a.run(`chip.stream.cache.size`);
+  assert.ok(cacheSize < 30, "eviction kept the cache bounded over 200 s of play: " + cacheSize + " chunks held");
+
+  // --- a seek to 90 s requests chunk 45 first -----------------------------
+  a.run(`chip.stream.cache.clear(); __msgs.length = 0; playT0 = 0; playOffset = 90; chipStreamStart(90);`);
+  const seekIdx = a.run(`(__msgs.find(m => m.seek) || {}).seek && __msgs.find(m => m.seek).seek.idx`);
+  assert.equal(seekIdx, 45, "the {seek} message lands on chunk 45 (90s / 2s chunks)");
+  const firstWant = a.run(`(__msgs.find(m => m.want) || {}).want`);
+  assert.equal(firstWant && firstWant.from, 45, "the first {want} after the seek also starts at chunk 45");
 });
 
 // The FF7-after-Challenge bug (Josh's iPad, 2026-09-30): Challenge (PS2)
@@ -2168,6 +2355,43 @@ test("chip render failure cleans up completely (worker/pcm/buffers/module cache)
   // real proof this render's output landed
   assert.equal(a.run(`chip.pcm.pulse1.length`), 10, "this render's PCM is what's kept, not the failed one's");
   assert.ok(a.run(`!!chipModules.cache.nsf`), "modules re-imported successfully for the next render");
+});
+
+// Aeon Battle (FFX, PS2) crashed the iPad's WKWebView, and after the crash
+// EVERY console song failed "couldn't load module tools/ps2/psf2.mjs:
+// Importing a module script failed" ×3 until a full app restart (Josh's
+// iPad, open-items.md "2026-09-30 21:40") — the content process was still
+// recovering, so the first import after a crash failed even for a kind
+// never involved in it. chipModules() now retries the whole set once,
+// inline, with a fresh buster, before giving up. importFn is a test-only
+// seam (no real file can be made to fail once then succeed); production
+// call sites never pass it.
+test("chipModules: an import that fails once then succeeds retries with a fresh buster; a successful retry IS cached", async () => {
+  const a = createApp();
+  let calls = 0; const seenPaths = [];
+  const fakeImport = async path => {
+    seenPaths.push(path); calls++;
+    if (calls <= 2) throw new Error("Importing a module script failed."); // every file in the FIRST attempt fails
+    return {ok: true};
+  };
+  a.context.__fakeImport = fakeImport;
+  a.run(`CHIPS.__teststream = {files: ["a", "b"], shared: [], own: []};`);
+  const M = await a.run(`chipModules("__teststream", __fakeImport)`);
+  assert.equal(M.ok, true, "the retried import's result is used");
+  assert.equal(calls, 4, "both files retried once each (2 files × 2 attempts)");
+  assert.notEqual(seenPaths[0], seenPaths[2], "the retry uses a fresh buster, not the identical failed URL");
+  assert.equal(a.run(`!!chipModules.cache.__teststream`), true, "the successful result IS cached");
+});
+
+test("chipModules: when BOTH attempts fail, it still throws, naming the module path — and never caches the failure", async () => {
+  const a = createApp();
+  const fakeImport = async () => { throw new Error("boom"); };
+  a.context.__fakeImport2 = fakeImport;
+  a.run(`CHIPS.__testfail = {files: ["x"], shared: [], own: []};`);
+  let threw = null;
+  try { await a.run(`chipModules("__testfail", __fakeImport2)`); } catch (err) { threw = err && err.message; }
+  assert.match(threw || "", /couldn't load module tools\/x\.mjs/);
+  assert.equal(a.run(`!!chipModules.cache.__testfail`), false, "never cached as broken — the next attempt gets a clean retry");
 });
 
 test("big drafts: an import's notes go to IndexedDB behind a stub; reads restore them; a full localStorage never throws out of saveDraft", async () => {
@@ -2440,6 +2664,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Text size", "Edit a copy",
     "Analyze ▸",
     "VoiceOver",
+    "Chip stream (experimental)",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
