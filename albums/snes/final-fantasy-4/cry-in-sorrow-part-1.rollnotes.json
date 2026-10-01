@@ -1,0 +1,11 @@
+{ "version": 1, "song": "cry-in-sorrow-part-1", "saved": 1790825921474, "notes": [
+  {"at":[1,1],"to":[1,3],"type":"chord","chord":"Bbm"},
+  {"at":[1,1],"type":"track","track":"voice2","color":"#f80030"},
+  {"at":[1,1],"type":"key","key":"Bbm"},
+  {"at":[1,1],"to":[1,3],"text":"i — Bb minor, the home chord"},
+  {"at":[1,1],"to":[3,4],"text":"Bass walks Bb, Ab, Gb (i, bVII, bVI). The Gb feels like an arrival but not home: the music uses C natural, which Gb major would spell Cb, so the key stays Bb minor. A sus chord has no third, so it passes through without settling."},
+  {"at":[1,4],"to":[2,2],"type":"chord","chord":"Absus4add2","note":"passing chord as the bass walks down from Bb to Gb"},
+  {"at":[1,4],"to":[2,2],"text":"bVII — Ab sus chord, a passing chord on the way down"},
+  {"at":[2,3],"to":[3,3],"type":"chord","chord":"Gbmaj9","note":"I was surprised to hear a major nine in this song since it is so sad. I guess I don't completely understand how a major nine is supposed to sound I expected it to be somewhat happy for some reason"},
+  {"at":[2,3],"to":[3,3],"text":"bVI — Gb major (maj9), a major chord native to the minor key; the bass lands here after walking Bb, Ab, Gb"}
+] }
