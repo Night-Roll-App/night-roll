@@ -1,3 +1,3 @@
-{ "version": 1, "song": "assault", "saved": 1790644403228, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "assault", "origin": {"kind":"capture"}, "stamp": 1790644403228, "notes": [
   {"at":[98,5],"type":"loop","loop":"41.6"}
 ] }

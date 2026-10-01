@@ -1,3 +1,3 @@
-{ "version": 1, "song": "tidus-theme", "saved": 1790644403340, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "tidus-theme", "origin": {"kind":"capture"}, "stamp": 1790644403340, "notes": [
   {"at":[53,1],"type":"loop","loop":"9.1"}
 ] }
