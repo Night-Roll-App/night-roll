@@ -1,3 +1,3 @@
-{ "version": 1, "song": "princess-toadstool-s-statue-found", "saved": 1790564649324, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "princess-toadstool-s-statue-found", "origin": {"kind":"capture"}, "stamp": 1790564649324, "notes": [
   {"at":[9,1.75],"type":"loop","loop":"1.1.75"}
 ] }

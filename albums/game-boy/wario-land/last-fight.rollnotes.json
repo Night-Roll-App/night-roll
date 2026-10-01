@@ -1,3 +1,3 @@
-{ "version": 1, "song": "last-fight", "saved": 1790564649322, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "last-fight", "origin": {"kind":"capture"}, "stamp": 1790564649322, "notes": [
   {"at":[50,2.25],"type":"loop","loop":"10.2.25"}
 ] }

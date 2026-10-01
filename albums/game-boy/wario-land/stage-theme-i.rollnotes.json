@@ -1,3 +1,3 @@
-{ "version": 1, "song": "stage-theme-i", "saved": 1790564649326, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "stage-theme-i", "origin": {"kind":"capture"}, "stamp": 1790564649326, "notes": [
   {"at":[52,4.5],"type":"loop","loop":"2.4.5"}
 ] }
