@@ -337,7 +337,11 @@
     font-size: 0.75rem;
     color: var(--gold);
     min-width: 0;
-    flex: 1;
+    /* its own full-width first line, buttons on the row below: squeezed
+       between 13 controls a lassoed chord read "F#3 · A#3 ·…" (Josh,
+       2026-09-30, mid-analysis) */
+    flex: 1 1 100%;
+    order: -1;
     cursor: pointer; /* always tappable: a message too long to read here opens in full (#infosheet) */
     display: -webkit-box;
     -webkit-line-clamp: 2; /* wraps to a 2nd line before it has to truncate at all */
