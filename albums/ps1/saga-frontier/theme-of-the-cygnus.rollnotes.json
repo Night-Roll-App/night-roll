@@ -1,3 +1,3 @@
-{ "version": 1, "song": "theme-of-the-cygnus", "saved": 1790613672035, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "theme-of-the-cygnus", "origin": {"kind":"capture"}, "stamp": 1790613672035, "notes": [
   {"at":[27,1],"type":"loop","loop":"5.1"}
 ] }

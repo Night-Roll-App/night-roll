@@ -1,3 +1,3 @@
-{ "version": 1, "song": "march", "saved": 1790613672010, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "march", "origin": {"kind":"capture"}, "stamp": 1790613672010, "notes": [
   {"at":[14,2],"type":"loop","loop":"6.2"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "last-battle-t260g", "saved": 1790613672000, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "last-battle-t260g", "origin": {"kind":"capture"}, "stamp": 1790613672000, "notes": [
   {"at":[155,1],"type":"loop","loop":"35.1"}
 ] }

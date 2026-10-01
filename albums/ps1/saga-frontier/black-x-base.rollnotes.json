@@ -1,3 +1,3 @@
-{ "version": 1, "song": "black-x-base", "saved": 1790613671923, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "black-x-base", "origin": {"kind":"capture"}, "stamp": 1790613671923, "notes": [
   {"at":[32,1],"type":"loop","loop":"9.1"}
 ] }

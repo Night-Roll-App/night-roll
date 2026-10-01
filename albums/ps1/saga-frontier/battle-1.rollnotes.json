@@ -1,3 +1,3 @@
-{ "version": 1, "song": "battle-1", "saved": 1790613671909, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "battle-1", "origin": {"kind":"capture"}, "stamp": 1790613671909, "notes": [
   {"at":[48,1.25],"type":"loop","loop":"13.1.25"}
 ] }

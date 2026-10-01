@@ -1,3 +1,3 @@
-{ "version": 1, "song": "wakatu", "saved": 1790613672038, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "wakatu", "origin": {"kind":"capture"}, "stamp": 1790613672038, "notes": [
   {"at":[26,3],"type":"loop","loop":"4.1"}
 ] }

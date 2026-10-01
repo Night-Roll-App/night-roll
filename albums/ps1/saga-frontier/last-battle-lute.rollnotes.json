@@ -1,3 +1,3 @@
-{ "version": 1, "song": "last-battle-lute", "saved": 1790613671978, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "last-battle-lute", "origin": {"kind":"capture"}, "stamp": 1790613671978, "notes": [
   {"at":[93,2.5],"type":"loop","loop":"25.2"}
 ] }

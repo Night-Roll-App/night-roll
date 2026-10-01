@@ -1,3 +1,3 @@
-{ "version": 1, "song": "travelling-regions", "saved": 1790613672036, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "travelling-regions", "origin": {"kind":"capture"}, "stamp": 1790613672036, "notes": [
   {"at":[7,1.5],"type":"loop","loop":"1.1.5"}
 ] }

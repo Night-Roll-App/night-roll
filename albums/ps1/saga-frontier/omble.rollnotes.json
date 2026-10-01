@@ -1,3 +1,3 @@
-{ "version": 1, "song": "omble", "saved": 1790613672017, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "omble", "origin": {"kind":"capture"}, "stamp": 1790613672017, "notes": [
   {"at":[12,3],"type":"loop","loop":"3.1"}
 ] }

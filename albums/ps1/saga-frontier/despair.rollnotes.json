@@ -1,3 +1,3 @@
-{ "version": 1, "song": "despair", "saved": 1790613671933, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "despair", "origin": {"kind":"capture"}, "stamp": 1790613671933, "notes": [
   {"at":[41,1],"type":"loop","loop":"17.1"}
 ] }

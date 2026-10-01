@@ -1,3 +1,3 @@
-{ "version": 1, "song": "shuzer", "saved": 1790613672027, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "shuzer", "origin": {"kind":"capture"}, "stamp": 1790613672027, "notes": [
   {"at":[20,1],"type":"loop","loop":"5.1"}
 ] }

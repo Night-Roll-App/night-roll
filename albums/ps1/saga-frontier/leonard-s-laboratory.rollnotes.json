@@ -1,3 +1,3 @@
-{ "version": 1, "song": "leonard-s-laboratory", "saved": 1790613672003, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "leonard-s-laboratory", "origin": {"kind":"capture"}, "stamp": 1790613672003, "notes": [
   {"at":[48,1],"type":"loop","loop":"3.1"}
 ] }

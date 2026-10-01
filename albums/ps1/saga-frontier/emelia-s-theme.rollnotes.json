@@ -1,3 +1,3 @@
-{ "version": 1, "song": "emelia-s-theme", "saved": 1790613671938, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "emelia-s-theme", "origin": {"kind":"capture"}, "stamp": 1790613671938, "notes": [
   {"at":[40,1],"type":"loop","loop":"9.1"}
 ] }
