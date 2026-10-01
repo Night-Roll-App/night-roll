@@ -1,3 +1,3 @@
-{ "version": 1, "song": "cloud-tops-intro", "saved": 1790564347070, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cloud-tops-intro", "origin": {"kind":"capture"}, "stamp": 1790564347070, "notes": [
   {"at":[16,2.25],"type":"loop","loop":"4.2.25"}
 ] }

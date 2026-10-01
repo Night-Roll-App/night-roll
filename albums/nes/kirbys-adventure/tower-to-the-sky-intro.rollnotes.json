@@ -1,3 +1,3 @@
-{ "version": 1, "song": "tower-to-the-sky-intro", "saved": 1790564347092, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "tower-to-the-sky-intro", "origin": {"kind":"capture"}, "stamp": 1790564347092, "notes": [
   {"at":[30,4.5],"type":"loop","loop":"6.4.5"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "forest-trail-intro", "saved": 1790564347074, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "forest-trail-intro", "origin": {"kind":"capture"}, "stamp": 1790564347074, "notes": [
   {"at":[25,1],"type":"loop","loop":"3.1"}
 ] }
