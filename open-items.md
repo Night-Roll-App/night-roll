@@ -11,10 +11,10 @@ Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     Welcoming of Maester Mika). Published or fresh — which is right?
 Q2. (ASK LATER) Archive move: make the archive token (resource owner
     joshcough, only the archive repo, Contents read+write) and say "go".
-Q5. May I add a redirect so the bare address night-roll-app.github.io
-    lands on the app? (One tiny public repo in the org,
-    Night-Roll-App.github.io, holding a redirect page.) Answered part: the
-    "site down" was the bare address without /night-roll/.
+Q5. ANSWERED YES (2026-10-01) — waiting on Josh to run ONE command (the auto-mode
+    permission classifier blocks me from creating a public repo). Files are ready in
+    the job tmp dir (index.html + 404.html redirecting to /night-roll/):
+    gh repo create Night-Roll-App/night-roll-app.github.io --public --source ~/.claude/jobs/c9506483/tmp/redirect --push
 Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
