@@ -1,4 +1,4 @@
-{ "version": 1, "song": "fanfare", "saved": 1789784215232, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "fanfare", "origin": {"kind":"composition"}, "stamp": 1789784215232, "notes": [
   {"at":[1,1],"type":"key","key":"Eb"},
   {"at":[1,1],"to":[2,4],"type":"section","label":"Fanfare"},
   {"at":[1,1],"type":"lane","lane":37},

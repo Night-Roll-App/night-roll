@@ -1,4 +1,4 @@
-{ "version": 1, "song": "KeyChangeTest-07-26", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "KeyChangeTest-07-26", "origin": {"kind":"composition"}, "notes": [
   {"at":[1,1],"type":"key","key":"G"},
   {"at":[1,1],"to":[8,4],"type":"section","label":"A — G-land"},
   {"at":[9,1],"to":[12,4],"type":"section","label":"B — Bb-land"},

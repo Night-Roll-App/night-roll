@@ -1,4 +1,4 @@
-{ "version": 1, "song": "running-with-the-runs", "saved": 1790395379205, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "running-with-the-runs", "origin": {"kind":"composition"}, "stamp": 1790395379205, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"to":[8,4],"type":"section","label":"Intro Whoa"},
   {"at":[1,1],"type":"tempo","bpm":140},

@@ -1,4 +1,4 @@
-{ "version": 1, "song": "graveyard", "saved": 1787450749188, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "graveyard", "origin": {"kind":"composition"}, "stamp": 1787450749188, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"lane","lane":38},
   {"at":[1,1],"type":"key","key":"F#m"},

@@ -1,9 +1,8 @@
-{ "version": 1, "song": "threnody", "saved": 1788809630442, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "threnody", "origin": {"kind":"copy","movedFrom":"albums/compositions/nightroll/test-sad-progression.mid"}, "stamp": 1788809630442, "notes": [
   {"at":[1,1],"type":"lane","lane":44},
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"key","key":"Cm"},
   {"at":[1,1],"type":"track","track":"violin 2","voice":"sf-violin"},
   {"at":[1,1],"type":"track","track":"violin 1","voice":"sf-violin"},
-  {"at":[1,1],"type":"track","track":"cello","voice":"sf-cello"},
-  {"at":[1,1],"text":"moved from albums/compositions/nightroll/test-sad-progression.mid"}
+  {"at":[1,1],"type":"track","track":"cello","voice":"sf-cello"}
 ] }

@@ -1,4 +1,4 @@
-{ "version": 1, "song": "cool-b-maj-with-b-part", "saved": 1787231082658, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cool-b-maj-with-b-part", "origin": {"kind":"copy","from":"albums/compositions/nightroll/cool-bmaj-progression.mid"}, "stamp": 1787231082658, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"lane","lane":37},
   {"at":[1,1],"type":"key","key":"G#m"},
@@ -6,7 +6,6 @@
   {"at":[1,1],"type":"track","track":"Trumpet","voice":"sf-trumpet","color":"#f80001"},
   {"at":[1,1],"to":[2,3],"type":"section","label":"Intro"},
   {"at":[1,1],"to":[2,3],"type":"chord","chord":"B"},
-  {"at":[1,1],"text":"forked from albums/compositions/nightroll/cool-bmaj-progression.mid"},
   {"at":[1,1],"type":"tempo","bpm":86},
   {"at":[1,1],"type":"track","track":"Melody","voice":"sawtooth","vol":1.1},
   {"at":[1,1],"type":"track","track":"Bass","voice":"square"},

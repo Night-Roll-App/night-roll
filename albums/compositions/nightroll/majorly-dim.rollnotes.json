@@ -1,4 +1,4 @@
-{ "version": 1, "song": "majorly-dim", "saved": 1790295582523, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "majorly-dim", "origin": {"kind":"composition"}, "stamp": 1790295582523, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"to":[1,2],"type":"chord","chord":"C"},
   {"at":[1,1],"type":"key","key":"C"},

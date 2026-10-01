@@ -1,9 +1,8 @@
-{ "version": 1, "song": "graveyard-2", "saved": 1790398072103, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "graveyard-2", "origin": {"kind":"copy","from":"albums/compositions/nightroll/graveyard.mid"}, "stamp": 1790398072103, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"lane","lane":35},
   {"at":[1,1],"type":"key","key":"F#m"},
   {"at":[1,1],"type":"tempo","bpm":96},
-  {"at":[1,1],"text":"forked from albums/compositions/nightroll/graveyard.mid"},
   {"at":[1,1],"type":"track","track":"triangle","voice":"triangle","vol":1.5},
   {"at":[1,4],"to":[5,4],"type":"section","label":"Intro"},
   {"at":[6,1],"type":"tempo","bpm":192},

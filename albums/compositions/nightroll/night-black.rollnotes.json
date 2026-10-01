@@ -1,4 +1,4 @@
-{ "version": 1, "song": "night-black", "saved": 1790213188595, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "night-black", "origin": {"kind":"composition"}, "stamp": 1790213188595, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"to":[2,4],"type":"chord","chord":"E"},
   {"at":[1,1],"to":[2,4],"type":"section","label":"E"},

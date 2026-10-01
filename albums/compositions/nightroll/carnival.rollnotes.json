@@ -1,4 +1,4 @@
-{ "version": 1, "song": "carnival", "saved": 1789882952240, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "carnival", "origin": {"kind":"composition"}, "stamp": 1789882952240, "notes": [
   {"at":[1,1],"type":"key","key":"F"},
   {"at":[1,1],"type":"tempo","bpm":90},
   {"at":[1,1],"to":[2,4],"type":"section","label":"A"},

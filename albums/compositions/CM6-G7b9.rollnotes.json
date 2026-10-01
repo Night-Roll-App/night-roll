@@ -1,4 +1,4 @@
-{ "version": 1, "song": "CM6-G7b9", "saved": 1789772354706, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "CM6-G7b9", "origin": {"kind":"composition"}, "stamp": 1789772354706, "notes": [
   {"at":[1,1],"type":"key","key":"C"},
   {"at":[1,1],"type":"track","track":"Inst 2","vol":0.75},
   {"at":[1,1],"type":"track","track":"Melody","voice":"square"},

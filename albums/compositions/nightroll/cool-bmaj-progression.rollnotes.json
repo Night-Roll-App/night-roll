@@ -1,4 +1,4 @@
-{ "version": 1, "song": "cool-bmaj-progression", "saved": 1787157375625, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cool-bmaj-progression", "origin": {"kind":"composition"}, "stamp": 1787157375625, "notes": [
   {"at":[1,1],"type":"timesig","timesig":"4/4"},
   {"at":[1,1],"type":"lane","lane":37},
   {"at":[1,1],"type":"tempo","bpm":75},
