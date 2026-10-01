@@ -19,79 +19,98 @@
   "tracks": {
    "prelude": {
     "n": 1,
-    "secs": 170
+    "secs": 170,
+    "track": 1
    },
    "prologue": {
     "n": 2,
-    "secs": 85
+    "secs": 85,
+    "track": 2
    },
    "epilogue": {
     "n": 3,
-    "secs": 270
+    "secs": 270,
+    "track": 18
    },
    "overworld": {
     "n": 4,
-    "secs": 60
+    "secs": 60,
+    "track": 4
    },
    "ship": {
     "n": 5,
-    "secs": 90
+    "secs": 90,
+    "track": 9
    },
    "airship": {
     "n": 6,
-    "secs": 45
+    "secs": 45,
+    "track": 13
    },
    "town": {
     "n": 7,
-    "secs": 45
+    "secs": 45,
+    "track": 7
    },
    "cornelia-castle": {
     "n": 8,
-    "secs": 40
+    "secs": 40,
+    "track": 3
    },
    "gurgu-volcano": {
     "n": 9,
-    "secs": 65
+    "secs": 65,
+    "track": 14
    },
    "matoyas-cave": {
     "n": 10,
-    "secs": 65
+    "secs": 65,
+    "track": 6
    },
    "cave": {
     "n": 11,
-    "secs": 50
+    "secs": 50,
+    "track": 11
    },
    "chaos-temple": {
     "n": 12,
-    "secs": 55
+    "secs": 55,
+    "track": 5
    },
    "floating-castle": {
     "n": 13,
-    "secs": 65
+    "secs": 65,
+    "track": 15
    },
    "underwater-palace": {
     "n": 14,
-    "secs": 55
+    "secs": 55,
+    "track": 10
    },
    "shop": {
     "n": 15,
-    "secs": 55
+    "secs": 55,
+    "track": 8
    },
    "battle": {
     "n": 16,
-    "secs": 90
+    "secs": 90,
+    "track": 16
    },
    "menu": {
     "n": 17,
-    "secs": 35
+    "secs": 35,
+    "track": 12
    },
    "game-over": {
     "n": 18,
-    "secs": 45
+    "secs": 45,
+    "track": 19
    },
    "victory": {
     "n": 19,
-    "secs": 30
+    "secs": 30,
+    "track": 17
    }
   }
  }

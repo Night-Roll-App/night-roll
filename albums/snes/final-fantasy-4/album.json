@@ -41,263 +41,328 @@
   "tracks": {
    "another-moon": {
     "n": 1,
-    "secs": 112
+    "secs": 112,
+    "track": 43
    },
    "castle-damcyan": {
     "n": 1,
-    "secs": 67
+    "secs": 67,
+    "track": 17
    },
    "chocobo-chocobo": {
     "n": 1,
-    "secs": 54
+    "secs": 54,
+    "track": 12
    },
    "chocobo-forest": {
     "n": 1,
-    "secs": 17
+    "secs": 17,
+    "track": 50
    },
    "crickets": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 51
    },
    "cry-in-sorrow-part-1": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 18
    },
    "cry-in-sorrow-part-2": {
     "n": 1,
-    "secs": 111
+    "secs": 111,
+    "track": 19
    },
    "dancing-calcobrina": {
     "n": 1,
-    "secs": 54
+    "secs": 54,
+    "track": 39
    },
    "dancing-girls": {
     "n": 1,
-    "secs": 13
+    "secs": 13,
+    "track": 52
    },
    "down-the-well": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 53
    },
    "epilogue-part-1": {
     "n": 1,
-    "secs": 300
+    "secs": 300,
+    "track": 47
    },
    "epilogue-part-2": {
     "n": 1,
-    "secs": 268
+    "secs": 268,
+    "track": 48
    },
    "epilogue-part-3": {
     "n": 1,
-    "secs": 213
+    "secs": 213,
+    "track": 49
    },
    "fabul": {
     "n": 1,
-    "secs": 112
+    "secs": 112,
+    "track": 23
    },
    "fanfare": {
     "n": 1,
-    "secs": 32
+    "secs": 32,
+    "track": 10
    },
    "fight-1": {
     "n": 1,
-    "secs": 99
+    "secs": 99,
+    "track": 9
    },
    "fight-2": {
     "n": 1,
-    "secs": 127
+    "secs": 127,
+    "track": 14
    },
    "giott-the-great-king": {
     "n": 1,
-    "secs": 65
+    "secs": 65,
+    "track": 38
    },
    "golbez-clad-in-dark": {
     "n": 1,
-    "secs": 108
+    "secs": 108,
+    "track": 26
    },
    "good-night": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 54
    },
    "gysahl-s-whistle": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 55
    },
    "hello-big-chocobo": {
     "n": 1,
-    "secs": 49
+    "secs": 49,
+    "track": 11
    },
    "hey-cid": {
     "n": 1,
-    "secs": 63
+    "secs": 63,
+    "track": 27
    },
    "hummingway-s-tune": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 56
    },
    "illusionary-world": {
     "n": 1,
-    "secs": 84.99
+    "secs": 84.99,
+    "track": 41
    },
    "into-the-darkness": {
     "n": 1,
-    "secs": 102
+    "secs": 102,
+    "track": 13
    },
    "join-the-party": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 57
    },
    "kingdom-baron": {
     "n": 1,
-    "secs": 83
+    "secs": 83,
+    "track": 3
    },
    "land-of-dwarves": {
     "n": 1,
-    "secs": 103.99000000000001
+    "secs": 103.99000000000001,
+    "track": 37
    },
    "long-way-to-go": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 29
    },
    "lunar-subterrane": {
     "n": 1,
-    "secs": 117
+    "secs": 117,
+    "track": 58
    },
    "main-theme-ocean": {
     "n": 1,
-    "secs": 154
+    "secs": 154,
+    "track": 8
    },
    "main-theme": {
     "n": 1,
-    "secs": 154.99
+    "secs": 154.99,
+    "track": 7
    },
    "melody-of-lute-night": {
     "n": 1,
-    "secs": 87
+    "secs": 87,
+    "track": 21
    },
    "melody-of-lute": {
     "n": 1,
-    "secs": 87
+    "secs": 87,
+    "track": 20
    },
    "mt-ordeals": {
     "n": 1,
-    "secs": 95
+    "secs": 95,
+    "track": 22
    },
    "mystic-mysidia": {
     "n": 1,
-    "secs": 86.99
+    "secs": 86.99,
+    "track": 28
    },
    "palom-and-porom": {
     "n": 1,
-    "secs": 39
+    "secs": 39,
+    "track": 30
    },
    "prologue": {
     "n": 1,
-    "secs": 108.98
+    "secs": 108.98,
+    "track": 5
    },
    "red-wings": {
     "n": 1,
-    "secs": 127
+    "secs": 127,
+    "track": 2
    },
    "ring-of-bomb": {
     "n": 1,
-    "secs": 89
+    "secs": 89,
+    "track": 15
    },
    "run": {
     "n": 1,
-    "secs": 24
+    "secs": 24,
+    "track": 24
    },
    "rydia": {
     "n": 1,
-    "secs": 121
+    "secs": 121,
+    "track": 16
    },
    "samba-de-chocobo": {
     "n": 1,
-    "secs": 59
+    "secs": 59,
+    "track": 34
    },
    "serpent-road": {
     "n": 1,
-    "secs": 29
+    "secs": 29,
+    "track": 59
    },
    "ship-ahoy": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 60
    },
    "somewhere-in-the-world": {
     "n": 1,
-    "secs": 48
+    "secs": 48,
+    "track": 36
    },
    "surprise": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 61
    },
    "suspicion": {
     "n": 1,
-    "secs": 53
+    "secs": 53,
+    "track": 25
    },
    "the-airship": {
     "n": 1,
-    "secs": 46
+    "secs": 46,
+    "track": 32
    },
    "the-big-whale": {
     "n": 1,
-    "secs": 62
+    "secs": 62,
+    "track": 42
    },
    "the-dreadful-fight": {
     "n": 1,
-    "secs": 177
+    "secs": 177,
+    "track": 31
    },
    "the-final-battle": {
     "n": 1,
-    "secs": 148
+    "secs": 148,
+    "track": 46
    },
    "the-lunarians": {
     "n": 1,
-    "secs": 125
+    "secs": 125,
+    "track": 44
    },
    "the-package-opens": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 62
    },
    "the-paladin": {
     "n": 1,
-    "secs": 22
+    "secs": 22,
+    "track": 63
    },
    "the-porno-magazine": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 64
    },
    "the-prelude": {
     "n": 1,
-    "secs": 119
+    "secs": 119,
+    "track": 1
    },
    "the-tower-of-babel": {
     "n": 1,
-    "secs": 109.98
+    "secs": 109.98,
+    "track": 35
    },
    "theme-of-love": {
     "n": 1,
-    "secs": 127.99000000000001
+    "secs": 127.99000000000001,
+    "track": 4
    },
    "toroian-beauty": {
     "n": 1,
-    "secs": 94
+    "secs": 94,
+    "track": 33
    },
    "tower-of-zot": {
     "n": 1,
-    "secs": 81
+    "secs": 81,
+    "track": 40
    },
    "tranquil-beach": {
     "n": 1,
-    "secs": 16
+    "secs": 16,
+    "track": 65
    },
    "welcome-to-our-town": {
     "n": 1,
-    "secs": 77
+    "secs": 77,
+    "track": 6
    },
    "within-the-giant": {
     "n": 1,
-    "secs": 124
+    "secs": 124,
+    "track": 45
    }
   },
   "chip": "spc",

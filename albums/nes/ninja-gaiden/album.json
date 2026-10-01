@@ -32,107 +32,133 @@
   "tracks": {
    "a-hero-s-end-ending-i": {
     "n": 22,
-    "secs": 44.664880000000004
+    "secs": 44.664880000000004,
+    "track": 22
    },
    "aftermath-cutscene": {
     "n": 21,
-    "secs": 55.397784
+    "secs": 55.397784,
+    "track": 21
    },
    "apprehensive-moments-cutscene-4-3": {
     "n": 7,
-    "secs": 21.315814
+    "secs": 21.315814,
+    "track": 7
    },
    "bloody-malth-cutscene": {
     "n": 20,
-    "secs": 16.132688
+    "secs": 16.132688,
+    "track": 20
    },
    "boss-battle": {
     "n": 5,
-    "secs": 35.465248
+    "secs": 35.465248,
+    "track": 5
    },
    "credits-duplicate": {
     "n": 25,
-    "secs": 103.595856
+    "secs": 103.595856,
+    "track": 25
    },
    "depth-of-wickedness-5-1-6-5": {
     "n": 19,
-    "secs": 27.198912
+    "secs": 27.198912,
+    "track": 19
    },
    "devilish-influence-cutscene-6-4": {
     "n": 13,
-    "secs": 26.132288
+    "secs": 26.132288,
+    "track": 13
    },
    "evading-the-enemy-2-1-6-1": {
     "n": 8,
-    "secs": 299.82134
+    "secs": 299.82134,
+    "track": 8
    },
    "evil-plans-cutscene": {
     "n": 18,
-    "secs": 22.399104
+    "secs": 22.399104,
+    "track": 18
    },
    "for-your-love-ending-iii": {
     "n": 24,
-    "secs": 53.997840000000004
+    "secs": 53.997840000000004,
+    "track": 24
    },
    "game-over": {
     "n": 26,
-    "secs": 4.599816
+    "secs": 4.599816,
+    "track": 26
    },
    "information-and-coercion-cutscene": {
     "n": 14,
-    "secs": 41.781662
+    "secs": 41.781662,
+    "track": 14
    },
    "it-s-over-ending-ii": {
     "n": 23,
-    "secs": 68.197272
+    "secs": 68.197272,
+    "track": 23
    },
    "jaquio-fortress-cutscene": {
     "n": 16,
-    "secs": 20.799168
+    "secs": 20.799168,
+    "track": 16
    },
    "nowhere-to-run-3-2-6-2": {
     "n": 12,
-    "secs": 65.49738
+    "secs": 65.49738,
+    "track": 12
    },
    "pushing-onward-1-1-5-2-6-3": {
     "n": 4,
-    "secs": 44.898204
+    "secs": 44.898204,
+    "track": 4
    },
    "rugged-terrain-2-2-4-1": {
     "n": 9,
-    "secs": 76.79692800000001
+    "secs": 76.79692800000001,
+    "track": 9
    },
    "seeking-truth-cutscene-5-3": {
     "n": 11,
-    "secs": 44.91487
+    "secs": 44.91487,
+    "track": 11
    },
    "sfx-next-act": {
     "n": 3,
-    "secs": 3.199872
+    "secs": 3.199872,
+    "track": 3
    },
    "spawn-of-evil-cutscene": {
     "n": 17,
-    "secs": 46.898124
+    "secs": 46.898124,
+    "track": 17
    },
    "swift-ninja-cutscene-3-1": {
     "n": 10,
-    "secs": 5.33312
+    "secs": 5.33312,
+    "track": 10
    },
    "the-duel-opening": {
     "n": 1,
-    "secs": 20.33252
+    "secs": 20.33252,
+    "track": 1
    },
    "unbreakable-determination-4-2": {
     "n": 15,
-    "secs": 43.198272
+    "secs": 43.198272,
+    "track": 15
    },
    "veil-of-uncertainty-cutscene": {
     "n": 6,
-    "secs": 24.632348
+    "secs": 24.632348,
+    "track": 6
    },
    "vow-of-revenge-opening-ii": {
     "n": 2,
-    "secs": 48.99804
+    "secs": 48.99804,
+    "track": 2
    }
   }
  }

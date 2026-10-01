@@ -44,275 +44,411 @@
   "tracks": {
    "ancient-dragon-s-fort": {
     "n": 1,
-    "secs": 126.66768
+    "secs": 126.66768,
+    "track": 23,
+    "disc": 1
    },
    "another-arni-village": {
     "n": 1,
-    "secs": 101.540604
+    "secs": 101.540604,
+    "track": 7,
+    "disc": 1
    },
    "another-guldove": {
     "n": 1,
-    "secs": 100.65101925000002
+    "secs": 100.65101925000002,
+    "track": 17,
+    "disc": 1
    },
    "another-marbule": {
     "n": 1,
-    "secs": 81.127776
+    "secs": 81.127776,
+    "track": 44,
+    "disc": 2
    },
    "another-termina": {
     "n": 1,
-    "secs": 80.131408
+    "secs": 80.131408,
+    "track": 11,
+    "disc": 1
    },
    "birds-ambience": {
     "n": 1,
-    "secs": 1349.771596
+    "secs": 1349.771596,
+    "track": 66,
+    "disc": 9
    },
    "cave-ambience-2": {
     "n": 1,
-    "secs": 2314.037024
+    "secs": 2314.037024,
+    "track": 68,
+    "disc": 9
    },
    "cave-ambience": {
     "n": 1,
-    "secs": 3769.424893166667
+    "secs": 3769.424893166667,
+    "track": 67,
+    "disc": 9
    },
    "chrono-main-theme": {
     "n": 1,
-    "secs": 89.65723
+    "secs": 89.65723,
+    "track": 33,
+    "disc": 2
    },
    "chronopolis": {
     "n": 1,
-    "secs": 165.33168
+    "secs": 165.33168,
+    "track": 51,
+    "disc": 3
    },
    "cleft-of-dimension": {
     "n": 1,
-    "secs": 71.21870045833333
+    "secs": 71.21870045833333,
+    "track": 24,
+    "disc": 2
    },
    "dancing-the-tokage": {
     "n": 1,
-    "secs": 73.042368
+    "secs": 73.042368,
+    "track": 4,
+    "disc": 1
    },
    "dead-sea-tower-of-ruin": {
     "n": 1,
-    "secs": 97.91891385416666
+    "secs": 97.91891385416666,
+    "track": 37,
+    "disc": 2
    },
    "death-volcano": {
     "n": 1,
-    "secs": 114.2838
+    "secs": 114.2838,
+    "track": 22,
+    "disc": 1
    },
    "dragon-god": {
     "n": 1,
-    "secs": 85.556625
+    "secs": 85.556625,
+    "track": 60,
+    "disc": 3
    },
    "dragon-s-prayer": {
     "n": 1,
-    "secs": 171.24564675000002
+    "secs": 171.24564675000002,
+    "track": 57,
+    "disc": 3
    },
    "dragonrider": {
     "n": 1,
-    "secs": 87.542002
+    "secs": 87.542002,
+    "track": 26,
+    "disc": 2
    },
    "dream-of-the-shore-bordering-another-world": {
     "n": 1,
-    "secs": 71.13367825
+    "secs": 71.13367825,
+    "track": 6,
+    "disc": 1
    },
    "dream-s-creation": {
     "n": 1,
-    "secs": 91.428992
+    "secs": 91.428992,
+    "track": 19,
+    "disc": 1
    },
    "drowning-valley": {
     "n": 1,
-    "secs": 58.868056
+    "secs": 58.868056,
+    "track": 10,
+    "disc": 1
    },
    "earth-dragon-s-island": {
     "n": 1,
-    "secs": 87.99912
+    "secs": 87.99912,
+    "track": 40,
+    "disc": 2
    },
    "etude-1": {
     "n": 1,
-    "secs": 8.10788
+    "secs": 8.10788,
+    "track": 46,
+    "disc": 2
    },
    "etude-2": {
     "n": 1,
-    "secs": 8.732862416666668
+    "secs": 8.732862416666668,
+    "track": 47,
+    "disc": 2
    },
    "fairies-make-way-for-magic": {
     "n": 1,
-    "secs": 8.715075583333334
+    "secs": 8.715075583333334,
+    "track": 45,
+    "disc": 2
    },
    "fates-gods-of-destiny": {
     "n": 1,
-    "secs": 94.090332
+    "secs": 94.090332,
+    "track": 52,
+    "disc": 3
    },
    "frozen-flame": {
     "n": 1,
-    "secs": 78.99530404166667
+    "secs": 78.99530404166667,
+    "track": 59,
+    "disc": 3
    },
    "gaia-s-navel": {
     "n": 1,
-    "secs": 94.286588
+    "secs": 94.286588,
+    "track": 41,
+    "disc": 2
    },
    "gale": {
     "n": 1,
-    "secs": 93.02046945833332
+    "secs": 93.02046945833332,
+    "track": 42,
+    "disc": 2
    },
    "garden-of-the-gods": {
     "n": 1,
-    "secs": 81.84365154166666
+    "secs": 81.84365154166666,
+    "track": 50,
+    "disc": 3
    },
    "he-sang-of-feeling": {
     "n": 1,
-    "secs": 76.581015
+    "secs": 76.581015,
+    "track": 8,
+    "disc": 1
    },
    "home-guldove": {
     "n": 1,
-    "secs": 113.848556
+    "secs": 113.848556,
+    "track": 28,
+    "disc": 2
    },
    "home-marbule": {
     "n": 1,
-    "secs": 88.694304
+    "secs": 88.694304,
+    "track": 29,
+    "disc": 2
    },
    "home-termina-variation": {
     "n": 1,
-    "secs": 86.334148
+    "secs": 86.334148,
+    "track": 64,
+    "disc": 9
    },
    "home-termina": {
     "n": 1,
-    "secs": 112.40569649999999
+    "secs": 112.40569649999999,
+    "track": 25,
+    "disc": 2
    },
    "home-village-arni": {
     "n": 1,
-    "secs": 94.919137
+    "secs": 94.919137,
+    "track": 2,
+    "disc": 1
    },
    "hydra-marshes": {
     "n": 1,
-    "secs": 89.454128
+    "secs": 89.454128,
+    "track": 18,
+    "disc": 1
    },
    "into-a-time-of-darkness": {
     "n": 1,
-    "secs": 2314.037024
+    "secs": 2314.037024,
+    "track": 61,
+    "disc": 3
    },
    "isle-of-the-damned": {
     "n": 1,
-    "secs": 115.714818
+    "secs": 115.714818,
+    "track": 36,
+    "disc": 2
    },
    "jellyfish-sea": {
     "n": 1,
-    "secs": 78.855776
+    "secs": 78.855776,
+    "track": 53,
+    "disc": 3
    },
    "leaving-the-body": {
     "n": 1,
-    "secs": 117.75266604166669
+    "secs": 117.75266604166669,
+    "track": 12,
+    "disc": 1
    },
    "life-faraway-promise": {
     "n": 1,
-    "secs": 217.3197425416666
+    "secs": 217.3197425416666,
+    "track": 62,
+    "disc": 3
    },
    "lost-child-of-time": {
     "n": 1,
-    "secs": 85.831342
+    "secs": 85.831342,
+    "track": 16,
+    "disc": 1
    },
    "lost-fragments": {
     "n": 1,
-    "secs": 93.05556154166669
+    "secs": 93.05556154166669,
+    "track": 9,
+    "disc": 1
    },
    "magical-dreamers-the-wind-stars-and-waves-intro": {
     "n": 1,
-    "secs": 29.45098695833334
+    "secs": 29.45098695833334,
+    "track": 48,
+    "disc": 2
    },
    "magical-dreamers-the-wind-stars-and-waves-main": {
     "n": 1,
-    "secs": 111.427472
+    "secs": 111.427472,
+    "track": 49,
+    "disc": 2
    },
    "magical-dreamers-the-wind-stars-and-waves-variation": {
     "n": 1,
-    "secs": 51.428064
+    "secs": 51.428064,
+    "track": 65,
+    "disc": 9
    },
    "nap": {
     "n": 1,
-    "secs": 6.791038729166667
+    "secs": 6.791038729166667,
+    "track": 32,
+    "disc": 2
    },
    "optimism": {
     "n": 1,
-    "secs": 71.11104
+    "secs": 71.11104,
+    "track": 35,
+    "disc": 2
    },
    "orphan-of-flame": {
     "n": 1,
-    "secs": 77.246416
+    "secs": 77.246416,
+    "track": 54,
+    "disc": 3
    },
    "people-seized-with-life": {
     "n": 1,
-    "secs": 100.72448320833333
+    "secs": 100.72448320833333,
+    "track": 38,
+    "disc": 2
    },
    "phantom-ship": {
     "n": 1,
-    "secs": 53.332096
+    "secs": 53.332096,
+    "track": 21,
+    "disc": 1
    },
    "predicament": {
     "n": 1,
-    "secs": 85.162
+    "secs": 85.162,
+    "track": 34,
+    "disc": 2
    },
    "previously-lost-hopes": {
     "n": 1,
-    "secs": 32.90968941666665
+    "secs": 32.90968941666665,
+    "track": 39,
+    "disc": 2
    },
    "reminiscence-feelings-not-erased": {
     "n": 1,
-    "secs": 93.181315
+    "secs": 93.181315,
+    "track": 5,
+    "disc": 1
    },
    "shadow-forest": {
     "n": 1,
-    "secs": 93.911616
+    "secs": 93.911616,
+    "track": 13,
+    "disc": 1
    },
    "the-big-admirable-mysterious-sleight-of-hand-group": {
     "n": 1,
-    "secs": 34.285376
+    "secs": 34.285376,
+    "track": 31,
+    "disc": 2
    },
    "the-brink-of-death-variation": {
     "n": 1,
-    "secs": 76.11163775
+    "secs": 76.11163775,
+    "track": 63,
+    "disc": 9
    },
    "the-brink-of-death": {
     "n": 1,
-    "secs": 76.11163775
+    "secs": 76.11163775,
+    "track": 1,
+    "disc": 1
    },
    "the-star-stealing-girl": {
     "n": 1,
-    "secs": 101.6929
+    "secs": 101.6929,
+    "track": 55,
+    "disc": 3
    },
    "time-of-the-dreamwatch": {
     "n": 1,
-    "secs": 119.98046875
+    "secs": 119.98046875,
+    "track": 56,
+    "disc": 3
    },
    "time-s-grasslands-home-world": {
     "n": 1,
-    "secs": 96.00144
+    "secs": 96.00144,
+    "track": 3,
+    "disc": 1
    },
    "tower-of-stars": {
     "n": 1,
-    "secs": 66.001056
+    "secs": 66.001056,
+    "track": 58,
+    "disc": 3
    },
    "victory-spring-s-gift": {
     "n": 1,
-    "secs": 22.540772958333335
+    "secs": 22.540772958333335,
+    "track": 15,
+    "disc": 1
    },
    "victory-summer-s-cry": {
     "n": 1,
-    "secs": 21.992269708333332
+    "secs": 21.992269708333332,
+    "track": 43,
+    "disc": 2
    },
    "viper-manor": {
     "n": 1,
-    "secs": 84.20944
+    "secs": 84.20944,
+    "track": 14,
+    "disc": 1
    },
    "voyage-another-world": {
     "n": 1,
-    "secs": 72.452992
+    "secs": 72.452992,
+    "track": 20,
+    "disc": 1
    },
    "voyage-home-world": {
     "n": 1,
-    "secs": 94.284784
+    "secs": 94.284784,
+    "track": 27,
+    "disc": 2
    },
    "zelbess": {
     "n": 1,
-    "secs": 70.201053
+    "secs": 70.201053,
+    "track": 30,
+    "disc": 2
    }
   },
   "chip": "psf",

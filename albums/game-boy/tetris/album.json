@@ -21,71 +21,88 @@
   "tracks": {
    "2-player-mode-danger": {
     "n": 6,
-    "secs": 10.71533203125
+    "secs": 10.71533203125,
+    "track": 15
    },
    "2-player-mode-game-over": {
     "n": 16,
-    "secs": 12.925369262695312
+    "secs": 12.925369262695312,
+    "track": 16
    },
    "2-player-mode-round-over": {
     "n": 5,
-    "secs": 6.2282867431640625
+    "secs": 6.2282867431640625,
+    "track": 17
    },
    "a-type-music-version-1-1": {
     "n": 2,
-    "secs": 38.5751953125
+    "secs": 38.5751953125,
+    "track": 2
    },
    "b-type-game-level-9-high-0-ending": {
     "n": 9,
-    "secs": 5.0228118896484375
+    "secs": 5.0228118896484375,
+    "track": 8
    },
    "b-type-game-level-9-high-1-ending": {
     "n": 10,
-    "secs": 5.0228118896484375
+    "secs": 5.0228118896484375,
+    "track": 9
    },
    "b-type-game-level-9-high-2-ending": {
     "n": 11,
-    "secs": 5.0228118896484375
+    "secs": 5.0228118896484375,
+    "track": 10
    },
    "b-type-game-level-9-high-3-ending": {
     "n": 12,
-    "secs": 5.0228118896484375
+    "secs": 5.0228118896484375,
+    "track": 11
    },
    "b-type-game-level-9-high-4-5-ending": {
     "n": 14,
-    "secs": 12.8583984375
+    "secs": 12.8583984375,
+    "track": 12
    },
    "b-type-game-level-9-high-5-ending-part-2-100000-points": {
     "n": 15,
-    "secs": 7.333305358886719
+    "secs": 7.333305358886719,
+    "track": 13
    },
    "b-type-music": {
     "n": 3,
-    "secs": 35.360595703125
+    "secs": 35.360595703125,
+    "track": 4
    },
    "c-type-music": {
     "n": 4,
-    "secs": 38.5751953125
+    "secs": 38.5751953125,
+    "track": 5
    },
    "game-over": {
     "n": 8,
-    "secs": 2.6118621826171875
+    "secs": 2.6118621826171875,
+    "track": 7
    },
    "high-score": {
     "n": 17,
-    "secs": 27.525009155273438
+    "secs": 27.525009155273438,
+    "track": 14
    },
    "stage-clear": {
     "n": 7,
-    "secs": 2.1765518188476562
+    "secs": 2.1765518188476562,
+    "track": 6
    },
    "title": {
     "n": 1,
-    "secs": 39.57975769042969
+    "secs": 39.57975769042969,
+    "track": 1
    },
    "unknown-jingle-02": {
     "n": 13,
-    "secs": 7.4337615966796875
+    "secs": 7.4337615966796875,
+    "track": 18
    }
   },
   "chip": "gbs"

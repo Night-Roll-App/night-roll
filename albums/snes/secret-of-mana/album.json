@@ -38,279 +38,348 @@
   "tracks": {
    "a-bell-is-tolling": {
     "n": 1,
-    "secs": 160
+    "secs": 160,
+    "track": 27
    },
    "a-conclusion": {
     "n": 1,
-    "secs": 60
+    "secs": 60,
+    "track": 42
    },
    "a-curious-happening": {
     "n": 1,
-    "secs": 105
+    "secs": 105,
+    "track": 28
    },
    "a-curious-tale": {
     "n": 1,
-    "secs": 141
+    "secs": 141,
+    "track": 2
    },
    "a-wish": {
     "n": 1,
-    "secs": 98
+    "secs": 98,
+    "track": 18
    },
    "ally-joins": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 52
    },
    "boss-defeated": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 58
    },
    "calm-before-the-storm": {
     "n": 1,
-    "secs": 218
+    "secs": 218,
+    "track": 22
    },
    "cannon-travel-launch": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 63
    },
    "cannon-travel": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 64
    },
    "ceremony": {
     "n": 1,
-    "secs": 95
+    "secs": 95,
+    "track": 36
    },
    "dancing-animals-echo": {
     "n": 1,
-    "secs": 133
+    "secs": 133,
+    "track": 9
    },
    "dancing-animals": {
     "n": 1,
-    "secs": 133
+    "secs": 133,
+    "track": 10
    },
    "danger": {
     "n": 1,
-    "secs": 243
+    "secs": 243,
+    "track": 21
    },
    "did-you-see-the-ocean": {
     "n": 1,
-    "secs": 228
+    "secs": 228,
+    "track": 20
    },
    "distant-thunder": {
     "n": 1,
-    "secs": 192
+    "secs": 192,
+    "track": 11
    },
    "elemental-acquired": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 56
    },
    "eternal-recurrence": {
     "n": 1,
-    "secs": 171.92000000000002
+    "secs": 171.92000000000002,
+    "track": 25
    },
    "fear-of-the-heavens": {
     "n": 1,
-    "secs": 94
+    "secs": 94,
+    "track": 1
    },
    "flammie-coming": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 66
    },
    "flammie-drum": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 65
    },
    "flammie-voice": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 67
    },
    "flight-into-the-unknown": {
     "n": 1,
-    "secs": 154
+    "secs": 154,
+    "track": 24
    },
    "fond-memories": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 5
    },
    "got-an-item": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 54
    },
    "got-weapon-orb": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 59
    },
    "i-closed-my-eyes": {
     "n": 1,
-    "secs": 33.92
+    "secs": 33.92,
+    "track": 48
    },
    "i-won-t-forget": {
     "n": 1,
-    "secs": 82
+    "secs": 82,
+    "track": 43
    },
    "in-the-dead-of-the-night": {
     "n": 1,
-    "secs": 65
+    "secs": 65,
+    "track": 14
    },
    "into-the-thick-of-it-echo": {
     "n": 1,
-    "secs": 198
+    "secs": 198,
+    "track": 6
    },
    "into-the-thick-of-it": {
     "n": 1,
-    "secs": 198
+    "secs": 198,
+    "track": 7
    },
    "it-happened-late-one-evening": {
     "n": 1,
-    "secs": 53.76
+    "secs": 53.76,
+    "track": 13
    },
    "leave-time-for-love": {
     "n": 1,
-    "secs": 122
+    "secs": 122,
+    "track": 38
    },
    "level-up": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 60
    },
    "magic-level-up": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 62
    },
    "mara-s-key": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 57
    },
    "menu": {
     "n": 1,
-    "secs": 18
+    "secs": 18,
+    "track": 51
    },
    "meridian-dance": {
     "n": 1,
-    "secs": 208
+    "secs": 208,
+    "track": 45
    },
    "midge-mallet": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 55
    },
    "monarch-on-the-shore": {
     "n": 1,
-    "secs": 135
+    "secs": 135,
+    "track": 29
    },
    "morning-is-here": {
     "n": 1,
-    "secs": 98.91
+    "secs": 98.91,
+    "track": 37
    },
    "mysterious-moaning": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 69
    },
    "mystic-invasion": {
     "n": 1,
-    "secs": 62
+    "secs": 62,
+    "track": 15
    },
    "new-continent-rises": {
     "n": 1,
-    "secs": 27.98
+    "secs": 27.98,
+    "track": 68
    },
    "now-flightless-wings": {
     "n": 1,
-    "secs": 122
+    "secs": 122,
+    "track": 46
    },
    "one-of-them-is-hope": {
     "n": 1,
-    "secs": 97
+    "secs": 97,
+    "track": 44
    },
    "phantom-and-a-rose": {
     "n": 1,
-    "secs": 139
+    "secs": 139,
+    "track": 3
    },
    "prophecy": {
     "n": 1,
-    "secs": 65
+    "secs": 65,
+    "track": 32
    },
    "secret-of-the-arid-sands": {
     "n": 1,
-    "secs": 111.98
+    "secs": 111.98,
+    "track": 16
    },
    "spirit-of-the-night": {
     "n": 1,
-    "secs": 156
+    "secs": 156,
+    "track": 19
    },
    "steel-and-snare": {
     "n": 1,
-    "secs": 180
+    "secs": 180,
+    "track": 33
    },
    "still-of-the-night": {
     "n": 1,
-    "secs": 297
+    "secs": 297,
+    "track": 39
    },
    "the-color-of-the-summer-sky": {
     "n": 1,
-    "secs": 133
+    "secs": 133,
+    "track": 8
    },
    "the-curse": {
     "n": 1,
-    "secs": 121
+    "secs": 121,
+    "track": 40
    },
    "the-dark-star-no-echo": {
     "n": 1,
-    "secs": 131
+    "secs": 131,
+    "track": 30
    },
    "the-dark-star": {
     "n": 1,
-    "secs": 131
+    "secs": 131,
+    "track": 31
    },
    "the-legend": {
     "n": 1,
-    "secs": 156
+    "secs": 156,
+    "track": 26
    },
    "the-little-sprite": {
     "n": 1,
-    "secs": 81
+    "secs": 81,
+    "track": 12
    },
    "the-oracle": {
     "n": 1,
-    "secs": 173
+    "secs": 173,
+    "track": 41
    },
    "the-second-truth-from-the-left": {
     "n": 1,
-    "secs": 269
+    "secs": 269,
+    "track": 47
    },
    "the-wind-never-ceases": {
     "n": 1,
-    "secs": 118.95
+    "secs": 118.95,
+    "track": 23
    },
    "together-always": {
     "n": 1,
-    "secs": 111
+    "secs": 111,
+    "track": 4
    },
    "unused-jingle-1": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 49
    },
    "unused-jingle-2": {
     "n": 1,
-    "secs": 11.950000000000001
+    "secs": 11.950000000000001,
+    "track": 50
    },
    "victory": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 53
    },
    "weapon-level-up": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 61
    },
    "what-the-forest-taught-me": {
     "n": 1,
-    "secs": 106
+    "secs": 106,
+    "track": 17
    },
    "whisper-and-mantra-echo": {
     "n": 1,
-    "secs": 100
+    "secs": 100,
+    "track": 34
    },
    "whisper-and-mantra": {
     "n": 1,
-    "secs": 100
+    "secs": 100,
+    "track": 35
    }
   },
   "chip": "spc",

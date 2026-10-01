@@ -35,207 +35,258 @@
   "tracks": {
    "battle-vs-gym-leader": {
     "n": 22,
-    "secs": 57.77907943725586
+    "secs": 57.77907943725586,
+    "track": 28
    },
    "battle-vs-trainer": {
     "n": 23,
-    "secs": 97.04072570800781
+    "secs": 97.04072570800781,
+    "track": 16
    },
    "battle-vs-wild-pokemon": {
     "n": 24,
-    "secs": 47.013519287109375
+    "secs": 47.013519287109375,
+    "track": 8
    },
    "casino": {
     "n": 35,
-    "secs": 39.17793273925781
+    "secs": 39.17793273925781,
+    "track": 34
    },
    "celadon-city-s-theme": {
     "n": 9,
-    "secs": 30.739608764648438
+    "secs": 30.739608764648438,
+    "track": 33
    },
    "cerulean-city-s-theme": {
     "n": 8,
-    "secs": 31.96182632446289
+    "secs": 31.96182632446289,
+    "track": 20
    },
    "cinnabar-island-s-theme": {
     "n": 10,
-    "secs": 21.69854736328125
+    "secs": 21.69854736328125,
+    "track": 39
    },
    "cycling": {
     "n": 33,
-    "secs": 34.57368850708008
+    "secs": 34.57368850708008,
+    "track": 30
    },
    "ending": {
     "n": 29,
-    "secs": 99.45167541503906
+    "secs": 99.45167541503906,
+    "track": 45
    },
    "evolution": {
     "n": 17,
-    "secs": 33.970951080322266
+    "secs": 33.970951080322266,
+    "track": 41
    },
    "guide": {
     "n": 16,
-    "secs": 15.855342864990234
+    "secs": 15.855342864990234,
+    "track": 14
    },
    "into-the-hall": {
     "n": 30,
-    "secs": 22.502197265625
+    "secs": 22.502197265625,
+    "track": 44
    },
    "item-fanfare": {
     "n": 46,
-    "secs": 3.214599609375
+    "secs": 3.214599609375,
+    "track": 46
    },
    "jigglypuff-s-song": {
     "n": 32,
-    "secs": 7.634674072265625
+    "secs": 7.634674072265625,
+    "track": 23
    },
    "last-battle-vs-rival": {
     "n": 25,
-    "secs": 74.53852844238281
+    "secs": 74.53852844238281,
+    "track": 43
    },
    "lavender-town-s-theme": {
     "n": 12,
-    "secs": 299.9790687561035
+    "secs": 299.9790687561035,
+    "track": 31
    },
    "level-up-fanfare": {
     "n": 48,
-    "secs": 2.2100372314453125
+    "secs": 2.2100372314453125,
+    "track": 48
    },
    "mt-moon-cave": {
     "n": 38,
-    "secs": 83.42890548706055
+    "secs": 83.42890548706055,
+    "track": 18
    },
    "oak-research-lab": {
     "n": 31,
-    "secs": 28.998367309570312
+    "secs": 28.998367309570312,
+    "track": 5
    },
    "ocean": {
     "n": 34,
-    "secs": 27.876605987548828
+    "secs": 27.876605987548828,
+    "track": 38
    },
    "opening-part-1": {
     "n": 1,
-    "secs": 12.690971374511719
+    "secs": 12.690971374511719,
+    "track": 1
    },
    "opening-part-2": {
     "n": 2,
-    "secs": 47.465572357177734
+    "secs": 47.465572357177734,
+    "track": 2
    },
    "pallet-town-s-theme": {
     "n": 4,
-    "secs": 32.14599609375
+    "secs": 32.14599609375,
+    "track": 3
    },
    "pewter-city-s-theme": {
     "n": 7,
-    "secs": 57.86279296875
+    "secs": 57.86279296875,
+    "track": 10
    },
    "pokedex-fanfare-1": {
     "n": 50,
-    "secs": 3.348541259765625
+    "secs": 3.348541259765625,
+    "track": 50
    },
    "pokedex-fanfare-2": {
     "n": 51,
-    "secs": 3.0136871337890625
+    "secs": 3.0136871337890625,
+    "track": 51
    },
    "pokemon-capture-fanfare": {
     "n": 49,
-    "secs": 4.01824951171875
+    "secs": 4.01824951171875,
+    "track": 49
    },
    "pokemon-center": {
     "n": 5,
-    "secs": 28.931396484375
+    "secs": 28.931396484375,
+    "track": 11
    },
    "pokemon-gym": {
     "n": 6,
-    "secs": 31.191661834716797
+    "secs": 31.191661834716797,
+    "track": 21
    },
    "pokemon-mansion": {
     "n": 39,
-    "secs": 299.9790687561035
+    "secs": 299.9790687561035,
+    "track": 40
    },
    "pokemon-received-fanfare": {
     "n": 47,
-    "secs": 3.0136871337890625
+    "secs": 3.0136871337890625,
+    "track": 47
    },
    "pokemon-recovery": {
     "n": 45,
-    "secs": 3.2648277282714844
+    "secs": 3.2648277282714844,
+    "track": 12
    },
    "pokemon-tower": {
     "n": 40,
-    "secs": 62.986061096191406
+    "secs": 62.986061096191406,
+    "track": 32
    },
    "professor-oak": {
     "n": 14,
-    "secs": 23.858356475830078
+    "secs": 23.858356475830078,
+    "track": 4
    },
    "rival-appears": {
     "n": 15,
-    "secs": 17.22824478149414
+    "secs": 17.22824478149414,
+    "track": 6
    },
    "st-anne": {
     "n": 13,
-    "secs": 32.14599609375
+    "secs": 32.14599609375,
+    "track": 25
    },
    "sylph-company": {
     "n": 41,
-    "secs": 60.72579574584961
+    "secs": 60.72579574584961,
+    "track": 37
    },
    "team-rocket-hideout": {
     "n": 36,
-    "secs": 68.61161041259766
+    "secs": 68.61161041259766,
+    "track": 36
    },
    "the-last-road": {
     "n": 21,
-    "secs": 29.83550262451172
+    "secs": 29.83550262451172,
+    "track": 42
    },
    "the-road-to-cerulean-from-mt-moon": {
     "n": 19,
-    "secs": 27.173412322998047
+    "secs": 27.173412322998047,
+    "track": 19
    },
    "the-road-to-lavender-town-from-vermilion": {
     "n": 20,
-    "secs": 33.451927185058594
+    "secs": 33.451927185058594,
+    "track": 26
    },
    "the-road-to-viridian-city-from-pallet": {
     "n": 18,
-    "secs": 22.904022216796875
+    "secs": 22.904022216796875,
+    "track": 7
    },
    "to-bill-s-origin-from-cerulean": {
     "n": 3,
-    "secs": 19.086685180664062
+    "secs": 19.086685180664062,
+    "track": 22
    },
    "trainer-appears-bad-guy-version": {
     "n": 42,
-    "secs": 7.383533477783203
+    "secs": 7.383533477783203,
+    "track": 35
    },
    "trainer-appears-boy-version": {
     "n": 44,
-    "secs": 8.438323974609375
+    "secs": 8.438323974609375,
+    "track": 27
    },
    "trainer-appears-girl-version": {
     "n": 43,
-    "secs": 7.584445953369141
+    "secs": 7.584445953369141,
+    "track": 15
    },
    "vermilion-city-s-theme": {
     "n": 11,
-    "secs": 23.506759643554688
+    "secs": 23.506759643554688,
+    "track": 24
    },
    "victory-vs-gym-leader": {
     "n": 28,
-    "secs": 36.566070556640625
+    "secs": 36.566070556640625,
+    "track": 29
    },
    "victory-vs-trainer": {
     "n": 26,
-    "secs": 12.657485961914062
+    "secs": 12.657485961914062,
+    "track": 17
    },
    "victory-vs-wild-pokemon": {
     "n": 27,
-    "secs": 12.657485961914062
+    "secs": 12.657485961914062,
+    "track": 9
    },
    "viridian-forest": {
     "n": 37,
-    "secs": 101.2598876953125
+    "secs": 101.2598876953125,
+    "track": 13
    }
   },
   "chip": "gbs"

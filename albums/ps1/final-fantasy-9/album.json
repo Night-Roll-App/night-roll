@@ -65,435 +65,651 @@
   "tracks": {
    "a-transient-past": {
     "n": 1,
-    "secs": 153.6
+    "secs": 153.6,
+    "track": 80,
+    "disc": 3
    },
    "aloha-de-chocobo": {
     "n": 1,
-    "secs": 90.947664
+    "secs": 90.947664,
+    "track": 40,
+    "disc": 2
    },
    "amarant-s-theme": {
     "n": 1,
-    "secs": 129.23498
+    "secs": 129.23498,
+    "track": 70,
+    "disc": 3
    },
    "ambush-attack": {
     "n": 1,
-    "secs": 62.501
+    "secs": 62.501,
+    "track": 59,
+    "disc": 3
    },
    "assault-of-the-white-dragons": {
     "n": 1,
-    "secs": 136.717386
+    "secs": 136.717386,
+    "track": 96,
+    "disc": 4
    },
    "at-the-south-gate-border": {
     "n": 1,
-    "secs": 157.355196
+    "secs": 157.355196,
+    "track": 43,
+    "disc": 2
    },
    "awakening-the-forest": {
     "n": 1,
-    "secs": 129.601944
+    "secs": 129.601944,
+    "track": 15,
+    "disc": 1
    },
    "battle-strategy-conference": {
     "n": 1,
-    "secs": 82.50121
+    "secs": 82.50121,
+    "track": 2,
+    "disc": 1
    },
    "battle": {
     "n": 1,
-    "secs": 72.374035
+    "secs": 72.374035,
+    "track": 16,
+    "disc": 1
    },
    "bittersweet-romance": {
     "n": 1,
-    "secs": 88.733424
+    "secs": 88.733424,
+    "track": 101,
+    "disc": 4
    },
    "black-mage-s-village": {
     "n": 1,
-    "secs": 94.58591
+    "secs": 94.58591,
+    "track": 63,
+    "disc": 3
    },
    "black-waltz": {
     "n": 1,
-    "secs": 45.00066
+    "secs": 45.00066,
+    "track": 29,
+    "disc": 1
    },
    "boss-battle": {
     "n": 1,
-    "secs": 112.94144
+    "secs": 112.94144,
+    "track": 19,
+    "disc": 1
    },
    "ceremony-for-the-gods": {
     "n": 1,
-    "secs": 66.463704
+    "secs": 66.463704,
+    "track": 65,
+    "disc": 3
    },
    "cid-s-theme": {
     "n": 1,
-    "secs": 109.501606
+    "secs": 109.501606,
+    "track": 30,
+    "disc": 2
    },
    "cleyra-s-trunk": {
     "n": 1,
-    "secs": 143.997504
+    "secs": 143.997504,
+    "track": 54,
+    "disc": 2
    },
    "cleyra-settlement": {
     "n": 1,
-    "secs": 56.24925
+    "secs": 56.24925,
+    "track": 55,
+    "disc": 2
    },
    "crossing-those-hills": {
     "n": 1,
-    "secs": 139.199072
+    "secs": 139.199072,
+    "track": 22,
+    "disc": 1
    },
    "crystal-world": {
     "n": 1,
-    "secs": 102.4
+    "secs": 102.4,
+    "track": 98,
+    "disc": 4
    },
    "dark-messenger": {
     "n": 1,
-    "secs": 163.238744
+    "secs": 163.238744,
+    "track": 99,
+    "disc": 4
    },
    "dissipating-sorrow": {
     "n": 1,
-    "secs": 94.73715
+    "secs": 94.73715,
+    "track": 94,
+    "disc": 4
    },
    "doga-and-une": {
     "n": 1,
-    "secs": 49.845996
+    "secs": 49.845996,
+    "track": 107,
+    "disc": 5
    },
    "eiko-s-theme": {
     "n": 1,
-    "secs": 103.55510208333332
+    "secs": 103.55510208333332,
+    "track": 66,
+    "disc": 3
    },
    "esto-gaza": {
     "n": 1,
-    "secs": 114.751683
+    "secs": 114.751683,
+    "track": 82,
+    "disc": 3
    },
    "eternal-harvest": {
     "n": 1,
-    "secs": 70.153624
+    "secs": 70.153624,
+    "track": 56,
+    "disc": 2
    },
    "extraction": {
     "n": 1,
-    "secs": 28.800432
+    "secs": 28.800432,
+    "track": 58,
+    "disc": 2
    },
    "fairy-battle": {
     "n": 1,
-    "secs": 65.50034799999999
+    "secs": 65.50034799999999,
+    "track": 44,
+    "disc": 2
    },
    "fanfare": {
     "n": 1,
-    "secs": 20.510744833333337
+    "secs": 20.510744833333337,
+    "track": 17,
+    "disc": 1
    },
    "far-away-in-the-twilight": {
     "n": 1,
-    "secs": 168.329428
+    "secs": 168.329428,
+    "track": 25,
+    "disc": 1
    },
    "feel-my-blade": {
     "n": 1,
-    "secs": 105.07469449999999
+    "secs": 105.07469449999999,
+    "track": 4,
+    "disc": 1
    },
    "final-battle": {
     "n": 1,
-    "secs": 48.000768
+    "secs": 48.000768,
+    "track": 100,
+    "disc": 4
    },
    "footsteps-of-desire": {
     "n": 1,
-    "secs": 119.9963
+    "secs": 119.9963,
+    "track": 71,
+    "disc": 3
    },
    "forgotten-face": {
     "n": 1,
-    "secs": 95.512092
+    "secs": 95.512092,
+    "track": 46,
+    "disc": 2
    },
    "fossil-roo": {
     "n": 1,
-    "secs": 66.463704
+    "secs": 66.463704,
+    "track": 61,
+    "disc": 3
    },
    "freya-s-theme": {
     "n": 1,
-    "secs": 163.6356
+    "secs": 163.6356,
+    "track": 42,
+    "disc": 2
    },
    "frontier-village-dali": {
     "n": 1,
-    "secs": 129.167975
+    "secs": 129.167975,
+    "track": 24,
+    "disc": 1
    },
    "game-over": {
     "n": 1,
-    "secs": 62.095521999999995
+    "secs": 62.095521999999995,
+    "track": 20,
+    "disc": 1
    },
    "gargan-roo": {
     "n": 1,
-    "secs": 43.99956
+    "secs": 43.99956,
+    "track": 53,
+    "disc": 2
    },
    "garnet-s-song-1": {
     "n": 1,
-    "secs": 40.63593939583333
+    "secs": 40.63593939583333,
+    "track": 35,
+    "disc": 2
    },
    "garnet-s-song-2": {
     "n": 1,
-    "secs": 45.232243
+    "secs": 45.232243,
+    "track": 36,
+    "disc": 2
    },
    "garnet-s-theme": {
     "n": 1,
-    "secs": 140.726616
+    "secs": 140.726616,
+    "track": 52,
+    "disc": 2
    },
    "grieve-for-the-skies": {
     "n": 1,
-    "secs": 67.99932
+    "secs": 67.99932,
+    "track": 57,
+    "disc": 2
    },
    "gulug-volcano": {
     "n": 1,
-    "secs": 108.001728
+    "secs": 108.001728,
+    "track": 83,
+    "disc": 3
    },
    "hidden-lips": {
     "n": 1,
-    "secs": 22.908984
+    "secs": 22.908984,
+    "track": 102,
+    "disc": 4
    },
    "hunter-s-chance": {
     "n": 1,
-    "secs": 106.772229
+    "secs": 106.772229,
+    "track": 37,
+    "disc": 2
    },
    "i-want-to-be-your-canary": {
     "n": 1,
-    "secs": 72.772388
+    "secs": 72.772388,
+    "track": 103,
+    "disc": 4
    },
    "ice-caverns": {
     "n": 1,
-    "secs": 80.15369599999998
+    "secs": 80.15369599999998,
+    "track": 23,
+    "disc": 1
    },
    "iifa-tree": {
     "n": 1,
-    "secs": 130.00195
+    "secs": 130.00195,
+    "track": 69,
+    "disc": 3
    },
    "immoral-melody": {
     "n": 1,
-    "secs": 126.284172
+    "secs": 126.284172,
+    "track": 51,
+    "disc": 2
    },
    "ipsen-s-castle": {
     "n": 1,
-    "secs": 51.371185125000004
+    "secs": 51.371185125000004,
+    "track": 87,
+    "disc": 4
    },
    "jesters-of-the-moon": {
     "n": 1,
-    "secs": 181.33152
+    "secs": 181.33152,
+    "track": 7,
+    "disc": 1
    },
    "keeper-of-time": {
     "n": 1,
-    "secs": 72.00108
+    "secs": 72.00108,
+    "track": 77,
+    "disc": 3
    },
    "kingdom-of-burmecia": {
     "n": 1,
-    "secs": 108.001584
+    "secs": 108.001584,
+    "track": 45,
+    "disc": 2
    },
    "kuja-s-theme-millennium-version": {
     "n": 1,
-    "secs": 67.2
+    "secs": 67.2,
+    "track": 108,
+    "disc": 5
    },
    "kuja-s-theme": {
     "n": 1,
-    "secs": 63.000924
+    "secs": 63.000924,
+    "track": 47,
+    "disc": 2
    },
    "limited-time": {
     "n": 1,
-    "secs": 82.284288
+    "secs": 82.284288,
+    "track": 27,
+    "disc": 1
    },
    "lindblum": {
     "n": 1,
-    "secs": 112.9384
+    "secs": 112.9384,
+    "track": 32,
+    "disc": 2
    },
    "memories-of-that-day": {
     "n": 1,
-    "secs": 63.99936
+    "secs": 63.99936,
+    "track": 18,
+    "disc": 1
    },
    "mistaken-love": {
     "n": 1,
-    "secs": 98.24658933333332
+    "secs": 98.24658933333332,
+    "track": 13,
+    "disc": 1
    },
    "moogle-s-theme": {
     "n": 1,
-    "secs": 49.6548
+    "secs": 49.6548,
+    "track": 74,
+    "disc": 3
    },
    "mountain-pass": {
     "n": 1,
-    "secs": 105.366816
+    "secs": 105.366816,
+    "track": 62,
+    "disc": 3
    },
    "oeilvert": {
     "n": 1,
-    "secs": 59.078848
+    "secs": 59.078848,
+    "track": 78,
+    "disc": 3
    },
    "one-problem-settled": {
     "n": 1,
-    "secs": 98.66568
+    "secs": 98.66568,
+    "track": 31,
+    "disc": 2
    },
    "place-of-memory": {
     "n": 1,
-    "secs": 115.2
+    "secs": 115.2,
+    "track": 97,
+    "disc": 4
    },
    "prelude": {
     "n": 1,
-    "secs": 96.001408
+    "secs": 96.001408,
+    "track": 105,
+    "disc": 4
    },
    "prima-vista-band": {
     "n": 1,
-    "secs": 43.500638
+    "secs": 43.500638,
+    "track": 9,
+    "disc": 1
    },
    "protecting-my-devotion": {
     "n": 1,
-    "secs": 60.631776
+    "secs": 60.631776,
+    "track": 75,
+    "disc": 3
    },
    "qu-s-marsh": {
     "n": 1,
-    "secs": 95.998336
+    "secs": 95.998336,
+    "track": 38,
+    "disc": 2
    },
    "queen-of-the-abyss": {
     "n": 1,
-    "secs": 40.0006
+    "secs": 40.0006,
+    "track": 14,
+    "disc": 1
    },
    "quina-s-theme": {
     "n": 1,
-    "secs": 129.87916
+    "secs": 129.87916,
+    "track": 39,
+    "disc": 2
    },
    "rebirth-of-the-evil-mist": {
     "n": 1,
-    "secs": 126.854944
+    "secs": 126.854944,
+    "track": 95,
+    "disc": 4
    },
    "rose-of-may": {
     "n": 1,
-    "secs": 74.771667
+    "secs": 74.771667,
+    "track": 60,
+    "disc": 3
    },
    "ruins-of-madain-sari": {
     "n": 1,
-    "secs": 104.8
+    "secs": 104.8,
+    "track": 67,
+    "disc": 3
    },
    "run": {
     "n": 1,
-    "secs": 78.165885
+    "secs": 78.165885,
+    "track": 21,
+    "disc": 1
    },
    "search-for-the-princess": {
     "n": 1,
-    "secs": 174.64142550000003
+    "secs": 174.64142550000003,
+    "track": 6,
+    "disc": 1
    },
    "secret-library-daguerreo": {
     "n": 1,
-    "secs": 105.107108
+    "secs": 105.107108,
+    "track": 86,
+    "disc": 4
    },
    "shinra-march-millennium-version": {
     "n": 1,
-    "secs": 68.001088
+    "secs": 68.001088,
+    "track": 106,
+    "disc": 5
    },
    "slew-of-love-letters": {
     "n": 1,
-    "secs": 76.88096300000001
+    "secs": 76.88096300000001,
+    "track": 73,
+    "disc": 3
    },
    "song-of-memories-alternate": {
     "n": 1,
-    "secs": 157.865251
+    "secs": 157.865251,
+    "track": 34,
+    "disc": 2
    },
    "song-of-memories": {
     "n": 1,
-    "secs": 137.10902000000004
+    "secs": 137.10902000000004,
+    "track": 33,
+    "disc": 2
    },
    "soulless-village": {
     "n": 1,
-    "secs": 86.401296
+    "secs": 86.401296,
+    "track": 91,
+    "disc": 4
    },
    "steiner-s-stealth": {
     "n": 1,
-    "secs": 73.47084
+    "secs": 73.47084,
+    "track": 26,
+    "disc": 1
    },
    "steiner-s-theme": {
     "n": 1,
-    "secs": 127.99872
+    "secs": 127.99872,
+    "track": 8,
+    "disc": 1
    },
    "stolen-eyes": {
     "n": 1,
-    "secs": 86.688463
+    "secs": 86.688463,
+    "track": 10,
+    "disc": 1
    },
    "successive-battles": {
     "n": 1,
-    "secs": 102.261432
+    "secs": 102.261432,
+    "track": 89,
+    "disc": 4
    },
    "terra": {
     "n": 1,
-    "secs": 111.601674
+    "secs": 111.601674,
+    "track": 90,
+    "disc": 4
    },
    "tetra-master": {
     "n": 1,
-    "secs": 100.174464
+    "secs": 100.174464,
+    "track": 79,
+    "disc": 3
    },
    "the-airship-hilda-garde": {
     "n": 1,
-    "secs": 120.889584
+    "secs": 120.889584,
+    "track": 85,
+    "disc": 4
    },
    "the-castle-frozen-in-time": {
     "n": 1,
-    "secs": 82.284288
+    "secs": 82.284288,
+    "track": 92,
+    "disc": 4
    },
    "the-chosen-summoner": {
     "n": 1,
-    "secs": 77.540988
+    "secs": 77.540988,
+    "track": 76,
+    "disc": 3
    },
    "the-city-that-never-sleeps": {
     "n": 1,
-    "secs": 153.602304
+    "secs": 153.602304,
+    "track": 49,
+    "disc": 2
    },
    "the-four-medallions": {
     "n": 1,
-    "secs": 72.720303
+    "secs": 72.720303,
+    "track": 88,
+    "disc": 4
    },
    "the-heart-of-melting-magic": {
     "n": 1,
-    "secs": 105.496008
+    "secs": 105.496008,
+    "track": 84,
+    "disc": 3
    },
    "the-place-i-ll-return-to-someday": {
     "n": 1,
-    "secs": 54.857984
+    "secs": 54.857984,
+    "track": 1,
+    "disc": 1
    },
    "the-sneaky-frog-and-the-scoundrel": {
     "n": 1,
-    "secs": 103.678704
+    "secs": 103.678704,
+    "track": 81,
+    "disc": 3
    },
    "the-sword-of-doubt": {
     "n": 1,
-    "secs": 88.615104
+    "secs": 88.615104,
+    "track": 48,
+    "disc": 2
    },
    "theme-of-tantalus": {
     "n": 1,
-    "secs": 60.471552
+    "secs": 60.471552,
+    "track": 50,
+    "disc": 2
    },
    "tonight": {
     "n": 1,
-    "secs": 11.534167374999999
+    "secs": 11.534167374999999,
+    "track": 11,
+    "disc": 1
    },
    "two-hearts-not-captured": {
     "n": 1,
-    "secs": 78.26153
+    "secs": 78.26153,
+    "track": 104,
+    "disc": 4
    },
    "ukulele-de-chocobo": {
     "n": 1,
-    "secs": 63.99936
+    "secs": 63.99936,
+    "track": 41,
+    "disc": 2
    },
    "unfathomed-reminiscence": {
     "n": 1,
-    "secs": 104.8
+    "secs": 104.8,
+    "track": 64,
+    "disc": 3
    },
    "vamo-alla-flamenco": {
     "n": 1,
-    "secs": 94.667211
+    "secs": 94.667211,
+    "track": 5,
+    "disc": 1
    },
    "vivi-s-theme": {
     "n": 1,
-    "secs": 86.11553
+    "secs": 86.11553,
+    "track": 3,
+    "disc": 1
    },
    "wall-of-sacred-beasts": {
     "n": 1,
-    "secs": 66.000968
+    "secs": 66.000968,
+    "track": 68,
+    "disc": 3
    },
    "we-are-thieves": {
     "n": 1,
-    "secs": 56.000896
+    "secs": 56.000896,
+    "track": 72,
+    "disc": 3
    },
    "you-re-not-alone": {
     "n": 1,
-    "secs": 137.14048
+    "secs": 137.14048,
+    "track": 93,
+    "disc": 4
    },
    "your-warmth": {
     "n": 1,
-    "secs": 29.454397999999998
+    "secs": 29.454397999999998,
+    "track": 12,
+    "disc": 1
    },
    "zidane-s-theme": {
     "n": 1,
-    "secs": 169.754748
+    "secs": 169.754748,
+    "track": 28,
+    "disc": 1
    }
   },
   "chip": "psf",

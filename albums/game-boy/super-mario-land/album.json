@@ -11,75 +11,93 @@
   "tracks": {
    "bonus-game-walk": {
     "n": 14,
-    "secs": 8.5625
+    "secs": 8.5625,
+    "track": 12
    },
    "bonus-game": {
     "n": 13,
-    "secs": 5
+    "secs": 5,
+    "track": 11
    },
    "boss": {
     "n": 8,
-    "secs": 3
+    "secs": 3,
+    "track": 7
    },
    "ending-credits": {
     "n": 6,
-    "secs": 52.875
+    "secs": 52.875,
+    "track": 17
    },
    "extra-life": {
     "n": 15,
-    "secs": 1.9375
+    "secs": 1.9375,
+    "track": 13
    },
    "game-over": {
     "n": 18,
-    "secs": 6.25
+    "secs": 6.25,
+    "track": 18
    },
    "invincible-can-can": {
     "n": 10,
-    "secs": 15.875
+    "secs": 15.875,
+    "track": 8
    },
    "last-boss": {
     "n": 9,
-    "secs": 66
+    "secs": 66,
+    "track": 16
    },
    "level-end": {
     "n": 12,
-    "secs": 3.8125
+    "secs": 3.8125,
+    "track": 10
    },
    "lose-life": {
     "n": 11,
-    "secs": 2.3125
+    "secs": 2.3125,
+    "track": 9
    },
    "oh-daisy": {
     "n": 17,
-    "secs": 3
+    "secs": 3,
+    "track": 15
    },
    "pipe-room": {
     "n": 7,
-    "secs": 24.5
+    "secs": 24.5,
+    "track": 6
    },
    "princess-daisy": {
     "n": 16,
-    "secs": 29
+    "secs": 29,
+    "track": 14
    },
    "world-music-1": {
     "n": 1,
-    "secs": 25.96875
+    "secs": 25.96875,
+    "track": 1
    },
    "world-music-2": {
     "n": 2,
-    "secs": 24
+    "secs": 24,
+    "track": 2
    },
    "world-music-3": {
     "n": 3,
-    "secs": 27
+    "secs": 27,
+    "track": 3
    },
    "world-music-4": {
     "n": 4,
-    "secs": 19.5
+    "secs": 19.5,
+    "track": 4
    },
    "world-music-5": {
     "n": 5,
-    "secs": 50
+    "secs": 50,
+    "track": 5
    }
   },
   "chip": "gbs"

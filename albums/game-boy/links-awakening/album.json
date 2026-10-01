@@ -53,379 +53,473 @@
   "tracks": {
    "angler-s-tunnel-intro": {
     "n": 76,
-    "secs": 9.56008529663086
+    "secs": 9.56008529663086,
+    "track": 51
    },
    "angler-s-tunnel": {
     "n": 23,
-    "secs": 14.063873291015625
+    "secs": 14.063873291015625,
+    "track": 52
    },
    "animal-village": {
     "n": 11,
-    "secs": 13.343936920166016
+    "secs": 13.343936920166016,
+    "track": 46
    },
    "ballad-of-the-wind-fish": {
     "n": 63,
-    "secs": 295.70967864990234
+    "secs": 295.70967864990234,
+    "track": 87
    },
    "battle-with-nightmare-intro": {
     "n": 93,
-    "secs": 8.572265625
+    "secs": 8.572265625,
+    "track": 82
    },
    "battle-with-nightmare": {
     "n": 35,
-    "secs": 115.00564956665039
+    "secs": 115.00564956665039,
+    "track": 83
    },
    "beach-scene-intro": {
     "n": 77,
-    "secs": 11.184127807617188
+    "secs": 11.184127807617188,
+    "track": 48
    },
    "beach-scene": {
     "n": 78,
-    "secs": 40.81871795654297
+    "secs": 40.81871795654297,
+    "track": 49
    },
    "bee-scene": {
     "n": 52,
-    "secs": 12.925369262695312
+    "secs": 12.925369262695312,
+    "track": 45
    },
    "boss": {
     "n": 25,
-    "secs": 16.324138641357422
+    "secs": 16.324138641357422,
+    "track": 26
    },
    "bottle-grotto": {
     "n": 21,
-    "secs": 299.9790687561035
+    "secs": 299.9790687561035,
+    "track": 34
    },
    "catfish-s-maw": {
     "n": 75,
-    "secs": 56.2554931640625
+    "secs": 56.2554931640625,
+    "track": 56
    },
    "cave": {
     "n": 38,
-    "secs": 16.87664794921875
+    "secs": 16.87664794921875,
+    "track": 18
    },
    "dream-shrine-dreaming": {
     "n": 30,
-    "secs": 9.978652954101562
+    "secs": 9.978652954101562,
+    "track": 42
    },
    "dream-shrine-intro": {
     "n": 36,
-    "secs": 11.987777709960938
+    "secs": 11.987777709960938,
+    "track": 41
    },
    "dream-shrine": {
     "n": 83,
-    "secs": 17.563098907470703
+    "secs": 17.563098907470703,
+    "track": 43
    },
    "eagle-s-tower-roof": {
     "n": 92,
-    "secs": 5.525093078613281
+    "secs": 5.525093078613281,
+    "track": 67
    },
    "eagle-s-tower": {
     "n": 91,
-    "secs": 105.01025390625
+    "secs": 105.01025390625,
+    "track": 66
    },
    "evil-eagle-intro": {
     "n": 84,
-    "secs": 57.2098274230957
+    "secs": 57.2098274230957,
+    "track": 68
    },
    "face-shrine": {
     "n": 88,
-    "secs": 51.43359375
+    "secs": 51.43359375,
+    "track": 61
    },
    "fairy-fountain": {
     "n": 12,
-    "secs": 6.529655456542969
+    "secs": 6.529655456542969,
+    "track": 17
    },
    "fanfare-unused": {
     "n": 79,
-    "secs": 2.6118621826171875
+    "secs": 2.6118621826171875,
+    "track": 93
    },
    "flying-rooster-revival": {
     "n": 85,
-    "secs": 7.8355865478515625
+    "secs": 7.8355865478515625,
+    "track": 64
    },
    "game-over": {
     "n": 3,
-    "secs": 17.14453125
+    "secs": 17.14453125,
+    "track": 89
    },
    "get-conch-horn": {
     "n": 40,
-    "secs": 21.932945251464844
+    "secs": 21.932945251464844,
+    "track": 35
    },
    "get-coral-triangle": {
     "n": 44,
-    "secs": 3.214599609375
+    "secs": 3.214599609375,
+    "track": 62
    },
    "get-full-moon-cello": {
     "n": 32,
-    "secs": 26.269306182861328
+    "secs": 26.269306182861328,
+    "track": 30
    },
    "get-heart-container": {
     "n": 37,
-    "secs": 6.931480407714844
+    "secs": 6.931480407714844,
+    "track": 27
    },
    "get-important-item": {
     "n": 16,
-    "secs": 11.987777709960938
+    "secs": 11.987777709960938,
+    "track": 22
    },
    "get-instrument": {
     "n": 27,
-    "secs": 9.241973876953125
+    "secs": 9.241973876953125,
+    "track": 29
    },
    "get-minor-item": {
     "n": 59,
-    "secs": 2.5114059448242188
+    "secs": 2.5114059448242188,
+    "track": 21
    },
    "get-organ-of-evening-calm": {
     "n": 45,
-    "secs": 23.92532730102539
+    "secs": 23.92532730102539,
+    "track": 69
    },
    "get-power-up": {
     "n": 39,
-    "secs": 9.308944702148438
+    "secs": 9.308944702148438,
+    "track": 15
    },
    "get-sea-harp": {
     "n": 42,
-    "secs": 23.791385650634766
+    "secs": 23.791385650634766,
+    "track": 53
    },
    "get-sea-lily-s-bell": {
     "n": 41,
-    "secs": 16.357624053955078
+    "secs": 16.357624053955078,
+    "track": 40
    },
    "get-sword": {
     "n": 15,
-    "secs": 7.199363708496094
+    "secs": 7.199363708496094,
+    "track": 7
    },
    "get-thunder-drum": {
     "n": 46,
-    "secs": 12.255661010742188
+    "secs": 12.255661010742188,
+    "track": 72
    },
    "get-wind-marimba": {
     "n": 43,
-    "secs": 16.407852172851562
+    "secs": 16.407852172851562,
+    "track": 57
    },
    "ghost-s-house": {
     "n": 72,
-    "secs": 30.0029296875
+    "secs": 30.0029296875,
+    "track": 55
    },
    "goat-s-house": {
     "n": 50,
-    "secs": 8.572265625
+    "secs": 8.572265625,
+    "track": 47
    },
    "hidden-track-moyse-german-version": {
     "n": 60,
-    "secs": 299.9790687561035
+    "secs": 299.9790687561035,
+    "track": 91
    },
    "house-of-chickens": {
     "n": 87,
-    "secs": 16.072998046875
+    "secs": 16.072998046875,
+    "track": 65
    },
    "inside-a-house": {
     "n": 10,
-    "secs": 33.351470947265625
+    "secs": 33.351470947265625,
+    "track": 11
    },
    "instrument-room": {
     "n": 24,
-    "secs": 3.8173370361328125
+    "secs": 3.8173370361328125,
+    "track": 28
    },
    "kanalet-castle": {
     "n": 19,
-    "secs": 17.345443725585938
+    "secs": 17.345443725585938,
+    "track": 38
    },
    "key-cavern": {
     "n": 22,
-    "secs": 39.37884521484375
+    "secs": 39.37884521484375,
+    "track": 39
    },
    "learn-ballad-of-the-wind-fish": {
     "n": 74,
-    "secs": 35.27688217163086
+    "secs": 35.27688217163086,
+    "track": 50
    },
    "learn-frog-s-song-of-soul": {
     "n": 53,
-    "secs": 27.257125854492188
+    "secs": 27.257125854492188,
+    "track": 63
    },
    "learn-manbo-s-mambo": {
     "n": 48,
-    "secs": 26.453475952148438
+    "secs": 26.453475952148438,
+    "track": 54
    },
    "link-awakens": {
     "n": 28,
-    "secs": 14.666610717773438
+    "secs": 14.666610717773438,
+    "track": 4
    },
    "mabe-village": {
     "n": 4,
-    "secs": 21.9664306640625
+    "secs": 21.9664306640625,
+    "track": 9
    },
    "main-theme-without-intro": {
     "n": 13,
-    "secs": 14.4656982421875
+    "secs": 14.4656982421875,
+    "track": 94
    },
    "main-theme": {
     "n": 1,
-    "secs": 20.693984985351562
+    "secs": 20.693984985351562,
+    "track": 2
    },
    "marin-s-song-the-end": {
     "n": 61,
-    "secs": 179.34786987304688
+    "secs": 179.34786987304688,
+    "track": 88
    },
    "marin-singing": {
     "n": 47,
-    "secs": 33.7532958984375
+    "secs": 33.7532958984375,
+    "track": 13
    },
    "mini-boss": {
     "n": 80,
-    "secs": 10.71533203125
+    "secs": 10.71533203125,
+    "track": 25
    },
    "mini-games": {
     "n": 2,
-    "secs": 16.072998046875
+    "secs": 16.072998046875,
+    "track": 10
    },
    "moblin-hideout": {
     "n": 62,
-    "secs": 13.3941650390625
+    "secs": 13.3941650390625,
+    "track": 32
    },
    "monkeys-at-work": {
     "n": 54,
-    "secs": 14.130844116210938
+    "secs": 14.130844116210938,
+    "track": 37
    },
    "mr-write-s-house": {
     "n": 55,
-    "secs": 8.0364990234375
+    "secs": 8.0364990234375,
+    "track": 33
    },
    "mysterious-woods": {
     "n": 9,
-    "secs": 48.218994140625
+    "secs": 48.218994140625,
+    "track": 14
    },
    "nightmare-defeated": {
     "n": 94,
-    "secs": 2.0593528747558594
+    "secs": 2.0593528747558594,
+    "track": 84
    },
    "opening-the-wind-fish-s-egg-eight-instruments": {
     "n": 71,
-    "secs": 38.50822448730469
+    "secs": 38.50822448730469,
+    "track": 80
    },
    "opening-the-wind-fish-s-egg-five-instruments": {
     "n": 68,
-    "secs": 33.987693786621094
+    "secs": 33.987693786621094,
+    "track": 77
    },
    "opening-the-wind-fish-s-egg-four-instruments": {
     "n": 67,
-    "secs": 33.987693786621094
+    "secs": 33.987693786621094,
+    "track": 76
    },
    "opening-the-wind-fish-s-egg-seven-instruments": {
     "n": 70,
-    "secs": 38.50822448730469
+    "secs": 38.50822448730469,
+    "track": 79
    },
    "opening-the-wind-fish-s-egg-six-instruments": {
     "n": 69,
-    "secs": 33.987693786621094
+    "secs": 33.987693786621094,
+    "track": 78
    },
    "opening-the-wind-fish-s-egg-three-instruments": {
     "n": 66,
-    "secs": 38.50822448730469
+    "secs": 38.50822448730469,
+    "track": 75
    },
    "opening-the-wind-fish-s-egg-two-instruments": {
     "n": 65,
-    "secs": 35.410823822021484
+    "secs": 35.410823822021484,
+    "track": 74
    },
    "overworld-unarmed": {
     "n": 29,
-    "secs": 34.2890625
+    "secs": 34.2890625,
+    "track": 5
    },
    "overworld-with-intro": {
     "n": 49,
-    "secs": 45.38947677612305
+    "secs": 45.38947677612305,
+    "track": 8
    },
    "overworld": {
     "n": 5,
-    "secs": 44.98765182495117
+    "secs": 44.98765182495117,
+    "track": 19
    },
    "owl": {
     "n": 34,
-    "secs": 4.01824951171875
+    "secs": 4.01824951171875,
+    "track": 6
    },
    "phone-booth": {
     "n": 51,
-    "secs": 16.742706298828125
+    "secs": 16.742706298828125,
+    "track": 12
    },
    "player-select": {
     "n": 17,
-    "secs": 7.500732421875
+    "secs": 7.500732421875,
+    "track": 3
    },
    "powerful-link": {
     "n": 73,
-    "secs": 6.42919921875
+    "secs": 6.42919921875,
+    "track": 16
    },
    "prologue": {
     "n": 26,
-    "secs": 51.98610305786133
+    "secs": 51.98610305786133,
+    "track": 1
    },
    "rapids-ride-house": {
     "n": 58,
-    "secs": 19.28759765625
+    "secs": 19.28759765625,
+    "track": 58
    },
    "rapids-ride": {
     "n": 8,
-    "secs": 22.502197265625
+    "secs": 22.502197265625,
+    "track": 59
    },
    "richard-s-villa": {
     "n": 64,
-    "secs": 186.76488876342773
+    "secs": 186.76488876342773,
+    "track": 36
    },
    "seashell-sword": {
     "n": 86,
-    "secs": 41.27077102661133
+    "secs": 41.27077102661133,
+    "track": 73
    },
    "southern-face-shrine": {
     "n": 31,
-    "secs": 37.503662109375
+    "secs": 37.503662109375,
+    "track": 60
    },
    "stairway-appears": {
     "n": 95,
-    "secs": 7.919300079345703
+    "secs": 7.919300079345703,
+    "track": 85
    },
    "tail-cave": {
     "n": 20,
-    "secs": 90.74546813964844
+    "secs": 90.74546813964844,
+    "track": 23
    },
    "tal-tal-mountain-range": {
     "n": 6,
-    "secs": 93.223388671875
+    "secs": 93.223388671875,
+    "track": 44
    },
    "talking-to-the-wind-fish": {
     "n": 89,
-    "secs": 34.55694580078125
+    "secs": 34.55694580078125,
+    "track": 86
    },
    "totaka-s-song-ocarina-unused": {
     "n": 56,
-    "secs": 13.812732696533203
+    "secs": 13.812732696533203,
+    "track": 92
    },
    "trouble-in-mabe-village": {
     "n": 14,
-    "secs": 10.71533203125
+    "secs": 10.71533203125,
+    "track": 31
    },
    "turtle-rock-awakens": {
     "n": 57,
-    "secs": 25.114059448242188
+    "secs": 25.114059448242188,
+    "track": 70
    },
    "turtle-rock": {
     "n": 90,
-    "secs": 38.67565155029297
+    "secs": 38.67565155029297,
+    "track": 71
    },
    "underground": {
     "n": 33,
-    "secs": 7.23284912109375
+    "secs": 7.23284912109375,
+    "track": 24
    },
    "wind-fish-s-egg": {
     "n": 18,
-    "secs": 136.82139587402344
+    "secs": 136.82139587402344,
+    "track": 81
    },
    "witch-s-house-crazy-tracy-s-house": {
     "n": 7,
-    "secs": 11.719894409179688
+    "secs": 11.719894409179688,
+    "track": 20
    },
    "zelda-theme-remix": {
     "n": 96,
-    "secs": 17.964923858642578
+    "secs": 17.964923858642578,
+    "track": 90
    }
   },
   "chip": "gbs"

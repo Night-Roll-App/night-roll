@@ -9,143 +9,178 @@
   "tracks": {
    "armored-armadillo": {
     "n": 1,
-    "secs": 111
+    "secs": 111,
+    "track": 9
    },
    "boomer-kuwanger": {
     "n": 1,
-    "secs": 128.99
+    "secs": 128.99,
+    "track": 10
    },
    "boss-battle": {
     "n": 1,
-    "secs": 59
+    "secs": 59,
+    "track": 18
    },
    "boss-defeated": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 19
    },
    "boss-intro": {
     "n": 1,
-    "secs": 14
+    "secs": 14,
+    "track": 17
    },
    "capcom-logo": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 34
    },
    "castings": {
     "n": 1,
-    "secs": 125
+    "secs": 125,
+    "track": 32
    },
    "chill-penguin": {
     "n": 1,
-    "secs": 82.99
+    "secs": 82.99,
+    "track": 11
    },
    "credits": {
     "n": 1,
-    "secs": 103
+    "secs": 103,
+    "track": 33
    },
    "dr-light": {
     "n": 1,
-    "secs": 31
+    "secs": 31,
+    "track": 22
    },
    "ending": {
     "n": 1,
-    "secs": 108
+    "secs": 108,
+    "track": 31
    },
    "flame-mammoth": {
     "n": 1,
-    "secs": 113
+    "secs": 113,
+    "track": 12
    },
    "intro-stage": {
     "n": 1,
-    "secs": 88
+    "secs": 88,
+    "track": 2
    },
    "launch-octopus": {
     "n": 1,
-    "secs": 103
+    "secs": 103,
+    "track": 13
    },
    "password-screen": {
     "n": 1,
-    "secs": 73.97
+    "secs": 73.97,
+    "track": 21
    },
    "sigma-battle-2": {
     "n": 1,
-    "secs": 106.98
+    "secs": 106.98,
+    "track": 29
    },
    "sigma-battle": {
     "n": 1,
-    "secs": 36
+    "secs": 36,
+    "track": 28
    },
    "sigma-boss-battle": {
     "n": 1,
-    "secs": 56
+    "secs": 56,
+    "track": 4
    },
    "sigma-fortress-1": {
     "n": 1,
-    "secs": 123
+    "secs": 123,
+    "track": 24
    },
    "sigma-fortress-2": {
     "n": 1,
-    "secs": 124
+    "secs": 124,
+    "track": 25
    },
    "sigma-fortress-3": {
     "n": 1,
-    "secs": 101
+    "secs": 101,
+    "track": 26
    },
    "sigma-intro-1": {
     "n": 1,
-    "secs": 17
+    "secs": 17,
+    "track": 3
    },
    "sigma-intro-2": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 27
    },
    "spark-mandrill": {
     "n": 1,
-    "secs": 102
+    "secs": 102,
+    "track": 14
    },
    "stage-intro": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 8
    },
    "stage-select-1": {
     "n": 1,
-    "secs": 18
+    "secs": 18,
+    "track": 7
    },
    "stage-select-2": {
     "n": 1,
-    "secs": 35
+    "secs": 35,
+    "track": 23
    },
    "stigma-defeated": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 30
    },
    "sting-chameleon": {
     "n": 1,
-    "secs": 68
+    "secs": 68,
+    "track": 15
    },
    "storm-eagle": {
     "n": 1,
-    "secs": 62
+    "secs": 62,
+    "track": 16
    },
    "test-track": {
     "n": 1,
-    "secs": 11.89
+    "secs": 11.89,
+    "track": 35
    },
    "title-screen": {
     "n": 1,
-    "secs": 26
+    "secs": 26,
+    "track": 1
    },
    "weapon-screen": {
     "n": 1,
-    "secs": 15
+    "secs": 15,
+    "track": 20
    },
    "zero-1": {
     "n": 1,
-    "secs": 34
+    "secs": 34,
+    "track": 5
    },
    "zero-2": {
     "n": 1,
-    "secs": 63
+    "secs": 63,
+    "track": 6
    }
   },
   "chip": "spc",

@@ -47,267 +47,333 @@
   "tracks": {
    "athletic-hurry-yoshi": {
     "n": 1,
-    "secs": 65
+    "secs": 65,
+    "track": 19
    },
    "athletic-hurry": {
     "n": 1,
-    "secs": 65
+    "secs": 65,
+    "track": 18
    },
    "athletic-yoshi": {
     "n": 1,
-    "secs": 75
+    "secs": 75,
+    "track": 17
    },
    "athletic": {
     "n": 1,
-    "secs": 75
+    "secs": 75,
+    "track": 16
    },
    "bonus-game-clear": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 42
    },
    "bonus-game-hurry": {
     "n": 1,
-    "secs": 56
+    "secs": 56,
+    "track": 41
    },
    "bonus-game": {
     "n": 1,
-    "secs": 64
+    "secs": 64,
+    "track": 40
    },
    "boss-battle-hurry": {
     "n": 1,
-    "secs": 80
+    "secs": 80,
+    "track": 44
    },
    "boss-battle": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 43
    },
    "bowser-defeated": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 60
    },
    "bowser-s-castle-emerges": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 7
    },
    "bowser-s-last-attack-faster": {
     "n": 1,
-    "secs": 70
+    "secs": 70,
+    "track": 56
    },
    "bowser-s-last-attack": {
     "n": 1,
-    "secs": 75
+    "secs": 75,
+    "track": 55
    },
    "bowser-zoom-out": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 58
    },
    "bowser-zoom": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 57
    },
    "cast-list-looped": {
     "n": 1,
-    "secs": 102
+    "secs": 102,
+    "track": 65
    },
    "cast-list": {
     "n": 1,
-    "secs": 140
+    "secs": 140,
+    "track": 64
    },
    "course-clear": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 47
    },
    "egg-is-rescued": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 45
    },
    "fade-out": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 48
    },
    "forest-of-illusion": {
     "n": 1,
-    "secs": 31
+    "secs": 31,
+    "track": 6
    },
    "fortress-clear": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 50
    },
    "fortress-hurry": {
     "n": 1,
-    "secs": 114
+    "secs": 114,
+    "track": 31
    },
    "fortress": {
     "n": 1,
-    "secs": 161
+    "secs": 161,
+    "track": 30
    },
    "game-over": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 52
    },
    "haunted-house-hurry": {
     "n": 1,
-    "secs": 109
+    "secs": 109,
+    "track": 29
    },
    "haunted-house": {
     "n": 1,
-    "secs": 166
+    "secs": 166,
+    "track": 28
    },
    "invincible-cave-hurry": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 39
    },
    "invincible-cave": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 37
    },
    "invincible-hurry": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 38
    },
    "invincible": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 36
    },
    "nintendo-logo": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 1
    },
    "overworld-hurry-yoshi": {
     "n": 1,
-    "secs": 69
+    "secs": 69,
+    "track": 15
    },
    "overworld-hurry": {
     "n": 1,
-    "secs": 69
+    "secs": 69,
+    "track": 14
    },
    "overworld-yoshi": {
     "n": 1,
-    "secs": 81
+    "secs": 81,
+    "track": 13
    },
    "overworld": {
     "n": 1,
-    "secs": 81
+    "secs": 81,
+    "track": 12
    },
    "p-switch-cave-hurry": {
     "n": 1,
-    "secs": 11.97
+    "secs": 11.97,
+    "track": 35
    },
    "p-switch-cave": {
     "n": 1,
-    "secs": 13
+    "secs": 13,
+    "track": 33
    },
    "p-switch-hurry": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 34
    },
    "p-switch": {
     "n": 1,
-    "secs": 13
+    "secs": 13,
+    "track": 32
    },
    "peach-s-item": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 59
    },
    "player-down": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 51
    },
    "princess-peach-is-rescued": {
     "n": 1,
-    "secs": 18
+    "secs": 18,
+    "track": 61
    },
    "secret-exit": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 49
    },
    "special-world": {
     "n": 1,
-    "secs": 29
+    "secs": 29,
+    "track": 10
    },
    "staff-roll": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 62
    },
    "star-road": {
     "n": 1,
-    "secs": 23
+    "secs": 23,
+    "track": 9
    },
    "super-mario-bros-remix": {
     "n": 1,
-    "secs": 172
+    "secs": 172,
+    "track": 11
    },
    "swimming-hurry-yoshi": {
     "n": 1,
-    "secs": 80
+    "secs": 80,
+    "track": 27
    },
    "swimming-hurry": {
     "n": 1,
-    "secs": 80
+    "secs": 80,
+    "track": 26
    },
    "swimming-yoshi": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 25
    },
    "swimming": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 24
    },
    "the-evil-king-bowser-intro": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 54
    },
    "the-evil-king-bowser": {
     "n": 1,
-    "secs": 93
+    "secs": 93,
+    "track": 53
    },
    "the-yoshis-are-home": {
     "n": 1,
-    "secs": 15
+    "secs": 15,
+    "track": 63
    },
    "title": {
     "n": 1,
-    "secs": 81
+    "secs": 81,
+    "track": 2
    },
    "underground-hurry": {
     "n": 1,
-    "secs": 65
+    "secs": 65,
+    "track": 22
    },
    "underground-yoshi-hurry": {
     "n": 1,
-    "secs": 65
+    "secs": 65,
+    "track": 23
    },
    "underground-yoshi": {
     "n": 1,
-    "secs": 83
+    "secs": 83,
+    "track": 21
    },
    "underground": {
     "n": 1,
-    "secs": 83
+    "secs": 83,
+    "track": 20
    },
    "valley-of-bowser": {
     "n": 1,
-    "secs": 20
+    "secs": 20,
+    "track": 8
    },
    "vanilla-dome": {
     "n": 1,
-    "secs": 39
+    "secs": 39,
+    "track": 5
    },
    "wandering-the-plains": {
     "n": 1,
-    "secs": 28
+    "secs": 28,
+    "track": 4
    },
    "world-clear": {
     "n": 1,
-    "secs": 14
+    "secs": 14,
+    "track": 46
    },
    "yoshi-s-island": {
     "n": 1,
-    "secs": 21
+    "secs": 21,
+    "track": 3
    },
    "yoshi": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 66
    }
   },
   "chip": "spc",

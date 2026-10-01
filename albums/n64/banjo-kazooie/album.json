@@ -193,1031 +193,1545 @@
   "tracks": {
    "advent-unused-beta-song": {
     "n": 1,
-    "secs": 51.72115384615385
+    "secs": 51.72115384615385,
+    "track": 168,
+    "disc": 0
    },
    "banjo-wins-the-furnace-fun-fanfare": {
     "n": 1,
-    "secs": 3.5234375
+    "secs": 3.5234375,
+    "track": 182,
+    "disc": 0
    },
    "barbeque-shock-1": {
     "n": 1,
-    "secs": 3.4285714285714284
+    "secs": 3.4285714285714284,
+    "track": 195,
+    "disc": 1
    },
    "barbeque-shock-2": {
     "n": 1,
-    "secs": 3.4285714285714284
+    "secs": 3.4285714285714284,
+    "track": 196,
+    "disc": 1
    },
    "barbeque-shock-3": {
     "n": 1,
-    "secs": 3.4285714285714284
+    "secs": 3.4285714285714284,
+    "track": 197,
+    "disc": 1
    },
    "barbeque-shock-4": {
     "n": 1,
-    "secs": 3.4285714285714284
+    "secs": 3.4285714285714284,
+    "track": 198,
+    "disc": 1
    },
    "blue-egg-max": {
     "n": 1,
-    "secs": 1.1538461538461537
+    "secs": 1.1538461538461537,
+    "track": 228,
+    "disc": 1
    },
    "boggy-s-igloo-happy": {
     "n": 1,
-    "secs": 29.142857142857142
+    "secs": 29.142857142857142,
+    "track": 77,
+    "disc": 0
    },
    "boggy-s-igloo-sad": {
     "n": 1,
-    "secs": 45.666666666666664
+    "secs": 45.666666666666664,
+    "track": 76,
+    "disc": 0
    },
    "boggy-s-race-lose": {
     "n": 1,
-    "secs": 3
+    "secs": 3,
+    "track": 200,
+    "disc": 1
    },
    "boggy-s-race-win": {
     "n": 1,
-    "secs": 2.925
+    "secs": 2.925,
+    "track": 199,
+    "disc": 1
    },
    "boggy-s-race": {
     "n": 1,
-    "secs": 62.666666666666664
+    "secs": 62.666666666666664,
+    "track": 81,
+    "disc": 0
    },
    "boss-boom-box": {
     "n": 1,
-    "secs": 55.78378378378378
+    "secs": 55.78378378378378,
+    "track": 121,
+    "disc": 0
    },
    "bottle-s-puzzle-challenge": {
     "n": 1,
-    "secs": 81.23076923076923
+    "secs": 81.23076923076923,
+    "track": 155,
+    "disc": 0
    },
    "bottles-puzzle-challenge-start": {
     "n": 1,
-    "secs": 1.8461538461538463
+    "secs": 1.8461538461538463,
+    "track": 224,
+    "disc": 1
    },
    "brentilda-s-theme": {
     "n": 1,
-    "secs": 50.08695652173913
+    "secs": 50.08695652173913,
+    "track": 29,
+    "disc": 0
    },
    "bridge-to-gruntilda-s-lair": {
     "n": 1,
-    "secs": 69.81818181818181
+    "secs": 69.81818181818181,
+    "track": 12,
+    "disc": 0
    },
    "bubblegloop-swamp-interiors": {
     "n": 1,
-    "secs": 75.11111111111111
+    "secs": 75.11111111111111,
+    "track": 64,
+    "disc": 0
    },
    "bubblegloop-swamp": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 63,
+    "disc": 0
    },
    "buried-under-a-rock": {
     "n": 1,
-    "secs": 11.238095238095237
+    "secs": 11.238095238095237,
+    "track": 165,
+    "disc": 0
    },
    "cemetery": {
     "n": 1,
-    "secs": 117.6
+    "secs": 117.6,
+    "track": 108,
+    "disc": 0
    },
    "cheato-s-theme": {
     "n": 1,
-    "secs": 40
+    "secs": 40,
+    "track": 62,
+    "disc": 0
    },
    "christmas-lights-on": {
     "n": 1,
-    "secs": 3.7115384615384617
+    "secs": 3.7115384615384617,
+    "track": 220,
+    "disc": 1
    },
    "church-door-opens": {
     "n": 1,
-    "secs": 4.125
+    "secs": 4.125,
+    "track": 222,
+    "disc": 1
    },
    "clanker-s-cavern-all-in-one": {
     "n": 1,
-    "secs": 120
+    "secs": 120,
+    "track": 49,
+    "disc": 0
    },
    "clanker-s-cavern-aquatic": {
     "n": 1,
-    "secs": 120
+    "secs": 120,
+    "track": 51,
+    "disc": 0
    },
    "clanker-s-cavern-deep-underwater": {
     "n": 1,
-    "secs": 120
+    "secs": 120,
+    "track": 52,
+    "disc": 0
    },
    "clanker-s-cavern-normal": {
     "n": 1,
-    "secs": 120
+    "secs": 120,
+    "track": 50,
+    "disc": 0
    },
    "click-clock-wood-autumn-all-in-one": {
     "n": 1,
-    "secs": 123
+    "secs": 123,
+    "track": 149,
+    "disc": 0
    },
    "click-clock-wood-autumn-aquatic": {
     "n": 1,
-    "secs": 123
+    "secs": 123,
+    "track": 151,
+    "disc": 0
    },
    "click-clock-wood-autumn-normal": {
     "n": 1,
-    "secs": 123
+    "secs": 123,
+    "track": 150,
+    "disc": 0
    },
    "click-clock-wood-lobby-all-in-one": {
     "n": 1,
-    "secs": 80.84210526315789
+    "secs": 80.84210526315789,
+    "track": 126,
+    "disc": 0
    },
    "click-clock-wood-lobby-autumn": {
     "n": 1,
-    "secs": 80.84210526315789
+    "secs": 80.84210526315789,
+    "track": 130,
+    "disc": 0
    },
    "click-clock-wood-lobby-normal": {
     "n": 1,
-    "secs": 80.84210526315789
+    "secs": 80.84210526315789,
+    "track": 127,
+    "disc": 0
    },
    "click-clock-wood-lobby-spring": {
     "n": 1,
-    "secs": 80.84210526315789
+    "secs": 80.84210526315789,
+    "track": 128,
+    "disc": 0
    },
    "click-clock-wood-lobby-summer": {
     "n": 1,
-    "secs": 80.84210526315789
+    "secs": 80.84210526315789,
+    "track": 129,
+    "disc": 0
    },
    "click-clock-wood-lobby-winter": {
     "n": 1,
-    "secs": 80.84210526315789
+    "secs": 80.84210526315789,
+    "track": 131,
+    "disc": 0
    },
    "click-clock-wood-spring-all-in-one": {
     "n": 1,
-    "secs": 150.85714285714286
+    "secs": 150.85714285714286,
+    "track": 132,
+    "disc": 0
    },
    "click-clock-wood-spring-aquatic": {
     "n": 1,
-    "secs": 150.85714285714286
+    "secs": 150.85714285714286,
+    "track": 134,
+    "disc": 0
    },
    "click-clock-wood-spring-normal": {
     "n": 1,
-    "secs": 150.85714285714286
+    "secs": 150.85714285714286,
+    "track": 133,
+    "disc": 0
    },
    "click-clock-wood-summer": {
     "n": 1,
-    "secs": 138
+    "secs": 138,
+    "track": 147,
+    "disc": 0
    },
    "click-clock-wood-unused-beta-version-1": {
     "n": 1,
-    "secs": 74.4
+    "secs": 74.4,
+    "track": 170,
+    "disc": 0
    },
    "click-clock-wood-unused-beta-version-2": {
     "n": 1,
-    "secs": 77.33333333333333
+    "secs": 77.33333333333333,
+    "track": 171,
+    "disc": 0
    },
    "click-clock-wood-winter": {
     "n": 1,
-    "secs": 136
+    "secs": 136,
+    "track": 153,
+    "disc": 0
    },
    "collect-a-secret-item-fanfare": {
     "n": 1,
-    "secs": 3.2589285714285716
+    "secs": 3.2589285714285716,
+    "track": 181,
+    "disc": 0
    },
    "collect-all-jinjos": {
     "n": 1,
-    "secs": 5.1923076923076925
+    "secs": 5.1923076923076925,
+    "track": 218,
+    "disc": 1
    },
    "collect-all-notes": {
     "n": 1,
-    "secs": 2.066666666666667
+    "secs": 2.066666666666667,
+    "track": 234,
+    "disc": 1
    },
    "collect-blue-egg": {
     "n": 1,
-    "secs": 0.4625
+    "secs": 0.4625,
+    "track": 227,
+    "disc": 1
    },
    "collect-extra-honeycomb": {
     "n": 1,
-    "secs": 1.4
+    "secs": 1.4,
+    "track": 226,
+    "disc": 1
    },
    "collect-extra-life": {
     "n": 1,
-    "secs": 2.4017857142857144
+    "secs": 2.4017857142857144,
+    "track": 210,
+    "disc": 1
    },
    "collect-gold-feather": {
     "n": 1,
-    "secs": 0.75
+    "secs": 0.75,
+    "track": 231,
+    "disc": 1
    },
    "collect-honeycomb": {
     "n": 1,
-    "secs": 0.6102941176470589
+    "secs": 0.6102941176470589,
+    "track": 225,
+    "disc": 1
    },
    "collect-jigsaw-piece": {
     "n": 1,
-    "secs": 3.8024314509762647
+    "secs": 3.8024314509762647,
+    "track": 214,
+    "disc": 1
    },
    "collect-jinjo": {
     "n": 1,
-    "secs": 3.2916666666666665
+    "secs": 3.2916666666666665,
+    "track": 217,
+    "disc": 1
    },
    "collect-note": {
     "n": 1,
-    "secs": 1
+    "secs": 1,
+    "track": 233,
+    "disc": 1
    },
    "collect-red-feather": {
     "n": 1,
-    "secs": 0.7692307692307693
+    "secs": 0.7692307692307693,
+    "track": 229,
+    "disc": 1
    },
    "complete-extra-honeycomb": {
     "n": 1,
-    "secs": 3.6923076923076925
+    "secs": 3.6923076923076925,
+    "track": 219,
+    "disc": 1
    },
    "complete-mozand-s-song": {
     "n": 1,
-    "secs": 2.1818181818181817
+    "secs": 2.1818181818181817,
+    "track": 221,
+    "disc": 1
    },
    "correct-fanfare": {
     "n": 1,
-    "secs": 2.8020833333333335
+    "secs": 2.8020833333333335,
+    "track": 179,
+    "disc": 0
    },
    "end-credits": {
     "n": 1,
-    "secs": 158
+    "secs": 158,
+    "track": 159,
+    "disc": 0
    },
    "ending-on-vacation": {
     "n": 1,
-    "secs": 88
+    "secs": 88,
+    "track": 166,
+    "disc": 0
    },
    "final-battle": {
     "n": 1,
-    "secs": 181.33333333333334
+    "secs": 181.33333333333334,
+    "track": 162,
+    "disc": 0
    },
    "flippits-battle": {
     "n": 1,
-    "secs": 60
+    "secs": 60,
+    "track": 66,
+    "disc": 0
    },
    "freezeezy-peak-all-in-one": {
     "n": 1,
-    "secs": 119.17241379310344
+    "secs": 119.17241379310344,
+    "track": 70,
+    "disc": 0
    },
    "freezeezy-peak-aquatic": {
     "n": 1,
-    "secs": 119.17241379310344
+    "secs": 119.17241379310344,
+    "track": 73,
+    "disc": 0
    },
    "freezeezy-peak-normal-with-christmas-bells": {
     "n": 1,
-    "secs": 119.17241379310344
+    "secs": 119.17241379310344,
+    "track": 72,
+    "disc": 0
    },
    "freezeezy-peak-normal": {
     "n": 1,
-    "secs": 119.17241379310344
+    "secs": 119.17241379310344,
+    "track": 71,
+    "disc": 0
    },
    "furnace-fun-banjo-kazooie-question": {
     "n": 1,
-    "secs": 0.9765625
+    "secs": 0.9765625,
+    "track": 205,
+    "disc": 1
    },
    "furnace-fun-death-skull-question": {
     "n": 1,
-    "secs": 1.3571428571428572
+    "secs": 1.3571428571428572,
+    "track": 206,
+    "disc": 1
    },
    "furnace-fun-gruntilda-question": {
     "n": 1,
-    "secs": 0.8235294117647058
+    "secs": 0.8235294117647058,
+    "track": 207,
+    "disc": 1
    },
    "furnace-fun-joker": {
     "n": 1,
-    "secs": 2.1666666666666665
+    "secs": 2.1666666666666665,
+    "track": 208,
+    "disc": 1
    },
    "furnace-fun-note-question": {
     "n": 1,
-    "secs": 0.6923076923076923
+    "secs": 0.6923076923076923,
+    "track": 209,
+    "disc": 1
    },
    "game-over": {
     "n": 1,
-    "secs": 11.4125
+    "secs": 11.4125,
+    "track": 212,
+    "disc": 1
    },
    "game-selection-1-2": {
     "n": 1,
-    "secs": 79.32203389830508
+    "secs": 79.32203389830508,
+    "track": 3,
+    "disc": 0
    },
    "game-selection-1": {
     "n": 1,
-    "secs": 79.32203389830508
+    "secs": 79.32203389830508,
+    "track": 4,
+    "disc": 0
    },
    "game-selection-2": {
     "n": 1,
-    "secs": 79.32203389830508
+    "secs": 79.32203389830508,
+    "track": 5,
+    "disc": 0
    },
    "game-selection-3": {
     "n": 1,
-    "secs": 29.548076923076923
+    "secs": 29.548076923076923,
+    "track": 6,
+    "disc": 0
    },
    "gnawty-s-house": {
     "n": 1,
-    "secs": 66.78260869565217
+    "secs": 66.78260869565217,
+    "track": 152,
+    "disc": 0
    },
    "gobi-s-valley-all-in-one": {
     "n": 1,
-    "secs": 129.23076923076923
+    "secs": 129.23076923076923,
+    "track": 85,
+    "disc": 0
    },
    "gobi-s-valley-aquatic": {
     "n": 1,
-    "secs": 129.23076923076923
+    "secs": 129.23076923076923,
+    "track": 88,
+    "disc": 0
    },
    "gobi-s-valley-jinxy-s-area": {
     "n": 1,
-    "secs": 129.23076923076923
+    "secs": 129.23076923076923,
+    "track": 87,
+    "disc": 0
    },
    "gobi-s-valley-normal": {
     "n": 1,
-    "secs": 129.23076923076923
+    "secs": 129.23076923076923,
+    "track": 86,
+    "disc": 0
    },
    "gold-feather-max": {
     "n": 1,
-    "secs": 1.2
+    "secs": 1.2,
+    "track": 232,
+    "disc": 1
    },
    "gruntilda-s-lair-aquatic": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 44,
+    "disc": 0
    },
    "gruntilda-s-lair-bubblegloop-swamp-freezeezy-peak-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 57,
+    "disc": 0
    },
    "gruntilda-s-lair-bubblegloop-swamp": {
     "n": 1,
-    "secs": 118.76288659793815
+    "secs": 118.76288659793815,
+    "track": 47,
+    "disc": 0
    },
    "gruntilda-s-lair-clanker-s-cavern-bubblegloop-swamp-all-in-one": {
     "n": 1,
-    "secs": 118.76288659793815
+    "secs": 118.76288659793815,
+    "track": 45,
+    "disc": 0
    },
    "gruntilda-s-lair-clanker-s-cavern": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 28,
+    "disc": 0
    },
    "gruntilda-s-lair-click-clock-wood-grunty-s-furnance-fun-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 122,
+    "disc": 0
    },
    "gruntilda-s-lair-click-clock-wood": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 43,
+    "disc": 0
    },
    "gruntilda-s-lair-freezeezy-peak-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 67,
+    "disc": 0
    },
    "gruntilda-s-lair-freezeezy-peak": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 60,
+    "disc": 0
    },
    "gruntilda-s-lair-gobi-s-valley-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 82,
+    "disc": 0
    },
    "gruntilda-s-lair-gobi-s-valley-mad-monster-mansion-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 92,
+    "disc": 0
    },
    "gruntilda-s-lair-gobi-s-valley": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 84,
+    "disc": 0
    },
    "gruntilda-s-lair-grunty-s-furnace-fun": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 125,
+    "disc": 0
    },
    "gruntilda-s-lair-mad-monster-mansion": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 95,
+    "disc": 0
    },
    "gruntilda-s-lair-mumbo-s-mountain-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 14,
+    "disc": 0
    },
    "gruntilda-s-lair-mumbo-s-mountain": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 16,
+    "disc": 0
    },
    "gruntilda-s-lair-normal": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 15,
+    "disc": 0
    },
    "gruntilda-s-lair-rusty-bucket-bay-mad-monster-mansion-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 96,
+    "disc": 0
    },
    "gruntilda-s-lair-rusty-bucket-bay": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 98,
+    "disc": 0
    },
    "gruntilda-s-lair-treasure-trove-cove-clanker-s-cavern-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 25,
+    "disc": 0
    },
    "gruntilda-s-lair-treasure-trove-cove-click-clock-wood-all-in-one": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 40,
+    "disc": 0
    },
    "gruntilda-s-lair-treasure-trove-cove": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 27,
+    "disc": 0
    },
    "grunty-falls": {
     "n": 1,
-    "secs": 12.713235294117647
+    "secs": 12.713235294117647,
+    "track": 164,
+    "disc": 0
    },
    "grunty-s-beauty-steal-machine": {
     "n": 1,
-    "secs": 117.33333333333333
+    "secs": 117.33333333333333,
+    "track": 13,
+    "disc": 0
    },
    "grunty-s-defeat": {
     "n": 1,
-    "secs": 163.2
+    "secs": 163.2,
+    "track": 157,
+    "disc": 0
    },
    "grunty-s-door-opens-fanfare": {
     "n": 1,
-    "secs": 4.01
+    "secs": 4.01,
+    "track": 183,
+    "disc": 0
    },
    "grunty-s-furnace-fun": {
     "n": 1,
-    "secs": 145.84615384615384
+    "secs": 145.84615384615384,
+    "track": 156,
+    "disc": 0
    },
    "hissup": {
     "n": 1,
-    "secs": 43.416666666666664
+    "secs": 43.416666666666664,
+    "track": 90,
+    "disc": 0
    },
    "hit-1": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 185,
+    "disc": 1
    },
    "hit-10": {
     "n": 1,
-    "secs": 2.3854166666666665
+    "secs": 2.3854166666666665,
+    "track": 194,
+    "disc": 1
    },
    "hit-2": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 186,
+    "disc": 1
    },
    "hit-3": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 187,
+    "disc": 1
    },
    "hit-4": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 188,
+    "disc": 1
    },
    "hit-5": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 189,
+    "disc": 1
    },
    "hit-6": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 190,
+    "disc": 1
    },
    "hit-7": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 191,
+    "disc": 1
    },
    "hit-8": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 192,
+    "disc": 1
    },
    "hit-9": {
     "n": 1,
-    "secs": 1.3125
+    "secs": 1.3125,
+    "track": 193,
+    "disc": 1
    },
    "inside-clanker-aquatic": {
     "n": 1,
-    "secs": 128.72727272727272
+    "secs": 128.72727272727272,
+    "track": 56,
+    "disc": 0
    },
    "inside-clanker-normal": {
     "n": 1,
-    "secs": 128.72727272727272
+    "secs": 128.72727272727272,
+    "track": 55,
+    "disc": 0
    },
    "inside-clanker": {
     "n": 1,
-    "secs": 128.72727272727272
+    "secs": 128.72727272727272,
+    "track": 54,
+    "disc": 0
    },
    "inside-crew-quarters": {
     "n": 1,
-    "secs": 68
+    "secs": 68,
+    "track": 117,
+    "disc": 0
    },
    "inside-snipper-s-shell": {
     "n": 1,
-    "secs": 129
+    "secs": 129,
+    "track": 35,
+    "disc": 0
    },
    "inside-the-christmas-tree": {
     "n": 1,
-    "secs": 38.857142857142854
+    "secs": 38.857142857142854,
+    "track": 75,
+    "disc": 0
    },
    "inside-the-church": {
     "n": 1,
-    "secs": 181.33333333333334
+    "secs": 181.33333333333334,
+    "track": 109,
+    "disc": 0
    },
    "inside-the-mansion": {
     "n": 1,
-    "secs": 128.7113022113022
+    "secs": 128.7113022113022,
+    "track": 105,
+    "disc": 0
    },
    "inside-the-pyramid": {
     "n": 1,
-    "secs": 135.92391304347825
+    "secs": 135.92391304347825,
+    "track": 89,
+    "disc": 0
    },
    "inside-the-sandcastle-all-in-one": {
     "n": 1,
-    "secs": 106.42105263157895
+    "secs": 106.42105263157895,
+    "track": 37,
+    "disc": 0
    },
    "inside-the-sandcastle-aquatic": {
     "n": 1,
-    "secs": 106.42105263157895
+    "secs": 106.42105263157895,
+    "track": 39,
+    "disc": 0
    },
    "inside-the-sandcastle-normal": {
     "n": 1,
-    "secs": 106.42105263157895
+    "secs": 106.42105263157895,
+    "track": 38,
+    "disc": 0
    },
    "inside-the-toilet": {
     "n": 1,
-    "secs": 108.8
+    "secs": 108.8,
+    "track": 106,
+    "disc": 0
    },
    "inside-the-treetops-all-in-one": {
     "n": 1,
-    "secs": 66.78260869565217
+    "secs": 66.78260869565217,
+    "track": 142,
+    "disc": 0
    },
    "inside-the-treetops-autumn": {
     "n": 1,
-    "secs": 66.78260869565217
+    "secs": 66.78260869565217,
+    "track": 145,
+    "disc": 0
    },
    "inside-the-treetops-spring": {
     "n": 1,
-    "secs": 66.78260869565217
+    "secs": 66.78260869565217,
+    "track": 143,
+    "disc": 0
    },
    "inside-the-treetops-summer": {
     "n": 1,
-    "secs": 66.78260869565217
+    "secs": 66.78260869565217,
+    "track": 144,
+    "disc": 0
    },
    "inside-the-treetops-winter": {
     "n": 1,
-    "secs": 66.78260869565217
+    "secs": 66.78260869565217,
+    "track": 146,
+    "disc": 0
    },
    "inside-the-warehouse-all-in-one": {
     "n": 1,
-    "secs": 85.90789473684211
+    "secs": 85.90789473684211,
+    "track": 114,
+    "disc": 0
    },
    "inside-the-warehouse-aquatic": {
     "n": 1,
-    "secs": 85.90789473684211
+    "secs": 85.90789473684211,
+    "track": 116,
+    "disc": 0
    },
    "inside-the-warehouse-normal": {
     "n": 1,
-    "secs": 85.90789473684211
+    "secs": 85.90789473684211,
+    "track": 115,
+    "disc": 0
    },
    "jiggy-appearance": {
     "n": 1,
-    "secs": 4.125
+    "secs": 4.125,
+    "track": 213,
+    "disc": 1
    },
    "jinjonator-appears-fanfare": {
     "n": 1,
-    "secs": 9.6
+    "secs": 9.6,
+    "track": 184,
+    "disc": 0
    },
    "jinjonator-charges": {
     "n": 1,
-    "secs": 72.12659101401309
+    "secs": 72.12659101401309,
+    "track": 163,
+    "disc": 0
    },
    "king-s-sandybuzz-s-maze": {
     "n": 1,
-    "secs": 1.0208333333333333
+    "secs": 1.0208333333333333,
+    "track": 180,
+    "disc": 0
    },
    "king-sandybutt-s-maze": {
     "n": 1,
-    "secs": 60.07077480215233
+    "secs": 60.07077480215233,
+    "track": 91,
+    "disc": 0
    },
    "lose-life": {
     "n": 1,
-    "secs": 3.685185185185185
+    "secs": 3.685185185185185,
+    "track": 211,
+    "disc": 1
    },
    "machine-room-all-in-one": {
     "n": 1,
-    "secs": 126.96
+    "secs": 126.96,
+    "track": 118,
+    "disc": 0
    },
    "machine-room-aquatic": {
     "n": 1,
-    "secs": 126.96
+    "secs": 126.96,
+    "track": 120,
+    "disc": 0
    },
    "machine-room-normal": {
     "n": 1,
-    "secs": 126.96
+    "secs": 126.96,
+    "track": 119,
+    "disc": 0
    },
    "mad-monster-mansion-all-in-one": {
     "n": 1,
-    "secs": 129.23076923076923
+    "secs": 129.23076923076923,
+    "track": 101,
+    "disc": 0
    },
    "mad-monster-mansion-aquatic": {
     "n": 1,
-    "secs": 129.23076923076923
+    "secs": 129.23076923076923,
+    "track": 104,
+    "disc": 0
    },
    "mad-monster-mansion-normal-with-church-bell": {
     "n": 1,
-    "secs": 129.23076923076923
+    "secs": 129.23076923076923,
+    "track": 103,
+    "disc": 0
    },
    "mad-monster-mansion-normal": {
     "n": 1,
-    "secs": 129.23076923076923
+    "secs": 129.23076923076923,
+    "track": 102,
+    "disc": 0
    },
    "main-title": {
     "n": 1,
-    "secs": 62.6
+    "secs": 62.6,
+    "track": 2,
+    "disc": 0
    },
    "mr-vile-s-game": {
     "n": 1,
-    "secs": 60.759682792035726
+    "secs": 60.759682792035726,
+    "track": 65,
+    "disc": 0
    },
    "mumbo-s-barbeque": {
     "n": 1,
-    "secs": 65.77777777777777
+    "secs": 65.77777777777777,
+    "track": 160,
+    "disc": 0
    },
    "mumbo-s-hut": {
     "n": 1,
-    "secs": 54.666666666666664
+    "secs": 54.666666666666664,
+    "track": 23,
+    "disc": 0
    },
    "mumbo-s-magic": {
     "n": 1,
-    "secs": 7.015625
+    "secs": 7.015625,
+    "track": 216,
+    "disc": 1
    },
    "mumbo-s-mountain-all-in-one": {
     "n": 1,
-    "secs": 126.3157894736842
+    "secs": 126.3157894736842,
+    "track": 17,
+    "disc": 0
    },
    "mumbo-s-mountain-aquatic": {
     "n": 1,
-    "secs": 126.3157894736842
+    "secs": 126.3157894736842,
+    "track": 22,
+    "disc": 0
    },
    "mumbo-s-mountain-conga-s-patch": {
     "n": 1,
-    "secs": 126.3157894736842
+    "secs": 126.3157894736842,
+    "track": 21,
+    "disc": 0
    },
    "mumbo-s-mountain-mumbo-s-hut": {
     "n": 1,
-    "secs": 126.3157894736842
+    "secs": 126.3157894736842,
+    "track": 20,
+    "disc": 0
    },
    "mumbo-s-mountain-normal": {
     "n": 1,
-    "secs": 126.3157894736842
+    "secs": 126.3157894736842,
+    "track": 18,
+    "disc": 0
    },
    "mumbo-s-mountain-ticker-s-tower": {
     "n": 1,
-    "secs": 126.3157894736842
+    "secs": 126.3157894736842,
+    "track": 19,
+    "disc": 0
    },
    "mumbo-s-raindance-unused-beta-song": {
     "n": 1,
-    "secs": 34.285714285714285
+    "secs": 34.285714285714285,
+    "track": 169,
+    "disc": 0
    },
    "mutie-snippets": {
     "n": 1,
-    "secs": 60.628387979580026
+    "secs": 60.628387979580026,
+    "track": 53,
+    "disc": 0
    },
    "nabnut-s-house-all-in-one": {
     "n": 1,
-    "secs": 81.23076923076923
+    "secs": 81.23076923076923,
+    "track": 136,
+    "disc": 0
    },
    "nabnut-s-house-aquatic": {
     "n": 1,
-    "secs": 81.23076923076923
+    "secs": 81.23076923076923,
+    "track": 141,
+    "disc": 0
    },
    "nabnut-s-house-autumn": {
     "n": 1,
-    "secs": 81.23076923076923
+    "secs": 81.23076923076923,
+    "track": 139,
+    "disc": 0
    },
    "nabnut-s-house-spring": {
     "n": 1,
-    "secs": 81.23076923076923
+    "secs": 81.23076923076923,
+    "track": 137,
+    "disc": 0
    },
    "nabnut-s-house-summer": {
     "n": 1,
-    "secs": 81.23076923076923
+    "secs": 81.23076923076923,
+    "track": 138,
+    "disc": 0
    },
    "nabnut-s-house-winter": {
     "n": 1,
-    "secs": 81.23076923076923
+    "secs": 81.23076923076923,
+    "track": 140,
+    "disc": 0
    },
    "nabnut-s-storeage-room": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 154,
+    "disc": 0
    },
    "nintendo-rare-logo": {
     "n": 1,
-    "secs": 11.583333333333334
+    "secs": 11.583333333333334,
+    "track": 1,
+    "disc": 0
    },
    "open-note-door-fanfare": {
     "n": 1,
-    "secs": 4.060975609756097
+    "secs": 4.060975609756097,
+    "track": 178,
+    "disc": 0
    },
    "overture": {
     "n": 1,
-    "secs": 207.79896713817018
+    "secs": 207.79896713817018,
+    "track": 7,
+    "disc": 0
    },
    "pause-screen": {
     "n": 1,
-    "secs": 57.6
+    "secs": 57.6,
+    "track": 11,
+    "disc": 0
    },
    "red-feather-max": {
     "n": 1,
-    "secs": 1.2666666666666666
+    "secs": 1.2666666666666666,
+    "track": 230,
+    "disc": 1
    },
    "running-shoes-jingle": {
     "n": 1,
-    "secs": 2.526182832482501
+    "secs": 2.526182832482501,
+    "track": 201,
+    "disc": 1
    },
    "running-shoes": {
     "n": 1,
-    "secs": 21.472554076101257
+    "secs": 21.472554076101257,
+    "track": 202,
+    "disc": 1
    },
    "rusty-bucket-bay-all-in-one": {
     "n": 1,
-    "secs": 114
+    "secs": 114,
+    "track": 110,
+    "disc": 0
    },
    "rusty-bucket-bay-aquatic": {
     "n": 1,
-    "secs": 114
+    "secs": 114,
+    "track": 113,
+    "disc": 0
    },
    "rusty-bucket-bay-normal": {
     "n": 1,
-    "secs": 114
+    "secs": 114,
+    "track": 111,
+    "disc": 0
    },
    "rusty-bucket-bay-whistle-puzzle": {
     "n": 1,
-    "secs": 114
+    "secs": 114,
+    "track": 112,
+    "disc": 0
    },
    "secret-fanfare-1-treasure-trove-cove-rusty-bucket-bay": {
     "n": 1,
-    "secs": 56.72727272727273
+    "secs": 56.72727272727273,
+    "track": 172,
+    "disc": 0
    },
    "secret-fanfare-2-freezeezy-peak": {
     "n": 1,
-    "secs": 62.4
+    "secs": 62.4,
+    "track": 173,
+    "disc": 0
    },
    "secret-fanfare-3-gobi-s-valley": {
     "n": 1,
-    "secs": 65.6842105263158
+    "secs": 65.6842105263158,
+    "track": 174,
+    "disc": 0
    },
    "secret-fanfare-4-mad-monster-mansion": {
     "n": 1,
-    "secs": 64.8
+    "secs": 64.8,
+    "track": 175,
+    "disc": 0
    },
    "secret-fanfare-5-click-clock-wood": {
     "n": 1,
-    "secs": 56.77272727272727
+    "secs": 56.77272727272727,
+    "track": 176,
+    "disc": 0
    },
    "sfx-bottles-challenge-pick-up": {
     "n": 1,
-    "secs": 0.3
+    "secs": 0.3,
+    "track": 235,
+    "disc": 1
    },
    "sfx-bottles-challenge-put-back": {
     "n": 1,
-    "secs": 0.3
+    "secs": 0.3,
+    "track": 236,
+    "disc": 1
    },
    "sfx-brentilda-appears": {
     "n": 1,
-    "secs": 1.3854166666666667
+    "secs": 1.3854166666666667,
+    "track": 237,
+    "disc": 1
    },
    "sfx-brentilda-dissappears": {
     "n": 1,
-    "secs": 1.5833333333333333
+    "secs": 1.5833333333333333,
+    "track": 238,
+    "disc": 1
    },
    "sfx-correct-jingle": {
     "n": 1,
-    "secs": 0.96875
+    "secs": 0.96875,
+    "track": 239,
+    "disc": 1
    },
    "sfx-dingpot-warp": {
     "n": 1,
-    "secs": 4.961340206185567
+    "secs": 4.961340206185567,
+    "track": 240,
+    "disc": 1
    },
    "sfx-jinjo-activates": {
     "n": 1,
-    "secs": 0.72
+    "secs": 0.72,
+    "track": 243,
+    "disc": 1
    },
    "sfx-jinjonator-maximum": {
     "n": 1,
-    "secs": 17.723684210526315
+    "secs": 17.723684210526315,
+    "track": 244,
+    "disc": 1
    },
    "sfx-lighthouse-winds": {
     "n": 1,
-    "secs": 88
+    "secs": 88,
+    "track": 245,
+    "disc": 1
    },
    "sfx-lose-oxygen": {
     "n": 1,
-    "secs": 0.125
+    "secs": 0.125,
+    "track": 246,
+    "disc": 1
    },
    "sfx-magic-carpet-drop": {
     "n": 1,
-    "secs": 4.125
+    "secs": 4.125,
+    "track": 248,
+    "disc": 1
    },
    "sfx-magic-carpet-rises": {
     "n": 1,
-    "secs": 4.125
+    "secs": 4.125,
+    "track": 247,
+    "disc": 1
    },
    "sfx-patch-remove": {
     "n": 1,
-    "secs": 0.42
+    "secs": 0.42,
+    "track": 250,
+    "disc": 1
    },
    "sfx-patch": {
     "n": 1,
-    "secs": 0.42
+    "secs": 0.42,
+    "track": 249,
+    "disc": 1
    },
    "sfx-pyramids": {
     "n": 1,
-    "secs": 4.125
+    "secs": 4.125,
+    "track": 251,
+    "disc": 1
    },
    "sfx-right": {
     "n": 1,
-    "secs": 0.96875
+    "secs": 0.96875,
+    "track": 253,
+    "disc": 1
    },
    "sfx-transformation": {
     "n": 1,
-    "secs": 4.909090909090909
+    "secs": 4.909090909090909,
+    "track": 254,
+    "disc": 1
    },
    "sfx-warp": {
     "n": 1,
-    "secs": 3.130298682665971
+    "secs": 3.130298682665971,
+    "track": 255,
+    "disc": 1
    },
    "sfx-wrong": {
     "n": 1,
-    "secs": 0.6057692307692307
+    "secs": 0.6057692307692307,
+    "track": 256,
+    "disc": 1
    },
    "snacker-attack": {
     "n": 1,
-    "secs": 2
+    "secs": 2,
+    "track": 36,
+    "disc": 0
    },
    "snipper-battle": {
     "n": 1,
-    "secs": 55.74193548387097
+    "secs": 55.74193548387097,
+    "track": 34,
+    "disc": 0
    },
    "spiral-mountain-all-in-one": {
     "n": 1,
-    "secs": 126.54545454545455
+    "secs": 126.54545454545455,
+    "track": 8,
+    "disc": 0
    },
    "spiral-mountain-aquatic": {
     "n": 1,
-    "secs": 126.54545454545455
+    "secs": 126.54545454545455,
+    "track": 10,
+    "disc": 0
    },
    "spiral-mountain-normal": {
     "n": 1,
-    "secs": 126.54545454545455
+    "secs": 126.54545454545455,
+    "track": 9,
+    "disc": 0
    },
    "the-end": {
     "n": 1,
-    "secs": 9.543478260869565
+    "secs": 9.543478260869565,
+    "track": 167,
+    "disc": 0
    },
    "ticker-s-tower": {
     "n": 1,
-    "secs": 92.3076923076923
+    "secs": 92.3076923076923,
+    "track": 24,
+    "disc": 0
    },
    "tooty-s-theme": {
     "n": 1,
-    "secs": 60.44444444444444
+    "secs": 60.44444444444444,
+    "track": 158,
+    "disc": 0
    },
    "top-of-the-lair": {
     "n": 1,
-    "secs": 136.33333333333334
+    "secs": 136.33333333333334,
+    "track": 161,
+    "disc": 0
    },
    "treasure-trove-cove-all-in-one": {
     "n": 1,
-    "secs": 119.04
+    "secs": 119.04,
+    "track": 30,
+    "disc": 0
    },
    "treasure-trove-cove-aquatic": {
     "n": 1,
-    "secs": 119.04
+    "secs": 119.04,
+    "track": 33,
+    "disc": 0
    },
    "treasure-trove-cove-captain-blubber-area": {
     "n": 1,
-    "secs": 119.04
+    "secs": 119.04,
+    "track": 32,
+    "disc": 0
    },
    "treasure-trove-cove-normal": {
     "n": 1,
-    "secs": 119.04
+    "secs": 119.04,
+    "track": 31,
+    "disc": 0
    },
    "tubular-s-oujia": {
     "n": 1,
-    "secs": 107
+    "secs": 107,
+    "track": 107,
+    "disc": 0
    },
    "twinklies-journey": {
     "n": 1,
-    "secs": 97.92857142857143
+    "secs": 97.92857142857143,
+    "track": 74,
+    "disc": 0
    },
    "unused-1": {
     "n": 1,
-    "secs": 0.9
+    "secs": 0.9,
+    "track": 257,
+    "disc": 1
    },
    "unused-2": {
     "n": 1,
-    "secs": 2.7027027027027026
+    "secs": 2.7027027027027026,
+    "track": 258,
+    "disc": 1
    },
    "unused-jingle": {
     "n": 1,
-    "secs": 3.8333333333333335
+    "secs": 3.8333333333333335,
+    "track": 223,
+    "disc": 1
    },
    "using-gold-feathers": {
     "n": 1,
-    "secs": 26.322580645161292
+    "secs": 26.322580645161292,
+    "track": 204,
+    "disc": 1
    },
    "wading-boots": {
     "n": 1,
-    "secs": 28.928571428571427
+    "secs": 28.928571428571427,
+    "track": 203,
+    "disc": 1
    },
    "world-door-open": {
     "n": 1,
-    "secs": 3.282721962002
+    "secs": 3.282721962002,
+    "track": 215,
+    "disc": 1
    },
    "world-puzzle-complete-fanfare": {
     "n": 1,
-    "secs": 4.4326923076923075
+    "secs": 4.4326923076923075,
+    "track": 177,
+    "disc": 0
    },
    "wozza-s-cave-all-in-one": {
     "n": 1,
-    "secs": 43.2
+    "secs": 43.2,
+    "track": 78,
+    "disc": 0
    },
    "wozza-s-cave-aquatic": {
     "n": 1,
-    "secs": 43.2
+    "secs": 43.2,
+    "track": 80,
+    "disc": 0
    },
    "wozza-s-cave-normal": {
     "n": 1,
-    "secs": 43.2
+    "secs": 43.2,
+    "track": 79,
+    "disc": 0
    },
    "zoom-in": {
     "n": 1,
-    "secs": 1.925
+    "secs": 1.925,
+    "track": 241,
+    "disc": 1
    },
    "zoom-out": {
     "n": 1,
-    "secs": 1.925
+    "secs": 1.925,
+    "track": 242,
+    "disc": 1
    },
    "zubba-battle": {
     "n": 1,
-    "secs": 65.68075364454502
+    "secs": 65.68075364454502,
+    "track": 148,
+    "disc": 0
    },
    "zubba-s-nest": {
     "n": 1,
-    "secs": 90.96052631578948
+    "secs": 90.96052631578948,
+    "track": 135,
+    "disc": 0
    },
    "gruntilda-s-lair-aquatic-2": {
     "n": 1,
-    "secs": 118.76288659793815
+    "secs": 118.76288659793815,
+    "track": 48,
+    "disc": 0
    },
    "gruntilda-s-lair-aquatic-3": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 61,
+    "disc": 0
    },
    "gruntilda-s-lair-aquatic-4": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 100,
+    "disc": 0
    },
    "gruntilda-s-lair-bubblegloop-swamp-2": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 59,
+    "disc": 0
    },
    "gruntilda-s-lair-clanker-s-cavern-2": {
     "n": 1,
-    "secs": 118.76288659793815
+    "secs": 118.76288659793815,
+    "track": 46,
+    "disc": 0
    },
    "gruntilda-s-lair-click-clock-wood-2": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 124,
+    "disc": 0
    },
    "gruntilda-s-lair-freezeezy-peak-2": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 69,
+    "disc": 0
    },
    "gruntilda-s-lair-gobi-s-valley-2": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 94,
+    "disc": 0
    },
    "gruntilda-s-lair-mad-monster-mansion-2": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 99,
+    "disc": 0
    },
    "gruntilda-s-lair-normal-2": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 26,
+    "disc": 0
    },
    "gruntilda-s-lair-normal-3": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 41,
+    "disc": 0
    },
    "gruntilda-s-lair-normal-4": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 58,
+    "disc": 0
    },
    "gruntilda-s-lair-normal-5": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 68,
+    "disc": 0
    },
    "gruntilda-s-lair-normal-6": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 83,
+    "disc": 0
    },
    "gruntilda-s-lair-normal-7": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 93,
+    "disc": 0
    },
    "gruntilda-s-lair-normal-8": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 97,
+    "disc": 0
    },
    "gruntilda-s-lair-normal-9": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 123,
+    "disc": 0
    },
    "gruntilda-s-lair-treasure-trove-cove-2": {
     "n": 1,
-    "secs": 121.23711340206185
+    "secs": 121.23711340206185,
+    "track": 42,
+    "disc": 0
    }
   },
   "chip": "usf",

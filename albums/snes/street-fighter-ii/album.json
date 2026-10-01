@@ -26,143 +26,178 @@
   "tracks": {
    "balrog-jap-vega-us-europe": {
     "n": 1,
-    "secs": 105
+    "secs": 105,
+    "track": 20
    },
    "blanka-s-ending": {
     "n": 1,
-    "secs": 62
+    "secs": 62,
+    "track": 25
    },
    "blanka": {
     "n": 1,
-    "secs": 114
+    "secs": 114,
+    "track": 7
    },
    "bonus-stage": {
     "n": 1,
-    "secs": 24
+    "secs": 24,
+    "track": 18
    },
    "capcom-sound": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 1
    },
    "chun-li-s-ending-1": {
     "n": 1,
-    "secs": 75
+    "secs": 75,
+    "track": 29
    },
    "chun-li-s-ending-2": {
     "n": 1,
-    "secs": 32
+    "secs": 32,
+    "track": 30
    },
    "chun-li": {
     "n": 1,
-    "secs": 105
+    "secs": 105,
+    "track": 10
    },
    "continue": {
     "n": 1,
-    "secs": 22
+    "secs": 22,
+    "track": 14
    },
    "credits": {
     "n": 1,
-    "secs": 224
+    "secs": 224,
+    "track": 33
    },
    "dhalsim-s-ending": {
     "n": 1,
-    "secs": 34
+    "secs": 34,
+    "track": 32
    },
    "dhalsim": {
     "n": 1,
-    "secs": 78
+    "secs": 78,
+    "track": 12
    },
    "e-honda-s-ending": {
     "n": 1,
-    "secs": 52
+    "secs": 52,
+    "track": 24
    },
    "e-honda": {
     "n": 1,
-    "secs": 118
+    "secs": 118,
+    "track": 6
    },
    "end-battle": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 13
    },
    "fight": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 34
    },
    "game-over": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 15
    },
    "guile-s-ending": {
     "n": 1,
-    "secs": 49
+    "secs": 49,
+    "track": 26
    },
    "guile": {
     "n": 1,
-    "secs": 132
+    "secs": 132,
+    "track": 8
    },
    "here-comes-a-new-challanger": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 17
    },
    "ken-s-ending-1": {
     "n": 1,
-    "secs": 51
+    "secs": 51,
+    "track": 27
    },
    "ken-s-ending-2": {
     "n": 1,
-    "secs": 46
+    "secs": 46,
+    "track": 28
    },
    "ken": {
     "n": 1,
-    "secs": 124
+    "secs": 124,
+    "track": 9
    },
    "m-bison-jap-balrog-us-europe": {
     "n": 1,
-    "secs": 104
+    "secs": 104,
+    "track": 19
    },
    "pause": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 35
    },
    "player-select": {
     "n": 1,
-    "secs": 32
+    "secs": 32,
+    "track": 3
    },
    "ranking": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 16
    },
    "ryu-s-ending": {
     "n": 1,
-    "secs": 61
+    "secs": 61,
+    "track": 23
    },
    "ryu": {
     "n": 1,
-    "secs": 98
+    "secs": 98,
+    "track": 5
    },
    "sagat": {
     "n": 1,
-    "secs": 163.98
+    "secs": 163.98,
+    "track": 21
    },
    "start-battle": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 4
    },
    "the-world-warrior": {
     "n": 1,
-    "secs": 30
+    "secs": 30,
+    "track": 2
    },
    "vega-jap-m-bison-us-europe": {
     "n": 1,
-    "secs": 132
+    "secs": 132,
+    "track": 22
    },
    "zangief-s-ending": {
     "n": 1,
-    "secs": 24
+    "secs": 24,
+    "track": 31
    },
    "zangief": {
     "n": 1,
-    "secs": 101
+    "secs": 101,
+    "track": 11
    }
   },
   "chip": "spc",

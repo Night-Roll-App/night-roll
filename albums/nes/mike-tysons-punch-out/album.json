@@ -70,263 +70,328 @@
   "tracks": {
    "bout-winner": {
     "n": 6,
-    "secs": 5.3831180000000005
+    "secs": 5.3831180000000005,
+    "track": 14
    },
    "don-flamenco-s-theme": {
     "n": 16,
-    "secs": 7.383038
+    "secs": 7.383038,
+    "track": 5
    },
    "game-over": {
     "n": 9,
-    "secs": 11.6662
+    "secs": 11.6662,
+    "track": 20
    },
    "get-up-little-mac": {
     "n": 22,
-    "secs": 5.33312
+    "secs": 5.33312,
+    "track": 11
    },
    "glass-joe-s-theme": {
     "n": 15,
-    "secs": 7.399704
+    "secs": 7.399704,
+    "track": 3
    },
    "king-hippo-s-theme": {
     "n": 17,
-    "secs": 5.399784
+    "secs": 5.399784,
+    "track": 6
    },
    "match-bgm": {
     "n": 23,
-    "secs": 32.33204
+    "secs": 32.33204,
+    "track": 10
    },
    "moving-on-to-next-level": {
     "n": 5,
-    "secs": 7.383038
+    "secs": 7.383038,
+    "track": 16
    },
    "piston-honda-s-theme": {
     "n": 19,
-    "secs": 7.383038
+    "secs": 7.383038,
+    "track": 4
    },
    "preparing-for-next-big-bout": {
     "n": 8,
-    "secs": 6.199752
+    "secs": 6.199752,
+    "track": 15
    },
    "punch-out-theme-reprise": {
     "n": 2,
-    "secs": 8.932976
+    "secs": 8.932976,
+    "track": 2
    },
    "punch-out-theme": {
     "n": 1,
-    "secs": 22.399104
+    "secs": 22.399104,
+    "track": 1
    },
    "round-1-begins": {
     "n": 10,
-    "secs": 4.199832
+    "secs": 4.199832,
+    "track": 9
    },
    "se-032": {
     "n": 32,
-    "secs": 1.049958
+    "secs": 1.049958,
+    "track": 29
    },
    "se-033": {
     "n": 33,
-    "secs": 1.049958
+    "secs": 1.049958,
+    "track": 30
    },
    "se-034": {
     "n": 34,
-    "secs": 1.049958
+    "secs": 1.049958,
+    "track": 31
    },
    "se-041": {
     "n": 41,
-    "secs": 1.5166060000000001
+    "secs": 1.5166060000000001,
+    "track": 38
    },
    "se-043": {
     "n": 43,
-    "secs": 1.08329
+    "secs": 1.08329,
+    "track": 40
    },
    "se-047": {
     "n": 47,
-    "secs": 1.5166060000000001
+    "secs": 1.5166060000000001,
+    "track": 44
    },
    "se-048": {
     "n": 48,
-    "secs": 2.049918
+    "secs": 2.049918,
+    "track": 45
    },
    "se-051": {
     "n": 51,
-    "secs": 1.5166060000000001
+    "secs": 1.5166060000000001,
+    "track": 48
    },
    "se-053": {
     "n": 53,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 50
    },
    "se-054": {
     "n": 54,
-    "secs": 1.349946
+    "secs": 1.349946,
+    "track": 51
    },
    "se-055": {
     "n": 55,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 52
    },
    "se-057": {
     "n": 57,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 54
    },
    "se-059": {
     "n": 59,
-    "secs": 1.183286
+    "secs": 1.183286,
+    "track": 56
    },
    "se-060": {
     "n": 60,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 57
    },
    "se-061": {
     "n": 61,
-    "secs": 1.116622
+    "secs": 1.116622,
+    "track": 58
    },
    "se-064": {
     "n": 64,
-    "secs": 1.116622
+    "secs": 1.116622,
+    "track": 61
    },
    "se-066": {
     "n": 66,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 63
    },
    "se-067": {
     "n": 67,
-    "secs": 1.49994
+    "secs": 1.49994,
+    "track": 64
    },
    "se-068": {
     "n": 68,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 65
    },
    "se-bell-ringing": {
     "n": 44,
-    "secs": 2.533232
+    "secs": 2.533232,
+    "track": 41
    },
    "se-bell": {
     "n": 35,
-    "secs": 2.049918
+    "secs": 2.049918,
+    "track": 32
    },
    "se-blocking": {
     "n": 27,
-    "secs": 1.049958
+    "secs": 1.049958,
+    "track": 24
    },
    "se-disappearing": {
     "n": 63,
-    "secs": 2.58323
+    "secs": 2.58323,
+    "track": 60
    },
    "se-dodging": {
     "n": 40,
-    "secs": 1.066624
+    "secs": 1.066624,
+    "track": 37
    },
    "se-hard-blow-to-the-gut": {
     "n": 42,
-    "secs": 1.283282
+    "secs": 1.283282,
+    "track": 39
    },
    "se-king-hippo-s-mouth": {
     "n": 46,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 43
    },
    "se-opponent-asked-for-more": {
     "n": 52,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 49
    },
    "se-opponent-jumping-away": {
     "n": 58,
-    "secs": 1.383278
+    "secs": 1.383278,
+    "track": 55
    },
    "se-opponent-knocked-out-2": {
     "n": 49,
-    "secs": 3.099876
+    "secs": 3.099876,
+    "track": 46
    },
    "se-opponent-knocked-out": {
     "n": 25,
-    "secs": 3.099876
+    "secs": 3.099876,
+    "track": 22
    },
    "se-opponent-misses-big-uppercut-blow": {
     "n": 65,
-    "secs": 2.049918
+    "secs": 2.049918,
+    "track": 62
    },
    "se-opponent-spitting-from-mouth": {
     "n": 26,
-    "secs": 1.349946
+    "secs": 1.349946,
+    "track": 23
    },
    "se-opponent-throwing-an-uppercut": {
     "n": 28,
-    "secs": 1.5166060000000001
+    "secs": 1.5166060000000001,
+    "track": 25
    },
    "se-opponent-throwing-swift-punches": {
     "n": 62,
-    "secs": 1.383278
+    "secs": 1.383278,
+    "track": 59
    },
    "se-opponent-throws-a-punch": {
     "n": 56,
-    "secs": 1.5166060000000001
+    "secs": 1.5166060000000001,
+    "track": 53
    },
    "se-punch-missed": {
     "n": 29,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 26
    },
    "se-punching-opponent": {
     "n": 31,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 28
    },
    "se-punching-title-name": {
     "n": 24,
-    "secs": 2.049918
+    "secs": 2.049918,
+    "track": 21
    },
    "se-referee-announcing-tko": {
     "n": 38,
-    "secs": 1.483274
+    "secs": 1.483274,
+    "track": 35
    },
    "se-referee-announcing-winner": {
     "n": 39,
-    "secs": 1.183286
+    "secs": 1.183286,
+    "track": 36
    },
    "se-referee-counting": {
     "n": 37,
-    "secs": 1.283282
+    "secs": 1.283282,
+    "track": 34
    },
    "se-referee": {
     "n": 36,
-    "secs": 1.233284
+    "secs": 1.233284,
+    "track": 33
    },
    "se-special-punch": {
     "n": 45,
-    "secs": 1.549938
+    "secs": 1.549938,
+    "track": 42
    },
    "se-special-star-obtained": {
     "n": 50,
-    "secs": 1.2499500000000001
+    "secs": 1.2499500000000001,
+    "track": 47
    },
    "se-uppercut-missed": {
     "n": 30,
-    "secs": 1.149954
+    "secs": 1.149954,
+    "track": 27
    },
    "soda-popinski-s-theme": {
     "n": 18,
-    "secs": 7.383038
+    "secs": 7.383038,
+    "track": 8
    },
    "the-dream-fight": {
     "n": 13,
-    "secs": 5.3831180000000005
+    "secs": 5.3831180000000005,
+    "track": 17
    },
    "von-kaiser-s-theme": {
     "n": 14,
-    "secs": 5.3831180000000005
+    "secs": 5.3831180000000005,
+    "track": 7
    },
    "warming-up-with-doc": {
     "n": 20,
-    "secs": 26.6656
+    "secs": 26.6656,
+    "track": 18
    },
    "you-lose": {
     "n": 7,
-    "secs": 5.783102
+    "secs": 5.783102,
+    "track": 12
    },
    "you-ve-won-the-championship-ranking": {
     "n": 4,
-    "secs": 10.599576
+    "secs": 10.599576,
+    "track": 19
    },
    "you-win": {
     "n": 21,
-    "secs": 5.33312
+    "secs": 5.33312,
+    "track": 13
    }
   }
  }

@@ -29,155 +29,231 @@
   "tracks": {
    "a-piece-of-remain": {
     "n": 1,
-    "secs": 36.923328
+    "secs": 36.923328,
+    "track": 32,
+    "disc": 2
    },
    "across-the-view": {
     "n": 1,
-    "secs": 49.62354075
+    "secs": 49.62354075,
+    "track": 30,
+    "disc": 2
    },
    "arise-within-you": {
     "n": 1,
-    "secs": 56.911059
+    "secs": 56.911059,
+    "track": 8,
+    "disc": 1
    },
    "consensus": {
     "n": 1,
-    "secs": 56.000896
+    "secs": 56.000896,
+    "track": 37,
+    "disc": 2
    },
    "escape-from-ub": {
     "n": 1,
-    "secs": 7.619088
+    "secs": 7.619088,
+    "track": 35,
+    "disc": 2
    },
    "femmes-fatales": {
     "n": 1,
-    "secs": 143.378661
+    "secs": 143.378661,
+    "track": 31,
+    "disc": 2
    },
    "force-trail": {
     "n": 1,
-    "secs": 53.6462625
+    "secs": 53.6462625,
+    "track": 23,
+    "disc": 1
    },
    "gloom-and-doom": {
     "n": 1,
-    "secs": 135.00198
+    "secs": 135.00198,
+    "track": 5,
+    "disc": 1
    },
    "influence-of-deep": {
     "n": 1,
-    "secs": 95.380149
+    "secs": 95.380149,
+    "track": 15,
+    "disc": 1
    },
    "kyrie": {
     "n": 1,
-    "secs": 100.796892
+    "secs": 100.796892,
+    "track": 29,
+    "disc": 2
    },
    "main-theme-piano-solo-version": {
     "n": 1,
-    "secs": 69.93890337500002
+    "secs": 69.93890337500002,
+    "track": 9,
+    "disc": 1
    },
    "main-theme": {
     "n": 1,
-    "secs": 61.700007125
+    "secs": 61.700007125,
+    "track": 36,
+    "disc": 2
    },
    "matrix": {
     "n": 1,
-    "secs": 72.498376
+    "secs": 72.498376,
+    "track": 26,
+    "disc": 2
    },
    "memories-of-aya-and-eve": {
     "n": 1,
-    "secs": 71.180484375
+    "secs": 71.180484375,
+    "track": 11,
+    "disc": 1
    },
    "memory-i": {
     "n": 1,
-    "secs": 9.9418545
+    "secs": 9.9418545,
+    "track": 4,
+    "disc": 1
    },
    "memory-ii": {
     "n": 1,
-    "secs": 23.372079
+    "secs": 23.372079,
+    "track": 22,
+    "disc": 1
    },
    "memory-iii": {
     "n": 1,
-    "secs": 32.14254
+    "secs": 32.14254,
+    "track": 25,
+    "disc": 1
    },
    "missing-perspective": {
     "n": 1,
-    "secs": 118.551828
+    "secs": 118.551828,
+    "track": 21,
+    "disc": 1
    },
    "musica-mundana": {
     "n": 1,
-    "secs": 60.00096
+    "secs": 60.00096,
+    "track": 33,
+    "disc": 2
    },
    "mystery-notes": {
     "n": 1,
-    "secs": 17.026548
+    "secs": 17.026548,
+    "track": 14,
+    "disc": 1
    },
    "omission-of-the-world": {
     "n": 1,
-    "secs": 73.845728
+    "secs": 73.845728,
+    "track": 27,
+    "disc": 2
    },
    "out-of-phase": {
     "n": 1,
-    "secs": 114.194382
+    "secs": 114.194382,
+    "track": 12,
+    "disc": 1
    },
    "overture": {
     "n": 1,
-    "secs": 66.421343
+    "secs": 66.421343,
+    "track": 2,
+    "disc": 1
    },
    "phrase-of-aya": {
     "n": 1,
-    "secs": 33.102912
+    "secs": 33.102912,
+    "track": 16,
+    "disc": 1
    },
    "phrase-of-eve": {
     "n": 1,
-    "secs": 84.49700287500002
+    "secs": 84.49700287500002,
+    "track": 24,
+    "disc": 1
    },
    "phrase-of-mitochondria": {
     "n": 1,
-    "secs": 12.8
+    "secs": 12.8,
+    "track": 17,
+    "disc": 1
    },
    "plosive-attack": {
     "n": 1,
-    "secs": 68.57248
+    "secs": 68.57248,
+    "track": 20,
+    "disc": 1
    },
    "se-il-mio-amore-sta-vincino": {
     "n": 1,
-    "secs": 123.43405062500004
+    "secs": 123.43405062500004,
+    "track": 3,
+    "disc": 1
    },
    "someone-calls-memorias": {
     "n": 1,
-    "secs": 44.191841833333335
+    "secs": 44.191841833333335,
+    "track": 38,
+    "disc": 2
    },
    "sotto-voice": {
     "n": 1,
-    "secs": 59.305555000000005
+    "secs": 59.305555000000005,
+    "track": 7,
+    "disc": 1
    },
    "the-surface-of-the-water": {
     "n": 1,
-    "secs": 95.581338
+    "secs": 95.581338,
+    "track": 10,
+    "disc": 1
    },
    "theme-of-aya": {
     "n": 1,
-    "secs": 47.99936
+    "secs": 47.99936,
+    "track": 18,
+    "disc": 1
    },
    "theme-of-mitochondria": {
     "n": 1,
-    "secs": 51.2
+    "secs": 51.2,
+    "track": 6,
+    "disc": 1
    },
    "ub": {
     "n": 1,
-    "secs": 9.796112
+    "secs": 9.796112,
+    "track": 34,
+    "disc": 2
    },
    "under-the-progress": {
     "n": 1,
-    "secs": 103.384288
+    "secs": 103.384288,
+    "track": 19,
+    "disc": 1
    },
    "urban-noise": {
     "n": 1,
-    "secs": 51.428064
+    "secs": 51.428064,
+    "track": 13,
+    "disc": 1
    },
    "waiting-for-something-happens": {
     "n": 1,
-    "secs": 71.07312624999994
+    "secs": 71.07312624999994,
+    "track": 1,
+    "disc": 1
    },
    "wheel-of-fortune": {
     "n": 1,
-    "secs": 104.997648
+    "secs": 104.997648,
+    "track": 28,
+    "disc": 2
    }
   },
   "chip": "psf",

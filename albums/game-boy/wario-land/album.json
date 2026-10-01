@@ -23,195 +23,243 @@
   "tracks": {
    "bonus-menu": {
     "n": 12,
-    "secs": 15.00146484375
+    "secs": 15.00146484375,
+    "track": 12
    },
    "bonus-results": {
     "n": 5,
-    "secs": 4.8218994140625
+    "secs": 4.8218994140625,
+    "track": 13
    },
    "bonus-select": {
     "n": 42,
-    "secs": 4.2191619873046875
+    "secs": 4.2191619873046875,
+    "track": 11
    },
    "boss-almost-defeated": {
     "n": 7,
-    "secs": 5.357666015625
+    "secs": 5.357666015625,
+    "track": 18
    },
    "boss-battle": {
     "n": 17,
-    "secs": 26.62090301513672
+    "secs": 26.62090301513672,
+    "track": 17
    },
    "boss-defeated": {
     "n": 18,
-    "secs": 5.0228118896484375
+    "secs": 5.0228118896484375,
+    "track": 19
    },
    "end-credits": {
     "n": 41,
-    "secs": 255.4936981201172
+    "secs": 255.4936981201172,
+    "track": 45
    },
    "file-select": {
     "n": 38,
-    "secs": 6.42919921875
+    "secs": 6.42919921875,
+    "track": 3
    },
    "game-over": {
     "n": 36,
-    "secs": 4.2191619873046875
+    "secs": 4.2191619873046875,
+    "track": 9
    },
    "huntering-with-bomb": {
     "n": 24,
-    "secs": 12.8583984375
+    "secs": 12.8583984375,
+    "track": 14
    },
    "intro": {
     "n": 32,
-    "secs": 28.897911071777344
+    "secs": 28.897911071777344,
+    "track": 1
    },
    "invincible-wario": {
     "n": 6,
-    "secs": 13.461135864257812
+    "secs": 13.461135864257812,
+    "track": 23
    },
    "kitchen-island": {
     "n": 2,
-    "secs": 34.2890625
+    "secs": 34.2890625,
+    "track": 4
    },
    "last-fight": {
     "n": 40,
-    "secs": 39.613243103027344
+    "secs": 39.613243103027344,
+    "track": 42
    },
    "last-stage": {
     "n": 30,
-    "secs": 51.43359375
+    "secs": 51.43359375,
+    "track": 40
    },
    "level-selected": {
     "n": 43,
-    "secs": 2.1095809936523438
+    "secs": 2.1095809936523438,
+    "track": 6
    },
    "lose-a-life": {
     "n": 8,
-    "secs": 3.6666526794433594
+    "secs": 3.6666526794433594,
+    "track": 8
    },
    "mt-teapot": {
     "n": 19,
-    "secs": 19.8233642578125
+    "secs": 19.8233642578125,
+    "track": 15
    },
    "mystery-theme": {
     "n": 45,
-    "secs": 2.14306640625
+    "secs": 2.14306640625,
+    "track": 29
    },
    "parsley-woods": {
     "n": 31,
-    "secs": 19.28759765625
+    "secs": 19.28759765625,
+    "track": 31
    },
    "princess-toadstool-s-statue-found": {
     "n": 47,
-    "secs": 19.73965072631836
+    "secs": 19.73965072631836,
+    "track": 43
    },
    "rice-beach": {
     "n": 21,
-    "secs": 8.30438232421875
+    "secs": 8.30438232421875,
+    "track": 5
    },
    "secret-room-found": {
     "n": 15,
-    "secs": 3.1141433715820312
+    "secs": 3.1141433715820312,
+    "track": 35
    },
    "sherbet-land": {
     "n": 20,
-    "secs": 51.43359375
+    "secs": 51.43359375,
+    "track": 21
    },
    "ss-tea-cup": {
     "n": 35,
-    "secs": 30.120128631591797
+    "secs": 30.120128631591797,
+    "track": 27
    },
    "stage-clear": {
     "n": 13,
-    "secs": 3.0136871337890625
+    "secs": 3.0136871337890625,
+    "track": 10
    },
    "stage-theme-i": {
     "n": 4,
-    "secs": 97.2751235961914
+    "secs": 97.2751235961914,
+    "track": 7
    },
    "stage-theme-ii": {
     "n": 10,
-    "secs": 51.567535400390625
+    "secs": 51.567535400390625,
+    "track": 16
    },
    "stage-theme-iii": {
     "n": 3,
-    "secs": 45.138336181640625
+    "secs": 45.138336181640625,
+    "track": 22
    },
    "stage-theme-iv": {
     "n": 14,
-    "secs": 68.20978546142578
+    "secs": 68.20978546142578,
+    "track": 24
    },
    "stage-theme-ix": {
     "n": 34,
-    "secs": 33.7532958984375
+    "secs": 33.7532958984375,
+    "track": 34
    },
    "stage-theme-v": {
     "n": 39,
-    "secs": 30.136871337890625
+    "secs": 30.136871337890625,
+    "track": 26
    },
    "stage-theme-vi": {
     "n": 27,
-    "secs": 8.84014892578125
+    "secs": 8.84014892578125,
+    "track": 28
    },
    "stage-theme-vii": {
     "n": 22,
-    "secs": 28.964881896972656
+    "secs": 28.964881896972656,
+    "track": 30
    },
    "stage-theme-viii": {
     "n": 9,
-    "secs": 26.235820770263672
+    "secs": 26.235820770263672,
+    "track": 32
    },
    "stage-theme-x": {
     "n": 11,
-    "secs": 25.716796875
+    "secs": 25.716796875,
+    "track": 37
    },
    "stage-theme-xi": {
     "n": 23,
-    "secs": 75.00732421875
+    "secs": 75.00732421875,
+    "track": 39
    },
    "stove-canyon": {
     "n": 33,
-    "secs": 47.06374740600586
+    "secs": 47.06374740600586,
+    "track": 25
    },
    "summoning-the-genie": {
     "n": 25,
-    "secs": 26.97249984741211
+    "secs": 26.97249984741211,
+    "track": 41
    },
    "switch-activated": {
     "n": 44,
-    "secs": 2.41094970703125
+    "secs": 2.41094970703125,
+    "track": 20
    },
    "syrup-castle": {
     "n": 29,
-    "secs": 15.118663787841797
+    "secs": 15.118663787841797,
+    "track": 38
    },
    "that-s-not-what-i-call-a-castle": {
     "n": 46,
-    "secs": 4.2191619873046875
+    "secs": 4.2191619873046875,
+    "track": 44
    },
    "title": {
     "n": 1,
-    "secs": 7.500732421875
+    "secs": 7.500732421875,
+    "track": 2
    },
    "treasure-found": {
     "n": 28,
-    "secs": 3.6833953857421875
+    "secs": 3.6833953857421875,
+    "track": 36
    },
    "unknown-jingle": {
     "n": 37,
-    "secs": 2.7458038330078125
+    "secs": 2.7458038330078125,
+    "track": 48
    },
    "unknown-song-1": {
     "n": 16,
-    "secs": 58.01347732543945
+    "secs": 58.01347732543945,
+    "track": 46
    },
    "unknown-song-2": {
     "n": 48,
-    "secs": 3.214599609375
+    "secs": 3.214599609375,
+    "track": 47
    },
    "world-cleared": {
     "n": 26,
-    "secs": 2.5951194763183594
+    "secs": 2.5951194763183594,
+    "track": 33
    }
   },
   "chip": "gbs"

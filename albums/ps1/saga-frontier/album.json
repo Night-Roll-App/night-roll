@@ -45,335 +45,501 @@
   "tracks": {
    "a-memory-of-childhood": {
     "n": 1,
-    "secs": 168.45033474999994
+    "secs": 168.45033474999994,
+    "track": 75,
+    "disc": 3
    },
    "alone": {
     "n": 1,
-    "secs": 158.248116
+    "secs": 158.248116,
+    "track": 47,
+    "disc": 2
    },
    "ancient-tomb-of-king-mu": {
     "n": 1,
-    "secs": 83.934254
+    "secs": 83.934254,
+    "track": 19,
+    "disc": 1
    },
    "ancient-tomb-of-king-sei": {
     "n": 1,
-    "secs": 63.9026
+    "secs": 63.9026,
+    "track": 18,
+    "disc": 1
    },
    "annihilation": {
     "n": 1,
-    "secs": 21.204158625
+    "secs": 21.204158625,
+    "track": 29,
+    "disc": 1
    },
    "asellus-theme": {
     "n": 1,
-    "secs": 93.99816787499995
+    "secs": 93.99816787499995,
+    "track": 9,
+    "disc": 1
    },
    "baccarat": {
     "n": 1,
-    "secs": 106.358864
+    "secs": 106.358864,
+    "track": 25,
+    "disc": 1
    },
    "back-streets-of-koorong": {
     "n": 1,
-    "secs": 81.746672
+    "secs": 81.746672,
+    "track": 46,
+    "disc": 2
    },
    "battle-1": {
     "n": 1,
-    "secs": 72.30451487499997
+    "secs": 72.30451487499997,
+    "track": 12,
+    "disc": 1
    },
    "battle-2": {
     "n": 1,
-    "secs": 100.15936300000001
+    "secs": 100.15936300000001,
+    "track": 20,
+    "disc": 1
    },
    "battle-3": {
     "n": 1,
-    "secs": 119.18650075
+    "secs": 119.18650075,
+    "track": 28,
+    "disc": 1
    },
    "battle-4-alternate": {
     "n": 1,
-    "secs": 112.93267199999998
+    "secs": 112.93267199999998,
+    "track": 45,
+    "disc": 2
    },
    "battle-4": {
     "n": 1,
-    "secs": 112.93267199999998
+    "secs": 112.93267199999998,
+    "track": 44,
+    "disc": 2
    },
    "battle-5": {
     "n": 1,
-    "secs": 93.14617575000001
+    "secs": 93.14617575000001,
+    "track": 53,
+    "disc": 2
    },
    "black-x-base": {
     "n": 1,
-    "secs": 66.262748
+    "secs": 66.262748,
+    "track": 58,
+    "disc": 3
    },
    "blue-s-theme": {
     "n": 1,
-    "secs": 65.55044362500001
+    "secs": 65.55044362500001,
+    "track": 3,
+    "disc": 1
    },
    "blue-town": {
     "n": 1,
-    "secs": 126.039775125
+    "secs": 126.039775125,
+    "track": 31,
+    "disc": 2
    },
    "booby-trap": {
     "n": 1,
-    "secs": 64.1177210625
+    "secs": 64.1177210625,
+    "track": 36,
+    "disc": 2
    },
    "castle-of-needles": {
     "n": 1,
-    "secs": 91.38744974999999
+    "secs": 91.38744974999999,
+    "track": 50,
+    "disc": 2
    },
    "confrontation-caballero-family": {
     "n": 1,
-    "secs": 51.144742
+    "secs": 51.144742,
+    "track": 17,
+    "disc": 1
    },
    "contented": {
     "n": 1,
-    "secs": 83.98781124999998
+    "secs": 83.98781124999998,
+    "track": 74,
+    "disc": 3
    },
    "danger": {
     "n": 1,
-    "secs": 22.800064
+    "secs": 22.800064,
+    "track": 43,
+    "disc": 2
    },
    "dear-my-country": {
     "n": 1,
-    "secs": 57.45624
+    "secs": 57.45624,
+    "track": 71,
+    "disc": 3
    },
    "despair": {
     "n": 1,
-    "secs": 96.72768
+    "secs": 96.72768,
+    "track": 34,
+    "disc": 2
    },
    "destiny-a-law": {
     "n": 1,
-    "secs": 115.20417125
+    "secs": 115.20417125,
+    "track": 70,
+    "disc": 3
    },
    "devin": {
     "n": 1,
-    "secs": 49.400208
+    "secs": 49.400208,
+    "track": 26,
+    "disc": 1
    },
    "dungeon": {
     "n": 1,
-    "secs": 78.06555
+    "secs": 78.06555,
+    "track": 11,
+    "disc": 1
    },
    "emelia-s-theme": {
     "n": 1,
-    "secs": 77.805312
+    "secs": 77.805312,
+    "track": 8,
+    "disc": 1
    },
    "fight-alkaiser": {
     "n": 1,
-    "secs": 148.69727999999998
+    "secs": 148.69727999999998,
+    "track": 7,
+    "disc": 1
    },
    "fight-r3x": {
     "n": 1,
-    "secs": 62.37904
+    "secs": 62.37904,
+    "track": 72,
+    "disc": 3
    },
    "fighting-machine-arena": {
     "n": 1,
-    "secs": 84.983083
+    "secs": 84.983083,
+    "track": 22,
+    "disc": 1
    },
    "finale": {
     "n": 1,
-    "secs": 8.991539999999999
+    "secs": 8.991539999999999,
+    "track": 77,
+    "disc": 9
    },
    "hell": {
     "n": 1,
-    "secs": 132.206476
+    "secs": 132.206476,
+    "track": 59,
+    "disc": 3
    },
    "hey-fuse": {
     "n": 1,
-    "secs": 110.298829
+    "secs": 110.298829,
+    "track": 37,
+    "disc": 2
    },
    "hq": {
     "n": 1,
-    "secs": 143.64048
+    "secs": 143.64048,
+    "track": 35,
+    "disc": 2
    },
    "junk": {
     "n": 1,
-    "secs": 73.68459975000005
+    "secs": 73.68459975000005,
+    "track": 6,
+    "disc": 1
    },
    "koorong": {
     "n": 1,
-    "secs": 114.847612
+    "secs": 114.847612,
+    "track": 27,
+    "disc": 1
    },
    "kylin-s-theme": {
     "n": 1,
-    "secs": 75.7598
+    "secs": 75.7598,
+    "track": 41,
+    "disc": 2
    },
    "labyrinth-of-darkness": {
     "n": 1,
-    "secs": 66.179276
+    "secs": 66.179276,
+    "track": 51,
+    "disc": 2
    },
    "last-battle-asellus": {
     "n": 1,
-    "secs": 180.88425525000002
+    "secs": 180.88425525000002,
+    "track": 62,
+    "disc": 3
    },
    "last-battle-blue": {
     "n": 1,
-    "secs": 374.7259229999999
+    "secs": 374.7259229999999,
+    "track": 63,
+    "disc": 3
    },
    "last-battle-emelia": {
     "n": 1,
-    "secs": 160.51778299999998
+    "secs": 160.51778299999998,
+    "track": 68,
+    "disc": 3
    },
    "last-battle-lute": {
     "n": 1,
-    "secs": 188.88107850000006
+    "secs": 188.88107850000006,
+    "track": 67,
+    "disc": 3
    },
    "last-battle-red": {
     "n": 1,
-    "secs": 210.53898400000006
+    "secs": 210.53898400000006,
+    "track": 65,
+    "disc": 3
    },
    "last-battle-riki": {
     "n": 1,
-    "secs": 140.60844899999998
+    "secs": 140.60844899999998,
+    "track": 64,
+    "disc": 3
    },
    "last-battle-t260g": {
     "n": 1,
-    "secs": 250.800704
+    "secs": 250.800704,
+    "track": 66,
+    "disc": 3
    },
    "leonard-s-laboratory": {
     "n": 1,
-    "secs": 138.911696
+    "secs": 138.911696,
+    "track": 23,
+    "disc": 1
    },
    "let-s-swing": {
     "n": 1,
-    "secs": 85.734562375
+    "secs": 85.734562375,
+    "track": 16,
+    "disc": 1
    },
    "light-a-lighthouse": {
     "n": 1,
-    "secs": 257.266656
+    "secs": 257.266656,
+    "track": 73,
+    "disc": 3
    },
    "lummox-beat": {
     "n": 1,
-    "secs": 92.90647375
+    "secs": 92.90647375,
+    "track": 69,
+    "disc": 3
    },
    "magic-kingdom": {
     "n": 1,
-    "secs": 123.75067037500001
+    "secs": 123.75067037500001,
+    "track": 52,
+    "disc": 2
    },
    "march": {
     "n": 1,
-    "secs": 23.323975
+    "secs": 23.323975,
+    "track": 82,
+    "disc": 9
    },
    "margmel-in-ruin": {
     "n": 1,
-    "secs": 127.0590545
+    "secs": 127.0590545,
+    "track": 4,
+    "disc": 1
    },
    "melody-a-tune": {
     "n": 1,
-    "secs": 127.6598076250001
+    "secs": 127.6598076250001,
+    "track": 54,
+    "disc": 2
    },
    "melody-of-time": {
     "n": 1,
-    "secs": 96.770862
+    "secs": 96.770862,
+    "track": 48,
+    "disc": 2
    },
    "mosperiburg": {
     "n": 1,
-    "secs": 84.612793375
+    "secs": 84.612793375,
+    "track": 56,
+    "disc": 3
    },
    "nakajima-manufacturer": {
     "n": 1,
-    "secs": 43.3398
+    "secs": 43.3398,
+    "track": 21,
+    "disc": 1
    },
    "never": {
     "n": 1,
-    "secs": 108.594288
+    "secs": 108.594288,
+    "track": 61,
+    "disc": 3
    },
    "next": {
     "n": 1,
-    "secs": 8.10789025
+    "secs": 8.10789025,
+    "track": 30,
+    "disc": 1
    },
    "omble": {
     "n": 1,
-    "secs": 50.017688
+    "secs": 50.017688,
+    "track": 32,
+    "disc": 2
    },
    "opening-title": {
     "n": 1,
-    "secs": 144.93226825
+    "secs": 144.93226825,
+    "track": 2,
+    "disc": 1
    },
    "owmi": {
     "n": 1,
-    "secs": 99.71068862499999
+    "secs": 99.71068862499999,
+    "track": 39,
+    "disc": 2
    },
    "pursuit-1": {
     "n": 1,
-    "secs": 3.30208
+    "secs": 3.30208,
+    "track": 80,
+    "disc": 9
    },
    "pursuit-2": {
     "n": 1,
-    "secs": 1.65104
+    "secs": 1.65104,
+    "track": 81,
+    "disc": 9
    },
    "resolution": {
     "n": 1,
-    "secs": 76.19860012499998
+    "secs": 76.19860012499998,
+    "track": 55,
+    "disc": 2
    },
    "riki": {
     "n": 1,
-    "secs": 64.3182395625
+    "secs": 64.3182395625,
+    "track": 79,
+    "disc": 9
    },
    "robot-2": {
     "n": 1,
-    "secs": 119.7004
+    "secs": 119.7004,
+    "track": 78,
+    "disc": 9
    },
    "shingrow": {
     "n": 1,
-    "secs": 91.309472
+    "secs": 91.309472,
+    "track": 40,
+    "disc": 2
    },
    "shudder": {
     "n": 1,
-    "secs": 93.84178962499999
+    "secs": 93.84178962499999,
+    "track": 38,
+    "disc": 2
    },
    "shuzer": {
     "n": 1,
-    "secs": 78.44743375
+    "secs": 78.44743375,
+    "track": 42,
+    "disc": 2
    },
    "standard-yorkland-song": {
     "n": 1,
-    "secs": 136.32554666666667
+    "secs": 136.32554666666667,
+    "track": 5,
+    "disc": 1
    },
    "sunset-town": {
     "n": 1,
-    "secs": 64.8377925
+    "secs": 64.8377925,
+    "track": 15,
+    "disc": 1
    },
    "tears-of-joy": {
     "n": 1,
-    "secs": 93.728346375
+    "secs": 93.728346375,
+    "track": 76,
+    "disc": 9
    },
    "the-ancient-ship": {
     "n": 1,
-    "secs": 63.3708
+    "secs": 63.3708,
+    "track": 33,
+    "disc": 2
    },
    "the-opening-of-a-journey": {
     "n": 1,
-    "secs": 95.92663466666667
+    "secs": 95.92663466666667,
+    "track": 1,
+    "disc": 1
    },
    "the-ultimate-weapon": {
     "n": 1,
-    "secs": 108.96864
+    "secs": 108.96864,
+    "track": 60,
+    "disc": 3
    },
    "theme-of-the-cygnus": {
     "n": 1,
-    "secs": 92.901848
+    "secs": 92.901848,
+    "track": 24,
+    "disc": 1
    },
    "to-the-new-world": {
     "n": 1,
-    "secs": 35.206
+    "secs": 35.206,
+    "track": 14,
+    "disc": 1
    },
    "travelling-regions": {
     "n": 1,
-    "secs": 20.9475735
+    "secs": 20.9475735,
+    "track": 83,
+    "disc": 9
    },
    "trick": {
     "n": 1,
-    "secs": 59.76937024999999
+    "secs": 59.76937024999999,
+    "track": 10,
+    "disc": 1
    },
    "victory": {
     "n": 1,
-    "secs": 16.681641
+    "secs": 16.681641,
+    "track": 13,
+    "disc": 1
    },
    "wakatu": {
     "n": 1,
-    "secs": 101.745408
+    "secs": 101.745408,
+    "track": 57,
+    "disc": 3
    },
    "with-orlouge": {
     "n": 1,
-    "secs": 161.18886612499995
+    "secs": 161.18886612499995,
+    "track": 49,
+    "disc": 2
    }
   },
   "chip": "psf",

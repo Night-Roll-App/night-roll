@@ -17,39 +17,48 @@
   "tracks": {
    "a-requiem-ending": {
     "n": 9,
-    "secs": 91.063024
+    "secs": 91.063024,
+    "track": 9
    },
    "bloody-tears-street-day-time-bgm": {
     "n": 2,
-    "secs": 37.33184
+    "secs": 37.33184,
+    "track": 2
    },
    "dwelling-of-doom-mansion-bgm": {
     "n": 4,
-    "secs": 25.432316
+    "secs": 25.432316,
+    "track": 4
    },
    "game-over-game-over": {
     "n": 7,
-    "secs": 5.066464
+    "secs": 5.066464,
+    "track": 7
    },
    "last-boss-last-boss-bgm": {
     "n": 6,
-    "secs": 8.532992
+    "secs": 8.532992,
+    "track": 6
    },
    "message-of-darkness-naming-bgm": {
     "n": 8,
-    "secs": 15.99936
+    "secs": 15.99936,
+    "track": 8
    },
    "monster-dance-night-bgm": {
     "n": 3,
-    "secs": 23.599056
+    "secs": 23.599056,
+    "track": 3
    },
    "the-silence-of-the-daylight-town-stage-bgm": {
     "n": 1,
-    "secs": 34.131968
+    "secs": 34.131968,
+    "track": 1
    },
    "within-these-castle-walls-castle-bgm": {
     "n": 5,
-    "secs": 19.199232000000002
+    "secs": 19.199232000000002,
+    "track": 5
    }
   }
  }

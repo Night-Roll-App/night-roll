@@ -21,55 +21,68 @@
   "tracks": {
    "area-a-01": {
     "n": 1,
-    "secs": 71.597136
+    "secs": 71.597136,
+    "track": 2
    },
    "area-b-03": {
     "n": 3,
-    "secs": 39.198432000000004
+    "secs": 39.198432000000004,
+    "track": 4
    },
    "area-c-05": {
     "n": 5,
-    "secs": 63.464128
+    "secs": 63.464128,
+    "track": 5
    },
    "area-cleared-08": {
     "n": 8,
-    "secs": 8.466328
+    "secs": 8.466328,
+    "track": 9
    },
    "area-d-02": {
     "n": 2,
-    "secs": 61.597536
+    "secs": 61.597536,
+    "track": 6
    },
    "areas-e-f-06": {
     "n": 6,
-    "secs": 48.181406
+    "secs": 48.181406,
+    "track": 7
    },
    "boss-theme-07": {
     "n": 7,
-    "secs": 27.198912
+    "secs": 27.198912,
+    "track": 8
    },
    "ending-credits-0e": {
     "n": 13,
-    "secs": 91.729664
+    "secs": 91.729664,
+    "track": 11
    },
    "final-area-04": {
     "n": 4,
-    "secs": 59.9976
+    "secs": 59.9976,
+    "track": 10
    },
    "game-over-09": {
     "n": 9,
-    "secs": 16.982654
+    "secs": 16.982654,
+    "track": 13
    },
    "highscore-0d": {
     "n": 12,
-    "secs": 8.532992
+    "secs": 8.532992,
+    "track": 12
    },
    "introduction-0a": {
     "n": 10,
-    "secs": 22.899084000000002
+    "secs": 22.899084000000002,
+    "track": 1
    },
    "stage-select-0c": {
     "n": 11,
-    "secs": 16.649334
+    "secs": 16.649334,
+    "track": 3
    }
   }
  }

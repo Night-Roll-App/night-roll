@@ -39,227 +39,283 @@
   "tracks": {
    "battle-across-the-sky": {
     "n": 58,
-    "secs": 12.066184
+    "secs": 12.066184,
+    "track": 32
    },
    "bird-chirp": {
     "n": 38,
-    "secs": 1.149954
+    "secs": 1.149954,
+    "track": 46
    },
    "bonus-perfect": {
     "n": 48,
-    "secs": 3.799848
+    "secs": 3.799848,
+    "track": 54
    },
    "bonus": {
     "n": 49,
-    "secs": 2.283242
+    "secs": 2.283242,
+    "track": 53
    },
    "boss": {
     "n": 13,
-    "secs": 28.798848
+    "secs": 28.798848,
+    "track": 29
    },
    "butter-building-theme": {
     "n": 46,
-    "secs": 6.399744
+    "secs": 6.399744,
+    "track": 5
    },
    "choices": {
     "n": 55,
-    "secs": 11.732864
+    "secs": 11.732864,
+    "track": 40
    },
    "cloud-tops-intro": {
     "n": 33,
-    "secs": 44.998200000000004
+    "secs": 44.998200000000004,
+    "track": 21
    },
    "cloud-tops": {
     "n": 34,
-    "secs": 35.198592
+    "secs": 35.198592,
+    "track": 22
    },
    "crane-fever-intense": {
     "n": 11,
-    "secs": 10.66624
+    "secs": 10.66624,
+    "track": 43
    },
    "crane-fever": {
     "n": 10,
-    "secs": 25.598976
+    "secs": 25.598976,
+    "track": 42
    },
    "egg-catcher-intro": {
     "n": 20,
-    "secs": 19.565884
+    "secs": 19.565884,
+    "track": 44
    },
    "egg-catcher": {
     "n": 21,
-    "secs": 14.932736
+    "secs": 14.932736,
+    "track": 45
    },
    "epilogue": {
     "n": 56,
-    "secs": 74.647014
+    "secs": 74.647014,
+    "track": 56
    },
    "fanfare-long": {
     "n": 8,
-    "secs": 6.383078
+    "secs": 6.383078,
+    "track": 39
    },
    "fanfare-short": {
     "n": 9,
-    "secs": 3.58319
+    "secs": 3.58319,
+    "track": 38
    },
    "fire": {
     "n": 26,
-    "secs": 1.16662
+    "secs": 1.16662,
+    "track": 49
    },
    "first-you-draw-a-circle": {
     "n": 50,
-    "secs": 7.399704
+    "secs": 7.399704,
+    "track": 1
    },
    "forest-trail-intro": {
     "n": 18,
-    "secs": 44.764876
+    "secs": 44.764876,
+    "track": 15
    },
    "forest-trail": {
     "n": 19,
-    "secs": 41.065024
+    "secs": 41.065024,
+    "track": 16
    },
    "fountain-of-dreams": {
     "n": 57,
-    "secs": 51.981254
+    "secs": 51.981254,
+    "track": 30
    },
    "game-over": {
     "n": 12,
-    "secs": 3.5665240000000002
+    "secs": 3.5665240000000002,
+    "track": 36
    },
    "goal": {
     "n": 6,
-    "secs": 2.4999000000000002
+    "secs": 2.4999000000000002,
+    "track": 37
    },
    "grape-garden-theme": {
     "n": 36,
-    "secs": 10.66624
+    "secs": 10.66624,
+    "track": 6
    },
    "grassy-bluff": {
     "n": 16,
-    "secs": 25.598976
+    "secs": 25.598976,
+    "track": 12
    },
    "green-fields-intro": {
     "n": 1,
-    "secs": 53.16454
+    "secs": 53.16454,
+    "track": 10
    },
    "green-fields": {
     "n": 2,
-    "secs": 42.66496
+    "secs": 42.66496,
+    "track": 11
    },
    "green-greens-intro": {
     "n": 4,
-    "secs": 31.782062
+    "secs": 31.782062,
+    "track": 27
    },
    "green-greens": {
     "n": 5,
-    "secs": 25.382318
+    "secs": 25.382318,
+    "track": 28
    },
    "gunshot": {
     "n": 23,
-    "secs": 2.066584
+    "secs": 2.066584,
+    "track": 50
    },
    "high-hills-intro": {
     "n": 31,
-    "secs": 54.83114
+    "secs": 54.83114,
+    "track": 13
    },
    "high-hills": {
     "n": 32,
-    "secs": 43.99824
+    "secs": 43.99824,
+    "track": 14
    },
    "hit": {
     "n": 25,
-    "secs": 1.849926
+    "secs": 1.849926,
+    "track": 51
    },
    "hyper": {
     "n": 3,
-    "secs": 5.33312
+    "secs": 5.33312,
+    "track": 41
    },
    "ice-cream-island-theme": {
     "n": 45,
-    "secs": 4.266496
+    "secs": 4.266496,
+    "track": 4
    },
    "island-paradise-intro": {
     "n": 41,
-    "secs": 59.297628
+    "secs": 59.297628,
+    "track": 17
    },
    "island-paradise": {
     "n": 42,
-    "secs": 51.297948
+    "secs": 51.297948,
+    "track": 18
    },
    "kirby-s-adventure": {
     "n": 54,
-    "secs": 31.682066
+    "secs": 31.682066,
+    "track": 2
    },
    "miss": {
     "n": 40,
-    "secs": 3.233204
+    "secs": 3.233204,
+    "track": 35
    },
    "nightmare-emerges": {
     "n": 53,
-    "secs": 10.549578
+    "secs": 10.549578,
+    "track": 31
    },
    "nightmare": {
     "n": 15,
-    "secs": 35.698572
+    "secs": 35.698572,
+    "track": 34
    },
    "no-bonus": {
     "n": 47,
-    "secs": 3.99984
+    "secs": 3.99984,
+    "track": 52
    },
    "open-waters-intro": {
     "n": 43,
-    "secs": 42.66496
+    "secs": 42.66496,
+    "track": 23
    },
    "open-waters": {
     "n": 44,
-    "secs": 34.131968
+    "secs": 34.131968,
+    "track": 24
    },
    "orange-ocean-theme": {
     "n": 22,
-    "secs": 19.199232000000002
+    "secs": 19.199232000000002,
+    "track": 8
    },
    "penalty": {
     "n": 30,
-    "secs": 2.549898
+    "secs": 2.549898,
+    "track": 48
    },
    "quick-draw": {
     "n": 27,
-    "secs": 2.699892
+    "secs": 2.699892,
+    "track": 47
    },
    "rainbow-resort-theme": {
     "n": 7,
-    "secs": 9.599616000000001
+    "secs": 9.599616000000001,
+    "track": 9
    },
    "spring-in-your-step-bad-rip": {
     "n": 17,
-    "secs": 12.799488
+    "secs": 12.799488,
+    "track": 55
    },
    "starry-sky-intro": {
     "n": 28,
-    "secs": 45.098196
+    "secs": 45.098196,
+    "track": 25
    },
    "starry-sky": {
     "n": 29,
-    "secs": 35.198592
+    "secs": 35.198592,
+    "track": 26
    },
    "the-moon": {
     "n": 14,
-    "secs": 15.399384
+    "secs": 15.399384,
+    "track": 33
    },
    "tower-to-the-sky-intro": {
     "n": 51,
-    "secs": 47.83142
+    "secs": 47.83142,
+    "track": 19
    },
    "tower-to-the-sky": {
     "n": 52,
-    "secs": 38.398464000000004
+    "secs": 38.398464000000004,
+    "track": 20
    },
    "vegetable-valley-theme": {
     "n": 35,
-    "secs": 19.199232000000002
+    "secs": 19.199232000000002,
+    "track": 3
    },
    "yogurt-yard-theme": {
     "n": 37,
-    "secs": 7.466368
+    "secs": 7.466368,
+    "track": 7
    }
   }
  }

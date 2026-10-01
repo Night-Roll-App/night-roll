@@ -19,63 +19,78 @@
   "tracks": {
    "black-night-final-battle": {
     "n": 10,
-    "secs": 17.599296
+    "secs": 17.599296,
+    "track": 10
    },
    "death": {
     "n": 14,
-    "secs": 2.599896
+    "secs": 2.599896,
+    "track": 14
    },
    "game-complete": {
     "n": 13,
-    "secs": 5.099796
+    "secs": 5.099796,
+    "track": 12
    },
    "game-over": {
     "n": 15,
-    "secs": 5.216458
+    "secs": 5.216458,
+    "track": 15
    },
    "heart-of-fire-prisonhold": {
     "n": 6,
-    "secs": 57.83102
+    "secs": 57.83102,
+    "track": 6
    },
    "introduction-castle-gate": {
     "n": 1,
-    "secs": 7.399704
+    "secs": 7.399704,
+    "track": 1
    },
    "nightmare-dracula-s-quarters": {
     "n": 8,
-    "secs": 35.198592
+    "secs": 35.198592,
+    "track": 8
    },
    "out-of-time-upper-terrace": {
     "n": 5,
-    "secs": 31.99872
+    "secs": 31.99872,
+    "track": 7
    },
    "poison-mind-boss-theme": {
     "n": 9,
-    "secs": 7.466368
+    "secs": 7.466368,
+    "track": 9
    },
    "stalker-armory": {
     "n": 3,
-    "secs": 34.398624
+    "secs": 34.398624,
+    "track": 3
    },
    "vampire-killer-courtyard": {
     "n": 2,
-    "secs": 29.898804000000002
+    "secs": 29.898804000000002,
+    "track": 2
    },
    "victory": {
     "n": 12,
-    "secs": 5.08313
+    "secs": 5.08313,
+    "track": 11
    },
    "voyager-ending": {
     "n": 11,
-    "secs": 53.08121
+    "secs": 53.08121,
+    "track": 13
    },
    "walking-edge-castle-swamp": {
     "n": 7,
-    "secs": 41.598336
+    "secs": 41.598336,
+    "track": 5
    },
    "wicked-child-upper-yard": {
     "n": 4,
-    "secs": 68.16394
+    "secs": 68.16394,
+    "track": 4
    }
   }
  }

@@ -22,155 +22,193 @@
   "tracks": {
    "cave-dungeon-both-variations": {
     "n": 1,
-    "secs": 122.84774436092673
+    "secs": 122.84774436092673,
+    "track": 17
    },
    "cave-dungeon-hazy-maze": {
     "n": 1,
-    "secs": 122.84774436092673
+    "secs": 122.84774436092673,
+    "track": 16
    },
    "cave-dungeon": {
     "n": 1,
-    "secs": 122.84774436092673
+    "secs": 122.84774436092673,
+    "track": 15
    },
    "correct-solution": {
     "n": 1,
-    "secs": 2.9614093959731336
+    "secs": 2.9614093959731336,
+    "track": 22
    },
    "course-clear": {
     "n": 1,
-    "secs": 2.3076923076923017
+    "secs": 2.3076923076923017,
+    "track": 28
    },
    "dire-dire-docks-in-water": {
     "n": 1,
-    "secs": 90.4135338345925
+    "secs": 90.4135338345925,
+    "track": 9
    },
    "dire-dire-docks-underwater-cave": {
     "n": 1,
-    "secs": 90.4135338345925
+    "secs": 90.4135338345925,
+    "track": 10
    },
    "dire-dire-docks": {
     "n": 1,
-    "secs": 90.4135338345925
+    "secs": 90.4135338345925,
+    "track": 8
    },
    "ending-demo": {
     "n": 1,
-    "secs": 72.78124999999825
+    "secs": 72.78124999999825,
+    "track": 36
    },
    "file-select": {
     "n": 1,
-    "secs": 19.199999999999445
+    "secs": 19.199999999999445,
+    "track": 21
    },
    "game-start": {
     "n": 1,
-    "secs": 2.4639423076923146
+    "secs": 2.4639423076923146,
+    "track": 27
    },
    "haunted-house": {
     "n": 1,
-    "secs": 104.21052631576619
+    "secs": 104.21052631576619,
+    "track": 13
    },
    "inside-the-castle-walls": {
     "n": 1,
-    "secs": 61.4137931034523
+    "secs": 61.4137931034523,
+    "track": 6
    },
    "koopa-clear": {
     "n": 1,
-    "secs": 2.452606635071099
+    "secs": 2.452606635071099,
+    "track": 33
    },
    "koopa-s-message": {
     "n": 1,
-    "secs": 2.4999999999999982
+    "secs": 2.4999999999999982,
+    "track": 30
    },
    "koopa-s-road": {
     "n": 1,
-    "secs": 71.11111111110752
+    "secs": 71.11111111110752,
+    "track": 31
    },
    "koopa-s-theme": {
     "n": 1,
-    "secs": 71.73913043477907
+    "secs": 71.73913043477907,
+    "track": 32
    },
    "lakitu-s-message": {
     "n": 1,
-    "secs": 4.537166861091153
+    "secs": 4.537166861091153,
+    "track": 38
    },
    "lethal-lava-land": {
     "n": 1,
-    "secs": 78.17819148936417
+    "secs": 78.17819148936417,
+    "track": 11
    },
    "looping-steps": {
     "n": 1,
-    "secs": 14.793749999999427
+    "secs": 14.793749999999427,
+    "track": 7
    },
    "main-theme": {
     "n": 1,
-    "secs": 72.21238938053907
+    "secs": 72.21238938053907,
+    "track": 4
    },
    "merry-go-round": {
     "n": 1,
-    "secs": 28.89375000000229
+    "secs": 28.89375000000229,
+    "track": 14
    },
    "metallic-mario": {
     "n": 1,
-    "secs": 27.75510204081831
+    "secs": 27.75510204081831,
+    "track": 20
    },
    "opening": {
     "n": 1,
-    "secs": 30.601851851850356
+    "secs": 30.601851851850356,
+    "track": 3
    },
    "peach-s-message": {
     "n": 1,
-    "secs": 5.603197674418654
+    "secs": 5.603197674418654,
+    "track": 2
    },
    "piranha-plant-s-lullaby": {
     "n": 1,
-    "secs": 67.646484375
+    "secs": 67.646484375,
+    "track": 18
    },
    "power-star": {
     "n": 1,
-    "secs": 4.1145833333333135
+    "secs": 4.1145833333333135,
+    "track": 24
    },
    "powerful-mario": {
     "n": 1,
-    "secs": 24.888888888889447
+    "secs": 24.888888888889447,
+    "track": 19
    },
    "race-fanfare": {
     "n": 1,
-    "secs": 2.6874999999999956
+    "secs": 2.6874999999999956,
+    "track": 25
    },
    "slider": {
     "n": 1,
-    "secs": 77.14285714285596
+    "secs": 77.14285714285596,
+    "track": 5
    },
    "snow-mountain": {
     "n": 1,
-    "secs": 90.9803921568458
+    "secs": 90.9803921568458,
+    "track": 12
    },
    "staff-roll": {
     "n": 1,
-    "secs": 200.5606633825796
+    "secs": 200.5606633825796,
+    "track": 37
    },
    "stage-boss": {
     "n": 1,
-    "secs": 42.83333333332762
+    "secs": 42.83333333332762,
+    "track": 29
    },
    "star-catch-fanfare": {
     "n": 1,
-    "secs": 3.4615384615384515
+    "secs": 3.4615384615384515,
+    "track": 26
    },
    "title-theme": {
     "n": 1,
-    "secs": 103.26308139532922
+    "secs": 103.26308139532922,
+    "track": 1
    },
    "toad-s-message": {
     "n": 1,
-    "secs": 2.1764705882352873
+    "secs": 2.1764705882352873,
+    "track": 23
    },
    "ultimate-koopa-clear": {
     "n": 1,
-    "secs": 24.512499999999143
+    "secs": 24.512499999999143,
+    "track": 35
    },
    "ultimate-koopa": {
     "n": 1,
-    "secs": 83.3865077227632
+    "secs": 83.3865077227632,
+    "track": 34
    }
   },
   "chip": "usf",

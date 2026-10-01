@@ -17,235 +17,351 @@
   "tracks": {
    "007-watch-theme": {
     "n": 1,
-    "secs": 36
+    "secs": 36,
+    "track": 48,
+    "disc": 3
    },
    "archives-x": {
     "n": 1,
-    "secs": 52.636986301369866
+    "secs": 52.636986301369866,
+    "track": 30,
+    "disc": 2
    },
    "archives": {
     "n": 1,
-    "secs": 136.91542288557216
+    "secs": 136.91542288557216,
+    "track": 11,
+    "disc": 1
    },
    "aztec-x": {
     "n": 1,
-    "secs": 56
+    "secs": 56,
+    "track": 38,
+    "disc": 2
    },
    "aztec": {
     "n": 1,
-    "secs": 162.7826086956522
+    "secs": 162.7826086956522,
+    "track": 19,
+    "disc": 1
    },
    "bungeee": {
     "n": 1,
-    "secs": 66
+    "secs": 66,
+    "track": 53,
+    "disc": 3
    },
    "bunker-1-x": {
     "n": 1,
-    "secs": 54.857142857142854
+    "secs": 54.857142857142854,
+    "track": 24,
+    "disc": 2
    },
    "bunker-1": {
     "n": 1,
-    "secs": 152
+    "secs": 152,
+    "track": 5,
+    "disc": 1
    },
    "bunker-2-x": {
     "n": 1,
-    "secs": 61.44
+    "secs": 61.44,
+    "track": 28,
+    "disc": 2
    },
    "bunker-2": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 9,
+    "disc": 1
    },
    "captured-statue": {
     "n": 1,
-    "secs": 5.305851063829787
+    "secs": 5.305851063829787,
+    "track": 57,
+    "disc": 3
    },
    "captured-surface": {
     "n": 1,
-    "secs": 11.326923076923077
+    "secs": 11.326923076923077,
+    "track": 56,
+    "disc": 3
    },
    "caverns-x": {
     "n": 1,
-    "secs": 54.857142857142854
+    "secs": 54.857142857142854,
+    "track": 36,
+    "disc": 2
    },
    "caverns": {
     "n": 1,
-    "secs": 249.79591836734693
+    "secs": 249.79591836734693,
+    "track": 17,
+    "disc": 1
    },
    "citadel": {
     "n": 1,
-    "secs": 128.4
+    "secs": 128.4,
+    "track": 43,
+    "disc": 3
    },
    "control-x": {
     "n": 1,
-    "secs": 49.77777777777778
+    "secs": 49.77777777777778,
+    "track": 35,
+    "disc": 2
    },
    "control": {
     "n": 1,
-    "secs": 136
+    "secs": 136,
+    "track": 16,
+    "disc": 1
    },
    "cradle-x": {
     "n": 1,
-    "secs": 55.576022314615024
+    "secs": 55.576022314615024,
+    "track": 37,
+    "disc": 2
    },
    "cradle": {
     "n": 1,
-    "secs": 121.25677595916005
+    "secs": 121.25677595916005,
+    "track": 18,
+    "disc": 1
    },
    "dam-x": {
     "n": 1,
-    "secs": 49.54838709677419
+    "secs": 49.54838709677419,
+    "track": 21,
+    "disc": 2
    },
    "dam": {
     "n": 1,
-    "secs": 145.71428571428572
+    "secs": 145.71428571428572,
+    "track": 1,
+    "disc": 1
    },
    "depot-x": {
     "n": 1,
-    "secs": 50.90909090909091
+    "secs": 50.90909090909091,
+    "track": 32,
+    "disc": 2
    },
    "depot": {
     "n": 1,
-    "secs": 136.6153846153846
+    "secs": 136.6153846153846,
+    "track": 13,
+    "disc": 1
    },
    "egypt-x": {
     "n": 1,
-    "secs": 55.65217391304348
+    "secs": 55.65217391304348,
+    "track": 39,
+    "disc": 2
    },
    "egypt": {
     "n": 1,
-    "secs": 162.406015037594
+    "secs": 162.406015037594,
+    "track": 20,
+    "disc": 1
    },
    "elevator-caverns": {
     "n": 1,
-    "secs": 31.035714285714285
+    "secs": 31.035714285714285,
+    "track": 46,
+    "disc": 3
    },
    "elevator-control": {
     "n": 1,
-    "secs": 68.61
+    "secs": 68.61,
+    "track": 45,
+    "disc": 3
    },
    "ending-theme": {
     "n": 1,
-    "secs": 60
+    "secs": 60,
+    "track": 51,
+    "disc": 3
    },
    "facility-x": {
     "n": 1,
-    "secs": 46.22222222222222
+    "secs": 46.22222222222222,
+    "track": 22,
+    "disc": 2
    },
    "facility": {
     "n": 1,
-    "secs": 120
+    "secs": 120,
+    "track": 2,
+    "disc": 1
    },
    "frigate-beta": {
     "n": 1,
-    "secs": 12.173913043478262
+    "secs": 12.173913043478262,
+    "track": 58,
+    "disc": 3
    },
    "frigate-x": {
     "n": 1,
-    "secs": 46.3448275862069
+    "secs": 46.3448275862069,
+    "track": 26,
+    "disc": 2
    },
    "frigate": {
     "n": 1,
-    "secs": 134.76923076923077
+    "secs": 134.76923076923077,
+    "track": 7,
+    "disc": 1
    },
    "james-bond-theme": {
     "n": 1,
-    "secs": 83.03356303069123
+    "secs": 83.03356303069123,
+    "track": 41,
+    "disc": 3
    },
    "jungle-x": {
     "n": 1,
-    "secs": 46.829268292682926
+    "secs": 46.829268292682926,
+    "track": 34,
+    "disc": 2
    },
    "jungle": {
     "n": 1,
-    "secs": 238.08
+    "secs": 238.08,
+    "track": 15,
+    "disc": 1
    },
    "mission-death-beta": {
     "n": 1,
-    "secs": 16.75235632183908
+    "secs": 16.75235632183908,
+    "track": 40,
+    "disc": 3
    },
    "mission-death": {
     "n": 1,
-    "secs": 13.013921901528015
+    "secs": 13.013921901528015,
+    "track": 49,
+    "disc": 3
    },
    "mission-select": {
     "n": 1,
-    "secs": 37.89473684210526
+    "secs": 37.89473684210526,
+    "track": 47,
+    "disc": 3
    },
    "multiplayer-death-beta": {
     "n": 1,
-    "secs": 8
+    "secs": 8,
+    "track": 54,
+    "disc": 3
    },
    "multiplayer-death": {
     "n": 1,
-    "secs": 9.912170364169109
+    "secs": 9.912170364169109,
+    "track": 55,
+    "disc": 3
    },
    "nintendo-and-rareware": {
     "n": 1,
-    "secs": 75.84
+    "secs": 75.84,
+    "track": 50,
+    "disc": 3
    },
    "runway-plane": {
     "n": 1,
-    "secs": 11.451597695169918
+    "secs": 11.451597695169918,
+    "track": 52,
+    "disc": 3
    },
    "runway-x": {
     "n": 1,
-    "secs": 45.354330708661415
+    "secs": 45.354330708661415,
+    "track": 23,
+    "disc": 2
    },
    "runway": {
     "n": 1,
-    "secs": 155.52
+    "secs": 155.52,
+    "track": 3,
+    "disc": 1
    },
    "silo-x": {
     "n": 1,
-    "secs": 54.857142857142854
+    "secs": 54.857142857142854,
+    "track": 25,
+    "disc": 2
    },
    "silo": {
     "n": 1,
-    "secs": 140.16
+    "secs": 140.16,
+    "track": 6,
+    "disc": 1
    },
    "statue-x": {
     "n": 1,
-    "secs": 52.36363636363637
+    "secs": 52.36363636363637,
+    "track": 29,
+    "disc": 2
    },
    "statue": {
     "n": 1,
-    "secs": 100.40816326530613
+    "secs": 100.40816326530613,
+    "track": 10,
+    "disc": 1
    },
    "streets-x": {
     "n": 1,
-    "secs": 57.6
+    "secs": 57.6,
+    "track": 31,
+    "disc": 2
    },
    "streets": {
     "n": 1,
-    "secs": 164.57142857142858
+    "secs": 164.57142857142858,
+    "track": 12,
+    "disc": 1
    },
    "surface-1": {
     "n": 1,
-    "secs": 245.76
+    "secs": 245.76,
+    "track": 4,
+    "disc": 1
    },
    "surface-2-x": {
     "n": 1,
-    "secs": 61.11363636363637
+    "secs": 61.11363636363637,
+    "track": 27,
+    "disc": 2
    },
    "surface-2": {
     "n": 1,
-    "secs": 153.6
+    "secs": 153.6,
+    "track": 8,
+    "disc": 1
    },
    "the-basement": {
     "n": 1,
-    "secs": 108.31858407079646
+    "secs": 108.31858407079646,
+    "track": 42,
+    "disc": 3
    },
    "train-x": {
     "n": 1,
-    "secs": 55.08196721311475
+    "secs": 55.08196721311475,
+    "track": 33,
+    "disc": 2
    },
    "train": {
     "n": 1,
-    "secs": 166
+    "secs": 166,
+    "track": 14,
+    "disc": 1
    },
    "unsquare-water-dance": {
     "n": 1,
-    "secs": 133.5
+    "secs": 133.5,
+    "track": 44,
+    "disc": 3
    }
   },
   "chip": "usf",

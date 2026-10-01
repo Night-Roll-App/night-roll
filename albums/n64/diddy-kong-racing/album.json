@@ -74,415 +74,518 @@
   "tracks": {
    "ancient-lake-fast": {
     "n": 1,
-    "secs": 93.33333333333333
+    "secs": 93.33333333333333,
+    "track": 18
    },
    "ancient-lake": {
     "n": 1,
-    "secs": 93.33333333333333
+    "secs": 93.33333333333333,
+    "track": 17
    },
    "background-effects-1": {
     "n": 1,
-    "secs": 58.10526315789474
+    "secs": 58.10526315789474,
+    "track": 99
    },
    "background-effects-2": {
     "n": 1,
-    "secs": 327.27272727272725
+    "secs": 327.27272727272725,
+    "track": 100
    },
    "background-effects-3": {
     "n": 1,
-    "secs": 40
+    "secs": 40,
+    "track": 101
    },
    "boulder-canyon-all-in-one-fast": {
     "n": 1,
-    "secs": 18.46153846153846
+    "secs": 18.46153846153846,
+    "track": 41
    },
    "boulder-canyon-all-in-one": {
     "n": 1,
-    "secs": 18.46153846153846
+    "secs": 18.46153846153846,
+    "track": 37
    },
    "boulder-canyon-inner-castle-fast": {
     "n": 1,
-    "secs": 18.46153846153846
+    "secs": 18.46153846153846,
+    "track": 44
    },
    "boulder-canyon-inner-castle": {
     "n": 1,
-    "secs": 18.46153846153846
+    "secs": 18.46153846153846,
+    "track": 40
    },
    "boulder-canyon-outer-castle-fast": {
     "n": 1,
-    "secs": 18.46153846153846
+    "secs": 18.46153846153846,
+    "track": 43
    },
    "boulder-canyon-outer-castle": {
     "n": 1,
-    "secs": 18.46153846153846
+    "secs": 18.46153846153846,
+    "track": 39
    },
    "boulder-canyon-outside-castle-fast": {
     "n": 1,
-    "secs": 18.46153846153846
+    "secs": 18.46153846153846,
+    "track": 42
    },
    "boulder-canyon-outside-castle": {
     "n": 1,
-    "secs": 18.46153846153846
+    "secs": 18.46153846153846,
+    "track": 38
    },
    "crescent-island-credits-2-fast": {
     "n": 1,
-    "secs": 93.91304347826087
+    "secs": 93.91304347826087,
+    "track": 30
    },
    "crescent-island-credits-2": {
     "n": 1,
-    "secs": 93.91304347826087
+    "secs": 93.91304347826087,
+    "track": 29
    },
    "darkmoon-caverns-credits-fast": {
     "n": 1,
-    "secs": 78.18181818181819
+    "secs": 78.18181818181819,
+    "track": 55
    },
    "darkmoon-caverns-credits": {
     "n": 1,
-    "secs": 78.18181818181819
+    "secs": 78.18181818181819,
+    "track": 54
    },
    "end-boss-level-finish": {
     "n": 1,
-    "secs": 5.979166666666667
+    "secs": 5.979166666666667,
+    "track": 76
    },
    "end-boss-level-start": {
     "n": 1,
-    "secs": 24
+    "secs": 24,
+    "track": 74
    },
    "end-boss": {
     "n": 1,
-    "secs": 72.72727272727273
+    "secs": 72.72727272727273,
+    "track": 75
    },
    "ending-1": {
     "n": 1,
-    "secs": 52.075471698113205
+    "secs": 52.075471698113205,
+    "track": 57
    },
    "ending-2-part-2": {
     "n": 1,
-    "secs": 56.13911290322581
+    "secs": 56.13911290322581,
+    "track": 62
    },
    "ending-2": {
     "n": 1,
-    "secs": 53.83064516129032
+    "secs": 53.83064516129032,
+    "track": 61
    },
    "enter-end-boss-level": {
     "n": 1,
-    "secs": 16.666666666666668
+    "secs": 16.666666666666668,
+    "track": 73
    },
    "everfrost-peak-snowball-valley-fast": {
     "n": 1,
-    "secs": 100
+    "secs": 100,
+    "track": 32
    },
    "everfrost-peak-snowball-valley": {
     "n": 1,
-    "secs": 100
+    "secs": 100,
+    "track": 31
    },
    "fire-mountain-darkwater-beach-icicle-pyramid-smokey-castle": {
     "n": 1,
-    "secs": 151.8987341772152
+    "secs": 151.8987341772152,
+    "track": 56
    },
    "first": {
     "n": 1,
-    "secs": 3.6
+    "secs": 3.6,
+    "track": 16
    },
    "fossil-canyon-fast": {
     "n": 1,
-    "secs": 81.29032258064517
+    "secs": 81.29032258064517,
+    "track": 20
    },
    "fossil-canyon": {
     "n": 1,
-    "secs": 81.29032258064517
+    "secs": 81.29032258064517,
+    "track": 19
    },
    "frosty-village-fast": {
     "n": 1,
-    "secs": 107.23404255319149
+    "secs": 107.23404255319149,
+    "track": 36
    },
    "frosty-village": {
     "n": 1,
-    "secs": 107.23404255319149
+    "secs": 107.23404255319149,
+    "track": 35
    },
    "genie-race-fast": {
     "n": 1,
-    "secs": 83.47826086956522
+    "secs": 83.47826086956522,
+    "track": 64
    },
    "genie-race": {
     "n": 1,
-    "secs": 83.47826086956522
+    "secs": 83.47826086956522,
+    "track": 63
    },
    "genie-s-tip": {
     "n": 1,
-    "secs": 1.9453125
+    "secs": 1.9453125,
+    "track": 65
    },
    "genie": {
     "n": 1,
-    "secs": 48
+    "secs": 48,
+    "track": 66
    },
    "get-piece-of-amulet": {
     "n": 1,
-    "secs": 2.5833333333333335
+    "secs": 2.5833333333333335,
+    "track": 67
    },
    "get-ready": {
     "n": 1,
-    "secs": 3.0375
+    "secs": 3.0375,
+    "track": 15
    },
    "gets-balloon-from-genie": {
     "n": 1,
-    "secs": 17.22972972972973
+    "secs": 17.22972972972973,
+    "track": 68
    },
    "greenwood-village-windmill-plains-fast": {
     "n": 1,
-    "secs": 78.18181818181819
+    "secs": 78.18181818181819,
+    "track": 46
    },
    "greenwood-village-windmill-plains": {
     "n": 1,
-    "secs": 78.18181818181819
+    "secs": 78.18181818181819,
+    "track": 45
    },
    "haunted-wood-fast": {
     "n": 1,
-    "secs": 73.125
+    "secs": 73.125,
+    "track": 48
    },
    "haunted-wood-ghosts": {
     "n": 1,
-    "secs": 13.375
+    "secs": 13.375,
+    "track": 49
    },
    "haunted-wood": {
     "n": 1,
-    "secs": 73.125
+    "secs": 73.125,
+    "track": 47
    },
    "hot-top-volcano-fast": {
     "n": 1,
-    "secs": 99.1304347826087
+    "secs": 99.1304347826087,
+    "track": 24
    },
    "hot-top-volcano": {
     "n": 1,
-    "secs": 99.1304347826087
+    "secs": 99.1304347826087,
+    "track": 23
    },
    "island-all-in-one": {
     "n": 1,
-    "secs": 74.71698113207547
+    "secs": 74.71698113207547,
+    "track": 82
    },
    "island-basic-fade-in": {
     "n": 1,
-    "secs": 74.71698113207547
+    "secs": 74.71698113207547,
+    "track": 84
    },
    "island-basic": {
     "n": 1,
-    "secs": 74.71698113207547
+    "secs": 74.71698113207547,
+    "track": 83
    },
    "island-dino-domain": {
     "n": 1,
-    "secs": 74.71698113207547
+    "secs": 74.71698113207547,
+    "track": 86
    },
    "island-dragon-forest": {
     "n": 1,
-    "secs": 74.71698113207547
+    "secs": 74.71698113207547,
+    "track": 89
    },
    "island-genie": {
     "n": 1,
-    "secs": 74.71698113207547
+    "secs": 74.71698113207547,
+    "track": 85
    },
    "island-sherbet-island": {
     "n": 1,
-    "secs": 74.71698113207547
+    "secs": 74.71698113207547,
+    "track": 88
    },
    "island-snowflake-mountain": {
     "n": 1,
-    "secs": 74.71698113207547
+    "secs": 74.71698113207547,
+    "track": 87
    },
    "jungle-falls-fast": {
     "n": 1,
-    "secs": 76.36363636363636
+    "secs": 76.36363636363636,
+    "track": 22
    },
    "jungle-falls": {
     "n": 1,
-    "secs": 76.36363636363636
+    "secs": 76.36363636363636,
+    "track": 21
    },
    "key-collected": {
     "n": 1,
-    "secs": 1.735611510791367
+    "secs": 1.735611510791367,
+    "track": 69
    },
    "key-opens-the-door-won-trophy": {
     "n": 1,
-    "secs": 11.612903225806452
+    "secs": 11.612903225806452,
+    "track": 70
    },
    "lost-against-end-boss": {
     "n": 1,
-    "secs": 18.896103896103895
+    "secs": 18.896103896103895,
+    "track": 77
    },
    "lost-against-wizpig": {
     "n": 1,
-    "secs": 6.03125
+    "secs": 6.03125,
+    "track": 80
    },
    "lost": {
     "n": 1,
-    "secs": 4.700520833333333
+    "secs": 4.700520833333333,
+    "track": 72
    },
    "no-access": {
     "n": 1,
-    "secs": 2.90625
+    "secs": 2.90625,
+    "track": 71
    },
    "options-level-selection": {
     "n": 1,
-    "secs": 48.010416666666664
+    "secs": 48.010416666666664,
+    "track": 3
    },
    "pirate-lagoon-treasure-caves-fast": {
     "n": 1,
-    "secs": 80
+    "secs": 80,
+    "track": 28
    },
    "pirate-lagoon-treasure-caves": {
     "n": 1,
-    "secs": 80
+    "secs": 80,
+    "track": 27
    },
    "player-select-all-in-one": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 4
    },
    "player-select-banjo": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 9
    },
    "player-select-bumper": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 8
    },
    "player-select-conker": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 10
    },
    "player-select-diddy": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 6
    },
    "player-select-drumstick": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 7
    },
    "player-select-krunch": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 5
    },
    "player-select-pipsy": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 13
    },
    "player-select-t-t": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 12
    },
    "player-select-timber": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 14
    },
    "player-select-tiptup": {
     "n": 1,
-    "secs": 21.0989010989011
+    "secs": 21.0989010989011,
+    "track": 11
    },
    "rareware-logo": {
     "n": 1,
-    "secs": 87.12087912087912
+    "secs": 87.12087912087912,
+    "track": 1
    },
    "silver-coin-1": {
     "n": 1,
-    "secs": 0.8709677419354839
+    "secs": 0.8709677419354839,
+    "track": 91
    },
    "silver-coin-2": {
     "n": 1,
-    "secs": 0.8709677419354839
+    "secs": 0.8709677419354839,
+    "track": 92
    },
    "silver-coin-3": {
     "n": 1,
-    "secs": 0.8709677419354839
+    "secs": 0.8709677419354839,
+    "track": 93
    },
    "silver-coin-4": {
     "n": 1,
-    "secs": 0.8709677419354839
+    "secs": 0.8709677419354839,
+    "track": 94
    },
    "silver-coin-5": {
     "n": 1,
-    "secs": 0.8225806451612904
+    "secs": 0.8225806451612904,
+    "track": 95
    },
    "silver-coin-6": {
     "n": 1,
-    "secs": 0.8225806451612904
+    "secs": 0.8225806451612904,
+    "track": 96
    },
    "silver-coin-7": {
     "n": 1,
-    "secs": 0.8225806451612904
+    "secs": 0.8225806451612904,
+    "track": 97
    },
    "silver-coin-8": {
     "n": 1,
-    "secs": 0.8225806451612904
+    "secs": 0.8225806451612904,
+    "track": 98
    },
    "spacedust-alley-star-city-fast": {
     "n": 1,
-    "secs": 104.34782608695652
+    "secs": 104.34782608695652,
+    "track": 51
    },
    "spacedust-alley-star-city": {
     "n": 1,
-    "secs": 104.34782608695652
+    "secs": 104.34782608695652,
+    "track": 50
    },
    "spaceport-alpha-fast": {
     "n": 1,
-    "secs": 76.52173913043478
+    "secs": 76.52173913043478,
+    "track": 53
    },
    "spaceport-alpha": {
     "n": 1,
-    "secs": 76.52173913043478
+    "secs": 76.52173913043478,
+    "track": 52
    },
    "the-adventure-begins": {
     "n": 1,
-    "secs": 61.2890625
+    "secs": 61.2890625,
+    "track": 81
    },
    "the-secret-tune": {
     "n": 1,
-    "secs": 66.08695652173913
+    "secs": 66.08695652173913,
+    "track": 102
    },
    "title-theme": {
     "n": 1,
-    "secs": 67.25274725274726
+    "secs": 67.25274725274726,
+    "track": 2
    },
    "trophy-race-3rd-place": {
     "n": 1,
-    "secs": 4.010416666666667
+    "secs": 4.010416666666667,
+    "track": 103
    },
    "tt": {
     "n": 1,
-    "secs": 33.80281690140845
+    "secs": 33.80281690140845,
+    "track": 90
    },
    "walrus-cove-fast": {
     "n": 1,
-    "secs": 84.48979591836735
+    "secs": 84.48979591836735,
+    "track": 34
    },
    "walrus-cove": {
     "n": 1,
-    "secs": 84.48979591836735
+    "secs": 84.48979591836735,
+    "track": 33
    },
    "whale-bay-fast": {
     "n": 1,
-    "secs": 110.625
+    "secs": 110.625,
+    "track": 26
    },
    "whale-bay": {
     "n": 1,
-    "secs": 110.625
+    "secs": 110.625,
+    "track": 25
    },
    "wizpig-2-beginning": {
     "n": 1,
-    "secs": 16
+    "secs": 16,
+    "track": 59
    },
    "wizpig-2-defeated": {
     "n": 1,
-    "secs": 40.8
+    "secs": 40.8,
+    "track": 60
    },
    "wizpig-lives-with-sound-effects": {
     "n": 1,
-    "secs": 46.51881720430107
+    "secs": 46.51881720430107,
+    "track": 58
    },
    "wizpig-race": {
     "n": 1,
-    "secs": 83.47826086956522
+    "secs": 83.47826086956522,
+    "track": 79
    },
    "wizpig": {
     "n": 1,
-    "secs": 18
+    "secs": 18,
+    "track": 78
    }
   },
   "chip": "usf",

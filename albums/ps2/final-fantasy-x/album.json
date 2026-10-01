@@ -53,371 +53,555 @@
   "tracks": {
    "aeon-battle": {
     "n": 1,
-    "secs": 232.5
+    "secs": 232.5,
+    "track": 86,
+    "disc": 4
    },
    "assault": {
     "n": 1,
-    "secs": 199.772674
+    "secs": 199.772674,
+    "track": 62,
+    "disc": 3
    },
    "auron-s-theme": {
     "n": 1,
-    "secs": 140.32693477083333
+    "secs": 140.32693477083333,
+    "track": 36,
+    "disc": 2
    },
    "battle": {
     "n": 1,
-    "secs": 101.05248
+    "secs": 101.05248,
+    "track": 9,
+    "disc": 1
    },
    "besaid-island": {
     "n": 1,
-    "secs": 140.917504
+    "secs": 140.917504,
+    "track": 18,
+    "disc": 1
    },
    "blitz-ball-gamblers": {
     "n": 1,
-    "secs": 110.76912
+    "secs": 110.76912,
+    "track": 17,
+    "disc": 1
    },
    "blitz-off": {
     "n": 1,
-    "secs": 175.51680712500004
+    "secs": 175.51680712500004,
+    "track": 35,
+    "disc": 2
    },
    "brass-de-chocobo": {
     "n": 1,
-    "secs": 76.8
+    "secs": 76.8,
+    "track": 38,
+    "disc": 2
    },
    "brave-advancement": {
     "n": 1,
-    "secs": 98
+    "secs": 98,
+    "track": 71,
+    "disc": 4
    },
    "challenge": {
     "n": 1,
-    "secs": 161.927808
+    "secs": 161.927808,
+    "track": 79,
+    "disc": 4
    },
    "cloister-of-trials": {
     "n": 1,
-    "secs": 96.09375
+    "secs": 96.09375,
+    "track": 22,
+    "disc": 1
    },
    "confrontation": {
     "n": 1,
-    "secs": 91.428608
+    "secs": 91.428608,
+    "track": 34,
+    "disc": 2
    },
    "crisis": {
     "n": 1,
-    "secs": 107.076816
+    "secs": 107.076816,
+    "track": 57,
+    "disc": 3
    },
    "darkness": {
     "n": 1,
-    "secs": 261.818112
+    "secs": 261.818112,
+    "track": 81,
+    "disc": 4
    },
    "daughter-of-the-high-summoner": {
     "n": 1,
-    "secs": 108.8
+    "secs": 108.8,
+    "track": 25,
+    "disc": 1
    },
    "decisive-battle": {
     "n": 1,
-    "secs": 206.04594362500006
+    "secs": 206.04594362500006,
+    "track": 87,
+    "disc": 4
    },
    "djose-temple": {
     "n": 1,
-    "secs": 116.1435875
+    "secs": 116.1435875,
+    "track": 43,
+    "disc": 2
    },
    "enemy-attack": {
     "n": 1,
-    "secs": 70.58826
+    "secs": 70.58826,
+    "track": 16,
+    "disc": 1
    },
    "game-over": {
     "n": 1,
-    "secs": 31.06371
+    "secs": 31.06371,
+    "track": 11,
+    "disc": 1
    },
    "guadosalam": {
     "n": 1,
-    "secs": 168
+    "secs": 168,
+    "track": 47,
+    "disc": 2
    },
    "hopeless-desire": {
     "n": 1,
-    "secs": 102.315798
+    "secs": 102.315798,
+    "track": 12,
+    "disc": 1
    },
    "hum-of-the-fayth-rikku": {
     "n": 1,
-    "secs": 35.172405
+    "secs": 35.172405,
+    "track": 90,
+    "disc": 9
    },
    "hum-of-the-fayth-tidus": {
     "n": 1,
-    "secs": 38.068956
+    "secs": 38.068956,
+    "track": 89,
+    "disc": 9
    },
    "hurry": {
     "n": 1,
-    "secs": 70.000056
+    "secs": 70.000056,
+    "track": 7,
+    "disc": 1
    },
    "hymn-of-the-fayth-anima": {
     "n": 1,
-    "secs": 40.00002
+    "secs": 40.00002,
+    "track": 85,
+    "disc": 4
    },
    "hymn-of-the-fayth-bahamut": {
     "n": 1,
-    "secs": 40.00002
+    "secs": 40.00002,
+    "track": 66,
+    "disc": 3
    },
    "hymn-of-the-fayth-ifrit": {
     "n": 1,
-    "secs": 40.00002
+    "secs": 40.00002,
+    "track": 29,
+    "disc": 2
    },
    "hymn-of-the-fayth-ixion": {
     "n": 1,
-    "secs": 40.00002
+    "secs": 40.00002,
+    "track": 44,
+    "disc": 2
    },
    "hymn-of-the-fayth-ronso-tribe": {
     "n": 1,
-    "secs": 40.00002
+    "secs": 40.00002,
+    "track": 74,
+    "disc": 4
    },
    "hymn-of-the-fayth-shiva": {
     "n": 1,
-    "secs": 40.00002
+    "secs": 40.00002,
+    "track": 54,
+    "disc": 3
    },
    "hymn-of-the-fayth-spira": {
     "n": 1,
-    "secs": 40.00002
+    "secs": 40.00002,
+    "track": 82,
+    "disc": 4
    },
    "hymn-of-the-fayth-valefor": {
     "n": 1,
-    "secs": 42.666688
+    "secs": 42.666688,
+    "track": 23,
+    "disc": 1
    },
    "hymn-of-the-fayth-yojimbo": {
     "n": 1,
-    "secs": 40.00002
+    "secs": 40.00002,
+    "track": 72,
+    "disc": 4
    },
    "hymn-of-the-fayth-yunalesca-alternate": {
     "n": 1,
-    "secs": 41.333354
+    "secs": 41.333354,
+    "track": 78,
+    "disc": 4
    },
    "hymn-of-the-fayth-yunalesca": {
     "n": 1,
-    "secs": 41.333354
+    "secs": 41.333354,
+    "track": 77,
+    "disc": 4
    },
    "hymn-of-the-fayth": {
     "n": 1,
-    "secs": 42.666688
+    "secs": 42.666688,
+    "track": 20,
+    "disc": 1
    },
    "i-can-fly": {
     "n": 1,
-    "secs": 81.428585
+    "secs": 81.428585,
+    "track": 64,
+    "disc": 3
    },
    "illusion": {
     "n": 1,
-    "secs": 156.73472
+    "secs": 156.73472,
+    "track": 91,
+    "disc": 9
    },
    "in-zanarkand": {
     "n": 1,
-    "secs": 95.33338
+    "secs": 95.33338,
+    "track": 1,
+    "disc": 1
    },
    "inflexible-determination": {
     "n": 1,
-    "secs": 24
+    "secs": 24,
+    "track": 32,
+    "disc": 2
    },
    "jecht-s-theme": {
     "n": 1,
-    "secs": 126.6315895
+    "secs": 126.6315895,
+    "track": 49,
+    "disc": 3
    },
    "launch": {
     "n": 1,
-    "secs": 93.5625
+    "secs": 93.5625,
+    "track": 60,
+    "disc": 3
    },
    "luca": {
     "n": 1,
-    "secs": 197.26032
+    "secs": 197.26032,
+    "track": 30,
+    "disc": 2
    },
    "lulu-s-theme": {
     "n": 1,
-    "secs": 109.714304
+    "secs": 109.714304,
+    "track": 70,
+    "disc": 4
    },
    "macalania-forest": {
     "n": 1,
-    "secs": 90.40132470833333
+    "secs": 90.40132470833333,
+    "track": 50,
+    "disc": 3
    },
    "mi-ihen-highroad": {
     "n": 1,
-    "secs": 98.85901766666669
+    "secs": 98.85901766666669,
+    "track": 37,
+    "disc": 2
    },
    "my-father-s-murderer": {
     "n": 1,
-    "secs": 72
+    "secs": 72,
+    "track": 68,
+    "disc": 3
    },
    "nostalgia": {
     "n": 1,
-    "secs": 87.26674841666666
+    "secs": 87.26674841666666,
+    "track": 92,
+    "disc": 9
    },
    "ominous": {
     "n": 1,
-    "secs": 160
+    "secs": 160,
+    "track": 8,
+    "disc": 1
    },
    "other-world-alternate-1": {
     "n": 1,
-    "secs": 145.03608
+    "secs": 145.03608,
+    "track": 4,
+    "disc": 1
    },
    "other-world-alternate-2": {
     "n": 1,
-    "secs": 145.03608
+    "secs": 145.03608,
+    "track": 5,
+    "disc": 1
    },
    "other-world-alternate-3": {
     "n": 1,
-    "secs": 144.4515471875
+    "secs": 144.4515471875,
+    "track": 6,
+    "disc": 1
    },
    "oui-are-al-bhed": {
     "n": 1,
-    "secs": 108.8
+    "secs": 108.8,
+    "track": 15,
+    "disc": 1
    },
    "path-of-repentance": {
     "n": 1,
-    "secs": 63.692244
+    "secs": 63.692244,
+    "track": 65,
+    "disc": 3
    },
    "people-of-the-far-north": {
     "n": 1,
-    "secs": 123.870976
+    "secs": 123.870976,
+    "track": 73,
+    "disc": 4
    },
    "permitted-passage": {
     "n": 1,
-    "secs": 66.545449
+    "secs": 66.545449,
+    "track": 40,
+    "disc": 2
    },
    "phantoms": {
     "n": 1,
-    "secs": 219.310396
+    "secs": 219.310396,
+    "track": 21,
+    "disc": 1
    },
    "pursuit": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 55,
+    "disc": 3
    },
    "ride-ze-shoopuf": {
     "n": 1,
-    "secs": 108
+    "secs": 108,
+    "track": 45,
+    "disc": 2
    },
    "rikku-s-theme": {
     "n": 1,
-    "secs": 107.4643663125
+    "secs": 107.4643663125,
+    "track": 46,
+    "disc": 2
    },
    "scorching-desert": {
     "n": 1,
-    "secs": 108
+    "secs": 108,
+    "track": 56,
+    "disc": 3
    },
    "sea-of-mist": {
     "n": 1,
-    "secs": 134.736896
+    "secs": 134.736896,
+    "track": 51,
+    "disc": 3
    },
    "seymour-battle": {
     "n": 1,
-    "secs": 183.999816
+    "secs": 183.999816,
+    "track": 84,
+    "disc": 4
    },
    "seymour-s-ambition": {
     "n": 1,
-    "secs": 112.08333333333333
+    "secs": 112.08333333333333,
+    "track": 53,
+    "disc": 3
    },
    "seymour-s-theme": {
     "n": 1,
-    "secs": 150.73333333333332
+    "secs": 150.73333333333332,
+    "track": 41,
+    "disc": 2
    },
    "silence-before-the-storm": {
     "n": 1,
-    "secs": 169.41168
+    "secs": 169.41168,
+    "track": 28,
+    "disc": 2
    },
    "someday-the-dream-will-end": {
     "n": 1,
-    "secs": 107.949822
+    "secs": 107.949822,
+    "track": 76,
+    "disc": 4
    },
    "sprouting": {
     "n": 1,
-    "secs": 90
+    "secs": 90,
+    "track": 27,
+    "disc": 2
    },
    "temple-band": {
     "n": 1,
-    "secs": 126.593472
+    "secs": 126.593472,
+    "track": 52,
+    "disc": 3
    },
    "the-prelude": {
     "n": 1,
-    "secs": 48.052083333333336
+    "secs": 48.052083333333336,
+    "track": 2,
+    "disc": 1
    },
    "the-sight-of-spira": {
     "n": 1,
-    "secs": 130.05286825000002
+    "secs": 130.05286825000002,
+    "track": 19,
+    "disc": 1
    },
    "the-splendid-performance": {
     "n": 1,
-    "secs": 101.542339
+    "secs": 101.542339,
+    "track": 33,
+    "disc": 2
    },
    "the-summoning": {
     "n": 1,
-    "secs": 36.7347
+    "secs": 36.7347,
+    "track": 24,
+    "disc": 1
    },
    "the-unsent-laugh": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 83,
+    "disc": 4
    },
    "thunder-plains": {
     "n": 1,
-    "secs": 112.93444775000002
+    "secs": 112.93444775000002,
+    "track": 48,
+    "disc": 3
    },
    "tidus-theme": {
     "n": 1,
-    "secs": 150.634096
+    "secs": 150.634096,
+    "track": 3,
+    "disc": 1
    },
    "time-of-judgement": {
     "n": 1,
-    "secs": 87.613613
+    "secs": 87.613613,
+    "track": 67,
+    "disc": 3
    },
    "to-the-end-of-the-abyss": {
     "n": 1,
-    "secs": 119.387775
+    "secs": 119.387775,
+    "track": 80,
+    "disc": 4
    },
    "tragedy": {
     "n": 1,
-    "secs": 240.217234
+    "secs": 240.217234,
+    "track": 63,
+    "disc": 3
    },
    "travel-agency": {
     "n": 1,
-    "secs": 88.88892
+    "secs": 88.88892,
+    "track": 39,
+    "disc": 2
    },
    "truth-revealed-alternate": {
     "n": 1,
-    "secs": 121.82117250000002
+    "secs": 121.82117250000002,
+    "track": 59,
+    "disc": 3
    },
    "truth-revealed": {
     "n": 1,
-    "secs": 122.71208150000001
+    "secs": 122.71208150000001,
+    "track": 58,
+    "disc": 3
    },
    "twilight": {
     "n": 1,
-    "secs": 297.142872
+    "secs": 297.142872,
+    "track": 42,
+    "disc": 2
    },
    "underground-activities": {
     "n": 1,
-    "secs": 36
+    "secs": 36,
+    "track": 13,
+    "disc": 1
    },
    "underwater-ruins": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 14,
+    "disc": 1
    },
    "victory": {
     "n": 1,
-    "secs": 40
+    "secs": 40,
+    "track": 10,
+    "disc": 1
    },
    "wakka-s-theme": {
     "n": 1,
-    "secs": 136.875
+    "secs": 136.875,
+    "track": 88,
+    "disc": 9
    },
    "wandering-flames": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 75,
+    "disc": 4
    },
    "wedding": {
     "n": 1,
-    "secs": 67.500027
+    "secs": 67.500027,
+    "track": 61,
+    "disc": 3
    },
    "welcoming-of-maester-mika": {
     "n": 1,
-    "secs": 72.452864
+    "secs": 72.452864,
+    "track": 31,
+    "disc": 2
    },
    "yuna-s-determination": {
     "n": 1,
-    "secs": 97.17191887499999
+    "secs": 97.17191887499999,
+    "track": 69,
+    "disc": 4
    },
    "yuna-s-theme": {
     "n": 1,
-    "secs": 102.85716
+    "secs": 102.85716,
+    "track": 26,
+    "disc": 2
    }
   },
   "chip": "psf2",

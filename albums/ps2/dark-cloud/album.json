@@ -33,239 +33,298 @@
   "tracks": {
    "battle": {
     "n": 1,
-    "secs": 40.775390625
+    "secs": 40.775390625,
+    "track": 12
    },
    "black-shadow": {
     "n": 1,
-    "secs": 101.999898
+    "secs": 101.999898,
+    "track": 39
    },
    "broken-promise-orgel-version": {
     "n": 1,
-    "secs": 46.1111065
+    "secs": 46.1111065,
+    "track": 19
    },
    "broken-promise": {
     "n": 1,
-    "secs": 87.9166315
+    "secs": 87.9166315,
+    "track": 24
    },
    "brownboo": {
     "n": 1,
-    "secs": 75.9375
+    "secs": 75.9375,
+    "track": 14
    },
    "castle-of-dark-heaven": {
     "n": 1,
-    "secs": 68.478165
+    "secs": 68.478165,
+    "track": 41
    },
    "ceremony": {
     "n": 1,
-    "secs": 179.98499663333334
+    "secs": 179.98499663333334,
+    "track": 2
    },
    "dark-cloud-main-theme-broken": {
     "n": 1,
-    "secs": 89.751927
+    "secs": 89.751927,
+    "track": 1
    },
    "demon-shaft": {
     "n": 1,
-    "secs": 73.548316
+    "secs": 73.548316,
+    "track": 47
    },
    "departure": {
     "n": 1,
-    "secs": 112.59749201875002
+    "secs": 112.59749201875002,
+    "track": 28
    },
    "divine-beast-cave": {
     "n": 1,
-    "secs": 62.562437437499995
+    "secs": 62.562437437499995,
+    "track": 8
    },
    "divine-beast-dran-alternate": {
     "n": 1,
-    "secs": 79.91944196041666
+    "secs": 79.91944196041666,
+    "track": 48
    },
    "divine-beast-dran": {
     "n": 1,
-    "secs": 79.725949
+    "secs": 79.725949,
+    "track": 10
    },
    "duel": {
     "n": 1,
-    "secs": 31.090878
+    "secs": 31.090878,
+    "track": 21
    },
    "emergency-alternate": {
     "n": 1,
-    "secs": 25.068438
+    "secs": 25.068438,
+    "track": 49
    },
    "emergency": {
     "n": 1,
-    "secs": 51.36975
+    "secs": 51.36975,
+    "track": 44
    },
    "gallery-of-time": {
     "n": 1,
-    "secs": 92.62258380416667
+    "secs": 92.62258380416667,
+    "track": 40
    },
    "if-you-strain-your-ears": {
     "n": 1,
-    "secs": 78.857064
+    "secs": 78.857064,
+    "track": 29
    },
    "land-of-hope": {
     "n": 1,
-    "secs": 51.702057
+    "secs": 51.702057,
+    "track": 36
    },
    "last-battle": {
     "n": 1,
-    "secs": 46.067811074999995
+    "secs": 46.067811074999995,
+    "track": 43
    },
    "legend-of-hunter-alternate": {
     "n": 1,
-    "secs": 50.948263125
+    "secs": 50.948263125,
+    "track": 50
    },
    "legend-of-hunter": {
     "n": 1,
-    "secs": 44.72334313333333
+    "secs": 44.72334313333333,
+    "track": 15
    },
    "main-theme-bossa-nova-version": {
     "n": 1,
-    "secs": 147.27339345
+    "secs": 147.27339345,
+    "track": 46
    },
    "matataki-village": {
     "n": 1,
-    "secs": 55.4166445
+    "secs": 55.4166445,
+    "track": 11
    },
    "memories": {
     "n": 1,
-    "secs": 65.71422
+    "secs": 65.71422,
+    "track": 38
    },
    "mission": {
     "n": 1,
-    "secs": 87.66372881666666
+    "secs": 87.66372881666666,
+    "track": 34
    },
    "moon-factory": {
     "n": 1,
-    "secs": 144.6
+    "secs": 144.6,
+    "track": 22
    },
    "moon-sea": {
     "n": 1,
-    "secs": 68.74546696875
+    "secs": 68.74546696875,
+    "track": 35
    },
    "muska-lacka": {
     "n": 1,
-    "secs": 87.1837799375
+    "secs": 87.1837799375,
+    "track": 27
    },
    "norune-village": {
     "n": 1,
-    "secs": 54.9
+    "secs": 54.9,
+    "track": 7
    },
    "open-your-eyes": {
     "n": 1,
-    "secs": 47.586172
+    "secs": 47.586172,
+    "track": 6
    },
    "queens": {
     "n": 1,
-    "secs": 75.223848
+    "secs": 75.223848,
+    "track": 18
    },
    "reminiscence": {
     "n": 1,
-    "secs": 100.40273761666667
+    "secs": 100.40273761666667,
+    "track": 13
    },
    "resurrection-of-the-dark-genie": {
     "n": 1,
-    "secs": 108.41135717499999
+    "secs": 108.41135717499999,
+    "track": 4
    },
    "shipwreck-alternate": {
     "n": 1,
-    "secs": 58.723324
+    "secs": 58.723324,
+    "track": 51
    },
    "shipwreck": {
     "n": 1,
-    "secs": 61.333272
+    "secs": 61.333272,
+    "track": 20
    },
    "stand-up": {
     "n": 1,
-    "secs": 63.10244325
+    "secs": 63.10244325,
+    "track": 26
    },
    "sun-and-moon-temple-alternate": {
     "n": 1,
-    "secs": 110.42160025
+    "secs": 110.42160025,
+    "track": 52
    },
    "sun-and-moon-temple": {
     "n": 1,
-    "secs": 110.42160025
+    "secs": 110.42160025,
+    "track": 30
    },
    "take-off": {
     "n": 1,
-    "secs": 130.47606
+    "secs": 130.47606,
+    "track": 31
    },
    "the-black-knight": {
     "n": 1,
-    "secs": 59.104452
+    "secs": 59.104452,
+    "track": 53
    },
    "the-daily-life": {
     "n": 1,
-    "secs": 59.49996628333333
+    "secs": 59.49996628333333,
+    "track": 25
    },
    "the-destruction-of-norune-village": {
     "n": 1,
-    "secs": 52.503792
+    "secs": 52.503792,
+    "track": 5
    },
    "the-forest-guardian": {
     "n": 1,
-    "secs": 51.363585
+    "secs": 51.363585,
+    "track": 17
    },
    "the-ice-queen": {
     "n": 1,
-    "secs": 54.310305
+    "secs": 54.310305,
+    "track": 23
    },
    "the-king-s-curse-alternate": {
     "n": 1,
-    "secs": 95.116222
+    "secs": 95.116222,
+    "track": 54
    },
    "the-king-s-curse": {
     "n": 1,
-    "secs": 123.666543
+    "secs": 123.666543,
+    "track": 32
    },
    "the-rowdy": {
     "n": 1,
-    "secs": 80.7893525
+    "secs": 80.7893525,
+    "track": 37
    },
    "the-spirit-king": {
     "n": 1,
-    "secs": 46.74781054583333
+    "secs": 46.74781054583333,
+    "track": 9
    },
    "the-village-festival": {
     "n": 1,
-    "secs": 137.517719625
+    "secs": 137.517719625,
+    "track": 3
    },
    "time-of-destiny": {
     "n": 1,
-    "secs": 99.451957
+    "secs": 99.451957,
+    "track": 42
    },
    "two-moons": {
     "n": 1,
-    "secs": 113.31365846666665
+    "secs": 113.31365846666665,
+    "track": 45
    },
    "unknown-1": {
     "n": 1,
-    "secs": 58.285656
+    "secs": 58.285656,
+    "track": 55
    },
    "unknown-5": {
     "n": 1,
-    "secs": 18.3749822375
+    "secs": 18.3749822375,
+    "track": 56
    },
    "wise-owl-forest-alternate-1": {
     "n": 1,
-    "secs": 112.571316
+    "secs": 112.571316,
+    "track": 57
    },
    "wise-owl-forest-alternate-2": {
     "n": 1,
-    "secs": 112.571316
+    "secs": 112.571316,
+    "track": 58
    },
    "wise-owl-forest-alternate-3": {
     "n": 1,
-    "secs": 112.571316
+    "secs": 112.571316,
+    "track": 59
    },
    "wise-owl-forest": {
     "n": 1,
-    "secs": 112.571316
+    "secs": 112.571316,
+    "track": 16
    },
    "yellow-drops": {
     "n": 1,
-    "secs": 98.423828125
+    "secs": 98.423828125,
+    "track": 33
    }
   },
   "chip": "psf2",

@@ -13,95 +13,118 @@
   "tracks": {
    "ancient-castle": {
     "n": 13,
-    "secs": 21.182486
+    "secs": 21.182486,
+    "track": 13
    },
    "battle-scene-1": {
     "n": 19,
-    "secs": 42.398304
+    "secs": 42.398304,
+    "track": 2
    },
    "battle-scene-2": {
     "n": 20,
-    "secs": 67.297308
+    "secs": 67.297308,
+    "track": 16
    },
    "castle-pandemonium": {
     "n": 12,
-    "secs": 27.432236
+    "secs": 27.432236,
+    "track": 8
    },
    "chocobo-theme": {
     "n": 3,
-    "secs": 6.866392
+    "secs": 6.866392,
+    "track": 10
    },
    "dead-music": {
     "n": 23,
-    "secs": 19.799208
+    "secs": 19.799208,
+    "track": 21
    },
    "dungeon": {
     "n": 16,
-    "secs": 47.99808
+    "secs": 47.99808,
+    "track": 14
    },
    "escape": {
     "n": 27,
-    "secs": 5.649774
+    "secs": 5.649774,
+    "track": 12
    },
    "fanfare": {
     "n": 8,
-    "secs": 4.83314
+    "secs": 4.83314,
+    "track": 22
    },
    "finale": {
     "n": 6,
-    "secs": 189.342426
+    "secs": 189.342426,
+    "track": 18
    },
    "imperial-army-theme": {
     "n": 15,
-    "secs": 40.381718
+    "secs": 40.381718,
+    "track": 9
    },
    "joining-the-team": {
     "n": 11,
-    "secs": 4.966468
+    "secs": 4.966468,
+    "track": 23
    },
    "magician-s-tower": {
     "n": 14,
-    "secs": 37.99848
+    "secs": 37.99848,
+    "track": 11
    },
    "main-theme": {
     "n": 4,
-    "secs": 39.848406
+    "secs": 39.848406,
+    "track": 7
    },
    "rebel-army-theme": {
     "n": 18,
-    "secs": 31.99872
+    "secs": 31.99872,
+    "track": 5
    },
    "reunion": {
     "n": 26,
-    "secs": 9.41629
+    "secs": 9.41629,
+    "track": 4
    },
    "revivification": {
     "n": 25,
-    "secs": 6.633068
+    "secs": 6.633068,
+    "track": 3
    },
    "temptation-of-the-princess": {
     "n": 24,
-    "secs": 10.91623
+    "secs": 10.91623,
+    "track": 20
    },
    "the-emperor-s-revival": {
     "n": 5,
-    "secs": 7.99968
+    "secs": 7.99968,
+    "track": 15
    },
    "the-prelude": {
     "n": 1,
-    "secs": 38.448462
+    "secs": 38.448462,
+    "track": 1
    },
    "town": {
     "n": 17,
-    "secs": 48.598056
+    "secs": 48.598056,
+    "track": 6
    },
    "victory": {
     "n": 22,
-    "secs": 17.265976000000002
+    "secs": 17.265976000000002,
+    "track": 17
    },
    "waltz": {
     "n": 28,
-    "secs": 16.366012
+    "secs": 16.366012,
+    "track": 19
    }
   }
  }

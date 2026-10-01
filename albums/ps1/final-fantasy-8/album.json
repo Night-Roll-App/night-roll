@@ -36,339 +36,507 @@
   "tracks": {
    "a-sacrifice": {
     "n": 1,
-    "secs": 95.998336
+    "secs": 95.998336,
+    "track": 36,
+    "disc": 2
    },
    "alto-chant": {
     "n": 1,
-    "secs": 11.29384
+    "secs": 11.29384,
+    "track": 82,
+    "disc": 9
    },
    "ami": {
     "n": 1,
-    "secs": 131.03071050000003
+    "secs": 131.03071050000003,
+    "track": 45,
+    "disc": 2
    },
    "balamb-garden": {
     "n": 1,
-    "secs": 98.8211
+    "secs": 98.8211,
+    "track": 1,
+    "disc": 1
    },
    "bass-chant": {
     "n": 1,
-    "secs": 21.17595
+    "secs": 21.17595,
+    "track": 80,
+    "disc": 9
    },
    "blue-fields": {
     "n": 1,
-    "secs": 85.595005375
+    "secs": 85.595005375,
+    "track": 2,
+    "disc": 1
    },
    "blue-sky": {
     "n": 1,
-    "secs": 41.444691999999996
+    "secs": 41.444691999999996,
+    "track": 49,
+    "disc": 3
    },
    "breezy": {
     "n": 1,
-    "secs": 72.06668
+    "secs": 72.06668,
+    "track": 15,
+    "disc": 1
    },
    "cactus-jack-galbadian-anthem": {
     "n": 1,
-    "secs": 87.65090499999998
+    "secs": 87.65090499999998,
+    "track": 28,
+    "disc": 2
    },
    "celebration-irish-jig": {
     "n": 1,
-    "secs": 140.00224
+    "secs": 140.00224,
+    "track": 78,
+    "disc": 9
    },
    "celebration-rinoa-s-theme": {
     "n": 1,
-    "secs": 140.00224
+    "secs": 140.00224,
+    "track": 79,
+    "disc": 9
    },
    "choir-chant": {
     "n": 1,
-    "secs": 45.17536
+    "secs": 45.17536,
+    "track": 84,
+    "disc": 9
    },
    "compression-of-time": {
     "n": 1,
-    "secs": 134.4
+    "secs": 134.4,
+    "track": 70,
+    "disc": 4
    },
    "dance-with-the-balamb-fish": {
     "n": 1,
-    "secs": 99.8123055
+    "secs": 99.8123055,
+    "track": 62,
+    "disc": 3
    },
    "dead-end": {
     "n": 1,
-    "secs": 68.80752400000002
+    "secs": 68.80752400000002,
+    "track": 14,
+    "disc": 1
    },
    "don-t-be-afraid-extended-intro": {
     "n": 1,
-    "secs": 98.617656
+    "secs": 98.617656,
+    "track": 4,
+    "disc": 1
    },
    "don-t-be-afraid": {
     "n": 1,
-    "secs": 87.635794
+    "secs": 87.635794,
+    "track": 3,
+    "disc": 1
    },
    "drifting": {
     "n": 1,
-    "secs": 76.797632
+    "secs": 76.797632,
+    "track": 50,
+    "disc": 3
    },
    "fear": {
     "n": 1,
-    "secs": 65.45424
+    "secs": 65.45424,
+    "track": 19,
+    "disc": 1
    },
    "female-chant": {
     "n": 1,
-    "secs": 11.29384
+    "secs": 11.29384,
+    "track": 83,
+    "disc": 9
    },
    "find-your-way": {
     "n": 1,
-    "secs": 108.8
+    "secs": 108.8,
+    "track": 6,
+    "disc": 1
    },
    "fisherman-s-horizon": {
     "n": 1,
-    "secs": 107.024016
+    "secs": 107.024016,
+    "track": 52,
+    "disc": 3
    },
    "fithos-lusec-wecos-vinosec-variation": {
     "n": 1,
-    "secs": 168.0673975
+    "secs": 168.0673975,
+    "track": 38,
+    "disc": 2
    },
    "fithos-lusec-wecos-vinosec": {
     "n": 1,
-    "secs": 127.7039495
+    "secs": 127.7039495,
+    "track": 37,
+    "disc": 2
    },
    "force-your-way": {
     "n": 1,
-    "secs": 119.31528
+    "secs": 119.31528,
+    "track": 11,
+    "disc": 1
    },
    "fragments-of-memories": {
     "n": 1,
-    "secs": 91.201368
+    "secs": 91.201368,
+    "track": 42,
+    "disc": 2
    },
    "galbadia-garden-no-intro": {
     "n": 1,
-    "secs": 90.4
+    "secs": 90.4,
+    "track": 32,
+    "disc": 2
    },
    "galbadia-garden": {
     "n": 1,
-    "secs": 124.97076000000001
+    "secs": 124.97076000000001,
+    "track": 31,
+    "disc": 2
    },
    "heresy": {
     "n": 1,
-    "secs": 129.23498
+    "secs": 129.23498,
+    "track": 51,
+    "disc": 3
    },
    "intruders": {
     "n": 1,
-    "secs": 69.9010485
+    "secs": 69.9010485,
+    "track": 39,
+    "disc": 2
    },
    "jailed": {
     "n": 1,
-    "secs": 102.85536
+    "secs": 102.85536,
+    "track": 43,
+    "disc": 2
    },
    "julia": {
     "n": 1,
-    "secs": 82.10127941666667
+    "secs": 82.10127941666667,
+    "track": 21,
+    "disc": 1
    },
    "junction": {
     "n": 1,
-    "secs": 42.668416
+    "secs": 42.668416,
+    "track": 23,
+    "disc": 1
    },
    "love-grows": {
     "n": 1,
-    "secs": 133.711968
+    "secs": 133.711968,
+    "track": 58,
+    "disc": 3
    },
    "lunatic-pandora": {
     "n": 1,
-    "secs": 108.388
+    "secs": 108.388,
+    "track": 69,
+    "disc": 4
    },
    "male-chant": {
     "n": 1,
-    "secs": 11.29384
+    "secs": 11.29384,
+    "track": 81,
+    "disc": 9
    },
    "martial-law": {
     "n": 1,
-    "secs": 106.001696
+    "secs": 106.001696,
+    "track": 27,
+    "disc": 2
    },
    "maybe-i-m-a-lion": {
     "n": 1,
-    "secs": 157.090176
+    "secs": 157.090176,
+    "track": 73,
+    "disc": 4
    },
    "mods-de-chocobo": {
     "n": 1,
-    "secs": 121.412048
+    "secs": 121.412048,
+    "track": 66,
+    "disc": 4
    },
    "movin": {
     "n": 1,
-    "secs": 207.464027
+    "secs": 207.464027,
+    "track": 48,
+    "disc": 3
    },
    "my-mind": {
     "n": 1,
-    "secs": 90.855568
+    "secs": 90.855568,
+    "track": 25,
+    "disc": 2
    },
    "never-look-back": {
     "n": 1,
-    "secs": 96.028799625
+    "secs": 96.028799625,
+    "track": 13,
+    "disc": 1
    },
    "odeka-ke-chocobo": {
     "n": 1,
-    "secs": 38.769108
+    "secs": 38.769108,
+    "track": 53,
+    "disc": 3
    },
    "only-a-plank-between-one-and-perdition": {
     "n": 1,
-    "secs": 69.692087
+    "secs": 69.692087,
+    "track": 29,
+    "disc": 2
    },
    "overture": {
     "n": 1,
-    "secs": 213.21174466666668
+    "secs": 213.21174466666668,
+    "track": 76,
+    "disc": 4
    },
    "premonition": {
     "n": 1,
-    "secs": 152.107487
+    "secs": 152.107487,
+    "track": 40,
+    "disc": 2
    },
    "residents": {
     "n": 1,
-    "secs": 98.284068
+    "secs": 98.284068,
+    "track": 65,
+    "disc": 3
    },
    "retaliation": {
     "n": 1,
-    "secs": 41.757253
+    "secs": 41.757253,
+    "track": 47,
+    "disc": 3
    },
    "ride-on": {
     "n": 1,
-    "secs": 89.144224
+    "secs": 89.144224,
+    "track": 67,
+    "disc": 4
    },
    "rivals": {
     "n": 1,
-    "secs": 96.003128
+    "secs": 96.003128,
+    "track": 44,
+    "disc": 2
    },
    "roses-and-wine": {
     "n": 1,
-    "secs": 62.60904
+    "secs": 62.60904,
+    "track": 22,
+    "disc": 1
    },
    "seed": {
     "n": 1,
-    "secs": 124.801872
+    "secs": 124.801872,
+    "track": 7,
+    "disc": 1
    },
    "shuffle-or-boogie": {
     "n": 1,
-    "secs": 64.001024
+    "secs": 64.001024,
+    "track": 16,
+    "disc": 1
    },
    "silence-and-motion": {
     "n": 1,
-    "secs": 180.00264
+    "secs": 180.00264,
+    "track": 61,
+    "disc": 3
    },
    "slide-show-part-1": {
     "n": 1,
-    "secs": 43.200648
+    "secs": 43.200648,
+    "track": 56,
+    "disc": 3
    },
    "slide-show-part-2": {
     "n": 1,
-    "secs": 49.020864
+    "secs": 49.020864,
+    "track": 57,
+    "disc": 3
    },
    "starting-up-looped": {
     "n": 1,
-    "secs": 17.538406
+    "secs": 17.538406,
+    "track": 10,
+    "disc": 1
    },
    "starting-up": {
     "n": 1,
-    "secs": 76.615142
+    "secs": 76.615142,
+    "track": 9,
+    "disc": 1
    },
    "succession-of-witches": {
     "n": 1,
-    "secs": 98.66568
+    "secs": 98.66568,
+    "track": 30,
+    "disc": 2
    },
    "tears-of-the-moon-descent": {
     "n": 1,
-    "secs": 46.665584
+    "secs": 46.665584,
+    "track": 64,
+    "disc": 3
    },
    "tears-of-the-moon": {
     "n": 1,
-    "secs": 69.678
+    "secs": 69.678,
+    "track": 63,
+    "disc": 3
    },
    "tell-me": {
     "n": 1,
-    "secs": 119.99792
+    "secs": 119.99792,
+    "track": 18,
+    "disc": 1
    },
    "the-castle": {
     "n": 1,
-    "secs": 159.62541212499997
+    "secs": 159.62541212499997,
+    "track": 71,
+    "disc": 4
    },
    "the-extreme": {
     "n": 1,
-    "secs": 230.66643999999997
+    "secs": 230.66643999999997,
+    "track": 74,
+    "disc": 4
    },
    "the-landing-demo": {
     "n": 1,
-    "secs": 143.8197285
+    "secs": 143.8197285,
+    "track": 77,
+    "disc": 9
    },
    "the-landing": {
     "n": 1,
-    "secs": 158.326168
+    "secs": 158.326168,
+    "track": 8,
+    "disc": 1
    },
    "the-legendary-beast": {
     "n": 1,
-    "secs": 203.425164
+    "secs": 203.425164,
+    "track": 72,
+    "disc": 4
    },
    "the-loser": {
     "n": 1,
-    "secs": 68.57024
+    "secs": 68.57024,
+    "track": 12,
+    "disc": 1
    },
    "the-man-with-the-machine-gun": {
     "n": 1,
-    "secs": 89.144224
+    "secs": 89.144224,
+    "track": 20,
+    "disc": 1
    },
    "the-mission": {
     "n": 1,
-    "secs": 115.55544
+    "secs": 115.55544,
+    "track": 26,
+    "disc": 2
    },
    "the-oath": {
     "n": 1,
-    "secs": 93.601404
+    "secs": 93.601404,
+    "track": 55,
+    "disc": 3
    },
    "the-salt-flats": {
     "n": 1,
-    "secs": 106.8396
+    "secs": 106.8396,
+    "track": 59,
+    "disc": 3
    },
    "the-spy": {
     "n": 1,
-    "secs": 107.29148
+    "secs": 107.29148,
+    "track": 46,
+    "disc": 3
    },
    "the-stage-is-set": {
     "n": 1,
-    "secs": 104.3484
+    "secs": 104.3484,
+    "track": 35,
+    "disc": 2
    },
    "the-successor": {
     "n": 1,
-    "secs": 217.082029
+    "secs": 217.082029,
+    "track": 75,
+    "disc": 4
    },
    "the-winner": {
     "n": 1,
-    "secs": 73.439082
+    "secs": 73.439082,
+    "track": 5,
+    "disc": 1
    },
    "timber-owls": {
     "n": 1,
-    "secs": 85.090512
+    "secs": 85.090512,
+    "track": 24,
+    "disc": 1
    },
    "trust-me": {
     "n": 1,
-    "secs": 93.601404
+    "secs": 93.601404,
+    "track": 60,
+    "disc": 3
    },
    "truth": {
     "n": 1,
-    "secs": 99.001452
+    "secs": 99.001452,
+    "track": 68,
+    "disc": 4
    },
    "under-her-control": {
     "n": 1,
-    "secs": 98.401476
+    "secs": 98.401476,
+    "track": 34,
+    "disc": 2
    },
    "unrest": {
     "n": 1,
-    "secs": 205.78214733333334
+    "secs": 205.78214733333334,
+    "track": 33,
+    "disc": 2
    },
    "waltz-for-the-moon": {
     "n": 1,
-    "secs": 84.91620649999999
+    "secs": 84.91620649999999,
+    "track": 17,
+    "disc": 1
    },
    "where-i-belong": {
     "n": 1,
-    "secs": 103.69080499999998
+    "secs": 103.69080499999998,
+    "track": 54,
+    "disc": 3
    },
    "wounded": {
     "n": 1,
-    "secs": 49.500726
+    "secs": 49.500726,
+    "track": 41,
+    "disc": 2
    }
   },
   "chip": "psf",

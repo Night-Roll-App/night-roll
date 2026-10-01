@@ -11,31 +11,38 @@
   "tracks": {
    "b-type-success": {
     "n": 2,
-    "secs": 3.299868
+    "secs": 3.299868,
+    "track": 4
    },
    "ending": {
     "n": 10,
-    "secs": 12.799488
+    "secs": 12.799488,
+    "track": 5
    },
    "high-score-tetris-master": {
     "n": 9,
-    "secs": 31.99872
+    "secs": 31.99872,
+    "track": 6
    },
    "music-1": {
     "n": 3,
-    "secs": 54.797808
+    "secs": 54.797808,
+    "track": 1
    },
    "music-2": {
     "n": 4,
-    "secs": 35.198592
+    "secs": 35.198592,
+    "track": 2
    },
    "music-3": {
     "n": 5,
-    "secs": 24.265696000000002
+    "secs": 24.265696000000002,
+    "track": 3
    },
    "unknown-track-1": {
     "n": 1,
-    "secs": 25.798968000000002
+    "secs": 25.798968000000002,
+    "track": 7
    }
   }
  }

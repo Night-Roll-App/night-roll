@@ -51,715 +51,1025 @@
   "tracks": {
    "100-bananas": {
     "n": 1,
-    "secs": 124.8
+    "secs": 124.8,
+    "track": 157
    },
    "angry-aztec-barrel-course": {
     "n": 1,
-    "secs": 84
+    "secs": 84,
+    "track": 42,
+    "disc": 0
    },
    "angry-aztec-boss-dogadon": {
     "n": 1,
-    "secs": 111
+    "secs": 111,
+    "track": 48,
+    "disc": 0
    },
    "angry-aztec-caves": {
     "n": 1,
-    "secs": 201.6
+    "secs": 201.6,
+    "track": 38,
+    "disc": 0
    },
    "angry-aztec-lobby": {
     "n": 1,
-    "secs": 69.38888888888889
+    "secs": 69.38888888888889,
+    "track": 37,
+    "disc": 0
    },
    "angry-aztec-race": {
     "n": 1,
-    "secs": 70.8
+    "secs": 70.8,
+    "track": 45,
+    "disc": 0
    },
    "angry-aztec-room": {
     "n": 1,
-    "secs": 62.76923076923077
+    "secs": 62.76923076923077,
+    "track": 43,
+    "disc": 0
    },
    "angry-aztec-temple": {
     "n": 1,
-    "secs": 142.63392857142858
+    "secs": 142.63392857142858,
+    "track": 44,
+    "disc": 0
    },
    "angry-aztec-underground": {
     "n": 1,
-    "secs": 132
+    "secs": 132,
+    "track": 41,
+    "disc": 0
    },
    "angry-aztec": {
     "n": 1,
-    "secs": 141.82954545454547
+    "secs": 141.82954545454547,
+    "track": 39,
+    "disc": 0
    },
    "baboon-balloon": {
     "n": 1,
-    "secs": 20.052083333333332
+    "secs": 20.052083333333332,
+    "track": 171
    },
    "banana-fairy-isle": {
     "n": 1,
-    "secs": 86.25
+    "secs": 86.25,
+    "track": 49,
+    "disc": 0
    },
    "banana-fairy-photo": {
     "n": 1,
-    "secs": 2.0923003347680535
+    "secs": 2.0923003347680535,
+    "track": 159
    },
    "banana-fairy": {
     "n": 1,
-    "secs": 18
+    "secs": 18,
+    "track": 158
    },
    "banana-medal": {
     "n": 1,
-    "secs": 3.853484388379928
+    "secs": 3.853484388379928,
+    "track": 156
    },
    "barrel-course-complete": {
     "n": 1,
-    "secs": 5.821759775538955
+    "secs": 5.821759775538955,
+    "track": 160
    },
    "battle-arena": {
     "n": 1,
-    "secs": 64.00833333333334
+    "secs": 64.00833333333334,
+    "track": 5,
+    "disc": 0
    },
    "beach-ambience": {
     "n": 1,
-    "secs": 134
+    "secs": 134,
+    "track": 148
    },
    "bonus-barrel-introduction": {
     "n": 1,
-    "secs": 8.125
+    "secs": 8.125,
+    "track": 9,
+    "disc": 0
    },
    "bonus-barrel": {
     "n": 1,
-    "secs": 60.93150862595
+    "secs": 60.93150862595,
+    "track": 10,
+    "disc": 0
    },
    "boss-introduction": {
     "n": 1,
-    "secs": 60
+    "secs": 60,
+    "track": 115,
+    "disc": 1
    },
    "boss-unlock": {
     "n": 1,
-    "secs": 12.278846153846153
+    "secs": 12.278846153846153,
+    "track": 113,
+    "disc": 1
    },
    "candy-s-music-store": {
     "n": 1,
-    "secs": 66.63157894736842
+    "secs": 66.63157894736842,
+    "track": 40,
+    "disc": 0
    },
    "chunky-s-triangle-trample": {
     "n": 1,
-    "secs": 4.4772727272727275
+    "secs": 4.4772727272727275,
+    "track": 166
    },
    "collect-banana-token": {
     "n": 1,
-    "secs": 0.46153846153846156
+    "secs": 0.46153846153846156,
+    "track": 146
    },
    "collect-blue-print": {
     "n": 1,
-    "secs": 1.8833333333333333
+    "secs": 1.8833333333333333,
+    "track": 153
    },
    "collect-bonus-token": {
     "n": 1,
-    "secs": 0.6153846153846154
+    "secs": 0.6153846153846154,
+    "track": 144
    },
    "collect-crystal-coconut": {
     "n": 1,
-    "secs": 0.6774193548387096
+    "secs": 0.6774193548387096,
+    "track": 167
    },
    "collect-golden-banana": {
     "n": 1,
-    "secs": 3.875
+    "secs": 3.875,
+    "track": 155
    },
    "collect-melon-piece": {
     "n": 1,
-    "secs": 0.875
+    "secs": 0.875,
+    "track": 151
    },
    "collect-multi-banana-token": {
     "n": 1,
-    "secs": 1.0769230769230769
+    "secs": 1.0769230769230769,
+    "track": 147
    },
    "collect-pearl": {
     "n": 1,
-    "secs": 0.7426470588235294
+    "secs": 0.7426470588235294,
+    "track": 66,
+    "disc": 0
    },
    "cranky-s-lab": {
     "n": 1,
-    "secs": 62.11764705882353
+    "secs": 62.11764705882353,
+    "track": 8,
+    "disc": 0
    },
    "cranky-s-potion": {
     "n": 1,
-    "secs": 10.157360138940057
+    "secs": 10.157360138940057,
+    "track": 13,
+    "disc": 0
    },
    "credits": {
     "n": 1,
-    "secs": 156.8
+    "secs": 156.8,
+    "track": 131,
+    "disc": 1
    },
    "creepy-castle-ballroom": {
     "n": 1,
-    "secs": 65.45454545454545
+    "secs": 65.45454545454545,
+    "track": 107,
+    "disc": 0
    },
    "creepy-castle-barrel-course": {
     "n": 1,
-    "secs": 88.27586206896552
+    "secs": 88.27586206896552,
+    "track": 98,
+    "disc": 0
    },
    "creepy-castle-boss-king-kut-out": {
     "n": 1,
-    "secs": 88
+    "secs": 88,
+    "track": 116,
+    "disc": 1
    },
    "creepy-castle-caves": {
     "n": 1,
-    "secs": 79.02439024390245
+    "secs": 79.02439024390245,
+    "track": 101,
+    "disc": 0
    },
    "creepy-castle-dungeons": {
     "n": 1,
-    "secs": 135.52941176470588
+    "secs": 135.52941176470588,
+    "track": 100,
+    "disc": 0
    },
    "creepy-castle-greenhouse": {
     "n": 1,
-    "secs": 82.47619047619048
+    "secs": 82.47619047619048,
+    "track": 102,
+    "disc": 0
    },
    "creepy-castle-library-alternate": {
     "n": 1,
-    "secs": 93.81818181818181
+    "secs": 93.81818181818181,
+    "track": 106,
+    "disc": 0
    },
    "creepy-castle-library": {
     "n": 1,
-    "secs": 93.81818181818181
+    "secs": 93.81818181818181,
+    "track": 105,
+    "disc": 0
    },
    "creepy-castle-lobby": {
     "n": 1,
-    "secs": 89.45454545454545
+    "secs": 89.45454545454545,
+    "track": 96,
+    "disc": 0
    },
    "creepy-castle-mine-cart": {
     "n": 1,
-    "secs": 100.11428571428571
+    "secs": 100.11428571428571,
+    "track": 111,
+    "disc": 0
    },
    "creepy-castle-museum": {
     "n": 1,
-    "secs": 115.5
+    "secs": 115.5,
+    "track": 104,
+    "disc": 0
    },
    "creepy-castle-rubbish-bin": {
     "n": 1,
-    "secs": 57.88235294117647
+    "secs": 57.88235294117647,
+    "track": 103,
+    "disc": 0
    },
    "creepy-castle-tree-trunk": {
     "n": 1,
-    "secs": 98.66666666666667
+    "secs": 98.66666666666667,
+    "track": 99,
+    "disc": 0
    },
    "creepy-castle-wind-tower": {
     "n": 1,
-    "secs": 69
+    "secs": 69,
+    "track": 108,
+    "disc": 0
    },
    "creepy-castle": {
     "n": 1,
-    "secs": 189.92105263157896
+    "secs": 189.92105263157896,
+    "track": 97,
+    "disc": 0
    },
    "crystal-caves-barrel-course": {
     "n": 1,
-    "secs": 80.84210526315789
+    "secs": 80.84210526315789,
+    "track": 89,
+    "disc": 0
    },
    "crystal-caves-board-game": {
     "n": 1,
-    "secs": 68.57142857142857
+    "secs": 68.57142857142857,
+    "track": 91,
+    "disc": 0
    },
    "crystal-caves-boss-army-dillo": {
     "n": 1,
-    "secs": 123.24324324324324
+    "secs": 123.24324324324324,
+    "track": 95,
+    "disc": 0
    },
    "crystal-caves-earthquake": {
     "n": 1,
-    "secs": 6.425
+    "secs": 6.425,
+    "track": 88,
+    "disc": 0
    },
    "crystal-caves-igloo": {
     "n": 1,
-    "secs": 72
+    "secs": 72,
+    "track": 90,
+    "disc": 0
    },
    "crystal-caves-indoors": {
     "n": 1,
-    "secs": 74.16666666666667
+    "secs": 74.16666666666667,
+    "track": 93,
+    "disc": 0
    },
    "crystal-caves-lobby": {
     "n": 1,
-    "secs": 70.29166666666667
+    "secs": 70.29166666666667,
+    "track": 86,
+    "disc": 0
    },
    "crystal-caves-race": {
     "n": 1,
-    "secs": 57.142857142857146
+    "secs": 57.142857142857146,
+    "track": 94,
+    "disc": 0
    },
    "crystal-caves-rotating-room": {
     "n": 1,
-    "secs": 59.4
+    "secs": 59.4,
+    "track": 92,
+    "disc": 0
    },
    "crystal-caves": {
     "n": 1,
-    "secs": 123.5
+    "secs": 123.5,
+    "track": 87,
+    "disc": 0
    },
    "defeat-boss": {
     "n": 1,
-    "secs": 5.358333333333333
+    "secs": 5.358333333333333,
+    "track": 117,
+    "disc": 1
    },
    "diddy-s-guitar-gazump": {
     "n": 1,
-    "secs": 4
+    "secs": 4,
+    "track": 163
    },
    "dk-isle": {
     "n": 1,
-    "secs": 108.8
+    "secs": 108.8,
+    "track": 14,
+    "disc": 0
    },
    "dk-rap": {
     "n": 1,
-    "secs": 216.6060606060606
+    "secs": 216.6060606060606,
+    "track": 2,
+    "disc": 0
    },
    "dk-s-treehouse": {
     "n": 1,
-    "secs": 81.23076923076923
+    "secs": 81.23076923076923,
+    "track": 7,
+    "disc": 0
    },
    "donkey-s-bongo-blast": {
     "n": 1,
-    "secs": 3.425
+    "secs": 3.425,
+    "track": 162
    },
    "ending": {
     "n": 1,
-    "secs": 100
+    "secs": 100,
+    "track": 132,
+    "disc": 1
    },
    "enguarde": {
     "n": 1,
-    "secs": 57.47222222222222
+    "secs": 57.47222222222222,
+    "track": 63,
+    "disc": 0
    },
    "entrance": {
     "n": 1,
-    "secs": 3.6923076923076925
+    "secs": 3.6923076923076925,
+    "track": 142
    },
    "exit": {
     "n": 1,
-    "secs": 3.6923076923076925
+    "secs": 3.6923076923076925,
+    "track": 143
    },
    "failure": {
     "n": 1,
-    "secs": 3.289473684210526
+    "secs": 3.289473684210526,
+    "track": 12,
+    "disc": 0
    },
    "find-blue-print": {
     "n": 1,
-    "secs": 2.0854165570233145
+    "secs": 2.0854165570233145,
+    "track": 152
    },
    "find-golden-banana": {
     "n": 1,
-    "secs": 3.25
+    "secs": 3.25,
+    "track": 154
    },
    "find-melon-piece": {
     "n": 1,
-    "secs": 1.141304347826087
+    "secs": 1.141304347826087,
+    "track": 150
    },
    "frantic-factory-boss-mad-jack": {
     "n": 1,
-    "secs": 116
+    "secs": 116,
+    "track": 58,
+    "disc": 0
    },
    "frantic-factory-car-race": {
     "n": 1,
-    "secs": 104
+    "secs": 104,
+    "track": 57,
+    "disc": 0
    },
    "frantic-factory-conveyor-belt": {
     "n": 1,
-    "secs": 57.333333333333336
+    "secs": 57.333333333333336,
+    "track": 55,
+    "disc": 0
    },
    "frantic-factory-lobby": {
     "n": 1,
-    "secs": 93.81818181818181
+    "secs": 93.81818181818181,
+    "track": 52,
+    "disc": 0
    },
    "frantic-factory-production-room": {
     "n": 1,
-    "secs": 110
+    "secs": 110,
+    "track": 54,
+    "disc": 0
    },
    "frantic-factory-research-and-development": {
     "n": 1,
-    "secs": 116
+    "secs": 116,
+    "track": 56,
+    "disc": 0
    },
    "frantic-factory": {
     "n": 1,
-    "secs": 135.27272727272728
+    "secs": 135.27272727272728,
+    "track": 53,
+    "disc": 0
    },
    "fungi-forest-barrel-course": {
     "n": 1,
-    "secs": 59.07692307692308
+    "secs": 59.07692307692308,
+    "track": 80,
+    "disc": 0
    },
    "fungi-forest-bonus-room": {
     "n": 1,
-    "secs": 70.08333333333333
+    "secs": 70.08333333333333,
+    "track": 81,
+    "disc": 0
    },
    "fungi-forest-boss-dogadon": {
     "n": 1,
-    "secs": 122.18181818181819
+    "secs": 122.18181818181819,
+    "track": 85,
+    "disc": 0
    },
    "fungi-forest-day": {
     "n": 1,
-    "secs": 155.6
+    "secs": 155.6,
+    "track": 74,
+    "disc": 0
    },
    "fungi-forest-giant-mushroom": {
     "n": 1,
-    "secs": 66.78260869565217
+    "secs": 66.78260869565217,
+    "track": 79,
+    "disc": 0
    },
    "fungi-forest-indoors-1": {
     "n": 1,
-    "secs": 62.9126213592233
+    "secs": 62.9126213592233,
+    "track": 75,
+    "disc": 0
    },
    "fungi-forest-indoors-2": {
     "n": 1,
-    "secs": 81.64948453608247
+    "secs": 81.64948453608247,
+    "track": 77,
+    "disc": 0
    },
    "fungi-forest-lobby": {
     "n": 1,
-    "secs": 67.2
+    "secs": 67.2,
+    "track": 73,
+    "disc": 0
    },
    "fungi-forest-mine-cart": {
     "n": 1,
-    "secs": 108
+    "secs": 108,
+    "track": 84,
+    "disc": 0
    },
    "fungi-forest-night": {
     "n": 1,
-    "secs": 129
+    "secs": 129,
+    "track": 76,
+    "disc": 0
    },
    "fungi-forest-race": {
     "n": 1,
-    "secs": 64.8
+    "secs": 64.8,
+    "track": 83,
+    "disc": 0
    },
    "fungi-forest-spider": {
     "n": 1,
-    "secs": 61.89147939582128
+    "secs": 61.89147939582128,
+    "track": 78,
+    "disc": 0
    },
    "fungi-forest-tree-trunk": {
     "n": 1,
-    "secs": 59.294117647058826
+    "secs": 59.294117647058826,
+    "track": 82,
+    "disc": 0
    },
    "funky-s-armoury": {
     "n": 1,
-    "secs": 70
+    "secs": 70,
+    "track": 29,
+    "disc": 0
    },
    "game-over": {
     "n": 1,
-    "secs": 27.428571428571427
+    "secs": 27.428571428571427,
+    "track": 124,
+    "disc": 1
    },
    "gloomy-galleon-barrel-course": {
     "n": 1,
-    "secs": 169.26315789473685
+    "secs": 169.26315789473685,
+    "track": 62,
+    "disc": 0
    },
    "gloomy-galleon-boat-race": {
     "n": 1,
-    "secs": 60.30769230769231
+    "secs": 60.30769230769231,
+    "track": 71,
+    "disc": 0
    },
    "gloomy-galleon-boss-puftoss": {
     "n": 1,
-    "secs": 118.66666666666667
+    "secs": 118.66666666666667,
+    "track": 72,
+    "disc": 0
    },
    "gloomy-galleon-caves": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 60,
+    "disc": 0
    },
    "gloomy-galleon-lobby": {
     "n": 1,
-    "secs": 72
+    "secs": 72,
+    "track": 59,
+    "disc": 0
    },
    "gloomy-galleon-mechanical-fish": {
     "n": 1,
-    "secs": 62.270270270270274
+    "secs": 62.270270270270274,
+    "track": 67,
+    "disc": 0
    },
    "gloomy-galleon-pearl-treasure": {
     "n": 1,
-    "secs": 48
+    "secs": 48,
+    "track": 65,
+    "disc": 0
    },
    "gloomy-galleon-ship-ruins": {
     "n": 1,
-    "secs": 101.88888888888889
+    "secs": 101.88888888888889,
+    "track": 69,
+    "disc": 0
    },
    "gloomy-galleon-submarine": {
     "n": 1,
-    "secs": 67.2
+    "secs": 67.2,
+    "track": 70,
+    "disc": 0
    },
    "gloomy-galleon-sunken-ship": {
     "n": 1,
-    "secs": 72
+    "secs": 72,
+    "track": 68,
+    "disc": 0
    },
    "gloomy-galleon": {
     "n": 1,
-    "secs": 165.6
+    "secs": 165.6,
+    "track": 61,
+    "disc": 0
    },
    "gorilla-gone": {
     "n": 1,
-    "secs": 16.052083333333332
+    "secs": 16.052083333333332,
+    "track": 175
    },
    "happy-k-lumsy": {
     "n": 1,
-    "secs": 10.104731329930004
+    "secs": 10.104731329930004,
+    "track": 126,
+    "disc": 1
    },
    "hideout-helm-bonus-barrel": {
     "n": 1,
-    "secs": 64
+    "secs": 64,
+    "track": 123,
+    "disc": 1
    },
    "hideout-helm-completed": {
     "n": 1,
-    "secs": 152.34782608695653
+    "secs": 152.34782608695653,
+    "track": 122,
+    "disc": 1
    },
    "hideout-helm-lobby": {
     "n": 1,
-    "secs": 82
+    "secs": 82,
+    "track": 119,
+    "disc": 1
    },
    "hideout-helm": {
     "n": 1,
-    "secs": 147.84615384615384
+    "secs": 147.84615384615384,
+    "track": 125,
+    "disc": 1
    },
    "hunky-chunky": {
     "n": 1,
-    "secs": 57.23076923076923
+    "secs": 57.23076923076923,
+    "track": 174
    },
    "instrument-refill": {
     "n": 1,
-    "secs": 3.2371794871794872
+    "secs": 3.2371794871794872,
+    "track": 161
    },
    "introduction": {
     "n": 1,
-    "secs": 292.375
+    "secs": 292.375,
+    "track": 6,
+    "disc": 0
    },
    "jungle-ambience": {
     "n": 1,
-    "secs": 27.015625
+    "secs": 27.015625,
+    "track": 149
    },
    "jungle-japes-barrel-course": {
     "n": 1,
-    "secs": 76.8
+    "secs": 76.8,
+    "track": 33,
+    "disc": 0
    },
    "jungle-japes-boss-army-dillo": {
     "n": 1,
-    "secs": 108
+    "secs": 108,
+    "track": 36,
+    "disc": 0
    },
    "jungle-japes-caves-ambience": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 27,
+    "disc": 0
    },
    "jungle-japes-caves": {
     "n": 1,
-    "secs": 172.36363636363637
+    "secs": 172.36363636363637,
+    "track": 26,
+    "disc": 0
    },
    "jungle-japes-lobby": {
     "n": 1,
-    "secs": 60
+    "secs": 60,
+    "track": 24,
+    "disc": 0
    },
    "jungle-japes-mine-cart": {
     "n": 1,
-    "secs": 102.66666666666667
+    "secs": 102.66666666666667,
+    "track": 35,
+    "disc": 0
    },
    "jungle-japes-storm": {
     "n": 1,
-    "secs": 62.4
+    "secs": 62.4,
+    "track": 31,
+    "disc": 0
    },
    "jungle-japes-underground": {
     "n": 1,
-    "secs": 104.72727272727273
+    "secs": 104.72727272727273,
+    "track": 34,
+    "disc": 0
    },
    "jungle-japes": {
     "n": 1,
-    "secs": 124.8
+    "secs": 124.8,
+    "track": 25,
+    "disc": 0
    },
    "k-lumsy-key": {
     "n": 1,
-    "secs": 3.725
+    "secs": 3.725,
+    "track": 118,
+    "disc": 1
    },
    "k-lumsy": {
     "n": 1,
-    "secs": 121.41176470588235
+    "secs": 121.41176470588235,
+    "track": 22,
+    "disc": 0
    },
    "k-rool-battle-introduction": {
     "n": 1,
-    "secs": 57.6
+    "secs": 57.6,
+    "track": 128,
+    "disc": 1
    },
    "k-rool-defeated": {
     "n": 1,
-    "secs": 37.84375
+    "secs": 37.84375,
+    "track": 130,
+    "disc": 1
    },
    "k-rool-duel": {
     "n": 1,
-    "secs": 192
+    "secs": 192,
+    "track": 129,
+    "disc": 1
    },
    "k-rool-take-off": {
     "n": 1,
-    "secs": 70.58823529411765
+    "secs": 70.58823529411765,
+    "track": 127,
+    "disc": 1
    },
    "k-rool": {
     "n": 1,
-    "secs": 34
+    "secs": 34,
+    "track": 120,
+    "disc": 1
    },
    "krem-isle-snide-s-hq": {
     "n": 1,
-    "secs": 70
+    "secs": 70,
+    "track": 51,
+    "disc": 0
    },
    "krem-isle": {
     "n": 1,
-    "secs": 121.84615384615384
+    "secs": 121.84615384615384,
+    "track": 50,
+    "disc": 0
    },
    "lanky-s-trombone-tremor": {
     "n": 1,
-    "secs": 5.053571428571429
+    "secs": 5.053571428571429,
+    "track": 164
    },
    "logo": {
     "n": 1,
-    "secs": 21.6
+    "secs": 21.6,
+    "track": 1,
+    "disc": 0
    },
    "lose-bonus-tokens": {
     "n": 1,
-    "secs": 1.1477272727272727
+    "secs": 1.1477272727272727,
+    "track": 145
    },
    "lose-race": {
     "n": 1,
-    "secs": 23.863636363636363
+    "secs": 23.863636363636363,
+    "track": 47,
+    "disc": 0
    },
    "mad-maze-maul": {
     "n": 1,
-    "secs": 59.2
+    "secs": 59.2,
+    "track": 176
    },
    "main-menu": {
     "n": 1,
-    "secs": 66.85714285714286
+    "secs": 66.85714285714286,
+    "track": 3,
+    "disc": 0
    },
    "mermaid-palace": {
     "n": 1,
-    "secs": 66.57142857142857
+    "secs": 66.57142857142857,
+    "track": 64,
+    "disc": 0
    },
    "mine-cart-carnage": {
     "n": 1,
-    "secs": 62.11764705882353
+    "secs": 62.11764705882353,
+    "track": 178
    },
    "mini-boss": {
     "n": 1,
-    "secs": 70.15384615384616
+    "secs": 70.15384615384616,
+    "track": 179
    },
    "mini-monkey": {
     "n": 1,
-    "secs": 46.5
+    "secs": 46.5,
+    "track": 173
    },
    "monkey-smash": {
     "n": 1,
-    "secs": 114.46153846153847
+    "secs": 114.46153846153847,
+    "track": 4,
+    "disc": 0
    },
    "orangsprint": {
     "n": 1,
-    "secs": 49.371428571428574
+    "secs": 49.371428571428574,
+    "track": 172
    },
    "pause-menu": {
     "n": 1,
-    "secs": 40.61538461538461
+    "secs": 40.61538461538461,
+    "track": 16,
+    "disc": 0
    },
    "pause": {
     "n": 1,
-    "secs": 0.625
+    "secs": 0.625,
+    "track": 15,
+    "disc": 0
    },
    "rambi": {
     "n": 1,
-    "secs": 43.885714285714286
+    "secs": 43.885714285714286,
+    "track": 32,
+    "disc": 0
    },
    "rocket-barrel-boost": {
     "n": 1,
-    "secs": 44
+    "secs": 44,
+    "track": 170
    },
    "snide-s-hq": {
     "n": 1,
-    "secs": 72.5
+    "secs": 72.5,
+    "track": 121,
+    "disc": 1
    },
    "stealthy-snoop": {
     "n": 1,
-    "secs": 74.18181818181819
+    "secs": 74.18181818181819,
+    "track": 177
    },
    "strong-kong": {
     "n": 1,
-    "secs": 30.545454545454547
+    "secs": 30.545454545454547,
+    "track": 169
    },
    "success": {
     "n": 1,
-    "secs": 2.1416666666666666
+    "secs": 2.1416666666666666,
+    "track": 11,
+    "disc": 0
    },
    "tag-barrel-chunky": {
     "n": 1,
-    "secs": 23.863636363636363
+    "secs": 23.863636363636363,
+    "track": 21,
+    "disc": 0
    },
    "tag-barrel-diddy": {
     "n": 1,
-    "secs": 23.863636363636363
+    "secs": 23.863636363636363,
+    "track": 18,
+    "disc": 0
    },
    "tag-barrel-donkey": {
     "n": 1,
-    "secs": 23.863636363636363
+    "secs": 23.863636363636363,
+    "track": 17,
+    "disc": 0
    },
    "tag-barrel-lanky": {
     "n": 1,
-    "secs": 23.863636363636363
+    "secs": 23.863636363636363,
+    "track": 19,
+    "disc": 0
    },
    "tag-barrel-tiny": {
     "n": 1,
-    "secs": 23.863636363636363
+    "secs": 23.863636363636363,
+    "track": 20,
+    "disc": 0
    },
    "tiny-s-saxophone-slam": {
     "n": 1,
-    "secs": 4.222222222222222
+    "secs": 4.222222222222222,
+    "track": 165
    },
    "transformation": {
     "n": 1,
-    "secs": 5.916666666666667
+    "secs": 5.916666666666667,
+    "track": 168
    },
    "troff-n-scoff": {
     "n": 1,
-    "secs": 73.30434782608695
+    "secs": 73.30434782608695,
+    "track": 112,
+    "disc": 0
    },
    "unknown": {
     "n": 1,
-    "secs": 3.2276343273632286
+    "secs": 3.2276343273632286,
+    "track": 133
    },
    "weapon-upgrade": {
     "n": 1,
-    "secs": 1.5333333333333334
+    "secs": 1.5333333333333334,
+    "track": 30,
+    "disc": 0
    },
    "win-race": {
     "n": 1,
-    "secs": 23.863636363636363
+    "secs": 23.863636363636363,
+    "track": 46,
+    "disc": 0
    },
    "wrinkly-kong": {
     "n": 1,
-    "secs": 21.6
+    "secs": 21.6,
+    "track": 23,
+    "disc": 0
    },
    "boss-unlock-2": {
     "n": 1,
-    "secs": 64
+    "secs": 64,
+    "track": 114,
+    "disc": 1
    },
    "creepy-castle-dungeons-2": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 109,
+    "disc": 0
    },
    "creepy-castle-dungeons-3": {
     "n": 1,
-    "secs": 112.94117647058823
+    "secs": 112.94117647058823,
+    "track": 110,
+    "disc": 0
    },
    "jungle-japes-2": {
     "n": 1,
-    "secs": 129.04569892473117
+    "secs": 129.04569892473117,
+    "track": 28,
+    "disc": 0
    },
    "unknown-2": {
     "n": 1,
-    "secs": 0.3942307692307692
+    "secs": 0.3942307692307692,
+    "track": 134
    },
    "unknown-3": {
     "n": 1,
-    "secs": 2.04
+    "secs": 2.04,
+    "track": 135
    },
    "unknown-4": {
     "n": 1,
-    "secs": 0.6484375
+    "secs": 0.6484375,
+    "track": 136
    },
    "unknown-5": {
     "n": 1,
-    "secs": 0.9107142857142857
+    "secs": 0.9107142857142857,
+    "track": 137
    },
    "unknown-6": {
     "n": 1,
-    "secs": 1.0673076923076923
+    "secs": 1.0673076923076923,
+    "track": 138
    },
    "unknown-7": {
     "n": 1,
-    "secs": 3.051260776086507
+    "secs": 3.051260776086507,
+    "track": 139
    },
    "unknown-8": {
     "n": 1,
-    "secs": 6.893343606177817
+    "secs": 6.893343606177817,
+    "track": 140
    }
   },
   "chip": "usf",

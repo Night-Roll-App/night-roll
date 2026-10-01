@@ -43,327 +43,482 @@
   "tracks": {
    "another-world-of-beasts": {
     "n": 1,
-    "secs": 136
+    "secs": 136,
+    "track": 53,
+    "disc": 2
    },
    "aria-de-mezzo-carattere": {
     "n": 1,
-    "secs": 235.99
+    "secs": 235.99,
+    "track": 37,
+    "disc": 2
    },
    "awakening": {
     "n": 1,
-    "secs": 103
+    "secs": 103,
+    "track": 5,
+    "disc": 1
    },
    "battle-theme": {
     "n": 1,
-    "secs": 110
+    "secs": 110,
+    "track": 7,
+    "disc": 1
    },
    "blackjack": {
     "n": 1,
-    "secs": 164
+    "secs": 164,
+    "track": 48,
+    "disc": 2
    },
    "blazing-fire": {
     "n": 1,
-    "secs": 21
+    "secs": 21,
+    "track": 75
    },
    "catastrophe": {
     "n": 1,
-    "secs": 112
+    "secs": 112,
+    "track": 55,
+    "disc": 3
    },
    "celes": {
     "n": 1,
-    "secs": 161
+    "secs": 161,
+    "track": 24,
+    "disc": 1
    },
    "coin-song": {
     "n": 1,
-    "secs": 178.99
+    "secs": 178.99,
+    "track": 29,
+    "disc": 2
    },
    "cyan": {
     "n": 1,
-    "secs": 129.99
+    "secs": 129.99,
+    "track": 15,
+    "disc": 1
    },
    "dancing-mad-full": {
     "n": 1,
-    "secs": 299.98
+    "secs": 299.98,
+    "track": 76
    },
    "dancing-mad-part-1": {
     "n": 1,
-    "secs": 216
+    "secs": 216,
+    "track": 67,
+    "disc": 3
    },
    "dancing-mad-part-2": {
     "n": 1,
-    "secs": 223
+    "secs": 223,
+    "track": 68,
+    "disc": 3
    },
    "dancing-mad-part-3": {
     "n": 1,
-    "secs": 191
+    "secs": 191,
+    "track": 69,
+    "disc": 3
    },
    "dancing-mad-part-4": {
     "n": 1,
-    "secs": 33
+    "secs": 33,
+    "track": 70,
+    "disc": 3
    },
    "dancing-mad-part-5": {
     "n": 1,
-    "secs": 300
+    "secs": 300,
+    "track": 71,
+    "disc": 3
    },
    "dark-world": {
     "n": 1,
-    "secs": 165
+    "secs": 165,
+    "track": 58,
+    "disc": 3
    },
    "devil-s-lab": {
     "n": 1,
-    "secs": 119
+    "secs": 119,
+    "track": 47,
+    "disc": 2
    },
    "edgar-and-sabin": {
     "n": 1,
-    "secs": 142
+    "secs": 142,
+    "track": 9,
+    "disc": 1
    },
    "ending-theme-part-1": {
     "n": 1,
-    "secs": 300
+    "secs": 300,
+    "track": 72,
+    "disc": 3
    },
    "ending-theme-part-2": {
     "n": 1,
-    "secs": 300
+    "secs": 300,
+    "track": 73,
+    "disc": 3
    },
    "epitaph": {
     "n": 1,
-    "secs": 151
+    "secs": 151,
+    "track": 62,
+    "disc": 3
    },
    "fanatics": {
     "n": 1,
-    "secs": 78
+    "secs": 78,
+    "track": 65,
+    "disc": 3
    },
    "fanfare": {
     "n": 1,
-    "secs": 33
+    "secs": 33,
+    "track": 8,
+    "disc": 1
    },
    "forever-rachel": {
     "n": 1,
-    "secs": 157
+    "secs": 157,
+    "track": 31,
+    "disc": 2
    },
    "gau": {
     "n": 1,
-    "secs": 142
+    "secs": 142,
+    "track": 20,
+    "disc": 1
    },
    "gogo": {
     "n": 1,
-    "secs": 116
+    "secs": 116,
+    "track": 61,
+    "disc": 3
    },
    "good-night": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 77
    },
    "grand-finale-part-1": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 42,
+    "disc": 2
    },
    "grand-finale-part-2": {
     "n": 1,
-    "secs": 175
+    "secs": 175,
+    "track": 43,
+    "disc": 2
    },
    "johnny-c-bad": {
     "n": 1,
-    "secs": 160
+    "secs": 160,
+    "track": 45,
+    "disc": 2
    },
    "kefka": {
     "n": 1,
-    "secs": 155
+    "secs": 155,
+    "track": 10,
+    "disc": 1
    },
    "kids-run-through-the-city": {
     "n": 1,
-    "secs": 148
+    "secs": 148,
+    "track": 22,
+    "disc": 1
    },
    "last-dungeon": {
     "n": 1,
-    "secs": 151
+    "secs": 151,
+    "track": 66,
+    "disc": 3
    },
    "locke": {
     "n": 1,
-    "secs": 111
+    "secs": 111,
+    "track": 6,
+    "disc": 1
    },
    "metamorphasis": {
     "n": 1,
-    "secs": 74
+    "secs": 74,
+    "track": 27,
+    "disc": 1
    },
    "mog": {
     "n": 1,
-    "secs": 97
+    "secs": 97,
+    "track": 50,
+    "disc": 2
    },
    "mt-koltz": {
     "n": 1,
-    "secs": 133
+    "secs": 133,
+    "track": 11,
+    "disc": 1
    },
    "new-continent": {
     "n": 1,
-    "secs": 148
+    "secs": 148,
+    "track": 54,
+    "disc": 3
    },
    "opening-theme-part-1": {
     "n": 1,
-    "secs": 74
+    "secs": 74,
+    "track": 1,
+    "disc": 1
    },
    "opening-theme-part-2": {
     "n": 1,
-    "secs": 69
+    "secs": 69,
+    "track": 2,
+    "disc": 1
    },
    "opening-theme-part-3": {
     "n": 1,
-    "secs": 116
+    "secs": 116,
+    "track": 3,
+    "disc": 1
    },
    "overture-part-1": {
     "n": 1,
-    "secs": 104
+    "secs": 104,
+    "track": 34,
+    "disc": 2
    },
    "overture-part-2": {
     "n": 1,
-    "secs": 44
+    "secs": 44,
+    "track": 35,
+    "disc": 2
    },
    "overture-part-3": {
     "n": 1,
-    "secs": 128
+    "secs": 128,
+    "track": 36,
+    "disc": 2
    },
    "quiet-beach": {
     "n": 1,
-    "secs": 27
+    "secs": 27,
+    "track": 78
    },
    "relm": {
     "n": 1,
-    "secs": 138
+    "secs": 138,
+    "track": 52,
+    "disc": 2
    },
    "rest-in-peace": {
     "n": 1,
-    "secs": 29
+    "secs": 29,
+    "track": 57,
+    "disc": 3
    },
    "returners": {
     "n": 1,
-    "secs": 147
+    "secs": 147,
+    "track": 12,
+    "disc": 1
    },
    "save-them": {
     "n": 1,
-    "secs": 106
+    "secs": 106,
+    "track": 25,
+    "disc": 1
    },
    "searching-for-friends": {
     "n": 1,
-    "secs": 151
+    "secs": 151,
+    "track": 60,
+    "disc": 3
    },
    "setzer": {
     "n": 1,
-    "secs": 99.99000000000001
+    "secs": 99.99000000000001,
+    "track": 44,
+    "disc": 2
    },
    "shadow": {
     "n": 1,
-    "secs": 99
+    "secs": 99,
+    "track": 13,
+    "disc": 1
    },
    "slam-shuffle": {
     "n": 1,
-    "secs": 127
+    "secs": 127,
+    "track": 32,
+    "disc": 2
    },
    "spinach-rag": {
     "n": 1,
-    "secs": 121
+    "secs": 121,
+    "track": 33,
+    "disc": 2
    },
    "strago": {
     "n": 1,
-    "secs": 121
+    "secs": 121,
+    "track": 51,
+    "disc": 2
    },
    "strong-wind": {
     "n": 1,
-    "secs": 16
+    "secs": 16,
+    "track": 80
    },
    "techno-de-chocobo": {
     "n": 1,
-    "secs": 226
+    "secs": 226,
+    "track": 30,
+    "disc": 2
    },
    "terra": {
     "n": 1,
-    "secs": 215.99
+    "secs": 215.99,
+    "track": 28,
+    "disc": 2
    },
    "the-day-after": {
     "n": 1,
-    "secs": 118
+    "secs": 118,
+    "track": 59,
+    "disc": 3
    },
    "the-decisive-battle": {
     "n": 1,
-    "secs": 106
+    "secs": 106,
+    "track": 26,
+    "disc": 1
    },
    "the-empire-gestahl": {
     "n": 1,
-    "secs": 171
+    "secs": 171,
+    "track": 46,
+    "disc": 2
    },
    "the-fierce-battle": {
     "n": 1,
-    "secs": 137
+    "secs": 137,
+    "track": 56,
+    "disc": 3
    },
    "the-magic-house": {
     "n": 1,
-    "secs": 136
+    "secs": 136,
+    "track": 63,
+    "disc": 3
    },
    "the-mines-of-narshe": {
     "n": 1,
-    "secs": 158
+    "secs": 158,
+    "track": 4,
+    "disc": 1
    },
    "the-phantom-forest": {
     "n": 1,
-    "secs": 187
+    "secs": 187,
+    "track": 17,
+    "disc": 1
    },
    "the-phantom-train": {
     "n": 1,
-    "secs": 144
+    "secs": 144,
+    "track": 18,
+    "disc": 1
    },
    "the-prelude": {
     "n": 1,
-    "secs": 154
+    "secs": 154,
+    "track": 74,
+    "disc": 3
    },
    "the-serpent-trench": {
     "n": 1,
-    "secs": 119
+    "secs": 119,
+    "track": 21,
+    "disc": 1
    },
    "the-unforgiven": {
     "n": 1,
-    "secs": 73
+    "secs": 73,
+    "track": 16,
+    "disc": 1
    },
    "the-wedding-waltz-duel-part-1": {
     "n": 1,
-    "secs": 77
+    "secs": 77,
+    "track": 38,
+    "disc": 2
    },
    "the-wedding-waltz-duel-part-2": {
     "n": 1,
-    "secs": 33.980000000000004
+    "secs": 33.980000000000004,
+    "track": 39,
+    "disc": 2
    },
    "the-wedding-waltz-duel-part-3": {
     "n": 1,
-    "secs": 45
+    "secs": 45,
+    "track": 40,
+    "disc": 2
    },
    "the-wedding-waltz-duel-part-4": {
     "n": 1,
-    "secs": 86
+    "secs": 86,
+    "track": 41,
+    "disc": 2
    },
    "train": {
     "n": 1,
-    "secs": 18
+    "secs": 18,
+    "track": 81
    },
    "troops-march-on": {
     "n": 1,
-    "secs": 104
+    "secs": 104,
+    "track": 14,
+    "disc": 1
    },
    "umaro": {
     "n": 1,
-    "secs": 93
+    "secs": 93,
+    "track": 64,
+    "disc": 3
    },
    "under-martial-law": {
     "n": 1,
-    "secs": 134
+    "secs": 134,
+    "track": 23,
+    "disc": 1
    },
    "untitled": {
     "n": 1,
-    "secs": 68
+    "secs": 68,
+    "track": 49,
+    "disc": 2
    },
    "unused-fanfare": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 82
    },
    "wild-west": {
     "n": 1,
-    "secs": 131
+    "secs": 131,
+    "track": 19,
+    "disc": 1
    }
   },
   "chip": "spc",

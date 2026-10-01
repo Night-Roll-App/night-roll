@@ -33,315 +33,393 @@
   "tracks": {
    "activating-pyramid": {
     "n": 1,
-    "secs": 139.58500869939473
+    "secs": 139.58500869939473,
+    "track": 30
    },
    "arcade-complete": {
     "n": 1,
-    "secs": 2.0863779709253136
+    "secs": 2.0863779709253136,
+    "track": 57
    },
    "assembling-floyd": {
     "n": 1,
-    "secs": 14.826923076923077
+    "secs": 14.826923076923077,
+    "track": 24
    },
    "asteroid": {
     "n": 1,
-    "secs": 202.28571428571428
+    "secs": 202.28571428571428,
+    "track": 58
    },
    "boss-death": {
     "n": 1,
-    "secs": 29.53846153846154
+    "secs": 29.53846153846154,
+    "track": 27
    },
    "boss-fight": {
     "n": 1,
-    "secs": 54.964285714285715
+    "secs": 54.964285714285715,
+    "track": 26
    },
    "boss-intro": {
     "n": 1,
-    "secs": 68.67857142857143
+    "secs": 68.67857142857143,
+    "track": 25
    },
    "cave": {
     "n": 1,
-    "secs": 119.23315633404593
+    "secs": 119.23315633404593,
+    "track": 10
    },
    "cerulean": {
     "n": 1,
-    "secs": 217.3068219201279
+    "secs": 217.3068219201279,
+    "track": 34
    },
    "character-select": {
     "n": 1,
-    "secs": 57.64705882352941
+    "secs": 57.64705882352941,
+    "track": 5
    },
    "death": {
     "n": 1,
-    "secs": 6.9375
+    "secs": 6.9375,
+    "track": 69
    },
    "departing-from-goldwood-sfx": {
     "n": 1,
-    "secs": 67.63636363636364
+    "secs": 67.63636363636364,
+    "track": 11
    },
    "destroying-the-asteroid": {
     "n": 1,
-    "secs": 22.794642857142858
+    "secs": 22.794642857142858,
+    "track": 60
    },
    "entering-pyramid": {
     "n": 1,
-    "secs": 67.64233576642336
+    "secs": 67.64233576642336,
+    "track": 31
    },
    "eschebone": {
     "n": 1,
-    "secs": 243.8127223857673
+    "secs": 243.8127223857673,
+    "track": 39
    },
    "finding-floyd-part-1": {
     "n": 1,
-    "secs": 3.75
+    "secs": 3.75,
+    "track": 21
    },
    "finding-floyd-part-2": {
     "n": 1,
-    "secs": 3.75
+    "secs": 3.75,
+    "track": 22
    },
    "finding-floyd-part-3": {
     "n": 1,
-    "secs": 3.75
+    "secs": 3.75,
+    "track": 23
    },
    "floyd-mission": {
     "n": 1,
-    "secs": 80.51612903225806
+    "secs": 80.51612903225806,
+    "track": 48
    },
    "floyd-s-destruction": {
     "n": 1,
-    "secs": 56.58424381828637
+    "secs": 56.58424381828637,
+    "track": 20
    },
    "flume": {
     "n": 1,
-    "secs": 46.98795180722892
+    "secs": 46.98795180722892,
+    "track": 29
    },
    "funky-disco": {
     "n": 1,
-    "secs": 21.460093896713616
+    "secs": 21.460093896713616,
+    "track": 52
    },
    "gem-quarry-saved": {
     "n": 1,
-    "secs": 115.99728629579376
+    "secs": 115.99728629579376,
+    "track": 46
    },
    "gemini": {
     "n": 1,
-    "secs": 0.5806451612903226
+    "secs": 0.5806451612903226,
+    "track": 67
    },
    "gold-bar": {
     "n": 1,
-    "secs": 2.826923076923077
+    "secs": 2.826923076923077,
+    "track": 65
    },
    "goldwood": {
     "n": 1,
-    "secs": 211.84745879594513
+    "secs": 211.84745879594513,
+    "track": 9
    },
    "ichor": {
     "n": 1,
-    "secs": 183.5042735042735
+    "secs": 183.5042735042735,
+    "track": 35
    },
    "intro-movie": {
     "n": 1,
-    "secs": 156.68120452884457
+    "secs": 156.68120452884457,
+    "track": 4
    },
    "jeff-barry-racing": {
     "n": 1,
-    "secs": 36.92307692307692
+    "secs": 36.92307692307692,
+    "track": 56
    },
    "jungle": {
     "n": 1,
-    "secs": 106.04651162790698
+    "secs": 106.04651162790698,
+    "track": 7
    },
    "landing-on-gem-quarry": {
     "n": 1,
-    "secs": 88.52941176470588
+    "secs": 88.52941176470588,
+    "track": 45
    },
    "landing-on-sekhmet-sfx": {
     "n": 1,
-    "secs": 39.81818181818182
+    "secs": 39.81818181818182,
+    "track": 32
    },
    "landing-on-ss-anubis-sfx": {
     "n": 1,
-    "secs": 24.011363636363637
+    "secs": 24.011363636363637,
+    "track": 14
    },
    "large-gemini": {
     "n": 1,
-    "secs": 0.7983870967741935
+    "secs": 0.7983870967741935,
+    "track": 68
    },
    "level-complete": {
     "n": 1,
-    "secs": 36.42857142857143
+    "secs": 36.42857142857143,
+    "track": 47
    },
    "logo-screens": {
     "n": 1,
-    "secs": 16.397727272727273
+    "secs": 16.397727272727273,
+    "track": 1
    },
    "main-theme": {
     "n": 1,
-    "secs": 109.92
+    "secs": 109.92,
+    "track": 2
    },
    "medal-ceremony": {
     "n": 1,
-    "secs": 154.57291666666666
+    "secs": 154.57291666666666,
+    "track": 61
    },
    "medal": {
     "n": 1,
-    "secs": 6.645833333333333
+    "secs": 6.645833333333333,
+    "track": 66
    },
    "meeting-lupus": {
     "n": 1,
-    "secs": 82.7807486631016
+    "secs": 82.7807486631016,
+    "track": 36
    },
    "meeting-mizar-part-1": {
     "n": 1,
-    "secs": 202.5367581238068
+    "secs": 202.5367581238068,
+    "track": 40
    },
    "meeting-mizar-part-2": {
     "n": 1,
-    "secs": 74.2153902460717
+    "secs": 74.2153902460717,
+    "track": 41
    },
    "menu": {
     "n": 1,
-    "secs": 198.54545454545453
+    "secs": 198.54545454545453,
+    "track": 3
    },
    "mines": {
     "n": 1,
-    "secs": 190.29403426455912
+    "secs": 190.29403426455912,
+    "track": 44
    },
    "mizar-escapes": {
     "n": 1,
-    "secs": 271.7487840519641
+    "secs": 271.7487840519641,
+    "track": 42
    },
    "mizar-s-death": {
     "n": 1,
-    "secs": 139.0282940693381
+    "secs": 139.0282940693381,
+    "track": 59
    },
    "mizar-s-palace": {
     "n": 1,
-    "secs": 214.84007878800085
+    "secs": 214.84007878800085,
+    "track": 28
    },
    "mizar-s-racetrack": {
     "n": 1,
-    "secs": 72
+    "secs": 72,
+    "track": 49
    },
    "racetrack-lose": {
     "n": 1,
-    "secs": 5.188577535715801
+    "secs": 5.188577535715801,
+    "track": 50
    },
    "racetrack-win": {
     "n": 1,
-    "secs": 4.0234375
+    "secs": 4.0234375,
+    "track": 51
    },
    "rescuing-vela": {
     "n": 1,
-    "secs": 78.27069265022509
+    "secs": 78.27069265022509,
+    "track": 16
    },
    "rith-essa": {
     "n": 1,
-    "secs": 236.1025641025641
+    "secs": 236.1025641025641,
+    "track": 38
    },
    "s-s-anubis": {
     "n": 1,
-    "secs": 158.5
+    "secs": 158.5,
+    "track": 15
    },
    "sekhmet": {
     "n": 1,
-    "secs": 258.986996453831
+    "secs": 258.986996453831,
+    "track": 33
    },
    "ship-landing-bay": {
     "n": 1,
-    "secs": 198.54545454545453
+    "secs": 198.54545454545453,
+    "track": 12
    },
    "something-faster": {
     "n": 1,
-    "secs": 70.57723577235772
+    "secs": 70.57723577235772,
+    "track": 54
    },
    "something-with-a-beat": {
     "n": 1,
-    "secs": 52.06986027944112
+    "secs": 52.06986027944112,
+    "track": 53
    },
    "soothing-rhythms": {
     "n": 1,
-    "secs": 101.23031496062993
+    "secs": 101.23031496062993,
+    "track": 55
    },
    "spacestation": {
     "n": 1,
-    "secs": 194.4
+    "secs": 194.4,
+    "track": 43
    },
    "spawnship": {
     "n": 1,
-    "secs": 180
+    "secs": 180,
+    "track": 37
    },
    "tawfret": {
     "n": 1,
-    "secs": 226
+    "secs": 226,
+    "track": 17
    },
    "the-goldwood-invasion": {
     "n": 1,
-    "secs": 107.62077922077923
+    "secs": 107.62077922077923,
+    "track": 8
    },
    "timeloop-start": {
     "n": 1,
-    "secs": 5.1875
+    "secs": 5.1875,
+    "track": 18
    },
    "transformation-of-tawfret": {
     "n": 1,
-    "secs": 75.8160146516197
+    "secs": 75.8160146516197,
+    "track": 19
    },
    "travelling": {
     "n": 1,
-    "secs": 42.5
+    "secs": 42.5,
+    "track": 6
    },
    "unidentified-1-sfx": {
     "n": 1,
-    "secs": 67.63636363636364
+    "secs": 67.63636363636364,
+    "track": 70
    },
    "unidentified-1": {
     "n": 1,
-    "secs": 36.052083333333336
+    "secs": 36.052083333333336,
+    "track": 62
    },
    "unidentified-2-sfx": {
     "n": 1,
-    "secs": 198.54545454545453
+    "secs": 198.54545454545453,
+    "track": 71
    },
    "unidentified-2": {
     "n": 1,
-    "secs": 178.81759917483427
+    "secs": 178.81759917483427,
+    "track": 63
    },
    "unidentified-3-sfx": {
     "n": 1,
-    "secs": 65.45454545454545
+    "secs": 65.45454545454545,
+    "track": 72
    },
    "unidentified-3": {
     "n": 1,
-    "secs": 103.57894736842105
+    "secs": 103.57894736842105,
+    "track": 64
    },
    "unidentified-4-sfx": {
     "n": 1,
-    "secs": 19.431818181818183
+    "secs": 19.431818181818183,
+    "track": 73
    },
    "unidentified-5-sfx": {
     "n": 1,
-    "secs": 18.818181818181817
+    "secs": 18.818181818181817,
+    "track": 74
    },
    "unidentified-6-sfx": {
     "n": 1,
-    "secs": 67.63636363636364
+    "secs": 67.63636363636364,
+    "track": 75
    },
    "unidentified-7-sfx": {
     "n": 1,
-    "secs": 69.81818181818181
+    "secs": 69.81818181818181,
+    "track": 76
    },
    "unidentified-8-sfx": {
     "n": 1,
-    "secs": 67.63636363636364
+    "secs": 67.63636363636364,
+    "track": 77
    },
    "unidentified-9-sfx": {
     "n": 1,
-    "secs": 24
+    "secs": 24,
+    "track": 78
    },
    "vela-s-capture": {
     "n": 1,
-    "secs": 77.89473684210526
+    "secs": 77.89473684210526,
+    "track": 13
    }
   },
   "chip": "usf",

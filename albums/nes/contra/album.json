@@ -14,47 +14,58 @@
   "tracks": {
    "alien-s-lair-stage-8": {
     "n": 6,
-    "secs": 34.298628
+    "secs": 34.298628,
+    "track": 8
    },
    "base-boss": {
     "n": 8,
-    "secs": 34.9986
+    "secs": 34.9986,
+    "track": 4
    },
    "bases-i-ii-stages-2-4": {
     "n": 7,
-    "secs": 51.197952
+    "secs": 51.197952,
+    "track": 3
    },
    "ending": {
     "n": 10,
-    "secs": 83.33
+    "secs": 83.33,
+    "track": 10
    },
    "energy-zone-stage-6": {
     "n": 5,
-    "secs": 21.699132
+    "secs": 21.699132,
+    "track": 7
    },
    "game-over": {
     "n": 11,
-    "secs": 6.599736
+    "secs": 6.599736,
+    "track": 11
    },
    "jungle-hangar-stages-1-7": {
     "n": 2,
-    "secs": 51.197952
+    "secs": 51.197952,
+    "track": 2
    },
    "snowfield-stage-5": {
     "n": 4,
-    "secs": 35.198592
+    "secs": 35.198592,
+    "track": 6
    },
    "title-screen": {
     "n": 1,
-    "secs": 6.0664240000000005
+    "secs": 6.0664240000000005,
+    "track": 1
    },
    "victory": {
     "n": 9,
-    "secs": 4.733144
+    "secs": 4.733144,
+    "track": 9
    },
    "waterfall-stage-3": {
     "n": 3,
-    "secs": 41.598336
+    "secs": 41.598336,
+    "track": 5
    }
   }
  }

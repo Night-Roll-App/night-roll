@@ -33,147 +33,183 @@
   "tracks": {
    "anger-of-the-guardians": {
     "n": 1,
-    "secs": 26
+    "secs": 26,
+    "track": 17
    },
    "beginning-of-the-journey": {
     "n": 1,
-    "secs": 48
+    "secs": 48,
+    "track": 2
    },
    "black-mist-storm": {
     "n": 1,
-    "secs": 99
+    "secs": 99,
+    "track": 26
    },
    "black-mist": {
     "n": 1,
-    "secs": 98.92
+    "secs": 98.92,
+    "track": 25
    },
    "dank-dungeons": {
     "n": 1,
-    "secs": 40
+    "secs": 40,
+    "track": 15
    },
    "dark-golden-land": {
     "n": 1,
-    "secs": 120
+    "secs": 120,
+    "track": 24
    },
    "dungeon-of-shadows": {
     "n": 1,
-    "secs": 96
+    "secs": 96,
+    "track": 27
    },
    "epilogue-beautiful-hyrule": {
     "n": 1,
-    "secs": 229.86
+    "secs": 229.86,
+    "track": 34
    },
    "forest-of-mystery": {
     "n": 1,
-    "secs": 41
+    "secs": 41,
+    "track": 21
    },
    "fortune-teller": {
     "n": 1,
-    "secs": 39
+    "secs": 39,
+    "track": 13
    },
    "ganon-s-message": {
     "n": 1,
-    "secs": 63
+    "secs": 63,
+    "track": 31
    },
    "great-victory": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 18
    },
    "guessing-game-house": {
     "n": 1,
-    "secs": 43
+    "secs": 43,
+    "track": 12
    },
    "hyrule-field-main-theme": {
     "n": 1,
-    "secs": 78
+    "secs": 78,
+    "track": 10
    },
    "kakariko-village": {
     "n": 1,
-    "secs": 186
+    "secs": 186,
+    "track": 11
    },
    "lost-ancient-ruins": {
     "n": 1,
-    "secs": 114
+    "secs": 114,
+    "track": 16
    },
    "majestic-castle-storm": {
     "n": 1,
-    "secs": 169
+    "secs": 169,
+    "track": 7
    },
    "majestic-castle": {
     "n": 1,
-    "secs": 169
+    "secs": 169,
+    "track": 6
    },
    "meeting-the-maidens": {
     "n": 1,
-    "secs": 63
+    "secs": 63,
+    "track": 28
    },
    "power-of-the-gods": {
     "n": 1,
-    "secs": 83
+    "secs": 83,
+    "track": 33
    },
    "priest-of-the-dark-order": {
     "n": 1,
-    "secs": 59
+    "secs": 59,
+    "track": 23
    },
    "princess-zelda-s-rescue": {
     "n": 1,
-    "secs": 91
+    "secs": 91,
+    "track": 8
    },
    "release-of-ganon": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 30
    },
    "safety-in-the-sanctuary": {
     "n": 1,
-    "secs": 62
+    "secs": 62,
+    "track": 9
    },
    "seal-of-seven-maidens": {
     "n": 1,
-    "secs": 109
+    "secs": 109,
+    "track": 3
    },
    "soldiers-of-kakariko-village": {
     "n": 1,
-    "secs": 19.92
+    "secs": 19.92,
+    "track": 14
    },
    "staff-roll": {
     "n": 1,
-    "secs": 234
+    "secs": 234,
+    "track": 35
    },
    "the-goddess-appears": {
     "n": 1,
-    "secs": 51
+    "secs": 51,
+    "track": 29
    },
    "the-prince-of-darkness": {
     "n": 1,
-    "secs": 65
+    "secs": 65,
+    "track": 32
    },
    "the-silly-pink-rabbit-storm": {
     "n": 1,
-    "secs": 51
+    "secs": 51,
+    "track": 20
    },
    "the-silly-pink-rabbit": {
     "n": 1,
-    "secs": 51
+    "secs": 51,
+    "track": 19
    },
    "time-of-the-falling-rain-storm": {
     "n": 1,
-    "secs": 48
+    "secs": 48,
+    "track": 5
    },
    "time-of-the-falling-rain": {
     "n": 1,
-    "secs": 48
+    "secs": 48,
+    "track": 4
    },
    "title-link-to-the-past": {
     "n": 1,
-    "secs": 17
+    "secs": 17,
+    "track": 1
    },
    "unsealing-the-master-sword": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 22
    },
    "unused-sound": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 36
    }
   },
   "chip": "spc",

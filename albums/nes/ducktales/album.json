@@ -10,47 +10,58 @@
   "tracks": {
    "african-mines": {
     "n": 5,
-    "secs": 30.382118000000002
+    "secs": 30.382118000000002,
+    "track": 5
    },
    "amazon": {
     "n": 3,
-    "secs": 38.398464000000004
+    "secs": 38.398464000000004,
+    "track": 3
    },
    "bless-me-bagpipes": {
     "n": 11,
-    "secs": 3.649854
+    "secs": 3.649854,
+    "track": 11
    },
    "boss-battle": {
     "n": 8,
-    "secs": 18.649254
+    "secs": 18.649254,
+    "track": 8
    },
    "death": {
     "n": 10,
-    "secs": 3.199872
+    "secs": 3.199872,
+    "track": 10
    },
    "gyro-s-flying-machine": {
     "n": 9,
-    "secs": 16.782662000000002
+    "secs": 16.782662000000002,
+    "track": 9
    },
    "himalayas": {
     "n": 6,
-    "secs": 36.648534
+    "secs": 36.648534,
+    "track": 6
    },
    "opening": {
     "n": 1,
-    "secs": 52.797888
+    "secs": 52.797888,
+    "track": 1
    },
    "stage-select": {
     "n": 2,
-    "secs": 3.3332
+    "secs": 3.3332,
+    "track": 2
    },
    "the-moon": {
     "n": 7,
-    "secs": 49.814674000000004
+    "secs": 49.814674000000004,
+    "track": 7
    },
    "transylvania": {
     "n": 4,
-    "secs": 43.981574
+    "secs": 43.981574,
+    "track": 4
    }
   }
  }

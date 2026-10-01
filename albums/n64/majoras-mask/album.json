@@ -46,415 +46,621 @@
   "tracks": {
    "astral-observatory": {
     "n": 1,
-    "secs": 34.66666666666684
+    "secs": 34.66666666666684,
+    "track": 25,
+    "disc": 1
    },
    "ballad-of-the-wind-fish": {
     "n": 1,
-    "secs": 8.888888888889017
+    "secs": 8.888888888889017,
+    "track": 95,
+    "disc": 2
    },
    "bass-guitar-session": {
     "n": 1,
-    "secs": 34.285714285714946
+    "secs": 34.285714285714946,
+    "track": 89,
+    "disc": 2
    },
    "bass-practice-music": {
     "n": 1,
-    "secs": 29.33333333333404
+    "secs": 29.33333333333404,
+    "track": 87,
+    "disc": 2
    },
    "battle": {
     "n": 1,
-    "secs": 57.358490566033765
+    "secs": 57.358490566033765,
+    "track": 36,
+    "disc": 1
    },
    "boss-battle": {
     "n": 1,
-    "secs": 76.56090935633617
+    "secs": 76.56090935633617,
+    "track": 66,
+    "disc": 2
    },
    "boss-clear": {
     "n": 1,
-    "secs": 11.666666666666453
+    "secs": 11.666666666666453,
+    "track": 67,
+    "disc": 2
    },
    "bremen-march": {
     "n": 1,
-    "secs": 20.00000000000009
+    "secs": 20.00000000000009,
+    "track": 74,
+    "disc": 2
    },
    "calling-the-four-giants": {
     "n": 1,
-    "secs": 105.59488272920275
+    "secs": 105.59488272920275,
+    "track": 105,
+    "disc": 2
    },
    "catch-item": {
     "n": 1,
-    "secs": 2.999999999999991
+    "secs": 2.999999999999991,
+    "track": 39,
+    "disc": 1
    },
    "catch-small-item": {
     "n": 1,
-    "secs": 2.999999999999991
+    "secs": 2.999999999999991,
+    "track": 40,
+    "disc": 1
    },
    "cave": {
     "n": 1,
-    "secs": 90.10416666666667
+    "secs": 90.10416666666667,
+    "track": 4,
+    "disc": 1
    },
    "chase-theme": {
     "n": 1,
-    "secs": 29.199999999998862
+    "secs": 29.199999999998862,
+    "track": 3,
+    "disc": 1
    },
    "clock-tower": {
     "n": 1,
-    "secs": 81.01626737254888
+    "secs": 81.01626737254888,
+    "track": 6,
+    "disc": 1
    },
    "clock-town-day-1": {
     "n": 1,
-    "secs": 56.72727272726648
+    "secs": 56.72727272726648,
+    "track": 8,
+    "disc": 1
    },
    "clock-town-day-2": {
     "n": 1,
-    "secs": 49.91999999999864
+    "secs": 49.91999999999864,
+    "track": 13,
+    "disc": 1
    },
    "clock-town-day-3": {
     "n": 1,
-    "secs": 35.199999999998646
+    "secs": 35.199999999998646,
+    "track": 19,
+    "disc": 1
    },
    "cremia-s-wagon": {
     "n": 1,
-    "secs": 30
+    "secs": 30,
+    "track": 78,
+    "disc": 2
    },
    "dancer": {
     "n": 1,
-    "secs": 30.909226190475618
+    "secs": 30.909226190475618,
+    "track": 22,
+    "disc": 1
    },
    "deku-palace": {
     "n": 1,
-    "secs": 68.57142857142996
+    "secs": 68.57142857142996,
+    "track": 45,
+    "disc": 1
    },
    "drum-practice-music": {
     "n": 1,
-    "secs": 27.27272727272792
+    "secs": 27.27272727272792,
+    "track": 86,
+    "disc": 2
    },
    "dungeon-appears": {
     "n": 1,
-    "secs": 7.999999999999954
+    "secs": 7.999999999999954,
+    "track": 50,
+    "disc": 1
    },
    "evan-s-piano-solo": {
     "n": 1,
-    "secs": 30.545454545455286
+    "secs": 30.545454545455286,
+    "track": 90,
+    "disc": 2
    },
    "event-clear": {
     "n": 1,
-    "secs": 8.017064331017915
+    "secs": 8.017064331017915,
+    "track": 76,
+    "disc": 2
    },
    "event-failure-1": {
     "n": 1,
-    "secs": 4.8979591836734215
+    "secs": 4.8979591836734215,
+    "track": 77,
+    "disc": 2
    },
    "event-failure-2": {
     "n": 1,
-    "secs": 8.00000000000009
+    "secs": 8.00000000000009,
+    "track": 79,
+    "disc": 2
    },
    "fairy-s-fountain": {
     "n": 1,
-    "secs": 27.566172442572036
+    "secs": 27.566172442572036,
+    "track": 9,
+    "disc": 1
    },
    "fanfare": {
     "n": 1,
-    "secs": 4.243356643356625
+    "secs": 4.243356643356625,
+    "track": 115,
+    "disc": 9
    },
    "fencing-grounds": {
     "n": 1,
-    "secs": 41.14285714285809
+    "secs": 41.14285714285809,
+    "track": 17,
+    "disc": 1
    },
    "final-hours": {
     "n": 1,
-    "secs": 125.21739130434192
+    "secs": 125.21739130434192,
+    "track": 24,
+    "disc": 1
    },
    "gale-warp": {
     "n": 1,
-    "secs": 8.415820931750087
+    "secs": 8.415820931750087,
+    "track": 49,
+    "disc": 1
    },
    "game-over": {
     "n": 1,
-    "secs": 8.346153846154019
+    "secs": 8.346153846154019,
+    "track": 37,
+    "disc": 1
    },
    "get-elegy-of-emptiness": {
     "n": 1,
-    "secs": 32.261844484629385
+    "secs": 32.261844484629385,
+    "track": 102,
+    "disc": 2
    },
    "get-goron-lullaby": {
     "n": 1,
-    "secs": 24.65422019973124
+    "secs": 24.65422019973124,
+    "track": 64,
+    "disc": 2
    },
    "get-heart-container": {
     "n": 1,
-    "secs": 2.999999999999991
+    "secs": 2.999999999999991,
+    "track": 18,
+    "disc": 1
    },
    "get-mask": {
     "n": 1,
-    "secs": 6.136363636363641
+    "secs": 6.136363636363641,
+    "track": 31,
+    "disc": 1
    },
    "get-new-wave-bossa-nova": {
     "n": 1,
-    "secs": 27.42857142857095
+    "secs": 27.42857142857095,
+    "track": 92,
+    "disc": 2
    },
    "get-oath-to-order": {
     "n": 1,
-    "secs": 25.45454545454589
+    "secs": 25.45454545454589,
+    "track": 56,
+    "disc": 1
    },
    "get-ocarina": {
     "n": 1,
-    "secs": 9.064285714285754
+    "secs": 9.064285714285754,
+    "track": 30,
+    "disc": 1
    },
    "get-sonata-of-awakening": {
     "n": 1,
-    "secs": 24.20771122223408
+    "secs": 24.20771122223408,
+    "track": 47,
+    "disc": 1
    },
    "giants-theme": {
     "n": 1,
-    "secs": 45.636363636362084
+    "secs": 45.636363636362084,
+    "track": 54,
+    "disc": 1
    },
    "gorman-track": {
     "n": 1,
-    "secs": 54
+    "secs": 54,
+    "track": 57,
+    "disc": 1
    },
    "goron-race-goal": {
     "n": 1,
-    "secs": 3.4838709677419732
+    "secs": 3.4838709677419732,
+    "track": 70,
+    "disc": 2
    },
    "goron-race": {
     "n": 1,
-    "secs": 40.89677419354737
+    "secs": 40.89677419354737,
+    "track": 69,
+    "disc": 2
    },
    "goron-s-shrine": {
     "n": 1,
-    "secs": 83.728260869561
+    "secs": 83.728260869561,
+    "track": 62,
+    "disc": 2
    },
    "great-bay-coast": {
     "n": 1,
-    "secs": 84.75
+    "secs": 84.75,
+    "track": 80,
+    "disc": 2
    },
    "great-bay-temple": {
     "n": 1,
-    "secs": 116.36363636361007
+    "secs": 116.36363636361007,
+    "track": 93,
+    "disc": 2
    },
    "happy-mask-salesman": {
     "n": 1,
-    "secs": 45.71428571428446
+    "secs": 45.71428571428446,
+    "track": 7,
+    "disc": 1
    },
    "horse-race-goal": {
     "n": 1,
-    "secs": 3.4838709677419732
+    "secs": 3.4838709677419732,
+    "track": 59,
+    "disc": 1
    },
    "horse-race": {
     "n": 1,
-    "secs": 40.89677419354737
+    "secs": 40.89677419354737,
+    "track": 58,
+    "disc": 1
    },
    "house": {
     "n": 1,
-    "secs": 27.585034013607395
+    "secs": 27.585034013607395,
+    "track": 14,
+    "disc": 1
    },
    "ikana-castle": {
     "n": 1,
-    "secs": 95.4545454545525
+    "secs": 95.4545454545525,
+    "track": 100,
+    "disc": 2
    },
    "ikana-valley": {
     "n": 1,
-    "secs": 99.99999999999471
+    "secs": 99.99999999999471,
+    "track": 96,
+    "disc": 2
    },
    "intro-woods": {
     "n": 1,
-    "secs": 56.455223880594815
+    "secs": 56.455223880594815,
+    "track": 117,
+    "disc": 9
    },
    "jungle-cruise": {
     "n": 1,
-    "secs": 56.72727272726648
+    "secs": 56.72727272726648,
+    "track": 44,
+    "disc": 1
    },
    "kamaro-s-dance": {
     "n": 1,
-    "secs": 27.532738095237615
+    "secs": 27.532738095237615,
+    "track": 15,
+    "disc": 1
    },
    "keaton-quiz": {
     "n": 1,
-    "secs": 79.99999999999926
+    "secs": 79.99999999999926,
+    "track": 20,
+    "disc": 1
    },
    "magic-hag-s-house": {
     "n": 1,
-    "secs": 47.454545454541844
+    "secs": 47.454545454541844,
+    "track": 42,
+    "disc": 1
    },
    "majora-s-incarnation-battle": {
     "n": 1,
-    "secs": 90.6666666666788
+    "secs": 90.6666666666788,
+    "track": 109,
+    "disc": 2
    },
    "majora-s-mask-battle": {
     "n": 1,
-    "secs": 108.34173669466134
+    "secs": 108.34173669466134,
+    "track": 108,
+    "disc": 2
    },
    "majora-s-mask-moon": {
     "n": 1,
-    "secs": 23.333333333332057
+    "secs": 23.333333333332057,
+    "track": 107,
+    "disc": 2
    },
    "majora-s-theme": {
     "n": 1,
-    "secs": 66
+    "secs": 66,
+    "track": 5,
+    "disc": 1
    },
    "majora-s-wrath-battle": {
     "n": 1,
-    "secs": 61.387096774191974
+    "secs": 61.387096774191974,
+    "track": 110,
+    "disc": 2
    },
    "marine-research-laboratory": {
     "n": 1,
-    "secs": 43.404255319148966
+    "secs": 43.404255319148966,
+    "track": 83,
+    "disc": 2
    },
    "mayor-s-house-council-room": {
     "n": 1,
-    "secs": 40.49999999999952
+    "secs": 40.49999999999952,
+    "track": 10,
+    "disc": 1
    },
    "middle-boss-battle": {
     "n": 1,
-    "secs": 56.54106471403684
+    "secs": 56.54106471403684,
+    "track": 52,
+    "disc": 1
    },
    "mikau-s-cry-ending": {
     "n": 1,
-    "secs": 4.499999999999991
+    "secs": 4.499999999999991,
+    "track": 82,
+    "disc": 2
    },
    "mikau-s-cry": {
     "n": 1,
-    "secs": 10.98461538461567
+    "secs": 10.98461538461567,
+    "track": 81,
+    "disc": 2
    },
    "milk-bar": {
     "n": 1,
-    "secs": 57.42857142856807
+    "secs": 57.42857142856807,
+    "track": 11,
+    "disc": 1
    },
    "minigame": {
     "n": 1,
-    "secs": 25.945945945947013
+    "secs": 25.945945945947013,
+    "track": 23,
+    "disc": 1
    },
    "music-box-house": {
     "n": 1,
-    "secs": 48.052083333326436
+    "secs": 48.052083333326436,
+    "track": 99,
+    "disc": 2
    },
    "new-wave-bossa-nova-with-lulu": {
     "n": 1,
-    "secs": 0
+    "secs": 0,
+    "track": 116,
+    "disc": 9
    },
    "opening-demo": {
     "n": 1,
-    "secs": 69.88805970148866
+    "secs": 69.88805970148866,
+    "track": 2,
+    "disc": 1
    },
    "owl-s-theme": {
     "n": 1,
-    "secs": 52.66583850931672
+    "secs": 52.66583850931672,
+    "track": 35,
+    "disc": 1
    },
    "piano-practice-music": {
     "n": 1,
-    "secs": 27.74213006331193
+    "secs": 27.74213006331193,
+    "track": 88,
+    "disc": 2
    },
    "pirate-fortress": {
     "n": 1,
-    "secs": 73.99999999999872
+    "secs": 73.99999999999872,
+    "track": 84,
+    "disc": 2
    },
    "recollection-of-zelda": {
     "n": 1,
-    "secs": 41.28479888905353
+    "secs": 41.28479888905353,
+    "track": 26,
+    "disc": 1
    },
    "romani-ranch": {
     "n": 1,
-    "secs": 127.0588235294185
+    "secs": 127.0588235294185,
+    "track": 72,
+    "disc": 2
    },
    "sharp-s-curse": {
     "n": 1,
-    "secs": 31.99999999999927
+    "secs": 31.99999999999927,
+    "track": 98,
+    "disc": 2
    },
    "shooting-gallery": {
     "n": 1,
-    "secs": 32.100000000003014
+    "secs": 32.100000000003014,
+    "track": 21,
+    "disc": 1
    },
    "shop": {
     "n": 1,
-    "secs": 59.99999999999606
+    "secs": 59.99999999999606,
+    "track": 16,
+    "disc": 1
    },
    "snow-mountain": {
     "n": 1,
-    "secs": 90.75
+    "secs": 90.75,
+    "track": 60,
+    "disc": 2
    },
    "snowhead-clear": {
     "n": 1,
-    "secs": 28.59034911448681
+    "secs": 28.59034911448681,
+    "track": 68,
+    "disc": 2
    },
    "snowhead-temple": {
     "n": 1,
-    "secs": 135
+    "secs": 135,
+    "track": 65,
+    "disc": 2
    },
    "song-of-healing-demo": {
     "n": 1,
-    "secs": 67.10415118214411
+    "secs": 67.10415118214411,
+    "track": 29,
+    "disc": 1
    },
    "song-of-storms": {
     "n": 1,
-    "secs": 43.408333333334646
+    "secs": 43.408333333334646,
+    "track": 12,
+    "disc": 1
    },
    "southern-swamp": {
     "n": 1,
-    "secs": 84.75
+    "secs": 84.75,
+    "track": 41,
+    "disc": 1
    },
    "staff-roll-alternate": {
     "n": 1,
-    "secs": 252.67267502510717
+    "secs": 252.67267502510717,
+    "track": 118,
+    "disc": 9
    },
    "staff-roll": {
     "n": 1,
-    "secs": 126.88476069723708
+    "secs": 126.88476069723708,
+    "track": 113,
+    "disc": 2
    },
    "stone-tower-temple-illusion": {
     "n": 1,
-    "secs": 81.60000000000998
+    "secs": 81.60000000000998,
+    "track": 104,
+    "disc": 2
    },
    "stone-tower-temple-reality": {
     "n": 1,
-    "secs": 81.60000000000998
+    "secs": 81.60000000000998,
+    "track": 103,
+    "disc": 2
    },
    "tatl-and-tael-meet-again": {
     "n": 1,
-    "secs": 37.41420807453403
+    "secs": 37.41420807453403,
+    "track": 106,
+    "disc": 2
    },
    "termina-field": {
     "n": 1,
-    "secs": 66.34231321839594
+    "secs": 66.34231321839594,
+    "track": 34,
+    "disc": 1
    },
    "the-giants-exit": {
     "n": 1,
-    "secs": 34.285714285714064
+    "secs": 34.285714285714064,
+    "track": 112,
+    "disc": 2
    },
    "the-monsters-raid": {
     "n": 1,
-    "secs": 26.00000000000077
+    "secs": 26.00000000000077,
+    "track": 75,
+    "disc": 2
    },
    "the-moon-disappears": {
     "n": 1,
-    "secs": 30.482142857142833
+    "secs": 30.482142857142833,
+    "track": 111,
+    "disc": 2
    },
    "title-demo": {
     "n": 1,
-    "secs": 130.74125469338668
+    "secs": 130.74125469338668,
+    "track": 1,
+    "disc": 1
    },
    "treasure-box": {
     "n": 1,
-    "secs": 7.562109237935988
+    "secs": 7.562109237935988,
+    "track": 38,
+    "disc": 1
    },
    "woodfall-clear": {
     "n": 1,
-    "secs": 20.590349114486852
+    "secs": 20.590349114486852,
+    "track": 53,
+    "disc": 1
    },
    "woodfall-temple": {
     "n": 1,
-    "secs": 80.00000000000145
+    "secs": 80.00000000000145,
+    "track": 51,
+    "disc": 1
    },
    "woods-of-mystery": {
     "n": 1,
-    "secs": 32.571428571430864
+    "secs": 32.571428571430864,
+    "track": 43,
+    "disc": 1
    },
    "zora-band": {
     "n": 1,
-    "secs": 34.285714285714946
+    "secs": 34.285714285714946,
+    "track": 94,
+    "disc": 2
    },
    "zora-hall": {
     "n": 1,
-    "secs": 82.3125
+    "secs": 82.3125,
+    "track": 85,
+    "disc": 2
    }
   },
   "chip": "usf",

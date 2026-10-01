@@ -17,119 +17,148 @@
   "tracks": {
    "aquatic-ambiance": {
     "n": 1,
-    "secs": 199
+    "secs": 199,
+    "track": 7
    },
    "bad-boss-boogie": {
     "n": 1,
-    "secs": 139
+    "secs": 139,
+    "track": 9
    },
    "bonus-lose": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 23
    },
    "bonus-room-blitz": {
     "n": 1,
-    "secs": 56
+    "secs": 56,
+    "track": 6
    },
    "bonus-room-opened": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 24
    },
    "bonus-win": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 25
    },
    "candy-s-love-song": {
     "n": 1,
-    "secs": 125
+    "secs": 125,
+    "track": 8
    },
    "cave-dweller-concert": {
     "n": 1,
-    "secs": 300
+    "secs": 300,
+    "track": 5
    },
    "cranky-s-theme": {
     "n": 1,
-    "secs": 109
+    "secs": 109,
+    "track": 4
    },
    "dk-island-swing": {
     "n": 1,
-    "secs": 300
+    "secs": 300,
+    "track": 3
    },
    "extra-life-balloon": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 26
    },
    "fanfare": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 27
    },
    "fear-factory": {
     "n": 1,
-    "secs": 230
+    "secs": 230,
+    "track": 19
    },
    "forest-frenzy": {
     "n": 1,
-    "secs": 120
+    "secs": 120,
+    "track": 13
    },
    "funky-s-fugue": {
     "n": 1,
-    "secs": 124
+    "secs": 124,
+    "track": 15
    },
    "gang-plank-galleon": {
     "n": 1,
-    "secs": 181
+    "secs": 181,
+    "track": 20
    },
    "ice-cave-chant": {
     "n": 1,
-    "secs": 196
+    "secs": 196,
+    "track": 18
    },
    "k-rool-s-cacophony": {
     "n": 1,
-    "secs": 21
+    "secs": 21,
+    "track": 21
    },
    "level-goal": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 28
    },
    "life-in-the-mines": {
     "n": 1,
-    "secs": 263
+    "secs": 263,
+    "track": 11
    },
    "lost-life": {
     "n": 1,
-    "secs": 12
+    "secs": 12,
+    "track": 29
    },
    "mine-cart-madness": {
     "n": 1,
-    "secs": 183
+    "secs": 183,
+    "track": 10
    },
    "misty-menace": {
     "n": 1,
-    "secs": 257
+    "secs": 257,
+    "track": 16
    },
    "northern-hemispheres": {
     "n": 1,
-    "secs": 241
+    "secs": 241,
+    "track": 17
    },
    "simian-segue": {
     "n": 1,
-    "secs": 146
+    "secs": 146,
+    "track": 2
    },
    "the-credits-concerto": {
     "n": 1,
-    "secs": 108
+    "secs": 108,
+    "track": 22
    },
    "theme": {
     "n": 1,
-    "secs": 114
+    "secs": 114,
+    "track": 1
    },
    "treetop-rock": {
     "n": 1,
-    "secs": 169
+    "secs": 169,
+    "track": 14
    },
    "voices-of-the-temple": {
     "n": 1,
-    "secs": 177
+    "secs": 177,
+    "track": 12
    }
   },
   "chip": "spc",
