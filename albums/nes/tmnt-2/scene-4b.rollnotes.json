@@ -1,3 +1,3 @@
-{ "version": 1, "song": "scene-4b", "saved": 1786915011031, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "scene-4b", "origin": {"kind":"capture"}, "stamp": 1786915011031, "notes": [
   {"at":[19,3.75],"type":"loop","loop":"1.3.75"}
 ] }
