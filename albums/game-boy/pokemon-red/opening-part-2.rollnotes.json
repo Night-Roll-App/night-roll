@@ -1,3 +1,3 @@
-{ "version": 1, "song": "opening-part-2", "saved": 1790564400888, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "opening-part-2", "origin": {"kind":"capture"}, "stamp": 1790564400888, "notes": [
   {"at":[27,2],"type":"loop","loop":"3.2"}
 ] }

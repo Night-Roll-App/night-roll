@@ -1,3 +1,3 @@
-{ "version": 1, "song": "oak-research-lab", "saved": 1790564400886, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "oak-research-lab", "origin": {"kind":"capture"}, "stamp": 1790564400886, "notes": [
   {"at":[17,3],"type":"loop","loop":"1.3"}
 ] }

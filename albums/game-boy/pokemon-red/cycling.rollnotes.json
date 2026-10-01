@@ -1,3 +1,3 @@
-{ "version": 1, "song": "cycling", "saved": 1790564400881, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cycling", "origin": {"kind":"capture"}, "stamp": 1790564400881, "notes": [
   {"at":[20,1.5],"type":"loop","loop":"1.1.5"}
 ] }

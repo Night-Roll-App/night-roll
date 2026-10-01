@@ -1,3 +1,3 @@
-{ "version": 1, "song": "pokemon-tower", "saved": 1790564400893, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "pokemon-tower", "origin": {"kind":"capture"}, "stamp": 1790564400893, "notes": [
   {"at":[34,1],"type":"loop","loop":"2.1"}
 ] }
