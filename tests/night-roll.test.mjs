@@ -2641,7 +2641,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "⋯ More", "+ New note",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -6019,10 +6019,10 @@ test("jobs: a job is a plain record mirrored to this device — progress, done, 
   assert.equal(run(`jobsFind("test", "y", true)`), null);
   assert.equal(run(`document.getElementById("jobsbtn").textContent`), "⏳ 1");
   assert.equal(run(`document.getElementById("jobsbtn").style.display`), "");
-  // footer v2 (2026-09-30): ⋯ More carries a matching gold badge so the
-  // running count is reachable with the sheet (and #jobsbtn inside it) closed
-  assert.equal(run(`document.getElementById("morebadge").textContent`), " ⏳1");
-  assert.equal(run(`document.getElementById("morebadge").style.display`), "");
+  // View ▾ → BACKGROUND → ⏳ Jobs (chrome density follow-up, 2026-10-01 pm):
+  // the running count is reachable from the menu even with the footer
+  // button's own sheet (or View ▾ itself) closed.
+  assert.equal(run(`document.getElementById("vwJobs").textContent`), "⏳  Jobs · 1 running");
   app.tick(300); // the throttled mirror lands
   assert.equal(JSON.parse(app.store.get("ff1roll-jobs"))[0].items[0].pct, 0.4);
   run(`__open();`);
@@ -6031,7 +6031,7 @@ test("jobs: a job is a plain record mirrored to this device — progress, done, 
   assert.deepEqual(val(`jobs[0].items.map(i => i.st)`), ["done", "done", "silent"]);
   assert.equal(run(`jobProgress(jobs[0])`), "3/3");
   assert.equal(run(`document.getElementById("jobsbtn").textContent`), "⏳", "finished: no count, dim");
-  assert.equal(run(`document.getElementById("morebadge").style.display`), "none", "⋯ More's badge is only for a RUNNING count, same as #jobsbtn's own dimming");
+  assert.equal(run(`document.getElementById("vwJobs").textContent`), "⏳  Jobs", "View ▾'s own count is RUNNING-only too, same as #jobsbtn's own dimming");
   // cancel: ✕ flips aborted; the runner ends the job as cancelled
   run(`globalThis.__gate = new Promise(res => { globalThis.__open = res; });
        jobStart("test", "cancel me", [{label: "a"}, {label: "b"}], async api => { api.update(0, {st: "running"}); await __gate; if (api.aborted) { api.update(0, {st: "cancelled"}); api.cancel(); return; } api.update(0, {st: "done"}); }, {slug: "c"});`);
@@ -6253,7 +6253,7 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
   }
 });
 
-test("status: /v1/status is polled like the inbox — the strip shows in EVERY tab and ✦ AI pulses while the bridge is working; no current line = idle (no pulse); a 404 hides the strip, drops the pulse, and stops asking", async () => {
+test("status: /v1/status is polled like the inbox — the strip shows in EVERY tab and ✦ AI's own aria-label reports it while the bridge is working; no current line = idle; a 404 hides the strip, clears the label, and stops asking", async () => {
   installSong();
   // other boot-scheduled fetches (catalog/manifest) can still land on a later
   // microtask turn once a real `fetch` exists — filter to /v1/status so they
@@ -6275,15 +6275,19 @@ test("status: /v1/status is polled like the inbox — the strip shows in EVERY t
     assert.equal(val(`document.getElementById("asknowstrip").style.display`), "");
     assert.equal(val(`document.getElementById("asknowstrip").textContent`), "Claude Code working: running tests · 3m ago");
     // Chrome density pass (2026-10-01): the header chip is gone — ✦ AI gets
-    // the "working" class (a pulsing dot) and a status aria-label instead.
-    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), true, "and ✦ AI pulses");
+    // the "working" class and a status aria-label instead. Chrome density
+    // follow-up (2026-10-01 pm, Josh: "always there and distracting"): the
+    // class used to also draw a pulsing dot (CSS ::before) — that's gone
+    // too, but askStatusRender still toggles the class and the aria-label
+    // text exactly as before (no visual, but still reachable by VoiceOver).
+    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), true, "and ✦ AI's aria-label says so");
     assert.equal(val(`document.getElementById("askbtn").getAttribute("aria-label")`), "Talk to the AI tutor — Claude Code is working: running tests");
     assert.equal(val(`document.getElementById("jobsnow").textContent`), "Now: running tests");
-    // no current line: idle, still shown (the bridge is there) — but no pulse
+    // no current line: idle, still shown (the bridge is there) — but the class is off
     run(`globalThis.fetch = async (u) => !String(u).includes("/v1/status") ? Promise.reject(new Error("no network in tests"))
          : {ok: true, status: 200, json: async () => ({now: null, recent: []})};`);
     await run(`askStatusPoll()`);
-    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), false, "idle: no dot");
+    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), false, "idle: no working class");
     assert.equal(val(`document.getElementById("askbtn").getAttribute("aria-label")`), "Talk to the AI tutor");
     assert.equal(val(`document.getElementById("jobsnow").style.display`), "none");
     // a 404 marks this url status-less, like the inbox's askInboxNo — never asked again
@@ -6294,11 +6298,61 @@ test("status: /v1/status is polled like the inbox — the strip shows in EVERY t
     await run(`askStatusPoll()`);
     assert.equal(val(`__calls2`), 1);
     assert.equal(val(`document.getElementById("asknowstrip").style.display`), "none", "no bridge: no strip");
-    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), false, "no bridge: no dot");
+    assert.equal(val(`document.getElementById("askbtn").classList.contains("working")`), false, "no bridge: no working class");
   } finally {
     run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; askCaps = {bridge: false, terminal: false};
          askStatusNow = null; askStatusRecent = []; askStatusNo = ""; askGeneral = false; songKey = null; song = null;`);
   }
+});
+
+test("chrome density follow-up (2026-10-01 pm, Josh's ruling #5): the 🎓 Learning header tag is gone entirely — no #modepill markup, CSS, or live JS reference left (a couple of historical comments still name the old id, same house style as #moresheet's own migration notes)", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /id="modepill"/, "no #modepill node in the markup");
+  assert.doesNotMatch(html, /#modepill\s*\{|#modepill\s*\.pilltext|#modepill\s*,/, "no #modepill CSS rule left");
+  assert.doesNotMatch(html, /getElementById\("modepill"\)/, "no live JS reference reads or writes it any more");
+  assert.doesNotMatch(html, /pilltext/, "its compact-icon helper class is gone too");
+  // Learning mode itself is untouched — still reachable from Settings and View ▾ → Mode
+  assert.match(html, /id="cfglearning"/, "Settings → Other still has the Learning checkbox");
+  assert.match(html, /id="vwLearning"/, "View ▾ → Mode still has 🎓 Learning mode");
+});
+
+test("chrome density follow-up (2026-10-01 pm, Josh's ruling #6, 'always there and distracting'): the pulsing dot on ✦ AI is gone — no CSS rule draws it, though the aria-label status text (and the 'working' class it hangs off) stays", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /askbtn\.working::before/, "no ::before rule paints a dot on #askbtn.working any more");
+  assert.doesNotMatch(html, /asknowpulse/, "the pulse keyframes are gone too (nothing references them)");
+  // the JS behavior behind the aria-label (askStatusRender) is unchanged —
+  // see the "status: /v1/status is polled…" test above for the class/label assertions.
+  assert.match(html, /classList\.toggle\("working", working\)/, "askStatusRender still tracks the state, just with nothing left to paint");
+});
+
+test("chrome density follow-up (2026-10-01 pm, Josh: 'text in the AI dialogue is always shifting … very annoying while analyzing'): #asknowstrip reserves a fixed 2-line height so a 1-line status never shrinks the box and nudges the chat log", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const rule = html.match(/#asknowstrip\s*\{[^}]*\}/);
+  assert.ok(rule, "#asknowstrip's own CSS rule exists");
+  assert.match(rule[0], /min-height:\s*calc\(1\.3em\s*\*\s*2\)/, "reserves 2 lines' worth of height always, closed or not");
+  const openRule = html.match(/#asknowstrip\.open\s*\{[^}]*\}/);
+  assert.ok(openRule, "#asknowstrip.open's own CSS rule exists");
+  assert.match(openRule[0], /min-height:\s*0/, "only the tapped-open state is allowed to grow past the fixed 2 lines");
+});
+
+test("chrome density follow-up (2026-10-01 pm, Josh: a 'ResizeObserver loop completed with undelivered notifications' ⚠ showed up): fitReadline's own observers defer their write a frame (scheduleFitReadline), and the benign message is filtered out of the uncaught-error logger even if a browser still raises it", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /new ResizeObserver\(fitReadline\)/, "the RO callback is never fitReadline directly — that's the synchronous-write pattern the warning is about");
+  assert.doesNotMatch(html, /new MutationObserver\(fitReadline\)/, "same for the MO callback");
+  assert.match(html, /new ResizeObserver\(scheduleFitReadline\)/, "both observers go through the deferred scheduler instead");
+  assert.match(html, /new MutationObserver\(scheduleFitReadline\)/);
+  assert.match(html, /BENIGN_ERRORS = \/\^ResizeObserver loop/, "the filter regex is there");
+
+  // Exercise the filter regex directly — the vm harness's `window` is a
+  // stub with no real synthetic-event dispatch, so the assertion that
+  // matters is "would the real window.addEventListener('error', …) handler
+  // let this message through", which is exactly what BENIGN_ERRORS decides.
+  const filtered = val(`BENIGN_ERRORS.test("ResizeObserver loop completed with undelivered notifications.")`);
+  assert.equal(filtered, true, "the exact browser message matches the filter");
+  const limitFiltered = val(`BENIGN_ERRORS.test("ResizeObserver loop limit exceeded")`);
+  assert.equal(limitFiltered, true, "the sibling 'limit exceeded' message matches too");
+  const real = val(`BENIGN_ERRORS.test("TypeError: x is not a function")`);
+  assert.equal(real, false, "an unrelated error is never swallowed by the filter");
 });
 
 test("breadcrumb: Published or Local first, as Open's sections mean them; the word is its own span so it never truncates", () => {
@@ -6361,17 +6415,25 @@ test("audio session: 'ambient' (mixes with YouTube etc.) until Night Roll plays;
   } finally { run(`navigator.audioSession = __navAS;`); }
 });
 
-test("⚠ log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on", () => {
-  run(`appErrors.length = 0; appDebug.length = 0; localStorage.removeItem("ff1roll-debuglog");
-       logErr("same thing"); logErr("same thing"); logErr("same thing"); logDebug("probe detail");`);
+test("⚠ log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on; chrome density follow-up (2026-10-01 pm, Josh's ruling #3): the footer chip shows only while something's UNREAD, hidden at 0 — View ▾ → BACKGROUND → ⚠ Messages reaches the same sheet always", () => {
+  run(`appErrors.length = 0; appDebug.length = 0; localStorage.removeItem("ff1roll-debuglog"); localStorage.removeItem("ff1roll-ask-seen-max"); errChip();`);
+  assert.equal(run(`document.getElementById("errbtn").style.display`), "none", "nothing logged yet: hidden");
+  assert.equal(run(`document.getElementById("vwMessages").textContent`), "⚠  Messages", "View ▾'s own item has no count at 0, but is still there");
+  run(`logErr("same thing"); logErr("same thing"); logErr("same thing"); logDebug("probe detail");`);
   assert.equal(val(`appErrors.length`), 1);
   assert.equal(val(`appErrors[0].n`), 3);
   assert.match(val(`logLine(appErrors[0])`), /same thing  ×3$/);
   assert.equal(run(`document.getElementById("errbtn").textContent`), "⚠ 1", "the debug line is kept but not counted");
+  assert.equal(run(`document.getElementById("errbtn").style.display`), "", "1 unread: shown");
+  assert.equal(run(`document.getElementById("vwMessages").textContent`), "⚠  Messages · 1", "View ▾'s own item carries the same unread count");
   run(`localStorage.setItem("ff1roll-debuglog", "1"); errChip();`);
   assert.equal(run(`document.getElementById("errbtn").textContent`), "⚠ 2", "with the switch on it is counted and shown");
+  assert.equal(run(`document.getElementById("errbtn").style.display`), "", "still unread: shown");
+  assert.equal(run(`document.getElementById("vwMessages").textContent`), "⚠  Messages · 2");
   assert.match(val(`logLines().map(logLine).join("|")`), /\[debug\] probe detail/);
   run(`localStorage.removeItem("ff1roll-debuglog"); appErrors.length = 0; appDebug.length = 0; errChip();`);
+  assert.equal(run(`document.getElementById("errbtn").style.display`), "none", "cleared: hidden again");
+  assert.equal(run(`document.getElementById("vwMessages").textContent`), "⚠  Messages", "View ▾'s own item drops back to no count");
 });
 
 test("audio wake outside a tap: a clock that won't move is a debug line with what was measured, never an ⚠ error or a rebuild", async () => {
@@ -7147,7 +7209,7 @@ test("P1 lasso chord: Normal auto-names the chord in the selection strip and hid
   assert.match(normal.run(`document.getElementById("noteinfo").textContent`), /→\s*C\b/, "Normal: the strip names the chord itself");
 });
 
-test("8va (footer v2, 2026-09-30): an always-visible toggle in ⋯ More — reachable with no lasso selection, unlike Chord?", () => {
+test("8va (footer v2, 2026-09-30; View ▾ → HIGHLIGHT / READOUT since the chrome density follow-up, 2026-10-01 pm): an always-visible toggle — reachable with no lasso selection, unlike Chord?", () => {
   const a = createApp({storage: {"ff1roll-mode": "learning"}});
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
@@ -7167,7 +7229,7 @@ test("8va (footer v2, 2026-09-30): an always-visible toggle in ⋯ More — reac
   assert.equal(a.run(`selOctaves`), true);
 });
 
-test("footer v2 tweaks (2026-09-30) → chrome density pass (2026-10-01): Publish is back on the footer bar (before ⋯ More), and ⋯ More's own markup no longer holds the VIEW segment or the key picker", () => {
+test("footer v2 tweaks (2026-09-30) → chrome density pass (2026-10-01) → chrome density follow-up (2026-10-01 pm): Publish is on the footer bar, ⋯ More is GONE entirely (Josh's ruling), and ⏳ Jobs is the footer's last button now", () => {
   // this is a markup-shape check, not a DOM-structure one — the vm harness's
   // document stub (tests/harness.mjs) vivifies elements by id on first
   // getElementById() with no real parent/child tree, so "X is inside the
@@ -7176,29 +7238,24 @@ test("footer v2 tweaks (2026-09-30) → chrome density pass (2026-10-01): Publis
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const footer = html.slice(html.indexOf("<footer"), html.indexOf("</footer>"));
   assert.match(footer, /id="syncbtn"/, "Publish (#syncbtn) is a direct footer button again");
-  assert.match(footer, /id="moresheetbtn"/, "⋯ More is still the footer's last button");
+  assert.doesNotMatch(footer, /id="moresheetbtn"/, "⋯ More is gone — no trigger button left in the footer");
+  assert.match(footer, /id="jobsbtn"/, "⏳ Jobs (#jobsbtn) is a direct footer button now");
   // #notebtn moved OUT of the footer into #notesmenu (the ☰ Notes ▴ drop-up,
   // below) — it's no longer a direct footer child, so it's not in this order
-  const order = ["viewbtn", "lassobtn", "instbtn", "readline", "listbtn", "syncbtn", "moresheetbtn"]
+  const order = ["viewbtn", "lassobtn", "instbtn", "readline", "listbtn", "syncbtn", "jobsbtn"]
     .map(id => footer.indexOf('id="' + id + '"'));
   for (let i = 1; i < order.length; i++) assert.ok(order[i - 1] < order[i], "footer order: " + order);
-  const more = html.slice(html.indexOf('id="moresheet"'), html.indexOf("<!-- KEY SIGNATURE"));
-  assert.doesNotMatch(more, /id="keysel"/, "the key picker left ⋯ More's own markup (it's a hidden node elsewhere now)");
-  assert.doesNotMatch(more, /id="viewbtn"/, "the VIEW segment was never in ⋯ More's own markup (it's visible in the footer now)");
-  assert.doesNotMatch(more, /id="syncbtn"/, "Publish isn't also still inside ⋯ More");
-  assert.match(more, /class="dropup"/, "⋯ More is a drop-up (chrome density pass, 2026-10-01), not a dockable window");
-  assert.match(more, /id="octbtn"/, "8va stays in ⋯ More");
-  assert.match(more, /id="findsel"/, "find: stays in ⋯ More");
-  assert.match(more, /id="cofbtn"/, "◯5 stays in ⋯ More");
-  assert.match(more, /id="jobsbtn"/, "⏳ Jobs stays in ⋯ More");
   // the key picker is a hidden node somewhere in the page, for the code/tests that still drive it by id
   assert.match(html, /id="keysel"/);
 });
 
-test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a whole window popping up and it's just unnecessary — just do it as a reverse drop-down'): no longer a dockable window — makeWindow() is never called for it, and a stale docked/tabbed 'moresheet' id from before this change is purged from wm on load", () => {
+test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a whole window popping up and it's just unnecessary — just do it as a reverse drop-down') → chrome density follow-up (2026-10-01 pm, Josh after using it): removed entirely — makeWindow() is never called for it, no drop-up markup is left, its tools moved into View ▾/the footer, and a stale docked/tabbed 'moresheet' id from either earlier change is purged from wm on load", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   assert.doesNotMatch(html, /makeWindow\("moresheet"/, "moresheet is never registered with makeWindow() any more");
   assert.doesNotMatch(html, /id="moresheet-h2"/, "no title bar — no Dock button, no ✕/drag/resize machinery (that's all `.overlay`-only, and #moresheet isn't one any more)");
+  assert.doesNotMatch(html, /id="moresheet"/, "no #moresheet drop-up markup left at all");
+  assert.doesNotMatch(html, /id="moresheetbtn"/, "no #moresheetbtn trigger left at all");
+  assert.doesNotMatch(html, /id="morebadge"/, "the ⏳N badge that used to live on the trigger button is gone with it");
 
   const staleWm = JSON.stringify({right: {ids: ["moresheet", "asksheet"], active: "asksheet", w: 380, mode: "full"}});
   const stale = createApp({storage: {"ff1roll-wm": staleWm}});
@@ -7206,13 +7263,12 @@ test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a wh
   assert.ok(!purged.right.ids.includes("moresheet"), "a stale docked moresheet id is purged on load: " + JSON.stringify(purged));
   assert.ok(purged.right.ids.includes("asksheet"), "its tab-mate is untouched");
 
-  // opens/closes like #listbtn/#viewbtn — a plain toggle, no wmLayoutAll() dependency
-  installSong();
-  run(`closeDropUp();`); // a stray open drop-up from an earlier test on this shared app would flip the first toggle the wrong way
-  run(`document.getElementById("moresheetbtn").click();`);
-  assert.equal(val(`document.getElementById("moresheet").classList.contains("on")`), true, "opens the drop-up");
-  run(`document.getElementById("moresheetbtn").click();`);
-  assert.equal(val(`document.getElementById("moresheet").classList.contains("on")`), false, "tapping the trigger again toggles it closed");
+  // its tools reach the user elsewhere now: 8va/find:/◯5 in View ▾'s own
+  // HIGHLIGHT / READOUT group, ⏳ Jobs on the footer and View ▾'s BACKGROUND
+  // group — same ids/handlers, just relocated (see the next few tests).
+  const viewsheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf('<!-- KEY SIGNATURE'));
+  for (const id of ["octbtn", "findsel", "cofbtn", "vwJobs", "vwMessages"])
+    assert.match(viewsheet, new RegExp('id="' + id + '"'), id + " reaches View ▾ now");
 });
 
 test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up from now on'): a drop-up (▦ Roll / ▤ Tracks / 𝄞 Score), first in the footer's left group, its own label naming the CURRENT view", () => {
@@ -7228,7 +7284,7 @@ test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up fro
   assert.doesNotMatch(viewbtn, /viewseg/, "one drop-up button, not the 3-way segment (Josh, 2026-10-01: 'way too big')");
   assert.ok(footer.indexOf('id="viewbtn"') < footer.indexOf('id="lassobtn"'), "view switch sits before ⊞ Lasso");
   assert.ok(footer.indexOf('id="lassobtn"') < footer.indexOf('id="instbtn"'), "⊞ Lasso sits before 🎹");
-  assert.match(html, /id="viewswitchmenu" class="dropup"/, "#viewswitchmenu is a drop-up, same pattern as #notesmenu/#moresheet");
+  assert.match(html, /id="viewswitchmenu" class="dropup"/, "#viewswitchmenu is a drop-up, same pattern as #notesmenu");
 
   // click opens the drop-up (never changes the view by itself); picking a row sets the mode and closes it
   const a = createApp();
@@ -7271,50 +7327,78 @@ test("fitReadline (chrome density pass, 2026-10-01): #readline gets .ownrow unde
   installSong();
   const stub = (id, w) => run(`document.getElementById(${JSON.stringify(id)}).getBoundingClientRect = () => ({width: ${w}, left: 0, top: 0, height: 44});`);
   stub("footer", 900);
-  for (const id of ["viewbtn", "lassobtn", "instbtn", "listbtn", "syncbtn", "moresheetbtn"]) stub(id, 80);
-  for (const id of ["errbtn", "askreplybtn", "clearbtn"]) run(`document.getElementById(${JSON.stringify(id)}).style.display = "none";`);
-  // 900 - 24 (pad) - 6*80 (used) - 6*8 (gaps) = 348 leftover — at/above 300
+  // ⋯ More (and its moresheetbtn) is gone (chrome density follow-up,
+  // 2026-10-01 pm) — #jobsbtn replaces it as the footer's last button, but
+  // (like #errbtn/#askreplybtn/#clearbtn) it's conditionally shown, hidden
+  // by default with no jobs, so it belongs in the HIDDEN group below, not
+  // the always-visible five.
+  // force the always-visible five's own display explicitly (#syncbtn only
+  // shows once updateSyncBtn() sees a repo connection, which this test
+  // never establishes) so the width sum below doesn't depend on state left
+  // behind by whichever tests happened to run earlier in the shared app.
+  for (const id of ["viewbtn", "lassobtn", "instbtn", "listbtn", "syncbtn"]) { run(`document.getElementById(${JSON.stringify(id)}).style.display = "";`); stub(id, 80); }
+  for (const id of ["errbtn", "askreplybtn", "clearbtn", "jobsbtn"]) run(`document.getElementById(${JSON.stringify(id)}).style.display = "none";`);
+  // 900 - 24 (pad) - 5*80 (used) - 5*8 (gaps) = 436 leftover — at/above 300
   run(`fitReadline();`);
-  assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), false, "348px leftover: inline, no .ownrow");
+  assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), false, "436px leftover: inline, no .ownrow");
 
-  stub("footer", 700); // 700 - 24 - 480 - 48 = 148 leftover — under 300
+  stub("footer", 700); // 700 - 24 - 400 - 40 = 236 leftover — under 300
   run(`fitReadline();`);
-  assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), true, "148px leftover: crushed, .ownrow added");
+  assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), true, "236px leftover: crushed, .ownrow added");
 
   stub("footer", 900); // back to the roomy case: .ownrow comes back OFF
   run(`fitReadline();`);
   assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), false, "widened back out: .ownrow removed");
 });
 
-test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them'): a Roll item exists, and the menu is grouped View / Panels / Display / Mode", () => {
+test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them') → chrome density follow-up (2026-10-01 pm, Josh's ruling): ⋯ More folded in — six groups now, View / Panels / Highlight-Readout / Display / Background / Mode, and VIEW is one 'View type ▸' row instead of three permanent ones", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const sheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf('<div id="moresheet"'));
-  assert.match(sheet, /id="vwRoll"/, "Roll is a real View ▾ item now");
-  // group order: VIEW, PANELS, DISPLAY, MODE — each item falls after its
-  // section's .cfgsec label and before the next one
+  const sheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf("<!-- KEY SIGNATURE"));
+  assert.match(sheet, /id="vwRoll"/, "Roll is a real View ▾ item still");
+  // group order: VIEW, PANELS, HIGHLIGHT / READOUT, DISPLAY, BACKGROUND,
+  // MODE — each item falls after its section's .cfgsec label and before the
+  // next one
   const at = s => { const i = sheet.indexOf(s); assert.ok(i >= 0, s + " not found in #viewsheet"); return i; };
   const secView = at('class="cfgsec">VIEW'), secPanels = at('class="cfgsec">PANELS'),
-        secDisplay = at('class="cfgsec">DISPLAY'), secMode = at('class="cfgsec">MODE');
-  assert.ok(secView < secPanels && secPanels < secDisplay && secDisplay < secMode, "section order: View, Panels, Display, Mode");
-  const vwRoll = at('id="vwRoll"'), vwTracksView = at('id="vwTracksView"'), vwScore = at('id="vwScore"');
+        secHighlight = at('class="cfgsec">HIGHLIGHT / READOUT'),
+        secDisplay = at('class="cfgsec">DISPLAY'), secBackground = at('class="cfgsec">BACKGROUND'),
+        secMode = at('class="cfgsec">MODE');
+  assert.ok(secView < secPanels && secPanels < secHighlight && secHighlight < secDisplay &&
+            secDisplay < secBackground && secBackground < secMode,
+            "section order: View, Panels, Highlight / Readout, Display, Background, Mode");
+  const vwViewType = at('id="vwViewType"'), vwRoll = at('id="vwRoll"'), vwTracksView = at('id="vwTracksView"'), vwScore = at('id="vwScore"');
   const vwInst = at('id="vwInst"'), vwSub = at('id="vwSub"'), vwMixer = at('id="vwMixer"'), vwTracks = at('id="vwTracks"');
+  const octbtn = at('id="octbtn"'), findsel = at('id="findsel"'), cofbtn = at('id="cofbtn"');
   const vwEdit = at('id="vwEdit"'), vwFooter = at('id="vwFooter"'), vwGrid = at('id="vwGrid"');
+  const vwJobs = at('id="vwJobs"'), vwMessages = at('id="vwMessages"');
   const vwAnalyze = at('id="vwAnalyze"'), vwCompare = at('id="vwCompare"'), vwLearning = at('id="vwLearning"'), vwListener = at('id="vwListener"');
-  for (const i of [vwRoll, vwTracksView, vwScore]) assert.ok(secView < i && i < secPanels, "View items sit in the View group");
-  for (const i of [vwInst, vwSub, vwMixer, vwTracks]) assert.ok(secPanels < i && i < secDisplay, "Panel items sit in the Panels group");
-  for (const i of [vwEdit, vwFooter, vwGrid]) assert.ok(secDisplay < i && i < secMode, "Display items sit in the Display group");
+  assert.ok(secView < vwViewType && vwViewType < secPanels, "'View type ▸' sits in the View group");
+  for (const i of [vwRoll, vwTracksView, vwScore]) assert.ok(vwViewType < i && i < secPanels, "Roll/Tracks view/Score view are nested under 'View type ▸', still in the View group");
+  for (const i of [vwInst, vwSub, vwMixer, vwTracks]) assert.ok(secPanels < i && i < secHighlight, "Panel items sit in the Panels group");
+  for (const i of [octbtn, findsel, cofbtn]) assert.ok(secHighlight < i && i < secDisplay, "8va/find:/◯5 (moved from ⋯ More) sit in the Highlight / Readout group");
+  for (const i of [vwEdit, vwFooter, vwGrid]) assert.ok(secDisplay < i && i < secBackground, "Display items sit in the Display group");
+  for (const i of [vwJobs, vwMessages]) assert.ok(secBackground < i && i < secMode, "⏳ Jobs/⚠ Messages (moved from ⋯ More) sit in the Background group");
   for (const i of [vwAnalyze, vwCompare, vwLearning, vwListener]) assert.ok(i > secMode, "Mode items sit in the Mode group");
   assert.ok(vwListener > vwAnalyze && vwListener > vwCompare && vwListener > vwLearning, "Listener mode is last, same as Josh's example ordering");
 
-  // selecting Roll from the menu actually switches the view, same as #viewbtn
+  // "View type ▸" starts collapsed, names the current view, and expands on tap
   const a = createApp();
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
     songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; viewMode = "tracks"; applyViewMode();
-    document.getElementById("vwRoll").click();
+    renderViewMenu();
   `);
-  assert.equal(a.run(`viewMode`), "roll", "View ▾ → Roll switches to the roll");
+  assert.equal(a.run(`document.getElementById("vwViewTypeRow").style.display`), "none", "collapsed by default");
+  assert.match(a.run(`document.getElementById("vwViewType").textContent`), /^▸  View type: Tracks view$/, "names the CURRENT view");
+  a.run(`document.getElementById("vwViewType").click();`);
+  assert.equal(a.run(`document.getElementById("vwViewTypeRow").style.display`), "", "one tap expands it");
+  assert.match(a.run(`document.getElementById("vwViewType").textContent`), /^▾  View type: Tracks view$/, "▸ becomes ▾ while expanded");
+
+  // selecting Roll from the (now expanded) row actually switches the view, same as #viewbtn
+  a.run(`document.getElementById("vwRoll").click();`);
+  assert.equal(a.run(`viewMode`), "roll", "View ▾ → View type ▸ → Roll switches to the roll");
   assert.match(a.run(`document.getElementById("vwRoll").textContent`), /^✓/, "Roll shows the checkmark once selected");
+  assert.match(a.run(`document.getElementById("vwViewType").textContent`), /View type: Roll$/, "the closed label would now read Roll too");
 });
 
 test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", () => {

@@ -64,3 +64,46 @@ shows in its own panel, not the main bar.
    the `footer.folded > :not(#readline)` rule are unchanged).
 6. Docs done (this file + NIGHT-ROLL.md); Josh's iPad check (6-note lasso,
    hidden track, Learning on/off, 1376 and ~1030 px) — open item.
+
+## Follow-up (Josh, 2026-10-01 afternoon, after using the pass above)
+
+Screenshot 2026-10-01T15-37-41-752Z + six rulings, same sitting as two more
+fixes from his own use of the build (#asknowstrip height jump, a
+ResizeObserver ⚠). See NIGHT-ROLL.md "Chrome density pass — follow-up" for
+the full writeup; summary:
+
+1. DONE — ⋯ More removed ENTIRELY (not just back to a drop-up — gone). Its
+   groups fold into View ▾: HIGHLIGHT / READOUT (8va, find:, ◯5, same ids)
+   between Panels and Display; a new BACKGROUND (⏳ Jobs, ⚠ Messages) between
+   Display and Mode.
+2. DONE — ⏳ Jobs back on the footer's right end (same #jobsbtn node),
+   hidden with no jobs; View ▾ → BACKGROUND → ⏳ Jobs always reachable, with
+   a running count, even at zero jobs (so a finished one stays reviewable).
+3. DONE — ⚠ errbtn: footer shows only on UNREAD (not just non-empty log);
+   View ▾ → BACKGROUND → ⚠ Messages always reachable regardless.
+4. DONE — View ▾'s VIEW group collapsed from three permanent rows to one
+   "▸ View type: <current>" expanding row (#vwViewType/#vwViewTypeRow) —
+   #vwRoll/#vwTracksView/#vwScore keep their ids/handlers, just nested.
+5. DONE — the header's gold "🎓 Learning" tag (#modepill) removed entirely;
+   Learning mode stays in Settings and View ▾ → Mode only.
+6. DONE — ✦ AI's pulsing dot (#askbtn.working::before/@keyframes
+   asknowpulse) removed; the aria-label status text (and the "working"
+   class it hangs off) is unchanged — VoiceOver still gets it, nothing
+   visual remains.
+7. DONE (same session, found mid-build) — #asknowstrip reserves a fixed
+   2-line height (`min-height: calc(1.3em * 2)`) so a status crossing the
+   1↔2-line boundary never shifts the chat log below it; only the tapped-
+   open state is allowed to grow.
+8. DONE (same session) — fitReadline's RO/MO callbacks go through a
+   requestAnimationFrame-deferred `scheduleFitReadline()` instead of
+   calling `fitReadline` (which writes to the observed subtree) directly,
+   fixing the "ResizeObserver loop completed with undelivered
+   notifications" warning at the source; a `BENIGN_ERRORS` filter in the
+   `window.onerror` handler also drops that message (and its "limit
+   exceeded" sibling) as belt-and-suspenders, since it's never actionable.
+
+Tests: `tests/night-roll.test.mjs` updated throughout (footer order,
+fitReadline's stub-width test, the View ▾ structure test, the jobs/⚠-log
+tests, three new tests for #modepill/working-dot/asknowstrip/BENIGN_ERRORS);
+FEATURES' "⋯ More" keyword → "View type"; `node tools/build_help.mjs` run.
+Open item: Josh's iPad check, now against this build instead.

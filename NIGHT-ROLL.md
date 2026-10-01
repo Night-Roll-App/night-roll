@@ -5881,3 +5881,140 @@ around the drop-up. FEATURES gained a "+ New note" keyword (the merged
 dd's own bold label for `#notebtn`); every other FEATURES keyword this
 pass's rewording touched ("⋯ More", "8va", "find:", "Circle of fifths")
 stayed in the new text, verbatim or as a substring.
+
+## Chrome density pass — follow-up (Josh, 2026-10-01 afternoon)
+
+After using acc1f8c (the pass above), Josh's screenshot
+(2026-10-01T15-37-41-752Z) and six rulings in one sitting. Theme: the first
+pass hid things *smaller*; this one asks whether each thing needs to be in
+the main bar at all, and who else is already the right home for it. Two
+more fixes landed the same session, mid-build, from his own use of the
+build: #asknowstrip's height jumping with the status text, and a
+ResizeObserver ⚠ from fitReadline's own write loop.
+
+**1. ⋯ More is gone. Entirely.** Not a drop-up any more, not a window
+before that — removed. Its own purpose ("tools used rarely enough they
+don't need a permanent seat on the row") was already View ▾'s purpose, so a
+second menu for the same job was one menu too many. `#moresheetbtn`,
+`#moresheet`, `#morerows`, `#morebadge`, the `.moresong`/`#morerows:not(:has(…))`
+CSS, the `openDropUp()` wiring for it, and its `makeWindow`/dockable-window
+comment history — all gone. Its three groups land inside View ▾ now:
+**HIGHLIGHT / READOUT** (`#octbtn` 8va, `#findsel` find:, `#cofbtn` ◯5
+Circle of fifths — same ids, same handlers, same `renderOctBtn`/
+`refreshFindSel`/click-handler code, just relocated markup) sits between
+PANELS and DISPLAY; **BACKGROUND** (new: `#vwJobs` ⏳ Jobs, `#vwMessages`
+⚠ Messages) sits between DISPLAY and MODE. Both forward to the footer
+buttons' own click handlers after closing View ▾ first, same convention as
+`vwGrid`/`vwCompare` (items that open a separate sheet rather than toggling
+in place). The stale-`wm`-purge migration code (a device that had
+`"moresheet"` docked/tabbed from either the window era or the drop-up era)
+is untouched — it still runs, still pure, still purges the dead id.
+
+**2. ⏳ Jobs: back on the footer, conditionally.** `#jobsbtn` is the SAME
+node/id/handler that used to live inside ⋯ More's SONG group — `updateJobsBtn()`
+is unchanged (hidden with no jobs at all; gold "⏳N" while running; dim "⏳"
+once everything's finished but not yet auto-cleared). It's the footer's
+last button now (⋯ More's old slot). `updateJobsBtn()` additionally writes
+`#vwJobs`'s own text (`"⏳  Jobs"` + `" · N running"` when `running > 0`) so
+View ▾ → BACKGROUND → ⏳ Jobs always names the running count too, even with
+the footer button hidden — and View ▾'s copy never hides at zero, so a
+finished, failed, or interrupted job stays reviewable after the footer
+button's gone quiet.
+
+**3. ⚠ errors: footer shows only when UNREAD.** `errChip()`'s footer
+condition changed from `lines.length` (any message, read or not) to `n`
+(the UNREAD count, same `askSeenMax().err` cursor Mark-as-read already
+used) — `b.style.display = n ? "" : "none"`. `errChip()` also now writes
+`#vwMessages` (`"⚠  Messages"` + `" · N"` when `n > 0`), and that item is
+reachable from View ▾ → BACKGROUND always, log empty or not, so a log
+you've already read is still one tap away without needing an unread count
+to justify footer space.
+
+**4. View ▾'s VIEW group: "View type ▸", not three rows.** "View ▾ is
+getting long" was Josh's own note mid-ruling. `#vwRoll`/`#vwTracksView`/
+`#vwScore` are the exact same ids/handlers/radio (✓ on exactly one) as
+before, just nested one level inside a new `#vwViewTypeRow` (plain div,
+`display:none` by default) that `#vwViewType` (a `.fitem` button, "▸  View
+type: Roll") expands/collapses on tap — an expanding row, not a floating
+submenu, so no extra positioning code and the whole thing stays inside one
+`.dropup`. `renderViewMenu()` keeps the ▸/▾ glyph and the "View type:
+<current>" label in sync off a new `vwViewTypeOpen` boolean; `aria-expanded`
+tracks it too. `vwViewTypeOpen` had to go in the EARLY boot-safe block
+(beside `APP_MODE`, not down near `renderViewMenu` itself) — the exact
+boot-path-TDZ mistake the memory note already warns about: `renderViewMenu`
+can run during boot, and a `let` declared further down the file would still
+be in its own TDZ at that call even though the function declaration itself
+is hoisted.
+
+**5. The header's 🎓 Learning tag is gone.** `#modepill` — markup, its
+`@container (max-width: 860px)` compact-icon CSS, `.pilltext`, the
+`applyMode()`/boot `style.display` writes, the click-to-open-View▾ handler —
+all removed. Learning mode itself is untouched (still Settings → Other,
+still View ▾ → Mode → 🎓 Learning mode); nothing in the header names which
+mode you're in any more. `#songcrumb` simply grows to fill whatever's left
+of the header now that nothing sits to its right.
+
+**6. ✦ AI's pulsing dot is gone.** "Always there and distracting" (Josh).
+`#askbtn.working::before` and `@keyframes asknowpulse` are removed from the
+CSS; `askStatusRender()` is otherwise untouched — it still does
+`abtn.classList.toggle("working", working)` and still sets the aria-label
+("Talk to the AI tutor — Claude Code is working: …" / plain "Talk to the AI
+tutor"), so VoiceOver still hears the state, there's just nothing painted
+for sighted use. The "working" class is harmless dead weight now (nothing
+styles it) but stays, since JS code and tests already key off it and
+removing it bought nothing.
+
+**7. #asknowstrip: a fixed 2-line height.** Josh, same session: "text in
+the AI dialogue is always shifting a little up and down … very annoying
+while analyzing." Cause: the strip's `-webkit-line-clamp: 2` only clips a
+2nd line when there IS one — a short status rendered the box at 1 line
+tall, so the chat log below it jumped every time a status crossed the
+1↔2-line boundary. Fix: `line-height: 1.3; min-height: calc(1.3em * 2)` on
+the closed (clamped) rule reserves the full 2-line box always, short status
+or long; `.open` (tapped — the un-clamped full text) is the one state
+allowed to grow, so it gets `min-height: 0` back. Nothing else in
+`askStatusRender()` toggles a size/display that would also jump on a status
+tick — `#jobsnow` and the strip itself only flip `display` on bridge
+presence, not per update, and ✦ AI's own visual is gone entirely (6, above).
+
+**8. fitReadline's ResizeObserver loop.** A ⚠ "ResizeObserver loop
+completed with undelivered notifications" showed up — caused by
+`fitReadline()` being the RO/MO callback directly: its own write
+(`classList.toggle("ownrow", …)`) can change `#readline`'s size, which sits
+inside the observed `#footer`, so mutating layout synchronously from inside
+the notification is exactly the pattern that warning exists for. Fix:
+`scheduleFitReadline()` — both observers now call it instead of
+`fitReadline` directly; it coalesces a burst of notifications into one
+`requestAnimationFrame(fitReadline)` call, moving the actual measure+write
+outside the notification cycle. `fitReadline()` itself is UNCHANGED and
+still fully synchronous (direct call sites — `applyChrome()`, the boot
+call, every test — still get an immediate result; the vm harness stubs
+`requestAnimationFrame` as a no-op and `ResizeObserver.observe()` as a
+no-op, so this only matters in a real browser). Belt-and-suspenders: a
+`BENIGN_ERRORS` regex (`/^ResizeObserver loop (completed with undelivered
+notifications|limit exceeded)/`) in the `window.addEventListener("error", …)`
+handler drops the message before it ever reaches `logErr` — it's never
+actionable, so it must never cost Josh a ⚠, whether or not the scheduling
+fix fully prevents the browser from raising it on some frame.
+
+Tests: `tests/night-roll.test.mjs` — footer-order and ⋯-More-removal tests
+rewritten (`#jobsbtn` replaces `#moresheetbtn` as the footer's last id;
+`#moresheet`/`#morebadge` asserted ABSENT everywhere, not just un-docked);
+`fitReadline`'s stub-width test moved `#jobsbtn` into the conditionally-
+hidden group (like `#errbtn`) instead of the always-visible five, and now
+forces each always-visible id's own `style.display` explicitly rather than
+trusting a connected-state default (`#syncbtn` only shows once
+`updateSyncBtn()` sees a repo, which no isolated test establishes); the
+View ▾ structure test checks all six groups in order and drives
+`#vwViewType`'s collapse/expand/relabel; the jobs test checks `#vwJobs`'s
+text instead of the retired `#morebadge`; the ⚠ log test checks `#errbtn`'s
+display at 0/1/2 unread and `#vwMessages`'s matching count; new tests check
+no `#modepill` markup/CSS/live-JS-reference survives, no `.working::before`/
+`asknowpulse` CSS survives, `#asknowstrip`'s fixed-height rule, and
+`BENIGN_ERRORS`' regex. `FEATURES`' "⋯ More" keyword became "View type" (the
+only item that genuinely no longer exists to point at — 8va/find:/Circle of
+fifths/Learning mode/⏳/⚠ all still have a home, worded around their new one).
+`node tools/build_help.mjs` regenerated HELP.md from the reworded help
+sheet (🎓 Learning mode, ⊞ Lasso, ◯5 Circle of fifths, find:, ⚠ Messages,
+⏳ Jobs, What Claude Code is doing now, View ▾ menu — the ⋯ More dt/dd was
+deleted outright, nothing left to point at).
