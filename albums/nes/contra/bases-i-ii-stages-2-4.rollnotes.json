@@ -1,3 +1,3 @@
-{ "version": 1, "song": "bases-i-ii-stages-2-4", "saved": 1790564288131, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "bases-i-ii-stages-2-4", "origin": {"kind":"capture"}, "stamp": 1790564288131, "notes": [
   {"at":[65,1],"type":"loop","loop":"9.1"}
 ] }
