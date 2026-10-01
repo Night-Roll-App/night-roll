@@ -1,3 +1,3 @@
-{ "version": 1, "song": "track-22", "saved": 1790564482284, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "track-22", "origin": {"kind":"capture"}, "stamp": 1790564482284, "notes": [
   {"at":[8,4],"type":"loop","loop":"2.4"}
 ] }
