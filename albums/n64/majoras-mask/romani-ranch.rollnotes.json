@@ -1,3 +1,3 @@
-{ "version": 1, "song": "romani-ranch", "saved": 1790615350823, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "romani-ranch", "origin": {"kind":"capture"}, "stamp": 1790615350823, "notes": [
   {"at":[46,1],"type":"loop","loop":"4.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "goron-race", "saved": 1790615350803, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "goron-race", "origin": {"kind":"capture"}, "stamp": 1790615350803, "notes": [
   {"at":[27,1],"type":"loop","loop":"3.1"}
 ] }

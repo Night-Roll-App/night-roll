@@ -1,3 +1,3 @@
-{ "version": 1, "song": "goron-s-shrine", "saved": 1790615350803, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "goron-s-shrine", "origin": {"kind":"capture"}, "stamp": 1790615350803, "notes": [
   {"at":[41,1.5],"type":"loop","loop":"9.1.5"}
 ] }

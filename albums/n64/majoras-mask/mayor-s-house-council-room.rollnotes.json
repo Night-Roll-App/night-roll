@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mayor-s-house-council-room", "saved": 1790615350816, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mayor-s-house-council-room", "origin": {"kind":"capture"}, "stamp": 1790615350816, "notes": [
   {"at":[21,2],"type":"loop","loop":"1.2"}
 ] }

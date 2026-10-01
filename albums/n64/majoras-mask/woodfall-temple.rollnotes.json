@@ -1,3 +1,3 @@
-{ "version": 1, "song": "woodfall-temple", "saved": 1790615350840, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "woodfall-temple", "origin": {"kind":"capture"}, "stamp": 1790615350840, "notes": [
   {"at":[41,1],"type":"loop","loop":"7.1"}
 ] }

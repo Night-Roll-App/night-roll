@@ -1,3 +1,3 @@
-{ "version": 1, "song": "great-bay-temple", "saved": 1790615350805, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "great-bay-temple", "origin": {"kind":"capture"}, "stamp": 1790615350805, "notes": [
   {"at":[49,1],"type":"loop","loop":"17.1"}
 ] }

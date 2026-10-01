@@ -1,3 +1,3 @@
-{ "version": 1, "song": "milk-bar", "saved": 1790615350819, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "milk-bar", "origin": {"kind":"capture"}, "stamp": 1790615350819, "notes": [
   {"at":[34,3],"type":"loop","loop":"2.1"}
 ] }
