@@ -1,4 +1,4 @@
-{ "version": 1, "song": "bubble-man", "saved": 1789699090350, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "bubble-man", "origin": {"kind":"capture"}, "stamp": 1789699090350, "notes": [
   {"at":[27,1],"to":[27,4],"type":"chord","chord":"G#"},
   {"at":[28,1],"to":[28,4],"type":"chord","chord":"G/B"},
   {"at":[29,1],"to":[29,1],"type":"chord","chord":"Cm"},

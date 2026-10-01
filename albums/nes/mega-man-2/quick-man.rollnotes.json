@@ -1,3 +1,3 @@
-{ "version": 1, "song": "quick-man", "saved": 1786911843883, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "quick-man", "origin": {"kind":"capture"}, "stamp": 1786911843883, "notes": [
   {"at":[49,3],"type":"loop","loop":"1.3"}
 ] }

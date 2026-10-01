@@ -1,3 +1,3 @@
-{ "version": 1, "song": "wood-man", "saved": 1786911864876, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "wood-man", "origin": {"kind":"capture"}, "stamp": 1786911864876, "notes": [
   {"at":[30,4.5],"type":"loop","loop":"6.4.5"}
 ] }

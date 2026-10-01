@@ -1,4 +1,4 @@
-{ "version": 1, "song": "crash-man", "saved": 1789699088484, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "crash-man", "origin": {"kind":"capture"}, "stamp": 1789699088484, "notes": [
   {"at":[1,1],"text":"This song sounds a lot like a baseball song"},
   {"at":[48,3],"type":"loop","loop":"8.3"}
 ] }

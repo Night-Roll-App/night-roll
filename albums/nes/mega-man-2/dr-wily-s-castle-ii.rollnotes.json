@@ -1,4 +1,4 @@
-{ "version": 1, "song": "dr-wily-s-castle-ii", "saved": 1789699084664, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "dr-wily-s-castle-ii", "origin": {"kind":"capture"}, "stamp": 1789699084664, "notes": [
   {"at":[1,1],"text":"This song does the same exact thing 12 times but rising one note at a time so it goes through every note there is until it falls all the way back down to the starting note"},
   {"at":[1,1],"to":[1,4],"type":"chord","chord":"D#m7"},
   {"at":[2,1],"to":[2,4],"type":"chord","chord":"F","note":"We have a bit of an F sharp major feel here in the melody and pulse one impulse two but it's still in the D sharp minor seven Under the base, they arpeggio. So I really think this is still D sharp minor seven"},

@@ -1,4 +1,4 @@
-{ "version": 1, "song": "dr-wily-s-castle", "saved": 1789696777276, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "dr-wily-s-castle", "origin": {"kind":"capture"}, "stamp": 1789696777276, "notes": [
   {"at":[1,1],"to":[2,4],"type":"chord","chord":"C#m"},
   {"at":[1,1],"to":[16,4],"type":"section","label":"A"},
   {"at":[1,1],"to":[8,4],"type":"section","label":"A1"},
