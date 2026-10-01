@@ -85,7 +85,9 @@ export async function renderOneNote(M, kind, inner, groupName, renderFn, {key, v
   const note = kind === "psf"
     ? {...t, tick: 0, endTick: dur, key, pitch: key, cents: 0, vel, gain: undefined, slide: undefined, unrolled: false}
     : {...t, tick: 0, dur, midi: key, key, semitone: key - 21, vel, slide: undefined, gain: undefined, bend: 0};
-  const one = {...inner, notes: [note], endTick: dur, loop: null, ducked: []};
+  // the renderer sizes its output from seq.loop too, not just the wrapper's loop — leaving it
+  // made a tap on FFX Challenge render the whole 164 s song for one note (2026-09-30)
+  const one = {...inner, notes: [note], endTick: dur, loop: null, ducked: [], ...(inner.seq ? {seq: {...inner.seq, loop: null}} : {})};
   const r = await renderFn(one, {sampleRate, seconds, onProgress: () => {}});
   return (r && r[groupName]) || null;
 }
