@@ -1,3 +1,3 @@
-{ "version": 1, "song": "floyd-mission", "saved": 1790617245179, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "floyd-mission", "origin": {"kind":"capture"}, "stamp": 1790617245179, "notes": [
   {"at":[53,1],"type":"loop","loop":"3.1"}
 ] }

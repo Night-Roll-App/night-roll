@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mizar-s-palace", "saved": 1790617245215, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mizar-s-palace", "origin": {"kind":"capture"}, "stamp": 1790617245215, "notes": [
   {"at":[149,1],"type":"loop","loop":"27.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "cave", "saved": 1790617245165, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cave", "origin": {"kind":"capture"}, "stamp": 1790617245165, "notes": [
   {"at":[73,1],"type":"loop","loop":"17.1"}
 ] }

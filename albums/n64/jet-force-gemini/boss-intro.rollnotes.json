@@ -1,3 +1,3 @@
-{ "version": 1, "song": "boss-intro", "saved": 1790617245163, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "boss-intro", "origin": {"kind":"capture"}, "stamp": 1790617245163, "notes": [
   {"at":[41,1.25],"type":"loop","loop":"1.1.25"}
 ] }

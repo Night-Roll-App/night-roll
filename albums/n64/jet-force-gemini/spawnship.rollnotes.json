@@ -1,3 +1,3 @@
-{ "version": 1, "song": "spawnship", "saved": 1790617245234, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "spawnship", "origin": {"kind":"capture"}, "stamp": 1790617245234, "notes": [
   {"at":[91,1],"type":"loop","loop":"3.1"}
 ] }

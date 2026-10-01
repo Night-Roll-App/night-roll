@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mizar-s-racetrack", "saved": 1790617245218, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mizar-s-racetrack", "origin": {"kind":"capture"}, "stamp": 1790617245218, "notes": [
   {"at":[49,1],"type":"loop","loop":"1.1"}
 ] }

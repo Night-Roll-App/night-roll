@@ -1,3 +1,3 @@
-{ "version": 1, "song": "asteroid", "saved": 1790617245160, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "asteroid", "origin": {"kind":"capture"}, "stamp": 1790617245160, "notes": [
   {"at":[119,1],"type":"loop","loop":"9.1"}
 ] }

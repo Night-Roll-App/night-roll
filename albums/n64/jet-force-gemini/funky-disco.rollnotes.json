@@ -1,3 +1,3 @@
-{ "version": 1, "song": "funky-disco", "saved": 1790617245181, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "funky-disco", "origin": {"kind":"capture"}, "stamp": 1790617245181, "notes": [
   {"at":[11,2],"type":"loop","loop":"3.2"}
 ] }
