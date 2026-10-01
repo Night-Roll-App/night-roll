@@ -1,3 +1,3 @@
-{ "version": 1, "song": "treasure-trove-cove-captain-blubber-area", "saved": 1790615741829, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "treasure-trove-cove-captain-blubber-area", "origin": {"kind":"capture"}, "stamp": 1790615741829, "notes": [
   {"at":[63,1],"type":"loop","loop":"2.1"}
 ] }

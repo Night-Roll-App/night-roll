@@ -1,3 +1,3 @@
-{ "version": 1, "song": "barbeque-shock-1", "saved": 1790615741465, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "barbeque-shock-1", "origin": {"kind":"capture"}, "stamp": 1790615741465, "notes": [
   {"at":[3,1],"type":"loop","loop":"2.1"}
 ] }

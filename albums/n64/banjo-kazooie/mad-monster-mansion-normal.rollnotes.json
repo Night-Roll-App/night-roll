@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mad-monster-mansion-normal", "saved": 1790615741708, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mad-monster-mansion-normal", "origin": {"kind":"capture"}, "stamp": 1790615741708, "notes": [
   {"at":[71,1],"type":"loop","loop":"9.1"}
 ] }

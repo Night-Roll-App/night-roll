@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mad-monster-mansion-normal-with-church-bell", "saved": 1790615741704, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mad-monster-mansion-normal-with-church-bell", "origin": {"kind":"capture"}, "stamp": 1790615741704, "notes": [
   {"at":[71,1],"type":"loop","loop":"9.1"}
 ] }

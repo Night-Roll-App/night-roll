@@ -1,3 +1,3 @@
-{ "version": 1, "song": "gruntilda-s-lair-clanker-s-cavern-2", "saved": 1790709804932, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "gruntilda-s-lair-clanker-s-cavern-2", "origin": {"kind":"capture"}, "stamp": 1790709804932, "notes": [
   {"at":[49,1],"type":"loop","loop":"3.1"}
 ] }

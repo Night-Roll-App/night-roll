@@ -1,3 +1,3 @@
-{ "version": 1, "song": "flippits-battle", "saved": 1790615741540, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "flippits-battle", "origin": {"kind":"capture"}, "stamp": 1790615741540, "notes": [
   {"at":[46,1],"type":"loop","loop":"3.1"}
 ] }

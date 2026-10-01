@@ -1,3 +1,3 @@
-{ "version": 1, "song": "freezeezy-peak-normal", "saved": 1790615741553, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "freezeezy-peak-normal", "origin": {"kind":"capture"}, "stamp": 1790615741553, "notes": [
   {"at":[73,1],"type":"loop","loop":"2.1"}
 ] }

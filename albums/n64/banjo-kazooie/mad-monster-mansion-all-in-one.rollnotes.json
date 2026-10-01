@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mad-monster-mansion-all-in-one", "saved": 1790615741697, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mad-monster-mansion-all-in-one", "origin": {"kind":"capture"}, "stamp": 1790615741697, "notes": [
   {"at":[71,1],"type":"loop","loop":"9.1"}
 ] }

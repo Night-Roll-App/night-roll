@@ -1,3 +1,3 @@
-{ "version": 1, "song": "zubba-s-nest", "saved": 1790615741844, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "zubba-s-nest", "origin": {"kind":"capture"}, "stamp": 1790615741844, "notes": [
   {"at":[37,1],"type":"loop","loop":"3.1"}
 ] }

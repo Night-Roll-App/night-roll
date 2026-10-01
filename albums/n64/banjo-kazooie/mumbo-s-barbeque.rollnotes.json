@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mumbo-s-barbeque", "saved": 1790615741712, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mumbo-s-barbeque", "origin": {"kind":"capture"}, "stamp": 1790615741712, "notes": [
   {"at":[38,1],"type":"loop","loop":"2.1"}
 ] }

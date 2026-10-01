@@ -1,3 +1,3 @@
-{ "version": 1, "song": "boss-boom-box", "saved": 1790615741473, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "boss-boom-box", "origin": {"kind":"capture"}, "stamp": 1790615741473, "notes": [
   {"at":[44,1],"type":"loop","loop":"4.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "sfx-pyramids", "saved": 1790615741795, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "sfx-pyramids", "origin": {"kind":"capture"}, "stamp": 1790615741795, "notes": [
   {"at":[3,1],"type":"loop","loop":"1.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "gobi-s-valley-all-in-one", "saved": 1790615741564, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "gobi-s-valley-all-in-one", "origin": {"kind":"capture"}, "stamp": 1790615741564, "notes": [
   {"at":[71,1],"type":"loop","loop":"5.1"}
 ] }

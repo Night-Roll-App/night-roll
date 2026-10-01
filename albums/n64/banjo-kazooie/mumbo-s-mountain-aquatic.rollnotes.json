@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mumbo-s-mountain-aquatic", "saved": 1790615741727, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mumbo-s-mountain-aquatic", "origin": {"kind":"capture"}, "stamp": 1790615741727, "notes": [
   {"at":[51,1],"type":"loop","loop":"2.1"}
 ] }

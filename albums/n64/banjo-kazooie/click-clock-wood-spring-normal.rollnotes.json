@@ -1,3 +1,3 @@
-{ "version": 1, "song": "click-clock-wood-spring-normal", "saved": 1790615741523, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "click-clock-wood-spring-normal", "origin": {"kind":"capture"}, "stamp": 1790615741523, "notes": [
   {"at":[67,1],"type":"loop","loop":"6.1"}
 ] }

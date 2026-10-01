@@ -1,3 +1,3 @@
-{ "version": 1, "song": "rusty-bucket-bay-whistle-puzzle", "saved": 1790615741791, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "rusty-bucket-bay-whistle-puzzle", "origin": {"kind":"capture"}, "stamp": 1790615741791, "notes": [
   {"at":[58,1],"type":"loop","loop":"2.1"}
 ] }
