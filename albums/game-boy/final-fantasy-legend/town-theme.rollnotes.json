@@ -1,3 +1,3 @@
-{ "version": 1, "song": "town-theme", "saved": 1790475532411, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "town-theme", "origin": {"kind":"capture"}, "stamp": 1790475532411, "notes": [
   {"at":[25,2.25],"type":"loop","loop":"1.2.25"}
 ] }

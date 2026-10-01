@@ -1,3 +1,3 @@
-{ "version": 1, "song": "requiem", "saved": 1790475532411, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "requiem", "origin": {"kind":"capture"}, "stamp": 1790475532411, "notes": [
   {"at":[15,4.75],"type":"loop","loop":"3.4.75"}
 ] }
