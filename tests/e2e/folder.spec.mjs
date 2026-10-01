@@ -47,7 +47,7 @@ test.describe("local folder mode", () => {
       return { mid: mid ? mid.size : 0, rn: rn ? JSON.parse(await rn.text()).version : null, txt: !!txt };
     }, KEY);
     expect(written.mid).toBeGreaterThan(20);
-    expect(written.rn).toBe(1);
+    expect(written.rn).toBe(2); // annotations v2 (P4) — the writer moved off v1
     expect(written.txt).toBe(true);
     // forget the device draft, come back: the catalog scan finds the folder copy
     await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.includes("e2e-folder")) localStorage.removeItem(k); });
