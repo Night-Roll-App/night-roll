@@ -1,3 +1,3 @@
-{ "version": 1, "song": "stalker-armory", "saved": 1790564275642, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "stalker-armory", "origin": {"kind":"capture"}, "stamp": 1790564275642, "notes": [
   {"at":[17,1.5],"type":"loop","loop":"3.1.5"}
 ] }

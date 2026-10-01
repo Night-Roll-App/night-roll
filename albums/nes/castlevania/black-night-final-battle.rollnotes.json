@@ -1,3 +1,3 @@
-{ "version": 1, "song": "black-night-final-battle", "saved": 1790564275634, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "black-night-final-battle", "origin": {"kind":"capture"}, "stamp": 1790564275634, "notes": [
   {"at":[12,1],"type":"loop","loop":"2.1"}
 ] }
