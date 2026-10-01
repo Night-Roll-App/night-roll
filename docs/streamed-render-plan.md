@@ -241,7 +241,40 @@ crash + recovery".
    locked-screen album play, Challenge at full quality — none of that has
    happened yet, this step is page-logic + vm tests only.
 4. Offline export in stream mode (worker {mix}; StereoPanner formulas).
-5. Default "auto": stream only where whole mode would downgrade/refuse.
+5. DONE (2026-10-01), default still OFF. "auto" streams a song ONLY where
+   the whole-render path would itself downgrade (mono, or a lower sample
+   rate) or refuse — planChipRender's own verdict for THIS song, with the
+   honest canStream:true peak estimate (planChipRender's own comment, step
+   0/out-of-band fix above). tools/chip-worker.mjs's `handleStream` already
+   parses/runs the song to open a stream session either way, so it computes
+   the hypothetical whole-render plan there for free (chipEstimateTracksW +
+   planChipRender, the exact numbers the plain whole-render handler itself
+   uses) whenever the `{stream:{…}}` request carries a `budget`, and returns
+   it as `{ready:{…, plan}}`; omitted (null) when no `budget` is given (an
+   ordinary "on"-mode open never needs an opinion). index.html's
+   `chipStreamOpen(auto)` sends that budget only when `auto` is true, and
+   once `{ready}` answers, `chipAutoShouldStream(plan, nativeRate)` decides:
+   `plan.refuse || plan.mono || plan.rate !== nativeRate` keeps the just-
+   opened session (stream); otherwise it terminates that worker and returns
+   false, the same shape as any other "fall back to chipRender()" exit, so a
+   song that already fits plays the unchanged whole render — same bytes, same
+   path, as if "auto" were "off". One `logDebug` line either way
+   (`chipAutoReason`), e.g. "Challenge: streaming — whole render would drop
+   to 24 kHz mono" or "small: whole — whole render fits as-is". A kind with
+   no stream hook at all never reaches this decision — the worker's existing
+   `{stream:{error:"no stream for <kind>"}}` reply (the same fallback "on"
+   mode already relies on) sends it straight to the whole path, logged by
+   the pre-existing error branch; the page still never hardcodes which kinds
+   qualify. The DEFAULT stays "off" (Josh hasn't A/B-listened to stream mode
+   for real yet — his weekend list has it) — this only changes what "auto"
+   itself does once someone picks it. Tests: tests/chip-worker.test.mjs
+   ({ready}.plan present/absent/matches planChipRender exactly, a fixed
+   30-channel fake chip simulating an FFX-Challenge-sized song); tests/
+   night-roll.test.mjs (a big psf2 plan that would downgrade keeps the
+   stream session; a small one discards it for the whole render; a kind
+   with no stream hook goes straight to whole; each logs its one line).
+   Help sheet "Chip stream (experimental)" and the Settings status line
+   updated to say what "auto" does; "off" is still the default everywhere.
 6. (optional) bus mode while hidden / over budget.
 
 ## Risks

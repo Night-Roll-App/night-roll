@@ -1875,7 +1875,7 @@
       <dt>📻 Listener mode</dt><dd>Phones open as a PLAYER: the roll, ⏮ ▶, the readouts, speed and volume — everything else hidden, including the section/chord bands and the notes strip (unreadably small on a phone anyway), because a shared song link is for listening, not editing. A <b>Full app</b> button in the header brings the whole DAW back on that device (and View ▾ → Listener mode folds it away again, on any device). Send someone a ?song= link and their phone just… plays it.</dd>
       <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — six groups, top to bottom (chrome density follow-up, 2026-10-01 pm: grew from four when ⋯ More's own tools folded in here — "View ▾ is getting long" is Josh's own note, but one findable menu beat two): <b>View</b> (one <b>▸ View type</b> row — tap to expand <b>▦ Roll / ▤ Tracks view / 𝄞 Score view</b>, a radio, one ✓ at a time, the same views the footer's bottom-left view drop-up switches between; its own closed label always names the CURRENT view), <b>Panels</b> (🎹 Instrument panel, 💬 Notes strip, 🎚 Mixer, ◂ Tracks — the windows and side panels you open beside the roll), <b>Highlight / Readout</b> (8va octave numbers, find: the pitch finder, ◯5 Circle of fifths — moved from ⋯ More, same ids and behavior), <b>Display</b> (🛠 Edit toolbar, ▦ Bottom bar, ▦ Grid…, and ▸ Section levels with −/+ steppers — shows "2 of 3"; the gutter chevron still one-tap cycles — what the roll itself shows or snaps to), <b>Background</b> (⏳ Jobs, ⚠ Messages — also moved from ⋯ More; both stay in the menu even when their matching footer button is hidden, so a finished job or an already-read message log is still reachable), and <b>Mode</b> (🔍 Analyze ▸, ⇄ Compare with repo, 🎓 Learning mode, 📻 Listener mode — these change what editing, or the whole app, means). ✓ means on, visible, or current; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else (or the moment an item opens its own separate sheet — Grid…, Compare, Jobs, Messages). Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
       <dt>Speed &amp; volume buttons</dt><dd>The speed slider folded into a <b>percentage button</b> — tap to open the slider, tap anywhere else and it folds back (the reset chip appears when off-native). Beside it, <b>🔊</b> is a master volume the same way: tap, slide (10–200%), tap away; the setting sticks per device and the button shows the number when it's not 100%.</dd>
-      <dt>LCD readout</dt><dd>Beside Play, Logic-style: live bar and beat (counted in the declared meter's beats), the tempo at the cursor from the song's own tempo map (scaled by the speed slider), and the declared meter and key. Undeclared stays honest: meter reads "4/4?", key reads "C?" (the display default), a stored tonic reads "B♭?". On your own songs the tempo segment is tappable too — it opens a Tempo change annotation ("tempo: 120" at a bar/beat; the map applies from there, so mid-song tempo changes work; Save writes the full map into the .mid). On analyzed songs the same annotation is an OBSERVATION — it records that the music changes tempo there and leaves playback untouched (the capture's timing is measured fact). Every readout is a door: tap the tempo to open the tempo annotation governing the cursor (or declare the first one), tap the meter to open the time signature, tap the key to open the key change ruling the cursor — a stored partial opens its own note with the tonic already filled.</dd>
+      <dt>LCD readout</dt><dd>Beside Play, Logic-style: live bar and beat (counted in the declared meter's beats), the tempo at the cursor from the song's own tempo map (scaled by the speed slider), and the declared meter and key. Undeclared stays honest: meter reads "4/4?", key reads "C?" (the display default), a stored tonic reads "B♭?". On your own songs the tempo segment is tappable too — it opens a Tempo change annotation ("tempo: 120" at a bar/beat; the map applies from there, so mid-song tempo changes work; Save writes the full map into the .mid). On analyzed songs the same annotation is an OBSERVATION — it records that the music changes tempo there and leaves playback untouched (the capture's timing is measured fact). Every readout is a door to the song's OPENING value — always bar 1, wherever the cursor is: tap the tempo, the meter or the key to open the one at bar 1 (or declare it there); a change partway through goes in with + Note — a stored partial opens its own note with the tonic already filled.</dd>
       <dt>Blue cursor</dt><dd>Play starts here. Tap the bar ruler to place it, or drag its handle (triangle under the ruler). Tapping a note selects it <b>without moving the cursor</b>, the DAW way, so Space still plays from where you were; <b>+ Note</b> anchors at the note you tapped. (Settings → Other brings back tap-to-move.)</dd>
     </dl>
 
@@ -1968,7 +1968,7 @@
       <dt>📁 Folder on this computer</dt><dd>Saving without GitHub. In File → Settings, tap <b>Choose folder…</b> and pick a folder on this computer: from then on every Save writes the song, its annotations, and its notes dump into that folder (laid out exactly like the repo — <code>albums/…/song.mid</code> beside its <code>.rollnotes.json</code>), nothing goes to GitHub, and no token is needed. The song picker lists the folder's albums alongside the site's; a song that exists in both opens from the folder. Tick <b>show only this folder's songs</b> under the folder row and the list becomes yours alone — the folder plus this device's drafts, none of the site's albums; with an empty folder the app opens straight into New song instead of Overworld. A device setting: it stays on that machine. FF1 songs still load from the site — annotate one and the annotations save to your folder. Chrome may ask for the folder again after a restart: <b>📁 Reconnect folder</b> appears at the top of the File menu (until you tap it, reads fall back to the site). <b>Forget</b> in Settings returns saves to GitHub; the files stay where they are. Needs Chrome or Edge on a computer — Safari has no way to write files, and the row says so there. In the iPad app a <code>.mid</code> or chip file tapped in Files, or sent with <b>Share → Night Roll</b>, opens here as a local draft. In the iPad app there is nothing to set: every Save also writes the song into Files on this iPad (Files → On My iPad → Night Roll, same layout), where you can copy, share or back it up, and Publish still sends it to GitHub. Brave ships the door switched off: enable <code>brave://flags/#file-system-access-api</code> and relaunch (the row tells you). Recordings that aren't yours belong here, not in a repo (see the design docs).</dd>
       <dt>∿ Audio tracks (recordings)</dt><dd>A recording — a guitar take, a vocal, a phone memo, a DAW bounce — as a track next to your MIDI voices. Tap the <b>＋∿</b> chip in the track bar (compositions and local drafts; File → Import… also recognizes audio files) and pick wav, aiff, mp3, or m4a. The clip lands at the cursor's bar as a new track named after the file, with the usual chip: M, S, color, fader, rename, ✕ Delete track. Leading silence is trimmed on arrival, so the take's FIRST SOUND sits on that bar (the status line says how much it trimmed). It plays in time with the song, loops with it (a clip longer than the notes extends the song's end), and is in the exported audio. <b>Slow it down and the pitch stays put</b>: at any speed but 100% the take is re-rendered (time-stretched, the way a slow-downer app does it) in the background — the lane says "⏳ preparing 50% (pitch kept)…" for a moment, then it plays in tune with your notes; a device toggle in the recording sheet turns that off for tape-style, slower = lower, like chip audio. Fine for guitar and voice down to about 40%; grainier below. <b>Tracks view</b> shows the waveform; <b>tap the clip</b> to select it (the status line says file, length, where its bytes are, and where it starts), <b>tap again to play from its start</b>, and in <b>Select</b> mode <b>hold and drag</b> to slide it in time (16th snap, one ⟲ undoes; with no tool armed a drag pans, as with notes). Every other view shows a thin ∿ strip under the ruler marking where the recording plays. <b>Pieces:</b> a recording can be cut into pieces that move on their own. <b>✂ Split at cursor</b> (the edit row's ✂, Edit ▾, or the recording sheet) cuts the selected piece where the play cursor is; <b>trim</b> by dragging a selected piece's left or right edge in Select (left trim keeps the sound where it is); <b>Erase</b> tap on a piece removes just that piece (the track stays); each piece drags separately. One ⟲ undoes any of it. Tap the selected chip for the <b>recording sheet</b> (‹ prev / next › step between pieces): nudge <b>starts</b> by a bar, a beat, or a 16th, <b>offset</b> by 10 ms or 100 ms (how far into the file the piece starts — the last hair of alignment), <b>⇤ Align first sound</b> (re-trims leading silence to the current anchor), <b>♩ Tempo from this take</b> (reads the beat spacing of the piece — its waveform's onsets, autocorrelated over 40–240 BPM — and offers the tempo it hears plus half and double, with how strong the read is; tap one and it becomes the song's tempo at bar 1, one ⟲ undoes; your notes keep their bar positions, so the grid moves to meet the take, which is the point; needs about four seconds of steady playing, and your own songs only — captures keep their measured tempo), <b>♩♩ Map the bars to this take</b> (the other direction: the GRID bends to the recording — it finds the beats through the whole piece, groups them into bars by the meter, and shows what it found: how many bars, the tempo range, and where the first downbeat sits; <b>Apply</b> writes one tempo change per bar from the piece's bar onward so every bar line lands on a downbeat it heard, wobble and all; <b>◀ downbeat / downbeat ▶</b> shift which beat counts as bar 1 when it guessed wrong — the correction Logic's Smart Tempo asks for too; the piece must start on a bar line, and a first downbeat that isn't at the piece's start means a pickup: shift, or trim the piece to the downbeat first; one ⟲ removes the whole map), <b>✂ Split at cursor</b>, <b>🗑 Remove piece</b>, <b>Replace file…</b>, and <b>☐ someone else's recording</b>: tick it for a band's track you play along with and it is never uploaded — GitHub removes such files on a rights holder's notice, and a public site is distribution. Storage: until you Save, the bytes live on this device only (the sheet says so; Safari can evict browser storage after a week away, so Save soon); Save writes them beside the song as <code>&lt;song&gt;.audio/&lt;file&gt;</code> — into your folder in folder mode, into the songs repo otherwise. Files over 20 MB get one question: <b>store as 16-bit mono WAV</b> (lossless for a mono source, half a stereo bounce) or import as-is. m4a/mp3 note: Safari and Chrome trim the encoder's lead-in differently, so millisecond alignment is honest only for WAV/AIFF. Not yet: recording from the mic, trimming or splitting a clip, looping a clip by itself, keeping pitch when slowing down, iPad/Safari playback of webm.</dd>
       <dt>Debug log</dt><dd>File → Settings → Other → <b>Debug log</b> shows diagnostic lines in ⚠ Messages, marked [debug]: audio wake-ups after you leave the app, engine rebuilds, audio state changes. Off, only real problems raise the ⚠ chip. A message that repeats shows once, with ×N. Turn it on when chasing a silence, so Claude can see what the audio engine measured.</dd>
-      <dt>Chip stream (experimental)</dt><dd>File → Settings → Other → <b>Chip stream</b>, beside Debug log: <b>Off</b> (default) is today's behavior — a PlayStation/PlayStation 2 song's console audio renders whole before it plays. <b>On</b> streams it instead, a couple of seconds at a time, so a big song (FFX "Challenge") can't crash the page's memory holding the whole thing at once; any failure for a song falls back to the whole render automatically. <b>Auto</b> behaves like Off for now (a later version streams only where the whole render would have to downgrade quality or refuse). A device setting — the switch doesn't change what you hear, only how it gets there.</dd>
+      <dt>Chip stream (experimental)</dt><dd>File → Settings → Other → <b>Chip stream</b>, beside Debug log: <b>Off</b> (default) is today's behavior — a PlayStation/PlayStation 2 song's console audio renders whole before it plays. <b>On</b> streams it instead, a couple of seconds at a time, so a big song (FFX "Challenge") can't crash the page's memory holding the whole thing at once; any failure for a song falls back to the whole render automatically. <b>Auto</b> streams only a song that would otherwise have to downgrade quality (mono, or a lower sample rate) or refuse outright to fit this device's memory — a song that fits as-is plays the ordinary whole render either way. A device setting — the switch doesn't change what you hear, only how it gets there.</dd>
       <dt>Text size</dt><dd>Night Roll's own text follows your device's text size — an iPhone/iPad's Settings → Accessibility → Display &amp; Text Size → Larger Text carries straight through (Safari's Dynamic Type), no setup needed. File → Settings → Other → <b>Text size</b> (Small/Default/Large/Larger) is a second, app-level dial for a browser that doesn't carry Dynamic Type through, or to go past what it offers — it scales the TEXT only: buttons, rows and the roll/score canvas stay the size they are, so nothing you tap moves.</dd>
       <dt>⚠ Messages</dt><dd><b>Copy all</b> puts the whole log on the clipboard for pasting to Claude. Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log; the footer's ⚠ button shows only while something is <b>unread</b> (chrome density follow-up, 2026-10-01 pm — it used to stay lit for any non-empty log, even one you'd already read), but <b>View ▾ → BACKGROUND → ⚠ Messages</b> opens the same sheet always, log empty or not, nothing unread or not. Tap to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
@@ -2539,7 +2539,7 @@
         <option value="auto">Auto</option>
         <option value="on">On</option>
       </select></div>
-    <div class="status cfgind">Experimental (docs/streamed-render-plan.md): console audio for a PlayStation/PlayStation 2 song arrives a couple of seconds at a time instead of rendering the whole song up front — the fix for a big song (FFX "Challenge") crashing the iPad's memory. <b>Off</b> (default): today's whole-render behavior, unchanged. <b>On</b>: stream mode for every song whose chip supports it; any failure falls back to the whole render for that song. <b>Auto</b> behaves like Off for now.</div>
+    <div class="status cfgind">Experimental (docs/streamed-render-plan.md): console audio for a PlayStation/PlayStation 2 song arrives a couple of seconds at a time instead of rendering the whole song up front — the fix for a big song (FFX "Challenge") crashing the iPad's memory. <b>Off</b> (default): today's whole-render behavior, unchanged. <b>On</b>: stream mode for every song whose chip supports it; any failure falls back to the whole render for that song. <b>Auto</b>: streams only a song that would otherwise have to downgrade quality (mono, or a lower sample rate) or refuse to fit this device's memory — every other PS1/PS2 song, and every other console, plays the unchanged whole render.</div>
     <div class="row"><label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;flex:1">
       <input type="checkbox" id="cfgpeninstant" style="width:20px;height:20px"> Apple Pencil draws and grabs at once</label></div>
     <div class="status cfgind">On: the Pencil places, grabs and moves notes the moment it touches — no hold; fingers still hold to grab and swipe to scroll. Off: the Pencil behaves like a finger.</div>
@@ -4354,28 +4354,28 @@ function updateLCD() {
   document.getElementById("lcdmkseg").classList.toggle("tappable", true);
   document.getElementById("lcdtemposeg").classList.toggle("tappable", true);
 }
-function governingAt(match) { // latest matching annotation at or before the cursor
-  const t = curTick();
+function governingAt(match, at) { // latest matching annotation at or before the cursor (or tick `at`)
+  const t = at === undefined ? curTick() : at;
   let hit = null;
   for (const n of rollnotes)
     if (match(n) && n.start <= t && (!hit || n.start >= hit.start)) hit = n;
   return hit;
 }
 document.getElementById("lcdtemposeg").addEventListener("click", () => {
-  if (!song) return; // edit the tempo ruling the cursor, or declare the first one
-  openEditor(governingAt(n => n.tempodir !== undefined), "tempo");
+  if (!song) return; // the song's opening tempo — always bar 1, not the cursor (Josh, 2026-10-01: "I almost always want the whole song"; a mid-song change is + Note)
+  openEditor(governingAt(n => n.tempodir !== undefined, 0), "tempo", {atStart: true});
 });
 // meter and key are independent targets in the shared segment (Josh, 2026-08-19)
 document.getElementById("lcdmeter").addEventListener("click", e => {
   if (!song) return;
   e.stopPropagation();
-  openEditor(governingAt(n => !!n.tsdir), "timesig");
+  openEditor(governingAt(n => !!n.tsdir, 0), "timesig", {atStart: true}); // bar 1, not the cursor (see the tempo segment)
 });
 document.getElementById("lcdkey").addEventListener("click", e => {
   if (!song) return;
   e.stopPropagation();
-  const kn = governingAt(n => n.keydir !== undefined || n.keypartial);
-  openEditor(kn, kn ? undefined : "key");
+  const kn = governingAt(n => n.keydir !== undefined || n.keypartial, 0); // bar 1, not the cursor (see the tempo segment)
+  openEditor(kn, kn ? undefined : "key", {atStart: true});
 });
 function updateSubtitle() {
   updateLCD(); // rides every cursor/playhead update
@@ -10652,17 +10652,47 @@ function chipStart(fromSec) {
 // ff1roll-chipstream: off|auto|on, overridden per-tab by ?chipstream=on|off
 // (A/B — PERF_FLAGS, the same hand-rolled location.search reader ?dpr/
 // ?scene already use, so this works in the vm test sandbox too, which has
-// no real `location`). "auto" behaves exactly like "off" until step 5
-// defines it (stream only where whole-render would downgrade or refuse) —
-// the UI already offers the three-way choice so turning auto on later needs
-// no new control.
+// no real `location`). "auto" (step 5, 2026-10-01): streams a song ONLY
+// where the whole-render path would itself downgrade (mono/a lower rate) or
+// refuse — see chipAutoShouldStream/chipStreamOpen's own comments, right
+// below. The DEFAULT stays "off" either way (Josh hasn't A/B-listened to
+// stream mode yet — his weekend list has it) — this only changes what
+// "auto" does once someone picks it.
 function chipStreamMode() {
   const u = PERF_FLAGS.get("chipstream");
   if (u === "on" || u === "off") return u;
   try { const v = localStorage.getItem("ff1roll-chipstream"); if (v === "on" || v === "off" || v === "auto") return v; } catch (err) { /* private mode: off */ }
   return "off";
 }
-function chipStreamWanted() { return chipStreamMode() === "on"; } // "auto" == "off" for now (step 5)
+// Step 5 (docs/streamed-render-plan.md): "auto" streams a song ONLY where
+// the whole-render path would itself have to downgrade (mono, or a lower
+// sample rate) or refuse — i.e. planChipRender's own verdict for THIS song,
+// with the honest canStream:true peak estimate (planChipRender's own
+// comment), says so. tools/chip-worker.mjs's handleStream computes that
+// hypothetical plan (chipEstimateTracksW + planChipRender, the exact numbers
+// the whole-render handler itself would use) whenever chipStreamOpen sends a
+// `budget`, and returns it as {ready:{…, plan}} — chipStreamOpen(true) reads
+// it right after a successful open and decides whether to KEEP the session
+// (stream) or throw it away and fall back to chipRender() (whole), so a
+// typical small/already-fitting song is untouched even with "auto" on,
+// exactly as it was with the switch "off". A kind with no stream hook at
+// all (today: everything but psf/psf2) never reaches this decision — the
+// worker's own `{stream:{error:"no stream for <kind>"}}` reply (the SAME
+// fallback "on" mode already relies on; the page still never hardcodes
+// which kinds qualify) sends it straight to the whole path, logged by the
+// existing error branch below.
+function chipAutoShouldStream(plan, nativeRate) { return !!plan && !!(plan.refuse || plan.mono || plan.rate !== nativeRate); }
+function chipAutoReason(plan, nativeRate) {
+  if (!plan) return "no budget plan from the worker";
+  if (plan.refuse) return "whole render would refuse (too big for this device's memory)";
+  if (plan.mono || plan.rate !== nativeRate) {
+    const bits = [];
+    if (plan.rate !== nativeRate) bits.push(Math.round(plan.rate / 1000) + " kHz");
+    if (plan.mono) bits.push("mono");
+    return "whole render would drop to " + bits.join(" ");
+  }
+  return "whole render fits as-is";
+}
 
 const CHIP_STREAM_CHUNK_SEC = 2;        // C in seconds of tape time (chunkFrames = this * the render's own sample rate — tools/chip-worker.mjs's own default chunk size)
 const CHIP_STREAM_OVERLAP = 256;        // O, in frames — tools/chip-worker.mjs's own default
@@ -10735,7 +10765,7 @@ function chipStreamIdxForTapeSec(tapeSec) { return Math.max(0, Math.floor(tapeSe
 // payload) and that this worker KEEPS running after "ready": {chunk}/
 // {silent} replies to later {want}/{idle} calls land on the SAME onmessage,
 // installed once, for the rest of this song's stream session.
-function chipStreamOpenWorker(kind, src, secs, rate, forKey) {
+function chipStreamOpenWorker(kind, src, secs, rate, forKey, budget) {
   return new Promise(resolve => {
     if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; }
     let w, workerUrl;
@@ -10765,7 +10795,7 @@ function chipStreamOpenWorker(kind, src, secs, rate, forKey) {
     const libs = {}, transfer = [bytes.buffer];
     for (const [name, b] of Object.entries(src.libs || {})) { const c2 = b instanceof Uint8Array ? b.slice() : new Uint8Array(b).slice(); libs[name] = c2; transfer.push(c2.buffer); }
     w.postMessage({stream: {id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, secs, rate,
-      chunkFrames: CHIP_STREAM_CHUNK_SEC * rate, overlap: CHIP_STREAM_OVERLAP}}, transfer);
+      chunkFrames: CHIP_STREAM_CHUNK_SEC * rate, overlap: CHIP_STREAM_OVERLAP, budget}}, transfer);
   });
 }
 // {chunk:{id, gen, idx, frames, tracks}} -> AudioBuffers in chip.stream.cache
@@ -10981,16 +11011,31 @@ function chipStreamStart(fromSec) {
 // once {ready} has arrived AND the first window (the chunks covering the
 // play-from position, +1) is cached, so playGate/album-play's wait on
 // chip.renderPromise sees the same "worth waiting for" contract either path.
-async function chipStreamOpen() {
+// `auto` (step 5): asks the worker for the hypothetical whole-render plan
+// (a `budget` on the {stream} request) and, once {ready} answers, keeps this
+// session only when that plan would downgrade or refuse — otherwise it
+// terminates the worker it just opened and returns false, same shape as any
+// other "fall back to chipRender()" exit (chipRenderAuto, below). Always one
+// logDebug line either way, naming the song and the reason.
+async function chipStreamOpen(auto) {
   const forKey = songKey;
   const src = await chipSource();
   if (!src) return false;
   const kind = src.chip || "nsf";
   const secs = Math.ceil(src.secs + 1);
   const rate = CHIPS[kind].renderRate || (audio ? audio.sampleRate : 44100);
-  const w = await chipStreamOpenWorker(kind, src, secs, rate, forKey);
+  const budget = auto ? chipRenderBudget() : undefined; // only "auto" needs the hypothetical whole-render plan back
+  const w = await chipStreamOpenWorker(kind, src, secs, rate, forKey, budget);
   if (songKey !== forKey) return false; // stale: a later song is open now
   if (!w || w.error) { logDebug("chip stream: " + (w && w.error || "no worker") + " — falling back to the whole render"); return false; }
+  if (auto) {
+    const willStream = chipAutoShouldStream(w.plan, rate);
+    logDebug(songTitleOf(forKey) + ": " + (willStream ? "streaming" : "whole") + " — " + chipAutoReason(w.plan, rate));
+    if (!willStream) { // this song wouldn't downgrade/refuse under the whole path: leave it alone, same as "off"
+      if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; }
+      return false;
+    }
+  }
   chip.stream = {
     key: forKey, gen: 0, rate: w.sampleRate, chunkFrames: CHIP_STREAM_CHUNK_SEC * w.sampleRate, overlap: CHIP_STREAM_OVERLAP,
     tracks: w.tracks, seconds: w.seconds, frames: w.frames, leadSec: w.leadSec,
@@ -11008,8 +11053,9 @@ async function chipStreamOpen() {
   return true;
 }
 async function chipRenderAuto() { // chip.renderPromise's entry point — see chipStreamOpen's own comment
-  if (chipStreamWanted()) {
-    const ok = await chipStreamOpen();
+  const mode = chipStreamMode();
+  if (mode === "on" || mode === "auto") {
+    const ok = await chipStreamOpen(mode === "auto");
     if (ok) return true;
   }
   return chipRender();
@@ -16016,7 +16062,7 @@ function setBeatPair(qid, sid, q) { // 2.75 → beat "2", sub ".75"
 function getBeatPair(qid, sid) {
   return (+document.getElementById(qid).value || 1) + (+document.getElementById(sid).value || 0);
 }
-function openEditor(note, presetType) {
+function openEditor(note, presetType, opts) { // opts.atStart: a new note anchors at bar 1 beat 1, ignoring the cursor/selection
   if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
   micStop(true);
   editingNote = note || null;
@@ -16024,11 +16070,11 @@ function openEditor(note, presetType) {
   const bt = barTicks();
   // a tapped note anchors a new note: tapping no longer moves the cursor
   // (DAW habit, 2026-09-29), and tap-a-note → + Note is how Josh annotates
-  const at0 = !note && selNote && song.tracks[selNote.ti] && song.tracks[selNote.ti].notes[selNote.ni] ? song.tracks[selNote.ti].notes[selNote.ni].t : playCursor;
+  const at0 = opts && opts.atStart ? 0 : !note && selNote && song.tracks[selNote.ti] && song.tracks[selNote.ti].notes[selNote.ni] ? song.tracks[selNote.ti].notes[selNote.ni].t : playCursor;
   let b1 = Math.floor(at0 / bt) + 1;
   let q1 = snapBeat((at0 % bt) / beatTicks() + 1);
   let b2 = "", q2 = "";
-  if (!note && rangeSel) { // prefill the from/to fields from the ruler selection
+  if (!note && rangeSel && !(opts && opts.atStart)) { // prefill the from/to fields from the ruler selection
     b1 = Math.floor(rangeSel.a / bt) + 1;
     q1 = snapBeat((rangeSel.a % bt) / beatTicks() + 1);
     const last = rangeSel.b - beatTicks(); // inclusive last beat of the selection

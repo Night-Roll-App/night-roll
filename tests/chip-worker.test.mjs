@@ -197,6 +197,18 @@ RUNNERS.fakenostream = { // same shape, deliberately no `stream` hook
   run: async (M, parsed) => parsed,
   lead: () => 0,
 };
+// Same shape as fakestream, but with a FIXED 30-channel count (chipEstimateTracksW's
+// own fixed-count path) independent of the (tiny) `bytes.tracks` fixture — lets
+// the plan test below simulate "FFX Challenge" (30 tracks) without actually
+// rendering 30 real tracks' worth of PCM (nothing here ever calls render()).
+RUNNERS.fakestream30 = {
+  parse: () => bytes => bytes,
+  run: async (M, parsed) => parsed,
+  lead: () => 0,
+  stream: (M, res, o) => makeFakeStream({tracks: res.tracks, frames: res.frames, sampleRate: o.sampleRate || res.sampleRate}),
+  channels: new Array(30).fill(0),
+  stereo: true,
+};
 const FAKE_MSG = (id, over = {}) => Object.assign({
   id, kind: "fakestream", files: [], shared: [], own: [], v: "",
   bytes: {tracks: ["a", "b", "c"], frames: 2000, sampleRate: 8000}, libs: null,
@@ -310,6 +322,42 @@ test("stream protocol: a kind with no `stream` hook, or an unknown kind, replies
   await handleStream(createStreamState(), FAKE_MSG("unknown", {kind: "doesnotexist"}), post);
   assert.deepEqual(replies[0], {stream: {id: "nostream", error: "no stream for fakenostream"}});
   assert.deepEqual(replies[1], {stream: {id: "unknown", error: "no worker runner for doesnotexist"}});
+});
+
+// docs/streamed-render-plan.md step 5: {ready}'s own `plan` — the
+// hypothetical whole-render verdict for THIS song (planChipRender +
+// chipEstimateTracksW, the exact numbers the plain whole-render handler
+// below computes for real) — is what index.html's "auto" switch reads to
+// decide whether streaming is even worth it. Only present when the
+// `{stream:{…}}` request carries a `budget` (chipStreamOpen's own `auto`
+// flag, index.html); omitted for an ordinary "on"-mode open, which never
+// needs an opinion.
+test("stream protocol: {ready}.plan is the hypothetical whole-render plan when a `budget` is given (step 5's auto switch), and null without one", async () => {
+  const BUDGET_APP = 600_000_000; // CHIP_BUDGET_APP, index.html — the iPad app's own budget
+  const bigFrames = 163 * 48000; // "FFX Challenge": 163 seconds at 48 kHz
+  let ready;
+  await handleStream(createStreamState(), FAKE_MSG("plan-big", {
+    kind: "fakestream30", bytes: {tracks: ["a", "b", "c"], frames: bigFrames, sampleRate: 48000}, rate: 48000, budget: BUDGET_APP,
+  }), m => { if (m.ready) ready = m.ready; });
+  assert.ok(ready.plan, "a budget was given: the plan comes back");
+  assert.deepEqual(ready.plan, planChipRender({tracks: 30, seconds: ready.seconds, sampleRate: 48000, channels: 2, budget: BUDGET_APP, canStream: true}),
+    "the SAME numbers planChipRender itself produces for this song");
+  assert.equal(ready.plan.mono, true, "30 tracks, 163s, 48kHz stereo busts the iPad budget: this plan DOES downgrade");
+  assert.equal(ready.plan.rate, 24000);
+
+  let readyNoBudget;
+  await handleStream(createStreamState(), FAKE_MSG("plan-none", {kind: "fakestream30"}), m => { if (m.ready) readyNoBudget = m.ready; });
+  assert.equal(readyNoBudget.plan, null, "no budget given (an ordinary \"on\"-mode open): no opinion either way");
+
+  // a small song under the SAME budget: the plan fits as-is (no downgrade) —
+  // step 5's auto switch leaves a song like this on the whole-render path
+  let readySmall;
+  await handleStream(createStreamState(), FAKE_MSG("plan-small", {
+    kind: "fakestream30", bytes: {tracks: ["a", "b", "c"], frames: 48000, sampleRate: 48000}, rate: 48000, budget: BUDGET_APP,
+  }), m => { if (m.ready) readySmall = m.ready; });
+  assert.equal(readySmall.plan.mono, false);
+  assert.equal(readySmall.plan.rate, 48000);
+  assert.ok(!readySmall.plan.refuse);
 });
 
 test("stream protocol: the REAL createSpuStream (PS1 fixture) assembled from windows == renderSpu's own output", async () => {

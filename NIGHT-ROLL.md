@@ -1117,6 +1117,43 @@ jitter) and the `{idle}` sweep's re-check cadence (today: once, right after
 the first window lands — a track that goes silent only much later in a
 long song won't be caught until a later step adds a periodic recheck).
 
+**"auto" (2026-10-01, docs/streamed-render-plan.md step 5 — default still
+OFF).** "auto" streams a song ONLY where the whole-render path would itself
+have to downgrade (mono, or a lower sample rate) or refuse — `planChipRender`'s
+own verdict for THAT song, with the honest `canStream:true` peak estimate
+(the Aeon Battle crash fix, above). `tools/chip-worker.mjs`'s `handleStream`
+already parses/runs the song to open a stream session regardless of mode, so
+it computes the hypothetical whole-render plan there for free
+(`chipEstimateTracksW` + `planChipRender`, the exact numbers the plain
+whole-render handler itself uses) whenever the `{stream:{…}}` request
+carries a `budget`, returning it as `{ready:{…, plan}}` — omitted (`null`)
+when no `budget` is given, so an ordinary "on"-mode open is untouched.
+`chipStreamOpen(auto)` (index.html) sends that budget only when `auto` is
+true; once `{ready}` answers, `chipAutoShouldStream(plan, nativeRate)` —
+`!!plan && (plan.refuse || plan.mono || plan.rate !== nativeRate)` — decides
+whether to KEEP the session it just opened (stream) or terminate that
+worker and return `false`, the exact same shape as any other "fall back to
+`chipRender()`" exit — a song that already fits plays the unchanged whole
+render, byte for byte, same as "off". One `logDebug` line either way
+(`chipAutoReason`): "Challenge: streaming — whole render would drop to 24
+kHz mono", or "small: whole — whole render fits as-is". A kind with no
+stream hook at all (today: everything but psf/psf2) never reaches this
+decision — the worker's pre-existing `{stream:{error:"no stream for
+<kind>"}}` reply (the same fallback "on" mode already relies on) sends it
+straight to the whole path, logged by the existing error branch; the page
+still never hardcodes which kinds qualify.
+
+Tests: tests/chip-worker.test.mjs — `{ready}.plan` present and matching
+`planChipRender` exactly when a `budget` is given, `null` without one (a
+fixed 30-channel fake chip stands in for an FFX-Challenge-sized song without
+actually rendering 30 tracks' worth of PCM). tests/night-roll.test.mjs — a
+FAKE worker exercising `chipRenderAuto` end to end: a big psf2 plan that
+would downgrade keeps the stream session; a small one discards it for the
+whole render; a kind with no stream hook goes straight to whole; each path
+logs its one line. The DEFAULT stays "off" either way — Josh hasn't
+A/B-listened to stream mode for real yet (his weekend list has it); this
+step only changes what "auto" itself does once someone picks it.
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware

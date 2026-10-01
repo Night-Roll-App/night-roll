@@ -37,11 +37,22 @@
 // `R.stream` hook today; every other kind replies the fallback error below
 // so the page can fall back to the whole-render path.
 //   postMessage({stream: {id, kind, files, shared, own, v, bytes, libs?,
-//                         secs, rate, chunkFrames, overlap}})
+//                         secs, rate, chunkFrames, overlap, budget}})
 //     chunkFrames (C): frames per chunk, not counting the overlap tail.
 //     overlap (O): frames of linear-crossfade overlap between adjacent
-//     chunks (chunk k = raw frames [kC, (k+1)C+O)).
-//   ← {ready: {id, tracks, seconds, sampleRate, frames, leadSec}}
+//     chunks (chunk k = raw frames [kC, (k+1)C+O)). budget (2026-10-01,
+//     docs/streamed-render-plan.md step 5): optional — when given, the
+//     {ready} reply's own `plan` is the HYPOTHETICAL whole-render verdict
+//     for this song (planChipRender/chipEstimateTracksW, the same numbers
+//     the plain whole-render path above computes, canStream: true) — stream
+//     mode's own peak never needs it (its cache is windowed, not the whole
+//     song), but the page's "auto" switch (chipRenderAuto, index.html) reads
+//     it to decide whether streaming is worth it for THIS song: stream only
+//     when this plan would downgrade (mono/lower rate) or refuse, otherwise
+//     discard the session and use the whole render as before. Omitted (or
+//     falsy) `plan` on the reply — no `budget` given, same as "on" mode's own
+//     open — means no opinion either way (the page never special-cases it).
+//   ← {ready: {id, tracks, seconds, sampleRate, frames, leadSec, plan}}
 //   ← {stream: {id, error: "no stream for <kind>"}}   no R.stream for this
 //     kind, or parse/run itself threw — the page falls back to whole-render
 //   postMessage({want: {id, gen, from, to}})   chunk indices [from, to],
@@ -491,7 +502,7 @@ function renderChunk(st, idx) {
 // then asks the kind's own `R.stream` hook (only psf/psf2 have one) to
 // build the chip's createSpuStream-shaped stream.
 export async function handleStream(streams, data, post) {
-  const {id, kind, files, shared, own, v, bytes, libs, secs, rate, chunkFrames, overlap} = data;
+  const {id, kind, files, shared, own, v, bytes, libs, secs, rate, chunkFrames, overlap, budget} = data;
   try {
     const R = RUNNERS[kind];
     if (!R) { post({stream: {id, error: "no worker runner for " + kind}}); return; }
@@ -511,7 +522,15 @@ export async function handleStream(streams, data, post) {
     // Tap-through-instrument preview (previewOne, below) keeps working in
     // stream mode too, same as after a whole render.
     live = {id, kind, M, R, res, rate: streamObj.sampleRate};
-    post({ready: {id, tracks: streamObj.tracks, seconds: streamObj.seconds, sampleRate: streamObj.sampleRate, frames: streamObj.frames, leadSec}});
+    // step 5's "auto" plan (see the protocol comment above `budget`, top of
+    // file) — the same chipEstimateTracksW/planChipRender numbers the plain
+    // whole-render handler below computes for real, just as a hypothetical
+    // here: this session streams regardless of what it says (the page
+    // decides whether to KEEP it), so computing it costs one extra, already-
+    // cheap (pure, no render) function call, not a second parse.
+    const plan = (budget == null) ? null :
+      planChipRender({tracks: chipEstimateTracksW(R, res, M), seconds: streamObj.seconds, sampleRate: rate, channels: R.stereo ? 2 : 1, budget, canStream: true});
+    post({ready: {id, tracks: streamObj.tracks, seconds: streamObj.seconds, sampleRate: streamObj.sampleRate, frames: streamObj.frames, leadSec, plan}});
   } catch (err) {
     post({stream: {id, error: String(err && err.message || err)}});
   }

@@ -2281,6 +2281,80 @@ test("chip stream mode: switch off uses chipRender untouched; on, a {stream:{err
   assert.equal(firstWant && firstWant.from, 45, "the first {want} after the seek also starts at chunk 45");
 });
 
+// docs/streamed-render-plan.md step 5: "auto" streams a song ONLY where the
+// whole-render plan for THAT song (planChipRender, the same honest
+// canStream:true numbers the whole path itself would use) would downgrade
+// (mono/a lower rate) or refuse — tools/chip-worker.mjs's handleStream
+// computes that hypothetical plan and hands it back on {ready}.plan whenever
+// chipStreamOpen sends a `budget` (auto mode only); this FAKE worker plays
+// that part directly (the real wiring — handleStream's own `plan` field —
+// is exercised in tests/chip-worker.test.mjs). One FAKE worker, synchronous,
+// same convention as the test above.
+test("chip stream mode \"auto\" (step 5): streams a big psf2 song whose whole-render plan would downgrade, plays a small one whole, and a kind with no stream hook goes straight to whole — one logDebug line either way", async () => {
+  const a = createApp({edition: "app"}); // chipRenderBudget()'s stricter iPad budget — needed for the big song to actually downgrade
+  const bigPlan = JSON.parse(a.run(`JSON.stringify(planChipRender({tracks: 30, seconds: 163, sampleRate: 48000, channels: 2, budget: chipRenderBudget(), canStream: true}))`));
+  assert.equal(bigPlan.mono, true, "sanity: the same FFX Challenge fixture planChipRender's own test uses (30 tracks, 163s, iPad budget)");
+  assert.equal(bigPlan.rate, 24000);
+  a.run(`
+    APP_BASE = "http://x/"; chipWorkerAvailable.broken = false;
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1"}]};
+    trackState = [{muted: false, solo: false}];
+    localStorage.setItem("ff1roll-chipstream", "auto");
+    globalThis.__msgs = []; globalThis.__autoPlan = null;
+    class FakeWorker {
+      constructor() { this._onmsg = null; this.chunkFrames = 0; }
+      set onmessage(fn) { this._onmsg = fn; }
+      get onmessage() { return this._onmsg; }
+      postMessage(m) {
+        globalThis.__msgs.push(m);
+        if (m.stream) {
+          this.chunkFrames = m.stream.chunkFrames;
+          if (m.stream.kind !== "psf" && m.stream.kind !== "psf2") { this._onmsg({data: {stream: {id: m.stream.id, error: "no stream for " + m.stream.kind}}}); return; }
+          const plan = m.stream.budget != null ? globalThis.__autoPlan : null; // only auto mode's own probe sends a budget
+          this._onmsg({data: {ready: {id: m.stream.id, tracks: ["pulse1"], seconds: m.stream.secs, sampleRate: m.stream.rate, frames: Math.round(m.stream.secs * m.stream.rate), leadSec: 0, plan}}});
+        } else if (m.want) {
+          for (let idx = m.want.from; idx <= m.want.to; idx++) {
+            const tracks = {pulse1: new Float32Array(this.chunkFrames).fill(0.3)};
+            this._onmsg({data: {chunk: {id: m.want.id, gen: m.want.gen, idx, frames: this.chunkFrames, tracks}}});
+          }
+        } else if (m.idle) { this._onmsg({data: {silent: {id: m.idle.id, names: []}}}); }
+        else if (m.seek) { /* no reply needed */ }
+        else if (m.preview) { this._onmsg({data: {preview: {req: m.preview.req, pcm: null}}}); }
+        else { // the plain whole-render shape, same hardcoded success regardless of kind — matches tools/chip-worker.mjs's own contract (it posts/reads metadata only)
+          this._onmsg({data: {id: m.id, done: {pcm: {pulse1: new Float32Array(10).fill(0.4)}, sampleRate: 44100, leadSec: 0, pan: {}, debug: {peakBytes: 40, keptBytes: 40, tracks: 1, groups: 1}}}});
+        }
+      }
+      terminate() {}
+    }
+    globalThis.Worker = FakeWorker;
+  `);
+
+  // --- a big psf2 song (30 tracks, 163s): the whole plan would drop to 24 kHz mono — auto streams it ---
+  a.run(`appDebug.length = 0; chip.pcm = null; chip.key = null; chip.stream = null; songKey = "albums/ps2/x/challenge.mid";
+         chipSource = () => Promise.resolve({bytes: new Uint8Array([1]), n: 1, secs: 163, chip: "psf2", libs: {}});
+         globalThis.__autoPlan = ${JSON.stringify(bigPlan)};`);
+  assert.equal(await a.run(`chipRenderAuto()`), true, "resolves");
+  assert.ok(a.run(`!!chip.stream`), "auto kept the stream session: the whole-render plan would have downgraded");
+  assert.match(a.run(`appDebug.map(x => x.msg).join("|")`), /challenge: streaming — whole render would drop to 24 kHz mono/i, "one logDebug line naming the reason");
+
+  // --- a small psf2 song: the whole plan fits as-is — auto plays it whole --
+  a.run(`appDebug.length = 0; chip.pcm = null; chip.key = null; chip.stream = null; songKey = "albums/ps2/x/small.mid";
+         chipSource = () => Promise.resolve({bytes: new Uint8Array([1]), n: 1, secs: 5, chip: "psf2", libs: {}});
+         globalThis.__autoPlan = {rate: 48000, mono: false, channels: 2, bytes: 50000};`);
+  assert.equal(await a.run(`chipRenderAuto()`), true, "resolves");
+  assert.equal(a.run(`chip.stream`), null, "auto discarded the stream session: the whole-render plan wouldn't have downgraded");
+  assert.ok(a.run(`chip.pcm.pulse1.length`) > 0, "played the whole render instead");
+  assert.match(a.run(`appDebug.map(x => x.msg).join("|")`), /small: whole — whole render fits as-is/i, "one logDebug line naming the reason");
+
+  // --- a kind with no stream hook (N64 USF): auto goes straight to whole ---
+  a.run(`appDebug.length = 0; chip.pcm = null; chip.key = null; chip.stream = null; songKey = "albums/n64/x/song.mid";
+         chipSource = () => Promise.resolve({bytes: new Uint8Array([1]), n: 1, secs: 30, chip: "usf", libs: {}});`);
+  assert.equal(await a.run(`chipRenderAuto()`), true, "resolves");
+  assert.equal(a.run(`chip.stream`), null, "no stream hook for usf: never even a candidate to keep");
+  assert.ok(a.run(`chip.pcm.pulse1.length`) > 0, "played the whole render instead");
+  assert.match(a.run(`appDebug.map(x => x.msg).join("|")`), /no stream for usf — falling back to the whole render/i, "one logDebug line, via the existing fallback branch");
+});
+
 // The FF7-after-Challenge bug (Josh's iPad, 2026-09-30): Challenge (PS2)
 // failed to render, and every song after it — including FF7, a DIFFERENT
 // chip entirely — failed the same "Importing a module script failed" until
@@ -6956,7 +7030,7 @@ test("tapping a note leaves the playhead alone by default; the old tap-to-move i
   run(`localStorage.setItem("ff1roll-notetapcursor", "1");`);
   assert.equal(val(`noteTapMovesCursor()`), true);
   run(`localStorage.removeItem("ff1roll-notetapcursor");`);
-  assert.match(val(`String(openEditor)`), /const at0 = !note && selNote/, "+ Note anchors at the tapped note");
+  assert.match(val(`String(openEditor)`), /const at0 = .*!note && selNote/, "+ Note anchors at the tapped note");
 });
 
 test("Send after ■ Stop: the stopped dictation's late words can't refill the emptied box", () => {
@@ -8973,4 +9047,19 @@ test("drumHit: a long captured duration sustains a decaying noise burst instead 
   run(`window.__bufLens = []; drumHit(0, 38, 0, 100, undefined);`); // no duration passed at all (back-compat)
   lens = val(`window.__bufLens`);
   assert.equal(lens[0], 0.11, "no durSec at all falls back to the fixed snare length, same as before this change");
+});
+
+test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", () => {
+  const a = createApp();
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
+    songKey = "albums/compositions/nightroll/zz-lcd.mid"; rollnotes = []; playCursor = 480 * 4 * 6; // bar 7
+    globalThis.__opened = null; const real = openEditor; openEditor = (n, t, o) => { __opened = {n, t, o}; };
+    document.getElementById("lcdmeter").dispatchEvent(new Event("click"));
+  `);
+  assert.equal(a.run(`__opened.t`), "timesig");
+  assert.equal(a.run(`!!(__opened.o && __opened.o.atStart)`), true, "the meter opens at bar 1");
+  a.run(`document.getElementById("lcdkey").dispatchEvent(new Event("click")); document.getElementById("lcdtemposeg").dispatchEvent(new Event("click"));`);
+  assert.equal(a.run(`!!(__opened.o && __opened.o.atStart)`), true, "tempo too");
+  assert.equal(a.run(`governingAt(n => true, 0)`), null, "governingAt(…, 0) looks at the song start, not the cursor");
 });

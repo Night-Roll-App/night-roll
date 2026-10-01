@@ -25,7 +25,9 @@ session start alongside the quiz.)
    Hurry!! "ch 9" first notes; Welcoming of Maester Mika "ch 8"/"ch 9" at bar 5;
    Blitz Off "ch 16"/"ch 18" at bar 12. If the published is wrong → re-capture those 4.
 5. Optional: Settings → Other → Chip stream "on", play Challenge — full quality?
-   Any ticks at the joins?
+   Any ticks at the joins? ("auto" now exists too — 2026-10-01, streams a
+   song only where the whole render would've had to downgrade or refuse, so
+   Challenge is the one case worth A/B-ing "auto" against "on"/"off".)
 
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
 Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
@@ -779,7 +781,12 @@ I never even played FFX… just do whatever you think is best"). Finishing
 only what protects every console: the OOM crash fix + import recovery, and
 the streamed player (step 3, default off). PARKED until he asks: FFX ch30/31
 no-instrument rule (his M/mute ear test is optional), Q1 FFX pitches,
-FFX/Dark Cloud tuning, streaming steps 1a/1b/1d/1e/4/5/6.
+FFX/Dark Cloud tuning, streaming steps 1a/1b/1d/1e/4/6.
+DONE 2026-10-01: streaming step 5 ("auto") — streams a song ONLY where the
+whole-render plan for it would downgrade (mono/a lower rate) or refuse;
+default stays "off" either way (he hasn't A/B-listened to stream mode for
+real yet — item 5 of the weekend list). See docs/streamed-render-plan.md
+step 5, NIGHT-ROLL.md "'auto' (2026-10-01...)".
 FFX CHANNELS WITH NO INSTRUMENT (Josh's ear, 2026-09-30, Challenge ch 30
 "sticks out like a sore thumb" vs the game on YouTube): the BGM tracks have
 notes but never a program change (0x20) — Challenge ch30/31, Hurry!! ch14,
