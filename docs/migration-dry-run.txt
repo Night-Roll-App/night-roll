@@ -1,0 +1,178 @@
+# tools/migrate-rollnotes-v2.mjs --dry-run
+# 2026-10-01T13:15:06.520Z
+
+## albums/compositions (3 files)
+  would-convert: 3   already-v2: 0   refused: 0
+    provenance note moved albums/compositions/cool-b-maj-with-b-part.rollnotes.json → from: albums/compositions/nightroll/cool-bmaj-progression.mid
+    provenance note moved albums/compositions/threnody.rollnotes.json → movedFrom: albums/compositions/nightroll/test-sad-progression.mid
+
+## albums/compositions/nightroll (14 files)
+  would-convert: 13   already-v2: 0   refused: 1
+    REFUSED albums/compositions/nightroll/graveyard-3.rollnotes.json: ambiguous provenance: 2 'forked from' note(s) + 0 'moved from' note(s) — a v2 header holds only one of each; refusing to drop one silently
+    provenance note moved albums/compositions/nightroll/ambush-2-saving-b-part-for-another-song.rollnotes.json → from: albums/compositions/nightroll/ambush.mid
+    provenance note moved albums/compositions/nightroll/graveyard-2.rollnotes.json → from: albums/compositions/nightroll/graveyard.mid
+    provenance note moved albums/compositions/nightroll/threnody-2.rollnotes.json → from: albums/compositions/threnody.mid, movedFrom: albums/compositions/nightroll/test-sad-progression.mid
+
+## albums/game-boy/donkey-kong-land (3 files)
+  would-convert: 3   already-v2: 0   refused: 0
+
+## albums/game-boy/final-fantasy-legend (11 files)
+  would-convert: 11   already-v2: 0   refused: 0
+
+## albums/game-boy/kirbys-dream-land (8 files)
+  would-convert: 8   already-v2: 0   refused: 0
+
+## albums/game-boy/links-awakening (26 files)
+  would-convert: 26   already-v2: 0   refused: 0
+
+## albums/game-boy/mega-man-v (21 files)
+  would-convert: 21   already-v2: 0   refused: 0
+
+## albums/game-boy/metroid-ii (7 files)
+  would-convert: 7   already-v2: 0   refused: 0
+
+## albums/game-boy/pokemon-red (28 files)
+  would-convert: 28   already-v2: 0   refused: 0
+
+## albums/game-boy/super-mario-land (8 files)
+  would-convert: 8   already-v2: 0   refused: 0
+
+## albums/game-boy/tetris (2 files)
+  would-convert: 2   already-v2: 0   refused: 0
+
+## albums/game-boy/wario-land (9 files)
+  would-convert: 9   already-v2: 0   refused: 0
+
+## albums/n64/banjo-kazooie (133 files)
+  would-convert: 133   already-v2: 0   refused: 0
+
+## albums/n64/diddy-kong-racing (70 files)
+  would-convert: 70   already-v2: 0   refused: 0
+
+## albums/n64/donkey-kong-64 (118 files)
+  would-convert: 118   already-v2: 0   refused: 0
+
+## albums/n64/goldeneye-007 (23 files)
+  would-convert: 23   already-v2: 0   refused: 0
+
+## albums/n64/jet-force-gemini (32 files)
+  would-convert: 32   already-v2: 0   refused: 0
+
+## albums/n64/majoras-mask (59 files)
+  would-convert: 59   already-v2: 0   refused: 0
+
+## albums/n64/ocarina-of-time (41 files)
+  would-convert: 41   already-v2: 0   refused: 0
+
+## albums/n64/super-mario-64 (22 files)
+  would-convert: 22   already-v2: 0   refused: 0
+
+## albums/nes/castlevania (5 files)
+  would-convert: 5   already-v2: 0   refused: 0
+
+## albums/nes/castlevania-ii (3 files)
+  would-convert: 3   already-v2: 0   refused: 0
+
+## albums/nes/contra (6 files)
+  would-convert: 6   already-v2: 0   refused: 0
+
+## albums/nes/ducktales (7 files)
+  would-convert: 7   already-v2: 0   refused: 0
+
+## albums/nes/final-fantasy-i (19 files)
+  would-convert: 19   already-v2: 0   refused: 0
+
+## albums/nes/final-fantasy-ii (7 files)
+  would-convert: 7   already-v2: 0   refused: 0
+
+## albums/nes/final-fantasy-iii (20 files)
+  would-convert: 20   already-v2: 0   refused: 0
+
+## albums/nes/kirbys-adventure (15 files)
+  would-convert: 15   already-v2: 0   refused: 0
+
+## albums/nes/legend-of-zelda (2 files)
+  would-convert: 2   already-v2: 0   refused: 0
+
+## albums/nes/mega-man-2 (12 files)
+  would-convert: 12   already-v2: 0   refused: 0
+
+## albums/nes/mike-tysons-punch-out (2 files)
+  would-convert: 2   already-v2: 0   refused: 0
+
+## albums/nes/ninja-gaiden (10 files)
+  would-convert: 10   already-v2: 0   refused: 0
+
+## albums/nes/ninja-gaiden-ii (19 files)
+  would-convert: 19   already-v2: 0   refused: 0
+
+## albums/nes/shadow-of-the-ninja (2 files)
+  would-convert: 2   already-v2: 0   refused: 0
+
+## albums/nes/shatterhand (4 files)
+  would-convert: 4   already-v2: 0   refused: 0
+
+## albums/nes/super-mario-bros-3 (8 files)
+  would-convert: 8   already-v2: 0   refused: 0
+
+## albums/nes/tetris (2 files)
+  would-convert: 2   already-v2: 0   refused: 0
+
+## albums/nes/tetris-nintendo (1 file)
+  would-convert: 1   already-v2: 0   refused: 0
+
+## albums/nes/tmnt-2 (10 files)
+  would-convert: 10   already-v2: 0   refused: 0
+
+## albums/ps1/chrono-cross (51 files)
+  would-convert: 51   already-v2: 0   refused: 0
+
+## albums/ps1/final-fantasy-7 (53 files)
+  would-convert: 53   already-v2: 0   refused: 0
+
+## albums/ps1/final-fantasy-8 (48 files)
+  would-convert: 48   already-v2: 0   refused: 0
+
+## albums/ps1/final-fantasy-9 (51 files)
+  would-convert: 51   already-v2: 0   refused: 0
+
+## albums/ps1/parasite-eve (33 files)
+  would-convert: 33   already-v2: 0   refused: 0
+
+## albums/ps1/saga-frontier (69 files)
+  would-convert: 69   already-v2: 0   refused: 0
+
+## albums/ps2/dark-cloud (50 files)
+  would-convert: 50   already-v2: 0   refused: 0
+
+## albums/ps2/final-fantasy-x (44 files)
+  would-convert: 44   already-v2: 0   refused: 0
+
+## albums/snes/final-fantasy-4 (1 file)
+  would-convert: 1   already-v2: 0   refused: 0
+
+## albums/starters (4 files)
+  would-convert: 4   already-v2: 0   refused: 0
+
+## Totals
+files scanned: 1196
+would-convert: 1195
+already-v2 (skipped): 0
+refused: 1
+legacy (bare .rollnotes, non-JSON) files found: 0
+
+## origin.kind breakdown (converted files)
+  capture: 1175
+  composition: 11
+  copy: 5
+  starter: 4
+
+## Provenance notes moved into origin.from/movedFrom (5)
+  albums/compositions/cool-b-maj-with-b-part.rollnotes.json → from: albums/compositions/nightroll/cool-bmaj-progression.mid
+  albums/compositions/nightroll/ambush-2-saving-b-part-for-another-song.rollnotes.json → from: albums/compositions/nightroll/ambush.mid
+  albums/compositions/nightroll/graveyard-2.rollnotes.json → from: albums/compositions/nightroll/graveyard.mid
+  albums/compositions/nightroll/threnody-2.rollnotes.json → from: albums/compositions/threnody.mid, movedFrom: albums/compositions/nightroll/test-sad-progression.mid
+  albums/compositions/threnody.rollnotes.json → movedFrom: albums/compositions/nightroll/test-sad-progression.mid
+
+## Refused files (1)
+  albums/compositions/nightroll/graveyard-3.rollnotes.json: ambiguous provenance: 2 'forked from' note(s) + 0 'moved from' note(s) — a v2 header holds only one of each; refusing to drop one silently
