@@ -7197,9 +7197,7 @@ test("#viewbtn (2026-09-30, Josh after using footer v2: 'I use it a lot in analy
   // container's own opening tag, not the whole slice)
   assert.doesNotMatch(viewbtn.slice(0, viewbtn.indexOf(">")), /aria-hidden="true"/, "#viewbtn is reachable, not aria-hidden");
   assert.doesNotMatch(viewbtn, /tabindex="-1"/, "#viewbtn's buttons are focusable, not the old inert node");
-  assert.match(viewbtn, /id="viewsegroll"/);
-  assert.match(viewbtn, /id="viewsegtracks"/);
-  assert.match(viewbtn, /id="viewsegscore"/);
+  assert.doesNotMatch(viewbtn, /viewseg/, "one cycling button again, not the 3-way segment (Josh, 2026-10-01: 'way too big')");
   assert.ok(footer.indexOf('id="viewbtn"') < footer.indexOf('id="lassobtn"'), "view switch sits before ⊞ Lasso");
   assert.ok(footer.indexOf('id="lassobtn"') < footer.indexOf('id="instbtn"'), "⊞ Lasso sits before 🎹");
 
@@ -7208,9 +7206,11 @@ test("#viewbtn (2026-09-30, Josh after using footer v2: 'I use it a lot in analy
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
     songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; viewMode = "score"; applyViewMode();
-    document.getElementById("viewsegroll").click();
+    document.getElementById("viewbtn").click();
   `);
-  assert.equal(a.run(`viewMode`), "roll", "clicking Roll in the footer segment switches to roll");
+  assert.equal(a.run(`viewMode`), "roll", "score → roll: the button cycles roll → tracks → score → roll");
+  a.run(`document.getElementById("viewbtn").click();`);
+  assert.equal(a.run(`viewMode`), "tracks");
 });
 
 test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them'): a Roll item exists, and the menu is grouped View / Panels / Display / Mode", () => {
