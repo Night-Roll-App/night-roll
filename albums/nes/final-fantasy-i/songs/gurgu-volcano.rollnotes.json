@@ -1,4 +1,4 @@
-{ "version": 1, "song": "gurgu-volcano", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "gurgu-volcano", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"type":"key","key":"D dorian"},
   {"at":[17,1],"type":"key","key":"F dorian"}
 ] }

@@ -1,4 +1,4 @@
-{ "version": 1, "song": "prologue", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "prologue", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"to":[1,2],"type":"chord","chord":"F5"},
   {"at":[1,1],"type":"key","key":"F"},
   {"at":[1,3],"to":[1,4],"type":"chord","chord":"C/E"},

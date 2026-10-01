@@ -1,4 +1,4 @@
-{ "version": 1, "song": "cave", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cave", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"type":"key","key":"Cm"},
   {"at":[1,1],"to":[7,4],"type":"section","label":"A"},
   {"at":[8,1],"to":[15,4],"type":"section","label":"B"}

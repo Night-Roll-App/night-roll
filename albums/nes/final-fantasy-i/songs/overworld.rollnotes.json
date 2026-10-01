@@ -1,4 +1,4 @@
-{ "version": 1, "song": "overworld", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "overworld", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"type":"key","key":"G"},
   {"at":[1,1],"to":[8,4],"type":"section","label":"A — G home"},
   {"at":[1,1],"to":[4,4],"type":"section","label":"A1"},

@@ -1,4 +1,4 @@
-{ "version": 1, "song": "cornelia-castle", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cornelia-castle", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"type":"key","key":"D"},
   {"at":[1,1],"to":[4,4],"type":"section","label":"A — the four-slot sentence"},
   {"at":[1,1],"to":[1,4],"text":"D — I. Home."},

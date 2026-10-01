@@ -1,4 +1,4 @@
-{ "version": 1, "song": "battle", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "battle", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"type":"key","key":"Gm"},
   {"at":[1,1],"to":[3,1.5],"type":"section","label":"Intro"},
   {"at":[1,1],"to":[1,2.25],"type":"section","label":"Slide in"},

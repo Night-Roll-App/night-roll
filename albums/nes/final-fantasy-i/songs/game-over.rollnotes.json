@@ -1,4 +1,4 @@
-{ "version": 1, "song": "game-over", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "game-over", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"type":"key","key":"Dm"},
   {"at":[1,3],"to":[1,4],"type":"chord","chord":"Dm"},
   {"at":[2,1],"to":[2,2],"type":"chord","chord":"G"},

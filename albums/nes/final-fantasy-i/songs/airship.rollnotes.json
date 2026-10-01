@@ -1,4 +1,4 @@
-{ "version": 1, "song": "airship", "saved": 1787750161234, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "airship", "origin": {"kind":"capture"}, "stamp": 1787750161234, "notes": [
   {"at":[1,1],"to":[8,2],"type":"section","label":"A"},
   {"at":[1,1],"to":[1,2],"type":"chord","chord":"F"},
   {"at":[1,1],"text":"Bass is all 8th notes and constantly bouncing between root and 5th. Gives the song a lot of energy."},

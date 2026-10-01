@@ -1,4 +1,4 @@
-{ "version": 1, "song": "underwater-palace", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "underwater-palace", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"to":[1,4],"type":"chord","chord":"G#m"},
   {"at":[1,1],"type":"key","key":"G#m"},
   {"at":[2,1],"to":[2,4],"type":"chord","chord":"F#","note":"bVII"}

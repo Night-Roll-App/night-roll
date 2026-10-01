@@ -1,4 +1,4 @@
-{ "version": 1, "song": "town", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "town", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"to":[4,4],"type":"section","label":"A"},
   {"at":[1,1],"to":[1,2],"type":"chord","chord":"C"},
   {"at":[1,1],"type":"key","key":"C"},

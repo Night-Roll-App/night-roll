@@ -1,4 +1,4 @@
-{ "version": 1, "song": "victory", "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "victory", "origin": {"kind":"capture"}, "notes": [
   {"at":[1,1],"type":"key","key":"Eb"},
   {"at":[3,3],"to":[4,2],"type":"chord","chord":"Eb"},
   {"at":[11,3],"type":"loop","loop":"3.3"}
