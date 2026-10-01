@@ -17,7 +17,13 @@ session start alongside the quiz.)
 3. Listening checks: FFX "Aeon Battle" plays without crashing; tapped SNES/NES/
    Game Boy notes sound like the game; FF4 "Main Theme (Ocean)" has no stray hat.
 4. PS2 (unparked 2026-10-01): FFX Challenge — mute ch 30 + ch 31 and compare to
-   the game recording (decides the no-instrument rule); Q1 FFX pitches by ear.
+   the game recording (decides the no-instrument rule).
+   Q1 FFX pitches — facts found 2026-10-01: the published files predate the WD
+   key-range fix (67672709, the one that fixed the battle themes' instruments);
+   the fresh capture is grounded in each sample's own root key. Listen against the
+   game recording: Ominous "ch 11" from bar 17 (published is an OCTAVE off — easiest);
+   Hurry!! "ch 9" first notes; Welcoming of Maester Mika "ch 8"/"ch 9" at bar 5;
+   Blitz Off "ch 16"/"ch 18" at bar 12. If the published is wrong → re-capture those 4.
 5. Optional: Settings → Other → Chip stream "on", play Challenge — full quality?
    Any ticks at the joins?
 
