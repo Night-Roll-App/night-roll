@@ -1,3 +1,3 @@
-{ "version": 1, "song": "celebration-rinoa-s-theme", "saved": 1790613085638, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "celebration-rinoa-s-theme", "origin": {"kind":"capture"}, "stamp": 1790613085638, "notes": [
   {"at":[71,1],"type":"loop","loop":"7.1"}
 ] }

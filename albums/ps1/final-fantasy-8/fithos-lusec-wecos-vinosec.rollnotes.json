@@ -1,3 +1,3 @@
-{ "version": 1, "song": "fithos-lusec-wecos-vinosec", "saved": 1790613085657, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "fithos-lusec-wecos-vinosec", "origin": {"kind":"capture"}, "stamp": 1790613085657, "notes": [
   {"at":[59,3.25],"type":"loop","loop":"1.1.25"}
 ] }

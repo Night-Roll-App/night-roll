@@ -1,3 +1,3 @@
-{ "version": 1, "song": "unrest", "saved": 1790613085734, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "unrest", "origin": {"kind":"capture"}, "stamp": 1790613085734, "notes": [
   {"at":[61,1],"type":"loop","loop":"1.1"}
 ] }

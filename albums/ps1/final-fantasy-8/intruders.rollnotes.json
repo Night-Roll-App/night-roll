@@ -1,3 +1,3 @@
-{ "version": 1, "song": "intruders", "saved": 1790613085663, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "intruders", "origin": {"kind":"capture"}, "stamp": 1790613085663, "notes": [
   {"at":[30,1.5],"type":"loop","loop":"1.1.5"}
 ] }

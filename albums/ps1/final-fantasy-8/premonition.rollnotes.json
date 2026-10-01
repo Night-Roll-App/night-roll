@@ -1,3 +1,3 @@
-{ "version": 1, "song": "premonition", "saved": 1790613085690, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "premonition", "origin": {"kind":"capture"}, "stamp": 1790613085690, "notes": [
   {"at":[118,2],"type":"loop","loop":"34.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "the-extreme", "saved": 1790613085707, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "the-extreme", "origin": {"kind":"capture"}, "stamp": 1790613085707, "notes": [
   {"at":[154,1],"type":"loop","loop":"54.1"}
 ] }

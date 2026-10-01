@@ -1,3 +1,3 @@
-{ "version": 1, "song": "ride-on", "saved": 1790613085694, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "ride-on", "origin": {"kind":"capture"}, "stamp": 1790613085694, "notes": [
   {"at":[53,1],"type":"loop","loop":"13.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "shuffle-or-boogie", "saved": 1790613085696, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "shuffle-or-boogie", "origin": {"kind":"capture"}, "stamp": 1790613085696, "notes": [
   {"at":[33,1],"type":"loop","loop":"9.1"}
 ] }

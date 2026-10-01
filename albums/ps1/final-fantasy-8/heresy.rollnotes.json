@@ -1,3 +1,3 @@
-{ "version": 1, "song": "heresy", "saved": 1790613085662, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "heresy", "origin": {"kind":"capture"}, "stamp": 1790613085662, "notes": [
   {"at":[36,1],"type":"loop","loop":"7.1"}
 ] }

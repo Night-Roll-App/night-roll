@@ -1,3 +1,3 @@
-{ "version": 1, "song": "the-loser", "saved": 1790613085719, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "the-loser", "origin": {"kind":"capture"}, "stamp": 1790613085719, "notes": [
   {"at":[20,1],"type":"loop","loop":"8.1"}
 ] }

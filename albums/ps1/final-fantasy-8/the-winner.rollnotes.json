@@ -1,3 +1,3 @@
-{ "version": 1, "song": "the-winner", "saved": 1790613085731, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "the-winner", "origin": {"kind":"capture"}, "stamp": 1790613085731, "notes": [
   {"at":[154,1],"type":"loop","loop":"58.1"}
 ] }

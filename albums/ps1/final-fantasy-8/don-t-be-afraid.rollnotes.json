@@ -1,3 +1,3 @@
-{ "version": 1, "song": "don-t-be-afraid", "saved": 1790613085648, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "don-t-be-afraid", "origin": {"kind":"capture"}, "stamp": 1790613085648, "notes": [
   {"at":[242,1],"type":"loop","loop":"42.1"}
 ] }
