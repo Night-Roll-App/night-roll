@@ -1,3 +1,3 @@
-{ "version": 1, "song": "crystal-cave-into-the-crystal-cave", "saved": 1790564323869, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "crystal-cave-into-the-crystal-cave", "origin": {"kind":"capture"}, "stamp": 1790564323869, "notes": [
   {"at":[37,1],"type":"loop","loop":"5.1"}
 ] }

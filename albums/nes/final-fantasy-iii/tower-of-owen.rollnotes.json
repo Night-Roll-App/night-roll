@@ -1,3 +1,3 @@
-{ "version": 1, "song": "tower-of-owen", "saved": 1790564323886, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "tower-of-owen", "origin": {"kind":"capture"}, "stamp": 1790564323886, "notes": [
   {"at":[20,2.75],"type":"loop","loop":"8.2.75"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "swift-twist", "saved": 1790564323877, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "swift-twist", "origin": {"kind":"capture"}, "stamp": 1790564323877, "notes": [
   {"at":[7,2],"type":"loop","loop":"1.2"}
 ] }

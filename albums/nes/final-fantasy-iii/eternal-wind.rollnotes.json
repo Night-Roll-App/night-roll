@@ -1,3 +1,3 @@
-{ "version": 1, "song": "eternal-wind", "saved": 1790564323871, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "eternal-wind", "origin": {"kind":"capture"}, "stamp": 1790564323871, "notes": [
   {"at":[35,1],"type":"loop","loop":"3.1"}
 ] }

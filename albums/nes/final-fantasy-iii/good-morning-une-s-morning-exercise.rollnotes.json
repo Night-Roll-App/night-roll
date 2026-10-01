@@ -1,3 +1,3 @@
-{ "version": 1, "song": "good-morning-une-s-morning-exercise", "saved": 1790564323873, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "good-morning-une-s-morning-exercise", "origin": {"kind":"capture"}, "stamp": 1790564323873, "notes": [
   {"at":[22,4.25],"type":"loop","loop":"8.2.25"}
 ] }

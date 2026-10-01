@@ -1,3 +1,3 @@
-{ "version": 1, "song": "cute-little-tozas-village-of-little-people-tozas", "saved": 1790564323870, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "cute-little-tozas-village-of-little-people-tozas", "origin": {"kind":"capture"}, "stamp": 1790564323870, "notes": [
   {"at":[38,4.5],"type":"loop","loop":"1.2.5"}
 ] }

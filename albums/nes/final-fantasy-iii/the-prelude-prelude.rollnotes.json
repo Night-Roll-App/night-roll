@@ -1,3 +1,3 @@
-{ "version": 1, "song": "the-prelude-prelude", "saved": 1790564323884, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "the-prelude-prelude", "origin": {"kind":"capture"}, "stamp": 1790564323884, "notes": [
   {"at":[52,2.5],"type":"loop","loop":"1.2"}
 ] }
