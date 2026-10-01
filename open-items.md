@@ -5,6 +5,22 @@ answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
 
+## FOR JOSH — WEEKEND TO-DO (written 2026-10-01; only things only he can do)
+1. Redirect for the bare address: in the Mac's Claude Code terminal, `!` as the
+   FIRST character: `! gh repo create Night-Roll-App/night-roll-app.github.io --public --source ~/.claude/jobs/c9506483/tmp/redirect --push`
+2. App Store / TestFlight (see APP STORE below): (a) TestFlight → internal
+   testers → install from the TestFlight app; (b) App Store Connect privacy
+   labels (no data collected) + the listing text from docs/app-store-listing.md;
+   (c) approve or redo the screenshots in ~/Desktop/nightroll-screenshots/;
+   (d) with the iPad's silent/bell switch on, play a song — does it still play?
+   (Build 3 upload is mine once you've done (a).)
+3. Listening checks: FFX "Aeon Battle" plays without crashing; tapped SNES/NES/
+   Game Boy notes sound like the game; FF4 "Main Theme (Ocean)" has no stray hat.
+4. PS2 (unparked 2026-10-01): FFX Challenge — mute ch 30 + ch 31 and compare to
+   the game recording (decides the no-instrument rule); Q1 FFX pitches by ear.
+5. Optional: Settings → Other → Chip stream "on", play Challenge — full quality?
+   Any ticks at the joins?
+
 ## QUESTIONS FOR JOSH — the one list (numbered; answered ones move to DONE)
 Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     different pitches in a fresh capture (Blitz Off, Hurry, Ominous,
@@ -752,7 +768,7 @@ keyword now points at the transport display). tests/night-roll.test.mjs: new
 footer-markup test; tests/e2e/docking.spec.mjs WINDOWS gained "moresheet".
 See NIGHT-ROLL.md "Footer v2 tweaks (Josh, 2026-09-30, after using it)".
 (He also found the Mixer and likes it.)
-PS2 PARKED (Josh, 2026-09-30 ~21:55: "we're spending a lot of money on it…
+PS2 UNPARKED 2026-10-01 (Josh: "continue to work on PS2 stuff then"). Was: PS2 PARKED (Josh, 2026-09-30 ~21:55: "we're spending a lot of money on it…
 I never even played FFX… just do whatever you think is best"). Finishing
 only what protects every console: the OOM crash fix + import recovery, and
 the streamed player (step 3, default off). PARKED until he asks: FFX ch30/31
