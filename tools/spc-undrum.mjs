@@ -119,7 +119,7 @@ export function readRecapture(bytes) {
 export function parseBytes(bytes) {
   const app = createApp();
   app.context.midiBytes = [...bytes];
-  const json = app.run("JSON.stringify(parseMidi(new Uint8Array(midiBytes).buffer))");
+  const json = app.run("JSON.stringify(parseMidi(new Uint8Array(midiBytes).buffer, {trust: true}))") /* trust: a capture's own timing, as the app reads it — untrusted parsing trims an unterminated note (FF6 blazing-fire voice1) */;
   return JSON.parse(json);
 }
 function readPublished(absPath) { return parseBytes(readFileSync(absPath)); }

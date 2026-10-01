@@ -739,10 +739,9 @@ whether the tool or the app owns the order.
 ## QUEUE (2026-09-29, the order Josh approved)
 SNES NOISE-VOICE FIX APPLIED (2026-10-01): 11 of 12 published songs had their fake
 "drums" track renamed/merged back to its real voice by tools/spc-undrum.mjs (every
-note verified identical against HEAD by an independent check). HELD: final-fantasy-6/
-blazing-fire — writing it shortened an UNTOUCHED track's one long note (voice1,
-22156 → 15360 ticks; the shared writer likely clips notes past the song end). Fix
-the writer/tool so untouched tracks round-trip exactly, then apply it.
+note verified identical against HEAD by an independent check). final-fantasy-6/blazing-fire
+DONE too: the tool parsed without {trust: true}, which trims an unterminated note
+(voice1, 22156 → 15360); fixed, re-run, verified identical — all 12 done.
 DONE 2026-09-30 — FOOTER v2 TWEAKS (Josh, 2026-09-30 ~22:45, after using it):
 Footer right-group push (Publish back on the bar before ⋯ More), ⋯ More
 dropped VIEW and KEY SIGNATURE (View ▾'s own Tracks/Score and the LCD key's
