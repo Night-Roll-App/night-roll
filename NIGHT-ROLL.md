@@ -76,7 +76,13 @@ play for annotations that saved them but left the menu. Color via one
 full-width `<input type=color>` picker
 (swatch shortcuts removed same day per Josh — any hex, stored in the
 track: directive as color=#rrggbb; TRACK_COLORS remains the default
-palette for unannotated tracks). The chips hug their content: ▾ sits beside the last
+palette for unannotated tracks). TRACK_COLORS (2026-09-30, Josh: SNES
+voice0/voice2 looked alike) is ordered hue+150° apart, not a smooth
+ramp — walking the 12-entry array visits 30°,180°,330°,120°,270°,60°,
+210°,0°,150°,300°,90°,240° on the color wheel, so every consecutive
+track index (what an arrangement of real tracks shows, chip-to-chip)
+is as far apart as 12 evenly-spaced hues allow; an explicit color=
+annotation still overrides it at any index. The chips hug their content: ▾ sits beside the last
 chip, and the transport/LCD cluster stays pinned to the top row when
 chips wrap (2026-08-15 iPad fixes). `darkreader-lock` meta keeps the
 Dark Reader extension from repainting swatches gray.

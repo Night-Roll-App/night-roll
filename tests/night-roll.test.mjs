@@ -2791,6 +2791,47 @@ test("track: directive — voice & color as synced annotations, round-tripping",
   run(`song = null; songKey = "midi/test.mid";`);
 });
 
+test("TRACK_COLORS: default palette — adjacent hues far apart, explicit color still wins", () => {
+  // plain hex → hue (degrees), no deps: same formula as the app has no need
+  // of elsewhere, so it lives in the test rather than index.html
+  function hue(hex) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    if (d === 0) return 0;
+    let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h *= 60;
+    return h < 0 ? h + 360 : h;
+  }
+  const hueDist = (a, b) => { const d = Math.abs(hue(a) - hue(b)) % 360; return Math.min(d, 360 - d); };
+
+  const colors = val(`TRACK_COLORS`);
+  assert.ok(colors.length >= 10 && colors.length <= 12, "a 10–12 color categorical palette");
+  assert.equal(new Set(colors).size, colors.length, "no literal duplicate hex");
+  for (const c of colors) assert.match(c, /^#[0-9a-fA-F]{6}$/, c);
+
+  // the headline ask: every CONSECUTIVE pair (voice ti vs ti+1, including the
+  // wrap past the last index) clears a 25° hue-distance floor — this is what
+  // "voice0 vs voice2 look alike" on the old smooth ramp violated one index
+  // over, and it's the pairing an arrangement of real tracks actually shows
+  for (let i = 0; i < colors.length; i++) {
+    const a = colors[i], b = colors[(i + 1) % colors.length];
+    assert.ok(hueDist(a, b) >= 25, `adjacent ${a} vs ${b}: hue ${hueDist(a, b).toFixed(1)}° < 25°`);
+  }
+
+  // default color is the palette, indexed and wrapping
+  installSong();
+  run(`song.tracks = [{name: "a", notes: []}, {name: "b", notes: []}, {name: "c", notes: []}]; trackState = [{}, {}, {}];`);
+  assert.equal(run(`trackColor(0)`), colors[0]);
+  assert.equal(run(`trackColor(1)`), colors[1]);
+  assert.equal(run(`trackColor(${colors.length})`), colors[0]); // wraps mod length
+
+  // an explicit track: color annotation always beats the default, any index
+  run(`rollnotes = parseRollnotes("[1.1]\\ntrack: a color=#123456\\n").map(resolveNote); finalizeNotes();`);
+  assert.equal(run(`trackColor(0)`), "#123456");
+  assert.notEqual("#123456", colors[0]);
+  run(`rollnotes = []; finalizeNotes(); song = null; songKey = "midi/test.mid";`);
+});
+
 test("format identity: text → object → JSON → object yields the SAME object (Josh's spec)", () => {
   installSong();
   const textFile = `# legacy header comment (dropped by design)

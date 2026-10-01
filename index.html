@@ -2835,8 +2835,14 @@ function drumStep(p, d) { // vertical moves walk the VISIBLE kit slots, not semi
   const i = ks.indexOf(p);
   return ks[Math.min(ks.length - 1, Math.max(0, (i < 0 ? 0 : i) + d))];
 }
-const TRACK_COLORS = ["#d95926","#3987e5","#199e70","#c98500","#d55181","#9085e9","#008300","#e66767",
-                      "#0aa2c0","#b44ac0","#8a7d20","#a1653f"]; // 12 before any repeat (Epilogue has 11 tracks)
+// 12 before any repeat (Epilogue has 11 tracks). Ordered hue+150° apart
+// (not a hue ramp — adjacent SNES voices like voice0/voice2 looked alike
+// on a smooth ramp, Josh 2026-09-30) so every CONSECUTIVE track index is
+// as far apart on the color wheel as 12 evenly-spaced hues allow; walking
+// the array in order visits 30°,180°,330°,120°,270°,60°,210°,0°,150°,
+// 300°,90°,240° — a fixed +150° step, wrapping too.
+const TRACK_COLORS = ["#d95926","#0aa2c0","#d55181","#008300","#7552e0","#aa8b0e","#3987e5","#e66767",
+                      "#199e70","#b44ac0","#61aa18","#9085e9"];
 // display spelling when NO key has been declared: all sharps, matching the
 // captures' neutral spelling — the app never volunteers flats the user
 // didn't derive (a mixed table once had Josh chasing a chord on Fb)
