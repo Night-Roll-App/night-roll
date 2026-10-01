@@ -1,3 +1,3 @@
-{ "version": 1, "song": "those-chosen-by-the-planet", "saved": 1790553533334, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "those-chosen-by-the-planet", "origin": {"kind":"capture"}, "stamp": 1790553533334, "notes": [
   {"at":[31,1],"type":"loop","loop":"5.1"}
 ] }

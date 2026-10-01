@@ -1,3 +1,3 @@
-{ "version": 1, "song": "farm-boy", "saved": 1790553533243, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "farm-boy", "origin": {"kind":"capture"}, "stamp": 1790553533243, "notes": [
   {"at":[49,1],"type":"loop","loop":"1.1"}
 ] }

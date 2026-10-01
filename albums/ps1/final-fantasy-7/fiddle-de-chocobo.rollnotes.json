@@ -1,3 +1,3 @@
-{ "version": 1, "song": "fiddle-de-chocobo", "saved": 1790553533246, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "fiddle-de-chocobo", "origin": {"kind":"capture"}, "stamp": 1790553533246, "notes": [
   {"at":[49,1],"type":"loop","loop":"3.1"}
 ] }

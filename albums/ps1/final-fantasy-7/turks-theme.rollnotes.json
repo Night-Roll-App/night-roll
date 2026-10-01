@@ -1,3 +1,3 @@
-{ "version": 1, "song": "turks-theme", "saved": 1790553533336, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "turks-theme", "origin": {"kind":"capture"}, "stamp": 1790553533336, "notes": [
   {"at":[53,1],"type":"loop","loop":"5.1"}
 ] }

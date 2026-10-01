@@ -1,3 +1,3 @@
-{ "version": 1, "song": "the-highwind-takes-to-the-skies", "saved": 1790553533329, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "the-highwind-takes-to-the-skies", "origin": {"kind":"capture"}, "stamp": 1790553533329, "notes": [
   {"at":[59,1],"type":"loop","loop":"9.1"}
 ] }

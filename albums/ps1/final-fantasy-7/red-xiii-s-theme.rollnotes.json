@@ -1,3 +1,3 @@
-{ "version": 1, "song": "red-xiii-s-theme", "saved": 1790553533305, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "red-xiii-s-theme", "origin": {"kind":"capture"}, "stamp": 1790553533305, "notes": [
   {"at":[20,1],"type":"loop","loop":"3.1"}
 ] }

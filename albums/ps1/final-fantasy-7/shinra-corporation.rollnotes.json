@@ -1,3 +1,3 @@
-{ "version": 1, "song": "shinra-corporation", "saved": 1790553533311, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "shinra-corporation", "origin": {"kind":"capture"}, "stamp": 1790553533311, "notes": [
   {"at":[61,1],"type":"loop","loop":"9.1"}
 ] }
