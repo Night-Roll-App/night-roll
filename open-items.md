@@ -525,13 +525,23 @@ the starters were inserted by hand to avoid a 300-line reorder; decide
 whether the tool or the app owns the order.
 
 ## QUEUE (2026-09-29, the order Josh approved)
-RULING (Josh, 2026-09-30 evening, replaces Q4's one-tap/no-form detail):
-the capture's header button is "✎ Edit"; it opens an in-app sheet to copy
-the song locally, with a Name field defaulting to the song's title. (Captures
-stay locked; the copy is the editable one.) Also: the header must never
-overlap — the crumb/title gets its own space and truncates, the Claude status
-chip (upper right) can't cover it; Settings tabs never disappear before the
-content (they wrap or scroll).
+DONE 2026-09-30 (Josh's ruling that evening, replaces Q4's one-tap/no-form
+detail): the capture's header button is "✎ Edit" (renamed from "✎ Make it
+mine", `#makeitminebtn` id unchanged); it opens the "Edit a copy" sheet
+(reused Save As form, `openSaveForm("editcopy")`) — Name defaults to the
+song's title (editable), folder to `my-covers/` or the last one used, same
+picker Save As has; confirm forks the copy the same way `makeItMine()`
+always did, clash-suffix included. Captures/starters stay locked; the copy
+is the editable one. Help sheet/HELP.md, the FEATURES drift keyword, and
+the makeItMine tests (now driving the sheet: default name, a custom name,
+clash suffix) all updated — see NIGHT-ROLL.md "Origins, RULES...". Also
+done: the header never overlaps now — `.hdrleft`/`#songcrumb`/`#nowchip`
+are real flex items (was `position:absolute` guessing widths), the crumb's
+folder shrinks before its title, the Claude status chip goes icon-only
+before it would crowd the title (NIGHT-ROLL.md "Header layout"); Settings
+tabs scroll horizontally instead of disappearing before the content
+(NIGHT-ROLL.md "Settings sheet: tabs scroll"). Browser-verify at 1376 and
+1024 px with a right dock open still owed (not done from this session).
 SMALL (P1 builder, 2026-09-30): the Publish sheet's "edited since publish"
 check (draftFingerprint/pubCompareDraft ~L15336) special-cases tempo baking
 but not meter — a meter-only edit may not show as edited until published.
@@ -1095,6 +1105,12 @@ Ranked, most annoying first (effort S/M/L):
     stays literal px, not part of this system yet. See NIGHT-ROLL.md
     "Text size — iOS Dynamic Type". Songs loop forever at the end —
     still open. M / S.
+    SUPERSEDED 2026-09-30 (same evening, QUEUE above): the `left:
+    23.75rem` guess (and `#nowchip`'s matching `position:absolute` on
+    the right) is gone — `.hdrleft`/`#songcrumb`/`#nowchip` are real
+    flex items now, so there's no width to guess at any text size, dock
+    state, or viewport width. See NIGHT-ROLL.md "Header layout: real
+    flex items, not position:absolute".
 
     VoiceOver half — FIRST PASS DONE 2026-09-30 (implemented, NOT yet
     committed/pushed — Josh or the terminal session should review and

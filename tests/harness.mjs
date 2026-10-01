@@ -37,6 +37,7 @@ function listenable(el) {
   el.removeEventListener = (type, fn) => listeners.get(type)?.delete(fn);
   el.dispatchEvent = (evt) => {
     evt.target ??= el;
+    evt.currentTarget ??= el; // no bubbling in this stub, so it's always the dispatching element — real DOM's meaning for a direct (non-delegated) listener
     evt.preventDefault ??= noop;
     evt.stopPropagation ??= noop;
     for (const fn of [...(listeners.get(evt.type) || [])]) fn(evt);
@@ -121,6 +122,13 @@ function makeEl() {
     get: () => _innerHTML,
     set: (v) => { _innerHTML = v; el.children = []; },
   });
+  // <select>.options (2026-09-30, the ✎ Edit sheet's folder picker):
+  // index.html reads `.options` on every <select> stub (findsel, fsfolder,
+  // the AI model/target pickers) — a live alias onto the same .children
+  // array appendChild already fills, same as a real HTMLOptionsCollection
+  // for every use this app makes of it (.length, indexing, spreading).
+  Object.defineProperty(el, "options", { get: () => el.children });
+  el.select = noop; // input.select(): nothing to select in a stub
   el.click = () => el.dispatchEvent({ type: "click" });
   el.remove = () => { if (el._parent) { const i = el._parent.children.indexOf(el); if (i >= 0) el._parent.children.splice(i, 1); } };
   return el;

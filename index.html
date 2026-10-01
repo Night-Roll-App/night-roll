@@ -64,6 +64,15 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* left cluster / crumb / right chip as real flex items (DAW review,
+     2026-09-30): they used to be position:absolute, the crumb centered by
+     GUESSING the left cluster's width (380px, past NIGHT//ROLL + File +
+     View + ✦ AI) and the chip pinned to the right edge — any width those
+     buttons wrapped, ✎ Edit joined the row, or a Full-height side dock
+     narrowed #songregion (header lives inside it), the guess was wrong and
+     they landed on top of each other. Real flex items can't overlap, only
+     truncate/wrap. container-type below is #nowchip's compact (icon-only)
+     form when the header itself is tight — see "@container" near #nowchip. */
   header {
     display: flex;
     align-items: center;
@@ -71,8 +80,14 @@
     padding: max(8px, env(safe-area-inset-top)) 12px 8px;
     background: var(--panel);
     border-bottom: 1px solid var(--grid);
-    flex-wrap: wrap;
+    position: relative;
+    container-type: inline-size;
   }
+  /* brand + File/Edit/View/✦ AI/Full app: its own wrapping row so a phone
+     width can still flow it onto a 2nd line without fighting the crumb (a
+     flex item of `header`, not `header` itself, wraps — `header` stays
+     nowrap so left/crumb/right always share one row at any width). */
+  .hdrleft { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; row-gap: 6px; flex: 0 1 auto; min-width: 0; }
   .brand {
     font-family: var(--mono);
     font-size: 0.8125rem;
@@ -93,7 +108,6 @@
     cursor: pointer;
   }
   select { max-width: 44vw; }
-  header { position: relative; }
   #recbtn { color: #e66767; font-size: 0.9375rem; }
   #recbtn.rec { background: #e66767; color: #151520; animation: recblink 1.2s ease-in-out infinite; }
   @keyframes recblink { 50% { opacity: 0.55; } }
@@ -102,27 +116,28 @@
     font-size: 0.75rem;
     letter-spacing: 0.06em;
     color: var(--gold);
-    /* everything right of the brand + File cluster belongs to the title —
-       centered in THAT space, not the viewport (mirroring the cluster on the
-       right wasted ~280px and still truncated long titles on iPad portrait) */
-    position: absolute;
-    left: 23.75rem; /* 380px at default text size — past NIGHT // ROLL + File + View + ✦ AI
-      (270 predated ✦ AI: the title ran under it). rem, not px: those buttons' TEXT scales
-      with --ts/--userscale (their padding doesn't), so their rendered right edge moves —
-      a fixed 380px let a Larger Text size overlap "✦ AI" with "Published" (DAW review
-      item 12, 2026-09-30: found in the Larger-setting screenshot review, narrow viewport). */
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
+    /* the flex item between .hdrleft and #nowchip — takes whatever's left,
+       centered in THAT space (not the viewport); min-width:0 is what lets a
+       flex item shrink past its content size at all (DAW review, 2026-09-30:
+       replaced a position:absolute guess at the left cluster's width — see
+       the comment on `header` above). */
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     justify-content: center;
     white-space: nowrap;
     overflow: hidden;
     pointer-events: none;
   }
-  /* Published/Local never truncates; the folder and the title do (Josh, 2026-09-29) */
-  #songcrumb > span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* Published/Local never truncates; the folder shrinks before the title,
+     which shrinks last (Josh, 2026-09-29; DAW review 2026-09-30 made it a
+     real priority instead of "both shrink together" — crumbfolder's
+     flex-shrink is 1000x crumbtitle's, so the folder gives up its width
+     first and the title only starts truncating once the folder's gone). */
+  #songcrumb > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   #songcrumb > .crumbwhere, #songcrumb > .crumbdot { flex: none; }
+  #songcrumb > .crumbfolder { flex: 0 1000 auto; } /* never GROWS: a growing folder pushed the title to the far right */
+  #songcrumb > .crumbtitle { flex: 0 1 auto; }
   #askshotimg { height: 44px; max-width: 80px; object-fit: cover; border-radius: 4px; border: 1px solid var(--grid); cursor: zoom-in; }
   #askshotimg.big { height: auto; max-width: 100%; cursor: zoom-out; }
   #askshotchip:has(#askshotimg.big) { flex-wrap: wrap; }
@@ -182,13 +197,25 @@
   #timectl { display: flex; align-items: center; gap: 10px; padding-right: 12px; flex: none; margin-top: 6px; min-height: 44px; }
   #timectl #metbtn { min-height: 34px; padding: 4px 10px; }
   /* what Claude Code is doing, always in view while the bridge is there
-     (Josh, 2026-09-30: "so he doesn't have to ask"); the title gives it room */
-  #nowchip { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); max-width: 22vw; font-family: var(--mono); font-size: 0.6875rem;
+     (Josh, 2026-09-30: "so he doesn't have to ask"); a real flex item now
+     (flex:none — it never grows, never shrinks the crumb's space away by
+     surprise) instead of position:absolute pinned to the header's right
+     edge, which is what let it sit on top of the crumb's title. */
+  #nowchip { flex: 0 0 auto; max-width: 220px; font-family: var(--mono); font-size: 0.6875rem;
              color: var(--dim); background: none; border: 1px solid var(--grid); border-radius: 12px; padding: 3px 10px; min-height: 26px;
-             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2; }
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #nowchip.working { color: var(--text); border-color: var(--accent); }
-  body.nowchip #songcrumb { right: calc(22vw + 20px); }
-  @media (max-width: 700px) { #nowchip { display: none !important; } body.nowchip #songcrumb { right: 10px; } }
+  /* the header itself is tight (a Full-height side dock narrows #songregion,
+     which header lives in) — a compact icon beats crowding the crumb's
+     title (Josh, 2026-09-30: "instead of pushing into the title"); the ✦
+     stands in for whatever status text would otherwise show, tap still
+     opens the same AI panel. */
+  @container (max-width: 860px) {
+    #nowchip { font-size: 0; width: 26px; min-width: 26px; max-width: 26px; padding: 3px 0; text-align: center; }
+    #nowchip::after { content: "✦"; font-size: 0.75rem; }
+    #nowchip.working::after { color: var(--accent); }
+  }
+  @media (max-width: 700px) { #nowchip { display: none !important; } }
   .overlay > .sheet:focus { outline: none; } /* focused for VoiceOver on open, not a control */
   #playbtn.loading { opacity: 0.7; } /* loading its sound: tappable (queues the play), not yet ▶ */
   #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 0.75rem; }
@@ -629,7 +656,16 @@
   #asknowrecent { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
   #asknowrecent .asknowitem { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jobsnow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #cfgtabs button { flex: 1; border: 0; border-radius: 0; min-height: 36px; background: transparent; color: var(--dim); font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; }
+  /* .seg's own overflow:hidden (above) exists to clip the buttons' square
+     corners to the group's rounded ones — with 4 tabs on a narrow sheet it
+     was also clipping whole TABS off the end, since `flex:1` items don't
+     wrap and .seg never scrolled (Josh: "tabs disappear, the content
+     stays" — the pane below is normal block flow, never clipped, so only
+     the tab row vanished). Horizontal scroll instead: every tab keeps a
+     readable min-width and the row scrolls to reach whichever doesn't fit,
+     never display:none. */
+  #cfgtabs { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+  #cfgtabs button { flex: 0 0 auto; min-width: 72px; border: 0; border-radius: 0; min-height: 36px; background: transparent; color: var(--dim); font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; }
   #cfgtabs button.on { background: var(--grid); color: var(--text); }
   #settingssheet .cfgpane { display: none; flex-direction: column; gap: 10px; }
   #settingssheet .cfgpane.on { display: flex; }
@@ -1105,14 +1141,16 @@
 <div id="shell">
 <div id="songregion">
 <header>
+  <div class="hdrleft">
   <div class="brand">NIGHT <span>//</span> ROLL</div>
   <button id="filesheetbtn">File ▾</button>
   <button id="editsheetbtn" style="display:none">Edit ▾</button>
   <button id="editherebtn" style="display:none" aria-label="Make a local copy to edit">✎ Edit locally</button>
-  <button id="makeitminebtn" style="display:none" aria-label="Make an editable copy of this locked song">✎ Make it mine</button>
+  <button id="makeitminebtn" style="display:none" aria-label="Make an editable copy of this locked song">✎ Edit</button>
   <button id="viewsheetbtn">View ▾</button>
   <button id="askbtn" aria-label="Talk to the AI tutor">✦ AI</button>
   <button id="fullappbtn" style="padding:6px 10px">Full app</button>
+  </div>
   <span id="songcrumb"></span>
   <button id="nowchip" style="display:none" aria-label="What Claude Code is doing — tap for recent steps"></button>
   <!-- accept threads two iOS quirks: listing only extensions grays out .nsf (no
@@ -1834,7 +1872,7 @@
     <div class="hsec" data-hsec="files">
     <dl>
       <dt>Install on the iPad</dt><dd>Safari → Share → <b>Add to Home Screen</b>. Night Roll then launches from its own icon, full screen with no browser bars, works offline (the app and any song you have opened are kept on the device; instrument sounds are kept as they are first used), and its drafts, annotations and settings live in storage Safari does not evict. Updates arrive on the next launch with a network — the page is always fetched fresh when it can be. Same for Chrome/Edge on a computer (the install icon in the address bar). File → the "build" line at the bottom of the menu says "installed" when you are running the installed copy. If offline support ever misbehaves, open the site with <code>?sw=0</code> once to turn it off on that device.</dd>
-      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has four tabs — <b>Saving</b> (folder or Files), <b>AI</b>, <b>GitHub</b>, <b>Other</b> (the debug log) — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips, led by <b>Published</b> or <b>Local</b> — the same meaning as Open's two sections — then its folder: <i>Published › Final Fantasy I › Battle Scene</i>), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save Version</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save Version (⌘S: a dated snapshot of the music AND annotations, kept on this device only — File → Versions… lists them), Publish (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), <b>✎ Make it mine</b> (a capture or bundled starter shows this where Edit ▾ would be, instead of Save As's form: one tap, no folder or name to pick — forks a copy straight into My Covers, or the folder you last used, annotations inherited the same way Save As's does; a name clash gets a number, "Overworld" → "Overworld 2" — the capture or starter itself is never touched), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Versions… (the published copy at the top when there is one, then this device's dated versions newest first — <b>Go back to this</b> on any row: your current state is kept as a version first, so nothing is thrown away, then that version becomes what you see — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… opens the <b>import hub</b> (below) — one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches); a drop target in the hub takes dragged files too, Download .mid (exports any song, works in Logic), Download audio (bounces the song to a 16-bit WAV <b>offline</b> — faster than real time, silent to you, no need to keep quiet hands: the song once through, loop off regardless of an armed cycle, through the same voices/chip/sampled/game-instrument/recording paths playback uses. On the iPad app it hands the file straight to the <b>share sheet</b> — Files, Messages, AirDrop, anywhere; in a browser it downloads. A browser with no offline renderer falls back to today's real-time capture instead — m4a on Safari / webm on Chrome, still loop off, still shareable anywhere including iMessage — and says why it fell back). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Publish is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>never saved</b> (exists only on this device, no folder yet), <b>not published</b> (a local copy with no published counterpart), <b>published</b> (matches the published copy), <b>changed since publish</b> (local edits not yet published), or <b>annotations changed here</b> (only the notes differ). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
+      <dt>File</dt><dd>Everything file-shaped lives here now. File → Settings has four tabs — <b>Saving</b> (folder or Files), <b>AI</b>, <b>GitHub</b>, <b>Other</b> (the debug log) — and reopens on the one you last used. Open… (the song picker, two sections: <b>LOCAL</b>, this device's copies grouped by folder, each row saying <i>not published</i> / <i>published</i> / <i>changed since publish</i> / <i>annotations changed here</i>; and <b>PUBLISHED</b>, the albums in your repo as folders, e.g. Imports › Mega Man 2 — a published song with a local copy opens the local one; the current song's title shows above the track chips, led by <b>Published</b> or <b>Local</b> — the same meaning as Open's two sections — then its folder: <i>Published › Final Fantasy I › Battle Scene</i>), New song (tempo/meter → a blank 3-voice composition called Untitled N; it lives on this device until <b>Save Version</b> asks for a folder and a name — pick one of your folders or type a new one, <code>NES/My Covers</code> nests), Save Version (⌘S: a dated snapshot of the music AND annotations, kept on this device only — File → Versions… lists them), Publish (opens the Publish sheet: on your own songs its button commits the .mid AND the annotations together in one go; on analyzed songs the same door publishes the annotations — one workflow, and what gets pushed is whatever the mode owns), Save As (a copy of ANY song, including a locked capture, into the folder you pick, annotations inherited — write a counter-line over Town), <b>✎ Edit</b> (a capture or bundled starter shows this where Edit ▾ would be — opens a small <i>Edit a copy</i> sheet: a name (defaulting to the title) and a folder (defaulting to My Covers, or the folder you last used — same picker Save As has), both editable; confirm forks a copy there, annotations inherited the same way Save As's does; a name clash still gets a number, "Overworld" → "Overworld 2" — the capture or starter itself is never touched), Settings… (the AI model; <b>GitHub</b> as a two-step setup — <b>your songs repo</b> and a fine-grained <b>token</b>, with <b>Check</b> confirming the pair can publish; the local folder; and under <b>advanced</b> an optional <b>NSF repo</b> for imported game files — every field saves itself when you leave it; there is no Save button), Versions… (the published copy at the top when there is one, then this device's dated versions newest first — <b>Go back to this</b> on any row: your current state is kept as a version first, so nothing is thrown away, then that version becomes what you see — for when local edits went somewhere you can't undo your way out of), Rename… (works on everything: an uncommitted draft renames its actual file; a committed/repo song keeps its filename — analysis docs and the capture pipeline reference it — and gets a display-title override written to its album.json and the manifest, so the new name shows everywhere), Import… opens the <b>import hub</b> (below) — one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches); a drop target in the hub takes dragged files too, Download .mid (exports any song, works in Logic), Download audio (bounces the song to a 16-bit WAV <b>offline</b> — faster than real time, silent to you, no need to keep quiet hands: the song once through, loop off regardless of an armed cycle, through the same voices/chip/sampled/game-instrument/recording paths playback uses. On the iPad app it hands the file straight to the <b>share sheet</b> — Files, Messages, AirDrop, anywhere; in a browser it downloads. A browser with no offline renderer falls back to today's real-time capture instead — m4a on Safari / webm on Chrome, still loop off, still shareable anywhere including iMessage — and says why it fell back). Compositions auto-draft to this device on every edit — find them under Open → LOCAL, in their folder, where a ✕ (tap twice) deletes the local copy from this device; Publish is what puts them in the repo, and it updates the dropdown's catalog automatically. <b>Drafts is not a folder — it's this device's working copies.</b> A song you've saved lives in its album (new songs go to Night Roll Sketches) AND keeps a drafts row here; each row says which: <b>never saved</b> (exists only on this device, no folder yet), <b>not published</b> (a local copy with no published counterpart), <b>published</b> (matches the published copy), <b>changed since publish</b> (local edits not yet published), or <b>annotations changed here</b> (only the notes differ). Imported MIDI files land there too (prefixed "local /") — they persist on this device and stay editable, but never sync to the repo; Save As forks one into a real composition. Move to… relocates a composition into any folder of yours, or a new one (files + catalog together on GitHub for a published song; a never-published song just changes folder on this device; the row names the song's current folder first); leaving Sketches adds a "moved from" note at bar 1, which is what keeps the song editable on your other devices (as "forked from" does for Save As), so leave it in place. A ＋ track chip appears in the track bar on compositions — and a <b>＋ drums</b> chip adds a GM drum kit track: its the kit gets its own labeled LANE that starts docked under your lowest melodic note — and you can DRAG it anywhere by its labels in the left gutter; the position saves as a normal synced annotation ("lane: N"), so it follows the song to every device. The working trio — hat, snare, kick — sits at the TOP of the lane, closest to your notes; below them only pieces the song actually uses appear (no toms in the song, no tom rows), and the <b>⋯ row</b> under the lane toggles the full 15-piece kit when you want to pencil something new (sticks per device). Tap a piece's gutter label to cycle <b>normal → solo → mute</b> (S in gold / ✕ dimmed; session-only, notes untouched): one tap on snare and ONLY the snare plays; solo more pieces to add them; use mute for "everything but the kick." Third tap returns to normal. Closed hats are bright (high-passed) so they cut through regular instruments instead of fighting the pulses for the same band. Delete any track from its voice &amp; color menu (tap the selected chip again → ✕ Delete track, tap twice), penciled like any notes, played with the built-in kit, and exported on MIDI channel 10 so Logic reads them as drums. File → Open… re-reads the published list each time you open it (at most once every 20 s), so a song published from the terminal or another device appears without relaunching. A track-name playlist (.m3u) picked on its own, with no import running, names the open song's album after the fact: each line names the song with that chip slot number — local drafts are renamed in place, a published album gets its titles in one write. Settings → GitHub → <b>game files &amp; instruments</b> is the repo your published imports' game files (and the instruments pulled from them) go to; <b>create mine</b> makes a public one named night-roll-archive under your account. <b>🎛 Instruments…</b> lists every published PlayStation and N64 game whose instruments were extracted — <b>Instruments in this song</b> leads when the open song is one of them, then every game; a game opens to <b>All instruments (A–Z)</b> or one of its own songs (labelled by the track it plays on when that's the song you have open); tap an instrument to hear it (a kit plays its first drums). Names are measured guesses. Any track in your own song can BORROW one as its voice — the voice &amp; color menu's <b>Game instruments ›</b> family, same games/songs picker; a loaded SoundFont's presets are one tap over in the same menu, under <b>Soundfonts ›</b> (font, then a bank:program preset list) — tap one to assign it and hear it.</dd>
       <dt>Import…</dt><dd>File → Import… opens the <b>import hub</b>: one screen, one section per format Night Roll reads, each saying exactly what it needs with its own <b>Choose files…</b> (one shared picker underneath — a file lands in whichever section's byte-sniff it matches, whichever section you tapped from); a drop target in the hub takes dragged files too. <b>MIDI</b> (.mid, .midi, .smf, .kar, even RIFF-wrapped .rmi — multi-select capable): ask where they belong — <b>Keep local</b> (this-device draft, annotations never sync) or <b>Create album</b> — one or many MIDIs become an album folder under drafts, audition/rename/✕ like a chip capture, and ⇪ Commit publishes them to the songs repo so annotations sync everywhere (commit rewrites the .mid as notes+tempo+meter — foreign CCs/programs are not preserved). <b>NES</b>: the .nsf, plus its .m3u if the rip has one (track names) — an NSF that needs an expansion sound chip (VRC6, VRC7, FDS, MMC5, Namco 163, Sunsoft 5B) is refused by name ("expansion sound chip &lt;names&gt; not supported") — the NES pipeline captures only the 2A03, and those songs keep their lead voices on the extra chip. <b>Game Boy</b>: the .gbs, plus its .m3u, same rule. <b>Super NES</b>: every .spc of the album, picked together — tagged lengths, so the loop scan is skipped. <b>Genesis</b>: .vgm/.vgz — synth voices only, no console-audio render yet. <b>PlayStation</b>: every .minipsf plus the one .psflib, picked together — reads Sony's own SEQ/VAB driver and Square's AKAO (Final Fantasy VII/VIII/IX, Chrono Cross); both play the console's own audio. <b>PlayStation 2</b>: every .minipsf2/.psf2 plus the one .psf2lib, picked together — reads Sony's stock driver (SQ/HD/BD) and Square Enix's own (BGM/WD — Final Fantasy X); both play the console's own audio. A PS2 set that's only streamed audio (Ico, XIII) is refused: "this is streamed audio, not note data — Night Roll reads sequence data (notes), not pre-rendered streams". <b>Nintendo 64</b>: every .miniusf plus the one .usflib. For NES, Game Boy, PlayStation, PlayStation 2 and Nintendo 64: a playlist (.m3u) picked on its own, later, names an open song's album (or, mid-capture, renames an already-open session's tracks). Every chip pick opens the capture panel: the same pipeline that dumped the FF1 album runs the track — loop detected and trimmed, tempo grid-fitted, the hardware loop point recorded as a loop: annotation (the capture window auto-doubles, 75 → 150 → 300s, when no loop fits) — and lands as a LOCAL draft under an album named for the game; audition and rename each one, ⇪ Commit a track or the whole album — it keeps going if you leave the menu, and it all keeps running in the background (⏳ Jobs) if you close the panel too — File → Publish import still pushes every import capture across all folders at once. <b>Chip audio is automatic</b>: whenever the app can reach a song's NSF/GBS/etc. (the live import session, this device's cache, or the public archive), NES, Game Boy, PlayStation, PlayStation 2 and Nintendo 64 songs render through the console's own sound hardware; Genesis and Super NES play through synth voices for now. <b>SoundFont</b>: one .sf2 (a fan-made game font, a better piano, anything) — not tied to a song at all: it loads straight in, a copy stays on this device (works offline, no GitHub needed) and, with a game files &amp; instruments repo configured, pushes to the archive too so your other devices can play it; files over 50 MB ask first (GitHub itself warns past 50 MB, refuses past 100). <b>New song from a recording</b>: one .wav/.mp3/.m4a/.aif/.flac becomes a brand-new song — <b>Untitled N</b>, 4/4 at 120 bpm with three empty note tracks waiting (Edit → Pencil to write against it; ♩ Tempo from this take reads the clip's real tempo whenever you're ready) — it lives on this device until Save.</dd>
       <dt>Share a song</dt><dd><b>🔗 Share link</b> in the Publish sheet hands the song's link to the share sheet (or copies it). A link is this player plus the song plus where the song lives: songs on this site need nothing more; a song published to another GitHub repo carries <code>songs=owner/repo</code>, so anyone who taps it hears that song from that repo, no setup — and you can open such links too (the breadcrumb then starts with 🔗 and the repo's name; everything is read-only there, your own songs are untouched, and nothing about the link is remembered). Publish also keeps a <b>song list in the repo's README</b> — every song as a player link, between two markers the app owns, the rest of the README untouched — so the repo page itself is the share page. The address bar is always a shareable link to the open song, and it is the song's path with no extension — …/night-roll/albums/compositions/nightroll/ambush. <b>Add .mid to the end and the same link is the MIDI file</b> (Logic opens it); take it off and it's the player again. Older ?song= links still open the player. The tab title and the link preview in Messages name the song first — "Threnody · Night Roll" — so a pasted link reads as the song, not the app.</dd>
       <dt>Data locations</dt><dd>Night Roll is configured with WHERE its data lives (Sync → "Data locations ▾"): three rows — songs (.mid, album.json, catalog), analysis (.rollnotes + docs), and NSF (chip-audio source) — each with a read base URL (blank = this site; or any raw.githubusercontent.com/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt; or local server) and an owner/repo write target. One fine-grained token, granted to every repo you write to, covers all commits; write errors name the repo they hit, and a 404 usually means the token hasn't been granted that repo. This is what lets another analyst point their own analysis repo at a shared songs corpus. Defaults: everything in this site's repo, NSFs from the public nsf-archive. In the iPad app "this site" is only the bundled starters, so reads default to the repo in Settings → GitHub (the same place Publish writes): your published songs, annotations and imports appear there once the repo is set; the starters come from the bundle either way.</dd>
@@ -1959,7 +1997,8 @@
       <button class="primary" id="fncreate">Create</button>
     </div>
   </div>
-  <div id="filesaveasform" style="display:none"><!-- Save (names an Untitled song) and Save As share it: folder + name -->
+  <div id="filesaveasform" style="display:none"><!-- Save (names an Untitled song), Save As, and ✎ Edit (captures/starters) share it: folder + name -->
+    <div class="row" id="fstitlerow" style="display:none"><span class="lbl" id="fstitle" style="font-size:0.9375rem;font-weight:600;color:var(--gold)"></span></div>
     <div class="row"><span class="lbl">folder</span>
       <select id="fsfolder" aria-label="Folder" style="flex:1;min-height:40px"></select></div>
     <div class="row"><input type="text" id="fsnewfolder" placeholder="new folder name (NES/My Covers nests)" style="flex:1;min-height:40px;display:none" autocapitalize="off"></div>
@@ -3142,7 +3181,7 @@ function updateEditBtnVis() { // the edit ROW exists only on songs made in the a
   document.getElementById("editherebtn").style.display =
     !editable && !!song && ownFolderPath(songKey) && !LINK_SONGS && !(cmp && cmp.showing === "repo") ? "" : "none";
   // a capture or starter: never "edit here" (nothing of yours to pull down) —
-  // "✎ Make it mine" forks one instead, no form (Q4, docs/provenance-plan.md)
+  // "✎ Edit" opens the "Edit a copy" sheet and forks one instead (Q4, docs/provenance-plan.md)
   const origin = song && songKey ? originOf(songKey) : null;
   document.getElementById("makeitminebtn").style.display =
     !editable && !!song && (origin === "capture" || origin === "starter") && !LINK_SONGS && !(cmp && cmp.showing === "repo") ? "" : "none";
@@ -11587,11 +11626,13 @@ function updateSongBtn() { // breadcrumb: Album › Title, with the real path di
   songtitleEl.appendChild(where);
   if (folder) {
     const crumb = document.createElement("span");
+    crumb.className = "crumbfolder"; // shrinks before the title (header CSS: flex-shrink 1000x crumbtitle's)
     crumb.style.color = "var(--dim)";
     crumb.textContent = folder + "\u00a0›\u00a0";
     songtitleEl.appendChild(crumb);
   }
   const title = document.createElement("span");
+  title.className = "crumbtitle"; // shrinks last -- truncates only once the folder's fully squeezed
   title.textContent = songTitleOf(currentPath);
   songtitleEl.appendChild(title);
   const chat = askUnsavedCount();
@@ -15308,7 +15349,7 @@ function originOf(key) {
 // starter: their .mid is written once, at capture commit, never again).
 // composition/copy/import are identical today — Josh's "your copy is
 // yours" alternative for captures was NOT taken; captures/starters stay
-// locked and get "✎ Make it mine" instead (the addendum, below).
+// locked and get "✎ Edit" instead (the addendum, below).
 const RULES = {
   composition: {editNotes: true, bakeTempo: true, bakeMeter: true, writesMid: true},
   copy: {editNotes: true, bakeTempo: true, bakeMeter: true, writesMid: true},
@@ -15411,14 +15452,17 @@ function folderFromInput(text) { // "NES/My Covers" → "nes/my-covers"; null wh
   if (!parts.length || RESERVED_FOLDERS.includes(parts[0])) return null;
   return parts.join("/");
 }
-function fillFolderSelect(sel, exclude) { // options: known folders + New folder…
+function fillFolderSelect(sel, exclude, prefer) { // options: known folders + New folder…; prefer: a folder to guarantee an option for and preselect (✎ Edit's my-covers/lastFolder default — it may have no songs in it yet, so folderChoices() alone wouldn't offer it)
   sel.innerHTML = "";
-  for (const f of folderChoices()) {
+  const choices = folderChoices();
+  if (prefer && !choices.includes(prefer)) choices.unshift(prefer);
+  for (const f of choices) {
     if (f === exclude) continue;
     const o = document.createElement("option"); o.value = f; o.textContent = folderTitle(f); sel.appendChild(o);
   }
   const o = document.createElement("option"); o.value = "__new__"; o.textContent = "New folder…"; sel.appendChild(o);
-  if (!sel.options.length || sel.options[0].value === "__new__") sel.value = "__new__";
+  if (prefer) sel.value = prefer;
+  else if (!sel.options.length || sel.options[0].value === "__new__") sel.value = "__new__";
 }
 function chosenFolder(sel, inp) { // the select, or the typed folder; null = nothing valid
   if (sel.value !== "__new__") return sel.value || null;
@@ -15462,20 +15506,29 @@ async function saveSongAs(folder, name) { // first Save Version of an Untitled s
   setInfo("saved as " + name.trim() + " in " + folderTitle(folder) + " — Publish sends it to " + (publishDest() === "folder" ? fsRoot.name : "GitHub"));
   return true;
 }
-function openSaveForm(mode) { // "save" (name an Untitled song) | "fork" (Save As): folder + name inside the File menu
+function openSaveForm(mode) { // "save" (name an Untitled song) | "fork" (Save As) | "editcopy" (✎ Edit — captures/starters): folder + name inside the File menu
   document.getElementById("filesheetbtn").click();
   document.getElementById("filenewform").style.display = "none";
   document.getElementById("filerenameform").style.display = "none";
   const form = document.getElementById("filesaveasform");
   form.style.display = "";
   form.dataset.mode = mode;
-  fillFolderSelect(document.getElementById("fsfolder"), null);
+  // ✎ Edit's default target: the same one makeItMine forked to with no form
+  // (docs/provenance-plan.md) — lastFolder if you've used one, else My Covers
+  const prefer = mode === "editcopy" ? (localStorage.getItem("ff1roll-lastfolder") || "my-covers") : null;
+  fillFolderSelect(document.getElementById("fsfolder"), null, prefer);
   document.getElementById("fsnewfolder").style.display = document.getElementById("fsfolder").value === "__new__" ? "" : "none";
   const inp = document.getElementById("fsname");
-  inp.value = mode === "fork" ? "" : (songKey && !/untitled-\d+\.mid$/.test(songKey) ? songTitleOf(songKey) : "");
-  inp.placeholder = mode === "fork" ? "name for the copy" : "song name";
-  document.getElementById("fsgo").textContent = mode === "fork" ? "Save copy" : "Save";
+  inp.value = mode === "editcopy" ? songTitleOf(songKey) // defaults to the title, editable (Josh's ruling)
+            : mode === "fork" ? ""
+            : (songKey && !/untitled-\d+\.mid$/.test(songKey) ? songTitleOf(songKey) : "");
+  inp.placeholder = mode === "editcopy" ? "name for your copy" : mode === "fork" ? "name for the copy" : "song name";
+  document.getElementById("fsgo").textContent = mode === "editcopy" ? "Copy & Edit" : mode === "fork" ? "Save copy" : "Save";
+  const title = document.getElementById("fstitle"), titleRow = document.getElementById("fstitlerow");
+  title.textContent = mode === "editcopy" ? "Edit a copy" : "";
+  titleRow.style.display = title.textContent ? "" : "none";
   inp.focus();
+  if (mode === "editcopy") inp.select?.(); // select-all: retyping the defaulted title is one keystroke, not a manual clear first
 }
 function folderOf(path) { // "albums/compositions/nightroll/x.mid" → "compositions/nightroll"; FF1's songs/ level collapses
   const parts = path.split("/"); parts.pop();
@@ -16249,7 +16302,7 @@ document.getElementById("filesheetbtn").addEventListener("click", e => {
   { const origin = song && songKey ? originOf(songKey) : null;
     fileStatus(song && isUnsaved(songKey) ? "not saved yet — Save names it and picks its folder"
                : isComposition() ? "your song — editable"
-               : (origin === "capture" || origin === "starter") ? "read-only here — ✎ Make it mine (or Save As…) makes an editable copy"
+               : (origin === "capture" || origin === "starter") ? "read-only here — ✎ Edit (or Save As…) makes an editable copy"
                : "read-only here — Save As makes an editable copy in a folder of yours"); }
   const r = e.currentTarget.getBoundingClientRect();
   filesheet.style.left = Math.max(6, r.left) + "px";
@@ -16802,6 +16855,11 @@ document.getElementById("fsgo").addEventListener("click", async () => {
   if (!folder) { fileStatus("⚠ Pick a folder, or type a name for a new one."); document.getElementById("fsnewfolder").focus(); return; }
   if (!name.trim()) { fileStatus("⚠ Name the song."); document.getElementById("fsname").focus(); return; }
   stop();
+  if (form.dataset.mode === "editcopy") {
+    makeItMine(name, folder);
+    document.getElementById("filesheet").classList.remove("on");
+    return;
+  }
   if (form.dataset.mode === "fork") {
     forkCurrentSong(name, folder);
     document.getElementById("filesheet").classList.remove("on");
@@ -16914,10 +16972,13 @@ function editHereNow() {
   updateSongBtn();
   setInfo("editing your copy on this device — Publish sends it");
 }
-document.getElementById("makeitminebtn").addEventListener("click", () => makeItMine());
+// ✎ Edit (Josh's ruling, renamed from "✎ Make it mine"): opens the "Edit a
+// copy" sheet instead of forking straight away — same destination, one more
+// tap to see/change the name and folder first.
+document.getElementById("makeitminebtn").addEventListener("click", () => openSaveForm("editcopy"));
 // "Overworld" -> "Overworld 2", "Overworld 3"… on a name clash in the target
-// folder — Make it mine is one tap with no name prompt to catch it first,
-// unlike Save As (Josh's ruling, docs/provenance-plan.md addendum).
+// folder — makeItMine() always runs this, default name or typed, unlike
+// Save As's fork mode (Josh's ruling, docs/provenance-plan.md addendum).
 function forkClashTitle(folder, title) {
   const dir = "albums/" + folder + "/";
   const taken = new Set([...publishedPaths(), ...draftKeys()]
@@ -16927,18 +16988,21 @@ function forkClashTitle(folder, title) {
   while (taken.has(slug)) { n++; slug = slugify(title + " " + n); }
   return n === 1 ? title : title + " " + n;
 }
-// "✎ Make it mine" (Q4, docs/provenance-plan.md addendum, "your copy is
-// yours"): the ONE tap that forks a capture or starter, replacing the
-// generic "read-only here — Save As…" message those used to get with no
-// quick affordance of their own. No form: forkCurrentSong(title, folder)
-// straight to the last folder used (or my-covers/ the first time), same
-// as Save As under the hood — the capture/starter itself is never touched.
-function makeItMine() {
+// "✎ Edit" (Q4, docs/provenance-plan.md addendum, "your copy is yours"):
+// forks a capture or starter, replacing the generic "read-only here — Save
+// As…" message those used to get with no quick affordance of their own.
+// Opens the "Edit a copy" sheet (openSaveForm("editcopy")) with the folder
+// and name defaulted — name/folder here are what the sheet's confirm passes
+// in; called with neither, it's the same one-tap default as before (straight
+// to the last folder used, or my-covers/ the first time). Either way it's
+// forkCurrentSong(title, folder) under the hood, clash-suffixed — the
+// capture/starter itself is never touched.
+function makeItMine(name, folder) {
   if (!song || !songKey) return;
   const origin = originOf(songKey);
   if (origin !== "capture" && origin !== "starter") return; // everything else already has Edit locally/Save As
-  const folder = localStorage.getItem("ff1roll-lastfolder") || "my-covers";
-  const title = forkClashTitle(folder, songTitleOf(songKey));
+  folder = folder || localStorage.getItem("ff1roll-lastfolder") || "my-covers";
+  const title = forkClashTitle(folder, (name || songTitleOf(songKey)).trim() || songTitleOf(songKey));
   forkCurrentSong(title, folder);
   setInfo("made your own copy — \"" + title + "\" in " + folderTitle(folder) + " — fully editable; Publish sends it.");
 }
@@ -21543,7 +21607,6 @@ function askStatusRender() {
   const chip = document.getElementById("nowchip");
   if (chip) {
     chip.style.display = askCaps.bridge ? "" : "none";
-    if (typeof document !== "undefined" && document.body && document.body.classList) document.body.classList.toggle("nowchip", askCaps.bridge);
     chip.textContent = "Claude: " + askStatusLine();
     chip.classList.toggle("working", !askStatusIdle());
   }

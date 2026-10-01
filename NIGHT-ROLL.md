@@ -389,21 +389,29 @@ but still takes any annotation.
 
 Captures and starters STAY locked (Josh took the plan's addendum, not
 his own "your copy is yours" alternative): the edit affordance they get
-instead is **"✎ Make it mine"** — a header button beside "✎ Edit
-locally" (shown when `!editableSong()` and the origin is capture/
-starter), one tap, no form: `makeItMine()` calls the same
-`forkCurrentSong(title, folder)` Save As uses, titled after the song's
-own display title and filed into `my-covers/` (or the last folder
-used) — `forkClashTitle` numbers a name clash ("Overworld" → "Overworld
-2") by checking both the published catalog and this device's drafts in
-that folder. The capture/starter itself is never touched. Bug found
-building this: `forkCurrentSong` called `saveDraft()` at the end, but
-`saveDraft`'s own `isComposition()` gate requires a draft to ALREADY
-exist — a brand-new own-folder key has none yet, so the very first fork
-silently wrote nothing; fixed with an explicit `draftWrite(key,
-draftDoc(false))` first (the same bootstrap `editHereNow` already needed
-for "✎ Edit locally"). This affects every Save As, not just Make it
-mine.
+instead is **"✎ Edit"** (renamed from "✎ Make it mine" the same day,
+DAW review item — `#makeitminebtn`, id unchanged) — a header button
+beside "✎ Edit locally" (shown when `!editableSong()` and the origin is
+capture/starter). It opens the "Edit a copy" sheet — `openSaveForm`'s
+third mode, `"editcopy"`, reusing the Save As/Save form (`#filesaveasform`):
+name defaults to the song's own display title (editable), folder
+defaults to `my-covers/` or the last folder used (`fillFolderSelect`'s
+`prefer` param — guaranteed an option even with nothing saved there
+yet), same folder picker Save As has. Confirm (`✎ Edit`'s `#fsgo`,
+"Copy & Edit") calls `makeItMine(name, folder)`, which calls the same
+`forkCurrentSong(title, folder)` Save As uses — `forkClashTitle` still
+numbers a name clash ("Overworld" → "Overworld 2") by checking both the
+published catalog and this device's drafts in that folder, whether the
+typed name is the default title or something else. `makeItMine()` with
+no arguments keeps its original one-tap default (last folder used, or
+`my-covers/` the first time) for anything still calling it directly.
+The capture/starter itself is never touched. Bug found building this:
+`forkCurrentSong` called `saveDraft()` at the end, but `saveDraft`'s own
+`isComposition()` gate requires a draft to ALREADY exist — a brand-new
+own-folder key has none yet, so the very first fork silently wrote
+nothing; fixed with an explicit `draftWrite(key, draftDoc(false))` first
+(the same bootstrap `editHereNow` already needed for "✎ Edit locally").
+This affects every Save As, not just ✎ Edit.
 
 Meter baking (Q9 — "a declared meter bakes wherever tempo bakes"):
 `publishSong`'s doc build adds `timesigs: bakeMeter(base, notes)` when
@@ -4991,3 +4999,60 @@ the non-`.overlay` popups (`#metsheet`, `#voicemenu`, `#wmmenu`,
 `#speedpop`/`#volpop`) got no focus management, only `#metsheet` got a
 static `role="dialog"`/`aria-labelledby` — they're small anchored
 popups, not full sheets, and were out of scope for this pass.
+
+## Header layout: real flex items, not position:absolute (2026-09-30)
+
+The header used to be `display:flex` for the brand + File/Edit/View/✦ AI
+buttons, with `#songcrumb` and `#nowchip` (the "Claude Code is doing…"
+chip) laid on top via `position:absolute` — the crumb centered itself by
+GUESSING the left cluster's rendered width (a hardcoded `left: 23.75rem`),
+and the chip pinned to the header's right edge. Any width those buttons
+wrapped (phone), ✎ Edit joined the row (see above), or a Full-height side
+dock narrowed `#songregion` — which the header lives inside, per
+`#shell`'s grid; a `Beside the roll` (inner) dock does NOT, since inner
+docks nest under `#songcenter`, below the header — the guess went stale
+and the crumb/chip sat on top of the title or each other (Josh, iPad,
+DAW review).
+
+Fixed by making all three real flex items of `header` (`flex-wrap:
+nowrap` now, so they can't fall onto separate lines and fight for space
+differently than intended): a new `.hdrleft` wrapper holds the brand and
+buttons (its OWN `flex-wrap: wrap` still lets them flow onto a 2nd row at
+phone width, same as before — only `header` itself stays one row);
+`#songcrumb` is `flex: 1 1 0; min-width: 0`, taking whatever's left and
+centering its own children in that space; `#nowchip` is `flex: 0 0 auto`
+after it. `#songcrumb`'s children: `.crumbwhere` ("Published ›" /
+"Local ›") and `.crumbdot` (the unsaved ● ) stay `flex: none` (never
+truncate); the folder span got a `.crumbfolder` class and the title span
+a `.crumbtitle` class so the folder's `flex-shrink` could be set 1000×
+the title's — they used to shrink together (`flex: 0 1 auto` on both),
+so the folder squeezing down BEFORE the title starts truncating (Josh,
+2026-09-29's original ruling: "Published/Local never truncates, the
+folder and the title do") is now an actual priority, not "whichever
+loses the coin flip."
+
+`#nowchip` also gets a compact (icon-only) form once the header itself
+is tight — `header { container-type: inline-size; }` plus `@container
+(max-width: 860px) { #nowchip { font-size: 0; … } #nowchip::after {
+content: "✦"; } }` (the existing `font-size: 0` + pseudo-element icon
+trick, same one `#asksheet-h2`'s dock button already used) — so a
+narrowed header goes to a small ✦ badge instead of crowding the crumb's
+title. The `@media (max-width: 700px)` rule hiding the chip entirely on
+phone widths is unchanged. The `body.nowchip` class (used only to widen
+`#songcrumb`'s old absolute right offset) is gone along with the
+absolute positioning it served.
+
+## Settings sheet: tabs scroll instead of disappearing (2026-09-30)
+
+`.seg`'s `overflow: hidden` exists to clip its buttons' square corners
+to the group's own rounded ones (every segmented control — mode/dur/acc,
+the instrument panel's tabs, `#cfgtabs` — shares it). With 4 Settings
+tabs (Saving/AI/GitHub/Other) at `flex: 1` and no wrap, a narrow sheet
+shrank them down to their min-content floor and then just clipped
+whatever still didn't fit off the end — Josh saw this as "the tabs
+disappear, the content stays" (the pane below is normal block flow,
+never clipped by `.seg`, so only the tab ROW vanished). Fixed narrowly
+(scoped to `#cfgtabs`, not `.seg` itself, which other segmented controls
+still rely on): `overflow-x: auto` and each button `flex: 0 0 auto;
+min-width: 72px` — the row scrolls horizontally to reach whichever tab
+doesn't fit, instead of `display:none`-ing it out of existence.

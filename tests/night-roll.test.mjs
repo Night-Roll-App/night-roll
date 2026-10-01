@@ -2437,7 +2437,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Snap while recording", "Quantize (Q)", "Also quantize note ends", "Recording keeps what you played",
     "A MIDI keyboard works on the iPad app too",
     "Mixer window", "Drag a strip by its name",
-    "Text size", "Make it mine",
+    "Text size", "Edit a copy",
     "Analyze ▸",
     "VoiceOver",
   ];
@@ -7537,7 +7537,7 @@ test("RULES: a capture refuses note/track edits (canEditMusic/editableSong false
   assert.deepEqual(JSON.parse(a.run(`JSON.stringify(rollnotes.map(n => n.text))`)), ["just a note"], "the annotation landed despite the capture being locked for notes/tracks");
 });
 
-test("makeItMine: forks a capture into my-covers/<slug>.mid with a clash suffix, leaving the capture's own files untouched", async () => {
+test("✎ Edit: opens the 'Edit a copy' sheet (name defaults to the title, folder to my-covers), a custom name is used, a name clash still gets a suffix, and the capture's own files stay untouched", async () => {
   const KEY = "albums/nes/mega-man-2/air-man.mid";
   const a = pubApp();
   useFakeFolder(a, "mim");
@@ -7545,7 +7545,7 @@ test("makeItMine: forks a capture into my-covers/<slug>.mid with a clash suffix,
     tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
   const capBytes = a.run(`Array.from(writeMidi(${JSON.stringify(capDoc)}))`);
   await a.run(`folderWrite(${JSON.stringify(KEY)}, new Uint8Array(${JSON.stringify(capBytes)}))`);
-  a.run(`
+  const openCapture = () => a.run(`
     albumMetaCache["albums/nes/mega-man-2"] = {nsf: true};
     CATALOG = ${JSON.stringify({"Mega Man 2": [["Air Man", KEY]]})};
     song = ${JSON.stringify(capDoc)};
@@ -7554,19 +7554,43 @@ test("makeItMine: forks a capture into my-covers/<slug>.mid with a clash suffix,
     trackState = [{muted: false, solo: false}];
     rollnotes = [];
   `);
+  openCapture();
   assert.equal(a.run(`originOf(songKey)`), "capture");
-  a.run(`makeItMine();`);
-  assert.equal(a.run(`songKey`), "albums/my-covers/air-man.mid", "one tap, no form: my-covers/ + the capture's own display title, slugged");
+
+  // tapping ✎ Edit opens the sheet, not an immediate fork — name defaults to
+  // the title, folder to my-covers (nothing's been saved there yet, so
+  // folderChoices() alone wouldn't offer it — the sheet still must)
+  a.run(`document.getElementById("makeitminebtn").click();`);
+  assert.equal(a.run(`document.getElementById("filesaveasform").style.display`), "", "the sheet is showing, not an immediate fork");
+  assert.equal(a.run(`document.getElementById("filesaveasform").dataset.mode`), "editcopy");
+  assert.equal(a.run(`document.getElementById("fstitle").textContent`), "Edit a copy");
+  assert.equal(a.run(`document.getElementById("fsname").value`), "Air Man", "name defaults to the capture's own display title");
+  assert.equal(a.run(`document.getElementById("fsfolder").value`), "my-covers", "folder defaults to my-covers — no lastFolder yet");
+  assert.equal(a.run(`songKey`), KEY, "still the capture — confirm hasn't happened yet");
+
+  // confirm with the default name: the same fork makeItMine always did
+  a.run(`document.getElementById("fsgo").click();`);
+  assert.equal(a.run(`songKey`), "albums/my-covers/air-man.mid", "my-covers/ + the capture's own display title, slugged");
   assert.equal(a.run(`originOf(songKey)`), "copy");
   assert.equal(a.run(`canEditMusic(songKey)`), true, "the fork is fully editable");
 
-  // forking the SAME capture again hits the name already taken in my-covers/
-  a.run(`songKey = ${JSON.stringify(KEY)}; song = ${JSON.stringify(capDoc)}; currentPath = songKey; rollnotes = [];`);
-  a.run(`makeItMine();`);
+  // a custom typed name is used, not the default title
+  openCapture();
+  a.run(`document.getElementById("makeitminebtn").click();`);
+  a.run(`document.getElementById("fsname").value = "My Custom Name";`);
+  a.run(`document.getElementById("fsgo").click();`);
+  assert.equal(a.run(`songKey`), "albums/my-covers/my-custom-name.mid", "the typed name, slugged — not the title");
+  assert.equal(a.run(`originOf(songKey)`), "copy");
+
+  // forking the SAME capture again (default name) hits the name already taken in my-covers/
+  openCapture();
+  a.run(`document.getElementById("makeitminebtn").click();`);
+  assert.equal(a.run(`document.getElementById("fsname").value`), "Air Man", "default name unaffected by the earlier forks");
+  a.run(`document.getElementById("fsgo").click();`);
   assert.equal(a.run(`songKey`), "albums/my-covers/air-man-2.mid", "a name clash gets a numeric suffix (\"Overworld\" -> \"Overworld 2\")");
 
   const capAfter = await folderBytes(a, KEY);
-  assert.deepEqual([...capAfter], [...capBytes.map(Number)], "Make it mine never touches the capture's own .mid");
+  assert.deepEqual([...capAfter], [...capBytes.map(Number)], "✎ Edit never touches the capture's own .mid");
 });
 
 test("Publish: a declared meter bakes into a composition's .mid wherever tempo bakes; a capture's own meter is untouched", async () => {
