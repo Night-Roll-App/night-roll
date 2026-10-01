@@ -1,3 +1,3 @@
-{ "version": 1, "song": "stairway-appears", "saved": 1790564529753, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "stairway-appears", "origin": {"kind":"capture"}, "stamp": 1790564529753, "notes": [
   {"at":[8,2.5],"type":"loop","loop":"1.2"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "get-heart-container", "saved": 1790564529727, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "get-heart-container", "origin": {"kind":"capture"}, "stamp": 1790564529727, "notes": [
   {"at":[7,3],"type":"loop","loop":"4.1"}
 ] }

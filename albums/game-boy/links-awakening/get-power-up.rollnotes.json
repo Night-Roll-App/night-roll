@@ -1,3 +1,3 @@
-{ "version": 1, "song": "get-power-up", "saved": 1790564529728, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "get-power-up", "origin": {"kind":"capture"}, "stamp": 1790564529728, "notes": [
   {"at":[6,4.25],"type":"loop","loop":"2.4.25"}
 ] }
