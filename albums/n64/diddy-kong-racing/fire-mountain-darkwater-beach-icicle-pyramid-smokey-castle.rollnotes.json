@@ -1,3 +1,3 @@
-{ "version": 1, "song": "fire-mountain-darkwater-beach-icicle-pyramid-smokey-castle", "saved": 1790616980986, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "fire-mountain-darkwater-beach-icicle-pyramid-smokey-castle", "origin": {"kind":"capture"}, "stamp": 1790616980986, "notes": [
   {"at":[101,1],"type":"loop","loop":"9.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "crescent-island-credits-2", "saved": 1790616980956, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "crescent-island-credits-2", "origin": {"kind":"capture"}, "stamp": 1790616980956, "notes": [
   {"at":[55,1],"type":"loop","loop":"5.1"}
 ] }

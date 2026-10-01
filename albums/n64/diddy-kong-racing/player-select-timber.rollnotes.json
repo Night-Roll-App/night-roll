@@ -1,3 +1,3 @@
-{ "version": 1, "song": "player-select-timber", "saved": 1790616981093, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "player-select-timber", "origin": {"kind":"capture"}, "stamp": 1790616981093, "notes": [
   {"at":[17,1],"type":"loop","loop":"9.1"}
 ] }

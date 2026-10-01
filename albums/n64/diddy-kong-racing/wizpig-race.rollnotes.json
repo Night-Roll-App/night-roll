@@ -1,3 +1,3 @@
-{ "version": 1, "song": "wizpig-race", "saved": 1790616981135, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "wizpig-race", "origin": {"kind":"capture"}, "stamp": 1790616981135, "notes": [
   {"at":[49,1],"type":"loop","loop":"9.1"}
 ] }

@@ -1,3 +1,3 @@
-{ "version": 1, "song": "boulder-canyon-outer-castle-fast", "saved": 1790616980946, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "boulder-canyon-outer-castle-fast", "origin": {"kind":"capture"}, "stamp": 1790616980946, "notes": [
   {"at":[11,1],"type":"loop","loop":"3.1"}
 ] }

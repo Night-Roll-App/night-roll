@@ -1,3 +1,3 @@
-{ "version": 1, "song": "player-select-t-t", "saved": 1790616981091, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "player-select-t-t", "origin": {"kind":"capture"}, "stamp": 1790616981091, "notes": [
   {"at":[17,1],"type":"loop","loop":"9.1"}
 ] }

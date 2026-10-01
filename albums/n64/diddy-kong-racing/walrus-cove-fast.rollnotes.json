@@ -1,3 +1,3 @@
-{ "version": 1, "song": "walrus-cove-fast", "saved": 1790616981118, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "walrus-cove-fast", "origin": {"kind":"capture"}, "stamp": 1790616981118, "notes": [
   {"at":[70,1],"type":"loop","loop":"5.1"}
 ] }

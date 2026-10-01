@@ -1,3 +1,3 @@
-{ "version": 1, "song": "island-genie", "saved": 1790616981050, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "island-genie", "origin": {"kind":"capture"}, "stamp": 1790616981050, "notes": [
   {"at":[34,1],"type":"loop","loop":"2.1"}
 ] }
