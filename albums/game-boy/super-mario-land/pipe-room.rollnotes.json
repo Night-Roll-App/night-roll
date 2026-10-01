@@ -1,3 +1,3 @@
-{ "version": 1, "song": "pipe-room", "saved": 1790564414120, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "pipe-room", "origin": {"kind":"capture"}, "stamp": 1790564414120, "notes": [
   {"at":[25,3],"type":"loop","loop":"23.2"}
 ] }
