@@ -97,7 +97,10 @@ const square = []; for (let i = 0; i < 28; i++) square.push(i < 14 ? 7 : 9);
 // long (~4096-sample at any rate — rr=11, linear/non-exponential release
 // steps by a constant -8) release, deliberately landing across the 4095
 // chunk-size boundary the task asks for.
-function buildAkaoResult() {
+// Exported for tests/chip-worker.test.mjs (docs/streamed-render-plan.md step
+// 2): the worker protocol's one real-chip test reuses this fixture instead
+// of inventing a second synthetic PS1 song.
+export function buildAkaoResult() {
   const ram = new Uint8Array(0x20000);
   const tableAt = 0x8000, bankAt = 0x10000, spuAddr = 0x1010;
   const normalAdsr = [0, 0x0f, 0x0f, 0x7f, 0x05, 1, 3, 3];

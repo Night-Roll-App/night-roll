@@ -120,7 +120,56 @@ list up front; only the sample renderers cost gigabytes, and all can stream.
    not just its fallback). Existing tests (tests/psx-render.test.mjs,
    tests/ps2.test.mjs, tests/psx-real.test.mjs, tests/ps2-real.test.mjs)
    stayed green unmodified — renderSpu's signature and output never changed.
-2. Worker stream protocol + sweep (fake-runner tests).
+2. DONE (2026-09-30). tools/chip-worker.mjs grows a SECOND message protocol
+   beside the whole-render one (that path is untouched): `{stream:{id, kind,
+   files, shared, own, v, bytes, libs, secs, rate, chunkFrames, overlap}}`
+   parses/runs exactly like the whole path, then calls the kind's own
+   `R.stream` hook — only `RUNNERS.psf`/`RUNNERS.psf2` have one (both just
+   call `M.createSpuStream`, step 1c) — and replies `{ready:{id, tracks,
+   seconds, sampleRate, frames, leadSec}}`, or `{stream:{id, error:"no
+   stream for <kind>"}}` for every other kind (and for a parse/run failure),
+   so the page falls back to whole-render. `{want:{id, gen, from, to}}`
+   answers chunk indices `[from, to]` one at a time: chunk k is raw frames
+   `[kC, (k+1)C+O)`; a sequential idx reuses the kept O-frame tail from the
+   previous chunk (prepended to just the new C frames rendered by
+   continuing the stream) instead of re-rendering the overlap, any other
+   idx reseeks and renders the whole window fresh. Chunk k's LAST O frames
+   get a linear fade-out (`1 - q/O`), chunk k+1's FIRST O frames (the same
+   absolute raw samples) the complementary fade-in (`q/O`) — the two sum to
+   exactly 1 for every q, so overlap-adding adjacent chunks reproduces the
+   untouched continuous render. Replies `{chunk:{id, gen, idx, frames,
+   tracks:{name: Float32Array | {l,r}}}}` (transferables; a track silent in
+   that whole window is omitted). Between chunks the handler yields to the
+   event loop (`await` a `setTimeout(0)`) and re-checks `gen`, so
+   `{seek:{id, gen, idx}}` (which bumps the session's gen and drops the kept
+   tail) cancels an in-flight `want` for an older gen without starving a
+   `previewOne` tap queued in between. `{idle:{id}}` is the (simple, not a
+   todo) sweep: replies `{silent:{id, names}}`, the tracks that have not
+   produced one audible sample in any chunk rendered so far — the
+   per-chunk silence check already tracks this for free; per-chunk
+   `snapshot()`s are kept (`checkpoints`) but not yet read back by anything
+   (a restore-from-nearest-checkpoint optimization is a real todo, not
+   needed for correctness). Everything is exported
+   (`createStreamState`/`handleStream`/`handleWant`/`handleSeek`/
+   `handleIdle`, plus the existing `RUNNERS`) so tests drive the protocol
+   directly — no real Worker, and a fake chip needs no real module loading
+   either (`loadM`'s files/shared/own lists can be empty).
+   Tests: tests/chip-worker.test.mjs — a fake "fakestream" chip (parse/run
+   passthrough, `bytes` IS the fixture) whose signal is a pure function of
+   absolute frame position (so continuity and a fresh seek+render always
+   agree exactly): overlap-add of a whole want's chunks equals one
+   continuous render within 1e-6; an out-of-order `want` (first-ever, and a
+   backward jump after going forward) matches the sequential result
+   bit-exact; a track wired permanently silent is omitted from every chunk;
+   a `seek` mid-`want` (new gen) cancels the rest of that `want` (exactly
+   the one chunk already in flight posts, confirmed by index and gen); a
+   `preview`-shaped async op racing a long `want` resolves before the
+   want's last chunk, not stuck behind it; a kind with no `stream` hook (or
+   an unknown kind) replies the fallback error. Plus one test with the REAL
+   `createSpuStream` on tests/psx-stream.test.mjs's AKAO/table fixture
+   (exported from there for reuse) run through the full protocol
+   (`handleStream` + `handleWant` over every chunk) — overlap-add of the
+   replies equals `renderSpu`'s own whole-song output within 1e-6.
 3. Page scheduler behind the switch, default off. vm tests of chipSegments
    (boundaries, loop wrap + pin, album end, count-in, 50% speed, seek order,
    bounded cache, trackGain wiring). Josh A/B by link: FF1 triangle (ticks),

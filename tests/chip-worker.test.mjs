@@ -7,6 +7,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createApp } from "./harness.mjs";
+import { createStreamState, handleStream, handleWant, handleSeek, RUNNERS } from "../tools/chip-worker.mjs";
+import { createSpuStream, renderSpu } from "../tools/psx/spu-render.mjs";
+import { buildAkaoResult } from "./psx-stream.test.mjs";
 
 test("tools/chip-worker.mjs parses as a module", () => {
   const r = spawnSync(process.execPath, ["--check", "tools/chip-worker.mjs"], {encoding: "utf8"});
@@ -151,4 +154,194 @@ test("tap preview: previewOne resolves the template's program/instrument for the
   assert.equal(reply.prog, 46, "resolves the SECOND program from the tapped tick, not the first");
   const noTick = await previewOne(live, {track: "ch 1 prog 51,46", midi: 64, vel: 100}); // no tick: e.g. a piano-strip key press
   assert.equal(noTick.prog, undefined, "no tick given: no program resolved either (today's behavior)");
+});
+
+// ---- streamed protocol (docs/streamed-render-plan.md step 2) -------------
+// A fake "fakestream" chip: parse/run are pure passthroughs (the test's
+// `bytes` IS the fixture: {tracks, frames, sampleRate}), so no real module
+// loading ever happens — handleStream's own loadM() sees empty files/shared/
+// own lists and returns M={}, which the fake runner's `stream` hook doesn't
+// touch. The signal is a pure function of absolute frame position (a sine
+// per track, scaled by track index) so continuity (prepend-the-kept-tail)
+// and a fresh seek+render always agree exactly, and the LAST track is wired
+// permanently silent for the omission test.
+function makeFakeStream({tracks, frames, sampleRate}) {
+  let cursor = 0;
+  const valueAt = (ti, f) => ti === tracks.length - 1 ? 0 : (0.2 + 0.05 * ti) * Math.sin((f + ti * 37) * 0.013 * (ti + 1));
+  function render(n) {
+    const end = Math.min(cursor + n, frames);
+    const out = {};
+    for (let ti = 0; ti < tracks.length; ti++) {
+      const l = new Float32Array(n), r = new Float32Array(n);
+      for (let i = 0; i < end - cursor; i++) { const v = valueAt(ti, cursor + i); l[i] = v; r[i] = v * 0.9; }
+      out[tracks[ti]] = {l, r};
+    }
+    cursor = end;
+    return out;
+  }
+  return {
+    sampleRate, seconds: frames / sampleRate, frames, tracks: tracks.slice(), render,
+    seek(f) { cursor = Math.max(0, Math.min(f, frames)); },
+    snapshot() { return {cursor}; },
+    restore(s) { cursor = s.cursor; },
+  };
+}
+RUNNERS.fakestream = {
+  parse: () => bytes => bytes,
+  run: async (M, parsed) => parsed,
+  lead: () => 0,
+  stream: (M, res, o) => makeFakeStream({tracks: res.tracks, frames: res.frames, sampleRate: o.sampleRate || res.sampleRate}),
+};
+RUNNERS.fakenostream = { // same shape, deliberately no `stream` hook
+  parse: () => bytes => bytes,
+  run: async (M, parsed) => parsed,
+  lead: () => 0,
+};
+const FAKE_MSG = (id, over = {}) => Object.assign({
+  id, kind: "fakestream", files: [], shared: [], own: [], v: "",
+  bytes: {tracks: ["a", "b", "c"], frames: 2000, sampleRate: 8000}, libs: null,
+  secs: 2000 / 8000, rate: 8000, chunkFrames: 256, overlap: 32,
+}, over);
+
+test("stream protocol: overlap windows have complementary ramps — adjacent chunks summed over the overlap == the continuous render (within 1e-6)", async () => {
+  const bytes = {tracks: ["a", "b", "c"], frames: 2000, sampleRate: 8000};
+  const continuous = makeFakeStream(bytes).render(bytes.frames); // one shot, the oracle
+
+  const streams = createStreamState();
+  let ready; const chunks = [];
+  const post = m => { if (m.ready) ready = m.ready; if (m.chunk) chunks.push(m.chunk); };
+  await handleStream(streams, FAKE_MSG("c1", {bytes}), post);
+  const total = Math.ceil(ready.frames / 256);
+  await handleWant(streams, {id: "c1", gen: 1, from: 0, to: total - 1}, post);
+  assert.equal(chunks.length, total, "one chunk per index, in order");
+
+  const recon = {}; for (const name of ready.tracks) recon[name] = {l: new Float32Array(ready.frames), r: new Float32Array(ready.frames)};
+  for (const c of chunks) {
+    const S = c.idx * 256;
+    for (const name of Object.keys(c.tracks)) {
+      const t = c.tracks[name];
+      for (let i = 0; i < c.frames; i++) { recon[name].l[S + i] += t.l[i]; recon[name].r[S + i] += t.r[i]; }
+    }
+  }
+  for (const name of ready.tracks) {
+    for (let i = 0; i < ready.frames; i++) {
+      assert.ok(Math.abs(recon[name].l[i] - continuous[name].l[i]) < 1e-6, `${name}.l[${i}]`);
+      assert.ok(Math.abs(recon[name].r[i] - continuous[name].r[i]) < 1e-6, `${name}.r[${i}]`);
+    }
+  }
+});
+
+test("stream protocol: out-of-order want triggers seek and still matches the sequential result", async () => {
+  const msg = FAKE_MSG("seq");
+  const seqStreams = createStreamState(); const seqChunks = [];
+  await handleStream(seqStreams, msg, () => {});
+  const total = Math.ceil(msg.bytes.frames / msg.chunkFrames);
+  await handleWant(seqStreams, {id: "seq", gen: 1, from: 0, to: total - 1}, m => { if (m.chunk) seqChunks.push(m.chunk); });
+  const seqChunk5 = seqChunks.find(c => c.idx === 5);
+
+  const oooStreams = createStreamState(); let oooChunk5;
+  await handleStream(oooStreams, FAKE_MSG("ooo"), () => {});
+  await handleWant(oooStreams, {id: "ooo", gen: 1, from: 5, to: 5}, m => { if (m.chunk) oooChunk5 = m.chunk; }); // first want ever, straight to idx 5: must seek
+
+  assert.equal(oooChunk5.frames, seqChunk5.frames);
+  for (const name of Object.keys(seqChunk5.tracks)) {
+    assert.deepEqual(Array.from(oooChunk5.tracks[name].l), Array.from(seqChunk5.tracks[name].l), name + ".l");
+    assert.deepEqual(Array.from(oooChunk5.tracks[name].r), Array.from(seqChunk5.tracks[name].r), name + ".r");
+  }
+
+  // forward a bit (builds a kept tail), then jump BACKWARD — also not "next"
+  const backStreams = createStreamState(); const backChunks = [];
+  await handleStream(backStreams, FAKE_MSG("back"), () => {});
+  await handleWant(backStreams, {id: "back", gen: 1, from: 2, to: 4}, m => { if (m.chunk) backChunks.push(m.chunk); });
+  await handleWant(backStreams, {id: "back", gen: 1, from: 0, to: 0}, m => { if (m.chunk) backChunks.push(m.chunk); });
+  const backChunk0 = backChunks.find(c => c.idx === 0);
+  const seqChunk0 = seqChunks.find(c => c.idx === 0);
+  assert.deepEqual(Array.from(backChunk0.tracks.a.l), Array.from(seqChunk0.tracks.a.l), "backward jump matches too");
+});
+
+test("stream protocol: a track that's silent in every window is omitted from every chunk", async () => {
+  const msg = FAKE_MSG("sil");
+  const streams = createStreamState(); const chunks = [];
+  await handleStream(streams, msg, () => {});
+  const total = Math.ceil(msg.bytes.frames / msg.chunkFrames);
+  await handleWant(streams, {id: "sil", gen: 1, from: 0, to: total - 1}, m => { if (m.chunk) chunks.push(m.chunk); });
+  assert.equal(chunks.length, total);
+  for (const c of chunks) {
+    assert.ok("a" in c.tracks && "b" in c.tracks, "live tracks present, idx " + c.idx);
+    assert.ok(!("c" in c.tracks), "silent track omitted, idx " + c.idx);
+  }
+});
+
+test("stream protocol: a stale gen is dropped — a seek mid-want cancels the rest of that want", async () => {
+  const msg = FAKE_MSG("gen", {bytes: {tracks: ["a", "b"], frames: 20000, sampleRate: 8000}});
+  const streams = createStreamState(); const chunks = [];
+  await handleStream(streams, msg, () => {});
+  const wantPromise = handleWant(streams, {id: "gen", gen: 1, from: 0, to: 50}, m => { if (m.chunk) chunks.push(m.chunk); });
+  // handleWant runs synchronously up to its first yield (after posting chunk 0),
+  // then suspends and returns a pending promise — so this runs before chunk 1.
+  handleSeek(streams, {id: "gen", gen: 2, idx: 10}, () => {});
+  await wantPromise;
+  assert.equal(chunks.length, 1, "only the chunk posted before the seek arrived");
+  assert.equal(chunks[0].idx, 0);
+  assert.equal(chunks[0].gen, 1);
+});
+
+test("stream protocol: a preview queued during a long want is answered before the want finishes", async () => {
+  const msg = FAKE_MSG("prev", {bytes: {tracks: ["a", "b"], frames: 100000, sampleRate: 8000}, chunkFrames: 2000, overlap: 100});
+  const streams = createStreamState();
+  const events = [];
+  await handleStream(streams, msg, () => {});
+  const total = Math.ceil(msg.bytes.frames / msg.chunkFrames); // many chunks -> many yields
+  const wantPromise = handleWant(streams, {id: "prev", gen: 1, from: 0, to: total - 1}, m => { if (m.chunk) events.push("chunk:" + m.chunk.idx); });
+  const previewPromise = (async () => { // a "preview" competing for the same event loop, one yield of its own
+    await new Promise(resolve => setTimeout(resolve, 0));
+    events.push("preview-done");
+  })();
+  await Promise.all([wantPromise, previewPromise]);
+  const previewPos = events.indexOf("preview-done");
+  assert.ok(previewPos >= 0, "preview resolved at all");
+  assert.ok(previewPos < events.length - 1, "preview resolved before the want's very last chunk, not stuck behind the whole want");
+});
+
+test("stream protocol: a kind with no `stream` hook, or an unknown kind, replies the fallback error", async () => {
+  const replies = [];
+  const post = m => replies.push(m);
+  await handleStream(createStreamState(), FAKE_MSG("nostream", {kind: "fakenostream"}), post);
+  await handleStream(createStreamState(), FAKE_MSG("unknown", {kind: "doesnotexist"}), post);
+  assert.deepEqual(replies[0], {stream: {id: "nostream", error: "no stream for fakenostream"}});
+  assert.deepEqual(replies[1], {stream: {id: "unknown", error: "no worker runner for doesnotexist"}});
+});
+
+test("stream protocol: the REAL createSpuStream (PS1 fixture) assembled from windows == renderSpu's own output", async () => {
+  const {result, opts} = buildAkaoResult();
+  const oracle = await renderSpu(result, opts);
+  RUNNERS.realpsx = {
+    parse: () => () => ({}),
+    run: async () => ({result, ram: opts.ram, table: opts.table, bank: opts.bank, seconds: oracle.seconds}),
+    lead: () => 0,
+    stream: (M, res, o) => createSpuStream(res.result, {sampleRate: o.sampleRate, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
+  };
+  const streams = createStreamState();
+  let ready; const chunks = [];
+  const post = m => { if (m.ready) ready = m.ready; if (m.chunk) chunks.push(m.chunk); };
+  const C = 4096, O = 256;
+  await handleStream(streams, {id: "r1", kind: "realpsx", files: [], shared: [], own: [], v: "", bytes: null, libs: null, secs: oracle.seconds, rate: 44100, chunkFrames: C, overlap: O}, post);
+  assert.ok(ready, "the real PS1 stream reports ready");
+  const total = Math.ceil(ready.frames / C);
+  await handleWant(streams, {id: "r1", gen: 1, from: 0, to: total - 1}, post);
+
+  const recon = {}; for (const name of ready.tracks) recon[name] = {l: new Float32Array(ready.frames), r: new Float32Array(ready.frames)};
+  for (const c of chunks) {
+    const S = c.idx * C;
+    for (const name of Object.keys(c.tracks)) {
+      const t = c.tracks[name];
+      for (let i = 0; i < c.frames; i++) { recon[name].l[S + i] += t.l[i]; recon[name].r[S + i] += t.r[i]; }
+    }
+  }
+  for (const name of ready.tracks) {
+    for (let i = 0; i < ready.frames; i++) {
+      assert.ok(Math.abs(recon[name].l[i] - oracle[name].l[i]) < 1e-6, `${name}.l[${i}]`);
+      assert.ok(Math.abs(recon[name].r[i] - oracle[name].r[i]) < 1e-6, `${name}.r[${i}]`);
+    }
+  }
 });

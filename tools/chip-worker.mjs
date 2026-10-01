@@ -29,6 +29,45 @@
 // the WKWebView content process). planChipRender/chipEstimateTracks/
 // chipStaticPan/chipDownmixStatic mirror index.html's copy exactly (a worker
 // can't import from the page's inline script) — keep the two in step.
+//
+// Streamed protocol (docs/streamed-render-plan.md step 2, 2026-09-30) — a
+// SECOND, separate message shape beside the whole-render one above; a song
+// still renders whole unless the page opts into this path. Only psf/psf2
+// (tools/psx/spu-render.mjs's createSpuStream) implement the per-kind
+// `R.stream` hook today; every other kind replies the fallback error below
+// so the page can fall back to the whole-render path.
+//   postMessage({stream: {id, kind, files, shared, own, v, bytes, libs?,
+//                         secs, rate, chunkFrames, overlap}})
+//     chunkFrames (C): frames per chunk, not counting the overlap tail.
+//     overlap (O): frames of linear-crossfade overlap between adjacent
+//     chunks (chunk k = raw frames [kC, (k+1)C+O)).
+//   ← {ready: {id, tracks, seconds, sampleRate, frames, leadSec}}
+//   ← {stream: {id, error: "no stream for <kind>"}}   no R.stream for this
+//     kind, or parse/run itself threw — the page falls back to whole-render
+//   postMessage({want: {id, gen, from, to}})   chunk indices [from, to],
+//     inclusive; answered one at a time, yielding to the event loop between
+//     chunks (so a preview request queued mid-want is never starved) and
+//     re-checking `gen` at each yield so a newer want/seek for the same id
+//     cancels the rest of this one without posting further chunks.
+//   ← {chunk: {id, gen, idx, frames, tracks: {name: Float32Array | {l, r}}}}
+//     (transferables; a track entirely silent in this window is omitted).
+//     Chunk k's LAST `overlap` frames carry a linear fade-out (1 - q/O);
+//     chunk k+1's FIRST `overlap` frames (the same absolute raw samples,
+//     reproduced via a kept tail — see renderChunk below) carry the
+//     complementary fade-in (q/O): (1-q/O)+(q/O) == 1 for every q, so
+//     summing the two chunks over the overlap reproduces the untouched
+//     continuous render exactly. The very first chunk has no fade-in; the
+//     last chunk (reaches the stream's own end) has no fade-out.
+//   postMessage({seek: {id, gen, idx}})   repositions for a future `want`
+//     at chunk `idx` and bumps the session's gen, which cancels any
+//     in-flight `want` loop for an older gen (above).
+//   postMessage({idle: {id}})   a state-only sweep; replies the tracks that
+//     have never produced an audible sample in any chunk rendered so far —
+//     the per-chunk silence check (above) already does the work, this just
+//     reports the accumulated complement. Per-chunk snapshot()s are kept in
+//     `checkpoints` (not yet read back by anything — a restore-from-nearest-
+//     checkpoint optimization is a todo, not needed for correctness today).
+//   ← {silent: {id, names}}
 const CHIP_RATE_STEPS = [48000, 32000, 24000, 22050]; // resampled by the renderer's own sampleRate option; 22050 is the floor
 export function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
   const bytesAt = (rate, ch) => Math.ceil(tracks * ch * rate * seconds * 4);
@@ -150,6 +189,7 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
     },
     lead: () => 0,
     render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
+    stream: (M, res, o) => M.createSpuStream(res.result, {sampleRate: o.sampleRate, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
     channels: null, // per song: every Float32Array the render returns
     stereo: true, // renderSpu always returns {l, r} per track (tools/psx/spu-render.mjs)
   },
@@ -170,6 +210,7 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
     },
     lead: () => 0,
     render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds}),
+    stream: (M, res, o) => M.createSpuStream(res.result, {sampleRate: o.sampleRate, keepSeconds: res.seconds}),
     channels: null, // per song: every Float32Array the render returns
     stereo: true, // the same renderSpu as PS1
   },
@@ -198,6 +239,196 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
   },
 };
 
+// ---- streamed protocol (docs/streamed-render-plan.md step 2) -------------
+// Everything below is exported so tests/chip-worker.test.mjs can drive the
+// protocol directly (no real Worker, no real module loading — a test's fake
+// runner needs no `files`/`shared`/`own` at all; loadM() below handles an
+// empty list fine) while the real self.onmessage (bottom of this file) is
+// the only caller in the browser.
+
+// Loads the same way the whole-render path does (same ?v-busted relative
+// imports), but WITHOUT that path's own "no renderer for <kind>" sanity
+// check — a fake test kind has no M.renderApu/renderSpu/renderN64 at all,
+// and a stream kind doesn't need one either (R.stream is M.createSpuStream,
+// called directly by RUNNERS.psf/psf2 above).
+async function loadM(files, shared, own, v) {
+  const loadOne = (f, opt) => { const path = "./" + (opt ? f.slice(1) : f) + ".mjs" + (v || "");
+    return import(path).catch(err => { if (opt) return {}; throw new Error("couldn't load module tools/" + (opt ? f.slice(1) : f) + ".mjs: " + (err && err.message || err)); }); };
+  const parts = await Promise.all((files || []).map(f => loadOne(f, f.startsWith("?"))));
+  const sh = await Promise.all((shared || []).map(f => loadOne(f, false)));
+  const M = Object.assign({}, ...parts, ...sh);
+  for (const k of (own || [])) for (const p of parts) if (p[k]) M[k] = p[k];
+  return M;
+}
+
+// A stream session's state, keyed by id. A plain Map so tests can make their
+// own (createStreamState()) instead of sharing the module's real one.
+export function createStreamState() { return new Map(); }
+
+// Complementary linear crossfade weights for an O-frame overlap: wIn[q] +
+// wOut[q] == 1 for every q (exactly, not just within tolerance), so a window
+// that fades OUT its last O frames and the next window that fades IN its
+// first O frames (the same absolute raw samples) sum back to the untouched
+// continuous signal.
+function fadeWeights(O) {
+  const wIn = new Float32Array(O), wOut = new Float32Array(O);
+  for (let q = 0; q < O; q++) { wIn[q] = q / O; wOut[q] = 1 - q / O; }
+  return {wIn, wOut};
+}
+function trackChannels(t) { return t.l ? [t.l, t.r] : [t]; }
+// Copies (never aliases a buffer that might later be transferred).
+function tailOf(t, n) { return t.l ? {l: t.l.slice(t.l.length - n), r: t.r.slice(t.r.length - n)} : t.slice(t.length - n); }
+function concatTrack(a, b) {
+  if (a.l) {
+    const l = new Float32Array(a.l.length + b.l.length), r = new Float32Array(a.r.length + b.r.length);
+    l.set(a.l, 0); l.set(b.l, a.l.length); r.set(a.r, 0); r.set(b.r, a.r.length);
+    return {l, r};
+  }
+  const out = new Float32Array(a.length + b.length); out.set(a, 0); out.set(b, a.length); return out;
+}
+function fadeTrack(t, wIn, wOut, doIn, doOut, O) {
+  for (const a of trackChannels(t)) {
+    const len = a.length;
+    if (doIn) { const n = Math.min(O, len); for (let q = 0; q < n; q++) a[q] *= wIn[q]; }
+    if (doOut) { const n = Math.min(O, len); const base = len - n; for (let q = 0; q < n; q++) a[base + q] *= wOut[q]; }
+  }
+}
+function isLiveTrack(t) {
+  for (const a of trackChannels(t)) for (let i = 0; i < a.length; i += 13) if (Math.abs(a[i]) > 1e-4) return true;
+  return false;
+}
+function transferOf(t, list) { if (t.l) list.push(t.l.buffer, t.r.buffer); else list.push(t.buffer); }
+
+// Renders raw frames [idx*C, idx*C+C+O) (clipped to the stream's own
+// length), applies this chunk's fades, drops silent tracks, and returns
+// {frames, tracks, transfer}. "Continuous": when `idx` is the session's own
+// expected next index AND a kept tail is on hand, this only renders the
+// NEW `C` frames and prepends the kept O-frame tail from the previous
+// chunk (the plan's own words: "keeps the O-frame tail to prepend") —
+// bit-identical to a fresh render of the same window, since the tail is a
+// verbatim (pre-fade) copy and the underlying stream's own arithmetic only
+// ever depends on continuing from where it left off. Any other `idx`
+// (out of order, or the very first want after a seek) reseeks and renders
+// the whole window fresh.
+function renderChunk(st, idx) {
+  const {streamObj, C, O, totalFrames, tracks} = st;
+  const S = idx * C;
+  const E = Math.min(S + C + O, totalFrames);
+  const len = Math.max(0, E - S);
+  const isFirst = idx === 0;
+  const isLast = E >= totalFrames;
+  const raw = {};
+  if (st.nextIdx === idx && st.tailBuf) {
+    const tailLen = st.tailBuf.len;
+    const newLen = Math.max(0, len - tailLen);
+    const fresh = newLen > 0 ? streamObj.render(newLen) : null;
+    for (const name of tracks) {
+      const tail = st.tailBuf.data[name];
+      raw[name] = fresh ? concatTrack(tail, fresh[name]) : tail;
+    }
+  } else {
+    streamObj.seek(S);
+    const r = streamObj.render(len);
+    for (const name of tracks) raw[name] = r[name];
+  }
+  // Keep a RAW (pre-fade) copy of this window's own tail for the next
+  // sequential want, computed before any fade or transfer touches `raw`.
+  const tailLen = Math.min(O, len);
+  const tailData = {};
+  for (const name of tracks) tailData[name] = tailOf(raw[name], tailLen);
+  st.tailBuf = {len: tailLen, data: tailData};
+  st.nextIdx = idx + 1;
+  st.checkpoints.set(idx, streamObj.snapshot()); // idle-sweep bookkeeping; not yet read back (todo: restore-from-nearest-checkpoint)
+
+  const outTracks = {}, transfer = [];
+  for (const name of tracks) {
+    const t = raw[name];
+    fadeTrack(t, st.wIn, st.wOut, !isFirst, !isLast, O);
+    if (!isLiveTrack(t)) continue; // entirely silent in this window: omit it
+    st.everNonSilent.add(name);
+    outTracks[name] = t;
+    transferOf(t, transfer);
+  }
+  return {frames: len, tracks: outTracks, transfer};
+}
+
+// {stream: {id, kind, files, shared, own, v, bytes, libs, secs, rate,
+//           chunkFrames, overlap}} -> {ready: {...}} | {stream: {id, error}}
+// Parses and runs exactly like the whole-render path (same R.parse/R.run),
+// then asks the kind's own `R.stream` hook (only psf/psf2 have one) to
+// build the chip's createSpuStream-shaped stream.
+export async function handleStream(streams, data, post) {
+  const {id, kind, files, shared, own, v, bytes, libs, secs, rate, chunkFrames, overlap} = data;
+  try {
+    const R = RUNNERS[kind];
+    if (!R) { post({stream: {id, error: "no worker runner for " + kind}}); return; }
+    const M = await loadM(files, shared, own, v);
+    const parsed = R.parse(M)(bytes, libs);
+    const res = await R.run(M, parsed, undefined, secs, () => {});
+    if (!R.stream) { post({stream: {id, error: "no stream for " + kind}}); return; }
+    const streamObj = R.stream(M, res, {sampleRate: rate});
+    const leadSec = R.lead(M, res);
+    const {wIn, wOut} = fadeWeights(overlap);
+    streams.set(id, {
+      kind, M, R, res, streamObj,
+      C: chunkFrames, O: overlap, totalFrames: streamObj.frames, tracks: streamObj.tracks,
+      gen: null, nextIdx: 0, tailBuf: null, wIn, wOut,
+      checkpoints: new Map(), everNonSilent: new Set(),
+    });
+    // Tap-through-instrument preview (previewOne, below) keeps working in
+    // stream mode too, same as after a whole render.
+    live = {id, kind, M, R, res, rate: streamObj.sampleRate};
+    post({ready: {id, tracks: streamObj.tracks, seconds: streamObj.seconds, sampleRate: streamObj.sampleRate, frames: streamObj.frames, leadSec}});
+  } catch (err) {
+    post({stream: {id, error: String(err && err.message || err)}});
+  }
+}
+
+// {seek: {id, gen, idx}}: repositions for a future `want` at chunk `idx` and
+// records `gen` as this session's current one — any in-flight `want` loop
+// (below) for an OLDER gen notices at its next yield and cancels itself.
+// Dropping the kept tail (rather than seeking the stream object right now)
+// means a seek that's never followed by a `want` costs nothing.
+export function handleSeek(streams, data, post) {
+  const {id, gen, idx} = data;
+  const st = streams.get(id);
+  if (!st) return;
+  st.gen = gen;
+  st.nextIdx = idx;
+  st.tailBuf = null;
+}
+
+// {want: {id, gen, from, to}} -> one {chunk: {...}} per idx in [from, to],
+// in order. Yields to the event loop between chunks (never a long
+// synchronous run) so a preview request or a seek queued mid-want is never
+// starved and can take effect promptly; re-checks `gen` after every yield so
+// a newer want/seek for this id (which overwrites st.gen) cancels the rest
+// of this call without rendering or posting further chunks.
+export async function handleWant(streams, data, post) {
+  const {id, gen, from, to} = data;
+  const st = streams.get(id);
+  if (!st) return;
+  st.gen = gen;
+  for (let idx = from; idx <= to; idx++) {
+    if (st.gen !== gen) return; // superseded while we were yielding
+    const chunk = renderChunk(st, idx);
+    post({chunk: {id, gen, idx, frames: chunk.frames, tracks: chunk.tracks}}, chunk.transfer);
+    if (idx < to) await new Promise(resolve => setTimeout(resolve, 0));
+  }
+}
+
+// {idle: {id}} -> {silent: {id, names}}: a state-only pass (no rendering)
+// reporting every track that has not produced one audible sample in any
+// chunk rendered so far (the complement of everNonSilent, built for free by
+// renderChunk's own per-chunk silence check).
+export function handleIdle(streams, data, post) {
+  const {id} = data;
+  const st = streams.get(id);
+  if (!st) return;
+  const names = st.tracks.filter(n => !st.everNonSilent.has(n));
+  post({silent: {id, names}});
+}
+
 // After a render the worker stays alive with the set loaded: a tap on a note
 // asks for that ONE note through its track's instrument (Josh, 2026-09-27:
 // "when I press notes on Dire Dire Docks it sounds them in our MIDI
@@ -206,6 +437,7 @@ export const RUNNERS = { // parse / emulate / render per chip — the page's CHI
 // from a register log and have no note to re-render, so the page keeps the
 // synth for those.
 let live = null; // {id, kind, M, R, res, rate} of the last successful render
+const streamSessions = createStreamState(); // id -> streamed-protocol session (above)
 // p: {track, midi, vel, ticks, seconds, offset, tick, ppq} → {pcm: Float32Array
 // | {l, r} | null, prog} | null. The one-note-copy-through-the-console's-own-
 // renderer recipe lives in tools/note-preview.mjs (M.renderOneNote), shared
@@ -249,6 +481,13 @@ if (typeof self !== "undefined") self.onmessage = async e => {
     } catch (err) { self.postMessage({preview: {req: q.req, pcm: null, error: String(err && err.message || err)}}); }
     return;
   }
+  // Streamed protocol (docs/streamed-render-plan.md step 2) — a separate
+  // message shape from the whole-render one below; dispatched first so it
+  // never falls through into that path.
+  if (e.data && e.data.stream) { await handleStream(streamSessions, e.data.stream, (m, t) => self.postMessage(m, t)); return; }
+  if (e.data && e.data.want) { await handleWant(streamSessions, e.data.want, (m, t) => self.postMessage(m, t)); return; }
+  if (e.data && e.data.seek) { handleSeek(streamSessions, e.data.seek, (m, t) => self.postMessage(m, t)); return; }
+  if (e.data && e.data.idle) { handleIdle(streamSessions, e.data.idle, (m, t) => self.postMessage(m, t)); return; }
   const {id, kind, files, shared, own, v, bytes, libs, n, secs, rate, budget, title} = e.data;
   const post = m => self.postMessage(Object.assign({id}, m));
   try {

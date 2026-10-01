@@ -900,6 +900,41 @@ channels) and a VAB fixture (two tones layered per note, two channels):
 chunked/random-chunk renders, `renderSpu()` itself, `restore(snapshot(k))`,
 and `seek(k)` all equal the oracle's whole-song output bit-exactly.
 
+**Chip worker stream protocol (2026-09-30, docs/streamed-render-plan.md
+step 2).** tools/chip-worker.mjs now answers a SECOND message shape beside
+the whole-render one (unchanged): `{stream:{id, kind, files, shared, own,
+v, bytes, libs, secs, rate, chunkFrames, overlap}}` parses/runs the song
+exactly like the whole path, then calls the kind's own `R.stream` hook
+(today only `RUNNERS.psf`/`psf2`, both just `M.createSpuStream` — step 1c)
+and replies `{ready:{id, tracks, seconds, sampleRate, frames, leadSec}}`,
+or `{stream:{id, error:"no stream for <kind>"}}` for any other kind (NES/
+GB/SNES/N64 have no stream API yet) so the page falls back to whole-render.
+`{want:{id, gen, from, to}}` answers chunk indices one at a time; chunk k
+is raw frames `[kC, (k+1)C+O)` — a sequential idx reuses the previous
+chunk's kept O-frame tail (prepended to just the new C frames) instead of
+re-rendering the overlap, any other idx reseeks. Chunk k's last O frames
+fade out linearly (`1 - q/O`), chunk k+1's first O frames (the same
+absolute samples) fade in (`q/O`) — the two sum to exactly 1, so overlap-
+adding adjacent chunks reproduces the untouched continuous render.
+Replies `{chunk:{id, gen, idx, frames, tracks:{name: Float32Array |
+{l,r}}}}` (transferables; a track silent in that window is omitted),
+yielding to the event loop between chunks and re-checking `gen` so
+`{seek:{id, gen, idx}}` cancels an in-flight `want` for an older gen
+without starving a `previewOne` tap queued mid-want. `{idle:{id}}` replies
+`{silent:{id, names}}`: tracks that have never produced an audible sample
+in any chunk rendered so far. Everything (`createStreamState`,
+`handleStream`, `handleWant`, `handleSeek`, `handleIdle`, `RUNNERS`) is
+exported so tests drive the protocol with no real Worker and no real
+module loading (a fake chip's `files`/`shared`/`own` can be empty — `loadM`
+just returns `{}`). Not yet wired to the page (step 3) or to any chip
+besides PS1/PS2. Tests: tests/chip-worker.test.mjs (a fake deterministic
+per-track signal: overlap-add == continuous within 1e-6, out-of-order
+`want` == sequential bit-exact, silent-track omission, stale-gen
+cancellation, preview-not-starved, fallback error for non-stream kinds;
+plus one test running the REAL `createSpuStream` through the full protocol
+over tests/psx-stream.test.mjs's AKAO/table fixture, overlap-add matching
+`renderSpu`'s own output within 1e-6).
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware
