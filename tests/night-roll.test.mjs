@@ -2665,6 +2665,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Analyze ▸",
     "VoiceOver",
     "Chip stream (experimental)",
+    "Game order",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
   assert.deepEqual(missing, [], "features with no help entry: " + missing.join(", "));
@@ -6122,6 +6123,39 @@ test("Publish rows: every song gets Open / Publish / Revert; a row's Publish is 
        for (const k of ["${A}", "${B}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-versions-"]) localStorage.removeItem(pre + k);`);
 });
 
+test("Revert drops EVERYTHING unpublished for a song, chat included (Josh, 2026-09-30 — it used to show \"N chat messages\" and a Revert that did nothing to the chat): chat-only revert empties the log and clears the pending row; edits+chat revert drops both; the confirm names what it drops", async () => {
+  const C = "albums/compositions/nightroll/row-chat-only.mid", D = "albums/compositions/nightroll/row-edits-chat.mid";
+  const chatC = "ff1roll-ask-" + C, chatD = "ff1roll-ask-" + D;
+  run(`globalThis.__realConfirm = appConfirm; globalThis.__confirmArgs = null;
+       appConfirm = async (t, b, ok, cancel) => { __confirmArgs = {t, b, ok, cancel}; return true; };
+       localStorage.setItem("${chatC}", JSON.stringify({lastUsed: 1, saved: 0, msgs: [{role: "user", content: "q1"}, {role: "assistant", content: "a1"}], trimmed: false}));`);
+  // chat-only: no draft, no notes — exactly the reported bug (nothing else pending, only the chat)
+  assert.equal(val(`askUnsavedCount("${chatC}")`), 2);
+  assert.ok(val(`pendingSongs()`).includes(C), "the unsaved chat alone makes it pending");
+  await run(`revertSongToRepo("${C}")`);
+  assert.equal(val(`__confirmArgs.ok`), "Revert — drops 2 chat messages", "the button names the chat count when that's the only thing pending");
+  assert.match(val(`__confirmArgs.b`), /2 chat messages/);
+  assert.equal(val(`askUnsavedCount("${chatC}")`), 0, "the unsaved chat is gone");
+  assert.equal(val(`JSON.parse(localStorage.getItem("${chatC}")).msgs.length`), 0, "no published chat to fall back to: revert clears it, like Clear chat");
+  assert.ok(!val(`pendingSongs()`).includes(C), "no longer in the pending list");
+  // edits + chat: both drop, and the confirm names both
+  run(`localStorage.setItem(draftStoreKey("${D}"), JSON.stringify({dirty: true, savedStamp: 5, ppq: 480, tracks: []}));
+       localStorage.setItem("${chatD}", JSON.stringify({lastUsed: 1, saved: 1, msgs: [{role: "user", content: "q1"}, {role: "assistant", content: "a1"}, {role: "user", content: "q2"}], trimmed: false}));`);
+  assert.equal(val(`askUnsavedCount("${chatD}")`), 2, "saved: 1 of 3 messages — 2 unsaved");
+  assert.ok(val(`pendingSongs()`).includes(D));
+  await run(`revertSongToRepo("${D}")`);
+  assert.equal(val(`__confirmArgs.ok`), "Revert — drops your edits and 2 chat messages");
+  assert.equal(val(`localStorage.getItem(draftStoreKey("${D}"))`), null, "music reverted too");
+  assert.equal(val(`askUnsavedCount("${chatD}")`), 0);
+  const stD = val(`JSON.parse(localStorage.getItem("${chatD}"))`);
+  assert.equal(stD.msgs.length, 1, "kept exactly the 1 message already in <song>.ask.md");
+  assert.equal(stD.saved, 1, "saved count untouched — those messages are the published state");
+  assert.ok(!val(`pendingSongs()`).includes(D), "no longer in the pending list");
+  run(`appConfirm = globalThis.__realConfirm; delete globalThis.__realConfirm; delete globalThis.__confirmArgs;
+       for (const k of ["${C}", "${D}"]) for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-versions-"]) localStorage.removeItem(pre + k);
+       localStorage.removeItem("${chatC}"); localStorage.removeItem("${chatD}");`);
+});
+
 test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands in the message box; the panel steps aside for the shot", async () => {
   run(`globalThis.__realFetch = globalThis.fetch; globalThis.__realAiUrl = aiUrl; globalThis.__realRaf = globalThis.requestAnimationFrame;
        aiUrl = () => "http://bridge.test"; globalThis.requestAnimationFrame = f => f();
@@ -6351,6 +6385,84 @@ test("album links: a boot ?album= arms albumRun (no play) only when the song tha
     run(`armAlbumLink(null, "albums/test/s1.mid")`);
     assert.equal(val(`albumRun`), null, "no album param at all: no-op");
   } finally { run(`CATALOG = {}; albumRun = null;`); }
+});
+
+test("Game order / A–Z (2026-09-30): albumOrder sorts by track, untracked songs sort last (alphabetically), A–Z ignores track data entirely", () => {
+  run(`CATALOG = {"T": [["Beta", "albums/g/beta.mid"], ["Alpha", "albums/g/alpha.mid"], ["Gamma", "albums/g/gamma.mid"]]};
+       albumMetaCache["albums/g"] = {nsf: {tracks: {beta: {track: 2}, alpha: {track: 1}}}};`); // gamma: no entry at all
+  try {
+    assert.equal(val(`albumHasTrackData("T")`), true);
+    assert.deepEqual(val(`albumOrder("T", CATALOG["T"], "game").map(e => e[0])`), ["Alpha", "Beta", "Gamma"],
+      "track 1, track 2, then the untracked one (sorted after the numbered songs, alphabetically)");
+    assert.deepEqual(val(`albumOrder("T", CATALOG["T"], "az").map(e => e[0])`), ["Alpha", "Beta", "Gamma"],
+      "A–Z mode ignores track numbers (same order here by coincidence of the titles chosen)");
+    assert.deepEqual(val(`albumEffectiveOrder("T").map(e => e[0])`), ["Alpha", "Beta", "Gamma"], "default pref is game order");
+  } finally { run(`CATALOG = {}; delete albumMetaCache["albums/g"];`); }
+});
+
+test("Game order: multi-disc sorts disc first, then track within a disc", () => {
+  run(`CATALOG = {"D": [["D2 T1", "albums/d/d2t1.mid"], ["D1 T2", "albums/d/d1t2.mid"], ["D1 T1", "albums/d/d1t1.mid"]]};
+       albumMetaCache["albums/d"] = {nsf: {tracks: {
+         d2t1: {track: 1, disc: 2}, d1t2: {track: 2, disc: 1}, d1t1: {track: 1, disc: 1},
+       }}};`);
+  try {
+    assert.deepEqual(val(`albumOrder("D", CATALOG["D"], "game").map(e => e[0])`), ["D1 T1", "D1 T2", "D2 T1"],
+      "disc 1 (tracks 1, 2) entirely before disc 2, even though disc 2's track 1 is numerically smaller");
+  } finally { run(`CATALOG = {}; delete albumMetaCache["albums/d"];`); }
+});
+
+test("Game order: albumHasTrackData is false (and the switch never builds) when an album's tracks carry only chip n/secs, no soundtrack position", () => {
+  run(`CATALOG = {"N": [["One", "albums/n/one.mid"], ["Two", "albums/n/two.mid"]]};
+       albumMetaCache["albums/n"] = {nsf: {tracks: {one: {n: 1, secs: 10}, two: {n: 1, secs: 12}}}};
+       filesub.children.length = 0;`);
+  try {
+    assert.equal(val(`albumHasTrackData("N")`), false, "n/secs are the chip's own slot + length, not a soundtrack position");
+    assert.deepEqual(val(`albumEffectiveOrder("N").map(e => e[0])`), ["One", "Two"], "falls back to A–Z");
+    run(`fsubFolder("published", "n")`); // the File ▸ Open list for this (single-album) folder
+    assert.equal(val(`filesub.children.some(c => c.className === "seg albumorderseg")`), false,
+      "no track data anywhere in the album: the Game order / A–Z switch is never built");
+  } finally { run(`CATALOG = {}; delete albumMetaCache["albums/n"]; filesub.children.length = 0;`); }
+});
+
+test("Game order: the switch builds when track data exists, and tapping A–Z flips the pref and redraws the list in the new order", () => {
+  run(`CATALOG = {"G": [["Beta", "albums/g2/beta.mid"], ["Alpha", "albums/g2/alpha.mid"]]};
+       albumMetaCache["albums/g2"] = {nsf: {tracks: {beta: {track: 1}, alpha: {track: 2}}}};
+       albumOrderPref = "game"; filesub.children.length = 0;
+       fsubFolder("published", "g2");`);
+  try {
+    assert.equal(val(`filesub.children.some(c => c.className === "seg albumorderseg")`), true, "track data present: the switch is built");
+    let texts = val(`filesub.children.map(c => c.textContent)`);
+    assert.ok(texts.indexOf("Beta") < texts.indexOf("Alpha"), "game order: Beta (track 1) listed before Alpha (track 2)");
+    // tap the A–Z button inside the switch
+    run(`const azBtn = filesub.children.find(c => c.className === "seg albumorderseg").children.find(b => b.textContent === "A–Z");
+         azBtn.dispatchEvent({type: "click"});`);
+    assert.equal(val(`albumOrderPref`), "az", "tapping A–Z set the device-local pref");
+    texts = val(`filesub.children.map(c => c.textContent)`);
+    assert.ok(texts.indexOf("Alpha") < texts.indexOf("Beta"), "the list redrew in A–Z order after the tap");
+  } finally {
+    run(`CATALOG = {}; delete albumMetaCache["albums/g2"]; filesub.children.length = 0;
+         albumOrderPref = "game"; localStorage.removeItem("ff1roll-albumorder");`);
+  }
+});
+
+test("album play: Next/Prev walk whichever order is currently shown (game vs A–Z), not raw CATALOG order", () => {
+  run(`CATALOG = {"P": [["Beta", "albums/p2/beta.mid"], ["Alpha", "albums/p2/alpha.mid"]]};
+       albumMetaCache["albums/p2"] = {nsf: {tracks: {beta: {track: 1}, alpha: {track: 2}}}};
+       globalThis.__seen = []; globalThis.__realPI2 = albumPlayIdx;
+       albumPlayIdx = (idx) => { idx = albumNextIdx(idx, albumRun.list.length); albumRun.idx = idx; __seen.push(albumRun.list[idx][0]); };
+       albumOrderPref = "game";
+       armAlbumLink("P", "albums/p2/beta.mid"); // track 1: first in game order
+       albumNext();`);
+  try {
+    assert.deepEqual(val(`globalThis.__seen`), ["Alpha"], "game order: after Beta (track 1), Next is Alpha (track 2)");
+    run(`albumOrderPref = "az"; globalThis.__seen = [];
+         armAlbumLink("P", "albums/p2/beta.mid"); // A–Z: Alpha, Beta — Beta is last
+         albumNext();`);
+    assert.deepEqual(val(`globalThis.__seen`), ["Alpha"], "A–Z order: after Beta (last), Next wraps to Alpha (first alphabetically)");
+  } finally {
+    run(`albumPlayIdx = globalThis.__realPI2; albumRun = null; CATALOG = {}; delete albumMetaCache["albums/p2"];
+         albumOrderPref = "game"; localStorage.removeItem("ff1roll-albumorder");`);
+  }
 });
 
 test("chip: Play right after a launch waits while the console file is still being found (Chrono Cross played on synth, 2026-09-29)", async () => {
@@ -6991,20 +7103,76 @@ test("footer v2 tweaks (2026-09-30): Publish is back on the footer bar (before �
   const footer = html.slice(html.indexOf("<footer>"), html.indexOf("</footer>"));
   assert.match(footer, /id="syncbtn"/, "Publish (#syncbtn) is a direct footer button again");
   assert.match(footer, /id="moresheetbtn"/, "⋯ More is still the footer's last button");
-  const order = ["lassobtn", "instbtn", "footerspacer", "listbtn", "notebtn", "syncbtn", "moresheetbtn"]
+  const order = ["viewbtn", "lassobtn", "instbtn", "footerspacer", "listbtn", "notebtn", "syncbtn", "moresheetbtn"]
     .map(id => id === "footerspacer" ? footer.indexOf('class="footerspacer"') : footer.indexOf('id="' + id + '"'));
   for (let i = 1; i < order.length; i++) assert.ok(order[i - 1] < order[i], "footer order: " + order);
   const more = html.slice(html.indexOf('id="moresheet"'), html.indexOf("<!-- /moresheet-home -->"));
   assert.doesNotMatch(more, /id="keysel"/, "the key picker left ⋯ More's own markup (it's a hidden node elsewhere now)");
-  assert.doesNotMatch(more, /id="viewseg"/, "the VIEW segment left ⋯ More's own markup (it's a hidden node elsewhere now)");
+  assert.doesNotMatch(more, /id="viewbtn"/, "the VIEW segment was never in ⋯ More's own markup (it's visible in the footer now)");
   assert.doesNotMatch(more, /id="syncbtn"/, "Publish isn't also still inside ⋯ More");
   assert.match(more, /id="octbtn"/, "8va stays in ⋯ More");
   assert.match(more, /id="findsel"/, "find: stays in ⋯ More");
   assert.match(more, /id="cofbtn"/, "◯5 stays in ⋯ More");
   assert.match(more, /id="jobsbtn"/, "⏳ Jobs stays in ⋯ More");
-  // the hidden nodes exist somewhere in the page, for the code/tests that still drive them by id
+  // the key picker is a hidden node somewhere in the page, for the code/tests that still drive it by id
   assert.match(html, /id="keysel"/);
-  assert.match(html, /id="viewseg"/);
+});
+
+test("#viewbtn (2026-09-30, Josh after using footer v2: 'I use it a lot in analysis'): a visible Roll/Tracks/Score segmented control, first in the footer's left group", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const footer = html.slice(html.indexOf("<footer>"), html.indexOf("</footer>"));
+  const viewbtn = footer.slice(footer.indexOf('id="viewbtn"'), footer.indexOf('id="subbtn"'));
+  assert.doesNotMatch(viewbtn, /display:\s*none/, "#viewbtn is visible, not the old hidden/inert node");
+  // (the ▦/▤/𝄞 glyph spans are aria-hidden="true" by design — decorative icons
+  // beside a real .ftxt label; the CONTROL itself must not be, so check the
+  // container's own opening tag, not the whole slice)
+  assert.doesNotMatch(viewbtn.slice(0, viewbtn.indexOf(">")), /aria-hidden="true"/, "#viewbtn is reachable, not aria-hidden");
+  assert.doesNotMatch(viewbtn, /tabindex="-1"/, "#viewbtn's buttons are focusable, not the old inert node");
+  assert.match(viewbtn, /id="viewsegroll"/);
+  assert.match(viewbtn, /id="viewsegtracks"/);
+  assert.match(viewbtn, /id="viewsegscore"/);
+  assert.ok(footer.indexOf('id="viewbtn"') < footer.indexOf('id="lassobtn"'), "view switch sits before ⊞ Lasso");
+  assert.ok(footer.indexOf('id="lassobtn"') < footer.indexOf('id="instbtn"'), "⊞ Lasso sits before 🎹");
+
+  // the switch actually drives the view
+  const a = createApp();
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
+    songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; viewMode = "score"; applyViewMode();
+    document.getElementById("viewsegroll").click();
+  `);
+  assert.equal(a.run(`viewMode`), "roll", "clicking Roll in the footer segment switches to roll");
+});
+
+test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them'): a Roll item exists, and the menu is grouped View / Panels / Display / Mode", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const sheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf('<div id="moresheet-home"'));
+  assert.match(sheet, /id="vwRoll"/, "Roll is a real View ▾ item now");
+  // group order: VIEW, PANELS, DISPLAY, MODE — each item falls after its
+  // section's .cfgsec label and before the next one
+  const at = s => { const i = sheet.indexOf(s); assert.ok(i >= 0, s + " not found in #viewsheet"); return i; };
+  const secView = at('class="cfgsec">VIEW'), secPanels = at('class="cfgsec">PANELS'),
+        secDisplay = at('class="cfgsec">DISPLAY'), secMode = at('class="cfgsec">MODE');
+  assert.ok(secView < secPanels && secPanels < secDisplay && secDisplay < secMode, "section order: View, Panels, Display, Mode");
+  const vwRoll = at('id="vwRoll"'), vwTracksView = at('id="vwTracksView"'), vwScore = at('id="vwScore"');
+  const vwInst = at('id="vwInst"'), vwSub = at('id="vwSub"'), vwMixer = at('id="vwMixer"'), vwTracks = at('id="vwTracks"');
+  const vwEdit = at('id="vwEdit"'), vwFooter = at('id="vwFooter"'), vwGrid = at('id="vwGrid"');
+  const vwAnalyze = at('id="vwAnalyze"'), vwCompare = at('id="vwCompare"'), vwLearning = at('id="vwLearning"'), vwListener = at('id="vwListener"');
+  for (const i of [vwRoll, vwTracksView, vwScore]) assert.ok(secView < i && i < secPanels, "View items sit in the View group");
+  for (const i of [vwInst, vwSub, vwMixer, vwTracks]) assert.ok(secPanels < i && i < secDisplay, "Panel items sit in the Panels group");
+  for (const i of [vwEdit, vwFooter, vwGrid]) assert.ok(secDisplay < i && i < secMode, "Display items sit in the Display group");
+  for (const i of [vwAnalyze, vwCompare, vwLearning, vwListener]) assert.ok(i > secMode, "Mode items sit in the Mode group");
+  assert.ok(vwListener > vwAnalyze && vwListener > vwCompare && vwListener > vwLearning, "Listener mode is last, same as Josh's example ordering");
+
+  // selecting Roll from the menu actually switches the view, same as #viewbtn
+  const a = createApp();
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
+    songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; viewMode = "tracks"; applyViewMode();
+    document.getElementById("vwRoll").click();
+  `);
+  assert.equal(a.run(`viewMode`), "roll", "View ▾ → Roll switches to the roll");
+  assert.match(a.run(`document.getElementById("vwRoll").textContent`), /^✓/, "Roll shows the checkmark once selected");
 });
 
 test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", () => {

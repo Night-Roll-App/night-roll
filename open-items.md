@@ -4442,3 +4442,33 @@ In FF4 "Cry in Sorrow (part 1)" (SNES), touching notes plays the generic synth (
 
 ## 2026-09-30 22:37 Josh (via Ask): track colors too similar in the roll
 In FF4 "Cry in Sorrow (part 1)" (SNES) voice0 and voice2 (and likely neighbours among voice0-voice6) are hard to tell apart by color; he can't tell which is the melody. "I wish we could do something about that." Wants clearly distinguishable per-track colors, at least within one song (SNES/console captures with 7-8 voices first).
+
+## 2026-09-30 23:36 Josh (via Ask): let the Ask chat EDIT existing annotations
+add_annotation can only add new ones. Josh wants the Ask chat to edit an existing annotation when he asks (e.g. put a numeral + explanation into an existing chord's note field instead of adding a separate overlapping note; change a chord's text/range; remove a note it added). Needs: an edit_annotation tool (find by bar/beat/kind, change text/comment/range) and a delete_annotation tool, in the app's Ask tool set and the bridge's tool prompt. Same per-instance rule: only when he explicitly asks; never overwrite his own words without being told to. Cleanup he's waiting on: 4 notes the Ask chat added to cry-in-sorrow-part-1 (numerals i / bVII / bVI plus a summary) should be folded into the chord note fields and removed once this exists.
+
+## Albums in GAME order — DONE 2026-09-30
+Two-part item, both parts shipped. Part 1 (commit 2bfffc95):
+`tools/album-order.mjs` reads each capture's original rip and writes the
+soundtrack position into album.json as `nsf.tracks[slug].track` (+`.disc`
+for multi-disc), 51 albums covered; no playlist to order by for a few NES
+sets (Zelda, Mega Man 2, Shadow of the Ninja, SMB3, Tetris, TMNT 2); no
+rip yet for Final Fantasy Legend. Part 2 (this session): the app's
+**Game order / A–Z** switch — a segmented control at the top of an
+album's song list (Open… and File ▸ Open), shown only when the album has
+track data. ONE function, `albumOrder(album, songs, mode)`, decides the
+order for both the list AND album play (💿 Play album, ⏮ Prev/⏭ Next) —
+Josh's WYSIWYG ruling: whatever order is shown is what plays. Device-local
+pref (`ff1roll-albumorder`, game|az, default game). No manifest.json
+change was needed — the app already warms every album's full album.json
+at boot (`albumMetaFor`/`albumMetaCache`), which already carries `.track`.
+Docs: NIGHT-ROLL.md "Album play" (new "Game order / A–Z" subsection), help
+sheet entry + HELP.md regenerated, FEATURES drift keyword "Game order".
+Tests: tests/night-roll.test.mjs — albumOrder game vs az, untracked songs
+last, multi-disc (disc then track), switch hidden with no track data,
+switch present + tap flips the pref and redraws, Next/Prev follow whichever
+order is shown. Full npm test green (night-roll.test.mjs 329/329,
+album-order.test.mjs 10/10, whole chain exit 0).
+
+## 2026-09-30 23:40 Josh (via Ask): "publish this song" as an Ask tool
+I cannot publish: annotations I add live unsynced on his device, and only the app's Publish can send them. Josh wants to say "publish this song" in the Ask chat and have it done, like a push command. Needs a publish_song tool in the app's Ask tool set (publishes the open song only, same function as the Publish sheet's per-song Publish, runs as a job, reports success/failure back to the chat). Only when he explicitly asks. Pairs with the edit_annotation/delete_annotation request above; he is waiting to publish cry-in-sorrow-part-1 (his chords + the numeral notes).
+- 23:47 Josh's ruling for the cleanup above: keep his own words in note fields and APPEND after them (Gbmaj9 keeps his surprise note, numeral+explanation added after); Bbm has no note yet, so it just gets the numeral.

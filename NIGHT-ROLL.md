@@ -1740,6 +1740,62 @@ dirty draft when the repo is newer and says so in the status line.
 Out of v1: shuffle, queue, lock-screen controls (needs a media element;
 the silent `<audio>` keep-alive stalled the iPad in August).
 
+**Game order / A–Z (2026-09-30):** Josh wants albums playable in GAME
+(soundtrack) order, not only alphabetical. `tools/album-order.mjs`
+reads each capture's original rip (filenames for a perFile set, the
+rip's `.m3u` for NSF/GBS) and writes the soundtrack position into
+album.json as `nsf.tracks[slug].track` (+`.disc` for a multi-disc set);
+51 albums have it as of this commit, a handful don't (no rip's playlist
+to order by — Zelda, Mega Man 2, SMB3, Tetris (NES), TMNT 2, Shadow of
+the Ninja) and Final Fantasy Legend has no rip at all. An album without
+any `.track` numbers never shows the switch and always sorts A–Z, same
+as before this feature.
+
+ONE function decides the order everywhere: `albumOrder(album, songs,
+mode)` — `songs` is `[[title, path], ...]` for one album (the shape
+`CATALOG[album]` already is); `mode` "game" sorts by `[disc, track]`
+with an untracked song sorting after every numbered one (tie-broken
+alphabetically); mode "az" (or an album with no track data at all)
+ignores track numbers and sorts by title, byte-identical to the old
+behavior. `albumTrackMap(album)` reads the slug → `{track, disc}` map
+from `albumMetaCache["albums/" + folderOf(...)]` — the SAME cache
+`albumMetaFor` warms for every album at boot (`initCatalog`'s "every
+album's album.json, warmed now" loop), so no extra fetch and no change
+to `tools/build_manifest.mjs` or `albums/manifest.json` were needed:
+`album.json` already carries `.track`, and the app already reads the
+whole file. `albumHasTrackData(album)` gates the switch (true iff at
+least one song has a `.track`). `albumEffectiveOrder(album)` is
+`CATALOG[album]` reordered by the current pref — forced to "az" when
+the album has no track data, so a never-ordered album's behavior never
+silently depends on the device pref.
+
+**Device pref:** `albumOrderPref` (`localStorage["ff1roll-albumorder"]`,
+"game" or "az", one global switch — not per-album), set via
+`setAlbumOrderPref(mode)`.
+
+**WYSIWYG (Josh, 2026-09-30: "whatever's shown is what plays"):** the
+segmented control (`albumOrderControl(album, onChange)` — a `.seg`
+`role="radiogroup"` with "Game order"/"A–Z" buttons, built only when
+`albumHasTrackData(album)` is true) sits at the top of an album's song
+list in BOTH places a song list renders — `renderFolder` (the mobile
+Open… sheet) and `fsubFolder` (File ▸ Open) — and both now order their
+`node.songs` through `albumEffectiveOrder(group)` instead of a flat
+alphabetical sort. Album PLAY uses the identical function: `albumStart`,
+`armAlbumLink`, and `fsubFolder`'s own "from N/M" index all read
+`albumEffectiveOrder(album)` for `albumRun.list`, so ⏮ Prev/⏭ Next (plain
+index walks over `run.list`) always agree with whatever the list just
+showed — flip the switch and the very next Prev/Next follows the new
+order. Tapping a mode button calls `setAlbumOrderPref` then re-invokes
+the same render function (`onChange`), so the list redraws in place.
+
+Tests: `tests/night-roll.test.mjs` ("Game order / A–Z" / "Game order:"
+prefixed tests) — `albumOrder` game vs az, untracked-last, multi-disc
+(disc then track), the switch hidden with no track data, the switch
+present + tap-to-flip redraw, and Next/Prev walking whichever order is
+shown. `tests/album-order.test.mjs` covers the *tool*'s own pieces
+(`chipTrackOrder`, `assignSlugsAndTracks`, `namesMatch`, …) — unrelated
+to the app-side `albumOrder` above (same name-ish, different file).
+
 ## Local folder mode (2026-09-15) — saving without GitHub
 
 Why: Josh's son has no GitHub account (Chrome on a MacBook Pro), and
@@ -2945,10 +3001,19 @@ songs so ✕ stops it before the next one; one Publish-all job at a time
 starts it and opens the dialog. A Publish-sheet row's own **Publish**
 passes `onlyKeys: [key]` — the same job, one item, titled "Publish
 <song>". Each row also has **Open** (draft → `openDraft`, else
-`loadSong`) and **Revert** (`revertSongToRepo`: appConfirm, then
-`dropLocalSong` — pushes the current state as a "Before going back"
-version first, Model B below, then discards; hidden on a never-published
-song, which has no repo copy). Not jobs: Download audio (an offline
+`loadSong`) and **Revert** (`revertSongToRepo`: appConfirm — the label
+and body name what's being dropped, e.g. "Revert — drops 2 chat
+messages" or "…your edits and 2 chat messages" — then `dropLocalSong`
+— pushes the current state as a "Before going back" version first,
+Model B below, then discards; hidden on a never-published song, which
+has no repo copy). Revert drops EVERYTHING unpublished for that song,
+chat included (Josh, 2026-09-30 — Revert used to leave unsaved chat
+behind while claiming "this device now has the published copy"):
+`askRevertToSaved(key)` truncates the song's local chat store back to
+its first `saved` messages (exactly what `<song>.ask.md` already holds;
+`saved` itself is untouched), same idea as `dropLocalSong` for
+music/notes — no published chat (`saved === 0`) means this empties the
+log, like Clear chat. Not jobs: Download audio (an offline
 bounce, faster than real time — see "Audio export" below — or its
 real-time fallback), chip renders (already off-thread; a row per song
 open would spam the list). Later: captures in the worker.
@@ -3100,12 +3165,16 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   for this. Commit message "Ask log <path> from Night Roll". The
   contents API omits bodies over 1 MB, so the read falls back to
   `download_url`. The breadcrumb ● lights for unsaved chat
-  (`askUnsavedCount`), the Save & Commit sheet lists it per song, the
-  commit button reads "⇪ Commit song", and Clear chat asks first only
+  (`askUnsavedCount`), the Publish sheet lists it per song, the
+  publish button reads "⇪ Publish song", and Clear chat asks first only
   when something is unsaved (Clear = new session; the file keeps what was
-  saved). `ghsaveall` (annotation sweep) does not carry chat — Save the
-  song for that. Purpose: session logs for code sessions — read
-  `<song>.ask.md` the way you read a handoff.
+  saved — `localStorage.removeItem`, the whole store, since nothing of it
+  needs keeping once a fresh session starts). The Publish sheet's
+  **Revert**, by contrast, keeps the `saved` messages and only drops the
+  unsaved tail (`askRevertToSaved`) — see "publishall" above. `ghsaveall`
+  (annotation sweep) does not carry chat — Save the song for that.
+  Purpose: session logs for code sessions — read `<song>.ask.md` the way
+  you read a handoff.
 - **Prompt** (`ASK_SYS`): a closing paragraph (2026-09-26, from the first
   real .ask.md) tells the model what it is inside the app — the context
   is attached by the app, it sees nothing else, it cannot write

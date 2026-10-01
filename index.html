@@ -370,6 +370,9 @@
   }
   @container (max-width: 420px) { footer .ftxt { display: none; } }
   .seg { display: flex; border: 1px solid var(--grid); border-radius: 6px; overflow: hidden; }
+  /* #viewbtn (footer, 2026-09-30): .seg button's own 36px (below) is below the
+     footer's 44px touch floor — this wins on class-count specificity. */
+  footer .seg button { min-height: 44px; }
 
   #instpanel { display: none; flex-shrink: 0; background: var(--panel); border-top: 1px solid var(--grid); }
   #instpanel.on { display: block; }
@@ -456,8 +459,11 @@
   #moresheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 44px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #moresheet .fitem:active { background: var(--panel); }
   #moresheet .fdiv { border-top: 1px solid var(--grid); margin: 4px 6px; }
-  #moresheet .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin: 6px 10px 2px; }
-  #moresheet .cfgsec:first-child { margin-top: 0; }
+  /* View ▾ (2026-09-30, Josh: "look hard at the ordering"): #viewsheet got the
+     same section labels ⋯ More uses — View / Panels / Display / Mode — so its
+     four groups read as groups, not one long list. */
+  #moresheet .cfgsec, #viewsheet .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin: 6px 10px 2px; }
+  #moresheet .cfgsec:first-child, #viewsheet .cfgsec:first-child { margin-top: 0; }
   #moresheet .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 10px; min-height: 44px; }
   /* select only, not `button` — every actual button in here is already
      `.fitem` (44px, above); a bare `#moresheet button` would also catch the
@@ -1331,12 +1337,21 @@
     <div id="noteinfo">tap a note</div>
     <button id="chordbtn" style="display:none">Chord?</button>
   </div>
-  <!-- #viewbtn: superseded first by the VIEW segment in #moresheet, then
-       (footer v2 tweaks, 2026-09-30) that segment's own UI dropped too —
-       View ▾ already has Tracks/Score, so the footer never needed a second
-       switch. Kept as a hidden node only in case anything still asks for it
-       by id. -->
-  <button id="viewbtn" style="display:none" aria-hidden="true" tabindex="-1" aria-label="View (retired — see View ▾)"></button>
+  <!-- #viewbtn: view switcher, back on the footer's left (Josh, 2026-09-30,
+       after using footer v2: "I use it a lot in analysis" — the first footer
+       v2 pass had hidden it, betting View ▾'s Tracks/Score covered it; it
+       didn't). A 3-way segmented control, first item in the left group —
+       same ids (viewsegroll/tracks/score) and the same viewSeg object the
+       retired #moresheet-era segment used, so applyViewMode()/setViewMode()
+       needed no changes, only this markup's location. .ftxt labels collapse
+       to bare glyphs past ~420px, same as ⊞ Lasso/⋯ More (see footer .ftxt
+       rule above). View ▾ has its own Roll/Tracks/Score radio group too —
+       same switch, two reaches. -->
+  <div class="seg" id="viewbtn" role="radiogroup" aria-label="View">
+    <button id="viewsegroll" role="radio" aria-checked="true"><span aria-hidden="true">▦</span> <span class="ftxt">Roll</span></button>
+    <button id="viewsegtracks" role="radio" aria-checked="false"><span aria-hidden="true">▤</span> <span class="ftxt">Tracks</span></button>
+    <button id="viewsegscore" role="radio" aria-checked="false"><span aria-hidden="true">𝄞</span> <span class="ftxt">Score</span></button>
+  </div>
   <!-- #subbtn: superseded by View ▾ → 💬 Notes strip (toggleSubtitle) — kept
        as a hidden node so vwSub's own display-state reads still work. -->
   <button id="subbtn" style="display:none" aria-hidden="true" tabindex="-1" aria-pressed="true" aria-label="Notes strip">💬</button>
@@ -1816,19 +1831,20 @@
       <dt>▶ Play / ■ Stop</dt><dd>NES-style voices; drum tracks get a real kit. Songs loop at their final bar forever (album play, below, is what ends them). While a song is still loading its sound — the console's voice, game or SoundFont instruments, a recording — ▶ shows <b>⏳ 42%</b> and waits; tap it then and it plays <b>by itself the moment the sound is ready</b> (tap again to cancel); a load that fails lets you play anyway and says why.</dd>
       <dt>Playing in the background</dt><dd>In the installed iPad app, music keeps playing when you leave the app or lock the screen: start a song or an album, then switch away. Come back to see where it is.</dd>
       <dt>💿 Play album</dt><dd>In File → Open…, every album has a <b>💿 Play album</b> row at the top (it starts from the song you have open when that song is in the album). The album plays straight through like a record — each song gets its intro plus two passes of its loop, fades, and the next one loads (the console's own sound is waited for while it renders) — and wraps around to the first song forever. While it plays, a 💿 strip under the transport shows <b>3/19</b>, the song, and what's next, with <b>⏮ Prev</b>, <b>⏭ Next</b>, and <b>✕</b> to leave. ▶, ■, ⏮ and Space work on the current song exactly as always (■ just pauses the album; ▶ picks it back up). Picking another song, ●, or Download audio also leaves. No dialog will interrupt a run: a song with a newer save on the repo plays from this device's draft and says so. Editing while it plays is fine. Keep the screen on — locking the iPad pauses it, and unlocking picks up where it stopped. While a run is on, the address bar carries it too (<code>?album=</code>) — opening that link reopens with the strip up, run armed, same song selected, and nothing playing yet; the first ▶ plays it as an album pass, same as picking 💿 Play album.</dd>
+      <dt>Game order / A–Z</dt><dd>Tap an album's song list (Open… or File → Open) and, when that album's soundtrack position is known, a small <b>Game order | A–Z</b> switch sits at the top: <b>Game order</b> plays the songs in the same order the original game's soundtrack does (multi-disc sets go disc then track; a song with no known position sorts after the numbered ones, alphabetically); <b>A–Z</b> is plain alphabetical. One device-wide setting, remembered across albums. The switch only appears on an album that HAS a soundtrack position for its songs — most capture albums do (51 so far), a few don't yet (no rip's playlist to read the order from). <b>💿 Play album</b> and its <b>⏮ Prev</b> / <b>⏭ Next</b> always walk whichever order the list is currently showing — switch it and the next song picked follows the new order too.</dd>
       <dt>⏱ Metronome</dt><dd><b>Tap ⏱ to turn the click on or off</b>; <b>⚙</b> beside it opens the settings. Any meter (1–12 over 2/4/8/16 — bpm counts the denominator beat), tap each beat cell to cycle accent → normal → silent, subdivisions in 2/3/4, slider or tap-tempo. Three modes: <b>free-running</b> (its own clock); <b>follow song</b> — clicks ride the song's own grid, phase-perfect on the declared meter through tempo changes, speed slider, and loops; <b>trial meter</b> — click a meter of YOUR choosing over the real music to A/B candidates by ear (the "shift accents" ‹ › slides the pattern's starting beat, since a right meter can sit offset). Settings stick.</dd>
       <dt>Count-in</dt><dd>Optional one-bar click lead-in. Playing counts in only from bar 1 beat 1 — never mid-song, never when the song loops back around; <b>recording (●) counts in from wherever it starts</b>, so a punch-in at bar 17 gets its bar of clicks too.</dd>
       <dt>⏮</dt><dd>Back to bar 1.</dd>
       <dt>Speed slider</dt><dd>25–200% of the song's own tempo, for close listening or instrument practice — pitch stays true; only time stretches. Applies when you let go; keeps its setting across songs. A 100% button appears whenever you're off native — tap to snap back.</dd>
       <dt>Scroll while playing</dt><dd>Scrolling away suspends the auto-follow camera so you can study any spot; it latches back on when the playhead reaches what you're looking at.</dd>
-      <dt>▤ Tracks view</dt><dd>The arrangement view (𝄞/▤/▦ button cycles Roll → Tracks → Score; also in View ▾): one lane per track, its notes drawn as a thumbnail (each lane scaled to its own range), with the track's color dot, name, M/S, and a volume fader in the lane header — the fader saves as the same vol= annotation as the voice menu's. Tap a note to select it (it sounds); lasso a box and it selects by TIME across every lane it touches — cross-track selection in one gesture. Hold-to-grab a selected note and drag: sideways moves it in time (bar-magnet-free, 16th snap), and <b>dragging up or down carries the whole selection to another lane</b> — pitch kept, one ⟲ undoes it, drums and melodic lanes never mix. Dragging shows a ghost until you release. Tap a lane's header to select that track; tap the selected track's header again for its voice & volume menu. Pencil doesn't draw here (a squeezed lane has no honest pitch) — it draws in Roll or Score; Erase works. The ruler above is the same one as always: sections, cycle, magnetic bars, the playhead triangle.</dd>
+      <dt>▤ Tracks view</dt><dd>The arrangement view (the ▦/▤/𝄞 segmented control bottom-left in the footer switches Roll / Tracks / Score; also in View ▾): one lane per track, its notes drawn as a thumbnail (each lane scaled to its own range), with the track's color dot, name, M/S, and a volume fader in the lane header — the fader saves as the same vol= annotation as the voice menu's. Tap a note to select it (it sounds); lasso a box and it selects by TIME across every lane it touches — cross-track selection in one gesture. Hold-to-grab a selected note and drag: sideways moves it in time (bar-magnet-free, 16th snap), and <b>dragging up or down carries the whole selection to another lane</b> — pitch kept, one ⟲ undoes it, drums and melodic lanes never mix. Dragging shows a ghost until you release. Tap a lane's header to select that track; tap the selected track's header again for its voice & volume menu. Pencil doesn't draw here (a squeezed lane has no honest pitch) — it draws in Roll or Score; Erase works. The ruler above is the same one as always: sections, cycle, magnetic bars, the playhead triangle.</dd>
       <dt>🎸 Bassist</dt><dd>The 🎸 beside 🎲 (behind ⋯, or Edit ▾ → Bassist…) generates a bassline for the range onto a track you pick (defaults to a NEW bass track unless an empty one exists — it never silently overwrites your notes; the status line says exactly what it replaces). PITCHES COME FROM YOUR DECLARED CHORDS — chord tones, slash basses honored (C♯/F walks to the F), N.C. bars pedal the key root; gaps ride the last chord. With ONLY a melody and no chords, it sketches the melody's harmony internally (duration-weighted, strong beats count more) and plays bass under that sketch — the sketch is never shown or written anywhere, and different seeds read the melody differently, which is the idea machine — declared chords always win bar-by-bar, inference only fills the unannotated gaps. The bass PLAYS THROUGH your Break sections (a Break is bass-alone by your own device). Styles: <b>chug</b> (root 8ths), <b>pump</b> (root–fifth), <b>arp</b> (chord tones cycling), <b>walk</b> (approach notes INTO each coming chord — the leading-tone move, mechanized), <b>riff</b> (rhythm copied from the follow source: the kick, any track, or the chord changes). busy 1–5, octave 1–3, strictly monophonic (NES-legal), same take chips / one-⟲ replace / same-label-sections-restate contract as the Drummer.</dd>
       <dt>⊞ Insert bars</dt><dd>Edit ▾ → Insert bars… opens a gap anywhere in the song: pick the spot (bar + beat, decimals fine), how much (a count of <b>bars</b>, <b>beats</b>, or <b>16ths</b>), and Insert. Everything from that point onward — notes, sections, chords, keys, the loop point — slides right together. A section that starts before the point and is still open there STRETCHES to span the gap; one that ends exactly at the point stays put (stretch it yourself if you want it covering the new bars). One ⟲ undoes the whole thing.</dd>
       <dt>Space</dt><dd>Play / stop, Logic-style — anywhere except while typing in a text field. With a hardware keyboard on iPad too.</dd>
       <dt>Hardware keyboard</dt><dd>Logic's keys: <b>Return</b> back to the start (or the cycle's start), <b>K</b> click on/off, <b>C</b> cycle on/off, <b>R</b> record, <b>Q</b> quantizes the selection, <b>⌘← / ⌘→</b> zoom out / in around the cursor. Editing: <b>⌘A</b> selects every visible note, <b>⌘C / ⌘X / ⌘V</b> copy, cut, paste at the playhead, <b>⌘D</b> duplicates the selection right after itself (whole bars when it's longer than a beat — press again to keep repeating), <b>⌘Z / ⇧⌘Z</b> undo / redo, <b>⌘S</b> Save Version, arrows move, ⇧ an octave, ⌥ resizes, Delete removes.</dd>
       <dt>▦ Grid</dt><dd>Notes move and resize on a 16th grid, or on triplet steps while a <b>T</b> duration is active — and the duration chips stay visible in <b>Select</b>, where they are that move grid, so changing it never means a trip through Pencil. Touching a note <b>picks up its grid</b> automatically: grab a triplet note and moves go in triplet steps, grab a straight one and they go in 16ths; tap a chip afterwards to override. View ▾ → <b>Grid…</b> opens a sheet: tap a number of <b>lines per bar</b> (say 10) and the roll redraws instantly with that many lines in each bar — and pencil entry, note drags and resizes all SNAP to those lines. Pure view-and-snap aid: no note moves, no annotation changes, the time signature stays what it is. This is how a figure the duration buttons can't spell — ten even notes across a 4/4 bar, each 0.4 beats — becomes pencil-drag from line to line; with a grid armed, a pencil tap lays down one cell — in the roll, the fall view and the score alike — so 6 lines per bar pencils quarter-note triplets and 12 pencils eighth triplets without touching the duration chips (they dim while a grid rules, and a <b>▦N</b> chip appears at the end of the row naming the grid — tap it for the sheet; opening another song turns the grid off). Set the <b>anchor</b> right in the sheet — bar and beat, and the beat takes decimals for sub-beat starts (2.5 = the "and" of 2, 2.25 = the second sixteenth) — and the lines run from there (14.2, say), so a figure beginning mid-bar gets its lines exactly where its notes go, continuing bar after bar on that phase across the whole song. Bar lines stay drawn for orientation but stop being snap targets while the grid is armed; a bar line falling between cells is expected, not a bug. <b>Off</b> returns to the meter's own grid (16ths, or triplet steps while a T duration is armed). Transient by design: set it, enter the passage, set it back.</dd>
       <dt>📻 Listener mode</dt><dd>Phones open as a PLAYER: the roll, ⏮ ▶, the readouts, speed and volume — everything else hidden, including the section/chord bands and the notes strip (unreadably small on a phone anyway), because a shared song link is for listening, not editing. A <b>Full app</b> button in the header brings the whole DAW back on that device (and View ▾ → Listener mode folds it away again, on any device). Send someone a ?song= link and their phone just… plays it.</dd>
-      <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — one place for every hide/show: 𝄞 Score view, ◂ Tracks, 🛠 Edit toolbar, ▦ Bottom bar, 🎹 Instrument panel, 💬 Notes strip, and ▸ Section levels with −/+ steppers (shows "2 of 3"; the gutter chevron still one-tap cycles). ✓ means visible; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else. Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
+      <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — four groups, top to bottom: <b>View</b> (▦ Roll / ▤ Tracks view / 𝄞 Score view — a radio, one ✓ at a time, the same switch as the segmented control bottom-left in the footer), <b>Panels</b> (🎹 Instrument panel, 💬 Notes strip, 🎚 Mixer, ◂ Tracks — the windows and side panels you open beside the roll), <b>Display</b> (🛠 Edit toolbar, ▦ Bottom bar, ▦ Grid…, and ▸ Section levels with −/+ steppers — shows "2 of 3"; the gutter chevron still one-tap cycles — what the roll itself shows or snaps to), and <b>Mode</b> (🔍 Analyze ▸, ⇄ Compare with repo, 🎓 Learning mode, 📻 Listener mode — these change what editing, or the whole app, means). ✓ means on, visible, or current; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else. Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
       <dt>Speed &amp; volume buttons</dt><dd>The speed slider folded into a <b>percentage button</b> — tap to open the slider, tap anywhere else and it folds back (the reset chip appears when off-native). Beside it, <b>🔊</b> is a master volume the same way: tap, slide (10–200%), tap away; the setting sticks per device and the button shows the number when it's not 100%.</dd>
       <dt>LCD readout</dt><dd>Beside Play, Logic-style: live bar and beat (counted in the declared meter's beats), the tempo at the cursor from the song's own tempo map (scaled by the speed slider), and the declared meter and key. Undeclared stays honest: meter reads "4/4?", key reads "C?" (the display default), a stored tonic reads "B♭?". On your own songs the tempo segment is tappable too — it opens a Tempo change annotation ("tempo: 120" at a bar/beat; the map applies from there, so mid-song tempo changes work; Save writes the full map into the .mid). On analyzed songs the same annotation is an OBSERVATION — it records that the music changes tempo there and leaves playback untouched (the capture's timing is measured fact). Every readout is a door: tap the tempo to open the tempo annotation governing the cursor (or declare the first one), tap the meter to open the time signature, tap the key to open the key change ruling the cursor — a stored partial opens its own note with the tonic already filled.</dd>
       <dt>Blue cursor</dt><dd>Play starts here. Tap the bar ruler to place it, or drag its handle (triangle under the ruler). Tapping a note selects it <b>without moving the cursor</b>, the DAW way, so Space still plays from where you were; <b>+ Note</b> anchors at the note you tapped. (Settings → Other brings back tap-to-move.)</dd>
@@ -1841,7 +1857,7 @@
     </div>
     <div class="hsec" data-hsec="tracks">
     <dl>
-      <dt>Track chips (top)</dt><dd>Tap a chip to select its track. <b>M</b> mutes — the track goes silent and its notes dim, but they stay on screen and editable. <b>S</b> solos (only soloed tracks play). <b>H</b> hides the track's notes (and their score staff) without silencing them — the way to lasso or read around one part. One tap each, any time, even mid-playback, and <b>the song remembers them</b> (saved with its annotations, like voice and volume). Tap the selected chip AGAIN for the voice &amp; color menu, organized by family: NES / waves (pulses, triangle, sine, saw; auto = the classic assignment, and its menu row SAYS what it resolves to for this track — "auto: pulse 50%", or "auto: chip" when the game's own sound is available), then real sampled instruments — Keys &amp; mallets (piano, electric piano, harpsichord, celesta, music box, vibraphone, marimba, glockenspiel), Guitar &amp; bass, Strings (solo violin/viola/cello/contrabass, the full section, pizzicato, harp), Winds (flute, piccolo, clarinet, oboe, saxes), Brass (trumpet, trombone, french horn, tuba, section), Organ &amp; choir — 36 FluidR3 soundfont instruments, each fetched only when a track uses it and cached after, and loudness-matched to the chip voices automatically — a violin at the same velocity as a pulse now sits at the same level, so velocity stays a musical choice instead of a mixing workaround. Last in the list, <b>Game instruments ›</b> borrows a voice from any published PS1/N64 game's library (File → 🎛 Instruments…, same source): a shortcut to <b>Instruments in this song</b> leads first when the open song is itself a game song with one, then every other game — tap in for <b>All instruments (A–Z)</b> or one of its songs (labelled by the track it plays on, when that's the song you have open), tap an instrument to hear it and assign it in one go. The menu row shows it as "GoldenEye 007 · Soft pad"; playback renders the note through the game's own sample, caching repeats, and never goes silent — a library or sample that can't be reached falls back to the track's own synth voice. Tap a family to open it, ‹ to go back; the menu opens in the current voice's family — and its color — the wide bar at the bottom shows the track's current color and opens a full color picker (any color at all), and a <b>vol</b> fader above it sets the track's own volume (0–150%), live while you drag — the mixer answer when one instrument dominates. On your own songs the menu also RENAMES the track (type a name, tap Rename): voice, color, and volume settings migrate with it, and Save bakes the name into the .mid. Name a track "drums" (or "kit"/"percussion") and it becomes a drum track. Both save as a normal synced annotation ("track: pulse1 voice=piano") — playback and display only, the MIDI is never touched. Many tracks wrap onto more rows; a ▾ appears beside the last chip when they overflow — first row always shows, ▾ reveals the rest, ▴ tucks them away (the transport stays pinned to the top row). The ◂ at the far left slides the whole chip cluster away when the row feels busy; ▸ brings it back (remembered). ▶ Play and ⏮ sit on this row; the 𝄞/▦ view toggle lives bottom-left in the footer. <b>Pan</b>: a left–right fader under the volume in the same menu; let go and it is saved as <code>pan=</code> on the track's annotation. An imported song's tracks arrive where the game put them (the .mid carries each channel's pan), and its chip audio is rendered in stereo from the same values.</dd>
+      <dt>Track chips (top)</dt><dd>Tap a chip to select its track. <b>M</b> mutes — the track goes silent and its notes dim, but they stay on screen and editable. <b>S</b> solos (only soloed tracks play). <b>H</b> hides the track's notes (and their score staff) without silencing them — the way to lasso or read around one part. One tap each, any time, even mid-playback, and <b>the song remembers them</b> (saved with its annotations, like voice and volume). Tap the selected chip AGAIN for the voice &amp; color menu, organized by family: NES / waves (pulses, triangle, sine, saw; auto = the classic assignment, and its menu row SAYS what it resolves to for this track — "auto: pulse 50%", or "auto: chip" when the game's own sound is available), then real sampled instruments — Keys &amp; mallets (piano, electric piano, harpsichord, celesta, music box, vibraphone, marimba, glockenspiel), Guitar &amp; bass, Strings (solo violin/viola/cello/contrabass, the full section, pizzicato, harp), Winds (flute, piccolo, clarinet, oboe, saxes), Brass (trumpet, trombone, french horn, tuba, section), Organ &amp; choir — 36 FluidR3 soundfont instruments, each fetched only when a track uses it and cached after, and loudness-matched to the chip voices automatically — a violin at the same velocity as a pulse now sits at the same level, so velocity stays a musical choice instead of a mixing workaround. Last in the list, <b>Game instruments ›</b> borrows a voice from any published PS1/N64 game's library (File → 🎛 Instruments…, same source): a shortcut to <b>Instruments in this song</b> leads first when the open song is itself a game song with one, then every other game — tap in for <b>All instruments (A–Z)</b> or one of its songs (labelled by the track it plays on, when that's the song you have open), tap an instrument to hear it and assign it in one go. The menu row shows it as "GoldenEye 007 · Soft pad"; playback renders the note through the game's own sample, caching repeats, and never goes silent — a library or sample that can't be reached falls back to the track's own synth voice. Tap a family to open it, ‹ to go back; the menu opens in the current voice's family — and its color — the wide bar at the bottom shows the track's current color and opens a full color picker (any color at all), and a <b>vol</b> fader above it sets the track's own volume (0–150%), live while you drag — the mixer answer when one instrument dominates. On your own songs the menu also RENAMES the track (type a name, tap Rename): voice, color, and volume settings migrate with it, and Save bakes the name into the .mid. Name a track "drums" (or "kit"/"percussion") and it becomes a drum track. Both save as a normal synced annotation ("track: pulse1 voice=piano") — playback and display only, the MIDI is never touched. Many tracks wrap onto more rows; a ▾ appears beside the last chip when they overflow — first row always shows, ▾ reveals the rest, ▴ tucks them away (the transport stays pinned to the top row). The ◂ at the far left slides the whole chip cluster away when the row feels busy; ▸ brings it back (remembered). ▶ Play and ⏮ sit on this row; the Roll/Tracks/Score switch lives bottom-left in the footer. <b>Pan</b>: a left–right fader under the volume in the same menu; let go and it is saved as <code>pan=</code> on the track's annotation. An imported song's tracks arrive where the game put them (the .mid carries each channel's pan), and its chip audio is rendered in stereo from the same values.</dd>
       <dt>S</dt><dd>Solo: hide everyone else instead.</dd>
       <dt>🎚 Mixer window</dt><dd>Tap <b>View ▾ → 🎚 Mixer</b> (hardware key <b>X</b>, Logic's mixer key, outside a text field) for a DAW-style mixer: one strip per track, side by side, scrolling sideways inside its own window if there are more than fit — the page itself never scrolls sideways. Each strip is the color dot and name, <b>M / S / H</b> (same as the track chips), a vertical <b>volume fader</b> and a live <b>level meter</b> beside it, and a <b>pan</b> slider below — every change writes the same <code>track:</code> annotation as the voice & color menu's fader and pan, so it's one ⟲ step and it sticks. A <b>MASTER</b> strip at the end is the same 🔊 control the header has. <b>Drag a strip by its name</b> to reorder it — track order follows the .mid, so this changes playback/export order too (on your own songs only; a capture's order shows read-only); dragging is one ⟲ step that puts every track back exactly where it was, annotations (voice/color/mute/solo) stay with the track by name regardless of where it moves. The meters cost nothing while the Mixer is closed — they only start running once it's open.</dd>
     </dl>
@@ -1930,7 +1946,7 @@
       <dt>⚠ Messages</dt><dd><b>Copy all</b> puts the whole log on the clipboard for pasting to Claude. Errors outlive the moment: anything warning-shaped (failed commits, unreachable NSFs, token-scope problems, even uncaught crashes) is kept in a log, and a ⚠ button appears in the footer only when the log is non-empty — tap it to read timestamped entries, Clear to dismiss. The bottom info strip still shows the latest message; this panel is where the ones you missed went.</dd>
       <dt>Song links</dt><dd>The address bar always holds a link to the open song — copy it and anyone who opens it lands directly on that song (?song=…). Local drafts are excluded (they exist only on your device).</dd>
       <dt>Save Version and Versions…</dt><dd>A published song is never edited in place: you edit this device's <b>local copy</b>. When a song of yours has no copy here, <b>✎ Edit locally</b> sits where Edit ▾ would be — tap it and the local copy is made right away, no confirmation, with a footer note: <i>editing your copy on this device — Publish sends it</i>. Every edit is kept automatically, on this device, the moment you make it — there is no auto-save switch to turn on; nothing is ever lost to a crash. File → <b>Save Version</b> (⌘S) additionally adds a DATED snapshot of the music AND the annotations to this device's history for the song — the status line says "Version saved — only on this iPad" (or "this device" outside the app); the first Save Version of an Untitled song still asks for a folder and a name. File → <b>Versions…</b> lists them newest first, plus the <b>Published copy</b> at the top when the song has one — tap <b>Go back to this</b> on any row: your current state is kept as a version first (labelled "Before going back"), so nothing is ever thrown away, then that version becomes what you see. The gold <b>●</b> after the title means <i>not published yet</i> (music, annotations, or chat) — Save Version never clears it, only <b>Publish</b> does. Not connected anywhere (no GitHub token or repo, no local folder)? Neither the ● nor the footer Publish button shows — your work is still kept automatically, and File → <b>Publish…</b> still opens and explains how to connect.</dd>
-      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and <b>⋯ More → SONG → Publish</b> open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since publish, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. Every song's row has the same three buttons: tap <b>Open</b> to open it here, <b>Publish</b> to publish that song only (a job — ⏳ shows it), <b>Revert</b> to drop this device's changes to it after asking (your current state is kept as a version first — File → Versions… brings it back; a song never published has no Revert — there is no published copy to go back to). <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
+      <dt>Publish</dt><dd>Your edits are kept on this device by themselves; <b>Publish</b> is the deliberate step that puts a song in the repo where other devices and other people can reach it. The Publish sheet (File → Publish… and <b>⋯ More → SONG → Publish</b> open the same door) It lists every song with anything pending on this device, the open song first: a line when its <b>music</b> is edited since publish, each unsynced <b>annotation</b> on its own line with a ✕ that discards that never-synced note from this device, and a line when <b>chat</b> messages are unsaved. Every song's row has the same three buttons: tap <b>Open</b> to open it here, <b>Publish</b> to publish that song only (a job — ⏳ shows it), <b>Revert</b> to drop EVERYTHING this device hasn't published for that song — music, annotations, AND unsaved chat messages alike — after asking (the confirm names what it drops, e.g. "Revert — drops 2 chat messages"; your current state is kept as a version first — File → Versions… brings it back; a song never published has no Revert — there is no published copy to go back to). <b>⇪ Publish song</b> ships the open song: .mid, .rollnotes.json, .notes.txt and .ask.md for your own songs; annotations + chat for analyzed ones. <b>Publish all (N)</b> appears when more than one song is pending and publishes everything pending on this device — music, annotations and chat, for every song listed. Needs your token once; Copy/Download the file otherwise. "Unsynced" = still only on this device. Repo ↗ opens the GitHub repository in a new tab. ⎘ Web session copies a bootstrap instruction — paste it into a fresh Claude Web chat and it clones the repo, reads WEB-SESSION.md from disk, and has everything it needs to run an analysis session (process rules, file locations, session shape, handoff format). It copies the clone command rather than a URL on purpose: a session that starts by fetching keeps fetching, one file at a time, and can't grep across your notes.</dd>
     </dl>
     </div>
 
@@ -1967,19 +1983,28 @@
 </div>
 
 <div id="viewsheet">
-  <button class="fitem" id="vwScore">𝄞  Score view</button>
-  <button class="fitem" id="vwListener">📻  Listener mode</button>
+  <!-- Restructured 2026-09-30 (Josh: "there's a Score view and a Tracks view
+       but no Roll view, and Listener mode is stuck between them — look hard
+       at the ordering"): four groups, same .cfgsec convention as ⋯ More —
+       VIEW (a radio: Roll/Tracks view/Score view, one checked, same switch
+       as #viewbtn in the footer), PANELS (windows you open beside the roll),
+       DISPLAY (what the roll itself shows/snaps to), MODE (changes what
+       editing or the whole app means — last, same as Listener mode always
+       was the outlier at the bottom). -->
+  <div class="cfgsec">VIEW</div>
+  <button class="fitem" id="vwRoll">▦  Roll</button>
   <button class="fitem" id="vwTracksView">▤  Tracks view</button>
-  <button class="fitem" id="vwMixer">🎚  Mixer</button>
-  <button class="fitem" id="vwCompare">⇄  Compare with repo</button>
+  <button class="fitem" id="vwScore">𝄞  Score view</button>
   <div class="fdiv"></div>
-  <button class="fitem" id="vwTracks">◂  Tracks</button>
-  <button class="fitem" id="vwEdit">🛠  Edit toolbar</button>
-  <button class="fitem" id="vwFooter">▦  Bottom bar</button>
-  <div class="fdiv"></div>
+  <div class="cfgsec">PANELS</div>
   <button class="fitem" id="vwInst">🎹  Instrument panel</button>
   <button class="fitem" id="vwSub">💬  Notes strip</button>
+  <button class="fitem" id="vwMixer">🎚  Mixer</button>
+  <button class="fitem" id="vwTracks">◂  Tracks</button>
   <div class="fdiv"></div>
+  <div class="cfgsec">DISPLAY</div>
+  <button class="fitem" id="vwEdit">🛠  Edit toolbar</button>
+  <button class="fitem" id="vwFooter">▦  Bottom bar</button>
   <button class="fitem" id="vwGrid">▦  Grid…</button>
   <div class="fdiv" id="vwLevelsDiv"></div>
   <div id="vwLevelsRow" style="display:flex;align-items:center;gap:4px;padding:2px 4px">
@@ -1988,8 +2013,11 @@
     <button id="vwLevelsPlus" style="min-height:38px;min-width:44px" aria-label="More section levels shown">+</button>
   </div>
   <div class="fdiv"></div>
+  <div class="cfgsec">MODE</div>
   <button class="fitem" id="vwAnalyze">🔍  Analyze ▸</button>
+  <button class="fitem" id="vwCompare">⇄  Compare with repo</button>
   <button class="fitem" id="vwLearning">🎓  Learning mode</button>
+  <button class="fitem" id="vwListener">📻  Listener mode</button>
 </div>
 <!-- ⋯ More sheet (footer v2, 2026-09-30; promoted to a real WINDOW in the
      2026-09-30 tweaks pass): what's left once Publish moved back to the bar
@@ -2026,21 +2054,17 @@
   </div>
 </div>
 </div><!-- /moresheet-home -->
-<!-- VIEW and KEY SIGNATURE (footer v2 tweaks, 2026-09-30, Josh): dropped
-     from the ⋯ More UI — View ▾ already has Tracks/Score (the segment here
-     duplicated it), and the key/mode pickers duplicated the LCD key (tap →
-     the governing key: annotation's own editor, which has always had its
-     own tonic/mode pickers, #nkeysel/#nkeymode). The nodes stay in the DOM,
-     just never shown: applyViewMode() still writes viewSeg's classes/aria,
-     the key-picker code (keysel/keymode/keyset/keysetest, refreshKeysetLabel,
-     refreshKeyPreview) still reads/writes these ids, and tests still drive
-     #keysetest directly — none of that code changed, only its UI reachability. -->
+<!-- KEY SIGNATURE (footer v2 tweaks, 2026-09-30, Josh): dropped from the ⋯
+     More UI — the key/mode pickers duplicated the LCD key (tap → the
+     governing key: annotation's own editor, which has always had its own
+     tonic/mode pickers, #nkeysel/#nkeymode). The VIEW segment that used to
+     live here too (Roll/Tracks/Score, hidden) is back on the footer and in
+     View ▾ instead — see #viewbtn — so only the key picker stays a hidden
+     node: the key-picker code (keysel/keymode/keyset/keysetest,
+     refreshKeysetLabel, refreshKeyPreview) still reads/writes these ids, and
+     tests still drive #keysetest directly — none of that code changed, only
+     its UI reachability. -->
 <div id="hiddenmorerows" style="display:none" aria-hidden="true">
-  <div class="seg" id="viewseg" role="radiogroup" aria-label="View">
-    <button id="viewsegroll" role="radio" aria-checked="true">Roll</button>
-    <button id="viewsegtracks" role="radio" aria-checked="false">Tracks</button>
-    <button id="viewsegscore" role="radio" aria-checked="false">Score</button>
-  </div>
   <div class="row">
     <select id="keysel" aria-label="Key tonic">
       <option value="" id="keyunset">key: not set (C)</option>
@@ -11536,9 +11560,10 @@ function armAlbumLink(album, path) { // ?album= at boot: arm the run WITHOUT pla
   // silent no-op (the song still opens). play() reads albumRun however it got
   // set, so the first ▶ counts passes and advances exactly like albumStart's.
   if (!album || !CATALOG[album]) return;
-  const idx = CATALOG[album].findIndex(([, p]) => p === path);
+  const list = albumEffectiveOrder(album); // the shown order (game or A–Z) — WYSIWYG
+  const idx = list.findIndex(([, p]) => p === path);
   if (idx < 0) return;
-  albumRun = {album, list: CATALOG[album], idx, passes: ALBUM_PASSES, gen: 0};
+  albumRun = {album, list, idx, passes: ALBUM_PASSES, gen: 0};
   albumStrip();
 }
 function albumStrip() { // the run's one visible body — text, paused dimming, shown iff a run exists
@@ -11569,7 +11594,7 @@ function albumLeave() { // ✕: keep this song, drop its ending
   setInfo("left the album — this song loops on its own now");
 }
 async function albumStart(album, idx) {
-  const list = CATALOG[album];
+  const list = CATALOG[album] && albumEffectiveOrder(album); // the shown order (game or A–Z) — WYSIWYG
   if (!list || !list[idx]) return;
   albumRun = {album, list, idx, passes: ALBUM_PASSES, gen: 0};
   albumStrip();
@@ -12423,7 +12448,15 @@ function renderFolder(section, folder) { // one level: subfolders, then this fol
     for (const key of node.songs.sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b))))
       { const r = songRow(songTitleOf(key) + "  · " + songStatus(key) + (key === currentPath ? "   ✓" : ""), () => { songsheet.classList.remove("on"); openDraft(key); }); if (key === currentPath) r.dataset.current = "1"; rows.appendChild(r); }
   } else {
-    for (const path of node.songs.sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)))) {
+    // this folder is one album iff every song here maps to the same CATALOG
+    // group — the only case where game order (and the switch) applies
+    const group = node.songs.length && groupOf(node.songs[0]);
+    const oneAlbum = !!(group && node.songs.every(p => groupOf(p) === group));
+    if (oneAlbum && albumHasTrackData(group)) rows.appendChild(albumOrderControl(group, () => renderFolder(section, folder)));
+    const songs = oneAlbum
+      ? albumEffectiveOrder(group).map(([, p]) => p).filter(p => node.songs.includes(p))
+      : node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
+    for (const path of songs) {
       const local = localStorage.getItem(draftStoreKey(path)) !== null; // the tap opens the local copy (draft wins)
       const r = songRow(songTitleOf(path) + (local ? "  · local copy" : "") + (path === currentPath ? "   ✓" : ""), () => {
         currentPath = path;
@@ -14076,12 +14109,12 @@ function applyChrome() {
   document.getElementById("panelshow").addEventListener("click", () => { editrowHidden = footerHidden = false; applyChrome(); });
   if (editrowHidden || footerHidden) applyChrome();
 }
-// footer v2 (2026-09-30): the cycling #viewbtn is superseded by the
-// Roll/Tracks/Score 3-way segment in #moresheet (Josh's usage note: the
-// Tracks/Roll/Score switch was RARELY used — it belongs behind ⋯ More, not
-// cycling a single button on the main row). #viewbtn itself is kept as a
-// hidden, inert node (see the footer markup) only in case anything still
-// looks it up by id.
+// #viewbtn (footer v2 tweaks, 2026-09-30): a 3-way Roll/Tracks/Score segment,
+// visible again at the footer's left — Josh uses it a lot in analysis; the
+// first footer v2 pass had hidden it, betting View ▾'s own Tracks/Score
+// items covered it, and that bet was wrong. Same ids/object as when this
+// segment lived hidden in #moresheet; View ▾ (vwRoll/vwTracksView/vwScore)
+// drives the same setViewMode(), just through separate DOM nodes.
 const viewSeg = {roll: document.getElementById("viewsegroll"), tracks: document.getElementById("viewsegtracks"), score: document.getElementById("viewsegscore")};
 function applyViewMode() {
   for (const [m, b] of Object.entries(viewSeg)) {
@@ -16302,6 +16335,70 @@ function subfolderKeys(node) { return Object.keys(node.sub).sort((a, b) => segTi
 function publishedPaths() { return Object.values(CATALOG).flat().map(([, p]) => p); }
 function groupOf(path) { const g = Object.entries(CATALOG).find(([, songs]) => songs.some(([, p]) => p === path)); return g ? g[0] : null; }
 function catalogHas(path) { return Object.values(CATALOG).some(songs => songs.some(([, p]) => p === path)); }
+// -------------------------------------------------------- album order (game vs A–Z)
+// Josh wants albums playable in GAME (soundtrack) order, not only alphabetical.
+// tools/album-order.mjs writes the soundtrack position into album.json as
+// nsf.tracks[slug].track (+.disc for a multi-disc set) for the capture albums
+// it could place; an album without that data never shows the switch and
+// always sorts A–Z. ONE function, albumOrder, so the song list (Open sheet,
+// File ▸ Open) and album play (Next/Prev, the "N/M … next:" strip) always
+// walk the SAME order — Josh, 2026-09-30: "whatever's shown is what plays."
+// Device-local pref (one global switch, not per-album): ff1roll-albumorder.
+let albumOrderPref = localStorage.getItem("ff1roll-albumorder") === "az" ? "az" : "game"; // "game" the moment an album HAS track data (albumHasTrackData gates it)
+function setAlbumOrderPref(mode) {
+  albumOrderPref = mode === "az" ? "az" : "game";
+  localStorage.setItem("ff1roll-albumorder", albumOrderPref);
+}
+function slugOfPath(path) { return path.split("/").pop().replace(/\.mid$/i, ""); }
+function albumTrackMap(album) { // slug -> {track, disc} for this album's songs, from the warmed album.json cache (albumMetaFor, at boot) — or null if it hasn't loaded yet / has none
+  const songs = CATALOG[album];
+  if (!songs || !songs.length) return null;
+  const meta = albumMetaCache["albums/" + folderOf(songs[0][1])];
+  return (meta && meta.nsf && meta.nsf.tracks) || null;
+}
+function albumHasTrackData(album) { // gates the switch: hidden when the album has no track numbers at all
+  const tracks = albumTrackMap(album);
+  return !!tracks && Object.values(tracks).some(t => t && t.track != null);
+}
+// songs: [[title, path], ...] for ONE album; returns a NEW array, reordered.
+// mode "game": disc, then track (tools/album-order.mjs's own sort key); a
+// song with no track number sorts after every numbered one. mode "az" (or
+// an album with no track data at all): alphabetical by title, same as before
+// this feature shipped.
+function albumOrder(album, songs, mode) {
+  const tracks = mode === "game" ? albumTrackMap(album) : null;
+  const key = ([, p]) => {
+    const t = tracks && tracks[slugOfPath(p)];
+    return t && t.track != null ? [0, t.disc || 0, t.track] : [1, 0, 0];
+  };
+  return songs.slice().sort((a, b) => {
+    const ka = key(a), kb = key(b);
+    for (let i = 0; i < 3; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i];
+    return a[0].localeCompare(b[0]); // ties (both untracked, or same track number) fall back to title
+  });
+}
+function albumEffectiveOrder(album) { // CATALOG[album], reordered per the current pref — "az" when the album has no track data, so the order never silently changes
+  const songs = CATALOG[album];
+  if (!songs) return songs;
+  return albumOrder(album, songs, albumHasTrackData(album) ? albumOrderPref : "az");
+}
+function albumOrderControl(album, onChange) { // the "Game order | A–Z" segmented switch — only built when albumHasTrackData(album) is true
+  const seg = document.createElement("div");
+  seg.className = "seg albumorderseg";
+  seg.setAttribute("role", "radiogroup");
+  seg.setAttribute("aria-label", "Song order");
+  seg.style.margin = "6px 4px";
+  for (const [mode, label] of [["game", "Game order"], ["az", "A–Z"]]) {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", String(albumOrderPref === mode));
+    b.classList.toggle("active", albumOrderPref === mode);
+    b.addEventListener("click", () => { if (albumOrderPref !== mode) { setAlbumOrderPref(mode); onChange(); } });
+    seg.appendChild(b);
+  }
+  return seg;
+}
 function songStatus(key) { // the word on a LOCAL row
   if (isUnsaved(key)) return "never saved";
   if (!catalogHas(key)) return "not published";
@@ -16789,10 +16886,12 @@ function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2-char s
     b.textContent = (on ? "✓ " : "   ") + b.textContent.replace(/^([✓ ]\s*)/, "").replace(/^\s+/, "");
     b.style.opacity = dim ? 0.55 : 1;
   };
-  const base = {vwScore: "𝄞  Score view", vwListener: "📻  Listener mode", vwTracksView: "▤  Tracks view", vwMixer: "🎚  Mixer", vwTracks: "◂  Tracks", vwEdit: "🛠  Edit toolbar",
+  const base = {vwRoll: "▦  Roll", vwScore: "𝄞  Score view", vwListener: "📻  Listener mode", vwTracksView: "▤  Tracks view", vwMixer: "🎚  Mixer", vwTracks: "◂  Tracks", vwEdit: "🛠  Edit toolbar",
                 vwFooter: "▦  Bottom bar", vwInst: "🎹  Instrument panel", vwSub: "💬  Notes strip",
                 vwCompare: "⇄  Compare with repo", vwAnalyze: "🔍  Analyze ▸", vwLearning: "🎓  Learning mode"};
   for (const [id, label] of Object.entries(base)) document.getElementById(id).textContent = label;
+  // VIEW group is a radio, not independent toggles: exactly one of these three is ✓
+  set("vwRoll", viewMode === "roll");
   set("vwScore", viewMode === "score");
   set("vwTracksView", viewMode === "tracks");
   set("vwMixer", mixerIsOpen());
@@ -16918,13 +17017,16 @@ document.getElementById("viewsheetbtn").addEventListener("click", e => {
 });
 { // View toggles flip in place — the menu STAYS OPEN (batch hiding is the use)
   const on = (id, fn) => document.getElementById(id).addEventListener("click", () => { fn(); renderViewMenu(); });
-  on("vwScore", () => setViewMode(viewMode === "score" ? "roll" : "score"));
+  // VIEW group is a radio (Josh, 2026-09-30): each item always SELECTS its
+  // mode — no toggle-off — same as the footer's #viewbtn segmented control.
+  on("vwRoll", () => setViewMode("roll"));
+  on("vwScore", () => setViewMode("score"));
   on("vwListener", () => {
     listenerMode = !listenerMode;
     localStorage.setItem("ff1roll-listener", listenerMode ? "1" : "0");
     applyListener();
   });
-  on("vwTracksView", () => setViewMode(viewMode === "tracks" ? "roll" : "tracks"));
+  on("vwTracksView", () => setViewMode("tracks"));
   on("vwMixer", () => toggleMixer());
   on("vwLearning", () => { setAppMode(appMode() === "learning" ? "normal" : "learning"); applyMode(); });
   on("vwAnalyze", () => { // Normal-only (the item is absent otherwise) — compute on toggle, never per frame
@@ -17133,17 +17235,22 @@ function fsubFolder(section, folder) { // one level: subfolders, then this folde
   fsubItem("‹ " + (up ? segTitle(up) : "All folders"), () => up ? fsubFolder(section, up) : fsubAlbums(), true);
   fsubHeader((section === "local" ? localLabel() : publishedLabel()) + "  ·  " + folderTitle(folder));
   for (const seg of subfolderKeys(node)) fsubItem(segTitle(node.sub[seg].path) + "  (" + nodeCount(node.sub[seg]) + ")  ›", () => fsubFolder(section, node.sub[seg].path));
-  const songs = node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
   if (section === "local") {
+    const songs = node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
     const rerender = () => { (nodeAt(folderTree(draftKeys()), folder) || {songs: []}).songs.length ? fsubFolder("local", folder) : fsubAlbums(); };
     for (const key of songs) draftRow(key, songTitleOf(key) + "  · " + songStatus(key), rerender);
     return;
   }
-  const group = songs.length && groupOf(songs[0]);
-  if (group && songs.every(p => groupOf(p) === group)) { // this folder is one album: the only way into an album run
-    const here = CATALOG[group].findIndex(([, p]) => p === currentPath);
+  const group = node.songs.length && groupOf(node.songs[0]);
+  const oneAlbum = !!(group && node.songs.every(p => groupOf(p) === group)); // this folder is one album: the only way into an album run
+  if (oneAlbum && albumHasTrackData(group)) filesub.appendChild(albumOrderControl(group, () => fsubFolder(section, folder)));
+  const songs = oneAlbum
+    ? albumEffectiveOrder(group).map(([, p]) => p).filter(p => node.songs.includes(p))
+    : node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
+  if (oneAlbum) { // play follows the SAME order the list just showed (Josh: WYSIWYG)
+    const here = songs.indexOf(currentPath);
     const from = here >= 0 ? here : 0;
-    fsubItem("💿  Play album" + (here >= 0 ? " from " + (here + 1) + "/" + CATALOG[group].length : ""),
+    fsubItem("💿  Play album" + (here >= 0 ? " from " + (here + 1) + "/" + songs.length : ""),
              () => { closeFileMenus(); albumStart(group, from); });
   }
   for (const path of songs)
@@ -17761,19 +17868,35 @@ function dropLocalSong(key) { // Revert to repo copy's discard: the current stat
     localStorage.removeItem(pre + key);
   idbDraftDelete(key);
 }
-async function revertSongToRepo(key) { // a Publish row's Revert: any pending song, open or not
+async function revertSongToRepo(key) { // a Publish row's Revert: any pending song, open or not.
+  // Reverts EVERYTHING unpublished for this song, chat included (Josh,
+  // 2026-09-30, ruling on the "N chat messages + Revert does nothing" bug) —
+  // the confirm/button name what's dropped so a chat-only revert isn't silent.
+  const chatKey = "ff1roll-ask-" + key;
+  const chatN = askUnsavedCount(chatKey);
+  const chatPhrase = chatN ? chatN + " chat message" + (chatN === 1 ? "" : "s") : "";
+  let notes = [];
+  try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { /* corrupt: treat as none */ }
+  const hasEdits = !!draftDirtyState(key) || notes.length > 0;
+  const drops = hasEdits && chatPhrase ? "your edits and " + chatPhrase
+              : hasEdits ? "your edits"
+              : chatPhrase ? chatPhrase
+              : "";
   const ok = await appConfirm("REVERT " + songTitleOf(key).toUpperCase() + "?",
-    "Discards this device's changes to this song — music, unsynced annotations, deletions. " +
+    "Discards this device's unpublished changes to this song" + (hasEdits ? " — music, unsynced annotations, deletions" : "") +
+    (chatPhrase ? (hasEdits ? ", and " + chatPhrase : " — " + chatPhrase) : "") + ". " +
     "The published copy becomes what you see. Your current state is kept as a version first — File → Versions… brings it back.",
-    "Revert", "Cancel");
+    "Revert" + (drops ? " — drops " + drops : ""), "Cancel");
   if (!ok) return;
   dropLocalSong(key);
+  askRevertToSaved(chatKey);
   pubCheck.delete(key);
   if (key === songKey) { editUndo = []; editRedo = []; songKey = null; await loadSong(key); }
   updateSyncBtn();
   updateSongBtn();
   if (document.getElementById("syncsheet").classList.contains("on")) renderSyncPending();
-  setInfo("reverted " + songTitleOf(key) + " — this device now has the published copy");
+  if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender(); // chat sheet open on this song: reflect the drop live
+  setInfo("reverted " + songTitleOf(key) + (chatPhrase ? " and dropped " + chatPhrase : "") + " — this device now has the published copy");
 }
 document.getElementById("filerevert").addEventListener("click", () => {
   if (!songKey) { setInfo("open a song first"); return; }
@@ -17844,18 +17967,23 @@ async function goBackToVersion(key, idx) {
   document.getElementById("versionssheet").classList.remove("on");
   setInfo("back to " + label + " — your previous state is saved as a version too");
 }
-async function goBackToPublished(key) {
+async function goBackToPublished(key) { // same door as the Publish sheet's Revert (revertSongToRepo) — same contract: chat included
+  const chatKey = "ff1roll-ask-" + key;
+  const chatN = askUnsavedCount(chatKey);
   const ok = await appConfirm("GO BACK TO THE PUBLISHED COPY?",
-    "Your current state is kept as a version first.", "Go back to this", "Cancel");
+    "Your current state is kept as a version first." + (chatN ? " Drops " + chatN + " unsaved chat message" + (chatN === 1 ? "" : "s") + " too." : ""),
+    "Go back to this", "Cancel");
   if (!ok) return;
   dropLocalSong(key);
+  askRevertToSaved(chatKey);
   pubCheck.delete(key);
   editUndo = []; editRedo = [];
   if (key === songKey) { songKey = null; await loadSong(key); }
   updateSyncBtn();
   updateSongBtn();
+  if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender();
   document.getElementById("versionssheet").classList.remove("on");
-  setInfo("back to the published copy — your previous state is saved as a version too");
+  setInfo("back to the published copy" + (chatN ? " and dropped " + chatN + " chat message" + (chatN === 1 ? "" : "s") : "") + " — your previous state is saved as a version too");
 }
 // -------------------------------------------------------- Download audio
 // DAW convention (GarageBand, Cubasis, BandLab): bounce OFFLINE — faster
@@ -22092,6 +22220,16 @@ function askSave(msgs, meta, key) {
     if (ok && typeof askstatus !== "undefined" && askstatus) askstatus.textContent = "chat storage is full — the oldest messages were dropped; Save the song to keep the rest";
   }
   if (typeof updateSongBtn === "function") updateSongBtn(); // the ● follows unsaved chat too
+}
+// Revert's chat leg (a Publish-row Revert drops EVERYTHING unpublished,
+// chat included, Josh 2026-09-30): truncate back to exactly the messages
+// already in <song>.ask.md — `saved` of them, from the front. No published
+// chat (saved 0) means this empties the log, same as Clear chat.
+function askRevertToSaved(key) {
+  const st = askStore(key);
+  if (st.msgs.length <= st.saved) return; // nothing unsaved — no-op
+  try { localStorage.setItem(key, JSON.stringify({lastUsed: Date.now(), msgs: st.msgs.slice(0, st.saved), saved: st.saved, trimmed: st.trimmed})); }
+  catch (err) { /* private mode / quota: leave it, the song revert above already happened */ }
 }
 function askEvictOthers(mine) { // other songs' logs go LRU-first when the total runs long — never one with unsaved messages
   try {
