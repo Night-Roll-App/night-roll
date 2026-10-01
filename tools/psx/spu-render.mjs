@@ -116,7 +116,7 @@ const clampPan = p => Math.max(0, Math.min(127, p));
 // or the image's AKAO sample sets, akao.mjs) or from the table the caller
 // found; pitch from the record's twelve base pitches (× 2^(octave − 6)) or,
 // for the 0x10-byte articulations, its unity key and fine tune.
-function akaoVoices(result, opts, sampleRate) {
+export function akaoVoices(result, opts, sampleRate) {
   const {ram, table, bank} = opts;
   const ctx = result.instr && result.instr.kind === "akao-sets" ? result.instr : null;
   let d, recOf, B = null;
@@ -158,7 +158,7 @@ function akaoVoices(result, opts, sampleRate) {
 // linear volumes: velocity × tone vol × program vol × bank master vol × the
 // channel's CC7·CC11; pan = the tone's, the program's and the channel's CC10
 // offsets from centre, summed.
-function vabVoices(result, sampleRate) {
+export function vabVoices(result, sampleRate) {
   const vab = result.vab;
   const envs = new Map();
   const envOf = t => { const k = t.adsr1 + ":" + t.adsr2; if (!envs.has(k)) envs.set(k, adsrRecord(t.adsr1, t.adsr2)); return envs.get(k); };
@@ -185,12 +185,149 @@ function vabVoices(result, sampleRate) {
   };
 }
 
-// -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}}
-// result: an AKAO capture (akao.mjs akaoNotes; opts {ram, table, bank} when
-// its instruments are INSTR.DAT) or a SEQ capture with its VAB (notes.mjs
-// seqNotes(seq, {vab}) — result.vab carries the bank and its samples, so no
-// RAM, table or bank is needed).
-export async function renderSpu(result, opts = {}) {
+// Streaming core (step 1c, docs/streamed-render-plan.md). This chip's own
+// renderer carries NO cross-note state at all — no reverb (the header
+// comment above says so: dry), no voice stealing, no shared filter — every
+// voice is an independent sum into l/r, so "stream" only needs a per-chunk
+// active-voice list; nothing needs to be shared between voices beyond the
+// group's l/r output. PS2 (Challenge's BGM/WD path, tools/ps2/wd.mjs
+// toBank() → this same renderSpu with result.vab set) goes through the
+// identical vabVoices() branch below — same contract, confirmed no reverb
+// there either (tools/ps2/INTEGRATION.md: "same as PS1's own reverb gap").
+//
+// A "job" is everything about one note+layer that's fixed before any sample
+// is produced (exactly the per-note/per-layer setup the old renderSpu did
+// inline, unchanged formulas); a "voice" is a job plus its live, mutating
+// playback state (Envelope, pos, ri/si cursors, step, vol). Jobs within a
+// group stay in g.notes order (tick-ascending; i0 is therefore
+// non-decreasing within a group) with each note's layers contiguous, in the
+// order voicesOf(n) returns them — the SAME order the old code's nested
+// note/layer loop produced. The active list only ever appends in that order
+// and filters dead voices out in place, so summation order into l/r (and so
+// float rounding) is identical to the old whole-buffer render for any chunk
+// size.
+function buildJobs(g, voicesOf, seq, sampleRate) {
+  const jobs = [];
+  for (const n of g.notes) {
+    for (const layer of voicesOf(n)) {
+      const {smp, ratio, env: rec} = layer;
+      const pan = layer.pan, gL = (127 - pan) / 127, gR = pan / 127;
+      const t0 = secondsAt(seq, n.tick), t1 = secondsAt(seq, n.endTick);
+      const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(t1 * sampleRate);
+      const toneVol = layer.gain;
+      let vol0 = Math.max(0, Math.min(1, (n.vel || 0) / 127)) * toneVol;
+      // a volume/expression change while the note sounds (n.gain: breakpoints
+      // in ticks from the note's start) — the driver moves the voice's volume,
+      // so the render follows it sample by sample; vel was that curve's start
+      let ramp = null;
+      if (n.gain && n.gain.length > 1) {
+        ramp = n.gain.map(g2 => ({i: Math.floor(secondsAt(seq, n.tick + g2.t) * sampleRate), l: g2.l * toneVol}));
+        vol0 = ramp[0].l;
+      }
+      // pitch slides (n.slide: semitone targets at tick offsets, each reached
+      // over len ticks) bend the ONE voice — no new attack, as the driver does
+      let slide = null;
+      if (n.slide && n.slide.length) {
+        slide = [{i: i0, s: 0}];
+        for (const sl of n.slide) {
+          const a = Math.floor(secondsAt(seq, n.tick + sl.t) * sampleRate), z = Math.floor(secondsAt(seq, n.tick + sl.t + Math.max(1, sl.len)) * sampleRate);
+          slide.push({i: a, s: slide[slide.length - 1].s}); slide.push({i: Math.max(z, a + 1), s: sl.to});
+        }
+      }
+      const pcm = smp.pcm, L = pcm.length;
+      jobs.push({pcm, L, oneShot: smp.oneShot, loopStart: smp.loopStart, loopEnd: smp.loopEnd, gL, gR, i0, iOff, rec, ratio, vol0, ramp, slide});
+    }
+  }
+  return jobs; // i0-ascending: g.notes is tick-ascending within a channel
+}
+
+// One output sample for one live voice at absolute index i: exactly the old
+// inner-loop body, used by fastForwardVoice() (seek() only calls this —
+// it's not the hot path, so staying a small shared function here is worth
+// it for correctness). render()'s own per-chunk loop below is the SAME
+// arithmetic, duplicated and hoisted into plain locals — calling this once
+// per sample cost ~2x the old whole-buffer render on a synthetic 8-channel/
+// 60-note fixture (property lookups on `job`/`v` every sample, and — before
+// the boolean-return change below — a "number | null" return that kept V8
+// from unboxing the float math). The tests that compare chunked/seeked
+// output against the frozen whole-render oracle are what keeps these two
+// copies honest; if you change one, change the other. When `l` is given,
+// writes the panned value into l[oi]/r[oi]; omitted (seek), the sample is
+// computed and discarded. -> true while the voice is still live, false the
+// instant it dies (envelope reached silence after release, or ran off a
+// non-looping sample — no sample was produced).
+function advanceVoice(job, v, i, l, r, oi) {
+  if (i >= job.iOff && v.env.on) v.env.release();
+  const lv = v.env.next();
+  if (!v.env.on && lv <= 0) return false;
+  if (v.pos >= job.L) {
+    if (job.oneShot || job.loopStart == null || job.loopEnd <= job.loopStart) return false;
+    v.pos = job.loopStart + ((v.pos - job.loopStart) % (job.loopEnd - job.loopStart));
+  }
+  if (job.ramp) {
+    while (v.ri + 1 < job.ramp.length && i >= job.ramp[v.ri + 1].i) v.ri++;
+    const g = job.ramp[v.ri], nx = job.ramp[v.ri + 1];
+    v.vol = nx && nx.i > g.i && i < nx.i ? g.l + (nx.l - g.l) * (i - g.i) / (nx.i - g.i) : g.l;
+  }
+  if (job.slide) {
+    while (v.si + 1 < job.slide.length && i >= job.slide[v.si + 1].i) v.si++;
+    const g = job.slide[v.si], nx = job.slide[v.si + 1];
+    const semis = nx && nx.i > g.i && i < nx.i ? g.s + (nx.s - g.s) * (i - g.i) / (nx.i - g.i) : g.s;
+    v.step = job.ratio * Math.pow(2, semis / 12);
+  }
+  const p0 = Math.floor(v.pos), f = v.pos - p0, a = job.pcm[p0], b = p0 + 1 < job.L ? job.pcm[p0 + 1] : (job.oneShot ? a : job.pcm[job.loopStart != null ? job.loopStart : 0]);
+  const val = (a + (b - a) * f) / 32768 * (lv / 0x7FFF) * v.vol * 0.5;
+  v.pos += v.step;
+  if (l !== undefined) { l[oi] += val * job.gL; r[oi] += val * job.gR; }
+  return true;
+}
+
+const freshVoice = (job) => ({job, env: new Envelope(job.rec), pos: 0, ri: 0, si: 0, step: job.ratio, vol: job.vol0, i: job.i0});
+
+// How long (in samples, at the stream's rate) a release could possibly last:
+// simulate Envelope from the loudest possible start (0x7FFF) — a real voice
+// releases at or below whatever level it actually reached, so its true
+// release is never longer than this; caching it per ADSR record (shared by
+// every note on the same instrument) makes seek()'s liveness test O(1) for
+// the common case instead of re-simulating per note. Capped at `cap` samples
+// (the stream's own total length) — beyond that, nothing is ever queried, so
+// "still releasing past the whole song" and "still releasing at sample N"
+// are the same fact for every purpose seek() uses this for.
+function releaseLenFor(rec, cache, cap) {
+  let n = cache.get(rec);
+  if (n != null) return n;
+  const e = new Envelope(rec);
+  e.level = 0x7FFF; e.phase = 3; e.on = false; e.cycle = 0;
+  n = 0;
+  while (n < cap) { n++; if (e.next() <= 0) break; }
+  cache.set(rec, n);
+  return n;
+}
+
+// Run a voice from its own start (job.i0) to `target` with no output — used
+// only by seek(), only for notes the liveness bound says might still be
+// live; same advanceVoice() calls in the same order a real render would
+// have made, so the state hand-off is exact. -> the live voice at `target`,
+// or null if it died first (also correct: seek() then just drops it).
+function fastForwardVoice(job, target) {
+  const v = freshVoice(job);
+  while (v.i < target) {
+    if (!advanceVoice(job, v, v.i)) return null;
+    v.i++;
+  }
+  return v;
+}
+
+// -> {sampleRate, seconds, frames, tracks, render(nFrames), seek(frame),
+// snapshot(), restore(s)}. Same inputs as renderSpu (below), which is now
+// just "stream the whole thing in one chunk". render(nFrames) returns
+// {[trackName]: {l, r}} for the NEXT nFrames from the stream's current
+// position (starting at 0); concatenating render() calls of any chunk sizes
+// reproduces renderSpu()'s whole-song arrays bit-for-bit, because every
+// voice's own arithmetic only ever depends on its own job and its own prior
+// state (see the comment above buildJobs) — chunk boundaries are invisible
+// to it.
+export function createSpuStream(result, opts = {}) {
   const sampleRate = opts.sampleRate || SPU_RATE;
   const voicesOf = result.vab ? vabVoices(result, sampleRate) : akaoVoices(result, opts, sampleRate);
   const {notes, seq} = result;
@@ -198,44 +335,49 @@ export async function renderSpu(result, opts = {}) {
   let endTick = seq.loop ? seq.loop.end : 0; for (const n of notes) endTick = Math.max(endTick, n.endTick || n.tick);
   const seconds = Math.min(opts.keepSeconds || Infinity, secondsAt(seq, endTick) + 2.5);
   const N = Math.ceil(seconds * sampleRate);
-  const out = {sampleRate, seconds};
-  let done = 0, total = notes.length;
-  for (const g of groups) {
-    const l = new Float32Array(N), r = new Float32Array(N);
-    for (const n of g.notes) {
-      for (const layer of voicesOf(n)) {
-        const {smp, ratio, env: rec} = layer;
-        const pan = layer.pan, gL = (127 - pan) / 127, gR = pan / 127;
-        const t0 = secondsAt(seq, n.tick), t1 = secondsAt(seq, n.endTick);
-        const i0 = Math.floor(t0 * sampleRate), iOff = Math.floor(t1 * sampleRate);
-        const toneVol = layer.gain;
-        let vol = Math.max(0, Math.min(1, (n.vel || 0) / 127)) * toneVol;
-        // a volume/expression change while the note sounds (n.gain: breakpoints
-        // in ticks from the note's start) — the driver moves the voice's volume,
-        // so the render follows it sample by sample; vel was that curve's start
-        let ramp = null, ri = 0;
-        if (n.gain && n.gain.length > 1) {
-          ramp = n.gain.map(g => ({i: Math.floor(secondsAt(seq, n.tick + g.t) * sampleRate), l: g.l * toneVol}));
-          vol = ramp[0].l;
-        }
-        // pitch slides (n.slide: semitone targets at tick offsets, each reached
-        // over len ticks) bend the ONE voice — no new attack, as the driver does
-        let slide = null, si = 0, step = ratio;
-        if (n.slide && n.slide.length) {
-          slide = [{i: i0, s: 0}];
-          for (const sl of n.slide) {
-            const a = Math.floor(secondsAt(seq, n.tick + sl.t) * sampleRate), z = Math.floor(secondsAt(seq, n.tick + sl.t + Math.max(1, sl.len)) * sampleRate);
-            slide.push({i: a, s: slide[slide.length - 1].s}); slide.push({i: Math.max(z, a + 1), s: sl.to});
-          }
-        }
-        const env = new Envelope(rec);
-        let pos = 0;
-        const pcm = smp.pcm, L = pcm.length;
-        for (let i = i0; i < N; i++) {
+  const tracks = groups.map(g => g.name);
+  const jobsByGroup = groups.map(g => buildJobs(g, voicesOf, seq, sampleRate));
+  const relCache = new Map(); // ADSR record -> worst-case release length (samples)
+
+  let frame = 0;
+  let active = jobsByGroup.map(() => []);     // per group: live voices, job order
+  let nextJobIdx = jobsByGroup.map(() => 0);  // per group: jobs with i0 < current frame are all decided
+
+  function activateUpTo(gi, end) {
+    const jobs = jobsByGroup[gi];
+    let idx = nextJobIdx[gi];
+    while (idx < jobs.length && jobs[idx].i0 < end) { active[gi].push(freshVoice(jobs[idx])); idx++; }
+    nextJobIdx[gi] = idx;
+  }
+
+  function render(nFrames) {
+    const end = Math.min(frame + nFrames, N);
+    const out = {};
+    for (let gi = 0; gi < groups.length; gi++) {
+      activateUpTo(gi, end);
+      const l = new Float32Array(nFrames), r = new Float32Array(nFrames);
+      const kept = [];
+      for (const v of active[gi]) {
+        // Hoisted out of advanceVoice() into plain locals for this chunk —
+        // same arithmetic (advanceVoice/fastForwardVoice's shared copy is
+        // the correctness reference the tests check this against), but as
+        // a per-call object-property lookup inside a per-SAMPLE loop this
+        // was ~2x the old whole-buffer render on a synthetic 8-channel/60-
+        // note fixture; hoisting the job's static fields and the voice's
+        // mutable ones to locals once per voice per chunk (not per sample)
+        // got it back under the 1.2x budget. Write back to `v` once, after.
+        const job = v.job, env = v.env;
+        const iOff = job.iOff, L = job.L, oneShot = job.oneShot, loopStart = job.loopStart, loopEnd = job.loopEnd,
+          pcm = job.pcm, gL = job.gL, gR = job.gR, ramp = job.ramp, slide = job.slide, ratio = job.ratio;
+        let pos = v.pos, ri = v.ri, si = v.si, step = v.step, vol = v.vol, i = v.i, dead = false;
+        while (i < end) {
           if (i >= iOff && env.on) env.release();
           const lv = env.next();
-          if (!env.on && lv <= 0) break;
-          if (pos >= L) { if (smp.oneShot || smp.loopStart == null || smp.loopEnd <= smp.loopStart) break; pos = smp.loopStart + ((pos - smp.loopStart) % (smp.loopEnd - smp.loopStart)); }
+          if (!env.on && lv <= 0) { dead = true; break; }
+          if (pos >= L) {
+            if (oneShot || loopStart == null || loopEnd <= loopStart) { dead = true; break; }
+            pos = loopStart + ((pos - loopStart) % (loopEnd - loopStart));
+          }
           if (ramp) {
             while (ri + 1 < ramp.length && i >= ramp[ri + 1].i) ri++;
             const g = ramp[ri], nx = ramp[ri + 1];
@@ -247,17 +389,90 @@ export async function renderSpu(result, opts = {}) {
             const semis = nx && nx.i > g.i && i < nx.i ? g.s + (nx.s - g.s) * (i - g.i) / (nx.i - g.i) : g.s;
             step = ratio * Math.pow(2, semis / 12);
           }
-          const p0 = Math.floor(pos), f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : (smp.oneShot ? a : pcm[smp.loopStart != null ? smp.loopStart : 0]);
-          const v = (a + (b - a) * f) / 32768 * (lv / 0x7FFF) * vol * 0.5;
-          l[i] += v * gL; r[i] += v * gR;
+          const p0 = Math.floor(pos), f = pos - p0, a = pcm[p0], b = p0 + 1 < L ? pcm[p0 + 1] : (oneShot ? a : pcm[loopStart != null ? loopStart : 0]);
+          const val = (a + (b - a) * f) / 32768 * (lv / 0x7FFF) * vol * 0.5;
+          const oi = i - frame;
+          l[oi] += val * gL; r[oi] += val * gR;
           pos += step;
+          i++;
         }
+        v.pos = pos; v.ri = ri; v.si = si; v.step = step; v.vol = vol; v.i = i;
+        if (!dead) kept.push(v);
       }
-      done++;
-      if (opts.onProgress && (done & 63) === 0) { opts.onProgress(done / total); await new Promise(r => setTimeout(r, 0)); }
+      active[gi] = kept;
+      out[tracks[gi]] = {l, r};
     }
-    out[g.name] = {l, r};
+    frame += nFrames;
+    return out;
   }
+
+  function seek(target) {
+    frame = Math.max(0, target);
+    for (let gi = 0; gi < groups.length; gi++) {
+      const jobs = jobsByGroup[gi];
+      const kept = [];
+      let idx = 0;
+      while (idx < jobs.length && jobs[idx].i0 < frame) {
+        const job = jobs[idx];
+        if (frame <= job.iOff + releaseLenFor(job.rec, relCache, N)) {
+          const v = fastForwardVoice(job, frame);
+          if (v) kept.push(v);
+        }
+        idx++;
+      }
+      active[gi] = kept;
+      nextJobIdx[gi] = idx;
+    }
+  }
+
+  function snapshot() {
+    return {
+      frame, nextJobIdx: nextJobIdx.slice(),
+      active: active.map(list => list.map(v => ({
+        job: v.job, pos: v.pos, ri: v.ri, si: v.si, step: v.step, vol: v.vol, i: v.i,
+        env: {level: v.env.level, phase: v.env.phase, cycle: v.env.cycle, on: v.env.on},
+      }))),
+    };
+  }
+
+  function restore(s) {
+    frame = s.frame;
+    nextJobIdx = s.nextJobIdx.slice();
+    active = s.active.map(list => list.map(sv => {
+      const env = new Envelope(sv.job.rec);
+      env.level = sv.env.level; env.phase = sv.env.phase; env.cycle = sv.env.cycle; env.on = sv.env.on;
+      return {job: sv.job, env, pos: sv.pos, ri: sv.ri, si: sv.si, step: sv.step, vol: sv.vol, i: sv.i};
+    }));
+  }
+
+  return {sampleRate, seconds, frames: N, tracks, render, seek, snapshot, restore};
+}
+
+// -> {sampleRate, seconds, [trackName]: {l: Float32Array, r: Float32Array}}
+// result: an AKAO capture (akao.mjs akaoNotes; opts {ram, table, bank} when
+// its instruments are INSTR.DAT) or a SEQ capture with its VAB (notes.mjs
+// seqNotes(seq, {vab}) — result.vab carries the bank and its samples, so no
+// RAM, table or bank is needed). Streams the whole thing in one pass over
+// createSpuStream — this is the only renderSpu implementation; every caller
+// (chip-worker's planChipRender/tally path, tools/psx sounding/preview
+// helpers, the PS2 BGM/WD path) is unaffected, same signature and shape.
+export async function renderSpu(result, opts = {}) {
+  const stream = createSpuStream(result, opts);
+  const out = {sampleRate: stream.sampleRate, seconds: stream.seconds};
+  const bufs = {};
+  for (const name of stream.tracks) bufs[name] = {l: new Float32Array(stream.frames), r: new Float32Array(stream.frames)};
+  // one second per chunk: each chunk yields to the event loop when onProgress is set, and a
+  // browser clamps setTimeout to >= 4 ms — 4096-frame chunks added ~8 s to a 163 s song (FFX Challenge)
+  const CHUNK = Math.max(4096, Math.round(stream.sampleRate));
+  let filled = 0;
+  while (filled < stream.frames) {
+    const n = Math.min(CHUNK, stream.frames - filled);
+    const chunk = stream.render(n);
+    for (const name of stream.tracks) { bufs[name].l.set(chunk[name].l, filled); bufs[name].r.set(chunk[name].r, filled); }
+    filled += n;
+    if (opts.onProgress) { opts.onProgress(filled / Math.max(1, stream.frames)); await new Promise(r => setTimeout(r, 0)); }
+  }
+  for (const name of stream.tracks) out[name] = bufs[name];
   if (opts.onProgress) opts.onProgress(1);
   return out;
 }

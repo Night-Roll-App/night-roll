@@ -865,6 +865,41 @@ port was never ref/unref'd (fine in a browser, forever in Node once a render
 yielded) — both now import the already-fixed `microYield` from
 `tools/nsf/nsf.mjs` instead of carrying their own copy.
 
+**Streamed PS1/PS2 render (2026-09-30, docs/streamed-render-plan.md step
+1c).** `tools/psx/spu-render.mjs`'s `createSpuStream(result, opts)` ->
+`{sampleRate, seconds, frames, tracks, render(nFrames), seek(frame),
+snapshot(), restore(s)}`; `renderSpu()` is now exactly "stream the whole
+thing in one pass" — same signature and output, every caller unaffected.
+This chip has NO cross-note state (the file's own header already said the
+render is dry: no reverb, and there's no voice-stealing model either), so
+streaming is just a per-chunk active-voice list: each note+layer becomes a
+"job" (its samples, ADSR record, pan, gain-ramp/pitch-slide breakpoints,
+i0/iOff — everything fixed before any sample is produced) plus a "voice"
+(its live Envelope, pos, ri/si cursors, step, vol); jobs activate in
+`g.notes` order (tick-ascending) with a note's layers contiguous, and the
+active list only ever appends/filters in that order so float summation
+order — and so rounding — matches the old whole-buffer render exactly,
+bit-for-bit, at any chunk size. `seek(frame)` skips fast-forwarding any
+note whose release could not possibly still be sounding by `frame`: per
+ADSR record, simulate `Envelope.release()` from the loudest possible level
+(0x7FFF, capped at the stream's own length) once and cache it — a real
+voice releases at or below whatever level it actually reached, so this
+bound is always safe. Perf: calling a shared per-sample function (returning
+the sample value or `null`) cost ~2x the old renderer on a synthetic
+8-channel/60-note fixture — a `number | null` return kept V8 from unboxing
+the float math; `render()`'s hot loop now hoists a voice's job fields and
+mutable state into plain locals once per chunk (matching the old code's own
+style) instead of calling that function per sample, which brought it back
+under the plan's 1.2x ceiling (measured ≈ 0.98-1.16x depending on chunk
+size). `seek()`'s fast-forward still uses the small shared per-sample
+function since it isn't the hot path. Test: tests/psx-stream.test.mjs — a
+frozen copy of the pre-streaming `renderSpu()` as the oracle, over an
+INSTR.DAT/table fixture (overlapping notes, a long linear release landing
+across a 4095-sample chunk boundary, a pitch slide, a gain ramp, two
+channels) and a VAB fixture (two tones layered per note, two channels):
+chunked/random-chunk renders, `renderSpu()` itself, `restore(snapshot(k))`,
+and `seek(k)` all equal the oracle's whole-song output bit-exactly.
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware

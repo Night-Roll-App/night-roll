@@ -74,6 +74,52 @@ list up front; only the sample renderers cost gigabytes, and all can stream.
    whole renders become "stream over [0,N)". Tests: random chunk sizes
    concatenated == frozen old renderer, bit-exact. Josh: one song per console
    sounds identical.
+   1c DONE (2026-09-30). tools/psx/spu-render.mjs's createSpuStream()
+   (PS1 and PS2 — Challenge's BGM/WD→wd.mjs toBank()→vabVoices goes through
+   this same function; no PS2-specific code needed). Confirmed by reading
+   the renderer, not assumed: this chip carries NO cross-note state at all —
+   no reverb (the file's own header comment already said so: dry), no voice
+   stealing — every voice is an independent sum into its group's l/r, so a
+   voice's own job (static: samples, ADSR record, pan, gain-ramp/pitch-slide
+   breakpoints, i0/iOff) plus its own mutable state (Envelope, pos, ri/si
+   cursors, step, vol) is everything streaming needs; nothing is shared
+   between voices. renderSpu() is now exactly "stream the whole thing in one
+   pass"; every caller (chip-worker's planChipRender/tally path, tools/psx
+   sounding/preview helpers, the PS2 BGM/WD path) is unaffected — same
+   signature, same {sampleRate, seconds, [track]: {l, r}} shape.
+   seek(frame) uses the liveness bound the plan called for: per ADSR record,
+   simulate Envelope.release() from the loudest possible level (0x7FFF,
+   capped at the stream's own total length) once, cache it, and skip
+   fast-forwarding any note whose release could not possibly still be
+   sounding by `frame` — a real voice releases at or below whatever level it
+   actually reached, so this is always a safe (never-too-short) bound.
+   Perf: a naive per-sample function call (returning the sample or null)
+   cost ~2x the old whole-buffer render on a synthetic 8-channel/60-note
+   fixture — a "number | null" return kept V8 from unboxing the float math.
+   Two fixes got it back in budget: (1) the shared per-sample step function
+   now returns a plain boolean and writes directly into l/r when given them,
+   instead of returning the sample; (2) render()'s own hot loop hoists the
+   job's static fields and the voice's mutable ones into plain locals once
+   per voice per CHUNK (not per sample) rather than calling that function
+   per sample — matching the old code's own local-variable style. Measured
+   on the synthetic fixture: whole-buffer-as-one-chunk ≈ 0.98x the old
+   renderer, a realistic 2048-frame chunk ≈ 1.03x, renderSpu()'s own default
+   4096-frame chunking ≈ 1.16x — under the 1.2x ceiling. (seek()'s
+   fast-forward still calls the small shared function per sample since it's
+   not the hot path; the bit-exact chunk/seek/restore tests are what keep
+   the two copies of the arithmetic honest.) Tests: tests/psx-stream.test.mjs
+   — a frozen copy of the pre-streaming renderSpu() as the oracle, over two
+   synthetic fixtures (an INSTR.DAT/table rip with overlapping notes, a
+   ~4096-sample linear release landing across the 4095 chunk-size boundary,
+   a pitch slide, a gain ramp, two channels; and a VAB rip with two tones
+   layered on every note, two channels): chunk sizes 1/4095/96000/mixed/
+   random all equal the oracle bit-exact; renderSpu() itself equals the
+   oracle; restore(snapshot(k)) and seek(k) each followed by render() equal
+   the oracle's own tail from k, bit-exact; seeking past every voice's
+   liveness bound renders pure silence (the skip path is actually exercised,
+   not just its fallback). Existing tests (tests/psx-render.test.mjs,
+   tests/ps2.test.mjs, tests/psx-real.test.mjs, tests/ps2-real.test.mjs)
+   stayed green unmodified — renderSpu's signature and output never changed.
 2. Worker stream protocol + sweep (fake-runner tests).
 3. Page scheduler behind the switch, default off. vm tests of chipSegments
    (boundaries, loop wrap + pin, album end, count-in, 50% speed, seek order,
