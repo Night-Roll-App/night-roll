@@ -2645,7 +2645,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Score entry", "inbox",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave", "reopens with the strip up",
@@ -7399,6 +7399,62 @@ test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no
   assert.equal(a.run(`viewMode`), "roll", "View ▾ → View type ▸ → Roll switches to the roll");
   assert.match(a.run(`document.getElementById("vwRoll").textContent`), /^✓/, "Roll shows the checkmark once selected");
   assert.match(a.run(`document.getElementById("vwViewType").textContent`), /View type: Roll$/, "the closed label would now read Roll too");
+});
+
+test("File ▾ → Open Recent (2026-10-01): newest first, deduped, capped at 10, Untitled skipped, Clear empties, tapping a row opens it by key", () => {
+  const a = createApp();
+  const run = (code) => a.run(code);
+  const val = (code) => JSON.parse(run(`JSON.stringify(${code})`));
+  const minimal = (name) => ({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+    tracks: [{name, notes: []}]});
+
+  // three songs load, in order — the list reads newest first
+  run(`setSong(${JSON.stringify(minimal("a"))}, "albums/a/one.mid");`);
+  run(`setSong(${JSON.stringify(minimal("b"))}, "albums/a/two.mid");`);
+  run(`setSong(${JSON.stringify(minimal("c"))}, "albums/a/three.mid");`);
+  assert.deepEqual(val(`recentSongs().map(r => r.key)`),
+    ["albums/a/three.mid", "albums/a/two.mid", "albums/a/one.mid"], "newest first");
+
+  // reopening an earlier one moves it to the front — no duplicate row
+  run(`setSong(${JSON.stringify(minimal("a"))}, "albums/a/one.mid");`);
+  assert.deepEqual(val(`recentSongs().map(r => r.key)`),
+    ["albums/a/one.mid", "albums/a/three.mid", "albums/a/two.mid"], "reopening moves it to the front");
+  assert.equal(val(`recentSongs().length`), 3, "deduped, not a fourth row");
+
+  // a new (Untitled, local/…) composition never joins the list
+  run(`createComposition(120, 4, 4);`);
+  assert.equal(val(`recentSongs().length`), 3, "the Untitled song added nothing");
+  assert.equal(val(`recentSongs().some(r => r.key.startsWith("local/"))`), false, "no local/… (unsaved) entry ever appears");
+
+  // capped at 10
+  run(`localStorage.removeItem("ff1roll-recent");
+       for (let i = 0; i < 12; i++) setSong(${JSON.stringify(minimal("x"))}, "albums/a/s" + i + ".mid");`);
+  assert.equal(val(`recentSongs().length`), 10, "capped at 10 even after 12 loads");
+  assert.deepEqual(val(`recentSongs().map(r => r.key)`),
+    Array.from({length: 10}, (_, i) => "albums/a/s" + (11 - i) + ".mid"), "the newest 10, most recent first");
+
+  // Clear recent empties it
+  run(`clearRecentSongs();`);
+  assert.deepEqual(val(`recentSongs()`), [], "Clear recent empties the list");
+
+  // tapping a row opens it with its key — the same function File → Open…'s
+  // own rows call (loadSong, via openRecentSong) — and the menu closes
+  run(`
+    localStorage.removeItem("ff1roll-recent");
+    setSong(${JSON.stringify(minimal("a"))}, "albums/a/one.mid");
+    setSong(${JSON.stringify(minimal("b"))}, "albums/a/two.mid");
+    globalThis.__opened = null;
+    loadSong = key => { globalThis.__opened = key; return Promise.resolve(); };
+    fileOpenRecentOpen = true;
+    renderOpenRecentRow();
+    document.getElementById("filesheet").classList.add("on"); // simulate the menu being open, so the close-on-tap assertion means something
+  `);
+  // row 0 is the current song (two.mid, ✓/dimmed), row 1 is one.mid, row 2 is Clear recent
+  assert.match(run(`document.getElementById("fileopenrecentrow").children[0].textContent`), /^✓ /, "the current song is marked ✓");
+  assert.match(run(`document.getElementById("fileopenrecentrow").children[1].textContent`), /^   One/, "the other recent song is listed, unmarked");
+  run(`document.getElementById("fileopenrecentrow").children[1].click();`);
+  assert.equal(val(`globalThis.__opened`), "albums/a/one.mid", "tapping the row opens it via loadSong with its key");
+  assert.equal(run(`document.getElementById("filesheet").classList.contains("on")`), false, "the File menu closes on tap");
 });
 
 test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", () => {

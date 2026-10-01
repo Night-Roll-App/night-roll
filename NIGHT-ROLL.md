@@ -1826,6 +1826,39 @@ UNVERIFIED (2026-09-14). If it doesn't, the route is static per-song
 stub directories (`albums/…/ambush/index.html`) with their own titles,
 which also makes previews work for script-less fetchers — not built.
 
+## Open Recent (2026-10-01)
+
+File ▾ → **Open Recent ▸**, right under Open…: same expanding-row pattern
+as View ▾'s "View type ▸" (`fileOpenRecentOpen`/`renderOpenRecentRow`,
+`#fileopenrecentrow`) rather than a floating submenu like Open…'s own
+`#filesub`. Device-local list, `localStorage["ff1roll-recent"]`, up to
+`RECENT_MAX` (10) `{key, title}` entries, newest first, deduped on
+reopen — storing the title means the row never needs the catalog just
+to display; the album shown beside it (`recentAlbumFor`) is read fresh
+at render time instead (the catalog's own album title via `groupOf`,
+or `folderTitle(folderOf(key))` for a local-only song — the same two
+cases `updateSongBtn`'s breadcrumb covers).
+
+**One choke point:** `rememberRecentSong(key)` is called from inside
+`setSong()` itself, right after `songKey = key` — the single place every
+real song-open converges (`loadSongInner`, `openDraftDoc`,
+`createComposition`, `forkCurrentSong`), the same hook `rememberLastSong`
+("where you left off") already uses one line above it. A linked song
+(`LINK_SONGS`) or an unsaved/Untitled one (`isUnsaved`: key starts
+`local/`) never joins the list.
+
+**Shown list only** (`recentSongsForMenu`) drops a key that's gone from
+both this device's drafts and the catalog — but only once the catalog
+has actually loaded (`Object.keys(CATALOG).length`); an empty catalog at
+boot means "don't know yet," not "gone," and a genuinely missing song
+still fails gracefully through `loadSong`'s own error path. Tapping a
+row calls the same two functions Open…'s own rows do — a local draft
+wins (`openDraft`), otherwise `loadSong` after the usual
+`currentPath`/`rememberLastSong`/`reflectSongURL`/`updateSongBtn`
+bookkeeping (`openRecentSong`) — and closes the File menu. "Clear
+recent" empties the list and re-renders in place, same as every other
+toggle in this menu.
+
 ## Album play (2026-09-14; strip model the same day)
 
 **The album is a strip, the transport is the song.** A second advisor
