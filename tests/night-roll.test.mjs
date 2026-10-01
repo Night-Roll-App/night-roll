@@ -8798,3 +8798,39 @@ test("manual annotation writes (docs/annotations-v2.md P4): refuse on a locked s
 
   run(`rollnotesReadOnly = false; annoClipboard = [];`); // leave globals clean for any test that runs after this one
 });
+
+test("drumHit: a long captured duration sustains a decaying noise burst instead of a fixed 45ms tick", () => {
+  // tools/spc/notes.mjs's NON-voice classifier still calls a few real, busy
+  // voices drums — but even those can carry an occasional long captured hit
+  // (the FF4 "Main Theme (Ocean)" case this guards was itself reclassified
+  // away from drum, but drumHit must not re-collapse ANY long drum note to a
+  // short tick, belt-and-suspenders). drumNoiseBuf's requested length is the
+  // signal: short hits ask for one of the fixed lengths (0.045/0.11/0.3s);
+  // a long one asks for (a capped version of) the real duration.
+  installSong();
+  run(`
+    song.tracks = [{name: "voice6", notes: []}];
+    trackState = [{muted: false, solo: false}];
+    ensureAudio();
+    window.__bufLens = [];
+    const __origDrumNoiseBuf = drumNoiseBuf;
+    drumNoiseBuf = (len) => { window.__bufLens.push(len); return __origDrumNoiseBuf(len); };
+  `);
+
+  run(`drumHit(0, 42, 0, 100, 4.0);`); // long: well past DRUM_LONG_SEC
+  let lens = val(`window.__bufLens`);
+  assert.equal(lens.length, 1);
+  assert.equal(lens[0], 4.0, "the real duration, not the fixed 45ms hat length");
+
+  run(`window.__bufLens = []; drumHit(0, 42, 0, 100, 20);`); // way past the cap
+  lens = val(`window.__bufLens`);
+  assert.ok(lens[0] <= 8, "DRUM_SUSTAIN_CAP_SEC bounds the noise buffer so a mis-tagged hold can't allocate forever");
+
+  run(`window.__bufLens = []; drumHit(0, 42, 0, 100, 0.2);`); // short hit: unchanged behavior
+  lens = val(`window.__bufLens`);
+  assert.equal(lens[0], 0.045, "a real short hit still gets its fixed hat length");
+
+  run(`window.__bufLens = []; drumHit(0, 38, 0, 100, undefined);`); // no duration passed at all (back-compat)
+  lens = val(`window.__bufLens`);
+  assert.equal(lens[0], 0.11, "no durSec at all falls back to the fixed snare length, same as before this change");
+});

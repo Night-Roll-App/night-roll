@@ -668,7 +668,7 @@ file's game/artist name the album, each row's title is the tag's
 the capture like an m3u length. `rows[n].parsed` is that row's file;
 `captureChipTrack` receives it in place of the one parsed NSF. The SPC
 runner already reconstructs (`reconstruct(capture)` → events with
-voice0–7 channels, noise as `drum`, volumes 0–127, 2 ms ticks), so
+voice0–7 channels, volumes 0–127, 2 ms ticks), so
 `CHIPS.spc.run` returns `events` too and rebins them to 10 ms frames
 (the NES loop/tempo stages were tuned for ~60 fps; 2 ms ticks gave them
 150 000 frames per 300 s); `captureChipTrack` uses `res.events` when
@@ -695,6 +695,26 @@ album.json that actually names a console file (`chipAlbumHasSource`).
 Verified in Chrome with the real Chrono Trigger set: 92 rows in order
 with tag titles, Frog's Theme captured. Test: "SPC import: a Super
 Nintendo set…" (synthetic SPC; `chipTrackOrder` on real file names).
+
+**NON voices aren't automatically drums (2026-10-01).** A voice with the
+hardware NOISE generator on used to become a GM drum unconditionally —
+wrong for FF4 "Main Theme (Ocean)" voice 6, a ~4 s near-silent "ocean
+wash" swell that set NON once at init and played like any other
+instrument, not a kit hit. `tools/spc/notes.mjs`'s `reconstruct()` now
+classifies each NON voice AFTER every onset/duration for it is known
+(`classifyNoiseVoices`), the same way `tools/kit-guess.mjs` reads a
+sequence chip's drum channel: `DRUM_MIN_HITS` (8) and
+`DRUM_MAX_MEDIAN_DUR_SEC` (0.5) — both named, both documented in
+`tools/spc/INTEGRATION.md` §6. A voice under either threshold keeps its
+`voiceN` track (never folded into the merged "drums" MIDI track/channel
+9) and its noise-clock-derived pitch unchanged — only the GM `drum` flag
+is cleared. `drumHit` (index.html, AUDIO ENGINE) also stopped assuming
+every drum note is a short hit: a captured duration ≥ `DRUM_LONG_SEC`
+(1 s) now sustains a decay-shaped noise burst over the real length
+(capped at `DRUM_SUSTAIN_CAP_SEC`, 8 s) instead of collapsing to the
+fixed 45 ms tick — real short hits are unchanged. Tests:
+`tests/spc.test.mjs` ("NON voice classification: …") and
+`tests/night-roll.test.mjs` ("drumHit: a long captured duration…").
 
 **Genesis import (2026-09-27; Josh: "is it gonna download games to test
 it with?" — built and verified against the real Sonic 1 set the agents

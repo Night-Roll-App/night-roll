@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { makeTestSPC, TEST_ROOT_HZ, TEST_MELODY_MIDI, TEST_TICKS_PER_NOTE, TEST_TICK_TARGET } from "../tools/spc/make-test-spc.mjs";
 import { parseSPC, runSPC, parseXid6, parseTrackName } from "../tools/spc/spc.mjs";
-import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC } from "../tools/spc/notes.mjs";
+import { reconstruct, toNotesTxt, estimateRoot, pitchName, TICK_SEC, SAMPLE_RATE, DRUM_MIN_HITS, DRUM_MAX_MEDIAN_DUR_SEC } from "../tools/spc/notes.mjs";
 import { decodeBRR, encodeBRR } from "../tools/spc/brr.mjs";
 import { SPC700 } from "../tools/spc/cpu-spc700.mjs";
 import { DspVoices, RATE_PERIOD, OFF } from "../tools/spc/dsp-state.mjs";
@@ -289,4 +289,65 @@ test("set file names: <disc><track><part> Title.spc, all-nines = not on the soun
   assert.deepEqual(parseTrackName("99 Unused Sound.spc"), {disc: null, track: 99, part: "", unlisted: true, title: "Unused Sound"});
   assert.equal(parseTrackName("/sets/zelda/05b Majestic Castle (Storm).spc").part, "b");
   assert.equal(parseTrackName("random.spc"), null);
+});
+
+// ---- NON-voice classification (percussive kit hit vs sustained noise
+// texture) — a hand-built capture, not a run SPC: reconstruct() is a pure
+// function of {dspLog, dsp0, samples, instruments, ram}, and the driver
+// bytecode needed to make a real CPU-emulated capture toggle NON/KON/KOFF on
+// a schedule would test the SPC700 core, not the classifier. One voice's
+// writes: VOLL + ADSR1 bit7 once (so settle()'s zero-volume auto-close never
+// fires), NON + FLG(clock) once, then a KON/KOFF pair per hit (KOFF cleared
+// one sample later so a later KON's envelope doesn't see a stale release bit
+// — real drivers pulse it the same way).
+function noiseVoiceCapture(voice, clock, hits) {
+  const dspLog = [
+    {sample: 0, addr: voice * 16 + 0, value: 100},
+    {sample: 0, addr: voice * 16 + 5, value: 0x80},
+    {sample: 0, addr: 0x3D, value: 1 << voice},
+    {sample: 0, addr: 0x6C, value: clock & 0x1F},
+  ];
+  let last = 0;
+  for (const h of hits) {
+    const onset = Math.round(h.start * SAMPLE_RATE), end = Math.round((h.start + h.dur) * SAMPLE_RATE);
+    dspLog.push({sample: onset, addr: 0x4C, value: 1 << voice});
+    dspLog.push({sample: end, addr: 0x5C, value: 1 << voice});
+    dspLog.push({sample: end + 1, addr: 0x5C, value: 0});
+    last = Math.max(last, end + 1);
+  }
+  dspLog.sort((a, b) => a.sample - b.sample);
+  return {dspLog, dsp0: new Uint8Array(128), samples: last + SAMPLE_RATE, instruments: new Map(), ram: new Uint8Array(0x10000)};
+}
+
+test("NON voice classification: sparse multi-second notes are not a drum", () => {
+  // FF4 "Main Theme (Ocean)" voice 6, shrunk: 8 hits (meets DRUM_MIN_HITS on
+  // its own, so duration — not count — is what has to disqualify it), each
+  // well over DRUM_MAX_MEDIAN_DUR_SEC.
+  const hits = Array.from({length: DRUM_MIN_HITS}, (_, i) => ({start: i * 5, dur: 4.0}));
+  const cap = noiseVoiceCapture(6, 20, hits);
+  const r = reconstruct(cap);
+  const evs = r.events.filter(e => e.voice === 6);
+  assert.equal(evs.length, DRUM_MIN_HITS);
+  assert.ok(evs.every(e => e.drum === undefined), "a sustained noise voice is not flagged as a GM drum");
+  assert.ok(evs.every(e => e.channel === "voice6"), "stays its own voice track, never folded into a merged drum track");
+  assert.ok(evs.every(e => e.midi != null), "still carries a pitch (the noise clock, same as the drum path used)");
+});
+
+test("NON voice classification: dense short hits are a drum", () => {
+  const hits = Array.from({length: 16}, (_, i) => ({start: i * 0.25, dur: 0.1}));
+  const cap = noiseVoiceCapture(0, 10, hits);
+  const r = reconstruct(cap);
+  const evs = r.events.filter(e => e.voice === 0);
+  assert.equal(evs.length, 16);
+  assert.ok(evs.every(e => e.drum !== undefined), "a busy, short-hit noise voice stays a GM drum");
+  assert.ok(evs.every(e => e.noiseClock === 10));
+});
+
+test("NON voice classification: too few hits to call a kit, even if short", () => {
+  const hits = Array.from({length: 3}, (_, i) => ({start: i * 0.3, dur: 0.1}));
+  const cap = noiseVoiceCapture(2, 15, hits);
+  const r = reconstruct(cap);
+  const evs = r.events.filter(e => e.voice === 2);
+  assert.equal(evs.length, 3);
+  assert.ok(evs.every(e => e.drum === undefined), "below DRUM_MIN_HITS — not enough evidence to call it a kit");
 });

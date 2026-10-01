@@ -301,3 +301,62 @@ low 193 → 194, none 396 → 390.
   subsonic results.
 - **Multi-part tracks** (`101a/b/c`, `314a-d`) are separate songs sharing
   an OST slot: keep the part letter in the track name.
+
+## 6. NON voices: drum, or texture? (2026-10-01)
+
+A voice with the hardware NOISE generator enabled (DSP `$3D`/NON bit set)
+used to become a GM drum unconditionally — correct for a real kit (hats,
+snares) but wrong for a voice that just uses the noise generator as a
+*timbre*. FF4 "Main Theme (Ocean)" keys voice 6's NOISE bit once at init
+and plays it as a ~4 s, near-silent "ocean wash" swell (min 3.999 s, max
+4.016 s, ~7.5 s apart, VOL ≈ 1%, ADSR rises then decays to 0 at ~4.2 s):
+a texture voice, not percussion. The old rule named its track "drums" and
+drumHit's fixed 45 ms synth tick (see NIGHT-ROLL.md "NON voices aren't
+automatically drums")
+turned the swell into a bright click at its onset.
+
+`tools/spc/notes.mjs`'s `reconstruct()` now classifies each NON voice the
+same way `tools/kit-guess.mjs` reads a sequence chip's drum channel — by
+rhythm, not by the hardware bit alone — in a post-pass (`classifyNoiseVoices`,
+after every voice's onsets/durations are known; a single onset can't carry
+this evidence by itself):
+
+- `DRUM_MIN_HITS` (8, matching kit-guess's own busiest-voice/hat threshold):
+  fewer onsets than this is too sparse to call a kit.
+- `DRUM_MAX_MEDIAN_DUR_SEC` (0.5): the voice's median note duration must be
+  under this — a kit hit decays well inside a beat; FF4 voice 6's median is
+  4.0 s. Duration is the decisive signal on its own: voice 6 has 36 notes
+  (comfortably over DRUM_MIN_HITS), so count alone would have called it a
+  kit — median duration is what correctly disqualifies it.
+
+A voice meeting both stays a drum exactly as before (GM note from its noise
+clock, folded into the merged "drums" MIDI track/channel 9 by
+`tools/nsf/midi-write.mjs`'s `makeMidi`). A voice that doesn't keeps its own
+`voiceN` track/channel — never merged — and its pitch is unchanged: the same
+noise-clock-derived GM-ish number the drum path already computed (`e.midi`
+is set once, at onset, the same way either way; only `e.drum` is cleared
+when the voice turns out not to be a kit). `toNotesTxt` picks this up for
+free (it already branches on `e.drum !== undefined`).
+
+Deliberately NOT a threshold: spacing regularity. kit-guess uses rhythmic
+*alignment* (on/off a beat), and FF4 voice 6's hits are themselves roughly
+regular (~7.5 s apart) — duration alone already separates the known cases
+cleanly, and a regularity gate risks false negatives on syncopated real
+drum patterns in other rips. If a future rip needs it, add it as a third
+required signal, not a replacement for duration/count.
+
+Out of scope here, found but not fixed (open-items.md): if/when an S-DSP
+renderer lands for SPC (today's SPC import is synth-voices-only — see §2's
+header and `index.html`'s "(synth voices; no console audio yet)" label —
+`CHIPS.spc.files` lists `"?spc/apu-render"` as optional and unused), its
+per-voice PCM would be keyed "voice0".."voice7" (`apu-render.mjs`), but a
+drum-classified voice's MIDI track is named "drums" (several voices
+merged) — a name mismatch `chipHas()`/`scheduleNote` would need to resolve
+before console audio could cover a drum track the way it already can for
+melodic ones.
+
+Tests: `tests/spc.test.mjs` ("NON voice classification: …", three cases —
+sparse-but-long, dense-and-short, and too-few-to-call-a-kit — built from a
+hand-assembled `reconstruct()` capture, not a run SPC: the classifier is a
+pure function of the event list, and driver bytecode to script NON/KON/KOFF
+would exercise the SPC700 core, not this rule).

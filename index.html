@@ -9245,13 +9245,41 @@ function drumNoiseBuf(len) {
   for (let k = 0; k < ch.length; k++) ch[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / ch.length, 1.5);
   return (drumNoise[key] = buf);
 }
-function drumHit(ti, p, when, vel) {
+const DRUM_LONG_SEC = 1;       // a captured hit this long or longer is a sustained noise voice (e.g. an SPC NON "wash" —
+  // tools/spc/notes.mjs classifyNoiseVoices still calls a few genuinely busy/long voices drums), not a tick: sustain it
+const DRUM_SUSTAIN_CAP_SEC = 8; // bound the noise buffer so a mis-tagged multi-minute hold can't allocate forever
+function drumHit(ti, p, when, vel, durSec) {
   if (!pieceAudible(p)) return; // audition state: the hit is skipped, notes untouched
   const g = audio.createGain();
   g.connect(trackGain(ti));
   // kit balance (Josh 2026-08-18: "the hi-hat was dominating" — noise reads
   // far louder than a sine thump at equal amplitude): kick/toms up, hats down
   const v = 0.75 * (0.3 + 0.7 * vel / 127);
+  // a long captured duration (Josh, FF4 "Main Theme (Ocean)" voice 6, 2026-10-01):
+  // collapsing a ~4s noise swell to the fixed 45ms tick below turned it into a
+  // bright click at the swell's onset. Respect the duration instead — decay-shaped
+  // noise (drumNoiseBuf already shapes it) sustained over the real length, same
+  // highpass cue for the hat-register pitches, no oscillator thump for kick/toms
+  // (a swell this long was never a beater hit). Real short hits are untouched —
+  // this branch only fires once durSec clears DRUM_LONG_SEC.
+  if (durSec != null && durSec >= DRUM_LONG_SEC) {
+    const len = Math.min(durSec, DRUM_SUSTAIN_CAP_SEC);
+    const buf = drumNoiseBuf(len);
+    const src = audio.createBufferSource();
+    src.buffer = buf;
+    g.gain.value = v * 0.5;
+    if (p === 42 || p === 44 || p === 46) { // hat-register clock: same brightness cue as a short hat
+      const hp = audio.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 6500;
+      src.connect(hp);
+      hp.connect(g);
+    } else src.connect(g);
+    src.onended = () => { try { g.disconnect(); } catch (err) {} };
+    src.start(when);
+    src.stop(when + len + 0.05);
+    return;
+  }
   if (p <= 36 || (p >= 41 && p <= 47 && p !== 42 && p !== 44 && p !== 46)) { // kick & toms: pitched thump
     const o = audio.createOscillator();
     o.type = "triangle";
@@ -9554,7 +9582,7 @@ function scheduleNote(ti, n, when, durSec) {
   // nor uses the oscillator/sample path below (see "game instrument voices" above scheduleNote)
   const gvoice = song.tracks[ti] && song.tracks[ti].voice;
   if (typeof gvoice === "string" && (gvoice.startsWith("game:") || gvoice.startsWith("sf2:"))) { scheduleGameNote(ti, n, when, durSec, gvoice); return; }
-  if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v); return; }
+  if (n.ch === 9 || trackIsDrums(ti)) { drumHit(ti, n.p, when, n.v, durSec); return; }
   let v = trackVoice(ti);
   // per-note chip timbre: NSF captures carry each pulse note's duty (the
   // chip's instrument choice — 12.5% thin, 25% classic, 50% hollow; 75%

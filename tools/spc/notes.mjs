@@ -163,6 +163,37 @@ export function resolveRoots(instruments, roots = {}) {
 // noise clock (FLG bits 0-4, 0 slow .. 31 fast) -> GM drum: kick / snare / hat
 function noiseDrum(clock) { return clock < 12 ? 35 : clock < 22 ? 38 : 42; }
 
+// A NON (hardware noise generator) voice is not automatically a drum: FF4
+// "Main Theme (Ocean)" keys voice 6's NOISE bit once at init and plays it as
+// a ~4 s, near-silent "ocean wash" swell — a texture voice, not percussion.
+// Classified the same way tools/kit-guess.mjs reads a sequence chip's drum
+// channel: many hits, short relative to a beat, is a kit; few and/or long is
+// a sustained/melodic voice. Named and documented here (and in
+// tools/spc/INTEGRATION.md / NIGHT-ROLL.md) so the thresholds are a fact to
+// check, not a buried magic number.
+export const DRUM_MIN_HITS = 8;            // tools/kit-guess.mjs's own busiest-voice (hat/ride) threshold
+export const DRUM_MAX_MEDIAN_DUR_SEC = 0.5; // a kit hit decays well under a beat; FF4 voice 6's median is 4.0s
+// Classify every NON voice's events after the fact (needs every onset/duration
+// for the voice, not just the one in hand): voices below the threshold keep
+// their onset-time `drum` GM number (unchanged); voices that read as a swell
+// or texture lose it — `e.drum` goes back to undefined, so toNotesTxt prints
+// the pitch (same clock-derived note the drum path already computed — "pitch
+// from the noise clock", per spec) and makeMidi keeps the voice on its own
+// voiceN track/channel instead of folding it into a merged "drums" track.
+function classifyNoiseVoices(events) {
+  const byVoice = new Map();
+  for (const e of events) {
+    if (e.drum === undefined) continue; // not a NON voice
+    (byVoice.get(e.voice) || byVoice.set(e.voice, []).get(e.voice)).push(e);
+  }
+  for (const evs of byVoice.values()) {
+    const durs = evs.map(e => (e.endSample - e.startSample) / SAMPLE_RATE).sort((a, b) => a - b);
+    const median = durs[Math.floor(durs.length / 2)];
+    const percussive = evs.length >= DRUM_MIN_HITS && median < DRUM_MAX_MEDIAN_DUR_SEC;
+    if (!percussive) for (const e of evs) e.drum = undefined;
+  }
+}
+
 // Reconstruct per-voice note events from a capture (runSPC's result).
 // onset = a KON bit (the dump's own KON register included, at sample 0); end = KOFF bit, the next KON, volume zeroed, one-shot
 // sample END, or the envelope model fading below SILENCE_ENV; pitch =
@@ -284,6 +315,8 @@ export function reconstruct(capture, {roots = {}} = {}) {
   }
   advanceTo(samples);
   for (let v = 0; v < 8; v++) close(v, samples);
+
+  classifyNoiseVoices(events);
 
   for (const e of events) {
     e.startFrame = toTick(e.startSample);
