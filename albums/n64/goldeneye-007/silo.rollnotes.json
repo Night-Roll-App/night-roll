@@ -1,3 +1,3 @@
-{ "version": 1, "song": "silo", "saved": 1790617407462, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "silo", "origin": {"kind":"capture"}, "stamp": 1790617407462, "notes": [
   {"at":[74,1],"type":"loop","loop":"10.1"}
 ] }

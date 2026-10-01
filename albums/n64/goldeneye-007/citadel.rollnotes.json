@@ -1,3 +1,3 @@
-{ "version": 1, "song": "citadel", "saved": 1790617407424, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "citadel", "origin": {"kind":"capture"}, "stamp": 1790617407424, "notes": [
   {"at":[108,1],"type":"loop","loop":"2.1"}
 ] }

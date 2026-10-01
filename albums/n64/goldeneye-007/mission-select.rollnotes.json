@@ -1,3 +1,3 @@
-{ "version": 1, "song": "mission-select", "saved": 1790617407454, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "mission-select", "origin": {"kind":"capture"}, "stamp": 1790617407454, "notes": [
   {"at":[16,1],"type":"loop","loop":"4.1"}
 ] }

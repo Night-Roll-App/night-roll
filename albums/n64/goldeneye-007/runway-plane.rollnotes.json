@@ -1,3 +1,3 @@
-{ "version": 1, "song": "runway-plane", "saved": 1790617407455, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "runway-plane", "origin": {"kind":"capture"}, "stamp": 1790617407455, "notes": [
   {"at":[8,1],"type":"loop","loop":"6.1"}
 ] }
