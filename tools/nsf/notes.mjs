@@ -1,14 +1,10 @@
 // Stage 2: APU register log -> note events, channel identity intact.
 // Discovery-mode rules: pitch, time, duration, channel. Nothing interpretive.
 import { snapBeat } from "./midi-write.mjs";
-
-// unthrottled yield (background tabs clamp setTimeout to ~1/sec; MessageChannel is not throttled)
-let _mc = null;
-function microYield() {
-  if (typeof MessageChannel === "undefined") return new Promise(r => setTimeout(r, 0));
-  if (!_mc) _mc = new MessageChannel();
-  return new Promise(r => { _mc.port1.onmessage = () => r(); _mc.port2.postMessage(0); });
-}
+// microYield: shared with ./nsf.mjs (not a local copy — a local MessageChannel
+// with no ref/unref, 2026-09-30, kept tools/chip-bench.mjs hanging; nsf.mjs's
+// own copy already carries the Node ref/unref fix this one lacked).
+import { microYield } from "./nsf.mjs";
 const CLOCK = 1_789_773; // NTSC CPU Hz
 
 const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];

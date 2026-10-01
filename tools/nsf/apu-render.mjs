@@ -11,13 +11,11 @@
 // cross-channel mixer nonlinearity is approximated per channel (audibly
 // negligible next to timbre/envelope truth).
 
-// unthrottled yield (background tabs clamp setTimeout to ~1/sec; MessageChannel is not throttled)
-let _mc = null;
-function microYield() {
-  if (typeof MessageChannel === "undefined") return new Promise(r => setTimeout(r, 0));
-  if (!_mc) _mc = new MessageChannel();
-  return new Promise(r => { _mc.port1.onmessage = () => r(); _mc.port2.postMessage(0); });
-}
+// microYield: shared with ./nsf.mjs (not a local copy — a local MessageChannel
+// with no ref/unref, 2026-09-30, kept tools/chip-bench.mjs hanging after a
+// render long enough to yield once; nsf.mjs's own copy already carries the
+// Node ref/unref fix this one lacked).
+import { microYield } from "./nsf.mjs";
 
 const CPU = 1789773; // NTSC 2A03 CPU clock, Hz
 

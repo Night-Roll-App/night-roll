@@ -14,7 +14,13 @@
 //     the worker doesn't); title: the song name, for the one-line debug note
 //   ← {id, progress}            0..1 while emulating (0–0.3) and rendering (0.3–1)
 //   ← {id, debug: "message"}    the budget plan changed the render (rate/mono) — logDebug it on the page
-//   ← {id, done: {pcm: {name: Float32Array}, sampleRate, leadSec, pan: {name: -1..1}}}
+//   ← {id, done: {pcm: {name: Float32Array}, sampleRate, leadSec, pan: {name: -1..1},
+//                 debug: {peakBytes, keptBytes, tracks, groups}}}  tally: peakBytes = the
+//     most this render held at once (R.render's whole return, since nothing
+//     streams yet, + any downmix copies made while their stereo originals
+//     were still held); keptBytes = what's actually in `pcm` above; tracks =
+//     chipEstimateTracksW's estimate (used for the budget plan); groups =
+//     the render's real group count (tools/chip-bench.mjs, NIGHT-ROLL.md)
 //   ← {id, error: "message"}
 // Stopping a render = terminate() from the page; nothing to unwind here.
 //
@@ -24,7 +30,7 @@
 // chipStaticPan/chipDownmixStatic mirror index.html's copy exactly (a worker
 // can't import from the page's inline script) — keep the two in step.
 const CHIP_RATE_STEPS = [48000, 32000, 24000, 22050]; // resampled by the renderer's own sampleRate option; 22050 is the floor
-function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
+export function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
   const bytesAt = (rate, ch) => Math.ceil(tracks * ch * rate * seconds * 4);
   let rate = sampleRate, mono = false, ch = channels;
   let bytes = bytesAt(rate, ch);
@@ -37,9 +43,21 @@ function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
   }
   return {rate, mono, channels: ch, bytes, refuse: true};
 }
-function chipEstimateTracksW(R, res) {
+// M: when given (and it exposes channelGroups — psx/notes.mjs or n64/notes.mjs,
+// both loaded into M for psf/psf2/usf — tools/psx/notes.mjs's channelGroups
+// can emit a melodic AND a kit group for the SAME channel, so a plain
+// distinct-channel count undercounts) the real group count channelGroups
+// itself will produce is used instead of the channel-count guess; kitify()
+// underneath is idempotent (result.kitGuess memoizes it), so calling it here
+// AND again inside R.render costs one extra O(notes) pass, not two full
+// analyses. Falls back to the channel-count guess if M/channelGroups isn't
+// there (register chips: fixed.length above already returned) or throws.
+export function chipEstimateTracksW(R, res, M) {
   const fixed = R.channels;
   if (fixed && fixed.length) return fixed.length;
+  if (M && M.channelGroups && res && res.result) {
+    try { return Math.max(1, M.channelGroups(res.result, {tsNum: 4, tsDen: 4}).length); } catch (err) { /* fall through to the cheaper guess */ }
+  }
   const notes = res && res.result && res.result.notes;
   if (Array.isArray(notes) && notes.length) return Math.max(1, new Set(notes.map(n => n.ch)).size);
   return 8;
@@ -66,8 +84,44 @@ function chipDownmixStatic(l, r, pan) {
   for (let i = 0; i < src.length; i++) mono[i] = src[i] * inv;
   return mono;
 }
+// docs/streamed-render-plan.md step 0 (2026-09-30): the downmix/pack loop
+// ALSO tallies the bytes this render held, cheaply — sums of `.byteLength`s
+// already in hand, no new scanning (the per-group silence scan below already
+// existed). PEAK: `r` (R.render's return) holds every group's stereo pair at
+// once — it is one non-streamed return, not produced incrementally — so ALL
+// of it (live or silent) is live memory the whole time this loop runs; a
+// mono downmix copy is a SEPARATE allocation made while its stereo source is
+// still referenced by `r`, so it adds to the peak rather than replacing
+// anything in it. KEPT: only what ends up in `pcm`, posted to the page.
+// Exported for tests/chip-worker.test.mjs (a fake stereo runner) — the real
+// render path (onmessage, below) is the only caller otherwise.
+export function tallyChipRender(r, names, plan) {
+  const pcm = {}, pan = {}, transfer = [];
+  let peakBytes = 0, keptBytes = 0;
+  for (const name of names) {
+    const x = r[name]; if (!x) continue;
+    const parts = x.l ? [x.l, x.r] : [x];
+    const xBytes = parts.reduce((s, a) => s + a.byteLength, 0);
+    peakBytes += xBytes; // held by `r` for every group at once, live or not
+    let live = false; for (const a of parts) { for (let i = 0; i < a.length && !live; i += 13) if (Math.abs(a[i]) > 1e-4) live = true; }
+    if (!live) continue;
+    if (plan.mono && x.l && x.r) { // downmix ONLY what the budget needed to shrink, and only where the pan holds still
+      const p = chipStaticPan(x.l, x.r);
+      if (p !== null) {
+        const mono = chipDownmixStatic(x.l, x.r, p);
+        peakBytes += mono.byteLength; // the copy coexists with x.l/x.r (still referenced by `r`) until the render returns
+        pcm[name] = mono; pan[name] = p; transfer.push(mono.buffer);
+        keptBytes += mono.byteLength;
+        continue;
+      }
+    }
+    pcm[name] = x; for (const a of parts) transfer.push(a.buffer);
+    keptBytes += xBytes;
+  }
+  return {pcm, pan, transfer, peakBytes, keptBytes};
+}
 
-const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS table, minus the app
+export const RUNNERS = { // parse / emulate / render per chip — the page's CHIPS table, minus the app
   nsf: {
     parse: M => b => M.parseNSF(b),
     run: (M, parsed, n, secs, prog) => M.runNSFAsync(parsed, n, secs, prog),
@@ -213,25 +267,15 @@ if (typeof self !== "undefined") self.onmessage = async e => {
     // memory budget (planChipRender, above): the render's OWN sample rate/
     // channels, decided before it allocates anything — mirrors index.html's
     // inline path exactly (the worker can't call the page's copy)
-    const plan = planChipRender({tracks: chipEstimateTracksW(R, res), seconds: secs, sampleRate: rate, channels: R.stereo ? 2 : 1, budget: budget || 2_000_000_000});
+    const tracks = chipEstimateTracksW(R, res, M);
+    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: R.stereo ? 2 : 1, budget: budget || 2_000_000_000});
     if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
     if (plan.rate !== rate || plan.mono) post({debug: (title || id) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)"});
     const r = await R.render(M, res, {sampleRate: plan.rate, onProgress: p => post({progress: 0.3 + p * 0.7})});
-    const pcm = {}, pan = {}, transfer = [];
     const isPcm = x => x instanceof Float32Array || !!(x && x.l instanceof Float32Array && x.r instanceof Float32Array); // mono, or a stereo pair from a renderer that pans
     const names = R.channels || Object.keys(r).filter(k => isPcm(r[k]));
-    for (const name of names) {
-      const x = r[name]; if (!x) continue;
-      const parts = x.l ? [x.l, x.r] : [x];
-      let live = false; for (const a of parts) { for (let i = 0; i < a.length && !live; i += 13) if (Math.abs(a[i]) > 1e-4) live = true; }
-      if (!live) continue;
-      if (plan.mono && x.l && x.r) { // downmix ONLY what the budget needed to shrink, and only where the pan holds still
-        const p = chipStaticPan(x.l, x.r);
-        if (p !== null) { const mono = chipDownmixStatic(x.l, x.r, p); pcm[name] = mono; pan[name] = p; transfer.push(mono.buffer); continue; }
-      }
-      pcm[name] = x; for (const a of parts) transfer.push(a.buffer);
-    }
+    const {pcm, pan, transfer, peakBytes, keptBytes} = tallyChipRender(r, names, plan);
     live = (kind === "psf" || kind === "psf2" || kind === "usf") ? {id, kind, M, R, res, rate: plan.rate} : null; // kept for note previews
-    post({done: {pcm, sampleRate: r.sampleRate, leadSec, pan}}, transfer);
+    post({done: {pcm, sampleRate: r.sampleRate, leadSec, pan, debug: {peakBytes, keptBytes, tracks, groups: names.length}}}, transfer);
   } catch (err) { post({error: String(err && err.message || err)}); }
 };

@@ -44,8 +44,31 @@ list up front; only the sample renderers cost gigabytes, and all can stream.
   falls back to it for that song.
 
 ## Build steps (each one commit, shippable, ear-checkable)
-0. Measure only: worker allocation tally (peak + kept) → logDebug "held X MB
-   (worker peak Y MB)"; tools/chip-bench.mjs for a node peak. Gives "before".
+0. DONE (2026-09-30). Worker allocation tally (peak + kept) → logDebug "<title>:
+   console audio held X MB (render peak Y MB, N tracks, R kHz,
+   mono|stereo|mixed)" from `chipPublish` (both render paths: `tallyChipRender`,
+   tools/chip-worker.mjs, and the inline fallback in index.html's `chipRender`,
+   which mirrors it). `tools/chip-bench.mjs <kind> <file> [lib...] [--seconds
+   N]` runs the SAME RUNNERS pipeline in plain Node and prints parse/render
+   seconds, a sampled process.memoryUsage().arrayBuffers peak, and the tally.
+   `chipEstimateTracks`/`chipEstimateTracksW` now count groups the way each
+   chip's own `channelGroups` will (a channel can yield a melodic AND a kit
+   group — the old distinct-channel count undercounted that); `chipPublish`'s
+   debug line notes "(estimated N0)" if the two ever disagree.
+   Sanity run (synthetic fixtures, tools/nsf/make-test-nsf.mjs and gbs/spc
+   kin — NOT the real archive): a tiny 3 s render, peak/kept 2.0x (NES) /
+   1.3x (GBS) / 8.0x (SPC, 6 of 8 voices silent in the test tune) — all
+   plan.mono=false (too small to trip the budget), so these only exercise the
+   "nothing downmixed, peak==render bytes" side; tests/chip-worker.test.mjs's
+   fake-stereo-runner cases exercise the downmix side directly and confirm
+   the plan's own hypothesis: stereo→mono, every group downmixed, peak ≈ 3×
+   kept (stereo original 2× + the mono copy 1×, both held at once — not a
+   measurement, a consequence of R.render returning all groups in one
+   non-streamed call). Found in passing: tools/nsf/apu-render.mjs and
+   tools/nsf/notes.mjs each carried a local `microYield` whose MessageChannel
+   port was never ref/unref'd — harmless in a browser, but hung `node
+   tools/chip-bench.mjs` forever after any render that yielded once; both now
+   import the already-fixed `microYield` from tools/nsf/nsf.mjs.
 1. Stream API per renderer (1a NES+GB, 1b SNES, 1c SPU, 1d N64 EAD+OoT,
    1e Rare): create…Stream → {render(frames), snapshot, restore}; the old
    whole renders become "stream over [0,N)". Tests: random chunk sizes

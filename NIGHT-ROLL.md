@@ -839,6 +839,32 @@ in Chrome: Overworld (NES, 3 voices) and Frog's Theme (SNES, 8 voices)
 render in the worker with the page idle; the vm keeps the inline path
 (no Worker there). Not verified on the iPad yet.
 
+**Render memory, measured (2026-09-30, docs/streamed-render-plan.md step
+0).** FFX "Challenge" (PS2, 30 tracks stereo 48 kHz) reproduced on the iPad
+as 1.88 GB and killed the WKWebView content process; the stopgap budget
+(`planChipRender`/`CHIP_BUDGET_APP`/`CHIP_BUDGET_WEB`, above `chipRender`)
+only shrinks what's KEPT, not the worker's PEAK — `renderSpu`/`renderN64`
+hand back a stereo pair per group regardless, so a mono downmix copy briefly
+coexists with its stereo original. Both render paths now tally this
+(`tallyChipRender`, tools/chip-worker.mjs; the inline fallback in
+`chipRender`, index.html, mirrors it) and `chipPublish` logs one line per
+render: `"<title>: console audio held X MB (render peak Y MB, N tracks,
+R kHz, mono|stereo|mixed)"` — `chip.pan`'s "estimated N0" suffix appears only
+if `chipEstimateTracks`/`chipEstimateTracksW`'s pre-render group count
+(now via the SAME `channelGroups` the renderer itself calls, not a plain
+distinct-channel count — that undercounted a channel emitting both a
+melodic AND a kit group) ever disagrees with what actually rendered.
+`tools/chip-bench.mjs <kind> <file> [lib...] [--seconds N]` runs the same
+RUNNERS pipeline in plain Node for one song and prints parse/render seconds,
+a sampled `process.memoryUsage().arrayBuffers` peak, and the same tally —
+for a small synthetic fixture only (tools/nsf/make-test-nsf.mjs and kin), or
+a short `--seconds` window; never a real set (Josh's CPU is his instrument).
+Building it surfaced a real Node-only hang: `tools/nsf/apu-render.mjs` and
+`tools/nsf/notes.mjs` each kept a local `microYield` whose `MessageChannel`
+port was never ref/unref'd (fine in a browser, forever in Node once a render
+yielded) — both now import the already-fixed `microYield` from
+`tools/nsf/nsf.mjs` instead of carrying their own copy.
+
 **Chip audio** (2026-08-17, `chip` button in the transport during an
 import session): the captured APU register log rendered through a
 pure-JS 2A03 DSP (tools/nsf/apu-render.mjs — duty sequencers, hardware

@@ -9725,9 +9725,20 @@ function planChipRender({tracks, seconds, sampleRate, channels, budget}) {
 // (nsf/gbs/spc) have a fixed channel list. `.ch` is the note's source channel
 // (channelGroups, tools/psx/notes.mjs and its N64/PS2 equivalents) — one
 // output track per distinct channel, the same count the render will produce.
-function chipEstimateTracks(kind, res) {
+// M: when given (and it exposes channelGroups — tools/psx/notes.mjs or
+// tools/n64/notes.mjs, both loaded into M for psf/psf2/usf) the real group
+// count channelGroups itself will produce is used instead of the
+// distinct-channel guess below — channelGroups can emit a melodic AND a kit
+// group for the SAME channel (tools/psx/notes.mjs), so the guess undercounts
+// a song with both. kitify() underneath is idempotent (result.kitGuess
+// memoizes it), so calling it here AND again inside the render below costs
+// one extra O(notes) pass, not two full analyses.
+function chipEstimateTracks(kind, res, M) {
   const fixed = CHIPS[kind] && CHIPS[kind].channels;
   if (fixed && fixed.length) return fixed.length;
+  if (M && M.channelGroups && res && res.result) {
+    try { return Math.max(1, M.channelGroups(res.result, {tsNum: 4, tsDen: 4}).length); } catch (err) { /* fall through to the cheaper guess */ }
+  }
   const notes = res && res.result && res.result.notes;
   if (Array.isArray(notes) && notes.length) return Math.max(1, new Set(notes.map(n => n.ch)).size);
   return 8; // an unfamiliar per-song shape: a conservative guess — only shifts the rate a notch, never wrong-sizes the actual render
@@ -9800,7 +9811,7 @@ async function chipRender() {
       // terminates the worker. The inline path below is the fallback.
       const w = await chipRenderInWorker(kind, src, secs, rate, forKey, budget);
       if (w === "stale") return false;
-      if (w) { return chipPublish(forKey, kind, w.pcm, w.sampleRate, w.leadSec, w.pan); }
+      if (w) { return chipPublish(forKey, kind, w.pcm, w.sampleRate, w.leadSec, w.pan, w.debug); }
       // a worker failure falls through to the inline render, once, and says so
     }
     const M = await chipModules(kind);
@@ -9823,7 +9834,8 @@ async function chipRender() {
     // the memory budget (planChipRender, above): known track count + this
     // chip's own channel count (stereo-capable chips only — CHIPS[kind].stereo)
     // decide the render's OWN sample rate/channels BEFORE it allocates anything
-    const plan = planChipRender({tracks: chipEstimateTracks(kind, res), seconds: secs, sampleRate: rate, channels: CHIPS[kind].stereo ? 2 : 1, budget});
+    const tracks = chipEstimateTracks(kind, res, M);
+    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: CHIPS[kind].stereo ? 2 : 1, budget});
     if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
     if (plan.rate !== rate || plan.mono) logDebug(songTitleOf(forKey) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)");
     const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
@@ -9835,16 +9847,32 @@ async function chipRender() {
     if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
     const pcm = {}, pan = {};
     const names = CHIPS[kind].channels.length ? CHIPS[kind].channels : Object.keys(r).filter(k => chipIsPcm(r[k])); // a sequence chip names its channels per song
+    // docs/streamed-render-plan.md step 0: the same tally as chip-worker.mjs's
+    // tallyChipRender — peakBytes = every group `r` holds at once (one
+    // non-streamed return) + any downmix copy made while its stereo original
+    // is still referenced; keptBytes = what ends up in `pcm`. Cheap: sums of
+    // .byteLength already in hand; chipSilent's scan already existed.
+    let peakBytes = 0, keptBytes = 0;
     for (const name of names) {
       const v = r[name]; r[name] = null;
-      if (!v || chipSilent([v])) continue; // a voice the song never uses keeps nothing
+      if (!v) continue;
+      const vBytes = v.l ? (v.l.byteLength + v.r.byteLength) : v.byteLength;
+      peakBytes += vBytes; // held by `r` for every group at once, live or not
+      if (chipSilent([v])) continue; // a voice the song never uses keeps nothing
       if (plan.mono && v.l && v.r) { // downmix ONLY what the budget needed to shrink, and only where the pan holds still
         const p = chipStaticPan(v.l, v.r);
-        if (p !== null) { pcm[name] = chipDownmixStatic(v.l, v.r, p); pan[name] = p; continue; }
+        if (p !== null) {
+          const mono = chipDownmixStatic(v.l, v.r, p);
+          peakBytes += mono.byteLength; // the copy coexists with v.l/v.r until this scope ends
+          pcm[name] = mono; pan[name] = p;
+          keptBytes += mono.byteLength;
+          continue;
+        }
       }
       pcm[name] = v;
+      keptBytes += vBytes;
     }
-    return chipPublish(forKey, kind, pcm, r.sampleRate, leadSec, pan);
+    return chipPublish(forKey, kind, pcm, r.sampleRate, leadSec, pan, {peakBytes, keptBytes, tracks, groups: names.length});
   } catch (err) {
     chipCleanupAfterFailure(kind);
     throw err;
@@ -9864,7 +9892,7 @@ function chipCleanupAfterFailure(kind) {
   if (chipWorker) { try { chipWorker.terminate(); } catch (err) { /* gone */ } chipWorker = null; } // the next render makes a fresh one
   if (kind && chipModules.cache) delete chipModules.cache[kind]; // re-import next time, never a once-rejected/partial module set
 }
-function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan) { // the render is in: keep it for the song it was made for
+function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan, debug) { // the render is in: keep it for the song it was made for
   if (songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
   if (!Object.keys(pcm).length) {
     logErr("chip render came out silent for " + forKey.split("/").pop() + " (" + CHIPS[kind].label + ") — playing synthesized voices; tell Claude the song name");
@@ -9873,6 +9901,22 @@ function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan) { // the rende
   chip.pcm = pcm; chip.pcmRate = sampleRate;
   chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers), unless chipPcmToBuffers can now
   chip.pan = pan && Object.keys(pan).length ? pan : null; // per-track static pan the memory budget downmixed to mono (planChipRender/chipStaticPan)
+  // docs/streamed-render-plan.md step 0 "before" measurement — one line, every
+  // render, both paths (the inline fallback above and chip-worker.mjs's
+  // tallyChipRender hand this same shape through w.debug): held = keptBytes
+  // (what chip.pcm/chip.buffers actually keeps); peak = the most this render
+  // held at once. tracks vs groups can still differ if a renderer's own
+  // channelGroups call ever diverges from chipEstimateTracks's early one
+  // (both call the SAME idempotent channelGroups now, so a difference here
+  // is a real discrepancy worth seeing, not the stale undercount this fixed).
+  if (debug) {
+    const mb = n => Math.round(n / 1e6);
+    const kept = Object.values(pcm);
+    const stereoCount = kept.filter(v => v && v.l).length;
+    const mono = stereoCount === 0 ? "mono" : stereoCount === kept.length ? "stereo" : "mixed";
+    const mismatch = debug.tracks !== debug.groups ? " (estimated " + debug.tracks + ")" : "";
+    logDebug(songTitleOf(forKey) + ": console audio held " + mb(debug.keptBytes) + " MB (render peak " + mb(debug.peakBytes) + " MB, " + debug.groups + " tracks" + mismatch + ", " + Math.round(sampleRate / 1000) + " kHz, " + mono + ")");
+  }
   chipPcmToBuffers();
   chip.lead = leadSec;
   chip.key = forKey;

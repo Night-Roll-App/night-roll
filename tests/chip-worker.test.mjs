@@ -90,6 +90,52 @@ test("seqTickOf: a roll tick converts to the sequence's own tick space — PS1 b
   assert.equal(seqTickOf("usf", {}, 4800, 480), 480, "480-ppq roll tick 4800 at TICKS_PER_BEAT=48: tick 480");
 });
 
+// docs/streamed-render-plan.md step 0 (2026-09-30): FFX "Challenge" reproduced
+// the worker's peak running far above what it KEEPS — renderSpu/renderN64
+// always hand back a stereo pair, so the mono downmix copy briefly coexists
+// with the stereo original. A fake stereo runner stands in for R.render's
+// return (no real emulator needed to test the tally math itself).
+test("tallyChipRender: stereo kept (plan.mono false) — peak equals kept, both at least the stereo bytes", async () => {
+  const { tallyChipRender } = await import("../tools/chip-worker.mjs");
+  const n = 4000;
+  const l = new Float32Array(n).fill(0.5), r = new Float32Array(n).fill(0.1); // plan.mono=false never even asks chipStaticPan — stays stereo regardless of the pan
+  const stereoBytes = l.byteLength + r.byteLength;
+  const out = tallyChipRender({track: {l, r}}, ["track"], {mono: false});
+  assert.equal(out.peakBytes, stereoBytes, "nothing downmixed: peak is exactly the stereo pair");
+  assert.equal(out.keptBytes, stereoBytes, "kept the stereo pair whole");
+  assert.ok(out.peakBytes >= stereoBytes);
+  assert.ok(out.keptBytes <= out.peakBytes);
+  assert.ok(out.pcm.track.l === l && out.pcm.track.r === r, "kept the ORIGINAL arrays, no copy made");
+});
+
+test("tallyChipRender: mono-downmix plan — peak counts BOTH the stereo original and the mono copy", async () => {
+  const { tallyChipRender } = await import("../tools/chip-worker.mjs");
+  const n = 4000;
+  const l = new Float32Array(n).fill(0.5), r = new Float32Array(n).fill(0.5); // centred and static: chipStaticPan reports a stable pan, so this group downmixes
+  const stereoBytes = l.byteLength + r.byteLength;
+  const out = tallyChipRender({track: {l, r}}, ["track"], {mono: true});
+  assert.ok(out.pcm.track instanceof Float32Array, "downmixed to one mono buffer");
+  const monoBytes = out.pcm.track.byteLength;
+  assert.equal(monoBytes, n * 4, "the mono copy is the track's own length");
+  assert.equal(out.keptBytes, monoBytes, "kept = only the mono copy");
+  assert.equal(out.peakBytes, stereoBytes + monoBytes, "peak = the stereo original (still held) + the mono copy made alongside it");
+  assert.ok(out.peakBytes >= stereoBytes, "peak is at least the stereo bytes it was made from");
+  assert.ok(out.keptBytes <= out.peakBytes, "kept never exceeds peak");
+  assert.ok(out.peakBytes >= 2.9 * out.keptBytes && out.peakBytes <= 3.1 * out.keptBytes,
+    "the plan's own hypothesis (docs/streamed-render-plan.md): stereo->mono peak ≈ 3× kept");
+});
+
+test("tallyChipRender: a silent group still counts toward peak (R.render already allocated it) but not toward kept", async () => {
+  const { tallyChipRender } = await import("../tools/chip-worker.mjs");
+  const n = 4000;
+  const silent = new Float32Array(n); // all zero: below the noise floor
+  const live = new Float32Array(n).fill(0.5);
+  const out = tallyChipRender({quiet: silent, loud: live}, ["quiet", "loud"], {mono: false});
+  assert.equal(out.peakBytes, silent.byteLength + live.byteLength, "both groups were allocated by the render, silent or not");
+  assert.equal(out.keptBytes, live.byteLength, "only the live group is kept/posted");
+  assert.ok(!("quiet" in out.pcm), "a silent voice keeps nothing");
+});
+
 test("tap preview: previewOne resolves the template's program/instrument for the page's cache key, from the tapped tick", async () => {
   const { previewOne } = await import("../tools/chip-worker.mjs");
   const { renderOneNote, findTemplateNote, seqTickOf } = await import("../tools/note-preview.mjs");
