@@ -1,3 +1,3 @@
-{ "version": 1, "song": "ultimate-koopa", "saved": 1790619034286, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "ultimate-koopa", "origin": {"kind":"capture"}, "stamp": 1790619034286, "notes": [
   {"at":[57,3],"type":"loop","loop":"14.3"}
 ] }

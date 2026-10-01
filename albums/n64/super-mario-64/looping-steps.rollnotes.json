@@ -1,3 +1,3 @@
-{ "version": 1, "song": "looping-steps", "saved": 1790619034262, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "looping-steps", "origin": {"kind":"capture"}, "stamp": 1790619034262, "notes": [
   {"at":[13,2.25],"type":"loop","loop":"1.2.25"}
 ] }

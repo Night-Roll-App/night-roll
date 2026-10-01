@@ -1,3 +1,3 @@
-{ "version": 1, "song": "stage-boss", "saved": 1790619034281, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "stage-boss", "origin": {"kind":"capture"}, "stamp": 1790619034281, "notes": [
   {"at":[33,1.5],"type":"loop","loop":"3.1.5"}
 ] }
