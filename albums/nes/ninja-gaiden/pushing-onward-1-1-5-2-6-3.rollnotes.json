@@ -1,3 +1,3 @@
-{ "version": 1, "song": "pushing-onward-1-1-5-2-6-3", "saved": 1790564720502, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "pushing-onward-1-1-5-2-6-3", "origin": {"kind":"capture"}, "stamp": 1790564720502, "notes": [
   {"at":[29,1.25],"type":"loop","loop":"9.1.25"}
 ] }

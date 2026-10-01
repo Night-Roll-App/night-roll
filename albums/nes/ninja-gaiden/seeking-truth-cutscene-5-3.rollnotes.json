@@ -1,3 +1,3 @@
-{ "version": 1, "song": "seeking-truth-cutscene-5-3", "saved": 1790564720507, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "seeking-truth-cutscene-5-3", "origin": {"kind":"capture"}, "stamp": 1790564720507, "notes": [
   {"at":[25,1.25],"type":"loop","loop":"5.1.25"}
 ] }
