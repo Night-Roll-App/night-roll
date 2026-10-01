@@ -1,3 +1,3 @@
-{ "version": 1, "song": "bloody-tears-street-day-time-bgm", "saved": 1790739071520, "notes": [
+{ "format": "night-roll-annotations", "version": 2, "song": "bloody-tears-street-day-time-bgm", "origin": {"kind":"capture"}, "stamp": 1790739071520, "notes": [
   {"at":[21,1],"type":"loop","loop":"5.1"}
 ] }
