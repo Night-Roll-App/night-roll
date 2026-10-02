@@ -2187,6 +2187,7 @@ test("chip stream mode: the synth guard reads chip.stream.live; a silent-track r
 // page-side state they produce.
 test("chip stream mode: switch off uses chipRender untouched; on, a {stream:{error}} falls back to it; a successful open schedules sources via trackGain(ti), bounds its cache over a long play, and a seek requests the right chunk first", async () => {
   const a = createApp();
+  a.run(`localStorage.setItem("ff1roll-chipstream", "off");`); // the default became "auto" (2026-10-01) — this case tests an explicit off
   // One FAKE worker, synchronous (same convention as "a worker that errors
   // once…", above — the vm's setTimeout is a fake clock that only moves on
   // an explicit tick(), so an async reply would need one; nothing here
