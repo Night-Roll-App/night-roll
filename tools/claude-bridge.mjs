@@ -639,6 +639,23 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   if (req.method === "OPTIONS") { cors(res); res.writeHead(204); return res.end(); }
   if (url.pathname === "/health") return json(res, 200, {ok: true});
+  // Josh's personal chord-shape search (a separate local folder, never in this repo — its
+  // data includes CC BY-NC content): /shapes/… serves its static web page, read-only,
+  // so the iPad reaches it over the same Tailscale path as Ask (…/claude/shapes/)
+  if (req.method === "GET" && (url.pathname === "/shapes" || url.pathname.startsWith("/shapes/"))) {
+    if (url.pathname === "/shapes") { res.writeHead(301, {location: "shapes/"}); return res.end(); }
+    const root = path.resolve(process.env.CHORD_SHAPES_WEB || path.join(os.homedir(), "work/ff/chord-shapes/web"));
+    let rel = decodeURIComponent(url.pathname.slice("/shapes/".length)) || "index.html";
+    const file = path.resolve(root, rel);
+    if (!file.startsWith(root + path.sep) && file !== root) { res.writeHead(403); return res.end(); }
+    const types = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".json": "application/json", ".css": "text/css", ".txt": "text/plain; charset=utf-8"};
+    fs.readFile(file, (err, buf) => {
+      if (err) { res.writeHead(404, {"content-type": "text/plain"}); return res.end("not found"); }
+      res.writeHead(200, {"content-type": types[path.extname(file)] || "application/octet-stream", "cache-control": "no-cache"});
+      res.end(buf);
+    });
+    return;
+  }
   if (!authorized(req)) return json(res, 401, {error: {message: "this bridge wants its token — Settings → key"}});
   if (req.method === "GET" && url.pathname === "/v1/models") { const {models} = await listModels(); return json(res, 200, {object: "list", data: models}); }
   if (req.method === "GET" && url.pathname === "/v1/jobs") return json(res, 200, {ok: true, running: [...jobs.values()].filter(j => j.status === "running").length, inbox: true, terminal: true, terminalLive: terminalReachable(), sessions: true});
