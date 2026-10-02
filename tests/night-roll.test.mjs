@@ -2745,7 +2745,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ AI", 'data-hsec="ask"', "✦ Fill", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message", "add, edit, delete, or publish",
+    "✦ AI", 'data-hsec="ask"', "write notes on your own songs", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message", "add, edit, delete, or publish",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
     "an estimated key is named as an estimate", "Check vs file",
@@ -5033,7 +5033,7 @@ test("Bassist golden fixture: applyTake extraction is byte-stable (notes, veloci
   run(`songKey = null; rollnotes = []; song.rawNotes = null;`);
 });
 
-test("Fill: parsePitch pins pitchName's octave (C4 = 60), double accidentals, MIDI numbers", () => {
+test("write_notes: parsePitch pins pitchName's octave (C4 = 60), double accidentals, MIDI numbers", () => {
   assert.equal(val(`parsePitch("C4")`), 60);
   assert.equal(val(`parsePitch("C3")`), 48);
   assert.equal(val(`parsePitch("F#3")`), 54);
@@ -5048,50 +5048,105 @@ test("Fill: parsePitch pins pitchName's octave (C4 = 60), double accidentals, MI
   assert.equal(val(`parsePitch(pitchName(70, -3))`), 70); // Bb spelled flat under Eb
 });
 
-test("Fill: validator — one failing fixture per rule; 6/8 beats and a chop map to the right ticks", () => {
+test("write_notes: lands on the named track as one ⟲ step; validates every note (nothing written on a bad one); track matching (never the selected track); replace range by onset; 6/8 + chop map to the right ticks", () => {
   installSong();
   run(`
-    songKey = "albums/compositions/nightroll/fill-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
+    songKey = "albums/compositions/nightroll/wn-test.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}"); /* the local copy: editable (2026-09-27) */
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
-      tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}, {name: "pulse2", notes: []}]};
-    song.rawNotes = [[{t: 100, d: 480, p: 60, v: 80}], []]; song.tracks[0].notes[0].ri = 0;
+      tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}, {name: "pulse2", notes: []}, {name: "triangle", notes: []}]};
+    song.rawNotes = [[{t: 100, d: 480, p: 60, v: 80}], [], []]; song.tracks[0].notes[0].ri = 0;
     chopS = 100; rollnotes = []; keyRegions = []; previewSf = null; declaredTs = [6, 8]; editUndo = []; editRedo = []; dupPending = null;
-    trackState = [{muted: false, solo: false}, {muted: false, solo: false}];
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}, {muted: false, solo: false}];
+    selTrack = 0; // pulse1 — must never be used as a fallback target
     computeSongEnd();
   `);
-  const sp = val(`(() => { const bt = barTicks(); return {t0: bt, t1: 3 * bt, from: 2, to: 3}; })()`);
-  const v = take => val(`askValidateTake(${JSON.stringify(take)}, ${JSON.stringify(sp)})`);
-  const good = {span: {fromBar: 2, toBar: 3}, notes: [{bar: 2, beat: 1, dur: 3, pitch: "C4"}, {bar: 3, beat: 4.5, dur: 1, pitch: "G3"}], why: "", question: ""};
-  const ok = v(good);
-  assert.ok(ok.hits, ok.error);
+  // good notes land on the NAMED track (triangle); one group undo; rawNotes mirror at + chopS
+  const r = val(`(() => { const k = askWriteNotes({track: "triangle", notes: [{bar: 2, beat: 1, dur_beats: 3, pitch: "C4"}, {bar: 3, beat: 4.5, dur_beats: 1, pitch: "G3"}]});
+    return {note: k.note, hits: song.tracks[2].notes.map(n => [n.t, n.d, n.p, n.v]), raw: song.rawNotes[2].map(n => n.t), undo: editUndo.length, kind: editUndo[0].kind, p0: song.tracks[0].notes.filter(n => !n.gone).length}; })()`);
   // 6/8: beat = eighth (240 ticks); bar 2 starts at 6*240 = 1440; beat 4.5 = 3.5 eighths in
-  assert.deepEqual(ok.hits.map(h => [h.t, h.d, h.p]), [[1440, 720, 60], [2880 + 840, 240, 55]]);
-  assert.deepEqual(ok.hits.map(h => h.v), [96, 78]); // downbeat 96; off-beat 78
-  assert.match(v({...good, notes: [{bar: 1, beat: 1, dur: 1, pitch: "C4"}]}).error, /bar must be within 2–3/);
-  assert.match(v({...good, notes: [{bar: 2, beat: 7, dur: 1, pitch: "C4"}]}).error, /beat must be ≥ 1 and < 7/);
-  assert.match(v({...good, notes: [{bar: 2, beat: 1, dur: 0, pitch: "C4"}]}).error, /dur must be > 0/);
-  assert.match(v({...good, notes: [{bar: 2, beat: 1, dur: 1, pitch: "Q4"}]}).error, /pitch must be like/);
-  assert.match(v({...good, notes: [{bar: 2, beat: 1, dur: 1, pitch: "C0"}]}).error, /out of range/);
-  assert.match(v({...good, notes: new Array(257).fill({bar: 2, beat: 1, dur: 1, pitch: "C4"})}).error, /256/);
-  assert.match(v({...good, notes: "nope"}).error, /array/);
-  assert.equal(v({...good, notes: [], question: "Stacked chords or one note at a time?"}).question, "Stacked chords or one note at a time?");
-  assert.match(val(`askValidateTake(askParseTake('<think>hmm</think> Sure! {"span":{"fromBar":2,"toBar":3},"notes":[],"why":"","question":""} done'), ${JSON.stringify(sp)})`).error || "", /^$/);
-  // applyTake with a chop: rawNotes mirror lands at + chopS; one group undo; the pulse1 note before the range survives
-  const r = val(`(() => { const k = applyTake(1, ${sp.t0}, ${sp.t1}, ${JSON.stringify(ok.hits)});
-    return {k, raw: song.rawNotes[1].map(n => n.t), undo: editUndo.length, kind: editUndo[0].kind, p1: song.tracks[0].notes.filter(n => !n.gone).length}; })()`);
-  assert.equal(r.k, 2);
+  assert.deepEqual(r.hits, [[1440, 720, 60, 96], [2880 + 840, 240, 55, 78]]); // downbeat vel 96; off-beat 78
   assert.deepEqual(r.raw, [1540, 3820]);
-  assert.equal(r.undo, 1); assert.equal(r.kind, "group"); assert.equal(r.p1, 1);
+  assert.equal(r.undo, 1); assert.equal(r.kind, "group");
+  assert.equal(r.p0, 1, "the untouched pulse1 note (selTrack) is never part of this — write_notes only touched triangle");
+  assert.match(r.note, /^wrote 2 notes on triangle, bars 2–3$/);
   run(`editUndoPop()`);
-  assert.equal(val(`song.tracks[1].notes.filter(n => !n.gone).length`), 0);
-  // target rule: pulse2 is empty in the span → default onto it; pulse1 has a note at 0 only → also empty in bars 2–3, and it comes first
-  assert.equal(val(`askDefaultTarget(${JSON.stringify(sp)})`), "0");
-  run(`song.tracks[0].notes.push({t: ${sp.t0}, d: 100, p: 60, v: 80});`);
-  assert.equal(val(`askDefaultTarget(${JSON.stringify(sp)})`), "1");
-  assert.match(val(`askTargetStatus(${JSON.stringify(sp)}, "0")`), /replaces 1 note on pulse1 in bars 2–3/);
-  run(`song.tracks[1].notes.push({t: ${sp.t0}, d: 100, p: 60, v: 80});`);
-  assert.equal(val(`askDefaultTarget(${JSON.stringify(sp)})`), "new");
-  run(`songKey = null; rollnotes = []; declaredTs = null; chopS = 0; song.rawNotes = null;`);
+  assert.equal(val(`song.tracks[2].notes.filter(n => !n.gone).length`), 0, "one ⟲ restores what was there");
+
+  // invalid notes: every rule gets its own fixture; NOTHING is written
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: [{bar: 0, beat: 1, dur_beats: 1, pitch: "C4"}]})`), /bar must be a whole number/);
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: [{bar: 2, beat: 7, dur_beats: 1, pitch: "C4"}]})`), /beat must be ≥ 1 and < 7/);
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: [{bar: 2, beat: 1, dur_beats: 0, pitch: "C4"}]})`), /dur_beats must be > 0/);
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: [{bar: 2, beat: 1, dur_beats: 1, pitch: "Q4"}]})`), /pitch must be like/);
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: [{bar: 2, beat: 1, dur_beats: 1, pitch: "C0"}]})`), /playable range/);
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: new Array(257).fill({bar: 2, beat: 1, dur_beats: 1, pitch: "C4"})})`), /256/);
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: []})`), /non-empty array/);
+  // one good note alongside one bad note: the whole call is rejected, the good one never lands either
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: [{bar: 2, beat: 1, dur_beats: 1, pitch: "C4"}, {bar: 2, beat: 1, dur_beats: 1, pitch: "Q9"}]})`), /pitch must be like/);
+  assert.equal(val(`song.tracks[2].notes.filter(n => !n.gone).length`), 0, "still nothing written after the rejected mixed call");
+
+  // unknown track name → error naming the real track names; the selected track (pulse1) is never used as a fallback
+  assert.throws(() => run(`askWriteNotes({track: "bassoon", notes: [{bar: 1, beat: 1, dur_beats: 1, pitch: "C4"}]})`), /no track named "bassoon" — this song's tracks: pulse1, pulse2, triangle/);
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 1, "pulse1 (selTrack) untouched — never defaulted onto");
+  // missing track name is the same refusal, never a silent default to selTrack
+  assert.throws(() => run(`askWriteNotes({notes: [{bar: 1, beat: 1, dur_beats: 1, pitch: "C4"}]})`), /say which track/);
+  // common chip-name shorthand still matches the track's real name
+  const r2 = val(`(() => { const k = askWriteNotes({track: "pulse 1", notes: [{bar: 5, beat: 1, dur_beats: 1, pitch: "D4"}]}); return k.note; })()`);
+  assert.match(r2, /^wrote 1 note on pulse1, bar 5$/);
+  run(`editUndoPop()`);
+
+  // replace range: removes existing notes on that track BY ONSET; a note sustaining in from before the range survives
+  run(`
+    const bt2 = barTicks();
+    song.tracks[1].notes = [{t: 0, d: bt2 + 200, p: 64, v: 80}, {t: bt2, d: 100, p: 65, v: 80}];
+    song.rawNotes[1] = [{t: 0 + chopS, d: bt2 + 200, p: 64, v: 80}, {t: bt2 + chopS, d: 100, p: 65, v: 80}];
+  `);
+  const rep = val(`(() => { const k = askWriteNotes({track: "pulse2", notes: [{bar: 2, beat: 1, dur_beats: 1, pitch: "A3"}], replace: {from_bar: 2, from_beat: 1, to_bar: 3, to_beat: 1}});
+    return {note: k.note, notes: song.tracks[1].notes.map(n => ({p: n.p, gone: !!n.gone})), undo: editUndo.length}; })()`);
+  assert.match(rep.note, /^wrote 1 note on pulse2, bar 2$/);
+  assert.ok(rep.notes.some(n => n.p === 64 && !n.gone), "the note sustaining in from before the range survives");
+  assert.ok(rep.notes.some(n => n.p === 65 && n.gone), "the onset inside the range is erased");
+  assert.ok(rep.notes.some(n => n.p === 57 && !n.gone), "the new note landed"); // A3 = 57
+  run(`editUndoPop()`);
+
+  run(`songKey = null; rollnotes = []; declaredTs = null; chopS = 0; song.rawNotes = null; selTrack = 0;`);
+});
+
+test("write_notes: no song open; refuses on a capture/locked song naming the fix; hidden from the general (no-song) chat", () => {
+  run(`song = null; songKey = null;`);
+  assert.throws(() => run(`askWriteNotes({track: "pulse1", notes: [{bar: 1, beat: 1, dur_beats: 1, pitch: "C4"}]})`), /no song open/);
+  installSong();
+  run(`
+    songKey = "albums/nes/mega-man-2/write-notes-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+    song.tracks = [{name: "triangle", notes: []}];
+    song.rawNotes = [[]];
+    trackState = [{muted: false, solo: false}];
+  `);
+  assert.equal(val(`editableSong()`), false, "sanity: the capture gate is really closed");
+  assert.throws(() => run(`askWriteNotes({track: "triangle", notes: [{bar: 1, beat: 1, dur_beats: 1, pitch: "C4"}]})`), /locked here \(a capture or starter\) — ✎ Edit/);
+  assert.equal(val(`song.tracks[0].notes.length`), 0, "nothing written on a locked song");
+  run(`localStorage.removeItem(draftStoreKey(songKey)); songKey = null; song = null;`);
+  // absent from the general (no-song) chat's tool list, same as the other song-only tools
+  run(`askGeneral = true;`);
+  assert.ok(!val(`askToolsNow().some(t => t.function.name === "write_notes")`), "write_notes hidden in the general chat");
+  assert.ok(val(`askToolsNow().some(t => t.function.name === "read_song")`), "reading songs still allowed");
+  run(`askGeneral = false;`);
+});
+
+test("✦ Fill is fully removed: no button, no Edit ▾ entry, no Ask-sheet fill row", () => {
+  // the vm harness's getElementById lazily CREATES any id on first lookup
+  // (tests/harness.mjs), so "no longer exists" has to be read from the
+  // actual markup, the same way the help-sheet drift guard does
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  for (const id of ['id="fillbtn"', 'id="emAskFill"', 'id="askfill"', 'id="asktarget"', 'id="asktargetstatus"', 'id="asktargetrow"', 'id="asktakes"']) {
+    assert.ok(!html.includes(id), id + " no longer in index.html");
+  }
+  assert.ok(!html.includes("Fill with AI"), '"Fill with AI…" menu entry no longer in index.html');
+  for (const fn of ["askFill", "openFill", "askFillable", "askRefreshTarget", "askRenderTakes", "askTakePrompt", "askValidateTake", "askParseTake", "askTargetOptions", "askDefaultTarget", "askTargetStatus", "askTakeVel"]) {
+    assert.equal(val(`typeof ${fn}`), "undefined", fn + " no longer exists");
+  }
+  assert.equal(val(`typeof ASK_TAKE_SCHEMA`), "undefined");
+  assert.equal(val(`typeof askWriteNotes`), "function", "replaced by write_notes");
 });
 
 test("Ask: backend selection from cfg; browser backend forces the 4k budget tier", () => {

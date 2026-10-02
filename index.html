@@ -1331,7 +1331,6 @@
   <button id="drumfillbtn" aria-label="Fill a drum pattern">🥁</button>
   <button id="drummerbtn" aria-label="Generate drums (Drummer)">🎲</button>
   <button id="bassistbtn" aria-label="Generate a bassline (Bassist)">🎸</button>
-  <button id="fillbtn" aria-label="Fill the range with the AI (✦ Fill)">✦</button>
   <button id="divbtn" aria-label="Divide selected notes into equal parts">➗</button>
   <button id="joinbtn" aria-label="Join selected notes">⁀</button>
   <button id="quantbtn" aria-label="Quantize selected notes to the grid">Q Quantize</button>
@@ -1960,7 +1959,6 @@
       <dt>Join</dt><dd>Select two or more notes on the same pitch and tap <b>⁀</b> — they merge into one note spanning first start to last end (each pitch merges separately, so a lassoed pair of chords joins into one longer chord).</dd>
       <dt>Unsaved dot</dt><dd>A gold <b>●</b> after the title means the song has edits that haven't been published — it appears the moment you change anything and clears when Publish sheet succeeds (the Save sheet's title says which state you're in, too).</dd>
       <dt>🎲 Drummer</dt><dd>The 🎲 beside 🥁 in the edit row (also Edit ▾ → Drummer…) generates a kit part for a bar range (prefilled from the ruler selection if one is armed, else the section under the cursor). It reads the structure YOU declared: a fixed backbeat skeleton (kick on 1, meter-aware snares) that seeds never move, hats whose loudness always stays under the snare, kicks that follow the bass track's offbeats, accents on chord-change downbeats, a snare on the bass's LONG notes (the agogic accent), fills from a small vocabulary before section boundaries and the loop target (crash on the arrival), and SILENCE in breaks — a bar where only the bass plays, or a section labeled "break", gets no drums at all. Each take REPLACES the range's kit notes and is exactly one ⟲ step, so your hand-placed drums come back with one undo. 🎲 again rerolls; the take chips replay any earlier take exactly (seed, energy, and range all remembered). Five knobs, Logic's split: <b>busy</b> (1–5) is density — hat subdivisions, ghosts, how eagerly kicks chase the bass; <b>hard</b> (1–5) is loudness — one uniform velocity shift across the whole kit, hats never dropping back below audible; <b>fills</b> (off–5) alone decides how often fills fire and how big (1–2 the quiet vocabulary, 4–5 runs/tom-drops/the full-bar buildup); <b>follow</b> picks what the kick listens to — <b>any track, by name</b> (its offbeat onsets and long notes, probabilistic; defaults to the detected bass) · <b>chords</b> (a kick exactly on every DECLARED chord change, deterministic, capped 4/bar) · <b>off</b> (skeleton and fills only); <b>feel</b> sets the backbeat rate — <b>half</b> (one big snare mid-bar, thinner hats: the slow-heavy read) · <b>double</b> (kick every beat, snare every offbeat 8th: the skank/D-beat read — bass-follow stands down, every slot is owned). The <b>parts</b> chips scope a reroll — kick, snare, hats, and <b>fills</b> (a role, not a pitch: the whole fill-and-crash layer at your section boundaries, snare runs and tom drops included). Toggle any combination: all four = the normal full roll; "I love these snares, reroll just the kick" = tap snare and hats and fills off; <b>fills alone</b> rerolls just the boundary bars (with fills set to off, that STRIPS the fills and lays plain groove — a de-fill). With the fills chip off the fills knob dims (nothing to control) and kept pieces stay byte-identical, hats capping under your real snares. Take chips now show their recipe (busy/hard/fills, ½ or 2× for feel, part initials when scoped) and still replay exactly. Layout: busy and hard are 1–5 segment rows (how much / how loud), fills off–5 and feel sit below, follow and parts under those — the long explanation you used to scroll past lives here in Help now. Two more rules: <b>sections sharing an EXACT label share their groove</b> — label two spans "A1" and the drums restate bar-for-bar (fills and crashes still vary: a fill is commentary on what comes next), so the same-label-same-color convention now also means same-drums; and at fills 4–5 the vocabulary opens its <b>metal tier</b> — a 16th-rate tom run down the kit, a full-bar crash-in kit fall, and a double-kick burst — weighted so big fills dominate the top of the knob.</dd>
-      <dt>✦ Fill</dt><dd>Stuck on a few bars? The ✦ beside 🎸 (behind ⋯, or Edit ▾ → Fill with AI…) opens the Ask sheet with a <b>fill onto</b> row: the range is the ruler selection if one is armed, else the bars in view, and the target defaults to a NEW track unless an existing track is empty there — it never silently overwrites your notes; the status line says exactly what a take replaces (by onset; a note sustaining in from before the range survives). Type what you want ("chords under the melody", "a walking line into the V", or nothing — it will fit something), then tap <b>✦ Fill</b> instead of Send. The model answers in the ruler's own bars and beats, the app checks every note (inside the range, a real pitch, in a playable register) and sends bad takes back for a fix up to three times, then the notes land IMMEDIATELY on the target track as one ⟲ step — exactly the Drummer's and Bassist's contract: play it, and one undo brings back what was there. Take chips (up to 8, this session) re-apply any earlier try; Fill again for another. If your ask leaves it unsure — stacked chords or one note at a time? — it asks instead of guessing; answer with Send, then Fill again. Its one-line reasoning stays behind a <b>why?</b> tap (naming what it did is your job first). Only on your own songs; never drums (that's the Drummer's); nothing it writes becomes an annotation.</dd>
       <dt>Edit menu</dt><dd>An <b>Edit ▾</b> menu appears beside File on songs you can edit: ⟲ Undo, ⟳ Redo, ⧉ Copy, ✂ Cut, 📋 Paste at cursor, 📋 Paste to… (another track, another octave), 🗑 Delete, 🔪 Split, ⇅ Transpose (chromatic, octave, and in-key moves live in its sheet), ♫ Insert chord, ⇄ Move to track, 🥁 Drum pattern, 🎲 Drummer, ➗ Divide, ⁀ Join, Q Quantize — the same actions as the edit-row icons, labeled. The row itself keeps the heavy-use tools up front and folds the rest behind <b>⋯</b> (tap to expand; the choice sticks per device) — so pencil mode's duration picker fits on one iPad row again. Redo replays what Undo took back; making any new edit clears the Redo history (standard editor behavior).</dd>
       <dt>Velocity</dt><dd>The <b>vol slider</b> in the edit row (1–127, the number beside it shows the value) sets the pencil's loudness — and with notes selected in Select mode, dragging it adjusts ALL of them live, brightness tracking the drag, committing one ⟲ step when you let go. Tap a selection (or a single note) and the slider jumps to its current velocity — and when every selected note shares one velocity, the selection readout says so ("… 6 notes · vel 80").</dd>
       <dt>Delete</dt><dd>Tap <b>🗑</b> in the edit row — every selected note goes at once. Delete key does the same.</dd>
@@ -1990,7 +1988,7 @@
 
     <div class="hsec" data-hsec="ask">
     <dl>
-      <dt>✦ AI</dt><dd>Talk to an AI tutor about what you're looking at — and, on your own songs, have it write notes (see <b>✦ Fill</b> under Editor). Tap <b>✦ AI</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter. Say the word and it will also <b>add, edit, delete, or publish</b> an annotation — never on its own; ask it to change or take back the wrong one and it edits or deletes that exact annotation in place (never a duplicate left beside it), and asking it to publish runs the same Publish the footer button does.</dd>
+      <dt>✦ AI</dt><dd>Talk to an AI tutor about what you're looking at. Tap <b>✦ AI</b> in the top bar. Every message you send carries the song, your cursor, the lasso, your own annotations, and the notes of the bars in view (or the ruler-selected range), so "what's happening in bar 9?" means YOUR bar 9 — bars and beats are the ones on your ruler, in your declared meter. Say the word and it will also <b>add, edit, delete, or publish</b> an annotation — never on its own; ask it to change or take back the wrong one and it edits or deletes that exact annotation in place (never a duplicate left beside it), and asking it to publish runs the same Publish the footer button does. Ask can also <b>write notes on your own songs</b> when you ask it to — spell it out ("a C3 gallop on the triangle in bar 5" means an eighth note plus two sixteenths, not the word "gallop") and it lands at once as one ⟲ step; it never volunteers a note you didn't dictate.</dd>
       <dt>House rules</dt><dd><b>🎓 Learning mode</b> (Settings → Other): hints and direction first — it confirms or refines a guess you've made, and tells you outright only when you insist or say you give up; general theory questions it answers directly; it never reveals a key you haven't set. <b>Normal mode</b>: it answers music questions directly — keys, chords, cadences, form — and says how sure it is; an estimated key is named as an estimate, not a fact. Either mode, it never annotates on its own initiative or answers a question you didn't ask.</dd>
       <dt>Move a sheet</dt><dd>Where you leave a sheet is where it reopens on this device, size included (the first open is centered). Drag any sheet by its title line (AI, SETTINGS, the capture panel's title row…) to slide it aside — say, to keep the capture panel in view while you talk to the AI; drag the <b>◢</b> in its bottom-right corner to resize it. Both come back to the defaults the next time it opens.</dd>
       <dt>Dock right (and left, and bottom)</dt><dd>Tap <b>Dock</b> beside AI, ALL NOTES, INSTRUMENTS, JOBS, or PUBLISH to open its menu: <b>Left</b>, <b>Right</b>, or <b>Bottom</b> pin it to that edge instead of a floating window — no backdrop, so you can keep working the roll (tap, edit, play) with it open, the song laid out in what's left. Once docked to a side, the same menu offers <b>Full height</b> (edge to edge, beside the header and footer too) or <b>Beside the roll</b> (the header rows above and the footer below stay full width — only the roll narrows). Drag the strip on the dock's inner edge to resize it — 280px up to nearly the whole window, leaving only a thin strip of the song's edge showing, so you can shove the roll out of the way for a minute and drag back (double-tap the strip to reset it to the default width). Dropping a window's title on a side that already holds one makes a <b>tab group</b> there — a small strip of tabs above it, one shown at a time; tap a tab to switch, and closing a tab's window just drops its chip from the strip (it's still docked — reopen it and the chip comes back). The bottom dock can hold two windows side by side — dock a second one there and a divider splits them; drag it to change the split, and drag the strip along the bottom dock's top edge to resize its height (160px up to nearly the whole window, same double-tap-to-reset). <b>Float</b> undocks a window again, right where it was — or just drag a docked window's title back out into the middle. <b>Drag-to-dock:</b> instead of the menu, grab a window's title and drag it to an edge — a highlight shows where it'll land (the outer part of a side edge for full height, the inner part for beside the roll); let go to dock there, or in the middle to float. Remembered on this device — reopening a window re-docks it if you left it docked; closing one frees its space without undocking it. On a phone-width window the <b>Dock</b> button is hidden and every window is always floating — there's no room to give the song.</dd>
@@ -2162,7 +2160,6 @@
   <button class="fitem" id="emFill">🥁  Drum pattern…</button>
   <button class="fitem" id="emDrummer">🎲  Drummer…</button>
   <button class="fitem" id="emBassist">🎸  Bassist…</button>
-  <button class="fitem" id="emAskFill">✦  Fill with AI…</button>
 </div>
 
 <div id="filesheet">
@@ -2439,16 +2436,10 @@
     </div>
     <div class="status" id="asksessionline" style="display:none"></div>
     <div id="asklog"></div>
-    <div class="chiprow" id="asktakes"></div>
     <div class="row" id="askspanrow">
       <span class="lbl" id="askspan">bars in view</span>
       <span class="status" id="askmodel" style="margin-left:auto"></span>
       <button id="askgear" aria-label="AI settings" style="min-height:32px;padding:4px 10px">⚙</button>
-    </div>
-    <div class="row" id="asktargetrow" style="display:none">
-      <span class="lbl">fill onto</span>
-      <select id="asktarget" aria-label="Target track for Fill"></select>
-      <span class="status" id="asktargetstatus" style="flex:1"></span>
     </div>
     <div class="row" id="askshotchip" style="display:none">
       <img id="askshotimg" alt="the screenshot to send" title="tap to see it larger">
@@ -2460,7 +2451,6 @@
       <button id="askmic">🎤 Speak</button>
       <button id="askshot" style="display:none" title="Send a picture of the app to Claude" aria-label="Send a picture of the app to Claude">📷</button>
       <button class="primary" id="asksend">Send</button>
-      <button id="askfill" style="display:none" aria-label="Ask the AI to write notes into the range">✦ Fill</button>
     </div>
     <div class="row">
       <span class="status" id="askstatus" style="flex:1"></span>
@@ -17566,7 +17556,6 @@ document.getElementById("editsheetbtn").addEventListener("click", e => {
   proxy("emFill", () => document.getElementById("drumfillbtn").click());
   proxy("emDrummer", () => openDrummer());
   proxy("emBassist", () => openBassist());
-  proxy("emAskFill", () => openFill());
 }
 function fileMenuSaveLabels() { // Save Version: your own local songs only. Versions…: any open song with a repo path (browsing/going back to the published copy also works on a read-only capture with local annotation edits)
   const comp = !!song && isComposition() && !LINK_SONGS;
@@ -22093,7 +22082,7 @@ const RULE_LEARNING = `THE RULE: discoveries are the user's. Default to hints, q
 const RULE_NORMAL = `Answer music questions directly — name keys, chords, cadences and form when asked; say how sure you are; the key line may be an estimate, call it one.`;
 const ASK_SYS_BASE2 = `Each user message carries a <context> block: the song, the meter, the cursor, any lasso-selected pitches, the user's own annotations (their established discoveries — build on them), and the notes of the bars in view. Bar and beat numbers are the user's ruler: "bar 9 beat 2" is the counted beat of the declared meter (in 6/8 there are six beats per bar). Refer to locations that way. The key-state line says whether the user has set a key; if it is not set, the key is undiscovered — do not name it. If the song is the user's own composition, it is editable and they may ask what they wrote — still lead with a hint. Say "not sure" when you are not sure. Never invent notes that are not in the context.
 
-What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing, and never needs to. For this project, always prefer the context block and the tools below over reading a song's file yourself, even where the system you're running in can otherwise read files, the repo or the web — they reflect the user's LIVE state, unsaved edits included, which a file on disk does not; say what access you actually have only when asked, rather than assuming either way. You have eight app tools, all of them ONLY when the user explicitly asks for that exact action, never on your own initiative: add_annotation writes ONE annotation in the user's words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note); edit_annotation changes an EXISTING annotation's text (and, if asked, where it sits) — target it by the "id" its context entry carries, or by its bar, beat and current text if the id has gone stale; delete_annotation removes one existing annotation the same way; all three say what they did in one short line, and if the target is ambiguous they ask which rather than guess. publish_song runs this song's Publish (the same one the footer button does) and reports what happened — it refuses when the device isn't connected (no GitHub token, no folder) or nothing here can be published, and says why. list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. read_bars reads bars of THIS song beyond what the context block's current window shows (live state, unsaved edits included) — ask for it instead of guessing an out-of-view bar or telling the user you can't see it; some bars in the context may already read "as sent earlier" instead of their notes — you still have those from earlier in this chat, no need to ask again. The app's ✦ Fill button (separate from this chat) writes notes into a range when the user uses it; this chat writes no notes outside what add_annotation/edit_annotation do on request. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
+What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing, and never needs to. For this project, always prefer the context block and the tools below over reading a song's file yourself, even where the system you're running in can otherwise read files, the repo or the web — they reflect the user's LIVE state, unsaved edits included, which a file on disk does not; say what access you actually have only when asked, rather than assuming either way. You have nine app tools, all of them ONLY when the user explicitly asks for that exact action, never on your own initiative: add_annotation writes ONE annotation in the user's words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note); edit_annotation changes an EXISTING annotation's text (and, if asked, where it sits) — target it by the "id" its context entry carries, or by its bar, beat and current text if the id has gone stale; delete_annotation removes one existing annotation the same way; all three say what they did in one short line, and if the target is ambiguous they ask which rather than guess. publish_song runs this song's Publish (the same one the footer button does) and reports what happened — it refuses when the device isn't connected (no GitHub token, no folder) or nothing here can be published, and says why. list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. read_bars reads bars of THIS song beyond what the context block's current window shows (live state, unsaved edits included) — ask for it instead of guessing an out-of-view bar or telling the user you can't see it; some bars in the context may already read "as sent earlier" instead of their notes — you still have those from earlier in this chat, no need to ask again. write_notes writes notes the user dictates onto a track they name (never the one selected in the app) — spell out every note yourself (a gallop is an eighth plus two sixteenths: write all three, don't use the word); it writes exactly what was asked, never a chord, key or note of your own choosing, lands as one undo step, and refuses on a locked/capture song. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
 function askSys() { return ASK_SYS_BASE1 + "\n\n" + (appMode() === "normal" ? RULE_NORMAL : RULE_LEARNING) + "\n\n" + ASK_SYS_BASE2; }
 
 let askBusy = null;       // AbortController (or {abort}) while a reply streams
@@ -22429,6 +22418,20 @@ const ASK_TOOLS = [
       to_bar: {type: "integer", minimum: 1, description: "inclusive; omit for just from_bar"},
       tracks: {type: "array", items: {type: "string"}, description: "optional: limit to these tracks, by number (\"1\") or name — omit for every track"}},
       required: ["from_bar"]}}},
+  {type: "function", function: {name: "write_notes", description: "Write notes into THIS song on a track the user names. Only when the user explicitly asks you to write, insert, add, or fill in notes — their request is the per-instance approval for their own song; never on your own initiative, and never volunteer chords, keys, or any note they didn't dictate. Spell out every note individually — a shorthand term like \"gallop\" means nothing to the app; write it as the eighth note plus two sixteenths it stands for. track names an EXISTING track exactly as the user said it (e.g. \"triangle\", \"pulse1\") — matched against this song's own track names; never default to whichever track is selected in the app, and an unknown or ambiguous name is an error naming this song's actual track names, never a guess. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix (✎ Edit makes an editable copy). Every note is validated before anything is written; one bad note and nothing lands. The written notes land as ONE ⟲ undo step, and the reply is one short line saying what was written.",
+    parameters: {type: "object", properties: {
+      track: {type: "string", description: "the track name as the user said it (e.g. \"triangle\", \"pulse1\") — matched case-insensitively against this song's track names"},
+      notes: {type: "array", description: "every note to write, spelled out individually in the user's words", items: {type: "object", properties: {
+        pitch: {type: "string", description: "scientific pitch like C4, F#3, Bb2 (C4 = middle C) — or a MIDI note number"},
+        bar: {type: "integer", minimum: 1, description: "the ruler's bar number"},
+        beat: {type: "number", minimum: 1, description: "counted beat, 1 = downbeat; fractions allowed (2.5)"},
+        dur_beats: {type: "number", exclusiveMinimum: 0, description: "duration in beats"},
+        vel: {type: "number", minimum: 1, maximum: 127, description: "optional: velocity 1–127 — omit for the app's own default"}},
+        required: ["pitch", "bar", "beat", "dur_beats"]}},
+      replace: {type: "object", description: "optional: a bar/beat range on the SAME track whose existing notes (by onset) are removed first", properties: {
+        from_bar: {type: "integer", minimum: 1}, from_beat: {type: "number", minimum: 1},
+        to_bar: {type: "integer", minimum: 1}, to_beat: {type: "number", minimum: 1}}}},
+      required: ["track", "notes"]}}},
 ];
 function askAddAnnotation(a) { // the same text grammar the editor and the files use: one line, parsed by parseRollnotes
   if (!song || !songKey) throw new Error("no song open");
@@ -22673,6 +22676,7 @@ async function askRunTool(name, a) {
     return (j.notes || []).map(e => at(e) + " " + (e.type ? e.type + ": " + (e.chord || e.label || e.key || e.bpm || e.loop || e.timesig || e.track || e.chop || e.lane || "") : e.text || "") + (e.note ? " — " + e.note : "")).join("\n") || "(no annotations)";
   }
   if (name === "read_bars") return askReadBars(a || {});
+  if (name === "write_notes") return askWriteNotes(a || {});
   throw new Error("unknown tool " + name);
 }
 
@@ -23169,7 +23173,6 @@ function askModeButtons() {
   // the tab names the song: the sheet covers the title behind it (Josh, 2026-09-27)
   try { const t = songKey ? songTitleOf(songKey) : (typeof baseName === "function" ? baseName() : ""); a.textContent = "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song"); } catch (err) { a.textContent = "♪ this song"; }
   const spanrow = document.getElementById("askspanrow"); if (spanrow) spanrow.style.display = askGeneral ? "none" : "";
-  const fillrow = document.getElementById("askfill"); if (fillrow && askGeneral) fillrow.style.display = "none";
   if (typeof askinput !== "undefined" && askinput && askTerminal) askinput.placeholder = "Tell the terminal what to build or fix…";
   else if (typeof askinput !== "undefined" && askinput) askinput.placeholder = askGeneral ? "Anything — the app, the project, music in general" + (askCaps.bridge ? ", a message for the terminal…" : "…") : "Ask about what you're looking at…";
   if (typeof askStatusRender === "function") askStatusRender(); // the "Now:" strip shows only in general mode
@@ -23349,7 +23352,7 @@ async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the
   askSave(now.msgs, {saved: now.saved + fresh.length}, key);
 }
 // Mode-tagged history (2026-10-01, SAFETY): every stored message carries the
-// mode it was PUSHED in (askSend/askFinish/askFail/askNotesArrived/askFill —
+// mode it was PUSHED in (askSend/askFinish/askFail/askNotesArrived —
 // `mode: appMode()` at push time); a legacy message from before this tag
 // existed has no `mode` field, and is treated as "learning" (Learning is the
 // default mode, Normal is the newer one — CLAUDE.md: Learning is the law).
@@ -23400,7 +23403,7 @@ const askstatus = document.getElementById("askstatus");
 // turn's context carries, since the leak lives in the session, not the
 // turn. A different mode is a different session, period.
 function askSessionName() { return (askGeneral ? "general" : String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160)) + (appMode() === "normal" ? "#normal" : ""); }
-const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars"]; // no open song in the general chat (read_bars is about THE open song, unlike read_song/read_notes, which name another one)
+const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes"]; // no open song in the general chat (read_bars/write_notes are about THE open song, unlike read_song/read_notes, which name another one)
 function askToolsNow() { return askGeneral ? ASK_TOOLS.filter(t => !ASK_SONG_ONLY_TOOLS.includes(t.function.name)) : ASK_TOOLS; }
 function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
 let askInboxNo = ""; // the url that answered 404 (no inbox there)
@@ -24964,7 +24967,6 @@ function openAsk() {
   askSessionRefresh();
   askRender();
   askRefresh();
-  askRefreshTarget();
   askModeButtons(); // sets the placeholder for the mode (and the "Now:" strip)
   asksheet.classList.add("on");
   wmLayoutAll(); // reopens docked if it was docked (open-items.md "a real windowing system")
@@ -24981,7 +24983,7 @@ document.getElementById("askbtn").addEventListener("click", openAsk);
 for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
   if ((askTerminal ? "terminal" : askGeneral ? "general" : "song") === mode) return;
   askSetMode(mode);
-  askRender(); askRefresh(); askRefreshTarget(); askSessionRefresh();
+  askRender(); askRefresh(); askSessionRefresh();
 });
 document.getElementById("asknowstrip").addEventListener("click", askStatusToggle);
 document.getElementById("askreplybtn").addEventListener("click", openAsk);
@@ -25027,26 +25029,29 @@ askinput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(); }
 });
 
-// ---- ✦ Fill: the generator half, under the Bassist's shipped contract.
-// The model writes notes as JSON in the ruler's frame; the TARGET is chosen
-// here (picker, resolved at Send — the model has no track field); a valid
-// take applies at once through applyTake (one ⟲ restores what was there);
-// take chips re-apply earlier tries. Only where the Bassist runs:
-// editable songs, no meter change in range, never drums.
-const ASK_TAKE_SCHEMA = {
-  type: "object", additionalProperties: false,
-  properties: {
-    span: {type: "object", additionalProperties: false, properties: {fromBar: {type: "integer"}, toBar: {type: "integer"}}, required: ["fromBar", "toBar"]},
-    notes: {type: "array", items: {type: "object", additionalProperties: false,
-      properties: {bar: {type: "integer"}, beat: {type: "number"}, dur: {type: "number"}, pitch: {type: "string"}},
-      required: ["bar", "beat", "dur", "pitch"]}},
-    why: {type: "string"},
-    question: {type: "string"},
-  },
-  required: ["span", "notes", "why", "question"],
-};
-let askTakes = [], askTakeActive = -1; // session-ephemeral: the validated take JSON is the replay, there is no seed
-let askSchemaMode = {};                // per URL: "json_schema" → "json_object" → "none" as the server allows
+// ---- write_notes (2026-10-02): replaces the removed ✦ Fill button — Josh
+// found Fill's separate UI confusing and wanted plain chat instead ("type
+// 'insert a gallop on C3 on the triangle' ... and have it just work",
+// open-items.md 19:02/19:05). The model spells out every note itself (no
+// shorthand expansion); the app only validates and lands them. Landing goes
+// through the SAME applyTake (one ⟲ group step) Fill and the Bassist/
+// Drummer generators already use — erase-by-onset within [t0, t1), never a
+// splice. Gate = editableSong(), same as every other writing path; never
+// drums, same as Fill never offered a drums track as a target.
+function askNormChip(s) { // common chip-name shorthand → the default track-name spelling, so "square 1"/"sq1" match a track literally named "pulse1"
+  return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^square/, "pulse").replace(/^sq/, "pulse").replace(/^tri$/, "triangle");
+}
+function askFindTrackIndex(name) { // never the selected track — an unmatched or ambiguous name is an error naming the song's own track names
+  const names = song.tracks.map((tr, ti) => tr.name || "track " + (ti + 1));
+  const want = String(name || "").trim();
+  if (!want) throw new Error("say which track: " + names.join(", "));
+  const lower = want.toLowerCase();
+  let hits = names.map((n, ti) => ti).filter(ti => names[ti].toLowerCase() === lower);
+  if (!hits.length) { const norm = askNormChip(want); hits = names.map((n, ti) => ti).filter(ti => askNormChip(names[ti]) === norm); }
+  if (hits.length === 1) return hits[0];
+  if (hits.length > 1) throw new Error("more than one track matches \"" + want + "\": " + hits.map(ti => names[ti]).join(", ") + " — say which");
+  throw new Error("no track named \"" + want + "\" — this song's tracks: " + names.join(", "));
+}
 function parsePitch(s) { // letter, up to two ASCII accidentals, octave — pitchName's convention (C4 = 60); or a MIDI number
   if (typeof s === "number") return Number.isInteger(s) ? s : null;
   const t = String(s).trim();
@@ -25056,205 +25061,58 @@ function parsePitch(s) { // letter, up to two ASCII accidentals, octave — pitc
   const acc = {"": 0, "#": 1, "♯": 1, "##": 2, x: 2, b: -1, "♭": -1, bb: -2}[m[2] || ""];
   return LETTER_PC[m[1].toUpperCase()] + acc + (parseInt(m[3], 10) + 1) * 12;
 }
-function askTakeVel(t, bs) { return Math.abs(((t - bs) / beatTicks()) % 1) < 0.01 ? (Math.abs(t - bs) < 5 ? 96 : 88) : 78; } // the Bassist's metric rule, no jitter
-function askValidateTake(take, sp) { // → {hits} in display ticks, or {error}
-  if (!take || typeof take !== "object") return {error: "not a JSON object"};
-  if (typeof take.question === "string" && take.question.trim() && !(take.notes || []).length) return {question: take.question.trim()};
-  if (!Array.isArray(take.notes)) return {error: "notes must be an array"};
-  if (take.notes.length > 256) return {error: "more than 256 notes"};
-  const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
-  const hits = [];
-  for (const [i, n] of take.notes.entries()) {
+function askNoteVel(t, bs) { return Math.abs(((t - bs) / beatTicks()) % 1) < 0.01 ? (Math.abs(t - bs) < 5 ? 96 : 88) : 78; } // the Bassist's metric rule, no jitter — the write_notes default when the model omits vel
+function askWriteNotesValidate(notes, bt, qt, beats) { // → {hits} in display ticks, or {error} naming EVERY bad note (nothing written on any failure)
+  if (!Array.isArray(notes) || !notes.length) return {error: "notes must be a non-empty array"};
+  if (notes.length > 256) return {error: "more than 256 notes in one call — split it up"};
+  const errs = [], hits = [];
+  notes.forEach((n, i) => {
     const where = "note " + (i + 1) + " (" + JSON.stringify(n) + ")";
-    if (!n || typeof n !== "object") return {error: where + ": not an object"};
-    if (!Number.isInteger(n.bar) || n.bar < sp.from || n.bar > sp.to) return {error: where + ": bar must be within " + sp.from + "–" + sp.to};
-    if (typeof n.beat !== "number" || !(n.beat >= 1 && n.beat < beats + 1)) return {error: where + ": beat must be ≥ 1 and < " + (beats + 1) + " (" + beats + " beats per bar)"};
-    if (typeof n.dur !== "number" || !(n.dur > 0)) return {error: where + ": dur must be > 0 (in beats)"};
+    if (!n || typeof n !== "object") { errs.push(where + ": not an object"); return; }
+    if (!Number.isInteger(n.bar) || n.bar < 1) { errs.push(where + ": bar must be a whole number ≥ 1"); return; }
+    if (typeof n.beat !== "number" || !(n.beat >= 1 && n.beat < beats + 1)) { errs.push(where + ": beat must be ≥ 1 and < " + (beats + 1) + " (" + beats + " beats per bar)"); return; }
+    if (typeof n.dur_beats !== "number" || !(n.dur_beats > 0)) { errs.push(where + ": dur_beats must be > 0"); return; }
     const p = parsePitch(n.pitch);
-    if (p === null) return {error: where + ": pitch must be like C4, F#3, Bb2 (C4 = middle C)"};
-    if (p < 24 || p > 108) return {error: where + ": pitch out of range (C1–C8)"};
+    if (p === null) { errs.push(where + ": pitch must be like C4, F#3, Bb2 (C4 = middle C), or a MIDI number"); return; }
+    if (p < 24 || p > 108) { errs.push(where + ": pitch out of playable range (C1–C8)"); return; }
     const bs = (n.bar - 1) * bt, t = bs + (n.beat - 1) * qt;
-    if (t < sp.t0 || t >= sp.t1) return {error: where + ": starts outside the range"};
-    hits.push({t: Math.round(t), d: Math.max(20, Math.round(n.dur * qt)), p, v: askTakeVel(t, bs)});
-  }
-  hits.sort((a, b) => a.t - b.t || a.p - b.p);
+    const vel = n.vel !== undefined && n.vel !== null && n.vel !== "" ? Math.max(1, Math.min(127, Math.round(+n.vel))) : askNoteVel(t, bs);
+    hits.push({t: Math.round(t), d: Math.max(20, Math.round(n.dur_beats * qt)), p, v: vel, bar: n.bar});
+  });
+  if (errs.length) return {error: errs.join("; ")};
   return {hits};
 }
-function askParseTake(text) { // JSON only, but small models decorate: take the outermost {...}
-  const raw = text.replace(/<think>[\s\S]*?<\/think>/g, "");
-  const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
-  if (a < 0 || b <= a) return null;
-  try { return JSON.parse(raw.slice(a, b + 1)); } catch (err) { return null; }
+function askWritableGate() { // write_notes' gate — Fill's rule, carried over: only the user's own editable songs
+  if (!song) return "no song open";
+  if (editableSong()) return null;
+  if (LINK_SONGS) return "this song is being viewed from a link to another repo — read-only here";
+  if (cmp && cmp.showing === "repo") return "you're hearing the saved copy in compare mode — swap back to your version first";
+  return "this song is locked here (a capture or starter) — ✎ Edit (or Save As…) makes an editable copy, then ask again";
 }
-function askTargetOptions() { return song.tracks.map((tr, ti) => ({ti, name: tr.name || "track " + (ti + 1)})).filter(o => !trackIsDrums(o.ti)); }
-function askDefaultTarget(sp) { // the Bassist's rule: a NEW track unless an existing one is empty in the span
-  for (const o of askTargetOptions())
-    if (!song.tracks[o.ti].notes.some(n => !n.gone && n.t < sp.t1 && n.t + n.d > sp.t0)) return String(o.ti);
-  return "new";
-}
-function askTargetStatus(sp, tgt) { // exactly what a take replaces, by onset; sustaining notes named
-  if (tgt === "new") return "onto a new track — replaces nothing";
-  const ti = parseInt(tgt, 10), tr = song.tracks[ti];
-  if (!tr) return "";
-  let rep = 0, sus = 0;
-  tr.notes.forEach(n => { if (n.gone) return; if (n.t >= sp.t0 && n.t < sp.t1) rep++; else if (n.t < sp.t0 && n.t + n.d > sp.t0) sus++; });
-  return "replaces " + rep + " note" + (rep === 1 ? "" : "s") + " on " + (tr.name || "track " + (ti + 1)) + " in bars " + sp.from + "–" + sp.to +
-         (sus ? "; " + sus + " note" + (sus === 1 ? "" : "s") + " from before bar " + sp.from + " sustain" + (sus === 1 ? "s" : "") + " into it" : "");
-}
-function askFillable() { // the Bassist's gates, with the reason
-  if (!song) return "no song";
-  if (!editableSong()) return "Fill works on your own songs — captures are locked (asking is fine)";
-  return null;
-}
-function askRefreshTarget() {
-  if (askGeneral) { document.getElementById("askfill").style.display = "none"; return; } // nothing to fill in the general chat
-  const row = document.getElementById("asktargetrow");
-  const gate = askFillable();
-  row.style.display = gate ? "none" : "";
-  document.getElementById("askfill").style.display = gate ? "none" : "";
-  if (gate) return;
-  const sp = askSpan();
-  const sel = document.getElementById("asktarget");
-  const prev = sel.value;
-  sel.innerHTML = "";
-  for (const o of askTargetOptions()) { const e = document.createElement("option"); e.value = String(o.ti); e.textContent = o.name; sel.appendChild(e); }
-  const nw = document.createElement("option"); nw.value = "new"; nw.textContent = "＋ new track"; sel.appendChild(nw);
-  sel.value = [...sel.options].some(o => o.value === prev) && prev ? prev : askDefaultTarget(sp);
-  document.getElementById("asktargetstatus").textContent = askTargetStatus(sp, sel.value);
-  askRenderTakes();
-}
-function askRenderTakes() {
-  const row = document.getElementById("asktakes");
-  row.innerHTML = "";
-  askTakes.forEach((tk, i) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = "take " + (i + 1) + " · " + tk.hits.length + " notes";
-    b.classList.toggle("active", i === askTakeActive);
-    b.addEventListener("click", () => {
-      if (!song.tracks[tk.ti]) { askstatus.textContent = "that take's track is gone"; return; }
-      applyTake(tk.ti, tk.sp.t0, tk.sp.t1, tk.hits);
-      askTakeActive = i;
-      askRenderTakes();
-      setInfo("take " + (i + 1) + " — " + tk.hits.length + " notes (one ⟲ brings the previous back)");
-    });
-    row.appendChild(b);
-  });
-}
-function askTakePrompt(sp, tgtLabel, existing) {
-  const ts = effTs();
-  return askSys() + `
-
-TAKE MODE — the user wants you to WRITE notes into bars ${sp.from}–${sp.to} on the track "${tgtLabel}" (${existing}). Reply with JSON only, no prose, exactly this shape:
-{"span":{"fromBar":${sp.from},"toBar":${sp.to}},"notes":[{"bar":${sp.from},"beat":1,"dur":2,"pitch":"C3"}],"why":"one sentence","question":""}
-bar = the ruler's bar number (${sp.from}..${sp.to}). beat = the counted beat of the declared meter ${ts[0]}/${ts[1]} (1 = the downbeat, ${ts[0]} beats per bar; decimals subdivide: 2.5 is halfway between beats 2 and 3). dur = length in the same beat unit. pitch = letter, optional # or b, octave — C4 is middle C (MIDI 60), exactly as the notes in the context are written. Stay in a sensible register for the surrounding tracks and read the existing notes in the context so your notes fit them. NES channels play one note at a time; the user sometimes wants stacked chords on one track anyway. If it is not clear from the ask and the existing material whether to stack notes or write one at a time — or anything else essential is unclear — return "notes": [] and put ONE short question in "question". Otherwise leave "question" empty. "why" is one sentence on what you tried; the user sees it only on request.`;
-}
-async function askFill() {
-  const gate = askFillable();
-  if (gate) { askstatus.textContent = gate; return; }
-  if (askBusy) return;
-  if (cfg().aiBackend !== "browser" && !(await aiHostOk(aiUrl()))) { askstatus.textContent = "not sent"; return; }
-  const sp = askSpan();
-  if (rollnotes.some(n => n.tsdir && n.start > sp.t0 && n.start < sp.t1)) { askstatus.textContent = "the range crosses a meter change — fill each meter's bars separately"; return; }
-  askSpanFrozen = sp;
-  document.getElementById("askspan").textContent = askSpanLabel(sp);
-  const tgt = document.getElementById("asktarget").value;
-  const tgtLabel = tgt === "new" ? "new track" : (song.tracks[parseInt(tgt, 10)].name || "track " + (parseInt(tgt, 10) + 1));
-  const existing = tgt === "new" ? "empty" : askTargetStatus(sp, tgt);
-  const text = askinput.value.trim() || "Fill these bars with something that fits.";
-  askMicOff();
-  askinput.value = ""; askGrow();
-  askBubble("user", "✦ " + text + "  [" + askSpanLabel(sp) + " → " + tgtLabel + "]");
-  const live = askBubble("ai", "…");
-  const budget = askBudget();
-  const msgs = askLoad();
-  const ctx = askContext(sp, budget);
-  const system = askTakePrompt(sp, tgtLabel, existing);
-  const ctl = typeof AbortController === "function" ? new AbortController() : {abort() {}, signal: undefined};
-  askBusy = ctl;
-  document.getElementById("askstop").style.display = "";
-  document.getElementById("asksend").disabled = document.getElementById("askfill").disabled = true;
-  const url = aiUrl();
-  const turns = askBuildMessages(msgs, text, ctx, budget);
-  let result = null, lastErr = "";
-  try {
-    for (let attempt = 1; attempt <= 3 && !result; attempt++) {
-      askstatus.textContent = (attempt === 1 ? "writing… " : "fixing the take (" + attempt + "/3)… ") + "(~" + Math.round(askEstimate(system, turns) / 100) / 10 + "k of " + Math.round(budget.win / 1000) + "k)";
-      const mode = askSchemaMode[url] || "json_schema";
-      let raw;
-      try {
-        raw = await aiProvider().chat({system, messages: turns, signal: ctl.signal, onDelta: r => askShowThinking(live, r.length > 400 ? r.slice(0, 400) + "…" : r),
-                                       onStatus: t => { askstatus.textContent = t; },
-                                       schema: mode === "json_schema" ? ASK_TAKE_SCHEMA : mode === "json_object" ? {} : null});
-      } catch (err) {
-        if (err && err.name === "AbortError") throw err;
-        if (/HTTP 4\d\d/.test(err.message) && mode !== "none") { // the server rejects structured output: degrade and retry the same attempt
-          askSchemaMode[url] = mode === "json_schema" ? "json_object" : "none";
-          attempt--; continue;
-        }
-        throw err;
-      }
-      const take = askParseTake(raw);
-      const v = take ? askValidateTake(take, sp) : {error: "the reply was not JSON"};
-      if (v.question) { result = {question: v.question}; break; }
-      if (v.hits) { result = {hits: v.hits, why: (take.why || "").trim()}; break; }
-      lastErr = v.error;
-      turns.push({role: "assistant", content: raw.slice(0, 2000)}, {role: "user", content: "That take was rejected: " + v.error + ". Reply again with corrected JSON only."});
-    }
-    if (!result) throw new Error("three takes in a row were unusable — last problem: " + lastErr);
-    if (result.question) {
-      live.textContent = result.question;
-      { const cur = askLoad(); cur.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp), mode: appMode()}, {role: "assistant", content: result.question, m: askModelName(), mode: appMode()}); askSave(cur); }
-      askstatus.textContent = "it needs an answer — reply, then Fill again";
-      return;
-    }
-    // apply: the Bassist's exact sequence, a created track folded into the same ⟲ step
-    let ti = tgt;
-    const madeTrack = ti === "new", undoLen = editUndo.length;
-    if (madeTrack) { ti = addTrackUndoable({name: "fill", notes: []}); saveDraft(); renderTrackbar(); }
-    else ti = parseInt(ti, 10);
-    const k = applyTake(ti, sp.t0, sp.t1, result.hits);
-    if (madeTrack) undoTrackAdd(ti, undoLen);
-    askTakes.push({sp, ti, hits: result.hits, why: result.why});
-    if (askTakes.length > 8) askTakes.shift();
-    askTakeActive = askTakes.length - 1;
-    const summary = "✓ " + k + " note" + (k === 1 ? "" : "s") + " onto " + (song.tracks[ti].name || "track " + (ti + 1)) + ", bars " + sp.from + "–" + sp.to + " — one ⟲ restores what was there";
-    live.textContent = summary;
-    if (result.why) { // his ruling: the reasoning stays behind a tap
-      const b = document.createElement("button");
-      b.type = "button"; b.textContent = "why?"; b.style.cssText = "margin-left:8px;min-height:28px;padding:2px 8px;font-size:0.75rem";
-      b.addEventListener("click", () => { b.replaceWith(document.createTextNode("\n" + result.why)); });
-      live.appendChild(b);
-    }
-    { const cur = askLoad(); cur.push({role: "user", content: text + " [fill bars " + sp.from + "–" + sp.to + "]", t: Date.now(), at: askSpanLabel(sp), mode: appMode()}, {role: "assistant", content: "(wrote " + k + " notes into bars " + sp.from + "–" + sp.to + " on " + (song.tracks[ti].name || "track " + (ti + 1)) + ")", m: askModelName(), mode: appMode()}); askSave(cur); }
-    askstatus.textContent = "";
-    setInfo("✦ take " + askTakes.length + ": " + k + " notes in bars " + sp.from + "–" + sp.to + " (one ⟲ restores what was there)");
-    askRefreshTarget();
-    document.getElementById("asktarget").value = String(ti);
-    document.getElementById("asktargetstatus").textContent = askTargetStatus(sp, String(ti));
-  } catch (err) {
-    const aborted = err && err.name === "AbortError";
-    live.classList.add("err");
-    live.textContent = "⚠ " + (aborted ? "stopped" : err.message);
-    askstatus.textContent = "";
-  } finally {
-    askBusy = null;
-    document.getElementById("askstop").style.display = "none";
-    document.getElementById("asksend").disabled = document.getElementById("askfill").disabled = false;
+function askWriteNotes(a) {
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const ti = askFindTrackIndex(a.track);
+  if (trackIsDrums(ti)) throw new Error("\"" + (song.tracks[ti].name || "track " + (ti + 1)) + "\" is a drum/noise track — write_notes doesn't write there");
+  const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
+  const v = askWriteNotesValidate(a.notes, bt, qt, beats);
+  if (v.error) throw new Error(v.error);
+  let t0 = 0, t1 = 0; // default: erase nothing (t0 === t1 never satisfies applyTake's "t >= t0 && t < t1")
+  if (a.replace) {
+    const r = a.replace;
+    const fb = Math.max(1, Math.round(+r.from_bar || 1)), fq = Math.max(1, +(r.from_beat !== undefined ? r.from_beat : 1));
+    const tb = Math.max(fb, Math.round(+(r.to_bar !== undefined ? r.to_bar : fb)));
+    const tq = r.to_beat !== undefined ? Math.max(1, +r.to_beat) : beats + 1;
+    t0 = (fb - 1) * bt + (fq - 1) * qt;
+    t1 = Math.max(t0 + 1, (tb - 1) * bt + (tq - 1) * qt);
   }
+  const hits = v.hits.sort((x, y) => x.t - y.t || x.p - y.p);
+  const added = applyTake(ti, t0, t1, hits);
+  const bars = a.notes.map(n => Math.round(+n.bar)), lo = Math.min(...bars), hi = Math.max(...bars);
+  const where = lo === hi ? ("bar " + lo) : ("bars " + lo + "–" + hi);
+  return {ok: true, note: "wrote " + added + " note" + (added === 1 ? "" : "s") + " on " + (song.tracks[ti].name || "track " + (ti + 1)) + ", " + where};
 }
-document.getElementById("askfill").addEventListener("click", askFill);
-document.getElementById("asktarget").addEventListener("change", () => {
-  document.getElementById("asktargetstatus").textContent = askTargetStatus(askSpan(), document.getElementById("asktarget").value);
-});
-function openFill() { // the edit-row / Edit ▾ entry: the same sheet, target row in focus
-  const gate = askFillable();
-  if (gate) { setInfo(gate); return; }
-  openAsk();
-  askinput.placeholder = "What should go here? (e.g. chords under the melody, a walking line to the V…)";
-  askFocusIfKeyboard();
-}
-document.getElementById("fillbtn").addEventListener("click", openFill);
 
 // ---------------------------------------------------- data-location config
 // Josh's design (2026-08-17, advisor-reviewed): the app is CONFIGURED with
