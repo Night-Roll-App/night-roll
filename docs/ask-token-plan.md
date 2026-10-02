@@ -51,7 +51,7 @@ Josh: "the MOST TOKEN-EFFICIENT way to talk about songs in Ask overall."
    and not "<context>"; a fresh session's first turn still contains
    "<context>".
 2. Mode-separated sessions: askSessionName adds "#normal" in Normal mode.
-3. Smaller base in read mode: --strict-mcp-config (empty) and
+3. **DONE (2026-10-01), modest.** Bridge passes --strict-mcp-config --mcp-config '{"mcpServers":{}}' --disable-slash-commands in both modes. Measured: restricted-tools base 38.7k → 15.7k (one run); full mode (Josh's bridge) ~28k either way — MCP tools are already deferred there. Judge further steps by the bridge's per-turn ring, not one-off runs. Was: Smaller base in read mode: --strict-mcp-config (empty) and
    --disable-slash-commands if supported; measure first-turn cache write.
 4. Change-only gate (builder in progress) + a session-epoch marker from the bridge
    (x-nr-session-epoch = sess.id:lastCompact.at); mark parts sent only on job

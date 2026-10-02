@@ -404,6 +404,10 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
   const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", resumed ? "--resume" : "--session-id", sess.id, "--model", model || CLAUDE_DEFAULT_MODEL, "--append-system-prompt", sys];
   if (CLAUDE_MODE !== "full") args.push("--tools", "Read", "Glob", "Grep", "WebFetch", "WebSearch");
   args.push("--add-dir", SHOTS_DIR); // a 📷 screenshot sits outside the repo; Read needs the directory allowed
+  // a lean base (docs/ask-token-plan.md step 3): no MCP servers (browser/Gmail/Drive tool
+  // definitions) and no skills list — Ask uses neither. Measured 2026-10-01: a first turn's
+  // cache write 38,748 → 15,678 tokens, i.e. ~23k fewer tokens re-read on every API call
+  args.push("--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--disable-slash-commands");
   const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
   job.child = child;
   let buf = "", err = "", sawText = false, held = "", holding = true, turnUsage = null, lastAssistantUsage = null, apiCalls = 0;
