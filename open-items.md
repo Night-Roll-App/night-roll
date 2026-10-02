@@ -35,12 +35,6 @@ Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     Welcoming of Maester Mika). Published or fresh — which is right?
 Q2. (ASK LATER) Archive move: make the archive token (resource owner
     joshcough, only the archive repo, Contents read+write) and say "go".
-Q11. Chord-progression search (your 23:20 idea): (A) search ONLY your own chord
-    annotations across all albums, by the SHAPE of the root motion (e.g. "down a
-    step, down a step, down a fourth" — works in any key), results = songs + bars,
-    on demand — no outside analysis; or (B) also an outside library of other songs'
-    progressions (far more songs, but chord names you didn't find yourself)?
-    Recommended: A now, B later if you want it.
 Q5. ANSWERED YES (2026-10-01) — waiting on Josh to run ONE command (the auto-mode
     permission classifier blocks me from creating a public repo). Files are ready in
     the job tmp dir (index.html + 404.html redirecting to /night-roll/):
@@ -49,7 +43,7 @@ Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
 for build 3.
-DONE: Q10 — graveyard-3 was copied from graveyard-2 (Josh, 2026-10-01); the leftover "forked from graveyard.mid" note dropped, file converted to v2 with origin.from graveyard-2 — all 1196 files are v2 now. Q4 — yes (2026-09-30): captures stay locked (notes/tracks); annotating them directly is unchanged; "✎ Make it mine" makes an editable copy in one tap at a new path (my-covers/overworld.mid; a clash → "Overworld 2"). Q6 — yes: imports edit like copies (tempo + meter bake; the file's own labels written back verbatim). Q8 — yes (2026-09-30): the machine-written "forked from"/"moved from" notes move into the v2 origin header; he approved fixing the 6 files ("I would like to fix the songs") — done in the P5 batch migration so the origin is kept, not lost. Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
+DONE: Q11 — Josh chose B (2026-10-01 23:25): a standalone chord-progression library/API of ANY songs, searchable by progression shape; he looks results up on YouTube. His explicit choice to bring in outside chord analysis (Learning mode: it's his on-demand tool, never volunteered). Data-source research first. Q10 — graveyard-3 was copied from graveyard-2 (Josh, 2026-10-01); the leftover "forked from graveyard.mid" note dropped, file converted to v2 with origin.from graveyard-2 — all 1196 files are v2 now. Q4 — yes (2026-09-30): captures stay locked (notes/tracks); annotating them directly is unchanged; "✎ Make it mine" makes an editable copy in one tap at a new path (my-covers/overworld.mid; a clash → "Overworld 2"). Q6 — yes: imports edit like copies (tempo + meter bake; the file's own labels written back verbatim). Q8 — yes (2026-09-30): the machine-written "forked from"/"moved from" notes move into the v2 origin header; he approved fixing the 6 files ("I would like to fix the songs") — done in the P5 batch migration so the origin is kept, not lost. Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
 his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
 own songs; "Publish all" = one publish per song; explicit song origins.
 
@@ -4862,3 +4856,6 @@ diffs) is still open.
 
 ## 2026-10-01 23:20 — Feature idea (via Ask): a chord-progression library to look up songs by progression
 Josh, in his words: "it would be cool to have a whole library of songs and their chord progressions, and then we could look them up." Context: in cry-in-sorrow-part-2 he found roots falling Bb, Ab, Gb, then a fourth down to Db (i, bVII, bVI, bIII). He knows many songs with three chords falling by step but cannot recall one whose fourth chord drops a fourth, and wants to find other songs with the same progression, listen, and feel what they do. Idea: index songs (his albums, possibly a reference corpus) by chord progression, then search by a progression he types or selects. Needs design; chords come from his own annotations, so Learning mode applies (nothing volunteered, no keys named for him).
+
+## 2026-10-01 23:25 — ANSWER to the progression-search question: option B, standalone (via Ask)
+Josh chose B, and bigger than the terminal's framing: the progression search should be almost independent of his annotations and of Night Roll's own songs. In his words: "a giant library of these things... they don't have to be on songs we've imported or captured or annotated... go out on the Internet and build this somehow. I have no idea how it would be built. It would be its own thing independent of Night Roll that Night Roll could use. An API Night Roll could ask: give me a list of songs that have this chord progression. Or just that I could use, and then I could look those songs up on YouTube and play them and hear what that sounds like in context." Needs design: where chord data comes from (licensing, open datasets), root-motion-shape queries in any key, a standalone service/API, Night Roll as one client. Learning mode: nothing volunteered; it answers only when he searches.
