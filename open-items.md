@@ -4917,3 +4917,7 @@ Docs: NIGHT-ROLL.md ("Skip already-sent bars + read_bars, step 6"
 paragraph), docs/ask-token-plan.md (step 6 marked done + a final summary of
 all eight steps, 0–7). This closes out the token-efficient-Ask plan — every
 step in the build order is now shipped.
+
+## DONE 2026-10-02 13:05 — iPad/iPhone: tapped notes silent with the silent switch on, but Play is audible (via Ask)
+FIXED: previewNote switches the session to "playback" (audible with the silent switch on) and back to "ambient" 2 s after the last tap. Side effect: a tap pauses other apps' audio, like ▶.
+Josh: with the iPhone/iPad on silent, pressing Play plays sound, but pressing/tapping a single note (Ab3, bar 10 beat 1, voice1 in cry-in-sorrow-part-2) makes no sound. Audio engine reports running, ⚠ log empty, status lines show the press registered ("Ab3 · bar 10 beat 1 · vel 16 · voice1"). Suggests the audition/tap path and the Play path use different audio routes (one honoring the silent switch, one not). Josh's rule: ear reports are measurements; reproduce before working around (see ipad-audio-known-good-engine).

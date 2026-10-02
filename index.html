@@ -9853,6 +9853,12 @@ function playSynthVoice(ti, n, when, durSec, v) {
 }
 async function previewNote(ti, pitch, tick) { // tick: the tapped note's own .t, when there IS one (a roll/score tap, a pencil placement) — lets a chip tap hear the program actually playing there, not always the track's first (FF7 "You Can Hear the Cry of the Planet", 2026-09-30). Omit it for a bare pitch (piano strip, live MIDI in) — same as before.
   ensureAudio();
+  // a tap is Night Roll making sound, like ▶: "playback" (audible with the iPad's silent switch
+  // on — the idle "ambient" session silenced taps, Josh 2026-10-02), back to "ambient" 2 s after
+  // the last tap unless something else is playing by then
+  audioSessionType("playback");
+  clearTimeout(previewNote.ambientTimer);
+  previewNote.ambientTimer = setTimeout(() => { if (!playing && !albumRun && !document.hidden && !met.on) audioSessionType("ambient"); }, 2000);
   await resumeAudio(); // clock is frozen until the context actually runs
   openMaster(); // master may be faded out from the last stop
   const tr = song && song.tracks[ti];
