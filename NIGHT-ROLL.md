@@ -3741,9 +3741,56 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
       tool-round case confirms a resumed session's prompt carries the TOOL
       RESULT and not `<context>`, while a fresh session's first turn still
       carries `<context>`.
-    - Steps 2–7 (mode-separated sessions, a smaller read-mode base, the
-      change-only gate, compact per-track encoding, skip-already-sent bars,
-      warm auto-Compact) are still open — docs/ask-token-plan.md.
+    - Steps 5–6 (compact per-track encoding, skip-already-sent bars) are
+      still open — docs/ask-token-plan.md. Steps 2 and 4 (mode-separated
+      sessions, the change-only gate) shipped in 0701a7f. Step 3 (a lean base: `--strict-mcp-config`,
+      empty `--mcp-config`, `--disable-slash-commands` in both modes) and
+      step 7 (warm auto-Compact) are done — see below.
+  - **Warm auto-Compact, ask-token-plan.md step 7 (2026-10-01).** The bridge
+    used to only compact a song's session when the app's Compact button was
+    tapped — a long session just kept growing until then. Now: the instant a
+    turn's job ends SUCCESSFULLY (never on error) with that turn's `ctxTokens`
+    (the per-turn ring's own figure) over `--compact-at`
+    (`BRIDGE_COMPACT_AT`, default 90000; `0` disables), `runClaude` fires the
+    existing `runCompact` for that song's session right away, in the
+    BACKGROUND (`startAutoCompact`, tools/claude-bridge.mjs) — the reply has
+    already gone out (never delayed by this), and the prompt cache the turn
+    just warmed is still hot, the cheapest possible moment to compact.
+    Recorded exactly like a manual Compact (`sessionUpdate` `turns: 1`,
+    running token counters reset, `lastCompact {at, preTokens, postTokens,
+    cost}`) except the cost is the delta against `lastCumCost` (step 0a's own
+    logic), not `/compact`'s raw `total_cost_usd` — that figure is a running
+    total too, and using it raw next to the triggering turn's own delta would
+    double-count. A per-song `compacting` Map holds the in-flight promise:
+    a second trigger for the same song while one is running is a no-op (two
+    compacts never overlap), and `runClaude` checks the same map before
+    spawning Claude Code for a turn, deferring the whole turn behind the
+    in-flight compact rather than racing it on the same `--resume` session
+    id. One `console.log` line per completed or failed auto-compact.
+    **The epoch header:** every chat-completion response (stream or not) now
+    carries `x-nr-session-epoch: "<session-id>:<lastCompact.at||0>"`
+    (`epochHeader`; exposed via `access-control-expose-headers` for the
+    app's `fetch` to read cross-origin) — it changes the instant a compact
+    (manual or automatic) lands on that song's session, the same signal the
+    app already watches for after a manual Compact. A non-stream reply
+    computes it lazily, when the response actually goes out (after its own
+    job — and any compact it waited behind — has finished), so it can
+    reflect a compact this very turn triggered or waited on; a streamed
+    reply can only carry it as of stream START (HTTP headers can't change
+    mid-stream), so it reflects an earlier turn's compact — either way the
+    app sees a same-turn auto-compact by its NEXT turn. **The app side of
+    reading this header (resending its context in full on a changed epoch)
+    is not built yet — docs/ask-token-plan.md step 7.**
+    Tests: tests/bridge.test.mjs's fourth test, a dedicated fake-claude
+    written as a Node script rather than `/bin/sh` (so it can log
+    `Date.now()` millisecond timestamps, proving a turn genuinely WAITED for
+    a running compact rather than merely running later) — a turn over
+    `--compact-at` triggers exactly one `/compact` call, which a turn fired
+    immediately after it only starts once the compact's full (artificial
+    400ms) run has actually finished; `lastCompact` carries the delta cost;
+    a turn under the threshold never compacts; `--compact-at 0` never
+    compacts even with a huge `ctxTokens`; the epoch header differs
+    before/after a compact and carries its exact timestamp.
   - **General chat (2026-09-27, Josh via the bridge: "some sort of main
     ask section that's not per song").** `askGeneral` (device pref
     `ff1roll-ask-mode`) is picked by the ♪ this song / ✦ general toggle at

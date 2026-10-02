@@ -265,3 +265,127 @@ esac
   assert.doesNotMatch(resumedToolRoundPrompt, /<context>/, "resumed + mid tool-round: only the tool result, not the whole <context> message again");
   assert.match(freshToolRoundPrompt, /<context>/, "a fresh (non-resumed) session is unchanged — it still sends everything via flatten()");
 });
+
+// a stand-in claude for step 7: a Node script (not /bin/sh — we need Date.now()
+// millisecond timestamps in the args log to prove a turn actually WAITED for a
+// running compact, not just that it happened to run later). --version
+// succeeds; every other invocation logs "<ms-epoch> <argv…>\n" to argsLog, then
+// either runs the real /compact path (a 400ms delay, so a turn fired right
+// after the triggering reply has a wide window to land mid-compact) or a
+// normal turn, whose reported ctxTokens/cost are controlled by CTRL_* markers
+// in the piped prompt (the bridge never sees these — they are the test's own
+// knobs) rather than an invocation counter, so every scenario is independent
+// of call order.
+function fakeClaudeForCompact(argsLog) {
+  return `#!/usr/bin/env node
+const fs = require("node:fs");
+const args = process.argv.slice(2);
+if (args[0] === "--version") process.exit(0);
+// "--append-system-prompt"'s own value has embedded real newlines, so a plain
+// "\\n"-joined log can't be split back into one entry per call — a sentinel
+// line (as tests/bridge.test.mjs's other fake-claudes use for prompt.log) can.
+fs.appendFileSync(${JSON.stringify(argsLog)}, Date.now() + " " + args.join(" ") + "\\n-----END-----\\n");
+let stdin = "";
+process.stdin.on("data", d => { stdin += d; });
+process.stdin.on("end", () => {
+  if (args.includes("/compact")) {
+    setTimeout(() => {
+      process.stdout.write(JSON.stringify({type: "system", subtype: "compact_boundary", compact_metadata: {pre_tokens: 80000, post_tokens: 5000}}) + "\\n");
+      process.stdout.write(JSON.stringify({type: "result", subtype: "success", result: "", is_error: false, total_cost_usd: 0.025}) + "\\n");
+    }, 400);
+  } else {
+    let IN = 50;
+    if (stdin.includes("CTRL_IN_HIGH")) IN = 60000;
+    else if (stdin.includes("CTRL_IN_LOW")) IN = 1000;
+    let COST = 0.001;
+    if (stdin.includes("CTRL_COST_1")) COST = 0.02;
+    else if (stdin.includes("CTRL_COST_2")) COST = 0.03;
+    process.stdout.write(JSON.stringify({type: "assistant", message: {content: [{type: "text", text: "ok"}], usage: {input_tokens: IN, output_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0}}}) + "\\n");
+    process.stdout.write(JSON.stringify({type: "result", subtype: "success", result: "ok", is_error: false, total_cost_usd: COST, usage: {input_tokens: 5, output_tokens: 7, cache_read_input_tokens: 0, cache_creation_input_tokens: 0}}) + "\\n");
+  }
+});
+`;
+}
+async function startFakeBridge(t, {argsLog, extraArgs}) {
+  const {writeFileSync, chmodSync} = await import("node:fs");
+  const dir = path.dirname(argsLog);
+  const bin = path.join(dir, "fake-claude");
+  writeFileSync(bin, fakeClaudeForCompact(argsLog));
+  chmodSync(bin, 0o755);
+  const port = 21000 + Math.floor(Math.random() * 3000);
+  const child = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port), "--jobs-dir", path.join(dir, "jobs"), ...extraArgs],
+    {env: {...process.env, CLAUDE_BIN: bin, BRIDGE_UPSTREAMS: "none=http://127.0.0.1:9"}, stdio: ["ignore", "pipe", "pipe"]});
+  t.after(() => { child.kill("SIGKILL"); });
+  let out = ""; child.stdout.on("data", d => { out += d; }); child.stderr.on("data", d => { out += d; });
+  for (let i = 0; i < 80 && !/jobs:/.test(out); i++) await sleep(100);
+  if (!/jobs:/.test(out)) throw new Error("fake bridge did not start\n" + out);
+  return "http://127.0.0.1:" + port;
+}
+
+test("bridge: ask-token-plan.md step 7 — warm auto-Compact fires over --compact-at, never overlaps, and changes x-nr-session-epoch", async t => {
+  const {readFileSync, existsSync} = await import("node:fs");
+  const dir = mkdtempSync(path.join(tmpdir(), "nr-bridge-autocompact-"));
+  t.after(() => rmSync(dir, {recursive: true, force: true}));
+  const argsLog = path.join(dir, "args.log");
+  const base = await startFakeBridge(t, {argsLog, extraArgs: ["--compact-at", "50000"]});
+  const askRaw = (song, content) => fetch(base + "/v1/chat/completions", {method: "POST", headers: {"content-type": "application/json", "x-nr-song": song}, body: JSON.stringify({model: "claude-code", messages: [{role: "user", content}]})});
+
+  // turn 1: ctxTokens (60000, from CTRL_IN_HIGH) is over --compact-at (50000)
+  // and total_cost_usd 0.02 (CTRL_COST_1, this session's first running total)
+  const r1 = await askRaw("auto-song", "hi CTRL_IN_HIGH CTRL_COST_1");
+  assert.equal(r1.status, 200);
+  const epoch1 = r1.headers.get("x-nr-session-epoch");
+  await r1.json();
+  assert.match(epoch1 || "", /:0$/, "no compact has landed yet — the epoch's compact timestamp is 0");
+
+  // turn 2, fired immediately after: ctxTokens (1000, CTRL_IN_LOW) is under
+  // threshold, so it must not itself trigger a second compact — it exists only
+  // to prove a turn arriving mid-compact WAITS for it rather than racing the
+  // same --resume session id (a non-stream reply waits for its job to end, and
+  // runClaude defers the whole turn behind the in-flight compact's promise)
+  const r2 = await askRaw("auto-song", "hi again CTRL_IN_LOW CTRL_COST_2");
+  assert.equal(r2.status, 200);
+  const epoch2 = r2.headers.get("x-nr-session-epoch");
+  await r2.json();
+
+  // the --append-system-prompt argument has embedded real newlines, so calls
+  // are separated by a "-----END-----" sentinel (readCalls), not split("\n")
+  const readCalls = log => (readFileSync(log, "utf8").split("\n-----END-----\n").map(s => s.trim()).filter(Boolean)).map(entry => { const sp = entry.indexOf(" "); return {t: +entry.slice(0, sp), rest: entry.slice(sp + 1)}; });
+  for (let i = 0; i < 50 && readCalls(argsLog).length < 3; i++) await sleep(50);
+  const parsed = readCalls(argsLog);
+  assert.equal(parsed.length, 3, "turn 1, the auto-compact, then turn 2 — not two compacts, not a 4th call: " + parsed.map(p => p.rest.slice(0, 60)).join(" / "));
+  const [t1, tc, t2] = parsed;
+  assert.ok(!t1.rest.includes("/compact"), "call 1 is the turn, not a compact");
+  assert.ok(tc.rest.includes("/compact"), "call 2 is the auto-compact, run right after turn 1's job ended: " + tc.rest);
+  assert.ok(!t2.rest.includes("/compact"), "call 3 is turn 2, not a second compact — two compacts never overlap");
+  assert.ok(t2.t - tc.t >= 350, `turn 2 only started ${t2.t - tc.t}ms after the compact began — it waited for the FULL 400ms compact to finish (the guard), not just for it to start`);
+
+  const sess = await (await fetch(base + "/v1/sessions/auto-song")).json();
+  assert.equal(sess.lastCompact.preTokens, 80000); assert.equal(sess.lastCompact.postTokens, 5000);
+  assert.ok(Math.abs(sess.lastCompact.cost - 0.005) < 1e-9, "lastCompact.cost is the DELTA (0.025 total − the 0.02 turn-1 total), not /compact's own raw total_cost_usd: " + sess.lastCompact.cost);
+  assert.equal(sess.turns, 2, "the compact reset turns to 1 (sessionUpdate turns:1); turn 2 then made it 2");
+  assert.equal(sess.tokens, 5 + 7, "the compact reset the running token counters to 0; only turn 2's usage remains");
+  assert.equal(sess.cost, 0.03, "0.02 (turn 1) + 0.005 (the compact's delta) + 0.005 (turn 2: 0.03 − 0.025)");
+
+  // the app's way of noticing: x-nr-session-epoch changes once the compact lands
+  assert.notEqual(epoch2, epoch1, "x-nr-session-epoch changes after an automatic compact");
+  assert.equal(epoch2, epoch1.split(":")[0] + ":" + sess.lastCompact.at, "the new epoch carries the compact's own timestamp");
+
+  // a song whose ctxTokens stay under --compact-at never auto-compacts
+  const before = readCalls(argsLog).filter(c => c.rest.includes("/compact")).length;
+  await (await askRaw("below-song", "hi CTRL_IN_LOW CTRL_COST_1")).json();
+  await sleep(600); // longer than the fake compact's own 400ms — plenty of time for a wrongly-fired one to show up
+  const after = readCalls(argsLog).filter(c => c.rest.includes("/compact")).length;
+  assert.equal(after, before, "ctxTokens under --compact-at: no auto-compact");
+  assert.equal((await (await fetch(base + "/v1/sessions/below-song")).json()).lastCompact, null);
+
+  // --compact-at 0 disables it outright, even with huge ctxTokens
+  const dir0 = mkdtempSync(path.join(tmpdir(), "nr-bridge-autocompact-off-"));
+  t.after(() => rmSync(dir0, {recursive: true, force: true}));
+  const argsLog0 = path.join(dir0, "args.log");
+  const base0 = await startFakeBridge(t, {argsLog: argsLog0, extraArgs: ["--compact-at", "0"]});
+  await (await fetch(base0 + "/v1/chat/completions", {method: "POST", headers: {"content-type": "application/json", "x-nr-song": "never-song"}, body: JSON.stringify({model: "claude-code", messages: [{role: "user", content: "hi CTRL_IN_HIGH CTRL_COST_1"}]})})).json();
+  await sleep(600);
+  assert.ok(!existsSync(argsLog0) || !readFileSync(argsLog0, "utf8").includes("/compact"), "--compact-at 0 disables auto-compact even over any ctxTokens");
+  assert.equal((await (await fetch(base0 + "/v1/sessions/never-song")).json()).lastCompact, null);
+});

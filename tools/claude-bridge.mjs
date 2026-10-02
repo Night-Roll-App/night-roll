@@ -24,14 +24,19 @@
 // "claude-code-opus/-sonnet/-haiku/-fable" are listed too, so the app's model
 // menu switches per chat without touching this Mac] · --repo DIR [cwd for Claude Code, default: this repo] ·
 // --jobs-dir DIR [BRIDGE_JOBS, ~/.night-roll-bridge/jobs] · --keep-hours H [24] ·
-// --state-dir DIR [beside the default jobs dir; inside a custom one].
+// --state-dir DIR [beside the default jobs dir; inside a custom one] ·
+// --compact-at N [BRIDGE_COMPACT_AT, 90000; 0 disables — see "warm auto-Compact" below].
 // POST /v1/shot takes a PNG/JPEG (the app's 📷) and answers {path} under
 // <state-dir>/shots; Claude Code gets that directory via --add-dir.
 // POST /v1/chat/completions may carry an optional x-nr-ctx-parts header
 // (JSON {part: chars}, e.g. {"notes":1200,"annotations":900}) describing
 // this turn's pushed context block; recorded as-is in that turn's row of
 // the session's ring (ask-token-plan.md step 0) — the bridge does not
-// interpret its shape.
+// interpret its shape. Every chat-completion response (stream or not)
+// carries x-nr-session-epoch: "<session-id>:<lastCompact.at||0>" — it
+// changes the instant a compact (manual or automatic) lands on that song's
+// session, so the app can tell a resend of its context is warranted (the
+// app side of reading it is a later step — ask-token-plan.md step 7).
 //
 // Models: "claude-code" when the `claude` CLI is installed (and not --no-claude),
 // plus every model each upstream lists, refreshed on every /v1/models call —
@@ -108,6 +113,28 @@
 // no extra call — kept as the bridge's last-seen `lastQuota` and surfaced on
 // GET /v1/status as `quota` (this account's own bridge-wide usage, not
 // per-session).
+//
+// Warm auto-Compact (ask-token-plan.md step 7, 2026-10-01): a turn's ring
+// row already has `ctxTokens` (the last assistant stream event's usage,
+// i.e. what's actually sitting in context right now). The instant a turn's
+// JOB ENDS SUCCESSFULLY (never on error) with ctxTokens over --compact-at
+// (default 90000; 0 disables), the bridge fires the existing runCompact for
+// that song's session in the BACKGROUND — the reply the app is waiting on
+// has already gone out, and the prompt cache is still warm, so this is the
+// cheapest possible moment to compact. Recorded exactly like the manual
+// POST /v1/sessions/:key/compact (sessionUpdate turns:1, the running
+// tokensIn/Out/cache counters reset, lastCompact {at, preTokens, postTokens,
+// cost}) except the cost uses the same delta-against-lastCumCost logic as a
+// normal turn (ask-token-plan.md step 0a) rather than adding /compact's own
+// total_cost_usd raw — that figure is a running total too. A per-song
+// `compacting` map holds the in-flight promise: a second trigger for the
+// same song while one is running is a no-op (two compacts never overlap),
+// and a turn's `runClaude` checks the same map before spawning Claude Code
+// and waits for the in-flight compact to finish first rather than racing it
+// on the same --resume session id. One line to the bridge's own log
+// (console.log, captured in nightroll-bridge.log under launchd) per
+// completed or failed auto-compact. The app learns of it exactly as it
+// learns of a manual Compact: x-nr-session-epoch (see above) changes.
 
 import http from "node:http";
 import {spawn, spawnSync} from "node:child_process";
@@ -149,6 +176,10 @@ const MODEL_CLAUDE = "claude-code";
 // stuck on the Mac's default with no way to change it from the iPad)
 const CLAUDE_DEFAULT_MODEL = flag("--model", process.env.BRIDGE_MODEL || "opus");
 const CLAUDE_MODELS = ["opus", "sonnet", "haiku", "fable"];
+// ask-token-plan.md step 7: warm auto-Compact fires once a turn's ctxTokens
+// (what's actually in context, from the ring) passes this; 0 disables.
+const compactAtRaw = +flag("--compact-at", process.env.BRIDGE_COMPACT_AT || 90000);
+const COMPACT_AT = Number.isFinite(compactAtRaw) && compactAtRaw >= 0 ? compactAtRaw : 90000;
 
 const upstreams = []; // [{name, url}]
 for (let i = 0; i < argv.length; i++) if (argv[i] === "--upstream" && argv[i + 1]) upstreams.push(parseUpstream(argv[++i]));
@@ -333,6 +364,39 @@ function sessionFor(key) {
   return all[key];
 }
 function sessionUpdate(key, patch) { const all = readJSON(SESSIONS_FILE, {}); all[key] = {...(all[key] || {}), ...patch, last: Date.now()}; writeJSON(SESSIONS_FILE, all); return all[key]; }
+function peekSession(key) { const all = readJSON(SESSIONS_FILE, {}); return all[key] || null; } // read-only: never creates a row (unlike sessionFor) — for the epoch header, which must not start a session just by being asked about one
+// ask-token-plan.md step 7: one in-flight compact per song at a time.
+// Keyed by songKey → a promise that resolves (never rejects) once that
+// compact is done, success or failure. startAutoCompact() is a no-op while
+// one is already running for the key (two compacts never overlap); runClaude
+// checks this map before spawning Claude Code and waits for it rather than
+// racing the same --resume session id.
+const compacting = new Map();
+function startAutoCompact(key, model, ctxTokens) {
+  if (compacting.has(key)) return; // already compacting this song — defensive; normally only one turn at a time triggers it
+  const before = sessionFor(key);
+  if (!before || !before.id) return; // nothing to compact
+  const p = (async () => {
+    try {
+      const r = await runCompact(before.id, model);
+      const totalCost = typeof r.cost === "number" ? r.cost : null;
+      // ask-token-plan.md step 0a's delta logic, not /compact's own raw total_cost_usd (also a running total)
+      const costDelta = totalCost == null ? 0 : (before.lastCumCost == null || totalCost < before.lastCumCost) ? totalCost : totalCost - before.lastCumCost;
+      sessionUpdate(key, {
+        id: before.id, turns: 1, tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0,
+        costUsd: (before.costUsd || 0) + costDelta,
+        lastCumCost: totalCost != null ? totalCost : (before.lastCumCost != null ? before.lastCumCost : null),
+        lastCompact: {at: Date.now(), preTokens: r.preTokens, postTokens: r.postTokens, cost: costDelta},
+      });
+      console.log(`auto-compact ${key}: ctxTokens ${ctxTokens} > ${COMPACT_AT} → ${r.preTokens} -> ${r.postTokens} tokens (+$${costDelta.toFixed(4)})`);
+    } catch (err) {
+      console.log(`auto-compact ${key} failed: ${String((err && err.message) || err).slice(0, 200)}`);
+    } finally {
+      compacting.delete(key);
+    }
+  })();
+  compacting.set(key, p);
+}
 // ask-token-plan.md step 0(b): opts.ring adds the per-session ring of the
 // last 50 turns ({t, gapS, in, out, cacheRead, cacheCreate, ctxTokens,
 // apiCalls, parts} — see runClaude) for GET /v1/sessions/:key?turns=1;
@@ -390,6 +454,8 @@ function notesPreface(sess) { // what the terminal said since this session's las
 
 // ---------------------------------------------------------------- runners
 function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
+  const compactInFlight = compacting.get(songKey); // ask-token-plan.md step 7: a turn arriving mid-compact waits for it rather than racing the same --resume session id
+  if (compactInFlight) { compactInFlight.then(() => runClaude(job, body, songKey, model, ctxPartsHeader, retry)); return; }
   const sess = sessionFor(songKey);
   const resumed = sess.turns > 0;
   const {system, prompt: tail} = resumed ? flattenTail(body.messages) : flatten(body.messages);
@@ -488,7 +554,11 @@ function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
       jobPush(job, {}, "stop");
     }
     void full;
-    jobEnd(job, null);
+    jobEnd(job, null); // the reply is out — anything from here on must not delay it
+    // ask-token-plan.md step 7: warm auto-Compact. Only on a successful job
+    // (never reached from the error returns above), and only while the cache
+    // this turn just warmed is still hot — fire-and-forget, in the background.
+    if (COMPACT_AT > 0 && ctxTokens != null && ctxTokens > COMPACT_AT) startAutoCompact(songKey, model, ctxTokens);
   });
   child.stdin.end(prompt);
 }
@@ -555,9 +625,13 @@ function cors(res) {
   res.setHeader("access-control-allow-origin", "*");
   res.setHeader("access-control-allow-methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("access-control-allow-headers", "*");
-  res.setHeader("access-control-expose-headers", "x-nr-job");
+  res.setHeader("access-control-expose-headers", "x-nr-job, x-nr-session-epoch");
 }
-function json(res, code, obj) { cors(res); res.writeHead(code, {"content-type": "application/json"}); res.end(JSON.stringify(obj)); }
+function json(res, code, obj, extraHeaders) { cors(res); if (extraHeaders) for (const k in extraHeaders) res.setHeader(k, extraHeaders[k]); res.writeHead(code, {"content-type": "application/json"}); res.end(JSON.stringify(obj)); }
+function epochHeader(songKey) { // ask-token-plan.md step 7: changes the instant a compact (manual or auto) lands on this song's session, so the app can tell its sent context is stale
+  const sess = peekSession(songKey);
+  return sess ? {"x-nr-session-epoch": sess.id + ":" + ((sess.lastCompact && sess.lastCompact.at) || 0)} : null;
+}
 const readBody = req => new Promise((res, rej) => { let b = ""; req.on("data", d => { b += d; }); req.on("end", () => res(b)); req.on("error", rej); });
 function authorized(req) { if (!TOKEN) return true; const h = String(req.headers.authorization || ""); return h === "Bearer " + TOKEN; }
 
@@ -662,26 +736,37 @@ const server = http.createServer(async (req, res) => {
     let body;
     try { body = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
     const id = String(req.headers["x-nr-job"] || "").replace(/[^\w.-]/g, "").slice(0, 64) || "job_" + crypto.randomUUID();
+    const songKey = songKeyOf(req, body);
     let job = loadJob(id);
     if (!job) {
       const {route} = await listModels();
       const target = route.get(body.model) || route.get(MODEL_CLAUDE) || [...route.values()][0];
       if (!target) return json(res, 503, {error: {message: "no model reachable: start LM Studio / Ollama, or install Claude Code"}});
       job = newJob(id, body.model || (target.claude ? MODEL_CLAUDE : target.id));
-      if (target.claude) runClaude(job, body, songKeyOf(req, body), target.model, req.headers["x-nr-ctx-parts"]); else runUpstream(job, body, target);
+      if (target.claude) runClaude(job, body, songKey, target.model, req.headers["x-nr-ctx-parts"]); else runUpstream(job, body, target);
     }
     const cid = "chatcmpl-" + id;
     const finalMessage = () => job.result && job.result.tool_calls ? {role: "assistant", content: null, tool_calls: job.result.tool_calls} : {role: "assistant", content: job.text};
     if (!body.stream) {
-      const done = () => { markFetched(job); json(res, 200, {id: cid, object: "chat.completion", created: Math.floor(Date.now() / 1000), model: job.model, choices: [{index: 0, message: finalMessage(), finish_reason: job.result && job.result.tool_calls ? "tool_calls" : "stop"}]}); };
+      // ask-token-plan.md step 7: computed when the response actually goes out
+      // (not when the request came in) — a non-stream reply already waits for
+      // the job to finish, and runClaude waits out any in-flight compact
+      // before it even starts, so this reflects a compact this very turn
+      // triggered or waited on, not just an earlier one.
+      const done = () => { markFetched(job); json(res, 200, {id: cid, object: "chat.completion", created: Math.floor(Date.now() / 1000), model: job.model, choices: [{index: 0, message: finalMessage(), finish_reason: job.result && job.result.tool_calls ? "tool_calls" : "stop"}]}, epochHeader(songKey)); };
       if (job.status === "done") return done();
-      if (job.status === "error") return json(res, 500, {error: {message: job.error}});
-      const sub = ev => { if (ev.type !== "end") return; if (job.status === "error") json(res, 500, {error: {message: job.error}}); else done(); };
+      if (job.status === "error") return json(res, 500, {error: {message: job.error}}, epochHeader(songKey));
+      const sub = ev => { if (ev.type !== "end") return; if (job.status === "error") json(res, 500, {error: {message: job.error}}, epochHeader(songKey)); else done(); };
       job.subs.add(sub); req.on("close", () => job.subs.delete(sub));
       return;
     }
     cors(res);
     res.setHeader("x-nr-job", id);
+    // a stream's headers go out before the turn (and any compact) finishes —
+    // the best a streamed reply can carry is the epoch as of stream START;
+    // the app sees a just-landed compact on its NEXT turn either way.
+    const epoch = epochHeader(songKey);
+    if (epoch) for (const k in epoch) res.setHeader(k, epoch[k]);
     res.writeHead(200, {"content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive"});
     const send = obj => { if (!res.writableEnded) res.write("data: " + JSON.stringify(obj) + "\n\n"); };
     const chunk = c => send({id: cid, object: "chat.completion.chunk", created: Math.floor(Date.now() / 1000), model: job.model, choices: [{index: 0, delta: c.delta, finish_reason: c.finish}]});
