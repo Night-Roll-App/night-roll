@@ -35,6 +35,12 @@ Q1. (ASK LATER — Josh, 2026-09-30) FFX by ear: 4 songs play at
     Welcoming of Maester Mika). Published or fresh — which is right?
 Q2. (ASK LATER) Archive move: make the archive token (resource owner
     joshcough, only the archive repo, Contents read+write) and say "go".
+Q11. Chord-progression search (your 23:20 idea): (A) search ONLY your own chord
+    annotations across all albums, by the SHAPE of the root motion (e.g. "down a
+    step, down a step, down a fourth" — works in any key), results = songs + bars,
+    on demand — no outside analysis; or (B) also an outside library of other songs'
+    progressions (far more songs, but chord names you didn't find yourself)?
+    Recommended: A now, B later if you want it.
 Q5. ANSWERED YES (2026-10-01) — waiting on Josh to run ONE command (the auto-mode
     permission classifier blocks me from creating a public repo). Files are ready in
     the job tmp dir (index.html + 404.html redirecting to /night-roll/):
@@ -4853,3 +4859,6 @@ Docs: NIGHT-ROLL.md ("Compact encoding, step 5" + the epoch's "app side"
 paragraph under step 7), docs/ask-token-plan.md (steps 4's epoch half + 5
 marked done). Step 6 (skip-already-sent bars, a read_bars tool, annotation
 diffs) is still open.
+
+## 2026-10-01 23:20 — Feature idea (via Ask): a chord-progression library to look up songs by progression
+Josh, in his words: "it would be cool to have a whole library of songs and their chord progressions, and then we could look them up." Context: in cry-in-sorrow-part-2 he found roots falling Bb, Ab, Gb, then a fourth down to Db (i, bVII, bVI, bIII). He knows many songs with three chords falling by step but cannot recall one whose fourth chord drops a fourth, and wants to find other songs with the same progression, listen, and feel what they do. Idea: index songs (his albums, possibly a reference corpus) by chord progression, then search by a progression he types or selects. Needs design; chords come from his own annotations, so Learning mode applies (nothing volunteered, no keys named for him).
