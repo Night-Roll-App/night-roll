@@ -5639,9 +5639,10 @@ function finalizeLasso() {
 }
 function toggleSel(hit) { // lasso-mode tap on a note: in/out of the selection
   const k = hit.ti + ":" + hit.ni;
-  if (multiSelKey.has(k)) {
+  if (multiSelKey.has(k) || (selNote && selNote.ti === hit.ti && selNote.ni === hit.ni)) {
     multiSelKey.delete(k);
     multiSel = multiSel.filter(s => s.ti + ":" + s.ni !== k);
+    if (selNote && selNote.ti === hit.ti && selNote.ni === hit.ni) selNote = null; // same gold ring, so tapping it out removes both
   } else {
     multiSel.push(hit);
     multiSelKey.add(k);
@@ -6813,6 +6814,7 @@ function scoreLassoTap(pos) { // lasso-mode tap on the score: toggle the notehea
     }
   }
   clearMultiSel();
+  selNote = null;
   setInfo("lasso: cleared");
   draw();
 }
@@ -7884,6 +7886,7 @@ function tap(pos) {
     if (viewMode === "score" && !fallActive()) { scoreLassoTap(pos); return; }
     if (hit) { toggleSel(hit); return; }
     clearMultiSel();
+    selNote = null; // a single selection from before lasso mode draws the same gold ring — "cleared" must clear it too (Josh, 2026-10-02)
     setInfo("lasso: cleared");
     draw();
     return;

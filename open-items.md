@@ -4947,3 +4947,5 @@ DONE: ✦ Fill removed entirely — #fillbtn, Edit ▾ → Fill with AI… (#emA
 (original:) 2026-10-02 19:25 — via Ask (Josh, iPad): toggle for the "added this session" dashed outline
 Josh: "is there a way to turn that off… it's actually a cool idea, highlight all the notes added this session with the dotted line, I actually really like that I just don't wanna see it all the time. Especially when I'm writing a new song, of course I know they're all unpublished."
 Today index.html ~L5397 draws the white dashed stroke for every n.added note, unconditionally. Wanted: a device-local View-menu toggle (localStorage pref, not song state), default off or off for brand-new songs; keep the feature. Needs help-sheet entry etc. per the shipping checklist.
+
+## DONE 2026-10-02 19:33 — lasso clear left a gold note (Josh, Terminal #47): a single selection from before lasso mode drew the same gold ring and survived "lasso: cleared"; empty tap and tapping the note out now clear it too

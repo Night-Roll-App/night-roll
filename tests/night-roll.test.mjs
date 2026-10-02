@@ -9731,6 +9731,19 @@ test("View ▾ → Outline new notes: the dashed added-this-session outline is a
   assert.doesNotMatch(run(`document.getElementById("vwAdded").textContent`), /^✓/);
 });
 
+test("lasso: tapping empty space or tapping the note out clears a leftover single selection too (Josh, 2026-10-02: a gold note he couldn't get rid of)", () => {
+  installSong();
+  run(`song.tracks = [{name: "a", notes: [{t: 0, d: 96, p: 60, v: 80}, {t: 96, d: 96, p: 62, v: 80}]}]; trackState = [{}];`);
+  run(`selNote = {ti: 0, ni: 0}; multiSel = []; multiSelKey = new Set();`);
+  run(`toggleSel({ti: 0, ni: 0})`); // tapping the gold note in lasso mode takes it out
+  assert.equal(run(`selNote`), null);
+  assert.equal(run(`multiSelKey.has("0:0")`), false);
+  run(`selNote = {ti: 0, ni: 1}; lassoMode = true;`);
+  run(`tap({x: RULER_W + 5000, y: RULER_H + 1})`); // empty space
+  assert.equal(run(`selNote`), null);
+  run(`lassoMode = false; song = null; songKey = "midi/test.mid";`);
+});
+
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", () => {
   const a = createApp();
   a.run(`
