@@ -3323,7 +3323,7 @@ Expansion-chip NSFs (header byte 0x7B: VRC6/VRC7/FDS/MMC5/N163/Sunsoft
 its lead voices, and a half-song published is worse than none — and the
 refusal surfaces as the import error both here and in the app.
 
-## ✦ Ask / ✦ Fill — in-app AI (P1a + P2a + P3 shipped 2026-09-25; design: local-llm-design.md)
+## ✦ Ask — in-app AI (P1a + P2a + P3 shipped 2026-09-25; P2a's ✦ Fill button removed 2026-10-02 in favor of the write_notes tool, below; design: local-llm-design.md)
 
 The tutor half of the AI plan. `✦ Ask` in the top bar (hidden in listener
 mode) opens `#asksheet`: a per-song conversation with any
@@ -3403,8 +3403,8 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   you read a handoff.
 - **Prompt** (`ASK_SYS`): a closing paragraph (2026-09-26, from the first
   real .ask.md) tells the model what it is inside the app — the context
-  is attached by the app, it sees nothing else, it cannot write
-  annotations, ✦ Fill is a separate button, what loop:/key:/section/chord
+  is attached by the app, it sees nothing else, it writes only through the
+  tools below and only on explicit request, what loop:/key:/section/chord
   lines mean, and to drop the music when the user says they are testing
   or not ready (Qwen kept steering back). Before that: the web-session rules — hints and direction
   first, confirm/refine a guess, one strong hint when asked, tell plainly
@@ -3424,40 +3424,54 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
 - **Measured (2026-09-25, Mac, Qwen 3.6 35B-A3B via LM Studio):** 17 bars
   of Overworld = 3.8k prompt tokens; reply 39 s of which ~34 s hidden
   thinking at 60 tok/s. Slow but usable; a no-think switch is a candidate.
-- **✦ Fill (P2a) — the generator half, under the Bassist's contract.**
-  Entries: `#fillbtn` (✦ beside 🎸, behind ⋯) and Edit ▾ → Fill with
-  AI… (`emAskFill`) open the same sheet via `openFill()`; on editable
-  songs the sheet shows a **target row** (`#asktarget` picker + status)
-  and a `✦ Fill` button beside Send. Gates = the Bassist's:
-  `editableSong()`, meter change in range, never drums (drum tracks are
-  not offered). **The target is chosen in the UI at Send** — the model
-  has no track field; `askDefaultTarget` = the first melodic track empty
-  in the span, else new; `askTargetStatus` names what a take replaces by
-  onset and how many notes sustain in from before the span. The span is
-  `askSpan()` (a ruler selection may reach past the song's end so a fill
-  can extend an empty song). `askTakePrompt` appends TAKE MODE to the
-  system prompt: JSON only, the ruler's bars/beats, pitch as
-  letter+accidental+octave (C4 = 60), and the ruling on stacked vs
-  one-at-a-time — if unclear, `notes: []` + `question`. Structured
-  output: `ASK_TAKE_SCHEMA` via `response_format: json_schema` (LM Studio
-  accepted it first try); on an HTTP 4xx the adapter degrades per URL to
-  `json_object`, then none (`askSchemaMode`). `askParseTake` takes the
-  outermost `{…}` (thinking stripped); `askValidateTake` returns hits in
-  display ticks or the first error (bar in span, 1 ≤ beat < beats+1,
-  dur > 0, `parsePitch` — pinned to `pitchName`'s octave, double
-  accidentals accepted — window 24–108, ≤ 256 notes, onset inside the
-  span); velocity = the Bassist's metric rule without bonus/jitter
-  (`askTakeVel`: 96/88/78). A rejected take goes back to the model as the
-  next user turn, up to three attempts. A valid take applies at once
-  through `applyTake(ti, t0, t1, hits)` — extracted from `bsGenerate`
-  and pinned by `tests/fixtures/bassist-golden.json` (three seeds → full
-  note lists incl. velocities, rawNotes mirror, undo shape) — with a new
-  track folded into the same ⟲ via `addTrackUndoable` + `undoTrackAdd`.
-  Take chips (`askTakes`, cap 8, session-ephemeral) store the validated
-  hits and re-apply on tap. The `why` line is shown only behind a "why?"
-  button (Josh's ruling). History records a one-line summary, never the
-  JSON. Measured: a 4-bar ask on an empty scratch song → 4 notes in ~65 s
-  (all thinking; the JSON itself is ~100 tokens).
+- **write_notes (2026-10-02) — replaces the removed ✦ Fill button.**
+  Josh found Fill's separate sheet (target picker, take chips, a second
+  send button) confusing, and a take still landed the wrong pitch/track/
+  rhythm once (open-items.md 19:02/19:05 — "I don't know what this Fill
+  button does… I don't like it"). The replacement is an ordinary `ASK_TOOLS`
+  entry (`ASK_SONG_ONLY_TOOLS`): the user just types the request into the
+  normal chat ("insert a gallop on C3 on the triangle") and the model calls
+  `write_notes({track, notes, replace?})` like any other tool. No separate
+  UI, no take chips, no target picker — the model spells out EVERY note
+  itself (bar, beat, dur_beats, pitch, optional vel); the prompt is
+  explicit that a shorthand term like "gallop" means nothing to the app and
+  must be expanded (an eighth plus two sixteenths) before the call.
+  `track` is matched against the song's own track names — exact
+  case-insensitive first, then `askNormChip` (a small shorthand table:
+  square→pulse, sq→pulse, tri→triangle, punctuation/case stripped) so
+  "square 1"/"sq1" still hit a track literally named `pulse1`; zero or
+  more than one match is a thrown error naming the song's real track
+  names — **never the selected track** (`askFindTrackIndex` never reads
+  `selTrack`). Gate = `askWritableGate()` (Fill's `editableSong()` rule,
+  carried over, with a reason per cause: no song, a link-viewed song, the
+  compare-repo swap, or a locked capture/starter — naming **✎ Edit** as
+  the fix). Never a drums/noise track (`trackIsDrums`, same rule Fill's
+  target picker enforced by omission). `askWriteNotesValidate` checks
+  EVERY note before anything is written — bar ≥ 1, 1 ≤ beat < beats+1,
+  dur_beats > 0, `parsePitch` (pinned to `pitchName`'s octave, double
+  accidentals, or a bare MIDI number) in the playable window 24–108, ≤ 256
+  notes — and returns every failing note's own error joined together (not
+  just the first), so a single bad note in a list never lands the good
+  ones beside it. Velocity defaults through `askNoteVel` (ex-`askTakeVel`:
+  the same metric rule, 96 downbeat / 88 near-beat / 78 off-beat, no
+  jitter) when the model omits `vel`. An optional `replace: {from_bar,
+  from_beat, to_bar, to_beat}` erases that track's existing notes in the
+  range BY ONSET first (a note sustaining in from before the range
+  survives) — same rule `applyTake` already enforced for Fill and the
+  generators; omitting `replace` erases nothing (`t0 === t1`, which never
+  satisfies `applyTake`'s `t >= t0 && t < t1`). Landing is the SAME
+  `applyTake(ti, t0, t1, hits)` Fill and the Bassist/Drummer use — one
+  `{kind: "group"}` undo step, erase-by-onset + add, never a splice. The
+  reply is one short line: `"wrote 6 notes on triangle, bars 3–4"`.
+  Removed along with Fill: `#fillbtn`, `#emAskFill` (Edit ▾ → Fill with
+  AI…), the Ask sheet's `#askfill` button and `#asktargetrow` ("fill
+  onto")/`#asktakes` rows, `openFill`, `askFill`, `askFillable`,
+  `askRefreshTarget`, `askRenderTakes`, `askTakePrompt`, `ASK_TAKE_SCHEMA`,
+  `askSchemaMode`, `askParseTake`, `askValidateTake`, `askTargetOptions`,
+  `askDefaultTarget`, `askTargetStatus`. Kept (still generic, still used
+  elsewhere): `parsePitch`, `trackIsDrums`, `editableSong`, `applyTake`,
+  `addTrackUndoable`/`undoTrackAdd` (the Bassist/Drummer still make
+  tracks; write_notes never does — the user names an EXISTING track).
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9
@@ -3521,11 +3535,12 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   local loop as the editor does), `list_songs` (CATALOG), `read_song`
   (path/title → `readData("songs")` → `parseMidi` → `notesTxtForDoc`,
   6000 chars, optional bar range), `read_notes` (the .rollnotes.json as
-  "[b.q - b.q] type: value — note" lines). `askSongPath` accepts a path,
-  a title, or a bare file name. The prompt's closing paragraph limits
-  add_annotation to what the user asked for in words — his rule: the
-  model never volunteers a reading, it writes what he dictates. Fill's
-  schema path sends no tools. The browser (WebLLM) backend ignores them.
+  "[b.q - b.q] type: value — note" lines), `write_notes` (the user's own
+  spelled-out notes onto a track they name — see below). `askSongPath`
+  accepts a path, a title, or a bare file name. The prompt's closing
+  paragraph limits add_annotation/write_notes to what the user asked for
+  in words — his rule: the model never volunteers a reading, it writes
+  what he dictates. The browser (WebLLM) backend ignores tools entirely.
   - **edit_annotation / delete_annotation / publish_song (2026-10-01,
     open-items).** Same "only on explicit ask, never guesses" rule as
     add_annotation. Targeting an EXISTING annotation: `askFindAnnotation`
@@ -3831,8 +3846,9 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     (`ASK_GENERAL_KEY`), bridge session name `general` (so it is one more
     entry in sessions.json), `askContext` is one sentence saying no song
     is attached, `askToolsNow()` drops add_annotation/edit_annotation/
-    delete_annotation/publish_song (`ASK_SONG_ONLY_TOOLS`), the span/fill
-    rows hide, and the log is the repo-level `ask/general.ask.md`
+    delete_annotation/publish_song/read_bars/write_notes
+    (`ASK_SONG_ONLY_TOOLS`), the span row hides, and the log is the
+    repo-level `ask/general.ask.md`
     (`ASK_GENERAL_LOG`; `askLogPath/askLogHeader/askCommitLog` take a key).
     Publishing: `pendingSongs()` lists "general" when it has unsaved
     messages; the PUBLISH sheet renders it as its own block with a
@@ -4115,8 +4131,7 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     request — used to send it all regardless of the CURRENT mode, local
     backends included (every turn, not just the first). Fixed: every
     pushed message now carries `mode: appMode()` at push time (`askSend`,
-    `askFinish`, `askFail`, `askNotesArrived`, and `askFill`'s direct
-    question/answer pushes); `askMsgMode(m)` reads it back, treating an
+    `askFinish`, `askFail`, `askNotesArrived`); `askMsgMode(m)` reads it back, treating an
     untagged (pre-2026-10-01) message as `"learning"` — the older, default
     mode, never the newer Normal — since there's no way to know which mode
     wrote it. `askBuildMessages` now skips any stored message whose mode
@@ -4166,9 +4181,14 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
 - **Not yet:** the in-browser path's Test on the iPad (WebGPU limits are
   the unknown), the P0 Safari-on-Mac probe. Tests: SSE
   parser, 6/8 frame + speller + key line, storage caps + quota, host
-  classing, `parsePitch`, validator fixtures (one per rule, 6/8 + chop),
-  `applyTake` undo/mirror, target default rule, Bassist golden fixture,
-  FEATURES keywords `✦ Ask` / `✦ Fill`.
+  classing, `parsePitch`, write_notes validator fixtures (one per rule,
+  6/8 + chop, nothing written on a bad note), track-name matching (never
+  `selTrack`), replace-by-onset, the locked-song/no-song/general-chat
+  refusals, `applyTake` undo/mirror, Bassist golden fixture, FEATURES
+  keyword `✦ Ask`, and a dedicated test asserting `#fillbtn`/`#askfill`/
+  `#emAskFill` are gone from index.html's own markup (the vm harness's
+  `getElementById` lazily creates any id, so that check reads the raw
+  HTML text instead).
 
 ## Window manager (shell + docks) — phase A of the windowing plan, 2026-09-29
 
@@ -5713,7 +5733,9 @@ it one."). `askSys()` concatenates BASE1 + the mode's RULE + BASE2,
 picked by `appMode()` at SEND time (never cached — the device-global mode
 can flip between messages), and replaced every read of the old `ASK_SYS`
 constant: `askRun`'s system prompt, `askEstimate`'s token estimate, and
-`askTakePrompt` (✦ Fill).
+`askTakePrompt`, ✦ Fill's own system-prompt builder (✦ Fill — and
+`askTakePrompt` with it — was removed 2026-10-02 in favor of the
+write_notes tool; see the ✦ Ask section above).
 
 `askContext`/`askSpanNotes` (the per-request `<context>` block) go
 through the same P3 discipline as every other display call site —
