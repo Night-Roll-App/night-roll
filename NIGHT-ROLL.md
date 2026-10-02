@@ -3625,15 +3625,40 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     footer's gold `#askreplybtn` ("✦ reply", the ⚠ pattern: stays until
     tapped, opens Ask) plus one info-strip line naming the other song
     when it differs. `openAsk` clears it. Test: "Ask reply badge".
-  - **📷 screenshots (2026-09-29):** `#askshot`, shown once the bridge's
-    inbox answers (only the bridge has one). `askShotCapture`: the iPad
-    shell's native `Screenshot.capture()` (a Capacitor plugin in the
-    shell's AppDelegate.swift — WKWebView `takeSnapshot`, JPEG) or, in a
-    browser, one frame of `getDisplayMedia` on this tab. `askShotTake`
-    hides a floating AI panel for the shot, POSTs the bytes to
-    `/v1/shot`, and appends `(screenshot: <path>)` to the message box.
-    The bridge saves under `<state-dir>/shots`, passes `--add-dir` so
-    Claude can Read there, and its system prompt says what the line means.
+  - **📷 screenshots + 🖼 Photos picker (2026-09-29, several-per-message
+    and 🖼 added 2026-10-02):** `#askshot`/`#askpick`, shown together
+    (`askShotShow` toggles both) once the bridge's inbox answers (only
+    the bridge has one). `askShotCapture`: the iPad shell's native
+    `Screenshot.capture()` (a Capacitor plugin in the shell's
+    AppDelegate.swift — WKWebView `takeSnapshot`, JPEG) or, in a
+    browser, one frame of `getDisplayMedia` on this tab. `#askpickfile`
+    (hidden `<input type=file accept="image/*" multiple>`) instead picks
+    existing pictures via `askPickFiles` — the OS offers Photo Library /
+    Take Photo / Choose File. Each picked file goes through
+    `askPrepImage`: HEIC/HEIF, anything over `MAX_SHOT_SIDE` (2752px
+    longest side), or anything over `MAX_SHOT_KEEP_BYTES` (2MB) is drawn
+    to a canvas and re-exported as JPEG @0.85 (canvas decodes HEIC in
+    Safari/WKWebView); a plain PNG/JPEG already under both limits rides
+    as-is. Both paths end at `askShotUpload`, which POSTs the bytes to
+    `/v1/shot` (bridge: 25MB cap, `SHOT_MAX`; sniffs PNG/JPEG magic
+    bytes only — HEIC must already be converted client-side by the time
+    it arrives) and gets back a path.
+    `askShotPending` is an array (cap `ASKSHOT_MAX` = 4, not a single
+    slot — 2026-10-02: Josh tapped 📷 twice meaning to send both, and
+    the old single-slot design silently dropped the first). `askShotAdd`
+    appends with a per-shot thumbnail (`askShotRender`, one `.askshotcell`
+    per pending shot with its own ✕ via `askShotRemove`); `#askshotx`
+    (`askShotClearAll`) drops them all at once. `askShotOutgoing` appends
+    one `(screenshot: <path>)` line per pending shot to the outgoing
+    message; `askShotDisplayText` collapses those lines back to one 📷
+    per shot in the on-device bubble. The composer draft (`askDraftSave`/
+    `askDraftLoad`) persists `{text, shots: [path, …]}`; an old draft
+    saved before this (`{shot: path}`, singular) restores as a one-shot
+    array (`askShotRestore`). The bridge saves every upload under
+    `<state-dir>/shots`, passes `--add-dir` so Claude can Read there, and
+    its system prompt says what the line means. Both the ♪ this song /
+    ✦ Ask chat and the ⌨ Terminal tab share this one composer, so 📷/🖼
+    work identically in both.
   - **"Now:" status (2026-09-29, Josh: "I wish I had a way to see what
     Claude Code was working on from here").** `--status "text"` (or POST
     `/v1/status {text}`) sets one current line + keeps the last 10 with
