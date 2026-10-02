@@ -6801,7 +6801,7 @@ function updateJobsBtn() {
   if (!b) return;
   const running = jobs.filter(j => j.state === "running" || j.state === "queued").length;
   const rest = jobs.length - running;
-  b.style.display = jobs.length ? "" : "none";
+  b.style.display = running ? "" : "none"; // only while something runs (Josh, 2026-10-01); finished jobs stay reviewable in View ▾ → ⏳ Jobs
   b.textContent = "⏳" + (running ? " " + running : "");
   b.style.color = running ? "var(--gold)" : "var(--dim)";
   b.setAttribute("aria-label", running ? running + " running — open the jobs list" : rest + " finished — open the jobs list");
