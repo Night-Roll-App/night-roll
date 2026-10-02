@@ -7819,6 +7819,136 @@ test("P7 bridge context: askTerminalContext (the Terminal tab's own builder — 
   a.run(`localStorage.removeItem(askSeenKey(ASK_TERMINAL_KEY)); appErrors.length = 0; appDebug.length = 0;`);
 });
 
+// ------------------------------------- P8: bridge-session caching ("make the
+// ✦ Ask context cheaper", open-items 2026-10-01) — the bridge's Claude Code
+// is a RESUMED session (tools/claude-bridge.mjs sessionFor/runClaude): once
+// it already holds the annotations/visible-notes text verbatim, resending it
+// unchanged every turn is pure waste. askCachedBlock hashes each section
+// against what was last CONFIRMED sent (askSentCommit, called from
+// askFinish only — never askFail) for that chat (askStoreKey()); unchanged
+// + askCaps.bridge (the same flag that detects the bridge everywhere else)
+// → a one-line stand-in instead of the full text.
+test("P8 bridge-session caching: unchanged annotations/visible notes send a one-line stand-in on the next turn; an edit sends them in full again", () => {
+  const a = mkAsk("learning", `
+    rollnotes = [{b1: 1, q1: 1, text: "C"}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+  `);
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "first message in the chat: full annotations");
+  assert.match(ctx, /^notes in bars 1–1:\n#/m, "first message: full visible-notes window");
+
+  a.run(`askFinish(askJobId(), "ok", askStoreKey())`); // what a real reply landing does — confirms this turn's hashes
+
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /^annotations: unchanged since your last message \(1 entries\)$/m, "nothing changed: a stand-in, not the text");
+  assert.match(ctx, /^notes in bars 1–1: unchanged since your last message$/m);
+  assert.doesNotMatch(ctx, /the user's annotations \(\.rollnotes\)/);
+
+  a.run(`rollnotes[0].text = "G";`); // an annotation edit changes its hash
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "edited: full again");
+  assert.match(ctx, /^notes in bars 1–1: unchanged since your last message$/m, "the OTHER section is untouched and still cached separately");
+});
+
+test("P8 bridge-session caching: a failed send never confirms the hash — the next turn still sends in full", () => {
+  const a = mkAsk("learning", `
+    rollnotes = [{b1: 1, q1: 1, text: "C"}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+  `);
+  a.run(`askContext(askSpan(), askBudget())`); // stages the hash
+  a.run(`askFail(askJobId(), "boom", askStoreKey())`); // never landed: must NOT confirm it
+  const ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "a failed send leaves nothing confirmed: full text again");
+  assert.doesNotMatch(ctx, /unchanged since your last message/);
+});
+
+test("P8 bridge-session caching: a non-bridge backend always gets the full text, confirmed hash or not", () => {
+  const a = mkAsk("learning", `rollnotes = [{b1: 1, q1: 1, text: "C"}];`); // askCaps.bridge stays false — no bridge detected, same as today
+  a.run(`askContext(askSpan(), askBudget())`);
+  a.run(`askFinish(askJobId(), "ok", askStoreKey())`); // even a "confirmed" hash must not matter without the bridge
+  const ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /the user's annotations \(\.rollnotes\)/);
+  assert.doesNotMatch(ctx, /unchanged since your last message/);
+});
+
+test("P8 bridge-session caching: Clear chat resets the confirmed hashes (the app's own bridge session controls)", () => {
+  const a = mkAsk("learning", `
+    rollnotes = [{b1: 1, q1: 1, text: "C"}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+  `);
+  a.run(`askContext(askSpan(), askBudget())`);
+  a.run(`askFinish(askJobId(), "ok", askStoreKey())`);
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /unchanged since your last message/, "sanity: cached before Clear");
+
+  a.run(`document.getElementById("askclear").dispatchEvent({type: "click"});`);
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "Clear chat: full again, as if a new chat");
+  assert.match(ctx, /^notes in bars 1–1:\n#/m);
+});
+
+test("P8 bridge-session caching: Compact resets the confirmed hashes (the compacted session no longer holds the verbatim text)", async () => {
+  const a = mkAsk("learning", `
+    rollnotes = [{b1: 1, q1: 1, text: "C"}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+  `);
+  a.run(`askContext(askSpan(), askBudget())`);
+  a.run(`askFinish(askJobId(), "ok", askStoreKey())`);
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /unchanged since your last message/, "sanity: cached before Compact");
+
+  a.run(`
+    askSessionCache[askSessionName()] = {turns: 5, tokens: 1000, cost: 0};
+    appConfirm = async () => true;
+    fetch = async () => ({ok: true, json: async () => ({ok: true, turnsBefore: 5, turnsAfter: 1, tokensBefore: 1000, tokensAfter: 50, cost: 0})});
+  `);
+  a.run(`document.getElementById("askcompact").dispatchEvent({type: "click"});`);
+  await new Promise(r => setImmediate(r)); // let Compact's own await chain (confirm → fetch → json) settle
+
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "Compact: full again next turn");
+});
+
+test("P8 bridge-session caching: a different chat (song key change / general chat) gets its own empty record — full text, even though this one already confirmed its hash", () => {
+  const a = mkAsk("learning", `
+    rollnotes = [{b1: 1, q1: 1, text: "C"}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+  `);
+  a.run(`askContext(askSpan(), askBudget())`);
+  a.run(`askFinish(askJobId(), "ok", askStoreKey())`);
+  a.run(`songKey = "midi/other.mid";`); // a different chat — askStoreKey() follows the song key, and this one never sent anything
+  const ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "a fresh store key has no confirmed hash: full text");
+});
+
+test("P8 bridge-session caching: a failed send never marks 'New since' lines as seen either (askSeenStage/commit/drop, the same success-only pattern as the annotations cache)", () => {
+  const a = mkAsk("learning");
+  a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];`);
+  a.run(`logErr("boom")`);
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /New since your last message:\nnew ⚠ messages \(1\):\n.*boom/s);
+
+  a.run(`askFail(askJobId(), "nope", askStoreKey())`); // never landed: must not commit the staged watermark
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /New since your last message:\nnew ⚠ messages \(1\):\n.*boom/s, "still new: a failed send never marks it seen");
+
+  a.run(`askFinish(askJobId(), "ok", askStoreKey())`); // this time it lands
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.doesNotMatch(ctx, /New since your last message:/, "now confirmed seen");
+  a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0;`);
+});
+
+test("P8 bridge-session caching: askSessionName is mode-separated — Learning and Normal never share a resumed bridge session for the same song (docs/ask-token-plan.md #2, SAFETY: nothing from Normal may leak into Learning's AI context)", () => {
+  const a = mkAsk("learning");
+  const learnName = a.run(`askSessionName()`);
+  a.run(`setAppMode("normal")`);
+  const normalName = a.run(`askSessionName()`);
+  assert.notEqual(learnName, normalName, "same song, different mode: a different bridge session key");
+  assert.match(normalName, /#normal$/);
+  a.run(`setAppMode("learning")`);
+  assert.equal(a.run(`askSessionName()`), learnName, "back to Learning: the original (unsuffixed) session key");
+});
+
 // ------------------------------------------- P6: Analyze ▸ (Normal-mode VIEW layer)
 // A per-bar chord reading (bsInferTimeline + nameChord, reused as-is) and a
 // whole-song key estimate (estimateKey, reused as-is), drawn as a dashed

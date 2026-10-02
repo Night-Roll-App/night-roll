@@ -4724,3 +4724,55 @@ album-order.test.mjs 10/10, whole chain exit 0).
 
 (2026-09-30 23:40 "publish this song" as an Ask tool, and its 23:47 cleanup
 ruling, are folded into the 23:36/23:40 DONE entry above.)
+
+## 2026-10-01 21:30 — Ask context: send only what changed (Josh, via Ask)
+
+Josh: every Ask message currently carries ALL of the song's annotations
+(chord notes included) plus the visible bars' notes. On a long song with
+many chord changes that adds up in tokens. He wants the terminal to design
+a more efficient scheme — e.g. send annotations/notes only when they
+changed since the last message of that song's session (the resumed Ask
+session already remembers earlier turns), or a compact diff. Constraints
+he has set elsewhere: Learning mode rules still bind (key state, no
+pre-filled answers); the edit/delete tools need the current annotation
+"id"s, so ids must stay available when a tool call is possible. Not urgent
+("not the biggest deal"), but wanted before long-song analysis sessions.
+
+**Correction 2026-10-01 21:35 (Josh, via Ask) — the real ask is broader.**
+Josh's goal is the most token-efficient way to communicate about songs in
+Ask, full stop. "Send only what changed" is ONE idea he finds reasonable,
+not the requirement; he did not want to lead with it. Design the whole
+scheme: how annotations, visible notes, status lines, the format preamble
+and the key/mode lines are sent, and what a long, chord-heavy song costs
+per turn. Compact encodings, on-demand reads (the model already has
+read_song / read_notes tools), and caching are all fair game. Keep the
+Learning-mode constraints and the annotation ids the edit/delete tools need.
+
+**Advisor plan: docs/ask-token-plan.md** (full build order, steps 0–7;
+NOT all done — see it for what's still open: step 0 measurement ring,
+step 1 tool-round de-dup, step 3 smaller read-mode base, steps 5–7 compact
+encoding / skip-already-sent-bars / warm auto-Compact).
+
+**DONE 2026-10-01 (terminal, steps 2 + 4) — change-only gate + mode
+separation.** `askCachedBlock` (index.html, NIGHT-ROLL.md "Bridge-session
+caching") hashes the annotations block and the visible "notes in bars a–b"
+window per chat; unchanged since the last CONFIRMED send (and the backend
+is the bridge) → a one-line stand-in ("annotations: unchanged since your
+last message (N entries)") instead of the full text. Confirmed only on
+`askFinish` (never `askFail` — a failed send never claims the bridge holds
+content it may not have gotten); full again after Clear chat / Compact
+(the bridge's own session controls), a song-key change, or on any
+non-bridge backend. The existing "New since your last message:" seen-
+cursor got the same success-only fix (`askSeenStage`/`askSeenCommit`/
+`askSeenDrop` — it used to advance right when the context was BUILT, before
+the send was known to succeed). SAFETY fix bundled in (step 2):
+`askSessionName()` now appends `#normal` in Normal mode, so a Normal/
+Learning mode flip on the same song never resumes the same bridge session
+— closes a real leak path (a resumed session remembers Normal-mode content
+verbatim; CLAUDE.md: nothing from Normal may reach Learning's AI context).
+Measured on a small sample (2 tracks, 5 annotations): context block 1847 →
+437 chars once cached (−76%). Tests: the "P8 bridge-session caching" block
+in tests/night-roll.test.mjs (8 cases). `npm test`: full chain green
+(night-roll.test.mjs 365/365, whole suite exit 0). Steps 0/1 (the bridge's
+own measurement ring + tool-round de-dup) are tools/claude-bridge.mjs —
+another builder's in progress there; not touched here.

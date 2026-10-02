@@ -3697,6 +3697,53 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     anything in yet reads as zeros not a 404, DELETE really starts the
     next turn on a fresh `--session-id`, and Compact's response carries
     the fake `compact_boundary`'s exact pre/post tokens.
+  - **Token-efficient Ask, steps 0–1 (2026-10-01, docs/ask-token-plan.md,
+    Josh: "the MOST TOKEN-EFFICIENT way to talk about songs in Ask
+    overall").** Two bridge bugs the plan measured first:
+    - **Cost was over-counting (step 0a).** `total_cost_usd` on a stream-json
+      `"result"` event is a RUNNING total for the whole resumed Claude Code
+      session, not a per-turn figure — summing it every turn made a long
+      session's `cost` stat grow ~quadratically with turn count. Each
+      session row now keeps `lastCumCost` (the last total seen); `costUsd`
+      grows by the DELTA since then, and a total that drops below
+      `lastCumCost` (a restarted/lost session, a fresh underlying counter —
+      see "session restarted" above) is treated as a fresh total rather than
+      subtracted as negative.
+    - **A per-session ring (step 0b).** Every turn now appends one row —
+      `{t, gapS, in, out, cacheRead, cacheCreate, ctxTokens, apiCalls,
+      parts}` — to `ring` (capped at the last 50) in that song's
+      `sessions.json` row. `gapS` is seconds since the session's previous
+      turn (`null` on its first). `ctxTokens` is input + cache_read +
+      cache_creation from the LAST `"assistant"` stream event's
+      `message.usage` (not the closing `"result"` event's usage, which is
+      this turn's own in/out/cache only, nor output tokens — the LAST
+      assistant event is the one that reflects what's actually sitting in
+      context right now). `apiCalls` counts `"assistant"` message events
+      that turn. `parts` is the optional `x-nr-ctx-parts` request header
+      (JSON `{part: chars}`, e.g. the app's notes-window/annotations split)
+      — recorded as-is, uninterpreted. `GET /v1/sessions/:key?turns=1` adds
+      a `ring` array to the usual `{turns, tokens, cost, lastCompact}`
+      shape; plain `GET` (no query) is unchanged.
+    - **Tool-round duplication (step 1).** `flattenTail` (the resumed-session
+      tail-only sender) used to stop at the last assistant message WITHOUT
+      `tool_calls` — but mid tool-round, the LAST assistant message HAS
+      `tool_calls`, so it fell through to an earlier turn's boundary and
+      re-sent the user's whole `<context>` message every round. Fixed to
+      stop after the last assistant message of ANY kind, so a tool round now
+      sends only the `TOOL RESULT` lines (and anything after). A fresh
+      (non-resumed) session still uses `flatten()` (full history) and is
+      unaffected.
+    - Tests: tests/bridge.test.mjs's third test — a fake-claude stand-in
+      that emits a distinct `message.usage` + `total_cost_usd` per call (a
+      counter file) confirms a running total 0.002 then 0.005 → session
+      cost 0.005 (not 0.007), a 2-row ring with `gapS`/`ctxTokens` that
+      differ per row, and `x-nr-ctx-parts` round-tripping; the same test's
+      tool-round case confirms a resumed session's prompt carries the TOOL
+      RESULT and not `<context>`, while a fresh session's first turn still
+      carries `<context>`.
+    - Steps 2–7 (mode-separated sessions, a smaller read-mode base, the
+      change-only gate, compact per-track encoding, skip-already-sent bars,
+      warm auto-Compact) are still open — docs/ask-token-plan.md.
   - **General chat (2026-09-27, Josh via the bridge: "some sort of main
     ask section that's not per song").** `askGeneral` (device pref
     `ff1roll-ask-mode`) is picked by the ♪ this song / ✦ general toggle at
@@ -3738,13 +3785,22 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     `askStripContext` already did this for the others).
     **Seen-cursor:** per chat (`askSeenKey` = `askStoreKey() + "-seen"` —
     one localStorage scalar per song key / general / terminal, `{err,
-    status}` ids), advanced by `askSeenAdvance` right after the outgoing
-    context is built (`askSend`/`askTerminalSend`) — NEVER inside
-    `askContext` itself, which `askResume` also calls to rebuild the SAME
-    question's context mid-tool-round; advancing there would make a
-    line vanish before it was ever actually sent. Device-local
-    localStorage is correct here: it's UI state (what THIS device has
-    told the bridge), not song state. **Mark-as-read:** a second
+    status}` ids). `askNewSinceLines` STAGES the watermark it just read
+    (`askSeenStage`, in-memory only, keyed by chat) every time it builds a
+    block — including `askResume` rebuilding the SAME question's context
+    mid-tool-round, which just restages a newer snapshot, never commits
+    one early. It is only COMMITTED (`askSeenSet`, via `askSeenCommit`)
+    once that exact context's send actually lands: `askFinish` (♪ song/✦
+    general) or a successful POST (`askTerminalSend`). A send that never
+    lands (`askFail`, or `askTerminalSend`'s catch) drops the staged
+    watermark (`askSeenDrop`) instead — a context shown in a failed send
+    must not be marked seen, or a retry would never mention it again
+    (2026-10-01, docs/ask-token-plan.md #4). `askSeenAdvance` itself still
+    exists (sets the watermark immediately) — tests call it directly to
+    simulate "a send just landed" without going through the full
+    stage/commit plumbing. Device-local localStorage is correct here: it's
+    UI state (what THIS device has told the bridge), not song state.
+    **Mark-as-read:** a second
     watermark (`askSeenMaxKey`/`askSeenMax`, the high-water mark across
     every chat's own cursor) drives the ⚠ badge (`errChip` now shows
     UNREAD, not total) and greys out already-sent lines in the ⚠
@@ -3765,6 +3821,57 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     advance clears them, a fresh error afterward shows alone, the
     debug-pref gate, the mode-leak guard, the 20-line/`(+N older)` cap,
     the open-song line, and `askTerminalContext`'s own POSTed text).
+  - **Bridge-session caching (2026-10-01, Josh via open-items: "make the
+    ✦ Ask context cheaper").** The bridge's Claude Code is a RESUMED
+    session, one per `askSessionName()` (`sessionFor`/`runClaude`) — it
+    remembers every earlier turn, so resending the two big, slow-changing
+    sections of `askContext` (the annotations block, the visible
+    "notes in bars a–b" window) unchanged every turn is pure waste.
+    `askCachedBlock(key, field, label, header, text, count?)` hashes
+    `text` (fnv1a32) and compares it against what was last CONFIRMED sent
+    for that chat (`askSentGet(key)[field]`, localStorage
+    `askStoreKey() + "-sentctx"`); unchanged, and the backend is the
+    bridge (`askCaps.bridge` — the same flag `askTabsApply`/
+    `askSessionRender` use to detect the bridge at all), it returns a
+    one-line stand-in (`"<label>: unchanged since your last message (N
+    entries)"`, count omitted for the notes window) instead of the full
+    `"<header>:\n<text>"`. Annotations are hashed WITH their `id` field
+    (`askAnnotationsText`'s re-sorted index) — if the hash matches, the
+    ids are identical too, so the stand-in is safe even though ids are
+    "this turn's handle for edit_annotation/delete_annotation". Staged,
+    not confirmed, at build time (`askSentStage`, in-memory, keyed by
+    chat) — `askContext` runs synchronously before the network
+    round-trip, so it can't know yet whether this send will succeed;
+    confirmed only by `askSentCommit`, called from `askFinish` (never
+    `askFail`, which drops the staged hash instead — a failed send must
+    not claim the bridge holds content it may never have gotten). Full,
+    always: a fresh chat (new `askStoreKey()`, e.g. a song-key change —
+    no stored hash yet), right after Clear chat or Compact
+    (`askSentReset`, since those are exactly the bridge's own session
+    controls and the resumed session's memory just changed under it),
+    and any non-bridge backend (`askCaps.bridge` false — a local model
+    server has no memory of its own; today's full-every-turn behavior,
+    unchanged). Tests: the "P8 bridge-session caching" block in
+    tests/night-roll.test.mjs (unchanged → stand-in, an edit → full
+    again, a failed send never confirms, non-bridge always full, Clear/
+    Compact reset, a different chat's empty record). Measured on a small
+    sample (2 tracks, 5 annotations, a 4-bar visible window): the context
+    block drops from 1847 to 437 chars once both sections are cached
+    (−76%, ≈350 fewer tokens at 4 chars/token) — on top of the fixed
+    Claude Code base (≈45–50k tokens, docs/ask-token-plan.md), so the win
+    compounds with turn count rather than being a one-off.
+  - **Mode-separated bridge sessions (2026-10-01, docs/ask-token-plan.md
+    #2 — SAFETY).** `askSessionName()` appends `#normal` whenever
+    `appMode() === "normal"`. Without this, flipping the SAME song's chat
+    between Learning and Normal would resume the SAME bridge session
+    either way — and since that session remembers every earlier turn
+    verbatim, a later Learning-mode turn would inherit Normal-mode
+    content (a key/chord estimate, `mode: normal`) straight out of the
+    session's own memory, a leak no check on what the CURRENT turn's
+    context carries could ever catch (CLAUDE.md: nothing from Normal may
+    leak into Learning's AI context). A different mode is a different
+    bridge session, period — same song, two rows in sessions.json. Test:
+    the "askSessionName is mode-separated" case in the P8 block above.
   - **Security:** binds 127.0.0.1 unless `--host`; `--token` requires
     `Authorization: Bearer` (the app's Settings key); CORS open (the app
     is a static page). TLS is someone else's job: Josh uses `tailscale

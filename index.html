@@ -22694,10 +22694,63 @@ function askNewSinceLines(key) {
   const hideNormal = appMode() !== "normal";
   const errs = logLines().filter(l => l.id > seen.err && (!hideNormal || l.mode !== "normal"));
   const stats = statusHistory.filter(s => s.id > seen.status && (!hideNormal || s.mode !== "normal"));
+  askSeenStage(key, {err: askMaxErrId(), status: askMaxStatusId()}); // this exact snapshot is what a successful send commits
   const L = [];
   if (errs.length) L.push("new ⚠ messages (" + errs.length + "):\n" + askCapLines(errs, 20, logLine));
   if (stats.length) L.push("new status lines (" + stats.length + "):\n" + askCapLines(stats, 20, s => new Date(s.t).toLocaleTimeString() + "  " + s.text));
   return L.length ? "New since your last message:\n" + L.join("\n") : null;
+}
+// ---- bridge-session caching (2026-10-01, Josh via open-items: "make the
+// ✦ Ask context cheaper"). The bridge's Claude Code is a RESUMED session,
+// one per song key (sessionFor/runClaude, tools/claude-bridge.mjs) — it
+// remembers earlier turns, so resending the two big, slow-changing sections
+// below (annotations, the visible note window) every turn is pure
+// repetition once the session already holds them. Per chat (askStoreKey(),
+// same key the seen-cursor above already uses): a hash of each section
+// LAST CONFIRMED SENT; unchanged since then, on the bridge, → a one-line
+// stand-in instead of the full text. Full whenever the session might not
+// hold it: first message of a chat (a fresh store key has no record), after
+// Clear chat / Compact (reset below — the bridge's own session controls),
+// after the song key changes (its own store key, so its own empty record),
+// after a failed send (askSentCommit runs from askFinish only, never
+// askFail), and always for a non-bridge backend (askCaps.bridge — the same
+// flag askTabsApply/askSessionRender use to detect the bridge at all; a
+// local model server has no memory of its own, so it keeps today's
+// full-every-turn behaviour).
+function askSentKey(key) { return (key || askStoreKey()) + "-sentctx"; }
+function askSentGet(key) {
+  try {
+    const j = JSON.parse(localStorage.getItem(askSentKey(key)) || "null");
+    if (j && typeof j === "object") return j;
+  } catch (err) { /* corrupt: nothing confirmed sent yet */ }
+  return {};
+}
+// Staged in memory only, per chat key, until the turn that used it actually
+// lands — askContext runs synchronously, before the network round-trip, so
+// it cannot know yet whether this send will succeed.
+let askSentPending = {};
+function askSentStage(key, field, hash) { (askSentPending[key] || (askSentPending[key] = {}))[field] = hash; }
+function askSentCommit(key) { // askFinish only: the reply that answers THIS context actually landed
+  const p = askSentPending[key]; delete askSentPending[key];
+  if (!p) return;
+  const cur = askSentGet(key);
+  try { localStorage.setItem(askSentKey(key), JSON.stringify({...cur, ...p})); } catch (err) { /* private mode */ }
+}
+function askSentDrop(key) { delete askSentPending[key]; } // askFail: never landed — the full text goes again next time
+function askSentReset(key) { // Clear chat / Compact: the bridge's memory of this chat just changed under it
+  key = key || askStoreKey();
+  try { localStorage.removeItem(askSentKey(key)); } catch (err) { /* private mode */ }
+  delete askSentPending[key];
+}
+// One large, slow-changing section: `label` names the one-line stand-in
+// ("annotations" / "notes in bars a–b"); `count`, if given, is its own
+// "(N entries)". fnv1a32 only has to catch "identical to what the session
+// already has" — not resist tampering.
+function askCachedBlock(key, field, label, header, text, count) {
+  const hash = fnv1a32(text);
+  if (askCaps.bridge && askSentGet(key)[field] === hash) return label + ": unchanged since your last message" + (count === undefined ? "" : " (" + count + " entries)");
+  askSentStage(key, field, hash);
+  return header + ":\n" + text;
 }
 function askContext(sp, budget) { // the ONE block per request; never stored
   if (askGeneral) {
@@ -22734,8 +22787,11 @@ function askContext(sp, budget) { // the ONE block per request; never stored
   }
   const anno = askAnnotationsText();
   const annoCap = budget.anno * ASK_CPT;
-  L.push("the user's annotations (.rollnotes) — each entry's \"id\" is this turn's handle for edit_annotation/delete_annotation:\n" + (anno.length > annoCap ? anno.slice(0, annoCap) + "\n# (annotations cut here to fit the window)" : anno));
-  L.push("notes in bars " + sp.from + "–" + sp.to + ":\n" + askSpanNotes(sp.t0, sp.t1, budget.span * ASK_CPT));
+  const annoFull = anno.length > annoCap ? anno.slice(0, annoCap) + "\n# (annotations cut here to fit the window)" : anno;
+  const cacheKey = askStoreKey();
+  L.push(askCachedBlock(cacheKey, "anno", "annotations", "the user's annotations (.rollnotes) — each entry's \"id\" is this turn's handle for edit_annotation/delete_annotation", annoFull, dedupedNotesWithIndex(rollnotes).length));
+  const spanLabel = "notes in bars " + sp.from + "–" + sp.to;
+  L.push(askCachedBlock(cacheKey, "span", spanLabel, spanLabel, askSpanNotes(sp.t0, sp.t1, budget.span * ASK_CPT)));
   const ns = askNewSinceLines(askStoreKey());
   if (ns) L.push(ns);
   return L.join("\n");
@@ -22831,11 +22887,21 @@ function askSeenSet(key, seen) {
   const next = {err: Math.max(m.err, seen.err || 0), status: Math.max(m.status, seen.status || 0)};
   if (next.err !== m.err || next.status !== m.status) try { localStorage.setItem(askSeenMaxKey(), JSON.stringify(next)); } catch (err) { /* private mode */ }
 }
-// Called once a message has actually gone out (askSend/askTerminalSend) —
-// never from askContext itself (askResume rebuilds context for a tool-call
-// round on the SAME question; that must not advance the cursor, or its own
-// new-since block would eat itself).
+// Sets the watermark immediately — what a successfully-landed send commits
+// (below), and what some tests call directly to simulate that same effect.
 function askSeenAdvance(key) { askSeenSet(key, {err: askMaxErrId(), status: askMaxStatusId()}); }
+// Staged, not advanced, at context-build time (askNewSinceLines calls
+// askSeenStage with the exact ids it just read) — advancing THERE, before
+// the send completes, would mark a line "seen" that a failed/dropped send
+// never actually delivered, and a later retry would then never mention it.
+// Committed only once the context's own send actually lands: askFinish
+// (askSend) or a successful POST (askTerminalSend) — never askContext/
+// askNewSinceLines itself (askResume also calls it to rebuild the SAME
+// question's context mid-tool-round, which must not commit early either).
+let askSeenPending = {};
+function askSeenStage(key, seen) { askSeenPending[key] = seen; }
+function askSeenCommit(key) { const p = askSeenPending[key]; delete askSeenPending[key]; if (p) askSeenSet(key, p); }
+function askSeenDrop(key) { delete askSeenPending[key]; } // never landed: try the same "new since" lines again next time
 // The chat is his session record (Josh, 2026-09-25): it lives here whole
 // until the song's Save appends it to <song>.ask.md, and only messages the
 // repo file already holds ever leave this device. `saved` counts those from
@@ -22987,7 +23053,17 @@ const askstatus = document.getElementById("askstatus");
 // reaches <song>.ask.md), and lights ✉ on the Ask button until read. Only a
 // host already allowed for Ask is polled; a server without /v1/inbox (LM
 // Studio, Ollama) is asked once and left alone.
-function askSessionName() { return askGeneral ? "general" : String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160); }
+// Mode-separated sessions (2026-10-01, docs/ask-token-plan.md #2 — SAFETY):
+// Learning is the law (CLAUDE.md) — a Normal-mode turn's content (a key/
+// chord estimate, "mode: normal") must never leak into a Learning-mode
+// chat's AI context, and the bridge's Claude Code is a RESUMED session that
+// remembers every earlier turn verbatim. Without this, flipping the SAME
+// song's chat between modes would resume the SAME bridge session either
+// way, and a later Learning-mode turn would inherit Normal-mode content
+// from the session's own memory — never caught by any check on what THIS
+// turn's context carries, since the leak lives in the session, not the
+// turn. A different mode is a different session, period.
+function askSessionName() { return (askGeneral ? "general" : String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160)) + (appMode() === "normal" ? "#normal" : ""); }
 const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song"]; // no open song in the general chat
 function askToolsNow() { return askGeneral ? ASK_TOOLS.filter(t => !ASK_SONG_ONLY_TOOLS.includes(t.function.name)) : ASK_TOOLS; }
 function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
@@ -23140,6 +23216,7 @@ document.getElementById("askcompact").addEventListener("click", async () => {
     const r = await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key) + "/compact", {method: "POST", headers: aiHeaders(), body: JSON.stringify({model: askCompactModelName()})});
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error((j.error && j.error.message) || "HTTP " + r.status);
+    askSentReset(askStoreKey()); // the compacted session no longer holds the full text verbatim — resend in full next time
     const k = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n);
     askstatus.textContent = "compacted: " + j.turnsBefore + " → " + j.turnsAfter + " turns · ~" + k(j.tokensBefore) + " → ~" + k(j.tokensAfter) + " tokens";
   } catch (err) { askstatus.textContent = "⚠ Compact failed — " + err.message; }
@@ -23476,6 +23553,8 @@ function askPendingIndex(msgs, jobId) { return msgs.findIndex(m => m.pending ===
 function askFinish(jobId, text, key) { // the reply for a pending question landed: store it, drop the marker
   delete askPartial[jobId];
   key = key || askStoreKey();
+  askSentCommit(key); // this context reached (and was acted on by) the bridge session — its cache entries are now confirmed
+  askSeenCommit(key); // same: the "New since" lines it carried are now confirmed seen by the bridge
   const msgs = askStore(key).msgs;
   const i = askPendingIndex(msgs, jobId);
   if (i < 0) return;
@@ -23487,6 +23566,8 @@ function askFinish(jobId, text, key) { // the reply for a pending question lande
 function askFail(jobId, note, key) { // no reply will come: keep the question, say why
   delete askPartial[jobId];
   key = key || askStoreKey();
+  askSentDrop(key); // never confirmed landed — the full sections go again next time, not a stand-in for content the bridge may never have gotten
+  askSeenDrop(key); // same: never mark a "new since" line seen that was never actually delivered
   const msgs = askStore(key).msgs;
   const i = askPendingIndex(msgs, jobId);
   if (i < 0) return;
@@ -23584,9 +23665,8 @@ function askTerminalContext() {
 }
 async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac's Claude Code; the reply comes back as a note
   const key = ASK_TERMINAL_KEY, msgs = askStore(key).msgs;
-  const ctx = askTerminalContext(); // built BEFORE the cursor advances, so it still sees everything new
+  const ctx = askTerminalContext(); // stages this turn's seen-watermark (askNewSinceLines) — committed below only if the POST actually lands
   const bodyText = ctx ? "<context>\n" + ctx + "\n</context>\n\n" + text : text;
-  askSeenAdvance(key);
   msgs.push({role: "user", content: text, t: Date.now()}); // stored/shown WITHOUT the context block, like every other chat (askStripContext strips it back out of history elsewhere; the terminal's own store never carries it at all)
   askSave(msgs, undefined, key);
   askMicOff(); // a live 🎤 writes its transcript back after we clear the box (Josh, 2026-09-30: the text stayed after Send)
@@ -23597,6 +23677,7 @@ async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac
     const r = await fetch(aiUrl() + "/v1/terminal", {method: "POST", headers: aiHeaders(), body: JSON.stringify({text: bodyText})});
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status);
+    askSeenCommit(key); // the bridge actually got it: this turn's "new since" lines are now confirmed seen
     askstatus.textContent = j.now && j.now.text ? "sent — the terminal is working: " + j.now.text : "sent — the terminal will answer here";
     askTerminalFast = Date.now() + 15 * 60000; // its answer shouldn't wait for the 60 s poll
     if (!askTerminalTimer) askTerminalTimer = setInterval(() => {
@@ -23604,6 +23685,7 @@ async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac
       if (!document.hidden) { askInboxPoll(); askStatusPoll(); }
     }, 5000);
   } catch (err) { // not queued: say so and give the words back, never lose them
+    askSeenDrop(key); // never delivered: the "new since" lines it carried are still unseen
     msgs.pop(); askSave(msgs, undefined, key); askRender();
     askinput.value = text; askGrow();
     askstatus.textContent = "⚠ not sent — the Mac's bridge didn't answer (" + err.message + "); your message is back in the box";
@@ -23620,8 +23702,7 @@ async function askSend() {
   document.getElementById("askspan").textContent = askSpanLabel(sp);
   const budget = askBudget();
   const msgs = askLoad();
-  const ctx = askContext(sp, budget);
-  askSeenAdvance(askStoreKey()); // "New since your last message:" cursor — never inside askContext itself, which askResume also calls to rebuild the SAME question's context mid-tool-round
+  const ctx = askContext(sp, budget); // stages this turn's "New since your last message:" watermark (askNewSinceLines) — askFinish commits it, askFail drops it
   const messages = askBuildMessages(msgs, text, ctx, budget);
   const jobId = askJobId();
   msgs.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp), pending: jobId}); // saved NOW: closing the sheet or leaving the app cannot lose it
@@ -24562,7 +24643,7 @@ document.getElementById("askgear").addEventListener("click", () => { asksheet.cl
 document.getElementById("askclear").addEventListener("click", async () => { // Clear = new session; unsaved messages are the one thing it can destroy
   const n = askUnsavedCount();
   if (n && !(await appConfirm("Clear chat", n + " message" + (n === 1 ? " is" : "s are") + " not in the repo yet — Save the song first to keep " + (n === 1 ? "it" : "them") + ". Clear anyway?", "Clear", "Keep"))) return;
-  localStorage.removeItem(askStoreKey()); askRender(); updateSongBtn();
+  localStorage.removeItem(askStoreKey()); askSentReset(askStoreKey()); askRender(); updateSongBtn();
   // Clear really resets (open-items.md "NEXT: AI SESSION CONTROLS" #1, Josh:
   // "the app's Clear chat only clears this device's log and never tells the
   // bridge, so the same Claude session keeps being resumed and growing"):
