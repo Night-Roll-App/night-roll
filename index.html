@@ -2981,9 +2981,9 @@ function drumStep(p, d) { // vertical moves walk the VISIBLE kit slots, not semi
 // it reads as the playhead/selection/highlight gold, never a track), and
 // WCAG contrast >= 3 against the roll's own surfaces: --bg and the pitch-row
 // shading drawn in drawFull (--grid-soft, --grid) — a chip must never blend
-// into its own lane. All 24 candidates at this S/L clear both bars (no
+// into its own lane. All 24 candidates clear both bars after the lift (no
 // dark/light theme split: there's only the one theme, see :root above).
-const AUTO_COLOR_S = 0.70, AUTO_COLOR_L = 0.65;
+const AUTO_COLOR_S = 0.70, AUTO_COLOR_L = 0.50;
 function hslToHex(h, s, l) {
   h = ((h % 360) + 360) % 360 / 360;
   const hue2rgb = (p, q, t) => {
@@ -3029,7 +3029,11 @@ const ROLL_SURFACE_COLORS = ["#0D1120", "#1A2138", "#242C48"];
 const TRACK_COLOR_CANDIDATES = (() => {
   const out = [];
   for (let h = 0; h < 360; h += 15) {
-    const hex = hslToHex(h, AUTO_COLOR_S, AUTO_COLOR_L);
+    // the old hand-picked palette's depth (L 0.50), lifted per hue only as far
+    // as the contrast bar needs (blues/violets come out lighter) — a uniform
+    // L 0.65 read pastel next to the colors Josh was used to
+    let L = AUTO_COLOR_L, hex = hslToHex(h, AUTO_COLOR_S, L);
+    while (L < 0.75 && ROLL_SURFACE_COLORS.some(s => contrastRatio(hex, s) < 3)) hex = hslToHex(h, AUTO_COLOR_S, L += 0.02);
     const l = relLuminance(hex);
     if (l < 0.08 || l > 0.85) continue; // black-ish / near-white band
     if (ROLL_SURFACE_COLORS.some(s => contrastRatio(hex, s) < 3)) continue; // must read against every roll surface
