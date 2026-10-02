@@ -674,6 +674,16 @@
   .sheet input[type=number] { width: 64px; }
   .sheet input[type=password] { flex: 1; min-width: 0; }
   .sheet textarea { width: 100%; min-height: 84px; resize: vertical; }
+  /* the annotation editor's comment box (Josh, 2026-10-01: "dragging the
+     window's corner makes it bigger but the text area stays the same size —
+     only the text area should grow"). Width already tracked the sheet
+     (textarea is 100% wide); height didn't, because .sheet is a flex column
+     whose children (h2/rows/#ntext) all default to flex-grow:0 — the sheet
+     grip's resize only grew the OUTER box, leaving the extra height unused.
+     flex-grow:1 here (the header/fields above keep their default flex:0 1
+     auto) sends that extra height to #ntext alone; the 84px floor above is
+     untouched, so the no-resize default is exactly as before. */
+  #noteeditor #ntext { flex: 1 1 auto; }
   .sheet .lbl { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
   #filesheet .lbl { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); } /* match the .fitem rows */
   .sheet .status { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); min-height: 14px; }
@@ -1029,6 +1039,7 @@
   .askmsg.user { background: var(--panel2); border: 1px solid var(--grid); align-self: flex-end; }
   .askmsg.ai { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; }
   .askmsg.err { color: #e66767; }
+  .askmsg.othermode { opacity: .55; } /* a different mode's turn (SAFETY 2026-10-01): shown here, never sent to the model in the current mode */
   .askmsg a { color: var(--gold); word-break: break-all; }
   #instfall { display: none; } /* Fall parked 2026-09-27: see the fallOn line */
   /* ⧉ at the end of every bubble: copying from the sheet on the iPad meant a
@@ -23026,11 +23037,25 @@ async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the
   const now = askStore(key); // messages may have arrived meanwhile; only the snapshot is in the file
   askSave(now.msgs, {saved: now.saved + fresh.length}, key);
 }
+// Mode-tagged history (2026-10-01, SAFETY): every stored message carries the
+// mode it was PUSHED in (askSend/askFinish/askFail/askNotesArrived/askFill —
+// `mode: appMode()` at push time); a legacy message from before this tag
+// existed has no `mode` field, and is treated as "learning" (Learning is the
+// default mode, Normal is the newer one — CLAUDE.md: Learning is the law).
+// askSessionName already keeps Learning/Normal on separate BRIDGE sessions
+// (2026-10-01, commit 0701a7f) — this is the other half: the on-device
+// transcript (askStore) is shared across modes, and askBuildMessages is the
+// one place history from it reaches a model request, so a Normal-mode turn
+// (which may carry a key/chord estimate) must never be included when the
+// CURRENT request is Learning, and vice versa.
+function askMsgMode(m) { return m.mode || "learning"; }
 function askBuildMessages(msgs, text, ctx, budget) { // stripped history newest-first until the history budget is spent
   const out = [];
   let left = budget.hist * ASK_CPT;
+  const mode = appMode();
   for (let i = msgs.length - 1; i >= 0; i--) {
     if (msgs[i].pending) continue; // the question in flight is sent as the live one, not as history
+    if (askMsgMode(msgs[i]) !== mode) continue; // a different mode's turn — never enters this request's context
     const c = askStripContext(msgs[i].content);
     if (c.length > left) break;
     left -= c.length;
@@ -23099,7 +23124,7 @@ function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab
     const mine = notes.filter(n => key ? toTerm(n) : !toTerm(n));
     if (!mine.length) continue;
     const k = key || askStoreKey(), msgs = askStore(k).msgs;
-    for (const n of mine) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal"});
+    for (const n of mine) msgs.push({role: "note", content: String(n.text), t: n.t || Date.now(), m: n.from || "terminal", mode: appMode()});
     askSave(msgs, undefined, k);
   }
   const shown = asksheet.classList.contains("on") ? notes.filter(n => (toTerm(n) ? ASK_TERMINAL_KEY : askStoreKey()) === askStoreKey()) : [];
@@ -23489,7 +23514,17 @@ function askRender() {
   else if (!msgs.length && !st.trimmed) askBubble("ai", appMode() === "normal"
     ? "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll answer directly — keys, chords, cadences, form — and say how sure I am."
     : "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
-  for (const m of msgs) { askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", m.role === "note" ? askClock(m.t) + askNoteLabel(m.m) + m.content : (askTerminal && m.role === "user" ? askClock(m.t) : "") + askStripContext(m.content)); if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; } }
+  for (const m of msgs) {
+    // a different mode's turn (askMsgMode/appMode, SAFETY 2026-10-01): still
+    // shown here (this is the on-device log, not a model request) but dimmed
+    // and tagged, so Josh can tell it was never part of the current mode's
+    // AI context, not just missing from it.
+    const otherMode = !askTerminal && askMsgMode(m) !== appMode();
+    const tag = otherMode ? "[" + (askMsgMode(m) === "normal" ? "Normal" : "Learning") + " mode] " : "";
+    const div = askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", tag + (m.role === "note" ? askClock(m.t) + askNoteLabel(m.m) + m.content : (askTerminal && m.role === "user" ? askClock(m.t) : "") + askStripContext(m.content)));
+    if (otherMode) div.classList.add("othermode");
+    if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; }
+  }
   if (pendingSeen) askResumeSoon(200);
 }
 async function askRenderEarlier() { // what this device let go of after it reached the repo file
@@ -23559,7 +23594,7 @@ function askFinish(jobId, text, key) { // the reply for a pending question lande
   const i = askPendingIndex(msgs, jobId);
   if (i < 0) return;
   delete msgs[i].pending;
-  msgs.splice(i + 1, 0, {role: "assistant", content: text, m: askModelName()});
+  msgs.splice(i + 1, 0, {role: "assistant", content: text, m: askModelName(), mode: appMode()});
   askSave(msgs, undefined, key);
   askLanded(key, false);
 }
@@ -23572,7 +23607,7 @@ function askFail(jobId, note, key) { // no reply will come: keep the question, s
   const i = askPendingIndex(msgs, jobId);
   if (i < 0) return;
   delete msgs[i].pending;
-  msgs.splice(i + 1, 0, {role: "assistant", content: "⚠ " + note, m: askModelName()});
+  msgs.splice(i + 1, 0, {role: "assistant", content: "⚠ " + note, m: askModelName(), mode: appMode()});
   askSave(msgs, undefined, key);
   askLanded(key, true);
 }
@@ -23705,7 +23740,7 @@ async function askSend() {
   const ctx = askContext(sp, budget); // stages this turn's "New since your last message:" watermark (askNewSinceLines) — askFinish commits it, askFail drops it
   const messages = askBuildMessages(msgs, text, ctx, budget);
   const jobId = askJobId();
-  msgs.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp), pending: jobId}); // saved NOW: closing the sheet or leaving the app cannot lose it
+  msgs.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp), pending: jobId, mode: appMode()}); // saved NOW: closing the sheet or leaving the app cannot lose it
   askSave(msgs);
   askMicOff(); // a live 🎤 would write its transcript back into the box after we clear it
   askinput.value = "";
@@ -24858,7 +24893,7 @@ async function askFill() {
     if (!result) throw new Error("three takes in a row were unusable — last problem: " + lastErr);
     if (result.question) {
       live.textContent = result.question;
-      { const cur = askLoad(); cur.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp)}, {role: "assistant", content: result.question, m: askModelName()}); askSave(cur); }
+      { const cur = askLoad(); cur.push({role: "user", content: text, t: Date.now(), at: askSpanLabel(sp), mode: appMode()}, {role: "assistant", content: result.question, m: askModelName(), mode: appMode()}); askSave(cur); }
       askstatus.textContent = "it needs an answer — reply, then Fill again";
       return;
     }
@@ -24880,7 +24915,7 @@ async function askFill() {
       b.addEventListener("click", () => { b.replaceWith(document.createTextNode("\n" + result.why)); });
       live.appendChild(b);
     }
-    { const cur = askLoad(); cur.push({role: "user", content: text + " [fill bars " + sp.from + "–" + sp.to + "]", t: Date.now(), at: askSpanLabel(sp)}, {role: "assistant", content: "(wrote " + k + " notes into bars " + sp.from + "–" + sp.to + " on " + (song.tracks[ti].name || "track " + (ti + 1)) + ")", m: askModelName()}); askSave(cur); }
+    { const cur = askLoad(); cur.push({role: "user", content: text + " [fill bars " + sp.from + "–" + sp.to + "]", t: Date.now(), at: askSpanLabel(sp), mode: appMode()}, {role: "assistant", content: "(wrote " + k + " notes into bars " + sp.from + "–" + sp.to + " on " + (song.tracks[ti].name || "track " + (ti + 1)) + ")", m: askModelName(), mode: appMode()}); askSave(cur); }
     askstatus.textContent = "";
     setInfo("✦ take " + askTakes.length + ": " + k + " notes in bars " + sp.from + "–" + sp.to + " (one ⟲ restores what was there)");
     askRefreshTarget();

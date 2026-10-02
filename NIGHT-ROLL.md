@@ -3872,6 +3872,29 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     leak into Learning's AI context). A different mode is a different
     bridge session, period — same song, two rows in sessions.json. Test:
     the "askSessionName is mode-separated" case in the P8 block above.
+  - **Mode-tagged on-device history (2026-10-01, SAFETY — the other half of
+    the above).** `askSessionName` walls off the BRIDGE session by mode, but
+    the on-device transcript (`askStore`/`askStoreKey`, `msgs`) is one
+    shared log per song/general chat across both modes, and
+    `askBuildMessages` — the one place that history reaches a model
+    request — used to send it all regardless of the CURRENT mode, local
+    backends included (every turn, not just the first). Fixed: every
+    pushed message now carries `mode: appMode()` at push time (`askSend`,
+    `askFinish`, `askFail`, `askNotesArrived`, and `askFill`'s direct
+    question/answer pushes); `askMsgMode(m)` reads it back, treating an
+    untagged (pre-2026-10-01) message as `"learning"` — the older, default
+    mode, never the newer Normal — since there's no way to know which mode
+    wrote it. `askBuildMessages` now skips any stored message whose mode
+    doesn't match `appMode()` before it ever reaches the length budget, so
+    a Normal-mode turn (which may carry a key/chord estimate) can't enter a
+    Learning request's messages, and vice versa, even though both turns
+    live in the same `localStorage` entry. The sheet (`askRender`) still
+    shows the other mode's turns — dimmed (`.askmsg.othermode`) and
+    prefixed `[Normal mode]`/`[Learning mode]` — so Josh can tell why a
+    bubble looks different, never silently drops it from the log, just
+    from the AI's context. Tests: four new "Ask: …mode…" cases in
+    tests/night-roll.test.mjs (filtering both directions, the untagged-is-
+    Learning default, each push site's tag, and the dimmed/tagged render).
   - **Security:** binds 127.0.0.1 unless `--host`; `--token` requires
     `Authorization: Bearer` (the app's Settings key); CORS open (the app
     is a static page). TLS is someone else's job: Josh uses `tailscale
@@ -4175,6 +4198,26 @@ song] below it from the outer context." No top dock.
   `#settingssheet`, `#confirmsheet`, `#importsheet` (the one with its own
   drag/grip special case), the voice menu, `#viewsheet`, and the various
   anchored dropdowns/submenus.
+- **A resized sheet's extra height has to go somewhere (2026-10-01, Josh on
+  `#noteeditor`: "dragging the window's corner makes it bigger but the text
+  area stays the same size — only the text area should grow").** `addGrips`'
+  `◢` sets `box.style.height` directly on the `.sheet` div (already a flex
+  column, `display:flex; flex-direction:column`), but every child defaults
+  to `flex-grow:0` — the box grew, the rows inside it didn't, so the extra
+  space just sat unused below the Save/Cancel row. Fix is one rule,
+  `#noteeditor #ntext { flex: 1 1 auto; }` — `#ntext`'s siblings (the type
+  row, bar/beat selects, chord/key/tempo/meter rows, Save/Cancel) keep the
+  default and stay put; `#ntext` alone absorbs whatever height the grip
+  adds. The existing `.sheet textarea { min-height: 84px }` floor is
+  untouched, so the no-resize default size is unchanged. Width already
+  tracked the sheet (`.sheet textarea { width: 100% }`); this was a
+  height-only gap. Scoped to `#noteeditor` specifically, not every `.sheet
+  textarea` — `#askinput` (the Ask composer) has its own JS auto-grow
+  (`askGrow`, content-driven, unrelated to window resize) and must not pick
+  up flex-grow too. Test: markup/CSS presence in tests/night-roll.test.mjs
+  ("Annotation editor (#noteeditor)…") — the vm harness has no real flex
+  layout engine to assert the resized pixel height against; browser-verify
+  the actual growth before shipping.
 - **Dock control:** one shared popup, `#wmmenu` (built fresh on each open,
   same pattern as `#voicemenu`/`#filesub`) — "Left" / "Right" / "Bottom",
   then (once docked to a side) "Full height" / "Beside the roll", then

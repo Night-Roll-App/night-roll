@@ -4776,3 +4776,22 @@ in tests/night-roll.test.mjs (8 cases). `npm test`: full chain green
 (night-roll.test.mjs 365/365, whole suite exit 0). Steps 0/1 (the bridge's
 own measurement ring + tool-round de-dup) are tools/claude-bridge.mjs —
 another builder's in progress there; not touched here.
+
+## 2026-10-01 21:58 — Chord-note dialog: text area doesn't grow with the window (Josh, via Ask) — DONE 2026-10-01
+
+Josh: in the chord note dialog, dragging the window's bottom-corner resize
+handle makes the window bigger but the note's text area stays the same
+size. The text area is the only part that should grow (it's what fills up
+as he types more); everything else in the dialog should stay put.
+Likely a fixed height/rows on the textarea instead of flex-filling the
+space the window gains. Check the same on other windows with a text area
+(annotation edit sheets). Browser-verify at iPad size before shipping.
+
+Fixed: it's the one editor (`#noteeditor`, openEditor) — `.sheet` is
+already a flex column but every child defaults to flex-grow:0, so the
+grip's height increase had nowhere to go. One rule, `#noteeditor #ntext {
+flex: 1 1 auto; }` — the textarea alone grows, the 84px no-resize default
+is unchanged, width already tracked the sheet. See NIGHT-ROLL.md (Window
+manager section) for the full writeup. Tests: markup/CSS presence only
+(vm has no real flex layout) — STILL NEEDS Josh's browser-check at iPad
+size before this is fully closed.

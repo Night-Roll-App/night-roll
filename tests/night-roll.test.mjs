@@ -7949,6 +7949,97 @@ test("P8 bridge-session caching: askSessionName is mode-separated — Learning a
   assert.equal(a.run(`askSessionName()`), learnName, "back to Learning: the original (unsuffixed) session key");
 });
 
+// askSessionName (above) mode-separates the BRIDGE session, but the on-device
+// transcript (askStore) is one shared log per song/general chat across both
+// modes — askBuildMessages is the one place its history reaches a model
+// request, so IT has to wall modes off too (2026-10-01, SAFETY: a Normal-mode
+// turn, which may carry a key/chord estimate, must never reach a Learning
+// request, and CLAUDE.md's Learning-is-the-law cuts both ways).
+test("Ask: history across modes is walled off at request time — a Normal-mode turn never enters a Learning request's messages, and a Learning turn never enters a Normal one, though both stay in the SAME on-device log", () => {
+  const a = mkAsk("learning");
+  a.run(`askSave([{role: "user", content: "what chord is this", mode: "normal"}, {role: "assistant", content: "that's a G7, pretty sure", mode: "normal"}]);`);
+  let msgs = JSON.parse(a.run(`JSON.stringify(askBuildMessages(askLoad(), "next question", "CTX", {hist: 100000}))`));
+  assert.equal(msgs.length, 1, "Learning: the Normal-mode turn is excluded — only the live question remains");
+  assert.doesNotMatch(msgs[0].content, /G7/, "no Normal-mode chord name reaches the Learning request");
+
+  a.run(`setAppMode("normal")`); // same store key, same stored messages
+  msgs = JSON.parse(a.run(`JSON.stringify(askBuildMessages(askLoad(), "another question", "CTX", {hist: 100000}))`));
+  assert.equal(msgs.length, 3, "Normal: the SAME turn is now visible as history");
+  assert.match(msgs[0].content, /what chord is this/);
+  assert.match(msgs[1].content, /G7/);
+
+  a.run(`askSave([...askLoad(), {role: "user", content: "what do you hear", mode: "learning"}, {role: "assistant", content: "listen to bar 2", mode: "learning"}]);
+         setAppMode("learning");`);
+  msgs = JSON.parse(a.run(`JSON.stringify(askBuildMessages(askLoad(), "q3", "CTX", {hist: 100000}))`));
+  assert.equal(msgs.length, 3, "Learning: only the two Learning-tagged messages + the live question");
+  assert.doesNotMatch(msgs.map(m => m.content).join("\n"), /G7/, "the Normal turn stays excluded");
+
+  a.run(`setAppMode("normal")`);
+  msgs = JSON.parse(a.run(`JSON.stringify(askBuildMessages(askLoad(), "q4", "CTX", {hist: 100000}))`));
+  assert.doesNotMatch(msgs.map(m => m.content).join("\n"), /listen to bar 2/, "a Learning-mode turn never enters a Normal-mode request's messages");
+});
+
+test("Ask: untagged legacy history (saved before mode-tagging shipped) counts as Learning only — never surfaces in a Normal-mode request", () => {
+  const a = mkAsk("learning");
+  a.run(`askSave([{role: "user", content: "legacy question, no mode field"}, {role: "assistant", content: "legacy reply"}]);`);
+  let msgs = JSON.parse(a.run(`JSON.stringify(askBuildMessages(askLoad(), "q", "CTX", {hist: 100000}))`));
+  assert.equal(msgs.length, 3, "Learning: untagged legacy messages are visible (treated as Learning, the older/default mode)");
+  a.run(`setAppMode("normal")`);
+  msgs = JSON.parse(a.run(`JSON.stringify(askBuildMessages(askLoad(), "q", "CTX", {hist: 100000}))`));
+  assert.equal(msgs.length, 1, "Normal: untagged legacy messages are excluded — never treated as Normal");
+});
+
+test("Ask: askSend/askFinish/askFail/askNotesArrived all tag the message they push with the mode it was created in (appMode() at push time)", () => {
+  // askSend's push sits right before its network call (aiHostOk/askRun) —
+  // exercising it live would mean standing up a fake AI backend for a tag
+  // check, so the tag on THAT push is a source check; askFinish/askFail/
+  // askNotesArrived have no network of their own and are exercised directly.
+  const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(src, /msgs\.push\(\{role: "user", content: text, t: Date\.now\(\), at: askSpanLabel\(sp\), pending: jobId, mode: appMode\(\)\}\);/, "askSend tags the user push");
+
+  const a = mkAsk("normal");
+  a.run(`askSave([{role: "user", content: "q", t: 1, at: "bars 1–4 (view)", pending: "nr_one"}]); askFinish("nr_one", "an answer");`);
+  let st = JSON.parse(a.run(`JSON.stringify(askStore())`));
+  assert.equal(st.msgs[1].mode, "normal", "askFinish tags the assistant push with the CURRENT mode");
+
+  a.run(`const m = askLoad(); m.push({role: "user", content: "q2", pending: "nr_two"}); askSave(m); askFail("nr_two", "stopped");`);
+  st = JSON.parse(a.run(`JSON.stringify(askStore())`));
+  assert.equal(st.msgs[3].mode, "normal", "askFail tags its assistant push too");
+
+  a.run(`asklog.innerHTML = ""; asksheet.classList.remove("on"); askNotesArrived([{id: 1, t: 1, from: "terminal", text: "note text"}]);`);
+  st = JSON.parse(a.run(`JSON.stringify(askStore(ASK_TERMINAL_KEY))`));
+  assert.equal(st.msgs.slice(-1)[0].mode, "normal", "askNotesArrived tags the note push");
+  a.run(`localStorage.removeItem(askStoreKey()); localStorage.removeItem(ASK_TERMINAL_KEY);`);
+});
+
+test("Ask: the on-screen log still SHOWS a different mode's turn (dimmed, tagged) — never sent to the model, but never silently hidden either", () => {
+  const a = mkAsk("learning");
+  a.run(`askSave([{role: "user", content: "what chord", mode: "normal", t: 1}, {role: "assistant", content: "that's a G7", mode: "normal", m: "test"}]);
+         asksheet.classList.add("on"); askSetMode("song"); askRender();`);
+  const bubbles = JSON.parse(a.run(`JSON.stringify([...asklog.children].map(d => ({dim: d.classList.contains("othermode"), text: d.textContent})))`));
+  const dimmed = bubbles.filter(b => b.dim);
+  assert.equal(dimmed.length, 2, "both the question and the G7 reply are dimmed: " + JSON.stringify(bubbles));
+  assert.ok(dimmed.every(b => /\[Normal mode\]/.test(b.text)), "and tagged, so Josh can tell why they look different: " + JSON.stringify(dimmed));
+});
+
+// Annotation editor (#noteeditor, openEditor): resizing the sheet by its ◢
+// corner grip only grew the outer box (Josh, 2026-10-01: "dragging the
+// window's corner makes it bigger but the text area stays the same size —
+// only the text area should grow") — .sheet is already a flex column, but
+// every child defaults to flex-grow:0, so the extra height went nowhere.
+// Layout itself isn't observable in the vm harness (no real flex engine), so
+// this checks the markup/CSS that drives it: #ntext is the sheet's only
+// growing child, scoped to this editor (not every .sheet textarea — the Ask
+// composer box has its own JS auto-grow, unrelated to this fix).
+test("Annotation editor (#noteeditor): #ntext is the one child that grows when the sheet is resized — header/fields above and the Save/Cancel row below stay fixed", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /#noteeditor #ntext\s*\{\s*flex:\s*1 1 auto;\s*\}/, "#ntext opts into flex-grow — every sibling (h2, the bar/beat/chord/key rows, the Save/Cancel row) keeps the default flex-grow:0");
+  assert.match(html, /\.sheet textarea \{ width: 100%; min-height: 84px; resize: vertical; \}/, "the 84px floor survives untouched — the no-resize default size is unchanged");
+  // markup: #ntext lives inside #noteeditor's own .sheet (the flex column the grip resizes), not some other sheet
+  const editor = html.match(/<div class="overlay" id="noteeditor">[\s\S]*?\n<\/div>\n\n<div id="notelistsheet-home"/)[0];
+  assert.match(editor, /<div class="sheet">[\s\S]*<textarea id="ntext"[\s\S]*<button class="primary" id="nsave">/, "ntext sits between the sheet's header/fields and its Save/Cancel row");
+});
+
 // ------------------------------------------- P6: Analyze ▸ (Normal-mode VIEW layer)
 // A per-bar chord reading (bsInferTimeline + nameChord, reused as-is) and a
 // whole-song key estimate (estimateKey, reused as-is), drawn as a dashed
