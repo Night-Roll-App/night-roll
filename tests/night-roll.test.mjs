@@ -43,6 +43,21 @@ test("keyNameToSf: majors, minors map to relative major, invalid → null", () =
   assert.equal(run(`keyNameToSf("")`), null);
 });
 
+// 2026-10-01 bug (Josh via Ask): "key: Ebm" still spelled sharps in the Ask
+// context dump. Root cause: keyNameToSf computed the relative major's PITCH
+// CLASS and re-derived sf from that pc alone — ambiguous at the F#/Gb
+// tritone (pc 6), so it silently preferred the sharp spelling no matter which
+// letter/accidental the user typed. Flat minor keys whose relative major
+// lands on that pc (Ebm → Gb, and flat majors spelled past it, like Gb/Cb/Abm
+// themselves) came out with the wrong sign. Fixed by working in fifths-space
+// from the typed letter throughout, never round-tripping through a bare pc.
+test("keyNameToSf: flat keys keep their sign past the F#/Gb enharmonic seam", () => {
+  const cases = {Gb: -6, Cb: -7, Ebm: -6, Abm: -7, "F#": 6, "C#": 7, "F#m": 3, "D#m": 6};
+  for (const [name, sf] of Object.entries(cases)) {
+    assert.equal(run(`keyNameToSf(${JSON.stringify(name)})`), sf, name);
+  }
+});
+
 test("parseRollnotes: anchors, ranges, sections, key directives, comments dropped", () => {
   const text = [
     "# header comment", "",
@@ -7737,6 +7752,51 @@ test("P4: askSpanNotes (Normal) spells by the key ESTIMATE when nothing is decla
   const learn = mkAsk("learning");
   const learnTxt = learn.run(`askSpanNotes(0, barTicks())`);
   assert.match(learnTxt, /# Pitches use sharp spelling; the true key is the user's to discover — this block states no key\./);
+});
+
+// 2026-10-01 bug (Josh via Ask, FF4 "Cry in Sorrow (part 2)"): he added
+// "key: Ebm" through the Ask add_annotation tool; askSpanNotes still spelled
+// sharps (A#, C#…) where Eb minor wants flats. Reproduced the real way: a
+// song with notes on the three "black key" pitch classes (10, 3, 6), the key
+// declared through askAddAnnotation exactly as the tool writes it — not by
+// poking keyRegions directly — then the very next askContext/askSpanNotes
+// call (no extra finalizeNotes in between: askAddAnnotation already calls
+// it, so the fix must hold on the first read after the write).
+function mkAskChromatic() {
+  const a = createApp({storage: {"ff1roll-mode": "learning"}});
+  a.run(`
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
+            tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 70, v: 80}, {t: 480, d: 480, p: 63, v: 80}, {t: 960, d: 480, p: 66, v: 80}]}]};
+    songKey = "midi/test.mid"; songEndTick = 4 * 480; playCursor = 0; playing = false; playRate = 1; viewMode = "roll";
+    trackState = [{muted: false, solo: false}]; rollnotes = []; keyRegions = []; declaredTs = null; previewSf = null; multiSel = [];
+    askAppState = () => "app: stub";
+    finalizeNotes();
+  `);
+  return a;
+}
+test("P4/2026-10-01: askAddAnnotation(key: Ebm/Bbm/Gb) spells flats, not sharps, in the very next askContext", () => {
+  for (const key of ["Ebm", "Bbm", "Gb"]) {
+    const a = mkAskChromatic();
+    a.run(`askAddAnnotation({kind: "key", text: ${JSON.stringify(key)}, bar: 1, beat: 1})`);
+    const ctx = a.run(`askContext(askSpan(), askBudget())`);
+    assert.match(ctx, new RegExp("key state: key: " + key + " ✓"), key + ": declared key reads back from the very next askContext");
+    assert.match(ctx, /bar 1: 1 Bb4 1, 2 Eb4 1, 3 Gb4 1/, key + ": flats (Bb/Eb/Gb), not sharps (A#/D#/F#)");
+  }
+});
+test("P4/2026-10-01: askAddAnnotation(key: F#m) spells sharps, for contrast with the flat keys above", () => {
+  const a = mkAskChromatic();
+  a.run(`askAddAnnotation({kind: "key", text: "F#m", bar: 1, beat: 1})`);
+  const ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /key state: key: F#m ✓/);
+  assert.match(ctx, /bar 1: 1 A#4 1, 2 D#4 1, 3 F#4 1/, "sharps (A#/D#/F#), not flats (Bb/Eb/Gb)");
+});
+// the editor (note-editor "key:" directive) path shares deriveNoteTypes with
+// askAddAnnotation — parseRollnotes is the text-grammar entry it uses.
+test("P4/2026-10-01: the note-editor's \"key: Ebm\" text path (parseRollnotes) spells the same flats as the Ask tool path", () => {
+  const a = mkAskChromatic();
+  a.run(`rollnotes = parseRollnotes("[1.1]\\nkey: Ebm").map(resolveNote); finalizeNotes();`);
+  const txt = a.run(`askSpanNotes(0, barTicks())`);
+  assert.match(txt, /bar 1: 1 Bb4 1, 2 Eb4 1, 3 Gb4 1/);
 });
 
 // ----------------------------- P7: bridge context block — "New since your

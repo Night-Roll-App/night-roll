@@ -4795,3 +4795,16 @@ is unchanged, width already tracked the sheet. See NIGHT-ROLL.md (Window
 manager section) for the full writeup. Tests: markup/CSS presence only
 (vm has no real flex layout) — STILL NEEDS Josh's browser-check at iPad
 size before this is fully closed.
+
+## DONE 2026-10-01 — Ebm key spells notes in SHARPS with E# (observed via Ask)
+FIXED: keyNameToSf lost the typed spelling at the F#/Gb seam (pc 6) — Ebm, Gb, Cb, Abm came out as sharp signatures, C# as flats. Now computed in fifths from the letter + accidental + mode. Affected the roll's spelling in those keys too, not only Ask.
+
+
+In cry-in-sorrow-part-2, after Josh added `key: Ebm` at bars 16 and 46,
+the Ask context's note block (header "Pitches are spelled by the user's
+declared key (Ebm)") spelled bars 28–59 in sharps — A#4, C#5, E#5, G#5 —
+where Bbm bars were spelled in flats (Bb, Db, F, Ab). Ebm is a six-flat
+key; sharp spelling with E# looks like the key is being read as D#m.
+Check the key→spelling function for Eb minor (and other flat minors typed
+with a flat tonic): the roll labels and the Ask note dump should spell
+Eb minor with flats. Reported to Josh as "looks wrong, queued to check".
