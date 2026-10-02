@@ -80,9 +80,61 @@ Josh: "the MOST TOKEN-EFFICIENT way to talk about songs in Ask overall."
    chars), annotations −71% (589→171 chars); first-message total (legend
    included) −34%, every later message −51% — on top of, not instead of,
    the bridge-session caching's stand-ins for unchanged sections.
-6. Skip already-sent bars per session; new read_bars(from, to, tracks?) tool for
-   the OPEN song (live state, askSpanNotes speller); annotation diffs +/−/~ with
-   stable content-hash ids.
+6. **DONE (2026-10-01), except annotation diffs (skipped — trivial, and the
+   change-only gate on the WHOLE annotations block already covers the
+   unchanged case).** Skip already-sent bars, bridge sessions only
+   (`askCaps.bridge`; local/LM Studio providers keep full `askSpanNotes`
+   every turn, unaffected). `askBarRow(tr, ti, b, bt, qt, est)` factors ONE
+   track's one-bar row out of `askSpanNotesCompact` (same octave/duration
+   carry-forward math) so this step and `read_bars` share one definition of
+   a bar's row; `askBarFingerprint(b, …)` is that bar's rows across every
+   track, hashed (fnv1a32) and compared against a new per-bar field,
+   `askSentGet(key).bars` (bar number → hash), living in the SAME sent-hash
+   record step 4's whole-block fields already use — one `askSentReset`
+   (Clear chat/Compact/a changed epoch) clears all of them together. A bar
+   whose hash matches joins its run of unchanged neighbors into one "bars
+   A–B: as sent earlier" line; a new/edited bar renders in full, by track,
+   for just that run. `askSpanNotesCompactCached` returns `{text,
+   allCached}` — when EVERY bar in the window was already sent, `askContext`
+   still gets the existing whole-block "unchanged since your last message"
+   stand-in (cheaper than one collapse line per bar), so a steady view costs
+   exactly what step 4 already made it cost; the granular collapsing only
+   shows up for a window mixing new/edited bars with already-sent ones.
+   `askSentCommit`'s merge for the `bars` field is a DEEP merge (every other
+   field is a scalar overwrite) and caps the record at 2000 bars, dropping
+   the lowest bar numbers first. New tool, `read_bars({from_bar, to_bar,
+   tracks?})` (`ASK_SONG_ONLY_TOOLS` — the OPEN song only): re-reads bars
+   from LIVE `song` state (unsaved edits included), byte-identical to
+   `askSpanNotesCompact` for that span when no `tracks` filter is given;
+   capped to 32 bars regardless of the window's own budget, truncation
+   stated. `ASK_SYS_BASE2` now lists it and explains the "as sent earlier"
+   convention, and no longer claims the model "cannot open other songs,
+   files, the repo or the web" (false on the bridge) — it now says to prefer
+   the context block and these tools over reading a song's file directly,
+   since they reflect live state a file on disk does not. Tests: the "P10
+   skip-already-sent bars"/"P10 read_bars" blocks in
+   tests/night-roll.test.mjs (12 cases — a mixed window's collapse/render
+   split; two separate earlier sends accumulating into one later
+   whole-block stand-in; editing one bar resending only that bar; a failed
+   send staging nothing; Clear/Compact/epoch resetting the per-bar record
+   with the rest; the 2000-bar cap; `read_bars` matching
+   `askSpanNotesCompact` exactly, seeing a live edit, hidden in the general
+   chat, and truncating a too-wide request). `npm test`: night-roll.test.mjs
+   387/387, whole suite green. **Measured** (a 64-bar synthetic song, one
+   note per bar, scrolled in 8-bar steps to the end and back — 16 turns,
+   `askSpanCachedBlock` isolated from the rest of `askContext`): total
+   notes-window chars 3026 → 1990 (−34.2%). The forward pass (8 windows,
+   every bar genuinely new) is identical either way, 1615 chars — nothing to
+   cache yet; the whole saving is on the way back: the same 8 windows,
+   now already sent, drop from 1411 to 375 chars (−73.4%), each one
+   collapsing to its "unchanged since your last message" stand-in. Before
+   this step, revisiting an earlier window after several others in between
+   cost full price every time (the old whole-block hash remembers only the
+   SINGLE most recently sent window); after it, the per-bar record
+   remembers every bar ever confirmed sent in the chat, however long ago —
+   the saving grows with how much a session re-visits ground it already
+   covered, which is exactly what scrolling back and forth through a song
+   does.
 7. **DONE (2026-10-01).** Warm auto-Compact (tools/claude-bridge.mjs): the
    instant a turn's JOB ENDS SUCCESSFULLY (never on error) with that turn's
    ctxTokens (the ring's own figure — the last assistant stream event's usage,
@@ -132,3 +184,45 @@ Measure before/after each step from the step-0 ring (replay 10 questions on an F
 song with Sonnet/Haiku).
 Also: correct ASK_SYS_BASE2's "you cannot open files" on the bridge; tell the
 model not to Read repo song files when the context already has the notes.
+**Done (2026-10-01), as step 6.**
+
+## Final summary (2026-10-01) — build order 0–7, all shipped
+
+Every step above is done. In build order: 0 the measurement ring
+(per-session `ring`, `lastCumCost` delta, `x-nr-ctx-parts`); 1 tool-round
+de-duplication (`flattenTail` stops at the last assistant message of any
+kind, so a resumed tool round sends only TOOL RESULT lines, never the whole
+`<context>` block again); 2 mode-separated bridge sessions (`#normal`
+suffix, closing a real Learning/Normal memory leak); 3 a smaller read-mode
+base (`--strict-mcp-config`/`--disable-slash-commands`); 4 the change-only
+gate (`askCachedBlock`, whole-block hashing for annotations, success-only
+stage/commit/drop) plus the session-epoch marker that resends in full the
+instant a compact — manual or the bridge's own automatic one — lands; 5 the
+compact encoding (`askSpanNotesCompact`/`askAnnotationsTextCompact`, a
+one-time legend); 6 per-bar skip-already-sent-bars on top of the compact
+encoding, plus `read_bars` for reading outside the window on demand; 7 warm
+auto-Compact (the bridge fires `/compact` itself once a turn's context
+passes `BRIDGE_COMPACT_AT`, in the background, never delaying the reply)
+and the epoch header step 4 reads.
+
+The savings compound rather than stack flatly: step 5's compact rows and
+annotation lines are what step 6 hashes per bar, so a bar that collapses to
+"as sent earlier" is already in the cheaper format; step 4's whole-block
+annotations gate and step 6's per-bar notes gate share one sent-hash record
+and one reset path (`askSentReset`), so Clear chat/Compact/an epoch change
+invalidates everything at once, never one piece forgotten; and step 7's
+auto-Compact keeps the fixed Claude Code base from growing unbounded
+underneath all of it. Measured, step by step, on real or representative
+fixtures: step 4 alone, −76% on a small sample once both blocks were
+cached; step 5 alone, notes −48%/annotations −71%/first message −34%/every
+later message −51%; step 6 alone (isolated from step 4/5's own savings,
+64-bar scroll-forward-then-back), −34.2% overall, −73.4% on the revisited
+(backward) half specifically. None of steps 4/5/6's numbers subtract from
+each other — a real session gets all three at once, on top of the fixed
+Claude Code base that steps 1/3 shrink and step 0 measures.
+
+Open, deliberately not done: annotation diffs (+/−/~, step 6's third
+bullet) — skipped as not worth it once the whole-block change-only gate on
+annotations (step 4) already covers "nothing changed"; a true diff would
+only help a long turn that both reads AND edits several annotations in one
+reply, which Learning mode's "never on its own initiative" rule makes rare.

@@ -4859,3 +4859,61 @@ Josh, in his words: "it would be cool to have a whole library of songs and their
 
 ## 2026-10-01 23:25 — ANSWER to the progression-search question: option B, standalone (via Ask)
 Josh chose B, and bigger than the terminal's framing: the progression search should be almost independent of his annotations and of Night Roll's own songs. In his words: "a giant library of these things... they don't have to be on songs we've imported or captured or annotated... go out on the Internet and build this somehow. I have no idea how it would be built. It would be its own thing independent of Night Roll that Night Roll could use. An API Night Roll could ask: give me a list of songs that have this chord progression. Or just that I could use, and then I could look those songs up on YouTube and play them and hear what that sounds like in context." Needs design: where chord data comes from (licensing, open datasets), root-motion-shape queries in any key, a standalone service/API, Night Roll as one client. Learning mode: nothing volunteered; it answers only when he searches.
+
+## 2026-10-01 23:30 — Clarification on the progression library: Josh is the client, Night Roll maybe (via Ask)
+Josh: "I'm not even sure Night Roll would be the client. It's more like I would be, but maybe Night Roll could be in some way, not exactly sure yet. Really it's for listening." So design the library as its own thing for him to search and listen to (find songs, then play them on YouTube); a Night Roll hook is optional later, not the point.
+
+## 2026-10-01 — Token-efficient Ask: step 6 (skip-already-sent bars + read_bars) — DONE 2026-10-01
+
+Continuing docs/ask-token-plan.md (full plan — "Advisor plan" entry above).
+Bridge-only (`askCaps.bridge`; local/LM Studio unaffected), on top of step 5's
+compact encoding:
+
+**Per-bar skip-already-sent.** `askBarRow`/`askBarFingerprint` factor ONE
+track's one-bar compact row, and a bar's fingerprint across every track, out
+of `askSpanNotesCompact`'s own math. `askSpanNotesCompactCached` hashes each
+bar and compares it against a new per-bar field, `askSentGet(key).bars`
+(bar → hash), living in the SAME sent-hash record step 4's whole-block
+fields already use (one `askSentReset` — Clear chat/Compact/a changed
+epoch — clears all of them together). A run of unchanged bars collapses to
+one "bars A–B: as sent earlier" line; a new/edited bar still renders in
+full. When EVERY bar in the window is already sent, `askContext` gets the
+existing whole-block "unchanged since your last message" stand-in instead
+(cheaper, and keeps step 4's own tests passing unchanged) — the granular
+line only appears for a window mixing new and already-sent bars.
+`askSentCommit` deep-merges the `bars` field (every other field there is a
+scalar overwrite) and caps it at 2000 bars, dropping the lowest numbers
+first.
+
+**read_bars.** A new tool, `read_bars({from_bar, to_bar, tracks?})`
+(`ASK_SONG_ONLY_TOOLS` — the OPEN song only, unlike `read_song`/
+`read_notes`), reads bars from LIVE `song` state (unsaved edits included);
+with no `tracks` filter it's byte-identical to `askSpanNotesCompact` for
+that span. Capped to 32 bars regardless of the window's own budget, and
+says so when truncated. `ASK_SYS_BASE2` lists it, explains the "as sent
+earlier" bars the model may see, and no longer claims the model "cannot
+open other songs, files, the repo or the web" (false on the bridge, where
+Claude Code actually can) — it now says to prefer the context block and
+these tools over reading a song's file directly, since they reflect the
+user's live, possibly-unsaved state.
+
+**Skipped:** annotation diffs (+/−/~) — the whole-block change-only gate on
+annotations (step 4) already covers "nothing changed"; a true diff only
+pays off for a turn that both reads and edits several annotations at once,
+which Learning mode's "never on its own initiative" rule makes rare.
+
+Measured (a 64-bar synthetic song, one note per bar, scrolled in 8-bar
+steps to the end and back — 16 turns, `askSpanCachedBlock` isolated from
+the rest of `askContext`): total notes-window chars 3026 → 1990 (−34.2%).
+The forward pass (8 windows, every bar genuinely new) is identical either
+way, 1615 chars; the whole saving is on the way back — the same 8 windows,
+now already sent, drop from 1411 to 375 chars (−73.4%). Before this step, a
+revisited window paid full price again unless it was the SINGLE most
+recently sent one; now the per-bar record remembers every bar ever
+confirmed sent in the chat, however long ago. Tests: the "P10
+skip-already-sent bars"/"P10 read_bars" blocks in tests/night-roll.test.mjs
+(12 cases). `npm test`: night-roll.test.mjs 387/387, whole suite green.
+Docs: NIGHT-ROLL.md ("Skip already-sent bars + read_bars, step 6"
+paragraph), docs/ask-token-plan.md (step 6 marked done + a final summary of
+all eight steps, 0–7). This closes out the token-efficient-Ask plan — every
+step in the build order is now shipped.

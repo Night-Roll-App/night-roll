@@ -8196,6 +8196,118 @@ test("epoch: a changed x-nr-session-epoch resets this chat's sent-hashes (annota
   a.run(`localStorage.removeItem(askEpochKey());`);
 });
 
+// ------------------------------------- P10: step 6 (docs/ask-token-plan.md)
+// — skip already-sent bars + read_bars. askSpanNotesCompactCached hashes
+// EACH bar's fingerprint (askBarFingerprint: that bar's askBarRow across
+// every track) against what this chat already confirmed sending
+// (askSentGet(key).bars, a per-bar companion to the whole-block "anno"/
+// "legend" fields askCachedBlock already keeps in the SAME record — one
+// askSentReset/Clear-chat/Compact/epoch-change clears all of them together).
+// A four-bar fixture, one distinct natural-pitch note per bar (C4/D4/E4/F4 —
+// no accidentals, so the compact spelling is unambiguous) so each bar's row,
+// and therefore its hash, differs from its neighbors.
+function mkAskBars() {
+  return mkAsk("learning", `
+    song.tracks = [{name: "melody", notes: [
+      {t: 0, d: 480, p: 60, v: 80},
+      {t: 1920, d: 480, p: 62, v: 80},
+      {t: 3840, d: 480, p: 64, v: 80},
+      {t: 5760, d: 480, p: 65, v: 80},
+    ]}];
+    songEndTick = 4 * barTicks();
+    trackState = [{muted: false, solo: false}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+  `);
+}
+const spBars = (from, to) => `{t0: ${from - 1} * barTicks(), t1: ${to} * barTicks(), from: ${from}, to: ${to}}`;
+test("P10 skip-already-sent bars: a window that re-covers earlier, unchanged bars shows them collapsed (\"as sent earlier\"), rendering only the new ones in full", () => {
+  const a = mkAskBars();
+  let ctx = a.run(`askContext(${spBars(1, 2)}, askBudget())`);
+  assert.match(ctx, /^notes in bars 1–2:\n#/m, "first message: full, like today");
+  assert.match(ctx, /\nT1 melody\n1\|1C4\/1\n2\|1D4\/1$/m);
+  a.run(`askFinish(askJobId(), "ok", askStoreKey())`); // confirms bars 1 and 2's hashes
+
+  ctx = a.run(`askContext(${spBars(1, 4)}, askBudget())`);
+  assert.match(ctx, /^notes in bars 1–4:\n#/m, "a wider window: the header always names the full requested span");
+  assert.match(ctx, /^bars 1–2: as sent earlier$/m, "the already-sent run collapses to ONE line, not two");
+  assert.match(ctx, /\nT1 melody\n3\|1E4\/1\n4\|1F4\/1$/m, "bars 3–4 are new: rendered in full, same format as ever");
+  assert.doesNotMatch(ctx, /\b1\|1C4/, "bar 1's row text itself is never repeated");
+});
+test("P10 skip-already-sent bars: scrolling forward then back — the per-bar record accumulates across DIFFERENT windows, so a window re-covering bars sent in either one collapses entirely (the existing whole-block stand-in, since every bar in it matches)", () => {
+  const a = mkAskBars();
+  a.run(`askContext(${spBars(1, 2)}, askBudget()); askFinish(askJobId(), "ok", askStoreKey());`); // view bars 1–2
+  a.run(`askContext(${spBars(3, 4)}, askBudget()); askFinish(askJobId(), "ok", askStoreKey());`); // scroll forward to 3–4 (a SEPARATE prior call, never bars 1–2 together)
+  const ctx = a.run(`askContext(${spBars(1, 4)}, askBudget())`); // scroll back: the view now covers both earlier windows at once
+  assert.match(ctx, /^notes in bars 1–4: unchanged since your last message$/m, "every bar in the window was already confirmed, from either earlier call: the compact whole-block stand-in, not four separate collapse lines");
+  assert.doesNotMatch(ctx, /\nT1 melody/, "nothing left to render in full");
+});
+test("P10 skip-already-sent bars: editing one note resends ONLY that bar — its unchanged neighbors stay collapsed", () => {
+  const a = mkAskBars();
+  a.run(`askContext(${spBars(1, 3)}, askBudget()); askFinish(askJobId(), "ok", askStoreKey());`);
+  a.run(`song.tracks[0].notes[1].p = 67;`); // bar 2's note: D4 -> G4 — an edit, not a new note
+  const ctx = a.run(`askContext(${spBars(1, 3)}, askBudget())`);
+  assert.match(ctx, /^bar 1: as sent earlier$/m);
+  assert.match(ctx, /^bar 3: as sent earlier$/m);
+  assert.match(ctx, /\nT1 melody\n2\|1G4\/1$/m, "only the edited bar renders, with its new content");
+  assert.doesNotMatch(ctx, /\b1\|1D4/, "the stale D4 reading is never sent again either");
+});
+test("P10 skip-already-sent bars: a failed send never records a bar's hash — the next turn sends it in full again", () => {
+  const a = mkAskBars();
+  a.run(`askContext(${spBars(1, 2)}, askBudget())`); // stages, never confirms
+  a.run(`askFail(askJobId(), "boom", askStoreKey())`);
+  const ctx = a.run(`askContext(${spBars(1, 2)}, askBudget())`);
+  assert.match(ctx, /\nT1 melody\n1\|1C4\/1\n2\|1D4\/1$/m, "full again: the failed send never landed");
+  assert.doesNotMatch(ctx, /^bars? [\d–]+: as sent earlier$/m, "no collapse line — only the legend's own explanation of the phrase may appear (its own hash was never confirmed either)");
+});
+test("P10 skip-already-sent bars: Clear chat / Compact / a changed session epoch reset the per-bar record along with the rest (askSentReset)", () => {
+  const a = mkAskBars();
+  a.run(`askContext(${spBars(1, 2)}, askBudget()); askFinish(askJobId(), "ok", askStoreKey());`);
+  let ctx = a.run(`askContext(${spBars(1, 2)}, askBudget())`);
+  assert.match(ctx, /^notes in bars 1–2: unchanged since your last message$/m, "sanity: fully cached before the reset");
+
+  a.run(`askSentReset(askStoreKey())`); // Clear chat / Compact / a changed epoch all call this
+  ctx = a.run(`askContext(${spBars(1, 2)}, askBudget())`);
+  assert.match(ctx, /\nT1 melody\n1\|1C4\/1\n2\|1D4\/1$/m, "full again, as if a new chat");
+});
+test("P10 skip-already-sent bars: the per-bar record is capped — committing past the cap drops the LOWEST bar numbers first", () => {
+  const a = mkAskBars();
+  const key = a.run(`askStoreKey()`);
+  a.run(`
+    const bulk = {};
+    for (let b = 1; b <= 2001; b++) bulk[b] = "h" + b;
+    askSentStageBars(${JSON.stringify(key)}, bulk);
+    askSentCommit(${JSON.stringify(key)});
+  `);
+  const bars = JSON.parse(a.run(`JSON.stringify(askSentGet(${JSON.stringify(key)}).bars)`));
+  assert.equal(Object.keys(bars).length, 2000, "capped at ASK_SENT_BARS_CAP");
+  assert.ok(!("1" in bars), "the lowest bar number was dropped first");
+  assert.ok("2001" in bars, "the newest bars survive");
+});
+test("P10 read_bars: returns exactly askSpanNotesCompact for the span, from LIVE state, and is refused in the general chat", () => {
+  const a = mkAskBars();
+  const viaReadBars = a.run(`askReadBars({from_bar: 2, to_bar: 3})`);
+  const direct = a.run(`askSpanNotesCompact(1 * barTicks(), 3 * barTicks(), 6000)`);
+  assert.equal(viaReadBars, direct, "no tracks filter: byte-identical to askSpanNotesCompact for that span");
+
+  a.run(`song.tracks[0].notes[1].p = 71;`); // an unsaved edit — read_bars must see it immediately
+  const live = a.run(`askReadBars({from_bar: 2, to_bar: 2})`);
+  assert.match(live, /2\|1B4\/1/, "live app state, not a snapshot from an earlier call");
+
+  assert.ok(a.run(`askToolsNow().some(t => t.function.name === "read_bars")`), "sanity: offered in a song chat");
+  a.run(`askGeneral = true;`);
+  assert.ok(!a.run(`askToolsNow().some(t => t.function.name === "read_bars")`), "not offered in the general chat — read_bars is about THE open song, unlike read_song/read_notes");
+  a.run(`askGeneral = false;`);
+});
+test("P10 read_bars: caps the span and says so when the request asks for more", () => {
+  const a = mkAsk("learning", `
+    song.tracks = [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 80}]}];
+    songEndTick = 200 * barTicks();
+    trackState = [{muted: false, solo: false}];
+  `);
+  const txt = a.run(`askReadBars({from_bar: 1, to_bar: 100})`);
+  assert.match(txt, /truncated to 32 bars/, "says it was cut, and how");
+});
+
 // askSessionName (above) mode-separates the BRIDGE session, but the on-device
 // transcript (askStore) is one shared log per song/general chat across both
 // modes — askBuildMessages is the one place its history reaches a model

@@ -3991,6 +3991,94 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
       message: 5197 → 2561 chars (−51%) — and this is BEFORE the
       bridge-session caching above collapses unchanged sections to a
       one-line stand-in on top of it.
+  - **Skip already-sent bars + read_bars, step 6 (2026-10-01,
+    docs/ask-token-plan.md).** The bridge-session caching above hashes the
+    visible notes window as ONE block — any single edit anywhere in view
+    makes `askCachedBlock` resend the WHOLE window. Step 6 moves that to bar
+    granularity for the bridge (`askCaps.bridge`; non-bridge keeps full
+    `askSpanNotes` every turn, unaffected, same gate as every other step
+    here):
+    - **`askBarRow(tr, ti, b, bt, qt, est)`** factors ONE track's one-bar row
+      out of `askSpanNotesCompact` (identical math — octave/duration carried
+      forward within the row, reset every bar) so this and `read_bars`
+      (below) never re-derive that rule in a second place that could drift.
+      It assumes a bar-aligned window, which `askSpan`'s own `t0`/`t1`
+      (always floor/ceil'd to a bar) guarantees.
+    - **`askBarFingerprint(b, bt, qt, est)`** is the "compact rows" for ONE
+      bar across every track, in order — `""` (no content, never cached,
+      never staged) when nothing sounds in that bar.
+    - **`askSpanNotesCompactCached(t0, t1, maxChars, key)`** hashes
+      (fnv1a32) each bar's fingerprint and compares it against
+      `askSentGet(key).bars` — a per-bar companion field living in the SAME
+      sent-hash record (`askStoreKey() + "-sentctx"`) the whole-block
+      "anno"/"legend"/`askCachedBlock` fields already use, so one
+      `askSentReset` (Clear chat, Compact, a changed session epoch) clears
+      all of them together. A bar whose hash matches joins its run of
+      likewise-unchanged neighbors into one `"bars A–B: as sent earlier"`
+      line (`"bar A: as sent earlier"` for a run of one); a new or edited
+      bar renders in full, grouped by track exactly as `askSpanNotesCompact`
+      always has, for just that run. Returns `{text, allCached}` —
+      `allCached` (every bar in the window already sent, at least one of
+      them with real content) lets `askSpanCachedBlock` fall back to the
+      EXISTING whole-window `"unchanged since your last message"` stand-in
+      instead of one collapse line per bar, so a steady, fully-cached view
+      costs exactly what step 4 already made it cost — the per-bar
+      granularity only shows up for a MIXED window (some bars new or
+      edited, some not). Staged (`askSentStageBars`, a per-bar merge —
+      `askSentStage`'s plain overwrite would lose bars an earlier call in
+      the same turn didn't touch), committed only by `askSentCommit`, from
+      `askFinish`, success-only, same as every other field (a failed send,
+      `askFail`→`askSentDrop`, leaves nothing recorded — the next turn
+      sends those bars in full again). `askSentCommit`'s merge for the
+      `bars` field is a DEEP merge (`{...cur.bars, ...p.bars}`), unlike
+      every other (scalar) field's plain overwrite, and it caps the record
+      at `ASK_SENT_BARS_CAP` (2000) by dropping the LOWEST bar numbers
+      first once exceeded — a sensible bound, not a precise one; no real
+      song's view gets near it.
+    - **`askSpanCachedBlock(key, label, t0, t1, maxChars)`** is `askContext`'s
+      own "notes in bars a–b" field now — replaces the old
+      `askCachedBlock(key, "span", …)` call. Non-bridge: unchanged.
+    - **`read_bars({from_bar, to_bar, tracks?})`** (`askReadBars`, a new
+      `ASK_TOOLS` entry, `ASK_SONG_ONLY_TOOLS` — the OPEN song only, unlike
+      `read_song`/`read_notes`, which name another one): re-reads bars from
+      LIVE `song` state (an unsaved edit shows up immediately), in the SAME
+      compact row format — with no `tracks` filter it is byte-identical to
+      calling `askSpanNotesCompact` for that span, built on the same
+      `askBarRow`. Capped to `ASK_READ_BARS_MAX` (32) bars regardless of the
+      window's own (much larger) char budget — a deliberate "show me more"
+      lookup should stay small — and says so, with where to continue from,
+      when truncated. The system prompt (`ASK_SYS_BASE2`) now lists it and
+      explains the "as sent earlier" bars it may see, and no longer claims
+      the model "cannot open other songs, files, the repo or the web" —
+      false on the bridge, where Claude Code actually can — in favor of
+      telling it to prefer the context block and these tools over reading a
+      song's file directly, since they reflect live state a file on disk
+      does not.
+    - Tests: the "P10 skip-already-sent bars"/"P10 read_bars" blocks in
+      tests/night-roll.test.mjs — a mixed window collapses its already-sent
+      run and renders only the new bars; two SEPARATE earlier sends
+      (different windows) accumulate so a later window covering both falls
+      back to the whole-block stand-in; editing one note resends only that
+      bar, its unchanged neighbors still collapsed; a failed send stages
+      nothing; Clear/Compact/epoch reset the per-bar record with the rest;
+      the 2000-bar cap drops the lowest numbers first; `read_bars` matches
+      `askSpanNotesCompact` exactly, sees a live edit immediately, is hidden
+      from `askToolsNow()` in the general chat, and truncates a too-wide
+      request. **Measured** (a 64-bar synthetic song, one note per bar,
+      scrolled in 8-bar steps to the end and back — 16 turns, `askSpanCachedBlock`
+      called directly so the number is step 6 alone, isolated from the rest
+      of `askContext`): total notes-window chars 3026 → 1990 (−34.2%). The
+      forward pass (8 windows, every bar genuinely new) is IDENTICAL either
+      way, 1615 chars — there is nothing to cache yet; the saving is all on
+      the way back: the backward pass (the same 8 windows, now already
+      sent) drops from 1411 to 375 chars (−73.4%), each one collapsing to
+      its single "unchanged since your last message" stand-in (every bar in
+      THAT window had already been sent, so `askSpanNotesCompactCached`'s
+      `allCached` shortcut applies — see above). Before step 6, revisiting
+      an earlier window after several others cost full price every time
+      (the old whole-block hash only remembers the SINGLE most recently
+      sent window); after it, the per-bar record remembers every bar ever
+      confirmed sent in the chat, however long ago.
   - **Mode-separated bridge sessions (2026-10-01, docs/ask-token-plan.md
     #2 — SAFETY).** `askSessionName()` appends `#normal` whenever
     `appMode() === "normal"`. Without this, flipping the SAME song's chat

@@ -22087,7 +22087,7 @@ const RULE_LEARNING = `THE RULE: discoveries are the user's. Default to hints, q
 const RULE_NORMAL = `Answer music questions directly — name keys, chords, cadences and form when asked; say how sure you are; the key line may be an estimate, call it one.`;
 const ASK_SYS_BASE2 = `Each user message carries a <context> block: the song, the meter, the cursor, any lasso-selected pitches, the user's own annotations (their established discoveries — build on them), and the notes of the bars in view. Bar and beat numbers are the user's ruler: "bar 9 beat 2" is the counted beat of the declared meter (in 6/8 there are six beats per bar). Refer to locations that way. The key-state line says whether the user has set a key; if it is not set, the key is undiscovered — do not name it. If the song is the user's own composition, it is editable and they may ask what they wrote — still lead with a hint. Say "not sure" when you are not sure. Never invent notes that are not in the context.
 
-What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing. You see only that block; you cannot open other songs, files, the repo or the web, and you cannot run anything — say so plainly when asked, and never claim the user must paste things. You have seven app tools, all of them ONLY when the user explicitly asks for that exact action, never on your own initiative: add_annotation writes ONE annotation in the user's words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note); edit_annotation changes an EXISTING annotation's text (and, if asked, where it sits) — target it by the "id" its context entry carries, or by its bar, beat and current text if the id has gone stale; delete_annotation removes one existing annotation the same way; all three say what they did in one short line, and if the target is ambiguous they ask which rather than guess. publish_song runs this song's Publish (the same one the footer button does) and reports what happened — it refuses when the device isn't connected (no GitHub token, no folder) or nothing here can be published, and says why. list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. The app's ✦ Fill button (separate from this chat) writes notes into a range when the user uses it; this chat writes no notes outside what add_annotation/edit_annotation do on request. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
+What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing, and never needs to. For this project, always prefer the context block and the tools below over reading a song's file yourself, even where the system you're running in can otherwise read files, the repo or the web — they reflect the user's LIVE state, unsaved edits included, which a file on disk does not; say what access you actually have only when asked, rather than assuming either way. You have eight app tools, all of them ONLY when the user explicitly asks for that exact action, never on your own initiative: add_annotation writes ONE annotation in the user's words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note); edit_annotation changes an EXISTING annotation's text (and, if asked, where it sits) — target it by the "id" its context entry carries, or by its bar, beat and current text if the id has gone stale; delete_annotation removes one existing annotation the same way; all three say what they did in one short line, and if the target is ambiguous they ask which rather than guess. publish_song runs this song's Publish (the same one the footer button does) and reports what happened — it refuses when the device isn't connected (no GitHub token, no folder) or nothing here can be published, and says why. list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. read_bars reads bars of THIS song beyond what the context block's current window shows (live state, unsaved edits included) — ask for it instead of guessing an out-of-view bar or telling the user you can't see it; some bars in the context may already read "as sent earlier" instead of their notes — you still have those from earlier in this chat, no need to ask again. The app's ✦ Fill button (separate from this chat) writes notes into a range when the user uses it; this chat writes no notes outside what add_annotation/edit_annotation do on request. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
 function askSys() { return ASK_SYS_BASE1 + "\n\n" + (appMode() === "normal" ? RULE_NORMAL : RULE_LEARNING) + "\n\n" + ASK_SYS_BASE2; }
 
 let askBusy = null;       // AbortController (or {abort}) while a reply streams
@@ -22417,6 +22417,12 @@ const ASK_TOOLS = [
     parameters: {type: "object", properties: {path: {type: "string", description: "the song path from list_songs"}, from_bar: {type: "integer", minimum: 1}, to_bar: {type: "integer", minimum: 1}}, required: ["path"]}}},
   {type: "function", function: {name: "read_notes", description: "Read another song's annotations (the user's own analysis of it). Use only when the user asks about another song.",
     parameters: {type: "object", properties: {path: {type: "string", description: "the song path from list_songs"}}, required: ["path"]}}},
+  {type: "function", function: {name: "read_bars", description: "Read bars of the OPEN song beyond what the context block's current window already shows — the same compact note rows, from LIVE app state (any unsaved edits included). Ask for this instead of guessing what an out-of-view bar holds, or claiming you cannot see it. The span is capped; a truncated reply says so and names where to continue from.",
+    parameters: {type: "object", properties: {
+      from_bar: {type: "integer", minimum: 1},
+      to_bar: {type: "integer", minimum: 1, description: "inclusive; omit for just from_bar"},
+      tracks: {type: "array", items: {type: "string"}, description: "optional: limit to these tracks, by number (\"1\") or name — omit for every track"}},
+      required: ["from_bar"]}}},
 ];
 function askAddAnnotation(a) { // the same text grammar the editor and the files use: one line, parsed by parseRollnotes
   if (!song || !songKey) throw new Error("no song open");
@@ -22600,6 +22606,45 @@ function askSongPath(p) { // accept a path, a title, or a bare name
   for (const songs of Object.values(CATALOG)) for (const [title, path] of songs) if (path === p || path === p + ".mid" || title.toLowerCase() === p.toLowerCase() || path.split("/").pop().replace(/\.midi?$/i, "") === p.toLowerCase()) return path;
   throw new Error("no song at " + p + " — use list_songs");
 }
+// askReadBars (step 6, docs/ask-token-plan.md): the OPEN song only (another
+// song's bars are read_song's job) — LIVE state (song.tracks, not a reload),
+// so an unsaved edit shows up immediately. Reuses askBarRow (the same per-
+// bar math askSpanNotesCompact/askSpanNotesCompactCached build on) so a
+// plain (no tracks filter) call is BYTE-IDENTICAL to askSpanNotesCompact for
+// that span — one format, never a second one drifting beside it. Capped to
+// ASK_READ_BARS_MAX bars: a deliberate "give me more" lookup should stay
+// small, independent of the window budget's own (much larger) cap.
+const ASK_READ_BARS_MAX = 32;
+function askReadBars(a) {
+  if (!song || !songKey) throw new Error("no song open");
+  a = a || {};
+  const bt = barTicks(), qt = beatTicks();
+  const nBars = Math.max(1, Math.ceil(songEndTick / bt));
+  let from = Math.max(1, Math.round(+a.from_bar || 1));
+  let to = Math.max(from, Math.round(+(a.to_bar !== undefined ? a.to_bar : from)));
+  to = Math.min(to, nBars);
+  let truncated = false;
+  if (to - from + 1 > ASK_READ_BARS_MAX) { to = from + ASK_READ_BARS_MAX - 1; truncated = true; }
+  const t0 = (from - 1) * bt, t1 = to * bt;
+  let text;
+  if (Array.isArray(a.tracks) && a.tracks.length) {
+    const want = new Set(a.tracks.map(x => String(x).toLowerCase()));
+    const {est, line} = askKeySpellComment(t0, t1);
+    const L = [line];
+    song.tracks.forEach((tr, ti) => {
+      if (!want.has(String(ti + 1)) && !(tr.name && want.has(tr.name.toLowerCase()))) return;
+      const drums = trackIsDrums(ti);
+      const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
+      const rows = [];
+      for (let b = from - 1; b < to; b++) { const row = askBarRow(tr, ti, b, bt, qt, est); if (row) rows.push(row); }
+      if (rows.length) { L.push(head); L.push(...rows); }
+    });
+    text = L.join("\n");
+  } else {
+    text = askSpanNotesCompact(t0, t1, 6000); // same cap read_song uses for another song's text
+  }
+  return text + (truncated ? "\n# (truncated to " + ASK_READ_BARS_MAX + " bars — read_bars again from bar " + (to + 1) + " for the rest)" : "");
+}
 async function askRunTool(name, a) {
   if (name === "add_annotation") return askAddAnnotation(a || {});
   if (name === "edit_annotation") return askEditAnnotation(a || {});
@@ -22621,6 +22666,7 @@ async function askRunTool(name, a) {
     const at = e => "[" + (e.at || [1, 1]).join(".") + (e.to ? " - " + e.to.join(".") : "") + "]";
     return (j.notes || []).map(e => at(e) + " " + (e.type ? e.type + ": " + (e.chord || e.label || e.key || e.bpm || e.loop || e.timesig || e.track || e.chop || e.lane || "") : e.text || "") + (e.note ? " — " + e.note : "")).join("\n") || "(no annotations)";
   }
+  if (name === "read_bars") return askReadBars(a || {});
   throw new Error("unknown tool " + name);
 }
 
@@ -22740,6 +22786,117 @@ function askSpanNotesCompact(t0, t1, maxChars) {
   if (cut !== null) L.push("# (cut at bar " + cut + " to fit the model's window — ask about a narrower range for the rest)");
   return L.join("\n");
 }
+// ---- step 6 (docs/ask-token-plan.md): skip already-sent bars + read_bars.
+// askBarRow factors ONE track's one-bar row out of askSpanNotesCompact above
+// (same math — octave/duration carried forward within the row, reset every
+// bar) so this section and read_bars (ASK_TOOLS) build/hash a single bar
+// without a second place that could drift from the format askSpanNotesCompact
+// already defines. It assumes a bar-aligned window (b*bt .. (b+1)*bt) —
+// askSpan's own invariant (t0/t1 are always floor/ceil'd to a bar) — so,
+// unlike askSpanNotesCompact's inner loop, it does not need to clamp to a
+// t0/t1 that could land mid-bar.
+function askBarRow(tr, ti, b, bt, qt, est) {
+  const fmt = x => String(Math.round(x * 100) / 100);
+  const drums = trackIsDrums(ti);
+  const ns = tr.notes.filter(n => !n.gone && n.t >= b * bt && n.t < (b + 1) * bt).sort((a, c) => a.t - c.t || a.p - c.p);
+  if (!ns.length) return null;
+  let lastOct = null, lastDur = null; // reset every bar — never carries across bars, same rule as askSpanNotesCompact
+  const toks = ns.map(n => {
+    const beat = fmt((n.t - b * bt) / qt + 1), dur = fmt(n.d / qt);
+    if (drums) { const tok = beat + "#" + n.p + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
+    const oct = Math.floor(n.p / 12) - 1, cls = spellPc(n.p % 12, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null));
+    let tok = beat + cls;
+    if (oct !== lastOct) tok += oct;
+    if (dur !== lastDur) tok += "/" + dur;
+    lastOct = oct; lastDur = dur;
+    return tok;
+  });
+  return (b + 1) + "|" + toks.join(" ");
+}
+// askBarFingerprint: the "compact rows" for ONE bar, across every track in
+// order — what the per-bar sent-hash record below hashes. "" (never cached,
+// never staged — nothing to collapse) when nothing sounds in that bar at all.
+function askBarFingerprint(b, bt, qt, est) {
+  const parts = [];
+  song.tracks.forEach((tr, ti) => { const row = askBarRow(tr, ti, b, bt, qt, est); if (row) parts.push("T" + (ti + 1) + row); });
+  return parts.join("\n");
+}
+// askSpanNotesCompactCached: askSpanNotesCompact's bridge-only sibling for
+// askContext's notes window. A bar whose fingerprint hash matches what THIS
+// chat already confirmed sending (askSentGet(key).bars, keyed by 1-based bar
+// number) collapses, with its run of likewise-unchanged neighbors, into one
+// "bars A–B: as sent earlier" line (singular "bar A: as sent earlier" for a
+// run of one) instead of repeating content the resumed Claude Code session
+// already holds verbatim; a new or edited bar still renders in full, grouped
+// by track exactly as askSpanNotesCompact does, for just that run of bars.
+// Returns {text, allCached}: allCached lets askSpanCachedBlock (below) fall
+// back to the existing whole-window "unchanged since your last message"
+// stand-in when EVERY bar in the window was already sent — a steady view
+// costs exactly what it did before this step, not one "as sent earlier" line
+// per bar. Stages (never commits — askSentCommit, from askFinish, success-
+// only, same as every other sent-hash field) the hashes of the bars this
+// call is about to show in full; a cached bar's hash is already on record
+// and needs no restaging.
+function askSpanNotesCompactCached(t0, t1, maxChars, key) {
+  const bt = barTicks(), qt = beatTicks();
+  const {est, line} = askKeySpellComment(t0, t1);
+  const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
+  const prevBars = askSentGet(key).bars || {};
+  const bars = [];
+  for (let b = b0; b < b1; b++) {
+    const fp = askBarFingerprint(b, bt, qt, est);
+    const hash = fp ? fnv1a32(fp) : null; // null: no content in this bar at all — never "cached", nothing to stage
+    bars.push({bar: b + 1, hash, cached: hash !== null && prevBars[b + 1] === hash});
+  }
+  const stage = {};
+  for (const x of bars) if (x.hash !== null && !x.cached) stage[x.bar] = x.hash;
+  if (Object.keys(stage).length) askSentStageBars(key, stage);
+  const anyContent = bars.some(x => x.hash !== null);
+  const allCached = anyContent && bars.every(x => x.hash === null || x.cached);
+  const L = [line];
+  let size = L.join("\n").length, cut = null, i = 0;
+  while (i < bars.length && cut === null) {
+    const cachedRun = bars[i].cached;
+    let j = i; while (j < bars.length && bars[j].cached === cachedRun) j++;
+    const run = bars.slice(i, j);
+    if (cachedRun) {
+      if (run.some(x => x.hash !== null)) { // an all-empty run has nothing to announce either way
+        const label = run.length > 1 ? "bars " + run[0].bar + "–" + run[run.length - 1].bar + ": as sent earlier" : "bar " + run[0].bar + ": as sent earlier";
+        if (maxChars && size + label.length + 1 > maxChars) { cut = run[0].bar; break; }
+        L.push(label); size += label.length + 1;
+      }
+    } else {
+      const subB0 = run[0].bar - 1, subB1 = run[run.length - 1].bar;
+      song.tracks.forEach((tr, ti) => {
+        const drums = trackIsDrums(ti);
+        const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
+        const rows = [];
+        for (let b = subB0; b < subB1; b++) {
+          if (cut !== null && b + 1 > cut) break;
+          const row = askBarRow(tr, ti, b, bt, qt, est);
+          if (!row) continue;
+          if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
+          rows.push(row); size += row.length + 1;
+        }
+        if (rows.length) { L.push(head); L.push(...rows); size += head.length; }
+      });
+    }
+    i = j;
+  }
+  if (cut !== null) L.push("# (cut at bar " + cut + " to fit the model's window — ask about a narrower range for the rest)");
+  return {text: L.join("\n"), allCached};
+}
+// askSpanCachedBlock: askContext's own "notes in bars a–b" field. Non-bridge
+// (no session to lean on): unchanged, full askSpanNotes every turn, exactly
+// as before this step. Bridge: askSpanNotesCompactCached's per-bar collapsing,
+// falling back to the plain "unchanged since your last message" stand-in
+// (askCachedBlock's own wording, kept identical on purpose) when the whole
+// window was already sent.
+function askSpanCachedBlock(key, label, t0, t1, maxChars) {
+  if (!askCaps.bridge) return label + ":\n" + askSpanNotes(t0, t1, maxChars);
+  const r = askSpanNotesCompactCached(t0, t1, maxChars, key);
+  return r.allCached ? label + ": unchanged since your last message" : label + ":\n" + r.text;
+}
 // askLegendText (step 5): the compact format's explanation, sent ONCE per
 // bridge session (tied to the same sent-hash record askCachedBlock uses —
 // askContext stages/commits it as the "legend" field, so it reappears after
@@ -22748,7 +22905,8 @@ function askSpanNotesCompact(t0, t1, maxChars) {
 function askLegendText() {
   return "# Compact context format (this explanation is sent once per session — later turns omit it):\n" +
     "# notes: \"T<n> name\" starts a track (\"[drums]\"/\"[muted]\" tag if either applies); each row is \"<bar>|<beat><Pitch><oct>/<dur> …\" — beat is the counted beat of the declared meter, 1 = the downbeat; duration is GATE TIME (how long the note was held), NOT a notated value — rhythm comes from onset spacing, not duration. Octave and duration repeat from the previous note IN THAT ROW when omitted (the first note of a row always states both). A drum track gives the raw note number after \"#\" instead of a pitch letter (e.g. \"2.5#38\").\n" +
-    "# annotations: \"<id> [bar.beat-bar.beat] kind: value — comment\"; id is this turn's handle for edit_annotation/delete_annotation; structural track/lane/audio directives (song-structure, not analysis) are left out here — they're unchanged in the app.";
+    "# annotations: \"<id> [bar.beat-bar.beat] kind: value — comment\"; id is this turn's handle for edit_annotation/delete_annotation; structural track/lane/audio directives (song-structure, not analysis) are left out here — they're unchanged in the app.\n" +
+    "# a bar already sent unchanged in an earlier turn of THIS chat may be shown as \"bar N: as sent earlier\" or \"bars A–B: as sent earlier\" instead of its rows (you still have it from before); use read_bars(from_bar, to_bar) for any bar you need restated or haven't seen yet, rather than guessing or asking the user to repeat it.";
 }
 function askAppState() { // what is running: build, install, audio engine, the last ⚠ lines — a bug report should need no relay (Josh, 2026-09-27: "you should have access to the current running build and any errors")
   const installed = (typeof navigator !== "undefined" && navigator.standalone) || (typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches);
@@ -22845,11 +23003,24 @@ function askSentGet(key) {
 // it cannot know yet whether this send will succeed.
 let askSentPending = {};
 function askSentStage(key, field, hash) { (askSentPending[key] || (askSentPending[key] = {}))[field] = hash; }
+// askSentStageBars (step 6): the "bars" field is a MAP (bar number → hash),
+// not a scalar like every other field here — askSentStage's plain assignment
+// would let a later call in the same turn clobber an earlier one's bars
+// instead of accumulating them, so it gets its own merge.
+function askSentStageBars(key, barsObj) { const pend = askSentPending[key] || (askSentPending[key] = {}); pend.bars = Object.assign(pend.bars || {}, barsObj); }
+const ASK_SENT_BARS_CAP = 2000; // a sensible bound on one chat's per-bar record, not a precise one — no real song's view gets near it; the LOWEST bar numbers drop first when it's exceeded
 function askSentCommit(key) { // askFinish only: the reply that answers THIS context actually landed
   const p = askSentPending[key]; delete askSentPending[key];
   if (!p) return;
   const cur = askSentGet(key);
-  try { localStorage.setItem(askSentKey(key), JSON.stringify({...cur, ...p})); } catch (err) { /* private mode */ }
+  const merged = {...cur, ...p};
+  if (p.bars) { // deep-merge, never overwrite: other bars this turn didn't touch must survive
+    const bars = {...(cur.bars || {}), ...p.bars};
+    const keys = Object.keys(bars);
+    if (keys.length > ASK_SENT_BARS_CAP) for (const k of keys.map(Number).sort((a, b) => a - b).slice(0, keys.length - ASK_SENT_BARS_CAP)) delete bars[k];
+    merged.bars = bars;
+  }
+  try { localStorage.setItem(askSentKey(key), JSON.stringify(merged)); } catch (err) { /* private mode */ }
 }
 function askSentDrop(key) { delete askSentPending[key]; } // askFail: never landed — the full text goes again next time
 function askSentReset(key) { // Clear chat / Compact: the bridge's memory of this chat just changed under it
@@ -22936,8 +23107,7 @@ function askContext(sp, budget) { // the ONE block per request; never stored
   const annoCount = askCaps.bridge ? dedupedNotesWithIndex(rollnotes).filter(({n}) => !askAnnotationStructural(n)).length : dedupedNotesWithIndex(rollnotes).length;
   L.push(askCachedBlock(cacheKey, "anno", "annotations", "the user's annotations (.rollnotes) — each entry's \"id\" is this turn's handle for edit_annotation/delete_annotation", annoFull, annoCount));
   const spanLabel = "notes in bars " + sp.from + "–" + sp.to;
-  const spanText = askCaps.bridge ? askSpanNotesCompact(sp.t0, sp.t1, budget.span * ASK_CPT) : askSpanNotes(sp.t0, sp.t1, budget.span * ASK_CPT);
-  L.push(askCachedBlock(cacheKey, "span", spanLabel, spanLabel, spanText));
+  L.push(askSpanCachedBlock(cacheKey, spanLabel, sp.t0, sp.t1, budget.span * ASK_CPT)); // step 6: per-bar collapsing on the bridge (askSpanNotesCompactCached), full askSpanNotes otherwise — see both above
   const ns = askNewSinceLines(askStoreKey());
   if (ns) L.push(ns);
   return L.join("\n");
@@ -23224,7 +23394,7 @@ const askstatus = document.getElementById("askstatus");
 // turn's context carries, since the leak lives in the session, not the
 // turn. A different mode is a different session, period.
 function askSessionName() { return (askGeneral ? "general" : String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160)) + (appMode() === "normal" ? "#normal" : ""); }
-const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song"]; // no open song in the general chat
+const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars"]; // no open song in the general chat (read_bars is about THE open song, unlike read_song/read_notes, which name another one)
 function askToolsNow() { return askGeneral ? ASK_TOOLS.filter(t => !ASK_SONG_ONLY_TOOLS.includes(t.function.name)) : ASK_TOOLS; }
 function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
 let askInboxNo = ""; // the url that answered 404 (no inbox there)
