@@ -7529,51 +7529,109 @@ test("fitReadline (chrome density pass, 2026-10-01): #readline gets .ownrow unde
   assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), false, "widened back out: .ownrow removed");
 });
 
-test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them') → chrome density follow-up (2026-10-01 pm, Josh's ruling): ⋯ More folded in — six groups now, View / Panels / Highlight-Readout / Display / Background / Mode, and VIEW is one 'View type ▸' row instead of three permanent ones", () => {
+test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them') → sub-menu follow-up (2026-10-02, Josh: 'View ▾ is too tall — make EVERY section an expanding sub-menu'): all six groups (View / Panels / Tools / Display / Background / Mode) are now header+content accordion rows, not .cfgsec captions over a flat list", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const sheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf("<!-- KEY SIGNATURE"));
   assert.match(sheet, /id="vwRoll"/, "Roll is a real View ▾ item still");
-  // group order: VIEW, PANELS, HIGHLIGHT / READOUT, DISPLAY, BACKGROUND,
-  // MODE — each item falls after its section's .cfgsec label and before the
-  // next one
+  assert.doesNotMatch(sheet, /class="cfgsec"/, "the old .cfgsec captions are gone — each group's own header row replaces them");
+  // group order: the six header buttons themselves, in order, replace the
+  // old .cfgsec anchors — every item still falls after its own group's
+  // header and before the next one
   const at = s => { const i = sheet.indexOf(s); assert.ok(i >= 0, s + " not found in #viewsheet"); return i; };
-  const secView = at('class="cfgsec">VIEW'), secPanels = at('class="cfgsec">PANELS'),
-        secHighlight = at('class="cfgsec">HIGHLIGHT / READOUT'),
-        secDisplay = at('class="cfgsec">DISPLAY'), secBackground = at('class="cfgsec">BACKGROUND'),
-        secMode = at('class="cfgsec">MODE');
-  assert.ok(secView < secPanels && secPanels < secHighlight && secHighlight < secDisplay &&
-            secDisplay < secBackground && secBackground < secMode,
-            "section order: View, Panels, Highlight / Readout, Display, Background, Mode");
-  const vwViewType = at('id="vwViewType"'), vwRoll = at('id="vwRoll"'), vwTracksView = at('id="vwTracksView"'), vwScore = at('id="vwScore"');
+  const vwViewType = at('id="vwViewType"'), vwPanels = at('id="vwPanels"'), vwTools = at('id="vwTools"'),
+        vwDisplay = at('id="vwDisplay"'), vwBackground = at('id="vwBackground"'), vwMode = at('id="vwMode"');
+  assert.ok(vwViewType < vwPanels && vwPanels < vwTools && vwTools < vwDisplay &&
+            vwDisplay < vwBackground && vwBackground < vwMode,
+            "group header order: View type, Panels, Tools, Display, Background, Mode");
+  const vwRoll = at('id="vwRoll"'), vwTracksView = at('id="vwTracksView"'), vwScore = at('id="vwScore"');
   const vwInst = at('id="vwInst"'), vwSub = at('id="vwSub"'), vwMixer = at('id="vwMixer"'), vwTracks = at('id="vwTracks"');
   const octbtn = at('id="octbtn"'), findsel = at('id="findsel"'), cofbtn = at('id="cofbtn"');
   const vwEdit = at('id="vwEdit"'), vwFooter = at('id="vwFooter"'), vwGrid = at('id="vwGrid"');
   const vwJobs = at('id="vwJobs"'), vwMessages = at('id="vwMessages"');
   const vwAnalyze = at('id="vwAnalyze"'), vwCompare = at('id="vwCompare"'), vwLearning = at('id="vwLearning"'), vwListener = at('id="vwListener"');
-  assert.ok(secView < vwViewType && vwViewType < secPanels, "'View type ▸' sits in the View group");
-  for (const i of [vwRoll, vwTracksView, vwScore]) assert.ok(vwViewType < i && i < secPanels, "Roll/Tracks view/Score view are nested under 'View type ▸', still in the View group");
-  for (const i of [vwInst, vwSub, vwMixer, vwTracks]) assert.ok(secPanels < i && i < secHighlight, "Panel items sit in the Panels group");
-  for (const i of [octbtn, findsel, cofbtn]) assert.ok(secHighlight < i && i < secDisplay, "8va/find:/◯5 (moved from ⋯ More) sit in the Highlight / Readout group");
-  for (const i of [vwEdit, vwFooter, vwGrid]) assert.ok(secDisplay < i && i < secBackground, "Display items sit in the Display group");
-  for (const i of [vwJobs, vwMessages]) assert.ok(secBackground < i && i < secMode, "⏳ Jobs/⚠ Messages (moved from ⋯ More) sit in the Background group");
-  for (const i of [vwAnalyze, vwCompare, vwLearning, vwListener]) assert.ok(i > secMode, "Mode items sit in the Mode group");
+  for (const i of [vwRoll, vwTracksView, vwScore]) assert.ok(vwViewType < i && i < vwPanels, "Roll/Tracks view/Score view are nested under 'View type ▸', still in the View group");
+  for (const i of [vwInst, vwSub, vwMixer, vwTracks]) assert.ok(vwPanels < i && i < vwTools, "Panel items sit in the Panels group");
+  for (const i of [octbtn, findsel, cofbtn]) assert.ok(vwTools < i && i < vwDisplay, "8va/find:/◯5 sit in the Tools group (renamed from Highlight / Readout)");
+  for (const i of [vwEdit, vwFooter, vwGrid]) assert.ok(vwDisplay < i && i < vwBackground, "Display items sit in the Display group");
+  for (const i of [vwJobs, vwMessages]) assert.ok(vwBackground < i && i < vwMode, "⏳ Jobs/⚠ Messages sit in the Background group");
+  for (const i of [vwAnalyze, vwCompare, vwLearning, vwListener]) assert.ok(i > vwMode, "Mode items sit in the Mode group");
   assert.ok(vwListener > vwAnalyze && vwListener > vwCompare && vwListener > vwLearning, "Listener mode is last, same as Josh's example ordering");
 
-  // "View type ▸" starts collapsed, names the current view, and expands on tap
   const a = createApp();
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
     songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; viewMode = "tracks"; applyViewMode();
     renderViewMenu();
   `);
-  assert.equal(a.run(`document.getElementById("vwViewTypeRow").style.display`), "none", "collapsed by default");
+  const rowIds = ["vwViewTypeRow", "vwPanelsRow", "vwToolsRow", "vwDisplayRow", "vwBackgroundRow", "vwModeRow"];
+  for (const id of rowIds) assert.equal(a.run(`document.getElementById("${id}").style.display`), "none", id + " starts closed");
   assert.match(a.run(`document.getElementById("vwViewType").textContent`), /^▸  View type: Tracks view$/, "names the CURRENT view");
+
+  // one tap expands a group
   a.run(`document.getElementById("vwViewType").click();`);
   assert.equal(a.run(`document.getElementById("vwViewTypeRow").style.display`), "", "one tap expands it");
   assert.match(a.run(`document.getElementById("vwViewType").textContent`), /^▾  View type: Tracks view$/, "▸ becomes ▾ while expanded");
 
+  // ACCORDION: opening a different group closes the one that was open
+  a.run(`document.getElementById("vwPanels").click();`);
+  assert.equal(a.run(`document.getElementById("vwViewTypeRow").style.display`), "none", "opening Panels closes View type");
+  assert.match(a.run(`document.getElementById("vwViewType").textContent`), /^▸  /, "View type's own glyph closes back to ▸ too");
+  assert.equal(a.run(`document.getElementById("vwPanelsRow").style.display`), "", "Panels is now open");
+  assert.match(a.run(`document.getElementById("vwPanels").textContent`), /^▾  Panels$/);
+
+  // tapping the OPEN group's own header again closes it — back to none open
+  a.run(`document.getElementById("vwPanels").click();`);
+  assert.equal(a.run(`document.getElementById("vwPanelsRow").style.display`), "none", "tapping the open header closes it");
+  assert.match(a.run(`document.getElementById("vwPanels").textContent`), /^▸  Panels$/);
+
+  // plain group headers carry no state hint
+  assert.match(a.run(`document.getElementById("vwTools").textContent`), /^▸  Tools$/);
+  assert.match(a.run(`document.getElementById("vwDisplay").textContent`), /^▸  Display$/);
+  assert.match(a.run(`document.getElementById("vwBackground").textContent`), /^▸  Background$/, "no '· ⏳N' hint while nothing is running");
+  assert.match(a.run(`document.getElementById("vwMode").textContent`), /^▸  Mode: Learning$/, "Mode names the current mode");
+
+  // View ▾ itself always reopens with every group closed, even one left open at close time
+  a.run(`
+    document.getElementById("vwDisplay").click();
+    document.getElementById("viewsheetbtn").click(); // open the menu
+  `);
+  assert.equal(a.run(`document.getElementById("viewsheet").classList.contains("on")`), true, "View ▾ is open");
+  for (const id of rowIds) assert.equal(a.run(`document.getElementById("${id}").style.display`), "none", id + " closed on (re)open even though Display was left open");
+  a.run(`document.getElementById("viewsheetbtn").click();`); // close it again, so the next open starts from scratch too
+  a.run(`
+    document.getElementById("vwTools").click();
+    document.getElementById("viewsheetbtn").click();
+  `);
+  for (const id of rowIds) assert.equal(a.run(`document.getElementById("${id}").style.display`), "none", id + " closed on every (re)open, not just the first");
+
+  // each item lives INSIDE its own group's container div, in the markup
+  // itself — not just before the next header (the vm harness's DOM stub
+  // builds no real parent/child tree off static HTML, only off JS-side
+  // appendChild/append, so this checks the one tree that does exist: the
+  // text). divContent extracts a <div id="…"> tag's own balanced contents.
+  const divContent = (id) => {
+    const openRe = new RegExp('<div[^>]*\\bid="' + id + '"[^>]*>');
+    const m = openRe.exec(sheet);
+    assert.ok(m, "no <div id=\"" + id + "\"> in #viewsheet");
+    const tagRe = /<div\b[^>]*>|<\/div>/g;
+    tagRe.lastIndex = m.index + m[0].length;
+    let depth = 1, tag;
+    while ((tag = tagRe.exec(sheet))) {
+      depth += tag[0] === "</div>" ? -1 : 1;
+      if (depth === 0) return sheet.slice(m.index + m[0].length, tag.index);
+    }
+    throw new Error("unterminated div " + id);
+  };
+  const livesIn = (rowId, itemId) => divContent(rowId).includes('id="' + itemId + '"');
+  for (const id of ["vwRoll", "vwTracksView", "vwScore"]) assert.ok(livesIn("vwViewTypeRow", id), id + " lives inside #vwViewTypeRow");
+  for (const id of ["vwInst", "vwSub", "vwMixer", "vwTracks"]) assert.ok(livesIn("vwPanelsRow", id), id + " lives inside #vwPanelsRow");
+  for (const id of ["octbtn", "findsel", "cofbtn"]) assert.ok(livesIn("vwToolsRow", id), id + " lives inside #vwToolsRow");
+  for (const id of ["vwEdit", "vwFooter", "vwAdded", "vwGrid", "vwLevelsRow"]) assert.ok(livesIn("vwDisplayRow", id), id + " lives inside #vwDisplayRow");
+  for (const id of ["vwJobs", "vwMessages"]) assert.ok(livesIn("vwBackgroundRow", id), id + " lives inside #vwBackgroundRow");
+  for (const id of ["vwAnalyze", "vwCompare", "vwLearning", "vwListener"]) assert.ok(livesIn("vwModeRow", id), id + " lives inside #vwModeRow");
+
   // selecting Roll from the (now expanded) row actually switches the view, same as #viewbtn
-  a.run(`document.getElementById("vwRoll").click();`);
+  a.run(`document.getElementById("vwViewType").click(); document.getElementById("vwRoll").click();`);
   assert.equal(a.run(`viewMode`), "roll", "View ▾ → View type ▸ → Roll switches to the roll");
   assert.match(a.run(`document.getElementById("vwRoll").textContent`), /^✓/, "Roll shows the checkmark once selected");
   assert.match(a.run(`document.getElementById("vwViewType").textContent`), /View type: Roll$/, "the closed label would now read Roll too");
