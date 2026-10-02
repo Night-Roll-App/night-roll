@@ -4808,3 +4808,48 @@ key; sharp spelling with E# looks like the key is being read as D#m.
 Check the key→spelling function for Eb minor (and other flat minors typed
 with a flat tonic): the roll labels and the Ask note dump should spell
 Eb minor with flats. Reported to Josh as "looks wrong, queued to check".
+
+## 2026-10-01 — Token-efficient Ask: step 5 (compact encoding) + the epoch's app side — DONE 2026-10-01
+
+Continuing docs/ask-token-plan.md (full plan — "Advisor plan" entry above).
+Two pieces, bridge-only (`askCaps.bridge`; a local/LM Studio provider is
+unaffected):
+
+**Step 5, compact encoding.** `askSpanNotesCompact`/`askAnnotationsTextCompact`
+(index.html) replace `askSpanNotes`/`askAnnotationsText` in `askContext` when
+talking to the bridge: notes as `"T<n> name"` + `"<bar>|<beat><Pitch><oct>/<dur>
+…"` rows (octave/duration shown only when they change from the previous note
+IN THE ROW; drums keep the raw note number, `"#"`-prefixed); annotations as
+`"<id> [bar.beat-bar.beat] kind: value — comment"` (the `.rollnotes` text
+grammar's own span, same ids edit/delete_annotation already use), dropping
+`track:`/`lane:`/`audio:` structural directives (song structure, not
+analysis — the app's own editor is still how those change). A legend
+(`askLegendText`) explaining both formats is sent once per session, tied to
+the same sent-hash record the bridge-session caching (steps 2/4, above) uses,
+so it reappears after Clear chat/Compact/a changed session epoch.
+Learning-mode spelling rules unchanged (`askKeySpellComment`, factored out
+of `askSpanNotes` so both paths share the exact same `estimateKey()` gate).
+
+**Epoch, app side.** The bridge's `x-nr-session-epoch` header (already
+shipped, step 7) is now read in `aiRemote().chat` the instant the fetch
+response lands; a changed epoch (a compact — manual or the bridge's own
+automatic one — landed, or the session restarted) calls `askSentReset`, the
+same reset Clear chat/a manual Compact already trigger, so the next turn
+resends in full rather than trusting a stand-in the resumed session may no
+longer back verbatim.
+
+Measured (real 7-track, 8-bar window, n64/banjo-kazooie/boggy-s-race.mid,
+plus a 9-entry annotation sample): notes window 4608 → 2390 chars (−48%);
+annotations 589 → 171 chars (−71%); legend costs 870 chars once. First
+message in a session: 5197 → 3431 chars (−34%); every later message: 5197
+→ 2561 chars (−51%) — on top of, not instead of, the bridge-session
+caching's stand-ins. Tests: the "P9 compact encoding" + "epoch:" blocks in
+tests/night-roll.test.mjs (a decoder pair proves the compact note rows
+decode to exactly the full format's own tuples; drums; annotation ids/
+dropped directives; the askCaps.bridge switch; the legend's
+once-per-session lifecycle; the Learning spy; the epoch reset/no-reset
+cases). `npm test`: night-roll.test.mjs 381/381, whole suite exit 0.
+Docs: NIGHT-ROLL.md ("Compact encoding, step 5" + the epoch's "app side"
+paragraph under step 7), docs/ask-token-plan.md (steps 4's epoch half + 5
+marked done). Step 6 (skip-already-sent bars, a read_bars tool, annotation
+diffs) is still open.

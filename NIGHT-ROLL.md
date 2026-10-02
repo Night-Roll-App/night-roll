@@ -3778,9 +3778,26 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     reflect a compact this very turn triggered or waited on; a streamed
     reply can only carry it as of stream START (HTTP headers can't change
     mid-stream), so it reflects an earlier turn's compact — either way the
-    app sees a same-turn auto-compact by its NEXT turn. **The app side of
-    reading this header (resending its context in full on a changed epoch)
-    is not built yet — docs/ask-token-plan.md step 7.**
+    app sees a same-turn auto-compact by its NEXT turn. **The app side
+    (2026-10-01, docs/ask-token-plan.md step 7/#4).** `aiRemote().chat`
+    reads `x-nr-session-epoch` off the fetch `Response` the instant it
+    comes back (headers land before the body, so this works for a streamed
+    reply too) and calls `askEpochNote(askStoreKey(), epoch)`: kept per
+    chat in localStorage right beside the sent-hash record
+    (`askEpochKey`/`askEpochGet`/`askEpochSet`, `askStoreKey() + "-epoch"`)
+    — unchanged from what this chat last saw, nothing happens; changed (a
+    manual or automatic compact landed, or the session restarted), it
+    calls `askSentReset`, the SAME reset Clear chat/a manual Compact
+    already trigger, so the very next turn resends annotations/the visible
+    notes window in full instead of a stand-in the resumed session no
+    longer backs verbatim. The first epoch ever seen for a chat has
+    nothing to compare against, so it just gets recorded. Harmless (and
+    absent — `r.headers.get` returns `null`) against a non-bridge
+    provider. Test: the "epoch:" test in tests/night-roll.test.mjs (a
+    fake streamed SSE response built as vm source, since the harness's
+    sandbox is a separate `vm` realm from the test file — see its
+    comment) — a changed epoch resets the cached hashes, an unchanged one
+    doesn't.
     Tests: tests/bridge.test.mjs's fourth test, a dedicated fake-claude
     written as a Node script rather than `/bin/sh` (so it can log
     `Date.now()` millisecond timestamps, proving a turn genuinely WAITED for
@@ -3907,6 +3924,73 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     (−76%, ≈350 fewer tokens at 4 chars/token) — on top of the fixed
     Claude Code base (≈45–50k tokens, docs/ask-token-plan.md), so the win
     compounds with turn count rather than being a one-off.
+  - **Compact encoding, step 5 (2026-10-01, docs/ask-token-plan.md).** The
+    BRIDGE only (`askCaps.bridge` — same gate as the caching above; a
+    local/LM Studio provider keeps `askSpanNotes`/`askAnnotationsText`,
+    full, unchanged) gets two denser encodings instead of the full
+    text/JSON `askContext` builds for everyone else:
+    - **Notes: `askSpanNotesCompact(t0, t1, maxChars)`.** Same facts as
+      `askSpanNotes` (same window, same cut-to-fit, same speller), one row
+      per bar, no word "bar": `"T<n> name [drums]? [muted]?"` starts a
+      track, then `"<bar>|<beat><Pitch><oct>/<dur> <beat><Pitch>…"` — a
+      note's octave and duration are written only when they differ from
+      the PREVIOUS NOTE IN THAT ROW (reset every row/bar; the first note
+      of a row always carries both, so a row decodes standalone). A drum
+      track gives the raw note number `"#"`-prefixed (`"2.5#38"`) instead
+      of a pitch letter — plain digits would be indistinguishable from
+      another beat. The key-spelling comment line (declared key / Normal
+      estimate / sharps-no-key-stated) is factored into
+      `askKeySpellComment(t0, t1)`, shared with `askSpanNotes`, so
+      Learning's gate on `estimateKey()` (appMode() === "normal" only)
+      can never drift between the two call sites — it stays on EVERY
+      turn (content, not boilerplate); the two purely-notational "# Format
+      .../# duration is GATE TIME..." lines move to the one-time legend
+      instead (below).
+    - **Annotations: `askAnnotationsTextCompact()`.** The SAME
+      `dedupedNotesWithIndex` ids `askAnnotationsText`'s JSON already
+      carries (`edit_annotation`/`delete_annotation`'s "id"), written in
+      the `.rollnotes` TEXT grammar's own span instead of JSON: `"<id>
+      [bar.beat-bar.beat] kind: value — comment"` (no spaces inside the
+      brackets — compactness). `kind`/`value` reuse `askNoteKind`/
+      `askNoteValue` (the same split `askEditAnnotation` already computes
+      for an existing note — one place decides what a note "is", never
+      duplicated). Structural `track:`/`lane:`/`audio:` directives
+      (`askAnnotationStructural` — song-structure, already out of scope
+      for edit/delete_annotation) are left out entirely: the model never
+      needs them to discuss the music, and they're UI state, not
+      analysis; `askContext`'s annotation count line reflects what's
+      actually shown (the non-structural count) in this mode, the full
+      `dedupedNotesWithIndex` count otherwise.
+    - **Legend, once per session (`askLegendText()`).** Explains both
+      formats above. Tied to the SAME sent-hash record `askCachedBlock`
+      uses (`askSentGet(cacheKey).legend`): a fresh chat, or one right
+      after Clear chat/Compact/a changed session epoch (`askSentReset` —
+      see both above), has no `legend` field, so `askContext` pushes it
+      and stages `legend: true` (committed only by `askSentCommit`, from
+      `askFinish`, same success-only rule as the annotations/notes
+      hashes); any later turn in the same session omits it.
+    - Tests: the "P9 compact encoding" block in tests/night-roll.test.mjs
+      — a decoder pair (`decodeFullNotes`/`decodeCompactNotes`, local to
+      the test file) parses both formats down to the same flat `{track,
+      bar, beat, pitch, dur}` tuples and asserts they're IDENTICAL for a
+      fixture exercising all four octave/duration carry-forward cases
+      (first note: both shown; same octave: omitted; changed octave:
+      shown; everything unchanged: both omitted); a drums test confirms
+      the `"#"`-prefixed raw number and duration carry-forward; an
+      annotations test confirms ids/span/kind/value/comment and that
+      `track:`/`lane:` directives are dropped; an `askContext` test
+      confirms the switch is `askCaps.bridge`-only; a legend test confirms
+      present/absent/present-again across a reset; a spy test confirms
+      Learning never reaches `estimateKey()` from the compact path either,
+      and that Normal's estimate wording matches `askSpanNotes`'s exactly.
+      **Measured** (a real 7-track, 8-bar window, n64/banjo-kazooie/
+      boggy-s-race.mid, plus a representative 9-entry annotation set):
+      notes window 4608 → 2390 chars (−48%); annotations 589 → 171 chars
+      (−71%); the one-time legend costs 870 chars. First message in a
+      session: 5197 → 3431 chars including the legend (−34%); every later
+      message: 5197 → 2561 chars (−51%) — and this is BEFORE the
+      bridge-session caching above collapses unchanged sections to a
+      one-line stand-in on top of it.
   - **Mode-separated bridge sessions (2026-10-01, docs/ask-token-plan.md
     #2 — SAFETY).** `askSessionName()` appends `#normal` whenever
     `appMode() === "normal"`. Without this, flipping the SAME song's chat

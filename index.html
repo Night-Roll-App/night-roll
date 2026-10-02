@@ -4162,6 +4162,25 @@ function askAnnotationsText() {
   const rows = dedupedNotesWithIndex(rollnotes).map(({n, i}) => "  " + JSON.stringify(Object.assign({id: i}, noteToJSON(n))));
   return '{ "version": 1, "song": ' + JSON.stringify(baseName()) + ', "notes": [\n' + rows.join(",\n") + "\n] }\n";
 }
+// askAnnotationsTextCompact (step 5, docs/ask-token-plan.md): the SAME ids
+// (dedupedNotesWithIndex's index into rollnotes — edit_annotation/
+// delete_annotation's "id" either way), the .rollnotes TEXT grammar's own
+// bar.beat span instead of JSON, and the kind/value split edit_annotation
+// already computes (askNoteKind/askNoteValue — one place decides what an
+// existing note "is", never duplicated). Structural track:/lane:/audio:
+// directives (askAnnotationStructural — song-structure, not analysis, and
+// out of scope for edit/delete_annotation already) are left out: the model
+// never needs them to discuss the music, and the app's own editor is where
+// they change. Sent to the BRIDGE only (askContext); local providers keep
+// askAnnotationsText, full JSON, every turn.
+function askAnnotationsTextCompact() {
+  const rows = dedupedNotesWithIndex(rollnotes).filter(({n}) => !askAnnotationStructural(n)).map(({n, i}) => {
+    const kind = askNoteKind(n), value = askNoteValue(n, kind);
+    const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]";
+    return i + " " + at + " " + kind + ": " + value + (n.cnote ? " — " + n.cnote : "");
+  });
+  return rows.length ? rows.join("\n") : "(no annotations)";
+}
 // A new key at a bar REPLACES the key there — never two keys at one point
 // (Josh's rule, 2026-08-25, after setting "F mixolydian" over airship's
 // committed "key F" produced both). Two defects were in the old predicate:
@@ -22179,6 +22198,9 @@ function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots
           try { const j = await r.json(); if (j.error) msg += " — " + (j.error.message || j.error); } catch (err) { /* no body */ }
           throw new Error(msg);
         }
+        // the bridge's session-epoch header (docs/ask-token-plan.md #4/#7):
+        // present only on the bridge, harmless (and absent) on LM Studio/etc
+        if (r.headers && r.headers.get) askEpochNote(askStoreKey(), r.headers.get("x-nr-session-epoch"));
         if (onOpen) onOpen(); // headers back = the server has the question (a drop after this is a dropped connection, not a lost question)
         const reader = r.body.getReader(), dec = new TextDecoder(), st = {buf: "", think: 0};
         let out = "", shown = 0, shownNote = "";
@@ -22624,21 +22646,33 @@ function askSpan() {
 }
 function askSpanLabel(sp) { return "bars " + sp.from + "–" + sp.to + " (" + sp.src + ")"; }
 function askKeyDeclared(t0, t1) { return sfDeclaredAtRaw(t0) !== null || keyRegions.some(r => r.start >= t0 && r.start < t1); }
-function askSpanNotes(t0, t1, maxChars) { // notesTxtFor's shape, three deltas: declared meter, display beats, one speller
-  const bt = barTicks(), qt = beatTicks(), ts = effTs();
-  const fmt = x => String(Math.round(x * 100) / 100);
+// askKeySpellComment: the one comment line stating whether/how pitches below
+// are spelled — declared key, Normal-mode estimate, or (Learning, or Normal
+// with nothing declared and no estimate yet) plain sharps naming no key.
+// Factored out (step 5, docs/ask-token-plan.md) so askSpanNotes (full) and
+// askSpanNotesCompact (bridge) share the IDENTICAL Learning-mode gate —
+// estimateKey() is only ever reached when appMode() === "normal" (P4 spy
+// test), never duplicated into two call sites that could drift.
+function askKeySpellComment(t0, t1) {
   const declared = askKeyDeclared(t0, t1);
   // Normal, nothing declared over this whole span: fall back to the estimate
   // for BOTH the header comment and the spelling — stated, never silent
   // (P4). Learning never reaches this (appMode() gates it, same convention
   // as sfShownAt/keyNameShownAt — see the spy test).
   const est = !declared && appMode() === "normal" ? estimateKey() : null;
+  const line = declared ? "# Pitches are spelled by the user's declared key (" + (keyNameAt(t0) || "declared") + ")."
+        : est ? "# Pitches are spelled by the Normal-mode key ESTIMATE (" + est.name + ", Krumhansl — unconfirmed)."
+        : "# Pitches use sharp spelling; the true key is the user's to discover — this block states no key.";
+  return {declared, est, line};
+}
+function askSpanNotes(t0, t1, maxChars) { // notesTxtFor's shape, three deltas: declared meter, display beats, one speller
+  const bt = barTicks(), qt = beatTicks(), ts = effTs();
+  const fmt = x => String(Math.round(x * 100) / 100);
+  const {est, line} = askKeySpellComment(t0, t1);
   const L = [];
   L.push("# Format: bar N: beat pitch duration, … — beat = the counted beat of the declared meter (" + ts[0] + "/" + ts[1] + ": " + ts[0] + " beats per bar, 1 = the downbeat); duration in the same unit.");
   L.push("# duration is GATE TIME (how long the note was held), NOT a notated value; RHYTHM comes from ONSET SPACING (the beat column): staccato notes gating at 0.33 are still eighths, not triplets.");
-  L.push(declared ? "# Pitches are spelled by the user's declared key (" + (keyNameAt(t0) || "declared") + ")."
-        : est ? "# Pitches are spelled by the Normal-mode key ESTIMATE (" + est.name + ", Krumhansl — unconfirmed)."
-        : "# Pitches use sharp spelling; the true key is the user's to discover — this block states no key.");
+  L.push(line);
   const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
   let cut = null, size = L.join("\n").length;
   song.tracks.forEach((tr, ti) => {
@@ -22657,6 +22691,64 @@ function askSpanNotes(t0, t1, maxChars) { // notesTxtFor's shape, three deltas: 
   });
   if (cut !== null) L.push("# (cut at bar " + cut + " to fit the model's window — ask about a narrower range for the rest)");
   return L.join("\n");
+}
+// askSpanNotesCompact (step 5, docs/ask-token-plan.md): the SAME facts as
+// askSpanNotes, sent to the BRIDGE only (askContext picks this one when
+// askCaps.bridge — local/LM Studio providers keep askSpanNotes, full, every
+// turn, since they hold no session memory of their own to lean on). One row
+// per bar, no word "bar": "<bar>|<beat><Pitch><oct>/<dur> <beat><Pitch>…" —
+// octave and duration are each written only when they differ from the
+// PREVIOUS NOTE IN THAT ROW (first note of a row always carries both, so a
+// row stands alone). The per-turn format explanation moves to askLegendText
+// (sent once per session); the key-spelling line stays here, every turn,
+// because it's content (which key, if any) — never static boilerplate, and
+// shares askKeySpellComment with askSpanNotes so Learning's gate on
+// estimateKey() can never drift between the two. Drums: the raw note number,
+// "#"-prefixed so a run of digits can't be misread as another beat.
+function askSpanNotesCompact(t0, t1, maxChars) {
+  const bt = barTicks(), qt = beatTicks();
+  const fmt = x => String(Math.round(x * 100) / 100);
+  const {est, line} = askKeySpellComment(t0, t1);
+  const L = [line];
+  const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
+  let cut = null, size = L.join("\n").length;
+  song.tracks.forEach((tr, ti) => {
+    const drums = trackIsDrums(ti);
+    const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
+    const rows = [];
+    for (let b = b0; b < b1; b++) {
+      if (cut !== null && b + 1 > cut) break;
+      const ns = tr.notes.filter(n => !n.gone && n.t >= Math.max(b * bt, t0) && n.t < Math.min((b + 1) * bt, t1)).sort((a, c) => a.t - c.t || a.p - c.p);
+      if (!ns.length) continue;
+      let lastOct = null, lastDur = null; // reset each row: "the previous note in the row" never reaches across bars
+      const toks = ns.map(n => {
+        const beat = fmt((n.t - b * bt) / qt + 1), dur = fmt(n.d / qt);
+        if (drums) { const tok = beat + "#" + n.p + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
+        const oct = Math.floor(n.p / 12) - 1, cls = spellPc(n.p % 12, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null));
+        let tok = beat + cls;
+        if (oct !== lastOct) tok += oct;
+        if (dur !== lastDur) tok += "/" + dur;
+        lastOct = oct; lastDur = dur;
+        return tok;
+      });
+      const row = (b + 1) + "|" + toks.join(" ");
+      if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
+      rows.push(row); size += row.length + 1;
+    }
+    if (rows.length) { L.push(head); L.push(...rows); size += head.length; }
+  });
+  if (cut !== null) L.push("# (cut at bar " + cut + " to fit the model's window — ask about a narrower range for the rest)");
+  return L.join("\n");
+}
+// askLegendText (step 5): the compact format's explanation, sent ONCE per
+// bridge session (tied to the same sent-hash record askCachedBlock uses —
+// askContext stages/commits it as the "legend" field, so it reappears after
+// Clear chat, Compact, or a changed session epoch, same as the annotations/
+// notes stand-ins do). Never sent to a non-bridge provider.
+function askLegendText() {
+  return "# Compact context format (this explanation is sent once per session — later turns omit it):\n" +
+    "# notes: \"T<n> name\" starts a track (\"[drums]\"/\"[muted]\" tag if either applies); each row is \"<bar>|<beat><Pitch><oct>/<dur> …\" — beat is the counted beat of the declared meter, 1 = the downbeat; duration is GATE TIME (how long the note was held), NOT a notated value — rhythm comes from onset spacing, not duration. Octave and duration repeat from the previous note IN THAT ROW when omitted (the first note of a row always states both). A drum track gives the raw note number after \"#\" instead of a pitch letter (e.g. \"2.5#38\").\n" +
+    "# annotations: \"<id> [bar.beat-bar.beat] kind: value — comment\"; id is this turn's handle for edit_annotation/delete_annotation; structural track/lane/audio directives (song-structure, not analysis) are left out here — they're unchanged in the app.";
 }
 function askAppState() { // what is running: build, install, audio engine, the last ⚠ lines — a bug report should need no relay (Josh, 2026-09-27: "you should have access to the current running build and any errors")
   const installed = (typeof navigator !== "undefined" && navigator.standalone) || (typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches);
@@ -22765,6 +22857,26 @@ function askSentReset(key) { // Clear chat / Compact: the bridge's memory of thi
   try { localStorage.removeItem(askSentKey(key)); } catch (err) { /* private mode */ }
   delete askSentPending[key];
 }
+// ---- session epoch (docs/ask-token-plan.md #4/#7): the bridge names each
+// resumed Claude Code session's identity as "<session-id>:<lastCompact.at||0>"
+// in the x-nr-session-epoch response header on every chat completion — it
+// changes the instant a compact (manual OR the bridge's own automatic one)
+// lands on that song's session, because the session either restarted or lost
+// its verbatim memory of what askCachedBlock thinks is still "unchanged
+// since your last message". Kept per chat (askStoreKey()), right beside the
+// sent-hash record: a changed epoch means the one this device is sending
+// against is stale, so it resets the SAME way Clear chat / a manual Compact
+// already do (askSentReset) — next message resends annotations/notes in
+// full rather than a stand-in the resumed session no longer backs.
+function askEpochKey(key) { return (key || askStoreKey()) + "-epoch"; }
+function askEpochGet(key) { try { return localStorage.getItem(askEpochKey(key)); } catch (err) { return null; } }
+function askEpochSet(key, epoch) { try { localStorage.setItem(askEpochKey(key), epoch); } catch (err) { /* private mode */ } }
+function askEpochNote(key, epoch) { // called wherever a chat completion's response headers are read
+  if (!epoch) return;
+  const prev = askEpochGet(key);
+  if (prev !== null && prev !== epoch) askSentReset(key); // compacted or replaced under us: resend in full next time
+  askEpochSet(key, epoch);
+}
 // One large, slow-changing section: `label` names the one-line stand-in
 // ("annotations" / "notes in bars a–b"); `count`, if given, is its own
 // "(N entries)". fnv1a32 only has to catch "identical to what the session
@@ -22808,13 +22920,24 @@ function askContext(sp, budget) { // the ONE block per request; never stored
       ? "lasso-selected notes: " + names + " — chord: " + nameChord(pitches, multiSelSf)
       : "lasso-selected notes: " + names + " — do not name this chord unless the user has guessed or insists");
   }
-  const anno = askAnnotationsText();
+  const cacheKey = askStoreKey();
+  // step 5 (docs/ask-token-plan.md): the BRIDGE gets the compact encodings
+  // (askSpanNotesCompact/askAnnotationsTextCompact) — a resumed Claude Code
+  // session is the only backend that can lean on a one-time legend instead
+  // of a format explanation every turn; a local/LM Studio provider has no
+  // memory of its own, so it keeps today's full, self-explaining format.
+  if (askCaps.bridge) {
+    const sent = askSentGet(cacheKey);
+    if (!sent.legend) { L.push(askLegendText()); askSentStage(cacheKey, "legend", true); }
+  }
+  const anno = askCaps.bridge ? askAnnotationsTextCompact() : askAnnotationsText();
   const annoCap = budget.anno * ASK_CPT;
   const annoFull = anno.length > annoCap ? anno.slice(0, annoCap) + "\n# (annotations cut here to fit the window)" : anno;
-  const cacheKey = askStoreKey();
-  L.push(askCachedBlock(cacheKey, "anno", "annotations", "the user's annotations (.rollnotes) — each entry's \"id\" is this turn's handle for edit_annotation/delete_annotation", annoFull, dedupedNotesWithIndex(rollnotes).length));
+  const annoCount = askCaps.bridge ? dedupedNotesWithIndex(rollnotes).filter(({n}) => !askAnnotationStructural(n)).length : dedupedNotesWithIndex(rollnotes).length;
+  L.push(askCachedBlock(cacheKey, "anno", "annotations", "the user's annotations (.rollnotes) — each entry's \"id\" is this turn's handle for edit_annotation/delete_annotation", annoFull, annoCount));
   const spanLabel = "notes in bars " + sp.from + "–" + sp.to;
-  L.push(askCachedBlock(cacheKey, "span", spanLabel, spanLabel, askSpanNotes(sp.t0, sp.t1, budget.span * ASK_CPT)));
+  const spanText = askCaps.bridge ? askSpanNotesCompact(sp.t0, sp.t1, budget.span * ASK_CPT) : askSpanNotes(sp.t0, sp.t1, budget.span * ASK_CPT);
+  L.push(askCachedBlock(cacheKey, "span", spanLabel, spanLabel, spanText));
   const ns = askNewSinceLines(askStoreKey());
   if (ns) L.push(ns);
   return L.join("\n");

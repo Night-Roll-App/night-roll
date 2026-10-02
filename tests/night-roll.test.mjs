@@ -8009,6 +8009,193 @@ test("P8 bridge-session caching: askSessionName is mode-separated — Learning a
   assert.equal(a.run(`askSessionName()`), learnName, "back to Learning: the original (unsuffixed) session key");
 });
 
+// ------------------------------------- P9: compact encoding (step 5,
+// docs/ask-token-plan.md) — the BRIDGE only (askCaps.bridge) gets the
+// compact "T<n> name" / "<bar>|<beat><Pitch><oct>/<dur> …" note rows and the
+// ".rollnotes"-style "<id> [bar.beat-bar.beat] kind: value" annotation
+// lines; a local/LM Studio provider keeps today's full, self-explaining
+// format untouched (askSpanNotes/askAnnotationsText, unchanged — see the P4/
+// P8 tests above, none of which set askCaps.bridge true and all still pass).
+function decodeFullNotes(txt) { // "## track N (name)" + "bar B: beat pitch dur, beat pitch dur" -> flat tuples
+  const out = [];
+  let track = null;
+  for (const line of txt.split("\n")) {
+    const th = line.match(/^## track (\d+)/);
+    if (th) { track = +th[1]; continue; }
+    const bm = line.match(/^bar (\d+): (.+)$/);
+    if (!bm || track === null) continue;
+    for (const part of bm[2].split(", ")) {
+      const m = part.match(/^([\d.]+) (\S+) ([\d.]+)$/);
+      if (m) out.push({track, bar: +bm[1], beat: +m[1], pitch: m[2], dur: +m[3]});
+    }
+  }
+  return out;
+}
+function decodeCompactNotes(txt) { // "T<n> name" + "<bar>|<beat><Pitch><oct>/<dur> …" (oct/dur carry forward per row) -> the SAME flat tuples
+  const out = [];
+  let track = null;
+  for (const line of txt.split("\n")) {
+    const th = line.match(/^T(\d+)/);
+    if (th) { track = +th[1]; continue; }
+    const bm = line.match(/^(\d+)\|(.+)$/);
+    if (!bm || track === null) continue;
+    let lastOct = null, lastDur = null;
+    for (const tok of bm[2].split(" ")) {
+      const m = tok.match(/^([\d.]+)([A-G][#b]?)(-?\d+)?(?:\/([\d.]+))?$/);
+      if (!m) continue;
+      const oct = m[3] !== undefined ? +m[3] : lastOct, dur = m[4] !== undefined ? +m[4] : lastDur;
+      lastOct = oct; lastDur = dur;
+      out.push({track, bar: +bm[1], beat: +m[1], pitch: m[2] + oct, dur});
+    }
+  }
+  return out;
+}
+test("P9 compact encoding: askSpanNotesCompact decodes to EXACTLY the same (bar, beat, pitch, dur) tuples as askSpanNotes — octave/duration carried forward within a row, shown again when they change", () => {
+  const a = mkAsk("learning", `
+    song.tracks = [{name: "lead", notes: [
+      {t: 0, d: 480, p: 60, v: 80},    // beat 1, C4, dur 1 — first note: both always shown
+      {t: 480, d: 240, p: 62, v: 80},  // beat 2, D4 (same octave: omitted), dur 0.5 (changed: shown)
+      {t: 960, d: 240, p: 74, v: 80},  // beat 3, D5 (octave changed: shown), dur 0.5 (same: omitted)
+      {t: 1440, d: 240, p: 76, v: 80}, // beat 4, E5 (same octave: omitted), dur 0.5 (same: omitted)
+    ]}];
+    trackState = [{muted: false, solo: false}];
+  `);
+  const compact = a.run(`askSpanNotesCompact(0, barTicks())`);
+  assert.match(compact, /# Pitches use sharp spelling/, "Learning, nothing declared: same key-spelling gate as askSpanNotes");
+  assert.match(compact, /\nT1 lead\n1\|1C4\/1 2D\/0\.5 3D5 4E$/, "octave/duration shown only when they change from the previous note in the row");
+  const full = a.run(`askSpanNotes(0, barTicks())`);
+  assert.deepEqual(decodeCompactNotes(compact), decodeFullNotes(full), "decoded, the compact rows are exactly the song's notes in the window");
+});
+test("P9 compact encoding: drum tracks keep the raw note number, '#'-prefixed so it can't be misread as another beat; duration still carries forward", () => {
+  const a = mkAsk("learning", `
+    song.tracks = [{name: "drums", notes: [
+      {t: 0, d: 480, p: 36, v: 100},
+      {t: 480, d: 480, p: 38, v: 100},
+      {t: 960, d: 240, p: 36, v: 100},
+    ]}];
+    trackState = [{muted: false, solo: false}];
+  `);
+  const compact = a.run(`askSpanNotesCompact(0, barTicks())`);
+  assert.match(compact, /\nT1 drums \[drums\]\n1\|1#36\/1 2#38 3#36\/0\.5$/, "same number as the full format, '#'-marked; duration omitted only when unchanged");
+});
+test("P9 compact encoding: askAnnotationsTextCompact keeps dedupedNotesWithIndex's ids, writes '<id> [bar.beat-bar.beat] kind: value — comment', and drops track:/lane:-style structural directives", () => {
+  const a = mkAsk("learning", `
+    rollnotes = [
+      {b1: 3, q1: 1, b2: 3, q2: 2, text: "chord: F", chord: true},
+      {b1: 5, q1: 1, text: "section: B", section: true},
+      {b1: 1, q1: 1, text: "key: Gm", keydir: -2, cnote: "borrowed?"},
+      {b1: 1, q1: 1, text: "track: bass mute=1", trackdir: {name: "bass", mute: true}},
+      {b1: 2, q1: 1, text: "lane: 1"},
+    ];
+  `);
+  const lines = a.run(`askAnnotationsTextCompact()`).split("\n");
+  assert.deepEqual(lines, [
+    "0 [3.1-3.2] chord: F",
+    "1 [5.1] section: B",
+    "2 [1.1] key: Gm — borrowed?",
+  ], "track:/lane: directives (indices 3 and 4) never reach the bridge context — song structure, not analysis");
+  a.run(`rollnotes = [];`);
+  assert.equal(a.run(`askAnnotationsTextCompact()`), "(no annotations)");
+});
+test("P9 compact encoding: askContext sends the compact rows/.rollnotes-style annotations ONLY when askCaps.bridge — a local/LM Studio provider keeps today's full format", () => {
+  const a = mkAsk("learning", `
+    rollnotes = [{b1: 1, q1: 1, text: "chord: C", chord: true}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+  `);
+  const ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /^0 \[1\.1\] chord: C$/m, "compact annotation line, not the JSON form");
+  assert.match(ctx, /^T1 melody\n/m, "compact note header, not '## track'");
+  assert.doesNotMatch(ctx, /"version": 1, "song"/);
+
+  a.run(`askCaps = {bridge: false, terminal: false, sessions: false};`);
+  const ctxLocal = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctxLocal, /"version": 1, "song"/, "non-bridge: unchanged, full JSON annotations");
+  assert.match(ctxLocal, /## track 1 \(melody\)/, "non-bridge: unchanged, full note format");
+});
+test("P9 compact encoding: the legend is sent once per session — present on the first bridge message, absent on the next, present again after Clear/Compact (askSentReset)", () => {
+  const a = mkAsk("learning", `
+    rollnotes = [{b1: 1, q1: 1, text: "chord: C", chord: true}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+  `);
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /# Compact context format/, "first message: the legend is sent");
+  a.run(`askFinish(askJobId(), "ok", askStoreKey())`);
+
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.doesNotMatch(ctx, /# Compact context format/, "second message, same session: no legend");
+
+  a.run(`askSentReset(askStoreKey())`); // Clear chat / Compact / a changed session epoch all do this
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /# Compact context format/, "after a reset: the legend comes back, just like the cached annotations/notes sections do");
+});
+test("P9 compact encoding: Learning never calls estimateKey from askSpanNotesCompact (spy); Normal reaches it for an undeclared span, and the compact text states the estimate the same way askSpanNotes does", () => {
+  const a = mkAsk("learning", `
+    globalThis.__estCalls = 0;
+    const __orig = estimateKey;
+    estimateKey = function() { globalThis.__estCalls++; return __orig(); };
+  `);
+  const learnTxt = a.run(`askSpanNotesCompact(0, barTicks())`);
+  assert.equal(a.run(`__estCalls`), 0, "Learning: not one call site reaches estimateKey");
+  assert.doesNotMatch(learnTxt, /ESTIMATE|degree/i, "Learning: no key estimate or degree wording leaks into the compact notes");
+
+  a.run(`setAppMode("normal"); finalizeNotes();`);
+  const txt = a.run(`askSpanNotesCompact(0, barTicks())`);
+  assert.ok(a.run(`__estCalls`) > 0, "Normal, nothing declared: reaches the estimate");
+  assert.match(txt, /# Pitches are spelled by the Normal-mode key ESTIMATE \(\S+, Krumhansl — unconfirmed\)\./, "states it plainly, same wording as askSpanNotes");
+});
+
+// ------------------------------------- epoch (app side, docs/ask-token-plan.md
+// #4/#7): the bridge names a resumed session's identity as
+// "<session-id>:<lastCompact.at||0>" in x-nr-session-epoch on every chat
+// completion; it changes the instant a compact (manual or the bridge's own
+// automatic one) lands. aiRemote().chat reads it off the fetch response
+// (available even mid-stream — HTTP headers land before the body) and
+// resets the SAME sent-hash record a manual Compact already does
+// (askSentReset) whenever it differs from what this chat last saw.
+// Builds the ONE Ask turn's worth of vm source: a fetch stub shaped like a
+// real streamed OpenAI chat completion (one SSE content delta, then [DONE]),
+// carrying the given x-nr-session-epoch response header, run through
+// aiRemote().chat() exactly as askSend would. A plain string builder (runs in
+// THIS process) — the vm sandbox is a separate realm (tests/harness.mjs,
+// vm.createContext), so a host-side closure/function value could never cross
+// into it; only source text can.
+const chatThroughBridge = epoch => `(async () => {
+  globalThis.fetch = async () => ({
+    ok: true, status: 200,
+    headers: {get: k => (k === "x-nr-session-epoch" ? ${JSON.stringify(epoch)} : null)},
+    body: {getReader: () => { let sent = false; return {read: async () => {
+      if (sent) return {done: true, value: undefined};
+      sent = true;
+      return {done: false, value: new TextEncoder().encode('data: {"choices":[{"delta":{"content":"ok"}}]}\\n\\ndata: [DONE]\\n\\n')};
+    }}; }},
+  });
+  await aiRemote().chat({system: "s", messages: [{role: "user", content: "hi"}], onDelta: () => {}});
+})()`;
+test("epoch: a changed x-nr-session-epoch resets this chat's sent-hashes (annotations/notes go in full again); an unchanged epoch leaves them cached", async () => {
+  const a = mkAsk("learning", `
+    rollnotes = [{b1: 1, q1: 1, text: "C"}];
+    askCaps = {bridge: true, terminal: false, sessions: true};
+    localStorage.removeItem(askEpochKey());
+    saveCfg({aiUrl: "http://bridge.test", aiModel: "claude-code"});
+  `);
+  a.run(`askContext(askSpan(), askBudget()); askFinish(askJobId(), "ok", askStoreKey());`); // stages + confirms the hashes
+  let ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /unchanged since your last message/, "sanity: cached before any turn runs through aiRemote().chat");
+
+  await a.run(chatThroughBridge("sess1:0"));
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /unchanged since your last message/, "first epoch ever recorded for this chat: nothing to compare against, so nothing resets");
+
+  await a.run(chatThroughBridge("sess1:0"));
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /unchanged since your last message/, "same epoch again: still cached");
+
+  await a.run(chatThroughBridge("sess1:1759300000000")); // the bridge just auto-compacted
+  ctx = a.run(`askContext(askSpan(), askBudget())`);
+  assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "epoch changed: the sent-hash record was reset, so the full annotations go again");
+  a.run(`localStorage.removeItem(askEpochKey());`);
+});
+
 // askSessionName (above) mode-separates the BRIDGE session, but the on-device
 // transcript (askStore) is one shared log per song/general chat across both
 // modes — askBuildMessages is the one place its history reaches a model

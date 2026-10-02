@@ -56,10 +56,30 @@ Josh: "the MOST TOKEN-EFFICIENT way to talk about songs in Ask overall."
 4. Change-only gate (builder in progress) + a session-epoch marker from the bridge
    (x-nr-session-epoch = sess.id:lastCompact.at); mark parts sent only on job
    success (askFinish), same for askSeenAdvance; askAppState build line only when
-   changed.
-5. Compact encoding: per-track rows "17|2.71F4/.29 3.46F" (no bar word, octave/
-   duration only when changed, sharps, no degrees); annotations in .rollnotes text
-   form; drop track/lane/vol UI entries; legend once per session. −35–45%.
+   changed. **The epoch marker is DONE both sides (2026-10-01):** bridge
+   (step 7, above) + app (`aiRemote().chat` reads the header, `askEpochNote`
+   resets the sent-hash record on change — see NIGHT-ROLL.md's "app side"
+   paragraph under step 7). The rest of step 4 (parts-sent-on-success,
+   askAppState build line) is separate, still open.
+5. **DONE (2026-10-01).** Compact encoding: per-track rows `"T<n> name"` then
+   `"<bar>|<beat><Pitch><oct>/<dur> …"` (no word "bar"; octave/duration shown
+   only when they change from the previous note IN THE ROW; sharps/declared-
+   key/Normal-estimate spelling unchanged, reusing askSpanNotes's own speller
+   via the factored-out `askKeySpellComment`; drums keep the raw note number,
+   `"#"`-prefixed for unambiguous parsing); annotations as `"<id>
+   [bar.beat-bar.beat] kind: value — comment"` (the `.rollnotes` text
+   grammar's own span, ids unchanged from today's JSON form), dropping
+   track:/lane:/audio:-style structural directives (song-structure, not
+   analysis); a legend (`askLegendText`) explaining both formats sent once
+   per session, tied to the same sent-hash record the bridge-session caching
+   (step before this) uses, so it reappears after Clear chat/Compact/a
+   changed session epoch. BRIDGE only (`askCaps.bridge`); a local/LM Studio
+   provider is unaffected. See NIGHT-ROLL.md's "Compact encoding, step 5"
+   paragraph for the full shape and tests. **Measured** (real 7-track, 8-bar
+   window + a 9-entry annotation sample): notes window −48% (4608→2390
+   chars), annotations −71% (589→171 chars); first-message total (legend
+   included) −34%, every later message −51% — on top of, not instead of,
+   the bridge-session caching's stand-ins for unchanged sections.
 6. Skip already-sent bars per session; new read_bars(from, to, tracks?) tool for
    the OPEN song (live state, askSpanNotes speller); annotation diffs +/−/~ with
    stable content-hash ids.
