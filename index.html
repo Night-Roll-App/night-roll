@@ -476,11 +476,14 @@
   .dropup .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 44px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   .dropup .fitem:active { background: var(--panel); }
   .dropup .fdiv { border-top: 1px solid var(--grid); margin: 4px 6px; }
-  /* View ▾ (2026-09-30, Josh: "look hard at the ordering"): #viewsheet got
-     the same section labels a drop-up uses — View / Panels / Display / Mode
-     — so its four groups read as groups, not one long list. */
-  .dropup .cfgsec, #viewsheet .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin: 6px 10px 2px; }
-  .dropup .cfgsec:first-child, #viewsheet .cfgsec:first-child { margin-top: 0; }
+  /* View ▾ (2026-09-30, Josh: "look hard at the ordering"; sub-menu follow-up
+     2026-10-02, "View ▾ is too tall — make EVERY section an expanding
+     sub-menu"): #viewsheet's six groups (View / Panels / Tools / Display /
+     Background / Mode) are no longer .cfgsec captions over a flat list —
+     each is its own header .fitem (▸/▾, aria-expanded) plus a content div
+     the header's own click handler shows/hides; see renderViewMenu(). */
+  .dropup .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin: 6px 10px 2px; }
+  .dropup .cfgsec:first-child { margin-top: 0; }
   .dropup .row, #viewsheet .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 10px; min-height: 44px; }
   .dropup select, #viewsheet select { min-height: 44px; }
   #editsheet.on, #viewsheet.on { display: block; }
@@ -1885,7 +1888,7 @@
       <dt>Hardware keyboard</dt><dd>Logic's keys: <b>Return</b> back to the start (or the cycle's start), <b>K</b> click on/off, <b>C</b> cycle on/off, <b>R</b> record, <b>Q</b> quantizes the selection, <b>⌘← / ⌘→</b> zoom out / in around the cursor. Editing: <b>⌘A</b> selects every visible note, <b>⌘C / ⌘X / ⌘V</b> copy, cut, paste at the playhead, <b>⌘D</b> duplicates the selection right after itself (whole bars when it's longer than a beat — press again to keep repeating), <b>⌘Z / ⇧⌘Z</b> undo / redo, <b>⌘S</b> Save Version, arrows move, ⇧ an octave, ⌥ resizes, Delete removes.</dd>
       <dt>▦ Grid</dt><dd>Notes move and resize on a 16th grid, or on triplet steps while a <b>T</b> duration is active — and the duration chips stay visible in <b>Select</b>, where they are that move grid, so changing it never means a trip through Pencil. Touching a note <b>picks up its grid</b> automatically: grab a triplet note and moves go in triplet steps, grab a straight one and they go in 16ths; tap a chip afterwards to override. View ▾ → <b>Grid…</b> opens a sheet: tap a number of <b>lines per bar</b> (say 10) and the roll redraws instantly with that many lines in each bar — and pencil entry, note drags and resizes all SNAP to those lines. Pure view-and-snap aid: no note moves, no annotation changes, the time signature stays what it is. This is how a figure the duration buttons can't spell — ten even notes across a 4/4 bar, each 0.4 beats — becomes pencil-drag from line to line; with a grid armed, a pencil tap lays down one cell — in the roll, the fall view and the score alike — so 6 lines per bar pencils quarter-note triplets and 12 pencils eighth triplets without touching the duration chips (they dim while a grid rules, and a <b>▦N</b> chip appears at the end of the row naming the grid — tap it for the sheet; opening another song turns the grid off). Set the <b>anchor</b> right in the sheet — bar and beat, and the beat takes decimals for sub-beat starts (2.5 = the "and" of 2, 2.25 = the second sixteenth) — and the lines run from there (14.2, say), so a figure beginning mid-bar gets its lines exactly where its notes go, continuing bar after bar on that phase across the whole song. Bar lines stay drawn for orientation but stop being snap targets while the grid is armed; a bar line falling between cells is expected, not a bug. <b>Off</b> returns to the meter's own grid (16ths, or triplet steps while a T duration is armed). Transient by design: set it, enter the passage, set it back.</dd>
       <dt>📻 Listener mode</dt><dd>Phones open as a PLAYER: the roll, ⏮ ▶, the readouts, speed and volume — everything else hidden, including the section/chord bands and the notes strip (unreadably small on a phone anyway), because a shared song link is for listening, not editing. A <b>Full app</b> button in the header brings the whole DAW back on that device (and View ▾ → Listener mode folds it away again, on any device). Send someone a ?song= link and their phone just… plays it.</dd>
-      <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — six groups, top to bottom (chrome density follow-up, 2026-10-01 pm: grew from four when ⋯ More's own tools folded in here — "View ▾ is getting long" is Josh's own note, but one findable menu beat two): <b>View</b> (one <b>▸ View type</b> row — tap to expand <b>▦ Roll / ▤ Tracks view / 𝄞 Score view</b>, a radio, one ✓ at a time, the same views the footer's bottom-left view drop-up switches between; its own closed label always names the CURRENT view), <b>Panels</b> (🎹 Instrument panel, 💬 Notes strip, 🎚 Mixer, ◂ Tracks — the windows and side panels you open beside the roll), <b>Highlight / Readout</b> (8va octave numbers, find: the pitch finder, ◯5 Circle of fifths — moved from ⋯ More, same ids and behavior), <b>Display</b> (🛠 Edit toolbar, ▦ Bottom bar, ┄ Outline new notes — a dashed white outline on every note added since the song opened, off by default, this device only —, ▦ Grid…, and ▸ Section levels with −/+ steppers — shows "2 of 3"; the gutter chevron still one-tap cycles — what the roll itself shows or snaps to), <b>Background</b> (⏳ Jobs, ⚠ Messages — also moved from ⋯ More; both stay in the menu even when their matching footer button is hidden, so a finished job or an already-read message log is still reachable), and <b>Mode</b> (🔍 Analyze ▸, ⇄ Compare with repo, 🎓 Learning mode, 📻 Listener mode — these change what editing, or the whole app, means). ✓ means on, visible, or current; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else (or the moment an item opens its own separate sheet — Grid…, Compare, Jobs, Messages). Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
+      <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — six expanding groups, top to bottom (sub-menu follow-up, 2026-10-02, Josh: "View ▾ is too tall — make EVERY section an expanding sub-menu"): tap a group's header row (<b>▸</b> closed / <b>▾</b> open) to expand it in place — opening one collapses whichever other group was open, so at most one is ever open, and the menu always starts fresh with all six closed. <b>View</b> (one <b>▸ View type</b> row — tap to expand <b>▦ Roll / ▤ Tracks view / 𝄞 Score view</b>, a radio, one ✓ at a time, the same views the footer's bottom-left view drop-up switches between; its own closed label always names the CURRENT view), <b>Panels</b> (🎹 Instrument panel, 💬 Notes strip, 🎚 Mixer, ◂ Tracks — the windows and side panels you open beside the roll), <b>Tools</b> (renamed from Highlight / Readout — 8va octave numbers, find: the pitch finder, ◯5 Circle of fifths), <b>Display</b> (🛠 Edit toolbar, ▦ Bottom bar, ┄ Outline new notes — a dashed white outline on every note added since the song opened, off by default, this device only —, ▦ Grid…, and ▸ Section levels with −/+ steppers — shows "2 of 3"; the gutter chevron still one-tap cycles — what the roll itself shows or snaps to), <b>Background</b> (⏳ Jobs, ⚠ Messages — its own header names a running count too; both stay in the group even when their matching footer button is hidden, so a finished job or an already-read message log is still reachable), and <b>Mode</b> (🔍 Analyze ▸, ⇄ Compare with repo, 🎓 Learning mode, 📻 Listener mode — these change what editing, or the whole app, means; the header itself names which mode you're in). ✓ means on, visible, or current; the menu STAYS OPEN while you flip several items at once inside an open group, and closes on a tap anywhere else (or the moment an item opens its own separate sheet — Grid…, Compare, Jobs, Messages). Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
       <dt>Speed &amp; volume buttons</dt><dd>The speed slider folded into a <b>percentage button</b> — tap to open the slider, tap anywhere else and it folds back (the reset chip appears when off-native). Beside it, <b>🔊</b> is a master volume the same way: tap, slide (10–200%), tap away; the setting sticks per device and the button shows the number when it's not 100%.</dd>
       <dt>LCD readout</dt><dd>Beside Play, Logic-style: live bar and beat (counted in the declared meter's beats), the tempo at the cursor from the song's own tempo map (scaled by the speed slider), and the declared meter and key. Undeclared stays honest: meter reads "4/4?", key reads "C?" (the display default), a stored tonic reads "B♭?". On your own songs the tempo segment is tappable too — it opens a Tempo change annotation ("tempo: 120" at a bar/beat; the map applies from there, so mid-song tempo changes work; Save writes the full map into the .mid). On analyzed songs the same annotation is an OBSERVATION — it records that the music changes tempo there and leaves playback untouched (the capture's timing is measured fact). Every readout is a door to the song's OPENING value — always bar 1, wherever the cursor is: tap the tempo, the meter or the key to open the one at bar 1 (or declare it there); a change partway through goes in with + Note — a stored partial opens its own note with the tonic already filled.</dd>
       <dt>Blue cursor</dt><dd>Play starts here. Tap the bar ruler to place it, or drag its handle (triangle under the ruler). Tapping a note selects it <b>without moving the cursor</b>, the DAW way, so Space still plays from where you were; <b>+ Note</b> anchors at the note you tapped. (Settings → Other brings back tap-to-move.)</dd>
@@ -1909,9 +1912,9 @@
       <dt>Tap a note</dt><dd>Inspector shows pitch, bar &amp; beat (counted 1e&amp;a), length, velocity, track — <b>and plays it</b>, in Roll, Score and Tracks alike. That includes chip songs: during playback the console render IS the track's sound, so per-note synthesis is suppressed to avoid doubling, but a tap has nothing to double and sounds the game's own instrument instead, wherever it can. On PlayStation/N64 the worker renders that one note fresh through the game's own instrument for that track. NES/Game Boy/SNES have no per-note renderer (a register log, not a sequence) — each track is one hardware voice, so the tap instead slices that exact moment out of the track's own already-rendered sound, release tail and all. A brand-new note you've just placed (nothing was rendered where it now sits), a drum hit, or a track given an explicit voice all still play the synth. Hearing one note at a time is the point of analysis mode.</dd>
       <dt>Status line (footer)</dt><dd>The footer's own first line (2026-09-30: its own row, <b>Chord?</b> at its right end when there's a selection to reveal in Normal mode — nothing else shares the row with it any more). Tap it to read it in full, even a long one: it wraps to two lines before it has to clip at all, and tapping opens the whole message in a sheet — nothing it says is ever lost past an ellipsis. A message that also offers a copy (a chord name, a note's detail) keeps its own tap-to-copy instead, unchanged.</dd>
       <dt>Copy the pitch list</dt><dd>When the lasso strip lists selected pitches, tap the text (or the ⧉ copy chip) to copy them comma-separated — after "Chord?", the chord name comes along too.</dd>
-      <dt>⊞ Lasso</dt><dd>Toggle on, then drag a box over notes (works in all views). Boxes ADD to the selection — draw as many as you need. Tap any note to toggle it in or out (surgical removal of a pedal or neighbor); tap empty space to clear. Shows all the pitch names, low to high — and <b>View ▾ → HIGHLIGHT / READOUT → 8va</b> (an always-on toggle now, reachable with no selection too) switches the octave numbers: off collapses duplicates to bare pitch classes (C · E · G), the chord-reading view; the setting sticks, and <b>Chord?</b> (Normal mode, with a selection) sits at the status line's own right end. Drag the box up into the ruler to take the annotations there too, lane by lane — up to the chord row takes the chords, higher takes the section row as well, all the way up takes the text-note flags: the box draws over the ruler, the bands it covers get a <b>gold outline</b> (text-note flags a gold ring) for as long as the selection lives, and those ride along with ⧉ and ✂ and land with 📋; 🗑 (or Backspace) deletes them with the notes, one ⟲ restores all of it.</dd>
-      <dt>◯5 Circle of fifths</dt><dd><b>View ▾ → HIGHLIGHT / READOUT → ◯5</b> (moved from ⋯ More, chrome density follow-up, 2026-10-01 pm — ⋯ More itself is gone, folded into View ▾). The classic chart, live: majors outside with their signatures, relative minors inside, diminished chords at the center, and the movable degree window (IV·I·V over ii·vi·iii over vii°). Two independent motions: <b>drag the wheel</b> (or ⟲ ⟳) to spin it — put any key at 12 o'clock; <b>tap a wedge</b> to move the degree window there. Opens with the song's key on top and highlighted. Below the wheel: the window key's signature accidentals, full scale, all seven triads, and its IV/V neighbors.</dd>
-      <dt>find: (pitch finder)</dt><dd><b>View ▾ → HIGHLIGHT / READOUT → find:</b> (moved from ⋯ More, chrome density follow-up, 2026-10-01 pm). Pick a pitch class in the dropdown and every occurrence lights up across all visible channels — everything else dims, so nothing lit means a confident zero. Works by pitch class (find B♭ catches A#), shows the count and channels in the strip, and labels the degree when a key is set. Made for mode-hunting: chasing the one accidental that separates two candidate modes.</dd>
+      <dt>⊞ Lasso</dt><dd>Toggle on, then drag a box over notes (works in all views). Boxes ADD to the selection — draw as many as you need. Tap any note to toggle it in or out (surgical removal of a pedal or neighbor); tap empty space to clear. Shows all the pitch names, low to high — and <b>View ▾ → Tools → 8va</b> (an always-on toggle now, reachable with no selection too) switches the octave numbers: off collapses duplicates to bare pitch classes (C · E · G), the chord-reading view; the setting sticks, and <b>Chord?</b> (Normal mode, with a selection) sits at the status line's own right end. Drag the box up into the ruler to take the annotations there too, lane by lane — up to the chord row takes the chords, higher takes the section row as well, all the way up takes the text-note flags: the box draws over the ruler, the bands it covers get a <b>gold outline</b> (text-note flags a gold ring) for as long as the selection lives, and those ride along with ⧉ and ✂ and land with 📋; 🗑 (or Backspace) deletes them with the notes, one ⟲ restores all of it.</dd>
+      <dt>◯5 Circle of fifths</dt><dd><b>View ▾ → Tools → ◯5</b> (moved from ⋯ More, chrome density follow-up, 2026-10-01 pm — ⋯ More itself is gone, folded into View ▾). The classic chart, live: majors outside with their signatures, relative minors inside, diminished chords at the center, and the movable degree window (IV·I·V over ii·vi·iii over vii°). Two independent motions: <b>drag the wheel</b> (or ⟲ ⟳) to spin it — put any key at 12 o'clock; <b>tap a wedge</b> to move the degree window there. Opens with the song's key on top and highlighted. Below the wheel: the window key's signature accidentals, full scale, all seven triads, and its IV/V neighbors.</dd>
+      <dt>find: (pitch finder)</dt><dd><b>View ▾ → Tools → find:</b> (moved from ⋯ More, chrome density follow-up, 2026-10-01 pm). Pick a pitch class in the dropdown and every occurrence lights up across all visible channels — everything else dims, so nothing lit means a confident zero. Works by pitch class (find B♭ catches A#), shows the count and channels in the strip, and labels the degree when a key is set. Made for mode-hunting: chasing the one accidental that separates two candidate modes.</dd>
       <dt>Chord?</dt><dd>After a lasso: reveals what chord those notes make. Hidden by default so you can name it first.</dd>
       <dt>Challenge?</dt><dd>Tap one of your chord bands in the ruler, then tap Challenge? — opens the evidence dialog: each label tone with its role and whether it sounds (and where), extra pitches present, the per-channel note lists, and what the namer would call the whole stack. Only when you ask; extra tones are evidence, not verdicts (a pedal point shows as "extra" — correctly).</dd>
       <dt>💬</dt><dd><b>View ▾ → 💬 Notes strip</b> (2026-09-30: out of the footer — it's the only control for this now). Show/hide the text-note strip (the fixed slot that shows your notes as the playhead crosses them). Off frees the vertical space; setting sticks.</dd>
@@ -2021,34 +2024,28 @@
 </div>
 
 <div id="viewsheet">
-  <!-- Restructured 2026-09-30 (Josh: "there's a Score view and a Tracks view
-       but no Roll view, and Listener mode is stuck between them — look hard
-       at the ordering"). Chrome density follow-up (2026-10-01 pm, Josh's
-       ruling after using the first pass): ⋯ More is gone entirely — its
-       whole purpose was "tools used rarely enough they don't need a
-       permanent seat on the row", which is also exactly what View ▾ already
-       is, so a second menu for the same job was one menu too many. Its three
-       groups land here: HIGHLIGHT / READOUT (8va, find:, ◯5 — same ids,
-       same handlers, just moved) and a new BACKGROUND (⏳ Jobs, ⚠ Messages —
-       both of which also keep a footer button of their own, shown only when
-       there's something to see: #jobsbtn while a job is running, #errbtn
-       while a message is unread). Six groups, top to bottom: VIEW (one
-       "View type ▸" row that expands to Roll/Tracks view/Score view instead
-       of three permanent rows — ✓ on the current one, same switch as
-       #viewbtn in the footer), PANELS (windows you open beside the roll),
-       HIGHLIGHT / READOUT, DISPLAY (what the roll itself shows/snaps to),
-       BACKGROUND, and MODE (changes what editing or the whole app means —
-       last, same as Listener mode always was the outlier at the bottom). -->
-  <div class="cfgsec">VIEW</div>
-  <!-- "View type ▸" (chrome density follow-up, 2026-10-01 pm, Josh's ruling
-       #4: "View ▾ is getting long … Roll/Tracks/Score [should be] ONE item
-       that opens a small submenu"): an expanding row, not a floating
-       submenu — same drop-up, no extra positioning code, still one tap to
-       open and one more to pick. vwViewTypeOpen (JS) tracks it; renderViewMenu
-       keeps the ▸/▾ glyph and the "View type: <current>" label in sync and
-       toggles #vwViewTypeRow's display. vwRoll/vwTracksView/vwScore are the
-       SAME ids/handlers/radio (✓ on exactly one) as before — just nested one
-       level in, not three permanent top-level rows. -->
+  <!-- Restructured 2026-09-30, regrouped by the chrome density pass and its
+       2026-10-01 pm follow-up (⋯ More folded in: HIGHLIGHT/READOUT, then
+       BACKGROUND). Sub-menu follow-up (2026-10-02, Josh: "View ▾ is too
+       tall — make EVERY section an expanding sub-menu"): every group below
+       is now the SAME pattern "View type ▸" already used (ruling #4,
+       2026-10-01 pm) — a header .fitem (▸ closed / ▾ open, aria-expanded)
+       followed by a content div the header's own click toggles. ACCORDION:
+       vwOpenGroup (JS, replaces the old vwViewTypeOpen boolean — same
+       boot-path-TDZ reasoning, see its declaration) holds at most one group
+       key at a time; opening a header closes whichever other group was
+       open; renderViewMenu() always collapses every group when View ▾ itself
+       opens. The six groups, top to bottom, are unchanged from the chrome
+       density pass: VIEW (one "View type ▸" row — Roll/Tracks view/Score
+       view, ✓ on the current one, same switch as #viewbtn in the footer),
+       PANELS (windows you open beside the roll), TOOLS (renamed from
+       HIGHLIGHT / READOUT — 8va, find:, ◯5 — same ids/handlers, unmoved),
+       DISPLAY (what the roll itself shows/snaps to), BACKGROUND, and MODE
+       (changes what editing or the whole app means — last, same as Listener
+       mode always was the outlier at the bottom). No more .cfgsec captions
+       or .fdiv dividers inside a group's own content — the header row IS the
+       group now; a thin .fdiv between header rows keeps six collapsed
+       headers from running together. -->
   <button class="fitem" id="vwViewType" aria-expanded="false">▸  View type: Roll</button>
   <div id="vwViewTypeRow" style="display:none">
     <button class="fitem" id="vwRoll">▦  Roll</button>
@@ -2056,60 +2053,74 @@
     <button class="fitem" id="vwScore">𝄞  Score view</button>
   </div>
   <div class="fdiv"></div>
-  <div class="cfgsec">PANELS</div>
-  <button class="fitem" id="vwInst">🎹  Instrument panel</button>
-  <button class="fitem" id="vwSub">💬  Notes strip</button>
-  <button class="fitem" id="vwMixer">🎚  Mixer</button>
-  <button class="fitem" id="vwTracks">◂  Tracks</button>
-  <div class="fdiv"></div>
-  <!-- HIGHLIGHT / READOUT (moved from ⋯ More, chrome density follow-up,
-       2026-10-01 pm): #octbtn/#findsel/#cofbtn are the exact same nodes —
-       same ids, same aria-labels, same JS listeners (renderOctBtn,
-       refreshFindSel, the #cofbtn click handler) — just relocated. #findsel
-       keeps its plain <select> (no custom picker) so iOS's native wheel
-       still works without closing the drop-up out from under it — the
-       pointerdown "tap-away closes" listener already exempts anything
-       inside the open menu itself, #viewsheet included. -->
-  <div class="cfgsec">HIGHLIGHT / READOUT</div>
-  <button class="fitem" id="octbtn" aria-label="Toggle octave numbers in the selection readout">8va  Show octave numbers (F#3 vs F#)</button>
-  <div class="row">
-    <span class="lbl" style="flex:1">find: Light up one pitch everywhere in the song</span>
-    <select id="findsel" aria-label="Highlight a pitch class" style="max-width:140px">
-      <option value="">find: off</option>
-    </select>
-  </div>
-  <button class="fitem" id="cofbtn" aria-label="Circle of fifths">◯5  Circle of fifths</button>
-  <div class="fdiv"></div>
-  <div class="cfgsec">DISPLAY</div>
-  <button class="fitem" id="vwEdit">🛠  Edit toolbar</button>
-  <button class="fitem" id="vwFooter">▦  Bottom bar</button>
-  <button class="fitem" id="vwAdded">┄  Outline new notes</button>
-  <button class="fitem" id="vwGrid">▦  Grid…</button>
-  <div class="fdiv" id="vwLevelsDiv"></div>
-  <div id="vwLevelsRow" style="display:flex;align-items:center;gap:4px;padding:2px 4px">
-    <span id="vwLevelsLbl" style="flex:1;font-family:var(--mono);font-size:0.8125rem;padding:6px"></span>
-    <button id="vwLevelsMinus" style="min-height:38px;min-width:44px" aria-label="Fewer section levels shown">−</button>
-    <button id="vwLevelsPlus" style="min-height:38px;min-width:44px" aria-label="More section levels shown">+</button>
+  <button class="fitem" id="vwPanels" aria-expanded="false">▸  Panels</button>
+  <div id="vwPanelsRow" style="display:none">
+    <button class="fitem" id="vwInst">🎹  Instrument panel</button>
+    <button class="fitem" id="vwSub">💬  Notes strip</button>
+    <button class="fitem" id="vwMixer">🎚  Mixer</button>
+    <button class="fitem" id="vwTracks">◂  Tracks</button>
   </div>
   <div class="fdiv"></div>
-  <!-- BACKGROUND (new, chrome density follow-up, 2026-10-01 pm): Logic's own
-       pattern named in docs/chrome-density-plan.md — "background work gets
-       its own panel rather than living in the main bar". #vwJobs/#vwMessages
-       just forward to the footer's own #jobsbtn/#errbtn click handlers
-       (renderJobs/errChip's own sheet-opening code, unchanged) after closing
-       View ▾ first — same convention as vwGrid/vwCompare below, which also
-       open a separate sheet rather than toggling in place. Both stay in the
-       menu even when their footer button is hidden (0 jobs, 0 unread), so a
-       finished/failed job or an already-read message log is still reachable. -->
-  <div class="cfgsec">BACKGROUND</div>
-  <button class="fitem" id="vwJobs">⏳  Jobs</button>
-  <button class="fitem" id="vwMessages">⚠  Messages</button>
+  <!-- TOOLS (renamed from HIGHLIGHT / READOUT, sub-menu follow-up,
+       2026-10-02): #octbtn/#findsel/#cofbtn are the exact same nodes the
+       chrome density pass left them — same ids, same aria-labels, same JS
+       listeners (renderOctBtn, refreshFindSel, the #cofbtn click handler) —
+       just one level deeper, inside #vwToolsRow instead of sitting loose
+       under a .cfgsec caption. #findsel keeps its plain <select> (no custom
+       picker) so iOS's native wheel still works without closing the
+       drop-up out from under it — the pointerdown "tap-away closes"
+       listener already exempts anything inside the open menu itself,
+       #viewsheet included. -->
+  <button class="fitem" id="vwTools" aria-expanded="false">▸  Tools</button>
+  <div id="vwToolsRow" style="display:none">
+    <button class="fitem" id="octbtn" aria-label="Toggle octave numbers in the selection readout">8va  Show octave numbers (F#3 vs F#)</button>
+    <div class="row">
+      <span class="lbl" style="flex:1">find: Light up one pitch everywhere in the song</span>
+      <select id="findsel" aria-label="Highlight a pitch class" style="max-width:140px">
+        <option value="">find: off</option>
+      </select>
+    </div>
+    <button class="fitem" id="cofbtn" aria-label="Circle of fifths">◯5  Circle of fifths</button>
+  </div>
   <div class="fdiv"></div>
-  <div class="cfgsec">MODE</div>
-  <button class="fitem" id="vwAnalyze">🔍  Analyze ▸</button>
-  <button class="fitem" id="vwCompare">⇄  Compare with repo</button>
-  <button class="fitem" id="vwLearning">🎓  Learning mode</button>
-  <button class="fitem" id="vwListener">📻  Listener mode</button>
+  <button class="fitem" id="vwDisplay" aria-expanded="false">▸  Display</button>
+  <div id="vwDisplayRow" style="display:none">
+    <button class="fitem" id="vwEdit">🛠  Edit toolbar</button>
+    <button class="fitem" id="vwFooter">▦  Bottom bar</button>
+    <button class="fitem" id="vwAdded">┄  Outline new notes</button>
+    <button class="fitem" id="vwGrid">▦  Grid…</button>
+    <div class="fdiv" id="vwLevelsDiv"></div>
+    <div id="vwLevelsRow" style="display:flex;align-items:center;gap:4px;padding:2px 4px">
+      <span id="vwLevelsLbl" style="flex:1;font-family:var(--mono);font-size:0.8125rem;padding:6px"></span>
+      <button id="vwLevelsMinus" style="min-height:38px;min-width:44px" aria-label="Fewer section levels shown">−</button>
+      <button id="vwLevelsPlus" style="min-height:38px;min-width:44px" aria-label="More section levels shown">+</button>
+    </div>
+  </div>
+  <div class="fdiv"></div>
+  <!-- BACKGROUND: Logic's own pattern named in docs/chrome-density-plan.md —
+       "background work gets its own panel rather than living in the main
+       bar". #vwJobs/#vwMessages just forward to the footer's own
+       #jobsbtn/#errbtn click handlers (renderJobs/errChip's own
+       sheet-opening code, unchanged) after closing View ▾ first — same
+       convention as vwGrid/vwCompare, which also open a separate sheet
+       rather than toggling in place. Both stay in the group even when their
+       footer button is hidden (0 jobs, 0 unread), so a finished/failed job
+       or an already-read message log is still reachable. The header's own
+       "· ⏳N" hint (renderViewMenu) reuses the running count
+       updateJobsBtn() already computes for #vwJobs's text. -->
+  <button class="fitem" id="vwBackground" aria-expanded="false">▸  Background</button>
+  <div id="vwBackgroundRow" style="display:none">
+    <button class="fitem" id="vwJobs">⏳  Jobs</button>
+    <button class="fitem" id="vwMessages">⚠  Messages</button>
+  </div>
+  <div class="fdiv"></div>
+  <button class="fitem" id="vwMode" aria-expanded="false">▸  Mode: Learning</button>
+  <div id="vwModeRow" style="display:none">
+    <button class="fitem" id="vwAnalyze">🔍  Analyze ▸</button>
+    <button class="fitem" id="vwCompare">⇄  Compare with repo</button>
+    <button class="fitem" id="vwLearning">🎓  Learning mode</button>
+    <button class="fitem" id="vwListener">📻  Listener mode</button>
+  </div>
 </div>
 <!-- KEY SIGNATURE (footer v2 tweaks, 2026-09-30, Josh): dropped from the UI
      entirely — the key/mode pickers duplicated the LCD key (tap → the
@@ -2171,9 +2182,9 @@
   <div class="fdiv"></div>
   <button class="fitem" id="fileopen">Open…</button>
   <!-- Open Recent ▸ (2026-10-01): same expanding-row pattern as View ▾'s
-       "View type ▸" (vwViewTypeOpen/renderViewMenu) — one tap opens an
-       inline list right here instead of a floating submenu like Open…'s
-       own #filesub. fileOpenRecentOpen (JS) tracks it; renderOpenRecentRow
+       own groups (vwOpenGroup/renderViewMenu) — one tap opens an inline
+       list right here instead of a floating submenu like Open…'s own
+       #filesub. fileOpenRecentOpen (JS) tracks it; renderOpenRecentRow
        keeps the ▸/▾ glyph and #fileopenrecentrow's rows in sync, and is
        re-run after every tap inside the row (pick/Clear) so the menu
        reflects the new state without closing. -->
@@ -2811,14 +2822,17 @@ function setAppMode(mode) {
 if (typeof document !== "undefined" && document.body) {
   document.body.dataset.mode = APP_MODE;
 }
-// "View type ▸" expand state (chrome density follow-up, 2026-10-01 pm) —
-// MUST live in this early boot block, same TDZ reasoning as APP_MODE above:
-// renderViewMenu reads it and can run during boot — function declarations
-// hoist, so the "typeof renderViewMenu === 'function'" boot-path guard is
-// already true long before this point in the file's text, but a `let`
-// declared further down would still be in its own TDZ at that call.
-let vwViewTypeOpen = false;
-let fileOpenRecentOpen = false; // File ▾ → "Open Recent ▸" expand state — same pattern/reasoning as vwViewTypeOpen just above
+// View ▾'s open-group accordion state (sub-menu follow-up, 2026-10-02 —
+// replaces the old vwViewTypeOpen boolean now that every group, not just
+// "View type ▸", expands/collapses: null, or one of "view"/"panels"/
+// "tools"/"display"/"background"/"mode"). MUST live in this early boot
+// block, same TDZ reasoning as APP_MODE above: renderViewMenu reads it and
+// can run during boot — function declarations hoist, so the
+// "typeof renderViewMenu === 'function'" boot-path guard is already true
+// long before this point in the file's text, but a `let` declared further
+// down would still be in its own TDZ at that call.
+let vwOpenGroup = null;
+let fileOpenRecentOpen = false; // File ▾ → "Open Recent ▸" expand state — same pattern/reasoning as vwOpenGroup just above
 // UI refresh after an interactive mode flip (View ▾ toggle, Settings
 // checkbox) — boot itself never calls this, it just reads APP_MODE above.
 // Chrome density follow-up (2026-10-01 pm, Josh's ruling): the header's
@@ -17474,17 +17488,36 @@ function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2-char s
   set("vwRoll", viewMode === "roll");
   set("vwScore", viewMode === "score");
   set("vwTracksView", viewMode === "tracks");
-  // "View type ▸" (chrome density follow-up, 2026-10-01 pm): an expanding
-  // row, not its own radio item — the label always names the CURRENT view
-  // (same convention as the footer's #viewbtn), and the ▸/▾ glyph plus
-  // #vwViewTypeRow's display track vwViewTypeOpen (below, toggled by the
-  // button's own click handler).
-  {
-    const VIEWTYPE_NAME = {roll: "Roll", tracks: "Tracks view", score: "Score view"};
-    const vt = document.getElementById("vwViewType");
-    vt.textContent = (vwViewTypeOpen ? "▾  " : "▸  ") + "View type: " + (VIEWTYPE_NAME[viewMode] || "Roll");
-    vt.setAttribute("aria-expanded", String(vwViewTypeOpen));
-    document.getElementById("vwViewTypeRow").style.display = vwViewTypeOpen ? "" : "none";
+  // Accordion: at most one of the six View ▾ groups open at a time
+  // (vwOpenGroup), every header/content pair sharing the same ▸/▾ +
+  // aria-expanded + display convention "View type ▸" always used (ruling
+  // #4, 2026-10-01 pm). The table is built fresh on every call (not a
+  // top-level const) — renderViewMenu can run during boot before later
+  // top-level `let`s (e.g. `jobs`) are past their TDZ, the same reason
+  // vwOpenGroup itself had to move into the early boot-safe block; a local
+  // table sidesteps that instead of needing its own early declaration.
+  // Background's running-jobs count is read off #vwJobs's OWN text
+  // (updateJobsBtn's write) rather than the `jobs` array directly, for the
+  // same reason.
+  const groups = {
+    view: {hdr: "vwViewType", row: "vwViewTypeRow",
+      label: () => "View type: " + ({roll: "Roll", tracks: "Tracks view", score: "Score view"}[viewMode] || "Roll")},
+    panels: {hdr: "vwPanels", row: "vwPanelsRow", label: () => "Panels"},
+    tools: {hdr: "vwTools", row: "vwToolsRow", label: () => "Tools"},
+    display: {hdr: "vwDisplay", row: "vwDisplayRow", label: () => "Display"},
+    background: {hdr: "vwBackground", row: "vwBackgroundRow", label: () => {
+      const m = document.getElementById("vwJobs").textContent.match(/· (\d+) running/);
+      return "Background" + (m ? " · ⏳" + m[1] : "");
+    }},
+    mode: {hdr: "vwMode", row: "vwModeRow", label: () =>
+      "Mode: " + (appMode() === "learning" ? "Learning" : "Normal") + (listenerMode ? " · Listener" : "")},
+  };
+  for (const [key, g] of Object.entries(groups)) {
+    const open = vwOpenGroup === key;
+    const hdr = document.getElementById(g.hdr);
+    hdr.textContent = (open ? "▾  " : "▸  ") + g.label();
+    hdr.setAttribute("aria-expanded", String(open));
+    document.getElementById(g.row).style.display = open ? "" : "none";
   }
   set("vwMixer", mixerIsOpen());
   set("vwCompare", !!cmp, !(song && songKey && isComposition())); // dimmed where there is nothing to compare against
@@ -17602,6 +17635,7 @@ document.getElementById("viewsheetbtn").addEventListener("click", e => {
   const sheet = document.getElementById("viewsheet");
   if (sheet.classList.contains("on")) { closeFileMenus(); return; }
   closeFileMenus();
+  vwOpenGroup = null; // sub-menu follow-up, 2026-10-02: every group starts closed, each time View ▾ opens
   renderViewMenu();
   const r = e.currentTarget.getBoundingClientRect();
   sheet.style.left = Math.max(6, Math.min(r.left, songRegionRight() - 250)) + "px";
@@ -17610,12 +17644,25 @@ document.getElementById("viewsheetbtn").addEventListener("click", e => {
 });
 { // View toggles flip in place — the menu STAYS OPEN (batch hiding is the use)
   const on = (id, fn) => document.getElementById(id).addEventListener("click", () => { fn(); renderViewMenu(); });
+  // Each group header toggles vwOpenGroup accordion-style: tapping the OPEN
+  // group's own header closes it (back to null); tapping any other closes
+  // whichever was open and opens this one — at most one group's content div
+  // is ever visible. Same expanding-row mechanics "View type ▸" always used
+  // (ruling #4, 2026-10-01 pm), just generalized to all six (sub-menu
+  // follow-up, 2026-10-02, Josh: "View ▾ is too tall — make EVERY section an
+  // expanding sub-menu").
+  const toggleGroup = key => { vwOpenGroup = vwOpenGroup === key ? null : key; };
+  on("vwViewType", () => toggleGroup("view"));
+  on("vwPanels", () => toggleGroup("panels"));
+  on("vwTools", () => toggleGroup("tools"));
+  on("vwDisplay", () => toggleGroup("display"));
+  on("vwBackground", () => toggleGroup("background"));
+  on("vwMode", () => toggleGroup("mode"));
   // VIEW group is a radio (Josh, 2026-09-30): each item always SELECTS its
   // mode — no toggle-off — same as the footer's #viewbtn segmented control.
   // "View type ▸" (chrome density follow-up, 2026-10-01 pm): expands/
   // collapses #vwViewTypeRow in place — picking a row below still re-renders
   // (the "on" wrapper) so the ▸/▾ + current-view label stay in sync.
-  on("vwViewType", () => { vwViewTypeOpen = !vwViewTypeOpen; });
   on("vwRoll", () => setViewMode("roll"));
   on("vwScore", () => setViewMode("score"));
   on("vwListener", () => {
@@ -17709,7 +17756,7 @@ function fileMenuSaveLabels() { // Save Version: your own local songs only. Vers
   document.getElementById("filerevert").style.display = !!song && !!songKey && !songKey.startsWith("local/") && !LINK_SONGS ? "" : "none";
 }
 // File ▾ → "Open Recent ▸" (2026-10-01): same expanding-row pattern as
-// View ▾'s "View type ▸" (renderViewMenu/vwViewTypeOpen) — keeps the ▸/▾
+// View ▾'s own groups (renderViewMenu/vwOpenGroup) — keeps the ▸/▾
 // glyph and #fileopenrecentrow's own rows in sync; called on every File ▾
 // open and again after any tap inside the row (pick/Clear) so the menu
 // reflects the new state in place, without closing.

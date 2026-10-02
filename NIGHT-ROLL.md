@@ -6530,3 +6530,68 @@ Device-local pref `ff1roll-added-outline` ("1"/"0"), read lazily by
 `showAddedOutline()` (a function with a cached `.v`, not a top-level let:
 drawFull runs on the boot path), written by `setAddedOutline()`. The
 `n.added` flag itself is unchanged — Publish/compare still use it.
+
+## View ▾ sub-menus (2026-10-02)
+
+Josh, after using the chrome density pass's regrouped menu for a day: "View
+▾ is too tall — make EVERY section an expanding sub-menu." Generalizes
+"View type ▸" (chrome density follow-up, ruling #4) to all six groups —
+**View, Panels, Tools** (renamed from Highlight / Readout), **Display,
+Background, Mode**. Each is now a header `.fitem` (`▸  Name` closed /
+`▾  Name` open, `aria-expanded`) plus a content div
+(`#vw<Group>Row`, `display:none` by default) the header's own click
+handler shows/hides — the same mechanics `#vwViewType`/`#vwViewTypeRow`
+already used, just applied to five more pairs (`#vwPanels`/`#vwPanelsRow`,
+`#vwTools`/`#vwToolsRow`, `#vwDisplay`/`#vwDisplayRow`,
+`#vwBackground`/`#vwBackgroundRow`, `#vwMode`/`#vwModeRow`). Every existing
+item id, handler, ✓ logic, dimming and Learning-mode hiding is unchanged —
+only one level deeper in the markup, inside its group's row div instead of
+sitting loose under a `.cfgsec` caption (removed, along with the `.fdiv`
+dividers a group's own content used to have between items — a thin `.fdiv`
+stays only BETWEEN header rows now).
+
+**Accordion.** `vwOpenGroup` (`null` or one of `"view"`/`"panels"`/
+`"tools"`/`"display"`/`"background"`/`"mode"`) replaces the old
+`vwViewTypeOpen` boolean, living in the exact same early boot-safe block
+(next to `APP_MODE`) for the same TDZ reason — `renderViewMenu` can run
+during boot, before a `let` declared further down the file is past its own
+TDZ. At most one group is open at a time: each header's click handler is
+`vwOpenGroup = vwOpenGroup === key ? null : key` (closes on a second tap of
+the same header, otherwise swaps to the new one), and `renderViewMenu()`
+loops a `{hdr, row, label()}` table — built FRESH inside the function on
+every call, not a top-level `const`, for the same TDZ reason `vwOpenGroup`
+itself needed the early block (a table built once at top level would sit
+at this function's own late position in the file and could be read before
+that line ran). `viewsheetbtn`'s own click handler sets `vwOpenGroup = null`
+before every `renderViewMenu()` call that opens the sheet, so View ▾ always
+starts with all six groups closed, even if one was left open last time.
+
+**Header hints.** `label()` is read fresh every render: View names the
+current view type (unchanged), Mode names the current mode
+(`"Mode: Learning"` / `"Mode: Normal"`, `" · Listener"` appended when
+`listenerMode`), Background shows `"Background · ⏳N"` while N jobs are
+running — read off `#vwJobs`'s OWN text (`updateJobsBtn()`'s write,
+`"⏳  Jobs · N running"`) via a regex rather than the `jobs` array directly,
+again sidestepping `jobs`' own later-in-the-file TDZ. Panels, Tools and
+Display carry no hint, same as before.
+
+Help: the "View ▾ menu" dt/dd rewritten for the accordion (kept every
+FEATURES drift keyword the old text carried — "View type", "find:",
+"Circle of fifths", "Instrument panel", "Outline new notes", "View ▾ menu",
+"STAYS OPEN", "Listener mode", "8va", "Analyze ▸", "Learning mode"); the
+Lasso/Circle of fifths/find: dt's own "View ▾ → HIGHLIGHT / READOUT → …"
+cross-references became "View ▾ → Tools → …". `node tools/build_help.mjs`
+regenerated HELP.md.
+
+Tests: `tests/night-roll.test.mjs`'s View ▾ structure test rewritten for
+the six header ids (replacing the `.cfgsec` anchors), plus new assertions —
+all six groups closed by default, one tap expands a group, opening a
+different group closes the one that was open, tapping the open group's own
+header closes it, the menu re-closes everything on every (re)open (not just
+the first), and each item's markup falls INSIDE its own group's row div
+(a balanced-`<div>` text extraction, not a DOM parent-chain walk — the vm
+harness never builds one off static HTML, only off JS-side
+appendChild/append). No `tests/e2e/*.spec.mjs` spec clicks a `#vw*`/
+`#octbtn`/`#findsel`/`#cofbtn` id directly (grepped — none do, `viewsheetbtn`
+itself is only ever checked for visibility), so none needed updating for
+the new display:none-until-expanded groups.
