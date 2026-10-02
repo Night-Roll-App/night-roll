@@ -27,6 +27,11 @@
 // --state-dir DIR [beside the default jobs dir; inside a custom one].
 // POST /v1/shot takes a PNG/JPEG (the app's 📷) and answers {path} under
 // <state-dir>/shots; Claude Code gets that directory via --add-dir.
+// POST /v1/chat/completions may carry an optional x-nr-ctx-parts header
+// (JSON {part: chars}, e.g. {"notes":1200,"annotations":900}) describing
+// this turn's pushed context block; recorded as-is in that turn's row of
+// the session's ring (ask-token-plan.md step 0) — the bridge does not
+// interpret its shape.
 //
 // Models: "claude-code" when the `claude` CLI is installed (and not --no-claude),
 // plus every model each upstream lists, refreshed on every /v1/models call —
@@ -72,7 +77,9 @@
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
 // GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET|POST /v1/app-state · GET|POST /v1/terminal ·
 // GET|DELETE /v1/sessions/:key (usage {turns, tokens, cost, lastCompact}; DELETE drops the
-// session id so the next turn starts fresh — Clear chat's backend reset) ·
+// session id so the next turn starts fresh — Clear chat's backend reset;
+// ?turns=1 adds `ring`, the last 50 turns' {t, gapS, in, out, cacheRead,
+// cacheCreate, ctxTokens, apiCalls, parts} — ask-token-plan.md step 0) ·
 // POST /v1/sessions/:key/compact (runs `/compact` non-interactively on that
 // song's Claude Code session; {preTokens, postTokens, cost, turnsBefore, turnsAfter}) · GET /health.
 // No dependencies. Node 18+.
@@ -85,6 +92,12 @@
 // the real field names, found by running `claude -p --session-id <uuid> …`
 // against a throwaway session and reading its stream. GET /v1/sessions/:key
 // sums them into {turns, tokens, cost}, for the app's per-tab usage line.
+// total_cost_usd itself is a RUNNING total for the whole resumed session, not
+// per-turn (ask-token-plan.md step 0, 2026-10-01): summing it every turn was
+// over-counting a long session's cost figure. The session row now keeps
+// lastCumCost (the last total_cost_usd seen) and costUsd only grows by the
+// delta since then; a total lower than lastCumCost (session restarted, a
+// fresh underlying counter) is treated as a fresh total, not a negative add.
 // Compaction: `claude -p --resume <id> … "/compact"` DOES run non-interactively
 // (confirmed against a live throwaway session) and emits a
 // `{"type":"system","subtype":"compact_boundary","compact_metadata":{pre_tokens,
@@ -196,10 +209,10 @@ function flatten(messages) { // OpenAI messages → one prompt; the system messa
   }
   return {system, prompt: lines.join("\n\n") + "\n\nASSISTANT:"};
 }
-function flattenTail(messages) { // a resumed session: only what came after the last reply it gave (the newest question, plus this round's tool call + results)
+function flattenTail(messages) { // a resumed session: only what came after the LAST assistant message of ANY kind (ask-token-plan.md bug #1: stopping at the last assistant WITHOUT tool_calls meant a mid-tool-round turn — whose last assistant message HAS tool_calls — fell back to an earlier turn's boundary and re-sent the whole <context> user message every round)
   const list = messages || [];
   let from = 0;
-  for (let i = list.length - 1; i >= 0; i--) if (list[i].role === "assistant" && !(list[i].tool_calls && list[i].tool_calls.length)) { from = i + 1; break; }
+  for (let i = list.length - 1; i >= 0; i--) if (list[i].role === "assistant") { from = i + 1; break; }
   return flatten(list.filter((m, i) => m.role === "system" || i >= from));
 }
 function safeJSON(s) { try { return JSON.parse(s || "{}"); } catch (err) { return {}; } }
@@ -313,17 +326,25 @@ function sessionFor(key) {
   // "claude reported an error" (2026-09-30 — a Compact wrote its usage into a
   // row a concurrent write had dropped). Start a fresh session, keep the rest.
   if (!all[key] || !all[key].id) {
-    all[key] = {tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0, costUsd: 0, lastCompact: null, ...(all[key] || {}),
+    all[key] = {tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheCreate: 0, costUsd: 0, lastCompact: null, lastCumCost: null, ring: [], ...(all[key] || {}),
                 id: crypto.randomUUID(), turns: 0, noteSeen: (all[key] && all[key].noteSeen) || 0, started: Date.now()};
     writeJSON(SESSIONS_FILE, all);
   }
   return all[key];
 }
 function sessionUpdate(key, patch) { const all = readJSON(SESSIONS_FILE, {}); all[key] = {...(all[key] || {}), ...patch, last: Date.now()}; writeJSON(SESSIONS_FILE, all); return all[key]; }
-function sessionUsageView(s) { // {turns, tokens, cost} — s may be undefined (never asked anything yet)
-  if (!s) return {turns: 0, tokens: 0, cost: 0, lastCompact: null};
+// ask-token-plan.md step 0(b): opts.ring adds the per-session ring of the
+// last 50 turns ({t, gapS, in, out, cacheRead, cacheCreate, ctxTokens,
+// apiCalls, parts} — see runClaude) for GET /v1/sessions/:key?turns=1;
+// left off by default so the plain usage shape (turns/tokens/cost/
+// lastCompact) is unchanged for existing callers.
+function sessionUsageView(s, opts) { // {turns, tokens, cost} — s may be undefined (never asked anything yet)
+  const ring = opts && opts.ring;
+  if (!s) return ring ? {turns: 0, tokens: 0, cost: 0, lastCompact: null, ring: []} : {turns: 0, tokens: 0, cost: 0, lastCompact: null};
   const tokens = (s.tokensIn || 0) + (s.tokensOut || 0) + (s.cacheRead || 0) + (s.cacheCreate || 0);
-  return {turns: s.turns || 0, tokens, cost: Math.round((s.costUsd || 0) * 10000) / 10000, lastCompact: s.lastCompact || null};
+  const view = {turns: s.turns || 0, tokens, cost: Math.round((s.costUsd || 0) * 10000) / 10000, lastCompact: s.lastCompact || null};
+  if (ring) view.ring = s.ring || [];
+  return view;
 }
 // Plan-quota % (open-items.md item 4): every turn's stream-json ALREADY
 // carries a top-level rate_limit_event — no extra "/usage" call needed —
@@ -368,19 +389,24 @@ function notesPreface(sess) { // what the terminal said since this session's las
 }
 
 // ---------------------------------------------------------------- runners
-function runClaude(job, body, songKey, model, retry = true) {
+function runClaude(job, body, songKey, model, ctxPartsHeader, retry = true) {
   const sess = sessionFor(songKey);
   const resumed = sess.turns > 0;
   const {system, prompt: tail} = resumed ? flattenTail(body.messages) : flatten(body.messages);
   const prompt = notesPreface(sess) + tail;
   const noteLast = inboxAll().last;
+  // ask-token-plan.md step 0(b): the app's optional x-nr-ctx-parts header
+  // (JSON part→chars) — stored as-is in this turn's ring row, no parsing of
+  // its shape beyond valid JSON (a bad/missing header just means no parts).
+  let ctxParts = null;
+  if (ctxPartsHeader) { try { ctxParts = JSON.parse(String(ctxPartsHeader)); } catch (err) { ctxParts = null; } }
   const sys = BRIDGE_SYS_COMMON + "\n" + (CLAUDE_MODE === "full" ? BRIDGE_SYS_FULL : BRIDGE_SYS_READ) + "\n" + BRIDGE_SYS_LINK + (system ? "\n\nNIGHT ROLL'S OWN INSTRUCTIONS:\n" + system : "") + toolInstructions(body.tools);
   const args = ["-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose", resumed ? "--resume" : "--session-id", sess.id, "--model", model || CLAUDE_DEFAULT_MODEL, "--append-system-prompt", sys];
   if (CLAUDE_MODE !== "full") args.push("--tools", "Read", "Glob", "Grep", "WebFetch", "WebSearch");
   args.push("--add-dir", SHOTS_DIR); // a 📷 screenshot sits outside the repo; Read needs the directory allowed
   const child = spawn(CLAUDE_BIN, args, {cwd: REPO, stdio: ["pipe", "pipe", "pipe"], env: {...process.env, CLAUDECODE: ""}});
   job.child = child;
-  let buf = "", err = "", sawText = false, held = "", holding = true, turnUsage = null;
+  let buf = "", err = "", sawText = false, held = "", holding = true, turnUsage = null, lastAssistantUsage = null, apiCalls = 0;
   const text = t => { // hold the first characters back: a one-line tool call must not stream as prose
     if (!holding) return jobPush(job, {content: t});
     held += t; const lead = held.trimStart();
@@ -396,8 +422,10 @@ function runClaude(job, body, songKey, model, retry = true) {
         const ev = j.event;
         if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") { sawText = true; text(ev.delta.text); }
         else if (ev.type === "content_block_start" && ev.content_block && ev.content_block.type === "tool_use") jobPush(job, {reasoning_content: "using " + ev.content_block.name + "… "});
-      } else if (j.type === "assistant" && j.message && Array.isArray(j.message.content)) {
-        for (const c of j.message.content) if (c.type === "tool_use") jobPush(job, {reasoning_content: "using " + c.name + (c.input && (c.input.file_path || c.input.pattern || c.input.command || c.input.url) ? " " + String(c.input.file_path || c.input.pattern || c.input.command || c.input.url).slice(0, 80) : "") + "… "});
+      } else if (j.type === "assistant" && j.message) {
+        apiCalls++; // ask-token-plan.md step 0(b): ring row's apiCalls = count of assistant message events this turn
+        if (j.message.usage) lastAssistantUsage = j.message.usage; // ring row's ctxTokens reads the LAST one (input + cache_read + cache_creation — not output, which isn't "context")
+        if (Array.isArray(j.message.content)) for (const c of j.message.content) if (c.type === "tool_use") jobPush(job, {reasoning_content: "using " + c.name + (c.input && (c.input.file_path || c.input.pattern || c.input.command || c.input.url) ? " " + String(c.input.file_path || c.input.pattern || c.input.command || c.input.url).slice(0, 80) : "") + "… "});
       } else if (j.type === "result") {
         if (j.is_error && !sawText) err = j.result || j.error || "claude reported an error";
         if (!sawText && typeof j.result === "string" && j.result) { sawText = true; text(j.result); }
@@ -415,16 +443,35 @@ function runClaude(job, body, songKey, model, retry = true) {
     if (!sawText && code !== 0 && resumed && retry && /session|conversation|resume/i.test(err)) { // Claude Code lost the session (cleaned up, another machine): start this song over, once
       sessionUpdate(songKey, {id: crypto.randomUUID(), turns: 0, noteSeen: 0, started: Date.now(), lost: err.trim().slice(0, 200)});
       job.notes.push("session restarted");
-      return runClaude(job, body, songKey, model, false);
+      return runClaude(job, body, songKey, model, ctxPartsHeader, false);
     }
     if (!sawText && code !== 0) return jobEnd(job, new Error((err || "claude exited " + code).trim().slice(0, 500)));
+    // ask-token-plan.md step 0(a): total_cost_usd is a RUNNING total for the
+    // whole resumed Claude Code session, not a per-turn figure — summing it
+    // every turn over-counted (a 20-turn session's "cost" was effectively
+    // cost × turns). Add only the delta since the last turn we saw
+    // (lastCumCost); a total that goes DOWN (a restarted/lost session, a
+    // fresh underlying counter) is treated as a fresh total, never a
+    // negative delta.
+    const totalCost = turnUsage ? turnUsage.cost : null;
+    const costDelta = totalCost == null ? 0 : (sess.lastCumCost == null || totalCost < sess.lastCumCost) ? totalCost : totalCost - sess.lastCumCost;
+    // ask-token-plan.md step 0(b): one ring row for this turn — gapS since
+    // the session's previous turn (sess.last, null on the session's first
+    // turn), ctxTokens from the LAST assistant stream event's usage (not the
+    // closing "result" event, which is this turn's own in/out/cache only).
+    const now = Date.now();
+    const gapS = sess.last ? Math.round((now - sess.last) / 1000) : null;
+    const ctxTokens = lastAssistantUsage ? (lastAssistantUsage.input_tokens || 0) + (lastAssistantUsage.cache_read_input_tokens || 0) + (lastAssistantUsage.cache_creation_input_tokens || 0) : null;
+    const ring = (sess.ring || []).concat([{t: now, gapS, in: turnUsage ? turnUsage.in : 0, out: turnUsage ? turnUsage.out : 0, cacheRead: turnUsage ? turnUsage.cacheRead : 0, cacheCreate: turnUsage ? turnUsage.cacheCreate : 0, ctxTokens, apiCalls, parts: ctxParts}]).slice(-50);
     sessionUpdate(songKey, {
       turns: sess.turns + 1, noteSeen: noteLast,
       tokensIn: (sess.tokensIn || 0) + (turnUsage ? turnUsage.in : 0),
       tokensOut: (sess.tokensOut || 0) + (turnUsage ? turnUsage.out : 0),
       cacheRead: (sess.cacheRead || 0) + (turnUsage ? turnUsage.cacheRead : 0),
       cacheCreate: (sess.cacheCreate || 0) + (turnUsage ? turnUsage.cacheCreate : 0),
-      costUsd: (sess.costUsd || 0) + (turnUsage ? turnUsage.cost : 0),
+      costUsd: (sess.costUsd || 0) + costDelta,
+      lastCumCost: totalCost != null ? totalCost : (sess.lastCumCost != null ? sess.lastCumCost : null),
+      ring,
     });
     const full = held || (holding ? "" : null);
     const call = parseToolCall(holding ? held : job.text);
@@ -520,7 +567,7 @@ const server = http.createServer(async (req, res) => {
   const sm = url.pathname.match(/^\/v1\/sessions\/([^/]+)(\/compact)?$/); // AI session controls (open-items.md): usage + Clear-really-resets + Compact
   if (sm) {
     const key = sanitizeSongKey(decodeURIComponent(sm[1])) || "default"; // the exact rule songKeyOf applies to x-nr-song, so the same song always lands on the same row
-    if (!sm[2] && req.method === "GET") { const all = readJSON(SESSIONS_FILE, {}); return json(res, 200, sessionUsageView(all[key])); }
+    if (!sm[2] && req.method === "GET") { const all = readJSON(SESSIONS_FILE, {}); return json(res, 200, sessionUsageView(all[key], {ring: url.searchParams.get("turns") === "1"})); }
     if (!sm[2] && req.method === "DELETE") { // Clear chat really resets: drop the session id so the next turn starts a new Claude Code session; .ask.md and the inbox are untouched
       const all = readJSON(SESSIONS_FILE, {});
       if (all[key]) { delete all[key]; writeJSON(SESSIONS_FILE, all); }
@@ -617,7 +664,7 @@ const server = http.createServer(async (req, res) => {
       const target = route.get(body.model) || route.get(MODEL_CLAUDE) || [...route.values()][0];
       if (!target) return json(res, 503, {error: {message: "no model reachable: start LM Studio / Ollama, or install Claude Code"}});
       job = newJob(id, body.model || (target.claude ? MODEL_CLAUDE : target.id));
-      if (target.claude) runClaude(job, body, songKeyOf(req, body), target.model); else runUpstream(job, body, target);
+      if (target.claude) runClaude(job, body, songKeyOf(req, body), target.model, req.headers["x-nr-ctx-parts"]); else runUpstream(job, body, target);
     }
     const cid = "chatcmpl-" + id;
     const finalMessage = () => job.result && job.result.tool_calls ? {role: "assistant", content: null, tool_calls: job.result.tool_calls} : {role: "assistant", content: job.text};

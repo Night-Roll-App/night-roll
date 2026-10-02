@@ -182,3 +182,86 @@ esac
   // compacting a chat with no session yet: 404, not a crash
   assert.equal((await fetch(base + "/v1/sessions/never-asked/compact", {method: "POST"})).status, 404);
 });
+
+test("bridge: ask-token-plan.md step 0 (cost delta, per-turn ring, x-nr-ctx-parts) and step 1 (flattenTail stops duplicating the context on a tool round)", async t => {
+  const {writeFileSync, readFileSync, existsSync, chmodSync} = await import("node:fs");
+  const dir = mkdtempSync(path.join(tmpdir(), "nr-bridge-ring-"));
+  const argsLog = path.join(dir, "args.log"), promptLog = path.join(dir, "prompt.log"), counter = path.join(dir, "n"), bin = path.join(dir, "fake-claude");
+  // a stand-in claude: logs argv (args.log) and the WHOLE prompt it was sent
+  // on stdin (prompt.log, "-----END-----"-separated — step 1 checks this);
+  // a counter file makes call N emit a distinct message.usage (for ctxTokens)
+  // and total_cost_usd (0.002 on the first turn, 0.005 on the second — a
+  // RUNNING total, same underlying session, the way the real CLI reports it).
+  writeFileSync(bin, `#!/bin/sh
+[ "$1" = "--version" ] && exit 0
+printf '%s\\n' "$*" >> "${argsLog}"
+STDIN=$(cat)
+{ printf '%s' "$STDIN"; printf '\\n-----END-----\\n'; } >> "${promptLog}"
+N=$(cat "${counter}" 2>/dev/null || echo 0)
+N=$((N+1))
+echo "$N" > "${counter}"
+case "$*" in
+  *"/compact"*)
+    echo '{"type":"result","subtype":"success","result":"","is_error":false,"total_cost_usd":0.0}'
+    ;;
+  *)
+    IN=$((N*10)); CR=$((N*20)); CC=$((N*5))
+    echo "{\\"type\\":\\"assistant\\",\\"message\\":{\\"content\\":[{\\"type\\":\\"text\\",\\"text\\":\\"ok\\"}],\\"usage\\":{\\"input_tokens\\":$IN,\\"output_tokens\\":5,\\"cache_read_input_tokens\\":$CR,\\"cache_creation_input_tokens\\":$CC}}}"
+    if [ "$N" = "1" ]; then COST=0.002; else COST=0.005; fi
+    echo "{\\"type\\":\\"result\\",\\"subtype\\":\\"success\\",\\"result\\":\\"ok\\",\\"is_error\\":false,\\"total_cost_usd\\":$COST,\\"usage\\":{\\"input_tokens\\":5,\\"output_tokens\\":7,\\"cache_read_input_tokens\\":100,\\"cache_creation_input_tokens\\":50}}"
+    ;;
+esac
+`);
+  chmodSync(bin, 0o755);
+  const port = 20000 + Math.floor(Math.random() * 1000);
+  const child = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port), "--jobs-dir", path.join(dir, "jobs")],
+    {env: {...process.env, CLAUDE_BIN: bin, BRIDGE_UPSTREAMS: "none=http://127.0.0.1:9"}, stdio: ["ignore", "pipe", "pipe"]});
+  t.after(() => { child.kill("SIGKILL"); rmSync(dir, {recursive: true, force: true}); });
+  let out = ""; child.stdout.on("data", d => { out += d; }); child.stderr.on("data", d => { out += d; });
+  for (let i = 0; i < 80 && !/jobs:/.test(out); i++) await sleep(100);
+  const base = "http://127.0.0.1:" + port;
+  const ask = (song, messages, headers) => fetch(base + "/v1/chat/completions", {method: "POST", headers: {"content-type": "application/json", "x-nr-song": song, ...(headers || {})}, body: JSON.stringify({model: "claude-code", messages})}).then(r => r.json());
+
+  // --- step 0: cost delta + ring -----------------------------------------
+  await ask("ring-song", [{role: "user", content: "hi"}]); // turn 1: total_cost_usd 0.002 (N=1)
+  await sleep(1100); // so turn 2's gapS is measurably > 0
+  await ask("ring-song", [{role: "user", content: "hi again"}], {"x-nr-ctx-parts": JSON.stringify({notes: 120, annotations: 45})}); // turn 2: total_cost_usd 0.005 (N=2, same session)
+
+  const plain = await (await fetch(base + "/v1/sessions/ring-song")).json();
+  assert.equal(plain.turns, 2);
+  assert.equal(plain.cost, 0.005, "a running total 0.002 then 0.005 adds only the delta — session cost 0.005, not 0.007");
+  assert.ok(!("ring" in plain), "no ?turns=1 — the plain usage shape is unchanged");
+
+  const withRing = await (await fetch(base + "/v1/sessions/ring-song?turns=1")).json();
+  assert.equal(withRing.cost, 0.005);
+  assert.equal(withRing.ring.length, 2, "ring has 2 rows");
+  const [row1, row2] = withRing.ring;
+  assert.equal(row1.gapS, null, "no previous turn yet on the session's first row");
+  assert.ok(row2.gapS >= 1, "gapS measures the gap since the previous turn: " + row2.gapS);
+  assert.equal(row1.ctxTokens, 10 + 20 + 5, "ctxTokens = input+cache_read+cache_creation from the LAST assistant stream event, N=1");
+  assert.equal(row2.ctxTokens, 20 + 40 + 10, "…and N=2 on the second row");
+  assert.equal(row1.apiCalls, 1); assert.equal(row2.apiCalls, 1);
+  assert.equal(row1.in, 5); assert.equal(row1.out, 7); assert.equal(row1.cacheRead, 100); assert.equal(row1.cacheCreate, 50);
+  assert.equal(row1.parts, null, "no x-nr-ctx-parts header on turn 1");
+  assert.deepEqual(row2.parts, {notes: 120, annotations: 45}, "x-nr-ctx-parts is stored as-is");
+
+  // --- step 1: flattenTail stops re-sending <context> mid tool-round -----
+  const contextMsg = {role: "user", content: "<context>song: Foo\nnotes here</context>\nWhat chord is this?"};
+  const toolRound = [
+    {role: "system", content: "night roll system"},
+    contextMsg,
+    {role: "assistant", tool_calls: [{id: "c1", type: "function", function: {name: "read_song", arguments: "{}"}}]},
+    {role: "tool", tool_call_id: "c1", content: "TOOL RESULT PAYLOAD 12345"},
+  ];
+  await ask("toolround-song", [{role: "user", content: "first turn"}]); // establishes turns>0 so the next call is "resumed"
+  await ask("toolround-song", toolRound); // mid tool-round, on a RESUMED session
+  await ask("fresh-song", toolRound); // the SAME shape, but this song's very first turn — not resumed
+
+  for (let i = 0; i < 50 && (readFileSync(promptLog, "utf8").match(/-----END-----/g) || []).length < 5; i++) await sleep(100);
+  const prompts = readFileSync(promptLog, "utf8").split("-----END-----\n").map(s => s.trim()).filter(Boolean);
+  assert.equal(prompts.length, 5);
+  const [, , , resumedToolRoundPrompt, freshToolRoundPrompt] = prompts;
+  assert.match(resumedToolRoundPrompt, /TOOL RESULT PAYLOAD 12345/);
+  assert.doesNotMatch(resumedToolRoundPrompt, /<context>/, "resumed + mid tool-round: only the tool result, not the whole <context> message again");
+  assert.match(freshToolRoundPrompt, /<context>/, "a fresh (non-resumed) session is unchanged — it still sends everything via flatten()");
+});
