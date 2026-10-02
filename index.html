@@ -489,6 +489,8 @@
   #editsheet.on, #viewsheet.on { display: block; }
   #editsheet .fitem, #viewsheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #editsheet .fitem:active, #viewsheet .fitem:active { background: var(--panel); }
+  /* a group's items sit indented under its ▾ header so the accordion reads as nested */
+  #viewsheet > div[id$="Row"] { padding-left: 26px; }
   #drummersheet .sheet { width: min(720px, 100%); } /* the range row wraps at 560 (Josh, from bed) */
   /* the chat: three quarters of the screen on a tablet — half was hard to
      read (Josh, 2026-09-26); phones keep the full width they already had */
