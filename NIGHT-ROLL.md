@@ -6495,3 +6495,13 @@ fifths/Learning mode/⏳/⚠ all still have a home, worded around their new one)
 sheet (🎓 Learning mode, ⊞ Lasso, ◯5 Circle of fifths, find:, ⚠ Messages,
 ⏳ Jobs, What Claude Code is doing now, View ▾ menu — the ⋯ More dt/dd was
 deleted outright, nothing left to point at).
+
+## Outline new notes (Josh, 2026-10-02)
+
+The dashed white stroke drawFull puts on every `n.added` note (added since
+the song opened) is now a View ▾ → Display toggle, **┄ Outline new notes**
+(#vwAdded), off by default — writing a new song, every note is new.
+Device-local pref `ff1roll-added-outline` ("1"/"0"), read lazily by
+`showAddedOutline()` (a function with a cached `.v`, not a top-level let:
+drawFull runs on the boot path), written by `setAddedOutline()`. The
+`n.added` flag itself is unchanged — Publish/compare still use it.

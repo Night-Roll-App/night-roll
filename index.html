@@ -1883,7 +1883,7 @@
       <dt>Hardware keyboard</dt><dd>Logic's keys: <b>Return</b> back to the start (or the cycle's start), <b>K</b> click on/off, <b>C</b> cycle on/off, <b>R</b> record, <b>Q</b> quantizes the selection, <b>⌘← / ⌘→</b> zoom out / in around the cursor. Editing: <b>⌘A</b> selects every visible note, <b>⌘C / ⌘X / ⌘V</b> copy, cut, paste at the playhead, <b>⌘D</b> duplicates the selection right after itself (whole bars when it's longer than a beat — press again to keep repeating), <b>⌘Z / ⇧⌘Z</b> undo / redo, <b>⌘S</b> Save Version, arrows move, ⇧ an octave, ⌥ resizes, Delete removes.</dd>
       <dt>▦ Grid</dt><dd>Notes move and resize on a 16th grid, or on triplet steps while a <b>T</b> duration is active — and the duration chips stay visible in <b>Select</b>, where they are that move grid, so changing it never means a trip through Pencil. Touching a note <b>picks up its grid</b> automatically: grab a triplet note and moves go in triplet steps, grab a straight one and they go in 16ths; tap a chip afterwards to override. View ▾ → <b>Grid…</b> opens a sheet: tap a number of <b>lines per bar</b> (say 10) and the roll redraws instantly with that many lines in each bar — and pencil entry, note drags and resizes all SNAP to those lines. Pure view-and-snap aid: no note moves, no annotation changes, the time signature stays what it is. This is how a figure the duration buttons can't spell — ten even notes across a 4/4 bar, each 0.4 beats — becomes pencil-drag from line to line; with a grid armed, a pencil tap lays down one cell — in the roll, the fall view and the score alike — so 6 lines per bar pencils quarter-note triplets and 12 pencils eighth triplets without touching the duration chips (they dim while a grid rules, and a <b>▦N</b> chip appears at the end of the row naming the grid — tap it for the sheet; opening another song turns the grid off). Set the <b>anchor</b> right in the sheet — bar and beat, and the beat takes decimals for sub-beat starts (2.5 = the "and" of 2, 2.25 = the second sixteenth) — and the lines run from there (14.2, say), so a figure beginning mid-bar gets its lines exactly where its notes go, continuing bar after bar on that phase across the whole song. Bar lines stay drawn for orientation but stop being snap targets while the grid is armed; a bar line falling between cells is expected, not a bug. <b>Off</b> returns to the meter's own grid (16ths, or triplet steps while a T duration is armed). Transient by design: set it, enter the passage, set it back.</dd>
       <dt>📻 Listener mode</dt><dd>Phones open as a PLAYER: the roll, ⏮ ▶, the readouts, speed and volume — everything else hidden, including the section/chord bands and the notes strip (unreadably small on a phone anyway), because a shared song link is for listening, not editing. A <b>Full app</b> button in the header brings the whole DAW back on that device (and View ▾ → Listener mode folds it away again, on any device). Send someone a ?song= link and their phone just… plays it.</dd>
-      <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — six groups, top to bottom (chrome density follow-up, 2026-10-01 pm: grew from four when ⋯ More's own tools folded in here — "View ▾ is getting long" is Josh's own note, but one findable menu beat two): <b>View</b> (one <b>▸ View type</b> row — tap to expand <b>▦ Roll / ▤ Tracks view / 𝄞 Score view</b>, a radio, one ✓ at a time, the same views the footer's bottom-left view drop-up switches between; its own closed label always names the CURRENT view), <b>Panels</b> (🎹 Instrument panel, 💬 Notes strip, 🎚 Mixer, ◂ Tracks — the windows and side panels you open beside the roll), <b>Highlight / Readout</b> (8va octave numbers, find: the pitch finder, ◯5 Circle of fifths — moved from ⋯ More, same ids and behavior), <b>Display</b> (🛠 Edit toolbar, ▦ Bottom bar, ▦ Grid…, and ▸ Section levels with −/+ steppers — shows "2 of 3"; the gutter chevron still one-tap cycles — what the roll itself shows or snaps to), <b>Background</b> (⏳ Jobs, ⚠ Messages — also moved from ⋯ More; both stay in the menu even when their matching footer button is hidden, so a finished job or an already-read message log is still reachable), and <b>Mode</b> (🔍 Analyze ▸, ⇄ Compare with repo, 🎓 Learning mode, 📻 Listener mode — these change what editing, or the whole app, means). ✓ means on, visible, or current; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else (or the moment an item opens its own separate sheet — Grid…, Compare, Jobs, Messages). Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
+      <dt>View ▾ menu</dt><dd>Beside Edit in the header (always there, even on locked songs) — six groups, top to bottom (chrome density follow-up, 2026-10-01 pm: grew from four when ⋯ More's own tools folded in here — "View ▾ is getting long" is Josh's own note, but one findable menu beat two): <b>View</b> (one <b>▸ View type</b> row — tap to expand <b>▦ Roll / ▤ Tracks view / 𝄞 Score view</b>, a radio, one ✓ at a time, the same views the footer's bottom-left view drop-up switches between; its own closed label always names the CURRENT view), <b>Panels</b> (🎹 Instrument panel, 💬 Notes strip, 🎚 Mixer, ◂ Tracks — the windows and side panels you open beside the roll), <b>Highlight / Readout</b> (8va octave numbers, find: the pitch finder, ◯5 Circle of fifths — moved from ⋯ More, same ids and behavior), <b>Display</b> (🛠 Edit toolbar, ▦ Bottom bar, ┄ Outline new notes — a dashed white outline on every note added since the song opened, off by default, this device only —, ▦ Grid…, and ▸ Section levels with −/+ steppers — shows "2 of 3"; the gutter chevron still one-tap cycles — what the roll itself shows or snaps to), <b>Background</b> (⏳ Jobs, ⚠ Messages — also moved from ⋯ More; both stay in the menu even when their matching footer button is hidden, so a finished job or an already-read message log is still reachable), and <b>Mode</b> (🔍 Analyze ▸, ⇄ Compare with repo, 🎓 Learning mode, 📻 Listener mode — these change what editing, or the whole app, means). ✓ means on, visible, or current; the menu STAYS OPEN while you flip several at once, and closes on a tap anywhere else (or the moment an item opens its own separate sheet — Grid…, Compare, Jobs, Messages). Every item mirrors an existing button — the buttons are the fast path, the menu is the findable one. The header itself never hides, so View ▾ is always the way back; hiding the bottom bar floats the ▴ restore button bottom-left (one tap brings everything back). The old ▾ hide buttons are gone — hiding lives here now.</dd>
       <dt>Speed &amp; volume buttons</dt><dd>The speed slider folded into a <b>percentage button</b> — tap to open the slider, tap anywhere else and it folds back (the reset chip appears when off-native). Beside it, <b>🔊</b> is a master volume the same way: tap, slide (10–200%), tap away; the setting sticks per device and the button shows the number when it's not 100%.</dd>
       <dt>LCD readout</dt><dd>Beside Play, Logic-style: live bar and beat (counted in the declared meter's beats), the tempo at the cursor from the song's own tempo map (scaled by the speed slider), and the declared meter and key. Undeclared stays honest: meter reads "4/4?", key reads "C?" (the display default), a stored tonic reads "B♭?". On your own songs the tempo segment is tappable too — it opens a Tempo change annotation ("tempo: 120" at a bar/beat; the map applies from there, so mid-song tempo changes work; Save writes the full map into the .mid). On analyzed songs the same annotation is an OBSERVATION — it records that the music changes tempo there and leaves playback untouched (the capture's timing is measured fact). Every readout is a door to the song's OPENING value — always bar 1, wherever the cursor is: tap the tempo, the meter or the key to open the one at bar 1 (or declare it there); a change partway through goes in with + Note — a stored partial opens its own note with the tonic already filled.</dd>
       <dt>Blue cursor</dt><dd>Play starts here. Tap the bar ruler to place it, or drag its handle (triangle under the ruler). Tapping a note selects it <b>without moving the cursor</b>, the DAW way, so Space still plays from where you were; <b>+ Note</b> anchors at the note you tapped. (Settings → Other brings back tap-to-move.)</dd>
@@ -2081,6 +2081,7 @@
   <div class="cfgsec">DISPLAY</div>
   <button class="fitem" id="vwEdit">🛠  Edit toolbar</button>
   <button class="fitem" id="vwFooter">▦  Bottom bar</button>
+  <button class="fitem" id="vwAdded">┄  Outline new notes</button>
   <button class="fitem" id="vwGrid">▦  Grid…</button>
   <div class="fdiv" id="vwLevelsDiv"></div>
   <div id="vwLevelsRow" style="display:flex;align-items:center;gap:4px;padding:2px 4px">
@@ -5290,6 +5291,20 @@ function updateCanvasA11y() {
   const nt = song.tracks.length;
   el.setAttribute("aria-label", title + " — " + viewName + " view, bars " + barFrom + "–" + barTo + ", " + nt + " track" + (nt === 1 ? "" : "s"));
 }
+// the dashed "added this session" outline — a device-local View toggle, off
+// by default (Josh, 2026-10-02: "I just don't wanna see it all the time…
+// writing a new song, of course I know they're all unpublished"). A function,
+// not a top-level let: drawFull runs on the boot path, before later lets exist.
+function showAddedOutline() {
+  if (showAddedOutline.v === undefined) {
+    try { showAddedOutline.v = localStorage.getItem("ff1roll-added-outline") === "1"; } catch (err) { showAddedOutline.v = false; }
+  }
+  return showAddedOutline.v;
+}
+function setAddedOutline(on) {
+  showAddedOutline.v = !!on;
+  try { localStorage.setItem("ff1roll-added-outline", on ? "1" : "0"); } catch (err) { /* private mode: session only */ }
+}
 function drawFull(skipCursor) {
   updateCanvasA11y();
   if (instOpen) drawInst(); // panel repaints on every app repaint (incl. playback frames)
@@ -5394,7 +5409,7 @@ function drawFull(skipCursor) {
         ctx.stroke();
         ctx.lineWidth = 1;
       }
-      if (n.added) {
+      if (n.added && showAddedOutline()) {
         ctx.globalAlpha = 1;
         ctx.strokeStyle = "#fff";
         ctx.setLineDash([3, 2]);
@@ -17444,7 +17459,7 @@ function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2-char s
     b.textContent = (on ? "✓ " : "   ") + b.textContent.replace(/^([✓ ]\s*)/, "").replace(/^\s+/, "");
     b.style.opacity = dim ? 0.55 : 1;
   };
-  const base = {vwRoll: "▦  Roll", vwScore: "𝄞  Score view", vwListener: "📻  Listener mode", vwTracksView: "▤  Tracks view", vwMixer: "🎚  Mixer", vwTracks: "◂  Tracks", vwEdit: "🛠  Edit toolbar",
+  const base = {vwRoll: "▦  Roll", vwScore: "𝄞  Score view", vwListener: "📻  Listener mode", vwTracksView: "▤  Tracks view", vwMixer: "🎚  Mixer", vwTracks: "◂  Tracks", vwEdit: "🛠  Edit toolbar", vwAdded: "┄  Outline new notes",
                 vwFooter: "▦  Bottom bar", vwInst: "🎹  Instrument panel", vwSub: "💬  Notes strip",
                 vwCompare: "⇄  Compare with repo", vwAnalyze: "🔍  Analyze ▸", vwLearning: "🎓  Learning mode"};
   for (const [id, label] of Object.entries(base)) document.getElementById(id).textContent = label;
@@ -17476,6 +17491,7 @@ function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2-char s
   set("vwTracks", !document.getElementById("trackslide").classList.contains("off"));
   set("vwEdit", !editrowHidden, !editOn); // dimmed (not disabled) in read-only: the pref still flips
   set("vwFooter", !footerHidden);
+  set("vwAdded", showAddedOutline());
   set("vwInst", typeof instOpen !== "undefined" && instOpen);
   set("vwSub", subOn);
   set("vwGrid", !!gridDiv);
@@ -17614,6 +17630,7 @@ document.getElementById("viewsheetbtn").addEventListener("click", e => {
   on("vwCompare", () => { document.getElementById("viewsheet").classList.remove("on"); if (cmp) cmpExit(); else cmpEnter(); });
   on("vwTracks", () => document.getElementById("tracktoggle").click());
   on("vwEdit", () => { editrowHidden = !editrowHidden; applyChrome(); });
+  on("vwAdded", () => { setAddedOutline(!showAddedOutline()); drawFull(); });
   on("vwFooter", () => { footerHidden = !footerHidden; applyChrome(); });
   on("vwInst", () => document.getElementById("instbtn").click());
   on("vwSub", () => toggleSubtitle());

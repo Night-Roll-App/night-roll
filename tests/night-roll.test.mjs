@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave", "reopens with the strip up",
@@ -9716,6 +9716,19 @@ test("drumHit: a long captured duration sustains a decaying noise burst instead 
   run(`window.__bufLens = []; drumHit(0, 38, 0, 100, undefined);`); // no duration passed at all (back-compat)
   lens = val(`window.__bufLens`);
   assert.equal(lens[0], 0.11, "no durSec at all falls back to the fixed snare length, same as before this change");
+});
+
+test("View ▾ → Outline new notes: the dashed added-this-session outline is a device pref, off by default (Josh, 2026-10-02)", () => {
+  run(`try { localStorage.removeItem("ff1roll-added-outline"); } catch (e) {} showAddedOutline.v = undefined;`);
+  assert.equal(run(`showAddedOutline()`), false);
+  run(`setAddedOutline(true)`);
+  assert.equal(run(`showAddedOutline()`), true);
+  run(`showAddedOutline.v = undefined`); // a reload reads the stored pref back
+  assert.equal(run(`showAddedOutline()`), true);
+  run(`renderViewMenu()`);
+  assert.match(run(`document.getElementById("vwAdded").textContent`), /^✓/);
+  run(`setAddedOutline(false); renderViewMenu()`);
+  assert.doesNotMatch(run(`document.getElementById("vwAdded").textContent`), /^✓/);
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", () => {
