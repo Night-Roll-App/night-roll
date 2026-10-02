@@ -2731,7 +2731,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
@@ -6420,15 +6420,70 @@ test("📷: the native snapshot goes to the bridge's /v1/shot and its path lands
     assert.equal(val(`askShotOutgoing("")`), "(screenshot only)\n(screenshot: /Users/x/shots/a.jpg)");
     assert.equal(val(`document.getElementById("askshotchip").style.display`), "");
     run(`document.getElementById("askshotx").dispatchEvent({type: "click"});`);
-    assert.equal(val(`askShotPending`), null, "✕ drops it");
+    assert.equal(val(`askShotPending.length`), 0, "✕ drops it");
     assert.equal(val(`askShotOutgoing("hi")`), "hi");
     // the shell's own plugin isn't in Capacitor.Plugins, and native-bridge.js has no registerPlugin: nativePromise reaches it (iPad, 2026-09-29: "this browser can't take a screenshot")
     run(`window.Capacitor = {isNativePlatform: () => true, Plugins: {}, nativePromise: async (pl, m) => pl === "Screenshot" && m === "capture" ? {jpeg: "/9j/4A=="} : null}; __posted = null; askinput.value = "";`);
     await run(`askShotTake()`);
     assert.equal(val(`__posted && __posted.type`), "image/jpeg");
   } finally {
-    run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; globalThis.requestAnimationFrame = __realRaf; delete window.Capacitor; askinput.value = "";`);
+    run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; globalThis.requestAnimationFrame = __realRaf; delete window.Capacitor; askinput.value = ""; askShotClearAll();`);
   }
+});
+
+test("📷/🖼: several screenshots per message (cap 4), per-item removal, and the old single-shot draft shape", async () => {
+  try {
+    // two appends → askShotOutgoing carries one line per shot, in order
+    run(`askShotAdd("/Users/x/shots/a.jpg", {bytes: new Uint8Array([1]), mime: "image/jpeg"});
+         askShotAdd("/Users/x/shots/b.jpg", {bytes: new Uint8Array([2]), mime: "image/jpeg"});`);
+    assert.equal(val(`askShotPending.length`), 2);
+    assert.equal(val(`askShotOutgoing("look at these")`), "look at these\n(screenshot: /Users/x/shots/a.jpg)\n(screenshot: /Users/x/shots/b.jpg)");
+    assert.equal(val(`document.getElementById("askshotcount").textContent`), "📷 2 screenshots — sent with your next message");
+    assert.equal(val(`document.getElementById("askshotimgs").children.length`), 2, "a thumbnail cell per shot");
+    assert.equal(val(`askShotDisplayText(askShotOutgoing("look at these"))`), "look at these 📷📷");
+    assert.equal(val(`askShotDisplayText(askShotOutgoing(""))`), "📷📷");
+
+    // cap at 4: a 5th is ignored
+    run(`askShotAdd("/Users/x/shots/c.jpg", {}); askShotAdd("/Users/x/shots/d.jpg", {}); askShotAdd("/Users/x/shots/e.jpg", {});`);
+    assert.equal(val(`askShotPending.length`), 4, "capped — the 5th never landed");
+    assert.deepEqual(val(`askShotPending.map(s => s.path)`), ["/Users/x/shots/a.jpg", "/Users/x/shots/b.jpg", "/Users/x/shots/c.jpg", "/Users/x/shots/d.jpg"]);
+
+    // removing one (by its own ✕, not the clear-all #askshotx)
+    run(`askShotRemove(1)`); // drops b.jpg
+    assert.deepEqual(val(`askShotPending.map(s => s.path)`), ["/Users/x/shots/a.jpg", "/Users/x/shots/c.jpg", "/Users/x/shots/d.jpg"]);
+    assert.equal(val(`document.getElementById("askshotimgs").children.length`), 3);
+
+    // #askshotx still clears everything at once
+    run(`document.getElementById("askshotx").dispatchEvent({type: "click"});`);
+    assert.equal(val(`askShotPending.length`), 0);
+    assert.equal(val(`document.getElementById("askshotchip").style.display`), "none");
+
+    // old draft shape {shot: "path"} (pre-2026-10-02, singular) restores as a one-shot array
+    run(`askShotRestore(["/Users/x/shots/only.jpg"])`); // what askDraftLoad does for the old shape (wrapped in [])
+    assert.equal(val(`askShotPending.length`), 1);
+    assert.equal(val(`askShotPending[0].path`), "/Users/x/shots/only.jpg");
+    run(`askShotClearAll()`);
+
+    // askShotShow toggles both 📷 and 🖼 together
+    run(`askShotShow(true)`);
+    assert.equal(val(`document.getElementById("askshot").style.display`), "");
+    assert.equal(val(`document.getElementById("askpick").style.display`), "");
+    run(`askShotShow(false)`);
+    assert.equal(val(`document.getElementById("askshot").style.display`), "none");
+    assert.equal(val(`document.getElementById("askpick").style.display`), "none");
+  } finally {
+    run(`askShotClearAll();`);
+  }
+});
+
+test("🖼: the Photos/Files picker is a hidden multi-file image input beside 📷", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const m = html.match(/<input type="file" id="askpickfile"[^>]*>/);
+  assert.ok(m, "askpickfile input exists");
+  assert.match(m[0], /accept="image\/\*"/);
+  assert.match(m[0], /\bmultiple\b/);
+  const btn = html.match(/<button id="askpick"[^>]*>/)[0];
+  assert.match(btn, /aria-label="Attach a picture from Photos\/Files"/);
 });
 
 test("status: /v1/status is polled like the inbox — the strip shows in EVERY tab and ✦ AI's own aria-label reports it while the bridge is working; no current line = idle; a 404 hides the strip, clears the label, and stops asking", async () => {

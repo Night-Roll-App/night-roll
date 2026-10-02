@@ -144,9 +144,11 @@
   #songcrumb > .crumbwhere, #songcrumb > .crumbdot { flex: none; }
   #songcrumb > .crumbfolder { flex: 0 1000 auto; } /* never GROWS: a growing folder pushed the title to the far right */
   #songcrumb > .crumbtitle { flex: 0 1 auto; }
-  #askshotimg { height: 44px; max-width: 80px; object-fit: cover; border-radius: 4px; border: 1px solid var(--grid); cursor: zoom-in; }
-  #askshotimg.big { height: auto; max-width: 100%; cursor: zoom-out; }
-  #askshotchip:has(#askshotimg.big) { flex-wrap: wrap; }
+  .askshotcell { position: relative; display: inline-block; }
+  .askshotimg { height: 44px; max-width: 80px; object-fit: cover; border-radius: 4px; border: 1px solid var(--grid); cursor: zoom-in; display: block; }
+  .askshotimg.big { height: auto; max-width: 100%; cursor: zoom-out; }
+  #askshotchip:has(.askshotimg.big) { flex-wrap: wrap; }
+  .askshotrm { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; min-height: 0; padding: 0; border-radius: 50%; line-height: 1; font-size: 0.6875rem; }
   #trackrow {
     display: flex;
     align-items: flex-start; /* chips may wrap to more rows; transport stays pinned to the first */
@@ -2001,7 +2003,7 @@
       <dt>New since your last message</dt><dd>On the Claude Code bridge, every message you send — ♩ this song, ✦ Ask, or ⌨ Terminal — carries what’s changed since your last one in THAT chat: any new ⚠ messages, any new status-line readouts (footer/Status window), and on ✦ Ask/⌨ Terminal (which have no song context of their own) which song is open, its view, and your cursor. You never copy an error or a status line over by hand, and a line already sent is never repeated.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, <b>✦ AI</b>'s own aria-label names whether the terminal's Claude Code is working or idle — refreshed every 10 seconds — with no visual badge on the button itself any more (chrome density follow-up, 2026-10-01 pm, Josh: the small pulsing dot that used to mark it was "always there and distracting"). Open ✦ AI for the full line — <b>Claude Code working: …</b> or <b>Claude Code idle</b> — in a fixed two-line strip that never grows or shrinks as the status changes (so it can't nudge the chat log above it); tap that line for the last ten steps with their times and the latest commits. Without the bridge (LM Studio, no AI) none of it appears.</dd>
-      <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a <code>(screenshot: …)</code> line lands in the message box — add what to look at and Send. In a browser, pick this tab when it asks what to share.</dd>
+      <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a thumbnail chip appears above the box — add what to look at and Send. Tap 📷 again (up to 4 per message) to attach several at once; each gets its own thumbnail and its own ✕, or tap the chip row's ✕ to drop them all. In a browser, pick this tab when it asks what to share. Beside 📷, <b>🖼</b> attaches a picture <b>from Photos</b> or Files instead of the app itself — the same 4-per-message limit, thumbnails, and Send line; a huge picture is downscaled and an iPhone/iPad HEIC photo is converted automatically, so it always reaches Claude as a plain JPEG or PNG.</dd>
       <dt>⌨ Terminal tab</dt><dd>Two pickers at its top choose the model the terminal gives its <b>advisors</b> (read-only reviews) and its <b>builders</b> (the agents that write code) — Opus, Sonnet, Haiku or Fable; the terminal session's own model is set at the Mac (/model). The ⌨ Terminal tab in ✦ AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. 📷 works the same. If the Mac can't be reached, the message goes back into the box.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved) — on the Claude Code bridge it also tells the Mac to really start over: without this, the same long-running Claude session kept being resumed underneath a cleared-looking chat.</dd>
       <dt>Session usage and Compact</dt><dd>On the Claude Code bridge, a small line under ✦ AI's tab strip says <b>"N turns · ~Nk tokens · $N.NN"</b> for the chat you're in (♪ this song or ✦ Ask — not ⌨ Terminal, which has no session of its own), refreshed after every reply and whenever you switch tabs; past 40 turns it adds <b>"— long, Compact saves tokens"</b>. Tap <b>Compact</b> beside Clear chat (in-app confirm) to have the bridge summarize this chat's memory on the Mac and shrink it — the status line then reads <b>"compacted: 172 → 1 turns · ~24k → ~3k tokens"</b>, the exact before/after the Mac measured. Compact only affects the Mac's memory of the conversation, never your saved messages or the .ask.md log. The <b>plan usage</b> line in ✦ AI's Recent (tap the <b>Now:</b> strip) shows this account's own subscription usage — this session and this week — when the bridge has seen it.</dd>
@@ -2443,14 +2445,16 @@
       <button id="askgear" aria-label="AI settings" style="min-height:32px;padding:4px 10px">⚙</button>
     </div>
     <div class="row" id="askshotchip" style="display:none">
-      <img id="askshotimg" alt="the screenshot to send" title="tap to see it larger">
-      <span class="status" style="flex:1">📷 screenshot — sent with your next message</span>
-      <button id="askshotx" aria-label="Remove the screenshot">✕</button>
+      <div id="askshotimgs" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+      <span class="status" id="askshotcount" style="flex:1">📷 screenshot — sent with your next message</span>
+      <button id="askshotx" aria-label="Remove all screenshots">✕</button>
     </div>
     <div class="row" id="askinputrow">
       <textarea id="askinput" placeholder="Ask about what you're looking at…" aria-label="Your question"></textarea>
       <button id="askmic">🎤 Speak</button>
       <button id="askshot" style="display:none" title="Send a picture of the app to Claude" aria-label="Send a picture of the app to Claude">📷</button>
+      <button id="askpick" style="display:none" title="Attach a picture from Photos/Files" aria-label="Attach a picture from Photos/Files">🖼</button>
+      <input type="file" id="askpickfile" accept="image/*" multiple style="display:none" aria-label="Choose a picture to attach">
       <button class="primary" id="asksend">Send</button>
     </div>
     <div class="row">
@@ -23781,12 +23785,21 @@ async function askStatusFetchCommits() { // origin/main's last 3 subjects, publi
 // ---- 📷 (Josh, 2026-09-29: "I wish there would be a way for me to send you
 // screenshots from the app itself"). The iPad shell's native snapshot
 // (WKWebView, exact pixels, no prompt); a browser shares its own tab
-// (getDisplayMedia — Chrome asks once per shot). The bridge stores the bytes
-// (POST /v1/shot) and answers a path on the Mac; the message carries
-// "(screenshot: <path>)" and Claude Reads it. The AI panel steps aside for the
-// shot unless it's docked — the picture is of the song, not the chat.
-function askShotShow(on) { const b = document.getElementById("askshot"); if (b) b.style.display = on ? "" : "none"; }
+// (getDisplayMedia — Chrome asks once per shot). 🖼 (2026-10-02) picks
+// existing pictures from Photos/Files instead of capturing the app itself —
+// same pending list, same upload, same outgoing line, just a different
+// source for the bytes. The bridge stores the bytes (POST /v1/shot) and
+// answers a path on the Mac; each lands as its own "(screenshot: <path>)"
+// line and Claude Reads it. The AI panel steps aside for a 📷 capture unless
+// it's docked — the picture is of the song, not the chat (🖼 doesn't need
+// that: nothing of the app is on screen while the OS picker is up).
+function askShotShow(on) {
+  const b = document.getElementById("askshot"), p = document.getElementById("askpick");
+  if (b) b.style.display = on ? "" : "none";
+  if (p) p.style.display = on ? "" : "none";
+}
 function askShotLine(path) { return "(screenshot: " + path + ")"; }
+const ASKSHOT_MAX = 4;
 function b64Bytes(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
 async function askShotCapture() { // -> {bytes, mime}
   // the shell's own plugin (registered in its AppDelegate.swift): native-bridge.js
@@ -23818,8 +23831,15 @@ async function askShotCapture() { // -> {bytes, mime}
     return {bytes: new Uint8Array(await blob.arrayBuffer()), mime: "image/png"};
   } finally { stream.getTracks().forEach(t => t.stop()); }
 }
+async function askShotUpload(bytes, mime) { // shared by 📷 capture and 🖼 picked files
+  const r = await fetch(aiUrl() + "/v1/shot", {method: "POST", headers: {...aiHeaders(), "content-type": mime}, body: bytes});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.path) throw new Error(j.error && j.error.message || "HTTP " + r.status);
+  return j.path;
+}
 async function askShotTake() {
-  const url = aiUrl(), sheet = document.getElementById("asksheet");
+  if (askShotPending.length >= ASKSHOT_MAX) { askstatus.textContent = "📷 already " + ASKSHOT_MAX + " attached (max) — remove one first"; return; }
+  const sheet = document.getElementById("asksheet");
   const aside = !sheet.classList.contains("docked");
   askstatus.textContent = aside ? "📷 taking…" : ""; // docked, the panel is IN the picture: no stale "taking…" in it
   if (aside) sheet.style.visibility = "hidden";
@@ -23831,37 +23851,126 @@ async function askShotTake() {
   finally { if (aside) sheet.style.visibility = ""; }
   askstatus.textContent = "📷 sending…";
   try {
-    const r = await fetch(url + "/v1/shot", {method: "POST", headers: {...aiHeaders(), "content-type": shot.mime}, body: shot.bytes});
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.path) throw new Error(j.error && j.error.message || "HTTP " + r.status);
-    askShotSet(j.path, shot);
-    askstatus.textContent = "📷 attached — Send, with a note if you like";
+    const path = await askShotUpload(shot.bytes, shot.mime);
+    askShotAdd(path, shot);
+    askstatus.textContent = askShotStatusLabel();
     // no focus: the keyboard stays down (Josh, 2026-09-29: the path in the box
     // summoned it and cluttered what he was writing)
   } catch (err) { askstatus.textContent = "📷 not sent: " + err.message; }
 }
-// the attached shot rides as a chip above the box, never text in it; Send
-// adds the "(screenshot: …)" line to the outgoing message only
-let askShotPending = null; // {path, url}
-function askShotSet(path, shot) {
-  if (askShotPending && askShotPending.url) { try { URL.revokeObjectURL(askShotPending.url); } catch (e) {} }
-  askShotPending = path ? {path, url: null} : null;
-  const chip = document.getElementById("askshotchip"), img = document.getElementById("askshotimg");
-  if (path && shot && typeof URL !== "undefined" && URL.createObjectURL && typeof Blob !== "undefined") {
-    try { askShotPending.url = URL.createObjectURL(new Blob([shot.bytes], {type: shot.mime})); img.src = askShotPending.url; } catch (e) {}
+// the attached shots ride as a row of chips above the box, never text in it;
+// Send adds one "(screenshot: …)" line per shot to the outgoing message only.
+// askShotPending is an array (cap ASKSHOT_MAX) — 2026-10-02: Josh tapped 📷
+// twice meaning to send both; the old single-slot design silently dropped
+// the first.
+let askShotPending = []; // [{path, url, mime}]
+function askShotStatusLabel() {
+  const n = askShotPending.length;
+  return n > 1 ? "📷 " + n + " screenshots attached — Send, with a note if you like" : "📷 attached — Send, with a note if you like";
+}
+function askShotRender() {
+  const chip = document.getElementById("askshotchip"), wrap = document.getElementById("askshotimgs"), label = document.getElementById("askshotcount");
+  const n = askShotPending.length;
+  chip.style.display = n ? "" : "none";
+  wrap.innerHTML = "";
+  askShotPending.forEach((s, i) => {
+    const cell = document.createElement("span"); cell.className = "askshotcell";
+    const img = document.createElement("img"); img.className = "askshotimg";
+    img.alt = "a screenshot to send"; img.title = "tap to see it larger";
+    if (s.url) img.src = s.url;
+    img.style.display = s.url ? "" : "none";
+    img.addEventListener("click", () => img.classList.toggle("big"));
+    const rm = document.createElement("button"); rm.className = "askshotrm"; rm.type = "button";
+    rm.setAttribute("aria-label", "Remove this screenshot"); rm.textContent = "✕";
+    rm.addEventListener("click", ev => { ev.stopPropagation(); askShotRemove(i); });
+    cell.appendChild(img); cell.appendChild(rm);
+    wrap.appendChild(cell);
+  });
+  label.textContent = n === 1 ? "📷 screenshot — sent with your next message" : n > 1 ? "📷 " + n + " screenshots — sent with your next message" : "";
+}
+function askShotAdd(path, shot) { // shot: {bytes, mime} for a thumbnail, or omitted when just restoring a path (draft reload — bytes live on the Mac)
+  if (!path || askShotPending.length >= ASKSHOT_MAX) return;
+  const entry = {path, url: null, mime: shot && shot.mime};
+  if (shot && shot.bytes && typeof URL !== "undefined" && URL.createObjectURL && typeof Blob !== "undefined") {
+    try { entry.url = URL.createObjectURL(new Blob([shot.bytes], {type: shot.mime})); } catch (e) {}
   }
-  img.classList.remove("big");
-  img.style.display = askShotPending && askShotPending.url ? "" : "none";
-  chip.style.display = path ? "" : "none";
+  askShotPending.push(entry);
+  askShotRender();
   if (typeof askDraftSaveSoon === "function") askDraftSaveSoon();
 }
-function askShotOutgoing(text) { // what Send sends: the note, then the shot's line; the box never holds it
-  if (!askShotPending) return text;
-  return (text || "(screenshot only)") + "\n" + askShotLine(askShotPending.path);
+function askShotRemove(i) {
+  const e = askShotPending[i];
+  if (!e) return;
+  if (e.url) { try { URL.revokeObjectURL(e.url); } catch (err) {} }
+  askShotPending.splice(i, 1);
+  askShotRender();
+  if (typeof askDraftSaveSoon === "function") askDraftSaveSoon();
+}
+function askShotClearAll() {
+  for (const e of askShotPending) if (e.url) { try { URL.revokeObjectURL(e.url); } catch (err) {} }
+  askShotPending = [];
+  askShotRender();
+}
+function askShotRestore(paths) { // draft reload: paths only, never bytes (the thumbnail doesn't survive a reload — the bytes are on the Mac)
+  askShotClearAll();
+  for (const p of (paths || [])) { if (p && askShotPending.length < ASKSHOT_MAX) askShotPending.push({path: p, url: null}); }
+  askShotRender();
+}
+function askShotOutgoing(text) { // what Send sends: the note, then each shot's line; the box never holds any of it
+  if (!askShotPending.length) return text;
+  return (text || "(screenshot only)") + askShotPending.map(s => "\n" + askShotLine(s.path)).join("");
+}
+// a batch Send/receive bubble shows the screenshot lines as 📷 glyphs, one
+// per shot, instead of the raw "(screenshot: path)" text
+function askShotDisplayText(text) {
+  const m = text.match(/\n\(screenshot: [^)]*\)/g);
+  if (!m) return text;
+  const head = text.slice(0, text.length - m.join("").length);
+  const icons = "📷".repeat(m.length);
+  return head === "(screenshot only)" ? icons : head + " " + icons;
+}
+const MAX_SHOT_SIDE = 2752, MAX_SHOT_KEEP_BYTES = 2 * 1024 * 1024;
+async function askPrepImage(file) { // -> {bytes, mime}: downscale if huge, re-export HEIC/HEIF as JPEG, else keep the original bytes
+  const heic = /heic|heif/i.test(file.type || "") || /\.(heic|heif)$/i.test(file.name || "");
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error("couldn't read that picture")); img.src = url; });
+    const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
+    const longest = Math.max(w0, h0);
+    if (!heic && file.size <= MAX_SHOT_KEEP_BYTES && longest <= MAX_SHOT_SIDE) {
+      return {bytes: new Uint8Array(await file.arrayBuffer()), mime: /png/i.test(file.type) ? "image/png" : "image/jpeg"};
+    }
+    const scale = longest > MAX_SHOT_SIDE ? MAX_SHOT_SIDE / longest : 1;
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(w0 * scale)); c.height = Math.max(1, Math.round(h0 * scale));
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+    if (!blob) throw new Error("couldn't convert that picture");
+    return {bytes: new Uint8Array(await blob.arrayBuffer()), mime: "image/jpeg"};
+  } finally { URL.revokeObjectURL(url); }
+}
+async function askPickFiles(fileList) { // 🖼 Photos/Files picker — each file prepped, uploaded, and appended like a 📷 shot
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  const room = ASKSHOT_MAX - askShotPending.length;
+  if (room <= 0) { askstatus.textContent = "📷 already " + ASKSHOT_MAX + " attached (max) — remove one first"; return; }
+  const take = files.slice(0, room);
+  const dropped = files.length - take.length;
+  for (const f of take) {
+    askstatus.textContent = "📷 sending…";
+    try {
+      const {bytes, mime} = await askPrepImage(f);
+      const path = await askShotUpload(bytes, mime);
+      askShotAdd(path, {bytes, mime});
+    } catch (err) { askstatus.textContent = "📷 not sent: " + (err && err.message || err); return; }
+  }
+  askstatus.textContent = dropped ? askShotStatusLabel() + " (" + dropped + " more skipped — " + ASKSHOT_MAX + " is the max)" : askShotStatusLabel();
 }
 document.getElementById("askshot").addEventListener("click", askShotTake);
-document.getElementById("askshotx").addEventListener("click", () => { askShotSet(null); askstatus.textContent = ""; });
-document.getElementById("askshotimg").addEventListener("click", e => e.target.classList.toggle("big"));
+document.getElementById("askshotx").addEventListener("click", () => { askShotClearAll(); askstatus.textContent = ""; });
+document.getElementById("askpick").addEventListener("click", () => document.getElementById("askpickfile").click());
+document.getElementById("askpickfile").addEventListener("change", e => { const files = e.target.files; e.target.value = ""; askPickFiles(files); });
 // when each note from the Mac (and each Terminal message) was sent — Josh,
 // 2026-09-30: "I want timestamps on the messages that you sent back to me"
 function askClock(t) {
@@ -23924,8 +24033,8 @@ function askDraftSave() {
   if (!askDraftKey) return;
   try {
     const text = askinput.value;
-    if (!text.trim() && !askShotPending) localStorage.removeItem(askDraftStore(askDraftKey));
-    else localStorage.setItem(askDraftStore(askDraftKey), JSON.stringify({text, shot: askShotPending ? askShotPending.path : null}));
+    if (!text.trim() && !askShotPending.length) localStorage.removeItem(askDraftStore(askDraftKey));
+    else localStorage.setItem(askDraftStore(askDraftKey), JSON.stringify({text, shots: askShotPending.map(s => s.path)}));
   } catch (err) { /* storage full or private: the box itself still holds it */ }
 }
 function askDraftSaveSoon() { clearTimeout(askDraftTimer); askDraftTimer = setTimeout(askDraftSave, 300); askComposing(!!askinput.value.trim()); }
@@ -23947,7 +24056,9 @@ function askDraftLoad() { // the panel now shows a different chat: its own unsen
   askDraftKey = key;
   let d = null; try { d = JSON.parse(localStorage.getItem(askDraftStore(key)) || "null"); } catch (err) { d = null; }
   askinput.value = d && d.text || "";
-  askShotSet(d && d.shot || null); // the path survives; the thumbnail doesn't (the bytes are on the Mac)
+  // new shape is {shots: [path, …]}; an old draft saved before 2026-10-02 has
+  // {shot: path} (singular) — restore that as a one-shot array
+  askShotRestore(d && d.shots ? d.shots : d && d.shot ? [d.shot] : []);
   askGrow();
 }
 function askDraftClear() { clearTimeout(askDraftTimer); askDraftTimer = null; try { localStorage.removeItem(askDraftStore(askStoreKey())); } catch (err) { /* nothing stored */ } }
@@ -24158,8 +24269,8 @@ async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac
   msgs.push({role: "user", content: text, t: Date.now()}); // stored/shown WITHOUT the context block, like every other chat (askStripContext strips it back out of history elsewhere; the terminal's own store never carries it at all)
   askSave(msgs, undefined, key);
   askMicOff(); // a live 🎤 writes its transcript back after we clear the box (Josh, 2026-09-30: the text stayed after Send)
-  askinput.value = ""; askShotSet(null); askDraftClear(); askGrow(); askComposing(false);
-  askBubble("user", askClock(Date.now()) + text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
+  askinput.value = ""; askShotClearAll(); askDraftClear(); askGrow(); askComposing(false);
+  askBubble("user", askClock(Date.now()) + askShotDisplayText(text));
   askstatus.textContent = "sending to the terminal…";
   try {
     const r = await fetch(aiUrl() + "/v1/terminal", {method: "POST", headers: aiHeaders(), body: JSON.stringify({text: bodyText})});
@@ -24181,7 +24292,7 @@ async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac
 }
 async function askSend() {
   const typed = askinput.value.trim();
-  if ((!typed && !askShotPending) || askBusy || !song) return;
+  if ((!typed && !askShotPending.length) || askBusy || !song) return;
   const text = askShotOutgoing(typed);
   if (askTerminal) return askTerminalSend(text);
   if (cfg().aiBackend !== "browser" && !(await aiHostOk(aiUrl()))) { askstatus.textContent = "not sent"; return; }
@@ -24197,11 +24308,11 @@ async function askSend() {
   askSave(msgs);
   askMicOff(); // a live 🎤 would write its transcript back into the box after we clear it
   askinput.value = "";
-  askShotSet(null);
+  askShotClearAll();
   askDraftClear();
   askGrow();
   askComposing(false);
-  askBubble("user", text.replace(/\n?\(screenshot: [^)]*\)$/, " 📷").replace(/^\(screenshot only\) 📷$/, "📷"));
+  askBubble("user", askShotDisplayText(text));
   const live = askBubble("ai", "…");
   live.dataset.job = jobId; // askResume finds THIS bubble by job, never "the last ai bubble"
   await askRun({msgs, text, sp, messages, jobId, live, key: askStoreKey()});
