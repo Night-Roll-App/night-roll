@@ -2883,9 +2883,9 @@ test("track: directive — voice & color as synced annotations, round-tripping",
   run(`song = null; songKey = "midi/test.mid";`);
 });
 
-test("TRACK_COLORS: default palette — adjacent hues far apart, explicit color still wins", () => {
-  // plain hex → hue (degrees), no deps: same formula as the app has no need
-  // of elsewhere, so it lives in the test rather than index.html
+test("autoTrackColors: farthest-point default track colors, explicit color still wins", () => {
+  // plain hex → hue (degrees), no deps — nothing else in the app needs a
+  // hex→hue conversion outside the algorithm itself, so it's duplicated here
   function hue(hex) {
     const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
@@ -2894,34 +2894,67 @@ test("TRACK_COLORS: default palette — adjacent hues far apart, explicit color 
     h *= 60;
     return h < 0 ? h + 360 : h;
   }
-  const hueDist = (a, b) => { const d = Math.abs(hue(a) - hue(b)) % 360; return Math.min(d, 360 - d); };
+  const hueDist = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
 
-  const colors = val(`TRACK_COLORS`);
-  assert.ok(colors.length >= 10 && colors.length <= 12, "a 10–12 color categorical palette");
-  assert.equal(new Set(colors).size, colors.length, "no literal duplicate hex");
-  for (const c of colors) assert.match(c, /^#[0-9a-fA-F]{6}$/, c);
-
-  // the headline ask: every CONSECUTIVE pair (voice ti vs ti+1, including the
-  // wrap past the last index) clears a 25° hue-distance floor — this is what
-  // "voice0 vs voice2 look alike" on the old smooth ramp violated one index
-  // over, and it's the pairing an arrangement of real tracks actually shows
-  for (let i = 0; i < colors.length; i++) {
-    const a = colors[i], b = colors[(i + 1) % colors.length];
-    assert.ok(hueDist(a, b) >= 25, `adjacent ${a} vs ${b}: hue ${hueDist(a, b).toFixed(1)}° < 25°`);
+  // every candidate clears the hard filter — checked against the app's OWN
+  // contrastRatio/relLuminance, not reimplemented here
+  const candidates = val(`TRACK_COLOR_CANDIDATES`);
+  const surfaces = val(`ROLL_SURFACE_COLORS`); // roll background + row-stripe shading
+  assert.ok(candidates.length >= 12, "enough candidates for a real spread");
+  const hueOfCandidate = new Map(candidates.map(c => [c.hex, c.h])); // the EXACT
+  // candidate angle, not hue(hex) — 8-bit hex quantization drifts a hex color's
+  // recovered hue by a few hundredths of a degree, which is enough to turn an
+  // exact 45°/90°/180° spacing into 44.9-something and fail a strict floor
+  for (const { hex } of candidates) {
+    assert.match(hex, /^#[0-9a-fA-F]{6}$/, hex);
+    for (const s of surfaces) {
+      const ratio = val(`contrastRatio(${JSON.stringify(hex)}, ${JSON.stringify(s)})`);
+      assert.ok(ratio >= 3, `${hex} vs ${s}: contrast ${ratio.toFixed(2)} < 3`);
+    }
   }
 
-  // default color is the palette, indexed and wrapping
   installSong();
-  run(`song.tracks = [{name: "a", notes: []}, {name: "b", notes: []}, {name: "c", notes: []}]; trackState = [{}, {}, {}];`);
-  assert.equal(run(`trackColor(0)`), colors[0]);
-  assert.equal(run(`trackColor(1)`), colors[1]);
-  assert.equal(run(`trackColor(${colors.length})`), colors[0]); // wraps mod length
+  run(`song.tracks = Array.from({length: 8}, (_, i) => ({name: "t" + i, notes: []})); trackState = song.tracks.map(() => ({}));`);
+  const colors8 = val(`autoTrackColors(song.tracks)`);
+  assert.equal(colors8.length, 8);
+  assert.equal(new Set(colors8).size, 8, "no literal duplicate hex among the first 8");
+  const hues8 = colors8.map(c => hueOfCandidate.get(c));
 
-  // an explicit track: color annotation always beats the default, any index
-  run(`rollnotes = parseRollnotes("[1.1]\\ntrack: a color=#123456\\n").map(resolveNote); finalizeNotes();`);
-  assert.equal(run(`trackColor(0)`), "#123456");
-  assert.notEqual("#123456", colors[0]);
-  run(`rollnotes = []; finalizeNotes(); song = null; songKey = "midi/test.mid";`);
+  // the headline ask: "the furthest color away from all the colors you
+  // currently have" — first three read as orange, blue, green
+  assert.ok(hueDist(hues8[0], 30) <= 20, `track 0 ${colors8[0]} not ~orange`);
+  assert.ok(hueDist(hues8[1], 210) <= 20, `track 1 ${colors8[1]} not ~blue`);
+  assert.ok(hueDist(hues8[2], 120) <= 20, `track 2 ${colors8[2]} not ~green`);
+
+  // FF4-sized (7 tracks): every PAIR among the first 7 clears 45°, not just
+  // consecutive ones — the old +150° walk only separated neighbors
+  for (let i = 0; i < 7; i++)
+    for (let j = i + 1; j < 7; j++)
+      assert.ok(hueDist(hues8[i], hues8[j]) >= 45, `${colors8[i]} vs ${colors8[j]} < 45°`);
+
+  // stability: a track's auto color depends only on the tracks before it —
+  // 3 tracks must get exactly the first 3 colors an 8-track song would
+  run(`song.tracks = song.tracks.slice(0, 3); trackState = trackState.slice(0, 3);`);
+  assert.deepEqual(val(`autoTrackColors(song.tracks)`), colors8.slice(0, 3));
+
+  // an explicit color is avoided even by auto tracks at a LATER index than
+  // the one Josh set it on, and still counts when it isn't ~on the 15° grid
+  run(`
+    song.tracks = [{name: "bass", notes: [], color: "#0000ff"}, {name: "a", notes: []}, {name: "b", notes: []}, {name: "c", notes: []}];
+    trackState = song.tracks.map(() => ({}));
+  `);
+  const withExplicit = val(`autoTrackColors(song.tracks)`);
+  assert.equal(withExplicit[0], "#0000ff"); // explicit wins outright, untouched
+  for (let i = 1; i < withExplicit.length; i++)
+    assert.ok(hueDist(hue(withExplicit[i]), 240) >= 60, `${withExplicit[i]} too close to the explicit blue`);
+
+  // trackColor(ti): explicit wins at any index, auto fills the rest, and ti
+  // wraps mod the song's ACTUAL track count (not the candidate/palette size)
+  assert.equal(run(`trackColor(0)`), "#0000ff");
+  assert.equal(run(`trackColor(1)`), withExplicit[1]);
+  assert.equal(run(`trackColor(${withExplicit.length})`), run(`trackColor(0)`));
+
+  run(`song = null; songKey = "midi/test.mid";`);
 });
 
 test("format identity: text → object → JSON → object yields the SAME object (Josh's spec)", () => {

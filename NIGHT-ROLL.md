@@ -75,14 +75,30 @@ triangle for the pass (Josh, 2026-09-23: Threnody's violin used to
 play for annotations that saved them but left the menu. Color via one
 full-width `<input type=color>` picker
 (swatch shortcuts removed same day per Josh — any hex, stored in the
-track: directive as color=#rrggbb; TRACK_COLORS remains the default
-palette for unannotated tracks). TRACK_COLORS (2026-09-30, Josh: SNES
-voice0/voice2 looked alike) is ordered hue+150° apart, not a smooth
-ramp — walking the 12-entry array visits 30°,180°,330°,120°,270°,60°,
-210°,0°,150°,300°,90°,240° on the color wheel, so every consecutive
-track index (what an arrangement of real tracks shows, chip-to-chip)
-is as far apart as 12 evenly-spaced hues allow; an explicit color=
-annotation still overrides it at any index. The chips hug their content: ▾ sits beside the last
+track: directive as color=#rrggbb; `autoTrackColors` fills in the rest).
+Default track colors (2026-10-02, replacing the 2026-09-30 fixed
++150° TRACK_COLORS walk — Josh: "orange, blue, PINK" at only 60° from
+orange, and "there has to be some sort of algorithm that always picks
+the furthest color away from all the colors you currently have in a
+set") are a real greedy max-min: `TRACK_COLOR_CANDIDATES` is 24 hues
+15° apart at one fixed saturation/lightness (`AUTO_COLOR_S`/`_L`),
+hard-filtered to a lightness band and WCAG contrast >= 3 against the
+roll's own surfaces (`ROLL_SURFACE_COLORS` — --bg and the pitch-row
+shading drawFull paints, --grid-soft/--grid; no light theme to repeat
+this for). `autoTrackColors(song.tracks)` assigns in track order:
+S starts as the hue of every EXPLICIT color= in the song (any index,
+Josh's own picks are always avoided), then each unset track takes the
+candidate maximizing its minimum circular hue distance to everything
+in S so far (ties prefer 30°/orange, then the lowest hue), memoized
+per song (cache key = explicit colors + track count) so it's stable —
+a track's auto color depends only on the tracks before it, never moves
+when a later track is added. First three: orange(30°), blue(210°),
+green(120°); FF4's 7-track set holds >= 45° between every pair, not
+just neighbors. `trackColor(ti)` returns the explicit color or this
+set's, wrapping mod the song's actual track count. `TRACK_COLORS`
+survives as a plain categorical palette (sectionColors' band colors) —
+the same candidates, walked in the order an all-auto track list would
+get them. The chips hug their content: ▾ sits beside the last
 chip, and the transport/LCD cluster stays pinned to the top row when
 chips wrap (2026-08-15 iPad fixes). `darkreader-lock` meta keeps the
 Dark Reader extension from repainting swatches gray.
