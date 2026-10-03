@@ -5412,3 +5412,5 @@ Leftovers from step 6 (docs/split-plan.md "Deviations (6)"):
   step lands — flag this specifically if a future step reconsiders it.
 
 ## DONE 2026-10-03 13:30 — pan past the song end (Josh, Terminal #70: "push the song left so I can see like 10 empty bars"): clampView lets a drag scroll to PAN_TAIL_BARS=16 empty bars past the last bar; zoom-out fit unchanged
+
+## DONE 2026-10-03 13:55 — Quantize off the toolbar (Josh, Terminal #71: "takes up too much room … never used it"): #quantbtn stays in the markup hidden (Edit ▾ → Quantize… clicks it; Q key unchanged)
