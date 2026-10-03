@@ -4969,3 +4969,6 @@ Josh: "View ▾ is too tall — make EVERY section an expanding sub-menu." Gener
 ## 2026-10-02 20:55 — icon audit for Josh (Terminal #50): https://claude.ai/artifact/RB1G5wuzBcEMfmiVmnteoK — 61 controls vs Google Material icons: 41 switch / 12 keep / 6 either / 2 done. Waiting on his pick (Q-list). Also found: Edit ▾ menu Copy/Paste still show ⧉/📋; ▦ ⇄ ⊞ each carry two unrelated meanings.
 
 ## DONE 2026-10-02 21:10 — buttons look pressed (Josh: copy "doesn't seem like it pressed"): every button dims + dips on :active; a no-op touchstart listener makes iOS Safari apply :active at all
+
+## QUEUED 2026-10-02 21:20 — one control registry: setControl() (Josh: "the code is not well factored", approved)
+After the Material-icons build lands: every button's icon/label/aria in one CONTROLS table; `setControl(id, {icon, label, aria})` is the ONLY way code changes a button (Play ▶/■, View ▾ ✓ column, ⏳/⚠ counts, ✦ AI countdown, menus); help sheet + status strings refer to controls by name, not copied glyphs; a vm test fails if code writes a button's textContent/innerHTML outside setControl. Goal: an icon or wording swap is a one-line edit.
