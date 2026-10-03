@@ -187,9 +187,9 @@ test("check rule 8: manifests (modulepreload / sw.js / devtools / src listing) m
   assert.match(v[0].message, /"b\.js"/);
 });
 
-test("checkSrc: the real repo, post-0b-cutover — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
+test("checkSrc: the real repo, post-step-1 (promote-state.mjs) — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
   const result = checkSrc(path.join(ROOT, "src"));
-  assert.equal(result.fileCount, 4, "app.js, edition.js, main.js, devtools.js");
+  assert.equal(result.fileCount, 5, "app.js, edition.js, main.js, devtools.js, state.js");
   assert.deepEqual(result.violations.map(v => v.message), [
     'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
   ], "convertAnchors() references an undeclared oldBpb (src/app.js ~line 13996) — a real latent ReferenceError bug in the app that predates the split, surfaced here for the first time by rule 1's static scan; out of scope for the cutover itself (a verbatim move), flagged in open-items.md instead of silently fixed");
@@ -206,10 +206,14 @@ function realModuleManifests() {
   const modulepreload = [...html.matchAll(/<link rel="modulepreload" href="src\/([^"]+)">/g)].map(m => m[1]);
   const appModules = JSON.parse(sw.match(/const APP_MODULES = (\[[\s\S]*?\]);/)[1]).map(p => p.replace(/^src\//, ""));
   // devtools.js only imports the modules it actually mirrors (app.js,
-  // edition.js — main.js has no exports worth mirroring, and a module can't
-  // import itself), so its real import list is 2 short of the full set by
-  // design. "+ itself + main.js" accounts for exactly that gap, not a bug.
-  const devtoolsImports = [...devtools.matchAll(/import \* as \w+ from "\.\/([^"]+)";/g)].map(m => m[1]).concat(["devtools.js", "main.js"]);
+  // edition.js, state.js — main.js has no exports worth mirroring, and a
+  // module can't import itself), so its real import list is 2 short of the
+  // full set by design. "+ itself + main.js" accounts for exactly that gap,
+  // not a bug. Any import STYLE counts (`import * as X` for app.js/edition.js's
+  // whole-namespace mirror, `import { S }` for state.js's two-way per-field
+  // mirror, docs/split-plan.md §4 step 1) — the rule cares which modules are
+  // pulled in, not how.
+  const devtoolsImports = [...devtools.matchAll(/^import .* from "\.\/([^"]+)";/gm)].map(m => m[1]).concat(["devtools.js", "main.js"]);
   const srcListing = readdirSync(path.join(ROOT, "src")).filter(f => f.endsWith(".js"));
   return { "index.html modulepreload": modulepreload, "sw.js APP_MODULES": appModules, "devtools.js imports (+ itself, main.js)": devtoolsImports, "src/ listing": srcListing };
 }

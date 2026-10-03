@@ -262,6 +262,25 @@ Each step below gives: what moves, what must not change, how to verify. Every st
 - Must not change: names, logic.
 - Verify: npm test (the proxy keeps every `run()` working), check.mjs rule 3, browser check.
 - After this step the main session retires the "boot-path TDZ" memory note.
+- **Done** (2026-10-03, Opus builder, worktree branch). `promote-state.mjs
+  --file src/app.js --state src/state.js --all` promoted 257 top-level
+  `let`/`var` names (the plan's ~203 estimate undercounted multi-declarator
+  lines, e.g. `let stretchWorker = null, stretchJobId = 0;`) into
+  `export const S` in the new src/state.js (no imports, evaluates first, per
+  §2.1). index.html's modulepreload list and sw.js's `APP_MODULES` (bumped to
+  `nr-v7`) gained `src/state.js`; src/devtools.js's `exposeGlobals()` now
+  mirrors every `S` field onto `window` with BOTH get and set (not just
+  app.js's remaining top-level names), so an e2e spec's `song = …`/
+  `mode = …` keeps working — it now sets `S.song`/`S.mode`. tests/
+  harness.mjs's vm-test scopeProxy needed NO change: it already resolved `S`
+  fields ahead of per-module footer accessors (§3.2, written during 0a in
+  anticipation of this step). See "Deviations (1)" below for the two real
+  bugs this step's first real-code run surfaced (both fixed in the shared
+  tooling, not worked around per-callsite) and the one genuine pre-existing
+  name collision it exposed. The "boot-path TDZ" class of bug for STATE is
+  now eliminated by construction (NIGHT-ROLL.md "Module map" says so); the
+  main session should retire its "boot-path TDZ check" memory note per the
+  plan — this builder does not touch memory files.
 
 **2. `ui/icons.js` and `ui/controls.js`.**
 - Move ICON, `iconSvg` and `setPlayBtn`.
@@ -508,6 +527,88 @@ Where step 0a's implementation diverged from this document's letter, smallest-wo
   alarm from a slow catalog fetch (no network, a cold CDN, …), which is an
   existing, unrelated condition `loadSong`/`setInfo` already handle with a
   message in the UI, not a reason to show the boot-failure panel.
+
+## Deviations (1, 2026-10-03)
+
+- **A 4th narrow, pre-existing scope.mjs bug, same family as 0b's three**:
+  `for (let ti = EXPR; …)` — EXPR, the loop variable's OWN initializer —
+  was never walked by `freeIdentifiers` (scope.mjs, used by check.mjs rule 1)
+  or by promote-state.mjs's own (separate, parallel) `collectUses`. Both
+  only collected the declared loop-variable NAME into the bound set and
+  skipped the initializer expression entirely, so a free reference inside it
+  — `song` in `for (let ti = song.tracks.length - 1; ti >= 0; ti--)`
+  (`hitNote`, src/app.js) — was silently never seen: not renamed to
+  `S.song`, and not flagged as a free identifier either (both tools share
+  the blind spot, so check.mjs's rule 1 didn't catch its own tool's miss).
+  This surfaced as a real `ReferenceError: song is not defined` the first
+  time a test exercised that path, not as a check.mjs finding — a gap this
+  step's real-code run exposed for both tools at once, the same way 0b's
+  three scope.mjs bugs were first exposed by real code rather than the 0a
+  fixtures. Fixed in both `freeIdentifiers` (scope.mjs) and `collectUses`
+  (promote-state.mjs): the declarator's `init` is now walked in the OUTER
+  scope, same as `VariableDeclarator`'s handling one case up. app.js was
+  reset to its pre-step-1 (HEAD) text and promote-state.mjs re-run in full
+  against the fixed tool, rather than hand-patching the one site found —
+  cheaper and safer than trying to prove by inspection that this was the
+  only occurrence in a 24,000-line file (an AST-level sweep afterward
+  confirmed no further `S`/`E` binding collisions remained — see the next
+  item — but the for-loop-init bug itself could in principle have hit any
+  number of call sites; a full re-run is the only way to be sure all of them
+  were caught by the SAME fixed pass).
+- **One genuine pre-existing name collision, not a tool bug**: `S` (and `E`)
+  already existed as ordinary parameter/local names in two places —
+  `function applyChop(S, E) { … }` and a `const S = …; const E = …;` block
+  inside `finalizeNotes` — purely coincidental (chop Start/End tick
+  shorthand), predating any notion of a state container. promote-state.mjs's
+  scope-aware renamer correctly left these scopes' own bare `S`/`E` uses
+  alone (they're legitimately bound there), but every OTHER promoted name
+  it rewrote to `S.name` inside those same scopes (`song` → `S.song`,
+  `appliedChop` → `S.appliedChop`, `chopS` → `S.chopS`, `chopE` → `S.chopE`)
+  then resolved to the wrong `S` — the local parameter/const, not the
+  imported state object — a silent correctness bug (`applyChop` always
+  returned `false`) rather than a crash, caught by the vm test suite, not by
+  check.mjs (both bindings are legitimately bound in their scope; nothing
+  about them is a free-identifier violation). Fixed by renaming ONLY the
+  local `S`/`E` to `cStart`/`cEnd` in both spots (pure local rename, zero
+  behavior change — confirmed against the pre-promotion source, which never
+  read a `.property` off either) — the smallest working alternative to
+  teaching promote-state.mjs to detect every possible collision between its
+  fixed container name and an arbitrary pre-existing identifier anywhere in
+  a 24,000-line file. An AST sweep for any other local/param/catch binding
+  literally named `S` or `E` (including destructuring patterns) found none
+  remaining. A future step moving code out of app.js should keep this in
+  mind if it ever renames/relocates a block containing a local `S`/`E`.
+- **~4 night-roll.test.mjs assertions, 1 pwa.test.mjs assertion, and 2
+  tests/modules.test.mjs assertions needed updating**, all for the same
+  reason: they pattern-match literal JS SOURCE TEXT (via `appSource()` or
+  `Function#toString()`), not behavior, so a promoted name's text changing
+  from `foo` to `S.foo` breaks a hardcoded bare-name regex even though
+  nothing about the app's behavior changed. Fixed by updating each regex to
+  expect `S.`-prefixed text (`forKey = S.songKey`, `S.audio = new`,
+  `S.rangeSel`, `S.APP_BASE`, …) — mechanical, one-to-one with the actual
+  diff, not a loosening of what's asserted. The two modules.test.mjs fixes
+  are structural, not textual: `checkSrc`'s real-repo file count moved from
+  4 to 5 (src/state.js is a genuinely new file), and rule 8's real-repo
+  manifest check needed `realModuleManifests()`'s devtools-import regex
+  broadened from `import \* as \w+` to any `import … from "./X"` — state.js
+  is deliberately imported as `import { S }` (a two-way per-field mirror),
+  not `import * as` (a GET-only whole-namespace mirror, right for app.js/
+  edition.js but wrong for S, per §3.4's own distinction between the two).
+- **tools/split/cutover.mjs's footer-generation code moved to a new shared
+  module, tools/split/e2e-footer.mjs** (`stripFooter`/`topLevelAccessorNames`/
+  `addAccessorFooter`), not duplicated: step 0b's `addAccessorFooter` ran
+  ONCE, when cutover.mjs first wrote app.js; from step 1 on, EVERY change to
+  app.js's top-level names (promote-state.mjs here; a future move.mjs
+  carving a module out of app.js in steps 2-14) must regenerate the footer
+  from the file's CURRENT body, or it goes stale — a stale footer's
+  generated accessor closures reference a name no longer declared in app.js,
+  which is exactly what check.mjs's rule 1 caught on the first attempt (the
+  pre-fix footer still mirrored `song`, `mode`, etc. as bare identifiers
+  after they'd moved to `S`). New `tools/split/regen-e2e-footer.mjs --file
+  src/app.js` does the regeneration (idempotent: strips any existing footer
+  first); cutover.mjs now imports the same `addAccessorFooter` instead of
+  keeping its own copy. No test imports cutover.mjs's internals directly, so
+  this refactor is invisible to tests/modules.test.mjs.
 
 ## 7. Estimates (Sonnet builder hours, excluding review and CI wait)
 

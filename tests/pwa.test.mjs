@@ -30,7 +30,7 @@ test("PWA: index.html links the manifest and the apple metadata", () => {
   // split-plan.md §4 step 0b, §3.3): appSource() is index.html plus every
   // src/**/*.js concatenated, so this still finds it.
   const js = appSource();
-  assert.match(js, /serviceWorker\.register\(new URL\("sw\.js", APP_BASE\)/);
+  assert.match(js, /serviceWorker\.register\(new URL\("sw\.js", S\.APP_BASE\)/);
   assert.match(js, /PERF_FLAGS\.get\("sw"\) === "0"/, "kill switch present");
 });
 

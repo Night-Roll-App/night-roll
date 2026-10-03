@@ -254,7 +254,22 @@ export function freeIdentifiers(node) {
       }
       case "ForStatement": {
         const inner = new Set(bound);
-        if (n.init?.type === "VariableDeclaration") n.init.declarations.forEach(d => patternNames(d.id).forEach(nm => inner.add(nm)));
+        // docs/split-plan.md §4 step 1 deviation (a 4th narrow scope.mjs bug,
+        // same family as 0b's labeled-statement/arguments/hoistedNames
+        // fixes): `for (let i = EXPR; ...)` — EXPR (the declarator's own
+        // initializer) was never walked, only its bound NAME collected, so a
+        // free reference inside EXPR (e.g. `song` in
+        // `for (let ti = song.tracks.length - 1; ...)`) was silently never
+        // seen — move.mjs under-added imports for it, and promote-state.mjs's
+        // own (separate, parallel) collectUses had the identical gap, so it
+        // never renamed such a reference to `S.name`, leaving a real
+        // ReferenceError at the original call site. The initializer runs in
+        // the OUTER scope (the loop variable isn't in scope for its own
+        // init), same as VariableDeclarator's case just above.
+        if (n.init?.type === "VariableDeclaration") n.init.declarations.forEach(d => {
+          patternNames(d.id).forEach(nm => inner.add(nm));
+          if (d.init) walk(d.init, bound);
+        });
         else if (n.init) walk(n.init, bound);
         if (n.test) walk(n.test, inner);
         if (n.update) walk(n.update, inner);

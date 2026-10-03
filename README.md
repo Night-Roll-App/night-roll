@@ -88,8 +88,9 @@ exercises), [quizzes.md](quizzes.md) (spaced-recall bank),
 ## Development
 
 `make serve` → http://localhost:8000 · `make test` → Node's built-in runner
-over `tests/` (the harness runs the app's inline script in a vm, so the app
-stays one file). Technical reference: [NIGHT-ROLL.md](NIGHT-ROLL.md).
+over `tests/` (the harness loads `src/` as real ES modules in a vm — no
+build step; see docs/split-plan.md). Technical reference:
+[NIGHT-ROLL.md](NIGHT-ROLL.md).
 
 <!-- night-roll:songs -->
 ## Songs — open in Night Roll

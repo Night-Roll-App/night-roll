@@ -91,7 +91,17 @@ function collectUses(ast, targetNames) {
       }
       case "ForStatement": {
         const inner = new Set(bound);
-        if (n.init?.type === "VariableDeclaration") n.init.declarations.forEach(d => patternNames(d.id).forEach(nm => inner.add(nm)));
+        // docs/split-plan.md §4 step 1 deviation: same fix as scope.mjs's
+        // freeIdentifiers — `for (let i = EXPR; ...)`'s own EXPR was never
+        // walked here either, so a reference to a promoted name inside it
+        // (e.g. `song` in `for (let ti = song.tracks.length - 1; ...)`)
+        // was silently left un-renamed, a real ReferenceError at runtime
+        // once `song` stopped being a top-level binding. The initializer
+        // runs in the OUTER scope, same as the VariableDeclarator case above.
+        if (n.init?.type === "VariableDeclaration") n.init.declarations.forEach(d => {
+          patternNames(d.id).forEach(nm => inner.add(nm));
+          if (d.init) walk(d.init, bound);
+        });
         else if (n.init) walk(n.init, bound);
         if (n.test) walk(n.test, inner);
         if (n.update) walk(n.update, inner);
