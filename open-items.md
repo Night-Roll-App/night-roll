@@ -5057,6 +5057,14 @@ src/app.js contains today's code. Mid-task, origin/main moved twice more
 before each cutover re-run, so src/app.js does NOT contain
 fitTrackRow/#trackrow.stacked and DOES contain #moderowbreak's markup. Q6
 above is the one real app bug 0b's static scan found (not fixed, out of
-scope for a verbatim move). NOT pushed: main session still needs to
-browser-verify (localhost + the packaged dist output) before pushing and
-building for the iPad.
+scope for a verbatim move). Verified: npm test per-file — night-roll.test.mjs
+417 (416 pass + 1 pre-existing env skip), gestures.test.mjs 17/17,
+bridge.test.mjs 10/10, pwa.test.mjs 3/3, package.test.mjs 3/3 (boot-from-dist
+included), modules.test.mjs 32/32 — all match the counts 0b itself reported.
+`node tools/split/check.mjs` clean except the one pre-existing oldBpb finding
+(Q6). `node tools/package.mjs --out /tmp/nr-dist-check2`: runtime modules 47,
+matching 0b's own report. instruments.test.mjs/ps2-real.test.mjs "real rip"
+failures are pre-existing missing-fixture gaps in /tmp/claude-501/rips
+(unrelated to src/, not touched by this step). NOT pushed: main session
+still needs to browser-verify (localhost + the packaged dist output) before
+pushing and building for the iPad.
