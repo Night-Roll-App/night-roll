@@ -5414,3 +5414,8 @@ Leftovers from step 6 (docs/split-plan.md "Deviations (6)"):
 ## DONE 2026-10-03 13:30 — pan past the song end (Josh, Terminal #70: "push the song left so I can see like 10 empty bars"): clampView lets a drag scroll to PAN_TAIL_BARS=16 empty bars past the last bar; zoom-out fit unchanged
 
 ## DONE 2026-10-03 13:55 — Quantize off the toolbar (Josh, Terminal #71: "takes up too much room … never used it"): #quantbtn stays in the markup hidden (Edit ▾ → Quantize… clicks it; Q key unchanged)
+
+## DONE 2026-10-03 14:10 — Lasso next to Select (Josh, Terminal #73): placeLassoBtn() moves #lassobtn before #modeseg when the edit row shows, back to the footer on read-only songs
+
+## 2026-10-03 Ask (Josh, lotion): breadcrumb still says "Local › Not saved yet › lotion" after Publish
+Josh published lotion and the breadcrumb did not change. Cause (src/app.js songWhereLabel/updateSongBtn ~L9471): "Local" shows whenever a ff1roll-draft-<path> exists OR the path is not in S.CATALOG; folder "Not saved yet" is the CATALOG group "local" (src/model/catalog.js). Publish apparently neither adds the song to its real album group nor clears/refreshes the draft marker, so the crumb stays stale. Wanted: after a successful Publish, the crumb names where it went (album/folder, Published) and Local/Not saved yet goes away. Needs a real-browser check.
