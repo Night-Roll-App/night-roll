@@ -134,6 +134,7 @@ build step; see docs/split-plan.md). Technical reference:
 - [Graveyard 2](capacitor://localhost/albums/compositions/nightroll/graveyard-2)
 - [Graveyard 3](capacitor://localhost/albums/compositions/nightroll/graveyard-3)
 - [Key Change Test (07-26)](capacitor://localhost/albums/compositions/nightroll/KeyChangeTest-07-26)
+- [Lotion](capacitor://localhost/albums/compositions/nightroll/lotion)
 - [Majorly Dim](capacitor://localhost/albums/compositions/nightroll/majorly-dim)
 - [Night Black](capacitor://localhost/albums/compositions/nightroll/night-black)
 - [Running With The Runs](capacitor://localhost/albums/compositions/nightroll/running-with-the-runs)
