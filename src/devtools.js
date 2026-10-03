@@ -50,6 +50,9 @@ import * as platformMode from "./platform/mode.js";
 import * as platformStorage from "./platform/storage.js";
 import * as platformFolder from "./platform/folder.js";
 import * as platformNative from "./platform/native.js";
+import * as audioEngine from "./audio/engine.js";
+import * as audioVoices from "./audio/voices.js";
+import * as audioTransport from "./audio/transport.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -60,7 +63,8 @@ export function exposeGlobals() {
   // other module, free to apply here too.
   const MODULES = { app, edition, icons, controls, midiParse, midiWrite, theoryChords, theoryKey,
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
-                     platformBase, platformMode, platformStorage, platformFolder, platformNative };
+                     platformBase, platformMode, platformStorage, platformFolder, platformNative,
+                     audioEngine, audioVoices, audioTransport };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global

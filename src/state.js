@@ -261,4 +261,55 @@ export const S = {
   wmBottomEls: [],
   filesMirrorT: 0,
   syncReturnToList: false,
+  perfRec: null, // ?perf=1 HUD (step 7, docs/split-plan.md §2.4): null when idle,
+  // else the in-flight recording session object. prof() below reads this to
+  // decide whether a wrapped call accrues into perfTotal — was a
+  // closure-local `rec` inside the old inline wrap()'s IIFE, which could not
+  // survive the split (prof() runs from whichever module defines the
+  // profiled function, not from app.js's HUD code).
+  perfAcct: {},  // name -> ms this second, live even when not recording (was wrap()'s local `acct`)
+  perfTotal: {}, // name -> {ms, calls} for the CURRENT recording session only (was wrap()'s local `total`)
 };
+// prof(name, fn) — step 7 (docs/split-plan.md §2.4 + §4 step 7). The
+// self-profiler used to instrument functions from the OUTSIDE, after boot,
+// by wrapping globalThis[name] for a fixed name list (NIGHT-ROLL.md "Perf
+// HUD + session recorder"): a module's top-level function is a binding, not
+// a globalThis property, so that stopped finding anything the moment a
+// named function moved out of the inline script (0b) — attribution went
+// quietly empty, no error. Fixed at the root instead of patched around:
+// each profiled function wraps ITSELF at its own definition site
+// (`name = prof("name", name);`, right after `function name(...) {...}`),
+// wherever that definition now lives, so the split can keep moving function
+// bodies between files without re-breaking this. Lives here, not next to
+// PERF_FLAGS (platform/base.js), because EVERY layer must be able to call
+// it — including layer-0 modules (e.g. midi/parse.js's secToTick) — and
+// platform/ is layer 1: a layer-0 module may not import it (check.mjs rule
+// 5). state.js is the one file every layer may import (layer 0, no
+// imports of its own), so the query-string gate below is a small,
+// deliberate duplicate of PERF_FLAGS's own hand-rolled parse (same
+// vm-sandbox-safety shape), not a shared import.
+const PERF_ON = (() => {
+  try {
+    const q = String(location.search || "").replace(/^\?/, "");
+    for (const kv of q.split("&")) {
+      const i = kv.indexOf("=");
+      if ((i < 0 ? kv : kv.slice(0, i)) === "perf") return !!(i < 0 ? "" : decodeURIComponent(kv.slice(i + 1)));
+    }
+  } catch (err) { /* vm test sandbox: no location — perf is always off there */ }
+  return false;
+})();
+export function prof(name, fn) {
+  if (!PERF_ON) return fn; // off: `fn` goes back untouched — no closure, no timing, no cost
+  return function (...args) {
+    const t0 = performance.now();
+    try { return fn.apply(this, args); }
+    finally {
+      const d = performance.now() - t0;
+      S.perfAcct[name] = (S.perfAcct[name] || 0) + d;
+      if (S.perfRec) {
+        const e = S.perfTotal[name] || (S.perfTotal[name] = { ms: 0, calls: 0 });
+        e.ms += d; e.calls++;
+      }
+    }
+  };
+}

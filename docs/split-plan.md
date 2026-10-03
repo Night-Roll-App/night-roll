@@ -714,6 +714,202 @@ constraint for whoever next considers moving these two.
   - vm transport tests
   - **iPad ear check: Josh plays a synth song, an SF2-voiced song, a game-voice song, and taps a note preview**
 - If the iPad goes mute, revert the step first and then move again one module at a time.
+- **Done** (2026-10-03, Opus builder, worktree branch). Three `move.mjs
+  --names` invocations over src/app.js: `engine.js` ←
+  `trackAudible,MASTER_VOL,warmContext,clockAlive,clockProbeText,
+  gestureActive,openMaster,trackGain,trackVol,trackPan,updateTrackGains,
+  dutyWave,makeOsc,pluckBuffer,pieceState,pieceAudible,drumNoise,
+  drumNoiseBuf,DRUM_LONG_SEC,DRUM_SUSTAIN_CAP_SEC,drumHit`; `voices.js` ←
+  `voiceType,trackVoice,SF_VOICES,sfPick,VOICE_GROUPS,VOICES,VOICE_AMP,
+  SF_NOTE_NAMES,sfNoteName,sfFileFor,sfBank,sfEnsure,sfDecode,sfDecodeCtx,
+  playSynthVoice,gameVoiceVault,parseGameVoice,parseSf2Voice,sf2VoiceId,
+  gameVoiceId`; `transport.js` ←
+  `audioStopSrcs,currentLoop,albumNextIdx,albumPrevIdx,albumEndSec,
+  ALBUM_PASSES,ALBUM_CAP_SEC,ALBUM_FADE,ALBUM_MAX_FAILS` — all by name, not
+  banner range, for the same reason steps 4-6 gave: the "audio (NES-ish
+  voices)"/"game instrument voices" banners each run hundreds of lines
+  through UI/chip/model code that stays. `regen-e2e-footer.mjs --file
+  src/app.js` re-run; check.mjs clean except the pre-existing `oldBpb`
+  finding; check-e2e-globals.mjs and check-controls.mjs clean (26 controls,
+  unchanged). devtools.js gained `audioEngine`/`audioVoices`/
+  `audioTransport` namespace imports (GET-only). sw.js APP_MODULES gained
+  all three, SW_VERSION bumped nr-v12 → nr-v13; index.html's modulepreload
+  list gained all three (after platform/, before app.js — all layer 3).
+  `node tools/package.mjs --out /tmp/nr-dist-s7`: 47 runtime modules
+  (unchanged — no tools/-side runtime module corresponds to audio/). Tests
+  under `perl -e 'alarm N; exec @ARGV'`: modules 33/33 (fileCount 20→23),
+  night-roll 418 (417 pass + 1 pre-existing skip), gestures 17/17, controls
+  3/3, bridge 10/10, pwa 3/3, package 3/3, chip-worker 31/31, psx-stream
+  9/9, sounding 12/12, nsf 20/23 (3 pre-existing vault-only skips),
+  migrate-rollnotes 9/9 — all unchanged from pre-step-7 baselines.
+  `npm run test:e2e:smoke` run once: 8/8 passed. **Byte-identity check**
+  (tools/split/scope.mjs-based AST diff, source text of every function
+  node, before vs. after): all 21 engine.js functions/consts, all 20
+  voices.js functions/consts, all 9 transport.js functions/consts, AND the
+  6 functions that did NOT move (`ensureAudio`, `resumeAudio`,
+  `rebuildAudio`, `previewNote`, `play`, `stop`) plus the top-level
+  `visibilitychange` listener and the `pointerdown` "warm" listener —
+  every single one diffs empty against the pre-step app.js. See
+  "Deviations (7)" for what did NOT move and why, and for the `?perf`
+  profiler fix's own writeup.
+
+## Deviations (7, 2026-10-03)
+
+- **This step hit the sharpest version yet of the "named target stays, pure
+  leaves move" pattern** — AUDIO IS FRAGILE (this task's own SAFETY
+  instruction, echoing the iPad known-good-engine rule) meant every
+  candidate was checked for free-identifier blockers individually, same
+  discipline as steps 4-6, with an explicit extra rule this step's task
+  added on top: a blocker is never "fixed" by restructuring the blocked
+  function — it stays, bit-for-bit, full stop.
+  - **`ensureAudio`/`resumeAudio`/`rebuildAudio` — this step's own named
+    targets for engine.js — did NOT move**, and this is a NEW, PERMANENT
+    kind of blocker, not a "not yet split" one: all three call
+    `logDebug`/`logErr`/`setInfo`, and `logErr`/`logDebug` both resolve to
+    `errChip()` (`document.getElementById`/`askSeenMax()` — UI-chrome,
+    layer 4, forever). Every prior step's blocked headline function
+    (`estimateKey`, `finalizeNotes`, `initCatalog`, `saveEdits`, `play`,
+    …) was blocked by code that WILL eventually land at layer ≤3 once its
+    own step runs; logging/status reporting never will — it is
+    structurally a UI concern (writing to the error chip, the message
+    sheet) in every app this split plan's layer table describes. The
+    precedent is step 6's `idbDraftPut` ("the ONE member... that calls
+    logErr... so it alone stays") — scaled up here to three of this
+    step's six named functions at once. `clockAlive`/`clockProbeText`/
+    `gestureActive`/`warmContext`/`openMaster` (no logging calls in any of
+    them) moved clean; `ensureAudio`/`resumeAudio`/`rebuildAudio` import
+    them back from `audio/engine.js`, a plain downward import, no behavior
+    change.
+  - **`scheduleNote`/`previewNote` — this step's two named targets for
+    voices.js — did NOT move**, for the chip-audio equivalent of the same
+    reason: both read `chip`/`chipActive()`/`chipHas()` directly (`chip`
+    is `audio/chip.js`'s own future state, step 8, still bare in app.js
+    today), a straight rule-5 LEGACY_CONTAINER import exactly like
+    `estimateKey`'s `trackIsDrums` dependency in step 4 — except this one
+    will resolve itself the moment step 8 lands `chip.js` (unlike
+    `ensureAudio`'s blocker, this one genuinely IS "not yet split").
+    Flagged as a QUEUED note in open-items.md: step 8 should retry
+    `move.mjs --names scheduleNote,previewNote --to audio/voices.js` once
+    `chip`/`chipActive`/`chipHas`/`chipPreviewBuffer`/`chipNoteSlice` exist
+    in `audio/chip.js` (same layer, same file family — a legal import at
+    that point). `playSynthVoice` — the actual oscillator/sample renderer
+    `scheduleNote` calls on every non-chip, non-game-voice note — has NO
+    such dependency and moved clean; `scheduleNote` (staying) imports it
+    back.
+  - **`play`/`stop`/the whole play-gate/album-orchestration system — this
+    step's largest named content for transport.js — did NOT move, almost
+    entirely.** `play()` alone touches `chip.*` (rendering/resolving/fail/
+    stream/key), `stretchEnsureAll`/clip scheduling (audio/clips.js, step
+    8), `met.*` (metronome, step 8), `document.getElementById`/`setInfo`/
+    `setPlayBtn`-adjacent calls, `playbackFrame`/`draw` (render, step 11),
+    and `scheduleNote` itself (staying, above) — more blockers in one
+    function than any previous step's single headline target. `stop()`,
+    `playGate()`/`playGateKick()`/`playGateTick()`/`playGateActive()`/
+    `playGateWait()` (all read `chip.rendering`/`chip.progress`/
+    `chip.resolving` directly), and the whole album system
+    (`albumStart`/`albumPlayIdx`/`albumNext`/`albumPrev`/`albumAdvance`/
+    `albumLeave`/`albumStrip`/`albumClear`/`armAlbumLink`/`albumPos`, all
+    needing `document.getElementById`, `loadSong`, `S.CATALOG`/
+    `albumEffectiveOrder`, or `chip.*`) are blocked the same way. What
+    moved: `currentLoop` (the loop-segment math `play()` calls — pure,
+    `S` + `tickToSec` only), `audioStopSrcs` (the clip-source stopper
+    `stop()` calls — pure, `S.audioSrcs` only), and the album-math leaves
+    `albumNextIdx`/`albumPrevIdx`/`albumEndSec` + their constants
+    (`ALBUM_PASSES`/`ALBUM_CAP_SEC`/`ALBUM_FADE`/`ALBUM_MAX_FAILS`) — none
+    of these five have a single blocked dependency, and nothing REQUIRED
+    moving them (no mover target calls them), but they are genuinely,
+    unambiguously transport/album content with zero risk, so they moved
+    rather than being left stranded next to code that can't follow them
+    yet. `audio/transport.js` is, by a wide margin, the thinnest of this
+    step's three files — an honest reflection of how much of "the
+    transport" is actually chip/clip/UI/model orchestration wearing a
+    transport-shaped name, not transport logic itself. Queued in
+    open-items.md for steps 8/9/11/14 to retry once chip.js/clips.js/
+    metronome.js/model(song,catalog)/render/ui-chrome exist.
+  - **`gameVoiceVault`/`parseGameVoice`/`parseSf2Voice`/`sf2VoiceId`/
+    `gameVoiceId` moved despite having no caller among this step's own
+    moved code** — same shape as step 4's unlisted spelling-table
+    constants and step 6's `draftInIdb`: they're pure, self-contained, and
+    they ARE the "game voices" content the plan's responsibility line
+    names once the bulk of actual game-voice machinery (preload, caching,
+    the picker UI) is excluded as blocked (see above) — moving them isn't
+    required by anything, but leaving genuinely clean, on-topic leaf code
+    behind for no structural reason would be the same over-caution
+    CLAUDE.md's "no one-time hacks" principle warns against in the
+    opposite direction. Their callers (`gameVoicesInSong`,
+    `sf2VoicesInSong`, `gameVoiceWarn`, `gameVoiceLabel`/`sf2VoiceLabel`,
+    `buildGameVoicePicker`/`buildSf2VoicePicker`, `resolveVoiceInstrument`)
+    all stay in app.js and import them back.
+  - **`pieceState`/`pieceAudible` moved with `drumHit`, unlisted by the
+    plan's table**: `drumHit` calls `pieceAudible` (the solo/mute audition
+    gate) on every call, and `pieceAudible` reads `pieceState` — both
+    pure (a `Map` + a predicate over it), no DOM, no `chip`. app.js's
+    render code (the roll ruler's gutter-label color) and its click
+    handler (the tap-to-solo/mute cycle) now import both back from
+    `audio/engine.js` — a plain downward import, zero behavior change.
+  - **`trackAudible` moved alongside `trackGain`, unlisted by the plan's
+    table**: `trackGain`'s gain-node setup reads `trackAudible(ti)` (mute/
+    solo) directly; it's pure (`S.trackState` only) and has ~10 other call
+    sites across app.js (render, note-dump tools, the debug log), all of
+    which now import it back from `audio/engine.js`.
+  - **`fileMeterAt`-style near-miss, this step's version: `gameNoteBucket`/
+    `resolveVoiceInstrument`/`gameLibSync`/`sf2Sync`/`gameNoteCache` were
+    checked and left behind on purpose**, not merely forgotten: they're
+    pure-ish (no `chip`, no logging), but their only caller
+    (`scheduleGameNote`) calls `gameVoiceWarn` → `setInfo` (UI-chrome) and
+    stays blocked regardless, so nothing in this step's actual move set
+    needs them. Moving orphaned pure leaves with no mover-side caller, on
+    the theory that they might be useful later, is exactly the kind of
+    speculative widening step 0a's own Deviations warned against for
+    `browser-globals.txt` ("a seed, not an audit") — left for whichever
+    step (8) actually lands `scheduleGameNote`'s blockers.
+- **The `?perf=1` self-profiler fix (§2.4) — the one change this step made
+  that is NOT a verbatim move, because the plan itself asks for a fix, not
+  a move.** `wrap()` patched `globalThis[name]` for a fixed 29-name list (28
+  distinct across the block's two `setTimeout` passes, not the plan's
+  estimated 25 — same "the plan's count undercounted" shape as step 1's
+  ~203-vs-257 `let`s); this had been silently producing EMPTY attribution
+  since the moment the first name on that list (`secToTick`) left the inline
+  script in step 3 — a module's top-level binding is not a `globalThis`
+  property, so `wrap()`'s own `typeof globalThis[name] === "function"` check
+  quietly failed closed, no error, ever since. Fixed at the root: each
+  profiled function now wraps ITSELF at its own definition
+  (`name = prof("name", name);`, immediately after the declaration),
+  wherever that declaration currently lives — 26 still in app.js, plus
+  `secToTick` (midi/parse.js, already moved in step 3) and `drumHit`/
+  `updateTrackGains` (audio/engine.js, moved THIS step). `prof`, its gate,
+  and the accumulators it reads/writes (`S.perfAcct`/`S.perfTotal`/
+  `S.perfRec`, replacing the old closure locals `acct`/`total`/`rec`) live
+  in **`state.js`, not `platform/base.js`** (where `PERF_FLAGS` already
+  is) — a deliberate, load-bearing choice: `prof` must be callable from
+  EVERY layer, including layer 0 itself (`midi/parse.js`'s `secToTick`),
+  and a layer-0 module may only import layer 0 (rule 5) — `platform/` is
+  layer 1, so a `prof` living there would make `midi/parse.js` (layer 0)
+  import a higher layer the instant `secToTick` needed it, the identical
+  shape of violation steps 4/5 found for `theory/key.js`/`estimateKey`.
+  `state.js` has no imports and is the one file every layer may reach, so
+  `prof`'s own `?perf` gate re-implements PERF_FLAGS's hand-rolled
+  query-string parse rather than importing it — a small, deliberate
+  duplication (the vm-sandbox-safety shape PERF_FLAGS's own comment already
+  uses), not a missed shared-code opportunity. The HUD panel/report/record
+  button (still in app.js, DOM-heavy, not audio) now reads/writes
+  `S.perfAcct`/`S.perfTotal`/`S.perfRec` instead of its own closure
+  locals — `acct`/`total` are aliased to the `S` objects they're mutated
+  in place (identity-preserving, no further rewrite needed); `rec` is
+  REASSIGNED (`= null`, `= {...}`), so every reference became `S.perfRec`
+  (65 occurrences), including inside the one block that's still broken
+  (see below) — a plain rename, confirmed by `node --check` + re-running
+  every test this step's "Musts" list names. **The second, separate
+  `globalThis`-patching wrapper (the "mark the timeline on an edit" pass
+  over `saveEdits`/`selEditApply`/`insertTime`, immediately below the first
+  in the same guarded block) was NOT fixed** — it's a different
+  instrumentation (pushing an EDIT marker string into
+  `S.perfRec.marks`, not timing), the plan's §2.4 names only "replace
+  `wrap()` with `prof(name, fn)` wrappers", and inventing a second generic
+  mechanism this step's task didn't ask for would be exactly the kind of
+  unrequested "fix" the SAFETY instructions warn against. It remains
+  silently broken, same as it's been since step 3 — queued in
+  open-items.md, not fixed here.
 
 **8. `audio/chip.js`, `chip-stream.js`, `clips.js`, `metronome.js`, `bounce.js`.**
 - Verify:

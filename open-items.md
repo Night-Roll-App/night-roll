@@ -5412,3 +5412,71 @@ Leftovers from step 6 (docs/split-plan.md "Deviations (6)"):
   step lands — flag this specifically if a future step reconsiders it.
 
 ## DONE 2026-10-03 13:30 — pan past the song end (Josh, Terminal #70: "push the song left so I can see like 10 empty bars"): clampView lets a drag scroll to PAN_TAIL_BARS=16 empty bars past the last bar; zoom-out fit unchanged
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 7: src/audio/{engine,voices,transport}.js + the ?perf profiler fix (docs/split-plan.md)
+Moved, byte-identical (AST-diffed, not just eyeballed): `audio/engine.js`
+(AudioContext lifecycle's pure half — warmContext/clockAlive/
+clockProbeText/gestureActive/openMaster/trackGain/trackVol/trackPan/
+trackAudible/updateTrackGains/dutyWave/makeOsc/pluckBuffer/pieceState/
+pieceAudible/drumNoise*/drumHit), `audio/voices.js` (voice
+identification — voiceType/trackVoice/SF-voice tables/game-voice id
+parsers/playSynthVoice), `audio/transport.js` (currentLoop/audioStopSrcs/
+album math leaves + constants). Tests/checks/package/smoke all green,
+unchanged counts from pre-step-7. Also fixed: the `?perf=1` self-profiler's
+`wrap()` → `prof()` (NIGHT-ROLL.md "Perf HUD" + "Module map"; prof() lives
+in state.js, not platform/base.js, for a layer reason — see there).
+Terminal session: review, browser-check (play a synth/SF2/game-voice song,
+tap a note preview), merge, push, build.
+
+## QUEUED 2026-10-03 — split: scheduleNote/previewNote still can't move to src/audio/voices.js; play/stop/play-gate/album still can't move to src/audio/transport.js (terminal-only, not a question for Josh)
+Leftovers from step 7 (docs/split-plan.md "Deviations (7)"), both the "not
+yet split" kind (unlike ensureAudio/resumeAudio/rebuildAudio below, these
+SHOULD resolve once the blocking steps land — no need to re-litigate
+whether they're movable, just re-run the mover once the blocker is gone):
+- `scheduleNote`/`previewNote` (→ audio/voices.js): both read `chip`/
+  `chipActive()`/`chipHas()`/`chipPreviewBuffer()`/`chipNoteSlice()`
+  directly (audio/chip.js, step 8, still bare in app.js). Retry
+  `move.mjs --names scheduleNote,previewNote --to audio/voices.js` once
+  step 8 lands chip.js — same layer (3), so this becomes a legal import at
+  that point, no further change needed to either function.
+- `play`/`stop`/the whole play-gate (`playGate`/`playGateKick`/
+  `playGateTick`/`playGateActive`/`playGateWait`)/album orchestration
+  (`albumStart`/`albumPlayIdx`/`albumNext`/`albumPrev`/`albumAdvance`/
+  `albumLeave`/`albumStrip`/`albumClear`/`armAlbumLink`/`albumPos`) (→
+  audio/transport.js): saturated with `chip.*` (step 8), clip scheduling
+  (`clipLen`, audio/clips.js, step 8), `met.*` (metronome, step 8),
+  `document.getElementById`/`setInfo`/UI-chrome calls (ui/chrome.js, step
+  14), and `loadSong`/`S.CATALOG`/`albumEffectiveOrder` (model, step 9).
+  This is the single most entangled cluster the split has found so far —
+  likely needs steps 8, 9, 11, AND 14 to all land before a clean move is
+  possible. Re-check incrementally (don't wait for all four at once): each
+  step may unblock a subset (e.g. step 8 alone unblocks the `chip`/`met`
+  references but not `document.getElementById`/`loadSong`).
+- The second `?perf=1` instrumentation wrapper (the "mark the timeline on
+  an edit" pass over `saveEdits`/`selEditApply`/`insertTime`, same guarded
+  block as the now-fixed `wrap()`) is STILL silently broken — same
+  `globalThis[name]` disease, different mechanism (pushes an EDIT marker,
+  not a timing sample), out of this step's "replace wrap() with prof()"
+  scope. Needs its own small `profMark(name, fn)`-shaped fix (or folding
+  into `prof()` as an optional second callback) whenever someone next
+  touches this HUD.
+
+## QUEUED 2026-10-03 — split: ensureAudio/resumeAudio/rebuildAudio cannot move to src/audio/engine.js, ever, as currently written (terminal-only, not a question for Josh)
+Leftover from step 7 (docs/split-plan.md "Deviations (7)") — correcting
+the plan's own step-7 line ("ensureAudio, resumeAudio... clockAlive,
+rebuildAudio, warmContext, master gain" as engine.js's contents): three of
+those six named functions are PERMANENTLY blocked, the same way
+`estimateKey`/`checkKeyVsFile` are permanently blocked from
+theory/key.js (open-items.md's existing QUEUED entry above) — not a "once
+some other step lands" situation. `ensureAudio`'s `onstatechange`,
+`resumeAudio`'s dead-clock-recovery path, and `rebuildAudio`'s own log
+line all call `logDebug`/`logErr`/`setInfo`, which resolve to `errChip()`
+(`document.getElementById`/`askSeenMax()`) — UI-chrome, layer 4, and
+logging/status reporting will never be a layer-≤3 concern in this app's
+own layer table (the same reasoning `scheduleBackupFlush`'s entry above
+gives for `serializeRollnotes`). If this is ever reconsidered, the only
+way around it — short of a real architecture change (an event/callback
+the UI layer subscribes to, instead of audio code calling into logging
+directly) — is out of scope for a verbatim-move split step; this is a
+design question, not a sequencing one, so flag it to Josh specifically
+(not silently retried) if a future step proposes touching it.

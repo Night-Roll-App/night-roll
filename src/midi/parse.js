@@ -1,4 +1,4 @@
-import { S } from "../state.js";
+import { S, prof } from "../state.js";
 
 // ---------------------------------------------------------------- midi parse
 export function parseMidi(buf, opts = {}) {
@@ -208,3 +208,4 @@ export function secToTick(song, sec) {
   while (lo < hi) { const m = (lo+hi+1) >> 1; if (ts[m].sec <= sec) lo = m; else hi = m-1; }
   return ts[lo].tick + (sec - ts[lo].sec) * 1e6 / ts[lo].usq * song.ppq;
 }
+secToTick = prof("secToTick", secToTick); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
