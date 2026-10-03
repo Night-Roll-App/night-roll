@@ -5024,3 +5024,5 @@ Josh: "That did not work and it is making the whole screen freak out, it is blin
 
 ## QUEUED 2026-10-03 00:50 — redo track-chip row stacking WITHOUT flapping (0692e13 reverted in 42bbd73: the iPad blinked nonstop at some widths)
 Design: stack decision depends only on the row WIDTH vs a threshold = transport natural width + all chips natural width + margin, measured once while unstacked and re-measured only when the track set or transport buttons change (never while stacked, never from the ▾ overflow signal). Hysteresis: stack below threshold, unstack above threshold + 60px. Verify in the browser at several widths (step the row width 700→1400 by 20px and assert at most one flip each way) BEFORE shipping. After split 0b lands (goes in src/).
+
+## DONE 2026-10-03 01:00 — Select/Pencil/Erase on their own row (Josh, Terminal #69: "too annoying the way it moves"): #moderowbreak forces the wrap in #editrow; ⋯ opening no longer shifts them. PORT NOTE: markup only (index.html), survives the split cutover.
