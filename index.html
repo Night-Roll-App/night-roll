@@ -489,6 +489,7 @@
   #editsheet.on, #viewsheet.on { display: block; }
   #editsheet .fitem, #viewsheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #editsheet .fitem:active, #viewsheet .fitem:active { background: var(--panel); }
+  svg.ico { width: 18px; height: 18px; fill: currentColor; vertical-align: middle; display: block; margin: auto; }
   /* a group's items sit indented under its ▾ header so the accordion reads as nested */
   #viewsheet > div[id$="Row"] { padding-left: 26px; }
   #drummersheet .sheet { width: min(720px, 100%); } /* the range row wraps at 560 (Josh, from bed) */
@@ -1298,8 +1299,11 @@
        all the time"). Nothing may be inserted ahead of this group. -->
   <button id="undobtn" aria-label="Undo">⟲</button>
   <button id="redobtn" aria-label="Redo">⟳</button>
-  <button id="copybtn" aria-label="Copy selected notes">⧉</button>
-  <button id="pastebtn" aria-label="Paste the selection at the cursor">📋</button>
+  <!-- copy/paste glyphs: Google Material Icons content_copy/content_paste
+       (outlined, Apache-2.0) — the platform-standard shapes; ⧉/📋 read as
+       "window" and an emoji clipboard (Josh, 2026-10-02) -->
+  <button id="copybtn" aria-label="Copy selected notes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
+  <button id="pastebtn" aria-label="Paste the selection at the cursor"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0S9.6.84 9.18 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg></button>
 
   <div class="seg" id="modeseg" role="radiogroup" aria-label="Edit mode">
     <button data-mode="select" role="radio" aria-checked="false">Select</button>
@@ -1975,7 +1979,7 @@
       <dt>Delete</dt><dd>Tap <b>🗑</b> in the edit row — every selected note goes at once. Delete key does the same.</dd>
       <dt>Divide (➗)</dt><dd>Select notes, tap <b>➗</b>, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.</dd>
       <dt>Quantize (Q)</dt><dd>Select notes, tap <b>Q Quantize</b> (behind ⋯, Edit ▾, or the <b>Q</b> key) and pick a strength — <b>100%</b> snaps each note's start exactly onto the current grid (the same grid Move/Pencil use: 16ths, triplet steps with a T duration active, or 32nds once the song has any); <b>75%/50%</b> moves it only partway there, a soft nudge for a take that's close but not glued down. <b>Also quantize note ends</b> additionally snaps each note's END and resizes to match — off by default, so a raw take's durations stay as played and only the onsets straighten. This is Logic's Quantize command: it acts on a selection AFTER the fact, undoably (one ⟲ step for the whole batch) — recording itself keeps what you played (see ● Record); Quantize is how you straighten it out when you want to.</dd>
-      <dt>Undo</dt><dd>⟲ ⟳ ⧉ 📋 (undo, redo, copy, paste) are always the first four buttons on the left of the edit toolbar — Pencil's note values and vol appear after them, never before, so they don't move. Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.</dd>
+      <dt>Undo</dt><dd>⟲ ⟳ and the copy / paste icons (undo, redo, copy, paste) are always the first four buttons on the left of the edit toolbar — Pencil's note values and vol appear after them, never before, so they don't move. Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.</dd>
     </dl>
     </div>
     <div class="hsec" data-hsec="files">
@@ -20400,7 +20404,7 @@ async function moveComposition(destDir) {
 document.getElementById("copybtn").addEventListener("click", () => {
   const k = copySelection();
   if (!k) { setInfo("nothing selected — lasso or tap notes first"); return; }
-  setInfo("copied " + clipSummary() + " — move the cursor anywhere, 📋 pastes there");
+  setInfo("copied " + clipSummary() + " — move the cursor anywhere, Paste puts them there");
   updateEditButtons();
 });
 const DP_PIECES = [["hat", 42], ["snare", 38], ["kick", 36]]; // hat on top, kick on the bottom — standard order
@@ -21807,7 +21811,7 @@ document.getElementById("mvdedupe").addEventListener("click", () => {
 let ptTarget = 0;
 function openPasteTo() {
   if (!editableSong()) { setInfo("paste works on your own songs — captures are locked"); return; }
-  if (!clipboardHas()) { setInfo("nothing copied yet — select notes and tap ⧉ (or ⌘C) first"); return; }
+  if (!clipboardHas()) { setInfo("nothing copied yet — select notes and tap Copy (or ⌘C) first"); return; }
   ptTarget = selTrack;
   const box = document.getElementById("pttracks");
   box.innerHTML = song.tracks.map((tr, ti) =>
@@ -21835,7 +21839,7 @@ document.getElementById("pastebtn").addEventListener("click", () => {
   if (!editableSong()) { setInfo("paste works on your own songs — captures are locked"); return; }
   const k = pasteClipboard(playCursor); // pastes the last ⧉/⌘C copy — surviving any scrolling
   setInfo(k ? "pasted " + clipSummary() + " — cursor moved to their end, paste again to chain"
-            : "nothing copied yet — select notes and tap ⧉ (or ⌘C) first");
+            : "nothing copied yet — select notes and tap Copy (or ⌘C) first");
 });
 document.getElementById("octupbtn").addEventListener("click", () => {
   if (nudgeSelection(0, 12)) setInfo("selection up an octave (⟲ undoes)");
@@ -21944,7 +21948,7 @@ document.getElementById("quantbtn").addEventListener("click", () => {
 document.getElementById("cutbtn").addEventListener("click", () => {
   const k = cutSelection();
   if (!k) { setInfo("nothing selected — lasso or tap notes first"); return; }
-  setInfo("cut " + clipSummary() + " — 📋 pastes them at the cursor (⟲ restores)");
+  setInfo("cut " + clipSummary() + " — Paste puts them at the cursor (⟲ restores)");
 });
 document.getElementById("splitbtn").addEventListener("click", () => {
   if (selClip && !multiSel.length && editableSong()) { splitSelectedClipAtCursor(); return; } // a selected audio piece splits like a note would
