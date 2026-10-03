@@ -2765,6 +2765,10 @@ const ICON = {
   folderOpen: '<path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>',
   libraryMusic: '<path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zm-7.5-1a2.5 2.5 0 0 0 2.5-2.5V7h3V5h-4v5.51c-.42-.32-.93-.51-1.5-.51a2.5 2.5 0 0 0 0 5zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/>',
 };
+function setVolBtn(pct) { // the speaker icon, plus the level only when it isn't 100% (a textContent write would wipe the icon)
+  const b = document.getElementById("volbtn");
+  if (b) b.innerHTML = iconSvg("volumeUp", pct === 100 ? "" : "txt") + (pct === 100 ? "" : pct + "%");
+}
 function iconSvg(name, cls) { // cls: extra class(es), e.g. "txt" for an icon beside visible text
   const d = ICON[name];
   if (!d) return "";
@@ -5184,7 +5188,7 @@ function mixerMasterStripEl() {
     const volsl = document.getElementById("volsl"), vollbl = document.getElementById("vollbl"), volbtn = document.getElementById("volbtn");
     if (volsl) volsl.value = fader.value;
     if (vollbl) vollbl.textContent = fader.value + "%";
-    if (volbtn) volbtn.textContent = masterVol === 1 ? "🔊" : "🔊" + fader.value + "%";
+    if (volbtn) setVolBtn(+fader.value);
   });
   return strip;
 }
@@ -13180,11 +13184,11 @@ const volbtn = document.getElementById("volbtn");
 masterVol = +(localStorage.getItem("ff1roll-mastervol") || 1);
 volsl.value = String(Math.round(masterVol * 100));
 vollbl.textContent = Math.round(masterVol * 100) + "%";
-volbtn.textContent = masterVol === 1 ? "🔊" : "🔊" + Math.round(masterVol * 100) + "%";
+setVolBtn(Math.round(masterVol * 100));
 volsl.addEventListener("input", () => {
   masterVol = (+volsl.value) / 100;
   vollbl.textContent = volsl.value + "%";
-  volbtn.textContent = masterVol === 1 ? "🔊" : "🔊" + volsl.value + "%";
+  setVolBtn(+volsl.value);
   localStorage.setItem("ff1roll-mastervol", String(masterVol));
   if (audio && master) master.gain.setValueAtTime(MASTER_VOL * masterVol, audio.currentTime);
 });
