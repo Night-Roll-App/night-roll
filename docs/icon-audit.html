@@ -1,0 +1,391 @@
+<title>Night Roll Icons</title>
+<meta name="description" content="An icon-by-icon audit of Night Roll's controls, comparing every glyph/emoji to its closest Google Material Icon.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0D1120;
+    --panel: #151B30;
+    --grid: #242C48;
+    --text: #D8DEF0;
+    --muted: #8A93B0;
+    --gold: #E6C060;
+    --accent: #6B8CFF;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  body {
+    padding: 20px 16px 60px;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 1.25rem;
+    margin: 0 0 4px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.8125rem;
+    margin: 0 0 18px;
+  }
+  .intro {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .intro p { margin: 0 0 8px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    align-items: center;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 26px;
+  }
+  .summary b { color: var(--text); }
+  section.area { margin-bottom: 30px; }
+  section.area h2 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--grid);
+    padding-bottom: 8px;
+    margin: 0 0 4px;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--grid);
+  }
+  .row:last-child { border-bottom: none; }
+  .icons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  .iconbox {
+    min-width: 30px;
+    min-height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .curglyph { line-height: 1; }
+  .mi { fill: currentColor; display: block; }
+  .mi.cur-svg { color: var(--text); }
+  .iconbox .mi:not(.cur-svg) { color: var(--gold); }
+  .arrow { color: var(--muted); font-size: 0.9rem; }
+  .noicon {
+    font-size: 0.6875rem;
+    color: var(--muted);
+    font-style: italic;
+    max-width: 90px;
+    display: inline-block;
+  }
+  .info { flex: 1 1 220px; min-width: 180px; }
+  .info .name { font-size: 0.875rem; color: var(--text); font-weight: 600; }
+  .info .eid { font-size: 0.6875rem; color: var(--muted); margin: 2px 0; word-break: break-word; }
+  .info .desc { font-size: 0.8125rem; color: var(--muted); line-height: 1.4; }
+  .vwrap {
+    flex: 1 1 200px;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .chip {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 3px 9px;
+    border-radius: 100px;
+    text-transform: uppercase;
+  }
+  .chip.switch { background: var(--gold); color: #1a1406; }
+  .chip.keep { background: var(--grid); color: var(--muted); }
+  .chip.either { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .chip.done { background: transparent; color: var(--muted); border: 1px dashed var(--muted); }
+  .reason { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+  @media (max-width: 480px) {
+    body { padding: 16px 16px 50px; }
+    .row { flex-direction: column; align-items: flex-start; }
+    .vwrap { width: 100%; }
+  }
+</style>
+<h1>Icon audit</h1>
+<p class="subtitle">Night Roll — every on-screen glyph vs. its closest Google Material Icon</p>
+<div class="intro">
+  <p>Josh asked for a pass over every icon in the app, now that Copy/Paste use real Google Material Icons (outlined, Apache-2.0) instead of the old ⧉/📋. This page lines up every button, menu item and chip glyph next to its closest Material match, says what the control does, and gives a one-line call: switch, keep, or either is fine.</p>
+  <p>Nothing in the app changes from this page — it's the menu to pick from, not a patch.</p>
+</div>
+<div class="summary"><b>41</b> switch &nbsp;&middot;&nbsp; <b>12</b> keep &nbsp;&middot;&nbsp; <b>6</b> either &nbsp;&middot;&nbsp; <b>2</b> already done</div>
+<section class="area"><h2>Edit toolbar</h2><div class="row">
+  <div class="icons"><div class="iconbox"><svg class="mi cur-svg" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">already Material</span></div></div>
+  <div class="info"><div class="eid">#copybtn</div><div class="desc">Copy selected notes</div></div>
+  <div class="vwrap"><span class="chip done">DONE</span><div class="reason">Already switched (2026-10-02) to Google Material content_copy.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><svg class="mi cur-svg" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0S9.6.84 9.18 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">already Material</span></div></div>
+  <div class="info"><div class="eid">#pastebtn</div><div class="desc">Paste at cursor</div></div>
+  <div class="vwrap"><span class="chip done">DONE</span><div class="reason">Already switched (2026-10-02) to Google Material content_paste.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⟲</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></div></div>
+  <div class="info"><div class="eid">#undobtn / #emUndo</div><div class="desc">Undo last edit</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Core control, used constantly — undo is the universal shape; ⟲ varies by font weight.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⟳</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16a8.002 8.002 0 0 1 7.6-5.5c1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></div></div>
+  <div class="info"><div class="eid">#redobtn / #emRedo</div><div class="desc">Redo</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Same reasoning as Undo — keep the pair matching.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">1 2 4 8 16 32</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#durseg [data-nv]</div><div class="desc">Note value picker (whole … 32nd)</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">These are the actual note-duration numerals musicians read — not decoration.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">— · T</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#durseg [data-mod]</div><div class="desc">Plain / Dotted / Triplet modifier</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">Domain shorthand (a dot, a tie, a letter) — no icon says this more clearly.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">▦</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 20H4v-4h4v4zm0-6H4v-4h4v4zm0-6H4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4z"/></svg></div></div>
+  <div class="info"><div class="eid">#gridchip</div><div class="desc">Custom grid rules indicator</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">▦ also means &quot;Roll view&quot; and &quot;Bottom bar&quot; elsewhere — grid_on frees this one meaning.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">♮ ♯ ♭</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#accseg [data-acc]</div><div class="desc">Pencil accidental (natural/sharp/flat)</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">The real accidentals — this is the notation, not a stand-in for it.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">✂</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg></div></div>
+  <div class="info"><div class="eid">#cutbtn / #emCut</div><div class="desc">Cut selected notes</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Scissors emoji renders colored/angled on iOS vs a plain glyph elsewhere; content_cut is one consistent mark.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🔪</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m14 4 2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4h-6zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3L10 4z"/></svg></div></div>
+  <div class="info"><div class="eid">#splitbtn / #emSplit</div><div class="desc">Split selected notes at cursor</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">A kitchen-knife emoji reads as food, not &quot;split&quot; — call_split literally shows one path becoming two.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🗑</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg></div></div>
+  <div class="info"><div class="eid">#delbtn / #emDelete</div><div class="desc">Delete selected notes</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Trash-can emoji is heavily styled/colored per platform; delete is the standard monochrome can.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⋯</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div></div>
+  <div class="info"><div class="eid">#morebtn</div><div class="desc">More edit tools (reveals the rest of the row)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Exact match, and renders at a reliable size — the unicode ellipsis can look like 3 periods at small sizes.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⇅</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z"/></svg></div></div>
+  <div class="info"><div class="eid">#trbtn / #emTranspose</div><div class="desc">Transpose selection</div></div>
+  <div class="vwrap"><span class="chip either">EITHER</span><div class="reason">⇅ already reads fine; swap_vert is marginally crisper at 22px — no urgency either way.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">▲8 / ▼8</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 17.59 7.41 19 12 14.42 16.59 19 18 17.59l-6-6z"/><path d="m6 11 1.41 1.41L12 7.83l4.59 4.58L18 11l-6-6z"/></svg></div></div>
+  <div class="info"><div class="eid">#octupbtn / #octdownbtn</div><div class="desc">Shift selection an octave up/down</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">8va is the real octave-shift notation musicians already read on a score — a plain double-chevron loses that meaning.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">♫</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m12 3 .01 10.55c-.59-.34-1.27-.55-2-.55a4.001 4.001 0 1 0 0 8c2.22 0 3.99-1.79 3.99-4V7h4V3h-6zm-1.99 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div></div>
+  <div class="info"><div class="eid">#insbtn / #emChord</div><div class="desc">Insert a chord at cursor</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">A genuine (non-emoji) music glyph — already monochrome and reads as &quot;notes,&quot; not decoration.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⇄</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div></div>
+  <div class="info"><div class="eid">#movebtn / #emMove</div><div class="desc">Move selection to another track</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">⇄ is reused for &quot;Compare with repo&quot; too (see Menus) — two unrelated actions sharing one glyph.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🥁</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#drumfillbtn / #emFill</div><div class="desc">Fill a drum pattern</div></div>
+  <div class="vwrap"><span class="chip either">EITHER</span><div class="reason">No drum glyph exists in this icon set; the emoji still reads clearly for a control Josh taps rarely.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🎲</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="7.5" cy="7.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="7.5" r="1.5"/></svg></div></div>
+  <div class="info"><div class="eid">#drummerbtn / #emDrummer</div><div class="desc">Generate drums (Drummer)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Exact concept match — dice ARE the Material icon for &quot;random/generate,&quot; just without emoji color variance.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🎸</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#bassistbtn / #emBassist</div><div class="desc">Generate a bassline (Bassist)</div></div>
+  <div class="vwrap"><span class="chip either">EITHER</span><div class="reason">No guitar/bass glyph in this icon set; same reasoning as the drum-pattern button above.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">➗</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 5v14h18V5H3zm5.33 12H5V7h3.33v10zm5.34 0h-3.33V7h3.33v10zM19 17h-3.33V7H19v10z"/></svg></div></div>
+  <div class="info"><div class="eid">#divbtn / #emDivide</div><div class="desc">Divide selected notes into equal parts</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">The division sign is a math symbol standing in for &quot;split into N&quot; — equal columns says that directly.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⁀</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M17 20.41 18.41 19 15 15.59 13.59 17 17 20.41zM7.5 8H11v5.59L5.59 19 7 20.41l6-6V8h3.5L12 3.5 7.5 8z"/></svg></div></div>
+  <div class="info"><div class="eid">#joinbtn / #emJoin</div><div class="desc">Join selected notes</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">⁀ (a tie character) renders as a near-invisible hairline in most fonts — effectively a blank button.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">Q</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#quantbtn / #emQuantize</div><div class="desc">Quantize selected notes to the grid</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">Letter mnemonic plus a text label — there&#x27;s no clearer single icon for &quot;quantize.&quot;</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⊞</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-8-2h2v-4h4v-2h-4V7h-2v4H7v2h4z"/></svg></div></div>
+  <div class="info"><div class="eid">#emInsertBars (Edit ▾ only)</div><div class="desc">Insert bars at cursor</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">⊞ also means &quot;Lasso&quot; on the footer (different action entirely) — add_box reads as &quot;insert&quot; specifically.</div></div>
+</div></section><section class="area"><h2>Transport &amp; LCD</h2><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⏮</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6l-8.5 6zm6.5 2.14L12.97 12 16 9.86v4.28z"/></svg></div></div>
+  <div class="info"><div class="eid">#rwbtn</div><div class="desc">Back to bar 1</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Standard transport icon, exact match — a control used every session.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">▶ / ■</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M10 8.64 15.27 12 10 15.36V8.64M8 5v14l11-7L8 5z"/></svg></div></div>
+  <div class="info"><div class="eid">#playbtn</div><div class="desc">Play / Stop (label swaps live)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">The single most-used button in the app — play_arrow/stop are the universal transport pair everywhere else.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">●</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/></svg></div></div>
+  <div class="info"><div class="eid">#recbtn</div><div class="desc">Record onto the selected track</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Exact match already (a filled dot) — Material&#x27;s version just sizes/aligns consistently with the rest of the row.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⏱</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></div></div>
+  <div class="info"><div class="eid">#metbtn</div><div class="desc">Metronome on/off</div></div>
+  <div class="vwrap"><span class="chip either">EITHER</span><div class="reason">No true metronome glyph exists in this set; a stopwatch/clock is an acceptable but inexact stand-in.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⚙</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1a.566.566 0 0 0-.18-.03c-.17 0-.34.09-.43.25l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46a.5.5 0 0 0 .61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.06.02.12.03.18.03.17 0 .34-.09.43-.25l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-1.98-1.71c.04.31.05.52.05.73 0 .21-.02.43-.05.73l-.14 1.13.89.7 1.08.84-.7 1.21-1.27-.51-1.04-.42-.9.68c-.43.32-.84.56-1.25.73l-1.06.43-.16 1.13-.2 1.35h-1.4l-.19-1.35-.16-1.13-1.06-.43c-.43-.18-.83-.41-1.23-.71l-.91-.7-1.06.43-1.27.51-.7-1.21 1.08-.84.89-.7-.14-1.13c-.03-.31-.05-.54-.05-.74s.02-.43.05-.73l.14-1.13-.89-.7-1.08-.84.7-1.21 1.27.51 1.04.42.9-.68c.43-.32.84-.56 1.25-.73l1.06-.43.16-1.13.2-1.35h1.39l.19 1.35.16 1.13 1.06.43c.43.18.83.41 1.23.71l.91.7 1.06-.43 1.27-.51.7 1.21-1.07.85-.89.7.14 1.13zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div></div>
+  <div class="info"><div class="eid">#metcfg</div><div class="desc">Metronome settings</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Unicode gear ⚙ varies a lot in weight by font/platform; Material&#x27;s gear is the one everyone recognizes.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🔊</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm7-.17v6.34L7.83 13H5v-2h2.83L10 8.83zM16.5 12A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/></svg></div></div>
+  <div class="info"><div class="eid">#volbtn</div><div class="desc">Master volume</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Speaker emoji is colored/detailed on most platforms; volume_up is the plain monochrome equivalent.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⏮ / ⏭</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6l-8.5 6zm6.5 2.14L12.97 12 16 9.86v4.28z"/></svg></div></div>
+  <div class="info"><div class="eid">#albumprev / #albumnext</div><div class="desc">Prev/Next song in album playback</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Same icons as the main transport (above) — reusing them here is free consistency.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">💿</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-12.5c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 5.5c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg></div></div>
+  <div class="info"><div class="eid">#&quot;Play album&quot; row, File → Open…</div><div class="desc">Play a whole album straight through</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Optical-disc emoji renders with a lot of platform-specific shine/color; album is a plain disc outline.</div></div>
+</div></section><section class="area"><h2>Footer</h2><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">▦ / ▤</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg></div></div>
+  <div class="info"><div class="eid">#viewbtn, #vsRoll/#vsTracks, #vwRoll/#vwTracksView</div><div class="desc">Switch to Roll view / Tracks view</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">▦ currently also means &quot;Bottom bar&quot; and &quot;Grid…&quot; elsewhere — grid_view (Roll) and table_rows (Tracks) give each its own mark.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">𝄞</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#vsScore / #vwScore</div><div class="desc">Switch to Score view</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">An actual treble clef — nothing in an icon set substitutes for the real notation.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⊞</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 5v4h2V5h4V3H5c-1.1 0-2 .9-2 2zm2 10H3v4c0 1.1.9 2 2 2h4v-2H5v-4zm14 4h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4zm0-16h-4v2h4v4h2V5c0-1.1-.9-2-2-2z"/></svg></div></div>
+  <div class="info"><div class="eid">#lassobtn</div><div class="desc">Lasso-select notes</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Corner-bracket &quot;marquee select&quot; is the icon convention everyone already knows from other apps; also frees ⊞ from double duty (see Insert bars, above).</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🎹</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 11.5h.25V19h-4.5v-4.5H10c.55 0 1-.45 1-1V5h2v8.5c0 .55.45 1 1 1zM5 5h2v8.5c0 .55.45 1 1 1h.25V19H5V5zm14 14h-3.25v-4.5H16c.55 0 1-.45 1-1V5h2v14z"/></svg></div></div>
+  <div class="info"><div class="eid">#instbtn / #vwInst</div><div class="desc">Open the instrument panel</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Piano-key emoji is colored/glossy per platform; the Material piano is the same literal keys, flat.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">☰</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg></div></div>
+  <div class="info"><div class="eid">#listbtn / #notesall</div><div class="desc">Notes list (☰ Notes ▴ / ☰ All notes)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">☰ usually means &quot;navigation menu&quot; everywhere else on the web — this is a list of notes, not a nav drawer.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⚠</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></div></div>
+  <div class="info"><div class="eid">#errbtn / #vwMessages</div><div class="desc">Errors / Messages</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">⚠ is a colored-triangle emoji on most platforms; warning is the plain monochrome equivalent already used for urgency elsewhere in the UI.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⏳</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5-4-4V4h8v3.5l-4 4z"/></svg></div></div>
+  <div class="info"><div class="eid">#jobsbtn / #vwJobs</div><div class="desc">Background jobs (captures, publishes)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">⏳ is an animated-looking sand-timer emoji; hourglass_empty is static and reads the same at a glance.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">↻</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></div></div>
+  <div class="info"><div class="eid">Jobs sheet retry button</div><div class="desc">Retry a failed/interrupted job</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">↻ renders as a thin, easy-to-miss squiggle in many fonts; refresh is bold and unambiguous.</div></div>
+</div></section><section class="area"><h2>AI window (✦ AI)</h2><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">✦</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm0 6-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25zm-7.5-5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99z"/></svg></div></div>
+  <div class="info"><div class="eid">#askbtn, #askmodegen, #askreplybtn</div><div class="desc">Talk to the AI (header button, ✦ Ask tab, ✦ reply badge)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Appears in 3 places — auto_awesome is now the de-facto standard &quot;AI feature&quot; mark industry-wide, and a plain star ✦ varies a lot by font weight.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">♪</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m12 3 .01 10.55c-.59-.34-1.27-.55-2-.55a4.001 4.001 0 1 0 0 8c2.22 0 3.99-1.79 3.99-4V7h4V3h-6zm-1.99 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div></div>
+  <div class="info"><div class="eid">#askmodesong</div><div class="desc">&quot;♪ this song&quot; chat tab</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">A real note glyph (not emoji) — reads as &quot;this song&#x27;s music,&quot; exactly what the tab is.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⌨</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16c1.1 0 2-.9 2-2V6a2 2 0 0 0-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.59-2.59L7.5 9l4 4-4 4z"/></svg></div></div>
+  <div class="info"><div class="eid">#askmodeterm</div><div class="desc">&quot;⌨ Terminal&quot; chat tab (Claude Code bridge)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">A generic keyboard emoji doesn&#x27;t say &quot;terminal session&quot;; the Material terminal glyph (a prompt, &gt;_) names the thing exactly.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⚙</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1a.566.566 0 0 0-.18-.03c-.17 0-.34.09-.43.25l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46a.5.5 0 0 0 .61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.06.02.12.03.18.03.17 0 .34-.09.43-.25l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-1.98-1.71c.04.31.05.52.05.73 0 .21-.02.43-.05.73l-.14 1.13.89.7 1.08.84-.7 1.21-1.27-.51-1.04-.42-.9.68c-.43.32-.84.56-1.25.73l-1.06.43-.16 1.13-.2 1.35h-1.4l-.19-1.35-.16-1.13-1.06-.43c-.43-.18-.83-.41-1.23-.71l-.91-.7-1.06.43-1.27.51-.7-1.21 1.08-.84.89-.7-.14-1.13c-.03-.31-.05-.54-.05-.74s.02-.43.05-.73l.14-1.13-.89-.7-1.08-.84.7-1.21 1.27.51 1.04.42.9-.68c.43-.32.84-.56 1.25-.73l1.06-.43.16-1.13.2-1.35h1.39l.19 1.35.16 1.13 1.06.43c.43.18.83.41 1.23.71l.91.7 1.06-.43 1.27-.51.7 1.21-1.07.85-.89.7.14 1.13zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div></div>
+  <div class="info"><div class="eid">#askgear</div><div class="desc">AI settings</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Same fix as Metronome settings, above — keep every gear in the app identical.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🎤</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div></div>
+  <div class="info"><div class="eid">#askmic</div><div class="desc">Speak (voice input)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Microphone emoji is heavily styled/colored; mic is the plain silhouette used industry-wide for voice input.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">📷</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m14.12 4 1.83 2H20v12H4V6h4.05l1.83-2h4.24M15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2zm-3 7c1.65 0 3 1.35 3 3s-1.35 3-3 3-3-1.35-3-3 1.35-3 3-3m0-2c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/></svg></div></div>
+  <div class="info"><div class="eid">#askshot</div><div class="desc">Send a screenshot of the app to Claude</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Camera emoji renders with a lens/body in full color; photo_camera is flat and matches the rest of the toolbar once switched.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🖼</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/></svg></div></div>
+  <div class="info"><div class="eid">#askpick</div><div class="desc">Attach a picture from Photos/Files</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Framed-picture emoji is detailed/colored; image is the plain picture-frame everyone reads as &quot;attach an image.&quot;</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">■</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M16 8v8H8V8h8m2-2H6v12h12V6z"/></svg></div></div>
+  <div class="info"><div class="eid">#askstop</div><div class="desc">Stop a reply that&#x27;s still streaming</div></div>
+  <div class="vwrap"><span class="chip either">EITHER</span><div class="reason">■ already IS a stop-square; Material&#x27;s version is only marginally more polished at this size.</div></div>
+</div></section><section class="area"><h2>Track chips</h2><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">M / S / H</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">Track chip buttons</div><div class="desc">Mute / Solo / Hide a track</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">Single-letter DAW convention (Logic, Ableton, GarageBand all use it) — more compact and more recognizable to a musician than any icon.</div></div>
+</div></section><section class="area"><h2>Menus (File ▾ / Edit ▾ / View ▾)</h2><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🎚</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg></div></div>
+  <div class="info"><div class="eid">#vwMixer</div><div class="desc">Open the Mixer</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Level-meter emoji is colored/detailed; tune is Material&#x27;s literal sliders icon — an exact match.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🛠</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m13.783 15.172 2.121-2.121 5.996 5.996-2.121 2.121zM17.5 10c1.93 0 3.5-1.57 3.5-3.5 0-.58-.16-1.12-.41-1.6l-2.7 2.7-1.49-1.49 2.7-2.7c-.48-.25-1.02-.41-1.6-.41C15.57 3 14 4.57 14 6.5c0 .41.08.8.21 1.16l-1.85 1.85-1.78-1.78.71-.71-1.41-1.41L12 3.49a3 3 0 0 0-4.24 0L4.22 7.03l1.41 1.41H2.81l-.71.71 3.54 3.54.71-.71V9.15l1.41 1.41.71-.71 1.78 1.78-7.41 7.41 2.12 2.12L16.34 9.79c.36.13.75.21 1.16.21z"/></svg></div></div>
+  <div class="info"><div class="eid">#vwEdit</div><div class="desc">Show/hide the Edit toolbar</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Hammer-and-wrench emoji renders very differently across platforms; construction is the flat monochrome equivalent.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">▦</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M19 13H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zm0 6H5v-4h14v4zm0-16H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 6H5V5h14v4z"/></svg></div></div>
+  <div class="info"><div class="eid">#vwFooter</div><div class="desc">Show/hide the bottom bar</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Disambiguates the third meaning of ▦ (see Roll view and Grid…, above) — a bar fixed to the bottom of a frame is literally what view_agenda shows.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">┄</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#vwAdded</div><div class="desc">Outline notes added since the song opened</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">A small invented dashed-line glyph that already pictures exactly what the toggle draws — no icon set beats a literal preview.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">▦</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 20H4v-4h4v4zm0-6H4v-4h4v4zm0-6H4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4z"/></svg></div></div>
+  <div class="info"><div class="eid">#vwGrid</div><div class="desc">Grid… (note-grid rules)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Same fix and same reasoning as the toolbar&#x27;s #gridchip, above — keep both grid controls on one icon.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">◯5</span></div><span class="arrow">&#8594;</span><div class="iconbox"><span class="noicon">no Material equivalent</span></div></div>
+  <div class="info"><div class="eid">#cofbtn</div><div class="desc">Circle of fifths</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">An invented glyph that already evokes the actual diagram — nothing generic says &quot;circle of fifths.&quot;</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🔍</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="info"><div class="eid">#vwAnalyze</div><div class="desc">Analyze ▸ (Normal-mode chord/key layer)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Magnifying-glass emoji picks up a drop shadow/color on iOS; search is the plain, widely recognized equivalent.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">⇄</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9.01 14H2v2h7.01v3L13 15l-3.99-4v3zm5.98-1v-3H22V8h-7.01V5L11 9l3.99 4z"/></svg></div></div>
+  <div class="info"><div class="eid">#vwCompare</div><div class="desc">Compare with repo (current draft vs. saved)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">⇄ is reused for &quot;Move to track&quot; in the Edit toolbar (an unrelated action) — compare_arrows is Material&#x27;s dedicated &quot;diff/compare&quot; mark.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🎓</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3 1 9l11 6 9-4.91V17h2V9L12 3z"/></svg></div></div>
+  <div class="info"><div class="eid">#vwLearning</div><div class="desc">Learning mode</div></div>
+  <div class="vwrap"><span class="chip either">EITHER</span><div class="reason">A graduation cap arguably names &quot;a student&#x27;s mode&quot; more precisely than Material&#x27;s school building — minor, no urgency.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">📻</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 6H8.3l8.26-3.34L15.88 1 3.24 6.15C2.51 6.43 2 7.17 2 8v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8c0-1.11-.89-2-2-2zm0 2v3h-2V9h-2v2H4V8h16zM4 20v-7h16v7H4z"/><circle cx="8" cy="16.48" r="2.5"/></svg></div></div>
+  <div class="info"><div class="eid">#vwListener</div><div class="desc">Listener mode (phone opens as a player)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Radio-set emoji is ornate/colored per platform; the Material radio is a flat, instantly-readable silhouette.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">📁</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></div></div>
+  <div class="info"><div class="eid">#filefolder</div><div class="desc">Reconnect folder</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Folder emoji renders with gradient/color on most platforms; folder_open is the plain standard icon.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">🎛</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zm-7.5-1a2.5 2.5 0 0 0 2.5-2.5V7h3V5h-4v5.51c-.42-.32-.93-.51-1.5-.51a2.5 2.5 0 0 0 0 5zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></svg></div></div>
+  <div class="info"><div class="eid">#fileinst</div><div class="desc">Instruments… (browse the published instrument library)</div></div>
+  <div class="vwrap"><span class="chip switch">SWITCH</span><div class="reason">Mixing-console emoji doesn&#x27;t say &quot;browse a library&quot;; library_music does, and stays distinct from Mixer&#x27;s tune icon above.</div></div>
+</div><div class="row">
+  <div class="icons"><div class="iconbox"><span class="curglyph" style="font-size:22px">▸ ▾ ▴ ◂</span></div><span class="arrow">&#8594;</span><div class="iconbox"><svg class="mi" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg></div></div>
+  <div class="info"><div class="eid">Disclosure carets — #tracktoggle, #panelshow, voice-menu back, chip overflow, every menu group header</div><div class="desc">Expand/collapse, show/hide, go back</div></div>
+  <div class="vwrap"><span class="chip keep">KEEP</span><div class="reason">One small, consistent family used identically in 15+ places already — switching buys nothing and risks breaking that consistency.</div></div>
+</div></section>
