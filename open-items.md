@@ -50,22 +50,6 @@ Q6. (found 2026-10-02, module-split step 0b) A real, pre-existing bug in
     this a dead path worth deleting instead? tools/split/check.mjs's static
     scan (not a test, not an ear report) found it — not fixed as part of the
     split (a verbatim move must not touch app logic).
-Q12. (found 2026-10-03, module-split step 4) `estimateKey` and
-    `checkKeyVsFile` did NOT move to src/theory/key.js as the plan named,
-    because both call model-layer helpers not split out yet
-    (`trackIsDrums` via `keyEstimateSig`; `barTicks`) — moving them now
-    would mean theory importing from app.js, which check.mjs's layer rule
-    forbids. Not asking you to decide anything now — just flagging that
-    whichever later step moves `trackIsDrums`/`barTicks` (step 5's
-    model/grid.js, by the table) should also finish this move. Full
-    reasoning: docs/split-plan.md "Deviations (4)".
-Not questions, just checks when you can: YouTube keeps playing until ▶;
-background play with the iPad locked; a MIDI keyboard on the iPad (●).
-App Store: TestFlight install, privacy labels + listing, screenshots, go
-for build 3.
-DONE: Q11 — Josh chose B (2026-10-01 23:25): a standalone chord-progression library/API of ANY songs, searchable by progression shape; he looks results up on YouTube. His explicit choice to bring in outside chord analysis (Learning mode: it's his on-demand tool, never volunteered). Data-source research first. Q10 — graveyard-3 was copied from graveyard-2 (Josh, 2026-10-01); the leftover "forked from graveyard.mid" note dropped, file converted to v2 with origin.from graveyard-2 — all 1196 files are v2 now. Q4 — yes (2026-09-30): captures stay locked (notes/tracks); annotating them directly is unchanged; "✎ Make it mine" makes an editable copy in one tap at a new path (my-covers/overworld.mid; a clash → "Overworld 2"). Q6 — yes: imports edit like copies (tempo + meter bake; the file's own labels written back verbatim). Q8 — yes (2026-09-30): the machine-written "forked from"/"moved from" notes move into the v2 origin header; he approved fixing the 6 files ("I would like to fix the songs") — done in the P5 batch migration so the origin is kept, not lost. Q7 — CM6-G7b9 (titled "Baseball / Beach Song") and KeyChangeTest-07-26 are his compositions (2026-09-30). Q9 — yes: a declared meter bakes into the .mid wherever tempo bakes (his songs); never on captures/starters (2026-09-30). Q3 — converting his songs' annotation files to v2 is NOT editing
-his songs (Josh: "we're just changing the format of a file"); annotations → JSON v2 (yes); tempo baked into the .mid only on your
-own songs; "Publish all" = one publish per song; explicit song origins.
 
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
@@ -5218,7 +5202,7 @@ Two real findings (full reasoning: docs/split-plan.md "Deviations (4)"):
   without misfiling a model helper into theory or rewriting the
   functions. Both stay exactly where they were, bare-name reachable;
   every Learning-mode gating spy test still passes unchanged. Flagged as
-  Q12 above for whichever later step moves trackIsDrums/barTicks.
+  the QUEUED split note below for whichever later step moves trackIsDrums/barTicks.
 
 `regen-e2e-footer.mjs --file src/app.js` re-run; devtools.js gained
 `theoryChords`/`theoryKey` namespace imports (GET-only); sw.js
@@ -5244,3 +5228,6 @@ byte-identical to the committed .notes.txt. `npm run test:e2e:smoke`
 still needs to browser-verify (localhost + packaged dist) before pushing
 and building for the iPad — same as every prior step, this is a pure
 refactor with no user-facing change.
+
+## QUEUED 2026-10-03 — split: finish moving estimateKey/checkKeyVsFile to src/theory/key.js (terminal-only, not a question for Josh)
+They stayed in app.js in step 4 because they call trackIsDrums/barTicks, not yet carved out; the step that moves those (step 5, model/grid.js) also moves these two.
