@@ -3472,6 +3472,59 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   elsewhere): `parsePitch`, `trackIsDrums`, `editableSong`, `applyTake`,
   `addTrackUndoable`/`undoTrackAdd` (the Bassist/Drummer still make
   tracks; write_notes never does — the user names an EXISTING track).
+- **copy_bars / insert_bars (2026-10-02, open-items 21:50) — Josh via Ask:
+  "repeat bars 5–6 after bar 6 and shift everything else over two bars";
+  the model tried a ~130-note `write_notes` call and it came back one
+  closing brace short (fixed separately in the bridge's tool-call repair —
+  see below). A dedicated tool is the right size for "repeat/copy music
+  that already exists" — the prompt tells the model to prefer it over
+  `write_notes` for exactly that request shape. Both tools are built on
+  `openGapShift(T, delta)`, extracted out of `insertTime` (Insert bars…'s
+  own apply code, index.html ~L6757): every note and annotation at/after
+  tick `T` slides later by `delta` ticks, including the straddling-
+  annotation stretch rule (an annotation open PAST `T` stretches; one
+  ending exactly at `T` stays put) — `openGapShift` returns the raw pieces
+  instead of pushing its own undo, so a caller can fold them into a BIGGER
+  group. `insertTime` itself is unchanged (calls `openGapShift` then
+  pushes its own two-entry group, same as before — Edit ▾ → Insert bars…
+  behaves exactly as it did).
+  - **`insert_bars({at_bar, count})`** (`askInsertBars`) is a thin
+    wrapper: validates, then calls `insertTime` directly — empty bars,
+    nothing copied, "falls out for free" once `insertTime` is just a
+    `(T, delta)` function. Undo: the same `{kind:"group", entries:
+    ["mod","anno"]}` Insert bars always made.
+  - **`copy_bars({from_bar, to_bar, at_bar})`** (`askCopyBars`) snapshots
+    every track's notes in `[from_bar, to_bar]` (ticks stored RELATIVE to
+    the source's own start, so the copy lands correctly at `at_bar`
+    whatever the source/gap relationship — before it, after it, or
+    overlapping) BEFORE calling `openGapShift` (which mutates live note
+    objects in place), then adds the snapshot back at `at_bar` on each
+    note's own track — drums included, nothing filtered (unlike
+    `write_notes`, which refuses a drums track; copying existing drum
+    hits is fine, dictating new ones isn't). The shift's `{mod, anno}`
+    pair plus the copy's own `{addBatch}` land in ONE `{kind:"group",
+    entries: ["mod","anno","addBatch"]}` — one ⟲ undoes the whole thing,
+    reversed in order (un-add the copies, restore annotations, restore
+    shifted note positions). Annotations are NEVER duplicated into the
+    copied range — Learning mode is the law, they're Josh's own analysis
+    — only shifted, exactly as Insert bars already shifts them (an
+    annotation inside `[from_bar, to_bar]` with no open end neither
+    shifts nor duplicates). `askBarsCount()` (`Math.ceil(songEndTick /
+    barTicks())`, the same basis `read_bars`'s `nBars` uses) backs
+    validation: `from_bar ≤ to_bar`, both within the song's current bar
+    count, `at_bar` in `1..(nBars + 1)` — every check runs before any
+    mutation, so a rejected call changes nothing. Reply:
+    `"copied bars 5–6 to bar 7; everything after moved 2 bars later"`.
+  - Gate = `askWritableGate()` (write_notes' rule — only the user's own
+    editable songs, naming ✎ Edit on a locked capture/starter). Wired
+    into `ASK_TOOLS`/`ASK_SONG_ONLY_TOOLS`/`askRunTool` and the ✦ Ask
+    system prompt's tool count (now eleven) and one sentence each, same
+    as every other tool. Tests: "copy_bars: repeats bars 2–3 at bar 4 …"
+    (3-track scratch song, drums included, later notes + the bar-5
+    section shift, the bar-2 chord neither shifts nor duplicates, one ⟲
+    restores exactly), "copy_bars: bad ranges error with nothing
+    changed; refuses on a locked capture…", "insert_bars: empty bars,
+    same shift as copy_bars, no notes added…".
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9
