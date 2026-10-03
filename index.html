@@ -175,8 +175,11 @@
   /* chips that don't fit beside the transport get the whole row below it
      (fitTrackRow in src/app.js decides from the row width only) */
   #trackrow.stacked { flex-wrap: wrap; }
-  #trackrow.stacked #transport { order: -1; flex: 1 1 100%; justify-content: flex-end; padding-right: 8px; }
-  #trackrow.stacked #trackzone { flex: 1 1 100%; }
+  /* stacked: transport + time controls share the top row (right-aligned, as
+     one group — moving only #transport left #timectl stranded under the
+     chips, Josh 2026-10-03), the chips get the whole row below */
+  #trackrow.stacked #transport { margin-left: auto; }
+  #trackrow.stacked #trackzone { order: 1; flex: 1 1 100%; }
   #albumstrip { display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(91,120,232,.14);
     border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); font: 12px var(--mono); color: var(--text); }
   #albumtext { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

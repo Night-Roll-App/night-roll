@@ -1583,7 +1583,8 @@ const TRACK_ROW_SLACK = 60;
 function trackRowNeed() {
   const tp = document.getElementById("transport"), bar = document.getElementById("trackbar"), tog = document.getElementById("tracktoggle");
   const kids = el => [...el.children].filter(c => c.offsetParent !== null || c.style.display !== "none");
-  const tw = kids(tp).reduce((w, c) => w + c.offsetWidth + 8, 0);
+  const tc = document.getElementById("timectl");
+  const tw = kids(tp).reduce((w, c) => w + c.offsetWidth + 8, 0) + (tc ? kids(tc).reduce((w, c) => w + c.offsetWidth + 8, 8) : 0); // the time controls ride the same row
   const cw = kids(bar).reduce((w, c) => w + Math.max(c.scrollWidth, c.offsetWidth) + 8, 0);
   return tw + cw + (tog ? tog.offsetWidth + 16 : 0) + 24;
 }
