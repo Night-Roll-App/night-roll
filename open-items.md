@@ -5304,6 +5304,109 @@ Corrects the 2026-10-03 00:50-ish entry this replaces, which assumed step 5 (mov
 
 ## QUEUED 2026-10-03 — split: finish moving initCatalog, finalizeNotes, and the edits-store SAFETY functions once their blocking dependencies land (terminal-only, not a question for Josh)
 Three leftovers from step 5 (docs/split-plan.md "Deviations (5)"), each blocked by a real rule-5 violation (a model/ file, layer 2, would have to import still-unsplit app.js, layer 5), not by anything step 5 itself could fix:
-- `initCatalog` (→ src/model/catalog.js) needs `folderOnly`/`songsURL`/`folderScanAlbums` (platform/folder.js + platform/base.js, step 6) and `albumMetaFor` (audio/chip.js, step 8). Revisit once BOTH land.
+- `initCatalog` (→ src/model/catalog.js) — UPDATE 2026-10-03 (step 6): `folderOnly`/`songsURL`/`folderScanAlbums` all landed (platform/folder.js + platform/storage.js), but `initCatalog` ALSO needs `albumMetaFor` (audio/chip.js, step 8), so it's still blocked on that one alone. Revisit once step 8 lands.
 - `finalizeNotes` (→ src/model/rollnotes.js) needs `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, steps 7-8), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`bakesTempo` (model/song.js or similar, step 9), `keyLabelState` (ui/notes.js, step 14). This is the deepest-reaching one — likely still blocked even after step 9, until the audio/render/ui layers it touches are further along. Re-check after each of steps 7, 8, 9, 11, 14.
-- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — the 2026-10-02-regression code — need `isComposition`/`ownFolderPath`/`isCaptureKey`/`LINK_SONGS` (provenance/platform, steps 6 + 9), `scheduleAnalysisRecompute` (gen/analysis.js, step 10), `saveDraft`/`computeSongEnd`/`updateSongMeta`/`draftRead` (model/song.js + model/versions.js, step 9), `updateChipBtn` (audio/chip.js, step 8), `editableSong`/`originOf` (provenance, step 9). Re-check after step 9 (the biggest chunk of this list); treat the SAFETY rule from docs/split-plan.md's step-5 task the same way next time — move it verbatim or not at all, never fragment it across a layer boundary.
+- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — the 2026-10-02-regression code — UPDATE 2026-10-03 (step 6): `LINK_SONGS` landed (platform/base.js) and no longer blocks anything here; still need `isComposition`/`ownFolderPath`/`isCaptureKey` (provenance, step 9), `scheduleAnalysisRecompute` (gen/analysis.js, step 10), `saveDraft`/`computeSongEnd`/`updateSongMeta`/`draftRead` (model/song.js + model/versions.js, step 9 — `saveDraft`/`draftRead` themselves were ALSO checked in step 6, for platform/storage.js, and are blocked the same way), `updateChipBtn` (audio/chip.js, step 8), `editableSong`/`originOf` (provenance, step 9). Re-check after step 9 (the biggest chunk of this list); treat the SAFETY rule the same way next time — move it verbatim or not at all, never fragment it across a layer boundary.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 6: src/platform/{base,mode,storage,folder,native}.js (docs/split-plan.md)
+Moved, five `move.mjs --names` invocations over src/app.js (base → mode →
+native → storage → folder, so each later file could resolve a cross-import
+against an already-moved earlier one):
+- `platform/base.js`: `setDocTitle`, `linkSongsBase`/`LINK_SONGS`/
+  `linkRepoLabel`, `rememberLastSong`, `RECENT_KEY`/`RECENT_MAX`/
+  `recentSongs`/`saveRecentSongsRaw`/`clearRecentSongs`, `MOVED_DIRS`/
+  `movedPath`, `songPathFromURL`/`songShareURL`/`albumParamFromURL`,
+  `PERF_FLAGS`/`PERF_NOSCENE`.
+- `platform/mode.js`: `hasExistingNightRollPrefs`, `appMode`, `setAppMode`,
+  `analysisAvailable`.
+- `platform/native.js`: `nativeCall`, `audioSessionType`.
+- `platform/storage.js`: `cfg`/`saveCfg`/`baseJoin`, `draftStoreKey`,
+  `readBase`/`songsURL`/`analysisURL`/`nsfURL`/`repoName`/`repoApi`/
+  `apiError`, every self-contained IDB leaf (`idbOpen`, `idbAudioPut`/
+  `Get`/`Delete`/`Move`, `idbSf2Put`/`Get`, `idbNsfPut`/`idbNsfPutNow`/
+  `idbNsfGet`, `idbFsGet`/`idbFsPut`, `idbDraftOp`/`idbDraftGet`/
+  `idbDraftDelete`/`idbDraftMove`), `IMP_DIR`/`CONSOLE_OF`, `draftInIdb`.
+- `platform/folder.js`: `fsRoot`, `folderActive`, `folderOnly`,
+  `folderSupported`, `nativeFs`, `nativeDirHandle`, `folderPermission`,
+  `fsDirFor`, `folderRead`/`folderWrite`/`folderDelete`, `fsReadJSON`,
+  `restoreFolder`, `readData`, `bundledPath`.
+
+Did NOT move — this step's SAFETY instruction named several functions
+explicitly and each was checked individually, not swept as a block:
+`saveEdits`/`loadEdits`/`saveDraft`/`draftWrite`/`draftRead`/
+`localDraftWrite`/`localDraftTracks`/`idbDraftPut` (all reach `logErr`
+and/or `isComposition`/`editableSong`/`retireOldOverlay`/`setInfo`/
+`updateSongBtn`/`updateSyncBtn`/`filesMirrorSoon` — UI/model, not yet
+split); `scheduleBackupFlush`/`flushBackupNow` (need `editableSong`/
+`draftDoc`/`serializeRollnotes`/`aiUrl`/`aiHeaders`/`logDebug`); `sfShownAt`
+(calls `estimateKey`, still LEGACY_CONTAINER per step 4's unresolved
+finding); `nativeOpenUrl`/`nativeOpenHook` (call `setInfo`/`stop`/
+`closeFileMenus`/`openPickedFiles` — import-hub/UI, not bridge code
+despite the name). `platform/sw.js` was not created at all: the
+service-worker-registration code is a single top-level `if`/`else`
+statement (not a `--names`-selectable declaration) whose body calls
+`setInfo` — blocked even if wrapped via `--range`. Full reasoning for
+every one of these in docs/split-plan.md "Deviations (6)" and
+NIGHT-ROLL.md's module-map entries.
+
+`regen-e2e-footer.mjs --file src/app.js` re-run; check.mjs clean except
+the pre-existing `oldBpb` finding (Q6); check-e2e-globals.mjs and
+check-controls.mjs clean (26 controls, unchanged). devtools.js gained
+`platformBase`/`platformMode`/`platformStorage`/`platformFolder`/
+`platformNative` namespace imports; sw.js APP_MODULES gained all five
+files, SW_VERSION nr-v11 → nr-v12; index.html's modulepreload list gained
+all five; tests/modules.test.mjs's checkSrc fileCount assertion bumped
+15 → 20. NIGHT-ROLL.md's module map gained all five entries plus a
+one-line fix to the model/edits.js entry (LINK_SONGS no longer "still in
+app.js").
+
+Verified: night-roll.test.mjs 417 (416 pass + 1 pre-existing env skip —
+every "local song: …" SAFETY-regression test passes unchanged, since none
+of that code moved a byte), gestures 17/17, modules 33/33, controls 3/3,
+bridge 10/10, pwa 3/3, package 3/3, nsf 20/23 (3 pre-existing vault-only
+skips), chip-worker 31/31, migrate-rollnotes 9/9 — all green. A full `npm
+test` run also surfaced 4 pre-existing tests/ps2-real.test.mjs failures
+(Zophar rip fixtures absent/incomplete in this environment) — confirmed
+unrelated to this step by grep (no moved name is referenced by tools/ps2/
+or that test file). `node tools/split/check.mjs` clean except oldBpb;
+`node tools/package.mjs --out /tmp/nr-dist-s6`: 47 runtime modules
+(unchanged — platform/ adds no tools/-side runtime module of its own).
+`tools/at.mjs`, `tools/span.mjs`, `tools/annotations.mjs` re-verified
+against albums/starters/fur-elise.mid (never albums/compositions/);
+`tools/dump_notes.mjs` re-run over the whole albums/starters/ directory —
+`git diff --stat` against the four committed .notes.txt files came back
+empty. `npm run test:e2e:smoke` (allowed once locally): chromium 8/8
+passed. NOT pushed: main session still needs to browser-verify (Settings →
+data location, open a local-folder song) before pushing and building for
+the iPad.
+
+## QUEUED 2026-10-03 — split: platform/sw.js, nativeOpenUrl/nativeOpenHook, sfShownAt, and the whole draft/edit-persistence SAFETY path still can't move (terminal-only, not a question for Josh)
+Leftovers from step 6 (docs/split-plan.md "Deviations (6)"):
+- `platform/sw.js`: the service-worker-registration `if`/`else` (src/app.js,
+  originally index.html ~line 23103) needs `setInfo` (ui/chrome.js, step
+  14) in its `else` branch. Revisit once step 14 lands; it's one statement,
+  not a cluster, so this should be a single `--range` once `setInfo` is
+  importable.
+- `nativeOpenUrl`/`nativeOpenHook` (→ platform/native.js): need `setInfo`/
+  `stop`/`closeFileMenus` (ui/chrome.js + audio/transport.js, steps 7/14)
+  and `openPickedFiles` (import/hub.js, step 9).
+- `sfShownAt` (→ platform/mode.js): blocked transitively by `estimateKey`
+  still being LEGACY_CONTAINER — same open structural question as the
+  theory/key.js entry above (Q-equivalent, not re-filed separately); revisit
+  together.
+- `saveEdits`/`loadEdits`/`saveDraft`/`draftWrite`/`draftRead`/
+  `localDraftWrite`/`localDraftTracks`/`idbDraftPut` (→ platform/storage.js):
+  all reach `logErr` (ui/chrome.js, step 14) and/or provenance/model code
+  (steps 8/9). Re-check after step 14 for `logErr`'s move, and after step 9
+  for the rest of `saveDraft`'s/`saveEdits`'s dependency list (which
+  overlaps the existing model/edits.js QUEUED entry above — these are the
+  same underlying functions, checked from the storage.js/platform side
+  this time; don't re-litigate, just re-check both entries together once
+  either step lands).
+- `scheduleBackupFlush`/`flushBackupNow` (→ platform/storage.js): need
+  `serializeRollnotes` (already model/rollnotes.js, layer 2 — permanently
+  out of reach for platform, layer 1, same shape as `estimateKey`/
+  `theory/key.js`) plus `aiUrl`/`aiHeaders` (ask/, step 13) and
+  `editableSong`/`draftDoc` (model/song.js, step 9). Likely permanently
+  blocked by the `serializeRollnotes` call alone even after every other
+  step lands — flag this specifically if a future step reconsiders it.

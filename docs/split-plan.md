@@ -641,6 +641,72 @@ constraint for whoever next considers moving these two.
 - Verify:
   - browser check: Settings → data location, open a local-folder song
   - iPad: open a file from Files (`nativeOpenHook`)
+- **Done** (2026-10-03, Opus builder, worktree branch). Five `move.mjs
+  --names` invocations over src/app.js, in dependency order (base → mode →
+  native → storage → folder, so each later file could resolve a cross-import
+  against an already-moved earlier one instead of app.js): `base.js` ←
+  `setDocTitle,linkSongsBase,LINK_SONGS,linkRepoLabel,rememberLastSong,
+  RECENT_KEY,RECENT_MAX,recentSongs,saveRecentSongsRaw,clearRecentSongs,
+  MOVED_DIRS,movedPath,songPathFromURL,songShareURL,albumParamFromURL,
+  PERF_FLAGS,PERF_NOSCENE` (17); `mode.js` ←
+  `hasExistingNightRollPrefs,appMode,setAppMode,analysisAvailable` (4);
+  `native.js` ← `nativeCall,audioSessionType` (2); `storage.js` ←
+  `cfg,saveCfg,baseJoin,draftStoreKey,readBase,songsURL,analysisURL,nsfURL,
+  repoName,repoApi,apiError,idbOpen,idbAudioPut,idbAudioGet,idbAudioDelete,
+  idbAudioMove,idbSf2Put,idbSf2Get,idbNsfPut,idbNsfPutNow,idbNsfGet,
+  idbDraftOp,idbDraftGet,idbDraftDelete,idbDraftMove,idbFsGet,idbFsPut,
+  IMP_DIR,CONSOLE_OF,draftInIdb` (30); `folder.js` ←
+  `fsRoot,folderActive,folderOnly,folderSupported,nativeFs,nativeDirHandle,
+  folderPermission,fsDirFor,folderRead,folderWrite,folderDelete,fsReadJSON,
+  restoreFolder,readData,bundledPath` (15). All five by name, not banner
+  range — like step 4's chord/key clusters, the areas this step's table
+  names (data-location config, local folder backend, Learning/Normal mode,
+  perf experiments) are each scattered across 1-3 sections hundreds of
+  lines apart, interleaved with settings-sheet/sync/publish UI code that
+  stays; a `--range` over any one banner would have swept up blocked code
+  right alongside the movable code in the same section (see Deviations (6)
+  for the settings/sync cluster this surfaced inside the "local folder
+  backend" banner specifically). No unresolved free identifiers from any
+  of the five invocations. `regen-e2e-footer.mjs --file src/app.js` re-run;
+  check.mjs clean except the pre-existing `oldBpb` finding;
+  check-e2e-globals.mjs and check-controls.mjs clean (26 registered
+  controls, unchanged — this step touched no control). devtools.js gained
+  `platformBase`/`platformMode`/`platformStorage`/`platformFolder`/
+  `platformNative` namespace imports (GET-only, same as every prior
+  module). sw.js APP_MODULES gained all five files, SW_VERSION bumped
+  nr-v11 → nr-v12; index.html's modulepreload list gained all five (after
+  model/, before app.js — all layer 1, correctly ordered below model's
+  layer 2 despite app.js importing both). `node tools/package.mjs --out
+  /tmp/nr-dist-s6` packages all five with no package.mjs changes needed; 47
+  runtime modules (unchanged from post-step-5 — no tools/-side runtime
+  module corresponds to platform/). `tools/at.mjs`, `tools/span.mjs`,
+  `tools/annotations.mjs` all re-verified against albums/starters/
+  fur-elise.mid (never albums/compositions/); `tools/dump_notes.mjs`
+  re-run over the whole albums/starters/ directory — `git diff --stat`
+  against the four committed .notes.txt files came back empty (byte-
+  identical). Tests, each under `perl -e 'alarm 300; exec @ARGV'`: modules
+  33/33 (fileCount bumped 15 → 20, same mechanical bump every prior step
+  made for its own new files), night-roll 417 (416 pass + 1 pre-existing
+  skip — EVERY "local song: …" SAFETY-regression test passes unchanged,
+  since none of that code moved a byte), gestures 17/17, controls 3/3
+  (unchanged), bridge 10/10, pwa 3/3, package 3/3, nsf 20/23 (3
+  pre-existing vault-only skips, same gap as every prior step), chip-worker
+  31/31, migrate-rollnotes 9/9. A full `npm test` run surfaced 4 pre-
+  existing failures in tests/ps2-real.test.mjs (Zophar PSF2-rip fixtures
+  absent from this environment, `skip: !has(slug)` only short-circuits
+  when the whole rip directory is missing, not when it's merely
+  incomplete) — unrelated to this step: no moved name is referenced by
+  tools/ps2/*.mjs or that test file, confirmed by grep. `npm run
+  test:e2e:smoke` run once: 8/8 passed. See "Deviations (6)" below for
+  what did NOT move and why — this step's table named several "big"
+  targets (`nativeOpenUrl`/`nativeOpenHook`, `sfShownAt`, `scheduleBackupFlush`/
+  `flushBackupNow`, the whole SAFETY-named draft/edit-persistence path, and
+  the service-worker registration itself) that turned out to reach into
+  UI-chrome (layer 4), audio (layer 3), or model (layer 2) — the same
+  "big-name-stays, leaves-move" pattern every step since 4 has found, here
+  concentrated because platform/ (layer 1) sits just one layer above the
+  lowest tier, so almost anything still UI-entangled is permanently out of
+  reach for it, not just "not yet split."
 
 **7. `audio/engine.js`, `audio/voices.js`, `audio/transport.js`**, plus the `prof()` fix (§2.4).
 - Must not change: one byte of the engine. This is the iPad audio known-good engine, f733b42 + 8e1c72d.
@@ -681,6 +747,99 @@ constraint for whoever next considers moving these two.
 - Doc sweep: NIGHT-ROLL.md module map, CLAUDE.md (§6), WEB-SESSION.md (src/ layout; tools still `node tools/x.mjs`), README.
 
 **16. Optional: CSS → `css/app.css`** (`<link>`, precached, the 4 CSS-grepping tests use `appSource()`).
+
+## Deviations (6, 2026-10-03)
+
+- **Every SAFETY-named function this step called out by name stayed in
+  app.js, verbatim, for a real reason — not a blanket refusal to try.**
+  Each was checked individually against its actual free identifiers:
+  - `saveEdits`/`loadEdits`/`saveDraft`/`draftWrite`/`draftRead`/
+    `localDraftWrite` all reach into `isComposition`/`editableSong`/
+    `retireOldOverlay`/`setInfo`/`updateSongBtn`/`updateSyncBtn`/
+    `filesMirrorSoon` (provenance/model/UI, layers 2+4) or, transitively,
+    into `logErr` (one more UI-chrome call, inside `localDraftWrite`'s
+    "too big to keep whole" warning and `localDraftTracks`'s crash-
+    recovery log) — none of which has a lower-layer home yet. Left
+    bit-for-bit where they were.
+  - `idbDraftPut` is the ONE member of the otherwise entirely clean
+    `idbDraftOp`/`idbDraftGet`/`idbDraftDelete`/`idbDraftMove` family that
+    calls `logErr` (its own catch branch's "draft notes could not be
+    stored for …" message) — so it alone stays in app.js while its three
+    siblings moved to platform/storage.js. This is a narrower, more
+    precise finding than treating "the draft IDB ops" as one all-or-
+    nothing unit: the three siblings have zero risk of a logic change
+    (their bodies don't change AT ALL, only their file), and leaving them
+    behind just because one relative is blocked would have been exactly
+    the over-caution CLAUDE.md's "no one-time hacks" principle argues
+    against in the opposite direction — don't generalize a real, narrow
+    constraint into a blanket one.
+  - `draftInIdb` (also SAFETY-named, "decides whether a draft is big-draft
+    IndexedDB or small-draft localStorage") turned out to be CLEANLY
+    movable once its two load-bearing constants `IMP_DIR`/`CONSOLE_OF`
+    (unlisted by the plan, same pattern as steps 4/5's unlisted spelling/
+    chord tables) came with it — neither constant has any other blocker,
+    and their one other app.js caller (`impDirFor`, capture-import territory,
+    step 9) now just imports them back from platform/storage.js. Moving
+    `draftInIdb` itself is a real, useful finding: it IS one of the
+    functions this step's SAFETY paragraph named, and it moved with zero
+    risk (pure string/Set membership test, no DOM, no `logErr`).
+  - `scheduleBackupFlush`/`flushBackupNow` (the Mac-backup pair, also
+    SAFETY-named) stayed together: `flushBackupNow` needs `editableSong`/
+    `draftDoc` (model, layer 2), `serializeRollnotes` (model/rollnotes.js,
+    layer 2 — ALREADY a real module, so this isn't even a "not yet split"
+    situation, it's permanent, same shape as `estimateKey`/`theory/key.js`
+    in step 4), `aiUrl`/`aiHeaders` (ask/, layer 4), and `logDebug`. No
+    subset of this pair is free of a layer-2-or-higher call.
+- **`sfShownAt` (named by this step for platform/mode.js) is blocked by the
+  same fact step 4 already established, not a new one**: it calls
+  `estimateKey` directly, and `estimateKey` is still bare in app.js
+  (LEGACY_CONTAINER, layer 5) — stuck there because it needs `trackIsDrums`/
+  `barTicks`-style model-layer (2) helpers, and `theory/key.js` (where
+  `estimateKey` would otherwise belong) can never import layer 2, per step
+  4/5's findings. Unlike that theory-vs-model deadlock, `platform/` (layer
+  1) importing `estimateKey` would be perfectly legal IF `estimateKey`
+  itself ever moved somewhere layer-1-or-lower — but it hasn't, and
+  nothing in THIS step changes that. So `sfShownAt`'s blocker today is
+  simply "app.js is layer 5, not layer 1-or-lower," re-confirmed rather
+  than newly discovered; it stays with `estimateKey`, unmoved, same call
+  site, same behavior.
+- **`nativeOpenUrl`/`nativeOpenHook` (named for platform/native.js) turned
+  out to be import-hub/UI code wearing a native-bridge name**, not thin
+  bridge wrappers: `nativeOpenUrl` directly calls `setInfo`, `stop`,
+  `closeFileMenus`, and `openPickedFiles` (the whole "a file was handed to
+  the app, now actually open it" sequence) — layers 3/4, nowhere close to
+  platform. Only the two Capacitor leaves with NO such calls
+  (`nativeCall`, `audioSessionType`) are genuinely platform-layer; the
+  plan's one-line description ("Capacitor bridges: audioSessionType,
+  screenshot, share…") undersold how much of the REST of the Capacitor-
+  touching code in this file is import/UI logic that merely reaches a
+  bridge function partway through, not a bridge function itself. The 📷
+  screenshot code (`askShotCapture` et al., ask/shots.js, step 13) and the
+  Core MIDI glue (`initWebMidi`/`initCoreMidi`/`midiStatusLine`, input/
+  record.js, step 12) are the same shape — `window.Capacitor` idiom, UI
+  calls throughout — confirmed by inspection, not moved, not even
+  attempted.
+- **`platform/sw.js` could not be created at all** — see NIGHT-ROLL.md's
+  module-map entry for the full reasoning (the registration code is one
+  top-level `if`/`else` statement, not a declaration `--names` can select,
+  and its `else` branch's `setInfo` call blocks even an `--range`-wrapped
+  `initSw1()`). Queued in open-items.md, not asked as a question for
+  Josh — this is a mechanical/layering fact, not a design decision.
+- **The "local folder backend" banner (src/app.js, originally index.html
+  ~line 22083) turned out to span far more than folder code** — reading
+  the full section (through line 23102, right up to the service-worker
+  banner) surfaced a dense, interleaved cluster of settings-sheet UI
+  (`openSettingsSheet`, `cfgShowPane`, …), sync/pending-songs UI
+  (`renderSyncPending`, `openSyncSheet`, `discardPending`, …), and GitHub
+  publish/readme code (`writeSongsReadme`, `putRollnotes`, `markPublished`,
+  `publishAllJobStart`, `writeToken`, …) — none of it folder-backend code,
+  all of it UI-chrome or sync/publish (steps 9/14) that merely happens to
+  sit in the same banner section as the real folder-FS code. This is the
+  same "one banner, several future modules' worth of code" shape step 4
+  found for the chord/key banners and step 5 found for "big drafts" — each
+  checked individually by free-identifier, not swept by `--range`. Only
+  the genuinely clean folder-FS and cfg-URL leaves moved; see NIGHT-ROLL.md
+  for the exact list.
 
 ## 5. Risks and guardrails
 
