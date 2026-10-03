@@ -1,0 +1,8 @@
+{ "format": "night-roll-annotations", "version": 2, "song": "lotion", "stamp": 1791002423107, "notes": [
+  {"at":[1,1],"type":"timesig","timesig":"4/4"},
+  {"at":[1,1],"to":[16,4.5],"type":"tempo","bpm":175},
+  {"at":[1,1],"type":"track","track":"triangle","vol":1.5},
+  {"at":[1,1],"type":"key","key":"C locrian"},
+  {"at":[15,1.5],"to":[15],"text":"Open question: does the second climb (E, F#, G# from beat 3&) finish the first one's thought (C#, D#, E), or answer it? Parked, come back to it."},
+  {"at":[20,1],"to":[20,4],"type":"loop","loop":"5.1"}
+] }
