@@ -4654,7 +4654,7 @@ function endPointer(e) {
     const inside = at >= S.rangeSel.a && at < S.rangeSel.b;
     const from = tickToSec(S.song, inside ? at : S.rangeSel.a);
     stop();
-    play(from).catch(() => {});
+    play(from, {keepPos: inside, noCountIn: true}).catch(() => {});
   }
   else if (S.drag.bandEdge && S.drag.moved) {
     const n = S.drag.bandEdge.n;
@@ -8557,7 +8557,10 @@ async function play(fromSec = 0, opts = {}) {
     // that span and outranks any loop: annotation
     S.loopSeg = {start: tickToSec(S.song, S.rangeSel.a),
                end: tickToSec(S.song, Math.min(S.rangeSel.b, S.songEndTick))};
-    S.playOffset = fromSec = S.loopSeg.start; // ▶ always replays from the cycle's top (Logic habit — Josh, 2026-08-19)
+    // ▶ always replays from the cycle's top (Logic habit — Josh, 2026-08-19);
+    // a reschedule mid-play (stretching the cycle) keeps the playhead when it
+    // is still inside the span (opts.keepPos — Josh, 2026-10-03)
+    if (!(opts.keepPos && fromSec >= S.loopSeg.start && fromSec < S.loopSeg.end)) S.playOffset = fromSec = S.loopSeg.start;
   }
   if (S.recording) S.loopSeg = recOpenEnded(S.loopSeg); // ● : the tape rolls on past the end and the song grows with the take
   // album play: this song ends after its passes (2 of the loop body after the

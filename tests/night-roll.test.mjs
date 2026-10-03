@@ -10373,6 +10373,20 @@ test("Publish on an Untitled song names it first (saveSongAs), then publishes it
   assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 2, "the notes came along");
 });
 
+test("cycle: ▶ starts at the cycle's top; a mid-play reschedule (stretching it) keeps the playhead when inside (Josh, 2026-10-03)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920 * 3, d: 480, p: 64, v: 80}]}]};
+       songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; songEndTick = 1920 * 8; keyRegions = []; playCursor = 0;
+       rangeSel = {a: 1920, b: 1920 * 5, cycle: true};`);
+  run(`globalThis.__p = 0; play(tickToSec(song, 1920 * 3)).then(() => __p++);`);
+  for (let i = 0; i < 50 && val(`__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`Math.round(playOffset * 1000)`), val(`Math.round(tickToSec(song, 1920) * 1000)`), "▶ starts at the cycle's top");
+  run(`stop(); __p = 0; play(tickToSec(song, 1920 * 3), {keepPos: true, noCountIn: true}).then(() => __p++);`);
+  for (let i = 0; i < 50 && val(`__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+  assert.equal(val(`Math.round(playOffset * 1000)`), val(`Math.round(tickToSec(song, 1920 * 3) * 1000)`), "a stretch keeps going from the playhead");
+  run(`stop();`);
+});
+
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {
   const a = await createApp();
   a.run(`
