@@ -2745,7 +2745,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "Talk to an AI tutor", 'data-hsec="ask"', "write notes on your own songs", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message", "add, edit, delete, or publish",
+    "Talk to an AI tutor", 'data-hsec="ask"', "write notes on your own songs", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message", "add, edit, delete, or publish", "repeat bars",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
     "an estimated key is named as an estimate", "Check vs file",
@@ -5180,6 +5180,130 @@ test("✦ Fill is fully removed: no button, no Edit ▾ entry, no Ask-sheet fill
   }
   assert.equal(val(`typeof ASK_TAKE_SCHEMA`), "undefined");
   assert.equal(val(`typeof askWriteNotes`), "function", "replaced by write_notes");
+});
+
+// copy_bars / insert_bars (2026-10-02, open-items 21:50 — Josh via Ask:
+// "repeat bars 5–6 after bar 6 and shift everything else over two bars";
+// write_notes spelling out ~130 notes by hand is the wrong tool for copying
+// music that already exists). Built on openGapShift, extracted out of
+// insertTime so Insert bars…/copy_bars/insert_bars share one shift — never
+// three copies of it.
+function installCopyBarsSong() { // 3 tracks, 4/4, ppq 480 (bt=1920, beat=480): a scratch song, never Josh's music
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/copybars-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), "{}"); // the local copy: editable
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [
+        {name: "pulse1", notes: [
+          {t: 0, d: 200, p: 59, v: 80},     // bar1 — control, before the source range, never touched
+          {t: 1920, d: 480, p: 60, v: 80},  // bar2 beat1 — SOURCE
+          {t: 5760, d: 480, p: 65, v: 80}], // bar4 beat1 — LATER, must shift
+        },
+        {name: "pulse2", notes: [
+          {t: 3840, d: 480, p: 64, v: 80}], // bar3 beat1 — SOURCE
+        },
+        {name: "triangle", drums: true, notes: [
+          {t: 2400, d: 240, p: 38, v: 80},  // bar2 beat2 — SOURCE (drums included)
+          {t: 9360, d: 240, p: 38, v: 80}], // past the source range — LATER, must shift
+        },
+      ]};
+    rollnotes = [
+      {b1: 2, q1: 1, text: "chord: C", chord: true},    // inside the source range — must NOT shift, must NOT duplicate
+      {b1: 5, q1: 1, text: "section: B", section: true}, // after at_bar once inserted — must shift, never duplicate
+    ];
+    declaredTs = null; chopS = 0; keyRegions = []; previewSf = null; editUndo = []; editRedo = []; dupPending = null;
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}, {muted: false, solo: false}];
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+test("copy_bars: repeats bars 2–3 at bar 4 on every track (drums included); later notes AND the bar-5 section shift by 2 bars; the bar-2 chord neither shifts nor duplicates; one ⟲ restores exactly", () => {
+  installCopyBarsSong();
+  const before = val(`({
+    p1: song.tracks[0].notes.map(n => [n.t, n.d, n.p, n.v]),
+    p2: song.tracks[1].notes.map(n => [n.t, n.d, n.p, n.v]),
+    tri: song.tracks[2].notes.map(n => [n.t, n.d, n.p, n.v]),
+    anno: rollnotes.map(n => [n.b1, n.q1, n.text]),
+  })`);
+  const r = val(`(() => { const k = askCopyBars({from_bar: 2, to_bar: 3, at_bar: 4}); return {
+    note: k.note,
+    p1: song.tracks[0].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    p2: song.tracks[1].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    tri: song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    anno: rollnotes.map(n => [n.b1, n.q1, n.text]),
+    undoLen: editUndo.length,
+    undo: {kind: editUndo[0].kind, kinds: editUndo[0].entries.map(e => e.kind)},
+  }; })()`);
+  assert.equal(r.note, "copied bars 2–3 to bar 4; everything after moved 2 bars later");
+  // pulse1: control untouched, the original SOURCE note stays where it was, the LATER note shifted bar4→bar6, and the copy landed at bar4 beat1
+  assert.deepEqual(r.p1.sort((a, b) => a[0] - b[0]), [[0, 200, 59, 80], [1920, 480, 60, 80], [5760, 480, 60, 80], [9600, 480, 65, 80]]);
+  // pulse2: the original SOURCE stays at bar3, the copy lands at bar5 beat1 (T + its offset into the source range)
+  assert.deepEqual(r.p2.sort((a, b) => a[0] - b[0]), [[3840, 480, 64, 80], [7680, 480, 64, 80]]);
+  // triangle (drums): original SOURCE stays at bar2 beat2, the LATER drum note shifts, the copy lands at bar4 beat2 (same offset as the source had into bar2)
+  assert.deepEqual(r.tri.sort((a, b) => a[0] - b[0]), [[2400, 240, 38, 80], [6240, 240, 38, 80], [13200, 240, 38, 80]]);
+  // annotations: the bar-2 chord (inside the copied range) neither shifted nor duplicated; the bar-5 section (after at_bar) shifted to bar 7, not duplicated
+  assert.deepEqual(r.anno, [[2, 1, "chord: C"], [7, 1, "section: B"]]);
+  assert.equal(r.undoLen, 1, "one ⟲ for the whole thing");
+  assert.equal(r.undo.kind, "group");
+  assert.deepEqual(r.undo.kinds, ["mod", "anno", "addBatch"]);
+  run(`editUndoPop()`);
+  const after = val(`({
+    p1: song.tracks[0].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    p2: song.tracks[1].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    tri: song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    anno: rollnotes.map(n => [n.b1, n.q1, n.text]),
+  })`);
+  assert.deepEqual(after.p1.sort((a, b) => a[0] - b[0]), before.p1.sort((a, b) => a[0] - b[0]), "one ⟲ restores pulse1 exactly");
+  assert.deepEqual(after.p2.sort((a, b) => a[0] - b[0]), before.p2.sort((a, b) => a[0] - b[0]), "one ⟲ restores pulse2 exactly");
+  assert.deepEqual(after.tri.sort((a, b) => a[0] - b[0]), before.tri.sort((a, b) => a[0] - b[0]), "one ⟲ restores triangle exactly");
+  assert.deepEqual(after.anno, before.anno, "one ⟲ restores the annotation layer exactly");
+});
+test("copy_bars: bad ranges error with nothing changed; refuses on a locked capture; hidden from the general (no-song) chat", () => {
+  installCopyBarsSong();
+  const snap = () => val(`song.tracks.map(tr => tr.notes.length)`);
+  const s0 = snap();
+  assert.throws(() => run(`askCopyBars({from_bar: 3, to_bar: 2, at_bar: 4})`), /to_bar must be ≥ from_bar/);
+  assert.throws(() => run(`askCopyBars({from_bar: 0, to_bar: 2, at_bar: 4})`), /from_bar must be ≥ 1/);
+  assert.throws(() => run(`askCopyBars({from_bar: 2, to_bar: 99, at_bar: 4})`), /don't all exist/);
+  assert.throws(() => run(`askCopyBars({from_bar: 2, to_bar: 3, at_bar: 0})`), /at_bar must be between/);
+  assert.throws(() => run(`askCopyBars({from_bar: 2, to_bar: 3, at_bar: 99})`), /at_bar must be between/);
+  assert.deepEqual(snap(), s0, "nothing changed after any rejected call");
+  assert.equal(val(`editUndo.length`), 0, "no undo entry from a rejected call");
+
+  run(`
+    songKey = "albums/nes/mega-man-2/copy-bars-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+  `);
+  assert.equal(val(`editableSong()`), false, "sanity: the capture gate is really closed");
+  assert.throws(() => run(`askCopyBars({from_bar: 2, to_bar: 3, at_bar: 4})`), /locked here \(a capture or starter\) — ✎ Edit/);
+  assert.throws(() => run(`askInsertBars({at_bar: 4, count: 2})`), /locked here \(a capture or starter\) — ✎ Edit/);
+  assert.deepEqual(snap(), s0, "still nothing changed on a locked song");
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+
+  run(`askGeneral = true;`);
+  assert.ok(!val(`askToolsNow().some(t => t.function.name === "copy_bars")`), "copy_bars hidden in the general chat");
+  assert.ok(!val(`askToolsNow().some(t => t.function.name === "insert_bars")`), "insert_bars hidden in the general chat");
+  run(`askGeneral = false;`);
+});
+test("insert_bars: empty bars, same shift as copy_bars, no notes added; one ⟲ step", () => {
+  installCopyBarsSong();
+  const r = val(`(() => { const k = askInsertBars({at_bar: 4, count: 2}); return {
+    note: k.note,
+    p1: song.tracks[0].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    anno: rollnotes.map(n => [n.b1, n.q1, n.text]),
+    undoLen: editUndo.length,
+    undo: {kind: editUndo[0].kind, kinds: editUndo[0].entries.map(e => e.kind)},
+  }; })()`);
+  assert.equal(r.note, "inserted 2 empty bars at bar 4 — everything after moved 2 bars later");
+  // the SOURCE note at bar2 (before at_bar) is untouched; the LATER note (bar4→bar6) shifts; nothing new is added
+  assert.deepEqual(r.p1.sort((a, b) => a[0] - b[0]), [[0, 200, 59, 80], [1920, 480, 60, 80], [9600, 480, 65, 80]]);
+  assert.deepEqual(r.anno, [[2, 1, "chord: C"], [7, 1, "section: B"]]);
+  assert.equal(r.undoLen, 1);
+  assert.deepEqual(r.undo.kinds, ["mod", "anno"], "no addBatch — insert_bars never adds notes");
+  run(`editUndoPop()`);
+  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v])`).sort((a, b) => a[0] - b[0]),
+    [[0, 200, 59, 80], [1920, 480, 60, 80], [5760, 480, 65, 80]], "one ⟲ restores exactly");
+  assert.throws(() => run(`askInsertBars({at_bar: 4, count: 0})`), /count must be ≥ 1/);
 });
 
 test("Ask: backend selection from cfg; browser backend forces the 4k budget tier", () => {
