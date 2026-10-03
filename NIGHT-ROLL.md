@@ -3525,6 +3525,69 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     restores exactly), "copy_bars: bad ranges error with nothing
     changed; refuses on a locked capture…", "insert_bars: empty bars,
     same shift as copy_bars, no notes added…".
+- **Delete bars (2026-10-02, open-items 22:20) — Josh in the terminal:
+  "Is there a way to delete a bar? I wanna delete bar 8 from this song"
+  … "we have Insert bars in the Edit [menu], it would be next to
+  that". Edit ▾ → Delete bars… (`#emDeleteBars`, right under Insert
+  bars…, same small sheet: from bar — defaults to the cursor's bar —
+  and how many) and the Ask tool `delete_bars({from_bar, count})`
+  (`askDeleteBars`), both built on **`closeGap(T, len)`**
+  (index.html ~L6824) — the inverse of `openGapShift`, the same way
+  `deleteTime` is the inverse of `insertTime`: removes the time span
+  `[T, T+len)` on every track. A note starting inside is deleted
+  outright (`n.gone = true`, same soft-delete `eraseBatch` undo kind
+  `deleteSelection` uses — the notes stay in the array, just hidden,
+  so one ⟲ is `setGone(false)`); one that starts before `T` but
+  sustains into the span is clipped to stop exactly at `T`; one
+  at/after `T+len` shifts earlier by `len`. A note ending exactly at
+  `T` (not past it) is untouched either way — no special case needed,
+  it falls out of the same strict `>` test `openGapShift`'s straddle
+  rule uses.
+  - **Annotations never die** (Learning mode — they're Josh's own
+    analysis): a single tick-mapper, `clamp = x => x < T ? x :
+    Math.max(T, x - len)`, leaves anything before `T` alone, collapses
+    anything inside `[T, T+len)` to `T` (so an anchor in the deleted
+    span MOVES to the cut point instead of being destroyed), and
+    shifts anything at/after `T+len` earlier by `len`. Applying the
+    SAME mapper to both `n.start` and `n.end` means a range straddling
+    the cut shrinks by exactly the overlap (its end maps the same way
+    the anchor does) with no separate case needed, and the mapper is
+    continuous at both boundaries (`x === T` and `x === T+len` land on
+    `T` either way it's computed) so there's no off-by-one seam.
+  - **One deviation from `openGapShift`'s own convention, deliberately**:
+    whether an annotation "has an end" is tested by `n.b2 !== undefined
+    && n.b2 !== null` here, NOT `n.end !== null` the way `openGapShift`
+    tests it. Reason: `finalizeNotes`'s depth-stacking pass (the `secs`
+    block, ~L4189) gives every chord/section with no declared `b2` a
+    SYNTHETIC one-bar `n.end` (`start + bt`) purely for the editor's
+    row-stacking math — `resolveNote` itself only derives a real `end`
+    from `n.b2` (`n.end = n.b2 ? … : null`). `openGapShift`'s `n.end`
+    check is blind to this and — dormant today only because no shipped
+    test moves a touched point-type chord/section through it — would
+    clamp that synthetic box independently of the anchor and bake a
+    fake partial-bar range into a plain point annotation the moment it
+    got shifted. `closeGap` checks `n.b2` instead, so a plain chord or
+    section that moves (shifted, or moved to the cut) stays a point
+    annotation; `openGapShift` itself is UNCHANGED (out of scope here —
+    it's shared, shipped code another change didn't ask to touch).
+  - Wired into `ASK_TOOLS`/`ASK_SONG_ONLY_TOOLS`/`askRunTool` and the
+    ✦ Ask system prompt (tool count now twelve, one sentence: "only
+    when the user explicitly asks to delete/remove bars"). Same gate
+    as copy_bars/insert_bars/write_notes. Reply: `"bar 8 removed —
+    everything after moved 1 bar earlier"` (+ `"; N annotations moved
+    to bar 8"` when any did). Edit ▾'s sheet status line matches.
+    Icon: `playlistRemove` (Google Material Icons, outlined,
+    @material-design-icons/svg, Apache-2.0 — same source as the rest of
+    the `ICON` table, 2026-10-02 icon audit). Tests: "delete_bars:
+    deletes bar 3 — notes starting inside gone on every track (drums
+    included), a note sustaining into it is clipped at its start (one
+    ending exactly there stays put), everything after shifts 1 bar
+    earlier; an annotation anchored inside moves to the cut, one after
+    it shifts, a straddling one shrinks; one ⟲ restores notes +
+    annotations exactly", "delete_bars: deletes 2 bars …", "delete_bars:
+    bad ranges error with nothing changed; refuses on a locked
+    capture; hidden from the general (no-song) chat". Drift keyword
+    "Delete bars" (FEATURES).
 - **In-browser backend (P3) — WebLLM.** Settings → AI model → "in this
   browser": `aiBackend = "browser"`, `aiBrowserModel` from
   `AI_BROWSER_MODELS` (curated from WebLLM 0.2.85's prebuilt list, 0.4–3.9

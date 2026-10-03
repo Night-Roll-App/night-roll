@@ -74,6 +74,9 @@ The 🎸 beside Drummer (behind More, or Edit ▾ → Bassist…) generates a ba
 **Insert bars**
 Edit ▾ → Insert bars… opens a gap anywhere in the song: pick the spot (bar + beat, decimals fine), how much (a count of **bars**, **beats**, or **16ths**), and Insert. Everything from that point onward — notes, sections, chords, keys, the loop point — slides right together. A section that starts before the point and is still open there STRETCHES to span the gap; one that ends exactly at the point stays put (stretch it yourself if you want it covering the new bars). One undo undoes the whole thing.
 
+**Delete bars**
+Edit ▾ → Delete bars…, right under Insert bars, closes a gap instead of opening one: pick the bar to start from (defaults to the cursor's bar) and how many to remove, and Delete. A note starting inside the deleted bars is removed; one sustaining across the cut is clipped there; everything after slides left to fill the gap — notes, sections, chords, keys, the loop point, all carried, same as Insert bars. Annotations never die: one anchored inside the deleted span moves to the cut point instead of being lost, and one straddling the cut shrinks rather than being duplicated or orphaned. The status line names what moved. One undo undoes the whole thing.
+
 **Space**
 Play / stop, Logic-style — anywhere except while typing in a text field. With a hardware keyboard on iPad too.
 

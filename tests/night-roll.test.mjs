@@ -2740,7 +2740,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -5304,6 +5304,131 @@ test("insert_bars: empty bars, same shift as copy_bars, no notes added; one ⟲ 
   assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v])`).sort((a, b) => a[0] - b[0]),
     [[0, 200, 59, 80], [1920, 480, 60, 80], [5760, 480, 65, 80]], "one ⟲ restores exactly");
   assert.throws(() => run(`askInsertBars({at_bar: 4, count: 0})`), /count must be ≥ 1/);
+});
+
+// delete_bars (2026-10-02, open-items 22:20 — Josh in the terminal: "Is there
+// a way to delete a bar? I wanna delete bar 8 from this song" … "we have
+// Insert bars in the Edit [menu], it would be next to that"). Built on
+// closeGap, the inverse of openGapShift: a note starting inside the deleted
+// span is removed, one sustaining across the cut is clipped there (one
+// ending exactly at the cut stays put, same boundary rule as Insert bars'
+// stretch), everything at/after the span shifts earlier, and annotations
+// never die — one anchored inside moves to the cut point, one straddling it
+// shrinks instead of being duplicated or orphaned.
+function installDeleteBarsSong() { // 3 tracks, 4/4, ppq 480 (bt=1920, beat=480): a scratch song, never Josh's music
+  installSong();
+  run(`
+    songKey = "albums/compositions/nightroll/deletebars-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), "{}"); // the local copy: editable
+    song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}],
+      tracks: [
+        {name: "pulse1", notes: [
+          {t: 0, d: 200, p: 59, v: 80},     // bar1 — control, before the cut, never touched
+          {t: 1920, d: 2000, p: 60, v: 80}, // bar2 beat1, sustains past the bar-3 start — CLIPPED to end at the cut
+          {t: 4080, d: 240, p: 61, v: 80},  // bar3 beat1.5 — starts INSIDE the deleted span — GONE
+          {t: 5760, d: 480, p: 65, v: 80}], // bar4 beat1 — at/after the span — SHIFTS earlier
+        },
+        {name: "pulse2", notes: [
+          {t: 3840, d: 480, p: 64, v: 80},  // bar3 beat1 exactly — starts INSIDE the span — GONE
+          {t: 7680, d: 480, p: 66, v: 80}], // bar5 beat1 — SHIFTS earlier
+        },
+        {name: "triangle", drums: true, notes: [
+          {t: 100, d: 50, p: 38, v: 80},    // bar1 — control, never touched
+          {t: 3600, d: 240, p: 38, v: 80},  // ends EXACTLY at the cut (3840) — stays put, not clipped (drums included)
+          {t: 4000, d: 100, p: 39, v: 80},  // starts inside the span — GONE (drums included)
+          {t: 9360, d: 240, p: 38, v: 80}], // after the span — SHIFTS earlier
+        },
+      ]};
+    rollnotes = [
+      {b1: 1, q1: 1, text: "chord: C", chord: true},                          // before the cut — untouched
+      {b1: 2, q1: 2, b2: 3, q2: 2, text: "section: A", section: true},        // straddles the cut — SHRINKS to meet it
+      {b1: 3, q1: 3, text: "chord: G", chord: true},                         // anchored INSIDE the span — moves to the cut (bar 3's start)
+      {b1: 5, q1: 1, text: "section: B2", section: true},                    // after the span — shifts
+    ];
+    declaredTs = null; chopS = 0; keyRegions = []; previewSf = null; editUndo = []; editRedo = []; dupPending = null;
+    trackState = [{muted: false, solo: false}, {muted: false, solo: false}, {muted: false, solo: false}];
+    finalizeNotes(); computeSongEnd();
+  `);
+}
+test("delete_bars: deletes bar 3 — notes starting inside gone on every track (drums included), a note sustaining into it is clipped at its start (one ending exactly there stays put), everything after shifts 1 bar earlier; an annotation anchored inside moves to the cut, one after it shifts, a straddling one shrinks; one ⟲ restores notes + annotations exactly", () => {
+  installDeleteBarsSong();
+  const before = val(`({
+    p1: song.tracks[0].notes.map(n => [n.t, n.d, n.p, n.v]),
+    p2: song.tracks[1].notes.map(n => [n.t, n.d, n.p, n.v]),
+    tri: song.tracks[2].notes.map(n => [n.t, n.d, n.p, n.v]),
+    anno: rollnotes.map(n => [n.b1, n.q1, n.b2 || null, n.q2 || null, n.text]),
+  })`);
+  const r = val(`(() => { const k = askDeleteBars({from_bar: 3, count: 1}); return {
+    note: k.note,
+    p1: song.tracks[0].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    p2: song.tracks[1].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    tri: song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    anno: rollnotes.map(n => [n.b1, n.q1, n.b2 || null, n.q2 || null, n.text]),
+    undoLen: editUndo.length,
+    undo: {kind: editUndo[0].kind, kinds: editUndo[0].entries.map(e => e.kind)},
+  }; })()`);
+  assert.equal(r.note, "bar 3 removed — everything after moved 1 bar earlier; 1 annotation moved to bar 3");
+  // pulse1: control untouched; the straddler clipped to stop at the cut (3840); the inside-span note gone; the later note shifted bar4→bar3
+  assert.deepEqual(r.p1.sort((a, b) => a[0] - b[0]), [[0, 200, 59, 80], [1920, 1920, 60, 80], [3840, 480, 65, 80]]);
+  // pulse2: the at-the-cut note gone; the bar5 note shifted to bar4 (3840 earlier? — 7680-1920=5760, bar4 beat1)
+  assert.deepEqual(r.p2.sort((a, b) => a[0] - b[0]), [[5760, 480, 66, 80]]);
+  // triangle (drums): control untouched; the note ENDING exactly at the cut stays put (not clipped); the inside-span note gone; the later note shifted
+  assert.deepEqual(r.tri.sort((a, b) => a[0] - b[0]), [[100, 50, 38, 80], [3600, 240, 38, 80], [7440, 240, 38, 80]]);
+  // annotations: bar-1 chord untouched; the straddling section shrinks to end exactly at the cut (bar2 beat4 == bar3 beat1's tick); the bar-3 chord moves to bar 3's start (the cut); the bar-5 section shifts to bar 4
+  assert.deepEqual(r.anno, [[1, 1, null, null, "chord: C"], [2, 2, 2, 4, "section: A"], [3, 1, null, null, "chord: G"], [4, 1, null, null, "section: B2"]]);
+  assert.equal(r.undoLen, 1, "one ⟲ for the whole thing");
+  assert.equal(r.undo.kind, "group");
+  assert.deepEqual(r.undo.kinds, ["mod", "eraseBatch", "anno"]);
+  run(`editUndoPop()`);
+  const after = val(`({
+    p1: song.tracks[0].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    p2: song.tracks[1].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    tri: song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    anno: rollnotes.map(n => [n.b1, n.q1, n.b2 || null, n.q2 || null, n.text]),
+  })`);
+  assert.deepEqual(after.p1.sort((a, b) => a[0] - b[0]), before.p1.sort((a, b) => a[0] - b[0]), "one ⟲ restores pulse1 exactly");
+  assert.deepEqual(after.p2.sort((a, b) => a[0] - b[0]), before.p2.sort((a, b) => a[0] - b[0]), "one ⟲ restores pulse2 exactly");
+  assert.deepEqual(after.tri.sort((a, b) => a[0] - b[0]), before.tri.sort((a, b) => a[0] - b[0]), "one ⟲ restores triangle exactly");
+  assert.deepEqual(after.anno, before.anno, "one ⟲ restores the annotation layer exactly");
+});
+test("delete_bars: deletes 2 bars — the same shift, scaled; a note at the far boundary (T+len exactly) shifts, not deleted", () => {
+  installDeleteBarsSong();
+  const r = val(`(() => { const k = askDeleteBars({from_bar: 3, count: 2}); return {
+    note: k.note,
+    p1: song.tracks[0].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    p2: song.tracks[1].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+    tri: song.tracks[2].notes.filter(n => !n.gone).map(n => [n.t, n.d, n.p, n.v]),
+  }; })()`);
+  assert.equal(r.note, "bars 3–4 removed — everything after moved 2 bars earlier; 1 annotation moved to bar 3");
+  // pulse1: the bar4 note (bar2+count span now reaches bar5) is now INSIDE the wider deleted span too — gone, not shifted
+  assert.deepEqual(r.p1.sort((a, b) => a[0] - b[0]), [[0, 200, 59, 80], [1920, 1920, 60, 80]]);
+  // pulse2: the bar5 note sits exactly at T+len (7680) — the far boundary shifts, it is not swallowed
+  assert.deepEqual(r.p2.sort((a, b) => a[0] - b[0]), [[3840, 480, 66, 80]]);
+  // triangle: the control and the stays-put note are unaffected by a wider span; the later note shifts by 2 bars now
+  assert.deepEqual(r.tri.sort((a, b) => a[0] - b[0]), [[100, 50, 38, 80], [3600, 240, 38, 80], [5520, 240, 38, 80]]);
+});
+test("delete_bars: bad ranges error with nothing changed; refuses on a locked capture; hidden from the general (no-song) chat", () => {
+  installDeleteBarsSong();
+  const snap = () => val(`song.tracks.map(tr => tr.notes.filter(n => !n.gone).length)`);
+  const s0 = snap();
+  assert.throws(() => run(`askDeleteBars({from_bar: 0, count: 1})`), /from_bar must be ≥ 1/);
+  assert.throws(() => run(`askDeleteBars({from_bar: 3, count: 0})`), /count must be ≥ 1/);
+  assert.throws(() => run(`askDeleteBars({from_bar: 3, count: 9999})`), /don't all exist/);
+  assert.deepEqual(snap(), s0, "nothing changed after any rejected call");
+  assert.equal(val(`editUndo.length`), 0, "no undo entry from a rejected call");
+
+  run(`
+    songKey = "albums/nes/mega-man-2/delete-bars-capture-test.mid";
+    localStorage.setItem(draftStoreKey(songKey), JSON.stringify({capture: true, dirty: false, tracks: []}));
+  `);
+  assert.equal(val(`editableSong()`), false, "sanity: the capture gate is really closed");
+  assert.throws(() => run(`askDeleteBars({from_bar: 3, count: 1})`), /locked here \(a capture or starter\) — ✎ Edit/);
+  assert.deepEqual(snap(), s0, "still nothing changed on a locked song");
+  run(`localStorage.removeItem(draftStoreKey(songKey));`);
+
+  run(`askGeneral = true;`);
+  assert.ok(!val(`askToolsNow().some(t => t.function.name === "delete_bars")`), "delete_bars hidden in the general chat");
+  run(`askGeneral = false;`);
 });
 
 test("Ask: backend selection from cfg; browser backend forces the 4k budget tier", () => {
