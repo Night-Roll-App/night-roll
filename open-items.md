@@ -5015,3 +5015,5 @@ HELP.md has only Settings → AI model (server URL, iPad needs https via Tailsca
 ## DONE 2026-10-02 23:55 — ruler taps no longer arm tiny cycles (Josh, Terminal #66): a ruler press must travel 24px (RULER_RANGE_SLOP) before it selects; under that it is a tap that places the cursor. PORT NOTE: lands after split 0b started — re-apply in src/ when merging 0b.
 
 ## DONE 2026-10-03 00:05 — edit toolbar reordered (Josh, Terminal #67): undo redo cut copy paste delete ⋯ (split now next to join inside ⋯), then Select/Pencil/Erase + Pencil options last. PORT NOTE: after split 0b started — re-apply in src/ when merging 0b.
+
+## DONE 2026-10-03 00:30 — track chips no longer cut off when the AI window is docked wide (Josh, Terminal #68): #trackrow.stacked puts the transport on the first row and the chips full-width below whenever they overflow beside it (fitTrackRow, ResizeObserver + updateTrackMore). PORT NOTE: lands after split 0b started.
