@@ -30,6 +30,14 @@ export function moveSnapTicks() { // 16th grid normally; triplet steps while a T
   if (S.pencilDur > 0 && S.pencilDur <= 0.125 + 1e-6) return Math.max(1, Math.round(S.song.ppq * 0.125));
   return Math.max(1, Math.round(S.song.ppq * (songHas32nds() ? 0.125 : 0.25)));
 }
+// cursor placement on the ruler/strip (Josh, 2026-10-03): a TAP lands on the
+// nearest 8th — the usual target; finer spots are reached by dragging, which
+// steps in 32nds (or the triplet/custom grid while one is active)
+export function cursorTapSnapTicks() { return Math.max(1, Math.round(S.song.ppq / 2)); }
+export function cursorDragSnapTicks() {
+  if (S.gridDiv || isTripletDur(S.pencilDur)) return moveSnapTicks();
+  return Math.max(1, Math.round(S.song.ppq / 8));
+}
 export function gridAnchorTick() { // grid phase origin — typed into the grid sheet
   // (Josh's 14.2 case: the figure starts mid-bar, so the cells must run FROM
   // there — bar lines stay drawn but stop being snap targets)

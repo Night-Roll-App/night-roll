@@ -1150,6 +1150,17 @@ test("picking the 32nd duration makes notes drag in 32nds, even in a song with n
   assert.equal(val(`moveSnapTicks()`), 60);
 });
 
+test("cursor on the ruler/strip: a tap lands on the nearest 8th, a drag steps in 32nds (Josh, 2026-10-03)", () => {
+  installSong();
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};
+       _has32 = null; gridDiv = null; pencilNV = 16; pencilMod = 1; pencilDur = 0.25;`);
+  assert.equal(val(`cursorTapSnapTicks()`), 240, "tap: 8ths");
+  assert.equal(val(`cursorDragSnapTicks()`), 60, "drag: 32nds");
+  run(`pencilNV = 8; pencilMod = 2 / 3; pencilDur = 1 / 3;`);
+  assert.equal(val(`cursorDragSnapTicks()`), 160, "triplet picked: drag follows the triplet grid");
+  assert.equal(val(`cursorTapSnapTicks()`), 240, "a tap stays on 8ths");
+});
+
 test("gridFollowNote: the move grid follows the note you touch", () => {
   installSong();
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};

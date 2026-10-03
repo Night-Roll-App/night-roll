@@ -67,6 +67,8 @@ import { beatsPerBarDisp } from "./model/grid.js";
 import { effTs } from "./model/grid.js";
 import { gridAnchorTick } from "./model/grid.js";
 import { moveSnapTicks } from "./model/grid.js";
+import { cursorTapSnapTicks } from "./model/grid.js";
+import { cursorDragSnapTicks } from "./model/grid.js";
 import { pencilTicks } from "./model/grid.js";
 import { gridCellStart } from "./model/grid.js";
 import { snapTickAbs } from "./model/grid.js";
@@ -4208,7 +4210,7 @@ function tickAtX(x, snap) {
   return Math.max(0, Math.round(t / snap) * snap);
 }
 function scrubTo(pos) {
-  const snap = moveSnapTicks(); // 16ths (triplet steps while a T duration is active)
+  const snap = cursorDragSnapTicks(); // 32nds (triplet/custom grid while active) — the fine path
   const tick = (pos.x - S.RULER_W + S.view.x) / pxPerTick();
   S.playCursor = Math.max(0, Math.round(tick / snap) * snap);
   updateSubtitle();
@@ -4763,7 +4765,7 @@ function endPointer(e) {
   else if (S.drag.stripCursor) { // the playhead strip: tap moves the cursor, NEVER touches rangeSel
     if (!S.drag.moved) {
       const tick = (S.drag.spos.x - S.RULER_W + S.view.x) / pxPerTick();
-      const snap = moveSnapTicks();
+      const snap = cursorTapSnapTicks(); // a tap lands on the nearest 8th; drag for finer
       seekOrMoveCursor(Math.max(0, Math.round(tick / snap) * snap), {fromHere: true, noCountIn: true});
     } else if (S.playing) seekOrMoveCursor(S.playCursor, {fromHere: true, noCountIn: true}); // a scrub while rolling: playback picks up where the finger lifted
   }
@@ -4956,7 +4958,7 @@ function tap(pos) {
       return;
     }
     const target = hitMark ? hitMark.start
-                 : Math.max(0, Math.round(tick / moveSnapTicks()) * moveSnapTicks()); // 16th grid
+                 : Math.max(0, Math.round(tick / cursorTapSnapTicks()) * cursorTapSnapTicks()); // nearest 8th
     seekOrMoveCursor(target);
     return;
   }
