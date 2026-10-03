@@ -7,6 +7,13 @@ export async function openApp(page) {
   // predate modes and assume Learning's "nothing volunteered" defaults
   // throughout, so pin it before the app's own boot-time migration ever runs.
   await page.addInitScript(() => { try { localStorage.setItem("ff1roll-mode", "learning"); } catch (e) {} });
+  // module split (docs/split-plan.md §4 step 0b, §3.4): app globals are now
+  // ES module top-level bindings, invisible to a bare identifier in an
+  // injected page.evaluate/waitForFunction script unless src/devtools.js's
+  // exposeGlobals() has mirrored them onto window — gated on this flag so
+  // production never pays for it. Must be set before src/main.js's own
+  // top-level code runs, hence addInitScript (runs before any page script).
+  await page.addInitScript(() => { window.__NR_EXPOSE = true; });
   // headless chromium stalls ~20s constructing a real AudioContext (no audio
   // device) — one stall per pointerdown that previews a note. Gesture tests
   // don't need sound: stub the whole WebAudio surface with inert fakes.

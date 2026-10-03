@@ -219,6 +219,23 @@ test("check rule 8: the real repo's four module manifests (modulepreload, sw.js 
   assert.deepEqual(v, []);
 });
 
+// ---- e2e devtools mirror, proven without a browser (docs/split-plan.md §3.4,
+// §4 step 0b deviation: app.js exports nothing on its own — none of its
+// top-level bindings survive the classic-script-to-module cutover as a
+// window property — so without the generated __nr$ accessor footer AND
+// tests/e2e/helpers.mjs setting window.__NR_EXPOSE, every bare-name
+// page.evaluate() in tests/e2e/*.mjs would throw ReferenceError only once a
+// real headless browser ran it. This statically proves the mirror covers
+// every real spec's references instead, via tools/split/check-e2e-globals.mjs
+// (reused here, same pattern as check.mjs's rule 8 above). ----------------
+
+test("check-e2e-globals: every bare identifier referenced inside tests/e2e/*.mjs page.evaluate()/evaluateHandle()/waitForFunction() callbacks resolves via src/devtools.js's window mirror (app.js's generated __nrExpose$ footer + other src/ exports) or tools/split/browser-globals.txt", async () => {
+  const { checkE2eGlobals } = await import("../tools/split/check-e2e-globals.mjs");
+  const result = checkE2eGlobals();
+  assert.deepEqual(result.violations, []);
+  assert.ok(result.checkedNames > 50, "sanity: this should be checking dozens of real bare app names, not an empty/broken scan");
+});
+
 test("checkSrc: catches a real violation across two fixture files on disk", async () => {
   const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
   const os = await import("node:os");

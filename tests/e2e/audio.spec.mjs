@@ -18,6 +18,9 @@ async function open(page) {
   // pin Learning (P0): this spec predates modes; a fresh Playwright context
   // has empty localStorage, which would migrate to Normal otherwise.
   await page.addInitScript(() => { try { localStorage.setItem("ff1roll-mode", "learning"); } catch (e) {} });
+  // module split (docs/split-plan.md §4 step 0b, §3.4, tests/e2e/helpers.mjs):
+  // bare app globals in page.evaluate need devtools.js's window mirror.
+  await page.addInitScript(() => { window.__NR_EXPOSE = true; });
   await page.route(/^(?!.*localhost)/, r => r.abort());
   await page.goto(OPFS);
   await page.waitForFunction(() => { try { return !!song; } catch (e) { return false; } }, null, { timeout: 15000 });

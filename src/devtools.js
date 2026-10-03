@@ -8,11 +8,22 @@
 // line here too — tests/modules.test.mjs's rule-8 check enforces this list
 // stays complete).
 //
-// GET only, by design (§3.4): an ES module's exported `let` binding is a
-// live READ reference to importers, but importers cannot assign it — only
-// the declaring module can. Two-way access (window.x = …) returns once a
-// name moves to `S` (step 1's promote-state.mjs); S's own fields get both
+// Plain named exports (edition.js, and any real module carved out of app.js
+// in later steps) are GET only (§3.4): an ES module's exported `let` binding
+// is a live READ reference to importers, but importers cannot assign it —
+// only the declaring module can. Two-way access (window.x = …) returns once
+// a name moves to `S` (step 1's promote-state.mjs); S's own fields get both
 // get and set, same as the test harness's scopeProxy (tests/harness.mjs).
+//
+// app.js is different TODAY (docs/split-plan.md §4 step 0b deviation): it is
+// the legacy container, so none of its ~203 top-level names are `export`ed
+// at all — the plain loop below would see nothing for it. cutover.mjs
+// appends a generated `export const __nrExpose$ = {get, set}` to app.js (same
+// mechanism tests/harness.mjs's own per-module footer already uses), which
+// this file mirrors onto window with BOTH get and set — real e2e specs
+// assign bare names too (`song = …`, `mode = …`), which a GET-only mirror
+// could never support. Deleted in step 15 along with app.js itself.
+//
 // Never touches production unless window.__NR_EXPOSE is set
 // (tests/e2e/helpers.mjs sets it before navigation) — left off by default
 // so an un-imported name fails loudly instead of silently resolving through
@@ -29,8 +40,20 @@ export function exposeGlobals() {
   const MODULES = { app, edition };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
+      if (name === "__nrExpose$") continue; // the accessor object itself, not a global
       if (name in window) continue; // never shadow a real browser global
       Object.defineProperty(window, name, { configurable: true, enumerable: true, get: () => ns[name] });
+    }
+  }
+  // app.js's generated accessor mirror (see the file-header comment above) —
+  // read AND write every one of its top-level bindings.
+  if (app.__nrExpose$) {
+    for (const name of Object.keys(app.__nrExpose$.get)) {
+      if (name in window) continue; // never shadow a real browser global
+      const setter = app.__nrExpose$.set[name];
+      const desc = { configurable: true, enumerable: true, get: app.__nrExpose$.get[name] };
+      if (setter) desc.set = setter;
+      Object.defineProperty(window, name, desc);
     }
   }
 }

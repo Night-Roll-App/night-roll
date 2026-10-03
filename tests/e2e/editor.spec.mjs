@@ -452,6 +452,9 @@ test("phone-size boot: song loads with the panel folded (no TDZ bricks) @smoke",
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
   await page.addInitScript(() => { /* fresh storage = phone-folded default */ });
+  // module split (docs/split-plan.md §4 step 0b, §3.4, tests/e2e/helpers.mjs):
+  // bare app globals in page.evaluate need devtools.js's window mirror.
+  await page.addInitScript(() => { window.__NR_EXPOSE = true; });
   await page.goto("/index.html", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => { try { return !!song; } catch (e) { return false; } }, null, { timeout: 15000 });
   expect(errors).toEqual([]);

@@ -99,6 +99,7 @@ ResizeObserver
 IntersectionObserver
 CustomEvent
 Event
+PointerEvent
 EventTarget
 AbortController
 AbortSignal
