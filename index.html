@@ -231,6 +231,11 @@
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; min-width: 74px; }
   button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   button:disabled { opacity: 0.4; cursor: default; }
+  #deploybanner { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 10000;
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 16px; max-width: calc(100vw - 24px);
+    background: var(--panel2); border: 2px solid var(--gold); border-radius: 12px; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6);
+    font-family: var(--mono); font-size: 0.875rem; color: var(--gold); }
+  #deploybanner span { flex: 1 1 auto; }
   /* pressed: every button dims and dips while the finger is on it (Josh,
      2026-10-02: the copy button "doesn't seem like it pressed"). iOS only
      applies :active when the page has a touchstart listener — see the no-op
@@ -1470,6 +1475,14 @@
      in-region drop-up away from its button. #askshot/#askpick keep their ids
      and handlers; Photo Library opens iOS's own chooser (Photo Library / Take
      Photo / Choose File). -->
+<!-- install banner: the ✦ AI countdown alone went unnoticed mid-edit (Josh,
+     2026-10-02: "did not notice the countdown"). Fixed at the top centre,
+     above every sheet, with the two choices on it — one tap, no sheet. -->
+<div id="deploybanner" role="alert" style="display:none">
+  <span id="deploytext"></span>
+  <button id="deploynotnow">Not now</button>
+  <button id="deploynow" class="primary">Install now</button>
+</div>
 <div id="askattachmenu" class="dropup" role="menu" style="position:fixed;z-index:9000">
   <button class="fitem" id="askshot" role="menuitem" aria-label="Send a picture of the app to Claude"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.12 4 1.83 2H20v12H4V6h4.05l1.83-2h4.24M15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2zm-3 7c1.65 0 3 1.35 3 3s-1.35 3-3 3-3-1.35-3-3 1.35-3 3-3m0-2c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/></svg>  Screenshot of Night Roll</button>
   <button class="fitem" id="askpick" role="menuitem" aria-label="Attach a picture from Photos/Files"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/></svg>  Photo Library…</button>
@@ -2076,12 +2089,18 @@
       <dt>New since your last message</dt><dd>On the Claude Code bridge, every message you send — ♩ this song, Ask, or Terminal — carries what’s changed since your last one in THAT chat: any new error messages, any new status-line readouts (footer/Status window), and on Ask/Terminal (which have no song context of their own) which song is open, its view, and your cursor. You never copy an error or a status line over by hand, and a line already sent is never repeated.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in AI as a gold <b>✉</b> bubble (inbox), and the <b>AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, <b>AI</b>'s own aria-label names whether the terminal's Claude Code is working or idle — refreshed every 10 seconds — with no visual badge on the button itself any more (chrome density follow-up, 2026-10-01 pm, Josh: the small pulsing dot that used to mark it was "always there and distracting"). Open AI for the full line — <b>Claude Code working: …</b> or <b>Claude Code idle</b> — in a fixed two-line strip that never grows or shrinks as the status changes (so it can't nudge the chat log above it); tap that line for the last ten steps with their times and the latest commits. Without the bridge (LM Studio, no AI) none of it appears.</dd>
-      <dt>Update countdown</dt><dd>On the Claude Code bridge, when a new version is about to be installed on your iPad, <b>AI</b> turns gold and counts down (<b>AI · 15</b>) and the status line says the app will restart — finish your gesture; your edits are kept as you go. It shows <b>AI · ⟳</b> while the install runs. Tap <b>AI</b> during the countdown for a small sheet — <b>Install now</b> or <b>Not now</b>. <b>Not now</b> holds the install (the Mac waits — nothing relaunches under you): the button reads <b>AI · ⏸</b> and the status line says the update is waiting; tap <b>AI</b> again whenever you're ready and choose Install now. Before the FIRST warning, if your edits aren't already in a Version, one is saved automatically, labelled "Before update HH:MM" (see Save Version and Versions… below) — one more way back if anything goes wrong.</dd>
+      <dt>Update countdown</dt><dd>On the Claude Code bridge, when a new version is about to be installed on your iPad, <b>AI</b> turns gold and counts down (<b>AI · 15</b>) and the status line says the app will restart — finish your gesture; your edits are kept as you go. It shows <b>AI · ⟳</b> while the install runs. Tap <b>AI</b> during the countdown for a small sheet — <b>Install now</b> or <b>Not now</b>. <b>Not now</b> holds the install (the Mac waits — nothing relaunches under you): the button reads <b>AI · ⏸</b> and the status line says the update is waiting; tap <b>AI</b> again whenever you're ready and choose Install now. Before the FIRST warning, if your edits aren't already in a Version, one is saved automatically, labelled "Before update HH:MM" (see Save Version and Versions… below) — one more way back if anything goes wrong. A gold banner at the top of the screen counts down too, with <b>Not now</b> and <b>Install now</b> right on it.</dd>
       <dt>Backups on your Mac</dt><dd>On the Claude Code bridge, every edit to one of your own songs (a composition or a local draft) is also copied to the Mac a few seconds after you stop typing — off this device entirely, same content Publish would push. It's a safety net, not something you manage: nothing in the app reads or restores from it, and a Mac that can't be reached just means the copy waits for next time (it never blocks or interrupts an edit).</dd>
       <dt>Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>＋</b> beside Speak, then <b>Screenshot of Night Roll</b> to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a thumbnail chip appears above the box — add what to look at and Send. Do it again (up to 4 per message) to attach several at once; each gets its own thumbnail and its own ✕, or tap the chip row's ✕ to drop them all. In a browser, pick this tab when it asks what to share. The same ＋ menu's <b>Photo Library…</b> attaches a picture <b>from Photos</b> (or takes one, or picks a file) instead of the app itself — the same 4-per-message limit, thumbnails, and Send line; a huge picture is downscaled and an iPhone/iPad HEIC photo is converted automatically, so it always reaches Claude as a plain JPEG or PNG.</dd>
       <dt>Terminal tab</dt><dd>Two pickers at its top choose the model the terminal gives its <b>advisors</b> (read-only reviews) and its <b>builders</b> (the agents that write code) — Opus, Sonnet, Haiku or Fable; the terminal session's own model is set at the Mac (/model). The Terminal tab in AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. Screenshot works the same. If the Mac can't be reached, the message goes back into the box.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved) — on the Claude Code bridge it also tells the Mac to really start over: without this, the same long-running Claude session kept being resumed underneath a cleared-looking chat.</dd>
       <dt>Session usage and Compact</dt><dd>On the Claude Code bridge, a small line under AI's tab strip says <b>"N turns · ~Nk tokens · $N.NN"</b> for the chat you're in (♪ this song or Ask — not Terminal, which has no session of its own), refreshed after every reply and whenever you switch tabs; past 40 turns it adds <b>"— long, Compact saves tokens"</b>. Tap <b>Compact</b> beside Clear chat (in-app confirm) to have the bridge summarize this chat's memory on the Mac and shrink it — the status line then reads <b>"compacted: 172 → 1 turns · ~24k → ~3k tokens"</b>, the exact before/after the Mac measured. Compact only affects the Mac's memory of the conversation, never your saved messages or the .ask.md log. The <b>plan usage</b> line in AI's Recent (tap the <b>Now:</b> strip) shows this account's own subscription usage — this session and this week — when the bridge has seen it.</dd>
+      <dt>AI setup, step by step</dt><dd>Everything below runs on a Mac (or any computer) you own; the iPad then reaches it over your private Tailscale network.<br>
+<b>LM Studio</b>: load a model, then start its server with CORS on — Developer tab → Start Server, and in Server settings turn on <b>Enable CORS</b> (or in Terminal: <code>lms server start --cors</code>; this does not survive a reboot unless LM Studio itself starts at login). Its address is <code>http://localhost:1234</code>.<br>
+<b>Ollama</b>: it must allow the app's origin — quit Ollama, run <code>launchctl setenv OLLAMA_ORIGINS "*"</code>, start Ollama again. Its address is <code>http://localhost:11434</code>.<br>
+<b>From an iPad</b> (it can only talk to https): install Tailscale on the Mac and the iPad, signed in to the same account; in the Tailscale admin console → DNS turn on MagicDNS and HTTPS Certificates; then on the Mac <code>tailscale serve --bg 1234</code> (approve Serve once from the link it prints). The iPad's address is then <code>https://&lt;mac-name&gt;.&lt;tailnet&gt;.ts.net</code>. Undo with <code>tailscale serve --https=443 off</code>.<br>
+<b>The Claude Code bridge</b> (needed for Claude Code, the Terminal tab, screenshots and Backups on your Mac): in the Night Roll folder run <code>npm run bridge</code> — or keep it running across reboots with <code>sh tools/launchd/install.sh --claude full --upstream lmstudio=http://localhost:1234</code> (<code>--uninstall</code> removes it). It listens on port 8787; expose it to the iPad with <code>tailscale serve --bg --set-path /claude 8787</code> and set the iPad's Settings → AI address to <code>https://&lt;mac-name&gt;.&lt;tailnet&gt;.ts.net/claude</code>. It also lists LM Studio and Ollama models when they're running. Add <code>--token &lt;secret&gt;</code> to lock it and put the same secret in Settings → AI → API key.<br>
+Then Settings → AI → <b>Test</b>: it lists the models it can reach, or says exactly what's wrong (server off, CORS off, http from an https page, no answer).</dd>
       <dt>Where the model runs</dt><dd>File → Settings… → <b>AI model</b>. <b>In this browser</b>: pick a small model (0.4–4 GB), the first Ask downloads it once and it runs on this device's GPU, nothing leaves the device; Test checks WebGPU and whether it's downloaded. <b>On a server</b>: the URL of an OpenAI-compatible server — LM Studio or Ollama on this computer (<code>http://localhost:1234</code>) or on another machine on your network — plus an optional API key; <b>Test</b> lists the server's models, picks one (your last pick if the server still has it), saves, and names exactly what's wrong when it can't (server off, CORS not enabled, https page talking to an http server, no answer in 8 s). On an iPad the server must be https (Tailscale Serve). The first time you point it at a machine other than this one, it asks once before sending your notes there.</dd>
       <dt>Settings save themselves</dt><dd>Every Settings field saves itself the moment you leave it — there is no Save button and closing never loses anything.</dd>
       <dt>Asking it to act</dt><dd>"put an F#m chord annotation on 21.1", "mark bars 6–12 as section A", "set a tempo of 192 at bar 6" — it writes exactly that annotation (unsynced, with a ✕ in the Publish sheet like your own). "compare this to ambush" makes it read that song's notes and annotations from the repo.</dd>
@@ -24193,12 +24212,36 @@ function deployButtonTick() {
   // than touching a .lbl child by class — same reasoning as setPlayBtn/
   // updateJobsBtn: the vm harness's element stubs have no querySelector.
   const icon = iconSvg("autoAwesome", "txt");
-  if (deployHeld) { b.innerHTML = icon + "AI · ⏸"; b.style.color = "var(--gold)"; return; }
   const left = Math.ceil((deployAt - Date.now()) / 1000);
+  deployBannerShow(deployHeld ? "Update waiting — install when you're ready" : left > 0 ? "Update installs in " + left + " s — the app will restart" : "Installing the update…", !deployHeld && left <= 0);
+  if (deployHeld) { b.innerHTML = icon + "AI · ⏸"; b.style.color = "var(--gold)"; return; }
   if (left > 0) { b.innerHTML = icon + "AI · " + left; b.style.color = "var(--gold)"; return; }
   b.innerHTML = icon + "AI · ⟳";
-  if (left < -90) { clearInterval(deployTimer); deployTimer = null; b.innerHTML = icon + "AI"; b.style.color = ""; } // the install never came: back to normal
+  if (left < -90) { clearInterval(deployTimer); deployTimer = null; b.innerHTML = icon + "AI"; b.style.color = ""; deployBannerShow(null); } // the install never came: back to normal
 }
+function deployBannerShow(text, installing) {
+  const bn = document.getElementById("deploybanner");
+  if (!bn) return;
+  bn.style.display = text ? "" : "none";
+  if (!text) return;
+  document.getElementById("deploytext").textContent = text;
+  document.getElementById("deploynotnow").style.display = installing || deployHeld ? "none" : "";
+  document.getElementById("deploynow").style.display = installing ? "none" : "";
+}
+async function deployInstallNow() {
+  const wasHeld = deployHeld;
+  try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: false, inSec: wasHeld ? 3 : 0})}); }
+  catch (err) { logDebug("deploy install-now: " + (err && err.message || err)); }
+  deploySetHeld(false);
+  if (wasHeld) deployWarn(3000); else { deployAt = Date.now(); deployButtonTick(); }
+}
+async function deployHoldNow() {
+  try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: true})}); }
+  catch (err) { logDebug("deploy hold: " + (err && err.message || err)); }
+  deploySetHeld(true);
+}
+document.getElementById("deploynotnow").addEventListener("click", deployHoldNow);
+document.getElementById("deploynow").addEventListener("click", deployInstallNow);
 function deployWarn(ms) {
   const first = !deployTimer;
   deployAt = Date.now() + ms;
@@ -24221,17 +24264,11 @@ function deploySetHeld(on) {
 }
 function deployActive() { return !!deployTimer || deployHeld; } // a countdown or a hold is in effect: ✦ AI opens the install sheet, not the chat
 async function deployAskTap() { // the "Not now" / "Install now" sheet (appConfirm — no native dialogs)
-  const wasHeld = deployHeld;
   const yes = await appConfirm("Update ready", "A new version is ready. The app will restart.", "Install now", "Not now");
   if (yes) {
-    try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: false, inSec: wasHeld ? 3 : 0})}); }
-    catch (err) { logDebug("deploy install-now: " + (err && err.message || err)); }
-    deploySetHeld(false);
-    if (wasHeld) deployWarn(3000); else { deployAt = Date.now(); deployButtonTick(); }
+    await deployInstallNow();
   } else {
-    try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: true})}); }
-    catch (err) { logDebug("deploy hold: " + (err && err.message || err)); }
-    deploySetHeld(true);
+    await deployHoldNow();
   }
 }
 async function askStatusPoll() {

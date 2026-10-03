@@ -6959,3 +6959,5 @@ guard still actually checks something.
 real music notation, the M/S/H convention, or a disclosure
 caret/chevron. Add the path to `ICON` once; don't inline the same path
 string in two places.
+
+Install banner (2026-10-02, Josh: "did not notice the countdown"): #deploybanner, fixed top-centre above every sheet, gold — "Update installs in N s", Not now / Install now right on it (deployHoldNow / deployInstallNow, shared with the ✦ AI sheet); "Update waiting" while held; hidden when the install never came.

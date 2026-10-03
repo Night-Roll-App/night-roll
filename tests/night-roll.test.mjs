@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
@@ -10318,6 +10318,20 @@ test("Edit ▾ → Remove duplicate notes: same track + start + pitch, keeps the
   assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 4, "one undo restores it");
   assert.equal(val(`removeDuplicateNotes() >= 0`), true);
   run(`song = null; songKey = "midi/test.mid";`);
+});
+
+test("install banner: a top banner counts down with Not now / Install now, says waiting while held (Josh, 2026-10-02: the ✦ AI countdown went unnoticed)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c);
+  run(`deployWarn(12000)`);
+  assert.equal(run(`document.getElementById("deploybanner").style.display`), "");
+  assert.match(run(`document.getElementById("deploytext").textContent`), /Update installs in 1[12] s/);
+  assert.equal(run(`document.getElementById("deploynotnow").style.display`), "");
+  run(`deploySetHeld(true)`);
+  assert.match(run(`document.getElementById("deploytext").textContent`), /Update waiting/);
+  assert.equal(run(`document.getElementById("deploynotnow").style.display`), "none", "already held: only Install now");
+  run(`deploySetHeld(false); deployAt = Date.now() - 100000;`);
+  app.tick(1000);
+  assert.equal(run(`document.getElementById("deploybanner").style.display`), "none", "gone once the install never came");
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {
