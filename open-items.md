@@ -5130,3 +5130,49 @@ session still needs to browser-verify (localhost + packaged dist) before
 pushing and building for the iPad — same as 0b, this is a pure refactor
 with no user-facing change, so verification is "does the app still behave
 identically," not a new feature to try.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 3: src/midi/parse.js + src/midi/write.js (docs/split-plan.md)
+Worktree branch worktree-agent-a9454f25a407fa673, commit fa87502e, on top of
+step 2 (d1a5bd40, already merged to main). `move.mjs --names
+parseMidi,tickToSec,secToTick --to src/midi/parse.js` then `--names
+writeMidi --to src/midi/write.js`, both over src/app.js — by NAME, not the
+table's "midi parse"/"midi write" banner ranges (the "midi parse" banner's
+section runs past these three declarations into unrelated grid/selection
+code; writeMidi has no leading banner at all, just its own inline comment).
+parse.js needed one import, `S` (tickToSec/secToTick read `S.playRate`) — a
+same-layer (layer 0) import, allowed by rule 5. write.js is fully
+self-contained, no imports. Neither function's body changed a byte:
+checked by running `tools/dump_notes.mjs` against a scratch/ copy of
+albums/starters/fur-elise.mid and diffing the output against the committed
+.notes.txt — identical. `regen-e2e-footer.mjs --file src/app.js` re-run;
+devtools.js gained `midiParse`/`midiWrite` namespace imports (GET-only,
+same pattern as icons.js/controls.js); sw.js APP_MODULES gained both
+files, SW_VERSION nr-v8 → nr-v9; index.html's modulepreload list gained
+both, grouped with the other layer-0 modules ahead of app.js;
+tests/modules.test.mjs's checkSrc fileCount assertion bumped 7 → 9.
+NIGHT-ROLL.md's module map gained both entries; its Code map's now-stale
+"midi parse → parseMidi + tempo maps" line was removed (moved up, per the
+module map's own stated convention for exactly this situation).
+No scope.mjs/move.mjs bugs surfaced this time (unlike every prior step) —
+both functions are leaf code, so the free-identifier/hoisting edge cases
+0b/1/2 found don't apply. One real finding, not a bug: `midiBase64`
+(sitting right after writeMidi in app.js) stayed put — its own comment at
+a call site says "any bytes — chunked btoa, not MIDI-specific," confirmed
+by grep (SoundFont bytes, recorded-audio bytes, and MIDI bytes all go
+through it) — moving it into midi/write.js would misfile a general utility
+as MIDI-specific; left for a later step (platform/ or a small util module)
+to claim. Verified: night-roll.test.mjs 417 (416 pass + 1 pre-existing env
+skip), gestures 17/17, modules 33/33, controls 3/3, bridge 10/10, pwa 3/3,
+package 3/3 (incl. the boot-from-dist test), nsf 20/20 (3 pre-existing
+vault-only skips), chip-worker 31/31, migrate-rollnotes 9/9 — all green.
+`node tools/split/check.mjs` clean except the known pre-existing oldBpb
+finding (Q6); check-e2e-globals.mjs and check-controls.mjs clean. `node
+tools/package.mjs --out /tmp/nr-dist-s3`: 47 runtime modules (unchanged
+from step 2 — midi/ adds no new tools/-side runtime modules of its own).
+`tools/at.mjs`, `tools/span.mjs` and `tools/dump_notes.mjs` re-verified
+against real songs in albums/starters/ (never albums/compositions/).
+`npm run test:e2e:smoke` (allowed once locally): chromium 8/8 passed. Full
+detail + deviations: docs/split-plan.md "Deviations (3)". NOT pushed: main
+session still needs to browser-verify (localhost + packaged dist) before
+pushing and building for the iPad — same as every prior step, this is a
+pure refactor with no user-facing change.
