@@ -22,8 +22,20 @@ export const LAYERS = [
   ["model", "gen"],
   ["audio", "render"],
   ["input", "ui", "ask", "import", "sync"],
-  ["main.js", "devtools.js"],
+  ["main.js", "devtools.js", "app.js"],
 ];
+
+// app.js (docs/split-plan.md §4 step 0b's cutover; deleted in step 15) is the
+// whole pre-split app, so it doesn't fit the layer table like a real module
+// does — it's layered alongside main.js/devtools.js (the two other things
+// that are allowed to see the whole app) so that main.js importing it, and
+// it importing any real module as steps 1-14 carve pieces out, both pass
+// rule 5. LEGACY_CONTAINER is also exempt from rule 3 (top-level mutable):
+// it still holds ~203 top-level `let`s until step 1's promote-state.mjs
+// moves them to `S`. This is the one check.mjs concession to the fact that
+// app.js is scaffolding, not a finished module — it shrinks to nothing by
+// step 15, at which point LEGACY_CONTAINER (and this comment) should go too.
+export const LEGACY_CONTAINER = "app.js";
 
 /** 0-5 layer number for a module's path relative to src/, or null if it
  *  matches no entry (check.mjs then flags it as unplaced, a stronger
@@ -253,7 +265,7 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src")) {
   }
 
   for (const [rel, parsed] of parsedByFile) {
-    const isStateFile = rel === "state.js";
+    const isStateFile = rel === "state.js" || rel === LEGACY_CONTAINER;
     violations.push(...ruleFreeIdentifiers(parsed, browserGlobals));
     violations.push(...ruleNoAssignToImport(parsed));
     violations.push(...ruleTopLevelMutable(parsed, { isStateFile }));
@@ -267,7 +279,14 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src")) {
       if (!info.specifier.startsWith(".")) return null; // vendor/external — not layered
       return layerOf(path.posix.normalize(path.posix.join(selfDir, info.specifier)));
     };
-    violations.push(...ruleTopLevelInitLayerZero(parsed, importLayer));
+    // main.js (docs/split-plan.md §1) IS the ordered top-level call list —
+    // "calls init*() in original file order, then boot()" — so by design its
+    // top-level statements reference every layer, not just layer 0. ES
+    // module evaluation order (dependencies before dependents) already
+    // guarantees everything it calls has finished evaluating; rule 4 exists
+    // to stop an ORDINARY module from depending on not-yet-ready state, and
+    // main.js, always the last thing evaluated, can't hit that hazard.
+    if (rel !== "main.js") violations.push(...ruleTopLevelInitLayerZero(parsed, importLayer));
   }
   violations.push(...ruleUniqueNames(declaredByFile));
   violations.push(...ruleSerializedSelfContained(functionsByName));

@@ -31,7 +31,7 @@ const CHECK_ONLY = argv.includes("--check");
 const ALLOWED_ALBUM_DIRS = ["albums/starters"];
 const FORBIDDEN = /final[-_ ]?fantasy|mega[-_ ]?man|tmnt|teenage mutant|nintendo|capcom|konami|square ?enix|castlevania|zelda|metroid/i;
 const TOP_FILES = ["index.html", "sw.js", "app.webmanifest", "404.html", "LICENSE"];
-const TOP_DIRS = ["vendor", "icons"];
+const TOP_DIRS = ["vendor", "icons", "src"];
 // Runtime modules: the browser imports these from tools/ (chip captures, chip
 // audio in the Worker). Only what the app's entry points reach, transitively —
 // the node-only scripts in the same folders (dumps, tests, bridges) stay home.
@@ -48,8 +48,10 @@ const RUNTIME_ENTRIES = ["chip-worker.mjs",
 // worker dynamic-imports them by these names, so a static scan never sees
 // them. Read from index.html itself: sounding/note-preview were missing from
 // the hand list above and every console render on the iPad fell to synth.
+// (docs/split-plan.md §4 step 0b: the CHIPS table is JS, so it moved with
+// everything else into src/app.js — index.html no longer has it.)
 function chipTableModules() {
-  const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const html = readFileSync(path.join(ROOT, "src", "app.js"), "utf8");
   const out = new Set();
   for (const m of html.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g))
     for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) out.add(q[1] + ".mjs");
@@ -73,6 +75,36 @@ function runtimeModules() { // tools-relative paths, entry points plus every sta
 }
 const RUNTIME = runtimeModules();
 
+// src/ reachability (docs/split-plan.md §4 step 0b): every static import and
+// literal import() in src/ must resolve to a real file, and every file under
+// src/ must be reachable from src/main.js — a module present on disk but
+// never imported would silently NOT ship if this guard didn't exist (the
+// copy step below copies the whole tree regardless, so today the two always
+// agree; this guard is what keeps them agreeing as later steps add and wire
+// up dozens of modules).
+function srcModules() {
+  const root = path.join(ROOT, "src");
+  if (!existsSync(root)) return { all: [], reachable: [], unresolved: [] };
+  const all = [];
+  (function walk(dir) { for (const e of readdirSync(dir)) { const f = path.join(dir, e); if (statSync(f).isDirectory()) walk(f); else if (e.endsWith(".js")) all.push(path.relative(root, f).split(path.sep).join("/")); } })(root);
+  const unresolved = [];
+  const seen = new Set(), todo = ["main.js"];
+  while (todo.length) {
+    const m = todo.pop();
+    if (seen.has(m)) continue;
+    seen.add(m);
+    const abs = path.join(root, m);
+    if (!existsSync(abs)) { unresolved.push(m); continue; }
+    const text = readFileSync(abs, "utf8");
+    for (const im of text.matchAll(/(?:from\s*|import\s*\(\s*)"(\.\.?\/[^"]+)"/g)) {
+      const t = path.posix.normalize(path.posix.join(path.posix.dirname(m), im[1]));
+      todo.push(t);
+    }
+  }
+  return { all, reachable: [...seen], unresolved };
+}
+const SRC = srcModules();
+
 const rel = p => path.relative(OUT, p).split(path.sep).join("/");
 function walk(dir, out = []) { for (const e of readdirSync(dir)) { const f = path.join(dir, e); if (statSync(f).isDirectory()) walk(f, out); else out.push(f); } return out; }
 function copyDir(src, dst) { mkdirSync(dst, {recursive: true}); for (const e of readdirSync(src)) { const a = path.join(src, e), b = path.join(dst, e); if (statSync(a).isDirectory()) copyDir(a, b); else copyFileSync(a, b); } }
@@ -80,16 +112,18 @@ function copyDir(src, dst) { mkdirSync(dst, {recursive: true}); for (const e of 
 const problems = [];
 const fail = m => problems.push(m);
 
-// 1. index.html: one line changes
-const srcIndex = readFileSync(path.join(ROOT, "index.html"), "utf8");
-const EDITION_LINE = 'const EDITION = "web";';
-if ((srcIndex.match(/const EDITION = "[a-z]+";/g) || []).length !== 1) fail("index.html must declare EDITION exactly once");
-const appIndex = srcIndex.replace(EDITION_LINE, 'const EDITION = "app";');
-if (appIndex === srcIndex) fail("EDITION line not found in index.html: " + EDITION_LINE);
+// 1. src/edition.js: one line changes (docs/split-plan.md §4 step 0b moved
+// this out of index.html, which is now copied byte-identical — checked below
+// alongside the other TOP_FILES/TOP_DIRS, nothing special left to verify here).
+const srcEdition = readFileSync(path.join(ROOT, "src", "edition.js"), "utf8");
+const EDITION_LINE = 'export const EDITION = "web";';
+if ((srcEdition.match(/export const EDITION = "[a-z]+";/g) || []).length !== 1) fail("src/edition.js must declare EDITION exactly once");
+const appEdition = srcEdition.replace(EDITION_LINE, 'export const EDITION = "app";');
+if (appEdition === srcEdition) fail("EDITION line not found in src/edition.js: " + EDITION_LINE);
 { // byte-identical apart from that line
-  const a = srcIndex.split("\n"), b = appIndex.split("\n");
+  const a = srcEdition.split("\n"), b = appEdition.split("\n");
   const diff = a.map((l, i) => l !== b[i] ? i : -1).filter(i => i >= 0);
-  if (a.length !== b.length || diff.length !== 1) fail("index.html differs from the repo's in " + diff.length + " lines (expected 1)");
+  if (a.length !== b.length || diff.length !== 1) fail("src/edition.js differs from the repo's in " + diff.length + " lines (expected 1)");
 }
 
 // 2. which albums ship
@@ -102,8 +136,8 @@ if (!CHECK_ONLY) {
   rmSync(OUT, {recursive: true, force: true});
   mkdirSync(OUT, {recursive: true});
   for (const f of TOP_FILES) if (existsSync(path.join(ROOT, f))) copyFileSync(path.join(ROOT, f), path.join(OUT, f));
-  writeFileSync(path.join(OUT, "index.html"), appIndex);
   for (const d of TOP_DIRS) if (existsSync(path.join(ROOT, d))) copyDir(path.join(ROOT, d), path.join(OUT, d));
+  writeFileSync(path.join(OUT, "src", "edition.js"), appEdition); // the one src/ file that isn't a byte-for-byte copy
   for (const m of RUNTIME) { const dst = path.join(OUT, "tools", m); mkdirSync(path.dirname(dst), {recursive: true}); copyFileSync(path.join(ROOT, "tools", m), dst); }
   mkdirSync(path.join(OUT, "albums"), {recursive: true});
   for (const d of shipAlbums) copyDir(d, path.join(OUT, path.relative(ROOT, d)));
@@ -119,11 +153,19 @@ for (const f of files) {
   if (r.startsWith("albums/") && r !== "albums/manifest.json" && !ALLOWED_ALBUM_DIRS.some(d => r.startsWith(d + "/"))) fail("album not allowed in the product: " + r);
   if (r.startsWith("tools/") ? !RUNTIME.includes(r.slice(6)) : /^(journals|handoffs|tests)\//.test(r) || /\.(ask|rollnotes)\.md$/.test(r)) fail("not a product file: " + r);
   if (FORBIDDEN.test(r)) fail("forbidden name in path: " + r);
-  if (/\.(json|md|txt|webmanifest|js)$/.test(r) && r !== "index.html" && !r.startsWith("vendor/")) {
+  // src/**/*.js is exempt from the text scan, like index.html (docs/
+  // split-plan.md §4 step 0b): it's the whole app's prose-heavy source
+  // (comments quoting Josh, feature names, …), the same reason index.html
+  // always was — the PATH scan two lines up and the album/compositions
+  // guards below still apply to it.
+  if (/\.(json|md|txt|webmanifest|js)$/.test(r) && r !== "index.html" && !r.startsWith("vendor/") && !r.startsWith("src/")) {
     const t = readFileSync(f, "utf8");
     if (FORBIDDEN.test(t)) fail("forbidden text in " + r + ": " + t.match(FORBIDDEN)[0]);
   }
 }
+for (const m of SRC.unresolved) fail("src/" + m + " is imported but does not exist");
+for (const m of SRC.all) if (!SRC.reachable.includes(m)) fail("src/" + m + " exists but is not reachable from src/main.js");
+if (!CHECK_ONLY) for (const m of SRC.all) if (!existsSync(path.join(OUT, "src", m))) fail("src/" + m + " is not in the output");
 if (!CHECK_ONLY) {
   const listed = new Set(shipManifest.flatMap(a => a.songs.map(s => s.path)));
   for (const p of listed) if (!existsSync(path.join(OUT, p))) fail("manifest lists a song that is not in the output: " + p);

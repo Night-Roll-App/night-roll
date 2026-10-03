@@ -6,6 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync, existsSync} from "node:fs";
 import {spawnSync} from "node:child_process";
+import {appSource} from "./harness.mjs";
 
 const root = new URL("../", import.meta.url);
 const read = p => readFileSync(new URL(p, root), "utf8");
@@ -25,8 +26,12 @@ test("PWA: index.html links the manifest and the apple metadata", () => {
   assert.match(html, /<link rel="manifest" href="app\.webmanifest">/);
   assert.match(html, /apple-mobile-web-app-capable" content="yes"/);
   assert.match(html, /<link rel="apple-touch-icon" href="icons\/apple-touch-icon\.png">/);
-  assert.match(html, /serviceWorker\.register\(new URL\("sw\.js", APP_BASE\)/);
-  assert.match(html, /PERF_FLAGS\.get\("sw"\) === "0"/, "kill switch present");
+  // the registration code itself lives in src/app.js post-cutover (docs/
+  // split-plan.md §4 step 0b, §3.3): appSource() is index.html plus every
+  // src/**/*.js concatenated, so this still finds it.
+  const js = appSource();
+  assert.match(js, /serviceWorker\.register\(new URL\("sw\.js", APP_BASE\)/);
+  assert.match(js, /PERF_FLAGS\.get\("sw"\) === "0"/, "kill switch present");
 });
 
 test("PWA: sw.js parses, precaches only files that exist, never the soundfonts", () => {

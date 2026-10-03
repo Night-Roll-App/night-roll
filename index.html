@@ -1224,6 +1224,51 @@
   } catch (e) {}
 })();
 </script>
+<script id="nr-boot-watchdog">
+// Boot watchdog (docs/split-plan.md §4 step 0b): a classic (non-module)
+// script, so it still runs even when src/main.js 404s, fails to parse, or
+// throws before app.js's own boot() ever starts — the module-load failure
+// mode a classic inline script never had. Cleared by src/app.js's boot()
+// (see the "boot watchdog" comment there) the moment boot() starts running;
+// until then, a 10s timeout or any uncaught error shows this panel instead
+// of a silent blank screen. Never a native dialog (CLAUDE.md "No native
+// dialogs") — an in-page panel with Reload and Reset cache (?sw=0, the
+// service worker's own kill switch).
+(function() {
+  function nrBootFail(detail) {
+    if (document.getElementById("nr-boot-panel")) return; // show it once
+    var panel = document.createElement("div");
+    panel.id = "nr-boot-panel";
+    panel.style.cssText = "position:fixed;inset:0;z-index:999999;background:#151520;color:#e8e8f0;"
+      + "font:14px/1.5 -apple-system,system-ui,sans-serif;padding:24px;overflow:auto";
+    var msg = document.createElement("pre");
+    msg.style.cssText = "white-space:pre-wrap;word-break:break-word;margin:0 0 16px";
+    msg.textContent = "Night Roll didn't finish starting.\n\n" + (detail || "(no error detail)");
+    var reload = document.createElement("button");
+    reload.textContent = "Reload";
+    reload.style.cssText = "margin-right:12px;padding:10px 16px;font-size:0.875rem";
+    reload.onclick = function() { location.reload(); };
+    var resetCache = document.createElement("button");
+    resetCache.textContent = "Reset cache";
+    resetCache.style.cssText = "padding:10px 16px;font-size:0.875rem";
+    resetCache.onclick = function() {
+      var u = new URL(location.href);
+      u.searchParams.set("sw", "0");
+      location.href = u.href;
+    };
+    panel.appendChild(msg);
+    panel.appendChild(reload);
+    panel.appendChild(resetCache);
+    var attach = function() { document.body.appendChild(panel); };
+    if (document.body) attach(); else document.addEventListener("DOMContentLoaded", attach);
+  }
+  window.__nrBoot = setTimeout(function() { nrBootFail("timed out after 10s — a module may have failed to load"); }, 10000);
+  window.addEventListener("error", function(e) {
+    if (!window.__nrBoot) return; // boot() already cleared it: a later runtime error is a normal bug, not a boot failure
+    nrBootFail((e && (e.message || (e.error && e.error.message))) || "unknown error");
+  });
+})();
+</script>
 </head>
 <body>
 <!-- VoiceOver first pass (open-items.md DAW review item 12's other half,

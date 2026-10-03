@@ -23,9 +23,16 @@
 // A stale-index footgun is avoided by design: index.html is only ever served
 // from cache when the network failed or timed out.
 
-const SW_VERSION = "nr-v5";
+const SW_VERSION = "nr-v6"; // bumped: module cutover (docs/split-plan.md §4 step 0b) adds APP_MODULES to PRECACHE
 const CACHE = "night-roll-" + SW_VERSION;
+// APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
+// rule 8) — index.html's modulepreload list, this list, devtools.js's
+// mirrored-module imports, and the real src/ file listing must all describe
+// the same set (tests/modules.test.mjs enforces it); a module missing here
+// means a 404 offline instead of a silent fallback.
+const APP_MODULES = ["src/app.js", "src/edition.js", "src/devtools.js", "src/main.js"];
 const PRECACHE = ["./", "index.html", "vendor/vexflow.js", "app.webmanifest",
+                  "src/app.js", "src/edition.js", "src/devtools.js", "src/main.js",
                   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 const NAV_TIMEOUT_MS = 4000;
 
@@ -138,6 +145,13 @@ self.addEventListener("fetch", e => {
   }
   if (rel.startsWith("vendor/soundfonts/")) { e.respondWith(cacheFirst(req, stripBust(req.url))); return; }
   if (rel === "vendor/vexflow.js" || rel === "app.webmanifest" || rel.startsWith("icons/")) { e.respondWith(cacheFirst(req, rel)); return; }
+  // src/ (docs/split-plan.md §4 step 0b): network-first like the page itself,
+  // not cache-first like the other precached assets — Pages' max-age=600 on
+  // index.html would otherwise let a browser serve a NEW index.html (which
+  // always points at the same src/main.js URL) alongside STALE cached
+  // modules from the previous deploy. revalidate bypasses the HTTP cache too
+  // (the index.html navigation handler above hit the same bug once, 2026-09-26).
+  if (rel.startsWith("src/")) { e.respondWith(networkFirst(req, {timeout: NAV_TIMEOUT_MS, key: rel, revalidate: true})); return; }
   if (rel.startsWith("albums/")) { e.respondWith(networkFirst(req, {timeout: 0, key: stripBust(req.url)})); return; }
   // anything else same-origin (tools/nsf, docs): network, cache as a courtesy
   e.respondWith(networkFirst(req, {timeout: 0, key: stripBust(req.url)}));

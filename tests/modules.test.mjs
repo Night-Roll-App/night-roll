@@ -1,12 +1,13 @@
-// tests/modules.test.mjs — docs/split-plan.md §0a: the harness's module mode
-// (tested here against a small fixture app, since index.html hasn't cut over
-// yet — see tests/split-fixtures/tiny-app/) and tools/split/{scope,check,
-// move,promote-state}.mjs, unit-tested on small in-memory fixtures (no real
-// src/ exists before step 0b, so checkSrc() against the real repo is
-// expected to report zero files — that's asserted below, not worked around).
+// tests/modules.test.mjs — docs/split-plan.md §0a/0b: the harness's module
+// mode (tested here against a small fixture app for its own mechanics — see
+// tests/split-fixtures/tiny-app/ — AND, once 0b lands, against the real
+// app), tools/split/{scope,check,move,promote-state}.mjs unit-tested on
+// small in-memory fixtures, and (post-0b) checkSrc()/rule 8 run against the
+// real src/ tree.
 import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createApp, appSource } from "./harness.mjs";
 import { parseModule, declaredNames, freeIdentifiers, topLevelImports, topLevelMutableNames } from "../tools/split/scope.mjs";
@@ -186,10 +187,36 @@ test("check rule 8: manifests (modulepreload / sw.js / devtools / src listing) m
   assert.match(v[0].message, /"b\.js"/);
 });
 
-test("checkSrc: the real repo has no src/ yet (pre-0b) — reports zero files, ok", () => {
+test("checkSrc: the real repo, post-0b-cutover — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
   const result = checkSrc(path.join(ROOT, "src"));
-  assert.equal(result.fileCount, 0);
-  assert.equal(result.ok, true);
+  assert.equal(result.fileCount, 4, "app.js, edition.js, main.js, devtools.js");
+  assert.deepEqual(result.violations.map(v => v.message), [
+    'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
+  ], "convertAnchors() references an undeclared oldBpb (src/app.js ~line 13996) — a real latent ReferenceError bug in the app that predates the split, surfaced here for the first time by rule 1's static scan; out of scope for the cutover itself (a verbatim move), flagged in open-items.md instead of silently fixed");
+});
+
+// ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's
+// 0a Deviations note: "0b should call ruleManifestsEqual() ... once it
+// creates those four things, and keep it there for every later step") ------
+
+function realModuleManifests() {
+  const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const sw = readFileSync(path.join(ROOT, "sw.js"), "utf8");
+  const devtools = readFileSync(path.join(ROOT, "src/devtools.js"), "utf8");
+  const modulepreload = [...html.matchAll(/<link rel="modulepreload" href="src\/([^"]+)">/g)].map(m => m[1]);
+  const appModules = JSON.parse(sw.match(/const APP_MODULES = (\[[\s\S]*?\]);/)[1]).map(p => p.replace(/^src\//, ""));
+  // devtools.js only imports the modules it actually mirrors (app.js,
+  // edition.js — main.js has no exports worth mirroring, and a module can't
+  // import itself), so its real import list is 2 short of the full set by
+  // design. "+ itself + main.js" accounts for exactly that gap, not a bug.
+  const devtoolsImports = [...devtools.matchAll(/import \* as \w+ from "\.\/([^"]+)";/g)].map(m => m[1]).concat(["devtools.js", "main.js"]);
+  const srcListing = readdirSync(path.join(ROOT, "src")).filter(f => f.endsWith(".js"));
+  return { "index.html modulepreload": modulepreload, "sw.js APP_MODULES": appModules, "devtools.js imports (+ itself, main.js)": devtoolsImports, "src/ listing": srcListing };
+}
+
+test("check rule 8: the real repo's four module manifests (modulepreload, sw.js precache, devtools mirror, src/ listing) describe the same set", () => {
+  const v = ruleManifestsEqual(realModuleManifests());
+  assert.deepEqual(v, []);
 });
 
 test("checkSrc: catches a real violation across two fixture files on disk", async () => {

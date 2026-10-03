@@ -74,8 +74,16 @@ before touching the player.
   detectable: hand the same file over twice and the second time the
   source path is gone and `handoffs/` already holds it. Refuse to
   overwrite an existing file of that name; say so instead.
-- One-file app: index.html, no build step. Match its comment style —
-  comments explain constraints, not narration.
+- **No build step; ES modules, not one file** (Josh, 2026-10-02). index.html is
+  markup + CSS; the app is plain browser ES modules under src/ (entry
+  src/main.js), served as-is — no bundler, transpiler or TypeScript. Map:
+  NIGHT-ROLL.md "Module map"; rules: docs/split-plan.md §2. All mutable app
+  state is on `S` (src/state.js) — no top-level `let` elsewhere; no top-level
+  side effects (wiring goes in init*() called by main.js in order); top-level
+  names stay unique across src/; buttons change only via setControl().
+  A new module goes in index.html's modulepreload list and sw.js APP_MODULES
+  (tests enforce); `node tools/split/check.mjs` must pass. Match the comment
+  style — comments explain constraints, not narration.
 - **No one-time hacks in capture engines** (Josh, 2026-09-27). A game's
   identity may only select WHERE to look (a manifest entry: engine
   dialect, where a rip keeps its song number) and only after generic
@@ -90,7 +98,9 @@ before touching the player.
 ## Where things are
 
 - Tests: tests/night-roll.test.mjs + tests/nsf.test.mjs (vm harness in
-  tests/harness.mjs extracts the inline script); tests/e2e/ (Playwright).
+  tests/harness.mjs loads src/ as real ES modules (vm.SourceTextModule,
+  --experimental-vm-modules); run("expr") sees S and every module's
+  top-level names); tests/e2e/ (Playwright).
 - Query tools: tools/*.mjs (at, span, pitch-census, song-diff,
   annotations, loop-targets) — harness-backed, facts only.
 - Pipeline: tools/nsf/ (6502+APU capture), tools/dump_notes.mjs

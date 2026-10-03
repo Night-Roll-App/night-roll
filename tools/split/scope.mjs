@@ -102,12 +102,58 @@ export function topLevelImports(ast) {
   return map;
 }
 
-export function hoistedNames(block) { // var + function decls directly in a block (function-scoped)
+/** `var` (and function-declaration) names that hoist to the function whose
+ *  body is `block` — recurses into nested non-function blocks (if/for/
+ *  while/switch/try/labeled), since `var` hoists through all of them to the
+ *  nearest function, not just the top level of the function's own body.
+ *  Does NOT recurse into a nested function/arrow's own body (new scope). */
+export function hoistedNames(block) {
   const names = [];
-  for (const s of block.body || []) {
-    if (s.type === "FunctionDeclaration" && s.id) names.push(s.id.name);
-    if (s.type === "VariableDeclaration" && s.kind === "var") s.declarations.forEach(d => names.push(...patternNames(d.id)));
+  function walk(node) {
+    if (!node) return;
+    switch (node.type) {
+      case "VariableDeclaration":
+        if (node.kind === "var") node.declarations.forEach(d => names.push(...patternNames(d.id)));
+        return;
+      case "FunctionDeclaration":
+        if (node.id) names.push(node.id.name);
+        return;
+      case "BlockStatement":
+        node.body.forEach(walk);
+        return;
+      case "IfStatement":
+        walk(node.consequent);
+        walk(node.alternate);
+        return;
+      case "ForStatement":
+        walk(node.init);
+        walk(node.body);
+        return;
+      case "ForInStatement":
+      case "ForOfStatement":
+        walk(node.left);
+        walk(node.body);
+        return;
+      case "WhileStatement":
+      case "DoWhileStatement":
+        walk(node.body);
+        return;
+      case "TryStatement":
+        walk(node.block);
+        if (node.handler) walk(node.handler.body);
+        walk(node.finalizer);
+        return;
+      case "SwitchStatement":
+        node.cases.forEach(c => c.consequent.forEach(walk));
+        return;
+      case "LabeledStatement":
+        walk(node.body);
+        return;
+      default:
+        return; // expressions, return/throw, etc. — nothing to hoist
+    }
   }
+  (block.body || []).forEach(walk);
   return names;
 }
 export function blockScopedNames(block) {
@@ -140,6 +186,16 @@ export function freeIdentifiers(node) {
         walk(n.object, bound);
         if (n.computed) walk(n.property, bound);
         return;
+      // labels (`outer: for (...) { break outer; }`) are their own namespace,
+      // never a variable reference — the generic fallback below would
+      // otherwise walk into BreakStatement/ContinueStatement's `label` and
+      // LabeledStatement's `label` as if they were Identifier uses.
+      case "LabeledStatement":
+        walk(n.body, bound);
+        return;
+      case "BreakStatement":
+      case "ContinueStatement":
+        return;
       case "Property":
       case "MethodDefinition":
         if (n.computed) walk(n.key, bound);
@@ -163,6 +219,7 @@ export function freeIdentifiers(node) {
       case "FunctionExpression": {
         const inner = new Set(bound);
         if (n.id) inner.add(n.id.name);
+        inner.add("arguments"); // every non-arrow function has its own implicit `arguments` — not free, and NOT a browser global (an arrow or module top level has none)
         n.params.forEach(p => { patternNames(p).forEach(nm => inner.add(nm)); if (p.type === "AssignmentPattern") walk(p.right, bound); });
         hoistedNames(n.body).forEach(nm => inner.add(nm));
         walk(n.body, inner);

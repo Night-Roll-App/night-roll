@@ -151,10 +151,26 @@ webkitOfflineAudioContext
 AudioWorkletNode
 MediaStream
 MediaRecorder
+BaseAudioContext
+AudioNode
+AudioBuffer
 
 # ---- MIDI / speech / misc browser surface this app touches ----
 webkitSpeechRecognition
 SpeechRecognition
+
+# ---- window / misc platform surface (docs/split-plan.md §4 step 0b, first
+# real scan of the whole app — these were always used, just never checked) ----
+PerformanceObserver
+innerWidth
+innerHeight
+DecompressionStream
+escape
+unescape
+
+# ---- vendor (classic <script src="vendor/vexflow.js">, not a module — see
+# index.html's modulepreload/script tags) ----
+Vex
 
 # ---- Capacitor (native bridge; platform/native.js) ----
 Capacitor

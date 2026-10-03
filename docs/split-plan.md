@@ -238,6 +238,25 @@ Each step below gives: what moves, what must not change, how to verify. Every st
   - browser on localhost and on Pages after deploy
   - **iPad build launches and plays one song**, which proves module loading in the WKWebView
   - offline relaunch on the iPad, which proves the precache
+- **Done** (2026-10-02, Opus builder, worktree branch). `tools/split/cutover.mjs`
+  did the extraction; src/{app,edition,main,devtools}.js + src/package.json
+  written, index.html now `<script type="module" src="src/main.js">` plus a
+  modulepreload list and the boot watchdog. sw.js bumped to nr-v6 with
+  APP_MODULES + src/ routing. package.mjs rewrites src/edition.js (not
+  index.html) and gained a reachability guard. See "Deviations (0b)" below
+  for where this diverged from the letter above, including two check.mjs
+  exemptions this step needed (app.js the legacy container; main.js's
+  top-level init() calls) and three real, narrow scope.mjs bugs this step's
+  first real-code run surfaced and fixed. npm test: night-roll.test.mjs 417
+  (416 pass + 1 pre-existing environment skip, ff1.nsf vault-only), bridge
+  10/10, pwa 3/3, package 3/3 (new boot-from-dist test included), modules 32
+  (was 30; +1 real-repo checkSrc assertion, +1 rule-8 wiring test) — all
+  unchanged from before 0b apart from the counts noted. instruments.test.mjs's
+  7 "real rip" failures are the known vault-only-fixture gap, untouched by
+  this step. `node tools/split/check.mjs` is clean except one PRE-EXISTING
+  app bug this step's first real scan surfaced (not fixed — out of scope for
+  a verbatim move): `convertAnchors()` (src/app.js, originally index.html
+  ~13996) references an undeclared `oldBpb` — queued in open-items.md.
 
 **1. All `let`s → `S`** (`promote-state.mjs` over src/app.js).
 - Must not change: names, logic.
@@ -399,6 +418,96 @@ Where step 0a's implementation diverged from this document's letter, smallest-wo
   22/23" phrasing. `tools/vm-flag.mjs`'s re-exec and package.json's flag
   both depend on that being true; if a future Node ships it unflagged,
   both become harmless no-ops (vm-flag.mjs's `typeof` check short-circuits).
+
+## Deviations (0b, 2026-10-02)
+
+- **check.mjs needed two exemptions this step's real code discovered, both
+  now in the tool, not worked around in the test:**
+  - **`app.js` (the "legacy container") is in the layer table at the same
+    tier as main.js/devtools.js**, and exempt from rule 3 (top-level
+    mutable), via a new `LEGACY_CONTAINER` export (same pattern as
+    `SERIALIZED`). It still holds ~203 top-level `let`s until step 1, and it
+    doesn't fit the layer table like a real module — layering it with
+    main.js/devtools.js means main.js importing it, and it importing any
+    real module as later steps carve pieces out, both pass rule 5 without
+    further changes. Deleted in step 15, along with this exemption.
+  - **`main.js` is exempt from rule 4** (top-level-initializer-references-
+    layer-0-only): its entire job, per §1's table, is top-level calls into
+    every layer ("calls init*() in original file order, then boot()"), and
+    ES module evaluation order (dependencies before dependents) already
+    guarantees everything it calls has finished evaluating — rule 4 exists
+    to stop an ORDINARY module from depending on not-yet-ready state, a
+    hazard main.js can't hit by construction. (`src/devtools.js` hit the
+    same rule for a top-level `{app, edition}` object literal; fixed by
+    moving that literal inside `exposeGlobals()` instead of exempting the
+    file — the cleaner fix where the call site allows it.)
+- **Three narrow, pre-existing scope.mjs bugs, surfaced by this step being
+  the first real code `freeIdentifiers`/`hoistedNames` ever ran against**
+  (0a's unit tests used small fixtures that didn't happen to hit these):
+  labeled statements (`outer: for (...) { break outer; }`) were walked as if
+  `break`/`continue`'s label were a variable reference; a non-arrow
+  function's implicit `arguments` wasn't treated as bound; and `hoistedNames`
+  only collected `var`/function declarations directly in a block, not
+  recursively through nested if/for/while/switch/try/labeled blocks (`var`
+  hoists through all of them to the nearest function). All three are fixed
+  in scope.mjs itself (shared by check.mjs/move.mjs/promote-state.mjs), not
+  worked around per-callsite. Reducing `check.mjs`'s real-repo violation
+  count from 16 to the one genuine app bug below is what surfaced the first
+  two; the third (`libFiles`, src/app.js ~17010) only showed up after.
+- **package.mjs's `chipTableModules()` must read `src/app.js`, not
+  index.html** — it scans the CHIPS table's `files:`/`shared:` literals,
+  which are JS and moved with everything else. Missing this would have
+  silently dropped `sounding.mjs`/`note-preview.mjs` from the runtime module
+  list again — the exact bug a 2026-09-28 comment in that function already
+  warns about ("every console render on the iPad fell to synth"). Caught by
+  diffing the runtime module count (45 broken → 47 fixed) against a
+  `git show HEAD:index.html` baseline before trusting the cutover.
+- **~24 night-roll.test.mjs/pwa.test.mjs assertions switched from reading
+  index.html to `appSource()`** (§3.3's "about 52 html. uses, mostly
+  markup" — that estimate undercounted the assertions that are genuinely JS,
+  not markup/CSS, mixed into otherwise-markup tests). `appSource()` is a
+  strictly safe superset (index.html's text is an unchanged PREFIX of it,
+  so every markup/CSS assertion keeps matching at the same positions; a JS
+  assertion that used to find its pattern inline now finds the identical
+  bytes in src/app.js instead) — confirmed by running the full suite twice:
+  once classifying each site by hand (missed one — the import-hub test's
+  trailing `addEventListener("drop"`/`makeWindow(` checks, not caught until
+  the test run itself failed), once blanket-switching everything except the
+  one site that must stay on raw index.html (`tests/build_help.mjs` parity,
+  which reads index.html directly itself). The second pass is what's
+  shipped; don't re-narrow it by hand in a later step without re-running the
+  full suite.
+- **One pre-existing app bug found, not fixed**: `convertAnchors()`
+  (src/app.js, originally index.html ~13996) has
+  `n.q2 || oldBpb`, and `oldBpb` is never declared anywhere — a real,
+  one-occurrence `ReferenceError` waiting for `n.b2` truthy + `n.q2` falsy
+  at runtime. check.mjs rule 1's first real-code scan found it; a verbatim
+  move must not fix app logic, so it's queued in open-items.md instead.
+- **One test fixed for a real module-boundary difference, not a false
+  positive**: the chip-stream-mode test monkeypatched `trackGain` via
+  `globalThis.trackGain = …`. That only works in the legacy (classic-script)
+  harness mode, where a top-level function declaration's binding and its
+  `globalThis` property are the same slot; a module's top-level bindings are
+  never `globalThis` properties (true in a real browser too, not just the
+  vm harness), so the patch silently stopped reaching the real `trackGain`
+  callers use. Fixed to a bare `trackGain = …` inside the `run()` string,
+  which the harness's `with`-scope `scopeProxy` already routes to the
+  declaring module's real setter (§3.2) — the same mechanism ~35 other
+  monkeypatched functions (`appConfirm`, `loadSong`, `play`, …) already use
+  correctly. Checked the rest of tests/*.mjs for the same pattern (every
+  `globalThis.NAME =` site cross-referenced against app.js's top-level
+  declared names): `trackGain` was the only real hit — every other
+  `globalThis.X` assignment is either a `__`-prefixed test-only sentinel or
+  an actual browser global (`fetch`, `location`, `Worker`, …), both
+  unaffected by the cutover.
+- **The boot watchdog clears at the START of `boot()`, not "the end of
+  `boot()`"** as this document's step-0b bullet says. The risk the watchdog
+  guards against is module 404/syntax failure — if that happens, `boot()`
+  never starts running at all, so reaching its first line already proves
+  the module graph loaded. Clearing at the end instead would risk a false
+  alarm from a slow catalog fetch (no network, a cold CDN, …), which is an
+  existing, unrelated condition `loadSong`/`setInfo` already handle with a
+  message in the UI, not a reason to show the boot-failure panel.
 
 ## 7. Estimates (Sonnet builder hours, excluding review and CI wait)
 
