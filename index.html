@@ -8188,6 +8188,11 @@ let wakeInFlight = false;
 document.addEventListener("visibilitychange", async () => {
   if (document.hidden || !audio || audio.state === "closed" || wakeInFlight) return; // a closed one waits for the tap
   if (playing && audio.state === "running") return;
+  // idle: back to the mixing session BEFORE the wake. A tap, ▶ or the click
+  // left "playback" behind if the app was hidden when it ended (every revert
+  // skips a hidden page), and resuming the context under "playback" stopped
+  // YouTube the moment Josh switched back in (2026-10-02)
+  if (!playing && !albumRun && !met.on) audioSessionType("ambient");
   wakeInFlight = true;
   try { await resumeAudio(); } finally { wakeInFlight = false; }
 });

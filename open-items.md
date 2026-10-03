@@ -4959,3 +4959,5 @@ Josh: "View ▾ is too tall — make EVERY section an expanding sub-menu." Gener
 ## DONE 2026-10-02 19:55 — undo/redo/copy/paste locked in place (Josh, Terminal #48): ⟲ ⟳ ⧉ 📋 moved to the start of #editrow, ahead of Select/Pencil/Erase and every per-mode control, so Pencil no longer pushes them
 
 ## DONE 2026-10-02 20:05 — copy/paste icons (Josh, Terminal #49): ⧉/📋 replaced with Google Material Icons content_copy/content_paste (outlined, Apache-2.0, inline SVG); status lines say "Copy"/"Paste" instead of the glyphs
+
+## DONE 2026-10-02 20:15 — switching back into Night Roll stopped YouTube (Josh, Terminal #51): a tap/▶/click that ended while the app was hidden left the session on "playback" (every revert skips a hidden page), and the wake on return resumed the engine under it. The return now sets "ambient" first when nothing is playing. Taps still use "playback" (he accepted that a note tap may stop YouTube). Needs his ear on the iPad.

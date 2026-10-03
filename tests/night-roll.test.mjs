@@ -6648,6 +6648,21 @@ test("audio session: 'ambient' (mixes with YouTube etc.) until Night Roll plays;
   } finally { run(`navigator.audioSession = __navAS;`); }
 });
 
+test("audio session: switching back into Night Roll while idle returns to 'ambient' before waking the engine, so YouTube keeps playing (Josh, 2026-10-02)", async () => {
+  run(`globalThis.__navAS = navigator.audioSession; navigator.audioSession = {type: "playback"};
+       globalThis.__aud = audio; audio = {state: "suspended", resume: async () => {}}; playing = false; albumRun = null; met.on = false;
+       globalThis.__ra = resumeAudio; resumeAudio = async () => {};`);
+  try {
+    app.docDispatch({type: "visibilitychange"});
+    await new Promise(r => setTimeout(r, 0));
+    assert.equal(val(`navigator.audioSession.type`), "ambient");
+    run(`navigator.audioSession.type = "playback"; met.on = true;`); // the click still running: leave it alone
+    app.docDispatch({type: "visibilitychange"});
+    await new Promise(r => setTimeout(r, 0));
+    assert.equal(val(`navigator.audioSession.type`), "playback");
+  } finally { run(`navigator.audioSession = __navAS; audio = __aud; resumeAudio = __ra; met.on = false; appErrors.length = 0; appDebug.length = 0;`); }
+});
+
 test("⚠ log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on; chrome density follow-up (2026-10-01 pm, Josh's ruling #3): the footer chip shows only while something's UNREAD, hidden at 0 — View ▾ → BACKGROUND → ⚠ Messages reaches the same sheet always", () => {
   run(`appErrors.length = 0; appDebug.length = 0; localStorage.removeItem("ff1roll-debuglog"); localStorage.removeItem("ff1roll-ask-seen-max"); errChip();`);
   assert.equal(run(`document.getElementById("errbtn").style.display`), "none", "nothing logged yet: hidden");
