@@ -4646,9 +4646,13 @@ function endPointer(e) {
   }
   else if (S.drag.rangeEdge && S.drag.moved && S.playing && S.rangeSel && S.rangeSel.cycle) {
     // new boundaries take effect NOW: the schedule pre-computes wrap passes, so
-    // rather than desync them, restart the cycle from its (new) top — the same
-    // always-from-the-top rule ▶ already follows (Josh, 2026-08-22)
-    const from = tickToSec(S.song, S.rangeSel.a);
+    // the cycle is rescheduled — from where the playhead IS when it's still
+    // inside the new span (Josh, 2026-10-03: stretching the end while it plays
+    // "should just go to the end of the selection", not jump back), from the
+    // new top only when the stretch left the playhead outside it
+    const at = secToTick(S.song, playSec());
+    const inside = at >= S.rangeSel.a && at < S.rangeSel.b;
+    const from = tickToSec(S.song, inside ? at : S.rangeSel.a);
     stop();
     play(from).catch(() => {});
   }

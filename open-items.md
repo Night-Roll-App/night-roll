@@ -5433,3 +5433,5 @@ Josh published lotion and the breadcrumb did not change. Cause (src/app.js songW
 ## DONE 2026-10-03 15:45 — ruler selection survives a relaunch (Josh, Terminal #78): rangeSel kept per song in localStorage (ff1roll-range-<key>, a view pref), written from draw() when it changes, restored in setSong, carried by renameLocalKeys
 
 ## DONE 2026-10-03 16:00 — opening an annotation no longer raises the iPad keyboard (Josh, Terminal #79): openEditor focuses the text box only for a NEW text note; opening an existing one of any kind blurs instead
+
+## DONE 2026-10-03 16:45 — stretching the cycle while it plays keeps the playhead (Josh, Terminal #81): the rangeEdge drag end restarts playback from where the playhead is when it is still inside the new span (from the new top only otherwise)
