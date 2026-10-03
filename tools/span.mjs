@@ -1,6 +1,7 @@
 // tools/span.mjs <song> <from> <to> [--json]
 // All events in a range, per track, plus the span's pitch-class set.
 // Pitch-class set only — NOT a chord name. Facts only.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { loadSong, parseBQ, fmtBQ, pitchName, PC_NAMES, isDrumTrack, outJson } from "./query-lib.mjs";
 
 const args = process.argv.slice(2).filter(a => a !== "--json");
@@ -8,7 +9,7 @@ const json = process.argv.includes("--json");
 const [songArg, fromArg, toArg] = args;
 if (!songArg || !fromArg || !toArg) { console.error("usage: span.mjs <song> <from bar.beat> <to bar.beat> [--json]"); process.exit(1); }
 
-const doc = loadSong(songArg);
+const doc = await loadSong(songArg);
 const t0 = parseBQ(doc, fromArg), t1 = parseBQ(doc, toArg);
 const pcs = new Set();
 const out = {song: doc.path, from: fromArg, to: toArg, tracks: [], pitchClassSet: []};

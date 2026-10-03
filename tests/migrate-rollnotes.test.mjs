@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { createApp } from "./harness.mjs";
 import { migrateText } from "../tools/migrate-rollnotes-v2.mjs";
 
-const app = createApp();
+const app = await createApp();
 
 test("migrate v1 -> v2: plain file with no provenance note gets a bare origin.kind, notes untouched, saved -> stamp", () => {
   const v1 = JSON.stringify({

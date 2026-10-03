@@ -1,8 +1,18 @@
-// Test harness: extracts the inline <script> from index.html and runs it in a
-// Node vm with a minimal DOM stub, so the app can stay a single file with no
-// build step. Top-level `let`/`const` bindings persist in the context's global
-// lexical scope, so later run() calls can read and assign them like a second
-// <script> tag would.
+// Test harness: runs the app in a Node vm with a minimal DOM stub, so it can
+// be tested with no build step. Two modes (docs/split-plan.md §3.1), chosen
+// by whether index.html has cut over to `<script type="module" src=
+// "src/main.js">` yet:
+//   - legacy: extracts the inline <script> and runs it in the vm context.
+//     Top-level `let`/`const` bindings persist in the context's global
+//     lexical scope, so later run() calls can read and assign them like a
+//     second <script> tag would. (Pre-0b: this is the only mode reachable —
+//     index.html has no module script yet.)
+//   - module: loads src/main.js and its import graph as real
+//     vm.SourceTextModules in the same context (needs node
+//     --experimental-vm-modules — package.json's test scripts carry the
+//     flag). run() sees every module's top-level names (and `S`'s fields)
+//     through a `with`-scope Proxy (§3.2), so ~2,076 existing run() call
+//     sites keep working unedited once 0b cuts index.html over.
 //
 // Event injection (2026-08-23): elements/document/window RECORD their
 // listeners and expose dispatchEvent, so vm tests can drive the real pointer
@@ -11,10 +21,11 @@
 // clock (app.tick(ms) fires them and advances performance.now()), which makes
 // the 230ms hold-to-grab dwell deterministic. WebAudio is the same inert fake
 // the e2e suite injects. None of this touches index.html.
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import vm from "node:vm";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { parseModule } from "../tools/split/scope.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -211,12 +222,9 @@ function fakeOfflineAudio(FakeCtx) {
   };
 }
 
-export function createApp(opts = {}) {
-  const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
-  const m = html.match(/<script>\n([\s\S]*?)<\/script>/); // inline script only (vendor tag has src=)
-  if (!m) throw new Error("inline <script> not found in index.html");
-  if (opts.edition) m[1] = m[1].replace('const EDITION = "web";', 'const EDITION = "' + opts.edition + '";'); // the product build's one-line change (tools/package.mjs)
-
+// Everything BOTH modes share: the fake DOM/clock/audio and the sandbox
+// object a vm.Context is built from. Doesn't touch index.html or src/ at all.
+function buildRuntime(opts = {}) {
   const elements = new Map();
   const store = new Map();
   // Learning/Normal mode (P0): the existing suite predates modes and exercises
@@ -312,12 +320,8 @@ export function createApp(opts = {}) {
     btoa: (s) => Buffer.from(s, "binary").toString("base64"),
     Math, JSON, // share so test-side values compare cleanly
   };
-  const context = vm.createContext(sandbox);
-  vm.runInContext(m[1], context, { filename: "index.html<script>" });
   return {
-    context,
-    /** Evaluate code inside the app's global scope; returns the result. */
-    run: (code) => vm.runInContext(code, context),
+    sandbox,
     /** The in-memory localStorage backing store (for asserting persistence). */
     store,
     /** Advance the fake clock, firing due setTimeout callbacks in order. */
@@ -329,6 +333,171 @@ export function createApp(opts = {}) {
     docDispatch: (evt) => documentEl.dispatchEvent(evt),
     winDispatch: (evt) => windowEl.dispatchEvent(evt),
   };
+}
+
+/** Builds a fresh app (vm context + module graph or legacy inline script) and
+ *  returns the handle every test and tool already uses. ASYNC (docs/
+ *  split-plan.md §3.1: vm.SourceTextModule#link is async in Node 22/23), so
+ *  every call site is `await createApp(...)` — mechanical, no behavior change
+ *  for the ~86 existing call sites. `opts.root` lets a test boot a different
+ *  app tree (e.g. the packaged iPad/Pages output under dist/), defaulting to
+ *  this repo's root. */
+export async function createApp(opts = {}) {
+  const root = opts.root || ROOT;
+  const html = readFileSync(path.join(root, "index.html"), "utf8");
+  // the cutover sentinel (docs/split-plan.md §4 step 0b): until index.html
+  // has this tag, there IS no src/main.js to load, so legacy is the only
+  // reachable path — true for every song/tool/test through step 0a.
+  if (/<script\s+type="module"\s+src="src\/main\.js"\s*>/.test(html)) return createAppModule(opts, root);
+  return createAppLegacy(opts, html);
+}
+
+function createAppLegacy(opts, html) {
+  const m = html.match(/<script>\n([\s\S]*?)<\/script>/); // inline script only (vendor tag has src=)
+  if (!m) throw new Error("inline <script> not found in index.html");
+  if (opts.edition) m[1] = m[1].replace('const EDITION = "web";', 'const EDITION = "' + opts.edition + '";'); // the product build's one-line change (tools/package.mjs)
+
+  const rt = buildRuntime(opts);
+  const context = vm.createContext(rt.sandbox);
+  vm.runInContext(m[1], context, { filename: "index.html<script>" });
+  return {
+    context,
+    /** Evaluate code inside the app's global scope; returns the result. */
+    run: (code) => vm.runInContext(code, context),
+    store: rt.store, tick: rt.tick, el: rt.el,
+    dispatch: rt.dispatch, docDispatch: rt.docDispatch, winDispatch: rt.winDispatch,
+  };
+}
+
+// ---- module mode (docs/split-plan.md §3.1-3.2) ---------------------------
+// Dead code until step 0b adds src/main.js and flips index.html's script tag
+// (createApp() above never reaches here before then) — exercised today only
+// by tests/modules.test.mjs's small fixture app, ahead of that cutover.
+
+/** A module's own top-level declared names, each {name, mutable} — `const`
+ *  is not mutable (no setter); function/class declarations and `let`/`var`
+ *  are (ES modules allow reassigning a top-level function/class binding,
+ *  same as `let`). Imports are deliberately excluded: the DECLARING module's
+ *  footer is the one tests rebind through (§3.2 — "rebinding works across
+ *  modules" via the live import binding), not every module that imports it. */
+function moduleMeta(source, abs) {
+  const { ast } = parseModule(source, abs);
+  const names = [];
+  for (const raw of ast.body) {
+    // every top-level declaration the mover produces is `export`ed (the
+    // app's convention — §1), so unwrap ExportNamedDeclaration the same way
+    // scope.declaredNames does; an un-exported top-level binding (true only
+    // of pre-0b fixtures/tests, never of real moved code) is still found.
+    const node = raw.type === "ExportNamedDeclaration" && raw.declaration ? raw.declaration : raw;
+    if (node.type === "FunctionDeclaration" && node.id) names.push({ name: node.id.name, mutable: true });
+    else if (node.type === "ClassDeclaration" && node.id) names.push({ name: node.id.name, mutable: true });
+    else if (node.type === "VariableDeclaration")
+      for (const d of node.declarations) if (d.id.type === "Identifier") names.push({ name: d.id.name, mutable: node.kind !== "const" });
+  }
+  return { names };
+}
+
+/** The `;export const __nr$ = {get: {...}, set: {...}};` footer (§3.2) —
+ *  bare references inside it resolve to the module's OWN top-level bindings
+ *  because it's appended to that module's own source text before parsing. */
+function footerForMeta(meta) {
+  if (!meta.names.length) return "";
+  const gets = meta.names.map(({ name }) => `${JSON.stringify(name)}: () => ${name}`).join(", ");
+  const sets = meta.names.filter(n => n.mutable).map(({ name }) => `${JSON.stringify(name)}: (v) => (${name} = v)`).join(", ");
+  return `\n;export const __nr$ = {get: {${gets}}, set: {${sets}}};\n`;
+}
+
+/** Reads a src/ file, applying the edition swap (§3.1) only to edition.js. */
+function readSrcFile(abs, opts) {
+  const source = readFileSync(abs, "utf8");
+  if (opts.edition && /[\\/]edition\.js$/.test(abs))
+    return source.replace(/export const EDITION = "[^"]*";/, `export const EDITION = "${opts.edition}";`);
+  return source;
+}
+
+/** `scopeProxy(mods, metaByAbs)` (§3.2): has()/get()/set() resolve a bare
+ *  name to S's matching field (once state.js exists, step 1+) or to the
+ *  declaring module's footer accessor; everything else falls through to the
+ *  `with`-block's outer scope, i.e. the vm context's real globals. */
+function scopeProxy(mods, metaByAbs) {
+  const ownerOf = new Map(); // top-level name -> owning module's abs path
+  for (const [abs, meta] of metaByAbs) for (const { name } of meta.names) ownerOf.set(name, abs);
+  let stateAbs; // lazy + cached: found on first use, once any module evaluates `S`
+  const findStateAbs = () => (stateAbs === undefined ? (stateAbs = ownerOf.get("S") ?? null) : stateAbs);
+  const stateObj = () => { const abs = findStateAbs(); return abs ? mods.get(abs).namespace.S : null; };
+  return new Proxy({}, {
+    has(_, n) {
+      if (typeof n !== "string") return false;
+      const S = stateObj();
+      if (S && Object.prototype.hasOwnProperty.call(S, n)) return true;
+      return ownerOf.has(n);
+    },
+    get(_, n) {
+      if (n === Symbol.unscopables || typeof n !== "string") return undefined; // with() reads this once per block
+      const S = stateObj();
+      if (S && Object.prototype.hasOwnProperty.call(S, n)) return S[n];
+      const abs = ownerOf.get(n);
+      return abs === undefined ? undefined : mods.get(abs).namespace.__nr$.get[n]();
+    },
+    set(_, n, v) {
+      const S = stateObj();
+      if (S && Object.prototype.hasOwnProperty.call(S, n)) { S[n] = v; return true; }
+      const abs = ownerOf.get(n);
+      if (abs === undefined) throw new ReferenceError(`${n} is not defined`);
+      const info = metaByAbs.get(abs).names.find(x => x.name === n);
+      if (!info?.mutable) throw new TypeError(`"${n}" is const in ${path.basename(abs)}`);
+      mods.get(abs).namespace.__nr$.set[n](v);
+      return true;
+    },
+  });
+}
+
+async function createAppModule(opts, root) {
+  if (typeof vm.SourceTextModule !== "function")
+    throw new Error("vm.SourceTextModule is missing — run node with --experimental-vm-modules (package.json's test scripts already carry it; tools/vm-flag.mjs re-execs a direct `node tools/x.mjs` invocation with it)");
+  const rt = buildRuntime(opts);
+  const context = vm.createContext(rt.sandbox);
+  const mods = new Map(); // abs path -> vm.SourceTextModule
+  const metaByAbs = new Map(); // abs path -> {names}
+  const load = (abs) => {
+    const existing = mods.get(abs);
+    if (existing) return existing;
+    const source = readSrcFile(abs, opts);
+    const meta = moduleMeta(source, abs);
+    metaByAbs.set(abs, meta);
+    const mod = new vm.SourceTextModule(source + footerForMeta(meta), { context, identifier: pathToFileURL(abs).href });
+    mods.set(abs, mod);
+    return mod;
+  };
+  const entry = load(path.join(root, "src/main.js"));
+  await entry.link((specifier, referencingModule) => load(fileURLToPath(new URL(specifier, referencingModule.identifier))));
+  context.__nrScope = scopeProxy(mods, metaByAbs);
+  entry.evaluate(); // NOT awaited: synchronous for modules without top-level await (true of this app) — boot keeps going in microtasks exactly as it does today
+  return {
+    context,
+    run: (code) => vm.runInContext("with (__nrScope) {\n" + code + "\n}", context),
+    store: rt.store, tick: rt.tick, el: rt.el,
+    dispatch: rt.dispatch, docDispatch: rt.docDispatch, winDispatch: rt.winDispatch,
+  };
+}
+
+/** index.html plus every src/**\/*.js concatenated (§3.3) — what a test that
+ *  greps the app's JS source should search, instead of index.html alone,
+ *  once code has started moving out into modules. A no-op concatenation
+ *  (returns just index.html) until src/ exists. */
+export function appSource(root = ROOT) {
+  const html = readFileSync(path.join(root, "index.html"), "utf8");
+  const srcDir = path.join(root, "src");
+  if (!existsSync(srcDir)) return html;
+  let modulesText = "";
+  (function walk(dir) {
+    for (const ent of readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) walk(p);
+      else if (ent.name.endsWith(".js")) modulesText += "\n" + readFileSync(p, "utf8");
+    }
+  })(srcDir);
+  return html + modulesText;
 }
 
 /** Plain pointer-event object: the app's handlers only read data properties.

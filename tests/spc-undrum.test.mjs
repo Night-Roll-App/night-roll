@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { writeSongMidi } from "../tools/nsf/midi-write.mjs";
 import { planSong, gateCheck, matchDrumVoice, parseBytes } from "../tools/spc-undrum.mjs";
 
-test("spc-undrum: rename case — the only source for a voice absent from the published file", () => {
+test("spc-undrum: rename case — the only source for a voice absent from the published file", async () => {
   const pubSong = {
     ppq: 480, timesig: [4, 4], tempos: [{ tick: 0, usq: 500000 }],
     tracks: [
@@ -17,7 +17,7 @@ test("spc-undrum: rename case — the only source for a voice absent from the pu
     ],
   };
   const pubBytes = writeSongMidi(pubSong);
-  const origPub = parseBytes(pubBytes);
+  const origPub = await parseBytes(pubBytes);
   assert.equal(origPub.tracks.find(t => t.name === "drums").notes[0].ch, 9, "sanity: the drums track landed on channel 9");
 
   // the re-capture: no "drums" bucket at all, the same note sits in voice0
@@ -36,7 +36,7 @@ test("spc-undrum: rename case — the only source for a voice absent from the pu
   assert.deepEqual(plan.report.pitchDiffs, []);
 
   const newBytes = writeSongMidi(plan.song);
-  const newParsed = parseBytes(newBytes);
+  const newParsed = await parseBytes(newBytes);
   const gate = gateCheck(origPub, newParsed, plan);
   assert.equal(gate.ok, true, gate.reasons.join("; "));
 
@@ -58,7 +58,7 @@ test("spc-undrum: rename case — the only source for a voice absent from the pu
   assert.deepEqual(v1New, v1Old);
 });
 
-test("spc-undrum: merge case — the voice already has its own track in the published file", () => {
+test("spc-undrum: merge case — the voice already has its own track in the published file", async () => {
   const pubSong = {
     ppq: 480, timesig: [4, 4], tempos: [{ tick: 0, usq: 500000 }],
     tracks: [
@@ -67,7 +67,7 @@ test("spc-undrum: merge case — the voice already has its own track in the publ
     ],
   };
   const pubBytes = writeSongMidi(pubSong);
-  const origPub = parseBytes(pubBytes);
+  const origPub = await parseBytes(pubBytes);
 
   // re-capture: voice1 has all three notes merged, on its own channel (7) —
   // deliberately different from the published voice1's channel (3), to
@@ -89,7 +89,7 @@ test("spc-undrum: merge case — the voice already has its own track in the publ
   assert.equal(plan.report.channel, 3, "merge keeps the published track's own channel, not the recapture's");
 
   const newBytes = writeSongMidi(plan.song);
-  const newParsed = parseBytes(newBytes);
+  const newParsed = await parseBytes(newBytes);
   const gate = gateCheck(origPub, newParsed, plan);
   assert.equal(gate.ok, true, gate.reasons.join("; "));
 

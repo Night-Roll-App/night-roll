@@ -5,6 +5,7 @@
 // NB: the FF album's dumps are written by tools/nsf/dump-all.mjs with
 // channel identity — this tool is for MIDIs with no NSF source (compositions,
 // hand-me-down transcriptions).
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { createApp } from "../tests/harness.mjs";
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import path from "node:path";
@@ -17,7 +18,7 @@ const DIRS = process.argv.length > 2 ? process.argv.slice(2)
 for (const dir of DIRS)
 for (const f of readdirSync(path.join(ROOT, dir)).filter(f => f.endsWith(".mid")).sort()) {
   const MIDI = path.join(ROOT, dir);
-  const app = createApp();
+  const app = await createApp();
   app.context.midiBytes = [...readFileSync(path.join(MIDI, f))];
   const text = app.run(`(() => {
     const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];

@@ -20,6 +20,7 @@
 // Night-Roll-App/nsf-archive) at the paths chipVaultFile would read them from,
 // check-before-PUT, through `gh api` (no token handling here). Nothing is
 // downloaded by this script and no chip file is ever written under the repo.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, mkdtempSync, rmSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -87,7 +88,7 @@ export async function importSet(opts, log = console.log) {
   if (!opts.slug) throw new Error("--slug is required");
   const loaded = gatherFiles(opts.src);
   if (!loaded.length) throw new Error("no files in " + opts.src);
-  const app = createApp();
+  const app = await createApp();
   const C = app.context;
   const kinds = JSON.parse(app.run("JSON.stringify(Object.keys(CHIPS))"));
   // the kind, sniffed as the picker would (the first chip file names it)

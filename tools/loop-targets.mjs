@@ -1,6 +1,7 @@
 // tools/loop-targets.mjs <song>|--all [--json]
 // Loop point, target, and what every track plays AT the target — serves the
 // loop-target tonic methodology. Facts only.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { loadSong, fmtBQ, pitchName, ROOT, outJson } from "./query-lib.mjs";
 import { readdirSync } from "node:fs";
 import path from "node:path";
@@ -23,7 +24,7 @@ else { console.error("usage: loop-targets.mjs <song>|--all [--json]"); process.e
 const out = [];
 for (const sArg of songs) {
   let doc;
-  try { doc = loadSong(sArg); } catch (e) { continue; }
+  try { doc = await loadSong(sArg); } catch (e) { continue; }
   const loop = doc.rollnotes.find(n => n.loopTo !== undefined);
   if (!loop) { out.push({song: doc.path, loop: null}); continue; }
   const t = loop.loopTo;

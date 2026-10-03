@@ -28,6 +28,7 @@
 // directive, an ambiguous provenance note count, invalid JSON, …) REFUSES
 // that file: nothing is written for it, and the reason is reported. .mid
 // files are never read or written by this tool.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -185,11 +186,11 @@ export function migrateOne(app, root, rnRelPath) {
 
 // ---- the batch run -----------------------------------------------------
 
-export function runMigration({ root = ROOT, write = false, substrings = [] } = {}) {
+export async function runMigration({ root = ROOT, write = false, substrings = [] } = {}) {
   const allFiles = findRollnotesFiles(root);
   const files = substrings.length ? allFiles.filter((f) => substrings.some((s) => f.includes(s))) : allFiles;
   const albumMeta = loadAlbumMeta(root, allFiles); // preload every album's nsf meta, not just the filtered set — isCaptureKey needs it regardless of which subset we're touching
-  const app = createApp();
+  const app = await createApp();
   app.context.__albumMetaPatch = albumMeta;
   app.run("Object.assign(albumMetaCache, __albumMetaPatch);");
 
@@ -282,7 +283,7 @@ export function parseArgs(argv) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const opts = parseArgs(process.argv.slice(2));
-  const result = runMigration({ write: opts.write, substrings: opts.substrings });
+  const result = await runMigration({ write: opts.write, substrings: opts.substrings });
   process.stdout.write(formatReport(result, { write: opts.write }));
   if (result.refused.length) process.exitCode = 0; // refusals are reported, not a tool failure
 }

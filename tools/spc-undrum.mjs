@@ -34,6 +34,7 @@
 // re-capture disagrees}; no "drums" track and no note on channel 9 (MIDI
 // channel 10) survive. Any mismatch REFUSES that song — nothing is written
 // for it, and the reason is reported. Songs are otherwise independent.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -116,13 +117,13 @@ export function readRecapture(bytes) {
 // ---------------------------------------------------------------- app-parsed published song
 // Exported for tests/spc-undrum.test.mjs: the real app parser (tests/harness.mjs),
 // not a second implementation — same requirement as the live tool.
-export function parseBytes(bytes) {
-  const app = createApp();
+export async function parseBytes(bytes) {
+  const app = await createApp();
   app.context.midiBytes = [...bytes];
   const json = app.run("JSON.stringify(parseMidi(new Uint8Array(midiBytes).buffer, {trust: true}))") /* trust: a capture's own timing, as the app reads it — untrusted parsing trims an unterminated note (FF6 blazing-fire voice1) */;
   return JSON.parse(json);
 }
-function readPublished(absPath) { return parseBytes(readFileSync(absPath)); }
+async function readPublished(absPath) { return await parseBytes(readFileSync(absPath)); }
 
 // ---------------------------------------------------------------- matching
 // Which recapture voice is the published "drums" track's real source, and
@@ -300,13 +301,13 @@ async function main() {
     if (!existsSync(pubPath)) { lines.push(label + ": REFUSED (published file missing: " + pubPath + ")"); results.push({ song, ok: false }); continue; }
     if (!existsSync(recPath)) { lines.push(label + ": REFUSED (no re-capture at " + recPath + ")"); results.push({ song, ok: false }); continue; }
 
-    const origPub = readPublished(pubPath);
+    const origPub = await readPublished(pubPath);
     const recBuf = readFileSync(recPath);
     const plan = planSong(origPub, recBuf);
     if (!plan.ok) { lines.push(label + ": REFUSED (" + plan.reason + ")"); results.push({ song, ok: false }); continue; }
 
     const newBytes = writeSongMidi(plan.song);
-    const newParsed = parseBytes(newBytes);
+    const newParsed = await parseBytes(newBytes);
     const gate = gateCheck(origPub, newParsed, plan);
 
     lines.push(label + ": " + (gate.ok ? "GATE PASS" : "GATE FAIL") +
@@ -347,5 +348,5 @@ async function main() {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  await main();
 }

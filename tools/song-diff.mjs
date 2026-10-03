@@ -1,6 +1,7 @@
 // tools/song-diff.mjs <old.mid> <new.mid> [--json]
 // Per-track added / removed / changed notes, de-duplicated, grouped by bar.
 // The hand-rolled diff from 2026-08-18, correct by default.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { loadSong, fmtBQ, pitchName, outJson } from "./query-lib.mjs";
 
 const argv = process.argv.slice(2).filter(a => a !== "--json");
@@ -8,7 +9,7 @@ const json = process.argv.includes("--json");
 const [oldArg, newArg] = argv;
 if (!oldArg || !newArg) { console.error("usage: song-diff.mjs <old.mid> <new.mid> [--json]"); process.exit(1); }
 
-const A = loadSong(oldArg), B = loadSong(newArg);
+const A = await loadSong(oldArg), B = await loadSong(newArg);
 const key = n => n.t + ":" + n.p;
 const out = {old: A.path, new: B.path, tracks: []};
 const names = [...new Set([...A.tracks.map(t => t.name), ...B.tracks.map(t => t.name)])];

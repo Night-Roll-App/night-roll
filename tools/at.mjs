@@ -1,6 +1,7 @@
 // tools/at.mjs <song> <bar.beat> [--span <bar.beat>] [--json]
 // Everything sounding at a moment (or across a span), per track — onsets
 // distinguished from notes still ringing. Facts only.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { loadSong, parseBQ, fmtBQ, pitchName, outJson } from "./query-lib.mjs";
 
 const args = process.argv.slice(2).filter(a => a !== "--json");
@@ -10,7 +11,7 @@ const spanArg = spanIdx >= 0 ? args.splice(spanIdx, 2)[1] : null;
 const [songArg, bqArg] = args;
 if (!songArg || !bqArg) { console.error("usage: at.mjs <song> <bar.beat> [--span <bar.beat>] [--json]"); process.exit(1); }
 
-const doc = loadSong(songArg);
+const doc = await loadSong(songArg);
 const t0 = parseBQ(doc, bqArg);
 const t1 = spanArg ? parseBQ(doc, spanArg) : t0 + 1;
 const out = {song: doc.path, at: bqArg, span: spanArg || null, tracks: []};

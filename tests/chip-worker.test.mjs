@@ -16,8 +16,8 @@ test("tools/chip-worker.mjs parses as a module", () => {
   assert.equal(r.status, 0, r.stderr);
 });
 
-test("every rendering chip has an inline parse that does not throw (the worker's fallback)", () => {
-  const app = createApp();
+test("every rendering chip has an inline parse that does not throw (the worker's fallback)", async () => {
+  const app = await createApp();
   const kinds = JSON.parse(app.run(`JSON.stringify(Object.keys(CHIPS).filter(k => CHIPS[k].render))`));
   assert.ok(kinds.includes("psf") && kinds.includes("usf") && kinds.includes("spc"), "renderers: " + kinds.join(",")); // nsf/gbs render by the default apu path
   for (const k of ["psf", "usf"]) {

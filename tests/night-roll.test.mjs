@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { createApp } from "./harness.mjs";
 import { writeSongMidi, trackBytes } from "../tools/nsf/midi-write.mjs";
 
-const app = createApp();
+const app = await createApp();
 const run = (code) => app.run(code);
 // vm results live in another realm (different Array prototype breaks deepEqual);
 // JSON round-trip localizes them
@@ -772,12 +772,12 @@ test("Import round trip: song.source carries the file's OWN meter/key history th
   run(`for (const k of ["ff1roll-draft-", "ff1roll-versions-", "ff1roll-notes-"]) localStorage.removeItem(k + songKey); songKey = null;`);
 });
 
-test("Import: writes NO ff1roll-notes-* in either mode (the P2 Normal auto-seed is gone, superseded by source — declared-vs-learner-spec.md C5); the file's own label rides along as draft.source instead, in BOTH modes", () => {
+test("Import: writes NO ff1roll-notes-* in either mode (the P2 Normal auto-seed is gone, superseded by source — declared-vs-learner-spec.md C5); the file's own label rides along as draft.source instead, in BOTH modes", async () => {
   const parsedWaltz = {ppq: 480, timesig: [3, 4], keysig: {sf: 2, minor: false}, // D major
                         source: {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]},
                         tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []};
   for (const mode of ["learning", "normal"]) {
-    const a = createApp({storage: {"ff1roll-mode": mode}});
+    const a = await createApp({storage: {"ff1roll-mode": mode}});
     a.run(`localMidiOpen(${JSON.stringify(parsedWaltz)}, "waltz.mid")`);
     assert.equal(a.run(`localStorage.getItem("ff1roll-notes-local/waltz.mid")`), null, mode + ": no annotation seeded from the file");
     const draft = JSON.parse(a.run(`localStorage.getItem("ff1roll-draft-local/waltz.mid")`));
@@ -899,8 +899,8 @@ test("a deleted track's raw metas are dropped with it; a renamed track keeps the
   assert.ok(!(reparsed.source.metas || []).some(m => m.events && m.events.some(e => e.bytes.slice(-7).join(",") === foreignTxt("drop me").join(","))), "the deleted track's raw events did not survive");
 });
 
-test("declaredTsForKey: the ff1roll-ts-<key> stash, else a stored timesig: annotation, else undeclared — for a song that is not the one open right now (Publish all, the ✦ AI read_song tool)", () => {
-  const a = createApp({storage: {}});
+test("declaredTsForKey: the ff1roll-ts-<key> stash, else a stored timesig: annotation, else undeclared — for a song that is not the one open right now (Publish all, the ✦ AI read_song tool)", async () => {
+  const a = await createApp({storage: {}});
   assert.equal(valOf(a, `declaredTsForKey("albums/x.mid")`), null);
   a.run(`localStorage.setItem("ff1roll-ts-albums/x.mid", "6/8");`);
   assert.deepEqual(valOf(a, `declaredTsForKey("albums/x.mid")`), [6, 8]);
@@ -974,8 +974,8 @@ test("checkKeyVsFile: one case per state, plus a tonic-only partial (mode?) comp
   run(`song.source = null; rollnotes = []; keyRegions = []; songEndTick = 0;`);
 });
 
-test("Check vs file — Learning: the status text is EXACTLY the generic line (no file value, no estimate, ever); estimateKey is never called by either button", () => {
-  const a = createApp({storage: {"ff1roll-mode": "learning"}});
+test("Check vs file — Learning: the status text is EXACTLY the generic line (no file value, no estimate, ever); estimateKey is never called by either button", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "learning"}});
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             source: {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]},
@@ -1003,8 +1003,8 @@ test("Check vs file — Learning: the status text is EXACTLY the generic line (n
   assert.equal(a.run(`globalThis.__estCalls`), 0, "still zero — Learning never runs the estimate, match or not");
 });
 
-test("Check vs file — Normal: the text states the file's own value (+ the note-census estimate, for key); \"Use the file's\" writes only when tapped", () => {
-  const a = createApp({storage: {"ff1roll-mode": "normal"}});
+test("Check vs file — Normal: the text states the file's own value (+ the note-census estimate, for key); \"Use the file's\" writes only when tapped", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "normal"}});
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             source: {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]},
@@ -1026,9 +1026,9 @@ test("Check vs file — Normal: the text states the file's own value (+ the note
   assert.equal(a.run(`declaredTs`), null, "opening the prefilled editor alone writes nothing — only Save does");
 });
 
-test("Check vs file: the button appears the same on a sourced song and on a plain capture (no source) — every song's KEY and METER group headers carry it", () => {
+test("Check vs file: the button appears the same on a sourced song and on a plain capture (no source) — every song's KEY and METER group headers carry it", async () => {
   for (const hasSource of [true, false]) {
-    const a = createApp({storage: {"ff1roll-mode": "normal"}});
+    const a = await createApp({storage: {"ff1roll-mode": "normal"}});
     a.run(`
       song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
               ${hasSource ? "source: {timesigs: [{tick: 0, num: 3, den: 4}], keysigs: [{tick: 0, sf: 2, minor: false}]}," : ""}
@@ -1329,7 +1329,7 @@ test("album play: a through-composed song with no loop: annotation plays once an
   // song — so a non-looping song's whole length got doubled (ALBUM_PASSES).
   // currentLoop() now says whether it found a REAL loop: directive; only
   // that gates the extra pass.
-  const app2 = createApp({intervals: true}); const run2 = c => app2.run(c), val2 = c => JSON.parse(run2(`JSON.stringify(${c})`));
+  const app2 = await createApp({intervals: true}); const run2 = c => app2.run(c), val2 = c => JSON.parse(run2(`JSON.stringify(${c})`));
   run2(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 120, p: 60, v: 80}]}]};
         songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0; declaredTs = null; rollnotes = [];
         trackState = [{muted: false, solo: false}]; computeSongEnd();
@@ -2048,11 +2048,11 @@ test("chip render: a silent render is detected; a render for a song no longer op
 // pure — no render, no audio — so the real numbers from that crash are the
 // fixture: it must shrink the render to fit the iPad's budget, and leave a
 // small NES song untouched everywhere else.
-test("planChipRender: FFX Challenge (30 tracks, 163s, 48kHz stereo) fits the iPad app's budget at 24 kHz mono; a small NES song is unchanged", () => {
+test("planChipRender: FFX Challenge (30 tracks, 163s, 48kHz stereo) fits the iPad app's budget at 24 kHz mono; a small NES song is unchanged", async () => {
   // EDITION is a `const` in the live script (a separate app instance picks
   // the product build's edition — tools/package.mjs), so the iPad-app case
   // goes through its OWN createApp rather than reassigning it here.
-  const appA = createApp({edition: "app"});
+  const appA = await createApp({edition: "app"});
   // canStream: true — Challenge is PS2/psf2, a stream-capable kind (R.stream,
   // tools/chip-worker.mjs) — chipRenderStreamed/renderStreamed render mono
   // straight into the kept buffer, so the honest (3x-aware) admission check
@@ -2201,7 +2201,7 @@ test("chip stream mode: the synth guard reads chip.stream.live; a silent-track r
 // nothing here depends on that — only on the MESSAGES exchanged and the
 // page-side state they produce.
 test("chip stream mode: switch off uses chipRender untouched; on, a {stream:{error}} falls back to it; a successful open schedules sources via trackGain(ti), bounds its cache over a long play, and a seek requests the right chunk first", async () => {
-  const a = createApp();
+  const a = await createApp();
   a.run(`localStorage.setItem("ff1roll-chipstream", "off");`); // the default became "auto" (2026-10-01) — this case tests an explicit off
   // One FAKE worker, synchronous (same convention as "a worker that errors
   // once…", above — the vm's setTimeout is a fake clock that only moves on
@@ -2307,7 +2307,7 @@ test("chip stream mode: switch off uses chipRender untouched; on, a {stream:{err
 // is exercised in tests/chip-worker.test.mjs). One FAKE worker, synchronous,
 // same convention as the test above.
 test("chip stream mode \"auto\" (step 5): streams a big psf2 song whose whole-render plan would downgrade, plays a small one whole, and a kind with no stream hook goes straight to whole — one logDebug line either way", async () => {
-  const a = createApp({edition: "app"}); // chipRenderBudget()'s stricter iPad budget — needed for the big song to actually downgrade
+  const a = await createApp({edition: "app"}); // chipRenderBudget()'s stricter iPad budget — needed for the big song to actually downgrade
   const bigPlan = JSON.parse(a.run(`JSON.stringify(planChipRender({tracks: 30, seconds: 163, sampleRate: 48000, channels: 2, budget: chipRenderBudget(), canStream: true}))`));
   assert.equal(bigPlan.mono, true, "sanity: the same FFX Challenge fixture planChipRender's own test uses (30 tracks, 163s, iPad budget)");
   assert.equal(bigPlan.rate, 24000);
@@ -2378,7 +2378,7 @@ test("chip stream mode \"auto\" (step 5): streams a big psf2 song whose whole-re
 // createApp: this test swaps out CHIPS.nsf.run/.render/.lead to force a
 // failure and then a clean success, so it must not bleed into other tests.
 test("a worker that errors once doesn't send the rest of the session onto the main thread (FF7 froze 90 s after Challenge failed, 2026-09-30)", async () => {
-  const a = createApp();
+  const a = await createApp();
   a.run(`
     APP_BASE = "http://x/"; chipWorkerAvailable.broken = false; songKey = "albums/ps1/x/a.mid";
     globalThis.Worker = class { postMessage() { this.onerror && this.onerror({message: "boom"}); } terminate() {} }; /* fires after the handlers are attached — the vm has no running timers */
@@ -2391,7 +2391,7 @@ test("a worker that errors once doesn't send the rest of the session onto the ma
 });
 
 test("chip render failure cleans up completely (worker/pcm/buffers/module cache) so the NEXT song's render is unaffected", async () => {
-  const a = createApp();
+  const a = await createApp();
   // The vm harness has no dynamic import() (no importModuleDynamic callback
   // on this context) — every other chip test in this file works around it
   // the same way: import the real modules in THIS (the test file's) realm
@@ -2458,7 +2458,7 @@ test("chip render failure cleans up completely (worker/pcm/buffers/module cache)
 // seam (no real file can be made to fail once then succeed); production
 // call sites never pass it.
 test("chipModules: an import that fails once then succeeds retries with a fresh buster; a successful retry IS cached", async () => {
-  const a = createApp();
+  const a = await createApp();
   let calls = 0; const seenPaths = [];
   const fakeImport = async path => {
     seenPaths.push(path); calls++;
@@ -2475,7 +2475,7 @@ test("chipModules: an import that fails once then succeeds retries with a fresh 
 });
 
 test("chipModules: when BOTH attempts fail, it still throws, naming the module path — and never caches the failure", async () => {
-  const a = createApp();
+  const a = await createApp();
   const fakeImport = async () => { throw new Error("boom"); };
   a.context.__fakeImport2 = fakeImport;
   a.run(`CHIPS.__testfail = {files: ["x"], shared: [], own: []};`);
@@ -4776,8 +4776,8 @@ test("Window manager: a dock dragged to its new, much higher ceiling leaves the 
   run(`wrap.clientWidth = 800; wrap.clientHeight = 600; songKey = null;`); // restore the harness default for every test after this one
 });
 
-test("Window manager: the pref survives a reload, migrates once from the old ff1roll-aidock pref, once more from the pre-phase-A shape (backfilling mode: full), and once more from the phase-A shape (backfilling ids/active — Phase B)", () => {
-  const app2 = createApp({storage: {"ff1roll-aidock": JSON.stringify({docked: true, width: 420})}});
+test("Window manager: the pref survives a reload, migrates once from the old ff1roll-aidock pref, once more from the pre-phase-A shape (backfilling mode: full), and once more from the phase-A shape (backfilling ids/active — Phase B)", async () => {
+  const app2 = await createApp({storage: {"ff1roll-aidock": JSON.stringify({docked: true, width: 420})}});
   const run2 = c => app2.run(c), val2 = c => JSON.parse(app2.run(`JSON.stringify(${c})`));
   assert.deepEqual(val2(`wm.right.ids`), ["asksheet"], "migrated from the old asksheet-only pref");
   assert.equal(val2(`wm.right.active`), "asksheet");
@@ -4790,10 +4790,10 @@ test("Window manager: the pref survives a reload, migrates once from the old ff1
   assert.equal(val2(`document.getElementById("shell").style.getPropertyValue("--dr-w")`), "420px");
 
   // a step-1/2 pref (already under the new key, but with no mode) also gets the mode backfilled on load
-  const app3 = createApp({storage: {"ff1roll-wm": JSON.stringify({right: {id: "asksheet", w: 500}})}});
+  const app3 = await createApp({storage: {"ff1roll-wm": JSON.stringify({right: {id: "asksheet", w: 500}})}});
   assert.equal(JSON.parse(app3.run(`JSON.stringify(wm.right)`)).mode, "full");
   // a phase-A pref (mode already backfilled, but still {id}, one window) also gets ids/active backfilled on load
-  const app4 = createApp({storage: {"ff1roll-wm": JSON.stringify({left: {id: "notelistsheet", w: 300, mode: "inner"}})}});
+  const app4 = await createApp({storage: {"ff1roll-wm": JSON.stringify({left: {id: "notelistsheet", w: 300, mode: "inner"}})}});
   assert.deepEqual(JSON.parse(app4.run(`JSON.stringify(wm.left)`)), {ids: ["notelistsheet"], active: "notelistsheet", w: 300, mode: "inner"});
 });
 
@@ -5429,7 +5429,7 @@ test("Settings tabs: one pane at a time, the last one remembered on this device"
 });
 
 test("app edition: reads come from the configured repo; bundled starters list and load without it", async () => {
-  const app2 = createApp({edition: "app"});
+  const app2 = await createApp({edition: "app"});
   const run2 = app2.run;
   run2(`APP_BASE = "capacitor://localhost/"; localStorage.removeItem("ff1roll-cfg"); cfg.c = null;`);
   assert.equal(run2(`EDITION`), "app");
@@ -5587,12 +5587,12 @@ test("chip source: an unpublished capture under a console folder finds its recor
   run(`localStorage.removeItem(draftStoreKey("albums/ps1/final-fantasy-7/bombing-mission.mid")); songKey = null;`);
 });
 
-test("boot with old keys: the folder migration runs before a handler attaches — and must not crash the page", () => {
+test("boot with old keys: the folder migration runs before a handler attaches — and must not crash the page", async () => {
   // the fourth-wave migration moves a capture's draft in IndexedDB through
   // the idb queue; that queue used to be declared 11,000 lines later, so a
   // device holding an albums/imports/ draft died at boot (Josh, 2026-09-27,
   // the Mac and its installed app: "nothing happens anywhere when I click")
-  const seeded = createApp({storage: {
+  const seeded = await createApp({storage: {
     "ff1roll-draft-albums/imports/mega-man-2/air-man.mid": JSON.stringify({dirty: true, tracks: [], tracksRef: true}),
     "ff1roll-notes-albums/final-fantasy-i/songs/overworld.mid": "[]",
   }});
@@ -5660,7 +5660,7 @@ test("Open re-reads the published list each time it opens (once per 20 s) and re
 });
 
 test("tap a note on a chip song: the live worker renders that one note through the game's instrument; the synth is the fallback", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`)); // its own app: an earlier test no-ops previewNote for the shared one
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`)); // its own app: an earlier test no-ops previewNote for the shared one
   run(`createComposition(120, 4, 4); ensureAudio(); globalThis.__srcs = 0; globalThis.__sched = 0;
        audio.createBufferSource = () => { globalThis.__srcs++; return {connect() {}, start() {}, stop() {}, buffer: null}; };
        scheduleNote = () => { globalThis.__sched++; };
@@ -5687,7 +5687,7 @@ test("tap a note on a REGISTER chip song (nsf/gbs/spc): no per-note renderer, so
   // played the generic synth, not the game sound. Each register-chip track
   // is one hardware voice — chip.buffers[track] already has this exact
   // note's sound; this is the slice math (chipNoteSlice), not a re-render.
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`createComposition(120, 4, 4); ensureAudio(); // ppq 480, 120bpm: tick 480 = one quarter = 0.5s
        chipWorker = null; // no live worker: chipPreviewBuffer must come back null fast, same as any register-chip song
        chip.key = songKey; chip.lead = 2; chip.pcm = null;
@@ -5766,7 +5766,7 @@ test("preview cache key: two taps at the same pitch but different ticks (a track
   // ANY note at pitch 60 always answered from whichever program happened to
   // render (and cache) FIRST, even after findTemplateNote itself started
   // honoring the tapped tick. The key must carry the resolved program too.
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`createComposition(120, 4, 4); ensureAudio(); globalThis.__srcs = 0; globalThis.__sched = 0; globalThis.__calls = [];
        audio.createBufferSource = () => { globalThis.__srcs++; return {connect() {}, start() {}, stop() {}, buffer: null}; };
        scheduleNote = () => { globalThis.__sched++; };
@@ -5794,7 +5794,7 @@ test("preview cache key: two taps at the same pitch but different ticks (a track
 });
 
 test("a playlist picked after the import names the open song's published album by chip slot, in one album.json write", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`CATALOG = {"Zelda": [["track-01", "albums/nes/legend-of-zelda/track-01.mid"], ["track-02", "albums/nes/legend-of-zelda/track-02.mid"], ["track-03", "albums/nes/legend-of-zelda/track-03.mid"]]};
        songKey = "albums/nes/legend-of-zelda/track-02.mid"; currentPath = songKey;
        albumMetaCache["albums/nes/legend-of-zelda"] = {title: "The Legend of Zelda", nsf: {vault: "legend-of-zelda.nsf", tracks: {"track-01": {n: 1, secs: 10}, "track-02": {n: 2, secs: 10}, "track-03": {n: 3, secs: 10}}}};
@@ -5819,7 +5819,7 @@ test("a playlist picked after the import names the open song's published album b
 });
 
 test("create mine: a public night-roll-archive under the user's account becomes their game files & instruments repo", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`saveCfg({aiBackend: "remote"}); cfg.c = null;`); // any first save freezes the defaults, Josh's archive included
   assert.equal(val(`cfg().nsfRepo`), "Night-Roll-App/nsf-archive");
   run(`document.getElementById("cfgsongsrepo").value = "someone/songs"; settingsPersist("cfgsongsrepo"); cfg.c = null;`);
@@ -5841,7 +5841,7 @@ test("create mine: a public night-roll-archive under the user's account becomes 
 });
 
 test("instruments: the sheet lists games with a library; a game's menu is All instruments (A–Z, natural sort) then its songs; a song view lists only that song's instruments; the open-song shortcut is conditional; a tap plays one", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   app2.context.__play = await import("../tools/instruments/play.mjs");
   const wav = (() => { const n = 64, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer); const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
     w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 32000, true); dv.setUint32(28, 64000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
@@ -5920,7 +5920,7 @@ test("instruments: a song view labels by the open song's own track (ch/prog matc
 });
 
 test("instAlbums: lists published albums whose game files carry an instrument library — NES, Game Boy, SNES, PS1, N64; a Genesis (vgm) album is excluded", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`CATALOG = {"GoldenEye": [["Dam", "albums/n64/goldeneye-007/dam.mid"]],
                "Final Fantasy VII": [["Bombing Mission", "albums/ps1/final-fantasy-vii/bombing-mission.mid"]],
                "Chrono Trigger": [["Corridors of Time", "albums/snes/chrono-trigger/corridors-of-time.mid"]],
@@ -5968,7 +5968,7 @@ test("game instrument voice: the track: directive round-trips a colon-heavy id, 
 });
 
 test("game instrument voice: the voice & color menu's Game instruments picker (games -> a game's All instruments/songs -> a leaf list) writes voice=game:… and previews once", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   const wav = (() => { const n = 64, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer); const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
     w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 32000, true); dv.setUint32(28, 64000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
     w(36, "data"); dv.setUint32(40, n * 2, true); for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, i % 8 < 4 ? 16000 : -16000, true); return b; })();
@@ -6005,7 +6005,7 @@ test("game instrument voice: the voice & color menu's Game instruments picker (g
 });
 
 test("game instrument voice: reopening a track's voice menu drills straight back to the instrument it's set to, not the systems list (Josh, 2026-09-29)", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   const wav = (() => { const n = 64, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer); const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
     w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 32000, true); dv.setUint32(28, 64000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
     w(36, "data"); dv.setUint32(40, n * 2, true); for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, i % 8 < 4 ? 16000 : -16000, true); return b; })();
@@ -6060,7 +6060,7 @@ test("game instrument voice: reopening a track's voice menu drills straight back
 });
 
 test("game instrument voice: an OLD-form vault (no console folder, written before the archive-by-console reorg) still resolves — loads from the album's CURRENT vault, plays, marks current, and the menu drills to it (Josh's Ambush report, 2026-09-29)", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   const wav = (() => { const n = 64, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer); const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
     w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 32000, true); dv.setUint32(28, 64000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
     w(36, "data"); dv.setUint32(40, n * 2, true); for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, i % 8 < 4 ? 16000 : -16000, true); return b; })();
@@ -6102,7 +6102,7 @@ test("game instrument voice: an OLD-form vault (no console folder, written befor
 });
 
 test("game instrument voice: scheduleNote renders each note through playNote and caches a repeat", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   const wav = (() => { const n = 64, b = new Uint8Array(44 + n * 2), dv = new DataView(b.buffer); const w = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
     w(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 32000, true); dv.setUint32(28, 64000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
     w(36, "data"); dv.setUint32(40, n * 2, true); for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, i % 8 < 4 ? 16000 : -16000, true); return b; })();
@@ -6138,7 +6138,7 @@ test("game instrument voice: scheduleNote renders each note through playNote and
 });
 
 test("game instrument voice: a missing library falls back to the track's synth voice and logs one ⚠ line", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`vaultFetch = async f => { throw new Error("404 " + f); };
        createComposition(120, 4, 4);
        song.tracks[0].notes = [{t: 0, d: 480, p: 64, v: 90}];
@@ -6163,7 +6163,7 @@ test("game instrument voice: a missing library falls back to the track's synth v
 });
 
 test("soundfont: File → Import… routes a .sf2 (RIFF/sfbk sniff), keeps a device copy + registers it, and reports its preset count", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   const bytes = new Uint8Array(24);
   bytes.set([0x52, 0x49, 0x46, 0x46], 0); // "RIFF"
   bytes.set([0x73, 0x66, 0x62, 0x6b], 8); // "sfbk" — parseSf2 itself is mocked below; only sf2Magic's sniff reads real bytes
@@ -6188,7 +6188,7 @@ test("soundfont: File → Import… routes a .sf2 (RIFF/sfbk sniff), keeps a dev
 });
 
 test("soundfont: with no game files & instruments repo configured, the import still stores locally and says so, without failing", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   const bytes = new Uint8Array(16);
   bytes.set([0x52, 0x49, 0x46, 0x46], 0); bytes.set([0x73, 0x66, 0x62, 0x6b], 8);
   app2.context.__sf2bytes = bytes;
@@ -6204,7 +6204,7 @@ test("soundfont: with no game files & instruments repo configured, the import st
 });
 
 test("soundfont: a garbled .sf2 (parseSf2 throws) reports the error and never reaches storage", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   const bytes = new Uint8Array(12);
   bytes.set([0x52, 0x49, 0x46, 0x46], 0); bytes.set([0x73, 0x66, 0x62, 0x6b], 8);
   app2.context.__sf2bytes = bytes;
@@ -6234,7 +6234,7 @@ test("soundfont voice: the track: directive round-trips an sf2:<slug>:<bank>:<pr
 });
 
 test("soundfont voice: scheduleNote renders each note through playNote (a preset doubles as a play.mjs inst) and caches a repeat", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   let playNoteCalls = 0;
   app2.context.__play = {regionFor: inst => inst.keyRegions[0], playNote: () => { playNoteCalls++; return new Float32Array(20).fill(0.3); }};
   run(`instPlayModule = Promise.resolve(__play);
@@ -6260,7 +6260,7 @@ test("soundfont voice: scheduleNote renders each note through playNote (a preset
 });
 
 test("soundfont voice: a missing/unreachable soundfont falls back to the track's synth voice and logs one ⚠ line", async () => {
-  const app2 = createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app2 = await createApp(); const run = c => app2.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`vaultFetch = async f => { throw new Error("404 " + f); };
        createComposition(120, 4, 4);
        song.tracks[0].notes = [{t: 0, d: 480, p: 64, v: 90}];
@@ -6790,8 +6790,8 @@ test("audio session: switching back into Night Roll while idle returns to 'ambie
   } finally { run(`navigator.audioSession = __navAS; audio = __aud; resumeAudio = __ra; met.on = false; appErrors.length = 0; appDebug.length = 0;`); }
 });
 
-test("deploy warning: ✦ AI counts down to an iPad install's relaunch, then resets if it never comes (Josh, 2026-10-02)", () => {
-  const app = createApp({intervals: true}); const run = c => app.run(c);
+test("deploy warning: ✦ AI counts down to an iPad install's relaunch, then resets if it never comes (Josh, 2026-10-02)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c);
   run(`deployWarn(12000)`);
   assert.match(run(`document.getElementById("askbtn").textContent`), /^AI · 1[12]$/);
   assert.match(run(`document.getElementById("noteinfo").textContent`), /new version installs in 12 s/);
@@ -6841,7 +6841,7 @@ test("audio wake outside a tap: a clock that won't move is a debug line with wha
 });
 
 test("album play: two overlapping play() calls leave no orphaned scheduler — after stop(), nothing advances the album (the album that flashed through every song in a second)", async () => {
-  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;`);
   run(`song.tracks = [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 960, d: 480, p: 64, v: 80}]}]; trackState = [{muted: false, solo: false}]; songEndTick = 4 * 480;`);
   // the harness can see a live scheduler: without stop() the album would advance
@@ -6991,7 +6991,7 @@ test("album play: Next/Prev walk whichever order is currently shown (game vs A�
 });
 
 test("chip: Play right after a launch waits while the console file is still being found (Chrono Cross played on synth, 2026-09-29)", async () => {
-  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
        trackState = [{muted: false, solo: false}]; songEndTick = 4 * 480;
        globalThis.__release = null; chipSource = () => new Promise(r => { __release = () => r(null); });
@@ -7055,7 +7055,7 @@ test("the unsent AI message survives: saved per chat, back after a relaunch, cle
 });
 
 test("count-in: ● counts in from any bar and the playhead waits at its start; plain playback mid-song doesn't count in", async () => {
-  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
        trackState = [{muted: false, solo: false}]; songEndTick = 32 * 480; met.countIn = true;`);
   const lead = async (rec) => {
@@ -7387,7 +7387,7 @@ test("a ruler range can be cleared: first tap outside fades it, the next removes
 });
 
 test("a console voice that FAILED to load says why, and the next ▶ retries it (Josh, 2026-09-30: sometimes instruments never load, silently)", async () => {
-  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`)); // its own app: earlier tests stub chipSource on the shared one
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`)); // its own app: earlier tests stub chipSource on the shared one
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}; keyRegions = []; previewSf = null; playCursor = 0; trackState = [{muted: false, solo: false}]; songEndTick = 4 * 480;`);
   run(`songKey = "albums/snes/test-album/song.mid"; chip.fail = null; globalThis.__realMeta = albumMetaFor; globalThis.__realFetch = globalThis.fetch;
        globalThis.__realRD = readData; readData = async () => { throw new Error("Load failed"); }; for (const k of Object.keys(albumMetaCache)) delete albumMetaCache[k]; albumMetaFor.lastFail = null;`);
@@ -7418,7 +7418,7 @@ test("the writer keeps melodic tracks off the drum channel even when a capture's
 });
 
 test("background play: a hidden page schedules 8 s ahead, so a throttled timer doesn't skip notes (Josh, 2026-09-29)", async () => {
-  const app = createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(run(`JSON.stringify(${c})`));
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: []}; songKey = "midi/test.mid"; keyRegions = []; previewSf = null; playCursor = 0;
        song.tracks = [{name: "t", notes: [{t: 0, d: 240, p: 60, v: 80}, {t: 2400, d: 240, p: 62, v: 80}, {t: 4800, d: 240, p: 64, v: 80}]}]; /* 0 s, 2.5 s, 5 s */
        trackState = [{muted: false, solo: false}]; songEndTick = 16 * 480;
@@ -7548,34 +7548,34 @@ test("titles sort in reading order: a trailing Roman numeral counts as its numbe
 // unaffected by this feature landing.
 function valOf(a, code) { return JSON.parse(a.run(`JSON.stringify(${code})`)); }
 
-test("P0 migration: absent+existing Night Roll prefs -> learning; absent+none -> normal; explicit mode is never overwritten", () => {
-  const fresh = createApp({storage: {}});
+test("P0 migration: absent+existing Night Roll prefs -> learning; absent+none -> normal; explicit mode is never overwritten", async () => {
+  const fresh = await createApp({storage: {}});
   assert.equal(fresh.run(`appMode()`), "normal", "fresh install, nothing on the device: Normal");
   assert.equal(fresh.run(`localStorage.getItem("ff1roll-mode")`), "normal", "the resolved mode is persisted so it isn't re-derived next boot");
 
   for (const [key, val0] of [["ff1roll-lastsong", "albums/x.mid"], ["ff1roll-cfg", "{}"], ["ff1roll-ghtoken", "tok"],
                              ["ff1roll-notes-albums/x.mid", "[]"], ["ff1roll-draft-albums/x.mid", "{}"]]) {
-    const a = createApp({storage: {[key]: val0}});
+    const a = await createApp({storage: {[key]: val0}});
     assert.equal(a.run(`appMode()`), "learning", "existing " + key + ": Learning");
   }
 
-  const keptNormal = createApp({storage: {"ff1roll-mode": "normal", "ff1roll-lastsong": "albums/x.mid"}});
+  const keptNormal = await createApp({storage: {"ff1roll-mode": "normal", "ff1roll-lastsong": "albums/x.mid"}});
   assert.equal(keptNormal.run(`appMode()`), "normal", "an explicit mode stands even with prior prefs on the device");
-  const keptLearning = createApp({storage: {"ff1roll-mode": "learning"}});
+  const keptLearning = await createApp({storage: {"ff1roll-mode": "learning"}});
   assert.equal(keptLearning.run(`appMode()`), "learning");
 });
 
-test("P0: setAppMode flips appMode() live and persists it (index.html's own body.dataset.mode write is guarded on document.body — absent by design in this vm harness, same sentinel sheetDrag/SHEET_TOP use to detect it, see harness.mjs)", () => {
-  const normal = createApp({storage: {}});
+test("P0: setAppMode flips appMode() live and persists it (index.html's own body.dataset.mode write is guarded on document.body — absent by design in this vm harness, same sentinel sheetDrag/SHEET_TOP use to detect it, see harness.mjs)", async () => {
+  const normal = await createApp({storage: {}});
   assert.equal(normal.run(`appMode()`), "normal");
   normal.run(`setAppMode("learning")`);
   assert.equal(normal.run(`localStorage.getItem("ff1roll-mode")`), "learning");
   assert.equal(normal.run(`appMode()`), "learning");
 });
 
-test("P1 lasso chord: Normal auto-names the chord in the selection strip and hides Chord?; Learning leaves it for the user to reveal", () => {
-  const mk = mode => {
-    const a = createApp({storage: {"ff1roll-mode": mode}});
+test("P1 lasso chord: Normal auto-names the chord in the selection strip and hides Chord?; Learning leaves it for the user to reveal", async () => {
+  const mk = async mode => {
+    const a = await createApp({storage: {"ff1roll-mode": mode}});
     a.run(`
       song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
               tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 480, p: 64, v: 80}, {t: 0, d: 480, p: 67, v: 80}]}]};
@@ -7588,18 +7588,18 @@ test("P1 lasso chord: Normal auto-names the chord in the selection strip and hid
     `);
     return a;
   };
-  const learn = mk("learning");
+  const learn = await mk("learning");
   assert.equal(learn.run(`document.getElementById("chordbtn").style.display`), "", "Learning: Chord? stays offered");
   assert.equal(learn.run(`document.getElementById("chordbtn").textContent`), "Chord?");
   assert.ok(!/→/.test(learn.run(`document.getElementById("noteinfo").textContent`)), "Learning: no chord name volunteered in the strip");
 
-  const normal = mk("normal");
+  const normal = await mk("normal");
   assert.equal(normal.run(`document.getElementById("chordbtn").style.display`), "none", "Normal: nothing to reveal — it's already named");
   assert.match(normal.run(`document.getElementById("noteinfo").textContent`), /→\s*C\b/, "Normal: the strip names the chord itself");
 });
 
-test("8va (footer v2, 2026-09-30; View ▾ → HIGHLIGHT / READOUT since the chrome density follow-up, 2026-10-01 pm): an always-visible toggle — reachable with no lasso selection, unlike Chord?", () => {
-  const a = createApp({storage: {"ff1roll-mode": "learning"}});
+test("8va (footer v2, 2026-09-30; View ▾ → HIGHLIGHT / READOUT since the chrome density follow-up, 2026-10-01 pm): an always-visible toggle — reachable with no lasso selection, unlike Chord?", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "learning"}});
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             tracks: [{name: "melody", notes: []}]};
@@ -7638,7 +7638,7 @@ test("footer v2 tweaks (2026-09-30) → chrome density pass (2026-10-01) → chr
   assert.match(html, /id="keysel"/);
 });
 
-test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a whole window popping up and it's just unnecessary — just do it as a reverse drop-down') → chrome density follow-up (2026-10-01 pm, Josh after using it): removed entirely — makeWindow() is never called for it, no drop-up markup is left, its tools moved into View ▾/the footer, and a stale docked/tabbed 'moresheet' id from either earlier change is purged from wm on load", () => {
+test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a whole window popping up and it's just unnecessary — just do it as a reverse drop-down') → chrome density follow-up (2026-10-01 pm, Josh after using it): removed entirely — makeWindow() is never called for it, no drop-up markup is left, its tools moved into View ▾/the footer, and a stale docked/tabbed 'moresheet' id from either earlier change is purged from wm on load", async () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   assert.doesNotMatch(html, /makeWindow\("moresheet"/, "moresheet is never registered with makeWindow() any more");
   assert.doesNotMatch(html, /id="moresheet-h2"/, "no title bar — no Dock button, no ✕/drag/resize machinery (that's all `.overlay`-only, and #moresheet isn't one any more)");
@@ -7647,7 +7647,7 @@ test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a wh
   assert.doesNotMatch(html, /id="morebadge"/, "the ⏳N badge that used to live on the trigger button is gone with it");
 
   const staleWm = JSON.stringify({right: {ids: ["moresheet", "asksheet"], active: "asksheet", w: 380, mode: "full"}});
-  const stale = createApp({storage: {"ff1roll-wm": staleWm}});
+  const stale = await createApp({storage: {"ff1roll-wm": staleWm}});
   const purged = JSON.parse(stale.run(`localStorage.getItem("ff1roll-wm")`));
   assert.ok(!purged.right.ids.includes("moresheet"), "a stale docked moresheet id is purged on load: " + JSON.stringify(purged));
   assert.ok(purged.right.ids.includes("asksheet"), "its tab-mate is untouched");
@@ -7660,7 +7660,7 @@ test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a wh
     assert.match(viewsheet, new RegExp('id="' + id + '"'), id + " reaches View ▾ now");
 });
 
-test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up from now on'): a drop-up (▦ Roll / ▤ Tracks / 𝄞 Score), first in the footer's left group, its own label naming the CURRENT view", () => {
+test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up from now on'): a drop-up (▦ Roll / ▤ Tracks / 𝄞 Score), first in the footer's left group, its own label naming the CURRENT view", async () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const footer = html.slice(html.indexOf("<footer"), html.indexOf("</footer>"));
   const viewbtn = footer.slice(footer.indexOf('id="viewbtn"'), footer.indexOf('id="subbtn"'));
@@ -7676,7 +7676,7 @@ test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up fro
   assert.match(html, /id="viewswitchmenu" class="dropup"/, "#viewswitchmenu is a drop-up, same pattern as #notesmenu");
 
   // click opens the drop-up (never changes the view by itself); picking a row sets the mode and closes it
-  const a = createApp();
+  const a = await createApp();
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
     songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; viewMode = "score"; applyViewMode();
@@ -7740,7 +7740,7 @@ test("fitReadline (chrome density pass, 2026-10-01): #readline gets .ownrow unde
   assert.equal(val(`document.getElementById("readline").classList.contains("ownrow")`), false, "widened back out: .ownrow removed");
 });
 
-test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them') → sub-menu follow-up (2026-10-02, Josh: 'View ▾ is too tall — make EVERY section an expanding sub-menu'): all six groups (View / Panels / Tools / Display / Background / Mode) are now header+content accordion rows, not .cfgsec captions over a flat list", () => {
+test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them') → sub-menu follow-up (2026-10-02, Josh: 'View ▾ is too tall — make EVERY section an expanding sub-menu'): all six groups (View / Panels / Tools / Display / Background / Mode) are now header+content accordion rows, not .cfgsec captions over a flat list", async () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const sheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf("<!-- KEY SIGNATURE"));
   assert.match(sheet, /id="vwRoll"/, "Roll is a real View ▾ item still");
@@ -7768,7 +7768,7 @@ test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no
   for (const i of [vwAnalyze, vwCompare, vwLearning, vwListener]) assert.ok(i > vwMode, "Mode items sit in the Mode group");
   assert.ok(vwListener > vwAnalyze && vwListener > vwCompare && vwListener > vwLearning, "Listener mode is last, same as Josh's example ordering");
 
-  const a = createApp();
+  const a = await createApp();
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
     songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; viewMode = "tracks"; applyViewMode();
@@ -7848,8 +7848,8 @@ test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no
   assert.match(a.run(`document.getElementById("vwViewType").textContent`), /View type: Roll$/, "the closed label would now read Roll too");
 });
 
-test("File ▾ → Open Recent (2026-10-01): newest first, deduped, capped at 10, Untitled skipped, Clear empties, tapping a row opens it by key", () => {
-  const a = createApp();
+test("File ▾ → Open Recent (2026-10-01): newest first, deduped, capped at 10, Untitled skipped, Clear empties, tapping a row opens it by key", async () => {
+  const a = await createApp();
   const run = (code) => a.run(code);
   const val = (code) => JSON.parse(run(`JSON.stringify(${code})`));
   const minimal = (name) => ({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
@@ -7904,8 +7904,8 @@ test("File ▾ → Open Recent (2026-10-01): newest first, deduped, capped at 10
   assert.equal(run(`document.getElementById("filesheet").classList.contains("on")`), false, "the File menu closes on tap");
 });
 
-test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", () => {
-  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A harmonic minor scale reads as Am", async () => {
+  const normal = await createApp({storage: {"ff1roll-mode": "normal"}});
   const cMajor = [60, 62, 64, 65, 67, 69, 71, 72].map(p => ({t: (p - 60) * 480, d: 480, p, v: 80}));
   normal.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
@@ -7927,8 +7927,8 @@ test("P3 estimateKey (Krumhansl-Schmuckler): a C major scale reads as C, an A ha
   assert.equal(amEst.sf, 0);
 });
 
-test("P3: Learning never calls estimateKey (spy) — sfShownAt/keyNameShownAt/updateLCD all gate on appMode() before touching it; Normal reaches it", () => {
-  const learn = createApp({storage: {"ff1roll-mode": "learning"}});
+test("P3: Learning never calls estimateKey (spy) — sfShownAt/keyNameShownAt/updateLCD all gate on appMode() before touching it; Normal reaches it", async () => {
+  const learn = await createApp({storage: {"ff1roll-mode": "learning"}});
   learn.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}, {t: 960, d: 480, p: 67, v: 80}]}]};
@@ -7945,8 +7945,8 @@ test("P3: Learning never calls estimateKey (spy) — sfShownAt/keyNameShownAt/up
   assert.ok(learn.run(`__estCalls`) > 0, "Normal: the same call site now estimates");
 });
 
-test("P3: Normal mode, nothing declared — LCD shows the estimate with '~', the keysel label offers to 'Set this key', which writes a real key: annotation", () => {
-  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+test("P3: Normal mode, nothing declared — LCD shows the estimate with '~', the keysel label offers to 'Set this key', which writes a real key: annotation", async () => {
+  const normal = await createApp({storage: {"ff1roll-mode": "normal"}});
   normal.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 55, v: 80}]}]};
@@ -7968,8 +7968,8 @@ test("P3: Normal mode, nothing declared — LCD shows the estimate with '~', the
   assert.equal(normal.run(`document.getElementById("keyunset").textContent`), "key: Gm ✓");
 });
 
-test("P3: Learning keeps the plain 'not set (C)' / '4/4?' defaults untouched — no estimate leaks into the label or the LCD", () => {
-  const learn = createApp({storage: {"ff1roll-mode": "learning"}});
+test("P3: Learning keeps the plain 'not set (C)' / '4/4?' defaults untouched — no estimate leaks into the label or the LCD", async () => {
+  const learn = await createApp({storage: {"ff1roll-mode": "learning"}});
   learn.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 55, v: 80}]}]};
@@ -7991,8 +7991,8 @@ test("P3: Learning keeps the plain 'not set (C)' / '4/4?' defaults untouched —
 // askSpanNotes build their key line from DATA (never the DOM, never a leak
 // of Normal's "(estimated)" wording into Learning); the welcome bubble and
 // the general-chat tutor-rule line are per-mode text.
-function mkAsk(mode, extra) {
-  const a = createApp({storage: {"ff1roll-mode": mode}});
+async function mkAsk(mode, extra) {
+  const a = await createApp({storage: {"ff1roll-mode": mode}});
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}]}]};
@@ -8005,8 +8005,8 @@ function mkAsk(mode, extra) {
   return a;
 }
 
-test("P4: askSys() shares the BASE text and picks RULE_LEARNING or RULE_NORMAL by appMode()", () => {
-  const a = mkAsk("learning");
+test("P4: askSys() shares the BASE text and picks RULE_LEARNING or RULE_NORMAL by appMode()", async () => {
+  const a = await mkAsk("learning");
   const learnSys = a.run(`askSys()`);
   assert.match(learnSys, /THE RULE: discoveries are the user's\./, "Learning gets yesterday's THE RULE paragraph, verbatim");
   assert.doesNotMatch(learnSys, /Answer music questions directly/, "Learning never gets RULE_NORMAL");
@@ -8020,8 +8020,8 @@ test("P4: askSys() shares the BASE text and picks RULE_LEARNING or RULE_NORMAL b
   assert.match(normalSys, /the resident music-theory tutor inside Night Roll/, "same shared BASE");
 });
 
-test("P4: askContext (Learning) is BYTE-IDENTICAL to before the ASK_SYS/askContext split (golden snapshot, fixed song)", () => {
-  const a = mkAsk("learning");
+test("P4: askContext (Learning) is BYTE-IDENTICAL to before the ASK_SYS/askContext split (golden snapshot, fixed song)", async () => {
+  const a = await mkAsk("learning");
   const ctx = a.run(`askContext(askSpan(), askBudget())`);
   assert.equal(ctx, `song: test — a locked capture the user is studying
 meter: 4/4 (beat = quarter), tempo: 120 bpm, 1 bars
@@ -8043,8 +8043,8 @@ notes in bars 1–1:
 bar 1: 1 C4 1, 2 E4 1`);
 });
 
-test("P4: Learning never calls estimateKey from askContext/askSpanNotes (spy); Normal reaches it for an undeclared key/span", () => {
-  const a = mkAsk("learning", `
+test("P4: Learning never calls estimateKey from askContext/askSpanNotes (spy); Normal reaches it for an undeclared key/span", async () => {
+  const a = await mkAsk("learning", `
     globalThis.__estCalls = 0;
     const __orig = estimateKey;
     estimateKey = function() { globalThis.__estCalls++; return __orig(); };
@@ -8057,8 +8057,8 @@ test("P4: Learning never calls estimateKey from askContext/askSpanNotes (spy); N
   assert.ok(a.run(`__estCalls`) > 0, "Normal: the same context build now estimates");
 });
 
-test("P4: askContext (Normal) states declared-vs-estimated plainly, carries a 'mode: normal' line, and names the lasso chord", () => {
-  const a = mkAsk("normal");
+test("P4: askContext (Normal) states declared-vs-estimated plainly, carries a 'mode: normal' line, and names the lasso chord", async () => {
+  const a = await mkAsk("normal");
   let ctx = a.run(`askContext(askSpan(), askBudget())`);
   assert.match(ctx, /^key state: estimated \S+ \(Krumhansl, confidence [\d.]+\)$/m, "nothing declared: the estimate, labelled");
   assert.match(ctx, /^mode: normal$/m, "Learning carries no such line — see the golden snapshot test");
@@ -8076,8 +8076,8 @@ test("P4: askContext (Normal) states declared-vs-estimated plainly, carries a 'm
   assert.match(ctx, /^lasso-selected notes: C4 E4 — chord: C \(no 5th\)$/m, "Normal names the chord itself, like the selection strip does");
 });
 
-test("P4: askContext (Learning) never names the lasso chord; the general chat context and the ✦ AI welcome bubble carry per-mode text", () => {
-  const learn = mkAsk("learning", `multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelSf = 0;`);
+test("P4: askContext (Learning) never names the lasso chord; the general chat context and the ✦ AI welcome bubble carry per-mode text", async () => {
+  const learn = await mkAsk("learning", `multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelSf = 0;`);
   const learnCtx = learn.run(`askContext(askSpan(), askBudget())`);
   assert.match(learnCtx, /^lasso-selected notes: C4 E4 — do not name this chord unless the user has guessed or insists$/m);
 
@@ -8087,7 +8087,7 @@ test("P4: askContext (Learning) never names the lasso chord; the general chat co
   assert.match(learnGeneral, /The tutor rule about the user's own discoveries still holds for music questions\./);
   assert.doesNotMatch(learnGeneral, /^mode: normal$/m);
 
-  const normal = mkAsk("normal");
+  const normal = await mkAsk("normal");
   const normalGeneral = normal.run(`(() => { askGeneral = true; try { return askContext({t0: 0, t1: 1920, from: 1, to: 1}, askBudget()); } finally { askGeneral = false; } })()`);
   assert.match(normalGeneral, /The tutor rule about answering music questions directly still holds\./);
   assert.match(normalGeneral, /^mode: normal$/m);
@@ -8099,14 +8099,14 @@ test("P4: askContext (Learning) never names the lasso chord; the general chat co
   assert.match(normal.run(`asklog.children[0].textContent`), /I'll answer directly — keys, chords, cadences, form — and say how sure I am\./);
 });
 
-test("P4: askSpanNotes (Normal) spells by the key ESTIMATE when nothing is declared, and says so in the header", () => {
-  const a = mkAsk("normal");
+test("P4: askSpanNotes (Normal) spells by the key ESTIMATE when nothing is declared, and says so in the header", async () => {
+  const a = await mkAsk("normal");
   const txt = a.run(`askSpanNotes(0, barTicks())`);
   assert.match(txt, /# Pitches are spelled by the Normal-mode key ESTIMATE \(C, Krumhansl — unconfirmed\)\./);
   assert.match(txt, /bar 1: 1 C4 1, 2 E4 1/, "spelled through the estimate's sf (0, sharp-side C major)");
 
   // Learning: unchanged (never reaches the estimate branch)
-  const learn = mkAsk("learning");
+  const learn = await mkAsk("learning");
   const learnTxt = learn.run(`askSpanNotes(0, barTicks())`);
   assert.match(learnTxt, /# Pitches use sharp spelling; the true key is the user's to discover — this block states no key\./);
 });
@@ -8119,8 +8119,8 @@ test("P4: askSpanNotes (Normal) spells by the key ESTIMATE when nothing is decla
 // poking keyRegions directly — then the very next askContext/askSpanNotes
 // call (no extra finalizeNotes in between: askAddAnnotation already calls
 // it, so the fix must hold on the first read after the write).
-function mkAskChromatic() {
-  const a = createApp({storage: {"ff1roll-mode": "learning"}});
+async function mkAskChromatic() {
+  const a = await createApp({storage: {"ff1roll-mode": "learning"}});
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
             tracks: [{name: "melody", notes: [{t: 0, d: 480, p: 70, v: 80}, {t: 480, d: 480, p: 63, v: 80}, {t: 960, d: 480, p: 66, v: 80}]}]};
@@ -8131,17 +8131,17 @@ function mkAskChromatic() {
   `);
   return a;
 }
-test("P4/2026-10-01: askAddAnnotation(key: Ebm/Bbm/Gb) spells flats, not sharps, in the very next askContext", () => {
+test("P4/2026-10-01: askAddAnnotation(key: Ebm/Bbm/Gb) spells flats, not sharps, in the very next askContext", async () => {
   for (const key of ["Ebm", "Bbm", "Gb"]) {
-    const a = mkAskChromatic();
+    const a = await mkAskChromatic();
     a.run(`askAddAnnotation({kind: "key", text: ${JSON.stringify(key)}, bar: 1, beat: 1})`);
     const ctx = a.run(`askContext(askSpan(), askBudget())`);
     assert.match(ctx, new RegExp("key state: key: " + key + " ✓"), key + ": declared key reads back from the very next askContext");
     assert.match(ctx, /bar 1: 1 Bb4 1, 2 Eb4 1, 3 Gb4 1/, key + ": flats (Bb/Eb/Gb), not sharps (A#/D#/F#)");
   }
 });
-test("P4/2026-10-01: askAddAnnotation(key: F#m) spells sharps, for contrast with the flat keys above", () => {
-  const a = mkAskChromatic();
+test("P4/2026-10-01: askAddAnnotation(key: F#m) spells sharps, for contrast with the flat keys above", async () => {
+  const a = await mkAskChromatic();
   a.run(`askAddAnnotation({kind: "key", text: "F#m", bar: 1, beat: 1})`);
   const ctx = a.run(`askContext(askSpan(), askBudget())`);
   assert.match(ctx, /key state: key: F#m ✓/);
@@ -8149,8 +8149,8 @@ test("P4/2026-10-01: askAddAnnotation(key: F#m) spells sharps, for contrast with
 });
 // the editor (note-editor "key:" directive) path shares deriveNoteTypes with
 // askAddAnnotation — parseRollnotes is the text-grammar entry it uses.
-test("P4/2026-10-01: the note-editor's \"key: Ebm\" text path (parseRollnotes) spells the same flats as the Ask tool path", () => {
-  const a = mkAskChromatic();
+test("P4/2026-10-01: the note-editor's \"key: Ebm\" text path (parseRollnotes) spells the same flats as the Ask tool path", async () => {
+  const a = await mkAskChromatic();
   a.run(`rollnotes = parseRollnotes("[1.1]\\nkey: Ebm").map(resolveNote); finalizeNotes();`);
   const txt = a.run(`askSpanNotes(0, barTicks())`);
   assert.match(txt, /bar 1: 1 Bb4 1, 2 Eb4 1, 3 Gb4 1/);
@@ -8164,8 +8164,8 @@ test("P4/2026-10-01: the note-editor's \"key: Ebm\" text path (parseRollnotes) s
 // Normal-mode-only line in a Learning context. askSeenAdvance is what
 // askSend/askTerminalSend call right after building the outgoing context —
 // exercised directly here, same effect as a real send.
-test("P7 bridge context: the builder returns song + new ⚠ + new status; a send's cursor-advance clears them; a fresh error after that shows alone", () => {
-  const a = mkAsk("learning");
+test("P7 bridge context: the builder returns song + new ⚠ + new status; a send's cursor-advance clears them; a fresh error after that shows alone", async () => {
+  const a = await mkAsk("learning");
   a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];`);
   a.run(`logErr("boom"); setInfo("hello status");`);
   let ctx = a.run(`askContext(askSpan(), askBudget())`);
@@ -8183,8 +8183,8 @@ test("P7 bridge context: the builder returns song + new ⚠ + new status; a send
   a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];`);
 });
 
-test("P7 bridge context: debug lines join 'new ⚠ messages' only with Settings → Debug log on, same gate as the ⚠ sheet/chip", () => {
-  const a = mkAsk("learning");
+test("P7 bridge context: debug lines join 'new ⚠ messages' only with Settings → Debug log on, same gate as the ⚠ sheet/chip", async () => {
+  const a = await mkAsk("learning");
   a.run(`localStorage.removeItem(askSeenKey()); localStorage.removeItem("ff1roll-debuglog"); appErrors.length = 0; appDebug.length = 0;`);
   a.run(`logDebug("probe only")`);
   let ctx = a.run(`askContext(askSpan(), askBudget())`);
@@ -8195,8 +8195,8 @@ test("P7 bridge context: debug lines join 'new ⚠ messages' only with Settings 
   a.run(`localStorage.removeItem("ff1roll-debuglog"); appErrors.length = 0; appDebug.length = 0;`);
 });
 
-test("P7 bridge context: Learning never surfaces a ⚠/status line pushed while the device was in Normal mode, whatever it says (CLAUDE.md hard rule — Learning mode is the law)", () => {
-  const normal = mkAsk("normal");
+test("P7 bridge context: Learning never surfaces a ⚠/status line pushed while the device was in Normal mode, whatever it says (CLAUDE.md hard rule — Learning mode is the law)", async () => {
+  const normal = await mkAsk("normal");
   normal.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];
               setInfo("C major"); logErr("normal-mode only error");`);
   normal.run(`setAppMode("learning"); finalizeNotes();`); // the SAME device, switched mid-session
@@ -8206,8 +8206,8 @@ test("P7 bridge context: Learning never surfaces a ⚠/status line pushed while 
   assert.doesNotMatch(ctx, /New since your last message:/, "nothing left to show once the only new lines are Normal-tagged");
 });
 
-test("P7 bridge context: 'New since' caps each section at 20 lines, newest last, then '(+N older)' — a flood stays cheap", () => {
-  const a = mkAsk("learning");
+test("P7 bridge context: 'New since' caps each section at 20 lines, newest last, then '(+N older)' — a flood stays cheap", async () => {
+  const a = await mkAsk("learning");
   a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];
          for (let i = 0; i < 25; i++) logErr("err " + i);`);
   const ctx = a.run(`askContext(askSpan(), askBudget())`);
@@ -8219,14 +8219,14 @@ test("P7 bridge context: 'New since' caps each section at 20 lines, newest last,
   a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0;`);
 });
 
-test("P7 bridge context: general/Terminal get the compact 'open song' line (title, path, published/local, view, cursor) the song chat already carries in full", () => {
-  const a = mkAsk("learning");
+test("P7 bridge context: general/Terminal get the compact 'open song' line (title, path, published/local, view, cursor) the song chat already carries in full", async () => {
+  const a = await mkAsk("learning");
   const ctx = a.run(`(() => { askGeneral = true; try { return askContext({t0: 0, t1: 1920, from: 1, to: 1}, askBudget()); } finally { askGeneral = false; } })()`);
   assert.match(ctx, /open song: Test \(midi\/test\.mid, Local\) — view: roll, paused; cursor: bar 1 beat 1/);
 });
 
-test("P7 bridge context: askTerminalContext (the Terminal tab's own builder — no model call, so no askContext) carries the open song + New-since, omitting whichever is empty", () => {
-  const a = mkAsk("learning");
+test("P7 bridge context: askTerminalContext (the Terminal tab's own builder — no model call, so no askContext) carries the open song + New-since, omitting whichever is empty", async () => {
+  const a = await mkAsk("learning");
   a.run(`localStorage.removeItem(askSeenKey(ASK_TERMINAL_KEY)); appErrors.length = 0; appDebug.length = 0; statusHistory = [];`);
   assert.equal(a.run(`askTerminalContext()`), "open song: Test (midi/test.mid, Local) — view: roll, paused; cursor: bar 1 beat 1", "nothing new yet: just the open song");
   a.run(`logErr("term boom")`);
@@ -8245,8 +8245,8 @@ test("P7 bridge context: askTerminalContext (the Terminal tab's own builder — 
 // askFinish only — never askFail) for that chat (askStoreKey()); unchanged
 // + askCaps.bridge (the same flag that detects the bridge everywhere else)
 // → a one-line stand-in instead of the full text.
-test("P8 bridge-session caching: unchanged annotations/visible notes send a one-line stand-in on the next turn; an edit sends them in full again", () => {
-  const a = mkAsk("learning", `
+test("P8 bridge-session caching: unchanged annotations/visible notes send a one-line stand-in on the next turn; an edit sends them in full again", async () => {
+  const a = await mkAsk("learning", `
     rollnotes = [{b1: 1, q1: 1, text: "C"}];
     askCaps = {bridge: true, terminal: false, sessions: true};
   `);
@@ -8267,8 +8267,8 @@ test("P8 bridge-session caching: unchanged annotations/visible notes send a one-
   assert.match(ctx, /^notes in bars 1–1: unchanged since your last message$/m, "the OTHER section is untouched and still cached separately");
 });
 
-test("P8 bridge-session caching: a failed send never confirms the hash — the next turn still sends in full", () => {
-  const a = mkAsk("learning", `
+test("P8 bridge-session caching: a failed send never confirms the hash — the next turn still sends in full", async () => {
+  const a = await mkAsk("learning", `
     rollnotes = [{b1: 1, q1: 1, text: "C"}];
     askCaps = {bridge: true, terminal: false, sessions: true};
   `);
@@ -8279,8 +8279,8 @@ test("P8 bridge-session caching: a failed send never confirms the hash — the n
   assert.doesNotMatch(ctx, /unchanged since your last message/);
 });
 
-test("P8 bridge-session caching: a non-bridge backend always gets the full text, confirmed hash or not", () => {
-  const a = mkAsk("learning", `rollnotes = [{b1: 1, q1: 1, text: "C"}];`); // askCaps.bridge stays false — no bridge detected, same as today
+test("P8 bridge-session caching: a non-bridge backend always gets the full text, confirmed hash or not", async () => {
+  const a = await mkAsk("learning", `rollnotes = [{b1: 1, q1: 1, text: "C"}];`); // askCaps.bridge stays false — no bridge detected, same as today
   a.run(`askContext(askSpan(), askBudget())`);
   a.run(`askFinish(askJobId(), "ok", askStoreKey())`); // even a "confirmed" hash must not matter without the bridge
   const ctx = a.run(`askContext(askSpan(), askBudget())`);
@@ -8288,8 +8288,8 @@ test("P8 bridge-session caching: a non-bridge backend always gets the full text,
   assert.doesNotMatch(ctx, /unchanged since your last message/);
 });
 
-test("P8 bridge-session caching: Clear chat resets the confirmed hashes (the app's own bridge session controls)", () => {
-  const a = mkAsk("learning", `
+test("P8 bridge-session caching: Clear chat resets the confirmed hashes (the app's own bridge session controls)", async () => {
+  const a = await mkAsk("learning", `
     rollnotes = [{b1: 1, q1: 1, text: "C"}];
     askCaps = {bridge: true, terminal: false, sessions: true};
   `);
@@ -8305,7 +8305,7 @@ test("P8 bridge-session caching: Clear chat resets the confirmed hashes (the app
 });
 
 test("P8 bridge-session caching: Compact resets the confirmed hashes (the compacted session no longer holds the verbatim text)", async () => {
-  const a = mkAsk("learning", `
+  const a = await mkAsk("learning", `
     rollnotes = [{b1: 1, q1: 1, text: "C"}];
     askCaps = {bridge: true, terminal: false, sessions: true};
   `);
@@ -8326,8 +8326,8 @@ test("P8 bridge-session caching: Compact resets the confirmed hashes (the compac
   assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "Compact: full again next turn");
 });
 
-test("P8 bridge-session caching: a different chat (song key change / general chat) gets its own empty record — full text, even though this one already confirmed its hash", () => {
-  const a = mkAsk("learning", `
+test("P8 bridge-session caching: a different chat (song key change / general chat) gets its own empty record — full text, even though this one already confirmed its hash", async () => {
+  const a = await mkAsk("learning", `
     rollnotes = [{b1: 1, q1: 1, text: "C"}];
     askCaps = {bridge: true, terminal: false, sessions: true};
   `);
@@ -8338,8 +8338,8 @@ test("P8 bridge-session caching: a different chat (song key change / general cha
   assert.match(ctx, /the user's annotations \(\.rollnotes\)/, "a fresh store key has no confirmed hash: full text");
 });
 
-test("P8 bridge-session caching: a failed send never marks 'New since' lines as seen either (askSeenStage/commit/drop, the same success-only pattern as the annotations cache)", () => {
-  const a = mkAsk("learning");
+test("P8 bridge-session caching: a failed send never marks 'New since' lines as seen either (askSeenStage/commit/drop, the same success-only pattern as the annotations cache)", async () => {
+  const a = await mkAsk("learning");
   a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0; statusHistory = [];`);
   a.run(`logErr("boom")`);
   let ctx = a.run(`askContext(askSpan(), askBudget())`);
@@ -8355,8 +8355,8 @@ test("P8 bridge-session caching: a failed send never marks 'New since' lines as 
   a.run(`localStorage.removeItem(askSeenKey()); appErrors.length = 0; appDebug.length = 0;`);
 });
 
-test("P8 bridge-session caching: askSessionName is mode-separated — Learning and Normal never share a resumed bridge session for the same song (docs/ask-token-plan.md #2, SAFETY: nothing from Normal may leak into Learning's AI context)", () => {
-  const a = mkAsk("learning");
+test("P8 bridge-session caching: askSessionName is mode-separated — Learning and Normal never share a resumed bridge session for the same song (docs/ask-token-plan.md #2, SAFETY: nothing from Normal may leak into Learning's AI context)", async () => {
+  const a = await mkAsk("learning");
   const learnName = a.run(`askSessionName()`);
   a.run(`setAppMode("normal")`);
   const normalName = a.run(`askSessionName()`);
@@ -8407,8 +8407,8 @@ function decodeCompactNotes(txt) { // "T<n> name" + "<bar>|<beat><Pitch><oct>/<d
   }
   return out;
 }
-test("P9 compact encoding: askSpanNotesCompact decodes to EXACTLY the same (bar, beat, pitch, dur) tuples as askSpanNotes — octave/duration carried forward within a row, shown again when they change", () => {
-  const a = mkAsk("learning", `
+test("P9 compact encoding: askSpanNotesCompact decodes to EXACTLY the same (bar, beat, pitch, dur) tuples as askSpanNotes — octave/duration carried forward within a row, shown again when they change", async () => {
+  const a = await mkAsk("learning", `
     song.tracks = [{name: "lead", notes: [
       {t: 0, d: 480, p: 60, v: 80},    // beat 1, C4, dur 1 — first note: both always shown
       {t: 480, d: 240, p: 62, v: 80},  // beat 2, D4 (same octave: omitted), dur 0.5 (changed: shown)
@@ -8423,8 +8423,8 @@ test("P9 compact encoding: askSpanNotesCompact decodes to EXACTLY the same (bar,
   const full = a.run(`askSpanNotes(0, barTicks())`);
   assert.deepEqual(decodeCompactNotes(compact), decodeFullNotes(full), "decoded, the compact rows are exactly the song's notes in the window");
 });
-test("P9 compact encoding: drum tracks keep the raw note number, '#'-prefixed so it can't be misread as another beat; duration still carries forward", () => {
-  const a = mkAsk("learning", `
+test("P9 compact encoding: drum tracks keep the raw note number, '#'-prefixed so it can't be misread as another beat; duration still carries forward", async () => {
+  const a = await mkAsk("learning", `
     song.tracks = [{name: "drums", notes: [
       {t: 0, d: 480, p: 36, v: 100},
       {t: 480, d: 480, p: 38, v: 100},
@@ -8435,8 +8435,8 @@ test("P9 compact encoding: drum tracks keep the raw note number, '#'-prefixed so
   const compact = a.run(`askSpanNotesCompact(0, barTicks())`);
   assert.match(compact, /\nT1 drums \[drums\]\n1\|1#36\/1 2#38 3#36\/0\.5$/, "same number as the full format, '#'-marked; duration omitted only when unchanged");
 });
-test("P9 compact encoding: askAnnotationsTextCompact keeps dedupedNotesWithIndex's ids, writes '<id> [bar.beat-bar.beat] kind: value — comment', and drops track:/lane:-style structural directives", () => {
-  const a = mkAsk("learning", `
+test("P9 compact encoding: askAnnotationsTextCompact keeps dedupedNotesWithIndex's ids, writes '<id> [bar.beat-bar.beat] kind: value — comment', and drops track:/lane:-style structural directives", async () => {
+  const a = await mkAsk("learning", `
     rollnotes = [
       {b1: 3, q1: 1, b2: 3, q2: 2, text: "chord: F", chord: true},
       {b1: 5, q1: 1, text: "section: B", section: true},
@@ -8454,8 +8454,8 @@ test("P9 compact encoding: askAnnotationsTextCompact keeps dedupedNotesWithIndex
   a.run(`rollnotes = [];`);
   assert.equal(a.run(`askAnnotationsTextCompact()`), "(no annotations)");
 });
-test("P9 compact encoding: askContext sends the compact rows/.rollnotes-style annotations ONLY when askCaps.bridge — a local/LM Studio provider keeps today's full format", () => {
-  const a = mkAsk("learning", `
+test("P9 compact encoding: askContext sends the compact rows/.rollnotes-style annotations ONLY when askCaps.bridge — a local/LM Studio provider keeps today's full format", async () => {
+  const a = await mkAsk("learning", `
     rollnotes = [{b1: 1, q1: 1, text: "chord: C", chord: true}];
     askCaps = {bridge: true, terminal: false, sessions: true};
   `);
@@ -8469,8 +8469,8 @@ test("P9 compact encoding: askContext sends the compact rows/.rollnotes-style an
   assert.match(ctxLocal, /"version": 1, "song"/, "non-bridge: unchanged, full JSON annotations");
   assert.match(ctxLocal, /## track 1 \(melody\)/, "non-bridge: unchanged, full note format");
 });
-test("P9 compact encoding: the legend is sent once per session — present on the first bridge message, absent on the next, present again after Clear/Compact (askSentReset)", () => {
-  const a = mkAsk("learning", `
+test("P9 compact encoding: the legend is sent once per session — present on the first bridge message, absent on the next, present again after Clear/Compact (askSentReset)", async () => {
+  const a = await mkAsk("learning", `
     rollnotes = [{b1: 1, q1: 1, text: "chord: C", chord: true}];
     askCaps = {bridge: true, terminal: false, sessions: true};
   `);
@@ -8485,8 +8485,8 @@ test("P9 compact encoding: the legend is sent once per session — present on th
   ctx = a.run(`askContext(askSpan(), askBudget())`);
   assert.match(ctx, /# Compact context format/, "after a reset: the legend comes back, just like the cached annotations/notes sections do");
 });
-test("P9 compact encoding: Learning never calls estimateKey from askSpanNotesCompact (spy); Normal reaches it for an undeclared span, and the compact text states the estimate the same way askSpanNotes does", () => {
-  const a = mkAsk("learning", `
+test("P9 compact encoding: Learning never calls estimateKey from askSpanNotesCompact (spy); Normal reaches it for an undeclared span, and the compact text states the estimate the same way askSpanNotes does", async () => {
+  const a = await mkAsk("learning", `
     globalThis.__estCalls = 0;
     const __orig = estimateKey;
     estimateKey = function() { globalThis.__estCalls++; return __orig(); };
@@ -8529,7 +8529,7 @@ const chatThroughBridge = epoch => `(async () => {
   await aiRemote().chat({system: "s", messages: [{role: "user", content: "hi"}], onDelta: () => {}});
 })()`;
 test("epoch: a changed x-nr-session-epoch resets this chat's sent-hashes (annotations/notes go in full again); an unchanged epoch leaves them cached", async () => {
-  const a = mkAsk("learning", `
+  const a = await mkAsk("learning", `
     rollnotes = [{b1: 1, q1: 1, text: "C"}];
     askCaps = {bridge: true, terminal: false, sessions: true};
     localStorage.removeItem(askEpochKey());
@@ -8563,8 +8563,8 @@ test("epoch: a changed x-nr-session-epoch resets this chat's sent-hashes (annota
 // A four-bar fixture, one distinct natural-pitch note per bar (C4/D4/E4/F4 —
 // no accidentals, so the compact spelling is unambiguous) so each bar's row,
 // and therefore its hash, differs from its neighbors.
-function mkAskBars() {
-  return mkAsk("learning", `
+async function mkAskBars() {
+  return await mkAsk("learning", `
     song.tracks = [{name: "melody", notes: [
       {t: 0, d: 480, p: 60, v: 80},
       {t: 1920, d: 480, p: 62, v: 80},
@@ -8577,8 +8577,8 @@ function mkAskBars() {
   `);
 }
 const spBars = (from, to) => `{t0: ${from - 1} * barTicks(), t1: ${to} * barTicks(), from: ${from}, to: ${to}}`;
-test("P10 skip-already-sent bars: a window that re-covers earlier, unchanged bars shows them collapsed (\"as sent earlier\"), rendering only the new ones in full", () => {
-  const a = mkAskBars();
+test("P10 skip-already-sent bars: a window that re-covers earlier, unchanged bars shows them collapsed (\"as sent earlier\"), rendering only the new ones in full", async () => {
+  const a = await mkAskBars();
   let ctx = a.run(`askContext(${spBars(1, 2)}, askBudget())`);
   assert.match(ctx, /^notes in bars 1–2:\n#/m, "first message: full, like today");
   assert.match(ctx, /\nT1 melody\n1\|1C4\/1\n2\|1D4\/1$/m);
@@ -8590,16 +8590,16 @@ test("P10 skip-already-sent bars: a window that re-covers earlier, unchanged bar
   assert.match(ctx, /\nT1 melody\n3\|1E4\/1\n4\|1F4\/1$/m, "bars 3–4 are new: rendered in full, same format as ever");
   assert.doesNotMatch(ctx, /\b1\|1C4/, "bar 1's row text itself is never repeated");
 });
-test("P10 skip-already-sent bars: scrolling forward then back — the per-bar record accumulates across DIFFERENT windows, so a window re-covering bars sent in either one collapses entirely (the existing whole-block stand-in, since every bar in it matches)", () => {
-  const a = mkAskBars();
+test("P10 skip-already-sent bars: scrolling forward then back — the per-bar record accumulates across DIFFERENT windows, so a window re-covering bars sent in either one collapses entirely (the existing whole-block stand-in, since every bar in it matches)", async () => {
+  const a = await mkAskBars();
   a.run(`askContext(${spBars(1, 2)}, askBudget()); askFinish(askJobId(), "ok", askStoreKey());`); // view bars 1–2
   a.run(`askContext(${spBars(3, 4)}, askBudget()); askFinish(askJobId(), "ok", askStoreKey());`); // scroll forward to 3–4 (a SEPARATE prior call, never bars 1–2 together)
   const ctx = a.run(`askContext(${spBars(1, 4)}, askBudget())`); // scroll back: the view now covers both earlier windows at once
   assert.match(ctx, /^notes in bars 1–4: unchanged since your last message$/m, "every bar in the window was already confirmed, from either earlier call: the compact whole-block stand-in, not four separate collapse lines");
   assert.doesNotMatch(ctx, /\nT1 melody/, "nothing left to render in full");
 });
-test("P10 skip-already-sent bars: editing one note resends ONLY that bar — its unchanged neighbors stay collapsed", () => {
-  const a = mkAskBars();
+test("P10 skip-already-sent bars: editing one note resends ONLY that bar — its unchanged neighbors stay collapsed", async () => {
+  const a = await mkAskBars();
   a.run(`askContext(${spBars(1, 3)}, askBudget()); askFinish(askJobId(), "ok", askStoreKey());`);
   a.run(`song.tracks[0].notes[1].p = 67;`); // bar 2's note: D4 -> G4 — an edit, not a new note
   const ctx = a.run(`askContext(${spBars(1, 3)}, askBudget())`);
@@ -8608,16 +8608,16 @@ test("P10 skip-already-sent bars: editing one note resends ONLY that bar — its
   assert.match(ctx, /\nT1 melody\n2\|1G4\/1$/m, "only the edited bar renders, with its new content");
   assert.doesNotMatch(ctx, /\b1\|1D4/, "the stale D4 reading is never sent again either");
 });
-test("P10 skip-already-sent bars: a failed send never records a bar's hash — the next turn sends it in full again", () => {
-  const a = mkAskBars();
+test("P10 skip-already-sent bars: a failed send never records a bar's hash — the next turn sends it in full again", async () => {
+  const a = await mkAskBars();
   a.run(`askContext(${spBars(1, 2)}, askBudget())`); // stages, never confirms
   a.run(`askFail(askJobId(), "boom", askStoreKey())`);
   const ctx = a.run(`askContext(${spBars(1, 2)}, askBudget())`);
   assert.match(ctx, /\nT1 melody\n1\|1C4\/1\n2\|1D4\/1$/m, "full again: the failed send never landed");
   assert.doesNotMatch(ctx, /^bars? [\d–]+: as sent earlier$/m, "no collapse line — only the legend's own explanation of the phrase may appear (its own hash was never confirmed either)");
 });
-test("P10 skip-already-sent bars: Clear chat / Compact / a changed session epoch reset the per-bar record along with the rest (askSentReset)", () => {
-  const a = mkAskBars();
+test("P10 skip-already-sent bars: Clear chat / Compact / a changed session epoch reset the per-bar record along with the rest (askSentReset)", async () => {
+  const a = await mkAskBars();
   a.run(`askContext(${spBars(1, 2)}, askBudget()); askFinish(askJobId(), "ok", askStoreKey());`);
   let ctx = a.run(`askContext(${spBars(1, 2)}, askBudget())`);
   assert.match(ctx, /^notes in bars 1–2: unchanged since your last message$/m, "sanity: fully cached before the reset");
@@ -8626,8 +8626,8 @@ test("P10 skip-already-sent bars: Clear chat / Compact / a changed session epoch
   ctx = a.run(`askContext(${spBars(1, 2)}, askBudget())`);
   assert.match(ctx, /\nT1 melody\n1\|1C4\/1\n2\|1D4\/1$/m, "full again, as if a new chat");
 });
-test("P10 skip-already-sent bars: the per-bar record is capped — committing past the cap drops the LOWEST bar numbers first", () => {
-  const a = mkAskBars();
+test("P10 skip-already-sent bars: the per-bar record is capped — committing past the cap drops the LOWEST bar numbers first", async () => {
+  const a = await mkAskBars();
   const key = a.run(`askStoreKey()`);
   a.run(`
     const bulk = {};
@@ -8640,8 +8640,8 @@ test("P10 skip-already-sent bars: the per-bar record is capped — committing pa
   assert.ok(!("1" in bars), "the lowest bar number was dropped first");
   assert.ok("2001" in bars, "the newest bars survive");
 });
-test("P10 read_bars: returns exactly askSpanNotesCompact for the span, from LIVE state, and is refused in the general chat", () => {
-  const a = mkAskBars();
+test("P10 read_bars: returns exactly askSpanNotesCompact for the span, from LIVE state, and is refused in the general chat", async () => {
+  const a = await mkAskBars();
   const viaReadBars = a.run(`askReadBars({from_bar: 2, to_bar: 3})`);
   const direct = a.run(`askSpanNotesCompact(1 * barTicks(), 3 * barTicks(), 6000)`);
   assert.equal(viaReadBars, direct, "no tracks filter: byte-identical to askSpanNotesCompact for that span");
@@ -8655,8 +8655,8 @@ test("P10 read_bars: returns exactly askSpanNotesCompact for the span, from LIVE
   assert.ok(!a.run(`askToolsNow().some(t => t.function.name === "read_bars")`), "not offered in the general chat — read_bars is about THE open song, unlike read_song/read_notes");
   a.run(`askGeneral = false;`);
 });
-test("P10 read_bars: caps the span and says so when the request asks for more", () => {
-  const a = mkAsk("learning", `
+test("P10 read_bars: caps the span and says so when the request asks for more", async () => {
+  const a = await mkAsk("learning", `
     song.tracks = [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 80}]}];
     songEndTick = 200 * barTicks();
     trackState = [{muted: false, solo: false}];
@@ -8671,8 +8671,8 @@ test("P10 read_bars: caps the span and says so when the request asks for more", 
 // request, so IT has to wall modes off too (2026-10-01, SAFETY: a Normal-mode
 // turn, which may carry a key/chord estimate, must never reach a Learning
 // request, and CLAUDE.md's Learning-is-the-law cuts both ways).
-test("Ask: history across modes is walled off at request time — a Normal-mode turn never enters a Learning request's messages, and a Learning turn never enters a Normal one, though both stay in the SAME on-device log", () => {
-  const a = mkAsk("learning");
+test("Ask: history across modes is walled off at request time — a Normal-mode turn never enters a Learning request's messages, and a Learning turn never enters a Normal one, though both stay in the SAME on-device log", async () => {
+  const a = await mkAsk("learning");
   a.run(`askSave([{role: "user", content: "what chord is this", mode: "normal"}, {role: "assistant", content: "that's a G7, pretty sure", mode: "normal"}]);`);
   let msgs = JSON.parse(a.run(`JSON.stringify(askBuildMessages(askLoad(), "next question", "CTX", {hist: 100000}))`));
   assert.equal(msgs.length, 1, "Learning: the Normal-mode turn is excluded — only the live question remains");
@@ -8695,8 +8695,8 @@ test("Ask: history across modes is walled off at request time — a Normal-mode 
   assert.doesNotMatch(msgs.map(m => m.content).join("\n"), /listen to bar 2/, "a Learning-mode turn never enters a Normal-mode request's messages");
 });
 
-test("Ask: untagged legacy history (saved before mode-tagging shipped) counts as Learning only — never surfaces in a Normal-mode request", () => {
-  const a = mkAsk("learning");
+test("Ask: untagged legacy history (saved before mode-tagging shipped) counts as Learning only — never surfaces in a Normal-mode request", async () => {
+  const a = await mkAsk("learning");
   a.run(`askSave([{role: "user", content: "legacy question, no mode field"}, {role: "assistant", content: "legacy reply"}]);`);
   let msgs = JSON.parse(a.run(`JSON.stringify(askBuildMessages(askLoad(), "q", "CTX", {hist: 100000}))`));
   assert.equal(msgs.length, 3, "Learning: untagged legacy messages are visible (treated as Learning, the older/default mode)");
@@ -8705,7 +8705,7 @@ test("Ask: untagged legacy history (saved before mode-tagging shipped) counts as
   assert.equal(msgs.length, 1, "Normal: untagged legacy messages are excluded — never treated as Normal");
 });
 
-test("Ask: askSend/askFinish/askFail/askNotesArrived all tag the message they push with the mode it was created in (appMode() at push time)", () => {
+test("Ask: askSend/askFinish/askFail/askNotesArrived all tag the message they push with the mode it was created in (appMode() at push time)", async () => {
   // askSend's push sits right before its network call (aiHostOk/askRun) —
   // exercising it live would mean standing up a fake AI backend for a tag
   // check, so the tag on THAT push is a source check; askFinish/askFail/
@@ -8713,7 +8713,7 @@ test("Ask: askSend/askFinish/askFail/askNotesArrived all tag the message they pu
   const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   assert.match(src, /msgs\.push\(\{role: "user", content: text, t: Date\.now\(\), at: askSpanLabel\(sp\), pending: jobId, mode: appMode\(\)\}\);/, "askSend tags the user push");
 
-  const a = mkAsk("normal");
+  const a = await mkAsk("normal");
   a.run(`askSave([{role: "user", content: "q", t: 1, at: "bars 1–4 (view)", pending: "nr_one"}]); askFinish("nr_one", "an answer");`);
   let st = JSON.parse(a.run(`JSON.stringify(askStore())`));
   assert.equal(st.msgs[1].mode, "normal", "askFinish tags the assistant push with the CURRENT mode");
@@ -8728,8 +8728,8 @@ test("Ask: askSend/askFinish/askFail/askNotesArrived all tag the message they pu
   a.run(`localStorage.removeItem(askStoreKey()); localStorage.removeItem(ASK_TERMINAL_KEY);`);
 });
 
-test("Ask: the on-screen log still SHOWS a different mode's turn (dimmed, tagged) — never sent to the model, but never silently hidden either", () => {
-  const a = mkAsk("learning");
+test("Ask: the on-screen log still SHOWS a different mode's turn (dimmed, tagged) — never sent to the model, but never silently hidden either", async () => {
+  const a = await mkAsk("learning");
   a.run(`askSave([{role: "user", content: "what chord", mode: "normal", t: 1}, {role: "assistant", content: "that's a G7", mode: "normal", m: "test"}]);
          asksheet.classList.add("on"); askSetMode("song"); askRender();`);
   const bubbles = JSON.parse(a.run(`JSON.stringify([...asklog.children].map(d => ({dim: d.classList.contains("othermode"), text: d.textContent})))`));
@@ -8778,17 +8778,17 @@ function analyzeFixture(bars) { // bars: array of [pc, pc, pc] triads (root, thi
 // C, F, G, C — root-position triads, one per bar
 const CFGC = analyzeFixture([[0, 4, 7], [5, 9, 0], [7, 11, 2], [0, 4, 7]]);
 
-test("P6 Analyze layer: a plain A–C–E bar after C reads Am, not \"C (no 5th)\" (the relative-major tie, 2026-09-30)", () => {
+test("P6 Analyze layer: a plain A–C–E bar after C reads Am, not \"C (no 5th)\" (the relative-major tie, 2026-09-30)", async () => {
   const f = analyzeFixture([[0, 4, 7], [9, 0, 4], [5, 9, 0], [7, 11, 2]]); // C, Am, F, G
-  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+  const normal = await createApp({storage: {"ff1roll-mode": "normal"}});
   normal.run(f.script + `renderViewMenu(); document.getElementById("vwAnalyze").click();`);
   const chords = valOf(normal, `analysisBands.chords.map(c => c.text)`);
   assert.equal(chords[1], "Am", "bar 2: " + chords[1]);
   assert.deepEqual(chords, ["C", "Am", "F", "G"]);
 });
 
-test("P6 Analyze layer: Learning has no menu item and never calls bsInferTimeline/estimateKey (spy)", () => {
-  const learn = createApp({storage: {"ff1roll-mode": "learning"}});
+test("P6 Analyze layer: Learning has no menu item and never calls bsInferTimeline/estimateKey (spy)", async () => {
+  const learn = await createApp({storage: {"ff1roll-mode": "learning"}});
   learn.run(CFGC.script + `
     renderViewMenu();
     globalThis.__bsCalls = 0; globalThis.__keCalls = 0;
@@ -8810,8 +8810,8 @@ test("P6 Analyze layer: Learning has no menu item and never calls bsInferTimelin
   assert.deepEqual(valOf(learn, `analysisBands`), {chords: [], key: null});
 });
 
-test("P6 Analyze layer: Normal — toggling the menu item computes per-bar chords for a fixture (C–F–G–C bars → C, F, G, C)", () => {
-  const normal = createApp({storage: {"ff1roll-mode": "normal"}});
+test("P6 Analyze layer: Normal — toggling the menu item computes per-bar chords for a fixture (C–F–G–C bars → C, F, G, C)", async () => {
+  const normal = await createApp({storage: {"ff1roll-mode": "normal"}});
   normal.run(CFGC.script + `renderViewMenu();`);
   assert.equal(normal.run(`document.getElementById("vwAnalyze").style.display`), "", "Normal: the menu item is present");
   assert.equal(normal.run(`analysisOn`), false, "off by default this session");
@@ -8831,8 +8831,8 @@ test("P6 Analyze layer: Normal — toggling the menu item computes per-bar chord
   assert.equal(normal.run(`analysisChordLane`), null);
 });
 
-test("P6 Analyze layer: switching to Learning turns the layer off immediately and clears any pending debounced recompute", () => {
-  const app = createApp({storage: {"ff1roll-mode": "normal"}});
+test("P6 Analyze layer: switching to Learning turns the layer off immediately and clears any pending debounced recompute", async () => {
+  const app = await createApp({storage: {"ff1roll-mode": "normal"}});
   app.run(CFGC.script + `
     document.getElementById("vwAnalyze").click();
     globalThis.__bsCalls = 0;
@@ -8848,8 +8848,8 @@ test("P6 Analyze layer: switching to Learning turns the layer off immediately an
   assert.equal(app.run(`__bsCalls`), 0, "the scheduled recompute never ran — the mode flip stopped it, not just its output");
 });
 
-test("P6 Analyze layer: Adopt writes ONE chord: annotation as a single ⟲ step; Adopt all chords adopts every band as ONE step too", () => {
-  const a = createApp({storage: {"ff1roll-mode": "normal"}});
+test("P6 Analyze layer: Adopt writes ONE chord: annotation as a single ⟲ step; Adopt all chords adopts every band as ONE step too", async () => {
+  const a = await createApp({storage: {"ff1roll-mode": "normal"}});
   a.run(CFGC.script + `document.getElementById("vwAnalyze").click();`);
   assert.equal(a.run(`rollnotes.length`), 0);
   assert.equal(a.run(`editUndo.length`), 0);
@@ -8881,8 +8881,8 @@ test("P6 Analyze layer: Adopt writes ONE chord: annotation as a single ⟲ step;
   assert.deepEqual(valOf(a, `rollnotes.filter(n => n.chord).sort((x,y)=>x.b1-y.b1).map(n => n.text)`), ["C", "F", "G", "C"]);
 });
 
-test("P6 Analyze layer: notes.txt (serializeRollnotes) and askContext are byte-identical with the layer on or off — it's a view, not data", () => {
-  const a = mkAsk("normal", CFGC.script);
+test("P6 Analyze layer: notes.txt (serializeRollnotes) and askContext are byte-identical with the layer on or off — it's a view, not data", async () => {
+  const a = await mkAsk("normal", CFGC.script);
   const notesBefore = a.run(`serializeRollnotes()`);
   const ctxBefore = a.run(`askContext({t0: 0, t1: barTicks(), from: 1, to: 1}, askBudget())`);
   a.run(`document.getElementById("vwAnalyze").click();`); // layer on, bands computed
@@ -8949,7 +8949,7 @@ function installOfflineTestSong(r) {
 }
 
 test("Download audio: renderSongOffline renders through OfflineAudioContext when one exists, and restores the live engine's globals untouched", async () => {
-  const a = createApp();
+  const a = await createApp();
   const r = (c) => a.run(c);
   installOfflineTestSong(r);
   assert.equal(r(`typeof window.OfflineAudioContext`), "function", "the harness stubs one by default, like every real browser");
@@ -8967,7 +8967,7 @@ test("Download audio: renderSongOffline renders through OfflineAudioContext when
 });
 
 test("Download audio: renderSongOffline falls back with a reason when there is no OfflineAudioContext", async () => {
-  const a = createApp();
+  const a = await createApp();
   const r = (c) => a.run(c);
   installOfflineTestSong(r);
   r(`window.__savedOAC = window.OfflineAudioContext; window.__savedWOAC = window.webkitOfflineAudioContext;
@@ -8982,7 +8982,7 @@ test("Download audio: renderSongOffline falls back with a reason when there is n
 });
 
 test("Download audio: deliverAudioFile writes the file via Filesystem then calls Share.share, both through nativePromise, when Capacitor is native", async () => {
-  const a = createApp();
+  const a = await createApp();
   const r = (c) => a.run(c);
   r(`
     globalThis.__calls = [];
@@ -9045,16 +9045,16 @@ test("VoiceOver: no symbol-only <button> lacks an aria-label (scan, explicit all
   assert.deepEqual(offenders, [], "symbol-only buttons with no aria-label: " + offenders.join(", "));
 });
 
-test("VoiceOver: setInfo (the status line / selected-note readout) mirrors into #srlive — same text, never more", () => {
-  const a = createApp();
+test("VoiceOver: setInfo (the status line / selected-note readout) mirrors into #srlive — same text, never more", async () => {
+  const a = await createApp();
   const r = (c) => a.run(c);
   r(`setInfo("C4 · E4 · G4  (3 notes)")`);
   assert.equal(a.el("srlive").textContent, "C4 · E4 · G4  (3 notes)");
   assert.equal(a.el("srlive").textContent, a.el("noteinfo").textContent, "never more than what the footer shows");
 });
 
-test("VoiceOver: srAnnounce de-dupes identical text and throttles bursts to the LAST text, not every intermediate one", () => {
-  const a = createApp();
+test("VoiceOver: srAnnounce de-dupes identical text and throttles bursts to the LAST text, not every intermediate one", async () => {
+  const a = await createApp();
   const r = (c) => a.run(c);
   r(`srAnnounce("first")`);
   assert.equal(a.el("srlive").textContent, "first");
@@ -9075,7 +9075,7 @@ function installTransportSong(r) {
 }
 
 test("VoiceOver: play() announces \"Playing\"; stop() announces the bar.beat it stopped at, read from the SAME LCD text on screen", async () => {
-  const a = createApp({intervals: true});
+  const a = await createApp({intervals: true});
   const r = (c) => a.run(c), v = (c) => JSON.parse(r(`JSON.stringify(${c})`));
   // let the one-shot boot IIFE's catalog fetch (rejects — no network in
   // tests) finish and write its own setInfo/srAnnounce ("catalog failed to
@@ -9097,10 +9097,10 @@ test("VoiceOver: play() announces \"Playing\"; stop() announces the bar.beat it 
   assert.equal(a.el("srlive").textContent, "Stopped at bar " + lcdBar + " beat " + lcdBeat);
 });
 
-test("VoiceOver, Learning mode: the live region never names a key/chord the screen doesn't show (lasso over C E G)", () => {
+test("VoiceOver, Learning mode: the live region never names a key/chord the screen doesn't show (lasso over C E G)", async () => {
   // createApp() with no explicit storage pins Learning mode (harness.mjs) —
   // this IS the "Learning song" the task asks for.
-  const learn = createApp();
+  const learn = await createApp();
   const rl = (c) => learn.run(c);
   rl(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
              tracks: [{name: "t", notes: [
@@ -9120,7 +9120,7 @@ test("VoiceOver, Learning mode: the live region never names a key/chord the scre
 
   // Normal mode, same notes: the chord IS named — and the live region still
   // says exactly what the footer says, just more of it (the arrow + name).
-  const norm = createApp({storage: {"ff1roll-mode": "normal"}});
+  const norm = await createApp({storage: {"ff1roll-mode": "normal"}});
   const rn = (c) => norm.run(c);
   rn(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
              tracks: [{name: "t", notes: [
@@ -9134,8 +9134,8 @@ test("VoiceOver, Learning mode: the live region never names a key/chord the scre
   assert.match(norm.el("srlive").textContent, /→/, "Normal mode DOES name the chord, on screen and in the live region alike");
 });
 
-test("VoiceOver: track-chip Mute/Solo are real toggles (role=button, aria-pressed, per-track aria-label) — not bare text spans; not-hidden chip has no Hide toggle at all (Chrome density pass, 2026-10-01: H off the chip)", () => {
-  const a = createApp();
+test("VoiceOver: track-chip Mute/Solo are real toggles (role=button, aria-pressed, per-track aria-label) — not bare text spans; not-hidden chip has no Hide toggle at all (Chrome density pass, 2026-10-01: H off the chip)", async () => {
+  const a = await createApp();
   const r = (c) => a.run(c);
   installTransportSong(r);
   r(`selTrack = 0; renderTrackbar();`);
@@ -9157,8 +9157,8 @@ test("VoiceOver: track-chip Mute/Solo are real toggles (role=button, aria-presse
   assert.equal(mute2.getAttribute("aria-pressed"), "true", "aria-pressed tracks the .on class trackToggle already drives");
 });
 
-test("VoiceOver: a hidden track's chip grows a 5th toggle — lit H, aria-pressed=true, one tap unhides via the same trackToggle(ti, \"hidden\")", () => {
-  const a = createApp();
+test("VoiceOver: a hidden track's chip grows a 5th toggle — lit H, aria-pressed=true, one tap unhides via the same trackToggle(ti, \"hidden\")", async () => {
+  const a = await createApp();
   const r = (c) => a.run(c);
   installTransportSong(r);
   r(`selTrack = 0; trackState[0].hidden = true; renderTrackbar();`);
@@ -9175,8 +9175,8 @@ test("VoiceOver: a hidden track's chip grows a 5th toggle — lit H, aria-presse
   assert.equal(a.run(`trackState[0].hidden`), false);
 });
 
-test("voice menu: #vmhide (chip's voice menu header row) toggles trackState[ti].hidden — where Hide moved off the chip", () => {
-  const a = createApp();
+test("voice menu: #vmhide (chip's voice menu header row) toggles trackState[ti].hidden — where Hide moved off the chip", async () => {
+  const a = await createApp();
   const r = (c) => a.run(c);
   installTransportSong(r);
   r(`selTrack = 0; buildVoiceMenu(0);`);
@@ -9195,8 +9195,8 @@ test("voice menu: #vmhide (chip's voice menu header row) toggles trackState[ti].
   assert.equal(vmhide().getAttribute("aria-pressed"), "false");
 });
 
-test("VoiceOver: the roll canvas carries a live aria-label naming the song, view, visible bars, and track count", () => {
-  const a = createApp();
+test("VoiceOver: the roll canvas carries a live aria-label naming the song, view, visible bars, and track count", async () => {
+  const a = await createApp();
   const r = (c) => a.run(c);
   installTransportSong(r);
   r(`view = {x: 0, y: 0, pxq: 56, rowH: 13}; viewMode = "roll"; updateCanvasA11y();`);
@@ -9212,7 +9212,7 @@ test("VoiceOver: the roll canvas carries a live aria-label naming the song, view
 // Publish all use, for every song, open or not. Folder mode (no GitHub token,
 // no fetch stubbing) exercises the real reads/writes — folderRead/folderWrite
 // are the same calls a repo publish makes, just to a fake directory.
-function pubApp() { return createApp(); }
+async function pubApp() { return await createApp(); }
 function useFakeFolder(a, name) {
   a.context.fakeRoot = fakeDir(name);
   a.run(`fsRoot.handle = fakeRoot; fsRoot.name = ${JSON.stringify(name)}; fsRoot.mode = "picker"; fsRoot.needsGrant = false;`);
@@ -9270,7 +9270,7 @@ function openComposition(a, key, {tempoNoteBpm} = {}) {
 test("Publish: the same song published open and not open — byte-identical .mid and notes.txt, annotations identical but for the stamp", async () => {
   const KEY = "albums/compositions/nightroll/twin.mid";
 
-  const A = pubApp();
+  const A = await pubApp();
   useFakeFolder(A, "A");
   openComposition(A, KEY, {tempoNoteBpm: 150});
   await A.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
@@ -9278,7 +9278,7 @@ test("Publish: the same song published open and not open — byte-identical .mid
   const annoA = JSON.parse(await folderText(A, "albums/compositions/nightroll/twin.rollnotes.json"));
   const notesA = await folderText(A, "albums/compositions/nightroll/twin.notes.txt");
 
-  const B = pubApp();
+  const B = await pubApp();
   useFakeFolder(B, "B");
   seedDraft(B, KEY, {tempoNoteBpm: 150}); // the SAME song, but never opened this session
   await B.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
@@ -9298,7 +9298,7 @@ test("Publish: the same song published open and not open — byte-identical .mid
 
 test("Publish: a capture's tempo: annotations are observations, never baked — its .mid tempo map is untouched", async () => {
   const KEY = "albums/nes/mega-man-2/air-man.mid";
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "cap");
   // the published capture: two measured tempo events already in the file
   const capDoc = {ppq: 480, timesig: [4, 4],
@@ -9322,7 +9322,7 @@ test("Publish: a capture's tempo: annotations are observations, never baked — 
 
 test("Publish: a deleted synced note isn't re-published, and its tombstone clears", async () => {
   const KEY = "albums/nes/final-fantasy-i/songs/tomb-test.mid"; // an analyzed song: annotations only, no music draft
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "tomb");
   const already = '{ "version": 1, "song": "tomb-test", "notes": [\n' +
     '  {"at":[1,1],"type":"section","label":"Intro"},\n' +
@@ -9342,8 +9342,8 @@ test("Publish: a deleted synced note isn't re-published, and its tombstone clear
   assert.equal(a.run(`localStorage.getItem("ff1roll-tombs-" + ${JSON.stringify(KEY)})`), null, "its tombstone cleared — the pushed file IS the post-deletion state");
 });
 
-test("Publish: an Untitled (local/) song's tempo note plays — baking is not limited to songs with a repo path", () => {
-  const a = pubApp();
+test("Publish: an Untitled (local/) song's tempo note plays — baking is not limited to songs with a repo path", async () => {
+  const a = await pubApp();
   const KEY = "local/untitled-1.mid";
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
@@ -9367,7 +9367,7 @@ test("Publish: an Untitled (local/) song's tempo note plays — baking is not li
 
 test("Publish: removing a baked tempo note removes it on republish — the base is recomputed fresh every time, never accumulated", async () => {
   const KEY = "albums/compositions/nightroll/ratchet.mid";
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "ratchet");
   openComposition(a, KEY, {tempoNoteBpm: 180});
   await a.run(`publishSong(${JSON.stringify(KEY)}, ghHeaders("folder"), () => {})`);
@@ -9386,8 +9386,8 @@ test("Publish: removing a baked tempo note removes it on republish — the base 
 });
 
 // ---- P1: origins, RULES, "Make it mine", meter baking (docs/provenance-plan.md) ----
-test("originOf: one of composition|copy|import|capture|starter, from what exists today", () => {
-  const a = pubApp();
+test("originOf: one of composition|copy|import|capture|starter, from what exists today", async () => {
+  const a = await pubApp();
   a.run(`albumMetaCache["albums/nes/mega-man-2"] = {nsf: true};`);
   assert.equal(a.run(`originOf("albums/nes/mega-man-2/air-man.mid")`), "capture", "album.json's nsf block");
   assert.equal(a.run(`originOf("albums/imports/tmnt-2/x.mid")`), "capture", "the legacy pre-move imports folder");
@@ -9404,8 +9404,8 @@ test("originOf: one of composition|copy|import|capture|starter, from what exists
   assert.equal(a.run(`originOf("local/brought-in.mid")`), "import", "a draft carrying the foreign file's own source (declared-vs-learner-spec.md)");
 });
 
-test("RULES: a capture refuses note/track edits (canEditMusic/editableSong false) but still accepts annotations", () => {
-  const a = pubApp();
+test("RULES: a capture refuses note/track edits (canEditMusic/editableSong false) but still accepts annotations", async () => {
+  const a = await pubApp();
   const KEY = "albums/nes/mega-man-2/air-man.mid";
   a.run(`
     albumMetaCache["albums/nes/mega-man-2"] = {nsf: true};
@@ -9435,7 +9435,7 @@ test("RULES: a capture refuses note/track edits (canEditMusic/editableSong false
 
 test("✎ Edit: opens the 'Edit a copy' sheet (name defaults to the title, folder to my-covers), a custom name is used, a name clash still gets a suffix, and the capture's own files stay untouched", async () => {
   const KEY = "albums/nes/mega-man-2/air-man.mid";
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "mim");
   const capDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
     tracks: [{name: "lead", notes: [{t: 0, d: 480, p: 60, v: 100}]}]};
@@ -9492,7 +9492,7 @@ test("✎ Edit: opens the 'Edit a copy' sheet (name defaults to the title, folde
 
 test("Publish: a declared meter bakes into a composition's .mid wherever tempo bakes; a capture's own meter is untouched", async () => {
   const KEY = "albums/compositions/nightroll/meter-test.mid";
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "meter");
   openComposition(a, KEY);
   a.run(`
@@ -9522,7 +9522,7 @@ test("Publish: a declared meter bakes into a composition's .mid wherever tempo b
 
 test("Publish: removing a declared meter note removes its baked event on republish — recomputed fresh every time, never accumulated", async () => {
   const KEY = "albums/compositions/nightroll/meter-ratchet.mid";
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "meter-ratchet");
   openComposition(a, KEY);
   a.run(`
@@ -9620,7 +9620,7 @@ test("Move (published, folder mode): the moved .mid is byte-identical to publish
   const newBase = newDir + "zz-test-move";
   const newKey = newBase + ".mid";
 
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "move-a");
   // a previously-published rollnotes.json at the OLD path: one section to
   // keep, one tombstoned on this device (same shape as the tomb-test above)
@@ -9651,7 +9651,7 @@ test("Move (published, folder mode): the moved .mid is byte-identical to publish
   assert.deepEqual(labels, ["Keep"], "the tombstoned note was not republished at the new path");
 
   // byte-identical to what publishSong writes fresh, for the SAME song, at the SAME new path
-  const b = pubApp();
+  const b = await pubApp();
   useFakeFolder(b, "move-b");
   openComposition(b, newKey, {tempoNoteBpm: 150});
   await b.run(`publishSong(${JSON.stringify(newKey)}, ghHeaders("folder"), () => {})`);
@@ -9664,7 +9664,7 @@ test("Move (published, folder mode): publishSong failing leaves the old files in
   const newDir = "albums/compositions/zz-moved-fail/";
   const newKey = newDir + "zz-test-move-fail.mid";
 
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "move-fail");
   // the old path already has real published files — the state a failed move must leave untouched
   const seedDoc = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}],
@@ -9705,7 +9705,7 @@ test("Move (published, folder mode): a published audio clip rides along — new 
   const newClip = newDir + "zz-test-move-clip.audio/take.wav";
   const clipBytes = [1, 2, 3, 4, 5, 6, 7, 8];
 
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "move-clip");
   // the published clip: already at the OLD dir, never on this device's IndexedDB (a prior session's recording)
   await a.run(`folderWrite(${JSON.stringify(oldClip)}, new Uint8Array(${JSON.stringify(clipBytes)}))`);
@@ -9808,7 +9808,7 @@ test("hasProvenanceNote/originOf (docs/annotations-v2.md P3): the open song's v2
 test("publishSong/annotationsFor (docs/annotations-v2.md P3): refuses to publish or overwrite a song whose .rollnotes.json was written by a newer Night Roll", async () => {
   const KEY = "albums/compositions/nightroll/zz-test-version-guard.mid";
   const RN = KEY.replace(/\.mid$/, ".rollnotes.json");
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "version-guard");
   openComposition(a, KEY);
   const futureDoc = JSON.stringify({format: "night-roll-annotations", version: 99, song: "zz-test-version-guard",
@@ -9868,7 +9868,7 @@ test("originOf (docs/annotations-v2.md P4): the stored header's origin.kind wins
 test("forkCurrentSong (docs/annotations-v2.md P4): writes origin.from in the v2 header, never a 'forked from' note — and publishes that way", async () => {
   const SRC = "albums/compositions/nightroll/zz-fork-origin-src.mid";
   const NEW = "albums/my-covers/zz-fork-origin-dest.mid";
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "fork-origin");
   openComposition(a, SRC);
   a.run(`forkCurrentSong("Zz Fork Origin Dest", "my-covers")`);
@@ -9889,7 +9889,7 @@ test("moveComposition (docs/annotations-v2.md P4): writes origin.movedFrom in th
   const oldKey = "albums/compositions/nightroll/zz-move-origin.mid";
   const newDir = "albums/compositions/zz-moved-origin/";
   const newKey = newDir + "zz-move-origin.mid";
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "move-origin");
   openComposition(a, oldKey, {tempoNoteBpm: 150});
   a.run(`CATALOG = ${JSON.stringify({"Night Roll Sketches": [["Zz Move Origin", oldKey]]})};`); // published: the move goes through publishSong
@@ -9909,7 +9909,7 @@ test("moveComposition (docs/annotations-v2.md P4): writes origin.movedFrom in th
 test("Publish (docs/annotations-v2.md P4): a v1 file comes out v2 on its very next publish, notes unchanged", async () => {
   const KEY = "albums/nes/final-fantasy-i/songs/zz-v1-upgrade.mid"; // an analyzed song: annotations only, no music draft (same shape as the tomb-test/version-guard tests above)
   const RN = KEY.replace(/\.mid$/, ".rollnotes.json");
-  const a = pubApp();
+  const a = await pubApp();
   useFakeFolder(a, "v1-upgrade");
   const v1 = '{ "version": 1, "song": "zz-v1-upgrade", "notes": [\n' +
     '  {"at":[1,1],"type":"section","label":"Intro"},\n' +
@@ -10031,8 +10031,8 @@ test("Notes ▴ drop-up: Hide/Show notes strip toggles the strip and names its n
   assert.equal(val(`subOn`), true);
 });
 
-test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", () => {
-  const a = createApp();
+test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {
+  const a = await createApp();
   a.run(`
     song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "melody", notes: []}]};
     songKey = "albums/compositions/nightroll/zz-lcd.mid"; rollnotes = []; playCursor = 480 * 4 * 6; // bar 7

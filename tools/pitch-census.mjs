@@ -1,6 +1,7 @@
 // tools/pitch-census.mjs <song> [--track N|name] [--json]
 // Every pitch class present: counts + total sounding duration, and which are
 // ABSENT. Duration-weighted (six half-notes ≠ one 16th). Facts only.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { loadSong, PC_NAMES, isDrumTrack, outJson } from "./query-lib.mjs";
 
 const argv = process.argv.slice(2);
@@ -10,7 +11,7 @@ const trackArg = ti >= 0 ? argv.splice(ti, 2)[1] : null;
 const songArg = argv.filter(a => a !== "--json")[0];
 if (!songArg) { console.error("usage: pitch-census.mjs <song> [--track T] [--json]"); process.exit(1); }
 
-const doc = loadSong(songArg);
+const doc = await loadSong(songArg);
 const tracks = doc.tracks.filter((tr, i) =>
   trackArg === null ? !isDrumTrack(tr.name) // kit pieces aren't pitch classes
   : (tr.name === trackArg || String(i) === trackArg));

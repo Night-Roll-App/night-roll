@@ -11,6 +11,7 @@
 // albums/final-fantasy-i/reference/meter-audit.md — a computed meter is a
 // guess, and the app/repo must never volunteer one for a song Josh hasn't
 // determined. Run: node tools/nsf/meter_audit.mjs
+import "../vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { createApp } from "../../tests/harness.mjs";
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import path from "node:path";
@@ -21,8 +22,8 @@ const SONGS = path.join(ROOT, "albums/final-fantasy-i/songs");
 const OUT = path.join(ROOT, "albums/final-fantasy-i/reference/meter-audit.md");
 const CANDIDATES = [2, 3, 4, 6]; // bar lengths in quarter notes (2/4, 3/4 | 6/8, 4/4, 6/4 | 12/8)
 
-function analyze(file) {
-  const app = createApp();
+async function analyze(file) {
+  const app = await createApp();
   app.context.midiBytes = [...readFileSync(path.join(SONGS, file))];
   return JSON.parse(app.run(`JSON.stringify((() => {
     const r = parseMidi(new Uint8Array(midiBytes).buffer);
@@ -67,7 +68,7 @@ const chatSummary = [];
 
 for (const f of readdirSync(SONGS).filter(f => f.endsWith(".mid")).sort()) {
   const base = f.replace(/\.mid$/, "");
-  const a = analyze(f);
+  const a = await analyze(f);
   const rn = path.join(SONGS, base + ".rollnotes.json");
   const declared = existsSync(rn) &&
     (readFileSync(rn, "utf8").match(/^timesig:\s*(\d+\/\d+)/m) || [])[1];
