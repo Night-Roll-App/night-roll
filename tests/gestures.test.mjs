@@ -325,3 +325,50 @@ test("gesture: a wobbly ruler tap (under 24px) places the cursor instead of armi
   drag(app, xy(480), xy(1440)); // a real drag still selects
   assert.deepEqual(JSON.parse(app.run(`JSON.stringify({a: rangeSel.a, b: rangeSel.b})`)), {a: 480, b: 1440});
 });
+
+// ---- playhead strip (Josh, 2026-10-03): a band under the ruler, right
+// above the notes — tap moves the cursor, drag scrubs, and NEITHER ever
+// touches rangeSel (that's the ruler's own job, above it, unchanged).
+const stripXY = (app, tk) => JSON.parse(app.run(`JSON.stringify({
+  x: RULER_W + (${tk} / song.ppq) * view.pxq - view.x, y: (STRIP_Y + RULER_H) / 2})`));
+
+test("gesture: a tap on the playhead strip moves the cursor and leaves an ARMED cycle byte-identical", async () => {
+  const app = await boot("vm-gest-strip-tap-armed");
+  app.run(`view.pxq = 200; clampView(); rangeSel = {a: 480, b: 1440, cycle: true}; draw();`);
+  const before = app.run(`JSON.stringify(rangeSel)`);
+  const p = stripXY(app, 960);
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`JSON.stringify(rangeSel)`), before, "rangeSel byte-identical — the strip never touches it");
+  assert.equal(app.run(`playCursor`), 960, "cursor landed exactly where he tapped");
+});
+
+test("gesture: a tap on the playhead strip leaves a PARKED cycle parked — it does not re-arm it", async () => {
+  const app = await boot("vm-gest-strip-tap-parked");
+  app.run(`view.pxq = 200; clampView(); rangeSel = {a: 480, b: 1440, cycle: true, off: true}; draw();`);
+  const before = app.run(`JSON.stringify(rangeSel)`);
+  // tapping this same span ON THE RULER would re-arm it (Josh's park/re-arm) — on the strip it must not
+  const p = stripXY(app, 960);
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`JSON.stringify(rangeSel)`), before, "still parked, byte-identical — no park, no clear, no re-arm");
+  assert.equal(app.run(`playCursor`), 960, "the cursor still moved");
+});
+
+test("gesture: a drag on the playhead strip scrubs the cursor continuously, rangeSel untouched", async () => {
+  const app = await boot("vm-gest-strip-drag");
+  app.run(`view.pxq = 200; clampView(); rangeSel = {a: 480, b: 1440, cycle: true}; draw();`);
+  const before = app.run(`JSON.stringify(rangeSel)`);
+  drag(app, stripXY(app, 240), stripXY(app, 1920));
+  assert.equal(app.run(`JSON.stringify(rangeSel)`), before, "rangeSel byte-identical through a strip drag");
+  assert.equal(app.run(`playCursor`), 1920, "cursor scrubbed to the drag's end (reuses scrubTo)");
+});
+
+test("gesture: the ruler itself still parks an armed cycle on tap — the strip changes nothing about it", async () => {
+  const app = await boot("vm-gest-ruler-still-parks");
+  app.run(`view.pxq = 200; clampView(); rangeSel = {a: 480, b: 1440, cycle: true}; draw();`);
+  const p = JSON.parse(app.run(`JSON.stringify({x: RULER_W + (960 / song.ppq) * view.pxq - view.x, y: 10})`));
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`rangeSel.off`), true, "the ruler tap still parks the cycle, exactly as before");
+});

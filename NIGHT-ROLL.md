@@ -28,7 +28,8 @@ lines — splitting adds Pages cache-skew risk for no payoff at this size.)
 cached canvases), toggled in the header, persisted. On song load the roll
 auto-fits the whole song and its pitch range to the screen (fitView). Both share one
 time-linear x-axis, the bar ruler, sections, markers, cursor, playhead,
-subtitles, and gestures. Pinch zooms per axis (horizontal = time; vertical
+subtitles, and gestures (Tracks shares the same ruler band too — `drawRuler`
+is one function for all three views). Pinch zooms per axis (horizontal = time; vertical
 = pitch rows, roll only). Roll zoom-out clamps to the song's own extents
 (2026-08-07, Josh's spec): per-axis floors (pxqFloor/rowHFloor) flush to
 the chop-trimmed bars and sounding pitch range, no padding — once time
@@ -40,6 +41,35 @@ rests break beams; playhead/cursor interpolate notehead-to-notehead
 (scoreTickToX), hopping glyphs only at key changes; zoom-out floor
 computed from the densest measure (scoreModel.pxqMin — relaxes when dense
 tracks are muted).
+
+**Playhead strip (2026-10-03).** A band directly under the ruler, right
+above the notes, in all three views — drawn by `drawPlayheadStripBand`
+(called from `drawRuler`, so Roll/Tracks/Score all get it for free):
+background a touch lighter than the roll (`--grid-soft`), bar lines strong,
+beat lines faint, same tick math as the roll's own grid. Height plumbing:
+`BASE_RULER_H`/`LANE_H`/`AUDIO_STRIP_H` sum into `S.STRIP_Y` (the OLD
+meaning of `RULER_H` — ruler + section/chord/analysis rows + the audio
+strip, no playhead strip; still the right boundary for bandEdge's grab zone
+and lassoAnno's "reached into the ruler" check), then `S.RULER_H =
+S.STRIP_Y + STRIP_H` — so every existing "offset the note area by
+RULER_H" call site (hit-testing, drawing, clampView, tracksLaneH, score's
+content top) keeps working unchanged; it just offsets a little further
+down now. The strip's own moving playhead mark (`drawStripPlayhead`,
+`stripPlayheadX`) is drawn AFTER `drawRuler` in `drawFull` and again in
+`playbackFrame`'s per-frame overlay — never baked into the scene cache,
+same discipline as the triangle handle's own line, because `drawRuler`'s
+opaque strip background would otherwise paint right over it. Gestures:
+TAP moves `playCursor` to a beat-snapped tick (`seekOrMoveCursor`, shared
+with the ruler's own tap-to-seek) WITHOUT touching `rangeSel` at all — no
+park, no clear, no re-arm, byte-identical before/after (Josh, 2026-10-03:
+"if I could click that spot under the ruler I wouldn't have that problem"
+— tapping the ruler itself still parks an armed cycle, unchanged). DRAG
+scrubs continuously via the existing `scrubTo`, same as dragging the
+playhead's triangle handle. `S.drag.stripCursor` is the new drag flag
+(alongside `.ruler`/`.cursor`/`.rangeEdge`/`.bandEdge`), included in the
+auto-follow suppression (`handMidGesture`) so a strip drag doesn't get
+yanked out from under a finger either. Tests: `tests/gestures.test.mjs`'s
+four "playhead strip" cases (tap/drag, armed/parked cycle).
 
 **Playback:** WebAudio. Pulse/pulse/triangle voices by track index; drum
 tracks (name match or channel 10) get a synthesized kit. Per-track gain
@@ -1511,8 +1541,10 @@ hides File/Edit/View, track chips, edit row, footer, ▴ restore,
 metronome/record, instrument panel, #subtitle notes strip — leaving
 the roll, ⏮ ▶, the LCD, speed % and 🔊. Section/chord bands fold too:
 finalizeNotes caps depth at -1 and nulls chord lanes when listenerMode,
-so RULER_H = BASE_RULER_H (applyListener re-runs finalizeNotes on
-toggle — idempotent, same pattern as setSecDepth). listenerMode is
+so STRIP_Y = BASE_RULER_H (applyListener re-runs finalizeNotes on
+toggle — idempotent, same pattern as setSecDepth); RULER_H is always
+STRIP_Y + the playhead strip's own height on top of that (2026-10-03,
+below). listenerMode is
 declared beside editOn/viewMode: lane math runs at song load, before
 applyChrome's boot read (the editOn TDZ lesson).
 Rationale: shared ?song= links are for listening.
@@ -5388,7 +5420,7 @@ edges, gold outline when `selClip === ti`), `hitTracksClip`, tap =
 select + `clipLabel` in the status line, second tap = play from the
 clip's start, hold-and-drag = `pendingEdit {kind: "clip"}` → ghost via
 `tracksGhost.dT` → `moveClip` on release. Every view: `drawAudioStrip`,
-an `AUDIO_STRIP_H` (18 px) band folded into `RULER_H` when the song has
+an `AUDIO_STRIP_H` (18 px) band folded into `STRIP_Y` when the song has
 audio. Chip label and lane header carry " ∿".
 
 **UX.** `＋∿` chip (own `#audioinput`, `accept="audio/*"…` so iOS opens
