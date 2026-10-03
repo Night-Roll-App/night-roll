@@ -1417,6 +1417,8 @@ stale and should move up here instead.
 - `devtools.js` — `exposeGlobals()`: window accessors for app.js's/edition.js's/icons.js's/controls.js's exports (GET-only — an ES module's exported binding can't be assigned by an importer) and for every `S` field (GET+SET, step 1 — `song = …`/`mode = …` in a `page.evaluate()` now write `S.song`/`S.mode`), so Playwright's bare-name reads and assignments keep working across the cutover (module bindings aren't window properties). Gated by `window.__NR_EXPOSE`; never touches production otherwise.
 - `ui/icons.js` — the Material `ICON` table + `iconSvg(name, cls)` (step 2, 2026-10-02), moved out of app.js verbatim. Layer 0 (declared early, boot-path TDZ rule): `renderViewMenu` and other boot-time renderers call `iconSvg()` before the rest of the script has run.
 - `ui/controls.js` — the control registry (step 2, 2026-10-02 — see "Controls registry" below): `CONTROLS` (id → {icon, glyph, cls, label, prefix, aria}) and `setControl(id, patch)`, the only place that writes a registered control's innerHTML/aria-label. `setPlayBtn`/`setVolBtn` moved here as thin wrappers.
+- `midi/parse.js` — `parseMidi` (format-1/0 SMF reader: tempo map, timesig/keysig, phase-2 raw-leftover capture for foreign files) + `tickToSec`/`secToTick` (step 3, 2026-10-03), moved out of app.js verbatim. Imports `S` for `S.playRate` (tick/sec conversion's practice-tempo multiplier) — layer 0, same tier as state.js, so this is a same-layer import, not a downward one.
+- `midi/write.js` — `writeMidi` (step 3, 2026-10-03): the hand-port SMF writer (format-1, meta track + one track per voice); self-contained, no imports. Paired with `tools/nsf/midi-write.mjs`'s `writeSongMidi` — the "writeMidi / writeSongMidi agree byte-for-byte" test pins the two together.
 
 ## Code map (index.html, section comments mark these)
 
@@ -1424,7 +1426,7 @@ catalog → CATALOG built from albums/manifest.json at boot (run
 tools/build_manifest.mjs after adding music; album.json per album holds
 title/order/name overrides) + two-level song picker (groups sheet → songs;
 opens into the current song's group) ·
-midi parse → parseMidi + tempo maps · rollnotes → parse/serialize/regions/
+rollnotes → parse/serialize/regions/
 sfAt/subtitle · lasso/chord id · load song → setSong (computes songEndTick;
 loadGen guards stale async loads) · track chips · drawing → draw/drawRuler (roll) ·
 score → buildScoreModel (quantize 16ths, chord-group, clip overlaps,

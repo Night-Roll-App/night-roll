@@ -319,6 +319,51 @@ Each step below gives: what moves, what must not change, how to verify. Every st
 **3. `midi/parse.js`, `midi/write.js`.**
 - Pure. Must not change: bytes out (the "writeMidi / writeSongMidi agree byte-for-byte" test).
 - Optional follow-up in a separate push: replace `writeMidi`'s hand port with an import of `tools/nsf/midi-write.mjs`, now possible because the harness links static imports. Ship it only if that test stays green.
+- **Done** (2026-10-03, Opus builder, worktree branch). `move.mjs --names
+  parseMidi,tickToSec,secToTick --to src/midi/parse.js` then `--names
+  writeMidi --to src/midi/write.js`, both over src/app.js, by name (not
+  banner range — the "midi parse" banner's section runs to the NEXT banner,
+  far past these three declarations, into unrelated grid/selection code; the
+  table's other banner, "midi write", doesn't exist — writeMidi has no
+  leading banner comment, just its own inline one). parse.js needed one
+  import, `S` (for `S.playRate` inside tickToSec/secToTick) — a same-layer
+  (layer 0) import, allowed by rule 5. write.js is fully self-contained, no
+  imports. Neither function's body changed a byte (checked by re-running
+  `node tools/dump_notes.mjs` against a copy of albums/starters/fur-elise.mid
+  in scratch/ and diffing against the committed .notes.txt — identical).
+  `regen-e2e-footer.mjs --file src/app.js` re-run; check.mjs clean except the
+  pre-existing `oldBpb` finding; check-e2e-globals.mjs and check-controls.mjs
+  clean. devtools.js gained `midiParse`/`midiWrite` namespace imports (GET-only,
+  same as icons.js/controls.js). sw.js APP_MODULES gained both files,
+  SW_VERSION bumped nr-v8 → nr-v9; index.html's modulepreload list gained
+  both (ordered with the other layer-0 modules, before app.js). `node
+  tools/package.mjs --out /tmp/nr-dist-s3` packages both files with no
+  package.mjs changes needed — its reachability guard walks static imports
+  generically from main.js, and app.js's new imports already reach them;
+  47 runtime modules, matches pre-step count (midi/ carries no extra
+  tools/-side runtime modules of its own). `tools/at.mjs`,
+  `tools/span.mjs` and `tools/dump_notes.mjs` all re-verified against real
+  songs in albums/starters/ (never albums/compositions/). See "Deviations (3)"
+  below for the one real finding.
+
+## Deviations (3, 2026-10-03)
+
+- **No scope.mjs/move.mjs bugs surfaced this time** — unlike every prior
+  step, this one hit nothing new: both functions are leaf code (parseMidi
+  reads only browser globals + `d`/`opts`/locals; writeMidi reads only its
+  own locals), so the free-identifier/hoisting edge cases steps 0b/1/2 found
+  simply don't apply here. The only cross-module reference this step
+  introduced — `tickToSec`/`secToTick` reading `S.playRate` — is the
+  ordinary, already-proven S-field-via-import path step 1 established.
+- **`midiBase64` (src/app.js, right after writeMidi) stayed put, not moved**:
+  its own comment at one call site says "any bytes — chunked btoa, not
+  MIDI-specific" (src/app.js, the audio-clip base64 caller), and a grep of
+  every call site confirms it — SoundFont bytes, recorded-audio bytes, and
+  MIDI bytes all go through it. It's a general base64-chunking helper that
+  happens to sit textually next to writeMidi, not one of "its helpers" per
+  §1's table; moving it would misfile a non-MIDI utility into midi/write.js.
+  Left in app.js for a later step (platform/ or a small util module) to
+  claim.
 
 **4. `theory/chords.js`, `theory/key.js`.**
 - Pure parts only; UI callers stay.
