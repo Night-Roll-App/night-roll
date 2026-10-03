@@ -1139,6 +1139,17 @@ test("pencilCellAt: under a custom grid a pencil tap is one cell, anywhere it's 
   assert.deepEqual(val(`pencilCellAt(700)`), {t: 720, snap: 240}); // no grid: the chip duration, nearest line
 });
 
+test("picking the 32nd duration makes notes drag in 32nds, even in a song with none yet (Josh, 2026-10-03)", () => {
+  installSong();
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 240, p: 60, v: 80}]}]};
+       _has32 = null; gridDiv = null; pencilNV = 16; pencilMod = 1; pencilDur = 0.25;`);
+  assert.equal(val(`moveSnapTicks()`), 120, "16th picked: 16ths");
+  run(`pencilNV = 32; pencilDur = 0.125;`);
+  assert.equal(val(`moveSnapTicks()`), 60, "32nd picked: 32nds");
+  assert.equal(val(`gridFollowNote({t: 0, d: 240})`), false, "grabbing a straight 16th keeps the 32nd pick");
+  assert.equal(val(`moveSnapTicks()`), 60);
+});
+
 test("gridFollowNote: the move grid follows the note you touch", () => {
   installSong();
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};
