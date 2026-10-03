@@ -256,8 +256,23 @@ function safeJSON(s) { try { return JSON.parse(s || "{}"); } catch (err) { retur
 function parseToolCall(text) { // the whole reply is one JSON line → a tool call; anything else is prose
   const t = (text || "").trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
   if (!t.startsWith("{") || !t.includes("tool_call")) return null;
-  try { const j = JSON.parse(t); if (j && j.tool_call && j.tool_call.name) return {name: String(j.tool_call.name), arguments: j.tool_call.arguments || {}}; } catch (err) { /* prose */ }
+  for (const cand of [t, closeJSON(t)]) {
+    try { const j = JSON.parse(cand); if (j && j.tool_call && j.tool_call.name) return {name: String(j.tool_call.name), arguments: j.tool_call.arguments || {}}; } catch (err) { /* prose */ }
+  }
   return null;
+}
+// a long tool call (a 130-note write_notes, 2026-10-02) came back one "}"
+// short and fell through as prose — the app showed raw JSON and ran nothing.
+// Close whatever brackets are still open (outside strings), in order.
+function closeJSON(t) {
+  const open = []; let inStr = false, esc = false;
+  for (const ch of t) {
+    if (inStr) { if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
+    if (ch === '"') inStr = true;
+    else if (ch === "{" || ch === "[") open.push(ch === "{" ? "}" : "]");
+    else if ((ch === "}" || ch === "]") && open.length) open.pop();
+  }
+  return inStr ? t : t + open.reverse().join("");
 }
 
 // ---------------------------------------------------------------- models

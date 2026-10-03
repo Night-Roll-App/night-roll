@@ -404,3 +404,25 @@ test("bridge: --deploy-in warns the app — GET /v1/status carries deployInMs un
   await fetch(B + "/v1/deploy", {method: "POST", headers: H, body: JSON.stringify({inSec: 0})});
   assert.equal((await (await fetch(B + "/v1/status")).json()).deployInMs, undefined, "0 cancels");
 });
+
+test("bridge: a long tool call that comes back one '}' short still runs as a tool call, not raw JSON (Josh, 2026-10-02: a 130-note write_notes)", async t => {
+  const {writeFileSync, chmodSync} = await import("node:fs");
+  const dir = mkdtempSync(path.join(tmpdir(), "nr-bridge-short-"));
+  const bin = path.join(dir, "fake-claude");
+  const broken = '{"tool_call":{"name":"write_notes","arguments":{"track":"triangle","notes":[{"pitch":"C3","bar":7,"beat":1,"dur_beats":0.5}]}}'; // one } short
+  writeFileSync(path.join(dir, "result.json"), JSON.stringify({type: "result", subtype: "success", result: broken, is_error: false, total_cost_usd: 0}) + "\n");
+  writeFileSync(bin, `#!/bin/sh\n[ "$1" = "--version" ] && exit 0\ncat >/dev/null\ncat "${path.join(dir, "result.json")}"\n`);
+  chmodSync(bin, 0o755);
+  const port = 16000 + Math.floor(Math.random() * 1000);
+  const child = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port), "--jobs-dir", path.join(dir, "jobs")],
+    {env: {...process.env, CLAUDE_BIN: bin, BRIDGE_UPSTREAMS: "none=http://127.0.0.1:9"}, stdio: ["ignore", "pipe", "pipe"]});
+  t.after(() => { child.kill("SIGKILL"); rmSync(dir, {recursive: true, force: true}); });
+  let out = ""; child.stdout.on("data", d => { out += d; }); child.stderr.on("data", d => { out += d; });
+  for (let i = 0; i < 80 && !/jobs:/.test(out); i++) await sleep(100);
+  const r = await (await fetch("http://127.0.0.1:" + port + "/v1/chat/completions", {method: "POST", headers: {"content-type": "application/json", "x-nr-song": "s"},
+    body: JSON.stringify({model: "claude-code", messages: [{role: "user", content: "write it"}], tools: [{type: "function", function: {name: "write_notes", parameters: {type: "object"}}}]})})).json();
+  const msg = r.choices[0].message;
+  assert.ok(msg.tool_calls, "ran as a tool call: " + JSON.stringify(msg).slice(0, 200));
+  assert.equal(msg.tool_calls[0].function.name, "write_notes");
+  assert.equal(JSON.parse(msg.tool_calls[0].function.arguments).notes[0].pitch, "C3");
+});
