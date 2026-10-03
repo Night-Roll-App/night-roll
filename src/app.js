@@ -1552,6 +1552,7 @@ function renderTrackbar() {
     }
   }
   updateTrackMore();
+  fitTrackRow(); // settle stacking in THIS frame: a frame later the roll shifted under whatever was just measured (a tap, an e2e drag)
 }
 function updateTrackMore() {
   const bar = document.getElementById("trackbar");
