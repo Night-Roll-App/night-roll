@@ -10031,21 +10031,6 @@ test("Notes ▴ drop-up: Hide/Show notes strip toggles the strip and names its n
   assert.equal(val(`subOn`), true);
 });
 
-test("an Untitled/local song's added notes are NOT re-added on reload (its draft is the whole song; the old overlay doubled them — Josh, 2026-10-02)", () => {
-  run(`
-    const key = "local/untitled-dup.mid";
-    setSong({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "triangle", notes: [{t: 0, d: 240, p: 48, v: 80}]}]}, key);
-    rollnotes = []; saveDraft();
-    song.tracks[0].notes.push({t: 480, d: 240, p: 50, v: 80, added: true});
-    saveEdits(); saveDraft();
-    // a stale overlay written by an older build must be dropped, not replayed
-    localStorage.setItem(editsKey(), JSON.stringify({removed: ["0:0"], added: [{ti: 0, t: 480, d: 240, p: 50}]}));
-  `);
-  run(`openDraftDoc(JSON.parse(localStorage.getItem(draftStoreKey("local/untitled-dup.mid"))), "local/untitled-dup.mid")`);
-  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone).map(n => n.t + ":" + n.p)`), ["0:48", "480:50"]);
-  assert.equal(val(`localStorage.getItem(editsKey())`), null, "the stale overlay is gone");
-});
-
 test("Edit ▾ → Remove duplicate notes: same track + start + pitch, keeps the longer, one undo restores", () => {
   installSong();
   run(`song.tracks = [{name: "a", notes: [{t: 0, d: 240, p: 60, v: 80}, {t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 240, p: 64, v: 80}, {t: 480, d: 240, p: 60, v: 80}]},

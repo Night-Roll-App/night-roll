@@ -3635,16 +3635,12 @@ let PMIN = 24, PMAX = 96;
 
 // ---------------------------------------------------------------- edits
 function editsKey() { return songKey ? "ff1roll-edits-" + songKey : null; }
-// a song whose draft IS the whole song (compositions, and Untitled/local
-// songs) must never get the removed/added overlay too: the draft already
-// holds every edit, so replaying the overlay on load doubled each added
-// note, and its index-based "removed" ids could hide the wrong notes once
-// bars were inserted (Josh, 2026-10-02: untitled-1's triangle came back
-// doubled after a reload). The overlay is for read-only songs only.
-function draftIsWhole() { return isComposition() || isLocalDraft(); }
+// REVERTED 2026-10-02 (6ad5eee → data loss): dropping a local song's overlay
+// on load threw away Josh's newest notes — on his iPad the whole-song copy
+// was OLDER than the overlay. Never delete the overlay until the draft is
+// proven to hold its edits. See open-items 22:30.
 function loadEdits() {
   if (!editsKey()) return;
-  if (draftIsWhole()) { localStorage.removeItem(editsKey()); updateClearBtn(); return; } // a stale overlay from before this fix: drop it, never apply it
   try {
     const e = JSON.parse(localStorage.getItem(editsKey()) || "null");
     if (!e) return;
@@ -3663,7 +3659,7 @@ function saveEdits() {
   // not in the spirit of the project) — edits just retire any review flags
   rollnotes.forEach(n => { if (n.stale) delete n.stale; });
   scheduleAnalysisRecompute(); // P6: Normal-only view layer — recompute on note edits, debounced; no-op when off
-  if (draftIsWhole()) { // composition or local song: the notes ARE the song — draft it whole
+  if (isComposition()) { // composition: the notes ARE the song — draft it whole
     saveDraft();
     computeSongEnd();
     updateSongMeta();
