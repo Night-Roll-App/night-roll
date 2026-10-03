@@ -368,6 +368,113 @@ Each step below gives: what moves, what must not change, how to verify. Every st
 **4. `theory/chords.js`, `theory/key.js`.**
 - Pure parts only; UI callers stay.
 - Must not change: Learning-mode gating (estimateKey is never called in Learning; there's a test for this).
+- **Done** (2026-10-03, Opus builder, worktree branch). `move.mjs --names
+  SHARP_SPELL,spellMemo,spellFor,spellPc,pitchName,CHORD_TEMPLATES,nameChord,
+  CHORD_FLAT,chordSym,NUM_DEG,MAJ_STEP,MIN_STEP,parseNumeral,
+  splitProgression,CHORD_BASES,CHORD_EXTS,chordQualParse,chordQualCompose,
+  parseChordSym,SF_MAJOR,LETTERS,LETTER_PC,keySpelling --to
+  src/theory/chords.js`, then `move.mjs --names
+  TONIC_SPELL,FIFTHS_POS,MODE_FIFTHS,trueSf,keyNameFor,pearsonCorr,fileKeyAt,
+  checkMeterVsFile --to src/theory/key.js`, both over src/app.js, by name
+  (banners don't cleanly bracket either cluster — the chord-naming functions
+  and the key-check functions are each scattered across 2-3 separate
+  sections hundreds of lines apart, interleaved with UI code that stays).
+  `regen-e2e-footer.mjs --file src/app.js` re-run; check.mjs clean except
+  the pre-existing `oldBpb` finding; check-e2e-globals.mjs and
+  check-controls.mjs clean. devtools.js gained `theoryChords`/`theoryKey`
+  namespace imports (GET-only). sw.js APP_MODULES gained both files,
+  SW_VERSION bumped nr-v9 → nr-v10; index.html's modulepreload list gained
+  both (ordered after midi/, before app.js — both layer 0). `node
+  tools/package.mjs --out /tmp/nr-dist-s4` packages both files with no
+  package.mjs changes needed; 47 runtime modules, same as post-step-3 (no
+  tools/-side runtime module corresponds to theory/). `tools/at.mjs`,
+  `tools/pitch-census.mjs`, `tools/annotations.mjs`, `tools/loop-targets.mjs`
+  and `tools/dump_notes.mjs` all re-verified against real songs in
+  albums/starters/ (never albums/compositions/) — `dump_notes.mjs`'s output
+  on a scratch copy of fur-elise.mid is byte-identical to the committed
+  .notes.txt. See "Deviations (4)" below for the two real findings: the
+  `spellPc`/`sfShownAt` layering fix, and `estimateKey`/`checkKeyVsFile`
+  staying in app.js.
+
+## Deviations (4, 2026-10-03)
+
+- **`spellPc`'s implicit-`sf` default called `sfShownAt()`, which couldn't
+  travel with it**: `sfShownAt` (Learning/Normal mode's key-spelling gate —
+  the exact function the "estimateKey never called in Learning" spy test
+  watches) reads `appMode()` and calls `estimateKey()`; it belongs with
+  platform/mode.js (§1's table), not theory, and it stays in app.js
+  (LEGACY_CONTAINER, layer 5) until that step. `spellPc`'s old body was
+  `if (sf === undefined) sf = sfShownAt(S.playCursor);` before the real
+  spelling lookup — moving `spellPc` as-is would have made
+  `src/theory/chords.js` (layer 0) import from `app.js` (layer 5), which
+  check.mjs rule 5 forbids outright (and rightly: theory must never reach
+  into the model/mode layer it's supposed to sit under). A repo-wide grep
+  confirmed exactly ONE call site relies on the default — the roll ruler's
+  pitch-class label (src/app.js, the row-label loop) — every other call
+  site across app.js, tools/ and tests/ already passes `sf` explicitly.
+  Fixed by moving the resolution to that one call site
+  (`spellPc(pc, sfShownAt(S.playCursor))`) and deleting the default branch
+  from `spellPc` itself. This is a one-line, value-identical change (the
+  exact same `sfShownAt(S.playCursor)` is still computed, just by the
+  caller instead of the callee) — not a byte-identical move for that one
+  function, but the smallest edit that unblocks the move without
+  misfiling `sfShownAt`/`appMode` into theory ahead of their own step. Every
+  other moved function (`pitchName`, `nameChord`, `chordSym`, `parseNumeral`,
+  `splitProgression`, `chordQualParse`/`Compose`, `parseChordSym`) had no
+  such dependency and moved byte-identical.
+- **`spellFor`/`keySpelling`/`SHARP_SPELL`/`spellMemo`/`SF_MAJOR`/`LETTERS`/
+  `LETTER_PC` moved too, unlisted by §1's table**: `spellPc` calls
+  `spellFor(sf)` (hence `keySpelling`/`spellMemo`) on every non-null `sf` —
+  not just the default branch — so these aren't optional companions, they're
+  load-bearing. All seven are pure (constants or S/DOM-free functions), so
+  moving them is a plain extension of the same pattern step 3 set with
+  `CHORD_TEMPLATES`/`CHORD_FLAT`/`CHORD_BASES`/`CHORD_EXTS`/`NUM_DEG`/
+  `MAJ_STEP`/`MIN_STEP` (also moved, also unlisted, also load-bearing
+  constants for the functions the plan DOES name). Every app.js call site
+  that used any of these directly (`transposeChordLabel`'s `CHORD_FLAT`/
+  `LETTER_PC`, the score renderer's `vexKey`/`SF_MAJOR` uses, `cofMajorName`,
+  the key-dial, …) got an automatic back-import from move.mjs; none of
+  those functions moved.
+- **`estimateKey` and `checkKeyVsFile` did NOT move — the plan's two biggest
+  named targets for this step stayed in app.js.** Both reach past theory's
+  own layer into model-layer helpers that haven't been split out yet:
+  `estimateKey` calls `keyEstimateSig()`, which calls `trackIsDrums(ti)`
+  (decides whether a track's notes count toward the pitch-class census);
+  `checkKeyVsFile` calls `barTicks()` (→ `beatsPerBarEff()` → `effTs()`).
+  Both helpers are pure (S-only, no DOM) but are explicitly §1's table's
+  future territory — `trackIsDrums` is a song/track-model predicate,
+  `barTicks`/`effTs` are named for `model/grid.js` (step 5, "pencil/snap/grid
+  helpers, effTs"). If `estimateKey`/`checkKeyVsFile` moved to
+  `theory/key.js` as written, they'd need `trackIsDrums`/`barTicks` imported
+  from app.js — a straight rule-5 violation (theory, layer 0, importing
+  LEGACY_CONTAINER, layer 5) check.mjs would reject, not a style nit. The
+  only ways around it were rejected: duplicating `trackIsDrums`'s/
+  `barTicks`'s logic inline inside theory/key.js (diverges from the single
+  source of truth the first time either changes — the same "no one-time
+  hacks" reasoning CLAUDE.md states for capture engines, applied here to
+  logic forks instead of per-game tables); or moving `trackIsDrums`/
+  `barTicks` into theory now (misfiles a model concern into the pure-theory
+  layer, exactly the kind of layer violation the table exists to prevent,
+  and creates rework when step 5/9 has to move them back out of theory and
+  into model/ anyway). Neither is a "move" — both are logic changes or
+  architecture changes a tight single-step spec shouldn't make unilaterally.
+  So both functions stay exactly where they were, under their original
+  names, called the same way everywhere (including every "estimateKey is
+  never called in Learning" spy test, which still passes unchanged — the
+  gating itself never moved and was never at risk). Flagged as Q11 in
+  open-items.md: step 5 (or whichever step moves `trackIsDrums`/`barTicks`)
+  should complete `estimateKey`'s and `checkKeyVsFile`'s move to
+  theory/key.js once their last blocking dependency lands, using the exact
+  same `move.mjs --names estimateKey,checkKeyVsFile` (plus
+  `keyEstimateSig`/`tonicPcFromName`, their own remaining non-S
+  dependencies) once trackIsDrums/barTicks are themselves layer-0-or-lower.
+- **`fileMeterAt` was NOT moved**, despite sitting textually right next to
+  `fileKeyAt` and looking like its meter-side twin: `checkMeterVsFile`
+  (which DID move) doesn't call it — it inlines the identical
+  `list[0].num`/`.den` logic itself. Grepped for other callers of
+  `fileMeterAt` in app.js; it has its own (UI) callers that stay, so moving
+  it would have been scope creep with no caller in this step's two
+  destination files to justify it.
 
 **5. `model/rollnotes.js`, `model/grid.js`, `model/edits.js`, `model/catalog.js`.**
 - Verify: `tests/migrate-rollnotes.test.mjs` and `node tools/dump_notes.mjs` output byte-identical on 3 FF1 songs.

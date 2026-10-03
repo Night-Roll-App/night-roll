@@ -1,0 +1,140 @@
+// display spelling when NO key has been declared: all sharps, matching the
+// captures' neutral spelling — the app never volunteers flats the user
+// didn't derive (a mixed table once had Josh chasing a chord on Fb)
+export const SHARP_SPELL = (() => {
+  const N = [["C",""],["C","#"],["D",""],["D","#"],["E",""],["F",""],["F","#"],["G",""],["G","#"],["A",""],["A","#"],["B",""]];
+  const m = {};
+  N.forEach(([letter, acc], i) => m[i] = {letter, acc});
+  return m;
+})();
+export const spellMemo = {};
+export function spellFor(sf) { return spellMemo[sf] || (spellMemo[sf] = keySpelling(sf)); }
+// ---------------------------------------------------------------- lasso / chord id
+export function spellPc(pc, sf) {
+  const s = sf === null ? SHARP_SPELL[pc] : spellFor(sf)[pc];
+  return s.letter + (s.acc || "");
+}
+export function pitchName(p, sf) { return spellPc(p % 12, sf) + (Math.floor(p / 12) - 1); }
+export const CHORD_TEMPLATES = [
+  ["", [0,4,7]], ["m", [0,3,7]], ["dim", [0,3,6]], ["aug", [0,4,8]],
+  ["7", [0,4,7,10]], ["maj7", [0,4,7,11]], ["m7", [0,3,7,10]],
+  ["m7b5", [0,3,6,10]], ["dim7", [0,3,6,9]], ["6", [0,4,7,9]], ["m6", [0,3,7,9]],
+  ["sus4", [0,5,7]], ["sus2", [0,2,7]], ["7b9", [0,4,7,10,1]], ["5", [0,7]],
+  ["9", [0,4,7,10,2]], ["m9", [0,3,7,10,2]], ["maj9", [0,4,7,11,2]], ["add9", [0,4,7,2]],
+];
+export function nameChord(pitches, sf) {
+  const pcs = [...new Set(pitches.map(p => p % 12))];
+  if (pcs.length < 2) return pcs.length ? spellPc(pcs[0], sf) + " (one pitch class)" : "";
+  const bassPc = pitches.reduce((a, b) => Math.min(a, b)) % 12;
+  let best = null;
+  const tryMatch = (allowNo5th) => {
+    for (const root of pcs) {
+      const rel = new Set(pcs.map(pc => (pc - root + 12) % 12));
+      for (const [suffix, tmpl] of CHORD_TEMPLATES) {
+        const need = allowNo5th ? tmpl.filter(iv => iv !== 7 || tmpl.length <= 2) : tmpl;
+        if (!need.every(iv => rel.has(iv))) continue;
+        if (![...rel].every(iv => tmpl.includes(iv))) continue;
+        const score = tmpl.length + (root === bassPc ? 0.5 : 0) - (allowNo5th ? 0.4 : 0);
+        if (!best || score > best.score) best = {score, root, suffix, no5: allowNo5th && !rel.has(7) && tmpl.includes(7)};
+      }
+    }
+  };
+  tryMatch(false);
+  if (!best) tryMatch(true);
+  if (!best) return "no standard chord match";
+  const inv = best.root !== bassPc ? "/" + spellPc(bassPc, sf) : "";
+  return spellPc(best.root, sf) + best.suffix + inv + (best.no5 ? " (no 5th)" : "");
+}
+// TOP clears the triangle handle: high ledger lines were kissing it
+
+export const SF_MAJOR = {0:"C",1:"G",2:"D",3:"A",4:"E",5:"B",6:"F#",7:"C#","-1":"F","-2":"Bb","-3":"Eb","-4":"Ab","-5":"Db","-6":"Gb","-7":"Cb"};
+export const LETTERS = "CDEFGAB";
+export const LETTER_PC = {C:0, D:2, E:4, F:5, G:7, A:9, B:11};
+export function keySpelling(sf) {
+  // map each pitch class -> {letter, acc} for this key signature
+  const tonicName = SF_MAJOR[sf] || "C";
+  const tonicLetter = tonicName[0];
+  const tonicPc = (LETTER_PC[tonicLetter] + (tonicName[1] === "#" ? 1 : tonicName[1] === "b" ? -1 : 0) + 12) % 12;
+  const steps = [2, 2, 1, 2, 2, 2, 1];
+  const map = {};
+  let letter = LETTERS.indexOf(tonicLetter), pc = tonicPc;
+  for (let dg = 0; dg < 7; dg++) {
+    const L = LETTERS[letter % 7];
+    const natural = LETTER_PC[L];
+    let diff = (pc - natural + 12) % 12;
+    if (diff > 6) diff -= 12;
+    map[pc] = {letter: L, acc: diff === 0 ? "" : diff === 1 ? "#" : diff === -1 ? "b" : diff === 2 ? "##" : "bb"};
+    pc = (pc + steps[dg]) % 12;
+    letter++;
+  }
+  // chromatic degrees: leading-tone-ish get sharps, borrowed-from-minor get flats
+  const CHROM = {1: "#", 3: "b", 6: "#", 8: "#", 10: "b"};
+  const SHARP = {0:["C",""],1:["C","#"],2:["D",""],3:["D","#"],4:["E",""],5:["F",""],6:["F","#"],7:["G",""],8:["G","#"],9:["A",""],10:["A","#"],11:["B",""]};
+  const FLAT  = {0:["C",""],1:["D","b"],2:["D",""],3:["E","b"],4:["E",""],5:["F",""],6:["G","b"],7:["G",""],8:["A","b"],9:["A",""],10:["B","b"],11:["B",""]};
+  for (let p = 0; p < 12; p++) {
+    if (map[p]) continue;
+    const rel = (p - tonicPc + 12) % 12;
+    const pick = (CHROM[rel] === "#" ? SHARP : FLAT)[p];
+    map[p] = {letter: pick[0], acc: pick[1]};
+  }
+  return map;
+}
+export const CHORD_FLAT = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"];
+export function chordSym(rootPc, qual) { // flat-preferring: ♭VI in Cm is A♭, not G♯
+  return CHORD_FLAT[rootPc] + (qual === "maj" ? "" : qual);
+}
+// Numeral → chord: major-scale-relative degrees, case = quality, suffix refines
+export const NUM_DEG = {I: 0, II: 1, III: 2, IV: 3, V: 4, VI: 5, VII: 6};
+export const MAJ_STEP = [0, 2, 4, 5, 7, 9, 11];
+export const MIN_STEP = [0, 2, 3, 5, 7, 8, 10];
+// natural minor: unaltered VI/VII sit a half-step lower
+// Numerals read against the major scale unless minorScale: the mood library
+// is written major-relative (♭VI, ♭VII), but a typed minor-key progression
+// says i–VI–VII–V and means Em C D B (Josh, 2026-09-12). Case still sets
+// quality, so V in minor is the major dominant and v the natural one.
+export function parseNumeral(tok, minorScale) {
+  const m = tok.match(/^([♭♯#b]?)(vii|vi|v|iv|iii|ii|i)(°|dim|maj7|7|6)?$/i);
+  if (!m) return null;
+  const acc = (m[1] === "♭" || m[1] === "b") ? -1 : m[1] ? 1 : 0;
+  const minor = m[2] === m[2].toLowerCase();
+  const suf = (m[3] || "").toLowerCase();
+  let qual = minor ? "m" : "maj";
+  if (suf === "°" || suf === "dim") qual = "dim";
+  else if (suf === "maj7") qual = "maj7";
+  else if (suf === "7") qual = minor ? "m7" : "7";
+  else if (suf === "6") qual = minor ? "m6" : "6";
+  const steps = minorScale ? MIN_STEP : MAJ_STEP;
+  return {pcOff: (steps[NUM_DEG[m[2].toUpperCase()]] + acc + 12) % 12, qual};
+}
+// progStr separators: the library's " – ", or whatever a thumb types
+// (hyphen, comma, arrow, spaces)
+export function splitProgression(progStr) { return progStr.split(/[\s–—\-,→>|]+/).filter(Boolean); }
+// chord widget: chips compose the symbol; typing in the box is equally valid
+// (chips re-highlight to match). Vocabulary = the lasso chord namer's, so
+// annotations and "Chord?" reveals always speak the same language.
+// base quality (pick one) + extensions (stack as many as the chord needs):
+// Cm7add9 = root C, base m, extensions 7 + add9 (Josh, 2026-08-19)
+export const CHORD_BASES = ["maj", "m", "dim", "aug", "sus2", "sus4", "5"];
+export const CHORD_EXTS = ["6", "7", "maj7", "9", "maj9", "11", "maj11", "13", "maj13",
+                    "add9", "add11", "add13", "b5", "#5", "b9", "#9", "#11", "b13"];
+export function chordQualParse(rest) { // "m7add9" -> {base, exts} or null if anything is left over
+  let base = "maj";
+  for (const b of CHORD_BASES) {
+    if (b !== "maj" && rest.startsWith(b) && !rest.startsWith("maj")) { base = b; rest = rest.slice(b.length); break; }
+  }
+  const exts = [];
+  const byLen = [...CHORD_EXTS].sort((a, c) => c.length - a.length);
+  outer: while (rest.length) {
+    for (const x of byLen) {
+      if (rest.startsWith(x) && !exts.includes(x)) { exts.push(x); rest = rest.slice(x.length); continue outer; }
+    }
+    return null; // unknown token: chips stand down, the typed text stands
+  }
+  return {base, exts};
+}
+export function chordQualCompose(base, exts) {
+  return (base === "maj" ? "" : base) + CHORD_EXTS.filter(x => exts.includes(x)).join("");
+}
+export function parseChordSym(sym) {
+  return (sym || "").trim().match(/^([A-G])([#b]?)([^/\s]*)(?:\/([A-G][#b]?))?(?:\s+\((.*)\))?$/);
+}

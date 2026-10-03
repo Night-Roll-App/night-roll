@@ -187,9 +187,9 @@ test("check rule 8: manifests (modulepreload / sw.js / devtools / src listing) m
   assert.match(v[0].message, /"b\.js"/);
 });
 
-test("checkSrc: the real repo, post-step-3 (midi/parse.js + midi/write.js) — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
+test("checkSrc: the real repo, post-step-4 (theory/chords.js + theory/key.js) — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
   const result = checkSrc(path.join(ROOT, "src"));
-  assert.equal(result.fileCount, 9, "app.js, edition.js, main.js, devtools.js, state.js, ui/icons.js, ui/controls.js, midi/parse.js, midi/write.js");
+  assert.equal(result.fileCount, 11, "app.js, edition.js, main.js, devtools.js, state.js, ui/icons.js, ui/controls.js, midi/parse.js, midi/write.js, theory/chords.js, theory/key.js");
   assert.deepEqual(result.violations.map(v => v.message), [
     'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
   ], "convertAnchors() references an undeclared oldBpb (src/app.js ~line 13996) — a real latent ReferenceError bug in the app that predates the split, surfaced here for the first time by rule 1's static scan; out of scope for the cutover itself (a verbatim move), flagged in open-items.md instead of silently fixed");
