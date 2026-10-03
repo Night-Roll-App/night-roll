@@ -5410,3 +5410,5 @@ Leftovers from step 6 (docs/split-plan.md "Deviations (6)"):
   `editableSong`/`draftDoc` (model/song.js, step 9). Likely permanently
   blocked by the `serializeRollnotes` call alone even after every other
   step lands — flag this specifically if a future step reconsiders it.
+
+## DONE 2026-10-03 13:30 — pan past the song end (Josh, Terminal #70: "push the song left so I can see like 10 empty bars"): clampView lets a drag scroll to PAN_TAIL_BARS=16 empty bars past the last bar; zoom-out fit unchanged
