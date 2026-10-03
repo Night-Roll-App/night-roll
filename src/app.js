@@ -2907,20 +2907,24 @@ function drawStripPlayhead(x, color) {
   ctx.fillStyle = color;
   ctx.fillRect(x - 0.75, S.STRIP_Y, 1.5, S.RULER_H - S.STRIP_Y);
 }
-function drawPlayheadStripBand(W) { // the strip's static look: background a
-  // touch lighter than the roll, bar lines strong, beat lines faint — the
-  // moving playhead itself is drawn separately (drawStripPlayhead), never here.
+function drawPlayheadStripBand(W) { // the strip's static look — RULER chrome,
+  // not a roll row: the ruler's own panel background (drawRuler already
+  // filled it), a line above, bar ticks full height and beat ticks short from
+  // the bottom edge like a ruler's. A --grid-soft fill read as one of the
+  // roll's light pitch rows (Josh, 2026-10-03: "it's just actually
+  // confusing"). The moving playhead is drawStripPlayhead's, never here.
   const ppt = pxPerTick(), bt = barTicks(), beatT = beatTicks();
   const t0 = S.view.x / ppt, t1 = (S.view.x + W) / ppt;
-  ctx.fillStyle = css("--grid-soft");
-  ctx.fillRect(S.RULER_W, S.STRIP_Y, W - S.RULER_W, STRIP_H);
+  ctx.strokeStyle = css("--grid");
+  ctx.beginPath(); ctx.moveTo(S.RULER_W, S.STRIP_Y + 0.5); ctx.lineTo(W, S.STRIP_Y + 0.5); ctx.stroke();
+  ctx.fillStyle = css("--dim");
   for (let t = Math.floor(t0 / beatT) * beatT; t < t1; t += beatT) {
     const x = S.RULER_W + t * ppt - S.view.x;
     if (x < S.RULER_W) continue;
     const isBar = Math.round(t) % bt === 0;
-    ctx.fillStyle = css("--grid");
-    ctx.globalAlpha = isBar ? 1 : 0.4;
-    ctx.fillRect(x, S.STRIP_Y, isBar ? 1.5 : 0.75, STRIP_H);
+    const h = isBar ? STRIP_H - 4 : Math.round(STRIP_H * 0.35);
+    ctx.globalAlpha = isBar ? 0.8 : 0.5;
+    ctx.fillRect(x, S.RULER_H - h, 1, h);
   }
   ctx.globalAlpha = 1;
 }

@@ -5452,3 +5452,5 @@ Josh published lotion and the breadcrumb did not change. Cause (src/app.js songW
 ## DONE 2026-10-03 17:05 — cycle stretch really keeps the playhead now (Josh, Terminal #83: b282f3f missed it): play() itself always reset fromSec to the cycle top; new opts.keepPos keeps an in-span position (used by the rangeEdge reschedule only; ▶ unchanged). Test proves both.
 
 ## DONE 2026-10-03 17:25 — each song reopens at its own zoom + scroll (Josh, Terminal #84): ff1roll-view-<mode>-<key> (debounced from draw), restored by fitView before it would fit; ruler selection already persisted (10d1640)
+
+## DONE 2026-10-03 17:55 — playhead strip restyled as ruler chrome (Josh, Terminal #85: it looked like a light roll row): ruler panel background, a line above, bar ticks tall / beat ticks short from the bottom
