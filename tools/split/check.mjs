@@ -286,7 +286,26 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src")) {
     // guarantees everything it calls has finished evaluating; rule 4 exists
     // to stop an ORDINARY module from depending on not-yet-ready state, and
     // main.js, always the last thing evaluated, can't hit that hazard.
-    if (rel !== "main.js") violations.push(...ruleTopLevelInitLayerZero(parsed, importLayer));
+    //
+    // app.js (LEGACY_CONTAINER) is exempt the same way, for a narrower
+    // reason specific to it (docs/split-plan.md §4 step 2's first real hit:
+    // the volume-button boot code calling the newly-imported setVolBtn,
+    // src/ui/controls.js, at app.js's own top level): app.js sits at the
+    // SAME layer tier as main.js (the layer table, above), meaning nothing
+    // it can import — now or as later steps carve more of it out — imports
+    // app.js back (that would be a layer-table violation on the OTHER
+    // module, caught by rule 5). With no cycle possible into app.js from
+    // anything it statically imports, ES module evaluation order alone
+    // (every static import finishes evaluating before the importing
+    // module's own top-level code runs, full stop) already guarantees a
+    // name app.js imports — at ANY layer — is ready by the time app.js's
+    // top level references it. Rule 4's layer-0-only restriction exists to
+    // catch exactly the case this can't be: a reference that MIGHT be part
+    // of an unresolved cycle. Narrower than main.js's exemption (app.js
+    // still can't read not-yet-initialized STATE from a sibling at its own
+    // tier — there are none to read from), but the same underlying
+    // guarantee. Deleted with LEGACY_CONTAINER itself in step 15.
+    if (rel !== "main.js" && rel !== LEGACY_CONTAINER) violations.push(...ruleTopLevelInitLayerZero(parsed, importLayer));
   }
   violations.push(...ruleUniqueNames(declaredByFile));
   violations.push(...ruleSerializedSelfContained(functionsByName));

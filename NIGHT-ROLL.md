@@ -1414,7 +1414,9 @@ stale and should move up here instead.
 - `edition.js` — `export const EDITION = "web"`; tools/package.mjs rewrites this one line to `"app"` for the store build (index.html itself is now copied byte-for-byte, no transform).
 - `state.js` — `export const S`: every piece of mutable app state (step 1, promote-state.mjs, 2026-10-02 — ~257 former top-level `let`/`var` names in app.js). No imports, so it evaluates first; every `S` field exists before any app code runs, which removes the boot-path TDZ class of bug for state by construction (see "Project conventions" below — the old per-site TDZ note is retired as a live risk, kept here for history).
 - `app.js` — the whole pre-split app (step 0b's cutover, 2026-10-02), verbatim from the old inline `<script>` apart from the EDITION import, the boot-watchdog clear, and (step 1) every former top-level `let`/`var` now read/written as `S.name`; shrinks to nothing as later steps carve real modules out of it, deleted in step 15. Its generated `__nrExpose$` accessor footer (tools/split/e2e-footer.mjs) is regenerated — `node tools/split/regen-e2e-footer.mjs --file src/app.js` — after ANY change to its top-level names, so it never mirrors a name that's no longer there.
-- `devtools.js` — `exposeGlobals()`: window accessors for app.js's/edition.js's exports (GET-only — an ES module's exported binding can't be assigned by an importer) and for every `S` field (GET+SET, step 1 — `song = …`/`mode = …` in a `page.evaluate()` now write `S.song`/`S.mode`), so Playwright's bare-name reads and assignments keep working across the cutover (module bindings aren't window properties). Gated by `window.__NR_EXPOSE`; never touches production otherwise.
+- `devtools.js` — `exposeGlobals()`: window accessors for app.js's/edition.js's/icons.js's/controls.js's exports (GET-only — an ES module's exported binding can't be assigned by an importer) and for every `S` field (GET+SET, step 1 — `song = …`/`mode = …` in a `page.evaluate()` now write `S.song`/`S.mode`), so Playwright's bare-name reads and assignments keep working across the cutover (module bindings aren't window properties). Gated by `window.__NR_EXPOSE`; never touches production otherwise.
+- `ui/icons.js` — the Material `ICON` table + `iconSvg(name, cls)` (step 2, 2026-10-02), moved out of app.js verbatim. Layer 0 (declared early, boot-path TDZ rule): `renderViewMenu` and other boot-time renderers call `iconSvg()` before the rest of the script has run.
+- `ui/controls.js` — the control registry (step 2, 2026-10-02 — see "Controls registry" below): `CONTROLS` (id → {icon, glyph, cls, label, prefix, aria}) and `setControl(id, patch)`, the only place that writes a registered control's innerHTML/aria-label. `setPlayBtn`/`setVolBtn` moved here as thin wrappers.
 
 ## Code map (index.html, section comments mark these)
 
@@ -6999,3 +7001,55 @@ caret/chevron. Add the path to `ICON` once; don't inline the same path
 string in two places.
 
 Install banner (2026-10-02, Josh: "did not notice the countdown"): #deploybanner, fixed top-centre above every sheet, gold — "Update installs in N s", Not now / Install now right on it (deployHoldNow / deployInstallNow, shared with the ✦ AI sheet); "Update waiting" while held; hidden when the install never came.
+
+## Controls registry (docs/split-plan.md §4 step 2, 2026-10-02 — Josh, 2026-10-02 21:20: "the code is not well factored", approved)
+
+`src/ui/controls.js`'s `CONTROLS` table (id → {icon, glyph, cls, label,
+prefix, aria}) and `setControl(id, patch)` are the ONLY place that writes a
+registered control's `innerHTML`/`aria-label` — a goal-post correction on
+the paragraph above this one (**The label-span problem**), which describes
+a `.chk`/`.lbl` child-span split that the actual icon-audit code never
+used: every control JS rewrote (and still rewrites) its WHOLE `innerHTML`
+each time, because the vm test harness's element stubs (tests/harness.mjs)
+only implement innerHTML/textContent/children, not querySelector — there
+was never a child element to touch selectively. `setControl()` is that
+same whole-innerHTML rebuild, just centralized in one file instead of
+copied at each call site.
+
+`setControl(id, {icon, glyph, cls, label, prefix, aria})` — every field is
+an independent PATCH: an omitted field keeps the control's last value (so
+an aria-only call, like ✦ AI's "is the bridge working" dot, never clobbers
+a countdown label another call just wrote, and vice versa). `icon` is an
+`ICON` table name (src/ui/icons.js, rendered via `iconSvg`); `glyph` is a
+literal character for a KEEP control (𝄞, ◂, 🎓, …) that predates or was
+exempted from the Material pass — at most one of the two is set. `prefix`
+is the ✓ /space checkbox column (View ▾'s rows, the Roll/Tracks/Score
+drop-up). `cls` is `iconSvg`'s own extra class ("txt" alongside visible
+text).
+
+Migrated to `setControl` in step 2: `#playbtn` (`setPlayBtn` is now a thin
+wrapper; `playGateTick`'s loading-percentage display too), `#volbtn`
+(`setVolBtn`), `#jobsbtn`/View ▾'s `#vwJobs` (`updateJobsBtn`), `#errbtn`/
+`#vwMessages` (`errChip`), `#askbtn` (`deployButtonTick`'s install
+countdown, and `askStatus`'s aria-label), `#viewbtn` + the Roll/Tracks/
+Score drop-up rows `#vsRoll`/`#vsTracks`/`#vsScore` (`applyViewMode`/
+`renderViewSwitch`), and every `renderViewMenu()` row named in "Rule for
+new controls" above plus `#vwGrid`. Not migrated (no fixed control id to
+register, or out of this step's named list): the `renderJobs()`/
+`fsubItem()` row factories, which build a FRESH button per call with no
+persistent id; the mic/Speak button (`S.micBtn`/`#nmic`, a dynamic target
+between two elements); `#askattach`/`#askshot`/`#askpick` (static markup
+only — nothing in app.js writes their icon/label/aria, so there is no
+writer to migrate).
+
+`tests/controls.test.mjs` is the drift guard: `tools/split/
+check-controls.mjs` statically scans every `src/**/*.js` file except
+`ui/controls.js` itself for a `.innerHTML =`/`.textContent =`/
+`.setAttribute("aria-label", …)` on an element resolved (by a direct
+`document.getElementById("id")` chain, or a `const x =
+document.getElementById("id")` local declared in the SAME top-level
+statement) to a registered `CONTROLS` id. A per-top-level-statement local
+map (not file-wide) avoids false positives from two unrelated functions
+both naming a local `b`. The ALLOWLIST in the test is empty today — step 2
+left no unconverted writer among the controls it registered — and may only
+shrink from here as a later step registers and migrates more.

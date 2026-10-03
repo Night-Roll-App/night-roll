@@ -187,9 +187,9 @@ test("check rule 8: manifests (modulepreload / sw.js / devtools / src listing) m
   assert.match(v[0].message, /"b\.js"/);
 });
 
-test("checkSrc: the real repo, post-step-1 (promote-state.mjs) — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
+test("checkSrc: the real repo, post-step-2 (ui/icons.js + ui/controls.js) — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
   const result = checkSrc(path.join(ROOT, "src"));
-  assert.equal(result.fileCount, 5, "app.js, edition.js, main.js, devtools.js, state.js");
+  assert.equal(result.fileCount, 7, "app.js, edition.js, main.js, devtools.js, state.js, ui/icons.js, ui/controls.js");
   assert.deepEqual(result.violations.map(v => v.message), [
     'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
   ], "convertAnchors() references an undeclared oldBpb (src/app.js ~line 13996) — a real latent ReferenceError bug in the app that predates the split, surfaced here for the first time by rule 1's static scan; out of scope for the cutover itself (a verbatim move), flagged in open-items.md instead of silently fixed");
@@ -214,7 +214,17 @@ function realModuleManifests() {
   // mirror, docs/split-plan.md §4 step 1) — the rule cares which modules are
   // pulled in, not how.
   const devtoolsImports = [...devtools.matchAll(/^import .* from "\.\/([^"]+)";/gm)].map(m => m[1]).concat(["devtools.js", "main.js"]);
-  const srcListing = readdirSync(path.join(ROOT, "src")).filter(f => f.endsWith(".js"));
+  // Recursive (docs/split-plan.md §4 step 2: src/ui/ is the first
+  // subdirectory) — a plain readdirSync would silently stop seeing every
+  // module under it, the same gap check.mjs's own listJsFiles() and
+  // package.mjs's srcModules() already walk around.
+  const srcListing = [];
+  (function walk(dir, prefix) {
+    for (const ent of readdirSync(dir, { withFileTypes: true })) {
+      if (ent.isDirectory()) walk(path.join(dir, ent.name), prefix + ent.name + "/");
+      else if (ent.name.endsWith(".js")) srcListing.push(prefix + ent.name);
+    }
+  })(path.join(ROOT, "src"), "");
   return { "index.html modulepreload": modulepreload, "sw.js APP_MODULES": appModules, "devtools.js imports (+ itself, main.js)": devtoolsImports, "src/ listing": srcListing };
 }
 

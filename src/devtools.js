@@ -35,6 +35,8 @@
 // window.
 import * as app from "./app.js";
 import * as edition from "./edition.js";
+import * as icons from "./ui/icons.js";
+import * as controls from "./ui/controls.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -43,7 +45,7 @@ export function exposeGlobals() {
   // actually evaluation-order-sensitive — but keeping the object literal
   // out of top-level init code is the same discipline §2.2 asks of every
   // other module, free to apply here too.
-  const MODULES = { app, edition };
+  const MODULES = { app, edition, icons, controls };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global

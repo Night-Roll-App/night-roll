@@ -295,6 +295,26 @@ Each step below gives: what moves, what must not change, how to verify. Every st
 - Add tests/controls.test.mjs: it fails when src/ writes `.textContent`/`.innerHTML`/`aria-label` on any element listed in CONTROLS outside controls.js. It starts with an allowlist of the remaining offenders, which only shrinks; each later step migrates the controls it moves.
 - Help sheet and status strings name controls through `CONTROLS[id].label`.
 - Verify: browser check of every migrated button, iPad look.
+- **Done** (2026-10-03, Opus builder, worktree branch). `tools/split/move.mjs
+  --names ICON,iconSvg --to src/ui/icons.js`, then `--names
+  setVolBtn,setPlayBtn --to src/ui/controls.js`, both over src/app.js.
+  `CONTROLS` ended up {icon, glyph, cls, label, prefix, aria} — `glyph`
+  and `prefix` beyond the plan's {icon, label, aria} shorthand, because
+  byte-identical output needed them (KEEP glyphs like 𝄞/◂/🎓 that never
+  got a Material icon, and the ✓/space checkbox column View ▾'s rows and
+  the Roll/Tracks/Score drop-up both share). `setControl` treats every
+  field as an independent patch (an omitted field keeps its last value)
+  rather than requiring the full {icon, label, aria} every call, so a
+  tick-by-tick countdown (deployButtonTick) and an aria-only status update
+  (askStatus) never clobber each other. 26 controls registered; migrated
+  writers: setPlayBtn (+ playGateTick's loading-% display), setVolBtn,
+  updateJobsBtn (#jobsbtn + #vwJobs), errChip (#errbtn + #vwMessages),
+  deployButtonTick + askStatus's aria-label (#askbtn), applyViewMode +
+  renderViewSwitch (#viewbtn, #vsRoll/#vsTracks/#vsScore), renderViewMenu's
+  `set()` helper (14 rows) + #vwGrid. tests/controls.test.mjs's allowlist
+  is empty — every writer this step touched was converted, not deferred.
+  See "Deviations (2)" for the layer-table finding this step surfaced and
+  the controls knowingly left unmigrated.
 
 **3. `midi/parse.js`, `midi/write.js`.**
 - Pure. Must not change: bytes out (the "writeMidi / writeSongMidi agree byte-for-byte" test).
@@ -609,6 +629,96 @@ Where step 0a's implementation diverged from this document's letter, smallest-wo
   first); cutover.mjs now imports the same `addAccessorFooter` instead of
   keeping its own copy. No test imports cutover.mjs's internals directly, so
   this refactor is invisible to tests/modules.test.mjs.
+
+## Deviations (2, 2026-10-03)
+
+- **check.mjs rule 4 needed a new exemption for app.js (LEGACY_CONTAINER),
+  the same shape as main.js's existing one but for a narrower reason**: the
+  first real code this step moved OUT of app.js (setVolBtn, now layer 4 —
+  `ui/` — instead of a same-file local) immediately surfaced that app.js's
+  own pre-existing boot code calls it at app.js's OWN top level (the
+  master-volume init, `setVolBtn(Math.round(S.masterVol * 100))`, right
+  beside `const volbtn = document.getElementById("volbtn")`), which rule 4
+  (top-level initializers may reference only layer-0 imports) now flags —
+  it couldn't before, because setVolBtn was a same-file local, not an
+  import, and rule 4 only looks at imports. This isn't a real hazard:
+  app.js sits at the SAME layer tier as main.js (the layer table), so
+  nothing it imports — now or as later steps carve more of it out — can
+  import app.js back (that would be a layer-5-importing-layer-5 violation
+  rule 5 would catch on the OTHER module first), which means no cycle can
+  reach app.js from anything it statically imports, which is exactly the
+  hazard rule 4's layer-0-only restriction exists to rule out by
+  construction. Fixed the same way as main.js: `checkSrc()`'s rule 4 call
+  now also skips `LEGACY_CONTAINER`, with the reasoning written at the call
+  site (tools/split/check.mjs) rather than a one-off per-callsite
+  workaround. Narrower than main.js's exemption in one respect — app.js
+  still can't safely read not-yet-initialized mutable STATE from a sibling
+  at its own tier, there just aren't any to read from yet — but the
+  underlying evaluation-order guarantee is identical. Deleted with
+  LEGACY_CONTAINER itself in step 15.
+- **`CONTROLS`' patch shape grew past the plan's {icon, label, aria}**: a
+  `glyph` field (a literal character — 𝄞, ◂, 🎓, 💬, ┄ — for a KEEP control
+  the Material icon audit never touched or exempted) and a `prefix` field
+  (the ✓ /"   " checkbox column shared by every View ▾ radio/toggle row AND
+  the footer's Roll/Tracks/Score drop-up, `#viewbtn`'s own switch menu).
+  Both were required to reproduce the pre-split byte-for-byte HTML — the
+  alternative (folding the checkmark into `label` as literal leading
+  text) would have worked too, but splitting it out means a caller that
+  only wants to flip the checkmark state (the common case, called on
+  every `renderViewMenu()`/`renderViewSwitch()` render) doesn't have to
+  reconstruct the whole label string to do it.
+- **`setControl`'s patch fields are independent, not an all-or-nothing
+  {icon, label, aria} triple**: the plan's wording ("writes innerHTML …,
+  aria-label and title in one place") reads as one call doing all three
+  every time, but two of this step's own migrated call sites need
+  partial updates specifically: `deployButtonTick` rewrites only `label`
+  every second (the countdown), and `askStatus` rewrites only `aria` when
+  the bridge's working/idle state flips — if one call's omitted fields
+  were treated as "clear it" rather than "leave it," the countdown and
+  the aria-label would stomp each other's last write. An omitted field
+  keeps the control's current value; `tests/controls.test.mjs` proves this
+  explicitly (the aria-only / label-only independence case).
+- **Not migrated to `setControl`, and not added to the allowlist** (no
+  violation exists to allowlist — these simply have no registered control
+  to write): `renderJobs()`'s and `fsubItem()`'s row-factory buttons, which
+  build a fresh, non-persistent element per call (no fixed id — `CONTROLS`
+  is keyed by id, so there's nothing to register); the mic/Speak button
+  (`S.micBtn`/`#nmic`), whose target is one of two different elements
+  chosen at runtime, not a single fixed id; `#askattach`/`#askshot`/
+  `#askpick`, which are static markup with their icon/label/aria baked into
+  index.html and NO JS writer at all (confirmed by grep — tests/
+  night-roll.test.mjs's own static-markup regex assertions on `#askpick`'s
+  `aria-label` attribute, and the `#askattachmenu` static div, would have
+  had to change if these moved into the registry, for zero behavior gain).
+  A future step that gives these a real dynamic writer should register
+  them then, not before.
+- **tests/controls.test.mjs's static scan (tools/split/check-controls.mjs)
+  is per-top-level-statement, not file-wide, for its local `const b =
+  document.getElementById(id)` → control-id map** — a file-wide map was
+  tried first and produced ~60 false positives, because this codebase's
+  actual convention is a short local name (`b`, almost always) reused
+  across dozens of unrelated functions for a dozen unrelated buttons; a
+  single flat map conflates all of them the moment any ONE declares
+  `const b = document.getElementById("playbtn")` anywhere in the file.
+  Scoping the map to each top-level `ast.body` entry (function
+  declarations and top-level statements are already one-per-concern in
+  this codebase) isolates them correctly with no accurate-scope walker
+  needed; the real repo scan came back clean (0 violations) once rescoped.
+- **tests/modules.test.mjs's `realModuleManifests()` helper needed to
+  become recursive**: its `srcListing` was a plain, non-recursive
+  `readdirSync(src).filter(...)` (accurate through step 1, when src/ had
+  no subdirectories) — this step's `src/ui/` is the first one, and the
+  flat listing would have silently stopped seeing `ui/icons.js`/
+  `ui/controls.js`, failing rule 8's "same four manifests" check the
+  moment index.html/sw.js/devtools.js (correctly) started listing them.
+  Fixed to walk subdirectories, mirroring check.mjs's own `listJsFiles()`
+  and package.mjs's `srcModules()`, both of which were already recursive
+  (this gap was specific to the test's own manifest helper).
+- **One hardcoded structural count needed bumping**: `checkSrc()`'s real-
+  repo test asserted `fileCount === 5` (the five flat files through step
+  1); this step's two new files under `src/ui/` make it 7 — updated along
+  with the test's own description, the same mechanical bump step 1's
+  Deviations section made for its own file-count assertion.
 
 ## 7. Estimates (Sonnet builder hours, excluding review and CI wait)
 
