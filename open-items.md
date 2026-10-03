@@ -5065,6 +5065,25 @@ included), modules.test.mjs 32/32 — all match the counts 0b itself reported.
 (Q6). `node tools/package.mjs --out /tmp/nr-dist-check2`: runtime modules 47,
 matching 0b's own report. instruments.test.mjs/ps2-real.test.mjs "real rip"
 failures are pre-existing missing-fixture gaps in /tmp/claude-501/rips
-(unrelated to src/, not touched by this step). NOT pushed: main session
-still needs to browser-verify (localhost + the packaged dist output) before
+(unrelated to src/, not touched by this step).
+
+FOLLOW-UP (same worktree branch, commit a04001e3): the main session caught
+a real gap the above missed — app.js exports nothing on its own, so
+devtools.js's window mirror had nothing to mirror, AND tests/e2e/
+helpers.mjs never set window.__NR_EXPOSE, so every bare-name
+page.evaluate() across tests/e2e/*.mjs (~150 call sites) would have thrown
+ReferenceError the first time CI actually ran them in a browser — the vm
+suite above can't see this, since it never loads app.js as a real
+window-backed page. Fixed: cutover.mjs now appends a generated
+`__nrExpose$` get/set accessor footer to app.js (same technique as tests/
+harness.mjs's own per-module footer, different name so the two don't
+collide when the vm harness loads app.js as a fixture); devtools.js mirrors
+it onto window with both get AND set; every e2e entry point
+(helpers.openApp + audio/folder/editor's own local setups) now sets
+__NR_EXPOSE before navigating. Added tools/split/check-e2e-globals.mjs (node
+-only, no browser) wired into modules.test.mjs, which statically proves
+every bare identifier the specs reference resolves — ran `npm run
+test:e2e:smoke` once locally (allowed per CLAUDE.md) to confirm against a
+real headless browser: chromium, 8/8 passed. NOT pushed: main session still
+needs to browser-verify (localhost + the packaged dist output) before
 pushing and building for the iPad.
