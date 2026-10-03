@@ -231,6 +231,12 @@
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; min-width: 74px; }
   button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   button:disabled { opacity: 0.4; cursor: default; }
+  /* pressed: every button dims and dips while the finger is on it (Josh,
+     2026-10-02: the copy button "doesn't seem like it pressed"). iOS only
+     applies :active when the page has a touchstart listener — see the no-op
+     one registered at boot. */
+  button:active:not(:disabled) { filter: brightness(0.7); transform: scale(0.94); }
+  button { transition: transform 60ms ease-out, filter 60ms ease-out; }
   .meta {
     font-family: var(--mono);
     font-size: 0.6875rem;
@@ -8108,6 +8114,7 @@ function warmContext() { // one silent sample: absorbs the fresh context's glitc
   src.connect(master);
   src.start();
 }
+if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("touchstart", () => {}, {passive: true}); // lets iOS Safari apply :active (the pressed look) — it skips :active on pages with no touch listener
 function audioSessionType(t) { try { if (navigator.audioSession && navigator.audioSession.type !== t) navigator.audioSession.type = t; } catch (err) { console.log("[audio] audioSession: " + err.message); } }
 function ensureAudio() { // one context for the app's lifetime — iOS Safari
   // glitches the first render quantum of a fresh context. But a context iOS
