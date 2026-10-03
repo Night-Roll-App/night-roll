@@ -1292,6 +1292,14 @@
 <div id="dockrightinner"><div id="wmdivider-right-inner" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div></div>
 </div><!-- /songcenter -->
 <div id="editrow">
+  <!-- ⟲ ⟳ ⧉ 📋 come FIRST, before anything that shows/hides per mode: Pencil's
+       note values/vol/accidentals used to push them sideways, and Josh reaches
+       for undo by position (2026-10-02: "it needs to be locked in one position
+       all the time"). Nothing may be inserted ahead of this group. -->
+  <button id="undobtn" aria-label="Undo">⟲</button>
+  <button id="redobtn" aria-label="Redo">⟳</button>
+  <button id="copybtn" aria-label="Copy selected notes">⧉</button>
+  <button id="pastebtn" aria-label="Paste the selection at the cursor">📋</button>
 
   <div class="seg" id="modeseg" role="radiogroup" aria-label="Edit mode">
     <button data-mode="select" role="radio" aria-checked="false">Select</button>
@@ -1321,10 +1329,6 @@
     <button data-acc="1" role="radio" aria-checked="false" aria-label="Sharp">♯</button>
     <button data-acc="-1" role="radio" aria-checked="false" aria-label="Flat">♭</button>
   </div>
-  <button id="undobtn" aria-label="Undo">⟲</button>
-  <button id="redobtn" aria-label="Redo">⟳</button>
-  <button id="copybtn" aria-label="Copy selected notes">⧉</button>
-  <button id="pastebtn" aria-label="Paste the selection at the cursor">📋</button>
   <button id="cutbtn" aria-label="Cut selected notes to the clipboard">✂</button>
   <button id="splitbtn" aria-label="Split selected notes at the cursor">🔪</button>
   <button id="delbtn" aria-label="Delete selected notes">🗑</button>
@@ -1971,7 +1975,7 @@
       <dt>Delete</dt><dd>Tap <b>🗑</b> in the edit row — every selected note goes at once. Delete key does the same.</dd>
       <dt>Divide (➗)</dt><dd>Select notes, tap <b>➗</b>, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.</dd>
       <dt>Quantize (Q)</dt><dd>Select notes, tap <b>Q Quantize</b> (behind ⋯, Edit ▾, or the <b>Q</b> key) and pick a strength — <b>100%</b> snaps each note's start exactly onto the current grid (the same grid Move/Pencil use: 16ths, triplet steps with a T duration active, or 32nds once the song has any); <b>75%/50%</b> moves it only partway there, a soft nudge for a take that's close but not glued down. <b>Also quantize note ends</b> additionally snaps each note's END and resizes to match — off by default, so a raw take's durations stay as played and only the onsets straighten. This is Logic's Quantize command: it acts on a selection AFTER the fact, undoably (one ⟲ step for the whole batch) — recording itself keeps what you played (see ● Record); Quantize is how you straighten it out when you want to.</dd>
-      <dt>Undo</dt><dd>Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.</dd>
+      <dt>Undo</dt><dd>⟲ ⟳ ⧉ 📋 (undo, redo, copy, paste) are always the first four buttons on the left of the edit toolbar — Pencil's note values and vol appear after them, never before, so they don't move. Every gesture above — move, resize, copy, paste, delete, divide — is exactly one ⟲ step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one ⟲ away, and a kit or bass track a generator created leaves with its take.</dd>
     </dl>
     </div>
     <div class="hsec" data-hsec="files">

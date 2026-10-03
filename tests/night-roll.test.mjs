@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave", "reopens with the strip up",
@@ -9855,6 +9855,13 @@ test("lasso: tapping empty space or tapping the note out clears a leftover singl
   run(`tap({x: RULER_W + 5000, y: RULER_H + 1})`); // empty space
   assert.equal(run(`selNote`), null);
   run(`lassoMode = false; song = null; songKey = "midi/test.mid";`);
+});
+
+test("edit toolbar: ⟲ ⟳ ⧉ 📋 are the first four controls, ahead of everything Pencil shows/hides (Josh, 2026-10-02: undo must never move)", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const row = html.slice(html.indexOf('<div id="editrow">'), html.indexOf('id="morewrap"'));
+  const ids = [...row.matchAll(/<(?:button|div)[^>]*\bid="([^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(ids.slice(1, 6), ["undobtn", "redobtn", "copybtn", "pastebtn", "modeseg"]); // [0] is #editrow itself
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", () => {
