@@ -5017,3 +5017,6 @@ HELP.md has only Settings → AI model (server URL, iPad needs https via Tailsca
 ## DONE 2026-10-03 00:05 — edit toolbar reordered (Josh, Terminal #67): undo redo cut copy paste delete ⋯ (split now next to join inside ⋯), then Select/Pencil/Erase + Pencil options last. PORT NOTE: after split 0b started — re-apply in src/ when merging 0b.
 
 ## DONE 2026-10-03 00:30 — track chips no longer cut off when the AI window is docked wide (Josh, Terminal #68): #trackrow.stacked puts the transport on the first row and the chips full-width below whenever they overflow beside it (fitTrackRow, ResizeObserver + updateTrackMore). PORT NOTE: lands after split 0b started.
+
+## 2026-10-03 00:05 — BUG (Josh via Ask): screen blinking nonstop on iPad
+Josh: "That did not work and it is making the whole screen freak out, it is blinking and blinking." Seen on build 10/03/2026 00:01:03 (after 0692e13 track chips fix: chips move to a full-width row when the AI window is docked wide). Screenshot: ~/.night-roll-bridge/shots/2026-10-03T04-00-49-106Z.jpg shows AI panel docked Right, chips in the top bar. Suspect: chip-wrap layout flapping (wrap -> no longer overflows -> unwrap -> overflows again), a resize loop. Song is untitled-1; notes are intact in the screenshot.
