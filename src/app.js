@@ -13292,6 +13292,11 @@ async function saveSongAs(folder, name) { // first Save Version of an Untitled s
   } catch (err) { /* the slug will do */ }
   localStorage.setItem("ff1roll-lastfolder", folder);
   saveVersion(true);
+  // the song is now a composition and its tempo:/key:/meter: directives
+  // resolve under that key's rules (bakesTempo …): reopen it from the new
+  // draft, or the LCD kept the bare base tempo and no key until a reload,
+  // which read as "it lost all its annotations" (Josh, 2026-10-03, lotion)
+  { const d = await draftRead(newKey); if (d) openDraftDoc(d, newKey); } // the same road a reload takes — proven to show them
   updateSongBtn();
   setInfo("saved as " + name.trim() + " in " + folderTitle(folder) + " — Publish sends it to " + (publishDest() === "folder" ? fsRoot.name : "GitHub"));
   return true;
