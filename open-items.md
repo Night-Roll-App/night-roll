@@ -5229,5 +5229,81 @@ still needs to browser-verify (localhost + packaged dist) before pushing
 and building for the iPad — same as every prior step, this is a pure
 refactor with no user-facing change.
 
-## QUEUED 2026-10-03 — split: finish moving estimateKey/checkKeyVsFile to src/theory/key.js (terminal-only, not a question for Josh)
-They stayed in app.js in step 4 because they call trackIsDrums/barTicks, not yet carved out; the step that moves those (step 5, model/grid.js) also moves these two.
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 5: src/model/{catalog,grid,edits,rollnotes}.js (docs/split-plan.md)
+Moved, each via `move.mjs --names` over src/app.js (one more invocation into
+the existing src/theory/key.js):
+- `model/rollnotes.js`: `barTicks`, `applyChop`, `notesBase`, `baseName`,
+  `notesStoreKey`, `ROLLNOTES_FORMAT`/`ROLLNOTES_MAX_VERSION`/
+  `ROLLNOTES_LOCK_MSG`, `parseRollnotes`/`jsonToRawNote`/
+  `parseRollnotesJSON`/`deriveNoteTypes`, `noteToJSON`/`trackDirText`/
+  `audioDirText`, `resolveNote`, `dedupedNotesWithIndex`,
+  `serializeNotesList`/`serializeRollnotes`/`serializeRollnotesStamped`.
+- `model/grid.js`: `pencilTicks`, `isTripletDur`, `songHas32nds`,
+  `moveSnapTicks`, `gridAnchorTick`, `snapTickAbs`, `pencilCellAt`,
+  `gridCellStart`, `effTs`, `beatsPerBarEff`, `beatTicks`,
+  `beatsPerBarDisp`, `secDepthCap`, `trackIsDrums`.
+- `model/edits.js`: `editsKey`, `isLocalDraft`, `overlayNoteSig`,
+  `updateClearBtn` — the safe quarter of the edits store; see below.
+- `model/catalog.js`: `groupOf`, `catalogHas`, `publishedPaths`,
+  `folderOf`, `albumFolders`, `segTitle`, `folderTitle`, `titleCaseSlug`,
+  `FOLDER_NAMES` — the "album/group lookups" half of the plan's
+  `model/catalog.js` line; see below for `initCatalog`.
+- `theory/key.js` (not listed by step 5's table, but the right home):
+  `keyNameToSf` + `MODE_OFFSET`/`LETTER_SF`/`MODE_SF_OFFSET` — pulled out
+  of `deriveNoteTypes`'s `key:`-directive parser because it's pure theory
+  (the inverse of the already-there `keyNameFor`), not annotation-model
+  logic.
+
+Did NOT move (every one hits a real rule-5 violation — a layer-2 `model/`
+file importing a not-yet-split piece of app.js, still layer 5
+LEGACY_CONTAINER today): `initCatalog` (needs `folderOnly`/`songsURL`/
+`folderScanAlbums` — platform/, step 6 — and `albumMetaFor` — audio/chip.js,
+step 8); `finalizeNotes` (needs a dozen render/audio/UI functions across
+steps 7/8/9/11); and, from the edits store, `loadEdits`/`saveEdits`/
+`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (the actual
+2026-10-02-regression code — needs `isComposition`/`scheduleAnalysisRecompute`/
+`saveDraft`/`computeSongEnd`/`updateSongMeta`/`draftRead`/`updateChipBtn`/
+`editableSong`/`ownFolderPath`/`originOf`/`LINK_SONGS` — provenance/audio/
+versions/gen, steps 6/8/9/10). Per this task's SAFETY instruction, the
+edits-store SAFETY functions were checked individually rather than forced
+across a layer boundary as a block; none of their bodies changed a byte,
+and they're still bare-name reachable from app.js, so every "local song: …"
+regression test (tests/night-roll.test.mjs, the exact 2026-10-02 coverage)
+passes unchanged. Full reasoning + the rollnotes.js/grid.js forward-reference
+ordering fix (a hand-corrected import specifier, not a logic change) in
+docs/split-plan.md "Deviations (5)".
+
+`regen-e2e-footer.mjs --file src/app.js` re-run (needed — without it, rule 2
+flagged 41 "assignment to imported binding" violations from the stale
+footer). devtools.js gained `modelCatalog`/`modelGrid`/`modelEdits`/
+`modelRollnotes` namespace imports; sw.js APP_MODULES gained all four files,
+SW_VERSION nr-v10 → nr-v11; index.html's modulepreload list gained all four;
+tests/modules.test.mjs's checkSrc fileCount assertion bumped 11 → 15.
+NIGHT-ROLL.md's module map gained all five entries (four model/ files +
+theory/key.js's keyNameToSf addendum).
+
+Verified: night-roll.test.mjs 417 (416 pass + 1 pre-existing env skip),
+gestures 17/17, modules 33/33, controls 3/3, bridge 10/10, pwa 3/3,
+package 3/3, nsf 20/20 (3 pre-existing vault-only skips), chip-worker
+31/31, migrate-rollnotes 9/9 — all green, all unchanged counts.
+`node tools/split/check.mjs` clean except the known pre-existing oldBpb
+finding (Q6); check-e2e-globals.mjs and check-controls.mjs clean. `node
+tools/package.mjs --out /tmp/nr-dist-s5`: 47 runtime modules (unchanged —
+model/ adds no tools/-side runtime module of its own). `tools/at.mjs`,
+`tools/span.mjs`, `tools/annotations.mjs`, `tools/loop-targets.mjs` and
+`tools/dump_notes.mjs` re-verified against albums/starters/fur-elise.mid
+(never albums/compositions/) — `dump_notes.mjs`'s output on a scratch copy
+is byte-identical to the committed .notes.txt. `npm run test:e2e:smoke`
+(allowed once locally): chromium 8/8 passed. NOT pushed: main session still
+needs to browser-verify (localhost + packaged dist) before pushing and
+building for the iPad — same as every prior step, this is a pure refactor
+with no user-facing change.
+
+## QUEUED 2026-10-03 — split: estimateKey/checkKeyVsFile cannot move to src/theory/key.js, ever, as currently written (terminal-only, not a question for Josh)
+Corrects the 2026-10-03 00:50-ish entry this replaces, which assumed step 5 (moving trackIsDrums/barTicks out of app.js) would unblock this. Step 5 moved both (trackIsDrums, keyEstimateSig's dependency, into src/model/grid.js; barTicks, checkKeyVsFile's dependency, into src/model/rollnotes.js — see docs/split-plan.md step 5's Done note) and re-attempted the theory/key.js move; check.mjs still refuses it, and will keep refusing it regardless of which model/ file ends up holding trackIsDrums/barTicks. Reason: docs/split-plan.md's layer table makes theory/ layer 0, the LOWEST layer — a module may import its own layer or lower, and for layer 0 that means layer 0 only, forever. trackIsDrums and barTicks are genuinely layer-2 (model/) concepts (a track-kind predicate; a meter×ppq calculation) no matter which model/ file holds them. Moving them out of app.js only swapped which layer blocks the import (LEGACY_CONTAINER, then real model/) — never layer 0. So this isn't "not yet carved out," it's structural: estimateKey/checkKeyVsFile can stay in theory/key.js's own layer only if rewritten to take trackIsDrums/barTicks as parameters (dependency injection) instead of importing them — a logic change, out of scope for any mechanical move step — or they move to a model/gen-layer module instead of theory/key.js (losing the "beside keyNameFor/pearsonCorr" cohesion step 4 wanted). Whoever next considers this should pick one of those two real options rather than retry the plain move.
+
+## QUEUED 2026-10-03 — split: finish moving initCatalog, finalizeNotes, and the edits-store SAFETY functions once their blocking dependencies land (terminal-only, not a question for Josh)
+Three leftovers from step 5 (docs/split-plan.md "Deviations (5)"), each blocked by a real rule-5 violation (a model/ file, layer 2, would have to import still-unsplit app.js, layer 5), not by anything step 5 itself could fix:
+- `initCatalog` (→ src/model/catalog.js) needs `folderOnly`/`songsURL`/`folderScanAlbums` (platform/folder.js + platform/base.js, step 6) and `albumMetaFor` (audio/chip.js, step 8). Revisit once BOTH land.
+- `finalizeNotes` (→ src/model/rollnotes.js) needs `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, steps 7-8), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`bakesTempo` (model/song.js or similar, step 9), `keyLabelState` (ui/notes.js, step 14). This is the deepest-reaching one — likely still blocked even after step 9, until the audio/render/ui layers it touches are further along. Re-check after each of steps 7, 8, 9, 11, 14.
+- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — the 2026-10-02-regression code — need `isComposition`/`ownFolderPath`/`isCaptureKey`/`LINK_SONGS` (provenance/platform, steps 6 + 9), `scheduleAnalysisRecompute` (gen/analysis.js, step 10), `saveDraft`/`computeSongEnd`/`updateSongMeta`/`draftRead` (model/song.js + model/versions.js, step 9), `updateChipBtn` (audio/chip.js, step 8), `editableSong`/`originOf` (provenance, step 9). Re-check after step 9 (the biggest chunk of this list); treat the SAFETY rule from docs/split-plan.md's step-5 task the same way next time — move it verbatim or not at all, never fragment it across a layer boundary.

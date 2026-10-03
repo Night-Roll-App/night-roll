@@ -23,14 +23,14 @@
 // A stale-index footgun is avoided by design: index.html is only ever served
 // from cache when the network failed or timed out.
 
-const SW_VERSION = "nr-v10"; // bumped: step 4 (docs/split-plan.md §4 step 4) adds src/theory/chords.js + src/theory/key.js to APP_MODULES
+const SW_VERSION = "nr-v11"; // bumped: step 5 (docs/split-plan.md §4 step 5) adds src/model/{catalog,grid,edits,rollnotes}.js to APP_MODULES
 const CACHE = "night-roll-" + SW_VERSION;
 // APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
 // rule 8) — index.html's modulepreload list, this list, devtools.js's
 // mirrored-module imports, and the real src/ file listing must all describe
 // the same set (tests/modules.test.mjs enforces it); a module missing here
 // means a 404 offline instead of a silent fallback.
-const APP_MODULES = ["src/app.js", "src/edition.js", "src/devtools.js", "src/main.js", "src/state.js", "src/ui/icons.js", "src/ui/controls.js", "src/midi/parse.js", "src/midi/write.js", "src/theory/chords.js", "src/theory/key.js"];
+const APP_MODULES = ["src/app.js", "src/edition.js", "src/devtools.js", "src/main.js", "src/state.js", "src/ui/icons.js", "src/ui/controls.js", "src/midi/parse.js", "src/midi/write.js", "src/theory/chords.js", "src/theory/key.js", "src/model/catalog.js", "src/model/grid.js", "src/model/edits.js", "src/model/rollnotes.js"];
 const PRECACHE = ["./", "index.html", "vendor/vexflow.js", "app.webmanifest",
                   "src/app.js", "src/edition.js", "src/devtools.js", "src/main.js",
                   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];

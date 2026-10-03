@@ -478,6 +478,164 @@ Each step below gives: what moves, what must not change, how to verify. Every st
 
 **5. `model/rollnotes.js`, `model/grid.js`, `model/edits.js`, `model/catalog.js`.**
 - Verify: `tests/migrate-rollnotes.test.mjs` and `node tools/dump_notes.mjs` output byte-identical on 3 FF1 songs.
+- **Done** (2026-10-03, Opus builder, worktree branch). Four `move.mjs --names`
+  invocations over src/app.js (plus one into the already-existing
+  src/theory/key.js): `rollnotes.js` ← `barTicks,applyChop,notesBase,baseName,
+  notesStoreKey,ROLLNOTES_FORMAT,ROLLNOTES_MAX_VERSION,ROLLNOTES_LOCK_MSG,
+  parseRollnotes,jsonToRawNote,parseRollnotesJSON,deriveNoteTypes,
+  audioDirText,noteToJSON,trackDirText,resolveNote,dedupedNotesWithIndex,
+  serializeNotesList,serializeRollnotes,serializeRollnotesStamped`;
+  `grid.js` ← `pencilTicks,isTripletDur,songHas32nds,moveSnapTicks,
+  gridAnchorTick,snapTickAbs,pencilCellAt,gridCellStart,effTs,
+  beatsPerBarEff,beatTicks,beatsPerBarDisp,secDepthCap,trackIsDrums`;
+  `edits.js` ← `editsKey,isLocalDraft,overlayNoteSig,updateClearBtn`;
+  `catalog.js` ← `groupOf,catalogHas,publishedPaths,folderOf,albumFolders,
+  segTitle,folderTitle,titleCaseSlug,FOLDER_NAMES`; `theory/key.js` (not
+  listed by this step's table, but the right home — see Deviations) ←
+  `keyNameToSf,MODE_OFFSET,LETTER_SF,MODE_SF_OFFSET`. Order mattered:
+  `rollnotes.js` was moved before `grid.js` so `barTicks`'s own back-import
+  into app.js existed by the time `grid.js`'s movers needed it; this left
+  `rollnotes.js` with three imports pointing at `../app.js` for
+  `beatsPerBarEff`/`beatTicks`/`beatsPerBarDisp` (correct at the moment they
+  were written, stale the instant `grid.js`'s move pulled those three out of
+  app.js) — hand-corrected to `./grid.js` immediately after, an import-line-only
+  fix within the plan's own §0 allowance ("the only allowed changes are
+  import/export lines"). `regen-e2e-footer.mjs --file src/app.js` re-run
+  (without it, rule 2 flagged 41 "assignment to imported binding" violations
+  — the stale footer's generated setters for every name that just left
+  app.js); after regen, check.mjs is clean except the pre-existing `oldBpb`
+  finding. check-e2e-globals.mjs and check-controls.mjs clean.
+  devtools.js gained `modelCatalog`/`modelGrid`/`modelEdits`/
+  `modelRollnotes` namespace imports (GET-only). sw.js APP_MODULES gained
+  all four, SW_VERSION bumped nr-v10 → nr-v11; index.html's modulepreload
+  list gained all four (after theory/, before app.js — all layer 2).
+  `node tools/package.mjs --out /tmp/nr-dist-s5` packages all four with no
+  package.mjs changes needed; 47 runtime modules, unchanged from post-step-4
+  (no tools/-side runtime module corresponds to model/). `tools/at.mjs`,
+  `tools/span.mjs`, `tools/annotations.mjs`, `tools/loop-targets.mjs` and
+  `tools/dump_notes.mjs` all re-verified against albums/starters/fur-elise.mid
+  (never albums/compositions/) — `dump_notes.mjs`'s output on a scratch copy
+  is byte-identical to the committed .notes.txt (this step's actual tool
+  coverage, not the "3 FF1 songs" above: FF1 songs come from the NSF
+  pipeline, tools/nsf/dump-all.mjs, which this step's moved code doesn't
+  touch). `npm run test:e2e:smoke` run once: 8/8 passed. See "Deviations (5)"
+  below for what each module actually ended up containing versus this
+  section's letter, and why — most of it is the same story repeated four
+  times: the plan's named "big" function for a module (`initCatalog`,
+  `finalizeNotes`, the bulk of the edits store, and — for the leftover
+  theory move below — `estimateKey`/`checkKeyVsFile` again) turned out to
+  reach into layers this step cannot touch, so it stayed in app.js while the
+  genuinely pure surrounding code moved.
+
+**Leftover from step 4: `estimateKey`/`checkKeyVsFile` still did not move.**
+Per this step's own assignment (finish moving them into `theory/key.js` once
+`trackIsDrums`/`keyEstimateSig`/`barTicks` are importable from a lower
+layer), `trackIsDrums` moved into `model/grid.js` and `barTicks` moved into
+`model/rollnotes.js` above — but this does NOT unblock the theory move, and
+can never. `theory/` is layer 0, the LOWEST layer in the table; a module may
+only import its own layer or lower, which for layer 0 means layer 0 only,
+full stop. `trackIsDrums`/`barTicks` are legitimately layer-2 (`model/`)
+concepts — `trackIsDrums` reads a track's notes/kind (song-model), `barTicks`
+multiplies a meter-derived beat count by `S.song.ppq` (grid-model) — moving
+them anywhere in `model/` (this step's only available destination, since
+`model/song.js` doesn't exist until step 9) leaves them at layer 2, which is
+*higher* than layer 0, not lower. `theory/key.js` importing from `model/`
+is exactly as forbidden by rule 5 as importing from `app.js`
+(`LEGACY_CONTAINER`) was in step 4 — the violation just moves from one
+layer-5-ish name to a real layer-2 one. The open-items.md entry that asked
+for this retry assumed the blocker was merely "not yet carved out of
+app.js"; it was actually a permanent structural one. The entry is corrected
+below, not marked done, with a new QUEUED note describing the real
+constraint for whoever next considers moving these two.
+
+## Deviations (5, 2026-10-03)
+
+- **Every named "big" function in this step's table stayed in app.js, same
+  story each time: it reaches into a layer this step cannot touch.** The
+  pattern repeats from step 4 (`estimateKey`/`checkKeyVsFile`) exactly:
+  - `initCatalog` (model/catalog.js) calls `folderOnly`/`songsURL`/
+    `folderScanAlbums` (platform/folder.js + platform/base.js, step 6) and
+    `albumMetaFor` (audio/chip.js, step 8) — all four still in app.js. What
+    DID move, under the table's own "album/group lookups" half of the same
+    responsibility line, is the cluster of pure `S.CATALOG` readers:
+    `groupOf`, `catalogHas`, `publishedPaths`, `folderOf`, `albumFolders`,
+    `segTitle`, `folderTitle` (+ `titleCaseSlug`/`FOLDER_NAMES`, unlisted but
+    load-bearing — `folderTitle`/`albumTitleFor`'s pattern, same as step 4's
+    unlisted chord constants). `model/catalog.js` therefore exists but holds
+    no `init*` function yet — the same shape `theory/key.js` had after step 4
+    (real content, but not its headline name).
+  - `finalizeNotes` (model/rollnotes.js) is the one case worse than
+    estimateKey's: it calls a DOZEN not-yet-split functions across four
+    future layers (`renderTrackbar` — ui, `updateTrackGains` — audio,
+    `sfPreloadForSong`/`gamePreloadForSong` — audio, `fitView` — render,
+    `applyAudioDirs`/`updateSongMeta`/`keyLabelState`/`bakesTempo` —
+    model/ui, plus `document.getElementById` reads, which are fine anywhere).
+    No subset of those is close to landing this step. Left in app.js
+    verbatim; everything it calls that DID move this step (`resolveNote`,
+    `barTicks`, `applyChop`) is now imported back in, which is the normal,
+    allowed direction (layer 5 importing layer 2).
+  - The edits store (model/edits.js) split down the middle: `editsKey`/
+    `isLocalDraft`/`overlayNoteSig`/`updateClearBtn` have zero calls into
+    unsplit code and moved verbatim. `loadEdits`/`saveEdits`/
+    `foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` — the actual
+    2026-10-02-regression code CLAUDE.md and this task both flag by name —
+    each hit a real rule-5 blocker (`isComposition`, `scheduleAnalysisRecompute`,
+    `saveDraft`, `computeSongEnd`, `updateSongMeta`, `draftRead`,
+    `updateChipBtn`, `editableSong`, `ownFolderPath`, `originOf`, `LINK_SONGS`
+    — provenance/audio/versions/gen, steps 6/8/9/10) and stayed, bodies
+    untouched. Per this task's SAFETY instruction, no subset of the
+    SAFETY-named functions (`saveEdits`/`loadEdits`/retired-overlay handling)
+    was forced across a layer boundary just to get partial credit on "edits
+    store" — the whole cohesive unit either moves clean or doesn't move at
+    all. Every "local song: …" regression test (tests/night-roll.test.mjs,
+    the exact 2026-10-02 coverage) passes unchanged because the code it
+    exercises is byte-identical and in the same file it started in.
+  - `estimateKey`/`checkKeyVsFile` (theory/key.js, step 4's leftover) — see
+    the "Leftover from step 4" note above the Done paragraph: this is now
+    understood to be a permanent structural block (layer 0 can never import
+    layer 2), not a temporary one step 5 could clear. `keyNameToSf` (+
+    `MODE_OFFSET`/`LETTER_SF`/`MODE_SF_OFFSET`) moved to `theory/key.js`
+    instead — unrelated to the estimateKey blocker, but a real finding of
+    its own: it's `deriveNoteTypes`'s (model/rollnotes.js) `key:`-directive
+    parser calling into pure theory (name → signed-fifths, the inverse of
+    `keyNameFor`, already in theory/key.js), a textbook same-direction,
+    layer-appropriate import, not a misfiling.
+- **A forward-reference ordering problem between `model/rollnotes.js` and
+  `model/grid.js`, resolved by sequencing + one hand-fix, not a tool
+  change.** `barTicks` (destined for rollnotes.js) calls `beatsPerBarEff`
+  (destined for grid.js), and three of grid.js's own functions
+  (`moveSnapTicks`, `gridAnchorTick`, `snapTickAbs`, `gridCellStart`) call
+  `barTicks` right back — a genuine same-layer mutual dependency between two
+  files neither of which exists until this step creates them. `move.mjs`
+  only ever looks at the CURRENT state of its `--from`/`--to` files, so
+  whichever move runs first writes an import pointing at wherever its
+  free names currently live — `app.js`, correctly, at that moment. Moving
+  `rollnotes.js` first (so `grid.js`'s later move could correctly resolve
+  `barTicks` via app.js's own freshly-added back-import) left `rollnotes.js`
+  itself with three imports reading `beatsPerBarEff`/`beatTicks`/
+  `beatsPerBarDisp` from `../app.js` — true when written, false the instant
+  the second move pulled those three into `grid.js`. Caught immediately by
+  check.mjs (rule 1: those three names are no longer in app.js, so its
+  free-identifier set wouldn't have them either — rather, the broken
+  imports would have surfaced as a link-time "module has no export named …"
+  the first time a test loaded `rollnotes.js`). Fixed by hand-editing the
+  three import lines to `./grid.js` — an import-specifier-only change, the
+  one kind of edit §0's "a move commit only moves code" rule explicitly
+  allows, confirmed by diffing: zero bytes of any function body changed.
+  A future step chaining two new same-layer modules with a mutual
+  dependency should expect this and budget for the same manual fix-up,
+  OR move the shared leaf dependency (here, effectively `beatsPerBarEff`/
+  `barTicks`) in a single combined step first if the tooling grows a
+  multi-destination mode — out of scope to build for this step.
+- **`regen-e2e-footer.mjs` is not optional busywork — skipping it produced
+  41 real rule-2 violations**, not a false alarm: app.js's generated
+  `__nrExpose$` footer (written once at cutover, regenerated by every step
+  since step 1's Deviations established the rule) still had `set` closures
+  doing `name = v` for every one of this step's ~41 moved names, which are
+  now imports, not local bindings — exactly the "stale footer" failure mode
+  Deviations (1) predicted for "a future move.mjs carving a module out of
+  app.js." Re-running it after all four `--to model/*` moves (and the one
+  `--to theory/key.js` move) cleared every one of them in a single pass.
 
 **6. `platform/*`** (base, mode, storage, folder, native, sw).
 - Verify:

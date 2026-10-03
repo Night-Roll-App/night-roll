@@ -41,6 +41,10 @@ import * as midiParse from "./midi/parse.js";
 import * as midiWrite from "./midi/write.js";
 import * as theoryChords from "./theory/chords.js";
 import * as theoryKey from "./theory/key.js";
+import * as modelCatalog from "./model/catalog.js";
+import * as modelGrid from "./model/grid.js";
+import * as modelEdits from "./model/edits.js";
+import * as modelRollnotes from "./model/rollnotes.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -49,7 +53,8 @@ export function exposeGlobals() {
   // actually evaluation-order-sensitive — but keeping the object literal
   // out of top-level init code is the same discipline §2.2 asks of every
   // other module, free to apply here too.
-  const MODULES = { app, edition, icons, controls, midiParse, midiWrite, theoryChords, theoryKey };
+  const MODULES = { app, edition, icons, controls, midiParse, midiWrite, theoryChords, theoryKey,
+                     modelCatalog, modelGrid, modelEdits, modelRollnotes };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global

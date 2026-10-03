@@ -54,3 +54,34 @@ export function checkMeterVsFile() {
   if (list.some(same)) return {state: "partial-match", file};
   return {state: "differs", file};
 }
+
+// modes: semitones from the relative major up to the tonic — the signature
+// engraved is always the relative major's; the stored name keeps tonic+mode
+export const MODE_OFFSET = {major: 0, ionian: 0, dorian: 2, phrygian: 4, lydian: 5,
+                     mixolydian: 7, minor: 9, aeolian: 9, locrian: 11};
+// Each natural letter's own circle-of-fifths position (F..B, no accidental);
+// an accidental shifts it by a further ±7 (one "lap" of fifths per semitone
+// of chromatic alteration — e.g. Eb = E's +4 minus the flat's 7 = -3).
+export const LETTER_SF = {F: -1, C: 0, G: 1, D: 2, A: 3, E: 4, B: 5};
+// Modal brightness, in fifths, relative to the SAME tonic held major (2026-10
+// fix — pitch-class math here lost the flat/sharp spelling the user typed,
+// e.g. keyNameToSf("Ebm") came out sf=+6 (F#, sharps) instead of sf=-6 (Gb,
+// flats): computing the relative major's PITCH CLASS and re-deriving sf from
+// that pc alone is ambiguous at the F#/Gb tritone and silently prefers the
+// sharp spelling. Working entirely in fifths-space from the typed letter
+// keeps the sign the user intended for every key, not just the lucky ones).
+export const MODE_SF_OFFSET = {lydian: 1, major: 0, ionian: 0, mixolydian: -1,
+                        dorian: -2, minor: -3, aeolian: -3, phrygian: -4, locrian: -5};
+export function keyNameToSf(name) {
+  let mode = "major", base = name;
+  const m = name.match(/^(\S+)\s+([a-z]+)$/i); // "D dorian" style
+  if (m && m[2].toLowerCase() in MODE_OFFSET) { base = m[1]; mode = m[2].toLowerCase(); }
+  else if (/m$/.test(name) && name.length > 1) { base = name.slice(0, -1); mode = "minor"; }
+  const L = base[0] ? base[0].toUpperCase() : "";
+  if (!(L in LETTER_SF)) return null;
+  const acc = base[1] === "#" ? 1 : base[1] === "b" ? -1 : 0;
+  let sf = LETTER_SF[L] + acc * 7 + MODE_SF_OFFSET[mode];
+  while (sf > 7) sf -= 12;  // fold only extreme enharmonics (SF_MAJOR runs -7..7)
+  while (sf < -7) sf += 12;
+  return sf;
+}
