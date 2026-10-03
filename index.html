@@ -1322,19 +1322,36 @@
 <div id="dockrightinner"><div id="wmdivider-right-inner" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div></div>
 </div><!-- /songcenter -->
 <div id="editrow">
-  <!-- Undo/Redo/Copy/Paste come FIRST, before anything that shows/hides per
-       mode: Pencil's note values/vol/accidentals used to push them sideways,
-       and Josh reaches for undo by position (2026-10-02: "it needs to be
-       locked in one position all the time"). Nothing may be inserted ahead
-       of this group. -->
+  <!-- Order (Josh, 2026-10-02): undo redo cut copy paste delete ⋯ — the
+     clipboard tools he uses constantly, FIRST and fixed: nothing that
+     shows/hides per mode may come before them (Pencil's note values/vol/
+     accidentals once pushed undo sideways — "it needs to be locked in one
+     position all the time"). Split sits by Join inside ⋯; Select/Pencil/
+     Erase and Pencil's options come LAST, after ⋯. -->
   <button id="undobtn" aria-label="Undo"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="redobtn" aria-label="Redo"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16a8.002 8.002 0 0 1 7.6-5.5c1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
+  <button id="cutbtn" aria-label="Cut selected notes to the clipboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg></button>
   <!-- copy/paste glyphs: Google Material Icons content_copy/content_paste
        (outlined, Apache-2.0) — the platform-standard shapes; ⧉/📋 read as
        "window" and an emoji clipboard (Josh, 2026-10-02) -->
   <button id="copybtn" aria-label="Copy selected notes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
   <button id="pastebtn" aria-label="Paste the selection at the cursor"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0S9.6.84 9.18 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg></button>
-
+  <button id="delbtn" aria-label="Delete selected notes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg></button>
+  <button id="morebtn" aria-label="More edit tools"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></button>
+  <span id="morewrap" style="display:none;gap:6px">
+  <button id="trbtn" aria-label="Transpose selection">⇅</button>
+  <button id="octupbtn" style="display:none" aria-label="Selection up an octave">▲8</button>
+  <button id="octdownbtn" style="display:none" aria-label="Selection down an octave">▼8</button>
+  <button id="insbtn" aria-label="Insert a chord at the cursor">♫</button>
+  <button id="movebtn" aria-label="Move selection to another track"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></button>
+  <button id="drumfillbtn" aria-label="Fill a drum pattern">🥁</button>
+  <button id="drummerbtn" aria-label="Generate drums (Drummer)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="7.5" cy="7.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="7.5" r="1.5"/></svg></button>
+  <button id="bassistbtn" aria-label="Generate a bassline (Bassist)">🎸</button>
+  <button id="divbtn" aria-label="Divide selected notes into equal parts"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5v14h18V5H3zm5.33 12H5V7h3.33v10zm5.34 0h-3.33V7h3.33v10zM19 17h-3.33V7H19v10z"/></svg></button>
+  <button id="joinbtn" aria-label="Join selected notes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 20.41 18.41 19 15 15.59 13.59 17 17 20.41zM7.5 8H11v5.59L5.59 19 7 20.41l6-6V8h3.5L12 3.5 7.5 8z"/></svg></button>
+  <button id="splitbtn" aria-label="Split selected notes at the cursor"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4h-6zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3L10 4z"/></svg></button>
+  <button id="quantbtn" aria-label="Quantize selected notes to the grid">Q Quantize</button>
+  </span>
   <div class="seg" id="modeseg" role="radiogroup" aria-label="Edit mode">
     <button data-mode="select" role="radio" aria-checked="false">Select</button>
     <button data-mode="pencil" role="radio" aria-checked="false">Pencil</button>
@@ -1363,23 +1380,6 @@
     <button data-acc="1" role="radio" aria-checked="false" aria-label="Sharp">♯</button>
     <button data-acc="-1" role="radio" aria-checked="false" aria-label="Flat">♭</button>
   </div>
-  <button id="cutbtn" aria-label="Cut selected notes to the clipboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg></button>
-  <button id="splitbtn" aria-label="Split selected notes at the cursor"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4h-6zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3L10 4z"/></svg></button>
-  <button id="delbtn" aria-label="Delete selected notes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg></button>
-  <button id="morebtn" aria-label="More edit tools"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></button>
-  <span id="morewrap" style="display:none;gap:6px">
-  <button id="trbtn" aria-label="Transpose selection">⇅</button>
-  <button id="octupbtn" style="display:none" aria-label="Selection up an octave">▲8</button>
-  <button id="octdownbtn" style="display:none" aria-label="Selection down an octave">▼8</button>
-  <button id="insbtn" aria-label="Insert a chord at the cursor">♫</button>
-  <button id="movebtn" aria-label="Move selection to another track"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></button>
-  <button id="drumfillbtn" aria-label="Fill a drum pattern">🥁</button>
-  <button id="drummerbtn" aria-label="Generate drums (Drummer)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="7.5" cy="7.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="7.5" r="1.5"/></svg></button>
-  <button id="bassistbtn" aria-label="Generate a bassline (Bassist)">🎸</button>
-  <button id="divbtn" aria-label="Divide selected notes into equal parts"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5v14h18V5H3zm5.33 12H5V7h3.33v10zm5.34 0h-3.33V7h3.33v10zM19 17h-3.33V7H19v10z"/></svg></button>
-  <button id="joinbtn" aria-label="Join selected notes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 20.41 18.41 19 15 15.59 13.59 17 17 20.41zM7.5 8H11v5.59L5.59 19 7 20.41l6-6V8h3.5L12 3.5 7.5 8z"/></svg></button>
-  <button id="quantbtn" aria-label="Quantize selected notes to the grid">Q Quantize</button>
-  </span>
 </div>
 <div id="instpanel">
   <div id="instwrap"><canvas id="instcanvas"></canvas></div>
@@ -2052,7 +2052,7 @@
       <dt>Divide</dt><dd>Select notes, tap <b>Divide</b>, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.</dd>
       <dt>Remove duplicate notes</dt><dd>Edit ▾ → <b>Remove duplicate notes</b> deletes notes stacked exactly on top of another on the same track (same start, same pitch) — you only ever hear one of them. The longer one stays; the status line says how many went, and one undo brings them back.</dd>
       <dt>Quantize (Q)</dt><dd>Select notes, tap <b>Q Quantize</b> (behind More, Edit ▾, or the <b>Q</b> key) and pick a strength — <b>100%</b> snaps each note's start exactly onto the current grid (the same grid Move/Pencil use: 16ths, triplet steps with a T duration active, or 32nds once the song has any); <b>75%/50%</b> moves it only partway there, a soft nudge for a take that's close but not glued down. <b>Also quantize note ends</b> additionally snaps each note's END and resizes to match — off by default, so a raw take's durations stay as played and only the onsets straighten. This is Logic's Quantize command: it acts on a selection AFTER the fact, undoably (one undo step for the whole batch) — recording itself keeps what you played (see Record); Quantize is how you straighten it out when you want to.</dd>
-      <dt>Undo</dt><dd>Undo/Redo and the copy / paste icons (undo, redo, copy, paste) are always the first four buttons on the left of the edit toolbar — Pencil's note values and vol appear after them, never before, so they don't move. Every gesture above — move, resize, copy, paste, delete, divide — is exactly one undo step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one undo away, and a kit or bass track a generator created leaves with its take.</dd>
+      <dt>Undo</dt><dd>The edit toolbar always starts with undo, redo, cut, copy, paste and delete, then ⋯ (transpose, chords, Drummer, Bassist, divide, join, split, quantize), and only then Select / Pencil / Erase and Pencil's note values — so the everyday buttons never move. Every gesture above — move, resize, copy, paste, delete, divide — is exactly one undo step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one undo away, and a kit or bass track a generator created leaves with its take.</dd>
     </dl>
     </div>
     <div class="hsec" data-hsec="files">

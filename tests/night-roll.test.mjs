@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
@@ -10290,9 +10290,12 @@ test("lasso: tapping empty space or tapping the note out clears a leftover singl
 
 test("edit toolbar: ⟲ ⟳ ⧉ 📋 are the first four controls, ahead of everything Pencil shows/hides (Josh, 2026-10-02: undo must never move)", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const row = html.slice(html.indexOf('<div id="editrow">'), html.indexOf('id="morewrap"'));
-  const ids = [...row.matchAll(/<(?:button|div)[^>]*\bid="([^"]+)"/g)].map(m => m[1]);
-  assert.deepEqual(ids.slice(1, 6), ["undobtn", "redobtn", "copybtn", "pastebtn", "modeseg"]); // [0] is #editrow itself
+  const row = html.slice(html.indexOf('<div id="editrow">'), html.indexOf('id="accseg"') + 20);
+  const ids = [...row.matchAll(/<(?:button|div|span)[^>]*\bid="([^"]+)"/g)].map(m => m[1]);
+  // Josh 2026-10-02 (second pass): undo redo cut copy paste delete ⋯, split by join inside ⋯, Select/Pencil/Erase last
+  assert.deepEqual(ids.slice(1, 9), ["undobtn", "redobtn", "cutbtn", "copybtn", "pastebtn", "delbtn", "morebtn", "morewrap"]); // [0] is #editrow itself
+  assert.equal(ids[ids.indexOf("joinbtn") + 1], "splitbtn", "split sits right after join");
+  assert.ok(ids.indexOf("modeseg") > ids.indexOf("quantbtn"), "Select/Pencil/Erase come after ⋯'s tools");
 });
 
 test("Notes ▴ drop-up: Hide/Show notes strip toggles the strip and names its next action (Josh, 2026-10-02)", () => {
