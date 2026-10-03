@@ -5458,3 +5458,6 @@ Josh published lotion and the breadcrumb did not change. Cause (src/app.js songW
 ## DONE 2026-10-03 (740feaf) — 32nd note value now drag-snaps to 32nds (moveSnapTicks: the pick is a trigger, as item 12's original spec said; presence still triggers too)
 ### was: 2026-10-03 Ask: 32nd note value does not drag-snap to 32nds
 Josh (lotion, pulse2 bar 40): with the 32nd note value selected he still can only drag/move notes in 16th steps. He expects the 32nd button to make move/drag snap to 32nds (0.125 beat). He wants to nudge a pulse2 echo of pulse1 a 32nd later. Ask wrote the shift by hand via write_notes for now. Please check whether the note-value button should drive the drag snap, and fix if so.
+
+## QUEUED 2026-10-03 — `npm test` stops at the first failing file
+The script chains files with `&&`, so when the real-rip suites (ps2-real, instruments) fail because /tmp/claude-501/rips was cleared, every later file (gestures, bridge, pwa, modules, controls…) silently never runs locally. Fix: skip real-rip tests when the rips dir is missing (like other *-real suites should), or run each file regardless and fail at the end.
