@@ -330,6 +330,7 @@
     flex-shrink: 0;
   }
   #editrow.on { display: flex; }
+  #moderowbreak { flex-basis: 100%; height: 0; }
 
   footer {
     display: flex;
@@ -1397,6 +1398,10 @@
   <button id="splitbtn" aria-label="Split selected notes at the cursor"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4h-6zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3L10 4z"/></svg></button>
   <button id="quantbtn" aria-label="Quantize selected notes to the grid">Q Quantize</button>
   </span>
+  <!-- Select/Pencil/Erase + Pencil's options get their OWN row (Josh,
+       2026-10-03: "it's just too annoying the way it moves" when ⋯ opened
+       beside them) — the break forces a wrap; costs one row, by his choice -->
+  <div id="moderowbreak" aria-hidden="true"></div>
   <div class="seg" id="modeseg" role="radiogroup" aria-label="Edit mode">
     <button data-mode="select" role="radio" aria-checked="false">Select</button>
     <button data-mode="pencil" role="radio" aria-checked="false">Pencil</button>
@@ -2097,7 +2102,7 @@
       <dt>Divide</dt><dd>Select notes, tap <b>Divide</b>, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.</dd>
       <dt>Remove duplicate notes</dt><dd>Edit ▾ → <b>Remove duplicate notes</b> deletes notes stacked exactly on top of another on the same track (same start, same pitch) — you only ever hear one of them. The longer one stays; the status line says how many went, and one undo brings them back.</dd>
       <dt>Quantize (Q)</dt><dd>Select notes, tap <b>Q Quantize</b> (behind More, Edit ▾, or the <b>Q</b> key) and pick a strength — <b>100%</b> snaps each note's start exactly onto the current grid (the same grid Move/Pencil use: 16ths, triplet steps with a T duration active, or 32nds once the song has any); <b>75%/50%</b> moves it only partway there, a soft nudge for a take that's close but not glued down. <b>Also quantize note ends</b> additionally snaps each note's END and resizes to match — off by default, so a raw take's durations stay as played and only the onsets straighten. This is Logic's Quantize command: it acts on a selection AFTER the fact, undoably (one undo step for the whole batch) — recording itself keeps what you played (see Record); Quantize is how you straighten it out when you want to.</dd>
-      <dt>Undo</dt><dd>The edit toolbar always starts with undo, redo, cut, copy, paste and delete, then ⋯ (transpose, chords, Drummer, Bassist, divide, join, split, quantize), and only then Select / Pencil / Erase and Pencil's note values — so the everyday buttons never move. Every gesture above — move, resize, copy, paste, delete, divide — is exactly one undo step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one undo away, and a kit or bass track a generator created leaves with its take.</dd>
+      <dt>Undo</dt><dd>The edit toolbar always starts with undo, redo, cut, copy, paste and delete, then ⋯ (transpose, chords, Drummer, Bassist, divide, join, split, quantize), and Select / Pencil / Erase with Pencil's note values sit on their own row below — so neither row moves when ⋯ opens. Every gesture above — move, resize, copy, paste, delete, divide — is exactly one undo step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one undo away, and a kit or bass track a generator created leaves with its take.</dd>
     </dl>
     </div>
     <div class="hsec" data-hsec="files">

@@ -10296,6 +10296,7 @@ test("edit toolbar: ⟲ ⟳ ⧉ 📋 are the first four controls, ahead of every
   assert.deepEqual(ids.slice(1, 9), ["undobtn", "redobtn", "cutbtn", "copybtn", "pastebtn", "delbtn", "morebtn", "morewrap"]); // [0] is #editrow itself
   assert.equal(ids[ids.indexOf("joinbtn") + 1], "splitbtn", "split sits right after join");
   assert.ok(ids.indexOf("modeseg") > ids.indexOf("quantbtn"), "Select/Pencil/Erase come after ⋯'s tools");
+  assert.equal(ids[ids.indexOf("modeseg") - 1], "moderowbreak", "Select/Pencil/Erase start their own row (2026-10-03)");
 });
 
 test("Notes ▴ drop-up: Hide/Show notes strip toggles the strip and names its next action (Josh, 2026-10-02)", () => {

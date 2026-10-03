@@ -5036,24 +5036,27 @@ Josh: "That did not work and it is making the whole screen freak out, it is blin
 ## QUEUED 2026-10-03 00:50 — redo track-chip row stacking WITHOUT flapping (0692e13 reverted in 42bbd73: the iPad blinked nonstop at some widths)
 Design: stack decision depends only on the row WIDTH vs a threshold = transport natural width + all chips natural width + margin, measured once while unstacked and re-measured only when the track set or transport buttons change (never while stacked, never from the ▾ overflow signal). Hysteresis: stack below threshold, unstack above threshold + 60px. Verify in the browser at several widths (step the row width 700→1400 by 20px and assert at most one flip each way) BEFORE shipping. After split 0b lands (goes in src/).
 
+## DONE 2026-10-03 01:00 — Select/Pencil/Erase on their own row (Josh, Terminal #69: "too annoying the way it moves"): #moderowbreak forces the wrap in #editrow; ⋯ opening no longer shifts them. PORT NOTE: markup only (index.html), survives the split cutover.
+
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 0b reproduced on current main (docs/split-plan.md)
 0b was first built 2026-10-02 on worktree branch worktree-agent-ab7f470f088110a71
-(commit 27139d29) against an older main; three main commits landed on top of
+(commit 27139d29) against an older main; several main commits landed on top of
 that base before it could ship (ruler-tap threshold, edit-toolbar reorder,
-the track-chip stacking commit AND its revert 42bbd73). Per the main
-session's instruction, that branch's index.html/src/app.js hunks were NOT
-merged by hand — instead: brought over the non-script files (tools/split/,
-src/edition.js, src/main.js, src/devtools.js, src/package.json, sw.js,
-tools/package.mjs, the pwa/package/modules tests, CLAUDE.md,
-docs/split-plan.md) via a path checkout from that branch; ported the
-NIGHT-ROLL.md "Module map"/sw.js-caching/boot-watchdog doc additions and the
-boot-watchdog `<script>` block in index.html's `<head>` by hand; then
+the track-chip stacking commit AND its revert 42bbd73, the moderowbreak
+fix). Per the main session's instruction, that branch's index.html/src/app.js
+hunks were NOT merged by hand — instead: brought over the non-script files
+(tools/split/, src/edition.js, src/main.js, src/devtools.js,
+src/package.json, sw.js, tools/package.mjs, the pwa/package/modules tests,
+CLAUDE.md, docs/split-plan.md) via a path checkout from that branch; ported
+the NIGHT-ROLL.md "Module map"/sw.js-caching/boot-watchdog doc additions and
+the boot-watchdog `<script>` block in index.html's `<head>` by hand; then
 re-ran `tools/split/cutover.mjs` against CURRENT main's index.html so
-src/app.js contains today's code. Mid-task, origin/main moved again
-(0692e139's chip-row stacking reverted in 42bbd73 — iPad blinking loop) —
-merged origin/main into this worktree branch before the final cutover run,
-so src/app.js does NOT contain fitTrackRow/#trackrow.stacked. Q6 above is
-the one real app bug 0b's static scan found (not fixed, out of scope for a
-verbatim move). NOT pushed: main session still needs to browser-verify
-(localhost + the packaged dist output) before pushing and building for the
-iPad.
+src/app.js contains today's code. Mid-task, origin/main moved twice more
+(0692e139's chip-row stacking reverted in 42bbd73 — iPad blinking loop; then
+11ee4d4b's #moderowbreak fix) — merged origin/main into this worktree branch
+before each cutover re-run, so src/app.js does NOT contain
+fitTrackRow/#trackrow.stacked and DOES contain #moderowbreak's markup. Q6
+above is the one real app bug 0b's static scan found (not fixed, out of
+scope for a verbatim move). NOT pushed: main session still needs to
+browser-verify (localhost + the packaged dist output) before pushing and
+building for the iPad.
