@@ -81,6 +81,7 @@
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
 // GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · POST /v1/deploy · GET|POST /v1/app-state · GET|POST /v1/terminal ·
+// POST /v1/backup {key, doc, notes?, at} · GET /v1/backups?key=… · GET /v1/backups/<dir>/<file> ·
 // GET|DELETE /v1/sessions/:key (usage {turns, tokens, cost, lastCompact}; DELETE drops the
 // session id so the next turn starts fresh — Clear chat's backend reset;
 // ?turns=1 adds `ring`, the last 50 turns' {t, gapS, in, out, cacheRead,
@@ -88,6 +89,26 @@
 // POST /v1/sessions/:key/compact (runs `/compact` non-interactively on that
 // song's Claude Code session; {preTokens, postTokens, cost, turnsBefore, turnsAfter}) · GET /health.
 // No dependencies. Node 18+.
+//
+// Deploy safeguards (2026-10-02, Josh: "I'm really concerned now about doing
+// work because every time there's a deployment I worry something bad is
+// gonna happen" — a bad build wiped notes in his Untitled song). Three legs:
+// (1) POST /v1/backup is an off-device copy of a song's own draft (doc =
+// draftDoc(), notes = the .rollnotes text) under ~/.night-roll-bridge/backups/
+// <key with / -> __>/<ISO time>.json — mkdir -p, same auth as every other
+// route, body capped ~20MB (413 past it), a write skipped when the doc is
+// byte-identical to that song's newest backup, newest 300 kept per song and
+// nothing younger than 7 days ever pruned past that. (2) deployWarn's first
+// tick on the app side saves a Version before an install if the song changed
+// since its last one — bridge-side, nothing to do with this file. (3) "Not
+// now": POST /v1/deploy now also takes {hold: true|false} — a hold blocks
+// --deploy-wait (new CLI flag, below) until released or 60 minutes pass
+// (then it reports released on its own); GET /v1/status carries deployHold:
+// true while held. `node tools/claude-bridge.mjs --deploy-wait` polls
+// GET /v1/status every 2s and exits 0 once deployInMs has run out AND no
+// hold is active (also exits 0 immediately if the bridge can't be reached,
+// or after 60 minutes of waiting) — build-ipad.sh runs this right before the
+// actual devicectl install, so Josh decides when that happens.
 //
 // AI session controls (2026-09-30, open-items.md "NEXT: AI SESSION CONTROLS",
 // Josh via Ask: "the same Claude session keeps being resumed and growing").
@@ -167,6 +188,10 @@ const STATUS_FILE = path.join(STATE_DIR, "status.json");
 let appState = null; // {composing, mic, t} — POST /v1/app-state from the app
 const SHOTS_DIR = path.join(STATE_DIR, "shots"); // screenshots from the app's 📷 (POST /v1/shot): Claude reads them by path
 const SHOT_MAX = 25 * 1024 * 1024;
+// off-device backups (2026-10-02): one folder per song key (/ -> __), newest
+// 300 kept + anything younger than 7 days past that — see POST /v1/backup
+const BACKUPS_DIR = path.join(STATE_DIR, "backups");
+const BACKUP_MAX = 20 * 1024 * 1024;
 const CLAUDE_MODE = has("--no-claude") ? "off" : (flag("--claude", process.env.BRIDGE_CLAUDE || "read") === "full" ? "full" : "read");
 const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
 const TURN_MS = 20 * 60 * 1000;
@@ -206,6 +231,21 @@ if (has("--say")) { // a note for the app's ✦ Ask window (and the song's sessi
   fetch(`http://${HOST === "0.0.0.0" ? "127.0.0.1" : HOST}:${PORT}/v1/deploy`, {method: "POST", headers, body: JSON.stringify({inSec})})
     .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("deploy warning: " + j.inSec + "s"); process.exit(0); })
     .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
+} else if (has("--deploy-wait")) { // "Not now" (2026-10-02): blocks build-ipad.sh's own relaunch step until the countdown has run out AND Josh hasn't held it — polls, never pushes
+  const headers = {"content-type": "application/json"}; if (TOKEN) headers.authorization = "Bearer " + TOKEN;
+  const base = `http://${HOST === "0.0.0.0" ? "127.0.0.1" : HOST}:${PORT}`;
+  const giveUpAt = Date.now() + 60 * 60 * 1000;
+  (async () => {
+    for (;;) {
+      let j;
+      try { const r = await fetch(base + "/v1/status", {headers}); j = await r.json(); }
+      catch (err) { console.log("deploy-wait: bridge unreachable — going ahead"); process.exit(0); }
+      const waiting = (j && j.deployInMs > 0) || !!(j && j.deployHold);
+      if (!waiting) { console.log("deploy-wait: clear to install"); process.exit(0); }
+      if (Date.now() > giveUpAt) { console.log("deploy-wait: gave up after 60 min (" + (j.deployHold ? "still held" : "still counting down") + ")"); process.exit(0); }
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  })();
 } else main();
 
 function main() {
@@ -441,6 +481,11 @@ function sessionUsageView(s, opts) { // {turns, tokens, cost} — s may be undef
 // carries the milliseconds left so the app can count down instead of
 // vanishing mid-edit (Josh, 2026-10-02)
 let deployUntil = 0;
+// "Not now" (2026-10-02, Josh: "he decides when the install happens"): a
+// hold blocks --deploy-wait regardless of deployUntil, until released or 60
+// minutes pass (then GET /v1/status reports it released on its own).
+let deployHold = false;
+let deployHoldAt = 0;
 let lastQuota = null; // {fiveHour:{pct,resetsAt}, sevenDay:{pct,resetsAt}, at} | null (never seen one yet)
 function recordQuota(info) {
   const w = info && info.unifiedWindows;
@@ -476,6 +521,27 @@ function notesPreface(sess) { // what the terminal said since this session's las
   if (!fresh.length) return "";
   const when = t => new Date(t).toTimeString().slice(0, 5);
   return "NOTES FROM THE TERMINAL (delivered by the bridge since your last turn; the user sees them in the app too):\n" + fresh.map(n => `- [${when(n.t)} ${n.from}] ${n.text}`).join("\n") + "\n\n";
+}
+// ---------------------------------------------------------------- backups
+// off-device copies (2026-10-02): one folder per song key, "/" -> "__" so it
+// never nests (same key rule as sessions, then the slash swap) — songs it
+// writes for are always a composition or a local/ draft, same keys sessions use.
+function backupKeyDir(key) { return (sanitizeSongKey(key) || "unknown").replace(/\//g, "__"); }
+function listBackupFiles(dir) { try { return fs.readdirSync(dir).filter(f => f.endsWith(".json")).sort(); } catch (err) { return []; } } // ISO-ish names sort chronologically
+function pruneBackups(dir) { // newest 300 kept; nothing younger than 7 days is ever dropped past that
+  const files = listBackupFiles(dir);
+  if (files.length <= 300) return;
+  const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
+  for (const f of files.slice(0, files.length - 300)) {
+    let at = null;
+    try { at = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")).at; } catch (err) { continue; } // unreadable: leave it rather than guess
+    if (typeof at === "number" && at < cutoff) { try { fs.unlinkSync(path.join(dir, f)); } catch (err) { /* already gone */ } }
+  }
+}
+async function readBodyCapped(req, max) { // like readBody, but throws (err.code 413) past `max` bytes — /v1/shot's own pattern, generalized
+  const chunks = []; let n = 0;
+  for await (const c of req) { n += c.length; if (n > max) { const e = new Error("too large"); e.code = 413; throw e; } chunks.push(c); }
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 // ---------------------------------------------------------------- runners
@@ -748,7 +814,12 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/v1/status") { // "what Claude Code is doing" — GET for the app's poll, POST from --status or a session announcing a step
-    if (req.method === "GET") { const box = statusAll(); const deployInMs = Math.max(0, deployUntil - Date.now()); return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(), sessions: true, quota: lastQuota, ...(deployInMs ? {deployInMs} : {})}); } // terminal: the app shows ⌨ Terminal only while a session reads it; sessions/quota: gates Compact + the usage line + the plan-quota chip
+    if (req.method === "GET") {
+      const box = statusAll();
+      if (deployHold && Date.now() - deployHoldAt > 60 * 60 * 1000) { deployHold = false; deployHoldAt = 0; } // a hold nobody released: report it over on its own after 60 min
+      const deployInMs = Math.max(0, deployUntil - Date.now());
+      return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(), sessions: true, quota: lastQuota, ...(deployInMs ? {deployInMs} : {}), ...(deployHold ? {deployHold: true} : {})});
+    } // terminal: the app shows ⌨ Terminal only while a session reads it; sessions/quota: gates Compact + the usage line + the plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       const box = statusSet(b && b.text);
@@ -756,12 +827,52 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, {now: box.now, recent: box.recent});
     }
   }
-  if (req.method === "POST" && url.pathname === "/v1/deploy") { // {inSec}: an install relaunches the iPad app in inSec seconds (0 cancels)
+  if (req.method === "POST" && url.pathname === "/v1/deploy") { // {inSec, hold?}: an install relaunches the iPad app in inSec seconds (0 cancels); hold:true/false pauses/releases "Not now" (2026-10-02) — independent of inSec, so a {hold:true} alone (what the app's Not now sends) doesn't need to also know the countdown
     let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+    if (b && typeof b.hold === "boolean") { deployHold = b.hold; deployHoldAt = b.hold ? Date.now() : 0; }
     const sec = Math.max(0, Math.min(120, +(b && b.inSec) || 0));
     deployUntil = sec ? Date.now() + sec * 1000 : 0;
-    console.log(sec ? `deploy: app relaunches in ${sec}s` : "deploy: cancelled");
-    return json(res, 200, {inSec: sec});
+    console.log((sec ? `deploy: app relaunches in ${sec}s` : "deploy: cancelled") + (deployHold ? " (held — \"Not now\")" : ""));
+    return json(res, 200, {inSec: sec, hold: deployHold});
+  }
+  if (req.method === "POST" && url.pathname === "/v1/backup") { // {key, doc, notes?, at}: an off-device copy of a song's own draft (2026-10-02 deploy safeguards)
+    let raw;
+    try { raw = await readBodyCapped(req, BACKUP_MAX); }
+    catch (err) { if (err.code === 413) return json(res, 413, {error: {message: "backup too big"}}); return json(res, 400, {error: {message: "upload broke off"}}); }
+    let b; try { b = JSON.parse(raw); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+    if (!b || !b.key || b.doc === undefined) return json(res, 400, {error: {message: "a backup needs key + doc"}});
+    const dir = path.join(BACKUPS_DIR, backupKeyDir(b.key));
+    fs.mkdirSync(dir, {recursive: true});
+    const files = listBackupFiles(dir);
+    const docStr = JSON.stringify(b.doc);
+    if (files.length) {
+      try { if (JSON.stringify(JSON.parse(fs.readFileSync(path.join(dir, files[files.length - 1]), "utf8")).doc) === docStr) return json(res, 200, {ok: true, skipped: true}); } // byte-identical to the newest backup: nothing to keep
+      catch (err) { /* the newest backup is unreadable: write a fresh one rather than guess */ }
+    }
+    const at = typeof b.at === "number" ? b.at : Date.now();
+    const file = new Date(at).toISOString().replace(/[:.]/g, "-") + ".json";
+    fs.writeFileSync(path.join(dir, file), JSON.stringify({key: b.key, at, doc: b.doc, notes: b.notes || null}));
+    pruneBackups(dir);
+    return json(res, 200, {ok: true, file});
+  }
+  if (req.method === "GET" && url.pathname === "/v1/backups") { // ?key=… → [{file, at, bytes}], newest last
+    const key = url.searchParams.get("key");
+    if (!key) return json(res, 400, {error: {message: "backups need ?key="}});
+    const dir = path.join(BACKUPS_DIR, backupKeyDir(key));
+    const list = listBackupFiles(dir).map(f => {
+      let at = null; try { at = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")).at; } catch (err) { /* list it anyway */ }
+      let bytes = 0; try { bytes = fs.statSync(path.join(dir, f)).size; } catch (err) { /* gone mid-list */ }
+      return {file: f, at, bytes};
+    });
+    return json(res, 200, {backups: list});
+  }
+  const bfm = url.pathname.match(/^\/v1\/backups\/([^/]+)\/([^/]+)$/);
+  if (req.method === "GET" && bfm) { // one backup's stored {key, at, doc, notes}
+    const root = path.resolve(BACKUPS_DIR);
+    const file = path.resolve(root, decodeURIComponent(bfm[1]), decodeURIComponent(bfm[2]));
+    if (!file.startsWith(root + path.sep)) return json(res, 403, {error: {message: "bad path"}});
+    let raw; try { raw = fs.readFileSync(file, "utf8"); } catch (err) { return json(res, 404, {error: {message: "no such backup"}}); }
+    cors(res); res.writeHead(200, {"content-type": "application/json"}); return res.end(raw);
   }
   if (req.method === "POST" && url.pathname === "/v1/shot") { // raw PNG/JPEG bytes → a file Claude can Read; answers its path
     const chunks = []; let n = 0;

@@ -2076,7 +2076,8 @@
       <dt>New since your last message</dt><dd>On the Claude Code bridge, every message you send — ♩ this song, Ask, or Terminal — carries what’s changed since your last one in THAT chat: any new error messages, any new status-line readouts (footer/Status window), and on Ask/Terminal (which have no song context of their own) which song is open, its view, and your cursor. You never copy an error or a status line over by hand, and a line already sent is never repeated.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in AI as a gold <b>✉</b> bubble (inbox), and the <b>AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, <b>AI</b>'s own aria-label names whether the terminal's Claude Code is working or idle — refreshed every 10 seconds — with no visual badge on the button itself any more (chrome density follow-up, 2026-10-01 pm, Josh: the small pulsing dot that used to mark it was "always there and distracting"). Open AI for the full line — <b>Claude Code working: …</b> or <b>Claude Code idle</b> — in a fixed two-line strip that never grows or shrinks as the status changes (so it can't nudge the chat log above it); tap that line for the last ten steps with their times and the latest commits. Without the bridge (LM Studio, no AI) none of it appears.</dd>
-      <dt>Update countdown</dt><dd>On the Claude Code bridge, when a new version is about to be installed on your iPad, <b>AI</b> turns gold and counts down (<b>AI · 15</b>) and the status line says the app will restart — finish your gesture; your edits are kept as you go. It shows <b>AI · ⟳</b> while the install runs.</dd>
+      <dt>Update countdown</dt><dd>On the Claude Code bridge, when a new version is about to be installed on your iPad, <b>AI</b> turns gold and counts down (<b>AI · 15</b>) and the status line says the app will restart — finish your gesture; your edits are kept as you go. It shows <b>AI · ⟳</b> while the install runs. Tap <b>AI</b> during the countdown for a small sheet — <b>Install now</b> or <b>Not now</b>. <b>Not now</b> holds the install (the Mac waits — nothing relaunches under you): the button reads <b>AI · ⏸</b> and the status line says the update is waiting; tap <b>AI</b> again whenever you're ready and choose Install now. Before the FIRST warning, if your edits aren't already in a Version, one is saved automatically, labelled "Before update HH:MM" (see Save Version and Versions… below) — one more way back if anything goes wrong.</dd>
+      <dt>Backups on your Mac</dt><dd>On the Claude Code bridge, every edit to one of your own songs (a composition or a local draft) is also copied to the Mac a few seconds after you stop typing — off this device entirely, same content Publish would push. It's a safety net, not something you manage: nothing in the app reads or restores from it, and a Mac that can't be reached just means the copy waits for next time (it never blocks or interrupts an edit).</dd>
       <dt>Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>＋</b> beside Speak, then <b>Screenshot of Night Roll</b> to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a thumbnail chip appears above the box — add what to look at and Send. Do it again (up to 4 per message) to attach several at once; each gets its own thumbnail and its own ✕, or tap the chip row's ✕ to drop them all. In a browser, pick this tab when it asks what to share. The same ＋ menu's <b>Photo Library…</b> attaches a picture <b>from Photos</b> (or takes one, or picks a file) instead of the app itself — the same 4-per-message limit, thumbnails, and Send line; a huge picture is downscaled and an iPhone/iPad HEIC photo is converted automatically, so it always reaches Claude as a plain JPEG or PNG.</dd>
       <dt>Terminal tab</dt><dd>Two pickers at its top choose the model the terminal gives its <b>advisors</b> (read-only reviews) and its <b>builders</b> (the agents that write code) — Opus, Sonnet, Haiku or Fable; the terminal session's own model is set at the Mac (/model). The Terminal tab in AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. Screenshot works the same. If the Mac can't be reached, the message goes back into the box.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved) — on the Claude Code bridge it also tells the Mac to really start over: without this, the same long-running Claude session kept being resumed underneath a cleared-looking chat.</dd>
@@ -4437,6 +4438,7 @@ function saveLocalNotes() {
   else localStorage.removeItem(notesStoreKey());
   updateSyncBtn();
   if (typeof updateSongBtn === "function") updateSongBtn(); // the ● counts unpublished annotations (songUnsaved)
+  if (editableSong()) scheduleBackupFlush(); // off-device backup (2026-10-02 deploy safeguards)
 }
 function dirtySongs() { // songs with unsynced local notes on this device
   return Object.keys(localStorage)
@@ -17491,6 +17493,7 @@ function saveDraft(clean) { // clean=true right after a successful Publish; the 
   try {
     const landed = draftWrite(songKey, draftDoc(clean));
     if (song.overlayFold) retireOldOverlay(song.overlayFold, landed);
+    if (editableSong()) scheduleBackupFlush(); // off-device backup (2026-10-02 deploy safeguards) — only an actual write schedules one
   } catch (err) { // a full localStorage must never throw out of an edit: say so, loudly, once per song
     if (saveDraft.warned !== songKey) { saveDraft.warned = songKey; logErr("this device's storage is full — the last edit to " + baseName() + " is NOT saved. Publish, or ✕ some drafts under Open → drafts, then edit again."); }
     setInfo("⚠ storage full — edit not saved (see ⚠)");
@@ -24116,29 +24119,120 @@ function askAgeText(t) { // "3m ago" — coarse, no need for seconds precision o
   const h = Math.round(m / 60); if (h < 24) return h + "h ago";
   return Math.round(h / 24) + "d ago";
 }
-// an iPad install is about to relaunch the app (build-ipad.sh → the bridge's
-// --deploy-in, relayed on /v1/status): count down on ✦ AI so the restart
-// never lands unannounced mid-edit (Josh, 2026-10-02: "some sort of notice
-// would be nice … maybe on the AI button"). Counted locally from the ms the
-// bridge reported — no clock shared with the Mac needed.
-let deployAt = 0, deployTimer = null;
-function deployWarn(ms) {
-  const first = !deployTimer;
-  deployAt = Date.now() + ms;
-  if (first) setInfo("a new version installs in " + Math.ceil(ms / 1000) + " s — the app will restart");
+// ---- Off-device backups (deploy safeguard #1, Josh, 2026-10-02: "I'm
+// really concerned now about doing work because every time there's a
+// deployment I worry something bad is gonna happen" — a bad build wiped
+// notes in his Untitled song, recovered only from Ask's chat history).
+// Every successful saveDraft()/saveLocalNotes() of an editable song of his
+// (editableSong() — compositions + local/ drafts) schedules a debounced
+// (5s) POST of its draft (+ the .rollnotes text) to the bridge's
+// /v1/backup — an off-device copy on the Mac — ONLY while the configured
+// backend is the bridge (askCaps.bridge, the same gate askStatusPoll uses).
+// Never blocks or throws into an edit: a failed POST only logs (logDebug).
+let backupFlushTimer = null;
+function scheduleBackupFlush() {
+  if (!askCaps.bridge) return;
+  clearTimeout(backupFlushTimer);
+  backupFlushTimer = setTimeout(flushBackupNow, 5000);
+}
+function flushBackupNow() {
+  if (backupFlushTimer) { clearTimeout(backupFlushTimer); backupFlushTimer = null; }
+  if (!askCaps.bridge || !song || !songKey || !editableSong()) return;
+  let doc; try { doc = draftDoc(false); } catch (err) { return; }
+  let notes = null; try { notes = serializeRollnotes(); } catch (err) { notes = null; }
+  try {
+    fetch(aiUrl() + "/v1/backup", {method: "POST", headers: aiHeaders(), body: JSON.stringify({key: songKey, doc, notes, at: Date.now()})})
+      .catch(err => logDebug("backup: " + (err && err.message || err)));
+  } catch (err) { logDebug("backup: " + (err && err.message || err)); }
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
+
+// ---- Deploy safeguard #2: a Version before every install. On deployWarn's
+// FIRST tick of a cycle, if the open song is editable and its music/
+// annotations differ from its newest Version, save one labelled "Before
+// update HH:MM" (the same Versions store File → Versions… reads) and flush
+// a backup right away too (#1) — belt and suspenders right before a relaunch.
+function deployBeforeInstall() {
+  if (!song || !songKey || !editableSong()) return;
+  try {
+    saveDraft(false); // the working copy is what a Version snapshots — make sure it's current first
+    const list = readVersions(songKey); // newest LAST
+    const newest = list.length ? list[list.length - 1] : null;
+    // musicSig (not a raw-blob compare): a local/ draft's own seq stamp bumps
+    // on every saveDraft() (NIGHT-ROLL.md "Local song persistence") even when
+    // the music itself hasn't changed — comparing the full stored JSON would
+    // "detect" a change on every single tick. musicSig reads only ppq/tracks/
+    // tempos/timesigs, same fields Save Version's own dirty check uses.
+    const curSig = musicSig(draftDoc(false));
+    let curNotes = null; try { const n = localStorage.getItem("ff1roll-notes-" + songKey); curNotes = n ? JSON.parse(n) : null; } catch (err) { curNotes = null; }
+    const draftChanged = !newest || musicSig(newest.draft) !== curSig;
+    const notesChanged = !newest || JSON.stringify(newest.notes || null) !== JSON.stringify(curNotes);
+    if (draftChanged || notesChanged) {
+      const now = new Date(), hhmm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+      pushVersion(songKey, "Before update " + hhmm);
+      flushBackupNow();
+    }
+  } catch (err) { logDebug("deploy version: " + (err && err.message || err)); }
+}
+
+// ---- Deploy safeguard #3 + the install countdown (NIGHT-ROLL.md "Install
+// countdown"): an iPad install is about to relaunch the app (build-ipad.sh
+// → the bridge's --deploy-in, relayed on /v1/status): count down on ✦ AI so
+// the restart never lands unannounced mid-edit (Josh, 2026-10-02: "some
+// sort of notice would be nice … maybe on the AI button"). Counted locally
+// from the ms the bridge reported — no clock shared with the Mac needed.
+// deployHeld mirrors the bridge's own deployHold (GET /v1/status), so a
+// fresh poll (a reload, another device) always shows the right thing;
+// build-ipad.sh's --deploy-wait is what actually pauses the relaunch — this
+// is only the UI ("Not now", Josh: "he decides when the install happens").
+let deployAt = 0, deployTimer = null, deployHeld = false;
+function deployButtonTick() {
   const b = document.getElementById("askbtn");
+  if (!b) return;
   // the whole innerHTML is rebuilt each tick (icon audit, 2026-10-02) rather
   // than touching a .lbl child by class — same reasoning as setPlayBtn/
   // updateJobsBtn: the vm harness's element stubs have no querySelector.
   const icon = iconSvg("autoAwesome", "txt");
-  const tick = () => {
-    const left = Math.ceil((deployAt - Date.now()) / 1000);
-    if (left > 0) { b.innerHTML = icon + "AI · " + left; b.style.color = "var(--gold)"; return; }
-    b.innerHTML = icon + "AI · ⟳";
-    if (left < -90) { clearInterval(deployTimer); deployTimer = null; b.innerHTML = icon + "AI"; b.style.color = ""; } // the install never came: back to normal
-  };
-  if (first) deployTimer = setInterval(tick, 1000);
-  tick();
+  if (deployHeld) { b.innerHTML = icon + "AI · ⏸"; b.style.color = "var(--gold)"; return; }
+  const left = Math.ceil((deployAt - Date.now()) / 1000);
+  if (left > 0) { b.innerHTML = icon + "AI · " + left; b.style.color = "var(--gold)"; return; }
+  b.innerHTML = icon + "AI · ⟳";
+  if (left < -90) { clearInterval(deployTimer); deployTimer = null; b.innerHTML = icon + "AI"; b.style.color = ""; } // the install never came: back to normal
+}
+function deployWarn(ms) {
+  const first = !deployTimer;
+  deployAt = Date.now() + ms;
+  if (first) {
+    setInfo("a new version installs in " + Math.ceil(ms / 1000) + " s — the app will restart");
+    deployTimer = setInterval(deployButtonTick, 1000);
+    deployBeforeInstall(); // safeguard #2 (+ a backup flush)
+  }
+  deployButtonTick();
+}
+function deploySetHeld(on) {
+  on = !!on;
+  if (on === deployHeld) return;
+  deployHeld = on;
+  if (deployHeld) {
+    if (!deployTimer) deployTimer = setInterval(deployButtonTick, 1000); // held with no local countdown running yet (e.g. a fresh poll after a reload)
+    setInfo("update waiting — tap ✦ AI to install when you're ready");
+  }
+  deployButtonTick();
+}
+function deployActive() { return !!deployTimer || deployHeld; } // a countdown or a hold is in effect: ✦ AI opens the install sheet, not the chat
+async function deployAskTap() { // the "Not now" / "Install now" sheet (appConfirm — no native dialogs)
+  const wasHeld = deployHeld;
+  const yes = await appConfirm("Update ready", "A new version is ready. The app will restart.", "Install now", "Not now");
+  if (yes) {
+    try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: false, inSec: wasHeld ? 3 : 0})}); }
+    catch (err) { logDebug("deploy install-now: " + (err && err.message || err)); }
+    deploySetHeld(false);
+    if (wasHeld) deployWarn(3000); else { deployAt = Date.now(); deployButtonTick(); }
+  } else {
+    try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: true})}); }
+    catch (err) { logDebug("deploy hold: " + (err && err.message || err)); }
+    deploySetHeld(true);
+  }
 }
 async function askStatusPoll() {
   if (!askInboxAllowed() || !song) return; // same gate as the inbox: a host allowed for Ask, and a song open (Ask itself needs one)
@@ -24153,6 +24247,7 @@ async function askStatusPoll() {
   askStatusRecent = (j && j.recent) || [];
   askQuota = (j && j.quota) || null;
   if (j && j.deployInMs > 0) deployWarn(j.deployInMs);
+  deploySetHeld(!!(j && j.deployHold));
   askCaps = {bridge: true, terminal: !!(j && j.terminal), terminalLive: !!(j && (j.terminalLive !== undefined ? j.terminalLive : j.terminal)), sessions: !!(j && j.sessions)};
   askStatusRender();
   askTabsApply();
@@ -25765,7 +25860,8 @@ function askFocusIfKeyboard() { // a touch screen's keyboard took half the sheet
   if (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches) return;
   askinput.focus();
 }
-document.getElementById("askbtn").addEventListener("click", openAsk);
+function askBtnTap() { if (deployActive()) return deployAskTap(); openAsk(); } // a countdown or a hold in effect: the install sheet, not the chat
+document.getElementById("askbtn").addEventListener("click", askBtnTap);
 for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
   if ((askTerminal ? "terminal" : askGeneral ? "general" : "song") === mode) return;
   askSetMode(mode);

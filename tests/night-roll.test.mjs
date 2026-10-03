@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Remove duplicate notes", "Hide notes strip", "Update countdown",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
@@ -6927,6 +6927,156 @@ test("deploy warning: ✦ AI counts down to an iPad install's relaunch, then res
   app.tick(1000);
   assert.equal(run(`document.getElementById("askbtn").textContent`), "AI", "back to normal");
   assert.equal(run(`deployTimer`), null);
+});
+
+// ---- Deploy safeguards (2026-10-02, Josh: "I'm really concerned now about
+// doing work because every time there's a deployment I worry something bad
+// is gonna happen" — a bad build wiped notes in his Untitled song).
+
+function freshComposition(run) { // a brand-new editable local/ song, same setup save's own tests use
+  run(`CATALOG = {}; localStorage.removeItem("ff1roll-lastfolder");
+       for (const k of Object.keys(localStorage)) if (/untitled|graveyard/.test(k)) localStorage.removeItem(k);
+       createComposition(120, 4, 4);`);
+}
+function mockBridge(run) { // aiUrl() + fetch stubbed, like askStatusPoll's own tests — only the bridge endpoints under test answer; anything else (catalog, etc.) rejects same as the harness default, so unrelated background fetches never run with a bogus success body
+  run(`globalThis.__posts = []; globalThis.__realFetch = globalThis.fetch; globalThis.__realAiUrl = aiUrl;
+       aiUrl = () => "http://localhost:8788";
+       globalThis.fetch = async (u, o) => {
+         if (!/\\/v1\\/(backup|deploy|status)/.test(String(u))) return Promise.reject(new Error("no network in tests"));
+         __posts.push({u: String(u), method: o && o.method, body: o && o.body ? JSON.parse(o.body) : null});
+         return {ok: true, json: async () => ({ok: true})};
+       };`);
+}
+function restoreBridge(run) { // each of these tests owns a fresh app/context, so there's nothing to isolate from a later test — just tidy up without nulling `song` (a stray async boot probe — e.g. the chip "console source" check — may still be settling, and reading it after `song = null` is a pre-existing boot-code hazard, not this feature's)
+  run(`globalThis.fetch = __realFetch; aiUrl = __realAiUrl; delete globalThis.__realFetch; delete globalThis.__realAiUrl; delete globalThis.__posts;
+       askCaps = {bridge: false, terminal: false, sessions: false}; appErrors.length = 0; appDebug.length = 0;`);
+}
+
+test("deploy safeguard #1: saveDraft()/saveLocalNotes() on an editable song schedule a debounced (5s) backup to the bridge — only with the bridge configured, coalesced, flushed on visibilitychange, never throwing on a failed POST (Josh, 2026-10-02)", async () => {
+  // no {intervals: true}: this test never needs deployWarn's own ticking, and
+  // without it the harness's periodic pollers (askStatusPoll's 10s interval)
+  // stay inert, so app.tick()'s fake clock can't accidentally fire one of
+  // THOSE and pollute __posts with an unrelated /v1/status call
+  const app = await createApp(); const run = c => app.run(c);
+  const val = (code) => JSON.parse(run(`JSON.stringify(${code})`));
+  freshComposition(run);
+  mockBridge(run);
+  run(`askCaps = {bridge: false, terminal: false, sessions: false};`);
+
+  // no bridge configured: an edit schedules nothing, ever
+  run(`saveDraft();`);
+  app.tick(6000);
+  assert.equal(val(`__posts.length`), 0, "no bridge: no backup ever goes out");
+
+  // with the bridge: two edits inside the debounce window coalesce into one flush
+  run(`askCaps = {bridge: true, terminal: false, sessions: false}; saveDraft(); saveDraft();`);
+  app.tick(4000);
+  assert.equal(val(`__posts.length`), 0, "still inside the 5s debounce");
+  app.tick(1500);
+  assert.equal(val(`__posts.length`), 1, "one flush for the two edits, not two");
+  assert.equal(val(`__posts[0].u`), "http://localhost:8788/v1/backup");
+  assert.equal(val(`__posts[0].method`), "POST");
+  assert.equal(val(`__posts[0].body.key`), run(`songKey`));
+  assert.ok(val(`__posts[0].body.doc && Array.isArray(__posts[0].body.doc.tracks)`), "doc is draftDoc()'s own shape");
+  assert.equal(typeof val(`__posts[0].body.notes`), "string", "the .rollnotes text rides along too");
+
+  // the page going hidden flushes right away — no need to wait out the debounce
+  run(`__posts.length = 0; saveLocalNotes(); document.hidden = true;`);
+  app.docDispatch({type: "visibilitychange"});
+  assert.equal(val(`__posts.length`), 1, "flushed immediately on hide");
+  run(`document.hidden = false;`);
+
+  // saveLocalNotes on a NON-editable song (a capture) never schedules one
+  run(`__posts.length = 0; const realEditable = editableSong; editableSong = () => false; saveLocalNotes(); editableSong = realEditable;`);
+  app.tick(6000);
+  assert.equal(val(`__posts.length`), 0, "not editable: no backup");
+
+  // a failed POST never throws into the edit path, and logs rather than raising ⚠
+  run(`appDebug.length = 0; globalThis.fetch = async () => { throw new Error("offline"); }; saveDraft();`);
+  app.tick(5500);
+  await new Promise(r => setTimeout(r, 0)); // let the rejected fetch's .catch land
+  assert.ok(!val(`appErrors`).some(e => /backup/i.test(e.msg)), "a failed backup never raises an error — logDebug only");
+  assert.ok(val(`appDebug`).some(e => e.msg === "backup: offline"), "…it DOES log, for debugging");
+
+  restoreBridge(run);
+});
+
+test("deploy safeguard #2: on deployWarn's FIRST tick, an editable song whose music/notes differ from its newest Version gets one labelled \"Before update HH:MM\" — and a backup flush; nothing changes if it already matches (Josh, 2026-10-02)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c);
+  const val = (code) => JSON.parse(run(`JSON.stringify(${code})`));
+  freshComposition(run);
+  mockBridge(run);
+  run(`askCaps = {bridge: true, terminal: false, sessions: false};`);
+  const key = run(`songKey`);
+  assert.equal(val(`readVersions(${JSON.stringify(key)}).length`), 0, "nothing saved as a Version yet");
+
+  run(`song.tracks[0].notes.push({t: 0, d: 480, p: 60, v: 80}); saveDraft();`); // an unsaved edit since the last (nonexistent) Version
+  run(`deployWarn(12000)`); // the first tick of a deploy cycle
+  const list1 = val(`readVersions(${JSON.stringify(key)})`);
+  assert.equal(list1.length, 1, "a Version was pushed because the song had never been versioned");
+  assert.match(list1[0].label, /^Before update \d\d:\d\d$/);
+  assert.equal(val(`__posts.filter(p => p.u.endsWith("/v1/backup")).length`), 1, "and a backup flush rode along");
+
+  // a second deployWarn tick in the SAME cycle (deployTimer still running) is not "first": no second Version
+  run(`__posts.length = 0; deployWarn(11000);`);
+  assert.equal(val(`readVersions(${JSON.stringify(key)}).length`), 1, "still just the one Version");
+
+  // reset for a fresh cycle and prove the "nothing changed" branch: no new Version, no extra backup
+  run(`clearInterval(deployTimer); deployTimer = null; __posts.length = 0;`);
+  run(`deployWarn(12000)`);
+  assert.equal(val(`readVersions(${JSON.stringify(key)}).length`), 1, "unchanged since the last Version: nothing new pushed");
+
+  run(`clearInterval(deployTimer); deployTimer = null;`);
+  restoreBridge(run);
+});
+
+test('deploy safeguard #3 "Not now": during the countdown, tapping \u2726 AI opens the install sheet instead of chat — Not now posts {hold:true} and shows AI\u00b7\u23f8; Install now posts {hold:false, inSec} and resumes/clears (Josh, 2026-10-02: "he decides when the install happens")', async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c);
+  const val = (code) => JSON.parse(run(`JSON.stringify(${code})`));
+  mockBridge(run);
+  run(`askCaps = {bridge: true, terminal: false, sessions: false};
+       globalThis.__opened = false; globalThis.__realOpenAsk = openAsk; openAsk = () => { __opened = true; };
+       globalThis.__realConfirm = appConfirm;`);
+
+  // no countdown/hold in effect: ✦ AI opens chat as always
+  run(`askBtnTap()`);
+  assert.equal(val(`__opened`), true, "no deploy in progress: the normal tap");
+
+  // a countdown is running: tapping it opens the install sheet, not chat, and "Not now" holds
+  run(`__opened = false; deployWarn(12000); __posts.length = 0; appConfirm = async () => false;`);
+  await run(`askBtnTap()`);
+  assert.equal(val(`__opened`), false, "the sheet took the tap, not openAsk");
+  assert.equal(val(`__posts.length`), 1);
+  assert.equal(val(`__posts[0].u`), "http://localhost:8788/v1/deploy");
+  assert.deepEqual(val(`__posts[0].body`), {hold: true});
+  assert.equal(run(`document.getElementById("askbtn").textContent`), "AI · \u23f8", "the gold \u23f8, label-span pattern preserved");
+  assert.equal(run(`deployHeld`), true);
+
+  // tapping again while held reopens the SAME sheet; Install now releases it and restarts a short countdown
+  run(`__posts.length = 0; appConfirm = async () => true;`);
+  await run(`askBtnTap()`);
+  assert.equal(val(`__posts.length`), 1);
+  assert.deepEqual(val(`__posts[0].body`), {hold: false, inSec: 3}, "resuming from a hold asks for a short grace window, not 0");
+  assert.equal(run(`deployHeld`), false);
+  assert.match(run(`document.getElementById("askbtn").textContent`), /^AI · [123]$/);
+
+  // Install now during an ACTIVE countdown (never held) goes immediately (inSec 0)
+  run(`clearInterval(deployTimer); deployTimer = null; deployHeld = false; __posts.length = 0; deployWarn(12000); appConfirm = async () => true;`);
+  await run(`askBtnTap()`);
+  assert.deepEqual(val(`__posts[0].body`), {hold: false, inSec: 0});
+  assert.equal(run(`document.getElementById("askbtn").textContent`), "AI · \u27f3", "goes to the spinner right away");
+
+  // askStatusPoll picks up a hold reported by the bridge even with no local countdown (e.g. a fresh poll after reload)
+  run(`clearInterval(deployTimer); deployTimer = null; deployHeld = false; songKey = "midi/x.mid"; song = {ppq:480,timesig:[4,4],tempos:[{tick:0,usq:500000,sec:0}],tracks:[]};
+       askStatusNo = ""; globalThis.fetch = async (u) => !String(u).includes("/v1/status") ? Promise.reject(new Error("no network"))
+         : {ok: true, status: 200, json: async () => ({now: null, recent: [], deployHold: true})};`);
+  await run(`askStatusPoll()`);
+  assert.equal(run(`deployHeld`), true);
+  assert.equal(run(`document.getElementById("askbtn").textContent`), "AI · \u23f8");
+
+  run(`clearInterval(deployTimer); deployTimer = null; deployHeld = false; openAsk = __realOpenAsk; appConfirm = __realConfirm;
+       delete globalThis.__realOpenAsk; delete globalThis.__opened; askStatusNo = "";`);
+  restoreBridge(run);
 });
 
 test("Messages log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on; chrome density follow-up (2026-10-01 pm, Josh's ruling #3): the footer chip shows only while something's UNREAD, hidden at 0 — View ▾ → BACKGROUND → Messages reaches the same sheet always", () => {
