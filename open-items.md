@@ -4972,3 +4972,6 @@ Josh: "View ▾ is too tall — make EVERY section an expanding sub-menu." Gener
 
 ## QUEUED 2026-10-02 21:20 — one control registry: setControl() (Josh: "the code is not well factored", approved)
 After the Material-icons build lands: every button's icon/label/aria in one CONTROLS table; `setControl(id, {icon, label, aria})` is the ONLY way code changes a button (Play ▶/■, View ▾ ✓ column, ⏳/⚠ counts, ✦ AI countdown, menus); help sheet + status strings refer to controls by name, not copied glyphs; a vm test fails if code writes a button's textContent/innerHTML outside setControl. Goal: an icon or wording swap is a one-line edit.
+
+## DECIDED 2026-10-02 21:30 — split index.html into ES modules (Josh: "just whatever the advisor says for the plan, just do it")
+No build step stays; the one-file rule goes. Opus advisor writes docs/split-plan.md; Sonnet builders execute it step by step, one shippable step per push. Order: Material icons ship first → split (control registry folded in). Josh won't review the plan.
