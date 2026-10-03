@@ -5087,3 +5087,46 @@ test:e2e:smoke` once locally (allowed per CLAUDE.md) to confirm against a
 real headless browser: chromium, 8/8 passed. NOT pushed: main session still
 needs to browser-verify (localhost + the packaged dist output) before
 pushing and building for the iPad.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 1: every top-level let/var → S (docs/split-plan.md)
+Worktree branch worktree-agent-a2852b81b994e0764, commit 25acd664, on top of
+0b (above). `tools/split/promote-state.mjs --file src/app.js --state
+src/state.js --all` promoted 257 top-level `let`/`var` names (plan estimated
+~203; undercounted multi-declarator lines) into `export const S` in new
+src/state.js — no imports, evaluates first, so every S field exists before
+any app code runs (removes the boot-path TDZ class of bug for state by
+construction; main session: retire the "boot-path TDZ check" memory note
+per the plan — this builder doesn't touch memory files). index.html
+modulepreload + sw.js APP_MODULES (bumped nr-v7) gained src/state.js;
+devtools.js's exposeGlobals() now mirrors every S field onto window with
+get+set (e2e `song = …` keeps working, now sets S.song); app.js's generated
+`__nrExpose$` footer logic moved to shared tools/split/e2e-footer.mjs and is
+regenerated via new tools/split/regen-e2e-footer.mjs after any change to
+app.js's top-level names (it had gone stale post-promotion — check.mjs rule
+1 caught it). Two real bugs surfaced and fixed in shared tooling (not
+worked around): scope.mjs's freeIdentifiers + promote-state.mjs's own
+collectUses both skipped a for-loop's own initializer expression (`for (let
+ti = song.tracks.length - 1; …)` left `song` un-renamed — a real
+`ReferenceError`, caught by the vm suite, not by check.mjs, since both tools
+shared the blind spot); app.js was reset to HEAD and promote-state.mjs
+re-run in full against the fix rather than hand-patching. One genuine
+pre-existing name collision, not a tool bug: `applyChop(S, E)` and a block
+in `finalizeNotes` used S/E as local chop-start/end tick names (predating
+any state container) — renamed to cStart/cEnd (pure local rename, zero
+behavior change; an AST sweep confirmed no other S/E collisions remain).
+~7 test assertions that pattern-match literal JS source text (not behavior)
+updated for the `S.` prefix; two modules.test.mjs assertions updated for
+the new file (checkSrc count 4→5; rule-8's devtools-import regex widened
+to any import style, since state.js is deliberately `import { S }`, not
+`import * as`). Verified: night-roll.test.mjs 417 (416 pass + 1 pre-existing
+env skip), gestures 17/17, modules 33/33, bridge 10/10, pwa 3/3, package
+3/3, plus nsf/chip-worker/migrate-rollnotes spot checks all green.
+`node tools/split/check.mjs` clean except the known pre-existing oldBpb
+finding (Q6); `node tools/split/check-e2e-globals.mjs` clean. `node
+tools/package.mjs --out /tmp/nr-dist-s1`: 47 runtime modules (matches 0b).
+`npm run test:e2e:smoke` (allowed once locally): chromium 8/8 passed. Full
+detail + deviations: docs/split-plan.md "Deviations (1)". NOT pushed: main
+session still needs to browser-verify (localhost + packaged dist) before
+pushing and building for the iPad — same as 0b, this is a pure refactor
+with no user-facing change, so verification is "does the app still behave
+identically," not a new feature to try.
