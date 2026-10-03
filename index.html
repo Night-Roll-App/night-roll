@@ -3635,12 +3635,17 @@ let PMIN = 24, PMAX = 96;
 
 // ---------------------------------------------------------------- edits
 function editsKey() { return songKey ? "ff1roll-edits-" + songKey : null; }
-// REVERTED 2026-10-02 (6ad5eee → data loss): dropping a local song's overlay
-// on load threw away Josh's newest notes — on his iPad the whole-song copy
-// was OLDER than the overlay. Never delete the overlay until the draft is
-// proven to hold its edits. See open-items 22:30.
+// The removed/added overlay is the edit store of READ-ONLY songs (captures)
+// only. A local/ song (Untitled, a local import) keeps ONE copy — its whole
+// draft, rewritten by every edit (saveEdits → saveDraft; see "Local song
+// persistence" in NIGHT-ROLL.md). Before 2026-10-02 it had both, they
+// disagreed, and replaying the overlay onto a draft that already held it
+// doubled notes; dropping it instead (6ad5eee) lost Josh's newest notes —
+// on his iPad the draft was the OLDER copy. foldOldOverlay merges what an
+// old build left behind.
 function loadEdits() {
   if (!editsKey()) return;
+  if (isLocalDraft()) { foldOldOverlay(); updateClearBtn(); return; }
   try {
     const e = JSON.parse(localStorage.getItem(editsKey()) || "null");
     if (!e) return;
@@ -3659,7 +3664,7 @@ function saveEdits() {
   // not in the spirit of the project) — edits just retire any review flags
   rollnotes.forEach(n => { if (n.stale) delete n.stale; });
   scheduleAnalysisRecompute(); // P6: Normal-only view layer — recompute on note edits, debounced; no-op when off
-  if (isComposition()) { // composition: the notes ARE the song — draft it whole
+  if (isComposition() || isLocalDraft()) { // composition or local song: the notes ARE the song — draft it whole
     saveDraft();
     computeSongEnd();
     updateSongMeta();
@@ -3677,8 +3682,65 @@ function saveEdits() {
   else localStorage.removeItem(editsKey());
   updateClearBtn();
 }
+// Policy for an overlay found on a local/ song. No build writes one any more,
+// so it is an old build's, with no stamp saying which draft it was built on —
+// on Josh's iPad (2026-10-02) the draft was older than it; elsewhere the
+// draft is newer and already holds it. So keep notes over guessing (a
+// doubled note is recoverable, a lost one is not):
+//  - an added note goes in unless the song already has a note on that track
+//    with the same start, pitch and length (no doubling);
+//  - a removed id ("ti:ni") is NOT replayed: it indexes the song as it was
+//    then, and after Insert bars or a rewrite of the draft it names a
+//    different note. Skipped ids go to the debug log;
+//  - the overlay stays until the merged draft is written AND read back
+//    holding every note it added; then it moves aside to
+//    ff1roll-retired-edits-<key>@<ms> — never deleted.
+function overlayNoteSig(ti, n) { return ti + ":" + n.t + ":" + n.p + ":" + n.d; }
+function foldOldOverlay() {
+  const raw = localStorage.getItem(editsKey());
+  if (raw === null) return;
+  let e = null; try { e = JSON.parse(raw); } catch (err) { logDebug("old edits on " + songKey + " are unreadable — left in place, not applied"); return; }
+  if (!e) return;
+  const have = new Set();
+  song.tracks.forEach((tr, ti) => tr.notes.forEach(n => { if (!n.gone) have.add(overlayNoteSig(ti, n)); }));
+  const need = [];
+  let restored = 0, already = 0;
+  for (const n of e.added || []) {
+    if (!song.tracks[n.ti]) continue;
+    const sig = overlayNoteSig(n.ti, n);
+    need.push(sig);
+    if (have.has(sig)) { already++; continue; }
+    have.add(sig);
+    song.tracks[n.ti].notes.push({t: n.t, d: n.d, p: n.p, v: 80, added: true});
+    restored++;
+  }
+  const skipped = e.removed || [];
+  logDebug("old edits on " + songKey + ": " + restored + " note(s) restored, " + already + " already in the draft, " +
+    skipped.length + " deletion(s) not replayed (notes kept)" + (skipped.length ? ": " + skipped.join(" ") : ""));
+  song.overlayFold = {key: songKey, raw, need};
+}
+// saveDraft calls this after a write while song.overlayFold is pending;
+// landed is draftWrite's answer (true, or the IndexedDB put's promise)
+function retireOldOverlay(f, landed) {
+  return Promise.resolve(landed).then(ok => ok ? draftRead(f.key) : null).then(d => {
+    if (!d || !d.tracks) return false;
+    const have = new Set();
+    d.tracks.forEach((tr, ti) => tr.notes.forEach(n => have.add(overlayNoteSig(ti, n))));
+    const missing = f.need.filter(sig => !have.has(sig)).length;
+    if (missing) { logDebug("old edits on " + f.key + " kept: the saved draft lacks " + missing + " of their notes"); return false; }
+    const live = "ff1roll-edits-" + f.key;
+    if (localStorage.getItem(live) !== f.raw) return false; // changed since the load: not ours to move
+    localStorage.setItem("ff1roll-retired-edits-" + f.key + "@" + Date.now(), f.raw); // a full store throws here: the overlay stays
+    localStorage.removeItem(live);
+    if (song && song.overlayFold === f) delete song.overlayFold;
+    updateClearBtn();
+    return true;
+  }).catch(err => { logDebug("old edits on " + f.key + " kept: " + (err && err.message || err)); return false; });
+}
+// Clear edits clears the overlay; on a local song the overlay is no edit
+// store, only an old build's leftover waiting to be folded — never offered
 function updateClearBtn() {
-  const has = editsKey() && localStorage.getItem(editsKey());
+  const has = editsKey() && !isLocalDraft() && localStorage.getItem(editsKey());
   document.getElementById("clearbtn").style.display = has ? "" : "none";
 }
 function updateEditBtnVis() { // the edit ROW exists only on songs made in the app
@@ -4734,7 +4796,10 @@ async function loadSongInner(path) {
     // must not silently mask it
     let d = null;
     try { d = JSON.parse(draftRaw); } catch (err) {}
-    if (d && d.tracksRef && !d.tracks) d.tracks = (await idbDraftGet(path)) || []; // an import's notes live in IndexedDB
+    if (d && d.tracksRef && !d.tracks) { // an import's notes live in IndexedDB
+      if (path.startsWith("local/")) d = await localDraftTracks(path, d);
+      else d.tracks = (await idbDraftGet(path)) || [];
+    }
     let repoStamp = 0;
     try {
       const r = await readData("analysis", path.replace(/\.mid$/, "") + ".rollnotes.json", true);
@@ -17311,7 +17376,10 @@ function draftDoc(clean) { // the song as this device stores it (the working cop
 function saveDraft(clean) { // clean=true right after a successful Publish; the working copy follows every edit regardless (crash recovery)
   if (!isComposition() && !isLocalDraft()) return;
   if (cmp && cmp.showing === "repo") return; // the saved copy is swapped in: writing it over the draft would destroy his edits
-  try { draftWrite(songKey, draftDoc(clean)); } catch (err) { // a full localStorage must never throw out of an edit: say so, loudly, once per song
+  try {
+    const landed = draftWrite(songKey, draftDoc(clean));
+    if (song.overlayFold) retireOldOverlay(song.overlayFold, landed);
+  } catch (err) { // a full localStorage must never throw out of an edit: say so, loudly, once per song
     if (saveDraft.warned !== songKey) { saveDraft.warned = songKey; logErr("this device's storage is full — the last edit to " + baseName() + " is NOT saved. Publish, or ✕ some drafts under Open → drafts, then edit again."); }
     setInfo("⚠ storage full — edit not saved (see ⚠)");
   }
@@ -17425,6 +17493,7 @@ function openDraftDoc(d, key) {
   setSong(parsed, key); // rollnotes ride the normal sidecar + local-notes path
   song.savedStamp = d.savedStamp || 0;
   song.pubSig = d.pubSig || null;
+  if (song.overlayFold) saveDraft(); // an old build's overlay was merged in: the draft takes it now (stamps above first — draftDoc reads them)
   currentPath = key;
   rememberLastSong(key);
   reflectSongURL(key);
@@ -19977,7 +20046,51 @@ function draftInIdb(key) { // big drafts (captures, imported files) keep their n
   return typeof indexedDB !== "undefined" && (key.startsWith(IMP_DIR) || key.startsWith("local/") ||
     Object.values(CONSOLE_OF).some(c => key.startsWith("albums/" + c + "/")));
 }
+// Local/ songs (2026-10-02 — see "Local song persistence" in NIGHT-ROLL.md):
+// every edit rewrites the whole draft (saveEdits), and the app can be killed
+// right after one (an install relaunch). The IndexedDB put is queued, so a
+// stub alone in localStorage could claim notes that never landed. So a
+// local draft is written WHOLE to localStorage — synchronous, the copy load
+// reads — whenever it fits (500k chars; local songs are usually far
+// smaller), and its notes go to IndexedDB too, so a song that later grows
+// past the cap loses at most the edits in flight, not everything since it
+// last fit. Every write carries seq (stored seq + 1); the IndexedDB record
+// is {seq, tracks}. Past the cap, or when the store is full: stub + IDB as
+// before, logged once — the last edit is crash-safe only once the put lands.
+// Returns true (stored) or the put's promise (true once landed).
+function localDraftWrite(key, doc) {
+  // seq is the LAST key written (below), so the last "seq": in the stored
+  // JSON is it — no parse of a whole song on every edit (a "seq": inside a
+  // string would be escaped, \"seq\")
+  const old = localStorage.getItem(draftStoreKey(key)) || "", at = old.lastIndexOf('"seq":');
+  const prev = at < 0 ? 0 : parseInt(old.slice(at + 6), 10) || 0;
+  doc = {...doc, seq: prev + 1};
+  const idb = typeof indexedDB !== "undefined";
+  const landed = idb ? idbDraftPut(key, {seq: doc.seq, tracks: doc.tracks}) : true;
+  const whole = JSON.stringify(doc);
+  if (!idb || whole.length <= 500000) {
+    try { localStorage.setItem(draftStoreKey(key), whole); return true; }
+    catch (err) { if (!idb) throw err; } // full: the stub below is smaller
+  }
+  if (localDraftWrite.warned !== key) { localDraftWrite.warned = key; logErr(key.split("/").pop() + " is too big to keep whole on this device — its newest edit is safe only a moment after you make it (IndexedDB)"); }
+  const {tracks, ...stub} = doc;
+  stub.tracksRef = 1;
+  localStorage.setItem(draftStoreKey(key), JSON.stringify(stub));
+  return landed;
+}
+// a local draft whose localStorage copy is only the stub: its notes from the
+// IndexedDB record ({seq, tracks}; an old build's is the bare tracks array).
+// A whole localStorage copy never consults IndexedDB — it was written
+// synchronously with the newest seq.
+async function localDraftTracks(key, d) {
+  const v = await idbDraftGet(key);
+  const tracks = v ? (Array.isArray(v) ? v : v.tracks) : null, seq = v && !Array.isArray(v) ? v.seq || 0 : 0;
+  if (d.seq && seq < d.seq) logErr(key.split("/").pop() + ": the app closed before its last edit was stored — opening the copy before it");
+  d.tracks = tracks || [];
+  return d;
+}
 function draftWrite(key, doc) { // synchronous for the caller; the notes follow through the queue
+  if (key.startsWith("local/")) return localDraftWrite(key, doc);
   if (draftInIdb(key)) {
     const {tracks, ...stub} = doc;
     stub.tracksRef = 1;
@@ -19989,11 +20102,14 @@ async function draftRead(key) { // the whole draft, notes included, or null
   const raw = localStorage.getItem(draftStoreKey(key));
   if (raw === null) return null;
   let d = null; try { d = JSON.parse(raw); } catch (err) { return null; }
-  if (d && d.tracksRef && !d.tracks) d.tracks = (await idbDraftGet(key)) || [];
+  if (d && d.tracksRef && !d.tracks) {
+    if (key.startsWith("local/")) return localDraftTracks(key, d);
+    d.tracks = (await idbDraftGet(key)) || [];
+  }
   return d;
 }
 function idbDraftOp(fn) { const p = _idbQueue.then(fn); _idbQueue = p.catch(() => { /* keep the queue alive */ }); return p; }
-function idbDraftPut(key, tracks) { return idbDraftOp(async () => { try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").put(tracks, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); } catch (err) { logErr("draft notes could not be stored for " + key.split("/").pop() + ": " + (err && err.message || err)); } }); }
+function idbDraftPut(key, tracks) { return idbDraftOp(async () => { try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").put(tracks, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); return true; } catch (err) { logErr("draft notes could not be stored for " + key.split("/").pop() + ": " + (err && err.message || err)); return false; } }); } // true once the notes landed
 function idbDraftGet(key) { return idbDraftOp(async () => { try { const db = await idbOpen(); const v = await new Promise(res => { const r = db.transaction("drafts").objectStore("drafts").get(key); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); }); db.close(); return v; } catch (err) { return null; } }); }
 function idbDraftDelete(key) { return idbDraftOp(async () => { try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").delete(key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); } catch (err) { /* nothing stored */ } }); }
 function idbDraftMove(oldKey, newKey) { return idbDraftOp(async () => { try { const db = await idbOpen(); const v = await new Promise(res => { const r = db.transaction("drafts").objectStore("drafts").get(oldKey); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); }); if (v !== null) await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").put(v, newKey); tx.objectStore("drafts").delete(oldKey); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); } catch (err) { /* nothing stored */ } }); }
@@ -22270,7 +22386,7 @@ function applyEditEntry(u) {
       selNote = v.selNote ? {ti: v.selNote.ti, ni: v.selNote.ni} : null;
       selClip = v.selClip ? {ti: v.selClip.ti, ci: v.selClip.ci} : null;
       multiSel = []; multiSelKey = new Set();
-      saveDraft(); // local drafts don't go through saveEdits()'s composition-only saveDraft() call below
+      saveDraft(); // the track order is draft-only state; saveEdits() below drafts only compositions and local songs
       renderTrackbar(); renderMixer(); updateTrackGains();
     } else if (v.kind === "addBatch") { for (const it of v.items) setGone(it.ti, it.ni, true); }
     else if (v.kind === "eraseBatch") { for (const it of v.items) setGone(it.ti, it.ni, false); }

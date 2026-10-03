@@ -5669,6 +5669,71 @@ and walks `#songcrumb`'s `.children` for a `.crumbdot`, not
 `querySelector`); a new `editHereNow` test makes `appConfirm` throw, to
 prove the no-confirm claim.
 
+## Local song persistence (2026-10-02 fix)
+
+**What broke.** A `local/` song (Untitled N, a local .mid import —
+`isLocalDraft()`) is not `isComposition()` (no `albums/` path), so
+`saveEdits()` treated it like a read-only capture and wrote only the
+removed/added overlay (`ff1roll-edits-<key>`: `"ti:ni"` ids + added notes).
+Its whole-song draft was rewritten only by the operations that call
+`saveDraft()` themselves (Insert bars, undo of a track reorder, track ops,
+recordings). Two stores, neither stamped: the draft was usually the OLDER
+one (that is why it lagged on Josh's iPad — not an IndexedDB failure), and
+`loadEdits()` replayed the overlay onto a draft that sometimes already held
+it — doubled notes, and `"ti:ni"` ids hiding whatever note now sat at that
+index after Insert bars. 6ad5eee dropped the overlay on load and lost
+untitled-1's pulse tracks (the overlay was the newer copy); reverted.
+
+**Design: one copy, written whole, synchronously.**
+- `saveEdits()` on a local song calls `saveDraft()`, exactly like a
+  composition. No overlay is written for a local song any more.
+- `draftWrite()` → `localDraftWrite()` for `local/` keys: the whole draft
+  goes to localStorage (synchronous — the app can be killed right after an
+  edit, e.g. an install relaunch, and the edit is already stored) when it is
+  ≤ 500,000 chars; local songs are far smaller. Its tracks ALSO go to
+  IndexedDB as `{seq, tracks}` so a song that later outgrows the cap loses
+  at most the edits in flight, not everything since it last fit.
+- Every write carries `seq` = stored seq + 1 (the last key of the JSON,
+  read back with `lastIndexOf('"seq":')`, no parse).
+- Past the cap (or when the whole copy won't fit in a full store): stub
+  (`tracksRef: 1`, `seq`) in localStorage + IndexedDB, as before, with a
+  one-time ⚠ "too big to keep whole". Load (`localDraftTracks`) compares the
+  stub's seq with the IndexedDB record's; older notes open with a ⚠ "the app
+  closed before its last edit was stored". **This path is not crash-safe for
+  the edit in flight** — IndexedDB puts are queued and asynchronous.
+- A whole localStorage copy never consults IndexedDB on load: it was written
+  synchronously with the newest seq. (Preferring a higher-seq IndexedDB
+  record would let a stale record left under a reused key — a new
+  Untitled 1 — win over the real song.)
+- Why not a synchronous shadow alongside the IndexedDB draft, or keeping
+  the overlay until the put lands: both are a second copy load must choose
+  between — the bug itself. The overlay can't be a crash journal anyway:
+  its ids index the song as LOADED, and the draft under it is rewritten by
+  every edit.
+
+**Old-build overlays (`foldOldOverlay`, called from `loadEdits`).** Any
+overlay found on a local song was written before this fix, with no stamp
+saying which draft it was built on. Policy — a doubled note is
+recoverable, a lost one is not:
+- an added note goes in unless the song already has one on that track with
+  the same start, pitch and length;
+- removed ids are NOT replayed (unverifiable after Insert bars or a draft
+  rewrite); they are listed in the debug log, notes kept;
+- `openDraftDoc` then writes the merged draft, and `retireOldOverlay` reads
+  it back (`draftRead`) — only if every overlay note is in the stored copy
+  does the overlay move to `ff1roll-retired-edits-<key>@<ms>` (never
+  deleted; nothing reads it again). A failed write leaves the overlay in
+  place; the next load folds it again (idempotent by the dedupe).
+- Clear edits is never offered on a local song (`updateClearBtn`): there
+  the overlay is an old leftover, not the edit store.
+
+Compositions (`albums/`) and read-only captures are unchanged: captures
+keep the overlay as their only edit store; compositions were already
+whole-draft. Tests: `local song: …` in tests/night-roll.test.mjs — draft
+newer than overlay, overlay newer, no-stamp dedupe, a failed fold leaves
+the overlay, Josh's Insert bars + paste + delete + reload, a kill before
+the IndexedDB put lands, and the too-big path.
+
 ## Learning / Normal mode (P0-P3, 2026-09-30)
 
 CLAUDE.md: "Keys/analyses are Josh's discoveries — Learning mode is the

@@ -10059,3 +10059,130 @@ test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \
   assert.equal(a.run(`!!(__opened.o && __opened.o.atStart)`), true, "tempo too");
   assert.equal(a.run(`governingAt(n => true, 0)`), null, "governingAt(…, 0) looks at the song start, not the cursor");
 });
+
+// ---- Local song persistence (2026-10-02 fix; NIGHT-ROLL.md "Local song
+// persistence"). Each device state is a store handed to a fresh app — a
+// reload — and the song opened through loadSong like a real launch.
+{
+  const KEY = "local/persist-test.mid";
+  const N = (t, p, d = 480) => ({t, d, p, v: 80});
+  const draftJSON = (notes, extra = {}) => JSON.stringify({savedStamp: 0, dirty: true, title: "Persist", ppq: 480, timesig: [4, 4],
+    tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes}], ...extra});
+  const settle = () => new Promise(r => setTimeout(r, 30));
+  async function reload(storage, before = "") {
+    const a = await createApp({storage});
+    if (before) a.run(before);
+    await a.run(`loadSong(${JSON.stringify(KEY)})`);
+    await settle();
+    return a;
+  }
+  const heard = a => a.run(`JSON.stringify(song.tracks.map((tr, ti) => tr.notes.filter(n => !n.gone).map(n => ti + ":" + n.t + ":" + n.p + ":" + n.d).sort()))`);
+  const stored = a => JSON.parse(a.store.get("ff1roll-draft-" + KEY));
+  const storedSigs = a => JSON.stringify(stored(a).tracks.map((tr, ti) => tr.notes.map(n => ti + ":" + n.t + ":" + n.p + ":" + n.d).sort()));
+  const retired = a => [...a.store.keys()].filter(k => k.startsWith("ff1roll-retired-edits-" + KEY + "@"));
+  // load never removes anything: every key there before is still there, or
+  // (the live overlay only) sits aside under a retired key, byte for byte
+  function nothingLost(storage, a) {
+    for (const [k, v] of Object.entries(storage)) {
+      if (a.store.has(k)) continue;
+      assert.ok(k === "ff1roll-edits-" + KEY && retired(a).some(r => a.store.get(r) === v), k + " vanished on load");
+    }
+  }
+
+  test("local song: draft NEWER than an old-build overlay — nothing doubled, the stale deletion id not replayed, overlay retired aside", async () => {
+    // the draft already holds the overlay's added note (480:62) and the
+    // deleted note is gone from it — so "0:0" now names a live note (A)
+    const storage = {["ff1roll-draft-" + KEY]: draftJSON([N(0, 60), N(480, 62)]),
+      ["ff1roll-edits-" + KEY]: JSON.stringify({removed: ["0:0"], added: [{ti: 0, t: 480, d: 480, p: 62}]})};
+    const a = await reload(storage);
+    assert.equal(heard(a), JSON.stringify([["0:0:60:480", "0:480:62:480"]]), "A kept, B once");
+    assert.equal(a.store.has("ff1roll-edits-" + KEY), false, "the live overlay is folded…");
+    assert.equal(retired(a).length, 1, "…and kept aside");
+    assert.equal(a.store.get(retired(a)[0]), storage["ff1roll-edits-" + KEY]);
+    assert.equal(storedSigs(a), JSON.stringify([["0:0:60:480", "0:480:62:480"]]));
+    assert.ok(stored(a).seq >= 1, "the draft is stamped");
+    nothingLost(storage, a);
+    const b = await reload(Object.fromEntries(a.store)); // a second reload: one copy, same song
+    assert.equal(heard(b), heard(a));
+  });
+
+  test("local song: overlay NEWER than the draft (Josh's iPad, 2026-10-02) — its notes come back and the draft takes them; deletions keep the note", async () => {
+    const storage = {["ff1roll-draft-" + KEY]: draftJSON([N(0, 60), N(960, 67)]),
+      ["ff1roll-edits-" + KEY]: JSON.stringify({removed: ["0:1"], added: [{ti: 0, t: 480, d: 480, p: 62}, {ti: 0, t: 1440, d: 240, p: 64}]})};
+    const a = await reload(storage);
+    assert.equal(heard(a), JSON.stringify([["0:0:60:480", "0:1440:64:240", "0:480:62:480", "0:960:67:480"]]),
+      "both overlay notes restored; the note \"0:1\" named is kept (a duplicate is recoverable, a lost note is not)");
+    assert.equal(storedSigs(a), heard(a), "folded into the draft before the overlay moved");
+    assert.equal(retired(a).length, 1);
+    nothingLost(storage, a);
+    assert.match(a.run(`appDebug.map(e => e.msg).join(" | ")`), /2 note\(s\) restored, 0 already in the draft, 1 deletion\(s\) not replayed/);
+  });
+
+  test("local song: an old-build overlay (no stamps) whose added note is already in the draft + a removed id — dedupe, keep, log, retire", async () => {
+    const storage = {["ff1roll-draft-" + KEY]: draftJSON([N(0, 60), N(480, 62)]),
+      ["ff1roll-edits-" + KEY]: JSON.stringify({removed: ["0:0"], added: [{ti: 0, t: 480, d: 480, p: 62}, {ti: 0, t: 960, d: 480, p: 65}]})};
+    const a = await reload(storage);
+    assert.equal(heard(a), JSON.stringify([["0:0:60:480", "0:480:62:480", "0:960:65:480"]]));
+    assert.match(a.run(`appDebug.map(e => e.msg).join(" | ")`), /1 note\(s\) restored, 1 already in the draft, 1 deletion\(s\) not replayed \(notes kept\): 0:0/);
+    assert.equal(retired(a).length, 1);
+    nothingLost(storage, a);
+    assert.equal(a.run(`document.getElementById("clearbtn").style.display`), "none", "Clear edits is never offered on a local song");
+  });
+
+  test("local song: an overlay the draft cannot be shown to hold stays put (the read-back is the proof)", async () => {
+    const storage = {["ff1roll-draft-" + KEY]: draftJSON([N(0, 60)]),
+      ["ff1roll-edits-" + KEY]: JSON.stringify({removed: [], added: [{ti: 0, t: 480, d: 480, p: 62}]})};
+    // a store whose draft writes fail: the merged song never lands
+    const a = await reload(storage, `{ const real = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = (k, v) => { if (k.startsWith("ff1roll-draft-")) { const e = new Error("QuotaExceededError"); e.name = "QuotaExceededError"; throw e; } return real(k, v); }; }`);
+    assert.equal(heard(a), JSON.stringify([["0:0:60:480", "0:480:62:480"]]), "the note is in the song on screen");
+    assert.equal(a.store.get("ff1roll-edits-" + KEY), storage["ff1roll-edits-" + KEY], "the overlay is still the only stored copy of it — untouched");
+    assert.equal(retired(a).length, 0);
+  });
+
+  test("local song: Insert bars + paste + hand-delete + reload (Josh's sequence, 2026-10-02) — no doubling, nothing lost, one copy", async () => {
+    const a = await reload({["ff1roll-draft-" + KEY]: draftJSON([N(0, 60), N(480, 62), N(960, 64), N(1440, 65)])});
+    a.run(`song.tracks[0].notes.push({t: 1920, d: 480, p: 67, v: 80, added: true}); saveEdits();`); // a pencil note, the way pencil lands one
+    a.run(`insertTime(960, 1920)`); // a bar of 4/4 at beat 3
+    a.run(`multiSel = [{ti: 0, ni: 0}, {ti: 0, ni: 1}]; multiSelKey = new Set(["0:0", "0:1"]); copySelection(); pasteClipboard(960);`);
+    const del = a.run(`song.tracks[0].notes.findIndex(n => !n.gone && n.p === 65)`);
+    a.run(`multiSel = [{ti: 0, ni: ${del}}]; multiSelKey = new Set(["0:${del}"]); deleteSelection();`);
+    const before = heard(a);
+    assert.equal(before, JSON.stringify([["0:0:60:480", "0:1440:62:480", "0:2880:64:480", "0:3840:67:480", "0:480:62:480", "0:960:60:480"]]));
+    assert.equal(a.store.has("ff1roll-edits-" + KEY), false, "a local song never writes the overlay");
+    assert.equal(storedSigs(a), before, "the draft holds every edit as it happens");
+    const b = await reload(Object.fromEntries(a.store));
+    assert.equal(heard(b), before, "the reload is the song as left");
+    const c = await reload(Object.fromEntries(b.store));
+    assert.equal(heard(c), before, "and stays so");
+  });
+
+  test("local song: the app killed right after an edit (the IndexedDB put never lands) — the reload still has the edit", async () => {
+    const fakeIdb = `globalThis.indexedDB = {}; idbDraftPut = () => new Promise(() => {}); idbDraftGet = () => Promise.resolve(null);`;
+    const a = await reload({["ff1roll-draft-" + KEY]: draftJSON([N(0, 60)])}, fakeIdb);
+    a.run(`song.tracks[0].notes.push({t: 480, d: 480, p: 62, v: 80, added: true}); saveEdits();`);
+    const s = stored(a);
+    assert.equal(s.tracksRef, undefined, "whole in localStorage — written before the edit returned");
+    assert.equal(s.tracks[0].notes.length, 2);
+    a.run(`song.tracks[0].notes.push({t: 960, d: 480, p: 64, v: 80, added: true}); saveEdits();`);
+    assert.equal(stored(a).seq, s.seq + 1, "every write stamps the next seq");
+    const b = await reload(Object.fromEntries(a.store), fakeIdb); // killed: nothing ever reached IndexedDB
+    assert.equal(heard(b), JSON.stringify([["0:0:60:480", "0:480:62:480", "0:960:64:480"]]));
+  });
+
+  test("local song too big to keep whole: stub + IndexedDB {seq, tracks}; a stub newer than its notes says so", async () => {
+    const big = Array.from({length: 20000}, (_, i) => N(i * 120, 40 + i % 40, 120));
+    const a = await reload({["ff1roll-draft-" + KEY]: draftJSON(big)},
+      `globalThis.indexedDB = {}; __idb = {}; idbDraftPut = (k, v) => { __idb[k] = v; return Promise.resolve(true); }; idbDraftGet = k => Promise.resolve(__idb[k] || null);`);
+    a.run(`song.tracks[0].notes.push({t: 0, d: 120, p: 90, v: 80, added: true}); saveEdits();`);
+    const s = stored(a);
+    assert.equal(s.tracksRef, 1); assert.equal(s.tracks, undefined);
+    assert.equal(a.run(`__idb[${JSON.stringify(KEY)}].seq`), s.seq, "the notes carry the stub's seq");
+    assert.match(a.run(`appErrors.map(e => e.msg).join(" ")`), /too big to keep whole/);
+    // the put for the newest edit never landed: the older notes open, and the app says so
+    const b = await reload(Object.fromEntries(a.store),
+      `globalThis.indexedDB = {}; idbDraftGet = () => Promise.resolve({seq: ${s.seq - 1}, tracks: ${JSON.stringify([{name: "pulse1", notes: big}])}});`);
+    assert.equal(b.run(`song.tracks[0].notes.length`), 20000);
+    assert.match(b.run(`appErrors.map(e => e.msg).join(" ")`), /closed before its last edit was stored/);
+  });
+}
