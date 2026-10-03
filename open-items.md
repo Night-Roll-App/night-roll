@@ -4961,3 +4961,5 @@ Josh: "View ▾ is too tall — make EVERY section an expanding sub-menu." Gener
 ## DONE 2026-10-02 20:05 — copy/paste icons (Josh, Terminal #49): ⧉/📋 replaced with Google Material Icons content_copy/content_paste (outlined, Apache-2.0, inline SVG); status lines say "Copy"/"Paste" instead of the glyphs
 
 ## DONE 2026-10-02 20:15 — switching back into Night Roll stopped YouTube (Josh, Terminal #51): a tap/▶/click that ended while the app was hidden left the session on "playback" (every revert skips a hidden page), and the wake on return resumed the engine under it. The return now sets "ambient" first when nothing is playing. Taps still use "playback" (he accepted that a note tap may stop YouTube). Needs his ear on the iPad.
+
+## DONE 2026-10-02 20:25 — one ＋ for attachments (Josh, Terminal #52): 📷 and 🖼 merged into a ＋ beside Speak that drops up "📷 Screenshot of Night Roll" / "🖼 Photo Library…" (the iMessage/ChatGPT/Claude-app pattern); Photo Library opens iOS's own chooser (Photo Library / Take Photo / Choose File)

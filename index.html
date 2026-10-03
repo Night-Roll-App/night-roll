@@ -1088,6 +1088,7 @@
   #askinputrow { flex-wrap: wrap; }
   #askinputrow #askinput { flex: 1 1 100%; }
   #askinputrow button { flex: 1 1 0; white-space: nowrap; }
+  #askinputrow #askattach { flex: 0 0 52px; font-size: 1.25rem; } /* one glyph: a square, not a third of the row */
   /* a narrow docked AI panel (Josh's screenshot, 2026-09-29): the Dock pill
      wrapped, the two chat tabs need to stay on one line */
   #asksheet .sheet { container-type: inline-size; }
@@ -1433,6 +1434,18 @@
   <button class="fitem" id="notesall">☰ All notes</button>
 </div>
 </div><!-- /songregion -->
+<!-- AI window attachments: ONE ＋ that drops up a two-item menu — the
+     iMessage/ChatGPT/Claude-app pattern (Josh, 2026-10-02: "I don't need two
+     buttons … I press like a plus button and then that brings up … screenshot
+     or photos"). Fixed-position and outside #songregion: the AI window docks
+     beside the song region, where songRegionRight()'s clamp would push an
+     in-region drop-up away from its button. #askshot/#askpick keep their ids
+     and handlers; Photo Library opens iOS's own chooser (Photo Library / Take
+     Photo / Choose File). -->
+<div id="askattachmenu" class="dropup" role="menu" style="position:fixed;z-index:9000">
+  <button class="fitem" id="askshot" role="menuitem" aria-label="Send a picture of the app to Claude">📷  Screenshot of Night Roll</button>
+  <button class="fitem" id="askpick" role="menuitem" aria-label="Attach a picture from Photos/Files">🖼  Photo Library…</button>
+</div>
 <div id="dockleft">
   <!-- generic dock divider (wmSideDividerize): resizes whatever window is
        currently docked full-height here; a dock's own window markup carries
@@ -2016,7 +2029,7 @@
       <dt>New since your last message</dt><dd>On the Claude Code bridge, every message you send — ♩ this song, ✦ Ask, or ⌨ Terminal — carries what’s changed since your last one in THAT chat: any new ⚠ messages, any new status-line readouts (footer/Status window), and on ✦ Ask/⌨ Terminal (which have no song context of their own) which song is open, its view, and your cursor. You never copy an error or a status line over by hand, and a line already sent is never repeated.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, <b>✦ AI</b>'s own aria-label names whether the terminal's Claude Code is working or idle — refreshed every 10 seconds — with no visual badge on the button itself any more (chrome density follow-up, 2026-10-01 pm, Josh: the small pulsing dot that used to mark it was "always there and distracting"). Open ✦ AI for the full line — <b>Claude Code working: …</b> or <b>Claude Code idle</b> — in a fixed two-line strip that never grows or shrinks as the status changes (so it can't nudge the chat log above it); tap that line for the last ten steps with their times and the latest commits. Without the bridge (LM Studio, no AI) none of it appears.</dd>
-      <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>📷</b> beside 🎤 Speak to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a thumbnail chip appears above the box — add what to look at and Send. Tap 📷 again (up to 4 per message) to attach several at once; each gets its own thumbnail and its own ✕, or tap the chip row's ✕ to drop them all. In a browser, pick this tab when it asks what to share. Beside 📷, <b>🖼</b> attaches a picture <b>from Photos</b> or Files instead of the app itself — the same 4-per-message limit, thumbnails, and Send line; a huge picture is downscaled and an iPhone/iPad HEIC photo is converted automatically, so it always reaches Claude as a plain JPEG or PNG.</dd>
+      <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>＋</b> beside 🎤 Speak, then <b>📷 Screenshot of Night Roll</b> to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a thumbnail chip appears above the box — add what to look at and Send. Do it again (up to 4 per message) to attach several at once; each gets its own thumbnail and its own ✕, or tap the chip row's ✕ to drop them all. In a browser, pick this tab when it asks what to share. The same ＋ menu's <b>🖼 Photo Library…</b> attaches a picture <b>from Photos</b> (or takes one, or picks a file) instead of the app itself — the same 4-per-message limit, thumbnails, and Send line; a huge picture is downscaled and an iPhone/iPad HEIC photo is converted automatically, so it always reaches Claude as a plain JPEG or PNG.</dd>
       <dt>⌨ Terminal tab</dt><dd>Two pickers at its top choose the model the terminal gives its <b>advisors</b> (read-only reviews) and its <b>builders</b> (the agents that write code) — Opus, Sonnet, Haiku or Fable; the terminal session's own model is set at the Mac (/model). The ⌨ Terminal tab in ✦ AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. 📷 works the same. If the Mac can't be reached, the message goes back into the box.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved) — on the Claude Code bridge it also tells the Mac to really start over: without this, the same long-running Claude session kept being resumed underneath a cleared-looking chat.</dd>
       <dt>Session usage and Compact</dt><dd>On the Claude Code bridge, a small line under ✦ AI's tab strip says <b>"N turns · ~Nk tokens · $N.NN"</b> for the chat you're in (♪ this song or ✦ Ask — not ⌨ Terminal, which has no session of its own), refreshed after every reply and whenever you switch tabs; past 40 turns it adds <b>"— long, Compact saves tokens"</b>. Tap <b>Compact</b> beside Clear chat (in-app confirm) to have the bridge summarize this chat's memory on the Mac and shrink it — the status line then reads <b>"compacted: 172 → 1 turns · ~24k → ~3k tokens"</b>, the exact before/after the Mac measured. Compact only affects the Mac's memory of the conversation, never your saved messages or the .ask.md log. The <b>plan usage</b> line in ✦ AI's Recent (tap the <b>Now:</b> strip) shows this account's own subscription usage — this session and this week — when the bridge has seen it.</dd>
@@ -2473,8 +2486,7 @@
     <div class="row" id="askinputrow">
       <textarea id="askinput" placeholder="Ask about what you're looking at…" aria-label="Your question"></textarea>
       <button id="askmic">🎤 Speak</button>
-      <button id="askshot" style="display:none" title="Send a picture of the app to Claude" aria-label="Send a picture of the app to Claude">📷</button>
-      <button id="askpick" style="display:none" title="Attach a picture from Photos/Files" aria-label="Attach a picture from Photos/Files">🖼</button>
+      <button id="askattach" style="display:none" title="Attach a picture" aria-label="Attach a picture" aria-haspopup="menu">＋</button>
       <input type="file" id="askpickfile" accept="image/*" multiple style="display:none" aria-label="Choose a picture to attach">
       <button class="primary" id="asksend">Send</button>
     </div>
@@ -17915,7 +17927,7 @@ function openDropUp(btn, menu) {
 }
 document.addEventListener("pointerdown", e => { // tap-away closes — exempts the trigger buttons themselves (their own click handler does the toggle-closed, via `was` above) and anything inside the open menu, so a native <select> inside it (#findsel) and its iOS picker stay safe
   if (!dropUpOpen) return;
-  if (dropUpOpen.contains(e.target) || e.target.closest("#viewbtn, #listbtn")) return;
+  if (dropUpOpen.contains(e.target) || e.target.closest("#viewbtn, #listbtn, #askattach")) return;
   closeDropUp();
 }, {capture: true});
 function fsubItem(label, onTap, dim) {
@@ -23859,9 +23871,9 @@ async function askStatusFetchCommits() { // origin/main's last 3 subjects, publi
 // it's docked — the picture is of the song, not the chat (🖼 doesn't need
 // that: nothing of the app is on screen while the OS picker is up).
 function askShotShow(on) {
-  const b = document.getElementById("askshot"), p = document.getElementById("askpick");
+  const b = document.getElementById("askattach");
   if (b) b.style.display = on ? "" : "none";
-  if (p) p.style.display = on ? "" : "none";
+  if (!on && dropUpOpen === document.getElementById("askattachmenu")) closeDropUp();
 }
 function askShotLine(path) { return "(screenshot: " + path + ")"; }
 const ASKSHOT_MAX = 4;
@@ -24032,6 +24044,18 @@ async function askPickFiles(fileList) { // 🖼 Photos/Files picker — each fil
   }
   askstatus.textContent = dropped ? askShotStatusLabel() + " (" + dropped + " more skipped — " + ASKSHOT_MAX + " is the max)" : askShotStatusLabel();
 }
+document.getElementById("askattach").addEventListener("click", () => {
+  const btn = document.getElementById("askattach"), menu = document.getElementById("askattachmenu");
+  const was = dropUpOpen === menu && menu.classList.contains("on");
+  closeFileMenus();
+  if (was) return;
+  const r = btn.getBoundingClientRect();
+  menu.style.left = Math.max(6, Math.min(r.right - 240, window.innerWidth - 246)) + "px"; // right-aligned to ＋: it sits at the AI window's right edge
+  menu.style.bottom = (wmInnerHeight() - r.top + 6) + "px";
+  menu.classList.add("on");
+  dropUpOpen = menu;
+});
+document.getElementById("askattachmenu").addEventListener("click", () => closeDropUp(), {capture: true}); // the item's own handler still runs
 document.getElementById("askshot").addEventListener("click", askShotTake);
 document.getElementById("askshotx").addEventListener("click", () => { askShotClearAll(); askstatus.textContent = ""; });
 document.getElementById("askpick").addEventListener("click", () => document.getElementById("askpickfile").click());

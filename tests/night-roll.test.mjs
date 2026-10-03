@@ -6464,13 +6464,14 @@ test("📷/🖼: several screenshots per message (cap 4), per-item removal, and 
     assert.equal(val(`askShotPending[0].path`), "/Users/x/shots/only.jpg");
     run(`askShotClearAll()`);
 
-    // askShotShow toggles both 📷 and 🖼 together
+    // askShotShow toggles the one ＋ (Josh, 2026-10-02: one attach button, not two)
     run(`askShotShow(true)`);
-    assert.equal(val(`document.getElementById("askshot").style.display`), "");
-    assert.equal(val(`document.getElementById("askpick").style.display`), "");
+    assert.equal(val(`document.getElementById("askattach").style.display`), "");
+    run(`document.getElementById("askattach").click()`);
+    assert.equal(val(`document.getElementById("askattachmenu").classList.contains("on")`), true, "＋ drops up the menu");
     run(`askShotShow(false)`);
-    assert.equal(val(`document.getElementById("askshot").style.display`), "none");
-    assert.equal(val(`document.getElementById("askpick").style.display`), "none");
+    assert.equal(val(`document.getElementById("askattach").style.display`), "none");
+    assert.equal(val(`document.getElementById("askattachmenu").classList.contains("on")`), false, "hiding ＋ closes its menu");
   } finally {
     run(`askShotClearAll();`);
   }
@@ -6482,8 +6483,10 @@ test("🖼: the Photos/Files picker is a hidden multi-file image input beside �
   assert.ok(m, "askpickfile input exists");
   assert.match(m[0], /accept="image\/\*"/);
   assert.match(m[0], /\bmultiple\b/);
-  const btn = html.match(/<button id="askpick"[^>]*>/)[0];
+  const btn = html.match(/<button class="fitem" id="askpick"[^>]*>/)[0];
   assert.match(btn, /aria-label="Attach a picture from Photos\/Files"/);
+  const menu = html.slice(html.indexOf('<div id="askattachmenu"'), html.indexOf("</div>", html.indexOf('<div id="askattachmenu"')));
+  assert.ok(menu.includes('id="askshot"') && menu.includes('id="askpick"'), "screenshot and Photos are items in the ＋ menu, not separate buttons");
 });
 
 test("status: /v1/status is polled like the inbox — the strip shows in EVERY tab and ✦ AI's own aria-label reports it while the bridge is working; no current line = idle; a 404 hides the strip, clears the label, and stops asking", async () => {

@@ -3626,9 +3626,12 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     tapped, opens Ask) plus one info-strip line naming the other song
     when it differs. `openAsk` clears it. Test: "Ask reply badge".
   - **📷 screenshots + 🖼 Photos picker (2026-09-29, several-per-message
-    and 🖼 added 2026-10-02):** `#askshot`/`#askpick`, shown together
-    (`askShotShow` toggles both) once the bridge's inbox answers (only
-    the bridge has one). `askShotCapture`: the iPad shell's native
+    and 🖼 added 2026-10-02):** `#askshot`/`#askpick` are the two items of
+    `#askattachmenu`, a fixed-position drop-up opened by ONE ＋ button
+    (`#askattach`, beside Speak — Josh 2026-10-02: one attach button, the
+    iMessage/ChatGPT pattern). `askShotShow` toggles the ＋ (and closes its
+    menu) once the bridge's inbox answers (only the bridge has one). The
+    menu lives outside #songregion because the AI window docks beside it. `askShotCapture`: the iPad shell's native
     `Screenshot.capture()` (a Capacitor plugin in the shell's
     AppDelegate.swift — WKWebView `takeSnapshot`, JPEG) or, in a
     browser, one frame of `getDisplayMedia` on this tab. `#askpickfile`
