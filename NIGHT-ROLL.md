@@ -6598,3 +6598,14 @@ appendChild/append). No `tests/e2e/*.spec.mjs` spec clicks a `#vw*`/
 `#octbtn`/`#findsel`/`#cofbtn` id directly (grepped — none do, `viewsheetbtn`
 itself is only ever checked for visibility), so none needed updating for
 the new display:none-until-expanded groups.
+
+## Install countdown (Josh, 2026-10-02)
+
+An iPad install relaunches the app. `build-ipad.sh` (night-roll-app) runs
+`node tools/claude-bridge.mjs --deploy-in 20` after the slow xcodebuild and
+sleeps 20 s before `devicectl install`. The bridge holds `deployUntil`
+(POST /v1/deploy {inSec}; 0 cancels) and GET /v1/status carries
+`deployInMs` while it runs. askStatusPoll (10 s) hands it to `deployWarn()`,
+which counts down on ✦ AI locally (gold "✦ AI · N", then "⟳"; reset after
+90 s if no install came) and says it once in the status line. 20 s because
+the poll is 10 s: he always sees ≥10 s.

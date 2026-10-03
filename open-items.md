@@ -4963,3 +4963,5 @@ Josh: "View ▾ is too tall — make EVERY section an expanding sub-menu." Gener
 ## DONE 2026-10-02 20:15 — switching back into Night Roll stopped YouTube (Josh, Terminal #51): a tap/▶/click that ended while the app was hidden left the session on "playback" (every revert skips a hidden page), and the wake on return resumed the engine under it. The return now sets "ambient" first when nothing is playing. Taps still use "playback" (he accepted that a note tap may stop YouTube). Needs his ear on the iPad.
 
 ## DONE 2026-10-02 20:25 — one ＋ for attachments (Josh, Terminal #52): 📷 and 🖼 merged into a ＋ beside Speak that drops up "📷 Screenshot of Night Roll" / "🖼 Photo Library…" (the iMessage/ChatGPT/Claude-app pattern); Photo Library opens iOS's own chooser (Photo Library / Take Photo / Choose File)
+
+## DONE 2026-10-02 20:40 — heads-up before an iPad install relaunches the app (Josh, Terminal #53): build-ipad.sh → bridge --deploy-in 20 → ✦ AI counts down in gold. Bridge needs a restart to know /v1/deploy (done when idle).

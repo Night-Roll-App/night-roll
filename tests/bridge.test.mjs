@@ -389,3 +389,18 @@ test("bridge: ask-token-plan.md step 7 — warm auto-Compact fires over --compac
   assert.ok(!existsSync(argsLog0) || !readFileSync(argsLog0, "utf8").includes("/compact"), "--compact-at 0 disables auto-compact even over any ctxTokens");
   assert.equal((await (await fetch(base0 + "/v1/sessions/never-song")).json()).lastCompact, null);
 });
+
+test("bridge: --deploy-in warns the app — GET /v1/status carries deployInMs until it runs out; 0 cancels (Josh, 2026-10-02)", async t => {
+  const jobsDir = mkdtempSync(path.join(tmpdir(), "nr-bridge-"));
+  const port = 17000 + Math.floor(Math.random() * 1000);
+  const {child} = await startBridge(["--no-claude", "--port", String(port), "--jobs-dir", jobsDir]);
+  t.after(() => { child.kill("SIGKILL"); rmSync(jobsDir, {recursive: true, force: true}); });
+  const B = "http://127.0.0.1:" + port, H = {"content-type": "application/json"};
+  assert.equal((await (await fetch(B + "/v1/status")).json()).deployInMs, undefined, "no warning before one is sent");
+  const cli = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port), "--deploy-in", "15"], {stdio: ["ignore", "pipe", "pipe"]});
+  assert.equal(await new Promise(r => cli.on("exit", r)), 0, "the CLI posts and exits");
+  const ms = (await (await fetch(B + "/v1/status")).json()).deployInMs;
+  assert.ok(ms > 13000 && ms <= 15000, "about 15 s left: " + ms);
+  await fetch(B + "/v1/deploy", {method: "POST", headers: H, body: JSON.stringify({inSec: 0})});
+  assert.equal((await (await fetch(B + "/v1/status")).json()).deployInMs, undefined, "0 cancels");
+});

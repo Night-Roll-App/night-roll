@@ -344,6 +344,9 @@ On the Claude Code bridge each song's chat is one long-running session that reme
 **What Claude Code is doing now**
 On the Claude Code bridge, **✦ AI**'s own aria-label names whether the terminal's Claude Code is working or idle — refreshed every 10 seconds — with no visual badge on the button itself any more (chrome density follow-up, 2026-10-01 pm, Josh: the small pulsing dot that used to mark it was "always there and distracting"). Open ✦ AI for the full line — **Claude Code working: …** or **Claude Code idle** — in a fixed two-line strip that never grows or shrinks as the status changes (so it can't nudge the chat log above it); tap that line for the last ten steps with their times and the latest commits. Without the bridge (LM Studio, no AI) none of it appears.
 
+**Update countdown**
+On the Claude Code bridge, when a new version is about to be installed on your iPad, **✦ AI** turns gold and counts down (**✦ AI · 15**) and the status line says the app will restart — finish your gesture; your edits are kept as you go. It shows **✦ AI · ⟳** while the install runs.
+
 **📷 Screenshot to Claude**
 On the Claude Code bridge, tap **＋** beside 🎤 Speak, then **📷 Screenshot of Night Roll** to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a thumbnail chip appears above the box — add what to look at and Send. Do it again (up to 4 per message) to attach several at once; each gets its own thumbnail and its own ✕, or tap the chip row's ✕ to drop them all. In a browser, pick this tab when it asks what to share. The same ＋ menu's **🖼 Photo Library…** attaches a picture **from Photos** (or takes one, or picks a file) instead of the app itself — the same 4-per-message limit, thumbnails, and Send line; a huge picture is downscaled and an iPhone/iPad HEIC photo is converted automatically, so it always reaches Claude as a plain JPEG or PNG.
 

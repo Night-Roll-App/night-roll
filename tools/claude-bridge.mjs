@@ -80,7 +80,7 @@
 //
 // Endpoints: GET /v1/models · POST /v1/chat/completions (stream or not) ·
 // GET /v1/jobs (probe: {ok, running}) · GET|DELETE /v1/jobs/:id ·
-// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · GET|POST /v1/app-state · GET|POST /v1/terminal ·
+// GET /v1/inbox?since=ID · POST /v1/inbox · GET|POST /v1/status · POST /v1/deploy · GET|POST /v1/app-state · GET|POST /v1/terminal ·
 // GET|DELETE /v1/sessions/:key (usage {turns, tokens, cost, lastCompact}; DELETE drops the
 // session id so the next turn starts fresh — Clear chat's backend reset;
 // ?turns=1 adds `ring`, the last 50 turns' {t, gapS, in, out, cacheRead,
@@ -199,6 +199,12 @@ if (has("--say")) { // a note for the app's ✦ Ask window (and the song's sessi
   const headers = {"content-type": "application/json"}; if (TOKEN) headers.authorization = "Bearer " + TOKEN;
   fetch(`http://${HOST === "0.0.0.0" ? "127.0.0.1" : HOST}:${PORT}/v1/status`, {method: "POST", headers, body: JSON.stringify({text})})
     .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log(text ? "status set" : "status cleared"); process.exit(0); })
+    .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
+} else if (has("--deploy-in")) { // the iPad build's heads-up: post it to the running bridge and exit, mirroring --status
+  const inSec = +flag("--deploy-in", "15");
+  const headers = {"content-type": "application/json"}; if (TOKEN) headers.authorization = "Bearer " + TOKEN;
+  fetch(`http://${HOST === "0.0.0.0" ? "127.0.0.1" : HOST}:${PORT}/v1/deploy`, {method: "POST", headers, body: JSON.stringify({inSec})})
+    .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error && j.error.message || "HTTP " + r.status); console.log("deploy warning: " + j.inSec + "s"); process.exit(0); })
     .catch(err => { console.error("could not reach the bridge on port " + PORT + ": " + err.message); process.exit(1); });
 } else main();
 
@@ -415,6 +421,11 @@ function sessionUsageView(s, opts) { // {turns, tokens, cost} — s may be undef
 // {rate_limit_info:{unifiedWindows:{five_hour:{utilization,resetsAt},
 // seven_day:{utilization,resetsAt}}}}. Bridge-wide (one Claude Code account),
 // not per-song: kept as the last one seen, surfaced on GET /v1/status.
+// an iPad install is about to relaunch the app (--deploy-in N, from the
+// shell's build-ipad.sh just before devicectl installs): GET /v1/status
+// carries the milliseconds left so the app can count down instead of
+// vanishing mid-edit (Josh, 2026-10-02)
+let deployUntil = 0;
 let lastQuota = null; // {fiveHour:{pct,resetsAt}, sevenDay:{pct,resetsAt}, at} | null (never seen one yet)
 function recordQuota(info) {
   const w = info && info.unifiedWindows;
@@ -722,13 +733,20 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/v1/status") { // "what Claude Code is doing" — GET for the app's poll, POST from --status or a session announcing a step
-    if (req.method === "GET") { const box = statusAll(); return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(), sessions: true, quota: lastQuota}); } // terminal: the app shows ⌨ Terminal only while a session reads it; sessions/quota: gates Compact + the usage line + the plan-quota chip
+    if (req.method === "GET") { const box = statusAll(); const deployInMs = Math.max(0, deployUntil - Date.now()); return json(res, 200, {now: box.now, recent: box.recent, terminal: true, terminalLive: terminalReachable(), sessions: true, quota: lastQuota, ...(deployInMs ? {deployInMs} : {})}); } // terminal: the app shows ⌨ Terminal only while a session reads it; sessions/quota: gates Compact + the usage line + the plan-quota chip
     if (req.method === "POST") {
       let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
       const box = statusSet(b && b.text);
       console.log(box.now ? `status: ${box.now.text.slice(0, 80)}` : "status cleared");
       return json(res, 200, {now: box.now, recent: box.recent});
     }
+  }
+  if (req.method === "POST" && url.pathname === "/v1/deploy") { // {inSec}: an install relaunches the iPad app in inSec seconds (0 cancels)
+    let b; try { b = JSON.parse(await readBody(req)); } catch (err) { return json(res, 400, {error: {message: "bad JSON"}}); }
+    const sec = Math.max(0, Math.min(120, +(b && b.inSec) || 0));
+    deployUntil = sec ? Date.now() + sec * 1000 : 0;
+    console.log(sec ? `deploy: app relaunches in ${sec}s` : "deploy: cancelled");
+    return json(res, 200, {inSec: sec});
   }
   if (req.method === "POST" && url.pathname === "/v1/shot") { // raw PNG/JPEG bytes → a file Claude can Read; answers its path
     const chunks = []; let n = 0;

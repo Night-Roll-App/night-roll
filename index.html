@@ -2029,6 +2029,7 @@
       <dt>New since your last message</dt><dd>On the Claude Code bridge, every message you send — ♩ this song, ✦ Ask, or ⌨ Terminal — carries what’s changed since your last one in THAT chat: any new ⚠ messages, any new status-line readouts (footer/Status window), and on ✦ Ask/⌨ Terminal (which have no song context of their own) which song is open, its view, and your cursor. You never copy an error or a status line over by hand, and a line already sent is never repeated.</dd>
       <dt>Notes from the Mac</dt><dd>On the Claude Code bridge each song's chat is one long-running session that remembers earlier turns, and it can carry a message to the Claude Code sessions in your terminal ("tell the terminal to push the Game Boy branch"). When the terminal writes back, the note appears in ✦ AI as a gold <b>✉</b> bubble (inbox), and the <b>✦ AI</b> button shows ✉ until you open it. Notes are saved with the chat.</dd>
       <dt>What Claude Code is doing now</dt><dd>On the Claude Code bridge, <b>✦ AI</b>'s own aria-label names whether the terminal's Claude Code is working or idle — refreshed every 10 seconds — with no visual badge on the button itself any more (chrome density follow-up, 2026-10-01 pm, Josh: the small pulsing dot that used to mark it was "always there and distracting"). Open ✦ AI for the full line — <b>Claude Code working: …</b> or <b>Claude Code idle</b> — in a fixed two-line strip that never grows or shrinks as the status changes (so it can't nudge the chat log above it); tap that line for the last ten steps with their times and the latest commits. Without the bridge (LM Studio, no AI) none of it appears.</dd>
+      <dt>Update countdown</dt><dd>On the Claude Code bridge, when a new version is about to be installed on your iPad, <b>✦ AI</b> turns gold and counts down (<b>✦ AI · 15</b>) and the status line says the app will restart — finish your gesture; your edits are kept as you go. It shows <b>✦ AI · ⟳</b> while the install runs.</dd>
       <dt>📷 Screenshot to Claude</dt><dd>On the Claude Code bridge, tap <b>＋</b> beside 🎤 Speak, then <b>📷 Screenshot of Night Roll</b> to send Claude a picture of the app: the AI panel steps aside (unless it's docked), the picture goes to your Mac, and a thumbnail chip appears above the box — add what to look at and Send. Do it again (up to 4 per message) to attach several at once; each gets its own thumbnail and its own ✕, or tap the chip row's ✕ to drop them all. In a browser, pick this tab when it asks what to share. The same ＋ menu's <b>🖼 Photo Library…</b> attaches a picture <b>from Photos</b> (or takes one, or picks a file) instead of the app itself — the same 4-per-message limit, thumbnails, and Send line; a huge picture is downscaled and an iPhone/iPad HEIC photo is converted automatically, so it always reaches Claude as a plain JPEG or PNG.</dd>
       <dt>⌨ Terminal tab</dt><dd>Two pickers at its top choose the model the terminal gives its <b>advisors</b> (read-only reviews) and its <b>builders</b> (the agents that write code) — Opus, Sonnet, Haiku or Fable; the terminal session's own model is set at the Mac (/model). The ⌨ Terminal tab in ✦ AI sends your message <b>straight to Claude Code in the Mac's terminal</b> — the session that builds Night Roll — instead of the Ask tutor. Its answers come back in that tab, and the <b>Now:</b> line shows what it's doing; if it's busy, your message waits in its queue. 📷 works the same. If the Mac can't be reached, the message goes back into the box.</dd>
       <dt>The chat is part of the song</dt><dd>The conversation is kept per song, whole, and it is part of the song's save: File → Publish appends everything since the last publish to <code>&lt;song&gt;.ask.md</code> beside the song (your session log — hand it to a code session later), the ● after the song title lights while chat is unsaved, and the Publish sheet lists it. <b>Clear chat</b> starts a fresh session on this device (it asks first if anything is unsaved; the .ask.md keeps what was saved) — on the Claude Code bridge it also tells the Mac to really start over: without this, the same long-running Claude session kept being resumed underneath a cleared-looking chat.</dd>
@@ -23694,6 +23695,26 @@ function askAgeText(t) { // "3m ago" — coarse, no need for seconds precision o
   const h = Math.round(m / 60); if (h < 24) return h + "h ago";
   return Math.round(h / 24) + "d ago";
 }
+// an iPad install is about to relaunch the app (build-ipad.sh → the bridge's
+// --deploy-in, relayed on /v1/status): count down on ✦ AI so the restart
+// never lands unannounced mid-edit (Josh, 2026-10-02: "some sort of notice
+// would be nice … maybe on the AI button"). Counted locally from the ms the
+// bridge reported — no clock shared with the Mac needed.
+let deployAt = 0, deployTimer = null;
+function deployWarn(ms) {
+  const first = !deployTimer;
+  deployAt = Date.now() + ms;
+  if (first) setInfo("a new version installs in " + Math.ceil(ms / 1000) + " s — the app will restart");
+  const b = document.getElementById("askbtn");
+  const tick = () => {
+    const left = Math.ceil((deployAt - Date.now()) / 1000);
+    if (left > 0) { b.textContent = "✦ AI · " + left; b.style.color = "var(--gold)"; return; }
+    b.textContent = "✦ AI · ⟳";
+    if (left < -90) { clearInterval(deployTimer); deployTimer = null; b.textContent = "✦ AI"; b.style.color = ""; } // the install never came: back to normal
+  };
+  if (first) deployTimer = setInterval(tick, 1000);
+  tick();
+}
 async function askStatusPoll() {
   if (!askInboxAllowed() || !song) return; // same gate as the inbox: a host allowed for Ask, and a song open (Ask itself needs one)
   const url = aiUrl();
@@ -23706,6 +23727,7 @@ async function askStatusPoll() {
   askStatusNow = (j && j.now) || null;
   askStatusRecent = (j && j.recent) || [];
   askQuota = (j && j.quota) || null;
+  if (j && j.deployInMs > 0) deployWarn(j.deployInMs);
   askCaps = {bridge: true, terminal: !!(j && j.terminal), terminalLive: !!(j && (j.terminalLive !== undefined ? j.terminalLive : j.terminal)), sessions: !!(j && j.sessions)};
   askStatusRender();
   askTabsApply();

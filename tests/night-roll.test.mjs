@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Update countdown",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave", "reopens with the strip up",
@@ -6664,6 +6664,20 @@ test("audio session: switching back into Night Roll while idle returns to 'ambie
     await new Promise(r => setTimeout(r, 0));
     assert.equal(val(`navigator.audioSession.type`), "playback");
   } finally { run(`navigator.audioSession = __navAS; audio = __aud; resumeAudio = __ra; met.on = false; appErrors.length = 0; appDebug.length = 0;`); }
+});
+
+test("deploy warning: ✦ AI counts down to an iPad install's relaunch, then resets if it never comes (Josh, 2026-10-02)", () => {
+  const app = createApp({intervals: true}); const run = c => app.run(c);
+  run(`deployWarn(12000)`);
+  assert.match(run(`document.getElementById("askbtn").textContent`), /^✦ AI · 1[12]$/);
+  assert.match(run(`document.getElementById("noteinfo").textContent`), /new version installs in 12 s/);
+  run(`deployAt = Date.now() - 1000;`);
+  app.tick(1000);
+  assert.equal(run(`document.getElementById("askbtn").textContent`), "✦ AI · ⟳");
+  run(`deployAt = Date.now() - 100000;`);
+  app.tick(1000);
+  assert.equal(run(`document.getElementById("askbtn").textContent`), "✦ AI", "back to normal");
+  assert.equal(run(`deployTimer`), null);
 });
 
 test("⚠ log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on; chrome density follow-up (2026-10-01 pm, Josh's ruling #3): the footer chip shows only while something's UNREAD, hidden at 0 — View ▾ → BACKGROUND → ⚠ Messages reaches the same sheet always", () => {
