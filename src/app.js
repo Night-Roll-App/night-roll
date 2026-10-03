@@ -12815,7 +12815,11 @@ function openEditor(note, presetType, opts) { // opts.atStart: a new note anchor
     ? "Synced note — edits and deletes become permanent when you Sync." : "";
   applyEditorType();
   editor.classList.add("on");
-  if (type === "note") document.getElementById("ntext").focus();
+  // the text box gets focus only for a NEW text note, where typing is the
+  // next thing — opening an existing one (any kind) must not raise the iPad
+  // keyboard over half the screen (Josh, 2026-10-03)
+  if (type === "note" && !note) document.getElementById("ntext").focus();
+  else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
 }
 document.getElementById("notebtn").addEventListener("click", () => {
   if (!S.song) return;
