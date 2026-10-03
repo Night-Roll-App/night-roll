@@ -2731,21 +2731,21 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
   const FEATURES = [
-    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "⌨ Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>⏳ 42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
+    "Playing in the background", "Every song's row has the same three buttons", "Screenshot to Claude", "from Photos", "counts in from wherever it starts", "Tap ⏱ to turn the click on or off", "<b>H</b> hides the track", "lit <b>H</b>", "Terminal tab", "the <b>Apple Pencil</b> can too", "<b>⌘D</b> duplicates the selection", "every track change: <b>voice, color, volume, pan", "<b>without moving the cursor</b>", "the terminal gives its <b>advisors</b>", "shows <b>42%</b> and waits", "led by <b>Published</b> or <b>Local</b>", "Debug log", "Metronome", "Speed slider", "Lasso", "Chord?", "Challenge?", "Learning mode", "View type", "+ New note",
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
     "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Update countdown",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
-    "⌘Z", "Delete track is one ⟲ away", "chains straight on", "picks up its grid", "quarter-note triplets", "▦N", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
-    "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "⏭ Next", "✕</b> to leave", "reopens with the strip up",
-    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "🎛 Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "⏳", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "⚠", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "✂</b> cuts", "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "🎲 Drummer", "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "● Record", "Drum chart", "Edit ▾", "⟳ Redo", "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
+    "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
+    "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "triangle handle", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
     "Tempo from this take", "Split at cursor", "Remove piece", "Map the bars to this take", "downbeat ▶",
-    "✦ AI", 'data-hsec="ask"', "write notes on your own songs", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "✦ reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message", "add, edit, delete, or publish",
+    "Talk to an AI tutor", 'data-hsec="ask"', "write notes on your own songs", ".ask.md", "Publish song", "Publish all", "NSF repo", "saves itself", "Save Version", "Versions…", "kept automatically", "Before going back", "Compare with repo", "chord annotation on 21.1", "leave the app while a slow reply cooks", "Add to Home Screen", "reply</b> badge", "songs=owner/repo", "your songs repo", "song list in the repo's README", "Dock right", "Beside the roll", "tab group", "Drag-to-dock", "double-tap the strip", "New since your last message", "add, edit, delete, or publish",
     "clear themselves a few seconds", "Publish dialog", "What Claude Code is doing now",
     "Session usage and Compact", "long, Compact saves tokens", "plan usage",
     "an estimated key is named as an estimate", "Check vs file",
@@ -6195,12 +6195,12 @@ test("jobs: a job is a plain record mirrored to this device — progress, done, 
   assert.equal(run(`jobProgress(jobs[0])`), "0/3 · a 40%");
   assert.equal(run(`jobsFind("test", "x", true).title`), "three tracks");
   assert.equal(run(`jobsFind("test", "y", true)`), null);
-  assert.equal(run(`document.getElementById("jobsbtn").textContent`), "⏳ 1");
+  assert.equal(run(`document.getElementById("jobsbtn").textContent`), "1");
   assert.equal(run(`document.getElementById("jobsbtn").style.display`), "");
-  // View ▾ → BACKGROUND → ⏳ Jobs (chrome density follow-up, 2026-10-01 pm):
+  // View ▾ → BACKGROUND → Jobs (chrome density follow-up, 2026-10-01 pm):
   // the running count is reachable from the menu even with the footer
   // button's own sheet (or View ▾ itself) closed.
-  assert.equal(run(`document.getElementById("vwJobs").textContent`), "⏳  Jobs · 1 running");
+  assert.equal(run(`document.getElementById("vwJobs").textContent`), "  Jobs · 1 running");
   app.tick(300); // the throttled mirror lands
   assert.equal(JSON.parse(app.store.get("ff1roll-jobs"))[0].items[0].pct, 0.4);
   run(`__open();`);
@@ -6208,8 +6208,8 @@ test("jobs: a job is a plain record mirrored to this device — progress, done, 
   assert.equal(run(`jobs[0].state`), "done");
   assert.deepEqual(val(`jobs[0].items.map(i => i.st)`), ["done", "done", "silent"]);
   assert.equal(run(`jobProgress(jobs[0])`), "3/3");
-  assert.equal(run(`document.getElementById("jobsbtn").textContent`), "⏳", "finished: no count, dim");
-  assert.equal(run(`document.getElementById("vwJobs").textContent`), "⏳  Jobs", "View ▾'s own count is RUNNING-only too, same as #jobsbtn's own dimming");
+  assert.equal(run(`document.getElementById("jobsbtn").textContent`), "", "finished: no count, dim");
+  assert.equal(run(`document.getElementById("vwJobs").textContent`), "  Jobs", "View ▾'s own count is RUNNING-only too, same as #jobsbtn's own dimming");
   // cancel: ✕ flips aborted; the runner ends the job as cancelled
   run(`globalThis.__gate = new Promise(res => { globalThis.__open = res; });
        jobStart("test", "cancel me", [{label: "a"}, {label: "b"}], async api => { api.update(0, {st: "running"}); await __gate; if (api.aborted) { api.update(0, {st: "cancelled"}); api.cancel(); return; } api.update(0, {st: "done"}); }, {slug: "c"});`);
@@ -6669,36 +6669,36 @@ test("audio session: switching back into Night Roll while idle returns to 'ambie
 test("deploy warning: ✦ AI counts down to an iPad install's relaunch, then resets if it never comes (Josh, 2026-10-02)", () => {
   const app = createApp({intervals: true}); const run = c => app.run(c);
   run(`deployWarn(12000)`);
-  assert.match(run(`document.getElementById("askbtn").textContent`), /^✦ AI · 1[12]$/);
+  assert.match(run(`document.getElementById("askbtn").textContent`), /^AI · 1[12]$/);
   assert.match(run(`document.getElementById("noteinfo").textContent`), /new version installs in 12 s/);
   run(`deployAt = Date.now() - 1000;`);
   app.tick(1000);
-  assert.equal(run(`document.getElementById("askbtn").textContent`), "✦ AI · ⟳");
+  assert.equal(run(`document.getElementById("askbtn").textContent`), "AI · ⟳");
   run(`deployAt = Date.now() - 100000;`);
   app.tick(1000);
-  assert.equal(run(`document.getElementById("askbtn").textContent`), "✦ AI", "back to normal");
+  assert.equal(run(`document.getElementById("askbtn").textContent`), "AI", "back to normal");
   assert.equal(run(`deployTimer`), null);
 });
 
-test("⚠ log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on; chrome density follow-up (2026-10-01 pm, Josh's ruling #3): the footer chip shows only while something's UNREAD, hidden at 0 — View ▾ → BACKGROUND → ⚠ Messages reaches the same sheet always", () => {
+test("Messages log: repeats collapse to ×N; debug lines stay out of the chip unless Settings → Debug log is on; chrome density follow-up (2026-10-01 pm, Josh's ruling #3): the footer chip shows only while something's UNREAD, hidden at 0 — View ▾ → BACKGROUND → Messages reaches the same sheet always", () => {
   run(`appErrors.length = 0; appDebug.length = 0; localStorage.removeItem("ff1roll-debuglog"); localStorage.removeItem("ff1roll-ask-seen-max"); errChip();`);
   assert.equal(run(`document.getElementById("errbtn").style.display`), "none", "nothing logged yet: hidden");
-  assert.equal(run(`document.getElementById("vwMessages").textContent`), "⚠  Messages", "View ▾'s own item has no count at 0, but is still there");
+  assert.equal(run(`document.getElementById("vwMessages").textContent`), "  Messages", "View ▾'s own item has no count at 0, but is still there");
   run(`logErr("same thing"); logErr("same thing"); logErr("same thing"); logDebug("probe detail");`);
   assert.equal(val(`appErrors.length`), 1);
   assert.equal(val(`appErrors[0].n`), 3);
   assert.match(val(`logLine(appErrors[0])`), /same thing  ×3$/);
-  assert.equal(run(`document.getElementById("errbtn").textContent`), "⚠ 1", "the debug line is kept but not counted");
+  assert.equal(run(`document.getElementById("errbtn").textContent`), "1", "the debug line is kept but not counted");
   assert.equal(run(`document.getElementById("errbtn").style.display`), "", "1 unread: shown");
-  assert.equal(run(`document.getElementById("vwMessages").textContent`), "⚠  Messages · 1", "View ▾'s own item carries the same unread count");
+  assert.equal(run(`document.getElementById("vwMessages").textContent`), "  Messages · 1", "View ▾'s own item carries the same unread count");
   run(`localStorage.setItem("ff1roll-debuglog", "1"); errChip();`);
-  assert.equal(run(`document.getElementById("errbtn").textContent`), "⚠ 2", "with the switch on it is counted and shown");
+  assert.equal(run(`document.getElementById("errbtn").textContent`), "2", "with the switch on it is counted and shown");
   assert.equal(run(`document.getElementById("errbtn").style.display`), "", "still unread: shown");
-  assert.equal(run(`document.getElementById("vwMessages").textContent`), "⚠  Messages · 2");
+  assert.equal(run(`document.getElementById("vwMessages").textContent`), "  Messages · 2");
   assert.match(val(`logLines().map(logLine).join("|")`), /\[debug\] probe detail/);
   run(`localStorage.removeItem("ff1roll-debuglog"); appErrors.length = 0; appDebug.length = 0; errChip();`);
   assert.equal(run(`document.getElementById("errbtn").style.display`), "none", "cleared: hidden again");
-  assert.equal(run(`document.getElementById("vwMessages").textContent`), "⚠  Messages", "View ▾'s own item drops back to no count");
+  assert.equal(run(`document.getElementById("vwMessages").textContent`), "  Messages", "View ▾'s own item drops back to no count");
 });
 
 test("audio wake outside a tap: a clock that won't move is a debug line with what was measured, never an ⚠ error or a rebuild", async () => {
@@ -6888,15 +6888,15 @@ test("▶ waits for the song: a percentage while the console voice renders; a ta
   assert.equal(val(`playGate()`), null, "nothing loading: no gate, no flash");
   run(`chip.rendering = songKey; chip.progress = 0.42; playGateKick(); playGateSince -= 1000; playGateTick();`);
   assert.equal(val(`document.getElementById("playbtn").classList.contains("loading")`), true);
-  assert.equal(val(`document.getElementById("playbtn").textContent`), "⏳ 42%");
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "42%");
   run(`globalThis.__played = 0; globalThis.__realPlay = play; play = async () => { __played++; }; document.getElementById("playbtn").dispatchEvent({type: "click"});`);
   assert.equal(val(`__played`), 0, "a tap while loading doesn't play yet…");
-  assert.equal(val(`document.getElementById("playbtn").textContent`), "⏳ 42% · will play", "…it queues");
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "42% · will play", "…it queues");
   run(`document.getElementById("playbtn").dispatchEvent({type: "click"});`);
-  assert.equal(val(`document.getElementById("playbtn").textContent`), "⏳ 42%", "a second tap cancels");
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "42%", "a second tap cancels");
   run(`document.getElementById("playbtn").dispatchEvent({type: "click"}); chip.rendering = null; playGateTick();`);
   assert.equal(val(`__played`), 1, "loaded: the queued play starts by itself");
-  assert.equal(val(`document.getElementById("playbtn").textContent`), "▶ Play");
+  assert.equal(val(`document.getElementById("playbtn").textContent`), "Play");
   run(`play = __realPlay; clearInterval(playGateTimer); playGateTimer = null;`);
 });
 
@@ -7560,11 +7560,11 @@ test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up fro
   `);
   assert.equal(a.run(`document.getElementById("viewswitchmenu").classList.contains("on")`), true, "opens the drop-up");
   assert.equal(a.run(`viewMode`), "score", "opening the drop-up never changes the view by itself");
-  assert.match(a.run(`document.getElementById("viewbtn").textContent`), /^𝄞 Score ▴$/, "the button's own label names the CURRENT view, not the next one");
+  assert.match(a.run(`document.getElementById("viewbtn").textContent`), /^𝄞 Score ▴$/, "the button's own label names the CURRENT view, not the next one (the icon is a KEEP glyph for Score, an svg.ico for Roll/Tracks)");
   a.run(`document.getElementById("vsRoll").click();`);
   assert.equal(a.run(`viewMode`), "roll", "picking a row sets the mode");
   assert.equal(a.run(`document.getElementById("viewswitchmenu").classList.contains("on")`), false, "picking a row closes the drop-up");
-  assert.match(a.run(`document.getElementById("viewbtn").textContent`), /^▦ Roll ▴$/);
+  assert.match(a.run(`document.getElementById("viewbtn").textContent`), /^Roll ▴$/, "Roll/Tracks show a Material icon (no glyph left in textContent)");
   a.run(`document.getElementById("viewbtn").click(); document.getElementById("vsTracks").click();`);
   assert.equal(a.run(`viewMode`), "tracks");
 });

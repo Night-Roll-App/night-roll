@@ -6609,3 +6609,101 @@ sleeps 20 s before `devicectl install`. The bridge holds `deployUntil`
 which counts down on ✦ AI locally (gold "✦ AI · N", then "⟳"; reset after
 90 s if no install came) and says it once in the status line. 20 s because
 the poll is 10 s: he always sees ≥10 s.
+
+## Material icons (2026-10-02)
+
+Icon audit (docs/icon-audit.html, Josh: "those all look great, go ahead and
+do it") swapped 41 emoji/Unicode glyphs for Google Material Icons (outlined
+style, `@material-design-icons/svg`, Apache-2.0) across the toolbar,
+transport, footer, AI window and File/Edit/View menus. Kept unchanged:
+music notation (durations, accidentals, 8va, the ♪/𝄞/♫ glyphs), the M/S/H
+track-chip convention, and the ▸/▾/▴/◂ disclosure carets — none of those
+have a clearer Material equivalent, and the carets are one consistent
+family already used in 15+ places. A few rows were graded EITHER
+(no urgency either way, e.g. ⇅ Transpose, 🥁 Drum fill, ■ Stop) and were
+left as they were.
+
+**`ICON`** (near the top of the `<script>`, right after the `EDITION`/
+`APP_BASE` block — boot-path TDZ rule, since renderViewMenu and other
+boot-time renderers call it) is a plain object: `name -> "<path d=...>"`
+(sometimes several `<path>`/`<circle>` tags). **`iconSvg(name, cls)`**
+wraps that into `<svg class="ico [cls]" viewBox="0 0 24 24"
+aria-hidden="true" data-name="name">…</svg>`. A static button that never
+gets rewritten just inlines the svg directly in the HTML (as `#copybtn`
+already did before this pass); a control JS rewrites (counts, the
+Play/Stop swap, View ▾'s checkmarks) calls `iconSvg()` at render time, or
+— for a handful of help-sheet placeholders — gets filled from `ICON` at
+boot via `svg[data-icon]`.
+
+**CSS** (`svg.ico`/`.ico`, near the top of `<style>`): `.ico` alone is the
+centered icon-only-button size (18px); `.ico.txt` sits inline beside
+visible text at the same 18px (transport/footer controls — Play, Prev,
+reply…); `.fitem .ico` is the ~16px drop-up/menu-row size, a plain
+descendant selector so every Edit ▾/View ▾/File row picks it up with no
+extra class; `.ico.inl` is a ~1em inline size for naming a switched icon
+inside help-sheet prose. Icons use `fill: currentColor`, so disabled/
+active/gold states still work with zero extra CSS.
+
+**The label-span problem.** `textContent =` wipes any child `<svg>`, so
+every control JS rewrites got restructured around it:
+- `#playbtn`: `setPlayBtn(state, label)` (defined right beside `iconSvg()`)
+  rebuilds the whole button's `innerHTML` — icon (play_arrow/stop/
+  hourglass_empty while loading) + label — every time, instead of the old
+  `"▶ "` / `"■ "` / `"⏳ "` text prefix. Every `playbtn.textContent = …`
+  call site became a `setPlayBtn(…)` call.
+- `#jobsbtn`/`#errbtn` and their View ▾ twins `#vwJobs`/`#vwMessages`: the
+  svg is a static sibling in the HTML; `updateJobsBtn()`/`errChip()` only
+  ever touch a `.lbl` span's `textContent` now.
+- `#gridchip`/`#vwGrid` (the custom-grid chip, ▦N before): same pattern,
+  svg static, `.lbl` carries just the count/"N/bar" suffix.
+- `#viewbtn` (the footer Roll/Tracks/Score drop-up) and `#vsRoll`/
+  `#vsTracks`/`#vsScore`: `applyViewMode()`/`renderViewSwitch()` rebuild
+  `innerHTML` fresh each call (icon or, for Score, a `<span class="ico
+  glyph">𝄞</span>` — 𝄞 is a KEEP glyph, not a switch, but it still needs
+  to survive the same rebuild, so it rides in the same icon slot as plain
+  text instead of an svg).
+- `renderViewMenu()`'s `base` table (Roll/Listener mode/Tracks view/Mixer/
+  Edit toolbar/Bottom bar/Instrument panel/Compare with repo/Analyze ▸,
+  plus the KEEP glyphs Score view/Tracks/Outline new notes/Notes strip/
+  Learning mode riding the same `{icon}`-or-`{glyph}` shape) rebuilds each
+  row's `innerHTML` as `<span class="chk"></span>` + icon/glyph +
+  `<span class="lbl">text</span>`; `set(id, on, dim)` now only ever
+  touches `.chk` (the fixed "✓ "/"   " state column), never the whole
+  button.
+- `#askbtn`: `<svg class="ico txt">` (auto_awesome) + `<span
+  class="lbl">AI</span>`; `deployWarn()`'s install countdown writes only
+  into `.lbl` ("AI · N", then "AI · ⟳" — the "⟳" itself is a deliberate
+  reuse of the redo glyph as a stuck-install spinner, not the Undo/Redo
+  icon switch, and is left as-is).
+- `fsubItem(label, onTap, dim, icon)` (File ▾'s sub-menu builder) grew an
+  optional 4th argument; passing an icon name builds `iconSvg(icon) + "
+  " + label` instead of plain text. Used for "Play album" (💿 → `album`).
+- Help-sheet inline icons (none needed in the end — every mention of a
+  switched glyph in help-sheet prose was reworded to the word form
+  instead, e.g. "⏳ Jobs" → "Jobs", "⟲ step" → "undo step"; see the next
+  paragraph) would use `<svg class="ico inl" data-icon="name"></svg>`,
+  filled by the same `svg[data-icon]` boot fill `iconSvg()` writes to —
+  that mechanism exists (a one-line `querySelectorAll` at boot) for any
+  future case where the word form reads worse than a small inline icon.
+
+**Help sheet & tests.** Every `<dt>`/inline `<b>` mention of a switched
+control's OLD glyph was rewritten to name it in words instead (the
+alternative the icon audit task allowed) — "☰ Notes ▴" → "Notes ▴", "⟲
+step" → "undo step", "🎲 Drummer" → "Drummer button", etc. Left alone,
+deliberately: glyphs that are still genuinely in use elsewhere for an
+unrelated meaning (the per-row "⚠ failed"/"⏳ preparing N%" convention in
+job/publish lists, the "●" unsaved-dot indicator, the deploy countdown's
+"⟳" spinner, the recording-piece "◀ downbeat / downbeat ▶" shift control,
+the circle-of-fifths "⟲"/"⟳" rotate buttons) — none of those are the
+switched CONTROL itself, just a glyph that happens to look similar.
+tests/night-roll.test.mjs's `FEATURES` drift list (the "help sheet covers
+every shipped feature" test) had its glyph-bearing keywords swapped for
+a word-form phrase still present in the rewritten text (e.g. `"⟳ Redo"` →
+`"edit: Undo, Redo, Copy"`, `"✦ AI"` → `"Talk to an AI tutor"`) so the
+guard still actually checks something.
+
+**Rule for new controls:** use a Material icon (outlined,
+`@material-design-icons/svg`) unless the audit's KEEP reasons apply —
+real music notation, the M/S/H convention, or a disclosure
+caret/chevron. Add the path to `ICON` once; don't inline the same path
+string in two places.

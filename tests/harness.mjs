@@ -116,17 +116,24 @@ function makeEl() {
   // anything else that queries .children after a re-render, e.g. `wrap.innerHTML
   // = ""; tracks.forEach(t => wrap.appendChild(...))`) needs that reflected here
   // too, not just the string kept for its own sake; a bare data property left
-  // .children stale across a second render
+  // .children stale across a second render. It also derives a plain-text
+  // `_textContent` (tags stripped) — icon audit, 2026-10-02: a button built as
+  // `iconSvg(name) + label` (an svg + plain text, no wrapping element) is now
+  // common, and a real browser's .textContent reads straight through the svg
+  // to that label; this stub has no real tree to walk, so it approximates
+  // with a tag-strip. Good enough for this app's actual innerHTML shapes
+  // (svg/span wrappers around real text, never markup that LOOKS like a tag
+  // inside the visible text itself).
   let _innerHTML = "";
+  let _textContent = "";
   Object.defineProperty(el, "innerHTML", {
     get: () => _innerHTML,
-    set: (v) => { _innerHTML = v; el.children = []; },
+    set: (v) => { _innerHTML = v; _textContent = String(v).replace(/<[^>]*>/g, ""); el.children = []; },
   });
   // same reasoning as innerHTML above (2026-10-01): a real `el.textContent =
   // "…"` replaces every child node too — renderSyncPending's own clear
   // (`box.textContent = ""`) relied on that and, as a bare data property,
   // silently left `.children` to accumulate across repeated renders
-  let _textContent = "";
   Object.defineProperty(el, "textContent", {
     get: () => _textContent,
     set: (v) => { _textContent = v; el.children = []; },
