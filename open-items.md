@@ -50,6 +50,15 @@ Q6. (found 2026-10-02, module-split step 0b) A real, pre-existing bug in
     this a dead path worth deleting instead? tools/split/check.mjs's static
     scan (not a test, not an ear report) found it — not fixed as part of the
     split (a verbatim move must not touch app logic).
+Q12. (found 2026-10-03, module-split step 4) `estimateKey` and
+    `checkKeyVsFile` did NOT move to src/theory/key.js as the plan named,
+    because both call model-layer helpers not split out yet
+    (`trackIsDrums` via `keyEstimateSig`; `barTicks`) — moving them now
+    would mean theory importing from app.js, which check.mjs's layer rule
+    forbids. Not asking you to decide anything now — just flagging that
+    whichever later step moves `trackIsDrums`/`barTicks` (step 5's
+    model/grid.js, by the table) should also finish this move. Full
+    reasoning: docs/split-plan.md "Deviations (4)".
 Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
@@ -5176,3 +5185,62 @@ detail + deviations: docs/split-plan.md "Deviations (3)". NOT pushed: main
 session still needs to browser-verify (localhost + packaged dist) before
 pushing and building for the iPad — same as every prior step, this is a
 pure refactor with no user-facing change.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 4: src/theory/chords.js + src/theory/key.js (docs/split-plan.md)
+Worktree branch worktree-agent-ab420f8b09566d0df, commit 40a73ba8, on top
+of step 3 (fa87502e/db529279, already merged to main). `move.mjs --names
+SHARP_SPELL,spellMemo,spellFor,spellPc,pitchName,CHORD_TEMPLATES,nameChord,
+CHORD_FLAT,chordSym,NUM_DEG,MAJ_STEP,MIN_STEP,parseNumeral,
+splitProgression,CHORD_BASES,CHORD_EXTS,chordQualParse,chordQualCompose,
+parseChordSym,SF_MAJOR,LETTERS,LETTER_PC,keySpelling --to
+src/theory/chords.js`, then `--names
+TONIC_SPELL,FIFTHS_POS,MODE_FIFTHS,trueSf,keyNameFor,pearsonCorr,fileKeyAt,
+checkMeterVsFile --to src/theory/key.js`, both over src/app.js — by NAME
+(neither cluster sits under one banner; each is scattered across 2-3
+sections hundreds of lines apart, interleaved with UI code that stays).
+
+Two real findings (full reasoning: docs/split-plan.md "Deviations (4)"):
+- `spellPc`'s implicit-`sf` default called `sfShownAt()` (the Learning/
+  Normal mode gate), which stays in app.js until platform/mode.js's own
+  step — moving `spellPc` as written would have made theory (layer 0)
+  import app.js (layer 5), a check.mjs rule-5 violation. Fixed by
+  resolving `sfShownAt(S.playCursor)` at the one call site that relied on
+  the default (the roll ruler's pitch-class label) instead of inside
+  `spellPc` — a one-line, value-identical change, not a byte-identical
+  move, for that one function only. `spellFor`/`keySpelling`/
+  `SHARP_SPELL`/`spellMemo`/`SF_MAJOR`/`LETTERS`/`LETTER_PC` moved too
+  (unlisted by the plan, load-bearing: `spellPc` calls `spellFor` on
+  every non-null `sf`, not just the default branch).
+- `estimateKey` and `checkKeyVsFile` — the plan's two biggest named
+  targets — did NOT move: both reach into model-layer helpers not split
+  out of app.js yet (`trackIsDrums` via `keyEstimateSig`; `barTicks`).
+  Moving them would be a rule-5 violation a verbatim move can't fix
+  without misfiling a model helper into theory or rewriting the
+  functions. Both stay exactly where they were, bare-name reachable;
+  every Learning-mode gating spy test still passes unchanged. Flagged as
+  Q12 above for whichever later step moves trackIsDrums/barTicks.
+
+`regen-e2e-footer.mjs --file src/app.js` re-run; devtools.js gained
+`theoryChords`/`theoryKey` namespace imports (GET-only); sw.js
+APP_MODULES gained both files, SW_VERSION nr-v9 → nr-v10; index.html's
+modulepreload list gained both, grouped with the other layer-0 modules;
+tests/modules.test.mjs's checkSrc fileCount assertion bumped 9 → 11.
+NIGHT-ROLL.md's module map gained both entries.
+
+Verified: night-roll.test.mjs 417 (416 pass + 1 pre-existing env skip),
+gestures 17/17, modules 33/33, controls 3/3, bridge 10/10, pwa 3/3,
+package 3/3, nsf 20/20 (3 pre-existing vault-only skips), chip-worker
+31/31, migrate-rollnotes 9/9 — all green. `node tools/split/check.mjs`
+clean except the known pre-existing oldBpb finding (Q6);
+check-e2e-globals.mjs and check-controls.mjs clean. `node
+tools/package.mjs --out /tmp/nr-dist-s4`: 47 runtime modules (unchanged —
+theory/ adds no tools/-side runtime module of its own). `tools/at.mjs`,
+`tools/pitch-census.mjs`, `tools/annotations.mjs`,
+`tools/loop-targets.mjs` and `tools/dump_notes.mjs` re-verified against
+real songs in albums/starters/ (never albums/compositions/) —
+`dump_notes.mjs`'s output on a scratch copy of fur-elise.mid is
+byte-identical to the committed .notes.txt. `npm run test:e2e:smoke`
+(allowed once locally): chromium 8/8 passed. NOT pushed: main session
+still needs to browser-verify (localhost + packaged dist) before pushing
+and building for the iPad — same as every prior step, this is a pure
+refactor with no user-facing change.
