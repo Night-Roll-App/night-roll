@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
@@ -10344,6 +10344,17 @@ test("panning can push the song left to show ~16 empty bars past its end; zoom-o
   const r = val(`({x: view.x, endPx: songEndTick * pxPerTick(), barPx: barTicks() * pxPerTick(), vis: wrap.clientWidth - RULER_W})`);
   const emptyBarsVisible = (r.x + r.vis - r.endPx) / r.barPx;
   assert.ok(emptyBarsVisible > 15.5 && emptyBarsVisible < 16.5, "about 16 empty bars past the end: " + emptyBarsVisible);
+  run(`song = null; songKey = "midi/test.mid";`);
+});
+
+test("the ruler selection survives a relaunch: kept per song on this device, restored when that song opens (Josh, 2026-10-03)", () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/range-test.mid"; rangeSel = {a: 1920, b: 3840, cycle: true}; draw();`);
+  assert.deepEqual(val(`JSON.parse(localStorage.getItem("ff1roll-range-albums/compositions/nightroll/range-test.mid"))`), {a: 1920, b: 3840, cycle: true, off: false});
+  assert.deepEqual(val(`rangeSelRestore("albums/compositions/nightroll/range-test.mid")`), {a: 1920, b: 3840, cycle: true});
+  assert.equal(val(`rangeSelRestore("albums/compositions/nightroll/other.mid")`), null, "another song starts with none");
+  run(`rangeSel = null; draw();`);
+  assert.equal(val(`localStorage.getItem("ff1roll-range-albums/compositions/nightroll/range-test.mid")`), null, "cleared range is forgotten");
   run(`song = null; songKey = "midi/test.mid";`);
 });
 

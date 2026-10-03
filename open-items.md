@@ -5429,3 +5429,5 @@ Josh published lotion and the breadcrumb did not change. Cause (src/app.js songW
 ## 2026-10-03 15:10 — CI red on 561a2e9: WebKit (iPad Pro 11, 1194px) stacks the top bar now that the threshold counts #timectl; the stack happened a frame AFTER renderTrackbar (observer → rAF), shifting the roll under e2e drags that had just measured. renderTrackbar now calls fitTrackRow() synchronously. Watching CI.
 
 ## 2026-10-03 15:25 — 0310e28 reopened the song via openDraftDoc after Save; that replaced S.song under callers still holding it (e2e newComposition → seedChord lost its notes; smoke 4 failures locally). Replaced with an in-place finalizeNotes()+updateSongMeta(); smoke 8/8; browser: 175 / C locrian shown right after Save.
+
+## DONE 2026-10-03 15:45 — ruler selection survives a relaunch (Josh, Terminal #78): rangeSel kept per song in localStorage (ff1roll-range-<key>, a view pref), written from draw() when it changes, restored in setSong, carried by renameLocalKeys
