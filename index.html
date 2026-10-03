@@ -1731,6 +1731,23 @@
   </div>
 </div>
 
+<div class="overlay" id="delbarsheet">
+  <div class="sheet">
+    <h2>DELETE BARS</h2>
+    <p class="meta" style="margin:0 0 8px;white-space:normal">Closes a gap: a note starting inside is removed, one sustaining across the cut is clipped there, everything after slides left to fill it. Notes, sections, chords, the loop — all carried; one anchored inside the deleted bars moves to the cut point instead of being lost, and one straddling it shrinks. One undo undoes it.</p>
+    <div class="row" style="align-items:center;gap:8px">
+      <span class="meta">From&nbsp; bar</span>
+      <input id="delb" type="number" min="1" step="1" inputmode="numeric" style="width:64px;min-height:44px;text-align:center;font-size:1.0625rem">
+      <span class="meta">count</span>
+      <input id="deln" type="number" min="1" step="1" inputmode="numeric" value="1" style="width:64px;min-height:44px;text-align:center;font-size:1.0625rem">
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="delgo" class="primary">Delete</button>
+      <button id="delclose" style="margin-left:auto">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="gridsheet">
   <div class="sheet">
     <h2>GRID</h2>
@@ -1935,6 +1952,7 @@
       <dt>▤ Tracks view</dt><dd>The arrangement view (the view drop-up bottom-left in the footer — Roll / Tracks / 𝄞 Score, its label naming the CURRENT view; also in View ▾): one lane per track, its notes drawn as a thumbnail (each lane scaled to its own range), with the track's color dot, name, M/S, and a volume fader in the lane header — the fader saves as the same vol= annotation as the voice menu's. Tap a note to select it (it sounds); lasso a box and it selects by TIME across every lane it touches — cross-track selection in one gesture. Hold-to-grab a selected note and drag: sideways moves it in time (bar-magnet-free, 16th snap), and <b>dragging up or down carries the whole selection to another lane</b> — pitch kept, one undo undoes it, drums and melodic lanes never mix. Dragging shows a ghost until you release. Tap a lane's header to select that track; tap the selected track's header again for its voice & volume menu. Pencil doesn't draw here (a squeezed lane has no honest pitch) — it draws in Roll or Score; Erase works. The ruler above is the same one as always: sections, cycle, magnetic bars, the playhead triangle.</dd>
       <dt>🎸 Bassist</dt><dd>The 🎸 beside Drummer (behind More, or Edit ▾ → Bassist…) generates a bassline for the range onto a track you pick (defaults to a NEW bass track unless an empty one exists — it never silently overwrites your notes; the status line says exactly what it replaces). PITCHES COME FROM YOUR DECLARED CHORDS — chord tones, slash basses honored (C♯/F walks to the F), N.C. bars pedal the key root; gaps ride the last chord. With ONLY a melody and no chords, it sketches the melody's harmony internally (duration-weighted, strong beats count more) and plays bass under that sketch — the sketch is never shown or written anywhere, and different seeds read the melody differently, which is the idea machine — declared chords always win bar-by-bar, inference only fills the unannotated gaps. The bass PLAYS THROUGH your Break sections (a Break is bass-alone by your own device). Styles: <b>chug</b> (root 8ths), <b>pump</b> (root–fifth), <b>arp</b> (chord tones cycling), <b>walk</b> (approach notes INTO each coming chord — the leading-tone move, mechanized), <b>riff</b> (rhythm copied from the follow source: the kick, any track, or the chord changes). busy 1–5, octave 1–3, strictly monophonic (NES-legal), same take chips / one-undo replace / same-label-sections-restate contract as the Drummer.</dd>
       <dt>Insert bars</dt><dd>Edit ▾ → Insert bars… opens a gap anywhere in the song: pick the spot (bar + beat, decimals fine), how much (a count of <b>bars</b>, <b>beats</b>, or <b>16ths</b>), and Insert. Everything from that point onward — notes, sections, chords, keys, the loop point — slides right together. A section that starts before the point and is still open there STRETCHES to span the gap; one that ends exactly at the point stays put (stretch it yourself if you want it covering the new bars). One undo undoes the whole thing.</dd>
+      <dt>Delete bars</dt><dd>Edit ▾ → Delete bars…, right under Insert bars, closes a gap instead of opening one: pick the bar to start from (defaults to the cursor's bar) and how many to remove, and Delete. A note starting inside the deleted bars is removed; one sustaining across the cut is clipped there; everything after slides left to fill the gap — notes, sections, chords, keys, the loop point, all carried, same as Insert bars. Annotations never die: one anchored inside the deleted span moves to the cut point instead of being lost, and one straddling the cut shrinks rather than being duplicated or orphaned. The status line names what moved. One undo undoes the whole thing.</dd>
       <dt>Space</dt><dd>Play / stop, Logic-style — anywhere except while typing in a text field. With a hardware keyboard on iPad too.</dd>
       <dt>Hardware keyboard</dt><dd>Logic's keys: <b>Return</b> back to the start (or the cycle's start), <b>K</b> click on/off, <b>C</b> cycle on/off, <b>R</b> record, <b>Q</b> quantizes the selection, <b>⌘← / ⌘→</b> zoom out / in around the cursor. Editing: <b>⌘A</b> selects every visible note, <b>⌘C / ⌘X / ⌘V</b> copy, cut, paste at the playhead, <b>⌘D</b> duplicates the selection right after itself (whole bars when it's longer than a beat — press again to keep repeating), <b>⌘Z / ⇧⌘Z</b> undo / redo, <b>⌘S</b> Save Version, arrows move, ⇧ an octave, ⌥ resizes, Delete removes.</dd>
       <dt>Grid</dt><dd>Notes move and resize on a 16th grid, or on triplet steps while a <b>T</b> duration is active — and the duration chips stay visible in <b>Select</b>, where they are that move grid, so changing it never means a trip through Pencil. Touching a note <b>picks up its grid</b> automatically: grab a triplet note and moves go in triplet steps, grab a straight one and they go in 16ths; tap a chip afterwards to override. View ▾ → <b>Grid…</b> opens a sheet: tap a number of <b>lines per bar</b> (say 10) and the roll redraws instantly with that many lines in each bar — and pencil entry, note drags and resizes all SNAP to those lines. Pure view-and-snap aid: no note moves, no annotation changes, the time signature stays what it is. This is how a figure the duration buttons can't spell — ten even notes across a 4/4 bar, each 0.4 beats — becomes pencil-drag from line to line; with a grid armed, a pencil tap lays down one cell — in the roll, the fall view and the score alike — so 6 lines per bar pencils quarter-note triplets and 12 pencils eighth triplets without touching the duration chips (they dim while a grid rules, and a chip appears at the end of the row naming the grid — tap it for the sheet; opening another song turns the grid off). Set the <b>anchor</b> right in the sheet — bar and beat, and the beat takes decimals for sub-beat starts (2.5 = the "and" of 2, 2.25 = the second sixteenth) — and the lines run from there (14.2, say), so a figure beginning mid-bar gets its lines exactly where its notes go, continuing bar after bar on that phase across the whole song. Bar lines stay drawn for orientation but stop being snap targets while the grid is armed; a bar line falling between cells is expected, not a bug. <b>Off</b> returns to the meter's own grid (16ths, or triplet steps while a T duration is armed). Transient by design: set it, enter the passage, set it back.</dd>
@@ -2226,6 +2244,7 @@
   <button class="fitem" id="emMove"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>  Move to track…</button>
   <button class="fitem" id="emTranspose">⇅  Transpose…</button>
   <button class="fitem" id="emInsertBars"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-8-2h2v-4h4v-2h-4V7h-2v4H7v2h4z"/></svg>  Insert bars…</button>
+  <button class="fitem" id="emDeleteBars"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 10H3v2h11v-2zm0-4H3v2h11V6zM3 16h7v-2H3v2zm11.41 6L17 19.41 19.59 22 21 20.59 18.41 18 21 15.41 19.59 14 17 16.59 14.41 14 13 15.41 15.59 18 13 20.59 14.41 22z"/></svg>  Delete bars…</button>
   <div class="fdiv"></div>
   <button class="fitem" id="emChord">♫  Insert chord…</button>
   <button class="fitem" id="emFill">🥁  Drum pattern…</button>
@@ -2735,6 +2754,7 @@ const ICON = {
   contentCut: '<path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/>',
   callSplit: '<path d="m14 4 2.29 2.29-2.88 2.88 1.42 1.42 2.88-2.88L20 10V4h-6zm-4 0H4v6l2.29-2.29 4.71 4.7V20h2v-8.41l-5.29-5.3L10 4z"/>',
   deleteIcon: '<path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/>',
+  playlistRemove: '<path d="M14 10H3v2h11v-2zm0-4H3v2h11V6zM3 16h7v-2H3v2zm11.41 6L17 19.41 19.59 22 21 20.59 18.41 18 21 15.41 19.59 14 17 16.59 14.41 14 13 15.41 15.59 18 13 20.59 14.41 22z"/>',
   moreHoriz: '<path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>',
   swapHoriz: '<path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>',
   casino: '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="7.5" cy="7.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="7.5" r="1.5"/>',
@@ -6857,6 +6877,66 @@ function openGapShift(T, delta) {
   }
   return {modItems, annoBefore, touched};
 }
+// closeGap: the CORE of Delete bars — the inverse of openGapShift. Removes
+// the time span [T, T+len) on every track: a note starting inside is
+// deleted outright; one that sustains across T is clipped to stop there;
+// everything at/after T+len shifts earlier by len. Annotations never die
+// (Learning mode — they're Josh's own analysis): the tick mapper below
+// leaves anything before T alone, collapses anything inside the span to T
+// (so an anchor in the deleted range moves to the cut point instead of
+// being destroyed), and shifts anything at/after T+len earlier by len — the
+// SAME mapper applied to both start and end means a range straddling the
+// cut (start < T, end inside or past the span) shrinks by exactly the
+// overlap, mirroring openGapShift's straddle-stretch rule in reverse; one
+// ending exactly at T (so unaffected either way) needs no special case, same
+// as openGapShift's "ends exactly at the point stays put". Returns the raw
+// pieces for ONE undo group; caller pushes undo and runs its own save/draw
+// (same contract as openGapShift).
+function closeGap(T, len) {
+  const clamp = x => x < T ? x : Math.max(T, x - len);
+  const annoBefore = annoSnapshot();
+  const modItems = [], erasedItems = [];
+  song.tracks.forEach((tr, ti) => tr.notes.forEach((n, ni) => {
+    if (n.gone) return;
+    if (n.t >= T && n.t < T + len) { // starts inside the deleted span: gone
+      n.gone = true;
+      const rn = song.rawNotes && n.ri !== undefined && song.rawNotes[ti][n.ri];
+      if (rn) rn.gone = true;
+      erasedItems.push({ti, ni});
+    } else if (n.t < T && n.t + n.d > T) { // sustains across T: clip, stop at T
+      modItems.push({ti, ni, t: n.t, d: n.d, p: n.p, v: n.v});
+      n.d = T - n.t;
+      const rn = song.rawNotes && n.ri !== undefined && song.rawNotes[ti][n.ri];
+      if (rn) rn.d = n.d;
+    } else if (n.t >= T + len) { // after the span: shift earlier
+      modItems.push({ti, ni, t: n.t, d: n.d, p: n.p, v: n.v});
+      n.t -= len;
+      const rn = song.rawNotes && n.ri !== undefined && song.rawNotes[ti][n.ri];
+      if (rn) rn.t = n.t + chopS;
+    }
+  }));
+  let touched = 0, movedToT = 0;
+  for (const n of rollnotes) {
+    const wasInSpan = n.start >= T && n.start < T + len;
+    const newStart = clamp(n.start);
+    // a REAL declared range has n.b2 (resolveNote's own test); n.end alone
+    // isn't safe here — chords/sections with no b2 still get a synthetic
+    // one-bar n.end for the editor's depth-stacking (finalizeNotes, "secs"
+    // below), and clamping THAT independently of the anchor would carve a
+    // fake partial-bar range out of a plain point annotation that merely
+    // got moved by the cut.
+    const hasEnd = n.b2 !== undefined && n.b2 !== null;
+    const newEnd = hasEnd ? clamp(n.end) : n.end;
+    if (newStart !== n.start || newEnd !== n.end) {
+      setAnchorBQ(n, newStart);
+      if (hasEnd) setEndBQ(n, newEnd);
+      resolveNote(n);
+      touched++;
+      if (wasInSpan) movedToT++; // anchored inside the deleted span — moved to T, not shifted
+    }
+  }
+  return {modItems, erasedItems, annoBefore, touched, movedToT};
+}
 function insertTime(T, delta) { // open a gap at tick T of delta ticks; ONE undo
   if (!editableSong() || delta <= 0) return 0;
   const {modItems, annoBefore, touched} = openGapShift(T, delta);
@@ -6901,6 +6981,38 @@ document.getElementById("insgo").addEventListener("click", () => {
 });
 document.getElementById("insclose").addEventListener("click", () =>
   document.getElementById("insbarsheet").classList.remove("on"));
+function deleteTime(T, len) { // close a gap at tick T of len ticks; ONE undo — closeGap's wrapper, mirrors insertTime
+  if (!editableSong() || len <= 0) return null;
+  const {modItems, erasedItems, annoBefore, touched, movedToT} = closeGap(T, len);
+  pushUndo({kind: "group", entries: [{kind: "mod", items: modItems}, {kind: "eraseBatch", items: erasedItems}, {kind: "anno", json: annoBefore}]});
+  finalizeNotes();
+  saveEdits(); // persists the erased (gone) notes for an edited-capture song; drafts whole for a composition
+  computeSongEnd();
+  saveLocalNotes(); // the shifted annotation layer
+  saveDraft();
+  if (viewMode === "score") buildScoreModel();
+  draw();
+  return {erased: erasedItems.length, moved: modItems.length + touched, movedToT};
+}
+function openDeleteBars() {
+  const bt = barTicks();
+  document.getElementById("delb").value = Math.floor(playCursor / bt) + 1;
+  document.getElementById("deln").value = 1;
+  document.getElementById("delbarsheet").classList.add("on");
+}
+document.getElementById("delgo").addEventListener("click", () => {
+  const bt = barTicks();
+  const fromBar = Math.max(1, Math.round(+document.getElementById("delb").value || 1));
+  const n = Math.max(1, Math.round(+document.getElementById("deln").value || 1));
+  const r = deleteTime((fromBar - 1) * bt, n * bt);
+  document.getElementById("delbarsheet").classList.remove("on");
+  const where = n > 1 ? ("bar " + fromBar + "–" + (fromBar + n - 1)) : ("bar " + fromBar);
+  setInfo(r ? where + " removed — everything after moved " + n + " bar" + (n === 1 ? "" : "s") + " earlier" +
+               (r.movedToT ? "; " + r.movedToT + " annotation" + (r.movedToT === 1 ? "" : "s") + " moved to bar " + fromBar : "")
+            : "nothing to delete from — is this song editable?");
+});
+document.getElementById("delclose").addEventListener("click", () =>
+  document.getElementById("delbarsheet").classList.remove("on"));
 function divideSelection(nParts) { // ➗: each selected note becomes N equal notes
   if (!editableSong()) return 0;
   const items = selEditItems().filter(({n}) => n.d >= nParts);
@@ -17997,6 +18109,7 @@ document.getElementById("editsheetbtn").addEventListener("click", e => {
   proxy("emMove", () => document.getElementById("movebtn").click());
   proxy("emTranspose", () => document.getElementById("trbtn").click());
   proxy("emInsertBars", () => { if (editableSong()) openInsertBars(); else setInfo("Insert bars works on your own songs"); });
+  proxy("emDeleteBars", () => { if (editableSong()) openDeleteBars(); else setInfo("Delete bars works on your own songs"); });
   proxy("emChord", () => document.getElementById("insbtn").click());
   proxy("emFill", () => document.getElementById("drumfillbtn").click());
   proxy("emDrummer", () => openDrummer());
@@ -22592,7 +22705,7 @@ const RULE_LEARNING = `THE RULE: discoveries are the user's. Default to hints, q
 const RULE_NORMAL = `Answer music questions directly — name keys, chords, cadences and form when asked; say how sure you are; the key line may be an estimate, call it one.`;
 const ASK_SYS_BASE2 = `Each user message carries a <context> block: the song, the meter, the cursor, any lasso-selected pitches, the user's own annotations (their established discoveries — build on them), and the notes of the bars in view. Bar and beat numbers are the user's ruler: "bar 9 beat 2" is the counted beat of the declared meter (in 6/8 there are six beats per bar). Refer to locations that way. The key-state line says whether the user has set a key; if it is not set, the key is undiscovered — do not name it. If the song is the user's own composition, it is editable and they may ask what they wrote — still lead with a hint. Say "not sure" when you are not sure. Never invent notes that are not in the context.
 
-What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing, and never needs to. For this project, always prefer the context block and the tools below over reading a song's file yourself, even where the system you're running in can otherwise read files, the repo or the web — they reflect the user's LIVE state, unsaved edits included, which a file on disk does not; say what access you actually have only when asked, rather than assuming either way. You have eleven app tools, all of them ONLY when the user explicitly asks for that exact action, never on your own initiative: add_annotation writes ONE annotation in the user's words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note); edit_annotation changes an EXISTING annotation's text (and, if asked, where it sits) — target it by the "id" its context entry carries, or by its bar, beat and current text if the id has gone stale; delete_annotation removes one existing annotation the same way; all three say what they did in one short line, and if the target is ambiguous they ask which rather than guess. publish_song runs this song's Publish (the same one the footer button does) and reports what happened — it refuses when the device isn't connected (no GitHub token, no folder) or nothing here can be published, and says why. list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. read_bars reads bars of THIS song beyond what the context block's current window shows (live state, unsaved edits included) — ask for it instead of guessing an out-of-view bar or telling the user you can't see it; some bars in the context may already read "as sent earlier" instead of their notes — you still have those from earlier in this chat, no need to ask again. write_notes writes notes the user dictates onto a track they name (never the one selected in the app) — spell out every note yourself (a gallop is an eighth plus two sixteenths: write all three, don't use the word); it writes exactly what was asked, never a chord, key or note of your own choosing, lands as one undo step, and refuses on a locked/capture song. copy_bars repeats or duplicates bars that already exist — "repeat bars 5–6 after bar 6" is copy_bars({from_bar: 5, to_bar: 6, at_bar: 7}), never a hand-spelled write_notes call; it opens the gap on every track (notes AND annotations after it slide later, exactly like Insert bars…), copies the source bars' notes into that gap on every track including drums, and never duplicates an annotation into the copy (that's the user's own analysis). insert_bars makes empty room — at_bar and count, nothing copied — the same shift, for when the user asks to insert or add blank bars rather than repeat existing ones. Both land as one undo step and refuse on a locked/capture song. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
+What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing, and never needs to. For this project, always prefer the context block and the tools below over reading a song's file yourself, even where the system you're running in can otherwise read files, the repo or the web — they reflect the user's LIVE state, unsaved edits included, which a file on disk does not; say what access you actually have only when asked, rather than assuming either way. You have twelve app tools, all of them ONLY when the user explicitly asks for that exact action, never on your own initiative: add_annotation writes ONE annotation in the user's words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note); edit_annotation changes an EXISTING annotation's text (and, if asked, where it sits) — target it by the "id" its context entry carries, or by its bar, beat and current text if the id has gone stale; delete_annotation removes one existing annotation the same way; all three say what they did in one short line, and if the target is ambiguous they ask which rather than guess. publish_song runs this song's Publish (the same one the footer button does) and reports what happened — it refuses when the device isn't connected (no GitHub token, no folder) or nothing here can be published, and says why. list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. read_bars reads bars of THIS song beyond what the context block's current window shows (live state, unsaved edits included) — ask for it instead of guessing an out-of-view bar or telling the user you can't see it; some bars in the context may already read "as sent earlier" instead of their notes — you still have those from earlier in this chat, no need to ask again. write_notes writes notes the user dictates onto a track they name (never the one selected in the app) — spell out every note yourself (a gallop is an eighth plus two sixteenths: write all three, don't use the word); it writes exactly what was asked, never a chord, key or note of your own choosing, lands as one undo step, and refuses on a locked/capture song. copy_bars repeats or duplicates bars that already exist — "repeat bars 5–6 after bar 6" is copy_bars({from_bar: 5, to_bar: 6, at_bar: 7}), never a hand-spelled write_notes call; it opens the gap on every track (notes AND annotations after it slide later, exactly like Insert bars…), copies the source bars' notes into that gap on every track including drums, and never duplicates an annotation into the copy (that's the user's own analysis). insert_bars makes empty room — at_bar and count, nothing copied — the same shift, for when the user asks to insert or add blank bars rather than repeat existing ones. delete_bars removes bars that already exist — from_bar and count, the inverse shift: a note starting inside is deleted, one sustaining across the cut is clipped there, and everything after slides earlier to close the gap (annotations are never destroyed — one anchored inside the deleted span moves to the cut point, one straddling it shrinks) — only when the user explicitly asks to delete or remove bars. All three land as one undo step and refuse on a locked/capture song. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
 function askSys() { return ASK_SYS_BASE1 + "\n\n" + (appMode() === "normal" ? RULE_NORMAL : RULE_LEARNING) + "\n\n" + ASK_SYS_BASE2; }
 
 let askBusy = null;       // AbortController (or {abort}) while a reply streams
@@ -22953,6 +23066,11 @@ const ASK_TOOLS = [
       at_bar: {type: "integer", minimum: 1, description: "where the new bars go"},
       count: {type: "integer", minimum: 1, description: "how many empty bars to insert"}},
       required: ["at_bar", "count"]}}},
+  {type: "function", function: {name: "delete_bars", description: "Delete bars that already exist in THIS song — the same operation as Edit ▾ → Delete bars…, and the inverse of insert_bars: removes count bars starting at from_bar on EVERY track (a note starting inside is deleted, one sustaining across the cut is clipped there) and everything after slides EARLIER to close the gap — annotations too (sections, chords, loop, key/tempo/meter). Annotations are never destroyed: one anchored inside the deleted span moves to the cut point instead, and one straddling the cut shrinks rather than being duplicated or orphaned. Only when the user explicitly asks to delete or remove bars — never on your own initiative. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix. Lands as ONE undo step.",
+    parameters: {type: "object", properties: {
+      from_bar: {type: "integer", minimum: 1, description: "first bar to delete"},
+      count: {type: "integer", minimum: 1, description: "how many bars to delete"}},
+      required: ["from_bar", "count"]}}},
 ];
 function askAddAnnotation(a) { // the same text grammar the editor and the files use: one line, parsed by parseRollnotes
   if (!song || !songKey) throw new Error("no song open");
@@ -23200,6 +23318,7 @@ async function askRunTool(name, a) {
   if (name === "write_notes") return askWriteNotes(a || {});
   if (name === "copy_bars") return askCopyBars(a || {});
   if (name === "insert_bars") return askInsertBars(a || {});
+  if (name === "delete_bars") return askDeleteBars(a || {});
   throw new Error("unknown tool " + name);
 }
 
@@ -23926,7 +24045,7 @@ const askstatus = document.getElementById("askstatus");
 // turn's context carries, since the leak lives in the session, not the
 // turn. A different mode is a different session, period.
 function askSessionName() { return (askGeneral ? "general" : String(songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160)) + (appMode() === "normal" ? "#normal" : ""); }
-const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes", "copy_bars", "insert_bars"]; // no open song in the general chat (these are all about THE open song, unlike read_song/read_notes, which name another one)
+const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars"]; // no open song in the general chat (these are all about THE open song, unlike read_song/read_notes, which name another one)
 function askToolsNow() { return askGeneral ? ASK_TOOLS.filter(t => !ASK_SONG_ONLY_TOOLS.includes(t.function.name)) : ASK_TOOLS; }
 function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
 let askInboxNo = ""; // the url that answered 404 (no inbox there)
@@ -25854,6 +25973,29 @@ function askCopyBars(a) { // {from_bar, to_bar, at_bar}: repeat/duplicate bars �
   draw();
   const fromLabel = fromBar === toBar ? ("bar " + fromBar) : ("bars " + fromBar + "–" + toBar);
   return {ok: true, note: "copied " + fromLabel + " to bar " + atBar + "; everything after moved " + count + " bar" + (count === 1 ? "" : "s") + " later"};
+}
+// delete_bars (2026-10-02, open-items 22:20) — Josh in the terminal: "Is
+// there a way to delete a bar?" … "we have Insert bars in the Edit [menu],
+// it would be next to that". The inverse of insert_bars/copy_bars: built on
+// closeGap (closeGap is to openGapShift as this is to insertTime) so the
+// same note-clip/shift and annotation-shrink/move-to-cut rules back both
+// the menu's Delete bars… and this tool.
+function askDeleteBars(a) { // {from_bar, count}: removes bars — same gate/validation shape as copy_bars
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const nBars = askBarsCount();
+  const fromBar = Math.round(+a.from_bar || 0);
+  if (!(fromBar >= 1)) throw new Error("from_bar must be ≥ 1");
+  const count = Math.round(+a.count || 0);
+  if (!(count >= 1)) throw new Error("count must be ≥ 1");
+  const toBar = fromBar + count - 1;
+  if (toBar > nBars) throw new Error("bars " + fromBar + "–" + toBar + " don't all exist — this song has " + nBars + " bar" + (nBars === 1 ? "" : "s"));
+  const bt = barTicks();
+  const r = deleteTime((fromBar - 1) * bt, count * bt);
+  const where = count > 1 ? ("bars " + fromBar + "–" + toBar) : ("bar " + fromBar);
+  return {ok: true, note: where + " removed — everything after moved " + count + " bar" + (count === 1 ? "" : "s") + " earlier" +
+    (r.movedToT ? "; " + r.movedToT + " annotation" + (r.movedToT === 1 ? "" : "s") + " moved to bar " + fromBar : "")};
 }
 
 // ---------------------------------------------------- data-location config
