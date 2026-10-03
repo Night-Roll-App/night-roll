@@ -13296,7 +13296,10 @@ async function saveSongAs(folder, name) { // first Save Version of an Untitled s
   return true;
 }
 function openSaveForm(mode) { // "save" (name an Untitled song) | "fork" (Save As) | "editcopy" (✎ Edit — captures/starters): folder + name inside the File menu
-  document.getElementById("filesheetbtn").click();
+  // open the File menu only if it isn't already: Save As is tapped FROM it,
+  // and clicking the File button again toggled it shut, form and all (Josh,
+  // 2026-10-03: "the file dialogue just disappears when I hit save as")
+  if (!document.getElementById("filesheet").classList.contains("on")) document.getElementById("filesheetbtn").click();
   document.getElementById("filenewform").style.display = "none";
   document.getElementById("filerenameform").style.display = "none";
   const form = document.getElementById("filesaveasform");
@@ -14071,7 +14074,9 @@ document.getElementById("editsheetbtn").addEventListener("click", e => {
   proxy("emBassist", () => openBassist());
 }
 function fileMenuSaveLabels() { // Save Version: your own local songs only. Versions…: any open song with a repo path (browsing/going back to the published copy also works on a read-only capture with local annotation edits)
-  const comp = !!S.song && isComposition() && !LINK_SONGS;
+  // an Untitled song is his too — and Save Version is how it gets a folder at
+  // all (Josh, 2026-10-03: "there is no Save Version")
+  const comp = !!S.song && (isComposition() || isUnsaved(S.songKey)) && !LINK_SONGS;
   document.getElementById("filesavelocal").style.display = comp ? "" : "none";
   document.getElementById("filerevert").style.display = !!S.song && !!S.songKey && !S.songKey.startsWith("local/") && !LINK_SONGS ? "" : "none";
 }
