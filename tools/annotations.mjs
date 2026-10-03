@@ -2,6 +2,7 @@
 // Annotations resolved to bar.beat with spans — plus ANOMALY flags:
 // duplicate track directives, spans past the song's end, and equal-span
 // section/chord pairs. Reports; never interprets.
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { loadSong, fmtBQ, outJson } from "./query-lib.mjs";
 
 const argv = process.argv.slice(2);
@@ -11,7 +12,7 @@ const typeArg = ti >= 0 ? argv.splice(ti, 2)[1] : null;
 const songArg = argv.filter(a => a !== "--json")[0];
 if (!songArg) { console.error("usage: annotations.mjs <song> [--type T] [--json]"); process.exit(1); }
 
-const doc = loadSong(songArg);
+const doc = await loadSong(songArg);
 const typeOf = n =>
   n.section ? "section" : n.chord ? "chord" :
   n.keydir !== undefined || n.keypartial ? "key" :

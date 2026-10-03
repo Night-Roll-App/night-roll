@@ -507,7 +507,7 @@ test("terminal import (tools/import-set.mjs) and the app's own capture (captureJ
   const modUrls = ["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"]
     .map(f => pathToFileURL(path.join(ROOT, "tools", f + ".mjs")).href);
   const mods = await Promise.all(modUrls.map(u => import(u)));
-  const app = createApp();
+  const app = await createApp();
   const C = app.context;
   C.setTimeout = setTimeout; C.clearTimeout = clearTimeout;
   C.__M = Object.assign({}, ...mods);

@@ -32,10 +32,10 @@ export function resolveSong(arg) { // "cool-bmaj-progression" | "overworld" | a 
   return hits[0];
 }
 
-export function loadSong(arg, {dedupe = true} = {}) {
+export async function loadSong(arg, {dedupe = true} = {}) {
   const midPath = resolveSong(arg);
   const rnPath = midPath.replace(/\.mid$/, ".rollnotes.json");
-  const app = createApp();
+  const app = await createApp();
   app.context.midiBytes = [...readFileSync(midPath)];
   app.context.rollnotesText = existsSync(rnPath) ? readFileSync(rnPath, "utf8") : "";
   const doc = JSON.parse(app.run(`(() => {

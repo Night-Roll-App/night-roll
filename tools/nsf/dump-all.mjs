@@ -6,6 +6,7 @@
 // Track numbers from the Zophar m3u; meter read from the existing song file;
 // tempo loop-calibrated from verified PERIOD_BARS (or grid-fitted).
 // Run: node tools/nsf/dump-all.mjs albums/final-fantasy-i/reference/ff1.nsf
+import "../vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { parseNSF, runNSF } from "./nsf.mjs";
 import { reconstruct, toNotesTxt, fitBpm, detectLoop, backportTiming } from "./notes.mjs";
@@ -64,9 +65,9 @@ const TRACKS = [ // [nsf track, repo name, seconds to capture — ≥ intro + 2 
   [19, "victory", 30],
 ];
 
-function meterOf(repoName) { // meter + bpm seed + bar count from the transcription MIDI
+async function meterOf(repoName) { // meter + bpm seed + bar count from the transcription MIDI
   try {
-    const app = createApp();
+    const app = await createApp();
     app.context.midiBytes = [...readFileSync("albums/final-fantasy-i/songs/" + repoName + ".mid")];
     const info = JSON.parse(app.run(
       "JSON.stringify((() => { const r = parseMidi(new Uint8Array(midiBytes).buffer); const bt = r.timesig[0] * 4 / r.timesig[1] * r.ppq; let end = 0; r.tracks.forEach(t => t.notes.forEach(n => end = Math.max(end, n.t + n.d))); return {ts: r.timesig, bpm: Math.round(6e7 / r.tempos[0].usq), bars: Math.ceil(end / bt - 0.05)}; })())"));
@@ -87,7 +88,7 @@ for (const [track, name, seconds] of TRACKS) {
   // (caveat: a pickup-intro song like ship starts its pickup at bar 1 beat 1)
   const t0 = Math.min(...events.map(e => e.startFrame));
   events = events.map(e => ({...e, startFrame: e.startFrame - t0, endFrame: e.endFrame - t0}));
-  let {tsNum, tsDen, seedBpm, midiBars} = meterOf(name);
+  let {tsNum, tsDen, seedBpm, midiBars} = await meterOf(name);
   if (METER_OVERRIDE[name]) [tsNum, tsDen] = METER_OVERRIDE[name];
 
   // trim to intro + one loop pass, exactly as the transcriptions were.

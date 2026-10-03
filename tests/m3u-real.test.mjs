@@ -21,7 +21,7 @@ import { createApp } from "./harness.mjs";
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const FIXDIR = path.join(ROOT, "fixtures", "m3u");
 
-const app = createApp();
+const app = await createApp();
 const val = (code) => JSON.parse(app.run(`JSON.stringify(${code})`));
 
 // Mirrors openPickedFiles' merge (index.html): every picked .m3u, sorted by

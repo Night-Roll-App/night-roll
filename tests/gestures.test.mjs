@@ -7,8 +7,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createApp, pev } from "./harness.mjs";
 
-function boot(name) {
-  const app = createApp();
+async function boot(name) {
+  const app = await createApp();
   // New is Untitled until Save names it (2026-09-27); the tests take the sync road to the same key
   app.run(`createComposition(120, 4, 4); renameLocalKeys(songKey, "albums/compositions/nightroll/" + ${JSON.stringify(name)} + ".mid");`);
   app.run(`
@@ -44,8 +44,8 @@ function drag(app, from, to, props = {}, steps = 8) {
   app.dispatch("roll", pev("pointerup", { clientX: to.x, clientY: to.y, ...props }));
 }
 
-test("gesture: right-edge drag resizes every selected note", () => {
-  const app = boot("vm-gest-resize");
+test("gesture: right-edge drag resizes every selected note", async () => {
+  const app = await boot("vm-gest-resize");
   app.run(`mode = "select"`);
   selectAll(app);
   const edge = noteXY(app, 470, 64); // within the 8px-in-ticks grab zone of t+d=480
@@ -54,8 +54,8 @@ test("gesture: right-edge drag resizes every selected note", () => {
   assert.deepEqual(notes(app).map(n => n.d), [240, 240, 240]);
 });
 
-test("gesture: full-song move drags sections and the loop along", () => {
-  const app = boot("vm-gest-move");
+test("gesture: full-song move drags sections and the loop along", async () => {
+  const app = await boot("vm-gest-move");
   app.run(`
     rollnotes = deriveNoteTypes([
       {b1: 1, q1: 1, b2: 1, q2: 2, text: "section: A", added: true},
@@ -71,8 +71,8 @@ test("gesture: full-song move drags sections and the loop along", () => {
   assert.equal(rn.find(n => n.text.startsWith("loop")).text, "loop: 1.3");
 });
 
-test("gesture: second finger flips pencil into pan — note rolled back, view scrolls", () => {
-  const app = boot("vm-gest-pinch");
+test("gesture: second finger flips pencil into pan — note rolled back, view scrolls", async () => {
+  const app = await boot("vm-gest-pinch");
   app.run(`mode = "pencil"; view.pxq = 600; clampView(); draw();`);
   const before = JSON.parse(app.run(
     `JSON.stringify({x: view.x, n: song.tracks[0].notes.filter(n => !n.gone).length})`));
@@ -88,8 +88,8 @@ test("gesture: second finger flips pencil into pan — note rolled back, view sc
   assert.equal(after.n, before.n); // the pencil's finger-down note was rolled back
 });
 
-test("gesture: cycle highlight stretches by its edges, both directions", () => {
-  const app = boot("vm-gest-cycle");
+test("gesture: cycle highlight stretches by its edges, both directions", async () => {
+  const app = await boot("vm-gest-cycle");
   const xy = tk => JSON.parse(app.run(
     `JSON.stringify({x: RULER_W + (${tk} / song.ppq) * view.pxq - view.x, y: 10})`));
   drag(app, xy(480), xy(960)); // arm a one-beat cycle
@@ -103,8 +103,8 @@ test("gesture: cycle highlight stretches by its edges, both directions", () => {
   assert.equal(app.run(`rangeSel.a`), 720);
 });
 
-test("gesture: finger fast stroke pans; a dwell cold-grabs; selected = instant", () => {
-  const app = boot("vm-gest-dwell");
+test("gesture: finger fast stroke pans; a dwell cold-grabs; selected = instant", async () => {
+  const app = await boot("vm-gest-dwell");
   app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);
   const start = noteXY(app, 240, 64);
   // a finger dwells; the Apple Pencil grabs at once (2026-09-29 — next test)
@@ -134,8 +134,8 @@ test("gesture: finger fast stroke pans; a dwell cold-grabs; selected = instant",
   assert.deepEqual(notes(app).map(n => n.t), [0, 480, 0], "instant grab, zero dwell");
 });
 
-test("gesture: custom grid — pencil taps land on 10ths-of-a-bar cells", () => {
-  const app = boot("vm-gest-grid");
+test("gesture: custom grid — pencil taps land on 10ths-of-a-bar cells", async () => {
+  const app = await boot("vm-gest-grid");
   app.run(`mode = "pencil"; gridDiv = 10; draw();`);
   // ppq 480, 4/4: bar = 1920, cell = 192. Tap mid-bar-2 between lines.
   const bt = app.run(`barTicks()`), cell = bt / 10;
@@ -156,8 +156,8 @@ test("gesture: custom grid — pencil taps land on 10ths-of-a-bar cells", () => 
   assert.equal(app.run(`moveSnapTicks()`), app.run(`Math.round(song.ppq / 4)`));
 });
 
-test("gesture: uneven grid divisions keep one exact phase from the anchor", () => {
-  const app = boot("vm-gest-grid7");
+test("gesture: uneven grid divisions keep one exact phase from the anchor", async () => {
+  const app = await boot("vm-gest-grid7");
   app.run(`gridDiv = 7; gridAnchor = {b: 5, q: 1};`);
   // cells are exact bt/7 floats from the anchor — no per-cell rounding drift
   const bt = app.run(`barTicks()`);
@@ -165,8 +165,8 @@ test("gesture: uneven grid divisions keep one exact phase from the anchor", () =
   assert.equal(app.run(`gridCellStart(${4 * bt + 3 * (bt / 7) + 20})`), want);
 });
 
-test("grid sheet: chip tap applies instantly; off chip restores the meter", () => {
-  const app = boot("vm-gest-gridmenu");
+test("grid sheet: chip tap applies instantly; off chip restores the meter", async () => {
+  const app = await boot("vm-gest-gridmenu");
   app.el("vwGrid").click(); // opens the sheet (View menu item)
   const chips = app.el("gridchips").children;
   assert.equal(chips.length, 9, "preset chips rendered");
@@ -179,8 +179,8 @@ test("grid sheet: chip tap applies instantly; off chip restores the meter", () =
   app.el("gridclose").click();
 });
 
-test("gesture: grid anchor typed in the sheet — 14.2 phase, bar line not a snap target", () => {
-  const app = boot("vm-gest-gridanchor");
+test("gesture: grid anchor typed in the sheet — 14.2 phase, bar line not a snap target", async () => {
+  const app = await boot("vm-gest-gridanchor");
   const bt = app.run(`barTicks()`), qt = app.run(`beatTicks()`);
   const a = 13 * bt + qt; // 14.2
   app.el("vwGrid").click(); // open the sheet
@@ -200,8 +200,8 @@ test("gesture: grid anchor typed in the sheet — 14.2 phase, bar line not a sna
   assert.equal(app.run(`gridCellStart(${13 * bt + 3 * cell + 20})`), 13 * bt + 3 * cell);
 });
 
-test("gesture: off-phase note's edge snaps TO the beat line (10-grid then 4-4)", () => {
-  const app = boot("vm-gest-offphase");
+test("gesture: off-phase note's edge snaps TO the beat line (10-grid then 4-4)", async () => {
+  const app = await boot("vm-gest-offphase");
   // a note penciled on the 10-grid: starts at cell 6.5*192=1248, 192 long,
   // ending 1440-ish? no: 1248+192=1440 exactly... use start 1152+96 off 16ths:
   // t=1056 (not a multiple of 120), d=192 -> end 1248; drag end to beat 4 (1440)
@@ -214,8 +214,8 @@ test("gesture: off-phase note's edge snaps TO the beat line (10-grid then 4-4)",
   assert.equal(n.t + n.d, 1440, "edge landed ON the beat, phase notwithstanding");
 });
 
-test("gesture: grabbing a note outside a stale selection moves ONLY that note", () => {
-  const app = boot("vm-gest-stalesel");
+test("gesture: grabbing a note outside a stale selection moves ONLY that note", async () => {
+  const app = await boot("vm-gest-stalesel");
   // three chord notes selected earlier (stale); a fourth note elsewhere
   app.run(`song.tracks[0].notes.push({t: 960, d: 480, p: 72, v: 80});
            multiSel = [{ti:0,ni:0},{ti:0,ni:1},{ti:0,ni:2}];
@@ -230,8 +230,8 @@ test("gesture: grabbing a note outside a stale selection moves ONLY that note", 
     "selection reset to the grabbed note");
 });
 
-test("gesture: off-phase note MOVE lands ON the grid line (and-of-1)", () => {
-  const app = boot("vm-gest-offmove");
+test("gesture: off-phase note MOVE lands ON the grid line (and-of-1)", async () => {
+  const app = await boot("vm-gest-offmove");
   // a note born on the fives (t=1056, no 16th phase); drag toward beat 1.5 of
   // bar 2 (tick 2160) — must land exactly there, not 1056+n*120
   app.run(`song.tracks[0].notes = [{t: 1056, d: 240, p: 64, v: 80}]; multiSel = [{ti:0,ni:0}];
@@ -242,8 +242,8 @@ test("gesture: off-phase note MOVE lands ON the grid line (and-of-1)", () => {
   assert.equal(notes(app)[0].t, 2160, "landed on the and of 1, phase gone");
 });
 
-test("insertTime: slide, stretch straddlers, leave exact-enders; one undo", () => {
-  const app = boot("vm-gest-insert");
+test("insertTime: slide, stretch straddlers, leave exact-enders; one undo", async () => {
+  const app = await boot("vm-gest-insert");
   // notes at bars 1 and 6; sections: one 1.1-5.4 (ends AT the point), one
   // 1.1-8.4 (straddles), one starting 6.1 (at the point); loop past it
   app.run(`
@@ -272,8 +272,8 @@ test("insertTime: slide, stretch straddlers, leave exact-enders; one undo", () =
   assert.deepEqual(rn2.sort((a,b)=>a-b), [5, 8, 9], "one undo restores annotations");
 });
 
-test("gesture: with the setting on, the Apple Pencil grabs a note at once — no dwell (default off)", () => {
-  const app = boot("vm-gest-pen");
+test("gesture: with the setting on, the Apple Pencil grabs a note at once — no dwell (default off)", async () => {
+  const app = await boot("vm-gest-pen");
   app.run(`mode = "select"; view.pxq = 600; clampView(); draw(); localStorage.setItem("ff1roll-peninstant", "1");`);
   const start = noteXY(app, 240, 64);
   const pen = (type, x, y) => app.dispatch("roll",
@@ -286,8 +286,8 @@ test("gesture: with the setting on, the Apple Pencil grabs a note at once — no
   assert.notDeepEqual(notes(app).map(n => n.t), before, "a pencil stroke on a note moves it");
 });
 
-test("gesture: a stale drag (a lift the canvas never heard) can't turn the next touch into a pinch (Josh, 2026-09-30: every drag zoomed)", () => {
-  const app = boot("vm-gest-stale");
+test("gesture: a stale drag (a lift the canvas never heard) can't turn the next touch into a pinch (Josh, 2026-09-30: every drag zoomed)", async () => {
+  const app = await boot("vm-gest-stale");
   app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);
   const f = (type, id, x, y, primary) => app.dispatch("roll",
     pev(type, { pointerId: id, clientX: x, clientY: y, pointerType: "touch", isPrimary: primary }));
@@ -300,8 +300,8 @@ test("gesture: a stale drag (a lift the canvas never heard) can't turn the next 
   assert.equal(app.run(`view.pxq`), pxq0, "a one-finger drag doesn't zoom");
 });
 
-test("gesture: palm rejection — a touch while the Pencil is down is ignored, not a pinch", () => {
-  const app = boot("vm-gest-palm");
+test("gesture: palm rejection — a touch while the Pencil is down is ignored, not a pinch", async () => {
+  const app = await boot("vm-gest-palm");
   app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);
   const pxq0 = app.run(`view.pxq`);
   app.dispatch("roll", pev("pointerdown", { pointerId: 5, clientX: 300, clientY: 200, pointerType: "pen", isPrimary: true }));

@@ -205,6 +205,17 @@ Each step below gives: what moves, what must not change, how to verify. Every st
 - Make all `createApp` call sites async and add the package.json flag.
 - Must not change: any test assertion.
 - Verify: npm test; `node tools/at.mjs <song> 1` still prints.
+- **Done** (2026-10-02, Sonnet builder). tools/split/scope.mjs (AST utilities:
+  parseModule, leadingComments/isBanner, declaredNames, freeIdentifiers,
+  topLevelImports, topLevelMutableNames, patternNames/hoistedNames/
+  blockScopedNames), check.mjs (all 8 rules + CLI + browser-globals.txt),
+  move.mjs (the mover + CLI), promote-state.mjs (the S-codemod + CLI), all
+  with fixture unit tests in tests/modules.test.mjs. harness.mjs's module
+  mode (§3.1-3.4) is implemented and self-tested against
+  tests/split-fixtures/tiny-app/ (a hand-written tiny module app) since
+  index.html hasn't cut over yet — that fixture is 0a-only scaffolding, not
+  part of the shipped app. See "Deviations" below for where reality diverged
+  from this section's letter, and what 0b should know going in.
 
 **0b. Cutover to modules: the whole script becomes one module.**
 - Add `tools/split/cutover.mjs`, a deterministic re-runnable script: it extracts the inline `<script>` into `src/app.js` verbatim, moves the EDITION line into `src/edition.js` (app.js imports it), writes `src/main.js` (`import "./app.js"`, plus the devtools hook), `src/devtools.js` and `src/package.json`, and replaces the script tag. The whole script already parses as a strict-mode module (checked).
@@ -336,6 +347,58 @@ Replace the line `- One-file app: index.html, no build step. Match its comment s
 ```
 
 In "Where things are", replace the Tests bullet's harness clause with: `vm harness in tests/harness.mjs loads src/ as real ES modules (vm.SourceTextModule, --experimental-vm-modules); run("expr") sees S and every module's top-level names`.
+
+## Deviations (0a, 2026-10-02)
+
+Where step 0a's implementation diverged from this document's letter, smallest-working-alternative style, each still meeting the step's intent:
+
+- **acorn's comment shape.** `onComment` (array form) gives `{type, value,
+  start, end}` — the field is `.value`, not `.text` as an early draft of
+  scope.mjs/move.mjs assumed. Fixed; `isBanner()` and `findBannerSection()`
+  are the only places that read it, so this is invisible to 0b.
+- **move.mjs's init-function grouping.** §1's "a moved block's top-level
+  statements" (plural) go into ONE `init<Module><N>()` per *maximal run* of
+  consecutive non-declaration nodes within a single mover invocation's
+  selection, not one function per statement. The call stub sits at the
+  first statement's original position; the rest of the run is deleted
+  outright. This is behaviorally identical to calling each separately at its
+  own spot, because every declaration between them is side-effect-free at
+  module-eval time (§2.2) — nothing observable happens in the gap either
+  way. 0b's cutover and later `move.mjs` invocations should expect this
+  grouping, not per-statement init functions.
+- **tools/split/browser-globals.txt is a seed, not an audit.** Populated
+  from the ECMAScript/Web-API standard sets plus a quick grep of index.html
+  for distinctive globals (Capacitor, navigator.*, indexedDB, …) — not a
+  line-by-line pass over all 26,739 lines. check.mjs rule 1 will surface
+  real gaps the first time a section actually moves (step 2+); add the
+  missing name there rather than widening the allowlist speculatively.
+- **check.mjs rule 8 (manifest equality) exists but isn't wired into the
+  CLI/npm-test path yet.** `ruleManifestsEqual()` is implemented and unit-
+  tested, but `checkSrc()` doesn't call it, because none of the four lists
+  it compares (index.html's modulepreload list, sw.js's `APP_MODULES`,
+  devtools.js's `import * as` list, the real src/ file listing) exist
+  before step 0b. 0b should call `ruleManifestsEqual()` from
+  tests/modules.test.mjs (or check.mjs's own CLI) once it creates those four
+  things, and keep it there for every later step.
+- **promote-state.mjs refuses a destructured top-level binding** (`let {a,
+  b} = x;`) with a clear error rather than promoting it, since none exist
+  in index.html today (confirmed by grep). If step 1 hits one, rewrite it
+  to simple bindings first (the error message says so), rather than teaching
+  the tool a destructuring-aware rename.
+- **The module-mode harness is unexercised by the real app through all of
+  0a** — index.html has no `<script type="module">` yet, so `createApp()`
+  always takes the legacy branch for every real test and tool. Its loader,
+  footer/accessor mechanism, and `scopeProxy` (S-fields + per-module
+  rebinding, including the `with`-scope `Symbol.unscopables` and const-write
+  guard) are proven against tests/split-fixtures/tiny-app/ instead. Step
+  0b's own verify list ("browser on localhost", "iPad build launches and
+  plays one song") is where this machinery first meets the real 26,739-line
+  app — budget real attention there, not rubber-stamp time.
+- **vm.SourceTextModule needs `--experimental-vm-modules` on this Node
+  (23.5.0)** — confirmed by direct test, not assumed from the plan's "Node
+  22/23" phrasing. `tools/vm-flag.mjs`'s re-exec and package.json's flag
+  both depend on that being true; if a future Node ships it unflagged,
+  both become harmless no-ops (vm-flag.mjs's `typeof` check short-circuits).
 
 ## 7. Estimates (Sonnet builder hours, excluding review and CI wait)
 

@@ -3,6 +3,7 @@
 // Josh has already recorded its key in the rollnotes; unswept songs are
 // counted but never have their pitches printed, so this can't leak a tonic
 // he hasn't discovered. Run: node tools/loop_target_bass.mjs
+import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { createApp } from "../tests/harness.mjs";
 import path from "node:path";
@@ -25,7 +26,7 @@ for (const f of readdirSync(SONGS).filter(f => f.endsWith(".mid")).sort()) {
   const lm = text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/m);
   const tb = lm ? [+lm[1], lm[2] ? +lm[2] : 1] : [1, 1];
 
-  const app = createApp();
+  const app = await createApp();
   app.context.midiBytes = [...readFileSync(path.join(SONGS, f))];
   const bass = JSON.parse(app.run(`JSON.stringify((() => {
     const r = parseMidi(new Uint8Array(midiBytes).buffer);
