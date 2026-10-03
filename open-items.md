@@ -39,6 +39,17 @@ Q5. ANSWERED YES (2026-10-01) — waiting on Josh to run ONE command (the auto-m
     permission classifier blocks me from creating a public repo). Files are ready in
     the job tmp dir (index.html + 404.html redirecting to /night-roll/):
     gh repo create Night-Roll-App/night-roll-app.github.io --public --source ~/.claude/jobs/c9506483/tmp/redirect --push
+Q6. (found 2026-10-02, module-split step 0b) A real, pre-existing bug in
+    convertAnchors() (meter-change handling for .rollnotes, src/app.js
+    ~line 13996 — was index.html ~13996 before the split): `n.q2 || oldBpb`
+    references `oldBpb`, which is never declared anywhere in the app. It
+    throws ReferenceError the moment a note has a `b2`/`q2` loop-end pair
+    AND `q2` is falsy (0) — reachable only from a specific rollnotes shape,
+    so it may never have fired for any of your songs. Does this need a fix,
+    and if so what should the fallback be (the old beats-per-bar? 1?), or is
+    this a dead path worth deleting instead? tools/split/check.mjs's static
+    scan (not a test, not an ear report) found it — not fixed as part of the
+    split (a verbatim move must not touch app logic).
 Not questions, just checks when you can: YouTube keeps playing until ▶;
 background play with the iPad locked; a MIDI keyboard on the iPad (●).
 App Store: TestFlight install, privacy labels + listing, screenshots, go
@@ -5012,11 +5023,11 @@ HELP.md has only Settings → AI model (server URL, iPad needs https via Tailsca
 ## DONE 2026-10-02 23:30 — AI setup help (Josh, Terminal #64): "AI setup, step by step" in the help (LM Studio CORS, Ollama OLLAMA_ORIGINS, Tailscale Serve for the iPad, the bridge + launchd + /claude mount + token)
 ## DONE 2026-10-02 23:35 — install countdown banner (Josh, Terminal #65: did not notice the countdown): gold top banner with Not now / Install now
 
-## DONE 2026-10-02 23:55 — ruler taps no longer arm tiny cycles (Josh, Terminal #66): a ruler press must travel 24px (RULER_RANGE_SLOP) before it selects; under that it is a tap that places the cursor. PORT NOTE: lands after split 0b started — re-apply in src/ when merging 0b.
+## DONE 2026-10-02 23:55 — ruler taps no longer arm tiny cycles (Josh, Terminal #66): a ruler press must travel 24px (RULER_RANGE_SLOP) before it selects; under that it is a tap that places the cursor. PORT NOTE: lands after split 0b started — RESOLVED: 0b's cutover.mjs extracts from CURRENT index.html, so RULER_RANGE_SLOP is already present in src/app.js, no manual re-apply needed.
 
-## DONE 2026-10-03 00:05 — edit toolbar reordered (Josh, Terminal #67): undo redo cut copy paste delete ⋯ (split now next to join inside ⋯), then Select/Pencil/Erase + Pencil options last. PORT NOTE: after split 0b started — re-apply in src/ when merging 0b.
+## DONE 2026-10-03 00:05 — edit toolbar reordered (Josh, Terminal #67): undo redo cut copy paste delete ⋯ (split now next to join inside ⋯), then Select/Pencil/Erase + Pencil options last. PORT NOTE: after split 0b started — RESOLVED: 0b's cutover.mjs extracts from CURRENT index.html, so the reordered toolbar markup is already present, no manual re-apply needed.
 
-## DONE 2026-10-03 00:30 — track chips no longer cut off when the AI window is docked wide (Josh, Terminal #68): #trackrow.stacked puts the transport on the first row and the chips full-width below whenever they overflow beside it (fitTrackRow, ResizeObserver + updateTrackMore). PORT NOTE: lands after split 0b started.
+## DONE 2026-10-03 00:30 — track chips no longer cut off when the AI window is docked wide (Josh, Terminal #68): #trackrow.stacked puts the transport on the first row and the chips full-width below whenever they overflow beside it (fitTrackRow, ResizeObserver + updateTrackMore). PORT NOTE: lands after split 0b started — MOOT: reverted in 42bbd73 (iPad blinking loop) before 0b's re-run; src/app.js does not contain fitTrackRow. See the 2026-10-03 00:50 QUEUED redo below.
 
 ## 2026-10-03 00:05 — BUG (Josh via Ask): screen blinking nonstop on iPad
 Josh: "That did not work and it is making the whole screen freak out, it is blinking and blinking." Seen on build 10/03/2026 00:01:03 (after 0692e13 track chips fix: chips move to a full-width row when the AI window is docked wide). Screenshot: ~/.night-roll-bridge/shots/2026-10-03T04-00-49-106Z.jpg shows AI panel docked Right, chips in the top bar. Suspect: chip-wrap layout flapping (wrap -> no longer overflows -> unwrap -> overflows again), a resize loop. Song is untitled-1; notes are intact in the screenshot.
@@ -5024,3 +5035,25 @@ Josh: "That did not work and it is making the whole screen freak out, it is blin
 
 ## QUEUED 2026-10-03 00:50 — redo track-chip row stacking WITHOUT flapping (0692e13 reverted in 42bbd73: the iPad blinked nonstop at some widths)
 Design: stack decision depends only on the row WIDTH vs a threshold = transport natural width + all chips natural width + margin, measured once while unstacked and re-measured only when the track set or transport buttons change (never while stacked, never from the ▾ overflow signal). Hysteresis: stack below threshold, unstack above threshold + 60px. Verify in the browser at several widths (step the row width 700→1400 by 20px and assert at most one flip each way) BEFORE shipping. After split 0b lands (goes in src/).
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 0b reproduced on current main (docs/split-plan.md)
+0b was first built 2026-10-02 on worktree branch worktree-agent-ab7f470f088110a71
+(commit 27139d29) against an older main; three main commits landed on top of
+that base before it could ship (ruler-tap threshold, edit-toolbar reorder,
+the track-chip stacking commit AND its revert 42bbd73). Per the main
+session's instruction, that branch's index.html/src/app.js hunks were NOT
+merged by hand — instead: brought over the non-script files (tools/split/,
+src/edition.js, src/main.js, src/devtools.js, src/package.json, sw.js,
+tools/package.mjs, the pwa/package/modules tests, CLAUDE.md,
+docs/split-plan.md) via a path checkout from that branch; ported the
+NIGHT-ROLL.md "Module map"/sw.js-caching/boot-watchdog doc additions and the
+boot-watchdog `<script>` block in index.html's `<head>` by hand; then
+re-ran `tools/split/cutover.mjs` against CURRENT main's index.html so
+src/app.js contains today's code. Mid-task, origin/main moved again
+(0692e139's chip-row stacking reverted in 42bbd73 — iPad blinking loop) —
+merged origin/main into this worktree branch before the final cutover run,
+so src/app.js does NOT contain fitTrackRow/#trackrow.stacked. Q6 above is
+the one real app bug 0b's static scan found (not fixed, out of scope for a
+verbatim move). NOT pushed: main session still needs to browser-verify
+(localhost + the packaged dist output) before pushing and building for the
+iPad.

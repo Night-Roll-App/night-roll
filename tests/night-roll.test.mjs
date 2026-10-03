@@ -3,7 +3,7 @@
 import test from "node:test";
 import { readFileSync, existsSync } from "node:fs";
 import assert from "node:assert/strict";
-import { createApp } from "./harness.mjs";
+import { createApp, appSource } from "./harness.mjs";
 import { writeSongMidi, trackBytes } from "../tools/nsf/midi-write.mjs";
 
 const app = await createApp();
@@ -2273,7 +2273,7 @@ test("chip stream mode: switch off uses chipRender untouched; on, a {stream:{err
     ensureAudio();
     playing = true; loopSeg = {start: 0, end: 200, looped: true}; playT0 = 0; playOffset = 0; playRate = 1; albumEndAbs = null;
     globalThis.__gainsSeen = [];
-    const _tg = trackGain; globalThis.trackGain = ti => { globalThis.__gainsSeen.push(ti); return _tg(ti); };
+    const _tg = trackGain; trackGain = ti => { globalThis.__gainsSeen.push(ti); return _tg(ti); };
     chipStreamStart(0);
   `);
   assert.ok(a.run(`chip.stream.srcs.length`) > 0, "at least one AudioBufferSourceNode scheduled");
@@ -2726,7 +2726,7 @@ test("GBS import: the Game Boy chip goes through the same capture path (syntheti
 });
 
 test("help sheet covers every shipped feature (drift guard — extend this list when you ship)", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   const help = html.match(/id="helpsheet"[\s\S]*?id="viewsheet"/)[0]; // the sheet ends where the View menu begins (its Close button is gone; the pinned ✕ closes it)
   // one recognizable keyword per shipped feature; a missing one means the
   // help sheet silently drifted from the app (it happened to the key dial)
@@ -2763,7 +2763,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
 });
 
 test("Text size (DAW review item 12): no fixed-px font-size survives the CSS/JS except the documented allow-list", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   // Every font-size that names a px size directly must have been converted to
   // rem (N/16) so it scales with the --ts/--userscale root multiplier — see
   // NIGHT-ROLL.md "Text size — iOS Dynamic Type". The one allowed exception
@@ -2778,7 +2778,7 @@ test("Text size (DAW review item 12): no fixed-px font-size survives the CSS/JS 
 });
 
 test("Text size: the root scale is rem-based off --ts/--userscale (both default 1, so default = 16px, byte-identical to the old fixed px)", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   assert.match(html, /--ts:\s*1;/);
   assert.match(html, /--userscale:\s*1;/);
   assert.match(html, /html\s*\{\s*font-size:\s*calc\(16px\s*\*\s*var\(--ts\)\s*\*\s*var\(--userscale\)\)/);
@@ -2798,7 +2798,7 @@ test("Text size: Settings → Other's Text size select persists the pref and app
 });
 
 test("Import hub (docs/import-hub-design.md): the File menu opens it, all ten sections are there in order, and the refusal strings match the real ones", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   // File menu: the old <label for="fileinput"> listing every extension is gone,
   // replaced by a button that opens the hub
   assert.doesNotMatch(html, /<label class="fitem" for="fileinput"/, "the old bare label is gone");
@@ -4141,7 +4141,7 @@ test("no looping keepalive media element (the 2.0s seek beat stays gone)", () =>
   assert.equal(run(`typeof silentUnlock`), "undefined", "keepalive element is gone");
   // AudioBufferSourceNode.loop is fine (chip playback uses it) — the banned
   // thing is an HTMLMediaElement, whose loop wraps are seeks on WebKit
-  const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const src = appSource();
   assert.ok(!/new Audio\s*\(/.test(src), "no HTMLAudioElement is constructed");
 });
 
@@ -5170,7 +5170,7 @@ test("✦ Fill is fully removed: no button, no Edit ▾ entry, no Ask-sheet fill
   // the vm harness's getElementById lazily CREATES any id on first lookup
   // (tests/harness.mjs), so "no longer exists" has to be read from the
   // actual markup, the same way the help-sheet drift guard does
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   for (const id of ['id="fillbtn"', 'id="emAskFill"', 'id="askfill"', 'id="asktarget"', 'id="asktargetstatus"', 'id="asktargetrow"', 'id="asktakes"']) {
     assert.ok(!html.includes(id), id + " no longer in index.html");
   }
@@ -6727,7 +6727,7 @@ test("📷/🖼: several screenshots per message (cap 4), per-item removal, and 
 });
 
 test("🖼: the Photos/Files picker is a hidden multi-file image input beside 📷", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   const m = html.match(/<input type="file" id="askpickfile"[^>]*>/);
   assert.ok(m, "askpickfile input exists");
   assert.match(m[0], /accept="image\/\*"/);
@@ -6791,7 +6791,7 @@ test("status: /v1/status is polled like the inbox — the strip shows in EVERY t
 });
 
 test("chrome density follow-up (2026-10-01 pm, Josh's ruling #5): the 🎓 Learning header tag is gone entirely — no #modepill markup, CSS, or live JS reference left (a couple of historical comments still name the old id, same house style as #moresheet's own migration notes)", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   assert.doesNotMatch(html, /id="modepill"/, "no #modepill node in the markup");
   assert.doesNotMatch(html, /#modepill\s*\{|#modepill\s*\.pilltext|#modepill\s*,/, "no #modepill CSS rule left");
   assert.doesNotMatch(html, /getElementById\("modepill"\)/, "no live JS reference reads or writes it any more");
@@ -6802,7 +6802,7 @@ test("chrome density follow-up (2026-10-01 pm, Josh's ruling #5): the 🎓 Learn
 });
 
 test("chrome density follow-up (2026-10-01 pm, Josh's ruling #6, 'always there and distracting'): the pulsing dot on ✦ AI is gone — no CSS rule draws it, though the aria-label status text (and the 'working' class it hangs off) stays", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   assert.doesNotMatch(html, /askbtn\.working::before/, "no ::before rule paints a dot on #askbtn.working any more");
   assert.doesNotMatch(html, /asknowpulse/, "the pulse keyframes are gone too (nothing references them)");
   // the JS behavior behind the aria-label (askStatusRender) is unchanged —
@@ -6811,7 +6811,7 @@ test("chrome density follow-up (2026-10-01 pm, Josh's ruling #6, 'always there a
 });
 
 test("chrome density follow-up (2026-10-01 pm, Josh: 'text in the AI dialogue is always shifting … very annoying while analyzing'): #asknowstrip reserves a fixed 2-line height so a 1-line status never shrinks the box and nudges the chat log", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   const rule = html.match(/#asknowstrip\s*\{[^}]*\}/);
   assert.ok(rule, "#asknowstrip's own CSS rule exists");
   assert.match(rule[0], /min-height:\s*calc\(1\.3em\s*\*\s*2\)/, "reserves 2 lines' worth of height always, closed or not");
@@ -6821,7 +6821,7 @@ test("chrome density follow-up (2026-10-01 pm, Josh: 'text in the AI dialogue is
 });
 
 test("chrome density follow-up (2026-10-01 pm, Josh: a 'ResizeObserver loop completed with undelivered notifications' ⚠ showed up): fitReadline's own observers defer their write a frame (scheduleFitReadline), and the benign message is filtered out of the uncaught-error logger even if a browser still raises it", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   assert.doesNotMatch(html, /new ResizeObserver\(fitReadline\)/, "the RO callback is never fitReadline directly — that's the synchronous-write pattern the warning is about");
   assert.doesNotMatch(html, /new MutationObserver\(fitReadline\)/, "same for the MO callback");
   assert.match(html, /new ResizeObserver\(scheduleFitReadline\)/, "both observers go through the deferred scheduler instead");
@@ -6892,7 +6892,7 @@ test("audio session: 'ambient' (mixes with YouTube etc.) until Night Roll plays;
   try {
     run(`audioSessionType("ambient");`);
     assert.equal(val(`navigator.audioSession.type`), "ambient");
-    const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    const src = appSource();
     const i = src.indexOf('audioSessionType("ambient");\n  audio = new'), j = src.indexOf('audioSessionType("playback"); // now Night Roll is the music');
     assert.ok(i > 0, "ambient is set before the context is created");
     assert.ok(j > src.indexOf("async function play("), "play() asks for playback");
@@ -7449,7 +7449,7 @@ test("Apple Pencil can grab and draw without the dwell (a device pref, default o
   run(`localStorage.setItem("ff1roll-peninstant", "1");`);
   assert.equal(val(`penInstant()`), true);
   run(`localStorage.removeItem("ff1roll-peninstant");`);
-  assert.match(readFileSync(new URL("../index.html", import.meta.url), "utf8"), /const instantGrab = e\.pointerType === "mouse" \|\| \(e\.pointerType === "pen" && penInstant\(\)\)/);
+  assert.match(appSource(), /const instantGrab = e\.pointerType === "mouse" \|\| \(e\.pointerType === "pen" && penInstant\(\)\)/);
 });
 
 test("⌘A selects every visible note; ⌘D repeats a bar-long selection one bar later, clipboard untouched", () => {
@@ -7610,7 +7610,7 @@ test("Mixer: View ▾ → 🎚 Mixer and the hardware key X both toggle it; phon
   assert.equal(val(`mixerIsOpen()`), false, "tapping it again closes it");
   app.docDispatch({type: "keydown", key: "x"});
   assert.equal(val(`mixerIsOpen()`), true, "hardware key X opens it (Logic's mixer key)");
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   assert.match(html, /#mixerstrips \{[^}]*overflow-x: auto/, "the strips scroll sideways inside their own window");
 });
 
@@ -7656,7 +7656,7 @@ test("⌨ Terminal model pickers: shown on the Terminal tab with the bridge; a c
 
 test("a ruler range can be cleared: first tap outside fades it, the next removes it; Esc removes it", () => {
   installSong();
-  const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const src = appSource();
   assert.match(src, /if \(rangeSel\.off && pos\.y < BASE_RULER_H\) \{ rangeSel = null;/, "a tap outside a faded range removes it");
   assert.match(src, /e\.key === "Escape" && rangeSel\) \{ rangeSel = null;/, "Esc removes it");
 });
@@ -7899,7 +7899,7 @@ test("footer v2 tweaks (2026-09-30) → chrome density pass (2026-10-01) → chr
   // getElementById() with no real parent/child tree, so "X is inside the
   // footer" can only be asked of the raw HTML text, the same way the
   // "help sheet"/"Import hub" drift guards above do.
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   const footer = html.slice(html.indexOf("<footer"), html.indexOf("</footer>"));
   assert.match(footer, /id="syncbtn"/, "Publish (#syncbtn) is a direct footer button again");
   assert.doesNotMatch(footer, /id="moresheetbtn"/, "⋯ More is gone — no trigger button left in the footer");
@@ -7914,7 +7914,7 @@ test("footer v2 tweaks (2026-09-30) → chrome density pass (2026-10-01) → chr
 });
 
 test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a whole window popping up and it's just unnecessary — just do it as a reverse drop-down') → chrome density follow-up (2026-10-01 pm, Josh after using it): removed entirely — makeWindow() is never called for it, no drop-up markup is left, its tools moved into View ▾/the footer, and a stale docked/tabbed 'moresheet' id from either earlier change is purged from wm on load", async () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   assert.doesNotMatch(html, /makeWindow\("moresheet"/, "moresheet is never registered with makeWindow() any more");
   assert.doesNotMatch(html, /id="moresheet-h2"/, "no title bar — no Dock button, no ✕/drag/resize machinery (that's all `.overlay`-only, and #moresheet isn't one any more)");
   assert.doesNotMatch(html, /id="moresheet"/, "no #moresheet drop-up markup left at all");
@@ -7936,7 +7936,7 @@ test("⋯ More (chrome density pass, 2026-10-01, Josh: 'the More button has a wh
 });
 
 test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up from now on'): a drop-up (▦ Roll / ▤ Tracks / 𝄞 Score), first in the footer's left group, its own label naming the CURRENT view", async () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   const footer = html.slice(html.indexOf("<footer"), html.indexOf("</footer>"));
   const viewbtn = footer.slice(footer.indexOf('id="viewbtn"'), footer.indexOf('id="subbtn"'));
   assert.doesNotMatch(viewbtn, /display:\s*none/, "#viewbtn is visible, not the old hidden/inert node");
@@ -7969,7 +7969,7 @@ test("#viewbtn (chrome density pass, 2026-10-01, Josh: 'I'll call it drop up fro
 });
 
 test("☰ Notes ▴ (chrome density pass, 2026-10-01): a drop-up holding + New note (#notebtn, same id/handler as before — openEditor(null)) and ☰ All notes (#notesall, openNoteList() extracted from #listbtn's old direct handler)", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   assert.match(html, /id="notesmenu" class="dropup"/, "#notesmenu is a drop-up");
   const menu = html.slice(html.indexOf('id="notesmenu"'), html.indexOf('id="notesmenu"') + html.slice(html.indexOf('id="notesmenu"')).indexOf("</div>"));
   assert.match(menu, /id="notebtn"/, "+ New note (#notebtn) lives inside the drop-up now");
@@ -8016,7 +8016,7 @@ test("fitReadline (chrome density pass, 2026-10-01): #readline gets .ownrow unde
 });
 
 test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no Roll view, and Listener mode is stuck between them') → sub-menu follow-up (2026-10-02, Josh: 'View ▾ is too tall — make EVERY section an expanding sub-menu'): all six groups (View / Panels / Tools / Display / Background / Mode) are now header+content accordion rows, not .cfgsec captions over a flat list", async () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   const sheet = html.slice(html.indexOf('<div id="viewsheet">'), html.indexOf("<!-- KEY SIGNATURE"));
   assert.match(sheet, /id="vwRoll"/, "Roll is a real View ▾ item still");
   assert.doesNotMatch(sheet, /class="cfgsec"/, "the old .cfgsec captions are gone — each group's own header row replaces them");
@@ -8985,7 +8985,7 @@ test("Ask: askSend/askFinish/askFail/askNotesArrived all tag the message they pu
   // exercising it live would mean standing up a fake AI backend for a tag
   // check, so the tag on THAT push is a source check; askFinish/askFail/
   // askNotesArrived have no network of their own and are exercised directly.
-  const src = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const src = appSource();
   assert.match(src, /msgs\.push\(\{role: "user", content: text, t: Date\.now\(\), at: askSpanLabel\(sp\), pending: jobId, mode: appMode\(\)\}\);/, "askSend tags the user push");
 
   const a = await mkAsk("normal");
@@ -9023,7 +9023,7 @@ test("Ask: the on-screen log still SHOWS a different mode's turn (dimmed, tagged
 // growing child, scoped to this editor (not every .sheet textarea — the Ask
 // composer box has its own JS auto-grow, unrelated to this fix).
 test("Annotation editor (#noteeditor): #ntext is the one child that grows when the sheet is resized — header/fields above and the Save/Cancel row below stay fixed", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   assert.match(html, /#noteeditor #ntext\s*\{\s*flex:\s*1 1 auto;\s*\}/, "#ntext opts into flex-grow — every sibling (h2, the bar/beat/chord/key rows, the Save/Cancel row) keeps the default flex-grow:0");
   assert.match(html, /\.sheet textarea \{ width: 100%; min-height: 84px; resize: vertical; \}/, "the 84px floor survives untouched — the no-resize default size is unchanged");
   // markup: #ntext lives inside #noteeditor's own .sheet (the flex column the grip resizes), not some other sheet
@@ -9293,7 +9293,7 @@ test("Download audio: deliverAudioFile writes the file via Filesystem then calls
 // see the one-off Playwright accessibility snapshot instead.
 
 test("VoiceOver: no symbol-only <button> lacks an aria-label (scan, explicit allow-list)", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   // Two known-safe false positives for a regex that can't evaluate JS:
   //  - #analyzeadopt ships empty in the markup; analyzeText() always fills it
   //    with a real word ("Adopt this chord"/"Adopt this key") before it's
@@ -10289,7 +10289,7 @@ test("lasso: tapping empty space or tapping the note out clears a leftover singl
 });
 
 test("edit toolbar: ⟲ ⟳ ⧉ 📋 are the first four controls, ahead of everything Pencil shows/hides (Josh, 2026-10-02: undo must never move)", () => {
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const html = appSource();
   const row = html.slice(html.indexOf('<div id="editrow">'), html.indexOf('id="accseg"') + 20);
   const ids = [...row.matchAll(/<(?:button|div|span)[^>]*\bid="([^"]+)"/g)].map(m => m[1]);
   // Josh 2026-10-02 (second pass): undo redo cut copy paste delete ⋯, split by join inside ⋯, Select/Pencil/Erase last

@@ -1398,6 +1398,23 @@ loop: 2.1          ← "loop:" prefix = loop directive. The anchor is the
   loop returns past a once-only intro carry a measured `loop:` directive
   in their rollnotes (battle, gameover, overworld, ship, victory).
 
+## Module map (src/ — docs/split-plan.md)
+
+index.html is markup + CSS only; the app itself is plain browser ES modules
+under src/, entry src/main.js, no build step. Grows one line per module as
+docs/split-plan.md's steps move pieces out of src/app.js; check.mjs rule 8
+(tools/split/check.mjs) keeps index.html's modulepreload list, sw.js's
+APP_MODULES, and src/devtools.js's mirrored imports all equal to the real
+src/ listing. The "Code map" section right below still describes how
+src/app.js is organized internally — accurate until a given area's line is
+added here with its own module, at which point that area's Code map entry is
+stale and should move up here instead.
+
+- `main.js` — entry: imports app.js, then (if `window.__NR_EXPOSE`) wires the e2e devtools mirror, then app.js's own top-level code (still verbatim boot order) runs.
+- `edition.js` — `export const EDITION = "web"`; tools/package.mjs rewrites this one line to `"app"` for the store build (index.html itself is now copied byte-for-byte, no transform).
+- `app.js` — the whole pre-split app (step 0b's cutover, 2026-10-02), verbatim from the old inline `<script>` apart from the EDITION import and the boot-watchdog clear; shrinks to nothing as later steps carve real modules out of it, deleted in step 15.
+- `devtools.js` — `exposeGlobals()`: GET-only window accessors mirroring every export of app.js/edition.js, so Playwright's `page.evaluate(() => bareName)` keeps working across the cutover (module bindings aren't window properties). Gated by `window.__NR_EXPOSE`; never touches production otherwise.
+
 ## Code map (index.html, section comments mark these)
 
 catalog → CATALOG built from albums/manifest.json at boot (run
@@ -4999,6 +5016,14 @@ WebLLM CDN pass through untouched):
   Pages' 404.html does online); serving index.html AT that path made
   the app take the song's directory for `APP_BASE` and every relative
   fetch missed (found in the first browser check).
+- `src/**` (docs/split-plan.md §4 step 0b, 2026-10-02 — the ES-module
+  cutover, see "Module map" above): network-first with the same 4 s timeout
+  and revalidate as the page itself, NOT cache-first like the other
+  precached assets — index.html's own `max-age=600` on Pages would otherwise
+  let a browser serve a fresh index.html (always pointing at the same
+  `src/main.js` URL) alongside stale cached modules from the previous
+  deploy, same bug class as the index.html one above. `APP_MODULES` in
+  sw.js lists every file; all four are precached at install.
 - `vendor/vexflow.js`, the manifest, icons: cache-first, precached.
 - `vendor/soundfonts/*`: cache-first, cached on first use — 83 MB is
   never precached (iOS quota, slow installs).
@@ -5027,6 +5052,18 @@ precache entries exist, soundfonts never precached, cross-origin passes
 through). Browser-verified on the Mac: install, precache, song cached on
 open, server stopped → page and song load; path-form URL offline →
 redirect → song loads. Josh's iPad: Safari → Share → Add to Home Screen.
+
+**Boot watchdog** (docs/split-plan.md §4 step 0b, 2026-10-02): a classic
+(non-module) inline script in index.html's `<head>`, so it still runs even
+when `src/main.js` 404s or throws before app.js's own `boot()` ever starts —
+the one new way a page can go blank that a single inline `<script>` never
+had. Arms `window.__nrBoot = setTimeout(nrBootFail, 10000)` and an `error`
+listener; `src/app.js`'s `boot()` clears it as its first statement (not its
+last — a slow catalog fetch must never trip a false alarm; the module graph
+having loaded far enough to start running `boot()` is already past the
+dangerous window). `nrBootFail` shows an in-page panel (never a native
+dialog — CLAUDE.md's hard rule): the error text, Reload, and Reset cache
+(`?sw=0`, the kill switch above).
 
 ## Dev channel — removed 2026-09-26
 
