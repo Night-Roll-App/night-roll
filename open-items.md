@@ -4965,3 +4965,5 @@ Josh: "View ▾ is too tall — make EVERY section an expanding sub-menu." Gener
 ## DONE 2026-10-02 20:25 — one ＋ for attachments (Josh, Terminal #52): 📷 and 🖼 merged into a ＋ beside Speak that drops up "📷 Screenshot of Night Roll" / "🖼 Photo Library…" (the iMessage/ChatGPT/Claude-app pattern); Photo Library opens iOS's own chooser (Photo Library / Take Photo / Choose File)
 
 ## DONE 2026-10-02 20:40 — heads-up before an iPad install relaunches the app (Josh, Terminal #53): build-ipad.sh → bridge --deploy-in 20 → ✦ AI counts down in gold. Bridge needs a restart to know /v1/deploy (done when idle).
+
+## 2026-10-02 20:55 — icon audit for Josh (Terminal #50): https://claude.ai/artifact/RB1G5wuzBcEMfmiVmnteoK — 61 controls vs Google Material icons: 41 switch / 12 keep / 6 either / 2 done. Waiting on his pick (Q-list). Also found: Edit ▾ menu Copy/Paste still show ⧉/📋; ▦ ⇄ ⊞ each carry two unrelated meanings.
