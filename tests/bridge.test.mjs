@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import {spawn} from "node:child_process";
-import {mkdtempSync, rmSync} from "node:fs";
+import {mkdtempSync, rmSync, mkdirSync, writeFileSync, readdirSync} from "node:fs";
 import {tmpdir} from "node:os";
 import path from "node:path";
 
@@ -425,4 +425,119 @@ test("bridge: a long tool call that comes back one '}' short still runs as a too
   assert.ok(msg.tool_calls, "ran as a tool call: " + JSON.stringify(msg).slice(0, 200));
   assert.equal(msg.tool_calls[0].function.name, "write_notes");
   assert.equal(JSON.parse(msg.tool_calls[0].function.arguments).notes[0].pitch, "C3");
+});
+
+// ---- Deploy safeguards (2026-10-02, Josh: "I'm really concerned now about
+// doing work because every time there's a deployment I worry something bad
+// is gonna happen" — a bad build wiped notes in his Untitled song).
+
+test("bridge: POST /v1/backup writes/lists/reads an off-device copy of a song's draft, skips a byte-identical write, 400s on a bad body, 404s an unknown file, 413s past the ~20MB cap", async t => {
+  const jobsDir = mkdtempSync(path.join(tmpdir(), "nr-bridge-backup-"));
+  const port = 15000 + Math.floor(Math.random() * 1000);
+  const {child} = await startBridge(["--no-claude", "--port", String(port), "--jobs-dir", jobsDir]);
+  t.after(() => { child.kill("SIGKILL"); rmSync(jobsDir, {recursive: true, force: true}); });
+  const B = "http://127.0.0.1:" + port, H = {"content-type": "application/json"};
+  const key = "albums/compositions/nightroll/backup-test.mid";
+  const dirName = key.replace(/\//g, "__"); // same rule the bridge applies (sanitizeSongKey leaves every char of this key alone)
+  const now = Date.now(), at1 = now - 9000, at2 = now - 7000;
+
+  const r1 = await fetch(B + "/v1/backup", {method: "POST", headers: H, body: JSON.stringify({key, doc: {tracks: [1]}, notes: "bar 1: C", at: at1})});
+  assert.deepEqual(await r1.json(), {ok: true, file: new Date(at1).toISOString().replace(/[:.]/g, "-") + ".json"});
+
+  const list1 = await (await fetch(B + "/v1/backups?key=" + encodeURIComponent(key))).json();
+  assert.equal(list1.backups.length, 1);
+  assert.equal(list1.backups[0].at, at1);
+  assert.ok(list1.backups[0].bytes > 0);
+
+  const one = await (await fetch(B + "/v1/backups/" + encodeURIComponent(dirName) + "/" + encodeURIComponent(list1.backups[0].file))).json();
+  assert.deepEqual(one, {key, at: at1, doc: {tracks: [1]}, notes: "bar 1: C"});
+
+  // byte-identical doc (notes differ — only the doc is compared): skipped, no new file
+  const r2 = await fetch(B + "/v1/backup", {method: "POST", headers: H, body: JSON.stringify({key, doc: {tracks: [1]}, notes: "a different note", at: at2})});
+  assert.deepEqual(await r2.json(), {ok: true, skipped: true});
+  assert.equal((await (await fetch(B + "/v1/backups?key=" + encodeURIComponent(key))).json()).backups.length, 1);
+
+  // a changed doc writes a new one
+  const r3 = await fetch(B + "/v1/backup", {method: "POST", headers: H, body: JSON.stringify({key, doc: {tracks: [1, 2]}, at: at2})});
+  assert.deepEqual(await r3.json(), {ok: true, file: new Date(at2).toISOString().replace(/[:.]/g, "-") + ".json"});
+  assert.equal((await (await fetch(B + "/v1/backups?key=" + encodeURIComponent(key))).json()).backups.length, 2);
+
+  // bad bodies
+  assert.equal((await fetch(B + "/v1/backup", {method: "POST", headers: H, body: JSON.stringify({key})})).status, 400, "a backup needs doc too");
+  assert.equal((await fetch(B + "/v1/backups")).status, 400, "backups need ?key=");
+  assert.equal((await fetch(B + "/v1/backups/" + encodeURIComponent(dirName) + "/nope.json")).status, 404);
+
+  // 413 past the ~20MB cap
+  const huge = "x".repeat(21 * 1024 * 1024);
+  const rBig = await fetch(B + "/v1/backup", {method: "POST", headers: H, body: JSON.stringify({key: "albums/compositions/nightroll/huge.mid", doc: {blob: huge}, at: now})});
+  assert.equal(rBig.status, 413);
+});
+
+test("bridge: backup retention — newest 300 kept, but nothing younger than 7 days is ever pruned past that (Josh, 2026-10-02)", async t => {
+  const jobsDir = mkdtempSync(path.join(tmpdir(), "nr-bridge-retain-"));
+  const port = 14000 + Math.floor(Math.random() * 1000);
+  const {child} = await startBridge(["--no-claude", "--port", String(port), "--jobs-dir", jobsDir]);
+  t.after(() => { child.kill("SIGKILL"); rmSync(jobsDir, {recursive: true, force: true}); });
+  const B = "http://127.0.0.1:" + port, H = {"content-type": "application/json"};
+  const key = "albums/compositions/nightroll/retain.mid";
+  const dirName = key.replace(/\//g, "__");
+  const dir = path.join(jobsDir, "state", "backups", dirName); // --jobs-dir is custom here, so STATE_DIR nests inside it
+  mkdirSync(dir, {recursive: true});
+  const now = Date.now(), DAY = 24 * 3600 * 1000;
+  const write = (at, i) => writeFileSync(path.join(dir, new Date(at).toISOString().replace(/[:.]/g, "-") + ".json"), JSON.stringify({key, at, doc: {i}}));
+  for (let i = 0; i < 4; i++) write(now - 10 * DAY + i * 1000, i);          // 4 old backups (older than 7 days — eligible for pruning)
+  for (let i = 0; i < 305; i++) write(now - 6 * DAY + i * 1000, 100 + i);  // 305 recent ones (younger than 7 days — never pruned, however far past 300 they push the folder)
+  assert.equal(readdirSync(dir).length, 309);
+  // one more HTTP write (a changed doc, the newest of all) triggers pruneBackups — 310 total, 10 past the 300 cap
+  await fetch(B + "/v1/backup", {method: "POST", headers: H, body: JSON.stringify({key, doc: {final: true}, at: now})});
+  const after = readdirSync(dir);
+  assert.equal(after.length, 306, "only the 4 old files were pruned — the 6 recent ones sitting in that same oldest-10 slice past the 300 cap survive");
+  assert.equal((await (await fetch(B + "/v1/backups?key=" + encodeURIComponent(key))).json()).backups.length, 306);
+});
+
+test('bridge: "Not now" — POST /v1/deploy {hold:true} blocks --deploy-wait until released; GET /v1/status carries deployHold (Josh, 2026-10-02)', async t => {
+  const jobsDir = mkdtempSync(path.join(tmpdir(), "nr-bridge-hold-"));
+  const port = 13000 + Math.floor(Math.random() * 1000);
+  const {child} = await startBridge(["--no-claude", "--port", String(port), "--jobs-dir", jobsDir]);
+  t.after(() => { child.kill("SIGKILL"); rmSync(jobsDir, {recursive: true, force: true}); });
+  const B = "http://127.0.0.1:" + port, H = {"content-type": "application/json"};
+  await fetch(B + "/v1/deploy", {method: "POST", headers: H, body: JSON.stringify({hold: true})});
+  const st1 = await (await fetch(B + "/v1/status")).json();
+  assert.equal(st1.deployHold, true);
+  assert.equal(st1.deployInMs, undefined, "a hold sent with no inSec carries no countdown either");
+
+  let waitExited = false, waitCode = null;
+  const waiter = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port), "--deploy-wait"], {stdio: ["ignore", "pipe", "pipe"]});
+  waiter.on("exit", code => { waitExited = true; waitCode = code; });
+  t.after(() => { if (!waitExited) waiter.kill("SIGKILL"); });
+  await sleep(2500); // one 2s poll cycle has had time to run
+  assert.equal(waitExited, false, "still held — --deploy-wait must not have exited");
+
+  await fetch(B + "/v1/deploy", {method: "POST", headers: H, body: JSON.stringify({hold: false})});
+  assert.equal((await (await fetch(B + "/v1/status")).json()).deployHold, undefined, "released");
+  for (let i = 0; i < 30 && !waitExited; i++) await sleep(200);
+  assert.equal(waitExited, true, "--deploy-wait exits once released");
+  assert.equal(waitCode, 0);
+});
+
+test("bridge: --deploy-wait also waits out a plain countdown with no hold, and exits immediately if the bridge is unreachable", async t => {
+  const jobsDir = mkdtempSync(path.join(tmpdir(), "nr-bridge-wait-"));
+  const port = 12000 + Math.floor(Math.random() * 1000);
+  const {child} = await startBridge(["--no-claude", "--port", String(port), "--jobs-dir", jobsDir]);
+  t.after(() => { child.kill("SIGKILL"); rmSync(jobsDir, {recursive: true, force: true}); });
+  const H = {"content-type": "application/json"};
+  const B = "http://127.0.0.1:" + port;
+  await fetch(B + "/v1/deploy", {method: "POST", headers: H, body: JSON.stringify({inSec: 3})});
+  const t0 = Date.now();
+  const waiter = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port), "--deploy-wait"], {stdio: ["ignore", "pipe", "pipe"]});
+  const code = await new Promise(r => waiter.on("exit", r));
+  assert.equal(code, 0);
+  assert.ok(Date.now() - t0 >= 2900, "waited out the ~3s countdown: " + (Date.now() - t0));
+
+  // unreachable bridge: exits 0 right away, no 2s poll wait
+  const t1 = Date.now();
+  const waiter2 = spawn(process.execPath, [new URL("../tools/claude-bridge.mjs", import.meta.url).pathname, "--port", String(port + 500), "--deploy-wait"], {stdio: ["ignore", "pipe", "pipe"]});
+  const code2 = await new Promise(r => waiter2.on("exit", r));
+  assert.equal(code2, 0);
+  assert.ok(Date.now() - t1 < 2000, "no bridge there: doesn't even wait for a poll cycle");
 });

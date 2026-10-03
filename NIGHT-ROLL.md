@@ -6791,6 +6791,77 @@ which counts down on ✦ AI locally (gold "✦ AI · N", then "⟳"; reset after
 90 s if no install came) and says it once in the status line. 20 s because
 the poll is 10 s: he always sees ≥10 s.
 
+## Deploy safeguards (2026-10-02)
+
+Josh, after a bad build wiped notes in his Untitled song (recovered only
+from Ask's chat history): "I'm really concerned now about doing work
+because every time there's a deployment I worry something bad is gonna
+happen." Three legs, all built around the existing Install countdown above.
+
+**1 — off-device backups (the bridge).** `POST /v1/backup {key, doc,
+notes?, at}` (`doc` = the song's `draftDoc()`, `notes` = its `.rollnotes`
+text) writes `~/.night-roll-bridge/backups/<key with / → __>/<ISO
+time>.json` — `backupKeyDir()` applies the same `sanitizeSongKey` rule
+sessions use, then swaps `/` for `__`. mkdir -p; same auth as every other
+route; body capped ~20 MB (413 past it, `readBodyCapped`, the same pattern
+`/v1/shot` already used). A write is skipped when its `doc` is
+byte-identical to that song's newest backup (`pruneBackups`'s sibling
+check, not pruning itself). Retention (`pruneBackups`): newest 300 kept;
+past that, a file only goes if it's also older than 7 days — a quiet song
+never loses its history just because it crossed 300. `GET
+/v1/backups?key=…` lists `{file, at, bytes}`; `GET
+/v1/backups/<dir>/<file>` returns one stored record whole.
+
+On the app side: `scheduleBackupFlush()`/`flushBackupNow()` (index.html,
+beside the deploy-warning code) debounce 5 s off `saveDraft()` and
+`saveLocalNotes()` — both call `scheduleBackupFlush()` guarded by
+`editableSong()` (compositions + local/ drafts; never a capture or
+starter), and `flushBackupNow()` itself re-checks `askCaps.bridge` (the
+same flag `askStatusPoll` detects — no bridge, no backup, ever) before
+POSTing. A flush also fires immediately on `visibilitychange` (tab/app
+going background) and from deploy safeguard #2's first tick, below. A
+failed POST never throws into an edit — `logDebug` only, same as every
+other best-effort network call in this app.
+
+**2 — a Version before every install.** `deployBeforeInstall()` runs once,
+on `deployWarn()`'s FIRST tick of a cycle (not every 10 s poll): if the
+open song is editable and its music or annotations differ from its newest
+stored Version, it saves one labelled "Before update HH:MM" (`pushVersion`,
+the same store File → Versions… reads) and triggers a backup flush (#1).
+The music comparison is `musicSig()` (ppq/tracks/tempos/timesigs), not a
+raw-blob compare — a local/ draft's own `seq` stamp (NIGHT-ROLL.md "Local
+song persistence") bumps on every `saveDraft()` even when nothing musical
+changed, so comparing the full stored JSON would "detect" a change on
+every single tick.
+
+**3 — "Not now" (Josh: "he decides when the install happens").** Tapping
+✦ AI while a countdown or hold is active (`deployActive()`) opens a small
+`appConfirm()` sheet instead of ✦ Ask — "A new version is ready. The app
+will restart." **Install now** / **Not now** (no native dialogs, per
+CLAUDE.md). **Not now** POSTs `/v1/deploy {hold: true}`; the bridge's
+`deployHold`/`deployHoldAt` block `--deploy-wait` (below) regardless of
+`deployUntil`, until released or 60 minutes pass (then GET /v1/status
+stops reporting it on its own). The button becomes `✦ AI · ⏸` (the same
+label-span `innerHTML` rebuild `deployButtonTick()` always did, icon
+audit 2026-10-02) and the status line says the update is waiting.
+Tapping ✦ AI again reopens the same sheet; **Install now** POSTs `{hold:
+false, inSec}` — `3` if it was resuming from a hold (a short grace
+window), `0` to go immediately from an un-held active countdown.
+`deploySetHeld()` mirrors the bridge's own `deployHold` on every
+`askStatusPoll()`, so a fresh poll (a reload, another device) always
+shows the right thing even with no local countdown running.
+
+`build-ipad.sh` (night-roll-app) replaces its old `--deploy-in 20 &&
+sleep 20` with `--deploy-in 20 && node tools/claude-bridge.mjs
+--deploy-wait` — the new CLI flag polls `GET /v1/status` every 2 s and
+exits 0 once `deployInMs` has run out AND `deployHold` is false (also
+exits 0 immediately if the bridge can't be reached, or after 60 minutes
+of waiting) — only then does the script's own `devicectl install` run.
+Tests: tests/bridge.test.mjs ("POST /v1/backup …", "backup retention …",
+"\"Not now\" … blocks --deploy-wait …", "--deploy-wait also waits out a
+plain countdown …"); tests/night-roll.test.mjs ("deploy safeguard #1/#2/#3
+…").
+
 ## Material icons (2026-10-02)
 
 Icon audit (docs/icon-audit.html, Josh: "those all look great, go ahead and
