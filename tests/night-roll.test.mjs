@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
@@ -10356,6 +10356,21 @@ test("the ruler selection survives a relaunch: kept per song on this device, res
   run(`rangeSel = null; draw();`);
   assert.equal(val(`localStorage.getItem("ff1roll-range-albums/compositions/nightroll/range-test.mid")`), null, "cleared range is forgotten");
   run(`song = null; songKey = "midi/test.mid";`);
+});
+
+test("Publish on an Untitled song names it first (saveSongAs), then publishes it as his music — .mid and annotations (Josh, 2026-10-03, lotion)", async () => {
+  const app = await createApp(); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`createComposition(120, 4, 4); song.tracks[0].notes.push({t: 0, d: 240, p: 60, v: 80}, {t: 480, d: 240, p: 62, v: 80}); saveDraft();
+       globalThis.__pub = []; writeToken = () => "tok"; ghHeaders = () => ({});
+       publishSong = async (key) => { __pub.push({key, his: isComposition()}); };
+       writeSongsReadme = async () => {}; initCatalog = async () => {};`);
+  assert.match(val(`songKey`), /^local\//);
+  run(`globalThis.__ok = null; publishUnsavedSong("compositions/nightroll", "qa pub song").then(v => __ok = v);`);
+  for (let i = 0; i < 50 && val(`__ok`) === null; i++) await new Promise(r => setTimeout(r, 10));
+  assert.equal(val(`__ok`), true);
+  assert.equal(val(`songKey`), "albums/compositions/nightroll/qa-pub-song.mid", "moved into its folder first");
+  assert.deepEqual(val(`__pub`), [{key: "albums/compositions/nightroll/qa-pub-song.mid", his: true}], "then published as his own music (.mid included)");
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 2, "the notes came along");
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {
