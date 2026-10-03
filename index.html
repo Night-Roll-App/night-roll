@@ -172,13 +172,6 @@
   #trackslide.off { max-width: 0; opacity: 0; flex: none; }
   #trackmore { margin: 8px 4px 0 0; min-height: 36px; padding: 4px 9px; flex: none; }
   #transport { display: flex; align-items: center; gap: 8px; flex: none; margin-top: 6px; }
-  /* too narrow for chips beside the transport (the AI window docked over a
-     third of the screen cut pulse1/pulse2/triangle to "pu…" — Josh,
-     2026-10-02): the transport takes the first row, the chips get the whole
-     width below it. fitTrackRow() toggles .stacked. */
-  #trackrow.stacked { flex-wrap: wrap; }
-  #trackrow.stacked #transport { order: -1; flex: 1 1 100%; justify-content: flex-end; padding-right: 8px; }
-  #trackrow.stacked #trackzone { flex: 1 1 100%; }
   #albumstrip { display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(91,120,232,.14);
     border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); font: 12px var(--mono); color: var(--text); }
   #albumtext { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1990,7 +1983,7 @@
     </div>
     <div class="hsec" data-hsec="tracks">
     <dl>
-      <dt>Track chips (top)</dt><dd>When the screen gets narrow (say the AI window is docked wide), the chips move to their own row under Play and the LCD instead of being cut off. Tap a chip to select its track. <b>M</b> mutes — the track goes silent and its notes dim, but they stay on screen and editable. <b>S</b> solos (only soloed tracks play). <b>H</b> hides the track's notes — in the chip's voice menu (second tap) or the Mixer; while hidden the chip shows a lit <b>H</b>, one tap brings it back — and its score staff, without silencing the track; the way to lasso or read around one part. One tap each, any time, even mid-playback, and <b>the song remembers them</b> (saved with its annotations, like voice and volume). Tap the selected chip AGAIN for the voice &amp; color menu, organized by family: NES / waves (pulses, triangle, sine, saw; auto = the classic assignment, and its menu row SAYS what it resolves to for this track — "auto: pulse 50%", or "auto: chip" when the game's own sound is available), then real sampled instruments — Keys &amp; mallets (piano, electric piano, harpsichord, celesta, music box, vibraphone, marimba, glockenspiel), Guitar &amp; bass, Strings (solo violin/viola/cello/contrabass, the full section, pizzicato, harp), Winds (flute, piccolo, clarinet, oboe, saxes), Brass (trumpet, trombone, french horn, tuba, section), Organ &amp; choir — 36 FluidR3 soundfont instruments, each fetched only when a track uses it and cached after, and loudness-matched to the chip voices automatically — a violin at the same velocity as a pulse now sits at the same level, so velocity stays a musical choice instead of a mixing workaround. Last in the list, <b>Game instruments ›</b> borrows a voice from any published PS1/N64 game's library (File → Instruments…, same source): a shortcut to <b>Instruments in this song</b> leads first when the open song is itself a game song with one, then every other game — tap in for <b>All instruments (A–Z)</b> or one of its songs (labelled by the track it plays on, when that's the song you have open), tap an instrument to hear it and assign it in one go. The menu row shows it as "GoldenEye 007 · Soft pad"; playback renders the note through the game's own sample, caching repeats, and never goes silent — a library or sample that can't be reached falls back to the track's own synth voice. Tap a family to open it, ‹ to go back; the menu opens in the current voice's family — and its color — the wide bar at the bottom shows the track's current color and opens a full color picker (any color at all), and a <b>vol</b> fader above it sets the track's own volume (0–150%), live while you drag — the mixer answer when one instrument dominates. On your own songs the menu also RENAMES the track (type a name, tap Rename): voice, color, and volume settings migrate with it, and Save bakes the name into the .mid. Name a track "drums" (or "kit"/"percussion") and it becomes a drum track. Both save as a normal synced annotation ("track: pulse1 voice=piano") — playback and display only, the MIDI is never touched. Many tracks wrap onto more rows; a ▾ appears beside the last chip when they overflow — first row always shows, ▾ reveals the rest, ▴ tucks them away (the transport stays pinned to the top row). The ◂ at the far left slides the whole chip cluster away when the row feels busy; ▸ brings it back (remembered). Play and Back to start sit on this row; the Roll/Tracks/Score switch lives bottom-left in the footer. <b>Pan</b>: a left–right fader under the volume in the same menu; let go and it is saved as <code>pan=</code> on the track's annotation. An imported song's tracks arrive where the game put them (the .mid carries each channel's pan), and its chip audio is rendered in stereo from the same values.</dd>
+      <dt>Track chips (top)</dt><dd>Tap a chip to select its track. <b>M</b> mutes — the track goes silent and its notes dim, but they stay on screen and editable. <b>S</b> solos (only soloed tracks play). <b>H</b> hides the track's notes — in the chip's voice menu (second tap) or the Mixer; while hidden the chip shows a lit <b>H</b>, one tap brings it back — and its score staff, without silencing the track; the way to lasso or read around one part. One tap each, any time, even mid-playback, and <b>the song remembers them</b> (saved with its annotations, like voice and volume). Tap the selected chip AGAIN for the voice &amp; color menu, organized by family: NES / waves (pulses, triangle, sine, saw; auto = the classic assignment, and its menu row SAYS what it resolves to for this track — "auto: pulse 50%", or "auto: chip" when the game's own sound is available), then real sampled instruments — Keys &amp; mallets (piano, electric piano, harpsichord, celesta, music box, vibraphone, marimba, glockenspiel), Guitar &amp; bass, Strings (solo violin/viola/cello/contrabass, the full section, pizzicato, harp), Winds (flute, piccolo, clarinet, oboe, saxes), Brass (trumpet, trombone, french horn, tuba, section), Organ &amp; choir — 36 FluidR3 soundfont instruments, each fetched only when a track uses it and cached after, and loudness-matched to the chip voices automatically — a violin at the same velocity as a pulse now sits at the same level, so velocity stays a musical choice instead of a mixing workaround. Last in the list, <b>Game instruments ›</b> borrows a voice from any published PS1/N64 game's library (File → Instruments…, same source): a shortcut to <b>Instruments in this song</b> leads first when the open song is itself a game song with one, then every other game — tap in for <b>All instruments (A–Z)</b> or one of its songs (labelled by the track it plays on, when that's the song you have open), tap an instrument to hear it and assign it in one go. The menu row shows it as "GoldenEye 007 · Soft pad"; playback renders the note through the game's own sample, caching repeats, and never goes silent — a library or sample that can't be reached falls back to the track's own synth voice. Tap a family to open it, ‹ to go back; the menu opens in the current voice's family — and its color — the wide bar at the bottom shows the track's current color and opens a full color picker (any color at all), and a <b>vol</b> fader above it sets the track's own volume (0–150%), live while you drag — the mixer answer when one instrument dominates. On your own songs the menu also RENAMES the track (type a name, tap Rename): voice, color, and volume settings migrate with it, and Save bakes the name into the .mid. Name a track "drums" (or "kit"/"percussion") and it becomes a drum track. Both save as a normal synced annotation ("track: pulse1 voice=piano") — playback and display only, the MIDI is never touched. Many tracks wrap onto more rows; a ▾ appears beside the last chip when they overflow — first row always shows, ▾ reveals the rest, ▴ tucks them away (the transport stays pinned to the top row). The ◂ at the far left slides the whole chip cluster away when the row feels busy; ▸ brings it back (remembered). Play and Back to start sit on this row; the Roll/Tracks/Score switch lives bottom-left in the footer. <b>Pan</b>: a left–right fader under the volume in the same menu; let go and it is saved as <code>pan=</code> on the track's annotation. An imported song's tracks arrive where the game put them (the .mid carries each channel's pan), and its chip audio is rendered in stereo from the same values.</dd>
       <dt>S</dt><dd>Solo: hide everyone else instead.</dd>
       <dt>Mixer window</dt><dd>Tap <b>View ▾ → Mixer</b> (hardware key <b>X</b>, Logic's mixer key, outside a text field) for a DAW-style mixer: one strip per track, side by side, scrolling sideways inside its own window if there are more than fit — the page itself never scrolls sideways. Each strip is the color dot and name, <b>M / S / H</b> (same as the track chips), a vertical <b>volume fader</b> and a live <b>level meter</b> beside it, and a <b>pan</b> slider below — every change writes the same <code>track:</code> annotation as the voice & color menu's fader and pan, so it's one undo step and it sticks. A <b>MASTER</b> strip at the end is the same volume control the header has. <b>Drag a strip by its name</b> to reorder it — track order follows the .mid, so this changes playback/export order too (on your own songs only; a capture's order shows read-only); dragging is one undo step that puts every track back exactly where it was, annotations (voice/color/mute/solo) stay with the track by name regardless of where it moves. The meters cost nothing while the Mixer is closed — they only start running once it's open.</dd>
     </dl>
@@ -5070,7 +5063,6 @@ function updateTrackMore() {
   const overflowing = bar.scrollHeight > bar.clientHeight + 2;
   more.style.display = overflowing || trackExpand ? "" : "none";
   more.textContent = trackExpand ? "▴" : "▾";
-  if (typeof scheduleFitTrackRow === "function") scheduleFitTrackRow(); // a chip that no longer fits beside the transport moves the row under it
 }
 document.getElementById("trackmore").addEventListener("click", () => {
   trackExpand = !trackExpand;
@@ -14977,31 +14969,6 @@ function fitReadline() {
 // breaks the cycle; fitReadlineScheduled coalesces a burst of notifications
 // (resize + several class changes in the same tick) into one frame's call.
 let fitReadlineScheduled = false;
-// the chips need room to read. Stack when they overflow beside the transport
-// (the ▾ "more tracks" button is the app's own did-not-fit signal); unstack
-// only once the whole set, measured at full width while stacked, fits beside
-// the transport with a margin — so it can't flip back and forth.
-function fitTrackRow() {
-  const row = document.getElementById("trackrow"), tp = document.getElementById("transport");
-  const more = document.getElementById("trackmore"), bar = document.getElementById("trackbar");
-  if (!row || !tp || !row.clientWidth) return;
-  const stacked = row.classList.contains("stacked");
-  if (!stacked) fitTrackRow.tw = tp.offsetWidth;
-  else fitTrackRow.need = [...bar.children].reduce((w, c) => w + c.offsetWidth + 8, 60); // ◂ toggle + gaps
-  const overflow = !stacked && more && more.style.display !== "none" && !trackExpand; // ▾ shown = the chips did not fit (▴ = he expanded them on purpose)
-  const fitsBeside = stacked && fitTrackRow.need && row.clientWidth - (fitTrackRow.tw || 0) >= fitTrackRow.need + 40;
-  const stack = stacked ? !fitsBeside : overflow;
-  if (stack !== stacked) { row.classList.toggle("stacked", stack); updateTrackMore(); if (song) { clampView(); draw(); } }
-}
-function scheduleFitTrackRow() { // a function property, not a top-level let: updateTrackMore calls this on the boot path, before later lets exist
-  if (scheduleFitTrackRow.pending) return;
-  scheduleFitTrackRow.pending = true;
-  requestAnimationFrame(() => { scheduleFitTrackRow.pending = false; fitTrackRow(); });
-}
-if (typeof document !== "undefined" && document.body && typeof ResizeObserver === "function") {
-  const tr = document.getElementById("trackrow");
-  if (tr) new ResizeObserver(scheduleFitTrackRow).observe(tr);
-}
 function scheduleFitReadline() {
   if (fitReadlineScheduled) return;
   fitReadlineScheduled = true;
