@@ -312,3 +312,16 @@ test("gesture: palm rejection — a touch while the Pencil is down is ignored, n
   assert.equal(app.run(`!!pinch`), false);
   assert.equal(app.run(`view.pxq`), pxq0);
 });
+
+test("gesture: a wobbly ruler tap (under 24px) places the cursor instead of arming a tiny cycle (Josh, 2026-10-02)", async () => {
+  const app = await boot("vm-gest-ruler-tap");
+  app.run(`view.pxq = 200; clampView(); rangeSel = null; draw();`);
+  const xy = tk => JSON.parse(app.run(`JSON.stringify({x: RULER_W + (${tk} / song.ppq) * view.pxq - view.x, y: 10})`));
+  const p = xy(960);
+  drag(app, p, {x: p.x + 15, y: p.y}); // a finger tap that wobbles 15px — past the 8px "moved" mark
+  assert.equal(app.run(`rangeSel`), null, "no 16th-note cycle");
+  const cur = +app.run(`playCursor`);
+  assert.ok(Math.abs(cur - 960) <= 240, "the cursor went where he tapped: " + cur);
+  drag(app, xy(480), xy(1440)); // a real drag still selects
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify({a: rangeSel.a, b: rangeSel.b})`)), {a: 480, b: 1440});
+});

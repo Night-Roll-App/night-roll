@@ -5011,3 +5011,5 @@ HELP.md has only Settings → AI model (server URL, iPad needs https via Tailsca
 
 ## DONE 2026-10-02 23:30 — AI setup help (Josh, Terminal #64): "AI setup, step by step" in the help (LM Studio CORS, Ollama OLLAMA_ORIGINS, Tailscale Serve for the iPad, the bridge + launchd + /claude mount + token)
 ## DONE 2026-10-02 23:35 — install countdown banner (Josh, Terminal #65: did not notice the countdown): gold top banner with Not now / Install now
+
+## DONE 2026-10-02 23:55 — ruler taps no longer arm tiny cycles (Josh, Terminal #66): a ruler press must travel 24px (RULER_RANGE_SLOP) before it selects; under that it is a tap that places the cursor. PORT NOTE: lands after split 0b started — re-apply in src/ when merging 0b.
