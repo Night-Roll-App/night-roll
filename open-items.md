@@ -5,6 +5,19 @@ answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
 
+## Playhead strip — DONE 2026-10-03 (Josh: "if I could click that spot
+under the ruler I wouldn't have that problem"). A thin band under the
+ruler, right above the notes, in Roll/Tracks/Score: tap moves the cursor,
+drag scrubs, neither ever touches rangeSel (the ruler above it still
+parks/re-arms a cycle exactly as before). See NIGHT-ROLL.md "Playhead
+strip (2026-10-03)" for the RULER_H/STRIP_Y plumbing. Branch:
+worktree-agent-ae6a59166855402f4 (not yet merged/pushed to main — built on
+a worktree per the task that spawned it). Tests: 4 new cases in
+tests/gestures.test.mjs; night-roll.test.mjs 420/420 (1 pre-existing
+skip); test:e2e:smoke 8/8 (one existing spec updated — listener mode's
+"no bands" invariant moved from RULER_H===BASE_RULER_H to
+STRIP_Y===BASE_RULER_H, since RULER_H now always includes the strip).
+
 ## FOR JOSH — WEEKEND TO-DO (written 2026-10-01; only things only he can do)
 1. Redirect for the bare address: in the Mac's Claude Code terminal, `!` as the
    FIRST character: `! gh repo create Night-Roll-App/night-roll-app.github.io --public --source ~/.claude/jobs/c9506483/tmp/redirect --push`
