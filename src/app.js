@@ -4217,8 +4217,8 @@ function scrubTo(pos) {
 // a ruler (or playhead strip) TAP's landing: while rolling, seek there like
 // the transport does; at rest, just move the cursor. Shared so the strip's
 // tap-to-move reuses exactly what the ruler's own tap already did.
-function seekOrMoveCursor(target) {
-  if (S.playing) { stop(); play(tickToSec(S.song, target)); }
+function seekOrMoveCursor(target, opts = {}) {
+  if (S.playing) { stop(); play(tickToSec(S.song, target), opts).catch(() => {}); }
   else { S.playCursor = target; updateSubtitle(); draw(); }
 }
 // iOS Safari ignores user-scalable=no: kill page-level pinch zoom explicitly,
@@ -4764,8 +4764,8 @@ function endPointer(e) {
     if (!S.drag.moved) {
       const tick = (S.drag.spos.x - S.RULER_W + S.view.x) / pxPerTick();
       const snap = moveSnapTicks();
-      seekOrMoveCursor(Math.max(0, Math.round(tick / snap) * snap));
-    } // a drag already scrubbed live via pointermove's scrubTo — nothing more to do on release
+      seekOrMoveCursor(Math.max(0, Math.round(tick / snap) * snap), {fromHere: true, noCountIn: true});
+    } else if (S.playing) seekOrMoveCursor(S.playCursor, {fromHere: true, noCountIn: true}); // a scrub while rolling: playback picks up where the finger lifted
   }
   else if (S.drag.ruler && !S.drag.rulerRange) tap(S.drag.spos); // a wobbly ruler tap still just places the cursor
   else if (!S.drag.moved) tap(evtPos(e));
@@ -8655,7 +8655,12 @@ async function play(fromSec = 0, opts = {}) {
   if (fromSec >= S.loopSeg.end - 0.01) S.loopSeg = {start: 0, end: tickToSec(S.song, S.songEndTick), looped: false};
   // only a DRAGGED ruler range cycles — tapping a section/chord band also sets
   // rangeSel (for + Note prefill) and silently outranked loop: annotations (Josh)
-  const cycling = !!(S.rangeSel && S.rangeSel.cycle && !S.rangeSel.off && S.rangeSel.b > S.rangeSel.a);
+  // a playhead-strip tap plays from exactly where it landed (opts.fromHere —
+  // Josh, 2026-10-03): inside the cycle it keeps looping; outside it, this
+  // pass plays straight on and the cycle waits for the next ▶
+  const cycleSet = !!(S.rangeSel && S.rangeSel.cycle && !S.rangeSel.off && S.rangeSel.b > S.rangeSel.a);
+  const fromTick = opts.fromHere ? secToTick(S.song, fromSec) : 0;
+  const cycling = cycleSet && !(opts.fromHere && (fromTick < S.rangeSel.a || fromTick >= S.rangeSel.b));
   if (cycling) { // Logic-style cycle: a ruler selection loops playback over just
     // that span and outranks any loop: annotation
     S.loopSeg = {start: tickToSec(S.song, S.rangeSel.a),
@@ -8663,7 +8668,7 @@ async function play(fromSec = 0, opts = {}) {
     // ▶ always replays from the cycle's top (Logic habit — Josh, 2026-08-19);
     // a reschedule mid-play (stretching the cycle) keeps the playhead when it
     // is still inside the span (opts.keepPos — Josh, 2026-10-03)
-    if (!(opts.keepPos && fromSec >= S.loopSeg.start && fromSec < S.loopSeg.end)) S.playOffset = fromSec = S.loopSeg.start;
+    if (!((opts.keepPos || opts.fromHere) && fromSec >= S.loopSeg.start && fromSec < S.loopSeg.end)) S.playOffset = fromSec = S.loopSeg.start;
   }
   if (S.recording) S.loopSeg = recOpenEnded(S.loopSeg); // ● : the tape rolls on past the end and the song grows with the take
   // album play: this song ends after its passes (2 of the loop body after the

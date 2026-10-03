@@ -10388,6 +10388,27 @@ test("cycle: ▶ starts at the cycle's top; a mid-play reschedule (stretching it
   run(`stop();`);
 });
 
+test("playhead strip tap while rolling plays from exactly there — inside the cycle keeps cycling, outside plays straight on (Josh, 2026-10-03)", async () => {
+  const app = await createApp({intervals: true}); const run = c => app.run(c), val = c => JSON.parse(app.run(`JSON.stringify(${c})`));
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "t", notes: [{t: 0, d: 480, p: 60, v: 80}, {t: 1920 * 3, d: 480, p: 64, v: 80}]}]};
+       songKey = "midi/test.mid"; trackState = [{muted: false, solo: false}]; songEndTick = 1920 * 8; keyRegions = []; playCursor = 0;
+       rangeSel = {a: 1920, b: 1920 * 5, cycle: true};`);
+  const startAt = async tick => {
+    run(`globalThis.__p = 0; play(tickToSec(song, ${tick}), {fromHere: true, noCountIn: true}).then(() => __p++);`);
+    for (let i = 0; i < 50 && val(`__p`) < 1; i++) { app.tick(20); await new Promise(r => setImmediate(r)); }
+  };
+  await startAt(1920 * 3);
+  assert.equal(val(`Math.round(playOffset * 1000)`), val(`Math.round(tickToSec(song, 1920 * 3) * 1000)`), "inside: from the tap");
+  assert.equal(val(`Math.round(loopSeg.end * 1000)`), val(`Math.round(tickToSec(song, 1920 * 5) * 1000)`), "inside: still cycling");
+  run(`stop();`); await startAt(1920 * 6);
+  assert.equal(val(`Math.round(playOffset * 1000)`), val(`Math.round(tickToSec(song, 1920 * 6) * 1000)`), "after the cycle: from the tap");
+  run(`stop();`); await startAt(0);
+  assert.equal(val(`Math.round(playOffset * 1000)`), 0, "before the cycle: from the tap");
+  assert.notEqual(val(`Math.round(loopSeg.start * 1000)`), val(`Math.round(tickToSec(song, 1920) * 1000)`), "outside: this pass doesn't cycle");
+  assert.deepEqual(val(`[rangeSel.a, rangeSel.b, !!rangeSel.cycle]`), [1920, 1920 * 5, true], "the cycle itself is untouched");
+  run(`stop();`);
+});
+
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {
   const a = await createApp();
   a.run(`
