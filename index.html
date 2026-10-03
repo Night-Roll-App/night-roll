@@ -2019,6 +2019,7 @@
       <dt>Velocity</dt><dd>The <b>vol slider</b> in the edit row (1–127, the number beside it shows the value) sets the pencil's loudness — and with notes selected in Select mode, dragging it adjusts ALL of them live, brightness tracking the drag, committing one undo step when you let go. Tap a selection (or a single note) and the slider jumps to its current velocity — and when every selected note shares one velocity, the selection readout says so ("… 6 notes · vel 80").</dd>
       <dt>Delete</dt><dd>Tap <b>Delete</b> in the edit row — every selected note goes at once. Delete key does the same.</dd>
       <dt>Divide</dt><dd>Select notes, tap <b>Divide</b>, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.</dd>
+      <dt>Remove duplicate notes</dt><dd>Edit ▾ → <b>Remove duplicate notes</b> deletes notes stacked exactly on top of another on the same track (same start, same pitch) — you only ever hear one of them. The longer one stays; the status line says how many went, and one undo brings them back.</dd>
       <dt>Quantize (Q)</dt><dd>Select notes, tap <b>Q Quantize</b> (behind More, Edit ▾, or the <b>Q</b> key) and pick a strength — <b>100%</b> snaps each note's start exactly onto the current grid (the same grid Move/Pencil use: 16ths, triplet steps with a T duration active, or 32nds once the song has any); <b>75%/50%</b> moves it only partway there, a soft nudge for a take that's close but not glued down. <b>Also quantize note ends</b> additionally snaps each note's END and resizes to match — off by default, so a raw take's durations stay as played and only the onsets straighten. This is Logic's Quantize command: it acts on a selection AFTER the fact, undoably (one undo step for the whole batch) — recording itself keeps what you played (see Record); Quantize is how you straighten it out when you want to.</dd>
       <dt>Undo</dt><dd>Undo/Redo and the copy / paste icons (undo, redo, copy, paste) are always the first four buttons on the left of the edit toolbar — Pencil's note values and vol appear after them, never before, so they don't move. Every gesture above — move, resize, copy, paste, delete, divide — is exactly one undo step, and so is every track change: <b>voice, color, volume, pan, M / S / H</b>. Keyboard: <b>⌘Z</b> undoes, <b>⇧⌘Z</b> (or ⌘Y) redoes, when you're not typing in a box. Everything that adds or removes notes is one step — pencil, erase, paste, split, join, chord and progression inserts (bands included), a recorded take, Drummer and Bassist takes — and so is adding or deleting a track: ✕ Delete track is one undo away, and a kit or bass track a generator created leaves with its take.</dd>
     </dl>
@@ -2221,6 +2222,7 @@
   <button class="fitem" id="emDivide"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5v14h18V5H3zm5.33 12H5V7h3.33v10zm5.34 0h-3.33V7h3.33v10zM19 17h-3.33V7H19v10z"/></svg>  Divide into…</button>
   <button class="fitem" id="emJoin"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 20.41 18.41 19 15 15.59 13.59 17 17 20.41zM7.5 8H11v5.59L5.59 19 7 20.41l6-6V8h3.5L12 3.5 7.5 8z"/></svg>  Join notes</button>
   <button class="fitem" id="emQuantize">Q  Quantize…</button>
+  <button class="fitem" id="emDedupe"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.53 17.74 9l-1.89 1.47 1.43 1.42L21 9l-9-7-2.59 2.02 1.42 1.42zm9 9.54-1.63-1.27-.67.52 1.43 1.43zM3.41.86 2 2.27l4.22 4.22L3 9l9 7 2.1-1.63 1.42 1.42-3.53 2.75-7.37-5.73L3 14.07l9 7 4.95-3.85L20.73 21l1.41-1.41L3.41.86zM12 13.47 6.26 9l1.39-1.08 5.02 5.02-.67.53z"/></svg>  Remove duplicate notes</button>
   <button class="fitem" id="emMove"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>  Move to track…</button>
   <button class="fitem" id="emTranspose">⇅  Transpose…</button>
   <button class="fitem" id="emInsertBars"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-8-2h2v-4h4v-2h-4V7h-2v4H7v2h4z"/></svg>  Insert bars…</button>
@@ -3633,8 +3635,16 @@ let PMIN = 24, PMAX = 96;
 
 // ---------------------------------------------------------------- edits
 function editsKey() { return songKey ? "ff1roll-edits-" + songKey : null; }
+// a song whose draft IS the whole song (compositions, and Untitled/local
+// songs) must never get the removed/added overlay too: the draft already
+// holds every edit, so replaying the overlay on load doubled each added
+// note, and its index-based "removed" ids could hide the wrong notes once
+// bars were inserted (Josh, 2026-10-02: untitled-1's triangle came back
+// doubled after a reload). The overlay is for read-only songs only.
+function draftIsWhole() { return isComposition() || isLocalDraft(); }
 function loadEdits() {
   if (!editsKey()) return;
+  if (draftIsWhole()) { localStorage.removeItem(editsKey()); updateClearBtn(); return; } // a stale overlay from before this fix: drop it, never apply it
   try {
     const e = JSON.parse(localStorage.getItem(editsKey()) || "null");
     if (!e) return;
@@ -3653,7 +3663,7 @@ function saveEdits() {
   // not in the spirit of the project) — edits just retire any review flags
   rollnotes.forEach(n => { if (n.stale) delete n.stale; });
   scheduleAnalysisRecompute(); // P6: Normal-only view layer — recompute on note edits, debounced; no-op when off
-  if (isComposition()) { // composition: the notes ARE the song — draft it whole
+  if (draftIsWhole()) { // composition or local song: the notes ARE the song — draft it whole
     saveDraft();
     computeSongEnd();
     updateSongMeta();
@@ -17914,6 +17924,11 @@ document.getElementById("editsheetbtn").addEventListener("click", e => {
   proxy("emDivide", () => document.getElementById("divbtn").click());
   proxy("emJoin", () => document.getElementById("joinbtn").click());
   proxy("emQuantize", () => document.getElementById("quantbtn").click());
+  proxy("emDedupe", () => {
+    if (!editableSong()) { setInfo("Remove duplicate notes works on your own songs"); return; }
+    const k = removeDuplicateNotes();
+    setInfo(k ? "removed " + k + " duplicate note" + (k === 1 ? "" : "s") + " (undo restores them)" : "no duplicate notes in this song");
+  });
   proxy("emMove", () => document.getElementById("movebtn").click());
   proxy("emTranspose", () => document.getElementById("trbtn").click());
   proxy("emInsertBars", () => { if (editableSong()) openInsertBars(); else setInfo("Insert bars works on your own songs"); });
@@ -22125,6 +22140,23 @@ document.getElementById("joinbtn").addEventListener("click", () => {
   setInfo(k ? "joined " + k + " notes"
             : "select two or more notes on the same pitch first");
 });
+// notes stacked exactly on top of each other — same track, same start, same
+// pitch — can only be heard once; the copy is a leftover (2026-10-02: the
+// reload bug doubled untitled-1's triangle). The longer one stays. Goes
+// through deleteSelection, so it is one ⟲ step like any delete.
+function removeDuplicateNotes() {
+  const seen = new Map(), dups = [];
+  song.tracks.forEach((tr, ti) => tr.notes.forEach((n, ni) => {
+    if (n.gone) return;
+    const k = ti + ":" + n.t + ":" + n.p, prev = seen.get(k);
+    if (!prev) { seen.set(k, {ti, ni, d: n.d}); return; }
+    if (n.d > prev.d) { dups.push({ti: prev.ti, ni: prev.ni}); seen.set(k, {ti, ni, d: n.d}); }
+    else dups.push({ti, ni});
+  }));
+  if (!dups.length) return 0;
+  multiSel = dups; multiSelKey = new Set(dups.map(x => x.ti + ":" + x.ni));
+  return deleteSelection();
+}
 document.getElementById("delbtn").addEventListener("click", () => {
   const k = deleteSelection();
   setInfo(k ? "deleted " + k + " note" + (k === 1 ? "" : "s") + " (undo restores them)"

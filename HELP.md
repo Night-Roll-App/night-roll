@@ -211,6 +211,9 @@ Tap **Delete** in the edit row — every selected note goes at once. Delete key 
 **Divide**
 Select notes, tap **Divide**, pick N (2–7): each note becomes N equal notes — pitch, velocity, and total span unchanged. This is how triplets happen: 3 on a half note = quarter-note triplets (the 1 · 1.667 · 2.333 placement no grid offers), 3 on a quarter = eighth triplets, 6 on a held two-beat note = a run of six. The pieces are free notes — drag them anywhere after.
 
+**Remove duplicate notes**
+Edit ▾ → **Remove duplicate notes** deletes notes stacked exactly on top of another on the same track (same start, same pitch) — you only ever hear one of them. The longer one stays; the status line says how many went, and one undo brings them back.
+
 **Quantize (Q)**
 Select notes, tap **Q Quantize** (behind More, Edit ▾, or the **Q** key) and pick a strength — **100%** snaps each note's start exactly onto the current grid (the same grid Move/Pencil use: 16ths, triplet steps with a T duration active, or 32nds once the song has any); **75%/50%** moves it only partway there, a soft nudge for a take that's close but not glued down. **Also quantize note ends** additionally snaps each note's END and resizes to match — off by default, so a raw take's durations stay as played and only the onsets straighten. This is Logic's Quantize command: it acts on a selection AFTER the fact, undoably (one undo step for the whole batch) — recording itself keeps what you played (see Record); Quantize is how you straighten it out when you want to.
 

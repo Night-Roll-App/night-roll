@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Hide notes strip", "Update countdown",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Remove duplicate notes", "Hide notes strip", "Update countdown",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
@@ -10029,6 +10029,35 @@ test("Notes ▴ drop-up: Hide/Show notes strip toggles the strip and names its n
   assert.equal(run(`document.getElementById("notesstrip").textContent`), "Show notes strip");
   run(`document.getElementById("notesstrip").click(); closeDropUp();`);
   assert.equal(val(`subOn`), true);
+});
+
+test("an Untitled/local song's added notes are NOT re-added on reload (its draft is the whole song; the old overlay doubled them — Josh, 2026-10-02)", () => {
+  run(`
+    const key = "local/untitled-dup.mid";
+    setSong({ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000, sec: 0}], tracks: [{name: "triangle", notes: [{t: 0, d: 240, p: 48, v: 80}]}]}, key);
+    rollnotes = []; saveDraft();
+    song.tracks[0].notes.push({t: 480, d: 240, p: 50, v: 80, added: true});
+    saveEdits(); saveDraft();
+    // a stale overlay written by an older build must be dropped, not replayed
+    localStorage.setItem(editsKey(), JSON.stringify({removed: ["0:0"], added: [{ti: 0, t: 480, d: 240, p: 50}]}));
+  `);
+  run(`openDraftDoc(JSON.parse(localStorage.getItem(draftStoreKey("local/untitled-dup.mid"))), "local/untitled-dup.mid")`);
+  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone).map(n => n.t + ":" + n.p)`), ["0:48", "480:50"]);
+  assert.equal(val(`localStorage.getItem(editsKey())`), null, "the stale overlay is gone");
+});
+
+test("Edit ▾ → Remove duplicate notes: same track + start + pitch, keeps the longer, one undo restores", () => {
+  installSong();
+  run(`song.tracks = [{name: "a", notes: [{t: 0, d: 240, p: 60, v: 80}, {t: 0, d: 480, p: 60, v: 80}, {t: 0, d: 240, p: 64, v: 80}, {t: 480, d: 240, p: 60, v: 80}]},
+                      {name: "b", notes: [{t: 0, d: 240, p: 60, v: 80}]}];
+       trackState = [{}, {}]; editUndo = []; multiSel = []; multiSelKey = new Set(); songKey = "local/dedupe-test.mid";`);
+  assert.equal(val(`removeDuplicateNotes()`), 1);
+  assert.deepEqual(val(`song.tracks[0].notes.filter(n => !n.gone).map(n => n.t + ":" + n.p + ":" + n.d)`), ["0:60:480", "0:64:240", "480:60:240"], "the longer copy stays");
+  assert.equal(val(`song.tracks[1].notes.filter(n => !n.gone).length`), 1, "another track's same note is not a duplicate");
+  run(`editUndoPop()`);
+  assert.equal(val(`song.tracks[0].notes.filter(n => !n.gone).length`), 4, "one undo restores it");
+  assert.equal(val(`removeDuplicateNotes() >= 0`), true);
+  run(`song = null; songKey = "midi/test.mid";`);
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", async () => {
