@@ -2735,7 +2735,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "find:", "Circle of fifths", "key: picker", "mode?", "Instrument panel",
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
-    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Update countdown",
+    "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always the first four buttons", "Hide notes strip", "Update countdown",
     "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
@@ -9894,6 +9894,17 @@ test("edit toolbar: ⟲ ⟳ ⧉ 📋 are the first four controls, ahead of every
   const row = html.slice(html.indexOf('<div id="editrow">'), html.indexOf('id="morewrap"'));
   const ids = [...row.matchAll(/<(?:button|div)[^>]*\bid="([^"]+)"/g)].map(m => m[1]);
   assert.deepEqual(ids.slice(1, 6), ["undobtn", "redobtn", "copybtn", "pastebtn", "modeseg"]); // [0] is #editrow itself
+});
+
+test("Notes ▴ drop-up: Hide/Show notes strip toggles the strip and names its next action (Josh, 2026-10-02)", () => {
+  run(`subOn = true; document.getElementById("listbtn").click()`);
+  assert.equal(run(`document.getElementById("notesstrip").textContent`), "Hide notes strip");
+  run(`document.getElementById("notesstrip").click()`);
+  assert.equal(val(`subOn`), false);
+  run(`document.getElementById("listbtn").click()`);
+  assert.equal(run(`document.getElementById("notesstrip").textContent`), "Show notes strip");
+  run(`document.getElementById("notesstrip").click(); closeDropUp();`);
+  assert.equal(val(`subOn`), true);
 });
 
 test("LCD tempo/meter/key always open bar 1, not the cursor (Josh, 2026-10-01: \"I almost always want the whole song\")", () => {
