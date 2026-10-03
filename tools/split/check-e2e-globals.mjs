@@ -30,6 +30,36 @@ import { fileURLToPath } from "node:url";
 import { parseModule, declaredNames, freeIdentifiers } from "./scope.mjs";
 import { loadBrowserGlobals } from "./check.mjs";
 
+/** Property names of `export const S = {...}` in src/state.js (step 1's
+ *  promote-state.mjs moved ~257 former top-level `let`/`var` names there as
+ *  object properties, not top-level declarations) — declaredNames() can't
+ *  see these at all, since they're ObjectExpression properties, not
+ *  declarations, but src/devtools.js's exposeGlobals() mirrors every one of
+ *  them onto window (get AND set), so a bare `song`/`mode = …` reference in
+ *  an e2e spec resolves through S exactly like a real module's export. */
+function stateFieldNames(srcDir) {
+  const names = new Set();
+  const stateFile = path.join(srcDir, "state.js");
+  let source;
+  try { source = readFileSync(stateFile, "utf8"); } catch { return names; }
+  const { ast } = parseModule(source, stateFile);
+  for (const raw of ast.body) {
+    const node = raw.type === "ExportNamedDeclaration" && raw.declaration ? raw.declaration : raw;
+    if (node.type !== "VariableDeclaration") continue;
+    for (const d of node.declarations) {
+      if (d.id.type === "Identifier" && d.id.name === "S" && d.init?.type === "ObjectExpression") {
+        for (const prop of d.init.properties) {
+          if (prop.type === "Property" && !prop.computed) {
+            if (prop.key.type === "Identifier") names.add(prop.key.name);
+            else if (prop.key.type === "Literal") names.add(String(prop.key.value));
+          }
+        }
+      }
+    }
+  }
+  return names;
+}
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.dirname(path.dirname(HERE));
 const SRC_DIR = path.join(REPO_ROOT, "src");
@@ -98,7 +128,7 @@ export function e2eEvaluateIdentifiers(e2eDir = E2E_DIR) {
 }
 
 export function checkE2eGlobals({ srcDir = SRC_DIR, e2eDir = E2E_DIR } = {}) {
-  const allowed = new Set([...appGlobalNames(srcDir), ...loadBrowserGlobals()]);
+  const allowed = new Set([...appGlobalNames(srcDir), ...stateFieldNames(srcDir), ...loadBrowserGlobals()]);
   const uses = e2eEvaluateIdentifiers(e2eDir);
   const violations = [];
   for (const [name, sites] of uses) {

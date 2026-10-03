@@ -2037,8 +2037,8 @@ test("chip render: a silent render is detected; a render for a song no longer op
   void loud;
   // the source reads the song it started for: chipRender stamps forKey, never the song current at the end
   const src = val(`chipRender.toString() + chipPublish.toString()`);
-  assert.ok(/const forKey = songKey/.test(src) && /chip\.key = forKey/.test(src) && !/chip\.key = songKey/.test(src), "chip.key comes from forKey");
-  assert.ok(/songKey !== forKey/.test(src), "a stale render is discarded");
+  assert.ok(/const forKey = S\.songKey/.test(src) && /chip\.key = forKey/.test(src) && !/chip\.key = S\.songKey/.test(src), "chip.key comes from forKey");
+  assert.ok(/S\.songKey !== forKey/.test(src), "a stale render is discarded");
   assert.equal(val(`chipWorkerAvailable()`), false, "the vm has no Worker: the inline path stays"); // the browser path is verified in Chrome
 });
 
@@ -6893,10 +6893,10 @@ test("audio session: 'ambient' (mixes with YouTube etc.) until Night Roll plays;
     run(`audioSessionType("ambient");`);
     assert.equal(val(`navigator.audioSession.type`), "ambient");
     const src = appSource();
-    const i = src.indexOf('audioSessionType("ambient");\n  audio = new'), j = src.indexOf('audioSessionType("playback"); // now Night Roll is the music');
+    const i = src.indexOf('audioSessionType("ambient");\n  S.audio = new'), j = src.indexOf('audioSessionType("playback"); // now Night Roll is the music');
     assert.ok(i > 0, "ambient is set before the context is created");
     assert.ok(j > src.indexOf("async function play("), "play() asks for playback");
-    assert.match(src, /if \(!albumRun && !document\.hidden && !met\.on\) audioSessionType\("ambient"\)/, "Stop mixes again, but not mid-album or off-screen");
+    assert.match(src, /if \(!S\.albumRun && !document\.hidden && !met\.on\) audioSessionType\("ambient"\)/, "Stop mixes again, but not mid-album or off-screen");
   } finally { run(`navigator.audioSession = __navAS;`); }
 });
 
@@ -7620,7 +7620,7 @@ test("tapping a note leaves the playhead alone by default; the old tap-to-move i
   run(`localStorage.setItem("ff1roll-notetapcursor", "1");`);
   assert.equal(val(`noteTapMovesCursor()`), true);
   run(`localStorage.removeItem("ff1roll-notetapcursor");`);
-  assert.match(val(`String(openEditor)`), /const at0 = .*!note && selNote/, "+ Note anchors at the tapped note");
+  assert.match(val(`String(openEditor)`), /const at0 = .*!note && S\.selNote/, "+ Note anchors at the tapped note");
 });
 
 test("Send after ■ Stop: the stopped dictation's late words can't refill the emptied box", () => {
@@ -7657,8 +7657,8 @@ test("⌨ Terminal model pickers: shown on the Terminal tab with the bridge; a c
 test("a ruler range can be cleared: first tap outside fades it, the next removes it; Esc removes it", () => {
   installSong();
   const src = appSource();
-  assert.match(src, /if \(rangeSel\.off && pos\.y < BASE_RULER_H\) \{ rangeSel = null;/, "a tap outside a faded range removes it");
-  assert.match(src, /e\.key === "Escape" && rangeSel\) \{ rangeSel = null;/, "Esc removes it");
+  assert.match(src, /if \(S\.rangeSel\.off && pos\.y < BASE_RULER_H\) \{ S\.rangeSel = null;/, "a tap outside a faded range removes it");
+  assert.match(src, /e\.key === "Escape" && S\.rangeSel\) \{ S\.rangeSel = null;/, "Esc removes it");
 });
 
 test("a console voice that FAILED to load says why, and the next ▶ retries it (Josh, 2026-09-30: sometimes instruments never load, silently)", async () => {
