@@ -46,6 +46,41 @@ import { saveDraft } from "../model/versions.js";
 import { renderMixer } from "./mixer.js";
 import { saveEdits } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
+import { openGridSheet } from "./sheets.js";
+import { editsKey } from "../model/edits.js";
+import { loadSong } from "../session/song.js";
+import { CHORD_BASES } from "../theory/chords.js";
+import { CHORD_EXTS } from "../theory/chords.js";
+import { nmic } from "./chrome.js";
+import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
+import { retireEdited } from "../model/edits.js";
+import { dropLocalKeyAt } from "../model/rollnotes.js";
+import { keyNameFor } from "../theory/key.js";
+import { tonicLabel } from "./notes.js";
+import { effTs } from "../model/grid.js";
+import { convertAnchors } from "../model/rollnotes.js";
+import { shiftAnchors } from "../model/rollnotes.js";
+import { clampViewImpl as clampView } from "./chrome.js";
+import { updateSubtitleImpl as updateSubtitle } from "./chrome.js";
+import { tombstone } from "../model/edits.js";
+import { selEditApply } from "../model/selection.js";
+import { copySelection } from "../model/selection.js";
+import { clipSummary } from "../model/selection.js";
+import { nudgeSelection } from "../model/selection.js";
+import { diatonicShift } from "../model/selection.js";
+import { divideSelection } from "../model/selection.js";
+import { quantizeSelection } from "../model/selection.js";
+import { cutSelection } from "../model/selection.js";
+import { splitSelectedClipAtCursor } from "../audio/clips.js";
+import { splitSelectionAt } from "../model/selection.js";
+import { splitSelectionHalves } from "../model/selection.js";
+import { joinSelection } from "../model/selection.js";
+import { deleteSelection } from "../model/selection.js";
+import { moveSnapTicks } from "../model/grid.js";
+import { saveVersion } from "../session/files.js";
+import { pasteClipboard } from "../model/selection.js";
+import { duplicateSelection } from "../model/selection.js";
+import { resizeSelection } from "../model/selection.js";
 
 export const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
 export const INS_DURS = [["16th", 0.25], ["8th", 0.5], ["8th.", 0.75], ["quarter", 1],
@@ -542,4 +577,493 @@ export function applyEditEntry(u) {
   computeSongEnd();
   if (S.viewMode === "score") buildScoreModel();
   draw();
+}
+
+export function initNoteEditor1() {
+  renderOctBtn(); // boot: correct checkmark before any selection ever runs refreshSelInfo
+  document.getElementById("octbtn").addEventListener("click", () => {
+    S.selOctaves = !S.selOctaves;
+    localStorage.setItem("ff1roll-seloct", S.selOctaves ? "1" : "0");
+    refreshSelInfo();
+  });
+}
+
+// (editOn is declared early, with the view state — the phone boot path calls
+// renderViewMenu before this file's later sections ran; TDZ here bricked
+// every iPhone: "Cannot access 'editOn' before initialization", 2026-08-23)
+export function initNoteEditor2() {
+  document.getElementById("accseg").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    S.pencilAcc = b.dataset.acc;
+    for (const x of document.querySelectorAll("#accseg button")) {
+      x.classList.toggle("active", x === b);
+      x.setAttribute("aria-checked", String(x === b));
+    }
+  });
+}
+
+export function initNoteEditor3() {
+  document.getElementById("modeseg").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    // tapping the active tool AGAIN turns it off (Josh: sometimes you just want
+    // to drag the song around without accidentally moving a note)
+    S.mode = b.dataset.mode === S.mode ? null : b.dataset.mode;
+    for (const x of document.querySelectorAll("#modeseg button")) {
+      x.classList.toggle("active", x.dataset.mode === S.mode);
+      x.setAttribute("aria-checked", String(x.dataset.mode === S.mode));
+    }
+    // duration chips show in Select too: there they are the MOVE grid (T = triplet
+    // steps), so changing it doesn't cost a trip through Pencil (Josh, 2026-09-12)
+    document.getElementById("durseg").style.display = S.mode === "pencil" || S.mode === "select" ? "" : "none";
+    // velocities show in Select too: with a selection they APPLY to it
+    document.getElementById("velseg").style.display = S.mode === "pencil" || S.mode === "select" ? "" : "none";
+    document.getElementById("accseg").style.display =
+      S.mode === "pencil" && S.viewMode === "score" ? "" : "none";
+    setInfo(S.mode === "pencil" ? (S.viewMode === "score" ? "pencil: tap a staff position — the stave picks the track"
+                                                      : "pencil: tap grid to add to selected track") :
+            S.mode === "erase" ? "erase: tap a note to remove" :
+            S.mode === "select" ? "tap a note" : "pan: drag moves the view — notes are safe");
+  });
+  document.getElementById("durseg").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.grid) { openGridSheet(); return; } // the ▦N chip: the grid sheet, from either mode
+    if (b.dataset.nv) S.pencilNV = parseInt(b.dataset.nv, 10);
+    else if (b.dataset.mod) S.pencilMod = parseFloat(b.dataset.mod);
+    else return;
+    S.pencilDur = (4 / S.pencilNV) * S.pencilMod;
+    syncDurSeg();
+  });
+  document.getElementById("clearbtn").addEventListener("click", () => {
+    if (editsKey()) localStorage.removeItem(editsKey());
+    loadSong(S.songKey).catch(e => setInfo(e.message));
+  });
+}
+
+export function initNoteEditor4() {
+  document.getElementById("ntype").addEventListener("change", applyEditorType);
+
+  (function buildChordWidget() {
+    const mkRow = (id, items) => {
+      const row = document.getElementById(id);
+      for (const [v, label] of items) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.v = v;
+        b.textContent = label;
+        row.appendChild(b);
+      }
+    };
+    mkRow("nchordroot", "CDEFGAB".split("").map(l => [l, l]));
+    mkRow("nchordacc", [["b", "♭"], ["", "♮"], ["#", "♯"]]);
+    mkRow("nchordqual", CHORD_BASES.map(q => [q, q]));
+    mkRow("nchordext", CHORD_EXTS.map(q => [q, q]));
+    const bass = document.getElementById("nchordbass");
+    const none = document.createElement("option");
+    none.value = ""; none.textContent = "—";
+    bass.appendChild(none);
+    for (const s of BASS_SPELLINGS) {
+      const o = document.createElement("option");
+      o.value = s; o.textContent = s;
+      bass.appendChild(o);
+    }
+    document.getElementById("nchordroot").addEventListener("click", e => {
+      if (!e.target.dataset.v) return;
+      chordSel.root = e.target.dataset.v;
+      if (chordSel.base === null) { chordSel.base = "maj"; chordSel.exts = []; }
+      refreshChordChips(); composeChord();
+    });
+    document.getElementById("nchordacc").addEventListener("click", e => {
+      if (e.target.dataset.v === undefined) return;
+      chordSel.acc = e.target.dataset.v;
+      refreshChordChips(); composeChord();
+    });
+    document.getElementById("nchordqual").addEventListener("click", e => {
+      if (!e.target.dataset.v) return;
+      chordSel.base = e.target.dataset.v;
+      if (chordSel.exts === null) chordSel.exts = [];
+      refreshChordChips(); composeChord();
+    });
+    document.getElementById("nchordext").addEventListener("click", e => { // extensions STACK
+      if (!e.target.dataset.v) return;
+      if (chordSel.base === null) chordSel.base = "maj";
+      const x = e.target.dataset.v, i = chordSel.exts.indexOf(x);
+      if (i >= 0) chordSel.exts.splice(i, 1); else chordSel.exts.push(x);
+      refreshChordChips(); composeChord();
+    });
+    bass.addEventListener("change", composeChord);
+    const sym = document.getElementById("nchordsym");
+    sym.addEventListener("input", () => { // follow hand-edits without rewriting them
+      const m = parseChordSym(sym.value);
+      chordSel.root = m ? m[1] : null;
+      chordSel.acc = m ? m[2] : "";
+      const q = m ? chordQualParse(m[3]) : null;
+      chordSel.base = q ? q.base : null;
+      chordSel.exts = q ? q.exts : [];
+      if (m) bass.value = m[4] || "";
+      refreshChordChips();
+    });
+    sym.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); document.getElementById("nsave").click(); }
+    });
+  })();
+
+    nmic.addEventListener("click", () =>
+    micToggle(nmic, document.getElementById("ntext"), s2 => document.getElementById("nstatus").textContent = s2));
+
+  document.getElementById("notebtn").addEventListener("click", () => {
+    if (!S.song) return;
+    // ALWAYS a new note (Josh, 2026-08-25). It used to reopen whatever
+    // annotation the cursor sat on, so a note at 1.1 made the button
+    // permanently un-add-able, with no way to tell whether Save would create or
+    // overwrite. + Note adds; editing an existing one is a tap in ☰ Notes.
+    openEditor(null);
+  });
+  document.getElementById("ncancel").addEventListener("click", () => { micStop(true); editor.classList.remove("on"); });
+   document.getElementById("ntext").addEventListener("keydown", e => {
+    // sections are one-line labels: Enter = save. Text notes keep Enter = newline
+    if (e.key === "Enter" && editorType() === "section") {
+      e.preventDefault();
+      document.getElementById("nsave").click();
+    }
+  });
+  document.getElementById("nsave").addEventListener("click", () => {
+    // P4 (docs/annotations-v2.md): closes P3's known gap — every manual
+    // annotation edit refuses on a locked (newer-than-this-app) song, same
+    // message as the Ask tool's add/edit_annotation, instead of landing
+    // in-memory/localStorage with no way to ever publish it
+    if (S.rollnotesReadOnly) { document.getElementById("nstatus").textContent = S.rollnotesLockReason || ROLLNOTES_LOCK_MSG; return; }
+    micStop(true); // the text is read now; a late result would land in a closed editor
+    const type = editorType();
+    const text = document.getElementById("ntext").value.trim();
+    if (type === "note" && !text) { document.getElementById("nstatus").textContent = "Note text is empty."; return; }
+    const b1 = Math.max(1, +document.getElementById("nb1").value || 1);
+    const q1 = Math.max(1, getBeatPair("nq1", "ns1"));
+    const b2raw = +document.getElementById("nb2").value || 0;
+    const q2raw = document.getElementById("nb2").value === "" ? 0 : getBeatPair("nq2", "ns2");
+    if (S.editingNote) retireEdited(S.editingNote);
+    let fresh;
+    if (type === "key") {
+      const [pcS, spS] = document.getElementById("nkeysel").value.split(":");
+      const pc = +pcS, sp = spS || "";
+      const mode = document.getElementById("nkeymode").value;
+      dropLocalKeyAt(b1, q1); // anchor-level: only a key at this exact beat is replaced
+      if (mode) {
+        const full = keyNameFor(pc, mode);
+        fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
+                 text: "key: " + full.name, keydir: full.sf, cnote: text || undefined, added: true};
+      } else { // tonic only: stored, not applied — asserted spelling if chosen
+        const tonic = sp || tonicLabel(pc);
+        fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
+                 text: "key: " + tonic + "?", keypartial: tonic, cnote: text || undefined, added: true};
+      }
+    } else if (type === "tempo") {
+      const bpm = Math.max(20, Math.min(400, +document.getElementById("ntempo").value || 120));
+      fresh = {b1, q1, b2: null, q2: null, text: "tempo: " + bpm, tempodir: bpm, cnote: text || undefined, added: true};
+    } else if (type === "timesig") {
+      const num = +document.getElementById("ntsnum").value, den = +document.getElementById("ntsden").value;
+      const oldTs = effTs();
+      // bar length OR beat unit changing moves anchors (6/8 counts eighths)
+      const tsChanged = num !== oldTs[0] || den !== oldTs[1];
+      const others = S.rollnotes.filter(n => !n.tsdir).length;
+      if (tsChanged && others > 0 && !S.rebarArmed) {
+        S.rebarArmed = true; // big warning, second tap confirms
+        document.getElementById("nstatus").textContent =
+          "⚠ Re-bar from " + effTs()[0] + "/" + effTs()[1] + " to " + num + "/" + den + "? " +
+          others + " annotation(s) will be converted to keep their musical positions. " +
+          "Tap Save again to confirm (then Sync to make permanent).";
+        return;
+      }
+      S.rebarArmed = false;
+      if (tsChanged) convertAnchors(oldTs, [num, den]);
+      S.rollnotes = S.rollnotes.filter(n => !(n.tsdir)); // one meter per song
+      fresh = {b1: tsChanged ? 1 : b1, q1: tsChanged ? 1 : q1, b2: null, q2: null,
+               text: "timesig: " + num + "/" + den, tsdir: [num, den], cnote: text || undefined, added: true};
+    } else if (type === "loop") {
+      const lb = Math.max(1, +document.getElementById("nlb").value || 1);
+      const lq = getBeatPair("nlq", "nls");
+      // one loop point per song: a new one replaces any local one
+      S.rollnotes = S.rollnotes.filter(n => !(n.added && n.loopTo !== undefined));
+      fresh = {b1, q1, b2: null, q2: null, text: "loop: " + lb + "." + lq, cnote: text || undefined, added: true};
+    } else if (type === "chop") {
+      const cmode = document.getElementById("nchopmode").value;
+      const dispTick = (b1 - 1) * barTicks() + (q1 - 1) * beatTicks();
+      const raw = dispTick + S.chopS; // fields are displayed coords; the directive stores raw
+      const newS = cmode === "start" ? raw : S.chopS;
+      const delta = S.chopS - newS;
+      const others = S.rollnotes.filter(n => !n.chopdir).length;
+      if (cmode === "start" && delta !== 0 && others > 0 && !S.rebarArmed) {
+        S.rebarArmed = true;
+        document.getElementById("nstatus").textContent =
+          "⚠ Chop the song start here? Bars renumber and " + others +
+          " annotation(s) shift to keep their musical positions. Tap Save again to confirm.";
+        return;
+      }
+      S.rebarArmed = false;
+      if (cmode === "start" && delta !== 0) shiftAnchors(delta);
+      S.rollnotes = S.rollnotes.filter(n => n.chopdir !== cmode); // one chop per side
+      const cbt = barTicks();
+      fresh = {b1: Math.floor(raw / cbt) + 1, q1: snapBeat((raw % cbt) / beatTicks() + 1),
+               b2: null, q2: null, text: "chop: " + cmode, added: true};
+    } else if (type === "chord") {
+      const sym = document.getElementById("nchordsym").value.trim();
+      if (!sym) { document.getElementById("nstatus").textContent = "Chord symbol is empty — tap chips or type one."; return; }
+      localStorage.setItem("ff1roll-dragtype", "chord");
+      fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
+               text: sym, chord: true, cnote: text || undefined, added: true};
+    } else if (type === "section") {
+      const label = document.getElementById("nsectlabel").value.trim();
+      if (!label) { document.getElementById("nstatus").textContent = "Section label is empty."; return; }
+      localStorage.setItem("ff1roll-dragtype", "section");
+      fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null,
+               text: label, section: true, added: true,
+               cnote: text || undefined};
+    } else {
+      fresh = {b1, q1, b2: b2raw || null, q2: b2raw ? (q2raw || null) : null, text, added: true};
+    }
+    dropSupersededBy(fresh);
+    S.rollnotes.push(resolveNote(fresh));
+    S.rangeSel = null;
+    finalizeNotes();
+    saveLocalNotes();
+    buildScoreModel(); // annotations can change signatures/spelling
+    clampView();
+    S.lastSubtitle = undefined;
+    updateSubtitle();
+    editor.classList.remove("on");
+    draw();
+  });
+  document.getElementById("ndelete").addEventListener("click", () => {
+    // P4 (docs/annotations-v2.md): closes P3's known gap — see #nsave's own guard
+    if (S.rollnotesReadOnly) { document.getElementById("nstatus").textContent = S.rollnotesLockReason || ROLLNOTES_LOCK_MSG; return; }
+    // deleting the meter directive re-bars back to neutral 4/4 — same two-tap
+    // warning + anchor conversion as declaring one, never a silent move
+    if (S.editingNote && S.editingNote.tsdir) {
+      const oldTs = effTs(), others = S.rollnotes.filter(n => !n.tsdir).length;
+      const tsChanged = oldTs[0] !== 4 || oldTs[1] !== 4;
+      if (tsChanged && others > 0 && !S.rebarArmed) {
+        S.rebarArmed = true;
+        document.getElementById("nstatus").textContent =
+          "⚠ Removing the meter re-bars back to neutral 4/4. " + others +
+          " annotation(s) will be converted to keep their musical positions. Tap Delete again to confirm.";
+        return;
+      }
+      S.rebarArmed = false;
+      if (tsChanged) convertAnchors(oldTs, [4, 4]);
+    }
+    // removing a start chop restores hidden bars: annotations shift right to stay
+    // glued to their music, with the same two-tap warning as re-barring
+    if (S.editingNote && S.editingNote.chopdir === "start" && S.chopS) {
+      const others = S.rollnotes.filter(n => !n.chopdir).length;
+      if (others > 0 && !S.rebarArmed) {
+        S.rebarArmed = true;
+        document.getElementById("nstatus").textContent =
+          "⚠ Removing the start chop restores the hidden bars; " + others +
+          " annotation(s) will shift to keep their musical positions. Tap Delete again to confirm.";
+        return;
+      }
+      S.rebarArmed = false;
+      shiftAnchors(S.chopS);
+    }
+    tombstone(S.editingNote); // synced notes need the deletion to survive a reload
+    S.rollnotes = S.rollnotes.filter(n => n !== S.editingNote);
+    finalizeNotes();
+    saveLocalNotes();
+    buildScoreModel();
+    clampView();
+    S.lastSubtitle = undefined;
+    updateSubtitle();
+    editor.classList.remove("on");
+    draw();
+  });
+}
+
+export function initNoteEditor5() {
+  { // velocity slider: pencil loudness always; with a selection it LIVE-adjusts
+    // those notes while dragging and commits ONE undo step on release
+    const slider = document.getElementById("velslider"), val = document.getElementById("velval");
+    let velSnap = null; // pre-gesture values for the undo entry
+    slider.addEventListener("input", () => {
+      const v = parseInt(slider.value, 10);
+      val.textContent = v;
+      S.pencilVel = v;
+      if (S.mode !== "select" || !editableSong()) return;
+      const items = selEditItems();
+      if (!items.length) return;
+      if (!velSnap) velSnap = items.map(({ti, ni, n}) => ({ti, ni, t: n.t, d: n.d, p: n.p, v: n.v}));
+      for (const it of items) it.n.v = v;
+      draw(); // brightness tracks the drag
+    });
+    slider.addEventListener("change", () => {
+      if (!velSnap) return;
+      const items = selEditItems();
+      if (items.length) {
+        selEditApply(items, () => {}, velSnap);
+        setInfo("set " + items.length + " note" + (items.length === 1 ? "" : "s") + " to velocity " + slider.value);
+      }
+      velSnap = null;
+    });
+  }
+  document.getElementById("copybtn").addEventListener("click", () => {
+    const k = copySelection();
+    if (!k) { setInfo("nothing selected — lasso or tap notes first"); return; }
+    setInfo("copied " + clipSummary() + " — move the cursor anywhere, Paste puts them there");
+    updateEditButtons();
+  });
+}
+
+export function initNoteEditor6() {
+  document.getElementById("octupbtn").addEventListener("click", () => {
+    if (nudgeSelection(0, 12)) setInfo("selection up an octave (undo undoes)");
+    else setInfo("nothing selected — lasso or tap notes first");
+  });
+  document.getElementById("octdownbtn").addEventListener("click", () => {
+    if (nudgeSelection(0, -12)) setInfo("selection down an octave (undo undoes)");
+    else setInfo("nothing selected — lasso or tap notes first");
+  });
+  // ⋯ folds the less-used tools (Josh, 2026-08-22: pencil mode wrapped the row)
+  {
+    const wrap2 = document.getElementById("morewrap");
+    const open = localStorage.getItem("ff1roll-editmore") === "1";
+    wrap2.style.display = open ? "inline-flex" : "none";
+    document.getElementById("morebtn").classList.toggle("active", open);
+    document.getElementById("morebtn").addEventListener("click", () => {
+      const on = wrap2.style.display === "none";
+      wrap2.style.display = on ? "inline-flex" : "none";
+      document.getElementById("morebtn").classList.toggle("active", on);
+      localStorage.setItem("ff1roll-editmore", on ? "1" : "0");
+    });
+  }
+  document.getElementById("trbtn").addEventListener("click", () => {
+    if (!selEditItems().length) { setInfo("select notes first — then ⇅ transposes them"); return; }
+    const row = document.getElementById("trchips");
+    if (!row.children.length) {
+      const mk = (label, fn) => {
+        const b = document.createElement("button");
+        b.textContent = label;
+        b.style.cssText = "flex:1;min-height:44px";
+        b.addEventListener("click", fn);
+        row.appendChild(b);
+      };
+      mk("−2", () => nudgeSelection(0, -2) && setInfo("down a whole step (chromatic)"));
+      mk("−1", () => nudgeSelection(0, -1) && setInfo("down a half step"));
+      mk("+1", () => nudgeSelection(0, 1) && setInfo("up a half step"));
+      mk("+2", () => nudgeSelection(0, 2) && setInfo("up a whole step (chromatic)"));
+      mk("in key ▼", () => diatonicShift(-1) && setInfo("down one scale degree — still in key"));
+      mk("in key ▲", () => diatonicShift(1) && setInfo("up one scale degree — still in key"));
+      mk("▼ 8va", () => nudgeSelection(0, -12) && setInfo("down an octave"));
+      mk("▲ 8va", () => nudgeSelection(0, 12) && setInfo("up an octave"));
+    }
+    document.getElementById("trsheet").classList.add("on");
+  });
+  document.getElementById("divbtn").addEventListener("click", () => {
+    if (!selEditItems().length) { setInfo("select notes first — then ➗ divides each into equal parts"); return; }
+    const row = document.getElementById("divchips");
+    if (!row.children.length) {
+      for (const n of [2, 3, 4, 5, 6, 7]) {
+        const b = document.createElement("button");
+        b.textContent = String(n);
+        b.style.cssText = "flex:1;min-height:44px;font-size:1.0625rem";
+        b.addEventListener("click", () => {
+          const k = divideSelection(n);
+          document.getElementById("divsheet").classList.remove("on");
+          setInfo(k ? "divided " + k + " note" + (k === 1 ? "" : "s") + " into " + n + " (one undo undoes)"
+                    : "those notes are too short to divide by " + n);
+        });
+        row.appendChild(b);
+      }
+    }
+    document.getElementById("divsheet").classList.add("on");
+  });
+  document.getElementById("quantbtn").addEventListener("click", () => {
+    if (!selEditItems().length) { setInfo("select notes first — then Q quantizes them to the grid"); return; }
+    const row = document.getElementById("quantchips");
+    if (!row.children.length) {
+      for (const pct of [100, 75, 50]) {
+        const b = document.createElement("button");
+        b.textContent = pct + "%";
+        b.style.cssText = "flex:1;min-height:44px;font-size:1.0625rem";
+        b.addEventListener("click", () => {
+          const alsoEnds = document.getElementById("quantends").checked;
+          const k = quantizeSelection(pct / 100, alsoEnds);
+          document.getElementById("quantsheet").classList.remove("on");
+          setInfo(k ? "quantized " + k + " note" + (k === 1 ? "" : "s") + " at " + pct + "% (one undo undoes)"
+                    : "nothing to quantize");
+        });
+        row.appendChild(b);
+      }
+    }
+    document.getElementById("quantsheet").classList.add("on");
+  });
+  document.getElementById("cutbtn").addEventListener("click", () => {
+    const k = cutSelection();
+    if (!k) { setInfo("nothing selected — lasso or tap notes first"); return; }
+    setInfo("cut " + clipSummary() + " — Paste puts them at the cursor (undo restores)");
+  });
+  document.getElementById("splitbtn").addEventListener("click", () => {
+    if (S.selClip && !S.multiSel.length && editableSong()) { splitSelectedClipAtCursor(); return; } // a selected audio piece splits like a note would
+    let k = splitSelectionAt(S.playCursor), how = "at the cursor";
+    if (!k) { k = splitSelectionHalves(); how = "in half"; }
+    setInfo(k ? "split " + k + " note" + (k === 1 ? "" : "s") + " " + how
+              : "select notes first — cursor inside splits there, otherwise each splits in half");
+  });
+  document.getElementById("joinbtn").addEventListener("click", () => {
+    const k = joinSelection();
+    setInfo(k ? "joined " + k + " notes"
+              : "select two or more notes on the same pitch first");
+  });
+  document.getElementById("delbtn").addEventListener("click", () => {
+    const k = deleteSelection();
+    setInfo(k ? "deleted " + k + " note" + (k === 1 ? "" : "s") + " (undo restores them)"
+              : "nothing selected — lasso or tap notes first");
+  });
+   document.getElementById("undobtn").addEventListener("click", editUndoPop);
+  document.getElementById("redobtn").addEventListener("click", editRedoPop);
+  // keyboard editing — every drag gesture has a key equivalent (easier on the
+  // hands): arrows move, shift = octave, alt+arrows resize, cmd-c/v copy/paste
+  // at the playhead, delete removes. Ignored while typing in a field.
+  document.addEventListener("keydown", e => {
+    if (!S.song || !editableSong()) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    const grid = moveSnapTicks(); // 16ths, or triplet steps while a T duration is active
+    const meta = e.metaKey || e.ctrlKey;
+    if (meta && e.key.toLowerCase() === "s") { e.preventDefault(); saveVersion(); return; }
+    if (meta && e.key.toLowerCase() === "c") {
+      const k = copySelection();
+      if (k) { setInfo("copied " + clipSummary() + " — ⌘V pastes at the playhead"); e.preventDefault(); }
+      return;
+    }
+    if (meta && e.key.toLowerCase() === "v") {
+      const k = pasteClipboard(S.playCursor);
+      if (k) { setInfo("pasted " + clipSummary() + " (selected — arrows move them; cursor at their end, ⌘V again chains)"); e.preventDefault(); }
+      return;
+    }
+    if (meta && e.key.toLowerCase() === "z") { // ⌘Z / ⇧⌘Z (Josh, 2026-09-12: ⌘Z did nothing on his Mac)
+      if (e.shiftKey) editRedoPop(); else editUndoPop();
+      e.preventDefault();
+      return;
+    }
+    if (meta && e.key.toLowerCase() === "y") { editRedoPop(); e.preventDefault(); return; }
+    if (meta && e.key.toLowerCase() === "a") { const k = selectAllNotes(); setInfo(k + " notes selected"); e.preventDefault(); return; }
+    if (meta && e.key.toLowerCase() === "x") { // cut = copy, then delete — one ⌘Z brings the notes back
+      if (copySelection()) { const s = clipSummary(); deleteSelection(); setInfo("cut " + s + " — ⌘V pastes at the playhead"); e.preventDefault(); }
+      return;
+    }
+    if (meta && e.key.toLowerCase() === "d") { if (duplicateSelection()) setInfo("duplicated — ⌘D again repeats it"); e.preventDefault(); return; }
+    if (meta) return; // don't eat browser shortcuts
+    if (e.key === "Backspace" || e.key === "Delete") {
+      if (deleteSelection()) e.preventDefault();
+      return;
+    }
+    if (!selEditItems().length) return;
+    let did = false;
+    if (e.key === "ArrowUp") did = nudgeSelection(0, e.shiftKey ? 12 : 1);
+    else if (e.key === "ArrowDown") did = nudgeSelection(0, e.shiftKey ? -12 : -1);
+    else if (e.key === "ArrowLeft") did = e.altKey ? resizeSelection(-grid) : nudgeSelection(-grid, 0);
+    else if (e.key === "ArrowRight") did = e.altKey ? resizeSelection(grid) : nudgeSelection(grid, 0);
+    if (did) e.preventDefault();
+  });
 }
