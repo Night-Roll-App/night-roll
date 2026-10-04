@@ -1471,6 +1471,21 @@ import { MODAL_KEEP } from "./ui/wm.js";
 import { refreshKeyPreview } from "./ui/notes.js";
 import { fileMeterAt } from "./ui/notes.js";
 import { homeSong } from "./session/boot.js";
+import { initChrome2 } from "./ui/chrome.js";
+import { initChrome3 } from "./ui/chrome.js";
+import { initChrome4 } from "./ui/chrome.js";
+import { initChrome5 } from "./ui/chrome.js";
+import { initChrome6 } from "./ui/chrome.js";
+import { initChrome7 } from "./ui/chrome.js";
+import { initChrome8 } from "./ui/chrome.js";
+import { initChrome9 } from "./ui/chrome.js";
+import { initChrome10 } from "./ui/chrome.js";
+import { initChrome11 } from "./ui/chrome.js";
+import { initChrome12 } from "./ui/chrome.js";
+import { initChrome13 } from "./ui/chrome.js";
+import { initChrome14 } from "./ui/chrome.js";
+import { initChrome15 } from "./ui/chrome.js";
+import { initChrome16 } from "./ui/chrome.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1574,22 +1589,7 @@ S.RULER_H = S.STRIP_Y + STRIP_H;
   const last4 = localStorage.getItem("ff1roll-lastsong");
   if (last4 && movedPath(last4)) rememberLastSong(movedPath(last4));
 })();
- document.getElementById("lcdtemposeg").addEventListener("click", () => {
-  if (!S.song) return; // the song's opening tempo — always bar 1, not the cursor (Josh, 2026-10-01: "I almost always want the whole song"; a mid-song change is + Note)
-  openEditor(governingAt(n => n.tempodir !== undefined, 0), "tempo", {atStart: true});
-});
-// meter and key are independent targets in the shared segment (Josh, 2026-08-19)
-document.getElementById("lcdmeter").addEventListener("click", e => {
-  if (!S.song) return;
-  e.stopPropagation();
-  openEditor(governingAt(n => !!n.tsdir, 0), "timesig", {atStart: true}); // bar 1, not the cursor (see the tempo segment)
-});
-document.getElementById("lcdkey").addEventListener("click", e => {
-  if (!S.song) return;
-  e.stopPropagation();
-  const kn = governingAt(n => n.keydir !== undefined || n.keypartial, 0); // bar 1, not the cursor (see the tempo segment)
-  openEditor(kn, kn ? undefined : "key", {atStart: true});
-});
+ initChrome2();
 
  
 document.getElementById("trackmore").addEventListener("click", () => {
@@ -1670,70 +1670,8 @@ document.getElementById("delclose").addEventListener("click", () =>
     if (document.getElementById("pubjobsheet").classList.contains("on")) renderPubJob();
   });
 }
-window.addEventListener("error", e => {
-  if (BENIGN_ERRORS.test(e.message || "")) return;
-  logErr("uncaught: " + e.message + (e.filename ? " (" + (e.filename.split("/").pop()) + ":" + e.lineno + ")" : ""));
-});
-window.addEventListener("unhandledrejection", e =>
-  logErr("unhandled: " + (e.reason && e.reason.message || e.reason)));
-document.getElementById("errbtn").addEventListener("click", () => {
-  const lines = logLines();
-  const max = askSeenMax().err; // Mark-as-read (2026-09-30): grey out lines already included in a "New since…" bridge context block, in ANY chat
-  const list = document.getElementById("errlist");
-  list.innerHTML = "";
-  if (!lines.length) list.textContent = "No messages.";
-  else for (const x of lines.slice().reverse()) {
-    const d = document.createElement("div");
-    d.style.marginBottom = "0.6em";
-    d.textContent = logLine(x);
-    if (x.id <= max) d.style.color = "var(--dim)";
-    list.appendChild(d);
-  }
-  document.getElementById("errsheet").classList.add("on");
-});
-document.getElementById("errcopy").addEventListener("click", async () => { // the whole log, newest first, for pasting to Claude (Josh, 2026-09-27) — built from the data, not the rendered DOM (errlist is now one div per line, so its own textContent runs the lines together)
-  const text = logLines().slice().reverse().map(logLine).join("\n\n") || "No messages.";
-  const b = document.getElementById("errcopy");
-  try { await navigator.clipboard.writeText(text); b.textContent = "Copied ✓"; }
-  catch (err) { b.textContent = "⚠ couldn't copy"; }
-  setTimeout(() => { b.textContent = "Copy all"; }, 1500);
-});
-document.getElementById("errclear").addEventListener("click", () => {
-  appErrors.length = 0; appDebug.length = 0;
-  document.getElementById("errbtn").style.display = "none";
-  document.getElementById("errsheet").classList.remove("on");
-});
- document.getElementById("noteinfo").addEventListener("click", async () => {
-  if (!S.infoCopyText) { // no copy action on this message: the tap reveals it in full instead
-    if (S.infoFull) {
-      document.getElementById("infosheettext").textContent = S.infoFull;
-      document.getElementById("infosheet").classList.add("on");
-    }
-    return;
-  }
-  let ok = true;
-  try { await navigator.clipboard.writeText(S.infoCopyText); }
-  catch (err) { // clipboard API denied: fall back to a hidden textarea
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = S.infoCopyText;
-      ta.style.position = "fixed"; ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select(); ok = document.execCommand("copy");
-      ta.remove();
-    } catch (err2) { ok = false; }
-  }
-  const chip = document.querySelector("#noteinfo .copychip");
-  if (chip) chip.textContent = ok ? "✓ copied" : "✗ copy failed";
-});
-// the Status window itself (#infosheet) had no way to copy its text at all
-// (Josh, 2026-09-30: "I can't copy from the Status window") — the info strip
-// already copies SOME messages (infoCopyText above); this covers the rest.
-document.getElementById("infosheetcopy").addEventListener("click", ev => {
-  ev.stopPropagation();
-  askCopyText(S.infoFull || document.getElementById("infosheettext").textContent, document.getElementById("infosheetcopy"));
-});
-
+initChrome3();
+ 
   // iOS Safari ignores user-scalable=no: kill page-level pinch zoom explicitly,
 // or a missed gesture zooms the whole page and hides the footer.
 for (const ev of ["gesturestart", "gesturechange", "gestureend"]) {
@@ -2507,11 +2445,7 @@ document.addEventListener("pointerdown", function warm() {
   resumeAudio();
   if (S.sfPreloadPending) sfPreloadForSong(); // the boot-time preload deferred to this gesture
 }, {capture: true});
-           document.addEventListener("pointerdown", e => { // tap-away closes the Edit menu
-  const es = document.getElementById("editsheet");
-  if (es.classList.contains("on") && !es.contains(e.target) && e.target.id !== "editsheetbtn")
-    es.classList.remove("on");
-}, {capture: true});
+           initChrome4();
 document.addEventListener("pointerdown", e => { // tap-away closes the voice menu
   const menu = document.getElementById("voicemenu");
   if (!menu.classList.contains("on")) return;
@@ -2532,75 +2466,16 @@ document.getElementById("albumnext").addEventListener("click", albumNext);
 document.getElementById("albumleave").addEventListener("click", albumLeave);
 
 
-  if (S.viewMode === "tracks") S.RULER_W = TRACKS_GUTTER;                         
+  initChrome5();
+                         
 
 
 
 
 
 
- document.getElementById("playbtn").addEventListener("click", () => {
-  if (!S.song) return; // first song still fetching
-  if (!S.playing && S.playGateShown) { playGateTick.queued = !playGateTick.queued; playGateTick(); return; } // loading: the tap queues (or cancels) the play; it starts when the sound is ready
-  S.playing ? stop() : play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0); // in an album run this is pause/resume — the run stays
-});
-document.getElementById("rwbtn").addEventListener("click", () => {
-  const startX = S.viewMode === "score" ? -SCORE_INTRO_W : 0;
-  // a ruler selection — armed or parked — owns ⏮: back to ITS start, and the
-  // view goes with it (Josh, 2026-10-04: it used to scroll to bar 1, so it
-  // looked like the song start)
-  const home = S.rangeSel && S.rangeSel.b > S.rangeSel.a ? S.rangeSel.a : 0;
-  const reveal = () => {
-    if (!home) { S.view.x = startX; return; }
-    const sx = S.viewMode === "score" ? scoreTickToX(home) : S.RULER_W + home * pxPerTick() - S.view.x;
-    if (sx >= S.RULER_W && sx <= canvas.clientWidth - 40) return; // already on screen: leave the view alone
-    S.view.x = Math.max(startX, S.view.x + sx - S.RULER_W - 40);
-    clampView();
-  };
-  if (S.playing) { stop(); S.playCursor = home; reveal(); play(tickToSec(S.song, home)); return; }
-  S.playCursor = home;
-  reveal();
-  updateSubtitle();
-  draw();
-});
-speedsl.addEventListener("input", () => { speedlbl.textContent = speedsl.value + "%"; });
-speedsl.addEventListener("change", () => applySpeed(+speedsl.value)); // on release, not per drag-tick
-speedreset.addEventListener("click", () => {
-  applySpeed(100);
-  document.getElementById("speedpop").style.display = "none"; // reset means done — fold immediately
-});
-// speed + volume live behind BUTTONS (Josh, 2026-08-22: the slider "takes too
-// much space... if I click it, it opens up the slider") — tap toggles the
-// popover open; tapping anywhere else folds it back to a button
-{
-  const pops = [["speedbtn", "speedpop"], ["volbtn", "volpop"]];
-  for (const [bid, pid] of pops) {
-    document.getElementById(bid).addEventListener("click", () => {
-      for (const [b2, p2] of pops) // one open at a time
-        document.getElementById(p2).style.display = p2 === pid &&
-          document.getElementById(p2).style.display === "none" ? "flex" : "none";
-    });
-  }
-  document.addEventListener("pointerdown", e => {
-    for (const [bid, pid] of pops) {
-      const pop = document.getElementById(pid);
-      if (pop.style.display !== "none" && !pop.contains(e.target) && e.target.id !== bid)
-        pop.style.display = "none";
-    }
-  }, {capture: true});
-}
-initChrome1();
-S.masterVol = +(localStorage.getItem("ff1roll-mastervol") || 1);
-volsl.value = String(Math.round(S.masterVol * 100));
-vollbl.textContent = Math.round(S.masterVol * 100) + "%";
-setVolBtn(Math.round(S.masterVol * 100));
-volsl.addEventListener("input", () => {
-  S.masterVol = (+volsl.value) / 100;
-  vollbl.textContent = volsl.value + "%";
-  setVolBtn(+volsl.value);
-  localStorage.setItem("ff1roll-mastervol", String(S.masterVol));
-  if (S.audio && S.master) S.master.gain.setValueAtTime(MASTER_VOL * S.masterVol, S.audio.currentTime);
-});
+ initChrome1();
+initChrome6();
 
  {
   // black keys get THREE options (2026-08-12 spec): fused "A#/Bb" = spelling
@@ -2953,23 +2828,7 @@ document.getElementById("fileabout").addEventListener("click", () => {
   document.getElementById("aboutsheet").classList.add("on");
 });
 
-findsel.addEventListener("focus", refreshFindSel);
-findsel.addEventListener("change", () => {
-  S.findPc = findsel.value === "" ? null : +findsel.value;
-  if (S.findPc === null) { setInfo("find: off"); draw(); return; }
-  let count = 0;
-  const chans = new Set();
-  if (S.song) S.song.tracks.forEach((tr, ti) => {
-    if (!trackShown(ti) || trackIsDrums(ti)) return;
-    for (const n of tr.notes) if (!n.gone && n.p % 12 === S.findPc) { count++; chans.add(tr.name || "track " + (ti + 1)); }
-  });
-  const sf = sfShownAt(curTick());
-  const deg = degreeOf(S.findPc, keyNameShownAt(curTick()));
-  const name = spellPc(S.findPc, sf) + (deg ? " (degree " + deg + ")" : "");
-  setInfo(count ? "find " + name + ": " + count + " notes — " + [...chans].join(", ")
-                : "find " + name + ": 0 — not present in this song");
-  draw();
-});
+initChrome7();
 
 lassobtn.addEventListener("click", () => {
   S.lassoMode = !S.lassoMode;
@@ -2993,55 +2852,10 @@ document.getElementById("chordbtn").addEventListener("click", () => {
   setInfo(names.join(" · ") + "  →  " + chordName, names.join(", ") + " — " + chordName);
 });
 
-if (typeof document !== "undefined" && document.body) { // real browser only — layout/Mutation observers are not unit tested, like the wmdock menu's own dismissal above
-  const footerEl = document.getElementById("footer");
-  if (typeof ResizeObserver === "function") new ResizeObserver(scheduleFitReadline).observe(footerEl);
-  // buttons appearing/disappearing (⚠/✦ reply/Clear edits, ⊞ Lasso's own
-  // label dropping to a glyph past ~420px) change the leftover without
-  // necessarily resizing the footer itself
-  if (typeof MutationObserver === "function") new MutationObserver(scheduleFitReadline).observe(footerEl, {attributes: true, attributeFilter: ["style", "class"], subtree: true});
-}
-fitReadline(); // initial state — applyChrome() isn't called at boot when nothing is folded
-{
-  const old = localStorage.getItem("ff1roll-panelhide"); // migrate the combined key
-  if (old !== null) {
-    localStorage.setItem("ff1roll-editrow-hidden", old);
-    localStorage.setItem("ff1roll-footer-hidden", old);
-    localStorage.removeItem("ff1roll-panelhide");
-  }
-  // phones start folded (a hand-sized screen is for the music, not the
-  // buttons); an explicit choice becomes the remembered one. iPads and up
-  // start open. min(screen dims) < 500 CSS px ≈ every phone, no iPad.
-  const scr = (typeof screen !== "undefined" && screen) || {width: 1024, height: 768};
-  const phone = Math.min(scr.width, scr.height) < 500;
-  const er = localStorage.getItem("ff1roll-editrow-hidden");
-  const fo = localStorage.getItem("ff1roll-footer-hidden");
-  S.editrowHidden = er === null ? phone : er === "1";
-  S.footerHidden = fo === null ? phone : fo === "1";
-  // phones are PLAYERS by default (Josh, 2026-08-23: "I want to send songs to
-  // people and have them open them and listen") — roll + transport, nothing
-  // else; the Full app button opts a device back into the whole DAW
-  const lm = localStorage.getItem("ff1roll-listener");
-  S.listenerMode = lm === null ? phone : lm === "1";
-  applyListener();
-  document.getElementById("fullappbtn").addEventListener("click", () => {
-    S.listenerMode = false;
-    localStorage.setItem("ff1roll-listener", "0");
-    applyListener();
-    setInfo("full app on — View ▾ → 'Listener mode' folds it back");
-  });
-  // the ▾ hide buttons retired (Josh, 2026-08-22): hiding is the View menu's
-  // job now; the floating ▴ stays as the never-strand restore
-  document.getElementById("panelshow").addEventListener("click", () => { S.editrowHidden = S.footerHidden = false; applyChrome(); });
-  if (S.editrowHidden || S.footerHidden) applyChrome();
-}
+initChrome8();
 
 
-  viewbtn.addEventListener("click", e => openDropUp(e.currentTarget, viewSwitchMenu));
-document.getElementById("vsRoll").addEventListener("click", () => { closeDropUp(); setViewMode("roll"); });
-document.getElementById("vsTracks").addEventListener("click", () => { closeDropUp(); setViewMode("tracks"); });
-document.getElementById("vsScore").addEventListener("click", () => { closeDropUp(); setViewMode("score"); });
-
+  
 // (editOn is declared early, with the view state — the phone boot path calls
 // renderViewMenu before this file's later sections ran; TDZ here bricked
 // every iPhone: "Cannot access 'editOn' before initialization", 2026-08-23)
@@ -3206,8 +3020,7 @@ document.getElementById("clearbtn").addEventListener("click", () => {
   if (editsKey()) localStorage.removeItem(editsKey());
   loadSong(S.songKey).catch(e => setInfo(e.message));
 });
-window.addEventListener("resize", resize);
-new ResizeObserver(resize).observe(wrap);
+initChrome9();
   document.addEventListener("pointerdown", function midiWarm() {
   document.removeEventListener("pointerdown", midiWarm);
   // the iPad app's native MIDI bridge starts only when ● asks for it — never
@@ -3264,8 +3077,7 @@ document.getElementById("websess").addEventListener("click", async e => {
   catch { e.target.textContent = "✗ copy failed"; }
   setTimeout(() => { e.target.textContent = "⎘ Web session"; }, 1800);
 });
-subbtn.classList.toggle("active", S.subOn);
-subbtn.setAttribute("aria-pressed", String(S.subOn));
+initChrome10();
 instFallBtn.addEventListener("click", () => {
   S.fallOn = !S.fallOn;
   if (S.fallOn) { // fall is piano-only and needs the keys visible
@@ -3556,414 +3368,13 @@ document.getElementById("gridclose").addEventListener("click", () => {
   document.getElementById("gridsheet").classList.remove("on");
   setInfo(S.gridDiv ? "grid: " + S.gridDiv + " lines/bar — View ▾ → Grid to change" : "grid off");
 });
-// the rest of Logic's transport keys (DAW review, 2026-09-29: muscle memory
-// failed silently): Return = to the start, K = click on/off, C = cycle
-// on/off, R = record, ⌘← / ⌘→ = zoom out / in around the cursor. Any song.
-document.addEventListener("keydown", e => {
-  if (!S.song || e.repeat || e.altKey) return;
-  const t = e.target;
-  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-  const meta = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
-  if (meta && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
-    const f = e.key === "ArrowRight" ? 1.25 : 0.8, ppt0 = pxPerTick(), cx = S.RULER_W + S.playCursor * ppt0 - S.view.x;
-    S.view.pxq = Math.min(400, Math.max(S.viewMode === "score" ? minPxq() : pxqFloor(), S.view.pxq * f));
-    S.view.x = S.playCursor * pxPerTick() + S.RULER_W - cx; // the cursor stays where it was on screen
-    clampView(); draw(); e.preventDefault(); return;
-  }
-  if (meta || e.shiftKey) return;
-  if (e.key === "Enter" && t && (t.tagName === "BUTTON" || t.getAttribute("role") === "button")) return; // Return on a focused button (real or role=button) presses it
-  if (e.key === "Enter") { document.getElementById("rwbtn").click(); e.preventDefault(); return; }
-  if (k === "k") { document.getElementById("metbtn").click(); e.preventDefault(); return; }
-  if (k === "x") { toggleMixer(); e.preventDefault(); return; } // Logic's mixer key
-  if (e.key === "Escape" && S.rangeSel) { S.rangeSel = null; setInfo("range cleared"); draw(); return; }
-  if (k === "c" && S.rangeSel && S.rangeSel.cycle && S.rangeSel.b > S.rangeSel.a) { S.rangeSel.off = !S.rangeSel.off; setInfo(S.rangeSel.off ? "cycle off" : "cycle on"); draw(); e.preventDefault(); return; }
-  if (k === "r") { const rb = document.getElementById("recbtn"); if (rb && rb.offsetParent !== null) { rb.click(); e.preventDefault(); } return; }
-  if (k === "q") { // Logic's Q: quantize the selection — only on your own songs
-    if (editableSong()) document.getElementById("quantbtn").click(); else setInfo("Quantize works on your own songs");
-    e.preventDefault(); return;
-  }
-});
-// VoiceOver/keyboard (2026-09-30): the app's own role="button" elements
-// (track-chip M/S/H, the chip itself, the "what's Claude doing" strip, …)
-// are <span>/<div>, not real <button>s — a browser gives those no built-in
-// Enter/Space activation the way it does a <button>. One delegated listener
-// covers every one of them, present and future, the same way SHEET_TOP is
-// the one choke point for every sheet.
-document.addEventListener("keydown", e => {
-  if ((e.key !== "Enter" && e.key !== " ") || e.repeat) return;
-  const t = e.target;
-  if (!t || t.tagName === "BUTTON" || t.getAttribute("role") !== "button") return;
-  e.preventDefault();
-  t.click();
-});
-document.addEventListener("keydown", e => { // space = play/stop, Logic-style
-  if (e.code !== "Space" || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
-  const t = e.target;
-  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" ||
-            t.isContentEditable || t.tagName === "BUTTON" || t.getAttribute("role") === "button")) return; // typing/tabbing wins
-  if (!S.song) return;
-  e.preventDefault(); // page must not scroll
-  if (S.playing) stop(); else document.getElementById("playbtn").click();
-});
-document.getElementById("viewsheetbtn").addEventListener("click", e => {
-  const sheet = document.getElementById("viewsheet");
-  if (sheet.classList.contains("on")) { closeFileMenus(); return; }
-  closeFileMenus();
-  S.vwOpenGroup = null; // sub-menu follow-up, 2026-10-02: every group starts closed, each time View ▾ opens
-  renderViewMenu();
-  const r = e.currentTarget.getBoundingClientRect();
-  sheet.style.left = Math.max(6, Math.min(r.left, songRegionRight() - 250)) + "px";
-  sheet.style.top = (r.bottom + 6) + "px";
-  sheet.classList.add("on");
-});
-{ // View toggles flip in place — the menu STAYS OPEN (batch hiding is the use)
-  const on = (id, fn) => document.getElementById(id).addEventListener("click", () => { fn(); renderViewMenu(); });
-  // Each group header toggles vwOpenGroup accordion-style: tapping the OPEN
-  // group's own header closes it (back to null); tapping any other closes
-  // whichever was open and opens this one — at most one group's content div
-  // is ever visible. Same expanding-row mechanics "View type ▸" always used
-  // (ruling #4, 2026-10-01 pm), just generalized to all six (sub-menu
-  // follow-up, 2026-10-02, Josh: "View ▾ is too tall — make EVERY section an
-  // expanding sub-menu").
-  const toggleGroup = key => { S.vwOpenGroup = S.vwOpenGroup === key ? null : key; };
-  on("vwViewType", () => toggleGroup("view"));
-  on("vwPanels", () => toggleGroup("panels"));
-  on("vwTools", () => toggleGroup("tools"));
-  on("vwDisplay", () => toggleGroup("display"));
-  on("vwBackground", () => toggleGroup("background"));
-  on("vwMode", () => toggleGroup("mode"));
-  // VIEW group is a radio (Josh, 2026-09-30): each item always SELECTS its
-  // mode — no toggle-off — same as the footer's #viewbtn segmented control.
-  // "View type ▸" (chrome density follow-up, 2026-10-01 pm): expands/
-  // collapses #vwViewTypeRow in place — picking a row below still re-renders
-  // (the "on" wrapper) so the ▸/▾ + current-view label stay in sync.
-  on("vwRoll", () => setViewMode("roll"));
-  on("vwScore", () => setViewMode("score"));
-  on("vwListener", () => {
-    S.listenerMode = !S.listenerMode;
-    localStorage.setItem("ff1roll-listener", S.listenerMode ? "1" : "0");
-    applyListener();
-  });
-  on("vwTracksView", () => setViewMode("tracks"));
-  on("vwMixer", () => toggleMixer());
-  on("vwLearning", () => { setAppMode(appMode() === "learning" ? "normal" : "learning"); applyMode(); });
-  on("vwAnalyze", () => { // Normal-only (the item is absent otherwise) — compute on toggle, never per frame
-    if (!analysisAvailable() || !S.song) return;
-    S.analysisOn = !S.analysisOn;
-    if (S.analysisOn) computeAnalysisLayer(); else { if (S._analysisTimer) { clearTimeout(S._analysisTimer); S._analysisTimer = null; } S.analysisBands = {chords: [], key: null}; }
-    finalizeNotes();
-    clampView();
-    draw();
-  });
-  on("vwCompare", () => { document.getElementById("viewsheet").classList.remove("on"); if (S.cmp) cmpExit(); else cmpEnter(); });
-  on("vwTracks", () => document.getElementById("tracktoggle").click());
-  on("vwEdit", () => { S.editrowHidden = !S.editrowHidden; applyChrome(); });
-  on("vwAdded", () => { setAddedOutline(!showAddedOutline()); drawFull(); });
-  on("vwFooter", () => { S.footerHidden = !S.footerHidden; applyChrome(); });
-  on("vwInst", () => document.getElementById("instbtn").click());
-  on("vwSub", () => toggleSubtitle());
-  on("vwGrid", () => { document.getElementById("viewsheet").classList.remove("on"); openGridSheet(); });
-  // BACKGROUND (chrome density follow-up, 2026-10-01 pm): both forward to
-  // the footer buttons' own click handlers (renderJobs/errChip's sheets are
-  // unchanged) — same "close View ▾ first" convention as vwGrid/vwCompare
-  // above, since these open a separate overlay rather than toggling in
-  // place. Works even while #jobsbtn/#errbtn are themselves hidden (0 jobs,
-  // 0 unread) — a hidden button's own click() still fires.
-  on("vwJobs", () => { document.getElementById("viewsheet").classList.remove("on"); document.getElementById("jobsbtn").click(); });
-  on("vwMessages", () => { document.getElementById("viewsheet").classList.remove("on"); document.getElementById("errbtn").click(); });
-  on("vwLevelsMinus", () => setSecDepth(Math.min(secDepthCap(), S.secMaxDepth - 1) - 1));
-  on("vwLevelsPlus", () => setSecDepth(Math.min(secDepthCap(), S.secMaxDepth - 1) + 1));
-}
-// P6: the Analyze sheet — opened by tapping a band in the Analyze layer
-// (tap()); Adopt writes ONE annotation (or all chords) through the existing
-// write path, Cancel just closes (nothing is written by looking).
-document.getElementById("analyzeadopt").addEventListener("click", () => {
-  if (!S.analyzeTarget) return;
-  if (S.analyzeTarget.kind === "chord") adoptChordBand(S.analyzeTarget);
-  else adoptKeyRegion({start: S.analyzeTarget.start, end: S.analyzeTarget.end, text: S.analyzeTarget.text,
-                        name: S.analyzeTarget.text, sf: S.analysisBands.key ? S.analysisBands.key.sf : 0});
-  document.getElementById("analyzesheet").classList.remove("on");
-});
-document.getElementById("analyzeadoptall").addEventListener("click", () => {
-  adoptAllChords();
-  document.getElementById("analyzesheet").classList.remove("on");
-});
-document.getElementById("analyzeclose").addEventListener("click", () => document.getElementById("analyzesheet").classList.remove("on"));
-document.addEventListener("pointerdown", e => { // tap-away closes the View menu
-  const vs = document.getElementById("viewsheet");
-  if (vs.classList.contains("on") && !vs.contains(e.target) && e.target.id !== "viewsheetbtn")
-    vs.classList.remove("on");
-}, {capture: true});
-document.getElementById("editsheetbtn").addEventListener("click", e => {
-  const sheet = document.getElementById("editsheet");
-  if (sheet.classList.contains("on")) { closeFileMenus(); return; }
-  closeFileMenus();
-  const r = e.currentTarget.getBoundingClientRect();
-  sheet.style.left = Math.max(6, Math.min(r.left, songRegionRight() - 250)) + "px";
-  sheet.style.top = (r.bottom + 6) + "px";
-  sheet.classList.add("on");
-});
-{ // menu items proxy the edit-row buttons — same guards, same messages
-  const proxy = (id, fn) => document.getElementById(id).addEventListener("click", () => { closeFileMenus(); fn(); });
-  proxy("emUndo", editUndoPop);
-  proxy("emRedo", editRedoPop);
-  proxy("emDup", () => document.getElementById("copybtn").click());
-  proxy("emPaste", () => document.getElementById("pastebtn").click());
-  proxy("emPasteTo", openPasteTo);
-  proxy("emCut", () => document.getElementById("cutbtn").click());
-  proxy("emDelete", () => document.getElementById("delbtn").click());
-  proxy("emSplit", () => document.getElementById("splitbtn").click());
-  proxy("emDivide", () => document.getElementById("divbtn").click());
-  proxy("emJoin", () => document.getElementById("joinbtn").click());
-  proxy("emQuantize", () => document.getElementById("quantbtn").click());
-  proxy("emDedupe", () => {
-    if (!editableSong()) { setInfo("Remove duplicate notes works on your own songs"); return; }
-    const k = removeDuplicateNotes();
-    setInfo(k ? "removed " + k + " duplicate note" + (k === 1 ? "" : "s") + " (undo restores them)" : "no duplicate notes in this song");
-  });
-  proxy("emMove", () => document.getElementById("movebtn").click());
-  proxy("emTranspose", () => document.getElementById("trbtn").click());
-  proxy("emInsertBars", () => { if (editableSong()) openInsertBars(); else setInfo("Insert bars works on your own songs"); });
-  proxy("emDeleteBars", () => { if (editableSong()) openDeleteBars(); else setInfo("Delete bars works on your own songs"); });
-  proxy("emChord", () => document.getElementById("insbtn").click());
-  proxy("emFill", () => document.getElementById("drumfillbtn").click());
-  proxy("emDrummer", () => openDrummer());
-  proxy("emBassist", () => openBassist());
-}
-document.getElementById("filesheetbtn").addEventListener("click", e => {
-  if (filesheet.classList.contains("on")) { closeFileMenus(); return; }
-  closeFileMenus();
-  fileMenuSaveLabels();
-  renderOpenRecentRow();
-  filesub.classList.remove("on");
-  document.getElementById("filenewform").style.display = "none";
-  document.getElementById("filesaveasform").style.display = "none";
-  document.getElementById("filerenameform").style.display = "none";
-  document.getElementById("filemoverow").style.display = isComposition() ? "" : "none";
-  document.getElementById("filesavelocal").textContent = S.song && isUnsaved(S.songKey) ? "Save Version…" : "Save Version";
-  if (isComposition()) { // move targets: any folder of yours, or a new one
-    const sel = document.getElementById("fmdest");
-    // name the current home first — a dropdown holding only the OTHER album
-    // read as "destination selected" (Josh, 2026-09-07)
-    document.getElementById("fmlbl").textContent = "In " + folderTitle(folderOf(S.songKey)) + " · move to";
-    fillFolderSelect(sel, folderOf(S.songKey));
-    document.getElementById("fmnewfolder").style.display = sel.value === "__new__" ? "" : "none";
-  }
-  const impN = importDraftKeys().length;
-  const impBtn = document.getElementById("fileimpcommit");
-  impBtn.style.display = impN ? "" : "none";
-  impBtn.textContent = publishLabel("import (" + impN + ")");
-  impBtn.disabled = !publishDest();
-  { // the rename item names its victim: Rename "Overworld"…
-    const t = S.currentPath ? songTitleOf(S.currentPath) : "";
-    document.getElementById("filerename").textContent =
-      t ? "Rename “" + (t.length > 18 ? t.slice(0, 17) + "…" : t) + "”…" : "Rename…";
-  }
-  { const origin = S.song && S.songKey ? originOf(S.songKey) : null;
-    fileStatus(S.song && isUnsaved(S.songKey) ? "not saved yet — Save names it and picks its folder"
-               : isComposition() ? "your song — editable"
-               : (origin === "capture" || origin === "starter") ? "read-only here — ✎ Edit (or Save As…) makes an editable copy"
-               : "read-only here — Save As makes an editable copy in a folder of yours"); }
-  const r = e.currentTarget.getBoundingClientRect();
-  filesheet.style.left = Math.max(6, r.left) + "px";
-  filesheet.style.top = (r.bottom + 4) + "px";
-  filesheet.classList.add("on");
-});
-document.addEventListener("pointerdown", e => { // tap-away closes, like a real menu
-  if (!filesheet.classList.contains("on") && !filesub.classList.contains("on")) return;
-  if (filesheet.contains(e.target) || filesub.contains(e.target) || e.target.closest("#filesheetbtn")) return;
-  closeFileMenus();
-}, {capture: true});
-document.getElementById("fmdest").addEventListener("change", () => {
-  const isNew = document.getElementById("fmdest").value === "__new__";
-  document.getElementById("fmnewfolder").style.display = isNew ? "" : "none";
-  if (isNew) document.getElementById("fmnewfolder").focus();
-});
-document.getElementById("fmgo").addEventListener("click", e => {
-  const folder = chosenFolder(document.getElementById("fmdest"), document.getElementById("fmnewfolder"));
-  if (!folder) { fileStatus("⚠ Pick a folder, or type a name for a new one."); return; }
-  if (!isComposition()) return;
-  localStorage.setItem("ff1roll-lastfolder", folder);
-  e.currentTarget.disabled = true;
-  moveComposition("albums/" + folder + "/").finally(() => { e.currentTarget.disabled = false; });
-});
- document.addEventListener("pointerdown", e => { // tap-away closes — exempts the trigger buttons themselves (their own click handler does the toggle-closed, via `was` above) and anything inside the open menu, so a native <select> inside it (#findsel) and its iOS picker stay safe
-  if (!S.dropUpOpen) return;
-  if (S.dropUpOpen.contains(e.target) || e.target.closest("#viewbtn, #listbtn, #askattach")) return;
-  closeDropUp();
-}, {capture: true});
-JOB_KINDS.publish = {
+initChrome11();
+ JOB_KINDS.publish = {
   label: j => "Publish · " + j.title,
   open: j => openPubJobSheet(j), // the publish dialog (Josh, 2026-09-29: the old jump to File → Open → folder "brought me to a weird page")
   retry: j => { const keys = (j.keys || []).filter(k => importDraftKeys().includes(k)); if (!keys.length) { setInfo(j.title + ": nothing left to publish"); return; } const job = publishJobStart(j.slug, keys, setInfo); if (job) openPubJobSheet(job); },
 };
-  document.getElementById("fileinst").addEventListener("click", () => {
-  closeFileMenus();
-  document.getElementById("instsheet").classList.add("on");
-  S.instNav = {sys: null, game: null, sub: null};
-  renderInstSheet();
-});
-document.getElementById("fileopen").addEventListener("click", e => {
-  const group = Object.entries(S.CATALOG).find(([, songs]) => songs.some(([, p]) => p === S.currentPath));
-  if (S.currentPath && localStorage.getItem("ff1roll-draft-" + S.currentPath)) fsubFolder("local", folderOf(S.currentPath)); // the local copy is what's open
-  else if (group) fsubFolder("published", folderOf(S.currentPath));
-  else fsubAlbums();
-  const mr = filesheet.getBoundingClientRect();
-  const ir = e.currentTarget.getBoundingClientRect();
-  filesub.style.left = Math.min(mr.right + 4, songRegionRight() - 240) + "px";
-  filesub.style.top = ir.top + "px";
-  filesub.classList.add("on");
-});
-document.getElementById("fileopenrecent").addEventListener("click", () => {
-  S.fileOpenRecentOpen = !S.fileOpenRecentOpen;
-  renderOpenRecentRow();
-});
-document.getElementById("filenew").addEventListener("click", () => {
-  document.getElementById("filenewform").style.display = "";
-  document.getElementById("filesaveasform").style.display = "none";
-  document.getElementById("fnbpm").focus();
-});
-document.getElementById("fncreate").addEventListener("click", () => {
-  stop();
-  createComposition(+document.getElementById("fnbpm").value || 120,
-                    +document.getElementById("fnnum").value, +document.getElementById("fnden").value);
-  document.getElementById("filesheet").classList.remove("on");
-  setInfo("new song — Edit → Pencil to write. It lives on this device as " + songTitleOf(S.songKey) + " until File → Save Version names it and picks its folder.");
-});
-// return key in the name fields = the primary action (iOS keyboards
-// otherwise cost an extra tap: the first one just dismisses the keyboard)
-document.getElementById("fsname").addEventListener("keydown", e => {
-  if (e.key === "Enter") { e.preventDefault(); document.getElementById("fsgo").click(); }
-});
-document.getElementById("fsnewfolder").addEventListener("keydown", e => {
-  if (e.key === "Enter") { e.preventDefault(); document.getElementById("fsname").focus(); }
-});
-document.getElementById("fsfolder").addEventListener("change", () => {
-  const isNew = document.getElementById("fsfolder").value === "__new__";
-  document.getElementById("fsnewfolder").style.display = isNew ? "" : "none";
-  if (isNew) document.getElementById("fsnewfolder").focus();
-});
-document.getElementById("filesaveas").addEventListener("click", () => { if (S.song) openSaveForm("fork"); });
-document.getElementById("fsgo").addEventListener("click", async () => {
-  const form = document.getElementById("filesaveasform");
-  const name = document.getElementById("fsname").value;
-  const folder = chosenFolder(document.getElementById("fsfolder"), document.getElementById("fsnewfolder"));
-  if (!folder) { fileStatus("⚠ Pick a folder, or type a name for a new one."); document.getElementById("fsnewfolder").focus(); return; }
-  if (!name.trim()) { fileStatus("⚠ Name the song."); document.getElementById("fsname").focus(); return; }
-  stop();
-  if (form.dataset.mode === "editcopy") {
-    makeItMine(name, folder);
-    document.getElementById("filesheet").classList.remove("on");
-    return;
-  }
-  if (form.dataset.mode === "fork") {
-    forkCurrentSong(name, folder);
-    document.getElementById("filesheet").classList.remove("on");
-    setInfo("copy saved as " + name.trim() + " in " + folderTitle(folder) + " — fully editable; Publish sends it to GitHub.");
-    return;
-  }
-  if (form.dataset.mode === "publish") { // Publish on a song with no folder yet (lotion, 2026-10-03) — publishUnsavedSong is the one place this happens, left open afterward (status line) like ghsave's own writing-mode branch
-    const btn = document.getElementById("fsgo");
-    btn.disabled = true;
-    try { await publishUnsavedSong(folder, name); }
-    finally { btn.disabled = false; }
-    return;
-  }
-  if (await saveSongAs(folder, name)) document.getElementById("filesheet").classList.remove("on");
-});
-// Rename works on EVERYTHING (Josh 2026-08-16): an uncommitted draft renames
-// its file; a repo song keeps its filename (analysis docs reference it) and
-// gets a display-title override in album.json + the manifest instead
-document.getElementById("filerename").addEventListener("click", () => {
-  if (!S.songKey) { fileStatus("Nothing to rename — no song open."); return; }
-  document.getElementById("filerenameform").style.display = "";
-  document.getElementById("filenewform").style.display = "none";
-  document.getElementById("filesaveasform").style.display = "none";
-  const inp = document.getElementById("frname");
-  inp.value = songTitleOf(S.songKey);
-  inp.focus();
-  inp.select();
-});
-document.getElementById("frname").addEventListener("keydown", e => {
-  if (e.key === "Enter") { e.preventDefault(); document.getElementById("frgo").click(); }
-});
-document.getElementById("frgo").addEventListener("click", async e => {
-  const raw = document.getElementById("frname").value.trim();
-  if (!raw || !S.songKey) { fileStatus("⚠ Type the new name first."); return; }
-  const btn = e.currentTarget;
-  btn.disabled = true;
-  try {
-    const hasDraft = localStorage.getItem(draftStoreKey(S.songKey)) !== null;
-    if (hasDraft && !(S.song && S.song.savedStamp)) { // never committed: rename the file itself
-      const newKey = renameImportDraft(S.songKey, raw);
-      if (newKey === null) { fileStatus("⚠ A draft named \"" + slugify(raw) + "\" already exists."); return; }
-      updateSongBtn();
-      fileStatus("Renamed ✓ (local draft — the name commits with it).");
-    } else { // repo song: title override, filename untouched
-      const token = writeToken();
-      if (!token) { fileStatus("No GitHub token stored yet — add one in File → Settings."); return; }
-      fileStatus("Renaming…");
-      await renameRepoTitle(S.songKey, raw, ghHeaders(token));
-      await initCatalog().catch(() => { /* CDN lag; next boot */ });
-      // the refetched manifest can be CDN-stale for ~10 min — the repo write
-      // succeeded, so patch the in-memory catalog instead of trusting it
-      // (Josh renamed Main Theme and the crumb kept saying Main Theme)
-      for (const songs of Object.values(S.CATALOG)) {
-        const hit = songs.find(([, p]) => p === S.songKey);
-        if (hit) hit[0] = raw;
-      }
-      updateSongBtn();
-      fileStatus("Renamed ✓ — \"" + raw + "\" everywhere the dropdown shows it.");
-    }
-    document.getElementById("filerenameform").style.display = "none";
-  } catch (err) { fileStatus("Rename failed: " + err.message); }
-  finally { btn.disabled = false; }
-});
-document.getElementById("editherebtn").addEventListener("click", () => editHereNow());
-// ✎ Edit (Josh's ruling, renamed from "✎ Make it mine"): opens the "Edit a
-// copy" sheet instead of forking straight away — same destination, one more
-// tap to see/change the name and folder first.
-document.getElementById("makeitminebtn").addEventListener("click", () => openSaveForm("editcopy"));
-document.getElementById("filesavelocal").addEventListener("click", () => { if (S.song && isUnsaved(S.songKey)) { openSaveForm("save"); return; } closeFileMenus(); saveVersion(); });
-document.getElementById("filerevert").addEventListener("click", () => {
-  if (!S.songKey) { setInfo("open a song first"); return; }
-  if (S.songKey.startsWith("local/")) { setInfo("local imports have no repo copy to go back to"); return; }
-  closeFileMenus();
-  openVersionsSheet();
-});
-document.getElementById("filedlaudio").addEventListener("click", async () => {
-  if (!S.song) return;
-  closeFileMenus();
-  if (S.exporting) { setInfo("already exporting — it finishes when the song does"); return; }
-  albumClear();
-  S.exporting = true;
-  let result = null, method = "offline";
-  try {
-    ensureAudio();
-    await resumeAudio();
-    const off = await renderSongOffline();
-    if (off.ok) {
-      result = {blob: new Blob([audioBufferToWav(off.buffer)], {type: "audio/wav"}),
-                name: (S.songKey ? S.songKey.split("/").pop().replace(/\.mid$/, "") : "song") + ".wav"};
-    } else {
-      logDebug("Download audio: offline bounce unavailable (" + off.why + ") — falling back to the real-time recorder");
-      method = "realtime";
-      result = await recordRealtimeAudio();
-    }
-  } finally { S.exporting = false; }
-  if (!result) return; // recordRealtimeAudio already said why (no MediaRecorder either)
-  try { await deliverAudioFile(result.blob, result.name); }
-  catch (err) { logErr("Download audio: " + (err && err.message || err)); return; }
-  setInfo((method === "offline" ? "audio bounced: " : "audio saved: ") + result.name + " (" + Math.round(result.blob.size / 1024) + " KB)");
-});
-document.getElementById("filedlmid").addEventListener("click", () => {
-  if (!S.song) return;
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([writeMidi(S.song)], {type: "audio/midi"}));
-  a.download = (S.songKey ? S.songKey.split("/").pop() : "song.mid");
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
+  initChrome12();
     JOB_KINDS.capture = {
   label: j => "Capture · " + j.title,
   open: j => { // the panel, if this session is still the one; else say what a retry needs
@@ -4016,14 +3427,7 @@ document.getElementById("impcommit").addEventListener("click", e => {
     btn.textContent = publishLabel("import (" + n + ")");
   });
 });
-document.getElementById("filesave").addEventListener("click", () => {
-  // one door for both modes (Josh, 2026-08-18): Save opens the sync sheet, which
-  // shows pending annotations; its commit button pushes what the mode owns —
-  // compositions: .mid + annotations together; analyzed songs: annotations only
-  if (!S.song) return;
-  closeFileMenus();
-  openSyncSheet();
-});
+initChrome13();
 { // velocity slider: pencil loudness always; with a selection it LIVE-adjusts
   // those notes while dragging and commits ONE undo step on release
   const slider = document.getElementById("velslider"), val = document.getElementById("velval");
@@ -4395,21 +3799,9 @@ document.addEventListener("keydown", e => {
   else if (e.key === "ArrowRight") did = e.altKey ? resizeSelection(grid) : nudgeSelection(grid, 0);
   if (did) e.preventDefault();
 });
-{
-  const fn = document.getElementById("fnnum");
-  for (let n = 2; n <= 12; n++) {
-    const o = document.createElement("option");
-    o.textContent = String(n);
-    if (n === 4) o.selected = true;
-    fn.appendChild(o);
-  }
-}
+initChrome14();
 
- if (document.getElementById("cmpswap")) {
-  document.getElementById("cmpswap").addEventListener("click", () => cmpShow(S.cmp && S.cmp.showing === "mine" ? "repo" : "mine"));
-  document.getElementById("cmpdone").addEventListener("click", cmpExit);
-}
-
+ 
 
          document.getElementById("cfgaitest").addEventListener("click", aiRunTest);
 document.getElementById("cfgaitestb").addEventListener("click", aiRunTest);
@@ -4420,7 +3812,7 @@ document.getElementById("cfgaibackend").addEventListener("change", aiBackendRows
    // what the configured backend can do (askStatusPoll detects; askTabsApply shows). sessions: the bridge's Clear-really-resets/Compact/usage-line trio (askSessionRender gates on it)
 try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal"; S.askGeneral = S.askTerminal || m === "general"; } catch (err) { S.askGeneral = S.askTerminal = false; }
   
-      document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
+      initChrome15();
 
 
 document.getElementById("deploynotnow").addEventListener("click", deployHoldNow);
@@ -4964,10 +4356,7 @@ document.getElementById("ghsaveall").addEventListener("click", () => {
   openPubJobSheet(job);
 });
 
-if (typeof document !== "undefined" && document.body && document.body.dataset) document.body.dataset.edition = EDITION; // the vm harness has no body
-applyViewMode();
-resize();
-updateSyncBtn();
+initChrome16();
 // ---- service worker (Phase 0, 2026-09-26): offline launch from the Home
 // Screen; network-first for the page itself so a stale index.html can never
 // stick. ?sw=0 is the kill switch: unregister + drop the caches, for a device
