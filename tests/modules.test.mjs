@@ -770,6 +770,13 @@ test("verbatim.classifyDiff: a plain move (removed text reappears added, same fi
   assert.deepEqual(extra, []);
 });
 
+test("verbatim.classifyDiff: a multi-line import's closing `} from \"…\";` line is an import line (wire.js re-pointing an impl import, phase 2 step 10)", () => {
+  const diff = fakeDiff([{ file: "src/wire.js", rem: ["import {", "  recFinishImpl,", "} from \"./app.js\";"], add: ["import {", "  recFinishImpl,", "} from \"./input/record.js\";"] }]);
+  const { lost, extra } = classifyDiff(diff);
+  assert.deepEqual(lost, []);
+  assert.deepEqual(extra, []);
+});
+
 test("verbatim.classifyDiff: real lost/dropped text is still flagged", () => {
   const diff = fakeDiff([{ file: "src/app.js", rem: ["function helper() { return 1; }", "function other() { return 2; }"] }]);
   const { lost } = classifyDiff(diff);

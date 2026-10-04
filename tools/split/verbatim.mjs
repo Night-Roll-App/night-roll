@@ -63,7 +63,11 @@ export function classifyDiff(diffText, opts = {}) {
     // (every line in either is new machinery, not moved code).
     if (hookNames && curFile && HOOK_FILE_RE.test(curFile)) continue;
     const text = norm(line.slice(1));
-    if (!text || text.startsWith("import ") || text.startsWith("//") || text.includes("__nrExpose$")) continue;
+    // a multi-line import's closing line (`} from "./x.js";`) is an import
+    // line too — wire.js keeps its impl imports in that shape, and
+    // re-pointing one (phase 2 step 10: recFinishImpl app.js → input/record.js)
+    // changes exactly that line; the opener is caught by "import " above.
+    if (!text || text.startsWith("import ") || /^\} from "[^"]+";$/.test(text) || text.startsWith("//") || text.includes("__nrExpose$")) continue;
     if (line[0] === "-") bump(rem, text); else bump(add, text);
   }
 
