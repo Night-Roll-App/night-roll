@@ -79,6 +79,9 @@ import { openEditor } from "../ui/note-editor.js";
 import { appMode } from "../platform/mode.js";
 import { openAnalyzeSheet } from "../ui/sheets.js";
 import { noteTapMovesCursor } from "../ui/sheets.js";
+import { cofCanvas } from "../render/cof.js";
+import { wrapSf } from "../render/cof.js";
+import { drawCof } from "../render/cof.js";
 
 // ---------------------------------------------------------------- hit test / coords
 export function evtPos(e) {
@@ -798,4 +801,22 @@ export function tap(pos) {
     updateSubtitle();
   } else setInfo("—");
   draw();
+}
+
+export const cofAngle = e => {
+  const r = cofCanvas.getBoundingClientRect();
+  return Math.atan2(e.clientY - r.top - r.height / 2, e.clientX - r.left - r.width / 2);
+};
+export function cofRelease(e) {
+  if (!S.cofPtr || S.cofPtr.id !== e.pointerId) return;
+  if (S.cofPtr.moved) {
+    S.cofRot = wrapSf(Math.round(S.cofDragRot));
+    S.cofDragRot = null;
+  } else { // plain tap: center the degree window on the tapped wedge
+    let i = Math.round((cofAngle(e) + Math.PI / 2) / (Math.PI / 6));
+    i = ((i % 12) + 12) % 12;
+    S.cofSf = wrapSf(wrapSf(i > 6 ? i - 12 : i) + S.cofRot);
+  }
+  S.cofPtr = null;
+  drawCof();
 }
