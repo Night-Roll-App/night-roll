@@ -1463,6 +1463,9 @@ import { applyTextSize } from "./ui/sheets.js";
 import { insertChordAt } from "./model/selection.js";
 import { insertProgressionAt } from "./model/selection.js";
 import { dedupeSong } from "./model/selection.js";
+import { HOLD_MS } from "./input/gestures.js";
+import { HOLD_SLOP } from "./input/gestures.js";
+import { RULER_RANGE_SLOP } from "./input/gestures.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1497,10 +1500,7 @@ S.APP_MODE = (() => {
 }
          
  
-                                        const HOLD_MS = 160; // hold-to-grab dwell (was 230 — "way too damn hard", 2026-08-24)
-const HOLD_SLOP = 20;                                                                                             // rollnote being edited, or null for new
-const RULER_RANGE_SLOP = 24;                                                           // An anchored menu/dropdown clamped against raw window.innerWidth could open
- S.RULER_W = RULER_W_ROLL;
+                                         S.RULER_W = RULER_W_ROLL;
 S.STRIP_Y = BASE_RULER_H;
 S.RULER_H = S.STRIP_Y + STRIP_H;
            
@@ -5126,4 +5126,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "homeSong": () => homeSong, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "recordRealtimeAudio": () => recordRealtimeAudio, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v)}};
+export const __nrExpose$ = {get: {"homeSong": () => homeSong, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "recordRealtimeAudio": () => recordRealtimeAudio, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v)}};

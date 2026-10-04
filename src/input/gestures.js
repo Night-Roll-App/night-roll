@@ -820,3 +820,7 @@ export function cofRelease(e) {
   S.cofPtr = null;
   drawCof();
 }
+
+export const HOLD_MS = 160; // hold-to-grab dwell (was 230 — "way too damn hard", 2026-08-24)
+export const HOLD_SLOP = 20;                                                                                             // rollnote being edited, or null for new
+export const RULER_RANGE_SLOP = 24;                                                           // An anchored menu/dropdown clamped against raw window.innerWidth could open
