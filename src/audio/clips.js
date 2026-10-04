@@ -22,6 +22,16 @@ import { clipEndTick } from "../model/song.js";
 import { setInfo } from "../hooks.js";
 import { playSec } from "./transport.js";
 import { trackGain } from "./engine.js";
+import { isComposition } from "../model/provenance.js";
+import { isLocalDraft } from "../model/edits.js";
+import { ownFolderPath } from "../model/provenance.js";
+import { addTrackUndoable } from "../model/edits.js";
+import { playGateKick } from "./transport.js";
+import { fmtBarBeat } from "../gen/drummer.js";
+import { barTicks } from "../model/rollnotes.js";
+import { stop } from "./transport.js";
+import { play } from "./transport.js";
+import { updateSubtitle } from "../hooks.js";
 
 // ---------------------------------------------------- audio tracks (clips)
 // A recording as a track (Josh's son, 2026-09-15: "I wouldn't use it unless
@@ -419,4 +429,124 @@ export function scheduleClip(ti, clip, when, durSec) { // durSec = WALL seconds 
     if (i >= 0) S.audioSrcs.splice(i, 1);
     try { g.disconnect(); } catch (err) { /* already gone */ }
   };
+}
+
+export function applyAudioDirs() { // called from finalizeNotes: every audio: note is one piece on its named track
+  const seen = new Set(); // exact twins (same anchor + text) collapse; the rest all stand
+  S.rollnotes = S.rollnotes.filter(n => {
+    if (!n.audiodir) return true;
+    const k = n.b1 + ":" + n.q1 + ":" + n.text;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  S.song.tracks.forEach(tr => { if (tr.kind === "audio") { delete tr.kind; delete tr.clips; } });
+  const files = new Set();
+  for (const n of S.rollnotes) {
+    if (!n.audiodir || !n.audiodir.file) continue;
+    let ti = S.song.tracks.findIndex((tr, i) =>
+      (tr.name || "tr" + (i + 1)).toLowerCase() === n.audiodir.track.toLowerCase());
+    if (ti < 0) {
+      // parseMidi keeps only tracks that have notes, and a clip's track never
+      // does — so a song reloaded from its saved .mid arrives without it.
+      // Recreate it by name (the addTrackUndoable shape keeps trackState and
+      // rawNotes in step); on a corpus song or a capture a stray directive
+      // stays stray. A published song of the user's own rebuilds it even
+      // with no local copy here: the recording is the song's, not the copy's
+      // (2026-09-27, when published copies stopped being editable in place).
+      if (!(isComposition() || isLocalDraft() || ownFolderPath(S.songKey)) || !S.trackState) continue;
+      ti = addTrackUndoable({name: n.audiodir.track, notes: []});
+    }
+    const tr = S.song.tracks[ti];
+    const cached = audioBufCache.get(audioCacheKey(n.audiodir.file));
+    tr.kind = "audio";
+    if (!tr.clips) tr.clips = [];
+    tr.clips.push({file: n.audiodir.file, at: Math.max(0, Math.round(n.start)), offset: n.audiodir.offset || 0,
+                   len: n.audiodir.len || null, local: !!n.audiodir.local, note: n,
+                   buffer: cached ? cached.buffer : null, peaks: cached ? cached.peaks : null,
+                   dur: cached ? cached.dur : 0, status: cached ? cached.status : "pending",
+                   where: cached ? cached.where : null}); // device / folder / repo — the sheet's "where its bytes are"
+    if (!cached) files.add(n.audiodir.file);
+  }
+  S.song.tracks.forEach(tr => { if (tr.kind === "audio") tr.clips.sort((a, b) => a.at - b.at); });
+  for (const f of files) audioEnsureFile(f);
+}
+export async function audioEnsureFile(file) { // resolve + decode one file; every piece using it gets the buffer
+  if (!S.song) return;
+  const key = S.songKey, ck = audioCacheKey(file);
+  if (audioBufCache.has(ck)) return;
+  const entry = {buffer: null, peaks: null, dur: 0, status: "decoding", where: null};
+  audioBufCache.set(ck, entry);
+  playGateKick();
+  const apply = () => { // the clip objects may have been rebuilt by a later finalizeNotes: find them by file
+    if (S.songKey !== key || !S.song) return;
+    forEachClip(c => { if (c.file === file)
+      Object.assign(c, {buffer: entry.buffer, peaks: entry.peaks, dur: entry.dur, status: entry.status, where: entry.where}); });
+    computeSongEnd();
+    if (S.playing) buildSchedule();
+    if (entry.status === "ready" && S.playRate !== 1) stretchEnsureAll(); // decoded while slowed: stretch it too
+    else if (entry.status === "ready" && S.playing) audioChaseNow(file); // decoded mid-play: in from here, not the next pass
+    draw();
+    if (S.autoAlignFiles.has(file) && entry.status === "ready") { // a take almost always has a lead-in:
+      // on import the first sound lands on the bar it was dropped at (Josh's export
+      // had most of a bar of recorder silence, 2026-09-16). Re-alignable in the sheet.
+      S.autoAlignFiles.delete(file);
+      let hit = null;
+      forEachClip((c, ti, ci) => { if (!hit && c.file === file) hit = {ti, ci, c}; });
+      const sec = hit ? clipOnsetSec(hit.c) : null;
+      if (sec !== null && sec > 0.005) {
+        setClipDir(hit.ti, hit.ci, {offset: sec});
+        S.editUndo.pop(); // part of the import, not a step of its own
+        setInfo("added " + (S.song.tracks[hit.ti].name || file) + " ∿ — trimmed " + sec.toFixed(2) + "s of silence so the first sound sits on " +
+                fmtBarBeat(hit.c.at) + " · tap its chip again to nudge or re-align");
+      }
+    }
+  };
+  const got = await audioBytesFor(key, file);
+  if (!got) { entry.status = "missing"; apply(); return; }
+  entry.where = got.where;
+  try {
+    const d = await decodeAudioBytes(got.bytes);
+    Object.assign(entry, d, {status: "ready"});
+  } catch (err) { entry.status = "undecodable"; }
+  apply();
+}
+export function applyBeatMap(ti, ci, map) { // one tempo: per bar from the piece's anchor bar; one undo
+  const tr = S.song.tracks[ti], c = tr && tr.clips[ci];
+  if (!c) return "no piece";
+  if (!(isComposition() || isLocalDraft())) return "captures keep their measured tempo — this works on your own songs";
+  const bt = barTicks();
+  if (c.at % bt !== 0) return "move the piece so it starts on a bar line first (its first downbeat = that bar)";
+  const b0 = c.at / bt + 1;
+  // the first found downbeat should sit at the piece's start; a late one (a pickup) shifts the map's origin
+  // by whole beats only when it is small; otherwise the user shifts the downbeat
+  const N = map.bars.length;
+  pushUndo({kind: "anno", json: annoSnapshot()});
+  S.rollnotes.forEach(n => { if (n.tempodir !== undefined && n.b1 >= b0 && n.b1 < b0 + N) tombstone(n); });
+  S.rollnotes = S.rollnotes.filter(n => !(n.tempodir !== undefined && n.b1 >= b0 && n.b1 < b0 + N));
+  map.bars.forEach((b, i) => {
+    S.rollnotes.push(resolveNote({b1: b0 + i, q1: 1, b2: null, q2: null, text: "tempo: " + b.bpm, tempodir: b.bpm, added: true}));
+  });
+  finalizeNotes();
+  saveLocalNotes();
+  computeSongEnd();
+  if (S.playing) { const at = playSec(); stop(); play(at, {noCountIn: true}).catch(() => {}); }
+  updateSubtitle();
+  draw();
+  return null;
+}
+export function setSongTempo(bpm) { // the song's tempo at 1.1 — compositions author tempo through this annotation
+  if (!(isComposition() || isLocalDraft())) { setInfo("captures keep their measured tempo — this works on your own songs"); return false; }
+  bpm = Math.max(20, Math.min(400, Math.round(bpm * 10) / 10));
+  pushUndo({kind: "anno", json: annoSnapshot()});
+  S.rollnotes.forEach(n => { if (n.tempodir !== undefined && n.b1 === 1 && n.q1 === 1) tombstone(n); });
+  S.rollnotes = S.rollnotes.filter(n => !(n.tempodir !== undefined && n.b1 === 1 && n.q1 === 1));
+  S.rollnotes.push(resolveNote({b1: 1, q1: 1, b2: null, q2: null, text: "tempo: " + bpm, tempodir: bpm, added: true}));
+  finalizeNotes();
+  saveLocalNotes();
+  computeSongEnd();
+  if (S.playing) { const at = playSec(); stop(); play(at, {noCountIn: true}).catch(() => {}); } // the map changed under the transport
+  updateSubtitle();
+  draw();
+  return true;
 }
