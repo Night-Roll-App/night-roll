@@ -86,6 +86,15 @@ export function classifyDiff(diffText, opts = {}) {
     }
     // a single new `installHooks();` call stub is always tolerated.
     if (add.has("installHooks();")) add.set("installHooks();", 0);
+    // src/state.js's own new literal field (docs/split-phase2-plan.md §1
+    // M1's code sketch: `hooks: {},` in S's initial object literal) is
+    // genuinely new text, not moved from anywhere — the one state.js change
+    // an H commit makes, tolerated unconditionally rather than joined onto
+    // whatever line happens to precede it (the same AUDIO_STRIP_H-shaped
+    // call docs/split-plan.md's Deviations (11) made for a line that is
+    // truly new, not a move a differ could ever match against a removed
+    // counterpart).
+    if (add.has("hooks: {},")) add.set("hooks: {},", 0);
   }
 
   // The init-wrapper header/stub are unambiguous by shape — zero them out

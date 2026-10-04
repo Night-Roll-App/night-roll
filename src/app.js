@@ -770,15 +770,15 @@ import { teardownMixerMeters } from "./ui/mixer.js";
 import { mixerIsOpen } from "./ui/mixer.js";
 import { mixerMeterRms } from "./ui/mixer.js";
 import { mixerMeterLoop } from "./ui/mixer.js";
-import { setInfo } from "./ui/chrome.js";
+import { setInfo } from "./hooks.js";
 import { renderViewMenu } from "./ui/chrome.js";
-import { logDebug } from "./ui/chrome.js";
+import { logDebug } from "./hooks.js";
 import { keyLabelState } from "./ui/chrome.js";
 import { updateSyncBtn } from "./ui/chrome.js";
 import { updateSongBtn } from "./ui/chrome.js";
-import { appConfirm } from "./ui/chrome.js";
-import { updateJobsBtn } from "./ui/chrome.js";
-import { logErr } from "./ui/chrome.js";
+import { appConfirm } from "./hooks.js";
+import { updateJobsBtn } from "./hooks.js";
+import { logErr } from "./hooks.js";
 import { srAnnounce } from "./ui/chrome.js";
 import { songHeader } from "./ui/chrome.js";
 import { localLabel } from "./ui/chrome.js";
@@ -974,6 +974,8 @@ import { undoTrackAdd } from "./ui/sheets.js";
 import { refreshSelInfo } from "./ui/note-editor.js";
 import { renderOctBtn } from "./ui/note-editor.js";
 import { reflectSelVel } from "./ui/note-editor.js";
+import { installHooks } from "./wire.js";
+installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
     const b = document.createElement("base"); b.href = S.APP_BASE;

@@ -8,7 +8,7 @@ import { parseChordSym } from "../theory/chords.js";
 import { chordQualParse } from "../theory/chords.js";
 import { micStop } from "./chrome.js";
 import { LINK_SONGS } from "../platform/base.js";
-import { setInfo } from "./chrome.js";
+import { setInfoImpl as setInfo } from "./chrome.js";
 import { linkRepoLabel } from "../platform/base.js";
 import { beatTicks } from "../model/grid.js";
 import { tonicOptionValue } from "./notes.js";

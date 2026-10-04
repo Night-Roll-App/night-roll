@@ -1,5 +1,6 @@
 import { connected } from "../sync/publish.js";
 import { S, prof } from "../state.js";
+import { setInfo, logErr, logDebug } from "../hooks.js";
 import { setControl } from "./controls.js";
 import { logLines } from "../model/jobs.js";
 import { askSeenMax } from "../ask/bridge.js";
@@ -109,7 +110,7 @@ export function updateSyncBtn() {
   const n = pendingSongs().length;
   btn.textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one"); shows even at N=0 once connected
 }
-export function appConfirm(title, body, okLabel, cancelLabel) { // non-blocking confirm:
+export function appConfirmImpl(title, body, okLabel, cancelLabel) { // non-blocking confirm:
   // window.confirm freezes the main thread AND every automation/CDP command
   // (the invisible-dialog page-freeze class, found by Josh 2026-08-19)
   return new Promise(res => {
@@ -125,7 +126,7 @@ export function appConfirm(title, body, okLabel, cancelLabel) { // non-blocking 
     sheet.classList.add("on");
   });
 }
-export function updateJobsBtn() {
+export function updateJobsBtnImpl() {
   const b = document.getElementById("jobsbtn");
   if (!b) return;
   const running = S.jobs.filter(j => j.state === "running" || j.state === "queued").length;
@@ -161,8 +162,8 @@ export function errChip() { // the number shown is UNREAD (new since the last ch
   // itself), so an already-read log is still one tap away to re-check.
   setControl("vwMessages", {label: "  Messages" + (n ? " · " + n : "")});
 }
-export function logErr(msg) { logPush(appErrors, msg); errChip(); }
-export function logDebug(msg) { logPush(appDebug, msg); console.log("[debug] " + msg); if (debugLogOn()) errChip(); }
+export function logErrImpl(msg) { logPush(appErrors, msg); errChip(); }
+export function logDebugImpl(msg) { logPush(appDebug, msg); console.log("[debug] " + msg); if (debugLogOn()) errChip(); }
 export function srAnnounce(text) {
   if (typeof document === "undefined" || !text || text === S.srLastText) return;
   const el = document.getElementById("srlive");
@@ -179,7 +180,7 @@ export function srAnnounce(text) {
 // #infosheet showed. A small capped ring buffer, ids like appErrors/appDebug
 // so askNewSinceLines can filter "new since a chat's cursor" the same way.
 export const STATUS_HISTORY_CAP = 50;
-export function setInfo(s, copyText) {
+export function setInfoImpl(s, copyText) {
   if (/⚠|failed|error|can't|cannot|unavailable/i.test(s)) logErr(s); // warnings survive being overwritten
   // mode tagged at push time, same reason as logPush above: a Normal-mode
   // status line (a chord/key name the selection strip shows) must never

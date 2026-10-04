@@ -2,6 +2,10 @@
 // No imports: this file evaluates first, so every S field exists before any
 // app code runs (removes the boot-path TDZ class of bug for state).
 export const S = {
+  // docs/split-phase2-plan.md §1 M1: upcall ports' real bodies, installed by
+  // src/wire.js's installHooks() before any init*() runs. src/hooks.js's
+  // forwarders read this; never written anywhere else.
+  hooks: {},
   APP_BASE: (() => { // let: the vm tests pin it (no location there)
   try { return new URL(".", location.href).href; } catch (e) { return ""; }
 })(),

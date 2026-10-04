@@ -10,6 +10,7 @@ import path from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import vm from "node:vm";
 import { createApp, appSource } from "./harness.mjs";
 import {
   parseModule, declaredNames, exportedNames, freeIdentifiers, topLevelImports,
@@ -335,10 +336,62 @@ test("checkSrc: the real repo's LAYERS table already has room for hooks.js (laye
 
 test("checkSrc: the real repo, post-step-14 (ui/{chrome,trackbar,mixer,voice-menu,notes,note-editor,sheets,wm}.js) — app.js (the legacy container, exempt from rules 3/5 until step 15 deletes it) is clean; the one real finding is a pre-existing app bug (oldBpb), not a checker false positive", () => {
   const result = checkSrc(path.join(ROOT, "src"));
-  assert.equal(result.fileCount, 62, "app.js, edition.js, main.js, devtools.js, state.js, ui/icons.js, ui/controls.js, midi/parse.js, midi/write.js, theory/chords.js, theory/key.js, model/catalog.js, model/grid.js, model/edits.js, model/rollnotes.js, platform/base.js, platform/mode.js, platform/storage.js, platform/folder.js, platform/native.js, audio/engine.js, audio/voices.js, audio/transport.js, audio/chip.js, audio/chip-stream.js, audio/clips.js, audio/metronome.js, audio/bounce.js, model/song.js, model/selection.js, model/provenance.js, model/album-order.js, model/versions.js, model/jobs.js, import/hub.js, import/capture.js, sync/publish.js, gen/drummer.js, gen/bassist.js, gen/analysis.js, render/roll.js, render/tracks.js, render/score.js, render/instrument.js, render/cof.js, render/compare.js, input/gestures.js, input/record.js, ask/backend.js, ask/tools.js, ask/context.js, ask/bridge.js, ask/shots.js, ask/sheet.js, ui/chrome.js, ui/trackbar.js, ui/mixer.js, ui/voice-menu.js, ui/notes.js, ui/note-editor.js, ui/sheets.js, ui/wm.js");
+  assert.equal(result.fileCount, 64, "app.js, edition.js, main.js, devtools.js, state.js, ui/icons.js, ui/controls.js, midi/parse.js, midi/write.js, theory/chords.js, theory/key.js, model/catalog.js, model/grid.js, model/edits.js, model/rollnotes.js, platform/base.js, platform/mode.js, platform/storage.js, platform/folder.js, platform/native.js, audio/engine.js, audio/voices.js, audio/transport.js, audio/chip.js, audio/chip-stream.js, audio/clips.js, audio/metronome.js, audio/bounce.js, model/song.js, model/selection.js, model/provenance.js, model/album-order.js, model/versions.js, model/jobs.js, import/hub.js, import/capture.js, sync/publish.js, gen/drummer.js, gen/bassist.js, gen/analysis.js, render/roll.js, render/tracks.js, render/score.js, render/instrument.js, render/cof.js, render/compare.js, input/gestures.js, input/record.js, ask/backend.js, ask/tools.js, ask/context.js, ask/bridge.js, ask/shots.js, ask/sheet.js, ui/chrome.js, ui/trackbar.js, ui/mixer.js, ui/voice-menu.js, ui/notes.js, ui/note-editor.js, ui/sheets.js, ui/wm.js, hooks.js, wire.js (docs/split-phase2-plan.md step 1)");
   assert.deepEqual(result.violations.map(v => v.message), [
     'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
   ], "convertAnchors() references an undeclared oldBpb (src/app.js ~line 13996) — a real latent ReferenceError bug in the app that predates the split, surfaced here for the first time by rule 1's static scan; out of scope for the cutover itself (a verbatim move), flagged in open-items.md instead of silently fixed");
+});
+
+// ---- docs/split-phase2-plan.md §1 M1, step 1: src/hooks.js's real ports,
+// verified against the real repo (not a synthetic fixture) — §3's own
+// "Each adds tests" list for an H commit.
+
+/** Loads ONLY src/hooks.js + src/state.js into a throwaway vm context —
+ *  deliberately NOT going through tests/harness.mjs's createApp() (which
+ *  always runs src/wire.js's installHooks() as app.js's first statement) —
+ *  so a port's `need()` fallback is reachable at all. state.js's top-level
+ *  initializers touch `localStorage` (several fields) and `location`
+ *  (APP_BASE, already try/caught) — a minimal stub sandbox, not the full
+ *  tests/harness.mjs buildRuntime(), is enough for a two-file graph that
+ *  never reads window/document. */
+async function loadHooksWithoutInstall() {
+  const context = vm.createContext({ localStorage: { getItem: () => null } });
+  const mods = new Map();
+  const load = (relName) => {
+    const abs = path.join(ROOT, "src", relName);
+    if (mods.has(abs)) return mods.get(abs);
+    const mod = new vm.SourceTextModule(readFileSync(abs, "utf8"), { context, identifier: "file://" + abs });
+    mods.set(abs, mod);
+    return mod;
+  };
+  const entry = load("hooks.js");
+  await entry.link((specifier) => load(path.basename(specifier)));
+  await entry.evaluate();
+  return entry.namespace;
+}
+
+test("hooks.js: every port throws `hook X not installed` before src/wire.js's installHooks() ever runs", async () => {
+  const hooks = await loadHooksWithoutInstall();
+  for (const name of ["setInfo", "logErr", "logDebug", "appConfirm", "updateJobsBtn"])
+    assert.throws(() => hooks[name]("x"), new RegExp(`hook ${name} not installed`));
+});
+
+test("wire.js installHooks(): every hooks.js port is installed, as a function, once the real app boots (createApp() -> app.js's first statement)", async () => {
+  const app = await createApp();
+  // JSON round-trip (tests/ai.test.mjs's own pattern): app.run() executes in
+  // a separate vm realm, so a plain array/object result fails assert's
+  // strict cross-realm identity checks even when its contents match.
+  const installed = JSON.parse(app.run("JSON.stringify(Object.keys(S.hooks).sort())"));
+  assert.deepEqual(installed, ["appConfirm", "logDebug", "logErr", "setInfo", "updateJobsBtn"]);
+  for (const name of installed) assert.equal(app.run(`typeof S.hooks.${name}`), "function");
+});
+
+test("hooks.js rebinding: reassigning the bare port name (run(\"setInfo = …\"), the vm harness's own e2e-devtools-mirror mechanism) replaces what every importer of the port calls — the real app.js caller included, with its own prior behavior (the ui/chrome.js setInfoImpl path) bypassed", async () => {
+  const app = await createApp();
+  app.run('setInfo = (s) => { S.__testHookSeen = s; };'); // reassigns hooks.js's OWN top-level binding — every bare "setInfo" import (app.js's included) is a live reference to it
+  app.run('setInfo("intercepted")');
+  assert.equal(app.run("S.__testHookSeen"), "intercepted");
+  assert.equal(app.run("S.infoFull"), "tap a note"); // setInfoImpl (ui/chrome.js) never ran — it would have overwritten S.infoFull's literal initial value
 });
 
 // ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's
@@ -387,7 +440,7 @@ test("check rule 8: the real repo's four module manifests (modulepreload, sw.js 
 
 test("checkSrc: vendor/ai/web (checkSrc's extraRoots) is clean against rules 1-3/6/7 — no top-level let, every free identifier resolved, no top-level name collides with src/'s", () => {
   const result = checkSrc(path.join(ROOT, "src"), { extraRoots: [{ root: path.join(ROOT, "vendor/ai/web"), prefix: "vendor/ai/web" }] });
-  assert.equal(result.fileCount, 64, "62 src/ files (see the checkSrc test above) + 2 vendor/ai/web files (index.js, sse.js)");
+  assert.equal(result.fileCount, 66, "64 src/ files (see the checkSrc test above) + 2 vendor/ai/web files (index.js, sse.js)");
   assert.deepEqual(result.violations.map(v => v.message), [
     'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
   ], "the one pre-existing src/ finding, unchanged by adding vendor/ai/web to the scan");
@@ -649,6 +702,11 @@ test("verbatim.classifyDiff --hook: a single installHooks(); call stub is tolera
   assert.deepEqual(classifyDiff(diff, { hookNames: ["draw"] }), { lost: [], extra: [] });
 });
 
+test("verbatim.classifyDiff --hook: src/state.js's new `hooks: {},` literal is tolerated — genuinely new text, not a move", () => {
+  const diff = fakeDiff([{ file: "src/state.js", add: ["hooks: {},"] }]);
+  assert.deepEqual(classifyDiff(diff, { hookNames: ["draw"] }), { lost: [], extra: [] });
+});
+
 test("verbatim.findSelfImports: a bare file importing its own basename is flagged; a normal import is not", () => {
   const files = new Map([
     ["src/theory/key.js", `import { MODE_OFFSET } from "./key.js";\nexport const x = 1;\n`],
@@ -698,11 +756,11 @@ test("blockers.computeBlockers: lists an already-resolved import that would cros
   assert.match(result.verdict, /illegal-layer/);
 });
 
-test("blockers.mjs CLI: real repo — chipSource -> audio/chip.js reproduces the documented CHIPS/logErr blocker chain (docs/split-plan.md's Deviations 8/9)", () => {
+test("blockers.mjs CLI: real repo — chipSource -> audio/chip.js, post-docs/split-phase2-plan.md step 1: still blocked by CHIPS (the table itself, step 2's own job), but no longer by logErr — the whole point of step 1's logErr port (docs/split-plan.md's Deviations 8/9 permanent blocker is dissolved: app.js's `import { logErr } from \"./hooks.js\";` is layer 0, never above any --to)", () => {
   const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", "chipSource", "--to", "src/audio/chip.js"], { cwd: ROOT, encoding: "utf8" });
-  assert.notEqual(r.status, 0); // blocked, per the plan's own documented finding
+  assert.notEqual(r.status, 0); // still blocked — CHIPS itself hasn't moved yet
   assert.match(r.stdout, /CHIPS/);
-  assert.match(r.stdout, /logErr/);
+  assert.doesNotMatch(r.stdout, /logErr/);
 });
 
 // ---- promote-state.mjs -------------------------------------------------------

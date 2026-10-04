@@ -1665,6 +1665,32 @@ stale and should move up here instead.
   reach-through — just as permanent, not merely homeless. See
   docs/split-plan.md "Deviations (14)" for the full chain.
 
+- `hooks.js` — docs/split-phase2-plan.md §1 M1, step 1 (2026-10-04): layer 0.
+  Upcall ports — one-line synchronous forwarders (`setInfo`, `logErr`,
+  `logDebug`, `appConfirm`, `updateJobsBtn`) that let a lower layer call a
+  function whose real body lives higher up, without an illegal import. Each
+  forwarder reads `S.hooks.<name>` (installed by `wire.js`'s
+  `installHooks()`) and throws `hook <name> not installed` if called before
+  boot wires it. Dissolves the "permanent" blockers docs/split-plan.md's
+  Deviations (7)/(8) found for `ensureAudio`/`resumeAudio`/`rebuildAudio`
+  (logDebug/logErr/setInfo) and `CHIPS`/`chipRender`/`chipSource`/etc.
+  (logErr) — both now unblockable, step 2.
+- `wire.js` — docs/split-phase2-plan.md §1 M1, step 1: layer 5 (app.js's/
+  main.js's own tier — the composition root). `installHooks()`: the ONLY
+  place a `hooks.js` port's bare name binds to its real body (currently
+  `ui/chrome.js`'s `setInfoImpl`/`logErrImpl`/`logDebugImpl`/
+  `appConfirmImpl`/`updateJobsBtnImpl`). Called as `app.js`'s FIRST
+  top-level statement (later `main.js`'s), before any `init*()` — every
+  port throws if reached first. Not every importer of a ported name routes
+  through the port: `ui/sheets.js`/`ui/note-editor.js` (same layer as
+  `ui/chrome.js`) import `XImpl as X` directly instead — a port exists only
+  to legalize a genuinely LOWER layer's upcall; a same-layer import was
+  already legal (§2.3's layer-3-5 cycles) and needs no indirection.
+- `ui/controls.js` — moved to layer 0 (next to `ui/icons.js`, which is all
+  it imports), docs/split-phase2-plan.md §1 M2, step 1: `setControl`/
+  `setPlayBtn`/`setVolBtn` are now reachable from `audio/*` once step 2
+  needs them, without a port.
+
 ## AI library (vendor/ai) — docs/ai-library-plan.md §1, step 1 (2026-10-04)
 
 The AI support that used to live entirely in `src/ask/` is moving into its

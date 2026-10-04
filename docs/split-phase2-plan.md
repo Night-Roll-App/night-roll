@@ -109,7 +109,7 @@ illegal-layer imports.
 | # | Kind | What | app.js lines out (est.) |
 |---|---|---|---|
 | 0 | tool | M4, blockers.mjs, rule 9/10 tests | 0 |
-| 1 | H | hooks.js + wire.js; ports setInfo, logErr, logDebug, appConfirm, updateJobsBtn; controls.js → layer 0; LAYERS gains session, hooks.js, wire.js | ~0 |
+| 1 | H | **Done.** hooks.js + wire.js; ports setInfo, logErr, logDebug, appConfirm, updateJobsBtn; controls.js → layer 0; LAYERS gains session, hooks.js, wire.js | ~0 (15054→15056) |
 | 2 | M | ensureAudio/resumeAudio/rebuildAudio → audio/engine; metStart → metronome; CHIPS, sonySeqCapture, psfInflater, PSX_SOUNDING_ON, chipExt, chipRender, chipEstimateTracks, chipRenderInWorker, chipCleanupAfterFailure, chipSource, chipVaultFile, chipModules → audio/chip; chipStreamOpen* → chip-stream; scheduleGameNote/gameVoiceWarn/gameNote*/resolveVoiceInstrument/gameLibSync/sf2Sync → audio/voices; idbDraftPut → platform/storage; jobsNotify → model/jobs | ~1,100 |
 | 3 | H | ports draw, playbackFrame, clampView, fitView, buildScoreModel, renderTrackbar, updateEditBtnVis, updateChipBtn, updateSongBtn, updateSyncBtn, updateSubtitle, askRender, finalizeNotes, recFinish, albumAdvance | ~0 |
 | 4 | M | play, stop, playGate*, buildSchedule, renderSongOffline, audioChaseNow → audio/transport; scheduleNote, previewNote, sf/game preload+wait → audio/voices; scheduleClip, stretchEnsure(All), applyAudioDirs, audioEnsureFile, applyBeatMap, setSongTempo, writeClips, setClipDir, splitClipAt, deleteClip → audio/clips | ~1,150 |
@@ -164,6 +164,43 @@ repo: unchanged (one pre-existing `oldBpb` finding; rule 9 adds zero new
 findings, so no allowlist was needed). `node tools/split/verbatim.mjs` on
 868beff8/b92ec10d: still ✔. See open-items.md's two move.mjs QUEUED entries
 (now RESOLVED) for the full before/after on each bug.
+
+**Step 1 — Done** (2026-10-04, terminal session). `src/hooks.js` (layer 0):
+the five ports of §1 M1's code sketch, verbatim shape — `setInfo`, `logErr`,
+`logDebug`, `appConfirm`, `updateJobsBtn`. `src/wire.js` (layer 5):
+`installHooks()`, called as `app.js`'s first top-level statement.
+`src/state.js` gained `hooks: {}`. `src/ui/chrome.js`: the five real bodies
+renamed `XImpl`; the file imports the bare names back from `../hooks.js`
+for its own internal call sites. `src/app.js` switched its five imports to
+`./hooks.js`. `src/ui/sheets.js`/`src/ui/note-editor.js` — same layer as
+`ui/chrome.js`, so no port needed — instead import `XImpl as X` directly
+from `./chrome.js` (only the import specifier changed, never a call site);
+confirmed by tests/modules.test.mjs's rule 10b/10c fixture, which still
+flags a SAME-layer port caller as a violation by design — a port exists
+only to legalize a genuinely lower layer's upcall. `src/ui/controls.js` →
+layer 0 in `check.mjs`'s LAYERS table (file unmoved, imports only
+`ui/icons.js`). Two real `check.mjs` rule-10 gaps found and fixed (both
+documented in the rule's own comment): `ruleHooksPorts` didn't exempt the
+port's own home file or app.js/main.js from its layer check (so chrome.js's
+own self-import and app.js's pre-existing imports both failed);
+`ruleNoTopLevelPortCalls` had no app.js/main.js exemption (rule 4 does),
+flagging dozens of app.js listener/IIFE blocks that only call a port
+inside a deferred callback, never at module-evaluation time. Dissolves the
+three permanent blockers docs/split-plan.md's Deviations (7)/(8) found —
+`ensureAudio`/`resumeAudio`/`rebuildAudio`, `CHIPS`/`chipRender`/
+`chipSource`/etc., `jobsNotify` — none of which have moved yet (step 2).
+Tests added: a port throws `hook X not installed` before `installHooks()`
+runs; every port installed as a function once the real app boots;
+reassigning the bare port name intercepts every importer, bypassing
+`ui/chrome.js`'s impl entirely. `perl -e 'alarm 1200; exec @ARGV' npm
+test`: only `ps2-real`/`instruments` fail (pre-existing). `check.mjs`:
+clean except `oldBpb`. `check-e2e-globals.mjs`/`check-controls.mjs` clean.
+`verbatim.mjs --hook setInfo,logErr,logDebug,appConfirm,updateJobsBtn
+HEAD`: ✔. prof label set unchanged (29 entries). `test:e2e:smoke`: 8/8.
+index.html/sw.js (`nr-v20`→`nr-v21`)/devtools.js gained hooks.js/wire.js;
+fileCount 62→64 (66 w/ vendor/ai/web). `src/app.js`: 15054→15056 lines.
+Full writeup: open-items.md's 2026-10-04 "module split phase 2 step 1"
+entry and its three RESOLVED notes on the dissolved blockers.
 
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run

@@ -29,7 +29,12 @@ const REPO_ROOT = path.dirname(path.dirname(HERE));
 // rule below is a per-FILE check that simply never runs for a file that
 // isn't there).
 export const LAYERS = [
-  ["state.js", "edition.js", "ui/icons.js", "midi", "theory", "hooks.js"],
+  // docs/split-phase2-plan.md §1 M2: ui/controls.js moved here (it imports
+  // only ui/icons.js, same as ui/icons.js itself) so setPlayBtn/setControl
+  // are reachable from audio/* without a port. Checked ahead of "ui" (layer
+  // 4, below) since layerOf() returns the FIRST matching entry, lowest
+  // layer first.
+  ["state.js", "edition.js", "ui/icons.js", "ui/controls.js", "midi", "theory", "hooks.js"],
   ["platform"],
   ["model", "gen"],
   ["audio", "render"],
@@ -353,9 +358,22 @@ export function ruleHooksShape(ast) {
 /** Rule 10b/10c: every port named by a hooks.js forwarder has EXACTLY one
  *  `XImpl` declared somewhere in src/, and that impl's layer is strictly
  *  above every module that still imports the port (bare name `X`) from
- *  hooks.js. `declaredByFile`: Map<relPath, string[]>; `importersOf(name)`:
+ *  hooks.js — a port exists ONLY to let a genuinely LOWER layer reach a
+ *  higher one; a same-layer (or scaffolding-tier) caller never needed
+ *  porting in the first place (§2.3: cycles inside layers 3-5 are legal
+ *  without one) and belongs on a direct, aliased import of `XImpl` from
+ *  the impl's own file instead (docs/split-phase2-plan.md §1 M1's "only
+ *  the import line changes" — an import SPECIFIER/alias change is always
+ *  free, verbatim.mjs skips every import line unconditionally), not on the
+ *  port. `declaredByFile`: Map<relPath, string[]>; `importersOf(name)`:
  *  relPath[] of files importing `name` from hooks.js; `layerOfFn`: relPath
- *  -> layer number or null. */
+ *  -> layer number or null. Two kinds of caller are exempt from the layer
+ *  check entirely, same reasoning as rule 4/5's existing LEGACY_CONTAINER
+ *  treatment above: (a) the impl's OWN home file (self-reference — the
+ *  plan's own "internal callers import the port" pattern, for call sites
+ *  that keep the bare, pre-rename name — never a layer crossing, since
+ *  it's the identical file at the identical layer); (b) app.js/main.js,
+ *  the scaffolding tier that may always import any layer. */
 export function ruleHooksPorts(hooksAst, declaredByFile, importersOf, layerOfFn) {
   const out = [];
   const ports = hooksAst.body.map(forwarderPortName).filter(Boolean);
@@ -367,6 +385,7 @@ export function ruleHooksPorts(hooksAst, declaredByFile, importersOf, layerOfFn)
     if (owners.length > 1) { out.push({ rule: 10, message: `hooks.js port "${name}": "${implName}" is declared in more than one file (${owners.join(", ")})` }); continue; }
     const implLayer = layerOfFn(owners[0]);
     for (const callerFile of importersOf(name)) {
+      if (callerFile === owners[0] || callerFile === "main.js" || callerFile === LEGACY_CONTAINER) continue;
       const callerLayer = layerOfFn(callerFile);
       if (implLayer === null || callerLayer === null) continue;
       if (!(implLayer > callerLayer))
@@ -539,7 +558,17 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
       return out;
     };
     violations.push(...ruleHooksPorts(hooksParsed.ast, declaredByFile, importersOf, layerOf));
-    if (portSet.size) for (const [, parsed] of parsedByFile) violations.push(...ruleNoTopLevelPortCalls(parsed.ast, portSet));
+    // app.js/main.js excluded, same as rule 4's own call above and for the
+    // same reason: a "top-level" reference inside one of app.js's ~326
+    // listener/IIFE blocks is frequently a callback body that runs on a
+    // later event, not at module-evaluation time — topLevelEffectExpressions
+    // can't tell the two apart (by design, same as rule 4), and app.js's
+    // own `installHooks();` (its first statement) already runs before any
+    // of those callbacks ever could.
+    if (portSet.size) for (const [rel, parsed] of parsedByFile) {
+      if (rel === "main.js" || rel === LEGACY_CONTAINER) continue;
+      violations.push(...ruleNoTopLevelPortCalls(parsed.ast, portSet));
+    }
   }
 
   const vendorFileCount = extraRoots.reduce((n, { root }) => n + listJsFiles(root).length, 0);

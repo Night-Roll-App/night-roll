@@ -5544,6 +5544,15 @@ directly) — is out of scope for a verbatim-move split step; this is a
 design question, not a sequencing one, so flag it to Josh specifically
 (not silently retried) if a future step proposes touching it.
 
+RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 1): the architecture
+change this entry asked for — an upcall port, not an event/callback bus —
+landed as `src/hooks.js` (layer 0, one forwarder per name: `setInfo`,
+`logErr`, `logDebug`, plus `appConfirm`/`updateJobsBtn`) + `src/wire.js`'s
+`installHooks()`. `ensureAudio`/`resumeAudio`/`rebuildAudio` themselves
+have NOT moved yet (that's step 2) — this entry's blocker is dissolved,
+not yet acted on; step 2 moves them (NIGHT-ROLL.md "Module map", `hooks.js`
+entry).
+
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 8: src/audio/{chip,chip-stream,clips,metronome,bounce}.js (docs/split-plan.md)
 Moved, six `move.mjs --names` invocations over src/app.js (`playSec` into
 the EXISTING audio/transport.js first — step 7's file, unlisted by any
@@ -5577,6 +5586,13 @@ NIGHT-ROLL.md's module-map entries:
   verbatim move. Needs either `logErr` to become injectable/removable, or
   a deliberate two-table split, whenever someone next considers this —
   not a silent retry.
+  RESOLVED 2026-10-04 (docs/split-phase2-plan.md step 1): `logErr` (plus
+  `logDebug`/`setInfo`) became an injectable upcall port exactly as asked
+  — `src/hooks.js`, forwarding through `S.hooks`, installed by
+  `src/wire.js`. `CHIPS`'s own `typeof logErr === "function"` guard is
+  untouched (still byte-identical) and now resolves to the port — no
+  two-table split needed. `CHIPS`/`chipRender`/`chipSource`/etc. have NOT
+  moved yet (step 2's job); this entry's blocker is gone, not yet acted on.
 - **`isCaptureKey`** was checked and deliberately NOT moved into
   audio/chip.js even though doing so would have unblocked `chipSource`
   today — its other caller, `ownFolderPath`, is slated for
@@ -5681,7 +5697,12 @@ matches the plan's table exactly); `model/versions.js` (the whole
 localStorage version store minus `saveVersion`/`saveDraft` themselves);
 `model/jobs.js` (the jobs store's and debug log's pure halves —
 `jobsNotify` stays, PERMANENTLY, same shape as `ensureAudio`'s logging
-calls in step 7); `import/hub.js` (`importHubLabel` only); `import/
+calls in step 7 — `jobsNotify` itself was later misfiled upward to
+`ui/sheets.js` once step 14 created it, per this doc's "Module map"
+`ui/sheets.js` entry; see the step 2 QUEUED entry below — RESOLVED
+2026-10-04, docs/split-phase2-plan.md step 1: `updateJobsBtn` is now a
+`hooks.js` port, so `jobsNotify` can move down to `model/jobs.js` legally;
+step 2 does the actual move); `import/hub.js` (`importHubLabel` only); `import/
 capture.js` (byte-magic format sniffing + pure key/label helpers);
 `sync/publish.js` (every GitHub-Contents-API/local-folder write primitive,
 the share-link builder, the README generator — 22 names — despite
@@ -6476,3 +6497,71 @@ UI, the note editor's chord widget and mic dictation toggle, the Jobs/
 Settings/Share/Analyze sheets), wm docking (mostly a regression check —
 the action functions didn't move), and phone width (a smoke check — this
 step touched no layout CSS), before pushing and building.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 1: src/hooks.js + src/wire.js, upcall ports (docs/split-phase2-plan.md)
+
+Done. `src/hooks.js` (layer 0): one-line forwarders — `setInfo`, `logErr`,
+`logDebug`, `appConfirm`, `updateJobsBtn` — each reading `S.hooks.<name>`
+and throwing `hook <name> not installed` if called before boot wires it.
+`src/wire.js` (layer 5): `installHooks()`, the ONLY place a port's bare
+name binds to its real body; `installHooks();` is `app.js`'s FIRST
+top-level statement (right after its import block). `src/state.js` gained
+`hooks: {}`. In `src/ui/chrome.js`, the five real bodies were renamed
+`setInfoImpl`/`logErrImpl`/`logDebugImpl`/`appConfirmImpl`/
+`updateJobsBtnImpl`, and the file imports the bare names back from
+`../hooks.js` for its own internal call sites (unchanged text) — rule 10
+(tools/split/check.mjs) exempts a port's own home file and app.js/main.js
+from its "impl strictly above every caller" layer check, same reasoning
+as rule 4/5's existing LEGACY_CONTAINER treatment. `src/app.js` switched
+its five imports of these names to `./hooks.js`. `src/ui/sheets.js`/
+`src/ui/note-editor.js` (same layer as `ui/chrome.js`, no port needed)
+instead import `XImpl as X` directly from `./chrome.js` — a port only
+legalizes a genuinely LOWER layer's upcall; same-layer imports were
+already legal (§2.3) and the rule 10b/10c fixture test (tests/
+modules.test.mjs) confirms a same-layer PORT caller is still flagged, by
+design — only the import SPECIFIER changed for these two files, never the
+call sites. `src/ui/controls.js` moved to layer 0 in `tools/split/
+check.mjs`'s LAYERS table (it imports only `ui/icons.js`; no file move).
+
+Two real `tools/split/check.mjs` rule-10 gaps found and fixed, both
+documented in the rule's own comment: (a) `ruleHooksPorts` didn't exempt
+the impl's own home file or app.js/main.js from its layer check, so the
+very pattern the plan's own M1 code sketch asks for (chrome.js importing
+its own port) and app.js's existing imports both failed; (b)
+`ruleNoTopLevelPortCalls` has no app.js/main.js exemption (rule 4 does),
+so dozens of app.js's listener/IIFE blocks — which only CALL a port
+inside a deferred callback, never at module-evaluation time — were
+flagged; both now skip app.js/main.js, matching rule 4's existing
+reasoning exactly.
+
+Three permanent blockers docs/split-plan.md's Deviations (7)/(8) found —
+`ensureAudio`/`resumeAudio`/`rebuildAudio` (audio/engine.js),
+`CHIPS`/`chipRender`/`chipSource`/etc. (audio/chip.js), `jobsNotify`
+(model/jobs.js) — are dissolved by this step's ports (see this file's
+three RESOLVED notes above, and NIGHT-ROLL.md's `hooks.js` module-map
+entry); none of those names have moved yet — that's step 2.
+
+Tests added (tests/modules.test.mjs): a port throws before
+`installHooks()` runs (loaded in an isolated vm context, never through
+`createApp()`); every port is installed, as a function, once the real
+app boots; reassigning the bare port name (`run("setInfo = …")`)
+intercepts every importer of the port — including the real `app.js`
+caller — bypassing `ui/chrome.js`'s `setInfoImpl` entirely. Plus the
+rule-10a/10b/10c/10d synthetic fixture tests (already part of step 0's
+commit) kept passing.
+
+`perl -e 'alarm 1200; exec @ARGV' npm test`: only `ps2-real`/`instruments`
+fail (pre-existing local-rip-fixture gap). `node tools/split/check.mjs`:
+clean except `oldBpb`. `check-e2e-globals.mjs`/`check-controls.mjs`
+clean. `node tools/split/verbatim.mjs --hook setInfo,logErr,logDebug,
+appConfirm,updateJobsBtn HEAD`: ✔. Sorted `^\w+ = prof\("\w+"` label set
+unchanged (29 entries — none of these five names are profiled).
+`npm run test:e2e:smoke`: 8/8. `index.html`'s modulepreload, `sw.js`'s
+APP_MODULES (`nr-v20` → `nr-v21`), and `devtools.js`'s namespace-import
+list all gained `hooks.js`/`wire.js`; `tests/modules.test.mjs`'s
+`checkSrc` fileCount bumped 62 → 64 (66 with vendor/ai/web). `src/app.js`:
+15054 → 15056 lines (2 new: the `installHooks` import + call).
+
+Browser-check by the main session: none required for this step alone —
+nothing user-facing moved; the real ear/eye check is step 2's (chip count
++ debug log, an NSF/SPC chip render, metronome).

@@ -92,6 +92,8 @@ import * as uiNotes from "./ui/notes.js";
 import * as uiNoteEditor from "./ui/note-editor.js";
 import * as uiSheets from "./ui/sheets.js";
 import * as uiWm from "./ui/wm.js";
+import * as hooks from "./hooks.js";
+import * as wire from "./wire.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -111,7 +113,8 @@ export function exposeGlobals() {
                      renderRoll, renderTracks, renderScore, renderInstrument, renderCof, renderCompare,
                      inputGestures, inputRecord,
                      askBackend, askTools, askContext, askBridge, askShots, askSheet,
-                     uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm };
+                     uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm,
+                     hooks, wire };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global
