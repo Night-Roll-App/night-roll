@@ -1387,6 +1387,11 @@ import { beatLabel } from "./input/gestures.js";
 import { cycleSecDepth } from "./ui/chrome.js";
 import { setSecDepth } from "./ui/chrome.js";
 import { gridFollowNote } from "./ui/note-editor.js";
+import { scorePencil } from "./input/gestures.js";
+import { scoreErase } from "./input/gestures.js";
+import { scoreTap } from "./input/gestures.js";
+import { scorePencilTick } from "./input/gestures.js";
+import { scoreStaveAt } from "./input/gestures.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -3107,117 +3112,6 @@ document.getElementById("albumleave").addEventListener("click", albumLeave);
 
 
 
-function scorePencilTick(x) {
-  // scoreXToTick interpolates between engraved noteheads — fine when a bar
-  // has them, wildly coarse when it's empty (a blank composition's default).
-  // Sparse bars get a LINEAR map from the note-start edge instead, which is
-  // exactly what the pencil beat guides draw.
-  const ppt = pxPerTick();
-  const mw = S.scoreModel.bt * ppt;
-  const mi = Math.max(0, Math.floor((x - S.RULER_W + S.view.x) / mw));
-  const entry = S.scoreCache.get(mi) || renderMeasure(mi);
-  if (entry && entry.timeMap.length >= 2) return scoreXToTick(x);
-  const nsx = entry ? entry.noteStartX : SCORE_PAD;
-  const localX = x - (S.RULER_W + mi * mw - S.view.x - SCORE_PAD);
-  const frac = Math.max(0, Math.min(0.999, (localX - nsx) / Math.max(1, mw + SCORE_PAD - nsx)));
-  return mi * S.scoreModel.bt + frac * S.scoreModel.bt;
-}
-function scoreStaveAt(pos) {
-  const localY = pos.y - (S.RULER_H + 4 - (S.view.y || 0));
-  const si = Math.max(0, Math.min(S.scoreModel.staves.length - 1,
-    Math.floor((localY - SCORE_TOP) / STAVE_H)));
-  return {si, sy: localY - (SCORE_TOP + si * STAVE_H)};
-}
-function scorePencil(pos) {
-  if (!S.scoreModel || !S.scoreModel.staves.length) return;
-  const {si, sy} = scoreStaveAt(pos);
-  const st = S.scoreModel.staves[si];
-  if (st.drums) { setInfo("kit entry lives in the roll (its lane) — score shows the chart"); return; }
-  const probe = new VF.Stave(0, 0, 100); // VexFlow's own line geometry
-  const topLineY = probe.getYForLine(0);
-  const step = (probe.getYForLine(1) - topLineY) / 2; // line-to-space distance
-  const k = Math.round((sy - topLineY) / step); // diatonic steps below the top line
-  if (k < -9 || k > 17) return; // past ~4 ledger lines: not a note tap
-  const nTop = st.clef === "bass" ? 26 : 38; // diatonic index of the top line: A3 / F5
-  const n = nTop - k;
-  const letter = "CDEFGAB"[((n % 7) + 7) % 7];
-  const octave = Math.floor(n / 7);
-  const sf = sfAt(S.playCursor);
-  const acc = S.pencilAcc === "key"
-    ? (["F", "C", "G", "D", "A", "E", "B"].slice(0, Math.max(0, sf)).includes(letter) ? 1
-       : ["B", "E", "A", "D", "G", "C", "F"].slice(0, Math.max(0, -sf)).includes(letter) ? -1 : 0)
-    : +S.pencilAcc;
-  const pitch = (octave + 1) * 12 + LETTER_PC[letter] + acc;
-  if (pitch < 0 || pitch > 127) return;
-  const {t, snap} = pencilCellAt(scorePencilTick(pos.x));
-  S.selTrack = st.ti;
-  const tr = S.song.tracks[st.ti];
-  if (tr.notes.some(n => !n.gone && n.t === t && n.p === pitch)) { previewNote(st.ti, pitch, t); return; } // no twins
-  const added = !isComposition();
-  tr.notes.push({t, d: snap, p: pitch, v: S.pencilVel, added});
-  if (S.song.rawNotes) S.song.rawNotes[st.ti].push({t: t + S.chopS, d: snap, p: pitch, v: S.pencilVel, added});
-  pushUndo({kind: "add", ti: st.ti, ni: tr.notes.length - 1});
-  saveEdits();
-  previewNote(st.ti, pitch, t);
-  renderTrackbar();
-  buildScoreModel();
-  setInfo(noteLabel(st.ti, tr.notes.length - 1));
-  draw();
-}
-function scoreErase(pos) {
-  const m = S.scoreModel;
-  if (!m) return;
-  const ppt = pxPerTick();
-  const mi = Math.floor((pos.x - S.RULER_W + S.view.x) / (m.bt * ppt));
-  const entry = S.scoreCache.get(mi);
-  if (!entry) return;
-  const localX = pos.x - (S.RULER_W + mi * m.bt * ppt - S.view.x - SCORE_PAD);
-  const localY = pos.y - (S.RULER_H + 4 - (S.view.y || 0));
-  for (const g of entry.geo) {
-    if (localX >= g.x0 && localX <= g.x1 && localY >= g.y0 && localY <= g.y1 && g.refs[0]) {
-      const {ti, ni} = g.refs[0];
-      const en = S.song.tracks[ti].notes[ni];
-      en.gone = true;
-      if (S.song.rawNotes && en.ri !== undefined && S.song.rawNotes[ti][en.ri]) S.song.rawNotes[ti][en.ri].gone = true;
-      if (S.selNote && S.selNote.ti === ti && S.selNote.ni === ni) S.selNote = null;
-      pushUndo({kind: "erase", ti, ni});
-      saveEdits();
-      buildScoreModel();
-      draw();
-      return;
-    }
-  }
-}
-function scoreTap(pos) {
-  const m = S.scoreModel;
-  const ppt = pxPerTick();
-  const mw = m.bt * ppt;
-  const mi = Math.floor((pos.x - S.RULER_W + S.view.x) / mw);
-  const entry = S.scoreCache.get(mi);
-  if (entry) {
-    const localX = pos.x - (S.RULER_W + mi * m.bt * ppt - S.view.x - SCORE_PAD);
-    const localY = pos.y - (S.RULER_H + 4 - (S.view.y || 0));
-    for (const g of entry.geo) {
-      if (localX >= g.x0 && localX <= g.x1 && localY >= g.y0 && localY <= g.y1) {
-        S.selNote = g.refs[0] ? {ti: g.refs[0].ti, ni: g.refs[0].ni} : null;
-        S.playCursor = g.tick;
-        if (S.selNote) {
-          setInfo(noteLabel(S.selNote.ti, S.selNote.ni));
-          reflectSelVel(); // the vol slider doubles as the velocity readout
-          previewNote(g.ti, g.pitches[g.pitches.length - 1], g.tick);
-        }
-        updateSubtitle(); draw();
-        return;
-      }
-    }
-  }
-  // empty area: move the cursor there, on the move grid
-  const snap = moveSnapTicks();
-  S.playCursor = Math.max(0, Math.round(scoreXToTick(pos.x) / snap) * snap);
-  S.selNote = null;
-  setInfo("—");
-  updateSubtitle(); draw();
-}
 
  function renderSongGroups() { // top: LOCAL's top-level folders, then PUBLISHED's
   S.songViewRedraw = () => renderSongGroups();
@@ -6515,4 +6409,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
+export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
