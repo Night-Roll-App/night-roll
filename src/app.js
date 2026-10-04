@@ -1184,6 +1184,17 @@ import { bsRefresh } from "./ui/sheets.js";
 import { drRefresh } from "./ui/sheets.js";
 import { bsBuildControls } from "./ui/sheets.js";
 import { drBuildControls } from "./ui/sheets.js";
+import { wmFloat } from "./ui/wm.js";
+import { wmDockBottomWindow } from "./ui/wm.js";
+import { wmDockSide } from "./ui/wm.js";
+import { makeWindow } from "./ui/wm.js";
+import { wmSideDividerize } from "./ui/wm.js";
+import { wmLayoutAll } from "./ui/wm.js";
+import { wmCloseWindow } from "./ui/wm.js";
+import { wmLayoutSide } from "./ui/wm.js";
+import { wmLayoutTabs } from "./ui/wm.js";
+import { wmSetSideModeFor } from "./ui/wm.js";
+import { wmOpenMenu } from "./ui/wm.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -9200,220 +9211,6 @@ for (const side of ["left", "right"]) if (S.wm[side] && S.wm[side].ids && S.wm[s
 if (S.wm.bottom && S.wm.bottom.ids && S.wm.bottom.ids.includes("moresheet")) S.wm = wmClearBottom(S.wm, "moresheet");
 wmSave(S.wm);
 try { localStorage.removeItem("ff1roll-sheetpos-moresheet"); } catch (err) { /* private mode */ }  // Applies wm[side] to the DOM: parks EVERY member of the tab group (full or
-// inner cell — whichever wm[side].mode says) — not just the active one; only
-// the active member gets the `on` class (display is entirely CSS-driven off
-// that, .overlay.docked.on{display:flex} vs the base .overlay.docked{display:
-// none}), so switching tabs is nothing more than toggling `on` on two
-// elements already sitting in the cell (see the "exactly one tab visible"
-// fixup below) — no reparenting needed on every tab switch. Sets
-// --d{l,r}-w / --d{l,r}i-w, and returns whether this side is a FULL dock
-// actively reserving width (wmLayoutAll uses that to narrow the footer). The
-// width reservation only applies while the ACTIVE tab is actually shown
-// (docked AND open) — closing it zeroes the reservation but the group itself
-// is untouched, so a closed window stays parked and reopening needs no
-// re-dock (same invariant every dock already had). Safe to call any time
-// (open, close, dock, float, mode switch, tab switch, drag, or a live window
-// resize) — idempotent.
-function wmLayoutSide(side) {
-  const shell = document.getElementById("shell");
-  const cells = wmSideCells(side);
-  let state = S.wm[side];
-  const ids = (state && wmAllowed(wmInnerWidth()) && state.ids) || [];
-  const wantMode = (state && state.mode) || "full";
-  const targetCell = wantMode === "inner" ? cells.inner : cells.full;
-  for (const el of S.wmSideMembers[side]) { // float anything parked here that's no longer part of the group
-    if (ids.includes(el.id)) continue;
-    // …unless another dock holds it now: moving the AI from Right to Left
-    // docked it left (left lays out first), then this Right pass sent it home,
-    // leaving an empty reserved strip and a floating panel (Josh's iPad,
-    // 2026-09-29: "docking left does not work at all")
-    if (wmWhereIs(S.wm, el.id)) continue;
-    const home = document.getElementById(el.id + "-home");
-    if (home && el.parentNode !== home) home.appendChild(el);
-    if (el.classList.contains("docked")) el.classList.remove("docked");
-    el._wmCell = null;
-  }
-  const wantEls = ids.map(id => document.getElementById(id)).filter(Boolean);
-  wantEls.forEach(el => { // touch the DOM only on a real change (SHEET_TOP answers every class/parent write with wmLayoutAll())
-    if (el._wmCell !== targetCell) { targetCell.appendChild(el); el._wmCell = targetCell; }
-    if (!el.classList.contains("docked")) el.classList.add("docked");
-  });
-  S.wmSideMembers[side] = wantEls;
-  // exactly one tab may be visible in the shared cell — if more than one
-  // opened independently (each window's own header button, not the dock/tab
-  // UI), the NEW one (whichever isn't the recorded active) wins and becomes
-  // active — reopening a background tab that way should bring IT forward,
-  // the same as tapping its chip would, not silently re-close it
-  const onEls = wantEls.filter(el => el.classList.contains("on"));
-  if (onEls.length > 1) {
-    const keep = onEls.find(el => el.id !== (state && state.active)) || onEls[0];
-    for (const el of onEls) if (el !== keep) el.classList.remove("on");
-    if (state && state.active !== keep.id) { S.wm = wmSetActiveSideTab(S.wm, side, keep.id); wmSave(S.wm); state = S.wm[side]; }
-  }
-  // the active tab itself is closed but a sibling is open: promote it —
-  // otherwise closing the front tab would stop the strip from reaching any
-  // of its siblings at all
-  if (state && ids.length) {
-    const activeEl = document.getElementById(state.active);
-    if (!(activeEl && activeEl.classList.contains("on"))) {
-      const openId = ids.find(id => { const e = document.getElementById(id); return e && e.classList.contains("on"); });
-      if (openId && openId !== state.active) { S.wm = wmSetActiveSideTab(S.wm, side, openId); wmSave(S.wm); state = S.wm[side]; }
-    }
-  }
-  wmLayoutTabs(side, targetCell, ids, state && state.active);
-  cells.full.classList.toggle("occupied", !!(state && wantMode === "full" && ids.length));
-  cells.inner.classList.toggle("occupied", !!(state && wantMode === "inner" && ids.length));
-  const activeEl = ids.includes(state && state.active) && document.getElementById(state.active); // `ids` (not the raw pref) already accounts for phone width — a saved dock must not reserve space there
-  const active = !!(activeEl && activeEl.classList.contains("on"));
-  const wpx = active ? wmClampSize(state.w, wmInnerWidth()) + "px" : "0px";
-  shell.style.setProperty(side === "left" ? "--dl-w" : "--dr-w", (active && wantMode === "full") ? wpx : "0px");
-  shell.style.setProperty(side === "left" ? "--dli-w" : "--dri-w", (active && wantMode === "inner") ? wpx : "0px");
-  return active && wantMode === "full";
-}
-// The tab strip: a chip per OPEN member of a multi-window side group (a
-// closed member's chip disappears — "closing a tab's window removes the
-// tab" — it stays parked, docked, just not reachable from the strip until
-// reopened, same close-never-undocks invariant as everywhere else). "A group
-// of one shows no strip" (ids.length <= 1); a group where at most one member
-// is open shows none either — nothing to switch to. Real-browser only (like
-// the Dock menu below) — tests exercise the pure ids/active transitions
-// directly instead.
-function wmLayoutTabs(side, targetCell, ids, activeId) {
-  const strip = document.getElementById("dock" + side + "-tabs");
-  if (!strip) return;
-  if (ids.length <= 1) { strip.classList.remove("on"); return; }
-  if (strip._wmCell !== targetCell) { targetCell.appendChild(strip); strip._wmCell = targetCell; }
-  // a chip per MEMBER, open or not: switching tabs closes the other window
-  // (one shows at a time), so filtering by "open" hid the tab you had just
-  // switched away from and you could never switch back (caught headless,
-  // 2026-09-29). Leaving a group is ✕ on its window (wmCloseWindow).
-  const kids = ids.map(id => {
-    const b = document.createElement("button");
-    b.className = "wmtab" + (id === activeId ? " active" : "");
-    b.textContent = wmWindowTitle(id);
-    b.setAttribute("aria-label", "Switch to " + wmWindowTitle(id));
-    b.addEventListener("click", () => { const e = document.getElementById(id); if (e && !e.classList.contains("on")) e.classList.add("on"); wmDockSide(id, side); });
-    return b;
-  });
-  if (typeof strip.replaceChildren === "function") strip.replaceChildren(...kids);
-  else { strip.innerHTML = ""; kids.forEach(k => strip.appendChild(k)); }
-  strip.classList.toggle("on", kids.length > 1);
-}
-// ✕ on a window: a member of a side TAB GROUP leaves the group (like closing an
-// IntelliJ/VS Code tab) so the strip never shows a tab that opens nothing;
-// a lone docked window just closes and keeps its dock for next time.
-function wmCloseWindow(ov) {
-  const where = ov && ov.id && wmWhereIs(S.wm, ov.id);
-  if (where && where.dock !== "bottom" && S.wm[where.dock] && S.wm[where.dock].ids && S.wm[where.dock].ids.length > 1) {
-    S.wm = wmRemoveSideTab(S.wm, where.dock, ov.id);
-    wmSave(S.wm);
-    const g = S.wm[where.dock], nx = g && g.active && document.getElementById(g.active);
-    if (nx && !nx.classList.contains("on")) nx.classList.add("on"); // the next tab shows, as when a tab closes
-  }
-  ov.classList.remove("on");
-  if (where) wmLayoutAll();
-}
-// The one entry point everything else calls: lays out both side docks and
-// the bottom dock, narrows the footer beside a FULL side dock either way,
-// refreshes every Dock button's label, and runs resize() — the same path a
-// real window resize takes — exactly once.
-function wmLayoutAll() {
-  const shell = document.getElementById("shell");
-  const leftFull = wmLayoutSide("left");
-  const rightFull = wmLayoutSide("right");
-  wmLayoutBottom();
-  if (shell.classList) shell.classList.toggle("hasdock", !!(leftFull || rightFull));
-  wmSyncDockButtons();
-  if (typeof resize === "function") resize(); // same path a real window resize takes
-  if (typeof askScrollEnd === "function" && wmWhereIs(S.wm, "asksheet")) askScrollEnd(); // re-parenting must not strand the chat mid-scroll
-}
-// ---- action functions: the Dock menu, the tab strip, drag-to-dock, and the
-// tests all call these directly. Each keeps the "a window is docked in at
-// most one place" invariant, saves, and relays through wmLayoutAll().
-function wmDockSide(id, side, mode) { // dock `id` to "left"/"right" (mode: "full" default for a brand new group, or "inner"). If that side already holds a group, `id` JOINS it as a new, active tab (Phase B) instead of replacing it — the same call also handles "tap an existing tab" (id already a member: just brings it to the front).
-  if (!wmAllowed(wmInnerWidth())) return; // no dock on a phone-width window
-  let next = S.wm;
-  const otherSide = side === "left" ? "right" : "left";
-  next = wmRemoveSideTab(next, otherSide, id);
-  if (next.bottom && next.bottom.ids && next.bottom.ids.includes(id)) next = wmClearBottom(next, id);
-  const cur = next[side];
-  next = (cur && cur.ids && cur.ids.includes(id)) ? wmSetActiveSideTab(next, side, id) : wmAddSideTab(next, side, id, wmInnerWidth());
-  if (mode) next = wmSetSideMode(next, side, mode);
-  S.wm = next;
-  wmSave(S.wm);
-  const grp = S.wm[side]; // exactly one tab shows at a time in the shared cell — close whichever sibling this one just replaced as active
-  if (grp && grp.active === id) for (const other of grp.ids) if (other !== id) { const oe = document.getElementById(other); if (oe && oe.classList.contains("on")) oe.classList.remove("on"); }
-  wmLayoutAll();
-}
-function wmSetSideModeFor(id, mode) { // flip full/inner for whichever side `id` is currently docked to; a no-op if it isn't
-  const where = wmWhereIs(S.wm, id);
-  if (!where || (where.dock !== "left" && where.dock !== "right")) return;
-  S.wm = wmSetSideMode(S.wm, where.dock, mode);
-  wmSave(S.wm);
-  wmLayoutAll();
-}
-function wmDockBottomWindow(id) { // dock `id` to the bottom — the first open slot, or splits it into the second
-  if (!wmAllowed(wmInnerWidth())) return;
-  let next = S.wm;
-  next = wmRemoveSideTab(next, "left", id);
-  next = wmRemoveSideTab(next, "right", id);
-  next = wmDockBottom(next, id, undefined, wmInnerHeight());
-  S.wm = next;
-  wmSave(S.wm);
-  wmLayoutAll();
-}
-function wmFloat(id) { // undock `id` from wherever it is (the only way OUT of a tab group); a no-op if it's already floating
-  if (S.wm.left && S.wm.left.ids && S.wm.left.ids.includes(id)) S.wm = wmRemoveSideTab(S.wm, "left", id);
-  else if (S.wm.right && S.wm.right.ids && S.wm.right.ids.includes(id)) S.wm = wmRemoveSideTab(S.wm, "right", id);
-  else if (S.wm.bottom && S.wm.bottom.ids && S.wm.bottom.ids.includes(id)) S.wm = wmClearBottom(S.wm, id);
-  else return;
-  wmSave(S.wm);
-  wmLayoutAll();
-}
-// ---- makeWindow(): registers a window as dockable and gives it the shared
-// Dock control (a button in its h2, id + "-h2" — every migrated window's h2
-// carries that id; see the body markup). ✕, title-drag and the ◢ grip are
-// NOT built here — every window already gets those from the generic loops
-// further down this file (the ✕ loop, sheetDrag's `.sheet > h2` selector,
-// addGrips), unchanged; a window not yet migrated (not in this list) keeps
-// getting exactly that and nothing else. See NIGHT-ROLL.md "Window manager
-// (shell + docks)" for the not-yet-migrated list.
-function makeWindow(id, opts) {
-  WM_WINDOWS[id] = {dockable: !!(opts && opts.dockable)};
-  if (!opts || !opts.dockable) return;
-  const h2 = document.getElementById(id + "-h2");
-  if (!h2 || h2._wmDockBtn) return; // idempotent
-  const btn = document.createElement("button");
-  btn.className = "wmdock";
-  btn.setAttribute("aria-label", "Dock this window — left, right, or bottom");
-  btn.addEventListener("click", () => wmOpenMenu(id, btn));
-  h2.appendChild(btn);
-  h2._wmDockBtn = btn;
-}
-function wmOpenMenu(id, anchor) {
-  const menu = document.getElementById("wmmenu");
-  const where = wmWhereIs(S.wm, id);
-  const items = [
-    wmMenuItem("Left", !!(where && where.dock === "left"), () => wmDockSide(id, "left")),
-    wmMenuItem("Right", !!(where && where.dock === "right"), () => wmDockSide(id, "right")),
-    wmMenuItem("Bottom", !!(where && where.dock === "bottom"), () => wmDockBottomWindow(id)),
-  ];
-  if (where && (where.dock === "left" || where.dock === "right")) {
-    const sep = document.createElement("div"); sep.className = "fsep"; items.push(sep);
-    items.push(wmMenuItem("Full height", where.mode !== "inner", () => wmSetSideModeFor(id, "full")));
-    items.push(wmMenuItem("Beside the roll", where.mode === "inner", () => wmSetSideModeFor(id, "inner")));
-  }
-  if (where) {
-    const sep2 = document.createElement("div"); sep2.className = "fsep"; items.push(sep2);
-    items.push(wmMenuItem("Float", false, () => wmFloat(id)));
-  }
-  if (typeof menu.replaceChildren === "function") menu.replaceChildren(...items);
-  else { menu.innerHTML = ""; items.forEach(i => menu.appendChild(i)); }
-  const r = anchor.getBoundingClientRect();
-  menu.style.left = Math.max(6, Math.min(r.left, songRegionRight() - 200)) + "px";
-  menu.style.top = (r.bottom + 6) + "px";
-  menu.classList.add("on");
-}
 if (typeof document !== "undefined" && document.body) { // real browser only — dismissing the menu is not unit tested (see comment above)
   document.addEventListener("pointerdown", e => {
     const menu = document.getElementById("wmmenu");
@@ -9445,47 +9242,6 @@ makeWindow("infosheet", {dockable: false});
 // window (WM_WINDOWS), but not dockable, so it gets no Dock button.
 makeWindow("importhub", {dockable: false});
 makeWindow("versionssheet", {dockable: false});
-// ---- dividers: one pair per side (full cell + inner cell — same width
-// value, wm[side].w, whichever cell is currently showing it), plus the
-// bottom dock's height (top edge) and, only with two windows, its split
-// (between them).
-function wmSideDividerize(divId, side) {
-  const divider = document.getElementById(divId);
-  let drag = null, lastTap = -Infinity; // double-tap resets to the default width (350ms, the app's own double-tap window)
-  divider.addEventListener("pointerdown", e => {
-    if (e.button && e.button !== 0) return;
-    if (!S.wm[side]) return;
-    const now = performance.now();
-    if (now - lastTap < 350) {
-      lastTap = -Infinity; // a third quick tap starts a fresh drag/pair, not another reset
-      S.wm = wmSetSideWidth(S.wm, side, WM_DEFAULT_W, wmInnerWidth());
-      wmSave(S.wm);
-      wmLayoutAll();
-      e.preventDefault();
-      return;
-    }
-    lastTap = now;
-    drag = {x0: e.clientX, w0: S.wm[side].w, id: e.pointerId};
-    divider.classList.add("dragging");
-    try { divider.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
-    e.preventDefault();
-  });
-  document.addEventListener("pointermove", e => {
-    if (!drag || e.pointerId !== drag.id || !S.wm[side]) return;
-    const delta = e.clientX - drag.x0;
-    // right's dividers sit on the dock's LEFT edge (drag left widens); left's sit on its RIGHT edge (drag right widens)
-    const w = side === "right" ? drag.w0 - delta : drag.w0 + delta;
-    S.wm = wmSetSideWidth(S.wm, side, w, wmInnerWidth());
-    wmLayoutAll();
-  });
-  const end = e => {
-    if (!drag || (e && e.pointerId !== drag.id)) return;
-    divider.classList.remove("dragging");
-    drag = null;
-    wmSave(S.wm);
-  };
-  document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
-}
 wmSideDividerize("wmdivider-left-full", "left");
 wmSideDividerize("wmdivider-left-inner", "left");
 wmSideDividerize("wmdivider-right-full", "right");
@@ -10572,4 +10328,4 @@ function renderSyncPending() {
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "renderTrackbarImpl": () => renderTrackbarImpl, "trackToggle": () => trackToggle, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerStripDragize": () => mixerStripDragize, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "jobsLoad": () => jobsLoad, "jobStart": () => jobStart, "jobsClearFinished": () => jobsClearFinished, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songsheet": () => songsheet, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "songStatus": () => songStatus, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "createComposition": () => createComposition, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "revertSongToRepo": () => revertSongToRepo, "recordRealtimeAudio": () => recordRealtimeAudio, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipVaultMeta": () => chipVaultMeta, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "commitImports": () => commitImports, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askSave": () => askSave, "askCommitLog": () => askCommitLog, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askRepending": () => askRepending, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmLayoutAll": () => wmLayoutAll, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmOpenMenu": () => wmOpenMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "discardPending": () => discardPending, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart, "fingerprintOldDrafts": () => fingerprintOldDrafts, "askRenderImpl": () => askRenderImpl, "askBubble": () => askBubble, "askRenderEarlier": () => askRenderEarlier, "askResumeSoon": () => askResumeSoon, "askFillBubble": () => askFillBubble, "askResume": () => askResume, "openSyncSheet": () => openSyncSheet, "renderSyncPending": () => renderSyncPending}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "trackToggle": (v) => (trackToggle = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsLoad": (v) => (jobsLoad = v), "jobStart": (v) => (jobStart = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "songStatus": (v) => (songStatus = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "createComposition": (v) => (createComposition = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "commitImports": (v) => (commitImports = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askSave": (v) => (askSave = v), "askCommitLog": (v) => (askCommitLog = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askRepending": (v) => (askRepending = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "discardPending": (v) => (discardPending = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "askBubble": (v) => (askBubble = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askResumeSoon": (v) => (askResumeSoon = v), "askFillBubble": (v) => (askFillBubble = v), "askResume": (v) => (askResume = v), "openSyncSheet": (v) => (openSyncSheet = v), "renderSyncPending": (v) => (renderSyncPending = v)}};
+export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "renderTrackbarImpl": () => renderTrackbarImpl, "trackToggle": () => trackToggle, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerStripDragize": () => mixerStripDragize, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "jobsLoad": () => jobsLoad, "jobStart": () => jobStart, "jobsClearFinished": () => jobsClearFinished, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songsheet": () => songsheet, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "songStatus": () => songStatus, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "createComposition": () => createComposition, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "revertSongToRepo": () => revertSongToRepo, "recordRealtimeAudio": () => recordRealtimeAudio, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipVaultMeta": () => chipVaultMeta, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "commitImports": () => commitImports, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askSave": () => askSave, "askCommitLog": () => askCommitLog, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askRepending": () => askRepending, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "discardPending": () => discardPending, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart, "fingerprintOldDrafts": () => fingerprintOldDrafts, "askRenderImpl": () => askRenderImpl, "askBubble": () => askBubble, "askRenderEarlier": () => askRenderEarlier, "askResumeSoon": () => askResumeSoon, "askFillBubble": () => askFillBubble, "askResume": () => askResume, "openSyncSheet": () => openSyncSheet, "renderSyncPending": () => renderSyncPending}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "trackToggle": (v) => (trackToggle = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsLoad": (v) => (jobsLoad = v), "jobStart": (v) => (jobStart = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "songStatus": (v) => (songStatus = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "createComposition": (v) => (createComposition = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "commitImports": (v) => (commitImports = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askSave": (v) => (askSave = v), "askCommitLog": (v) => (askCommitLog = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askRepending": (v) => (askRepending = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "discardPending": (v) => (discardPending = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "askBubble": (v) => (askBubble = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askResumeSoon": (v) => (askResumeSoon = v), "askFillBubble": (v) => (askFillBubble = v), "askResume": (v) => (askResume = v), "openSyncSheet": (v) => (openSyncSheet = v), "renderSyncPending": (v) => (renderSyncPending = v)}};

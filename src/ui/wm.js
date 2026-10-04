@@ -1,4 +1,7 @@
 import { S } from "../state.js";
+import { resize } from "./chrome.js";
+import { askScrollEnd } from "../ask/sheet.js";
+import { songRegionRight } from "./chrome.js";
 
 // ---- Window manager: shell + docks, phase A (open-items.md, "a real
 // windowing system"). Steps 1-2 (REBUILT 2026-09-29 after attempt 1,
@@ -325,3 +328,259 @@ export function wmMenuItem(label, active, fn) {
   return b;
 }
 export function wmCloseMenu() { document.getElementById("wmmenu").classList.remove("on"); }
+
+// inner cell — whichever wm[side].mode says) — not just the active one; only
+// the active member gets the `on` class (display is entirely CSS-driven off
+// that, .overlay.docked.on{display:flex} vs the base .overlay.docked{display:
+// none}), so switching tabs is nothing more than toggling `on` on two
+// elements already sitting in the cell (see the "exactly one tab visible"
+// fixup below) — no reparenting needed on every tab switch. Sets
+// --d{l,r}-w / --d{l,r}i-w, and returns whether this side is a FULL dock
+// actively reserving width (wmLayoutAll uses that to narrow the footer). The
+// width reservation only applies while the ACTIVE tab is actually shown
+// (docked AND open) — closing it zeroes the reservation but the group itself
+// is untouched, so a closed window stays parked and reopening needs no
+// re-dock (same invariant every dock already had). Safe to call any time
+// (open, close, dock, float, mode switch, tab switch, drag, or a live window
+// resize) — idempotent.
+export function wmLayoutSide(side) {
+  const shell = document.getElementById("shell");
+  const cells = wmSideCells(side);
+  let state = S.wm[side];
+  const ids = (state && wmAllowed(wmInnerWidth()) && state.ids) || [];
+  const wantMode = (state && state.mode) || "full";
+  const targetCell = wantMode === "inner" ? cells.inner : cells.full;
+  for (const el of S.wmSideMembers[side]) { // float anything parked here that's no longer part of the group
+    if (ids.includes(el.id)) continue;
+    // …unless another dock holds it now: moving the AI from Right to Left
+    // docked it left (left lays out first), then this Right pass sent it home,
+    // leaving an empty reserved strip and a floating panel (Josh's iPad,
+    // 2026-09-29: "docking left does not work at all")
+    if (wmWhereIs(S.wm, el.id)) continue;
+    const home = document.getElementById(el.id + "-home");
+    if (home && el.parentNode !== home) home.appendChild(el);
+    if (el.classList.contains("docked")) el.classList.remove("docked");
+    el._wmCell = null;
+  }
+  const wantEls = ids.map(id => document.getElementById(id)).filter(Boolean);
+  wantEls.forEach(el => { // touch the DOM only on a real change (SHEET_TOP answers every class/parent write with wmLayoutAll())
+    if (el._wmCell !== targetCell) { targetCell.appendChild(el); el._wmCell = targetCell; }
+    if (!el.classList.contains("docked")) el.classList.add("docked");
+  });
+  S.wmSideMembers[side] = wantEls;
+  // exactly one tab may be visible in the shared cell — if more than one
+  // opened independently (each window's own header button, not the dock/tab
+  // UI), the NEW one (whichever isn't the recorded active) wins and becomes
+  // active — reopening a background tab that way should bring IT forward,
+  // the same as tapping its chip would, not silently re-close it
+  const onEls = wantEls.filter(el => el.classList.contains("on"));
+  if (onEls.length > 1) {
+    const keep = onEls.find(el => el.id !== (state && state.active)) || onEls[0];
+    for (const el of onEls) if (el !== keep) el.classList.remove("on");
+    if (state && state.active !== keep.id) { S.wm = wmSetActiveSideTab(S.wm, side, keep.id); wmSave(S.wm); state = S.wm[side]; }
+  }
+  // the active tab itself is closed but a sibling is open: promote it —
+  // otherwise closing the front tab would stop the strip from reaching any
+  // of its siblings at all
+  if (state && ids.length) {
+    const activeEl = document.getElementById(state.active);
+    if (!(activeEl && activeEl.classList.contains("on"))) {
+      const openId = ids.find(id => { const e = document.getElementById(id); return e && e.classList.contains("on"); });
+      if (openId && openId !== state.active) { S.wm = wmSetActiveSideTab(S.wm, side, openId); wmSave(S.wm); state = S.wm[side]; }
+    }
+  }
+  wmLayoutTabs(side, targetCell, ids, state && state.active);
+  cells.full.classList.toggle("occupied", !!(state && wantMode === "full" && ids.length));
+  cells.inner.classList.toggle("occupied", !!(state && wantMode === "inner" && ids.length));
+  const activeEl = ids.includes(state && state.active) && document.getElementById(state.active); // `ids` (not the raw pref) already accounts for phone width — a saved dock must not reserve space there
+  const active = !!(activeEl && activeEl.classList.contains("on"));
+  const wpx = active ? wmClampSize(state.w, wmInnerWidth()) + "px" : "0px";
+  shell.style.setProperty(side === "left" ? "--dl-w" : "--dr-w", (active && wantMode === "full") ? wpx : "0px");
+  shell.style.setProperty(side === "left" ? "--dli-w" : "--dri-w", (active && wantMode === "inner") ? wpx : "0px");
+  return active && wantMode === "full";
+}
+// The tab strip: a chip per OPEN member of a multi-window side group (a
+// closed member's chip disappears — "closing a tab's window removes the
+// tab" — it stays parked, docked, just not reachable from the strip until
+// reopened, same close-never-undocks invariant as everywhere else). "A group
+// of one shows no strip" (ids.length <= 1); a group where at most one member
+// is open shows none either — nothing to switch to. Real-browser only (like
+// the Dock menu below) — tests exercise the pure ids/active transitions
+// directly instead.
+export function wmLayoutTabs(side, targetCell, ids, activeId) {
+  const strip = document.getElementById("dock" + side + "-tabs");
+  if (!strip) return;
+  if (ids.length <= 1) { strip.classList.remove("on"); return; }
+  if (strip._wmCell !== targetCell) { targetCell.appendChild(strip); strip._wmCell = targetCell; }
+  // a chip per MEMBER, open or not: switching tabs closes the other window
+  // (one shows at a time), so filtering by "open" hid the tab you had just
+  // switched away from and you could never switch back (caught headless,
+  // 2026-09-29). Leaving a group is ✕ on its window (wmCloseWindow).
+  const kids = ids.map(id => {
+    const b = document.createElement("button");
+    b.className = "wmtab" + (id === activeId ? " active" : "");
+    b.textContent = wmWindowTitle(id);
+    b.setAttribute("aria-label", "Switch to " + wmWindowTitle(id));
+    b.addEventListener("click", () => { const e = document.getElementById(id); if (e && !e.classList.contains("on")) e.classList.add("on"); wmDockSide(id, side); });
+    return b;
+  });
+  if (typeof strip.replaceChildren === "function") strip.replaceChildren(...kids);
+  else { strip.innerHTML = ""; kids.forEach(k => strip.appendChild(k)); }
+  strip.classList.toggle("on", kids.length > 1);
+}
+// ✕ on a window: a member of a side TAB GROUP leaves the group (like closing an
+// IntelliJ/VS Code tab) so the strip never shows a tab that opens nothing;
+// a lone docked window just closes and keeps its dock for next time.
+export function wmCloseWindow(ov) {
+  const where = ov && ov.id && wmWhereIs(S.wm, ov.id);
+  if (where && where.dock !== "bottom" && S.wm[where.dock] && S.wm[where.dock].ids && S.wm[where.dock].ids.length > 1) {
+    S.wm = wmRemoveSideTab(S.wm, where.dock, ov.id);
+    wmSave(S.wm);
+    const g = S.wm[where.dock], nx = g && g.active && document.getElementById(g.active);
+    if (nx && !nx.classList.contains("on")) nx.classList.add("on"); // the next tab shows, as when a tab closes
+  }
+  ov.classList.remove("on");
+  if (where) wmLayoutAll();
+}
+// The one entry point everything else calls: lays out both side docks and
+// the bottom dock, narrows the footer beside a FULL side dock either way,
+// refreshes every Dock button's label, and runs resize() — the same path a
+// real window resize takes — exactly once.
+export function wmLayoutAll() {
+  const shell = document.getElementById("shell");
+  const leftFull = wmLayoutSide("left");
+  const rightFull = wmLayoutSide("right");
+  wmLayoutBottom();
+  if (shell.classList) shell.classList.toggle("hasdock", !!(leftFull || rightFull));
+  wmSyncDockButtons();
+  if (typeof resize === "function") resize(); // same path a real window resize takes
+  if (typeof askScrollEnd === "function" && wmWhereIs(S.wm, "asksheet")) askScrollEnd(); // re-parenting must not strand the chat mid-scroll
+}
+// ---- action functions: the Dock menu, the tab strip, drag-to-dock, and the
+// tests all call these directly. Each keeps the "a window is docked in at
+// most one place" invariant, saves, and relays through wmLayoutAll().
+export function wmDockSide(id, side, mode) { // dock `id` to "left"/"right" (mode: "full" default for a brand new group, or "inner"). If that side already holds a group, `id` JOINS it as a new, active tab (Phase B) instead of replacing it — the same call also handles "tap an existing tab" (id already a member: just brings it to the front).
+  if (!wmAllowed(wmInnerWidth())) return; // no dock on a phone-width window
+  let next = S.wm;
+  const otherSide = side === "left" ? "right" : "left";
+  next = wmRemoveSideTab(next, otherSide, id);
+  if (next.bottom && next.bottom.ids && next.bottom.ids.includes(id)) next = wmClearBottom(next, id);
+  const cur = next[side];
+  next = (cur && cur.ids && cur.ids.includes(id)) ? wmSetActiveSideTab(next, side, id) : wmAddSideTab(next, side, id, wmInnerWidth());
+  if (mode) next = wmSetSideMode(next, side, mode);
+  S.wm = next;
+  wmSave(S.wm);
+  const grp = S.wm[side]; // exactly one tab shows at a time in the shared cell — close whichever sibling this one just replaced as active
+  if (grp && grp.active === id) for (const other of grp.ids) if (other !== id) { const oe = document.getElementById(other); if (oe && oe.classList.contains("on")) oe.classList.remove("on"); }
+  wmLayoutAll();
+}
+export function wmSetSideModeFor(id, mode) { // flip full/inner for whichever side `id` is currently docked to; a no-op if it isn't
+  const where = wmWhereIs(S.wm, id);
+  if (!where || (where.dock !== "left" && where.dock !== "right")) return;
+  S.wm = wmSetSideMode(S.wm, where.dock, mode);
+  wmSave(S.wm);
+  wmLayoutAll();
+}
+export function wmDockBottomWindow(id) { // dock `id` to the bottom — the first open slot, or splits it into the second
+  if (!wmAllowed(wmInnerWidth())) return;
+  let next = S.wm;
+  next = wmRemoveSideTab(next, "left", id);
+  next = wmRemoveSideTab(next, "right", id);
+  next = wmDockBottom(next, id, undefined, wmInnerHeight());
+  S.wm = next;
+  wmSave(S.wm);
+  wmLayoutAll();
+}
+export function wmFloat(id) { // undock `id` from wherever it is (the only way OUT of a tab group); a no-op if it's already floating
+  if (S.wm.left && S.wm.left.ids && S.wm.left.ids.includes(id)) S.wm = wmRemoveSideTab(S.wm, "left", id);
+  else if (S.wm.right && S.wm.right.ids && S.wm.right.ids.includes(id)) S.wm = wmRemoveSideTab(S.wm, "right", id);
+  else if (S.wm.bottom && S.wm.bottom.ids && S.wm.bottom.ids.includes(id)) S.wm = wmClearBottom(S.wm, id);
+  else return;
+  wmSave(S.wm);
+  wmLayoutAll();
+}
+// ---- makeWindow(): registers a window as dockable and gives it the shared
+// Dock control (a button in its h2, id + "-h2" — every migrated window's h2
+// carries that id; see the body markup). ✕, title-drag and the ◢ grip are
+// NOT built here — every window already gets those from the generic loops
+// further down this file (the ✕ loop, sheetDrag's `.sheet > h2` selector,
+// addGrips), unchanged; a window not yet migrated (not in this list) keeps
+// getting exactly that and nothing else. See NIGHT-ROLL.md "Window manager
+// (shell + docks)" for the not-yet-migrated list.
+export function makeWindow(id, opts) {
+  WM_WINDOWS[id] = {dockable: !!(opts && opts.dockable)};
+  if (!opts || !opts.dockable) return;
+  const h2 = document.getElementById(id + "-h2");
+  if (!h2 || h2._wmDockBtn) return; // idempotent
+  const btn = document.createElement("button");
+  btn.className = "wmdock";
+  btn.setAttribute("aria-label", "Dock this window — left, right, or bottom");
+  btn.addEventListener("click", () => wmOpenMenu(id, btn));
+  h2.appendChild(btn);
+  h2._wmDockBtn = btn;
+}
+export function wmOpenMenu(id, anchor) {
+  const menu = document.getElementById("wmmenu");
+  const where = wmWhereIs(S.wm, id);
+  const items = [
+    wmMenuItem("Left", !!(where && where.dock === "left"), () => wmDockSide(id, "left")),
+    wmMenuItem("Right", !!(where && where.dock === "right"), () => wmDockSide(id, "right")),
+    wmMenuItem("Bottom", !!(where && where.dock === "bottom"), () => wmDockBottomWindow(id)),
+  ];
+  if (where && (where.dock === "left" || where.dock === "right")) {
+    const sep = document.createElement("div"); sep.className = "fsep"; items.push(sep);
+    items.push(wmMenuItem("Full height", where.mode !== "inner", () => wmSetSideModeFor(id, "full")));
+    items.push(wmMenuItem("Beside the roll", where.mode === "inner", () => wmSetSideModeFor(id, "inner")));
+  }
+  if (where) {
+    const sep2 = document.createElement("div"); sep2.className = "fsep"; items.push(sep2);
+    items.push(wmMenuItem("Float", false, () => wmFloat(id)));
+  }
+  if (typeof menu.replaceChildren === "function") menu.replaceChildren(...items);
+  else { menu.innerHTML = ""; items.forEach(i => menu.appendChild(i)); }
+  const r = anchor.getBoundingClientRect();
+  menu.style.left = Math.max(6, Math.min(r.left, songRegionRight() - 200)) + "px";
+  menu.style.top = (r.bottom + 6) + "px";
+  menu.classList.add("on");
+}
+// ---- dividers: one pair per side (full cell + inner cell — same width
+// value, wm[side].w, whichever cell is currently showing it), plus the
+// bottom dock's height (top edge) and, only with two windows, its split
+// (between them).
+export function wmSideDividerize(divId, side) {
+  const divider = document.getElementById(divId);
+  let drag = null, lastTap = -Infinity; // double-tap resets to the default width (350ms, the app's own double-tap window)
+  divider.addEventListener("pointerdown", e => {
+    if (e.button && e.button !== 0) return;
+    if (!S.wm[side]) return;
+    const now = performance.now();
+    if (now - lastTap < 350) {
+      lastTap = -Infinity; // a third quick tap starts a fresh drag/pair, not another reset
+      S.wm = wmSetSideWidth(S.wm, side, WM_DEFAULT_W, wmInnerWidth());
+      wmSave(S.wm);
+      wmLayoutAll();
+      e.preventDefault();
+      return;
+    }
+    lastTap = now;
+    drag = {x0: e.clientX, w0: S.wm[side].w, id: e.pointerId};
+    divider.classList.add("dragging");
+    try { divider.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    e.preventDefault();
+  });
+  document.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id || !S.wm[side]) return;
+    const delta = e.clientX - drag.x0;
+    // right's dividers sit on the dock's LEFT edge (drag left widens); left's sit on its RIGHT edge (drag right widens)
+    const w = side === "right" ? drag.w0 - delta : drag.w0 + delta;
+    S.wm = wmSetSideWidth(S.wm, side, w, wmInnerWidth());
+    wmLayoutAll();
+  });
+  const end = e => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    divider.classList.remove("dragging");
+    drag = null;
+    wmSave(S.wm);
+  };
+  document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+}
