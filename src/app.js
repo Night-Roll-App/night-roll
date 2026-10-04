@@ -582,6 +582,180 @@ import { recOpenEnded } from "./input/record.js";
 import { recSnap } from "./input/record.js";
 import { recSnapOn } from "./input/record.js";
 import { midiStatusLine } from "./input/record.js";
+import { songTitleOf } from "./ask/context.js";
+import { songWhereLabel } from "./ask/context.js";
+import { aiHostKind } from "./ask/backend.js";
+import { aiRunTest } from "./ask/backend.js";
+import { aiBackendRows } from "./ask/backend.js";
+import { aiUrl } from "./ask/backend.js";
+import { aiHeaders } from "./ask/backend.js";
+import { AI_BROWSER_MODELS } from "./ask/backend.js";
+import { aiProvider } from "./ask/backend.js";
+import { aiBrowserMenu } from "./ask/backend.js";
+import { aiModelMenu } from "./ask/backend.js";
+import { aiSay } from "./ask/backend.js";
+import { aiSSE } from "./ask/backend.js";
+import { aiRemote } from "./ask/backend.js";
+import { aiPickModel } from "./ask/backend.js";
+import { AI_TEST_MS } from "./ask/backend.js";
+import { aiTest } from "./ask/backend.js";
+import { AI_WEBLLM_URL } from "./ask/backend.js";
+import { aiWebllmLoad } from "./ask/backend.js";
+import { aiEngineFor } from "./ask/backend.js";
+import { aiBrowserTest } from "./ask/backend.js";
+import { aiBrowser } from "./ask/backend.js";
+import { askKeySpellComment } from "./ask/context.js";
+import { askBarRow } from "./ask/context.js";
+import { askSpanNotesCompact } from "./ask/context.js";
+import { askAppState } from "./ask/context.js";
+import { askOpenSongLine } from "./ask/context.js";
+import { askNewSinceLines } from "./ask/context.js";
+import { askViewCursorLine } from "./ask/context.js";
+import { askModeLine } from "./ask/context.js";
+import { askSentGet } from "./ask/context.js";
+import { askLegendText } from "./ask/context.js";
+import { askSentStage } from "./ask/context.js";
+import { ASK_CPT } from "./ask/context.js";
+import { askCachedBlock } from "./ask/context.js";
+import { askSpanCachedBlock } from "./ask/context.js";
+import { askStripContext } from "./ask/context.js";
+import { askSentReset } from "./ask/context.js";
+import { askMsgMode } from "./ask/context.js";
+import { askSpan } from "./ask/context.js";
+import { askSpanLabel } from "./ask/context.js";
+import { askSentCommit } from "./ask/context.js";
+import { askSentDrop } from "./ask/context.js";
+import { askBudget } from "./ask/context.js";
+import { askEstimate } from "./ask/context.js";
+import { askSys } from "./ask/context.js";
+import { askTerminalContext } from "./ask/context.js";
+import { askBuildMessages } from "./ask/context.js";
+import { ASK_SYS_BASE1 } from "./ask/context.js";
+import { RULE_LEARNING } from "./ask/context.js";
+import { RULE_NORMAL } from "./ask/context.js";
+import { ASK_SYS_BASE2 } from "./ask/context.js";
+import { askKeyDeclared } from "./ask/context.js";
+import { askSpanNotes } from "./ask/context.js";
+import { askBarFingerprint } from "./ask/context.js";
+import { askSpanNotesCompactCached } from "./ask/context.js";
+import { askCapLines } from "./ask/context.js";
+import { askSentKey } from "./ask/context.js";
+import { askSentStageBars } from "./ask/context.js";
+import { ASK_SENT_BARS_CAP } from "./ask/context.js";
+import { askEpochKey } from "./ask/context.js";
+import { askEpochGet } from "./ask/context.js";
+import { askEpochSet } from "./ask/context.js";
+import { askEpochNote } from "./ask/context.js";
+import { askFindAnnotation } from "./ask/tools.js";
+import { askAnnotationStructural } from "./ask/tools.js";
+import { askNoteKind } from "./ask/tools.js";
+import { askSongPath } from "./ask/tools.js";
+import { notesTxtForDoc } from "./ask/tools.js";
+import { askReadBars } from "./ask/tools.js";
+import { askAnnotationsTextCompact } from "./ask/tools.js";
+import { askAnnotationsText } from "./ask/tools.js";
+import { ASK_TOOLS } from "./ask/tools.js";
+import { askWritableGate } from "./ask/tools.js";
+import { askFindTrackIndex } from "./ask/tools.js";
+import { askWriteNotesValidate } from "./ask/tools.js";
+import { askBarsValidate } from "./ask/tools.js";
+import { askBarsCount } from "./ask/tools.js";
+import { askNoteValue } from "./ask/tools.js";
+import { ASK_READ_BARS_MAX } from "./ask/tools.js";
+import { askNormChip } from "./ask/tools.js";
+import { parsePitch } from "./ask/tools.js";
+import { askNoteVel } from "./ask/tools.js";
+import { askSeenMax } from "./ask/bridge.js";
+import { askUnsavedCount } from "./ask/bridge.js";
+import { askRevertToSaved } from "./ask/bridge.js";
+import { askTermModelsLoad } from "./ask/bridge.js";
+import { askStatusRender } from "./ask/bridge.js";
+import { ASK_TERMINAL_KEY } from "./ask/bridge.js";
+import { ASK_GENERAL_KEY } from "./ask/bridge.js";
+import { askStore } from "./ask/bridge.js";
+import { ASK_LOCAL_SOFT } from "./ask/bridge.js";
+import { askEvictOthers } from "./ask/bridge.js";
+import { askLogKey } from "./ask/bridge.js";
+import { askLogSong } from "./ask/bridge.js";
+import { askLogPath } from "./ask/bridge.js";
+import { askLogMarkdown } from "./ask/bridge.js";
+import { askLogHeader } from "./ask/bridge.js";
+import { askInboxAllowed } from "./ask/bridge.js";
+import { askInboxSeenKey } from "./ask/bridge.js";
+import { deployButtonTick } from "./ask/bridge.js";
+import { askSessionRender } from "./ask/bridge.js";
+import { askSessionRefresh } from "./ask/bridge.js";
+import { askTabsVisible } from "./ask/bridge.js";
+import { askSessionName } from "./ask/bridge.js";
+import { askSessionLine } from "./ask/bridge.js";
+import { askCompactModelName } from "./ask/bridge.js";
+import { askComposing } from "./ask/bridge.js";
+import { askSeenCommit } from "./ask/bridge.js";
+import { askPendingIndex } from "./ask/bridge.js";
+import { askModelName } from "./ask/bridge.js";
+import { askSeenDrop } from "./ask/bridge.js";
+import { askJobsSupported } from "./ask/bridge.js";
+import { askToolsNow } from "./ask/bridge.js";
+import { askLoad } from "./ask/bridge.js";
+import { askJobId } from "./ask/bridge.js";
+import { askPendingAll } from "./ask/bridge.js";
+import { askBadgeOff } from "./ask/bridge.js";
+import { deployActive } from "./ask/bridge.js";
+import { askStatusToggle } from "./ask/bridge.js";
+import { ASK_GENERAL_LOG } from "./ask/bridge.js";
+import { ASK_TOTAL_CAP } from "./ask/bridge.js";
+import { askSeenKey } from "./ask/bridge.js";
+import { askSeenGet } from "./ask/bridge.js";
+import { askMaxErrId } from "./ask/bridge.js";
+import { askMaxStatusId } from "./ask/bridge.js";
+import { askSeenMaxKey } from "./ask/bridge.js";
+import { askSeenSet } from "./ask/bridge.js";
+import { askSeenAdvance } from "./ask/bridge.js";
+import { askSeenStage } from "./ask/bridge.js";
+import { ASK_SONG_ONLY_TOOLS } from "./ask/bridge.js";
+import { askAgeText } from "./ask/bridge.js";
+import { deployBannerShow } from "./ask/bridge.js";
+import { askStatusIdle } from "./ask/bridge.js";
+import { askStatusLine } from "./ask/bridge.js";
+import { askStatusRecentShow } from "./ask/bridge.js";
+import { askStatusFetchCommits } from "./ask/bridge.js";
+import { TERM_MODELS } from "./ask/bridge.js";
+import { askModeButtons } from "./ask/sheet.js";
+import { asksheet } from "./ask/sheet.js";
+import { askStoreKey } from "./ask/sheet.js";
+import { askstatus } from "./ask/sheet.js";
+import { askClock } from "./ask/sheet.js";
+import { askNoteLabel } from "./ask/sheet.js";
+import { askSetMode } from "./ask/sheet.js";
+import { askDraftSaveSoon } from "./ask/sheet.js";
+import { asklog } from "./ask/sheet.js";
+import { askDraftSave } from "./ask/sheet.js";
+import { askDraftLoad } from "./ask/sheet.js";
+import { askPartial } from "./ask/sheet.js";
+import { askScrollEnd } from "./ask/sheet.js";
+import { askShowThinking } from "./ask/sheet.js";
+import { askinput } from "./ask/sheet.js";
+import { askDraftClear } from "./ask/sheet.js";
+import { askGrow } from "./ask/sheet.js";
+import { askRefresh } from "./ask/sheet.js";
+import { askFocusIfKeyboard } from "./ask/sheet.js";
+import { askDraftStore } from "./ask/sheet.js";
+import { b64Bytes } from "./ask/shots.js";
+import { ASKSHOT_MAX } from "./ask/shots.js";
+import { askShotUpload } from "./ask/shots.js";
+import { askShotAdd } from "./ask/shots.js";
+import { askShotStatusLabel } from "./ask/shots.js";
+import { askShotClearAll } from "./ask/shots.js";
+import { askPickFiles } from "./ask/shots.js";
+import { askShotDisplayText } from "./ask/shots.js";
+import { askShotOutgoing } from "./ask/shots.js";
+import { askShotLine } from "./ask/shots.js";
+import { askShotRender } from "./ask/shots.js";
+import { askShotRemove } from "./ask/shots.js";
+import { askShotRestore } from "./ask/shots.js";
+import { MAX_SHOT_SIDE } from "./ask/shots.js";
+import { MAX_SHOT_KEEP_BYTES } from "./ask/shots.js";
+import { askPrepImage } from "./ask/shots.js";
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
     const b = document.createElement("base"); b.href = S.APP_BASE;
@@ -1215,34 +1389,6 @@ function updateSyncBtn() {
   btn.style.display = "";
   const n = pendingSongs().length;
   btn.textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one"); shows even at N=0 once connected
-}
-// Same set serializeRollnotes would publish, each entry tagged with an "id"
-// (its index into `rollnotes`) — edit_annotation/delete_annotation target by
-// it. Only stable for the one Ask turn that reads this context block: an
-// edit re-sorts rollnotes (finalizeNotes), so a SECOND tool call in the same
-// reply should re-target by bar/beat/match_text instead of a now-stale id.
-function askAnnotationsText() {
-  const rows = dedupedNotesWithIndex(S.rollnotes).map(({n, i}) => "  " + JSON.stringify(Object.assign({id: i}, noteToJSON(n))));
-  return '{ "version": 1, "song": ' + JSON.stringify(baseName()) + ', "notes": [\n' + rows.join(",\n") + "\n] }\n";
-}
-// askAnnotationsTextCompact (step 5, docs/ask-token-plan.md): the SAME ids
-// (dedupedNotesWithIndex's index into rollnotes — edit_annotation/
-// delete_annotation's "id" either way), the .rollnotes TEXT grammar's own
-// bar.beat span instead of JSON, and the kind/value split edit_annotation
-// already computes (askNoteKind/askNoteValue — one place decides what an
-// existing note "is", never duplicated). Structural track:/lane:/audio:
-// directives (askAnnotationStructural — song-structure, not analysis, and
-// out of scope for edit/delete_annotation already) are left out: the model
-// never needs them to discuss the music, and the app's own editor is where
-// they change. Sent to the BRIDGE only (askContext); local providers keep
-// askAnnotationsText, full JSON, every turn.
-function askAnnotationsTextCompact() {
-  const rows = dedupedNotesWithIndex(S.rollnotes).filter(({n}) => !askAnnotationStructural(n)).map(({n, i}) => {
-    const kind = askNoteKind(n), value = askNoteValue(n, kind);
-    const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? "-" + n.b2 + "." + (n.q2 || 1) : "") + "]";
-    return i + " " + at + " " + kind + ": " + value + (n.cnote ? " — " + n.cnote : "");
-  });
-  return rows.length ? rows.join("\n") : "(no annotations)";
 }
 // A new key at a bar REPLACES the key there — never two keys at one point
 // (Josh's rule, 2026-08-25, after setting "F mixolydian" over airship's
@@ -7050,30 +7196,7 @@ function scoreTap(pos) {
 // 43-entry dropdown got unusable once chip captures joined the catalog
 const songtitleEl = document.getElementById("songcrumb");
 const songsheet = document.getElementById("songsheet");
- // resolved in boot() once the manifest is in
-function songTitleOf(path) {
-  for (const songs of Object.values(S.CATALOG)) {
-    const hit = songs.find(([, p]) => p === path);
-    if (hit) return hit[0];
-  }
-  const base = path.split("/").pop().replace(/\.midi?$/i, "");
-  try { // a draft may carry a typed title (rename / import naming)
-    const d = JSON.parse(localStorage.getItem("ff1roll-draft-" + path) || "null");
-    if (d && d.title) return impDisplayTitle(d, base);
-  } catch (err) { /* corrupt draft */ }
-  return titleCaseSlug(base);
-}
-// Published or Local, meaning what Open's two sections mean: a copy on this
-// device is Local, even of a published song (Josh, 2026-09-29). Shared by
-// updateSongBtn's breadcrumb below and askOpenSongLine (the bridge context
-// block's compact song summary for the general/Terminal tabs, which have no
-// other song context) — one wording, never duplicated (Josh, 2026-09-30).
-function songWhereLabel(path) {
-  const group = Object.entries(S.CATALOG).find(([, songs]) => songs.some(([, p]) => p === path));
-  const local = localStorage.getItem("ff1roll-draft-" + path) !== null;
-  return (LINK_SONGS ? "🔗 " + linkRepoLabel(LINK_SONGS) + " › " : "") + (local || !group ? "Local" : "Published");
-}
-function updateSongBtn() { // breadcrumb: Album › Title, with the real path dimmed after
+ function updateSongBtn() { // breadcrumb: Album › Title, with the real path dimmed after
   songtitleEl.innerHTML = "";
   setDocTitle(S.currentPath ? songTitleOf(S.currentPath) : null);
   if (!S.currentPath) return;
@@ -14443,83 +14566,8 @@ if (document.getElementById("cmpswap")) {
   document.getElementById("cmpdone").addEventListener("click", cmpExit);
 }
 
-// ---------------------------------------------------------------- ✦ AI (in-app AI)
-// Design: local-llm-design.md (advisor-converged, Josh's rulings 2026-09-25).
-// A tutor and, later, a generator, over ONE adapter: any OpenAI-compatible
-// server (LM Studio / Ollama, this machine or another on the network). The
-// house rules ride in the system prompt: hints first, answers when he insists.
-// Every request carries ONE context block (never stored) under a budget keyed
-// to the model's window; bars and beats in the protocol are the RULER's —
-// display bars, the declared meter's counted beat — never quarters.
-// ASK_SYS split (P4, 2026-09-30): a shared BASE plus a per-mode RULE
-// paragraph, picked at SEND time by askSys() — never cached, since the
-// device-global mode can flip between messages. RULE_LEARNING is
-// yesterday's "THE RULE" paragraph, verbatim (Learning's tutoring never
-// changed); RULE_NORMAL is new (other users, one device switch — CLAUDE.md
-// scope, Josh's ruling 2026-09-29).
-const ASK_SYS_BASE1 = `You are the resident music-theory tutor inside Night Roll, a piano-roll + engraved-score web app for studying NES soundtracks and learning composition. The user often chats from an iPad — keep replies short and warm, a few sentences unless asked for depth. Plain text only: no markdown, no headers, no bullet lists.`;
-const RULE_LEARNING = `THE RULE: discoveries are the user's. Default to hints, questions and direction (what does the bass outline? which accidental keeps appearing? what happens on the downbeat of bar 9?). When the user has made a guess, confirm or refine it honestly. If the user asks to be told, give one strong hint first; if they insist again, or say they give up, tell them plainly — never withhold forever. General theory concepts (what is a secondary dominant? how do sevenths resolve?) are fair game to answer directly: concepts aren't spoilers, per-song conclusions are.`;
-const RULE_NORMAL = `Answer music questions directly — name keys, chords, cadences and form when asked; say how sure you are; the key line may be an estimate, call it one.`;
-const ASK_SYS_BASE2 = `Each user message carries a <context> block: the song, the meter, the cursor, any lasso-selected pitches, the user's own annotations (their established discoveries — build on them), and the notes of the bars in view. Bar and beat numbers are the user's ruler: "bar 9 beat 2" is the counted beat of the declared meter (in 6/8 there are six beats per bar). Refer to locations that way. The key-state line says whether the user has set a key; if it is not set, the key is undiscovered — do not name it. If the song is the user's own composition, it is editable and they may ask what they wrote — still lead with a hint. Say "not sure" when you are not sure. Never invent notes that are not in the context.
 
-What you are inside Night Roll, so you never misdescribe it: the app attaches the <context> block itself — the user pastes nothing, and never needs to. For this project, always prefer the context block and the tools below over reading a song's file yourself, even where the system you're running in can otherwise read files, the repo or the web — they reflect the user's LIVE state, unsaved edits included, which a file on disk does not; say what access you actually have only when asked, rather than assuming either way. You have twelve app tools, all of them ONLY when the user explicitly asks for that exact action, never on your own initiative: add_annotation writes ONE annotation in the user's words, at the bar and beat they said (chord, section, key, tempo, loop, or a plain note); edit_annotation changes an EXISTING annotation's text (and, if asked, where it sits) — target it by the "id" its context entry carries, or by its bar, beat and current text if the id has gone stale; delete_annotation removes one existing annotation the same way; all three say what they did in one short line, and if the target is ambiguous they ask which rather than guess. publish_song runs this song's Publish (the same one the footer button does) and reports what happened — it refuses when the device isn't connected (no GitHub token, no folder) or nothing here can be published, and says why. list_songs, read_song and read_notes let you look at another song in this Night Roll when the user refers to one ("compare this to ambush") — read, then answer under THE RULE as usual. read_bars reads bars of THIS song beyond what the context block's current window shows (live state, unsaved edits included) — ask for it instead of guessing an out-of-view bar or telling the user you can't see it; some bars in the context may already read "as sent earlier" instead of their notes — you still have those from earlier in this chat, no need to ask again. write_notes writes notes the user dictates onto a track they name (never the one selected in the app) — spell out every note yourself (a gallop is an eighth plus two sixteenths: write all three, don't use the word); it writes exactly what was asked, never a chord, key or note of your own choosing, lands as one undo step, and refuses on a locked/capture song. copy_bars repeats or duplicates bars that already exist — "repeat bars 5–6 after bar 6" is copy_bars({from_bar: 5, to_bar: 6, at_bar: 7}), never a hand-spelled write_notes call; it opens the gap on every track (notes AND annotations after it slide later, exactly like Insert bars…), copies the source bars' notes into that gap on every track including drums, and never duplicates an annotation into the copy (that's the user's own analysis). insert_bars makes empty room — at_bar and count, nothing copied — the same shift, for when the user asks to insert or add blank bars rather than repeat existing ones. delete_bars removes bars that already exist — from_bar and count, the inverse shift: a note starting inside is deleted, one sustaining across the cut is clipped there, and everything after slides earlier to close the gap (annotations are never destroyed — one anchored inside the deleted span moves to the cut point, one straddling it shrinks) — only when the user explicitly asks to delete or remove bars. All three land as one undo step and refuse on a locked/capture song. In the annotations, "loop: B.Q" marks a playback loop (the anchor is the jump point, B.Q the return), "key:" sets the key state, "section" lines are form labels, "chord" lines are the user's own chord readings. If the user says they are testing, not ready, or asks you to stop bringing up the music, do exactly that until they say they are ready — answer only what they asked.`;
-function askSys() { return ASK_SYS_BASE1 + "\n\n" + (appMode() === "normal" ? RULE_NORMAL : RULE_LEARNING) + "\n\n" + ASK_SYS_BASE2; }
-
-         // the span the current turn was sent against
-// chars per token for THIS content: note dumps are digits and short names —
-// measured 7.3k chars → 3839 tokens on Qwen 3.6 (2026-09-25), not prose's 4
-const ASK_CPT = 2;
-function aiUrl() { return (cfg().aiUrl || "").replace(/\/+$/, ""); }
-function aiHeaders() {
-  const h = {"content-type": "application/json"};
-  const k = localStorage.getItem("ff1roll-aikey");
-  if (k) h.authorization = "Bearer " + k;
-  return h;
-}
-function aiSSE(state, chunk) { // OpenAI-style SSE → text deltas; state = {buf: ""}; vm-testable on strings
-  state.buf += chunk;
-  const out = [];
-  const lines = state.buf.split("\n");
-  state.buf = lines.pop();
-  for (const l of lines) {
-    const t = l.trim();
-    if (!t.startsWith("data:")) continue;
-    const d = t.slice(5).trim();
-    if (d === "[DONE]") { state.done = true; continue; }
-    let j;
-    try { j = JSON.parse(d); } catch (err) { continue; }
-    const c = j.choices && j.choices[0];
-    const txt = c && c.delta && c.delta.content;
-    if (typeof txt === "string" && txt) out.push(txt);
-    const think = c && c.delta && (c.delta.reasoning_content || c.delta.reasoning); // LM Studio streams Qwen's thinking apart; count it so the wait is visible
-    if (typeof think === "string") {
-      state.think = (state.think || 0) + think.length;
-      // the bridge sends whole steps ("using Bash npm test… "); LM Studio sends
-      // thinking in fragments — only a whole step becomes the visible note
-      if (/^using .+…\s*$/.test(think)) state.note = think.replace(/^using /, "").replace(/…\s*$/, "").trim();
-    }
-    const tc = c && c.delta && c.delta.tool_calls; // OpenAI tools: name once, arguments in pieces, one slot per index
-    if (Array.isArray(tc)) {
-      state.tools = state.tools || [];
-      for (const t of tc) {
-        const i = t.index || 0;
-        const slot = state.tools[i] || (state.tools[i] = {id: "", name: "", args: ""});
-        if (t.id) slot.id = t.id;
-        if (t.function && t.function.name) slot.name += t.function.name;
-        if (t.function && typeof t.function.arguments === "string") slot.args += t.function.arguments;
-      }
-    }
-    if (c && c.finish_reason) state.finish = c.finish_reason;
-    if (j.error && j.error.message) state.error = j.error.message;
-  }
-  return out;
-}
-function aiHostKind(url) { // "local" never prompts; everything else asks once per host
-  let host = "";
-  try { host = new URL(url).hostname; } catch (err) { return "bad"; }
-  return host === "localhost" || host === "127.0.0.1" || host === "[::1]" ? "local" : "other";
-}
-async function aiHostOk(url) { // per-host consent: the payload is his annotations + notes
+         async function aiHostOk(url) { // per-host consent: the payload is his annotations + notes
   const kind = aiHostKind(url);
   if (kind === "bad") return false;
   if (kind === "local") return true;
@@ -14533,299 +14581,11 @@ async function aiHostOk(url) { // per-host consent: the payload is his annotatio
   if (yes) { ok.push(host); localStorage.setItem("ff1roll-ai-hosts", JSON.stringify(ok)); }
   return yes;
 }
-function aiRemote() { // the one adapter shape; a browser (WebLLM) backend slots in beside it later
-  const url = aiUrl();
-  return {
-    async listModels() {
-      const r = await fetch(url + "/v1/models", {headers: aiHeaders()});
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const j = await r.json();
-      return (j.data || []).map(m => m.id).filter(Boolean);
-    },
-    async chat({system, messages, signal, onDelta, schema, onStatus, tools, onTool, job, onOpen, onRound, onNote}) {
-      let model = cfg().aiModel;
-      const headers = aiHeaders();
-      if (job) { // the bridge keeps a job alive through a dropped connection; ■ Stop kills it explicitly
-        headers["x-nr-job"] = job;
-        headers["x-nr-song"] = askSessionName(); // the bridge keeps one Claude Code session per song
-        if (signal) signal.addEventListener("abort", () => { fetch(url + "/v1/jobs/" + encodeURIComponent(job), {method: "DELETE", headers: aiHeaders()}).catch(() => {}); }, {once: true});
-      }
-      if (!model) {
-        if (!S.askModelCache || S.askModelCache.url !== url) S.askModelCache = {url, ids: await this.listModels()};
-        model = S.askModelCache.ids[0];
-        if (!model) throw new Error("the server lists no models — load one in LM Studio");
-      }
-      // Tool rounds (2026-09-26): the model may call app tools (annotate, read
-      // another song); the app runs them and sends the results back, at most
-      // a few times, then the model answers in words.
-      const convo = [{role: "system", content: system}, ...messages];
-      let retried = false;
-      for (let round = 0; round < 5; round++) {
-        const body = {model, stream: true, messages: convo};
-        if (job && round) { headers["x-nr-job"] = job + "-r" + round; if (onRound) onRound(job + "-r" + round); } // a new job per tool round: the same id would replay round one's tool call forever; the caller's marker follows
-        if (schema) body.response_format = {type: "json_schema", json_schema: {name: "take", strict: true, schema}};
-        if (tools && tools.length && onTool) body.tools = tools;
-        const r = await fetch(url + "/v1/chat/completions", {method: "POST", headers, body: JSON.stringify(body), signal});
-        if (!r.ok) {
-          let msg = "HTTP " + r.status;
-          try { const j = await r.json(); if (j.error) msg += " — " + (j.error.message || j.error); } catch (err) { /* no body */ }
-          throw new Error(msg);
-        }
-        // the bridge's session-epoch header (docs/ask-token-plan.md #4/#7):
-        // present only on the bridge, harmless (and absent) on LM Studio/etc
-        if (r.headers && r.headers.get) askEpochNote(askStoreKey(), r.headers.get("x-nr-session-epoch"));
-        if (onOpen) onOpen(); // headers back = the server has the question (a drop after this is a dropped connection, not a lost question)
-        const reader = r.body.getReader(), dec = new TextDecoder(), st = {buf: "", think: 0};
-        let out = "", shown = 0, shownNote = "";
-        for (;;) {
-          const {done, value} = await reader.read();
-          if (done) break;
-          for (const t of aiSSE(st, dec.decode(value, {stream: true}))) { out += t; onDelta(out); }
-          if (st.note && st.note !== shownNote && onNote) { shownNote = st.note; onNote(st.note); } // what Claude is doing right now (Josh, 2026-09-26: "no indication you are still doing work")
-          if (!out && st.think - shown > 400 && onStatus) { shown = st.think; onStatus("thinking… (" + Math.round(st.think / 5) + " words so far — thinking is a model setting in LM Studio, not here)"); }
-          if (st.error) throw new Error(st.error);
-        }
-        const calls = (st.tools || []).filter(t => t && t.name);
-        if (!calls.length && !out.trim() && round === 0 && !retried) { retried = true; round--; continue; } // a thinking-only turn (Qwen, first request after a load): one silent retry
-        if (!calls.length || !onTool) return out;
-        convo.push({role: "assistant", content: out || "", tool_calls: calls.map((t, i) => ({id: t.id || "call_" + round + "_" + i, type: "function", function: {name: t.name, arguments: t.args || "{}"}}))});
-        for (const [i, t] of calls.entries()) {
-          let args = {};
-          try { args = JSON.parse(t.args || "{}"); } catch (err) { args = {_parse_error: String(err.message)}; }
-          if (onStatus) onStatus("⚙ " + t.name + "…");
-          let result;
-          try { result = await onTool(t.name, args); } catch (err) { result = {error: String(err && err.message || err)}; }
-          convo.push({role: "tool", tool_call_id: t.id || "call_" + round + "_" + i, content: typeof result === "string" ? result : JSON.stringify(result)});
-        }
-        onDelta(out ? out + "\n\n…" : "…"); // the words so far stay; the next round continues them
-      }
-      throw new Error("the model kept calling tools without answering — try again");
-    },
-  };
-}
-// Test connection: five outcomes, each with its fix in the same line. The
-// guesswork lives here, not in his head.
-function aiSay(el, t) { // ✓ gold, ⚠ red, anything else plain
-  el.textContent = t;
-  el.classList.toggle("ok", t.startsWith("✓"));
-  el.classList.toggle("err", t.startsWith("⚠"));
-}
-function aiModelMenu(ids, pick) { // the model select: what the server listed, the saved id kept even when unlisted
-  const sel = document.getElementById("cfgaimodel");
-  sel.innerHTML = "";
-  const add = (v, label) => { const o = document.createElement("option"); o.value = v; o.textContent = label || v; sel.appendChild(o); return o; };
-  if (pick && !ids.includes(pick)) add(pick, pick + (ids.length ? " (not on this server)" : ""));
-  for (const id of ids) add(id);
-  if (!sel.options.length) add("", "— Test to list the server's models —");
-  sel.value = pick || sel.options[0].value;
-}
-function aiPickModel(ids, saved) { return ids.includes(saved) ? saved : (ids.find(id => !/embed/i.test(id)) || ids[0] || ""); }
-const AI_TEST_MS = 8000;
-async function aiTest(url, statusEl, btn) {
-  const say = t => aiSay(statusEl, t);
-  url = (url || "").replace(/\/+$/, "");
-  if (aiHostKind(url) === "bad") { say("⚠ that is not a URL — try http://localhost:1234"); return null; }
-  if (location.protocol === "https:" && url.startsWith("http:") && aiHostKind(url) !== "local") {
-    say("⚠ mixed content: this page is https but the server is http — the browser blocks that. Reach the server over https (Tailscale Serve) or open Night Roll over http from that machine. See Help → ✦ AI.");
-    return null;
-  }
-  const label = btn ? btn.textContent : "";
-  if (btn) { btn.disabled = true; btn.textContent = "Testing…"; }
-  say("testing " + url + " (up to " + AI_TEST_MS / 1000 + " s)…");
-  const ctl = typeof AbortController === "function" ? new AbortController() : {abort() {}, signal: undefined};
-  const timer = setTimeout(() => ctl.abort(), AI_TEST_MS);
-  try {
-    const r = await fetch(url + "/v1/models", {headers: aiHeaders(), signal: ctl.signal});
-    if (!r.ok) { say("⚠ the server answered HTTP " + r.status + (r.status === 401 || r.status === 403 ? " — it wants an API key" : "")); return null; }
-    const ids = ((await r.json()).data || []).map(m => m.id).filter(Boolean);
-    S.askModelCache = {url, ids};
-    if (!ids.length) { say("✓ reachable · no model listed — load one in LM Studio, then Test"); return ids; }
-    // Test means "this is the server I mean": keep his pick if it is still there, else the first chat-looking model, and save
-    const pick = aiPickModel(ids, cfg().aiModel);
-    aiModelMenu(ids, pick);
-    saveCfg({aiUrl: url, aiModel: pick});
-    askRefresh();
-    say("✓ connected · " + ids.length + " model" + (ids.length === 1 ? "" : "s") + " · using " + pick + " · saved");
-    return ids;
-  } catch (err) {
-    if (err && err.name === "AbortError") { say("⚠ no answer in " + AI_TEST_MS / 1000 + " s — server running? right port? On an iPad the URL must be https (Tailscale Serve)."); return null; }
-    // reachable-but-CORS-blocked vs unreachable: an opaque no-cors fetch succeeds in the first case only
-    let reachable = false;
-    try { await fetch(url + "/v1/models", {mode: "no-cors"}); reachable = true; } catch (err2) { reachable = false; }
-    if (reachable) say("⚠ reachable, but CORS is off: in LM Studio → Developer → Server settings turn on Enable CORS (Ollama: set OLLAMA_ORIGINS=*)");
-    else say(/\.ts\.net\b/.test(url) // a tailnet address: the usual cause is the VPN being off on THIS device (Josh, 2026-09-27, twice)
-      ? "⚠ unreachable: is Tailscale connected on this device? (Open the Tailscale app — it drops sometimes.) And is the bridge running on the Mac?"
-      : "⚠ unreachable: is the server running at " + url + "? Same network? (If the browser asked to allow local-network access, say yes.)");
-    return null;
-  } finally {
-    clearTimeout(timer);
-    if (btn) { btn.disabled = false; btn.textContent = label === "Testing…" ? "Test" : label; }
-  }
-}
-function aiRunTest() {
-  const out = document.getElementById("cfgaitestout");
-  if (document.getElementById("cfgaibackend").value === "browser") aiBrowserTest(document.getElementById("cfgaibrowsermodel").value, out);
-  else aiTest(document.getElementById("cfgaiurl").value.trim(), out, document.getElementById("cfgaitest"));
-}
 document.getElementById("cfgaitest").addEventListener("click", aiRunTest);
 document.getElementById("cfgaitestb").addEventListener("click", aiRunTest);
 document.getElementById("cfgaiurl").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); aiRunTest(); } });
 document.getElementById("cfgaibackend").addEventListener("change", aiBackendRows);
-function aiBackendRows() { // the AI section shows the rows the chosen backend uses
-  const browser = document.getElementById("cfgaibackend").value === "browser";
-  for (const id of ["cfgaibrowserrow", "cfgaihelpbrowser"]) document.getElementById(id).style.display = browser ? "" : "none";
-  for (const id of ["cfgaiurlrow", "cfgaimodelrow", "cfgaikeyrow", "cfgaihelpremote"]) document.getElementById(id).style.display = browser ? "none" : "";
-}
-// ---- in-browser backend: WebLLM (MLC), loaded only when chosen. First
-// third-party-hosted runtime dependency (code from jsdelivr, weights from
-// HuggingFace) — Josh's call, CDN over vendoring (local-llm-design.md §10.8).
-// Weights cache in the browser after the first download. Needs WebGPU.
-const AI_WEBLLM_URL = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/lib/index.js";
-const AI_BROWSER_MODELS = [ // curated from the prebuilt list, smallest first; sizes = VRAM at load
-  ["SmolLM2-360M-Instruct-q4f16_1-MLC", "SmolLM2 360M · 0.4 GB (tiny — for testing)"],
-  ["Llama-3.2-1B-Instruct-q4f16_1-MLC", "Llama 3.2 1B · 0.9 GB"],
-  ["Qwen3.5-0.8B-q4f16_1-MLC", "Qwen 3.5 0.8B · 1.6 GB"],
-  ["SmolLM2-1.7B-Instruct-q4f16_1-MLC", "SmolLM2 1.7B · 1.8 GB"],
-  ["Qwen3-1.7B-q4f16_1-MLC", "Qwen 3 1.7B · 2.0 GB"],
-  ["Qwen3.5-2B-q4f16_1-MLC", "Qwen 3.5 2B · 2.2 GB"],
-  ["Llama-3.2-3B-Instruct-q4f16_1-MLC", "Llama 3.2 3B · 2.3 GB"],
-  ["Qwen3-4B-q4f16_1-MLC", "Qwen 3 4B · 3.4 GB"],
-  ["Phi-4-mini-instruct-q4f16_1-MLC", "Phi-4 mini · 3.4 GB"],
-  ["Qwen3.5-4B-q4f16_1-MLC", "Qwen 3.5 4B · 3.9 GB"],
-];
-function aiBrowserMenu(current) {
-  const sel = document.getElementById("cfgaibrowsermodel");
-  sel.innerHTML = "";
-  for (const [id, label] of AI_BROWSER_MODELS) { const o = document.createElement("option"); o.value = id; o.textContent = label; sel.appendChild(o); }
-  sel.value = AI_BROWSER_MODELS.some(m => m[0] === current) ? current : AI_BROWSER_MODELS[1][0];
-}
-async function aiWebllmLoad(statusFn) {
-  if (!S.aiWebllm) { statusFn("loading the in-browser runtime…"); S.aiWebllm = await import(AI_WEBLLM_URL); }
-  return S.aiWebllm;
-}
-async function aiEngineFor(modelId, statusFn) {
-  if (S.aiEngine && S.aiEngineModel === modelId) return S.aiEngine;
-  const w = await aiWebllmLoad(statusFn);
-  if (S.aiEngine) { try { await S.aiEngine.unload(); } catch (err) { /* already gone */ } S.aiEngine = null; }
-  S.aiEngine = await w.CreateMLCEngine(modelId, {initProgressCallback: p => statusFn((p && p.text) || "loading…")});
-  S.aiEngineModel = modelId;
-  return S.aiEngine;
-}
-async function aiBrowserTest(modelId, statusEl) { // also THE capability probe for a new device (iPad): WebGPU + cache state
-  const say = t => aiSay(statusEl, t);
-  if (!navigator.gpu) { say("⚠ no WebGPU in this browser — in-browser models need it (Chrome, Edge, Safari 26+); use a server instead"); return; }
-  let ad = null;
-  try { ad = await navigator.gpu.requestAdapter(); } catch (err) { ad = null; }
-  if (!ad) { say("⚠ WebGPU is here but no GPU adapter answered — try another browser, or use a server"); return; }
-  const lim = ad.limits || {};
-  const mb = x => Math.round((x || 0) / 1048576);
-  try {
-    const w = await aiWebllmLoad(say);
-    const cached = await w.hasModelInCache(modelId);
-    say("✓ WebGPU ok (max buffer " + mb(lim.maxBufferSize) + " MB, storage binding " + mb(lim.maxStorageBufferBindingSize) + " MB" + (ad.features && ad.features.has && ad.features.has("shader-f16") ? ", f16" : "") + ") · " +
-        modelId + (cached ? " is downloaded" : " not downloaded yet — the first Ask downloads it"));
-  } catch (err) { say("⚠ the in-browser runtime failed to load: " + err.message + " (offline?)"); }
-}
-function aiBrowser() {
-  const modelId = cfg().aiBrowserModel;
-  return {
-    id: "browser",
-    async listModels() { return AI_BROWSER_MODELS.map(m => m[0]); },
-    async chat({system, messages, signal, onDelta, schema, onStatus}) {
-      if (!navigator.gpu) throw new Error("no WebGPU in this browser — pick a server in Settings");
-      const eng = await aiEngineFor(modelId, onStatus || (() => {}));
-      if (signal) signal.addEventListener("abort", () => { try { eng.interruptGenerate(); } catch (err) { /* idle */ } });
-      const req = {messages: [{role: "system", content: system}, ...messages], stream: true, extra_body: {enable_thinking: false}};
-      if (schema && Object.keys(schema).length) req.response_format = {type: "json_object", schema: JSON.stringify(schema)};
-      else if (schema) req.response_format = {type: "json_object"};
-      let out = "";
-      const chunks = await eng.chat.completions.create(req);
-      for await (const c of chunks) {
-        const t = c.choices && c.choices[0] && c.choices[0].delta && c.choices[0].delta.content;
-        if (t) { out += t; onDelta(out); }
-      }
-      if (signal && signal.aborted) { const e = new Error("stopped"); e.name = "AbortError"; throw e; }
-      return out;
-    },
-  };
-}
-function aiProvider() { return cfg().aiBackend === "browser" ? aiBrowser() : Object.assign(aiRemote(), {id: "remote"}); }
 
-// ---- ✦ AI tools (Josh, 2026-09-26): "if I propose putting an F sharp minor
-// chord annotation on 21.1, then it should just be able to do it" — and read
-// other songs in the repo. The APP runs the tools (the model only asks), so
-// they work the same against LM Studio, the Claude bridge, or anything else
-// that speaks OpenAI tool calls. Annotations land as "added" (unsynced), like
-// his own, with the ✕ in Save & Commit; the prompt limits writing to what he
-// asked for in words.
-const ASK_TOOLS = [
-  {type: "function", function: {name: "add_annotation", description: "Write ONE annotation into the open song at a bar and beat, exactly as the user asked. Only when the user explicitly asks you to annotate, mark, label or write something — never on your own initiative.",
-    parameters: {type: "object", properties: {
-      kind: {type: "string", enum: ["chord", "section", "key", "tempo", "loop", "note"], description: "chord = a chord symbol (e.g. F#m, G7/B, Cmaj7#11); section = a form label (Intro, A, B'); key = a key (F#m, Bb, A#/Bb? for tonic-only); tempo = bpm; loop = the return point as bar.beat, placed at the jump point; note = plain prose"},
-      text: {type: "string", description: "the symbol, label, key, bpm, bar.beat, or prose — in the user's words"},
-      bar: {type: "integer", minimum: 1}, beat: {type: "number", minimum: 1, description: "counted beat, 1 = downbeat; fractions allowed (2.5)"},
-      end_bar: {type: "integer", minimum: 1, description: "optional: the last bar the annotation spans"}, end_beat: {type: "number", minimum: 1, description: "optional: the last beat it spans (omit = end of that bar)"},
-      comment: {type: "string", description: "optional: a note attached to the annotation, in the user's words"}},
-      required: ["kind", "text", "bar", "beat"]}}},
-  {type: "function", function: {name: "edit_annotation", description: "Change an EXISTING annotation's text (and, optionally, where it sits). Only when the user explicitly asks you to edit, change, rename, move or correct one — never on your own initiative. Target it by id (from this turn's context block) or by its current bar+beat (+match_text if more than one annotation shares that bar.beat); an ambiguous target is an error, never a guess.",
-    parameters: {type: "object", properties: {
-      id: {type: "integer", minimum: 0, description: "the annotation's \"id\" exactly as the context block lists it — the surest target; stale after an earlier tool call in the SAME reply changes the annotations, so use bar/beat/match_text for a second edit in one turn"},
-      bar: {type: "integer", minimum: 1, description: "the annotation's CURRENT bar — with beat, used to find it when id is omitted or stale"},
-      beat: {type: "number", minimum: 1, description: "the annotation's CURRENT counted beat"},
-      match_text: {type: "string", description: "the annotation's current text — disambiguates when more than one annotation shares that bar.beat"},
-      text: {type: "string", description: "the new symbol, label, key, bpm, bar.beat, or prose — in the user's words"},
-      comment: {type: "string", description: "optional: replaces the note attached to the annotation; omit to leave the existing one"},
-      new_bar: {type: "integer", minimum: 1, description: "optional: moves the annotation to this bar"}, new_beat: {type: "number", minimum: 1, description: "optional: moves it to this beat"},
-      new_end_bar: {type: "integer", minimum: 1, description: "optional: changes the last bar it spans"}, new_end_beat: {type: "number", minimum: 1, description: "optional: changes the last beat it spans"}},
-      required: ["text"]}}},
-  {type: "function", function: {name: "delete_annotation", description: "Remove ONE existing annotation. Only when the user explicitly asks you to delete, remove or take back one — never on your own initiative. Give id, or bar+beat (+match_text if more than one annotation shares that bar.beat); an ambiguous target is an error, never a guess.",
-    parameters: {type: "object", properties: {
-      id: {type: "integer", minimum: 0, description: "the annotation's \"id\" exactly as the context block lists it"},
-      bar: {type: "integer", minimum: 1, description: "the annotation's current bar — with beat, used when id is omitted or stale"}, beat: {type: "number", minimum: 1, description: "the annotation's current counted beat"},
-      match_text: {type: "string", description: "its current text — disambiguates when more than one annotation shares that bar.beat"}}}}},
-  {type: "function", function: {name: "publish_song", description: "Publish the open song — the same Publish the footer button runs (song + annotations, or annotations only for a locked capture). Only when the user explicitly says to publish. Refuses, with a reason, when the device isn't connected or there is nothing here to publish.", parameters: {type: "object", properties: {}}}},
-  {type: "function", function: {name: "list_songs", description: "List the songs available in this Night Roll (albums, titles, paths) — use when the user refers to another song.", parameters: {type: "object", properties: {}}}},
-  {type: "function", function: {name: "read_song", description: "Read another song's notes (or a bar range of it) in the same text format as the context block. Use only when the user asks about another song.",
-    parameters: {type: "object", properties: {path: {type: "string", description: "the song path from list_songs"}, from_bar: {type: "integer", minimum: 1}, to_bar: {type: "integer", minimum: 1}}, required: ["path"]}}},
-  {type: "function", function: {name: "read_notes", description: "Read another song's annotations (the user's own analysis of it). Use only when the user asks about another song.",
-    parameters: {type: "object", properties: {path: {type: "string", description: "the song path from list_songs"}}, required: ["path"]}}},
-  {type: "function", function: {name: "read_bars", description: "Read bars of the OPEN song beyond what the context block's current window already shows — the same compact note rows, from LIVE app state (any unsaved edits included). Ask for this instead of guessing what an out-of-view bar holds, or claiming you cannot see it. The span is capped; a truncated reply says so and names where to continue from.",
-    parameters: {type: "object", properties: {
-      from_bar: {type: "integer", minimum: 1},
-      to_bar: {type: "integer", minimum: 1, description: "inclusive; omit for just from_bar"},
-      tracks: {type: "array", items: {type: "string"}, description: "optional: limit to these tracks, by number (\"1\") or name — omit for every track"}},
-      required: ["from_bar"]}}},
-  {type: "function", function: {name: "write_notes", description: "Write notes into THIS song on a track the user names. Only when the user explicitly asks you to write, insert, add, or fill in notes — their request is the per-instance approval for their own song; never on your own initiative, and never volunteer chords, keys, or any note they didn't dictate. Spell out every note individually — a shorthand term like \"gallop\" means nothing to the app; write it as the eighth note plus two sixteenths it stands for. track names an EXISTING track exactly as the user said it (e.g. \"triangle\", \"pulse1\") — matched against this song's own track names; never default to whichever track is selected in the app, and an unknown or ambiguous name is an error naming this song's actual track names, never a guess. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix (✎ Edit makes an editable copy). Every note is validated before anything is written; one bad note and nothing lands. The written notes land as ONE undo step, and the reply is one short line saying what was written.",
-    parameters: {type: "object", properties: {
-      track: {type: "string", description: "the track name as the user said it (e.g. \"triangle\", \"pulse1\") — matched case-insensitively against this song's track names"},
-      notes: {type: "array", description: "every note to write, spelled out individually in the user's words", items: {type: "object", properties: {
-        pitch: {type: "string", description: "scientific pitch like C4, F#3, Bb2 (C4 = middle C) — or a MIDI note number"},
-        bar: {type: "integer", minimum: 1, description: "the ruler's bar number"},
-        beat: {type: "number", minimum: 1, description: "counted beat, 1 = downbeat; fractions allowed (2.5)"},
-        dur_beats: {type: "number", exclusiveMinimum: 0, description: "duration in beats"},
-        vel: {type: "number", minimum: 1, maximum: 127, description: "optional: velocity 1–127 — omit for the app's own default"}},
-        required: ["pitch", "bar", "beat", "dur_beats"]}},
-      replace: {type: "object", description: "optional: a bar/beat range on the SAME track whose existing notes (by onset) are removed first", properties: {
-        from_bar: {type: "integer", minimum: 1}, from_beat: {type: "number", minimum: 1},
-        to_bar: {type: "integer", minimum: 1}, to_beat: {type: "number", minimum: 1}}}},
-      required: ["track", "notes"]}}},
-  {type: "function", function: {name: "copy_bars", description: "Repeat, duplicate or copy bars that already exist in THIS song. Inserts (to_bar − from_bar + 1) bars at at_bar on EVERY track — the same operation as Edit ▾ → Insert bars…, so every later note AND annotation (sections, chords, loop, key/tempo/meter) slides later to make room — then copies the notes of bars from_bar..to_bar (every track, drums included) into the new gap. Prefer this over write_notes whenever the request is to repeat or copy music that is already there, rather than dictate new notes. Only when the user explicitly asks to repeat, duplicate or copy bars — never on your own initiative. Annotations inside the copied range are never duplicated (they are the user's own analysis); only annotations after at_bar shift, same as Insert bars. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix. Lands as ONE undo step.",
-    parameters: {type: "object", properties: {
-      from_bar: {type: "integer", minimum: 1, description: "first bar to copy"},
-      to_bar: {type: "integer", minimum: 1, description: "last bar to copy, inclusive"},
-      at_bar: {type: "integer", minimum: 1, description: "where the copy lands (the gap opens here); to repeat bars 5–6 right after themselves, at_bar is 7"}},
-      required: ["from_bar", "to_bar", "at_bar"]}}},
-  {type: "function", function: {name: "insert_bars", description: "Insert empty bars into THIS song — the same operation as Edit ▾ → Insert bars…: every later note AND annotation (sections, chords, loop, key/tempo/meter) slides later to make room. Only when the user explicitly asks to insert, add or make room for blank/empty bars — for repeating or copying music that already exists, use copy_bars instead. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix. Lands as ONE undo step.",
-    parameters: {type: "object", properties: {
-      at_bar: {type: "integer", minimum: 1, description: "where the new bars go"},
-      count: {type: "integer", minimum: 1, description: "how many empty bars to insert"}},
-      required: ["at_bar", "count"]}}},
-  {type: "function", function: {name: "delete_bars", description: "Delete bars that already exist in THIS song — the same operation as Edit ▾ → Delete bars…, and the inverse of insert_bars: removes count bars starting at from_bar on EVERY track (a note starting inside is deleted, one sustaining across the cut is clipped there) and everything after slides EARLIER to close the gap — annotations too (sections, chords, loop, key/tempo/meter). Annotations are never destroyed: one anchored inside the deleted span moves to the cut point instead, and one straddling the cut shrinks rather than being duplicated or orphaned. Only when the user explicitly asks to delete or remove bars — never on your own initiative. Works only on the user's own editable songs — refuses on a locked/capture song, naming the fix. Lands as ONE undo step.",
-    parameters: {type: "object", properties: {
-      from_bar: {type: "integer", minimum: 1, description: "first bar to delete"},
-      count: {type: "integer", minimum: 1, description: "how many bars to delete"}},
-      required: ["from_bar", "count"]}}},
-];
 function askAddAnnotation(a) { // the same text grammar the editor and the files use: one line, parsed by parseRollnotes
   if (!S.song || !S.songKey) throw new Error("no song open");
   if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
@@ -14851,48 +14611,6 @@ function askAddAnnotation(a) { // the same text grammar the editor and the files
   if (typeof updateSongBtn === "function") updateSongBtn();
   if (typeof updateSyncBtn === "function") updateSyncBtn();
   return {ok: true, at: head, text: fresh.text, unsynced: true, note: "written on this device; Publish sends it with the song — the user can discard it in the Publish sheet"};
-}
-// edit_annotation/delete_annotation (2026-10-01, open-items): targeting for
-// an EXISTING annotation, robust the way the issue asked — by id (this
-// turn's context listing, dedupedNotesWithIndex's index into rollnotes) or
-// by bar+beat+match_text. Never guesses: 0 or >1 candidates is an error.
-function askFindAnnotation(a) {
-  if (!S.song || !S.songKey) throw new Error("no song open");
-  if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
-  a = a || {};
-  if (a.id !== undefined && a.id !== null && a.id !== "") {
-    const id = Math.round(+a.id);
-    if (!(id >= 0 && id < S.rollnotes.length)) throw new Error("no annotation with id " + a.id + " — it may be stale (another edit in this reply re-sorts them); use bar+beat instead");
-    return S.rollnotes[id];
-  }
-  if (a.bar === undefined || a.beat === undefined) throw new Error("say which annotation: its id from the context, or its bar and beat");
-  const bar = Math.max(1, Math.round(+a.bar)), beat = Math.max(1, +a.beat);
-  let cands = S.rollnotes.filter(n => n.b1 === bar && Math.abs((n.q1 || 1) - beat) < 1e-6);
-  if (a.match_text) {
-    const t = String(a.match_text).trim().toLowerCase();
-    const narrowed = cands.filter(n => (n.text || "").toLowerCase().includes(t));
-    if (narrowed.length) cands = narrowed;
-  }
-  if (!cands.length) throw new Error("no annotation at bar " + bar + " beat " + beat + (a.match_text ? " matching \"" + a.match_text + "\"" : ""));
-  if (cands.length > 1) throw new Error("more than one annotation at bar " + bar + " beat " + beat + ": " +
-    cands.map(n => JSON.stringify((n.text || "").split("\n")[0])).join(", ") + " — say which (match_text, or its id from the context)");
-  return cands[0];
-}
-function askNoteKind(n) { // the add_annotation "kind" this existing note was written as
-  if (n.section) return "section";
-  if (n.chord) return "chord";
-  if (n.keydir !== undefined || n.keypartial) return "key";
-  if (n.tempodir !== undefined) return "tempo";
-  if (n.loopTo !== undefined) return "loop";
-  return "note";
-}
-function askNoteValue(n, kind) { // the "text" add_annotation would need to reproduce n's own value — chord/section store the bare symbol/label; key/tempo/loop carry a "kind: " prefix
-  if (kind === "note") return n.text || "";
-  const m = (n.text || "").match(/^[a-z]+:\s*(.+)$/is);
-  return m ? m[1].trim() : (n.text || "");
-}
-function askAnnotationStructural(n) { // meter/chop/track/audio/lane: song-structure directives, not annotations — out of scope for edit/delete_annotation (see NIGHT-ROLL.md ✦ AI)
-  return !!(n.tsdir || n.chopdir || n.trackdir || n.audiodir || /^lane:\s*-?\d+\s*$/i.test(n.text || ""));
 }
 function askEditAnnotation(a) {
   if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
@@ -14970,83 +14688,6 @@ async function askPublishSong() {
   const where = folderActive() ? ("to " + fsRoot.name) : "(GitHub Pages takes ~1 min to serve it)";
   return {ok: true, message: "Published " + S.songKey + " " + where + (hisMusic ? " — song and annotations together." : " — annotations.")};
 }
-function notesTxtForDoc(doc, name, fromBar, toBar, maxChars, key) { // notesTxtFor's shape for ANOTHER song (no key stated, sharp spelling)
-  const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const pn = p => NAMES[p % 12] + (Math.floor(p / 12) - 1);
-  // HIS declared meter, never doc.timesig (the file's own raw label) — see
-  // declaredTsForKey and notesTxtFor's matching fix (C8)
-  const declared = (S.song && key && key === S.songKey) ? S.declaredTs : declaredTsForKey(key);
-  const ts = declared || [4, 4];
-  const tsLabel = declared ? declared[0] + "/" + declared[1] : "4/4? (not declared)";
-  const bt = ts[0] * 4 / ts[1] * doc.ppq;
-  let end = 0;
-  doc.tracks.forEach(t => t.notes.forEach(n => { if (!n.gone) end = Math.max(end, n.t + n.d); }));
-  const nBars = Math.ceil(end / bt - 0.05);
-  const b0 = Math.max(0, (fromBar || 1) - 1), b1 = Math.min(nBars, toBar || nBars);
-  const fmt = x => x.toFixed(2).replace(/\.?0+$/, "");
-  const L = ["# " + name + " — " + tsLabel + ", " + Math.round(6e7 / doc.tempos[0].usq) + "bpm, " + nBars + " bars" + (b0 || b1 < nBars ? " (bars " + (b0 + 1) + "–" + b1 + " shown)" : ""),
-             "# Format: bar N: beat pitch duration-in-quarter-notes; duration is GATE TIME, rhythm comes from onset spacing; sharp spelling, no key stated"];
-  let size = L.join("\n").length, cut = null;
-  doc.tracks.forEach((tr, ti) => {
-    const rows = [];
-    for (let b = b0; b < b1; b++) {
-      if (cut !== null && b + 1 > cut) break;
-      const ns = tr.notes.filter(n => !n.gone && n.t >= b * bt && n.t < (b + 1) * bt);
-      if (!ns.length) continue;
-      const row = "bar " + (b + 1) + ": " + ns.map(n => fmt((n.t - b * bt) / doc.ppq + 1) + " " + pn(n.p) + " " + fmt(n.d / doc.ppq)).join(", ");
-      if (maxChars && size + row.length + 40 > maxChars) { cut = b + 1; break; }
-      rows.push(row); size += row.length + 1;
-    }
-    if (rows.length) { L.push("", "## track " + (ti + 1) + (tr.name ? " (" + tr.name + ")" : "")); L.push(...rows); }
-  });
-  if (cut !== null) L.push("# (cut at bar " + cut + " to fit — ask for a narrower range)");
-  return L.join("\n");
-}
-function askSongPath(p) { // accept a path, a title, or a bare name
-  p = String(p || "").trim();
-  if (!p) throw new Error("which song?");
-  for (const songs of Object.values(S.CATALOG)) for (const [title, path] of songs) if (path === p || path === p + ".mid" || title.toLowerCase() === p.toLowerCase() || path.split("/").pop().replace(/\.midi?$/i, "") === p.toLowerCase()) return path;
-  throw new Error("no song at " + p + " — use list_songs");
-}
-// askReadBars (step 6, docs/ask-token-plan.md): the OPEN song only (another
-// song's bars are read_song's job) — LIVE state (song.tracks, not a reload),
-// so an unsaved edit shows up immediately. Reuses askBarRow (the same per-
-// bar math askSpanNotesCompact/askSpanNotesCompactCached build on) so a
-// plain (no tracks filter) call is BYTE-IDENTICAL to askSpanNotesCompact for
-// that span — one format, never a second one drifting beside it. Capped to
-// ASK_READ_BARS_MAX bars: a deliberate "give me more" lookup should stay
-// small, independent of the window budget's own (much larger) cap.
-const ASK_READ_BARS_MAX = 32;
-function askReadBars(a) {
-  if (!S.song || !S.songKey) throw new Error("no song open");
-  a = a || {};
-  const bt = barTicks(), qt = beatTicks();
-  const nBars = Math.max(1, Math.ceil(S.songEndTick / bt));
-  let from = Math.max(1, Math.round(+a.from_bar || 1));
-  let to = Math.max(from, Math.round(+(a.to_bar !== undefined ? a.to_bar : from)));
-  to = Math.min(to, nBars);
-  let truncated = false;
-  if (to - from + 1 > ASK_READ_BARS_MAX) { to = from + ASK_READ_BARS_MAX - 1; truncated = true; }
-  const t0 = (from - 1) * bt, t1 = to * bt;
-  let text;
-  if (Array.isArray(a.tracks) && a.tracks.length) {
-    const want = new Set(a.tracks.map(x => String(x).toLowerCase()));
-    const {est, line} = askKeySpellComment(t0, t1);
-    const L = [line];
-    S.song.tracks.forEach((tr, ti) => {
-      if (!want.has(String(ti + 1)) && !(tr.name && want.has(tr.name.toLowerCase()))) return;
-      const drums = trackIsDrums(ti);
-      const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
-      const rows = [];
-      for (let b = from - 1; b < to; b++) { const row = askBarRow(tr, ti, b, bt, qt, est); if (row) rows.push(row); }
-      if (rows.length) { L.push(head); L.push(...rows); }
-    });
-    text = L.join("\n");
-  } else {
-    text = askSpanNotesCompact(t0, t1, 6000); // same cap read_song uses for another song's text
-  }
-  return text + (truncated ? "\n# (truncated to " + ASK_READ_BARS_MAX + " bars — read_bars again from bar " + (to + 1) + " for the rest)" : "");
-}
 async function askRunTool(name, a) {
   if (name === "add_annotation") return askAddAnnotation(a || {});
   if (name === "edit_annotation") return askEditAnnotation(a || {});
@@ -15076,258 +14717,6 @@ async function askRunTool(name, a) {
   throw new Error("unknown tool " + name);
 }
 
-// ---- the span: the ruler selection if armed, else the bars in view. ONE
-// frame everywhere — display bars/beats (chop-relative, the declared meter's
-// counted beat). The turn is sent against the span as frozen at Send.
-function askSpan() {
-  const bt = barTicks();
-  const end = Math.max(bt, S.songEndTick);
-  let t0, t1, src;
-  if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) {
-    t0 = Math.floor(S.rangeSel.a / bt) * bt; t1 = Math.ceil(S.rangeSel.b / bt) * bt; src = "selected";
-  } else {
-    const w = (wrap && wrap.clientWidth) || 800;
-    const ppt = pxPerTick();
-    t0 = Math.floor(Math.max(0, S.view.x / ppt) / bt) * bt;
-    t1 = Math.ceil(Math.min(end, (S.view.x + w - S.RULER_W) / ppt) / bt) * bt;
-    src = "in view";
-  }
-  if (src === "in view") { t0 = Math.max(0, Math.min(t0, end - bt)); t1 = Math.min(t1, end); } // a ruler selection may reach past the song's end (a fill can extend it)
-  t1 = Math.max(t0 + bt, t1);
-  return {t0, t1, from: Math.floor(t0 / bt) + 1, to: Math.ceil(t1 / bt), src};
-}
-function askSpanLabel(sp) { return "bars " + sp.from + "–" + sp.to + " (" + sp.src + ")"; }
-function askKeyDeclared(t0, t1) { return sfDeclaredAtRaw(t0) !== null || S.keyRegions.some(r => r.start >= t0 && r.start < t1); }
-// askKeySpellComment: the one comment line stating whether/how pitches below
-// are spelled — declared key, Normal-mode estimate, or (Learning, or Normal
-// with nothing declared and no estimate yet) plain sharps naming no key.
-// Factored out (step 5, docs/ask-token-plan.md) so askSpanNotes (full) and
-// askSpanNotesCompact (bridge) share the IDENTICAL Learning-mode gate —
-// estimateKey() is only ever reached when appMode() === "normal" (P4 spy
-// test), never duplicated into two call sites that could drift.
-function askKeySpellComment(t0, t1) {
-  const declared = askKeyDeclared(t0, t1);
-  // Normal, nothing declared over this whole span: fall back to the estimate
-  // for BOTH the header comment and the spelling — stated, never silent
-  // (P4). Learning never reaches this (appMode() gates it, same convention
-  // as sfShownAt/keyNameShownAt — see the spy test).
-  const est = !declared && appMode() === "normal" ? estimateKey() : null;
-  const line = declared ? "# Pitches are spelled by the user's declared key (" + (keyNameAt(t0) || "declared") + ")."
-        : est ? "# Pitches are spelled by the Normal-mode key ESTIMATE (" + est.name + ", Krumhansl — unconfirmed)."
-        : "# Pitches use sharp spelling; the true key is the user's to discover — this block states no key.";
-  return {declared, est, line};
-}
-function askSpanNotes(t0, t1, maxChars) { // notesTxtFor's shape, three deltas: declared meter, display beats, one speller
-  const bt = barTicks(), qt = beatTicks(), ts = effTs();
-  const fmt = x => String(Math.round(x * 100) / 100);
-  const {est, line} = askKeySpellComment(t0, t1);
-  const L = [];
-  L.push("# Format: bar N: beat pitch duration, … — beat = the counted beat of the declared meter (" + ts[0] + "/" + ts[1] + ": " + ts[0] + " beats per bar, 1 = the downbeat); duration in the same unit.");
-  L.push("# duration is GATE TIME (how long the note was held), NOT a notated value; RHYTHM comes from ONSET SPACING (the beat column): staccato notes gating at 0.33 are still eighths, not triplets.");
-  L.push(line);
-  const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
-  let cut = null, size = L.join("\n").length;
-  S.song.tracks.forEach((tr, ti) => {
-    const head = "\n## track " + (ti + 1) + (tr.name ? " (" + tr.name + ")" : "") + (trackIsDrums(ti) ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
-    const rows = [];
-    for (let b = b0; b < b1; b++) {
-      if (cut !== null && b + 1 > cut) break;
-      const ns = tr.notes.filter(n => !n.gone && n.t >= Math.max(b * bt, t0) && n.t < Math.min((b + 1) * bt, t1)).sort((a, c) => a.t - c.t || a.p - c.p);
-      if (!ns.length) continue;
-      const row = "bar " + (b + 1) + ": " + ns.map(n =>
-        fmt((n.t - b * bt) / qt + 1) + " " + (trackIsDrums(ti) ? String(n.p) : pitchName(n.p, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null))) + " " + fmt(n.d / qt)).join(", ");
-      if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
-      rows.push(row); size += row.length + 1;
-    }
-    if (rows.length) { L.push(head); L.push(...rows); size += head.length; }
-  });
-  if (cut !== null) L.push("# (cut at bar " + cut + " to fit the model's window — ask about a narrower range for the rest)");
-  return L.join("\n");
-}
-// askSpanNotesCompact (step 5, docs/ask-token-plan.md): the SAME facts as
-// askSpanNotes, sent to the BRIDGE only (askContext picks this one when
-// askCaps.bridge — local/LM Studio providers keep askSpanNotes, full, every
-// turn, since they hold no session memory of their own to lean on). One row
-// per bar, no word "bar": "<bar>|<beat><Pitch><oct>/<dur> <beat><Pitch>…" —
-// octave and duration are each written only when they differ from the
-// PREVIOUS NOTE IN THAT ROW (first note of a row always carries both, so a
-// row stands alone). The per-turn format explanation moves to askLegendText
-// (sent once per session); the key-spelling line stays here, every turn,
-// because it's content (which key, if any) — never static boilerplate, and
-// shares askKeySpellComment with askSpanNotes so Learning's gate on
-// estimateKey() can never drift between the two. Drums: the raw note number,
-// "#"-prefixed so a run of digits can't be misread as another beat.
-function askSpanNotesCompact(t0, t1, maxChars) {
-  const bt = barTicks(), qt = beatTicks();
-  const fmt = x => String(Math.round(x * 100) / 100);
-  const {est, line} = askKeySpellComment(t0, t1);
-  const L = [line];
-  const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
-  let cut = null, size = L.join("\n").length;
-  S.song.tracks.forEach((tr, ti) => {
-    const drums = trackIsDrums(ti);
-    const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
-    const rows = [];
-    for (let b = b0; b < b1; b++) {
-      if (cut !== null && b + 1 > cut) break;
-      const ns = tr.notes.filter(n => !n.gone && n.t >= Math.max(b * bt, t0) && n.t < Math.min((b + 1) * bt, t1)).sort((a, c) => a.t - c.t || a.p - c.p);
-      if (!ns.length) continue;
-      let lastOct = null, lastDur = null; // reset each row: "the previous note in the row" never reaches across bars
-      const toks = ns.map(n => {
-        const beat = fmt((n.t - b * bt) / qt + 1), dur = fmt(n.d / qt);
-        if (drums) { const tok = beat + "#" + n.p + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
-        const oct = Math.floor(n.p / 12) - 1, cls = spellPc(n.p % 12, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null));
-        let tok = beat + cls;
-        if (oct !== lastOct) tok += oct;
-        if (dur !== lastDur) tok += "/" + dur;
-        lastOct = oct; lastDur = dur;
-        return tok;
-      });
-      const row = (b + 1) + "|" + toks.join(" ");
-      if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
-      rows.push(row); size += row.length + 1;
-    }
-    if (rows.length) { L.push(head); L.push(...rows); size += head.length; }
-  });
-  if (cut !== null) L.push("# (cut at bar " + cut + " to fit the model's window — ask about a narrower range for the rest)");
-  return L.join("\n");
-}
-// ---- step 6 (docs/ask-token-plan.md): skip already-sent bars + read_bars.
-// askBarRow factors ONE track's one-bar row out of askSpanNotesCompact above
-// (same math — octave/duration carried forward within the row, reset every
-// bar) so this section and read_bars (ASK_TOOLS) build/hash a single bar
-// without a second place that could drift from the format askSpanNotesCompact
-// already defines. It assumes a bar-aligned window (b*bt .. (b+1)*bt) —
-// askSpan's own invariant (t0/t1 are always floor/ceil'd to a bar) — so,
-// unlike askSpanNotesCompact's inner loop, it does not need to clamp to a
-// t0/t1 that could land mid-bar.
-function askBarRow(tr, ti, b, bt, qt, est) {
-  const fmt = x => String(Math.round(x * 100) / 100);
-  const drums = trackIsDrums(ti);
-  const ns = tr.notes.filter(n => !n.gone && n.t >= b * bt && n.t < (b + 1) * bt).sort((a, c) => a.t - c.t || a.p - c.p);
-  if (!ns.length) return null;
-  let lastOct = null, lastDur = null; // reset every bar — never carries across bars, same rule as askSpanNotesCompact
-  const toks = ns.map(n => {
-    const beat = fmt((n.t - b * bt) / qt + 1), dur = fmt(n.d / qt);
-    if (drums) { const tok = beat + "#" + n.p + (dur !== lastDur ? "/" + dur : ""); lastDur = dur; return tok; }
-    const oct = Math.floor(n.p / 12) - 1, cls = spellPc(n.p % 12, sfDeclaredAtRaw(n.t) ?? (est ? est.sf : null));
-    let tok = beat + cls;
-    if (oct !== lastOct) tok += oct;
-    if (dur !== lastDur) tok += "/" + dur;
-    lastOct = oct; lastDur = dur;
-    return tok;
-  });
-  return (b + 1) + "|" + toks.join(" ");
-}
-// askBarFingerprint: the "compact rows" for ONE bar, across every track in
-// order — what the per-bar sent-hash record below hashes. "" (never cached,
-// never staged — nothing to collapse) when nothing sounds in that bar at all.
-function askBarFingerprint(b, bt, qt, est) {
-  const parts = [];
-  S.song.tracks.forEach((tr, ti) => { const row = askBarRow(tr, ti, b, bt, qt, est); if (row) parts.push("T" + (ti + 1) + row); });
-  return parts.join("\n");
-}
-// askSpanNotesCompactCached: askSpanNotesCompact's bridge-only sibling for
-// askContext's notes window. A bar whose fingerprint hash matches what THIS
-// chat already confirmed sending (askSentGet(key).bars, keyed by 1-based bar
-// number) collapses, with its run of likewise-unchanged neighbors, into one
-// "bars A–B: as sent earlier" line (singular "bar A: as sent earlier" for a
-// run of one) instead of repeating content the resumed Claude Code session
-// already holds verbatim; a new or edited bar still renders in full, grouped
-// by track exactly as askSpanNotesCompact does, for just that run of bars.
-// Returns {text, allCached}: allCached lets askSpanCachedBlock (below) fall
-// back to the existing whole-window "unchanged since your last message"
-// stand-in when EVERY bar in the window was already sent — a steady view
-// costs exactly what it did before this step, not one "as sent earlier" line
-// per bar. Stages (never commits — askSentCommit, from askFinish, success-
-// only, same as every other sent-hash field) the hashes of the bars this
-// call is about to show in full; a cached bar's hash is already on record
-// and needs no restaging.
-function askSpanNotesCompactCached(t0, t1, maxChars, key) {
-  const bt = barTicks(), qt = beatTicks();
-  const {est, line} = askKeySpellComment(t0, t1);
-  const b0 = Math.floor(t0 / bt), b1 = Math.ceil(t1 / bt);
-  const prevBars = askSentGet(key).bars || {};
-  const bars = [];
-  for (let b = b0; b < b1; b++) {
-    const fp = askBarFingerprint(b, bt, qt, est);
-    const hash = fp ? fnv1a32(fp) : null; // null: no content in this bar at all — never "cached", nothing to stage
-    bars.push({bar: b + 1, hash, cached: hash !== null && prevBars[b + 1] === hash});
-  }
-  const stage = {};
-  for (const x of bars) if (x.hash !== null && !x.cached) stage[x.bar] = x.hash;
-  if (Object.keys(stage).length) askSentStageBars(key, stage);
-  const anyContent = bars.some(x => x.hash !== null);
-  const allCached = anyContent && bars.every(x => x.hash === null || x.cached);
-  const L = [line];
-  let size = L.join("\n").length, cut = null, i = 0;
-  while (i < bars.length && cut === null) {
-    const cachedRun = bars[i].cached;
-    let j = i; while (j < bars.length && bars[j].cached === cachedRun) j++;
-    const run = bars.slice(i, j);
-    if (cachedRun) {
-      if (run.some(x => x.hash !== null)) { // an all-empty run has nothing to announce either way
-        const label = run.length > 1 ? "bars " + run[0].bar + "–" + run[run.length - 1].bar + ": as sent earlier" : "bar " + run[0].bar + ": as sent earlier";
-        if (maxChars && size + label.length + 1 > maxChars) { cut = run[0].bar; break; }
-        L.push(label); size += label.length + 1;
-      }
-    } else {
-      const subB0 = run[0].bar - 1, subB1 = run[run.length - 1].bar;
-      S.song.tracks.forEach((tr, ti) => {
-        const drums = trackIsDrums(ti);
-        const head = "\nT" + (ti + 1) + (tr.name ? " " + tr.name : "") + (drums ? " [drums]" : "") + (trackAudible(ti) ? "" : " [muted]");
-        const rows = [];
-        for (let b = subB0; b < subB1; b++) {
-          if (cut !== null && b + 1 > cut) break;
-          const row = askBarRow(tr, ti, b, bt, qt, est);
-          if (!row) continue;
-          if (maxChars && size + head.length + row.length + 2 > maxChars) { cut = b + 1; break; }
-          rows.push(row); size += row.length + 1;
-        }
-        if (rows.length) { L.push(head); L.push(...rows); size += head.length; }
-      });
-    }
-    i = j;
-  }
-  if (cut !== null) L.push("# (cut at bar " + cut + " to fit the model's window — ask about a narrower range for the rest)");
-  return {text: L.join("\n"), allCached};
-}
-// askSpanCachedBlock: askContext's own "notes in bars a–b" field. Non-bridge
-// (no session to lean on): unchanged, full askSpanNotes every turn, exactly
-// as before this step. Bridge: askSpanNotesCompactCached's per-bar collapsing,
-// falling back to the plain "unchanged since your last message" stand-in
-// (askCachedBlock's own wording, kept identical on purpose) when the whole
-// window was already sent.
-function askSpanCachedBlock(key, label, t0, t1, maxChars) {
-  if (!S.askCaps.bridge) return label + ":\n" + askSpanNotes(t0, t1, maxChars);
-  const r = askSpanNotesCompactCached(t0, t1, maxChars, key);
-  return r.allCached ? label + ": unchanged since your last message" : label + ":\n" + r.text;
-}
-// askLegendText (step 5): the compact format's explanation, sent ONCE per
-// bridge session (tied to the same sent-hash record askCachedBlock uses —
-// askContext stages/commits it as the "legend" field, so it reappears after
-// Clear chat, Compact, or a changed session epoch, same as the annotations/
-// notes stand-ins do). Never sent to a non-bridge provider.
-function askLegendText() {
-  return "# Compact context format (this explanation is sent once per session — later turns omit it):\n" +
-    "# notes: \"T<n> name\" starts a track (\"[drums]\"/\"[muted]\" tag if either applies); each row is \"<bar>|<beat><Pitch><oct>/<dur> …\" — beat is the counted beat of the declared meter, 1 = the downbeat; duration is GATE TIME (how long the note was held), NOT a notated value — rhythm comes from onset spacing, not duration. Octave and duration repeat from the previous note IN THAT ROW when omitted (the first note of a row always states both). A drum track gives the raw note number after \"#\" instead of a pitch letter (e.g. \"2.5#38\").\n" +
-    "# annotations: \"<id> [bar.beat-bar.beat] kind: value — comment\"; id is this turn's handle for edit_annotation/delete_annotation; structural track/lane/audio directives (song-structure, not analysis) are left out here — they're unchanged in the app.\n" +
-    "# a bar already sent unchanged in an earlier turn of THIS chat may be shown as \"bar N: as sent earlier\" or \"bars A–B: as sent earlier\" instead of its rows (you still have it from before); use read_bars(from_bar, to_bar) for any bar you need restated or haven't seen yet, rather than guessing or asking the user to repeat it.";
-}
-function askAppState() { // what is running: build, install, audio engine, the last ⚠ lines — a bug report should need no relay (Josh, 2026-09-27: "you should have access to the current running build and any errors")
-  const installed = (typeof navigator !== "undefined" && navigator.standalone) || (typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches);
-  const L = [];
-  L.push("app: build " + (document.lastModified || "unknown") + (typeof EDITION !== "undefined" && EDITION === "app" ? " · the iPad app" : installed ? " · installed (home screen)" : " · in the browser") + (typeof navigator !== "undefined" && navigator.onLine === false ? " · offline" : "") +
-         "; audio engine: " + (typeof S.audio !== "undefined" && S.audio ? S.audio.state : "not created yet") + (typeof S.playing !== "undefined" && S.playing ? ", playing" : ""));
-  const lines = typeof logLines === "function" ? logLines() : [];
-  const errs = lines.slice(-8).map(e => (e.t instanceof Date ? e.t.toTimeString().slice(0, 8) + " " : "") + (e.debug ? "[debug] " : "") + e.msg + (e.n > 1 ? " ×" + e.n : ""));
-  L.push("recent ⚠ log (" + lines.length + " total" + (typeof debugLogOn === "function" && debugLogOn() ? ", debug lines included" : "") + "; newest last):\n" + (errs.length ? errs.join("\n") : "(none)"));
-  return L.join("\n");
-}
-// askModeLine (P4): "mode: normal" when Normal, else null (omitted) — the
-// bridge's own system prompt (tools/claude-bridge.mjs BRIDGE_SYS_READ/FULL)
-// reads this same convention: no mode line in the context = Learning.
-function askModeLine() { return appMode() === "normal" ? "mode: normal" : null; }
 // askKeyStateLine (P4): Learning matches keyLabelState()'s text BYTE FOR
 // BYTE (built from data now, never the DOM — see keyLabelState's comment);
 // Normal states declared-vs-estimated plainly instead, since an estimate
@@ -15339,128 +14728,7 @@ function askKeyStateLine() {
   return est ? "key state: estimated " + est.name + " (Krumhansl, confidence " + (Math.round(est.conf * 100) / 100) + ")"
              : "key state: undetermined — not enough notes yet to estimate";
 }
-function askViewCursorLine(bt, qt, tick) { // shared by the song chat's own line (below) and askOpenSongLine (general/Terminal's compact summary) — one wording, never duplicated
-  return "view: " + S.viewMode + (S.playing ? ", playing" : ", paused") + (S.playRate !== 1 ? " at " + Math.round(S.playRate * 100) + "% speed" : "") +
-         "; cursor: bar " + (Math.floor(tick / bt) + 1) + " beat " + (Math.round(((tick % bt) / qt + 1) * 100) / 100);
-}
-// General/Terminal chats carry no per-song context of their own (askGeneral's
-// branch below says so explicitly) — but a song may still be open behind
-// them, and Josh never wants to have to say which one or copy its facts over
-// (2026-09-30). Compact on purpose: title, path, published/local, view,
-// cursor — not the meter/annotations/notes bulk the song chat's own context
-// already carries.
-function askOpenSongLine() {
-  if (!S.songKey || !S.song) return null;
-  return "open song: " + songTitleOf(S.songKey) + " (" + S.songKey + ", " + songWhereLabel(S.songKey) + ") — " + askViewCursorLine(barTicks(), beatTicks(), curTick());
-}
-// "New since your last message:" (2026-09-30, Josh via the iPad Ask — every
-// bridge message should carry what changed since his last one, so he never
-// has to copy/paste an error or a status line over by hand). Per-chat cursor
-// (askSeenGet/askSeenAdvance, below) so each chat only sees what's NEW to
-// IT — a line already sent in that chat never repeats. Capped and
-// oldest-first-dropped (askCapLines) to keep it cheap; omitted entirely when
-// there's nothing new, so an ordinary turn costs nothing extra.
-function askCapLines(arr, n, fmt) {
-  const shown = arr.slice(-n), older = arr.length - shown.length;
-  return shown.map(fmt).join("\n") + (older > 0 ? "\n(+" + older + " older)" : "");
-}
-function askNewSinceLines(key) {
-  const seen = askSeenGet(key);
-  // Learning is the law (CLAUDE.md): a line pushed while the device was in
-  // Normal mode (a chord/key/meter estimate the selection strip or LCD
-  // showed) must never reach a Learning-mode context, whatever it says —
-  // dropped here by its OWN tag (logPush/setInfo), not by guessing from text
-  const hideNormal = appMode() !== "normal";
-  const errs = logLines().filter(l => l.id > seen.err && (!hideNormal || l.mode !== "normal"));
-  const stats = S.statusHistory.filter(s => s.id > seen.status && (!hideNormal || s.mode !== "normal"));
-  askSeenStage(key, {err: askMaxErrId(), status: askMaxStatusId()}); // this exact snapshot is what a successful send commits
-  const L = [];
-  if (errs.length) L.push("new ⚠ messages (" + errs.length + "):\n" + askCapLines(errs, 20, logLine));
-  if (stats.length) L.push("new status lines (" + stats.length + "):\n" + askCapLines(stats, 20, s => new Date(s.t).toLocaleTimeString() + "  " + s.text));
-  return L.length ? "New since your last message:\n" + L.join("\n") : null;
-}
-// ---- bridge-session caching (2026-10-01, Josh via open-items: "make the
-// ✦ Ask context cheaper"). The bridge's Claude Code is a RESUMED session,
-// one per song key (sessionFor/runClaude, tools/claude-bridge.mjs) — it
-// remembers earlier turns, so resending the two big, slow-changing sections
-// below (annotations, the visible note window) every turn is pure
-// repetition once the session already holds them. Per chat (askStoreKey(),
-// same key the seen-cursor above already uses): a hash of each section
-// LAST CONFIRMED SENT; unchanged since then, on the bridge, → a one-line
-// stand-in instead of the full text. Full whenever the session might not
-// hold it: first message of a chat (a fresh store key has no record), after
-// Clear chat / Compact (reset below — the bridge's own session controls),
-// after the song key changes (its own store key, so its own empty record),
-// after a failed send (askSentCommit runs from askFinish only, never
-// askFail), and always for a non-bridge backend (askCaps.bridge — the same
-// flag askTabsApply/askSessionRender use to detect the bridge at all; a
-// local model server has no memory of its own, so it keeps today's
-// full-every-turn behaviour).
-function askSentKey(key) { return (key || askStoreKey()) + "-sentctx"; }
-function askSentGet(key) {
-  try {
-    const j = JSON.parse(localStorage.getItem(askSentKey(key)) || "null");
-    if (j && typeof j === "object") return j;
-  } catch (err) { /* corrupt: nothing confirmed sent yet */ }
-  return {};
-}
-function askSentStage(key, field, hash) { (S.askSentPending[key] || (S.askSentPending[key] = {}))[field] = hash; }
-// askSentStageBars (step 6): the "bars" field is a MAP (bar number → hash),
-// not a scalar like every other field here — askSentStage's plain assignment
-// would let a later call in the same turn clobber an earlier one's bars
-// instead of accumulating them, so it gets its own merge.
-function askSentStageBars(key, barsObj) { const pend = S.askSentPending[key] || (S.askSentPending[key] = {}); pend.bars = Object.assign(pend.bars || {}, barsObj); }
-const ASK_SENT_BARS_CAP = 2000; // a sensible bound on one chat's per-bar record, not a precise one — no real song's view gets near it; the LOWEST bar numbers drop first when it's exceeded
-function askSentCommit(key) { // askFinish only: the reply that answers THIS context actually landed
-  const p = S.askSentPending[key]; delete S.askSentPending[key];
-  if (!p) return;
-  const cur = askSentGet(key);
-  const merged = {...cur, ...p};
-  if (p.bars) { // deep-merge, never overwrite: other bars this turn didn't touch must survive
-    const bars = {...(cur.bars || {}), ...p.bars};
-    const keys = Object.keys(bars);
-    if (keys.length > ASK_SENT_BARS_CAP) for (const k of keys.map(Number).sort((a, b) => a - b).slice(0, keys.length - ASK_SENT_BARS_CAP)) delete bars[k];
-    merged.bars = bars;
-  }
-  try { localStorage.setItem(askSentKey(key), JSON.stringify(merged)); } catch (err) { /* private mode */ }
-}
-function askSentDrop(key) { delete S.askSentPending[key]; } // askFail: never landed — the full text goes again next time
-function askSentReset(key) { // Clear chat / Compact: the bridge's memory of this chat just changed under it
-  key = key || askStoreKey();
-  try { localStorage.removeItem(askSentKey(key)); } catch (err) { /* private mode */ }
-  delete S.askSentPending[key];
-}
-// ---- session epoch (docs/ask-token-plan.md #4/#7): the bridge names each
-// resumed Claude Code session's identity as "<session-id>:<lastCompact.at||0>"
-// in the x-nr-session-epoch response header on every chat completion — it
-// changes the instant a compact (manual OR the bridge's own automatic one)
-// lands on that song's session, because the session either restarted or lost
-// its verbatim memory of what askCachedBlock thinks is still "unchanged
-// since your last message". Kept per chat (askStoreKey()), right beside the
-// sent-hash record: a changed epoch means the one this device is sending
-// against is stale, so it resets the SAME way Clear chat / a manual Compact
-// already do (askSentReset) — next message resends annotations/notes in
-// full rather than a stand-in the resumed session no longer backs.
-function askEpochKey(key) { return (key || askStoreKey()) + "-epoch"; }
-function askEpochGet(key) { try { return localStorage.getItem(askEpochKey(key)); } catch (err) { return null; } }
-function askEpochSet(key, epoch) { try { localStorage.setItem(askEpochKey(key), epoch); } catch (err) { /* private mode */ } }
-function askEpochNote(key, epoch) { // called wherever a chat completion's response headers are read
-  if (!epoch) return;
-  const prev = askEpochGet(key);
-  if (prev !== null && prev !== epoch) askSentReset(key); // compacted or replaced under us: resend in full next time
-  askEpochSet(key, epoch);
-}
-// One large, slow-changing section: `label` names the one-line stand-in
-// ("annotations" / "notes in bars a–b"); `count`, if given, is its own
-// "(N entries)". fnv1a32 only has to catch "identical to what the session
-// already has" — not resist tampering.
-function askCachedBlock(key, field, label, header, text, count) {
-  const hash = fnv1a32(text);
-  if (S.askCaps.bridge && askSentGet(key)[field] === hash) return label + ": unchanged since your last message" + (count === undefined ? "" : " (" + count + " entries)");
-  askSentStage(key, field, hash);
-  return header + ":\n" + text;
-}
-function askContext(sp, budget) { // the ONE block per request; never stored
+  function askContext(sp, budget) { // the ONE block per request; never stored
   if (S.askGeneral) {
     let s = "general chat — no song attached. The user opened the general Ask: for the app, the project, music in general, or a message for the terminal; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. " +
       (appMode() === "normal" ? "The tutor rule about answering music questions directly still holds." : "The tutor rule about the user's own discoveries still holds for music questions.") +
@@ -15514,115 +14782,9 @@ function askContext(sp, budget) { // the ONE block per request; never stored
   if (ns) L.push(ns);
   return L.join("\n");
 }
-function askBudget() { // profiles keyed to the window (tokens); LM Studio loads at 4–8k by default, WebLLM's prebuilts are 4096
-  // the bridge's Claude Code has a large window whatever the Settings field
-  // says: the 8k default trimmed its context and warned about a "small
-  // window" it does not have (Josh, 2026-09-26)
-  const claude = /^claude/i.test(String(cfg().aiModel || (S.askModelCache && S.askModelCache.ids && S.askModelCache.ids[0]) || ""));
-  const win = cfg().aiBackend === "browser" ? 4096 : claude ? 200000 : (+cfg().aiWindow || 8192);
-  return win <= 4096 ? {win, small: true, anno: 500, span: 1200, hist: 300}
-       : win <= 8192 ? {win, small: true, anno: 1000, span: 2000, hist: 1000}
-                     : {win, small: false, anno: 6000, span: 8000, hist: 3000};
-}
-function askStripContext(text) { return text.replace(/^<context>[\s\S]*?<\/context>\s*/, ""); }
-// ---- history: per song, context stripped at SAVE time, capped so it can
-// never crowd out saveDraft (drafts are the only copy of unsynced music)
-const ASK_LOCAL_SOFT = 256 * 1024, ASK_TOTAL_CAP = 512 * 1024;
-// General chat (2026-09-27, Josh via the bridge: "some sort of main ask
-// section that's not per song … I'm talking to you on the death song from
-// Final Fantasy but nothing we're talking about has anything to do with
-// that"). One more chat key, "general": its own store, its own resumed
-// bridge session, no song context, no annotation tool, and a repo-level
-// log at ask/general.ask.md that Publish ships like a song's chat. The
-// toggle at the top of the sheet picks; the choice is a device preference.
-const ASK_GENERAL_KEY = "ff1roll-ask-general";
-const ASK_GENERAL_LOG = "ask/general.ask.md";
-// Terminal (Josh, 2026-09-29: "can messages typed in the AI panel go
-// straight into your terminal session?"): a third chat whose Send posts to
-// the bridge's /v1/terminal queue, which the terminal's Claude Code watches;
-// its replies come back as inbox notes and land in this tab. No song
-// context, no model call here. An addition beside the Ask tabs, not the
-// default (Josh is evaluating it: Ask answers at once while I build). It rides the general chat's
-// UI (askGeneral stays true: no span row, no Fill), with its own store.
-const ASK_TERMINAL_KEY = "ff1roll-ask-terminal";
  // what the configured backend can do (askStatusPoll detects; askTabsApply shows). sessions: the bridge's Clear-really-resets/Compact/usage-line trio (askSessionRender gates on it)
 try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal"; S.askGeneral = S.askTerminal || m === "general"; } catch (err) { S.askGeneral = S.askTerminal = false; }
-function askSetMode(mode) { // "terminal" | "song" | "general" (a boolean still means general/song)
-  if (mode === true) mode = "general"; else if (mode === false) mode = "song";
-  S.askTerminal = mode === "terminal"; S.askGeneral = S.askTerminal || mode === "general";
-  try { localStorage.setItem("ff1roll-ask-mode", mode); } catch (err) { /* private mode */ }
-  askModeButtons();
-}
-function askModeButtons() {
-  const a = document.getElementById("askmodesong"), b = document.getElementById("askmodegen"), c = document.getElementById("askmodeterm");
-  if (!a || !b) return;
-  const gen = S.askGeneral && !S.askTerminal;
-  a.classList.toggle("active", !S.askGeneral); b.classList.toggle("active", gen);
-  a.setAttribute("aria-selected", String(!S.askGeneral)); b.setAttribute("aria-selected", String(gen));
-  if (c) { c.classList.toggle("active", S.askTerminal); c.setAttribute("aria-selected", String(S.askTerminal)); }
-  if (typeof askTermModelsLoad === "function") askTermModelsLoad();
-  // the tab names the song: the sheet covers the title behind it (Josh, 2026-09-27)
-  try { const t = S.songKey ? songTitleOf(S.songKey) : (typeof baseName === "function" ? baseName() : ""); a.textContent = "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song"); } catch (err) { a.textContent = "♪ this song"; }
-  const spanrow = document.getElementById("askspanrow"); if (spanrow) spanrow.style.display = S.askGeneral ? "none" : "";
-  if (typeof askinput !== "undefined" && askinput && S.askTerminal) askinput.placeholder = "Tell the terminal what to build or fix…";
-  else if (typeof askinput !== "undefined" && askinput) askinput.placeholder = S.askGeneral ? "Anything — the app, the project, music in general" + (S.askCaps.bridge ? ", a message for the terminal…" : "…") : "Ask about what you're looking at…";
-  if (typeof askStatusRender === "function") askStatusRender(); // the "Now:" strip shows only in general mode
-}
-function askStoreKey() { return S.askTerminal ? ASK_TERMINAL_KEY : S.askGeneral ? ASK_GENERAL_KEY : "ff1roll-ask-" + (S.songKey || "local"); }
-// ---- seen-cursor for the "New since your last message:" bridge context
-// (2026-09-30). Per chat (song key / general / terminal — askStoreKey()
-// already tells them apart, so its value doubles as the cursor's own key),
-// "seen up to id" for both logs. Device-local localStorage is right: it's UI
-// state (what THIS device has already told the bridge), not song state.
-function askSeenKey(key) { return (key || askStoreKey()) + "-seen"; }
-function askSeenGet(key) {
-  try {
-    const j = JSON.parse(localStorage.getItem(askSeenKey(key)) || "null");
-    if (j && typeof j === "object") return {err: j.err || 0, status: j.status || 0};
-  } catch (err) { /* corrupt: nothing seen yet */ }
-  return {err: 0, status: 0};
-}
-function askMaxErrId() { let m = 0; for (const l of appErrors) if (l.id > m) m = l.id; for (const l of appDebug) if (l.id > m) m = l.id; return m; }
-function askMaxStatusId() { return S.statusHistory.length ? S.statusHistory[S.statusHistory.length - 1].id : 0; }
-// Mark-as-read watermark (2026-09-30): the HIGH-WATER MARK across every
-// chat's own cursor — once a line has gone out in ANY chat's context block,
-// it's "already sent" for the app's own ⚠ badge/sheet and Status window too
-// (errChip, the #errsheet render, and #infosheet would use this), never only
-// the chat Josh happens to have open.
-function askSeenMaxKey() { return "ff1roll-ask-seen-max"; }
-function askSeenMax() {
-  try {
-    const j = JSON.parse(localStorage.getItem(askSeenMaxKey()) || "null");
-    if (j && typeof j === "object") return {err: j.err || 0, status: j.status || 0};
-  } catch (err) { /* corrupt: nothing marked read yet */ }
-  return {err: 0, status: 0};
-}
-function askSeenSet(key, seen) {
-  try { localStorage.setItem(askSeenKey(key), JSON.stringify(seen)); } catch (err) { /* private mode */ }
-  const m = askSeenMax();
-  const next = {err: Math.max(m.err, seen.err || 0), status: Math.max(m.status, seen.status || 0)};
-  if (next.err !== m.err || next.status !== m.status) try { localStorage.setItem(askSeenMaxKey(), JSON.stringify(next)); } catch (err) { /* private mode */ }
-}
-// Sets the watermark immediately — what a successfully-landed send commits
-// (below), and what some tests call directly to simulate that same effect.
-function askSeenAdvance(key) { askSeenSet(key, {err: askMaxErrId(), status: askMaxStatusId()}); }
-function askSeenStage(key, seen) { S.askSeenPending[key] = seen; }
-function askSeenCommit(key) { const p = S.askSeenPending[key]; delete S.askSeenPending[key]; if (p) askSeenSet(key, p); }
-function askSeenDrop(key) { delete S.askSeenPending[key]; } // never landed: try the same "new since" lines again next time
-// The chat is his session record (Josh, 2026-09-25): it lives here whole
-// until the song's Save appends it to <song>.ask.md, and only messages the
-// repo file already holds ever leave this device. `saved` counts those from
-// the front; `trimmed` says some were let go, so askRender shows the file.
-function askStore(key) {
-  try {
-    const j = JSON.parse(localStorage.getItem(key || askStoreKey()) || "null");
-    if (j && Array.isArray(j.msgs)) return {msgs: j.msgs, saved: Math.min(j.saved || 0, j.msgs.length), trimmed: !!j.trimmed, lastUsed: j.lastUsed || 0};
-  } catch (err) { /* corrupt: start empty */ }
-  return {msgs: [], saved: 0, trimmed: false, lastUsed: 0};
-}
-function askLoad() { return askStore().msgs; }
-function askUnsavedCount(key) { const st = askStore(key); return st.msgs.length - st.saved; }
-function askSave(msgs, meta, key) {
+ function askSave(msgs, meta, key) {
   key = key || askStoreKey();
   const prev = askStore(key);
   let saved = meta && meta.saved !== undefined ? Math.min(meta.saved, msgs.length) : Math.min(prev.saved, msgs.length);
@@ -15643,58 +14805,7 @@ function askSave(msgs, meta, key) {
   }
   if (typeof updateSongBtn === "function") updateSongBtn(); // the ● follows unsaved chat too
 }
-// Revert's chat leg (a Publish-row Revert drops EVERYTHING unpublished,
-// chat included, Josh 2026-09-30): truncate back to exactly the messages
-// already in <song>.ask.md — `saved` of them, from the front. No published
-// chat (saved 0) means this empties the log, same as Clear chat.
-function askRevertToSaved(key) {
-  const st = askStore(key);
-  if (st.msgs.length <= st.saved) return; // nothing unsaved — no-op
-  try { localStorage.setItem(key, JSON.stringify({lastUsed: Date.now(), msgs: st.msgs.slice(0, st.saved), saved: st.saved, trimmed: st.trimmed})); }
-  catch (err) { /* private mode / quota: leave it, the song revert above already happened */ }
-}
-function askEvictOthers(mine) { // other songs' logs go LRU-first when the total runs long — never one with unsaved messages
-  try {
-    const others = Object.keys(localStorage).filter(k => k.startsWith("ff1roll-ask-") && k !== askStoreKey())
-      .map(k => { const st = askStore(k); return {k, lu: st.lastUsed, n: (localStorage.getItem(k) || "").length, clean: st.msgs.length === st.saved}; })
-      .sort((a, b) => a.lu - b.lu);
-    let total = mine + others.reduce((a, o) => a + o.n, 0);
-    for (const o of others) {
-      if (total <= ASK_TOTAL_CAP) break;
-      if (!o.clean) continue;
-      // an emptied log keeps its `trimmed` marker: askRender then loads the
-      // repo file instead of greeting an empty chat (the messages were not lost)
-      const had = askStore(o.k).msgs.length;
-      if (had) localStorage.setItem(o.k, JSON.stringify({lastUsed: o.lu, msgs: [], saved: 0, trimmed: true})); else localStorage.removeItem(o.k);
-      total -= o.n;
-    }
-  } catch (err) { /* enumeration failed: skip eviction */ }
-}
-function askModelName() { const c = cfg(); return c.aiBackend === "browser" ? c.aiBrowserModel : (c.aiModel || (S.askModelCache && S.askModelCache.ids[0]) || "model"); }
-function askLogKey(keyArg) { // a store key ("ff1roll-ask-…"), a song key, or nothing (the open chat) → the store key
-  if (!keyArg) return askStoreKey();
-  return keyArg.startsWith("ff1roll-ask-") ? keyArg : "ff1roll-ask-" + keyArg;
-}
-function askLogSong(storeKey) { return storeKey === ASK_GENERAL_KEY ? null : storeKey.slice("ff1roll-ask-".length); }
-function askLogPath(key) { const sk = askLogKey(key); if (sk === ASK_GENERAL_KEY) return ASK_GENERAL_LOG; const song = askLogSong(sk); return song && song !== "local" ? song.replace(/\.midi?$/i, "") + ".ask.md" : null; } // beside the .mid (compositions) or the .rollnotes.json (analyzed); the general chat at the repo root
-function askLogHeader(key) {
-  const sk = askLogKey(key);
-  if (sk === ASK_GENERAL_KEY) return "# ✦ AI log — general\n\nThe chat that is not about one song (the app, the project, music in general, messages for the terminal). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
-  return "# ✦ AI log — " + songTitleOf(askLogSong(sk)) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
-}
-function askLogMarkdown(msgs) { // what Save appends: one heading per question (when, which bars), the reply under it
-  const two = n => String(n).padStart(2, "0");
-  const when = t => { const d = new Date(t); return d.getFullYear() + "-" + two(d.getMonth() + 1) + "-" + two(d.getDate()) + " " + two(d.getHours()) + ":" + two(d.getMinutes()); };
-  let out = "";
-  for (const m of msgs) {
-    const c = askStripContext(m.content).trim();
-    if (m.role === "user") out += "\n### " + (m.t ? when(m.t) : "—") + (m.at ? " · " + m.at : "") + "\n\n**Josh:** " + c + "\n";
-    else if (m.role === "note") out += "\n**Mac (" + (m.m || "terminal") + "):** " + c + "\n";
-    else out += "\n**AI" + (m.m ? " (" + m.m + ")" : "") + ":** " + c + "\n";
-  }
-  return out;
-}
-async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the unsaved messages to <song>.ask.md (or the general log); keyArg: another song's key for Publish all
+ async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the unsaved messages to <song>.ask.md (or the general log); keyArg: another song's key for Publish all
   const key = askLogKey(keyArg || (S.askGeneral ? "ff1roll-ask-" + (S.songKey || "local") : null)); // a song's Publish ships the SONG's chat even while the general tab is showing
   const general = key === ASK_GENERAL_KEY;
   const sk = askLogSong(key);
@@ -15733,68 +14844,8 @@ async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the
   const now = askStore(key); // messages may have arrived meanwhile; only the snapshot is in the file
   askSave(now.msgs, {saved: now.saved + fresh.length}, key);
 }
-// Mode-tagged history (2026-10-01, SAFETY): every stored message carries the
-// mode it was PUSHED in (askSend/askFinish/askFail/askNotesArrived —
-// `mode: appMode()` at push time); a legacy message from before this tag
-// existed has no `mode` field, and is treated as "learning" (Learning is the
-// default mode, Normal is the newer one — CLAUDE.md: Learning is the law).
-// askSessionName already keeps Learning/Normal on separate BRIDGE sessions
-// (2026-10-01, commit 0701a7f) — this is the other half: the on-device
-// transcript (askStore) is shared across modes, and askBuildMessages is the
-// one place history from it reaches a model request, so a Normal-mode turn
-// (which may carry a key/chord estimate) must never be included when the
-// CURRENT request is Learning, and vice versa.
-function askMsgMode(m) { return m.mode || "learning"; }
-function askBuildMessages(msgs, text, ctx, budget) { // stripped history newest-first until the history budget is spent
-  const out = [];
-  let left = budget.hist * ASK_CPT;
-  const mode = appMode();
-  for (let i = msgs.length - 1; i >= 0; i--) {
-    if (msgs[i].pending) continue; // the question in flight is sent as the live one, not as history
-    if (askMsgMode(msgs[i]) !== mode) continue; // a different mode's turn — never enters this request's context
-    const c = askStripContext(msgs[i].content);
-    if (c.length > left) break;
-    left -= c.length;
-    out.unshift({role: msgs[i].role, content: c});
-  }
-  out.push({role: "user", content: "<context>\n" + ctx + "\n</context>\n\n" + text});
-  return out;
-}
-function askEstimate(system, messages) { return Math.round((system.length + messages.reduce((a, m) => a + m.content.length, 0)) / ASK_CPT); }
 
-// ---- the sheet
-const asksheet = document.getElementById("asksheet");
-const asklog = document.getElementById("asklog");
-const askinput = document.getElementById("askinput");
-const askstatus = document.getElementById("askstatus");
-// ---- Notes from the Mac (2026-09-27, Josh: "I can't message you back without
-// getting out of bed"). The bridge keeps an inbox the terminal's Claude Code
-// writes to (`node tools/claude-bridge.mjs --say "…"`); the app polls it,
-// shows each note in ✦ AI as a "note" bubble, saves it with the chat (so it
-// reaches <song>.ask.md), and lights ✉ on the Ask button until read. Only a
-// host already allowed for Ask is polled; a server without /v1/inbox (LM
-// Studio, Ollama) is asked once and left alone.
-// Mode-separated sessions (2026-10-01, docs/ask-token-plan.md #2 — SAFETY):
-// Learning is the law (CLAUDE.md) — a Normal-mode turn's content (a key/
-// chord estimate, "mode: normal") must never leak into a Learning-mode
-// chat's AI context, and the bridge's Claude Code is a RESUMED session that
-// remembers every earlier turn verbatim. Without this, flipping the SAME
-// song's chat between modes would resume the SAME bridge session either
-// way, and a later Learning-mode turn would inherit Normal-mode content
-// from the session's own memory — never caught by any check on what THIS
-// turn's context carries, since the leak lives in the session, not the
-// turn. A different mode is a different session, period.
-function askSessionName() { return (S.askGeneral ? "general" : String(S.songKey || "draft:" + (typeof baseName === "function" ? baseName() : "local")).replace(/[^\x20-\x7e]/g, "_").slice(0, 160)) + (appMode() === "normal" ? "#normal" : ""); }
-const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars"]; // no open song in the general chat (these are all about THE open song, unlike read_song/read_notes, which name another one)
-function askToolsNow() { return S.askGeneral ? ASK_TOOLS.filter(t => !ASK_SONG_ONLY_TOOLS.includes(t.function.name)) : ASK_TOOLS; }
-function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
- function askInboxAllowed() {
-  const url = aiUrl();
-  if (!url || cfg().aiBackend === "browser" || S.askInboxNo === url) return false;
-  if (aiHostKind(url) === "local") return true;
-  try { return JSON.parse(localStorage.getItem("ff1roll-ai-hosts") || "[]").includes(new URL(url).host); } catch (err) { return false; }
-}
-async function askInboxPoll() {
+  async function askInboxPoll() {
   if (!askInboxAllowed() || !S.song) return;
   const url = aiUrl();
   let r;
@@ -15826,14 +14877,7 @@ function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab
   if (shown.length === notes.length) return;
   else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
 }
-    function askAgeText(t) { // "3m ago" — coarse, no need for seconds precision once past a minute
-  const s = Math.max(0, Math.round((Date.now() - (t || 0)) / 1000));
-  if (s < 60) return s + "s ago";
-  const m = Math.round(s / 60); if (m < 60) return m + "m ago";
-  const h = Math.round(m / 60); if (h < 24) return h + "h ago";
-  return Math.round(h / 24) + "d ago";
-}
-function scheduleBackupFlush() {
+    function scheduleBackupFlush() {
   if (!S.askCaps.bridge) return;
   clearTimeout(S.backupFlushTimer);
   S.backupFlushTimer = setTimeout(flushBackupNow, 5000);
@@ -15878,29 +14922,6 @@ function deployBeforeInstall() {
   } catch (err) { logDebug("deploy version: " + (err && err.message || err)); }
 }
 
-function deployButtonTick() {
-  const b = document.getElementById("askbtn");
-  if (!b) return;
-  // setControl (src/ui/controls.js) rebuilds the whole innerHTML each tick —
-  // same reasoning as setPlayBtn/updateJobsBtn: the vm harness's element
-  // stubs have no querySelector, and it's the one place a control's icon
-  // (autoAwesome, unchanged here) plus label gets written.
-  const left = Math.ceil((S.deployAt - Date.now()) / 1000);
-  deployBannerShow(S.deployHeld ? "Update waiting — install when you're ready" : left > 0 ? "Update installs in " + left + " s — the app will restart" : "Installing the update…", !S.deployHeld && left <= 0);
-  if (S.deployHeld) { setControl("askbtn", {label: "AI · ⏸"}); b.style.color = "var(--gold)"; return; }
-  if (left > 0) { setControl("askbtn", {label: "AI · " + left}); b.style.color = "var(--gold)"; return; }
-  setControl("askbtn", {label: "AI · ⟳"});
-  if (left < -90) { clearInterval(S.deployTimer); S.deployTimer = null; setControl("askbtn", {label: "AI"}); b.style.color = ""; deployBannerShow(null); } // the install never came: back to normal
-}
-function deployBannerShow(text, installing) {
-  const bn = document.getElementById("deploybanner");
-  if (!bn) return;
-  bn.style.display = text ? "" : "none";
-  if (!text) return;
-  document.getElementById("deploytext").textContent = text;
-  document.getElementById("deploynotnow").style.display = installing || S.deployHeld ? "none" : "";
-  document.getElementById("deploynow").style.display = installing ? "none" : "";
-}
 async function deployInstallNow() {
   const wasHeld = S.deployHeld;
   try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: false, inSec: wasHeld ? 3 : 0})}); }
@@ -15935,7 +14956,7 @@ function deploySetHeld(on) {
   }
   deployButtonTick();
 }
-function deployActive() { return !!S.deployTimer || S.deployHeld; } // a countdown or a hold is in effect: ✦ AI opens the install sheet, not the chat
+ // a countdown or a hold is in effect: ✦ AI opens the install sheet, not the chat
 async function deployAskTap() { // the "Not now" / "Install now" sheet (appConfirm — no native dialogs)
   const yes = await appConfirm("Update ready", "A new version is ready. The app will restart.", "Install now", "Not now");
   if (yes) {
@@ -15963,14 +14984,6 @@ async function askStatusPoll() {
   askTabsApply();
   askSessionRefresh();
 }
-// which chat tabs this setup can use (Josh, 2026-09-29: "not everyone can
-// support the new tabs"). Detected, never a setting: ⌨ Terminal only while
-// the bridge says a terminal session is reading its queue (the store app's
-// users have no bridge, so it never shows for them — EDITION can't tell,
-// Josh's own iPad runs the store build); ✦ Ask (the song-free chat) for any configured
-// backend; ♪ song as ever. A tab that disappears falls back to ♪ — each
-// chat keeps its own unsent draft, so nothing is lost.
-function askTabsVisible(c) { return {song: true, general: !!c.backend, terminal: !!(c.backend && c.bridge && c.terminal)}; }
 function askTabsApply() {
   const v = askTabsVisible({backend: cfg().aiBackend === "browser" || !!aiUrl(), bridge: S.askCaps.bridge, terminal: S.askCaps.terminal});
   const g = document.getElementById("askmodegen"), t = document.getElementById("askmodeterm");
@@ -15979,35 +14992,7 @@ function askTabsApply() {
   askTermModelsLoad();
   if ((S.askTerminal && !v.terminal) || (S.askGeneral && !S.askTerminal && !v.general)) { askSetMode("song"); if (asksheet.classList.contains("on")) askRender(); }
 }
- // key → {turns, tokens, cost, lastCompact} | null (never fetched)
-function askSessionLine(u) {
-  const k = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n);
-  let s = u.turns + " turn" + (u.turns === 1 ? "" : "s") + " · ~" + k(u.tokens) + " tokens" + (u.cost ? " · $" + u.cost.toFixed(2) : "");
-  if (u.turns > 40) s += " — long, Compact saves tokens";
-  return s;
-}
-function askCompactModelName() { const m = /^claude-code-(opus|sonnet|haiku|fable)$/.exec(askModelName()); return m ? m[1] : undefined; } // the bridge's compact runs the Claude CLI directly — it wants "opus", not "claude-code-opus"; plain "claude-code" omits it, so the bridge's own default model applies
-function askSessionRender() {
-  const line = document.getElementById("asksessionline"), btn = document.getElementById("askcompact");
-  const show = S.askCaps.bridge && S.askCaps.sessions && !S.askTerminal && S.song;
-  if (line) line.style.display = show ? "" : "none";
-  if (btn) btn.style.display = show ? "" : "none";
-  if (!show) return;
-  const u = S.askSessionCache[askSessionName()];
-  if (line) line.textContent = u ? askSessionLine(u) : "";
-  if (btn) btn.disabled = !u || !u.turns;
-}
-async function askSessionRefresh() {
-  if (!S.askCaps.bridge || !S.askCaps.sessions || S.askTerminal || !S.song) { askSessionRender(); return; }
-  const key = askSessionName();
-  try {
-    const r = await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key), {headers: aiHeaders(), cache: "no-store"});
-    if (!r.ok) return;
-    S.askSessionCache[key] = await r.json();
-  } catch (err) { return; } // unreachable right now: keep showing the last numbers we had
-  askSessionRender();
-}
-document.getElementById("askcompact").addEventListener("click", async () => {
+  document.getElementById("askcompact").addEventListener("click", async () => {
   const key = askSessionName();
   const u = S.askSessionCache[key];
   if (!u || !u.turns) return;
@@ -16026,84 +15011,11 @@ document.getElementById("askcompact").addEventListener("click", async () => {
   } catch (err) { askstatus.textContent = "⚠ Compact failed — " + err.message; }
   await askSessionRefresh();
 });
-function askStatusIdle() { return !S.askStatusNow || !S.askStatusNow.text || /^idle\b/i.test(S.askStatusNow.text); }
-function askStatusLine() { // "working: …" or "idle", from the bridge's current line
-  if (askStatusIdle()) return "idle" + (S.askStatusNow && S.askStatusNow.text && /^idle\W+(.+)/i.test(S.askStatusNow.text) ? " — " + S.askStatusNow.text.replace(/^idle\W+/i, "") : "");
-  return "working: " + S.askStatusNow.text;
-}
-function askStatusRender() {
-  const strip = document.getElementById("asknowstrip");
-  if (strip) { // every tab, whenever the bridge is there (was the song-free chat only)
-    const show = S.askCaps.bridge;
-    strip.style.display = show ? "" : "none";
-    if (show) strip.textContent = (S.askTerminal && S.askCaps.terminal && !S.askCaps.terminalLive ? "queued — the terminal is busy; your message waits. " : "") +
-      "Claude Code " + askStatusLine() + (S.askStatusNow && S.askStatusNow.t ? " · " + askAgeText(S.askStatusNow.t) : "");
-    if (!show) askStatusRecentShow(false);
-  }
-  // Chrome density pass (2026-10-01): the header's own status chip is gone
-  // — ✦ AI gets a small pulsing dot instead, same "bridge connected and not
-  // idle" condition that used to show the chip; no bridge means no dot,
-  // same as the chip used to disappear entirely without one.
-  const abtn = document.getElementById("askbtn");
-  if (abtn) {
-    const working = S.askCaps.bridge && !askStatusIdle();
-    abtn.classList.toggle("working", working);
-    setControl("askbtn", {aria: working ? "Talk to the AI tutor — Claude Code is working: " + S.askStatusNow.text : "Talk to the AI tutor"});
-  }
-  const jobsnow = document.getElementById("jobsnow");
-  if (jobsnow) {
-    const showJ = !!(S.askStatusNow && S.askStatusNow.text);
-    jobsnow.style.display = showJ ? "" : "none";
-    if (showJ) jobsnow.textContent = "Now: " + S.askStatusNow.text;
-  }
-}
-function askStatusRecentShow(on) {
-  S.askStatusRecentOpen = !!on;
-  const strip = document.getElementById("asknowstrip"); if (strip) strip.classList.toggle("open", !!on); // tapped: the whole line, not the ellipsis
-  const el = document.getElementById("asknowrecent");
-  if (!el) return;
-  el.style.display = on ? "" : "none";
-  if (!on) return;
-  el.innerHTML = "";
-  if (S.askQuota && (S.askQuota.fiveHour || S.askQuota.sevenDay)) { // plan-quota %: this account's own usage, not this song's — shown once, in Recent
-    const d = document.createElement("div");
-    d.className = "asknowitem";
-    const parts = [];
-    if (S.askQuota.fiveHour) parts.push(S.askQuota.fiveHour.pct + "% this session");
-    if (S.askQuota.sevenDay) parts.push(S.askQuota.sevenDay.pct + "% this week");
-    d.textContent = "plan usage: " + parts.join(" · ");
-    el.appendChild(d);
-  }
-  for (const n of S.askStatusRecent.slice().reverse()) {
-    const d = document.createElement("div");
-    d.className = "asknowitem";
-    d.textContent = askAgeText(n.t) + " — " + n.text;
-    el.appendChild(d);
-  }
-  for (const subj of S.askStatusCommits || []) {
-    const d = document.createElement("div");
-    d.className = "asknowitem";
-    d.textContent = "commit: " + subj;
-    el.appendChild(d);
-  }
-}
 // live while the bridge is there and the app is on screen: every 10 s (the
 // inbox keeps its own 60 s pace)
 // (askStatusPoll asks only an allowed host, and never again after a 404 —
 // so for LM Studio or no AI at all this costs one request, then nothing)
 if (typeof window !== "undefined") setInterval(() => { if (!document.hidden) askStatusPoll(); }, 10000);
-function askStatusToggle() { askStatusRecentShow(!S.askStatusRecentOpen); if (S.askStatusRecentOpen) askStatusFetchCommits(); }
-async function askStatusFetchCommits() { // origin/main's last 3 subjects, public+unauthenticated, at most once per 5 min; silent on any failure
-  if (S.askStatusCommits && Date.now() - S.askStatusCommitsAt < 5 * 60000) return;
-  S.askStatusCommitsAt = Date.now();
-  try {
-    const r = await fetch("https://api.github.com/repos/Night-Roll-App/night-roll/commits?per_page=3");
-    if (!r.ok) return;
-    const j = await r.json();
-    S.askStatusCommits = (Array.isArray(j) ? j : []).map(c => c && c.commit && c.commit.message ? c.commit.message.split("\n")[0] : "").filter(Boolean);
-    if (S.askStatusRecentOpen) askStatusRecentShow(true);
-  } catch (err) { /* silent — the strip still has the bridge's own Recent */ }
-}
 // ---- 📷 (Josh, 2026-09-29: "I wish there would be a way for me to send you
 // screenshots from the app itself"). The iPad shell's native snapshot
 // (WKWebView, exact pixels, no prompt); a browser shares its own tab
@@ -16120,9 +15032,6 @@ function askShotShow(on) {
   if (b) b.style.display = on ? "" : "none";
   if (!on && S.dropUpOpen === document.getElementById("askattachmenu")) closeDropUp();
 }
-function askShotLine(path) { return "(screenshot: " + path + ")"; }
-const ASKSHOT_MAX = 4;
-function b64Bytes(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
 async function askShotCapture() { // -> {bytes, mime}
   // the shell's own plugin (registered in its AppDelegate.swift): native-bridge.js
   // has no registerPlugin (that's @capacitor/core, which this page doesn't
@@ -16153,12 +15062,6 @@ async function askShotCapture() { // -> {bytes, mime}
     return {bytes: new Uint8Array(await blob.arrayBuffer()), mime: "image/png"};
   } finally { stream.getTracks().forEach(t => t.stop()); }
 }
-async function askShotUpload(bytes, mime) { // shared by 📷 capture and 🖼 picked files
-  const r = await fetch(aiUrl() + "/v1/shot", {method: "POST", headers: {...aiHeaders(), "content-type": mime}, body: bytes});
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j.path) throw new Error(j.error && j.error.message || "HTTP " + r.status);
-  return j.path;
-}
 async function askShotTake() {
   if (S.askShotPending.length >= ASKSHOT_MAX) { askstatus.textContent = "📷 already " + ASKSHOT_MAX + " attached (max) — remove one first"; return; }
   const sheet = document.getElementById("asksheet");
@@ -16180,111 +15083,7 @@ async function askShotTake() {
     // summoned it and cluttered what he was writing)
   } catch (err) { askstatus.textContent = "📷 not sent: " + err.message; }
 }
- // [{path, url, mime}]
-function askShotStatusLabel() {
-  const n = S.askShotPending.length;
-  return n > 1 ? "📷 " + n + " screenshots attached — Send, with a note if you like" : "📷 attached — Send, with a note if you like";
-}
-function askShotRender() {
-  const chip = document.getElementById("askshotchip"), wrap = document.getElementById("askshotimgs"), label = document.getElementById("askshotcount");
-  const n = S.askShotPending.length;
-  chip.style.display = n ? "" : "none";
-  wrap.innerHTML = "";
-  S.askShotPending.forEach((s, i) => {
-    const cell = document.createElement("span"); cell.className = "askshotcell";
-    const img = document.createElement("img"); img.className = "askshotimg";
-    img.alt = "a screenshot to send"; img.title = "tap to see it larger";
-    if (s.url) img.src = s.url;
-    img.style.display = s.url ? "" : "none";
-    img.addEventListener("click", () => img.classList.toggle("big"));
-    const rm = document.createElement("button"); rm.className = "askshotrm"; rm.type = "button";
-    rm.setAttribute("aria-label", "Remove this screenshot"); rm.textContent = "✕";
-    rm.addEventListener("click", ev => { ev.stopPropagation(); askShotRemove(i); });
-    cell.appendChild(img); cell.appendChild(rm);
-    wrap.appendChild(cell);
-  });
-  label.textContent = n === 1 ? "📷 screenshot — sent with your next message" : n > 1 ? "📷 " + n + " screenshots — sent with your next message" : "";
-}
-function askShotAdd(path, shot) { // shot: {bytes, mime} for a thumbnail, or omitted when just restoring a path (draft reload — bytes live on the Mac)
-  if (!path || S.askShotPending.length >= ASKSHOT_MAX) return;
-  const entry = {path, url: null, mime: shot && shot.mime};
-  if (shot && shot.bytes && typeof URL !== "undefined" && URL.createObjectURL && typeof Blob !== "undefined") {
-    try { entry.url = URL.createObjectURL(new Blob([shot.bytes], {type: shot.mime})); } catch (e) {}
-  }
-  S.askShotPending.push(entry);
-  askShotRender();
-  if (typeof askDraftSaveSoon === "function") askDraftSaveSoon();
-}
-function askShotRemove(i) {
-  const e = S.askShotPending[i];
-  if (!e) return;
-  if (e.url) { try { URL.revokeObjectURL(e.url); } catch (err) {} }
-  S.askShotPending.splice(i, 1);
-  askShotRender();
-  if (typeof askDraftSaveSoon === "function") askDraftSaveSoon();
-}
-function askShotClearAll() {
-  for (const e of S.askShotPending) if (e.url) { try { URL.revokeObjectURL(e.url); } catch (err) {} }
-  S.askShotPending = [];
-  askShotRender();
-}
-function askShotRestore(paths) { // draft reload: paths only, never bytes (the thumbnail doesn't survive a reload — the bytes are on the Mac)
-  askShotClearAll();
-  for (const p of (paths || [])) { if (p && S.askShotPending.length < ASKSHOT_MAX) S.askShotPending.push({path: p, url: null}); }
-  askShotRender();
-}
-function askShotOutgoing(text) { // what Send sends: the note, then each shot's line; the box never holds any of it
-  if (!S.askShotPending.length) return text;
-  return (text || "(screenshot only)") + S.askShotPending.map(s => "\n" + askShotLine(s.path)).join("");
-}
-// a batch Send/receive bubble shows the screenshot lines as 📷 glyphs, one
-// per shot, instead of the raw "(screenshot: path)" text
-function askShotDisplayText(text) {
-  const m = text.match(/\n\(screenshot: [^)]*\)/g);
-  if (!m) return text;
-  const head = text.slice(0, text.length - m.join("").length);
-  const icons = "📷".repeat(m.length);
-  return head === "(screenshot only)" ? icons : head + " " + icons;
-}
-const MAX_SHOT_SIDE = 2752, MAX_SHOT_KEEP_BYTES = 2 * 1024 * 1024;
-async function askPrepImage(file) { // -> {bytes, mime}: downscale if huge, re-export HEIC/HEIF as JPEG, else keep the original bytes
-  const heic = /heic|heif/i.test(file.type || "") || /\.(heic|heif)$/i.test(file.name || "");
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error("couldn't read that picture")); img.src = url; });
-    const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
-    const longest = Math.max(w0, h0);
-    if (!heic && file.size <= MAX_SHOT_KEEP_BYTES && longest <= MAX_SHOT_SIDE) {
-      return {bytes: new Uint8Array(await file.arrayBuffer()), mime: /png/i.test(file.type) ? "image/png" : "image/jpeg"};
-    }
-    const scale = longest > MAX_SHOT_SIDE ? MAX_SHOT_SIDE / longest : 1;
-    const c = document.createElement("canvas");
-    c.width = Math.max(1, Math.round(w0 * scale)); c.height = Math.max(1, Math.round(h0 * scale));
-    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
-    if (!blob) throw new Error("couldn't convert that picture");
-    return {bytes: new Uint8Array(await blob.arrayBuffer()), mime: "image/jpeg"};
-  } finally { URL.revokeObjectURL(url); }
-}
-async function askPickFiles(fileList) { // 🖼 Photos/Files picker — each file prepped, uploaded, and appended like a 📷 shot
-  const files = Array.from(fileList || []);
-  if (!files.length) return;
-  const room = ASKSHOT_MAX - S.askShotPending.length;
-  if (room <= 0) { askstatus.textContent = "📷 already " + ASKSHOT_MAX + " attached (max) — remove one first"; return; }
-  const take = files.slice(0, room);
-  const dropped = files.length - take.length;
-  for (const f of take) {
-    askstatus.textContent = "📷 sending…";
-    try {
-      const {bytes, mime} = await askPrepImage(f);
-      const path = await askShotUpload(bytes, mime);
-      askShotAdd(path, {bytes, mime});
-    } catch (err) { askstatus.textContent = "📷 not sent: " + (err && err.message || err); return; }
-  }
-  askstatus.textContent = dropped ? askShotStatusLabel() + " (" + dropped + " more skipped — " + ASKSHOT_MAX + " is the max)" : askShotStatusLabel();
-}
-document.getElementById("askattach").addEventListener("click", () => {
+ document.getElementById("askattach").addEventListener("click", () => {
   const btn = document.getElementById("askattach"), menu = document.getElementById("askattachmenu");
   const was = S.dropUpOpen === menu && menu.classList.contains("on");
   closeFileMenus();
@@ -16304,14 +15103,6 @@ document.getElementById("askpickfile").addEventListener("change", e => {
   // value is reset — the picker then "did nothing" (Josh, 2026-10-03, iPad)
   const files = Array.from(e.target.files || []); e.target.value = ""; askPickFiles(files);
 });
-// when each note from the Mac (and each Terminal message) was sent — Josh,
-// 2026-09-30: "I want timestamps on the messages that you sent back to me"
-function askClock(t) {
-  if (!t) return "";
-  const d = new Date(t), now = new Date(), hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-  return (d.toDateString() === now.toDateString() ? hm : d.toLocaleDateString(undefined, {month: "short", day: "numeric"}) + " " + hm) + " · ";
-}
-function askNoteLabel(from) { return "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; }
 function askInboxStart() { clearInterval(S.askInboxTimer); S.askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askStatusPoll(); askResume(); } }, 60000); askInboxPoll(); askStatusPoll(); askResumeSoon(1500); } // at boot too: a reply that landed while the app was closed lights ✦ without opening the sheet
 function askBubble(role, text) {
   const div = document.createElement("div");
@@ -16356,41 +15147,6 @@ async function askCopyText(text, b) {
   else setInfo("⚠ couldn't copy — select the text in the bubble instead");
   return ok;
 }
-// the unsent message survives a relaunch (Josh, 2026-09-29: five dictated
-// paragraphs lost today to the app reinstalling under him). Per chat, device-
-// local (a composer draft is not the song's state); cleared on Send.
-function askDraftStore(key) { return "ff1roll-askdraft-" + key; }
-function askDraftSave() {
-  clearTimeout(S.askDraftTimer); S.askDraftTimer = null;
-  if (!S.askDraftKey) return;
-  try {
-    const text = askinput.value;
-    if (!text.trim() && !S.askShotPending.length) localStorage.removeItem(askDraftStore(S.askDraftKey));
-    else localStorage.setItem(askDraftStore(S.askDraftKey), JSON.stringify({text, shots: S.askShotPending.map(s => s.path)}));
-  } catch (err) { /* storage full or private: the box itself still holds it */ }
-}
-function askDraftSaveSoon() { clearTimeout(S.askDraftTimer); S.askDraftTimer = setTimeout(askDraftSave, 300); askComposing(!!askinput.value.trim()); }
-function askComposing(on) {
-  if (on && S.askComposingOn && Date.now() - S.askComposingAt < 20000) return;
-  if (!on && !S.askComposingOn) return;
-  S.askComposingOn = on; S.askComposingAt = Date.now();
-  if (!askInboxAllowed() || S.askInboxNo === aiUrl()) return;
-  const mic = typeof S.micBtn !== "undefined" && S.micBtn === document.getElementById("askmic");
-  fetch(aiUrl() + "/v1/app-state", {method: "POST", headers: aiHeaders(), body: JSON.stringify({composing: on, mic})}).catch(() => {});
-}
-function askDraftLoad() { // the panel now shows a different chat: its own unsent message comes back
-  const key = askStoreKey();
-  if (key === S.askDraftKey) return;
-  if (S.askDraftKey) askDraftSave(); // the chat we're leaving keeps what was in the box
-  S.askDraftKey = key;
-  let d = null; try { d = JSON.parse(localStorage.getItem(askDraftStore(key)) || "null"); } catch (err) { d = null; }
-  askinput.value = d && d.text || "";
-  // new shape is {shots: [path, …]}; an old draft saved before 2026-10-02 has
-  // {shot: path} (singular) — restore that as a one-shot array
-  askShotRestore(d && d.shots ? d.shots : d && d.shot ? [d.shot] : []);
-  askGrow();
-}
-function askDraftClear() { clearTimeout(S.askDraftTimer); S.askDraftTimer = null; try { localStorage.removeItem(askDraftStore(askStoreKey())); } catch (err) { /* nothing stored */ } }
 if (typeof document !== "undefined" && document.addEventListener) {
   document.addEventListener("visibilitychange", () => { if (document.hidden) askDraftSave(); });
   if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", askDraftSave);
@@ -16436,38 +15192,7 @@ async function askRenderEarlier() { // what this device let go of after it reach
   } catch (err) { div.textContent = "earlier messages are in " + path + " — couldn't load it (" + err.message + ")"; }
   askScrollEnd(); // the earlier block grows above the conversation: keep its end in view
 }
-function askRefresh() { // span label + model line; called on open and after Settings
-  if (!S.song) return;
-  const sp = askSpan();
-  document.getElementById("askspan").textContent = askSpanLabel(sp);
-  const c = cfg();
-  let host = c.aiUrl; try { host = new URL(c.aiUrl).host; } catch (err) { /* shown raw */ }
-  document.getElementById("askmodel").textContent = c.aiBackend === "browser"
-    ? (AI_BROWSER_MODELS.find(m => m[0] === c.aiBrowserModel) || [0, c.aiBrowserModel])[1].split(" · ")[0] + " · this browser"
-    : (c.aiModel || (S.askModelCache && S.askModelCache.ids[0]) || "model") + " · " + host;
-}
-const askPartial = {}; // job id -> the words streamed so far: a closed-and-reopened sheet redraws from storage, which only holds the marker (Josh, 2026-09-27: "I don't see the first part of the response")
-function askShowThinking(live, raw) { // Qwen-style <think> blocks stay out of the bubble
-  const vis = raw.replace(/<think>[\s\S]*?(<\/think>|$)/g, "").replace(/^\s+/, "");
-  if (live && live.dataset && live.dataset.job && vis) askPartial[live.dataset.job] = vis;
-  live.textContent = vis || "…";
-  if (vis) askstatus.textContent = "";
-  asklog.scrollTop = asklog.scrollHeight;
-}
- // {url, ok}
-async function askJobsSupported() {
-  const url = aiUrl();
-  if (cfg().aiBackend === "browser") return false;
-  if (S.askJobsCache && S.askJobsCache.url === url) return S.askJobsCache.ok;
-  let ok = false;
-  try { const r = await fetch(url + "/v1/jobs", {headers: aiHeaders()}); ok = r.ok && !!(await r.json()).ok; }
-  catch (err) { return null; } // unreachable right now is not "no jobs": a reload with Tailscale down must not fail every pending question
-  S.askJobsCache = {url, ok};
-  return ok;
-}
-function askJobId() { return "nr_" + (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").slice(0, 20) : Date.now().toString(36) + Math.random().toString(36).slice(2, 8)); }
-function askPendingIndex(msgs, jobId) { return msgs.findIndex(m => m.pending === jobId); }
-// The store key rides with the job: the reply belongs to the song that asked,
+  // The store key rides with the job: the reply belongs to the song that asked,
 // even if another song is open by the time it lands (Josh, 2026-09-26: "scroll
 // away … work on a song … get a notification").
 function askFinish(jobId, text, key) { // the reply for a pending question landed: store it, drop the marker
@@ -16508,7 +15233,6 @@ function askLanded(key, failed) {
   const other = key !== askStoreKey() ? " in " + songTitleOf(key.replace(/^ff1roll-ask-/, "")) : "";
   setInfo((failed ? "✦ AI: no reply" : "✦ AI replied") + other + " — tap ✦ reply to read it");
 }
-function askBadgeOff() { document.getElementById("askreplybtn").style.display = "none"; }
 async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exchange (tool rounds inside); the pending marker outlives a dropped connection
   const budget = askBudget();
   const est = askEstimate(askSys(), messages);
@@ -16549,39 +15273,10 @@ async function askRun({msgs, text, sp, messages, jobId, live, key}) { // one exc
     document.getElementById("asksend").disabled = false;
   }
 }
-// which model the terminal session gives its advisors (read-only reviews)
-// and builders (implementation agents) — Josh, 2026-09-30: "change the
-// advisor's model and any sub task models". Kept on the bridge, read by the
-// terminal session before each launch. Its OWN model is Claude Code's /model.
-const TERM_MODELS = [["opus", "Opus"], ["sonnet", "Sonnet"], ["haiku", "Haiku"], ["fable", "Fable"]];
-async function askTermModelsLoad() {
-  const row = document.getElementById("asktermmodels");
-  if (!row) return;
-  row.style.display = S.askTerminal && S.askCaps.terminal ? "" : "none";
-  if (!S.askTerminal || !S.askCaps.terminal) return;
-  let j = null; try { const r = await fetch(aiUrl() + "/v1/terminal-prefs", {headers: aiHeaders(), cache: "no-store"}); if (r.ok) j = await r.json(); } catch (err) { /* keep what's shown */ }
-  for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) {
-    const sel = document.getElementById(id);
-    if (!sel.children.length) for (const [v, label] of TERM_MODELS) { const o = document.createElement("option"); o.value = v; o.textContent = label; sel.appendChild(o); }
-    if (j && j[k]) sel.value = j[k];
-  }
-}
 for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
   try { await fetch(aiUrl() + "/v1/terminal-prefs", {method: "POST", headers: aiHeaders(), body: JSON.stringify({[k]: e.target.value})}); askstatus.textContent = k + "s will use " + e.target.value; }
   catch (err) { askstatus.textContent = "⚠ couldn't reach the bridge: " + err.message; }
 });
-// The Terminal tab has no model call of its own (no askContext/askBuildMessages)
-// — this is its ONLY context builder. Same two pieces as the general chat's
-// "New since your last message:" addendum, minus the music-tutor framing
-// text, which doesn't apply here (Josh, 2026-09-30).
-function askTerminalContext() {
-  const parts = [];
-  const openLine = askOpenSongLine();
-  if (openLine) parts.push(openLine);
-  const ns = askNewSinceLines(ASK_TERMINAL_KEY);
-  if (ns) parts.push(ns);
-  return parts.length ? parts.join("\n") : null;
-}
 async function askTerminalSend(text) { // the Terminal tab: queue it for the Mac's Claude Code; the reply comes back as a note
   const key = ASK_TERMINAL_KEY, msgs = askStore(key).msgs;
   const ctx = askTerminalContext(); // stages this turn's seen-watermark (askNewSinceLines) — committed below only if the POST actually lands
@@ -16638,16 +15333,6 @@ async function askSend() {
   await askRun({msgs, text, sp, messages, jobId, live, key: askStoreKey()});
 }
 function askResumeSoon(ms) { clearTimeout(S.askResumeTimer); S.askResumeTimer = setTimeout(() => { S.askResumeTimer = null; askResume(); }, ms); }
-function askPendingAll() { // every pending question on this device, oldest first — across songs and the general chat
-  const out = [];
-  try {
-    for (const k of Object.keys(localStorage)) {
-      if (!k.startsWith("ff1roll-ask-") || k === askInboxSeenKey()) continue;
-      askStore(k).msgs.forEach((m, i) => { if (m.pending) out.push({key: k, jobId: m.pending, i, t: m.t || 0}); });
-    }
-  } catch (err) { /* enumeration failed: nothing to resume */ }
-  return out.sort((a, b) => a.t - b.t);
-}
 function askRepending(key, from, to) { // a tool round continues under a new job id: the marker follows it (re-read, never a stale array)
   const msgs = askStore(key).msgs, i = askPendingIndex(msgs, from);
   if (i < 0) return false;
@@ -17534,11 +16219,6 @@ function openAsk() {
   askScrollEnd(); // the log was drawn while the sheet was display:none (scrollHeight 0), so every open landed at the top (Josh, 2026-09-27)
   askFocusIfKeyboard();
 }
-function askScrollEnd() { if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => { asklog.scrollTop = asklog.scrollHeight; }); else asklog.scrollTop = asklog.scrollHeight; }
-function askFocusIfKeyboard() { // a touch screen's keyboard took half the sheet on every open, and Josh dictates (2026-09-27); focus only where a real keyboard is likely
-  if (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches) return;
-  askinput.focus();
-}
 function askBtnTap() { if (deployActive()) return deployAskTap(); openAsk(); } // a countdown or a hold in effect: the install sheet, not the chat
 document.getElementById("askbtn").addEventListener("click", askBtnTap);
 for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
@@ -17574,12 +16254,6 @@ function askMicOff() { // Send clears the box: a late result must not refill it
   // or the late transcript lands in the emptied box (Josh, 2026-09-30)
   if (S.micPrev) { S.micPrev.onresult = null; try { S.micPrev.abort(); } catch (err) { /* already gone */ } S.micPrev = null; }
 }
-function askGrow() { // size the box to its text (CSS caps it) and keep the end in view
-  askinput.style.height = "auto";
-  askinput.style.height = askinput.scrollHeight + "px";
-  askinput.scrollTop = askinput.scrollHeight;
-  askDraftSaveSoon(); // typing and dictation both land here
-}
 askinput.addEventListener("input", askGrow);
 askinput.addEventListener("blur", () => { if (!(typeof S.micBtn !== "undefined" && S.micBtn === document.getElementById("askmic"))) askComposing(false); }); // the draft is saved; a build may go ahead
 document.getElementById("askmic").addEventListener("click", () => {
@@ -17590,67 +16264,7 @@ askinput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(); }
 });
 
-// ---- write_notes (2026-10-02): replaces the removed ✦ Fill button — Josh
-// found Fill's separate UI confusing and wanted plain chat instead ("type
-// 'insert a gallop on C3 on the triangle' ... and have it just work",
-// open-items.md 19:02/19:05). The model spells out every note itself (no
-// shorthand expansion); the app only validates and lands them. Landing goes
-// through the SAME applyTake (one ⟲ group step) Fill and the Bassist/
-// Drummer generators already use — erase-by-onset within [t0, t1), never a
-// splice. Gate = editableSong(), same as every other writing path; never
-// drums, same as Fill never offered a drums track as a target.
-function askNormChip(s) { // common chip-name shorthand → the default track-name spelling, so "square 1"/"sq1" match a track literally named "pulse1"
-  return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^square/, "pulse").replace(/^sq/, "pulse").replace(/^tri$/, "triangle");
-}
-function askFindTrackIndex(name) { // never the selected track — an unmatched or ambiguous name is an error naming the song's own track names
-  const names = S.song.tracks.map((tr, ti) => tr.name || "track " + (ti + 1));
-  const want = String(name || "").trim();
-  if (!want) throw new Error("say which track: " + names.join(", "));
-  const lower = want.toLowerCase();
-  let hits = names.map((n, ti) => ti).filter(ti => names[ti].toLowerCase() === lower);
-  if (!hits.length) { const norm = askNormChip(want); hits = names.map((n, ti) => ti).filter(ti => askNormChip(names[ti]) === norm); }
-  if (hits.length === 1) return hits[0];
-  if (hits.length > 1) throw new Error("more than one track matches \"" + want + "\": " + hits.map(ti => names[ti]).join(", ") + " — say which");
-  throw new Error("no track named \"" + want + "\" — this song's tracks: " + names.join(", "));
-}
-function parsePitch(s) { // letter, up to two ASCII accidentals, octave — pitchName's convention (C4 = 60); or a MIDI number
-  if (typeof s === "number") return Number.isInteger(s) ? s : null;
-  const t = String(s).trim();
-  if (/^\d{1,3}$/.test(t)) return parseInt(t, 10);
-  const m = t.match(/^([A-Ga-g])(##|bb|#|b|♯|♭|x)?(-?\d)$/);
-  if (!m) return null;
-  const acc = {"": 0, "#": 1, "♯": 1, "##": 2, x: 2, b: -1, "♭": -1, bb: -2}[m[2] || ""];
-  return LETTER_PC[m[1].toUpperCase()] + acc + (parseInt(m[3], 10) + 1) * 12;
-}
-function askNoteVel(t, bs) { return Math.abs(((t - bs) / beatTicks()) % 1) < 0.01 ? (Math.abs(t - bs) < 5 ? 96 : 88) : 78; } // the Bassist's metric rule, no jitter — the write_notes default when the model omits vel
-function askWriteNotesValidate(notes, bt, qt, beats) { // → {hits} in display ticks, or {error} naming EVERY bad note (nothing written on any failure)
-  if (!Array.isArray(notes) || !notes.length) return {error: "notes must be a non-empty array"};
-  if (notes.length > 256) return {error: "more than 256 notes in one call — split it up"};
-  const errs = [], hits = [];
-  notes.forEach((n, i) => {
-    const where = "note " + (i + 1) + " (" + JSON.stringify(n) + ")";
-    if (!n || typeof n !== "object") { errs.push(where + ": not an object"); return; }
-    if (!Number.isInteger(n.bar) || n.bar < 1) { errs.push(where + ": bar must be a whole number ≥ 1"); return; }
-    if (typeof n.beat !== "number" || !(n.beat >= 1 && n.beat < beats + 1)) { errs.push(where + ": beat must be ≥ 1 and < " + (beats + 1) + " (" + beats + " beats per bar)"); return; }
-    if (typeof n.dur_beats !== "number" || !(n.dur_beats > 0)) { errs.push(where + ": dur_beats must be > 0"); return; }
-    const p = parsePitch(n.pitch);
-    if (p === null) { errs.push(where + ": pitch must be like C4, F#3, Bb2 (C4 = middle C), or a MIDI number"); return; }
-    if (p < 24 || p > 108) { errs.push(where + ": pitch out of playable range (C1–C8)"); return; }
-    const bs = (n.bar - 1) * bt, t = bs + (n.beat - 1) * qt;
-    const vel = n.vel !== undefined && n.vel !== null && n.vel !== "" ? Math.max(1, Math.min(127, Math.round(+n.vel))) : askNoteVel(t, bs);
-    hits.push({t: Math.round(t), d: Math.max(20, Math.round(n.dur_beats * qt)), p, v: vel, bar: n.bar});
-  });
-  if (errs.length) return {error: errs.join("; ")};
-  return {hits};
-}
-function askWritableGate() { // write_notes' gate — Fill's rule, carried over: only the user's own editable songs
-  if (!S.song) return "no song open";
-  if (editableSong()) return null;
-  if (LINK_SONGS) return "this song is being viewed from a link to another repo — read-only here";
-  if (S.cmp && S.cmp.showing === "repo") return "you're hearing the saved copy in compare mode — swap back to your version first";
-  return "this song is locked here (a capture or starter) — ✎ Edit (or Save As…) makes an editable copy, then ask again";
-}
-function askWriteNotes(a) {
+ function askWriteNotes(a) {
   const gate = askWritableGate();
   if (gate) throw new Error(gate);
   a = a || {};
@@ -17675,36 +16289,7 @@ function askWriteNotes(a) {
   return {ok: true, note: "wrote " + added + " note" + (added === 1 ? "" : "s") + " on " + (S.song.tracks[ti].name || "track " + (ti + 1)) + ", " + where};
 }
 
-// ---- copy_bars / insert_bars (2026-10-02, open-items 21:50) — Josh via Ask
-// asked to "repeat bars 5–6 after bar 6 and shift everything else over two
-// bars"; the model tried a ~130-note write_notes and it came back one
-// closing brace short. copy_bars is the dedicated call: ONE small tool
-// instead of spelling out every note by hand. Built on openGapShift (the
-// Insert bars… apply code, extracted above) so the shift is never
-// duplicated — same notes+annotations sliding later, same straddling-
-// annotation stretch rule. copy_bars folds that shift PLUS its own
-// addBatch of copied notes into a single {kind:"group"} undo entry (one ⟲
-// for the whole thing); insert_bars needs no extra fold and just calls
-// insertTime directly. Gate = askWritableGate() (write_notes' rule).
-// Annotations are NEVER duplicated into the copied range — Learning mode
-// is the law, they're Josh's own analysis — only shifted, exactly as
-// Insert bars already shifts them.
-function askBarsCount() { return Math.max(1, Math.ceil(S.songEndTick / barTicks())); } // "this song has N bars" — same basis askReadBars uses
-function askBarsValidate(a, requireRange) { // → {fromBar, toBar, atBar} or {atBar}; throws naming the problem, nothing changed
-  const nBars = askBarsCount();
-  let fromBar, toBar;
-  if (requireRange) {
-    fromBar = Math.round(+a.from_bar || 0);
-    toBar = Math.round(+a.to_bar || 0);
-    if (!(fromBar >= 1)) throw new Error("from_bar must be ≥ 1");
-    if (!(toBar >= fromBar)) throw new Error("to_bar must be ≥ from_bar");
-    if (toBar > nBars) throw new Error("bars " + fromBar + "–" + toBar + " don't all exist — this song has " + nBars + " bar" + (nBars === 1 ? "" : "s"));
-  }
-  const atBar = Math.round(+a.at_bar || 0);
-  if (!(atBar >= 1 && atBar <= nBars + 1)) throw new Error("at_bar must be between 1 and " + (nBars + 1) + " (this song has " + nBars + " bar" + (nBars === 1 ? "" : "s") + ")");
-  return requireRange ? {fromBar, toBar, atBar} : {atBar};
-}
-function askInsertBars(a) { // {at_bar, count}: empty bars, same shift as Edit ▾ → Insert bars…
+ function askInsertBars(a) { // {at_bar, count}: empty bars, same shift as Edit ▾ → Insert bars…
   const gate = askWritableGate();
   if (gate) throw new Error(gate);
   a = a || {};
@@ -18628,4 +17213,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"rememberRecentSong": () => rememberRecentSong, "recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "PSX_SOUNDING_ON": () => PSX_SOUNDING_ON, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "songRegionRight": () => songRegionRight, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "loadEdits": () => loadEdits, "saveEdits": () => saveEdits, "foldOldOverlay": () => foldOldOverlay, "retireOldOverlay": () => retireOldOverlay, "placeLassoBtn": () => placeLassoBtn, "updateEditBtnVis": () => updateEditBtnVis, "computeSongEnd": () => computeSongEnd, "annoSnapshot": () => annoSnapshot, "annoRestore": () => annoRestore, "setAnchorBQ": () => setAnchorBQ, "setEndBQ": () => setEndBQ, "bakeTempos": () => bakeTempos, "bakeMeter": () => bakeMeter, "finalizeNotes": () => finalizeNotes, "loadNotes": () => loadNotes, "subtractTombstones": () => subtractTombstones, "mergeLocalAdditions": () => mergeLocalAdditions, "annotationsFor": () => annotationsFor, "resolveNoteWith": () => resolveNoteWith, "saveLocalNotes": () => saveLocalNotes, "dirtySongs": () => dirtySongs, "updateSyncBtn": () => updateSyncBtn, "askAnnotationsText": () => askAnnotationsText, "askAnnotationsTextCompact": () => askAnnotationsTextCompact, "dropLocalKeyAt": () => dropLocalKeyAt, "dropSupersededBy": () => dropSupersededBy, "homeSong": () => homeSong, "appConfirm": () => appConfirm, "reflectSongURL": () => reflectSongURL, "toggleHl": () => toggleHl, "updateLCD": () => updateLCD, "governingAt": () => governingAt, "updateSubtitle": () => updateSubtitle, "loadSong": () => loadSong, "loadSongInner": () => loadSongInner, "setSong": () => setSong, "renderTrackbar": () => renderTrackbar, "updateTrackMore": () => updateTrackMore, "TRACK_ROW_SLACK": () => TRACK_ROW_SLACK, "trackRowNeed": () => trackRowNeed, "fitTrackRow": () => fitTrackRow, "scheduleFitTrackRow": () => scheduleFitTrackRow, "trackToggle": () => trackToggle, "mixerIsOpen": () => mixerIsOpen, "mixerPanLabel": () => mixerPanLabel, "moveInSameOrder": () => moveInSameOrder, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerMasterStripEl": () => mixerMasterStripEl, "mixerStripDragize": () => mixerStripDragize, "ensureMixerMeters": () => ensureMixerMeters, "teardownMixerMeters": () => teardownMixerMeters, "mixerMeterRms": () => mixerMeterRms, "mixerMeterLoop": () => mixerMeterLoop, "ensureMixerMeterLoop": () => ensureMixerMeterLoop, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "resize": () => resize, "draw": () => draw, "playbackFrame": () => playbackFrame, "updateCanvasA11y": () => updateCanvasA11y, "drawFull": () => drawFull, "clearMultiSel": () => clearMultiSel, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "reflectSelVel": () => reflectSelVel, "refreshSelInfo": () => refreshSelInfo, "renderOctBtn": () => renderOctBtn, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "writeClips": () => writeClips, "setClipDir": () => setClipDir, "moveClip": () => moveClip, "trimClip": () => trimClip, "splitClipAt": () => splitClipAt, "splitSelectedClipAtCursor": () => splitSelectedClipAtCursor, "deleteClip": () => deleteClip, "hitTracksClip": () => hitTracksClip, "updateChordStale": () => updateChordStale, "transposeChordLabel": () => transposeChordLabel, "ridealongChordBands": () => ridealongChordBands, "selEditApply": () => selEditApply, "nudgeSelection": () => nudgeSelection, "resizeSelection": () => resizeSelection, "copySelection": () => copySelection, "cutSelection": () => cutSelection, "pasteAnnotations": () => pasteAnnotations, "pasteClipboard": () => pasteClipboard, "selectAllNotes": () => selectAllNotes, "duplicateSelection": () => duplicateSelection, "lassoedAnnos": () => lassoedAnnos, "deleteSelection": () => deleteSelection, "sweepStrandedClones": () => sweepStrandedClones, "duplicateSelectionInPlace": () => duplicateSelectionInPlace, "splitApply": () => splitApply, "openGapShift": () => openGapShift, "closeGap": () => closeGap, "insertTime": () => insertTime, "openInsertBars": () => openInsertBars, "deleteTime": () => deleteTime, "openDeleteBars": () => openDeleteBars, "divideSelection": () => divideSelection, "quantizeSelection": () => quantizeSelection, "splitSelectionAt": () => splitSelectionAt, "splitSelectionHalves": () => splitSelectionHalves, "joinSelection": () => joinSelection, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "jobsNotify": () => jobsNotify, "jobsLoad": () => jobsLoad, "jobsAutoClear": () => jobsAutoClear, "jobStart": () => jobStart, "jobApi": () => jobApi, "jobCancel": () => jobCancel, "jobsDismiss": () => jobsDismiss, "jobsClearFinished": () => jobsClearFinished, "updateJobsBtn": () => updateJobsBtn, "renderJobs": () => renderJobs, "openPubJobSheet": () => openPubJobSheet, "pubItemIcon": () => pubItemIcon, "renderPubJob": () => renderPubJob, "errChip": () => errChip, "logErr": () => logErr, "logDebug": () => logDebug, "srAnnounce": () => srAnnounce, "STATUS_HISTORY_CAP": () => STATUS_HISTORY_CAP, "setInfo": () => setInfo, "minPxq": () => minPxq, "songPitchExtent": () => songPitchExtent, "pxqFloor": () => pxqFloor, "ROLL_AIR": () => ROLL_AIR, "dispPitchExtent": () => dispPitchExtent, "rowHFloor": () => rowHFloor, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "fitView": () => fitView, "PAN_TAIL_BARS": () => PAN_TAIL_BARS, "clampView": () => clampView, "tap": () => tap, "ensureAudio": () => ensureAudio, "rebuildAudio": () => rebuildAudio, "resumeAudio": () => resumeAudio, "sfPreloadForSong": () => sfPreloadForSong, "sfWaitForSong": () => sfWaitForSong, "autoVoiceLabel": () => autoVoiceLabel, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "GAME_FAMILY": () => GAME_FAMILY, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "SF2_FAMILY": () => SF2_FAMILY, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "gameVoiceFromAll": () => gameVoiceFromAll, "gameVoiceFrom": () => gameVoiceFrom, "gameVoiceFromSet": () => gameVoiceFromSet, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "transposeTrack": () => transposeTrack, "resolveGameVault": () => resolveGameVault, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "instPlayerReady": () => instPlayerReady, "gameLibSync": () => gameLibSync, "sf2Sync": () => sf2Sync, "gameVoicesInSong": () => gameVoicesInSong, "sf2VoicesInSong": () => sf2VoicesInSong, "gamePreloadTokens": () => gamePreloadTokens, "gamePreloadForSong": () => gamePreloadForSong, "gameWaitForSong": () => gameWaitForSong, "gameNoteCache": () => gameNoteCache, "gameNoteBucket": () => gameNoteBucket, "gameVoiceWarned": () => gameVoiceWarned, "gameVoiceWarn": () => gameVoiceWarn, "resolveVoiceInstrument": () => resolveVoiceInstrument, "scheduleGameNote": () => scheduleGameNote, "scheduleNote": () => scheduleNote, "previewNote": () => previewNote, "buildSchedule": () => buildSchedule, "chipSource": () => chipSource, "updateChipBtn": () => updateChipBtn, "PLAY_GATE_GRACE": () => PLAY_GATE_GRACE, "PLAY_GATE_MAX": () => PLAY_GATE_MAX, "gateSettled": () => gateSettled, "gateWatched": () => gateWatched, "gatePending": () => gatePending, "playGate": () => playGate, "playGateKick": () => playGateKick, "playGateActive": () => playGateActive, "playGateTick": () => playGateTick, "playGateWait": () => playGateWait, "updateChipBtnInner": () => updateChipBtnInner, "chipEstimateTracks": () => chipEstimateTracks, "chipRender": () => chipRender, "chipCleanupAfterFailure": () => chipCleanupAfterFailure, "chipPublish": () => chipPublish, "chipRenderInWorker": () => chipRenderInWorker, "chipStreamOpenWorker": () => chipStreamOpenWorker, "chipStreamOpen": () => chipStreamOpen, "chipRenderAuto": () => chipRenderAuto, "applyAudioDirs": () => applyAudioDirs, "audioEnsureFile": () => audioEnsureFile, "applyBeatMap": () => applyBeatMap, "setSongTempo": () => setSongTempo, "stretchEnsure": () => stretchEnsure, "audioChaseNow": () => audioChaseNow, "stretchEnsureAll": () => stretchEnsureAll, "scheduleClip": () => scheduleClip, "play": () => play, "stop": () => stop, "albumPos": () => albumPos, "armAlbumLink": () => armAlbumLink, "albumStrip": () => albumStrip, "albumClear": () => albumClear, "albumLeave": () => albumLeave, "albumStart": () => albumStart, "albumNext": () => albumNext, "albumPrev": () => albumPrev, "albumPlayIdx": () => albumPlayIdx, "albumAdvance": () => albumAdvance, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songtitleEl": () => songtitleEl, "songsheet": () => songsheet, "songTitleOf": () => songTitleOf, "songWhereLabel": () => songWhereLabel, "updateSongBtn": () => updateSongBtn, "songRow": () => songRow, "songHeader": () => songHeader, "localLabel": () => localLabel, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "updateSongMeta": () => updateSongMeta, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "keysel": () => keysel, "keysetBtn": () => keysetBtn, "keymodeSel": () => keymodeSel, "fileMeterAt": () => fileMeterAt, "fileCheckLine": () => fileCheckLine, "runKeyCheck": () => runKeyCheck, "runMeterCheck": () => runMeterCheck, "useFileKey": () => useFileKey, "useFileMeter": () => useFileMeter, "keyNameShownAt": () => keyNameShownAt, "expandKeyName": () => expandKeyName, "keyLabelState": () => keyLabelState, "tonicLabel": () => tonicLabel, "chosenTonic": () => chosenTonic, "chosenTonicPc": () => chosenTonicPc, "partialNameOf": () => partialNameOf, "tonicOptionValue": () => tonicOptionValue, "refreshKeyPreview": () => refreshKeyPreview, "refreshKeysetLabel": () => refreshKeysetLabel, "metStart": () => metStart, "CHORD_QUALS": () => CHORD_QUALS, "CHORD_ROOTS": () => CHORD_ROOTS, "INS_DURS": () => INS_DURS, "chordLabel": () => chordLabel, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "stampChordBand": () => stampChordBand, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "PROG_LIB": () => PROG_LIB, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "notelistSheet": () => notelistSheet, "NOTE_GROUPS": () => NOTE_GROUPS, "renderNoteJump": () => renderNoteJump, "renderNoteList": () => renderNoteList, "openNoteList": () => openNoteList, "showHelpTab": () => showHelpTab, "findsel": () => findsel, "refreshFindSel": () => refreshFindSel, "lassobtn": () => lassobtn, "chordEvidence": () => chordEvidence, "openChallenge": () => openChallenge, "applyListener": () => applyListener, "applyChrome": () => applyChrome, "FOOTER_DROPUP_BTN_IDS": () => FOOTER_DROPUP_BTN_IDS, "fitReadline": () => fitReadline, "scheduleFitReadline": () => scheduleFitReadline, "viewbtn": () => viewbtn, "viewSwitchMenu": () => viewSwitchMenu, "renderViewSwitch": () => renderViewSwitch, "applyViewMode": () => applyViewMode, "viewSaved": () => viewSaved, "setViewMode": () => setViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "syncDurSeg": () => syncDurSeg, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinish": () => recFinish, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "instbtn": () => instbtn, "instFallBtn": () => instFallBtn, "applyInst": () => applyInst, "subbtn": () => subbtn, "toggleSubtitle": () => toggleSubtitle, "editor": () => editor, "fillBarBeatSelects": () => fillBarBeatSelects, "editorType": () => editorType, "applyEditorType": () => applyEditorType, "BASS_SPELLINGS": () => BASS_SPELLINGS, "chordSel": () => chordSel, "refreshChordChips": () => refreshChordChips, "composeChord": () => composeChord, "setChordWidget": () => setChordWidget, "SPEECH": () => SPEECH, "nmic": () => nmic, "micStop": () => micStop, "micJoin": () => micJoin, "micToggle": () => micToggle, "snapBeat": () => snapBeat, "setBeatPair": () => setBeatPair, "getBeatPair": () => getBeatPair, "openEditor": () => openEditor, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "tombKey": () => tombKey, "tombKeyFor": () => tombKeyFor, "noteIdentity": () => noteIdentity, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "tombstone": () => tombstone, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "syncsheet": () => syncsheet, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "folderChoices": () => folderChoices, "fillFolderSelect": () => fillFolderSelect, "renameLocalKeys": () => renameLocalKeys, "saveSongAs": () => saveSongAs, "openSaveForm": () => openSaveForm, "localFolders": () => localFolders, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "songStatus": () => songStatus, "publishDest": () => publishDest, "publishLabel": () => publishLabel, "draftFingerprint": () => draftFingerprint, "pubCheck": () => pubCheck, "pubCompareDraft": () => pubCompareDraft, "fingerprintOldDrafts": () => fingerprintOldDrafts, "saveDraft": () => saveDraft, "saveVersion": () => saveVersion, "openDraft": () => openDraft, "openDraftDoc": () => openDraftDoc, "createComposition": () => createComposition, "forkCurrentSong": () => forkCurrentSong, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "renderViewMenu": () => renderViewMenu, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "closeDropUp": () => closeDropUp, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "instLibs": () => instLibs, "instWavs": () => instWavs, "instPlayer": () => instPlayer, "instDecodeWav": () => instDecodeWav, "instAlbums": () => instAlbums, "romanValue": () => romanValue, "titleSortKey": () => titleSortKey, "titleCompare": () => titleCompare, "INST_SYS_ORDER": () => INST_SYS_ORDER, "INST_CHIPS": () => INST_CHIPS, "instFolder": () => instFolder, "gameInstUsedBySong": () => gameInstUsedBySong, "gameSongRows": () => gameSongRows, "songInstrumentRows": () => songInstrumentRows, "currentSongGameContext": () => currentSongGameContext, "instLibrary": () => instLibrary, "instSamples": () => instSamples, "instKeys": () => instKeys, "sf2Module": () => sf2Module, "sf2Fonts": () => sf2Fonts, "sf2Bytes": () => sf2Bytes, "sf2Font": () => sf2Font, "sf2Registry": () => sf2Registry, "sf2RegistryAdd": () => sf2RegistryAdd, "instAudition": () => instAudition, "usedInstruments": () => usedInstruments, "usedInstrumentRows": () => usedInstrumentRows, "renderGameInstNav": () => renderGameInstNav, "renderInstSheet": () => renderInstSheet, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "dropLocalSong": () => dropLocalSong, "revertSongToRepo": () => revertSongToRepo, "versionLabel": () => versionLabel, "openVersionsSheet": () => openVersionsSheet, "renderVersionsSheet": () => renderVersionsSheet, "goBackToVersion": () => goBackToVersion, "goBackToPublished": () => goBackToPublished, "offlineWaitForAssets": () => offlineWaitForAssets, "renderSongOffline": () => renderSongOffline, "recordRealtimeAudio": () => recordRealtimeAudio, "CHIPS": () => CHIPS, "sonySeqCapture": () => sonySeqCapture, "psfInflater": () => psfInflater, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipExt": () => chipExt, "chipVaultMeta": () => chipVaultMeta, "chipVaultFile": () => chipVaultFile, "chipModules": () => chipModules, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "localDraftWrite": () => localDraftWrite, "localDraftTracks": () => localDraftTracks, "draftWrite": () => draftWrite, "draftRead": () => draftRead, "idbDraftPut": () => idbDraftPut, "commitImports": () => commitImports, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "dpTick": () => dpTick, "drGenerate": () => drGenerate, "drKitCountT": () => drKitCountT, "scheduleAnalysisRecompute": () => scheduleAnalysisRecompute, "adoptChordBand": () => adoptChordBand, "adoptAllChords": () => adoptAllChords, "adoptKeyRegion": () => adoptKeyRegion, "openAnalyzeSheet": () => openAnalyzeSheet, "bsGenerate": () => bsGenerate, "applyTake": () => applyTake, "bsBuildControls": () => bsBuildControls, "bsRange": () => bsRange, "bsRefresh": () => bsRefresh, "openBassist": () => openBassist, "drRange": () => drRange, "drRefresh": () => drRefresh, "segGet": () => segGet, "segSet": () => segSet, "drPartsGet": () => drPartsGet, "drPartsSet": () => drPartsSet, "drPartsSync": () => drPartsSync, "drBuildControls": () => drBuildControls, "openDrummer": () => openDrummer, "openPasteTo": () => openPasteTo, "diatonicShift": () => diatonicShift, "removeDuplicateNotes": () => removeDuplicateNotes, "updateEditButtons": () => updateEditButtons, "pushUndo": () => pushUndo, "addTrackUndoable": () => addTrackUndoable, "undoTrackAdd": () => undoTrackAdd, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "cmpBar": () => cmpBar, "ASK_SYS_BASE1": () => ASK_SYS_BASE1, "RULE_LEARNING": () => RULE_LEARNING, "RULE_NORMAL": () => RULE_NORMAL, "ASK_SYS_BASE2": () => ASK_SYS_BASE2, "askSys": () => askSys, "ASK_CPT": () => ASK_CPT, "aiUrl": () => aiUrl, "aiHeaders": () => aiHeaders, "aiSSE": () => aiSSE, "aiHostKind": () => aiHostKind, "aiHostOk": () => aiHostOk, "aiRemote": () => aiRemote, "aiSay": () => aiSay, "aiModelMenu": () => aiModelMenu, "aiPickModel": () => aiPickModel, "AI_TEST_MS": () => AI_TEST_MS, "aiTest": () => aiTest, "aiRunTest": () => aiRunTest, "aiBackendRows": () => aiBackendRows, "AI_WEBLLM_URL": () => AI_WEBLLM_URL, "AI_BROWSER_MODELS": () => AI_BROWSER_MODELS, "aiBrowserMenu": () => aiBrowserMenu, "aiWebllmLoad": () => aiWebllmLoad, "aiEngineFor": () => aiEngineFor, "aiBrowserTest": () => aiBrowserTest, "aiBrowser": () => aiBrowser, "aiProvider": () => aiProvider, "ASK_TOOLS": () => ASK_TOOLS, "askAddAnnotation": () => askAddAnnotation, "askFindAnnotation": () => askFindAnnotation, "askNoteKind": () => askNoteKind, "askNoteValue": () => askNoteValue, "askAnnotationStructural": () => askAnnotationStructural, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "notesTxtForDoc": () => notesTxtForDoc, "askSongPath": () => askSongPath, "ASK_READ_BARS_MAX": () => ASK_READ_BARS_MAX, "askReadBars": () => askReadBars, "askRunTool": () => askRunTool, "askSpan": () => askSpan, "askSpanLabel": () => askSpanLabel, "askKeyDeclared": () => askKeyDeclared, "askKeySpellComment": () => askKeySpellComment, "askSpanNotes": () => askSpanNotes, "askSpanNotesCompact": () => askSpanNotesCompact, "askBarRow": () => askBarRow, "askBarFingerprint": () => askBarFingerprint, "askSpanNotesCompactCached": () => askSpanNotesCompactCached, "askSpanCachedBlock": () => askSpanCachedBlock, "askLegendText": () => askLegendText, "askAppState": () => askAppState, "askModeLine": () => askModeLine, "askKeyStateLine": () => askKeyStateLine, "askViewCursorLine": () => askViewCursorLine, "askOpenSongLine": () => askOpenSongLine, "askCapLines": () => askCapLines, "askNewSinceLines": () => askNewSinceLines, "askSentKey": () => askSentKey, "askSentGet": () => askSentGet, "askSentStage": () => askSentStage, "askSentStageBars": () => askSentStageBars, "ASK_SENT_BARS_CAP": () => ASK_SENT_BARS_CAP, "askSentCommit": () => askSentCommit, "askSentDrop": () => askSentDrop, "askSentReset": () => askSentReset, "askEpochKey": () => askEpochKey, "askEpochGet": () => askEpochGet, "askEpochSet": () => askEpochSet, "askEpochNote": () => askEpochNote, "askCachedBlock": () => askCachedBlock, "askContext": () => askContext, "askBudget": () => askBudget, "askStripContext": () => askStripContext, "ASK_LOCAL_SOFT": () => ASK_LOCAL_SOFT, "ASK_TOTAL_CAP": () => ASK_TOTAL_CAP, "ASK_GENERAL_KEY": () => ASK_GENERAL_KEY, "ASK_GENERAL_LOG": () => ASK_GENERAL_LOG, "ASK_TERMINAL_KEY": () => ASK_TERMINAL_KEY, "askSetMode": () => askSetMode, "askModeButtons": () => askModeButtons, "askStoreKey": () => askStoreKey, "askSeenKey": () => askSeenKey, "askSeenGet": () => askSeenGet, "askMaxErrId": () => askMaxErrId, "askMaxStatusId": () => askMaxStatusId, "askSeenMaxKey": () => askSeenMaxKey, "askSeenMax": () => askSeenMax, "askSeenSet": () => askSeenSet, "askSeenAdvance": () => askSeenAdvance, "askSeenStage": () => askSeenStage, "askSeenCommit": () => askSeenCommit, "askSeenDrop": () => askSeenDrop, "askStore": () => askStore, "askLoad": () => askLoad, "askUnsavedCount": () => askUnsavedCount, "askSave": () => askSave, "askRevertToSaved": () => askRevertToSaved, "askEvictOthers": () => askEvictOthers, "askModelName": () => askModelName, "askLogKey": () => askLogKey, "askLogSong": () => askLogSong, "askLogPath": () => askLogPath, "askLogHeader": () => askLogHeader, "askLogMarkdown": () => askLogMarkdown, "askCommitLog": () => askCommitLog, "askMsgMode": () => askMsgMode, "askBuildMessages": () => askBuildMessages, "askEstimate": () => askEstimate, "asksheet": () => asksheet, "asklog": () => asklog, "askinput": () => askinput, "askstatus": () => askstatus, "askSessionName": () => askSessionName, "ASK_SONG_ONLY_TOOLS": () => ASK_SONG_ONLY_TOOLS, "askToolsNow": () => askToolsNow, "askInboxSeenKey": () => askInboxSeenKey, "askInboxAllowed": () => askInboxAllowed, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "askAgeText": () => askAgeText, "scheduleBackupFlush": () => scheduleBackupFlush, "flushBackupNow": () => flushBackupNow, "deployBeforeInstall": () => deployBeforeInstall, "deployButtonTick": () => deployButtonTick, "deployBannerShow": () => deployBannerShow, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployActive": () => deployActive, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsVisible": () => askTabsVisible, "askTabsApply": () => askTabsApply, "askSessionLine": () => askSessionLine, "askCompactModelName": () => askCompactModelName, "askSessionRender": () => askSessionRender, "askSessionRefresh": () => askSessionRefresh, "askStatusIdle": () => askStatusIdle, "askStatusLine": () => askStatusLine, "askStatusRender": () => askStatusRender, "askStatusRecentShow": () => askStatusRecentShow, "askStatusToggle": () => askStatusToggle, "askStatusFetchCommits": () => askStatusFetchCommits, "askShotShow": () => askShotShow, "askShotLine": () => askShotLine, "ASKSHOT_MAX": () => ASKSHOT_MAX, "b64Bytes": () => b64Bytes, "askShotCapture": () => askShotCapture, "askShotUpload": () => askShotUpload, "askShotTake": () => askShotTake, "askShotStatusLabel": () => askShotStatusLabel, "askShotRender": () => askShotRender, "askShotAdd": () => askShotAdd, "askShotRemove": () => askShotRemove, "askShotClearAll": () => askShotClearAll, "askShotRestore": () => askShotRestore, "askShotOutgoing": () => askShotOutgoing, "askShotDisplayText": () => askShotDisplayText, "MAX_SHOT_SIDE": () => MAX_SHOT_SIDE, "MAX_SHOT_KEEP_BYTES": () => MAX_SHOT_KEEP_BYTES, "askPrepImage": () => askPrepImage, "askPickFiles": () => askPickFiles, "askClock": () => askClock, "askNoteLabel": () => askNoteLabel, "askInboxStart": () => askInboxStart, "askBubble": () => askBubble, "askFillBubble": () => askFillBubble, "askCopyText": () => askCopyText, "askDraftStore": () => askDraftStore, "askDraftSave": () => askDraftSave, "askDraftSaveSoon": () => askDraftSaveSoon, "askComposing": () => askComposing, "askDraftLoad": () => askDraftLoad, "askDraftClear": () => askDraftClear, "askRender": () => askRender, "askRenderEarlier": () => askRenderEarlier, "askRefresh": () => askRefresh, "askPartial": () => askPartial, "askShowThinking": () => askShowThinking, "askJobsSupported": () => askJobsSupported, "askJobId": () => askJobId, "askPendingIndex": () => askPendingIndex, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askBadgeOff": () => askBadgeOff, "askRun": () => askRun, "TERM_MODELS": () => TERM_MODELS, "askTermModelsLoad": () => askTermModelsLoad, "askTerminalContext": () => askTerminalContext, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askResumeSoon": () => askResumeSoon, "askPendingAll": () => askPendingAll, "askRepending": () => askRepending, "askResume": () => askResume, "WM_KEY": () => WM_KEY, "WM_OLD_KEY": () => WM_OLD_KEY, "WM_MIN_W": () => WM_MIN_W, "WM_DEFAULT_W": () => WM_DEFAULT_W, "WM_MIN_H": () => WM_MIN_H, "WM_DEFAULT_H": () => WM_DEFAULT_H, "WM_MIN_SPLIT": () => WM_MIN_SPLIT, "WM_PHONE_MAX": () => WM_PHONE_MAX, "WM_ZONE_FRAC": () => WM_ZONE_FRAC, "WM_EDGE_GAP": () => WM_EDGE_GAP, "wmClampSize": () => wmClampSize, "wmClampHeight": () => wmClampHeight, "wmClampSplit": () => wmClampSplit, "wmAllowed": () => wmAllowed, "wmMigrate": () => wmMigrate, "wmMigrateShape": () => wmMigrateShape, "wmMigrateShapeB": () => wmMigrateShapeB, "wmSetSide": () => wmSetSide, "wmClearSide": () => wmClearSide, "wmSetSideMode": () => wmSetSideMode, "wmAddSideTab": () => wmAddSideTab, "wmRemoveSideTab": () => wmRemoveSideTab, "wmSetActiveSideTab": () => wmSetActiveSideTab, "wmSetSideWidth": () => wmSetSideWidth, "wmZoneFor": () => wmZoneFor, "wmDockBottom": () => wmDockBottom, "wmClearBottom": () => wmClearBottom, "wmSetBottomHeight": () => wmSetBottomHeight, "wmSetBottomSplit": () => wmSetBottomSplit, "wmWhereIs": () => wmWhereIs, "wmLoad": () => wmLoad, "wmSave": () => wmSave, "wmInnerWidth": () => wmInnerWidth, "wmInnerHeight": () => wmInnerHeight, "WM_WINDOWS": () => WM_WINDOWS, "wmSideCells": () => wmSideCells, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmWindowTitle": () => wmWindowTitle, "wmLayoutBottom": () => wmLayoutBottom, "wmDockLabel": () => wmDockLabel, "wmDockShort": () => wmDockShort, "wmSyncDockButtons": () => wmSyncDockButtons, "wmLayoutAll": () => wmLayoutAll, "wmZoneForPointer": () => wmZoneForPointer, "wmShowDropZone": () => wmShowDropZone, "wmHideDropZone": () => wmHideDropZone, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmMenuItem": () => wmMenuItem, "wmOpenMenu": () => wmOpenMenu, "wmCloseMenu": () => wmCloseMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askScrollEnd": () => askScrollEnd, "askFocusIfKeyboard": () => askFocusIfKeyboard, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askGrow": () => askGrow, "askNormChip": () => askNormChip, "askFindTrackIndex": () => askFindTrackIndex, "parsePitch": () => parsePitch, "askNoteVel": () => askNoteVel, "askWriteNotesValidate": () => askWriteNotesValidate, "askWritableGate": () => askWritableGate, "askWriteNotes": () => askWriteNotes, "askBarsCount": () => askBarsCount, "askBarsValidate": () => askBarsValidate, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "filesMirror": () => filesMirror, "filesMirrorSoon": () => filesMirrorSoon, "filesMirrorFor": () => filesMirrorFor, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "draftDirtyState": () => draftDirtyState, "syncable": () => syncable, "pendingSongs": () => pendingSongs, "renderSyncPending": () => renderSyncPending, "discardPending": () => discardPending, "openSyncSheet": () => openSyncSheet, "CFG_PANES": () => CFG_PANES, "cfgShowPane": () => cfgShowPane, "openSettingsSheet": () => openSettingsSheet, "noteTapMovesCursor": () => noteTapMovesCursor, "penInstant": () => penInstant, "textSizePref": () => textSizePref, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "ghCheckOut": () => ghCheckOut, "ghCheckMessage": () => ghCheckMessage, "ghCheck": () => ghCheck, "MODAL_KEEP": () => MODAL_KEEP, "openShareSheet": () => openShareSheet, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart}, set: {"rememberRecentSong": (v) => (rememberRecentSong = v), "recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "songRegionRight": (v) => (songRegionRight = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "loadEdits": (v) => (loadEdits = v), "saveEdits": (v) => (saveEdits = v), "foldOldOverlay": (v) => (foldOldOverlay = v), "retireOldOverlay": (v) => (retireOldOverlay = v), "placeLassoBtn": (v) => (placeLassoBtn = v), "updateEditBtnVis": (v) => (updateEditBtnVis = v), "computeSongEnd": (v) => (computeSongEnd = v), "annoSnapshot": (v) => (annoSnapshot = v), "annoRestore": (v) => (annoRestore = v), "setAnchorBQ": (v) => (setAnchorBQ = v), "setEndBQ": (v) => (setEndBQ = v), "bakeTempos": (v) => (bakeTempos = v), "bakeMeter": (v) => (bakeMeter = v), "finalizeNotes": (v) => (finalizeNotes = v), "loadNotes": (v) => (loadNotes = v), "subtractTombstones": (v) => (subtractTombstones = v), "mergeLocalAdditions": (v) => (mergeLocalAdditions = v), "annotationsFor": (v) => (annotationsFor = v), "resolveNoteWith": (v) => (resolveNoteWith = v), "saveLocalNotes": (v) => (saveLocalNotes = v), "dirtySongs": (v) => (dirtySongs = v), "updateSyncBtn": (v) => (updateSyncBtn = v), "askAnnotationsText": (v) => (askAnnotationsText = v), "askAnnotationsTextCompact": (v) => (askAnnotationsTextCompact = v), "dropLocalKeyAt": (v) => (dropLocalKeyAt = v), "dropSupersededBy": (v) => (dropSupersededBy = v), "homeSong": (v) => (homeSong = v), "appConfirm": (v) => (appConfirm = v), "reflectSongURL": (v) => (reflectSongURL = v), "toggleHl": (v) => (toggleHl = v), "updateLCD": (v) => (updateLCD = v), "governingAt": (v) => (governingAt = v), "updateSubtitle": (v) => (updateSubtitle = v), "loadSong": (v) => (loadSong = v), "loadSongInner": (v) => (loadSongInner = v), "setSong": (v) => (setSong = v), "renderTrackbar": (v) => (renderTrackbar = v), "updateTrackMore": (v) => (updateTrackMore = v), "trackRowNeed": (v) => (trackRowNeed = v), "fitTrackRow": (v) => (fitTrackRow = v), "scheduleFitTrackRow": (v) => (scheduleFitTrackRow = v), "trackToggle": (v) => (trackToggle = v), "mixerIsOpen": (v) => (mixerIsOpen = v), "mixerPanLabel": (v) => (mixerPanLabel = v), "moveInSameOrder": (v) => (moveInSameOrder = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerMasterStripEl": (v) => (mixerMasterStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "ensureMixerMeters": (v) => (ensureMixerMeters = v), "teardownMixerMeters": (v) => (teardownMixerMeters = v), "mixerMeterRms": (v) => (mixerMeterRms = v), "mixerMeterLoop": (v) => (mixerMeterLoop = v), "ensureMixerMeterLoop": (v) => (ensureMixerMeterLoop = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "resize": (v) => (resize = v), "draw": (v) => (draw = v), "playbackFrame": (v) => (playbackFrame = v), "updateCanvasA11y": (v) => (updateCanvasA11y = v), "drawFull": (v) => (drawFull = v), "clearMultiSel": (v) => (clearMultiSel = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "reflectSelVel": (v) => (reflectSelVel = v), "refreshSelInfo": (v) => (refreshSelInfo = v), "renderOctBtn": (v) => (renderOctBtn = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "writeClips": (v) => (writeClips = v), "setClipDir": (v) => (setClipDir = v), "moveClip": (v) => (moveClip = v), "trimClip": (v) => (trimClip = v), "splitClipAt": (v) => (splitClipAt = v), "splitSelectedClipAtCursor": (v) => (splitSelectedClipAtCursor = v), "deleteClip": (v) => (deleteClip = v), "hitTracksClip": (v) => (hitTracksClip = v), "updateChordStale": (v) => (updateChordStale = v), "transposeChordLabel": (v) => (transposeChordLabel = v), "ridealongChordBands": (v) => (ridealongChordBands = v), "selEditApply": (v) => (selEditApply = v), "nudgeSelection": (v) => (nudgeSelection = v), "resizeSelection": (v) => (resizeSelection = v), "copySelection": (v) => (copySelection = v), "cutSelection": (v) => (cutSelection = v), "pasteAnnotations": (v) => (pasteAnnotations = v), "pasteClipboard": (v) => (pasteClipboard = v), "selectAllNotes": (v) => (selectAllNotes = v), "duplicateSelection": (v) => (duplicateSelection = v), "lassoedAnnos": (v) => (lassoedAnnos = v), "deleteSelection": (v) => (deleteSelection = v), "sweepStrandedClones": (v) => (sweepStrandedClones = v), "duplicateSelectionInPlace": (v) => (duplicateSelectionInPlace = v), "splitApply": (v) => (splitApply = v), "openGapShift": (v) => (openGapShift = v), "closeGap": (v) => (closeGap = v), "insertTime": (v) => (insertTime = v), "openInsertBars": (v) => (openInsertBars = v), "deleteTime": (v) => (deleteTime = v), "openDeleteBars": (v) => (openDeleteBars = v), "divideSelection": (v) => (divideSelection = v), "quantizeSelection": (v) => (quantizeSelection = v), "splitSelectionAt": (v) => (splitSelectionAt = v), "splitSelectionHalves": (v) => (splitSelectionHalves = v), "joinSelection": (v) => (joinSelection = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsNotify": (v) => (jobsNotify = v), "jobsLoad": (v) => (jobsLoad = v), "jobsAutoClear": (v) => (jobsAutoClear = v), "jobStart": (v) => (jobStart = v), "jobApi": (v) => (jobApi = v), "jobCancel": (v) => (jobCancel = v), "jobsDismiss": (v) => (jobsDismiss = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "updateJobsBtn": (v) => (updateJobsBtn = v), "renderJobs": (v) => (renderJobs = v), "openPubJobSheet": (v) => (openPubJobSheet = v), "pubItemIcon": (v) => (pubItemIcon = v), "renderPubJob": (v) => (renderPubJob = v), "errChip": (v) => (errChip = v), "logErr": (v) => (logErr = v), "logDebug": (v) => (logDebug = v), "srAnnounce": (v) => (srAnnounce = v), "setInfo": (v) => (setInfo = v), "minPxq": (v) => (minPxq = v), "songPitchExtent": (v) => (songPitchExtent = v), "pxqFloor": (v) => (pxqFloor = v), "dispPitchExtent": (v) => (dispPitchExtent = v), "rowHFloor": (v) => (rowHFloor = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "fitView": (v) => (fitView = v), "clampView": (v) => (clampView = v), "tap": (v) => (tap = v), "ensureAudio": (v) => (ensureAudio = v), "rebuildAudio": (v) => (rebuildAudio = v), "resumeAudio": (v) => (resumeAudio = v), "sfPreloadForSong": (v) => (sfPreloadForSong = v), "sfWaitForSong": (v) => (sfWaitForSong = v), "autoVoiceLabel": (v) => (autoVoiceLabel = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "gameVoiceFromAll": (v) => (gameVoiceFromAll = v), "gameVoiceFrom": (v) => (gameVoiceFrom = v), "gameVoiceFromSet": (v) => (gameVoiceFromSet = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "transposeTrack": (v) => (transposeTrack = v), "resolveGameVault": (v) => (resolveGameVault = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "instPlayerReady": (v) => (instPlayerReady = v), "gameVoicesInSong": (v) => (gameVoicesInSong = v), "sf2VoicesInSong": (v) => (sf2VoicesInSong = v), "gamePreloadForSong": (v) => (gamePreloadForSong = v), "gameWaitForSong": (v) => (gameWaitForSong = v), "gameNoteBucket": (v) => (gameNoteBucket = v), "gameVoiceWarn": (v) => (gameVoiceWarn = v), "resolveVoiceInstrument": (v) => (resolveVoiceInstrument = v), "scheduleGameNote": (v) => (scheduleGameNote = v), "scheduleNote": (v) => (scheduleNote = v), "previewNote": (v) => (previewNote = v), "buildSchedule": (v) => (buildSchedule = v), "chipSource": (v) => (chipSource = v), "updateChipBtn": (v) => (updateChipBtn = v), "gatePending": (v) => (gatePending = v), "playGate": (v) => (playGate = v), "playGateKick": (v) => (playGateKick = v), "playGateActive": (v) => (playGateActive = v), "playGateTick": (v) => (playGateTick = v), "playGateWait": (v) => (playGateWait = v), "updateChipBtnInner": (v) => (updateChipBtnInner = v), "chipEstimateTracks": (v) => (chipEstimateTracks = v), "chipRender": (v) => (chipRender = v), "chipCleanupAfterFailure": (v) => (chipCleanupAfterFailure = v), "chipPublish": (v) => (chipPublish = v), "chipRenderInWorker": (v) => (chipRenderInWorker = v), "chipStreamOpenWorker": (v) => (chipStreamOpenWorker = v), "chipStreamOpen": (v) => (chipStreamOpen = v), "chipRenderAuto": (v) => (chipRenderAuto = v), "applyAudioDirs": (v) => (applyAudioDirs = v), "audioEnsureFile": (v) => (audioEnsureFile = v), "applyBeatMap": (v) => (applyBeatMap = v), "setSongTempo": (v) => (setSongTempo = v), "stretchEnsure": (v) => (stretchEnsure = v), "audioChaseNow": (v) => (audioChaseNow = v), "stretchEnsureAll": (v) => (stretchEnsureAll = v), "scheduleClip": (v) => (scheduleClip = v), "play": (v) => (play = v), "stop": (v) => (stop = v), "albumPos": (v) => (albumPos = v), "armAlbumLink": (v) => (armAlbumLink = v), "albumStrip": (v) => (albumStrip = v), "albumClear": (v) => (albumClear = v), "albumLeave": (v) => (albumLeave = v), "albumStart": (v) => (albumStart = v), "albumNext": (v) => (albumNext = v), "albumPrev": (v) => (albumPrev = v), "albumPlayIdx": (v) => (albumPlayIdx = v), "albumAdvance": (v) => (albumAdvance = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "songTitleOf": (v) => (songTitleOf = v), "songWhereLabel": (v) => (songWhereLabel = v), "updateSongBtn": (v) => (updateSongBtn = v), "songRow": (v) => (songRow = v), "songHeader": (v) => (songHeader = v), "localLabel": (v) => (localLabel = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "updateSongMeta": (v) => (updateSongMeta = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "fileCheckLine": (v) => (fileCheckLine = v), "runKeyCheck": (v) => (runKeyCheck = v), "runMeterCheck": (v) => (runMeterCheck = v), "useFileKey": (v) => (useFileKey = v), "useFileMeter": (v) => (useFileMeter = v), "keyNameShownAt": (v) => (keyNameShownAt = v), "expandKeyName": (v) => (expandKeyName = v), "keyLabelState": (v) => (keyLabelState = v), "tonicLabel": (v) => (tonicLabel = v), "chosenTonic": (v) => (chosenTonic = v), "chosenTonicPc": (v) => (chosenTonicPc = v), "partialNameOf": (v) => (partialNameOf = v), "tonicOptionValue": (v) => (tonicOptionValue = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "refreshKeysetLabel": (v) => (refreshKeysetLabel = v), "metStart": (v) => (metStart = v), "chordLabel": (v) => (chordLabel = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "stampChordBand": (v) => (stampChordBand = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "renderNoteJump": (v) => (renderNoteJump = v), "renderNoteList": (v) => (renderNoteList = v), "openNoteList": (v) => (openNoteList = v), "showHelpTab": (v) => (showHelpTab = v), "refreshFindSel": (v) => (refreshFindSel = v), "chordEvidence": (v) => (chordEvidence = v), "openChallenge": (v) => (openChallenge = v), "applyListener": (v) => (applyListener = v), "applyChrome": (v) => (applyChrome = v), "fitReadline": (v) => (fitReadline = v), "scheduleFitReadline": (v) => (scheduleFitReadline = v), "renderViewSwitch": (v) => (renderViewSwitch = v), "applyViewMode": (v) => (applyViewMode = v), "setViewMode": (v) => (setViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "syncDurSeg": (v) => (syncDurSeg = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "recFinish": (v) => (recFinish = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "applyInst": (v) => (applyInst = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "fillBarBeatSelects": (v) => (fillBarBeatSelects = v), "editorType": (v) => (editorType = v), "applyEditorType": (v) => (applyEditorType = v), "refreshChordChips": (v) => (refreshChordChips = v), "composeChord": (v) => (composeChord = v), "setChordWidget": (v) => (setChordWidget = v), "micStop": (v) => (micStop = v), "micJoin": (v) => (micJoin = v), "micToggle": (v) => (micToggle = v), "snapBeat": (v) => (snapBeat = v), "setBeatPair": (v) => (setBeatPair = v), "getBeatPair": (v) => (getBeatPair = v), "openEditor": (v) => (openEditor = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "tombKey": (v) => (tombKey = v), "tombKeyFor": (v) => (tombKeyFor = v), "noteIdentity": (v) => (noteIdentity = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "tombstone": (v) => (tombstone = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "folderChoices": (v) => (folderChoices = v), "fillFolderSelect": (v) => (fillFolderSelect = v), "renameLocalKeys": (v) => (renameLocalKeys = v), "saveSongAs": (v) => (saveSongAs = v), "openSaveForm": (v) => (openSaveForm = v), "localFolders": (v) => (localFolders = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "songStatus": (v) => (songStatus = v), "publishDest": (v) => (publishDest = v), "publishLabel": (v) => (publishLabel = v), "draftFingerprint": (v) => (draftFingerprint = v), "pubCompareDraft": (v) => (pubCompareDraft = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "saveDraft": (v) => (saveDraft = v), "saveVersion": (v) => (saveVersion = v), "openDraft": (v) => (openDraft = v), "openDraftDoc": (v) => (openDraftDoc = v), "createComposition": (v) => (createComposition = v), "forkCurrentSong": (v) => (forkCurrentSong = v), "renderViewMenu": (v) => (renderViewMenu = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "closeDropUp": (v) => (closeDropUp = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "instPlayer": (v) => (instPlayer = v), "instDecodeWav": (v) => (instDecodeWav = v), "instAlbums": (v) => (instAlbums = v), "romanValue": (v) => (romanValue = v), "titleSortKey": (v) => (titleSortKey = v), "titleCompare": (v) => (titleCompare = v), "instFolder": (v) => (instFolder = v), "gameInstUsedBySong": (v) => (gameInstUsedBySong = v), "gameSongRows": (v) => (gameSongRows = v), "songInstrumentRows": (v) => (songInstrumentRows = v), "currentSongGameContext": (v) => (currentSongGameContext = v), "instLibrary": (v) => (instLibrary = v), "instSamples": (v) => (instSamples = v), "instKeys": (v) => (instKeys = v), "sf2Module": (v) => (sf2Module = v), "sf2Bytes": (v) => (sf2Bytes = v), "sf2Font": (v) => (sf2Font = v), "sf2Registry": (v) => (sf2Registry = v), "sf2RegistryAdd": (v) => (sf2RegistryAdd = v), "instAudition": (v) => (instAudition = v), "usedInstruments": (v) => (usedInstruments = v), "usedInstrumentRows": (v) => (usedInstrumentRows = v), "renderGameInstNav": (v) => (renderGameInstNav = v), "renderInstSheet": (v) => (renderInstSheet = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "dropLocalSong": (v) => (dropLocalSong = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "versionLabel": (v) => (versionLabel = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "goBackToPublished": (v) => (goBackToPublished = v), "offlineWaitForAssets": (v) => (offlineWaitForAssets = v), "renderSongOffline": (v) => (renderSongOffline = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "sonySeqCapture": (v) => (sonySeqCapture = v), "psfInflater": (v) => (psfInflater = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipExt": (v) => (chipExt = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "chipVaultFile": (v) => (chipVaultFile = v), "chipModules": (v) => (chipModules = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "localDraftWrite": (v) => (localDraftWrite = v), "localDraftTracks": (v) => (localDraftTracks = v), "draftWrite": (v) => (draftWrite = v), "draftRead": (v) => (draftRead = v), "idbDraftPut": (v) => (idbDraftPut = v), "commitImports": (v) => (commitImports = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "dpTick": (v) => (dpTick = v), "drGenerate": (v) => (drGenerate = v), "drKitCountT": (v) => (drKitCountT = v), "scheduleAnalysisRecompute": (v) => (scheduleAnalysisRecompute = v), "adoptChordBand": (v) => (adoptChordBand = v), "adoptAllChords": (v) => (adoptAllChords = v), "adoptKeyRegion": (v) => (adoptKeyRegion = v), "openAnalyzeSheet": (v) => (openAnalyzeSheet = v), "bsGenerate": (v) => (bsGenerate = v), "applyTake": (v) => (applyTake = v), "bsBuildControls": (v) => (bsBuildControls = v), "bsRange": (v) => (bsRange = v), "bsRefresh": (v) => (bsRefresh = v), "openBassist": (v) => (openBassist = v), "drRange": (v) => (drRange = v), "drRefresh": (v) => (drRefresh = v), "segGet": (v) => (segGet = v), "segSet": (v) => (segSet = v), "drPartsGet": (v) => (drPartsGet = v), "drPartsSet": (v) => (drPartsSet = v), "drPartsSync": (v) => (drPartsSync = v), "drBuildControls": (v) => (drBuildControls = v), "openDrummer": (v) => (openDrummer = v), "openPasteTo": (v) => (openPasteTo = v), "diatonicShift": (v) => (diatonicShift = v), "removeDuplicateNotes": (v) => (removeDuplicateNotes = v), "updateEditButtons": (v) => (updateEditButtons = v), "pushUndo": (v) => (pushUndo = v), "addTrackUndoable": (v) => (addTrackUndoable = v), "undoTrackAdd": (v) => (undoTrackAdd = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "cmpBar": (v) => (cmpBar = v), "askSys": (v) => (askSys = v), "aiUrl": (v) => (aiUrl = v), "aiHeaders": (v) => (aiHeaders = v), "aiSSE": (v) => (aiSSE = v), "aiHostKind": (v) => (aiHostKind = v), "aiHostOk": (v) => (aiHostOk = v), "aiRemote": (v) => (aiRemote = v), "aiSay": (v) => (aiSay = v), "aiModelMenu": (v) => (aiModelMenu = v), "aiPickModel": (v) => (aiPickModel = v), "aiTest": (v) => (aiTest = v), "aiRunTest": (v) => (aiRunTest = v), "aiBackendRows": (v) => (aiBackendRows = v), "aiBrowserMenu": (v) => (aiBrowserMenu = v), "aiWebllmLoad": (v) => (aiWebllmLoad = v), "aiEngineFor": (v) => (aiEngineFor = v), "aiBrowserTest": (v) => (aiBrowserTest = v), "aiBrowser": (v) => (aiBrowser = v), "aiProvider": (v) => (aiProvider = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askFindAnnotation": (v) => (askFindAnnotation = v), "askNoteKind": (v) => (askNoteKind = v), "askNoteValue": (v) => (askNoteValue = v), "askAnnotationStructural": (v) => (askAnnotationStructural = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "notesTxtForDoc": (v) => (notesTxtForDoc = v), "askSongPath": (v) => (askSongPath = v), "askReadBars": (v) => (askReadBars = v), "askRunTool": (v) => (askRunTool = v), "askSpan": (v) => (askSpan = v), "askSpanLabel": (v) => (askSpanLabel = v), "askKeyDeclared": (v) => (askKeyDeclared = v), "askKeySpellComment": (v) => (askKeySpellComment = v), "askSpanNotes": (v) => (askSpanNotes = v), "askSpanNotesCompact": (v) => (askSpanNotesCompact = v), "askBarRow": (v) => (askBarRow = v), "askBarFingerprint": (v) => (askBarFingerprint = v), "askSpanNotesCompactCached": (v) => (askSpanNotesCompactCached = v), "askSpanCachedBlock": (v) => (askSpanCachedBlock = v), "askLegendText": (v) => (askLegendText = v), "askAppState": (v) => (askAppState = v), "askModeLine": (v) => (askModeLine = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askViewCursorLine": (v) => (askViewCursorLine = v), "askOpenSongLine": (v) => (askOpenSongLine = v), "askCapLines": (v) => (askCapLines = v), "askNewSinceLines": (v) => (askNewSinceLines = v), "askSentKey": (v) => (askSentKey = v), "askSentGet": (v) => (askSentGet = v), "askSentStage": (v) => (askSentStage = v), "askSentStageBars": (v) => (askSentStageBars = v), "askSentCommit": (v) => (askSentCommit = v), "askSentDrop": (v) => (askSentDrop = v), "askSentReset": (v) => (askSentReset = v), "askEpochKey": (v) => (askEpochKey = v), "askEpochGet": (v) => (askEpochGet = v), "askEpochSet": (v) => (askEpochSet = v), "askEpochNote": (v) => (askEpochNote = v), "askCachedBlock": (v) => (askCachedBlock = v), "askContext": (v) => (askContext = v), "askBudget": (v) => (askBudget = v), "askStripContext": (v) => (askStripContext = v), "askSetMode": (v) => (askSetMode = v), "askModeButtons": (v) => (askModeButtons = v), "askStoreKey": (v) => (askStoreKey = v), "askSeenKey": (v) => (askSeenKey = v), "askSeenGet": (v) => (askSeenGet = v), "askMaxErrId": (v) => (askMaxErrId = v), "askMaxStatusId": (v) => (askMaxStatusId = v), "askSeenMaxKey": (v) => (askSeenMaxKey = v), "askSeenMax": (v) => (askSeenMax = v), "askSeenSet": (v) => (askSeenSet = v), "askSeenAdvance": (v) => (askSeenAdvance = v), "askSeenStage": (v) => (askSeenStage = v), "askSeenCommit": (v) => (askSeenCommit = v), "askSeenDrop": (v) => (askSeenDrop = v), "askStore": (v) => (askStore = v), "askLoad": (v) => (askLoad = v), "askUnsavedCount": (v) => (askUnsavedCount = v), "askSave": (v) => (askSave = v), "askRevertToSaved": (v) => (askRevertToSaved = v), "askEvictOthers": (v) => (askEvictOthers = v), "askModelName": (v) => (askModelName = v), "askLogKey": (v) => (askLogKey = v), "askLogSong": (v) => (askLogSong = v), "askLogPath": (v) => (askLogPath = v), "askLogHeader": (v) => (askLogHeader = v), "askLogMarkdown": (v) => (askLogMarkdown = v), "askCommitLog": (v) => (askCommitLog = v), "askMsgMode": (v) => (askMsgMode = v), "askBuildMessages": (v) => (askBuildMessages = v), "askEstimate": (v) => (askEstimate = v), "askSessionName": (v) => (askSessionName = v), "askToolsNow": (v) => (askToolsNow = v), "askInboxSeenKey": (v) => (askInboxSeenKey = v), "askInboxAllowed": (v) => (askInboxAllowed = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "askAgeText": (v) => (askAgeText = v), "scheduleBackupFlush": (v) => (scheduleBackupFlush = v), "flushBackupNow": (v) => (flushBackupNow = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployButtonTick": (v) => (deployButtonTick = v), "deployBannerShow": (v) => (deployBannerShow = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployActive": (v) => (deployActive = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsVisible": (v) => (askTabsVisible = v), "askTabsApply": (v) => (askTabsApply = v), "askSessionLine": (v) => (askSessionLine = v), "askCompactModelName": (v) => (askCompactModelName = v), "askSessionRender": (v) => (askSessionRender = v), "askSessionRefresh": (v) => (askSessionRefresh = v), "askStatusIdle": (v) => (askStatusIdle = v), "askStatusLine": (v) => (askStatusLine = v), "askStatusRender": (v) => (askStatusRender = v), "askStatusRecentShow": (v) => (askStatusRecentShow = v), "askStatusToggle": (v) => (askStatusToggle = v), "askStatusFetchCommits": (v) => (askStatusFetchCommits = v), "askShotShow": (v) => (askShotShow = v), "askShotLine": (v) => (askShotLine = v), "b64Bytes": (v) => (b64Bytes = v), "askShotCapture": (v) => (askShotCapture = v), "askShotUpload": (v) => (askShotUpload = v), "askShotTake": (v) => (askShotTake = v), "askShotStatusLabel": (v) => (askShotStatusLabel = v), "askShotRender": (v) => (askShotRender = v), "askShotAdd": (v) => (askShotAdd = v), "askShotRemove": (v) => (askShotRemove = v), "askShotClearAll": (v) => (askShotClearAll = v), "askShotRestore": (v) => (askShotRestore = v), "askShotOutgoing": (v) => (askShotOutgoing = v), "askShotDisplayText": (v) => (askShotDisplayText = v), "askPrepImage": (v) => (askPrepImage = v), "askPickFiles": (v) => (askPickFiles = v), "askClock": (v) => (askClock = v), "askNoteLabel": (v) => (askNoteLabel = v), "askInboxStart": (v) => (askInboxStart = v), "askBubble": (v) => (askBubble = v), "askFillBubble": (v) => (askFillBubble = v), "askCopyText": (v) => (askCopyText = v), "askDraftStore": (v) => (askDraftStore = v), "askDraftSave": (v) => (askDraftSave = v), "askDraftSaveSoon": (v) => (askDraftSaveSoon = v), "askComposing": (v) => (askComposing = v), "askDraftLoad": (v) => (askDraftLoad = v), "askDraftClear": (v) => (askDraftClear = v), "askRender": (v) => (askRender = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askRefresh": (v) => (askRefresh = v), "askShowThinking": (v) => (askShowThinking = v), "askJobsSupported": (v) => (askJobsSupported = v), "askJobId": (v) => (askJobId = v), "askPendingIndex": (v) => (askPendingIndex = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askBadgeOff": (v) => (askBadgeOff = v), "askRun": (v) => (askRun = v), "askTermModelsLoad": (v) => (askTermModelsLoad = v), "askTerminalContext": (v) => (askTerminalContext = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askResumeSoon": (v) => (askResumeSoon = v), "askPendingAll": (v) => (askPendingAll = v), "askRepending": (v) => (askRepending = v), "askResume": (v) => (askResume = v), "wmClampSize": (v) => (wmClampSize = v), "wmClampHeight": (v) => (wmClampHeight = v), "wmClampSplit": (v) => (wmClampSplit = v), "wmAllowed": (v) => (wmAllowed = v), "wmMigrate": (v) => (wmMigrate = v), "wmMigrateShape": (v) => (wmMigrateShape = v), "wmMigrateShapeB": (v) => (wmMigrateShapeB = v), "wmSetSide": (v) => (wmSetSide = v), "wmClearSide": (v) => (wmClearSide = v), "wmSetSideMode": (v) => (wmSetSideMode = v), "wmAddSideTab": (v) => (wmAddSideTab = v), "wmRemoveSideTab": (v) => (wmRemoveSideTab = v), "wmSetActiveSideTab": (v) => (wmSetActiveSideTab = v), "wmSetSideWidth": (v) => (wmSetSideWidth = v), "wmZoneFor": (v) => (wmZoneFor = v), "wmDockBottom": (v) => (wmDockBottom = v), "wmClearBottom": (v) => (wmClearBottom = v), "wmSetBottomHeight": (v) => (wmSetBottomHeight = v), "wmSetBottomSplit": (v) => (wmSetBottomSplit = v), "wmWhereIs": (v) => (wmWhereIs = v), "wmLoad": (v) => (wmLoad = v), "wmSave": (v) => (wmSave = v), "wmInnerWidth": (v) => (wmInnerWidth = v), "wmInnerHeight": (v) => (wmInnerHeight = v), "wmSideCells": (v) => (wmSideCells = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmWindowTitle": (v) => (wmWindowTitle = v), "wmLayoutBottom": (v) => (wmLayoutBottom = v), "wmDockLabel": (v) => (wmDockLabel = v), "wmDockShort": (v) => (wmDockShort = v), "wmSyncDockButtons": (v) => (wmSyncDockButtons = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmZoneForPointer": (v) => (wmZoneForPointer = v), "wmShowDropZone": (v) => (wmShowDropZone = v), "wmHideDropZone": (v) => (wmHideDropZone = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmMenuItem": (v) => (wmMenuItem = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmCloseMenu": (v) => (wmCloseMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askScrollEnd": (v) => (askScrollEnd = v), "askFocusIfKeyboard": (v) => (askFocusIfKeyboard = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askGrow": (v) => (askGrow = v), "askNormChip": (v) => (askNormChip = v), "askFindTrackIndex": (v) => (askFindTrackIndex = v), "parsePitch": (v) => (parsePitch = v), "askNoteVel": (v) => (askNoteVel = v), "askWriteNotesValidate": (v) => (askWriteNotesValidate = v), "askWritableGate": (v) => (askWritableGate = v), "askWriteNotes": (v) => (askWriteNotes = v), "askBarsCount": (v) => (askBarsCount = v), "askBarsValidate": (v) => (askBarsValidate = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "filesMirror": (v) => (filesMirror = v), "filesMirrorSoon": (v) => (filesMirrorSoon = v), "filesMirrorFor": (v) => (filesMirrorFor = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "draftDirtyState": (v) => (draftDirtyState = v), "syncable": (v) => (syncable = v), "pendingSongs": (v) => (pendingSongs = v), "renderSyncPending": (v) => (renderSyncPending = v), "discardPending": (v) => (discardPending = v), "openSyncSheet": (v) => (openSyncSheet = v), "cfgShowPane": (v) => (cfgShowPane = v), "openSettingsSheet": (v) => (openSettingsSheet = v), "noteTapMovesCursor": (v) => (noteTapMovesCursor = v), "penInstant": (v) => (penInstant = v), "textSizePref": (v) => (textSizePref = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "ghCheckOut": (v) => (ghCheckOut = v), "ghCheckMessage": (v) => (ghCheckMessage = v), "ghCheck": (v) => (ghCheck = v), "openShareSheet": (v) => (openShareSheet = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v)}};
+export const __nrExpose$ = {get: {"rememberRecentSong": () => rememberRecentSong, "recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "PSX_SOUNDING_ON": () => PSX_SOUNDING_ON, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "songRegionRight": () => songRegionRight, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "loadEdits": () => loadEdits, "saveEdits": () => saveEdits, "foldOldOverlay": () => foldOldOverlay, "retireOldOverlay": () => retireOldOverlay, "placeLassoBtn": () => placeLassoBtn, "updateEditBtnVis": () => updateEditBtnVis, "computeSongEnd": () => computeSongEnd, "annoSnapshot": () => annoSnapshot, "annoRestore": () => annoRestore, "setAnchorBQ": () => setAnchorBQ, "setEndBQ": () => setEndBQ, "bakeTempos": () => bakeTempos, "bakeMeter": () => bakeMeter, "finalizeNotes": () => finalizeNotes, "loadNotes": () => loadNotes, "subtractTombstones": () => subtractTombstones, "mergeLocalAdditions": () => mergeLocalAdditions, "annotationsFor": () => annotationsFor, "resolveNoteWith": () => resolveNoteWith, "saveLocalNotes": () => saveLocalNotes, "dirtySongs": () => dirtySongs, "updateSyncBtn": () => updateSyncBtn, "dropLocalKeyAt": () => dropLocalKeyAt, "dropSupersededBy": () => dropSupersededBy, "homeSong": () => homeSong, "appConfirm": () => appConfirm, "reflectSongURL": () => reflectSongURL, "toggleHl": () => toggleHl, "updateLCD": () => updateLCD, "governingAt": () => governingAt, "updateSubtitle": () => updateSubtitle, "loadSong": () => loadSong, "loadSongInner": () => loadSongInner, "setSong": () => setSong, "renderTrackbar": () => renderTrackbar, "updateTrackMore": () => updateTrackMore, "TRACK_ROW_SLACK": () => TRACK_ROW_SLACK, "trackRowNeed": () => trackRowNeed, "fitTrackRow": () => fitTrackRow, "scheduleFitTrackRow": () => scheduleFitTrackRow, "trackToggle": () => trackToggle, "mixerIsOpen": () => mixerIsOpen, "mixerPanLabel": () => mixerPanLabel, "moveInSameOrder": () => moveInSameOrder, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerMasterStripEl": () => mixerMasterStripEl, "mixerStripDragize": () => mixerStripDragize, "ensureMixerMeters": () => ensureMixerMeters, "teardownMixerMeters": () => teardownMixerMeters, "mixerMeterRms": () => mixerMeterRms, "mixerMeterLoop": () => mixerMeterLoop, "ensureMixerMeterLoop": () => ensureMixerMeterLoop, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "resize": () => resize, "draw": () => draw, "playbackFrame": () => playbackFrame, "updateCanvasA11y": () => updateCanvasA11y, "drawFull": () => drawFull, "clearMultiSel": () => clearMultiSel, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "reflectSelVel": () => reflectSelVel, "refreshSelInfo": () => refreshSelInfo, "renderOctBtn": () => renderOctBtn, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "writeClips": () => writeClips, "setClipDir": () => setClipDir, "moveClip": () => moveClip, "trimClip": () => trimClip, "splitClipAt": () => splitClipAt, "splitSelectedClipAtCursor": () => splitSelectedClipAtCursor, "deleteClip": () => deleteClip, "hitTracksClip": () => hitTracksClip, "updateChordStale": () => updateChordStale, "transposeChordLabel": () => transposeChordLabel, "ridealongChordBands": () => ridealongChordBands, "selEditApply": () => selEditApply, "nudgeSelection": () => nudgeSelection, "resizeSelection": () => resizeSelection, "copySelection": () => copySelection, "cutSelection": () => cutSelection, "pasteAnnotations": () => pasteAnnotations, "pasteClipboard": () => pasteClipboard, "selectAllNotes": () => selectAllNotes, "duplicateSelection": () => duplicateSelection, "lassoedAnnos": () => lassoedAnnos, "deleteSelection": () => deleteSelection, "sweepStrandedClones": () => sweepStrandedClones, "duplicateSelectionInPlace": () => duplicateSelectionInPlace, "splitApply": () => splitApply, "openGapShift": () => openGapShift, "closeGap": () => closeGap, "insertTime": () => insertTime, "openInsertBars": () => openInsertBars, "deleteTime": () => deleteTime, "openDeleteBars": () => openDeleteBars, "divideSelection": () => divideSelection, "quantizeSelection": () => quantizeSelection, "splitSelectionAt": () => splitSelectionAt, "splitSelectionHalves": () => splitSelectionHalves, "joinSelection": () => joinSelection, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "jobsNotify": () => jobsNotify, "jobsLoad": () => jobsLoad, "jobsAutoClear": () => jobsAutoClear, "jobStart": () => jobStart, "jobApi": () => jobApi, "jobCancel": () => jobCancel, "jobsDismiss": () => jobsDismiss, "jobsClearFinished": () => jobsClearFinished, "updateJobsBtn": () => updateJobsBtn, "renderJobs": () => renderJobs, "openPubJobSheet": () => openPubJobSheet, "pubItemIcon": () => pubItemIcon, "renderPubJob": () => renderPubJob, "errChip": () => errChip, "logErr": () => logErr, "logDebug": () => logDebug, "srAnnounce": () => srAnnounce, "STATUS_HISTORY_CAP": () => STATUS_HISTORY_CAP, "setInfo": () => setInfo, "minPxq": () => minPxq, "songPitchExtent": () => songPitchExtent, "pxqFloor": () => pxqFloor, "ROLL_AIR": () => ROLL_AIR, "dispPitchExtent": () => dispPitchExtent, "rowHFloor": () => rowHFloor, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "fitView": () => fitView, "PAN_TAIL_BARS": () => PAN_TAIL_BARS, "clampView": () => clampView, "tap": () => tap, "ensureAudio": () => ensureAudio, "rebuildAudio": () => rebuildAudio, "resumeAudio": () => resumeAudio, "sfPreloadForSong": () => sfPreloadForSong, "sfWaitForSong": () => sfWaitForSong, "autoVoiceLabel": () => autoVoiceLabel, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "GAME_FAMILY": () => GAME_FAMILY, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "SF2_FAMILY": () => SF2_FAMILY, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "gameVoiceFromAll": () => gameVoiceFromAll, "gameVoiceFrom": () => gameVoiceFrom, "gameVoiceFromSet": () => gameVoiceFromSet, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "transposeTrack": () => transposeTrack, "resolveGameVault": () => resolveGameVault, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "instPlayerReady": () => instPlayerReady, "gameLibSync": () => gameLibSync, "sf2Sync": () => sf2Sync, "gameVoicesInSong": () => gameVoicesInSong, "sf2VoicesInSong": () => sf2VoicesInSong, "gamePreloadTokens": () => gamePreloadTokens, "gamePreloadForSong": () => gamePreloadForSong, "gameWaitForSong": () => gameWaitForSong, "gameNoteCache": () => gameNoteCache, "gameNoteBucket": () => gameNoteBucket, "gameVoiceWarned": () => gameVoiceWarned, "gameVoiceWarn": () => gameVoiceWarn, "resolveVoiceInstrument": () => resolveVoiceInstrument, "scheduleGameNote": () => scheduleGameNote, "scheduleNote": () => scheduleNote, "previewNote": () => previewNote, "buildSchedule": () => buildSchedule, "chipSource": () => chipSource, "updateChipBtn": () => updateChipBtn, "PLAY_GATE_GRACE": () => PLAY_GATE_GRACE, "PLAY_GATE_MAX": () => PLAY_GATE_MAX, "gateSettled": () => gateSettled, "gateWatched": () => gateWatched, "gatePending": () => gatePending, "playGate": () => playGate, "playGateKick": () => playGateKick, "playGateActive": () => playGateActive, "playGateTick": () => playGateTick, "playGateWait": () => playGateWait, "updateChipBtnInner": () => updateChipBtnInner, "chipEstimateTracks": () => chipEstimateTracks, "chipRender": () => chipRender, "chipCleanupAfterFailure": () => chipCleanupAfterFailure, "chipPublish": () => chipPublish, "chipRenderInWorker": () => chipRenderInWorker, "chipStreamOpenWorker": () => chipStreamOpenWorker, "chipStreamOpen": () => chipStreamOpen, "chipRenderAuto": () => chipRenderAuto, "applyAudioDirs": () => applyAudioDirs, "audioEnsureFile": () => audioEnsureFile, "applyBeatMap": () => applyBeatMap, "setSongTempo": () => setSongTempo, "stretchEnsure": () => stretchEnsure, "audioChaseNow": () => audioChaseNow, "stretchEnsureAll": () => stretchEnsureAll, "scheduleClip": () => scheduleClip, "play": () => play, "stop": () => stop, "albumPos": () => albumPos, "armAlbumLink": () => armAlbumLink, "albumStrip": () => albumStrip, "albumClear": () => albumClear, "albumLeave": () => albumLeave, "albumStart": () => albumStart, "albumNext": () => albumNext, "albumPrev": () => albumPrev, "albumPlayIdx": () => albumPlayIdx, "albumAdvance": () => albumAdvance, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songtitleEl": () => songtitleEl, "songsheet": () => songsheet, "updateSongBtn": () => updateSongBtn, "songRow": () => songRow, "songHeader": () => songHeader, "localLabel": () => localLabel, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "updateSongMeta": () => updateSongMeta, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "keysel": () => keysel, "keysetBtn": () => keysetBtn, "keymodeSel": () => keymodeSel, "fileMeterAt": () => fileMeterAt, "fileCheckLine": () => fileCheckLine, "runKeyCheck": () => runKeyCheck, "runMeterCheck": () => runMeterCheck, "useFileKey": () => useFileKey, "useFileMeter": () => useFileMeter, "keyNameShownAt": () => keyNameShownAt, "expandKeyName": () => expandKeyName, "keyLabelState": () => keyLabelState, "tonicLabel": () => tonicLabel, "chosenTonic": () => chosenTonic, "chosenTonicPc": () => chosenTonicPc, "partialNameOf": () => partialNameOf, "tonicOptionValue": () => tonicOptionValue, "refreshKeyPreview": () => refreshKeyPreview, "refreshKeysetLabel": () => refreshKeysetLabel, "metStart": () => metStart, "CHORD_QUALS": () => CHORD_QUALS, "CHORD_ROOTS": () => CHORD_ROOTS, "INS_DURS": () => INS_DURS, "chordLabel": () => chordLabel, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "stampChordBand": () => stampChordBand, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "PROG_LIB": () => PROG_LIB, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "notelistSheet": () => notelistSheet, "NOTE_GROUPS": () => NOTE_GROUPS, "renderNoteJump": () => renderNoteJump, "renderNoteList": () => renderNoteList, "openNoteList": () => openNoteList, "showHelpTab": () => showHelpTab, "findsel": () => findsel, "refreshFindSel": () => refreshFindSel, "lassobtn": () => lassobtn, "chordEvidence": () => chordEvidence, "openChallenge": () => openChallenge, "applyListener": () => applyListener, "applyChrome": () => applyChrome, "FOOTER_DROPUP_BTN_IDS": () => FOOTER_DROPUP_BTN_IDS, "fitReadline": () => fitReadline, "scheduleFitReadline": () => scheduleFitReadline, "viewbtn": () => viewbtn, "viewSwitchMenu": () => viewSwitchMenu, "renderViewSwitch": () => renderViewSwitch, "applyViewMode": () => applyViewMode, "viewSaved": () => viewSaved, "setViewMode": () => setViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "syncDurSeg": () => syncDurSeg, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinish": () => recFinish, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "instbtn": () => instbtn, "instFallBtn": () => instFallBtn, "applyInst": () => applyInst, "subbtn": () => subbtn, "toggleSubtitle": () => toggleSubtitle, "editor": () => editor, "fillBarBeatSelects": () => fillBarBeatSelects, "editorType": () => editorType, "applyEditorType": () => applyEditorType, "BASS_SPELLINGS": () => BASS_SPELLINGS, "chordSel": () => chordSel, "refreshChordChips": () => refreshChordChips, "composeChord": () => composeChord, "setChordWidget": () => setChordWidget, "SPEECH": () => SPEECH, "nmic": () => nmic, "micStop": () => micStop, "micJoin": () => micJoin, "micToggle": () => micToggle, "snapBeat": () => snapBeat, "setBeatPair": () => setBeatPair, "getBeatPair": () => getBeatPair, "openEditor": () => openEditor, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "tombKey": () => tombKey, "tombKeyFor": () => tombKeyFor, "noteIdentity": () => noteIdentity, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "tombstone": () => tombstone, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "syncsheet": () => syncsheet, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "folderChoices": () => folderChoices, "fillFolderSelect": () => fillFolderSelect, "renameLocalKeys": () => renameLocalKeys, "saveSongAs": () => saveSongAs, "openSaveForm": () => openSaveForm, "localFolders": () => localFolders, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "songStatus": () => songStatus, "publishDest": () => publishDest, "publishLabel": () => publishLabel, "draftFingerprint": () => draftFingerprint, "pubCheck": () => pubCheck, "pubCompareDraft": () => pubCompareDraft, "fingerprintOldDrafts": () => fingerprintOldDrafts, "saveDraft": () => saveDraft, "saveVersion": () => saveVersion, "openDraft": () => openDraft, "openDraftDoc": () => openDraftDoc, "createComposition": () => createComposition, "forkCurrentSong": () => forkCurrentSong, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "renderViewMenu": () => renderViewMenu, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "closeDropUp": () => closeDropUp, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "instLibs": () => instLibs, "instWavs": () => instWavs, "instPlayer": () => instPlayer, "instDecodeWav": () => instDecodeWav, "instAlbums": () => instAlbums, "romanValue": () => romanValue, "titleSortKey": () => titleSortKey, "titleCompare": () => titleCompare, "INST_SYS_ORDER": () => INST_SYS_ORDER, "INST_CHIPS": () => INST_CHIPS, "instFolder": () => instFolder, "gameInstUsedBySong": () => gameInstUsedBySong, "gameSongRows": () => gameSongRows, "songInstrumentRows": () => songInstrumentRows, "currentSongGameContext": () => currentSongGameContext, "instLibrary": () => instLibrary, "instSamples": () => instSamples, "instKeys": () => instKeys, "sf2Module": () => sf2Module, "sf2Fonts": () => sf2Fonts, "sf2Bytes": () => sf2Bytes, "sf2Font": () => sf2Font, "sf2Registry": () => sf2Registry, "sf2RegistryAdd": () => sf2RegistryAdd, "instAudition": () => instAudition, "usedInstruments": () => usedInstruments, "usedInstrumentRows": () => usedInstrumentRows, "renderGameInstNav": () => renderGameInstNav, "renderInstSheet": () => renderInstSheet, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "dropLocalSong": () => dropLocalSong, "revertSongToRepo": () => revertSongToRepo, "versionLabel": () => versionLabel, "openVersionsSheet": () => openVersionsSheet, "renderVersionsSheet": () => renderVersionsSheet, "goBackToVersion": () => goBackToVersion, "goBackToPublished": () => goBackToPublished, "offlineWaitForAssets": () => offlineWaitForAssets, "renderSongOffline": () => renderSongOffline, "recordRealtimeAudio": () => recordRealtimeAudio, "CHIPS": () => CHIPS, "sonySeqCapture": () => sonySeqCapture, "psfInflater": () => psfInflater, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipExt": () => chipExt, "chipVaultMeta": () => chipVaultMeta, "chipVaultFile": () => chipVaultFile, "chipModules": () => chipModules, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "localDraftWrite": () => localDraftWrite, "localDraftTracks": () => localDraftTracks, "draftWrite": () => draftWrite, "draftRead": () => draftRead, "idbDraftPut": () => idbDraftPut, "commitImports": () => commitImports, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "dpTick": () => dpTick, "drGenerate": () => drGenerate, "drKitCountT": () => drKitCountT, "scheduleAnalysisRecompute": () => scheduleAnalysisRecompute, "adoptChordBand": () => adoptChordBand, "adoptAllChords": () => adoptAllChords, "adoptKeyRegion": () => adoptKeyRegion, "openAnalyzeSheet": () => openAnalyzeSheet, "bsGenerate": () => bsGenerate, "applyTake": () => applyTake, "bsBuildControls": () => bsBuildControls, "bsRange": () => bsRange, "bsRefresh": () => bsRefresh, "openBassist": () => openBassist, "drRange": () => drRange, "drRefresh": () => drRefresh, "segGet": () => segGet, "segSet": () => segSet, "drPartsGet": () => drPartsGet, "drPartsSet": () => drPartsSet, "drPartsSync": () => drPartsSync, "drBuildControls": () => drBuildControls, "openDrummer": () => openDrummer, "openPasteTo": () => openPasteTo, "diatonicShift": () => diatonicShift, "removeDuplicateNotes": () => removeDuplicateNotes, "updateEditButtons": () => updateEditButtons, "pushUndo": () => pushUndo, "addTrackUndoable": () => addTrackUndoable, "undoTrackAdd": () => undoTrackAdd, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "cmpBar": () => cmpBar, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askSave": () => askSave, "askCommitLog": () => askCommitLog, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "scheduleBackupFlush": () => scheduleBackupFlush, "flushBackupNow": () => flushBackupNow, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askBubble": () => askBubble, "askFillBubble": () => askFillBubble, "askCopyText": () => askCopyText, "askRender": () => askRender, "askRenderEarlier": () => askRenderEarlier, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askResumeSoon": () => askResumeSoon, "askRepending": () => askRepending, "askResume": () => askResume, "WM_KEY": () => WM_KEY, "WM_OLD_KEY": () => WM_OLD_KEY, "WM_MIN_W": () => WM_MIN_W, "WM_DEFAULT_W": () => WM_DEFAULT_W, "WM_MIN_H": () => WM_MIN_H, "WM_DEFAULT_H": () => WM_DEFAULT_H, "WM_MIN_SPLIT": () => WM_MIN_SPLIT, "WM_PHONE_MAX": () => WM_PHONE_MAX, "WM_ZONE_FRAC": () => WM_ZONE_FRAC, "WM_EDGE_GAP": () => WM_EDGE_GAP, "wmClampSize": () => wmClampSize, "wmClampHeight": () => wmClampHeight, "wmClampSplit": () => wmClampSplit, "wmAllowed": () => wmAllowed, "wmMigrate": () => wmMigrate, "wmMigrateShape": () => wmMigrateShape, "wmMigrateShapeB": () => wmMigrateShapeB, "wmSetSide": () => wmSetSide, "wmClearSide": () => wmClearSide, "wmSetSideMode": () => wmSetSideMode, "wmAddSideTab": () => wmAddSideTab, "wmRemoveSideTab": () => wmRemoveSideTab, "wmSetActiveSideTab": () => wmSetActiveSideTab, "wmSetSideWidth": () => wmSetSideWidth, "wmZoneFor": () => wmZoneFor, "wmDockBottom": () => wmDockBottom, "wmClearBottom": () => wmClearBottom, "wmSetBottomHeight": () => wmSetBottomHeight, "wmSetBottomSplit": () => wmSetBottomSplit, "wmWhereIs": () => wmWhereIs, "wmLoad": () => wmLoad, "wmSave": () => wmSave, "wmInnerWidth": () => wmInnerWidth, "wmInnerHeight": () => wmInnerHeight, "WM_WINDOWS": () => WM_WINDOWS, "wmSideCells": () => wmSideCells, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmWindowTitle": () => wmWindowTitle, "wmLayoutBottom": () => wmLayoutBottom, "wmDockLabel": () => wmDockLabel, "wmDockShort": () => wmDockShort, "wmSyncDockButtons": () => wmSyncDockButtons, "wmLayoutAll": () => wmLayoutAll, "wmZoneForPointer": () => wmZoneForPointer, "wmShowDropZone": () => wmShowDropZone, "wmHideDropZone": () => wmHideDropZone, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmMenuItem": () => wmMenuItem, "wmOpenMenu": () => wmOpenMenu, "wmCloseMenu": () => wmCloseMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "filesMirror": () => filesMirror, "filesMirrorSoon": () => filesMirrorSoon, "filesMirrorFor": () => filesMirrorFor, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "draftDirtyState": () => draftDirtyState, "syncable": () => syncable, "pendingSongs": () => pendingSongs, "renderSyncPending": () => renderSyncPending, "discardPending": () => discardPending, "openSyncSheet": () => openSyncSheet, "CFG_PANES": () => CFG_PANES, "cfgShowPane": () => cfgShowPane, "openSettingsSheet": () => openSettingsSheet, "noteTapMovesCursor": () => noteTapMovesCursor, "penInstant": () => penInstant, "textSizePref": () => textSizePref, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "ghCheckOut": () => ghCheckOut, "ghCheckMessage": () => ghCheckMessage, "ghCheck": () => ghCheck, "MODAL_KEEP": () => MODAL_KEEP, "openShareSheet": () => openShareSheet, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart}, set: {"rememberRecentSong": (v) => (rememberRecentSong = v), "recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "songRegionRight": (v) => (songRegionRight = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "loadEdits": (v) => (loadEdits = v), "saveEdits": (v) => (saveEdits = v), "foldOldOverlay": (v) => (foldOldOverlay = v), "retireOldOverlay": (v) => (retireOldOverlay = v), "placeLassoBtn": (v) => (placeLassoBtn = v), "updateEditBtnVis": (v) => (updateEditBtnVis = v), "computeSongEnd": (v) => (computeSongEnd = v), "annoSnapshot": (v) => (annoSnapshot = v), "annoRestore": (v) => (annoRestore = v), "setAnchorBQ": (v) => (setAnchorBQ = v), "setEndBQ": (v) => (setEndBQ = v), "bakeTempos": (v) => (bakeTempos = v), "bakeMeter": (v) => (bakeMeter = v), "finalizeNotes": (v) => (finalizeNotes = v), "loadNotes": (v) => (loadNotes = v), "subtractTombstones": (v) => (subtractTombstones = v), "mergeLocalAdditions": (v) => (mergeLocalAdditions = v), "annotationsFor": (v) => (annotationsFor = v), "resolveNoteWith": (v) => (resolveNoteWith = v), "saveLocalNotes": (v) => (saveLocalNotes = v), "dirtySongs": (v) => (dirtySongs = v), "updateSyncBtn": (v) => (updateSyncBtn = v), "dropLocalKeyAt": (v) => (dropLocalKeyAt = v), "dropSupersededBy": (v) => (dropSupersededBy = v), "homeSong": (v) => (homeSong = v), "appConfirm": (v) => (appConfirm = v), "reflectSongURL": (v) => (reflectSongURL = v), "toggleHl": (v) => (toggleHl = v), "updateLCD": (v) => (updateLCD = v), "governingAt": (v) => (governingAt = v), "updateSubtitle": (v) => (updateSubtitle = v), "loadSong": (v) => (loadSong = v), "loadSongInner": (v) => (loadSongInner = v), "setSong": (v) => (setSong = v), "renderTrackbar": (v) => (renderTrackbar = v), "updateTrackMore": (v) => (updateTrackMore = v), "trackRowNeed": (v) => (trackRowNeed = v), "fitTrackRow": (v) => (fitTrackRow = v), "scheduleFitTrackRow": (v) => (scheduleFitTrackRow = v), "trackToggle": (v) => (trackToggle = v), "mixerIsOpen": (v) => (mixerIsOpen = v), "mixerPanLabel": (v) => (mixerPanLabel = v), "moveInSameOrder": (v) => (moveInSameOrder = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerMasterStripEl": (v) => (mixerMasterStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "ensureMixerMeters": (v) => (ensureMixerMeters = v), "teardownMixerMeters": (v) => (teardownMixerMeters = v), "mixerMeterRms": (v) => (mixerMeterRms = v), "mixerMeterLoop": (v) => (mixerMeterLoop = v), "ensureMixerMeterLoop": (v) => (ensureMixerMeterLoop = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "resize": (v) => (resize = v), "draw": (v) => (draw = v), "playbackFrame": (v) => (playbackFrame = v), "updateCanvasA11y": (v) => (updateCanvasA11y = v), "drawFull": (v) => (drawFull = v), "clearMultiSel": (v) => (clearMultiSel = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "reflectSelVel": (v) => (reflectSelVel = v), "refreshSelInfo": (v) => (refreshSelInfo = v), "renderOctBtn": (v) => (renderOctBtn = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "writeClips": (v) => (writeClips = v), "setClipDir": (v) => (setClipDir = v), "moveClip": (v) => (moveClip = v), "trimClip": (v) => (trimClip = v), "splitClipAt": (v) => (splitClipAt = v), "splitSelectedClipAtCursor": (v) => (splitSelectedClipAtCursor = v), "deleteClip": (v) => (deleteClip = v), "hitTracksClip": (v) => (hitTracksClip = v), "updateChordStale": (v) => (updateChordStale = v), "transposeChordLabel": (v) => (transposeChordLabel = v), "ridealongChordBands": (v) => (ridealongChordBands = v), "selEditApply": (v) => (selEditApply = v), "nudgeSelection": (v) => (nudgeSelection = v), "resizeSelection": (v) => (resizeSelection = v), "copySelection": (v) => (copySelection = v), "cutSelection": (v) => (cutSelection = v), "pasteAnnotations": (v) => (pasteAnnotations = v), "pasteClipboard": (v) => (pasteClipboard = v), "selectAllNotes": (v) => (selectAllNotes = v), "duplicateSelection": (v) => (duplicateSelection = v), "lassoedAnnos": (v) => (lassoedAnnos = v), "deleteSelection": (v) => (deleteSelection = v), "sweepStrandedClones": (v) => (sweepStrandedClones = v), "duplicateSelectionInPlace": (v) => (duplicateSelectionInPlace = v), "splitApply": (v) => (splitApply = v), "openGapShift": (v) => (openGapShift = v), "closeGap": (v) => (closeGap = v), "insertTime": (v) => (insertTime = v), "openInsertBars": (v) => (openInsertBars = v), "deleteTime": (v) => (deleteTime = v), "openDeleteBars": (v) => (openDeleteBars = v), "divideSelection": (v) => (divideSelection = v), "quantizeSelection": (v) => (quantizeSelection = v), "splitSelectionAt": (v) => (splitSelectionAt = v), "splitSelectionHalves": (v) => (splitSelectionHalves = v), "joinSelection": (v) => (joinSelection = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsNotify": (v) => (jobsNotify = v), "jobsLoad": (v) => (jobsLoad = v), "jobsAutoClear": (v) => (jobsAutoClear = v), "jobStart": (v) => (jobStart = v), "jobApi": (v) => (jobApi = v), "jobCancel": (v) => (jobCancel = v), "jobsDismiss": (v) => (jobsDismiss = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "updateJobsBtn": (v) => (updateJobsBtn = v), "renderJobs": (v) => (renderJobs = v), "openPubJobSheet": (v) => (openPubJobSheet = v), "pubItemIcon": (v) => (pubItemIcon = v), "renderPubJob": (v) => (renderPubJob = v), "errChip": (v) => (errChip = v), "logErr": (v) => (logErr = v), "logDebug": (v) => (logDebug = v), "srAnnounce": (v) => (srAnnounce = v), "setInfo": (v) => (setInfo = v), "minPxq": (v) => (minPxq = v), "songPitchExtent": (v) => (songPitchExtent = v), "pxqFloor": (v) => (pxqFloor = v), "dispPitchExtent": (v) => (dispPitchExtent = v), "rowHFloor": (v) => (rowHFloor = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "fitView": (v) => (fitView = v), "clampView": (v) => (clampView = v), "tap": (v) => (tap = v), "ensureAudio": (v) => (ensureAudio = v), "rebuildAudio": (v) => (rebuildAudio = v), "resumeAudio": (v) => (resumeAudio = v), "sfPreloadForSong": (v) => (sfPreloadForSong = v), "sfWaitForSong": (v) => (sfWaitForSong = v), "autoVoiceLabel": (v) => (autoVoiceLabel = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "gameVoiceFromAll": (v) => (gameVoiceFromAll = v), "gameVoiceFrom": (v) => (gameVoiceFrom = v), "gameVoiceFromSet": (v) => (gameVoiceFromSet = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "transposeTrack": (v) => (transposeTrack = v), "resolveGameVault": (v) => (resolveGameVault = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "instPlayerReady": (v) => (instPlayerReady = v), "gameVoicesInSong": (v) => (gameVoicesInSong = v), "sf2VoicesInSong": (v) => (sf2VoicesInSong = v), "gamePreloadForSong": (v) => (gamePreloadForSong = v), "gameWaitForSong": (v) => (gameWaitForSong = v), "gameNoteBucket": (v) => (gameNoteBucket = v), "gameVoiceWarn": (v) => (gameVoiceWarn = v), "resolveVoiceInstrument": (v) => (resolveVoiceInstrument = v), "scheduleGameNote": (v) => (scheduleGameNote = v), "scheduleNote": (v) => (scheduleNote = v), "previewNote": (v) => (previewNote = v), "buildSchedule": (v) => (buildSchedule = v), "chipSource": (v) => (chipSource = v), "updateChipBtn": (v) => (updateChipBtn = v), "gatePending": (v) => (gatePending = v), "playGate": (v) => (playGate = v), "playGateKick": (v) => (playGateKick = v), "playGateActive": (v) => (playGateActive = v), "playGateTick": (v) => (playGateTick = v), "playGateWait": (v) => (playGateWait = v), "updateChipBtnInner": (v) => (updateChipBtnInner = v), "chipEstimateTracks": (v) => (chipEstimateTracks = v), "chipRender": (v) => (chipRender = v), "chipCleanupAfterFailure": (v) => (chipCleanupAfterFailure = v), "chipPublish": (v) => (chipPublish = v), "chipRenderInWorker": (v) => (chipRenderInWorker = v), "chipStreamOpenWorker": (v) => (chipStreamOpenWorker = v), "chipStreamOpen": (v) => (chipStreamOpen = v), "chipRenderAuto": (v) => (chipRenderAuto = v), "applyAudioDirs": (v) => (applyAudioDirs = v), "audioEnsureFile": (v) => (audioEnsureFile = v), "applyBeatMap": (v) => (applyBeatMap = v), "setSongTempo": (v) => (setSongTempo = v), "stretchEnsure": (v) => (stretchEnsure = v), "audioChaseNow": (v) => (audioChaseNow = v), "stretchEnsureAll": (v) => (stretchEnsureAll = v), "scheduleClip": (v) => (scheduleClip = v), "play": (v) => (play = v), "stop": (v) => (stop = v), "albumPos": (v) => (albumPos = v), "armAlbumLink": (v) => (armAlbumLink = v), "albumStrip": (v) => (albumStrip = v), "albumClear": (v) => (albumClear = v), "albumLeave": (v) => (albumLeave = v), "albumStart": (v) => (albumStart = v), "albumNext": (v) => (albumNext = v), "albumPrev": (v) => (albumPrev = v), "albumPlayIdx": (v) => (albumPlayIdx = v), "albumAdvance": (v) => (albumAdvance = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "updateSongBtn": (v) => (updateSongBtn = v), "songRow": (v) => (songRow = v), "songHeader": (v) => (songHeader = v), "localLabel": (v) => (localLabel = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "updateSongMeta": (v) => (updateSongMeta = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "fileCheckLine": (v) => (fileCheckLine = v), "runKeyCheck": (v) => (runKeyCheck = v), "runMeterCheck": (v) => (runMeterCheck = v), "useFileKey": (v) => (useFileKey = v), "useFileMeter": (v) => (useFileMeter = v), "keyNameShownAt": (v) => (keyNameShownAt = v), "expandKeyName": (v) => (expandKeyName = v), "keyLabelState": (v) => (keyLabelState = v), "tonicLabel": (v) => (tonicLabel = v), "chosenTonic": (v) => (chosenTonic = v), "chosenTonicPc": (v) => (chosenTonicPc = v), "partialNameOf": (v) => (partialNameOf = v), "tonicOptionValue": (v) => (tonicOptionValue = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "refreshKeysetLabel": (v) => (refreshKeysetLabel = v), "metStart": (v) => (metStart = v), "chordLabel": (v) => (chordLabel = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "stampChordBand": (v) => (stampChordBand = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "renderNoteJump": (v) => (renderNoteJump = v), "renderNoteList": (v) => (renderNoteList = v), "openNoteList": (v) => (openNoteList = v), "showHelpTab": (v) => (showHelpTab = v), "refreshFindSel": (v) => (refreshFindSel = v), "chordEvidence": (v) => (chordEvidence = v), "openChallenge": (v) => (openChallenge = v), "applyListener": (v) => (applyListener = v), "applyChrome": (v) => (applyChrome = v), "fitReadline": (v) => (fitReadline = v), "scheduleFitReadline": (v) => (scheduleFitReadline = v), "renderViewSwitch": (v) => (renderViewSwitch = v), "applyViewMode": (v) => (applyViewMode = v), "setViewMode": (v) => (setViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "syncDurSeg": (v) => (syncDurSeg = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "recFinish": (v) => (recFinish = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "applyInst": (v) => (applyInst = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "fillBarBeatSelects": (v) => (fillBarBeatSelects = v), "editorType": (v) => (editorType = v), "applyEditorType": (v) => (applyEditorType = v), "refreshChordChips": (v) => (refreshChordChips = v), "composeChord": (v) => (composeChord = v), "setChordWidget": (v) => (setChordWidget = v), "micStop": (v) => (micStop = v), "micJoin": (v) => (micJoin = v), "micToggle": (v) => (micToggle = v), "snapBeat": (v) => (snapBeat = v), "setBeatPair": (v) => (setBeatPair = v), "getBeatPair": (v) => (getBeatPair = v), "openEditor": (v) => (openEditor = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "tombKey": (v) => (tombKey = v), "tombKeyFor": (v) => (tombKeyFor = v), "noteIdentity": (v) => (noteIdentity = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "tombstone": (v) => (tombstone = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "folderChoices": (v) => (folderChoices = v), "fillFolderSelect": (v) => (fillFolderSelect = v), "renameLocalKeys": (v) => (renameLocalKeys = v), "saveSongAs": (v) => (saveSongAs = v), "openSaveForm": (v) => (openSaveForm = v), "localFolders": (v) => (localFolders = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "songStatus": (v) => (songStatus = v), "publishDest": (v) => (publishDest = v), "publishLabel": (v) => (publishLabel = v), "draftFingerprint": (v) => (draftFingerprint = v), "pubCompareDraft": (v) => (pubCompareDraft = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "saveDraft": (v) => (saveDraft = v), "saveVersion": (v) => (saveVersion = v), "openDraft": (v) => (openDraft = v), "openDraftDoc": (v) => (openDraftDoc = v), "createComposition": (v) => (createComposition = v), "forkCurrentSong": (v) => (forkCurrentSong = v), "renderViewMenu": (v) => (renderViewMenu = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "closeDropUp": (v) => (closeDropUp = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "instPlayer": (v) => (instPlayer = v), "instDecodeWav": (v) => (instDecodeWav = v), "instAlbums": (v) => (instAlbums = v), "romanValue": (v) => (romanValue = v), "titleSortKey": (v) => (titleSortKey = v), "titleCompare": (v) => (titleCompare = v), "instFolder": (v) => (instFolder = v), "gameInstUsedBySong": (v) => (gameInstUsedBySong = v), "gameSongRows": (v) => (gameSongRows = v), "songInstrumentRows": (v) => (songInstrumentRows = v), "currentSongGameContext": (v) => (currentSongGameContext = v), "instLibrary": (v) => (instLibrary = v), "instSamples": (v) => (instSamples = v), "instKeys": (v) => (instKeys = v), "sf2Module": (v) => (sf2Module = v), "sf2Bytes": (v) => (sf2Bytes = v), "sf2Font": (v) => (sf2Font = v), "sf2Registry": (v) => (sf2Registry = v), "sf2RegistryAdd": (v) => (sf2RegistryAdd = v), "instAudition": (v) => (instAudition = v), "usedInstruments": (v) => (usedInstruments = v), "usedInstrumentRows": (v) => (usedInstrumentRows = v), "renderGameInstNav": (v) => (renderGameInstNav = v), "renderInstSheet": (v) => (renderInstSheet = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "dropLocalSong": (v) => (dropLocalSong = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "versionLabel": (v) => (versionLabel = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "goBackToPublished": (v) => (goBackToPublished = v), "offlineWaitForAssets": (v) => (offlineWaitForAssets = v), "renderSongOffline": (v) => (renderSongOffline = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "sonySeqCapture": (v) => (sonySeqCapture = v), "psfInflater": (v) => (psfInflater = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipExt": (v) => (chipExt = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "chipVaultFile": (v) => (chipVaultFile = v), "chipModules": (v) => (chipModules = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "localDraftWrite": (v) => (localDraftWrite = v), "localDraftTracks": (v) => (localDraftTracks = v), "draftWrite": (v) => (draftWrite = v), "draftRead": (v) => (draftRead = v), "idbDraftPut": (v) => (idbDraftPut = v), "commitImports": (v) => (commitImports = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "dpTick": (v) => (dpTick = v), "drGenerate": (v) => (drGenerate = v), "drKitCountT": (v) => (drKitCountT = v), "scheduleAnalysisRecompute": (v) => (scheduleAnalysisRecompute = v), "adoptChordBand": (v) => (adoptChordBand = v), "adoptAllChords": (v) => (adoptAllChords = v), "adoptKeyRegion": (v) => (adoptKeyRegion = v), "openAnalyzeSheet": (v) => (openAnalyzeSheet = v), "bsGenerate": (v) => (bsGenerate = v), "applyTake": (v) => (applyTake = v), "bsBuildControls": (v) => (bsBuildControls = v), "bsRange": (v) => (bsRange = v), "bsRefresh": (v) => (bsRefresh = v), "openBassist": (v) => (openBassist = v), "drRange": (v) => (drRange = v), "drRefresh": (v) => (drRefresh = v), "segGet": (v) => (segGet = v), "segSet": (v) => (segSet = v), "drPartsGet": (v) => (drPartsGet = v), "drPartsSet": (v) => (drPartsSet = v), "drPartsSync": (v) => (drPartsSync = v), "drBuildControls": (v) => (drBuildControls = v), "openDrummer": (v) => (openDrummer = v), "openPasteTo": (v) => (openPasteTo = v), "diatonicShift": (v) => (diatonicShift = v), "removeDuplicateNotes": (v) => (removeDuplicateNotes = v), "updateEditButtons": (v) => (updateEditButtons = v), "pushUndo": (v) => (pushUndo = v), "addTrackUndoable": (v) => (addTrackUndoable = v), "undoTrackAdd": (v) => (undoTrackAdd = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "cmpBar": (v) => (cmpBar = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askSave": (v) => (askSave = v), "askCommitLog": (v) => (askCommitLog = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "scheduleBackupFlush": (v) => (scheduleBackupFlush = v), "flushBackupNow": (v) => (flushBackupNow = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askBubble": (v) => (askBubble = v), "askFillBubble": (v) => (askFillBubble = v), "askCopyText": (v) => (askCopyText = v), "askRender": (v) => (askRender = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askResumeSoon": (v) => (askResumeSoon = v), "askRepending": (v) => (askRepending = v), "askResume": (v) => (askResume = v), "wmClampSize": (v) => (wmClampSize = v), "wmClampHeight": (v) => (wmClampHeight = v), "wmClampSplit": (v) => (wmClampSplit = v), "wmAllowed": (v) => (wmAllowed = v), "wmMigrate": (v) => (wmMigrate = v), "wmMigrateShape": (v) => (wmMigrateShape = v), "wmMigrateShapeB": (v) => (wmMigrateShapeB = v), "wmSetSide": (v) => (wmSetSide = v), "wmClearSide": (v) => (wmClearSide = v), "wmSetSideMode": (v) => (wmSetSideMode = v), "wmAddSideTab": (v) => (wmAddSideTab = v), "wmRemoveSideTab": (v) => (wmRemoveSideTab = v), "wmSetActiveSideTab": (v) => (wmSetActiveSideTab = v), "wmSetSideWidth": (v) => (wmSetSideWidth = v), "wmZoneFor": (v) => (wmZoneFor = v), "wmDockBottom": (v) => (wmDockBottom = v), "wmClearBottom": (v) => (wmClearBottom = v), "wmSetBottomHeight": (v) => (wmSetBottomHeight = v), "wmSetBottomSplit": (v) => (wmSetBottomSplit = v), "wmWhereIs": (v) => (wmWhereIs = v), "wmLoad": (v) => (wmLoad = v), "wmSave": (v) => (wmSave = v), "wmInnerWidth": (v) => (wmInnerWidth = v), "wmInnerHeight": (v) => (wmInnerHeight = v), "wmSideCells": (v) => (wmSideCells = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmWindowTitle": (v) => (wmWindowTitle = v), "wmLayoutBottom": (v) => (wmLayoutBottom = v), "wmDockLabel": (v) => (wmDockLabel = v), "wmDockShort": (v) => (wmDockShort = v), "wmSyncDockButtons": (v) => (wmSyncDockButtons = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmZoneForPointer": (v) => (wmZoneForPointer = v), "wmShowDropZone": (v) => (wmShowDropZone = v), "wmHideDropZone": (v) => (wmHideDropZone = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmMenuItem": (v) => (wmMenuItem = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmCloseMenu": (v) => (wmCloseMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "filesMirror": (v) => (filesMirror = v), "filesMirrorSoon": (v) => (filesMirrorSoon = v), "filesMirrorFor": (v) => (filesMirrorFor = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "draftDirtyState": (v) => (draftDirtyState = v), "syncable": (v) => (syncable = v), "pendingSongs": (v) => (pendingSongs = v), "renderSyncPending": (v) => (renderSyncPending = v), "discardPending": (v) => (discardPending = v), "openSyncSheet": (v) => (openSyncSheet = v), "cfgShowPane": (v) => (cfgShowPane = v), "openSettingsSheet": (v) => (openSettingsSheet = v), "noteTapMovesCursor": (v) => (noteTapMovesCursor = v), "penInstant": (v) => (penInstant = v), "textSizePref": (v) => (textSizePref = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "ghCheckOut": (v) => (ghCheckOut = v), "ghCheckMessage": (v) => (ghCheckMessage = v), "ghCheck": (v) => (ghCheck = v), "openShareSheet": (v) => (openShareSheet = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v)}};

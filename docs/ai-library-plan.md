@@ -102,6 +102,53 @@ Night Roll's profile; `--repo` required.
 
 ## 3. What goes where
 
+**Step 13 landed** (docs/split-plan.md, 2026-10-04) — this section's
+prerequisite move is done; here is where its own library-bound/adapter-bound
+split actually ended up, one step before extraction can begin:
+- Library-bound, landed in `src/ask/backend.js`: `aiSSE`, `aiHeaders`,
+  `aiHostKind`, `aiRemote`, `aiSay`, `aiModelMenu`, `aiPickModel`, `aiTest`,
+  `aiRunTest`, `aiBackendRows`, `aiBrowserMenu`, the WebLLM bits
+  (`aiWebllmLoad`, `aiEngineFor`, `aiBrowserTest`, `aiBrowser`), `aiProvider`
+  — every one of this table's row-1/row-2 library names except `aiHostOk`
+  (stayed in app.js: its one `appConfirm()` call has no `host.confirm`
+  adapter yet) and `aiUrl` (moved too, though this table calls it an
+  adapter one-line wrapper — today it still reads `cfg()` directly, since
+  the `host.settings` seam doesn't exist until extraction itself).
+- Adapter-bound, landed in `src/ask/context.js`: `askSys`/`ASK_SYS_*`/
+  `RULE_LEARNING`/`RULE_NORMAL` (moved verbatim — Learning law untouched),
+  `askContext`'s own line builders (`askSpan*`, `askBarRow`/
+  `askBarFingerprint`, `askLegendText`, `askAppState`, `askModeLine`,
+  `askViewCursorLine`, `askOpenSongLine`, `askCapLines`,
+  `askNewSinceLines`), `askTerminalContext`. **`askContext` itself did
+  NOT move** (blocked by `askKeyStateLine` → `keyLabelState`, no home yet)
+  — it stays in app.js, importing every line builder above back; this
+  table's row "`askContext`, `askTerminalContext`, `askAnnotationsText*`...
+  → adapter (context builder)" is therefore split: the builder FUNCTIONS
+  moved, the top-level `askContext` ORCHESTRATOR did not, yet.
+- Adapter-bound, landed in `src/ask/tools.js`: `ASK_TOOLS`'s schema,
+  `askAnnotationsText`/`askAnnotationsTextCompact`, and the small per-field
+  validators (`askFindAnnotation`/`askNoteKind`/`askNoteValue`/
+  `askAnnotationStructural`/`askNormChip`/`askFindTrackIndex`/`askNoteVel`/
+  `askWriteNotesValidate`/`askWritableGate`/`askBarsCount`/
+  `askBarsValidate`). **`askRunTool` and every tool body that writes
+  (`askAddAnnotation`/`askEditAnnotation`/`askDeleteAnnotation`/
+  `askPublishSong`/`askWriteNotes`/`askInsertBars`/`askCopyBars`/
+  `askDeleteBars`) did NOT move** — this table's "adapter (tool registry)"
+  row is, like `askContext` above, split between moved field-helpers and
+  an un-moved dispatcher + write bodies, still blocked by `draw`/
+  `finalizeNotes`/`saveEdits`/`saveDraft`/`publishSong`/`insertTime`/
+  `deleteTime`/`applyTake` (all `ui/*`-or-permanently blocked; see
+  docs/split-plan.md's step 13 Deviations).
+- `askCommitLog` (this table's own adapter/`host.persistLog` row) did NOT
+  move — blocked by `askSave` → `updateSongBtn`.
+- Everything else this table calls out (ctx-cache mechanics, `client.js`'s
+  budget/build-messages/run/resume/jobs, `store.js`/`window.js`'s store,
+  bridge-client's inbox/status/session/app-state, `attach.js`'s shot
+  pipeline) landed across `src/ask/{context,bridge,shots,sheet}.js` per
+  NIGHT-ROLL.md's Module map — that map is the accurate, current, per-name
+  record; this bulleted summary only tracks the library-vs-adapter
+  question this section itself asks, not a restatement of the full move.
+
 | Today | Goes to |
 |---|---|
 | `aiSSE` | lib sse.js (pure; first) |

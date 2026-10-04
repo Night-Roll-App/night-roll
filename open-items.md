@@ -5443,10 +5443,15 @@ Leftovers from step 6 (docs/split-plan.md "Deviations (6)"), re-checked against 
   (model/song.js/model/versions.js) — two of four blockers cleared — but
   `serializeRollnotes` (model/rollnotes.js, layer 2 — permanently out of
   reach for platform, layer 1, confirmed unchanged) and `aiUrl`/`aiHeaders`
-  (ask/, step 13) remain. Still permanently blocked by `serializeRollnotes`
-  alone regardless of step 13 — flag this specifically if a future step
-  reconsiders it (the same "rewrite to inject the dependency, or move the
-  function to a higher layer" choice as `sfShownAt` above).
+  (now landed in `ask/backend.js`, step 13 — still layer 4, still above
+  platform's layer 1) remain. Still permanently blocked by
+  `serializeRollnotes` alone regardless of step 13 landing — flag this
+  specifically if a future step reconsiders it (the same "rewrite to
+  inject the dependency, or move the function to a higher layer" choice
+  as `sfShownAt` above). `flushBackupNow`/`scheduleBackupFlush`
+  themselves also still did NOT move in step 13 (re-checked, step 13's
+  own task) — both call `logDebug` directly, a second, independent
+  blocker from `serializeRollnotes`.
 
 ## DONE 2026-10-03 13:30 — pan past the song end (Josh, Terminal #70: "push the song left so I can see like 10 empty bars"): clampView lets a drag scroll to PAN_TAIL_BARS=16 empty bars past the last bar; zoom-out fit unchanged
 
@@ -6100,3 +6105,72 @@ NIGHT-ROLL.md's two new `input/*` entries.
 NOT pushed: the main session should browser-check, on the iPad and
 desktop, drawing a note, hold-to-grab, pinch-zoom, a ruler drag, and
 strip tap/drag, before pushing and building.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split step 13: src/ask/{backend,tools,context,bridge,shots,sheet}.js (docs/split-plan.md)
+Shipped: 172 of the ~192 ask/ai-prefixed names (plus `parsePitch`/
+`b64Bytes`/`notesTxtForDoc`/`TERM_MODELS`) moved verbatim across six new
+files — `ask/backend.js` (20: `aiUrl`/providers/WebLLM, all library-bound
+per docs/ai-library-plan.md §3), `ask/context.js` (42: the system prompt,
+every context-line builder, the sent/epoch cache, plus a relocated
+`songTitleOf`/`songWhereLabel` — see below), `ask/tools.js` (19: the
+`ASK_TOOLS` schema + pure annotation/write-notes/bars field helpers),
+`ask/bridge.js` (55: seen-cursors, chat store/log, session/job
+bookkeeping, inbox/status polling), `ask/sheet.js` (20: the chat sheet's
+DOM + draft persistence), `ask/shots.js` (16: the screenshot list). Full
+per-file name lists and the "did NOT move, and why" accounting are in
+NIGHT-ROLL.md's Module map, not restated here. **None of the six files'
+own headline orchestrators moved** — `askContext`, `askRunTool` and
+every write-tool body, `askRun`/`askSend`/`askResume`, `openAsk`/
+`askBtnTap`, every `deploy*` function except the three logging-free ones
+— all still bare in app.js, blocked by `setInfo`/`draw`/`logDebug`/
+`appConfirm`/`updateSongBtn`/`finalizeNotes`/`saveEdits`/`saveDraft`/
+`publishSong`/`insertTime`/`deleteTime`/`applyTake`/`closeDropUp`/
+`micStop`/`keyLabelState` — all `ui/*` (step 14) or permanently blocked
+(`draw`, step 11's finding) or shared code with no home of its own yet.
+
+**`songTitleOf`/`songWhereLabel` relocated into `ask/context.js`,
+unlisted by the plan's table, after `model/song.js` (the thematically
+obvious home, where `estimateKey` already lives) turned out to be
+flatly illegal**: `songTitleOf` calls `impDisplayTitle`
+(`import/capture.js`, layer 4), and `model/song.js` is layer 2 — layer 2
+can never import layer 4, confirmed by `check.mjs` the moment it was
+tried (`rule 5: model/song.js (layer 2) imports "../import/capture.js"
+(layer 4)`). Reverted, re-run with `--to src/ask/context.js` (layer 4,
+same layer as `import/capture.js`) instead — zero rule-5 findings. The
+~30 non-ask callers left in app.js now import it back downward, legal
+regardless of host file. See docs/split-plan.md "Deviations (13)" for
+the full reasoning, including why `keyLabelState`/`closeDropUp`/
+`micStop` (the other three app.js-shared blockers this step hit) were
+NOT given the same treatment — each still has a genuine non-ask caller
+with no `ui/*` home of its own yet, so relocating them would be the
+"speculative widening" step 0a's Deviations warned against; `songTitleOf`
+only got the exception because `model/` was ruled out BY THE LAYER TABLE
+ITSELF, not by taste.
+
+One `move.mjs` same-file self-import slip hit (the known class from steps
+8-10): moving `askReadBars` into `tools.js` resolved its `songTitleOf`
+reference via app.js's own already-rewritten import (pointing at
+`ask/context.js`) instead of recognizing it as a local declaration of
+that same destination file — produced a self-import inside
+`ask/context.js`, caught immediately by `check.mjs`'s parse error, fixed
+by deleting the one bogus line.
+
+`regen-e2e-footer.mjs --file src/app.js` run once, after all seven
+`move.mjs` invocations and both hand-fix passes (the self-import above,
+plus the same-layer `bridge.js`/`sheet.js` cycle's one stale `../app.js`
+specifier) — not mid-step, per step 12's own procedural finding.
+`check.mjs`/`check-controls.mjs`/`check-e2e-globals.mjs` all clean except
+the pre-existing `oldBpb` finding. `node tools/split/verbatim.mjs HEAD`
+prints a clean ✔. `tests/ai.test.mjs` (7/7) and `tests/bridge.test.mjs`
+(10/10) — this step's own oracles — both green, standalone and inside
+`npm test` (427/427 on night-roll, the only other failures being the
+pre-existing `ps2-real`/`instruments` local-rip gap). `npm run
+test:e2e:smoke`: chromium 8/8.
+
+NOT pushed: the main session should browser-check, on the iPad, sending
+one Ask message, attaching a screenshot, and confirming the "Now:"
+status line still updates — the plan's own verify line for this step —
+before pushing and building. docs/ai-library-plan.md §3 gained a short
+note on exactly which of its library-bound functions actually landed in
+`ask/backend.js` vs stayed in app.js (`aiHostOk`), since extraction
+(the plan's step 1) is the next task to pick this up.

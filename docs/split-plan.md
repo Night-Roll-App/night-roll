@@ -2172,6 +2172,76 @@ constraint for whoever next considers moving these two.
 
 **13. `ask/*`.**
 - Verify: bridge.test; on the iPad, send one Ask message, attach a screenshot, see the "Now:" status.
+- **Done** (2026-10-04, Sonnet builder, worktree branch). Same "named target
+  stays, pure leaves move" pattern as every step since 4, here landing its
+  sparsest result yet by name-count-staying: of the six files' own headline
+  callers (`askContext`, `askRunTool`, `askRun`/`askSend`, `openAsk`), NONE
+  moved — every one reaches `setInfo`/`draw`/`logDebug`/`appConfirm`/
+  `updateSongBtn`/`finalizeNotes`/`saveEdits`/`saveDraft`/`publishSong`,
+  all still bare in app.js (`ui/*` is step 14; `draw` is render's own
+  permanent block, step 11) — but 172 of the ~192 ask/ai-prefixed names
+  (plus `parsePitch`, `b64Bytes`, `notesTxtForDoc`, `TERM_MODELS` — pure
+  leaves with no other home) moved regardless, by far the largest single
+  verbatim-move count of any step so far. Seven `move.mjs --names`
+  invocations over src/app.js, all by name (the banner spans hundreds of
+  lines of UI/model-write code the real content is interleaved with, the
+  same shape every step since 4 has found): `ask/backend.js` (20 names),
+  `ask/context.js` (42, including an unlisted relocation — see Deviations),
+  `ask/tools.js` (19), `ask/bridge.js` (55), `ask/sheet.js` (20),
+  `ask/shots.js` (16). See NIGHT-ROLL.md's Module map for the per-file name
+  lists and the full "did NOT move, and why" accounting — the same level of
+  individual-function scrutiny steps 4-12 established, not a blanket
+  per-banner sweep. Move order mattered and is itself a finding: `backend.js`
+  (zero ask-internal dependencies) first, then `context.js` (self-contained
+  among ask/* — nothing it moved needed `tools.js`/`bridge.js`/`sheet.js`/
+  `shots.js`), then `tools.js` (needs `context.js`'s span/bar-cache
+  builders), then `bridge.js` and `sheet.js` (a genuine same-layer CYCLE —
+  `bridge.js`'s `askSeenKey`/`askStore`/`askLogKey` family needs `sheet.js`'s
+  `askStoreKey`; `sheet.js`'s `askModeButtons` needs `bridge.js`'s
+  `askTermModelsLoad`/`askStatusRender` — legal under §2.3, "cycles inside
+  layers 3-5 are allowed," but `move.mjs` only ever resolves against the
+  CURRENT state of `--from`, the identical step-5/11 finding), then
+  `shots.js` last (needs `sheet.js`'s `askstatus` DOM const, no further
+  cycle). The bridge.js-before-sheet.js ordering choice meant exactly one
+  stale specifier needed a hand-fix afterward (`bridge.js`'s `askStoreKey`
+  import, pointing at `../app.js` until `sheet.js` existed) — not two,
+  confirming the ordering was the right one of the two choices, not
+  arbitrary. One `move.mjs` same-file self-import slip hit (open-items.md's
+  known class, steps 8-10): moving `askReadBars` (→ `tools.js`) resolved its
+  free reference to `songTitleOf` via app.js's own already-updated import
+  (pointing at `ask/context.js`, from the EARLIER `songTitleOf`/
+  `songWhereLabel` relocation below) instead of recognizing `songTitleOf` as
+  a LOCAL declaration of the destination file it was generating that import
+  INSIDE of — produced `import { songTitleOf } from "./context.js";` inside
+  `context.js` itself, a parse error, caught immediately by `check.mjs`,
+  fixed by deleting the one bogus line (same one-line hand-fix every prior
+  instance of this bug got). `regen-e2e-footer.mjs --file src/app.js` run
+  exactly once, after all seven invocations and both rounds of hand-fixes
+  were done (per step 12's own procedural finding: never mid-step); `check.
+  mjs` clean except the pre-existing `oldBpb` finding; `check-controls.mjs`
+  clean (26 controls, unchanged — this step touched no control);
+  `check-e2e-globals.mjs` clean. `devtools.js` gained `askBackend`/
+  `askTools`/`askContext`/`askBridge`/`askShots`/`askSheet` namespace
+  imports (GET-only). `sw.js` `APP_MODULES` gained all six files,
+  `SW_VERSION` bumped `nr-v18` → `nr-v19`; `index.html`'s modulepreload
+  list gained all six, after `input/record.js`, before `app.js` (all
+  layer 4). `tests/modules.test.mjs`'s `checkSrc` fileCount assertion
+  bumped 48 → 54. `node tools/split/verbatim.mjs HEAD` prints a clean ✔.
+  The sorted `^\w+ = prof\("\w+"` set across src/ is unchanged (29
+  entries) — none of this step's names were ever profiled. `node
+  tools/package.mjs --out /tmp/nr-dist-s13`: 47 runtime modules
+  (unchanged — no `tools/`-side runtime module corresponds to `ask/`).
+  Tests (`perl -e 'alarm 1200; exec @ARGV' npm test`): night-roll 427/427
+  (every "local song: …" SAFETY-regression test and every Learning-mode
+  spy test passes unchanged, since none of that gating code moved); the
+  only two failing test FILES were `ps2-real`/`instruments`, the known
+  pre-existing local-rip-fixture gap. `tests/ai.test.mjs` (this step's own
+  oracle, 7 integration tests against fake OpenAI/bridge servers): 7/7,
+  run standalone and inside the full suite. `tests/bridge.test.mjs` (the
+  other oracle): 10/10. `npm run test:e2e:smoke`: chromium 8/8. See
+  "Deviations (13)" below for the `songTitleOf`/`songWhereLabel`
+  relocation (a real, load-bearing finding, not a simple extra) and the
+  full per-file "what stayed and why" accounting.
 
 **14. `ui/*`** (chrome, trackbar, mixer, voice-menu, notes, note-editor, sheets, wm).
 - app.js empties into main.js, which becomes the ordered `init*()` list plus `boot()`.
@@ -2184,6 +2254,96 @@ constraint for whoever next considers moving these two.
 - Doc sweep: NIGHT-ROLL.md module map, CLAUDE.md (§6), WEB-SESSION.md (src/ layout; tools still `node tools/x.mjs`), README.
 
 **16. Optional: CSS → `css/app.css`** (`<link>`, precached, the 4 CSS-grepping tests use `appSource()`).
+
+## Deviations (13, 2026-10-04)
+
+- **`songTitleOf`/`songWhereLabel` relocated into `ask/context.js`, unlisted
+  by §1's table, after a first attempt at the thematically obvious home
+  (`model/song.js`, where `estimateKey`/`checkKeyVsFile`/`keyNameAt`
+  already live) turned out to be flatly illegal, not just
+  undesirable.** `songTitleOf`'s own comment says it is "Shared by
+  `updateSongBtn`'s breadcrumb... and `askOpenSongLine`" — genuinely used
+  by ~30 non-ask call sites (song lists, share sheets, breadcrumbs) as
+  well as by this step's `askOpenSongLine`/`askTerminalContext`. It is
+  pure and layer-safe in isolation (`S.CATALOG`, `titleCaseSlug` from
+  `model/catalog.js` already-layer-2, `impDisplayTitle` from
+  `import/capture.js` layer-4, `LINK_SONGS`/`linkRepoLabel` from
+  `platform/base.js` layer-1) — but `impDisplayTitle` being layer 4 is
+  exactly what rules out `model/song.js` (layer 2): moving it there and
+  running `check.mjs` immediately produced `rule 5: model/song.js
+  (layer 2) imports "../import/capture.js" (layer 4) — higher layers may
+  not be imported`, the identical wall steps 4/5 hit for
+  `estimateKey`'s `trackIsDrums` dependency. Unlike that case, this one
+  had a second, LEGAL destination available: `ask/context.js` itself is
+  layer 4, the same layer as `import/capture.js`, so the exact same
+  function that cannot live at layer 2 is perfectly fine at layer 4 — the
+  move was reverted (`git checkout -- src/app.js src/model/song.js`) and
+  re-run with `--to src/ask/context.js` instead, which `check.mjs`
+  accepted outright (zero rule-5 findings for either file). The ~30
+  non-ask callers left in app.js (layer 5/LEGACY_CONTAINER) now import
+  `songTitleOf`/`songWhereLabel` downward from `ask/context.js`, which is
+  always legal regardless of which layer-≤4 file a name ends up in — the
+  "misfiling" concern steps 6/9/11 raised for `closeDropUp`/`micStop`/
+  `keyLabelState` (shared code with no home, left alone) does not apply
+  here in the same way, because there WAS no other legal home to
+  misfile it FROM: `model/` was the only thematic alternative and it was
+  ruled out by the layer table itself, not by taste. This is the
+  opposite shape from steps 6/9/11's "leave it, not our row to claim"
+  findings — here the row genuinely had nowhere else to go.
+- **`keyLabelState`/`expandKeyName` (blocking `askKeyStateLine`, hence
+  transitively `askContext` itself) were checked against the exact same
+  question `songTitleOf` raised, and came out the other way — correctly
+  left in app.js, not relocated.** `keyLabelState` has a second caller at
+  app.js's own key-select label (`unsetOpt.textContent = text`, UI-chrome,
+  blocked by its own neighborhood regardless), and — unlike
+  `songTitleOf` — nothing rules out a layer-≤4 home for it YET: it has no
+  `import/capture.js`-shaped wall forcing the question. Moving it into
+  `ask/context.js` purely to unblock `askKeyStateLine`, with its only
+  other caller sitting inside UI-chrome code that itself has no `ui/*.js`
+  home until step 14, would be the exact "speculative widening" step 0a's
+  Deviations warned against — there is no structural reason it has to
+  live in `ask/` rather than wherever `ui/chrome.js` ends up, and guessing
+  wrong here is pure rework later. `closeDropUp` (blocking `askShotShow`)
+  and `micStop` (blocking `askMicOff`/`askNoteSeen`'s sibling) are the
+  same shape — both have call sites well outside ask/* with no `ui/*`
+  home yet — and stayed for the identical reason, matching steps 6/9/11's
+  precedent exactly rather than reaching for `songTitleOf`'s exception.
+- **The move order (`backend.js`, `context.js`, `tools.js`, `bridge.js`,
+  `sheet.js`, `shots.js`) was chosen specifically to minimize stale
+  `../app.js` import specifiers from the real same-layer cycle between
+  `bridge.js` and `sheet.js`** (see the step-13 "Done" note above for the
+  cycle itself). Moving `bridge.js` before `sheet.js` left exactly one
+  stale specifier (`bridge.js`'s own `askStoreKey` import); the reverse
+  order would have left `sheet.js`'s `askTermModelsLoad`/`askStatusRender`
+  imports stale instead — also exactly one hand-fix, since in EITHER
+  order only the file moved second can discover the other's not-yet-moved
+  names. The choice therefore didn't reduce the number of hand-fixes (one,
+  either way, is unavoidable for a genuine cycle under `move.mjs`'s
+  current single-pass resolution) — it just picked which single import
+  line would need the fix, confirmed by inspection after the fact rather
+  than by any actual churn difference. Worth noting for whichever future
+  tooling pass addresses `move.mjs`'s known "resolves only against the
+  current state of `--from`" limitation (steps 5/11's finding, repeated
+  here a third time): a true fix would need a two-pass or deferred-import
+  resolution, not an ordering heuristic.
+- **`parsePitch` moved into `ask/tools.js` despite being a general
+  pitch-string parser, not an ask-specific name** — found sitting inside
+  the write_notes/bars banner with exactly one caller
+  (`askWriteNotesValidate`, this step's own content) and zero other
+  references anywhere in app.js/tools/tests. Per the "pull the
+  load-bearing helper along, don't leave a clean leaf stranded for no
+  structural reason" precedent (steps 4/5/8/10), it moved with its one
+  caller rather than waiting for some future `theory/` or `midi/` step to
+  claim a name it has no other use for yet. If a second caller ever
+  appears outside `ask/*`, it can move again verbatim — nothing about
+  today's placement is load-bearing on `tools.js` specifically.
+- **Browser verification is still owed by the main session** (this
+  builder's task explicitly excludes it): send one Ask message, attach a
+  screenshot, confirm the "Now:" status line — the plan's own verify line
+  for this step, which a vm test can narrow but not replace (the bridge
+  round trip is proven by `tests/ai.test.mjs`/`tests/bridge.test.mjs`
+  against fake servers; only a real device proves the UI wiring that
+  stayed in app.js still fires correctly end to end).
 
 ## Deviations (6, 2026-10-03)
 
