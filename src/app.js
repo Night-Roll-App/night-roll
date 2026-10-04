@@ -1524,6 +1524,8 @@ import { initSheet2 } from "./ask/sheet.js";
 import { initSheet3 } from "./ask/sheet.js";
 import { initBridge1 } from "./ask/bridge.js";
 import { initBridge2 } from "./ask/bridge.js";
+import { initEngine1 } from "./audio/engine.js";
+import { initEngine2 } from "./audio/engine.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1642,18 +1644,7 @@ initTrackbar1();
 
  
 
- if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("touchstart", () => {}, {passive: true});
-document.addEventListener("visibilitychange", async () => {
-  if (document.hidden || !S.audio || S.audio.state === "closed" || S.wakeInFlight) return; // a closed one waits for the tap
-  if (S.playing && S.audio.state === "running") return;
-  // idle: back to the mixing session BEFORE the wake. A tap, ▶ or the click
-  // left "playback" behind if the app was hidden when it ended (every revert
-  // skips a hidden page), and resuming the context under "playback" stopped
-  // YouTube the moment Josh switched back in (2026-10-02)
-  if (!S.playing && !S.albumRun && !met.on) audioSessionType("ambient");
-  S.wakeInFlight = true;
-  try { await resumeAudio(); } finally { S.wakeInFlight = false; }
-});
+ initEngine1();
 // first touch anywhere: create + warm the context inside a user gesture
 // ?perf=1 — on-device performance HUD (iPad has no Activity Monitor): fps,
 // worst frame gap, long-task count/max over the last second. ⏺ records a
@@ -1993,22 +1984,7 @@ if (typeof location !== "undefined" && document.body && new URLSearchParams(loca
     for (const k in acct) acct[k] = 0;
   }, 1000);
 })();
-// The iOS silent-switch bypass is GONE (Josh, 2026-08-25). It looped a 2.0s
-// silent <audio> forever to hold the tab in the "media playback" category the
-// hardware mute switch does not silence. On WebKit every loop wrap is a seek,
-// and his recordings put a stall burst on exactly that 2.0s beat — clean for
-// 70s, then every other second after one note move, worsening until reload.
-// It was added 2026-08-22 for a friend's "it won't play"; the perf collapse
-// dates from 08-24. A comfort feature is not worth a third of the frame
-// budget. If the mute switch bites someone again: say so in the UI, or hold
-// the classification with a MUCH longer buffer so seeks are rare — do not
-// re-introduce a 2-second loop.
-document.addEventListener("pointerdown", function warm() {
-  document.removeEventListener("pointerdown", warm);
-  ensureAudio();
-  resumeAudio();
-  if (S.sfPreloadPending) sfPreloadForSong(); // the boot-time preload deferred to this gesture
-}, {capture: true});
+initEngine2();
            initChrome4();
 initVoiceMenu1();
                          

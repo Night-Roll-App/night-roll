@@ -3,6 +3,8 @@ import { audioSessionType } from "../platform/native.js";
 import { logDebug } from "../hooks.js";
 import { logErr } from "../hooks.js";
 import { setInfo } from "../hooks.js";
+import { met } from "./metronome.js";
+import { sfPreloadForSong } from "./voices.js";
 
 export function trackAudible(ti) { // what you HEAR: mute and solo (they never hide notes — DAW habit, 2026-09-29)
   const anySolo = S.trackState.some(s => s.solo);
@@ -268,4 +270,38 @@ export async function resumeAudio() {
     setInfo("audio asleep — tap ▶ again");
     logErr("audio asleep: rebuilt the engine inside your tap and its clock still doesn't move (" + clockProbeText() + ") — tap ▶ again; if it stays silent, relaunch the app");
   }
+}
+
+export function initEngine1() {
+  if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("touchstart", () => {}, {passive: true});
+  document.addEventListener("visibilitychange", async () => {
+    if (document.hidden || !S.audio || S.audio.state === "closed" || S.wakeInFlight) return; // a closed one waits for the tap
+    if (S.playing && S.audio.state === "running") return;
+    // idle: back to the mixing session BEFORE the wake. A tap, ▶ or the click
+    // left "playback" behind if the app was hidden when it ended (every revert
+    // skips a hidden page), and resuming the context under "playback" stopped
+    // YouTube the moment Josh switched back in (2026-10-02)
+    if (!S.playing && !S.albumRun && !met.on) audioSessionType("ambient");
+    S.wakeInFlight = true;
+    try { await resumeAudio(); } finally { S.wakeInFlight = false; }
+  });
+}
+
+// The iOS silent-switch bypass is GONE (Josh, 2026-08-25). It looped a 2.0s
+// silent <audio> forever to hold the tab in the "media playback" category the
+// hardware mute switch does not silence. On WebKit every loop wrap is a seek,
+// and his recordings put a stall burst on exactly that 2.0s beat — clean for
+// 70s, then every other second after one note move, worsening until reload.
+// It was added 2026-08-22 for a friend's "it won't play"; the perf collapse
+// dates from 08-24. A comfort feature is not worth a third of the frame
+// budget. If the mute switch bites someone again: say so in the UI, or hold
+// the classification with a MUCH longer buffer so seeks are rare — do not
+// re-introduce a 2-second loop.
+export function initEngine2() {
+  document.addEventListener("pointerdown", function warm() {
+    document.removeEventListener("pointerdown", warm);
+    ensureAudio();
+    resumeAudio();
+    if (S.sfPreloadPending) sfPreloadForSong(); // the boot-time preload deferred to this gesture
+  }, {capture: true});
 }
