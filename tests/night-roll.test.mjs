@@ -2799,6 +2799,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Game order", "more than one chip file",
     "without touching your cycle",
     "drag the tag to scrub",
+    "Export score",
     "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",
   ];
   const missing = FEATURES.filter(k => !help.includes(k));
@@ -9486,6 +9487,129 @@ test("Download audio: deliverAudioFile writes the file via Filesystem then calls
   assert.deepEqual([calls[1][0], calls[1][1]], ["Share", "share"]);
   assert.deepEqual(calls[1][2].files, ["file:///cache/song.wav"], "shares the URI Filesystem.writeFile handed back");
   assert.equal(calls[1][2].title, "song.wav");
+});
+
+// ---------------------------------------------------------------- Export score (DAW F6)
+// render/score-print.js. Pagination and the document are pure and tested
+// outright; the SVG step is VexFlow (absent in the vm — the same gap that
+// leaves S.scoreModel null here), so the delivery test hands exportScore a
+// stand-in engraver and checks everything around it.
+test("Export score: paginateScore tiles the measures into whole-measure systems and system-capped pages (first page may hold fewer); never splits a bar", async () => {
+  const a = await createApp();
+  const val = (c) => JSON.parse(a.run("JSON.stringify(" + c + ")"));
+  assert.deepEqual(val(`paginateScore(10, 4, 2, 3)`), [[{from: 0, to: 4}, {from: 4, to: 8}], [{from: 8, to: 10}]]);
+  assert.deepEqual(val(`paginateScore(0, 4, 2)`), [], "no measures, no pages");
+  assert.deepEqual(val(`paginateScore(1, 4, 2)`), [[{from: 0, to: 1}]], "one short system on one page");
+  assert.deepEqual(val(`paginateScore(9, 4, 2)`).map(p => p.length), [2, 1], "nextPageSystems defaults to the first page's cap");
+  const pages = val(`paginateScore(37, 3, 4, 5)`);
+  assert.deepEqual(pages.map(p => p.length), [4, 5, 4], "4 systems on page 1, then 5 per page, the last partial");
+  const systems = pages.flat();
+  let at = 0;
+  for (const s of systems) { // contiguous, in order, whole measures, never over the per-system width
+    assert.equal(s.from, at); assert.ok(s.to > s.from && s.to - s.from <= 3); at = s.to;
+  }
+  assert.equal(at, 37, "every measure exactly once");
+});
+
+test("Export score: scorePageLayout — bars per system from the view's proportional width (floored at PRINT_PXQ_MIN), then justified to the line; pages fit the paper's height; a bar wider than the paper prints alone, shrunk", async () => {
+  const a = await createApp();
+  const val = (c) => JSON.parse(a.run("JSON.stringify(" + c + ")"));
+  const model = `{nMeasures: 9, bt: 1920, staves: [{}, {}], pxqMin: 24}`;
+  const L = val(`scorePageLayout(${model}, 480, "letter")`);
+  assert.equal(L.paper, "letter");
+  assert.equal(L.contentW, 816 - 96);
+  assert.equal(L.pxq, 36, "24 px/q on screen is under the paper floor");
+  assert.equal(L.measuresPerSystem, 4, "(720 − 100 intro) / (4 quarters × 36 = 144)");
+  assert.equal(L.measureW, 155, "then justified: floor(620 / 4) — systems fill the line");
+  assert.equal(L.systemH, 18 + 2 * 100 + 28);
+  assert.deepEqual(L.pages, [[{from: 0, to: 4}, {from: 4, to: 8}, {from: 8, to: 9}]], "9 bars = 3 systems, all on page 1 (title block leaves room for 3)");
+  const L40 = val(`scorePageLayout({nMeasures: 40, bt: 1920, staves: [{}, {}], pxqMin: 24}, 480, "letter")`);
+  assert.deepEqual(L40.pages.map(p => p.length), [3, 3, 3, 1], "page 1 under its title: 3; later pages: 3; 10 systems in all");
+  const A4 = val(`scorePageLayout(${model}, 480, "a4")`);
+  assert.equal(A4.paper, "a4"); assert.equal(A4.contentW, 794 - 96); assert.equal(A4.measuresPerSystem, 4);
+  assert.equal(val(`scorePageLayout(${model}, 480, "tabloid")`).paper, "letter", "an unknown paper falls back to Letter");
+  const dense = val(`scorePageLayout({nMeasures: 3, bt: 3360, staves: [{}], pxqMin: 140}, 480, "letter")`);
+  assert.equal(dense.measureW, 720 - 100, "7/4 at the view's 140 px/q would be 980 px: alone on its line, shrunk to the content width minus the clef column");
+  assert.equal(dense.measuresPerSystem, 1);
+  assert.deepEqual(dense.pages.map(p => p.length), [3]);
+});
+
+test("Export score: scoreHtmlDocument — one <svg> per page section, an @page rule for the paper, the title escaped in <title> and <h1>, page numbers, and no external reference of any kind", async () => {
+  const a = await createApp();
+  const html = a.run(`scoreHtmlDocument({title: "Für <Elise> & co", subtitle: "Starters", paper: "a4", pages: ['<svg xmlns="http://www.w3.org/2000/svg" width="698" height="246"></svg>', '<svg xmlns="http://www.w3.org/2000/svg" width="698" height="492"></svg>']})`);
+  assert.equal((html.match(/<svg\b/g) || []).length, 2);
+  assert.equal((html.match(/<section class="page">/g) || []).length, 2);
+  assert.match(html, /@page \{ size: A4; margin: 0; \}/);
+  assert.match(html, /<title>Für &lt;Elise&gt; &amp; co — score<\/title>/);
+  assert.match(html, /<h1>Für &lt;Elise&gt; &amp; co<\/h1>/);
+  assert.match(html, /<header class="first">.*<p>Starters<\/p>/s);
+  assert.match(html, /<footer>1 \/ 2<\/footer>/, "page 1 numbers itself in the footer");
+  assert.match(html, /<span>2 \/ 2<\/span>/, "later pages carry a running head with the number");
+  assert.match(html, /break-after: page/);
+  assert.doesNotMatch(html, /<script|<link|url\(|@import|\b(src|href)=/, "self-contained: it prints from Files with no network");
+  assert.match(a.run(`scoreHtmlDocument({title: "", paper: "letter", pages: ["<svg></svg>"]})`), /@page \{ size: letter;.*<h1>Untitled<\/h1>/s);
+  assert.doesNotMatch(a.run(`scoreHtmlDocument({title: "x", paper: "letter", pages: ["<svg></svg>"]})`), /<footer>/, "a one-page score has no page number");
+});
+
+test("Export score: exportScore lays out the score model, builds the document from the stand-in engraver's pages and hands <song>-score.html to deliverAudioFile (share sheet on the iPad); refuses with the status line when there is no song or no notes", async () => {
+  const a = await createApp();
+  const r = (c) => a.run(c);
+  r(`
+    globalThis.__calls = [];
+    window.Capacitor = {
+      isNativePlatform: () => true,
+      nativePromise: async (plugin, method, args) => {
+        globalThis.__calls.push([plugin, method, args]);
+        if (plugin === "Filesystem" && method === "writeFile") return {uri: "file:///cache/" + args.path};
+        return {activityType: ""};
+      },
+    };
+    globalThis.__engrave = layout => { globalThis.__layout = layout; return layout.pages.map(() => '<svg xmlns="http://www.w3.org/2000/svg"></svg>'); };
+  `);
+  r(`song = null;`);
+  assert.equal(await r(`exportScore("letter", globalThis.__engrave)`), null, "no song");
+  r(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]}; songKey = "albums/starters/fur-elise.mid";`);
+  assert.equal(await r(`exportScore("letter", globalThis.__engrave)`), null, "no notes");
+  assert.equal(r(`globalThis.__calls.length`), 0, "nothing delivered for a refusal");
+  // the vm has no VexFlow, so buildScoreModel leaves the model null — stand one in, as the view would have built it
+  r(`
+    song.tracks[0].notes.push({t: 0, d: 480, p: 60, v: 80}, {t: 1920 * 7, d: 480, p: 64, v: 80});
+    scoreModel = {nMeasures: 9, bt: 1920, sf: 0, keyName: "C", pxqMin: 24,
+                  staves: [{ti: 0, clef: "treble", color: "#fff", measures: Array.from({length: 9}, () => [])}]};
+  `);
+  const out = await r(`exportScore("a4", globalThis.__engrave)`);
+  assert.equal(out.name, "fur-elise-score.html");
+  assert.equal(out.pages, 1, "9 bars of one staff: 3 systems, one A4 page");
+  assert.equal(r(`globalThis.__layout.paper`), "a4");
+  const calls = JSON.parse(r(`JSON.stringify(globalThis.__calls)`));
+  assert.deepEqual(calls.map(c => [c[0], c[1]]), [["Filesystem", "writeFile"], ["Share", "share"]], "the Download audio path: write to the cache, then the share sheet");
+  assert.equal(calls[0][2].path, "fur-elise-score.html");
+  const html = Buffer.from(calls[0][2].data, "base64").toString();
+  assert.match(html, /^<!doctype html>/);
+  assert.match(html, /@page \{ size: A4/);
+  assert.equal((html.match(/<svg\b/g) || []).length, 1);
+  assert.match(html, /<h1>F(ü|u)r Elise/, "the title line is songTitleOf (the vm has no catalog: the slug, title-cased)");
+  assert.deepEqual(calls[1][2].files, ["file:///cache/fur-elise-score.html"]);
+  assert.match(r(`document.getElementById("noteinfo").textContent`), /score exported: fur-elise-score\.html \(1 page\)/);
+  r(`scoreModel = null; song = null; songKey = null; delete window.Capacitor;`);
+});
+
+test("Export score: File ▾ → Export score… toggles the paper row (other File forms close), Export remembers the paper as a device pref and calls exportScore", async () => {
+  const a = await createApp();
+  const r = (c) => a.run(c);
+  r(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 0, d: 480, p: 60, v: 80}]}]}; songKey = "albums/starters/fur-elise.mid";`);
+  r(`document.getElementById("filenewform").style.display = "";`);
+  r(`document.getElementById("filedlscore").click()`);
+  assert.equal(r(`document.getElementById("filescoreform").style.display`), "", "the paper row opens");
+  assert.equal(r(`document.getElementById("filenewform").style.display`), "none", "the other File forms close");
+  r(`document.getElementById("filedlscore").click()`);
+  assert.equal(r(`document.getElementById("filescoreform").style.display`), "none", "tap again: closed");
+  r(`document.getElementById("fsxpaper").value = "a4";`);
+  r(`document.getElementById("fsxgo").click()`);
+  await new Promise(res => setTimeout(res, 0));
+  assert.equal(r(`localStorage.getItem("ff1roll-score-paper")`), "a4", "device pref, not song state");
+  assert.equal(r(`filesheet.classList.contains("on")`), false, "the menu closes on Export");
+  r(`song = null; songKey = null;`);
 });
 
 // ---------------------------------------------------------------- VoiceOver

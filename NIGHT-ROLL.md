@@ -1613,6 +1613,7 @@ sections are these modules now.
 - `render/score.js` — `buildScoreModel`/`drawScore` plus their own supporting cast, step 11 (2026-10-04): `VF` + the stave-geometry constants, the drum-chart role table (`DRUM_SCORE`/`drumScoreRole`), `vexKey`, `durationPieces`, `buildScoreModel`, `scoreContentH`, `renderMeasure`, `renderIntro`, `scoreTickToX`/`scoreXToTick` (the engraved-notehead ↔ tick map every playhead/band x-coordinate in score view asks), `drawScore`, `scoreMeasureAnchors`, `drawScorePencilGuides`. **Note entry/erase/tap — `scorePencil`/`scoreErase`/`scoreTap`/`scoreStaveAt`/`scorePencilTick` — did NOT move**: each reaches `saveEdits`/`draw`/`renderTrackbar`/`setInfo`, none yet split (model/edits.js's SAFETY block, step 5; render's own hub, above; ui, step 14).
 - `render/instrument.js` — piano, fretboard, fall, step 11 (2026-10-04): `instWrap`/`instCanvas`/`ictx`, the geometry constants (`WHITE_PCS`/`GTR_TUNING`/`GTR_NAMES`/`GTR_FRETS`/`DEGREE_LABEL`), `degreeOf`, `instRange`, `instLitPitches`, `drawInst`, `pianoGeom`, `instLitColor`, `drawPiano`, `guitarGeom`, `drawGuitar`, `gtrFold`, `FALL_WINDOW`, `drawFall`, `instResize`. **Hit-test/recording — `pianoHit`/`guitarHit`/`instTap`/`instPlay`/`recNoteOn`/`recNoteOff`/`recFinish`/the Web MIDI glue — did NOT move**, input/record territory, step 12; all import `pianoGeom`/`guitarGeom`/`gtrFold` back down. `keyNameShownAt` (app.js, `sfShownAt`'s still-unmoved sibling since step 4) was checked and left alone — no render function needs it (`drawPiano`/`drawGuitar` call `keyNameAt`/`sfDeclaredAt` directly), only `instTap` does.
 - `render/cof.js` — circle-of-fifths drawing, step 11 (2026-10-04): `cofCanvas`/`cofCtx`, `cofMinor`/`cofDim`/`cofSigLabel`/`cofMajorName`, `wrapSf`, `drawCof`. The wheel's own drag interaction (`cofAngle`/`cofRelease`, the pointerdown/move/up wiring) stays in app.js — gesture territory, step 12. **Step 12 (2026-10-04) confirms the call is right but not for the reason expected: `cofRelease` itself is blocker-free (only `wrapSf`/`drawCof`, this file, plus `S`), but its four top-level `cofCanvas.addEventListener(...)` listeners need §2.2's `init<Module><N>()` wrapping to move, and `verbatim.mjs` has no tolerance for that mechanism's own structural lines — a real tooling gap, not a logic one; see docs/split-plan.md "Deviations (12)" and open-items.md.**
+- `render/score-print.js` — Export score (DAW F6, 2026-10-04): `PAPER`/`PRINT_*` (page geometry in CSS px), `paginateScore` + `scorePageLayout` (pure: measures → whole-measure systems → pages), `engraveScorePages` (VexFlow's SVG backend into an off-screen host, one `<svg>` per page, black ink, track-name staff labels — through `render/score.js`'s `engraveMeasure`, the view's own engraver), `scoreHtmlDocument` (the self-contained page with its `@page` rule), `scoreAlbumLine`, `exportScore` (the flow: model → layout → pages → document → `audio/bounce.js`'s `deliverAudioFile`). Imports `buildScoreModelImpl` directly (same layer — rule 10). See "Export score — printable pages".
 - `render/compare.js` — Compare with repo's pure outline-drawing + diff math, step 11 (2026-10-04): `cmpTrackKey`, `cmpDiff`, `drawCompare`. **`cmpEnter`/`cmpExit`/`cmpShow`/`cmpBar` did NOT move** — each reaches `setInfo`/`readData`/`draw()` (the last one `render/roll.js`'s own permanent blocker, above).
 - `input/gestures.js` — pointer gesture math, step 12 (2026-10-04): `evtPos`, `posToTickPitch`, `cursorHandleHit`, `cursorHit`, `tickAtX`, `rulerSnapX`, `armNoteEdit` (pure coordinate/hit-test helpers). **The canvas pointer/pinch/hold-to-grab/lasso state machine (`pointerdown`/`pointermove`/`pointerup` on `canvas`, `endPointer`, `tap`, `finalizeLasso`, `toggleSel`, `scoreLassoTap`, `scrubTo`, `seekOrMoveCursor`, `placePencilNote`, `clearMultiSel`) did NOT move** — every one of them calls `setInfo()` and/or `draw()`/`drawFull()` directly or through still-bare app.js names (`refreshSelInfo`/`renderTrackbar`/`openVoiceMenu`/`saveVoices`/`hitNote`/`hitTracksNote`/`hitTracksClip`/`annoSnapshot`/`setAnchorBQ`/`setEndBQ`/`updateSubtitle`) — `ui/*` is step 14, `draw` is render's own permanent block (step 11). Every `document.addEventListener("keydown", …)` block in this region (arrow/⌘ editing shortcuts, Space = play/stop, Escape-closes-topmost-overlay) stayed for the same `setInfo`/`draw`/`stop`/`ui/wm.js` reasons. The circle-of-fifths wheel's drag interaction (`cofAngle`/`cofRelease`, `render/cof.js`'s own entry above) is genuinely blocker-free too but stayed — not a logic block, a `verbatim.mjs` tooling gap against the `init<Module><N>()` wrapping its top-level listeners would need; see docs/split-plan.md "Deviations (12)".
 - `input/record.js` — pure record/MIDI-status helpers, step 12 (2026-10-04): `recOpenEnded`, `recSnap`, `recSnapOn`, `midiStatusLine`. **The ● record button's click handler and `recNoteOn`/`recNoteOff`/`recFinish`/`midiMessage`/`initWebMidi`/`initCoreMidi` did NOT move** — `recNoteOff` calls `draw()` directly (the one call that blocks the whole MIDI-in chain above it), `recFinish` additionally needs `setInfo`/`pushUndo`/`saveEdits`/`saveDraft`. `instTap`'s pointer wiring (`render/instrument.js`'s own entry, above) stayed for the same reason, confirming that entry's step-12 prediction.
@@ -6381,6 +6382,72 @@ args)` otherwise (how 📷 Screenshot reaches its own plugin — this page
 loads no `@capacitor/core`, so there's no `registerPlugin`, and
 `@capacitor/share` has no JS shim here, so Share always goes through
 `nativePromise`). In a browser: `<a download>`, same as Download .mid.
+
+## Export score — printable pages (DAW F6, 2026-10-04)
+
+File ▾ → **Export score…** → paper (Letter/A4) → **Export**. The score
+view's model (`buildScoreModel`: the shown, non-drum tracks as staves,
+the kit at the bottom, declared key/meter only) is laid out onto pages
+and engraved into one `<svg>` per page, wrapped in a single
+self-contained HTML document, and handed to `deliverAudioFile` — the
+Download audio path: Capacitor Filesystem cache + Share sheet on the
+iPad (Print, or Save to Files), an `a.download` in a browser. File name
+`<song>-score.html`; status line "score exported: … (N pages)".
+
+Why this shape (plan docs/plans/2026-10-04-daw-shortlist.md F6, Fable
+review): `window.print()` is modal and the WKWebView has no print dialog
+at all; an in-app PDF writer means a library. The iPad's own print path
+makes the PDF from the page, so the app ships pages, not PDF bytes.
+
+**One engraver.** `renderMeasure` (the view's cached per-measure canvas)
+is now a thin wrapper around `engraveMeasure(ctx2, mi, x0, y0, mw,
+opts)` — the whole VexFlow body moved there unchanged except that the
+stave x/y and the measure width are parameters. The view calls it with
+`(SCORE_PAD, 0, bt·pxPerTick)`; print calls it per bar at the bar's
+page position with `opts.ink = "#000"` (staves, notes, beams, ties one
+colour — the view's track colours are for a dark panel) and, on each
+system's first bar, `opts.intro = {time: mi === 0}` so the bar carries
+its own clef and key signature (the view keeps those in the pinned
+`renderIntro` column) and bar 1 the declared time signature. A key
+change at a system start still cancels the outgoing signature.
+
+**Layout (pure, tested).** `PAPER` is CSS px at 96/in (Letter 816×1056,
+A4 794×1123); margins 48 all round; the first page's header 96 px
+(title, album line), later pages 40 px (running title, "n / N"). Bars
+per system = `floor((contentW − SCORE_INTRO_W) / (bt/ppq · pxq))` with
+`pxq` the model's `pxqMin` (the densest bar's own floor) but never under
+`PRINT_PXQ_MIN` (36 px/quarter); the bars are then justified —
+`measureW = floor(lineW / measuresPerSystem)` — so every system fills the
+line (a bar wider than the paper prints alone, shrunk). A system's first
+bar is `measureW + SCORE_INTRO_W` wide (the clef column). System height
+= `SCORE_TOP + staves·STAVE_H + 28`. `paginateScore(n,
+perSystem, firstPageSystems, nextPageSystems)` tiles measures into
+systems and systems into pages — a bar is never split, by construction.
+
+**The document.** `@page { size: letter|A4; margin: 0 }` with each
+`.page` section sized to the paper and carrying its own padding, so
+Safari and Chrome print it 1:1; `break-after: page` between sections;
+screen view shows the sheets on grey. No `<script>`, `<link>`, `url()`
+or `@import` anywhere (tested) — VexFlow 4 emits glyphs as paths, so the
+SVG needs no font. Track names label each staff on a page's first
+system (`ctx.fillText`, 9 px sans, 12 px into the stave's 40 px headroom
+— above the treble clef's reach).
+
+**Learning mode.** Nothing to branch on: the pages are what the score
+view draws. Key signatures come from `sfAt`/`sfDeclaredAt` exactly as on
+screen, the time signature only from `S.declaredTs`; no chord names, no
+estimates, no analysis text.
+
+**Harness seam.** `exportScore(paper, engrave = engraveScorePages)` —
+the vm has no VexFlow (which is also why `S.scoreModel` is null there),
+so the delivery test stands in a model and an engraver and checks the
+layout, the document and the `deliverAudioFile` calls. The paper choice
+is a device pref (`ff1roll-score-paper`); the File ▾ row is
+`#filescoreform` (`#fsxpaper`, `#fsxgo`), opened by `#filedlscore`.
+
+Device checks owed: share sheet → Print on the iPad; Save to Files →
+open → Share → Print → pinch → Save to Files (PDF); a 3-staff song over
+several pages; a mid-song key change landing on a system start.
 
 ## Import hub (docs/import-hub-design.md, 2026-09-29)
 

@@ -1047,6 +1047,7 @@
   <button class="fitem" id="fileshare">🔗 Share link…</button>
   <button class="fitem" id="filedlmid">Download .mid</button>
   <button class="fitem" id="filedlaudio">Download audio</button>
+  <button class="fitem" id="filedlscore">Export score…</button>
   <button class="fitem" id="filehelp">Help</button>
   <button class="fitem" id="fileabout">About</button>
   <div id="filenewform" style="display:none">
@@ -1065,6 +1066,12 @@
     <div class="row">
       <input type="text" id="fsname" placeholder="song name" style="flex:1;min-height:40px">
       <button class="primary" id="fsgo">Save</button>
+    </div>
+  </div>
+  <div id="filescoreform" style="display:none"><!-- File ▾ → Export score… (DAW F6): paper size, then Export — src/render/score-print.js -->
+    <div class="row"><span class="lbl">paper</span>
+      <select id="fsxpaper" aria-label="Paper size" style="min-height:40px"><option value="letter">Letter</option><option value="a4">A4</option></select>
+      <button class="primary" id="fsxgo">Export</button>
     </div>
   </div>
   <div id="filerenameform" style="display:none">
@@ -1541,6 +1548,7 @@
 <link rel="modulepreload" href="src/render/roll.js">
 <link rel="modulepreload" href="src/render/tracks.js">
 <link rel="modulepreload" href="src/render/score.js">
+<link rel="modulepreload" href="src/render/score-print.js">
 <link rel="modulepreload" href="src/render/instrument.js">
 <link rel="modulepreload" href="src/render/cof.js">
 <link rel="modulepreload" href="src/render/compare.js">
