@@ -52,7 +52,7 @@ import { updateSyncBtnImpl as updateSyncBtn } from "../ui/chrome.js";
 import { renderSyncPending } from "../ui/sheets.js";
 import { asksheet } from "../ask/sheet.js";
 import { askStoreKey } from "../ask/sheet.js";
-import { askRender } from "../hooks.js";
+import { askRenderImpl as askRender } from "../ask/sheet.js";
 import { fileStatus } from "../ui/chrome.js";
 import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
 import { writeToken } from "../sync/publish.js";

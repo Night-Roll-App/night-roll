@@ -64,7 +64,7 @@ import { loadEdits } from "../model/edits.js";
 import { effTs } from "../model/grid.js";
 import { clampViewImpl as clampView } from "../ui/chrome.js";
 import { askModeButtons } from "../ask/sheet.js";
-import { askRender } from "../hooks.js";
+import { askRenderImpl as askRender } from "../ask/sheet.js";
 import { SCORE_INTRO_W } from "../render/score.js";
 import { viewRestore } from "../render/roll.js";
 import { pxqFloor } from "../ui/chrome.js";

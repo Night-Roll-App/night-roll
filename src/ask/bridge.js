@@ -36,7 +36,7 @@ import { askBubble } from "./sheet.js";
 import { askClock } from "./sheet.js";
 import { askNoteLabel } from "./sheet.js";
 import { askSetMode } from "./sheet.js";
-import { askRender } from "../hooks.js";
+import { askRenderImpl as askRender } from "./sheet.js";
 import { askResume } from "./client.js";
 import { askResumeSoon } from "./client.js";
 

@@ -13,6 +13,17 @@ import { cfg } from "../platform/storage.js";
 import { AI_BROWSER_MODELS } from "./backend.js";
 import { micStop } from "../ui/chrome.js";
 import { askCopyText } from "../ui/sheets.js";
+import { askStore } from "./bridge.js";
+import { appMode } from "../platform/mode.js";
+import { askMsgMode } from "./context.js";
+import { askStripContext } from "./context.js";
+import { askResumeSoon } from "./client.js";
+import { askLogPath } from "./bridge.js";
+import { folderActive } from "../platform/folder.js";
+import { folderRead } from "../platform/folder.js";
+import { isComposition } from "../model/provenance.js";
+import { songsURL } from "../platform/storage.js";
+import { analysisURL } from "../platform/storage.js";
 
 export function askSetMode(mode) { // "terminal" | "song" | "general" (a boolean still means general/song)
   if (mode === true) mode = "general"; else if (mode === false) mode = "song";
@@ -145,4 +156,46 @@ export function askFillBubble(div, text) { // the words, web addresses tappable,
     b.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(text, b); });
     div.appendChild(b);
   }
+}
+
+export function askRenderImpl() {
+  askDraftLoad();
+  asklog.innerHTML = "";
+  const st = askStore();
+  const msgs = st.msgs;
+  if (st.trimmed) askRenderEarlier();
+  let pendingSeen = false;
+  if (!msgs.length && !st.trimmed && S.askTerminal) askBubble("ai", "This goes straight to Claude Code in the Mac's terminal — the session that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.");
+  else if (!msgs.length && !st.trimmed && S.askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
+  else if (!msgs.length && !st.trimmed) askBubble("ai", appMode() === "normal"
+    ? "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll answer directly — keys, chords, cadences, form — and say how sure I am."
+    : "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
+  for (const m of msgs) {
+    // a different mode's turn (askMsgMode/appMode, SAFETY 2026-10-01): still
+    // shown here (this is the on-device log, not a model request) but dimmed
+    // and tagged, so Josh can tell it was never part of the current mode's
+    // AI context, not just missing from it.
+    const otherMode = !S.askTerminal && askMsgMode(m) !== appMode();
+    const tag = otherMode ? "[" + (askMsgMode(m) === "normal" ? "Normal" : "Learning") + " mode] " : "";
+    const div = askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", tag + (m.role === "note" ? askClock(m.t) + askNoteLabel(m.m) + m.content : (S.askTerminal && m.role === "user" ? askClock(m.t) : "") + askStripContext(m.content)));
+    if (otherMode) div.classList.add("othermode");
+    if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; }
+  }
+  if (pendingSeen) askResumeSoon(200);
+}
+export async function askRenderEarlier() { // what this device let go of after it reached the repo file
+  const div = askBubble("ai", "loading the earlier messages from the repo file…");
+  div.classList.add("earlier");
+  const path = askLogPath();
+  try {
+    let text;
+    if (folderActive()) { const f = await folderRead(path); text = f ? await f.text() : ""; }
+    else {
+      const r = await fetch((isComposition() ? songsURL : analysisURL)(path) + "?t=" + Date.now(), {cache: "no-cache"});
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      text = await r.text();
+    }
+    div.textContent = text.trim() || "(the repo file is empty)";
+  } catch (err) { div.textContent = "earlier messages are in " + path + " — couldn't load it (" + err.message + ")"; }
+  askScrollEnd(); // the earlier block grows above the conversation: keep its end in view
 }

@@ -11,7 +11,7 @@ import { askSentDrop } from "./context.js";
 import { askSeenDrop } from "./bridge.js";
 import { askSessionRefresh } from "./bridge.js";
 import { asksheet } from "./sheet.js";
-import { askRender } from "../hooks.js";
+import { askRenderImpl as askRender } from "./sheet.js";
 import { songTitleOfImpl as songTitleOf } from "./context.js";
 import { setInfoImpl as setInfo } from "../ui/chrome.js";
 import { askBudget } from "./context.js";

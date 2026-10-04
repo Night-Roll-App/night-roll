@@ -17,8 +17,9 @@ import { drumStepImpl, annoInLassoImpl } from "./render/roll.js";
 import { fitViewImpl, finalizeNotesImpl, updateSongMetaImpl } from "./session/song.js";
 import { albumAdvanceImpl } from "./session/album.js";
 import { renderTrackbarImpl } from "./ui/trackbar.js";
+import { askRenderImpl } from "./ask/sheet.js";
 import {
-  askRenderImpl, recFinishImpl,
+  recFinishImpl,
 } from "./app.js";
 
 export function installHooks() {
