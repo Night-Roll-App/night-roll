@@ -29,7 +29,9 @@ test("package: builds the app edition into a temp dir with only starter albums a
   assert.equal(a.length, b.length);
   assert.equal(a.filter((l, i) => l !== b[i]).length, 1, "exactly one line differs");
   for (const f of ["sw.js", "app.webmanifest", "404.html", "LICENSE", "vendor/vexflow.js", "icons/icon-512.png", "albums/manifest.json", "BUILD.json",
-                   "src/edition.js", "src/devtools.js", "src/main.js", "src/wire.js", "src/session/boot.js", "src/package.json"]) assert.ok(existsSync(path.join(out, f)), f);
+                   "src/edition.js", "src/devtools.js", "src/main.js", "src/wire.js", "src/session/boot.js", "src/package.json",
+                   "css/app.css" /* docs/split-plan.md §4 step 16: the stylesheet index.html links ships byte-for-byte */]) assert.ok(existsSync(path.join(out, f)), f);
+  assert.equal(readFileSync(path.join(out, "css/app.css"), "utf8"), readFileSync(path.join(root, "css/app.css"), "utf8"), "css/app.css is copied byte-for-byte");
   assert.ok(!existsSync(path.join(out, "src/app.js")), "src/app.js is gone (docs/split-phase2-plan.md step 13)");
   const files = walk(out).map(f => path.relative(out, f));
   assert.ok(!files.some(f => /final-fantasy|mega-man|tmnt|compositions/.test(f)), "no game albums or compositions in the output");

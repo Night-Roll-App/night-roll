@@ -34,6 +34,22 @@ test("PWA: index.html links the manifest and the apple metadata", () => {
   assert.match(js, /PERF_FLAGS\.get\("sw"\) === "0"/, "kill switch present");
 });
 
+test("PWA: the stylesheet ships offline — index.html links css/app.css (its only stylesheet, no inline <style> left; docs/split-plan.md §4 step 16), sw.js precaches it and routes css/ network-first like src/, and the file is the real CSS", () => {
+  const html = read("index.html");
+  const links = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map(m => m[1]);
+  assert.deepEqual(links, ["css/app.css"]);
+  assert.doesNotMatch(html, /<style[\s>]/, "no inline <style> block — every rule lives in css/app.css");
+  assert.ok(html.indexOf('href="css/app.css"') < html.indexOf("<script"), "the stylesheet is linked before the first script, so it is render-blocking and nothing paints unstyled");
+  assert.ok(existsSync(new URL("css/app.css", root)));
+  const css = read("css/app.css");
+  assert.match(css, /^\s*:root \{/, "starts with the :root token block index.html's <style> did");
+  assert.match(css, /\.sheet\.help \.hsec\.on\{display:block\}\s*$/, "ends where the old <style> block ended");
+  const sw = read("sw.js");
+  const list = JSON.parse(sw.match(/const PRECACHE = (\[[\s\S]*?\]);/)[1].replace(/\s+/g, " "));
+  assert.ok(list.includes("css/app.css"), "precached, so an offline launch is styled");
+  assert.match(sw, /rel\.startsWith\("src\/"\) \|\| rel\.startsWith\("css\/"\)/, "css/ takes the src/ branch: network-first, HTTP cache bypassed, never cache-first");
+});
+
 test("PWA: sw.js parses, precaches only files that exist, never the soundfonts", () => {
   const r = spawnSync(process.execPath, ["--check", new URL("sw.js", root).pathname], {encoding: "utf8"});
   assert.equal(r.status, 0, r.stderr);

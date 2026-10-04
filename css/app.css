@@ -1,0 +1,1186 @@
+  :root {
+    --bg: #0D1120;
+    --panel: #161C30;
+    --panel2: #1C2340;
+    --grid: #242C48;
+    --grid-soft: #1A2138;
+    --text: #C7D0E8;
+    --dim: #6B77A0;
+    --accent: #5B78E8;
+    --gold: #E4C36A;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    /* Text-size root (DAW review item 12, 2026-09-30): every font-size in this
+       file is N/16 rem so the default render is byte-identical to the old
+       fixed px — only the ROOT size moves. --ts follows iOS Dynamic Type
+       (set by the boot script below, via -apple-system-body; WebKit only —
+       everywhere else it stays 1); --userscale is the Settings → Other
+       "Text size" device pref (Small/Default/Large/Larger, also 1 by
+       default). Layout (padding, grid, canvas) is NOT in rem on purpose —
+       only text grows; a control that would clip instead grows via
+       min-height. Canvas-drawn text (ctx.font, roll/score labels) is not
+       part of this system yet and stays literal px — noted, not fixed here. */
+    --ts: 1;
+    --userscale: 1;
+  }
+  html { font-size: calc(16px * var(--ts) * var(--userscale)); }
+  /* touch-action: manipulation kills iOS Safari's double-tap page zoom on
+     every element (the no-zoom viewport meta is ignored); canvases override
+     to none below so app gestures own them completely */
+  * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* left cluster / crumb as real flex items (DAW review, 2026-09-30): they
+     used to be position:absolute, the crumb centered by GUESSING the left
+     cluster's width (380px, past NIGHT//ROLL + File + View + ✦ AI) — any
+     width those buttons wrapped, ✎ Edit joined the row, or a Full-height
+     side dock narrowed #songregion (header lives inside it), the guess was
+     wrong and they landed on top of each other. Real flex items can't
+     overlap, only truncate/wrap.
+     (Chrome density pass, 2026-10-01: the Claude-status chip that used to
+     sit here moved into ✦ AI's own aria-label + the AI window's
+     #asknowstrip. Chrome density follow-up, 2026-10-01 pm: the header's
+     right-end slot that chip and then the 🎓 Learning tag used to occupy is
+     gone too — #songcrumb now simply grows to fill whatever's left; Learning
+     mode is read from Settings or View ▾ → Mode, not a header badge. See
+     NIGHT-ROLL.md "Chrome density pass".) */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--grid);
+    position: relative;
+  }
+  /* brand + File/Edit/View/✦ AI/Full app: its own wrapping row so a phone
+     width can still flow it onto a 2nd line without fighting the crumb (a
+     flex item of `header`, not `header` itself, wraps — `header` stays
+     nowrap so left/crumb/right always share one row at any width). */
+  .hdrleft { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; row-gap: 6px; flex: 0 1 auto; min-width: 0; }
+  .brand {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+  .brand span { color: var(--dim); }
+  select, button, label.filebtn {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--grid);
+    border-radius: 6px;
+    padding: 8px 12px;
+    min-height: 40px;
+    cursor: pointer;
+  }
+  select { max-width: 44vw; }
+  #recbtn { color: #e66767; font-size: 0.9375rem; }
+  #recbtn.rec { background: #e66767; color: #151520; animation: recblink 1.2s ease-in-out infinite; }
+  @keyframes recblink { 50% { opacity: 0.55; } }
+  #songcrumb {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+    /* the flex item that takes whatever's left of the header, centered in
+       THAT space (not the viewport); min-width:0 is what lets a flex item
+       shrink past its content size at all (DAW review, 2026-09-30: replaced
+       a position:absolute guess at the left cluster's width — see the
+       comment on `header` above). Chrome density follow-up (2026-10-01 pm):
+       now the header's only right-of-.hdrleft item — the 🎓 Learning tag
+       that used to share this row with it is gone (below). */
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  /* Published/Local never truncates; the folder shrinks before the title,
+     which shrinks last (Josh, 2026-09-29; DAW review 2026-09-30 made it a
+     real priority instead of "both shrink together" — crumbfolder's
+     flex-shrink is 1000x crumbtitle's, so the folder gives up its width
+     first and the title only starts truncating once the folder's gone). */
+  #songcrumb > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  #songcrumb > .crumbwhere, #songcrumb > .crumbdot { flex: none; }
+  #songcrumb > .crumbfolder { flex: 0 1000 auto; } /* never GROWS: a growing folder pushed the title to the far right */
+  #songcrumb > .crumbtitle { flex: 0 1 auto; }
+  .askshotcell { position: relative; display: inline-block; }
+  .askshotimg { height: 44px; max-width: 80px; object-fit: cover; border-radius: 4px; border: 1px solid var(--grid); cursor: zoom-in; display: block; }
+  .askshotimg.big { height: auto; max-width: 100%; cursor: zoom-out; }
+  #askshotchip:has(.askshotimg.big) { flex-wrap: wrap; }
+  .askshotrm { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; min-height: 0; padding: 0; border-radius: 50%; line-height: 1; font-size: 0.6875rem; }
+  #trackrow {
+    display: flex;
+    align-items: flex-start; /* chips may wrap to more rows; transport stays pinned to the first */
+    gap: 8px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--grid);
+    flex-shrink: 0;
+  }
+  #trackzone { flex: 1 1 0; min-width: 0; display: flex; align-items: flex-start; }
+  #tracktoggle { margin: 8px 0 0 8px; min-height: 36px; padding: 4px 8px; flex: none; }
+  #trackslide {
+    display: flex;
+    align-items: flex-start;
+    flex: 0 1 auto; /* hug the chips so ▾ sits beside the last one; shrink (wrap) only when squeezed */
+    min-width: 0;
+    overflow: hidden;
+    max-width: 100vw;
+    opacity: 1;
+    transition: max-width 0.22s ease, opacity 0.22s ease;
+  }
+  #trackslide.off { max-width: 0; opacity: 0; flex: none; }
+  #trackmore { margin: 8px 4px 0 0; min-height: 36px; padding: 4px 9px; flex: none; }
+  #transport { display: flex; align-items: center; gap: 8px; flex: none; margin-top: 6px; }
+  /* chips that don't fit beside the transport get the whole row below it
+     (fitTrackRow in src/app.js decides from the row width only) */
+  #trackrow.stacked { flex-wrap: wrap; }
+  /* stacked: transport + time controls share the top row (right-aligned, as
+     one group — moving only #transport left #timectl stranded under the
+     chips, Josh 2026-10-03), the chips get the whole row below */
+  #trackrow.stacked #transport { margin-left: auto; }
+  #trackrow.stacked #trackzone { order: 1; flex: 1 1 100%; }
+  #albumstrip { display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(91,120,232,.14);
+    border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); font: 12px var(--mono); color: var(--text); }
+  #albumtext { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #albumstrip button { min-height: 44px; flex: none; }
+  #albumstrip.paused #albumtext { opacity: .55; }
+  #lcd {
+    display: flex;
+    align-items: stretch;
+    background: #0c101e;
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    padding: 3px 4px;
+    gap: 2px;
+  }
+  .lcdseg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 10px;
+    border-right: 1px solid var(--grid);
+    min-width: 44px;
+  }
+  .lcdseg:last-child { border-right: 0; }
+  .lcdbig { font-family: var(--mono); font-size: 1.1875rem; line-height: 1.05; color: #dfe6ff; }
+  .lcdmid { font-family: var(--mono); font-size: 0.75rem; line-height: 1.3; color: #dfe6ff; }
+  .lcdmid.lcdkey { color: var(--gold); }
+  .lcdlbl { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+  .lcdseg.tappable { cursor: pointer; }
+  .lcdseg.tappable:active { background: var(--panel); border-radius: 5px; }
+  #timectl { display: flex; align-items: center; gap: 10px; padding-right: 12px; flex: none; margin-top: 6px; min-height: 44px; }
+  #timectl #metbtn { min-height: 34px; padding: 4px 10px; }
+  /* Chrome density pass (2026-10-01): the always-visible "Claude Code is
+     doing…" header chip crowded the crumb (Josh, screenshot 2026-10-01
+     14:37) and is gone — the full status still lives in the AI window's
+     #asknowstrip (below, allowed to wrap 2 lines instead of truncating to
+     one). Chrome density follow-up (2026-10-01 pm, Josh after using the
+     first pass): the pulsing dot that stood in for the chip on ✦ AI itself
+     is ALSO gone now — "always there and distracting" — ✦ AI's
+     aria-label still carries the working text (askStatusRender, JS), just
+     with no visual. */
+  .overlay > .sheet:focus { outline: none; } /* focused for VoiceOver on open, not a control */
+  #playbtn.loading { opacity: 0.7; } /* loading its sound: tappable (queues the play), not yet ▶ */
+  #timectl #metcfg { min-height: 34px; padding: 4px 6px; margin-left: 2px; font-size: 0.75rem; }
+  select:focus-visible, button:focus-visible,
+  input:focus-visible, textarea:focus-visible, a:focus-visible,
+  [tabindex]:focus-visible, [role="button"]:focus-visible,
+  canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* VoiceOver first pass (2026-09-30): visually hidden but still reachable
+     by a screen reader — the standard clip-to-1px technique, not
+     display:none (which VoiceOver/NVDA both skip entirely). Zero visible
+     pixels, so it can't show up in a before/after screenshot diff. */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; min-width: 74px; }
+  button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #deploybanner { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 10000;
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 16px; max-width: calc(100vw - 24px);
+    background: var(--panel2); border: 2px solid var(--gold); border-radius: 12px; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6);
+    font-family: var(--mono); font-size: 0.875rem; color: var(--gold); }
+  #deploybanner span { flex: 1 1 auto; }
+  /* pressed: every button dims and dips while the finger is on it (Josh,
+     2026-10-02: the copy button "doesn't seem like it pressed"). iOS only
+     applies :active when the page has a touchstart listener — see the no-op
+     one registered at boot. */
+  button:active:not(:disabled) { filter: brightness(0.7); transform: scale(0.94); }
+  button { transition: transform 60ms ease-out, filter 60ms ease-out; }
+  .meta {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    color: var(--dim);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  input[type=file] { display: none; }
+  #speedsl {
+    -webkit-appearance: none;
+    appearance: none;
+    width: min(200px, 22vw);
+    height: 40px;
+    background: transparent;
+    cursor: pointer;
+  }
+  #speedsl::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--grid);
+  }
+  #speedsl::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px;
+    height: 26px;
+    margin-top: -10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--panel);
+  }
+  #speedsl::-moz-range-track { height: 6px; border-radius: 3px; background: var(--grid); }
+  #speedsl::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
+
+  #trackbar {
+    display: flex;
+    flex-wrap: wrap; /* many tracks flow onto more rows instead of scrolling */
+    gap: 8px;
+    padding: 8px 0 8px 12px;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  #trackbar.collapsed { max-height: 52px; overflow: hidden; } /* first row only */
+  .chip {
+    touch-action: manipulation; /* iOS ignores the viewport no-zoom meta; without this two quick taps zoom the page */
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 7px 11px;
+    border: 1px solid var(--grid);
+    border-radius: 16px;
+    background: var(--panel2);
+    white-space: nowrap;
+    cursor: pointer;
+    min-height: 36px;
+  }
+  .chip .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .chip.muted { opacity: 0.35; }
+  .chip.selected { border-color: var(--gold); }
+  .chip .solo {
+    font-size: 0.625rem;
+    color: var(--dim);
+    border: 1px solid var(--grid);
+    border-radius: 4px;
+    padding: 2px 5px;
+  }
+  .chip .solo.on { color: var(--gold); border-color: var(--gold); }
+
+  #rollwrap { flex: 1; position: relative; min-height: 0; min-width: 0; }
+  #cmpbar { display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-family: var(--mono); font-size: 0.75rem;
+            color: var(--text); background: var(--panel); border-bottom: 1px solid var(--grid); flex-wrap: wrap; }
+  #cmpbar button { min-height: 32px; padding: 4px 10px; }
+  #cmpbar .gold { color: var(--gold); } #cmpbar .red { color: #e66767; }
+  body[data-edition="app"] .webonly { display: none !important; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+
+  #editrow {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--panel);
+    border-top: 1px solid var(--grid);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  #editrow.on { display: flex; }
+  #moderowbreak { flex-basis: 100%; height: 0; }
+
+  footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px max(8px, env(safe-area-inset-bottom));
+    background: var(--panel);
+    border-top: 1px solid var(--grid);
+    flex-wrap: wrap;
+    container-type: inline-size; /* footer v2 (2026-09-30): the "⊞ Lasso" label drops to a glyph past ~420px */
+  }
+  /* Folding (View ▾ → Bottom bar; phones default): hide only line 2, the
+     individual buttons — #readline (the readout) stays up always. Replaces
+     footer.style.display="none" in applyChrome, which hid the readout too. */
+  footer.folded > :not(#readline) { display: none; }
+  /* footer v2 (2026-09-30, Option A v2) → chrome density pass (2026-10-01,
+     Josh): inline in the button row by default — flex: 1 1 300px; min-width:
+     300px, never crushed below a usable readout — a flex row so #chordbtn
+     can sit at its right end. fitReadline() (JS, below) adds .ownrow
+     (order:-1; flex-basis:100%, today's own-row layout) whenever what's
+     left for it drops under 300px; #noteinfo itself is just the first
+     (growing) cell either way. Replaces the old #noteinfo
+     order:-1/flex:1 1 100% hotfix (3d60818) directly on #noteinfo, which
+     pinned it to its own line unconditionally. */
+  #readline { flex: 1 1 300px; min-width: 300px; display: flex; align-items: center; gap: 8px; }
+  #readline.ownrow { order: -1; flex: 1 1 100%; min-width: 0; }
+  footer button, footer select { min-height: 44px; }
+  #noteinfo {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--gold);
+    min-width: 0;
+    flex: 1 1 0;
+    cursor: pointer; /* always tappable: a message too long to read here opens in full (#infosheet) */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* wraps to a 2nd line before it has to truncate at all */
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    word-break: break-word;
+    overflow: hidden;
+  }
+  #noteinfo.copyable { cursor: pointer; }
+  #noteinfo .copychip {
+    font-size: 0.625rem;
+    color: var(--dim);
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    padding: 1px 7px;
+    margin-left: 8px;
+  }
+  @container (max-width: 420px) { footer .ftxt { display: none; } }
+  .seg { display: flex; border: 1px solid var(--grid); border-radius: 6px; overflow: hidden; }
+  /* #viewbtn (footer, 2026-09-30): .seg button's own 36px (below) is below the
+     footer's 44px touch floor — this wins on class-count specificity. */
+  footer .seg button { min-height: 44px; }
+
+  #instpanel { display: none; flex-shrink: 0; background: var(--panel); border-top: 1px solid var(--grid); }
+  #instpanel.on { display: block; }
+  #instbar { display: flex; align-items: center; gap: 8px; padding: 4px 12px 6px; }
+  #instbar .seg button { border: 0; min-height: 32px; padding: 5px 14px; }
+  #instfall, #instlock, #instsustain, .instoct { min-height: 32px; padding: 5px 12px; }
+  /* the keyboard's ‹ C3 – E5 › group reads as one control: the readout
+     sits between the octave buttons at a fixed width so it doesn't jitter
+     as the letters change */
+  .instoct { padding: 5px 10px; font-size: 1.1rem; line-height: 1; }
+  .instoct:disabled { opacity: 0.35; }
+  #instrange { font-family: var(--mono); font-size: 0.75rem; color: var(--text); min-width: 5.5em; text-align: center; white-space: nowrap; }
+  #instbar [hidden] { display: none; }
+  /* a phone-width panel: the readout and Sustain fold under the tabs
+     rather than pushing the status text off the end */
+  @media (max-width: 560px) { #instbar { flex-wrap: wrap; row-gap: 6px; } #instinfo { flex-basis: 100%; text-align: left; } }
+  #instinfo {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--gold);
+    min-width: 0;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+    transition: opacity 1.5s ease;
+  }
+  #instwrap { position: relative; height: 168px; }
+
+  #metsheet {
+    display: none;
+    position: absolute;
+    z-index: 58;
+    max-width: 94vw;
+    width: 520px;
+  }
+  #metsheet.on { display: block; }
+  #metsheet .metpanel {
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #metsheet .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #metsheet .lbl { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); }
+
+  #importsheet {
+    display: none;
+    position: absolute;
+    z-index: 58;
+    max-width: 94vw;
+    width: min(75vw, 1040px); /* track names were cut off at 560px on the iPad (Josh, 2026-09-27: "at least 50%") */
+  }
+  #importsheet.on { display: block; }
+  #importsheet .metpanel {
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #importsheet .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #importsheet .lbl { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); }
+  #implist { max-height: 42vh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  #implist .row { flex-wrap: nowrap; }
+  #implist .st { font-family: var(--mono); font-size: 0.6875rem; line-height: 1.35; color: var(--dim); flex: 3 1 160px; min-width: 0; white-space: normal; }
+
+  #editsheet, #viewsheet {
+    display: none;
+    position: absolute;
+    z-index: 60;
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 230px;
+    max-width: 92vw;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  /* Drop-up (Josh, 2026-10-01: "the reverse of a drop-down menu like the
+     File menu — it drops upwards"): a small popover anchored right above
+     its trigger button — same sheet styling as #editsheet/#viewsheet, just
+     opened UPWARD by openDropUp()/closeDropUp() (JS, below) instead of
+     below the button. Shared by #viewswitchmenu (the footer's view button)
+     and #notesmenu (☰ Notes ▴) — ⋯ More (#moresheet) used to be the third
+     one here too; chrome density follow-up (2026-10-01 pm, Josh's ruling)
+     removed it entirely, folding its tools (8va, find:, ◯5, Jobs) into
+     View ▾ (below) instead of a fourth menu. */
+  .dropup {
+    display: none;
+    position: absolute;
+    z-index: 60;
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 230px;
+    max-width: 92vw;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  .dropup.on { display: block; }
+  .dropup .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 44px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
+  .dropup .fitem:active { background: var(--panel); }
+  .dropup .fdiv { border-top: 1px solid var(--grid); margin: 4px 6px; }
+  /* View ▾ (2026-09-30, Josh: "look hard at the ordering"; sub-menu follow-up
+     2026-10-02, "View ▾ is too tall — make EVERY section an expanding
+     sub-menu"): #viewsheet's six groups (View / Panels / Tools / Display /
+     Background / Mode) are no longer .cfgsec captions over a flat list —
+     each is its own header .fitem (▸/▾, aria-expanded) plus a content div
+     the header's own click handler shows/hides; see renderViewMenu(). */
+  .dropup .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin: 6px 10px 2px; }
+  .dropup .cfgsec:first-child { margin-top: 0; }
+  .dropup .row, #viewsheet .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 10px; min-height: 44px; }
+  .dropup select, #viewsheet select { min-height: 44px; }
+  #editsheet.on, #viewsheet.on { display: block; }
+  #editsheet .fitem, #viewsheet .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
+  #editsheet .fitem:active, #viewsheet .fitem:active { background: var(--panel); }
+  svg.ico { width: 18px; height: 18px; fill: currentColor; vertical-align: middle; display: block; margin: auto; }
+  /* Material icons (2026-10-02): .ico is the icon-ONLY-button variant above
+     (centered, no label beside it). .ico.txt sits next to visible button
+     text (transport/footer controls — Play, Prev, reply…) at the same
+     18px the glyphs it replaced read at. .fitem .ico is the drop-up/menu
+     row size (~16px) — a plain descendant selector so every Edit ▾/View ▾/
+     File row gets it with no extra class. .ico.inl is the ~1em inline size
+     for naming a switched icon inside prose, if a future case needs it
+     (none does today — the help sheet names switched controls in words
+     instead). A KEEP glyph (𝄞, ┄, 💬, 🎓, ◂) rides the same slot as an svg would,
+     wrapped in a span.ico(.txt).glyph instead, so it survives the same
+     innerHTML rebuilds an svg does. See NIGHT-ROLL.md "Material icons" for the ICON
+     table + iconSvg() these all come from. */
+  .ico.txt { width: 18px; height: 18px; display: inline-block; vertical-align: -4px; margin-right: 6px; fill: currentColor; }
+  span.ico.txt.glyph { width: auto; height: auto; vertical-align: -1px; fill: none; } /* a KEEP glyph (e.g. 𝄞) standing in the same slot — no svg box to size */
+  .fitem .ico { width: 16px; height: 16px; display: inline-block; vertical-align: -3px; margin-right: 8px; fill: currentColor; }
+  .ico.inl { width: 1em; height: 1em; display: inline-block; vertical-align: -0.15em; margin: 0 1px; fill: currentColor; }
+  /* a group's items sit indented under its ▾ header so the accordion reads as nested */
+  #viewsheet > div[id$="Row"] { padding-left: 26px; }
+  #drummersheet .sheet { width: min(720px, 100%); } /* the range row wraps at 560 (Josh, from bed) */
+  /* the chat: three quarters of the screen on a tablet — half was hard to
+     read (Josh, 2026-09-26); phones keep the full width they already had */
+  #asksheet .sheet { width: max(min(560px, 100%), 75vw); max-width: 100%; }
+  .drseg button { min-height: 44px; min-width: 42px; }
+  #drparts button { min-height: 44px; padding: 8px 12px; }
+  /* listener mode (phones default): the app is a PLAYER — roll + transport only */
+  body.listener #filesheetbtn, body.listener #editsheetbtn, body.listener #viewsheetbtn,
+  body.listener #trackzone, body.listener #editrow, body.listener footer,
+  body.listener #panelshow, body.listener #metbtn, body.listener #metcfg, body.listener #recbtn,
+  body.listener #instpanel, body.listener #subtitle, body.listener #askbtn { display: none !important; }
+  #fullappbtn { display: none; }
+  body.listener #fullappbtn { display: inline-block; }
+  #filesheet {
+    display: none;
+    position: absolute;
+    z-index: 60;
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 280px; /* the Move-to row (label + picker + button) sets the floor */
+    max-width: 92vw;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  #filesheet.on { display: block; }
+  #filesub {
+    display: none;
+    position: absolute;
+    z-index: 61;
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 220px;
+    max-width: 80vw;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  #filesub.on { display: block; }
+  #voicemenu {
+    display: none;
+    position: absolute;
+    z-index: 62;
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 210px;
+    max-width: 80vw;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  #voicemenu.on { display: block; }
+  #voicemenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 40px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; white-space: pre; }
+  #voicemenu .fitem:active { background: var(--panel); }
+  #filesub .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 9px 12px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
+  #filesub .fitem:active { background: var(--panel); }
+  #filesheet .fitem {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: none;
+    border-radius: 6px;
+    min-height: 42px;
+    padding: 9px 12px;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  #filesheet .fitem:active { background: var(--panel); }
+  #filesheet .fdiv, #editsheet .fdiv, #viewsheet .fdiv { border-top: 1px solid var(--grid); margin: 4px 6px; }
+  #filesheet .row { display: flex; gap: 8px; align-items: center; padding: 6px 8px; flex-wrap: wrap; }
+  #filesheet .status { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); padding: 4px 10px 6px; max-width: 300px; white-space: pre-wrap; }
+
+  .metbeat {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    width: 38px;
+    min-height: 44px;
+    border-radius: 6px;
+    border: 1px solid var(--grid);
+    background: var(--panel2);
+    color: var(--dim);
+  }
+  .metbeat.l1 { color: var(--text); background: var(--panel2); }
+  .metbeat.l2 { color: #111; background: var(--gold); border-color: var(--gold); font-weight: 700; }
+  .metbeat.l0 { opacity: 0.3; }
+  .metbeat.now { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  #cofdetail { font-family: var(--mono); font-size: 0.75rem; line-height: 1.7; margin-top: 8px; white-space: pre-wrap; }
+  #cofdetail b { color: var(--gold); }
+
+  .chline { font-family: var(--mono); font-size: 0.8125rem; padding: 3px 0; }
+  .chline.chhead { color: var(--dim); font-size: 0.6875rem; letter-spacing: 0.09em; margin-top: 12px; text-transform: uppercase; }
+  .chline.ok { color: var(--gold); }
+  .chline.bad { color: #e66767; }
+  .chline.warn { color: var(--accent); }
+  .chline.dim { color: var(--dim); }
+  .seg button { border: none; border-radius: 0; min-height: 36px; padding: 6px 11px; }
+  .hint { font-size: 0.6875rem; color: var(--dim); font-family: var(--mono); }
+
+  #subtitle {
+    /* constant-height slot: shown for the whole song when it has text notes,
+       blank between them — toggling per-note reflowed the layout and made
+       the instrument panel bounce (Josh, 2026-08-07). Long notes scroll. */
+    display: none;
+    position: relative;
+    height: 60px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    padding: 8px 96px 8px 16px;
+    background: var(--panel2);
+    border-top: 1px solid var(--grid);
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--gold);
+    white-space: pre-wrap;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  #subtitle.on { display: block; }
+  #subtitle .where { color: var(--dim); font-size: 0.6875rem; display: block; margin-bottom: 2px; }
+  #subtitle .hl {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    padding: 4px 8px;
+    min-height: 28px;
+    border-radius: 5px;
+    border: 1px solid var(--grid);
+    background: var(--panel);
+    color: var(--dim);
+    cursor: pointer;
+  }
+  #subtitle .hl.on { color: var(--gold); border-color: var(--gold); }
+
+  .overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 9, 18, 0.72);
+    z-index: 10;
+  }
+  .overlay.on { display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .sheet {
+    background: var(--panel);
+    border: 1px solid var(--grid);
+    border-radius: 12px;
+    padding: 16px;
+    width: min(560px, 100%);
+    max-height: 88dvh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  /* ✕ pinned to the top of every sheet: the notes list is long enough that
+     finding Close meant scrolling to the bottom (Josh, 2026-08-25) */
+  .sheet .sheetx {
+    position: sticky; top: 0; align-self: flex-end; z-index: 2;
+    min-width: 40px; min-height: 40px; margin: -6px -6px -16px 0;
+    background: var(--panel); border: 1px solid var(--grid); border-radius: 8px;
+    color: var(--dim); font-family: var(--mono); font-size: 0.875rem;
+  }
+  .sheet h2 { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.12em; color: var(--dim); font-weight: 600; }
+  /* the pinned ✕ is prepended above the title; pull the title up onto its row
+     (✕ = 40px tall with a -16px bottom margin, + the 10px gap) — Josh, 2026-09-25:
+     "a lot of room at the top" */
+  .sheet .sheetx + h2 { margin-top: -34px; margin-bottom: 0; min-height: 40px; display: flex; align-items: center; padding-right: 48px; }
+  .sheet .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sheet input[type=number], .sheet input[type=password], .sheet input[type=text], .sheet textarea {
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--grid);
+    border-radius: 6px;
+    padding: 8px;
+  }
+  .sheet input[type=number] { width: 64px; }
+  .sheet input[type=password] { flex: 1; min-width: 0; }
+  .sheet textarea { width: 100%; min-height: 84px; resize: vertical; }
+  /* the annotation editor's comment box (Josh, 2026-10-01: "dragging the
+     window's corner makes it bigger but the text area stays the same size —
+     only the text area should grow"). Width already tracked the sheet
+     (textarea is 100% wide); height didn't, because .sheet is a flex column
+     whose children (h2/rows/#ntext) all default to flex-grow:0 — the sheet
+     grip's resize only grew the OUTER box, leaving the extra height unused.
+     flex-grow:1 here (the header/fields above keep their default flex:0 1
+     auto) sends that extra height to #ntext alone; the 84px floor above is
+     untouched, so the no-resize default is exactly as before. */
+  #noteeditor #ntext { flex: 1 1 auto; }
+  .sheet .lbl { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+  #filesheet .lbl { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); } /* match the .fitem rows */
+  .sheet .status { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); min-height: 14px; }
+  /* Settings: the Test result is its own line and looks like a result — gold ✓ /
+     red ⚠, bold — never the help paragraph's gray (Josh, 2026-09-25: "I don't
+     see anything happening at all") */
+  .sheet .status.ok { color: var(--gold); font-weight: 600; }
+  .sheet .status.err { color: #e66767; font-weight: 600; }
+  .sheet .cfgind { padding-left: 78px; }
+  /* jobs + publish dialog: one bar shape shared by both sheets (Josh, 2026-09-29) */
+  .jobbar { flex: 1; min-width: 40px; height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; }
+  .jobbar > div { height: 100%; width: 0%; background: var(--gold); border-radius: 3px; transition: width 0.15s linear; }
+  .jobbar.sm { max-width: 56px; height: 4px; }
+  #jobssheet .jobbody { display: flex; flex-direction: column; gap: 4px; }
+  #jobssheet .jobbarrow { display: flex; align-items: center; gap: 6px; }
+  .jobprog { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+  #pubjoblist { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); display: flex; flex-direction: column; gap: 6px; }
+  #pubjoblist .pubjobrow { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+  #pubjoblist .pjname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #pubjoblist .pjstate { font-size: 0.75rem; display: flex; align-items: center; gap: 6px; flex: none; max-width: 55%; }
+  #pubjoblist .pjstate.fail { color: #e66767; white-space: normal; text-align: right; }
+  #pubjoblist .pjstate.done { color: var(--gold); }
+  /* the AI panel's "Now:" strip (2026-09-29; every tab since 2026-09-30):
+     what Claude Code is doing — clamped to 2 lines instead of truncating to
+     one (Chrome density pass, 2026-10-01: the header's old status chip is
+     gone — this strip is the only place the full status shows now, besides
+     ✦ AI's own aria-label). Tap opens the Recent list beneath.
+     Chrome density follow-up (2026-10-01 pm, Josh: "text in the AI dialogue
+     is always shifting a little up and down … very annoying while
+     analyzing"): -webkit-line-clamp only clips a 2nd line when there IS one
+     — a 1-line status made the box itself 1 line tall, so the chat log below
+     it jumped every time the text crossed the 1↔2-line boundary. min-height
+     reserves the full 2-line box always, short status or long, closed; .open
+     (tapped — the full un-clamped text) is the one case allowed to grow. */
+  #asknowstrip { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; min-height: calc(1.3em * 2); }
+  #asknowstrip.open { -webkit-line-clamp: unset; display: block; min-height: 0; }
+  #asknowrecent { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
+  #asknowrecent .asknowitem { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jobsnow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* .seg's own overflow:hidden (above) exists to clip the buttons' square
+     corners to the group's rounded ones — with 4 tabs on a narrow sheet it
+     was also clipping whole TABS off the end, since `flex:1` items don't
+     wrap and .seg never scrolled (Josh: "tabs disappear, the content
+     stays" — the pane below is normal block flow, never clipped, so only
+     the tab row vanished). Horizontal scroll instead: every tab keeps a
+     readable min-width and the row scrolls to reach whichever doesn't fit,
+     never display:none. */
+  #cfgtabs { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+  #cfgtabs button { flex: 0 0 auto; min-width: 72px; border: 0; border-radius: 0; min-height: 36px; background: transparent; color: var(--dim); font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; }
+  #cfgtabs button.on { background: var(--grid); color: var(--text); }
+  #settingssheet .cfgpane { display: none; flex-direction: column; gap: 10px; }
+  #settingssheet .cfgpane.on { display: flex; }
+  .sheet .cfgsec { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.12em; color: var(--dim); margin-top: 6px; }
+  .sheet select { font-family: var(--mono); font-size: 0.875rem; background: var(--bg); color: var(--text); border: 1px solid var(--grid); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+  .sheet details summary { min-height: 36px; display: flex; align-items: center; cursor: pointer; list-style: none; }
+  .sheet details summary::-webkit-details-marker { display: none; }
+  .sheet details[open] summary { color: var(--text); }
+  .sheet details .row { margin-top: 8px; }
+  /* Save & Commit: one block per song with anything pending; the open song
+     first with a bar. 12px in --text — this list IS the sheet (Josh, 2026-09-25) */
+  #syncpending { font-family: var(--mono); font-size: 0.75rem; color: var(--text); display: flex; flex-direction: column; gap: 8px; }
+  #syncpending .psong { padding: 4px 0 4px 10px; border-left: 2px solid transparent; }
+  #syncpending .psong.open { border-left-color: var(--accent); }
+  /* each song its own block, its Open right after its name: on the iPad's wide
+     sheet a stretched name pushed Open to the far edge, and which song it
+     belonged to was a guess (Josh, 2026-09-29) */
+  #syncpending .psong + .psong { border-top: 1px solid var(--line, rgba(255,255,255,0.08)); padding-top: 8px; }
+  #syncpending .ptitle > span { flex: 0 1 auto; }
+  #syncpending .ptitle { color: var(--dim); font-weight: 600; letter-spacing: 0.04em; min-height: 24px; display: flex; align-items: center; gap: 8px; }
+  #syncpending .ptitle button { min-height: 32px; padding: 2px 12px; flex: none; }
+  #syncpending .psong.open .ptitle { color: var(--text); }
+  #syncpending .pline { display: flex; align-items: center; gap: 6px; min-height: 30px; }
+  #syncpending .pline.note { padding-left: 14px; }
+  #syncpending .pline button { min-width: 36px; min-height: 30px; padding: 2px 6px; flex: none; }
+  #syncpending .pempty { color: var(--dim); }
+  .sheet.help { max-height: 82dvh; overflow-y: auto; -webkit-user-select: text; user-select: text; }
+  .sheet.help h3 {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    margin-top: 6px;
+  }
+  .sheet.help dl { margin: 0; }
+  .sheet.help dt { font-family: var(--mono); font-size: 0.9375rem; color: var(--text); margin-top: 7px; }
+  .sheet.help dd { font-size: 0.9375rem; color: var(--dim); margin: 1px 0 0 0; line-height: 1.45; }
+  /* Import hub (docs/import-hub-design.md): dragging a file over the panel
+     highlights it — the ONLY drop target in the app, so no ambiguity about
+     where a drop lands. */
+  #importhub.dragover .sheet { outline: 2px dashed var(--gold); outline-offset: -6px; background: rgba(230, 192, 96, 0.06); }
+  #importhub .sheet dt { margin-top: 12px; }
+  #importhub .sheet dt:first-child { margin-top: 0; }
+  #importhub .sheet dd .row { margin-top: 6px; }
+
+  /* Mixer (open-items.md DAW CONVENTIONS REVIEW item 11, 2026-09-30): one
+     strip per track + a master strip, laid out in a single row that scrolls
+     HORIZONTALLY INSIDE its own window — the page itself never scrolls
+     sideways at phone width (#mixersheet .sheet, not #shell, gets the
+     overflow). Reuses the .chip .solo look-and-feel for M/S/H. */
+  #mixersheet .sheet { width: min(960px, 96vw); }
+  #mixerstrips { display: flex; flex-direction: row; align-items: flex-start; gap: 10px;
+    overflow-x: auto; overflow-y: hidden; padding: 4px 2px 8px; -webkit-overflow-scrolling: touch; }
+  .mixerstrip { display: flex; flex-direction: column; align-items: center; gap: 6px;
+    flex: 0 0 74px; width: 74px; padding: 8px 6px; border: 1px solid var(--grid);
+    border-radius: 10px; background: var(--panel2); touch-action: pan-y; }
+  .mixerstrip.selected { border-color: var(--gold); }
+  .mixerstrip.dragging { opacity: 0.5; }
+  .mixerstrip.dropbefore { box-shadow: -3px 0 0 var(--gold) inset; }
+  .mixerstrip.dropafter { box-shadow: 3px 0 0 var(--gold) inset; }
+  .mixerstrip.mixermaster { border-color: var(--accent); background: var(--panel); }
+  .mixername { display: flex; align-items: center; gap: 5px; max-width: 100%;
+    font-family: var(--mono); font-size: 0.6875rem; color: var(--text); cursor: grab;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mixerstrip.mixermaster .mixername { cursor: default; justify-content: center; letter-spacing: 0.08em; color: var(--dim); }
+  .mixername .dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+  .mixerbtns { display: flex; gap: 4px; }
+  .mixerbtns .solo { font-size: 0.625rem; color: var(--dim); border: 1px solid var(--grid);
+    border-radius: 4px; padding: 3px 6px; background: none; min-height: 26px; min-width: 22px; }
+  .mixerbtns .solo.on { color: var(--gold); border-color: var(--gold); }
+  .mixerfaderbox { display: flex; align-items: flex-end; gap: 6px; height: 130px; }
+  .mixermeter { width: 8px; height: 100%; background: var(--bg); border: 1px solid var(--grid);
+    border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; flex: none; }
+  .mixermeterfill { width: 100%; height: 0%; background: var(--gold); }
+  .mixerfaderwrap { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .mixerfader { -webkit-appearance: none; appearance: none; width: 110px; height: 24px;
+    background: transparent; transform: rotate(-90deg); flex: none; }
+  .mixerfader::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--grid); }
+  .mixerfader::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9px;
+    border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
+  .mixerfader::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grid); }
+  .mixerfader::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
+  .mixervlbl { font-family: var(--mono); font-size: 0.625rem; color: var(--dim); }
+  .mixerpan { width: 100%; height: 22px; -webkit-appearance: none; appearance: none; background: transparent; } /* same look as the faders, not the browser's default */
+  .mixerpan::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--grid); }
+  .mixerpan::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
+  .mixerpan::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grid); }
+  .mixerpan::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
+  .mixerplbl { font-family: var(--mono); font-size: 0.625rem; color: var(--dim); min-height: 12px; }
+
+  .noterow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    background: var(--panel2);
+    cursor: pointer;
+    min-height: 44px;
+  }
+  .noterow .where {
+    flex: 0 0 auto; /* never squeezed by a long attached note */
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    color: var(--gold);
+    white-space: nowrap;
+    min-width: 72px;
+  }
+  .noterow .kind {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    padding: 2px 7px;
+    border-radius: 9px;
+    border: 1px solid var(--grid);
+    color: var(--dim);
+    white-space: nowrap;
+  }
+  .noterow .kind.sec { color: var(--text); }
+  .noterow .kind.key { color: var(--accent); border-color: var(--accent); }
+  /* Row space priority (Josh, 2026-08-25: a long ✱ note on a chord squeezed
+     the chord name out of the row entirely). The identity of the row — its
+     bars and its label — always survives; the attached note is what gives way,
+     because it is the one thing you can go read by tapping the row. */
+  .noterow .body {
+    flex: 0 1 auto;   /* sizes to the label; only shrinks when nothing else can */
+    min-width: 0;
+    font-size: 0.75rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .noterow .unsynced { flex: 0 0 auto; font-family: var(--mono); font-size: 0.625rem; color: var(--dim); white-space: nowrap; }
+  .noterow .cnote {
+    flex: 1 1 0;      /* takes the leftover, and ellipsises inside it */
+    min-width: 0;
+    font-family: var(--mono); font-size: 0.625rem; color: var(--gold);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .chiprow { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
+  /* ✦ AI: the in-app AI sheet. The log is the tall part; rows stay fixed. */
+  .sheet.ask { height: 88dvh; width: min(680px, 100%); }
+  #asksheet .sheet.ask { width: max(min(680px, 100%), 75vw); max-width: 100%; } /* three quarters of the screen, whatever rule comes later (Josh, 2026-09-27: "shrunk back to a third") */
+  /* Window manager: shell + docks (phase A of the windowing plan —
+     open-items.md "a real windowing system"; steps 1-2, REBUILT 2026-09-29
+     after attempt 1, c322e3c, broke on the iPad — see the comment on #shell
+     in the body markup — laid the shell down; this phase adds left/bottom
+     docks, an INNER mode for the side docks, a split bottom, and
+     makeWindow()). #songregion is ALWAYS the centered middle column (Josh's
+     rule); docks are cells sized by CSS vars a dock's JS sets, default 0px
+     (closed). A FULL side dock is an outer #shell grid cell, edge to edge
+     (beside the header and footer too, grid-row 1/3); an INNER side dock is
+     nested inside #songregion's own center row (#songcenter), beside
+     #rollwrap only — the song's header rows stay above it, its footer below,
+     spanning the full width under it (Josh: "a header and footer of the song
+     below it from the outer context"). Grid/flex items stretch to fill their
+     cell by default, so nothing else about #songregion's own layout needs an
+     explicit height/width — pixel-identical to the old layout with every
+     dock at 0px. See makeWindow()/wmLayoutAll() and NIGHT-ROLL.md "Window
+     manager (shell + docks)". */
+  #shell {
+    display: grid;
+    grid-template-columns: var(--dl-w, 0px) 1fr var(--dr-w, 0px);
+    grid-template-rows: 1fr var(--db-h, 0px);
+    flex: 1;
+    min-height: 0;
+  }
+  #songregion { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  /* flex column, not a bare block: Phase B's tab strip (order: 0) sits above
+     the docked window(s) (order: 1, flex: 1 — see .overlay.docked below);
+     with no strip showing (0 or 1 windows here) the window still fills the
+     whole cell, same as the old hardcoded height: 100% */
+  #dockleft { grid-column: 1; grid-row: 1 / 3; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; }
+  #dockright { grid-column: 3; grid-row: 1 / 3; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; }
+  /* bottom dock: INNER width (grid-column 2, between the side docks, under
+     #songregion only — not 1/4) by default, chosen so the bottom dock reads
+     as an extension of the song's own bottom band rather than a strip that
+     runs under a side panel too; a full-width bottom is not built (phase A
+     doesn't need it — only the split-in-two case was asked for). May hold
+     two windows side by side (#dockbottom0/#dockbottom1), split by
+     #wmdivider-bottomsplit. */
+  #dockbottom { grid-column: 2; grid-row: 2; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: row; }
+  #dockbottom .dockslot { flex: 1 1 0; min-width: 0; min-height: 0; overflow: hidden; display: none; }
+  #dockbottom .dockslot.shown { display: flex; }
+  #dockbottom.split #dockbottom0.shown { flex: 0 0 calc((100% - 8px) * var(--db-split, 0.5)); }
+  #dockbottom.split #dockbottom1.shown { flex: 1 1 0; }
+  /* the center band: #rollwrap plus its two INNER side-dock cells, sized by
+     their own CSS vars (0px closed) — same "stretch to fill, pixel-identical
+     at 0px" contract as the outer docks */
+  #songcenter { display: flex; flex-direction: row; flex: 1; min-width: 0; min-height: 0; }
+  #dockleftinner  { flex: 0 0 var(--dli-w, 0px); min-width: 0; min-height: 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  #dockrightinner { flex: 0 0 var(--dri-w, 0px); min-width: 0; min-height: 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  /* a docked window: its .overlay fills the dock cell in place (no backdrop,
+     no position:fixed — the cell IS its reserved space) and its .sheet fills
+     the overlay, seam to seam. Generic on `.docked` so any dock (side, full
+     or inner, or bottom) reuses it unmodified. Phase B: every member of a
+     tab group sits in the cell this way (not just the active one) — flex:1
+     fills exactly what the old hardcoded height:100% did when there's no
+     tab strip (order:0, below) sharing the column with it; only `.on` (the
+     active tab) actually shows (display:flex; the rest stay display:none). */
+  .overlay.docked { position: static; display: none; background: transparent; padding: 0; width: 100%; height: auto; z-index: auto; flex: 1 1 auto; min-height: 0; order: 1; }
+  .overlay.docked.on { display: flex; }
+  /* !important: sheetDrag() restores a floating window's saved spot as
+     INLINE transform/width/height — docked, those left the panel shifted
+     down with gaps above and below on Josh's iPad (a fresh browser had none
+     saved) */
+  .overlay.docked .sheet { width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; transform: none !important; margin: 0 !important; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0;
+    overflow: hidden; min-height: 0; } /* the SHEET itself never scrolls as one block while docked (unlike floating,
+    where .sheet/.sheet.help's own overflow-y:auto scrolls everything together, ✕ pinned by position:sticky) — a short
+    dock (240px default) cut off the input row/buttons below a tall log otherwise. Header rows and trailing button
+    rows keep their natural size; the one designated scrolling body per window (below) is flex:1 + min-height:0, so
+    IT shrinks and scrolls while the header and the input/button rows stay put. */
+  #asksheet.docked #asklog, #instsheet.docked #instrows, #notelistsheet.docked #notelistrows,
+  #jobssheet.docked #jobslist, #pubjobsheet.docked #pubjoblist, #infosheet.docked #infosheettext {
+    flex: 1; min-height: 0; overflow-y: auto;
+  }
+  /* (a one-row sideways-scrolling footer beside a full-height dock clipped its
+     last chip, ⏳, in half on Josh's iPad; the footer wraps instead — a hidden
+     control is worse than a second row. New docks start "Beside the roll".) */
+  /* #asksheet .sheet.ask (below) sets a floating-only custom width at ID+class
+     specificity — beats the generic rule above, so it needs its own override
+     here too (ID + .docked + .ask) to actually fill the dock while docked */
+  #asksheet.docked .sheet.ask { width: 100%; max-width: none; height: 100%; max-height: none; }
+  .overlay.docked .sheetgrip { display: none; } /* the dock's divider resizes it instead */
+  /* Phase B: the tab strip for a side dock cell holding more than one window
+     (wmLayoutTabs) — order: 0 puts it above the window(s), order: 1 above.
+     Hidden entirely with 0 or 1 windows in the group, or with only one
+     currently open (nothing to switch to). */
+  .wmtabs { display: none; order: 0; flex: 0 0 auto; gap: 2px; padding: 4px 4px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .wmtabs.on { display: flex; }
+  .wmtab { min-height: 34px; padding: 4px 10px; font-family: var(--mono); font-size: 0.75rem; border: 1px solid var(--grid); border-bottom: none; border-radius: 6px 6px 0 0; background: var(--panel); color: var(--dim); cursor: pointer; white-space: nowrap; }
+  .wmtab.active { color: var(--text); background: var(--panel2); border-color: var(--dim); }
+  /* Phase B: the drag-to-dock highlight (wmShowDropZone/wmZoneFor) — shown
+     over whichever zone a dragged, dockable window's title is currently
+     over; releasing there docks it (the middle of the song region floats
+     it, same as today). */
+  #wmdropzone { display: none; position: fixed; z-index: 62; pointer-events: none;
+    background: rgba(230, 192, 96, 0.16); border: 2px solid var(--gold); box-sizing: border-box; border-radius: 4px; }
+  #wmdropzone.on { display: block; }
+  /* the generic Dock control every dockable window gets (makeWindow) — the
+     spot #askdock used to sit alone, now built the same way for all six */
+  .wmdock { margin-left: auto; cursor: pointer; min-height: 28px; padding: 2px 9px; font-size: 0.75rem; }
+  #wmmenu {
+    display: none; position: fixed; z-index: 63;
+    background: var(--panel2); border: 1px solid var(--grid); border-radius: 10px;
+    padding: 6px; min-width: 190px; max-width: 80vw;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  #wmmenu.on { display: block; }
+  #wmmenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 40px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
+  #wmmenu .fitem:active { background: var(--panel); }
+  #wmmenu .fitem.active { color: var(--accent); }
+  #wmmenu .fsep { height: 1px; background: var(--grid); margin: 5px 2px; }
+  /* dock dividers: one pair per side (full cell + inner cell) — a window
+     drags whichever one is visible; shown only while that cell is occupied
+     (something is docked there, open or not — same as the divider always
+     being there to grab even when the panel behind it happens to be closed) */
+  /* Dividers: a visible 2 px line with a centred grip, inside a 40 px touch
+     zone (Josh, on the iPad: he could not see or find the 8 px invisible
+     strips). The zone straddles the seam, 20 px each side. */
+  .wmdivider-x { display: none; position: absolute; top: 0; bottom: 0; width: 40px; cursor: ew-resize; touch-action: none; z-index: 3;
+    background: linear-gradient(to right, transparent 19px, var(--wmline) 19px, var(--wmline) 21px, transparent 21px); }
+  .wmdivider-x::after { content: ""; position: absolute; top: 50%; left: 50%; width: 6px; height: 44px; margin: -22px 0 0 -3px; border-radius: 3px; background: var(--wmgrip); }
+  .wmdivider-x:hover, .wmdivider-x.dragging { --wmline: var(--accent); --wmgrip: var(--accent); }
+  #wmdivider-left-full, #wmdivider-left-inner { right: -20px; }
+  #wmdivider-right-full, #wmdivider-right-inner { left: -20px; }
+  #dockleft.occupied #wmdivider-left-full, #dockleftinner.occupied #wmdivider-left-inner,
+  #dockright.occupied #wmdivider-right-full, #dockrightinner.occupied #wmdivider-right-inner { display: block; }
+  #wmdivider-bottomh { display: none; position: absolute; left: 0; right: 0; top: -20px; height: 40px; cursor: ns-resize; touch-action: none; z-index: 3;
+    background: linear-gradient(to bottom, transparent 19px, var(--wmline) 19px, var(--wmline) 21px, transparent 21px); }
+  #wmdivider-bottomh::after { content: ""; position: absolute; top: 50%; left: 50%; width: 44px; height: 6px; margin: -3px 0 0 -22px; border-radius: 3px; background: var(--wmgrip); }
+  #wmdivider-bottomh:hover, #wmdivider-bottomh.dragging { --wmline: var(--accent); --wmgrip: var(--accent); }
+  #dockbottom.occupied #wmdivider-bottomh { display: block; }
+  #wmdivider-bottomsplit { display: none; position: relative; flex: 0 0 14px; cursor: ew-resize; touch-action: none; z-index: 3;
+    background: linear-gradient(to right, transparent 6px, var(--wmline) 6px, var(--wmline) 8px, transparent 8px); }
+  #wmdivider-bottomsplit::before { content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -13px; } /* 40 px touch zone */
+  #wmdivider-bottomsplit::after { content: ""; position: absolute; top: 50%; left: 50%; width: 6px; height: 44px; margin: -22px 0 0 -3px; border-radius: 3px; background: var(--wmgrip); }
+  #wmdivider-bottomsplit:hover, #wmdivider-bottomsplit.dragging { --wmline: var(--accent); --wmgrip: var(--accent); }
+  #shell { --wmline: rgba(154, 163, 199, 0.35); --wmgrip: rgba(154, 163, 199, 0.6); }
+  #dockbottom.split #wmdivider-bottomsplit { display: block; }
+  /* sheets move: drag by the title line — the Ask sheet over the capture panel
+     hid it (Josh, 2026-09-27: "I should be able to move these dialogues around") */
+  .sheet > h2, #importsheet .row:first-child { cursor: move; touch-action: none; -webkit-user-select: none; user-select: none; }
+  .sheet.dragging { transition: none; }
+  /* ◢ resize grip: a real element (a pseudo-element gets no pointer events),
+     sticky at the end of the scroll box so it stays visible at the corner.
+     order: 9999 (Josh, iPad, 2026-09-29): addGrips appends it once at boot,
+     so a sheet whose content grows later (Publish's job rows) pushes the
+     grip out of last-child position in the flex column — it surfaced
+     two-thirds of the way down instead of the bottom-right corner. order
+     pins it last regardless of what appends after it, in every .sheet. */
+  .sheetgrip { position: sticky; bottom: -16px; align-self: flex-end; flex: none; width: 26px; height: 26px; margin: -8px -12px -12px 0;
+               cursor: nwse-resize; touch-action: none; color: var(--dim); font-size: 1rem; line-height: 26px; text-align: center; opacity: .7; z-index: 2; order: 9999;
+               margin-top: auto; } /* flex auto-margin trick (Josh, iPad): a sheet resized
+               taller than its content otherwise leaves the grip stranded right after the
+               last row instead of at the bottom — auto consumes the leftover column space */
+  #importsheet .sheetgrip { margin: -4px -8px -8px 0; margin-top: auto; bottom: -12px; }
+  #asklog { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+            -webkit-user-select: text; user-select: text; min-height: 80px; }
+  .askmsg { font-size: 1.0625rem; line-height: 1.5; padding: 10px 13px; border-radius: 10px; /* 14 was too small to read on the iPad (Josh, 2026-09-27) */
+            white-space: pre-wrap; max-width: 92%; }
+  .askmsg.user { background: var(--panel2); border: 1px solid var(--grid); align-self: flex-end; }
+  .askmsg.ai { background: var(--bg); border: 1px solid var(--grid); align-self: flex-start; }
+  .askmsg.err { color: #e66767; }
+  .askmsg.othermode { opacity: .55; } /* a different mode's turn (SAFETY 2026-10-01): shown here, never sent to the model in the current mode */
+  .askmsg a { color: var(--gold); word-break: break-all; }
+  #instfall { display: none; } /* Fall parked 2026-09-27: see the fallOn line */
+  /* ⧉ at the end of every bubble: copying from the sheet on the iPad meant a
+     long-press fight with the selection (Josh, 2026-09-26). The glyph lives
+     in CSS so a bubble's textContent stays exactly its message. */
+  .askmsg .askcopy { float: right; margin: 0 -4px -2px 8px; min-height: 26px; padding: 0 7px; font-size: 0.8125rem; line-height: 24px; opacity: .55; border-color: transparent; }
+  .askmsg .askcopy::before { content: "⧉"; }
+  .askmsg .askcopy.done { opacity: 1; color: var(--gold); }
+  .askmsg .askcopy.done::before { content: "✓ copied"; }
+  /* generic ⧉ Copy (askCopyText handles the clipboard + the .done flash;
+     .copybtn is the visual, decoupled from .askmsg so any read-only sheet
+     can use it — Josh couldn't copy the Status window, 2026-09-30) */
+  .copybtn { min-height: 26px; padding: 0 7px; font-size: 0.8125rem; line-height: 24px; opacity: .7; border-color: transparent; flex: none; }
+  .copybtn::before { content: "⧉ Copy"; }
+  .copybtn.sm { min-height: 20px; padding: 0 5px; font-size: 0.75rem; line-height: 18px; margin-left: 6px; }
+  .copybtn.sm::before { content: "⧉"; }
+  .copybtn.done { opacity: 1; color: var(--gold); }
+  .copybtn.done::before { content: "✓ copied"; }
+  .copybtn.sm.done::before { content: "✓"; }
+  /* read-only text areas Josh needs to select/copy from: none of these had
+     it (2026-09-30 — "I can't copy from the Status window") */
+  #infosheettext, #versionsrows .body, #jobslist .jobbody, #pubjoblist .pjname,
+  #pubjoblist .pjstate, #pubjobnote, #jobsnow, #impstatus {
+    user-select: text; -webkit-user-select: text;
+  }
+  #askmoderow { gap: 6px; margin-bottom: 4px; }
+  #askmoderow button { min-height: 30px; padding: 3px 12px; font-size: 0.75rem; }
+  .askmsg.note { background: rgba(230,192,96,.10); border: 1px solid rgba(230,192,96,.5); align-self: stretch; white-space: pre-wrap; }
+  #askbtn.hasnote::after { content: " ✉"; color: #e6c060; }
+  .askmsg.earlier { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); white-space: pre-wrap; max-height: 40vh; overflow: auto; align-self: stretch; }
+  /* The box grows with its text (askGrow) up to ~8 lines — a fixed 120px hid
+     dictation past the second line (Josh, 2026-09-26). */
+  /* the message box is ALWAYS its own full-width row, Speak/📷/Send (and
+     whatever else shares #askinputrow) in a row beneath it — docked beside
+     the roll at ~700px it used to squeeze the box down to ~300px showing
+     ~5 lines, cramped next to the buttons (Josh, iPad, 2026-09-30). Was
+     narrow-width-only (below 380px); now unconditional at every width. */
+  #askinputrow { flex-wrap: wrap; }
+  #askinputrow #askinput { flex: 1 1 100%; }
+  #askinputrow button { flex: 1 1 0; white-space: nowrap; }
+  #askinputrow #askattach { flex: 0 0 52px; font-size: 1.25rem; } /* one glyph: a square, not a third of the row */
+  /* a narrow docked AI panel (Josh's screenshot, 2026-09-29): the Dock pill
+     wrapped, the two chat tabs need to stay on one line */
+  #asksheet .sheet { container-type: inline-size; }
+  @container (max-width: 380px) {
+    #asksheet-h2 .wmdockbtn, #asksheet-h2 button[data-short] { font-size: 0; }
+    #asksheet-h2 button[data-short]::after { content: attr(data-short); font-size: 0.75rem; }
+    #askmoderow { flex-wrap: nowrap; }
+    #askmoderow button { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
+  #askinput { font-family: var(--sans); font-size: 0.9375rem; flex: 1; min-height: calc(4lh + 20px); max-height: min(44dvh, calc(8lh + 20px)); /* own full-width row now (above): ~4 lines to start, grows to ~8, then scrolls — the chat log keeps the panel (Josh, 2026-09-29: dictation grew it to 17 lines) */
+              resize: none; width: auto; overflow-y: auto; }
+  .chiprow button {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 6px 9px;
+    min-width: 34px;
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .chiprow button.active { border-color: var(--accent); color: var(--accent); }
+
+  /* type jump bar: every annotation type reachable from the top of the sheet,
+     without scrolling to find out whether it exists (Josh, 2026-08-25) */
+  #notejump {
+    position: sticky; top: 0; z-index: 1;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 6px 0; background: var(--panel);
+  }
+  #notejump button {
+    min-height: 34px; padding: 0 10px; border-radius: 8px;
+    border: 1px solid var(--grid); background: transparent;
+    color: var(--dim); font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.06em;
+  }
+  #notejump button.has { color: var(--fg); border-color: var(--dim); }
+  .notegroup { margin-top: 10px; scroll-margin-top: 52px; }
+  .notegroup:first-child { margin-top: 0; }
+  .notegroup .ghead {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    color: var(--dim);
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .notegroup .ghead .gadd {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .notegroup .grows { display: flex; flex-direction: column; gap: 7px; }
+#progpanel{max-height:56dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
+.prow{padding:8px 2px;border-bottom:1px solid #2a2a3a}
+.prow b{color:var(--gold);font-size:0.875rem}
+.prow .pchords{display:block;font-family:var(--mono);font-size:0.9375rem;margin:2px 0}
+.prow .pnum{display:block;font-family:var(--mono);font-size:0.75rem;opacity:.65}
+.prow small{display:block;font-size:0.75rem;opacity:.75;line-height:1.35}
+#helptabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+#helptabs button{min-height:40px;padding:8px 14px;border-radius:8px;background:#242433;color:#cfcfe0;border:1px solid #3a3a4e;font-size:0.875rem}
+#helptabs button.on{background:var(--gold);color:#151520;border-color:var(--gold);font-weight:600}
+.sheet.help .hsec{display:none}
+.sheet.help .hsec.on{display:block}

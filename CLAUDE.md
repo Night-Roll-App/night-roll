@@ -75,8 +75,9 @@ before touching the player.
   source path is gone and `handoffs/` already holds it. Refuse to
   overwrite an existing file of that name; say so instead.
 - **No build step; ES modules, not one file** (Josh, 2026-10-02). index.html is
-  markup + CSS; the app is plain browser ES modules under src/ (entry
-  src/main.js), served as-is — no bundler, transpiler or TypeScript. Map:
+  markup only, its CSS is css/app.css (no inline `<style>`); the app is plain
+  browser ES modules under src/ (entry src/main.js), served as-is — no
+  bundler, transpiler or TypeScript. Map:
   NIGHT-ROLL.md "Module map"; rules: docs/split-plan.md §2. All mutable app
   state is on `S` (src/state.js) — no top-level `let` elsewhere; no top-level
   side effects (wiring goes in init*() called by main.js in order); top-level

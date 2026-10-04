@@ -2,9 +2,9 @@
 // tools/package.mjs — assemble the PRODUCT build of Night Roll (Phase 1, step 5
 // of the iPad app plan, 2026-09-26) and refuse to ship anything that is not
 // ours. No build step in the usual sense: index.html is copied byte-for-byte
-// except ONE line (EDITION "web" → "app"); vendor/, sw.js, the manifest and
-// icons come along; albums/ is reduced to the starter albums and a manifest
-// listing only them.
+// except ONE line (EDITION "web" → "app"); src/, css/, vendor/, sw.js, the
+// manifest and icons come along; albums/ is reduced to the starter albums and
+// a manifest listing only them.
 //
 //   node tools/package.mjs                 # → dist/night-roll-app/
 //   node tools/package.mjs --out /some/dir # elsewhere (tests use a temp dir)
@@ -33,7 +33,7 @@ const CHECK_ONLY = argv.includes("--check");
 const ALLOWED_ALBUM_DIRS = ["albums/starters"];
 const FORBIDDEN = /final[-_ ]?fantasy|mega[-_ ]?man|tmnt|teenage mutant|nintendo|capcom|konami|square ?enix|castlevania|zelda|metroid/i;
 const TOP_FILES = ["index.html", "sw.js", "app.webmanifest", "404.html", "LICENSE"];
-const TOP_DIRS = ["vendor", "icons", "src"];
+const TOP_DIRS = ["vendor", "icons", "src", "css"];
 // Runtime modules: the browser imports these from tools/ (chip captures, chip
 // audio in the Worker). Only what the app's entry points reach, transitively —
 // the node-only scripts in the same folders (dumps, tests, bridges) stay home.
@@ -116,6 +116,7 @@ function srcModules() {
   return { all, reachable: [...seen], reachableAbs, unresolved };
 }
 const SRC = srcModules();
+const STYLESHEETS = [...readFileSync(path.join(ROOT, "index.html"), "utf8").matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map(m => m[1]);
 
 const rel = p => path.relative(OUT, p).split(path.sep).join("/");
 function walk(dir, out = []) { for (const e of readdirSync(dir)) { const f = path.join(dir, e); if (statSync(f).isDirectory()) walk(f, out); else out.push(f); } return out; }
@@ -182,8 +183,9 @@ for (const f of files) {
   // split-plan.md §4 step 0b): it's the whole app's prose-heavy source
   // (comments quoting Josh, feature names, …), the same reason index.html
   // always was — the PATH scan two lines up and the album/compositions
-  // guards below still apply to it.
-  if (/\.(json|md|txt|webmanifest|js)$/.test(r) && r !== "index.html" && !r.startsWith("vendor/") && !r.startsWith("src/")) {
+  // guards below still apply to it. css/** (step 16) is index.html's own
+  // former <style> block, exempt for the same reason.
+  if (/\.(json|md|txt|webmanifest|js|css)$/.test(r) && r !== "index.html" && !r.startsWith("vendor/") && !r.startsWith("src/") && !r.startsWith("css/")) {
     const t = readFileSync(f, "utf8");
     if (FORBIDDEN.test(t)) fail("forbidden text in " + r + ": " + t.match(FORBIDDEN)[0]);
   }
@@ -192,6 +194,14 @@ for (const m of SRC.unresolved) fail("src/" + m + " is imported but does not exi
 for (const m of SRC.all) if (!SRC.reachable.includes(m)) fail("src/" + m + " exists but is not reachable from src/main.js");
 for (const abs of AI_WEB) if (abs !== AI_WEB_INDEX && !SRC.reachableAbs.has(abs)) fail("vendor/ai/web/" + path.relative(AI_WEB_DIR, abs).split(path.sep).join("/") + " is vendored but not reachable from src/main.js (nor the library's own index.js)");
 if (!CHECK_ONLY) for (const m of SRC.all) if (!existsSync(path.join(OUT, "src", m))) fail("src/" + m + " is not in the output");
+// stylesheets (docs/split-plan.md §4 step 16): every <link rel="stylesheet">
+// in index.html must resolve to a repo file AND a packaged one — index.html
+// without css/app.css is an unstyled app, offline and in the iPad bundle alike.
+if (!STYLESHEETS.length) fail("index.html links no stylesheet (css/app.css, docs/split-plan.md §4 step 16)");
+for (const href of STYLESHEETS) {
+  if (!existsSync(path.join(ROOT, href))) fail("index.html links a stylesheet that does not exist: " + href);
+  else if (!CHECK_ONLY && !existsSync(path.join(OUT, href))) fail("stylesheet linked by index.html is not in the output: " + href);
+}
 if (!CHECK_ONLY) {
   const listed = new Set(shipManifest.flatMap(a => a.songs.map(s => s.path)));
   for (const p of listed) if (!existsSync(path.join(OUT, p))) fail("manifest lists a song that is not in the output: " + p);
