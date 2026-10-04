@@ -69,31 +69,16 @@ Q7. ANSWERED (Terminal #92: NES/SNES sound great) — step 7 shipped ba19c73. Wa
     check soon, or should I continue with the non-audio steps first?
 Q8. ANSWERED (Terminal #93): Night-Roll-App/claude-bridge, private, rename later OK; scope = ALL AI (bridge, in-browser/cloud models, Ollama, LM Studio, the AI window). Was: The AI library's new repo: name and
     visibility? Default: Night-Roll-App/claude-bridge, private.
-Q9. (ASK LATER — module split phase 2 steps 3/4/4b, 2026-10-04) iPad ear
-    check needed before these steps are considered fully verified
-    (docs/split-phase2-plan.md §3's step-4 list, narrowed to what steps 4
-    and 4b actually touched): a chip song (NES + one streamed console —
-    the chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/
-    chipRenderAuto path moved file in step 4) and note preview (chip
-    fallback). Step 4b moved more code (recOpenEnded/computeSongEnd/clip
-    geometry/buildSchedule/the tombstone-undo helpers/saveLocalNotes, all
-    verbatim re-homes; srAnnounce/scheduleBackupFlush/setAnchorBQ, all
-    verbatim hook ports) but NONE of it is on an actual sound-producing
-    path — every move is either pure data/undo bookkeeping or a
-    byte-identical rename+forward (verbatim.mjs checked each commit), so
-    this narrows Q9's own list rather than widening it. The one step-4b
-    move that touches something a device test would exercise: writeClips/
-    setClipDir/splitClipAt/deleteClip (apply/split/delete an audio clip)
-    now live in audio/clips.js — a verbatim move, not a logic change, but
-    if/when you do get to the existing "clip at 0.5×" item below, splitting
-    or deleting a piece during that same pass exercises this step's own
-    code too (no separate check needed for it). play/stop/the whole
-    transport/voices/clips-remainder cluster (scheduleClip/stretchEnsure/
-    applyAudioDirs/audioEnsureFile/applyBeatMap/setSongTempo — the
-    play-gate/instrument-preload web) did NOT move (heavily blocked — see
-    this entry's own writeup below), so synth/SF2/game-voice/album-auto-
-    advance remain unaffected by steps 4/4b and don't need a fresh check
-    on their account.
+Q9. (ASK LATER — module split phase 2 steps 3/4/4b/4c, 2026-10-04) iPad
+    ear check needed before these steps are considered fully verified.
+    Step 4c moved the whole transport/voices/clips cluster — play/stop,
+    the play gate, scheduleNote/previewNote, the sampled/game/SF2 preload,
+    scheduleClip + the WSOLA apply side, the offline bounce — out of
+    app.js (verbatim, no logic change, verbatim.mjs ✔ on every commit),
+    so the list is docs/split-phase2-plan.md §3's step-4 list IN FULL, no
+    longer narrowed: synth, SF2, game voice, NES + one streamed console,
+    clip at 0.5×, note preview, album auto-advance, metronome. (iPad
+    mute → revert first, per the known-good-engine rule.)
 
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
@@ -6902,3 +6887,31 @@ this step actually touched — see Q9 above): a chip song (NES + one
 streamed console) and note preview (chip fallback). The rest of plan §3's
 step-4 ear-check list (synth, SF2, game voice, clip at 0.5×, album
 auto-advance) is unaffected — that code never moved.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 4c: the transport/voices/clips cluster is out (docs/split-phase2-plan.md)
+
+Seven M commits, all verbatim (`verbatim.mjs <sha>` ✔ each, zero
+exceptions), finishing what steps 4/4b left. The 50-name closure
+blockers.mjs reported was not one knot: 28 names hang off a 22-name
+strongly-connected core one way only, so they moved as their own
+commits around it — title-order helpers → `model/catalog.js`; the
+instrument-library loaders + `gameVoicesInSong`/`sf2VoicesInSong`/
+`resolveGameVault` → `audio/voices.js`; `albumStrip` → `audio/
+transport.js`; THEN the core in one commit (`scheduleClip`/
+`stretchEnsure*`/`audioChaseNow` → clips; `scheduleNote` + sf/game
+preload+wait → voices; play gate + `play`/`stop` → transport; one
+import-line hand fix, `playGateKick` from `../app.js` → `./transport.js`);
+then `previewNote` → voices, `applyAudioDirs`/`audioEnsureFile`/
+`applyBeatMap`/`setSongTempo` → clips, and `renderSongOffline`/
+`offlineWaitForAssets` → `audio/bounce.js` (split-plan §1's "offline
+render" row, not the phase-2 table's transport guess). No new port, no
+logic edit, Learning-mode gates untouched. Checks per commit: check.mjs
+clean except `oldBpb`, e2e-globals/controls clean, prof label set
+unchanged (29), footer regenerated. Group: `npm test` under alarm 1200 —
+only ps2-real/instruments fail (pre-existing); smoke 8/8; package 181
+files, list identical. `src/app.js`: 14179 → 13343 (836 out).
+
+Device check owed — Q9 (the FULL step-4 ear list now: synth, SF2, game
+voice, NES + one streamed console, clip at 0.5×, note preview, album
+auto-advance, metronome). This is the known-good iPad engine moving file;
+build, listen, revert on the first mute.

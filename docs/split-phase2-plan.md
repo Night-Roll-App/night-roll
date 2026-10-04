@@ -112,7 +112,7 @@ illegal-layer imports.
 | 1 | H | **Done.** hooks.js + wire.js; ports setInfo, logErr, logDebug, appConfirm, updateJobsBtn; controls.js → layer 0; LAYERS gains session, hooks.js, wire.js | ~0 (15054→15056) |
 | 2 | M | **Done, with two real exceptions (see §2 writeup): `chipRender`/`chipRenderInWorker` and `chipStreamOpen` stayed, blocked by `songTitleOf`, a NEW blocker, not `logErr`.** ensureAudio/resumeAudio/rebuildAudio → audio/engine; metStart → metronome; CHIPS, sonySeqCapture, psfInflater, PSX_SOUNDING_ON, chipExt, ~~chipRender~~, chipEstimateTracks, ~~chipRenderInWorker~~, chipCleanupAfterFailure, chipSource, chipVaultFile, chipModules → audio/chip; chipStreamOpenWorker (not ~~chipStreamOpen~~) → chip-stream; scheduleGameNote/gameVoiceWarn/gameNote*/resolveVoiceInstrument/gameLibSync/sf2Sync → audio/voices; idbDraftPut → platform/storage; jobsNotify → model/jobs | ~1,100 (actual: 571, 15056→14485) |
 | 3 | H | **Done.** ports draw, playbackFrame, clampView, fitView, buildScoreModel, renderTrackbar, updateEditBtnVis, updateChipBtn, updateSongBtn, updateSyncBtn, updateSubtitle, askRender, finalizeNotes, recFinish, albumAdvance — plus songTitleOf (step 2's blocker) | ~0 (actual: +9, 14486→14495 — new import lines only) |
-| 4 | M | **Done, with the transport/voices/clips clusters almost entirely blocked (see §2 writeup): only chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/chipRenderAuto actually moved**, unblocked by step 3's songTitleOf port; play/stop/playGate*/buildSchedule/renderSongOffline/audioChaseNow → audio/transport; scheduleNote, previewNote, sf/game preload+wait → audio/voices; scheduleClip, stretchEnsure(All), applyAudioDirs, audioEnsureFile, applyBeatMap, setSongTempo, writeClips, setClipDir, splitClipAt, deleteClip → audio/clips all stayed, still blocked | ~1,150 (actual: 220, 14495→14275) |
+| 4 | M | **Done, with the transport/voices/clips clusters almost entirely blocked (see §2 writeup): only chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/chipRenderAuto actually moved**, unblocked by step 3's songTitleOf port; play/stop/playGate*/buildSchedule/renderSongOffline/audioChaseNow → audio/transport; scheduleNote, previewNote, sf/game preload+wait → audio/voices; scheduleClip, stretchEnsure(All), applyAudioDirs, audioEnsureFile, applyBeatMap, setSongTempo, writeClips, setClipDir, splitClipAt, deleteClip → audio/clips all stayed, still blocked. **Finished in step 4c (worktree agent, 2026-10-04): the whole cluster is out — see the 4c write-up.** | ~1,150 (actual: 220, 14495→14275; 4c: 836 more, 14179→13343) |
 | 5 | M | saveEdits/loadEdits/foldOldOverlay/retireOldOverlay → model/edits; selEditApply + selection mutators, insertTime/deleteTime, ridealongChordBands, transposeTrack, closeGap → model/selection; scheduleAnalysisRecompute/adopt* → gen/analysis; drGenerate/bsGenerate/applyTake → gen/*; M2's misfiled ones down out of ui/* | ~1,400 |
 | 6 | M | session/song.js: finalizeNotes, bakeMeter, bakeTempos, loadNotes, updateSongMeta, fitView, loadSong*, setSong, openDraft*; session/album.js: albumStart/PlayIdx/Advance…; session/files.js: saveSongAs, openSaveForm, forkCurrentSong, revertSongToRepo, moveComposition, renameLocalKeys | ~1,000 |
 | 7 | M | voice menu/pickers/buildClipControls → ui/voice-menu; renderTrackbar/trackToggle/saveTrackDir/saveVoices/renameTrack → ui/trackbar; mixer cluster → ui/mixer; wm actions → ui/wm; renderNoteList → ui/notes; updateChipBtn/updateSubtitle/updateLCD → ui/chrome; drummer/bassist sheets → ui/sheets | ~1,700 |
@@ -494,6 +494,81 @@ exact same web (confirmed: all six pull in 46 of its names when
 checked together). Per this step's own instruction ("if something is
 truly not portable, leave that cluster and document") — left bit-for-
 bit in app.js.
+
+**Step 4c — Done** (2026-10-04, worktree agent). The transport/voices/
+clips cluster step 4b left — the "step 11-sized undertaking" above — is
+out of app.js, verbatim, in seven M commits. The key finding: the 50-name
+closure `blockers.mjs` reported was NOT one strongly-connected component.
+Read function by function, 28 of the 50 hang off the real SCC in one
+direction only (the SCC calls down into them, nothing in them calls back
+up), so they each move as their own linking commit, and the SCC itself is
+22 names. Order and placement (docs/split-plan.md §1's table, not this
+file's step-4 row, decides where a name lands — one deviation, noted):
+
+1. **M** `romanValue`/`titleSortKey`/`titleCompare` → `model/catalog.js`.
+   Pure album-title ordering, only caller `instAlbums`; landed at layer 2
+   ("album lookups") rather than beside their caller at layer 3 — the
+   `albumMetaFor`-in-chip.js lesson of phase 1 step 9 (a pure leaf parked
+   one layer too high deadlocks the next lower-layer caller). Clean.
+2. **M** the instrument-library layer → `audio/voices.js`: `instLibs`/
+   `instWavs`/`instPlayer`/`instDecodeWav`/`instAlbums`/`INST_CHIPS`/
+   `instFolder`/`instLibrary`/`instSamples`/`sf2Module`/`sf2Fonts`/
+   `sf2Bytes`/`sf2Font`/`resolveGameVault`/`instPlayerReady`/
+   `gameVoicesInSong`/`sf2VoicesInSong` (17). Clean after commit 1.
+3. **M** `albumStrip` → `audio/transport.js`. Clean. After it,
+   `blockers.mjs` on the 22-name SCC: closure (none), illegal (none).
+4. **M, the SCC, one commit, three `move.mjs` invocations** — no ordering
+   of smaller commits leaves rule 5 clean in between (play → sfWaitForSong
+   → sfPreloadForSong → playGateKick → playGateTick → play; scheduleNote →
+   scheduleClip → stretchEnsure → audioChaseNow → scheduleClip; play →
+   scheduleNote/stretchEnsureAll). `audio/clips.js` ← `scheduleClip`/
+   `stretchEnsure`/`stretchEnsureAll`/`audioChaseNow`; `audio/voices.js` ←
+   `sfPreloadForSong`/`sfWaitForSong`/`gamePreloadTokens`/
+   `gamePreloadForSong`/`gameWaitForSong`/`scheduleNote`;
+   `audio/transport.js` ← `PLAY_GATE_GRACE`/`PLAY_GATE_MAX`/`gateSettled`/
+   `gateWatched`/`gatePending`/`playGate`/`playGateWait`/`playGateKick`/
+   `playGateActive`/`playGateTick`/`play`/`stop`. Invoked in that order
+   (clips first — nothing it needs was still in app.js; voices second —
+   one need, `playGateKick`, still in app.js; transport last — everything
+   it needs now real), so exactly ONE specifier needed the §0 import-line
+   hand fix: voices.js's `import { playGateKick } from "../app.js"` →
+   `"./transport.js"`. The three files now form a layer-3 cycle (legal,
+   §2.3; every crossing name is a hoisted function or a const read only
+   inside one). `play.gen = 0;` — a top-level property write on play's
+   function object — stays in app.js (evaluates after transport.js) and
+   picked up two leading spaces from the indented `  function
+   stretchEnsure` line cut from its `function` token onward (whitespace
+   only; verbatim.mjs ✔).
+5. **M** `previewNote` → `audio/voices.js` (a consumer of scheduleNote,
+   not a member of the SCC). Clean.
+6. **M** `applyAudioDirs`/`audioEnsureFile`/`applyBeatMap`/`setSongTempo`
+   → `audio/clips.js` (the clips cluster's last four; each reaches the
+   SCC one way). Clean.
+7. **M** `offlineWaitForAssets`/`renderSongOffline` → **`audio/bounce.js`,
+   not `audio/transport.js`** as this file's step-4 row said:
+   docs/split-plan.md §1 gives bounce.js "Download audio: wav encode,
+   offline render", and bounce.js already holds the wavEncode/
+   audioBufferToWav/deliverAudioFile the same click handler feeds the
+   rendered buffer to. Same layer either way. Clean once `audioEnsureFile`
+   (commit 6) had moved.
+
+Per commit: `verbatim.mjs <sha>` ✔ with zero exceptions all seven times
+(no same-line split this time — `PLAY_GATE_GRACE, PLAY_GATE_MAX`,
+`gateSettled, gateWatched`, `instLibs, instWavs` are each ONE declaration
+with two declarators, moved whole); `regen-e2e-footer.mjs` after every
+move; `check.mjs` clean except `oldBpb`; `check-e2e-globals`/
+`check-controls` clean; sorted `prof("…")` label set unchanged (29 —
+`scheduleNote`'s wrap travelled with it, label string untouched). After
+the group: `perl -e 'alarm 1200; exec @ARGV' npm test` — only `ps2-real`/
+`instruments` fail (pre-existing local-rip gap); modules 81/81, controls
+3/3, ai/bridge/gestures/chip-worker/sounding/night-roll green;
+`test:e2e:smoke` 8/8; `node tools/package.mjs --out`: 181 files, list
+identical to before the step (no file added — all five targets already
+existed). `src/app.js`: 14179 → 13343 (836 out). Learning-mode gates
+untouched. No port added, no logic edit anywhere. **iPad ear check now
+owed in full** (plan §3's step-4 list, no longer narrowed — this IS the
+engine): synth, SF2, game voice, NES + one streamed console, clip at
+0.5×, note preview, album auto-advance, metronome. See open-items Q9.
 
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run

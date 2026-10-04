@@ -842,6 +842,19 @@ test("blockers.mjs CLI: real repo — writeClips/setClipDir/splitClipAt/deleteCl
   }
 });
 
+test("blockers.mjs CLI: real repo — the play-gate/preload/scheduler cluster (play/stop/playGate*/scheduleNote/previewNote/sfWaitForSong/gameWaitForSong/scheduleClip/stretchEnsure*/applyAudioDirs/audioEnsureFile/applyBeatMap/setSongTempo/renderSongOffline) is no longer declared in app.js at all, post-docs/split-phase2-plan.md step 4c: steps 4/4b's '37-name closure' was 28 one-way leaves around a 22-name SCC, moved as seven verbatim commits", () => {
+  for (const [name, toPath] of [
+    ["play", "src/audio/transport.js"], ["stop", "src/audio/transport.js"], ["playGateKick", "src/audio/transport.js"], ["albumStrip", "src/audio/transport.js"],
+    ["scheduleNote", "src/audio/voices.js"], ["previewNote", "src/audio/voices.js"], ["sfWaitForSong", "src/audio/voices.js"], ["gameWaitForSong", "src/audio/voices.js"], ["instLibrary", "src/audio/voices.js"],
+    ["scheduleClip", "src/audio/clips.js"], ["stretchEnsure", "src/audio/clips.js"], ["applyAudioDirs", "src/audio/clips.js"], ["setSongTempo", "src/audio/clips.js"],
+    ["renderSongOffline", "src/audio/bounce.js"], ["titleCompare", "src/model/catalog.js"],
+  ]) {
+    const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", name, "--to", toPath], { cwd: ROOT, encoding: "utf8" });
+    assert.equal(r.status, 0, `${name}: ${r.stdout}`);
+    assert.match(r.stdout, /clean/);
+  }
+});
+
 // ---- promote-state.mjs -------------------------------------------------------
 
 test("promote-state.mjs: a literal-init let becomes an S field; references become S.name, shadows don't", () => {
