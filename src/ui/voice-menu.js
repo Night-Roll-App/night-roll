@@ -713,3 +713,18 @@ export function resolvedGameVaultSync(idVault) {
   }).catch(() => {});
   return idVault;
 }
+
+export function initVoiceMenu1() {
+  document.addEventListener("pointerdown", e => { // tap-away closes the voice menu
+    const menu = document.getElementById("voicemenu");
+    if (!menu.classList.contains("on")) return;
+    if (menu.contains(e.target)) return;
+    // only the chip the menu ALREADY belongs to is exempt (its own click handler
+    // toggles/rebuilds it) — a tap on any OTHER track's chip is a tap-away, same
+    // as tapping the roll (Josh, traced 2026-09-29: a stale menu stayed open,
+    // still pointing at the old track, after a first tap on a different chip)
+    const chip = e.target.closest && e.target.closest(".chip");
+    if (chip && Number(chip.dataset.ti) === S.voiceMenuTi) return;
+    menu.classList.remove("on");
+  }, {capture: true});
+}

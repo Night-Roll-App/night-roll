@@ -1505,6 +1505,7 @@ import { initNotes1 } from "./ui/notes.js";
 import { initNotes2 } from "./ui/notes.js";
 import { initNotes3 } from "./ui/notes.js";
 import { initTrackbar1 } from "./ui/trackbar.js";
+import { initVoiceMenu1 } from "./ui/voice-menu.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2393,18 +2394,7 @@ document.addEventListener("pointerdown", function warm() {
   if (S.sfPreloadPending) sfPreloadForSong(); // the boot-time preload deferred to this gesture
 }, {capture: true});
            initChrome4();
-document.addEventListener("pointerdown", e => { // tap-away closes the voice menu
-  const menu = document.getElementById("voicemenu");
-  if (!menu.classList.contains("on")) return;
-  if (menu.contains(e.target)) return;
-  // only the chip the menu ALREADY belongs to is exempt (its own click handler
-  // toggles/rebuilds it) — a tap on any OTHER track's chip is a tap-away, same
-  // as tapping the roll (Josh, traced 2026-09-29: a stale menu stayed open,
-  // still pointing at the old track, after a first tap on a different chip)
-  const chip = e.target.closest && e.target.closest(".chip");
-  if (chip && Number(chip.dataset.ti) === S.voiceMenuTi) return;
-  menu.classList.remove("on");
-}, {capture: true});
+initVoiceMenu1();
                          
                         
         play.gen = 0;
