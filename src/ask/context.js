@@ -29,9 +29,10 @@ import { logLine } from "../model/jobs.js";
 import { askStoreKey } from "./sheet.js";
 import { cfg } from "../platform/storage.js";
 import { ASK_TERMINAL_KEY } from "./bridge.js";
+import { songTitleOf } from "../hooks.js";
 
 // resolved in boot() once the manifest is in
-export function songTitleOf(path) {
+export function songTitleOfImpl(path) {
   for (const songs of Object.values(S.CATALOG)) {
     const hit = songs.find(([, p]) => p === path);
     if (hit) return hit[0];

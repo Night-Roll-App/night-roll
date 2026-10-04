@@ -377,9 +377,22 @@ async function loadHooksWithoutInstall() {
   return entry.namespace;
 }
 
+// docs/split-phase2-plan.md step 3 added 16 more ports (draw, playbackFrame,
+// clampView, fitView, buildScoreModel, renderTrackbar, updateEditBtnVis,
+// updateChipBtn, updateSongBtn, updateSyncBtn, updateSubtitle, askRender,
+// finalizeNotes, recFinish, albumAdvance, songTitleOf — the last is step 2's
+// chipRender/etc. blocker) alongside step 1's original five.
+const ALL_PORTS = [
+  "setInfo", "logErr", "logDebug", "appConfirm", "updateJobsBtn",
+  "draw", "playbackFrame", "clampView", "fitView", "buildScoreModel",
+  "renderTrackbar", "updateEditBtnVis", "updateChipBtn", "updateSongBtn",
+  "updateSyncBtn", "updateSubtitle", "askRender", "finalizeNotes",
+  "recFinish", "albumAdvance", "songTitleOf",
+];
+
 test("hooks.js: every port throws `hook X not installed` before src/wire.js's installHooks() ever runs", async () => {
   const hooks = await loadHooksWithoutInstall();
-  for (const name of ["setInfo", "logErr", "logDebug", "appConfirm", "updateJobsBtn"])
+  for (const name of ALL_PORTS)
     assert.throws(() => hooks[name]("x"), new RegExp(`hook ${name} not installed`));
 });
 
@@ -389,7 +402,7 @@ test("wire.js installHooks(): every hooks.js port is installed, as a function, o
   // a separate vm realm, so a plain array/object result fails assert's
   // strict cross-realm identity checks even when its contents match.
   const installed = JSON.parse(app.run("JSON.stringify(Object.keys(S.hooks).sort())"));
-  assert.deepEqual(installed, ["appConfirm", "logDebug", "logErr", "setInfo", "updateJobsBtn"]);
+  assert.deepEqual(installed, [...ALL_PORTS].sort());
   for (const name of installed) assert.equal(app.run(`typeof S.hooks.${name}`), "function");
 });
 
@@ -399,6 +412,15 @@ test("hooks.js rebinding: reassigning the bare port name (run(\"setInfo = …\")
   app.run('setInfo("intercepted")');
   assert.equal(app.run("S.__testHookSeen"), "intercepted");
   assert.equal(app.run("S.infoFull"), "tap a note"); // setInfoImpl (ui/chrome.js) never ran — it would have overwritten S.infoFull's literal initial value
+});
+
+test("hooks.js rebinding: same for draw() — a lower-layer caller (simulated here: a model mutator reaching up through the port) gets the rebound body, the real drawImpl (ui/chrome.js) bypassed (docs/split-phase2-plan.md step 3)", async () => {
+  const app = await createApp();
+  app.run("S.sceneValid = true;"); // drawImpl unconditionally sets this false — the tell that it ran
+  app.run('draw = () => { S.__testDrawSeen = true; };'); // reassigns hooks.js's OWN top-level binding, same mechanism as setInfo above
+  app.run('draw()'); // a model mutator would call this bare name once it's reachable from a lower layer
+  assert.equal(app.run("S.__testDrawSeen"), true);
+  assert.equal(app.run("S.sceneValid"), true); // drawImpl never ran
 });
 
 // ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's
@@ -769,10 +791,12 @@ test("blockers.mjs CLI: real repo — chipSource -> audio/chip.js is CLEAN, post
   assert.match(r.stdout, /clean/);
 });
 
-test("blockers.mjs CLI: real repo — chipRender -> audio/chip.js, post-docs/split-phase2-plan.md step 2: a NEW, real blocker this step's own move surfaced, not logErr/CHIPS related — chipRender (and chipRenderInWorker) call songTitleOf (ask/context.js, layer 4) directly, an illegal upward import from audio/chip.js's layer 3; both stay in app.js, documented in open-items.md, not silently retried", () => {
+test("blockers.mjs CLI: real repo — chipRender -> audio/chip.js, post-docs/split-phase2-plan.md step 3: step 2's songTitleOf illegal-layer blocker is DISSOLVED now that songTitleOf is a hooks.js port (step 3) — the remaining blocker is only chipRender's own still-in-app.js closure (chipRenderInWorker, chipPublish), which step 4 moves alongside it, not a permanent one", () => {
   const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", "chipRender", "--to", "src/audio/chip.js"], { cwd: ROOT, encoding: "utf8" });
   assert.notEqual(r.status, 0);
-  assert.match(r.stdout, /songTitleOf/);
+  assert.doesNotMatch(r.stdout, /songTitleOf/);
+  assert.doesNotMatch(r.stdout, /illegal-layer imports: (?!\(none\))/);
+  assert.match(r.stdout, /closure \(still in app\.js\): chipRenderInWorker, chipPublish/);
 });
 
 // ---- promote-state.mjs -------------------------------------------------------

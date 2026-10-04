@@ -6,7 +6,14 @@
 import { S } from "./state.js";
 import {
   setInfoImpl, logErrImpl, logDebugImpl, appConfirmImpl, updateJobsBtnImpl,
+  drawImpl, playbackFrameImpl, clampViewImpl, updateSongBtnImpl, updateSyncBtnImpl,
 } from "./ui/chrome.js";
+import { buildScoreModelImpl } from "./render/score.js";
+import { songTitleOfImpl } from "./ask/context.js";
+import {
+  fitViewImpl, renderTrackbarImpl, updateEditBtnVisImpl, updateChipBtnImpl,
+  updateSubtitleImpl, askRenderImpl, finalizeNotesImpl, recFinishImpl, albumAdvanceImpl,
+} from "./app.js";
 
 export function installHooks() {
   Object.assign(S.hooks, {
@@ -15,5 +22,22 @@ export function installHooks() {
     logDebug: (...a) => logDebugImpl(...a),
     appConfirm: (...a) => appConfirmImpl(...a),
     updateJobsBtn: (...a) => updateJobsBtnImpl(...a),
+    // docs/split-phase2-plan.md step 3
+    draw: (...a) => drawImpl(...a),
+    playbackFrame: (...a) => playbackFrameImpl(...a),
+    clampView: (...a) => clampViewImpl(...a),
+    fitView: (...a) => fitViewImpl(...a),
+    buildScoreModel: (...a) => buildScoreModelImpl(...a),
+    renderTrackbar: (...a) => renderTrackbarImpl(...a),
+    updateEditBtnVis: (...a) => updateEditBtnVisImpl(...a),
+    updateChipBtn: (...a) => updateChipBtnImpl(...a),
+    updateSongBtn: (...a) => updateSongBtnImpl(...a),
+    updateSyncBtn: (...a) => updateSyncBtnImpl(...a),
+    updateSubtitle: (...a) => updateSubtitleImpl(...a),
+    askRender: (...a) => askRenderImpl(...a),
+    finalizeNotes: (...a) => finalizeNotesImpl(...a),
+    recFinish: (...a) => recFinishImpl(...a),
+    albumAdvance: (...a) => albumAdvanceImpl(...a),
+    songTitleOf: (...a) => songTitleOfImpl(...a),
   });
 }

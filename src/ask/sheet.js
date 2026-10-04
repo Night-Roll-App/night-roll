@@ -1,6 +1,6 @@
 import { S } from "../state.js";
 import { askTermModelsLoad } from "./bridge.js";
-import { songTitleOf } from "./context.js";
+import { songTitleOfImpl as songTitleOf } from "./context.js";
 import { baseName } from "../model/rollnotes.js";
 import { askStatusRender } from "./bridge.js";
 import { ASK_TERMINAL_KEY } from "./bridge.js";

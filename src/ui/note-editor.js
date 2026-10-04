@@ -21,7 +21,7 @@ import { annoInLasso } from "../render/roll.js";
 import { editableSong } from "../model/song.js";
 import { ownFolderPath } from "../model/provenance.js";
 import { originOf } from "../model/provenance.js";
-import { draw } from "./chrome.js";
+import { drawImpl as draw } from "./chrome.js";
 import { sfShownAt } from "../model/song.js";
 import { pitchName } from "../theory/chords.js";
 import { spellPc } from "../theory/chords.js";

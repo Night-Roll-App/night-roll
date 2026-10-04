@@ -69,7 +69,7 @@ export function durationPieces(ticks, ppq) {
   }
   return out.length ? out : [{dur: "16", dots: 0, ticks: 0.25 * ppq}];
 }
-export function buildScoreModel() {
+export function buildScoreModelImpl() {
   S.scoreModel = null;
   S.scoreCache.clear();
   S.scoreIntro = null;
@@ -213,7 +213,7 @@ export function buildScoreModel() {
   const pxqMin = Math.min(140, Math.max(24, Math.ceil((maxEv * 24 + 72) / quartersPerBar)));
   S.scoreModel = {nMeasures, bt, sf: sf0, keyName: SF_MAJOR[sf0] || "C", staves, pxqMin};
 }
-buildScoreModel = prof("buildScoreModel", buildScoreModel); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+buildScoreModelImpl = prof("buildScoreModel", buildScoreModelImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
 export function scoreContentH() {
   return S.scoreModel ? SCORE_TOP + S.scoreModel.staves.length * STAVE_H + 30 : 0;

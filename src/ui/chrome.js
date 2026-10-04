@@ -1,6 +1,6 @@
 import { connected } from "../sync/publish.js";
 import { S, prof } from "../state.js";
-import { setInfo, logErr, logDebug } from "../hooks.js";
+import { setInfo, logErr, logDebug, draw, updateSongBtn, updateSyncBtn } from "../hooks.js";
 import { setControl } from "./controls.js";
 import { logLines } from "../model/jobs.js";
 import { askSeenMax } from "../ask/bridge.js";
@@ -11,7 +11,7 @@ import { debugLogOn } from "../model/jobs.js";
 import { appMode } from "../platform/mode.js";
 import { chip } from "../audio/chip.js";
 import { setDocTitle } from "../platform/base.js";
-import { songTitleOf } from "../ask/context.js";
+import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { folderTitle } from "../model/catalog.js";
 import { folderOf } from "../model/catalog.js";
 import { songWhereLabel } from "../ask/context.js";
@@ -103,7 +103,7 @@ import { writeMidi } from "../midi/write.js";
 import { serializeRollnotesStamped } from "../model/rollnotes.js";
 import { notesTxtFor } from "../sync/publish.js";
 
-export function updateSyncBtn() {
+export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
   if (!connected()) { btn.style.display = "none"; return; } // Model B: not connected anywhere = no footer Publish button
   btn.style.display = "";
@@ -200,7 +200,7 @@ export function setInfoImpl(s, copyText) {
     el.appendChild(chip);
   }
 }
-export function updateSongBtn() { // breadcrumb: Album › Title, with the real path dimmed after
+export function updateSongBtnImpl() { // breadcrumb: Album › Title, with the real path dimmed after
   songtitleEl.innerHTML = "";
   setDocTitle(S.currentPath ? songTitleOf(S.currentPath) : null);
   if (!S.currentPath) return;
@@ -545,9 +545,9 @@ export function resize() {
   if (typeof updateTrackMore === "function") updateTrackMore(); // wrap point moves with width
   draw();
 }
-export function draw() { S.sceneValid = false; rangeSelPersist(); viewPersistSoon(); drawFull(false); }
-draw = prof("draw", draw); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-export function playbackFrame() {
+export function drawImpl() { S.sceneValid = false; rangeSelPersist(); viewPersistSoon(); drawFull(false); }
+drawImpl = prof("draw", drawImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+export function playbackFrameImpl() {
   if (!S.song) { draw(); return; }
   if (PERF_NOSCENE) { drawFull(false); return; } // ?scene=0: never allocate the cache
   // Fall is a function of time, not of the view: every frame is a new picture,
@@ -593,7 +593,7 @@ export function playbackFrame() {
     S.phLastX = x;
   } else S.phLastX = null;
 }
-playbackFrame = prof("playbackFrame", playbackFrame); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+playbackFrameImpl = prof("playbackFrame", playbackFrameImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 // VoiceOver first pass: the roll/score/tracks canvas is one opaque element to
 // a screen reader (role="application" on #roll, set in the markup — it owns
 // its own keyboard shortcuts, so VoiceOver must not intercept arrow keys the
@@ -826,7 +826,7 @@ export function drawFull(skipCursor) {
 drawFull = prof("drawFull", drawFull); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
 // how far past the last bar a drag may scroll (clampView)
-export function clampView() {
+export function clampViewImpl() {
   if (S.song && S.view.pxq < minPxq()) S.view.pxq = minPxq(); // score floor tracks the model
   if (S.song && S.viewMode !== "score") { // roll zoom-out clamp: whole song = the floor
     if (S.view.pxq < pxqFloor()) S.view.pxq = pxqFloor();

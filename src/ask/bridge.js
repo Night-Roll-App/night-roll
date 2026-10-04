@@ -3,7 +3,7 @@ import { appErrors } from "../model/jobs.js";
 import { appDebug } from "../model/jobs.js";
 import { S } from "../state.js";
 import { cfg } from "../platform/storage.js";
-import { songTitleOf } from "./context.js";
+import { songTitleOfImpl as songTitleOf } from "./context.js";
 import { askStripContext } from "./context.js";
 import { baseName } from "../model/rollnotes.js";
 import { appMode } from "../platform/mode.js";

@@ -16,3 +16,20 @@ export function logErr(...a) { return (S.hooks.logErr || need("logErr"))(...a); 
 export function logDebug(...a) { return (S.hooks.logDebug || need("logDebug"))(...a); }
 export function appConfirm(...a) { return (S.hooks.appConfirm || need("appConfirm"))(...a); }
 export function updateJobsBtn(...a) { return (S.hooks.updateJobsBtn || need("updateJobsBtn"))(...a); }
+// docs/split-phase2-plan.md step 3: render/chrome/session upcalls + songTitleOf (step 2's blocker).
+export function draw(...a) { return (S.hooks.draw || need("draw"))(...a); }
+export function playbackFrame(...a) { return (S.hooks.playbackFrame || need("playbackFrame"))(...a); }
+export function clampView(...a) { return (S.hooks.clampView || need("clampView"))(...a); }
+export function fitView(...a) { return (S.hooks.fitView || need("fitView"))(...a); }
+export function buildScoreModel(...a) { return (S.hooks.buildScoreModel || need("buildScoreModel"))(...a); }
+export function renderTrackbar(...a) { return (S.hooks.renderTrackbar || need("renderTrackbar"))(...a); }
+export function updateEditBtnVis(...a) { return (S.hooks.updateEditBtnVis || need("updateEditBtnVis"))(...a); }
+export function updateChipBtn(...a) { return (S.hooks.updateChipBtn || need("updateChipBtn"))(...a); }
+export function updateSongBtn(...a) { return (S.hooks.updateSongBtn || need("updateSongBtn"))(...a); }
+export function updateSyncBtn(...a) { return (S.hooks.updateSyncBtn || need("updateSyncBtn"))(...a); }
+export function updateSubtitle(...a) { return (S.hooks.updateSubtitle || need("updateSubtitle"))(...a); }
+export function askRender(...a) { return (S.hooks.askRender || need("askRender"))(...a); }
+export function finalizeNotes(...a) { return (S.hooks.finalizeNotes || need("finalizeNotes"))(...a); }
+export function recFinish(...a) { return (S.hooks.recFinish || need("recFinish"))(...a); }
+export function albumAdvance(...a) { return (S.hooks.albumAdvance || need("albumAdvance"))(...a); }
+export function songTitleOf(...a) { return (S.hooks.songTitleOf || need("songTitleOf"))(...a); }
