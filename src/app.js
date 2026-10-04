@@ -1513,6 +1513,7 @@ import { initGestures2 } from "./input/gestures.js";
 import { initRecord1 } from "./input/record.js";
 import { initKeyboard1 } from "./input/keyboard.js";
 import { initKeyboard2 } from "./input/keyboard.js";
+import { initHub1 } from "./import/hub.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2037,123 +2038,8 @@ initChrome8();
 
   
 initNoteEditor2();
- // [{name, parsed}] awaiting a destination choice
-document.getElementById("cfgnsfcreate").addEventListener("click", async e => {
-  const btn = e.currentTarget, out = document.getElementById("cfgnsfstatus");
-  btn.disabled = true;
-  try { const full = await createGameFilesRepo(t => { out.textContent = t; }); if (full) document.getElementById("cfgnsfrepo").value = full; }
-  catch (err) { out.textContent = "⚠ " + err.message; }
-  finally { btn.disabled = false; }
-});
-document.getElementById("fileinput").addEventListener("change", async e => {
-  const files = [...e.target.files];
-  if (!files.length) return;
-  stop();
-  closeFileMenus();
-  try {
-    const loaded = [];
-    for (const f of files) loaded.push({name: f.name, bytes: new Uint8Array(await f.arrayBuffer())});
-    await openPickedFiles(loaded);
-  } catch (err) { setInfo("could not import: " + err.message); }
-  e.target.value = ""; // allow re-picking the same file
-});
-document.getElementById("fileimporthub").addEventListener("click", () => {
-  closeFileMenus();
-  document.getElementById("importhubstatus").textContent = "Drop files anywhere on this panel, or use a section's Choose files… above.";
-  document.getElementById("importhub").classList.add("on");
-});
-// by id, not document.querySelectorAll("[data-kind]") — the vm harness's
-// document stub has no querySelectorAll, only getElementById (NIGHT-ROLL.md/
-// CLAUDE.md: the harness strings-match the hub's markup instead)
-for (const [id, kind] of [["ihMidi", "midi"], ["ihNes", "nes"], ["ihGb", "gb"], ["ihSnes", "snes"],
-                          ["ihGenesis", "genesis"], ["ihPs1", "ps1"], ["ihPs2", "ps2"], ["ihN64", "n64"],
-                          ["ihSf2", "sf2"], ["ihAudio", "audio"]]) {
-  document.getElementById(id).addEventListener("click", () => {
-    document.getElementById("importhubstatus").textContent = "choose your " + importHubLabel(kind) + " file(s)…";
-    document.getElementById("fileinput").click();
-  });
-}
-// the drop target (phase 2 of the design): dragover/drop on #importhub only,
-// feeding the dropped files to the same openPickedFiles the picker uses —
-// its own comment above already anticipated a drop.
-document.getElementById("importhub").addEventListener("dragover", e => {
-  e.preventDefault();
-  document.getElementById("importhub").classList.add("dragover");
-});
-document.getElementById("importhub").addEventListener("dragleave", e => {
-  if (e.target === document.getElementById("importhub")) document.getElementById("importhub").classList.remove("dragover");
-});
-document.getElementById("importhub").addEventListener("drop", async e => {
-  e.preventDefault();
-  document.getElementById("importhub").classList.remove("dragover");
-  const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
-  if (!files.length) return;
-  stop();
-  try {
-    const loaded = [];
-    for (const f of files) loaded.push({name: f.name, bytes: new Uint8Array(await f.arrayBuffer())});
-    await openPickedFiles(loaded);
-  } catch (err) { setInfo("could not import: " + err.message); }
-  closeFileMenus();
-});
-document.getElementById("midcancel").addEventListener("click", () => {
-  S.pendingMidis = null;
-  document.getElementById("midisheet").classList.remove("on");
-});
- document.getElementById("audioinput").addEventListener("change", async e => {
-  const files = [...e.target.files];
-  e.target.value = "";
-  if (!files.length) return;
-  stop();
-  try {
-    const items = [];
-    for (const f of files) items.push({name: f.name, bytes: new Uint8Array(await f.arrayBuffer()), type: f.type});
-    await importAudioFiles(items);
-  } catch (err) { setInfo("could not import: " + err.message); }
-});
-document.getElementById("midlocal").addEventListener("click", () => {
-  if (!S.pendingMidis || !S.pendingMidis.length) return;
-  const {name, parsed} = S.pendingMidis[0];
-  S.pendingMidis = null;
-  document.getElementById("midisheet").classList.remove("on");
-  localMidiOpen(parsed, name);
-});
-document.getElementById("midcreate").addEventListener("click", () => {
-  if (!S.pendingMidis || !S.pendingMidis.length) return;
-  const alb = document.getElementById("midalbum").value.trim();
-  if (!alb) { setInfo("⚠ name the album first"); return; }
-  const slug = folderFromInput(alb) || slugify(alb);
-  let firstKey = null;
-  for (const {name, parsed} of S.pendingMidis) {
-    const base = slugify(name.replace(/\.(midi?|smf|kar|rmi)$/i, ""));
-    const key = "albums/" + slug + "/" + base + ".mid"; // MIDI files: a folder of the user's own, editable, published like any song
-    if (!firstKey) firstKey = key;
-    draftWrite(key, {
-      savedStamp: 0, dirty: true, title: name.replace(/\.(midi?|smf|kar|rmi)$/i, ""),
-      ppq: parsed.ppq, timesig: parsed.timesig || [4, 4],
-      ...(parsed.source ? {source: parsed.source} : {}), // the file's OWN meter/key history, kept apart from what he later declares (docs/declared-vs-learner-spec.md)
-      tempos: parsed.tempos,
-      tracks: parsed.tracks.map(tr => ({name: tr.name,
-        ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}),
-        ...(tr.offset ? {offset: tr.offset} : {}),
-        ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how the raw metas in source.metas reattach after edits
-        notes: tr.notes.map(nt => {
-        const o = {t: nt.t, d: nt.d, p: nt.p, v: nt.v};
-        if (nt.ch !== undefined) o.ch = nt.ch;
-        if (nt.duty !== undefined) o.duty = nt.duty;
-        if (nt.ve !== undefined) o.ve = nt.ve;
-        return o;
-      })}))});
-  }
-  const count = S.pendingMidis.length;
-  S.pendingMidis = null;
-  document.getElementById("midisheet").classList.remove("on");
-  stop();
-  openDraft(firstKey);
-  setInfo(count + " song" + (count === 1 ? "" : "s") + " in album \"" + alb +
-          "\" — Open → LOCAL to audition/rename, ⇪ Publish sends it to the songs repo.");
-});
-initNoteEditor3();
+ initHub1();
+ initNoteEditor3();
 initChrome9();
   initRecord1();
 initKeyboard1();
