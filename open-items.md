@@ -5635,3 +5635,14 @@ status, shots, backups) into a standalone repo that Night Roll consumes as
 plain ES modules (no build step). Night Roll-specific context (song/annotation
 lines, Learning-mode rules) stays in Night Roll as a plug-in to the library.
 Blocked on Q7 (split order) and Q8 (repo).
+
+## QUEUED 2026-10-04 — DAW inventory shortlist (Josh, Terminal #104; docs/daw-inventory.md)
+1. Playhead tag inside the strip, triangle gone (Roll/Tracks/Score) — S
+2. Keyboard: fixed key width, Play/Scroll segment, two-finger scroll, ‹ › octave + range readout, off-screen lit-key chevrons — M
+3. Keyboard look (black-key offsets, rounded whites) + Sustain — S
+4. Touch-and-hold a note → edit menu; three-finger undo/redo — S–M
+5. Capture MIDI (keep the last ~60 s; "Keep that") — M
+6. Velocity lane — M
+7. Typed bar jump in the LCD; drag a cycle's middle to move it — S
+8. Score → PDF/print — M
+Build after the module-split branch merges (they touch render/input code the split is moving).
