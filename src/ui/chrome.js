@@ -122,6 +122,11 @@ import { stop } from "../audio/transport.js";
 import { cmpTrackKey } from "../render/compare.js";
 import { computeSongEnd } from "../model/song.js";
 import { play } from "../audio/transport.js";
+import { isUnsaved } from "../model/provenance.js";
+import { catalogHas } from "../model/catalog.js";
+import { wmInnerHeight } from "./wm.js";
+import { openDraft } from "../session/song.js";
+import { idbDraftDelete } from "../platform/storage.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
@@ -1157,4 +1162,69 @@ export function cmpShow(which) { // swap which version the roll and the transpor
   cmpBar();
   draw();
   if (at !== null) play(at, {noCountIn: true});
+}
+
+export const songsheet = document.getElementById("songsheet");
+export function songStatus(key) { // the word on a LOCAL row
+  if (isUnsaved(key)) return "never saved";
+  if (!catalogHas(key)) return "not published";
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
+  if (d && d.dirty) return "changed since publish";
+  if (dirtySongs().includes(key)) return "annotations changed here";
+  return "published";
+}
+export const fileStatus = s => {
+  if (/⚠|failed|error|can't|cannot/i.test(s)) logErr(s);
+  document.getElementById("filestatus").textContent = s;
+};
+export const filesheet = document.getElementById("filesheet");
+// Open › is a cascading submenu: albums fly out beside the File menu,
+// drill into a group, tap a song. Opens straight into the current group.
+export const filesub = document.getElementById("filesub");
+export function closeFileMenus() {
+  filesheet.classList.remove("on");
+  filesub.classList.remove("on");
+  document.getElementById("editsheet").classList.remove("on");
+  document.getElementById("viewsheet").classList.remove("on");
+  document.getElementById("importhub").classList.remove("on");
+  closeDropUp();
+}
+export function openDropUp(btn, menu) {
+  const was = S.dropUpOpen === menu && menu.classList.contains("on"); // tapping an already-open trigger toggles it closed
+  closeFileMenus();
+  if (was) return;
+  const r = btn.getBoundingClientRect();
+  menu.style.left = Math.max(6, Math.min(r.left, songRegionRight() - 250)) + "px";
+  menu.style.bottom = (wmInnerHeight() - r.top + 6) + "px";
+  menu.classList.add("on");
+  S.dropUpOpen = menu;
+}
+export function draftRow(key, label, rerender, extra) { // open + (optional extra) + two-tap ✕
+  const row = document.createElement("div");
+  row.style.cssText = "display:flex;align-items:center;gap:4px";
+  const open = document.createElement("button");
+  open.className = "fitem";
+  open.style.flex = "1";
+  open.textContent = label + (key === S.currentPath ? "   ✓" : "");
+  open.addEventListener("click", () => { closeFileMenus(); openDraft(key); });
+  row.appendChild(open);
+  if (extra) row.appendChild(extra);
+  const del = document.createElement("button");
+  del.className = "fitem";
+  del.style.cssText = "flex:none;width:auto;color:var(--dim)";
+  del.textContent = "✕";
+  del.addEventListener("click", () => {
+    if (del.textContent === "✕") { // two-tap confirm: unsaved work dies with a draft
+      del.textContent = "sure?";
+      del.style.color = "#e66767";
+      return;
+    }
+    for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-"])
+      localStorage.removeItem(pre + key);
+    idbDraftDelete(key);
+    rerender();
+  });
+  row.appendChild(del);
+  filesub.appendChild(row);
 }
