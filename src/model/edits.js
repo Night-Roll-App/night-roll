@@ -6,6 +6,12 @@ import { updateSyncBtn } from "../hooks.js";
 import { updateSongBtn } from "../hooks.js";
 import { editableSong } from "./song.js";
 import { scheduleBackupFlush } from "../hooks.js";
+import { logDebug } from "../hooks.js";
+import { scheduleAnalysisRecompute } from "../gen/analysis.js";
+import { isComposition } from "./provenance.js";
+import { saveDraft } from "./versions.js";
+import { computeSongEnd } from "./song.js";
+import { updateSongMeta } from "../hooks.js";
 
 // ---------------------------------------------------------------- edits
 export function editsKey() { return S.songKey ? "ff1roll-edits-" + S.songKey : null; }
@@ -82,3 +88,75 @@ export function undoTrackAdd(ti, lenBefore) { // fold a generator's own entry (i
   const own = S.editUndo.length > lenBefore ? S.editUndo.pop() : null;
   pushUndo(own ? {kind: "group", entries: [{kind: "trackRemove", ti}, own]} : {kind: "trackRemove", ti});
 }
+
+// The removed/added overlay is the edit store of READ-ONLY songs (captures)
+// only. A local/ song (Untitled, a local import) keeps ONE copy — its whole
+// draft, rewritten by every edit (saveEdits → saveDraft; see "Local song
+// persistence" in NIGHT-ROLL.md). Before 2026-10-02 it had both, they
+// disagreed, and replaying the overlay onto a draft that already held it
+// doubled notes; dropping it instead (6ad5eee) lost Josh's newest notes —
+// on his iPad the draft was the OLDER copy. foldOldOverlay merges what an
+// old build left behind.
+export function loadEdits() {
+  if (!editsKey()) return;
+  if (isLocalDraft()) { foldOldOverlay(); updateClearBtn(); return; }
+  try {
+    const e = JSON.parse(localStorage.getItem(editsKey()) || "null");
+    if (!e) return;
+    for (const id of e.removed || []) {
+      const [ti, ni] = id.split(":").map(Number);
+      if (S.song.tracks[ti] && S.song.tracks[ti].notes[ni]) S.song.tracks[ti].notes[ni].gone = true;
+    }
+    for (const n of e.added || []) {
+      if (S.song.tracks[n.ti]) S.song.tracks[n.ti].notes.push({t: n.t, d: n.d, p: n.p, v: 80, added: true});
+    }
+  } catch (err) { /* corrupted edits: ignore */ }
+  updateClearBtn();
+}
+export function foldOldOverlay() {
+  const raw = localStorage.getItem(editsKey());
+  if (raw === null) return;
+  let e = null; try { e = JSON.parse(raw); } catch (err) { logDebug("old edits on " + S.songKey + " are unreadable — left in place, not applied"); return; }
+  if (!e) return;
+  const have = new Set();
+  S.song.tracks.forEach((tr, ti) => tr.notes.forEach(n => { if (!n.gone) have.add(overlayNoteSig(ti, n)); }));
+  const need = [];
+  let restored = 0, already = 0;
+  for (const n of e.added || []) {
+    if (!S.song.tracks[n.ti]) continue;
+    const sig = overlayNoteSig(n.ti, n);
+    need.push(sig);
+    if (have.has(sig)) { already++; continue; }
+    have.add(sig);
+    S.song.tracks[n.ti].notes.push({t: n.t, d: n.d, p: n.p, v: 80, added: true});
+    restored++;
+  }
+  const skipped = e.removed || [];
+  logDebug("old edits on " + S.songKey + ": " + restored + " note(s) restored, " + already + " already in the draft, " +
+    skipped.length + " deletion(s) not replayed (notes kept)" + (skipped.length ? ": " + skipped.join(" ") : ""));
+  S.song.overlayFold = {key: S.songKey, raw, need};
+}
+export function saveEdits() {
+  // label review is on-demand only (Josh, 2026-08-19: unsolicited verdicts are
+  // not in the spirit of the project) — edits just retire any review flags
+  S.rollnotes.forEach(n => { if (n.stale) delete n.stale; });
+  scheduleAnalysisRecompute(); // P6: Normal-only view layer — recompute on note edits, debounced; no-op when off
+  if (isComposition() || isLocalDraft()) { // composition or local song: the notes ARE the song — draft it whole
+    saveDraft();
+    computeSongEnd();
+    updateSongMeta();
+    return;
+  }
+  if (!editsKey()) return;
+  const removed = [], added = [];
+  S.song.tracks.forEach((tr, ti) => tr.notes.forEach((n, ni) => {
+    // ticks stored raw (chop is a view); ri keeps ids stable across chops
+    if (n.added) { if (!n.gone) added.push({ti, t: n.t + S.chopS, d: n.d, p: n.p}); }
+    else if (n.gone) removed.push(ti + ":" + (n.ri !== undefined ? n.ri : ni));
+  }));
+  if (removed.length || added.length)
+    localStorage.setItem(editsKey(), JSON.stringify({removed, added}));
+  else localStorage.removeItem(editsKey());
+  updateClearBtn();
+}
+saveEdits = prof("saveEdits", saveEdits); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
