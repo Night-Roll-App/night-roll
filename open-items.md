@@ -5763,7 +5763,7 @@ Josh (lotion, pulse2 bar 40): with the 32nd note value selected he still can onl
 ### was: `npm test` stops at the first failing file
 The script chains files with `&&`, so when the real-rip suites (ps2-real, instruments) fail because /tmp/claude-501/rips was cleared, every later file (gestures, bridge, pwa, modules, controls…) silently never runs locally. Fix: skip real-rip tests when the rips dir is missing (like other *-real suites should), or run each file regardless and fail at the end.
 
-## QUEUED 2026-10-03 — AI interaction as its own library (Josh, Terminal #91)
+## IN PROGRESS 2026-10-03/04 — AI interaction as its own library (Josh, Terminal #91)
 "extract all the code for the AI interaction into its own library so that we
 can write other iPad apps and just use this seamlessly … a new repo … pull it
 from there". Order: finish the module split first (step 13 = src/ask/), then
@@ -5771,7 +5771,25 @@ lift src/ask/ + tools/claude-bridge.mjs (bridge server, Terminal tab, notes,
 status, shots, backups) into a standalone repo that Night Roll consumes as
 plain ES modules (no build step). Night Roll-specific context (song/annotation
 lines, Learning-mode rules) stays in Night Roll as a plug-in to the library.
-Blocked on Q7 (split order) and Q8 (repo).
+Was blocked on Q7 (split order) and Q8 (repo) — both answered; see
+docs/ai-library-plan.md for the full design (library layout, host adapter,
+what goes where, the 8 ordered steps).
+
+**Step 1 DONE 2026-10-04 (branch module-split):** `Night-Roll-App/claude-bridge@v0.1.0`
+(web/sse.js = aiSSE only, plus its tests/README/LICENSE) vendored into
+`vendor/ai/` by the new `tools/ai-sync.mjs` (`--ref`/`--repo`, `--from` for
+the dev loop, `--check` wired into `npm test` via tests/modules.test.mjs);
+`src/ask/backend.js`'s `aiSSE` now imports from `vendor/ai/web/sse.js`
+(re-exported — every existing importer, and the vm harness's bare-name
+`aiSSE`, unaffected); `sw.js` (`AI_LIB`/`AI_MODULES`/`CACHE`), index.html's
+modulepreload, `tools/package.mjs` (reachability guard + never-ships-
+vendor/ai/bridge/**), and `tools/split/check.mjs` (rules 1-3/6/7 now also
+run over `vendor/ai/web`) all wired per the plan's §1. NIGHT-ROLL.md gained
+an "AI library (vendor/ai)" section. Steps 2-7 (bridge server, backends,
+store/ctx-cache/bridge-client/attach, the client loop, the window, the
+library's own markup) remain queued — see docs/ai-library-plan.md §4.
+NOT pushed from this worktree: browser-verify (offline + the iPad package)
+is step 1's own stated verify line, still owed before this merges/ships.
 
 ## OVERNIGHT PLAN 2026-10-03 (Josh, Terminal #97/#99/#100) — all on branch module-split, Josh tests in the morning
 1. Split steps 9–15 (builders, one step at a time, merged here).

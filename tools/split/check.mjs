@@ -172,6 +172,13 @@ export function ruleLayerTable(relPath, ast) {
     const spec = node.source.value;
     if (!spec.startsWith(".")) continue; // external/bare specifier (vendor) — not layered
     const target = path.posix.normalize(path.posix.join(selfDir, spec));
+    // a relative import that resolves OUTSIDE src/ entirely (e.g.
+    // src/ask/backend.js's "../../vendor/ai/web/sse.js") leaves Night Roll's
+    // own layer system by construction — nothing under src/ can ever be
+    // "above" or "below" a file that was never placed in the layer table in
+    // the first place, so it's not this rule's concern (checkSrc's
+    // extraRoots param runs its own, separate rules 1-3/7 over it).
+    if (target.startsWith("../")) continue;
     const targetLayer = layerOf(target);
     if (targetLayer === null) { out.push({ rule: 5, message: `${relPath}: import "${spec}" resolves outside the layer table` }); continue; }
     if (targetLayer > selfLayer)
@@ -238,37 +245,71 @@ function listJsFiles(root) {
 
 /** Check every src/**\/*.js file against rules 1-7 (rule 8 needs manifests
  *  from elsewhere — see ruleManifestsEqual, called separately once index.html
- *  and sw.js carry module lists, from step 0b on). */
-export function checkSrc(srcRoot = path.join(REPO_ROOT, "src")) {
+ *  and sw.js carry module lists, from step 0b on).
+ *
+ *  `opts.extraRoots`: additional flat JS trees (docs/ai-library-plan.md §4
+ *  step 1 — vendor/ai/web, the vendored AI library) checked by rules 1-3/7
+ *  (no top-level let outside state.js, no assigning an import, every free
+ *  identifier resolved, no self-referencing SERIALIZED function) and folded
+ *  into rule 6's uniqueness map alongside src/ (the library's `ai`-prefixed
+ *  names and Night Roll's `ask`-prefixed ones must never collide, since the
+ *  vm harness's scopeProxy resolves a bare name by owning module, same as a
+ *  real `with` scope would). Each entry is `{ root, prefix }` (prefix e.g.
+ *  "vendor/ai/web" — turns its files' rel paths into "vendor/ai/web/sse.js"
+ *  so they can never collide with a real src/ rel path, which never starts
+ *  with "vendor/"). Exempt from rule 5 (the layer table) and rule 4 (every
+ *  top-level initializer effect must be layer-0): neither concept applies to
+ *  a library that isn't part of Night Roll's own src/ layer system. */
+export function checkSrc(srcRoot = path.join(REPO_ROOT, "src"), opts = {}) {
+  const extraRoots = opts.extraRoots || [];
   const files = listJsFiles(srcRoot);
   const violations = [];
-  if (!files.length) return { ok: true, fileCount: 0, violations: [] };
+  if (!files.length && !extraRoots.length) return { ok: true, fileCount: 0, violations: [] };
 
   const browserGlobals = loadBrowserGlobals();
   const parsedByFile = new Map(); // relPath -> parsed
   const declaredByFile = new Map(); // relPath -> string[]
   const functionsByName = new Map(); // name -> FunctionDeclaration node (for rule 7)
+  const vendorRels = new Set(); // rel keys from extraRoots — rule 4/5 skip these
 
-  for (const abs of files) {
-    const rel = path.relative(srcRoot, abs);
+  function collect(abs, rel) {
     const source = readFileSync(abs, "utf8");
     let parsed;
     try { parsed = parseModule(source, rel); }
-    catch (e) { violations.push({ rule: 0, message: e.message }); continue; }
+    catch (e) { violations.push({ rule: 0, message: e.message }); return; }
     parsedByFile.set(rel, parsed);
-    const names = parsed.ast.body.flatMap(declaredNames);
+    // rule 6's uniqueness map wants names this file ITSELF declares, not one
+    // it merely forwards — `export { x } from "y"` (a pure re-export, e.g.
+    // vendor/ai/web/index.js forwarding sse.js's aiSSE) creates no local
+    // binding at all (scope.declaredNames doesn't special-case `node.source`,
+    // so it would otherwise count as "declared" here), and `export { x };`
+    // where `x` is a top-level IMPORT in this same file (e.g.
+    // src/ask/backend.js forwarding vendor/ai/web/sse.js's aiSSE so every
+    // existing `import { aiSSE } from "./ask/backend.js"` keeps working) is
+    // forwarding too, just via a local binding instead of a direct re-export.
+    const imports = topLevelImports(parsed.ast);
+    const names = parsed.ast.body.flatMap(n => (n.type === "ExportNamedDeclaration" && n.source) ? [] : declaredNames(n))
+      .filter(n => !imports.has(n));
     declaredByFile.set(rel, names);
     for (const node of parsed.ast.body) {
       const decl = node.type === "ExportNamedDeclaration" ? node.declaration : node;
       if (decl?.type === "FunctionDeclaration" && decl.id) functionsByName.set(decl.id.name, decl);
     }
   }
+  for (const abs of files) collect(abs, path.relative(srcRoot, abs).split(path.sep).join("/"));
+  for (const { root, prefix } of extraRoots) for (const abs of listJsFiles(root)) {
+    const rel = prefix + "/" + path.relative(root, abs).split(path.sep).join("/");
+    vendorRels.add(rel);
+    collect(abs, rel);
+  }
 
   for (const [rel, parsed] of parsedByFile) {
     const isStateFile = rel === "state.js" || rel === LEGACY_CONTAINER;
+    const isVendor = vendorRels.has(rel);
     violations.push(...ruleFreeIdentifiers(parsed, browserGlobals));
     violations.push(...ruleNoAssignToImport(parsed));
     violations.push(...ruleTopLevelMutable(parsed, { isStateFile }));
+    if (isVendor) continue; // rules 4/5 need Night Roll's own layer table, which a vendored library isn't part of
     violations.push(...ruleLayerTable(rel, parsed.ast));
 
     const imports = topLevelImports(parsed.ast); // name -> {specifier, imported}
@@ -310,7 +351,8 @@ export function checkSrc(srcRoot = path.join(REPO_ROOT, "src")) {
   violations.push(...ruleUniqueNames(declaredByFile));
   violations.push(...ruleSerializedSelfContained(functionsByName));
 
-  return { ok: violations.length === 0, fileCount: files.length, violations };
+  const vendorFileCount = extraRoots.reduce((n, { root }) => n + listJsFiles(root).length, 0);
+  return { ok: violations.length === 0, fileCount: files.length + vendorFileCount, violations };
 }
 
 // ---- CLI -----------------------------------------------------------------
@@ -319,8 +361,13 @@ function isMain() {
   catch { return false; }
 }
 if (isMain()) {
-  const srcRoot = process.argv[2] ? path.resolve(process.argv[2]) : path.join(REPO_ROOT, "src");
-  const result = checkSrc(srcRoot);
+  const defaultRoot = path.join(REPO_ROOT, "src");
+  const srcRoot = process.argv[2] ? path.resolve(process.argv[2]) : defaultRoot;
+  // the default (whole-repo) run also covers the vendored AI library — a
+  // custom root (test fixtures) opts out by not being the real src/ tree.
+  const aiWeb = path.join(REPO_ROOT, "vendor", "ai", "web");
+  const extraRoots = srcRoot === defaultRoot && existsSync(aiWeb) ? [{ root: aiWeb, prefix: "vendor/ai/web" }] : [];
+  const result = checkSrc(srcRoot, { extraRoots });
   if (!result.fileCount) console.log(`check.mjs: no .js files under ${path.relative(REPO_ROOT, srcRoot) || "src"} yet — nothing to check (pre-0b)`);
   else console.log(`check.mjs: ${result.fileCount} file(s), ${result.violations.length} violation(s)`);
   for (const v of result.violations) console.error(`  rule ${v.rule}: ${v.message}`);

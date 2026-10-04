@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
 import { createApp, appSource } from "./harness.mjs";
 import { parseModule, declaredNames, freeIdentifiers, topLevelImports, topLevelMutableNames } from "../tools/split/scope.mjs";
 import {
@@ -231,6 +232,49 @@ function realModuleManifests() {
 test("check rule 8: the real repo's four module manifests (modulepreload, sw.js precache, devtools mirror, src/ listing) describe the same set", () => {
   const v = ruleManifestsEqual(realModuleManifests());
   assert.deepEqual(v, []);
+});
+
+// ---- AI library vendoring (docs/ai-library-plan.md §1, §4 step 1) --------
+// tools/ai-sync.mjs vendors Night-Roll-App/claude-bridge into vendor/ai/;
+// these are that step's own oracles, alongside tests/ai.test.mjs (unchanged
+// — the real-request/real-reply round trip — proving aiSSE still works once
+// imported rather than declared in src/ask/backend.js).
+
+test("checkSrc: vendor/ai/web (checkSrc's extraRoots) is clean against rules 1-3/6/7 — no top-level let, every free identifier resolved, no top-level name collides with src/'s", () => {
+  const result = checkSrc(path.join(ROOT, "src"), { extraRoots: [{ root: path.join(ROOT, "vendor/ai/web"), prefix: "vendor/ai/web" }] });
+  assert.equal(result.fileCount, 64, "62 src/ files (see the checkSrc test above) + 2 vendor/ai/web files (index.js, sse.js)");
+  assert.deepEqual(result.violations.map(v => v.message), [
+    'free identifier "oldBpb" is not a local, an import, or in browser-globals.txt',
+  ], "the one pre-existing src/ finding, unchanged by adding vendor/ai/web to the scan");
+});
+
+function aiLibraryManifests() {
+  const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const sw = readFileSync(path.join(ROOT, "sw.js"), "utf8");
+  const files = JSON.parse(readFileSync(path.join(ROOT, "vendor/ai/files.json"), "utf8"));
+  const modulepreload = [...html.matchAll(/<link rel="modulepreload" href="([^"]+)">/g)].map(m => m[1]);
+  const modulepreloadVendor = modulepreload.filter(p => p.startsWith("vendor/ai/web/"));
+  const aiModules = JSON.parse(sw.match(/const AI_MODULES = (\[[\s\S]*?\]);/)[1]);
+  const webEntries = Object.keys(files).filter(p => p.startsWith("web/")).map(p => "vendor/ai/" + p);
+  return { "index.html modulepreload ∩ vendor/ai/web": modulepreloadVendor, "sw.js AI_MODULES": aiModules, "vendor/ai/files.json web/ entries": webEntries };
+}
+
+test("AI library wiring: index.html modulepreload ∩ vendor/ai/web = sw.js AI_MODULES = vendor/ai/files.json's web/ entries", () => {
+  const v = ruleManifestsEqual(aiLibraryManifests());
+  assert.deepEqual(v, []);
+});
+
+test("AI library wiring: sw.js's AI_LIB equals vendor/ai/VERSION's sha7", () => {
+  const version = readFileSync(path.join(ROOT, "vendor/ai/VERSION"), "utf8").trim();
+  const sha = version.split(/\s+/)[1];
+  const sw = readFileSync(path.join(ROOT, "sw.js"), "utf8");
+  const aiLib = sw.match(/const AI_LIB = "([0-9a-f]+)";/)[1];
+  assert.equal(aiLib, sha.slice(0, 7));
+});
+
+test("AI library wiring: `node tools/ai-sync.mjs --check` passes — vendor/ai/'s hashes match files.json and VERSION isn't dirty", () => {
+  const r = spawnSync(process.execPath, ["tools/ai-sync.mjs", "--check"], { cwd: ROOT, encoding: "utf8" });
+  assert.equal(r.status, 0, "stdout: " + r.stdout + "\nstderr: " + r.stderr);
 });
 
 // ---- e2e devtools mirror, proven without a browser (docs/split-plan.md §3.4,
