@@ -41,8 +41,9 @@ import { appConfirmImpl as appConfirm } from "../ui/chrome.js";
 import { askSentReset } from "./context.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { askSessionName } from "./bridge.js";
-import { aiUrl } from "./backend.js";
-import { aiHeaders } from "./backend.js";
+import { askHost } from "./host.js";
+import { aiDraftKey, aiDraftRead, aiDraftWrite, aiDraftClear } from "../../vendor/ai/web/store.js";
+import { aiSessionDelete } from "../../vendor/ai/web/bridge-client.js";
 import { askSessionRender } from "./bridge.js";
 import { askSend } from "./client.js";
 import { SPEECH } from "../ui/note-editor.js";
@@ -86,15 +87,13 @@ export function askNoteLabel(from) { return "✉ " + (from && from !== "terminal
 // the unsent message survives a relaunch (Josh, 2026-09-29: five dictated
 // paragraphs lost today to the app reinstalling under him). Per chat, device-
 // local (a composer draft is not the song's state); cleared on Send.
-export function askDraftStore(key) { return "ff1roll-askdraft-" + key; }
+// The record itself (its key, its {text, shots} shape — and the older {shot}
+// shape it still reads) is the library's (vendor/ai/web/store.js, step 4).
+export function askDraftStore(key) { return aiDraftKey(askHost(), key); }
 export function askDraftSave() {
   clearTimeout(S.askDraftTimer); S.askDraftTimer = null;
   if (!S.askDraftKey) return;
-  try {
-    const text = askinput.value;
-    if (!text.trim() && !S.askShotPending.length) localStorage.removeItem(askDraftStore(S.askDraftKey));
-    else localStorage.setItem(askDraftStore(S.askDraftKey), JSON.stringify({text, shots: S.askShotPending.map(s => s.path)}));
-  } catch (err) { /* storage full or private: the box itself still holds it */ }
+  aiDraftWrite(askHost(), S.askDraftKey, {text: askinput.value, shots: S.askShotPending.map(s => s.path)});
 }
 export function askDraftSaveSoon() { clearTimeout(S.askDraftTimer); S.askDraftTimer = setTimeout(askDraftSave, 300); askComposing(!!askinput.value.trim()); }
 export function askDraftLoad() { // the panel now shows a different chat: its own unsent message comes back
@@ -102,14 +101,12 @@ export function askDraftLoad() { // the panel now shows a different chat: its ow
   if (key === S.askDraftKey) return;
   if (S.askDraftKey) askDraftSave(); // the chat we're leaving keeps what was in the box
   S.askDraftKey = key;
-  let d = null; try { d = JSON.parse(localStorage.getItem(askDraftStore(key)) || "null"); } catch (err) { d = null; }
-  askinput.value = d && d.text || "";
-  // new shape is {shots: [path, …]}; an old draft saved before 2026-10-02 has
-  // {shot: path} (singular) — restore that as a one-shot array
-  askShotRestore(d && d.shots ? d.shots : d && d.shot ? [d.shot] : []);
+  const d = aiDraftRead(askHost(), key);
+  askinput.value = d.text;
+  askShotRestore(d.shots);
   askGrow();
 }
-export function askDraftClear() { clearTimeout(S.askDraftTimer); S.askDraftTimer = null; try { localStorage.removeItem(askDraftStore(askStoreKey())); } catch (err) { /* nothing stored */ } }
+export function askDraftClear() { clearTimeout(S.askDraftTimer); S.askDraftTimer = null; aiDraftClear(askHost(), askStoreKey()); }
 export function askRefresh() { // span label + model line; called on open and after Settings
   if (!S.song) return;
   const sp = askSpan();
@@ -277,7 +274,7 @@ export function initSheet3() {
     if (S.askCaps.bridge && S.askCaps.sessions && !S.askTerminal) {
       const key = askSessionName();
       delete S.askSessionCache[key];
-      try { await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key), {method: "DELETE", headers: aiHeaders()}); } catch (err) { /* the local clear already happened; the bridge just keeps resuming the old one */ }
+      try { await aiSessionDelete(askHost(), key); } catch (err) { /* the local clear already happened; the bridge just keeps resuming the old one */ }
       askSessionRender();
     }
   });

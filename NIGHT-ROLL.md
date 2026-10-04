@@ -2090,7 +2090,27 @@ redeclared. Step 3 (library `v0.3.0`, `web/backends.js`): the remote
 KIND, `backend.js`'s `aiTestWords` turns it into this app's sentence) and
 per-host consent (`aiHostConsent`, the list under `ff1roll-ai-hosts`; the
 sheet's wording is `askHost().confirmHost`). tests/ai.test.mjs is the oracle
-for every step and is unchanged throughout.
+for every step and is unchanged throughout. Step 4 (`v0.4.0`): `web/store.js`
+(the chat record `{msgs, saved, trimmed, lastUsed}`, its caps and eviction,
+the pending markers, the seen cursor, the draft, `aiLogMarkdown`), `web/
+ctx-cache.js` (the `-sentctx`/`-epoch` records, `aiCachedBlock`, `aiHash` =
+the same FNV-1a 32 as `fnv1a32`, so every hash a device holds still
+matches), `web/bridge-client.js` (HTTP only: jobs, inbox, status, sessions,
+terminal + prefs, app-state, deploy — `{ok, status, body}`, a network error
+throws; polling and every render stay in `src/ask/bridge.js`) and `web/
+attach.js` (upload, the `(screenshot: path)` line, image prep, tab capture;
+the pending list and the shell's native capture stay in `src/ask/shots.js`).
+The library reads and writes under `askHost().keys` — `store: "ff1roll-ask-"`,
+`seenMax`, `inboxSeen`, `draft: "ff1roll-askdraft-"`, `mode` — so nothing
+migrates. **tests/ask-storage.test.mjs + tests/fixtures/ask-storage-2026-10-04.json**
+are the no-lost-chats guard: every shape a device held that day, under its
+real key names, must read back identically (stores, cursors, hashes, epoch,
+both draft shapes, the saved tab), eviction must never touch an unsaved
+chat or any key that isn't a chat store, and a save round-trips. One
+deliberate change rode along: eviction over `ASK_TOTAL_CAP` used to walk
+every `ff1roll-ask-*` key and so deleted the `-seen`/`-sentctx`/`-epoch`
+cursors (a resend, a re-poll — never messages); it now considers only
+values that are chat stores.
 
 ## Code map (index.html, section comments mark these)
 

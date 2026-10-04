@@ -38,6 +38,9 @@ import { askAnnotationsTextCompact } from "./tools.js";
 import { askAnnotationsText } from "./tools.js";
 import { dedupedNotesWithIndex } from "../model/rollnotes.js";
 import { askAnnotationStructural } from "./tools.js";
+import { askHost } from "./host.js";
+import { aiSentKey, aiSentGet, aiSentStage, aiSentStageBars, AI_SENT_BARS_CAP, aiSentCommit, aiSentDrop, aiSentReset, aiEpochKey, aiEpochGet, aiEpochSet, aiEpochNote, aiCachedBlock } from "../../vendor/ai/web/ctx-cache.js";
+import { aiStripContext } from "../../vendor/ai/web/store.js";
 
 // resolved in boot() once the manifest is in
 export function songTitleOfImpl(path) {
@@ -397,42 +400,18 @@ export function askNewSinceLines(key) {
 // flag askTabsApply/askSessionRender use to detect the bridge at all; a
 // local model server has no memory of its own, so it keeps today's
 // full-every-turn behaviour).
-export function askSentKey(key) { return (key || askStoreKey()) + "-sentctx"; }
-export function askSentGet(key) {
-  try {
-    const j = JSON.parse(localStorage.getItem(askSentKey(key)) || "null");
-    if (j && typeof j === "object") return j;
-  } catch (err) { /* corrupt: nothing confirmed sent yet */ }
-  return {};
-}
-export function askSentStage(key, field, hash) { (S.askSentPending[key] || (S.askSentPending[key] = {}))[field] = hash; }
-// askSentStageBars (step 6): the "bars" field is a MAP (bar number → hash),
-// not a scalar like every other field here — askSentStage's plain assignment
-// would let a later call in the same turn clobber an earlier one's bars
-// instead of accumulating them, so it gets its own merge.
-export function askSentStageBars(key, barsObj) { const pend = S.askSentPending[key] || (S.askSentPending[key] = {}); pend.bars = Object.assign(pend.bars || {}, barsObj); }
-export const ASK_SENT_BARS_CAP = 2000;
-// a sensible bound on one chat's per-bar record, not a precise one — no real song's view gets near it; the LOWEST bar numbers drop first when it's exceeded
-export function askSentCommit(key) { // askFinish only: the reply that answers THIS context actually landed
-  const p = S.askSentPending[key]; delete S.askSentPending[key];
-  if (!p) return;
-  const cur = askSentGet(key);
-  const merged = {...cur, ...p};
-  if (p.bars) { // deep-merge, never overwrite: other bars this turn didn't touch must survive
-    const bars = {...(cur.bars || {}), ...p.bars};
-    const keys = Object.keys(bars);
-    if (keys.length > ASK_SENT_BARS_CAP) for (const k of keys.map(Number).sort((a, b) => a - b).slice(0, keys.length - ASK_SENT_BARS_CAP)) delete bars[k];
-    merged.bars = bars;
-  }
-  try { localStorage.setItem(askSentKey(key), JSON.stringify(merged)); } catch (err) { /* private mode */ }
-}
-export function askSentDrop(key) { delete S.askSentPending[key]; }
-// askFail: never landed — the full text goes again next time
-export function askSentReset(key) { // Clear chat / Compact: the bridge's memory of this chat just changed under it
-  key = key || askStoreKey();
-  try { localStorage.removeItem(askSentKey(key)); } catch (err) { /* private mode */ }
-  delete S.askSentPending[key];
-}
+// The cache's mechanics live in the AI library (vendor/ai/web/ctx-cache.js,
+// step 4) under the same storage keys; these are Night Roll's bare names as
+// delegates — askHost() supplies the open chat's key and the state bag.
+export function askSentKey(key) { return aiSentKey(askHost(), key); }
+export function askSentGet(key) { return aiSentGet(askHost(), key); }
+export function askSentStage(key, field, hash) { aiSentStage(askHost(), key, field, hash); }
+// the "bars" field is a MAP (bar number → hash), merged, never overwritten
+export function askSentStageBars(key, barsObj) { aiSentStageBars(askHost(), key, barsObj); }
+export const ASK_SENT_BARS_CAP = AI_SENT_BARS_CAP;
+export function askSentCommit(key) { aiSentCommit(askHost(), key); } // askFinish only: the reply that answers THIS context actually landed
+export function askSentDrop(key) { aiSentDrop(askHost(), key); } // askFail: never landed — the full text goes again next time
+export function askSentReset(key) { aiSentReset(askHost(), key); } // Clear chat / Compact: the bridge's memory of this chat just changed under it
 // ---- session epoch (docs/ask-token-plan.md #4/#7): the bridge names each
 // resumed Claude Code session's identity as "<session-id>:<lastCompact.at||0>"
 // in the x-nr-session-epoch response header on every chat completion — it
@@ -444,25 +423,15 @@ export function askSentReset(key) { // Clear chat / Compact: the bridge's memory
 // against is stale, so it resets the SAME way Clear chat / a manual Compact
 // already do (askSentReset) — next message resends annotations/notes in
 // full rather than a stand-in the resumed session no longer backs.
-export function askEpochKey(key) { return (key || askStoreKey()) + "-epoch"; }
-export function askEpochGet(key) { try { return localStorage.getItem(askEpochKey(key)); } catch (err) { return null; } }
-export function askEpochSet(key, epoch) { try { localStorage.setItem(askEpochKey(key), epoch); } catch (err) { /* private mode */ } }
-export function askEpochNote(key, epoch) { // called wherever a chat completion's response headers are read
-  if (!epoch) return;
-  const prev = askEpochGet(key);
-  if (prev !== null && prev !== epoch) askSentReset(key); // compacted or replaced under us: resend in full next time
-  askEpochSet(key, epoch);
-}
+export function askEpochKey(key) { return aiEpochKey(askHost(), key); }
+export function askEpochGet(key) { return aiEpochGet(askHost(), key); }
+export function askEpochSet(key, epoch) { aiEpochSet(askHost(), key, epoch); }
+export function askEpochNote(key, epoch) { aiEpochNote(askHost(), key, epoch); } // called wherever a chat completion's response headers are read
 // One large, slow-changing section: `label` names the one-line stand-in
 // ("annotations" / "notes in bars a–b"); `count`, if given, is its own
-// "(N entries)". fnv1a32 only has to catch "identical to what the session
-// already has" — not resist tampering.
-export function askCachedBlock(key, field, label, header, text, count) {
-  const hash = fnv1a32(text);
-  if (S.askCaps.bridge && askSentGet(key)[field] === hash) return label + ": unchanged since your last message" + (count === undefined ? "" : " (" + count + " entries)");
-  askSentStage(key, field, hash);
-  return header + ":\n" + text;
-}
+// "(N entries)". The library's hash is the same FNV-1a 32 as fnv1a32, so
+// every record a device already holds still matches.
+export function askCachedBlock(key, field, label, header, text, count) { return aiCachedBlock(askHost(), key, field, label, header, text, count); }
 export function askBudget() { // profiles keyed to the window (tokens); LM Studio loads at 4–8k by default, WebLLM's prebuilts are 4096
   // the bridge's Claude Code has a large window whatever the Settings field
   // says: the 8k default trimmed its context and warned about a "small
@@ -473,7 +442,7 @@ export function askBudget() { // profiles keyed to the window (tokens); LM Studi
        : win <= 8192 ? {win, small: true, anno: 1000, span: 2000, hist: 1000}
                      : {win, small: false, anno: 6000, span: 8000, hist: 3000};
 }
-export function askStripContext(text) { return text.replace(/^<context>[\s\S]*?<\/context>\s*/, ""); }
+export function askStripContext(text) { return aiStripContext(text); }
 // Mode-tagged history (2026-10-01, SAFETY): every stored message carries the
 // mode it was PUSHED in (askSend/askFinish/askFail/askNotesArrived —
 // `mode: appMode()` at push time); a legacy message from before this tag

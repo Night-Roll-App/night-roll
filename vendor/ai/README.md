@@ -16,11 +16,13 @@ vocabulary out of the library.
 
 Plan: Night Roll's `docs/ai-library-plan.md`.
 
-Status: v0.3 — `aiSSE` (the streaming parser, v0.1), `bridge/server.mjs`
+Status: v0.4 — `aiSSE` (the streaming parser, v0.1), `bridge/server.mjs`
 (the Mac/Node bridge server and its CLI, v0.2), `web/backends.js` (the
 remote and in-browser backends, the connection probe, per-host consent,
-v0.3). The rest (the chat store, the client loop, the AI window) moves over
-in the plan's steps 4–6.
+v0.3), `web/store.js` + `web/ctx-cache.js` + `web/bridge-client.js` +
+`web/attach.js` (the chat record and its cursors/drafts, the sent-context
+cache, the bridge's own routes, attachments, v0.4). The rest (the client
+loop, the AI window) moves over in the plan's steps 5–6.
 
 ## web/
 
@@ -47,6 +49,38 @@ url, {timeoutMs})` → `{kind: bad-url|mixed-content|http|empty|ok|timeout|cors|
 (a KIND, never a sentence: the wording is the app's), `aiPickModel`,
 `aiHostConsent(host, url)` / `aiHostAllowed(host, url)`, `aiBrowserProbe(host,
 modelId, statusFn)`, `AI_BROWSER_MODELS`, `AI_WEBLLM_URL`.
+
+`web/store.js` — the on-device chat record, read and written under the
+HOST'S key names (an app with chats already on devices hands in its
+existing names; nothing migrates):
+- `keys.store` → the prefix every chat store key starts with; `keys.seenMax`, `keys.draft` (prefix) the rest
+- `chatKey()` → the open chat's store key
+- `logCursor()` → `{err, status}`: the newest ids of the app's own log lines (what "seen up to" records)
+- `status(text)` → a one-line notice (storage full); `onStoreChanged(key)` optional; `jobPrefix` optional (default `"nr_"`)
+
+Exports: `aiStoreGet/aiStoreSave/aiUnsavedCount/aiRevertToSaved/aiEvictOthers`
+(shape `{msgs, saved, trimmed, lastUsed}`; caps `AI_LOCAL_SOFT`/`AI_TOTAL_CAP`;
+eviction touches only clean chat stores, never a cursor), `aiPendingAll/
+aiPendingIndex/aiJobId`, the seen cursor (`aiSeenGet/Set/Max/Advance`,
+`aiSeenStage/Commit/Drop` — success-only), the draft (`aiDraftRead/Write/Clear`),
+`aiLogMarkdown(msgs, {user, note, ai})`, `aiStripContext`.
+
+`web/ctx-cache.js` — what a resumed bridge session already holds, per chat
+key (`<key>-sentctx`, `<key>-epoch`): `aiSentGet/Stage/StageBars/Commit/Drop/
+Reset`, `aiEpochGet/Set/Note`, `aiCachedBlock(host, key, field, label, header,
+text, count)` (the stand-in line only when `host.state.askCaps.bridge`),
+`aiHash` (FNV-1a 32, stable).
+
+`web/bridge-client.js` — HTTP only, the bridge's own routes: `aiJobsSupported`
+(true/false/null = unreachable), `aiJobGet` (`{status, job}`, null on 404),
+`aiJobKill`, `aiInboxFetch`, `aiStatusFetch`, `aiSessionGet/Delete/Compact`,
+`aiTerminalPost`, `aiTerminalPrefsGet/Set`, `aiAppState`, `aiDeploy` — each
+`{ok, status, body}`; a network error throws. The app owns polling and rendering.
+
+`web/attach.js` — `aiShotUpload(host, bytes, mime)` → path, `aiShotLine/
+aiShotOutgoing(text, paths)/aiShotDisplayText`, `aiPrepImage(file)`,
+`aiShotCaptureTab()` (getDisplayMedia), `AI_SHOT_MAX`. The pending list and
+a native shell's capture plugin are the app's.
 
 ## bridge/
 

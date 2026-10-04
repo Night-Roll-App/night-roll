@@ -1,0 +1,64 @@
+{
+  "_about": "Every localStorage shape the ✦ AI chat kept on 2026-10-04, under its REAL key names (AI library step 4, docs/ai-library-plan.md §4). `storage` is the device: key → the exact string stored. `expect` is what today's code reads back from it. The library may change HOW these are read, never WHAT comes back — a change here is a lost chat.",
+  "storage": {
+    "ff1roll-ask-albums/compositions/nightroll/threnody.mid": "{\"lastUsed\":1759600000000,\"msgs\":[{\"role\":\"user\",\"content\":\"what is the bass outlining here?\",\"t\":1759500000000,\"at\":\"bars 1–4 (ruler)\",\"mode\":\"learning\"},{\"role\":\"assistant\",\"content\":\"Listen to the first note of each bar — what do they spell?\",\"m\":\"claude-code\",\"mode\":\"learning\"},{\"role\":\"user\",\"content\":\"a minor triad?\",\"t\":1759500100000,\"at\":\"bars 1–4 (ruler)\"},{\"role\":\"assistant\",\"content\":\"Yes — and now bar 5.\",\"m\":\"claude-code\"},{\"role\":\"note\",\"content\":\"pushed the footer fix\",\"t\":1759500200000,\"m\":\"terminal\",\"mode\":\"learning\"},{\"role\":\"user\",\"content\":\"and bar 9?\",\"t\":1759500300000,\"at\":\"bars 9–12 (ruler)\",\"pending\":\"nr_pend01\",\"mode\":\"learning\"}],\"saved\":2,\"trimmed\":false}",
+    "ff1roll-ask-general": "{\"lastUsed\":1759590000000,\"msgs\":[{\"role\":\"user\",\"content\":\"what does the ⚠ badge mean?\",\"t\":1759400000000,\"mode\":\"learning\"},{\"role\":\"assistant\",\"content\":\"An error line the app logged since you last looked.\",\"m\":\"claude-code\",\"mode\":\"learning\"}],\"saved\":2,\"trimmed\":false}",
+    "ff1roll-ask-terminal": "{\"lastUsed\":1759580000000,\"msgs\":[{\"role\":\"user\",\"content\":\"fix the footer\",\"t\":1759300000000},{\"role\":\"note\",\"content\":\"done: footer fixed\",\"t\":1759300500000,\"m\":\"terminal\",\"mode\":\"learning\"}],\"saved\":0}",
+    "ff1roll-ask-albums/nes/ff1/matoya.mid": "{\"lastUsed\":1759000000000,\"msgs\":[],\"saved\":0,\"trimmed\":true}",
+    "ff1roll-ask-albums/nes/ff1/town.mid": "{\"lastUsed\":1758000000000,\"msgs\":[{\"role\":\"user\",\"content\":\"old chat\",\"t\":1758000000000},{\"role\":\"assistant\",\"content\":\"old reply\",\"m\":\"qwen\"}],\"saved\":2}",
+    "ff1roll-ask-albums/nes/ff1/saved-more-than-kept.mid": "{\"lastUsed\":1758500000000,\"msgs\":[{\"role\":\"user\",\"content\":\"one\",\"t\":1}],\"saved\":5,\"trimmed\":true}",
+    "ff1roll-ask-albums/nes/ff1/corrupt.mid": "{not json",
+    "ff1roll-ask-albums/compositions/nightroll/threnody.mid-seen": "{\"err\":12,\"status\":7}",
+    "ff1roll-ask-general-seen": "{\"err\":3}",
+    "ff1roll-ask-seen-max": "{\"err\":12,\"status\":9}",
+    "ff1roll-ask-albums/compositions/nightroll/threnody.mid-sentctx": "{\"anno\":3735928559,\"legend\":true,\"notes\":123456789,\"bars\":{\"1\":1111,\"2\":2222,\"9\":9999}}",
+    "ff1roll-ask-albums/compositions/nightroll/threnody.mid-epoch": "a1b2c3d4-sess:1759400000000",
+    "ff1roll-askdraft-ff1roll-ask-albums/compositions/nightroll/threnody.mid": "{\"text\":\"a long dictated paragraph I never sent\",\"shots\":[\"/Users/j/.night-roll-bridge/shots/a.png\",\"/Users/j/.night-roll-bridge/shots/b.jpg\"]}",
+    "ff1roll-askdraft-ff1roll-ask-general": "{\"text\":\"an old draft\",\"shot\":\"/Users/j/.night-roll-bridge/shots/only.png\"}",
+    "ff1roll-ask-mode": "general",
+    "ff1roll-ask-inbox-seen": "41",
+    "ff1roll-ai-hosts": "[\"mac.tail1234.ts.net\"]",
+    "ff1roll-aikey": "s3cret",
+    "ff1roll-draft-albums/compositions/nightroll/threnody.mid": "{\"not\":\"a chat — the song's own local copy, never the chat store's business\"}"
+  },
+  "expect": {
+    "stores": {
+      "ff1roll-ask-albums/compositions/nightroll/threnody.mid": {"msgs": [{"role": "user", "content": "what is the bass outlining here?", "t": 1759500000000, "at": "bars 1–4 (ruler)", "mode": "learning"}, {"role": "assistant", "content": "Listen to the first note of each bar — what do they spell?", "m": "claude-code", "mode": "learning"}, {"role": "user", "content": "a minor triad?", "t": 1759500100000, "at": "bars 1–4 (ruler)"}, {"role": "assistant", "content": "Yes — and now bar 5.", "m": "claude-code"}, {"role": "note", "content": "pushed the footer fix", "t": 1759500200000, "m": "terminal", "mode": "learning"}, {"role": "user", "content": "and bar 9?", "t": 1759500300000, "at": "bars 9–12 (ruler)", "pending": "nr_pend01", "mode": "learning"}], "saved": 2, "trimmed": false, "lastUsed": 1759600000000},
+      "ff1roll-ask-general": {"msgs": [{"role": "user", "content": "what does the ⚠ badge mean?", "t": 1759400000000, "mode": "learning"}, {"role": "assistant", "content": "An error line the app logged since you last looked.", "m": "claude-code", "mode": "learning"}], "saved": 2, "trimmed": false, "lastUsed": 1759590000000},
+      "ff1roll-ask-terminal": {"msgs": [{"role": "user", "content": "fix the footer", "t": 1759300000000}, {"role": "note", "content": "done: footer fixed", "t": 1759300500000, "m": "terminal", "mode": "learning"}], "saved": 0, "trimmed": false, "lastUsed": 1759580000000},
+      "ff1roll-ask-albums/nes/ff1/matoya.mid": {"msgs": [], "saved": 0, "trimmed": true, "lastUsed": 1759000000000},
+      "ff1roll-ask-albums/nes/ff1/town.mid": {"msgs": [{"role": "user", "content": "old chat", "t": 1758000000000}, {"role": "assistant", "content": "old reply", "m": "qwen"}], "saved": 2, "trimmed": false, "lastUsed": 1758000000000},
+      "ff1roll-ask-albums/nes/ff1/saved-more-than-kept.mid": {"msgs": [{"role": "user", "content": "one", "t": 1}], "saved": 1, "trimmed": true, "lastUsed": 1758500000000},
+      "ff1roll-ask-albums/nes/ff1/corrupt.mid": {"msgs": [], "saved": 0, "trimmed": false, "lastUsed": 0},
+      "ff1roll-ask-albums/nes/ff1/never-opened.mid": {"msgs": [], "saved": 0, "trimmed": false, "lastUsed": 0}
+    },
+    "unsaved": {
+      "ff1roll-ask-albums/compositions/nightroll/threnody.mid": 4,
+      "ff1roll-ask-general": 0,
+      "ff1roll-ask-terminal": 2,
+      "ff1roll-ask-albums/nes/ff1/saved-more-than-kept.mid": 0
+    },
+    "seen": {
+      "ff1roll-ask-albums/compositions/nightroll/threnody.mid": {"err": 12, "status": 7},
+      "ff1roll-ask-general": {"err": 3, "status": 0},
+      "ff1roll-ask-terminal": {"err": 0, "status": 0}
+    },
+    "seenMax": {"err": 12, "status": 9},
+    "sentctx": {
+      "ff1roll-ask-albums/compositions/nightroll/threnody.mid": {"anno": 3735928559, "legend": true, "notes": 123456789, "bars": {"1": 1111, "2": 2222, "9": 9999}},
+      "ff1roll-ask-general": {}
+    },
+    "epoch": {
+      "ff1roll-ask-albums/compositions/nightroll/threnody.mid": "a1b2c3d4-sess:1759400000000",
+      "ff1roll-ask-general": null
+    },
+    "drafts": {
+      "ff1roll-ask-albums/compositions/nightroll/threnody.mid": {"text": "a long dictated paragraph I never sent", "shots": ["/Users/j/.night-roll-bridge/shots/a.png", "/Users/j/.night-roll-bridge/shots/b.jpg"]},
+      "ff1roll-ask-general": {"text": "an old draft", "shots": ["/Users/j/.night-roll-bridge/shots/only.png"]},
+      "ff1roll-ask-terminal": {"text": "", "shots": []}
+    },
+    "pending": [{"key": "ff1roll-ask-albums/compositions/nightroll/threnody.mid", "jobId": "nr_pend01", "i": 5}],
+    "mode": "general",
+    "inboxSeen": "41"
+  }
+}

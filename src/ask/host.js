@@ -22,6 +22,10 @@ import { askEpochNote } from "./context.js";
 import { appConfirmImpl as appConfirm } from "../ui/chrome.js";
 import { aiUrl } from "./backend.js";
 import { aiHeaders } from "./backend.js";
+import { askMaxErrId } from "./bridge.js";
+import { askMaxStatusId } from "./bridge.js";
+import { askstatus } from "./sheet.js";
+import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 
 // The host adapter (docs/ai-library-plan.md §2): the ONE object the AI
 // library (vendor/ai/web) sees of this app. Every app-specific thing — the
@@ -35,8 +39,12 @@ import { aiHeaders } from "./backend.js";
 export function askHost() {
   if (S.aiHost) return S.aiHost;
   S.aiHost = {
-    state: S, // the library keeps its runtime fields here (askModelCache, askCaps, …) — the same bag the tests read by bare name
-    keys: {hosts: "ff1roll-ai-hosts", apiKey: "ff1roll-aikey"},
+    state: S, // the library keeps its runtime fields here (askModelCache, askCaps, askSeenPending, askSentPending, askJobsCache, …) — the same bag the tests read by bare name
+    // today's exact storage keys — the chat stores (ff1roll-ask-<song> / -general / -terminal and their -seen/-sentctx/-epoch cursors), the drafts, the watermarks
+    keys: {hosts: "ff1roll-ai-hosts", apiKey: "ff1roll-aikey", store: "ff1roll-ask-", seenMax: "ff1roll-ask-seen-max", inboxSeen: "ff1roll-ask-inbox-seen", draft: "ff1roll-askdraft-", mode: "ff1roll-ask-mode"},
+    logCursor: () => ({err: askMaxErrId(), status: askMaxStatusId()}), // the newest ⚠/status line ids — what a landed send marks "seen up to"
+    status: t => { askstatus.textContent = t; },
+    onStoreChanged: () => updateSongBtn(), // the ● follows unsaved chat too
     settings: () => { const c = cfg(); return {url: c.aiUrl, model: c.aiModel, backend: c.aiBackend, browserModel: c.aiBrowserModel, window: c.aiWindow}; },
     apiKey: () => localStorage.getItem("ff1roll-aikey"),
     url: () => aiUrl(), // the library's fetches go through THIS app's delegates, so a test's `aiUrl = () => …` reaches every one of them

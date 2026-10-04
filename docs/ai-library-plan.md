@@ -241,8 +241,24 @@ mechanical commit).
    wording). Library `tests/backends.test.mjs` ports tests/ai.test.mjs's fake
    servers (model listing, streaming, tool rounds with `-r1`, errors, the
    probe's kinds, consent); tests/ai.test.mjs itself unchanged, green.
-4. Store, ctx-cache, bridge-client, attach — with a fixture test that today's
-   `ff1roll-*` keys load identically.
+4. **DONE 2026-10-04 (claude-bridge `v0.4.0`).** `web/store.js` (chat
+   record, caps/eviction, pending markers + `aiJobId`, seen cursor, draft,
+   `aiLogMarkdown(msgs, labels)`, `aiStripContext`), `web/ctx-cache.js`
+   (`aiSent*`/`aiEpoch*`/`aiCachedBlock`/`aiHash` — FNV-1a 32, byte-
+   compatible with the records devices hold), `web/bridge-client.js` (HTTP
+   only, `{ok, status, body}`; Night Roll keeps polling/rendering),
+   `web/attach.js` (upload, shot lines, image prep, tab capture). Keys come
+   from `askHost().keys` (`store: "ff1roll-ask-"`, `seenMax`, `inboxSeen`,
+   `draft: "ff1roll-askdraft-"`, `mode`); the host also gives `logCursor()`
+   (askMaxErrId/askMaxStatusId), `status(text)`, `onStoreChanged`
+   (updateSongBtn). `src/ask/{bridge,context,sheet,shots}.js` keep every
+   bare name as delegates; `askLog*`/`askCommitLog` (the repo log) stay
+   app-side. **Fixture: tests/ask-storage.test.mjs + tests/fixtures/
+   ask-storage-2026-10-04.json** — today's shapes under the real key names
+   read back identically; eviction never touches an unsaved chat or a
+   non-store key (the one behaviour change: cursors used to be evicted
+   with the chats because they share the prefix). Library tests:
+   store/ctx-cache/attach (pure) + bridge-client (fake bridge).
 5. The client loop through `host.systemPrompt/context/tools/runTool`; all
    Learning tests stay in Night Roll and must stay green unchanged.
 6. Window in adopt mode (binds today's `#ask*` markup; e2e selectors unchanged).
