@@ -15,6 +15,7 @@ import { setAnchorBQImpl } from "./ui/note-editor.js";
 import {
   fitViewImpl, renderTrackbarImpl, updateEditBtnVisImpl, updateChipBtnImpl,
   updateSubtitleImpl, askRenderImpl, finalizeNotesImpl, recFinishImpl, albumAdvanceImpl,
+  updateSongMetaImpl,
 } from "./app.js";
 
 export function installHooks() {
@@ -45,5 +46,7 @@ export function installHooks() {
     srAnnounce: (...a) => srAnnounceImpl(...a),
     scheduleBackupFlush: (...a) => scheduleBackupFlushImpl(...a),
     setAnchorBQ: (...a) => setAnchorBQImpl(...a),
+    // docs/split-phase2-plan.md step 5
+    updateSongMeta: (...a) => updateSongMetaImpl(...a),
   });
 }

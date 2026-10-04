@@ -40,3 +40,9 @@ export function songTitleOf(...a) { return (S.hooks.songTitleOf || need("songTit
 export function srAnnounce(...a) { return (S.hooks.srAnnounce || need("srAnnounce"))(...a); }
 export function scheduleBackupFlush(...a) { return (S.hooks.scheduleBackupFlush || need("scheduleBackupFlush"))(...a); }
 export function setAnchorBQ(...a) { return (S.hooks.setAnchorBQ || need("setAnchorBQ"))(...a); }
+// docs/split-phase2-plan.md step 5: the three upcalls the model/gen clusters
+// make that have no layer-2 home — the bpm label (saveEdits), the lasso's
+// pixel-box annotation query (cut/delete/copy), the kit-lane row walk
+// (nudge on a drum track) — bodies stay in ui/chrome, ui/note-editor,
+// render/roll.
+export function updateSongMeta(...a) { return (S.hooks.updateSongMeta || need("updateSongMeta"))(...a); }

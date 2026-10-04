@@ -392,6 +392,8 @@ const ALL_PORTS = [
   "updateSyncBtn", "updateSubtitle", "askRender", "finalizeNotes",
   "recFinish", "albumAdvance", "songTitleOf", "srAnnounce",
   "scheduleBackupFlush", "setAnchorBQ",
+  // step 5: the model/gen clusters' three remaining upcalls
+  "updateSongMeta",
 ];
 
 test("hooks.js: every port throws `hook X not installed` before src/wire.js's installHooks() ever runs", async () => {
@@ -452,6 +454,15 @@ test("hooks.js rebinding: same for setAnchorBQ() (docs/split-phase2-plan.md step
   app.run('setAnchorBQ(S.__testAnchorArg, 480)');
   assert.equal(app.run("S.__testAnchorSeen"), 480);
   assert.equal(app.run("S.__testAnchorArg.b1"), undefined); // setAnchorBQImpl never ran
+});
+
+test("hooks.js rebinding: same for updateSongMeta() (docs/split-phase2-plan.md step 5) — saveEdits (model/edits.js) refreshes the bpm label through this bare name; a lower-layer caller gets the rebound body, the real updateSongMetaImpl (the #songmeta DOM write) bypassed", async () => {
+  const app = await createApp();
+  app.run('document.getElementById("songmeta").textContent = "untouched";'); // updateSongMetaImpl always rewrites this node when a song is open — the tell that it ran
+  app.run('updateSongMeta = () => { S.__testMetaSeen = true; };'); // reassigns hooks.js's OWN top-level binding
+  app.run("updateSongMeta()");
+  assert.equal(app.run("S.__testMetaSeen"), true);
+  assert.equal(app.run('document.getElementById("songmeta").textContent'), "untouched"); // updateSongMetaImpl never ran
 });
 
 // ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's
