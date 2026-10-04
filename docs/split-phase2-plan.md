@@ -117,7 +117,7 @@ illegal-layer imports.
 | 6 | M | **Done (worktree agent, 2026-10-04; 7 commits; see write-up — revertSongToRepo/moveComposition wait for step 8's sync web; bakeMeter/bakeTempos landed in model/rollnotes, not session).** session/song.js: finalizeNotes, bakeMeter, bakeTempos, loadNotes, updateSongMeta, fitView, loadSong*, setSong, openDraft*; session/album.js: albumStart/PlayIdx/Advance…; session/files.js: saveSongAs, openSaveForm, forkCurrentSong, revertSongToRepo, moveComposition, renameLocalKeys | ~1,000 (actual: 808, 12139→11331) |
 | 7 | M | **Done (worktree agent, 2026-10-04; 9 commits + a step 0 addendum; see write-up — the Instruments sheet web landed in ui/sheets.js, reorderTrack in ui/mixer.js).** voice menu/pickers/buildClipControls → ui/voice-menu; renderTrackbar/trackToggle/saveTrackDir/saveVoices/renameTrack → ui/trackbar; mixer cluster → ui/mixer; wm actions → ui/wm; renderNoteList → ui/notes; updateChipBtn/updateSubtitle/updateLCD → ui/chrome; drummer/bassist sheets → ui/sheets | ~1,700 (actual: 1,971, 11331→9360) |
 | 8 | M | **Done (worktree agent, 2026-10-04; 12 M commits + 1 harness commit; see write-up — jobStart landed in ui/sheets.js beside jobApi, askSave/askCommitLog pulled forward into ask/bridge.js).** commitImports, impCapture, openChipImport, captureChipTrack, fsub*, batchCommit, importAudioFiles, openPickedFiles, m3u → import/*; publishSong, renderSyncPending, openSyncSheet, fingerprintOldDrafts, discardPending, sweepStrandedClones, renameRepoTitles, manifest* → sync/publish (sheets → ui/sheets) | ~1,350 (actual: 1,903, 9360→7457) |
-| 9 | M | askRun, askSend, askContext, askRunTool, askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes… → ask/* | ~720 |
+| 9 | M | **Done (worktree agent, 2026-10-04; 9 commits; see write-up — two new files, ask/client.js (the run/send/resume client) and ask/host.js (openAsk/askBtnTap, the host adapter); deploy* landed in ask/bridge.js).** askRun, askSend, askContext, askRunTool, askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes… → ask/* | ~720 (actual: 748, 7638→6890) |
 | 10 | M | tap, endPointer, finalizeLasso, toggleSel, score pencil/tap/erase, instTap, recFinish, initCoreMidi/initWebMidi → input/*; cof drag → input/gestures | ~650 |
 | 11 | M | remainder bucketed by blockers.mjs (settings/folder UI, chord/progression insert, compare, versions sheet…) | ~1,500 |
 | 12a–f | L | top-level blocks → init functions, each with its cluster: canvas pointer listeners → input/gestures; editor/chord-widget/notes wiring → ui/note-editor + ui/notes; sheet/wm/modal wiring → ui/sheets + ui/wm; ask wiring → ask/sheet; ?perf HUD → ui/perf.js; migration IIFEs → model/*; boot IIFE → session/boot.js boot() | ~3,400 |
@@ -879,6 +879,81 @@ S.hooks is the only writable path) — grepped tests/e2e/: no Playwright
 test stubs `appConfirm` or `S.hooks`, so nothing to add; if one ever
 does on an import/sync flow, the same two-binding rule belongs in
 devtools.js.
+**Step 9 — Done** (2026-10-04, worktree agent, after the merge of main).
+Nine M commits; two new files. `blockers.mjs` on the row's names first, in
+the §3 library-vs-adapter grouping of docs/ai-library-plan.md: the write
+tool bodies, the context orchestrator, the shots trio, the deploy hold and
+`aiHostOk` each came back clean on their own; the run/send/resume client and
+the inbox/status polling were one SCC (askRun → askInboxPoll/askStatusPoll
+after a landed reply; askInboxPoll → askFinish/askFail/askRun on a resumed
+job); the render pair and the window opener each hang off that SCC one way.
+So, leaves first, the SCC in one commit, its dependents after:
+
+1. **M** `askRunTool` + `askAddAnnotation`/`askEditAnnotation`/
+   `askDeleteAnnotation`/`askPublishSong`/`askWriteNotes`/`askInsertBars`/
+   `askCopyBars`/`askDeleteBars` → **ask/tools.js** (the §3 table's
+   "adapter (tool registry)" row — the dispatcher now sits beside
+   `ASK_TOOLS` and the field validators step 13 had already moved).
+2. **M** `askContext` + `askKeyStateLine` → **ask/context.js** (adapter,
+   context builder; `askKeyStateLine`'s `keyLabelState` had been the step-13
+   blocker — it's been importable since step 11). Learning-mode gates:
+   moved verbatim, untouched.
+3. **M** `askShotShow`/`askShotCapture`/`askShotTake` → **ask/shots.js**
+   (lib attach.js). Note for extraction: `askShotCapture`'s native branch is
+   the table's `host.captureScreen` adapter — it lives in a lib-labelled file
+   until the host adapter exists.
+4. **M** `deployBeforeInstall`/`deployInstallNow`/`deployHoldNow`/
+   `deployWarn`/`deploySetHeld`/`deployAskTap` → **ask/bridge.js** (§2's
+   bridge-client.js row lists "deploy hold").
+5. **M** `aiHostOk` → **ask/backend.js** (the table's row-2 backend name
+   step 13 left behind for its `appConfirm` call; at layer 4 that is the
+   `appConfirmImpl as appConfirm` alias, same as every other ask/* file).
+6. **M** `askBubble`/`askFillBubble`/`askMicOff` → **ask/sheet.js** (lib
+   window.js leaves; clean once checked alone, which shrank the SCC).
+7. **M, the SCC, one commit, two `move.mjs` invocations** (the 4c/8
+   precedent): **new `ask/client.js`** ← `askRun`/`askSend`/`askFinish`/
+   `askFail`/`askLanded`/`askRepending`/`askTerminalSend`/`askResume`/
+   `askResumeSoon` (the table's "lib client.js" row, 247 lines); then
+   `ask/bridge.js` ← `askInboxPoll`/`askStatusPoll`/`askTabsApply`/
+   `askInboxStart`/`askNotesArrived`/`askNoteSeen` (bridge-client). Client
+   first (5 of its needs still in app.js vs the polling group's 7), so
+   exactly two specifiers needed the §0 hand fix — `client.js`'s
+   `askInboxPoll`/`askStatusPoll` from `"../app.js"` → `"./bridge.js"`
+   (the other three were already real imports). Library-bound and
+   adapter-bound code stay in separate files: client.js imports its
+   context/tools from context.js/tools.js, never the reverse.
+8. **M** `askRenderImpl` (the `askRender` port's body — the plan's "askRenderImpl
+   too") + `askRenderEarlier` → **ask/sheet.js**; `wire.js` now imports
+   `askRenderImpl` from `./ask/sheet.js`, leaving `recFinishImpl` as the last
+   port body in app.js (step 10). Rule 10 then fired on every layer-4
+   `askRender` hooks import (client.js, bridge.js, tools.js, chrome.js) —
+   all rewritten to `askRenderImpl as askRender`, the step 6/7 rule.
+9. **M** `openAsk` + `askBtnTap` → **new `ask/host.js`** — docs/ai-library-plan.md
+   §2's host adapter file, started with its first two members (the table's
+   "`askBtnTap`, `openAsk` → adapter (wm + setControl)" row). It holds the
+   app-specific window opener only; the next host.js members are the
+   extraction's own (`confirm`, `captureScreen`, `persistLog`…).
+
+Per commit: `verbatim.mjs <sha>` ✔ ×9, zero exceptions (no `--hook` — no
+port renamed; the `askRenderImpl` move is a plain move with its wire.js
+import re-pointed, an import line); regen-e2e-footer after every move;
+check.mjs clean except `oldBpb` (70 → 72 files); e2e-globals/controls
+clean; prof label set 30, unchanged (no ask name is profiled). Rule 10 at
+layer 4 fired on six of the nine (ask/ is layer 4) — 20 copied `../hooks.js`
+port imports rewritten to `XImpl as X`. Rule 8's manifests kept in step
+for the two new files: index.html modulepreload, sw.js APP_MODULES
+(SW_VERSION nr-v25 → nr-v27, one bump per file), devtools.js namespaces
+(`askClient`, `askHost`), modules.test fileCount 68 → 70 (70 → 72 with
+vendor/ai/web). Group: `perl -e 'alarm 1200; exec @ARGV' npm test` —
+890 pass, 17 fail, and the 17 are exactly `ps2-real` (4) + `instruments` (13), the pre-existing local-rip gap — identical to the post-merge baseline; night-roll 428/429, modules 89/89, ai 7/7, bridge green; `test:e2e:smoke` 8/8; `node tools/package.mjs --out`: 187
+files = step 8's 184 + ui/piano.js (the merge) + ask/client.js +
+ask/host.js, nothing else. `src/app.js`: 7638 → 6890 (748 out, ~the row's
+~720). Nothing ask-named is left in app.js except the top-level wiring
+(the ✦ button's listener, the inbox/status timers' start, the compose box's
+handlers — step 12's "ask wiring → ask/sheet"). **Browser check owed**
+(plan §3 step 9): an Ask tool run (write_notes) + a resume, plus the ✦ open
+and a Terminal-tab send, since openAsk/askRun moved file.
+
 **Merge of main (2026-10-04)** — `git merge origin/main` into the branch
 after step 8 (15 main-only commits: the ⏮ back-to-selection change, the
 playhead tag in the strip, the on-screen keyboard rewrite + `src/ui/piano.js`,

@@ -1924,6 +1924,28 @@ stale and should move up here instead.
   `reveal` logic is in app.js's rwbtn handler. Full conflict list:
   docs/split-phase2-plan.md "Merge of main (2026-10-04)".
 
+- **Phase 2 step 9 (2026-10-04) — the Ask cluster out of app.js.** Two new
+  files. `ask/client.js` (docs/ai-library-plan.md §2's "lib client.js"):
+  `askRun` (one exchange, tool rounds inside), `askSend`, `askTerminalSend`,
+  `askFinish`/`askFail`/`askLanded`/`askRepending` (the pending-question
+  markers), `askResume`/`askResumeSoon`. `ask/host.js` (§2's host adapter,
+  started): `openAsk`, `askBtnTap`. Into existing files: `askRunTool` + the
+  write tool bodies (`askAddAnnotation`/`askEditAnnotation`/
+  `askDeleteAnnotation`/`askPublishSong`/`askWriteNotes`/`askInsertBars`/
+  `askCopyBars`/`askDeleteBars`) → `ask/tools.js`; `askContext` +
+  `askKeyStateLine` → `ask/context.js` (its step-13 "did NOT move" clause is
+  retired); `askShotShow`/`askShotCapture`/`askShotTake` → `ask/shots.js`;
+  the inbox/status polling (`askInboxPoll`/`askStatusPoll`/`askTabsApply`/
+  `askInboxStart`/`askNotesArrived`/`askNoteSeen`) and the deploy hold
+  (`deployBeforeInstall`/`deployInstallNow`/`deployHoldNow`/`deployWarn`/
+  `deploySetHeld`/`deployAskTap`) → `ask/bridge.js`; `aiHostOk` →
+  `ask/backend.js`; `askRenderImpl` (the `askRender` port's body),
+  `askRenderEarlier`, `askBubble`/`askFillBubble`/`askMicOff` →
+  `ask/sheet.js` (wire.js imports `askRenderImpl` from there now). Only the
+  ask wiring statements (the ✦ listener, the compose box, the timers) stay
+  in app.js, for step 12. Commit-by-commit: docs/split-phase2-plan.md's
+  step 9 write-up.
+
 ## AI library (vendor/ai) — docs/ai-library-plan.md §1, step 1 (2026-10-04)
 
 The AI support that used to live entirely in `src/ask/` is moving into its
