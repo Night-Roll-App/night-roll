@@ -125,6 +125,7 @@ import { play } from "../audio/transport.js";
 import { isUnsaved } from "../model/provenance.js";
 import { catalogHas } from "../model/catalog.js";
 import { wmInnerHeight } from "./wm.js";
+import { drawVelLane, toggleVelLane } from "./vellane.js";
 import { openDraft } from "../session/song.js";
 import { idbDraftDelete } from "../platform/storage.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
@@ -546,6 +547,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwFooter: {icon: "viewAgenda", text: "Bottom bar"},
     vwInst: {icon: "piano", text: "Instrument panel"},
     vwSub: {glyph: "💬", text: "Notes strip"},
+    vwVel: {icon: "barChart", text: "Velocity lane"},
     vwCompare: {icon: "compareArrows", text: "Compare with repo"},
     vwAnalyze: {icon: "search", text: "Analyze ▸"},
     vwLearning: {glyph: "🎓", text: "Learning mode"},
@@ -600,6 +602,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   set("vwAdded", showAddedOutline());
   set("vwInst", typeof S.instOpen !== "undefined" && S.instOpen);
   set("vwSub", S.subOn);
+  set("vwVel", S.vwVel);
   // vwGrid isn't in `base` (its label carries a dynamic "N/bar" suffix) — same setControl approach
   setControl("vwGrid", {label: "  Grid…" + (S.gridDiv ? "  " + S.gridDiv + "/bar" : ""), prefix: S.gridDiv ? "✓ " : "   "});
   const lvr = document.getElementById("vwLevelsRow"), lvd = document.getElementById("vwLevelsDiv");
@@ -751,6 +754,7 @@ export function updateCanvasA11y() {
 export function drawFull(skipCursor) {
   updateCanvasA11y();
   if (S.instOpen) drawInst(); // panel repaints on every app repaint (incl. playback frames)
+  drawVelLane(); // the velocity lane too (it hides itself outside roll view)
   if (typeof updateEditButtons === "function") updateEditButtons(); // cached — cheap on every frame
   if (!S.song) return;
   const W = wrap.clientWidth, H = wrap.clientHeight;
@@ -1962,6 +1966,7 @@ export function initChrome11() {
     on("vwFooter", () => { S.footerHidden = !S.footerHidden; applyChrome(); });
     on("vwInst", () => document.getElementById("instbtn").click());
     on("vwSub", () => toggleSubtitle());
+    on("vwVel", () => toggleVelLane());
     on("vwGrid", () => { document.getElementById("viewsheet").classList.remove("on"); openGridSheet(); });
     // BACKGROUND (chrome density follow-up, 2026-10-01 pm): both forward to
     // the footer buttons' own click handlers (renderJobs/errChip's sheets are

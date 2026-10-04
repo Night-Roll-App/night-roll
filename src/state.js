@@ -222,6 +222,8 @@ export const S = {
   // key}, wall-clock ms. RAM only: a take is not song state until "Keep
   // that" writes it, and setSong empties it.
   captureBuf: [],
+  vwVel: false,  // the velocity lane (ui/vellane.js), device pref ff1roll-vel-open
+  velDrag: null, // {pid, items, pre, v0, v, hit, moved}: a stalk drag in flight
   midiReady: false,
   midiAccess: null,
   midiErr: null,

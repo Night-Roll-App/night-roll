@@ -363,7 +363,7 @@ key, meter or chord for him unless asked.
 | 3 | Keyboard look: real black-key offsets, rounded whites, shading; Sustain button (§1a) | S |
 | 4 | Touch-and-hold a note → context menu of the edit-row actions; iPadOS three-finger undo/redo | S–M |
 | 5 | Capture MIDI: keep the last ~60 s of noodling; "Keep that" writes it at the cursor, one undo — **done 2026-10-04** | M |
-| 6 | Velocity lane under the roll (drag to shape; shows chip envelopes as facts) | M |
+| 6 | Velocity lane under the roll (drag to shape; shows chip envelopes as facts) — **done 2026-10-04** | M |
 | 7 | Typed bar jump by tapping the LCD bar field; m:ss beside it; drag the cycle's middle to move it | S |
 | 8 | Score → PDF/print of his own piece — **done 2026-10-04** (File ▾ → Export score…: paged SVG in a self-contained HTML file via the share sheet; the iPad's own print path makes the PDF — NIGHT-ROLL.md "Export score") | M |
 

@@ -96,6 +96,7 @@ import * as uiNotes from "./ui/notes.js";
 import * as uiNoteEditor from "./ui/note-editor.js";
 import * as uiSheets from "./ui/sheets.js";
 import * as uiWm from "./ui/wm.js";
+import * as uiVellane from "./ui/vellane.js";
 import * as sessionSong from "./session/song.js";
 import * as sessionAlbum from "./session/album.js";
 import * as sessionFiles from "./session/files.js";
@@ -124,7 +125,7 @@ export function exposeGlobals() {
                      renderRoll, renderTracks, renderScore, renderScorePrint, renderInstrument, renderCof, renderCompare,
                      inputGestures, inputRecord, inputKeyboard,
                      askBackend, askTools, askContext, askBridge, askShots, askSheet, askClient, askHost,
-                     uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm,
+                     uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm, uiVellane,
                      sessionSong, sessionAlbum, sessionFiles, sessionBoot, uiPerf, platformSw,
                      hooks, wire };
   for (const ns of Object.values(MODULES)) {

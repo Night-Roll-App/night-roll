@@ -372,6 +372,12 @@
      footer's 44px touch floor — this wins on class-count specificity. */
   footer .seg button { min-height: 44px; }
 
+  /* the velocity lane (2026-10-04, DAW shortlist F4): a strip under the roll
+     band — View ▾ → Panels → Velocity lane, off by default; drawVelLane()
+     (src/ui/vellane.js) shows it in roll view only */
+  #vellane { display: none; flex-shrink: 0; height: 72px; position: relative; background: var(--panel); border-top: 1px solid var(--grid); }
+  #vellane.on { display: block; }
+  #velcanvas { display: block; width: 100%; height: 100%; touch-action: none; }
   #instpanel { display: none; flex-shrink: 0; background: var(--panel); border-top: 1px solid var(--grid); }
   #instpanel.on { display: block; }
   #instbar { display: flex; align-items: center; gap: 8px; padding: 4px 12px 6px; }
@@ -525,7 +531,7 @@
   body.listener #filesheetbtn, body.listener #editsheetbtn, body.listener #viewsheetbtn,
   body.listener #trackzone, body.listener #editrow, body.listener footer,
   body.listener #panelshow, body.listener #metbtn, body.listener #metcfg, body.listener #recbtn,
-  body.listener #instpanel, body.listener #subtitle, body.listener #askbtn { display: none !important; }
+  body.listener #instpanel, body.listener #vellane, body.listener #subtitle, body.listener #askbtn { display: none !important; }
   #fullappbtn { display: none; }
   body.listener #fullappbtn { display: inline-block; }
   #filesheet {

@@ -6132,6 +6132,59 @@ Record precedence); tests/gestures.test.mjs "keyboard: a key tapped while
 nothing records…" (press/lift, glissando, ● rolling). Help: Editor →
 "Keep that (Capture MIDI)". No hardware key yet (open-items).
 
+## Velocity lane (2026-10-04, DAW shortlist F4)
+
+Logic's velocity lane under the piano roll. `src/ui/vellane.js` (layer 4,
+ui; in the three manifests + devtools, `initVellane1()` after
+`initKeyboard2()` in main.js):
+
+- **The strip.** `#vellane` (a 72 px `#velcanvas`) sits between
+  `#songcenter` and `#editrow`, so it spans the whole band under the roll
+  and its inner docks. View ▾ → Panels → Velocity lane (`vwVel`, a
+  `CONTROLS` row with the `barChart` icon) → `toggleVelLane()`/`setVelLane`;
+  `S.vwVel` is the device pref `ff1roll-vel-open`, OFF by default. Visible
+  only when `velLaneWanted()`: a song is open, `S.viewMode === "roll"`, not
+  Fall — `drawVelLane()` runs from `drawFull` on every repaint and applies
+  that itself (`applyVelLane`, sizing the canvas the moment it appears), so
+  Tracks/Score/Listener never show it and `applyViewMode` needed no edit.
+- **Geometry.** `velGeom()`: `yOf(v)` maps 1..127 between `VEL_PAD_TOP`
+  and the baseline, `vOf(y)` the inverse, clamped (`velClamp`, never 0);
+  `left` is the roll's x offset inside the strip (an inner left dock
+  shifts both). Stalk x = `velNoteX`: `left + S.RULER_W + n.t·pxPerTick −
+  S.view.x` — the roll's own mapping, nothing of its own to drift.
+  `velVisible(g)` lists the on-screen stalks in paint order (other tracks
+  first, the selected track last; hidden tracks and audio tracks skipped).
+  Look: the track's colour, the selected track at 0.85 alpha, the rest
+  0.4, lasso'd notes ringed `--gold`; 32/64/96 guide lines; a chip note's
+  `n.ve` (parse.js's software-envelope decay target) as a 0.5-alpha line
+  falling from the stalk top to `yOf(ve)` across the note's width — a fact,
+  never editable.
+- **The gesture.** `velHit(x)`: within `VEL_GRAB` (7 px) of a stalk's
+  centre; a selected note beats an unselected one, the selected track beats
+  the rest, then nearest — so a chord's stalks (one x) resolve to the one
+  lasso'd. `velPointerDown`: `editableSong()` false → the stalks stay, the
+  drag is refused with `velLockedLine()` (captures: "facts from the capture
+  — Edit a copy"); else the drag's items are `selEditItems()` when the hit
+  is in the selection, the one note otherwise, with a pre snapshot
+  (`S.velDrag = {pid, items, pre, v0, v, hit, moved}`). Move:
+  `velDragApply(vOf(y))` — one note is set; a selection scales
+  proportionally, `velScaled(preV, v0, v) = clamp(round(preV · v/v0))`, so
+  the grabbed note follows the finger and every other keeps its ratio to it;
+  `draw()` each step (the roll's brightness tracks it; the live value is
+  printed beside the stalk). Up: `selEditApply(items, noop, pre)` — ONE
+  "mod" undo entry holding the pre values, the same call and entry the vol
+  slider's release and Quantize use (rawNotes twin synced, saveEdits,
+  computeSongEnd, score model); a still tap or a `pointercancel` restores
+  the pre values and pushes nothing.
+
+Velocities are .mid data: nothing lane-local is stored, and the pref is
+the only localStorage key. Tests: tests/gestures.test.mjs's five
+"velocity lane" cases (pref + roll-only visibility + relaunch; geometry and
+hit preference; single drag, clamps, one undo per drag, still tap, cancel;
+proportional scaling + clamp + undo exactness + a stalk outside the
+selection; the locked gate). Help: Editor → "Velocity lane". No hardware
+key (open-items).
+
 ## iPad CoreMIDI bridge (2026-09-30)
 
 Josh's son records from a MIDI keyboard via Web MIDI on a MacBook

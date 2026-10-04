@@ -154,6 +154,13 @@ S.instSustain = localStorage.getItem("ff1roll-inst-sustain") === "1";
 S.instScroll = (() => { const v = parseFloat(localStorage.getItem("ff1roll-inst-scroll-piano")); return Number.isFinite(v) ? v : null; })();
 S.fallOn = false;
 applyInst();
+try { S.vwVel = localStorage.getItem("ff1roll-vel-open") === "1"; } catch (err) { S.vwVel = false; }
+velCanvas.addEventListener("pointerdown", velPointerDown);
+velCanvas.addEventListener("pointermove", velPointerMove);
+velCanvas.addEventListener("pointerup", e => velPointerUp(e, false));
+velCanvas.addEventListener("pointercancel", e => velPointerUp(e, true));
+new ResizeObserver(() => { if (velWrap.classList.contains("on")) velResize(); }).observe(velWrap);
+applyVelLane();
 document.getElementById("ntype").addEventListener("change", applyEditorType);
 (function buildChordWidget() {
 nmic.addEventListener("click", () =>

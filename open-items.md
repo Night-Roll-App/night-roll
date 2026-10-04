@@ -7186,7 +7186,15 @@ blockers.mjs), step 12 (the ~320 top-level statements → init functions).
    wiggling on one key no longer splits a held Record note. Open: no
    hardware key for Keep that yet; iPad: try keys → Keep that, MIDI → Keep
    that, Keep that on a capture (refused), after a song switch (empty).
-6. Velocity lane — M
+6. ~~Velocity lane — M~~
+   DONE 2026-10-04 (Fable, lane B worktree branch; NIGHT-ROLL.md "Velocity
+   lane"): src/ui/vellane.js, View ▾ → Panels → Velocity lane (off by
+   default, device pref), stalks per note in track colour, drag = set, a
+   lasso'd drag scales proportionally, one mod undo per drag via
+   selEditApply, read-only (status line) on songs that aren't his, chip
+   `ve` decay drawn as a fact. Open: no hardware key; MAIN SESSION must eye
+   the layout in a real browser at phone width and iPad before push (memory:
+   no unseen layout ships) — the strip is new chrome under the roll.
 7. Typed bar jump in the LCD; drag a cycle's middle to move it — S
 8. ~~Score → PDF/print — M~~ DONE 2026-10-04 (DAW F6, lane C, Fable worktree
    branch; main merges): File ▾ → Export score… (Letter/A4) → `<song>-score.html`,

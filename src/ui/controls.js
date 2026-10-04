@@ -54,6 +54,7 @@ export const CONTROLS = {
   vwFooter: {icon: "viewAgenda", cls: "", label: "Bottom bar", prefix: "   "},
   vwInst: {icon: "piano", cls: "", label: "Instrument panel", prefix: "   "},
   vwSub: {glyph: "💬", cls: "", label: "  Notes strip", prefix: "   "},
+  vwVel: {icon: "barChart", cls: "", label: "Velocity lane", prefix: "   "},
   vwCompare: {icon: "compareArrows", cls: "", label: "Compare with repo", prefix: "   "},
   vwAnalyze: {icon: "search", cls: "", label: "Analyze ▸", prefix: "   "},
   vwLearning: {glyph: "🎓", cls: "", label: "  Learning mode", prefix: "   "},

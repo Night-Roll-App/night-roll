@@ -676,3 +676,125 @@ test("keyboard: a key tapped while nothing records goes to the Capture MIDI buff
   app.dispatch("instcanvas", pev("pointerup", { clientX: 10, clientY: KEYS_Y }));
   app.run(`recording = false; playing = false; recTake = [];`);
 });
+
+// ---- the velocity lane (2026-10-04, docs/daw-inventory.md §4 #6) ----
+// #vellane's stubbed box is 800×600; the lane's own geometry (velGeom) maps
+// velocity ↔ y, so the tests ask it for coordinates instead of hardcoding.
+async function velApp(name) {
+  const app = await boot(name);
+  app.run(`
+    song.tracks[0].notes = [{t: 0, d: 480, p: 60, v: 80}, {t: 480, d: 480, p: 64, v: 80}, {t: 960, d: 480, p: 67, v: 100}];
+    view.x = 0; view.pxq = 56; selTrack = 0; selNote = null; multiSel = []; multiSelKey = new Set(); editUndo = []; editRedo = [];
+    setVelLane(true);
+  `);
+  return app;
+}
+const velXY = (app, tick, v) => JSON.parse(app.run(`JSON.stringify((() => { const g = velGeom();
+  return {x: g.left + RULER_W + (${tick} / song.ppq) * view.pxq - view.x + 1.5, y: g.yOf(${v})}; })())`));
+const vels = (app) => JSON.parse(app.run(`JSON.stringify(song.tracks[0].notes.map(n => n.v))`));
+function velDrag(app, from, to, steps = 6) {
+  app.dispatch("velcanvas", pev("pointerdown", { clientX: from.x, clientY: from.y }));
+  for (let i = 1; i <= steps; i++) app.dispatch("velcanvas", pev("pointermove", { clientX: from.x, clientY: from.y + ((to.y - from.y) * i) / steps }));
+  app.dispatch("velcanvas", pev("pointerup", { clientX: from.x, clientY: to.y }));
+}
+
+test("velocity lane: a device pref, off by default; shown in roll view only; a boot with the pref set opens it", async () => {
+  const app = await boot("vm-vel-pref");
+  assert.equal(app.run(`vwVel`), false, "off by default");
+  assert.equal(app.el("vellane").classList.contains("on"), false);
+  app.run(`setVelLane(true)`);
+  assert.equal(app.run(`localStorage.getItem("ff1roll-vel-open")`), "1");
+  assert.equal(app.el("vellane").classList.contains("on"), true, "a song is open and the view is the roll");
+  app.run(`setViewMode("tracks")`);
+  assert.equal(app.el("vellane").classList.contains("on"), false, "the lane is the roll's: hidden in Tracks view");
+  app.run(`setViewMode("roll")`);
+  assert.equal(app.el("vellane").classList.contains("on"), true);
+  app.run(`setVelLane(false)`);
+  assert.equal(app.run(`localStorage.getItem("ff1roll-vel-open")`), "0");
+  assert.equal(app.el("vellane").classList.contains("on"), false);
+  const app2 = await createApp({ storage: { "ff1roll-mode": "learning", "ff1roll-vel-open": "1" } });
+  assert.equal(app2.run(`vwVel`), true, "the pref survives a relaunch");
+});
+
+test("velocity lane: velGeom maps 1..127 onto the strip, velHit grabs within 7 px and prefers a selected note on a shared beat", async () => {
+  const app = await velApp("vm-vel-geom");
+  const g = JSON.parse(app.run(`JSON.stringify((() => { const g = velGeom(); return {H: g.H, top: g.top, bot: g.bot, y127: g.yOf(127), y1: g.yOf(1), vTop: g.vOf(g.top), vBot: g.vOf(g.bot), vAbove: g.vOf(-50), vBelow: g.vOf(g.H + 50)}; })())`));
+  assert.equal(g.y127, g.top); assert.ok(Math.abs(g.y1 - (g.bot - (g.bot - g.top) / 127)) < 1e-9);
+  assert.equal(g.vTop, 127); assert.equal(g.vAbove, 127, "above the strip clamps to 127");
+  assert.equal(g.vBot, 1, "the baseline is 1, never 0"); assert.equal(g.vBelow, 1);
+  const p = velXY(app, 480, 80);
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify((h => h && {ti: h.ti, ni: h.ni})(velHit(${p.x})))`)), { ti: 0, ni: 1 });
+  assert.equal(app.run(`velHit(${p.x} + 20)`), null, "20 px away is not a grab");
+  // two notes on one beat: the lasso'd one wins the stalk
+  app.run(`song.tracks[0].notes.push({t: 480, d: 480, p: 72, v: 60}); multiSel = [{ti: 0, ni: 3}]; multiSelKey = new Set(["0:3"]); draw();`);
+  assert.equal(app.run(`velHit(${p.x}).ni`), 3);
+  app.run(`multiSel = []; multiSelKey = new Set(); draw();`);
+  assert.equal(app.run(`velHit(${p.x}).ni`), 1, "unselected: the first stalk at that x");
+});
+
+test("velocity lane: dragging a stalk sets that one note's velocity, clamped 1..127 — one undo step per drag, a still tap none", async () => {
+  const app = await velApp("vm-vel-drag");
+  velDrag(app, velXY(app, 480, 80), velXY(app, 480, 100));
+  assert.deepEqual(vels(app), [80, 100, 100]);
+  assert.equal(app.run(`editUndo.length`), 1, "one entry for the drag");
+  assert.equal(app.run(`editUndo[0].kind`), "mod");
+  assert.equal(app.run(`editUndo[0].items.length`), 1);
+  assert.match(app.el("noteinfo").textContent, /velocity 100 \(undo restores 80\)/);
+  velDrag(app, velXY(app, 0, 80), { y: -40 }); // far above the strip
+  assert.deepEqual(vels(app), [127, 100, 100], "clamped at 127");
+  velDrag(app, velXY(app, 960, 100), { y: 10000 }); // far below
+  assert.deepEqual(vels(app), [127, 100, 1], "clamped at 1, never 0");
+  assert.equal(app.run(`editUndo.length`), 3);
+  const p = velXY(app, 480, 100);
+  app.dispatch("velcanvas", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  app.dispatch("velcanvas", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`editUndo.length`), 3, "a still tap pushes nothing");
+  app.run(`editUndoPop(); editUndoPop(); editUndoPop();`);
+  assert.deepEqual(vels(app), [80, 80, 100], "three undos walk the three drags back");
+  app.run(`editRedoPop()`);
+  assert.deepEqual(vels(app), [80, 100, 100]);
+  // a cancelled pointer (the system took the touch) puts the notes back and pushes nothing
+  const q = velXY(app, 480, 100);
+  app.dispatch("velcanvas", pev("pointerdown", { clientX: q.x, clientY: q.y }));
+  app.dispatch("velcanvas", pev("pointermove", { clientX: q.x, clientY: velXY(app, 480, 30).y }));
+  assert.equal(vels(app)[1], 30, "live while dragging");
+  app.dispatch("velcanvas", pev("pointercancel", { clientX: q.x, clientY: q.y }));
+  assert.deepEqual(vels(app), [80, 100, 100]);
+  assert.equal(app.run(`editUndo.length`), 1);
+});
+
+test("velocity lane: dragging a stalk inside a multi-selection scales the whole selection proportionally (grabbed note follows the finger, ratios kept, clamped) — one undo", async () => {
+  const app = await velApp("vm-vel-scale");
+  selectAll(app); // v = [80, 80, 100]
+  velDrag(app, velXY(app, 960, 100), velXY(app, 960, 50)); // the loud note halves → everything halves
+  assert.deepEqual(vels(app), [40, 40, 50]);
+  assert.equal(app.run(`editUndo.length`), 1);
+  assert.equal(app.run(`editUndo[0].items.length`), 3, "one mod entry holds all three");
+  assert.match(app.el("noteinfo").textContent, /scaled 3 notes' velocities by the grabbed note, 100 → 50/);
+  velDrag(app, velXY(app, 0, 40), velXY(app, 0, 120)); // ×3: the 50 would be 150 → clamped
+  assert.deepEqual(vels(app), [120, 120, 127]);
+  app.run(`editUndoPop()`);
+  assert.deepEqual(vels(app), [40, 40, 50]);
+  app.run(`editUndoPop()`);
+  assert.deepEqual(vels(app), [80, 80, 100], "the pre-drag values come back exactly, not a re-derived ratio");
+  assert.equal(app.run(`velScaled(80, 100, 50)`), 40);
+  assert.equal(app.run(`velScaled(1, 1, 127)`), 127);
+  assert.equal(app.run(`velScaled(3, 100, 1)`), 1, "never below 1");
+  // a stalk OUTSIDE the selection drags alone, leaving the selection untouched
+  app.run(`multiSel = [{ti: 0, ni: 0}]; multiSelKey = new Set(["0:0"]); draw();`);
+  velDrag(app, velXY(app, 960, 100), velXY(app, 960, 64));
+  assert.deepEqual(vels(app), [80, 80, 64]);
+});
+
+test("velocity lane: a song that isn't yours draws its stalks but refuses the drag with a status line (capture velocities are facts)", async () => {
+  const app = await velApp("vm-vel-locked");
+  app.run(`__ownKey = songKey; songKey = "albums/final-fantasy-1/overworld.mid"; draw();`); // a catalog key with no draft of ours: editableSong() false, same as a read-only capture
+  assert.equal(app.el("vellane").classList.contains("on"), true, "still shown — the facts are worth seeing");
+  assert.equal(app.run(`velVisible(velGeom()).length`), 3, "all three stalks drawn");
+  velDrag(app, velXY(app, 480, 80), velXY(app, 480, 120));
+  assert.deepEqual(vels(app), [80, 80, 100], "nothing changed");
+  assert.equal(app.run(`editUndo.length`), 0);
+  assert.equal(app.run(`velDrag`), null, "no drag was started");
+  assert.match(app.el("noteinfo").textContent, /velocity edits work on your own songs|facts from the capture/);
+  app.run(`songKey = __ownKey;`);
+});

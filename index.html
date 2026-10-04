@@ -207,6 +207,7 @@
 <div id="rollwrap"><canvas id="roll" role="application" tabindex="0" aria-label="Night Roll — no song open"></canvas></div>
 <div id="dockrightinner"><div id="wmdivider-right-inner" class="wmdivider-x" role="separator" aria-orientation="vertical" aria-label="Resize the docked panel"></div></div>
 </div><!-- /songcenter -->
+<div id="vellane"><canvas id="velcanvas" aria-label="Velocity lane — drag a stalk to set that note's velocity"></canvas></div><!-- src/ui/vellane.js: View ▾ → Panels → Velocity lane; roll view only -->
 <div id="editrow">
   <!-- Order (Josh, 2026-10-02): undo redo cut copy paste delete ⋯ — the
      clipboard tools he uses constantly, FIRST and fixed: nothing that
@@ -896,6 +897,7 @@
   <div id="vwPanelsRow" style="display:none">
     <button class="fitem" id="vwInst">Instrument panel</button>
     <button class="fitem" id="vwSub">Notes strip</button>
+    <button class="fitem" id="vwVel">Velocity lane</button>
     <button class="fitem" id="vwMixer">Mixer</button>
     <button class="fitem" id="vwTracks">Tracks</button>
   </div>
@@ -1582,6 +1584,7 @@
 <link rel="modulepreload" href="src/ui/note-editor.js">
 <link rel="modulepreload" href="src/ui/sheets.js">
 <link rel="modulepreload" href="src/ui/wm.js">
+<link rel="modulepreload" href="src/ui/vellane.js">
 <link rel="modulepreload" href="src/session/song.js">
 <link rel="modulepreload" href="src/session/album.js">
 <link rel="modulepreload" href="src/session/files.js">
