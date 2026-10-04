@@ -160,3 +160,19 @@ export function saveEdits() {
   updateClearBtn();
 }
 saveEdits = prof("saveEdits", saveEdits); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+
+// Editing a SYNCED annotation replaces it with a local copy; without a
+// tombstone the repo original came back on reload underneath the rename
+// (Josh, 2026-09-13: "renaming makes a new one over the top of the old one")
+export function retireEdited(n) { tombstone(n); S.rollnotes = S.rollnotes.filter(x => x !== n); }
+export function pruneTombstones() { // an undo put notes back: their tombstones must not re-kill them on reload
+  if (!S.songKey) return;
+  try {
+    const t = JSON.parse(localStorage.getItem(tombKey()) || "[]");
+    const live = new Set(S.rollnotes.filter(n => !n.added).map(noteIdentity));
+    const keep = t.filter(id => !live.has(id));
+    if (keep.length !== t.length) localStorage.setItem(tombKey(), JSON.stringify(keep));
+  } catch (err) {}
+}
+export function clearTombstones() { clearTombstonesFor(S.songKey); }
+export function clearTombstonesFor(key) { if (key) localStorage.removeItem(tombKeyFor(key)); }
