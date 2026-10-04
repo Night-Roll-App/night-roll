@@ -29,6 +29,14 @@ import * as midiParse from "./midi/parse.js";
 import * as midiWrite from "./midi/write.js";
 import * as theoryChords from "./theory/chords.js";
 import * as theoryKey from "./theory/key.js";
+import * as theoryFactsCommon from "./theory/facts/common.js";
+import * as theoryFactsPattern from "./theory/facts/pattern.js";
+import * as theoryFactsForm from "./theory/facts/form.js";
+import * as theoryFactsMelody from "./theory/facts/melody.js";
+import * as theoryFactsRhythm from "./theory/facts/rhythm.js";
+import * as theoryFactsBass from "./theory/facts/bass.js";
+import * as theoryFactsVoices from "./theory/facts/voices.js";
+import * as theoryFactsFormat from "./theory/facts/format.js";
 import * as modelCatalog from "./model/catalog.js";
 import * as modelGrid from "./model/grid.js";
 import * as modelEdits from "./model/edits.js";
@@ -98,7 +106,7 @@ export function exposeGlobals() {
   // rule 4): nothing here is evaluation-order-sensitive, but keeping the
   // object literal out of top-level init code is the same discipline §2.2
   // asks of every other module, free to apply here too.
-  const MODULES = { edition, icons, controls, piano, midiParse, midiWrite, theoryChords, theoryKey,
+  const MODULES = { edition, icons, controls, piano, midiParse, midiWrite, theoryChords, theoryKey, theoryFactsCommon, theoryFactsPattern, theoryFactsForm, theoryFactsMelody, theoryFactsRhythm, theoryFactsBass, theoryFactsVoices, theoryFactsFormat,
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport,
