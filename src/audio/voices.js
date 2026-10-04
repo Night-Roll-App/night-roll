@@ -17,6 +17,13 @@ import { chipHas } from "./chip.js";
 import { trackIsDrums } from "../model/grid.js";
 import { drumHit } from "./engine.js";
 import { prof } from "../state.js";
+import { ensureAudio } from "./engine.js";
+import { audioSessionType } from "../platform/native.js";
+import { met } from "./metronome.js";
+import { resumeAudio } from "./engine.js";
+import { openMaster } from "./engine.js";
+import { chipPreviewBuffer } from "./chip.js";
+import { chipNoteSlice } from "./chip-stream.js";
 
 export function voiceType(ti) {
   if (S.song.tracks[ti] && S.song.tracks[ti].kind === "audio") return "sine"; // never sounds: the clip is the voice
@@ -639,3 +646,49 @@ export function scheduleNote(ti, n, when, durSec) {
   playSynthVoice(ti, n, when, durSec, v);
 }
 scheduleNote = prof("scheduleNote", scheduleNote); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+
+export async function previewNote(ti, pitch, tick) { // tick: the tapped note's own .t, when there IS one (a roll/score tap, a pencil placement) — lets a chip tap hear the program actually playing there, not always the track's first (FF7 "You Can Hear the Cry of the Planet", 2026-09-30). Omit it for a bare pitch (piano strip, live MIDI in) — same as before.
+  ensureAudio();
+  // a tap is Night Roll making sound, like ▶: "playback" (audible with the iPad's silent switch
+  // on — the idle "ambient" session silenced taps, Josh 2026-10-02), back to "ambient" 2 s after
+  // the last tap unless something else is playing by then
+  audioSessionType("playback");
+  clearTimeout(previewNote.ambientTimer);
+  previewNote.ambientTimer = setTimeout(() => { if (!S.playing && !S.albumRun && !document.hidden && !met.on) audioSessionType("ambient"); }, 2000);
+  await resumeAudio(); // clock is frozen until the context actually runs
+  openMaster(); // master may be faded out from the last stop
+  const tr = S.song && S.song.tracks[ti];
+  if (tr && chipActive() && chipHas(tr.name) && (!tr.voice || tr.voice === "auto") && !trackIsDrums(ti)) { // a chip song: the game's own instrument, if the worker still holds the set
+    const buf = await chipPreviewBuffer(tr.name, pitch, tr.offset || 0, tick, S.song.ppq);
+    if (buf) { const s = S.audio.createBufferSource(); s.buffer = buf; s.connect(trackGain(ti)); s.start(S.audio.currentTime + 0.01); return; }
+    // register chips (nsf/gbs/spc): chipPreviewBuffer above always comes back
+    // null — no per-note renderer, a register log has no note to re-render
+    // (tools/chip-worker.mjs's own comment). But each track IS one hardware
+    // voice, monophonic, so the song's own rendered track buffer already
+    // holds exactly this note's sound — slice it instead of the generic
+    // synth (Josh, FF4 SNES "Cry in Sorrow (part 1)", 2026-09-30: "tapping a
+    // note plays the generic synth, not the game sound").
+    const slice = chipNoteSlice(tr, pitch, tick);
+    if (slice) {
+      const src = S.audio.createBufferSource();
+      src.buffer = slice.buf;
+      const g = S.audio.createGain(); // ~5ms fade in/out: a slice starts/ends mid-waveform, not at a zero-crossing
+      const when = S.audio.currentTime + 0.01;
+      const fade = Math.min(0.005, slice.dur / 2);
+      g.gain.setValueAtTime(0, when);
+      g.gain.linearRampToValueAtTime(1, when + fade);
+      g.gain.setValueAtTime(1, Math.max(when + fade, when + slice.dur - fade));
+      g.gain.linearRampToValueAtTime(0, when + slice.dur);
+      src.connect(g);
+      // same path chipStart uses from here down: [chip.pan panner, if this
+      // track was downmixed to mono] -> trackGain(ti), so volume/pan/mute match playback
+      let node = g;
+      if (chip.pan && chip.pan[tr.name] !== undefined && S.audio.createStereoPanner) { const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[tr.name]; g.connect(p); node = p; }
+      node.connect(trackGain(ti));
+      src.onended = () => { try { src.disconnect(); g.disconnect(); if (node !== g) node.disconnect(); } catch (err) {} };
+      src.start(when, slice.offset, slice.dur); // a lone extra source — never touches chip.srcs, so a tap mid-playback can't fight the playing sources
+      return;
+    }
+  }
+  scheduleNote(ti, {p: pitch, v: 90, ch: 0, _preview: true}, S.audio.currentTime + 0.01, 0.3);
+}
