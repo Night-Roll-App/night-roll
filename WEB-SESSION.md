@@ -132,6 +132,12 @@ or note classification. Findings stay Josh's.
     node tools/annotations.mjs <song> [--type T]             # resolved dump + anomaly flags
     node tools/loop-targets.mjs <song>|--all                 # loop anchor/target + what sounds there
     node tools/import-set.mjs <zip|dir|file> --slug <slug>   # the app's Import → Capture all → Publish, headless (NIGHT-ROLL.md)
+    node tools/theory.mjs <song> pattern --from 1.1 --to 3.1 [--track T]   # where THIS figure comes back, any transposition (--library <dir> = across songs)
+    node tools/theory.mjs <song> form|melody|rhythm|bass|voices [--track T] [--from --to]
+                                                             # bar/phrase repeats + sequences; range/leaps/contour; density/
+                                                             # syncopation + how often his chord bands change; lowest-per-beat
+                                                             # + pedals; parallel 5ths/8ves/crossings — docs/theory-toolkit.md
+    node tools/harmony.mjs <song> roman|cadences|nct|modulation|chromatic  # VERDICTS from HIS key:/chord bands only — run only when he asks for that reading (docs/theory-harmony.md)
 
 `<song>` is a bare name (`overworld`, `cool-bmaj-progression`) or a path.
 All take `--json`. Stacked duplicate notes are de-duplicated by default.

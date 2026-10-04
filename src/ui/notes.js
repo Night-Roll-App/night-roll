@@ -4,7 +4,7 @@ import { estimateKey } from "../model/song.js";
 import { checkMeterVsFile } from "../theory/key.js";
 import { openEditor } from "./note-editor.js";
 import { TONIC_SPELL } from "../theory/key.js";
-import { tonicPcOfName } from "../theory/key.js";
+import { tonicPcOfName } from "../theory/chords.js";
 import { S, prof } from "../state.js";
 import { barTicks } from "../model/rollnotes.js";
 import { keyNameFor } from "../theory/key.js";

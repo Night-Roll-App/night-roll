@@ -106,7 +106,7 @@ import { drawImpl as draw } from "./chrome.js";
 import { bsInferTimeline } from "../gen/bassist.js";
 import { keyNameAt } from "../model/song.js";
 import { sfDeclaredAt } from "../model/song.js";
-import { tonicPcOfName } from "../theory/key.js";
+import { tonicPcOfName } from "../theory/chords.js";
 import { chordAt } from "../gen/bassist.js";
 import { nextChange } from "../gen/bassist.js";
 import { isLocalDraft } from "../model/edits.js";

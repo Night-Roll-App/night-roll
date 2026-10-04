@@ -50,6 +50,19 @@ export function nameChord(pitches, sf) {
 export const SF_MAJOR = {0:"C",1:"G",2:"D",3:"A",4:"E",5:"B",6:"F#",7:"C#","-1":"F","-2":"Bb","-3":"Eb","-4":"Ab","-5":"Db","-6":"Gb","-7":"Cb"};
 export const LETTERS = "CDEFGAB";
 export const LETTER_PC = {C:0, D:2, E:4, F:5, G:7, A:9, B:11};
+// modes: semitones from the relative major up to the tonic — the signature
+// engraved is always the relative major's; the stored name keeps tonic+mode
+export const MODE_OFFSET = {major: 0, ionian: 0, dorian: 2, phrygian: 4, lydian: 5,
+                     mixolydian: 7, minor: 9, aeolian: 9, locrian: 11};
+export function tonicPcOfName(name) { // "G#m" / "D dorian" / "Bb" -> pc
+  const m = (name || "").match(/^([A-G])([#b]?)/);
+  return m ? (LETTER_PC[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0) + 12) % 12 : null;
+}
+export function modeOfName(name) {
+  const mm = (name || "").match(/\s([a-z]+)$/i);
+  if (mm && mm[1].toLowerCase() in MODE_OFFSET) return mm[1].toLowerCase();
+  return /m$/.test(name) && name.length > 1 ? "minor" : "major";
+}
 export function keySpelling(sf) {
   // map each pitch class -> {letter, acc} for this key signature
   const tonicName = SF_MAJOR[sf] || "C";

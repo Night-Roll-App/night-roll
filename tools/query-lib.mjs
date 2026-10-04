@@ -56,7 +56,7 @@ export async function loadSong(arg, {dedupe = true} = {}) {
       // first and refuse, same as the app's own publish guard
       rollnotesVersion: rnVersion, rollnotesReadOnly: rnReadOnly, rollnotesOrigin: rnOrigin,
       tracks: song.tracks.map(tr => ({name: tr.name || "",
-        notes: tr.notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p, v: n.v}))})),
+        notes: tr.notes.filter(n => !n.gone).map(n => ({t: n.t, d: n.d, p: n.p, v: n.v, ch: n.ch}))})),
       rollnotes: rollnotes.map(n => ({text: n.text, note: n.cnote, b1: n.b1, q1: n.q1, b2: n.b2, q2: n.q2,
         start: n.start, end: n.end, section: !!n.section, chord: !!n.chord,
         keydir: n.keydir, keypartial: n.keypartial, tsdir: n.tsdir, tempodir: n.tempodir,
