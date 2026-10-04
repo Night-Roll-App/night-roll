@@ -66,6 +66,9 @@ import { syncable } from "../ui/chrome.js";
 import { pubCheck } from "../ui/sheets.js";
 import { pubCompareDraft } from "../ui/sheets.js";
 import { logDebugImpl as logDebug } from "../ui/chrome.js";
+import { JOB_KINDS } from "../model/jobs.js";
+import { openPubJobSheet } from "../ui/sheets.js";
+import { setInfoImpl as setInfo } from "../ui/chrome.js";
 
 export async function putSongsText(path, text, h) { // text sibling files in the songs repo
   if (folderActive()) { await folderWrite(path, text); return {ok: true, status: 200}; }
@@ -655,4 +658,26 @@ export async function fingerprintOldDrafts() {
   } finally { S.pubCheckRunning = false; }
   updateSyncBtn();
   if (sheetOn() && S.song) renderSyncPending(); // the list as checked (and the "checking…" line gone)
+}
+
+// once per launch, a few seconds in (after the boot's own fetches): the
+// Publish (N) count is right before the sheet is ever opened
+export function initPublish1() {
+  if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprintOldDrafts().catch(() => {}); }, 4000);
+}
+
+export function initPublish2() {
+  JOB_KINDS.publish = {
+    label: j => "Publish · " + j.title,
+    open: j => openPubJobSheet(j), // the publish dialog (Josh, 2026-09-29: the old jump to File → Open → folder "brought me to a weird page")
+    retry: j => { const keys = (j.keys || []).filter(k => importDraftKeys().includes(k)); if (!keys.length) { setInfo(j.title + ": nothing left to publish"); return; } const job = publishJobStart(j.slug, keys, setInfo); if (job) openPubJobSheet(job); },
+  };
+}
+
+export function initPublish3() {
+  JOB_KINDS.publishall = {
+    label: j => j.title,
+    open: j => openPubJobSheet(j),
+    retry: j => { const job = publishAllJobStart(setInfo); if (job) openPubJobSheet(job); },
+  };
 }

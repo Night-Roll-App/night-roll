@@ -1515,6 +1515,9 @@ import { initKeyboard1 } from "./input/keyboard.js";
 import { initKeyboard2 } from "./input/keyboard.js";
 import { initHub1 } from "./import/hub.js";
 import { initCapture1 } from "./import/capture.js";
+import { initPublish1 } from "./sync/publish.js";
+import { initPublish2 } from "./sync/publish.js";
+import { initPublish3 } from "./sync/publish.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2053,16 +2056,10 @@ initNoteEditor4();
 
   
  
-     // once per launch, a few seconds in (after the boot's own fetches): the
-// Publish (N) count is right before the sheet is ever opened
-if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprintOldDrafts().catch(() => {}); }, 4000);
+     initPublish1();
 initSheets4();
 initChrome11();
- JOB_KINDS.publish = {
-  label: j => "Publish · " + j.title,
-  open: j => openPubJobSheet(j), // the publish dialog (Josh, 2026-09-29: the old jump to File → Open → folder "brought me to a weird page")
-  retry: j => { const keys = (j.keys || []).filter(k => importDraftKeys().includes(k)); if (!keys.length) { setInfo(j.title + ": nothing left to publish"); return; } const job = publishJobStart(j.slug, keys, setInfo); if (job) openPubJobSheet(job); },
-};
+ initPublish2();
   initChrome12();
     initCapture1();
  initChrome13();
@@ -2186,11 +2183,7 @@ askinput.addEventListener("keydown", e => {
             initSheets6();
 initWm2();
  initSheets7();
-JOB_KINDS.publishall = {
-  label: j => j.title,
-  open: j => openPubJobSheet(j),
-  retry: j => { const job = publishAllJobStart(setInfo); if (job) openPubJobSheet(job); },
-};
+initPublish3();
 initSheets8();
 
 initChrome16();
