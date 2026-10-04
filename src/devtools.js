@@ -73,6 +73,7 @@ import * as genAnalysis from "./gen/analysis.js";
 import * as renderRoll from "./render/roll.js";
 import * as renderTracks from "./render/tracks.js";
 import * as renderScore from "./render/score.js";
+import * as renderScorePrint from "./render/score-print.js";
 import * as renderInstrument from "./render/instrument.js";
 import * as renderCof from "./render/cof.js";
 import * as renderCompare from "./render/compare.js";
@@ -120,7 +121,7 @@ export function exposeGlobals() {
                      modelSong, modelSelection, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
                      importHub, importCapture, syncPublish,
                      genDrummer, genBassist, genAnalysis,
-                     renderRoll, renderTracks, renderScore, renderInstrument, renderCof, renderCompare,
+                     renderRoll, renderTracks, renderScore, renderScorePrint, renderInstrument, renderCof, renderCompare,
                      inputGestures, inputRecord, inputKeyboard,
                      askBackend, askTools, askContext, askBridge, askShots, askSheet, askClient, askHost,
                      uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm,

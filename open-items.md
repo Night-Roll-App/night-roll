@@ -7180,7 +7180,14 @@ blockers.mjs), step 12 (the ~320 top-level statements → init functions).
 5. Capture MIDI (keep the last ~60 s; "Keep that") — M
 6. Velocity lane — M
 7. Typed bar jump in the LCD; drag a cycle's middle to move it — S
-8. Score → PDF/print — M
+8. ~~Score → PDF/print — M~~ DONE 2026-10-04 (DAW F6, lane C, Fable worktree
+   branch; main merges): File ▾ → Export score… (Letter/A4) → `<song>-score.html`,
+   paged SVG from the score view's own engraver (`engraveMeasure`, split out of
+   `renderMeasure`), handed over by `deliverAudioFile` (share sheet / download).
+   No window.print, no PDF writer — NIGHT-ROLL.md "Export score". Device check
+   owed: share sheet → Print on the iPad; Save to Files → open → print to PDF;
+   Safari download on the Mac; a 3-staff song over several pages; a key change
+   mid-song (cancel naturals at a system start).
 Build after the module-split branch merges (they touch render/input code the split is moving).
 
 ## QUEUED 2026-10-04 — Game Boy Tetris: Korobeiniki missing from our capture (Josh, Terminal #107–108)

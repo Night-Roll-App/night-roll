@@ -228,27 +228,47 @@ export function renderMeasure(mi) {
   const dpr = window.devicePixelRatio || 1;
   c.width = Math.ceil((mw + SCORE_PAD * 2) * dpr);
   c.height = Math.ceil(scoreContentH() * dpr);
-  const geo = [], timeMap = [];
-  let noteStartXc = SCORE_PAD;
   const renderer = new VF.Renderer(c, VF.Renderer.Backends.CANVAS);
   const ctx2 = renderer.getContext();
   ctx2.scale(dpr, dpr);
   ctx2.setFillStyle("#C7D0E8");
   ctx2.setStrokeStyle("#C7D0E8");
+  const {geo, timeMap, noteStartX, keyChanged} = engraveMeasure(ctx2, mi, SCORE_PAD, 0, mw);
+  const entry = {canvas: c, geo, timeMap, mw, noteStartX, keyChanged};
+  S.scoreCache.set(key, entry);
+  if (S.scoreCache.size > 60) S.scoreCache.delete(S.scoreCache.keys().next().value);
+  return entry;
+}
+// The ONE engraver — the view's cached measure canvases (renderMeasure) and
+// Export score's SVG pages (render/score-print.js) both come through here, so
+// paper can never disagree with the screen. Engraves measure `mi` of
+// S.scoreModel onto a VexFlow context: staves stacked from (x0, y0), each
+// `mw` wide. opts.ink paints staves, notes, beams and ties one colour (print:
+// black on white) instead of the view's stave grey + track colours;
+// opts.intro adds the clef/key column the view keeps in renderIntro (plus the
+// declared time signature when intro.time) — a printed system's first bar
+// carries its own. Returns notehead geometry (context coordinates) and the
+// tick→x anchors the playhead glides between.
+export function engraveMeasure(ctx2, mi, x0, y0, mw, opts = {}) {
+  const m = S.scoreModel;
+  const geo = [], timeMap = [];
+  let noteStartXc = x0;
   const sfM = sfAt(mi * m.bt);
   const spell = sfDeclaredAt(mi * m.bt) === null ? SHARP_SPELL : spellFor(sfM);
   const sfPrev = mi > 0 ? sfAt((mi - 1) * m.bt) : sfM;
   const keyChanged = mi > 0 && sfM !== sfPrev;
   const built = []; // per-stave build products, formatted together below
   m.staves.forEach((st, si) => {
-    const y = SCORE_TOP + si * STAVE_H;
-    const stave = new VF.Stave(SCORE_PAD, y, mw, {fill_style: "#3A4569"});
+    const y = y0 + SCORE_TOP + si * STAVE_H;
+    const stave = new VF.Stave(x0, y, mw, {fill_style: opts.ink || "#3A4569"});
+    if (opts.intro) stave.addClef(st.clef);
     if (keyChanged && !st.drums) {
       // cancelKey draws naturals for the outgoing signature (essential when
       // the new key is C, whose own signature is empty)
       try { stave.addKeySignature(SF_MAJOR[sfM] || "C", SF_MAJOR[sfPrev] || "C"); }
       catch (e) { stave.addKeySignature(SF_MAJOR[sfM] || "C"); }
-    }
+    } else if (opts.intro && !st.drums && sfM !== 0) stave.addKeySignature(SF_MAJOR[sfM] || "C"); // roles, not pitches, on the kit staff
+    if (opts.intro && opts.intro.time && S.declaredTs) stave.addTimeSignature(S.declaredTs[0] + "/" + S.declaredTs[1]);
     stave.setContext(ctx2).draw();
     if (si === 0) noteStartXc = stave.getNoteStartX();
     const mkVoice = (events, stemDir, hideRests) => { // stemDir null = melodic auto
@@ -268,7 +288,7 @@ export function renderMeasure(mi) {
         } else {
           vn = new VF.StaveNote({clef: st.clef, keys: e.pitches.map(p => vexKey(p, spell)), duration: e.dur, auto_stem: true, dots: e.dots || 0});
         }
-        if (!e.hidden) vn.setStyle({fillStyle: st.color, strokeStyle: st.color});
+        if (!e.hidden) vn.setStyle({fillStyle: opts.ink || st.color, strokeStyle: opts.ink || st.color});
         for (let dd = 0; dd < e.dots; dd++) VF.Dot.buildAndAttach([vn], {all: true});
         e.vn = vn;
         vnotes.push(vn);
@@ -280,14 +300,14 @@ export function renderMeasure(mi) {
     };
     if (st.drums) { // hands (stems up) + feet (stems down), two voices, one staff
       const hands = st.measures[mi] || [], feet = (st.measuresFeet && st.measuresFeet[mi]) || [];
-      if (!hands.length && !feet.length) { timeMap.push({tick: mi * m.bt, x: SCORE_PAD}); return; }
+      if (!hands.length && !feet.length) { timeMap.push({tick: mi * m.bt, x: x0}); return; }
       const vH = mkVoice(hands, 1), vF = mkVoice(feet, -1, true);
       built.push({st, si, stave, voice: vH.voice, voice2: vF.voice,
                   vnotes: vH.vnotes, vnotes2: vF.vnotes, events: hands.concat(feet)});
       return;
     }
     const events = st.measures[mi] || [];
-    if (!events.length) { timeMap.push({tick: mi * m.bt, x: SCORE_PAD}); return; }
+    if (!events.length) { timeMap.push({tick: mi * m.bt, x: x0}); return; }
     const {voice, vnotes} = mkVoice(events, null);
     VF.Accidental.applyAccidentals([voice], SF_MAJOR[sfM] || "C");
     built.push({st, si, stave, voice, vnotes, events});
@@ -302,9 +322,10 @@ export function renderMeasure(mi) {
     const fmt = new VF.Formatter({softmaxFactor: 10});
     for (const b of built) fmt.joinVoices(b.voice2 ? [b.voice, b.voice2] : [b.voice]);
     fmt.format(built.flatMap(b => b.voice2 ? [b.voice, b.voice2] : [b.voice]),
-               mw - (built[0].stave.getNoteStartX() - SCORE_PAD) - 14);
+               mw - (built[0].stave.getNoteStartX() - x0) - 14);
   }
   for (const {st, si, stave, voice, voice2, vnotes, vnotes2, events} of built) {
+    const color = opts.ink || st.color;
     voice.draw(ctx2, stave);
     if (voice2) voice2.draw(ctx2, stave);
     // rests must break beams — beaming only the notes bridges beams straight
@@ -317,7 +338,7 @@ export function renderMeasure(mi) {
       try { beams = beams.concat(VF.Beam.generateBeams(vnotes2, beamOpts)); } catch (e) {}
     }
     beams.forEach(b => {
-      b.setStyle({fillStyle: st.color, strokeStyle: st.color});
+      b.setStyle({fillStyle: color, strokeStyle: color});
       b.setContext(ctx2).draw();
     });
     // ties within the measure
@@ -325,7 +346,7 @@ export function renderMeasure(mi) {
       if (!e.rest && e.tieFrom && e.tieFrom.vn && events.includes(e.tieFrom)) {
         const idx = e.pitches.map((_, k) => k);
         const tie = new VF.StaveTie({first_note: e.tieFrom.vn, last_note: e.vn, first_indices: idx, last_indices: idx});
-        if (tie.setStyle) tie.setStyle({fillStyle: st.color, strokeStyle: st.color});
+        if (tie.setStyle) tie.setStyle({fillStyle: color, strokeStyle: color});
         tie.setContext(ctx2).draw();
       }
     }
@@ -357,16 +378,13 @@ export function renderMeasure(mi) {
     else dedup.push(tm);
   }
   let hx = -Infinity;
-  const xCap = SCORE_PAD + mw - 4; // dense bars can engrave past their barline
+  const xCap = x0 + mw - 4; // dense bars can engrave past their barline
   for (const tm of dedup) { tm.x = Math.min(Math.max(tm.x, hx + 0.5), xCap); hx = tm.x; }
   // the cap can flatten the tail; re-spread the flattened run backwards so
   // motion stays strictly forward into the next measure
   for (let i = dedup.length - 2; i >= 0; i--)
     if (dedup[i].x >= dedup[i + 1].x) dedup[i].x = dedup[i + 1].x - 0.5;
-  const entry = {canvas: c, geo, timeMap: dedup, mw, noteStartX: noteStartXc, keyChanged};
-  S.scoreCache.set(key, entry);
-  if (S.scoreCache.size > 60) S.scoreCache.delete(S.scoreCache.keys().next().value);
-  return entry;
+  return {geo, timeMap: dedup, noteStartX: noteStartXc, keyChanged};
 }
 export function renderIntro() { // pinned-at-start clef / key / time column
   if (S.scoreIntro) return S.scoreIntro;
