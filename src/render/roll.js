@@ -553,3 +553,9 @@ export function drawAnalysisLayer(tickX, W) { // dashed/outlined — visually di
   for (const c of S.analysisBands.chords) drawBand(S.analysisChordLane, c.start, c.end, c.text);
   if (S.analysisBands.key) drawBand(S.analysisKeyLane, S.analysisBands.key.start, S.analysisBands.key.end, S.analysisBands.key.name + "~");
 }
+
+export function initRoll1() {
+  S.RULER_W = RULER_W_ROLL;
+  S.STRIP_Y = BASE_RULER_H;
+  S.RULER_H = S.STRIP_Y + STRIP_H;
+}

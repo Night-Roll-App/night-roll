@@ -1528,6 +1528,7 @@ import { initEngine1 } from "./audio/engine.js";
 import { initEngine2 } from "./audio/engine.js";
 import { initTransport1 } from "./audio/transport.js";
 import { initAlbum1 } from "./session/album.js";
+import { initRoll1 } from "./render/roll.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1562,9 +1563,7 @@ S.APP_MODE = (() => {
 }
          
  
-                                         S.RULER_W = RULER_W_ROLL;
-S.STRIP_Y = BASE_RULER_H;
-S.RULER_H = S.STRIP_Y + STRIP_H;
+                                         initRoll1();
            
 
 (function migrateAlbumPaths() {
