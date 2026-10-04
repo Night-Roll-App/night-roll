@@ -102,6 +102,18 @@ import { folderWrite } from "../platform/folder.js";
 import { writeMidi } from "../midi/write.js";
 import { serializeRollnotesStamped } from "../model/rollnotes.js";
 import { notesTxtFor } from "../model/rollnotes.js";
+import { updateChipBtn } from "../hooks.js";
+import { ownFolderPath } from "../model/provenance.js";
+import { LINK_SONGS } from "../platform/base.js";
+import { originOf } from "../model/provenance.js";
+import { updateSubtitle } from "../hooks.js";
+import { refreshKeysetLabel } from "./notes.js";
+import { isDirective } from "../model/rollnotes.js";
+import { activeNoteAt } from "../render/roll.js";
+import { sectionPathAt } from "../render/roll.js";
+import { playGateKick } from "../audio/transport.js";
+import { chipSource } from "../audio/chip.js";
+import { chipRenderAuto } from "../audio/chip-stream.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
@@ -916,4 +928,175 @@ export function cmpBar() {
   add("~" + d.changed + " changed" + (d.tracks.some(t => t.ti < 0) ? " · a deleted track is counted, not drawn" : ""));
   document.getElementById("cmpswap").textContent = mine ? "hear the saved copy" : "hear your version";
   bar.style.display = "";
+}
+
+// spilling under the right dock (window manager, build steps 1-2) — the song
+// area's own right edge is narrower than the window whenever a sheet is
+// docked. Every such clamp site uses this instead of window.innerWidth.
+// True .overlay modals (centered, full-viewport backdrop) are unaffected —
+// they cover the dock too, by design; only anchored menus need this.
+export function songRegionRight() {
+  const el = typeof document !== "undefined" && document.getElementById && document.getElementById("songregion");
+  const r = el && typeof el.getBoundingClientRect === "function" && el.getBoundingClientRect();
+  if (r && typeof r.width === "number") return (typeof r.right === "number" ? r.right : r.left + r.width);
+  return (typeof window !== "undefined" && window.innerWidth) || 1024;
+}
+// Lasso sits left of Select/Pencil/Erase on songs you can edit (Josh,
+// 2026-10-03), and in the footer otherwise — the edit row doesn't exist on
+// captures, where lasso is still the reading tool. One node, moved; its
+// listeners and id travel with it.
+export function placeLassoBtn(editable) {
+  const b = document.getElementById("lassobtn"), row = document.getElementById("editrow"), seg = document.getElementById("modeseg");
+  if (!b || !row || !seg || typeof row.insertBefore !== "function" || !b.parentNode) return; // the vm harness's stub elements can't move
+  if (!placeLassoBtn.home) placeLassoBtn.home = {parent: b.parentNode, next: b.nextSibling};
+  if (editable) { if (b.nextSibling !== seg) row.insertBefore(b, seg); b.classList.add("inrow"); }
+  else if (b.parentNode !== placeLassoBtn.home.parent) { placeLassoBtn.home.parent.insertBefore(b, placeLassoBtn.home.next); b.classList.remove("inrow"); }
+}
+export function updateEditBtnVisImpl() { // the edit ROW exists only on songs made in the app
+  // (or local .mid loads) — never on the FF captures (Josh, 2026-08-15)
+  if (typeof updateChipBtn === "function") updateChipBtn(); // chip-audio offer follows the song
+  // P1 (docs/provenance-plan.md): was its own isComposition()||isLocalDraft()
+  // ||songKey===null, missing the link-mode/compare-repo guards editableSong()
+  // has — one of the "three copies disagree" bugs the plan found; now the
+  // same call, so a linked song or the repo side of Compare hides the row here too.
+  const editable = editableSong();
+  if (!editable && S.mode !== null && S.mode !== "select") { // leaving an editable song mid-pencil
+    S.mode = null;
+    for (const x of document.querySelectorAll("#modeseg button"))
+      x.classList.remove("active");
+    document.getElementById("durseg").style.display = "none";
+    document.getElementById("velseg").style.display = "none";
+    document.getElementById("accseg").style.display = "none";
+  }
+  S.editOn = editable;
+  document.getElementById("editrow").classList.toggle("on", editable);
+  placeLassoBtn(editable);
+  if (editable) document.getElementById("velseg").style.display =
+    (S.mode === "pencil" || S.mode === "select") ? "" : "none";
+  document.getElementById("recbtn").style.display = editable ? "" : "none";
+  document.getElementById("editsheetbtn").style.display = editable ? "" : "none";
+  // a published song of the user's own, with no local copy here: offer to make one (Josh, 2026-09-27: ask first)
+  document.getElementById("editherebtn").style.display =
+    !editable && !!S.song && ownFolderPath(S.songKey) && !LINK_SONGS && !(S.cmp && S.cmp.showing === "repo") ? "" : "none";
+  // a capture or starter: never "edit here" (nothing of yours to pull down) —
+  // "✎ Edit" opens the "Edit a copy" sheet and forks one instead (Q4, docs/provenance-plan.md)
+  const origin = S.song && S.songKey ? originOf(S.songKey) : null;
+  document.getElementById("makeitminebtn").style.display =
+    !editable && !!S.song && (origin === "capture" || origin === "starter") && !LINK_SONGS && !(S.cmp && S.cmp.showing === "repo") ? "" : "none";
+}
+// ⊙ highlight toggle
+export function toggleHl() {
+  S.hlOn = !S.hlOn;
+  localStorage.setItem("ff1roll-hl", S.hlOn ? "1" : "0");
+  S.lastSubtitle = undefined; // rerender the strip so the button state updates
+  updateSubtitle();
+  draw();
+}
+export function updateLCD() {
+  if (!S.song) return;
+  const t = curTick();
+  const bt = barTicks(), tb = beatTicks();
+  const bar = Math.floor(t / bt) + 1;
+  const beat = Math.floor((t % bt) / tb) + 1;
+  let usq = S.song.tempos[0].usq;
+  for (const tp of S.song.tempos) { if (tp.tick <= t) usq = tp.usq; else break; }
+  const bpm = Math.round(6e7 / usq * S.playRate);
+  const meter = S.declaredTs ? S.declaredTs[0] + "/" + S.declaredTs[1] : "4/4?";
+  const partial = S.rollnotes.find(n => n.keypartial);
+  // same honesty as the meter's "4/4?": undeclared key = the C default, flagged.
+  // Normal, nothing declared/stored: "Gm~" — the estimate, tilde flags it as
+  // unconfirmed the same way "?" flags an undeclared default. Learning never
+  // reaches the estimate branch (appMode() gates it before estimateKey() runs).
+  const est = !keyNameAt(t) && !partial && appMode() === "normal" ? estimateKey() : null;
+  const key = keyNameAt(t) || (partial ? partial.keypartial + "?" : est ? est.name + "~" : "C?");
+  const s = bar + "|" + beat + "|" + bpm + "|" + meter + "|" + key;
+  if (s === S.lcdCache) return;
+  S.lcdCache = s;
+  document.getElementById("lcdbar").textContent = String(bar);
+  document.getElementById("lcdbeat").textContent = String(beat);
+  document.getElementById("lcdtempo").textContent = String(bpm);
+  document.getElementById("lcdmeter").textContent = meter;
+  document.getElementById("lcdkey").textContent = key;
+  // both segments are doors to their annotations (Josh, 2026-08-19)
+  document.getElementById("lcdmkseg").classList.toggle("tappable", true);
+  document.getElementById("lcdtemposeg").classList.toggle("tappable", true);
+}
+updateLCD = prof("updateLCD", updateLCD); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+export function updateSubtitleImpl() {
+  updateLCD(); // rides every cursor/playhead update
+  refreshKeysetLabel(); // cursor moved: keep "Set @ bar N" honest
+  const el = document.getElementById("subtitle");
+  // the slot exists for the whole song (constant height, no layout bounce);
+  // only its CONTENT follows the playhead
+  const hasNotes = !!S.song && S.rollnotes.some(n => !isDirective(n));
+  el.classList.toggle("on", hasNotes && S.subOn);
+  const n = S.song ? activeNoteAt(curTick()) : null;
+  if (n === S.lastSubtitle) return;
+  S.lastSubtitle = n;
+  el.innerHTML = "";
+  if (!n) return;
+  const where = document.createElement("span");
+  where.className = "where";
+  const sec = sectionPathAt(n.start);
+  where.textContent = "bar " + n.b1 + (n.b2 ? "–" + n.b2 : "") + (sec ? " · " + sec : "") +
+                      (n.added ? " · unsynced" : "");
+  const hl = document.createElement("button");
+  hl.className = "hl" + (S.hlOn ? " on" : "");
+  hl.textContent = "⊙ highlight";
+  hl.addEventListener("click", toggleHl);
+  el.append(where, document.createTextNode(n.text), hl);
+  el.scrollTop = 0;
+}
+updateSubtitleImpl = prof("updateSubtitle", updateSubtitleImpl); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+// Right after a launch the source resolve (album meta, this device's store,
+// the archive) takes seconds, and chip.rendering is only set after it: a Play
+// in that window went out on synth voices (Josh, 2026-09-29, Chrono Cross,
+// twice after a reload). chip.resolving lets play() wait for the decision.
+export function updateChipBtnImpl() {
+  const key = S.songKey, p = updateChipBtnInner();
+  chip.resolving = {key, p};
+  p.catch(() => {}).finally(() => { if (chip.resolving && chip.resolving.p === p) chip.resolving = null; });
+  playGateKick();
+  return p;
+}
+export async function updateChipBtnInner() { // name kept for call sites; now just the auto-render kick
+  // "the chip button should not even have to exist" (Josh, 2026-08-17): chip
+  // audio simply plays when a source resolves. Per-track override lives in
+  // the voice menu — auto = the console own sound, an explicit instrument
+  // swaps that track to synthesis.
+  if (chip.fail && chip.fail.key === S.songKey) chip.fail = null; // this attempt starts clean
+  const available = chipTrackNo() !== null || (await chipSource()) !== null;
+  logDebug("song open: console source " + (available ? "found" : chip.fail && chip.fail.key === S.songKey ? "FAILED — " + chip.fail.why : "none (synth voices)"));
+  // a lookup that FAILED (not "this song has none") must never pass for synth
+  // silently (Josh, 2026-09-30: "sometimes the instruments never load"): say
+  // why; the next ▶ tries again
+  if (!available && chip.fail && chip.fail.key === S.songKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again");
+  // an import capture with NO reachable NSF plays synthesized — say so ONCE,
+  // loudly enough to find (Josh listened to synth for an hour believing it
+  // was the chip, 2026-08-17): the ⚠ log names the fix
+  if (!available && S.songKey && S.songKey.startsWith("albums/imports/") &&
+      updateChipBtn.warned !== S.songKey && await chipAlbumHasSource()) {
+    updateChipBtn.warned = S.songKey;
+    logErr("chip audio unavailable for " + S.songKey.split("/").pop() +
+           " — no NSF on this device (captures made before NSF storage, or another device's import). " +
+           "Re-import the album's NSF once, or commit the album; playing synthesized voices meanwhile.");
+  }
+  if (available && chip.key !== S.songKey && chip.rendering !== S.songKey) {
+    if (chip.key && chip.key !== S.songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chip.pan = null; chipPreviewCache.clear(); if (S.chipWorker && S.chipWorker.__key !== S.songKey) { try { S.chipWorker.terminate(); } catch (err) { /* gone */ } S.chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
+    chip.rendering = S.songKey;
+    const forKey = S.songKey;
+    chip.renderPromise = chipRenderAuto().catch(err => {
+      // name + message (a module-load failure now names its path — fix 2),
+      // and the heap if the browser exposes it: a real 404 vs an allocation
+      // failure used to look identical in this one line (Josh's iPad, FF7
+      // failing the same way Challenge just had, 2026-09-30)
+      const heap = (typeof performance !== "undefined" && performance.memory && performance.memory.usedJSHeapSize) ? " · heap " + Math.round(performance.memory.usedJSHeapSize / 1e6) + " MB" : "";
+      const detail = (err && err.name ? err.name + ": " : "") + (err && err.message || err);
+      chip.fail = {key: forKey, why: "the console render failed for " + songTitleOf(forKey) + " (" + detail + ")" + heap};
+      if (S.songKey === forKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again");
+      logDebug("render failed: " + chip.fail.why);
+      return false;
+    }) // not renderable: synth carries the song, and says so
+      .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
+  }
 }

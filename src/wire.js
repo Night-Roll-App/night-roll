@@ -8,6 +8,7 @@ import {
   setInfoImpl, logErrImpl, logDebugImpl, appConfirmImpl, updateJobsBtnImpl,
   drawImpl, playbackFrameImpl, clampViewImpl, updateSongBtnImpl, updateSyncBtnImpl,
   srAnnounceImpl, scheduleBackupFlushImpl,
+  updateEditBtnVisImpl, updateChipBtnImpl, updateSubtitleImpl, // docs/split-phase2-plan.md step 7
 } from "./ui/chrome.js";
 import { buildScoreModelImpl } from "./render/score.js";
 import { songTitleOfImpl } from "./ask/context.js";
@@ -16,8 +17,7 @@ import { drumStepImpl, annoInLassoImpl } from "./render/roll.js";
 import { fitViewImpl, finalizeNotesImpl, updateSongMetaImpl } from "./session/song.js";
 import { albumAdvanceImpl } from "./session/album.js";
 import {
-  renderTrackbarImpl, updateEditBtnVisImpl, updateChipBtnImpl,
-  updateSubtitleImpl, askRenderImpl, recFinishImpl,
+  renderTrackbarImpl, askRenderImpl, recFinishImpl,
 } from "./app.js";
 
 export function installHooks() {

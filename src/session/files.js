@@ -8,7 +8,7 @@ import { idbAudioMove } from "../platform/storage.js";
 import { rememberLastSong } from "../platform/base.js";
 import { reflectSongURL } from "./song.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
-import { updateEditBtnVis } from "../hooks.js";
+import { updateEditBtnVisImpl as updateEditBtnVis } from "../ui/chrome.js";
 import { isUnsaved } from "../model/provenance.js";
 import { slugify } from "../model/provenance.js";
 import { draftStoreKey } from "../platform/storage.js";

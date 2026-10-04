@@ -16,7 +16,7 @@ import { rememberLastSong } from "../platform/base.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { loadSong } from "./song.js";
 import { ALBUM_MAX_FAILS } from "../audio/transport.js";
-import { updateChipBtn } from "../hooks.js";
+import { updateChipBtnImpl as updateChipBtn } from "../ui/chrome.js";
 import { chip } from "../audio/chip.js";
 import { audioReady } from "../audio/clips.js";
 import { playGateWait } from "../audio/transport.js";
