@@ -117,3 +117,9 @@ export function albumAdvanceImpl() { // from the scheduler timer, once the pass 
   run.advancing = false;
   if (S.albumRun === run) albumPlayIdx(run.idx + 1);
 }
+
+export function initAlbum1() {
+  document.getElementById("albumprev").addEventListener("click", albumPrev);
+  document.getElementById("albumnext").addEventListener("click", albumNext);
+  document.getElementById("albumleave").addEventListener("click", albumLeave);
+}
