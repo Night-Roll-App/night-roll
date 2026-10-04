@@ -30,6 +30,14 @@ import { askStoreKey } from "./sheet.js";
 import { cfg } from "../platform/storage.js";
 import { ASK_TERMINAL_KEY } from "./bridge.js";
 import { songTitleOf } from "../hooks.js";
+import { keyLabelState } from "../ui/chrome.js";
+import { editableSong } from "../model/song.js";
+import { baseName } from "../model/rollnotes.js";
+import { nameChord } from "../theory/chords.js";
+import { askAnnotationsTextCompact } from "./tools.js";
+import { askAnnotationsText } from "./tools.js";
+import { dedupedNotesWithIndex } from "../model/rollnotes.js";
+import { askAnnotationStructural } from "./tools.js";
 
 // resolved in boot() once the manifest is in
 export function songTitleOfImpl(path) {
@@ -505,4 +513,70 @@ export function askTerminalContext() {
   const ns = askNewSinceLines(ASK_TERMINAL_KEY);
   if (ns) parts.push(ns);
   return parts.length ? parts.join("\n") : null;
+}
+
+// askKeyStateLine (P4): Learning matches keyLabelState()'s text BYTE FOR
+// BYTE (built from data now, never the DOM — see keyLabelState's comment);
+// Normal states declared-vs-estimated plainly instead, since an estimate
+// may be named under RULE_NORMAL.
+export function askKeyStateLine() {
+  if (appMode() !== "normal") return "key state: " + keyLabelState().text + " — 'not set' means the user has NOT discovered the key; do not reveal it";
+  if (S.keyRegions.length) return "key state: declared " + S.keyRegions.map(r => r.name + (r.b2 ? "(" + r.b1 + "–" + r.b2 + ")" : "")).join(", ");
+  const est = estimateKey();
+  return est ? "key state: estimated " + est.name + " (Krumhansl, confidence " + (Math.round(est.conf * 100) / 100) + ")"
+             : "key state: undetermined — not enough notes yet to estimate";
+}
+export function askContext(sp, budget) { // the ONE block per request; never stored
+  if (S.askGeneral) {
+    let s = "general chat — no song attached. The user opened the general Ask: for the app, the project, music in general, or a message for the terminal; nothing here is about one song. Do not read or discuss the open song unless asked, and do not add annotations. " +
+      (appMode() === "normal" ? "The tutor rule about answering music questions directly still holds." : "The tutor rule about the user's own discoveries still holds for music questions.") +
+      (appMode() === "normal" ? "\nmode: normal" : "") + "\n" + askAppState();
+    const openLine = askOpenSongLine();
+    if (openLine) s += "\n" + openLine;
+    const ns = askNewSinceLines(askStoreKey());
+    if (ns) s += "\n" + ns;
+    return s;
+  }
+  const bt = barTicks(), qt = beatTicks(), ts = effTs();
+  const tick = curTick();
+  const own = editableSong(); // P1: was missing the link-mode/compare-repo guards editableSong() has (Bugs found, docs/provenance-plan.md) — a linked/compare-repo song now correctly tells the tutor it's locked, like everywhere else
+  const tempo = S.song.tempos.reduce((acc, t) => (t.tick <= sp.t0 ? t : acc), S.song.tempos[0]);
+  const L = [];
+  L.push("song: " + baseName() + (S.songKey && S.songKey.startsWith("albums/") ? " (album: " + S.songKey.split("/")[1] + ")" : "") +
+         (own ? " — the user's own composition (editable)" : " — a locked capture the user is studying"));
+  L.push("meter: " + ts[0] + "/" + ts[1] + " (beat = " + (ts[1] === 8 ? "eighth" : ts[1] === 16 ? "sixteenth" : ts[1] === 2 ? "half note" : "quarter") + "), tempo: " +
+         Math.round(6e7 / tempo.usq) + " bpm, " + Math.max(1, Math.ceil(S.songEndTick / bt)) + " bars");
+  L.push("tracks: " + S.song.tracks.map((t, i) => (t.name || "track " + (i + 1)) + (trackIsDrums(i) ? " (drums)" : "") + (trackAudible(i) ? "" : " (muted)")).join(", "));
+  L.push(askViewCursorLine(bt, qt, tick));
+  L.push(askKeyStateLine());
+  const modeLine = askModeLine();
+  if (modeLine) L.push(modeLine);
+  L.push(askAppState());
+  if (S.multiSel.length) {
+    const pitches = [...new Set(S.multiSel.map(m => S.song.tracks[m.ti].notes[m.ni].p))].sort((a, b) => a - b);
+    const names = pitches.map(p => pitchName(p, S.multiSelSf)).join(" ");
+    L.push(appMode() === "normal"
+      ? "lasso-selected notes: " + names + " — chord: " + nameChord(pitches, S.multiSelSf)
+      : "lasso-selected notes: " + names + " — do not name this chord unless the user has guessed or insists");
+  }
+  const cacheKey = askStoreKey();
+  // step 5 (docs/ask-token-plan.md): the BRIDGE gets the compact encodings
+  // (askSpanNotesCompact/askAnnotationsTextCompact) — a resumed Claude Code
+  // session is the only backend that can lean on a one-time legend instead
+  // of a format explanation every turn; a local/LM Studio provider has no
+  // memory of its own, so it keeps today's full, self-explaining format.
+  if (S.askCaps.bridge) {
+    const sent = askSentGet(cacheKey);
+    if (!sent.legend) { L.push(askLegendText()); askSentStage(cacheKey, "legend", true); }
+  }
+  const anno = S.askCaps.bridge ? askAnnotationsTextCompact() : askAnnotationsText();
+  const annoCap = budget.anno * ASK_CPT;
+  const annoFull = anno.length > annoCap ? anno.slice(0, annoCap) + "\n# (annotations cut here to fit the window)" : anno;
+  const annoCount = S.askCaps.bridge ? dedupedNotesWithIndex(S.rollnotes).filter(({n}) => !askAnnotationStructural(n)).length : dedupedNotesWithIndex(S.rollnotes).length;
+  L.push(askCachedBlock(cacheKey, "anno", "annotations", "the user's annotations (.rollnotes) — each entry's \"id\" is this turn's handle for edit_annotation/delete_annotation", annoFull, annoCount));
+  const spanLabel = "notes in bars " + sp.from + "–" + sp.to;
+  L.push(askSpanCachedBlock(cacheKey, spanLabel, sp.t0, sp.t1, budget.span * ASK_CPT)); // step 6: per-bar collapsing on the bridge (askSpanNotesCompactCached), full askSpanNotes otherwise — see both above
+  const ns = askNewSinceLines(askStoreKey());
+  if (ns) L.push(ns);
+  return L.join("\n");
 }
