@@ -33,6 +33,19 @@ import { snapBeat } from "../model/grid.js";
 import { setEndBQ } from "../model/rollnotes.js";
 import { dropSupersededBy } from "../model/rollnotes.js";
 import { isTripletDur } from "../model/grid.js";
+import { trackShown } from "../render/roll.js";
+import { annoSnapshot } from "../model/edits.js";
+import { annoRestore } from "../model/rollnotes.js";
+import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
+import { saveLocalNotes } from "../model/edits.js";
+import { pruneTombstones } from "../model/edits.js";
+import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
+import { renderTrackbarImpl as renderTrackbar } from "./trackbar.js";
+import { updateTrackGains } from "../audio/engine.js";
+import { saveDraft } from "../model/versions.js";
+import { renderMixer } from "./mixer.js";
+import { saveEdits } from "../model/edits.js";
+import { computeSongEnd } from "../model/song.js";
 
 // fractional rotation while a finger is spinning the wheel
 // Insert-chord (Josh, 2026-08-17): stamp a full chord at the cursor with the
@@ -447,4 +460,104 @@ export function gridFollowNote(n) {
   S.pencilDur = (4 / S.pencilNV) * S.pencilMod;
   syncDurSeg();
   return true;
+}
+
+export function selectAllNotes() { // ⌘A: every visible note (hidden tracks stay out — H means out of reach)
+  if (!S.song) return 0;
+  S.multiSel = [];
+  S.song.tracks.forEach((tr, ti) => { if (!trackShown(ti) || tr.kind === "audio") return; tr.notes.forEach((n, ni) => { if (!n.gone) S.multiSel.push({ti, ni}); }); });
+  S.multiSelKey = new Set(S.multiSel.map(({ti, ni}) => ti + ":" + ni));
+  S.selNote = null; S.lassoAnno = null;
+  if (typeof refreshSelInfo === "function") refreshSelInfo();
+  draw();
+  return S.multiSel.length;
+}
+export function invertEdit(u) { // the entry that would undo an applyU(u), captured NOW
+  if (u.kind === "group") return {kind: "group", entries: u.entries.map(invertEdit).reverse()};
+  if (u.kind === "trackRemove") return {kind: "trackInsert", ti: u.ti, track: S.song.tracks[u.ti],
+    raw: S.song.rawNotes ? S.song.rawNotes[u.ti] : null, state: S.trackState[u.ti]};
+  if (u.kind === "trackInsert") return {kind: "trackRemove", ti: u.ti};
+  if (u.kind === "trackReorder") return {kind: "trackReorder", tracks: S.song.tracks.slice(), trackState: S.trackState.slice(), // current state, like anno/mod
+    trackGains: S.trackGains.slice(), trackPanners: S.trackPanners.slice(), rawNotes: S.song.rawNotes ? S.song.rawNotes.slice() : null,
+    selTrack: S.selTrack, selNote: S.selNote ? {ti: S.selNote.ti, ni: S.selNote.ni} : null, selClip: S.selClip ? {ti: S.selClip.ti, ci: S.selClip.ci} : null};
+  if (u.kind === "mod") return {kind: "mod", items: u.items.map(({ti, ni}) => {
+    const n = S.song.tracks[ti].notes[ni];
+    return {ti, ni, t: n.t, d: n.d, p: n.p, v: n.v};
+  })};
+  if (u.kind === "addBatch") return {kind: "eraseBatch", items: u.items};
+  if (u.kind === "eraseBatch") return {kind: "addBatch", items: u.items};
+  if (u.kind === "anno") return {kind: "anno", json: annoSnapshot()}; // current state, like mod
+  return {ti: u.ti, ni: u.ni, kind: u.kind === "add" ? "erase" : "add"};
+}
+export function editRedoPop() {
+  const r = S.editRedo.pop();
+  if (!r || !S.song) return;
+  S.editUndo.push(invertEdit(r)); // plain push: redo must not clear its own stack
+  applyEditEntry(r);
+}
+export function editUndoPop() {
+  const u = S.editUndo.pop();
+  if (!u || !S.song) return;
+  S.editRedo.push(invertEdit(u));
+  applyEditEntry(u);
+}
+export function applyEditEntry(u) {
+  const setGone = (ti, ni, gone) => {
+    const nn = S.song.tracks[ti] && S.song.tracks[ti].notes[ni];
+    if (!nn) return;
+    nn.gone = gone;
+    if (S.song.rawNotes && nn.ri !== undefined && S.song.rawNotes[ti][nn.ri]) S.song.rawNotes[ti][nn.ri].gone = gone;
+  };
+  const applyU = v => {
+    if (v.kind === "group") { for (let i = v.entries.length - 1; i >= 0; i--) applyU(v.entries[i]); }
+    else if (v.kind === "mod") { // restore each note's prior time/duration/pitch
+      for (const it of v.items) {
+        const nn = S.song.tracks[it.ti] && S.song.tracks[it.ti].notes[it.ni];
+        if (!nn) continue;
+        nn.t = it.t; nn.d = it.d; nn.p = it.p;
+        if (it.v !== undefined) nn.v = it.v;
+        const rn = S.song.rawNotes && nn.ri !== undefined && S.song.rawNotes[it.ti][nn.ri];
+        if (rn) { rn.t = it.t + S.chopS; rn.d = it.d; rn.p = it.p; if (it.v !== undefined) rn.v = it.v; }
+      }
+    } else if (v.kind === "anno") { // restore the whole annotation layer
+      annoRestore(v.json);
+      finalizeNotes();
+      saveLocalNotes();
+      pruneTombstones();
+      if (S.viewMode === "score") buildScoreModel();
+    } else if (v.kind === "trackInsert") { // put a deleted track back where it was
+      S.song.tracks.splice(v.ti, 0, v.track);
+      if (S.song.rawNotes) S.song.rawNotes.splice(v.ti, 0, v.raw || []);
+      S.trackState.splice(v.ti, 0, v.state || {muted: false, solo: false});
+      S.selTrack = v.ti;
+      S.multiSel = []; S.multiSelKey = new Set(); S.selNote = null;
+      renderTrackbar(); updateTrackGains();
+    } else if (v.kind === "trackRemove") {
+      S.song.tracks.splice(v.ti, 1);
+      if (S.song.rawNotes) S.song.rawNotes.splice(v.ti, 1);
+      S.trackState.splice(v.ti, 1);
+      S.selTrack = Math.max(0, Math.min(S.selTrack, S.song.tracks.length - 1));
+      S.multiSel = []; S.multiSelKey = new Set(); S.selNote = null;
+      renderTrackbar(); updateTrackGains();
+    } else if (v.kind === "trackReorder") { // Mixer drag reorder: a full snapshot restore, not a re-derived move — see reorderTrack()
+      S.song.tracks = v.tracks.slice();
+      S.trackState = v.trackState.slice();
+      S.trackGains = v.trackGains.slice();
+      S.trackPanners = v.trackPanners.slice();
+      if (v.rawNotes) S.song.rawNotes = v.rawNotes.slice();
+      S.selTrack = v.selTrack;
+      S.selNote = v.selNote ? {ti: v.selNote.ti, ni: v.selNote.ni} : null;
+      S.selClip = v.selClip ? {ti: v.selClip.ti, ci: v.selClip.ci} : null;
+      S.multiSel = []; S.multiSelKey = new Set();
+      saveDraft(); // the track order is draft-only state; saveEdits() below drafts only compositions and local songs
+      renderTrackbar(); renderMixer(); updateTrackGains();
+    } else if (v.kind === "addBatch") { for (const it of v.items) setGone(it.ti, it.ni, true); }
+    else if (v.kind === "eraseBatch") { for (const it of v.items) setGone(it.ti, it.ni, false); }
+    else setGone(v.ti, v.ni, v.kind === "add"); // undo an add = remove it; undo an erase = restore it
+  };
+  applyU(u);
+  saveEdits();
+  computeSongEnd();
+  if (S.viewMode === "score") buildScoreModel();
+  draw();
 }

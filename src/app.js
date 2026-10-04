@@ -1435,6 +1435,11 @@ import { initChrome1 } from "./ui/chrome.js";
 import { convertAnchors } from "./model/rollnotes.js";
 import { shiftAnchors } from "./model/rollnotes.js";
 import { annoRestore } from "./model/rollnotes.js";
+import { editUndoPop } from "./ui/note-editor.js";
+import { editRedoPop } from "./ui/note-editor.js";
+import { selectAllNotes } from "./ui/note-editor.js";
+import { invertEdit } from "./ui/note-editor.js";
+import { applyEditEntry } from "./ui/note-editor.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1608,17 +1613,7 @@ document.getElementById("octbtn").addEventListener("click", () => {
   refreshSelInfo();
 });
   
-   function selectAllNotes() { // ⌘A: every visible note (hidden tracks stay out — H means out of reach)
-  if (!S.song) return 0;
-  S.multiSel = [];
-  S.song.tracks.forEach((tr, ti) => { if (!trackShown(ti) || tr.kind === "audio") return; tr.notes.forEach((n, ni) => { if (!n.gone) S.multiSel.push({ti, ni}); }); });
-  S.multiSelKey = new Set(S.multiSel.map(({ti, ni}) => ti + ":" + ni));
-  S.selNote = null; S.lassoAnno = null;
-  if (typeof refreshSelInfo === "function") refreshSelInfo();
-  draw();
-  return S.multiSel.length;
-}
- function openInsertBars() {
+    function openInsertBars() {
   const bt = barTicks(), qt = beatTicks();
   document.getElementById("insb").value = Math.floor(S.playCursor / bt) + 1;
   document.getElementById("insq").value = Math.round(((S.playCursor % bt) / qt + 1) * 100) / 100;
@@ -4663,96 +4658,7 @@ document.getElementById("delbtn").addEventListener("click", () => {
   setInfo(k ? "deleted " + k + " note" + (k === 1 ? "" : "s") + " (undo restores them)"
             : "nothing selected — lasso or tap notes first");
 });
- function invertEdit(u) { // the entry that would undo an applyU(u), captured NOW
-  if (u.kind === "group") return {kind: "group", entries: u.entries.map(invertEdit).reverse()};
-  if (u.kind === "trackRemove") return {kind: "trackInsert", ti: u.ti, track: S.song.tracks[u.ti],
-    raw: S.song.rawNotes ? S.song.rawNotes[u.ti] : null, state: S.trackState[u.ti]};
-  if (u.kind === "trackInsert") return {kind: "trackRemove", ti: u.ti};
-  if (u.kind === "trackReorder") return {kind: "trackReorder", tracks: S.song.tracks.slice(), trackState: S.trackState.slice(), // current state, like anno/mod
-    trackGains: S.trackGains.slice(), trackPanners: S.trackPanners.slice(), rawNotes: S.song.rawNotes ? S.song.rawNotes.slice() : null,
-    selTrack: S.selTrack, selNote: S.selNote ? {ti: S.selNote.ti, ni: S.selNote.ni} : null, selClip: S.selClip ? {ti: S.selClip.ti, ci: S.selClip.ci} : null};
-  if (u.kind === "mod") return {kind: "mod", items: u.items.map(({ti, ni}) => {
-    const n = S.song.tracks[ti].notes[ni];
-    return {ti, ni, t: n.t, d: n.d, p: n.p, v: n.v};
-  })};
-  if (u.kind === "addBatch") return {kind: "eraseBatch", items: u.items};
-  if (u.kind === "eraseBatch") return {kind: "addBatch", items: u.items};
-  if (u.kind === "anno") return {kind: "anno", json: annoSnapshot()}; // current state, like mod
-  return {ti: u.ti, ni: u.ni, kind: u.kind === "add" ? "erase" : "add"};
-}
-function editRedoPop() {
-  const r = S.editRedo.pop();
-  if (!r || !S.song) return;
-  S.editUndo.push(invertEdit(r)); // plain push: redo must not clear its own stack
-  applyEditEntry(r);
-}
-function editUndoPop() {
-  const u = S.editUndo.pop();
-  if (!u || !S.song) return;
-  S.editRedo.push(invertEdit(u));
-  applyEditEntry(u);
-}
-function applyEditEntry(u) {
-  const setGone = (ti, ni, gone) => {
-    const nn = S.song.tracks[ti] && S.song.tracks[ti].notes[ni];
-    if (!nn) return;
-    nn.gone = gone;
-    if (S.song.rawNotes && nn.ri !== undefined && S.song.rawNotes[ti][nn.ri]) S.song.rawNotes[ti][nn.ri].gone = gone;
-  };
-  const applyU = v => {
-    if (v.kind === "group") { for (let i = v.entries.length - 1; i >= 0; i--) applyU(v.entries[i]); }
-    else if (v.kind === "mod") { // restore each note's prior time/duration/pitch
-      for (const it of v.items) {
-        const nn = S.song.tracks[it.ti] && S.song.tracks[it.ti].notes[it.ni];
-        if (!nn) continue;
-        nn.t = it.t; nn.d = it.d; nn.p = it.p;
-        if (it.v !== undefined) nn.v = it.v;
-        const rn = S.song.rawNotes && nn.ri !== undefined && S.song.rawNotes[it.ti][nn.ri];
-        if (rn) { rn.t = it.t + S.chopS; rn.d = it.d; rn.p = it.p; if (it.v !== undefined) rn.v = it.v; }
-      }
-    } else if (v.kind === "anno") { // restore the whole annotation layer
-      annoRestore(v.json);
-      finalizeNotes();
-      saveLocalNotes();
-      pruneTombstones();
-      if (S.viewMode === "score") buildScoreModel();
-    } else if (v.kind === "trackInsert") { // put a deleted track back where it was
-      S.song.tracks.splice(v.ti, 0, v.track);
-      if (S.song.rawNotes) S.song.rawNotes.splice(v.ti, 0, v.raw || []);
-      S.trackState.splice(v.ti, 0, v.state || {muted: false, solo: false});
-      S.selTrack = v.ti;
-      S.multiSel = []; S.multiSelKey = new Set(); S.selNote = null;
-      renderTrackbar(); updateTrackGains();
-    } else if (v.kind === "trackRemove") {
-      S.song.tracks.splice(v.ti, 1);
-      if (S.song.rawNotes) S.song.rawNotes.splice(v.ti, 1);
-      S.trackState.splice(v.ti, 1);
-      S.selTrack = Math.max(0, Math.min(S.selTrack, S.song.tracks.length - 1));
-      S.multiSel = []; S.multiSelKey = new Set(); S.selNote = null;
-      renderTrackbar(); updateTrackGains();
-    } else if (v.kind === "trackReorder") { // Mixer drag reorder: a full snapshot restore, not a re-derived move — see reorderTrack()
-      S.song.tracks = v.tracks.slice();
-      S.trackState = v.trackState.slice();
-      S.trackGains = v.trackGains.slice();
-      S.trackPanners = v.trackPanners.slice();
-      if (v.rawNotes) S.song.rawNotes = v.rawNotes.slice();
-      S.selTrack = v.selTrack;
-      S.selNote = v.selNote ? {ti: v.selNote.ti, ni: v.selNote.ni} : null;
-      S.selClip = v.selClip ? {ti: v.selClip.ti, ci: v.selClip.ci} : null;
-      S.multiSel = []; S.multiSelKey = new Set();
-      saveDraft(); // the track order is draft-only state; saveEdits() below drafts only compositions and local songs
-      renderTrackbar(); renderMixer(); updateTrackGains();
-    } else if (v.kind === "addBatch") { for (const it of v.items) setGone(it.ti, it.ni, true); }
-    else if (v.kind === "eraseBatch") { for (const it of v.items) setGone(it.ti, it.ni, false); }
-    else setGone(v.ti, v.ni, v.kind === "add"); // undo an add = remove it; undo an erase = restore it
-  };
-  applyU(u);
-  saveEdits();
-  computeSongEnd();
-  if (S.viewMode === "score") buildScoreModel();
-  draw();
-}
-document.getElementById("undobtn").addEventListener("click", editUndoPop);
+ document.getElementById("undobtn").addEventListener("click", editUndoPop);
 document.getElementById("redobtn").addEventListener("click", editRedoPop);
 // keyboard editing — every drag gesture has a key equivalent (easier on the
 // hands): arrows move, shift = octave, alt+arrows resize, cmd-c/v copy/paste
@@ -5587,4 +5493,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "homeSong": () => homeSong, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
+export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "homeSong": () => homeSong, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
