@@ -4,16 +4,12 @@ import { appDebug } from "../model/jobs.js";
 import { S } from "../state.js";
 import { cfg } from "../platform/storage.js";
 import { songTitleOfImpl as songTitleOf } from "./context.js";
-import { askStripContext } from "./context.js";
 import { baseName } from "../model/rollnotes.js";
 import { appMode } from "../platform/mode.js";
 import { ASK_TOOLS } from "./tools.js";
 import { aiUrl } from "./backend.js";
-import { aiHostKind } from "./backend.js";
 import { setControl } from "../ui/controls.js";
-import { aiHeaders } from "./backend.js";
 import { askstatus } from "./sheet.js";
-import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { folderActive } from "../platform/folder.js";
 import { folderRead } from "../platform/folder.js";
 import { folderWrite } from "../platform/folder.js";
@@ -40,10 +36,19 @@ import { askRenderImpl as askRender } from "./sheet.js";
 import { askResume } from "./client.js";
 import { askResumeSoon } from "./client.js";
 import { askSentReset } from "./context.js";
+import { askHost } from "./host.js";
+// The store, the seen cursor, the pending markers and the bridge's own
+// routes live in the AI library (vendor/ai/web/{store,bridge-client}.js,
+// step 4) — under the same storage keys (askHost().keys) and the same wire.
+// What stays here is Night Roll's: which lines count as "new" (askMaxErrId/
+// askMaxStatusId), the repo log (askLog*/askCommitLog), and every render.
+import { AI_LOCAL_SOFT, AI_TOTAL_CAP, aiStoreGet, aiStoreSave, aiUnsavedCount, aiRevertToSaved, aiEvictOthers, aiPendingAll, aiPendingIndex, aiJobId, aiSeenKey, aiSeenGet, aiSeenMax, aiSeenSet, aiSeenAdvance, aiSeenStage, aiSeenCommit, aiSeenDrop, aiLogMarkdown } from "../../vendor/ai/web/store.js";
+import { aiJobsSupported, aiInboxFetch, aiStatusFetch, aiSessionGet, aiSessionCompact, aiTerminalPrefsGet, aiTerminalPrefsSet, aiAppState, aiDeploy } from "../../vendor/ai/web/bridge-client.js";
+import { aiHostAllowed } from "../../vendor/ai/web/backends.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
 // never crowd out saveDraft (drafts are the only copy of unsynced music)
-export const ASK_LOCAL_SOFT = 256 * 1024, ASK_TOTAL_CAP = 512 * 1024;
+export const ASK_LOCAL_SOFT = AI_LOCAL_SOFT, ASK_TOTAL_CAP = AI_TOTAL_CAP;
 // General chat (2026-09-27, Josh via the bridge: "some sort of main ask
 // section that's not per song … I'm talking to you on the death song from
 // Final Fantasy but nothing we're talking about has anything to do with
@@ -73,14 +78,8 @@ export function askLogShared(storeKey) { return storeKey === ASK_GENERAL_KEY || 
 // already tells them apart, so its value doubles as the cursor's own key),
 // "seen up to id" for both logs. Device-local localStorage is right: it's UI
 // state (what THIS device has already told the bridge), not song state.
-export function askSeenKey(key) { return (key || askStoreKey()) + "-seen"; }
-export function askSeenGet(key) {
-  try {
-    const j = JSON.parse(localStorage.getItem(askSeenKey(key)) || "null");
-    if (j && typeof j === "object") return {err: j.err || 0, status: j.status || 0};
-  } catch (err) { /* corrupt: nothing seen yet */ }
-  return {err: 0, status: 0};
-}
+export function askSeenKey(key) { return aiSeenKey(askHost(), key); }
+export function askSeenGet(key) { return aiSeenGet(askHost(), key); }
 export function askMaxErrId() { let m = 0; for (const l of appErrors) if (l.id > m) m = l.id; for (const l of appDebug) if (l.id > m) m = l.id; return m; }
 export function askMaxStatusId() { return S.statusHistory.length ? S.statusHistory[S.statusHistory.length - 1].id : 0; }
 // Mark-as-read watermark (2026-09-30): the HIGH-WATER MARK across every
@@ -88,67 +87,32 @@ export function askMaxStatusId() { return S.statusHistory.length ? S.statusHisto
 // it's "already sent" for the app's own ⚠ badge/sheet and Status window too
 // (errChip, the #errsheet render, and #infosheet would use this), never only
 // the chat Josh happens to have open.
-export function askSeenMaxKey() { return "ff1roll-ask-seen-max"; }
-export function askSeenMax() {
-  try {
-    const j = JSON.parse(localStorage.getItem(askSeenMaxKey()) || "null");
-    if (j && typeof j === "object") return {err: j.err || 0, status: j.status || 0};
-  } catch (err) { /* corrupt: nothing marked read yet */ }
-  return {err: 0, status: 0};
-}
-export function askSeenSet(key, seen) {
-  try { localStorage.setItem(askSeenKey(key), JSON.stringify(seen)); } catch (err) { /* private mode */ }
-  const m = askSeenMax();
-  const next = {err: Math.max(m.err, seen.err || 0), status: Math.max(m.status, seen.status || 0)};
-  if (next.err !== m.err || next.status !== m.status) try { localStorage.setItem(askSeenMaxKey(), JSON.stringify(next)); } catch (err) { /* private mode */ }
-}
+export function askSeenMaxKey() { return askHost().keys.seenMax; }
+export function askSeenMax() { return aiSeenMax(askHost()); }
+export function askSeenSet(key, seen) { aiSeenSet(askHost(), key, seen); }
 // Sets the watermark immediately — what a successfully-landed send commits
 // (below), and what some tests call directly to simulate that same effect.
-export function askSeenAdvance(key) { askSeenSet(key, {err: askMaxErrId(), status: askMaxStatusId()}); }
-export function askSeenStage(key, seen) { S.askSeenPending[key] = seen; }
-export function askSeenCommit(key) { const p = S.askSeenPending[key]; delete S.askSeenPending[key]; if (p) askSeenSet(key, p); }
-export function askSeenDrop(key) { delete S.askSeenPending[key]; }
+export function askSeenAdvance(key) { aiSeenAdvance(askHost(), key); }
+export function askSeenStage(key, seen) { aiSeenStage(askHost(), key, seen); }
+export function askSeenCommit(key) { aiSeenCommit(askHost(), key); }
+export function askSeenDrop(key) { aiSeenDrop(askHost(), key); }
 // never landed: try the same "new since" lines again next time
 // The chat is his session record (Josh, 2026-09-25): it lives here whole
 // until the song's Save appends it to <song>.ask.md, and only messages the
 // repo file already holds ever leave this device. `saved` counts those from
 // the front; `trimmed` says some were let go, so askRender shows the file.
-export function askStore(key) {
-  try {
-    const j = JSON.parse(localStorage.getItem(key || askStoreKey()) || "null");
-    if (j && Array.isArray(j.msgs)) return {msgs: j.msgs, saved: Math.min(j.saved || 0, j.msgs.length), trimmed: !!j.trimmed, lastUsed: j.lastUsed || 0};
-  } catch (err) { /* corrupt: start empty */ }
-  return {msgs: [], saved: 0, trimmed: false, lastUsed: 0};
-}
+export function askStore(key) { return aiStoreGet(askHost(), key); }
 export function askLoad() { return askStore().msgs; }
-export function askUnsavedCount(key) { const st = askStore(key); return st.msgs.length - st.saved; }
+export function askUnsavedCount(key) { return aiUnsavedCount(askHost(), key); }
 // Revert's chat leg (a Publish-row Revert drops EVERYTHING unpublished,
 // chat included, Josh 2026-09-30): truncate back to exactly the messages
 // already in <song>.ask.md — `saved` of them, from the front. No published
 // chat (saved 0) means this empties the log, same as Clear chat.
-export function askRevertToSaved(key) {
-  const st = askStore(key);
-  if (st.msgs.length <= st.saved) return; // nothing unsaved — no-op
-  try { localStorage.setItem(key, JSON.stringify({lastUsed: Date.now(), msgs: st.msgs.slice(0, st.saved), saved: st.saved, trimmed: st.trimmed})); }
-  catch (err) { /* private mode / quota: leave it, the song revert above already happened */ }
-}
-export function askEvictOthers(mine) { // other songs' logs go LRU-first when the total runs long — never one with unsaved messages
-  try {
-    const others = Object.keys(localStorage).filter(k => k.startsWith("ff1roll-ask-") && k !== askStoreKey())
-      .map(k => { const st = askStore(k); return {k, lu: st.lastUsed, n: (localStorage.getItem(k) || "").length, clean: st.msgs.length === st.saved}; })
-      .sort((a, b) => a.lu - b.lu);
-    let total = mine + others.reduce((a, o) => a + o.n, 0);
-    for (const o of others) {
-      if (total <= ASK_TOTAL_CAP) break;
-      if (!o.clean) continue;
-      // an emptied log keeps its `trimmed` marker: askRender then loads the
-      // repo file instead of greeting an empty chat (the messages were not lost)
-      const had = askStore(o.k).msgs.length;
-      if (had) localStorage.setItem(o.k, JSON.stringify({lastUsed: o.lu, msgs: [], saved: 0, trimmed: true})); else localStorage.removeItem(o.k);
-      total -= o.n;
-    }
-  } catch (err) { /* enumeration failed: skip eviction */ }
-}
+export function askRevertToSaved(key) { aiRevertToSaved(askHost(), key); }
+// other songs' logs go LRU-first when the total runs long — never one with
+// unsaved messages, never a -seen/-sentctx/-epoch cursor (they share the
+// prefix; before step 4 they went too)
+export function askEvictOthers(mine) { aiEvictOthers(askHost(), mine); }
 export function askModelName() { const c = cfg(); return c.aiBackend === "browser" ? c.aiBrowserModel : (c.aiModel || (S.askModelCache && S.askModelCache.ids[0]) || "model"); }
 export function askLogKey(keyArg) { // a store key ("ff1roll-ask-…"), a song key, or nothing (the open chat) → the store key
   if (!keyArg) return askStoreKey();
@@ -163,18 +127,7 @@ export function askLogHeader(key) {
   if (sk === ASK_TERMINAL_KEY) return "# ✦ AI log — Terminal\n\nThe ⌨ Terminal chat — messages to and from the Mac's Claude Code (no song, no model call in the app). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
   return "# ✦ AI log — " + songTitleOf(askLogSong(sk)) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
 }
-export function askLogMarkdown(msgs) { // what Save appends: one heading per question (when, which bars), the reply under it
-  const two = n => String(n).padStart(2, "0");
-  const when = t => { const d = new Date(t); return d.getFullYear() + "-" + two(d.getMonth() + 1) + "-" + two(d.getDate()) + " " + two(d.getHours()) + ":" + two(d.getMinutes()); };
-  let out = "";
-  for (const m of msgs) {
-    const c = askStripContext(m.content).trim();
-    if (m.role === "user") out += "\n### " + (m.t ? when(m.t) : "—") + (m.at ? " · " + m.at : "") + "\n\n**Josh:** " + c + "\n";
-    else if (m.role === "note") out += "\n**Mac (" + (m.m || "terminal") + "):** " + c + "\n";
-    else out += "\n**AI" + (m.m ? " (" + m.m + ")" : "") + ":** " + c + "\n";
-  }
-  return out;
-}
+export function askLogMarkdown(msgs) { return aiLogMarkdown(msgs, {user: "Josh", note: "Mac", ai: "AI"}); } // what Save appends: one heading per question (when, which bars), the reply under it
 // ---- Notes from the Mac (2026-09-27, Josh: "I can't message you back without
 // getting out of bed"). The bridge keeps an inbox the terminal's Claude Code
 // writes to (`node tools/claude-bridge.mjs --say "…"`); the app polls it,
@@ -196,12 +149,11 @@ export function askSessionName() { return (S.askGeneral ? "general" : String(S.s
 export const ASK_SONG_ONLY_TOOLS = ["add_annotation", "edit_annotation", "delete_annotation", "publish_song", "read_bars", "write_notes", "copy_bars", "insert_bars", "delete_bars"];
 // no open song in the general chat (these are all about THE open song, unlike read_song/read_notes, which name another one)
 export function askToolsNow() { return S.askGeneral ? ASK_TOOLS.filter(t => !ASK_SONG_ONLY_TOOLS.includes(t.function.name)) : ASK_TOOLS; }
-export function askInboxSeenKey() { return "ff1roll-ask-inbox-seen"; }
-export function askInboxAllowed() {
+export function askInboxSeenKey() { return askHost().keys.inboxSeen; }
+export function askInboxAllowed() { // a host already allowed for Ask (local, or consented once) — a poll never asks
   const url = aiUrl();
   if (!url || cfg().aiBackend === "browser" || S.askInboxNo === url) return false;
-  if (aiHostKind(url) === "local") return true;
-  try { return JSON.parse(localStorage.getItem("ff1roll-ai-hosts") || "[]").includes(new URL(url).host); } catch (err) { return false; }
+  return aiHostAllowed(askHost(), url);
 }
 export function askAgeText(t) { // "3m ago" — coarse, no need for seconds precision once past a minute
   const s = Math.max(0, Math.round((Date.now() - (t || 0)) / 1000));
@@ -265,9 +217,9 @@ export async function askSessionRefresh() {
   if (!S.askCaps.bridge || !S.askCaps.sessions || S.askTerminal || !S.song) { askSessionRender(); return; }
   const key = askSessionName();
   try {
-    const r = await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key), {headers: aiHeaders(), cache: "no-store"});
+    const r = await aiSessionGet(askHost(), key);
     if (!r.ok) return;
-    S.askSessionCache[key] = await r.json();
+    S.askSessionCache[key] = r.body;
   } catch (err) { return; } // unreachable right now: keep showing the last numbers we had
   askSessionRender();
 }
@@ -350,21 +302,12 @@ export function askComposing(on) {
   S.askComposingOn = on; S.askComposingAt = Date.now();
   if (!askInboxAllowed() || S.askInboxNo === aiUrl()) return;
   const mic = typeof S.micBtn !== "undefined" && S.micBtn === document.getElementById("askmic");
-  fetch(aiUrl() + "/v1/app-state", {method: "POST", headers: aiHeaders(), body: JSON.stringify({composing: on, mic})}).catch(() => {});
+  aiAppState(askHost(), {composing: on, mic});
 }
-// {url, ok}
-export async function askJobsSupported() {
-  const url = aiUrl();
-  if (cfg().aiBackend === "browser") return false;
-  if (S.askJobsCache && S.askJobsCache.url === url) return S.askJobsCache.ok;
-  let ok = false;
-  try { const r = await fetch(url + "/v1/jobs", {headers: aiHeaders()}); ok = r.ok && !!(await r.json()).ok; }
-  catch (err) { return null; } // unreachable right now is not "no jobs": a reload with Tailscale down must not fail every pending question
-  S.askJobsCache = {url, ok};
-  return ok;
-}
-export function askJobId() { return "nr_" + (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").slice(0, 20) : Date.now().toString(36) + Math.random().toString(36).slice(2, 8)); }
-export function askPendingIndex(msgs, jobId) { return msgs.findIndex(m => m.pending === jobId); }
+// true / false / null = unreachable right now (not "no jobs": a reload with Tailscale down must not fail every pending question); cached per URL on S.askJobsCache
+export function askJobsSupported() { return aiJobsSupported(askHost()); }
+export function askJobId() { return aiJobId(askHost()); }
+export function askPendingIndex(msgs, jobId) { return aiPendingIndex(msgs, jobId); }
 export function askBadgeOff() { document.getElementById("askreplybtn").style.display = "none"; }
 // which model the terminal session gives its advisors (read-only reviews)
 // and builders (implementation agents) — Josh, 2026-09-30: "change the
@@ -376,45 +319,18 @@ export async function askTermModelsLoad() {
   if (!row) return;
   row.style.display = S.askTerminal && S.askCaps.terminal ? "" : "none";
   if (!S.askTerminal || !S.askCaps.terminal) return;
-  let j = null; try { const r = await fetch(aiUrl() + "/v1/terminal-prefs", {headers: aiHeaders(), cache: "no-store"}); if (r.ok) j = await r.json(); } catch (err) { /* keep what's shown */ }
+  const j = await aiTerminalPrefsGet(askHost()); // null when unreachable: keep what's shown
   for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) {
     const sel = document.getElementById(id);
     if (!sel.children.length) for (const [v, label] of TERM_MODELS) { const o = document.createElement("option"); o.value = v; o.textContent = label; sel.appendChild(o); }
     if (j && j[k]) sel.value = j[k];
   }
 }
-export function askPendingAll() { // every pending question on this device, oldest first — across songs and the general chat
-  const out = [];
-  try {
-    for (const k of Object.keys(localStorage)) {
-      if (!k.startsWith("ff1roll-ask-") || k === askInboxSeenKey()) continue;
-      askStore(k).msgs.forEach((m, i) => { if (m.pending) out.push({key: k, jobId: m.pending, i, t: m.t || 0}); });
-    }
-  } catch (err) { /* enumeration failed: nothing to resume */ }
-  return out.sort((a, b) => a.t - b.t);
-}
+export function askPendingAll() { return aiPendingAll(askHost()); } // every pending question on this device, oldest first — across songs and the general chat
 
-export function askSave(msgs, meta, key) {
-  key = key || askStoreKey();
-  const prev = askStore(key);
-  let saved = meta && meta.saved !== undefined ? Math.min(meta.saved, msgs.length) : Math.min(prev.saved, msgs.length);
-  let trimmed = prev.trimmed;
-  let keep = msgs.map(m => Object.assign({}, m, {content: askStripContext(m.content)}));
-  const pack = () => JSON.stringify({lastUsed: Date.now(), msgs: keep, saved, trimmed});
-  const dropSaved = () => { if (saved < 2) return false; keep = keep.slice(2); saved -= 2; trimmed = true; return true; };
-  let str = pack();
-  while (str.length > ASK_LOCAL_SOFT && dropSaved()) str = pack();
-  askEvictOthers(str.length);
-  const tryPut = () => { try { localStorage.setItem(key, pack()); return true; } catch (err) { return false; } };
-  let ok = tryPut();
-  while (!ok && dropSaved()) ok = tryPut(); // quota: shed what the repo already has
-  while (!ok && keep.length > 2) { // nothing saved left to shed — the oldest unsaved go, and it says so
-    keep = keep.slice(2); saved = 0;
-    ok = tryPut();
-    if (ok && typeof askstatus !== "undefined" && askstatus) askstatus.textContent = "chat storage is full — the oldest messages were dropped; Save the song to keep the rest";
-  }
-  if (typeof updateSongBtn === "function") updateSongBtn(); // the ● follows unsaved chat too
-}
+// context stripped at save time; over the soft cap the repo-held pairs shed
+// first, then the oldest unsaved (and askHost().status says so); the ● follows via askHost().onStoreChanged
+export function askSave(msgs, meta, key) { aiStoreSave(askHost(), msgs, meta, key); }
 export async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the unsaved messages to <song>.ask.md (or the general log); keyArg: another song's key for Publish all
   const key = askLogKey(keyArg || (S.askGeneral ? "ff1roll-ask-" + (S.songKey || "local") : null)); // a song's Publish ships the SONG's chat even while the general tab is showing
   const general = askLogShared(key); // general and terminal: the songs repo, no composition test
@@ -487,13 +403,13 @@ export function deployBeforeInstall() {
 }
 export async function deployInstallNow() {
   const wasHeld = S.deployHeld;
-  try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: false, inSec: wasHeld ? 3 : 0})}); }
+  try { await aiDeploy(askHost(), {hold: false, inSec: wasHeld ? 3 : 0}); }
   catch (err) { logDebug("deploy install-now: " + (err && err.message || err)); }
   deploySetHeld(false);
   if (wasHeld) deployWarn(3000); else { S.deployAt = Date.now(); deployButtonTick(); }
 }
 export async function deployHoldNow() {
-  try { await fetch(aiUrl() + "/v1/deploy", {method: "POST", headers: aiHeaders(), body: JSON.stringify({hold: true})}); }
+  try { await aiDeploy(askHost(), {hold: true}); }
   catch (err) { logDebug("deploy hold: " + (err && err.message || err)); }
   deploySetHeld(true);
 }
@@ -531,11 +447,11 @@ export async function askInboxPoll() {
   if (!askInboxAllowed() || !S.song) return;
   const url = aiUrl();
   let r;
-  try { r = await fetch(url + "/v1/inbox?since=" + (+(localStorage.getItem(askInboxSeenKey()) || 0)), {headers: aiHeaders(), cache: "no-store"}); } catch (err) { return; }
+  try { r = await aiInboxFetch(askHost(), localStorage.getItem(askInboxSeenKey()) || 0); } catch (err) { return; }
   if (r.status === 404) { S.askInboxNo = url; askShotShow(false); return; }
   if (!r.ok) return;
   askShotShow(true); // an inbox means the Mac's bridge: it takes 📷 screenshots too
-  let j; try { j = await r.json(); } catch (err) { return; }
+  const j = r.body; if (!j) return;
   let notes = (j && j.notes || []).filter(n => n && n.text);
   // a device that has never polled (a fresh install: the Xcode shell,
   // 2026-09-27, got the whole night's 40 notes poured into Threnody II's
@@ -564,10 +480,10 @@ export async function askStatusPoll() {
   const url = aiUrl();
   if (S.askStatusNo === url) return;
   let r;
-  try { r = await fetch(url + "/v1/status", {headers: aiHeaders(), cache: "no-store"}); } catch (err) { S.askCaps = {...S.askCaps, terminalLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
+  try { r = await aiStatusFetch(askHost()); } catch (err) { S.askCaps = {...S.askCaps, terminalLive: false}; askStatusRender(); return; } // unreachable this moment: say so in the tab — never pull a tab out from under him (Josh, 2026-09-30: the Terminal tab vanished mid-conversation)
   if (r.status === 404) { S.askStatusNo = url; S.askStatusNow = null; S.askCaps = {bridge: false, terminal: false, sessions: false}; askStatusRender(); askTabsApply(); askSessionRender(); return; }
   if (!r.ok) return;
-  let j; try { j = await r.json(); } catch (err) { return; }
+  const j = r.body; if (!j) return;
   S.askStatusNow = (j && j.now) || null;
   S.askStatusRecent = (j && j.recent) || [];
   S.askQuota = (j && j.quota) || null;
@@ -605,8 +521,8 @@ export function initBridge1() {
     btn.disabled = true;
     askstatus.textContent = "compacting…";
     try {
-      const r = await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key) + "/compact", {method: "POST", headers: aiHeaders(), body: JSON.stringify({model: askCompactModelName()})});
-      const j = await r.json().catch(() => ({}));
+      const r = await aiSessionCompact(askHost(), key, askCompactModelName());
+      const j = r.body || {};
       if (!r.ok) throw new Error((j.error && j.error.message) || "HTTP " + r.status);
       askSentReset(askStoreKey()); // the compacted session no longer holds the full text verbatim — resend in full next time
       const k = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n);
@@ -623,7 +539,7 @@ export function initBridge1() {
 
 export function initBridge2() {
   for (const [id, k] of [["asktermadvisor", "advisor"], ["asktermbuilder", "builder"]]) document.getElementById(id).addEventListener("change", async e => {
-    try { await fetch(aiUrl() + "/v1/terminal-prefs", {method: "POST", headers: aiHeaders(), body: JSON.stringify({[k]: e.target.value})}); askstatus.textContent = k + "s will use " + e.target.value; }
+    try { await aiTerminalPrefsSet(askHost(), {[k]: e.target.value}); askstatus.textContent = k + "s will use " + e.target.value; }
     catch (err) { askstatus.textContent = "⚠ couldn't reach the bridge: " + err.message; }
   });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });

@@ -1,23 +1,16 @@
 import { S } from "../state.js";
-import { askTermModelsLoad } from "./bridge.js";
 import { songTitleOfImpl as songTitleOf } from "./context.js";
 import { baseName } from "../model/rollnotes.js";
-import { askStatusRender } from "./bridge.js";
 import { ASK_TERMINAL_KEY } from "./bridge.js";
 import { ASK_GENERAL_KEY } from "./bridge.js";
 import { askComposing } from "./bridge.js";
-import { askShotRestore } from "./shots.js";
 import { askSpan } from "./context.js";
 import { askSpanLabel } from "./context.js";
 import { cfg } from "../platform/storage.js";
 import { AI_BROWSER_MODELS } from "./backend.js";
 import { micStop } from "../ui/chrome.js";
-import { askCopyText } from "../ui/sheets.js";
-import { askStore } from "./bridge.js";
 import { appMode } from "../platform/mode.js";
 import { askMsgMode } from "./context.js";
-import { askStripContext } from "./context.js";
-import { askResumeSoon } from "./client.js";
 import { askLogPath } from "./bridge.js";
 import { folderActive } from "../platform/folder.js";
 import { folderRead } from "../platform/folder.js";
@@ -41,33 +34,46 @@ import { appConfirmImpl as appConfirm } from "../ui/chrome.js";
 import { askSentReset } from "./context.js";
 import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
 import { askSessionName } from "./bridge.js";
-import { aiUrl } from "./backend.js";
-import { aiHeaders } from "./backend.js";
+import { askHost } from "./host.js";
+import { aiDraftKey } from "../../vendor/ai/web/store.js";
+import { aiSessionDelete } from "../../vendor/ai/web/bridge-client.js";
+import { aiClock, aiGrow, aiScrollEnd, aiFocusIfKeyboard, aiDraftSaveNow, aiDraftSaveSoon, aiDraftLoad, aiDraftDrop, aiFillBubble, aiBubble, aiShowThinking, aiTabSet, aiTabButtons, aiRenderLog } from "../../vendor/ai/web/window.js";
 import { askSessionRender } from "./bridge.js";
 import { askSend } from "./client.js";
 import { SPEECH } from "../ui/note-editor.js";
 import { micToggle } from "../ui/note-editor.js";
 
-export function askSetMode(mode) { // "terminal" | "song" | "general" (a boolean still means general/song)
-  if (mode === true) mode = "general"; else if (mode === false) mode = "song";
-  S.askTerminal = mode === "terminal"; S.askGeneral = S.askTerminal || mode === "general";
-  try { localStorage.setItem("ff1roll-ask-mode", mode); } catch (err) { /* private mode */ }
-  askModeButtons();
+// The window's mechanics — tabs, the growing box, bubbles, the live stream,
+// the draft, the log render — are the AI library's (vendor/ai/web/window.js,
+// step 6, ADOPT mode: it binds THIS markup by id; index.html and the CSS are
+// untouched). Every word it shows comes from askHost(): the tab label, the
+// placeholders, the greetings, the mode tag, the ✉ label. These are Night
+// Roll's bare names as delegates, same signatures.
+export function askSetMode(mode) { aiTabSet(askHost(), mode); } // "terminal" | "song" | "general" (a boolean still means general/song); the choice is a device preference (ff1roll-ask-mode)
+export function askModeButtons() { aiTabButtons(askHost()); } // active/aria, the song's name on its tab, the span row, the placeholder; then askTermModelsLoad + askStatusRender (host.onTabsChanged)
+export function askTabLabel() { // the tab names the song: the sheet covers the title behind it (Josh, 2026-09-27)
+  const t = S.songKey ? songTitleOf(S.songKey) : (typeof baseName === "function" ? baseName() : "");
+  return "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song");
 }
-export function askModeButtons() {
-  const a = document.getElementById("askmodesong"), b = document.getElementById("askmodegen"), c = document.getElementById("askmodeterm");
-  if (!a || !b) return;
-  const gen = S.askGeneral && !S.askTerminal;
-  a.classList.toggle("active", !S.askGeneral); b.classList.toggle("active", gen);
-  a.setAttribute("aria-selected", String(!S.askGeneral)); b.setAttribute("aria-selected", String(gen));
-  if (c) { c.classList.toggle("active", S.askTerminal); c.setAttribute("aria-selected", String(S.askTerminal)); }
-  if (typeof askTermModelsLoad === "function") askTermModelsLoad();
-  // the tab names the song: the sheet covers the title behind it (Josh, 2026-09-27)
-  try { const t = S.songKey ? songTitleOf(S.songKey) : (typeof baseName === "function" ? baseName() : ""); a.textContent = "♪ " + (t && t.length > 22 ? t.slice(0, 21) + "…" : t || "this song"); } catch (err) { a.textContent = "♪ this song"; }
-  const spanrow = document.getElementById("askspanrow"); if (spanrow) spanrow.style.display = S.askGeneral ? "none" : "";
-  if (typeof askinput !== "undefined" && askinput && S.askTerminal) askinput.placeholder = "Tell the terminal what to build or fix…";
-  else if (typeof askinput !== "undefined" && askinput) askinput.placeholder = S.askGeneral ? "Anything — the app, the project, music in general" + (S.askCaps.bridge ? ", a message for the terminal…" : "…") : "Ask about what you're looking at…";
-  if (typeof askStatusRender === "function") askStatusRender(); // the "Now:" strip shows only in general mode
+export function askPlaceholder(tab) {
+  if (tab === "terminal") return "Tell the terminal what to build or fix…";
+  return tab === "general" ? "Anything — the app, the project, music in general" + (S.askCaps.bridge ? ", a message for the terminal…" : "…") : "Ask about what you're looking at…";
+}
+export function askGreeting(tab) { // an empty chat's first bubble — the Learning one leads with hints (CLAUDE.md), the Normal one answers
+  if (tab === "terminal") return "This goes straight to Claude Code in the Mac's terminal — the session that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.";
+  if (tab === "general") return "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.";
+  return appMode() === "normal"
+    ? "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll answer directly — keys, chords, cadences, form — and say how sure I am."
+    : "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.";
+}
+// a different mode's turn (askMsgMode/appMode, SAFETY 2026-10-01): still
+// shown (this is the on-device log, not a model request) but dimmed and
+// tagged, so Josh can tell it was never part of the current mode's AI
+// context, not just missing from it. The library draws the tag; what counts
+// as "other" is decided here, never there.
+export function askMsgTag(m) {
+  const otherMode = !S.askTerminal && askMsgMode(m) !== appMode();
+  return {tag: otherMode ? "[" + (askMsgMode(m) === "normal" ? "Normal" : "Learning") + " mode] " : "", dim: otherMode};
 }
 export function askStoreKey() { return S.askTerminal ? ASK_TERMINAL_KEY : S.askGeneral ? ASK_GENERAL_KEY : "ff1roll-ask-" + (S.songKey || "local"); }
 // ---- the sheet
@@ -77,39 +83,18 @@ export const askinput = document.getElementById("askinput");
 export const askstatus = document.getElementById("askstatus");
 // when each note from the Mac (and each Terminal message) was sent — Josh,
 // 2026-09-30: "I want timestamps on the messages that you sent back to me"
-export function askClock(t) {
-  if (!t) return "";
-  const d = new Date(t), now = new Date(), hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-  return (d.toDateString() === now.toDateString() ? hm : d.toLocaleDateString(undefined, {month: "short", day: "numeric"}) + " " + hm) + " · ";
-}
+export function askClock(t) { return aiClock(t); }
 export function askNoteLabel(from) { return "✉ " + (from && from !== "terminal" ? from : "from the Mac") + ": "; }
 // the unsent message survives a relaunch (Josh, 2026-09-29: five dictated
 // paragraphs lost today to the app reinstalling under him). Per chat, device-
-// local (a composer draft is not the song's state); cleared on Send.
-export function askDraftStore(key) { return "ff1roll-askdraft-" + key; }
-export function askDraftSave() {
-  clearTimeout(S.askDraftTimer); S.askDraftTimer = null;
-  if (!S.askDraftKey) return;
-  try {
-    const text = askinput.value;
-    if (!text.trim() && !S.askShotPending.length) localStorage.removeItem(askDraftStore(S.askDraftKey));
-    else localStorage.setItem(askDraftStore(S.askDraftKey), JSON.stringify({text, shots: S.askShotPending.map(s => s.path)}));
-  } catch (err) { /* storage full or private: the box itself still holds it */ }
-}
-export function askDraftSaveSoon() { clearTimeout(S.askDraftTimer); S.askDraftTimer = setTimeout(askDraftSave, 300); askComposing(!!askinput.value.trim()); }
-export function askDraftLoad() { // the panel now shows a different chat: its own unsent message comes back
-  const key = askStoreKey();
-  if (key === S.askDraftKey) return;
-  if (S.askDraftKey) askDraftSave(); // the chat we're leaving keeps what was in the box
-  S.askDraftKey = key;
-  let d = null; try { d = JSON.parse(localStorage.getItem(askDraftStore(key)) || "null"); } catch (err) { d = null; }
-  askinput.value = d && d.text || "";
-  // new shape is {shots: [path, …]}; an old draft saved before 2026-10-02 has
-  // {shot: path} (singular) — restore that as a one-shot array
-  askShotRestore(d && d.shots ? d.shots : d && d.shot ? [d.shot] : []);
-  askGrow();
-}
-export function askDraftClear() { clearTimeout(S.askDraftTimer); S.askDraftTimer = null; try { localStorage.removeItem(askDraftStore(askStoreKey())); } catch (err) { /* nothing stored */ } }
+// local (a composer draft is not the song's state); cleared on Send. The
+// record (ff1roll-askdraft-<chat>, {text, shots} — and the older {shot} shape
+// it still reads) and the save/load mechanics are the library's.
+export function askDraftStore(key) { return aiDraftKey(askHost(), key); }
+export function askDraftSave() { aiDraftSaveNow(askHost()); }
+export function askDraftSaveSoon() { aiDraftSaveSoon(askHost()); } // also the bridge's "composing" notice (host.onDraftChange → askComposing)
+export function askDraftLoad() { aiDraftLoad(askHost()); } // the panel now shows a different chat: its own unsent message comes back
+export function askDraftClear() { aiDraftDrop(askHost()); }
 export function askRefresh() { // span label + model line; called on open and after Settings
   if (!S.song) return;
   const sp = askSpan();
@@ -120,26 +105,12 @@ export function askRefresh() { // span label + model line; called on open and af
     ? (AI_BROWSER_MODELS.find(m => m[0] === c.aiBrowserModel) || [0, c.aiBrowserModel])[1].split(" · ")[0] + " · this browser"
     : (c.aiModel || (S.askModelCache && S.askModelCache.ids[0]) || "model") + " · " + host;
 }
-export const askPartial = {};
+export const askPartial = S.askPartial; // the library's record (vendor/ai/web/client.js aiPartial), aliased for askRender/askShowThinking
 // job id -> the words streamed so far: a closed-and-reopened sheet redraws from storage, which only holds the marker (Josh, 2026-09-27: "I don't see the first part of the response")
-export function askShowThinking(live, raw) { // Qwen-style <think> blocks stay out of the bubble
-  const vis = raw.replace(/<think>[\s\S]*?(<\/think>|$)/g, "").replace(/^\s+/, "");
-  if (live && live.dataset && live.dataset.job && vis) askPartial[live.dataset.job] = vis;
-  live.textContent = vis || "…";
-  if (vis) askstatus.textContent = "";
-  asklog.scrollTop = asklog.scrollHeight;
-}
-export function askScrollEnd() { if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => { asklog.scrollTop = asklog.scrollHeight; }); else asklog.scrollTop = asklog.scrollHeight; }
-export function askFocusIfKeyboard() { // a touch screen's keyboard took half the sheet on every open, and Josh dictates (2026-09-27); focus only where a real keyboard is likely
-  if (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches) return;
-  askinput.focus();
-}
-export function askGrow() { // size the box to its text (CSS caps it) and keep the end in view
-  askinput.style.height = "auto";
-  askinput.style.height = askinput.scrollHeight + "px";
-  askinput.scrollTop = askinput.scrollHeight;
-  askDraftSaveSoon(); // typing and dictation both land here
-}
+export function askShowThinking(live, raw) { aiShowThinking(askHost(), live, raw); } // Qwen-style <think> blocks stay out of the bubble
+export function askScrollEnd() { aiScrollEnd(askHost()); }
+export function askFocusIfKeyboard() { aiFocusIfKeyboard(askHost()); } // a touch screen's keyboard took half the sheet on every open, and Josh dictates (2026-09-27); focus only where a real keyboard is likely
+export function askGrow() { aiGrow(askHost()); } // size the box to its text (CSS caps it) and keep the end in view; typing and dictation both land here
 
 export function askMicOff() { // Send clears the box: a late result must not refill it
   if (S.micBtn === document.getElementById("askmic")) micStop(true);
@@ -148,67 +119,13 @@ export function askMicOff() { // Send clears the box: a late result must not ref
   // or the late transcript lands in the emptied box (Josh, 2026-09-30)
   if (S.micPrev) { S.micPrev.onresult = null; try { S.micPrev.abort(); } catch (err) { /* already gone */ } S.micPrev = null; }
 }
-export function askBubble(role, text) {
-  const div = document.createElement("div");
-  div.className = "askmsg " + role;
-  askFillBubble(div, text);
-  asklog.appendChild(div);
-  asklog.scrollTop = asklog.scrollHeight;
-  return div;
-}
-export function askFillBubble(div, text) { // the words, web addresses tappable, a ⧉ copy at the end
-  div.textContent = text;
-  // links only where the DOM can rebuild children (the test harness's fake
-  // elements keep textContent as a plain string, so they get the text alone)
-  const re = /https?:\/\/[^\s<>"'`]+/g;
-  if (re.test(text) && typeof div.replaceChildren === "function") {
-    const nodes = []; let last = 0, m; re.lastIndex = 0;
-    while ((m = re.exec(text))) {
-      let url = m[0]; const trail = url.match(/[.,;:!?)\]]+$/); if (trail) url = url.slice(0, -trail[0].length);
-      nodes.push(document.createTextNode(text.slice(last, m.index)));
-      const a = document.createElement("a"); a.href = url; a.textContent = url; a.target = "_blank"; a.rel = "noopener"; // the PWA hands _blank to Safari
-      nodes.push(a);
-      last = m.index + url.length;
-    }
-    nodes.push(document.createTextNode(text.slice(last)));
-    div.replaceChildren(...nodes);
-  }
-  if (text.trim() && text !== "…") {
-    const b = document.createElement("button");
-    b.className = "askcopy"; b.type = "button"; b.setAttribute("aria-label", "Copy this message"); b.title = "copy";
-    b.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(text, b); });
-    div.appendChild(b);
-  }
-}
+export function askBubble(role, text) { return aiBubble(askHost(), role, text); }
+export function askFillBubble(div, text) { aiFillBubble(askHost(), div, text); } // the words, web addresses tappable, a ⧉ copy at the end (host.copyText)
 
-export function askRenderImpl() {
-  askDraftLoad();
-  asklog.innerHTML = "";
-  const st = askStore();
-  const msgs = st.msgs;
-  if (st.trimmed) askRenderEarlier();
-  let pendingSeen = false;
-  if (!msgs.length && !st.trimmed && S.askTerminal) askBubble("ai", "This goes straight to Claude Code in the Mac's terminal — the session that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.");
-  else if (!msgs.length && !st.trimmed && S.askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
-  else if (!msgs.length && !st.trimmed) askBubble("ai", appMode() === "normal"
-    ? "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll answer directly — keys, chords, cadences, form — and say how sure I am."
-    : "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
-  for (const m of msgs) {
-    // a different mode's turn (askMsgMode/appMode, SAFETY 2026-10-01): still
-    // shown here (this is the on-device log, not a model request) but dimmed
-    // and tagged, so Josh can tell it was never part of the current mode's
-    // AI context, not just missing from it.
-    const otherMode = !S.askTerminal && askMsgMode(m) !== appMode();
-    const tag = otherMode ? "[" + (askMsgMode(m) === "normal" ? "Normal" : "Learning") + " mode] " : "";
-    const div = askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", tag + (m.role === "note" ? askClock(m.t) + askNoteLabel(m.m) + m.content : (S.askTerminal && m.role === "user" ? askClock(m.t) : "") + askStripContext(m.content)));
-    if (otherMode) div.classList.add("othermode");
-    if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; }
-  }
-  if (pendingSeen) askResumeSoon(200);
-}
-export async function askRenderEarlier() { // what this device let go of after it reached the repo file
-  const div = askBubble("ai", "loading the earlier messages from the repo file…");
-  div.classList.add("earlier");
+export function askRenderImpl() { aiRenderLog(askHost()); } // the draft, the greeting (askGreeting), each message with its mode tag (askMsgTag), pending bubbles, the earlier block (askRenderEarlier)
+export async function askRenderEarlier(div) { // what this device let go of after it reached the repo file; `div` is the library's placeholder bubble (or none, when called alone)
+  if (!div) { div = askBubble("ai", ""); div.classList.add("earlier"); }
+  div.textContent = "loading the earlier messages from the repo file…";
   const path = askLogPath();
   try {
     let text;
@@ -224,6 +141,9 @@ export async function askRenderEarlier() { // what this device let go of after i
 }
 
 // what the configured backend can do (askStatusPoll detects; askTabsApply shows). sessions: the bridge's Clear-really-resets/Compact/usage-line trio (askSessionRender gates on it)
+// the tab this device had open (ff1roll-ask-mode) — the library's aiTabRestore
+// does the same; kept as this statement so the boot-order snapshot
+// (tests/boot-order.test.mjs) stays byte-identical
 export function initSheet1() {
   try { const m = localStorage.getItem("ff1roll-ask-mode"); S.askTerminal = m === "terminal"; S.askGeneral = S.askTerminal || m === "general"; } catch (err) { S.askGeneral = S.askTerminal = false; }
 }
@@ -257,6 +177,10 @@ export function initSheet2() {
 
 export function initSheet3() {
   document.getElementById("askbtn").addEventListener("click", askBtnTap);
+  // the window's own controls stay wired here (not the library's aiWindowBind,
+  // which does the same for an app without wiring of its own): each handler
+  // is a delegate into vendor/ai/web/window.js, and the boot-order snapshot
+  // (tests/boot-order.test.mjs) keeps these statements as they were
   for (const [id, mode] of [["askmodesong", "song"], ["askmodegen", "general"], ["askmodeterm", "terminal"]]) document.getElementById(id).addEventListener("click", () => {
     if ((S.askTerminal ? "terminal" : S.askGeneral ? "general" : "song") === mode) return;
     askSetMode(mode);
@@ -277,7 +201,7 @@ export function initSheet3() {
     if (S.askCaps.bridge && S.askCaps.sessions && !S.askTerminal) {
       const key = askSessionName();
       delete S.askSessionCache[key];
-      try { await fetch(aiUrl() + "/v1/sessions/" + encodeURIComponent(key), {method: "DELETE", headers: aiHeaders()}); } catch (err) { /* the local clear already happened; the bridge just keeps resuming the old one */ }
+      try { await aiSessionDelete(askHost(), key); } catch (err) { /* the local clear already happened; the bridge just keeps resuming the old one */ }
       askSessionRender();
     }
   });

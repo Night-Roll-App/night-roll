@@ -242,6 +242,8 @@ export const S = {
   editRedo: [],
   editBtnCache: "",
   askBusy: null,
+  askPartial: {}, // job id → the words streamed so far (the AI library keeps it; sheet.js aliases it)
+  aiHost: null, // the AI library's host adapter, built once by askHost() (src/ask/host.js)
   askModelCache: null,
   askSpanFrozen: null,
   aiWebllm: null,

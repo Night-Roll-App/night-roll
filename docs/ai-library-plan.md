@@ -226,15 +226,103 @@ mechanical commit).
    `node tools/ai-sync.mjs --ref vX` then `launchctl kickstart -k
    gui/$UID/com.nightroll.bridge` — the terminal session's job, after
    Josh's merge, never a build/worktree session's.
-3. Backends via `host.settings`/`host.confirm`; tests/ai.test.mjs unchanged
-   is the oracle; library gets client.test with ported fake servers.
-4. Store, ctx-cache, bridge-client, attach — with a fixture test that today's
-   `ff1roll-*` keys load identically.
-5. The client loop through `host.systemPrompt/context/tools/runTool`; all
-   Learning tests stay in Night Roll and must stay green unchanged.
-6. Window in adopt mode (binds today's `#ask*` markup; e2e selectors unchanged).
-7. (Optional, last) the library renders its own markup + CSS +
-   `mountAiSettings` — what makes a second iPad app need no copied HTML.
+3. **DONE 2026-10-04 (claude-bridge `v0.3.0`).** `web/backends.js`:
+   `aiRemoteBackend`/`aiBrowserBackend`/`aiPickBackend` (the OpenAI-SSE and
+   WebLLM paths, verbatim mechanics), `aiProbe` (the Test button's probe —
+   answers a kind, never a sentence), `aiHostConsent`/`aiHostAllowed` (the
+   consent list under `host.keys.hosts`, the sheet's words from
+   `host.confirmHost`). Every library function takes `host` first (no
+   library global, no "mode"); `src/ask/host.js`'s `askHost()` builds Night
+   Roll's once (`S.aiHost`): `settings()` over `cfg()`, `apiKey()`,
+   `url()`/`headers()` pointing back at the app's own `aiUrl`/`aiHeaders`
+   delegates (so a test's by-name stub reaches every library fetch),
+   `sessionName`, `onSessionEpoch`, `confirmHost`. `src/ask/backend.js` keeps
+   every bare name as a one-line delegate (`aiTestWords` holds the Test
+   wording). Library `tests/backends.test.mjs` ports tests/ai.test.mjs's fake
+   servers (model listing, streaming, tool rounds with `-r1`, errors, the
+   probe's kinds, consent); tests/ai.test.mjs itself unchanged, green.
+4. **DONE 2026-10-04 (claude-bridge `v0.4.0`).** `web/store.js` (chat
+   record, caps/eviction, pending markers + `aiJobId`, seen cursor, draft,
+   `aiLogMarkdown(msgs, labels)`, `aiStripContext`), `web/ctx-cache.js`
+   (`aiSent*`/`aiEpoch*`/`aiCachedBlock`/`aiHash` — FNV-1a 32, byte-
+   compatible with the records devices hold), `web/bridge-client.js` (HTTP
+   only, `{ok, status, body}`; Night Roll keeps polling/rendering),
+   `web/attach.js` (upload, shot lines, image prep, tab capture). Keys come
+   from `askHost().keys` (`store: "ff1roll-ask-"`, `seenMax`, `inboxSeen`,
+   `draft: "ff1roll-askdraft-"`, `mode`); the host also gives `logCursor()`
+   (askMaxErrId/askMaxStatusId), `status(text)`, `onStoreChanged`
+   (updateSongBtn). `src/ask/{bridge,context,sheet,shots}.js` keep every
+   bare name as delegates; `askLog*`/`askCommitLog` (the repo log) stay
+   app-side. **Fixture: tests/ask-storage.test.mjs + tests/fixtures/
+   ask-storage-2026-10-04.json** — today's shapes under the real key names
+   read back identically; eviction never touches an unsaved chat or a
+   non-store key (the one behaviour change: cursors used to be evicted
+   with the chats because they share the prefix). Library tests:
+   store/ctx-cache/attach (pure) + bridge-client (fake bridge).
+5. **DONE 2026-10-04 (claude-bridge `v0.5.0`).** `web/client.js`:
+   `aiSendText`/`aiRun`/`aiFinish`/`aiFail`/`aiRepending`/`aiResume`/
+   `aiResumeSoon`/`aiTerminalSend`, verbatim mechanics, every app-specific
+   thing through the host — `systemPrompt` (askSys), `context`
+   (askContext), `terminalContext`, `buildMessages` (askBuildMessages: the
+   mode filter stays app-side), `budget`/`estimate`, `tools`/`runTool`,
+   `modelName`, `messageMeta` (`{mode: appMode()}`), `backend`/
+   `jobsSupported` (the app's own delegates, stub-reachable), `canResume`/
+   `resumeScope`, the window callbacks, and `text(key)` over neutral
+   `AI_TEXT` defaults (host.js's `ASK_TEXT` keeps "the Mac" wording).
+   `src/ask/client.js` keeps `askSend` whole — gating, consent, span, and
+   the user push with its `mode: appMode()` tag (the mode-tag SAFETY test
+   reads that line from the source; `aiSendText` is the library's send for
+   other apps, Night Roll hands its built messages to `aiRun`) — and the
+   delegates; `askPartial` → `S.askPartial`. Library `tests/client.test.mjs`
+   (fake bridge + object bubbles: store-first send, tool round moves the
+   marker, HTTP 500/abort, cut stream → resume running/done/404/no-jobs/
+   unreachable, terminal send both ways). tests/ai.test.mjs and every
+   Learning case in tests/night-roll.test.mjs unchanged, green. One
+   library fix-up commit inside the step: the loop's status helper was
+   named `aiSay`, which collided with Night Roll's Settings `aiSay`
+   (check.mjs rule 6 across src/ + vendor/ai/web caught it) → `aiNotice`.
+6. **DONE 2026-10-04 (claude-bridge `v0.6.0`).** `web/window.js` in adopt
+   mode: `aiEl(host, which)` resolves `host.ids` (defaults `AI_WINDOW_IDS` =
+   today's `ask*` ids, so Night Roll overrides nothing), `host.css` the
+   class names (`askmsg`/`askcopy`/`othermode`/`earlier`). Mechanics moved:
+   `aiGrow`/`aiScrollEnd`/`aiFocusIfKeyboard`, `aiBubble`/`aiFillBubble`
+   (links; copy via `host.copyText`), `aiShowThinking`, the tabs
+   (`aiTabSet`/`aiTabButtons`/`aiTabRestore`; `host.keys.mode`, `host.tabLabel`,
+   `host.placeholder`, `host.onTabsChanged`/`onTabPicked`), the draft
+   (`aiDraftLoad`/`SaveNow`/`SaveSoon`/`Drop`; `host.shotPaths`/`restoreShots`,
+   `host.onDraftChange` → askComposing), `aiRenderLog` (`host.greeting`,
+   `host.msgTag` → `{tag, dim}`, `host.noteLabel`, `host.showText`,
+   `host.renderEarlier(div)`; pending bubbles from `aiPartial` with
+   `AI_TEXT.stillWriting`/`pendingHere`), `aiWindowBind` (Send/Enter →
+   `host.send`, Stop → `state.askBusy.abort()`, input → grow, tab clicks).
+   Night Roll: sheet.js keeps every bare name as a delegate and holds the
+   wording as plain functions (`askTabLabel`, `askPlaceholder`, `askGreeting`,
+   `askMsgTag`, `askNoteLabel`, `askRenderEarlier(div)`); `initSheet1`'s
+   tab restore and `initSheet3`'s five listeners stay as they were (each
+   now a delegate call) so tests/boot-order.test.mjs's snapshot of main.js's
+   expanded init sequence is byte-identical — `aiTabRestore`/`aiWindowBind`
+   are for an app without wiring of its own; index.html/CSS/e2e selectors
+   untouched. Library `tests/window.test.mjs` runs it over a tiny fake DOM.
+7. **Deferred (decided 2026-10-04, Fable review): NOT this round.** What
+   it would be, once a second app exists to need it: `web/window.css` +
+   `aiMountWindow(root, host)` rendering today's `#asksheet` subtree
+   (tabs row, span row, "Now:" strip, log, attach chip, compose row with
+   📷/🖼/🎤/Send/Stop, status line, session line + Compact, the ⌨ model
+   pickers) from a template string with the SAME ids/classes
+   `AI_WINDOW_IDS`/`AI_WINDOW_CSS` already name, so `aiWindowBind` and
+   every adopt-mode function work unchanged on a mounted window;
+   `aiMountSettings(root, host)` rendering the Settings "AI model" rows
+   (`#cfgaibackend`, `#cfgaiurl`+Test, `#cfgaimodel`, `#cfgaikey`,
+   `#cfgaibrowsermodel`) with `aiProbe` + `aiBrowserProbe` behind the
+   buttons and the app's `aiTestWords`-style wording from the host; the
+   app-side bits that would then become host hooks: `askRefresh`'s model
+   line, `askStatusRender`'s strip + the ✦ button's working dot,
+   `askShotRender`'s chip, `askTermModelsLoad`'s pickers, `openAsk`'s
+   window-manager calls (`wmLayoutAll`). Night Roll would keep its markup
+   until the mounted window is pixel-checked against it in the real
+   browser and on the iPad (memory: no unseen layout ships). Nothing is
+   gained today: index.html is the only consumer, and the split just
+   finished.
 
 Dev loop: edit `../claude-bridge`, `ai-sync --from ../claude-bridge` (VERSION
 "dirty" → modules.test fails, so it can't be pushed), then tag the library,

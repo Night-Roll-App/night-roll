@@ -2106,6 +2106,93 @@ resolved, unique top-level names, SERIALIZED self-containment) also run
 over `vendor/ai/web/` — rules 4/5 (the layer table) don't apply: the library
 isn't part of Night Roll's own layer system.
 
+**The host adapter — `askHost()` in `src/ask/host.js` (AI library steps 3–6,
+2026-10-04).** Every library function takes the app's `host` object as its
+first argument (the library holds no global of its own, no "mode", no
+storage key, no wording); `askHost()` builds Night Roll's once (cached on
+`S.aiHost`) and is the ONE place the library learns anything about this app.
+`src/ask/*.js` keep every bare name the tests and the e2e mirror use —
+`aiUrl`, `aiHeaders`, `aiProvider`, `aiRemote`, `aiBrowser`, `aiTest`,
+`aiHostOk`, … — as one-line delegates (`aiUrl = () => aiBaseUrl(askHost())`),
+and the host's own `url()`/`headers()`/… arrows read those delegates' live
+import bindings, so a test's `run("aiUrl = () => …")` is seen by every
+library call too. Library top-level names are `ai*` but never the same ones
+as a delegate (check.mjs rule 6 scans `vendor/ai/web` with `src/`); a library
+name Night Roll needs under its own name unchanged is forwarded
+(`export { AI_BROWSER_MODELS, aiWebllmLoad, aiEngineFor }`), never
+redeclared. Step 3 (library `v0.3.0`, `web/backends.js`): the remote
+(OpenAI-SSE, tool rounds, the bridge's job/session headers) and in-browser
+(WebLLM) backends, `aiProbe` (the Test button's mechanics — it answers a
+KIND, `backend.js`'s `aiTestWords` turns it into this app's sentence) and
+per-host consent (`aiHostConsent`, the list under `ff1roll-ai-hosts`; the
+sheet's wording is `askHost().confirmHost`). tests/ai.test.mjs is the oracle
+for every step and is unchanged throughout. Step 4 (`v0.4.0`): `web/store.js`
+(the chat record `{msgs, saved, trimmed, lastUsed}`, its caps and eviction,
+the pending markers, the seen cursor, the draft, `aiLogMarkdown`), `web/
+ctx-cache.js` (the `-sentctx`/`-epoch` records, `aiCachedBlock`, `aiHash` =
+the same FNV-1a 32 as `fnv1a32`, so every hash a device holds still
+matches), `web/bridge-client.js` (HTTP only: jobs, inbox, status, sessions,
+terminal + prefs, app-state, deploy — `{ok, status, body}`, a network error
+throws; polling and every render stay in `src/ask/bridge.js`) and `web/
+attach.js` (upload, the `(screenshot: path)` line, image prep, tab capture;
+the pending list and the shell's native capture stay in `src/ask/shots.js`).
+The library reads and writes under `askHost().keys` — `store: "ff1roll-ask-"`,
+`seenMax`, `inboxSeen`, `draft: "ff1roll-askdraft-"`, `mode` — so nothing
+migrates. **tests/ask-storage.test.mjs + tests/fixtures/ask-storage-2026-10-04.json**
+are the no-lost-chats guard: every shape a device held that day, under its
+real key names, must read back identically (stores, cursors, hashes, epoch,
+both draft shapes, the saved tab), eviction must never touch an unsaved
+chat or any key that isn't a chat store, and a save round-trips. One
+deliberate change rode along: eviction over `ASK_TOTAL_CAP` used to walk
+every `ff1roll-ask-*` key and so deleted the `-seen`/`-sentctx`/`-epoch`
+cursors (a resend, a re-poll — never messages); it now considers only
+values that are chat stores. Step 5 (`v0.5.0`): `web/client.js` — the
+exchange (`aiSendText`: the question stored with its pending marker BEFORE
+the request; `aiRun`: the stream, tool rounds under `-r1…` job ids, abort,
+the cut-stream branches; `aiResume`: every pending question looked up on
+the bridge; `aiTerminalSend`). The library never sees what the context says
+or which tools exist: `askHost()` hands it `systemPrompt` (= `askSys`, the
+Learning law), `context` (= `askContext`), `buildMessages` (= `askBuildMessages`
+— a different mode's turn never enters a request), `tools`/`runTool`,
+`messageMeta` (`{mode: appMode()}` — stored on every message, never read by
+the library), `backend`/`jobsSupported` (through the app's own `aiProvider`/
+`askJobsSupported` delegates, so a test's by-name stub reaches the loop),
+and the window callbacks (`bubble`, `showThinking`, `fillBubble`, `busy`,
+`afterSend`, `landed` = `askLanded`). Wording: the library's `AI_TEXT`
+defaults are neutral ("the server", "the bridge"); `host.text(key)` hands
+back this app's lines (`ASK_TEXT` in host.js: "the Mac", "File → Settings…
+→ AI model"). `src/ask/client.js` keeps `askSend` whole (the DOM read, the
+gating, the consent, the span freeze, and the user push itself with its
+`mode: appMode()` tag — the SAFETY test reads that line from the source, so
+the library's `aiSendText` is for other apps; Night Roll hands the built
+messages to `aiRun`) and every bare name as delegates; `askPartial` is now
+`S.askPartial` (aliased in sheet.js). All 68 Learning cases and
+tests/ai.test.mjs's Learning-wire test are unchanged and green. Step 6
+(`v0.6.0`): `web/window.js` in ADOPT mode — it binds index.html's existing
+`#asksheet #asklog #askinput #askstatus #asksend #askstop #askmode*
+#askspanrow` by id (`AI_WINDOW_IDS` are exactly this app's; markup, CSS
+and every e2e selector untouched) and owns the mechanics: the box that
+grows (`aiGrow`), bubbles + links + the copy button (`aiBubble`/
+`aiFillBubble`, copy via `host.copyText`), the live stream (`aiShowThinking`),
+the three tabs (`aiTabSet`/`aiTabButtons`/`aiTabRestore`, the choice under
+`host.keys.mode`), the draft (`aiDraftLoad`/`aiDraftSaveNow`/`aiDraftSaveSoon`/
+`aiDraftDrop`), the log render (`aiRenderLog`) and the Send/Enter/Stop/tab
+wiring (`aiWindowBind`). Every sentence a user reads is still this app's:
+sheet.js now holds them as plain functions the host hands over —
+`askTabLabel` (♪ + the song), `askPlaceholder`, `askGreeting` (the Learning
+greeting leads with hints, the Normal one answers), `askMsgTag` (which turn
+is "another mode's": `askMsgMode`/`appMode`, decided here, drawn there),
+`askNoteLabel`, `askRenderEarlier(div)`. `openAsk`/`askBtnTap` stay in
+host.js; `askRenderImpl` = `aiRenderLog(askHost())`. The window's own
+listeners (tabs, Send/Enter, Stop, input) stay in `initSheet3`, and
+`initSheet1`'s tab restore stays as it was — each a one-line call into a
+delegate, kept so tests/boot-order.test.mjs's snapshot (main.js's expanded
+init sequence) is byte-identical; the library's `aiWindowBind`/`aiTabRestore`
+do the same for an app with no wiring of its own. Step 7 (the library's
+own markup + CSS + `mountAiSettings`) is deliberately NOT done: index.html
+is the only consumer today — docs/ai-library-plan.md §4 says what it would
+take once a second app exists.
+
 ## Code map (index.html, section comments mark these)
 
 catalog → CATALOG built from albums/manifest.json at boot (run
