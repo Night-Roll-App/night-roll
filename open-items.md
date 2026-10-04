@@ -6915,3 +6915,32 @@ Device check owed — Q9 (the FULL step-4 ear list now: synth, SF2, game
 voice, NES + one streamed console, clip at 0.5×, note preview, album
 auto-advance, metronome). This is the known-good iPad engine moving file;
 build, listen, revert on the first mute.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 5: model/gen down (docs/split-phase2-plan.md)
+
+Eighteen commits (14 M, 3 H carrying 4 ports), all verbatim-checked.
+Re-homed first, so the clusters could reach layer 2: `isDirective`/
+`isCopyableAnno`, `setEndBQ`/`dropSupersededBy`/`dropLocalKeyAt`,
+`notesTxtFor`/`declaredTsForKey` → model/rollnotes.js; `snapBeat` →
+model/grid.js; `undoTrackAdd` → model/edits.js; `draftWrite`/
+`localDraftWrite`, `saveDraft`/`retireOldOverlay`/`draftRead`/
+`localDraftTracks`/`filesMirror`/`filesMirrorSoon`/`filesMirrorFor` →
+model/versions.js (phase 1 step 14 had parked them in ui/*);
+`transposeChordLabel` → theory/chords.js. Ported (hooks.js 24 → 28):
+`updateSongMeta`, `lassoedAnnos`, `drumStep`, `annoInLasso`. Then the
+clusters: `saveEdits`/`loadEdits`/`foldOldOverlay` → model/edits.js;
+26 selection mutators → model/selection.js; `scheduleAnalysisRecompute`
++ `adopt*` → gen/analysis.js; `drGenerate` → gen/drummer.js;
+`bsGenerate`/`applyTake` → gen/bassist.js; `moveClip`/`trimClip`/
+`splitSelectedClipAtCursor` → audio/clips.js. check.mjs clean except
+`oldBpb` throughout (rule 10 caught one wrong port use — fixed with the
+downward Impl alias); prof set 29 unchanged; `npm test` under alarm
+1200 — only ps2-real/instruments fail (pre-existing); modules 86/86;
+smoke 8/8; package 181 files unchanged. `src/app.js`: 13343 → 12139.
+
+Device check owed before shipping (plan §3 step 5): edit/undo,
+quantize/split/join, copy/paste, a drummer/bassist take on a SCRATCH
+song — and, since saveDraft/saveEdits/draftWrite changed file, one
+real-browser edit → reload → compare on a scratch local song
+(persistence needs a device test). Verbatim moves, but that rule exists
+because of 6ad5eee.

@@ -113,7 +113,7 @@ illegal-layer imports.
 | 2 | M | **Done, with two real exceptions (see §2 writeup): `chipRender`/`chipRenderInWorker` and `chipStreamOpen` stayed, blocked by `songTitleOf`, a NEW blocker, not `logErr`.** ensureAudio/resumeAudio/rebuildAudio → audio/engine; metStart → metronome; CHIPS, sonySeqCapture, psfInflater, PSX_SOUNDING_ON, chipExt, ~~chipRender~~, chipEstimateTracks, ~~chipRenderInWorker~~, chipCleanupAfterFailure, chipSource, chipVaultFile, chipModules → audio/chip; chipStreamOpenWorker (not ~~chipStreamOpen~~) → chip-stream; scheduleGameNote/gameVoiceWarn/gameNote*/resolveVoiceInstrument/gameLibSync/sf2Sync → audio/voices; idbDraftPut → platform/storage; jobsNotify → model/jobs | ~1,100 (actual: 571, 15056→14485) |
 | 3 | H | **Done.** ports draw, playbackFrame, clampView, fitView, buildScoreModel, renderTrackbar, updateEditBtnVis, updateChipBtn, updateSongBtn, updateSyncBtn, updateSubtitle, askRender, finalizeNotes, recFinish, albumAdvance — plus songTitleOf (step 2's blocker) | ~0 (actual: +9, 14486→14495 — new import lines only) |
 | 4 | M | **Done, with the transport/voices/clips clusters almost entirely blocked (see §2 writeup): only chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/chipRenderAuto actually moved**, unblocked by step 3's songTitleOf port; play/stop/playGate*/buildSchedule/renderSongOffline/audioChaseNow → audio/transport; scheduleNote, previewNote, sf/game preload+wait → audio/voices; scheduleClip, stretchEnsure(All), applyAudioDirs, audioEnsureFile, applyBeatMap, setSongTempo, writeClips, setClipDir, splitClipAt, deleteClip → audio/clips all stayed, still blocked. **Finished in step 4c (worktree agent, 2026-10-04): the whole cluster is out — see the 4c write-up.** | ~1,150 (actual: 220, 14495→14275; 4c: 836 more, 14179→13343) |
-| 5 | M | saveEdits/loadEdits/foldOldOverlay/retireOldOverlay → model/edits; selEditApply + selection mutators, insertTime/deleteTime, ridealongChordBands, transposeTrack, closeGap → model/selection; scheduleAnalysisRecompute/adopt* → gen/analysis; drGenerate/bsGenerate/applyTake → gen/*; M2's misfiled ones down out of ui/* | ~1,400 |
+| 5 | M | **Done (worktree agent, 2026-10-04; 18 commits — 14 M + 3 H carrying 4 ports; see write-up; retireOldOverlay landed in model/versions beside saveDraft, its only caller).** saveEdits/loadEdits/foldOldOverlay/retireOldOverlay → model/edits; selEditApply + selection mutators, insertTime/deleteTime, ridealongChordBands, transposeTrack, closeGap → model/selection; scheduleAnalysisRecompute/adopt* → gen/analysis; drGenerate/bsGenerate/applyTake → gen/*; M2's misfiled ones down out of ui/* | ~1,400 (actual: 1,204, 13343→12139) |
 | 6 | M | session/song.js: finalizeNotes, bakeMeter, bakeTempos, loadNotes, updateSongMeta, fitView, loadSong*, setSong, openDraft*; session/album.js: albumStart/PlayIdx/Advance…; session/files.js: saveSongAs, openSaveForm, forkCurrentSong, revertSongToRepo, moveComposition, renameLocalKeys | ~1,000 |
 | 7 | M | voice menu/pickers/buildClipControls → ui/voice-menu; renderTrackbar/trackToggle/saveTrackDir/saveVoices/renameTrack → ui/trackbar; mixer cluster → ui/mixer; wm actions → ui/wm; renderNoteList → ui/notes; updateChipBtn/updateSubtitle/updateLCD → ui/chrome; drummer/bassist sheets → ui/sheets | ~1,700 |
 | 8 | M | commitImports, impCapture, openChipImport, captureChipTrack, fsub*, batchCommit, importAudioFiles, openPickedFiles, m3u → import/*; publishSong, renderSyncPending, openSyncSheet, fingerprintOldDrafts, discardPending, sweepStrandedClones, renameRepoTitles, manifest* → sync/publish (sheets → ui/sheets) | ~1,350 |
@@ -569,6 +569,71 @@ untouched. No port added, no logic edit anywhere. **iPad ear check now
 owed in full** (plan §3's step-4 list, no longer narrowed — this IS the
 engine): synth, SF2, game voice, NES + one streamed console, clip at
 0.5×, note preview, album auto-advance, metronome. See open-items Q9.
+
+**Step 5 — Done** (2026-10-04, worktree agent). Eighteen commits. The
+row's four clusters were each held at layer 2 by the same two things:
+the M2 "misfiled upward" names still sitting in ui/* (saveDraft and
+friends), and a handful of helpers at layers 3–4 that model code calls.
+`blockers.mjs` first, every cluster, before anything moved; then the
+unblocking in dependency order, then the clusters:
+
+1–7. **M, re-homes** (each `blockers.mjs` clean, each importer re-pointed
+   by hand, import lines only): `isDirective`/`isCopyableAnno`
+   (render/roll.js → model/rollnotes.js — annotation predicates, not
+   drawing); `snapBeat` (ui/note-editor.js → model/grid.js — the reason
+   4b ported setAnchorBQ instead of re-homing it); `setEndBQ`/
+   `dropSupersededBy` (ui/note-editor.js → model/rollnotes.js);
+   `notesTxtFor`/`declaredTsForKey` (sync/publish.js → model/rollnotes.js
+   — filesMirror's ONE layer-4 dependency, which was what kept saveDraft
+   out of model); `undoTrackAdd` (ui/sheets.js → model/edits.js);
+   `draftWrite`/`localDraftWrite` (ui/sheets.js → model/versions.js);
+   `saveDraft`/`retireOldOverlay`/`filesMirrorSoon`/`draftRead`/
+   `filesMirror`/`localDraftTracks` (ui/chrome.js) + `filesMirrorFor`
+   (app.js) → model/versions.js — M2's own "back down once ports exist",
+   done. `flushBackupNow` stays in ui/chrome.js (aiUrl/aiHeaders, layer 4;
+   reached only through the scheduleBackupFlush port). Step 2's move.mjs
+   gotcha recurred once (a copied same-layer `logErrImpl as logErr` alias
+   landing in versions.js, rule 5) — hand-fixed to the hooks.js port.
+8–9, 14. **H, three commits, four ports** — the model/gen clusters' upcalls
+   with no layer-2 home, all by §1 M1's recipe: `updateSongMeta` (the bpm
+   label; saveEdits calls it; impl stays in app.js, wire.js imports it
+   from there — step 3's shape), `lassoedAnnos` + `drumStep` (the lasso's
+   pixel-box annotation query in ui/note-editor.js; the kit-lane row walk
+   in render/roll.js), `annoInLasso` (copySelection filters with it
+   directly). **check.mjs rule 10 earned its keep**: the first annoInLasso
+   attempt pointed ui/note-editor.js (layer 4) at the port whose impl is
+   layer 3 — flagged; fixed with step 3's downward `annoInLassoImpl as
+   annoInLasso` alias. ALL_PORTS 24 → 28, a rebinding test per port.
+10–13. **M**: `transposeChordLabel` → theory/chords.js (LETTER_PC/
+   CHORD_FLAT live there); `dropLocalKeyAt` → model/rollnotes.js;
+   `scheduleAnalysisRecompute`/`adoptChordBand`/`adoptAllChords`/
+   `adoptKeyRegion` → gen/analysis.js (Normal-mode gate inside the bodies,
+   untouched); `saveEdits`/`loadEdits`/`foldOldOverlay` → model/edits.js
+   (the 2026-10-02 SAFETY slice — verbatim, prof wrap travelled).
+15–18. **M**: the selection cluster → model/selection.js, 26 names — the
+   row's list plus the neighbours blockers.mjs showed held only by the
+   set itself (`duplicateSelection(InPlace)`, `divideSelection`,
+   `diatonicShift`, `removeDuplicateNotes`, `sweepStrandedClones`,
+   `clearMultiSel`; left: `selectAllNotes` (render+ui), the undo log's
+   apply side `invertEdit`/`applyEditEntry`/`editUndoPop`/`editRedoPop`
+   (reaches the mixer UI — step 11), the sheet openers); `moveClip`/
+   `trimClip`/`splitSelectedClipAtCursor` → audio/clips.js (they surfaced
+   as "blocked by layer 3" — i.e. clips-cluster members); `drGenerate` →
+   gen/drummer.js; `bsGenerate`/`applyTake` → gen/bassist.js.
+
+Per commit: `verbatim.mjs <sha>` ✔ (M) / `--hook <names>` ✔ (H), zero
+exceptions in all eighteen; regen-e2e-footer after every app.js move;
+check.mjs clean except `oldBpb`; e2e-globals/controls clean; prof set
+29, unchanged (saveDraft/saveEdits/selEditApply/insertTime wraps all
+travelled). Group: `perl -e 'alarm 1200; exec @ARGV' npm test` — only
+`ps2-real`/`instruments` fail (pre-existing); modules 86/86; smoke 8/8;
+`package.mjs`: 181 files, list identical. `src/app.js`: 13343 → 12139
+(1,204 out, ~the row's estimate). Learning-mode gates untouched.
+**Device check owed** (plan §3 step 5): edit/undo, quantize/split/join,
+copy/paste, a drummer/bassist take, and — because saveDraft/saveEdits/
+draftWrite moved file — a real-browser edit → reload → compare on a
+scratch local song before this ships (memory: persistence needs a
+device test).
 
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run
