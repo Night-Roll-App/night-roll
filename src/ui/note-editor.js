@@ -1,0 +1,441 @@
+import { S, prof } from "../state.js";
+import { resolveNote } from "../model/rollnotes.js";
+import { barTicks } from "../model/rollnotes.js";
+import { beatsPerBarDisp } from "../model/grid.js";
+import { isComposition } from "../model/provenance.js";
+import { chordQualCompose } from "../theory/chords.js";
+import { parseChordSym } from "../theory/chords.js";
+import { chordQualParse } from "../theory/chords.js";
+import { micStop } from "./chrome.js";
+import { LINK_SONGS } from "../platform/base.js";
+import { setInfo } from "./chrome.js";
+import { linkRepoLabel } from "../platform/base.js";
+import { beatTicks } from "../model/grid.js";
+import { tonicOptionValue } from "./notes.js";
+import { modeOfName } from "../theory/key.js";
+import { selEditItems } from "../model/selection.js";
+import { selClipObj } from "../render/tracks.js";
+import { clipboardHas } from "../model/selection.js";
+import { isDirective } from "../render/roll.js";
+import { annoInLasso } from "../render/roll.js";
+import { editableSong } from "../model/song.js";
+import { ownFolderPath } from "../model/provenance.js";
+import { originOf } from "../model/provenance.js";
+import { draw } from "./chrome.js";
+import { sfShownAt } from "../model/song.js";
+import { pitchName } from "../theory/chords.js";
+import { spellPc } from "../theory/chords.js";
+import { appMode } from "../platform/mode.js";
+import { nameChord } from "../theory/chords.js";
+
+// fractional rotation while a finger is spinning the wheel
+// Insert-chord (Josh, 2026-08-17): stamp a full chord at the cursor with the
+// pencil duration, cursor walks forward — repeated inserts build a progression.
+export const CHORD_QUALS = [
+  ["maj", [0, 4, 7]], ["m", [0, 3, 7]], ["dim", [0, 3, 6]], ["aug", [0, 4, 8]],
+  ["sus2", [0, 2, 7]], ["sus4", [0, 5, 7]], ["6", [0, 4, 7, 9]], ["m6", [0, 3, 7, 9]],
+  ["7", [0, 4, 7, 10]], ["maj7", [0, 4, 7, 11]], ["m7", [0, 3, 7, 10]],
+  ["m7♭5", [0, 3, 6, 10]], ["dim7", [0, 3, 6, 9]],
+];
+export const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
+export const INS_DURS = [["16th", 0.25], ["8th", 0.5], ["8th.", 0.75], ["quarter", 1],
+                  ["quarter.", 1.5], ["half", 2], ["half.", 3], ["whole", 4]];
+// quarters — the Insert dialogs' own duration, independent of the pencil
+export function chordLabel() {
+  return CHORD_ROOTS[S.chordRoot].split("/")[0] + (S.chordQual === "maj" ? "" : S.chordQual);
+}
+export function stampChordBand(tick, durTicks, sym) { // the matching ruler annotation
+  // end via setEndBQ (inclusive last beat): deriving it from the last tick
+  // rounded every band up a beat, so bar-long chords overlapped (Josh, 2026-09-12)
+  const fresh = {text: sym, chord: true, added: true};
+  setAnchorBQ(fresh, tick);
+  setEndBQ(fresh, tick + durTicks);
+  dropSupersededBy(fresh); // one band per span, same as the dialog path
+  S.rollnotes.push(resolveNote(fresh));
+}
+// Progression library (Josh, 2026-08-17): emotions → Roman-numeral recipes.
+// Numerals are major-scale-relative (♭VI = lowered 6th degree), the app's
+// degree convention; lowercase = minor chord. Deliberately key-agnostic.
+export const PROG_LIB = [
+  ["Triumphant", "I – IV – V – I", "the textbook full cadence — arrival with banners"],
+  ["Heroic", "I – ♭VII – IV – I", "the Mixolydian rock-hero loop; ♭VII is the swagger"],
+  ["Hopeful", "I – V – vi – IV", "the four-chord anthem — rises, dips minor, lands warm"],
+  ["Bittersweet", "vi – IV – I – V", "same chords as Hopeful, started on the minor — smiling through it"],
+  ["Nostalgic", "I – vi – IV – V", "the 50s doo-wop turnaround; instant sepia"],
+  ["Romantic", "Imaj7 – vi7 – ii7 – V7", "jazz turnaround with the sevenths left in — candlelight"],
+  ["Peaceful", "I – IV – I – IV", "plagal rocking, no leading tone anywhere — nothing needs to happen"],
+  ["Dreamy", "Imaj7 – IVmaj7", "two maj7 chords floating a fourth apart; time gets soft"],
+  ["Wonder", "I – II", "the Lydian lift — the major chord one whole step up opens the sky"],
+  ["Playful", "I – VI7 – II7 – V7", "the ragtime circle of dominants; every chord winks"],
+  ["Yearning", "IV – V – iii – vi", "the JRPG 'royal road' — reaches, almost resolves, aches instead"],
+  ["Anxious", "vi – V – IV – V", "circles the tonic without ever landing on it"],
+  ["Melancholy", "i7 – iv7 – ♭VI – V7", "minor with sevenths — sadness that still moves forward"],
+  ["Sad (epic)", "i – ♭VI – ♭III – ♭VII", "the dark pop loop; grief with scale"],
+  ["Grieving", "i – ♭VII – ♭VI – V", "the Andalusian descent — the bass walks down to the funeral"],
+  ["Lonely", "i – v – i – v", "minor v instead of major V: no leading tone, no one coming"],
+  ["Dark epic", "i – ♭VI – ♭VII – i", "the boss-theme loop; menace in armor"],
+  ["Ominous", "i – ♭II", "the Neapolitan half-step shadow — Jaws lives here"],
+  ["Villainous", "i – ♭vi", "minor chromatic mediant (Cm→A♭m): wrongness with a cape"],
+  ["Creepy", "i – ♯iv°", "tonic against the tritone diminished — the floor isn't real"],
+  ["Battle", "i – ♭VII – ♭VI – ♭VII", "the driving minor loop; run, fight, repeat"],
+  ["Mysterious", "I – ♭VI", "major chromatic mediant (C→A♭): familiar light, unfamiliar room"],
+  ["Tense", "i – ♭II – ♭III – ♭II", "phrygian steps grinding a half-step above home"],
+];
+// ---------------------------------------------------------------- note editor
+export const editor = document.getElementById("noteeditor");
+export function fillBarBeatSelects() {
+  const bars = Math.max(1, Math.round(S.songEndTick / barTicks()));
+  const beatsPerBar = beatsPerBarDisp();
+  const mkBars = (id, noneOption, pastEnd) => {
+    const s = document.getElementById(id);
+    s.innerHTML = "";
+    if (noneOption) {
+      const o = document.createElement("option");
+      o.value = ""; o.textContent = "—";
+      s.appendChild(o);
+    }
+    // pastEnd: one extra bar so a loop's "from" can name the absolute end
+    // of the song — bar N+1 beat 1 IS the end of bar N
+    for (let b = 1; b <= bars + (pastEnd ? 1 : 0); b++) {
+      const o = document.createElement("option");
+      o.value = String(b); o.textContent = String(b);
+      s.appendChild(o);
+    }
+  };
+  const mkBeats = (id) => { // whole beats only — subdivisions live in the paired select
+    const s = document.getElementById(id);
+    s.innerHTML = "";
+    for (let b = 1; b <= beatsPerBar; b++) {
+      const o = document.createElement("option");
+      o.value = String(b); o.textContent = String(b);
+      s.appendChild(o);
+    }
+  };
+  const mkSubs = (id) => { // Josh's split (2026-08-18): one merged 1/1e/1&/1a…
+    // dropdown got huge — beat picks the beat, this picks the 16th within it
+    const s = document.getElementById(id);
+    s.innerHTML = "";
+    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) {
+      const o = document.createElement("option");
+      o.value = String(f); o.textContent = syl;
+      s.appendChild(o);
+    }
+  };
+  mkBars("nb1", false, true); mkBars("nb2", true); mkBars("nlb", false);
+  mkBeats("nq1"); mkBeats("nq2"); mkBeats("nlq");
+  mkSubs("ns1"); mkSubs("ns2"); mkSubs("nls");
+}
+export function editorType() { return document.getElementById("ntype").value; }
+export function applyEditorType() {
+  const t = editorType();
+  document.getElementById("ntext").style.display = ""; // every authored type carries a note (Josh, 2026-08-22)
+  document.getElementById("nsectrow").style.display = t === "section" ? "" : "none";
+  document.getElementById("nkeyrow").style.display = t === "key" ? "" : "none";
+  document.getElementById("nchordbox").style.display = t === "chord" ? "" : "none";
+  document.getElementById("ntsrow").style.display = t === "timesig" ? "" : "none";
+  document.getElementById("ntemporow").style.display = t === "tempo" ? "" : "none";
+  document.getElementById("nlooprow").style.display = t === "loop" ? "" : "none";
+  document.getElementById("nchoprow").style.display = t === "chop" ? "" : "none";
+  document.getElementById("ntorow").style.display = t === "loop" || t === "timesig" || t === "chop" || t === "tempo" ? "none" : "";
+  document.getElementById("nmic").style.display =
+    SPEECH && t !== "key" && t !== "loop" && t !== "timesig" && t !== "chop" && t !== "tempo" ? "" : "none"; // dictation targets the text box
+  document.getElementById("ntext").placeholder =
+    t === "note" ? "What's happening at this beat?"
+                 : "Optional note about this " + (t === "timesig" ? "meter" : t) + " (✱ in the ruler)";
+  document.getElementById("nstatus").textContent =
+    t === "key" ? "To bar '—' = until further notice; set it to make a temporary key that reverts after." :
+    t === "chord" ? "Tap chips or type the symbol. Standard: bare root = major (C), m = minor (Gm), /X = bass note (G7/B)." :
+    t === "chop" ? "Non-destructive trim: the chopped part disappears entirely and bars renumber. Chopping the start shifts your annotations to match; delete the chop to restore." :
+    t === "loop" ? "When playback reaches the 'from' point (or the song end, if 'from' is at/before the target), it jumps back to the target bar/beat." :
+    t === "timesig" ? "Until you declare a meter, the grid is a neutral 4/4 ruler. Declaring re-bars the song; existing annotations are converted to keep their musical positions." :
+    t === "tempo" ? (isComposition()
+      ? "Authoring: sets the tempo from this bar/beat onward. Playback, the LCD, and Save all follow."
+      : "Observation: records that the music changes tempo here. Playback is untouched — the capture's timing is measured fact.") :
+    document.getElementById("nstatus").textContent;
+}
+export const BASS_SPELLINGS = ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb",
+                        "G", "G#", "Ab", "A", "A#", "Bb", "B"];
+export const chordSel = {root: null, acc: "", base: "maj", exts: []};
+export function refreshChordChips() {
+  for (const b of document.querySelectorAll("#nchordroot button"))
+    b.classList.toggle("active", b.dataset.v === chordSel.root);
+  for (const b of document.querySelectorAll("#nchordacc button"))
+    b.classList.toggle("active", chordSel.root !== null && b.dataset.v === chordSel.acc);
+  for (const b of document.querySelectorAll("#nchordqual button"))
+    b.classList.toggle("active", chordSel.base !== null && b.dataset.v === chordSel.base);
+  for (const b of document.querySelectorAll("#nchordext button"))
+    b.classList.toggle("active", chordSel.base !== null && chordSel.exts.includes(b.dataset.v));
+}
+export function composeChord() {
+  if (!chordSel.root || chordSel.base === null) return; // incomplete/unknown — leave the box alone
+  const bass = document.getElementById("nchordbass").value;
+  document.getElementById("nchordsym").value = chordSel.root + chordSel.acc +
+    chordQualCompose(chordSel.base, chordSel.exts) + (bass ? "/" + bass : "");
+}
+export function setChordWidget(sym) {
+  const m = parseChordSym(sym);
+  chordSel.root = m ? m[1] : null;
+  chordSel.acc = m ? m[2] : "";
+  const q = m ? chordQualParse(m[3]) : {base: "maj", exts: []};
+  chordSel.base = q ? q.base : null; // unknown quality: chips stand down
+  chordSel.exts = q ? q.exts : [];
+  document.getElementById("nchordbass").value = m && m[4] ? m[4] : "";
+  document.getElementById("nchordsym").value = sym || "";
+  refreshChordChips();
+}
+// dictation into the note text box (Web Speech API — easier on hands than
+// typing; falls back silently to the keyboard mic where unsupported)
+export const SPEECH = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+// whichever 🎤 is live (annotation editor or ✦ AI)
+// Safari hands dictation back one segment per pause, with no space and no
+// period between segments, but it capitalizes the first word after a pause
+// (Josh, 2026-09-26: "nowAnd", "butIt"). Join segments with a space, and when
+// the next one starts with a capital and the last ended with none of .?!,;:
+// close the sentence with a period first.
+export function micJoin(parts) {
+  let out = "";
+  for (let p of parts) {
+    p = (p || "").trim();
+    if (!p) continue;
+    if (!out) { out = p; continue; }
+    const closes = /[.?!,;:]$/.test(out);
+    out += (!closes && /^[A-Z]/.test(p) ? ". " : " ") + p;
+  }
+  return out;
+}
+export function micToggle(btn, textarea, statusFn) { // shared dictation: append into any box
+  if (S.micRec) { const same = S.micBtn === btn; micStop(!same); if (same) return; } // same button = a tapped Stop: its words still land
+  // a stale late result must not overwrite this session's base — and Safari
+  // runs ONE recognition at a time: a stopped session still winding down made
+  // the new start() throw while the button said it was listening (Josh,
+  // 2026-09-26: "it just wasn't accepting anything")
+  if (S.micPrev) { S.micPrev.onresult = null; try { S.micPrev.abort(); } catch (err) { /* already gone */ } S.micPrev = null; }
+  const base = textarea.value ? textarea.value.replace(/\s+$/, "") + " " : "";
+  let finals = "";
+  S.micRec = new SPEECH();
+  S.micBtn = btn;
+  S.micRec.continuous = true;
+  S.micRec.interimResults = true;
+  S.micRec.onresult = e => {
+    const fin = [], mid = [];
+    for (let i = 0; i < e.results.length; i++) (e.results[i].isFinal ? fin : mid).push(e.results[i][0].transcript);
+    finals = micJoin(fin);
+    textarea.value = micJoin([base, finals, micJoin(mid)]);
+    textarea.dispatchEvent(new Event("input")); // so the box grows/scrolls as it would when typed into
+  };
+  S.micRec.onerror = e => {
+    statusFn(e.error === "not-allowed" ? "Microphone permission denied — allow it in Safari settings."
+                                       : "Dictation error: " + e.error);
+    micStop();
+  };
+  S.micRec.onend = () => micStop(); // Safari ends recognition on silence
+  btn.classList.add("active");
+  btn.textContent = "■ Stop listening"; // the Ask sheet has a second ■ (stop reply): say which this is
+  try { S.micRec.start(); }
+  catch (err) { statusFn("Dictation couldn't start (" + (err.message || err) + ") — tap 🎤 again"); micStop(true); } // never a listening button that isn't
+}
+export function snapBeat(q) { return Math.round((q - 1) / 0.25) * 0.25 + 1; }
+export function setBeatPair(qid, sid, q) { // 2.75 → beat "2", sub ".75"
+  q = snapBeat(q);
+  const beat = Math.floor(q + 0.03);
+  document.getElementById(qid).value = String(beat);
+  document.getElementById(sid).value = String(Math.round((q - beat) * 4) / 4);
+}
+export function getBeatPair(qid, sid) {
+  return (+document.getElementById(qid).value || 1) + (+document.getElementById(sid).value || 0);
+}
+export function openEditor(note, presetType, opts) { // opts.atStart: a new note anchors at bar 1 beat 1, ignoring the cursor/selection
+  if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  micStop(true);
+  S.editingNote = note || null;
+  fillBarBeatSelects();
+  const bt = barTicks();
+  // a tapped note anchors a new note: tapping no longer moves the cursor
+  // (DAW habit, 2026-09-29), and tap-a-note → + Note is how Josh annotates
+  const at0 = opts && opts.atStart ? 0 : !note && S.selNote && S.song.tracks[S.selNote.ti] && S.song.tracks[S.selNote.ti].notes[S.selNote.ni] ? S.song.tracks[S.selNote.ti].notes[S.selNote.ni].t : S.playCursor;
+  let b1 = Math.floor(at0 / bt) + 1;
+  let q1 = snapBeat((at0 % bt) / beatTicks() + 1);
+  let b2 = "", q2 = "";
+  if (!note && S.rangeSel && !(opts && opts.atStart)) { // prefill the from/to fields from the ruler selection
+    b1 = Math.floor(S.rangeSel.a / bt) + 1;
+    q1 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
+    const last = S.rangeSel.b - beatTicks(); // inclusive last beat of the selection
+    if (last >= S.rangeSel.a) { // >= so a one-beat selection prefills To = From
+      b2 = Math.floor(last / bt) + 1;
+      q2 = snapBeat((last % bt) / beatTicks() + 1);
+    }
+  }
+  const type = note ? (note.chord ? "chord" : note.section ? "section"
+                       : note.keydir !== undefined || note.keypartial ? "key"
+                       : note.tsdir ? "timesig" : note.tempodir !== undefined ? "tempo" : note.chopdir ? "chop"
+                       : note.loopTo !== undefined ? "loop" : "note")
+             : presetType ? presetType // a group's + button pre-picks its type
+             // a drag before + Note means "label this span" — as whichever of
+             // section/chord was dragged last (chord runs stay in chord mode)
+             : S.rangeSel ? (localStorage.getItem("ff1roll-dragtype") || "section")
+             : "note";
+  document.getElementById("ntype").value = type;
+  if (type === "tempo") {
+    let usq = S.song.tempos[0].usq;
+    for (const tp of S.song.tempos) { if (tp.tick <= at0) usq = tp.usq; else break; }
+    document.getElementById("ntempo").value =
+      note && note.tempodir !== undefined ? String(note.tempodir) : String(Math.round(6e7 / usq));
+  }
+  if (type === "timesig" && note) {
+    document.getElementById("ntsnum").value = String(note.tsdir[0]);
+    document.getElementById("ntsden").value = String(note.tsdir[1]);
+  }
+  S.rebarArmed = false; // any editor open resets the two-tap warning
+  if (!note && S.rangeSel) setTimeout(() =>
+    document.getElementById(type === "chord" ? "nchordsym" : "ntext").focus(), 50);
+  if (type === "loop" && note) {
+    const lbt = barTicks();
+    document.getElementById("nlb").value = String(Math.floor(note.loopTo / lbt) + 1);
+    setBeatPair("nlq", "nls", (note.loopTo % lbt) / beatTicks() + 1);
+  }
+  document.getElementById("nb1").value = String(note ? note.b1 : b1);
+  setBeatPair("nq1", "ns1", note ? note.q1 : q1);
+  document.getElementById("nb2").value = note ? (note.b2 ? String(note.b2) : "") : (b2 ? String(b2) : "");
+  setBeatPair("nq2", "ns2", note ? (note.q2 || beatsPerBarDisp()) : (q2 || beatsPerBarDisp()));
+  if (type === "chop" && note) {
+    // show the cut in DISPLAYED coordinates (start chop = the current bar 1),
+    // overriding the raw-space b1/q1 the directive itself stores
+    document.getElementById("nchopmode").value = note.chopdir;
+    const dt = note.chopdir === "start" ? 0 : Math.max(0, (S.chopE !== null ? S.chopE : 0) - S.chopS);
+    document.getElementById("nb1").value = String(Math.floor(dt / barTicks()) + 1);
+    setBeatPair("nq1", "ns1", (dt % barTicks()) / beatTicks() + 1);
+  }
+  document.getElementById("ntext").value =
+    ["chord", "key", "tempo", "timesig", "loop", "section", "chop"].includes(type)
+      ? (note && note.cnote || "")
+      : note ? note.text : "";
+  document.getElementById("nsectlabel").value = type === "section" && note ? note.text : "";
+  if (type === "chord") setChordWidget(note ? note.text : "");
+  if (type === "key" && note) {
+    const nm = (note.text.match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i) || [])[1] || "";
+    if (note.keypartial) {
+      document.getElementById("nkeysel").value = tonicOptionValue(note.keypartial);
+      document.getElementById("nkeymode").value = ""; // tonic stored, mode pending
+    } else {
+      document.getElementById("nkeysel").value = tonicOptionValue((nm.match(/^([A-G][#b]?)/) || ["", "C"])[1]);
+      document.getElementById("nkeymode").value = modeOfName(nm);
+    }
+  }
+  document.getElementById("ndelete").style.display = note ? "" : "none";
+  document.getElementById("nstatus").textContent = note && !note.added
+    ? "Synced note — edits and deletes become permanent when you Sync." : "";
+  applyEditorType();
+  editor.classList.add("on");
+  // the text box gets focus only for a NEW text note, where typing is the
+  // next thing — opening an existing one (any kind) must not raise the iPad
+  // keyboard over half the screen (Josh, 2026-10-03)
+  if (type === "note" && !note) document.getElementById("ntext").focus();
+  else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
+}
+export function updateEditButtons() { // disabled = "this can't do anything right now"
+  const sel = S.song ? selEditItems().length : 0;
+  const annos = S.song && S.lassoAnno ? lassoedAnnos().length : 0;
+  const piece = !!(S.song && S.selClip && selClipObj()); // a selected audio piece splits too
+  const st = [!S.editUndo.length, !S.editRedo.length, !sel, !clipboardHas(), !(sel || annos), !(sel || piece)];
+  const key = st.join("|");
+  if (key === S.editBtnCache) return;
+  S.editBtnCache = key;
+  const set = (id, off) => { const b = document.getElementById(id); if (b) b.disabled = off; };
+  set("undobtn", st[0]); set("emUndo", st[0]);
+  set("redobtn", st[1]); set("emRedo", st[1]);
+  set("splitbtn", st[5]); set("emSplit", st[5]);
+  for (const id of ["joinbtn", "emJoin", "movebtn", "emMove",
+                    "divbtn", "emDivide", "trbtn", "emTranspose",
+                    "quantbtn", "emQuantize"]) set(id, st[2]);
+  for (const id of ["copybtn", "emDup", "cutbtn", "emCut", "delbtn", "emDelete"]) set(id, st[4]); // these also act on lasso'd annotations, notes or not
+  set("pastebtn", st[3]); set("emPaste", st[3]); set("emPasteTo", st[3]);
+}
+updateEditButtons = prof("updateEditButtons", updateEditButtons); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+
+export function setAnchorBQ(n, tick) { // start anchor from a tick
+  const bt = barTicks(), qt = beatTicks(), t = Math.max(0, tick);
+  n.b1 = Math.floor(t / bt) + 1;
+  n.q1 = snapBeat((t % bt) / qt + 1);
+}
+export function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote adds one)
+  const bt = barTicks(), qt = beatTicks(), t = Math.max(qt, tick) - qt;
+  n.b2 = Math.floor(t / bt) + 1;
+  n.q2 = snapBeat((t % bt) / qt + 1);
+}
+// Editing an annotation used to leave the old one sitting beside the new one:
+// airship ended up with two keys at 1.1, two chord bands on 15.1–15.4, and the
+// same tritone note at two anchors — invisible in the roll, because duplicate
+// bands draw on top of each other (Josh, 2026-08-26: "something feels wrong
+// with the annotation sometimes"). Call this before pushing a new annotation.
+// Josh's rules, per type:
+//   chord — one band per exact span. A new band REPLACES whatever was on that
+//           span, whatever its label; that is what re-labelling a bar means.
+//   note  — several notes at one anchor are legitimate and stay. Only a
+//           byte-identical text at the same anchor is a duplicate.
+//   key   — handled by dropLocalKeyAt (anchor-level).
+// Sections are deliberately left alone: nesting is by containment and he has
+// not asked for a rule there.
+export function dropSupersededBy(fresh) {
+  const sameAnchor = n => n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1);
+  const sameSpan = n => sameAnchor(n) && (n.b2 || null) === (fresh.b2 || null) &&
+                                         (n.q2 || null) === (fresh.q2 || null);
+  if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
+  else if (!isDirective(fresh)) {
+    const t = (fresh.text || "").trim();
+    S.rollnotes = S.rollnotes.filter(n => !(!isDirective(n) && sameAnchor(n) && (n.text || "").trim() === t));
+  }
+}
+export function lassoedAnnos() { return S.lassoAnno ? S.rollnotes.filter(n => annoInLasso(n, S.lassoAnno)) : []; }
+
+export function refreshSelInfo() { // one source of truth for the selection readout
+  // 8va (footer v2, 2026-09-30): moved into ⋯ More → SELECTION READOUT as an
+  // always-visible toggle (Josh's usage note: it's reached with no lasso
+  // selection too, to set the sticky preference ahead of time) — no more
+  // show/hide here, just its checked state, rendered every call.
+  renderOctBtn();
+  if (!S.multiSel.length) {
+    document.getElementById("chordbtn").style.display = "none";
+    setInfo("lasso: nothing selected");
+    draw();
+    return;
+  }
+  const tMin = Math.min(...S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].t));
+  S.multiSelSf = sfShownAt(Math.max(0, tMin));
+  reflectSelVel();
+  const pitches = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].p))].sort((a, b) => a - b);
+  // 8va off = chord-reading mode: pitch classes only, octave duplicates collapsed
+  const names = S.selOctaves
+    ? pitches.map(p => pitchName(p, S.multiSelSf))
+    : [...new Set(pitches.map(p => p % 12))].map(pc => spellPc(pc, S.multiSelSf));
+  const vels = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].v))];
+  const velTxt = vels.length === 1 ? " · vel " + vels[0] : ""; // uniform velocity is worth stating
+  S.challengeSec = null;
+  const cb = document.getElementById("chordbtn");
+  if (appMode() === "normal") {
+    // Normal: the chord names itself (nameChord is pattern-matching, not a
+    // ruling on Josh's music) — Chord? stays hidden, nothing to reveal
+    const chordName = nameChord(pitches, S.multiSelSf);
+    setInfo(names.join(" · ") + "  →  " + chordName + "  (" + S.multiSel.length + " notes" + velTxt + ")",
+            names.join(", ") + " — " + chordName);
+    cb.style.display = "none";
+  } else {
+    setInfo(names.join(" · ") + "  (" + S.multiSel.length + " notes" + velTxt + ")", names.join(", "));
+    cb.textContent = "Chord?";
+    cb.style.display = "";
+  }
+  draw();
+}
+// 8va: octave numbers in the readout
+export function renderOctBtn() { // ✓ = selOctaves on — same convention as renderViewMenu's checkmarks
+  const ob = document.getElementById("octbtn");
+  ob.textContent = (S.selOctaves ? "✓ " : "   ") + "8va  Show octave numbers (F#3 vs F#)";
+  ob.classList.toggle("primary", S.selOctaves);
+}
+
+export function reflectSelVel() { // slider face shows the selection's velocity
+  const items = selEditItems();
+  if (!items.length) return;
+  const v = items[0].n.v || 80;
+  const sl = document.getElementById("velslider");
+  if (sl) { sl.value = v; document.getElementById("velval").textContent = v; }
+}

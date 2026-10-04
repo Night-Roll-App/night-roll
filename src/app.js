@@ -756,6 +756,224 @@ import { askShotRestore } from "./ask/shots.js";
 import { MAX_SHOT_SIDE } from "./ask/shots.js";
 import { MAX_SHOT_KEEP_BYTES } from "./ask/shots.js";
 import { askPrepImage } from "./ask/shots.js";
+import { updateTrackMore } from "./ui/trackbar.js";
+import { fitTrackRow } from "./ui/trackbar.js";
+import { scheduleFitTrackRow } from "./ui/trackbar.js";
+import { TRACK_ROW_SLACK } from "./ui/trackbar.js";
+import { trackRowNeed } from "./ui/trackbar.js";
+import { moveInSameOrder } from "./ui/mixer.js";
+import { mixerMasterStripEl } from "./ui/mixer.js";
+import { mixerPanLabel } from "./ui/mixer.js";
+import { ensureMixerMeters } from "./ui/mixer.js";
+import { ensureMixerMeterLoop } from "./ui/mixer.js";
+import { teardownMixerMeters } from "./ui/mixer.js";
+import { mixerIsOpen } from "./ui/mixer.js";
+import { mixerMeterRms } from "./ui/mixer.js";
+import { mixerMeterLoop } from "./ui/mixer.js";
+import { setInfo } from "./ui/chrome.js";
+import { renderViewMenu } from "./ui/chrome.js";
+import { logDebug } from "./ui/chrome.js";
+import { keyLabelState } from "./ui/chrome.js";
+import { updateSyncBtn } from "./ui/chrome.js";
+import { updateSongBtn } from "./ui/chrome.js";
+import { appConfirm } from "./ui/chrome.js";
+import { updateJobsBtn } from "./ui/chrome.js";
+import { logErr } from "./ui/chrome.js";
+import { srAnnounce } from "./ui/chrome.js";
+import { songHeader } from "./ui/chrome.js";
+import { localLabel } from "./ui/chrome.js";
+import { songRow } from "./ui/chrome.js";
+import { closeDropUp } from "./ui/chrome.js";
+import { findsel } from "./ui/chrome.js";
+import { refreshFindSel } from "./ui/chrome.js";
+import { scheduleFitReadline } from "./ui/chrome.js";
+import { fitReadline } from "./ui/chrome.js";
+import { applyChrome } from "./ui/chrome.js";
+import { renderViewSwitch } from "./ui/chrome.js";
+import { viewbtn } from "./ui/chrome.js";
+import { viewSwitchMenu } from "./ui/chrome.js";
+import { applyInst } from "./ui/chrome.js";
+import { instbtn } from "./ui/chrome.js";
+import { subbtn } from "./ui/chrome.js";
+import { instFallBtn } from "./ui/chrome.js";
+import { micStop } from "./ui/chrome.js";
+import { errChip } from "./ui/chrome.js";
+import { STATUS_HISTORY_CAP } from "./ui/chrome.js";
+import { expandKeyName } from "./ui/chrome.js";
+import { FOOTER_DROPUP_BTN_IDS } from "./ui/chrome.js";
+import { viewSaved } from "./ui/chrome.js";
+import { keyNameShownAt } from "./ui/chrome.js";
+import { nmic } from "./ui/chrome.js";
+import { pendingSongs } from "./ui/chrome.js";
+import { songtitleEl } from "./ui/chrome.js";
+import { dirtySongs } from "./ui/chrome.js";
+import { syncable } from "./ui/chrome.js";
+import { draftDirtyState } from "./ui/chrome.js";
+import { GAME_FAMILY } from "./ui/voice-menu.js";
+import { SF2_FAMILY } from "./ui/voice-menu.js";
+import { autoVoiceLabel } from "./ui/voice-menu.js";
+import { gameVoiceFromSet } from "./ui/voice-menu.js";
+import { gameVoiceFrom } from "./ui/voice-menu.js";
+import { gameVoiceFromAll } from "./ui/voice-menu.js";
+import { refreshKeysetLabel } from "./ui/notes.js";
+import { keysel } from "./ui/notes.js";
+import { tonicLabel } from "./ui/notes.js";
+import { chosenTonicPc } from "./ui/notes.js";
+import { keymodeSel } from "./ui/notes.js";
+import { keysetBtn } from "./ui/notes.js";
+import { chosenTonic } from "./ui/notes.js";
+import { partialNameOf } from "./ui/notes.js";
+import { NOTE_GROUPS } from "./ui/notes.js";
+import { notelistSheet } from "./ui/notes.js";
+import { runKeyCheck } from "./ui/notes.js";
+import { runMeterCheck } from "./ui/notes.js";
+import { useFileMeter } from "./ui/notes.js";
+import { renderNoteJump } from "./ui/notes.js";
+import { showHelpTab } from "./ui/notes.js";
+import { lassobtn } from "./ui/notes.js";
+import { openChallenge } from "./ui/notes.js";
+import { tonicOptionValue } from "./ui/notes.js";
+import { fileCheckLine } from "./ui/notes.js";
+import { chordEvidence } from "./ui/notes.js";
+import { snapBeat } from "./ui/note-editor.js";
+import { openEditor } from "./ui/note-editor.js";
+import { updateEditButtons } from "./ui/note-editor.js";
+import { CHORD_QUALS } from "./ui/note-editor.js";
+import { stampChordBand } from "./ui/note-editor.js";
+import { chordLabel } from "./ui/note-editor.js";
+import { CHORD_ROOTS } from "./ui/note-editor.js";
+import { INS_DURS } from "./ui/note-editor.js";
+import { PROG_LIB } from "./ui/note-editor.js";
+import { applyEditorType } from "./ui/note-editor.js";
+import { BASS_SPELLINGS } from "./ui/note-editor.js";
+import { chordSel } from "./ui/note-editor.js";
+import { refreshChordChips } from "./ui/note-editor.js";
+import { composeChord } from "./ui/note-editor.js";
+import { micToggle } from "./ui/note-editor.js";
+import { editor } from "./ui/note-editor.js";
+import { editorType } from "./ui/note-editor.js";
+import { getBeatPair } from "./ui/note-editor.js";
+import { setBeatPair } from "./ui/note-editor.js";
+import { SPEECH } from "./ui/note-editor.js";
+import { fillBarBeatSelects } from "./ui/note-editor.js";
+import { setChordWidget } from "./ui/note-editor.js";
+import { micJoin } from "./ui/note-editor.js";
+import { setAnchorBQ } from "./ui/note-editor.js";
+import { setEndBQ } from "./ui/note-editor.js";
+import { lassoedAnnos } from "./ui/note-editor.js";
+import { dropSupersededBy } from "./ui/note-editor.js";
+import { renderJobs } from "./ui/sheets.js";
+import { jobCancel } from "./ui/sheets.js";
+import { renderPubJob } from "./ui/sheets.js";
+import { openAnalyzeSheet } from "./ui/sheets.js";
+import { publishDest } from "./ui/sheets.js";
+import { publishLabel } from "./ui/sheets.js";
+import { openPubJobSheet } from "./ui/sheets.js";
+import { openSettingsSheet } from "./ui/sheets.js";
+import { openShareSheet } from "./ui/sheets.js";
+import { versionLabel } from "./ui/sheets.js";
+import { jobsDismiss } from "./ui/sheets.js";
+import { jobApi } from "./ui/sheets.js";
+import { askCopyText } from "./ui/sheets.js";
+import { penInstant } from "./ui/sheets.js";
+import { noteTapMovesCursor } from "./ui/sheets.js";
+import { dropLocalSong } from "./ui/sheets.js";
+import { pubCheck } from "./ui/sheets.js";
+import { cfgShowPane } from "./ui/sheets.js";
+import { ghCheckOut } from "./ui/sheets.js";
+import { ghCheck } from "./ui/sheets.js";
+import { syncsheet } from "./ui/sheets.js";
+import { pubItemIcon } from "./ui/sheets.js";
+import { textSizePref } from "./ui/sheets.js";
+import { jobsNotify } from "./ui/sheets.js";
+import { CFG_PANES } from "./ui/sheets.js";
+import { pubCompareDraft } from "./ui/sheets.js";
+import { jobsAutoClear } from "./ui/sheets.js";
+import { ghCheckMessage } from "./ui/sheets.js";
+import { draftWrite } from "./ui/sheets.js";
+import { localDraftWrite } from "./ui/sheets.js";
+import { idbDraftPut } from "./ui/sheets.js";
+import { wmInnerHeight } from "./ui/wm.js";
+import { WM_WINDOWS } from "./ui/wm.js";
+import { wmZoneForPointer } from "./ui/wm.js";
+import { wmShowDropZone } from "./ui/wm.js";
+import { wmHideDropZone } from "./ui/wm.js";
+import { wmLoad } from "./ui/wm.js";
+import { wmRemoveSideTab } from "./ui/wm.js";
+import { wmClearBottom } from "./ui/wm.js";
+import { wmSave } from "./ui/wm.js";
+import { wmSideCells } from "./ui/wm.js";
+import { wmAllowed } from "./ui/wm.js";
+import { wmInnerWidth } from "./ui/wm.js";
+import { wmWhereIs } from "./ui/wm.js";
+import { wmSetActiveSideTab } from "./ui/wm.js";
+import { wmClampSize } from "./ui/wm.js";
+import { wmWindowTitle } from "./ui/wm.js";
+import { wmLayoutBottom } from "./ui/wm.js";
+import { wmSyncDockButtons } from "./ui/wm.js";
+import { wmAddSideTab } from "./ui/wm.js";
+import { wmSetSideMode } from "./ui/wm.js";
+import { wmDockBottom } from "./ui/wm.js";
+import { wmMenuItem } from "./ui/wm.js";
+import { wmCloseMenu } from "./ui/wm.js";
+import { wmSetSideWidth } from "./ui/wm.js";
+import { WM_DEFAULT_W } from "./ui/wm.js";
+import { wmSetBottomHeight } from "./ui/wm.js";
+import { WM_DEFAULT_H } from "./ui/wm.js";
+import { wmSetBottomSplit } from "./ui/wm.js";
+import { WM_KEY } from "./ui/wm.js";
+import { WM_OLD_KEY } from "./ui/wm.js";
+import { WM_MIN_W } from "./ui/wm.js";
+import { WM_MIN_H } from "./ui/wm.js";
+import { WM_MIN_SPLIT } from "./ui/wm.js";
+import { WM_PHONE_MAX } from "./ui/wm.js";
+import { WM_ZONE_FRAC } from "./ui/wm.js";
+import { WM_EDGE_GAP } from "./ui/wm.js";
+import { wmClampHeight } from "./ui/wm.js";
+import { wmClampSplit } from "./ui/wm.js";
+import { wmMigrate } from "./ui/wm.js";
+import { wmMigrateShape } from "./ui/wm.js";
+import { wmMigrateShapeB } from "./ui/wm.js";
+import { wmSetSide } from "./ui/wm.js";
+import { wmClearSide } from "./ui/wm.js";
+import { wmZoneFor } from "./ui/wm.js";
+import { wmDockLabel } from "./ui/wm.js";
+import { wmDockShort } from "./ui/wm.js";
+import { draw } from "./ui/chrome.js";
+import { playbackFrame } from "./ui/chrome.js";
+import { drawFull } from "./ui/chrome.js";
+import { resize } from "./ui/chrome.js";
+import { updateCanvasA11y } from "./ui/chrome.js";
+import { pushUndo } from "./model/edits.js";
+import { addTrackUndoable } from "./model/edits.js";
+import { clampView } from "./ui/chrome.js";
+import { minPxq } from "./ui/chrome.js";
+import { pxqFloor } from "./ui/chrome.js";
+import { rowHFloor } from "./ui/chrome.js";
+import { PAN_TAIL_BARS } from "./ui/chrome.js";
+import { dispPitchExtent } from "./ui/chrome.js";
+import { ROLL_AIR } from "./ui/chrome.js";
+import { saveDraft } from "./ui/chrome.js";
+import { scheduleBackupFlush } from "./ui/chrome.js";
+import { retireOldOverlay } from "./ui/chrome.js";
+import { filesMirrorSoon } from "./ui/chrome.js";
+import { filesMirror } from "./ui/chrome.js";
+import { draftRead } from "./ui/chrome.js";
+import { flushBackupNow } from "./ui/chrome.js";
+import { localDraftTracks } from "./ui/chrome.js";
+import { bsRange } from "./ui/sheets.js";
+import { drRange } from "./ui/sheets.js";
+import { drPartsGet } from "./ui/sheets.js";
+import { drKitCountT } from "./ui/sheets.js";
+import { segSet } from "./ui/sheets.js";
+import { drPartsSet } from "./ui/sheets.js";
+import { drPartsSync } from "./ui/sheets.js";
+import { computeSongEnd } from "./ui/sheets.js";
+import { dpTick } from "./ui/sheets.js";
+import { undoTrackAdd } from "./ui/sheets.js";
+import { refreshSelInfo } from "./ui/note-editor.js";
+import { renderOctBtn } from "./ui/note-editor.js";
+import { reflectSelVel } from "./ui/note-editor.js";
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
     const b = document.createElement("base"); b.href = S.APP_BASE;
@@ -895,30 +1113,6 @@ function loadEdits() {
   } catch (err) { /* corrupted edits: ignore */ }
   updateClearBtn();
 }
-function saveEdits() {
-  // label review is on-demand only (Josh, 2026-08-19: unsolicited verdicts are
-  // not in the spirit of the project) — edits just retire any review flags
-  S.rollnotes.forEach(n => { if (n.stale) delete n.stale; });
-  scheduleAnalysisRecompute(); // P6: Normal-only view layer — recompute on note edits, debounced; no-op when off
-  if (isComposition() || isLocalDraft()) { // composition or local song: the notes ARE the song — draft it whole
-    saveDraft();
-    computeSongEnd();
-    updateSongMeta();
-    return;
-  }
-  if (!editsKey()) return;
-  const removed = [], added = [];
-  S.song.tracks.forEach((tr, ti) => tr.notes.forEach((n, ni) => {
-    // ticks stored raw (chop is a view); ri keeps ids stable across chops
-    if (n.added) { if (!n.gone) added.push({ti, t: n.t + S.chopS, d: n.d, p: n.p}); }
-    else if (n.gone) removed.push(ti + ":" + (n.ri !== undefined ? n.ri : ni));
-  }));
-  if (removed.length || added.length)
-    localStorage.setItem(editsKey(), JSON.stringify({removed, added}));
-  else localStorage.removeItem(editsKey());
-  updateClearBtn();
-}
-saveEdits = prof("saveEdits", saveEdits); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 function foldOldOverlay() {
   const raw = localStorage.getItem(editsKey());
   if (raw === null) return;
@@ -942,24 +1136,6 @@ function foldOldOverlay() {
     skipped.length + " deletion(s) not replayed (notes kept)" + (skipped.length ? ": " + skipped.join(" ") : ""));
   S.song.overlayFold = {key: S.songKey, raw, need};
 }
-// saveDraft calls this after a write while song.overlayFold is pending;
-// landed is draftWrite's answer (true, or the IndexedDB put's promise)
-function retireOldOverlay(f, landed) {
-  return Promise.resolve(landed).then(ok => ok ? draftRead(f.key) : null).then(d => {
-    if (!d || !d.tracks) return false;
-    const have = new Set();
-    d.tracks.forEach((tr, ti) => tr.notes.forEach(n => have.add(overlayNoteSig(ti, n))));
-    const missing = f.need.filter(sig => !have.has(sig)).length;
-    if (missing) { logDebug("old edits on " + f.key + " kept: the saved draft lacks " + missing + " of their notes"); return false; }
-    const live = "ff1roll-edits-" + f.key;
-    if (localStorage.getItem(live) !== f.raw) return false; // changed since the load: not ours to move
-    localStorage.setItem("ff1roll-retired-edits-" + f.key + "@" + Date.now(), f.raw); // a full store throws here: the overlay stays
-    localStorage.removeItem(live);
-    if (S.song && S.song.overlayFold === f) delete S.song.overlayFold;
-    updateClearBtn();
-    return true;
-  }).catch(err => { logDebug("old edits on " + f.key + " kept: " + (err && err.message || err)); return false; });
-}
 // Lasso sits left of Select/Pencil/Erase on songs you can edit (Josh,
 // 2026-10-03), and in the footer otherwise — the edit row doesn't exist on
 // captures, where lasso is still the reading tool. One node, moved; its
@@ -971,57 +1147,7 @@ function placeLassoBtn(editable) {
   if (editable) { if (b.nextSibling !== seg) row.insertBefore(b, seg); b.classList.add("inrow"); }
   else if (b.parentNode !== placeLassoBtn.home.parent) { placeLassoBtn.home.parent.insertBefore(b, placeLassoBtn.home.next); b.classList.remove("inrow"); }
 }
-function updateEditBtnVis() { // the edit ROW exists only on songs made in the app
-  // (or local .mid loads) — never on the FF captures (Josh, 2026-08-15)
-  if (typeof updateChipBtn === "function") updateChipBtn(); // chip-audio offer follows the song
-  // P1 (docs/provenance-plan.md): was its own isComposition()||isLocalDraft()
-  // ||songKey===null, missing the link-mode/compare-repo guards editableSong()
-  // has — one of the "three copies disagree" bugs the plan found; now the
-  // same call, so a linked song or the repo side of Compare hides the row here too.
-  const editable = editableSong();
-  if (!editable && S.mode !== null && S.mode !== "select") { // leaving an editable song mid-pencil
-    S.mode = null;
-    for (const x of document.querySelectorAll("#modeseg button"))
-      x.classList.remove("active");
-    document.getElementById("durseg").style.display = "none";
-    document.getElementById("velseg").style.display = "none";
-    document.getElementById("accseg").style.display = "none";
-  }
-  S.editOn = editable;
-  document.getElementById("editrow").classList.toggle("on", editable);
-  placeLassoBtn(editable);
-  if (editable) document.getElementById("velseg").style.display =
-    (S.mode === "pencil" || S.mode === "select") ? "" : "none";
-  document.getElementById("recbtn").style.display = editable ? "" : "none";
-  document.getElementById("editsheetbtn").style.display = editable ? "" : "none";
-  // a published song of the user's own, with no local copy here: offer to make one (Josh, 2026-09-27: ask first)
-  document.getElementById("editherebtn").style.display =
-    !editable && !!S.song && ownFolderPath(S.songKey) && !LINK_SONGS && !(S.cmp && S.cmp.showing === "repo") ? "" : "none";
-  // a capture or starter: never "edit here" (nothing of yours to pull down) —
-  // "✎ Edit" opens the "Edit a copy" sheet and forks one instead (Q4, docs/provenance-plan.md)
-  const origin = S.song && S.songKey ? originOf(S.songKey) : null;
-  document.getElementById("makeitminebtn").style.display =
-    !editable && !!S.song && (origin === "capture" || origin === "starter") && !LINK_SONGS && !(S.cmp && S.cmp.showing === "repo") ? "" : "none";
-}
 
-function computeSongEnd() { // re-run whenever the effective meter changes
-  let lastTick = 0;
-  S.song.tracks.forEach(tr => tr.notes.forEach(n => { lastTick = Math.max(lastTick, n.t + n.d); }));
-  S.song.tracks.forEach(tr => { // an audio piece can outlast every note (an audio-only song must not loop one bar)
-    if (tr.kind === "audio") for (const c of tr.clips) if (c.dur) lastTick = Math.max(lastTick, clipEndTick(c));
-  });
-  const bt = barTicks();
-  S.songEndTick = Math.max(bt, Math.ceil(lastTick / bt - 0.05) * bt);
-  // extend (never shrink) the default C1..C7 pitch range to whatever this
-  // song actually uses — see PMIN/PMAX's own comment
-  let lo = 24, hi = 96;
-  S.song.tracks.forEach(tr => tr.notes.forEach(n => {
-    if (n.gone) return;
-    if (n.p < lo) lo = n.p; if (n.p > hi) hi = n.p;
-  }));
-  S.PMIN = Math.max(0, lo); S.PMAX = Math.min(127, hi);
-}
-computeSongEnd = prof("computeSongEnd", computeSongEnd); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 function annoSnapshot() { // full annotation-layer state, INCLUDING added flags
   return JSON.stringify(S.rollnotes.map(n => ({j: noteToJSON(n), a: !!n.added})));
 }
@@ -1030,16 +1156,6 @@ function annoRestore(str) {
   const arr = JSON.parse(str);
   S.rollnotes = deriveNoteTypes(arr.map(e => jsonToRawNote(e.j))).map(resolveNote);
   S.rollnotes.forEach((n, i) => { n.added = arr[i].a; });
-}
-function setAnchorBQ(n, tick) { // start anchor from a tick
-  const bt = barTicks(), qt = beatTicks(), t = Math.max(0, tick);
-  n.b1 = Math.floor(t / bt) + 1;
-  n.q1 = snapBeat((t % bt) / qt + 1);
-}
-function setEndBQ(n, tick) { // q2 is the INCLUSIVE end beat (resolveNote adds one)
-  const bt = barTicks(), qt = beatTicks(), t = Math.max(qt, tick) - qt;
-  n.b2 = Math.floor(t / bt) + 1;
-  n.q2 = snapBeat((t % bt) / qt + 1);
 }
 // Pure: base tempo events (un-baked — the file's own, before any tempo:
 // annotation) + resolved notes (only n.tempodir/n.start are read) + ppq ->
@@ -1232,6 +1348,38 @@ function finalizeNotes() {
   S.RULER_H = S.STRIP_Y + STRIP_H; // + the playhead strip, always present, right above the notes
 }
 finalizeNotes = prof("finalizeNotes", finalizeNotes); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+function updateEditBtnVis() { // the edit ROW exists only on songs made in the app
+  // (or local .mid loads) — never on the FF captures (Josh, 2026-08-15)
+  if (typeof updateChipBtn === "function") updateChipBtn(); // chip-audio offer follows the song
+  // P1 (docs/provenance-plan.md): was its own isComposition()||isLocalDraft()
+  // ||songKey===null, missing the link-mode/compare-repo guards editableSong()
+  // has — one of the "three copies disagree" bugs the plan found; now the
+  // same call, so a linked song or the repo side of Compare hides the row here too.
+  const editable = editableSong();
+  if (!editable && S.mode !== null && S.mode !== "select") { // leaving an editable song mid-pencil
+    S.mode = null;
+    for (const x of document.querySelectorAll("#modeseg button"))
+      x.classList.remove("active");
+    document.getElementById("durseg").style.display = "none";
+    document.getElementById("velseg").style.display = "none";
+    document.getElementById("accseg").style.display = "none";
+  }
+  S.editOn = editable;
+  document.getElementById("editrow").classList.toggle("on", editable);
+  placeLassoBtn(editable);
+  if (editable) document.getElementById("velseg").style.display =
+    (S.mode === "pencil" || S.mode === "select") ? "" : "none";
+  document.getElementById("recbtn").style.display = editable ? "" : "none";
+  document.getElementById("editsheetbtn").style.display = editable ? "" : "none";
+  // a published song of the user's own, with no local copy here: offer to make one (Josh, 2026-09-27: ask first)
+  document.getElementById("editherebtn").style.display =
+    !editable && !!S.song && ownFolderPath(S.songKey) && !LINK_SONGS && !(S.cmp && S.cmp.showing === "repo") ? "" : "none";
+  // a capture or starter: never "edit here" (nothing of yours to pull down) —
+  // "✎ Edit" opens the "Edit a copy" sheet and forks one instead (Q4, docs/provenance-plan.md)
+  const origin = S.song && S.songKey ? originOf(S.songKey) : null;
+  document.getElementById("makeitminebtn").style.display =
+    !editable && !!S.song && (origin === "capture" || origin === "starter") && !LINK_SONGS && !(S.cmp && S.cmp.showing === "repo") ? "" : "none";
+}
 async function loadNotes() {
   const gen = S.loadGen; // abandon if another song starts loading mid-fetch
   S.rollnotes = [];
@@ -1376,21 +1524,7 @@ function saveLocalNotes() {
   if (typeof updateSongBtn === "function") updateSongBtn(); // the ● counts unpublished annotations (songUnsaved)
   if (editableSong()) scheduleBackupFlush(); // off-device backup (2026-10-02 deploy safeguards)
 }
-saveLocalNotes = prof("saveLocalNotes", saveLocalNotes); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-function dirtySongs() { // songs with unsynced local notes on this device
-  return Object.keys(localStorage)
-    .filter(k => k.startsWith("ff1roll-notes-"))
-    .map(k => k.slice("ff1roll-notes-".length))
-    .filter(syncable); // same exclusions as syncable() below (local/, uncommitted captures)
-}
-function updateSyncBtn() {
-  const btn = document.getElementById("syncbtn");
-  if (!connected()) { btn.style.display = "none"; return; } // Model B: not connected anywhere = no footer Publish button
-  btn.style.display = "";
-  const n = pendingSongs().length;
-  btn.textContent = n ? "Publish (" + n + ")" : "Publish"; // one pending song is a count too (Josh: "the publish doesn't have a one"); shows even at N=0 once connected
-}
-// A new key at a bar REPLACES the key there — never two keys at one point
+saveLocalNotes = prof("saveLocalNotes", saveLocalNotes); // A new key at a bar REPLACES the key there — never two keys at one point
 // (Josh's rule, 2026-08-25, after setting "F mixolydian" over airship's
 // committed "key F" produced both). Two defects were in the old predicate:
 //   n.added        — only this session's annotations carry it (it isn't
@@ -1407,29 +1541,6 @@ function updateSyncBtn() {
 function dropLocalKeyAt(bar, q = 1) {
   S.rollnotes = S.rollnotes.filter(n =>
     !((n.keydir !== undefined || n.keypartial) && n.b1 === bar && (n.q1 || 1) === q));
-}
-// Editing an annotation used to leave the old one sitting beside the new one:
-// airship ended up with two keys at 1.1, two chord bands on 15.1–15.4, and the
-// same tritone note at two anchors — invisible in the roll, because duplicate
-// bands draw on top of each other (Josh, 2026-08-26: "something feels wrong
-// with the annotation sometimes"). Call this before pushing a new annotation.
-// Josh's rules, per type:
-//   chord — one band per exact span. A new band REPLACES whatever was on that
-//           span, whatever its label; that is what re-labelling a bar means.
-//   note  — several notes at one anchor are legitimate and stay. Only a
-//           byte-identical text at the same anchor is a duplicate.
-//   key   — handled by dropLocalKeyAt (anchor-level).
-// Sections are deliberately left alone: nesting is by containment and he has
-// not asked for a rule there.
-function dropSupersededBy(fresh) {
-  const sameAnchor = n => n.b1 === fresh.b1 && (n.q1 || 1) === (fresh.q1 || 1);
-  const sameSpan = n => sameAnchor(n) && (n.b2 || null) === (fresh.b2 || null) &&
-                                         (n.q2 || null) === (fresh.q2 || null);
-  if (fresh.chord) S.rollnotes = S.rollnotes.filter(n => !(n.chord && sameSpan(n)));
-  else if (!isDirective(fresh)) {
-    const t = (fresh.text || "").trim();
-    S.rollnotes = S.rollnotes.filter(n => !(!isDirective(n) && sameAnchor(n) && (n.text || "").trim() === t));
-  }
 }
 (function migrateAlbumPaths() {
   const remap = v => v.replace(/^(ff1roll-(?:notes|edits|ts)-)?midi\//, "$1albums/final-fantasy-i/songs/")
@@ -1502,22 +1613,6 @@ function dropSupersededBy(fresh) {
 function homeSong(all) {
   const ow = "albums/nes/final-fantasy-i/songs/overworld.mid";
   return all.includes(ow) ? ow : (all[0] || ow);
-}
-function appConfirm(title, body, okLabel, cancelLabel) { // non-blocking confirm:
-  // window.confirm freezes the main thread AND every automation/CDP command
-  // (the invisible-dialog page-freeze class, found by Josh 2026-08-19)
-  return new Promise(res => {
-    const sheet = document.getElementById("confirmsheet");
-    document.getElementById("cfTitle").textContent = title;
-    document.getElementById("cfBody").textContent = body;
-    const ok = document.getElementById("cfOk"), cancel = document.getElementById("cfCancel");
-    ok.textContent = okLabel || "OK";
-    cancel.textContent = cancelLabel || "Cancel";
-    const done = v => { sheet.classList.remove("on"); ok.onclick = cancel.onclick = null; res(v); };
-    ok.onclick = () => done(true);
-    cancel.onclick = () => done(false);
-    sheet.classList.add("on");
-  });
 }
 function reflectSongURL(path) { // the address bar always holds a shareable link: the song's path, no extension
   try {
@@ -1744,6 +1839,40 @@ function setSong(parsed, key) {
   if (ask && ask.classList.contains("on")) { try { askModeButtons(); askRender(); } catch (err) { /* too early in boot: openAsk renders it */ } }
 }
 
+document.getElementById("trackmore").addEventListener("click", () => {
+  S.trackExpand = !S.trackExpand;
+  updateTrackMore();
+});
+if (typeof document !== "undefined" && document.body && typeof ResizeObserver === "function") {
+  const tr = document.getElementById("trackrow");
+  if (tr) new ResizeObserver(scheduleFitTrackRow).observe(tr); // the row's WIDTH changes with the window/dock; stacking only changes its height
+  const tb = document.getElementById("trackbar");
+  if (tb && typeof MutationObserver === "function") new MutationObserver(scheduleFitTrackRow).observe(tb, {childList: true}); // tracks added/removed change the need
+}
+// slide the whole chip cluster away when the row feels noisy (Josh, 2026-08-15)
+{
+  const slide = document.getElementById("trackslide");
+  const tog = document.getElementById("tracktoggle");
+  const apply = hidden => {
+    slide.classList.toggle("off", hidden);
+    tog.textContent = hidden ? "▸" : "◂";
+    tog.setAttribute("aria-label", hidden ? "Show tracks" : "Hide tracks");
+    if (!hidden) updateTrackMore();
+  };
+  tog.addEventListener("click", () => {
+    const hidden = !slide.classList.contains("off");
+    localStorage.setItem("ff1roll-tracks-hidden", hidden ? "1" : "0");
+    apply(hidden);
+  });
+  // re-measure once the slide animation actually finishes — measuring at a
+  // transitional width wrapped chips onto phantom rows (Josh's toggle bug)
+  slide.addEventListener("transitionend", () => {
+    if (!slide.classList.contains("off")) updateTrackMore();
+  });
+  apply(localStorage.getItem("ff1roll-tracks-hidden") === "1");
+}
+ 
+ // chord band armed for a challenge (tap on the ruler)
 // ---------------------------------------------------------------- track chips
 function renderTrackbar() {
   const bar = document.getElementById("trackbar");
@@ -1855,109 +1984,11 @@ function renderTrackbar() {
   fitTrackRow(); // settle stacking in THIS frame: a frame later the roll shifted under whatever was just measured (a tap, an e2e drag)
 }
 renderTrackbar = prof("renderTrackbar", renderTrackbar); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-function updateTrackMore() {
-  const bar = document.getElementById("trackbar");
-  const more = document.getElementById("trackmore");
-  const slide = document.getElementById("trackslide");
-  bar.classList.toggle("collapsed", !S.trackExpand);
-  // never measure while the cluster is hidden or mid-slide — a squeezed
-  // width wraps every chip and poisons the disclosure state
-  if (slide && (slide.classList.contains("off") || slide.clientWidth < 60)) return;
-  // reading scrollHeight forces a fresh layout — measure synchronously
-  const overflowing = bar.scrollHeight > bar.clientHeight + 2;
-  more.style.display = overflowing || S.trackExpand ? "" : "none";
-  more.textContent = S.trackExpand ? "▴" : "▾";
-}
-document.getElementById("trackmore").addEventListener("click", () => {
-  S.trackExpand = !S.trackExpand;
-  updateTrackMore();
-});
-// chips too wide to sit beside the transport (the AI window docked wide cut
-// them to "pu…" — Josh, 2026-10-02) move to their own full-width row. The
-// decision reads ONLY the row's width against a threshold that stacking
-// cannot change: the transport's buttons (their own widths, summed) plus the
-// chips' full text widths (scrollWidth — the same squeezed or not). An
-// earlier version also read the ▾ overflow signal, which the stacking itself
-// flips; at some widths it toggled every frame and the iPad blinked nonstop
-// (0692e13, reverted). Unstacking needs TRACK_ROW_SLACK more room, so a
-// width right at the threshold can't flip back and forth either.
-const TRACK_ROW_SLACK = 60;
-function trackRowNeed() {
-  const tp = document.getElementById("transport"), bar = document.getElementById("trackbar"), tog = document.getElementById("tracktoggle");
-  const kids = el => [...el.children].filter(c => c.offsetParent !== null || c.style.display !== "none");
-  const tc = document.getElementById("timectl");
-  const tw = kids(tp).reduce((w, c) => w + c.offsetWidth + 8, 0) + (tc ? kids(tc).reduce((w, c) => w + c.offsetWidth + 8, 8) : 0); // the time controls ride the same row
-  const cw = kids(bar).reduce((w, c) => w + Math.max(c.scrollWidth, c.offsetWidth) + 8, 0);
-  return tw + cw + (tog ? tog.offsetWidth + 16 : 0) + 24;
-}
-function fitTrackRow() {
-  const row = document.getElementById("trackrow");
-  if (!row || !row.clientWidth) return;
-  const stacked = row.classList.contains("stacked"), need = trackRowNeed(), w = row.clientWidth;
-  const stack = stacked ? w < need + TRACK_ROW_SLACK : w < need;
-  if (stack !== stacked) { row.classList.toggle("stacked", stack); updateTrackMore(); }
-}
-function scheduleFitTrackRow() { // a function property, not S: called from observers only
-  if (scheduleFitTrackRow.pending) return;
-  scheduleFitTrackRow.pending = true;
-  requestAnimationFrame(() => { scheduleFitTrackRow.pending = false; fitTrackRow(); });
-}
-if (typeof document !== "undefined" && document.body && typeof ResizeObserver === "function") {
-  const tr = document.getElementById("trackrow");
-  if (tr) new ResizeObserver(scheduleFitTrackRow).observe(tr); // the row's WIDTH changes with the window/dock; stacking only changes its height
-  const tb = document.getElementById("trackbar");
-  if (tb && typeof MutationObserver === "function") new MutationObserver(scheduleFitTrackRow).observe(tb, {childList: true}); // tracks added/removed change the need
-}
-// slide the whole chip cluster away when the row feels noisy (Josh, 2026-08-15)
-{
-  const slide = document.getElementById("trackslide");
-  const tog = document.getElementById("tracktoggle");
-  const apply = hidden => {
-    slide.classList.toggle("off", hidden);
-    tog.textContent = hidden ? "▸" : "◂";
-    tog.setAttribute("aria-label", hidden ? "Show tracks" : "Hide tracks");
-    if (!hidden) updateTrackMore();
-  };
-  tog.addEventListener("click", () => {
-    const hidden = !slide.classList.contains("off");
-    localStorage.setItem("ff1roll-tracks-hidden", hidden ? "1" : "0");
-    apply(hidden);
-  });
-  // re-measure once the slide animation actually finishes — measuring at a
-  // transitional width wrapped chips onto phantom rows (Josh's toggle bug)
-  slide.addEventListener("transitionend", () => {
-    if (!slide.classList.contains("off")) updateTrackMore();
-  });
-  apply(localStorage.getItem("ff1roll-tracks-hidden") === "1");
-}
 function trackToggle(ti, what) { // M / S / H from a chip or a lane header: the song remembers it (track: annotation)
   const st = S.trackState[ti] || (S.trackState[ti] = {muted: false, solo: false});
   st[what] = !st[what];
   if (S.song && S.song.tracks[ti]) saveTrackDir(ti); // finalizeNotes re-applies it, then renders
   renderTrackbar(); buildScoreModel(); updateTrackGains(); clampView(); draw();
-}
- // what you SEE and can select: H on the chip
-
-// ---------------------------------------------------------------- Mixer
-// DAW CONVENTIONS REVIEW item 11 (open-items.md, 2026-09-29 advisor round):
-// "a mixer with every channel side by side (fader, pan, M/S, a level meter)
-// and drag-to-reorder tracks." #mixersheet is a dockable window
-// (makeWindow, below) built fresh (renderMixer) every time it opens; a
-// strip's fader/pan/M/S/H write the SAME track: annotation the voice &
-// color menu and the track chips already write (saveTrackDir) — nothing
-// new to persist, no new state shape.
-function mixerIsOpen() {
-  const el = document.getElementById("mixersheet");
-  return !!(el && el.classList && el.classList.contains("on"));
-}
-function mixerPanLabel(v) { return Math.abs(v) < 0.025 ? "C" : (v < 0 ? "L" : "R") + Math.round(Math.abs(v) * 100); }
-// splice-move: remove at `from`, reinsert at `to` (both already valid
-// indexes into arr) — self-inverse via moveInSameOrder(arr, to, from), the
-// fact reorderTrack()'s undo/redo entries lean on
-function moveInSameOrder(arr, from, to) {
-  if (!arr || from === to || from < 0 || from >= arr.length) return;
-  const [v] = arr.splice(from, 1);
-  arr.splice(Math.max(0, Math.min(to, arr.length)), 0, v);
 }
 // Drag a strip (or, later, a track chip) left/right to move a track — the
 // .mid's own track order, so this reorders song.tracks itself (unlike
@@ -2101,50 +2132,6 @@ function mixerStripEl(tr, ti, canReorder) {
   if (canReorder) mixerStripDragize(strip, name, ti);
   return strip;
 }
-function mixerMasterStripEl() {
-  const strip = document.createElement("div");
-  strip.className = "mixerstrip mixermaster";
-  const label = document.createElement("div");
-  label.className = "mixername";
-  label.textContent = "MASTER";
-  strip.appendChild(label);
-
-  const fbox = document.createElement("div");
-  fbox.className = "mixerfaderbox";
-  const meter = document.createElement("div");
-  meter.className = "mixermeter";
-  const meterfill = document.createElement("div");
-  meterfill.className = "mixermeterfill";
-  meter.appendChild(meterfill);
-  S.mixerMasterMeterEl = meterfill;
-
-  const faderwrap = document.createElement("div");
-  faderwrap.className = "mixerfaderwrap";
-  const fader = document.createElement("input");
-  fader.type = "range"; fader.className = "mixerfader";
-  fader.min = "10"; fader.max = "200"; fader.step = "5";
-  fader.value = String(Math.round(S.masterVol * 100));
-  fader.setAttribute("aria-label", "Master volume");
-  faderwrap.appendChild(fader);
-  fbox.append(meter, faderwrap);
-  strip.appendChild(fbox);
-
-  const vlbl = document.createElement("div");
-  vlbl.className = "mixervlbl";
-  vlbl.textContent = Math.round(S.masterVol * 100) + "%";
-  strip.appendChild(vlbl);
-  fader.addEventListener("input", () => { // same device pref the header's own 🔊 slider writes — kept in sync both ways
-    S.masterVol = (+fader.value) / 100;
-    vlbl.textContent = fader.value + "%";
-    localStorage.setItem("ff1roll-mastervol", String(S.masterVol));
-    if (S.audio && S.master) S.master.gain.setValueAtTime(MASTER_VOL * S.masterVol, S.audio.currentTime);
-    const volsl = document.getElementById("volsl"), vollbl = document.getElementById("vollbl"), volbtn = document.getElementById("volbtn");
-    if (volsl) volsl.value = fader.value;
-    if (vollbl) vollbl.textContent = fader.value + "%";
-    if (volbtn) setVolBtn(+fader.value);
-  });
-  return strip;
-}
 // Pointer-drag reorder (sheetDrag/wmSideDividerize's own pattern: capture
 // the pointer on down, read deltas on move, commit on up). Only wired when
 // canReorder (editableSong()) — on a capture/published-not-local song the
@@ -2189,66 +2176,6 @@ function mixerStripDragize(strip, handle, ti) {
   handle.addEventListener("pointerup", end);
   handle.addEventListener("pointercancel", end);
 }
-// Meters: an AnalyserNode per track, tapped AFTER trackGains[ti] (a second
-// destination — connect() doesn't remove the node's existing route to its
-// panner/master, so tapping never touches what you hear), built lazily only
-// while the Mixer is open. ensureMixerMeters is idempotent and safe to call
-// any time (song load, a track added mid-session, ensureAudio() finally
-// firing on the first tap) — it only fills in gaps.
-function ensureMixerMeters() {
-  if (!S.audio || !S.song) return;
-  S.song.tracks.forEach((tr, ti) => {
-    if (S.mixerAnalysers[ti]) return;
-    trackGain(ti); // every strip gets a meter the moment the Mixer opens, not only the tracks that have already played
-    const an = S.audio.createAnalyser();
-    an.fftSize = 256;
-    S.trackGains[ti].connect(an);
-    S.mixerAnalysers[ti] = an;
-    S.mixerMeterBufs[ti] = new Uint8Array(an.fftSize);
-  });
-  if (S.master && !S.mixerMasterAnalyser) {
-    S.mixerMasterAnalyser = S.audio.createAnalyser();
-    S.mixerMasterAnalyser.fftSize = 256;
-    S.master.connect(S.mixerMasterAnalyser);
-    S.mixerMasterMeterBuf = new Uint8Array(S.mixerMasterAnalyser.fftSize);
-  }
-}
-function teardownMixerMeters() { // Mixer closed: drop every analyser — zero cost while closed, per spec
-  S.mixerAnalysers.forEach(an => { try { an && an.disconnect(); } catch (err) { /* already gone */ } });
-  S.mixerAnalysers = []; S.mixerMeterBufs = [];
-  if (S.mixerMasterAnalyser) { try { S.mixerMasterAnalyser.disconnect(); } catch (err) { /* already gone */ } S.mixerMasterAnalyser = null; S.mixerMasterMeterBuf = null; }
-  if (S.mixerMeterRunning) cancelAnimationFrame(S.mixerMeterRaf);
-  S.mixerMeterRunning = false; S.mixerMeterRaf = 0;
-}
-function mixerMeterRms(an, buf) {
-  an.getByteTimeDomainData(buf);
-  let sum = 0;
-  for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
-  return Math.sqrt(sum / buf.length);
-}
-function mixerMeterLoop(ts) {
-  if (!mixerIsOpen()) { S.mixerMeterRunning = false; S.mixerMeterRaf = 0; return; } // closed mid-flight: stop, don't reschedule — no cost while closed
-  S.mixerMeterRaf = requestAnimationFrame(mixerMeterLoop);
-  if (ts !== undefined && ts - S.mixerMeterLastT < 30) return; // ~30fps cap
-  S.mixerMeterLastT = ts || 0;
-  ensureMixerMeters(); // covers ensureAudio() firing after the Mixer was already open (the first tap anywhere)
-  if (S.song) S.song.tracks.forEach((tr, ti) => {
-    const an = S.mixerAnalysers[ti], el = S.mixerMeterEls[ti];
-    if (!an || !el) return;
-    el.style.height = Math.min(100, Math.round(mixerMeterRms(an, S.mixerMeterBufs[ti]) * 140)) + "%";
-  });
-  if (S.mixerMasterAnalyser && S.mixerMasterMeterEl)
-    S.mixerMasterMeterEl.style.height = Math.min(100, Math.round(mixerMeterRms(S.mixerMasterAnalyser, S.mixerMasterMeterBuf) * 140)) + "%";
-}
-// mixerMeterRunning (not "is mixerMeterRaf truthy") is the source of truth for
-// "is the loop scheduled": requestAnimationFrame's own id can legitimately be
-// 0 (the vm harness's inert stub always returns 0), so treating id-as-boolean
-// would re-schedule a duplicate loop every call
-function ensureMixerMeterLoop() {
-  if (S.mixerMeterRunning) return;
-  S.mixerMeterRunning = true;
-  S.mixerMeterRaf = requestAnimationFrame(mixerMeterLoop);
-}
 function openMixer() {
   if (!S.song) return;
   renderMixer();
@@ -2264,296 +2191,6 @@ function closeMixer() {
 }
 function toggleMixer() { if (mixerIsOpen()) closeMixer(); else openMixer(); }
 
-// ---------------------------------------------------------------- drawing
-function resize() {
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = wrap.clientWidth * dpr;
-  canvas.height = wrap.clientHeight * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (typeof updateTrackMore === "function") updateTrackMore(); // wrap point moves with width
-  draw();
-}
-function draw() { S.sceneValid = false; rangeSelPersist(); viewPersistSoon(); drawFull(false); }
-draw = prof("draw", draw); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-function playbackFrame() {
-  if (!S.song) { draw(); return; }
-  if (PERF_NOSCENE) { drawFull(false); return; } // ?scene=0: never allocate the cache
-  // Fall is a function of time, not of the view: every frame is a new picture,
-  // and the roll's playhead means nothing over it. The scene cache below froze
-  // it at the first frame and drew a gold line marching across (Josh, 2026-09-27,
-  // Chrono Trigger: "the notes … are just stopped, and there's a cursor for
-  // some reason scrolling across the screen")
-  if (fallActive()) { S.sceneValid = false; drawFull(false); return; }
-  if (S.instOpen) drawInst();
-  const dpr = window.devicePixelRatio || 1;
-  if (!S.sceneValid || S.view.x !== S.sceneVX || S.view.y !== S.sceneVY ||
-      !S.sceneCanvas || S.sceneCanvas.width !== canvas.width || S.sceneCanvas.height !== canvas.height) {
-    drawFull(true); // scene only — no playhead baked into the cache
-    if (!S.sceneCanvas) S.sceneCanvas = document.createElement("canvas");
-    if (S.sceneCanvas.width !== canvas.width) S.sceneCanvas.width = canvas.width; // setting width
-    if (S.sceneCanvas.height !== canvas.height) S.sceneCanvas.height = canvas.height; // always reallocs
-    else S.sceneCanvas.getContext("2d").clearRect(0, 0, S.sceneCanvas.width, S.sceneCanvas.height);
-    S.sceneCanvas.getContext("2d").drawImage(canvas, 0, 0);
-    S.sceneValid = true; S.sceneVX = S.view.x; S.sceneVY = S.view.y; S.phLastX = null;
-  } else if (S.phLastX !== null) {
-    // restore ONLY the strip under the previous playhead — a full-canvas blit
-    // per frame is the same pixel bill as a full redraw on CPU rasterizers
-    // (Brave, 2026-08-24: still 180% after the draw-call fix)
-    const sx = Math.max(0, Math.floor((S.phLastX - 13) * dpr));
-    const sw = Math.ceil(28 * dpr);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(S.sceneCanvas, sx, 0, sw, S.sceneCanvas.height, sx, 0, sw, S.sceneCanvas.height);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  // playhead overlay — same geometry as drawFull's, clipped below the ruler
-  const tick = secToTick(S.song, playSec());
-  const x = S.viewMode === "score" && S.scoreModel ? scoreTickToX(tick) : S.RULER_W + tick * pxPerTick() - S.view.x; // the score spaces by noteheads, not ticks
-  const H = wrap.clientHeight;
-  if (x >= S.RULER_W) {
-    ctx.fillStyle = css("--gold");
-    ctx.fillRect(x, S.RULER_H, 1.5, H - S.RULER_H);
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H);
-    ctx.lineTo(x + 11, S.RULER_H);
-    ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
-    drawStripPlayhead(x, css("--gold")); // playbackFrame only ever runs while S.playing
-    S.phLastX = x;
-  } else S.phLastX = null;
-}
-playbackFrame = prof("playbackFrame", playbackFrame); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-// VoiceOver first pass: the roll/score/tracks canvas is one opaque element to
-// a screen reader (role="application" on #roll, set in the markup — it owns
-// its own keyboard shortcuts, so VoiceOver must not intercept arrow keys the
-// way it would for role="img"). aria-label is the only description it gets:
-// song, which of the three views, the visible bar range, and the track
-// count — recomputed every draw (cheap: a few multiplies and a string),
-// never announced on its own (aria-label isn't a live region — nothing reads
-// it aloud until the user explores the element), so no throttling needed
-// here the way srAnnounce needs it.
-function updateCanvasA11y() {
-  const el = typeof document !== "undefined" && document.getElementById("roll");
-  if (!el) return;
-  // idempotent — cheap to re-set every call, and it keeps the role/tabindex
-  // set here in JS (not only in the static markup) so a vm test can see it
-  // the same way a real browser would
-  el.setAttribute("role", "application");
-  el.tabIndex = 0;
-  if (!S.song) { el.setAttribute("aria-label", "Night Roll — no song open"); return; }
-  const title = S.currentPath ? songTitleOf(S.currentPath) : "untitled song";
-  const viewName = S.viewMode === "score" ? "Score" : S.viewMode === "tracks" ? "Tracks" : "Roll";
-  const ppt = pxPerTick(), bt = barTicks();
-  const W = Math.max(0, ((wrap && wrap.clientWidth) || 0) - S.RULER_W);
-  const barFrom = Math.max(1, Math.floor(S.view.x / ppt / bt) + 1);
-  const barTo = Math.max(barFrom, Math.floor((S.view.x + W) / ppt / bt) + 1);
-  const nt = S.song.tracks.length;
-  el.setAttribute("aria-label", title + " — " + viewName + " view, bars " + barFrom + "–" + barTo + ", " + nt + " track" + (nt === 1 ? "" : "s"));
-}
-function drawFull(skipCursor) {
-  updateCanvasA11y();
-  if (S.instOpen) drawInst(); // panel repaints on every app repaint (incl. playback frames)
-  if (typeof updateEditButtons === "function") updateEditButtons(); // cached — cheap on every frame
-  if (!S.song) return;
-  const W = wrap.clientWidth, H = wrap.clientHeight;
-  ctx.fillStyle = css("--bg");
-  ctx.fillRect(0, 0, W, H);
-  if (fallActive()) { drawFall(W, H); return; }
-  if (S.viewMode === "score" && VF && S.scoreModel) {
-    drawScore(W, H, skipCursor);
-    drawRuler(W, H);
-    // drawRuler's opaque strip background just painted over the score's own
-    // cursor mark wherever it crossed the strip — redraw it on top, same
-    // "never baked into the cache" rule as every other playhead mark.
-    if (!skipCursor) drawStripPlayhead(stripPlayheadX(), S.playing ? css("--gold") : css("--accent"));
-    return;
-  }
-  if (S.viewMode === "tracks") {
-    drawTracks(W, H, skipCursor);
-    drawRuler(W, H);
-    if (!skipCursor) drawStripPlayhead(stripPlayheadX(), S.playing ? css("--gold") : css("--accent"));
-    return;
-  }
-  S._laneTop = null; S._kitSlots = null; // re-dock: edits since the last frame may have changed the lowest note
-  S._has32 = null; // 32nd-grid presence re-checks against current notes
-  const ppt = pxPerTick();
-  const bt = barTicks();
-  const rowH = S.view.rowH;
-
-  // pitch row banding (black-key rows darker) + the kit lane, docked below the bass
-  const TOP = topRow();
-  for (let p = botRow(); p <= TOP; p++) {
-    const y = S.RULER_H + (TOP - p) * rowH - S.view.y;
-    if (y < S.RULER_H - rowH || y > H) continue;
-    if (inKitLane(p)) { // kit lane: alternate soft banding, heavy line above the lane
-      if (p === kitLaneTop() + 1) { ctx.fillStyle = css("--grid"); ctx.fillRect(S.RULER_W, y, W - S.RULER_W, 1.5); continue; }
-      if ((kitLaneTop() - p) % 2 === 0) { ctx.fillStyle = css("--grid-soft"); ctx.fillRect(S.RULER_W, y, W - S.RULER_W, rowH); }
-      continue;
-    }
-    const pc = p % 12;
-    const black = [1,3,6,8,10].includes(pc);
-    ctx.fillStyle = black ? css("--grid-soft") : "transparent";
-    if (black) ctx.fillRect(S.RULER_W, y, W - S.RULER_W, rowH);
-    if (pc === 0 || pc === 5) { // line under C and F for orientation
-      ctx.fillStyle = css("--grid");
-      ctx.fillRect(S.RULER_W, y + rowH, W - S.RULER_W, pc === 0 ? 1.5 : 0.5);
-    }
-  }
-
-  drawRangeTints(W, H);
-
-  // beat + bar lines — beat = the meter's denominator note (eighths in 6/8);
-  // compound meters (6/8, 9/8, 12/8) get a medium line on each group of 3
-  const t0 = S.view.x / ppt, t1 = (S.view.x + W) / ppt;
-  const beatT = beatTicks();
-  const groupT = effTs()[1] >= 8 && effTs()[0] % 3 === 0 ? beatT * 3 : null;
-  ctx.textAlign = "left";
-  if (S.gridDiv) { // custom grid: cells on their own phase + the meter's bar
-    // lines kept as reference (they may sit BETWEEN cells — see gridAnchorTick)
-    const cell = bt / S.gridDiv, a = gridAnchorTick();
-    for (let k = Math.floor((t0 - a) / cell); a + k * cell < t1; k++) {
-      const t = a + k * cell;
-      const x = S.RULER_W + t * ppt - S.view.x;
-      if (x < S.RULER_W) continue;
-      ctx.fillStyle = css("--grid-soft");
-      ctx.fillRect(x, S.RULER_H, 0.75, H);
-    }
-    for (let t = Math.max(0, Math.floor(t0 / bt) * bt); t < t1; t += bt) {
-      const x = S.RULER_W + t * ppt - S.view.x;
-      if (x < S.RULER_W) continue;
-      ctx.fillStyle = css("--grid");
-      ctx.fillRect(x, S.RULER_H, 1.5, H);
-    }
-  } else for (let t = Math.floor(t0 / beatT) * beatT; t < t1; t += beatT) {
-    const x = S.RULER_W + t * ppt - S.view.x;
-    if (x < S.RULER_W) continue;
-    const isBar = Math.round(t) % bt === 0;
-    const isGroup = !isBar && groupT && Math.round(t) % groupT === 0;
-    ctx.fillStyle = isBar ? css("--grid") : css("--grid-soft");
-    ctx.fillRect(x, S.RULER_H, isBar ? 1.5 : isGroup ? 1.25 : 0.75, H);
-  }
-
-  // notes
-  S.song.tracks.forEach((tr, ti) => {
-    if (!trackShown(ti)) return; // hidden = gone; muted = dimmed (still visible, still editable)
-    const color = trackColor(ti);
-    const dim = trackAudible(ti) ? 1 : 0.3;
-    for (let ni = 0; ni < tr.notes.length; ni++) {
-      const n = tr.notes[ni];
-      if (n.gone) continue;
-      const x = S.RULER_W + n.t * ppt - S.view.x;
-      const w = Math.max(3, n.d * ppt - 1);
-      if (x + w < S.RULER_W || x > W) continue;
-      const y = S.RULER_H + (topRow() - noteRow(ti, n.p)) * rowH - S.view.y;
-      if (y < S.RULER_H - rowH || y > H) continue;
-      ctx.globalAlpha = (0.55 + 0.45 * (n.v / 127)) * dim;
-      if (S.findPc !== null && n.p % 12 !== S.findPc) ctx.globalAlpha *= 0.15; // finder: non-matches recede
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(x, y + 1.5, w, rowH - 3, 2.5);
-      ctx.fill();
-      if (S.findPc !== null && n.p % 12 === S.findPc) {
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = css("--accent");
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.lineWidth = 1;
-      }
-      if (n.added && showAddedOutline()) {
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = "#fff";
-        ctx.setLineDash([3, 2]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-      if ((S.selNote && S.selNote.ti === ti && S.selNote.ni === ni) || S.multiSelKey.has(ti + ":" + ni)) {
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = css("--gold");
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.lineWidth = 1;
-      }
-    }
-  });
-  ctx.globalAlpha = 1;
-  if (S.cmp) drawCompare(ppt, rowH, W, H);
-
-  function cursorHandle(x) { // Logic-sized triangle under the ruler, made for fingers
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H);
-    ctx.lineTo(x + 11, S.RULER_H);
-    ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
-  }
-  // playhead / cursor — same triangle either way, gold while rolling
-  if (skipCursor) { /* playbackFrame lays the playhead over the cached scene */ }
-  else if (S.playing) {
-    const tick = secToTick(S.song, playSec());
-    const x = S.RULER_W + tick * ppt - S.view.x;
-    ctx.fillStyle = css("--gold");
-    ctx.fillRect(x, 0, 1.5, H);
-    cursorHandle(x);
-  } else {
-    const x = S.RULER_W + S.playCursor * ppt - S.view.x;
-    ctx.fillStyle = css("--accent");
-    ctx.fillRect(x - 1, 0, 2.5, H);
-    cursorHandle(x);
-  }
-
-  drawRuler(W, H);
-  if (!skipCursor) drawStripPlayhead(stripPlayheadX(), S.playing ? css("--gold") : css("--accent"));
-  drawLasso(); // over the ruler too: a box dragged up into the bands must be seen there (Josh, 2026-09-13)
-
-  // left ruler
-  ctx.fillStyle = css("--panel");
-  ctx.fillRect(0, 0, S.RULER_W, H);
-  ctx.strokeStyle = css("--grid");
-  ctx.beginPath(); ctx.moveTo(S.RULER_W - 0.5, 0); ctx.lineTo(S.RULER_W - 0.5, H); ctx.stroke();
-  if (S.secMaxDepth > 1 && S.song) { // ▸/▾ level-collapse chevron, in the gutter corner
-    const cap = secDepthCap(); // beside the section lanes (drawn AFTER the panel, or it's buried)
-    ctx.fillStyle = css("--gold");
-    ctx.font = "11px " + css("--mono");
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillText(cap >= S.secMaxDepth - 1 ? "▾" : "▸" + (cap + 1), 5, BASE_RULER_H + LANE_H / 2 + 1);
-  }
-  ctx.textAlign = "right";
-  ctx.textBaseline = "middle"; // labels center on their rows (E sat at its row's bottom)
-  for (let p = botRow(); p <= topRow(); p++) {
-    const pc = p % 12;
-    const y = S.RULER_H + (topRow() - p) * rowH - S.view.y;
-    if (y < S.RULER_H || y > H) continue;
-    if (inKitLane(p)) { // kit lane rows carry their piece names
-      if (p === laneBotRow() - 1) { // the ⋯ expander: show/hide unused pieces
-        if (S.view.rowH >= 6) {
-          ctx.fillStyle = css("--dim");
-          ctx.fillText(S.kitShowAll ? "⋯ less" : "⋯ kit", S.RULER_W - 6, y + rowH / 2);
-        }
-        continue;
-      }
-      const gm = kitSlots()[kitLaneTop() - p];
-      if (gm !== undefined && DRUM_LABELS[gm] && S.view.rowH >= 6) { // shrink, don't vanish (iPad zoom-out lost the labels)
-        const st = pieceState.get(gm);
-        ctx.fillStyle = st === "solo" ? css("--gold") : !pieceAudible(gm) ? css("--dim") : css("--text");
-        if (S.view.rowH < 10) ctx.font = Math.max(7, Math.floor(S.view.rowH)) + "px " + css("--mono");
-        ctx.fillText((st === "solo" ? "S " : st === "mute" ? "✕" : "") + DRUM_LABELS[gm], S.RULER_W - 6, y + rowH / 2);
-        if (S.view.rowH < 10) ctx.font = "10px " + css("--mono");
-      }
-      continue;
-    }
-    if (pc === 0) {
-      ctx.fillStyle = css("--text");
-      ctx.fillText("C" + (Math.floor(p/12) - 1), S.RULER_W - 6, y + rowH / 2);
-    } else if (S.view.rowH >= 12 && [2,4,5,7,9,11].includes(pc)) {
-      ctx.fillStyle = css("--dim"); // was --grid: nearly invisible
-      ctx.fillText(spellPc(pc, sfShownAt(S.playCursor)), S.RULER_W - 6, y + rowH / 2);
-    }
-  }
-  ctx.textBaseline = "alphabetic";
-  ctx.textAlign = "left";
-}
-drawFull = prof("drawFull", drawFull); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-
- // chord band armed for a challenge (tap on the ruler)
 function clearMultiSel() {
   if (typeof sweepStrandedClones === "function") sweepStrandedClones();
   S.challengeSec = null;
@@ -2667,58 +2304,7 @@ function toggleSel(hit) { // lasso-mode tap on a note: in/out of the selection
   }
   refreshSelInfo();
 }
-function reflectSelVel() { // slider face shows the selection's velocity
-  const items = selEditItems();
-  if (!items.length) return;
-  const v = items[0].n.v || 80;
-  const sl = document.getElementById("velslider");
-  if (sl) { sl.value = v; document.getElementById("velval").textContent = v; }
-}
-function refreshSelInfo() { // one source of truth for the selection readout
-  // 8va (footer v2, 2026-09-30): moved into ⋯ More → SELECTION READOUT as an
-  // always-visible toggle (Josh's usage note: it's reached with no lasso
-  // selection too, to set the sticky preference ahead of time) — no more
-  // show/hide here, just its checked state, rendered every call.
-  renderOctBtn();
-  if (!S.multiSel.length) {
-    document.getElementById("chordbtn").style.display = "none";
-    setInfo("lasso: nothing selected");
-    draw();
-    return;
-  }
-  const tMin = Math.min(...S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].t));
-  S.multiSelSf = sfShownAt(Math.max(0, tMin));
-  reflectSelVel();
-  const pitches = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].p))].sort((a, b) => a - b);
-  // 8va off = chord-reading mode: pitch classes only, octave duplicates collapsed
-  const names = S.selOctaves
-    ? pitches.map(p => pitchName(p, S.multiSelSf))
-    : [...new Set(pitches.map(p => p % 12))].map(pc => spellPc(pc, S.multiSelSf));
-  const vels = [...new Set(S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].v))];
-  const velTxt = vels.length === 1 ? " · vel " + vels[0] : ""; // uniform velocity is worth stating
-  S.challengeSec = null;
-  const cb = document.getElementById("chordbtn");
-  if (appMode() === "normal") {
-    // Normal: the chord names itself (nameChord is pattern-matching, not a
-    // ruling on Josh's music) — Chord? stays hidden, nothing to reveal
-    const chordName = nameChord(pitches, S.multiSelSf);
-    setInfo(names.join(" · ") + "  →  " + chordName + "  (" + S.multiSel.length + " notes" + velTxt + ")",
-            names.join(", ") + " — " + chordName);
-    cb.style.display = "none";
-  } else {
-    setInfo(names.join(" · ") + "  (" + S.multiSel.length + " notes" + velTxt + ")", names.join(", "));
-    cb.textContent = "Chord?";
-    cb.style.display = "";
-  }
-  draw();
-}
- // 8va: octave numbers in the readout
-function renderOctBtn() { // ✓ = selOctaves on — same convention as renderViewMenu's checkmarks
-  const ob = document.getElementById("octbtn");
-  ob.textContent = (S.selOctaves ? "✓ " : "   ") + "8va  Show octave numbers (F#3 vs F#)";
-  ob.classList.toggle("primary", S.selOctaves);
-}
-renderOctBtn(); // boot: correct checkmark before any selection ever runs refreshSelInfo
+ renderOctBtn(); // boot: correct checkmark before any selection ever runs refreshSelInfo
 document.getElementById("octbtn").addEventListener("click", () => {
   S.selOctaves = !S.selOctaves;
   localStorage.setItem("ff1roll-seloct", S.selOctaves ? "1" : "0");
@@ -3117,7 +2703,6 @@ function duplicateSelection() { // ⌘D: a copy right after the selection, the c
   [S.noteClipboard, S.annoClipboard] = keep;
   return k;
 }
-function lassoedAnnos() { return S.lassoAnno ? S.rollnotes.filter(n => annoInLasso(n, S.lassoAnno)) : []; }
 function deleteSelection() { // notes AND the lasso'd annotations (Josh, 2026-09-13) — one undo step
   if (!editableSong()) return 0;
   const items = selEditItems();
@@ -3537,8 +3122,7 @@ function noteLabel(ti, ni) {
   return name + " · bar " + bar + " beat " + beatLabel(beat) + " · " +
          (n.d / S.song.ppq).toFixed(2) + "q · vel " + n.v + " · " + tname + (n.added ? " · added" : "");
 }
-            function jobsNotify() { for (const fn of jobListeners) { try { fn(); } catch (err) { /* a listener's problem */ } } updateJobsBtn(); }
-function jobsLoad() { // boot: what was running when the page last died is "interrupted", with its last counts
+            function jobsLoad() { // boot: what was running when the page last died is "interrupted", with its last counts
   try { S.jobs = JSON.parse(localStorage.getItem("ff1roll-jobs") || "[]"); } catch (err) { S.jobs = []; }
   if (!Array.isArray(S.jobs)) S.jobs = [];
   let hit = null;
@@ -3550,14 +3134,7 @@ function jobsLoad() { // boot: what was running when the page last died is "inte
   updateJobsBtn();
   return hit;
 }
- // Josh, 2026-09-29: done/cancelled jobs clear themselves a few seconds after they end; failed/interrupted stay until looked at
-function jobsAutoClear(id) {
-  setTimeout(() => {
-    const j = S.jobs.find(x => x.id === id);
-    if (j && (j.state === "done" || j.state === "cancelled")) jobsDismiss(id);
-  }, JOBS_AUTOCLEAR_MS);
-}
-function jobStart(kind, title, items, runner, extra) { // runner(api) is async; api.aborted flips on ✕
+ function jobStart(kind, title, items, runner, extra) { // runner(api) is async; api.aborted flips on ✕
   const job = Object.assign({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind, title, state: "running",
     items: items.map(it => ({label: it.label, st: "queued", pct: 0, msg: "", key: it.key || null})),
     note: "", started: Date.now(), ended: 0, err: ""}, extra || {});
@@ -3567,137 +3144,7 @@ function jobStart(kind, title, items, runner, extra) { // runner(api) is async; 
   Promise.resolve().then(() => runner(api)).then(() => { if (job.state === "running") api.done(); }, err => api.fail(err));
   return job;
 }
-function jobApi(job) {
-  const ctl = jobControls[job.id] || (jobControls[job.id] = {aborted: false});
-  const finish = (state, err) => { job.state = state; job.ended = Date.now(); if (err) job.err = String(err && err.message || err); delete jobControls[job.id]; jobsSave(true); jobsNotify(); if (state === "done" || state === "cancelled") jobsAutoClear(job.id); };
-  return {
-    job,
-    get aborted() { return ctl.aborted; },
-    update(i, patch) { const it = job.items[i]; if (!it) return; Object.assign(it, patch); if (patch.st) jobsSave(true); else jobsSave(); jobsNotify(); },
-    note(text) { job.note = text; jobsSave(); jobsNotify(); },
-    done() { finish("done"); },
-    fail(err) { finish("failed", err); },
-    cancel() { finish("cancelled"); },
-  };
-}
-function jobCancel(id) { const c = jobControls[id]; if (c) c.aborted = true; const j = S.jobs.find(x => x.id === id); if (j && j.state === "queued") jobApi(j).cancel(); }
-function jobsDismiss(id) { S.jobs = S.jobs.filter(j => j.id !== id); jobsSave(true); jobsNotify(); }
 function jobsClearFinished() { S.jobs = S.jobs.filter(j => j.state === "running" || j.state === "queued"); jobsSave(true); jobsNotify(); }
-function updateJobsBtn() {
-  const b = document.getElementById("jobsbtn");
-  if (!b) return;
-  const running = S.jobs.filter(j => j.state === "running" || j.state === "queued").length;
-  const rest = S.jobs.length - running;
-  b.style.display = running ? "" : "none"; // only while something runs (Josh, 2026-10-01); finished jobs stay reviewable in View ▾ → Jobs
-  // setControl (docs/split-plan.md §4 step 2) is the one place that rebuilds
-  // a control's whole innerHTML — see src/ui/controls.js's own comment for
-  // why (same vm-harness querySelector gap the icon audit already worked
-  // around here).
-  setControl("jobsbtn", {label: running ? String(running) : "", aria: running ? running + " running — open the jobs list" : rest + " finished — open the jobs list"});
-  b.style.color = running ? "var(--gold)" : "var(--dim)";
-  // View ▾ → BACKGROUND → ⏳ Jobs (chrome density follow-up, 2026-10-01 pm):
-  // reaches the same jobs sheet even with #jobsbtn hidden (no jobs at all) —
-  // it's the one place a finished/failed/interrupted job is still reviewable
-  // once the footer button has nothing running left to show. Running count
-  // only (not "N finished") — same "something's happening" signal #jobsbtn
-  // itself gives, just findable from the menu too.
-  setControl("vwJobs", {label: "  Jobs" + (running ? " · " + running + " running" : "")});
-}
-function renderJobs() {
-  const list = document.getElementById("jobslist");
-  list.innerHTML = "";
-  if (!S.jobs.length) { const d = document.createElement("div"); d.className = "status"; d.textContent = "No jobs."; list.appendChild(d); return; }
-  for (const job of S.jobs.slice().reverse()) {
-    const kind = JOB_KINDS[job.kind] || {};
-    const row = document.createElement("div");
-    row.className = "row";
-    const body = document.createElement("span");
-    body.className = "jobbody";
-    body.style.cssText = "flex:1;min-width:0;font-size:0.8125rem";
-    const word = {running: "⏳", queued: "· queued", done: "✓", failed: "✗ failed", cancelled: "✕ cancelled", interrupted: "⚠ interrupted"}[job.state] || job.state;
-    const line = document.createElement("div");
-    line.textContent = (kind.label ? kind.label(job) : job.title) + "  " + word + (job.err ? "  " + job.err : "");
-    body.appendChild(line);
-    if (job.err) { // a failed job's error text, selectable above (.jobbody) but easy to miss on the iPad — Copy it directly
-      const cp = document.createElement("button");
-      cp.className = "copybtn sm"; cp.type = "button"; cp.setAttribute("aria-label", "Copy this error");
-      cp.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(job.err, cp); });
-      line.appendChild(cp);
-    }
-    const barrow = document.createElement("div");
-    barrow.className = "jobbarrow";
-    const bar = document.createElement("div");
-    bar.className = "jobbar";
-    jobBarSet(bar, jobFraction(job));
-    barrow.appendChild(bar);
-    const prog = jobProgress(job);
-    if (prog) { const p = document.createElement("span"); p.className = "jobprog"; p.textContent = prog; barrow.appendChild(p); }
-    body.appendChild(barrow);
-    row.appendChild(body);
-    const btn = (label, fn, aria, icon) => { const b = document.createElement("button"); if (icon) b.innerHTML = iconSvg(icon); else b.textContent = label; b.style.minHeight = "36px"; if (aria) b.setAttribute("aria-label", aria); b.addEventListener("click", fn); row.appendChild(b); };
-    if (kind.open) btn("Open", () => { document.getElementById("jobssheet").classList.remove("on"); kind.open(job); });
-    if (job.state === "running" || job.state === "queued") btn("✕", () => { jobCancel(job.id); renderJobs(); }, "Cancel");
-    else {
-      if (kind.retry && job.state !== "done") btn(null, () => { document.getElementById("jobssheet").classList.remove("on"); kind.retry(job); }, "Retry what is left", "refresh");
-      btn("✕", () => { jobsDismiss(job.id); renderJobs(); }, "Dismiss");
-    }
-    list.appendChild(row);
-  }
-}
-function openPubJobSheet(job) {
-  S.pubJobShown = job.id;
-  renderPubJob();
-  document.getElementById("pubjobsheet").classList.add("on");
-}
-function pubItemIcon(it) {
-  if (it.st === "done" || it.st === "silent") return {cls: "done", text: "✓"};
-  if (it.st === "failed") return {cls: "fail", text: "⚠ " + (it.msg || "failed")};
-  if (it.st === "cancelled") return {cls: "", text: "✕ cancelled"};
-  if (it.st === "interrupted") return {cls: "", text: "⚠ interrupted"};
-  return {cls: "", text: "…"};
-}
-function renderPubJob() {
-  const sheet = document.getElementById("pubjobsheet");
-  const job = S.jobs.find(j => j.id === S.pubJobShown);
-  if (!job) { sheet.classList.remove("on"); return; }
-  document.getElementById("pubjobtitle").textContent = job.title || "Publish";
-  jobBarSet(document.getElementById("pubjobbar"), jobFraction(job));
-  document.getElementById("pubjobnote").textContent = job.note || "";
-  const list = document.getElementById("pubjoblist");
-  list.innerHTML = "";
-  for (const it of job.items || []) {
-    const row = document.createElement("div");
-    row.className = "pubjobrow";
-    const name = document.createElement("span");
-    name.className = "pjname";
-    name.textContent = it.label;
-    row.appendChild(name);
-    if (it.st === "running") {
-      const bar = document.createElement("div");
-      bar.className = "jobbar sm";
-      jobBarSet(bar, it.pct || 0);
-      const state = document.createElement("span");
-      state.className = "pjstate";
-      state.appendChild(bar);
-      row.appendChild(state);
-    } else {
-      const {cls, text} = pubItemIcon(it);
-      const state = document.createElement("span");
-      state.className = "pjstate" + (cls ? " " + cls : "");
-      state.textContent = text;
-      row.appendChild(state);
-      if (it.st === "failed" && it.msg) { // the failure text, copyable (same need as a job's .jobbody error)
-        const cp = document.createElement("button");
-        cp.className = "copybtn sm"; cp.type = "button"; cp.setAttribute("aria-label", "Copy this error");
-        cp.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(it.msg, cp); });
-        row.appendChild(cp);
-      }
-    }
-    list.appendChild(row);
-  }
-  const running = job.state === "running" || job.state === "queued";
-  document.getElementById("pubjobcancel").style.display = running ? "" : "none";
-}
 if (typeof document !== "undefined" && document.getElementById("jobsbtn")) {
   document.getElementById("jobsbtn").addEventListener("click", () => { renderJobs(); document.getElementById("jobssheet").classList.add("on"); });
   document.getElementById("jobsclear").addEventListener("click", () => { jobsClearFinished(); renderJobs(); });
@@ -3708,24 +3155,6 @@ if (typeof document !== "undefined" && document.getElementById("jobsbtn")) {
     if (document.getElementById("pubjobsheet").classList.contains("on")) renderPubJob();
   });
 }
-function errChip() { // the number shown is UNREAD (new since the last chat message sent to a bridge backend, any chat — askSeenMax); Mark-as-read, 2026-09-30
-  const b = document.getElementById("errbtn");
-  if (!b) return;
-  const lines = logLines();
-  const max = askSeenMax().err;
-  const n = lines.filter(l => l.id > max).length;
-  // chrome density follow-up (2026-10-01 pm, Josh's ruling): the footer chip
-  // is reachable from View ▾ → Messages at any time now (always present
-  // there) — it only needs to claim footer space for UNREAD messages, not
-  // merely a non-empty log (a read-and-dismissed log used to keep it lit).
-  b.style.display = n ? "" : "none";
-  setControl("errbtn", {label: String(n)}); // setControl (src/ui/controls.js) — see updateJobsBtn's comment
-  // View ▾ → BACKGROUND → Messages: always reachable (unlike #errbtn
-  // itself), so an already-read log is still one tap away to re-check.
-  setControl("vwMessages", {label: "  Messages" + (n ? " · " + n : "")});
-}
-function logErr(msg) { logPush(appErrors, msg); errChip(); }
-function logDebug(msg) { logPush(appDebug, msg); console.log("[debug] " + msg); if (debugLogOn()) errChip(); }
 window.addEventListener("error", e => {
   if (BENIGN_ERRORS.test(e.message || "")) return;
   logErr("uncaught: " + e.message + (e.filename ? " (" + (e.filename.split("/").pop()) + ":" + e.lineno + ")" : ""));
@@ -3759,43 +3188,7 @@ document.getElementById("errclear").addEventListener("click", () => {
   document.getElementById("errbtn").style.display = "none";
   document.getElementById("errsheet").classList.remove("on");
 });
-function srAnnounce(text) {
-  if (typeof document === "undefined" || !text || text === S.srLastText) return;
-  const el = document.getElementById("srlive");
-  if (!el) return;
-  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
-  const emit = () => { S.srLastText = text; S.srLastAt = now; el.textContent = text; };
-  const elapsed = now - S.srLastAt;
-  if (elapsed >= 250) { if (S.srTimer) { clearTimeout(S.srTimer); S.srTimer = null; } emit(); }
-  else { if (S.srTimer) clearTimeout(S.srTimer); S.srTimer = setTimeout(emit, 250 - elapsed); }
-}
-// Status history (2026-09-30, bridge context block — Josh: every message to
-// the Mac should carry what changed since his last one): setInfo kept no
-// history before this, just the current line (infoFull) the strip and
-// #infosheet showed. A small capped ring buffer, ids like appErrors/appDebug
-// so askNewSinceLines can filter "new since a chat's cursor" the same way.
-const STATUS_HISTORY_CAP = 50;
- function setInfo(s, copyText) {
-  if (/⚠|failed|error|can't|cannot|unavailable/i.test(s)) logErr(s); // warnings survive being overwritten
-  // mode tagged at push time, same reason as logPush above: a Normal-mode
-  // status line (a chord/key name the selection strip shows) must never
-  // surface in a Learning-mode bridge context later in the same session
-  S.statusHistory.push({id: ++S.statusSeq, t: Date.now(), text: s, mode: appMode()});
-  if (S.statusHistory.length > STATUS_HISTORY_CAP) S.statusHistory.shift();
-  const el = document.getElementById("noteinfo");
-  el.textContent = s;
-  srAnnounce(s);
-  S.infoFull = s;
-  S.infoCopyText = copyText || null;
-  el.classList.toggle("copyable", !!S.infoCopyText);
-  if (S.infoCopyText) {
-    const chip = document.createElement("span");
-    chip.className = "copychip";
-    chip.textContent = "⧉ copy";
-    el.appendChild(chip);
-  }
-}
-document.getElementById("noteinfo").addEventListener("click", async () => {
+ document.getElementById("noteinfo").addEventListener("click", async () => {
   if (!S.infoCopyText) { // no copy action on this message: the tap reveals it in full instead
     if (S.infoFull) {
       document.getElementById("infosheettext").textContent = S.infoFull;
@@ -3826,14 +3219,7 @@ document.getElementById("infosheetcopy").addEventListener("click", ev => {
   askCopyText(S.infoFull || document.getElementById("infosheettext").textContent, document.getElementById("infosheetcopy"));
 });
 
- // manual scroll during playback suspends auto-follow
-                        // until the playhead walks back into view
-// score view can't zoom out as far as the roll: its floor comes from the
-// song's densest measure (see buildScoreModel.pxqMin) or engraving overflows
-function minPxq() {
-  return S.viewMode === "score" ? (S.scoreModel ? S.scoreModel.pxqMin : 36) : 8;
-}
-// Roll zoom-out clamp (Josh, 2026-08-06): pinch-out stops once the whole song
+ // Roll zoom-out clamp (Josh, 2026-08-06): pinch-out stops once the whole song
 // is in view — per axis, flush to the song's own extents (chop-trimmed), no
 // padding. While time still overflows, both axes zoom; once every bar fits,
 // further pinch-out only reveals pitch; once every note is visible, nothing.
@@ -3844,26 +3230,7 @@ function songPitchExtent() { // lowest..highest sounding pitch of the (trimmed) 
   }));
   return lo <= hi ? {lo: Math.max(S.PMIN, lo), hi: Math.min(S.PMAX, hi)} : {lo: 55, hi: 79};
 }
-function pxqFloor() { // px/quarter where bar 1..last bar fill the width, less a ruler-width of right padding
-  if (!S.song || !S.songEndTick) return 8;
-  return Math.min(400, Math.max(8, (wrap.clientWidth - 2 * S.RULER_W) / (S.songEndTick / S.song.ppq)));
-}
-const ROLL_AIR = 3; // rows of breathing room above and below the pitch range at full zoom-out
-function dispPitchExtent() { // like songPitchExtent, but in display rows (kit lane included)
-  let lo = Infinity, hi = -Infinity;
-  S.song.tracks.forEach((tr, ti) => tr.notes.forEach(n => {
-    if (n.gone) return;
-    const r = noteRow(ti, n.p);
-    if (r < lo) lo = r; if (r > hi) hi = r;
-  }));
-  return lo <= hi ? {lo: Math.max(botRow(), lo), hi: Math.min(topRow(), hi)} : {lo: 55, hi: 79};
-}
-function rowHFloor() { // row height where the display range + air fills the height, less a ruler-height of bottom padding
-  if (!S.song) return 6;
-  const {lo, hi} = dispPitchExtent();
-  return Math.min(32, Math.max(4, (wrap.clientHeight - 2 * S.RULER_H) / (hi - lo + 1 + 2 * ROLL_AIR)));
-}
-function scrubTo(pos) {
+ function scrubTo(pos) {
   const snap = cursorDragSnapTicks(); // 32nds (triplet/custom grid while active) — the fine path
   const tick = (pos.x - S.RULER_W + S.view.x) / pxPerTick();
   S.playCursor = Math.max(0, Math.round(tick / snap) * snap);
@@ -4446,35 +3813,7 @@ function fitView() { // on song load: the whole song flush on screen (= the zoom
   // screen after a reload in Tracks (first finalizeNotes re-fits, unclamped)
   S.view.y = S.viewMode === "tracks" ? 0 : (topRow() - dispPitchExtent().hi - ROLL_AIR) * S.view.rowH;
 }
-const PAN_TAIL_BARS = 16; // how far past the last bar a drag may scroll (clampView)
-function clampView() {
-  if (S.song && S.view.pxq < minPxq()) S.view.pxq = minPxq(); // score floor tracks the model
-  if (S.song && S.viewMode !== "score") { // roll zoom-out clamp: whole song = the floor
-    if (S.view.pxq < pxqFloor()) S.view.pxq = pxqFloor();
-    if (S.view.rowH < rowHFloor()) S.view.rowH = rowHFloor();
-  }
-  const minX = S.viewMode === "score" && S.scoreModel ? -SCORE_INTRO_W : 0;
-  // scroll room past the end: empty bars to write into (Josh, 2026-10-03:
-  // "I just want to push the song left so I can see like 10 empty bars" —
-  // zoom-out still fits the song + 2 bars; only panning reaches further)
-  const maxX = S.song
-    ? Math.max(minX, S.songEndTick * pxPerTick() + PAN_TAIL_BARS * barTicks() * pxPerTick() - (wrap.clientWidth - S.RULER_W))
-    : Infinity;
-  S.view.x = Math.min(maxX, Math.max(minX, S.view.x));
-  // song can be null here — maxX above already guards for it. This one did not,
-  // and it bricked the app (Josh, 2026-09-06): clampView runs during the load
-  // window, so being in Tracks view when a load starts threw before the load
-  // finished, and viewMode is restored from localStorage, so the reload put him
-  // straight back in Tracks. It read as "the song file is broken" — the file
-  // was fine. Any new song. use in this function needs the same guard.
-  const contentH = S.viewMode === "tracks" ? (S.song ? S.song.tracks.length : 0) * tracksLaneH()
-    : S.viewMode === "score" && S.scoreModel
-    ? scoreContentH()
-    : (topRow() - botRow() + 1) * S.view.rowH;
-  const maxY = contentH - (wrap.clientHeight - S.RULER_H);
-  S.view.y = Math.min(Math.max(0, maxY), Math.max(0, S.view.y));
-}
-
+ 
 function tap(pos) {
   // lasso mode: taps EDIT the selection — tap a note to toggle it in/out,
   // tap empty space to clear. The box unions; taps are the precision tool.
@@ -5102,12 +4441,6 @@ async function sfWaitForSong(capMs) { // resolve when this song's sampled pitche
   setInfo("loading " + name + "…");
   await Promise.race([Promise.all(waits), new Promise(r => setTimeout(r, capMs))]);
 }
-function autoVoiceLabel(ti) { // what "auto" actually resolves to for THIS track
-  if (chipActive() && S.song.tracks[ti] && chipHas(S.song.tracks[ti].name))
-    return "chip — the game's own sound";
-  const v = voiceType(ti);
-  return (VOICES.find(([id]) => id === v) || [, v])[1];
-}
 function saveVoices() { saveTrackDir(S.voiceMenuTi); }
 function saveTrackDir(ti) { // upsert this track's "track:" directive — a normal
   // synced annotation (Josh, 2026-08-15): voice & color are song truths; so
@@ -5128,9 +4461,9 @@ function saveTrackDir(ti) { // upsert this track's "track:" directive — a norm
   saveLocalNotes();
   updateSyncBtn();
 }
- // null = family list; a title = that family's instruments
-const GAME_FAMILY = "Game instruments";    // inside a chosen game: null = its menu (all instruments + songs); "all" = the A–Z leaf list; {title, path} = one song's leaf list
-const gameVoiceLabels = new Map(); // "game:…" voice id -> "<Game title> · <nameGuess>", filled as known
+// inside a chosen game: null = its menu (all instruments + songs); "all" = the A–Z leaf list; {title, path} = one song's leaf list
+const gameVoiceLabels = new Map();
+// "game:…" voice id -> "<Game title> · <nameGuess>", filled as known
 function gameVoiceLabel(v) { // sync read for menu rows; fills in async and refreshes the open menu once known — "fall back to the id" (spec) until then
   if (gameVoiceLabels.has(v)) return gameVoiceLabels.get(v);
   const info = parseGameVoice(v);
@@ -5147,8 +4480,9 @@ function gameVoiceLabel(v) { // sync read for menu rows; fills in async and refr
   })().catch(() => {}); // network hiccup: stays on the id fallback
   return gameVoiceLabels.get(v);
 }
-const SF2_FAMILY = "Soundfonts";  // inside SF2_FAMILY: null = pick a font; a slug = that font's presets
-const sf2VoiceLabels = new Map(); // "sf2:…" voice id -> "<font name> · <preset name>", filled as known
+// inside SF2_FAMILY: null = pick a font; a slug = that font's presets
+const sf2VoiceLabels = new Map();
+// "sf2:…" voice id -> "<font name> · <preset name>", filled as known
 function sf2VoiceLabel(v) { // same "fall back to the id, fill in async" contract as gameVoiceLabel
   if (sf2VoiceLabels.has(v)) return sf2VoiceLabels.get(v);
   const info = parseSf2Voice(v);
@@ -5162,7 +4496,7 @@ function sf2VoiceLabel(v) { // same "fall back to the id, fill in async" contrac
   })().catch(() => {});
   return sf2VoiceLabels.get(v);
 }
-function openVoiceMenu(ti, anchor) { // position ONCE from the chip, then show
+         function openVoiceMenu(ti, anchor) { // position ONCE from the chip, then show
   const menu = document.getElementById("voicemenu");
   S.voiceMenuTi = ti;
   // open straight into the family holding the track's current voice
@@ -5470,15 +4804,6 @@ async function openGameVoiceMenuTo(ti, voiceId) {
   }
   S.voiceMenuGameSys = g.sys; S.voiceMenuGameVault = g; S.voiceMenuGameSub = sub;
   buildVoiceMenu(ti);
-}
-// which game song a game voice was picked from, per device (a UI memory, not
-// song state — the voice id itself stays "game:<vault>:<id>")
-function gameVoiceFromAll() { try { return JSON.parse(localStorage.getItem("ff1roll-gamevoicefrom") || "{}"); } catch (e) { return {}; } }
-function gameVoiceFrom(voiceId) { const m = gameVoiceFromAll()[voiceId]; return m && m.path ? m : null; }
-function gameVoiceFromSet(voiceId, sub) {
-  const all = gameVoiceFromAll();
-  if (sub && sub.path) all[voiceId] = {title: sub.title, path: sub.path}; else delete all[voiceId];
-  try { localStorage.setItem("ff1roll-gamevoicefrom", JSON.stringify(all)); } catch (e) { /* private mode */ }
 }
 // SF2_FAMILY's own small 2-level nav (font -> its presets) — the SAME calling
 // convention as renderGameInstNav (rowFactory/onNavigate/isCurrent/backLabelAtTop)
@@ -6055,69 +5380,7 @@ function buildSchedule() {
   });
   S.schedEvents.sort((a, b) => a.sec - b.sec);
 }
-   async function chipSource() { // {bytes, n, secs} for the current song, or null
-  if (chipTrackNo() !== null && (S.nsfSess.bytes || S.nsfSess.rows[chipTrackNo()].bytes)) {
-    const n = chipTrackNo();
-    const libs = {}; for (const [k, f] of Object.entries(S.nsfSess.libs || {})) libs[k] = f.bytes; // the set's shared library, by lower-cased name
-    return {bytes: S.nsfSess.bytes || S.nsfSess.rows[n].bytes, n: S.nsfSess.bytes ? n : 1, secs: S.nsfSess.rows[n].secs || 60, chip: S.nsfSess.chip || "nsf", libs};
-  }
-  if (!S.songKey) return null;
-  const base = S.songKey.split("/").pop().replace(/\.mid$/, "");
-  // this device already has the bytes? (import happened here, or vault cached)
-  const im = S.songKey.match(/^albums\/imports\/([^/]+)\//);
-  const meta = await albumMetaFor(S.songKey);
-  const dir0 = (S.songKey.match(/^(albums\/.+?)\/(?:songs\/)?[^/]+\.mid$/) || [])[1];
-  if (!meta && albumMetaFor.lastFail && albumMetaFor.lastFail.dir === dir0) chip.fail = {key: S.songKey, why: "the album's info didn't load (" + albumMetaFor.lastFail.why + ")"};
-  // the record's slug: a published album names it (nsf.vault); an unpublished
-  // capture has no album.json, so its folder IS the slug (impTrackKey builds
-  // albums/<console>/<slug>/…). Only the legacy imports/ prefix was checked
-  // once console folders came in — every unpublished PS1 song fell to synth
-  // after a relaunch (Josh, 2026-09-27: "everything has reverted")
-  const slug = im ? im[1] : (meta && meta.nsf && meta.nsf.vault) ||
-    (isCaptureKey(S.songKey) ? S.songKey.replace(/\/[^/]+\.mid$/, "").split("/").pop() : null);
-  if (!slug) return null;
-  const metaTr = meta && meta.nsf && meta.nsf.tracks && meta.nsf.tracks[base];
-  const rec = await idbNsfGet(slug);
-  let tr = (rec && rec.tracks && rec.tracks[base]) || metaTr;
-  if (tr === undefined || tr === null) return null;
-  if (typeof tr === "number") tr = {n: tr};
-  const vault = (meta && meta.nsf && meta.nsf.vault) || "";
-  const kind = (rec && rec.chip) || (meta && meta.nsf && meta.nsf.chip) || (/\.gbs$/i.test(vault) ? "gbs" : "nsf");
-  const perFile = !!(meta && meta.nsf && meta.nsf.perFile) || !!(tr && tr.bytes);
-  let bytes = perFile ? tr.bytes : rec && rec.bytes;
-  if (!bytes && meta && meta.nsf && meta.nsf.vault) { // fall back to the vault, then cache
-    console.log("[chip] fetching the console file from the archive…");
-    try {
-      if (perFile) { bytes = await vaultFetch(chipVaultFile(meta.nsf, base)); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
-      else { bytes = await vaultFetch(meta.nsf.vault); if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {}, kind); }
-    } catch (err) { // say WHY and stand down to synthesized voices — never a stuck banner
-      chip.fail = {key: S.songKey, why: "the console file didn't download (" + err.message + ")"};
-      return null;
-    }
-  }
-  if (!bytes) return null;
-  let libs = (rec && rec.libs) || null; // a set's shared library (PS1): on the device, else from the archive, then cached
-  if (!libs && meta && meta.nsf && Array.isArray(meta.nsf.libs) && meta.nsf.libs.length) {
-    libs = {};
-    try {
-      for (const l of meta.nsf.libs) { const b = await vaultFetch(meta.nsf.vault + l.file); if (b) libs[l.name] = b; }
-      if (Object.keys(libs).length) idbNsfPut(slug, null, {}, kind, libs);
-    } catch (err) { chip.fail = {key: S.songKey, why: "the console's sound library didn't download (" + err.message + ")"}; return null; }
-  }
-  return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind, libs: libs || {}};
-}
-// Right after a launch the source resolve (album meta, this device's store,
-// the archive) takes seconds, and chip.rendering is only set after it: a Play
-// in that window went out on synth voices (Josh, 2026-09-29, Chrono Cross,
-// twice after a reload). chip.resolving lets play() wait for the decision.
-function updateChipBtn() {
-  const key = S.songKey, p = updateChipBtnInner();
-  chip.resolving = {key, p};
-  p.catch(() => {}).finally(() => { if (chip.resolving && chip.resolving.p === p) chip.resolving = null; });
-  playGateKick();
-  return p;
-}
-// ---- ▶ waits for the song (Josh, 2026-09-29: "the play button should not
+   // ---- ▶ waits for the song (Josh, 2026-09-29: "the play button should not
 // even be enabled until everything is loaded … once it hits 100% it turns
 // into the regular Play button"). playGate() is the one synchronous answer:
 // null = ready, else {pct, what}. The ticker runs only while something loads
@@ -6149,80 +5412,10 @@ function playGate() {
   } catch (err) { return null; } // a half-built song: never block ▶ on our own bookkeeping
   return waiting ? {pct: (total - waiting) / total, what: "instruments"} : null;
 }
-function playGateKick() {
-  if (S.playGateTimer || typeof document === "undefined") return;
-  S.playGateSince = Date.now();
-  playGateTick();
-  if (S.playGateTimer === null && playGateActive()) S.playGateTimer = setInterval(playGateTick, 200);
-}
-function playGateActive() { return !S.playing && !!playGate(); }
-function playGateTick() {
-  const btn = document.getElementById("playbtn");
-  const g = S.playing ? null : playGate(), late = Date.now() - S.playGateSince;
-  const timedOut = g && late > PLAY_GATE_MAX;
-  if (timedOut) { logErr("still loading " + g.what + " after " + PLAY_GATE_MAX / 1000 + " s — ▶ is on anyway (synthesized voices where it isn't ready)"); playGateTick.queued = false; }
-  if (g && !timedOut) {
-    if (late < PLAY_GATE_GRACE) return;
-    // not .disabled: a tap while loading QUEUES the play (Josh, 2026-09-30:
-    // "it should start by itself the moment loading finishes"); tap again to cancel
-    btn.classList.add("loading");
-    setControl("playbtn", {icon: "hourglassEmpty", label: Math.round(g.pct * 100) + "%" + (playGateTick.queued ? " · will play" : "")});
-    btn.title = "loading " + g.what + (playGateTick.queued ? " — plays when ready (tap to cancel)" : " — tap to play when it's ready");
-    S.playGateShown = true;
-    return;
-  }
-  clearInterval(S.playGateTimer); S.playGateTimer = null;
-  if (S.playGateShown) {
-    S.playGateShown = false; btn.classList.remove("loading"); btn.title = ""; if (!S.playing) setPlayBtn("play", "Play");
-    if (playGateTick.queued && !S.playing && S.song) { playGateTick.queued = false; play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0); }
-  }
-  playGateTick.queued = false;
-}
 async function playGateWait(capMs) { // album advance: the same gate, awaited
   playGateKick();
   const t0 = Date.now();
   while (playGate() && Date.now() - t0 < capMs) await new Promise(r => setTimeout(r, 200));
-}
-async function updateChipBtnInner() { // name kept for call sites; now just the auto-render kick
-  // "the chip button should not even have to exist" (Josh, 2026-08-17): chip
-  // audio simply plays when a source resolves. Per-track override lives in
-  // the voice menu — auto = the console own sound, an explicit instrument
-  // swaps that track to synthesis.
-  if (chip.fail && chip.fail.key === S.songKey) chip.fail = null; // this attempt starts clean
-  const available = chipTrackNo() !== null || (await chipSource()) !== null;
-  logDebug("song open: console source " + (available ? "found" : chip.fail && chip.fail.key === S.songKey ? "FAILED — " + chip.fail.why : "none (synth voices)"));
-  // a lookup that FAILED (not "this song has none") must never pass for synth
-  // silently (Josh, 2026-09-30: "sometimes the instruments never load"): say
-  // why; the next ▶ tries again
-  if (!available && chip.fail && chip.fail.key === S.songKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again");
-  // an import capture with NO reachable NSF plays synthesized — say so ONCE,
-  // loudly enough to find (Josh listened to synth for an hour believing it
-  // was the chip, 2026-08-17): the ⚠ log names the fix
-  if (!available && S.songKey && S.songKey.startsWith("albums/imports/") &&
-      updateChipBtn.warned !== S.songKey && await chipAlbumHasSource()) {
-    updateChipBtn.warned = S.songKey;
-    logErr("chip audio unavailable for " + S.songKey.split("/").pop() +
-           " — no NSF on this device (captures made before NSF storage, or another device's import). " +
-           "Re-import the album's NSF once, or commit the album; playing synthesized voices meanwhile.");
-  }
-  if (available && chip.key !== S.songKey && chip.rendering !== S.songKey) {
-    if (chip.key && chip.key !== S.songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chip.pan = null; chipPreviewCache.clear(); if (S.chipWorker && S.chipWorker.__key !== S.songKey) { try { S.chipWorker.terminate(); } catch (err) { /* gone */ } S.chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
-    chip.rendering = S.songKey;
-    const forKey = S.songKey;
-    chip.renderPromise = chipRenderAuto().catch(err => {
-      // name + message (a module-load failure now names its path — fix 2),
-      // and the heap if the browser exposes it: a real 404 vs an allocation
-      // failure used to look identical in this one line (Josh's iPad, FF7
-      // failing the same way Challenge just had, 2026-09-30)
-      const heap = (typeof performance !== "undefined" && performance.memory && performance.memory.usedJSHeapSize) ? " · heap " + Math.round(performance.memory.usedJSHeapSize / 1e6) + " MB" : "";
-      const detail = (err && err.name ? err.name + ": " : "") + (err && err.message || err);
-      chip.fail = {key: forKey, why: "the console render failed for " + songTitleOf(forKey) + " (" + detail + ")" + heap};
-      if (S.songKey === forKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again");
-      logDebug("render failed: " + chip.fail.why);
-      return false;
-    }) // not renderable: synth carries the song, and says so
-      .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
-  }
 }
     // A sequence chip (psf/psf2/usf: CHIPS[kind].channels === []) doesn't know its
 // own track count until the sequence is parsed (res.result) — register chips
@@ -6522,14 +5715,6 @@ async function chipStreamOpen(auto) {
   if (S.chipWorker) S.chipWorker.postMessage({idle: {id: forKey}}); // one state-only sweep so an all-silent track re-enables synth promptly, not only after it happens to fall inside a rendered window
   console.log("[chip] stream ready: " + forKey + " — playing the console's own sound (stream mode)");
   return true;
-}
-async function chipRenderAuto() { // chip.renderPromise's entry point — see chipStreamOpen's own comment
-  const mode = chipStreamMode();
-  if (mode === "on" || mode === "auto") {
-    const ok = await chipStreamOpen(mode === "auto");
-    if (ok) return true;
-  }
-  return chipRender();
 }
     function applyAudioDirs() { // called from finalizeNotes: every audio: note is one piece on its named track
   const seen = new Set(); // exact twins (same anchor + text) collapse; the rest all stand
@@ -7191,66 +6376,8 @@ function scoreTap(pos) {
   updateSubtitle(); draw();
 }
 
-// ---------------------------------------------------------------- ui wiring
-// two-level song picker: groups first, then that group's songs — a flat
-// 43-entry dropdown got unusable once chip captures joined the catalog
-const songtitleEl = document.getElementById("songcrumb");
 const songsheet = document.getElementById("songsheet");
- function updateSongBtn() { // breadcrumb: Album › Title, with the real path dimmed after
-  songtitleEl.innerHTML = "";
-  setDocTitle(S.currentPath ? songTitleOf(S.currentPath) : null);
-  if (!S.currentPath) return;
-  const group = Object.entries(S.CATALOG).find(([, songs]) => songs.some(([, p]) => p === S.currentPath));
-  const local = localStorage.getItem("ff1roll-draft-" + S.currentPath) !== null;
-  const folder = group ? group[0] : local ? folderTitle(folderOf(S.currentPath)) : null;
-  const where = document.createElement("span");
-  where.className = "crumbwhere";
-  where.style.color = "var(--dim)";
-  where.textContent = songWhereLabel(S.currentPath) + "\u00a0›\u00a0"; // nbsp: a flex item drops its edge spaces
-  songtitleEl.appendChild(where);
-  if (folder) {
-    const crumb = document.createElement("span");
-    crumb.className = "crumbfolder"; // shrinks before the title (header CSS: flex-shrink 1000x crumbtitle's)
-    crumb.style.color = "var(--dim)";
-    crumb.textContent = folder + "\u00a0›\u00a0";
-    songtitleEl.appendChild(crumb);
-  }
-  const title = document.createElement("span");
-  title.className = "crumbtitle"; // shrinks last -- truncates only once the folder's fully squeezed
-  title.textContent = songTitleOf(S.currentPath);
-  songtitleEl.appendChild(title);
-  const chat = askUnsavedCount();
-  const unsaved = songUnsaved();
-  if ((unsaved || chat) && connected()) { // "not published yet": hidden entirely when nothing is connected (Model B) — a local-only user's work is always kept, Versions are the save points
-    const dot = document.createElement("span");
-    dot.textContent = "\u00a0●";
-    dot.className = "crumbdot";
-    dot.style.color = "var(--gold)";
-    dot.setAttribute("aria-label", unsaved ? "Unpublished changes" : chat + " chat messages not saved");
-    songtitleEl.appendChild(dot);
-  }
-}
-function songRow(label, onTap, dim) {
-  const row = document.createElement("div");
-  row.className = "noterow";
-  row.setAttribute("role", "button");
-  const body = document.createElement("span");
-  body.className = "body";
-  if (dim) body.style.color = "var(--dim)";
-  body.textContent = label;
-  row.appendChild(body);
-  row.addEventListener("click", onTap);
-  return row;
-}
-function songHeader(text) { // a section line: LOCAL / PUBLISHED
-  const h = document.createElement("div");
-  h.className = "meta";
-  h.style.cssText = "padding:8px 4px 0;letter-spacing:.1em;white-space:normal;text-align:left";
-  h.textContent = text;
-  return h;
-}
-function localLabel() { return "LOCAL · " + (nativeFs() ? "this iPad" : "this device"); }
-function publishedLabel() { return "PUBLISHED · " + (LINK_SONGS ? linkRepoLabel(LINK_SONGS) : folderActive() ? fsRoot.name : cfg().songsRepo); }
+ function publishedLabel() { return "PUBLISHED · " + (LINK_SONGS ? linkRepoLabel(LINK_SONGS) : folderActive() ? fsRoot.name : cfg().songsRepo); }
 function renderSongGroups() { // top: LOCAL's top-level folders, then PUBLISHED's
   S.songViewRedraw = () => renderSongGroups();
   document.getElementById("songsheettitle").textContent = "OPEN";
@@ -7409,59 +6536,11 @@ volsl.addEventListener("input", () => {
   if (S.audio && S.master) S.master.gain.setValueAtTime(MASTER_VOL * S.masterVol, S.audio.currentTime);
 });
 
-// key dial: preview any signature live; Set writes "key: X" at the cursor bar.
-// A signature is mode-ambiguous (Bb major and G minor share two flats), so a
-// major/minor toggle picks which TONIC gets recorded — "key: Gm", never the
-// relative major standing in for it.
-// Key picker (reworked 2026-08-07, Josh's design from the sweep handoff):
-// FIRST dropdown = tonic pitch only, SECOND = mode. The old signature list
-// ("D / B minor") let a missed mode write a silent wrong key. Tonic without
-// mode is a normal mid-derivation state (floating castle), so it's STORABLE
-// ("key: G#/Ab?") but never APPLIED — no signature, no respelling, nothing
-// downstream until the mode lands. Stored vs applied is always visible.
-const keysel = document.getElementById("keysel");
-const keysetBtn = document.getElementById("keyset");
-const keymodeSel = document.getElementById("keymode");
  function fileMeterAt(tick) { // the file's own declared meter at a tick, or null
   if (!S.song || !S.song.source || !S.song.source.timesigs || !S.song.source.timesigs.length) return null;
   let cur = S.song.source.timesigs[0];
   for (const ts of S.song.source.timesigs) { if (ts.tick <= tick) cur = ts; else break; }
   return {num: cur.num, den: cur.den};
-}
-// ---- ☰ Notes' "Check vs file" button (C7) — the KEY and METER group
-// headers, on EVERY song. Learning: fileCheckLine's text NEVER contains the
-// file's value or runs estimateKey (spy-tested); Normal states the file's
-// value plainly (+ the note-census estimate, for key) and offers a one-tap
-// "Use the file's" action.
-function fileCheckLine(r, kind) { // same wording for key and meter (spec: "meter: same lines")
-  const noun = kind === "key" ? "key" : "meter";
-  if (r.state === "nofile") return "This song's file carries no " + noun + " label of its own — nothing to compare (game captures and songs made here never do).";
-  if (r.state === "noanswer") return "Set your " + noun + " first — this compares your answer with the file's own label.";
-  if (r.state === "match") return r.tonicOnly
-    ? "Your tonic matches the file's label; add the mode to check the whole key."
-    : "Your " + noun + " matches the file's own label.";
-  if (r.state === "partial-match") return "Matches the file's label for part of the song — labels can be wrong.";
-  return "The file's label says something else — labels can be wrong (many programs write C major / 4/4 by default). Listen again, or keep yours.";
-}
-function runKeyCheck() {
-  const r = checkKeyVsFile();
-  let text = fileCheckLine(r, "key");
-  if (appMode() === "normal" && r.file) {
-    text += " The file says: " + r.file.name + ".";
-    const est = estimateKey();
-    if (est) text += " Estimate from the notes: " + est.name + " (confidence " + (Math.round(est.conf * 100) / 100) + ").";
-  }
-  const status = document.getElementById("notelistStatus");
-  if (status) status.textContent = text;
-  return r;
-}
-function runMeterCheck() {
-  const r = checkMeterVsFile();
-  let text = fileCheckLine(r, "meter");
-  if (appMode() === "normal" && r.file) text += " The file says: " + r.file.num + "/" + r.file.den + ".";
-  const status = document.getElementById("notelistStatus");
-  if (status) status.textContent = text;
-  return r;
 }
 // Normal-only, one tap — same "declared, not just previewed" pattern as
 // #keysetest (which promotes the ESTIMATE); this promotes the FILE's key.
@@ -7481,47 +6560,6 @@ function useFileKey() {
   draw();
   setInfo("key set to " + r.file.name + " at bar " + bar + " (from the file's label — unsynced — Sync to commit)");
 }
-// Normal-only: prefills the meter editor and stops — Save still runs the
-// existing two-tap re-bar warning (a meter change re-anchors every
-// annotation), so nothing is written just from this tap.
-function useFileMeter() {
-  const r = checkMeterVsFile();
-  if (!r.file) return;
-  openEditor(null, "timesig");
-  document.getElementById("ntsnum").value = String(r.file.num);
-  document.getElementById("ntsden").value = String(r.file.den);
-}
-function keyNameShownAt(tick) { // keyNameAt (declared), else the Normal estimate's name, else null
-  const d = keyNameAt(tick);
-  if (d !== null) return d;
-  if (appMode() === "normal") { const est = estimateKey(); if (est) return est.name; }
-  return null;
-}
-function expandKeyName(name) { // "Gm" -> "G minor", "C" -> "C major" — for the keysel label
-  const m = /^([A-G][#b]?)(m?)$/.exec(name || "");
-  return m ? m[1] + " " + (m[2] === "m" ? "minor" : "major") : (name || "");
-}
-// keyLabelState (P4): the #keyunset text, built from data — used by
-// finalizeNotes to SET the label and by askContext (Learning) to read the
-// identical text without touching the DOM (the leak this fixed: askContext
-// used to read the live label, which in Normal now says "(estimated)").
-function keyLabelState() {
-  const partials = S.rollnotes.filter(n => n.keypartial).map(n => n.keypartial + "?");
-  // Normal, nothing declared or stored: offer the estimate, labelled, with
-  // a one-tap way to promote it to a real key: annotation. Learning never
-  // reaches the estimate branch — appMode() gates it, so estimateKey() is
-  // never called there (see the spy test).
-  const est = !S.keyRegions.length && !partials.length && appMode() === "normal" ? estimateKey() : null;
-  const text = S.keyRegions.length
-    ? "key: " + S.keyRegions.map(r => r.name + (r.b2 ? "(" + r.b1 + "–" + r.b2 + ")" : "")).join(", ") + " ✓"
-    : partials.length
-    ? "key: " + partials.join(", ") + " — tonic stored, NOT applied"
-    : est
-    ? "key: " + expandKeyName(est.name) + " (estimated) — tap to set"
-    : "key: not set (C)";
-  return {text, est};
-}
-function tonicLabel(pc) { return TONIC_SPELL[pc].join("/"); }
 {
   // black keys get THREE options (2026-08-12 spec): fused "A#/Bb" = spelling
   // undetermined, plus each asserted spelling — Josh can know a tonic is Bb
@@ -7546,20 +6584,7 @@ function tonicLabel(pc) { return TONIC_SPELL[pc].join("/"); }
     nk.appendChild(opt.cloneNode(true));
   }
 }
-function chosenTonic() { // {pc, sp} — sp = "" when the spelling is undecided/unambiguous
-  if (keysel.value === "") return null;
-  const [pc, sp] = keysel.value.split(":");
-  return {pc: +pc, sp: sp || ""};
-}
-function chosenTonicPc() { const t = chosenTonic(); return t ? t.pc : null; }
-function partialNameOf(t) { return t.sp || tonicLabel(t.pc); } // "Bb" asserted vs "A#/Bb" fused
-function tonicOptionValue(name) { // stored name -> option value ("Bb"→"10:Bb", "A#/Bb"→"10:", "C"→"0:")
-  const pc = tonicPcOfName(name);
-  if (pc === null) return "";
-  const single = (name.match(/^([A-G][#b]?)$/) || [])[1];
-  return pc + ":" + (single && TONIC_SPELL[pc].length > 1 ? single : "");
-}
-function refreshKeyPreview() { // preview applies only when tonic AND mode are chosen
+ function refreshKeyPreview() { // preview applies only when tonic AND mode are chosen
   const pc = chosenTonicPc(), mode = keymodeSel.value;
   const full = pc !== null && mode ? keyNameFor(pc, mode) : null;
   S.previewSf = full ? full.sf : null;
@@ -7569,16 +6594,6 @@ function refreshKeyPreview() { // preview applies only when tonic AND mode are c
   buildScoreModel();
   clampView();
   draw();
-}
-function refreshKeysetLabel() {
-  const t = chosenTonic();
-  if (!S.song || !t) return;
-  const mode = keymodeSel.value;
-  const bar = Math.floor(S.playCursor / barTicks()) + 1;
-  const label = mode
-    ? "Set " + keyNameFor(t.pc, mode).name + " @ bar " + bar
-    : "Store " + partialNameOf(t) + "? @ bar " + bar;
-  if (keysetBtn.textContent !== label) keysetBtn.textContent = label; // runs per frame
 }
 keysel.addEventListener("change", refreshKeyPreview);
 keymodeSel.addEventListener("change", refreshKeyPreview);
@@ -7732,23 +6747,7 @@ document.getElementById("mettap").addEventListener("click", () => {
   }
 });
 
-                // fractional rotation while a finger is spinning the wheel
-// Insert-chord (Josh, 2026-08-17): stamp a full chord at the cursor with the
-// pencil duration, cursor walks forward — repeated inserts build a progression.
-const CHORD_QUALS = [
-  ["maj", [0, 4, 7]], ["m", [0, 3, 7]], ["dim", [0, 3, 6]], ["aug", [0, 4, 8]],
-  ["sus2", [0, 2, 7]], ["sus4", [0, 5, 7]], ["6", [0, 4, 7, 9]], ["m6", [0, 3, 7, 9]],
-  ["7", [0, 4, 7, 10]], ["maj7", [0, 4, 7, 11]], ["m7", [0, 3, 7, 10]],
-  ["m7♭5", [0, 3, 6, 10]], ["dim7", [0, 3, 6, 9]],
-];
-const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
-const INS_DURS = [["16th", 0.25], ["8th", 0.5], ["8th.", 0.75], ["quarter", 1],
-                  ["quarter.", 1.5], ["half", 2], ["half.", 3], ["whole", 4]];
- // quarters — the Insert dialogs' own duration, independent of the pencil
-function chordLabel() {
-  return CHORD_ROOTS[S.chordRoot].split("/")[0] + (S.chordQual === "maj" ? "" : S.chordQual);
-}
- // ti, or null = the whole selection
+                  // ti, or null = the whole selection
 function renameTrack(ti, newName) { // compositions/local drafts only — analysis songs regenerate from NSF
   newName = (newName || "").trim();
   if (!newName) return "name is empty";
@@ -7837,15 +6836,6 @@ function dedupeSong() { // 🧹 back by demand (Josh 2026-08-18: old drafts keep
   if (S.viewMode === "score") buildScoreModel();
   draw();
   return erased.length;
-}
-function stampChordBand(tick, durTicks, sym) { // the matching ruler annotation
-  // end via setEndBQ (inclusive last beat): deriving it from the last tick
-  // rounded every band up a beat, so bar-long chords overlapped (Josh, 2026-09-12)
-  const fresh = {text: sym, chord: true, added: true};
-  setAnchorBQ(fresh, tick);
-  setEndBQ(fresh, tick + durTicks);
-  dropSupersededBy(fresh); // one band per span, same as the dialog path
-  S.rollnotes.push(resolveNote(fresh));
 }
 function insertChordAt(tick, rootPc, qual, oct, durQ) {
   if (!editableSong()) return 0;
@@ -7963,34 +6953,6 @@ function insertChordAt(tick, rootPc, qual, oct, durQ) {
   draw();
   return added.length;
 }
-// Progression library (Josh, 2026-08-17): emotions → Roman-numeral recipes.
-// Numerals are major-scale-relative (♭VI = lowered 6th degree), the app's
-// degree convention; lowercase = minor chord. Deliberately key-agnostic.
-const PROG_LIB = [
-  ["Triumphant", "I – IV – V – I", "the textbook full cadence — arrival with banners"],
-  ["Heroic", "I – ♭VII – IV – I", "the Mixolydian rock-hero loop; ♭VII is the swagger"],
-  ["Hopeful", "I – V – vi – IV", "the four-chord anthem — rises, dips minor, lands warm"],
-  ["Bittersweet", "vi – IV – I – V", "same chords as Hopeful, started on the minor — smiling through it"],
-  ["Nostalgic", "I – vi – IV – V", "the 50s doo-wop turnaround; instant sepia"],
-  ["Romantic", "Imaj7 – vi7 – ii7 – V7", "jazz turnaround with the sevenths left in — candlelight"],
-  ["Peaceful", "I – IV – I – IV", "plagal rocking, no leading tone anywhere — nothing needs to happen"],
-  ["Dreamy", "Imaj7 – IVmaj7", "two maj7 chords floating a fourth apart; time gets soft"],
-  ["Wonder", "I – II", "the Lydian lift — the major chord one whole step up opens the sky"],
-  ["Playful", "I – VI7 – II7 – V7", "the ragtime circle of dominants; every chord winks"],
-  ["Yearning", "IV – V – iii – vi", "the JRPG 'royal road' — reaches, almost resolves, aches instead"],
-  ["Anxious", "vi – V – IV – V", "circles the tonic without ever landing on it"],
-  ["Melancholy", "i7 – iv7 – ♭VI – V7", "minor with sevenths — sadness that still moves forward"],
-  ["Sad (epic)", "i – ♭VI – ♭III – ♭VII", "the dark pop loop; grief with scale"],
-  ["Grieving", "i – ♭VII – ♭VI – V", "the Andalusian descent — the bass walks down to the funeral"],
-  ["Lonely", "i – v – i – v", "minor v instead of major V: no leading tone, no one coming"],
-  ["Dark epic", "i – ♭VI – ♭VII – i", "the boss-theme loop; menace in armor"],
-  ["Ominous", "i – ♭II", "the Neapolitan half-step shadow — Jaws lives here"],
-  ["Villainous", "i – ♭vi", "minor chromatic mediant (Cm→A♭m): wrongness with a cape"],
-  ["Creepy", "i – ♯iv°", "tonic against the tritone diminished — the floor isn't real"],
-  ["Battle", "i – ♭VII – ♭VI – ♭VII", "the driving minor loop; run, fight, repeat"],
-  ["Mysterious", "I – ♭VI", "major chromatic mediant (C→A♭): familiar light, unfamiliar room"],
-  ["Tense", "i – ♭II – ♭III – ♭II", "phrygian steps grinding a half-step above home"],
-];
 {
   const panel = document.getElementById("progpanel");
   panel.innerHTML =
@@ -8120,44 +7082,6 @@ function cofRelease(e) {
 cofCanvas.addEventListener("pointerup", cofRelease);
 cofCanvas.addEventListener("pointercancel", () => { S.cofPtr = null; S.cofDragRot = null; drawCof(); });
 
-// ---------------------------------------------------------------- notes list
-const notelistSheet = document.getElementById("notelistsheet");
-// one group per annotation type, so working a single layer (all the chords,
-// all the keys) never means hunting through a mixed chronological pile
-const NOTE_GROUPS = [
-  {title: "KEY", type: "key", match: n => n.keydir !== undefined || n.keypartial},
-  {title: "TEMPO", type: "tempo", match: n => n.tempodir !== undefined},
-  {title: "TRACKS", type: "note", match: n => n.trackdir},
-  {title: "METER", type: "timesig", match: n => !!n.tsdir},
-  {title: "SECTIONS", type: "section", match: n => n.section},
-  {title: "CHORDS", type: "chord", match: n => n.chord},
-  {title: "LOOP", type: "loop", match: n => n.loopTo !== undefined},
-  {title: "CHOP", type: "chop", match: n => !!n.chopdir},
-  {title: "TEXT NOTES", type: "note", match: () => true}, // catches the rest
-];
-// Jump bar across the top: one chip per annotation type, with its count.
-// Types that HAVE entries scroll to their group; empty ones open the editor
-// preset to that type, because an empty group has nothing to scroll to and
-// "add one of these" is the only thing you could want from it. Josh, 2026-08-25:
-// "I just need a set of buttons at the top to easily go to those sections."
-function renderNoteJump(counts) {
-  const bar = document.getElementById("notejump");
-  bar.innerHTML = "";
-  for (const g of NOTE_GROUPS) {
-    const n = counts.get(g) || 0;
-    const b = document.createElement("button");
-    b.textContent = g.title + (n ? " " + n : "");
-    b.className = n ? "has" : "";
-    b.setAttribute("aria-label", n ? "Go to " + g.title : "Add " + g.title.toLowerCase());
-    b.addEventListener("click", () => {
-      const box = document.querySelector('.notegroup[data-type="' + g.title + '"]');
-      if (box) { box.scrollIntoView({block: "start", behavior: "smooth"}); return; }
-      notelistSheet.classList.remove("on");
-      openEditor(null, g.type);
-    });
-    bar.appendChild(b);
-  }
-}
 function renderNoteList() {
   const rows = document.getElementById("notelistrows");
   rows.innerHTML = "";
@@ -8317,16 +7241,6 @@ document.getElementById("notelistAdd").addEventListener("click", () => {
   openEditor(null);
 });
 
-function showHelpTab(name) {
-  const sheet = document.getElementById("helpsheet");
-  if (!sheet.querySelector('.hsec[data-hsec="' + name + '"]')) name = "views";
-  for (const b of sheet.querySelectorAll("#helptabs button")) {
-    b.classList.toggle("on", b.dataset.hs === name);
-    b.setAttribute("aria-selected", String(b.dataset.hs === name));
-  }
-  for (const sec of sheet.querySelectorAll(".hsec")) sec.classList.toggle("on", sec.dataset.hsec === name);
-  try { localStorage.setItem("ff1roll-helptab", name); } catch (e) {}
-}
 document.getElementById("helptabs").addEventListener("click", e => {
   const b = e.target.closest("button[data-hs]");
   if (b) showHelpTab(b.dataset.hs);
@@ -8344,19 +7258,6 @@ document.getElementById("fileabout").addEventListener("click", () => {
   document.getElementById("aboutsheet").classList.add("on");
 });
 
-const findsel = document.getElementById("findsel");
-function refreshFindSel() { // respell the 12 options per the governing (or, Normal, estimated) key
-  const sf = sfShownAt(curTick());
-  while (findsel.options.length > 1) findsel.remove(1);
-  for (let pc = 0; pc < 12; pc++) {
-    const o = document.createElement("option");
-    o.value = String(pc);
-    const deg = typeof degreeOf === "function" ? degreeOf(pc, keyNameShownAt(curTick())) : null;
-    o.textContent = spellPc(pc, sf) + (deg ? " · " + deg : "");
-    findsel.appendChild(o);
-  }
-  findsel.value = S.findPc === null ? "" : String(S.findPc);
-}
 findsel.addEventListener("focus", refreshFindSel);
 findsel.addEventListener("change", () => {
   S.findPc = findsel.value === "" ? null : +findsel.value;
@@ -8375,7 +7276,6 @@ findsel.addEventListener("change", () => {
   draw();
 });
 
-const lassobtn = document.getElementById("lassobtn");
 lassobtn.addEventListener("click", () => {
   S.lassoMode = !S.lassoMode;
   lassobtn.classList.toggle("active", S.lassoMode);
@@ -8384,99 +7284,6 @@ lassobtn.addEventListener("click", () => {
   setInfo(S.lassoMode ? "lasso: drag across notes to identify them" : "tap a note");
   draw();
 });
-// Challenge a chord band (Josh, 2026-08-07): tap the band, then ask. Reports
-// the evidence — label tones present/missing, extra pitches, and what the
-// lasso namer would call the full stack. On request only; never volunteers,
-// never touches unlabeled spans. Extra tones are EVIDENCE, not verdicts: a
-// tonic pedal under a V7 shows up here as "extra", and that's correct.
-function chordEvidence(sec) {
-  const pitches = new Set();
-  const byTrack = [];
-  S.song.tracks.forEach((tr, ti) => {
-    if (!trackShown(ti) || trackIsDrums(ti)) return;
-    const ps = new Set();
-    for (const n of tr.notes) {
-      if (!n.gone && n.t < sec.end && n.t + n.d > sec.start) { pitches.add(n.p); ps.add(n.p); }
-    }
-    if (ps.size) byTrack.push({name: tr.name || "track " + (ti + 1), pitches: [...ps].sort((a, b) => a - b)});
-  });
-  if (!pitches.size) return {err: "no notes sound in this span"};
-  const present = new Set([...pitches].map(p => p % 12));
-  const m = parseChordSym(sec.text);
-  let expected = null, roles = null;
-  if (m) {
-    const rootPc = (LETTER_PC[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0) + 12) % 12;
-    const tmpl = CHORD_TEMPLATES.find(([suf]) => suf === (m[3] || ""));
-    if (tmpl) {
-      expected = new Set(tmpl[1].map(iv => (rootPc + iv) % 12));
-      // pc -> role in the LABELED chord, so a partial match reads as
-      // "has the 3rd and 7th, missing root and 5th" — the guide-tone story
-      roles = {};
-      for (const iv of tmpl[1]) {
-        roles[(rootPc + iv) % 12] =
-          iv === 0 ? "root" : iv <= 2 ? "9th" : iv <= 4 ? "3rd" : iv === 5 ? "4th"
-          : iv <= 8 ? "5th" : iv === 9 ? (m[3].includes("6") ? "6th" : "7th") : "7th";
-      }
-      if (m[4]) {
-        const bpc = (LETTER_PC[m[4][0]] + (m[4][1] === "#" ? 1 : m[4][1] === "b" ? -1 : 0) + 12) % 12;
-        expected.add(bpc);
-        if (!(bpc in roles)) roles[bpc] = "bass";
-      }
-    }
-  }
-  const missing = expected ? [...expected].filter(pc => !present.has(pc)) : null;
-  const extra = expected ? [...present].filter(pc => !expected.has(pc)) : null;
-  return {pitches: [...pitches].sort((a, b) => a - b), present, expected, missing, extra, roles, byTrack,
-          namer: nameChord([...pitches], sfDeclaredAt(sec.start))};
-}
-function openChallenge(sec) {
-  const ev = chordEvidence(sec);
-  const sf = sfDeclaredAt(sec.start);
-  const body = document.getElementById("chbody");
-  body.innerHTML = "";
-  const copyLines = [];
-  const line = (text, cls) => {
-    const d = document.createElement("div");
-    d.className = "chline" + (cls ? " " + cls : "");
-    d.textContent = text;
-    body.appendChild(d);
-    copyLines.push(text);
-  };
-  const title = "CHALLENGE — " + sec.text + " · bar " + sec.b1 +
-                (sec.b2 && sec.b2 !== sec.b1 ? "–" + sec.b2 : "");
-  document.getElementById("chtitle").textContent = title;
-  copyLines.push(title);
-  if (ev.err) {
-    line(ev.err, "dim");
-  } else {
-    const occ = pc => ev.pitches.filter(p => p % 12 === pc).map(p => pitchName(p, sf)).join(" ");
-    line("label tones", "chhead");
-    if (ev.expected === null) {
-      line("label not in the chord vocabulary — tone check skipped", "dim");
-    } else {
-      for (const pc of ev.expected) {
-        const has = ev.present.has(pc);
-        line(spellPc(pc, sf) + " — " + ev.roles[pc] + (has ? " · sounds as " + occ(pc) : " · MISSING"),
-             has ? "ok" : "bad");
-      }
-    }
-    line("also sounding — evidence, not verdict (pedals and passing tones land here)", "chhead");
-    if (ev.extra === null) {
-      const all = [...new Set(ev.pitches.map(p => p % 12))];
-      line(all.map(pc => spellPc(pc, sf)).join(" "), "warn");
-    } else if (ev.extra.length) {
-      for (const pc of ev.extra) line(spellPc(pc, sf) + " · sounds as " + occ(pc), "warn");
-    } else {
-      line("nothing outside the label", "dim");
-    }
-    line("by channel", "chhead");
-    for (const t of ev.byTrack) line(t.name + ":  " + t.pitches.map(p => pitchName(p, sf)).join(" "), "dim");
-    line("namer's read of the full stack", "chhead");
-    line(ev.namer);
-  }
-  S.challengeCopy = copyLines.join("\n");
-  document.getElementById("challengesheet").classList.add("on");
-}
 document.getElementById("chcopy").addEventListener("click", async e => {
   try { await navigator.clipboard.writeText(S.challengeCopy); e.target.textContent = "✓ copied"; }
   catch { e.target.textContent = "✗ copy failed"; }
@@ -8496,49 +7303,6 @@ function applyListener() {
   document.body.classList.toggle("listener", S.listenerMode);
   if (S.song) finalizeNotes(); // band lanes + RULER_H depend on the mode
   window.dispatchEvent(new Event("resize"));
-}
-function applyChrome() {
-  document.getElementById("editrow").style.display = S.editrowHidden ? "none" : "";
-  // footer v2 (2026-09-30): a class, not style.display="none" — folding
-  // must hide only line 2 (footer.folded > :not(#readline)), never the
-  // readout; listener mode still hides the whole footer (its own CSS rule).
-  document.getElementById("footer").classList.toggle("folded", S.footerHidden);
-  document.getElementById("panelshow").style.display = S.footerHidden ? "" : "none";
-  localStorage.setItem("ff1roll-editrow-hidden", S.editrowHidden ? "1" : "0");
-  localStorage.setItem("ff1roll-footer-hidden", S.footerHidden ? "1" : "0");
-  window.dispatchEvent(new Event("resize")); // canvas reclaims the space
-  renderViewMenu();
-  fitReadline(); // line 2 just appeared/disappeared wholesale — the leftover for #readline changed
-}
-// #readline, never crushed (chrome density pass, 2026-10-01): the footer's
-// OTHER visible buttons (by id — the vm harness never builds a real
-// #footer->children tree, see the "no real parent/child tree" comment
-// elsewhere in this file, so a traversal would find nothing there) plus the
-// gaps between them is what's left for #readline; under 300px it gets
-// .ownrow (its own full-width row, order:-1 — today's own-row layout,
-// CSS) instead of shrinking past a usable readout. A plain width sum, not
-// pixel-perfect (no computed padding/border math) — good enough for a
-// yes/no at the 300px line, and exactly what the stubbed-width tests drive.
-const FOOTER_DROPUP_BTN_IDS = ["viewbtn", "lassobtn", "instbtn", "listbtn", "errbtn", "askreplybtn", "clearbtn", "syncbtn", "jobsbtn"];
-function fitReadline() {
-  const foot = document.getElementById("footer"), rl = document.getElementById("readline");
-  const fr = foot.getBoundingClientRect();
-  if (!fr || !fr.width) return; // not laid out yet (display:none, etc.)
-  const PAD = 24, GAP = 8; // footer's own padding (8px 12px) and gap (8px) — see footer CSS
-  let used = 0, n = 0;
-  for (const id of FOOTER_DROPUP_BTN_IDS) {
-    const b = document.getElementById(id);
-    if (!b || b.style.display === "none") continue;
-    used += b.getBoundingClientRect().width;
-    n++;
-  }
-  const leftover = fr.width - PAD - used - GAP * n; // n gaps between the visible buttons and #readline
-  rl.classList.toggle("ownrow", leftover < 300);
-}
-function scheduleFitReadline() {
-  if (S.fitReadlineScheduled) return;
-  S.fitReadlineScheduled = true;
-  requestAnimationFrame(() => { S.fitReadlineScheduled = false; fitReadline(); });
 }
 if (typeof document !== "undefined" && document.body) { // real browser only — layout/Mutation observers are not unit tested, like the wmdock menu's own dismissal above
   const footerEl = document.getElementById("footer");
@@ -8582,14 +7346,410 @@ fitReadline(); // initial state — applyChrome() isn't called at boot when noth
   document.getElementById("panelshow").addEventListener("click", () => { S.editrowHidden = S.footerHidden = false; applyChrome(); });
   if (S.editrowHidden || S.footerHidden) applyChrome();
 }
-const viewbtn = document.getElementById("viewbtn"); // a drop-up (#viewswitchmenu, 2026-10-01) — its label names the CURRENT view, not the next one
-const viewSwitchMenu = document.getElementById("viewswitchmenu");
-function renderViewSwitch() { // ✓ on the current view's row — same convention as renderViewMenu's checkmarks
-  setControl("vsRoll", {icon: "gridView", cls: "", label: "  Roll", prefix: S.viewMode === "roll" ? "✓ " : "   "});
-  setControl("vsTracks", {icon: "tableRows", cls: "", label: "  Tracks", prefix: S.viewMode === "tracks" ? "✓ " : "   "});
-  setControl("vsScore", {glyph: "𝄞", cls: "", label: "  Score", prefix: S.viewMode === "score" ? "✓ " : "   "});
+async function chipSource() { // {bytes, n, secs} for the current song, or null
+  if (chipTrackNo() !== null && (S.nsfSess.bytes || S.nsfSess.rows[chipTrackNo()].bytes)) {
+    const n = chipTrackNo();
+    const libs = {}; for (const [k, f] of Object.entries(S.nsfSess.libs || {})) libs[k] = f.bytes; // the set's shared library, by lower-cased name
+    return {bytes: S.nsfSess.bytes || S.nsfSess.rows[n].bytes, n: S.nsfSess.bytes ? n : 1, secs: S.nsfSess.rows[n].secs || 60, chip: S.nsfSess.chip || "nsf", libs};
+  }
+  if (!S.songKey) return null;
+  const base = S.songKey.split("/").pop().replace(/\.mid$/, "");
+  // this device already has the bytes? (import happened here, or vault cached)
+  const im = S.songKey.match(/^albums\/imports\/([^/]+)\//);
+  const meta = await albumMetaFor(S.songKey);
+  const dir0 = (S.songKey.match(/^(albums\/.+?)\/(?:songs\/)?[^/]+\.mid$/) || [])[1];
+  if (!meta && albumMetaFor.lastFail && albumMetaFor.lastFail.dir === dir0) chip.fail = {key: S.songKey, why: "the album's info didn't load (" + albumMetaFor.lastFail.why + ")"};
+  // the record's slug: a published album names it (nsf.vault); an unpublished
+  // capture has no album.json, so its folder IS the slug (impTrackKey builds
+  // albums/<console>/<slug>/…). Only the legacy imports/ prefix was checked
+  // once console folders came in — every unpublished PS1 song fell to synth
+  // after a relaunch (Josh, 2026-09-27: "everything has reverted")
+  const slug = im ? im[1] : (meta && meta.nsf && meta.nsf.vault) ||
+    (isCaptureKey(S.songKey) ? S.songKey.replace(/\/[^/]+\.mid$/, "").split("/").pop() : null);
+  if (!slug) return null;
+  const metaTr = meta && meta.nsf && meta.nsf.tracks && meta.nsf.tracks[base];
+  const rec = await idbNsfGet(slug);
+  let tr = (rec && rec.tracks && rec.tracks[base]) || metaTr;
+  if (tr === undefined || tr === null) return null;
+  if (typeof tr === "number") tr = {n: tr};
+  const vault = (meta && meta.nsf && meta.nsf.vault) || "";
+  const kind = (rec && rec.chip) || (meta && meta.nsf && meta.nsf.chip) || (/\.gbs$/i.test(vault) ? "gbs" : "nsf");
+  const perFile = !!(meta && meta.nsf && meta.nsf.perFile) || !!(tr && tr.bytes);
+  let bytes = perFile ? tr.bytes : rec && rec.bytes;
+  if (!bytes && meta && meta.nsf && meta.nsf.vault) { // fall back to the vault, then cache
+    console.log("[chip] fetching the console file from the archive…");
+    try {
+      if (perFile) { bytes = await vaultFetch(chipVaultFile(meta.nsf, base)); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
+      else { bytes = await vaultFetch(meta.nsf.vault); if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {}, kind); }
+    } catch (err) { // say WHY and stand down to synthesized voices — never a stuck banner
+      chip.fail = {key: S.songKey, why: "the console file didn't download (" + err.message + ")"};
+      return null;
+    }
+  }
+  if (!bytes) return null;
+  let libs = (rec && rec.libs) || null; // a set's shared library (PS1): on the device, else from the archive, then cached
+  if (!libs && meta && meta.nsf && Array.isArray(meta.nsf.libs) && meta.nsf.libs.length) {
+    libs = {};
+    try {
+      for (const l of meta.nsf.libs) { const b = await vaultFetch(meta.nsf.vault + l.file); if (b) libs[l.name] = b; }
+      if (Object.keys(libs).length) idbNsfPut(slug, null, {}, kind, libs);
+    } catch (err) { chip.fail = {key: S.songKey, why: "the console's sound library didn't download (" + err.message + ")"}; return null; }
+  }
+  return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind, libs: libs || {}};
 }
-function applyViewMode() {
+function chipVaultFile(meta, base) { return meta.perFile ? meta.vault + base + chipExt(meta.chip) : meta.vault; }
+
+function chipExt(kind) { return (CHIPS[kind] || CHIPS.nsf).ext; }
+
+// {chip, M: pipeline modules, nsf: parsed file, rows: [{st, open}]} — the name predates the second chip
+// One chip per descriptor (2026-09-27, Game Boy joins the NES): the GB
+// modules export the NSF names (parse/run/reconstruct/renderApu) with GB
+// semantics, so everything after `reconstruct` is one code path. The vault
+// file's extension is the chip id; album.json's `nsf:` key name stays for
+// old albums (`nsf.chip` says which). `shared` are the NSF modules the chip
+// builds on, loaded HERE with the ?v buster and merged last: a module's own
+// nested import (gbs/notes → ../nsf/notes) carries no buster, and the
+// browser handed the GB pipeline a stale midi-write from cache on the first
+// try; `own` names what the chip's module must still win. `midiOpts` are
+// the writer options that make the shared makeMidi speak the chip.
+const CHIPS = {
+  nsf: {magic: b => String.fromCharCode(...b.subarray(0, 5)) === "NESM\x1a", ext: ".nsf", label: "NSF",
+        channels: ["pulse1", "pulse2", "triangle", "noise"],
+        files: ["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"], shared: [], own: [],
+        parse: M => M.parseNSF, run: M => M.runNSFAsync, midiOpts: () => ({})},
+  gbs: {magic: b => String.fromCharCode(...b.subarray(0, 3)) === "GBS" && b[3] === 1, ext: ".gbs", label: "GBS",
+        channels: ["pulse1", "pulse2", "wave", "noise"],
+        files: ["gbs/gbs", "gbs/notes", "gbs/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
+        parse: M => M.parseGBS, run: M => M.runGBSAsync, midiOpts: M => ({chans: M.GB_CHANNELS, drum: M.gbNoiseDrum})},
+  // Super Nintendo (2026-09-27, Josh from bed with the Chrono Trigger zip:
+  // "can he just get the Super Nintendo stuff merged so I can test it").
+  // ONE .spc PER TRACK (perFile): the picker takes the whole set, rows are
+  // the files in disc/track order, titles from the tags. The SPC pipeline
+  // returns its own events (8 voices as voice0-7, noise as drums, volumes
+  // already 0-127) on 2 ms ticks; they are rebinned to 10 ms so the NES
+  // loop/tempo stages see a frame count they were tuned for. No renderer
+  // yet: synth voices carry these songs, and nothing goes to the archive.
+  // tagged: the set's tags state each track's length (intro + one pass),
+  // so the capture is that long and the loop scan is skipped — on the real
+  // Chrono Trigger set the scan took 5–40 s per track, found nothing, and
+  // then the 300 s retry doubled it (an iPad tab would not survive that).
+  spc: {magic: b => String.fromCharCode(...b.subarray(0, 27)) === "SNES-SPC700 Sound File Data", ext: ".spc", label: "SPC", keepBytes: true,
+        channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"], perFile: true, tagged: true,
+        files: ["spc/spc", "spc/notes", "?spc/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"], // "?" = optional: the S-DSP renderer lands separately; until then synth carries these songs
+        render: (M, res, o) => M.renderApu(res.apuLog, o), // the SPC renderer takes the capture itself
+        renderRate: 32000, // the chip's own rate: eight voices of a 3-minute song at 48 kHz were ~300 MB twice over
+        parse: M => M.parseSPC,
+        run: M => async (spc, n, seconds, onProgress) => {
+          const cap = await M.runSPCAsync(spc, seconds, onProgress);
+          const r = M.reconstruct(cap, {});
+          const k = 5; // 2 ms ticks → 10 ms frames
+          const events = r.events.map(e => { const a = Math.round(e.startFrame / k); return {...e, midi: Math.round(e.midi), startFrame: a, endFrame: Math.max(a + 1, Math.round(e.endFrame / k))}; });
+          return {apuLog: cap, frames: Math.round(r.frames / k), frameSec: r.frameSec * k, events};
+        },
+        midiOpts: () => ({volMax: 127})},
+  // Sega Genesis / Mega Drive (2026-09-27; Josh: "is it gonna download games
+  // to test it with?" — tested on the real Sonic 1 + 2 sets). A VGM is a
+  // register LOG, not a program: no emulation, reconstruct reads it straight.
+  // One file per track (perFile, "NN - Title.vgm"), often gzipped (.vgz) —
+  // the sniff needs the name for those. Header holds total and loop samples
+  // (tagged), GD3 holds titles. Events arrive on 44100 Hz sample "frames"
+  // with vel/velEnd 0-127; the adapter rebins to 10 ms and maps to the NSF
+  // event shape; noise and DAC hits carry a drum number. No renderer yet.
+  vgm: {magic: (b, name) => String.fromCharCode(...b.subarray(0, 4)) === "Vgm " || (b[0] === 0x1F && b[1] === 0x8B && /\.vg[mz]$/i.test(name || "")),
+        ext: ".vgm", label: "VGM", channels: [], perFile: true, tagged: true,
+        files: ["vgm/vgm", "vgm/notes"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
+        parseAsync: M => async bytes => { const v = M.parseVGM(await M.inflateVGM(bytes)); const g = v.gd3 || {}; v.name = g.track || ""; v.game = g.game || ""; v.artist = g.author || ""; v.tags = {seconds: Math.max(1, Math.round((v.endSample || v.totalSamples || 0) / 44100))}; return v; },
+        parse: M => () => { throw new Error("VGM parses asynchronously"); },
+        run: M => async (vgm, n, seconds, onProgress) => {
+          const raw = M.reconstruct(vgm, {});
+          const k = 441; // 44100 Hz samples → 10 ms frames
+          const events = raw.filter(e => e.midi != null || e.drum != null).map(e => { const a = Math.round(e.startFrame / k); const o = {channel: e.channel, startFrame: a, endFrame: Math.max(a + 1, Math.round(e.endFrame / k)), midi: e.midi == null ? 0 : Math.round(e.midi), vol: e.vel == null ? 100 : e.vel}; if (e.velEnd != null) o.volEnd = e.velEnd; if (e.drum != null) o.drum = e.drum; return o; });
+          if (onProgress) onProgress(1);
+          const endSample = vgm.endSample || vgm.totalSamples || 0;
+          return {apuLog: null, frames: Math.round(endSample / k), frameSec: k / 44100, events, loopFrame: vgm.loopSample != null && vgm.loopSamples ? Math.round(vgm.loopSample / k) : null};
+        },
+        midiOpts: () => ({volMax: 127})},
+  // Sony PlayStation (2026-09-27; verified on the real Final Fantasy VII set).
+  // A set is many .minipsf (one per song, a few KB) plus ONE .psflib (the
+  // driver + samples) that every mini names in its _lib tag — pick them
+  // together. A PSF is a program image, not a log: the chain is inflated
+  // (DecompressionStream), overlaid into a 2 MiB RAM image, scanned for a
+  // SEQ/VAB (libsnd games) or an AKAO sequence (Square: FF7), and the
+  // sequence reader yields notes IN TICKS with a tempo map and meter — so
+  // this chip has a `capture` of its own that writes the MIDI directly and
+  // never goes through the frame/loop-scan/tempo-fit path. No renderer.
+  psf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x01, ext: ".psf", label: "PSF",
+        channels: [], perFile: true, tagged: true, keepBytes: true, // the mini per track + the set's lib (below): chip audio outlives the session
+        libFile: name => /\.psflib$/i.test(name),
+        files: ["psx/psf", "psx/akao", "psx/seq", "psx/vab", "psx/notes", "psx/spu-render", "psx/capture"], shared: ["sounding", "note-preview"], own: [],
+        // chip audio (2026-09-27): the driver's own samples, pitched per the
+        // instrument table, shaped by each instrument's envelope — spu-render.mjs.
+        // parse/run/render mirror the SNES contract; the lib rides in src.libs.
+        parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
+        run: M => async (parsed, n, secs, onProgress) => {
+          const readLib = name => { const b = parsed.libs[name.toLowerCase()]; if (!b) throw new Error("this song needs its library file " + name + " — pick it together with the songs"); return b; };
+          const chain = await M.loadPSFChain(parsed.bytes, readLib, {name: "song.minipsf", inflate: psfInflater()});
+          const {ram, ranges} = M.assembleRam(chain);
+          if (onProgress) onProgress(0.3);
+          const song = M.psfSong(ram, ranges, "song.minipsf"); // SEQ/VAB or AKAO, the song the mini names — tools/psx/capture.mjs
+          if (!song.renderable) throw new Error(song.why + " — synthesized voices");
+          if (onProgress) onProgress(1);
+          return {result: song.result, ram, table: song.table || null, bank: song.bank || null, seconds: secs};
+        },
+        lead: () => 0, // the capture's MIDI keeps the score's own rests: song time zero is tick 0
+        render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
+        stream: (M, res, o) => M.createSpuStream(res.result, {sampleRate: o.sampleRate, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}), // mirrors tools/chip-worker.mjs's RUNNERS.psf — chipRenderStreamed (the inline fallback's own copy) and stream mode (chipStreamOpen) both use this
+        renderRate: 44100, stereo: true, // renderSpu always returns {l, r} per track (tools/psx/spu-render.mjs)
+        parseAsync: M => async (bytes, name) => { const psf = M.parsePSF(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
+        capture: async (M, parsed, secs, onProgress, sess) => {
+          const inflate = psfInflater(); // no browser inflater (the vm tests): loadPSFChain falls back to node:zlib
+          const readLib = n => { const f = sess && sess.libs && sess.libs[n.toLowerCase()]; if (!f) throw new Error("this song needs its library file " + n + " — pick it together with the songs"); return f.bytes; };
+          const chain = await M.loadPSFChain(parsed.bytes, readLib, {name: parsed.fileName, inflate});
+          const {ram, ranges} = M.assembleRam(chain);
+          if (onProgress) onProgress(0.4);
+          const song = M.psfSong(ram, ranges, parsed.fileName); // the same resolver the render uses
+          const result = song.result;
+          // sounding-pitch offsets (2026-09-28): some instruments' samples were
+          // recorded an octave — occasionally two — from the key the composer
+          // typed, so the console sounds a different pitch than the roll shows
+          // (tools/n64/INTEGRATION.md §9.3/§9.6; Josh: "the roll should show the
+          // sounding pitch"). One held-note render per non-kit group, through
+          // the same renderSpu the console audio uses; kit groups never shift.
+          // HELD for PlayStation (2026-09-28): the N64 offsets were checked
+          // against a real player (lazyusf2); no PS1 player runs here without a
+          // Sony BIOS, so these are measured against OUR renderer only. Until
+          // Josh's ear confirms that renderer's octave (Cry of the Planet vs a
+          // recording), PS1 captures keep the written pitch — flip
+          // PSX_SOUNDING_ON once confirmed.
+          return sonySeqCapture(M, "psf", result, 44100, (one, o) => M.renderSpu(one, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram, table: song.table || null, bank: song.bank || null, keepSeconds: o.seconds}), onProgress, []);
+        }},
+  // Sony PlayStation 2 (2026-09-28; milestone 3, verified on the real Dark
+  // Cloud AND Final Fantasy X sets — docs/plans/ps2.md "Findings"). PS2's
+  // PSF2/minipsf2 is PSF's container reshaped as a small virtual filesystem
+  // (tools/ps2/psf2.mjs) instead of a flat RAM image, so there is no
+  // assembleRam step here: the mini + its .psf2lib merge into one file
+  // list, a mini's own psf2.ini (Sony's stock driver — "-s=/-h=/-b=" naming
+  // its SQ/HD/BD triplet, e.g. every real Dark Cloud song) or ".bgm" (Square
+  // Enix's own PS2 driver — Final Fantasy X and kin, its own separate
+  // opcode table — tools/ps2/bgm.mjs) picks the format, and tools/ps2/
+  // capture.mjs's ps2Song does the rest. Both drivers reuse PS1 SEQ's own
+  // shape byte for byte (tools/ps2/sq.mjs, tools/ps2/bgm.mjs), so the note
+  // pipeline (seqNotes/makeMidi/channelGroups, tools/psx/notes.mjs) and the
+  // chip-audio renderer (renderSpu, tools/psx/spu-render.mjs — an HD/BD or
+  // WD bank both reshape into a VAB-shaped bank, tools/ps2/hd.mjs's/
+  // tools/ps2/wd.mjs's toBank(), so no PS2-specific render code exists) run
+  // over either one completely unmodified.
+  psf2: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x02, ext: ".psf2", label: "PSF2",
+        channels: [], perFile: true, tagged: true, keepBytes: true, // the mini per track + the set's lib: chip audio outlives the session, exactly as PS1's psf
+        libFile: name => /\.psf2lib$/i.test(name),
+        files: ["ps2/psf2", "ps2/sq", "ps2/hd", "ps2/bgm", "ps2/wd", "ps2/capture", "psx/vab", "psx/notes", "psx/spu-render"], shared: ["sounding", "note-preview"], own: [],
+        parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
+        run: M => async (parsed, n, secs, onProgress) => {
+          const readLib = name => { const b = parsed.libs[name.toLowerCase()]; if (!b) throw new Error("this song needs its library file " + name + " — pick it together with the songs"); return b; };
+          const chain = await M.loadPSF2Chain(parsed.bytes, readLib, {name: "song.minipsf2", inflate: psfInflater()});
+          const files = M.mergePSF2(chain);
+          const mini = chain.find(s => s.name === "song.minipsf2");
+          if (onProgress) onProgress(0.3);
+          const song = await M.ps2Song(files, mini, {inflate: psfInflater()});
+          if (!song.renderable) throw new Error((song.why || "no HD/BD bank in this image") + " — synthesized voices");
+          if (onProgress) onProgress(1);
+          return {result: song.result, seconds: secs};
+        },
+        lead: () => 0, // the capture's MIDI keeps the score's own rests: song time zero is tick 0
+        // no ram/table/bank arguments (unlike CHIPS.psf's render): ps2Song
+        // already folds the HD/BD bank into result.vab (seqNotes(seq, {vab:
+        // bank})), the same field PS1's SEQ/VAB path uses — renderSpu's
+        // vabVoices() branch needs nothing else.
+        render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds}),
+        stream: (M, res, o) => M.createSpuStream(res.result, {sampleRate: o.sampleRate, keepSeconds: res.seconds}), // mirrors tools/chip-worker.mjs's RUNNERS.psf2
+        renderRate: 48000, // PSF2's own native rate (PSF1/PS1's is 44100 — docs/plans/ps2.md §3)
+        stereo: true, // the same renderSpu as PS1 (FFX "Challenge" reproduced here — 30 tracks, 163 s, 1.88 GB at this rate)
+        parseAsync: M => async (bytes, name) => { const psf = M.parsePSF2(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
+        capture: async (M, parsed, secs, onProgress, sess) => {
+          const inflate = psfInflater(); // ps2/psf2.mjs's own default (node:zlib) covers the vm tests when this is null
+          const readLib = n => { const f = sess && sess.libs && sess.libs[n.toLowerCase()]; if (!f) throw new Error("this song needs its library file " + n + " — pick it together with the songs"); return f.bytes; };
+          const chain = await M.loadPSF2Chain(parsed.bytes, readLib, {name: parsed.fileName, inflate});
+          const files = M.mergePSF2(chain);
+          const mini = chain.find(s => s.name === parsed.fileName);
+          if (onProgress) onProgress(0.3);
+          const song = await M.ps2Song(files, mini, {inflate});
+          const result = song.result;
+          // the SAME sounding-pitch flag as PS1 (PSX_SOUNDING_ON), held off pending the same ear check
+          return sonySeqCapture(M, "psf2", result, 48000, (one, o) => M.renderSpu(one, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: o.seconds}), onProgress, song.warnings || []);
+        }},
+  // Nintendo 64 (2026-09-27; verified on the real Super Mario 64 and Zelda
+  // sets). A USF set is many .miniusf (a save-state word or two each) plus
+  // ONE .usflib carrying the game's sparse ROM and RDRAM. The EAD sequence
+  // tables are located in that image, the mini's save state names the
+  // sequence id, and the libultra sequence interpreter yields notes in
+  // 48-tick beats with a tempo map — another sequence chip: its own
+  // capture, MIDI written directly. Chip audio (2026-09-27, evening): the
+  // game's own sound bank — VADPCM samples, key regions, envelopes — through
+  // n64/render.mjs; the mini per track + the lib once persist like the PS1's.
+  usf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x21, ext: ".usf", label: "USF",
+        channels: [], perFile: true, tagged: true, keepBytes: true,
+        libFile: name => /\.usflib$/i.test(name),
+        files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes", "n64/capture", "n64/vadpcm", "n64/bank", "n64/render", "n64/rare"], shared: ["sounding", "note-preview"], own: [], // rare: Rare's driver (GoldenEye) — sequenceOfSet falls back to it when no EAD tables are found
+        parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
+        run: M => async (parsed, n, secs, onProgress) => {
+          const files = [{name: "song.miniusf", bytes: parsed.bytes}];
+          for (const [name, bytes] of Object.entries(parsed.libs)) files.push({name, bytes}); // the lib's NAME is the game's identity (USF_GAMES)
+          const set = M.loadUSF(files);
+          if (onProgress) onProgress(0.3);
+          const {seq, res} = M.sequenceOfSet(set);
+          if (onProgress) onProgress(1);
+          return {result: res, set, banks: seq.banks, seconds: secs};
+        },
+        lead: () => 0,
+        render: (M, res, o) => M.renderN64(res.result, {set: res.set, banks: res.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds, meter: {tsNum: 4, tsDen: 4}}),
+        renderRate: 32000, // the console's own output rate
+        stereo: true, // n64/render.mjs always returns {l, r} per track (the GoldenEye crash this file already documents, chipPcmToBuffers below)
+        parseAsync: M => async (bytes, name) => { const u = M.parseUSF(bytes); const t = u.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {usf: u, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: u.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
+        capture: async (M, parsed, secs, onProgress, sess) => {
+          const libs = Object.values(sess && sess.libs || {}); // the lib objects persist across captures, so their parse is cached on them
+          const set = M.loadUSF([{name: parsed.fileName, bytes: parsed.bytes, parsed: parsed.usf}, ...libs]);
+          if (onProgress) onProgress(0.3);
+          const {game, id, seq, res, present} = M.sequenceOfSet(set);
+          // sounding-pitch offsets (2026-09-28), same as the PS1 path: EAD's
+          // Title Theme inst 3/4 and Cave Dungeon inst 0/6/7, Rare's
+          // keyBase-shifted programs (tools/n64/INTEGRATION.md §9.3/§9.6/§10.6)
+          // — a held note per non-kit channel through the game's own bank/font
+          // (renderN64, which dispatches to renderRare for a Rare driver),
+          // before the MIDI is written. Kit groups never shift.
+          const groups = M.channelGroups(res, {tsNum: 4, tsDen: 4});
+          const offsets = await M.soundingOffsets(groups, (g, key) => M.renderOneNote(
+            M, "usf", res, g.name,
+            (one, o) => M.renderN64(one, {set, banks: seq.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: o.seconds, meter: {tsNum: 4, tsDen: 4}}),
+            {key, vel: 100, ticks: 100000, seconds: 1, sampleRate: 32000}
+          ), {sampleRate: 32000});
+          const shiftWarnings = M.applySoundingOffsets(groups, offsets, "midi");
+          if (onProgress) onProgress(0.6);
+          const bytes = M.toMidi(res, {tsNum: 4, tsDen: 4, offsets});
+          const tpb = res.ticksPerBeat || 48;
+          { // diagnostic (2026-09-27: the iPad scrambles Mario 64 while the Mac, running this same code, does not): the facts of this capture, into ⚠ so Copy all carries them
+            let cov = 0; for (let i = 0; i < present.length; i++) cov += present[i];
+            const nn = (res.notes || []).length, chs = [...new Set((res.notes || []).map(n => n.ch))].join(" ");
+            const line = "usf " + parsed.fileName + ": game " + (game ? game.id || game.abi : "?") + " seq " + id + " @" + (seq.rom != null ? "rom " + seq.rom.toString(16) : "ram") + " " + seq.size + "B cov " + cov +
+                         " → " + nn + " notes ch[" + chs + "] tpb " + tpb + " ticks " + (res.ticks ?? res.endTick ?? "?") + " " + (res.seconds || 0).toFixed(1) + "s tempo " + (res.tempos && res.tempos[0] ? res.tempos[0].bpm : "?") + (res.loop ? " loop@" + res.loop.tick : " noloop") + " midi " + bytes.length + "B";
+            if (typeof logErr === "function") logErr(line);
+          }
+          const bq = tick => { const b = tick / tpb; return [Math.floor(b / 4) + 1, Math.round((b - Math.floor(b / 4) * 4) * 4) / 4 + 1]; };
+          const loops = !!res.loop;
+          const warnings = [];
+          if (res.truncated) warnings.push("stopped at the length cap");
+          if (res.selfModified) warnings.push("the sequence rewrites itself while playing");
+          if (res.ioReads) warnings.push("reads the game's io ports (" + res.ioReads + "×) — the game would steer this song");
+          if (res.stubbed && res.stubbed.length) warnings.push("sound-shaping ops ignored: " + res.stubbed.join("; "));
+          for (const w of res.warnings || []) warnings.push(w); // toMidi's kit guess: which drum index became which GM drum
+          for (const w of shiftWarnings) warnings.push(w);
+          if (onProgress) onProgress(1);
+          return {bytes, bpm: res.tempos && res.tempos[0] ? res.tempos[0].bpm : 120, secs: res.seconds, looped: loops, snapped: true,
+                  loopAnchor: loops && res.loop.tick > 0 ? bq(res.loop.at) : null, loopTarget: loops && res.loop.tick > 0 ? bq(res.loop.tick) : null, warnings};
+        }},
+};
+function playGateKick() {
+  if (S.playGateTimer || typeof document === "undefined") return;
+  S.playGateSince = Date.now();
+  playGateTick();
+  if (S.playGateTimer === null && playGateActive()) S.playGateTimer = setInterval(playGateTick, 200);
+}
+// Right after a launch the source resolve (album meta, this device's store,
+// the archive) takes seconds, and chip.rendering is only set after it: a Play
+// in that window went out on synth voices (Josh, 2026-09-29, Chrono Cross,
+// twice after a reload). chip.resolving lets play() wait for the decision.
+function updateChipBtn() {
+  const key = S.songKey, p = updateChipBtnInner();
+  chip.resolving = {key, p};
+  p.catch(() => {}).finally(() => { if (chip.resolving && chip.resolving.p === p) chip.resolving = null; });
+  playGateKick();
+  return p;
+}
+async function updateChipBtnInner() { // name kept for call sites; now just the auto-render kick
+  // "the chip button should not even have to exist" (Josh, 2026-08-17): chip
+  // audio simply plays when a source resolves. Per-track override lives in
+  // the voice menu — auto = the console own sound, an explicit instrument
+  // swaps that track to synthesis.
+  if (chip.fail && chip.fail.key === S.songKey) chip.fail = null; // this attempt starts clean
+  const available = chipTrackNo() !== null || (await chipSource()) !== null;
+  logDebug("song open: console source " + (available ? "found" : chip.fail && chip.fail.key === S.songKey ? "FAILED — " + chip.fail.why : "none (synth voices)"));
+  // a lookup that FAILED (not "this song has none") must never pass for synth
+  // silently (Josh, 2026-09-30: "sometimes the instruments never load"): say
+  // why; the next ▶ tries again
+  if (!available && chip.fail && chip.fail.key === S.songKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again");
+  // an import capture with NO reachable NSF plays synthesized — say so ONCE,
+  // loudly enough to find (Josh listened to synth for an hour believing it
+  // was the chip, 2026-08-17): the ⚠ log names the fix
+  if (!available && S.songKey && S.songKey.startsWith("albums/imports/") &&
+      updateChipBtn.warned !== S.songKey && await chipAlbumHasSource()) {
+    updateChipBtn.warned = S.songKey;
+    logErr("chip audio unavailable for " + S.songKey.split("/").pop() +
+           " — no NSF on this device (captures made before NSF storage, or another device's import). " +
+           "Re-import the album's NSF once, or commit the album; playing synthesized voices meanwhile.");
+  }
+  if (available && chip.key !== S.songKey && chip.rendering !== S.songKey) {
+    if (chip.key && chip.key !== S.songKey) { chipStopSrcs(); chip.buffers = null; chip.pcm = null; chip.key = null; chip.pan = null; chipPreviewCache.clear(); if (S.chipWorker && S.chipWorker.__key !== S.songKey) { try { S.chipWorker.terminate(); } catch (err) { /* gone */ } S.chipWorker = null; } } // free the last song's audio: eight SNES voices are hundreds of MB
+    chip.rendering = S.songKey;
+    const forKey = S.songKey;
+    chip.renderPromise = chipRenderAuto().catch(err => {
+      // name + message (a module-load failure now names its path — fix 2),
+      // and the heap if the browser exposes it: a real 404 vs an allocation
+      // failure used to look identical in this one line (Josh's iPad, FF7
+      // failing the same way Challenge just had, 2026-09-30)
+      const heap = (typeof performance !== "undefined" && performance.memory && performance.memory.usedJSHeapSize) ? " · heap " + Math.round(performance.memory.usedJSHeapSize / 1e6) + " MB" : "";
+      const detail = (err && err.name ? err.name + ": " : "") + (err && err.message || err);
+      chip.fail = {key: forKey, why: "the console render failed for " + songTitleOf(forKey) + " (" + detail + ")" + heap};
+      if (S.songKey === forKey) setInfo("⚠ the console voice didn't load: " + chip.fail.why + " — tap ▶ to try again");
+      logDebug("render failed: " + chip.fail.why);
+      return false;
+    }) // not renderable: synth carries the song, and says so
+      .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
+  }
+}
+function playGateActive() { return !S.playing && !!playGate(); }
+function playGateTick() {
+  const btn = document.getElementById("playbtn");
+  const g = S.playing ? null : playGate(), late = Date.now() - S.playGateSince;
+  const timedOut = g && late > PLAY_GATE_MAX;
+  if (timedOut) { logErr("still loading " + g.what + " after " + PLAY_GATE_MAX / 1000 + " s — ▶ is on anyway (synthesized voices where it isn't ready)"); playGateTick.queued = false; }
+  if (g && !timedOut) {
+    if (late < PLAY_GATE_GRACE) return;
+    // not .disabled: a tap while loading QUEUES the play (Josh, 2026-09-30:
+    // "it should start by itself the moment loading finishes"); tap again to cancel
+    btn.classList.add("loading");
+    setControl("playbtn", {icon: "hourglassEmpty", label: Math.round(g.pct * 100) + "%" + (playGateTick.queued ? " · will play" : "")});
+    btn.title = "loading " + g.what + (playGateTick.queued ? " — plays when ready (tap to cancel)" : " — tap to play when it's ready");
+    S.playGateShown = true;
+    return;
+  }
+  clearInterval(S.playGateTimer); S.playGateTimer = null;
+  if (S.playGateShown) {
+    S.playGateShown = false; btn.classList.remove("loading"); btn.title = ""; if (!S.playing) setPlayBtn("play", "Play");
+    if (playGateTick.queued && !S.playing && S.song) { playGateTick.queued = false; play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0); }
+  }
+  playGateTick.queued = false;
+}
+async function chipRenderAuto() { // chip.renderPromise's entry point — see chipStreamOpen's own comment
+  const mode = chipStreamMode();
+  if (mode === "on" || mode === "auto") {
+    const ok = await chipStreamOpen(mode === "auto");
+    if (ok) return true;
+  }
+  return chipRender();
+}
+// each view keeps its own zoom and scroll, per song, this session (Josh,
+// 2026-09-29: a fully zoomed-out roll came back from Score at ~6 bars —
+// Score raises pxq to what engraving can space). Restored BEFORE
+// applyViewMode, whose clamps would otherwise act on the other view's numbers.
+function setViewMode(m) {
+  if (m === "score" && !VF) { setInfo("score engine failed to load"); return; }
+  if (S.songKey) viewSaved.set(S.songKey + "|" + S.viewMode, {...S.view});
+  S.viewMode = m;
+  localStorage.setItem("ff1roll-view", S.viewMode);
+  const sv = S.songKey && viewSaved.get(S.songKey + "|" + m);
+  if (sv) Object.assign(S.view, sv);
+  applyViewMode();
+}
+ function applyViewMode() {
   const tracks = S.viewMode === "tracks", score = S.viewMode === "score";
   const vText = tracks ? "Tracks" : score ? "Score" : "Roll";
   const aria = "View: " + vText + " — tap to switch";
@@ -8612,21 +7772,7 @@ function applyViewMode() {
   clampView();
   draw();
 }
-// each view keeps its own zoom and scroll, per song, this session (Josh,
-// 2026-09-29: a fully zoomed-out roll came back from Score at ~6 bars —
-// Score raises pxq to what engraving can space). Restored BEFORE
-// applyViewMode, whose clamps would otherwise act on the other view's numbers.
-const viewSaved = new Map(); // songKey|mode -> {x, y, pxq, rowH}
-function setViewMode(m) {
-  if (m === "score" && !VF) { setInfo("score engine failed to load"); return; }
-  if (S.songKey) viewSaved.set(S.songKey + "|" + S.viewMode, {...S.view});
-  S.viewMode = m;
-  localStorage.setItem("ff1roll-view", S.viewMode);
-  const sv = S.songKey && viewSaved.get(S.songKey + "|" + m);
-  if (sv) Object.assign(S.view, sv);
-  applyViewMode();
-}
-viewbtn.addEventListener("click", e => openDropUp(e.currentTarget, viewSwitchMenu));
+ viewbtn.addEventListener("click", e => openDropUp(e.currentTarget, viewSwitchMenu));
 document.getElementById("vsRoll").addEventListener("click", () => { closeDropUp(); setViewMode("roll"); });
 document.getElementById("vsTracks").addEventListener("click", () => { closeDropUp(); setViewMode("tracks"); });
 document.getElementById("vsScore").addEventListener("click", () => { closeDropUp(); setViewMode("score"); });
@@ -9384,20 +8530,6 @@ instCanvas.addEventListener("pointercancel", e => {
   recNoteOff(e.pointerId);
 });
 new ResizeObserver(instResize).observe(instWrap);
-const instbtn = document.getElementById("instbtn");
-const instFallBtn = document.getElementById("instfall");
-function applyInst() {
-  document.getElementById("instpanel").classList.toggle("on", S.instOpen);
-  instbtn.classList.toggle("active", S.instOpen);
-  instbtn.setAttribute("aria-pressed", String(S.instOpen));
-  document.getElementById("insttab-piano").classList.toggle("active", S.instTab === "piano");
-  document.getElementById("insttab-piano").setAttribute("aria-selected", String(S.instTab === "piano"));
-  document.getElementById("insttab-guitar").classList.toggle("active", S.instTab === "guitar");
-  document.getElementById("insttab-guitar").setAttribute("aria-selected", String(S.instTab === "guitar"));
-  instFallBtn.classList.toggle("active", S.fallOn);
-  instFallBtn.setAttribute("aria-pressed", String(S.fallOn));
-  if (S.instOpen) instResize(); // canvas had zero size while display:none
-}
 instbtn.addEventListener("click", () => {
   S.instOpen = !S.instOpen;
   localStorage.setItem("ff1roll-inst-open", S.instOpen ? "1" : "0");
@@ -9420,12 +8552,6 @@ document.getElementById("websess").addEventListener("click", async e => {
   catch { e.target.textContent = "✗ copy failed"; }
   setTimeout(() => { e.target.textContent = "⎘ Web session"; }, 1800);
 });
-// #subbtn retired from the footer (footer v2, 2026-09-30): View ▾ → 💬 Notes
-// strip is the only control now — vwSub calls this directly instead of
-// clicking a hidden button. #subbtn itself stays as a hidden, inert node
-// (kept in the footer markup) only so anything still reading its
-// active/aria-pressed state for the old on/off visuals keeps working.
-const subbtn = document.getElementById("subbtn");
 subbtn.classList.toggle("active", S.subOn);
 subbtn.setAttribute("aria-pressed", String(S.subOn));
 function toggleSubtitle() {
@@ -9466,110 +8592,8 @@ S.instOpen = localStorage.getItem("ff1roll-inst-open") === "1";
 S.fallOn = false; // was: localStorage.getItem("ff1roll-inst-fall") === "1" && instTab === "piano"
 applyInst();
 
-// ---------------------------------------------------------------- note editor
-const editor = document.getElementById("noteeditor");
-function fillBarBeatSelects() {
-  const bars = Math.max(1, Math.round(S.songEndTick / barTicks()));
-  const beatsPerBar = beatsPerBarDisp();
-  const mkBars = (id, noneOption, pastEnd) => {
-    const s = document.getElementById(id);
-    s.innerHTML = "";
-    if (noneOption) {
-      const o = document.createElement("option");
-      o.value = ""; o.textContent = "—";
-      s.appendChild(o);
-    }
-    // pastEnd: one extra bar so a loop's "from" can name the absolute end
-    // of the song — bar N+1 beat 1 IS the end of bar N
-    for (let b = 1; b <= bars + (pastEnd ? 1 : 0); b++) {
-      const o = document.createElement("option");
-      o.value = String(b); o.textContent = String(b);
-      s.appendChild(o);
-    }
-  };
-  const mkBeats = (id) => { // whole beats only — subdivisions live in the paired select
-    const s = document.getElementById(id);
-    s.innerHTML = "";
-    for (let b = 1; b <= beatsPerBar; b++) {
-      const o = document.createElement("option");
-      o.value = String(b); o.textContent = String(b);
-      s.appendChild(o);
-    }
-  };
-  const mkSubs = (id) => { // Josh's split (2026-08-18): one merged 1/1e/1&/1a…
-    // dropdown got huge — beat picks the beat, this picks the 16th within it
-    const s = document.getElementById(id);
-    s.innerHTML = "";
-    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) {
-      const o = document.createElement("option");
-      o.value = String(f); o.textContent = syl;
-      s.appendChild(o);
-    }
-  };
-  mkBars("nb1", false, true); mkBars("nb2", true); mkBars("nlb", false);
-  mkBeats("nq1"); mkBeats("nq2"); mkBeats("nlq");
-  mkSubs("ns1"); mkSubs("ns2"); mkSubs("nls");
-}
-function editorType() { return document.getElementById("ntype").value; }
-function applyEditorType() {
-  const t = editorType();
-  document.getElementById("ntext").style.display = ""; // every authored type carries a note (Josh, 2026-08-22)
-  document.getElementById("nsectrow").style.display = t === "section" ? "" : "none";
-  document.getElementById("nkeyrow").style.display = t === "key" ? "" : "none";
-  document.getElementById("nchordbox").style.display = t === "chord" ? "" : "none";
-  document.getElementById("ntsrow").style.display = t === "timesig" ? "" : "none";
-  document.getElementById("ntemporow").style.display = t === "tempo" ? "" : "none";
-  document.getElementById("nlooprow").style.display = t === "loop" ? "" : "none";
-  document.getElementById("nchoprow").style.display = t === "chop" ? "" : "none";
-  document.getElementById("ntorow").style.display = t === "loop" || t === "timesig" || t === "chop" || t === "tempo" ? "none" : "";
-  document.getElementById("nmic").style.display =
-    SPEECH && t !== "key" && t !== "loop" && t !== "timesig" && t !== "chop" && t !== "tempo" ? "" : "none"; // dictation targets the text box
-  document.getElementById("ntext").placeholder =
-    t === "note" ? "What's happening at this beat?"
-                 : "Optional note about this " + (t === "timesig" ? "meter" : t) + " (✱ in the ruler)";
-  document.getElementById("nstatus").textContent =
-    t === "key" ? "To bar '—' = until further notice; set it to make a temporary key that reverts after." :
-    t === "chord" ? "Tap chips or type the symbol. Standard: bare root = major (C), m = minor (Gm), /X = bass note (G7/B)." :
-    t === "chop" ? "Non-destructive trim: the chopped part disappears entirely and bars renumber. Chopping the start shifts your annotations to match; delete the chop to restore." :
-    t === "loop" ? "When playback reaches the 'from' point (or the song end, if 'from' is at/before the target), it jumps back to the target bar/beat." :
-    t === "timesig" ? "Until you declare a meter, the grid is a neutral 4/4 ruler. Declaring re-bars the song; existing annotations are converted to keep their musical positions." :
-    t === "tempo" ? (isComposition()
-      ? "Authoring: sets the tempo from this bar/beat onward. Playback, the LCD, and Save all follow."
-      : "Observation: records that the music changes tempo here. Playback is untouched — the capture's timing is measured fact.") :
-    document.getElementById("nstatus").textContent;
-}
 document.getElementById("ntype").addEventListener("change", applyEditorType);
 
-const BASS_SPELLINGS = ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb",
-                        "G", "G#", "Ab", "A", "A#", "Bb", "B"];
-const chordSel = {root: null, acc: "", base: "maj", exts: []};
-function refreshChordChips() {
-  for (const b of document.querySelectorAll("#nchordroot button"))
-    b.classList.toggle("active", b.dataset.v === chordSel.root);
-  for (const b of document.querySelectorAll("#nchordacc button"))
-    b.classList.toggle("active", chordSel.root !== null && b.dataset.v === chordSel.acc);
-  for (const b of document.querySelectorAll("#nchordqual button"))
-    b.classList.toggle("active", chordSel.base !== null && b.dataset.v === chordSel.base);
-  for (const b of document.querySelectorAll("#nchordext button"))
-    b.classList.toggle("active", chordSel.base !== null && chordSel.exts.includes(b.dataset.v));
-}
-function composeChord() {
-  if (!chordSel.root || chordSel.base === null) return; // incomplete/unknown — leave the box alone
-  const bass = document.getElementById("nchordbass").value;
-  document.getElementById("nchordsym").value = chordSel.root + chordSel.acc +
-    chordQualCompose(chordSel.base, chordSel.exts) + (bass ? "/" + bass : "");
-}
-function setChordWidget(sym) {
-  const m = parseChordSym(sym);
-  chordSel.root = m ? m[1] : null;
-  chordSel.acc = m ? m[2] : "";
-  const q = m ? chordQualParse(m[3]) : {base: "maj", exts: []};
-  chordSel.base = q ? q.base : null; // unknown quality: chips stand down
-  chordSel.exts = q ? q.exts : [];
-  document.getElementById("nchordbass").value = m && m[4] ? m[4] : "";
-  document.getElementById("nchordsym").value = sym || "";
-  refreshChordChips();
-}
 (function buildChordWidget() {
   const mkRow = (id, items) => {
     const row = document.getElementById(id);
@@ -9635,177 +8659,9 @@ function setChordWidget(sym) {
   });
 })();
 
-// dictation into the note text box (Web Speech API — easier on hands than
-// typing; falls back silently to the keyboard mic where unsupported)
-const SPEECH = window.SpeechRecognition || window.webkitSpeechRecognition || null;
-const nmic = document.getElementById("nmic");
- // the last recognizer stopped, until its late result lands or a new one starts
-function micStop(discard) {
-  if (S.micRec) {
-    // Safari delivers the final transcript AFTER stop() — on iPad that is
-    // where most of the words arrive, so a tapped ■ Stop (or Safari's own
-    // silence end) must leave onresult attached or the last sentence is
-    // lost (Josh, 2026-09-26: "the speaker button doesn't work"). Only a
-    // caller that clears or closes the box discards it: Send once had a
-    // late result refill the box it had just emptied.
-    S.micRec.onend = S.micRec.onerror = null;
-    if (discard) S.micRec.onresult = null; else S.micPrev = S.micRec;
-    try { S.micRec.stop(); } catch (err) { /* already stopped */ }
-  }
-  S.micRec = null;
-  if (S.micBtn) { S.micBtn.classList.remove("active"); S.micBtn.innerHTML = iconSvg("mic", "txt") + "Speak"; }
-  else { nmic.classList.remove("active"); nmic.innerHTML = iconSvg("mic", "txt") + "Speak"; }
-  S.micBtn = null;
-}
- // whichever 🎤 is live (annotation editor or ✦ AI)
-// Safari hands dictation back one segment per pause, with no space and no
-// period between segments, but it capitalizes the first word after a pause
-// (Josh, 2026-09-26: "nowAnd", "butIt"). Join segments with a space, and when
-// the next one starts with a capital and the last ended with none of .?!,;:
-// close the sentence with a period first.
-function micJoin(parts) {
-  let out = "";
-  for (let p of parts) {
-    p = (p || "").trim();
-    if (!p) continue;
-    if (!out) { out = p; continue; }
-    const closes = /[.?!,;:]$/.test(out);
-    out += (!closes && /^[A-Z]/.test(p) ? ". " : " ") + p;
-  }
-  return out;
-}
-function micToggle(btn, textarea, statusFn) { // shared dictation: append into any box
-  if (S.micRec) { const same = S.micBtn === btn; micStop(!same); if (same) return; } // same button = a tapped Stop: its words still land
-  // a stale late result must not overwrite this session's base — and Safari
-  // runs ONE recognition at a time: a stopped session still winding down made
-  // the new start() throw while the button said it was listening (Josh,
-  // 2026-09-26: "it just wasn't accepting anything")
-  if (S.micPrev) { S.micPrev.onresult = null; try { S.micPrev.abort(); } catch (err) { /* already gone */ } S.micPrev = null; }
-  const base = textarea.value ? textarea.value.replace(/\s+$/, "") + " " : "";
-  let finals = "";
-  S.micRec = new SPEECH();
-  S.micBtn = btn;
-  S.micRec.continuous = true;
-  S.micRec.interimResults = true;
-  S.micRec.onresult = e => {
-    const fin = [], mid = [];
-    for (let i = 0; i < e.results.length; i++) (e.results[i].isFinal ? fin : mid).push(e.results[i][0].transcript);
-    finals = micJoin(fin);
-    textarea.value = micJoin([base, finals, micJoin(mid)]);
-    textarea.dispatchEvent(new Event("input")); // so the box grows/scrolls as it would when typed into
-  };
-  S.micRec.onerror = e => {
-    statusFn(e.error === "not-allowed" ? "Microphone permission denied — allow it in Safari settings."
-                                       : "Dictation error: " + e.error);
-    micStop();
-  };
-  S.micRec.onend = () => micStop(); // Safari ends recognition on silence
-  btn.classList.add("active");
-  btn.textContent = "■ Stop listening"; // the Ask sheet has a second ■ (stop reply): say which this is
-  try { S.micRec.start(); }
-  catch (err) { statusFn("Dictation couldn't start (" + (err.message || err) + ") — tap 🎤 again"); micStop(true); } // never a listening button that isn't
-}
-nmic.addEventListener("click", () =>
+  nmic.addEventListener("click", () =>
   micToggle(nmic, document.getElementById("ntext"), s2 => document.getElementById("nstatus").textContent = s2));
 
-function snapBeat(q) { return Math.round((q - 1) / 0.25) * 0.25 + 1; }
-function setBeatPair(qid, sid, q) { // 2.75 → beat "2", sub ".75"
-  q = snapBeat(q);
-  const beat = Math.floor(q + 0.03);
-  document.getElementById(qid).value = String(beat);
-  document.getElementById(sid).value = String(Math.round((q - beat) * 4) / 4);
-}
-function getBeatPair(qid, sid) {
-  return (+document.getElementById(qid).value || 1) + (+document.getElementById(sid).value || 0);
-}
-function openEditor(note, presetType, opts) { // opts.atStart: a new note anchors at bar 1 beat 1, ignoring the cursor/selection
-  if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
-  micStop(true);
-  S.editingNote = note || null;
-  fillBarBeatSelects();
-  const bt = barTicks();
-  // a tapped note anchors a new note: tapping no longer moves the cursor
-  // (DAW habit, 2026-09-29), and tap-a-note → + Note is how Josh annotates
-  const at0 = opts && opts.atStart ? 0 : !note && S.selNote && S.song.tracks[S.selNote.ti] && S.song.tracks[S.selNote.ti].notes[S.selNote.ni] ? S.song.tracks[S.selNote.ti].notes[S.selNote.ni].t : S.playCursor;
-  let b1 = Math.floor(at0 / bt) + 1;
-  let q1 = snapBeat((at0 % bt) / beatTicks() + 1);
-  let b2 = "", q2 = "";
-  if (!note && S.rangeSel && !(opts && opts.atStart)) { // prefill the from/to fields from the ruler selection
-    b1 = Math.floor(S.rangeSel.a / bt) + 1;
-    q1 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
-    const last = S.rangeSel.b - beatTicks(); // inclusive last beat of the selection
-    if (last >= S.rangeSel.a) { // >= so a one-beat selection prefills To = From
-      b2 = Math.floor(last / bt) + 1;
-      q2 = snapBeat((last % bt) / beatTicks() + 1);
-    }
-  }
-  const type = note ? (note.chord ? "chord" : note.section ? "section"
-                       : note.keydir !== undefined || note.keypartial ? "key"
-                       : note.tsdir ? "timesig" : note.tempodir !== undefined ? "tempo" : note.chopdir ? "chop"
-                       : note.loopTo !== undefined ? "loop" : "note")
-             : presetType ? presetType // a group's + button pre-picks its type
-             // a drag before + Note means "label this span" — as whichever of
-             // section/chord was dragged last (chord runs stay in chord mode)
-             : S.rangeSel ? (localStorage.getItem("ff1roll-dragtype") || "section")
-             : "note";
-  document.getElementById("ntype").value = type;
-  if (type === "tempo") {
-    let usq = S.song.tempos[0].usq;
-    for (const tp of S.song.tempos) { if (tp.tick <= at0) usq = tp.usq; else break; }
-    document.getElementById("ntempo").value =
-      note && note.tempodir !== undefined ? String(note.tempodir) : String(Math.round(6e7 / usq));
-  }
-  if (type === "timesig" && note) {
-    document.getElementById("ntsnum").value = String(note.tsdir[0]);
-    document.getElementById("ntsden").value = String(note.tsdir[1]);
-  }
-  S.rebarArmed = false; // any editor open resets the two-tap warning
-  if (!note && S.rangeSel) setTimeout(() =>
-    document.getElementById(type === "chord" ? "nchordsym" : "ntext").focus(), 50);
-  if (type === "loop" && note) {
-    const lbt = barTicks();
-    document.getElementById("nlb").value = String(Math.floor(note.loopTo / lbt) + 1);
-    setBeatPair("nlq", "nls", (note.loopTo % lbt) / beatTicks() + 1);
-  }
-  document.getElementById("nb1").value = String(note ? note.b1 : b1);
-  setBeatPair("nq1", "ns1", note ? note.q1 : q1);
-  document.getElementById("nb2").value = note ? (note.b2 ? String(note.b2) : "") : (b2 ? String(b2) : "");
-  setBeatPair("nq2", "ns2", note ? (note.q2 || beatsPerBarDisp()) : (q2 || beatsPerBarDisp()));
-  if (type === "chop" && note) {
-    // show the cut in DISPLAYED coordinates (start chop = the current bar 1),
-    // overriding the raw-space b1/q1 the directive itself stores
-    document.getElementById("nchopmode").value = note.chopdir;
-    const dt = note.chopdir === "start" ? 0 : Math.max(0, (S.chopE !== null ? S.chopE : 0) - S.chopS);
-    document.getElementById("nb1").value = String(Math.floor(dt / barTicks()) + 1);
-    setBeatPair("nq1", "ns1", (dt % barTicks()) / beatTicks() + 1);
-  }
-  document.getElementById("ntext").value =
-    ["chord", "key", "tempo", "timesig", "loop", "section", "chop"].includes(type)
-      ? (note && note.cnote || "")
-      : note ? note.text : "";
-  document.getElementById("nsectlabel").value = type === "section" && note ? note.text : "";
-  if (type === "chord") setChordWidget(note ? note.text : "");
-  if (type === "key" && note) {
-    const nm = (note.text.match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i) || [])[1] || "";
-    if (note.keypartial) {
-      document.getElementById("nkeysel").value = tonicOptionValue(note.keypartial);
-      document.getElementById("nkeymode").value = ""; // tonic stored, mode pending
-    } else {
-      document.getElementById("nkeysel").value = tonicOptionValue((nm.match(/^([A-G][#b]?)/) || ["", "C"])[1]);
-      document.getElementById("nkeymode").value = modeOfName(nm);
-    }
-  }
-  document.getElementById("ndelete").style.display = note ? "" : "none";
-  document.getElementById("nstatus").textContent = note && !note.added
-    ? "Synced note — edits and deletes become permanent when you Sync." : "";
-  applyEditorType();
-  editor.classList.add("on");
-  // the text box gets focus only for a NEW text note, where typing is the
-  // next thing — opening an existing one (any kind) must not raise the iPad
-  // keyboard over half the screen (Josh, 2026-10-03)
-  if (type === "note" && !note) document.getElementById("ntext").focus();
-  else if (document.activeElement && editor.contains(document.activeElement)) document.activeElement.blur();
-}
 document.getElementById("notebtn").addEventListener("click", () => {
   if (!S.song) return;
   // ALWAYS a new note (Josh, 2026-08-25). It used to reopen whatever
@@ -10039,8 +8895,6 @@ function tombstone(n) {
 }
 function clearTombstones() { clearTombstonesFor(S.songKey); }
 function clearTombstonesFor(key) { if (key) localStorage.removeItem(tombKeyFor(key)); }
-// ---------------------------------------------------------------- sync
-const syncsheet = document.getElementById("syncsheet");
  async function updateManifest(h, mutate) { // GET manifest.json, mutate, PUT — keeps the dropdown honest
   if (folderActive()) return; // the folder has no manifest: initCatalog rescans it
   const path = "albums/manifest.json";
@@ -10203,14 +9057,6 @@ function subfolderKeys(node) { return Object.keys(node.sub).sort((a, b) => segTi
   if (dirtySongs().includes(key)) return "annotations changed here";
   return "published";
 }
-function publishDest() { // where Publish would send things: "github" | "folder" | null
-  if (folderActive()) return "folder";
-  return localStorage.getItem("ff1roll-ghtoken") ? "github" : null;
-}
-function publishLabel(what) { // the button says where it goes; with nowhere to go it says what to do (never "Commit")
-  const d = publishDest();
-  return d === "github" ? "⇪ Publish " + what : d === "folder" ? "Save " + what + " to " + (fsRoot.mode === "native" ? "Files" : "folder") : "Connect GitHub to publish";
-}
  // d.timesigs: Q9's baked meter (docs/provenance-plan.md) — undefined on anything that doesn't bake one, so this widens musicSig exactly the way adding tempos did (Bugs found): a meter-only change now republishes the .mid too
 // A draft from before the fingerprint: read the published .mid once and let
 // "edited" follow the comparison — "edited" means "differs from what is
@@ -10263,79 +9109,9 @@ async function draftFingerprint(path, d, repoStamp) {
   try { draftWrite(path, d); } catch (err) { /* full: the next edit writes it */ }
   return true;
 }
-// The Publish sheet checks every listed draft against the PUBLISHED copy the
-// way Compare does (notes by tick+pitch, length and velocity; tempo map), not
-// by a byte fingerprint: a draft whose music matches is taken off the list
-// (and an unstamped one adopts the repo's stamp — identical music can mask
-// nothing), and one that differs says how, on its line. The strict fingerprint
-// left songs "edited" whose Compare showed +0 −0 ~0 (Josh, 2026-09-29), and
-// guessing why cost three rounds; the sheet now shows the facts.
-const pubCheck = new Map(); async function pubCompareDraft(key, d) { // -> {same, text}
-  let repoStamp = 0;
-  try { const r = await readData("analysis", key.replace(/\.mid$/, "") + ".rollnotes.json", true); if (r.ok) repoStamp = JSON.parse(await r.text()).saved || 0; } catch (err) { /* no annotations file: fine */ }
-  let pub;
-  try {
-    const r = await readData("songs", key, true);
-    if (!r.ok) return {same: false, text: "not in the repo yet (HTTP " + r.status + ")"};
-    pub = parseMidi(await r.arrayBuffer());
-  } catch (err) { return {same: false, text: "couldn't read the published copy: " + err.message}; }
-  const scale = d.ppq / pub.ppq;
-  const repoTracks = pub.tracks.map(t => ({name: t.name, notes: t.notes.map(n => scale === 1 ? n : {...n, t: Math.round(n.t * scale), d: Math.round(n.d * scale)})}));
-  const diff = cmpDiff(repoTracks, d.tracks);
-  const same = !diff.tracks.length; // notes only: tempo is an annotation (see musicSig)
-  if (same) {
-    d.dirty = false; d.pubSig = musicSig(d);
-    if (repoStamp && !d.savedStamp) d.savedStamp = repoStamp;
-    try { draftWrite(key, d); } catch (err) { /* full: stays listed */ }
-    return {same, text: ""};
-  }
-  const parts = [];
-  parts.push("+" + diff.added + " −" + diff.removed + " ~" + diff.changed + " notes (" + diff.tracks.map(t => t.name).join(", ") + ")");
-  return {same, text: "vs published: " + parts.join("; ")};
-}
-async function fingerprintOldDrafts() {
-  if (S.pubCheckRunning || LINK_SONGS) return;
-  S.pubCheckRunning = true;
-  let changed = false;
-  const sheetOn = () => document.getElementById("syncsheet").classList.contains("on");
-  if (sheetOn() && S.song) renderSyncPending(); // shows the "checking…" line
-  try {
-    for (const key of draftKeys()) {
-      if (!syncable(key)) continue;
-      let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
-      if (!d || !d.dirty) { pubCheck.delete(key); continue; }
-      if (!d.tracks) { pubCheck.set(key, "not checked: its notes live in this device's database (an import)"); continue; }
-      const r = await pubCompareDraft(key, d);
-      changed = true;
-      if (r.same) {
-        pubCheck.delete(key);
-        if (key === S.songKey && S.song) { S.song.pubSig = d.pubSig; S.song.savedStamp = d.savedStamp || S.song.savedStamp; updateSongBtn(); }
-      } else pubCheck.set(key, r.text);
-      logDebug("publish check " + key.split("/").pop() + ": " + (r.same ? "matches the published copy — off the list" : r.text));
-    }
-  } finally { S.pubCheckRunning = false; }
-  updateSyncBtn();
-  if (sheetOn() && S.song) renderSyncPending(); // the list as checked (and the "checking…" line gone)
-}
-// once per launch, a few seconds in (after the boot's own fetches): the
+ // once per launch, a few seconds in (after the boot's own fetches): the
 // Publish (N) count is right before the sheet is ever opened
 if (typeof window !== "undefined" && !LINK_SONGS) setTimeout(() => { fingerprintOldDrafts().catch(() => {}); }, 4000);
-function saveDraft(clean) { // clean=true right after a successful Publish; the working copy follows every edit regardless (crash recovery)
-  if (!isComposition() && !isLocalDraft()) return;
-  if (S.cmp && S.cmp.showing === "repo") return; // the saved copy is swapped in: writing it over the draft would destroy his edits
-  try {
-    const landed = draftWrite(S.songKey, draftDoc(clean));
-    if (S.song.overlayFold) retireOldOverlay(S.song.overlayFold, landed);
-    if (editableSong()) scheduleBackupFlush(); // off-device backup (2026-10-02 deploy safeguards) — only an actual write schedules one
-  } catch (err) { // a full localStorage must never throw out of an edit: say so, loudly, once per song
-    if (saveDraft.warned !== S.songKey) { saveDraft.warned = S.songKey; logErr("this device's storage is full — the last edit to " + baseName() + " is NOT saved. Publish, or ✕ some drafts under Open → drafts, then edit again."); }
-    setInfo("⚠ storage full — edit not saved (see ⚠)");
-  }
-  updateSongBtn(); // the unsaved dot tracks every edit
-  updateSyncBtn(); // and the Publish (N) count: an undo back to the published music takes a song off it
-  filesMirrorSoon(); // the Files copy follows, once the edits settle — every edit is kept, always (Model B)
-}
-saveDraft = prof("saveDraft", saveDraft);
 function saveVersion(quiet) { // File → Save Version / ⌘S
   if (S.song && isUnsaved(S.songKey)) { if (!quiet) openSaveForm("save"); return false; } // first Save Version of an Untitled song: folder + name first
   if (!S.song || !S.songKey || !isComposition()) { if (!quiet) setInfo("Save Version works on your own songs — this one is a capture; Save As forks it"); return false; }
@@ -10347,10 +9123,80 @@ function saveVersion(quiet) { // File → Save Version / ⌘S
   if (!quiet) setInfo("Version saved — only on this " + (EDITION === "app" ? "iPad" : "device"));
   return true;
 }
+function openVersionsSheet() {
+  document.getElementById("versionssheet").classList.add("on");
+  renderVersionsSheet();
+}
+async function goBackToVersion(key, idx) {
+  const list = readVersions(key);
+  const v = list[idx];
+  if (!v) return;
+  const label = versionLabel(v);
+  const ok = await appConfirm("GO BACK TO " + label.toUpperCase() + "?",
+    "Your current state is kept as a version first.", "Go back to this", "Cancel");
+  if (!ok) return;
+  pushVersion(key, "Before going back"); // list[idx] is still valid after this: pushVersion only appends
+  localStorage.setItem(draftStoreKey(key), JSON.stringify(v.draft));
+  if (v.notes) localStorage.setItem("ff1roll-notes-" + key, JSON.stringify(v.notes)); else localStorage.removeItem("ff1roll-notes-" + key);
+  if (v.ts) localStorage.setItem("ff1roll-ts-" + key, v.ts); else localStorage.removeItem("ff1roll-ts-" + key);
+  S.editUndo = []; S.editRedo = [];
+  if (key === S.songKey) await openDraft(key);
+  document.getElementById("versionssheet").classList.remove("on");
+  setInfo("back to " + label + " — your previous state is saved as a version too");
+}
 async function openDraft(key) {
   const d = await draftRead(key);
   if (!d) { setInfo("⚠ that draft is gone from this device"); return; }
   openDraftDoc(d, key);
+}
+function renderVersionsSheet() {
+  const box = document.getElementById("versionsrows");
+  box.textContent = "";
+  const key = S.songKey;
+  const row = (label, onGoBack) => {
+    const r = document.createElement("div");
+    r.className = "noterow";
+    const body = document.createElement("span");
+    body.className = "body";
+    body.textContent = label;
+    r.appendChild(body);
+    if (onGoBack) {
+      const b = document.createElement("button");
+      b.className = "fitem";
+      b.style.cssText = "flex:none;width:auto";
+      b.textContent = "Go back to this";
+      b.addEventListener("click", onGoBack);
+      r.appendChild(b);
+    }
+    box.appendChild(r);
+    return r;
+  };
+  if (!key) { row("open a song first"); return; }
+  if (catalogHas(key)) row("Published copy", () => goBackToPublished(key));
+  const list = readVersions(key);
+  if (!list.length && !catalogHas(key)) row("Nothing saved here yet — File → Save Version to start.");
+  for (let i = list.length - 1; i >= 0; i--) { // newest first on screen
+    const v = list[i];
+    row(versionLabel(v), () => goBackToVersion(key, i));
+  }
+}
+async function goBackToPublished(key) { // same door as the Publish sheet's Revert (revertSongToRepo) — same contract: chat included
+  const chatKey = "ff1roll-ask-" + key;
+  const chatN = askUnsavedCount(chatKey);
+  const ok = await appConfirm("GO BACK TO THE PUBLISHED COPY?",
+    "Your current state is kept as a version first." + (chatN ? " Drops " + chatN + " unsaved chat message" + (chatN === 1 ? "" : "s") + " too." : ""),
+    "Go back to this", "Cancel");
+  if (!ok) return;
+  dropLocalSong(key);
+  askRevertToSaved(chatKey);
+  pubCheck.delete(key);
+  S.editUndo = []; S.editRedo = [];
+  if (key === S.songKey) { S.songKey = null; await loadSong(key); }
+  updateSyncBtn();
+  updateSongBtn();
+  if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender();
+  document.getElementById("versionssheet").classList.remove("on");
+  setInfo("back to the published copy" + (chatN ? " and dropped " + chatN + " chat message" + (chatN === 1 ? "" : "s") : "") + " — your previous state is saved as a version too");
 }
 function openDraftDoc(d, key) {
   stop(); // a looping chip buffer would otherwise play the OLD song under the new roll
@@ -10445,101 +9291,6 @@ const fileStatus = s => {
   document.getElementById("filestatus").textContent = s;
 };
 const filesheet = document.getElementById("filesheet");
-function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2-char state column)
-  // Each row's whole innerHTML is rebuilt every call: "✓ "/"   " + an icon
-  // (Material svg, via iconSvg()) or a KEEP glyph + the label text. No
-  // child-element lookup (querySelector/by-class) anywhere here — the vm
-  // harness's element stubs (tests/harness.mjs) only implement
-  // innerHTML/textContent/children, not querySelector, and this function
-  // runs on every boot (icon audit, 2026-10-02; see NIGHT-ROLL.md
-  // "Material icons").
-  const set = (id, on, dim) => {
-    const b = document.getElementById(id);
-    if (!b) return;
-    const v = base[id];
-    setControl(id, v.icon ? {icon: v.icon, cls: "", label: v.text, prefix: on ? "✓ " : "   "}
-                          : {glyph: v.glyph, cls: "", label: "  " + v.text, prefix: on ? "✓ " : "   "});
-    b.style.opacity = dim ? 0.55 : 1;
-  };
-  const base = {
-    vwRoll: {icon: "gridView", text: "Roll"},
-    vwScore: {glyph: "𝄞", text: "Score view"},
-    vwListener: {icon: "radio", text: "Listener mode"},
-    vwTracksView: {icon: "tableRows", text: "Tracks view"},
-    vwMixer: {icon: "tune", text: "Mixer"},
-    vwTracks: {glyph: "◂", text: "Tracks"},
-    vwEdit: {icon: "construction", text: "Edit toolbar"},
-    vwAdded: {glyph: "┄", text: "Outline new notes"},
-    vwFooter: {icon: "viewAgenda", text: "Bottom bar"},
-    vwInst: {icon: "piano", text: "Instrument panel"},
-    vwSub: {glyph: "💬", text: "Notes strip"},
-    vwCompare: {icon: "compareArrows", text: "Compare with repo"},
-    vwAnalyze: {icon: "search", text: "Analyze ▸"},
-    vwLearning: {glyph: "🎓", text: "Learning mode"},
-  };
-  // VIEW group is a radio, not independent toggles: exactly one of these three is ✓
-  set("vwRoll", S.viewMode === "roll");
-  set("vwScore", S.viewMode === "score");
-  set("vwTracksView", S.viewMode === "tracks");
-  // Accordion: at most one of the six View ▾ groups open at a time
-  // (vwOpenGroup), every header/content pair sharing the same ▸/▾ +
-  // aria-expanded + display convention "View type ▸" always used (ruling
-  // #4, 2026-10-01 pm). The table is built fresh on every call (not a
-  // top-level const) — renderViewMenu can run during boot before later
-  // top-level `let`s (e.g. `jobs`) are past their TDZ, the same reason
-  // vwOpenGroup itself had to move into the early boot-safe block; a local
-  // table sidesteps that instead of needing its own early declaration.
-  // Background's running-jobs count is read off #vwJobs's OWN text
-  // (updateJobsBtn's write) rather than the `jobs` array directly, for the
-  // same reason.
-  const groups = {
-    view: {hdr: "vwViewType", row: "vwViewTypeRow",
-      label: () => "View type: " + ({roll: "Roll", tracks: "Tracks view", score: "Score view"}[S.viewMode] || "Roll")},
-    panels: {hdr: "vwPanels", row: "vwPanelsRow", label: () => "Panels"},
-    tools: {hdr: "vwTools", row: "vwToolsRow", label: () => "Tools"},
-    display: {hdr: "vwDisplay", row: "vwDisplayRow", label: () => "Display"},
-    background: {hdr: "vwBackground", row: "vwBackgroundRow", label: () => {
-      const m = document.getElementById("vwJobs").textContent.match(/· (\d+) running/);
-      return "Background" + (m ? " · " + m[1] + " running" : "");
-    }},
-    mode: {hdr: "vwMode", row: "vwModeRow", label: () =>
-      "Mode: " + (appMode() === "learning" ? "Learning" : "Normal") + (S.listenerMode ? " · Listener" : "")},
-  };
-  for (const [key, g] of Object.entries(groups)) {
-    const open = S.vwOpenGroup === key;
-    const hdr = document.getElementById(g.hdr);
-    hdr.textContent = (open ? "▾  " : "▸  ") + g.label();
-    hdr.setAttribute("aria-expanded", String(open));
-    document.getElementById(g.row).style.display = open ? "" : "none";
-  }
-  set("vwMixer", mixerIsOpen());
-  set("vwCompare", !!S.cmp, !(S.song && S.songKey && isComposition())); // dimmed where there is nothing to compare against
-  // P6: Normal-mode only — the item is ABSENT (not dimmed) in Learning, same
-  // discipline as every other Learning-mode hiding place (CLAUDE.md).
-  const vwA = document.getElementById("vwAnalyze");
-  vwA.style.display = analysisAvailable() ? "" : "none";
-  if (analysisAvailable()) set("vwAnalyze", S.analysisOn);
-  set("vwLearning", appMode() === "learning");
-  set("vwListener", S.listenerMode);
-  set("vwTracks", !document.getElementById("trackslide").classList.contains("off"));
-  set("vwEdit", !S.editrowHidden, !S.editOn); // dimmed (not disabled) in read-only: the pref still flips
-  set("vwFooter", !S.footerHidden);
-  set("vwAdded", showAddedOutline());
-  set("vwInst", typeof S.instOpen !== "undefined" && S.instOpen);
-  set("vwSub", S.subOn);
-  // vwGrid isn't in `base` (its label carries a dynamic "N/bar" suffix) — same setControl approach
-  setControl("vwGrid", {label: "  Grid…" + (S.gridDiv ? "  " + S.gridDiv + "/bar" : ""), prefix: S.gridDiv ? "✓ " : "   "});
-  const lvr = document.getElementById("vwLevelsRow"), lvd = document.getElementById("vwLevelsDiv");
-  const has = S.secMaxDepth > 1;
-  lvr.style.display = has ? "flex" : "none";
-  lvd.style.display = has ? "" : "none";
-  if (has) {
-    const cur = Math.min(secDepthCap(), S.secMaxDepth - 1);
-    document.getElementById("vwLevelsLbl").textContent = "▸ Section levels: " + (cur + 1) + " of " + S.secMaxDepth;
-    document.getElementById("vwLevelsMinus").disabled = cur <= 0;
-    document.getElementById("vwLevelsPlus").disabled = cur >= S.secMaxDepth - 1;
-  }
-}
 function openGridSheet() {
   const row = document.getElementById("gridchips");
   row.innerHTML = "";
@@ -10873,12 +9624,7 @@ function closeFileMenus() {
   document.getElementById("importhub").classList.remove("on");
   closeDropUp();
 }
- // the currently open drop-up's own element, or null
-function closeDropUp() {
-  if (S.dropUpOpen) S.dropUpOpen.classList.remove("on");
-  S.dropUpOpen = null;
-}
-function openDropUp(btn, menu) {
+ function openDropUp(btn, menu) {
   const was = S.dropUpOpen === menu && menu.classList.contains("on"); // tapping an already-open trigger toggles it closed
   closeFileMenus();
   if (was) return;
@@ -11569,13 +10315,6 @@ function makeItMine(name, folder) {
   setInfo("made your own copy — \"" + title + "\" in " + folderTitle(folder) + " — fully editable; Publish sends it.");
 }
 document.getElementById("filesavelocal").addEventListener("click", () => { if (S.song && isUnsaved(S.songKey)) { openSaveForm("save"); return; } closeFileMenus(); saveVersion(); });
-function dropLocalSong(key) { // Revert to repo copy's discard: the current state is saved as a version first ("Before going back"), so nothing is lost
-  pushVersion(key, "Before going back"); // migrates any pre-versions checkpoint/stash too; a no-op when there's nothing local yet
-  for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-",
-                     "ff1roll-tombs-", "ff1roll-lastsync-"])
-    localStorage.removeItem(pre + key);
-  idbDraftDelete(key);
-}
 async function revertSongToRepo(key) { // a Publish row's Revert: any pending song, open or not.
   // Reverts EVERYTHING unpublished for this song, chat included (Josh,
   // 2026-09-30, ruling on the "N chat messages + Revert does nothing" bug) —
@@ -11612,87 +10351,6 @@ document.getElementById("filerevert").addEventListener("click", () => {
   closeFileMenus();
   openVersionsSheet();
 });
-// ---- Versions… sheet (File menu, replaces the old Revert to last save… /
-// Revert to repo copy… / Restore unsaved copy…): the published copy (when
-// there is one) at the top, then this device's dated versions newest first.
-// "Go back to this" on any row pushes the CURRENT state as a version first
-// ("Before going back"), so a wrong tap never loses anything.
-function versionLabel(v) { // "Version 3 · Sep 29 14:02" / a migrated or manual label as-is
-  const d = new Date(v.at);
-  const stamp = d.toLocaleDateString(undefined, {month: "short", day: "numeric"}) + " " +
-                d.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
-  return v.label + " · " + stamp;
-}
-function openVersionsSheet() {
-  document.getElementById("versionssheet").classList.add("on");
-  renderVersionsSheet();
-}
-function renderVersionsSheet() {
-  const box = document.getElementById("versionsrows");
-  box.textContent = "";
-  const key = S.songKey;
-  const row = (label, onGoBack) => {
-    const r = document.createElement("div");
-    r.className = "noterow";
-    const body = document.createElement("span");
-    body.className = "body";
-    body.textContent = label;
-    r.appendChild(body);
-    if (onGoBack) {
-      const b = document.createElement("button");
-      b.className = "fitem";
-      b.style.cssText = "flex:none;width:auto";
-      b.textContent = "Go back to this";
-      b.addEventListener("click", onGoBack);
-      r.appendChild(b);
-    }
-    box.appendChild(r);
-    return r;
-  };
-  if (!key) { row("open a song first"); return; }
-  if (catalogHas(key)) row("Published copy", () => goBackToPublished(key));
-  const list = readVersions(key);
-  if (!list.length && !catalogHas(key)) row("Nothing saved here yet — File → Save Version to start.");
-  for (let i = list.length - 1; i >= 0; i--) { // newest first on screen
-    const v = list[i];
-    row(versionLabel(v), () => goBackToVersion(key, i));
-  }
-}
-async function goBackToVersion(key, idx) {
-  const list = readVersions(key);
-  const v = list[idx];
-  if (!v) return;
-  const label = versionLabel(v);
-  const ok = await appConfirm("GO BACK TO " + label.toUpperCase() + "?",
-    "Your current state is kept as a version first.", "Go back to this", "Cancel");
-  if (!ok) return;
-  pushVersion(key, "Before going back"); // list[idx] is still valid after this: pushVersion only appends
-  localStorage.setItem(draftStoreKey(key), JSON.stringify(v.draft));
-  if (v.notes) localStorage.setItem("ff1roll-notes-" + key, JSON.stringify(v.notes)); else localStorage.removeItem("ff1roll-notes-" + key);
-  if (v.ts) localStorage.setItem("ff1roll-ts-" + key, v.ts); else localStorage.removeItem("ff1roll-ts-" + key);
-  S.editUndo = []; S.editRedo = [];
-  if (key === S.songKey) await openDraft(key);
-  document.getElementById("versionssheet").classList.remove("on");
-  setInfo("back to " + label + " — your previous state is saved as a version too");
-}
-async function goBackToPublished(key) { // same door as the Publish sheet's Revert (revertSongToRepo) — same contract: chat included
-  const chatKey = "ff1roll-ask-" + key;
-  const chatN = askUnsavedCount(chatKey);
-  const ok = await appConfirm("GO BACK TO THE PUBLISHED COPY?",
-    "Your current state is kept as a version first." + (chatN ? " Drops " + chatN + " unsaved chat message" + (chatN === 1 ? "" : "s") + " too." : ""),
-    "Go back to this", "Cancel");
-  if (!ok) return;
-  dropLocalSong(key);
-  askRevertToSaved(chatKey);
-  pubCheck.delete(key);
-  S.editUndo = []; S.editRedo = [];
-  if (key === S.songKey) { S.songKey = null; await loadSong(key); }
-  updateSyncBtn();
-  updateSongBtn();
-  if (typeof asksheet !== "undefined" && asksheet.classList.contains("on") && askStoreKey() === chatKey) askRender();
-  document.getElementById("versionssheet").classList.remove("on");
-  setInfo("back to the published copy" + (chatN ? " and dropped " + chatN + " chat message" + (chatN === 1 ? "" : "s") : "") + " — your previous state is saved as a version too");
-}
 // mirrors play()'s preflight (sfWaitForSong/gameWaitForSong, the chip
 // resolve/render wait) plus audio-clip decode and time-stretch, which play()
 // leaves to catch up on a later loop pass — an offline bounce gets ONE pass,
@@ -11847,253 +10505,7 @@ document.getElementById("filedlmid").addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(a.href);
 });
-   // {chip, M: pipeline modules, nsf: parsed file, rows: [{st, open}]} — the name predates the second chip
-// One chip per descriptor (2026-09-27, Game Boy joins the NES): the GB
-// modules export the NSF names (parse/run/reconstruct/renderApu) with GB
-// semantics, so everything after `reconstruct` is one code path. The vault
-// file's extension is the chip id; album.json's `nsf:` key name stays for
-// old albums (`nsf.chip` says which). `shared` are the NSF modules the chip
-// builds on, loaded HERE with the ?v buster and merged last: a module's own
-// nested import (gbs/notes → ../nsf/notes) carries no buster, and the
-// browser handed the GB pipeline a stale midi-write from cache on the first
-// try; `own` names what the chip's module must still win. `midiOpts` are
-// the writer options that make the shared makeMidi speak the chip.
-const CHIPS = {
-  nsf: {magic: b => String.fromCharCode(...b.subarray(0, 5)) === "NESM\x1a", ext: ".nsf", label: "NSF",
-        channels: ["pulse1", "pulse2", "triangle", "noise"],
-        files: ["nsf/nsf", "nsf/notes", "nsf/midi-write", "nsf/apu-render"], shared: [], own: [],
-        parse: M => M.parseNSF, run: M => M.runNSFAsync, midiOpts: () => ({})},
-  gbs: {magic: b => String.fromCharCode(...b.subarray(0, 3)) === "GBS" && b[3] === 1, ext: ".gbs", label: "GBS",
-        channels: ["pulse1", "pulse2", "wave", "noise"],
-        files: ["gbs/gbs", "gbs/notes", "gbs/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
-        parse: M => M.parseGBS, run: M => M.runGBSAsync, midiOpts: M => ({chans: M.GB_CHANNELS, drum: M.gbNoiseDrum})},
-  // Super Nintendo (2026-09-27, Josh from bed with the Chrono Trigger zip:
-  // "can he just get the Super Nintendo stuff merged so I can test it").
-  // ONE .spc PER TRACK (perFile): the picker takes the whole set, rows are
-  // the files in disc/track order, titles from the tags. The SPC pipeline
-  // returns its own events (8 voices as voice0-7, noise as drums, volumes
-  // already 0-127) on 2 ms ticks; they are rebinned to 10 ms so the NES
-  // loop/tempo stages see a frame count they were tuned for. No renderer
-  // yet: synth voices carry these songs, and nothing goes to the archive.
-  // tagged: the set's tags state each track's length (intro + one pass),
-  // so the capture is that long and the loop scan is skipped — on the real
-  // Chrono Trigger set the scan took 5–40 s per track, found nothing, and
-  // then the 300 s retry doubled it (an iPad tab would not survive that).
-  spc: {magic: b => String.fromCharCode(...b.subarray(0, 27)) === "SNES-SPC700 Sound File Data", ext: ".spc", label: "SPC", keepBytes: true,
-        channels: ["voice0", "voice1", "voice2", "voice3", "voice4", "voice5", "voice6", "voice7"], perFile: true, tagged: true,
-        files: ["spc/spc", "spc/notes", "?spc/apu-render"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"], // "?" = optional: the S-DSP renderer lands separately; until then synth carries these songs
-        render: (M, res, o) => M.renderApu(res.apuLog, o), // the SPC renderer takes the capture itself
-        renderRate: 32000, // the chip's own rate: eight voices of a 3-minute song at 48 kHz were ~300 MB twice over
-        parse: M => M.parseSPC,
-        run: M => async (spc, n, seconds, onProgress) => {
-          const cap = await M.runSPCAsync(spc, seconds, onProgress);
-          const r = M.reconstruct(cap, {});
-          const k = 5; // 2 ms ticks → 10 ms frames
-          const events = r.events.map(e => { const a = Math.round(e.startFrame / k); return {...e, midi: Math.round(e.midi), startFrame: a, endFrame: Math.max(a + 1, Math.round(e.endFrame / k))}; });
-          return {apuLog: cap, frames: Math.round(r.frames / k), frameSec: r.frameSec * k, events};
-        },
-        midiOpts: () => ({volMax: 127})},
-  // Sega Genesis / Mega Drive (2026-09-27; Josh: "is it gonna download games
-  // to test it with?" — tested on the real Sonic 1 + 2 sets). A VGM is a
-  // register LOG, not a program: no emulation, reconstruct reads it straight.
-  // One file per track (perFile, "NN - Title.vgm"), often gzipped (.vgz) —
-  // the sniff needs the name for those. Header holds total and loop samples
-  // (tagged), GD3 holds titles. Events arrive on 44100 Hz sample "frames"
-  // with vel/velEnd 0-127; the adapter rebins to 10 ms and maps to the NSF
-  // event shape; noise and DAC hits carry a drum number. No renderer yet.
-  vgm: {magic: (b, name) => String.fromCharCode(...b.subarray(0, 4)) === "Vgm " || (b[0] === 0x1F && b[1] === 0x8B && /\.vg[mz]$/i.test(name || "")),
-        ext: ".vgm", label: "VGM", channels: [], perFile: true, tagged: true,
-        files: ["vgm/vgm", "vgm/notes"], shared: ["nsf/notes", "nsf/midi-write"], own: ["reconstruct", "toNotesTxt"],
-        parseAsync: M => async bytes => { const v = M.parseVGM(await M.inflateVGM(bytes)); const g = v.gd3 || {}; v.name = g.track || ""; v.game = g.game || ""; v.artist = g.author || ""; v.tags = {seconds: Math.max(1, Math.round((v.endSample || v.totalSamples || 0) / 44100))}; return v; },
-        parse: M => () => { throw new Error("VGM parses asynchronously"); },
-        run: M => async (vgm, n, seconds, onProgress) => {
-          const raw = M.reconstruct(vgm, {});
-          const k = 441; // 44100 Hz samples → 10 ms frames
-          const events = raw.filter(e => e.midi != null || e.drum != null).map(e => { const a = Math.round(e.startFrame / k); const o = {channel: e.channel, startFrame: a, endFrame: Math.max(a + 1, Math.round(e.endFrame / k)), midi: e.midi == null ? 0 : Math.round(e.midi), vol: e.vel == null ? 100 : e.vel}; if (e.velEnd != null) o.volEnd = e.velEnd; if (e.drum != null) o.drum = e.drum; return o; });
-          if (onProgress) onProgress(1);
-          const endSample = vgm.endSample || vgm.totalSamples || 0;
-          return {apuLog: null, frames: Math.round(endSample / k), frameSec: k / 44100, events, loopFrame: vgm.loopSample != null && vgm.loopSamples ? Math.round(vgm.loopSample / k) : null};
-        },
-        midiOpts: () => ({volMax: 127})},
-  // Sony PlayStation (2026-09-27; verified on the real Final Fantasy VII set).
-  // A set is many .minipsf (one per song, a few KB) plus ONE .psflib (the
-  // driver + samples) that every mini names in its _lib tag — pick them
-  // together. A PSF is a program image, not a log: the chain is inflated
-  // (DecompressionStream), overlaid into a 2 MiB RAM image, scanned for a
-  // SEQ/VAB (libsnd games) or an AKAO sequence (Square: FF7), and the
-  // sequence reader yields notes IN TICKS with a tempo map and meter — so
-  // this chip has a `capture` of its own that writes the MIDI directly and
-  // never goes through the frame/loop-scan/tempo-fit path. No renderer.
-  psf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x01, ext: ".psf", label: "PSF",
-        channels: [], perFile: true, tagged: true, keepBytes: true, // the mini per track + the set's lib (below): chip audio outlives the session
-        libFile: name => /\.psflib$/i.test(name),
-        files: ["psx/psf", "psx/akao", "psx/seq", "psx/vab", "psx/notes", "psx/spu-render", "psx/capture"], shared: ["sounding", "note-preview"], own: [],
-        // chip audio (2026-09-27): the driver's own samples, pitched per the
-        // instrument table, shaped by each instrument's envelope — spu-render.mjs.
-        // parse/run/render mirror the SNES contract; the lib rides in src.libs.
-        parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
-        run: M => async (parsed, n, secs, onProgress) => {
-          const readLib = name => { const b = parsed.libs[name.toLowerCase()]; if (!b) throw new Error("this song needs its library file " + name + " — pick it together with the songs"); return b; };
-          const chain = await M.loadPSFChain(parsed.bytes, readLib, {name: "song.minipsf", inflate: psfInflater()});
-          const {ram, ranges} = M.assembleRam(chain);
-          if (onProgress) onProgress(0.3);
-          const song = M.psfSong(ram, ranges, "song.minipsf"); // SEQ/VAB or AKAO, the song the mini names — tools/psx/capture.mjs
-          if (!song.renderable) throw new Error(song.why + " — synthesized voices");
-          if (onProgress) onProgress(1);
-          return {result: song.result, ram, table: song.table || null, bank: song.bank || null, seconds: secs};
-        },
-        lead: () => 0, // the capture's MIDI keeps the score's own rests: song time zero is tick 0
-        render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}),
-        stream: (M, res, o) => M.createSpuStream(res.result, {sampleRate: o.sampleRate, ram: res.ram, table: res.table, bank: res.bank, keepSeconds: res.seconds}), // mirrors tools/chip-worker.mjs's RUNNERS.psf — chipRenderStreamed (the inline fallback's own copy) and stream mode (chipStreamOpen) both use this
-        renderRate: 44100, stereo: true, // renderSpu always returns {l, r} per track (tools/psx/spu-render.mjs)
-        parseAsync: M => async (bytes, name) => { const psf = M.parsePSF(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
-        capture: async (M, parsed, secs, onProgress, sess) => {
-          const inflate = psfInflater(); // no browser inflater (the vm tests): loadPSFChain falls back to node:zlib
-          const readLib = n => { const f = sess && sess.libs && sess.libs[n.toLowerCase()]; if (!f) throw new Error("this song needs its library file " + n + " — pick it together with the songs"); return f.bytes; };
-          const chain = await M.loadPSFChain(parsed.bytes, readLib, {name: parsed.fileName, inflate});
-          const {ram, ranges} = M.assembleRam(chain);
-          if (onProgress) onProgress(0.4);
-          const song = M.psfSong(ram, ranges, parsed.fileName); // the same resolver the render uses
-          const result = song.result;
-          // sounding-pitch offsets (2026-09-28): some instruments' samples were
-          // recorded an octave — occasionally two — from the key the composer
-          // typed, so the console sounds a different pitch than the roll shows
-          // (tools/n64/INTEGRATION.md §9.3/§9.6; Josh: "the roll should show the
-          // sounding pitch"). One held-note render per non-kit group, through
-          // the same renderSpu the console audio uses; kit groups never shift.
-          // HELD for PlayStation (2026-09-28): the N64 offsets were checked
-          // against a real player (lazyusf2); no PS1 player runs here without a
-          // Sony BIOS, so these are measured against OUR renderer only. Until
-          // Josh's ear confirms that renderer's octave (Cry of the Planet vs a
-          // recording), PS1 captures keep the written pitch — flip
-          // PSX_SOUNDING_ON once confirmed.
-          return sonySeqCapture(M, "psf", result, 44100, (one, o) => M.renderSpu(one, {sampleRate: o.sampleRate, onProgress: o.onProgress, ram, table: song.table || null, bank: song.bank || null, keepSeconds: o.seconds}), onProgress, []);
-        }},
-  // Sony PlayStation 2 (2026-09-28; milestone 3, verified on the real Dark
-  // Cloud AND Final Fantasy X sets — docs/plans/ps2.md "Findings"). PS2's
-  // PSF2/minipsf2 is PSF's container reshaped as a small virtual filesystem
-  // (tools/ps2/psf2.mjs) instead of a flat RAM image, so there is no
-  // assembleRam step here: the mini + its .psf2lib merge into one file
-  // list, a mini's own psf2.ini (Sony's stock driver — "-s=/-h=/-b=" naming
-  // its SQ/HD/BD triplet, e.g. every real Dark Cloud song) or ".bgm" (Square
-  // Enix's own PS2 driver — Final Fantasy X and kin, its own separate
-  // opcode table — tools/ps2/bgm.mjs) picks the format, and tools/ps2/
-  // capture.mjs's ps2Song does the rest. Both drivers reuse PS1 SEQ's own
-  // shape byte for byte (tools/ps2/sq.mjs, tools/ps2/bgm.mjs), so the note
-  // pipeline (seqNotes/makeMidi/channelGroups, tools/psx/notes.mjs) and the
-  // chip-audio renderer (renderSpu, tools/psx/spu-render.mjs — an HD/BD or
-  // WD bank both reshape into a VAB-shaped bank, tools/ps2/hd.mjs's/
-  // tools/ps2/wd.mjs's toBank(), so no PS2-specific render code exists) run
-  // over either one completely unmodified.
-  psf2: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x02, ext: ".psf2", label: "PSF2",
-        channels: [], perFile: true, tagged: true, keepBytes: true, // the mini per track + the set's lib: chip audio outlives the session, exactly as PS1's psf
-        libFile: name => /\.psf2lib$/i.test(name),
-        files: ["ps2/psf2", "ps2/sq", "ps2/hd", "ps2/bgm", "ps2/wd", "ps2/capture", "psx/vab", "psx/notes", "psx/spu-render"], shared: ["sounding", "note-preview"], own: [],
-        parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
-        run: M => async (parsed, n, secs, onProgress) => {
-          const readLib = name => { const b = parsed.libs[name.toLowerCase()]; if (!b) throw new Error("this song needs its library file " + name + " — pick it together with the songs"); return b; };
-          const chain = await M.loadPSF2Chain(parsed.bytes, readLib, {name: "song.minipsf2", inflate: psfInflater()});
-          const files = M.mergePSF2(chain);
-          const mini = chain.find(s => s.name === "song.minipsf2");
-          if (onProgress) onProgress(0.3);
-          const song = await M.ps2Song(files, mini, {inflate: psfInflater()});
-          if (!song.renderable) throw new Error((song.why || "no HD/BD bank in this image") + " — synthesized voices");
-          if (onProgress) onProgress(1);
-          return {result: song.result, seconds: secs};
-        },
-        lead: () => 0, // the capture's MIDI keeps the score's own rests: song time zero is tick 0
-        // no ram/table/bank arguments (unlike CHIPS.psf's render): ps2Song
-        // already folds the HD/BD bank into result.vab (seqNotes(seq, {vab:
-        // bank})), the same field PS1's SEQ/VAB path uses — renderSpu's
-        // vabVoices() branch needs nothing else.
-        render: (M, res, o) => M.renderSpu(res.result, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds}),
-        stream: (M, res, o) => M.createSpuStream(res.result, {sampleRate: o.sampleRate, keepSeconds: res.seconds}), // mirrors tools/chip-worker.mjs's RUNNERS.psf2
-        renderRate: 48000, // PSF2's own native rate (PSF1/PS1's is 44100 — docs/plans/ps2.md §3)
-        stereo: true, // the same renderSpu as PS1 (FFX "Challenge" reproduced here — 30 tracks, 163 s, 1.88 GB at this rate)
-        parseAsync: M => async (bytes, name) => { const psf = M.parsePSF2(bytes); const t = psf.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {psf, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: psf.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
-        capture: async (M, parsed, secs, onProgress, sess) => {
-          const inflate = psfInflater(); // ps2/psf2.mjs's own default (node:zlib) covers the vm tests when this is null
-          const readLib = n => { const f = sess && sess.libs && sess.libs[n.toLowerCase()]; if (!f) throw new Error("this song needs its library file " + n + " — pick it together with the songs"); return f.bytes; };
-          const chain = await M.loadPSF2Chain(parsed.bytes, readLib, {name: parsed.fileName, inflate});
-          const files = M.mergePSF2(chain);
-          const mini = chain.find(s => s.name === parsed.fileName);
-          if (onProgress) onProgress(0.3);
-          const song = await M.ps2Song(files, mini, {inflate});
-          const result = song.result;
-          // the SAME sounding-pitch flag as PS1 (PSX_SOUNDING_ON), held off pending the same ear check
-          return sonySeqCapture(M, "psf2", result, 48000, (one, o) => M.renderSpu(one, {sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: o.seconds}), onProgress, song.warnings || []);
-        }},
-  // Nintendo 64 (2026-09-27; verified on the real Super Mario 64 and Zelda
-  // sets). A USF set is many .miniusf (a save-state word or two each) plus
-  // ONE .usflib carrying the game's sparse ROM and RDRAM. The EAD sequence
-  // tables are located in that image, the mini's save state names the
-  // sequence id, and the libultra sequence interpreter yields notes in
-  // 48-tick beats with a tempo map — another sequence chip: its own
-  // capture, MIDI written directly. Chip audio (2026-09-27, evening): the
-  // game's own sound bank — VADPCM samples, key regions, envelopes — through
-  // n64/render.mjs; the mini per track + the lib once persist like the PS1's.
-  usf: {magic: b => b[0] === 0x50 && b[1] === 0x53 && b[2] === 0x46 && b[3] === 0x21, ext: ".usf", label: "USF",
-        channels: [], perFile: true, tagged: true, keepBytes: true,
-        libFile: name => /\.usflib$/i.test(name),
-        files: ["n64/usf", "n64/ead-usf", "n64/seq-libultra", "n64/notes", "n64/capture", "n64/vadpcm", "n64/bank", "n64/render", "n64/rare"], shared: ["sounding", "note-preview"], own: [], // rare: Rare's driver (GoldenEye) — sequenceOfSet falls back to it when no EAD tables are found
-        parse: M => (bytes, src) => ({bytes, libs: (src && src.libs) || {}}),
-        run: M => async (parsed, n, secs, onProgress) => {
-          const files = [{name: "song.miniusf", bytes: parsed.bytes}];
-          for (const [name, bytes] of Object.entries(parsed.libs)) files.push({name, bytes}); // the lib's NAME is the game's identity (USF_GAMES)
-          const set = M.loadUSF(files);
-          if (onProgress) onProgress(0.3);
-          const {seq, res} = M.sequenceOfSet(set);
-          if (onProgress) onProgress(1);
-          return {result: res, set, banks: seq.banks, seconds: secs};
-        },
-        lead: () => 0,
-        render: (M, res, o) => M.renderN64(res.result, {set: res.set, banks: res.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: res.seconds, meter: {tsNum: 4, tsDen: 4}}),
-        renderRate: 32000, // the console's own output rate
-        stereo: true, // n64/render.mjs always returns {l, r} per track (the GoldenEye crash this file already documents, chipPcmToBuffers below)
-        parseAsync: M => async (bytes, name) => { const u = M.parseUSF(bytes); const t = u.tags || {}; const len = /^(\d+):(\d+)/.exec(t.length || ""); return {usf: u, fileName: name, bytes, name: t.title || "", game: t.game || "", artist: t.artist || "", libs: u.libs || [], tags: {seconds: len ? +len[1] * 60 + +len[2] : 0}}; },
-        capture: async (M, parsed, secs, onProgress, sess) => {
-          const libs = Object.values(sess && sess.libs || {}); // the lib objects persist across captures, so their parse is cached on them
-          const set = M.loadUSF([{name: parsed.fileName, bytes: parsed.bytes, parsed: parsed.usf}, ...libs]);
-          if (onProgress) onProgress(0.3);
-          const {game, id, seq, res, present} = M.sequenceOfSet(set);
-          // sounding-pitch offsets (2026-09-28), same as the PS1 path: EAD's
-          // Title Theme inst 3/4 and Cave Dungeon inst 0/6/7, Rare's
-          // keyBase-shifted programs (tools/n64/INTEGRATION.md §9.3/§9.6/§10.6)
-          // — a held note per non-kit channel through the game's own bank/font
-          // (renderN64, which dispatches to renderRare for a Rare driver),
-          // before the MIDI is written. Kit groups never shift.
-          const groups = M.channelGroups(res, {tsNum: 4, tsDen: 4});
-          const offsets = await M.soundingOffsets(groups, (g, key) => M.renderOneNote(
-            M, "usf", res, g.name,
-            (one, o) => M.renderN64(one, {set, banks: seq.banks, sampleRate: o.sampleRate, onProgress: o.onProgress, keepSeconds: o.seconds, meter: {tsNum: 4, tsDen: 4}}),
-            {key, vel: 100, ticks: 100000, seconds: 1, sampleRate: 32000}
-          ), {sampleRate: 32000});
-          const shiftWarnings = M.applySoundingOffsets(groups, offsets, "midi");
-          if (onProgress) onProgress(0.6);
-          const bytes = M.toMidi(res, {tsNum: 4, tsDen: 4, offsets});
-          const tpb = res.ticksPerBeat || 48;
-          { // diagnostic (2026-09-27: the iPad scrambles Mario 64 while the Mac, running this same code, does not): the facts of this capture, into ⚠ so Copy all carries them
-            let cov = 0; for (let i = 0; i < present.length; i++) cov += present[i];
-            const nn = (res.notes || []).length, chs = [...new Set((res.notes || []).map(n => n.ch))].join(" ");
-            const line = "usf " + parsed.fileName + ": game " + (game ? game.id || game.abi : "?") + " seq " + id + " @" + (seq.rom != null ? "rom " + seq.rom.toString(16) : "ram") + " " + seq.size + "B cov " + cov +
-                         " → " + nn + " notes ch[" + chs + "] tpb " + tpb + " ticks " + (res.ticks ?? res.endTick ?? "?") + " " + (res.seconds || 0).toFixed(1) + "s tempo " + (res.tempos && res.tempos[0] ? res.tempos[0].bpm : "?") + (res.loop ? " loop@" + res.loop.tick : " noloop") + " midi " + bytes.length + "B";
-            if (typeof logErr === "function") logErr(line);
-          }
-          const bq = tick => { const b = tick / tpb; return [Math.floor(b / 4) + 1, Math.round((b - Math.floor(b / 4) * 4) * 4) / 4 + 1]; };
-          const loops = !!res.loop;
-          const warnings = [];
-          if (res.truncated) warnings.push("stopped at the length cap");
-          if (res.selfModified) warnings.push("the sequence rewrites itself while playing");
-          if (res.ioReads) warnings.push("reads the game's io ports (" + res.ioReads + "×) — the game would steer this song");
-          if (res.stubbed && res.stubbed.length) warnings.push("sound-shaping ops ignored: " + res.stubbed.join("; "));
-          for (const w of res.warnings || []) warnings.push(w); // toMidi's kit guess: which drum index became which GM drum
-          for (const w of shiftWarnings) warnings.push(w);
-          if (onProgress) onProgress(1);
-          return {bytes, bpm: res.tempos && res.tempos[0] ? res.tempos[0].bpm : 120, secs: res.seconds, looped: loops, snapped: true,
-                  loopAnchor: loops && res.loop.tick > 0 ? bq(res.loop.at) : null, loopTarget: loops && res.loop.tick > 0 ? bq(res.loop.tick) : null, warnings};
-        }},
-};
-// The shared back half of a Sony SEQ-shaped capture (PS1 SEQ/AKAO, PS2 SQ):
+   // The shared back half of a Sony SEQ-shaped capture (PS1 SEQ/AKAO, PS2 SQ):
 // sounding-pitch offsets rendered through the console's own renderSpu (held
 // behind PSX_SOUNDING_ON), the MIDI, and the song's length and loop bars from
 // its tempo map. renderOne(one, o) renders a one-note result for the offsets.
@@ -12129,7 +10541,6 @@ function chipTrackOrder(files) { // a set's files in disc/track/part order, unli
   return files.slice().sort((a, b) => { const x = key(a), y = key(b); for (let i = 0; i < 4; i++) { if (x[i] < y[i]) return -1; if (x[i] > y[i]) return 1; } return a.name.localeCompare(b.name, undefined, {numeric: true}); });
 }
 function chipKindOf(bytes, name) { for (const k of Object.keys(CHIPS)) if (bytes.length > 8 && CHIPS[k].magic(bytes, name)) return k; return null; }
-function chipExt(kind) { return (CHIPS[kind] || CHIPS.nsf).ext; }
 function chipVaultMeta(slug, kind) { // album.json's nsf: block for an import — one file per album, or a folder of one file per track
   const c = CHIPS[kind] || CHIPS.nsf;
   // the archive mirrors albums/: a console folder, then the album (Josh,
@@ -12141,7 +10552,7 @@ function chipVaultMeta(slug, kind) { // album.json's nsf: block for an import �
   if (c.perFile) m.perFile = true;
   return m;
 }
-function chipVaultFile(meta, base) { return meta.perFile ? meta.vault + base + chipExt(meta.chip) : meta.vault; } // where a track's console file lives in the archive
+ // where a track's console file lives in the archive
 async function chipModules(kind, importFn) { // importFn: test-only override of real dynamic import() (tests/night-roll.test.mjs — no real file can be made to fail once then succeed)
   kind = kind || "nsf";
   chipModules.cache = chipModules.cache || {};
@@ -12623,69 +11034,7 @@ async function batchCommit(which, files, message, h, status) {
   if (!a.ok && a.retry) a = await attempt(); // someone pushed mid-flight: rebuild on the new tip
   if (!a.ok) throw apiError(which, a.r, "ref update");
 }
-// Local/ songs (2026-10-02 — see "Local song persistence" in NIGHT-ROLL.md):
-// every edit rewrites the whole draft (saveEdits), and the app can be killed
-// right after one (an install relaunch). The IndexedDB put is queued, so a
-// stub alone in localStorage could claim notes that never landed. So a
-// local draft is written WHOLE to localStorage — synchronous, the copy load
-// reads — whenever it fits (500k chars; local songs are usually far
-// smaller), and its notes go to IndexedDB too, so a song that later grows
-// past the cap loses at most the edits in flight, not everything since it
-// last fit. Every write carries seq (stored seq + 1); the IndexedDB record
-// is {seq, tracks}. Past the cap, or when the store is full: stub + IDB as
-// before, logged once — the last edit is crash-safe only once the put lands.
-// Returns true (stored) or the put's promise (true once landed).
-function localDraftWrite(key, doc) {
-  // seq is the LAST key written (below), so the last "seq": in the stored
-  // JSON is it — no parse of a whole song on every edit (a "seq": inside a
-  // string would be escaped, \"seq\")
-  const old = localStorage.getItem(draftStoreKey(key)) || "", at = old.lastIndexOf('"seq":');
-  const prev = at < 0 ? 0 : parseInt(old.slice(at + 6), 10) || 0;
-  doc = {...doc, seq: prev + 1};
-  const idb = typeof indexedDB !== "undefined";
-  const landed = idb ? idbDraftPut(key, {seq: doc.seq, tracks: doc.tracks}) : true;
-  const whole = JSON.stringify(doc);
-  if (!idb || whole.length <= 500000) {
-    try { localStorage.setItem(draftStoreKey(key), whole); return true; }
-    catch (err) { if (!idb) throw err; } // full: the stub below is smaller
-  }
-  if (localDraftWrite.warned !== key) { localDraftWrite.warned = key; logErr(key.split("/").pop() + " is too big to keep whole on this device — its newest edit is safe only a moment after you make it (IndexedDB)"); }
-  const {tracks, ...stub} = doc;
-  stub.tracksRef = 1;
-  localStorage.setItem(draftStoreKey(key), JSON.stringify(stub));
-  return landed;
-}
-// a local draft whose localStorage copy is only the stub: its notes from the
-// IndexedDB record ({seq, tracks}; an old build's is the bare tracks array).
-// A whole localStorage copy never consults IndexedDB — it was written
-// synchronously with the newest seq.
-async function localDraftTracks(key, d) {
-  const v = await idbDraftGet(key);
-  const tracks = v ? (Array.isArray(v) ? v : v.tracks) : null, seq = v && !Array.isArray(v) ? v.seq || 0 : 0;
-  if (d.seq && seq < d.seq) logErr(key.split("/").pop() + ": the app closed before its last edit was stored — opening the copy before it");
-  d.tracks = tracks || [];
-  return d;
-}
-function draftWrite(key, doc) { // synchronous for the caller; the notes follow through the queue
-  if (key.startsWith("local/")) return localDraftWrite(key, doc);
-  if (draftInIdb(key)) {
-    const {tracks, ...stub} = doc;
-    stub.tracksRef = 1;
-    idbDraftPut(key, tracks);
-    localStorage.setItem(draftStoreKey(key), JSON.stringify(stub));
-  } else localStorage.setItem(draftStoreKey(key), JSON.stringify(doc));
-}
-async function draftRead(key) { // the whole draft, notes included, or null
-  const raw = localStorage.getItem(draftStoreKey(key));
-  if (raw === null) return null;
-  let d = null; try { d = JSON.parse(raw); } catch (err) { return null; }
-  if (d && d.tracksRef && !d.tracks) {
-    if (key.startsWith("local/")) return localDraftTracks(key, d);
-    d.tracks = (await idbDraftGet(key)) || [];
-  }
-  return d;
-}
-function idbDraftPut(key, tracks) { return idbDraftOp(async () => { try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").put(tracks, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); return true; } catch (err) { logErr("draft notes could not be stored for " + key.split("/").pop() + ": " + (err && err.message || err)); return false; } }); } async function commitImports(status, keys) { // ONE commit for the whole batch
+ async function commitImports(status, keys) { // ONE commit for the whole batch
   keys = keys || importDraftKeys();
   if (!keys.length) { status("No import drafts to commit."); return; }
   const token = writeToken();
@@ -13142,11 +11491,6 @@ function dpBuildBeatSelects() { // bar typed (fills extend past the song's end),
     }
   }
 }
-function dpTick(barId, qId, sId) {
-  const bar = Math.max(1, parseInt(document.getElementById(barId).value, 10) || 1);
-  const q = (+document.getElementById(qId).value || 1) + (+document.getElementById(sId).value || 0);
-  return (bar - 1) * barTicks() + (q - 1) * beatTicks();
-}
 document.getElementById("drumfillbtn").addEventListener("click", () => {
   if (!editableSong()) { setInfo("drum fills work on your own songs — captures are locked"); return; }
   dpBuildBeatSelects();
@@ -13205,273 +11549,7 @@ document.getElementById("dpfill").addEventListener("click", () => {
                        : "nothing to fill — pattern is empty or those hits already exist");
 });
 
-function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Override, fillAmt) {
-  // v2 (advisor spec): busy = density, hard = velocity, follow = what the kick
-  // listens to, feel = backbeat rate. Legacy positional call maps energy ->
-  // busy = hard = energy, and hard 3 / follow bass / feel normal is BIT-
-  // IDENTICAL to v1 for the same seed (hard consumes zero rng draws).
-  let busy, hard, follow, feel, parts;
-  if (typeof energyOrOpts === "object" && energyOrOpts !== null) {
-    const o = energyOrOpts;
-    busy = o.busy ?? 3; hard = o.hard ?? busy;
-    follow = o.follow ?? "bass"; feel = o.feel ?? "normal";
-    parts = o.parts ?? "all";
-    if (o.followTi !== undefined) follow = "bass"; // an explicit track uses the bass-follow engine
-    fillAmt = o.fillAmt ?? 3;
-    fromBar = o.fromBar; toBar = o.toBar;
-    t0Override = o.t0; t1Override = o.t1;
-  } else {
-    busy = energyOrOpts; hard = energyOrOpts; follow = "bass"; feel = "normal"; parts = "all";
-    if (fillAmt === undefined) fillAmt = 3;
-  }
-  // scoped reroll (Josh, 2026-08-22, advisor round 2): parts is a SET of
-  // kick/snare/hats (pitch groups) + fills (a ROLE — fills contain snares and
-  // kicks, so the fill layer scopes by BAR, not pitch). All four = the
-  // literal v1 "all" path, bit-identical. ZERO new rng draws in any path.
-  const PIECE_GROUPS = {kick: [36, 35], snare: [38, 40, 37], hats: [42, 44, 46]};
-  const partsArr = drNormParts(parts);
-  const isAllParts = ["kick", "snare", "hats", "fills"].every(g => partsArr.includes(g));
-  const fillsOn = partsArr.includes("fills");
-  const grooveGroups = partsArr.filter(g => g !== "fills");
-  const scopePcs = isAllParts ? null
-    : new Set(grooveGroups.flatMap(g => PIECE_GROUPS[g]));
-  if (!fillsOn) fillAmt = 0;
-  if (!isAllParts && !partsArr.length) { setInfo("pick at least one part"); return 0; }
-  const HARD_DELTA = 7 * (hard - 3);
-  const energy = busy; // density reads below
-  if (!editableSong()) { setInfo("the Drummer works on your own songs — captures are locked"); return 0; }
-  const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
-  // sub-bar edges: bar loop still walks whole bars (per-bar substreams stay
-  // stable), put() clamps every hit to [t0, t1) — a 2.4 start drops bar 2's
-  // hits before beat 4, exactly the drums-enter-late workflow
-  const t0 = t0Override !== undefined ? t0Override : (fromBar - 1) * bt;
-  const t1 = t1Override !== undefined ? t1Override : toBar * bt;
-  if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) {
-    setInfo("the range crosses a meter change — generate each meter's bars separately");
-    return 0;
-  }
-  let di = S.song.tracks.findIndex((_, ti) => trackIsDrums(ti));
-  const madeTrack = di < 0, undoLen = S.editUndo.length;
-  if (madeTrack) {
-    di = addTrackUndoable({name: "drums", notes: []});
-    saveDraft();
-    renderTrackbar();
-  }
-  const tr = S.song.tracks[di], isAdd = !isComposition();
-  const oFollowTi = typeof energyOrOpts === "object" && energyOrOpts !== null ? energyOrOpts.followTi : undefined;
-  const bassTi = oFollowTi !== undefined && S.song.tracks[oFollowTi] ? oFollowTi : drBassTrack();
-  // context per bar: break = nothing but bass (or nothing at all) SOUNDING there,
-  // or a declared section label saying so — a sustained melody note is not a break
-  // a break is a DROPOUT: bars where the texture thins to the followed track
-  // alone. If no OTHER track plays anywhere in the range (a one-voice
-  // passage), nothing dropped out — only a labeled "break" section counts.
-  let rangeHasOthers = false;
-  S.song.tracks.forEach((mtr, ti) => {
-    if (ti === di || ti === bassTi || trackIsDrums(ti)) return;
-    if (mtr.notes.some(n => !n.gone && n.t < t1 && n.t + n.d > t0)) rangeHasOthers = true;
-  });
-  // labeled "break" sections silence EXACTLY their span (a Break ending at
-  // 14.1 must not mute all of bar 14 — Josh, 2026-08-22); put() enforces it
-  const breakSpans = S.rollnotes.filter(n => n.section && /break/i.test(n.text))
-    .map(n => ({s: n.start, e: n.end || n.start + bt}));
-  const inLabeledBreak = t => breakSpans.some(sp => t >= sp.s && t < sp.e);
-  const isBreak = bar => {
-    const bs = (bar - 1) * bt, be = bar * bt;
-    if (breakSpans.some(sp => sp.s <= bs && sp.e >= be)) return true; // fully covered bar
-    if (!rangeHasOthers) return false;
-    let melodic = false;
-    S.song.tracks.forEach((mtr, ti) => {
-      if (ti === di || ti === bassTi || trackIsDrums(ti)) return;
-      if (mtr.notes.some(n => !n.gone && n.t < be && n.t + n.d > bs)) melodic = true;
-    });
-    return !melodic;
-  };
-  // boundaries inside the range: section starts + the loop target — the bar BEFORE gets the fill
-  const boundaries = drBoundaries(t0, t1);
-  // fill bars (role scope): the bar BEFORE each boundary; boundary/arrival
-  // downbeat ticks carry the crash
-  const fillBarSet = new Set([...boundaries].map(b => b - 1));
-  const crashTicks = new Set([...boundaries].map(b => (b - 1) * bt));
-  if (boundaries.has(fromBar)) crashTicks.add((fromBar - 1) * bt);
-  const inFillScope = t => fillBarSet.has(Math.floor(t / bt) + 1) || crashTicks.has(t);
-  const chordStarts = new Set(S.rollnotes.filter(n => n.chord && !n.section).map(n => n.start));
-  // same label = same drums (the app's own same-label-same-color convention,
-  // extended; advisor 2026-08-22): the GROOVE substream keys on (label hash +
-  // bar offset within the section) so identically-labeled sections restate
-  // bar-for-bar. EXACT label match — no stemming, that would be inference.
-  // Fills and arrival crashes stay keyed on absolute bars: a fill is
-  // commentary on what comes NEXT, and varied fills between identical grooves
-  // is what a human drummer does. Bars outside any section keep absolute-bar
-  // keying — unsectioned songs are bit-identical to the old engine.
-  const grooveLane = bar => sectionLane(bar);
-  const bass = bassTi >= 0 ? S.song.tracks[bassTi].notes.filter(n => !n.gone && n.t >= t0 && n.t < t1) : [];
-  // ---- erase everything the kit holds in the range (idempotent replace) ----
-  const erased = [];
-  tr.notes.forEach((n, ni) => {
-    if (!n.gone && n.t >= t0 && n.t < t1 &&
-        (!scopePcs || scopePcs.has(n.p) || (fillsOn && inFillScope(n.t)))) {
-      n.gone = true;
-      const rn = S.song.rawNotes && n.ri !== undefined && S.song.rawNotes[di][n.ri];
-      if (rn) rn.gone = true;
-      erased.push({ti: di, ni});
-    }
-  });
-  // ---- generate ----
-  const hits = []; // {t, p, v, d}
-  const put = (t, p, v, d) => {
-    if (t < t0 || t >= t1) return;
-    if (scopePcs && !scopePcs.has(p) && !(fillsOn && inFillScope(t))) return; // out-of-scope pieces are KEPT
-    if (inLabeledBreak(t)) return; // a declared Break silences its exact span
-    let vv = v + HARD_DELTA; // hard: one uniform shift, applied nowhere else
-    if (p === 42) vv = Math.max(40, vv); // hats never fall back into the inaudible zone
-    hits.push({t, p, v: Math.max(1, Math.min(127, Math.round(vv))), d});
-  };
-  // a boundary AT the range start: this generation owns the arrival — crash it
-  // (section-at-a-time workflow: the intro pass plays the fill, this pass lands)
-  if (boundaries.has(fromBar) && !isBreak(fromBar)) {
-    const arng = drumRng(seed, fromBar * 7919 + 47);
-    put((fromBar - 1) * bt, 49, 100 + arng() * 12, 120);
-  }
-  for (let bar = fromBar; bar <= toBar; bar++) {
-    if (scopePcs && scopePcs.size === 0 && fillsOn && !fillBarSet.has(bar)) continue; // fills-only: touch fill bars alone
-    if (isBreak(bar)) continue; // his breaks are sacred: the drummer lays out
-    const rng = drumRng(seed, grooveLane(bar));
-    const bs = (bar - 1) * bt;
-    // fill window (the fill owns its beats; skeleton and hats yield inside it)
-    let fill = null;
-    if (boundaries.has(bar + 1) && fillAmt > 0) {
-      const frng = drumRng(seed, bar * 7919 + 13);
-      // the FILLS knob (not energy) picks the band and the odds — Logic's
-      // Fill Amount/Complexity split, collapsed to one knob (Josh, 2026-08-22)
-      const pool = DR_FILLS.filter(f => fillAmt >= f.minE && fillAmt <= f.maxE);
-      if (frng() < 0.35 + 0.12 * fillAmt && pool.length) {
-        if (fillAmt >= 4) { // weighted: big fills dominate at the top of the knob
-          const total = pool.reduce((a, f) => a + (f.weight || 1), 0);
-          let roll = frng() * total;
-          for (const f of pool) { roll -= (f.weight || 1); if (roll <= 0) { fill = f; break; } }
-          if (!fill) fill = pool[pool.length - 1];
-        } else fill = pool[Math.floor(frng() * pool.length)];
-      }
-    }
-    const fillStart = fill ? bs + (beats - Math.min(fill.len, beats)) * qt : Infinity;
-    // skeleton: kick on 1 (fixed in every feel) — knobs never move the anchor
-    put(bs, 36, 104 + rng() * 8, 70);
-    let barSnareV = 0; // tracked PRE-delta: the hats-under-snare discipline shifts uniformly
-    if (feel === "double") { // skank/D-beat: kick every beat, snare every offbeat 8th
-      for (let k = 1; k < beats; k++) {
-        const t = bs + k * qt;
-        if (t < fillStart) put(t, 36, 96 + rng() * 8, 65);
-      }
-      for (let k = 0; k < beats; k++) {
-        const t = bs + (k + 0.5) * qt;
-        if (t >= fillStart) continue;
-        const v = 100 + rng() * 16;
-        barSnareV = Math.max(barSnareV, v);
-        put(t, 38, v, 55);
-      }
-    } else {
-      const backs = feel === "half" ? [Math.floor(beats / 2) + 1] : drBackbeats(beats);
-      for (const b of backs) {
-        const t = bs + (b - 1) * qt;
-        if (t >= fillStart) continue;
-        const v = 100 + rng() * 16;
-        barSnareV = Math.max(barSnareV, v);
-        put(t, 38, v, 60);
-      }
-    }
-    if (!barSnareV) barSnareV = 108;
-    if (scopePcs && !grooveGroups.includes("snare")) { // snares kept, not generated: cap under the REAL ones
-      let kept = 0;
-      for (const n of tr.notes) if (!n.gone && n.t >= bs && n.t < bs + bt && (n.p === 38 || n.p === 40)) kept = Math.max(kept, n.v || 0);
-      if (kept) barSnareV = kept;
-    }
-    // hats: table by feel + busy; ceiling stays under the bar's snare
-    const hatCap = Math.min(88, barSnareV - 12); // under the snare, but audible in the mix
-    const hatStep = feel === "half" ? (busy <= 2 ? qt : qt / 2) : qt / 2; // half thins a notch
-    for (let t = bs; t < bs + bt; t += hatStep) {
-      if (t >= fillStart) break;
-      const on = Math.abs((t - bs) % qt) < 1;
-      put(t, 42, Math.min(hatCap, on ? 66 + rng() * 16 : 52 + rng() * 12), 40);
-      const pairGate = feel === "half" ? busy >= 5 : busy >= 4;
-      const pairProb = feel === "half" ? 0.12 * (busy - 1) : 0.12 * busy;
-      if (pairGate && !on && rng() < pairProb) put(t + qt / 4, 42, Math.min(hatCap, 50 + rng() * 10), 35);
-    }
-    if (follow === "bass" && feel !== "double") { // double already owns every slot
-      // bass-following kicks: offbeat bass onsets, probability by busy, capped 2/bar
-      let extra = 0;
-      for (const n of bass) {
-        if (n.t < bs || n.t >= bs + bt || n.t >= fillStart) continue;
-        const beatPos = (n.t - bs) / qt;
-        if (Math.abs(beatPos - Math.round(beatPos)) < 0.01 && (Math.round(beatPos) === 0)) continue; // beat 1 covered
-        if (extra >= 2) break;
-        if (rng() < 0.12 + 0.1 * busy) { put(n.t, 36, 88 + rng() * 12, 60); extra++; }
-      }
-      // agogic snare on the bass's LONG notes (Josh's own device)
-      for (const n of bass) {
-        if (n.t < bs || n.t >= bs + bt || n.t >= fillStart) continue;
-        if (n.d >= qt * 1.5 && !(feel === "double") &&
-            !(feel === "half" ? [Math.floor(beats / 2) + 1] : drBackbeats(beats))
-              .some(b => Math.abs(n.t - (bs + (b - 1) * qt)) < 5))
-          put(n.t, 38, Math.min(120, barSnareV + 8), 60);
-      }
-    } else if (follow === "chords") { // declared chord starts get the kick — deterministic
-      let ck = 0;
-      for (const ct of chordStarts) {
-        if (ct < bs || ct >= Math.min(bs + bt, fillStart)) continue;
-        if (Math.abs(ct - bs) < 5) continue; // downbeat already kicked
-        if (ck >= 4) break; // harmonic-rhythm-compression safety
-        put(ct, 36, 92 + rng() * 12, 60);
-        ck++;
-      }
-    }
-    // the fill itself, then a crash lands on the boundary downbeat (next bar's put)
-    if (fill) for (const h of fill.hits(rng, qt, beats)) put(bs + h.off, h.p, h.v, h.d);
-    if (boundaries.has(bar + 1) && bar + 1 <= toBar && !isBreak(bar + 1)) {
-      put(bs + bt, 49, 100 + rng() * 12, 120);
-    }
-  }
-  // chord-change downbeat accents (+12, capped) — harmonic-rhythm compression
-  // densifies these automatically, so his device is honored for free
-  if (follow !== "off") for (const ct of chordStarts) {
-    if (ct < t0 || ct >= t1) continue;
-    for (const h of hits) if (h.t === ct && (h.p === 36 || h.p === 42)) h.v = Math.min(h.p === 42 ? 76 + HARD_DELTA : 127, h.v + 12);
-  }
-  hits.sort((a, b) => a.t - b.t || a.p - b.p);
-  const added = [];
-  for (const h of hits) {
-    tr.notes.push({t: h.t, d: h.d, p: h.p, v: h.v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[di].push({t: h.t + S.chopS, d: h.d, p: h.p, v: h.v, added: isAdd});
-    added.push({ti: di, ni: tr.notes.length - 1});
-  }
-  pushUndo({kind: "group", entries: [{kind: "eraseBatch", items: erased}, {kind: "addBatch", items: added}]});
-  if (madeTrack) undoTrackAdd(di, undoLen); // a kit the Drummer made leaves with its take
-  saveEdits();
-  computeSongEnd();
-  if (S.viewMode === "score") buildScoreModel();
-  S.view.y = 1e9;
-  clampView();
-  draw();
-  return added.length;
-}
- // session-ephemeral: the winning take IS the notes
-function drKitCountT(t0, t1) { // counts only what the current parts scope would replace
-  const pa = typeof drPartsGet === "function" && document.querySelector("#drparts button")
-    ? drNormParts(drPartsGet()) : ["kick", "snare", "hats", "fills"];
-  const all = ["kick", "snare", "hats", "fills"].every(g => pa.includes(g));
-  const G = {kick: [36, 35], snare: [38, 40, 37], hats: [42, 44, 46]};
-  const pcs = new Set(pa.filter(g => g !== "fills").flatMap(g => G[g]));
-  const fillsOn = pa.includes("fills");
-  const bt = barTicks();
-  const bounds = drBoundaries(t0, t1);
-  const fillBars = new Set([...bounds].map(b => b - 1));
-  let k = 0;
-  S.song.tracks.forEach((tr, ti) => { if (trackIsDrums(ti)) tr.notes.forEach(n => {
-    if (n.gone || n.t < t0 || n.t >= t1) return;
-    if (all || pcs.has(n.p) || (fillsOn && (fillBars.has(Math.floor(n.t / bt) + 1) || n.p === 49))) k++;
-  }); });
-  return k;
-}
-function scheduleAnalysisRecompute() { // debounced: note edits, not per frame (P6 spec)
+ function scheduleAnalysisRecompute() { // debounced: note edits, not per frame (P6 spec)
   if (!S.analysisOn || !analysisAvailable()) return; // off, or Learning: nothing to recompute, nothing scheduled
   if (S._analysisTimer) clearTimeout(S._analysisTimer);
   S._analysisTimer = setTimeout(() => {
@@ -13545,321 +11623,6 @@ function adoptKeyRegion(region) {
   draw();
   setInfo("key set to " + region.name + " at bar " + bar + " (from Analyze — unsynced — Sync to commit)");
 }
-function openAnalyzeSheet(target) { // target: {kind:"chord"|"key", start, end, text}
-  S.analyzeTarget = target;
-  const isChord = target.kind === "chord";
-  document.getElementById("analyzetext").textContent =
-    (isChord ? "Chord (analysis estimate): " + target.text : "Key (analysis estimate): " + target.text) +
-    " — an estimate, not written as an annotation until you adopt it.";
-  document.getElementById("analyzeadopt").textContent = isChord ? "Adopt this chord" : "Adopt this key";
-  document.getElementById("analyzeadoptall").style.display = isChord && S.analysisBands.chords.length > 1 ? "" : "none";
-  document.getElementById("analyzesheet").classList.add("on");
-}
-function bsGenerate(seed, opts) { // the Bassist: strictly monophonic, chord-driven
-  const {style = "chug", busy = 3, oct = 2, follow = "auto", followTi, targetTi,
-         fromBar, toBar} = opts;
-  const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
-  const t0 = opts.t0 !== undefined ? opts.t0 : (fromBar - 1) * bt;
-  const t1 = opts.t1 !== undefined ? opts.t1 : toBar * bt;
-  if (!editableSong()) { setInfo("the Bassist works on your own songs — captures are locked"); return 0; }
-  if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) {
-    setInfo("the range crosses a meter change — generate each meter's bars separately");
-    return 0;
-  }
-  if (targetTi === undefined || !S.song.tracks[targetTi] || trackIsDrums(targetTi)) {
-    setInfo("pick a target track for the bass");
-    return 0;
-  }
-  // pitch truth ladder: declared chords > inferred-from-melody sketch > key root > refuse
-  let tl = bsChordTimeline(t0, t1);
-  let inferred = false;
-  {
-    const mels = S.song.tracks.map((tr2, ti) => ({tr2, ti}))
-      .filter(({tr2, ti}) => ti !== targetTi && !trackIsDrums(ti) &&
-        tr2.notes.some(n => !n.gone && n.t < t1 && n.t + n.d > t0))
-      .map(({ti}) => ti); // ALL sounding voices — one voice alone misreads multi-voice songs
-    if (mels.length) { // fill only the bars no band covers (mixed songs welcome)
-      const declared = tl.filter(e => !e.lookahead);
-      const inferredTl = bsInferTimeline(t0, t1, mels, drumRng(seed, 0xB055));
-      const gaps = inferredTl.filter(g => !declared.some(d2 => d2.t < g.end && d2.end > g.t));
-      if (gaps.length) { inferred = declared.length === 0; tl = [...declared, ...gaps, ...tl.filter(e => e.lookahead)].sort((a, b) => a.t - b.t); }
-    }
-    if (!tl.filter(e => !e.lookahead).length) {
-      const kn = keyNameAt(t0), pc = kn && sfDeclaredAt(t0) !== null ? tonicPcOfName(kn) : null;
-      if (pc === null || pc === undefined) {
-        setInfo("no chords, no melody, no key declared in this range — the bassist has nothing to read");
-        return 0;
-      }
-      tl = [{t: t0, end: t1, rootPc: pc, bassPc: pc, tones: [pc, (pc + 7) % 12], readable: true}];
-    }
-  }
-  // NOTE: no Break silencing here — a Break is a drop to JUST BASS (his own
-  // device, cool-b-maj + graveyard), so the bass is the one voice that plays through.
-  // follow source for the riff style / accents
-  const di = S.song.tracks.findIndex((_, ti) => trackIsDrums(ti));
-  const fMode = follow === "auto" ? (di >= 0 ? "drums" : "chords") : follow;
-  const srcOnsets = [];
-  if (fMode === "drums" && di >= 0) {
-    for (const n of S.song.tracks[di].notes)
-      if (!n.gone && (n.p === 36 || n.p === 35) && n.t >= t0 && n.t < t1) srcOnsets.push(n.t);
-  } else if (fMode.startsWith && fMode.startsWith("t")) {
-    const ti = parseInt(fMode.slice(1), 10);
-    if (S.song.tracks[ti]) for (const n of S.song.tracks[ti].notes)
-      if (!n.gone && n.t >= t0 && n.t < t1) srcOnsets.push(n.t);
-  } else if (fMode === "chords") {
-    for (const e of tl) if (!e.lookahead && e.t >= t0 && e.t < t1) srcOnsets.push(e.t);
-  }
-  srcOnsets.sort((a, b) => a - b);
-  const srcSet = new Set(srcOnsets.map(t => Math.round(t / (qt / 4)) * (qt / 4)));
-  const place = (pc, o) => Math.max(24, Math.min(60, 12 * (o + 1) + pc));
-  const hits = [];
-  const put = (t, p, v, d) => {
-    if (t < t0 || t >= t1) return;
-    hits.push({t: Math.round(t), p, v: Math.max(1, Math.min(127, Math.round(v))), d: Math.max(20, Math.round(d))});
-  };
-  const vFor = (t, bs) => { // downbeat 96 / on-beat 88 / off 78; +8 on chord-change onsets (cap 110)
-    const pos = (t - bs) / qt;
-    let v = Math.abs(pos) < 0.01 ? 96 : Math.abs(pos - Math.round(pos)) < 0.01 ? 88 : 78;
-    const c = chordAt(tl, t);
-    if (c && Math.abs(c.t - t) < 5) v = Math.min(110, v + 8);
-    return v;
-  };
-  for (let bar = fromBar; bar <= toBar; bar++) {
-    const bs = (bar - 1) * bt;
-    const rng = drumRng(seed, sectionLane(bar) ^ 0xBA55);
-    const jit = []; // constant draw budget per bar per style (liked-bar stability)
-    for (let i = 0; i < beats * 2; i++) jit.push(rng() * 8 - 4);
-    const pops = [];
-    for (let i = 0; i < beats; i++) pops.push(rng());
-    const dirDraw = rng();
-    const c0 = chordAt(tl, bs) || tl[0];
-    if (!c0) continue;
-    if (style === "chug") {
-      for (let i = 0; i < beats * 2; i++) {
-        const t = bs + i * qt / 2;
-        const c = chordAt(tl, t) || c0;
-        if (busy === 1 && i % 2) continue;
-        if (busy === 2 && i === beats * 2 - 1) continue;
-        let p = place(c.bassPc, oct);
-        if (busy >= 4 && i % 2 && pops[i >> 1] < 0.25) p += 12;
-        put(t, p, vFor(t, bs) + jit[i], busy === 1 ? qt * 0.9 : qt * 0.45);
-        if (busy >= 5 && i === beats * 2 - 2) put(t + qt / 4, p, 74 + jit[i], qt * 0.2);
-      }
-    } else if (style === "pump") {
-      const step = busy >= 4 ? qt / 2 : qt;
-      for (let t = bs, i = 0; t < bs + bt; t += step, i++) {
-        const c = chordAt(tl, t) || c0;
-        if (busy === 1 && (t - bs) % (2 * qt) !== 0) continue;
-        const root = place(c.bassPc, oct);
-        const fifth = root + 7 <= 12 * (oct + 1) + 16 ? root + 7 : root - 5;
-        put(t, (Math.floor((t - bs) / qt)) % 2 === 0 ? root : fifth,
-            vFor(t, bs) + jit[Math.min(jit.length - 1, i)], busy === 1 ? qt * 2 : step * 0.85);
-      }
-    } else if (style === "arp") {
-      const c = c0;
-      const tones = c.tones.length >= 3 ? c.tones.slice(0, 4) : [...c.tones, (c.rootPc + 12) % 12];
-      const step = busy <= 2 ? qt : busy <= 4 ? qt / 2 : qt / 4;
-      const seq = [];
-      const up = tones.map(pc => place(pc, oct) + (pc < c.bassPc ? 12 : 0)).sort((a, b) => a - b);
-      if (dirDraw < 0.4) seq.push(...up);
-      else if (dirDraw < 0.7) seq.push(...[...up].reverse());
-      else seq.push(...up, ...[...up].reverse().slice(1, -1));
-      let k = 0;
-      for (let t = bs; t < bs + bt; t += step, k++) {
-        const cc = chordAt(tl, t) || c;
-        if (cc !== c && Math.abs(cc.t - t) < 5) { put(t, place(cc.bassPc, oct), vFor(t, bs) + jit[k % jit.length], step * 0.8); k = 0; continue; }
-        put(t, seq[k % seq.length], vFor(t, bs) + jit[k % jit.length], step * 0.8);
-      }
-    } else if (style === "walk") {
-      const nxt = nextChange(tl, bs + bt - qt);
-      for (let b = 0; b < beats; b++) {
-        const t = bs + b * qt;
-        if (busy <= 2 && b !== 0 && b !== beats - 1) continue;
-        const c = chordAt(tl, t) || c0;
-        let p;
-        if (b === 0) p = place(c.bassPc, oct);
-        else if (b === beats - 1 && nxt) { // approach into the coming change
-          const tgt = place(nxt.bassPc, oct);
-          const r = pops[b];
-          p = r < 0.4 ? tgt - 1 : r < 0.6 ? tgt + 1 : r < 0.8 ? tgt - 5 : tgt - 2;
-        } else if (b === beats - 1) p = place(c.bassPc, oct) - 5; // turnaround fifth below
-        else { // middle: nearest chord tone toward the target line
-          const from = place(c.bassPc, oct);
-          const tgt = nxt ? place(nxt.bassPc, oct) : from;
-          const ideal = from + (tgt - from) * (b / (beats - 1));
-          const opts2 = c.tones.map(pc => place(pc, oct) + (place(pc, oct) < from - 6 ? 12 : 0));
-          opts2.sort((a2, b2) => Math.abs(a2 - ideal) - Math.abs(b2 - ideal) || (pops[b] < 0.5 ? a2 - b2 : b2 - a2));
-          p = opts2[0];
-        }
-        put(t, p, vFor(t, bs) + jit[b * 2], qt * 0.9);
-        if (busy >= 4 && pops[b] < 0.2) put(t + qt / 2, p, 74 + jit[b * 2 + 1], qt * 0.4);
-      }
-    } else if (style === "riff") {
-      const ons = srcOnsets.filter(t => t >= bs && t < bs + bt)
-        .map(t => Math.round(t / (qt / 4)) * (qt / 4)).filter((t, i, a) => a.indexOf(t) === i).slice(0, 8);
-      if (!ons.length) { ons.push(bs, bs + 2 * qt); }
-      ons.forEach((t, i) => {
-        const c = chordAt(tl, t) || c0;
-        const r = pops[i % pops.length];
-        const pc = Math.abs(c.t - t) < 5 ? c.bassPc
-                 : r < 0.6 ? c.bassPc : r < 0.85 ? c.tones[Math.min(2, c.tones.length - 1)] : c.tones[Math.min(1, c.tones.length - 1)];
-        const next = ons[i + 1];
-        put(t, place(pc, oct), (srcSet.has(Math.round(t / (qt / 4)) * (qt / 4)) ? 92 : 82) + jit[i % jit.length],
-            Math.min(next !== undefined ? next - t : qt, qt));
-      });
-    }
-  }
-  hits.sort((a, b) => a.t - b.t);
-  for (let i = 0; i < hits.length - 1; i++) hits[i].d = Math.min(hits[i].d, hits[i + 1].t - hits[i].t); // strict mono
-  const n = applyTake(targetTi, t0, t1, hits);
-  if (inferred) setInfo("no chords declared — harmony sketched from your melody (internal only; different seeds read it differently)");
-  return n;
-}
-// The generators' shared apply: replace-in-range as ONE group undo. Erase is
-// by ONSET (a note sustaining in from before the range survives), via the
-// `gone` flag — never a splice, so `ni` indices stay stable for undo — with
-// the rawNotes mirror through `ri`; adds mirror into rawNotes at + chopS.
-// hits: [{t, d, p, v}] in display ticks. Extracted from the Bassist
-// 2026-09-25 for ✦ Fill; tests/fixtures/bassist-golden.json pins its output.
-function applyTake(targetTi, t0, t1, hits) {
-  const tr = S.song.tracks[targetTi], isAdd = !isComposition();
-  const erased = [];
-  tr.notes.forEach((n, ni) => {
-    if (!n.gone && n.t >= t0 && n.t < t1) {
-      n.gone = true;
-      const rn = S.song.rawNotes && n.ri !== undefined && S.song.rawNotes[targetTi][n.ri];
-      if (rn) rn.gone = true;
-      erased.push({ti: targetTi, ni});
-    }
-  });
-  const added = [];
-  for (const h of hits) {
-    if (h.d <= 0) continue;
-    const v = Math.max(1, Math.min(127, Math.round(h.v))), d = Math.max(20, Math.round(h.d)), t = Math.round(h.t);
-    tr.notes.push({t, d, p: h.p, v, added: isAdd});
-    if (S.song.rawNotes) S.song.rawNotes[targetTi].push({t: t + S.chopS, d, p: h.p, v, added: isAdd});
-    added.push({ti: targetTi, ni: tr.notes.length - 1});
-  }
-  pushUndo({kind: "group", entries: [{kind: "eraseBatch", items: erased}, {kind: "addBatch", items: added}]});
-  saveEdits();
-  computeSongEnd();
-  if (S.viewMode === "score") buildScoreModel();
-  draw();
-  return added.length;
-}
-function bsBuildControls() {
-  if (document.querySelector("#bsstyle button")) return;
-  const mkSeg = (id, vals, def) => {
-    const el = document.getElementById(id);
-    vals.forEach(v => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.dataset.v = String(v);
-      b.textContent = String(v);
-      b.addEventListener("click", () => { segSet(id, v); bsRefresh(); });
-      el.appendChild(b);
-    });
-    segSet(id, def);
-  };
-  mkSeg("bsstyle", ["chug", "pump", "arp", "walk", "riff"],
-        S.song && S.song.tracks.some((_, ti) => trackIsDrums(ti)) ? "riff" : "chug");
-  mkSeg("bsbusy", [1, 2, 3, 4, 5], 3);
-  mkSeg("bsoct", [1, 2, 3], 2);
-  const beats = effTs()[0];
-  for (const id of ["bsfromq", "bstoq"]) {
-    const sel = document.getElementById(id);
-    sel.innerHTML = "";
-    for (let b = 1; b <= beats; b++) { const o = document.createElement("option"); o.value = String(b); o.textContent = String(b); sel.appendChild(o); }
-  }
-  for (const id of ["bsfroms", "bstos"]) {
-    const sel = document.getElementById(id);
-    sel.innerHTML = "";
-    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) { const o = document.createElement("option"); o.value = String(f); o.textContent = syl; sel.appendChild(o); }
-  }
-}
-function bsRange() {
-  const t0 = dpTick("bsfrom", "bsfromq", "bsfroms");
-  let t1 = dpTick("bsto", "bstoq", "bstos");
-  if (t1 <= t0) t1 = t0 + barTicks();
-  return {t0, t1, from: Math.floor(t0 / barTicks()) + 1, to: Math.ceil(t1 / barTicks())};
-}
-function bsRefresh() {
-  const r = bsRange();
-  const tgt = document.getElementById("bstarget").value;
-  const ti = tgt === "new" ? -1 : parseInt(tgt, 10);
-  let replaces = 0;
-  if (ti >= 0 && S.song.tracks[ti]) S.song.tracks[ti].notes.forEach(n => { if (!n.gone && n.t >= r.t0 && n.t < r.t1) replaces++; });
-  const chordBars = new Set(bsChordTimeline(r.t0, r.t1).filter(e => !e.lookahead)
-    .flatMap(e => { const out = []; for (let b = Math.floor(Math.max(e.t, r.t0) / barTicks()); b < Math.ceil(Math.min(e.end, r.t1) / barTicks()); b++) out.push(b); return out; })).size;
-  const totBars = r.to - r.from + 1;
-  document.getElementById("bsstatus").textContent =
-    "replaces " + replaces + " note(s) on " + (ti >= 0 && S.song.tracks[ti] ? (S.song.tracks[ti].name || "track " + (ti + 1)) : "a new bass track") +
-    " · chords cover " + Math.min(chordBars, totBars) + " of " + totBars + " bar" + (totBars === 1 ? "" : "s") +
-    (chordBars === 0 ? " (will sketch harmony from your melody)" : "");
-  const row = document.getElementById("bstakes");
-  row.innerHTML = "";
-  S.bsTakes.forEach((tk, i) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = "take " + (i + 1) + " · " + tk.style + " " + tk.busy + " · oct" + tk.oct;
-    b.classList.toggle("active", i === S.bsActive);
-    b.addEventListener("click", () => {
-      segSet("bsstyle", tk.style); segSet("bsbusy", tk.busy); segSet("bsoct", tk.oct);
-      document.getElementById("bsfollow").value = tk.followSel;
-      document.getElementById("bstarget").value = String(tk.targetTi);
-      document.getElementById("bsfrom").value = tk.from; document.getElementById("bsto").value = tk.to;
-      if (tk.q) { setBeatPair("bsfromq", "bsfroms", tk.q[0]); setBeatPair("bstoq", "bstos", tk.q[1]); }
-      const k = bsGenerate(tk.seed, tk.opts);
-      S.bsActive = i;
-      bsRefresh();
-      setInfo("take " + (i + 1) + " — " + tk.style + " · " + k + " notes (one undo brings the previous back)");
-    });
-    row.appendChild(b);
-  });
-}
-function openBassist() {
-  if (!editableSong()) { setInfo("the Bassist works on your own songs — captures are locked"); return; }
-  bsBuildControls();
-  const bt = barTicks();
-  { // follow: drums / tracks / chords; target: melodic tracks + new
-    const f = document.getElementById("bsfollow");
-    f.innerHTML = "";
-    const addOpt = (sel, v, label) => { const o = document.createElement("option"); o.value = v; o.textContent = label; sel.appendChild(o); };
-    if (S.song.tracks.some((_, ti) => trackIsDrums(ti))) addOpt(f, "drums", "drums (kick)");
-    S.song.tracks.forEach((tr2, ti) => { if (!trackIsDrums(ti)) addOpt(f, "t" + ti, tr2.name || "track " + (ti + 1)); });
-    addOpt(f, "chords", "chords");
-    f.value = S.song.tracks.some((_, ti) => trackIsDrums(ti)) ? "drums" : "chords";
-    const tsel = document.getElementById("bstarget");
-    tsel.innerHTML = "";
-    S.song.tracks.forEach((tr2, ti) => { if (!trackIsDrums(ti)) addOpt(tsel, String(ti), tr2.name || "track " + (ti + 1)); });
-    addOpt(tsel, "new", "＋ new bass track");
-    const bi = drBassTrack();
-    const r0 = (() => { const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor); return sec; })();
-    // never default onto a track with notes in range: new track wins then
-    tsel.value = "new";
-    if (bi >= 0) {
-      const t0g = r0 ? r0.start : 0, t1g = r0 ? (r0.end || t0g + bt) : S.songEndTick;
-      const has = S.song.tracks[bi].notes.some(n => !n.gone && n.t < t1g && n.t + n.d > t0g);
-      if (!has) tsel.value = String(bi);
-    }
-  }
-  const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
-  let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt)), q0 = 1, q1 = 1, toBar = to + 1;
-  if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) {
-    from = Math.floor(S.rangeSel.a / bt) + 1; q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
-    toBar = Math.floor(S.rangeSel.b / bt) + 1; q1 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
-  } else if (sec) {
-    from = Math.floor(sec.start / bt) + 1; q0 = snapBeat((sec.start % bt) / beatTicks() + 1);
-    const e = sec.end || sec.start + bt;
-    toBar = Math.floor(e / bt) + 1; q1 = snapBeat((e % bt) / beatTicks() + 1);
-  }
-  document.getElementById("bsfrom").value = from;
-  document.getElementById("bsto").value = toBar;
-  setBeatPair("bsfromq", "bsfroms", q0);
-  setBeatPair("bstoq", "bstos", q1);
-  bsRefresh();
-  document.getElementById("bassistsheet").classList.add("on");
-}
 document.getElementById("bassistbtn").addEventListener("click", openBassist);
 document.getElementById("bsgen").addEventListener("click", () => {
   const r = bsRange();
@@ -13898,180 +11661,7 @@ document.getElementById("bsgen").addEventListener("click", () => {
 });
 for (const id of ["bsfrom", "bsto"]) document.getElementById(id).addEventListener("input", bsRefresh);
 for (const id of ["bsfromq", "bsfroms", "bstoq", "bstos", "bstarget", "bsfollow"]) document.getElementById(id).addEventListener("change", bsRefresh);
-function drRange() { // ticks + whole-bar span from the bar/beat/sub selects
-  const t0 = dpTick("drfrom", "drfromq", "drfroms");
-  let t1 = dpTick("drto", "drtoq", "drtos");
-  if (t1 <= t0) t1 = t0 + barTicks();
-  return {t0, t1, from: Math.floor(t0 / barTicks()) + 1, to: Math.ceil(t1 / barTicks())};
-}
-function drRefresh() {
-  const r = drRange();
-  const from = r.from, to = r.to;
-  const mode = (document.getElementById("drfollow") || {}).value || "bass";
-  let followTxt;
-  if (mode === "off") followTxt = "following: nothing";
-  else if (mode === "chords") {
-    const n = S.rollnotes.filter(x => x.chord && !x.section && x.start >= r.t0 && x.start < r.t1).length;
-    followTxt = "following: chords (" + n + " change" + (n === 1 ? "" : "s") + " in range)";
-  } else {
-    const ti = mode.startsWith("t") ? parseInt(mode.slice(1), 10) : drBassTrack();
-    followTxt = ti >= 0 && S.song.tracks[ti] ? "following: " + (S.song.tracks[ti].name || "track " + (ti + 1)) : "no track to follow";
-  }
-  const nb = drBoundaries(r.t0, r.t1).size;
-  const fillsPicked = !document.querySelector("#drparts button") || drPartsGet().includes("fills");
-  document.getElementById("drstatus").textContent =
-    "replaces " + drKitCountT(r.t0, r.t1) + " kit note(s) in " + fmtBarBeat(r.t0) + "–" + fmtBarBeat(r.t1) + " · " + followTxt +
-    (fillsPicked ? " · " + nb + " fill spot" + (nb === 1 ? "" : "s") : "");
-  const row = document.getElementById("drtakes");
-  row.innerHTML = "";
-  S.drTakes.forEach((tk, i) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    const pa = drNormParts(tk.parts ?? "all");
-    const scoped = !["kick", "snare", "hats", "fills"].every(g => pa.includes(g));
-    b.textContent = "take " + (i + 1) + " · " + (tk.busy ?? tk.energy ?? 3) + "/" + (tk.hard ?? tk.busy ?? 3) + "/" + (tk.fillAmt ?? 3) +
-      ((tk.feel ?? "normal") === "half" ? " ½" : (tk.feel ?? "normal") === "double" ? " 2×" : "") +
-      (scoped ? " " + pa.map(g => g[0].toUpperCase()).join("+") : "");
-    b.classList.toggle("active", i === S.drActive);
-    b.addEventListener("click", () => { // a take is the FULL tuple, not just the seed
-      const busy = tk.busy ?? tk.energy ?? 3, hard = tk.hard ?? busy;
-      const follow = tk.follow ?? "bass", feel = tk.feel ?? "normal", fillAmt = tk.fillAmt ?? 3;
-      drPartsSet(tk.parts ?? "all");
-      segSet("drbusy", busy);
-      segSet("drhard", hard);
-      segSet("drfills", fillAmt);
-      document.getElementById("drfollow").value = tk.followTi !== undefined ? "t" + tk.followTi : follow;
-      segSet("drfeel", feel);
-      document.getElementById("drfrom").value = tk.from;
-      document.getElementById("drto").value = tk.to;
-      if (tk.q) { setBeatPair("drfromq", "drfroms", tk.q[0]); setBeatPair("drtoq", "drtos", tk.q[1]); }
-      const k = drGenerate(tk.seed, {busy, hard, follow, feel, fillAmt, parts: tk.parts ?? "all", followTi: tk.followTi,
-        fromBar: tk.fromBar ?? tk.from, toBar: tk.toBar ?? tk.to, t0: tk.t0, t1: tk.t1});
-      S.drActive = i;
-      drRefresh();
-      setInfo("take " + (i + 1) + " — busy " + busy + " · hard " + hard + " · fills " + fillAmt +
-              " · " + follow + " · " + feel + " · " + k + " hits (one undo brings the previous back)");
-    });
-    row.appendChild(b);
-  });
-}
 function segGet(id) { const a = document.querySelector("#" + id + " button.active"); return a ? a.dataset.v : null; }
-function segSet(id, v) {
-  for (const b of document.querySelectorAll("#" + id + " button")) b.classList.toggle("active", b.dataset.v === String(v));
-}
-function drPartsGet() {
-  return [...document.querySelectorAll("#drparts button.active")].map(b => b.dataset.part);
-}
-function drPartsSet(arr) {
-  const a = drNormParts(arr);
-  for (const b of document.querySelectorAll("#drparts button")) b.classList.toggle("active", a.includes(b.dataset.part));
-  drPartsSync();
-}
-function drPartsSync() { // fills chip off = the fills knob is inert (scoped rolls skip fills)
-  const on = drPartsGet().includes("fills");
-  const row = document.getElementById("drfillsrow");
-  row.style.opacity = on ? 1 : 0.35;
-  row.style.pointerEvents = on ? "" : "none";
-}
-function drBuildControls() {
-  if (document.querySelector("#drbusy button")) return;
-  const mkSeg = (id, vals, def, labels) => {
-    const el = document.getElementById(id);
-    vals.forEach((v, i) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.dataset.v = String(v);
-      b.textContent = labels ? labels[i] : String(v);
-      b.addEventListener("click", () => { segSet(id, v); drRefresh(); });
-      el.appendChild(b);
-    });
-    segSet(id, def);
-  };
-  mkSeg("drbusy", [1, 2, 3, 4, 5], 3);
-  mkSeg("drhard", [1, 2, 3, 4, 5], 3);
-  mkSeg("drfills", [0, 1, 2, 3, 4, 5], 3, ["off", "1", "2", "3", "4", "5"]);
-  mkSeg("drfeel", ["normal", "half", "double"], "normal");
-  const pr = document.getElementById("drparts");
-  for (const part of ["kick", "snare", "hats", "fills"]) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.dataset.part = part;
-    b.textContent = part;
-    b.classList.add("active");
-    b.addEventListener("click", () => { b.classList.toggle("active"); drPartsSync(); drRefresh(); });
-    pr.appendChild(b);
-  }
-}
-function openDrummer() {
-  if (!editableSong()) { setInfo("the Drummer works on your own songs — captures are locked"); return; }
-  drBuildControls();
-  const bt = barTicks();
-  { // follow picker: every melodic track BY NAME (Josh: "no way to tell it what
-    // instrument to follow"), then chords / off; default = the detected bass
-    const fsel = document.getElementById("drfollow");
-    const keep = fsel.value;
-    fsel.innerHTML = "";
-    S.song.tracks.forEach((tr2, ti) => {
-      if (trackIsDrums(ti)) return;
-      const o = document.createElement("option");
-      o.value = "t" + ti;
-      o.textContent = tr2.name || "track " + (ti + 1);
-      fsel.appendChild(o);
-    });
-    for (const [v, label] of [["chords", "chords"], ["off", "off"]]) {
-      const o = document.createElement("option");
-      o.value = v; o.textContent = label;
-      fsel.appendChild(o);
-    }
-    fsel.value = [...fsel.options].some(o => o.value === keep) ? keep : "t" + Math.max(0, drBassTrack());
-  }
-  const beats = effTs()[0]; // beat + subdivision selects, drum-fill convention
-  for (const id of ["drfromq", "drtoq"]) {
-    const sel = document.getElementById(id);
-    sel.innerHTML = "";
-    for (let b = 1; b <= beats; b++) {
-      const o = document.createElement("option");
-      o.value = String(b); o.textContent = String(b);
-      sel.appendChild(o);
-    }
-  }
-  for (const id of ["drfroms", "drtos"]) {
-    const sel = document.getElementById(id);
-    sel.innerHTML = "";
-    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) {
-      const o = document.createElement("option");
-      o.value = String(f); o.textContent = syl;
-      sel.appendChild(o);
-    }
-  }
-  // default range: the section under the cursor; else the loop body; else the whole song
-  const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
-  const loop = S.rollnotes.find(n => n.loopTo !== undefined);
-  let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt));
-  let q0 = 1, q1 = 1, toBar;
-  if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) { // an armed ruler selection wins outright
-    from = Math.floor(S.rangeSel.a / bt) + 1;
-    q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
-    toBar = Math.floor(S.rangeSel.b / bt) + 1;
-    q1 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
-  } else if (sec) { // the section's exact edges, beats included (to = exclusive end)
-    from = Math.floor(sec.start / bt) + 1;
-    q0 = snapBeat((sec.start % bt) / beatTicks() + 1);
-    const e = sec.end || sec.start + bt;
-    toBar = Math.floor(e / bt) + 1;
-    q1 = snapBeat((e % bt) / beatTicks() + 1);
-  } else if (loop) {
-    from = Math.floor(loop.loopTo / bt) + 1;
-    q0 = snapBeat((loop.loopTo % bt) / beatTicks() + 1);
-    toBar = to + 1; // whole rest of the song, exclusive end on the bar after
-  } else toBar = to + 1;
-  document.getElementById("drfrom").value = from;
-  document.getElementById("drto").value = toBar;
-  setBeatPair("drfromq", "drfroms", q0);
-  setBeatPair("drtoq", "drtos", q1);
-  drRefresh();
-  document.getElementById("drummersheet").classList.add("on");
-}
 document.getElementById("drgen").addEventListener("click", () => {
   const r = drRange();
   const opts = {
@@ -14317,41 +11907,7 @@ document.getElementById("delbtn").addEventListener("click", () => {
   setInfo(k ? "deleted " + k + " note" + (k === 1 ? "" : "s") + " (undo restores them)"
             : "nothing selected — lasso or tap notes first");
 });
-function updateEditButtons() { // disabled = "this can't do anything right now"
-  const sel = S.song ? selEditItems().length : 0;
-  const annos = S.song && S.lassoAnno ? lassoedAnnos().length : 0;
-  const piece = !!(S.song && S.selClip && selClipObj()); // a selected audio piece splits too
-  const st = [!S.editUndo.length, !S.editRedo.length, !sel, !clipboardHas(), !(sel || annos), !(sel || piece)];
-  const key = st.join("|");
-  if (key === S.editBtnCache) return;
-  S.editBtnCache = key;
-  const set = (id, off) => { const b = document.getElementById(id); if (b) b.disabled = off; };
-  set("undobtn", st[0]); set("emUndo", st[0]);
-  set("redobtn", st[1]); set("emRedo", st[1]);
-  set("splitbtn", st[5]); set("emSplit", st[5]);
-  for (const id of ["joinbtn", "emJoin", "movebtn", "emMove",
-                    "divbtn", "emDivide", "trbtn", "emTranspose",
-                    "quantbtn", "emQuantize"]) set(id, st[2]);
-  for (const id of ["copybtn", "emDup", "cutbtn", "emCut", "delbtn", "emDelete"]) set(id, st[4]); // these also act on lasso'd annotations, notes or not
-  set("pastebtn", st[3]); set("emPaste", st[3]); set("emPasteTo", st[3]);
-}
-updateEditButtons = prof("updateEditButtons", updateEditButtons); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-function pushUndo(entry) { S.editUndo.push(entry); S.editRedo = []; } // a fresh edit forks history
-// Track add/delete are undo steps too (Josh, 2026-09-12: a deleted track was
-// gone for good). Deleting used to wipe the history because entries hold track
-// indexes; LIFO makes that unnecessary — nothing older can be reached until the
-// delete itself is undone, which puts the track back at the same index.
-function addTrackUndoable(track) { // push a track and return its index; caller records the undo
-  S.song.tracks.push(track);
-  if (S.song.rawNotes) S.song.rawNotes.push([]);
-  S.trackState.push({muted: false, solo: false});
-  return S.song.tracks.length - 1;
-}
-function undoTrackAdd(ti, lenBefore) { // fold a generator's own entry (if it pushed one) into the same step
-  const own = S.editUndo.length > lenBefore ? S.editUndo.pop() : null;
-  pushUndo(own ? {kind: "group", entries: [{kind: "trackRemove", ti}, own]} : {kind: "trackRemove", ti});
-}
-function invertEdit(u) { // the entry that would undo an applyU(u), captured NOW
+ function invertEdit(u) { // the entry that would undo an applyU(u), captured NOW
   if (u.kind === "group") return {kind: "group", entries: u.entries.map(invertEdit).reverse()};
   if (u.kind === "trackRemove") return {kind: "trackInsert", ti: u.ti, track: S.song.tracks[u.ti],
     raw: S.song.rawNotes ? S.song.rawNotes[u.ti] : null, state: S.trackState[u.ti]};
@@ -14877,22 +12433,7 @@ function askNotesArrived(notes) { // the terminal's notes go to the Terminal tab
   if (shown.length === notes.length) return;
   else { document.getElementById("askbtn").classList.add("hasnote"); setInfo("✉ a note from your Mac — tap ✦ AI to read it"); }
 }
-    function scheduleBackupFlush() {
-  if (!S.askCaps.bridge) return;
-  clearTimeout(S.backupFlushTimer);
-  S.backupFlushTimer = setTimeout(flushBackupNow, 5000);
-}
-function flushBackupNow() {
-  if (S.backupFlushTimer) { clearTimeout(S.backupFlushTimer); S.backupFlushTimer = null; }
-  if (!S.askCaps.bridge || !S.song || !S.songKey || !editableSong()) return;
-  let doc; try { doc = draftDoc(false); } catch (err) { return; }
-  let notes = null; try { notes = serializeRollnotes(); } catch (err) { notes = null; }
-  try {
-    fetch(aiUrl() + "/v1/backup", {method: "POST", headers: aiHeaders(), body: JSON.stringify({key: S.songKey, doc, notes, at: Date.now()})})
-      .catch(err => logDebug("backup: " + (err && err.message || err)));
-  } catch (err) { logDebug("backup: " + (err && err.message || err)); }
-}
-document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) flushBackupNow(); });
 
 // ---- Deploy safeguard #2: a Version before every install. On deployWarn's
 // FIRST tick of a cycle, if the open song is editable and its music/
@@ -15103,94 +12644,10 @@ document.getElementById("askpickfile").addEventListener("change", e => {
   // value is reset — the picker then "did nothing" (Josh, 2026-10-03, iPad)
   const files = Array.from(e.target.files || []); e.target.value = ""; askPickFiles(files);
 });
-function askInboxStart() { clearInterval(S.askInboxTimer); S.askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askStatusPoll(); askResume(); } }, 60000); askInboxPoll(); askStatusPoll(); askResumeSoon(1500); } // at boot too: a reply that landed while the app was closed lights ✦ without opening the sheet
-function askBubble(role, text) {
-  const div = document.createElement("div");
-  div.className = "askmsg " + role;
-  askFillBubble(div, text);
-  asklog.appendChild(div);
-  asklog.scrollTop = asklog.scrollHeight;
-  return div;
-}
-function askFillBubble(div, text) { // the words, web addresses tappable, a ⧉ copy at the end
-  div.textContent = text;
-  // links only where the DOM can rebuild children (the test harness's fake
-  // elements keep textContent as a plain string, so they get the text alone)
-  const re = /https?:\/\/[^\s<>"'`]+/g;
-  if (re.test(text) && typeof div.replaceChildren === "function") {
-    const nodes = []; let last = 0, m; re.lastIndex = 0;
-    while ((m = re.exec(text))) {
-      let url = m[0]; const trail = url.match(/[.,;:!?)\]]+$/); if (trail) url = url.slice(0, -trail[0].length);
-      nodes.push(document.createTextNode(text.slice(last, m.index)));
-      const a = document.createElement("a"); a.href = url; a.textContent = url; a.target = "_blank"; a.rel = "noopener"; // the PWA hands _blank to Safari
-      nodes.push(a);
-      last = m.index + url.length;
-    }
-    nodes.push(document.createTextNode(text.slice(last)));
-    div.replaceChildren(...nodes);
-  }
-  if (text.trim() && text !== "…") {
-    const b = document.createElement("button");
-    b.className = "askcopy"; b.type = "button"; b.setAttribute("aria-label", "Copy this message"); b.title = "copy";
-    b.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(text, b); });
-    div.appendChild(b);
-  }
-}
-async function askCopyText(text, b) {
-  let ok = false;
-  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); ok = true; } } catch (err) { ok = false; }
-  if (!ok) { // older Safari / no secure context: the selection way
-    try { const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px;top:0"; document.body.appendChild(ta); ta.select(); ok = document.execCommand("copy"); ta.remove(); } catch (err) { ok = false; }
-  }
-  if (!b) return ok;
-  if (ok) { b.classList.add("done"); setTimeout(() => b.classList.remove("done"), 1400); }
-  else setInfo("⚠ couldn't copy — select the text in the bubble instead");
-  return ok;
-}
+function askInboxStart() { clearInterval(S.askInboxTimer); S.askInboxTimer = setInterval(() => { if (!document.hidden) { askInboxPoll(); askStatusPoll(); askResume(); } }, 60000); askInboxPoll(); askStatusPoll(); askResumeSoon(1500); }
 if (typeof document !== "undefined" && document.addEventListener) {
   document.addEventListener("visibilitychange", () => { if (document.hidden) askDraftSave(); });
   if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", askDraftSave);
-}
-function askRender() {
-  askDraftLoad();
-  asklog.innerHTML = "";
-  const st = askStore();
-  const msgs = st.msgs;
-  if (st.trimmed) askRenderEarlier();
-  let pendingSeen = false;
-  if (!msgs.length && !st.trimmed && S.askTerminal) askBubble("ai", "This goes straight to Claude Code in the Mac's terminal — the session that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.");
-  else if (!msgs.length && !st.trimmed && S.askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
-  else if (!msgs.length && !st.trimmed) askBubble("ai", appMode() === "normal"
-    ? "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll answer directly — keys, chords, cadences, form — and say how sure I am."
-    : "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
-  for (const m of msgs) {
-    // a different mode's turn (askMsgMode/appMode, SAFETY 2026-10-01): still
-    // shown here (this is the on-device log, not a model request) but dimmed
-    // and tagged, so Josh can tell it was never part of the current mode's
-    // AI context, not just missing from it.
-    const otherMode = !S.askTerminal && askMsgMode(m) !== appMode();
-    const tag = otherMode ? "[" + (askMsgMode(m) === "normal" ? "Normal" : "Learning") + " mode] " : "";
-    const div = askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", tag + (m.role === "note" ? askClock(m.t) + askNoteLabel(m.m) + m.content : (S.askTerminal && m.role === "user" ? askClock(m.t) : "") + askStripContext(m.content)));
-    if (otherMode) div.classList.add("othermode");
-    if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; }
-  }
-  if (pendingSeen) askResumeSoon(200);
-}
-async function askRenderEarlier() { // what this device let go of after it reached the repo file
-  const div = askBubble("ai", "loading the earlier messages from the repo file…");
-  div.classList.add("earlier");
-  const path = askLogPath();
-  try {
-    let text;
-    if (folderActive()) { const f = await folderRead(path); text = f ? await f.text() : ""; }
-    else {
-      const r = await fetch((isComposition() ? songsURL : analysisURL)(path) + "?t=" + Date.now(), {cache: "no-cache"});
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      text = await r.text();
-    }
-    div.textContent = text.trim() || "(the repo file is empty)";
-  } catch (err) { div.textContent = "earlier messages are in " + path + " — couldn't load it (" + err.message + ")"; }
-  askScrollEnd(); // the earlier block grows above the conversation: keep its end in view
 }
   // The store key rides with the job: the reply belongs to the song that asked,
 // even if another song is open by the time it lands (Josh, 2026-09-26: "scroll
@@ -15332,62 +12789,12 @@ async function askSend() {
   live.dataset.job = jobId; // askResume finds THIS bubble by job, never "the last ai bubble"
   await askRun({msgs, text, sp, messages, jobId, live, key: askStoreKey()});
 }
-function askResumeSoon(ms) { clearTimeout(S.askResumeTimer); S.askResumeTimer = setTimeout(() => { S.askResumeTimer = null; askResume(); }, ms); }
 function askRepending(key, from, to) { // a tool round continues under a new job id: the marker follows it (re-read, never a stale array)
   const msgs = askStore(key).msgs, i = askPendingIndex(msgs, from);
   if (i < 0) return false;
   msgs[i].pending = to;
   askSave(msgs, undefined, key);
   return true;
-}
-// Resume (2026-09-26 audit): every pending question gets looked at, in every
-// chat, not just the open one — and a look that cannot happen now (busy,
-// backgrounded, the Mac unreachable) is rescheduled, never dropped. Only
-// a real answer from the bridge ("no such job", "error") fails a question.
-async function askResume() {
-  const all = askPendingAll();
-  if (!all.length) return;
-  if (S.askBusy || !S.song || (typeof document.hidden === "boolean" && document.hidden)) { askResumeSoon(3000); return; }
-  const liveFor = jobId => [...asklog.querySelectorAll(".askmsg.ai")].find(d => d.dataset.job === jobId) || null;
-  const sup = await askJobsSupported();
-  if (sup === null) { // unreachable right now: the reply is kept on the Mac; say so where the bubble is, and look again
-    for (const p of all) { const live = p.key === askStoreKey() ? liveFor(p.jobId) : null; if (live) live.textContent = "… (can't reach the Mac right now — the reply is kept there; retrying)"; }
-    askResumeSoon(5000); return;
-  }
-  if (!sup) { for (const p of all) askFail(p.jobId, "no reply came back (the connection dropped) — ask again", p.key); return; }
-  let again = false;
-  for (const p of all) {
-    const mine = p.key === askStoreKey(), live = mine ? liveFor(p.jobId) : null;
-    let j;
-    try { const r = await fetch(aiUrl() + "/v1/jobs/" + encodeURIComponent(p.jobId), {headers: aiHeaders()}); if (r.status === 404) { askFail(p.jobId, "the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again", p.key); continue; } j = await r.json(); }
-    catch (err) { again = true; continue; }
-    const step = ((j.notes || []).slice(-1)[0] || "working").replace(/^using /, "").replace(/…\s*$/, "");
-    if (j.status === "running") { if (j.text) askPartial[p.jobId] = j.text; if (live) live.textContent = j.text ? j.text : "… (" + step + ")"; if (mine) askstatus.textContent = "working: " + step; again = true; continue; }
-    if (mine) askstatus.textContent = ""; // the "stream was cut" line is over once the reply lands or fails
-    if (j.status === "error") { askFail(p.jobId, j.error || "the job failed", p.key); continue; }
-    const calls = j.result && j.result.tool_calls;
-    if (!calls || !calls.length) { askFinish(p.jobId, (j.text || "").trim() || "(no reply)", p.key); continue; }
-    if (!mine) { again = true; continue; } // a tool round acts on the OPEN song: it continues when that chat is opened again
-    // the job ended in a tool call: run it here, then continue the exchange as a new job
-    const msgs = askStore(p.key).msgs, i = askPendingIndex(msgs, p.jobId);
-    if (i < 0) continue;
-    const pend = msgs[i];
-    const sp = S.askSpanFrozen || askSpan();
-    const budget = askBudget();
-    const history = msgs.slice(0, i);
-    const messages = askBuildMessages(history, pend.content, askContext(sp, budget), budget);
-    messages.push({role: "assistant", content: "", tool_calls: calls});
-    for (const c of calls) {
-      let args = {}; try { args = JSON.parse(c.function.arguments || "{}"); } catch (err) { args = {}; }
-      let result; try { result = await askRunTool(c.function.name, args); } catch (err) { result = {error: String(err.message || err)}; }
-      messages.push({role: "tool", tool_call_id: c.id, content: typeof result === "string" ? result : JSON.stringify(result)});
-    }
-    const nextId = askJobId();
-    askRepending(p.key, p.jobId, nextId);
-    await askRun({msgs, text: pend.content, sp, messages, jobId: nextId, live: live || askBubble("ai", "…"), key: p.key});
-    askResumeSoon(500); return; // one exchange at a time; the others get their look after it
-  }
-  if (again) askResumeSoon(3000);
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { askResumeSoon(300); askInboxPoll(); } });
 askInboxStart();
@@ -15520,198 +12927,7 @@ askInboxStart();
     for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on") && !el.classList.contains("docked")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box) restore(box); } }
   }).observe(document.body, {attributes: true, attributeFilter: ["class"], subtree: true});
 })();
-// ---- Window manager: shell + docks, phase A (open-items.md, "a real
-// windowing system"). Steps 1-2 (REBUILT 2026-09-29 after attempt 1,
-// c322e3c, broke on the iPad — see the #shell comment in the body markup and
-// NIGHT-ROLL.md "Window manager (shell + docks)") built the shell and a
-// right-only dock; this phase generalizes it to left/right/bottom, an INNER
-// mode for the side docks (beside the roll only, vs FULL height edge to
-// edge), a split bottom (two windows side by side), and makeWindow() —
-// registering a window as dockable and giving it the shared Dock control,
-// in place of the one-off #askdock button. #shell's grid + #songcenter's
-// flex row (CSS above) ARE the layout mechanism: docking sets a CSS var the
-// CSS already reads and moves the window's own node into the right cell —
-// #songregion (or its center row) needs no code of its own, it just shrinks
-// into what the track/cell leaves it, same as any other grid/flex resize.
-// resize() — the exact function window's own "resize" listener calls — runs
-// directly from wmLayoutAll() wherever a track's size changes, so
-// canvas/ruler/lanes (all read wrap.clientWidth live) redraw at the new
-// size; the live ResizeObserver on #rollwrap (above, "subtitle strip
-// toggling resizes the roll") also fires on its own in a real browser
-// whenever a track actually changes.
-//
-// wm = {left?: {id, w, mode}, right?: {id, w, mode}, bottom?: {ids, h,
-// split}} — mode is "full" (edge to edge, beside the header/footer too) or
-// "inner" (beside the roll only); bottom.ids holds one or two window ids
-// side by side. Flat localStorage (ff1roll-wm), migrated once from the old
-// asksheet-only ff1roll-aidock ({docked, width}), and again (wmMigrateShape)
-// from the step-1/2 shape ({right: {id, w}}, no mode — always meant FULL).
-// Pure helpers (wmClampSize, wmClampHeight, wmClampSplit, wmAllowed,
-// wmMigrate, wmMigrateShape, wmSetSide, wmClearSide, wmSetSideMode,
-// wmDockBottom, wmClearBottom, wmSetBottomHeight, wmSetBottomSplit,
-// wmWhereIs) take no DOM — the vm suite calls them directly — everything
-// else here only uses getElementById + classList/style, which the harness
-// stubs too, so the action functions (wmDockSide, wmDockBottomWindow,
-// wmSetSideModeFor, wmFloat) are exercised the same way the old right-dock
-// tests exercised wmToggleRight/wmLayoutRight. Menu/button DOM (createElement,
-// popup positioning) is real-browser-only, like sheetDrag below — not unit
-// tested, same as the ✕/grip/drag loops it sits beside.
-const WM_KEY = "ff1roll-wm";
-const WM_OLD_KEY = "ff1roll-aidock"; // pre-shell pref: {docked, width}, asksheet only
-const WM_MIN_W = 280;      // narrowest a side dock's divider allows
-const WM_DEFAULT_W = 380;  // a side dock's width the first time it's ever opened
-const WM_MIN_H = 160;      // shortest the bottom dock's divider allows
-const WM_DEFAULT_H = 240;  // the bottom dock's height the first time it's ever opened
-const WM_MIN_SPLIT = 0.2;  // narrowest either half of a split bottom dock can be
-const WM_PHONE_MAX = 700;  // below this window width there is no "what's left" to give the song — no dock, any side
-const WM_ZONE_FRAC = 0.15; // Phase B (drag-to-dock): >= 15% of the song region's width/height at each edge counts as a drop zone
-const WM_EDGE_GAP = 32;    // Josh, 2026-09-29 (iPad): "drag the divider nearly all the way across to hide the roll for a minute, then drag back" — the dock's ceiling leaves only this many px of the song's edge showing, instead of a flat 60/70% (which stopped short of covering the song); never so small the divider itself could be dragged off-screen
-
-function wmClampSize(w, innerWidth) { // pure: bounds a side dock's width to [280, innerWidth - 32]
-  const iw = (typeof innerWidth === "number" && innerWidth > 0) ? innerWidth : 1024;
-  return Math.max(WM_MIN_W, Math.min(Math.max(WM_MIN_W, iw - WM_EDGE_GAP), Math.round(w)));
-}
-function wmClampHeight(h, innerHeight) { // pure: bounds the bottom dock's height to [160, innerHeight - 32]
-  const ih = (typeof innerHeight === "number" && innerHeight > 0) ? innerHeight : 768;
-  return Math.max(WM_MIN_H, Math.min(Math.max(WM_MIN_H, ih - WM_EDGE_GAP), Math.round(h)));
-}
-function wmClampSplit(f) { return Math.max(WM_MIN_SPLIT, Math.min(1 - WM_MIN_SPLIT, f)); } // pure: the fraction the bottom dock's first slot keeps
-function wmAllowed(innerWidth) { return typeof innerWidth === "number" && innerWidth >= WM_PHONE_MAX; } // pure: phone width never offers a dock, any side
-function wmMigrate(oldPref) { // pure: the pre-shell {docked, width} shape -> {right: {id, w}} | {}
-  if (!oldPref || typeof oldPref !== "object" || !oldPref.docked) return {};
-  const w = (typeof oldPref.width === "number" && oldPref.width > 0) ? oldPref.width : WM_DEFAULT_W;
-  return {right: {id: "asksheet", w}};
-}
-function wmMigrateShape(state) { // pure: the step-1/2 shape (a side dock with no `mode`, always FULL; a bottom dock — there wasn't one — with no `split`) -> phase-A shape
-  if (!state || typeof state !== "object") return {};
-  let next = state;
-  for (const side of ["left", "right"]) {
-    if (next[side] && !next[side].mode) { if (next === state) next = Object.assign({}, state); next[side] = Object.assign({}, next[side], {mode: "full"}); }
-  }
-  if (next.bottom && next.bottom.split == null) { if (next === state) next = Object.assign({}, state); next.bottom = Object.assign({}, next.bottom, {split: 0.5}); }
-  return next;
-}
-function wmMigrateShapeB(state) { // pure: phase-A side shape ({id, w, mode}, one window) -> phase-B tab shape ({ids, active, w, mode}, one or more) — the bottom dock already used `ids`/no tabs, so it needs no migration
-  if (!state || typeof state !== "object") return {};
-  let next = state;
-  for (const side of ["left", "right"]) {
-    const s = next[side];
-    if (s && !s.ids) { if (next === state) next = Object.assign({}, state); next[side] = {ids: [s.id], active: s.id, w: s.w, mode: s.mode}; }
-  }
-  return next;
-}
-// Phase B (2026-09-29): a side dock's slot holds a TAB GROUP, not one window
-// — {ids: [id, ...], active, w, mode}. `active` is which tab is shown right
-// now (its node is the only one in the group with the `on` class — see
-// wmLayoutSide); `ids` is every window ever dropped there, in tab order,
-// unchanged by opening/closing (closing only drops a tab's CHIP from the
-// rendered strip — see wmLayoutTabs — the same "close never undocks"
-// invariant every other dock already had). Dropping a window on an EMPTY
-// side starts a fresh one-tab group; dropping on an OCCUPIED one adds a tab
-// (wmAddSideTab); wmRemoveSideTab is the only way OUT of a group (a real
-// Float, or dragging it to another dock). The bottom dock is unchanged —
-// two slots, replace-not-tab, per Josh ("the bottom's two halves stay a
-// split").
-function wmSetSide(state, side, ids, active, w, mode, innerWidth) { // pure: replaces a side's whole tab group
-  return Object.assign({}, state, {[side]: {ids: ids.slice(), active, w: wmClampSize(w, innerWidth), mode: mode === "inner" ? "inner" : "full"}});
-}
-function wmClearSide(state, side) { const next = Object.assign({}, state); delete next[side]; return next; } // pure
-function wmSetSideMode(state, side, mode) { // pure: flips full/inner in place — doesn't move the window(s) or touch their width
-  if (!state[side]) return state;
-  return Object.assign({}, state, {[side]: Object.assign({}, state[side], {mode: mode === "inner" ? "inner" : "full"})});
-}
-function wmAddSideTab(state, side, id, innerWidth) { // pure: adds `id` as a new, active tab to an existing side group (its width/mode unchanged), or starts a fresh one-tab group (default width, beside the roll)
-  const cur = state[side];
-  if (cur && cur.ids && cur.ids.length) {
-    const ids = cur.ids.includes(id) ? cur.ids : [...cur.ids, id];
-    return wmSetSide(state, side, ids, id, cur.w, cur.mode, innerWidth);
-  }
-  return wmSetSide(state, side, [id], id, WM_DEFAULT_W, "inner", innerWidth);
-}
-function wmRemoveSideTab(state, side, id) { // pure: drops one id from a side's tab group — the ONLY way out of a group (closing never does this); the side key is dropped entirely once its last tab leaves, else a fallback active is picked if `id` was on top
-  const cur = state[side];
-  if (!cur || !cur.ids || !cur.ids.includes(id)) return state;
-  const ids = cur.ids.filter(x => x !== id);
-  if (!ids.length) { const next = Object.assign({}, state); delete next[side]; return next; }
-  const active = cur.active === id ? ids[0] : cur.active;
-  return Object.assign({}, state, {[side]: Object.assign({}, cur, {ids, active})});
-}
-function wmSetActiveSideTab(state, side, id) { // pure: brings one tab to the front of its group (tapping a tab, or re-dropping a member already in the group); a no-op if it isn't a member
-  const cur = state[side];
-  if (!cur || !cur.ids || !cur.ids.includes(id) || cur.active === id) return state;
-  return Object.assign({}, state, {[side]: Object.assign({}, cur, {active: id})});
-}
-function wmSetSideWidth(state, side, w, innerWidth) { // pure: a divider drag — width only, ids/active/mode untouched
-  if (!state[side]) return state;
-  return Object.assign({}, state, {[side]: Object.assign({}, state[side], {w: wmClampSize(w, innerWidth)})});
-}
-function wmZoneFor(x, y, rect) { // pure (drag-to-dock): which dock zone a pointer sits over while dragging a window's title, given the song region's rect — null in the middle (float). A corner resolves to whichever edge the pointer is proportionally closest to.
-  if (!rect || !rect.width || !rect.height) return null;
-  const leftFrac = (x - rect.left) / rect.width;
-  const rightFrac = (rect.left + rect.width - x) / rect.width;
-  const bottomFrac = (rect.top + rect.height - y) / rect.height;
-  const cands = [];
-  if (leftFrac <= WM_ZONE_FRAC) cands.push({side: "left", frac: leftFrac});
-  if (rightFrac <= WM_ZONE_FRAC) cands.push({side: "right", frac: rightFrac});
-  if (bottomFrac <= WM_ZONE_FRAC) cands.push({side: "bottom", frac: bottomFrac});
-  if (!cands.length) return null;
-  cands.sort((a, b) => a.frac - b.frac);
-  const win = cands[0];
-  if (win.side === "bottom") return {side: "bottom"};
-  // split preview within a side zone: the half nearer the SCREEN EDGE = Full
-  // height, the half nearer the roll = Beside the roll — chosen over an
-  // arbitrary label because it reads the same way the drag itself feels:
-  // drag further out (more of the zone behind you) for "more" (the whole
-  // height), stop just past the boundary for "less" (beside the roll only).
-  return {side: win.side, mode: win.frac <= WM_ZONE_FRAC / 2 ? "full" : "inner"};
-}
-function wmDockBottom(state, id, split, innerHeight) { // pure: adds `id` to the bottom dock — the first open slot, or replaces the second
-  const cur = (state.bottom && state.bottom.ids) || [];
-  const ids = cur.includes(id) ? cur : cur.length < 2 ? [...cur, id] : [cur[0], id]; // a third window bumps whatever was in the second slot
-  return Object.assign({}, state, {bottom: {
-    ids, h: wmClampHeight((state.bottom && state.bottom.h) || WM_DEFAULT_H, innerHeight),
-    split: wmClampSplit(split != null ? split : (state.bottom && state.bottom.split != null ? state.bottom.split : 0.5)),
-  }});
-}
-function wmClearBottom(state, id) { // pure: drops one id; an empty result removes the bottom key entirely
-  const ids = ((state.bottom && state.bottom.ids) || []).filter(x => x !== id);
-  const next = Object.assign({}, state);
-  if (!ids.length) { delete next.bottom; return next; }
-  next.bottom = Object.assign({}, state.bottom, {ids});
-  return next;
-}
-function wmSetBottomHeight(state, h, innerHeight) { // pure
-  if (!state.bottom) return state;
-  return Object.assign({}, state, {bottom: Object.assign({}, state.bottom, {h: wmClampHeight(h, innerHeight)})});
-}
-function wmSetBottomSplit(state, split) { // pure
-  if (!state.bottom) return state;
-  return Object.assign({}, state, {bottom: Object.assign({}, state.bottom, {split: wmClampSplit(split)})});
-}
-function wmWhereIs(state, id) { // pure: which dock (if any) currently claims `id` (any tab in a side's group counts, active or not), and a side dock's mode
-  if (state.left && state.left.ids && state.left.ids.includes(id)) return {dock: "left", mode: state.left.mode || "full"};
-  if (state.right && state.right.ids && state.right.ids.includes(id)) return {dock: "right", mode: state.right.mode || "full"};
-  if (state.bottom && state.bottom.ids && state.bottom.ids.includes(id)) return {dock: "bottom"};
-  return null;
-}
-function wmLoad() {
-  try {
-    const raw = localStorage.getItem(WM_KEY);
-    if (raw != null) { const parsed = JSON.parse(raw); if (parsed && typeof parsed === "object") return wmMigrateShapeB(wmMigrateShape(parsed)); }
-  } catch (err) { /* private mode */ }
-  try { // migrate the old pref once, whatever it said, then forget it — never re-read after this
-    const oldRaw = localStorage.getItem(WM_OLD_KEY);
-    if (oldRaw != null) {
-      localStorage.removeItem(WM_OLD_KEY);
-      const migrated = wmMigrateShapeB(wmMigrateShape(wmMigrate(JSON.parse(oldRaw))));
-      if (migrated.right) wmSave(migrated);
-      return migrated;
-    }
-  } catch (err) { /* private mode */ }
-  return {};
-}
-function wmSave(state) { try { localStorage.setItem(WM_KEY, JSON.stringify(state)); } catch (err) { /* private mode */ } }
-S.wm = wmLoad();
+                             S.wm = wmLoad();
 // ⋯ More is gone entirely now (a drop-up, 2026-10-01, then removed outright
 // in the chrome density follow-up the same day) — a device that had
 // "moresheet" docked or tabbed from before either change would otherwise
@@ -15722,21 +12938,7 @@ S.wm = wmLoad();
 for (const side of ["left", "right"]) if (S.wm[side] && S.wm[side].ids && S.wm[side].ids.includes("moresheet")) S.wm = wmRemoveSideTab(S.wm, side, "moresheet");
 if (S.wm.bottom && S.wm.bottom.ids && S.wm.bottom.ids.includes("moresheet")) S.wm = wmClearBottom(S.wm, "moresheet");
 wmSave(S.wm);
-try { localStorage.removeItem("ff1roll-sheetpos-moresheet"); } catch (err) { /* private mode */ } // the old floating window's remembered position — dead now too
-function wmInnerWidth() { return (typeof window !== "undefined" && window.innerWidth) || 1024; }
-function wmInnerHeight() { return (typeof window !== "undefined" && window.innerHeight) || 768; }
-// Which windows makeWindow() has registered, and whether each is dockable —
-// id -> {dockable}. The ✕/grip/drag loops further down this file (unchanged)
-// are the shared, generic mechanism every window — migrated or not — already
-// gets; this registry only adds the Dock control on top, for the six windows
-// migrated so far.
-const WM_WINDOWS = {};
- // same idea, for the bottom dock's slots, in slot order
-function wmSideCells(side) {
-  return side === "left" ? {full: document.getElementById("dockleft"), inner: document.getElementById("dockleftinner")}
-                          : {full: document.getElementById("dockright"), inner: document.getElementById("dockrightinner")};
-}
-// Applies wm[side] to the DOM: parks EVERY member of the tab group (full or
+try { localStorage.removeItem("ff1roll-sheetpos-moresheet"); } catch (err) { /* private mode */ }  // Applies wm[side] to the DOM: parks EVERY member of the tab group (full or
 // inner cell — whichever wm[side].mode says) — not just the active one; only
 // the active member gets the `on` class (display is entirely CSS-driven off
 // that, .overlay.docked.on{display:flex} vs the base .overlay.docked{display:
@@ -15850,74 +13052,6 @@ function wmCloseWindow(ov) {
   ov.classList.remove("on");
   if (where) wmLayoutAll();
 }
-function wmWindowTitle(id) { // a tab chip's label — a window's own <h2> text, minus the Dock button makeWindow() appended to it
-  const h2 = document.getElementById(id + "-h2");
-  if (!h2 || !h2.childNodes) return id;
-  let t = "";
-  for (const n of h2.childNodes) { if (n.tagName === "BUTTON") continue; t += (n.textContent != null ? n.textContent : (n.text || "")); }
-  t = t.trim();
-  return t || id;
-}
-// Applies wm.bottom to the DOM: moves up to two windows' nodes into
-// #dockbottom0/#dockbottom1, sets --db-h/--db-split, and toggles which
-// slot(s) actually show (a closed window's slot collapses, same "active"
-// rule as a side dock).
-function wmLayoutBottom() {
-  const shell = document.getElementById("shell");
-  const dockbottom = document.getElementById("dockbottom");
-  const slots = [document.getElementById("dockbottom0"), document.getElementById("dockbottom1")];
-  const state = S.wm.bottom;
-  const wantIds = (state && wmAllowed(wmInnerWidth()) && state.ids) || [];
-  const wantEls = wantIds.map(id => document.getElementById(id)).filter(Boolean);
-  for (const el of S.wmBottomEls) { // float anything parked here that's no longer wanted
-    if (wantEls.includes(el)) continue;
-    if (wmWhereIs(S.wm, el.id)) continue; // moved to a side dock: that dock placed it
-    const home = document.getElementById(el.id + "-home");
-    if (home && el.parentNode !== home) home.appendChild(el);
-    if (el.classList.contains("docked")) el.classList.remove("docked");
-  }
-  S.wmBottomEls = [];
-  // touch the DOM only on a real change: classList.add/remove rewrite the
-  // class attribute even when nothing changes, SHEET_TOP's MutationObserver
-  // answers every class write with wmLayoutAll(), and the page hung forever
-  // on the first bottom dock (caught by the headless check, 2026-09-29)
-  wantEls.forEach((el, i) => {
-    if (!slots[i]) return;
-    if (el.parentNode !== slots[i]) slots[i].appendChild(el);
-    if (!el.classList.contains("docked")) el.classList.add("docked");
-    S.wmBottomEls.push(el);
-  });
-  const activeFlags = slots.map((slot, i) => !!(wantEls[i] && wantEls[i].classList.contains("on")));
-  slots.forEach((slot, i) => slot.classList.toggle("shown", activeFlags[i]));
-  const bothActive = activeFlags[0] && activeFlags[1];
-  dockbottom.classList.toggle("occupied", wantEls.length > 0); // something is parked here, open or not (divider visibility)
-  dockbottom.classList.toggle("split", bothActive);
-  shell.style.setProperty("--db-h", activeFlags.some(Boolean) ? wmClampHeight((state && state.h) || WM_DEFAULT_H, wmInnerHeight()) + "px" : "0px");
-  shell.style.setProperty("--db-split", String(wmClampSplit(state && state.split != null ? state.split : 0.5)));
-}
-function wmDockLabel(id) { // pure-ish (reads module state `wm`): what a window's Dock button should say
-  const where = wmWhereIs(S.wm, id);
-  if (!where) return "Dock";
-  if (where.dock === "bottom") return "Docked: Bottom";
-  return "Docked: " + (where.dock === "left" ? "Left" : "Right") + (where.mode === "inner" ? " (beside roll)" : "");
-}
-function wmDockShort(id) { const w = wmWhereIs(S.wm, id); return !w ? "Dock" : w.dock === "bottom" ? "Bottom ▸" : (w.dock === "left" ? "Left ▸" : "Right ▸"); }
-function wmSyncDockButtons() { // updates every dockable window's Dock button — text, and hidden at phone width (same as the old askdock button)
-  const allowed = wmAllowed(wmInnerWidth());
-  for (const id in WM_WINDOWS) {
-    if (!WM_WINDOWS[id].dockable) continue;
-    const h2 = document.getElementById(id + "-h2");
-    const btn = h2 && h2._wmDockBtn;
-    if (!btn) continue;
-    btn.style.display = allowed ? "" : "none";
-    btn.textContent = wmDockLabel(id);
-    btn.dataset.short = wmDockShort(id); // a narrow dock shows this instead (CSS container query)
-    const docked = !!wmWhereIs(S.wm, id);
-    const label = docked ? "Change how this window is docked, or float it" : "Dock this window — left, right, or bottom";
-    btn.setAttribute("aria-label", label);
-    btn.title = label;
-  }
-}
 // The one entry point everything else calls: lays out both side docks and
 // the bottom dock, narrows the footer beside a FULL side dock either way,
 // refreshes every Dock button's label, and runs resize() — the same path a
@@ -15932,31 +13066,6 @@ function wmLayoutAll() {
   if (typeof resize === "function") resize(); // same path a real window resize takes
   if (typeof askScrollEnd === "function" && wmWhereIs(S.wm, "asksheet")) askScrollEnd(); // re-parenting must not strand the chat mid-scroll
 }
-// ---- drag-to-dock (Phase B): the drop-zone highlight shown while dragging
-// a dockable window's title (sheetDrag, below). Real-DOM only, like the rest
-// of this section's positioning code — the pure decision is wmZoneFor.
-function wmZoneForPointer(x, y) {
-  const region = document.getElementById("songregion");
-  if (!region || typeof region.getBoundingClientRect !== "function") return null;
-  return wmZoneFor(x, y, region.getBoundingClientRect());
-}
-function wmShowDropZone(zone) {
-  const el = document.getElementById("wmdropzone");
-  if (!el) return;
-  if (!zone) { el.classList.remove("on"); return; }
-  const region = document.getElementById("songregion"), center = document.getElementById("songcenter");
-  if (!region || typeof region.getBoundingClientRect !== "function") return;
-  const r = region.getBoundingClientRect();
-  const vr = (zone.mode === "inner" && center && center.getBoundingClientRect) ? center.getBoundingClientRect() : r;
-  let box;
-  if (zone.side === "bottom") box = {left: r.left, top: r.top + r.height * (1 - WM_ZONE_FRAC), width: r.width, height: r.height * WM_ZONE_FRAC};
-  else if (zone.side === "left") box = {left: r.left, top: vr.top, width: r.width * WM_ZONE_FRAC, height: vr.height};
-  else box = {left: r.left + r.width * (1 - WM_ZONE_FRAC), top: vr.top, width: r.width * WM_ZONE_FRAC, height: vr.height};
-  el.style.left = Math.round(box.left) + "px"; el.style.top = Math.round(box.top) + "px";
-  el.style.width = Math.round(box.width) + "px"; el.style.height = Math.round(box.height) + "px";
-  el.classList.add("on");
-}
-function wmHideDropZone() { const el = document.getElementById("wmdropzone"); if (el) el.classList.remove("on"); }
 // ---- action functions: the Dock menu, the tab strip, drag-to-dock, and the
 // tests all call these directly. Each keeps the "a window is docked in at
 // most one place" invariant, saves, and relays through wmLayoutAll().
@@ -16020,20 +13129,6 @@ function makeWindow(id, opts) {
   h2.appendChild(btn);
   h2._wmDockBtn = btn;
 }
-// The shared Dock popup (#wmmenu, one instance, rebuilt fresh on each open —
-// same pattern as #voicemenu/#filesub): Left / Right / Bottom, Full height /
-// Beside the roll once docked to a side, and Float once docked anywhere.
-// Real-browser only (createElement-built rows) — not unit tested, like the
-// menu/dropdown code it sits beside; tests drive wmDockSide/wmDockBottomWindow/
-// wmSetSideModeFor/wmFloat directly instead, the same way the old tests drove
-// wmToggleRight instead of clicking #askdock.
-function wmMenuItem(label, active, fn) {
-  const b = document.createElement("button");
-  b.className = "fitem" + (active ? " active" : "");
-  b.textContent = label;
-  b.addEventListener("click", () => { fn(); wmCloseMenu(); });
-  return b;
-}
 function wmOpenMenu(id, anchor) {
   const menu = document.getElementById("wmmenu");
   const where = wmWhereIs(S.wm, id);
@@ -16058,7 +13153,6 @@ function wmOpenMenu(id, anchor) {
   menu.style.top = (r.bottom + 6) + "px";
   menu.classList.add("on");
 }
-function wmCloseMenu() { document.getElementById("wmmenu").classList.remove("on"); }
 if (typeof document !== "undefined" && document.body) { // real browser only — dismissing the menu is not unit tested (see comment above)
   document.addEventListener("pointerdown", e => {
     const menu = document.getElementById("wmmenu");
@@ -16359,22 +13453,7 @@ function askDeleteBars(a) { // {from_bar, count}: removes bars — same gate/val
 }
 
 
- async function filesMirror() {
-  const fs = nativeFs();
-  if (!fs || !S.song || !S.songKey || !isComposition()) return false;
-  const root = nativeDirHandle(fs, "");
-  const base = S.songKey.replace(/\.mid$/, "");
-  try {
-    await folderWrite(S.songKey, writeMidi(S.song), root);
-    await folderWrite(base + ".rollnotes.json", serializeRollnotesStamped(Date.now()), root);
-    await folderWrite(base + ".notes.txt", notesTxtFor(), root);
-    return true;
-  } catch (err) {
-    if (filesMirror.warned !== S.songKey) { filesMirror.warned = S.songKey; setInfo("⚠ couldn't write the song into Files: " + err.message); }
-    return false;
-  }
-}
-function filesMirrorSoon() { clearTimeout(S.filesMirrorT); S.filesMirrorT = setTimeout(filesMirror, 2000); } // auto-save: after the edits settle
+  // auto-save: after the edits settle
 // same job, for a song that is NOT open (Publish all's other-song leg —
 // Bugs found, docs/provenance-plan.md: Publish all skipped the iPad Files
 // mirror for every song but the open one). doc/content are what publishSong
@@ -16460,159 +13539,7 @@ async function forgetFolder() {
   await idbFsPut(null);
   await folderAfterChange("folder forgotten — saves go to GitHub again");
 }
-         // sync opened from the notes list → return there after commit
-// review pane: every unsynced note on this device, grouped by song, so a
-// commit is never a blind dialog — you see exactly what's outstanding
-function draftDirtyState(key) { // "never" (no save yet) | "edited" (since the last save) | null
-  try {
-    const d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null");
-    if (!d || !d.dirty) return null;
-    return d.savedStamp ? "edited" : "never";
-  } catch (err) { return null; }
-}
-function syncable(key) { // local/ has no repo path; an uncommitted capture draft (any console
-  // folder, not just albums/imports/ — Bugs found, docs/provenance-plan.md
-  // P0: a captured-but-uncommitted song's loop:/etc. annotations passed this
-  // and could publish before the .mid existed) rides its own Commit, not Sync.
-  // Once committed the draft is gone (isCaptureKey still says locked, via
-  // album.json, but draftStoreKey(key) is null) and annotations sync normally.
-  return !key.startsWith("local/") &&
-         !(isCaptureKey(key) && localStorage.getItem(draftStoreKey(key)) !== null);
-}
-function pendingSongs() { // every song with anything to ship, the open one first
-  const set = new Set(dirtySongs());
-  for (const k of draftKeys()) if (syncable(k) && draftDirtyState(k)) set.add(k);
-  for (const k of Object.keys(localStorage)) {
-    if (!k.startsWith("ff1roll-ask-")) continue;
-    const key = k.slice("ff1roll-ask-".length);
-    if (key === "general") { if (askUnsavedCount(k) > 0) set.add("general"); continue; } // the general chat: no song, its own block
-    if (key !== "local" && syncable(key) && askUnsavedCount(k) > 0) set.add(key);
-  }
-  return [...set].sort((a, b) => (a === S.songKey ? -1 : b === S.songKey ? 1 : 0) || a.localeCompare(b));
-}
-function renderSyncPending() {
-  updateSyncBtn(); // the count follows the list it is drawn from (Josh: "it doesn't update that number")
-  const box = document.getElementById("syncpending");
-  box.textContent = "";
-  const line = (parent, text, cls) => {
-    const row = document.createElement("div");
-    row.className = "pline" + (cls ? " " + cls : "");
-    const span = document.createElement("span");
-    span.textContent = text;
-    row.appendChild(span);
-    parent.appendChild(row);
-    return row;
-  };
-  // the list shrinks when the check below finishes: say so, or it reads as a
-  // glitch ("it said five, then boom, two" — Josh, 2026-09-29)
-  if (S.pubCheckRunning) line(box, "checking each song against its published copy…", "pempty");
-  for (const key of pendingSongs()) {
-    const block = document.createElement("div");
-    if (key === "general") { // the general chat ships by itself: one tap, no song involved
-      block.className = "psong";
-      const title = document.createElement("div");
-      title.className = "ptitle";
-      const tspan = document.createElement("span"); tspan.textContent = "✦ General chat";
-      const b = document.createElement("button");
-      b.textContent = "Publish chat";
-      b.title = "Append the unsaved general chat to " + ASK_GENERAL_LOG;
-      b.addEventListener("click", async () => {
-        const status = document.getElementById("syncstatus");
-        const token = folderActive() ? "folder" : takeToken(status);
-        if (!token) return;
-        b.disabled = true; status.textContent = "Publishing the general chat…";
-        try { await askCommitLog(folderActive() ? null : ghHeaders(token), ASK_GENERAL_KEY); status.textContent = "General chat published ✓"; }
-        catch (err) { status.textContent = "⚠ general chat: " + err.message; }
-        b.disabled = false; updateSyncBtn(); renderSyncPending();
-      });
-      title.append(tspan, b);
-      block.appendChild(title);
-      const n = askUnsavedCount(ASK_GENERAL_KEY);
-      line(block, "✦ " + n + " chat message" + (n === 1 ? "" : "s") + " unsaved");
-      box.appendChild(block);
-      continue;
-    }
-    block.className = "psong" + (key === S.songKey ? " open" : "");
-    const title = document.createElement("div");
-    title.className = "ptitle";
-    const tspan = document.createElement("span");
-    tspan.textContent = songTitleOf(key) + (key === S.songKey ? " · open" : "");
-    title.appendChild(tspan);
-    // every row: Open / Publish / Revert (Josh, 2026-09-29) — the same three
-    // on every song, not Open only when a draft happened to exist
-    if (key !== S.songKey) {
-      const o = document.createElement("button");
-      o.textContent = "Open";
-      o.title = "Open this song here";
-      o.addEventListener("click", () => {
-        (localStorage.getItem(draftStoreKey(key)) !== null ? openDraft(key) : loadSong(key)).then(openSyncSheet);
-      });
-      title.appendChild(o);
-    }
-    const pb = document.createElement("button");
-    pb.textContent = "Publish";
-    pb.title = "Publish this song only (a job — ⏳ shows it)";
-    pb.addEventListener("click", () => {
-      const status = document.getElementById("syncstatus");
-      if (!takeToken(status)) return; // same gate as Publish all
-      const job = publishAllJobStart(t => { status.textContent = t; }, [key]);
-      if (!job) return;
-      document.getElementById("syncsheet").classList.remove("on");
-      openPubJobSheet(job);
-    });
-    title.appendChild(pb);
-    if (draftDirtyState(key) !== "never") { // a never-published song has no repo copy: Revert would delete it
-      const rb = document.createElement("button");
-      rb.textContent = "Revert";
-      rb.title = "Drop this device's changes to this song; the published copy becomes what you see";
-      rb.addEventListener("click", () => revertSongToRepo(key));
-      title.appendChild(rb);
-    }
-    block.appendChild(title);
-    const music = draftDirtyState(key);
-    if (music) {
-      const row = line(block, "♪ music " + (music === "never" ? "never published" : "edited since publish") + (pubCheck.get(key) ? " — " + pubCheck.get(key) : ""));
-      if (key === S.songKey && music === "edited") { // what changed? the roll shows it (View → Compare with repo)
-        const b = document.createElement("button");
-        b.textContent = "Compare";
-        b.title = "Outline every note that differs from the published copy on the roll";
-        b.style.marginLeft = "auto";
-        b.addEventListener("click", () => { syncsheet.classList.remove("on"); cmpEnter(); });
-        row.appendChild(b);
-      }
-    }
-    let notes = [];
-    try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { notes = []; }
-    if (notes.length) {
-      line(block, "✎ " + notes.length + " annotation" + (notes.length === 1 ? "" : "s") + " unsynced");
-      notes.forEach((n, i) => {
-        const at = "[" + n.b1 + "." + n.q1 + (n.b2 ? " - " + n.b2 + "." + (n.q2 || "") : "") + "]";
-        const text = n.text.length > 60 ? n.text.slice(0, 57) + "…" : n.text;
-        // loop:/key: texts already carry their prefix; only label the others
-        const row = line(block, at + " " + (n.section ? "section: " : "") + text, "note");
-        const x = document.createElement("button");
-        x.textContent = "✕";
-        x.title = "Discard this note (this device only — it was never synced)";
-        x.addEventListener("click", () => discardPending(key, i));
-        row.prepend(x);
-      });
-    }
-    const chat = askUnsavedCount("ff1roll-ask-" + key);
-    if (chat) line(block, "✦ " + chat + " chat message" + (chat === 1 ? "" : "s") + " unsaved");
-    box.appendChild(block);
-  }
-  if (!box.childElementCount) {
-    const e = document.createElement("div");
-    e.className = "pempty";
-    e.textContent = "Nothing pending on this device.";
-    box.appendChild(e);
-  }
-  const all = document.getElementById("ghsaveall");
-  const n = pendingSongs().length;
-  all.textContent = "Publish all (" + n + ")";
-  all.style.display = n > 1 ? "" : "none";
-}
-function discardPending(key, idx) { // drop one never-synced note from the stash
+         function discardPending(key, idx) { // drop one never-synced note from the stash
   let notes = [];
   try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); }
   catch (err) {}
@@ -16627,81 +13554,8 @@ function discardPending(key, idx) { // drop one never-synced note from the stash
   updateSyncBtn();
   renderSyncPending();
 }
-function openSyncSheet() { // callable even with no song loaded (bad-config recovery)
-  S.syncReturnToList = false; // notelistSync sets it true right after this runs
-  if (S.song) renderSyncPending();
-  fingerprintOldDrafts().catch(() => {});
-  const comp = !!S.song && isComposition();
-  document.getElementById("ghsave").textContent = "⇪ Publish song"; // edits already live on the device; this is the deliberate step that puts a song where others can reach it (Josh, 2026-09-26) — one word for what it ships, in folder mode too (Model B, 2026-09-29): Save is Save Version now, never Publish's word
-  document.getElementById("repolink").href = "https://github.com/" + cfg().songsRepo;
-  // the status line starts empty (Josh, 2026-09-25: the buttons are clear on
-  // their own) and speaks only for progress, results, or a missing prerequisite
-  document.getElementById("syncstatus").textContent = !S.song
-    ? "No song loaded — if the catalog failed, check File → Settings, then reload."
-    : !S.songKey
-    ? "Local file — Copy/Download only (no repo path to commit to)."
-    : LINK_SONGS
-    ? "You're viewing " + linkRepoLabel(LINK_SONGS) + "'s songs from a link — read-only here. Share link copies this song's link."
-    : !writeToken()
-    ? "Connect GitHub first: File → Settings… → GITHUB (your repo, then a token) — Publish sends songs there."
-    : isUnsaved(S.songKey) // lotion, 2026-10-03: say so before he taps — Publish used to look like it shipped the song and only sent the annotations
-    ? "This song has no folder yet — Publish will ask for a name and folder first."
-    : "";
-  document.getElementById("ghsave").disabled = !!LINK_SONGS;
-  if (LINK_SONGS) document.getElementById("ghsaveall").style.display = "none";
-  syncsheet.classList.add("on");
-}
 document.getElementById("syncbtn").addEventListener("click", openSyncSheet);
-const CFG_PANES = ["saving", "ai", "github", "other"];
-function cfgShowPane(name) { // one pane at a time; the choice is a device pref
-  if (!CFG_PANES.includes(name)) name = "saving";
-  for (const p of CFG_PANES) {
-    document.getElementById("cfgpane-" + p).classList.toggle("on", p === name);
-    document.getElementById("cfgtab-" + p).classList.toggle("on", p === name);
-    document.getElementById("cfgtab-" + p).setAttribute("aria-selected", String(p === name));
-  }
-  try { localStorage.setItem("ff1roll-cfgpane", name); } catch (err) { /* private mode */ }
-}
 for (const p of CFG_PANES) document.getElementById("cfgtab-" + p).addEventListener("click", () => cfgShowPane(p));
-function openSettingsSheet() {
-  const c = cfg();
-  cfgShowPane(localStorage.getItem("ff1roll-cfgpane") || "saving");
-  document.getElementById("ghtoken").value = localStorage.getItem("ff1roll-ghtoken") || "";
-  document.getElementById("cfgsongsrepo").value = c.songsRepo;
-  document.getElementById("cfglearning").checked = appMode() === "learning";
-  document.getElementById("cfgdebuglog").checked = debugLogOn();
-  document.getElementById("cfgchipstream").value = chipStreamMode();
-  document.getElementById("cfgpeninstant").checked = penInstant();
-  document.getElementById("cfgnotetapcursor").checked = noteTapMovesCursor();
-  document.getElementById("cfgrecsnap").checked = recSnapOn();
-  document.getElementById("cfgtextsize").value = textSizePref();
-  ghCheckOut("");
-  if (localStorage.getItem("ff1roll-ghtoken")) ghCheck(); // one small GET: "connected" shows without a tap
-  document.getElementById("cfgnsfrepo").value = c.nsfRepo;
-  document.getElementById("cfgaibackend").value = c.aiBackend;
-  aiBrowserMenu(c.aiBrowserModel);
-  aiBackendRows();
-  document.getElementById("cfgaiurl").value = c.aiUrl;
-  aiModelMenu(S.askModelCache && S.askModelCache.url === c.aiUrl.replace(/\/+$/, "") ? S.askModelCache.ids : [], c.aiModel);
-  document.getElementById("cfgaikey").value = localStorage.getItem("ff1roll-aikey") || "";
-  document.getElementById("cfgaiwindow").value = c.aiWindow;
-  const out = document.getElementById("cfgaitestout");
-  out.textContent = ""; out.classList.remove("ok", "err");
-  document.getElementById("settingssheet").classList.add("on");
-}
-// Autosave: each field persists itself on change, so there is nothing to lose
-// on Close/✕/backdrop/Esc and no Save to find (Josh, 2026-09-25). A blank
-// token/key removes the stored one; blank locations fall back to defaults.
-function noteTapMovesCursor() { try { return localStorage.getItem("ff1roll-notetapcursor") === "1"; } catch (err) { return false; } }
-// OFF by default (2026-09-30): Josh works with a stylus and pans with it —
-// an instant grab turned a swipe that started on a note into a move. Back to
-// last night's behaviour; the setting stays for anyone who wants it on.
-function penInstant() { try { return localStorage.getItem("ff1roll-peninstant") === "1"; } catch (err) { return false; } }
-// Settings → Other → Text size (DAW review item 12, 2026-09-30): multiplies
-// the root rem size (--userscale in the :root font-size calc, boot script
-// applies it before first paint too). "1" (Default) is a no-op — same as
-// never having set it.
-function textSizePref() { try { return localStorage.getItem("ff1roll-textsize") || "1"; } catch (err) { return "1"; } }
 function applyTextSize(v) { try { document.documentElement.style.setProperty("--userscale", v); } catch (err) {} }
 function settingsPersist(id) {
   const v = el => document.getElementById(el).value.trim();
@@ -16742,27 +13596,6 @@ function settingsPersist(id) {
   if (id.startsWith("cfgai")) askRefresh();
 }
 document.getElementById("settingssheet").addEventListener("change", e => { if (e.target && e.target.id) settingsPersist(e.target.id); });
-function ghCheckOut(t) { const el = document.getElementById("ghcheckout"); if (el) aiSay(el, t); }
-function ghCheckMessage(repo, status, j) { // one line per outcome, the fix in the same line
-  if (status === 200 && j && j.permissions && j.permissions.push) return "✓ connected — " + repo + ", the token can publish there";
-  if (status === 200) return "⚠ the token can read " + repo + " but not write — its permission needs Contents: Read and write";
-  if (status === 401) return "⚠ GitHub rejected the token — expired, or pasted with a stray character";
-  if (status === 404) return "⚠ no access to " + repo + " — check the repo name, and that the token's repository access includes it";
-  if (status === 403) return "⚠ GitHub said no (403) — rate limit or a token without access to " + repo;
-  return "⚠ could not reach GitHub (" + status + ")";
-}
-async function ghCheck() {
-  const repo = (document.getElementById("cfgsongsrepo").value.trim() || cfg().songsRepo);
-  const token = document.getElementById("ghtoken").value.trim() || localStorage.getItem("ff1roll-ghtoken") || "";
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { ghCheckOut("⚠ the repo is owner/repo, like Night-Roll-App/night-roll"); return; }
-  if (!token) { ghCheckOut("⚠ no token yet — make one (the button) and paste it"); return; }
-  ghCheckOut("checking " + repo + "…");
-  try {
-    const r = await fetch("https://api.github.com/repos/" + repo, {headers: ghHeaders(token), cache: "no-store"});
-    let j = null; try { j = await r.json(); } catch (err) { /* no body */ }
-    ghCheckOut(ghCheckMessage(repo, r.status, j));
-  } catch (err) { ghCheckOut("⚠ could not reach GitHub — offline?"); }
-}
 document.getElementById("ghcheck").addEventListener("click", ghCheck);
 document.getElementById("filesettings").addEventListener("click", () => {
   closeFileMenus();
@@ -16895,18 +13728,6 @@ document.addEventListener("keydown", e => {
     st.textContent = "Link copied: " + link;
   } catch (err) { st.textContent = err && err.name === "AbortError" ? "" : "Couldn't share: " + err.message + " — " + link; }
 });
-function openShareSheet() { // File → Share link: the link, visible, with Copy and the system share sheet
-  const has = !!S.songKey && /^albums\//.test(S.songKey);
-  const link = has ? shareLinkFor(S.songKey) : "";
-  document.getElementById("shBody").textContent = has
-    ? songTitleOf(S.songKey) + " — anyone with this link can listen:"
-    : "This song only lives on this device, so it has no link yet — Publish it first (File → Publish…).";
-  const url = document.getElementById("shUrl");
-  url.value = link; url.style.display = has ? "" : "none";
-  document.getElementById("shCopy").style.display = has ? "" : "none";
-  document.getElementById("shSend").style.display = has && navigator.share ? "" : "none";
-  document.getElementById("sharesheet").classList.add("on");
-}
 document.getElementById("fileshare").addEventListener("click", () => { closeFileMenus(); openShareSheet(); });
 document.getElementById("shClose").addEventListener("click", () => document.getElementById("sharesheet").classList.remove("on"));
 document.getElementById("shUrl").addEventListener("focus", e => e.target.select());
@@ -17190,6 +14011,1023 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
       });
   first.finally(nativeOpenHook); // a file handed to the iPad app at launch opens over the first song, not under it
 })();
+
+async function fingerprintOldDrafts() {
+  if (S.pubCheckRunning || LINK_SONGS) return;
+  S.pubCheckRunning = true;
+  let changed = false;
+  const sheetOn = () => document.getElementById("syncsheet").classList.contains("on");
+  if (sheetOn() && S.song) renderSyncPending(); // shows the "checking…" line
+  try {
+    for (const key of draftKeys()) {
+      if (!syncable(key)) continue;
+      let d = null; try { d = JSON.parse(localStorage.getItem(draftStoreKey(key)) || "null"); } catch (err) { d = null; }
+      if (!d || !d.dirty) { pubCheck.delete(key); continue; }
+      if (!d.tracks) { pubCheck.set(key, "not checked: its notes live in this device's database (an import)"); continue; }
+      const r = await pubCompareDraft(key, d);
+      changed = true;
+      if (r.same) {
+        pubCheck.delete(key);
+        if (key === S.songKey && S.song) { S.song.pubSig = d.pubSig; S.song.savedStamp = d.savedStamp || S.song.savedStamp; updateSongBtn(); }
+      } else pubCheck.set(key, r.text);
+      logDebug("publish check " + key.split("/").pop() + ": " + (r.same ? "matches the published copy — off the list" : r.text));
+    }
+  } finally { S.pubCheckRunning = false; }
+  updateSyncBtn();
+  if (sheetOn() && S.song) renderSyncPending(); // the list as checked (and the "checking…" line gone)
+}
+function askRender() {
+  askDraftLoad();
+  asklog.innerHTML = "";
+  const st = askStore();
+  const msgs = st.msgs;
+  if (st.trimmed) askRenderEarlier();
+  let pendingSeen = false;
+  if (!msgs.length && !st.trimmed && S.askTerminal) askBubble("ai", "This goes straight to Claude Code in the Mac's terminal — the session that builds Night Roll. Tell it what to build or fix; its answers come back here, and the Now: line above shows what it's doing.");
+  else if (!msgs.length && !st.trimmed && S.askGeneral) askBubble("ai", "This is the general chat — not about any one song. Ask about the app, the project, music in general, or say \"tell the terminal…\" to pass a message to the Claude Code sessions on your Mac.");
+  else if (!msgs.length && !st.trimmed) askBubble("ai", appMode() === "normal"
+    ? "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll answer directly — keys, chords, cadences, form — and say how sure I am."
+    : "Ask me about what you're looking at — I can see the song, your cursor, your notes, and the bars in view. I'll point you toward things before I name them; say you give up and I'll just tell you.");
+  for (const m of msgs) {
+    // a different mode's turn (askMsgMode/appMode, SAFETY 2026-10-01): still
+    // shown here (this is the on-device log, not a model request) but dimmed
+    // and tagged, so Josh can tell it was never part of the current mode's
+    // AI context, not just missing from it.
+    const otherMode = !S.askTerminal && askMsgMode(m) !== appMode();
+    const tag = otherMode ? "[" + (askMsgMode(m) === "normal" ? "Normal" : "Learning") + " mode] " : "";
+    const div = askBubble(m.role === "user" ? "user" : m.role === "note" ? "note" : "ai", tag + (m.role === "note" ? askClock(m.t) + askNoteLabel(m.m) + m.content : (S.askTerminal && m.role === "user" ? askClock(m.t) : "") + askStripContext(m.content)));
+    if (otherMode) div.classList.add("othermode");
+    if (m.pending) { const part = askPartial[m.pending]; askBubble("ai", part ? part + "\n\n… (still writing)" : "… (still working — the reply lands here)").dataset.job = m.pending; pendingSeen = true; }
+  }
+  if (pendingSeen) askResumeSoon(200);
+}
+function askBubble(role, text) {
+  const div = document.createElement("div");
+  div.className = "askmsg " + role;
+  askFillBubble(div, text);
+  asklog.appendChild(div);
+  asklog.scrollTop = asklog.scrollHeight;
+  return div;
+}
+async function askRenderEarlier() { // what this device let go of after it reached the repo file
+  const div = askBubble("ai", "loading the earlier messages from the repo file…");
+  div.classList.add("earlier");
+  const path = askLogPath();
+  try {
+    let text;
+    if (folderActive()) { const f = await folderRead(path); text = f ? await f.text() : ""; }
+    else {
+      const r = await fetch((isComposition() ? songsURL : analysisURL)(path) + "?t=" + Date.now(), {cache: "no-cache"});
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      text = await r.text();
+    }
+    div.textContent = text.trim() || "(the repo file is empty)";
+  } catch (err) { div.textContent = "earlier messages are in " + path + " — couldn't load it (" + err.message + ")"; }
+  askScrollEnd(); // the earlier block grows above the conversation: keep its end in view
+}
+function askResumeSoon(ms) { clearTimeout(S.askResumeTimer); S.askResumeTimer = setTimeout(() => { S.askResumeTimer = null; askResume(); }, ms); }
+function askFillBubble(div, text) { // the words, web addresses tappable, a ⧉ copy at the end
+  div.textContent = text;
+  // links only where the DOM can rebuild children (the test harness's fake
+  // elements keep textContent as a plain string, so they get the text alone)
+  const re = /https?:\/\/[^\s<>"'`]+/g;
+  if (re.test(text) && typeof div.replaceChildren === "function") {
+    const nodes = []; let last = 0, m; re.lastIndex = 0;
+    while ((m = re.exec(text))) {
+      let url = m[0]; const trail = url.match(/[.,;:!?)\]]+$/); if (trail) url = url.slice(0, -trail[0].length);
+      nodes.push(document.createTextNode(text.slice(last, m.index)));
+      const a = document.createElement("a"); a.href = url; a.textContent = url; a.target = "_blank"; a.rel = "noopener"; // the PWA hands _blank to Safari
+      nodes.push(a);
+      last = m.index + url.length;
+    }
+    nodes.push(document.createTextNode(text.slice(last)));
+    div.replaceChildren(...nodes);
+  }
+  if (text.trim() && text !== "…") {
+    const b = document.createElement("button");
+    b.className = "askcopy"; b.type = "button"; b.setAttribute("aria-label", "Copy this message"); b.title = "copy";
+    b.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(text, b); });
+    div.appendChild(b);
+  }
+}
+// Resume (2026-09-26 audit): every pending question gets looked at, in every
+// chat, not just the open one — and a look that cannot happen now (busy,
+// backgrounded, the Mac unreachable) is rescheduled, never dropped. Only
+// a real answer from the bridge ("no such job", "error") fails a question.
+async function askResume() {
+  const all = askPendingAll();
+  if (!all.length) return;
+  if (S.askBusy || !S.song || (typeof document.hidden === "boolean" && document.hidden)) { askResumeSoon(3000); return; }
+  const liveFor = jobId => [...asklog.querySelectorAll(".askmsg.ai")].find(d => d.dataset.job === jobId) || null;
+  const sup = await askJobsSupported();
+  if (sup === null) { // unreachable right now: the reply is kept on the Mac; say so where the bubble is, and look again
+    for (const p of all) { const live = p.key === askStoreKey() ? liveFor(p.jobId) : null; if (live) live.textContent = "… (can't reach the Mac right now — the reply is kept there; retrying)"; }
+    askResumeSoon(5000); return;
+  }
+  if (!sup) { for (const p of all) askFail(p.jobId, "no reply came back (the connection dropped) — ask again", p.key); return; }
+  let again = false;
+  for (const p of all) {
+    const mine = p.key === askStoreKey(), live = mine ? liveFor(p.jobId) : null;
+    let j;
+    try { const r = await fetch(aiUrl() + "/v1/jobs/" + encodeURIComponent(p.jobId), {headers: aiHeaders()}); if (r.status === 404) { askFail(p.jobId, "the Mac no longer has this reply (its bridge restarted, or the question never reached it) — ask again", p.key); continue; } j = await r.json(); }
+    catch (err) { again = true; continue; }
+    const step = ((j.notes || []).slice(-1)[0] || "working").replace(/^using /, "").replace(/…\s*$/, "");
+    if (j.status === "running") { if (j.text) askPartial[p.jobId] = j.text; if (live) live.textContent = j.text ? j.text : "… (" + step + ")"; if (mine) askstatus.textContent = "working: " + step; again = true; continue; }
+    if (mine) askstatus.textContent = ""; // the "stream was cut" line is over once the reply lands or fails
+    if (j.status === "error") { askFail(p.jobId, j.error || "the job failed", p.key); continue; }
+    const calls = j.result && j.result.tool_calls;
+    if (!calls || !calls.length) { askFinish(p.jobId, (j.text || "").trim() || "(no reply)", p.key); continue; }
+    if (!mine) { again = true; continue; } // a tool round acts on the OPEN song: it continues when that chat is opened again
+    // the job ended in a tool call: run it here, then continue the exchange as a new job
+    const msgs = askStore(p.key).msgs, i = askPendingIndex(msgs, p.jobId);
+    if (i < 0) continue;
+    const pend = msgs[i];
+    const sp = S.askSpanFrozen || askSpan();
+    const budget = askBudget();
+    const history = msgs.slice(0, i);
+    const messages = askBuildMessages(history, pend.content, askContext(sp, budget), budget);
+    messages.push({role: "assistant", content: "", tool_calls: calls});
+    for (const c of calls) {
+      let args = {}; try { args = JSON.parse(c.function.arguments || "{}"); } catch (err) { args = {}; }
+      let result; try { result = await askRunTool(c.function.name, args); } catch (err) { result = {error: String(err.message || err)}; }
+      messages.push({role: "tool", tool_call_id: c.id, content: typeof result === "string" ? result : JSON.stringify(result)});
+    }
+    const nextId = askJobId();
+    askRepending(p.key, p.jobId, nextId);
+    await askRun({msgs, text: pend.content, sp, messages, jobId: nextId, live: live || askBubble("ai", "…"), key: p.key});
+    askResumeSoon(500); return; // one exchange at a time; the others get their look after it
+  }
+  if (again) askResumeSoon(3000);
+}
+function openSyncSheet() { // callable even with no song loaded (bad-config recovery)
+  S.syncReturnToList = false; // notelistSync sets it true right after this runs
+  if (S.song) renderSyncPending();
+  fingerprintOldDrafts().catch(() => {});
+  const comp = !!S.song && isComposition();
+  document.getElementById("ghsave").textContent = "⇪ Publish song"; // edits already live on the device; this is the deliberate step that puts a song where others can reach it (Josh, 2026-09-26) — one word for what it ships, in folder mode too (Model B, 2026-09-29): Save is Save Version now, never Publish's word
+  document.getElementById("repolink").href = "https://github.com/" + cfg().songsRepo;
+  // the status line starts empty (Josh, 2026-09-25: the buttons are clear on
+  // their own) and speaks only for progress, results, or a missing prerequisite
+  document.getElementById("syncstatus").textContent = !S.song
+    ? "No song loaded — if the catalog failed, check File → Settings, then reload."
+    : !S.songKey
+    ? "Local file — Copy/Download only (no repo path to commit to)."
+    : LINK_SONGS
+    ? "You're viewing " + linkRepoLabel(LINK_SONGS) + "'s songs from a link — read-only here. Share link copies this song's link."
+    : !writeToken()
+    ? "Connect GitHub first: File → Settings… → GITHUB (your repo, then a token) — Publish sends songs there."
+    : isUnsaved(S.songKey) // lotion, 2026-10-03: say so before he taps — Publish used to look like it shipped the song and only sent the annotations
+    ? "This song has no folder yet — Publish will ask for a name and folder first."
+    : "";
+  document.getElementById("ghsave").disabled = !!LINK_SONGS;
+  if (LINK_SONGS) document.getElementById("ghsaveall").style.display = "none";
+  syncsheet.classList.add("on");
+}
+function renderSyncPending() {
+  updateSyncBtn(); // the count follows the list it is drawn from (Josh: "it doesn't update that number")
+  const box = document.getElementById("syncpending");
+  box.textContent = "";
+  const line = (parent, text, cls) => {
+    const row = document.createElement("div");
+    row.className = "pline" + (cls ? " " + cls : "");
+    const span = document.createElement("span");
+    span.textContent = text;
+    row.appendChild(span);
+    parent.appendChild(row);
+    return row;
+  };
+  // the list shrinks when the check below finishes: say so, or it reads as a
+  // glitch ("it said five, then boom, two" — Josh, 2026-09-29)
+  if (S.pubCheckRunning) line(box, "checking each song against its published copy…", "pempty");
+  for (const key of pendingSongs()) {
+    const block = document.createElement("div");
+    if (key === "general") { // the general chat ships by itself: one tap, no song involved
+      block.className = "psong";
+      const title = document.createElement("div");
+      title.className = "ptitle";
+      const tspan = document.createElement("span"); tspan.textContent = "✦ General chat";
+      const b = document.createElement("button");
+      b.textContent = "Publish chat";
+      b.title = "Append the unsaved general chat to " + ASK_GENERAL_LOG;
+      b.addEventListener("click", async () => {
+        const status = document.getElementById("syncstatus");
+        const token = folderActive() ? "folder" : takeToken(status);
+        if (!token) return;
+        b.disabled = true; status.textContent = "Publishing the general chat…";
+        try { await askCommitLog(folderActive() ? null : ghHeaders(token), ASK_GENERAL_KEY); status.textContent = "General chat published ✓"; }
+        catch (err) { status.textContent = "⚠ general chat: " + err.message; }
+        b.disabled = false; updateSyncBtn(); renderSyncPending();
+      });
+      title.append(tspan, b);
+      block.appendChild(title);
+      const n = askUnsavedCount(ASK_GENERAL_KEY);
+      line(block, "✦ " + n + " chat message" + (n === 1 ? "" : "s") + " unsaved");
+      box.appendChild(block);
+      continue;
+    }
+    block.className = "psong" + (key === S.songKey ? " open" : "");
+    const title = document.createElement("div");
+    title.className = "ptitle";
+    const tspan = document.createElement("span");
+    tspan.textContent = songTitleOf(key) + (key === S.songKey ? " · open" : "");
+    title.appendChild(tspan);
+    // every row: Open / Publish / Revert (Josh, 2026-09-29) — the same three
+    // on every song, not Open only when a draft happened to exist
+    if (key !== S.songKey) {
+      const o = document.createElement("button");
+      o.textContent = "Open";
+      o.title = "Open this song here";
+      o.addEventListener("click", () => {
+        (localStorage.getItem(draftStoreKey(key)) !== null ? openDraft(key) : loadSong(key)).then(openSyncSheet);
+      });
+      title.appendChild(o);
+    }
+    const pb = document.createElement("button");
+    pb.textContent = "Publish";
+    pb.title = "Publish this song only (a job — ⏳ shows it)";
+    pb.addEventListener("click", () => {
+      const status = document.getElementById("syncstatus");
+      if (!takeToken(status)) return; // same gate as Publish all
+      const job = publishAllJobStart(t => { status.textContent = t; }, [key]);
+      if (!job) return;
+      document.getElementById("syncsheet").classList.remove("on");
+      openPubJobSheet(job);
+    });
+    title.appendChild(pb);
+    if (draftDirtyState(key) !== "never") { // a never-published song has no repo copy: Revert would delete it
+      const rb = document.createElement("button");
+      rb.textContent = "Revert";
+      rb.title = "Drop this device's changes to this song; the published copy becomes what you see";
+      rb.addEventListener("click", () => revertSongToRepo(key));
+      title.appendChild(rb);
+    }
+    block.appendChild(title);
+    const music = draftDirtyState(key);
+    if (music) {
+      const row = line(block, "♪ music " + (music === "never" ? "never published" : "edited since publish") + (pubCheck.get(key) ? " — " + pubCheck.get(key) : ""));
+      if (key === S.songKey && music === "edited") { // what changed? the roll shows it (View → Compare with repo)
+        const b = document.createElement("button");
+        b.textContent = "Compare";
+        b.title = "Outline every note that differs from the published copy on the roll";
+        b.style.marginLeft = "auto";
+        b.addEventListener("click", () => { syncsheet.classList.remove("on"); cmpEnter(); });
+        row.appendChild(b);
+      }
+    }
+    let notes = [];
+    try { notes = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); } catch (err) { notes = []; }
+    if (notes.length) {
+      line(block, "✎ " + notes.length + " annotation" + (notes.length === 1 ? "" : "s") + " unsynced");
+      notes.forEach((n, i) => {
+        const at = "[" + n.b1 + "." + n.q1 + (n.b2 ? " - " + n.b2 + "." + (n.q2 || "") : "") + "]";
+        const text = n.text.length > 60 ? n.text.slice(0, 57) + "…" : n.text;
+        // loop:/key: texts already carry their prefix; only label the others
+        const row = line(block, at + " " + (n.section ? "section: " : "") + text, "note");
+        const x = document.createElement("button");
+        x.textContent = "✕";
+        x.title = "Discard this note (this device only — it was never synced)";
+        x.addEventListener("click", () => discardPending(key, i));
+        row.prepend(x);
+      });
+    }
+    const chat = askUnsavedCount("ff1roll-ask-" + key);
+    if (chat) line(block, "✦ " + chat + " chat message" + (chat === 1 ? "" : "s") + " unsaved");
+    box.appendChild(block);
+  }
+  if (!box.childElementCount) {
+    const e = document.createElement("div");
+    e.className = "pempty";
+    e.textContent = "Nothing pending on this device.";
+    box.appendChild(e);
+  }
+  const all = document.getElementById("ghsaveall");
+  const n = pendingSongs().length;
+  all.textContent = "Publish all (" + n + ")";
+  all.style.display = n > 1 ? "" : "none";
+}
+
+
+function openBassist() {
+  if (!editableSong()) { setInfo("the Bassist works on your own songs — captures are locked"); return; }
+  bsBuildControls();
+  const bt = barTicks();
+  { // follow: drums / tracks / chords; target: melodic tracks + new
+    const f = document.getElementById("bsfollow");
+    f.innerHTML = "";
+    const addOpt = (sel, v, label) => { const o = document.createElement("option"); o.value = v; o.textContent = label; sel.appendChild(o); };
+    if (S.song.tracks.some((_, ti) => trackIsDrums(ti))) addOpt(f, "drums", "drums (kick)");
+    S.song.tracks.forEach((tr2, ti) => { if (!trackIsDrums(ti)) addOpt(f, "t" + ti, tr2.name || "track " + (ti + 1)); });
+    addOpt(f, "chords", "chords");
+    f.value = S.song.tracks.some((_, ti) => trackIsDrums(ti)) ? "drums" : "chords";
+    const tsel = document.getElementById("bstarget");
+    tsel.innerHTML = "";
+    S.song.tracks.forEach((tr2, ti) => { if (!trackIsDrums(ti)) addOpt(tsel, String(ti), tr2.name || "track " + (ti + 1)); });
+    addOpt(tsel, "new", "＋ new bass track");
+    const bi = drBassTrack();
+    const r0 = (() => { const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor); return sec; })();
+    // never default onto a track with notes in range: new track wins then
+    tsel.value = "new";
+    if (bi >= 0) {
+      const t0g = r0 ? r0.start : 0, t1g = r0 ? (r0.end || t0g + bt) : S.songEndTick;
+      const has = S.song.tracks[bi].notes.some(n => !n.gone && n.t < t1g && n.t + n.d > t0g);
+      if (!has) tsel.value = String(bi);
+    }
+  }
+  const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
+  let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt)), q0 = 1, q1 = 1, toBar = to + 1;
+  if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) {
+    from = Math.floor(S.rangeSel.a / bt) + 1; q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
+    toBar = Math.floor(S.rangeSel.b / bt) + 1; q1 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
+  } else if (sec) {
+    from = Math.floor(sec.start / bt) + 1; q0 = snapBeat((sec.start % bt) / beatTicks() + 1);
+    const e = sec.end || sec.start + bt;
+    toBar = Math.floor(e / bt) + 1; q1 = snapBeat((e % bt) / beatTicks() + 1);
+  }
+  document.getElementById("bsfrom").value = from;
+  document.getElementById("bsto").value = toBar;
+  setBeatPair("bsfromq", "bsfroms", q0);
+  setBeatPair("bstoq", "bstos", q1);
+  bsRefresh();
+  document.getElementById("bassistsheet").classList.add("on");
+}
+function openDrummer() {
+  if (!editableSong()) { setInfo("the Drummer works on your own songs — captures are locked"); return; }
+  drBuildControls();
+  const bt = barTicks();
+  { // follow picker: every melodic track BY NAME (Josh: "no way to tell it what
+    // instrument to follow"), then chords / off; default = the detected bass
+    const fsel = document.getElementById("drfollow");
+    const keep = fsel.value;
+    fsel.innerHTML = "";
+    S.song.tracks.forEach((tr2, ti) => {
+      if (trackIsDrums(ti)) return;
+      const o = document.createElement("option");
+      o.value = "t" + ti;
+      o.textContent = tr2.name || "track " + (ti + 1);
+      fsel.appendChild(o);
+    });
+    for (const [v, label] of [["chords", "chords"], ["off", "off"]]) {
+      const o = document.createElement("option");
+      o.value = v; o.textContent = label;
+      fsel.appendChild(o);
+    }
+    fsel.value = [...fsel.options].some(o => o.value === keep) ? keep : "t" + Math.max(0, drBassTrack());
+  }
+  const beats = effTs()[0]; // beat + subdivision selects, drum-fill convention
+  for (const id of ["drfromq", "drtoq"]) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (let b = 1; b <= beats; b++) {
+      const o = document.createElement("option");
+      o.value = String(b); o.textContent = String(b);
+      sel.appendChild(o);
+    }
+  }
+  for (const id of ["drfroms", "drtos"]) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) {
+      const o = document.createElement("option");
+      o.value = String(f); o.textContent = syl;
+      sel.appendChild(o);
+    }
+  }
+  // default range: the section under the cursor; else the loop body; else the whole song
+  const sec = S.rollnotes.find(n => n.section && n.start <= S.playCursor && (n.end || n.start + bt) > S.playCursor);
+  const loop = S.rollnotes.find(n => n.loopTo !== undefined);
+  let from = 1, to = Math.max(1, Math.ceil(S.songEndTick / bt));
+  let q0 = 1, q1 = 1, toBar;
+  if (S.rangeSel && S.rangeSel.b > S.rangeSel.a) { // an armed ruler selection wins outright
+    from = Math.floor(S.rangeSel.a / bt) + 1;
+    q0 = snapBeat((S.rangeSel.a % bt) / beatTicks() + 1);
+    toBar = Math.floor(S.rangeSel.b / bt) + 1;
+    q1 = snapBeat((S.rangeSel.b % bt) / beatTicks() + 1);
+  } else if (sec) { // the section's exact edges, beats included (to = exclusive end)
+    from = Math.floor(sec.start / bt) + 1;
+    q0 = snapBeat((sec.start % bt) / beatTicks() + 1);
+    const e = sec.end || sec.start + bt;
+    toBar = Math.floor(e / bt) + 1;
+    q1 = snapBeat((e % bt) / beatTicks() + 1);
+  } else if (loop) {
+    from = Math.floor(loop.loopTo / bt) + 1;
+    q0 = snapBeat((loop.loopTo % bt) / beatTicks() + 1);
+    toBar = to + 1; // whole rest of the song, exclusive end on the bar after
+  } else toBar = to + 1;
+  document.getElementById("drfrom").value = from;
+  document.getElementById("drto").value = toBar;
+  setBeatPair("drfromq", "drfroms", q0);
+  setBeatPair("drtoq", "drtos", q1);
+  drRefresh();
+  document.getElementById("drummersheet").classList.add("on");
+}
+function bsBuildControls() {
+  if (document.querySelector("#bsstyle button")) return;
+  const mkSeg = (id, vals, def) => {
+    const el = document.getElementById(id);
+    vals.forEach(v => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.v = String(v);
+      b.textContent = String(v);
+      b.addEventListener("click", () => { segSet(id, v); bsRefresh(); });
+      el.appendChild(b);
+    });
+    segSet(id, def);
+  };
+  mkSeg("bsstyle", ["chug", "pump", "arp", "walk", "riff"],
+        S.song && S.song.tracks.some((_, ti) => trackIsDrums(ti)) ? "riff" : "chug");
+  mkSeg("bsbusy", [1, 2, 3, 4, 5], 3);
+  mkSeg("bsoct", [1, 2, 3], 2);
+  const beats = effTs()[0];
+  for (const id of ["bsfromq", "bstoq"]) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (let b = 1; b <= beats; b++) { const o = document.createElement("option"); o.value = String(b); o.textContent = String(b); sel.appendChild(o); }
+  }
+  for (const id of ["bsfroms", "bstos"]) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (const [f, syl] of [[0, "·"], [0.25, "e"], [0.5, "&"], [0.75, "a"]]) { const o = document.createElement("option"); o.value = String(f); o.textContent = syl; sel.appendChild(o); }
+  }
+}
+function bsRefresh() {
+  const r = bsRange();
+  const tgt = document.getElementById("bstarget").value;
+  const ti = tgt === "new" ? -1 : parseInt(tgt, 10);
+  let replaces = 0;
+  if (ti >= 0 && S.song.tracks[ti]) S.song.tracks[ti].notes.forEach(n => { if (!n.gone && n.t >= r.t0 && n.t < r.t1) replaces++; });
+  const chordBars = new Set(bsChordTimeline(r.t0, r.t1).filter(e => !e.lookahead)
+    .flatMap(e => { const out = []; for (let b = Math.floor(Math.max(e.t, r.t0) / barTicks()); b < Math.ceil(Math.min(e.end, r.t1) / barTicks()); b++) out.push(b); return out; })).size;
+  const totBars = r.to - r.from + 1;
+  document.getElementById("bsstatus").textContent =
+    "replaces " + replaces + " note(s) on " + (ti >= 0 && S.song.tracks[ti] ? (S.song.tracks[ti].name || "track " + (ti + 1)) : "a new bass track") +
+    " · chords cover " + Math.min(chordBars, totBars) + " of " + totBars + " bar" + (totBars === 1 ? "" : "s") +
+    (chordBars === 0 ? " (will sketch harmony from your melody)" : "");
+  const row = document.getElementById("bstakes");
+  row.innerHTML = "";
+  S.bsTakes.forEach((tk, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = "take " + (i + 1) + " · " + tk.style + " " + tk.busy + " · oct" + tk.oct;
+    b.classList.toggle("active", i === S.bsActive);
+    b.addEventListener("click", () => {
+      segSet("bsstyle", tk.style); segSet("bsbusy", tk.busy); segSet("bsoct", tk.oct);
+      document.getElementById("bsfollow").value = tk.followSel;
+      document.getElementById("bstarget").value = String(tk.targetTi);
+      document.getElementById("bsfrom").value = tk.from; document.getElementById("bsto").value = tk.to;
+      if (tk.q) { setBeatPair("bsfromq", "bsfroms", tk.q[0]); setBeatPair("bstoq", "bstos", tk.q[1]); }
+      const k = bsGenerate(tk.seed, tk.opts);
+      S.bsActive = i;
+      bsRefresh();
+      setInfo("take " + (i + 1) + " — " + tk.style + " · " + k + " notes (one undo brings the previous back)");
+    });
+    row.appendChild(b);
+  });
+}
+function drRefresh() {
+  const r = drRange();
+  const from = r.from, to = r.to;
+  const mode = (document.getElementById("drfollow") || {}).value || "bass";
+  let followTxt;
+  if (mode === "off") followTxt = "following: nothing";
+  else if (mode === "chords") {
+    const n = S.rollnotes.filter(x => x.chord && !x.section && x.start >= r.t0 && x.start < r.t1).length;
+    followTxt = "following: chords (" + n + " change" + (n === 1 ? "" : "s") + " in range)";
+  } else {
+    const ti = mode.startsWith("t") ? parseInt(mode.slice(1), 10) : drBassTrack();
+    followTxt = ti >= 0 && S.song.tracks[ti] ? "following: " + (S.song.tracks[ti].name || "track " + (ti + 1)) : "no track to follow";
+  }
+  const nb = drBoundaries(r.t0, r.t1).size;
+  const fillsPicked = !document.querySelector("#drparts button") || drPartsGet().includes("fills");
+  document.getElementById("drstatus").textContent =
+    "replaces " + drKitCountT(r.t0, r.t1) + " kit note(s) in " + fmtBarBeat(r.t0) + "–" + fmtBarBeat(r.t1) + " · " + followTxt +
+    (fillsPicked ? " · " + nb + " fill spot" + (nb === 1 ? "" : "s") : "");
+  const row = document.getElementById("drtakes");
+  row.innerHTML = "";
+  S.drTakes.forEach((tk, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    const pa = drNormParts(tk.parts ?? "all");
+    const scoped = !["kick", "snare", "hats", "fills"].every(g => pa.includes(g));
+    b.textContent = "take " + (i + 1) + " · " + (tk.busy ?? tk.energy ?? 3) + "/" + (tk.hard ?? tk.busy ?? 3) + "/" + (tk.fillAmt ?? 3) +
+      ((tk.feel ?? "normal") === "half" ? " ½" : (tk.feel ?? "normal") === "double" ? " 2×" : "") +
+      (scoped ? " " + pa.map(g => g[0].toUpperCase()).join("+") : "");
+    b.classList.toggle("active", i === S.drActive);
+    b.addEventListener("click", () => { // a take is the FULL tuple, not just the seed
+      const busy = tk.busy ?? tk.energy ?? 3, hard = tk.hard ?? busy;
+      const follow = tk.follow ?? "bass", feel = tk.feel ?? "normal", fillAmt = tk.fillAmt ?? 3;
+      drPartsSet(tk.parts ?? "all");
+      segSet("drbusy", busy);
+      segSet("drhard", hard);
+      segSet("drfills", fillAmt);
+      document.getElementById("drfollow").value = tk.followTi !== undefined ? "t" + tk.followTi : follow;
+      segSet("drfeel", feel);
+      document.getElementById("drfrom").value = tk.from;
+      document.getElementById("drto").value = tk.to;
+      if (tk.q) { setBeatPair("drfromq", "drfroms", tk.q[0]); setBeatPair("drtoq", "drtos", tk.q[1]); }
+      const k = drGenerate(tk.seed, {busy, hard, follow, feel, fillAmt, parts: tk.parts ?? "all", followTi: tk.followTi,
+        fromBar: tk.fromBar ?? tk.from, toBar: tk.toBar ?? tk.to, t0: tk.t0, t1: tk.t1});
+      S.drActive = i;
+      drRefresh();
+      setInfo("take " + (i + 1) + " — busy " + busy + " · hard " + hard + " · fills " + fillAmt +
+              " · " + follow + " · " + feel + " · " + k + " hits (one undo brings the previous back)");
+    });
+    row.appendChild(b);
+  });
+}
+function drBuildControls() {
+  if (document.querySelector("#drbusy button")) return;
+  const mkSeg = (id, vals, def, labels) => {
+    const el = document.getElementById(id);
+    vals.forEach((v, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.v = String(v);
+      b.textContent = labels ? labels[i] : String(v);
+      b.addEventListener("click", () => { segSet(id, v); drRefresh(); });
+      el.appendChild(b);
+    });
+    segSet(id, def);
+  };
+  mkSeg("drbusy", [1, 2, 3, 4, 5], 3);
+  mkSeg("drhard", [1, 2, 3, 4, 5], 3);
+  mkSeg("drfills", [0, 1, 2, 3, 4, 5], 3, ["off", "1", "2", "3", "4", "5"]);
+  mkSeg("drfeel", ["normal", "half", "double"], "normal");
+  const pr = document.getElementById("drparts");
+  for (const part of ["kick", "snare", "hats", "fills"]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.part = part;
+    b.textContent = part;
+    b.classList.add("active");
+    b.addEventListener("click", () => { b.classList.toggle("active"); drPartsSync(); drRefresh(); });
+    pr.appendChild(b);
+  }
+}
+function drGenerate(seed, energyOrOpts, fromBar, toBar, t0Override, t1Override, fillAmt) {
+  // v2 (advisor spec): busy = density, hard = velocity, follow = what the kick
+  // listens to, feel = backbeat rate. Legacy positional call maps energy ->
+  // busy = hard = energy, and hard 3 / follow bass / feel normal is BIT-
+  // IDENTICAL to v1 for the same seed (hard consumes zero rng draws).
+  let busy, hard, follow, feel, parts;
+  if (typeof energyOrOpts === "object" && energyOrOpts !== null) {
+    const o = energyOrOpts;
+    busy = o.busy ?? 3; hard = o.hard ?? busy;
+    follow = o.follow ?? "bass"; feel = o.feel ?? "normal";
+    parts = o.parts ?? "all";
+    if (o.followTi !== undefined) follow = "bass"; // an explicit track uses the bass-follow engine
+    fillAmt = o.fillAmt ?? 3;
+    fromBar = o.fromBar; toBar = o.toBar;
+    t0Override = o.t0; t1Override = o.t1;
+  } else {
+    busy = energyOrOpts; hard = energyOrOpts; follow = "bass"; feel = "normal"; parts = "all";
+    if (fillAmt === undefined) fillAmt = 3;
+  }
+  // scoped reroll (Josh, 2026-08-22, advisor round 2): parts is a SET of
+  // kick/snare/hats (pitch groups) + fills (a ROLE — fills contain snares and
+  // kicks, so the fill layer scopes by BAR, not pitch). All four = the
+  // literal v1 "all" path, bit-identical. ZERO new rng draws in any path.
+  const PIECE_GROUPS = {kick: [36, 35], snare: [38, 40, 37], hats: [42, 44, 46]};
+  const partsArr = drNormParts(parts);
+  const isAllParts = ["kick", "snare", "hats", "fills"].every(g => partsArr.includes(g));
+  const fillsOn = partsArr.includes("fills");
+  const grooveGroups = partsArr.filter(g => g !== "fills");
+  const scopePcs = isAllParts ? null
+    : new Set(grooveGroups.flatMap(g => PIECE_GROUPS[g]));
+  if (!fillsOn) fillAmt = 0;
+  if (!isAllParts && !partsArr.length) { setInfo("pick at least one part"); return 0; }
+  const HARD_DELTA = 7 * (hard - 3);
+  const energy = busy; // density reads below
+  if (!editableSong()) { setInfo("the Drummer works on your own songs — captures are locked"); return 0; }
+  const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
+  // sub-bar edges: bar loop still walks whole bars (per-bar substreams stay
+  // stable), put() clamps every hit to [t0, t1) — a 2.4 start drops bar 2's
+  // hits before beat 4, exactly the drums-enter-late workflow
+  const t0 = t0Override !== undefined ? t0Override : (fromBar - 1) * bt;
+  const t1 = t1Override !== undefined ? t1Override : toBar * bt;
+  if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) {
+    setInfo("the range crosses a meter change — generate each meter's bars separately");
+    return 0;
+  }
+  let di = S.song.tracks.findIndex((_, ti) => trackIsDrums(ti));
+  const madeTrack = di < 0, undoLen = S.editUndo.length;
+  if (madeTrack) {
+    di = addTrackUndoable({name: "drums", notes: []});
+    saveDraft();
+    renderTrackbar();
+  }
+  const tr = S.song.tracks[di], isAdd = !isComposition();
+  const oFollowTi = typeof energyOrOpts === "object" && energyOrOpts !== null ? energyOrOpts.followTi : undefined;
+  const bassTi = oFollowTi !== undefined && S.song.tracks[oFollowTi] ? oFollowTi : drBassTrack();
+  // context per bar: break = nothing but bass (or nothing at all) SOUNDING there,
+  // or a declared section label saying so — a sustained melody note is not a break
+  // a break is a DROPOUT: bars where the texture thins to the followed track
+  // alone. If no OTHER track plays anywhere in the range (a one-voice
+  // passage), nothing dropped out — only a labeled "break" section counts.
+  let rangeHasOthers = false;
+  S.song.tracks.forEach((mtr, ti) => {
+    if (ti === di || ti === bassTi || trackIsDrums(ti)) return;
+    if (mtr.notes.some(n => !n.gone && n.t < t1 && n.t + n.d > t0)) rangeHasOthers = true;
+  });
+  // labeled "break" sections silence EXACTLY their span (a Break ending at
+  // 14.1 must not mute all of bar 14 — Josh, 2026-08-22); put() enforces it
+  const breakSpans = S.rollnotes.filter(n => n.section && /break/i.test(n.text))
+    .map(n => ({s: n.start, e: n.end || n.start + bt}));
+  const inLabeledBreak = t => breakSpans.some(sp => t >= sp.s && t < sp.e);
+  const isBreak = bar => {
+    const bs = (bar - 1) * bt, be = bar * bt;
+    if (breakSpans.some(sp => sp.s <= bs && sp.e >= be)) return true; // fully covered bar
+    if (!rangeHasOthers) return false;
+    let melodic = false;
+    S.song.tracks.forEach((mtr, ti) => {
+      if (ti === di || ti === bassTi || trackIsDrums(ti)) return;
+      if (mtr.notes.some(n => !n.gone && n.t < be && n.t + n.d > bs)) melodic = true;
+    });
+    return !melodic;
+  };
+  // boundaries inside the range: section starts + the loop target — the bar BEFORE gets the fill
+  const boundaries = drBoundaries(t0, t1);
+  // fill bars (role scope): the bar BEFORE each boundary; boundary/arrival
+  // downbeat ticks carry the crash
+  const fillBarSet = new Set([...boundaries].map(b => b - 1));
+  const crashTicks = new Set([...boundaries].map(b => (b - 1) * bt));
+  if (boundaries.has(fromBar)) crashTicks.add((fromBar - 1) * bt);
+  const inFillScope = t => fillBarSet.has(Math.floor(t / bt) + 1) || crashTicks.has(t);
+  const chordStarts = new Set(S.rollnotes.filter(n => n.chord && !n.section).map(n => n.start));
+  // same label = same drums (the app's own same-label-same-color convention,
+  // extended; advisor 2026-08-22): the GROOVE substream keys on (label hash +
+  // bar offset within the section) so identically-labeled sections restate
+  // bar-for-bar. EXACT label match — no stemming, that would be inference.
+  // Fills and arrival crashes stay keyed on absolute bars: a fill is
+  // commentary on what comes NEXT, and varied fills between identical grooves
+  // is what a human drummer does. Bars outside any section keep absolute-bar
+  // keying — unsectioned songs are bit-identical to the old engine.
+  const grooveLane = bar => sectionLane(bar);
+  const bass = bassTi >= 0 ? S.song.tracks[bassTi].notes.filter(n => !n.gone && n.t >= t0 && n.t < t1) : [];
+  // ---- erase everything the kit holds in the range (idempotent replace) ----
+  const erased = [];
+  tr.notes.forEach((n, ni) => {
+    if (!n.gone && n.t >= t0 && n.t < t1 &&
+        (!scopePcs || scopePcs.has(n.p) || (fillsOn && inFillScope(n.t)))) {
+      n.gone = true;
+      const rn = S.song.rawNotes && n.ri !== undefined && S.song.rawNotes[di][n.ri];
+      if (rn) rn.gone = true;
+      erased.push({ti: di, ni});
+    }
+  });
+  // ---- generate ----
+  const hits = []; // {t, p, v, d}
+  const put = (t, p, v, d) => {
+    if (t < t0 || t >= t1) return;
+    if (scopePcs && !scopePcs.has(p) && !(fillsOn && inFillScope(t))) return; // out-of-scope pieces are KEPT
+    if (inLabeledBreak(t)) return; // a declared Break silences its exact span
+    let vv = v + HARD_DELTA; // hard: one uniform shift, applied nowhere else
+    if (p === 42) vv = Math.max(40, vv); // hats never fall back into the inaudible zone
+    hits.push({t, p, v: Math.max(1, Math.min(127, Math.round(vv))), d});
+  };
+  // a boundary AT the range start: this generation owns the arrival — crash it
+  // (section-at-a-time workflow: the intro pass plays the fill, this pass lands)
+  if (boundaries.has(fromBar) && !isBreak(fromBar)) {
+    const arng = drumRng(seed, fromBar * 7919 + 47);
+    put((fromBar - 1) * bt, 49, 100 + arng() * 12, 120);
+  }
+  for (let bar = fromBar; bar <= toBar; bar++) {
+    if (scopePcs && scopePcs.size === 0 && fillsOn && !fillBarSet.has(bar)) continue; // fills-only: touch fill bars alone
+    if (isBreak(bar)) continue; // his breaks are sacred: the drummer lays out
+    const rng = drumRng(seed, grooveLane(bar));
+    const bs = (bar - 1) * bt;
+    // fill window (the fill owns its beats; skeleton and hats yield inside it)
+    let fill = null;
+    if (boundaries.has(bar + 1) && fillAmt > 0) {
+      const frng = drumRng(seed, bar * 7919 + 13);
+      // the FILLS knob (not energy) picks the band and the odds — Logic's
+      // Fill Amount/Complexity split, collapsed to one knob (Josh, 2026-08-22)
+      const pool = DR_FILLS.filter(f => fillAmt >= f.minE && fillAmt <= f.maxE);
+      if (frng() < 0.35 + 0.12 * fillAmt && pool.length) {
+        if (fillAmt >= 4) { // weighted: big fills dominate at the top of the knob
+          const total = pool.reduce((a, f) => a + (f.weight || 1), 0);
+          let roll = frng() * total;
+          for (const f of pool) { roll -= (f.weight || 1); if (roll <= 0) { fill = f; break; } }
+          if (!fill) fill = pool[pool.length - 1];
+        } else fill = pool[Math.floor(frng() * pool.length)];
+      }
+    }
+    const fillStart = fill ? bs + (beats - Math.min(fill.len, beats)) * qt : Infinity;
+    // skeleton: kick on 1 (fixed in every feel) — knobs never move the anchor
+    put(bs, 36, 104 + rng() * 8, 70);
+    let barSnareV = 0; // tracked PRE-delta: the hats-under-snare discipline shifts uniformly
+    if (feel === "double") { // skank/D-beat: kick every beat, snare every offbeat 8th
+      for (let k = 1; k < beats; k++) {
+        const t = bs + k * qt;
+        if (t < fillStart) put(t, 36, 96 + rng() * 8, 65);
+      }
+      for (let k = 0; k < beats; k++) {
+        const t = bs + (k + 0.5) * qt;
+        if (t >= fillStart) continue;
+        const v = 100 + rng() * 16;
+        barSnareV = Math.max(barSnareV, v);
+        put(t, 38, v, 55);
+      }
+    } else {
+      const backs = feel === "half" ? [Math.floor(beats / 2) + 1] : drBackbeats(beats);
+      for (const b of backs) {
+        const t = bs + (b - 1) * qt;
+        if (t >= fillStart) continue;
+        const v = 100 + rng() * 16;
+        barSnareV = Math.max(barSnareV, v);
+        put(t, 38, v, 60);
+      }
+    }
+    if (!barSnareV) barSnareV = 108;
+    if (scopePcs && !grooveGroups.includes("snare")) { // snares kept, not generated: cap under the REAL ones
+      let kept = 0;
+      for (const n of tr.notes) if (!n.gone && n.t >= bs && n.t < bs + bt && (n.p === 38 || n.p === 40)) kept = Math.max(kept, n.v || 0);
+      if (kept) barSnareV = kept;
+    }
+    // hats: table by feel + busy; ceiling stays under the bar's snare
+    const hatCap = Math.min(88, barSnareV - 12); // under the snare, but audible in the mix
+    const hatStep = feel === "half" ? (busy <= 2 ? qt : qt / 2) : qt / 2; // half thins a notch
+    for (let t = bs; t < bs + bt; t += hatStep) {
+      if (t >= fillStart) break;
+      const on = Math.abs((t - bs) % qt) < 1;
+      put(t, 42, Math.min(hatCap, on ? 66 + rng() * 16 : 52 + rng() * 12), 40);
+      const pairGate = feel === "half" ? busy >= 5 : busy >= 4;
+      const pairProb = feel === "half" ? 0.12 * (busy - 1) : 0.12 * busy;
+      if (pairGate && !on && rng() < pairProb) put(t + qt / 4, 42, Math.min(hatCap, 50 + rng() * 10), 35);
+    }
+    if (follow === "bass" && feel !== "double") { // double already owns every slot
+      // bass-following kicks: offbeat bass onsets, probability by busy, capped 2/bar
+      let extra = 0;
+      for (const n of bass) {
+        if (n.t < bs || n.t >= bs + bt || n.t >= fillStart) continue;
+        const beatPos = (n.t - bs) / qt;
+        if (Math.abs(beatPos - Math.round(beatPos)) < 0.01 && (Math.round(beatPos) === 0)) continue; // beat 1 covered
+        if (extra >= 2) break;
+        if (rng() < 0.12 + 0.1 * busy) { put(n.t, 36, 88 + rng() * 12, 60); extra++; }
+      }
+      // agogic snare on the bass's LONG notes (Josh's own device)
+      for (const n of bass) {
+        if (n.t < bs || n.t >= bs + bt || n.t >= fillStart) continue;
+        if (n.d >= qt * 1.5 && !(feel === "double") &&
+            !(feel === "half" ? [Math.floor(beats / 2) + 1] : drBackbeats(beats))
+              .some(b => Math.abs(n.t - (bs + (b - 1) * qt)) < 5))
+          put(n.t, 38, Math.min(120, barSnareV + 8), 60);
+      }
+    } else if (follow === "chords") { // declared chord starts get the kick — deterministic
+      let ck = 0;
+      for (const ct of chordStarts) {
+        if (ct < bs || ct >= Math.min(bs + bt, fillStart)) continue;
+        if (Math.abs(ct - bs) < 5) continue; // downbeat already kicked
+        if (ck >= 4) break; // harmonic-rhythm-compression safety
+        put(ct, 36, 92 + rng() * 12, 60);
+        ck++;
+      }
+    }
+    // the fill itself, then a crash lands on the boundary downbeat (next bar's put)
+    if (fill) for (const h of fill.hits(rng, qt, beats)) put(bs + h.off, h.p, h.v, h.d);
+    if (boundaries.has(bar + 1) && bar + 1 <= toBar && !isBreak(bar + 1)) {
+      put(bs + bt, 49, 100 + rng() * 12, 120);
+    }
+  }
+  // chord-change downbeat accents (+12, capped) — harmonic-rhythm compression
+  // densifies these automatically, so his device is honored for free
+  if (follow !== "off") for (const ct of chordStarts) {
+    if (ct < t0 || ct >= t1) continue;
+    for (const h of hits) if (h.t === ct && (h.p === 36 || h.p === 42)) h.v = Math.min(h.p === 42 ? 76 + HARD_DELTA : 127, h.v + 12);
+  }
+  hits.sort((a, b) => a.t - b.t || a.p - b.p);
+  const added = [];
+  for (const h of hits) {
+    tr.notes.push({t: h.t, d: h.d, p: h.p, v: h.v, added: isAdd});
+    if (S.song.rawNotes) S.song.rawNotes[di].push({t: h.t + S.chopS, d: h.d, p: h.p, v: h.v, added: isAdd});
+    added.push({ti: di, ni: tr.notes.length - 1});
+  }
+  pushUndo({kind: "group", entries: [{kind: "eraseBatch", items: erased}, {kind: "addBatch", items: added}]});
+  if (madeTrack) undoTrackAdd(di, undoLen); // a kit the Drummer made leaves with its take
+  saveEdits();
+  computeSongEnd();
+  if (S.viewMode === "score") buildScoreModel();
+  S.view.y = 1e9;
+  clampView();
+  draw();
+  return added.length;
+}
+function bsGenerate(seed, opts) { // the Bassist: strictly monophonic, chord-driven
+  const {style = "chug", busy = 3, oct = 2, follow = "auto", followTi, targetTi,
+         fromBar, toBar} = opts;
+  const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
+  const t0 = opts.t0 !== undefined ? opts.t0 : (fromBar - 1) * bt;
+  const t1 = opts.t1 !== undefined ? opts.t1 : toBar * bt;
+  if (!editableSong()) { setInfo("the Bassist works on your own songs — captures are locked"); return 0; }
+  if (S.rollnotes.some(n => n.tsdir && n.start > t0 && n.start < t1)) {
+    setInfo("the range crosses a meter change — generate each meter's bars separately");
+    return 0;
+  }
+  if (targetTi === undefined || !S.song.tracks[targetTi] || trackIsDrums(targetTi)) {
+    setInfo("pick a target track for the bass");
+    return 0;
+  }
+  // pitch truth ladder: declared chords > inferred-from-melody sketch > key root > refuse
+  let tl = bsChordTimeline(t0, t1);
+  let inferred = false;
+  {
+    const mels = S.song.tracks.map((tr2, ti) => ({tr2, ti}))
+      .filter(({tr2, ti}) => ti !== targetTi && !trackIsDrums(ti) &&
+        tr2.notes.some(n => !n.gone && n.t < t1 && n.t + n.d > t0))
+      .map(({ti}) => ti); // ALL sounding voices — one voice alone misreads multi-voice songs
+    if (mels.length) { // fill only the bars no band covers (mixed songs welcome)
+      const declared = tl.filter(e => !e.lookahead);
+      const inferredTl = bsInferTimeline(t0, t1, mels, drumRng(seed, 0xB055));
+      const gaps = inferredTl.filter(g => !declared.some(d2 => d2.t < g.end && d2.end > g.t));
+      if (gaps.length) { inferred = declared.length === 0; tl = [...declared, ...gaps, ...tl.filter(e => e.lookahead)].sort((a, b) => a.t - b.t); }
+    }
+    if (!tl.filter(e => !e.lookahead).length) {
+      const kn = keyNameAt(t0), pc = kn && sfDeclaredAt(t0) !== null ? tonicPcOfName(kn) : null;
+      if (pc === null || pc === undefined) {
+        setInfo("no chords, no melody, no key declared in this range — the bassist has nothing to read");
+        return 0;
+      }
+      tl = [{t: t0, end: t1, rootPc: pc, bassPc: pc, tones: [pc, (pc + 7) % 12], readable: true}];
+    }
+  }
+  // NOTE: no Break silencing here — a Break is a drop to JUST BASS (his own
+  // device, cool-b-maj + graveyard), so the bass is the one voice that plays through.
+  // follow source for the riff style / accents
+  const di = S.song.tracks.findIndex((_, ti) => trackIsDrums(ti));
+  const fMode = follow === "auto" ? (di >= 0 ? "drums" : "chords") : follow;
+  const srcOnsets = [];
+  if (fMode === "drums" && di >= 0) {
+    for (const n of S.song.tracks[di].notes)
+      if (!n.gone && (n.p === 36 || n.p === 35) && n.t >= t0 && n.t < t1) srcOnsets.push(n.t);
+  } else if (fMode.startsWith && fMode.startsWith("t")) {
+    const ti = parseInt(fMode.slice(1), 10);
+    if (S.song.tracks[ti]) for (const n of S.song.tracks[ti].notes)
+      if (!n.gone && n.t >= t0 && n.t < t1) srcOnsets.push(n.t);
+  } else if (fMode === "chords") {
+    for (const e of tl) if (!e.lookahead && e.t >= t0 && e.t < t1) srcOnsets.push(e.t);
+  }
+  srcOnsets.sort((a, b) => a - b);
+  const srcSet = new Set(srcOnsets.map(t => Math.round(t / (qt / 4)) * (qt / 4)));
+  const place = (pc, o) => Math.max(24, Math.min(60, 12 * (o + 1) + pc));
+  const hits = [];
+  const put = (t, p, v, d) => {
+    if (t < t0 || t >= t1) return;
+    hits.push({t: Math.round(t), p, v: Math.max(1, Math.min(127, Math.round(v))), d: Math.max(20, Math.round(d))});
+  };
+  const vFor = (t, bs) => { // downbeat 96 / on-beat 88 / off 78; +8 on chord-change onsets (cap 110)
+    const pos = (t - bs) / qt;
+    let v = Math.abs(pos) < 0.01 ? 96 : Math.abs(pos - Math.round(pos)) < 0.01 ? 88 : 78;
+    const c = chordAt(tl, t);
+    if (c && Math.abs(c.t - t) < 5) v = Math.min(110, v + 8);
+    return v;
+  };
+  for (let bar = fromBar; bar <= toBar; bar++) {
+    const bs = (bar - 1) * bt;
+    const rng = drumRng(seed, sectionLane(bar) ^ 0xBA55);
+    const jit = []; // constant draw budget per bar per style (liked-bar stability)
+    for (let i = 0; i < beats * 2; i++) jit.push(rng() * 8 - 4);
+    const pops = [];
+    for (let i = 0; i < beats; i++) pops.push(rng());
+    const dirDraw = rng();
+    const c0 = chordAt(tl, bs) || tl[0];
+    if (!c0) continue;
+    if (style === "chug") {
+      for (let i = 0; i < beats * 2; i++) {
+        const t = bs + i * qt / 2;
+        const c = chordAt(tl, t) || c0;
+        if (busy === 1 && i % 2) continue;
+        if (busy === 2 && i === beats * 2 - 1) continue;
+        let p = place(c.bassPc, oct);
+        if (busy >= 4 && i % 2 && pops[i >> 1] < 0.25) p += 12;
+        put(t, p, vFor(t, bs) + jit[i], busy === 1 ? qt * 0.9 : qt * 0.45);
+        if (busy >= 5 && i === beats * 2 - 2) put(t + qt / 4, p, 74 + jit[i], qt * 0.2);
+      }
+    } else if (style === "pump") {
+      const step = busy >= 4 ? qt / 2 : qt;
+      for (let t = bs, i = 0; t < bs + bt; t += step, i++) {
+        const c = chordAt(tl, t) || c0;
+        if (busy === 1 && (t - bs) % (2 * qt) !== 0) continue;
+        const root = place(c.bassPc, oct);
+        const fifth = root + 7 <= 12 * (oct + 1) + 16 ? root + 7 : root - 5;
+        put(t, (Math.floor((t - bs) / qt)) % 2 === 0 ? root : fifth,
+            vFor(t, bs) + jit[Math.min(jit.length - 1, i)], busy === 1 ? qt * 2 : step * 0.85);
+      }
+    } else if (style === "arp") {
+      const c = c0;
+      const tones = c.tones.length >= 3 ? c.tones.slice(0, 4) : [...c.tones, (c.rootPc + 12) % 12];
+      const step = busy <= 2 ? qt : busy <= 4 ? qt / 2 : qt / 4;
+      const seq = [];
+      const up = tones.map(pc => place(pc, oct) + (pc < c.bassPc ? 12 : 0)).sort((a, b) => a - b);
+      if (dirDraw < 0.4) seq.push(...up);
+      else if (dirDraw < 0.7) seq.push(...[...up].reverse());
+      else seq.push(...up, ...[...up].reverse().slice(1, -1));
+      let k = 0;
+      for (let t = bs; t < bs + bt; t += step, k++) {
+        const cc = chordAt(tl, t) || c;
+        if (cc !== c && Math.abs(cc.t - t) < 5) { put(t, place(cc.bassPc, oct), vFor(t, bs) + jit[k % jit.length], step * 0.8); k = 0; continue; }
+        put(t, seq[k % seq.length], vFor(t, bs) + jit[k % jit.length], step * 0.8);
+      }
+    } else if (style === "walk") {
+      const nxt = nextChange(tl, bs + bt - qt);
+      for (let b = 0; b < beats; b++) {
+        const t = bs + b * qt;
+        if (busy <= 2 && b !== 0 && b !== beats - 1) continue;
+        const c = chordAt(tl, t) || c0;
+        let p;
+        if (b === 0) p = place(c.bassPc, oct);
+        else if (b === beats - 1 && nxt) { // approach into the coming change
+          const tgt = place(nxt.bassPc, oct);
+          const r = pops[b];
+          p = r < 0.4 ? tgt - 1 : r < 0.6 ? tgt + 1 : r < 0.8 ? tgt - 5 : tgt - 2;
+        } else if (b === beats - 1) p = place(c.bassPc, oct) - 5; // turnaround fifth below
+        else { // middle: nearest chord tone toward the target line
+          const from = place(c.bassPc, oct);
+          const tgt = nxt ? place(nxt.bassPc, oct) : from;
+          const ideal = from + (tgt - from) * (b / (beats - 1));
+          const opts2 = c.tones.map(pc => place(pc, oct) + (place(pc, oct) < from - 6 ? 12 : 0));
+          opts2.sort((a2, b2) => Math.abs(a2 - ideal) - Math.abs(b2 - ideal) || (pops[b] < 0.5 ? a2 - b2 : b2 - a2));
+          p = opts2[0];
+        }
+        put(t, p, vFor(t, bs) + jit[b * 2], qt * 0.9);
+        if (busy >= 4 && pops[b] < 0.2) put(t + qt / 2, p, 74 + jit[b * 2 + 1], qt * 0.4);
+      }
+    } else if (style === "riff") {
+      const ons = srcOnsets.filter(t => t >= bs && t < bs + bt)
+        .map(t => Math.round(t / (qt / 4)) * (qt / 4)).filter((t, i, a) => a.indexOf(t) === i).slice(0, 8);
+      if (!ons.length) { ons.push(bs, bs + 2 * qt); }
+      ons.forEach((t, i) => {
+        const c = chordAt(tl, t) || c0;
+        const r = pops[i % pops.length];
+        const pc = Math.abs(c.t - t) < 5 ? c.bassPc
+                 : r < 0.6 ? c.bassPc : r < 0.85 ? c.tones[Math.min(2, c.tones.length - 1)] : c.tones[Math.min(1, c.tones.length - 1)];
+        const next = ons[i + 1];
+        put(t, place(pc, oct), (srcSet.has(Math.round(t / (qt / 4)) * (qt / 4)) ? 92 : 82) + jit[i % jit.length],
+            Math.min(next !== undefined ? next - t : qt, qt));
+      });
+    }
+  }
+  hits.sort((a, b) => a.t - b.t);
+  for (let i = 0; i < hits.length - 1; i++) hits[i].d = Math.min(hits[i].d, hits[i + 1].t - hits[i].t); // strict mono
+  const n = applyTake(targetTi, t0, t1, hits);
+  if (inferred) setInfo("no chords declared — harmony sketched from your melody (internal only; different seeds read it differently)");
+  return n;
+}
+function saveEdits() {
+  // label review is on-demand only (Josh, 2026-08-19: unsolicited verdicts are
+  // not in the spirit of the project) — edits just retire any review flags
+  S.rollnotes.forEach(n => { if (n.stale) delete n.stale; });
+  scheduleAnalysisRecompute(); // P6: Normal-only view layer — recompute on note edits, debounced; no-op when off
+  if (isComposition() || isLocalDraft()) { // composition or local song: the notes ARE the song — draft it whole
+    saveDraft();
+    computeSongEnd();
+    updateSongMeta();
+    return;
+  }
+  if (!editsKey()) return;
+  const removed = [], added = [];
+  S.song.tracks.forEach((tr, ti) => tr.notes.forEach((n, ni) => {
+    // ticks stored raw (chop is a view); ri keeps ids stable across chops
+    if (n.added) { if (!n.gone) added.push({ti, t: n.t + S.chopS, d: n.d, p: n.p}); }
+    else if (n.gone) removed.push(ti + ":" + (n.ri !== undefined ? n.ri : ni));
+  }));
+  if (removed.length || added.length)
+    localStorage.setItem(editsKey(), JSON.stringify({removed, added}));
+  else localStorage.removeItem(editsKey());
+  updateClearBtn();
+}
+saveEdits = prof("saveEdits", saveEdits); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+// The generators' shared apply: replace-in-range as ONE group undo. Erase is
+// by ONSET (a note sustaining in from before the range survives), via the
+// `gone` flag — never a splice, so `ni` indices stay stable for undo — with
+// the rawNotes mirror through `ri`; adds mirror into rawNotes at + chopS.
+// hits: [{t, d, p, v}] in display ticks. Extracted from the Bassist
+// 2026-09-25 for ✦ Fill; tests/fixtures/bassist-golden.json pins its output.
+function applyTake(targetTi, t0, t1, hits) {
+  const tr = S.song.tracks[targetTi], isAdd = !isComposition();
+  const erased = [];
+  tr.notes.forEach((n, ni) => {
+    if (!n.gone && n.t >= t0 && n.t < t1) {
+      n.gone = true;
+      const rn = S.song.rawNotes && n.ri !== undefined && S.song.rawNotes[targetTi][n.ri];
+      if (rn) rn.gone = true;
+      erased.push({ti: targetTi, ni});
+    }
+  });
+  const added = [];
+  for (const h of hits) {
+    if (h.d <= 0) continue;
+    const v = Math.max(1, Math.min(127, Math.round(h.v))), d = Math.max(20, Math.round(h.d)), t = Math.round(h.t);
+    tr.notes.push({t, d, p: h.p, v, added: isAdd});
+    if (S.song.rawNotes) S.song.rawNotes[targetTi].push({t: t + S.chopS, d, p: h.p, v, added: isAdd});
+    added.push({ti: targetTi, ni: tr.notes.length - 1});
+  }
+  pushUndo({kind: "group", entries: [{kind: "eraseBatch", items: erased}, {kind: "addBatch", items: added}]});
+  saveEdits();
+  computeSongEnd();
+  if (S.viewMode === "score") buildScoreModel();
+  draw();
+  return added.length;
+}
 // ---- e2e accessor mirror (docs/split-plan.md §4 step 0b deviation) -------
 // Generated by tools/split/cutover.mjs (step 0b) / tools/split/
 // regen-e2e-footer.mjs (step 1 on), not hand-maintained — re-running either
@@ -17213,4 +15051,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"rememberRecentSong": () => rememberRecentSong, "recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "PSX_SOUNDING_ON": () => PSX_SOUNDING_ON, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "songRegionRight": () => songRegionRight, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "loadEdits": () => loadEdits, "saveEdits": () => saveEdits, "foldOldOverlay": () => foldOldOverlay, "retireOldOverlay": () => retireOldOverlay, "placeLassoBtn": () => placeLassoBtn, "updateEditBtnVis": () => updateEditBtnVis, "computeSongEnd": () => computeSongEnd, "annoSnapshot": () => annoSnapshot, "annoRestore": () => annoRestore, "setAnchorBQ": () => setAnchorBQ, "setEndBQ": () => setEndBQ, "bakeTempos": () => bakeTempos, "bakeMeter": () => bakeMeter, "finalizeNotes": () => finalizeNotes, "loadNotes": () => loadNotes, "subtractTombstones": () => subtractTombstones, "mergeLocalAdditions": () => mergeLocalAdditions, "annotationsFor": () => annotationsFor, "resolveNoteWith": () => resolveNoteWith, "saveLocalNotes": () => saveLocalNotes, "dirtySongs": () => dirtySongs, "updateSyncBtn": () => updateSyncBtn, "dropLocalKeyAt": () => dropLocalKeyAt, "dropSupersededBy": () => dropSupersededBy, "homeSong": () => homeSong, "appConfirm": () => appConfirm, "reflectSongURL": () => reflectSongURL, "toggleHl": () => toggleHl, "updateLCD": () => updateLCD, "governingAt": () => governingAt, "updateSubtitle": () => updateSubtitle, "loadSong": () => loadSong, "loadSongInner": () => loadSongInner, "setSong": () => setSong, "renderTrackbar": () => renderTrackbar, "updateTrackMore": () => updateTrackMore, "TRACK_ROW_SLACK": () => TRACK_ROW_SLACK, "trackRowNeed": () => trackRowNeed, "fitTrackRow": () => fitTrackRow, "scheduleFitTrackRow": () => scheduleFitTrackRow, "trackToggle": () => trackToggle, "mixerIsOpen": () => mixerIsOpen, "mixerPanLabel": () => mixerPanLabel, "moveInSameOrder": () => moveInSameOrder, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerMasterStripEl": () => mixerMasterStripEl, "mixerStripDragize": () => mixerStripDragize, "ensureMixerMeters": () => ensureMixerMeters, "teardownMixerMeters": () => teardownMixerMeters, "mixerMeterRms": () => mixerMeterRms, "mixerMeterLoop": () => mixerMeterLoop, "ensureMixerMeterLoop": () => ensureMixerMeterLoop, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "resize": () => resize, "draw": () => draw, "playbackFrame": () => playbackFrame, "updateCanvasA11y": () => updateCanvasA11y, "drawFull": () => drawFull, "clearMultiSel": () => clearMultiSel, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "reflectSelVel": () => reflectSelVel, "refreshSelInfo": () => refreshSelInfo, "renderOctBtn": () => renderOctBtn, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "writeClips": () => writeClips, "setClipDir": () => setClipDir, "moveClip": () => moveClip, "trimClip": () => trimClip, "splitClipAt": () => splitClipAt, "splitSelectedClipAtCursor": () => splitSelectedClipAtCursor, "deleteClip": () => deleteClip, "hitTracksClip": () => hitTracksClip, "updateChordStale": () => updateChordStale, "transposeChordLabel": () => transposeChordLabel, "ridealongChordBands": () => ridealongChordBands, "selEditApply": () => selEditApply, "nudgeSelection": () => nudgeSelection, "resizeSelection": () => resizeSelection, "copySelection": () => copySelection, "cutSelection": () => cutSelection, "pasteAnnotations": () => pasteAnnotations, "pasteClipboard": () => pasteClipboard, "selectAllNotes": () => selectAllNotes, "duplicateSelection": () => duplicateSelection, "lassoedAnnos": () => lassoedAnnos, "deleteSelection": () => deleteSelection, "sweepStrandedClones": () => sweepStrandedClones, "duplicateSelectionInPlace": () => duplicateSelectionInPlace, "splitApply": () => splitApply, "openGapShift": () => openGapShift, "closeGap": () => closeGap, "insertTime": () => insertTime, "openInsertBars": () => openInsertBars, "deleteTime": () => deleteTime, "openDeleteBars": () => openDeleteBars, "divideSelection": () => divideSelection, "quantizeSelection": () => quantizeSelection, "splitSelectionAt": () => splitSelectionAt, "splitSelectionHalves": () => splitSelectionHalves, "joinSelection": () => joinSelection, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "jobsNotify": () => jobsNotify, "jobsLoad": () => jobsLoad, "jobsAutoClear": () => jobsAutoClear, "jobStart": () => jobStart, "jobApi": () => jobApi, "jobCancel": () => jobCancel, "jobsDismiss": () => jobsDismiss, "jobsClearFinished": () => jobsClearFinished, "updateJobsBtn": () => updateJobsBtn, "renderJobs": () => renderJobs, "openPubJobSheet": () => openPubJobSheet, "pubItemIcon": () => pubItemIcon, "renderPubJob": () => renderPubJob, "errChip": () => errChip, "logErr": () => logErr, "logDebug": () => logDebug, "srAnnounce": () => srAnnounce, "STATUS_HISTORY_CAP": () => STATUS_HISTORY_CAP, "setInfo": () => setInfo, "minPxq": () => minPxq, "songPitchExtent": () => songPitchExtent, "pxqFloor": () => pxqFloor, "ROLL_AIR": () => ROLL_AIR, "dispPitchExtent": () => dispPitchExtent, "rowHFloor": () => rowHFloor, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "fitView": () => fitView, "PAN_TAIL_BARS": () => PAN_TAIL_BARS, "clampView": () => clampView, "tap": () => tap, "ensureAudio": () => ensureAudio, "rebuildAudio": () => rebuildAudio, "resumeAudio": () => resumeAudio, "sfPreloadForSong": () => sfPreloadForSong, "sfWaitForSong": () => sfWaitForSong, "autoVoiceLabel": () => autoVoiceLabel, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "GAME_FAMILY": () => GAME_FAMILY, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "SF2_FAMILY": () => SF2_FAMILY, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "gameVoiceFromAll": () => gameVoiceFromAll, "gameVoiceFrom": () => gameVoiceFrom, "gameVoiceFromSet": () => gameVoiceFromSet, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "transposeTrack": () => transposeTrack, "resolveGameVault": () => resolveGameVault, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "instPlayerReady": () => instPlayerReady, "gameLibSync": () => gameLibSync, "sf2Sync": () => sf2Sync, "gameVoicesInSong": () => gameVoicesInSong, "sf2VoicesInSong": () => sf2VoicesInSong, "gamePreloadTokens": () => gamePreloadTokens, "gamePreloadForSong": () => gamePreloadForSong, "gameWaitForSong": () => gameWaitForSong, "gameNoteCache": () => gameNoteCache, "gameNoteBucket": () => gameNoteBucket, "gameVoiceWarned": () => gameVoiceWarned, "gameVoiceWarn": () => gameVoiceWarn, "resolveVoiceInstrument": () => resolveVoiceInstrument, "scheduleGameNote": () => scheduleGameNote, "scheduleNote": () => scheduleNote, "previewNote": () => previewNote, "buildSchedule": () => buildSchedule, "chipSource": () => chipSource, "updateChipBtn": () => updateChipBtn, "PLAY_GATE_GRACE": () => PLAY_GATE_GRACE, "PLAY_GATE_MAX": () => PLAY_GATE_MAX, "gateSettled": () => gateSettled, "gateWatched": () => gateWatched, "gatePending": () => gatePending, "playGate": () => playGate, "playGateKick": () => playGateKick, "playGateActive": () => playGateActive, "playGateTick": () => playGateTick, "playGateWait": () => playGateWait, "updateChipBtnInner": () => updateChipBtnInner, "chipEstimateTracks": () => chipEstimateTracks, "chipRender": () => chipRender, "chipCleanupAfterFailure": () => chipCleanupAfterFailure, "chipPublish": () => chipPublish, "chipRenderInWorker": () => chipRenderInWorker, "chipStreamOpenWorker": () => chipStreamOpenWorker, "chipStreamOpen": () => chipStreamOpen, "chipRenderAuto": () => chipRenderAuto, "applyAudioDirs": () => applyAudioDirs, "audioEnsureFile": () => audioEnsureFile, "applyBeatMap": () => applyBeatMap, "setSongTempo": () => setSongTempo, "stretchEnsure": () => stretchEnsure, "audioChaseNow": () => audioChaseNow, "stretchEnsureAll": () => stretchEnsureAll, "scheduleClip": () => scheduleClip, "play": () => play, "stop": () => stop, "albumPos": () => albumPos, "armAlbumLink": () => armAlbumLink, "albumStrip": () => albumStrip, "albumClear": () => albumClear, "albumLeave": () => albumLeave, "albumStart": () => albumStart, "albumNext": () => albumNext, "albumPrev": () => albumPrev, "albumPlayIdx": () => albumPlayIdx, "albumAdvance": () => albumAdvance, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songtitleEl": () => songtitleEl, "songsheet": () => songsheet, "updateSongBtn": () => updateSongBtn, "songRow": () => songRow, "songHeader": () => songHeader, "localLabel": () => localLabel, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "updateSongMeta": () => updateSongMeta, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "keysel": () => keysel, "keysetBtn": () => keysetBtn, "keymodeSel": () => keymodeSel, "fileMeterAt": () => fileMeterAt, "fileCheckLine": () => fileCheckLine, "runKeyCheck": () => runKeyCheck, "runMeterCheck": () => runMeterCheck, "useFileKey": () => useFileKey, "useFileMeter": () => useFileMeter, "keyNameShownAt": () => keyNameShownAt, "expandKeyName": () => expandKeyName, "keyLabelState": () => keyLabelState, "tonicLabel": () => tonicLabel, "chosenTonic": () => chosenTonic, "chosenTonicPc": () => chosenTonicPc, "partialNameOf": () => partialNameOf, "tonicOptionValue": () => tonicOptionValue, "refreshKeyPreview": () => refreshKeyPreview, "refreshKeysetLabel": () => refreshKeysetLabel, "metStart": () => metStart, "CHORD_QUALS": () => CHORD_QUALS, "CHORD_ROOTS": () => CHORD_ROOTS, "INS_DURS": () => INS_DURS, "chordLabel": () => chordLabel, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "stampChordBand": () => stampChordBand, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "PROG_LIB": () => PROG_LIB, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "notelistSheet": () => notelistSheet, "NOTE_GROUPS": () => NOTE_GROUPS, "renderNoteJump": () => renderNoteJump, "renderNoteList": () => renderNoteList, "openNoteList": () => openNoteList, "showHelpTab": () => showHelpTab, "findsel": () => findsel, "refreshFindSel": () => refreshFindSel, "lassobtn": () => lassobtn, "chordEvidence": () => chordEvidence, "openChallenge": () => openChallenge, "applyListener": () => applyListener, "applyChrome": () => applyChrome, "FOOTER_DROPUP_BTN_IDS": () => FOOTER_DROPUP_BTN_IDS, "fitReadline": () => fitReadline, "scheduleFitReadline": () => scheduleFitReadline, "viewbtn": () => viewbtn, "viewSwitchMenu": () => viewSwitchMenu, "renderViewSwitch": () => renderViewSwitch, "applyViewMode": () => applyViewMode, "viewSaved": () => viewSaved, "setViewMode": () => setViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "syncDurSeg": () => syncDurSeg, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinish": () => recFinish, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "instbtn": () => instbtn, "instFallBtn": () => instFallBtn, "applyInst": () => applyInst, "subbtn": () => subbtn, "toggleSubtitle": () => toggleSubtitle, "editor": () => editor, "fillBarBeatSelects": () => fillBarBeatSelects, "editorType": () => editorType, "applyEditorType": () => applyEditorType, "BASS_SPELLINGS": () => BASS_SPELLINGS, "chordSel": () => chordSel, "refreshChordChips": () => refreshChordChips, "composeChord": () => composeChord, "setChordWidget": () => setChordWidget, "SPEECH": () => SPEECH, "nmic": () => nmic, "micStop": () => micStop, "micJoin": () => micJoin, "micToggle": () => micToggle, "snapBeat": () => snapBeat, "setBeatPair": () => setBeatPair, "getBeatPair": () => getBeatPair, "openEditor": () => openEditor, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "tombKey": () => tombKey, "tombKeyFor": () => tombKeyFor, "noteIdentity": () => noteIdentity, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "tombstone": () => tombstone, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "syncsheet": () => syncsheet, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "folderChoices": () => folderChoices, "fillFolderSelect": () => fillFolderSelect, "renameLocalKeys": () => renameLocalKeys, "saveSongAs": () => saveSongAs, "openSaveForm": () => openSaveForm, "localFolders": () => localFolders, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "songStatus": () => songStatus, "publishDest": () => publishDest, "publishLabel": () => publishLabel, "draftFingerprint": () => draftFingerprint, "pubCheck": () => pubCheck, "pubCompareDraft": () => pubCompareDraft, "fingerprintOldDrafts": () => fingerprintOldDrafts, "saveDraft": () => saveDraft, "saveVersion": () => saveVersion, "openDraft": () => openDraft, "openDraftDoc": () => openDraftDoc, "createComposition": () => createComposition, "forkCurrentSong": () => forkCurrentSong, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "renderViewMenu": () => renderViewMenu, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "closeDropUp": () => closeDropUp, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "instLibs": () => instLibs, "instWavs": () => instWavs, "instPlayer": () => instPlayer, "instDecodeWav": () => instDecodeWav, "instAlbums": () => instAlbums, "romanValue": () => romanValue, "titleSortKey": () => titleSortKey, "titleCompare": () => titleCompare, "INST_SYS_ORDER": () => INST_SYS_ORDER, "INST_CHIPS": () => INST_CHIPS, "instFolder": () => instFolder, "gameInstUsedBySong": () => gameInstUsedBySong, "gameSongRows": () => gameSongRows, "songInstrumentRows": () => songInstrumentRows, "currentSongGameContext": () => currentSongGameContext, "instLibrary": () => instLibrary, "instSamples": () => instSamples, "instKeys": () => instKeys, "sf2Module": () => sf2Module, "sf2Fonts": () => sf2Fonts, "sf2Bytes": () => sf2Bytes, "sf2Font": () => sf2Font, "sf2Registry": () => sf2Registry, "sf2RegistryAdd": () => sf2RegistryAdd, "instAudition": () => instAudition, "usedInstruments": () => usedInstruments, "usedInstrumentRows": () => usedInstrumentRows, "renderGameInstNav": () => renderGameInstNav, "renderInstSheet": () => renderInstSheet, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "dropLocalSong": () => dropLocalSong, "revertSongToRepo": () => revertSongToRepo, "versionLabel": () => versionLabel, "openVersionsSheet": () => openVersionsSheet, "renderVersionsSheet": () => renderVersionsSheet, "goBackToVersion": () => goBackToVersion, "goBackToPublished": () => goBackToPublished, "offlineWaitForAssets": () => offlineWaitForAssets, "renderSongOffline": () => renderSongOffline, "recordRealtimeAudio": () => recordRealtimeAudio, "CHIPS": () => CHIPS, "sonySeqCapture": () => sonySeqCapture, "psfInflater": () => psfInflater, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipExt": () => chipExt, "chipVaultMeta": () => chipVaultMeta, "chipVaultFile": () => chipVaultFile, "chipModules": () => chipModules, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "localDraftWrite": () => localDraftWrite, "localDraftTracks": () => localDraftTracks, "draftWrite": () => draftWrite, "draftRead": () => draftRead, "idbDraftPut": () => idbDraftPut, "commitImports": () => commitImports, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "dpTick": () => dpTick, "drGenerate": () => drGenerate, "drKitCountT": () => drKitCountT, "scheduleAnalysisRecompute": () => scheduleAnalysisRecompute, "adoptChordBand": () => adoptChordBand, "adoptAllChords": () => adoptAllChords, "adoptKeyRegion": () => adoptKeyRegion, "openAnalyzeSheet": () => openAnalyzeSheet, "bsGenerate": () => bsGenerate, "applyTake": () => applyTake, "bsBuildControls": () => bsBuildControls, "bsRange": () => bsRange, "bsRefresh": () => bsRefresh, "openBassist": () => openBassist, "drRange": () => drRange, "drRefresh": () => drRefresh, "segGet": () => segGet, "segSet": () => segSet, "drPartsGet": () => drPartsGet, "drPartsSet": () => drPartsSet, "drPartsSync": () => drPartsSync, "drBuildControls": () => drBuildControls, "openDrummer": () => openDrummer, "openPasteTo": () => openPasteTo, "diatonicShift": () => diatonicShift, "removeDuplicateNotes": () => removeDuplicateNotes, "updateEditButtons": () => updateEditButtons, "pushUndo": () => pushUndo, "addTrackUndoable": () => addTrackUndoable, "undoTrackAdd": () => undoTrackAdd, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "cmpBar": () => cmpBar, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askSave": () => askSave, "askCommitLog": () => askCommitLog, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "scheduleBackupFlush": () => scheduleBackupFlush, "flushBackupNow": () => flushBackupNow, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askBubble": () => askBubble, "askFillBubble": () => askFillBubble, "askCopyText": () => askCopyText, "askRender": () => askRender, "askRenderEarlier": () => askRenderEarlier, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askResumeSoon": () => askResumeSoon, "askRepending": () => askRepending, "askResume": () => askResume, "WM_KEY": () => WM_KEY, "WM_OLD_KEY": () => WM_OLD_KEY, "WM_MIN_W": () => WM_MIN_W, "WM_DEFAULT_W": () => WM_DEFAULT_W, "WM_MIN_H": () => WM_MIN_H, "WM_DEFAULT_H": () => WM_DEFAULT_H, "WM_MIN_SPLIT": () => WM_MIN_SPLIT, "WM_PHONE_MAX": () => WM_PHONE_MAX, "WM_ZONE_FRAC": () => WM_ZONE_FRAC, "WM_EDGE_GAP": () => WM_EDGE_GAP, "wmClampSize": () => wmClampSize, "wmClampHeight": () => wmClampHeight, "wmClampSplit": () => wmClampSplit, "wmAllowed": () => wmAllowed, "wmMigrate": () => wmMigrate, "wmMigrateShape": () => wmMigrateShape, "wmMigrateShapeB": () => wmMigrateShapeB, "wmSetSide": () => wmSetSide, "wmClearSide": () => wmClearSide, "wmSetSideMode": () => wmSetSideMode, "wmAddSideTab": () => wmAddSideTab, "wmRemoveSideTab": () => wmRemoveSideTab, "wmSetActiveSideTab": () => wmSetActiveSideTab, "wmSetSideWidth": () => wmSetSideWidth, "wmZoneFor": () => wmZoneFor, "wmDockBottom": () => wmDockBottom, "wmClearBottom": () => wmClearBottom, "wmSetBottomHeight": () => wmSetBottomHeight, "wmSetBottomSplit": () => wmSetBottomSplit, "wmWhereIs": () => wmWhereIs, "wmLoad": () => wmLoad, "wmSave": () => wmSave, "wmInnerWidth": () => wmInnerWidth, "wmInnerHeight": () => wmInnerHeight, "WM_WINDOWS": () => WM_WINDOWS, "wmSideCells": () => wmSideCells, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmWindowTitle": () => wmWindowTitle, "wmLayoutBottom": () => wmLayoutBottom, "wmDockLabel": () => wmDockLabel, "wmDockShort": () => wmDockShort, "wmSyncDockButtons": () => wmSyncDockButtons, "wmLayoutAll": () => wmLayoutAll, "wmZoneForPointer": () => wmZoneForPointer, "wmShowDropZone": () => wmShowDropZone, "wmHideDropZone": () => wmHideDropZone, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmMenuItem": () => wmMenuItem, "wmOpenMenu": () => wmOpenMenu, "wmCloseMenu": () => wmCloseMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "filesMirror": () => filesMirror, "filesMirrorSoon": () => filesMirrorSoon, "filesMirrorFor": () => filesMirrorFor, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "draftDirtyState": () => draftDirtyState, "syncable": () => syncable, "pendingSongs": () => pendingSongs, "renderSyncPending": () => renderSyncPending, "discardPending": () => discardPending, "openSyncSheet": () => openSyncSheet, "CFG_PANES": () => CFG_PANES, "cfgShowPane": () => cfgShowPane, "openSettingsSheet": () => openSettingsSheet, "noteTapMovesCursor": () => noteTapMovesCursor, "penInstant": () => penInstant, "textSizePref": () => textSizePref, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "ghCheckOut": () => ghCheckOut, "ghCheckMessage": () => ghCheckMessage, "ghCheck": () => ghCheck, "MODAL_KEEP": () => MODAL_KEEP, "openShareSheet": () => openShareSheet, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart}, set: {"rememberRecentSong": (v) => (rememberRecentSong = v), "recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "songRegionRight": (v) => (songRegionRight = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "loadEdits": (v) => (loadEdits = v), "saveEdits": (v) => (saveEdits = v), "foldOldOverlay": (v) => (foldOldOverlay = v), "retireOldOverlay": (v) => (retireOldOverlay = v), "placeLassoBtn": (v) => (placeLassoBtn = v), "updateEditBtnVis": (v) => (updateEditBtnVis = v), "computeSongEnd": (v) => (computeSongEnd = v), "annoSnapshot": (v) => (annoSnapshot = v), "annoRestore": (v) => (annoRestore = v), "setAnchorBQ": (v) => (setAnchorBQ = v), "setEndBQ": (v) => (setEndBQ = v), "bakeTempos": (v) => (bakeTempos = v), "bakeMeter": (v) => (bakeMeter = v), "finalizeNotes": (v) => (finalizeNotes = v), "loadNotes": (v) => (loadNotes = v), "subtractTombstones": (v) => (subtractTombstones = v), "mergeLocalAdditions": (v) => (mergeLocalAdditions = v), "annotationsFor": (v) => (annotationsFor = v), "resolveNoteWith": (v) => (resolveNoteWith = v), "saveLocalNotes": (v) => (saveLocalNotes = v), "dirtySongs": (v) => (dirtySongs = v), "updateSyncBtn": (v) => (updateSyncBtn = v), "dropLocalKeyAt": (v) => (dropLocalKeyAt = v), "dropSupersededBy": (v) => (dropSupersededBy = v), "homeSong": (v) => (homeSong = v), "appConfirm": (v) => (appConfirm = v), "reflectSongURL": (v) => (reflectSongURL = v), "toggleHl": (v) => (toggleHl = v), "updateLCD": (v) => (updateLCD = v), "governingAt": (v) => (governingAt = v), "updateSubtitle": (v) => (updateSubtitle = v), "loadSong": (v) => (loadSong = v), "loadSongInner": (v) => (loadSongInner = v), "setSong": (v) => (setSong = v), "renderTrackbar": (v) => (renderTrackbar = v), "updateTrackMore": (v) => (updateTrackMore = v), "trackRowNeed": (v) => (trackRowNeed = v), "fitTrackRow": (v) => (fitTrackRow = v), "scheduleFitTrackRow": (v) => (scheduleFitTrackRow = v), "trackToggle": (v) => (trackToggle = v), "mixerIsOpen": (v) => (mixerIsOpen = v), "mixerPanLabel": (v) => (mixerPanLabel = v), "moveInSameOrder": (v) => (moveInSameOrder = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerMasterStripEl": (v) => (mixerMasterStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "ensureMixerMeters": (v) => (ensureMixerMeters = v), "teardownMixerMeters": (v) => (teardownMixerMeters = v), "mixerMeterRms": (v) => (mixerMeterRms = v), "mixerMeterLoop": (v) => (mixerMeterLoop = v), "ensureMixerMeterLoop": (v) => (ensureMixerMeterLoop = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "resize": (v) => (resize = v), "draw": (v) => (draw = v), "playbackFrame": (v) => (playbackFrame = v), "updateCanvasA11y": (v) => (updateCanvasA11y = v), "drawFull": (v) => (drawFull = v), "clearMultiSel": (v) => (clearMultiSel = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "reflectSelVel": (v) => (reflectSelVel = v), "refreshSelInfo": (v) => (refreshSelInfo = v), "renderOctBtn": (v) => (renderOctBtn = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "writeClips": (v) => (writeClips = v), "setClipDir": (v) => (setClipDir = v), "moveClip": (v) => (moveClip = v), "trimClip": (v) => (trimClip = v), "splitClipAt": (v) => (splitClipAt = v), "splitSelectedClipAtCursor": (v) => (splitSelectedClipAtCursor = v), "deleteClip": (v) => (deleteClip = v), "hitTracksClip": (v) => (hitTracksClip = v), "updateChordStale": (v) => (updateChordStale = v), "transposeChordLabel": (v) => (transposeChordLabel = v), "ridealongChordBands": (v) => (ridealongChordBands = v), "selEditApply": (v) => (selEditApply = v), "nudgeSelection": (v) => (nudgeSelection = v), "resizeSelection": (v) => (resizeSelection = v), "copySelection": (v) => (copySelection = v), "cutSelection": (v) => (cutSelection = v), "pasteAnnotations": (v) => (pasteAnnotations = v), "pasteClipboard": (v) => (pasteClipboard = v), "selectAllNotes": (v) => (selectAllNotes = v), "duplicateSelection": (v) => (duplicateSelection = v), "lassoedAnnos": (v) => (lassoedAnnos = v), "deleteSelection": (v) => (deleteSelection = v), "sweepStrandedClones": (v) => (sweepStrandedClones = v), "duplicateSelectionInPlace": (v) => (duplicateSelectionInPlace = v), "splitApply": (v) => (splitApply = v), "openGapShift": (v) => (openGapShift = v), "closeGap": (v) => (closeGap = v), "insertTime": (v) => (insertTime = v), "openInsertBars": (v) => (openInsertBars = v), "deleteTime": (v) => (deleteTime = v), "openDeleteBars": (v) => (openDeleteBars = v), "divideSelection": (v) => (divideSelection = v), "quantizeSelection": (v) => (quantizeSelection = v), "splitSelectionAt": (v) => (splitSelectionAt = v), "splitSelectionHalves": (v) => (splitSelectionHalves = v), "joinSelection": (v) => (joinSelection = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsNotify": (v) => (jobsNotify = v), "jobsLoad": (v) => (jobsLoad = v), "jobsAutoClear": (v) => (jobsAutoClear = v), "jobStart": (v) => (jobStart = v), "jobApi": (v) => (jobApi = v), "jobCancel": (v) => (jobCancel = v), "jobsDismiss": (v) => (jobsDismiss = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "updateJobsBtn": (v) => (updateJobsBtn = v), "renderJobs": (v) => (renderJobs = v), "openPubJobSheet": (v) => (openPubJobSheet = v), "pubItemIcon": (v) => (pubItemIcon = v), "renderPubJob": (v) => (renderPubJob = v), "errChip": (v) => (errChip = v), "logErr": (v) => (logErr = v), "logDebug": (v) => (logDebug = v), "srAnnounce": (v) => (srAnnounce = v), "setInfo": (v) => (setInfo = v), "minPxq": (v) => (minPxq = v), "songPitchExtent": (v) => (songPitchExtent = v), "pxqFloor": (v) => (pxqFloor = v), "dispPitchExtent": (v) => (dispPitchExtent = v), "rowHFloor": (v) => (rowHFloor = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "fitView": (v) => (fitView = v), "clampView": (v) => (clampView = v), "tap": (v) => (tap = v), "ensureAudio": (v) => (ensureAudio = v), "rebuildAudio": (v) => (rebuildAudio = v), "resumeAudio": (v) => (resumeAudio = v), "sfPreloadForSong": (v) => (sfPreloadForSong = v), "sfWaitForSong": (v) => (sfWaitForSong = v), "autoVoiceLabel": (v) => (autoVoiceLabel = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "gameVoiceFromAll": (v) => (gameVoiceFromAll = v), "gameVoiceFrom": (v) => (gameVoiceFrom = v), "gameVoiceFromSet": (v) => (gameVoiceFromSet = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "transposeTrack": (v) => (transposeTrack = v), "resolveGameVault": (v) => (resolveGameVault = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "instPlayerReady": (v) => (instPlayerReady = v), "gameVoicesInSong": (v) => (gameVoicesInSong = v), "sf2VoicesInSong": (v) => (sf2VoicesInSong = v), "gamePreloadForSong": (v) => (gamePreloadForSong = v), "gameWaitForSong": (v) => (gameWaitForSong = v), "gameNoteBucket": (v) => (gameNoteBucket = v), "gameVoiceWarn": (v) => (gameVoiceWarn = v), "resolveVoiceInstrument": (v) => (resolveVoiceInstrument = v), "scheduleGameNote": (v) => (scheduleGameNote = v), "scheduleNote": (v) => (scheduleNote = v), "previewNote": (v) => (previewNote = v), "buildSchedule": (v) => (buildSchedule = v), "chipSource": (v) => (chipSource = v), "updateChipBtn": (v) => (updateChipBtn = v), "gatePending": (v) => (gatePending = v), "playGate": (v) => (playGate = v), "playGateKick": (v) => (playGateKick = v), "playGateActive": (v) => (playGateActive = v), "playGateTick": (v) => (playGateTick = v), "playGateWait": (v) => (playGateWait = v), "updateChipBtnInner": (v) => (updateChipBtnInner = v), "chipEstimateTracks": (v) => (chipEstimateTracks = v), "chipRender": (v) => (chipRender = v), "chipCleanupAfterFailure": (v) => (chipCleanupAfterFailure = v), "chipPublish": (v) => (chipPublish = v), "chipRenderInWorker": (v) => (chipRenderInWorker = v), "chipStreamOpenWorker": (v) => (chipStreamOpenWorker = v), "chipStreamOpen": (v) => (chipStreamOpen = v), "chipRenderAuto": (v) => (chipRenderAuto = v), "applyAudioDirs": (v) => (applyAudioDirs = v), "audioEnsureFile": (v) => (audioEnsureFile = v), "applyBeatMap": (v) => (applyBeatMap = v), "setSongTempo": (v) => (setSongTempo = v), "stretchEnsure": (v) => (stretchEnsure = v), "audioChaseNow": (v) => (audioChaseNow = v), "stretchEnsureAll": (v) => (stretchEnsureAll = v), "scheduleClip": (v) => (scheduleClip = v), "play": (v) => (play = v), "stop": (v) => (stop = v), "albumPos": (v) => (albumPos = v), "armAlbumLink": (v) => (armAlbumLink = v), "albumStrip": (v) => (albumStrip = v), "albumClear": (v) => (albumClear = v), "albumLeave": (v) => (albumLeave = v), "albumStart": (v) => (albumStart = v), "albumNext": (v) => (albumNext = v), "albumPrev": (v) => (albumPrev = v), "albumPlayIdx": (v) => (albumPlayIdx = v), "albumAdvance": (v) => (albumAdvance = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "updateSongBtn": (v) => (updateSongBtn = v), "songRow": (v) => (songRow = v), "songHeader": (v) => (songHeader = v), "localLabel": (v) => (localLabel = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "updateSongMeta": (v) => (updateSongMeta = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "fileCheckLine": (v) => (fileCheckLine = v), "runKeyCheck": (v) => (runKeyCheck = v), "runMeterCheck": (v) => (runMeterCheck = v), "useFileKey": (v) => (useFileKey = v), "useFileMeter": (v) => (useFileMeter = v), "keyNameShownAt": (v) => (keyNameShownAt = v), "expandKeyName": (v) => (expandKeyName = v), "keyLabelState": (v) => (keyLabelState = v), "tonicLabel": (v) => (tonicLabel = v), "chosenTonic": (v) => (chosenTonic = v), "chosenTonicPc": (v) => (chosenTonicPc = v), "partialNameOf": (v) => (partialNameOf = v), "tonicOptionValue": (v) => (tonicOptionValue = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "refreshKeysetLabel": (v) => (refreshKeysetLabel = v), "metStart": (v) => (metStart = v), "chordLabel": (v) => (chordLabel = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "stampChordBand": (v) => (stampChordBand = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "renderNoteJump": (v) => (renderNoteJump = v), "renderNoteList": (v) => (renderNoteList = v), "openNoteList": (v) => (openNoteList = v), "showHelpTab": (v) => (showHelpTab = v), "refreshFindSel": (v) => (refreshFindSel = v), "chordEvidence": (v) => (chordEvidence = v), "openChallenge": (v) => (openChallenge = v), "applyListener": (v) => (applyListener = v), "applyChrome": (v) => (applyChrome = v), "fitReadline": (v) => (fitReadline = v), "scheduleFitReadline": (v) => (scheduleFitReadline = v), "renderViewSwitch": (v) => (renderViewSwitch = v), "applyViewMode": (v) => (applyViewMode = v), "setViewMode": (v) => (setViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "syncDurSeg": (v) => (syncDurSeg = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "recFinish": (v) => (recFinish = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "applyInst": (v) => (applyInst = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "fillBarBeatSelects": (v) => (fillBarBeatSelects = v), "editorType": (v) => (editorType = v), "applyEditorType": (v) => (applyEditorType = v), "refreshChordChips": (v) => (refreshChordChips = v), "composeChord": (v) => (composeChord = v), "setChordWidget": (v) => (setChordWidget = v), "micStop": (v) => (micStop = v), "micJoin": (v) => (micJoin = v), "micToggle": (v) => (micToggle = v), "snapBeat": (v) => (snapBeat = v), "setBeatPair": (v) => (setBeatPair = v), "getBeatPair": (v) => (getBeatPair = v), "openEditor": (v) => (openEditor = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "tombKey": (v) => (tombKey = v), "tombKeyFor": (v) => (tombKeyFor = v), "noteIdentity": (v) => (noteIdentity = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "tombstone": (v) => (tombstone = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "folderChoices": (v) => (folderChoices = v), "fillFolderSelect": (v) => (fillFolderSelect = v), "renameLocalKeys": (v) => (renameLocalKeys = v), "saveSongAs": (v) => (saveSongAs = v), "openSaveForm": (v) => (openSaveForm = v), "localFolders": (v) => (localFolders = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "songStatus": (v) => (songStatus = v), "publishDest": (v) => (publishDest = v), "publishLabel": (v) => (publishLabel = v), "draftFingerprint": (v) => (draftFingerprint = v), "pubCompareDraft": (v) => (pubCompareDraft = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "saveDraft": (v) => (saveDraft = v), "saveVersion": (v) => (saveVersion = v), "openDraft": (v) => (openDraft = v), "openDraftDoc": (v) => (openDraftDoc = v), "createComposition": (v) => (createComposition = v), "forkCurrentSong": (v) => (forkCurrentSong = v), "renderViewMenu": (v) => (renderViewMenu = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "closeDropUp": (v) => (closeDropUp = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "instPlayer": (v) => (instPlayer = v), "instDecodeWav": (v) => (instDecodeWav = v), "instAlbums": (v) => (instAlbums = v), "romanValue": (v) => (romanValue = v), "titleSortKey": (v) => (titleSortKey = v), "titleCompare": (v) => (titleCompare = v), "instFolder": (v) => (instFolder = v), "gameInstUsedBySong": (v) => (gameInstUsedBySong = v), "gameSongRows": (v) => (gameSongRows = v), "songInstrumentRows": (v) => (songInstrumentRows = v), "currentSongGameContext": (v) => (currentSongGameContext = v), "instLibrary": (v) => (instLibrary = v), "instSamples": (v) => (instSamples = v), "instKeys": (v) => (instKeys = v), "sf2Module": (v) => (sf2Module = v), "sf2Bytes": (v) => (sf2Bytes = v), "sf2Font": (v) => (sf2Font = v), "sf2Registry": (v) => (sf2Registry = v), "sf2RegistryAdd": (v) => (sf2RegistryAdd = v), "instAudition": (v) => (instAudition = v), "usedInstruments": (v) => (usedInstruments = v), "usedInstrumentRows": (v) => (usedInstrumentRows = v), "renderGameInstNav": (v) => (renderGameInstNav = v), "renderInstSheet": (v) => (renderInstSheet = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "dropLocalSong": (v) => (dropLocalSong = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "versionLabel": (v) => (versionLabel = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "goBackToPublished": (v) => (goBackToPublished = v), "offlineWaitForAssets": (v) => (offlineWaitForAssets = v), "renderSongOffline": (v) => (renderSongOffline = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "sonySeqCapture": (v) => (sonySeqCapture = v), "psfInflater": (v) => (psfInflater = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipExt": (v) => (chipExt = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "chipVaultFile": (v) => (chipVaultFile = v), "chipModules": (v) => (chipModules = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "localDraftWrite": (v) => (localDraftWrite = v), "localDraftTracks": (v) => (localDraftTracks = v), "draftWrite": (v) => (draftWrite = v), "draftRead": (v) => (draftRead = v), "idbDraftPut": (v) => (idbDraftPut = v), "commitImports": (v) => (commitImports = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "dpTick": (v) => (dpTick = v), "drGenerate": (v) => (drGenerate = v), "drKitCountT": (v) => (drKitCountT = v), "scheduleAnalysisRecompute": (v) => (scheduleAnalysisRecompute = v), "adoptChordBand": (v) => (adoptChordBand = v), "adoptAllChords": (v) => (adoptAllChords = v), "adoptKeyRegion": (v) => (adoptKeyRegion = v), "openAnalyzeSheet": (v) => (openAnalyzeSheet = v), "bsGenerate": (v) => (bsGenerate = v), "applyTake": (v) => (applyTake = v), "bsBuildControls": (v) => (bsBuildControls = v), "bsRange": (v) => (bsRange = v), "bsRefresh": (v) => (bsRefresh = v), "openBassist": (v) => (openBassist = v), "drRange": (v) => (drRange = v), "drRefresh": (v) => (drRefresh = v), "segGet": (v) => (segGet = v), "segSet": (v) => (segSet = v), "drPartsGet": (v) => (drPartsGet = v), "drPartsSet": (v) => (drPartsSet = v), "drPartsSync": (v) => (drPartsSync = v), "drBuildControls": (v) => (drBuildControls = v), "openDrummer": (v) => (openDrummer = v), "openPasteTo": (v) => (openPasteTo = v), "diatonicShift": (v) => (diatonicShift = v), "removeDuplicateNotes": (v) => (removeDuplicateNotes = v), "updateEditButtons": (v) => (updateEditButtons = v), "pushUndo": (v) => (pushUndo = v), "addTrackUndoable": (v) => (addTrackUndoable = v), "undoTrackAdd": (v) => (undoTrackAdd = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "cmpBar": (v) => (cmpBar = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askSave": (v) => (askSave = v), "askCommitLog": (v) => (askCommitLog = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "scheduleBackupFlush": (v) => (scheduleBackupFlush = v), "flushBackupNow": (v) => (flushBackupNow = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askBubble": (v) => (askBubble = v), "askFillBubble": (v) => (askFillBubble = v), "askCopyText": (v) => (askCopyText = v), "askRender": (v) => (askRender = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askResumeSoon": (v) => (askResumeSoon = v), "askRepending": (v) => (askRepending = v), "askResume": (v) => (askResume = v), "wmClampSize": (v) => (wmClampSize = v), "wmClampHeight": (v) => (wmClampHeight = v), "wmClampSplit": (v) => (wmClampSplit = v), "wmAllowed": (v) => (wmAllowed = v), "wmMigrate": (v) => (wmMigrate = v), "wmMigrateShape": (v) => (wmMigrateShape = v), "wmMigrateShapeB": (v) => (wmMigrateShapeB = v), "wmSetSide": (v) => (wmSetSide = v), "wmClearSide": (v) => (wmClearSide = v), "wmSetSideMode": (v) => (wmSetSideMode = v), "wmAddSideTab": (v) => (wmAddSideTab = v), "wmRemoveSideTab": (v) => (wmRemoveSideTab = v), "wmSetActiveSideTab": (v) => (wmSetActiveSideTab = v), "wmSetSideWidth": (v) => (wmSetSideWidth = v), "wmZoneFor": (v) => (wmZoneFor = v), "wmDockBottom": (v) => (wmDockBottom = v), "wmClearBottom": (v) => (wmClearBottom = v), "wmSetBottomHeight": (v) => (wmSetBottomHeight = v), "wmSetBottomSplit": (v) => (wmSetBottomSplit = v), "wmWhereIs": (v) => (wmWhereIs = v), "wmLoad": (v) => (wmLoad = v), "wmSave": (v) => (wmSave = v), "wmInnerWidth": (v) => (wmInnerWidth = v), "wmInnerHeight": (v) => (wmInnerHeight = v), "wmSideCells": (v) => (wmSideCells = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmWindowTitle": (v) => (wmWindowTitle = v), "wmLayoutBottom": (v) => (wmLayoutBottom = v), "wmDockLabel": (v) => (wmDockLabel = v), "wmDockShort": (v) => (wmDockShort = v), "wmSyncDockButtons": (v) => (wmSyncDockButtons = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmZoneForPointer": (v) => (wmZoneForPointer = v), "wmShowDropZone": (v) => (wmShowDropZone = v), "wmHideDropZone": (v) => (wmHideDropZone = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmMenuItem": (v) => (wmMenuItem = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmCloseMenu": (v) => (wmCloseMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "filesMirror": (v) => (filesMirror = v), "filesMirrorSoon": (v) => (filesMirrorSoon = v), "filesMirrorFor": (v) => (filesMirrorFor = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "draftDirtyState": (v) => (draftDirtyState = v), "syncable": (v) => (syncable = v), "pendingSongs": (v) => (pendingSongs = v), "renderSyncPending": (v) => (renderSyncPending = v), "discardPending": (v) => (discardPending = v), "openSyncSheet": (v) => (openSyncSheet = v), "cfgShowPane": (v) => (cfgShowPane = v), "openSettingsSheet": (v) => (openSettingsSheet = v), "noteTapMovesCursor": (v) => (noteTapMovesCursor = v), "penInstant": (v) => (penInstant = v), "textSizePref": (v) => (textSizePref = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "ghCheckOut": (v) => (ghCheckOut = v), "ghCheckMessage": (v) => (ghCheckMessage = v), "ghCheck": (v) => (ghCheck = v), "openShareSheet": (v) => (openShareSheet = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v)}};
+export const __nrExpose$ = {get: {"rememberRecentSong": () => rememberRecentSong, "recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "PSX_SOUNDING_ON": () => PSX_SOUNDING_ON, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "songRegionRight": () => songRegionRight, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "loadEdits": () => loadEdits, "foldOldOverlay": () => foldOldOverlay, "placeLassoBtn": () => placeLassoBtn, "annoSnapshot": () => annoSnapshot, "annoRestore": () => annoRestore, "bakeTempos": () => bakeTempos, "bakeMeter": () => bakeMeter, "finalizeNotes": () => finalizeNotes, "updateEditBtnVis": () => updateEditBtnVis, "loadNotes": () => loadNotes, "subtractTombstones": () => subtractTombstones, "mergeLocalAdditions": () => mergeLocalAdditions, "annotationsFor": () => annotationsFor, "resolveNoteWith": () => resolveNoteWith, "saveLocalNotes": () => saveLocalNotes, "dropLocalKeyAt": () => dropLocalKeyAt, "homeSong": () => homeSong, "reflectSongURL": () => reflectSongURL, "toggleHl": () => toggleHl, "updateLCD": () => updateLCD, "governingAt": () => governingAt, "updateSubtitle": () => updateSubtitle, "loadSong": () => loadSong, "loadSongInner": () => loadSongInner, "setSong": () => setSong, "renderTrackbar": () => renderTrackbar, "trackToggle": () => trackToggle, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerStripDragize": () => mixerStripDragize, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "clearMultiSel": () => clearMultiSel, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "writeClips": () => writeClips, "setClipDir": () => setClipDir, "moveClip": () => moveClip, "trimClip": () => trimClip, "splitClipAt": () => splitClipAt, "splitSelectedClipAtCursor": () => splitSelectedClipAtCursor, "deleteClip": () => deleteClip, "hitTracksClip": () => hitTracksClip, "updateChordStale": () => updateChordStale, "transposeChordLabel": () => transposeChordLabel, "ridealongChordBands": () => ridealongChordBands, "selEditApply": () => selEditApply, "nudgeSelection": () => nudgeSelection, "resizeSelection": () => resizeSelection, "copySelection": () => copySelection, "cutSelection": () => cutSelection, "pasteAnnotations": () => pasteAnnotations, "pasteClipboard": () => pasteClipboard, "selectAllNotes": () => selectAllNotes, "duplicateSelection": () => duplicateSelection, "deleteSelection": () => deleteSelection, "sweepStrandedClones": () => sweepStrandedClones, "duplicateSelectionInPlace": () => duplicateSelectionInPlace, "splitApply": () => splitApply, "openGapShift": () => openGapShift, "closeGap": () => closeGap, "insertTime": () => insertTime, "openInsertBars": () => openInsertBars, "deleteTime": () => deleteTime, "openDeleteBars": () => openDeleteBars, "divideSelection": () => divideSelection, "quantizeSelection": () => quantizeSelection, "splitSelectionAt": () => splitSelectionAt, "splitSelectionHalves": () => splitSelectionHalves, "joinSelection": () => joinSelection, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "jobsLoad": () => jobsLoad, "jobStart": () => jobStart, "jobsClearFinished": () => jobsClearFinished, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "fitView": () => fitView, "tap": () => tap, "ensureAudio": () => ensureAudio, "rebuildAudio": () => rebuildAudio, "resumeAudio": () => resumeAudio, "sfPreloadForSong": () => sfPreloadForSong, "sfWaitForSong": () => sfWaitForSong, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "transposeTrack": () => transposeTrack, "resolveGameVault": () => resolveGameVault, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "instPlayerReady": () => instPlayerReady, "gameLibSync": () => gameLibSync, "sf2Sync": () => sf2Sync, "gameVoicesInSong": () => gameVoicesInSong, "sf2VoicesInSong": () => sf2VoicesInSong, "gamePreloadTokens": () => gamePreloadTokens, "gamePreloadForSong": () => gamePreloadForSong, "gameWaitForSong": () => gameWaitForSong, "gameNoteCache": () => gameNoteCache, "gameNoteBucket": () => gameNoteBucket, "gameVoiceWarned": () => gameVoiceWarned, "gameVoiceWarn": () => gameVoiceWarn, "resolveVoiceInstrument": () => resolveVoiceInstrument, "scheduleGameNote": () => scheduleGameNote, "scheduleNote": () => scheduleNote, "previewNote": () => previewNote, "buildSchedule": () => buildSchedule, "PLAY_GATE_GRACE": () => PLAY_GATE_GRACE, "PLAY_GATE_MAX": () => PLAY_GATE_MAX, "gateSettled": () => gateSettled, "gateWatched": () => gateWatched, "gatePending": () => gatePending, "playGate": () => playGate, "playGateWait": () => playGateWait, "chipEstimateTracks": () => chipEstimateTracks, "chipRender": () => chipRender, "chipCleanupAfterFailure": () => chipCleanupAfterFailure, "chipPublish": () => chipPublish, "chipRenderInWorker": () => chipRenderInWorker, "chipStreamOpenWorker": () => chipStreamOpenWorker, "chipStreamOpen": () => chipStreamOpen, "applyAudioDirs": () => applyAudioDirs, "audioEnsureFile": () => audioEnsureFile, "applyBeatMap": () => applyBeatMap, "setSongTempo": () => setSongTempo, "stretchEnsure": () => stretchEnsure, "audioChaseNow": () => audioChaseNow, "stretchEnsureAll": () => stretchEnsureAll, "scheduleClip": () => scheduleClip, "play": () => play, "stop": () => stop, "albumPos": () => albumPos, "armAlbumLink": () => armAlbumLink, "albumStrip": () => albumStrip, "albumClear": () => albumClear, "albumLeave": () => albumLeave, "albumStart": () => albumStart, "albumNext": () => albumNext, "albumPrev": () => albumPrev, "albumPlayIdx": () => albumPlayIdx, "albumAdvance": () => albumAdvance, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songsheet": () => songsheet, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "updateSongMeta": () => updateSongMeta, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "useFileKey": () => useFileKey, "refreshKeyPreview": () => refreshKeyPreview, "metStart": () => metStart, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "renderNoteList": () => renderNoteList, "openNoteList": () => openNoteList, "applyListener": () => applyListener, "chipSource": () => chipSource, "chipVaultFile": () => chipVaultFile, "chipExt": () => chipExt, "CHIPS": () => CHIPS, "playGateKick": () => playGateKick, "updateChipBtn": () => updateChipBtn, "updateChipBtnInner": () => updateChipBtnInner, "playGateActive": () => playGateActive, "playGateTick": () => playGateTick, "chipRenderAuto": () => chipRenderAuto, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "syncDurSeg": () => syncDurSeg, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinish": () => recFinish, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "tombKey": () => tombKey, "tombKeyFor": () => tombKeyFor, "noteIdentity": () => noteIdentity, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "tombstone": () => tombstone, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "folderChoices": () => folderChoices, "fillFolderSelect": () => fillFolderSelect, "renameLocalKeys": () => renameLocalKeys, "saveSongAs": () => saveSongAs, "openSaveForm": () => openSaveForm, "localFolders": () => localFolders, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "songStatus": () => songStatus, "draftFingerprint": () => draftFingerprint, "saveVersion": () => saveVersion, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "openDraft": () => openDraft, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openDraftDoc": () => openDraftDoc, "createComposition": () => createComposition, "forkCurrentSong": () => forkCurrentSong, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "instLibs": () => instLibs, "instWavs": () => instWavs, "instPlayer": () => instPlayer, "instDecodeWav": () => instDecodeWav, "instAlbums": () => instAlbums, "romanValue": () => romanValue, "titleSortKey": () => titleSortKey, "titleCompare": () => titleCompare, "INST_SYS_ORDER": () => INST_SYS_ORDER, "INST_CHIPS": () => INST_CHIPS, "instFolder": () => instFolder, "gameInstUsedBySong": () => gameInstUsedBySong, "gameSongRows": () => gameSongRows, "songInstrumentRows": () => songInstrumentRows, "currentSongGameContext": () => currentSongGameContext, "instLibrary": () => instLibrary, "instSamples": () => instSamples, "instKeys": () => instKeys, "sf2Module": () => sf2Module, "sf2Fonts": () => sf2Fonts, "sf2Bytes": () => sf2Bytes, "sf2Font": () => sf2Font, "sf2Registry": () => sf2Registry, "sf2RegistryAdd": () => sf2RegistryAdd, "instAudition": () => instAudition, "usedInstruments": () => usedInstruments, "usedInstrumentRows": () => usedInstrumentRows, "renderGameInstNav": () => renderGameInstNav, "renderInstSheet": () => renderInstSheet, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "revertSongToRepo": () => revertSongToRepo, "offlineWaitForAssets": () => offlineWaitForAssets, "renderSongOffline": () => renderSongOffline, "recordRealtimeAudio": () => recordRealtimeAudio, "sonySeqCapture": () => sonySeqCapture, "psfInflater": () => psfInflater, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipVaultMeta": () => chipVaultMeta, "chipModules": () => chipModules, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "commitImports": () => commitImports, "publishSong": () => publishSong, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "scheduleAnalysisRecompute": () => scheduleAnalysisRecompute, "adoptChordBand": () => adoptChordBand, "adoptAllChords": () => adoptAllChords, "adoptKeyRegion": () => adoptKeyRegion, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "diatonicShift": () => diatonicShift, "removeDuplicateNotes": () => removeDuplicateNotes, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "cmpBar": () => cmpBar, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askSave": () => askSave, "askCommitLog": () => askCommitLog, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askRepending": () => askRepending, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmLayoutAll": () => wmLayoutAll, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmOpenMenu": () => wmOpenMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "filesMirrorFor": () => filesMirrorFor, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "discardPending": () => discardPending, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart, "fingerprintOldDrafts": () => fingerprintOldDrafts, "askRender": () => askRender, "askBubble": () => askBubble, "askRenderEarlier": () => askRenderEarlier, "askResumeSoon": () => askResumeSoon, "askFillBubble": () => askFillBubble, "askResume": () => askResume, "openSyncSheet": () => openSyncSheet, "renderSyncPending": () => renderSyncPending, "openBassist": () => openBassist, "openDrummer": () => openDrummer, "bsBuildControls": () => bsBuildControls, "bsRefresh": () => bsRefresh, "drRefresh": () => drRefresh, "drBuildControls": () => drBuildControls, "drGenerate": () => drGenerate, "bsGenerate": () => bsGenerate, "saveEdits": () => saveEdits, "applyTake": () => applyTake}, set: {"rememberRecentSong": (v) => (rememberRecentSong = v), "recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "songRegionRight": (v) => (songRegionRight = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "loadEdits": (v) => (loadEdits = v), "foldOldOverlay": (v) => (foldOldOverlay = v), "placeLassoBtn": (v) => (placeLassoBtn = v), "annoSnapshot": (v) => (annoSnapshot = v), "annoRestore": (v) => (annoRestore = v), "bakeTempos": (v) => (bakeTempos = v), "bakeMeter": (v) => (bakeMeter = v), "finalizeNotes": (v) => (finalizeNotes = v), "updateEditBtnVis": (v) => (updateEditBtnVis = v), "loadNotes": (v) => (loadNotes = v), "subtractTombstones": (v) => (subtractTombstones = v), "mergeLocalAdditions": (v) => (mergeLocalAdditions = v), "annotationsFor": (v) => (annotationsFor = v), "resolveNoteWith": (v) => (resolveNoteWith = v), "saveLocalNotes": (v) => (saveLocalNotes = v), "dropLocalKeyAt": (v) => (dropLocalKeyAt = v), "homeSong": (v) => (homeSong = v), "reflectSongURL": (v) => (reflectSongURL = v), "toggleHl": (v) => (toggleHl = v), "updateLCD": (v) => (updateLCD = v), "governingAt": (v) => (governingAt = v), "updateSubtitle": (v) => (updateSubtitle = v), "loadSong": (v) => (loadSong = v), "loadSongInner": (v) => (loadSongInner = v), "setSong": (v) => (setSong = v), "renderTrackbar": (v) => (renderTrackbar = v), "trackToggle": (v) => (trackToggle = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "clearMultiSel": (v) => (clearMultiSel = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "writeClips": (v) => (writeClips = v), "setClipDir": (v) => (setClipDir = v), "moveClip": (v) => (moveClip = v), "trimClip": (v) => (trimClip = v), "splitClipAt": (v) => (splitClipAt = v), "splitSelectedClipAtCursor": (v) => (splitSelectedClipAtCursor = v), "deleteClip": (v) => (deleteClip = v), "hitTracksClip": (v) => (hitTracksClip = v), "updateChordStale": (v) => (updateChordStale = v), "transposeChordLabel": (v) => (transposeChordLabel = v), "ridealongChordBands": (v) => (ridealongChordBands = v), "selEditApply": (v) => (selEditApply = v), "nudgeSelection": (v) => (nudgeSelection = v), "resizeSelection": (v) => (resizeSelection = v), "copySelection": (v) => (copySelection = v), "cutSelection": (v) => (cutSelection = v), "pasteAnnotations": (v) => (pasteAnnotations = v), "pasteClipboard": (v) => (pasteClipboard = v), "selectAllNotes": (v) => (selectAllNotes = v), "duplicateSelection": (v) => (duplicateSelection = v), "deleteSelection": (v) => (deleteSelection = v), "sweepStrandedClones": (v) => (sweepStrandedClones = v), "duplicateSelectionInPlace": (v) => (duplicateSelectionInPlace = v), "splitApply": (v) => (splitApply = v), "openGapShift": (v) => (openGapShift = v), "closeGap": (v) => (closeGap = v), "insertTime": (v) => (insertTime = v), "openInsertBars": (v) => (openInsertBars = v), "deleteTime": (v) => (deleteTime = v), "openDeleteBars": (v) => (openDeleteBars = v), "divideSelection": (v) => (divideSelection = v), "quantizeSelection": (v) => (quantizeSelection = v), "splitSelectionAt": (v) => (splitSelectionAt = v), "splitSelectionHalves": (v) => (splitSelectionHalves = v), "joinSelection": (v) => (joinSelection = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsLoad": (v) => (jobsLoad = v), "jobStart": (v) => (jobStart = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "fitView": (v) => (fitView = v), "tap": (v) => (tap = v), "ensureAudio": (v) => (ensureAudio = v), "rebuildAudio": (v) => (rebuildAudio = v), "resumeAudio": (v) => (resumeAudio = v), "sfPreloadForSong": (v) => (sfPreloadForSong = v), "sfWaitForSong": (v) => (sfWaitForSong = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "transposeTrack": (v) => (transposeTrack = v), "resolveGameVault": (v) => (resolveGameVault = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "instPlayerReady": (v) => (instPlayerReady = v), "gameVoicesInSong": (v) => (gameVoicesInSong = v), "sf2VoicesInSong": (v) => (sf2VoicesInSong = v), "gamePreloadForSong": (v) => (gamePreloadForSong = v), "gameWaitForSong": (v) => (gameWaitForSong = v), "gameNoteBucket": (v) => (gameNoteBucket = v), "gameVoiceWarn": (v) => (gameVoiceWarn = v), "resolveVoiceInstrument": (v) => (resolveVoiceInstrument = v), "scheduleGameNote": (v) => (scheduleGameNote = v), "scheduleNote": (v) => (scheduleNote = v), "previewNote": (v) => (previewNote = v), "buildSchedule": (v) => (buildSchedule = v), "gatePending": (v) => (gatePending = v), "playGate": (v) => (playGate = v), "playGateWait": (v) => (playGateWait = v), "chipEstimateTracks": (v) => (chipEstimateTracks = v), "chipRender": (v) => (chipRender = v), "chipCleanupAfterFailure": (v) => (chipCleanupAfterFailure = v), "chipPublish": (v) => (chipPublish = v), "chipRenderInWorker": (v) => (chipRenderInWorker = v), "chipStreamOpenWorker": (v) => (chipStreamOpenWorker = v), "chipStreamOpen": (v) => (chipStreamOpen = v), "applyAudioDirs": (v) => (applyAudioDirs = v), "audioEnsureFile": (v) => (audioEnsureFile = v), "applyBeatMap": (v) => (applyBeatMap = v), "setSongTempo": (v) => (setSongTempo = v), "stretchEnsure": (v) => (stretchEnsure = v), "audioChaseNow": (v) => (audioChaseNow = v), "stretchEnsureAll": (v) => (stretchEnsureAll = v), "scheduleClip": (v) => (scheduleClip = v), "play": (v) => (play = v), "stop": (v) => (stop = v), "albumPos": (v) => (albumPos = v), "armAlbumLink": (v) => (armAlbumLink = v), "albumStrip": (v) => (albumStrip = v), "albumClear": (v) => (albumClear = v), "albumLeave": (v) => (albumLeave = v), "albumStart": (v) => (albumStart = v), "albumNext": (v) => (albumNext = v), "albumPrev": (v) => (albumPrev = v), "albumPlayIdx": (v) => (albumPlayIdx = v), "albumAdvance": (v) => (albumAdvance = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "updateSongMeta": (v) => (updateSongMeta = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "useFileKey": (v) => (useFileKey = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "metStart": (v) => (metStart = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "renderNoteList": (v) => (renderNoteList = v), "openNoteList": (v) => (openNoteList = v), "applyListener": (v) => (applyListener = v), "chipSource": (v) => (chipSource = v), "chipVaultFile": (v) => (chipVaultFile = v), "chipExt": (v) => (chipExt = v), "playGateKick": (v) => (playGateKick = v), "updateChipBtn": (v) => (updateChipBtn = v), "updateChipBtnInner": (v) => (updateChipBtnInner = v), "playGateActive": (v) => (playGateActive = v), "playGateTick": (v) => (playGateTick = v), "chipRenderAuto": (v) => (chipRenderAuto = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "syncDurSeg": (v) => (syncDurSeg = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "recFinish": (v) => (recFinish = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "tombKey": (v) => (tombKey = v), "tombKeyFor": (v) => (tombKeyFor = v), "noteIdentity": (v) => (noteIdentity = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "tombstone": (v) => (tombstone = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "folderChoices": (v) => (folderChoices = v), "fillFolderSelect": (v) => (fillFolderSelect = v), "renameLocalKeys": (v) => (renameLocalKeys = v), "saveSongAs": (v) => (saveSongAs = v), "openSaveForm": (v) => (openSaveForm = v), "localFolders": (v) => (localFolders = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "songStatus": (v) => (songStatus = v), "draftFingerprint": (v) => (draftFingerprint = v), "saveVersion": (v) => (saveVersion = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "openDraft": (v) => (openDraft = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openDraftDoc": (v) => (openDraftDoc = v), "createComposition": (v) => (createComposition = v), "forkCurrentSong": (v) => (forkCurrentSong = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "instPlayer": (v) => (instPlayer = v), "instDecodeWav": (v) => (instDecodeWav = v), "instAlbums": (v) => (instAlbums = v), "romanValue": (v) => (romanValue = v), "titleSortKey": (v) => (titleSortKey = v), "titleCompare": (v) => (titleCompare = v), "instFolder": (v) => (instFolder = v), "gameInstUsedBySong": (v) => (gameInstUsedBySong = v), "gameSongRows": (v) => (gameSongRows = v), "songInstrumentRows": (v) => (songInstrumentRows = v), "currentSongGameContext": (v) => (currentSongGameContext = v), "instLibrary": (v) => (instLibrary = v), "instSamples": (v) => (instSamples = v), "instKeys": (v) => (instKeys = v), "sf2Module": (v) => (sf2Module = v), "sf2Bytes": (v) => (sf2Bytes = v), "sf2Font": (v) => (sf2Font = v), "sf2Registry": (v) => (sf2Registry = v), "sf2RegistryAdd": (v) => (sf2RegistryAdd = v), "instAudition": (v) => (instAudition = v), "usedInstruments": (v) => (usedInstruments = v), "usedInstrumentRows": (v) => (usedInstrumentRows = v), "renderGameInstNav": (v) => (renderGameInstNav = v), "renderInstSheet": (v) => (renderInstSheet = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "offlineWaitForAssets": (v) => (offlineWaitForAssets = v), "renderSongOffline": (v) => (renderSongOffline = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "sonySeqCapture": (v) => (sonySeqCapture = v), "psfInflater": (v) => (psfInflater = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "chipModules": (v) => (chipModules = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "commitImports": (v) => (commitImports = v), "publishSong": (v) => (publishSong = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "scheduleAnalysisRecompute": (v) => (scheduleAnalysisRecompute = v), "adoptChordBand": (v) => (adoptChordBand = v), "adoptAllChords": (v) => (adoptAllChords = v), "adoptKeyRegion": (v) => (adoptKeyRegion = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "diatonicShift": (v) => (diatonicShift = v), "removeDuplicateNotes": (v) => (removeDuplicateNotes = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "cmpBar": (v) => (cmpBar = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askSave": (v) => (askSave = v), "askCommitLog": (v) => (askCommitLog = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askRepending": (v) => (askRepending = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "filesMirrorFor": (v) => (filesMirrorFor = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "discardPending": (v) => (discardPending = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "askRender": (v) => (askRender = v), "askBubble": (v) => (askBubble = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askResumeSoon": (v) => (askResumeSoon = v), "askFillBubble": (v) => (askFillBubble = v), "askResume": (v) => (askResume = v), "openSyncSheet": (v) => (openSyncSheet = v), "renderSyncPending": (v) => (renderSyncPending = v), "openBassist": (v) => (openBassist = v), "openDrummer": (v) => (openDrummer = v), "bsBuildControls": (v) => (bsBuildControls = v), "bsRefresh": (v) => (bsRefresh = v), "drRefresh": (v) => (drRefresh = v), "drBuildControls": (v) => (drBuildControls = v), "drGenerate": (v) => (drGenerate = v), "bsGenerate": (v) => (bsGenerate = v), "saveEdits": (v) => (saveEdits = v), "applyTake": (v) => (applyTake = v)}};

@@ -25,3 +25,15 @@ export function updateClearBtn() {
 // imported local MIDIs live under local/ — draft-backed and editable on this
 // device, but with no repo path: never synced, never committed
 export function isLocalDraft() { return !!S.songKey && S.songKey.startsWith("local/"); }
+
+export function pushUndo(entry) { S.editUndo.push(entry); S.editRedo = []; } // a fresh edit forks history
+// Track add/delete are undo steps too (Josh, 2026-09-12: a deleted track was
+// gone for good). Deleting used to wipe the history because entries hold track
+// indexes; LIFO makes that unnecessary — nothing older can be reached until the
+// delete itself is undone, which puts the track back at the same index.
+export function addTrackUndoable(track) { // push a track and return its index; caller records the undo
+  S.song.tracks.push(track);
+  if (S.song.rawNotes) S.song.rawNotes.push([]);
+  S.trackState.push({muted: false, solo: false});
+  return S.song.tracks.length - 1;
+}

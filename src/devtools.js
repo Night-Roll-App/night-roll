@@ -84,6 +84,14 @@ import * as askContext from "./ask/context.js";
 import * as askBridge from "./ask/bridge.js";
 import * as askShots from "./ask/shots.js";
 import * as askSheet from "./ask/sheet.js";
+import * as uiChrome from "./ui/chrome.js";
+import * as uiTrackbar from "./ui/trackbar.js";
+import * as uiMixer from "./ui/mixer.js";
+import * as uiVoiceMenu from "./ui/voice-menu.js";
+import * as uiNotes from "./ui/notes.js";
+import * as uiNoteEditor from "./ui/note-editor.js";
+import * as uiSheets from "./ui/sheets.js";
+import * as uiWm from "./ui/wm.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -102,7 +110,8 @@ export function exposeGlobals() {
                      genDrummer, genBassist, genAnalysis,
                      renderRoll, renderTracks, renderScore, renderInstrument, renderCof, renderCompare,
                      inputGestures, inputRecord,
-                     askBackend, askTools, askContext, askBridge, askShots, askSheet };
+                     askBackend, askTools, askContext, askBridge, askShots, askSheet,
+                     uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global
