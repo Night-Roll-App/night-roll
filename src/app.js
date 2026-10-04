@@ -11796,7 +11796,8 @@ function saveDraft(clean) { // clean=true right after a successful Publish; the 
   updateSyncBtn(); // and the Publish (N) count: an undo back to the published music takes a song off it
   filesMirrorSoon(); // the Files copy follows, once the edits settle — every edit is kept, always (Model B)
 }
-saveDraft = prof("saveDraft", saveDraft);  function saveVersion(quiet) { // File → Save Version / ⌘S
+saveDraft = prof("saveDraft", saveDraft);
+function saveVersion(quiet) { // File → Save Version / ⌘S
   if (S.song && isUnsaved(S.songKey)) { if (!quiet) openSaveForm("save"); return false; } // first Save Version of an Untitled song: folder + name first
   if (!S.song || !S.songKey || !isComposition()) { if (!quiet) setInfo("Save Version works on your own songs — this one is a capture; Save As forks it"); return false; }
   if (S.cmp && S.cmp.showing === "repo") { if (!quiet) setInfo("you're hearing the published copy — switch back to your version first"); return false; }
