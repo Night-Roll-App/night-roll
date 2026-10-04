@@ -92,6 +92,7 @@ import * as uiNotes from "./ui/notes.js";
 import * as uiNoteEditor from "./ui/note-editor.js";
 import * as uiSheets from "./ui/sheets.js";
 import * as uiWm from "./ui/wm.js";
+import * as sessionSong from "./session/song.js";
 import * as hooks from "./hooks.js";
 import * as wire from "./wire.js";
 import { S } from "./state.js";
@@ -114,6 +115,7 @@ export function exposeGlobals() {
                      inputGestures, inputRecord,
                      askBackend, askTools, askContext, askBridge, askShots, askSheet,
                      uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm,
+                     sessionSong,
                      hooks, wire };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {

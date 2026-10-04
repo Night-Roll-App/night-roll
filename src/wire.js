@@ -13,10 +13,10 @@ import { buildScoreModelImpl } from "./render/score.js";
 import { songTitleOfImpl } from "./ask/context.js";
 import { setAnchorBQImpl, lassoedAnnosImpl } from "./ui/note-editor.js";
 import { drumStepImpl, annoInLassoImpl } from "./render/roll.js";
+import { fitViewImpl, finalizeNotesImpl, updateSongMetaImpl } from "./session/song.js";
 import {
-  fitViewImpl, renderTrackbarImpl, updateEditBtnVisImpl, updateChipBtnImpl,
-  updateSubtitleImpl, askRenderImpl, finalizeNotesImpl, recFinishImpl, albumAdvanceImpl,
-  updateSongMetaImpl,
+  renderTrackbarImpl, updateEditBtnVisImpl, updateChipBtnImpl,
+  updateSubtitleImpl, askRenderImpl, recFinishImpl, albumAdvanceImpl,
 } from "./app.js";
 
 export function installHooks() {
