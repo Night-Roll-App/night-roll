@@ -5,6 +5,7 @@ import { topRow } from "../render/roll.js";
 import { fallActive, stripPlayheadX, TAG_HIT } from "../render/roll.js";
 import { scoreTickToX } from "../render/score.js";
 import { barTicks } from "../model/rollnotes.js";
+import { askBarsCount } from "../ask/tools.js";
 import { beatTicks } from "../model/grid.js";
 import { pitchName } from "../theory/chords.js";
 import { sfAt } from "../model/song.js";
@@ -95,6 +96,7 @@ import { pencilTicks } from "../model/grid.js";
 import { gridCellStart } from "../model/grid.js";
 import { annoSnapshot } from "../model/edits.js";
 import { minPxq } from "../ui/chrome.js";
+import { PAN_TAIL_BARS } from "../ui/chrome.js";
 import { pxqFloor } from "../ui/chrome.js";
 import { rowHFloor } from "../ui/chrome.js";
 import { dispPitchExtent } from "../ui/chrome.js";
@@ -134,7 +136,14 @@ export function cursorHit(pos) {
 }
 export function rulerSnapX(x) { // bar lines are magnetic in SCREEN pixels (Pencil-friendly
   // at every zoom); away from a bar line, 16ths — finer is what zoom is for
-  const fine = tickAtX(x, Math.round(S.song.ppq / 4));
+  return rulerSnapTick((x - S.RULER_W + S.view.x) / pxPerTick());
+}
+// the same magnet for a tick that is NOT under the finger — a whole cycle
+// slid by its middle (DAW F5) snaps by its START, so the span's length never
+// changes while it rides the bar lines
+export function rulerSnapTick(t) {
+  const q = Math.round(S.song.ppq / 4);
+  const fine = Math.max(0, Math.round(t / q) * q);
   const bt = barTicks(), ppt = pxPerTick();
   const nearBar = Math.round(fine / bt) * bt;
   return Math.abs((nearBar - fine) * ppt) <= 14 ? Math.max(0, nearBar) : fine;
@@ -484,6 +493,45 @@ export function seekOrMoveCursor(target, opts = {}) {
   if (S.playing) { stop(); play(tickToSec(S.song, target), opts).catch(() => {}); }
   else { S.playCursor = target; updateSubtitle(); draw(); }
 }
+// Go to bar (DAW F5, 2026-10-04 — docs/daw-inventory.md §4 #7, "go to bar 37
+// without scrolling"): the LCD's bar segment opens #barjumpsheet with the
+// current bar pre-filled; Go / Return seeks (or, while playing, restarts from
+// there — the strip tap's own options), clamped to the song's bars. An in-app
+// sheet, never prompt() (CLAUDE.md: native dialogs block the main thread).
+export function openBarJump() {
+  if (!S.song) return;
+  const inp = document.getElementById("bjbar");
+  const bars = askBarsCount();
+  inp.value = String(Math.floor(curTick() / barTicks()) + 1);
+  inp.max = String(bars);
+  document.getElementById("bjof").textContent = "of " + bars;
+  document.getElementById("barjumpsheet").classList.add("on");
+  if (typeof inp.focus === "function") inp.focus();
+  if (typeof inp.select === "function") inp.select(); // digits replace the old bar
+}
+export function barJumpGo() {
+  if (!S.song) return false;
+  const inp = document.getElementById("bjbar");
+  const n = Math.round(Number(inp.value));
+  if (inp.value === "" || !Number.isFinite(n)) { setInfo("type a bar number"); return false; }
+  // your own song reaches PAN_TAIL_BARS past its end — the empty bars the roll
+  // already pans into to write in (clampView); a song you can only read ends
+  // where its music ends
+  const bars = askBarsCount(), cap = bars + (editableSong() ? PAN_TAIL_BARS : 0);
+  const bar = Math.max(1, Math.min(cap, n));
+  const tick = (bar - 1) * barTicks();
+  document.getElementById("barjumpsheet").classList.remove("on");
+  seekOrMoveCursor(tick, {fromHere: true, noCountIn: true});
+  // "without scrolling" is the point: bring an off-screen cursor into view a
+  // third of the way in (the transport's own follow rule), and let auto-follow
+  // re-latch if the song is rolling
+  const x = tick * pxPerTick(), W = (canvas.clientWidth || 800) - S.RULER_W;
+  if (x < S.view.x || x > S.view.x + W) { S.view.x = Math.max(0, x - W * 0.3); S.followFree = false; clampView(); draw(); }
+  setInfo(bar === n ? "bar " + bar
+        : n > cap ? "bar " + bar + " — the song has " + bars + " bar" + (bars === 1 ? "" : "s") + (cap > bars ? " (+" + PAN_TAIL_BARS + " to write in)" : "")
+        : "bar 1");
+  return true;
+}
 export function placePencilNote(pp) { // deferred pencil: called by the dwell timer or a clean tap
   const tr = S.song.tracks[S.selTrack];
   if (tr.kind === "audio") { setInfo("that track is a recording — pick a MIDI track to pencil on"); return; }
@@ -611,6 +659,7 @@ export function endPointer(e) {
       it.n.t !== o[i].t || it.n.d !== o[i].d || it.n.p !== o[i].p);
     if (changed) selEditApply(S.drag.noteEdit.items, () => {}, o);
   }
+  else if (S.drag.rangeEdge === "mid" && !S.drag.rangeMoved) tap(S.drag.spos); // a press inside the band that never slid: today's park / re-arm tap
   else if (S.drag.rangeEdge && S.drag.moved && S.playing && S.rangeSel && S.rangeSel.cycle) {
     // new boundaries take effect NOW: the schedule pre-computes wrap passes, so
     // the cycle is rescheduled — from where the playhead IS when it's still
@@ -1033,6 +1082,11 @@ export function initGestures1() {
       const ax = S.RULER_W + S.rangeSel.a * ppt - S.view.x, bx = S.RULER_W + S.rangeSel.b * ppt - S.view.x;
       if (Math.abs(p.x - bx) < 12) rangeEdge = "b";
       else if (Math.abs(p.x - ax) < 12) rangeEdge = "a";
+      // inside the band, clear of both ends: the whole cycle slides (DAW F5,
+      // Logic's drag-the-centre); the ends still stretch as before, and a
+      // tap here still parks/re-arms — the slide only engages past
+      // RULER_RANGE_SLOP (endPointer hands an unmoved press to tap())
+      else if (p.x > ax + 12 && p.x < bx - 12) rangeEdge = "mid";
     }
     const plain = !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge;
     // a press ON the playhead (its tag in the strip, any mode, even while
@@ -1042,6 +1096,7 @@ export function initGestures1() {
     const onCursor = plain && cursorHit(p);
     S.drag = {id: e.pointerId, ptype: e.pointerType, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false,
             lasso, noteEdit, pencil, bandEdge, pendingEdit, pendingPencil, rangeEdge, onCursor,
+            range0: rangeEdge ? {a: S.rangeSel.a, b: S.rangeSel.b} : null, // the span as grabbed — a "mid" slide keeps its length
             ruler: plain && !!S.song && p.y < BASE_RULER_H,
             // the playhead strip, between the ruler/bands and the notes (Josh,
             // 2026-10-03): tap moves the cursor, drag scrubs — NEVER touches
@@ -1205,6 +1260,18 @@ export function initGestures1() {
         }
         draw();
       }
+      else if (S.drag.rangeEdge === "mid") { // slide the whole cycle: length kept, start bar-magnetic, clamped at 0
+        const x = evtPos(e).x;
+        // the same finger-width allowance as a ruler tap: a wobble inside the
+        // band is still the park/re-arm tap, not a 16th-note shove
+        if (!S.drag.rangeMoved && Math.abs(x - S.drag.spos.x) < RULER_RANGE_SLOP) return;
+        S.drag.rangeMoved = true;
+        const len = S.drag.range0.b - S.drag.range0.a;
+        const a = rulerSnapTick(S.drag.range0.a + (x - S.drag.spos.x) / pxPerTick());
+        S.rangeSel.a = a; S.rangeSel.b = a + len;
+        S.rangeSel.off = false; // sliding re-arms a parked cycle, like stretching
+        draw();
+      }
       else if (S.drag.rangeEdge) { // stretch the cycle by its end — bar-magnetic, stays armed
         const tk = rulerSnapX(evtPos(e).x);
         const min16 = Math.round(S.song.ppq / 4);
@@ -1240,6 +1307,11 @@ export function initGestures1() {
   });
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", () => { S.drag = null; S.pinch = null; draw(); });
+  // Go to bar (DAW F5): the LCD's bar segment, the sheet's Go, and Return in its field
+  document.getElementById("lcdbarseg").addEventListener("click", openBarJump);
+  document.getElementById("bjgo").addEventListener("click", barJumpGo);
+  document.getElementById("bjclose").addEventListener("click", () => document.getElementById("barjumpsheet").classList.remove("on"));
+  document.getElementById("bjbar").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); barJumpGo(); } });
   canvas.addEventListener("wheel", e => {
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {

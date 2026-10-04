@@ -103,6 +103,98 @@ test("gesture: cycle highlight stretches by its edges, both directions", async (
   assert.equal(app.run(`rangeSel.a`), 720);
 });
 
+test("gesture (DAW F5): dragging the cycle's MIDDLE slides the whole span — length kept, clamped at 0, ends still stretch, outside still draws, a wobble still parks", async () => {
+  const app = await boot("vm-gest-cycle-move");
+  app.run(`view.pxq = 600; clampView(); draw();`); // 1.25 px per tick: a one-beat band is 600 px wide, so its middle is unambiguous
+  const xy = tk => JSON.parse(app.run(
+    `JSON.stringify({x: RULER_W + (${tk} / song.ppq) * view.pxq - view.x, y: 10})`));
+  const sel = () => JSON.parse(app.run(`JSON.stringify({a: rangeSel.a, b: rangeSel.b, off: !!rangeSel.off, cycle: !!rangeSel.cycle})`));
+  drag(app, xy(480), xy(960)); // arm a one-beat cycle
+  assert.deepEqual(sel(), {a: 480, b: 960, off: false, cycle: true});
+  drag(app, xy(720), xy(720 + 960)); // grab the middle, slide two beats right
+  assert.deepEqual(sel(), {a: 1440, b: 1920, off: false, cycle: true}, "the span moved as one; its length is still a beat");
+  drag(app, xy(1680), xy(1680 - 6000)); // slide far past the start
+  assert.deepEqual(sel(), {a: 0, b: 480, off: false, cycle: true}, "clamped at bar 1, length kept");
+  drag(app, xy(480), xy(960)); // the right END still stretches
+  assert.deepEqual(sel(), {a: 0, b: 960, off: false, cycle: true});
+  drag(app, xy(0), xy(240)); // the left END still shrinks
+  assert.deepEqual(sel(), {a: 240, b: 960, off: false, cycle: true});
+  drag(app, xy(1920), xy(2400)); // a drag OUTSIDE the band draws a new span
+  assert.deepEqual(sel(), {a: 1920, b: 2400, off: false, cycle: true});
+  // bar-magnetic by its START (rulerSnapTick, the tick-side twin of rulerSnapX): zoomed
+  // out to 0.05 px/tick a 16th is 6 px, so a start 180 ticks short of bar 3 is 9 px
+  // from the line and snaps TO it; 540 ticks short (27 px) stays on its 16th
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify((() => { const k = view.pxq; view.pxq = 24;
+    const r = [rulerSnapTick(3660), rulerSnapTick(3300), rulerSnapTick(-500)]; view.pxq = k; return r; })())`)),
+    [3840, 3360, 0]);
+  drag(app, xy(2160), xy(2160 + 1920)); // two bars right, on the line
+  assert.deepEqual(sel(), {a: 3840, b: 4320, off: false, cycle: true}, "start on bar 3, length kept");
+  // a wobbly press inside the band is still the park tap, not a shove
+  const mid = xy(4080);
+  app.dispatch("roll", pev("pointerdown", {clientX: mid.x, clientY: mid.y}));
+  app.dispatch("roll", pev("pointermove", {clientX: mid.x + 10, clientY: mid.y}));
+  app.dispatch("roll", pev("pointerup", {clientX: mid.x + 10, clientY: mid.y}));
+  assert.deepEqual(sel(), {a: 3840, b: 4320, off: true, cycle: true}, "parked, not moved");
+  // sliding a parked cycle re-arms it, like stretching does
+  drag(app, xy(4080), xy(4080 + 480));
+  assert.deepEqual(sel(), {a: 4320, b: 4800, off: false, cycle: true});
+  assert.equal(app.run(`multiSel.length`), 0, "no selection churn");
+});
+
+test("Go to bar (DAW F5): tap the LCD's bar → type → Go or Return seeks; clamped to the song's bars; nothing typed keeps the sheet; the cycle is untouched", async () => {
+  const app = await boot("vm-gest-barjump");
+  app.run(`song.tracks[0].notes.push({t: 7 * barTicks(), d: 480, p: 60, v: 80}); computeSongEnd(); draw();`); // an 8-bar song
+  const bt = app.run(`barTicks()`), bars = app.run(`askBarsCount()`);
+  assert.equal(bars, 8);
+  const tail = app.run(`PAN_TAIL_BARS`);
+  app.run(`updateLCD()`);
+  assert.ok(app.el("lcdbarseg").classList.contains("tappable"), "the bar segment is a door like tempo/meter/key");
+  app.el("lcdbarseg").click();
+  assert.ok(app.el("barjumpsheet").classList.contains("on"), "an in-app sheet, no prompt()");
+  assert.equal(app.el("bjbar").value, "1", "pre-filled with the current bar");
+  assert.equal(app.el("bjof").textContent, "of " + bars);
+  app.el("bjbar").value = "3";
+  app.el("bjgo").click();
+  assert.equal(app.run(`playCursor`), 2 * bt, "bar 3 = two bars of ticks");
+  assert.ok(!app.el("barjumpsheet").classList.contains("on"), "Go closes it");
+  app.run(`updateLCD()`);
+  assert.equal(app.el("lcdbar").textContent, "3");
+  // Return in the field is Go
+  app.el("lcdbarseg").click();
+  assert.equal(app.el("bjbar").value, "3");
+  app.el("bjbar").value = "2";
+  app.dispatch("bjbar", {type: "keydown", key: "Enter"});
+  assert.equal(app.run(`playCursor`), bt);
+  assert.ok(!app.el("barjumpsheet").classList.contains("on"));
+  // clamps both ways — your own song reaches the roll's empty tail bars (room to write)
+  app.el("lcdbarseg").click(); app.el("bjbar").value = "9999"; app.el("bjgo").click();
+  assert.equal(app.run(`playCursor`), (bars + tail - 1) * bt, "past the end lands on the last writable bar");
+  // and the view came along: the cursor is on screen, a third of the way in
+  const vis = JSON.parse(app.run(`JSON.stringify({x: playCursor * pxPerTick(), vx: view.x, W: 800 - RULER_W})`));
+  assert.ok(vis.x >= vis.vx && vis.x <= vis.vx + vis.W, "jumped off-screen → scrolled into view: " + JSON.stringify(vis));
+  // a song you can only read ends where the music ends
+  app.run(`__k = songKey; songKey = "albums/ff1/vm-gest-barjump-readonly.mid";`); // a published key with no local draft: canEditMusic() says no
+  assert.equal(app.run(`editableSong()`), false);
+  app.el("lcdbarseg").click(); app.el("bjbar").value = "9999"; app.el("bjgo").click();
+  assert.equal(app.run(`playCursor`), (bars - 1) * bt, "read-only: the last bar of music");
+  app.run(`songKey = __k;`);
+  app.el("lcdbarseg").click(); app.el("bjbar").value = "0"; app.el("bjgo").click();
+  assert.equal(app.run(`playCursor`), 0, "bar 0 is bar 1");
+  app.el("lcdbarseg").click(); app.el("bjbar").value = "2.6"; app.el("bjgo").click();
+  assert.equal(app.run(`playCursor`), 2 * bt, "a fraction rounds to a bar");
+  // nothing typed: the sheet stays, the cursor stays
+  app.el("lcdbarseg").click(); app.el("bjbar").value = ""; app.el("bjgo").click();
+  assert.ok(app.el("barjumpsheet").classList.contains("on"));
+  assert.equal(app.run(`playCursor`), 2 * bt);
+  app.el("bjclose").click();
+  assert.ok(!app.el("barjumpsheet").classList.contains("on"), "Cancel closes it");
+  // a jump never touches an armed cycle (the strip-tap rule)
+  app.run(`rangeSel = {a: 480, b: 960, cycle: true}; draw();`);
+  app.el("lcdbarseg").click(); app.el("bjbar").value = "4"; app.el("bjgo").click();
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify(rangeSel)`)), {a: 480, b: 960, cycle: true});
+  assert.equal(app.run(`playCursor`), 3 * bt);
+});
+
 test("gesture: finger fast stroke pans; a dwell cold-grabs; selected = instant", async () => {
   const app = await boot("vm-gest-dwell");
   app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);

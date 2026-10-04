@@ -103,6 +103,30 @@ points of `drawStripPlayhead` all inside the strip band, nothing drawn in
 `(RULER_H, RULER_H + 16]`, Roll and Tracks), "a press on the tag is a
 grab …" and "the tag drags while PLAYING too …".
 
+**Go to bar + slide the cycle (DAW F5, 2026-10-04 — docs/daw-inventory.md
+§4 #7).** The LCD's bar segment (`#lcdbarseg`, `tappable` like tempo/meter/
+key) opens `#barjumpsheet`: `openBarJump()` pre-fills the current bar
+(`curTick()`), shows "of N" (`askBarsCount()`), focuses + selects the field
+so the number pad replaces the digits; `barJumpGo()` (Go, or Return in the
+field) clamps to 1..N, closes, and calls `seekOrMoveCursor((bar−1)·barTicks,
+{fromHere, noCountIn})` — the strip tap's options, so a rolling song restarts
+there without a count-in and `rangeSel` is never touched; an empty field
+keeps the sheet open (status line). Both live in src/input/gestures.js
+(wired at the end of `initGestures1`); bars are linear `barTicks()` like
+`updateLCD` itself. Cycle: `rangeEdge` now has a third value, `"mid"` — a
+press inside the amber band more than 12 px from BOTH ends (ends keep
+priority). `S.drag.range0` holds the span as grabbed; the slide engages only
+past `RULER_RANGE_SLOP` (24 px, the ruler tap's own wobble allowance) and
+sets `S.drag.rangeMoved`; from then `a = rulerSnapTick(range0.a + dx/ppt)`,
+`b = a + len` — `rulerSnapTick` is `rulerSnapX`'s tick-side twin (16ths,
+bar-magnetic within 14 screen px, clamped at 0), so the span snaps by its
+START and never changes length; `off` clears (sliding re-arms, like
+stretching). `endPointer`: an unmoved/under-slop "mid" press goes to
+`tap(spos)` (park / re-arm, unchanged); a slid cycle while playing takes the
+existing rangeEdge reschedule branch (`handMidGesture` already covers
+`rangeEdge`, so auto-follow stays off during the slide). Tests:
+tests/gestures.test.mjs "dragging the cycle's MIDDLE …" and "Go to bar …".
+
 **Playback:** WebAudio. Pulse/pulse/triangle voices by track index; drum
 tracks (name match or channel 10) get a synthesized kit. Per-track gain
 nodes make mute/solo instant mid-playback. Songs loop at the final bar

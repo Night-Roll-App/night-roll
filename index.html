@@ -163,7 +163,7 @@
     <button class="primary" id="playbtn"><svg class="ico txt" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 8.64 15.27 12 10 15.36V8.64M8 5v14l11-7L8 5z"/></svg>Play</button>
     <button id="recbtn" aria-label="Record onto the selected track" style="display:none"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/></svg></button>
     <div id="lcd">
-      <div class="lcdseg"><span class="lcdbig" id="lcdbar">1</span><span class="lcdlbl">bar</span></div>
+      <div class="lcdseg" id="lcdbarseg"><span class="lcdbig" id="lcdbar">1</span><span class="lcdlbl">bar</span></div>
       <div class="lcdseg"><span class="lcdbig" id="lcdbeat">1</span><span class="lcdlbl">beat</span></div>
       <div class="lcdseg" id="lcdtemposeg"><span class="lcdmid" id="lcdtempo">—</span><span class="lcdlbl">tempo</span></div>
       <div class="lcdseg" id="lcdmkseg"><span class="lcdmid" id="lcdmeter">4/4</span><span class="lcdmid lcdkey" id="lcdkey">—</span></div>
@@ -658,6 +658,25 @@
     <div class="row" style="margin-top:10px">
       <button id="delgo" class="primary">Delete</button>
       <button id="delclose" style="margin-left:auto">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bar jump (DAW F5, 2026-10-04): tap the LCD's bar number → type a bar → Go
+     (or Return). An in-app sheet, never prompt(): the number pad opens on
+     the field with the current bar pre-selected, so "go to bar 37" is tap,
+     3, 7, Go. src/input/gestures.js openBarJump/barJumpGo. -->
+<div class="overlay" id="barjumpsheet">
+  <div class="sheet" style="max-width:300px">
+    <h2>GO TO BAR</h2>
+    <div class="row" style="align-items:center;gap:8px">
+      <span class="meta">Bar</span>
+      <input id="bjbar" type="number" min="1" step="1" inputmode="numeric" enterkeyhint="go" style="width:84px;min-height:44px;text-align:center;font-size:1.0625rem" aria-label="Bar number">
+      <span class="meta" id="bjof"></span>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="bjgo" class="primary">Go</button>
+      <button id="bjclose" style="margin-left:auto">Cancel</button>
     </div>
   </div>
 </div>

@@ -1129,9 +1129,11 @@ export function updateLCD() {
   document.getElementById("lcdtempo").textContent = String(bpm);
   document.getElementById("lcdmeter").textContent = meter;
   document.getElementById("lcdkey").textContent = key;
-  // both segments are doors to their annotations (Josh, 2026-08-19)
+  // both segments are doors to their annotations (Josh, 2026-08-19); the bar
+  // segment is the door to Go to bar (DAW F5 — src/input/gestures.js openBarJump)
   document.getElementById("lcdmkseg").classList.toggle("tappable", true);
   document.getElementById("lcdtemposeg").classList.toggle("tappable", true);
+  document.getElementById("lcdbarseg").classList.toggle("tappable", true);
 }
 updateLCD = prof("updateLCD", updateLCD); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 export function updateSubtitleImpl() {

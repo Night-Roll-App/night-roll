@@ -7196,7 +7196,8 @@ blockers.mjs), step 12 (the ~320 top-level statements → init functions).
    `ve` decay drawn as a fact. Open: no hardware key; MAIN SESSION must eye
    the layout in a real browser at phone width and iPad before push (memory:
    no unseen layout ships) — the strip is new chrome under the roll.
-7. Typed bar jump in the LCD; drag a cycle's middle to move it — S
+7. ~~Typed bar jump in the LCD; drag a cycle's middle to move it — S~~
+   DONE 2026-10-04 (DAW F5, lane A): #lcdbarseg → Go to bar sheet (openBarJump/barJumpGo, clamped 1..askBarsCount, Return = Go, never touches rangeSel); rangeEdge "mid" slides the whole cycle (rulerSnapTick, length kept, clamp 0, RULER_RANGE_SLOP before it engages so a wobble still parks). m:ss readout NOT built (not in the Fable-reviewed F5). Try on the iPad: slide a cycle while it plays; type a bar past the end.
 8. ~~Score → PDF/print — M~~ DONE 2026-10-04 (DAW F6, lane C, Fable worktree
    branch; main merges): File ▾ → Export score… (Letter/A4) → `<song>-score.html`,
    paged SVG from the score view's own engraver (`engraveMeasure`, split out of

@@ -364,7 +364,7 @@ key, meter or chord for him unless asked.
 | 4 | Touch-and-hold a note → context menu of the edit-row actions; iPadOS three-finger undo/redo | S–M |
 | 5 | Capture MIDI: keep the last ~60 s of noodling; "Keep that" writes it at the cursor, one undo — **done 2026-10-04** | M |
 | 6 | Velocity lane under the roll (drag to shape; shows chip envelopes as facts) — **done 2026-10-04** | M |
-| 7 | Typed bar jump by tapping the LCD bar field; m:ss beside it; drag the cycle's middle to move it | S |
+| 7 | Typed bar jump by tapping the LCD bar field; drag the cycle's middle to move it — **done 2026-10-04** (m:ss readout not built) | S |
 | 8 | Score → PDF/print of his own piece — **done 2026-10-04** (File ▾ → Export score…: paged SVG in a self-contained HTML file via the share sheet; the iPad's own print path makes the PDF — NIGHT-ROLL.md "Export score") | M |
 
 Josh's two items are 1–3. Everything else waits on his ruling.
