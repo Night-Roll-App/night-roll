@@ -372,3 +372,84 @@ test("gesture: the ruler itself still parks an armed cycle on tap — the strip 
   app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
   assert.equal(app.run(`rangeSel.off`), true, "the ruler tap still parks the cycle, exactly as before");
 });
+
+// ---- the playhead's handle (Josh, 2026-10-04: "I don't like the way our
+// triangle cursor looks and I don't like that it's not in that little strip"):
+// one rounded tag INSIDE the strip, no triangle under the ruler, and the tag
+// is the drag handle — in any mode, even while playing.
+// Records every path point drawStripPlayhead lays down (ctx is the harness's
+// settable no-op stub) and every path point of the whole frame.
+const recordPaths = (app, view) => JSON.parse(app.run(`(() => {
+  viewMode = ${JSON.stringify(view)}; applyViewMode();
+  const pts = [], all = []; let inTag = false;
+  const real = drawStripPlayhead;
+  drawStripPlayhead = (x, c) => { inTag = true; real(x, c); inTag = false; };
+  const log = (x, y) => { all.push([x, y]); if (inTag) pts.push([x, y]); };
+  ctx.moveTo = log; ctx.lineTo = log; ctx.arcTo = (x1, y1, x2, y2) => { log(x1, y1); log(x2, y2); };
+  draw();
+  drawStripPlayhead = real; delete ctx.moveTo; delete ctx.lineTo; delete ctx.arcTo;
+  return JSON.stringify({pts, all, x: stripPlayheadX(), STRIP_Y, RULER_H});
+})()`));
+
+test("gesture: the playhead's handle is a tag drawn INSIDE the strip — nothing hangs below RULER_H (Roll and Tracks)", async () => {
+  const app = await boot("vm-gest-tag-draw");
+  app.run(`view.pxq = 200; clampView(); playCursor = 960; mode = "select";`);
+  for (const view of ["roll", "tracks"]) {
+    const r = recordPaths(app, view);
+    assert.ok(r.pts.length >= 6, view + ": the tag is a path (sides + rounded top), got " + r.pts.length + " points");
+    for (const [x, y] of r.pts) {
+      assert.ok(y >= r.STRIP_Y && y <= r.RULER_H, view + ": every tag point is inside the strip band, got y=" + y + " for [" + r.STRIP_Y + ", " + r.RULER_H + "]");
+      assert.ok(Math.abs(x - r.x) <= 9, view + ": the tag is centred on the playhead (18 px wide), got dx=" + (x - r.x));
+    }
+    assert.ok(r.pts.some(([, y]) => y === r.RULER_H), view + ": the tag's bottom is flush with RULER_H, where the line through the notes starts");
+    assert.ok(!r.all.some(([, y]) => y > r.RULER_H && y <= r.RULER_H + 16), view + ": no triangle tip under the ruler any more");
+  }
+  app.run(`viewMode = "roll"; applyViewMode();`);
+});
+
+test("gesture: a press on the tag is a grab, not a strip tap — released still, the cursor stays put; dragged, it scrubs in 32nds; rangeSel untouched", async () => {
+  const app = await boot("vm-gest-tag-grab");
+  // 540 sits on the 32nd grid (60 ticks) but NOT on an 8th: a strip TAP there would snap it to 480
+  app.run(`view.pxq = 200; clampView(); playCursor = 540; rangeSel = {a: 480, b: 1440, cycle: true}; mode = "pencil"; draw();`);
+  const before = app.run(`JSON.stringify(rangeSel)`);
+  const p = stripXY(app, 540);
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`!!(drag && drag.onCursor && drag.stripCursor)`), true, "the tag outranks the strip's tap-to-snap, in any mode (pencil here)");
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`playCursor`), 540, "let go without moving: the cursor did not jump to the nearest 8th");
+  drag(app, p, stripXY(app, 1930));
+  assert.equal(app.run(`playCursor`), 1920, "a drag on the tag scrubs on the 32nd grid, like a strip drag");
+  assert.equal(app.run(`JSON.stringify(rangeSel)`), before, "rangeSel byte-identical — a cursor drag never touches it");
+  // 20 px past the tag's edge is the plain strip again: a tap there still snaps to the 8th
+  const q = stripXY(app, 1920); q.x += 20;
+  app.dispatch("roll", pev("pointerdown", { clientX: q.x, clientY: q.y }));
+  assert.equal(app.run(`!!drag.onCursor`), false, "off the tag: a strip tap");
+  app.dispatch("roll", pev("pointerup", { clientX: q.x, clientY: q.y }));
+  assert.equal(app.run(`playCursor`), 1920, "the strip's own tap still lands on the nearest 8th");
+});
+
+test("gesture: the tag drags while PLAYING too — the tag follows the finger, and release plays on from the new spot; a still tap does nothing", async () => {
+  const app = await boot("vm-gest-tag-playing");
+  app.run(`ensureAudio(); view.pxq = 200; clampView(); rangeSel = {a: 480, b: 1440, cycle: true};
+           playing = true; loopSeg = null; playT0 = audio.currentTime; playOffset = tickToSec(song, 960); playCursor = 0;
+           globalThis.__played = []; play = (sec, opts) => { __played.push({sec, opts}); playing = true; return Promise.resolve(); };
+           stop = () => { playing = false; }; draw();`);
+  const before = app.run(`JSON.stringify(rangeSel)`);
+  const p = stripXY(app, 960); // the rolling playhead is at tick 960
+  assert.ok(Math.abs(+app.run(`stripPlayheadX()`) - p.x) < 1, "the tag is drawn at the audio's position while rolling");
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`!!(drag && drag.onCursor && drag.stripCursor)`), true, "the tag is grabbable while playing");
+  app.dispatch("roll", pev("pointerup", { clientX: p.x, clientY: p.y }));
+  assert.equal(app.run(`__played.length`), 0, "a still tap on the tag neither seeks nor restarts");
+  assert.equal(app.run(`playing`), true);
+  const to = stripXY(app, 1920);
+  app.dispatch("roll", pev("pointerdown", { clientX: p.x, clientY: p.y }));
+  app.dispatch("roll", pev("pointermove", { clientX: to.x, clientY: to.y }));
+  assert.ok(Math.abs(+app.run(`stripPlayheadX()`) - to.x) < 1, "mid-scrub the tag follows the finger, not the audio");
+  app.dispatch("roll", pev("pointerup", { clientX: to.x, clientY: to.y }));
+  const played = JSON.parse(app.run(`JSON.stringify(__played)`));
+  assert.equal(played.length, 1, "release plays on from the new spot");
+  assert.equal(played[0].sec, +app.run(`tickToSec(song, 1920)`), "from exactly where the finger lifted");
+  assert.equal(played[0].opts.fromHere, true, "like a strip drag's release: from here, no cycle restart");
+  assert.equal(app.run(`JSON.stringify(rangeSel)`), before, "rangeSel byte-identical through a mid-play cursor drag");
+});

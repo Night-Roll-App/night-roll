@@ -57,19 +57,47 @@ content top) keeps working unchanged; it just offsets a little further
 down now. The strip's own moving playhead mark (`drawStripPlayhead`,
 `stripPlayheadX`) is drawn AFTER `drawRuler` in `drawFull` and again in
 `playbackFrame`'s per-frame overlay — never baked into the scene cache,
-same discipline as the triangle handle's own line, because `drawRuler`'s
+same discipline as each view's own cursor line, because `drawRuler`'s
 opaque strip background would otherwise paint right over it. Gestures:
 TAP moves `playCursor` to a beat-snapped tick (`seekOrMoveCursor`, shared
 with the ruler's own tap-to-seek) WITHOUT touching `rangeSel` at all — no
 park, no clear, no re-arm, byte-identical before/after (Josh, 2026-10-03:
 "if I could click that spot under the ruler I wouldn't have that problem"
 — tapping the ruler itself still parks an armed cycle, unchanged). DRAG
-scrubs continuously via the existing `scrubTo`, same as dragging the
-playhead's triangle handle. `S.drag.stripCursor` is the new drag flag
-(alongside `.ruler`/`.cursor`/`.rangeEdge`/`.bandEdge`), included in the
-auto-follow suppression (`handMidGesture`) so a strip drag doesn't get
+scrubs continuously via the existing `scrubTo`. `S.drag.stripCursor` is
+the drag flag (alongside `.ruler`/`.rangeEdge`/`.bandEdge`), included in
+the auto-follow suppression (`handMidGesture`) so a strip drag doesn't get
 yanked out from under a finger either. Tests: `tests/gestures.test.mjs`'s
 four "playhead strip" cases (tap/drag, armed/parked cycle).
+
+**Playhead tag (2026-10-04).** The playhead's handle IS the strip's mark:
+`drawStripPlayhead(x, color)` draws one rounded tag (`TAG_W` = 18 px wide,
+`STRIP_H − 4` tall, `TAG_R` corners, bottom flush with `S.RULER_H` so the
+view's 1.5 px line through the notes grows out of it; `--accent` at rest,
+`--gold` rolling; a faint dark outline; clipped to the right of `RULER_W`).
+The Logic-sized triangle that used to hang below the ruler in Roll, Tracks
+and Score is gone — it covered the first row of notes (Josh, 2026-10-04:
+"I don't like that it's not in that little strip, it's below the strip").
+The cycle stays in the number band above (`BASE_RULER_H`), so the two never
+overlap. Hit zone: `cursorHandleHit` is the strip band (`y ∈ [STRIP_Y,
+RULER_H)`, `|dx| ≤ TAG_HIT` = 14 → a 29 px finger target) around
+`stripPlayheadX()` — so it works in every mode AND while playing (the strip
+already scrubbed mid-play; one rule for both). In `pointerdown` a press on
+the playhead (the tag, or its line through the notes at rest in select
+mode — `cursorHit`) sets `S.drag.onCursor` and rides the SAME
+`S.drag.stripCursor` path (the old separate `S.drag.cursor` is folded in);
+the one difference is on release: unmoved + `onCursor` leaves the cursor
+exactly where it is (a plain strip tap would snap it to the nearest 8th).
+Mid-play, `stripPlayheadX` follows `S.playCursor` while a strip/tag drag is
+in progress (`S.drag.moved`), so the tag tracks the finger while the audio
+keeps rolling; release calls `seekOrMoveCursor(S.playCursor, {fromHere})`
+and playback picks up from there. `playbackFrame` now takes its x from
+`stripPlayheadX()` too; its dirty-rect restore (±13 px around `phLastX`,
+28 px wide) must keep covering `TAG_W` + outline — widen both together.
+Tests: `tests/gestures.test.mjs` "the playhead's handle is a tag …" (path
+points of `drawStripPlayhead` all inside the strip band, nothing drawn in
+`(RULER_H, RULER_H + 16]`, Roll and Tracks), "a press on the tag is a
+grab …" and "the tag drags while PLAYING too …".
 
 **Playback:** WebAudio. Pulse/pulse/triangle voices by track index; drum
 tracks (name match or channel 10) get a synthesized kit. Per-track gain

@@ -641,6 +641,7 @@ const AUDIO_STRIP_H = 18; S.RULER_W = RULER_W_ROLL;
 // it; everything that offsets the note area by RULER_H keeps working as-is
 // because RULER_H now simply includes the strip too.
 const STRIP_H = BASE_RULER_H;
+const TAG_W = 18, TAG_R = 4, TAG_HIT = 14; // the playhead tag in the strip (drawStripPlayhead): drawn width, corner radius, grab half-width
 S.STRIP_Y = BASE_RULER_H;
 S.RULER_H = S.STRIP_Y + STRIP_H;
       // the band the Analyze sheet is currently open on
@@ -2238,17 +2239,11 @@ function playbackFrame() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   // playhead overlay — same geometry as drawFull's, clipped below the ruler
-  const tick = secToTick(S.song, playSec());
-  const x = S.viewMode === "score" && S.scoreModel ? scoreTickToX(tick) : S.RULER_W + tick * pxPerTick() - S.view.x; // the score spaces by noteheads, not ticks
+  const x = stripPlayheadX(); // the score spaces by noteheads, not ticks; a mid-play scrub follows the finger
   const H = wrap.clientHeight;
   if (x >= S.RULER_W) {
     ctx.fillStyle = css("--gold");
     ctx.fillRect(x, S.RULER_H, 1.5, H - S.RULER_H);
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H);
-    ctx.lineTo(x + 11, S.RULER_H);
-    ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
     drawStripPlayhead(x, css("--gold")); // playbackFrame only ever runs while S.playing
     S.phLastX = x;
   } else S.phLastX = null;
@@ -2423,26 +2418,19 @@ function drawFull(skipCursor) {
   ctx.globalAlpha = 1;
   if (S.cmp) drawCompare(ppt, rowH, W, H);
 
-  function cursorHandle(x) { // Logic-sized triangle under the ruler, made for fingers
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H);
-    ctx.lineTo(x + 11, S.RULER_H);
-    ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
-  }
-  // playhead / cursor — same triangle either way, gold while rolling
+  // playhead / cursor — the line only; its handle is the tag in the playhead
+  // strip (drawStripPlayhead, after drawRuler), gold while rolling. The old
+  // triangle under the ruler covered the first row of notes (Josh, 2026-10-04).
   if (skipCursor) { /* playbackFrame lays the playhead over the cached scene */ }
   else if (S.playing) {
     const tick = secToTick(S.song, playSec());
     const x = S.RULER_W + tick * ppt - S.view.x;
     ctx.fillStyle = css("--gold");
     ctx.fillRect(x, 0, 1.5, H);
-    cursorHandle(x);
   } else {
     const x = S.RULER_W + S.playCursor * ppt - S.view.x;
     ctx.fillStyle = css("--accent");
     ctx.fillRect(x - 1, 0, 2.5, H);
-    cursorHandle(x);
   }
 
   drawRuler(W, H);
@@ -3038,26 +3026,46 @@ function drawTracks(W, H, skipCursor) {
   if (skipCursor) return;
   const x = S.RULER_W + (S.playing ? secToTick(S.song, playSec()) : S.playCursor) * ppt - S.view.x;
   ctx.fillStyle = S.playing ? css("--gold") : css("--accent");
-  ctx.fillRect(x - (S.playing ? 0 : 1), 0, S.playing ? 1.5 : 2.5, H);
-  ctx.beginPath();
-  ctx.moveTo(x - 11, S.RULER_H); ctx.lineTo(x + 11, S.RULER_H); ctx.lineTo(x, S.RULER_H + 14);
-  ctx.fill();
+  ctx.fillRect(x - (S.playing ? 0 : 1), 0, S.playing ? 1.5 : 2.5, H); // the handle is the strip's tag (drawStripPlayhead)
 }
 drawTracks = prof("drawTracks", drawTracks); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 // playhead strip (Josh, 2026-10-03): a band under the ruler, right above the
 // notes — x uses the same per-view geometry as every other playhead mark
 // (linear ticks, except Score's engraved spacing).
 function stripPlayheadX() {
-  const tick = S.playing ? secToTick(S.song, playSec()) : S.playCursor;
+  // a scrub mid-play follows the finger, not the audio (which keeps rolling
+  // until release, when playback picks up from where the finger lifted)
+  const scrubbing = S.drag && S.drag.stripCursor && S.drag.moved;
+  const tick = S.playing && !scrubbing ? secToTick(S.song, playSec()) : S.playCursor;
   return S.viewMode === "score" && S.scoreModel ? scoreTickToX(tick) : S.RULER_W + tick * pxPerTick() - S.view.x;
 }
-// drawn AFTER drawRuler (never baked into the scene cache, same discipline
-// as the roll/tracks/score's own cursor marks) — drawRuler's opaque strip
+// the playhead's handle (Josh, 2026-10-04): ONE rounded tag inside the strip,
+// bottom flush with S.RULER_H so the line through the notes grows out of it —
+// Logic's handle sits in the ruler's lower band the same way. It replaced a
+// triangle hung below the ruler that covered the first row of notes in all
+// three views. Width/zone: TAG_W drawn, TAG_HIT either side for the finger
+// (cursorHandleHit) — and the dirty-rect restore in playbackFrame (±13 px
+// around phLastX, 28 wide) must keep covering TAG_W + the outline.
+// Drawn AFTER drawRuler (never baked into the scene cache, same discipline
+// as the roll/tracks/score's own cursor lines) — drawRuler's opaque strip
 // background would otherwise paint right over it.
 function drawStripPlayhead(x, color) {
   if (x < S.RULER_W) return;
+  const top = S.RULER_H - (STRIP_H - 4), bot = S.RULER_H, l = x - TAG_W / 2, r = x + TAG_W / 2;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(S.RULER_W, S.STRIP_Y, wrap.clientWidth, STRIP_H); ctx.clip(); // never over the left gutter
+  ctx.beginPath();
+  ctx.moveTo(l, bot);
+  ctx.lineTo(l, top + TAG_R); ctx.arcTo(l, top, l + TAG_R, top, TAG_R);
+  ctx.lineTo(r - TAG_R, top); ctx.arcTo(r, top, r, top + TAG_R, TAG_R);
+  ctx.lineTo(r, bot);
+  ctx.closePath();
   ctx.fillStyle = color;
-  ctx.fillRect(x - 0.75, S.STRIP_Y, 1.5, S.RULER_H - S.STRIP_Y);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(0,0,0,.35)"; // a shade darker than the fill, on either panel tone
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
 }
 function drawPlayheadStripBand(W) { // the strip's static look — RULER chrome,
   // not a roll row: the ruler's own panel background (drawRuler already
@@ -4336,20 +4344,20 @@ function rowHFloor() { // row height where the display range + air fills the hei
   const {lo, hi} = dispPitchExtent();
   return Math.min(32, Math.max(4, (wrap.clientHeight - 2 * S.RULER_H) / (hi - lo + 1 + 2 * ROLL_AIR)));
 }
-function cursorHandleHit(pos) { // the triangle under the ruler — outranks every tool, lasso included
-  if (S.playing || !S.song) return false;
-  const x = S.viewMode === "score" ? scoreTickToX(S.playCursor)
-                                 : S.RULER_W + S.playCursor * pxPerTick() - S.view.x;
-  return pos.y >= S.RULER_H && pos.y < S.RULER_H + 16 && Math.abs(pos.x - x) < 14;
+function cursorHandleHit(pos) { // the tag in the playhead strip — grabbable in
+  // ANY mode and while PLAYING (the strip already scrubs mid-play; one rule
+  // for both). It outranks the strip's own tap-to-snap: a finger ON the
+  // handle is a grab, never a jump to the nearest 8th.
+  if (!S.song || fallActive()) return false;
+  return pos.y >= S.STRIP_Y && pos.y < S.RULER_H && Math.abs(pos.x - stripPlayheadX()) <= TAG_HIT;
 }
 function cursorHit(pos) {
+  if (cursorHandleHit(pos)) return true;
   if (S.playing || !S.song) return false;
+  if (pos.y < S.RULER_H) return false; // ruler drags select a range instead
   const x = S.viewMode === "score" ? scoreTickToX(S.playCursor)
                                  : S.RULER_W + S.playCursor * pxPerTick() - S.view.x;
-  // the handle triangle under the ruler is grabbable in ANY mode
-  if (cursorHandleHit(pos)) return true;
-  if (pos.y < S.RULER_H) return false; // ruler drags select a range instead
-  return S.mode === "select" || S.mode === null ? Math.abs(pos.x - x) < 12 : false;
+  return S.mode === "select" || S.mode === null ? Math.abs(pos.x - x) < 12 : false; // the line itself, at rest
 }
 function rulerSnapX(x) { // bar lines are magnetic in SCREEN pixels (Pencil-friendly
   // at every zoom); away from a bar line, 16ths — finer is what zoom is for
@@ -4465,8 +4473,7 @@ canvas.addEventListener("pointerdown", e => {
   // the pen draws, fingers navigate — 2026-09-29; device pref, default on).
   // A finger still dwells: a fast finger stroke pans
   const instantGrab = e.pointerType === "mouse" || (e.pointerType === "pen" && penInstant());
-  let lasso = S.lassoMode && !!S.song && (fallActive() || p.y >= S.RULER_H) &&
-              !cursorHandleHit(p); // the triangle outranks the lasso (Josh, 2026-08-22)
+  let lasso = S.lassoMode && !!S.song && (fallActive() || p.y >= S.RULER_H); // the playhead's tag sits in the strip, above where a lasso can start
   let noteEdit = null, pendingEdit = null;
   // a drag that STARTS on a selected note moves the selection even in lasso
   // mode (drag from empty space still draws a box; a tap still toggles)
@@ -4584,17 +4591,22 @@ canvas.addEventListener("pointerdown", e => {
     if (Math.abs(p.x - bx) < 12) rangeEdge = "b";
     else if (Math.abs(p.x - ax) < 12) rangeEdge = "a";
   }
+  const plain = !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge;
+  // a press ON the playhead (its tag in the strip, any mode, even while
+  // playing; or its line through the notes at rest, select mode) — a cursor
+  // drag, which is the strip's scrub with one difference: let go without
+  // moving and the cursor stays put (a strip tap would snap it to an 8th)
+  const onCursor = plain && cursorHit(p);
   S.drag = {id: e.pointerId, ptype: e.pointerType, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false,
-          lasso, noteEdit, pencil, bandEdge, pendingEdit, pendingPencil, rangeEdge,
-          cursor: !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge && cursorHit(p),
-          ruler: !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge && !!S.song && p.y < BASE_RULER_H,
+          lasso, noteEdit, pencil, bandEdge, pendingEdit, pendingPencil, rangeEdge, onCursor,
+          ruler: plain && !!S.song && p.y < BASE_RULER_H,
           // the playhead strip, between the ruler/bands and the notes (Josh,
           // 2026-10-03): tap moves the cursor, drag scrubs — NEVER touches
           // rangeSel (that's the whole point — the ruler above still parks
           // it). No viewMode exclusion: same linear-tick approximation the
-          // ruler's own tap/drag already uses in Score.
-          stripCursor: !lasso && !noteEdit && !pendingEdit && !pencil && !pendingPencil && !bandEdge && !rangeEdge &&
-                     !!S.song && !fallActive() && p.y >= S.STRIP_Y && p.y < S.RULER_H,
+          // ruler's own tap/drag already uses in Score. Also the flag for a
+          // grabbed playhead (onCursor) — one scrub path, one follow rule.
+          stripCursor: onCursor || (plain && !!S.song && !fallActive() && p.y >= S.STRIP_Y && p.y < S.RULER_H),
           spos: p};
   if (pendingEdit || pendingPencil) { // hold-to-grab: dwell arms the edit; a fast stroke pans
     const d = S.drag;
@@ -4766,7 +4778,7 @@ canvas.addEventListener("pointermove", e => {
       resolveNote(n);
       draw();
     }
-    else if (S.drag.cursor || S.drag.stripCursor) scrubTo(evtPos(e));
+    else if (S.drag.stripCursor) scrubTo(evtPos(e));
     else if (S.drag.ruler) { // drag along the ruler = select a beat range
       // a finger placing the cursor wobbles past the 8px "moved" mark; under
       // RULER_RANGE_SLOP it is still that tap, not a 16th-note cycle (Josh,
@@ -4788,7 +4800,7 @@ function endPointer(e) {
     // one finger lifted: hand control to the survivor as a fresh pan drag
     const survivor = S.pinch.a.id === e.pointerId ? S.pinch.b : S.pinch.a;
     S.drag = {id: survivor.id, x: survivor.x, y: survivor.y, sx: survivor.x, sy: survivor.y,
-            moved: true, cursor: false, ruler: false};
+            moved: true, stripCursor: false, ruler: false};
     S.pinch = null;
     return;
   }
@@ -4917,9 +4929,11 @@ function endPointer(e) {
   }
   else if (S.drag.stripCursor) { // the playhead strip: tap moves the cursor, NEVER touches rangeSel
     if (!S.drag.moved) {
-      const tick = (S.drag.spos.x - S.RULER_W + S.view.x) / pxPerTick();
-      const snap = cursorTapSnapTicks(); // a tap lands on the nearest 8th; drag for finer
-      seekOrMoveCursor(Math.max(0, Math.round(tick / snap) * snap), {fromHere: true, noCountIn: true});
+      if (!S.drag.onCursor) { // a grabbed-and-released playhead stays exactly where it is
+        const tick = (S.drag.spos.x - S.RULER_W + S.view.x) / pxPerTick();
+        const snap = cursorTapSnapTicks(); // a tap lands on the nearest 8th; drag for finer
+        seekOrMoveCursor(Math.max(0, Math.round(tick / snap) * snap), {fromHere: true, noCountIn: true});
+      }
     } else if (S.playing) seekOrMoveCursor(S.playCursor, {fromHere: true, noCountIn: true}); // a scrub while rolling: playback picks up where the finger lifted
   }
   else if (S.drag.ruler && !S.drag.rulerRange) tap(S.drag.spos); // a wobbly ruler tap still just places the cursor
@@ -7423,7 +7437,7 @@ async function play(fromSec = 0, opts = {}) {
     if (!S.playing) return;
     const x = secToTick(S.song, playSec()) * pxPerTick();
     const W = wrap.clientWidth - S.RULER_W;
-    const handMidGesture = S.drag && (S.drag.ruler || S.drag.rangeEdge || S.drag.bandEdge || S.drag.cursor || S.drag.stripCursor);
+    const handMidGesture = S.drag && (S.drag.ruler || S.drag.rangeEdge || S.drag.bandEdge || S.drag.stripCursor);
     if (S.followFree) {
       // user scrolled away: hands off until the playhead enters their view
       if (x >= S.view.x && x <= S.view.x + W) S.followFree = false;
@@ -8047,23 +8061,17 @@ function drawScore(W, H, skipCursor) { // skipCursor: playbackFrame's cached sce
   drawScorePencilGuides(W, H);
   drawLasso();
   // playhead / cursor — both interpolate notehead-to-notehead (scoreTickToX),
-  // same Logic-sized triangle as the roll, gold while rolling
-  const drawHandle = x => {
-    ctx.beginPath();
-    ctx.moveTo(x - 11, S.RULER_H); ctx.lineTo(x + 11, S.RULER_H); ctx.lineTo(x, S.RULER_H + 14);
-    ctx.fill();
-  };
+  // the line only, gold while rolling; the handle is the strip's tag
+  // (drawStripPlayhead, drawn after drawRuler in drawFull)
   if (skipCursor) return; // a playhead baked into the cache stayed as a second gold line (Josh, 2026-09-29, score view)
   if (S.playing) {
     const x = scoreTickToX(secToTick(S.song, playSec()));
     ctx.fillStyle = css("--gold");
     ctx.fillRect(x, 0, 1.5, H);
-    drawHandle(x);
   } else {
     const x = scoreTickToX(S.playCursor);
     ctx.fillStyle = css("--accent");
     ctx.fillRect(x - 1, 0, 2.5, H);
-    drawHandle(x);
   }
 }
 drawScore = prof("drawScore", drawScore); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()

@@ -156,6 +156,13 @@ fingers scroll / octave buttons clamp to 12..107).
 Size: S (one afternoon; the risk is the Score x-mapping and the three
 copies of the triangle).
 
+**Shipped 2026-10-04** as designed: `drawStripPlayhead` draws the tag
+(`TAG_W`/`TAG_R`/`TAG_HIT` beside `STRIP_H`), the three triangles are gone,
+`cursorHandleHit` is the strip band and works while playing, `S.drag.cursor`
+is folded into `S.drag.stripCursor` (+ `onCursor` for the no-snap release),
+and a mid-play drag shows the tag under the finger (`stripPlayheadX`). The
+60 %-alpha line idea was not done. NIGHT-ROLL.md "Playhead tag".
+
 ---
 
 ## 2. Inventory
@@ -189,7 +196,7 @@ key, meter or chord for him unless asked.
 
 | Logic iPad / others | Night Roll today | Worth it? |
 |---|---|---|
-| Handle inside the ruler's lower band; line down; drag to scrub `[shot]` | PARTIAL: strip + separate triangle below it (§1b) | **Yes, S — §1b** |
+| Handle inside the ruler's lower band; line down; drag to scrub `[shot]` | HAS (2026-10-04): the tag in the strip, draggable even while playing (§1b) | done |
 | Catch/follow mode toggle | HAS: auto-follow suspends on manual scroll, re-latches `[HELP "Scroll while playing"]` | — |
 | Scrub audio while dragging | PARTIAL: `scrubTo` seeks; no audible scrub | Maybe, S — sound the notes under the handle while dragging (one note at a time is the whole point of analysis) |
 
@@ -351,7 +358,7 @@ key, meter or chord for him unless asked.
 
 | # | Change | Size |
 |---|---|---|
-| 1 | Playhead handle inside the strip; triangle gone in all three views (§1b) | S |
+| 1 | Playhead handle inside the strip; triangle gone in all three views (§1b) — **done 2026-10-04** | S |
 | 2 | Keyboard: fixed key width, Play/Scroll segment, two-finger scroll, ‹ › octave with range readout, off-screen lit-key chevrons (§1a) | M |
 | 3 | Keyboard look: real black-key offsets, rounded whites, shading; Sustain button (§1a) | S |
 | 4 | Touch-and-hold a note → context menu of the edit-row actions; iPadOS three-finger undo/redo | S–M |
