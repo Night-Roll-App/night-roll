@@ -32,6 +32,7 @@ import { nameChord } from "../theory/chords.js";
 import { snapBeat } from "../model/grid.js";
 import { setEndBQ } from "../model/rollnotes.js";
 import { dropSupersededBy } from "../model/rollnotes.js";
+import { isTripletDur } from "../model/grid.js";
 
 // fractional rotation while a finger is spinning the wheel
 // Insert-chord (Josh, 2026-08-17): stamp a full chord at the cursor with the
@@ -431,4 +432,19 @@ export function syncDurSeg() {
     x.setAttribute("aria-pressed", String(on));
     x.style.opacity = S.gridDiv ? "0.45" : "";
   }
+}
+
+// The grid picks up the note you touch: a triplet note (triplet position or
+// triplet length) moves on triplet steps, a straight one on 16ths — no trip
+// to the chips to move either (Josh, 2026-09-12). Chips still override after.
+export function gridFollowNote(n) {
+  if (!n || S.gridDiv) return false; // a custom grid outranks all
+  const q = S.song.ppq, onLine = (t, g) => Math.abs(t / g - Math.round(t / g)) < 1e-6;
+  const trip = (onLine(n.t, q / 3) && !onLine(n.t, q / 4)) || isTripletDur(n.d / q);
+  if (trip === isTripletDur(S.pencilDur)) return false;
+  if (trip) { S.pencilMod = 2 / 3; S.pencilNV = n.d / q >= 0.6 ? 4 : n.d / q >= 0.3 ? 8 : 16; }
+  else { S.pencilMod = 1; S.pencilNV = 16; }
+  S.pencilDur = (4 / S.pencilNV) * S.pencilMod;
+  syncDurSeg();
+  return true;
 }
