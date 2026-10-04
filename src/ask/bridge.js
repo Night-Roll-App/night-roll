@@ -12,6 +12,14 @@ import { aiUrl } from "./backend.js";
 import { aiHostKind } from "./backend.js";
 import { setControl } from "../ui/controls.js";
 import { aiHeaders } from "./backend.js";
+import { askstatus } from "./sheet.js";
+import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
+import { folderActive } from "../platform/folder.js";
+import { folderRead } from "../platform/folder.js";
+import { folderWrite } from "../platform/folder.js";
+import { isCompositionKey } from "../model/provenance.js";
+import { isComposition } from "../model/provenance.js";
+import { repoApi } from "../platform/storage.js";
 
 // ---- history: per song, context stripped at SAVE time, capped so it can
 // never crowd out saveDraft (drafts are the only copy of unsynced music)
@@ -356,4 +364,65 @@ export function askPendingAll() { // every pending question on this device, olde
     }
   } catch (err) { /* enumeration failed: nothing to resume */ }
   return out.sort((a, b) => a.t - b.t);
+}
+
+export function askSave(msgs, meta, key) {
+  key = key || askStoreKey();
+  const prev = askStore(key);
+  let saved = meta && meta.saved !== undefined ? Math.min(meta.saved, msgs.length) : Math.min(prev.saved, msgs.length);
+  let trimmed = prev.trimmed;
+  let keep = msgs.map(m => Object.assign({}, m, {content: askStripContext(m.content)}));
+  const pack = () => JSON.stringify({lastUsed: Date.now(), msgs: keep, saved, trimmed});
+  const dropSaved = () => { if (saved < 2) return false; keep = keep.slice(2); saved -= 2; trimmed = true; return true; };
+  let str = pack();
+  while (str.length > ASK_LOCAL_SOFT && dropSaved()) str = pack();
+  askEvictOthers(str.length);
+  const tryPut = () => { try { localStorage.setItem(key, pack()); return true; } catch (err) { return false; } };
+  let ok = tryPut();
+  while (!ok && dropSaved()) ok = tryPut(); // quota: shed what the repo already has
+  while (!ok && keep.length > 2) { // nothing saved left to shed — the oldest unsaved go, and it says so
+    keep = keep.slice(2); saved = 0;
+    ok = tryPut();
+    if (ok && typeof askstatus !== "undefined" && askstatus) askstatus.textContent = "chat storage is full — the oldest messages were dropped; Save the song to keep the rest";
+  }
+  if (typeof updateSongBtn === "function") updateSongBtn(); // the ● follows unsaved chat too
+}
+export async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the unsaved messages to <song>.ask.md (or the general log); keyArg: another song's key for Publish all
+  const key = askLogKey(keyArg || (S.askGeneral ? "ff1roll-ask-" + (S.songKey || "local") : null)); // a song's Publish ships the SONG's chat even while the general tab is showing
+  const general = key === ASK_GENERAL_KEY;
+  const sk = askLogSong(key);
+  const path = askLogPath(key);
+  const st = askStore(key);
+  // never past a question still waiting for its reply: askFinish splices the
+  // reply right after it, and a watermark already beyond that spot would
+  // count the reply as published — then shed it from the device unpublished
+  const stop = st.msgs.findIndex((m, k) => k >= st.saved && m.pending);
+  const fresh = st.msgs.slice(st.saved, stop < 0 ? st.msgs.length : stop);
+  if (!path || !fresh.length) return;
+  const add = askLogMarkdown(fresh);
+  if (folderActive()) {
+    const f = await folderRead(path);
+    await folderWrite(path, (f ? await f.text() : askLogHeader(key)) + add);
+  } else {
+    const repo = general || (comp !== undefined ? comp : (sk && typeof isCompositionKey === "function" ? isCompositionKey(sk) : isComposition())) ? "songs" : "analysis";
+    const putOnce = async () => {
+      let sha = null, old = askLogHeader(key);
+      const g = await fetch(repoApi(repo) + path + "?ref=main", {headers: h, cache: "no-store"});
+      if (g.ok) {
+        const j = await g.json();
+        sha = j.sha;
+        if (j.content) old = decodeURIComponent(escape(atob(j.content.replace(/\n/g, ""))));
+        else if (j.size) old = await (await fetch(j.download_url, {headers: h, cache: "no-store"})).text(); // >1 MB: contents API omits the body
+      }
+      const body = {message: "Ask log " + path + " from Night Roll", branch: "main",
+                    content: btoa(unescape(encodeURIComponent(old + add)))};
+      if (sha) body.sha = sha;
+      return fetch(repoApi(repo) + path, {method: "PUT", headers: h, body: JSON.stringify(body)});
+    };
+    let r = await putOnce();
+    if (r.status === 409) r = await putOnce();
+    if (!r.ok) throw new Error(".ask.md HTTP " + r.status);
+  }
+  const now = askStore(key); // messages may have arrived meanwhile; only the snapshot is in the file
+  askSave(now.msgs, {saved: now.saved + fresh.length}, key);
 }
