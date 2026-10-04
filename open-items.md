@@ -5663,3 +5663,6 @@ Blocked on Q7 (split order) and Q8 (repo).
 7. Typed bar jump in the LCD; drag a cycle's middle to move it — S
 8. Score → PDF/print — M
 Build after the module-split branch merges (they touch render/input code the split is moving).
+
+## QUEUED 2026-10-04 — Game Boy Tetris: Korobeiniki missing from our capture (Josh, Terminal #107–108)
+Josh found Korobeiniki in a Game Boy OST on YouTube, not in our Game Boy › Tetris album (17/17 GBS tracks captured; rip header "Tetris v1.0", Hirokazu Tanaka). Interval search (E B C D C B A A C E, any key, repeats collapsed) over every channel of every GB/NES Tetris capture: found ONLY in NES › Tetris (Bullet-Proof Software) track-01. "A-Type Music (version 1.1)" is a real, different song (Josh confirmed). Next: fetch another GB Tetris rip (Zophar GBS/m3u) and compare track lists/lengths — rip lacks it vs our capture garbled a track.
