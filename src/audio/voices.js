@@ -3,6 +3,11 @@ import { trackGain } from "./engine.js";
 import { pluckBuffer } from "./engine.js";
 import { makeOsc } from "./engine.js";
 import { setInfo } from "../hooks.js";
+import { albumMetaFor } from "../model/provenance.js";
+import { titleCompare } from "../model/catalog.js";
+import { vaultFetch } from "./chip.js";
+import { idbSf2Get } from "../platform/storage.js";
+import { idbSf2Put } from "../platform/storage.js";
 
 export function voiceType(ti) {
   if (S.song.tracks[ti] && S.song.tracks[ti].kind === "audio") return "sine"; // never sounds: the clip is the voice
@@ -390,4 +395,121 @@ export function scheduleGameNote(ti, n, when, durSec, voice) {
   src.onended = () => { try { src.disconnect(); } catch (err) {} };
   src.start(when);
   src.stop(when + buf.length / S.audio.sampleRate + 0.05);
+}
+
+// A game: voice written before the archive-by-console reorganization
+// (2026-09-29) has a vault with no console folder ("final-fantasy-7",
+// "ff1.nsf") — game files then lived at the archive root. Every album's
+// nsf.vault is now "<console>/<old vault>" (e.g. "ps1/final-fantasy-7/",
+// "nes/ff1.nsf"), so the OLD idVault 404s against instLibrary. Never rewrite
+// the annotation (Josh's picks are his) — resolve it to its album's CURRENT
+// vault at read time instead: idVault itself when it already matches an
+// album directly (already current, or simply unknown to instAlbums at all),
+// else the vault of the instAlbums() entry whose vault, with its console
+// prefix stripped, equals idVault (trailing "/" for a folder vault, the
+// whole filename for a single-file one). Every caller that loads/labels/
+// compares a game voice goes through this first.
+export async function resolveGameVault(idVault) {
+  const games = await instAlbums();
+  if (games.some(g => g.vault.replace(/\/$/, "") === idVault)) return idVault;
+  const hit = games.find(g => {
+    const slash = g.vault.indexOf("/");
+    return slash >= 0 && g.vault.slice(slash + 1).replace(/\/$/, "") === idVault;
+  });
+  return hit ? hit.vault.replace(/\/$/, "") : idVault;
+}
+// tools/instruments/play.mjs, once resolved — scheduleNote needs it synchronously
+export async function instPlayerReady() { return (S.instPlaySync = S.instPlaySync || await instPlayer()); }
+export function gameVoicesInSong() { // [{vault, instId, voice}] this song's tracks actually use, de-duped by voice id
+  const out = [], seen = new Set();
+  if (S.song) S.song.tracks.forEach(tr => {
+    const info = parseGameVoice(tr.voice);
+    if (info && !seen.has(tr.voice)) { seen.add(tr.voice); out.push({vault: info.vault, instId: info.instId, voice: tr.voice}); }
+  });
+  return out;
+}
+export function sf2VoicesInSong() { // [{slug, bank, program, voice}] this song's tracks actually use, de-duped by voice id
+  const out = [], seen = new Set();
+  if (S.song) S.song.tracks.forEach(tr => {
+    const info = parseSf2Voice(tr.voice);
+    if (info && !seen.has(tr.voice)) { seen.add(tr.voice); out.push({slug: info.slug, bank: info.bank, program: info.program, voice: tr.voice}); }
+  });
+  return out;
+}
+// ---------------------------------------------------- game instruments
+// The instruments pulled from each published PS1/N64 game (tools/instruments/
+// extract.mjs) live in the game files & instruments repo at <vault>instruments/:
+// instruments.json + one WAV per sample. This sheet lists the games that have
+// one, then a game's instruments by their measured name; a tap plays the
+// instrument (root, fifth, octave around the keys its songs used; a kit plays
+// its first slots) through tools/instruments/play.mjs — the same player the
+// verification held against each driver. Step 2 of Josh's "use instruments
+// from any game" (2026-09-28); assigning one to a track is step 3.
+export const instLibs = new Map(), instWavs = new Map();
+// the vm tests inject the module; the page imports it
+export function instPlayer() { return S.instPlayModule || (S.instPlayModule = import(new URL("tools/instruments/play.mjs", S.APP_BASE).href)); }
+export function instDecodeWav(u8) { // 16-bit PCM WAV → Float32Array (mono, first channel); loop points come from instruments.json
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let p = 12, ch = 1, bits = 16;
+  while (p + 8 <= u8.length) {
+    const id = String.fromCharCode(u8[p], u8[p + 1], u8[p + 2], u8[p + 3]), len = dv.getUint32(p + 4, true);
+    if (id === "fmt ") { ch = dv.getUint16(p + 10, true); bits = dv.getUint16(p + 22, true); }
+    if (id === "data") {
+      if (bits !== 16) throw new Error("instrument sample is " + bits + "-bit; 16 expected");
+      const n = Math.floor(len / 2 / ch), out = new Float32Array(n);
+      for (let i = 0; i < n; i++) out[i] = dv.getInt16(p + 8 + i * 2 * ch, true) / 32768;
+      return out;
+    }
+    p += 8 + len + (len & 1);
+  }
+  throw new Error("instrument sample has no data chunk");
+}
+export async function instAlbums() { // [{title, vault, songs: [[songTitle, path]] (CATALOG's own album order)}] of published albums whose game files carry an instrument library
+  const out = [];
+  for (const [title, songs] of Object.entries(S.CATALOG)) {
+    if (!songs.length) continue;
+    const meta = await albumMetaFor(songs[0][1]).catch(() => null);
+    const n = meta && meta.nsf;
+    if (n && typeof n.vault === "string" && INST_CHIPS.has(n.chip || "nsf")) out.push({title: meta.title || title, vault: n.vault, songs, sys: String(songs[0][1]).split("/")[1]});
+  }
+  return out.sort((a, b) => titleCompare(a.title, b.title));
+}
+// the album kinds tools/instruments/extract.mjs builds libraries for (an NES
+// album.json names no chip: plain NSF is the default kind)
+export const INST_CHIPS = new Set(["nsf", "gbs", "spc", "psf", "psf2", "usf"]);
+// where an album's library sits in the archive — tools/instruments/model.mjs
+// instrumentsFolder, the rule the extractor publishes by: a folder vault holds
+// it inside ("goldeneye-007/instruments/"); a single-file vault beside the file
+// under its whole name ("tetris.nsf.instruments/"), since tetris.nsf and
+// tetris.gbs would collide without the extension
+export function instFolder(vault) { return vault.endsWith("/") ? vault + "instruments/" : vault + ".instruments/"; }
+export async function instLibrary(vault) {
+  if (!instLibs.has(vault)) instLibs.set(vault, vaultFetch(instFolder(vault) + "instruments.json").then(b => JSON.parse(new TextDecoder().decode(b))));
+  return instLibs.get(vault);
+}
+export async function instSamples(vault, lib, hashes) { // {hash: {rate, loop, pcm}} for the samples a play needs, fetched once each
+  const out = {};
+  for (const h of hashes) {
+    const k = vault + h;
+    if (!instWavs.has(k)) instWavs.set(k, vaultFetch(instFolder(vault) + lib.samples[h].file).then(instDecodeWav));
+    out[h] = {rate: lib.samples[h].rate, loop: lib.samples[h].loop || null, pcm: await instWavs.get(k)};
+  }
+  return out;
+}
+export function sf2Module() { return S.sf2PlayModule || (S.sf2PlayModule = import(new URL("tools/instruments/sf2.mjs", S.APP_BASE).href)); }
+export const sf2Fonts = new Map(); // slug -> Promise<parsed font> (tools/instruments/sf2.mjs's parseSf2 result), fetched/parsed once
+// bytes: this device's IndexedDB first (an import, or a song that already loaded this
+// font once), else the game files & instruments repo's soundfonts/<slug>.sf2 (cached
+// to IndexedDB on success, same "works offline after the first load" contract as chip
+// audio's vault fetch)
+export async function sf2Bytes(slug) {
+  const local = await idbSf2Get(slug);
+  if (local) return local;
+  const bytes = await vaultFetch("soundfonts/" + slug + ".sf2");
+  idbSf2Put(slug, bytes).catch(() => {});
+  return bytes;
+}
+export function sf2Font(slug) {
+  if (!sf2Fonts.has(slug)) sf2Fonts.set(slug, sf2Bytes(slug).then(async b => (await sf2Module()).parseSf2(b)));
+  return sf2Fonts.get(slug);
 }
