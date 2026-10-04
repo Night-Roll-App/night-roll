@@ -32,6 +32,7 @@ import { barTicks } from "../model/rollnotes.js";
 import { stop } from "./transport.js";
 import { play } from "./transport.js";
 import { updateSubtitle } from "../hooks.js";
+import { clipLabel } from "../render/tracks.js";
 
 // ---------------------------------------------------- audio tracks (clips)
 // A recording as a track (Josh's son, 2026-09-15: "I wouldn't use it unless
@@ -549,4 +550,33 @@ export function setSongTempo(bpm) { // the song's tempo at 1.1 — compositions 
   updateSubtitle();
   draw();
   return true;
+}
+
+export function moveClip(ti, ci, dT) {
+  const c = S.song.tracks[ti].clips[ci];
+  setClipDir(ti, ci, {at: Math.max(0, c.at + dT)});
+  if (S.selClip) setInfo(clipLabel(S.selClip.ti, S.selClip.ci) + " — one undo undoes the move");
+}
+// trim: drag an edge in Select. Left keeps the SOUND in place (anchor and
+// file offset move together); right only changes how much plays.
+export function trimClip(ti, ci, side, dT) {
+  const c = S.song.tracks[ti].clips[ci];
+  if (!c || !c.dur) return;
+  const dSec = (tickToSec(S.song, c.at + dT) - tickToSec(S.song, c.at)) * S.playRate; // buffer seconds
+  const len = clipLen(c);
+  if (side === "L") {
+    const d = Math.max(-c.offset, Math.min(len - 0.05, dSec));
+    setClipDir(ti, ci, {at: c.at + secToTick(S.song, tickToSec(S.song, c.at) + d / S.playRate) - c.at, offset: +(c.offset + d).toFixed(3), len: +(len - d).toFixed(3)});
+  } else {
+    const nl = Math.max(0.05, Math.min(c.dur - c.offset, len + dSec));
+    setClipDir(ti, ci, {len: +nl.toFixed(3)});
+  }
+  if (S.selClip) setInfo(clipLabel(S.selClip.ti, S.selClip.ci) + " — trimmed; one undo undoes it");
+}
+export function splitSelectedClipAtCursor() {
+  if (!S.selClip) return false;
+  const ok = splitClipAt(S.selClip.ti, S.selClip.ci, Math.round(S.playCursor));
+  setInfo(ok ? "split at " + fmtBarBeat(S.playCursor) + " — two pieces now; one ⟲ rejoins them"
+             : "put the cursor inside the piece to split it");
+  return ok;
 }
