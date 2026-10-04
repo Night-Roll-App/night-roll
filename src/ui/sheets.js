@@ -113,6 +113,8 @@ import { isLocalDraft } from "../model/edits.js";
 import { editsKey } from "../model/edits.js";
 import { updateClearBtn } from "../model/edits.js";
 import { clipEndTick } from "../audio/clips.js";
+import { idbDraftPut } from "../platform/storage.js";
+import { jobsNotify } from "../model/jobs.js";
 
 export function jobCancel(id) { const c = jobControls[id]; if (c) c.aborted = true; const j = S.jobs.find(x => x.id === id); if (j && j.state === "queued") jobApi(j).cancel(); }
 export function renderJobs() {
@@ -379,7 +381,6 @@ export async function ghCheck() {
   } catch (err) { ghCheckOut("⚠ could not reach GitHub — offline?"); }
 }
 
-export function jobsNotify() { for (const fn of jobListeners) { try { fn(); } catch (err) { /* a listener's problem */ } } updateJobsBtn(); }
 // Josh, 2026-09-29: done/cancelled jobs clear themselves a few seconds after they end; failed/interrupted stay until looked at
 export function jobsAutoClear(id) {
   setTimeout(() => {
@@ -440,7 +441,6 @@ export function localDraftWrite(key, doc) {
   localStorage.setItem(draftStoreKey(key), JSON.stringify(stub));
   return landed;
 }
-export function idbDraftPut(key, tracks) { return idbDraftOp(async () => { try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").put(tracks, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); return true; } catch (err) { logErr("draft notes could not be stored for " + key.split("/").pop() + ": " + (err && err.message || err)); return false; } }); }
 
 
 // session-ephemeral: the winning take IS the notes

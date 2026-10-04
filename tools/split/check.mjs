@@ -146,6 +146,22 @@ function isPureLiteralish(node) {
     case "FunctionExpression": case "ArrowFunctionExpression": case "ClassExpression":
     case "Literal": case "Identifier": case "TemplateLiteral":
       return true;
+    // An object/array literal built only from pure-literalish parts (docs/
+    // split-phase2-plan.md step 2 surfaced this: CHIPS, a plain `{nsf: {...},
+    // ...}` table of closures, moving out of app.js — the legacy container's
+    // own rule-4/rule-10d exemption — into a real module for the first time).
+    // Same reasoning the FunctionExpression/ArrowFunctionExpression case
+    // above already rests on: a function's BODY isn't inspected here because
+    // it only runs when CALLED, never at module-eval time; building the
+    // ENCLOSING object/array is equally side-effect-free when every property/
+    // element is itself one of these safely-deferred shapes — nothing
+    // executes constructing the literal, regardless of what a nested
+    // closure's own body later references.
+    case "ObjectExpression":
+      return node.properties.every(p => p.type === "SpreadElement" ? isPureLiteralish(p.argument)
+        : (!p.computed || isPureLiteralish(p.key)) && isPureLiteralish(p.value));
+    case "ArrayExpression":
+      return node.elements.every(e => e === null || isPureLiteralish(e.type === "SpreadElement" ? e.argument : e));
     default:
       return false;
   }

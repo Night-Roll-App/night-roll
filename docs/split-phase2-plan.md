@@ -110,7 +110,7 @@ illegal-layer imports.
 |---|---|---|---|
 | 0 | tool | M4, blockers.mjs, rule 9/10 tests | 0 |
 | 1 | H | **Done.** hooks.js + wire.js; ports setInfo, logErr, logDebug, appConfirm, updateJobsBtn; controls.js → layer 0; LAYERS gains session, hooks.js, wire.js | ~0 (15054→15056) |
-| 2 | M | ensureAudio/resumeAudio/rebuildAudio → audio/engine; metStart → metronome; CHIPS, sonySeqCapture, psfInflater, PSX_SOUNDING_ON, chipExt, chipRender, chipEstimateTracks, chipRenderInWorker, chipCleanupAfterFailure, chipSource, chipVaultFile, chipModules → audio/chip; chipStreamOpen* → chip-stream; scheduleGameNote/gameVoiceWarn/gameNote*/resolveVoiceInstrument/gameLibSync/sf2Sync → audio/voices; idbDraftPut → platform/storage; jobsNotify → model/jobs | ~1,100 |
+| 2 | M | **Done, with two real exceptions (see §2 writeup): `chipRender`/`chipRenderInWorker` and `chipStreamOpen` stayed, blocked by `songTitleOf`, a NEW blocker, not `logErr`.** ensureAudio/resumeAudio/rebuildAudio → audio/engine; metStart → metronome; CHIPS, sonySeqCapture, psfInflater, PSX_SOUNDING_ON, chipExt, ~~chipRender~~, chipEstimateTracks, ~~chipRenderInWorker~~, chipCleanupAfterFailure, chipSource, chipVaultFile, chipModules → audio/chip; chipStreamOpenWorker (not ~~chipStreamOpen~~) → chip-stream; scheduleGameNote/gameVoiceWarn/gameNote*/resolveVoiceInstrument/gameLibSync/sf2Sync → audio/voices; idbDraftPut → platform/storage; jobsNotify → model/jobs | ~1,100 (actual: 571, 15056→14485) |
 | 3 | H | ports draw, playbackFrame, clampView, fitView, buildScoreModel, renderTrackbar, updateEditBtnVis, updateChipBtn, updateSongBtn, updateSyncBtn, updateSubtitle, askRender, finalizeNotes, recFinish, albumAdvance | ~0 |
 | 4 | M | play, stop, playGate*, buildSchedule, renderSongOffline, audioChaseNow → audio/transport; scheduleNote, previewNote, sf/game preload+wait → audio/voices; scheduleClip, stretchEnsure(All), applyAudioDirs, audioEnsureFile, applyBeatMap, setSongTempo, writeClips, setClipDir, splitClipAt, deleteClip → audio/clips | ~1,150 |
 | 5 | M | saveEdits/loadEdits/foldOldOverlay/retireOldOverlay → model/edits; selEditApply + selection mutators, insertTime/deleteTime, ridealongChordBands, transposeTrack, closeGap → model/selection; scheduleAnalysisRecompute/adopt* → gen/analysis; drGenerate/bsGenerate/applyTake → gen/*; M2's misfiled ones down out of ui/* | ~1,400 |
@@ -201,6 +201,49 @@ index.html/sw.js (`nr-v20`→`nr-v21`)/devtools.js gained hooks.js/wire.js;
 fileCount 62→64 (66 w/ vendor/ai/web). `src/app.js`: 15054→15056 lines.
 Full writeup: open-items.md's 2026-10-04 "module split phase 2 step 1"
 entry and its three RESOLVED notes on the dissolved blockers.
+
+**Step 2 — Done** (2026-10-04, terminal session). `blockers.mjs` run
+before every cluster, real repo. Moved clean: `ensureAudio`/`resumeAudio`/
+`rebuildAudio` → `audio/engine.js`; `metStart` → `audio/metronome.js`;
+`CHIPS`/`sonySeqCapture`/`psfInflater`/`PSX_SOUNDING_ON`/`chipExt`/
+`chipEstimateTracks`/`chipCleanupAfterFailure`/`chipSource`/
+`chipVaultFile`/`chipModules` → `audio/chip.js`; `chipStreamOpenWorker` →
+`audio/chip-stream.js`; `scheduleGameNote`/`gameVoiceWarn`/
+`gameVoiceWarned`/`gameNoteBucket`/`gameNoteCache`/
+`resolveVoiceInstrument`/`gameLibSync`/`sf2Sync` → `audio/voices.js`;
+`idbDraftPut` → `platform/storage.js`, `jobsNotify` → `model/jobs.js`
+(both FROM `ui/sheets.js`, not `app.js` — phase 1 misfiled them there;
+`move.mjs` copied `ui/sheets.js`'s own same-layer `XImpl as X` import
+alias verbatim, landing an illegal upward import each time — both
+hand-fixed to import the port from `../hooks.js` instead; `app.js`'s own
+stale `from "./ui/sheets.js"` import of each name also hand-fixed).
+**A NEW, real permanent blocker this step surfaced, unrelated to `logErr`:
+`chipRender`/`chipRenderInWorker`/`chipPublish`/`chipStreamOpen`/
+`chipRenderAuto` all call `songTitleOf` (`ask/context.js`, layer 4)
+directly — none of step 1's five ports cover it. All five stay in
+app.js.** One real `check.mjs` gap found and fixed: `isPureLiteralish`
+didn't recurse into object/array literals, so `CHIPS` (a plain table of
+closures) tripped rule 10d even though `CHIPS.usf.capture`'s own `logErr`
+reference never runs at module-eval time — same reasoning the existing
+`FunctionExpression` case already rests on. Two real-repo test/tool
+breaks fixed (not pre-existing): `tests/package.test.mjs` and `tools/
+package.mjs`'s `chipTableModules()` both hardcoded reading `src/app.js`
+for `CHIPS`'s `files:`/`shared:` lists — now scan the whole src/ tree
+(the test via `appSource()`). `perl -e 'alarm 1200; exec @ARGV' npm
+test`: only `ps2-real`/`instruments` fail (pre-existing). `check.mjs`:
+clean except `oldBpb` (`regen-e2e-footer.mjs` re-run after every move —
+skipping it once left 4 stale rule-2 findings, caught immediately).
+`check-e2e-globals.mjs`/`check-controls.mjs` clean. prof label set
+unchanged (29). `test:e2e:smoke`: 8/8. `src/app.js`: 15056 → 14485 lines
+(571 out, under the ~1,100 estimate — the five `songTitleOf`-blocked
+functions are among the cluster's largest). A fourth same-shape
+`verbatim.mjs` false alarm (the `AUDIO_STRIP_H` class, Deviations (11)):
+two original physical lines each held an unrelated pair of statements
+(`PSX_SOUNDING_ON`/`HOLD_MS`; a top-level touchstart listener/
+`ensureAudio`'s own declaration) — one moved, one stayed, hand-verified,
+not fixed in the tool, same precedent. Full writeup: open-items.md's
+2026-10-04 "module split phase 2 step 2" entry. **Browser-check needed**
+(plan §3): ⚠ chip count + debug log, an NSF/SPC chip render, metronome.
 
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run

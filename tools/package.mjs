@@ -51,11 +51,16 @@ const RUNTIME_ENTRIES = ["chip-worker.mjs",
 // them. Read from index.html itself: sounding/note-preview were missing from
 // the hand list above and every console render on the iPad fell to synth.
 // (docs/split-plan.md §4 step 0b: the CHIPS table is JS, so it moved with
-// everything else into src/app.js — index.html no longer has it.)
+// everything else into src/app.js — index.html no longer has it; docs/
+// split-phase2-plan.md step 2 moved it again, src/app.js -> src/audio/
+// chip.js — scan the whole src/ tree, not one file, so CHIPS can keep
+// moving without this list silently going stale.)
 function chipTableModules() {
-  const html = readFileSync(path.join(ROOT, "src", "app.js"), "utf8");
+  const root = path.join(ROOT, "src");
+  let text = "";
+  (function walk(dir) { for (const e of readdirSync(dir)) { const f = path.join(dir, e); if (statSync(f).isDirectory()) walk(f); else if (e.endsWith(".js")) text += "\n" + readFileSync(f, "utf8"); } })(root);
   const out = new Set();
-  for (const m of html.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g))
+  for (const m of text.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g))
     for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) out.add(q[1] + ".mjs");
   return [...out];
 }

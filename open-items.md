@@ -6565,3 +6565,150 @@ list all gained `hooks.js`/`wire.js`; `tests/modules.test.mjs`'s
 Browser-check by the main session: none required for this step alone —
 nothing user-facing moved; the real ear/eye check is step 2's (chip count
 + debug log, an NSF/SPC chip render, metronome).
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 2: audio engine + chip render + idbDraftPut + jobsNotify move down (docs/split-phase2-plan.md)
+
+Done. `blockers.mjs <names> --to <file>` run before every cluster (per
+this step's own instruction), real repo, not a fixture.
+
+Moved clean, by `move.mjs --names` (one invocation per cluster):
+`ensureAudio`/`resumeAudio`/`rebuildAudio` → `audio/engine.js` (now the
+`logDebug`/`logErr`/`setInfo` port exists); `metStart` →
+`audio/metronome.js` (needed `ensureAudio`/`resumeAudio` moved first);
+`CHIPS`/`sonySeqCapture`/`psfInflater`/`PSX_SOUNDING_ON`/`chipExt`/
+`chipEstimateTracks`/`chipCleanupAfterFailure`/`chipSource`/
+`chipVaultFile`/`chipModules` → `audio/chip.js` (the `logErr` port
+dissolves docs/split-plan.md's Deviations (8) `CHIPS` blocker — see
+below for a `check.mjs` gap this specific move surfaced);
+`chipStreamOpenWorker` → `audio/chip-stream.js` (needed the chip.js
+cluster moved first, for `CHIPS`); `scheduleGameNote`/`gameVoiceWarn`/
+`gameVoiceWarned`/`gameNoteBucket`/`gameNoteCache`/
+`resolveVoiceInstrument`/`gameLibSync`/`sf2Sync` → `audio/voices.js`
+(`gameVoiceWarned`, unlisted by the task, pulled along — `gameVoiceWarn`
+needs it, same "load-bearing helper" pattern steps 4-6 established);
+`idbDraftPut` → `platform/storage.js` and `jobsNotify` → `model/jobs.js`
+— both FROM `ui/sheets.js`, not `app.js` (phase 1 misfiled them there;
+NIGHT-ROLL.md's own `platform/storage.js`/`model/jobs.js` entries already
+said so). `blockers.mjs`'s CLI hardcodes `--from src/app.js`, so these
+two needed a different check: `move.mjs --dry-run` first, by hand —
+both picked up `ui/sheets.js`'s own same-layer import alias
+(`logErrImpl as logErr` / `updateJobsBtnImpl as updateJobsBtn`, both
+`from "./chrome.js"`, step 1's own "same-layer callers don't need the
+port" choice) and copied that relationship verbatim, landing an ILLEGAL
+upward import into a layer-1/layer-2 file (`../ui/chrome.js`, layer 4).
+Both hand-fixed to import from `../hooks.js` instead (the port, legal
+from any layer) — move.mjs has no way to know a copied import relationship
+needs re-deriving against the NEW file's own layer, since nothing about
+that is wrong in general (it's only wrong because `--from`'s import was
+itself a same-layer shortcut, not the port). Also by hand: `app.js`'s own
+stale `import { idbDraftPut } from "./ui/sheets.js"` / `import {
+jobsNotify } from "./ui/sheets.js"` (sheets.js doesn't export either name
+any more, just re-imports it for its own internal use) — `check.mjs` rule
+9 would have caught a wrong-but-still-exported specifier, but these two
+were imports of a name that's ENTIRELY GONE from that file, which is rule
+1 territory (an unresolved import) — caught by `check.mjs` immediately,
+not silently.
+
+**Two real `check.mjs` gaps found and fixed, both load-bearing for this
+step specifically (neither was hit by any phase-1 step, since nothing
+moved OUT of app.js's blanket rule-4/rule-10d exemption into a real module
+with this shape before):**
+- `isPureLiteralish` didn't recurse into object/array literals — `CHIPS`,
+  a plain `{nsf: {...}, gbs: {...}, ...}` table of closures, moving out of
+  app.js for the first time tripped rule 10d (a top-level initializer
+  "calling" the `logErr` port) even though `CHIPS.usf.capture`'s own
+  `logErr` reference is inside a closure that only runs when CALLED, same
+  as the already-existing `FunctionExpression`/`ArrowFunctionExpression`
+  cases right next to this one. Fixed: an `ObjectExpression`/
+  `ArrayExpression` is pure-literalish when every property/element is,
+  recursively — building the literal itself never executes anything.
+- (Documented in step 1's own entry already, re-confirmed here on real
+  content, not just app.js/main.js's listener blocks: `ruleHooksPorts`'s
+  self-file and app.js/main.js exemptions, `ruleNoTopLevelPortCalls`'s
+  app.js/main.js exemption — both held up against this step's real moves
+  with no further gap.)
+
+**A new, real permanent blocker this step's own moves surfaced — NOT
+`logErr`/`CHIPS` related, not anticipated by this task's brief:
+`chipRender`/`chipRenderInWorker`/`chipPublish` (audio/chip.js) and
+`chipStreamOpen`/`chipRenderAuto` (audio/chip-stream.js) all call
+`songTitleOf` (`ask/context.js`, layer 4) directly** — `chipRender`/
+`chipRenderInWorker`/`chipStreamOpen` each for a `logDebug` status line
+naming the open song; `chipPublish` because `chipRender` passes debug
+info through it; `chipRenderAuto` because it calls both. An illegal
+upward import from `audio/chip.js`'s/`audio/chip-stream.js`'s layer 3,
+and no port covers `songTitleOf` — it isn't one of step 1's five, and
+isn't named by any later H step in docs/split-phase2-plan.md's table
+either. All five stay in app.js, now importing `CHIPS`/`chipSource`/
+`chipEstimateTracks`/`chipVaultFile`/`chipCleanupAfterFailure`/
+`chipStreamOpenWorker`/etc. back from `audio/chip.js`/`audio/
+chip-stream.js` unchanged. Flagged here, not silently retried: whoever
+next considers this needs either a `songTitleOf` port (a sixth name for
+`hooks.js`, own H commit) or to accept these five as this app's actual
+render-entry-point home staying in app.js indefinitely.
+
+`perl -e 'alarm 1200; exec @ARGV' npm test`: two NEW real-repo breaks this
+step's moves caused, both fixed (not pre-existing, not the known
+`ps2-real`/`instruments` gap):
+- `tests/package.test.mjs`'s own CHIPS-list scan read `src/app.js` by
+  name (hardcoded) for the `files:`/`shared:` module lists `CHIPS`
+  carries — empty once `CHIPS` moved out. Fixed to use
+  `tests/harness.mjs`'s `appSource()` (the whole src/ tree concatenated,
+  §3.3 — built for exactly this).
+- `tools/package.mjs`'s `chipTableModules()` had the SAME hardcoded
+  `src/app.js` read — a real packaging-tool bug, not just a test one
+  (the shipped iPad/Pages bundle would have silently stopped including
+  `tools/sounding.mjs`/`tools/note-preview.mjs`/etc.). Fixed the same way,
+  walking all of src/ instead of reading one file.
+Both fixes are general (scan the tree, not a path), so neither breaks
+again the next time a step moves CHIPS (or anything else `files:`/
+`shared:`-shaped) to a different file.
+
+After both fixes: only `ps2-real`/`instruments` fail (pre-existing).
+`node tools/split/check.mjs`: clean except `oldBpb`
+(`regen-e2e-footer.mjs --file src/app.js` re-run after EVERY move this
+step made — a move that turns a declaration into an import without a
+footer re-run left 4 stale rule-2 "assignment to imported binding"
+findings the first time, from the generated `__nrExpose$`'s own two-way
+accessor still trying to SET names that are imports now; caught
+immediately, not shipped). `check-e2e-globals.mjs`/`check-controls.mjs`
+clean. Sorted `^\w+ = prof\("\w+"` label set unchanged (29 entries — none
+of this step's names are profiled). `npm run test:e2e:smoke`: 8/8.
+`src/app.js`: 15056 → 14485 lines (571 out — well under the plan's
+~1,100 estimate, because `chipRender`/`chipRenderInWorker`/`chipPublish`/
+`chipStreamOpen`/`chipRenderAuto`, among the largest functions in the
+cluster, all stayed).
+
+**A fourth same-shape `verbatim.mjs` false alarm, same class docs/
+split-plan.md's Deviations (11) found for `AUDIO_STRIP_H` ("a genuinely
+unfixable… same-line, multi-statement split") — two instances this time,
+both hand-verified, neither fixed in the tool (same reasoning: a line-
+level differ has no concept of a physical line holding two unrelated
+statements, only one of which moved).** `const PSX_SOUNDING_ON = false;
+const HOLD_MS = 160;` was one original physical line; `PSX_SOUNDING_ON`
+moved to `audio/chip.js`, `HOLD_MS` (+ its trailing comment) stayed —
+`node tools/split/verbatim.mjs HEAD` reports one `lost`/two `extra` for
+it, same as `AUDIO_STRIP_H`. ` if (typeof document !== "undefined" &&
+document.addEventListener) document.addEventListener("touchstart", () =>
+{}, {passive: true}); function ensureAudio() { // one context…` was
+ALSO one original physical line (a top-level touchstart listener and
+`ensureAudio`'s own declaration, sharing a line) — `move.mjs`'s cut left
+the touchstart half joined onto the FOLLOWING statement instead
+(`document.addEventListener("visibilitychange", …)`, a separate top-level
+listener that happened to sit right after `ensureAudio`'s closing brace)
+— the line-joining bug docs/split-plan.md's Deviations (9)-(11) already
+named, hit here for the first time on a function (not a `prof()` wrap).
+Hand-fixed: split back onto two lines, nothing else touched. Confirmed by
+hand, token-by-token: `const PSX_SOUNDING_ON = false;` reappears verbatim
+in `audio/chip.js`, `const HOLD_MS = 160;` (+ comment) in app.js; the
+touchstart statement is its own line in app.js, `export function
+ensureAudio() { // one context…` (same comment) in `audio/engine.js`.
+Nothing lost either time — flagged here as the precedent `AUDIO_STRIP_H`
+already set, not reopened as a tooling task.
+
+Browser-check by the main session (plan §3): ⚠ chip count + debug log,
+an NSF/SPC chip render, and the metronome — `ensureAudio`/`resumeAudio`/
+`rebuildAudio`/`metStart`/the whole `CHIPS` table moved file, byte-
+identical, but this is exactly the audio-session code the plan's own
+"AUDIO IS FRAGILE" guardrail (docs/split-plan.md §5) singles out for a
+real device/browser check regardless.

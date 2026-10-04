@@ -1,5 +1,6 @@
 import { S } from "../state.js";
 import { appMode } from "../platform/mode.js";
+import { updateJobsBtn } from "../hooks.js";
 
 // the strip's un-truncated text — CSS only clips the DISPLAY (Josh, 2026-09-29:
                            // "those messages at the bottom … you can't always read them all"); tapping
@@ -79,3 +80,5 @@ export const logLine = x => x.t.toLocaleTimeString() + "  " + (x.debug ? "[debug
 // sometimes raise on the frame it settles — it is never actionable, so it
 // must never cost Josh a ⚠.
 export const BENIGN_ERRORS = /^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/;
+
+export function jobsNotify() { for (const fn of jobListeners) { try { fn(); } catch (err) { /* a listener's problem */ } } updateJobsBtn(); }

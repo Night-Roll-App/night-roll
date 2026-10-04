@@ -1,6 +1,7 @@
 import { S } from "../state.js";
 import { EDITION } from "../edition.js";
 import { LINK_SONGS } from "./base.js";
+import { logErr } from "../hooks.js";
 
 // bytes: this device's IndexedDB first (written at import, BEFORE decode —
 // Safari's decodeAudioData detaches the input buffer), then the song's
@@ -261,3 +262,5 @@ export function apiError(which, r, what) {
                      ") — edit the token on GitHub and add that repo to it");
   return new Error(what + " → " + repoName(which) + " HTTP " + r.status);
 }
+
+export function idbDraftPut(key, tracks) { return idbDraftOp(async () => { try { const db = await idbOpen(); await new Promise((res, rej) => { const tx = db.transaction("drafts", "readwrite"); tx.objectStore("drafts").put(tracks, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); db.close(); return true; } catch (err) { logErr("draft notes could not be stored for " + key.split("/").pop() + ": " + (err && err.message || err)); return false; } }); }

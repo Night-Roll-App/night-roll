@@ -177,6 +177,13 @@ test("check rule 4: a literal/function/class initializer is never flagged, even 
   assert.equal(v.length, 0); // arrow function body only runs when CALLED, not at module-eval time
 });
 
+test("check rule 4/10d: an object/array literal built only from pure-literalish parts is never flagged, even when a nested closure references a higher layer or a port (docs/split-phase2-plan.md step 2 — CHIPS, moving out of app.js for the first time)", () => {
+  const src = `import { Thing } from "../audio/engine.js";\nexport const TABLE = {nsf: {capture: () => { if (typeof logErr === "function") logErr("x"); return new Thing(); }}, list: [1, 2, () => logErr("y")]};\n`;
+  const parsed = parseModule(src, "ui/chrome.js");
+  assert.equal(ruleTopLevelInitLayerZero(parsed, () => 3).length, 0); // building the table itself never calls Thing()
+  assert.equal(ruleNoTopLevelPortCalls(parsed.ast, new Set(["logErr"])).length, 0); // nor logErr — both closures only run when CALLED
+});
+
 test("layerOf + check rule 5: an importer may use its own layer or lower, never higher", () => {
   assert.equal(layerOf("state.js"), 0);
   assert.equal(layerOf("platform/base.js"), 1);
@@ -756,11 +763,16 @@ test("blockers.computeBlockers: lists an already-resolved import that would cros
   assert.match(result.verdict, /illegal-layer/);
 });
 
-test("blockers.mjs CLI: real repo — chipSource -> audio/chip.js, post-docs/split-phase2-plan.md step 1: still blocked by CHIPS (the table itself, step 2's own job), but no longer by logErr — the whole point of step 1's logErr port (docs/split-plan.md's Deviations 8/9 permanent blocker is dissolved: app.js's `import { logErr } from \"./hooks.js\";` is layer 0, never above any --to)", () => {
+test("blockers.mjs CLI: real repo — chipSource -> audio/chip.js is CLEAN, post-docs/split-phase2-plan.md step 2: chipSource/CHIPS/etc. actually moved there, and step 1's logErr port means computeBlockers never even needs to chase it (chipSource isn't declared in app.js at all any more)", () => {
   const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", "chipSource", "--to", "src/audio/chip.js"], { cwd: ROOT, encoding: "utf8" });
-  assert.notEqual(r.status, 0); // still blocked — CHIPS itself hasn't moved yet
-  assert.match(r.stdout, /CHIPS/);
-  assert.doesNotMatch(r.stdout, /logErr/);
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /clean/);
+});
+
+test("blockers.mjs CLI: real repo — chipRender -> audio/chip.js, post-docs/split-phase2-plan.md step 2: a NEW, real blocker this step's own move surfaced, not logErr/CHIPS related — chipRender (and chipRenderInWorker) call songTitleOf (ask/context.js, layer 4) directly, an illegal upward import from audio/chip.js's layer 3; both stay in app.js, documented in open-items.md, not silently retried", () => {
+  const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", "chipRender", "--to", "src/audio/chip.js"], { cwd: ROOT, encoding: "utf8" });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stdout, /songTitleOf/);
 });
 
 // ---- promote-state.mjs -------------------------------------------------------

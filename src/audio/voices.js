@@ -2,6 +2,7 @@ import { S } from "../state.js";
 import { trackGain } from "./engine.js";
 import { pluckBuffer } from "./engine.js";
 import { makeOsc } from "./engine.js";
+import { setInfo } from "../hooks.js";
 
 export function voiceType(ti) {
   if (S.song.tracks[ti] && S.song.tracks[ti].kind === "audio") return "sine"; // never sounds: the clip is the voice
@@ -309,4 +310,84 @@ export function playSynthVoice(ti, n, when, durSec, v) {
   o.onended = () => { try { g.disconnect(); } catch (err) {} };
   o.start(when);
   o.stop(end + 0.05);
+}
+
+export const gameLibSync = new Map(); // vault folder -> {lib, samples: {hash: {rate, loop, pcm}}}, filled by gamePreloadForSong
+export const sf2Sync = new Map(); // slug -> parsed font ({name, presets, samples}, tools/instruments/sf2.mjs), filled by gamePreloadForSong
+// "voice|pitch|velBucket|durBucket" -> {ctx, buf: AudioBuffer} — the RENDERED
+// buffer itself, same shape/eviction as chipPreviewCache: a repeated note is
+// an instant replay, no re-render AND no re-copy; ctx guards a stale buffer
+// across an ensureAudio() context rebuild (a fresh context can't play an old
+// context's buffer)
+export const gameNoteCache = new Map();
+export function gameNoteBucket(vel, durSec) { // render at the bucket's own values so a cache hit is an exact repeat, not noise
+  return {velB: Math.max(1, Math.min(127, Math.round(vel / 8) * 8)),
+          durB: Math.max(50, Math.round((durSec * 1000) / 50) * 50)};
+}
+export const gameVoiceWarned = new Set(); // one ⚠ per (voice, reason) per session — a fixed connection warns again next Play
+export function gameVoiceWarn(voice, why) {
+  const key = voice + "|" + why;
+  if (gameVoiceWarned.has(key)) return;
+  gameVoiceWarned.add(key);
+  if (typeof voice === "string" && voice.startsWith("sf2:")) {
+    const info = parseSf2Voice(voice);
+    setInfo("⚠ soundfont " + (info ? info.slug + " " + info.bank + ":" + info.program : voice) + " " + why + " — using the synth voice");
+    return;
+  }
+  const info = parseGameVoice(voice);
+  setInfo("⚠ game instrument " + (info ? info.vault + " · " + info.instId : voice) + " " + why + " — using the synth voice");
+}
+// {inst, samples} | {reason}: a "game:" voice's instrument (from gameLibSync) or an
+// "sf2:" voice's preset (from sf2Sync, which already doubles as a play.mjs inst —
+// tools/instruments/sf2.mjs) — the ONE thing scheduleGameNote actually needs, so it
+// stays the one caching/scheduling function for both kinds of borrowed instrument
+// (NIGHT-ROLL.md "Game instrument libraries" step 4: "reuse scheduleGameNote... by
+// giving it a resolver for sf2: ids").
+export function resolveVoiceInstrument(voice) {
+  if (typeof voice === "string" && voice.startsWith("game:")) {
+    const info = parseGameVoice(voice);
+    if (!info) return {reason: "has a bad voice id"};
+    const entry = gameLibSync.get(info.vault);
+    if (!entry) return {reason: "couldn't load its library"};
+    const inst = entry.lib.instruments.find(i => i.id === info.instId);
+    if (!inst) return {reason: "instrument not found"};
+    return {inst, samples: entry.samples};
+  }
+  if (typeof voice === "string" && voice.startsWith("sf2:")) {
+    const info = parseSf2Voice(voice);
+    if (!info) return {reason: "has a bad voice id"};
+    const font = sf2Sync.get(info.slug);
+    if (!font) return {reason: "couldn't load its soundfont"};
+    const inst = font.presets.find(p => p.bank === info.bank && p.program === info.program);
+    if (!inst) return {reason: "preset not found"};
+    return {inst, samples: font.samples};
+  }
+  return {reason: "has a bad voice id"};
+}
+export function scheduleGameNote(ti, n, when, durSec, voice) {
+  const {inst, samples, reason} = resolveVoiceInstrument(voice);
+  const P = S.instPlaySync;
+  if (!inst || !samples || !P) {
+    gameVoiceWarn(voice, reason || "is still loading");
+    playSynthVoice(ti, n, when, durSec, voiceType(ti)); // the track's own default — never silence
+    return;
+  }
+  const {velB, durB} = gameNoteBucket(n.v, durSec);
+  const key = voice + "|" + n.p + "|" + velB + "|" + durB;
+  const hit = gameNoteCache.get(key);
+  let buf = hit && hit.ctx === S.audio ? hit.buf : null;
+  if (!buf) {
+    const pcm = P.playNote(inst, samples, {key: n.p, vel: velB, hold: durB / 1000, sampleRate: S.audio.sampleRate, tail: 3});
+    if (!pcm.length) { gameVoiceWarn(voice, "has no sample for that note"); playSynthVoice(ti, n, when, durSec, voiceType(ti)); return; }
+    buf = S.audio.createBuffer(1, pcm.length, S.audio.sampleRate);
+    buf.copyToChannel(pcm, 0);
+    if (gameNoteCache.size > 300) gameNoteCache.clear();
+    gameNoteCache.set(key, {ctx: S.audio, buf});
+  }
+  const src = S.audio.createBufferSource();
+  src.buffer = buf;
+  src.connect(trackGain(ti)); // pan lives on trackGain's own panner, same as every voice — never on the instrument's own pan/region.pan
+  src.onended = () => { try { src.disconnect(); } catch (err) {} };
+  src.start(when);
+  src.stop(when + buf.length / S.audio.sampleRate + 0.05);
 }

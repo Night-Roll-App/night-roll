@@ -8,7 +8,7 @@ import {readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSyn
 import {mkdtempSync} from "node:fs";
 import {tmpdir} from "node:os";
 import path from "node:path";
-import {createApp} from "./harness.mjs";
+import {createApp, appSource} from "./harness.mjs";
 
 const root = path.dirname(new URL("./", import.meta.url).pathname.replace(/\/$/, ""));
 const tool = path.join(root, "tools", "package.mjs");
@@ -40,10 +40,11 @@ test("package: builds the app edition into a temp dir with only starter albums a
     assert.ok(existsSync(path.join(out, f)), f + " should ship");
   // every module the page's CHIPS table names ships — the worker imports them by name at run time (2026-09-28:
   // sounding/note-preview were missing and every console render on the iPad fell back to the synth). The CHIPS
-  // table is JS, so it lives in src/app.js now (docs/split-plan.md §4 step 0b moved it out of index.html).
-  const appJs = readFileSync(path.join(root, "src", "app.js"), "utf8");
+  // table is JS, so it lives in src/ now (docs/split-plan.md §4 step 0b moved it out of index.html;
+  // docs/split-phase2-plan.md step 2 moved it again, src/app.js -> src/audio/chip.js) — appSource()
+  // (tests/harness.mjs §3.3) is the whole src/ tree concatenated, not just app.js, for exactly this reason.
   const named = new Set();
-  for (const m of appJs.matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g)) for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) named.add("tools/" + q[1] + ".mjs");
+  for (const m of appSource(root).matchAll(/\b(?:files|shared):\s*\[([^\]]*)\]/g)) for (const q of m[1].matchAll(/"\??([\w/-]+)"/g)) named.add("tools/" + q[1] + ".mjs");
   assert.ok(named.has("tools/sounding.mjs") && named.has("tools/note-preview.mjs") && named.size > 20, "the CHIPS lists were read");
   for (const f of named) if (existsSync(path.join(root, f))) assert.ok(existsSync(path.join(out, f)), f + " is named in CHIPS and should ship");
   assert.ok(!files.some(f => /^tools\/(package|dump_notes|claude-bridge|at|span)\.mjs$|^tools\/nsf\/(dump|dump-all|make-test-nsf)\.mjs$/.test(f)), "no node-only tools in the output");
