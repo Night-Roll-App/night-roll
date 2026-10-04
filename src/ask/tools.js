@@ -13,6 +13,43 @@ import { askBarRow } from "./context.js";
 import { askSpanNotesCompact } from "./context.js";
 import { LETTER_PC } from "../theory/chords.js";
 import { editableSong } from "../model/song.js";
+import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
+import { parseRollnotes } from "../model/rollnotes.js";
+import { dropSupersededBy } from "../model/rollnotes.js";
+import { resolveNote } from "../model/rollnotes.js";
+import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
+import { saveLocalNotes } from "../model/edits.js";
+import { drawImpl as draw } from "../ui/chrome.js";
+import { updateSongBtnImpl as updateSongBtn } from "../ui/chrome.js";
+import { updateSyncBtnImpl as updateSyncBtn } from "../ui/chrome.js";
+import { dropLocalKeyAt } from "../model/rollnotes.js";
+import { retireEdited } from "../model/edits.js";
+import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
+import { clampViewImpl as clampView } from "../ui/chrome.js";
+import { updateSubtitleImpl as updateSubtitle } from "../ui/chrome.js";
+import { tombstone } from "../model/edits.js";
+import { connected } from "../sync/publish.js";
+import { writeToken } from "../sync/publish.js";
+import { ghHeaders } from "../audio/chip.js";
+import { isComposition } from "../model/provenance.js";
+import { publishSong } from "../sync/publish.js";
+import { writeSongsReadme } from "../sync/publish.js";
+import { initCatalog } from "../model/catalog.js";
+import { renderSyncPending } from "../ui/sheets.js";
+import { folderActive } from "../platform/folder.js";
+import { fsRoot } from "../platform/folder.js";
+import { readData } from "../platform/folder.js";
+import { parseMidi } from "../midi/parse.js";
+import { songTitleOfImpl as songTitleOf } from "./context.js";
+import { beatsPerBarDisp } from "../model/grid.js";
+import { applyTake } from "../gen/bassist.js";
+import { insertTime } from "../model/selection.js";
+import { openGapShift } from "../model/selection.js";
+import { pushUndo } from "../model/edits.js";
+import { saveEdits } from "../model/edits.js";
+import { computeSongEnd } from "../model/song.js";
+import { saveDraft } from "../model/versions.js";
+import { deleteTime } from "../model/selection.js";
 
 // Same set serializeRollnotes would publish, each entry tagged with an "id"
 // (its index into `rollnotes`) — edit_annotation/delete_annotation target by
@@ -326,4 +363,227 @@ export function askBarsValidate(a, requireRange) { // → {fromBar, toBar, atBar
   const atBar = Math.round(+a.at_bar || 0);
   if (!(atBar >= 1 && atBar <= nBars + 1)) throw new Error("at_bar must be between 1 and " + (nBars + 1) + " (this song has " + nBars + " bar" + (nBars === 1 ? "" : "s") + ")");
   return requireRange ? {fromBar, toBar, atBar} : {atBar};
+}
+
+export function askAddAnnotation(a) { // the same text grammar the editor and the files use: one line, parsed by parseRollnotes
+  if (!S.song || !S.songKey) throw new Error("no song open");
+  if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
+  if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
+  const bar = Math.max(1, Math.round(+a.bar || 1)), beat = Math.max(1, +a.beat || 1);
+  const eb = a.end_bar ? Math.max(bar, Math.round(+a.end_bar)) : null;
+  const eq = eb && a.end_beat ? Math.max(1, +a.end_beat) : null;
+  const kind = String(a.kind || "note"), text = String(a.text || "").trim();
+  if (!text) throw new Error("empty text");
+  const line = (kind === "note" ? text : kind + ": " + text) + (a.comment ? "\n" + String(a.comment).trim() : "");
+  const head = "[" + bar + "." + beat + (eb ? " - " + eb + (eq ? "." + eq : "") : "") + "]";
+  const parsed = parseRollnotes(head + "\n" + line);
+  if (!parsed.length) throw new Error("could not parse that annotation");
+  const fresh = parsed[0];
+  fresh.added = true;
+  const isLoop = n => n.loopTo !== undefined || /^loop:/i.test(n.text || "");
+  if (isLoop(fresh)) S.rollnotes = S.rollnotes.filter(n => !(n.added && isLoop(n))); // one loop point per song, as the editor does (loopTo is derived later, in finalizeNotes)
+  dropSupersededBy(fresh);
+  S.rollnotes.push(resolveNote(fresh));
+  finalizeNotes();
+  saveLocalNotes();
+  if (typeof draw === "function") draw();
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof updateSyncBtn === "function") updateSyncBtn();
+  return {ok: true, at: head, text: fresh.text, unsynced: true, note: "written on this device; Publish sends it with the song — the user can discard it in the Publish sheet"};
+}
+export function askEditAnnotation(a) {
+  if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
+  a = a || {};
+  const n = askFindAnnotation(a);
+  if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — change it in the app's own editor, not here");
+  const kind = askNoteKind(n);
+  const bar = a.new_bar !== undefined ? Math.max(1, Math.round(+a.new_bar)) : n.b1;
+  const beat = a.new_beat !== undefined ? Math.max(1, +a.new_beat) : (n.q1 || 1);
+  const eb = a.new_end_bar !== undefined ? Math.max(bar, Math.round(+a.new_end_bar)) : (n.b2 || null);
+  const eq = eb !== null ? (a.new_end_beat !== undefined ? Math.max(1, +a.new_end_beat) : (eb === n.b2 ? (n.q2 || null) : null)) : null;
+  const text = String(a.text || "").trim();
+  if (!text) throw new Error("empty text");
+  const comment = a.comment !== undefined ? String(a.comment).trim() : (n.cnote || "");
+  const line = (kind === "note" ? text : kind + ": " + text) + (comment ? "\n" + comment : "");
+  const head = "[" + bar + "." + beat + (eb ? " - " + eb + (eq ? "." + eq : "") : "") + "]";
+  const parsed = parseRollnotes(head + "\n" + line);
+  if (!parsed.length) throw new Error("could not parse that annotation");
+  const fresh = parsed[0];
+  fresh.added = true;
+  if (kind === "key") dropLocalKeyAt(bar, beat); // anchor-level: only a key at the (possibly new) exact beat is replaced
+  retireEdited(n); // tombstones a synced original (so it can't come back on reload) and drops it — same path the note editor's own Save uses on an edit
+  const isLoop = nn => nn.loopTo !== undefined || /^loop:/i.test(nn.text || "");
+  if (isLoop(fresh)) S.rollnotes = S.rollnotes.filter(nn => !(nn.added && isLoop(nn))); // one loop point per song
+  dropSupersededBy(fresh);
+  S.rollnotes.push(resolveNote(fresh));
+  finalizeNotes();
+  saveLocalNotes();
+  if (typeof buildScoreModel === "function") buildScoreModel();
+  if (typeof clampView === "function") clampView();
+  S.lastSubtitle = undefined;
+  if (typeof updateSubtitle === "function") updateSubtitle();
+  if (typeof draw === "function") draw();
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof updateSyncBtn === "function") updateSyncBtn();
+  return {ok: true, at: head, text: fresh.text, note: "edited in place"};
+}
+export function askDeleteAnnotation(a) {
+  if (S.rollnotesReadOnly) throw new Error(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); // version guard, docs/annotations-v2.md P3
+  const n = askFindAnnotation(a || {});
+  if (askAnnotationStructural(n)) throw new Error("that annotation is a structural directive (meter/chop/track/audio/lane) — remove it in the app's own editor, not here");
+  const at = "[" + n.b1 + "." + (n.q1 || 1) + (n.b2 ? " - " + n.b2 + (n.q2 ? "." + n.q2 : "") : "") + "]", text = (n.text || "").split("\n")[0];
+  tombstone(n); // synced notes need the deletion to survive a reload — same path the note editor's own Delete uses
+  S.rollnotes = S.rollnotes.filter(x => x !== n);
+  finalizeNotes();
+  saveLocalNotes();
+  if (typeof buildScoreModel === "function") buildScoreModel();
+  if (typeof clampView === "function") clampView();
+  S.lastSubtitle = undefined;
+  if (typeof updateSubtitle === "function") updateSubtitle();
+  if (typeof draw === "function") draw();
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof updateSyncBtn === "function") updateSyncBtn();
+  return {ok: true, at, text, note: "deleted"};
+}
+// publish_song (2026-10-01): the exact per-song flow the footer's Publish
+// button runs (#ghsave's "writing mode" branch for his own songs; the plain
+// annotations-only branch otherwise) — never a parallel path, so a tool-run
+// publish and a tapped one behave identically.
+export async function askPublishSong() {
+  if (!S.song || !S.songKey) throw new Error("no song open");
+  if (LINK_SONGS) throw new Error("this song is being viewed from a link to another repo — read-only");
+  if (!connected()) throw new Error("not connected — add a GitHub token, or choose a local folder, in File → Settings first");
+  const token = writeToken();
+  const h = ghHeaders(token);
+  const hisMusic = isComposition();
+  let status = "";
+  await publishSong(S.songKey, h, m => { status = m; });
+  if (hisMusic) {
+    try { await writeSongsReadme(h); } catch (err) { status = "published, but the repo's song list didn't update: " + err.message; }
+  }
+  try { await initCatalog(); } catch (err) { /* best-effort refresh */ }
+  if (typeof updateSongBtn === "function") updateSongBtn();
+  if (typeof renderSyncPending === "function") renderSyncPending();
+  const where = folderActive() ? ("to " + fsRoot.name) : "(GitHub Pages takes ~1 min to serve it)";
+  return {ok: true, message: "Published " + S.songKey + " " + where + (hisMusic ? " — song and annotations together." : " — annotations.")};
+}
+export async function askRunTool(name, a) {
+  if (name === "add_annotation") return askAddAnnotation(a || {});
+  if (name === "edit_annotation") return askEditAnnotation(a || {});
+  if (name === "delete_annotation") return askDeleteAnnotation(a || {});
+  if (name === "publish_song") return askPublishSong();
+  if (name === "list_songs") return Object.entries(S.CATALOG).map(([album, songs]) => ({album, songs: songs.map(([title, path]) => ({title, path}))}));
+  if (name === "read_song") {
+    const path = askSongPath(a && a.path);
+    const res = await readData("songs", path);
+    if (!res.ok) throw new Error("could not read " + path);
+    const doc = parseMidi(await res.arrayBuffer());
+    return notesTxtForDoc(doc, songTitleOf(path), a.from_bar, a.to_bar, 6000, path);
+  }
+  if (name === "read_notes") {
+    const path = askSongPath(a && a.path);
+    const res = await readData("analysis", path.replace(/\.midi?$/i, "") + ".rollnotes.json");
+    if (!res.ok) return "(no annotations saved for " + path + ")";
+    let j; try { j = JSON.parse(await res.text()); } catch (err) { return "(annotations unreadable)"; }
+    const at = e => "[" + (e.at || [1, 1]).join(".") + (e.to ? " - " + e.to.join(".") : "") + "]";
+    return (j.notes || []).map(e => at(e) + " " + (e.type ? e.type + ": " + (e.chord || e.label || e.key || e.bpm || e.loop || e.timesig || e.track || e.chop || e.lane || "") : e.text || "") + (e.note ? " — " + e.note : "")).join("\n") || "(no annotations)";
+  }
+  if (name === "read_bars") return askReadBars(a || {});
+  if (name === "write_notes") return askWriteNotes(a || {});
+  if (name === "copy_bars") return askCopyBars(a || {});
+  if (name === "insert_bars") return askInsertBars(a || {});
+  if (name === "delete_bars") return askDeleteBars(a || {});
+  throw new Error("unknown tool " + name);
+}
+export function askWriteNotes(a) {
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const ti = askFindTrackIndex(a.track);
+  if (trackIsDrums(ti)) throw new Error("\"" + (S.song.tracks[ti].name || "track " + (ti + 1)) + "\" is a drum/noise track — write_notes doesn't write there");
+  const bt = barTicks(), qt = beatTicks(), beats = beatsPerBarDisp();
+  const v = askWriteNotesValidate(a.notes, bt, qt, beats);
+  if (v.error) throw new Error(v.error);
+  let t0 = 0, t1 = 0; // default: erase nothing (t0 === t1 never satisfies applyTake's "t >= t0 && t < t1")
+  if (a.replace) {
+    const r = a.replace;
+    const fb = Math.max(1, Math.round(+r.from_bar || 1)), fq = Math.max(1, +(r.from_beat !== undefined ? r.from_beat : 1));
+    const tb = Math.max(fb, Math.round(+(r.to_bar !== undefined ? r.to_bar : fb)));
+    const tq = r.to_beat !== undefined ? Math.max(1, +r.to_beat) : beats + 1;
+    t0 = (fb - 1) * bt + (fq - 1) * qt;
+    t1 = Math.max(t0 + 1, (tb - 1) * bt + (tq - 1) * qt);
+  }
+  const hits = v.hits.sort((x, y) => x.t - y.t || x.p - y.p);
+  const added = applyTake(ti, t0, t1, hits);
+  const bars = a.notes.map(n => Math.round(+n.bar)), lo = Math.min(...bars), hi = Math.max(...bars);
+  const where = lo === hi ? ("bar " + lo) : ("bars " + lo + "–" + hi);
+  return {ok: true, note: "wrote " + added + " note" + (added === 1 ? "" : "s") + " on " + (S.song.tracks[ti].name || "track " + (ti + 1)) + ", " + where};
+}
+export function askInsertBars(a) { // {at_bar, count}: empty bars, same shift as Edit ▾ → Insert bars…
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const count = Math.round(+a.count || 0);
+  if (!(count >= 1)) throw new Error("count must be ≥ 1");
+  const {atBar} = askBarsValidate(a, false);
+  const bt = barTicks();
+  insertTime((atBar - 1) * bt, count * bt);
+  return {ok: true, note: "inserted " + count + " empty bar" + (count === 1 ? "" : "s") + " at bar " + atBar + " — everything after moved " + count + " bar" + (count === 1 ? "" : "s") + " later"};
+}
+export function askCopyBars(a) { // {from_bar, to_bar, at_bar}: repeat/duplicate bars — insert + copy, one undo step
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const {fromBar, toBar, atBar} = askBarsValidate(a, true);
+  const bt = barTicks(), count = toBar - fromBar + 1;
+  const sourceStart = (fromBar - 1) * bt, sourceEnd = toBar * bt, T = (atBar - 1) * bt, delta = count * bt;
+  // snapshot the source range (every track, drums included) BEFORE the
+  // shift mutates live note objects — ticks stored relative to sourceStart
+  // so the copy lands correctly at T regardless of where T falls relative
+  // to the source (before, after, or overlapping it)
+  const snapshot = [];
+  S.song.tracks.forEach((tr, ti) => tr.notes.forEach(n => {
+    if (!n.gone && n.t >= sourceStart && n.t < sourceEnd) snapshot.push({ti, t: n.t - sourceStart, d: n.d, p: n.p, v: n.v});
+  }));
+  const {modItems, annoBefore} = openGapShift(T, delta);
+  const added = [];
+  for (const h of snapshot) {
+    const tr = S.song.tracks[h.ti], isAdd = !isComposition(), t = T + h.t;
+    tr.notes.push({t, d: h.d, p: h.p, v: h.v, added: isAdd});
+    if (S.song.rawNotes) S.song.rawNotes[h.ti].push({t: t + S.chopS, d: h.d, p: h.p, v: h.v, added: isAdd});
+    added.push({ti: h.ti, ni: tr.notes.length - 1});
+  }
+  pushUndo({kind: "group", entries: [{kind: "mod", items: modItems}, {kind: "anno", json: annoBefore}, {kind: "addBatch", items: added}]});
+  finalizeNotes();
+  saveEdits(); // persists the copied (added:true) notes for an edited-capture song; drafts whole for a composition
+  computeSongEnd();
+  saveLocalNotes(); // the shifted annotation layer
+  saveDraft();
+  if (S.viewMode === "score") buildScoreModel();
+  draw();
+  const fromLabel = fromBar === toBar ? ("bar " + fromBar) : ("bars " + fromBar + "–" + toBar);
+  return {ok: true, note: "copied " + fromLabel + " to bar " + atBar + "; everything after moved " + count + " bar" + (count === 1 ? "" : "s") + " later"};
+}
+// delete_bars (2026-10-02, open-items 22:20) — Josh in the terminal: "Is
+// there a way to delete a bar?" … "we have Insert bars in the Edit [menu],
+// it would be next to that". The inverse of insert_bars/copy_bars: built on
+// closeGap (closeGap is to openGapShift as this is to insertTime) so the
+// same note-clip/shift and annotation-shrink/move-to-cut rules back both
+// the menu's Delete bars… and this tool.
+export function askDeleteBars(a) { // {from_bar, count}: removes bars — same gate/validation shape as copy_bars
+  const gate = askWritableGate();
+  if (gate) throw new Error(gate);
+  a = a || {};
+  const nBars = askBarsCount();
+  const fromBar = Math.round(+a.from_bar || 0);
+  if (!(fromBar >= 1)) throw new Error("from_bar must be ≥ 1");
+  const count = Math.round(+a.count || 0);
+  if (!(count >= 1)) throw new Error("count must be ≥ 1");
+  const toBar = fromBar + count - 1;
+  if (toBar > nBars) throw new Error("bars " + fromBar + "–" + toBar + " don't all exist — this song has " + nBars + " bar" + (nBars === 1 ? "" : "s"));
+  const bt = barTicks();
+  const r = deleteTime((fromBar - 1) * bt, count * bt);
+  const where = count > 1 ? ("bars " + fromBar + "–" + toBar) : ("bar " + fromBar);
+  return {ok: true, note: where + " removed — everything after moved " + count + " bar" + (count === 1 ? "" : "s") + " earlier" +
+    (r.movedToT ? "; " + r.movedToT + " annotation" + (r.movedToT === 1 ? "" : "s") + " moved to bar " + fromBar : "")};
 }
