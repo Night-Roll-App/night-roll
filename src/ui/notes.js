@@ -33,6 +33,14 @@ import { LANE_H } from "../render/roll.js";
 import { songHasAudio } from "../model/song.js";
 import { AUDIO_STRIP_H } from "../render/roll.js";
 import { STRIP_H } from "../render/roll.js";
+import { isComposition } from "../model/provenance.js";
+import { dropLocalKeyAt } from "../model/rollnotes.js";
+import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
+import { saveLocalNotes } from "../model/edits.js";
+import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
+import { updateSubtitleImpl as updateSubtitle } from "./chrome.js";
+import { drawImpl as draw } from "./chrome.js";
+import { setInfoImpl as setInfo } from "./chrome.js";
 
 // key dial: preview any signature live; Set writes "key: X" at the cursor bar.
 // A signature is mode-ambiguous (Bb major and G minor share two flats), so a
@@ -258,4 +266,186 @@ export function openChallenge(sec) {
   }
   S.challengeCopy = copyLines.join("\n");
   document.getElementById("challengesheet").classList.add("on");
+}
+
+export function updateChordStale() { // Phase 2 (open-items plan): a chord band whose
+  // label no longer matches what SOUNDS in its span gets a stale flag —
+  // marked, never rewritten; renaming stays Josh's call in ☰ Notes
+  if (!S.song || !isComposition()) return;
+  for (const band of S.rollnotes) {
+    delete band.stale;
+    if (!band.chord || band.section || !(band.end > band.start)) continue;
+    const pitches = [];
+    S.song.tracks.forEach((tr, ti) => {
+      if (trackIsDrums(ti)) return;
+      for (const n of tr.notes)
+        if (!n.gone && n.t < band.end && n.t + n.d > band.start) pitches.push(n.p);
+    });
+    if (!pitches.length) continue;
+    const read = nameChord(pitches, sfDeclaredAt(band.start));
+    if (read && !read.includes("one pitch class") &&
+        read.split(" ")[0] !== band.text.split("/")[0].trim())
+      band.stale = read;
+  }
+}
+// Normal-only, one tap — same "declared, not just previewed" pattern as
+// #keysetest (which promotes the ESTIMATE); this promotes the FILE's key.
+export function useFileKey() {
+  if (!S.song || !S.songKey) return;
+  const r = checkKeyVsFile();
+  if (!r.file || !r.file.name) return;
+  const bar = Math.floor(S.playCursor / barTicks()) + 1;
+  dropLocalKeyAt(bar);
+  const fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + r.file.name, keydir: r.file.sf, added: true};
+  S.rollnotes.push(resolveNote(fresh));
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  S.lastSubtitle = undefined;
+  updateSubtitle();
+  draw();
+  setInfo("key set to " + r.file.name + " at bar " + bar + " (from the file's label — unsynced — Sync to commit)");
+}
+export function renderNoteList() {
+  const rows = document.getElementById("notelistrows");
+  rows.innerHTML = "";
+  const counts = new Map();
+  const sorted = [...S.rollnotes].sort((a, b) => a.start - b.start || (a.section ? -1 : 1));
+  document.getElementById("notelistStatus").textContent = sorted.length
+    ? sorted.length + " notes · tap one to edit or delete · synced-note changes need Sync to stick"
+    : "No notes yet — add the first one.";
+  const remaining = [...sorted];
+  for (const g of NOTE_GROUPS) {
+    const mine = [];
+    for (let i = 0; i < remaining.length; i++) {
+      if (g.match(remaining[i])) { mine.push(remaining[i]); remaining.splice(i--, 1); }
+    }
+    counts.set(g, mine.length);
+    // hide empty groups; Text notes always shows (its + adds one), and KEY/
+    // METER always show too — Check vs file works on every song, even one
+    // with no key/meter declared yet (docs/declared-vs-learner-spec.md C7)
+    if (!mine.length && g.type !== "note" && g.title !== "KEY" && g.title !== "METER") continue;
+    const box = document.createElement("div");
+    box.className = "notegroup";
+    box.dataset.type = g.title; // the jump bar scrolls to this
+    const head = document.createElement("div");
+    head.className = "ghead";
+    head.textContent = g.title + (mine.length ? " · " + mine.length : "");
+    const add = document.createElement("button");
+    add.className = "gadd";
+    add.textContent = "+";
+    add.setAttribute("aria-label", "Add " + g.title.toLowerCase());
+    add.addEventListener("click", e => {
+      e.stopPropagation();
+      notelistSheet.classList.remove("on");
+      openEditor(null, g.type);
+    });
+    if (g.type === "chord" && mine.length && isComposition()) {
+      // on-demand label review — the app NEVER volunteers this (Josh's rule:
+      // findings are his; a report he asked for is a tool, one he didn't is an answer)
+      const chk = document.createElement("button");
+      chk.className = "gadd";
+      chk.style.width = "auto";
+      chk.style.padding = "0 8px";
+      chk.textContent = "Check labels";
+      chk.addEventListener("click", e => {
+        e.stopPropagation();
+        updateChordStale();
+        const flagged = S.rollnotes.filter(n => n.stale).length;
+        renderNoteList();
+        document.getElementById("notelistStatus").textContent = flagged
+          ? flagged + " label(s) don't match what sounds in their span — shown below and as ⚠ on the bands. Your labels; rename or ignore. Any note edit clears the flags."
+          : "Every chord label matches what sounds in its span.";
+        draw();
+      });
+      head.appendChild(chk);
+    }
+    if (g.title === "KEY" || g.title === "METER") {
+      // Check vs file (docs/declared-vs-learner-spec.md C7): on EVERY song —
+      // seeing the button reveals nothing by itself, so it's never gated by
+      // mode or by whether this song even carries a source. Learning never
+      // shows the file's value or runs estimateKey (CLAUDE.md); Normal adds
+      // the file's own value (+ the estimate, for key) and a one-tap "use
+      // the file's" action.
+      const chk = document.createElement("button");
+      chk.className = "gadd";
+      chk.style.width = "auto";
+      chk.style.padding = "0 8px";
+      chk.textContent = "Check vs file";
+      const useBtn = document.createElement("button");
+      useBtn.className = "gadd";
+      useBtn.style.width = "auto";
+      useBtn.style.padding = "0 8px";
+      useBtn.style.display = "none";
+      chk.addEventListener("click", e => {
+        e.stopPropagation();
+        const r = g.title === "KEY" ? runKeyCheck() : runMeterCheck();
+        if (appMode() === "normal" && r.file) {
+          useBtn.textContent = g.title === "KEY" ? "Use the file's (" + r.file.name + ")" : "Use the file's (" + r.file.num + "/" + r.file.den + ")";
+          useBtn.style.display = "";
+        } else useBtn.style.display = "none";
+      });
+      useBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        if (g.title === "KEY") useFileKey(); else useFileMeter();
+        useBtn.style.display = "none";
+      });
+      head.appendChild(chk);
+      head.appendChild(useBtn);
+    }
+    head.appendChild(add);
+    const grows = document.createElement("div");
+    grows.className = "grows";
+    for (const n of mine) {
+      const row = document.createElement("div");
+      row.className = "noterow";
+      row.setAttribute("role", "button");
+      const where = document.createElement("span");
+      where.className = "where";
+      where.textContent = (n.b2 ? n.b1 + "." + n.q1 + "–" + n.b2 + "." + (n.q2 || beatsPerBarDisp())
+                               : "bar " + n.b1 + (n.q1 !== 1 ? "." + n.q1 : "")) +
+                          (n.chopdir ? " raw" : ""); // chop anchors are pre-chop capture coordinates
+      const body = document.createElement("span");
+      body.className = "body";
+      body.textContent = n.text + (n.stale ? " — reads: " + n.stale : "");
+      if ((n.section || n.chord) && S.sectionColors[n.text]) {
+        const dot = document.createElement("span");
+        dot.textContent = "■ ";
+        dot.style.color = S.sectionColors[n.text];
+        body.prepend(dot);
+      }
+      row.append(where, body);
+      if (n.cnote) {
+        const c = document.createElement("span");
+        c.className = "cnote";
+        c.textContent = "✱ " + n.cnote.split("\n")[0];
+        row.append(c);
+      }
+      if (n.added) {
+        const u = document.createElement("span");
+        u.className = "unsynced";
+        u.textContent = "unsynced";
+        row.append(u);
+      }
+      row.addEventListener("click", () => {
+        notelistSheet.classList.remove("on");
+        S.playCursor = n.start;
+        updateSubtitle();
+        draw();
+        openEditor(n);
+      });
+      grows.appendChild(row);
+    }
+    box.append(head, grows);
+    rows.appendChild(box);
+  }
+  renderNoteJump(counts);
+}
+// ☰ All notes (chrome density pass, 2026-10-01): extracted from #listbtn's
+// own direct handler so #notesall (inside #notesmenu, the drop-up below)
+// can call it too — #listbtn itself now just opens the drop-up.
+export function openNoteList() {
+  if (!S.song) return;
+  renderNoteList();
+  notelistSheet.classList.add("on");
 }
