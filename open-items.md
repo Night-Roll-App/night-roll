@@ -5074,6 +5074,22 @@ Design: stack decision depends only on the row WIDTH vs a threshold = transport 
 
 ## DONE 2026-10-03 01:00 — Select/Pencil/Erase on their own row (Josh, Terminal #69: "too annoying the way it moves"): #moderowbreak forces the wrap in #editrow; ⋯ opening no longer shifts them. PORT NOTE: markup only (index.html), survives the split cutover.
 
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split step 16: index.html's CSS → css/app.css (docs/split-plan.md §4 step 16)
+The one `<style>` block (1186 lines, 66,956 bytes) is css/app.css verbatim —
+byte-identical, no `url()`/`@import` so nothing rebases — linked from `<head>`
+where the block was (render-blocking, so no inline critical CSS kept).
+index.html 2917 → 1733 lines. sw.js precaches it and routes css/ network-first
+like src/ (SW_VERSION nr-v33); tools/package.mjs copies css/, exempts it from
+the prose scan, fails if a linked stylesheet is missing; harness `appCss()`,
+`appSource()` includes the CSS (5 night-roll tests grep it, unchanged);
+pwa.test pins link + precache + route; package.test the byte-identical copy.
+Docs: NIGHT-ROLL.md Module map intro, CLAUDE.md "No build step" rule, the
+plan's Done note. npm test: night-roll 429/430 (1 skip), gestures 31, pwa 4,
+package 3, modules 93; check.mjs clean except oldBpb; smoke 8/8 (3.6s), the
+server log shows css/app.css 200. To eyeball after merge: first paint on
+Pages (no flash — the sheet blocks render), iPad offline launch styled (the
+precache entry; a stale nr-v32 cache drops on activate).
+
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 0b reproduced on current main (docs/split-plan.md)
 0b was first built 2026-10-02 on worktree branch worktree-agent-ab7f470f088110a71
 (commit 27139d29) against an older main; several main commits landed on top of

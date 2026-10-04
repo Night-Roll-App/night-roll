@@ -1495,8 +1495,14 @@ loop: 2.1          ← "loop:" prefix = loop directive. The anchor is the
 
 ## Module map (src/ — docs/split-plan.md)
 
-index.html is markup + CSS only; the app itself is plain browser ES modules
-under src/, entry src/main.js, no build step. **The split is finished
+index.html is markup only — its CSS is `css/app.css` (one `<link
+rel="stylesheet">` in `<head>`, before `ts-boot`; docs/split-plan.md §4 step
+16 moved the former `<style>` block there verbatim; sw.js precaches it and
+serves css/ network-first like src/, tools/package.mjs copies css/ and
+refuses to ship if a linked stylesheet is missing; tests grep it through
+tests/harness.mjs `appCss()`, and `appSource()` includes it); the app itself
+is plain browser ES modules under src/, entry src/main.js, no build step.
+**The split is finished
 (docs/split-plan.md steps 0a–14, docs/split-phase2-plan.md steps 0–13,
 2026-10-04): src/app.js no longer exists.** Every module below is a real
 module at its layer (tools/split/check.mjs LAYERS); `src/main.js` is wiring

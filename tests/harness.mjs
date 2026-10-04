@@ -461,15 +461,28 @@ async function createAppModule(opts, root) {
   };
 }
 
-/** index.html plus every src/**\/*.js concatenated (§3.3) — what a test that
- *  greps the app's JS source should search, instead of index.html alone,
- *  once code has started moving out into modules. A no-op concatenation
+/** Every stylesheet index.html links, concatenated in link order (docs/
+ *  split-plan.md §4 step 16: the CSS left index.html for css/app.css) — what
+ *  a test that greps the app's CSS should search. Empty when index.html
+ *  links none (the split fixture). A linked sheet that is missing throws:
+ *  that is the unstyled-app bug tools/package.mjs's guard exists for. */
+export function appCss(root = ROOT) {
+  const html = readFileSync(path.join(root, "index.html"), "utf8");
+  return [...html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map(m => readFileSync(path.join(root, m[1]), "utf8")).join("\n");
+}
+
+/** index.html, its stylesheets (appCss) and every src/**\/*.js concatenated
+ *  (§3.3) — what a test that greps the app's source should search, instead
+ *  of index.html alone, once code has started moving out into modules.
+ *  index.html comes first so a markup match sits where it always did; a
+ *  test that wants only the CSS uses appCss(). A no-op concatenation
  *  (returns just index.html) until src/ exists. */
 export function appSource(root = ROOT) {
   const html = readFileSync(path.join(root, "index.html"), "utf8");
   const srcDir = path.join(root, "src");
   if (!existsSync(srcDir)) return html;
-  let modulesText = "";
+  const css = appCss(root);
+  let modulesText = css ? "\n" + css : "";
   (function walk(dir) {
     for (const ent of readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, ent.name);

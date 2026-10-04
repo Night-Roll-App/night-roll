@@ -15,7 +15,7 @@ Line numbers come from index.html @ ce709b1e (26,739 lines). They drift, so find
 
 ## 1. Target layout
 
-`index.html` keeps the markup, the `<style>` block, the pre-body `ts-boot` script, `vendor/vexflow.js`, a modulepreload list, a boot watchdog and `<script type="module" src="src/main.js">`.
+`index.html` keeps the markup, the `<style>` block (until step 16, which moved it to `css/app.css`), the pre-body `ts-boot` script, `vendor/vexflow.js`, a modulepreload list, a boot watchdog and `<script type="module" src="src/main.js">`.
 `src/package.json` is `{"type":"module"}` so that Node treats src/*.js as ESM. Use the `.js` extension, not `.mjs`, so every static server sends the right MIME type.
 
 **Layers.** A module may import only from its own layer or a lower one, and check.mjs enforces this. Cycles inside layers 3–5 are allowed (see §2.3).
@@ -2362,6 +2362,27 @@ constraint for whoever next considers moving these two.
 - Doc sweep: NIGHT-ROLL.md module map, CLAUDE.md (§6), WEB-SESSION.md (src/ layout; tools still `node tools/x.mjs`), README.
 
 **16. Optional: CSS → `css/app.css`** (`<link>`, precached, the 4 CSS-grepping tests use `appSource()`).
+- **Done** (2026-10-04, worktree branch). index.html's one `<style>` block
+  (lines 24–1209, 66,956 bytes, no `media` attribute, no `url()`/`@import`,
+  so no relative-URL rebasing) is `css/app.css` verbatim — the move is
+  byte-identical (`cmp` of the old block against the new file is empty) —
+  and index.html links it where the block was (`<head>`, before `ts-boot`,
+  so it is render-blocking: no inline critical CSS was kept, because nothing
+  paints before a head stylesheet arrives and the PWA splash/theme-color
+  covers the launch). index.html: 2917 → 1733 lines. sw.js: `css/app.css`
+  precached, `css/` routed through the src/ branch (network-first, 4 s,
+  HTTP cache bypassed — a new index.html must never pair with a stale
+  sheet), SW_VERSION nr-v33. tools/package.mjs: copies `css/`, exempts
+  `css/**` from the prose scan like `src/**`, and fails if any
+  `<link rel="stylesheet">` in index.html is missing from the repo or the
+  output. Tests: tests/harness.mjs `appCss()` (every stylesheet index.html
+  links, in order) and `appSource()` now includes it right after
+  index.html, so the CSS greps in night-roll.test kept matching unchanged;
+  tests/pwa.test "the stylesheet ships offline" pins the link, the absence
+  of inline `<style>`, the precache entry and the css/ route; package.test
+  checks the byte-identical copy. The CSS text itself still says "every
+  font-size in this file" and "the boot script below" (it meant index.html)
+  — left verbatim per §0; a comment-only touch-up is a separate commit.
 
 ## Deviations (13, 2026-10-04)
 
