@@ -64,10 +64,10 @@ Q6. (found 2026-10-02, module-split step 0b) A real, pre-existing bug in
     scan (not a test, not an ear report) found it — not fixed as part of the
     split (a verbatim move must not touch app logic).
 
-Q7. (2026-10-03, Terminal #91) Split step 7 (audio) is built but held for
+Q7. ANSWERED (Terminal #92: NES/SNES sound great) — step 7 shipped ba19c73. Was: Split step 7 (audio) is built but held for
     your NES/SNES sound check on the current iPad build. Can you do the
     check soon, or should I continue with the non-audio steps first?
-Q8. (2026-10-03, Terminal #91) The AI library's new repo: name and
+Q8. ANSWERED (Terminal #93): Night-Roll-App/claude-bridge, private, rename later OK; scope = ALL AI (bridge, in-browser/cloud models, Ollama, LM Studio, the AI window). Was: The AI library's new repo: name and
     visibility? Default: Night-Roll-App/claude-bridge, private.
 
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
