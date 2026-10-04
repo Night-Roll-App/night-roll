@@ -5637,7 +5637,10 @@ lines, Learning-mode rules) stays in Night Roll as a plug-in to the library.
 Blocked on Q7 (split order) and Q8 (repo).
 
 ## QUEUED 2026-10-04 — DAW inventory shortlist (Josh, Terminal #104; docs/daw-inventory.md)
-1. Playhead tag inside the strip, triangle gone (Roll/Tracks/Score) — S
+1. ~~Playhead tag inside the strip, triangle gone (Roll/Tracks/Score) — S~~
+   DONE 2026-10-04 (built on a worktree branch off main, not the split
+   branch; NIGHT-ROLL.md "Playhead tag"). Eyeball on device: tag colour
+   against the panel, phone width, Score view, mid-play drag.
 2. Keyboard: fixed key width, Play/Scroll segment, two-finger scroll, ‹ › octave + range readout, off-screen lit-key chevrons — M
 3. Keyboard look (black-key offsets, rounded whites) + Sustain — S
 4. Touch-and-hold a note → edit menu; three-finger undo/redo — S–M
