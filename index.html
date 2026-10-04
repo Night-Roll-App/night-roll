@@ -715,6 +715,34 @@
   </div>
 </div>
 
+<!-- ✦ Annotate this song… (Normal mode only — View ▾ → Mode; the item is
+     absent in Learning, same as Analyze; src/ask/annotate.js). Nothing is
+     written by opening this; Run is the approval. -->
+<div class="overlay" id="annotatesheet">
+  <div class="sheet">
+    <h2>✦ ANNOTATE THIS SONG — AI ESTIMATES</h2>
+    <p class="meta" style="margin:0 0 8px;white-space:normal">Asks the AI model from Settings for <b>estimates</b> of this song's
+    sections, chords and key — read from the notes plus computed facts (which bars repeat, how the bass moves) — and writes
+    them as annotations tagged <b>✦ AI</b>. Your own annotations are never overwritten: an estimate that overlaps one of
+    yours is skipped. One undo takes a run back; <b>Clear AI annotations</b> removes every tagged one at once. Long songs go
+    in bar windows and merge. Unsynced until you Publish, like any annotation.</p>
+    <div class="row" style="align-items:center;gap:14px;flex-wrap:wrap">
+      <label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer">
+        <input type="checkbox" id="annotatesections" checked style="width:20px;height:20px"> Sections</label>
+      <label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer">
+        <input type="checkbox" id="annotatechords" checked style="width:20px;height:20px"> Chords</label>
+      <label style="font-size:0.8125rem;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer">
+        <input type="checkbox" id="annotatekeys" checked style="width:20px;height:20px"> Key</label>
+    </div>
+    <p class="status" id="annotatestatus" style="margin:8px 0 0;white-space:normal"></p>
+    <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+      <button id="annotaterun" class="primary">Run</button>
+      <button id="annotateclear">Clear AI annotations</button>
+      <button id="annotateclose" style="margin-left:auto">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="divsheet">
   <div class="sheet">
     <h2>DIVIDE INTO</h2>
@@ -977,6 +1005,7 @@
   <button class="fitem" id="vwMode" aria-expanded="false">▸  Mode: Learning</button>
   <div id="vwModeRow" style="display:none">
     <button class="fitem" id="vwAnalyze">Analyze</button>
+    <button class="fitem" id="vwAnnotate">Annotate this song…</button>
     <button class="fitem" id="vwCompare">Compare with repo</button>
     <button class="fitem" id="vwLearning">Learning mode</button>
     <button class="fitem" id="vwListener">Listener mode</button>
@@ -1618,6 +1647,7 @@
 <link rel="modulepreload" href="src/ask/sheet.js">
 <link rel="modulepreload" href="src/ask/client.js">
 <link rel="modulepreload" href="src/ask/host.js">
+<link rel="modulepreload" href="src/ask/annotate.js">
 <link rel="modulepreload" href="src/ui/chrome.js">
 <link rel="modulepreload" href="src/ui/trackbar.js">
 <link rel="modulepreload" href="src/ui/mixer.js">

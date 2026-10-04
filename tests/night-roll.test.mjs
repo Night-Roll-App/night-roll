@@ -2794,6 +2794,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Mixer window", "Drag a strip by its name",
     "Text size", "Edit a copy",
     "Analyze ▸",
+    "Annotate this song",
     "VoiceOver",
     "Chip stream (experimental)",
     "Game order", "more than one chip file",
@@ -8405,7 +8406,7 @@ test("View ▾ (2026-09-30, Josh: 'there's a Score view and a Tracks view but no
   for (const id of ["octbtn", "findsel", "cofbtn"]) assert.ok(livesIn("vwToolsRow", id), id + " lives inside #vwToolsRow");
   for (const id of ["vwEdit", "vwFooter", "vwAdded", "vwGrid", "vwLevelsRow"]) assert.ok(livesIn("vwDisplayRow", id), id + " lives inside #vwDisplayRow");
   for (const id of ["vwJobs", "vwMessages"]) assert.ok(livesIn("vwBackgroundRow", id), id + " lives inside #vwBackgroundRow");
-  for (const id of ["vwAnalyze", "vwCompare", "vwLearning", "vwListener"]) assert.ok(livesIn("vwModeRow", id), id + " lives inside #vwModeRow");
+  for (const id of ["vwAnalyze", "vwAnnotate", "vwCompare", "vwLearning", "vwListener"]) assert.ok(livesIn("vwModeRow", id), id + " lives inside #vwModeRow");
 
   // selecting Roll from the (now expanded) row actually switches the view, same as #viewbtn
   a.run(`document.getElementById("vwViewType").click(); document.getElementById("vwRoll").click();`);

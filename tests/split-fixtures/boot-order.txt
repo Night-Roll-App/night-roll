@@ -194,6 +194,11 @@ document.addEventListener("pointerdown", e => {
 document.getElementById("fmdest").addEventListener("change", () => {
 document.getElementById("fmgo").addEventListener("click", e => {
 document.addEventListener("pointerdown", e => {
+JOB_KINDS.annotate = {label: j => j.title};
+document.getElementById("vwAnnotate").addEventListener("click", () => {
+document.getElementById("annotaterun").addEventListener("click", () => annotateRunTap());
+document.getElementById("annotateclear").addEventListener("click", () => annotateClearTap());
+document.getElementById("annotateclose").addEventListener("click", () => document.getElementById("annotatesheet").classList.remove("on"));
 JOB_KINDS.publish = {
 document.getElementById("fileinst").addEventListener("click", () => {
 document.getElementById("fileopen").addEventListener("click", e => {

@@ -88,6 +88,7 @@ import * as askShots from "./ask/shots.js";
 import * as askSheet from "./ask/sheet.js";
 import * as askClient from "./ask/client.js";
 import * as askHost from "./ask/host.js";
+import * as askAnnotate from "./ask/annotate.js";
 import * as uiChrome from "./ui/chrome.js";
 import * as uiTrackbar from "./ui/trackbar.js";
 import * as uiMixer from "./ui/mixer.js";
@@ -124,7 +125,7 @@ export function exposeGlobals() {
                      genDrummer, genBassist, genAnalysis,
                      renderRoll, renderTracks, renderScore, renderScorePrint, renderInstrument, renderCof, renderCompare,
                      inputGestures, inputRecord, inputKeyboard,
-                     askBackend, askTools, askContext, askBridge, askShots, askSheet, askClient, askHost,
+                     askBackend, askTools, askContext, askBridge, askShots, askSheet, askClient, askHost, askAnnotate,
                      uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm, uiVellane,
                      sessionSong, sessionAlbum, sessionFiles, sessionBoot, uiPerf, platformSw,
                      hooks, wire };

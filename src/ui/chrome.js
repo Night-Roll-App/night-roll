@@ -550,6 +550,7 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
     vwVel: {icon: "barChart", text: "Velocity lane"},
     vwCompare: {icon: "compareArrows", text: "Compare with repo"},
     vwAnalyze: {icon: "search", text: "Analyze ▸"},
+    vwAnnotate: {icon: "autoAwesome", text: "Annotate this song…"},
     vwLearning: {glyph: "🎓", text: "Learning mode"},
   };
   // VIEW group is a radio, not independent toggles: exactly one of these three is ✓
@@ -594,6 +595,11 @@ export function renderViewMenu() { // ✓ = visible; labels never shift (fixed 2
   const vwA = document.getElementById("vwAnalyze");
   vwA.style.display = analysisAvailable() ? "" : "none";
   if (analysisAvailable()) set("vwAnalyze", S.analysisOn);
+  // ✦ Annotate this song… (src/ask/annotate.js): the same absent-in-Learning
+  // mechanism — the item does not exist there, nothing to dim or explain.
+  const vwAn = document.getElementById("vwAnnotate");
+  vwAn.style.display = analysisAvailable() ? "" : "none";
+  if (analysisAvailable()) set("vwAnnotate", false);
   set("vwLearning", appMode() === "learning");
   set("vwListener", S.listenerMode);
   set("vwTracks", !document.getElementById("trackslide").classList.contains("off"));

@@ -33,6 +33,7 @@ import { initPublish1, initPublish2, initPublish3 } from "./sync/publish.js";
 import { initBackend1 } from "./ask/backend.js";
 import { initSheet1, initSheet2, initSheet3 } from "./ask/sheet.js";
 import { initBridge1, initBridge2 } from "./ask/bridge.js";
+import { initAnnotate1 } from "./ask/annotate.js";
 import { initAlbum1 } from "./session/album.js";
 import { initBoot1, boot } from "./session/boot.js";
 
@@ -80,6 +81,7 @@ initNoteEditor4();
 initPublish1();
 initSheets4();
 initChrome11();
+initAnnotate1(); // ✦ Annotate this song…: the View ▾ Mode item beside vwAnalyze (wired just above) and its #annotatesheet
 initPublish2();
 initChrome12();
 initCapture1();

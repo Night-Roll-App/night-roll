@@ -1683,7 +1683,8 @@ albums → songs; manifest carries the field. Also his wish for Open to
 separate "Published songs" from "Local songs" (it already splits albums
 vs "Night Roll drafts"; a wording pass at most).
 
-## QUEUED IDEA (Josh, 2026-09-27): "✦ Annotate this song for me"
+## DONE 2026-10-04 — "✦ Annotate this song…" (docs/plans/2026-10-04-annotate-song.md, Fable-reviewed + built; NIGHT-ROLL.md section of the same name)
+### was: QUEUED IDEA (Josh, 2026-09-27): "✦ Annotate this song for me"
 
 Import a classical MIDI, ask the AI to analyze it and write the
 annotations. Consistent with the 2026-08-19 ruling (asked-for = a tool):
@@ -1691,7 +1692,19 @@ on-demand, per song, per tap, never volunteered. Design sketch: an Ask
 mode that returns structured chord/section/key lines, parsed into
 annotations tagged as AI-written (reviewable, clearable in one go);
 MIDI-derived songs only (chip imports included), audio tracks have no
-notes. Not started.
+notes.
+
+Built as: View ▾ → Mode → ✦ Annotate this song… (Normal mode ONLY — the
+item is absent in Learning, the runner refuses, no ASK tool exists for it,
+so the chat's tools/prompt/context are untouched; tests prove it). A
+background job asks the model window by window (JSON only, its own system
+prompt, `tools: []`, the theory FACTS as grounding), validates every reply
+through the app's own chord/key parsers, skips estimates over the user's
+own annotations, writes the rest tagged `ai: {model, at}` as ONE undo step;
+"Clear AI annotations" removes them all in one step. src/ask/annotate.js,
+tests/annotate.test.mjs (13 cases, fake OpenAI-SSE server). Not yet tried
+on a real model by Josh — try on a SCRATCH song in Normal mode; roman
+numerals (the harmony toolkit) stay a later checkbox.
 
 ## PHASE 2 — THE REAL SHELL, STARTED 2026-09-27 (afternoon)
 
@@ -5986,7 +5999,7 @@ package; tools/package.mjs guards reachability). Steps 3–6 never touched
 2. AI library: new private repo Night-Roll-App/claude-bridge (name/visibility Josh's, Q8) holding ALL AI support (bridge server, in-browser/cloud models, Ollama, LM Studio, the AI window); Night Roll imports it (plain ES modules, no build step).
 3. AI integration tests (tests/ai.test.mjs): fake bridge/Ollama/LM Studio servers, assert the real request AND the reply landing in the app — being written now.
 4. ✅ npm test runs every file (tools/run-tests.mjs).
-5. "✦ Annotate this song for me" (QUEUED IDEA 2026-09-27): built after the library. Normal mode ONLY (Learning mode never gets AI-written analysis — CLAUDE.md), on-demand per tap, annotations tagged AI-written, clearable in one go.
+5. ✅ 2026-10-04 "✦ Annotate this song…" (QUEUED IDEA 2026-09-27): built after the library — Normal mode ONLY (Learning mode never gets AI-written analysis — CLAUDE.md), on-demand per tap, annotations tagged `ai`, clearable in one go. See its DONE entry above and NIGHT-ROLL.md.
 Morning: one iPad build of the branch + one checklist; merge to main only after Josh says so.
 
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 10: src/gen/{drummer,bassist,analysis}.js (docs/split-plan.md)

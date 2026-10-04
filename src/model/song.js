@@ -2,6 +2,7 @@ import { S } from "../state.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { canEditMusic } from "./provenance.js";
 import { trackIsDrums } from "./grid.js";
+import { beatTicks } from "./grid.js";
 import { pearsonCorr } from "../theory/key.js";
 import { keyNameFor } from "../theory/key.js";
 import { SF_MAJOR } from "../theory/chords.js";
@@ -18,6 +19,16 @@ import { prof } from "../state.js";
 // once, copy chords). Works on editable songs; drag on the roll or arrow
 // keys — keyboard covers everything, easier on the hands than dragging.
 export function editableSong() { return !!S.song && !LINK_SONGS && canEditMusic(S.songKey) && !(S.cmp && S.cmp.showing === "repo"); }
+// docs/theory-toolkit.md §3.0: the ONE adapter every in-app caller of the
+// theory FACTS toolkit shares — live state, unsaved edits included (the same
+// reason read_bars reads S.song rather than the repo file). Audio tracks
+// have no notes and are left out; the drum flag is read BEFORE the filter so
+// trackIsDrums sees the real track index.
+export function factsDocFromState() {
+  return {ppq: S.song.ppq, barTicks: barTicks(), beatTicks: beatTicks(),
+    tracks: S.song.tracks.map((t, ti) => ({name: t.name, kind: t.kind, drums: trackIsDrums(ti), notes: t.notes.filter(n => !n.gone)})).filter(t => t.kind !== "audio"),
+    rollnotes: S.rollnotes};
+}
 
 // ---- estimateKey (P3): Krumhansl-Schmuckler, Normal mode only ----
 // Duration-weighted pitch-class census of non-drum, non-gone notes,

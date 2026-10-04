@@ -471,6 +471,13 @@ export function renderNoteList() {
         c.textContent = "✱ " + n.cnote.split("\n")[0];
         row.append(c);
       }
+      if (n.ai) { // ✦ Annotate this song: an AI estimate stays identifiable for as long as it lives (src/ask/annotate.js)
+        const a = document.createElement("span");
+        a.className = "aitag";
+        a.textContent = "✦ AI";
+        a.title = "AI estimate" + (n.ai.model ? " (" + n.ai.model + ")" : "") + " — View ▾ → Mode → Annotate this song… → Clear removes them all";
+        row.append(a);
+      }
       if (n.added) {
         const u = document.createElement("span");
         u.className = "unsynced";

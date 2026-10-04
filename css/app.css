@@ -926,6 +926,7 @@
     text-overflow: ellipsis;
   }
   .noterow .unsynced { flex: 0 0 auto; font-family: var(--mono); font-size: 0.625rem; color: var(--dim); white-space: nowrap; }
+  .noterow .aitag { flex: 0 0 auto; font-family: var(--mono); font-size: 0.625rem; color: var(--gold); border: 1px solid var(--gold); border-radius: 9px; padding: 1px 6px; white-space: nowrap; } /* ✦ Annotate this song: the AI-estimate badge */
   .noterow .cnote {
     flex: 1 1 0;      /* takes the leftover, and ellipsises inside it */
     min-width: 0;

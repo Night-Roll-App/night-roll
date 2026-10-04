@@ -1683,6 +1683,7 @@ sections are these modules now.
 - `ask/tools.js` — the tool registry and its pure field helpers, step 13: `ASK_TOOLS` (the OpenAI tool-call schema, pure data), the per-annotation field helpers (`askFindAnnotation`/`askNoteKind`/`askNoteValue`/`askAnnotationStructural`), `askSongPath`, `ASK_READ_BARS_MAX`/`askReadBars` (the read_bars tool body, importing `askKeySpellComment`/`askBarRow`/`askSpanNotesCompact` back from `ask/context.js`), `notesTxtForDoc`/`askAnnotationsText`/`askAnnotationsTextCompact` (the read_song/read_notes text format), the write_notes/bars validators `askNormChip`/`askFindTrackIndex`/`askNoteVel`/`askWriteNotesValidate`/`askWritableGate`/`askBarsCount`/`askBarsValidate`, and `parsePitch` — a general pitch-string parser sitting inside this banner with no other caller, moved here with its one caller rather than given a `theory/` home it doesn't need yet. **Every tool body that actually WRITES — `askAddAnnotation`/`askEditAnnotation`/`askDeleteAnnotation`/`askPublishSong`/`askWriteNotes`/`askInsertBars`/`askCopyBars`/`askDeleteBars` — and the dispatcher `askRunTool` itself did NOT move**: each calls `draw()`/`finalizeNotes()`/`saveEdits()`/`saveDraft()`/`pushUndo()`/`updateSongBtn()`/`updateSyncBtn()`/`publishSong()`/`insertTime()`/`deleteTime()`/`applyTake()` — all still bare in app.js (model/UI-chrome territory, steps 9/14; `draw` permanently, step 11).
 - `ask/context.js` — the system prompt and every context-block line builder, step 13: `askSys`/`ASK_SYS_BASE1`/`ASK_SYS_BASE2`/`RULE_LEARNING`/`RULE_NORMAL` (**Learning mode is the law — moved verbatim, logic untouched**), `ASK_CPT`, the span/bar-cache family (`askSpan`/`askSpanLabel`/`askKeyDeclared`/`askKeySpellComment`/`askSpanNotes`/`askSpanNotesCompact`/`askBarRow`/`askBarFingerprint`/`askSpanNotesCompactCached`/`askSpanCachedBlock`), the per-line builders (`askLegendText`/`askAppState`/`askModeLine`/`askViewCursorLine`/`askOpenSongLine`/`askCapLines`/`askNewSinceLines`), the sent/epoch cache mechanics (`askSentKey`/`Get`/`Stage`/`StageBars`/`ASK_SENT_BARS_CAP`/`Commit`/`Drop`/`Reset`, `askEpochKey`/`Get`/`Set`/`Note`, `askCachedBlock`), `askBudget`/`askStripContext`, `askTerminalContext`, and the message builder `askMsgMode`/`askBuildMessages`/`askEstimate`. **`songTitleOf`/`songWhereLabel` also landed here, unlisted by docs/split-plan.md's §1 table** — a deliberate relocation, not a misfile by default: `askOpenSongLine`/`askTerminalContext` both need them, and they're themselves clean (`S.CATALOG`, `titleCaseSlug` from `model/catalog.js`, `impDisplayTitle` from `import/capture.js`, `LINK_SONGS`/`linkRepoLabel` from `platform/base.js` — all layer ≤4) — but `model/song.js` (the thematically obvious home, layer 2) is ruled out outright: `impDisplayTitle` is layer 4, and layer 2 can never import layer 4 (check.mjs rule 5), the identical wall steps 4/5 hit for `estimateKey`/`trackIsDrums`. `ask/context.js` (layer 4) is the only legal home that unblocks real step-13 content; the dozens of other, non-ask callers left in app.js (breadcrumbs, song lists, share sheets) now import it back downward, which is always legal regardless of which layer-≤4 file it lives in. **`askContext` and `askKeyStateLine` — this step's own two biggest named targets — did NOT move**: `askKeyStateLine` calls `keyLabelState()` (shared with a non-ask UI-chrome caller at app.js's key-select label, no home of its own yet — not ask's row to claim), and `askContext` itself calls `askKeyStateLine`, inheriting the block. Both stay in app.js, importing every line-builder above back.
 - `ask/bridge.js` — seen-cursors, inbox/status polling, session + job bookkeeping, and the chat store/log, step 13: `ASK_LOCAL_SOFT`/`ASK_TOTAL_CAP`/`ASK_GENERAL_KEY`/`ASK_GENERAL_LOG`/`ASK_TERMINAL_KEY`, the seen-cursor family (`askSeenKey`/`Get`/`askMaxErrId`/`askMaxStatusId`/`askSeenMaxKey`/`askSeenMax`/`askSeenSet`/`askSeenAdvance`/`askSeenStage`/`askSeenCommit`/`askSeenDrop`), the chat store (`askStore`/`askLoad`/`askUnsavedCount`/`askRevertToSaved`/`askEvictOthers`/`askModelName`), the markdown log (`askLogKey`/`Song`/`Path`/`Header`/`Markdown`), session identity/render (`askSessionName`/`ASK_SONG_ONLY_TOOLS`/`askToolsNow`/`askInboxSeenKey`/`askInboxAllowed`/`askAgeText`/`askTabsVisible`/`askSessionLine`/`askCompactModelName`/`askSessionRender`/`askSessionRefresh`/`askStatusIdle`/`askStatusLine`/`askStatusRender`/`askStatusRecentShow`/`askStatusToggle`/`askStatusFetchCommits`/`askTermModelsLoad`/`TERM_MODELS`), job bookkeeping (`askPendingAll`/`askJobsSupported`/`askJobId`/`askPendingIndex`/`askBadgeOff`), the bridge "composing" notice (`askComposing`, POSTs `/v1/app-state` — matches docs/ai-library-plan.md §2's future `bridge-client.js`), and the 3 deploy/update-banner helpers with no logging call of their own (`deployButtonTick`/`deployBannerShow`/`deployActive`). **Every function that calls `setInfo()`/`logDebug()`/`appConfirm()`/`updateSongBtn()` directly or transitively — `askSave`/`askCommitLog`/`askInboxPoll`/`askNotesArrived`/`askStatusPoll`/`askTabsApply`/`askInboxStart`/`askFinish`/`askFail`/`askLanded`/`askRun`/`askTerminalSend`/`askSend`/`askResume`/`askResumeSoon`/`askRepending`, `deployBeforeInstall`/`scheduleBackupFlush`/`flushBackupNow`/`deployInstallNow`/`deployHoldNow`/`deployWarn`/`deploySetHeld`/`deployAskTap`, `openAsk`/`askBtnTap` — did NOT move**, matching step 7's `ensureAudio` precedent: logging/status reporting is a permanent UI-chrome concern, not a "not yet split" one.
+- `ask/annotate.js` — "✦ Annotate this song…" (2026-10-04, docs/plans/2026-10-04-annotate-song.md; its own section below): `annotateGate` (Normal only + song/key/lock/pitched-notes), the pure pieces `annotateParse`/`annotateValidate`/`annotateOverlaps`/`annotateWindows`, `annotateWrite`/`annotateClear` (one `pushUndo` each), `annotateRun` (a `jobStart("annotate")` job calling `aiProvider().chat` with `ANNOTATE_SYS` and `tools: []` — never the chat's `askRun`), the `#annotatesheet` handlers and `initAnnotate1` (main.js, right after `initChrome11`). Imports `factsDocFromState` (model/song.js — the theory-toolkit adapter) and the FACTS kinds as grounding.
 - `ask/shots.js` — 📷 screenshot list management, step 13: `ASKSHOT_MAX`/`b64Bytes`, `askShotLine`/`askShotUpload`/`askShotStatusLabel`/`askShotRender`/`askShotAdd`/`askShotRemove`/`askShotClearAll`/`askShotRestore`/`askShotOutgoing`/`askShotDisplayText`, `MAX_SHOT_SIDE`/`MAX_SHOT_KEEP_BYTES`/`askPrepImage`, `askPickFiles`. **`askShotShow` (calls `closeDropUp()`, a shared drop-up-menu helper with no home yet) and `askShotCapture`/`askShotTake` (call `logDebug()`) did NOT move** — per docs/ai-library-plan.md §3 these were always slated to become the host adapter's `captureScreen()` hook, not library material, so staying in app.js for now changes nothing about that plan.
 - `ask/sheet.js` — the chat sheet's own DOM and the compose-box draft, step 13: the sheet's DOM consts (`asksheet`/`asklog`/`askinput`/`askstatus`), mode-switch UI (`askSetMode`/`askModeButtons`), the chat-store key router `askStoreKey` (a shared foundation almost every other `ask/*.js` file imports back), small render helpers (`askClock`/`askNoteLabel`/`askRefresh`/`askPartial`/`askShowThinking`), the draft persistence (`askDraftStore`/`askDraftSave`/`askDraftSaveSoon`/`askDraftLoad`/`askDraftClear`), and the box-resize/scroll/focus helpers (`askGrow`/`askScrollEnd`/`askFocusIfKeyboard`). **`askNoteSeen`/`askBubble`/`askFillBubble`/`askCopyText`/`askRender`/`askRenderEarlier`/`askMicOff` and `openAsk`/`askBtnTap` themselves did NOT move** — each calls `setInfo()` (the ✉/status line) or `micStop()` (shared dictation helper, no home yet) directly or transitively; the top-level `document.getElementById("askbtn").addEventListener(...)` wiring block and its neighbors stayed in app.js untouched, per this step's own instruction to leave top-level listener blocks alone.
 - **`draw()`/`playbackFrame()`/`buildScoreModel()`/`drawRuler()`/etc. are now real exports of `render/*`, not bare app.js names** — every entry above this one in this Module map that said a function "did NOT move... calls `draw()`/`buildScoreModel()` (render, step 11)" should now be read as: that call is a plain downward import from `render/roll.js`/`render/score.js`, and the function itself remains blocked — `draw()` specifically is now a PERMANENT block (see `render/roll.js`'s own entry), not a temporary one step 11 would clear. This corrects every such reference above (`model/song.js`'s `loadSong`/`setSong`, `model/selection.js`'s `selEditApply`, `model/edits.js`'s `saveEdits`, `gen/drummer.js`'s `drGenerate`, `gen/bassist.js`'s `applyTake`, `gen/analysis.js`'s `scheduleAnalysisRecompute`/`adopt*`, `audio/clips.js`'s `stretchEnsure`, `sync/publish.js`'s `markPublished`) — none of those functions can move once `render/*` exists; they were never blocked by render being unsplit, they're blocked by render's own hub being permanently above their layer, or (for layer-2 callers like `model/selection.js`) permanently unreachable at all (layer 2 can never import layer 3). open-items.md's corresponding QUEUED notes are corrected to match.
@@ -5273,6 +5274,83 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
   `#emAskFill` are gone from index.html's own markup (the vm harness's
   `getElementById` lazily creates any id, so that check reads the raw
   HTML text instead).
+
+## ✦ Annotate this song… — AI estimates as annotations, Normal mode only (2026-10-04)
+
+docs/plans/2026-10-04-annotate-song.md (Fable-reviewed), closing open-items'
+"QUEUED IDEA (Josh, 2026-09-27)". View ▾ → Mode → **✦ Annotate this song…**
+(`#vwAnnotate`, right under `vwAnalyze`) opens `#annotatesheet`: Sections /
+Chords / Key checkboxes, **Run**, **Clear AI annotations**, a status line.
+Code: `src/ask/annotate.js`; tests: tests/annotate.test.mjs (fake
+OpenAI-SSE server, tests/ai.test.mjs's shape).
+
+**Learning mode: the feature does not exist.** The menu item is ABSENT
+(`renderViewMenu`: `style.display = analysisAvailable() ? "" : "none"` —
+the identical mechanism as `vwAnalyze`, not dimmed), `openAnnotateSheet`
+and the hidden button's handler return in Learning, `annotateGate()` answers
+"Normal mode only" and `annotateRun` throws it before any request. Nothing
+reaches the chat: there is NO ASK tool for this — `ASK_TOOLS`, `askToolsNow`,
+`askSys` and `askContext` are untouched by construction, because the job
+calls `aiProvider().chat({system: ANNOTATE_SYS, messages, tools: []})`
+itself, never `askRun`. The Learning test proves all of it (item absent,
+sheet never opens, runner refuses, zero requests on the fake server,
+tool list / system prompt / context block free of it).
+
+**Normal mode: the Run tap is the approval.** Gate (`annotateGate`):
+`analysisAvailable()`, a song with a `songKey`, not `LINK_SONGS`, not
+`rollnotesReadOnly` (docs/annotations-v2.md P3), at least one pitched
+(non-audio, non-drum) track with notes. Per-host consent runs first
+(`aiHostOk(aiUrl())`, the chat's own gate). The request per window:
+`song:`/`bars a–b of N · meter: k beats per bar`/`wanted: …`, the user's
+own annotations in those bars (fixed — never restated), a **FACTS** block
+from the theory toolkit (`formFacts`, `bassFacts`, `melodyFacts`,
+`rhythmFacts` on `factsDocFromState()` — docs/theory-toolkit.md §3.0's
+adapter, now in src/model/song.js — each formatted and cut to a third of
+`askBudget().span`), then **NOTES** = `askSpanNotesCompact` for the window.
+`ANNOTATE_SYS` asks for ONE JSON object
+`{"sections":[{from_bar,to_bar,label}],"chords":[{bar,beat,end_bar,end_beat,symbol}],"keys":[{bar,name}]}`
+(end_beat = the last beat the chord still sounds on, inclusive) and restates
+the compact-row format.
+
+**Windowed runs (required, not optional).** `annotateBarCosts()` sums each
+bar's `askBarRow` lengths (the one place the row format lives, so the split
+cannot drift from `askSpanNotesCompact`); `annotateWindows(costs, cap)`
+cuts `[from, to]` runs under `annotateWindowCap(budget)` (= `budget.span`
+minus the track heads; 4k window → 1200 chars). Every window is asked in
+turn inside ONE `jobStart("annotate", …)` job (footer ⏳, ✕ aborts via
+`api.aborted` → `AbortController`); `S.annotateBusy` allows one run at a
+time; a song change mid-run (`S.songKey !== key`) writes nothing.
+
+**Validate, then write — nothing lands on any failure** (the write_notes
+discipline): `annotateParse` (outermost `{…}`, `<think>` stripped; anything
+else is "no usable reply"), `annotateValidate` (bars within
+`askBarsCount()`, beats within the meter, `parseChordSym` non-null,
+`keyNameToSf` defined, labels ≤ 40, sections non-overlapping, kinds not
+ticked dropped — every failure named, the window named when there are
+several). Then `annotateOverlaps`: an estimate whose span overlaps a NON-ai
+annotation of the same kind (section band / chord band / key at that bar)
+is **skipped** and reported ("skipped N (yours)"); one overlapping an
+estimate already accepted in this run is **merged** (dropped). Then
+`annotateWrite`: each item through the editor's own text grammar
+(`[b.q - eb.eq]` + `kind: text` → `parseRollnotes` → `resolveNote`),
+`added = true`, `ai = {model: askModelName(), at: ISO}`, an earlier AI
+estimate of the same kind on the same span replaced (no twins), ONE
+`pushUndo({kind: "anno"})` for the whole run (the adoptAllChords pattern),
+`finalizeNotes`/`saveLocalNotes`/redraw. The user's own band on an
+estimate's exact span replaces it when HE writes (dropSupersededBy — the
+editor's rule, unchanged). **Clear AI annotations** (`annotateClear`,
+appConfirm first — never a native dialog): every `n.ai` note through
+`tombstone` (a published one stays deleted across reloads) and out, one
+`pushUndo`.
+
+**The tag.** `n.ai = {model, at}` is song state, not a device pref: it
+round-trips through `noteToJSON`/`jsonToRawNote` (so the v2 file, the undo
+snapshot `annoSnapshot`, and copy/paste carry it), through `saveLocalNotes`'s
+unsynced store, and is documented in docs/annotations-v2.md + the schema's
+note object. All notes shows a gold **✦ AI** badge (`.aitag`, src/ui/notes.js)
+on tagged rows, in either mode — they are song state once written, and the
+badge is what keeps them identifiable. Claude sessions with Josh never run
+this on his songs without his per-instance ask (CLAUDE.md).
 
 ## Window manager (shell + docks) — phase A of the windowing plan, 2026-09-29
 

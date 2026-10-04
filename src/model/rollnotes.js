@@ -78,6 +78,7 @@ export function jsonToRawNote(j) { // schema entry -> the raw shape the deriver 
     case "lane": n.text = "lane: " + j.lane; break;
     default: n.text = j.text || "";
   }
+  if (j.ai && typeof j.ai === "object") n.ai = {model: String(j.ai.model || ""), at: String(j.ai.at || "")}; // ✦ Annotate this song: the AI-estimate tag rides the file, the local store and the undo snapshot (src/ask/annotate.js)
   return n;
 }
 // .rollnotes v2 (docs/annotations-v2.md, P3 2026-10-01): same top-level
@@ -189,6 +190,11 @@ export function audioDirText(d) {
     (d.len ? " len=" + (+(+d.len).toFixed(3)) : "") + (d.local ? " local=1" : "");
 }
 export function noteToJSON(n) { // enriched-or-stashed note -> schema entry (text prefixes are truth)
+  const j = noteToJSONBase(n);
+  if (n.ai) j.ai = {model: String(n.ai.model || ""), at: String(n.ai.at || "")}; // the ✦ AI tag on every type alike (jsonToRawNote reads it back)
+  return j;
+}
+export function noteToJSONBase(n) {
   const j = {at: n.q1 !== 1 ? [n.b1, n.q1] : [n.b1, 1]};
   if (n.b2) j.to = (n.q2 !== null && n.q2 !== undefined) ? [n.b2, n.q2] : [n.b2];
   const t = n.text || "";

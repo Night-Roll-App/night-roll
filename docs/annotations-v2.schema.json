@@ -100,7 +100,17 @@
         "len": { "type": "number", "exclusiveMinimum": 0, "description": "type: audio — seconds of the file this piece plays; absent = the rest." },
         "local": { "type": "boolean", "description": "type: audio — this device's local recording, never synced." },
         "chop": { "type": "string", "enum": ["start", "end"], "description": "type: chop — non-destructive trim in RAW capture coordinates." },
-        "lane": { "type": "integer", "description": "type: lane." }
+        "lane": { "type": "integer", "description": "type: lane." },
+        "ai": {
+          "type": "object",
+          "description": "Present only on an annotation written by '✦ Annotate this song…' (an AI estimate, Normal mode, src/ask/annotate.js). Absent = the user's own. Any note type may carry it.",
+          "required": ["model", "at"],
+          "properties": {
+            "model": { "type": "string", "description": "The model id that produced the estimate." },
+            "at": { "type": "string", "format": "date-time", "description": "ISO-8601 timestamp of the run." }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     }

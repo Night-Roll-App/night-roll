@@ -57,6 +57,7 @@ export const CONTROLS = {
   vwVel: {icon: "barChart", cls: "", label: "Velocity lane", prefix: "   "},
   vwCompare: {icon: "compareArrows", cls: "", label: "Compare with repo", prefix: "   "},
   vwAnalyze: {icon: "search", cls: "", label: "Analyze ▸", prefix: "   "},
+  vwAnnotate: {icon: "autoAwesome", cls: "", label: "Annotate this song…", prefix: "   "}, // ✦ AI estimates, Normal only (src/ask/annotate.js)
   vwLearning: {glyph: "🎓", cls: "", label: "  Learning mode", prefix: "   "},
   vwListener: {icon: "radio", cls: "", label: "Listener mode", prefix: "   "},
   vwGrid: {icon: "gridOn", cls: "", label: "  Grid…", prefix: "   "},

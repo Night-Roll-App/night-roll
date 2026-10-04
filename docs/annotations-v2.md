@@ -83,6 +83,17 @@ A v2 file's `notes` array round-trips through the exact same deriver
 twin (same `notes`, only the header differs) parses to identical in-memory
 notes.
 
+One optional field was added 2026-10-04 (the only one since v1), on any
+note type: `"ai": {"model": "<id>", "at": "<ISO-8601>"}` — the tag
+"✦ Annotate this song…" (src/ask/annotate.js, Normal mode only) puts on
+every estimate it writes, so an AI-written line stays identifiable for as
+long as it lives (the ✦ AI badge in All notes; "Clear AI annotations"
+removes exactly these). `noteToJSON` writes it, `jsonToRawNote` reads it,
+the device's unsynced store (`ff1roll-notes-<key>`) and the undo snapshot
+(`annoSnapshot`) carry it; a note without it is the user's own. Absent =
+not AI. Readers that do not know the field ignore it (the schema's note
+object lists it; nothing else about the entry changes).
+
 ## Reader (shipped, P3)
 
 `parseRollnotesJSON` (index.html) accepts both transparently:
