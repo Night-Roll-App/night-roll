@@ -69,6 +69,16 @@ Q7. ANSWERED (Terminal #92: NES/SNES sound great) — step 7 shipped ba19c73. Wa
     check soon, or should I continue with the non-audio steps first?
 Q8. ANSWERED (Terminal #93): Night-Roll-App/claude-bridge, private, rename later OK; scope = ALL AI (bridge, in-browser/cloud models, Ollama, LM Studio, the AI window). Was: The AI library's new repo: name and
     visibility? Default: Night-Roll-App/claude-bridge, private.
+Q9. (ASK LATER — module split phase 2 steps 3/4, 2026-10-04) iPad ear
+    check needed before these steps are considered fully verified
+    (docs/split-phase2-plan.md §3's step-4 list, narrowed to what step 4
+    actually touched): a chip song (NES + one streamed console — the
+    chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/
+    chipRenderAuto path moved file this step) and note preview (chip
+    fallback). play/stop/the whole transport/voices/clips cluster did NOT
+    move (heavily blocked — see this entry's own writeup below), so synth/
+    SF2/game-voice/clip-at-0.5×/album-auto-advance are unaffected by this
+    pair of steps and don't need a fresh check on their account.
 
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
@@ -6712,3 +6722,168 @@ an NSF/SPC chip render, and the metronome — `ensureAudio`/`resumeAudio`/
 identical, but this is exactly the audio-session code the plan's own
 "AUDIO IS FRAGILE" guardrail (docs/split-plan.md §5) singles out for a
 real device/browser check regardless.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 3: render/chrome/session upcall ports + songTitleOf (docs/split-phase2-plan.md)
+
+Done. Sixteen ports (§1 M1's recipe, one H commit, no code moved — only
+renamed `XImpl` in place + rewired imports): `draw`, `playbackFrame`,
+`clampView`, `updateSongBtn`, `updateSyncBtn` (home: `ui/chrome.js`);
+`buildScoreModel` (home: `render/score.js`); `songTitleOf` (home:
+`ask/context.js` — step 2's own `chipRender`/`chipRenderInWorker`/
+`chipPublish`/`chipStreamOpen`/`chipRenderAuto` blocker); `fitView`,
+`renderTrackbar`, `updateEditBtnVis`, `updateChipBtn`, `updateSubtitle`,
+`askRender`, `finalizeNotes`, `recFinish`, `albumAdvance` (home: `app.js`
+itself — the body stays, renamed + exported, so `wire.js` imports the
+`*Impl` straight from `app.js`, a circular import with `app.js`'s own
+`import { installHooks } from "./wire.js"` that's safe because every name
+is a hoisted function declaration, identical in shape to the `app.js`↔
+`wire.js` cycle step 1 already relies on).
+
+Importers re-pointed by the rule the task stated: a caller whose own layer
+is BELOW the impl's routes through `hooks.js` (the only legal path);
+a caller at or above the impl's layer (same tier, or legally reading
+downward already) uses `XImpl as X` directly from the impl's file instead
+— `ui/sheets.js`/`ui/note-editor.js` (same `ui` tier as `ui/chrome.js`,
+plus `ui/sheets.js` reading down into `render/score.js`/`ask/context.js`,
+both already-legal downward imports) and `ask/bridge.js`/`ask/sheet.js`
+(same `ask` tier as `ask/context.js`) all got the alias form; `ui/chrome.js`'s
+own `songTitleOf` import (same `ask`/`ui` tier, both layer 4) did too.
+`app.js`'s existing imports of the five `ui/chrome.js`-homed names plus
+`buildScoreModel`/`songTitleOf` switched from their old home files to
+`./hooks.js` (the home file no longer re-exports the bare name once
+ported — this is true regardless of app.js's own layer, so it isn't an
+exception to the rule above, just a consequence of where the bare name
+actually lives now). Nine brand-new `import { X } from "./hooks.js";`
+lines added to `app.js` for the names whose impl stayed there — needed so
+`app.js`'s OWN internal bare-name call sites (`finalizeNotes` calling
+`renderTrackbar()`/`fitView()`/`updateEditBtnVis()`; `renderTrackbar`
+calling itself recursively plus `buildScoreModel()`/`clampView()`/
+`draw()`; `updateEditBtnVis` calling `updateChipBtn()`; etc. — all
+UNCHANGED call-site text) still resolve. Two same-file self-imports, same
+pattern step 1 set for `ui/chrome.js`'s original five: `ui/chrome.js`
+imports `draw`/`updateSongBtn`/`updateSyncBtn` back from `../hooks.js`
+(for `resize()`'s `draw()` and `saveDraft()`'s `updateSongBtn()`/
+`updateSyncBtn()` calls); `ask/context.js` imports `songTitleOf` back from
+`../hooks.js` (for `askViewCursorLine`'s own internal
+`songTitleOf(S.songKey)` call).
+
+One pre-existing same-name-property wrinkle, checked and confirmed
+harmless: `updateChipBtn.warned` (a per-song memoization flag, read/
+written only by the sibling, non-renamed `updateChipBtnInner`) now hangs
+off the `hooks.js` forwarder's function object instead of the impl's —
+every reference resolves to the same singleton import, so this is
+behaviorally identical, not a logic change.
+
+`node tools/split/regen-e2e-footer.mjs --file src/app.js` re-run — the
+nine app.js-resident names' setters in the generated `__nrExpose$` would
+otherwise try to assign to now-imported bindings (rule 2), the identical
+"a move that turns a declaration into an import" gotcha step 2 hit, here
+from a rename rather than a move. After regen, the nine `*Impl` names get
+two-way accessors and the bare names drop out of the footer entirely (an
+import, not a declaration — `declaredNames()` returns `[]` for
+`ImportDeclaration`), matching step 1's `setInfo`/etc. precedent.
+
+Two real-repo tests in `tests/modules.test.mjs` updated (expected,
+task-authorized test maintenance, not a new break): the "every port
+throws"/"installHooks() installs" tests grew from the original five names
+to all 21; the step-2-era negative test asserting `chipRender -> audio/
+chip.js` is blocked BY `songTitleOf` now asserts the opposite (dissolved —
+only `chipRenderInWorker`/`chipPublish`, chipRender's own still-in-app.js
+siblings, remain, and that's a "move together" situation, not permanent).
+Two tests added per plan §3's own list: a port-before-install throw test
+(folded into the all-21 loop); a NEW rebinding test for `draw` (sets
+`S.sceneValid = true`, reassigns the bare `draw` port, confirms the real
+`drawImpl` — which unconditionally sets `sceneValid = false` — never ran).
+
+`perl -e 'alarm 1200; exec @ARGV' npm test`: only `ps2-real`/`instruments`
+fail (pre-existing, missing local rips). `node tools/split/check.mjs`:
+clean except `oldBpb` (Q6). `check-e2e-globals.mjs`/`check-controls.mjs`
+clean. `node tools/split/verbatim.mjs --hook setInfo,logErr,logDebug,
+appConfirm,updateJobsBtn,draw,playbackFrame,clampView,fitView,
+buildScoreModel,renderTrackbar,updateEditBtnVis,updateChipBtn,
+updateSongBtn,updateSyncBtn,updateSubtitle,askRender,finalizeNotes,
+recFinish,albumAdvance,songTitleOf HEAD`: ✔, zero lost/extra. Sorted
+`prof("…")` LABEL set unchanged (29 — the renamed bindings keep their
+original label strings). `npm run test:e2e:smoke`: 8/8. `node
+tools/package.mjs --out`: 181 files, unchanged (no file added/removed).
+`src/app.js`: 14486 → 14495 lines (+9, new hooks.js import lines only —
+no code moved this step).
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 4: transport/voices/clips mostly blocked; chip render + chip-stream cluster moves (docs/split-phase2-plan.md)
+
+Done, with almost the entire named scope staying in app.js — documented,
+per this step's own instruction ("leave anything still blocked"), not
+silently retried. `blockers.mjs` run against every named cluster FIRST,
+real repo, before any move:
+
+- `play`/`stop`/`playGate`/`playGateKick`/`playGateTick`/`playGateActive`/
+  `playGateWait`/`buildSchedule`/`renderSongOffline`/`audioChaseNow` →
+  `audio/transport.js`: 45 still-in-app.js closure names (the whole album
+  system, sf/game/instrument preload machinery, the tombstone/undo
+  helpers, `scheduleClip`/`stretchEnsure*`) plus 5 illegal-layer imports —
+  `recOpenEnded` (`input/record.js`), `srAnnounce`/`scheduleBackupFlush`
+  (`ui/chrome.js`), `computeSongEnd` (`ui/sheets.js`), `setAnchorBQ`
+  (`ui/note-editor.js`), all layer 4.
+- `scheduleNote`/`previewNote`/sf+game preload+wait → `audio/voices.js`:
+  37 closure names (the same play-gate/instrument-preload web) plus 2 of
+  the same illegal-layer imports (`recOpenEnded`/`srAnnounce`).
+- `scheduleClip`/`stretchEnsure(All)`/`applyAudioDirs`/`audioEnsureFile`/
+  `applyBeatMap`/`setSongTempo`/`writeClips`/`setClipDir`/`splitClipAt`/
+  `deleteClip` → `audio/clips.js`: checked individually, not just as a
+  block — every one of the ten comes back blocked, the smallest
+  (`writeClips`/`setClipDir`/`splitClipAt`/`deleteClip`) by
+  `annoSnapshot`/`tombstone`/`saveLocalNotes`/`buildSchedule` plus 3 of the
+  illegal-layer imports (`setAnchorBQ`/`computeSongEnd`/
+  `scheduleBackupFlush`), the larger ones pulling in the whole
+  transport/play-gate web on top.
+
+None of the five illegal-layer imports (`recOpenEnded`, `srAnnounce`,
+`scheduleBackupFlush`, `computeSongEnd`, `setAnchorBQ`) are covered by any
+existing port, and none are named by docs/split-phase2-plan.md's table for
+one — adding a port for any of them would be a new H commit this step's
+own scope ("step 4 = M commit(s)") doesn't authorize. This is the exact
+shape docs/split-plan.md's phase-1 Deviations (7)/(8) already found for
+this same code (`play`/`stop`/play-gate "did NOT move, almost entirely");
+step 3's ports didn't touch any of these five names, so nothing new
+cleared here. All three clusters stay entirely in app.js, bit-for-bit.
+
+**What step 3's `songTitleOf` port DID unblock, exactly as it was designed
+to**: `blockers.mjs chipRender,chipRenderInWorker,chipPublish --to
+src/audio/chip.js` came back clean (per step 2's own writeup, `songTitleOf`
+was their only blocker) — moved by name, verbatim. That immediately
+cleared `chipStreamOpen`/`chipRenderAuto --to src/audio/chip-stream.js`
+too (their remaining blocker was `chipRender`/`chipRenderInWorker`/
+`chipPublish` themselves, now real same-layer imports from the just-moved
+`audio/chip.js`) — moved the same way, same commit. `chipRender`/
+`chipRenderInWorker` now import `songTitleOf` from `../hooks.js` for their
+`logDebug` status line; `chipPublish` needed no direct import (it only
+receives `chipRender`'s debug string through); `chipRenderAuto` now
+imports `chipRender` from `./chip.js` instead of a bare app.js reference.
+
+`node tools/split/regen-e2e-footer.mjs --file src/app.js` re-run. One
+real-repo test in `tests/modules.test.mjs` updated (expected — the
+step-3-era test asserted this exact cluster was STILL blocked by
+`chipRenderInWorker`/`chipPublish`; now that step 4 actually moved them,
+the correct assertion is that all five report clean, with
+`blockers.mjs` finding nothing to chase at all — not even an empty
+closure — because none of the five is declared in app.js any more, same
+shape the pre-existing `chipSource` test already established).
+
+`perl -e 'alarm 1200; exec @ARGV' npm test`: only `ps2-real`/`instruments`
+fail (pre-existing). `node tools/split/check.mjs`: clean except `oldBpb`.
+`check-e2e-globals.mjs`/`check-controls.mjs` clean. `node
+tools/split/verbatim.mjs HEAD`: ✔, zero lost/extra — no exceptions
+needed (a clean `move.mjs --names` move, not a rename, so nothing for
+`--hook` to tolerate and nothing hand-verified). Sorted `prof("…")` LABEL
+set unchanged (29 — none of the five moved names are profiled). `npm run
+test:e2e:smoke`: 8/8. `node tools/package.mjs --out`: 181 files, unchanged
+(no file added/removed — `audio/chip.js`/`audio/chip-stream.js` already
+existed). `src/app.js`: 14495 → 14275 lines (220 out, well under the
+plan's ~1,150 estimate — almost the entire transport/voices/clips cluster
+stayed put).
+
+Browser-check still needed by the main session (plan §3, narrowed to what
+this step actually touched — see Q9 above): a chip song (NES + one
+streamed console) and note preview (chip fallback). The rest of plan §3's
+step-4 ear-check list (synth, SF2, game voice, clip at 0.5×, album
+auto-advance) is unaffected — that code never moved.

@@ -12,6 +12,7 @@ import { idbNsfGet } from "../platform/storage.js";
 import { idbNsfPut } from "../platform/storage.js";
 import { logErr } from "../hooks.js";
 import { logDebug } from "../hooks.js";
+import { songTitleOf } from "../hooks.js";
 
 // ---------------------------------------------------- authentic chip audio
 // The captured APU register log rendered through the 2A03's real DSP
@@ -785,4 +786,174 @@ export async function chipModules(kind, importFn) { // importFn: test-only overr
     chipModules.cache[kind] = M;
   }
   return chipModules.cache[kind];
+}
+
+export async function chipRender() {
+  const forKey = S.songKey;
+  const src = await chipSource();
+  if (!src) return false;
+  // NO ensureAudio here: this runs at song load, outside any tap. Creating or
+  // rebuilding the AudioContext outside a gesture is the mute-until-relaunch
+  // case (Josh, 2026-09-27, a committed Chrono Trigger song silenced
+  // everything). The render only makes Float32 PCM; chipBuffers() turns it
+  // into AudioBuffers inside play()'s tap, on whatever context is live then.
+  const kind = src.chip || "nsf";
+  const secs = Math.ceil(src.secs + 1);
+  const rate = CHIPS[kind].renderRate || (S.audio ? S.audio.sampleRate : 44100);
+  chip.progress = 0;
+  // A failure past this point (module load, emulation, render, or the memory
+  // budget refusing) must not poison the NEXT song's render (Josh's iPad,
+  // 2026-09-30: Challenge crashed, then FF7 — a different chip kind —
+  // failed the same way until a full app restart: whatever Challenge left
+  // allocated was starving later dynamic import()s). Every real throw out of
+  // this function goes through chipCleanupAfterFailure first. A "stale
+  // render" (superseded by a song change) is NOT a failure — those are
+  // caught inline below and return false without touching anything.
+  try {
+    const budget = chipRenderBudget();
+    if (chipWorkerAvailable()) {
+      // Off the main thread when the browser can (module workers: every
+      // current Safari/Chrome): the page stays fluid, the first Play after
+      // opening a song no longer plays over a render, and a song change just
+      // terminates the worker. The inline path below is the fallback.
+      const w = await chipRenderInWorker(kind, src, secs, rate, forKey, budget);
+      if (w === "stale") return false;
+      if (w) { return chipPublish(forKey, kind, w.pcm, w.sampleRate, w.leadSec, w.pan, w.debug); }
+      // a worker failure falls through to the inline render, once, and says so
+    }
+    const M = await chipModules(kind);
+    const nsfParsed = CHIPS[kind].parse(M)(src.bytes, src);
+    if (!M.renderApu && !M.renderSpu) return false; // no renderer for this chip (yet): synth carries the song
+    // a song opened on top of this one aborts the render at its next progress
+    // tick — several quick opens used to leave several renders running to the
+    // end (memory, and a starved audio thread: Josh, 2026-09-27)
+    const alive = () => { if (S.songKey !== forKey) throw new Error("stale render: " + forKey.split("/").pop()); };
+    let res;
+    try {
+      res = await CHIPS[kind].run(M)(nsfParsed, src.n, secs,
+        p => { alive(); chip.progress = p * 0.3; console.log("[chip] emulating " + Math.round(p * 100) + "%"); });
+    } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
+    const {frameSec} = res;
+    // song time zero = first onset (the capture's trim) — find it the same way; a sequence chip says 0 itself
+    let leadSec = 0;
+    if (CHIPS[kind].lead) leadSec = CHIPS[kind].lead(M, res);
+    else { const ev = res.events || M.reconstruct(res.apuLog, res.frames, frameSec); leadSec = (ev.length ? Math.min(...ev.map(e => e.startFrame)) : 0) * frameSec; }
+    // the memory budget (planChipRender, above): known track count + this
+    // chip's own channel count (stereo-capable chips only — CHIPS[kind].stereo)
+    // decide the render's OWN sample rate/channels BEFORE it allocates anything
+    const tracks = chipEstimateTracks(kind, res, M);
+    const canStream = !!CHIPS[kind].stream;
+    const plan = planChipRender({tracks, seconds: secs, sampleRate: rate, channels: CHIPS[kind].stereo ? 2 : 1, budget, canStream});
+    if (plan.refuse) throw new Error("too big for this device's memory: " + Math.round(plan.bytes / 1e6) + " MB");
+    if (plan.rate !== rate || plan.mono) logDebug(songTitleOf(forKey) + ": console voice rendered at " + (plan.rate / 1000) + " kHz" + (plan.mono ? " mono" : "") + " to fit memory (~" + Math.round(plan.bytes / 1e6) + " MB)");
+    if (canStream) { // chunk by chunk, straight into the kept buffers (2026-09-30: peak ≈ kept + one chunk, not ~3x — chipRenderStreamed's own comment)
+      let out;
+      try {
+        out = await chipRenderStreamed(M, CHIPS[kind], res, {sampleRate: plan.rate,
+          plan, onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
+      } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
+      if (S.songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
+      return chipPublish(forKey, kind, out.pcm, out.sampleRate, leadSec, out.pan, {peakBytes: out.peakBytes, keptBytes: out.keptBytes, tracks, groups: out.groups});
+    }
+    const render = CHIPS[kind].render || ((MM, rr, o) => MM.renderApu(rr.apuLog, rr.frames, rr.frameSec, o));
+    let r;
+    try {
+      r = await render(M, res, {sampleRate: plan.rate,
+        onProgress: p => { alive(); chip.progress = 0.3 + p * 0.7; console.log("[chip] rendering " + Math.round(p * 100) + "%"); }});
+    } catch (err) { if (/^stale render/.test(err && err.message)) { console.log("[chip] " + err.message); return false; } throw err; }
+    if (S.songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
+    const pcm = {}, pan = {};
+    const names = CHIPS[kind].channels.length ? CHIPS[kind].channels : Object.keys(r).filter(k => chipIsPcm(r[k])); // a sequence chip names its channels per song
+    // docs/streamed-render-plan.md step 0: the same tally as chip-worker.mjs's
+    // tallyChipRender — peakBytes = every group `r` holds at once (one
+    // non-streamed return) + any downmix copy made while its stereo original
+    // is still referenced; keptBytes = what ends up in `pcm`. Cheap: sums of
+    // .byteLength already in hand; chipSilent's scan already existed.
+    let peakBytes = 0, keptBytes = 0;
+    for (const name of names) {
+      const v = r[name]; r[name] = null;
+      if (!v) continue;
+      const vBytes = v.l ? (v.l.byteLength + v.r.byteLength) : v.byteLength;
+      peakBytes += vBytes; // held by `r` for every group at once, live or not
+      if (chipSilent([v])) continue; // a voice the song never uses keeps nothing
+      if (plan.mono && v.l && v.r) { // downmix ONLY what the budget needed to shrink, and only where the pan holds still
+        const p = chipStaticPan(v.l, v.r);
+        if (p !== null) {
+          const mono = chipDownmixStatic(v.l, v.r, p);
+          peakBytes += mono.byteLength; // the copy coexists with v.l/v.r until this scope ends
+          pcm[name] = mono; pan[name] = p;
+          keptBytes += mono.byteLength;
+          continue;
+        }
+      }
+      pcm[name] = v;
+      keptBytes += vBytes;
+    }
+    return chipPublish(forKey, kind, pcm, r.sampleRate, leadSec, pan, {peakBytes, keptBytes, tracks, groups: names.length});
+  } catch (err) {
+    chipCleanupAfterFailure(kind);
+    throw err;
+  }
+}
+export function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan, debug) { // the render is in: keep it for the song it was made for
+  if (S.songKey !== forKey) { console.log("[chip] discarded: " + forKey + " is no longer open"); return false; }
+  if (!Object.keys(pcm).length) {
+    logErr("chip render came out silent for " + forKey.split("/").pop() + " (" + CHIPS[kind].label + ") — playing synthesized voices; tell Claude the song name");
+    return false;
+  }
+  chip.pcm = pcm; chip.pcmRate = sampleRate;
+  chip.buffers = null; chip.buffersCtx = null; // built from pcm in the tap (chipBuffers), unless chipPcmToBuffers can now
+  chip.pan = pan && Object.keys(pan).length ? pan : null; // per-track static pan the memory budget downmixed to mono (planChipRender/chipStaticPan)
+  // docs/streamed-render-plan.md step 0 "before" measurement — one line, every
+  // render, both paths (the inline fallback above and chip-worker.mjs's
+  // tallyChipRender hand this same shape through w.debug): held = keptBytes
+  // (what chip.pcm/chip.buffers actually keeps); peak = the most this render
+  // held at once. tracks vs groups can still differ if a renderer's own
+  // channelGroups call ever diverges from chipEstimateTracks's early one
+  // (both call the SAME idempotent channelGroups now, so a difference here
+  // is a real discrepancy worth seeing, not the stale undercount this fixed).
+  if (debug) {
+    const mb = n => Math.round(n / 1e6);
+    const kept = Object.values(pcm);
+    const stereoCount = kept.filter(v => v && v.l).length;
+    const mono = stereoCount === 0 ? "mono" : stereoCount === kept.length ? "stereo" : "mixed";
+    const mismatch = debug.tracks !== debug.groups ? " (estimated " + debug.tracks + ")" : "";
+    logDebug(songTitleOf(forKey) + ": console audio held " + mb(debug.keptBytes) + " MB (render peak " + mb(debug.peakBytes) + " MB, " + debug.groups + " tracks" + mismatch + ", " + Math.round(sampleRate / 1000) + " kHz, " + mono + ")");
+  }
+  chipPcmToBuffers();
+  chip.lead = leadSec;
+  chip.key = forKey;
+  console.log("[chip] ready: " + forKey + " — playing the console's own sound");
+  return true;
+}
+export function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
+  return new Promise(resolve => {
+    if (S.chipWorker) { try { S.chipWorker.terminate(); } catch (err) { /* gone */ } S.chipWorker = null; }
+    let w, workerUrl;
+    try { workerUrl = new URL("tools/chip-worker.mjs?v=" + Date.now(), S.APP_BASE).href; w = new Worker(workerUrl, {type: "module"}); }
+    catch (err) { chipWorkerAvailable.broken = true; console.warn("[chip] no module worker (" + workerUrl + "): " + err.message + " — rendering inline"); return resolve(null); }
+    S.chipWorker = w;
+    const c = CHIPS[kind];
+    const watch = setInterval(() => { if (S.songKey !== forKey) { finish("stale"); } }, 250); // a song change ends the render at once
+    const finish = out => { // a finished render keeps its worker (and the loaded set) for note previews; anything else ends it
+      clearInterval(watch);
+      if (out && out.pcm) { w.__key = forKey; resolve(out); return; }
+      if (S.chipWorker === w) S.chipWorker = null; try { w.terminate(); } catch (err) { /* gone */ }
+      if (out === "stale") console.log("[chip] stale render stopped: " + forKey.split("/").pop());
+      resolve(out);
+    };
+    w.onmessage = e => {
+      const m = e.data || {};
+      if (m.preview) { const cb = chipPreviewPending.get(m.preview.req); chipPreviewPending.delete(m.preview.req); if (cb) cb(m.preview); return; }
+      if (typeof m.progress === "number") { chip.progress = m.progress; return; }
+      if (m.debug) { logDebug(m.debug); return; } // the worker's own budget-plan line (planChipRender ran in there, not here)
+      if (m.error) { console.warn("[chip] worker (" + workerUrl + "): " + m.error + " — rendering inline"); return finish(null); } // this render only: a latched flag sent every later song of the session onto the main thread (FF7 froze 90 s after Challenge's failure, 2026-09-30)
+      if (m.done) return finish(m.done);
+    };
+    w.onerror = err => { console.warn("[chip] worker failed (" + workerUrl + "): " + (err && err.message || "error") + " — rendering inline"); finish(null); }; // this render only — only a constructor that throws (no module workers at all) latches
+    const bytes = src.bytes instanceof Uint8Array ? src.bytes.slice() : new Uint8Array(src.bytes).slice(); // a copy: the record keeps its own
+    const libs = {}, transfer = [bytes.buffer];
+    for (const [name, b] of Object.entries(src.libs || {})) { const c2 = b instanceof Uint8Array ? b.slice() : new Uint8Array(b).slice(); libs[name] = c2; transfer.push(c2.buffer); } // a set's shared library (PS1, N64)
+    w.postMessage({id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, n: src.n, secs, rate, budget, title: songTitleOf(forKey)}, transfer);
+  });
 }

@@ -791,12 +791,16 @@ test("blockers.mjs CLI: real repo — chipSource -> audio/chip.js is CLEAN, post
   assert.match(r.stdout, /clean/);
 });
 
-test("blockers.mjs CLI: real repo — chipRender -> audio/chip.js, post-docs/split-phase2-plan.md step 3: step 2's songTitleOf illegal-layer blocker is DISSOLVED now that songTitleOf is a hooks.js port (step 3) — the remaining blocker is only chipRender's own still-in-app.js closure (chipRenderInWorker, chipPublish), which step 4 moves alongside it, not a permanent one", () => {
-  const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", "chipRender", "--to", "src/audio/chip.js"], { cwd: ROOT, encoding: "utf8" });
-  assert.notEqual(r.status, 0);
-  assert.doesNotMatch(r.stdout, /songTitleOf/);
-  assert.doesNotMatch(r.stdout, /illegal-layer imports: (?!\(none\))/);
-  assert.match(r.stdout, /closure \(still in app\.js\): chipRenderInWorker, chipPublish/);
+test("blockers.mjs CLI: real repo — chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/chipRenderAuto are no longer declared in app.js at all, post-docs/split-phase2-plan.md step 4: step 2's songTitleOf illegal-layer blocker dissolved by step 3's port, and step 4 actually moved the whole cluster (audio/chip.js, audio/chip-stream.js) — blockers.mjs now has nothing to chase (not even an empty closure, since the name isn't in app.js to begin with)", () => {
+  for (const [name, toPath] of [
+    ["chipRender", "src/audio/chip.js"], ["chipRenderInWorker", "src/audio/chip.js"],
+    ["chipPublish", "src/audio/chip.js"], ["chipStreamOpen", "src/audio/chip-stream.js"],
+    ["chipRenderAuto", "src/audio/chip-stream.js"],
+  ]) {
+    const r = spawnSync(process.execPath, ["tools/split/blockers.mjs", name, "--to", toPath], { cwd: ROOT, encoding: "utf8" });
+    assert.equal(r.status, 0, `${name}: ${r.stdout}`);
+    assert.match(r.stdout, /clean/);
+  }
 });
 
 // ---- promote-state.mjs -------------------------------------------------------

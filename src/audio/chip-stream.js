@@ -8,6 +8,11 @@ import { playSec } from "./transport.js";
 import { chipWorkerAvailable } from "./chip.js";
 import { CHIPS } from "./chip.js";
 import { chipPreviewPending } from "./chip.js";
+import { chipSource } from "./chip.js";
+import { chipRenderBudget } from "./chip.js";
+import { logDebug } from "../hooks.js";
+import { songTitleOf } from "../hooks.js";
+import { chipRender } from "./chip.js";
 
 // -------------------------------------------- chip stream mode (step 3) ---
 // docs/streamed-render-plan.md step 3 — a SECOND way to get console audio
@@ -384,4 +389,61 @@ export function chipStreamOpenWorker(kind, src, secs, rate, forKey, budget) {
     w.postMessage({stream: {id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, secs, rate,
       chunkFrames: CHIP_STREAM_CHUNK_SEC * rate, overlap: CHIP_STREAM_OVERLAP, budget}}, transfer);
   });
+}
+
+// Entry point for chip.renderPromise (replaces a bare chipRender() call):
+// stream mode first when the switch is on, the existing whole-render path
+// otherwise OR as the fallback from any stream failure — exactly the
+// behavior before this step when the switch is off. chipStreamOpen resolves
+// once {ready} has arrived AND the first window (the chunks covering the
+// play-from position, +1) is cached, so playGate/album-play's wait on
+// chip.renderPromise sees the same "worth waiting for" contract either path.
+// `auto` (step 5): asks the worker for the hypothetical whole-render plan
+// (a `budget` on the {stream} request) and, once {ready} answers, keeps this
+// session only when that plan would downgrade or refuse — otherwise it
+// terminates the worker it just opened and returns false, same shape as any
+// other "fall back to chipRender()" exit (chipRenderAuto, below). Always one
+// logDebug line either way, naming the song and the reason.
+export async function chipStreamOpen(auto) {
+  const forKey = S.songKey;
+  const src = await chipSource();
+  if (!src) return false;
+  const kind = src.chip || "nsf";
+  const secs = Math.ceil(src.secs + 1);
+  const rate = CHIPS[kind].renderRate || (S.audio ? S.audio.sampleRate : 44100);
+  const budget = auto ? chipRenderBudget() : undefined; // only "auto" needs the hypothetical whole-render plan back
+  const w = await chipStreamOpenWorker(kind, src, secs, rate, forKey, budget);
+  if (S.songKey !== forKey) return false; // stale: a later song is open now
+  if (!w || w.error) { logDebug("chip stream: " + (w && w.error || "no worker") + " — falling back to the whole render"); return false; }
+  if (auto) {
+    const willStream = chipAutoShouldStream(w.plan, rate);
+    logDebug(songTitleOf(forKey) + ": " + (willStream ? "streaming" : "whole") + " — " + chipAutoReason(w.plan, rate));
+    if (!willStream) { // this song wouldn't downgrade/refuse under the whole path: leave it alone, same as "off"
+      if (S.chipWorker) { try { S.chipWorker.terminate(); } catch (err) { /* gone */ } S.chipWorker = null; }
+      return false;
+    }
+  }
+  chip.stream = {
+    key: forKey, gen: 0, rate: w.sampleRate, chunkFrames: CHIP_STREAM_CHUNK_SEC * w.sampleRate, overlap: CHIP_STREAM_OVERLAP,
+    tracks: w.tracks, seconds: w.seconds, frames: w.frames, leadSec: w.leadSec,
+    silent: new Set(), cache: new Map(), pinnedIdx: new Set(), scheduled: new Set(), waiters: new Map(),
+    bytes: 0, peakBytes: 0, live: false, srcs: [],
+  };
+  chip.lead = w.leadSec; chip.key = forKey; chip.buffers = null; chip.pcm = null; chip.pan = null;
+  const fromSec = (typeof S.song !== "undefined" && S.song && typeof S.playCursor !== "undefined" && S.playCursor > 0) ? tickToSec(S.song, S.playCursor) : 0;
+  const idx0 = chipStreamIdxForTapeSec(chip.lead + fromSec * S.playRate);
+  chipStreamRequestRange(idx0, idx0 + 1);
+  await chipStreamWaitFor(idx0);
+  if (S.songKey !== forKey || !chip.stream || chip.stream.key !== forKey) return false; // superseded while waiting
+  if (S.chipWorker) S.chipWorker.postMessage({idle: {id: forKey}}); // one state-only sweep so an all-silent track re-enables synth promptly, not only after it happens to fall inside a rendered window
+  console.log("[chip] stream ready: " + forKey + " — playing the console's own sound (stream mode)");
+  return true;
+}
+export async function chipRenderAuto() { // chip.renderPromise's entry point — see chipStreamOpen's own comment
+  const mode = chipStreamMode();
+  if (mode === "on" || mode === "auto") {
+    const ok = await chipStreamOpen(mode === "auto");
+    if (ok) return true;
+  }
+  return chipRender();
 }
