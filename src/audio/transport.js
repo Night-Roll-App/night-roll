@@ -1,5 +1,6 @@
 import { tickToSec } from "../midi/parse.js";
 import { S } from "../state.js";
+import { clipLen } from "../model/song.js";
 
 // audio export: play ONCE, whole song, no loop
 export function currentLoop() { // "loop: B.Q" = at the anchor (jump point), return to B.Q
@@ -51,4 +52,23 @@ export function playSec() { // current position on the song timeline, seconds
   const s = Math.max(0, S.audio.currentTime - S.playT0) + S.playOffset; // playT0 starts slightly ahead; a count-in holds the playhead at its start, even mid-song
   if (!S.loopSeg || S.loopSeg.end <= S.loopSeg.start) return s;
   return s < S.loopSeg.end ? s : S.loopSeg.start + (s - S.loopSeg.end) % (S.loopSeg.end - S.loopSeg.start);
+}
+
+export function buildSchedule() {
+  // all tracks scheduled; per-track gain nodes apply mute/solo live
+  S.schedEvents = [];
+  S.song.tracks.forEach((tr, ti) => {
+    for (const n of tr.notes) {
+      if (n.gone) continue;
+      S.schedEvents.push({ti, n, sec: tickToSec(S.song, n.t), dur: Math.max(0.04, tickToSec(S.song, n.t + n.d) - tickToSec(S.song, n.t))});
+    }
+    if (tr.kind === "audio") for (const c of tr.clips) { // one event per piece; sec/dur are WALL
+      // seconds like every event (tickToSec already divides by playRate), the
+      // file offset/len are buffer seconds. The stub n keeps the chase filters
+      // and the transport-stopped guard shape-compatible.
+      if (!c.dur || clipLen(c) <= 0) continue;
+      S.schedEvents.push({ti, n: {ch: 0, v: 100, _clip: c}, sec: tickToSec(S.song, c.at), dur: clipLen(c) / S.playRate});
+    }
+  });
+  S.schedEvents.sort((a, b) => a.sec - b.sec);
 }
