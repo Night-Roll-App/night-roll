@@ -29,6 +29,10 @@ import * as midiParse from "./midi/parse.js";
 import * as midiWrite from "./midi/write.js";
 import * as theoryChords from "./theory/chords.js";
 import * as theoryKey from "./theory/key.js";
+import * as theoryHarmonyRoman from "./theory/harmony/roman.js";
+import * as theoryHarmonyCadence from "./theory/harmony/cadence.js";
+import * as theoryHarmonyNct from "./theory/harmony/nct.js";
+import * as theoryHarmonyModulation from "./theory/harmony/modulation.js";
 import * as modelCatalog from "./model/catalog.js";
 import * as modelGrid from "./model/grid.js";
 import * as modelEdits from "./model/edits.js";
@@ -99,6 +103,7 @@ export function exposeGlobals() {
   // object literal out of top-level init code is the same discipline §2.2
   // asks of every other module, free to apply here too.
   const MODULES = { edition, icons, controls, piano, midiParse, midiWrite, theoryChords, theoryKey,
+                     theoryHarmonyRoman, theoryHarmonyCadence, theoryHarmonyNct, theoryHarmonyModulation,
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
                      audioEngine, audioVoices, audioTransport,
