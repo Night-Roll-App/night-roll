@@ -1946,6 +1946,32 @@ stale and should move up here instead.
   in app.js, for step 12. Commit-by-commit: docs/split-phase2-plan.md's
   step 9 write-up.
 
+- **Phase 2 step 10 (2026-10-04) — the input side out of app.js.** New
+  `input/keyboard.js`: the on-screen keyboard's finger side — `instTap`,
+  `instPlay` (+ Sustain's `instReleaseVoice`/`instReleaseHeld`/
+  `instReleaseAll`), `setInstInfo`, `guitarHit`, the `instPointerDown`/
+  `instPointerMove`/`instPointerUp` gesture machine (`instPtrXY`/
+  `instPtrMeanX`/`instPtrPlayed`/`instPtrTicket`, `instLetGo`,
+  `instScrollPersist`, `INST_PAN_SLOP`), `instSetMode`/`instSetLock`/
+  `instSetSustain`; the geometry/scroll half stays in `render/instrument.js`.
+  `input/record.js` now holds the whole MIDI-in/record chain its step-12
+  entry said did NOT move: `recNoteOn`/`recNoteOff`, `recFinishImpl` (the
+  `recFinish` port's body — wire.js imports it from here; app.js holds no
+  port body any more), `midiMessage`, `initWebMidi`, `initCoreMidi`.
+  `input/gestures.js` now holds the canvas pointer machine's functions its
+  own entry listed as stayed: `tap`, `endPointer`, `finalizeLasso`,
+  `toggleSel`, `scoreLassoTap`, `scrubTo`, `seekOrMoveCursor`, `hitNote`/
+  `fallHitNote`/`hitTracksNote`/`hitTracksClip`, `placePencilNote`, the
+  Score pencil (`scorePencilTick`/`scoreStaveAt`/`scorePencil`/`scoreErase`/
+  `scoreTap`), the cof drag (`cofAngle`/`cofRelease` — `render/cof.js`'s
+  entry is retired on this point) and the tap's info-line formatters
+  `beatLabel`/`noteLabel`. Re-homed on the way: `moveSelectionToTrack` →
+  `model/selection.js`, `setSecDepth`/`cycleSecDepth` → `ui/chrome.js`,
+  `gridFollowNote` → `ui/note-editor.js`. The `addEventListener` statements
+  themselves (canvas, cofCanvas, instCanvas, #instbar, ●, ⏮) stay in app.js
+  for step 12. Commit-by-commit: docs/split-phase2-plan.md's step 10
+  write-up.
+
 ## AI library (vendor/ai) — docs/ai-library-plan.md §1, step 1 (2026-10-04)
 
 The AI support that used to live entirely in `src/ask/` is moving into its

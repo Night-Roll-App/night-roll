@@ -118,7 +118,7 @@ illegal-layer imports.
 | 7 | M | **Done (worktree agent, 2026-10-04; 9 commits + a step 0 addendum; see write-up — the Instruments sheet web landed in ui/sheets.js, reorderTrack in ui/mixer.js).** voice menu/pickers/buildClipControls → ui/voice-menu; renderTrackbar/trackToggle/saveTrackDir/saveVoices/renameTrack → ui/trackbar; mixer cluster → ui/mixer; wm actions → ui/wm; renderNoteList → ui/notes; updateChipBtn/updateSubtitle/updateLCD → ui/chrome; drummer/bassist sheets → ui/sheets | ~1,700 (actual: 1,971, 11331→9360) |
 | 8 | M | **Done (worktree agent, 2026-10-04; 12 M commits + 1 harness commit; see write-up — jobStart landed in ui/sheets.js beside jobApi, askSave/askCommitLog pulled forward into ask/bridge.js).** commitImports, impCapture, openChipImport, captureChipTrack, fsub*, batchCommit, importAudioFiles, openPickedFiles, m3u → import/*; publishSong, renderSyncPending, openSyncSheet, fingerprintOldDrafts, discardPending, sweepStrandedClones, renameRepoTitles, manifest* → sync/publish (sheets → ui/sheets) | ~1,350 (actual: 1,903, 9360→7457) |
 | 9 | M | **Done (worktree agent, 2026-10-04; 9 commits; see write-up — two new files, ask/client.js (the run/send/resume client) and ask/host.js (openAsk/askBtnTap, the host adapter); deploy* landed in ask/bridge.js).** askRun, askSend, askContext, askRunTool, askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes… → ask/* | ~720 (actual: 748, 7638→6890) |
-| 10 | M | tap, endPointer, finalizeLasso, toggleSel, score pencil/tap/erase, instTap, recFinish, initCoreMidi/initWebMidi → input/*; cof drag → input/gestures | ~650 |
+| 10 | M | **Done (worktree agent, 2026-10-04; 10 commits + a step 0 addendum; see write-up — one new file, input/keyboard.js (the keyboard gesture machine); six unnamed leaves re-homed to model/selection, ui/chrome, ui/note-editor, input/gestures).** tap, endPointer, finalizeLasso, toggleSel, score pencil/tap/erase, instTap, recFinish, initCoreMidi/initWebMidi → input/*; cof drag → input/gestures | ~650 (actual: 1,025, 6890→5865) |
 | 11 | M | remainder bucketed by blockers.mjs (settings/folder UI, chord/progression insert, compare, versions sheet…) | ~1,500 |
 | 12a–f | L | top-level blocks → init functions, each with its cluster: canvas pointer listeners → input/gestures; editor/chord-widget/notes wiring → ui/note-editor + ui/notes; sheet/wm/modal wiring → ui/sheets + ui/wm; ask wiring → ask/sheet; ?perf HUD → ui/perf.js; migration IIFEs → model/*; boot IIFE → session/boot.js boot() | ~3,400 |
 | 13 | final | app.js = imports + footer + init stubs → delete; stub list becomes main.js; drop LEGACY_CONTAINER + harness legacy path; doc sweep (§4 step 15) | ~1,000 |
@@ -953,6 +953,82 @@ ask/host.js, nothing else. `src/app.js`: 7638 → 6890 (748 out, ~the row's
 handlers — step 12's "ask wiring → ask/sheet"). **Browser check owed**
 (plan §3 step 9): an Ask tool run (write_notes) + a resume, plus the ✦ open
 and a Terminal-tab send, since openAsk/askRun moved file.
+
+**Step 10 — Done** (2026-10-04, worktree agent, same pass as step 9).
+Ten M commits + one step 0 addendum; one new file. `blockers.mjs` on the
+row's four sets first: the record/MIDI-in chain was clean on its own; the
+keyboard's gesture machine (main's 2026-10-04 rewrite, merged that morning)
+was held only by `recNoteOn`/`recNoteOff`; the Score pencil by
+`noteLabel`/`beatLabel`; the canvas cluster by those plus `gridFollowNote`,
+`setSecDepth`/`cycleSecDepth` and `moveSelectionToTrack` — six leaves the row
+never named, each a one-way dependency, each re-homed where it belongs
+rather than dragged into input/. Order chosen so every commit is
+blockers-clean on its own:
+
+1. **M** `recNoteOn`/`recNoteOff`/`recFinishImpl`/`midiMessage`/
+   `initWebMidi`/`initCoreMidi` → **input/record.js**. `wire.js` imports
+   `recFinishImpl` from there now — **no port body is left in app.js**
+   (step 9 took `askRenderImpl`); wire.js's `from "./app.js"` import is gone.
+2. **M, new `input/keyboard.js`** (the row's "instTap / the new instPointer*
+   keyboard gesture machine"): `instTap`, `instPlay` + Sustain's
+   `instReleaseVoice`/`instReleaseHeld`/`instReleaseAll`, `setInstInfo`,
+   `guitarHit`, `instPointerDown`/`instPointerMove`/`instPointerUp`,
+   `instPtrXY`/`instPtrMeanX`/`instPtrPlayed`/`instPtrTicket`, `instLetGo`,
+   `instScrollPersist`, `INST_PAN_SLOP`, `instSetMode`/`instSetLock`/
+   `instSetSustain` (20 names). The geometry/scroll side stays in
+   render/instrument.js (the merge put it there: `instGeom`/`instSetScroll`/
+   `instOctave`/`instRevealPitch`/`pianoHit`); keyboard.js imports it down.
+3–6. **M, re-homes**: `moveSelectionToTrack` (the ⇄ retrack — a selection
+   mutator; its declaration carried an 18-space indent from an earlier
+   same-line split, left in app.js as whitespace, the 4c precedent) →
+   **model/selection.js**; `beatLabel`/`noteLabel` (the tap's info line) →
+   **input/gestures.js**; `setSecDepth`/`cycleSecDepth` (the section-depth
+   stepper; its `typeof renderViewMenu` guard resolves in chrome.js, where
+   `renderViewMenu` lives) → **ui/chrome.js**; `gridFollowNote` (the pencil's
+   triplet-follow, calls `syncDurSeg`) → **ui/note-editor.js**.
+7. **M** `scorePencilTick`/`scoreStaveAt`/`scorePencil`/`scoreErase`/
+   `scoreTap` → **input/gestures.js**.
+8. **M** the canvas cluster → **input/gestures.js**: `tap`, `endPointer`,
+   `finalizeLasso`, `toggleSel`, `scoreLassoTap`, `scrubTo`,
+   `seekOrMoveCursor`, `hitNote`, `fallHitNote`, `hitTracksNote`,
+   `hitTracksClip`, `placePencilNote` (12 names, 532 lines).
+9. **M** `cofAngle`/`cofRelease` (the row's "cof drag → input/gestures") →
+   **input/gestures.js**.
+
+**Step 0 addendum (second)**, its own commit before commit 1: `verbatim.mjs`
+treats a multi-line import's closing `} from "…";` line as an import line.
+Re-pointing wire.js's `recFinishImpl` import changes exactly that line, and
+the checker's "import lines are free" rule only knew the one-line shape
+(step 7's false start had worked around it by keeping the `}` line
+byte-identical, which is impossible when the specifier itself changes).
+Fixture test in tests/modules.test.mjs (89 → 90). The first attempt at
+commit 1 was flagged (`lost: } from "./app.js";`), soft-reset, the tooling
+committed alone, the move re-committed — ✔.
+
+Per commit: `verbatim.mjs <sha>` ✔ ×10 (no `--hook` — `recFinishImpl` keeps
+its name; a plain move with its wire.js import line re-pointed);
+regen-e2e-footer after every move; check.mjs clean except `oldBpb` (72 → 73
+files); e2e-globals/controls clean; prof label set 30, unchanged (no
+input name is profiled). Rule 10 at layer 4 fired on five of the ten (input/
+and ui/ are layer 4) — 11 copied `../hooks.js` port imports rewritten to
+`XImpl as X`. Rule 8's manifests for the new file: modulepreload, sw.js
+APP_MODULES (SW_VERSION nr-v27 → nr-v28), devtools.js (`inputKeyboard`),
+modules.test fileCount 70 → 71 (72 → 73 with vendor). Group: `perl -e
+'alarm 1200; exec @ARGV' npm test` — 891 pass, 17 fail, the 17 exactly `ps2-real` (4) + `instruments` (13), the pre-existing local-rip gap (+1 pass = the new verbatim fixture); night-roll 428/429, modules 90/90, gestures/ai/bridge green; `test:e2e:smoke` 8/8;
+`node tools/package.mjs --out`: 188 files = step 9's 187 + input/keyboard.js,
+nothing else (checked by name). `src/app.js`: 6890 → 5865 (1,025 out, well
+over the row's ~650 — the merge's keyboard machine and the six leaves).
+What stays in app.js from this area is all top-level wiring for step 12:
+the canvas `pointerdown`/`pointermove`/`pointerup`/`pointercancel`/`wheel`
+listeners (the pinch/hold/lasso state machine's entry points — `endPointer`
+is now an import), the cofCanvas and instCanvas listeners, the #instbar
+button listeners, the ● record button's click handler, the ⏮ handler. Not
+moved and not in the row: `recordRealtimeAudio` (the mic take — reaches the
+clips/transport web one way; step 11 by blockers). Learning-mode gates
+untouched. **Browser/device check owed** (plan §3 has no step-10 list; this
+is the one): a roll tap/drag/lasso/pinch, a Score pencil + erase, the
+playhead tag drag, a keyboard glissando + two-finger scroll + Sustain, one
+● record take from the keyboard (recFinish moved file), and the cof drag.
 
 **Merge of main (2026-10-04)** — `git merge origin/main` into the branch
 after step 8 (15 main-only commits: the ⏮ back-to-selection change, the
