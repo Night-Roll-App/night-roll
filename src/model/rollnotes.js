@@ -470,3 +470,49 @@ export function resolveNoteWith(n, ppq, ts) {
   n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || ts[0]) * qt : null;
   return n;
 }
+
+// Pure: base tempo events (un-baked — the file's own, before any tempo:
+// annotation) + resolved notes (only n.tempodir/n.start are read) + ppq ->
+// a new tempo map with sec offsets filled in. Lifted out of finalizeNotes
+// (docs/provenance-plan.md P2) so playback (finalizeNotes, below) and
+// publish (publishSong) bake the SAME way from the SAME base every time —
+// recomputed from scratch on every call, never accumulated, so removing a
+// tempo: annotation removes its baked event instead of leaving it behind
+// (the "ratchet" bug).
+export function bakeTempos(base, notes, ppq) {
+  const dirs = notes.filter(n => n.tempodir !== undefined).sort((a, b) => a.start - b.start);
+  if (!dirs.length) return base.map(t => ({...t}));
+  const evs = base.filter(t => t.tick < dirs[0].start).map(t => ({tick: t.tick, usq: t.usq}));
+  if (!evs.length) evs.push({tick: 0, usq: Math.round(6e7 / dirs[0].tempodir)});
+  for (const d of dirs) evs.push({tick: Math.max(0, Math.round(d.start)), usq: Math.round(6e7 / d.tempodir)});
+  const byTick = new Map();
+  for (const e of evs) byTick.set(e.tick, e); // same tick: the directive wins
+  const sorted = [...byTick.values()].sort((a, b) => a.tick - b.tick);
+  let sec = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0) sec += (sorted[i].tick - sorted[i - 1].tick) / ppq * sorted[i - 1].usq / 1e6;
+    sorted[i].sec = sec;
+  }
+  return sorted;
+}
+// Pure, same shape as bakeTempos (docs/provenance-plan.md Q9 — a declared
+// meter bakes wherever tempo bakes): base timesig events (the file's own,
+// un-declared) + resolved notes (only n.tsdir/n.start are read) -> a new
+// [{tick, num, den}] list, baked fresh from the same base every publish,
+// never accumulated. Today there's only ever ONE timesig: annotation (the
+// editor keeps "one meter per song" — declaring a new one replaces it,
+// re-barring), so in practice this returns either the base unchanged (no
+// declaration: "written back verbatim", Q6) or one event at the
+// declaration's own tick — written as a list, not a single pair, so a
+// future multi-meter song and an import's own pre-declaration history
+// (base) both round-trip correctly.
+export function bakeMeter(base, notes) {
+  const dirs = notes.filter(n => n.tsdir).sort((a, b) => a.start - b.start);
+  if (!dirs.length) return base.map(t => ({...t}));
+  const evs = base.filter(t => t.tick < dirs[0].start).map(t => ({tick: t.tick, num: t.num, den: t.den}));
+  if (!evs.length) evs.push({tick: 0, num: dirs[0].tsdir[0], den: dirs[0].tsdir[1]});
+  for (const d of dirs) evs.push({tick: Math.max(0, Math.round(d.start)), num: d.tsdir[0], den: d.tsdir[1]});
+  const byTick = new Map();
+  for (const e of evs) byTick.set(e.tick, e); // same tick: the directive wins
+  return [...byTick.values()].sort((a, b) => a.tick - b.tick);
+}
