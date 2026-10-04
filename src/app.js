@@ -221,6 +221,101 @@ import { albumNextIdx } from "./audio/transport.js";
 import { albumPrevIdx } from "./audio/transport.js";
 import { ALBUM_MAX_FAILS } from "./audio/transport.js";
 import { ALBUM_CAP_SEC } from "./audio/transport.js";
+import { playSec } from "./audio/transport.js";
+import { albumMetaFor } from "./audio/chip.js";
+import { chipActive } from "./audio/chip.js";
+import { chipHas } from "./audio/chip.js";
+import { chip } from "./audio/chip.js";
+import { chipPreviewBuffer } from "./audio/chip.js";
+import { chipTrackNo } from "./audio/chip.js";
+import { vaultFetch } from "./audio/chip.js";
+import { chipAlbumHasSource } from "./audio/chip.js";
+import { chipStopSrcs } from "./audio/chip.js";
+import { chipPreviewCache } from "./audio/chip.js";
+import { chipRenderBudget } from "./audio/chip.js";
+import { chipWorkerAvailable } from "./audio/chip.js";
+import { planChipRender } from "./audio/chip.js";
+import { chipRenderStreamed } from "./audio/chip.js";
+import { chipIsPcm } from "./audio/chip.js";
+import { chipSilent } from "./audio/chip.js";
+import { chipStaticPan } from "./audio/chip.js";
+import { chipDownmixStatic } from "./audio/chip.js";
+import { chipPreviewProgAt } from "./audio/chip.js";
+import { chipPcmToBuffers } from "./audio/chip.js";
+import { chipPreviewPending } from "./audio/chip.js";
+import { chipBuffers } from "./audio/chip.js";
+import { chipStart } from "./audio/chip.js";
+import { ghHeaders } from "./audio/chip.js";
+import { albumMetaCache } from "./audio/chip.js";
+import { CHIP_BUDGET_APP } from "./audio/chip.js";
+import { CHIP_BUDGET_WEB } from "./audio/chip.js";
+import { CHIP_RATE_STEPS } from "./audio/chip.js";
+import { CHIP_STREAMED_RENDER_CHUNK_SEC } from "./audio/chip.js";
+import { chipNoteSlice } from "./audio/chip-stream.js";
+import { chipStreamOnChunk } from "./audio/chip-stream.js";
+import { chipStreamOnSilent } from "./audio/chip-stream.js";
+import { CHIP_STREAM_CHUNK_SEC } from "./audio/chip-stream.js";
+import { CHIP_STREAM_OVERLAP } from "./audio/chip-stream.js";
+import { chipAutoShouldStream } from "./audio/chip-stream.js";
+import { chipAutoReason } from "./audio/chip-stream.js";
+import { chipStreamIdxForTapeSec } from "./audio/chip-stream.js";
+import { chipStreamRequestRange } from "./audio/chip-stream.js";
+import { chipStreamWaitFor } from "./audio/chip-stream.js";
+import { chipStreamMode } from "./audio/chip-stream.js";
+import { chipStreamStart } from "./audio/chip-stream.js";
+import { chipStreamPump } from "./audio/chip-stream.js";
+import { CHIP_STREAM_HORIZON_VISIBLE } from "./audio/chip-stream.js";
+import { CHIP_STREAM_HORIZON_HIDDEN } from "./audio/chip-stream.js";
+import { CHIP_STREAM_PIN_LOOKAHEAD } from "./audio/chip-stream.js";
+import { CHIP_SEG_HORIZON_SEC } from "./audio/chip-stream.js";
+import { CHIP_SEG_MAX_SEGMENTS } from "./audio/chip-stream.js";
+import { chipSegments } from "./audio/chip-stream.js";
+import { chipStreamPinLoopStart } from "./audio/chip-stream.js";
+import { chipStreamEvict } from "./audio/chip-stream.js";
+import { chipStreamScheduled } from "./audio/chip-stream.js";
+import { chipStreamScheduleChunk } from "./audio/chip-stream.js";
+import { clipEndTick } from "./audio/clips.js";
+import { songHasAudio } from "./audio/clips.js";
+import { stretchCache } from "./audio/clips.js";
+import { clipLen } from "./audio/clips.js";
+import { forEachClip } from "./audio/clips.js";
+import { stretchPending } from "./audio/clips.js";
+import { clipOnsetSec } from "./audio/clips.js";
+import { clipTempo } from "./audio/clips.js";
+import { clipBeatMap } from "./audio/clips.js";
+import { keepPitch } from "./audio/clips.js";
+import { audioBufCache } from "./audio/clips.js";
+import { audioCacheKey } from "./audio/clips.js";
+import { audioBytesFor } from "./audio/clips.js";
+import { decodeAudioBytes } from "./audio/clips.js";
+import { stretchKey } from "./audio/clips.js";
+import { stretchInWorker } from "./audio/clips.js";
+import { clipClamp } from "./audio/clips.js";
+import { audioReady } from "./audio/clips.js";
+import { audioDirFor } from "./audio/clips.js";
+import { PEAK_BUCKET } from "./audio/clips.js";
+import { peaksOf } from "./audio/clips.js";
+import { tempoFromPeaks } from "./audio/clips.js";
+import { onsetCurve } from "./audio/clips.js";
+import { beatTrack } from "./audio/clips.js";
+import { wsolaStretch } from "./audio/clips.js";
+import { stretchJobs } from "./audio/clips.js";
+import { met } from "./audio/metronome.js";
+import { ensureMetGain } from "./audio/metronome.js";
+import { metClick } from "./audio/metronome.js";
+import { metPump } from "./audio/metronome.js";
+import { metBuildCells } from "./audio/metronome.js";
+import { applyMetMode } from "./audio/metronome.js";
+import { metHalt } from "./audio/metronome.js";
+import { metSave } from "./audio/metronome.js";
+import { metDefaultAccents } from "./audio/metronome.js";
+import { metFollowNum } from "./audio/metronome.js";
+import { metFollowBeatTicks } from "./audio/metronome.js";
+import { metPumpFollow } from "./audio/metronome.js";
+import { midiBase64 } from "./audio/bounce.js";
+import { audioBufferToWav } from "./audio/bounce.js";
+import { deliverAudioFile } from "./audio/bounce.js";
+import { wavEncode } from "./audio/bounce.js";
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
     const b = document.createElement("base"); b.href = S.APP_BASE;
@@ -1194,11 +1289,6 @@ function activeNoteAt(tick) {
 function sectionPathAt(tick) {
   return S.rollnotes.filter(n => (n.section || n.chord) && tick >= n.start && tick < n.end)
                   .sort((a, b) => a.depth - b.depth).map(s => s.text).join(" › ");
-}
-function playSec() { // current position on the song timeline, seconds
-  const s = Math.max(0, S.audio.currentTime - S.playT0) + S.playOffset; // playT0 starts slightly ahead; a count-in holds the playhead at its start, even mid-song
-  if (!S.loopSeg || S.loopSeg.end <= S.loopSeg.start) return s;
-  return s < S.loopSeg.end ? s : S.loopSeg.start + (s - S.loopSeg.end) % (S.loopSeg.end - S.loopSeg.start);
 }
 function curTick() {
   return S.playing ? secToTick(S.song, playSec()) : S.playCursor;
@@ -6477,77 +6567,7 @@ function buildSchedule() {
   });
   S.schedEvents.sort((a, b) => a.sec - b.sec);
 }
- // ---------------------------------------------------- authentic chip audio
-// The captured APU register log rendered through the 2A03's real DSP
-// (tools/nsf/apu-render.mjs) — one pulse wave changing pitch instead of an
-// oscillator per note, hardware envelopes, real noise. Available while the
-// import session that captured the current draft is still open.
-const chip = {key: null, pcm: null, pcmRate: 0, buffers: null, buffersCtx: null, lead: 0, srcs: [], pan: null, stream: null}; // no toggle: chip audio is automatic wherever a source resolves
-// stream: non-null only in stream mode (docs/streamed-render-plan.md step 3,
-// chipStreamOpen) — {key, gen, rate, chunkFrames, overlap, tracks, seconds,
-// frames, leadSec, silent:Set, cache:Map(idx->{buffers,bytes,pinned}),
-// pinnedIdx:Set, scheduled:Set, waiters:Map(idx->[fn]), bytes, peakBytes,
-// live, srcs:[]}. chip.pcm/chip.buffers stay null for a song playing from
-// chip.stream — chipActive()/chipHas() read all three.
-// pan: {name: -1..1}, set only for a track the memory budget (below) downmixed
-// from a genuinely stereo render to mono — chipStart reapplies it so the
-// audible result is unchanged; absent/null for every other track (normal pan
-// — trackPan/trackPanners, the mixer's own per-track control — still applies).
-function chipTrackNo() { // NSF track number from the LIVE import session
-  if (!S.songKey || !S.nsfSess) return null;
-  for (let n = 1; n < S.nsfSess.rows.length; n++)
-    if (S.nsfSess.rows[n] && S.nsfSess.rows[n].key === S.songKey) return n;
-  return null;
-}
-// NSF vault: a PRIVATE repo (Josh's design, 2026-08-17) holding the NSFs the
-// public repo must not — album.json links to it (vault file + track map, pure
-// metadata) and the app fetches with the same token Sync uses. Chain:
-// live import session → this device's IndexedDB cache → vault fetch (cached).
-// NSF repo config lives in cfg() (nsfBase for reads, nsfRepo for writes)
-const albumMetaCache = {}; // album dir -> album.json contents (or null)
-async function albumMetaFor(key) {
-  const m = key && key.match(/^(albums\/.+?)\/(?:songs\/)?[^/]+\.mid$/); // lazy: don't swallow /songs/
-  if (!m) return null;
-  const dir = m[1];
-  if (!(dir in albumMetaCache)) {
-    try {
-      const r = await readData("songs", dir + "/album.json", true);
-      // cache SUCCESS only: a 404 during CDN lag (album committed seconds ago)
-      // must not poison the tab — it made committed songs silently play synth
-      // while drafts played chip (Josh's side-by-side, 2026-08-17)
-      if (r.ok) albumMetaCache[dir] = await r.json();
-      else { if (r.status !== 404) albumMetaFor.lastFail = {dir, why: "HTTP " + r.status}; return null; } // 404 = no album.json (a composition): not a failure
-    } catch (err) { albumMetaFor.lastFail = {dir, why: err.message || "offline"}; return null; }
-  }
-  return albumMetaCache[dir];
-}
-async function vaultFetch(file) {
-  // raw-first: a PUBLIC archive serves tokenless with open CORS — chip audio
-  // needs zero setup. Private forks fall back to the API + token.
-  try {
-    const raw = await fetch(nsfURL(file) + "?t=" + Date.now(), {cache: "no-cache"});
-    if (raw.ok) return new Uint8Array(await raw.arrayBuffer());
-  } catch (err) { /* offline or blocked: try the API */ }
-  const token = localStorage.getItem("ff1roll-ghtoken");
-  if (!token) throw new Error("NSF not publicly reachable and no GitHub token on this device — add one in File → Settings");
-  const r = await fetch(repoApi("nsf") + file + "?ref=main", {headers: ghHeaders(token)});
-  if (!r.ok) throw apiError("nsf", r, file);
-  let j = await r.json();
-  // the contents API inlines files up to 1 MB only; above that it answers
-  // with an empty content and the blob's sha — Mario 64's library is 1.2 MB,
-  // so every other device fetched nothing and fell to synth. The blobs API
-  // serves the same bytes, base64, to 100 MB.
-  if (!j.content && j.sha) {
-    const b = await fetch("https://api.github.com/repos/" + repoName("nsf") + "/git/blobs/" + j.sha, {headers: ghHeaders(token)});
-    if (!b.ok) throw apiError("nsf", b, file);
-    j = await b.json();
-  }
-  const bin = atob(j.content.replace(/\n/g, ""));
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
-async function chipSource() { // {bytes, n, secs} for the current song, or null
+   async function chipSource() { // {bytes, n, secs} for the current song, or null
   if (chipTrackNo() !== null && (S.nsfSess.bytes || S.nsfSess.rows[chipTrackNo()].bytes)) {
     const n = chipTrackNo();
     const libs = {}; for (const [k, f] of Object.entries(S.nsfSess.libs || {})) libs[k] = f.bytes; // the set's shared library, by lower-cased name
@@ -6716,64 +6736,7 @@ async function updateChipBtnInner() { // name kept for call sites; now just the 
       .finally(() => { if (chip.rendering === forKey) chip.rendering = null; });
   }
 }
-// A render belongs to the song it started for. Two renders can be in flight
-// (open a slow Game Boy song, get bored, open an FF1 song): each used to
-// empty chip.buffers on the way in and stamp chip.key with whatever song was
-// CURRENT on the way out, so the later finisher could hand an FF1 song the
-// Game Boy's buffers (Josh, 2026-09-27: FFL songs silent, then FF1 silent
-// too). Now: build aside, and only publish if this song is still open. A
-// render whose every channel came out silent is refused with a ⚠ line
-// naming the song — synth carries it, and the log says why.
-// ---- console-render memory budget (2026-09-30; FFX "Challenge" reproduced:
-// PS2's own driver, 30 tracks, 163 s, stereo 48 kHz = 1.88 GB of Float32 —
-// the iPad's WKWebView killed the content process for it: black screen, fast
-// reload). Generic across every chip (no per-game table, per CLAUDE.md): the
-// plan only sees track count / seconds / sample rate / channels, picked
-// BEFORE the render runs so the peak allocation itself never happens.
-// Dropping entirely-silent tracks is the existing post-render step
-// (chipSilent, below) — this only shapes what IS rendered.
-const CHIP_BUDGET_APP = 600_000_000;  // the iPad app (WKWebView) — measured well below what crashed Challenge
-const CHIP_BUDGET_WEB = 2_000_000_000; // desktop/browser — GoldenEye (N64) on a phone crashed around here (chipPcmToBuffers' comment, 2026-09-28)
-const CHIP_RATE_STEPS = [48000, 32000, 24000, 22050]; // resampled by the renderer's own sampleRate option; 22050 is the floor — never lower
-function chipRenderBudget() { return (typeof EDITION !== "undefined" && EDITION === "app") ? CHIP_BUDGET_APP : CHIP_BUDGET_WEB; }
-// Pure: the cheapest combination (mono, then a lower sample rate) that fits
-// the budget, in the order CLAUDE.md's fix asked for — (a) drop silent
-// tracks is handled elsewhere (this can't know which tracks are silent
-// before they're rendered); (b) mono; (c) a lower rate, 48k→32k→24k→22050.
-// {tracks, seconds, sampleRate, channels, budget, canStream} → {rate, mono, channels, bytes, refuse}
-// canStream (2026-09-30, Aeon Battle crash — open-items.md "2026-09-30 21:40",
-// mirrors tools/chip-worker.mjs's own copy — keep the two in step): a kind
-// with a stream hook (CHIPS[kind].stream, today psf/psf2) renders mono
-// straight into the final kept buffer chunk by chunk (chipRenderStreamed,
-// below) — its peak is kept + one chunk. A kind with no stream hook still
-// renders the WHOLE stereo pair in one call, THEN downmixes while that
-// original is still referenced — its real peak for the mono step is the
-// stereo pair (2x) + the mono copy (1x) ≈ 3x kept (step 0 measured the
-// multiplier). The budget used to compare `budget` against kept alone for
-// EVERY kind, so a "mono fits" verdict for a non-streaming kind could still
-// crash for real; the mono step's admission check below uses the honest
-// (3x-aware) estimate when canStream is falsy. `bytes` itself stays the kept
-// estimate either way (what's reported/logged elsewhere).
-function planChipRender({tracks, seconds, sampleRate, channels, budget, canStream}) {
-  const bytesAt = (rate, ch) => Math.ceil(tracks * ch * rate * seconds * 4);
-  const monoFits = (rate, ch, keptBytes) => keptBytes + (canStream ? 0 : bytesAt(rate, ch)) <= budget; // + the stereo original a non-streaming render still holds
-  let rate = sampleRate, mono = false, ch = channels;
-  let bytes = bytesAt(rate, ch);
-  if (bytes <= budget) return {rate, mono, channels: ch, bytes};
-  if (ch > 1) { // (b) mono: half the bytes, no quality loss when the pan turns out static (chipStaticPan, at render time)
-    mono = true; ch = 1;
-    bytes = bytesAt(rate, ch);
-    if (monoFits(rate, channels, bytes)) return {rate, mono, channels: ch, bytes};
-  }
-  for (const step of CHIP_RATE_STEPS) { // (c) lower the rate, never below 22050 (the last step)
-    if (step >= rate) continue;
-    rate = step;
-    bytes = bytesAt(rate, ch);
-    if (mono ? monoFits(rate, channels, bytes) : bytes <= budget) return {rate, mono, channels: ch, bytes};
-  }
-  return {rate, mono, channels: ch, bytes, refuse: true}; // floor hit and still over budget: the caller refuses the render, synth carries the song
-}
-// A sequence chip (psf/psf2/usf: CHIPS[kind].channels === []) doesn't know its
+    // A sequence chip (psf/psf2/usf: CHIPS[kind].channels === []) doesn't know its
 // own track count until the sequence is parsed (res.result) — register chips
 // (nsf/gbs/spc) have a fixed channel list. `.ch` is the note's source channel
 // (channelGroups, tools/psx/notes.mjs and its N64/PS2 equivalents) — one
@@ -6795,123 +6758,6 @@ function chipEstimateTracks(kind, res, M) {
   const notes = res && res.result && res.result.notes;
   if (Array.isArray(notes) && notes.length) return Math.max(1, new Set(notes.map(n => n.ch)).size);
   return 8; // an unfamiliar per-song shape: a conservative guess — only shifts the rate a notch, never wrong-sizes the actual render
-}
-// Downmix a stereo render pair to mono IF its pan is static across the whole
-// track (varies < ~0.08 pan units between sampled windows) — null keeps it
-// stereo (the fix's own rule: "if pan varies per note, keep stereo for that
-// track only"). windows: rms energy per ~512-sample block, sampled every
-// stride blocks so a multi-minute track doesn't scan every sample.
-function chipStaticPan(l, r) {
-  const n = Math.min(l.length, r.length);
-  if (!n) return 0;
-  const win = 512, stride = Math.max(1, Math.floor(n / (win * 4000)));
-  const pans = [];
-  for (let start = 0; start + win <= n; start += win * stride) {
-    let el = 0, er = 0;
-    for (let i = start; i < start + win; i++) { el += l[i] * l[i]; er += r[i] * r[i]; }
-    if (el < 1e-9 && er < 1e-9) continue; // silence here says nothing about pan
-    pans.push(Math.max(-1, Math.min(1, Math.atan2(Math.sqrt(er), Math.sqrt(el)) * 4 / Math.PI - 1)));
-  }
-  if (pans.length < 2) return 0; // too little signal to tell: treat as centred
-  const lo = Math.min(...pans), hi = Math.max(...pans);
-  return hi - lo > 0.08 ? null : pans.reduce((a, b) => a + b, 0) / pans.length;
-}
-// The exact inverse of the equal-power law trackPanners (chipStart) applies
-// at playback, so a static-pan track sounds identical after the round trip:
-// mono = the louder channel divided back out by its own gain at this pan.
-function chipDownmixStatic(l, r, pan) {
-  const gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4);
-  const useL = gl >= gr, src = useL ? l : r, g = useL ? gl : gr, inv = g > 1e-6 ? 1 / g : 0;
-  const mono = new Float32Array(src.length);
-  for (let i = 0; i < src.length; i++) mono[i] = src[i] * inv;
-  return mono;
-}
-function chipSilent(chans) { // (Float32Array | {l, r})[] → true when nothing in any of them is above the noise floor
-  for (const c of chans) for (const a of (c && c.l ? [c.l, c.r] : [c])) { if (!a) continue; for (let i = 0; i < a.length; i += 13) if (Math.abs(a[i]) > 1e-4) return false; }
-  return true;
-}
-function chipIsPcm(x) { return x instanceof Float32Array || !!(x && x.l instanceof Float32Array && x.r instanceof Float32Array); }
-async function chipAlbumHasSource() { // an SNES import has no console file at all: no warning is due
-  try { const meta = await albumMetaFor(S.songKey); return !!(meta && meta.nsf); } catch (err) { return false; }
-}
-// 2026-09-30 (Aeon Battle crash, open-items.md "2026-09-30 21:40"): mirrors
-// tools/chip-worker.mjs's own renderStreamed — keep the two in step (the
-// worker can't import from this inline script). Used by chipRender() below
-// INSTEAD of a plain CHIPS[kind].render() call whenever the kind has a
-// `.stream` hook (today psf/psf2): renders into the FINAL kept buffers chunk
-// by chunk, so a mono downmix copy never coexists with the whole stereo
-// original for the whole song (peak ≈ kept + one chunk, not ~3x kept — see
-// planChipRender's own comment for the budget-honesty half of this fix).
-const CHIP_STREAMED_RENDER_CHUNK_SEC = 1;
-async function chipRenderStreamed(M, kindDef, res, {sampleRate, plan, onProgress}) {
-  const streamObj = kindDef.stream(M, res, {sampleRate});
-  const names = streamObj.tracks;
-  const total = streamObj.frames;
-  const chunkFrames = Math.max(1, Math.round(sampleRate * CHIP_STREAMED_RENDER_CHUNK_SEC));
-  const pan = {};
-  if (plan.mono) {
-    const acc = {}; for (const n of names) acc[n] = {pans: [], moved: false, sawAudio: false};
-    for (let done = 0; done < total; ) {
-      const n = Math.min(chunkFrames, total - done);
-      const r = streamObj.render(n);
-      for (const name of names) {
-        const t = r[name];
-        if (!t || !t.l || acc[name].moved) continue;
-        if (chipSilent([t])) continue;
-        const p = chipStaticPan(t.l, t.r);
-        if (p === null) { acc[name].moved = true; continue; }
-        acc[name].pans.push(p); acc[name].sawAudio = true;
-      }
-      done += n;
-    }
-    for (const name of names) {
-      const a = acc[name];
-      if (a.moved || !a.sawAudio) { pan[name] = null; continue; }
-      if (a.pans.length < 2) { pan[name] = a.pans[0] || 0; continue; }
-      const lo = Math.min(...a.pans), hi = Math.max(...a.pans);
-      pan[name] = hi - lo > 0.08 ? null : a.pans.reduce((x, y) => x + y, 0) / a.pans.length;
-    }
-    streamObj.seek(0);
-  }
-  const outMono = {}, outL = {}, outR = {};
-  let offset = 0, peakChunkBytes = 0;
-  for (let done = 0; done < total; ) {
-    const n = Math.min(chunkFrames, total - done);
-    const r = streamObj.render(n);
-    let chunkBytes = 0;
-    for (const name of names) {
-      const t = r[name]; if (!t) continue;
-      if (t.l) {
-        chunkBytes += t.l.byteLength + t.r.byteLength;
-        if (plan.mono && pan[name] !== null && pan[name] !== undefined) {
-          if (!outMono[name]) outMono[name] = new Float32Array(total);
-          const m = chipDownmixStatic(t.l, t.r, pan[name]);
-          outMono[name].set(m, offset);
-          chunkBytes += m.byteLength;
-        } else {
-          if (!outL[name]) { outL[name] = new Float32Array(total); outR[name] = new Float32Array(total); }
-          outL[name].set(t.l, offset); outR[name].set(t.r, offset);
-        }
-      } else {
-        if (!outMono[name]) outMono[name] = new Float32Array(total);
-        outMono[name].set(t, offset);
-        chunkBytes += t.byteLength;
-      }
-    }
-    peakChunkBytes = Math.max(peakChunkBytes, chunkBytes);
-    offset += n; done += n;
-    if (onProgress) onProgress(offset / total);
-  }
-  const pcm = {}, panOut = {}; let keptBytes = 0;
-  for (const name of names) {
-    const v = outMono[name] ? outMono[name] : (outL[name] ? {l: outL[name], r: outR[name]} : null);
-    if (!v) continue;
-    if (chipSilent([v])) continue;
-    pcm[name] = v;
-    keptBytes += v.l ? (v.l.byteLength + v.r.byteLength) : v.byteLength;
-    if (outMono[name] && pan[name] !== null && pan[name] !== undefined) panOut[name] = pan[name];
-  }
-  return {pcm, pan: panOut, peakBytes: keptBytes + peakChunkBytes, keptBytes, sampleRate: streamObj.sampleRate, groups: names.length};
 }
 async function chipRender() {
   const forKey = S.songKey;
@@ -7065,48 +6911,7 @@ function chipPublish(forKey, kind, pcm, sampleRate, leadSec, pan, debug) { // th
   console.log("[chip] ready: " + forKey + " — playing the console's own sound");
   return true;
 }
-function chipWorkerAvailable() { return typeof Worker !== "undefined" && typeof S.APP_BASE !== "undefined" && !!S.APP_BASE && !chipWorkerAvailable.broken; }
- // one at a time; a new song terminates the old render; after a render it stays for previews (w.__key = its song)
-const chipPreviewPending = new Map(); // req → resolve, for one-note previews answered by the live worker
-const chipPreviewCache = new Map();   // "song|track|midi[|p<prog>]" → AudioBuffer, so a repeated tap is instant
-const chipPreviewProgAt = new Map();  // the game's own instrument for ONE note, or null (synth then). offset:
-// tools/sounding.mjs — the roll's pitch minus this is the key the renderer
-// needs. tick/ppq: the tapped note's own roll tick + song.ppq — several
-// chip tracks change program mid-track ("ch 1 prog 51,46"), so a tap late
-// in such a track must hear that later program, not always the track's
-// first (Josh's ear: FF7 "You Can Hear the Cry of the Planet", 2026-09-30).
-// Passed straight through to the worker (chip-worker.mjs previewOne), which
-// resolves them to the right template note via M.seqTickOf/findTemplateNote
-// (tools/note-preview.mjs) — this function stays kind-agnostic. Undefined
-// tick (a piano-strip key press, live MIDI input — no note at all) keeps
-// today's behavior exactly: the track's first program, keyed without a tick.
-async function chipPreviewBuffer(name, midi, offset = 0, tick, ppq) {
-  if (!S.chipWorker || S.chipWorker.__key !== S.songKey || !S.audio) return null;
-  const known = tick != null && chipPreviewProgAt.get(S.songKey + "|" + name + "|" + tick);
-  const key = S.songKey + "|" + name + "|" + midi + (known ? "|p" + known : "");
-  const hit = chipPreviewCache.get(key);
-  if (hit && hit.ctx === S.audio) return hit.buf;
-  const req = ++S.chipPreviewReq;
-  const reply = await new Promise(res => {
-    const t = setTimeout(() => { chipPreviewPending.delete(req); res(null); }, 400); // a slow answer loses to the synth: a tap must sound now
-    chipPreviewPending.set(req, m => { clearTimeout(t); res(m); });
-    try { S.chipWorker.postMessage({preview: {req, id: S.songKey, track: name, midi, vel: 100, offset, tick, ppq}}); } catch (err) { clearTimeout(t); chipPreviewPending.delete(req); res(null); }
-  });
-  if (!reply || !reply.pcm) return null;
-  const x = reply.pcm, st = x.l ? x : null;
-  const buf = S.audio.createBuffer(st ? 2 : 1, (st ? st.l : x).length, reply.sampleRate || S.audio.sampleRate);
-  if (st) { buf.copyToChannel(st.l, 0); buf.copyToChannel(st.r, 1); } else buf.copyToChannel(x, 0);
-  // key by the template's own program/instrument, not the raw tick: every
-  // note under the same program shares one buffer, and a cached prog-51
-  // buffer can never answer a prog-46 tap (the bug: findTemplateNote always
-  // took the group's FIRST note, so every tick shared one wrong-program key)
-  if (tick != null && reply.prog != null) chipPreviewProgAt.set(S.songKey + "|" + name + "|" + tick, reply.prog);
-  const finalKey = S.songKey + "|" + name + "|" + midi + (reply.prog != null ? "|p" + reply.prog : "");
-  if (chipPreviewCache.size > 300) { chipPreviewCache.clear(); chipPreviewProgAt.clear(); }
-  chipPreviewCache.set(finalKey, {ctx: S.audio, buf});
-  return buf;
-}
-function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
+       function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
   return new Promise(resolve => {
     if (S.chipWorker) { try { S.chipWorker.terminate(); } catch (err) { /* gone */ } S.chipWorker = null; }
     let w, workerUrl;
@@ -7137,215 +6942,9 @@ function chipRenderInWorker(kind, src, secs, rate, forKey, budget) {
     w.postMessage({id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, n: src.n, secs, rate, budget, title: songTitleOf(forKey)}, transfer);
   });
 }
-function chipActive() { return chip.key === S.songKey && !!(chip.pcm || chip.buffers || chip.stream); }
-function chipHas(name) { // this track name has console audio
-  if (chip.stream) return chip.stream.tracks.includes(name) && !chip.stream.silent.has(name); // stream mode (step 3): listed and not reported silent by the idle sweep
-  return !!((chip.pcm && chip.pcm[name]) || (chip.buffers && chip.buffers[name]));
-}
-function chipBuffers() { // AudioBuffers for the live context, made from the render's PCM — called from play()'s tap only
-  if (chip.buffers && chip.buffersCtx === S.audio) return chip.buffers;
-  if (!chip.pcm || !S.audio) return chip.buffers || {};
-  const out = {};
-  for (const [name, data] of Object.entries(chip.pcm)) { // mono Float32Array, or a stereo pair {l, r} from a renderer that pans
-    const st = data && data.l ? data : null;
-    const buf = S.audio.createBuffer(st ? 2 : 1, (st ? st.l : data).length, chip.pcmRate || S.audio.sampleRate); // at the render's rate: the graph resamples on playback
-    if (st) { buf.copyToChannel(st.l, 0); buf.copyToChannel(st.r, 1); } else buf.copyToChannel(data, 0);
-    out[name] = buf;
-  }
-  chip.buffers = out; chip.buffersCtx = S.audio;
-  return out;
-}
-// The render as AudioBuffers right away, each track's Float32 copy dropped
-// as its buffer is made: holding both doubled the memory, and a 137 s N64
-// song (GoldenEye "Archives": 14 stereo tracks, ~470 MB) crashed Safari on a
-// phone (Josh, 2026-09-28). The AudioBuffer constructor needs no context, so
-// this does not wait for the tap that makes one; without it (old engines),
-// chipBuffers builds from pcm in the tap as before.
-function chipPcmToBuffers() {
-  if (!chip.pcm || typeof AudioBuffer !== "function") return;
-  const out = {};
-  try {
-    for (const name of Object.keys(chip.pcm)) {
-      const data = chip.pcm[name], st = data && data.l ? data : null;
-      const buf = new AudioBuffer({numberOfChannels: st ? 2 : 1, length: (st ? st.l : data).length, sampleRate: chip.pcmRate});
-      if (st) { buf.copyToChannel(st.l, 0); buf.copyToChannel(st.r, 1); } else buf.copyToChannel(data, 0);
-      out[name] = buf;
-      delete chip.pcm[name]; // this track's Float32 copy is garbage now
-    }
-  } catch (err) { // put back what was already converted, so the tap can build every track
-    for (const [name, buf] of Object.entries(out)) chip.pcm[name] = buf.numberOfChannels === 2 ? {l: buf.getChannelData(0), r: buf.getChannelData(1)} : buf.getChannelData(0);
-    console.log("[chip] AudioBuffer constructor failed, building in the tap: " + err.message);
-    return;
-  }
-  chip.buffers = out; chip.buffersCtx = null; chip.pcm = null; // chipBuffers returns these for any context
-}
-function chipStopSrcs() {
-  for (const s of chip.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
-  chip.srcs = [];
-  // stream mode (docs/streamed-render-plan.md step 3): stop the per-chunk
-  // sources chipStreamPump scheduled, but keep chip.stream.cache — the same
-  // chunks are good for the next play() from anywhere already cached, and a
-  // fresh render would throw away work for nothing. One call site (stop()
-  // already calls chipStopSrcs) covers both paths.
-  if (chip.stream) {
-    for (const s of chip.stream.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
-    chip.stream.srcs = [];
-    chip.stream.live = false;
-  }
-}
-function chipStart(fromSec) {
-  chipStopSrcs();
-  for (const [name, buffer] of Object.entries(chipBuffers())) {
-    const ti = S.song.tracks.findIndex(tr => (tr.name || "") === name);
-    if (ti < 0) continue;
-    const vv = S.song.tracks[ti].voice;
-    if (vv && vv !== "auto") continue; // explicit instrument choice overrides the chip for this track
-    const src = S.audio.createBufferSource();
-    src.buffer = buffer;
-    src.playbackRate.value = S.playRate; // speed slider = tape-style on chip audio
-    if (S.loopSeg && S.loopSeg.end > S.loopSeg.start) {
-      src.loop = true;
-      src.loopStart = Math.min(chip.lead + S.loopSeg.start * S.playRate, buffer.duration);
-      src.loopEnd = Math.min(chip.lead + S.loopSeg.end * S.playRate, buffer.duration);
-    }
-    // a track the memory budget downmixed from stereo to mono (planChipRender,
-    // chip.pan) gets ITS OWN panner here, upstream of trackGain/trackPanners
-    // (the mixer's own per-track pan, untouched) — bakes the console's
-    // original static pan back in so the audible result is unchanged
-    let node = src;
-    if (chip.pan && chip.pan[name] !== undefined && S.audio.createStereoPanner) {
-      const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[name];
-      src.connect(p); node = p;
-    }
-    node.connect(trackGain(ti));
-    src.start(S.playT0, Math.min(chip.lead + fromSec * S.playRate, buffer.duration));
-    if (S.albumEndAbs !== null) src.stop(S.playT0 + S.albumEndAbs); // the hardware loop still wraps; album play just ends it
-    chip.srcs.push(src);
-  }
-}
-// -------------------------------------------- chip stream mode (step 3) ---
-// docs/streamed-render-plan.md step 3 — a SECOND way to get console audio
-// playing, added entirely behind a switch that defaults OFF. With the
-// switch off, nothing above this comment runs any differently than before
-// this step (chipRender/chipPublish/chipPcmToBuffers/chipStart/
-// planChipRender are untouched and chip.stream stays null forever). On, for
-// a song whose chip kind streams — today only psf/psf2
-// (tools/chip-worker.mjs RUNNERS' own R.stream hook) — console audio arrives
-// a couple of seconds at a time instead of being rendered (and held) whole
-// up front; see the plan doc for why (FFX "Challenge" on PS2, 1.88 GB of
-// Float32, killed the iPad's WKWebView). The page never hardcodes which
-// kinds qualify (CLAUDE.md: no per-game/per-kind table in a capture engine)
-// — it just tries, and the worker's own {stream:{error:"no stream for
-// <kind>"}} reply for every other kind is the fallback signal.
-//
-// Settings → Other's three-way control (next to Debug log) persists
-// ff1roll-chipstream: off|auto|on, overridden per-tab by ?chipstream=on|off
-// (A/B — PERF_FLAGS, the same hand-rolled location.search reader ?dpr/
-// ?scene already use, so this works in the vm test sandbox too, which has
-// no real `location`). "auto" (step 5, 2026-10-01): streams a song ONLY
-// where the whole-render path would itself downgrade (mono/a lower rate) or
-// refuse — see chipAutoShouldStream/chipStreamOpen's own comments, right
-// below. The DEFAULT stays "off" either way (Josh hasn't A/B-listened to
-// stream mode yet — his weekend list has it) — this only changes what
-// "auto" does once someone picks it.
-function chipStreamMode() {
-  const u = PERF_FLAGS.get("chipstream");
-  if (u === "on" || u === "off" || u === "auto") return u;
-  try { const v = localStorage.getItem("ff1roll-chipstream"); if (v === "on" || v === "off" || v === "auto") return v; } catch (err) { /* private mode: the default */ }
-  return "auto"; // default (Josh, 2026-10-01): auto touches only songs the whole path would downgrade or refuse, and falls back to it on any failure
-}
-// Step 5 (docs/streamed-render-plan.md): "auto" streams a song ONLY where
-// the whole-render path would itself have to downgrade (mono, or a lower
-// sample rate) or refuse — i.e. planChipRender's own verdict for THIS song,
-// with the honest canStream:true peak estimate (planChipRender's own
-// comment), says so. tools/chip-worker.mjs's handleStream computes that
-// hypothetical plan (chipEstimateTracksW + planChipRender, the exact numbers
-// the whole-render handler itself would use) whenever chipStreamOpen sends a
-// `budget`, and returns it as {ready:{…, plan}} — chipStreamOpen(true) reads
-// it right after a successful open and decides whether to KEEP the session
-// (stream) or throw it away and fall back to chipRender() (whole), so a
-// typical small/already-fitting song is untouched even with "auto" on,
-// exactly as it was with the switch "off". A kind with no stream hook at
-// all (today: everything but psf/psf2) never reaches this decision — the
-// worker's own `{stream:{error:"no stream for <kind>"}}` reply (the SAME
-// fallback "on" mode already relies on; the page still never hardcodes
-// which kinds qualify) sends it straight to the whole path, logged by the
-// existing error branch below.
-function chipAutoShouldStream(plan, nativeRate) { return !!plan && !!(plan.refuse || plan.mono || plan.rate !== nativeRate); }
-function chipAutoReason(plan, nativeRate) {
-  if (!plan) return "no budget plan from the worker";
-  if (plan.refuse) return "whole render would refuse (too big for this device's memory)";
-  if (plan.mono || plan.rate !== nativeRate) {
-    const bits = [];
-    if (plan.rate !== nativeRate) bits.push(Math.round(plan.rate / 1000) + " kHz");
-    if (plan.mono) bits.push("mono");
-    return "whole render would drop to " + bits.join(" ");
-  }
-  return "whole render fits as-is";
-}
 
-const CHIP_STREAM_CHUNK_SEC = 2;        // C in seconds of tape time (chunkFrames = this * the render's own sample rate — tools/chip-worker.mjs's own default chunk size)
-const CHIP_STREAM_OVERLAP = 256;        // O, in frames — tools/chip-worker.mjs's own default
-const CHIP_STREAM_HORIZON_VISIBLE = 7;  // seconds of context time chipStreamPump requests/schedules ahead
-const CHIP_STREAM_HORIZON_HIDDEN = 12;  // document.hidden: the OS throttles timers, so a hidden tab asks further ahead (same reasoning as the note scheduler's own 8s hidden lookahead)
-const CHIP_STREAM_PIN_LOOKAHEAD = 2;    // seconds of tape past loopSeg.start kept pinned so a wrap never waits
-
-// Pure tape-time mapping for stream-mode scheduling (chipStreamPump, below)
-// — the same "tape time = chip.lead + songSec × playRate" chipStart already
-// uses for one native-looping AudioBuffer's src.start()/loopStart/loopEnd,
-// generalized to a RUN of small per-chunk buffers. fromSec/loopSeg.start/
-// loopSeg.end are in the scheduler's own "sec" domain (play()'s playSec(),
-// tickToSec — already divided by playRate), NOT native/tape seconds; a
-// context-time span therefore equals the SAME span in this "sec" domain
-// (the /playRate baked into "sec" and the ×playRate baked into tape time
-// cancel — the identity chipStart's single looping source already relies on
-// via a constant playbackRate), while tape position itself is `lead +
-// sec × playRate`.
-// Returns [{when, tapeFrom, tapeTo}, …] — `when` is CONTEXT time, in the
-// domain the `playT0` argument is given in (the caller supplies whatever
-// anchor is current: a fresh audio.currentTime each pump tick, or a fixed
-// playT0 for a one-shot computation/test). Segment 0 runs from `fromSec`
-// (so a resume mid-loop plays its own remainder — the existing note
-// scheduler's own chase behavior) to loopSeg.end; every segment after
-// repeats the WHOLE loop body [loopSeg.start, loopSeg.end) — a hard splice
-// at the wrap, no crossfade between passes, same as src.loop today. A
-// through-composed song (loopSeg.looped falsy) gets exactly one segment.
-// albumEndAbs (seconds after `playT0`, or null) truncates the last segment
-// and drops anything past it — same rule play()'s own pump already applies
-// to note scheduling. Stops once CHIP_SEG_HORIZON_SEC of context time
-// beyond `playT0` is covered: generous margin over the pump's own largest
-// lookahead (12s hidden), so one call always returns enough for one pump
-// tick even for a pathologically short loop (the FF1 triangle ear test);
-// CHIP_SEG_MAX_SEGMENTS is a safety valve against a zero-length loop
-// looping this function forever.
-const CHIP_SEG_HORIZON_SEC = 20;
-const CHIP_SEG_MAX_SEGMENTS = 512;
-function chipSegments(fromSec, loopSeg, playRate, lead, albumEndAbs, playT0) {
-  const out = [];
-  if (!loopSeg || !(loopSeg.end > loopSeg.start) || !(playRate > 0)) return out;
-  let when = playT0, songFrom = fromSec;
-  while (out.length < CHIP_SEG_MAX_SEGMENTS) {
-    const songTo = loopSeg.end;
-    if (songTo <= songFrom) break; // at/past the loop end with no wrap to reach from here
-    let tapeFrom = lead + songFrom * playRate, tapeTo = lead + songTo * playRate;
-    let segDur = songTo - songFrom; // context-time span (see the identity above)
-    const absStart = when - playT0;
-    if (albumEndAbs !== null) {
-      if (absStart >= albumEndAbs - 1e-9) break; // the pass count is spent: nothing past the end
-      if (absStart + segDur > albumEndAbs) { segDur = albumEndAbs - absStart; tapeTo = tapeFrom + segDur * playRate; }
-    }
-    if (segDur <= 0) break;
-    out.push({when, tapeFrom, tapeTo});
-    when += segDur;
-    if (albumEndAbs !== null && when - playT0 >= albumEndAbs - 1e-9) break;
-    if (!loopSeg.looped) break; // through-composed: one pass, no wrap (play()'s own rule)
-    if (when - playT0 >= CHIP_SEG_HORIZON_SEC) break; // enough for one pump tick's lookahead
-    songFrom = loopSeg.start; // every repeat after the first plays the WHOLE loop body
-  }
-  return out;
-}
-
-function chipStreamIdxForTapeSec(tapeSec) { return Math.max(0, Math.floor(tapeSec / CHIP_STREAM_CHUNK_SEC)); } // rate cancels: chunkFrames/rate == CHIP_STREAM_CHUNK_SEC
+                        
+ // rate cancels: chunkFrames/rate == CHIP_STREAM_CHUNK_SEC
 
 // {id, kind, files, shared, own, v, bytes, libs, secs, rate} -> a Promise of
 // {tracks, seconds, sampleRate, frames, leadSec} (ready) or {error}. Mirrors
@@ -7387,212 +6986,6 @@ function chipStreamOpenWorker(kind, src, secs, rate, forKey, budget) {
     w.postMessage({stream: {id: forKey, kind, files: c.files, shared: c.shared || [], own: c.own || [], v: "?v=" + Date.now(), bytes, libs, secs, rate,
       chunkFrames: CHIP_STREAM_CHUNK_SEC * rate, overlap: CHIP_STREAM_OVERLAP, budget}}, transfer);
   });
-}
-// {chunk:{id, gen, idx, frames, tracks}} -> AudioBuffers in chip.stream.cache
-// (the same "build the AudioBuffer once, drop the Float32" move
-// chipPcmToBuffers makes for the whole-render path). A chunk for a superseded
-// song or an old gen (a seek bumped it) is silently dropped — the worker may
-// still have one in flight when either happens.
-function chipStreamOnChunk(c) {
-  const st = chip.stream;
-  if (!st || st.key !== c.id || st.gen !== c.gen) return;
-  const buffers = {}; let bytes = 0;
-  for (const [name, data] of Object.entries(c.tracks)) {
-    const stereo = data && data.l ? data : null;
-    const len = stereo ? stereo.l.length : (data ? data.length : 0);
-    if (!len) continue;
-    let buf = null;
-    try { buf = (typeof AudioBuffer === "function") ? new AudioBuffer({numberOfChannels: stereo ? 2 : 1, length: len, sampleRate: st.rate})
-      : (S.audio && S.audio.createBuffer(stereo ? 2 : 1, len, st.rate)); } catch (err) { buf = S.audio && S.audio.createBuffer(stereo ? 2 : 1, len, st.rate); }
-    if (!buf) continue;
-    if (stereo) { buf.copyToChannel(stereo.l, 0); buf.copyToChannel(stereo.r, 1); bytes += stereo.l.byteLength + stereo.r.byteLength; }
-    else { buf.copyToChannel(data, 0); bytes += data.byteLength; }
-    buffers[name] = buf;
-  }
-  st.cache.set(c.idx, {buffers, bytes, pinned: st.pinnedIdx.has(c.idx)});
-  st.bytes = 0; for (const e of st.cache.values()) st.bytes += e.bytes;
-  st.peakBytes = Math.max(st.peakBytes, st.bytes);
-  const waiters = st.waiters.get(c.idx);
-  if (waiters) { st.waiters.delete(c.idx); waiters.forEach(fn => fn()); }
-}
-// {silent:{id, names}} -> chip.stream.silent, a live Set — chipHas() (and so
-// scheduleNote's chip guard) reads it the instant it updates: a track the
-// idle sweep found never audible lets the synth voice back in, same as the
-// whole-render path dropping a silent track from chip.pcm entirely.
-function chipStreamOnSilent(s) {
-  const st = chip.stream;
-  if (!st || st.key !== s.id) return;
-  st.silent = new Set(s.names);
-}
-function chipStreamRequestRange(from, to) {
-  const st = chip.stream;
-  if (!st || !S.chipWorker) return;
-  const need = [];
-  for (let i = from; i <= to; i++) if (!st.cache.has(i)) need.push(i);
-  if (!need.length) return;
-  let i = 0;
-  while (i < need.length) { // contiguous runs in one {want} call
-    let j = i; while (j + 1 < need.length && need[j + 1] === need[j] + 1) j++;
-    S.chipWorker.postMessage({want: {id: st.key, gen: st.gen, from: need[i], to: need[j]}});
-    i = j + 1;
-  }
-}
-function chipStreamWaitFor(idx) {
-  const st = chip.stream;
-  if (!st) return Promise.resolve();
-  if (st.cache.has(idx)) return Promise.resolve();
-  return new Promise(resolve => { if (!st.waiters.has(idx)) st.waiters.set(idx, []); st.waiters.get(idx).push(resolve); });
-}
-// Pins the chunks covering [loopSeg.start, loopSeg.start + lookahead] (and
-// requests them if they aren't cached yet) so a loop wrap never has to wait
-// on the worker; un-pins everything when there's no loop to wrap to. Cheap
-// to call every pump tick — it only touches the pin set, not the network/
-// worker traffic, beyond the one request for chunks not yet on hand.
-function chipStreamPinLoopStart() {
-  const st = chip.stream;
-  if (!st) return;
-  const idxSet = new Set();
-  if (S.loopSeg && S.loopSeg.looped) {
-    const tapeStart = chip.lead + S.loopSeg.start * S.playRate;
-    const idxFrom = chipStreamIdxForTapeSec(tapeStart);
-    const idxTo = chipStreamIdxForTapeSec(tapeStart + CHIP_STREAM_PIN_LOOKAHEAD * S.playRate);
-    for (let idx = idxFrom; idx <= idxTo; idx++) idxSet.add(idx);
-    chipStreamRequestRange(idxFrom, idxTo);
-  }
-  st.pinnedIdx = idxSet;
-  for (const [idx, entry] of st.cache) entry.pinned = idxSet.has(idx);
-}
-// Frees cached chunks behind the playhead (never a pinned one) — the
-// memory-bounded half of streaming: a long play never holds more than a few
-// chunks' worth at once. One chunk of slack behind the current index: its
-// overlap tail may still be sounding (the fade-out half of the crossfade).
-function chipStreamEvict(curSec) {
-  const st = chip.stream;
-  if (!st) return;
-  const curIdx = chipStreamIdxForTapeSec(chip.lead + curSec * S.playRate);
-  for (const [idx, entry] of st.cache) if (!entry.pinned && idx < curIdx - 1) st.cache.delete(idx);
-  st.bytes = 0; for (const e of st.cache.values()) st.bytes += e.bytes;
-}
-function chipStreamScheduled(idx, when) { return chip.stream.scheduled.has(idx + "@" + Math.round(when * 1000)); }
-// Schedules one AudioBufferSourceNode per track for chunk `idx`'s buffer,
-// wired EXACTLY like chipStart's own sources (src -> [chip.pan panner, if
-// any] -> trackGain(ti)) so mute/solo/volume/pan and the Mixer meters all
-// keep working unchanged. `when`/`offset`/`dur` are already resolved by the
-// caller (chipStreamPump) to the exact slice of this chunk's buffer that
-// belongs to the current segment — see the comment there for the formula.
-function chipStreamScheduleChunk(idx, entry, when, offset, dur) {
-  const st = chip.stream;
-  for (const [name, buffer] of Object.entries(entry.buffers)) {
-    const ti = S.song.tracks.findIndex(tr => (tr.name || "") === name);
-    if (ti < 0) continue;
-    const vv = S.song.tracks[ti].voice;
-    if (vv && vv !== "auto") continue; // explicit instrument choice overrides the chip for this track, same as chipStart
-    const src = S.audio.createBufferSource();
-    src.buffer = buffer;
-    src.playbackRate.value = S.playRate;
-    let node = src;
-    if (chip.pan && chip.pan[name] !== undefined && S.audio.createStereoPanner) { const p = S.audio.createStereoPanner(); p.pan.value = chip.pan[name]; src.connect(p); node = p; }
-    node.connect(trackGain(ti));
-    const startAt = Math.max(when, S.audio.currentTime + 0.003);
-    if (dur > 0) src.start(startAt, offset, dur); else src.start(startAt, offset);
-    src.onended = () => { const i = st.srcs.indexOf(src); if (i >= 0) st.srcs.splice(i, 1); };
-    st.srcs.push(src);
-  }
-  st.scheduled.add(idx + "@" + Math.round(when * 1000));
-}
-// previewNote's register-chip path (nsf/gbs/spc — above, chipPreviewBuffer
-// has no per-note renderer for these). Finds the tapped note — tick+pitch
-// exact match, not erased, and not `added` (a pencil placement/MIDI-in note
-// has nothing rendered where it now sits; `added` is unset only on notes
-// the import itself captured — rollnotes.added's own convention) — and
-// returns the slice of its track's render that sounds it: {buf, offset,
-// dur}, all in BUFFER seconds (start()'s offset/duration are always
-// seconds, whatever the buffer's sample rate — no resampling here).
-// Native/"tape" position = chip.lead + tickToSec(song, tick) * playRate,
-// same identity chipStart's own single looping source relies on (tickToSec
-// already divides by playRate; this multiplies it back out). The slice runs
-// from the note's own start to its end + a short release tail — up to the
-// NEXT note on this track, or +250ms, whichever comes first.
-// Stream mode (chip.stream): only answers from a chunk chipStreamPump has
-// ALREADY cached — this never requests one from the worker. "else synth" is
-// simpler, and the chunks around the playhead are usually already there.
-function chipNoteSlice(tr, pitch, tick) {
-  if (tick == null) return null;
-  const n = tr.notes.find(nn => !nn.gone && nn.t === tick && nn.p === pitch && !nn.added);
-  if (!n) return null;
-  const startTape = chip.lead + tickToSec(S.song, n.t) * S.playRate;
-  const noteEndTape = chip.lead + tickToSec(S.song, n.t + n.d) * S.playRate;
-  let next = null;
-  for (const o of tr.notes) if (!o.gone && o !== n && o.t > n.t && (next === null || o.t < next.t)) next = o;
-  const endTape = Math.min(noteEndTape + 0.25, next ? chip.lead + tickToSec(S.song, next.t) * S.playRate : Infinity);
-  if (chip.stream) {
-    const idx = chipStreamIdxForTapeSec(startTape);
-    const entry = chip.stream.cache.get(idx);
-    const buf = entry && entry.buffers[tr.name];
-    if (!buf) return null; // not cached yet: the synth answers now, same as an unready whole render
-    const chunkTapeStart = idx * CHIP_STREAM_CHUNK_SEC;
-    const offset = Math.min(Math.max(0, startTape - chunkTapeStart), buf.duration);
-    const dur = Math.max(0.02, Math.min(endTape - chunkTapeStart, buf.duration) - offset);
-    return {buf, offset, dur};
-  }
-  const buf = chipBuffers()[tr.name];
-  if (!buf) return null; // the render isn't done yet, or this track was dropped silent
-  const offset = Math.min(startTape, buf.duration);
-  const dur = Math.max(0.02, Math.min(endTape, buf.duration) - offset);
-  return {buf, offset, dur};
-}
-// The ~60ms pump (play(), below) calls this FIRST, every tick, while
-// chip.stream is this song's live session: requests chunks up to a horizon
-// (visible/hidden — the OS throttles timers in a hidden tab, same reasoning
-// as the note scheduler's own lookahead), schedules any newly-arrived ones
-// that fall inside THIS tick's scheduling window, evicts played chunks, and
-// keeps the loop's own start pinned. Safe to call when not playing or
-// between songs — every real action below is gated on chip.stream actually
-// being this song's live session.
-function chipStreamPump(nowCtx) {
-  const st = chip.stream;
-  if (!S.playing || !st || st.key !== S.songKey) return;
-  const horizon = (typeof document !== "undefined" && document.hidden) ? CHIP_STREAM_HORIZON_HIDDEN : CHIP_STREAM_HORIZON_VISIBLE;
-  const until = nowCtx + horizon;
-  const curSec = playSec();
-  const albumEndRel = S.albumEndAbs === null ? null : S.albumEndAbs - (nowCtx - S.playT0);
-  const segs = chipSegments(curSec, S.loopSeg, S.playRate, chip.lead, albumEndRel, nowCtx);
-  let anyLive = false;
-  for (const seg of segs) {
-    if (seg.when >= until) break;
-    const idxFrom = chipStreamIdxForTapeSec(seg.tapeFrom);
-    const idxTo = chipStreamIdxForTapeSec(Math.max(seg.tapeFrom, seg.tapeTo - 1e-9));
-    chipStreamRequestRange(idxFrom, idxTo);
-    for (let idx = idxFrom; idx <= idxTo; idx++) {
-      const entry = st.cache.get(idx);
-      if (!entry) continue; // not back from the worker yet — the next tick retries
-      const chunkTapeStart = idx * CHIP_STREAM_CHUNK_SEC;
-      const when = seg.when + Math.max(0, chunkTapeStart - seg.tapeFrom) / S.playRate;
-      if (when >= until) continue; // this tick's window doesn't reach it yet
-      if (chipStreamScheduled(idx, when)) continue; // already scheduled on an earlier tick
-      const offset = Math.max(0, seg.tapeFrom - chunkTapeStart); // mid-chunk resume (a seek that doesn't land on a chunk boundary)
-      const dur = Math.max(0, seg.tapeTo - Math.max(seg.tapeFrom, chunkTapeStart)); // trims the LAST chunk of a segment at the loop wrap / album end: a hard splice, no bleed into the next segment
-      chipStreamScheduleChunk(idx, entry, when, offset, dur);
-      anyLive = true;
-    }
-  }
-  if (anyLive) st.live = true;
-  chipStreamEvict(curSec);
-  chipStreamPinLoopStart();
-}
-// Replaces chipStart(fromSec) in stream mode: no new render, no `{stream}`
-// message — the cache from chipStreamOpen keeps whatever it already has (a
-// replay from a different spot can reuse cached chunks; chipStreamPump's own
-// eviction keeps memory bounded going forward). Bumping gen cancels any
-// `{want}`/`{idle}` still in flight for the position this is leaving.
-function chipStreamStart(fromSec) {
-  const st = chip.stream;
-  if (!st) return;
-  for (const s of st.srcs) { try { s.stop(); } catch (err) { /* already done */ } }
-  st.srcs = []; st.scheduled = new Set(); st.live = false;
-  st.gen++;
-  if (S.chipWorker) S.chipWorker.postMessage({seek: {id: st.key, gen: st.gen, idx: chipStreamIdxForTapeSec(chip.lead + fromSec * S.playRate)}});
-  chipStreamPump(S.audio.currentTime);
 }
 // Entry point for chip.renderPromise (replaces a bare chipRender() call):
 // stream mode first when the switch is on, the existing whole-render path
@@ -7650,26 +7043,7 @@ async function chipRenderAuto() { // chip.renderPromise's entry point — see ch
   }
   return chipRender();
 }
-// ---------------------------------------------------- audio tracks (clips)
-// A recording as a track (Josh's son, 2026-09-15: "I wouldn't use it unless
-// it supported waves"). Design + advisor review: wave-tracks-design.md.
-// The track itself is an ordinary empty track in the .mid; the "audio:"
-// annotation names it and gives it ONE clip (file, bar.beat anchor, offset),
-// derived here at finalizeNotes exactly as voice/color are. The bytes live in
-// this device's IndexedDB until Save, then beside the .mid in
-// <song>.audio/<file> (folder or repo). Playback is one buffer source per
-// pass through the ordinary scheduler — chip audio's model, generalized.
-const audioBufCache = new Map();  // live buffer sources: stop() must kill them (MIDI nodes die on their own, a 3-min clip does not)
-const PEAK_BUCKET = 256; // samples per min/max pair (~3 min = 31k pairs)
-function audioDirFor(key) { return (key || "").replace(/\.midi?$/i, "") + ".audio"; }
-function audioCacheKey(file) { return S.songKey + "|" + file; }
-function songHasAudio() { return !!S.song && S.song.tracks.some(tr => tr.kind === "audio" && tr.clips.length); }
-function clipLen(c) { return c.len || Math.max(0, c.dur - c.offset); } // buffer seconds this piece plays
-function clipEndTick(c) { // rate-independent: both conversions carry playRate
-  return secToTick(S.song, tickToSec(S.song, c.at) + clipLen(c) / S.playRate);
-}
-function clipClamp(d, ...limits) { for (const l of limits) if (l < d) d = l; return d; }
-function applyAudioDirs() { // called from finalizeNotes: every audio: note is one piece on its named track
+    function applyAudioDirs() { // called from finalizeNotes: every audio: note is one piece on its named track
   const seen = new Set(); // exact twins (same anchor + text) collapse; the rest all stand
   S.rollnotes = S.rollnotes.filter(n => {
     if (!n.audiodir) return true;
@@ -7708,51 +7082,6 @@ function applyAudioDirs() { // called from finalizeNotes: every audio: note is o
   }
   S.song.tracks.forEach(tr => { if (tr.kind === "audio") tr.clips.sort((a, b) => a.at - b.at); });
   for (const f of files) audioEnsureFile(f);
-}
-function forEachClip(fn) { // fn(clip, ti, ci)
-  if (!S.song) return;
-  S.song.tracks.forEach((tr, ti) => { if (tr.kind === "audio") tr.clips.forEach((c, ci) => fn(c, ti, ci)); });
-}
-async function audioBytesFor(key, file) { // {bytes, where} or null
-  const rec = await idbAudioGet(key + "|" + file);
-  if (rec && rec.bytes) return {bytes: rec.bytes, where: "device"};
-  try {
-    const r = await readData("songs", audioDirFor(key) + "/" + file);
-    if (r.ok) return {bytes: await r.arrayBuffer(), where: r.fromFolder ? "folder" : "repo"};
-  } catch (err) { /* offline */ }
-  return null;
-}
-// decode WITHOUT the main AudioContext: an OfflineAudioContext needs no user
-// gesture (the main context can't be built at page load — see
-// sfPreloadForSong), and an AudioBuffer plays in any context. Downmixed to
-// mono inside the callback so the stereo copy never outlives it (~63MB for a
-// 3-minute WAV on the iPad).
-function decodeAudioBytes(bytes) {
-  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-  if (!OAC) return Promise.reject(new Error("no audio decoder"));
-  const oac = new OAC(1, 1, 48000);
-  return new Promise((res, rej) => oac.decodeAudioData(bytes.slice(0), b => {
-    const len = b.length, chs = b.numberOfChannels || 1;
-    const mono = oac.createBuffer(1, len, b.sampleRate);
-    const out = mono.getChannelData(0);
-    for (let c = 0; c < chs; c++) {
-      const src = b.getChannelData(c);
-      if (c === 0) out.set(src); else for (let i = 0; i < len; i++) out[i] += src[i];
-    }
-    if (chs > 1) for (let i = 0; i < len; i++) out[i] /= chs;
-    res({buffer: mono, peaks: peaksOf(out), dur: b.duration});
-  }, err => rej(err || new Error("decode failed"))));
-}
-function peaksOf(data) { // min/max per bucket, interleaved
-  const nb = Math.ceil(data.length / PEAK_BUCKET);
-  const out = new Float32Array(nb * 2);
-  for (let k = 0; k < nb; k++) {
-    let lo = 1, hi = -1;
-    const end = Math.min(data.length, (k + 1) * PEAK_BUCKET);
-    for (let i = k * PEAK_BUCKET; i < end; i++) { const v = data[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
-    out[k * 2] = lo; out[k * 2 + 1] = hi;
-  }
-  return out;
 }
 async function audioEnsureFile(file) { // resolve + decode one file; every piece using it gets the buffer
   if (!S.song) return;
@@ -7794,135 +7123,7 @@ async function audioEnsureFile(file) { // resolve + decode one file; every piece
   } catch (err) { entry.status = "undecodable"; }
   apply();
 }
-function clipOnsetSec(c) { // seconds into the file where sound starts (first peak bucket over the floor), or null
-  if (!c.peaks || !c.buffer) return null;
-  const nb = c.peaks.length / 2;
-  let k = 0;
-  while (k < nb && Math.max(-c.peaks[k * 2], c.peaks[k * 2 + 1]) < 0.02) k++;
-  return +Math.min(c.dur, k * PEAK_BUCKET / c.buffer.sampleRate).toFixed(3);
-}
- // freshly imported clips: trim the lead-in once they decode
-// Tempo from a take (Josh, 2026-09-16: Logic's "set the song's tempo from the
-// wave"). Level 1: ONE steady tempo. The lane's peaks (min/max per 256
-// samples, ~5 ms) become an onset curve (rises in the envelope); its
-// autocorrelation over 40–240 BPM picks the strongest period, weighted
-// toward the 60–180 range a detector otherwise confuses with its half or
-// double. Nothing is written until a candidate is tapped. Returns
-// {bpm, conf, alts} or {err}.
-function tempoFromPeaks(peaks, bucketSec, fromSec, toSec) {
-  const nb = peaks.length / 2;
-  const k0 = Math.max(0, Math.floor(fromSec / bucketSec)), k1 = Math.min(nb, Math.ceil(toSec / bucketSec));
-  const n = k1 - k0;
-  if (n * bucketSec < 4) return {err: "too short — a take needs about four seconds to read a tempo"};
-  const env = new Float32Array(n);
-  for (let k = 0; k < n; k++) env[k] = Math.max(-peaks[(k0 + k) * 2], peaks[(k0 + k) * 2 + 1]);
-  const on = new Float32Array(n); // onset strength: rises only, lightly smoothed
-  for (let k = 1; k < n; k++) on[k] = Math.max(0, env[k] - env[k - 1]);
-  for (let k = 1; k < n - 1; k++) on[k] = (on[k - 1] + on[k] + on[k + 1]) / 3;
-  let mean = 0; for (let k = 0; k < n; k++) mean += on[k]; mean /= n;
-  let e0 = 0; for (let k = 0; k < n; k++) { on[k] -= mean; e0 += on[k] * on[k]; }
-  if (e0 <= 1e-9) return {err: "no beats to read in this piece"};
-  const Lmin = Math.floor(60 / 240 / bucketSec), Lmax = Math.min(n >> 1, Math.ceil(60 / 40 / bucketSec));
-  const ac = new Float32Array(Lmax + 1);
-  for (let L = Lmin; L <= Lmax; L++) { let s = 0; for (let k = L; k < n; k++) s += on[k] * on[k - L]; ac[L] = s / e0; }
-  let best = -1, bestScore = -Infinity;
-  for (let L = Lmin; L <= Lmax; L++) {
-    const bpm = 60 / (L * bucketSec);
-    const w = Math.exp(-Math.pow(Math.log(bpm / 110) / 0.55, 2) / 2); // soft preference, not a wall
-    const score = ac[L] * (0.6 + 0.4 * w);
-    if (score > bestScore) { bestScore = score; best = L; }
-  }
-  if (best < 0) return {err: "no beats to read in this piece"};
-  let L = best; // parabolic refine across the neighbours
-  if (best > Lmin && best < Lmax) {
-    const a = ac[best - 1], b = ac[best], c = ac[best + 1], d = a - 2 * b + c;
-    if (d < 0) L = best + 0.5 * (a - c) / d;
-  }
-  const bpm = 60 / (L * bucketSec), conf = ac[best];
-  return {bpm: Math.round(bpm * 10) / 10, conf, level: conf >= 0.35 ? "strong" : conf >= 0.18 ? "fair" : "weak",
-          alts: [Math.round(bpm * 5) / 10, Math.round(bpm * 20) / 10]};
-}
-// Level 2 — beat mapping (Josh, 2026-09-17: "Logic just figures out where the
-// beats are"). The grid bends to the take: a dynamic-programming beat tracker
-// (Ellis 2007) walks the onset curve choosing beat times that balance "an
-// onset is here" against "this spacing matches the period"; downbeats come
-// from the meter and accent; then ONE tempo: per bar makes every bar line
-// land on a found downbeat. Nothing is written until Apply; the downbeat
-// shift is the correction Logic also asks for now and then.
-function onsetCurve(peaks, bucketSec, fromSec, toSec) { // unit-variance onset strength for a window of a file
-  const nb = peaks.length / 2;
-  const k0 = Math.max(0, Math.floor(fromSec / bucketSec)), k1 = Math.min(nb, Math.ceil(toSec / bucketSec));
-  const n = k1 - k0;
-  const env = new Float32Array(n), on = new Float32Array(n);
-  for (let k = 0; k < n; k++) env[k] = Math.max(-peaks[(k0 + k) * 2], peaks[(k0 + k) * 2 + 1]);
-  // the first frame's rise counts too: a piece usually STARTS on a sound (auto-trim
-  // put the first onset at the anchor), so compare it with the bucket before the
-  // window, or with silence at the file's head — else beat one lands late
-  const prev = k0 > 0 ? Math.max(-peaks[(k0 - 1) * 2], peaks[(k0 - 1) * 2 + 1]) : 0;
-  on[0] = Math.max(0, env[0] - prev);
-  for (let k = 1; k < n; k++) on[k] = Math.max(0, env[k] - env[k - 1]);
-  for (let k = 1; k < n - 1; k++) on[k] = (on[k - 1] + on[k] + on[k + 1]) / 3;
-  let mean = 0; for (let k = 0; k < n; k++) mean += on[k]; mean /= n;
-  let v = 0; for (let k = 0; k < n; k++) v += (on[k] - mean) * (on[k] - mean); v = Math.sqrt(v / Math.max(1, n));
-  if (v > 1e-9) for (let k = 0; k < n; k++) on[k] = (on[k] - mean) / v;
-  return {on, n, k0};
-}
-function beatTrack(on, period, tightness = 100) { // Ellis DP: beat frame indexes given a period in frames
-  const n = on.length;
-  if (n < period * 2) return [];
-  const score = new Float32Array(n), back = new Int32Array(n).fill(-1);
-  const pMin = Math.max(1, Math.round(period / 2)), pMax = Math.round(period * 2);
-  const tx = new Float32Array(pMax + 1); // transition cost by gap: -tightness·(log(gap/period))²
-  for (let g = pMin; g <= pMax; g++) tx[g] = -tightness * Math.pow(Math.log(g / period), 2);
-  for (let t = 0; t < n; t++) {
-    let best = -Infinity, bi = -1; // negative running scores are fine: the chain must reach the first beat
-    for (let g = pMin; g <= pMax && g <= t; g++) {
-      const s = score[t - g] + tx[g];
-      if (s > best) { best = s; bi = t - g; }
-    }
-    score[t] = on[t] + (bi < 0 ? 0 : best);
-    back[t] = bi;
-  }
-  let end = n - 1; // start the backtrace at the strongest recent beat
-  for (let t = Math.max(0, n - pMax); t < n; t++) if (score[t] > score[end]) end = t;
-  const beats = [];
-  for (let t = end; t >= 0; t = back[t]) { beats.push(t); if (back[t] < 0) break; }
-  return beats.reverse();
-}
-function clipBeatMap(c, phaseShift = 0) { // {bars: [{bpm, sec}], beats, bpmRange, offBars, firstBeatSec, B} or {err}
-  if (!c.peaks || !c.buffer || !c.dur) return {err: "not decoded yet"};
-  const bucketSec = PEAK_BUCKET / c.buffer.sampleRate, from = c.offset, to = c.offset + clipLen(c);
-  const t = tempoFromPeaks(c.peaks, bucketSec, from, to);
-  if (t.err) return t;
-  const period = 60 / t.bpm / bucketSec;
-  const {on} = onsetCurve(c.peaks, bucketSec, from, to);
-  const beats = beatTrack(on, period);
-  const B = beatsPerBarDisp();
-  if (beats.length < 2 * B + 1) return {err: "too few beats found for a bar map (need a few bars of steady playing)"};
-  // downbeat phase: the beat class with the most accent; the first beat wins a tie
-  const acc = [];
-  for (let p = 0; p < B; p++) {
-    let s = 0, k = 0;
-    for (let i = p; i < beats.length; i += B) { s += on[beats[i]]; k++; }
-    acc.push(k ? s / k : -Infinity);
-  }
-  let phase = 0; // the first beat is the downbeat unless another class is clearly more accented
-  for (let p = 1; p < B; p++) if (acc[p] > Math.max(acc[0], 0) + 0.35 && acc[p] > acc[phase]) phase = p;
-  phase = ((phase + phaseShift) % B + B) % B;
-  const quartersPerBar = effTs()[0] * 4 / effTs()[1];
-  const bars = [];
-  const secAt = i => beats[i] * bucketSec; // seconds from the piece's start
-  for (let i = phase; i + B < beats.length; i += B) {
-    const D = secAt(i + B) - secAt(i);
-    bars.push({sec: secAt(i), dur: D, bpm: Math.round(quartersPerBar * 60 / D * 100) / 100});
-  }
-  if (!bars.length) return {err: "not even one full bar found"};
-  const bpms = bars.map(b => b.bpm).sort((a, b) => a - b);
-  const median = bpms[bpms.length >> 1];
-  const offBars = bars.filter(b => Math.abs(b.bpm - median) / median > 0.35).length; // a slipped beat shows as a wild bar
-  return {bars, beats: beats.map(secAt), B, phase, firstBeatSec: bars[0].sec, bpmRange: [bpms[0], bpms[bpms.length - 1]], median, offBars, conf: t.level};
-}
-function applyBeatMap(ti, ci, map) { // one tempo: per bar from the piece's anchor bar; one undo
+ function applyBeatMap(ti, ci, map) { // one tempo: per bar from the piece's anchor bar; one undo
   const tr = S.song.tracks[ti], c = tr && tr.clips[ci];
   if (!c) return "no piece";
   if (!(isComposition() || isLocalDraft())) return "captures keep their measured tempo — this works on your own songs";
@@ -7946,10 +7147,6 @@ function applyBeatMap(ti, ci, map) { // one tempo: per bar from the piece's anch
   draw();
   return null;
 }
-function clipTempo(c) { // the estimate for one piece's window of its file
-  if (!c.peaks || !c.buffer || !c.dur) return {err: "not decoded yet"};
-  return tempoFromPeaks(c.peaks, PEAK_BUCKET / c.buffer.sampleRate, c.offset, c.offset + clipLen(c));
-}
 function setSongTempo(bpm) { // the song's tempo at 1.1 — compositions author tempo through this annotation
   if (!(isComposition() || isLocalDraft())) { setInfo("captures keep their measured tempo — this works on your own songs"); return false; }
   bpm = Math.max(20, Math.min(400, Math.round(bpm * 10) / 10));
@@ -7965,70 +7162,7 @@ function setSongTempo(bpm) { // the song's tempo at 1.1 — compositions author 
   draw();
   return true;
 }
-function audioReady() { // resolves when every file in the song has settled (ready or not)
-  const settled = e => !e || e.status === "ready" || e.status === "missing" || e.status === "undecodable";
-  const files = new Set();
-  forEachClip(c => { if (!settled(audioBufCache.get(audioCacheKey(c.file)))) files.add(c.file); });
-  return Promise.all([...files].map(f => new Promise(res => {
-    const t = setInterval(() => { if (settled(audioBufCache.get(audioCacheKey(f)))) { clearInterval(t); res(); } }, 100);
-  })));
-}
-// ---- pitch-preserving slowdown (Josh, 2026-09-17: "Amazing Slow Downer keeps
-// the pitches"). Plan B from the design talk: the take is re-rendered at the
-// slider's rate with WSOLA (overlap-add of ~21 ms grains, each placed where it
-// best continues the last one), in a worker so nothing freezes, cached per
-// file × rate; playback then uses that buffer at rate 1 through the same
-// per-pass scheduler, so loops, pieces, and the iPad behave unchanged.
-// Tape-style (pitch follows) stays as a device toggle in the recording sheet.
-function wsolaStretch(input, rate) { // Float32Array mono → Float32Array, length ≈ input.length / rate, pitch kept
-  const N = input.length;
-  if (Math.abs(rate - 1) < 1e-6 || N < 4096) return input.slice();
-  const frame = 1024, hop = frame >> 1, tol = 128;
-  const outLen = Math.round(N / rate);
-  const out = new Float32Array(outLen + frame), norm = new Float32Array(outLen + frame);
-  const win = new Float32Array(frame);
-  for (let i = 0; i < frame; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / frame);
-  let prevIn = 0;
-  for (let outPos = 0, k = 0; outPos < outLen; outPos += hop, k++) {
-    const target = Math.min(N - frame, Math.round(outPos * rate)); // nominal analysis position
-    let best = target;
-    if (k > 0) { // choose, near the target, the grain that best continues the previous one
-      const natural = Math.min(N - frame, prevIn + hop);
-      const lo = Math.max(0, target - tol), hi = Math.min(N - frame, target + tol);
-      let bestScore = -Infinity;
-      for (let cand = lo; cand <= hi; cand += 2) {
-        let s = 0;
-        for (let i = 0; i < frame; i += 4) s += input[cand + i] * input[natural + i];
-        if (s > bestScore) { bestScore = s; best = cand; }
-      }
-    }
-    best = Math.max(0, Math.min(N - frame, best));
-    for (let i = 0; i < frame; i++) { out[outPos + i] += input[best + i] * win[i]; norm[outPos + i] += win[i]; }
-    prevIn = best;
-  }
-  for (let i = 0; i < outLen; i++) if (norm[i] > 1e-6) out[i] /= norm[i];
-  return out.slice(0, outLen);
-}
-const stretchJobs = new Map();
-function stretchInWorker(data, rate) { // resolves with the stretched Float32Array; inline (no worker) where there is none
-  if (typeof Worker === "undefined" || typeof Blob === "undefined" || typeof URL === "undefined" || typeof URL.createObjectURL !== "function")
-    return Promise.resolve(wsolaStretch(data, rate));
-  if (!S.stretchWorker) {
-    const src = wsolaStretch.toString() +
-      ";onmessage=function(e){var d=e.data;var out=wsolaStretch(d.data,d.rate);postMessage({id:d.id,out:out},[out.buffer]);};";
-    S.stretchWorker = new Worker(URL.createObjectURL(new Blob([src], {type: "text/javascript"})));
-    S.stretchWorker.onmessage = e => { const res = stretchJobs.get(e.data.id); if (res) { stretchJobs.delete(e.data.id); res(e.data.out); } };
-  }
-  return new Promise(res => {
-    const id = ++S.stretchJobId, copy = data.slice();
-    stretchJobs.set(id, res);
-    S.stretchWorker.postMessage({id, data: copy, rate}, [copy.buffer]);
-  });
-}
-const stretchCache = new Map(); // songKey|file|rate -> {status: "pending"|"ready", buffer}
-function keepPitch() { return localStorage.getItem("ff1roll-tapestyle") !== "1"; } // default: keep pitch
-function stretchKey(file, rate) { return audioCacheKey(file) + "|" + rate; }
-function stretchEnsure(file) { // the current rate's stretched buffer for a file: cached, pending, or kicked off now
+  function stretchEnsure(file) { // the current rate's stretched buffer for a file: cached, pending, or kicked off now
   const rate = S.playRate;
   const k = stretchKey(file, rate);
   let e = stretchCache.get(k);
@@ -8071,11 +7205,6 @@ function stretchEnsureAll() { // every file in the song, for the current rate; o
   const files = new Set();
   forEachClip(c => files.add(c.file));
   for (const f of files) stretchEnsure(f);
-}
-function stretchPending(c) { // true while this piece's file is being re-rendered for the current rate
-  if (S.playRate === 1 || !keepPitch() || !c.buffer) return false;
-  const e = stretchCache.get(stretchKey(c.file, S.playRate));
-  return !e || e.status !== "ready";
 }
 function scheduleClip(ti, clip, when, durSec) { // durSec = WALL seconds left to play from `when`
   if (!clip.buffer || durSec <= 0.01) return;
@@ -9636,124 +8765,7 @@ document.getElementById("keysetest").addEventListener("click", () => {
   setInfo("key set to " + est.name + " at bar " + bar + " (from the estimate — unsynced — Sync to commit)");
 });
 
-// ---------------------------------------------------------------- metronome (⏱)
-// Standalone and feature-rich: any meter, per-beat accent editing (tap a cell:
-// accent → normal → silent), subdivisions, tap tempo. Plays through its own
-// gain straight to the destination, so it survives song stop()'s master fade
-// and can click OVER a playing song — a poor man's meter audition.
-const met = Object.assign({bpm: 120, num: 4, den: 4, sub: 1, accents: [2, 1, 1, 1], on: false,
-                           follow: "song", nudge: 0, countIn: false}, // follow the song by default (Josh, 2026-09-29: a free 120 clicked out of time with the song)
-                          JSON.parse(localStorage.getItem("ff1roll-met") || "{}"));
 met.on = false;
-const metSave = () => localStorage.setItem("ff1roll-met",
-  JSON.stringify({bpm: met.bpm, num: met.num, den: met.den, sub: met.sub, accents: met.accents,
-                  follow: met.follow, nudge: met.nudge, countIn: met.countIn}));
-function metDefaultAccents() { // beat 1 accented; compound meters accent each group of 3
-  return Array.from({length: met.num}, (_, i) =>
-    i === 0 ? 2 : (met.den >= 8 && met.num % 3 === 0 && i % 3 === 0) ? 2 : 1);
-}
-function metBuildCells() {
-  const row = document.getElementById("metbeats");
-  row.innerHTML = "";
-  met.accents.forEach((lv, i) => {
-    const b = document.createElement("button");
-    b.className = "metbeat l" + lv;
-    b.textContent = String(i + 1);
-    b.addEventListener("click", () => {
-      met.accents[i] = (met.accents[i] + 2) % 3; // 2 → 1 → 0 → 2
-      metSave();
-      metBuildCells();
-    });
-    row.appendChild(b);
-  });
-}
-function metClick(when, level) { // natural wood click: bandpassed noise tick.
-  // v1 squares were squeaky; v2's pitch glide read as sci-fi (Josh) — the
-  // fix is NO pitch movement at all, just a short filtered transient whose
-  // ring dies on its own, like a physical metronome.
-  const dur = 0.03;
-  const buf = S.audio.createBuffer(1, Math.ceil(S.audio.sampleRate * dur), S.audio.sampleRate);
-  const ch = buf.getChannelData(0);
-  for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / ch.length, 2);
-  const src = S.audio.createBufferSource();
-  src.buffer = buf;
-  const bp = S.audio.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.value = level === 2 ? 1500 : level === 1 ? 1000 : 2000;
-  bp.Q.value = 8;
-  const g = S.audio.createGain();
-  g.gain.value = (level === 2 ? 2.8 : level === 1 ? 1.8 : 0.8); // narrowband eats energy
-  src.connect(bp);
-  bp.connect(g);
-  g.connect(S.metGain);
-  src.start(when);
-}
-// Follow/trial modes (Josh, 2026-08-15): clicks derive from the SONG's own
-// tick grid through tickToSec — phase-true by construction, tempo map and
-// speed slider included, loop wraps handled by chasing the next beat inside
-// the loop segment. Follow clicks the declared meter; trial clicks a meter
-// of Josh's choosing over the real music (the honest meter audition:
-// accents supplied, verdict his), with "shift accents" cycling the pattern's
-// starting beat — a candidate meter can be right but offset.
-function metFollowBeatTicks() {
-  const den = met.follow === "trial" ? met.den : effTs()[1];
-  return S.song.ppq * 4 / den;
-}
-function metFollowNum() { return met.follow === "trial" ? met.num : effTs()[0]; }
-function metPumpFollow() {
-  if (!S.playing) return; // follow/trial click only while the song runs
-  const tb = metFollowBeatTicks();
-  const num = metFollowNum();
-  const now = playSec();
-  let bt = Math.ceil((secToTick(S.song, now) + 1) / tb) * tb;
-  let delta;
-  const sec = tickToSec(S.song, bt);
-  if (S.loopSeg && S.loopSeg.end > S.loopSeg.start && sec >= S.loopSeg.end - 1e-4) {
-    // next beat lies past the jump point: chase it into the next pass
-    bt = Math.ceil((secToTick(S.song, S.loopSeg.start) - 1e-4) / tb) * tb;
-    delta = (S.loopSeg.end - now) + (tickToSec(S.song, bt) - S.loopSeg.start);
-  } else {
-    delta = sec - now;
-  }
-  if (delta > 0.16) return;
-  const when = S.audio.currentTime + Math.max(0.005, delta);
-  if (S.metLastWhen >= 0 && Math.abs(when - S.metLastWhen) < 0.03) return; // this beat is scheduled
-  S.metLastWhen = when;
-  const k = Math.round(bt / tb);
-  const idx = (((k + met.nudge) % num) + num) % num;
-  const lv = met.accents[idx] !== undefined ? met.accents[idx] : 1;
-  if (lv > 0) metClick(when, lv);
-  setTimeout(() => {
-    if (!met.on) return;
-    document.querySelectorAll("#metbeats .metbeat").forEach((el, j) =>
-      el.classList.toggle("now", j === idx));
-  }, Math.max(0, (when - S.audio.currentTime) * 1000));
-}
-function metPump() {
-  if (met.follow !== "free") { metPumpFollow(); return; }
-  const spb = 60 / met.bpm; // seconds per counted (denominator) beat
-  while (S.metNext < S.audio.currentTime + 0.12) {
-    const i = S.metIdx % met.num;
-    const lv = met.accents[i];
-    if (lv > 0) metClick(S.metNext, lv);
-    for (let s = 1; s < met.sub; s++) metClick(S.metNext + spb * s / met.sub, 0); // sub-clicks, quiet
-    const delay = Math.max(0, (S.metNext - S.audio.currentTime) * 1000);
-    setTimeout(() => {
-      if (!met.on) return;
-      document.querySelectorAll("#metbeats .metbeat").forEach((el, k) =>
-        el.classList.toggle("now", k === i));
-    }, delay);
-    S.metIdx++;
-    S.metNext += spb;
-  }
-}
-function ensureMetGain() {
-  if (!S.metGain || S.metGain.context !== S.audio) {
-    S.metGain = S.audio.createGain();
-    S.metGain.gain.value = 1;
-    S.metGain.connect(S.audio.destination); // not master: song stop()'s fade can't silence the click
-  }
-}
 async function metStart() {
   ensureAudio();
   audioSessionType("playback");
@@ -9766,14 +8778,6 @@ async function metStart() {
   metPump();
   document.getElementById("metgo").textContent = "■ Stop";
   document.getElementById("metbtn").classList.add("active"); // ⏱ shows it's running even with the panel closed
-}
-function metHalt() {
-  met.on = false;
-  if (!S.playing && !document.hidden) audioSessionType("ambient");
-  clearInterval(S.metTimer);
-  document.getElementById("metgo").textContent = "▶ Start";
-  document.getElementById("metbtn").classList.remove("active");
-  document.querySelectorAll("#metbeats .metbeat").forEach(el => el.classList.remove("now"));
 }
 {
   const num = document.getElementById("metnum");
@@ -9831,24 +8835,6 @@ document.getElementById("metsub").addEventListener("change", e => {
   met.sub = +e.target.value;
   metSave();
 });
-function applyMetMode() {
-  const f = met.follow;
-  document.getElementById("metnudgewrap").style.display = f === "trial" ? "" : "none";
-  document.getElementById("metbpm").disabled = f !== "free";
-  document.getElementById("metnum").disabled = f === "follow";
-  document.getElementById("metden").disabled = f === "follow";
-  document.getElementById("metsub").disabled = f !== "free"; // subs are free-run only
-  if (f === "follow" && S.song) { // cells mirror the declared meter
-    met.num = effTs()[0];
-    met.den = effTs()[1];
-    document.getElementById("metnum").value = String(met.num);
-    document.getElementById("metden").value = String(met.den);
-    met.accents = metDefaultAccents();
-    metBuildCells();
-  }
-  S.metLastWhen = -1;
-  metSave();
-}
 document.getElementById("metfollow").addEventListener("change", e => {
   met.follow = e.target.value;
   applyMetMode();
@@ -13347,11 +12333,6 @@ function openDraftDoc(d, key) {
   reflectSongURL(key);
   updateSongBtn();
 }
-function midiBase64(bytes) { // btoa in chunks — big songs overflow the arg limit
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
-  return btoa(bin);
-}
 function createComposition(bpm, num, den) { // Untitled until the first Save names it and picks its folder
   const key = untitledKey();
   const parsed = {ppq: 480, timesig: [num, den],
@@ -14674,43 +13655,6 @@ async function goBackToPublished(key) { // same door as the Publish sheet's Reve
   document.getElementById("versionssheet").classList.remove("on");
   setInfo("back to the published copy" + (chatN ? " and dropped " + chatN + " chat message" + (chatN === 1 ? "" : "s") : "") + " — your previous state is saved as a version too");
 }
-// -------------------------------------------------------- Download audio
-// DAW convention (GarageBand, Cubasis, BandLab): bounce OFFLINE — faster
-// than real time, straight to a WAV file, handed to the share sheet — not a
-// real-time recording of the speaker output. renderSongOffline() drives the
-// SAME voice/chip/sampled/game-instrument/clip code live playback uses
-// (buildSchedule, scheduleNote, chipStart, drumHit, scheduleClip,
-// scheduleGameNote all read `audio`/`master`/`trackGains` as globals — this
-// just points those globals at an OfflineAudioContext for one synchronous
-// pass instead of the live one) — see NIGHT-ROLL.md "Audio export". Every
-// voice kind an OfflineAudioContext can build a node graph for renders this
-// way; nothing in the engine is actually tied to the live context (it was
-// already built context-agnostic for the no-user-gesture decode path — see
-// decodeAudioBytes above). The one real hard case is a browser with no
-// OfflineAudioContext at all — that falls back to today's real-time
-// MediaRecorder capture (recordRealtimeAudio), never a silent track.
-function wavEncode(numChannels, sampleRate, channelData) { // channelData: [Float32Array, …], one per channel, equal length
-  const numFrames = channelData[0] ? channelData[0].length : 0;
-  const blockAlign = numChannels * 2, byteRate = sampleRate * blockAlign, dataSize = numFrames * blockAlign;
-  const buf = new ArrayBuffer(44 + dataSize), view = new DataView(buf);
-  let p = 0;
-  const wStr = s => { for (let i = 0; i < s.length; i++) view.setUint8(p++, s.charCodeAt(i)); };
-  const wU32 = v => { view.setUint32(p, v, true); p += 4; };
-  const wU16 = v => { view.setUint16(p, v, true); p += 2; };
-  wStr("RIFF"); wU32(36 + dataSize); wStr("WAVE");
-  wStr("fmt "); wU32(16); wU16(1) /* PCM */; wU16(numChannels); wU32(sampleRate); wU32(byteRate); wU16(blockAlign); wU16(16) /* bits/sample */;
-  wStr("data"); wU32(dataSize);
-  for (let i = 0; i < numFrames; i++) for (let c = 0; c < numChannels; c++) {
-    const s = Math.max(-1, Math.min(1, channelData[c][i] || 0));
-    view.setInt16(p, s < 0 ? s * 0x8000 : s * 0x7FFF, true); p += 2;
-  }
-  return new Uint8Array(buf);
-}
-function audioBufferToWav(buf) { // AudioBuffer (or the offline render's plain equivalent) -> 16-bit WAV bytes
-  const chans = [];
-  for (let c = 0; c < buf.numberOfChannels; c++) chans.push(buf.getChannelData(c));
-  return wavEncode(buf.numberOfChannels, buf.sampleRate, chans);
-}
 // mirrors play()'s preflight (sfWaitForSong/gameWaitForSong, the chip
 // resolve/render wait) plus audio-clip decode and time-stretch, which play()
 // leaves to catch up on a later loop pass — an offline bounce gets ONE pass,
@@ -14831,25 +13775,6 @@ function recordRealtimeAudio() {
       });
     });
   });
-}
-// hand the export to the iPad's native share sheet (the existing
-// @capacitor/share plugin) via the Filesystem plugin's cache directory; a
-// browser just downloads the file, same as Download .mid
-async function deliverAudioFile(blob, name) {
-  const C = typeof window !== "undefined" && window.Capacitor;
-  const native = !!(C && C.isNativePlatform && C.isNativePlatform());
-  if (!native) {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    return;
-  }
-  const data = midiBase64(new Uint8Array(await blob.arrayBuffer())); // any bytes — chunked btoa, not MIDI-specific
-  const wrote = await nativeCall("Filesystem", "writeFile", {path: name, data, directory: "CACHE", recursive: true});
-  if (!wrote || !wrote.uri) throw new Error("couldn't write the export to the app's cache (no Plugins.Filesystem, no nativePromise)");
-  await nativeCall("Share", "share", {title: name, files: [wrote.uri]});
 }
 document.getElementById("filedlaudio").addEventListener("click", async () => {
   if (!S.song) return;
@@ -22169,9 +21094,6 @@ document.getElementById("dlfile").addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(a.href);
 });
-function ghHeaders(token) {
-  return {Authorization: "Bearer " + token, Accept: "application/vnd.github+json"};
-}
 async function putRollnotes(path, content, headers) { // PUT with one stale-sha retry
   if (folderActive()) { await folderWrite(path, content); return {ok: true, status: 200}; }
   const putOnce = async () => {
@@ -22493,4 +21415,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"rememberRecentSong": () => rememberRecentSong, "recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "initCatalog": () => initCatalog, "DRUM_LABELS": () => DRUM_LABELS, "DRUM_SLOTS": () => DRUM_SLOTS, "kitSlots": () => kitSlots, "songHasDrums": () => songHasDrums, "topRow": () => topRow, "computeLaneTop": () => computeLaneTop, "kitLaneTop": () => kitLaneTop, "laneBotRow": () => laneBotRow, "botRow": () => botRow, "inKitLane": () => inKitLane, "noteRow": () => noteRow, "drumStep": () => drumStep, "AUTO_COLOR_S": () => AUTO_COLOR_S, "AUTO_COLOR_L": () => AUTO_COLOR_L, "hslToHex": () => hslToHex, "hueOf": () => hueOf, "hueDist": () => hueDist, "relLuminance": () => relLuminance, "contrastRatio": () => contrastRatio, "ROLL_SURFACE_COLORS": () => ROLL_SURFACE_COLORS, "TRACK_COLOR_CANDIDATES": () => TRACK_COLOR_CANDIDATES, "pickFarthestColor": () => pickFarthestColor, "TRACK_COLORS": () => TRACK_COLORS, "autoTrackColors": () => autoTrackColors, "PSX_SOUNDING_ON": () => PSX_SOUNDING_ON, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "canvas": () => canvas, "ctx": () => ctx, "wrap": () => wrap, "songRegionRight": () => songRegionRight, "RULER_W_ROLL": () => RULER_W_ROLL, "TRACKS_GUTTER": () => TRACKS_GUTTER, "BASE_RULER_H": () => BASE_RULER_H, "LANE_H": () => LANE_H, "AUDIO_STRIP_H": () => AUDIO_STRIP_H, "STRIP_H": () => STRIP_H, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "loadEdits": () => loadEdits, "saveEdits": () => saveEdits, "foldOldOverlay": () => foldOldOverlay, "retireOldOverlay": () => retireOldOverlay, "placeLassoBtn": () => placeLassoBtn, "updateEditBtnVis": () => updateEditBtnVis, "computeSongEnd": () => computeSongEnd, "sfShownAt": () => sfShownAt, "sfAt": () => sfAt, "sfDeclaredAt": () => sfDeclaredAt, "sfDeclaredAtRaw": () => sfDeclaredAtRaw, "annoSnapshot": () => annoSnapshot, "annoRestore": () => annoRestore, "setAnchorBQ": () => setAnchorBQ, "setEndBQ": () => setEndBQ, "bakeTempos": () => bakeTempos, "bakeMeter": () => bakeMeter, "finalizeNotes": () => finalizeNotes, "loadNotes": () => loadNotes, "subtractTombstones": () => subtractTombstones, "mergeLocalAdditions": () => mergeLocalAdditions, "annotationsFor": () => annotationsFor, "resolveNoteWith": () => resolveNoteWith, "saveLocalNotes": () => saveLocalNotes, "dirtySongs": () => dirtySongs, "updateSyncBtn": () => updateSyncBtn, "askAnnotationsText": () => askAnnotationsText, "askAnnotationsTextCompact": () => askAnnotationsTextCompact, "dropLocalKeyAt": () => dropLocalKeyAt, "dropSupersededBy": () => dropSupersededBy, "isDirective": () => isDirective, "activeNoteAt": () => activeNoteAt, "sectionPathAt": () => sectionPathAt, "playSec": () => playSec, "curTick": () => curTick, "homeSong": () => homeSong, "appConfirm": () => appConfirm, "reflectSongURL": () => reflectSongURL, "toggleHl": () => toggleHl, "updateLCD": () => updateLCD, "governingAt": () => governingAt, "updateSubtitle": () => updateSubtitle, "loadSong": () => loadSong, "loadSongInner": () => loadSongInner, "setSong": () => setSong, "renderTrackbar": () => renderTrackbar, "updateTrackMore": () => updateTrackMore, "TRACK_ROW_SLACK": () => TRACK_ROW_SLACK, "trackRowNeed": () => trackRowNeed, "fitTrackRow": () => fitTrackRow, "scheduleFitTrackRow": () => scheduleFitTrackRow, "trackToggle": () => trackToggle, "trackShown": () => trackShown, "mixerIsOpen": () => mixerIsOpen, "mixerPanLabel": () => mixerPanLabel, "moveInSameOrder": () => moveInSameOrder, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerMasterStripEl": () => mixerMasterStripEl, "mixerStripDragize": () => mixerStripDragize, "ensureMixerMeters": () => ensureMixerMeters, "teardownMixerMeters": () => teardownMixerMeters, "mixerMeterRms": () => mixerMeterRms, "mixerMeterLoop": () => mixerMeterLoop, "ensureMixerMeterLoop": () => ensureMixerMeterLoop, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "resize": () => resize, "cssCache": () => cssCache, "css": () => css, "drawRangeTints": () => drawRangeTints, "pxPerTick": () => pxPerTick, "draw": () => draw, "viewKey": () => viewKey, "viewPersistSoon": () => viewPersistSoon, "viewRestore": () => viewRestore, "rangeSelKey": () => rangeSelKey, "rangeSelPersist": () => rangeSelPersist, "rangeSelRestore": () => rangeSelRestore, "playbackFrame": () => playbackFrame, "updateCanvasA11y": () => updateCanvasA11y, "showAddedOutline": () => showAddedOutline, "setAddedOutline": () => setAddedOutline, "drawFull": () => drawFull, "clearMultiSel": () => clearMultiSel, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "reflectSelVel": () => reflectSelVel, "refreshSelInfo": () => refreshSelInfo, "renderOctBtn": () => renderOctBtn, "fallHitNote": () => fallHitNote, "drawLasso": () => drawLasso, "tracksLaneH": () => tracksLaneH, "laneGeom": () => laneGeom, "trackLaneAt": () => trackLaneAt, "tracksNoteY": () => tracksNoteY, "hitTracksNote": () => hitTracksNote, "selClipIs": () => selClipIs, "selClipObj": () => selClipObj, "clipSpanX": () => clipSpanX, "clipStatusText": () => clipStatusText, "clipLabel": () => clipLabel, "fmtSec": () => fmtSec, "drawAudioStrip": () => drawAudioStrip, "drawClipLane": () => drawClipLane, "writeClips": () => writeClips, "setClipDir": () => setClipDir, "moveClip": () => moveClip, "trimClip": () => trimClip, "splitClipAt": () => splitClipAt, "splitSelectedClipAtCursor": () => splitSelectedClipAtCursor, "deleteClip": () => deleteClip, "hitTracksClip": () => hitTracksClip, "drawTracks": () => drawTracks, "stripPlayheadX": () => stripPlayheadX, "drawStripPlayhead": () => drawStripPlayhead, "drawPlayheadStripBand": () => drawPlayheadStripBand, "drawRuler": () => drawRuler, "evtPos": () => evtPos, "posToTickPitch": () => posToTickPitch, "editableSong": () => editableSong, "selEditItems": () => selEditItems, "updateChordStale": () => updateChordStale, "transposeChordLabel": () => transposeChordLabel, "ridealongChordBands": () => ridealongChordBands, "selEditApply": () => selEditApply, "nudgeSelection": () => nudgeSelection, "resizeSelection": () => resizeSelection, "isCopyableAnno": () => isCopyableAnno, "annoInLasso": () => annoInLasso, "copySelection": () => copySelection, "cutSelection": () => cutSelection, "pasteAnnotations": () => pasteAnnotations, "clipboardHas": () => clipboardHas, "clipSummary": () => clipSummary, "pasteClipboard": () => pasteClipboard, "selectAllNotes": () => selectAllNotes, "duplicateSelection": () => duplicateSelection, "lassoedAnnos": () => lassoedAnnos, "deleteSelection": () => deleteSelection, "sweepStrandedClones": () => sweepStrandedClones, "duplicateSelectionInPlace": () => duplicateSelectionInPlace, "splitApply": () => splitApply, "openGapShift": () => openGapShift, "closeGap": () => closeGap, "insertTime": () => insertTime, "openInsertBars": () => openInsertBars, "deleteTime": () => deleteTime, "openDeleteBars": () => openDeleteBars, "divideSelection": () => divideSelection, "quantizeSelection": () => quantizeSelection, "splitSelectionAt": () => splitSelectionAt, "splitSelectionHalves": () => splitSelectionHalves, "joinSelection": () => joinSelection, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "appErrors": () => appErrors, "JOB_KINDS": () => JOB_KINDS, "jobListeners": () => jobListeners, "jobControls": () => jobControls, "jobsSave": () => jobsSave, "jobsNotify": () => jobsNotify, "jobsOnChange": () => jobsOnChange, "jobsLoad": () => jobsLoad, "jobProgress": () => jobProgress, "jobFraction": () => jobFraction, "JOBS_AUTOCLEAR_MS": () => JOBS_AUTOCLEAR_MS, "jobsAutoClear": () => jobsAutoClear, "jobStart": () => jobStart, "jobApi": () => jobApi, "jobsList": () => jobsList, "jobsFind": () => jobsFind, "jobCancel": () => jobCancel, "jobsDismiss": () => jobsDismiss, "jobsClearFinished": () => jobsClearFinished, "updateJobsBtn": () => updateJobsBtn, "jobBarSet": () => jobBarSet, "renderJobs": () => renderJobs, "openPubJobSheet": () => openPubJobSheet, "pubItemIcon": () => pubItemIcon, "renderPubJob": () => renderPubJob, "appDebug": () => appDebug, "debugLogOn": () => debugLogOn, "logPush": () => logPush, "logLines": () => logLines, "errChip": () => errChip, "logErr": () => logErr, "logDebug": () => logDebug, "logLine": () => logLine, "BENIGN_ERRORS": () => BENIGN_ERRORS, "srAnnounce": () => srAnnounce, "STATUS_HISTORY_CAP": () => STATUS_HISTORY_CAP, "setInfo": () => setInfo, "minPxq": () => minPxq, "songPitchExtent": () => songPitchExtent, "pxqFloor": () => pxqFloor, "ROLL_AIR": () => ROLL_AIR, "dispPitchExtent": () => dispPitchExtent, "rowHFloor": () => rowHFloor, "cursorHandleHit": () => cursorHandleHit, "cursorHit": () => cursorHit, "rulerSnapX": () => rulerSnapX, "tickAtX": () => tickAtX, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "armNoteEdit": () => armNoteEdit, "endPointer": () => endPointer, "fitView": () => fitView, "PAN_TAIL_BARS": () => PAN_TAIL_BARS, "clampView": () => clampView, "tap": () => tap, "ensureAudio": () => ensureAudio, "rebuildAudio": () => rebuildAudio, "resumeAudio": () => resumeAudio, "sfPreloadForSong": () => sfPreloadForSong, "sfWaitForSong": () => sfWaitForSong, "autoVoiceLabel": () => autoVoiceLabel, "trackColor": () => trackColor, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "GAME_FAMILY": () => GAME_FAMILY, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "SF2_FAMILY": () => SF2_FAMILY, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "gameVoiceFromAll": () => gameVoiceFromAll, "gameVoiceFrom": () => gameVoiceFrom, "gameVoiceFromSet": () => gameVoiceFromSet, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "transposeTrack": () => transposeTrack, "resolveGameVault": () => resolveGameVault, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "instPlayerReady": () => instPlayerReady, "gameLibSync": () => gameLibSync, "sf2Sync": () => sf2Sync, "gameVoicesInSong": () => gameVoicesInSong, "sf2VoicesInSong": () => sf2VoicesInSong, "gamePreloadTokens": () => gamePreloadTokens, "gamePreloadForSong": () => gamePreloadForSong, "gameWaitForSong": () => gameWaitForSong, "gameNoteCache": () => gameNoteCache, "gameNoteBucket": () => gameNoteBucket, "gameVoiceWarned": () => gameVoiceWarned, "gameVoiceWarn": () => gameVoiceWarn, "resolveVoiceInstrument": () => resolveVoiceInstrument, "scheduleGameNote": () => scheduleGameNote, "scheduleNote": () => scheduleNote, "previewNote": () => previewNote, "buildSchedule": () => buildSchedule, "chip": () => chip, "chipTrackNo": () => chipTrackNo, "albumMetaCache": () => albumMetaCache, "albumMetaFor": () => albumMetaFor, "vaultFetch": () => vaultFetch, "chipSource": () => chipSource, "updateChipBtn": () => updateChipBtn, "PLAY_GATE_GRACE": () => PLAY_GATE_GRACE, "PLAY_GATE_MAX": () => PLAY_GATE_MAX, "gateSettled": () => gateSettled, "gateWatched": () => gateWatched, "gatePending": () => gatePending, "playGate": () => playGate, "playGateKick": () => playGateKick, "playGateActive": () => playGateActive, "playGateTick": () => playGateTick, "playGateWait": () => playGateWait, "updateChipBtnInner": () => updateChipBtnInner, "CHIP_BUDGET_APP": () => CHIP_BUDGET_APP, "CHIP_BUDGET_WEB": () => CHIP_BUDGET_WEB, "CHIP_RATE_STEPS": () => CHIP_RATE_STEPS, "chipRenderBudget": () => chipRenderBudget, "planChipRender": () => planChipRender, "chipEstimateTracks": () => chipEstimateTracks, "chipStaticPan": () => chipStaticPan, "chipDownmixStatic": () => chipDownmixStatic, "chipSilent": () => chipSilent, "chipIsPcm": () => chipIsPcm, "chipAlbumHasSource": () => chipAlbumHasSource, "CHIP_STREAMED_RENDER_CHUNK_SEC": () => CHIP_STREAMED_RENDER_CHUNK_SEC, "chipRenderStreamed": () => chipRenderStreamed, "chipRender": () => chipRender, "chipCleanupAfterFailure": () => chipCleanupAfterFailure, "chipPublish": () => chipPublish, "chipWorkerAvailable": () => chipWorkerAvailable, "chipPreviewPending": () => chipPreviewPending, "chipPreviewCache": () => chipPreviewCache, "chipPreviewProgAt": () => chipPreviewProgAt, "chipPreviewBuffer": () => chipPreviewBuffer, "chipRenderInWorker": () => chipRenderInWorker, "chipActive": () => chipActive, "chipHas": () => chipHas, "chipBuffers": () => chipBuffers, "chipPcmToBuffers": () => chipPcmToBuffers, "chipStopSrcs": () => chipStopSrcs, "chipStart": () => chipStart, "chipStreamMode": () => chipStreamMode, "chipAutoShouldStream": () => chipAutoShouldStream, "chipAutoReason": () => chipAutoReason, "CHIP_STREAM_CHUNK_SEC": () => CHIP_STREAM_CHUNK_SEC, "CHIP_STREAM_OVERLAP": () => CHIP_STREAM_OVERLAP, "CHIP_STREAM_HORIZON_VISIBLE": () => CHIP_STREAM_HORIZON_VISIBLE, "CHIP_STREAM_HORIZON_HIDDEN": () => CHIP_STREAM_HORIZON_HIDDEN, "CHIP_STREAM_PIN_LOOKAHEAD": () => CHIP_STREAM_PIN_LOOKAHEAD, "CHIP_SEG_HORIZON_SEC": () => CHIP_SEG_HORIZON_SEC, "CHIP_SEG_MAX_SEGMENTS": () => CHIP_SEG_MAX_SEGMENTS, "chipSegments": () => chipSegments, "chipStreamIdxForTapeSec": () => chipStreamIdxForTapeSec, "chipStreamOpenWorker": () => chipStreamOpenWorker, "chipStreamOnChunk": () => chipStreamOnChunk, "chipStreamOnSilent": () => chipStreamOnSilent, "chipStreamRequestRange": () => chipStreamRequestRange, "chipStreamWaitFor": () => chipStreamWaitFor, "chipStreamPinLoopStart": () => chipStreamPinLoopStart, "chipStreamEvict": () => chipStreamEvict, "chipStreamScheduled": () => chipStreamScheduled, "chipStreamScheduleChunk": () => chipStreamScheduleChunk, "chipNoteSlice": () => chipNoteSlice, "chipStreamPump": () => chipStreamPump, "chipStreamStart": () => chipStreamStart, "chipStreamOpen": () => chipStreamOpen, "chipRenderAuto": () => chipRenderAuto, "audioBufCache": () => audioBufCache, "PEAK_BUCKET": () => PEAK_BUCKET, "audioDirFor": () => audioDirFor, "audioCacheKey": () => audioCacheKey, "songHasAudio": () => songHasAudio, "clipLen": () => clipLen, "clipEndTick": () => clipEndTick, "clipClamp": () => clipClamp, "applyAudioDirs": () => applyAudioDirs, "forEachClip": () => forEachClip, "audioBytesFor": () => audioBytesFor, "decodeAudioBytes": () => decodeAudioBytes, "peaksOf": () => peaksOf, "audioEnsureFile": () => audioEnsureFile, "clipOnsetSec": () => clipOnsetSec, "tempoFromPeaks": () => tempoFromPeaks, "onsetCurve": () => onsetCurve, "beatTrack": () => beatTrack, "clipBeatMap": () => clipBeatMap, "applyBeatMap": () => applyBeatMap, "clipTempo": () => clipTempo, "setSongTempo": () => setSongTempo, "audioReady": () => audioReady, "wsolaStretch": () => wsolaStretch, "stretchJobs": () => stretchJobs, "stretchInWorker": () => stretchInWorker, "stretchCache": () => stretchCache, "keepPitch": () => keepPitch, "stretchKey": () => stretchKey, "stretchEnsure": () => stretchEnsure, "audioChaseNow": () => audioChaseNow, "stretchEnsureAll": () => stretchEnsureAll, "stretchPending": () => stretchPending, "scheduleClip": () => scheduleClip, "play": () => play, "stop": () => stop, "albumPos": () => albumPos, "armAlbumLink": () => armAlbumLink, "albumStrip": () => albumStrip, "albumClear": () => albumClear, "albumLeave": () => albumLeave, "albumStart": () => albumStart, "albumNext": () => albumNext, "albumPrev": () => albumPrev, "albumPlayIdx": () => albumPlayIdx, "albumAdvance": () => albumAdvance, "VF": () => VF, "STAVE_H": () => STAVE_H, "SCORE_TOP": () => SCORE_TOP, "SCORE_PAD": () => SCORE_PAD, "SCORE_INTRO_W": () => SCORE_INTRO_W, "DRUM_SCORE": () => DRUM_SCORE, "drumScoreRole": () => drumScoreRole, "vexKey": () => vexKey, "durationPieces": () => durationPieces, "buildScoreModel": () => buildScoreModel, "scoreContentH": () => scoreContentH, "renderMeasure": () => renderMeasure, "renderIntro": () => renderIntro, "scoreTickToX": () => scoreTickToX, "scoreXToTick": () => scoreXToTick, "drawScore": () => drawScore, "scoreMeasureAnchors": () => scoreMeasureAnchors, "scorePencilTick": () => scorePencilTick, "drawScorePencilGuides": () => drawScorePencilGuides, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songtitleEl": () => songtitleEl, "songsheet": () => songsheet, "songTitleOf": () => songTitleOf, "songWhereLabel": () => songWhereLabel, "updateSongBtn": () => updateSongBtn, "songDirtyFlag": () => songDirtyFlag, "songRow": () => songRow, "songHeader": () => songHeader, "localLabel": () => localLabel, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "updateSongMeta": () => updateSongMeta, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "keysel": () => keysel, "keysetBtn": () => keysetBtn, "keymodeSel": () => keymodeSel, "KS_MAJOR_PROFILE": () => KS_MAJOR_PROFILE, "KS_MINOR_PROFILE": () => KS_MINOR_PROFILE, "keyEstimateSig": () => keyEstimateSig, "estimateKey": () => estimateKey, "fileMeterAt": () => fileMeterAt, "tonicPcFromName": () => tonicPcFromName, "checkKeyVsFile": () => checkKeyVsFile, "fileCheckLine": () => fileCheckLine, "runKeyCheck": () => runKeyCheck, "runMeterCheck": () => runMeterCheck, "useFileKey": () => useFileKey, "useFileMeter": () => useFileMeter, "keyNameShownAt": () => keyNameShownAt, "expandKeyName": () => expandKeyName, "keyLabelState": () => keyLabelState, "tonicLabel": () => tonicLabel, "tonicPcOfName": () => tonicPcOfName, "modeOfName": () => modeOfName, "chosenTonic": () => chosenTonic, "chosenTonicPc": () => chosenTonicPc, "partialNameOf": () => partialNameOf, "tonicOptionValue": () => tonicOptionValue, "refreshKeyPreview": () => refreshKeyPreview, "refreshKeysetLabel": () => refreshKeysetLabel, "met": () => met, "metSave": () => metSave, "metDefaultAccents": () => metDefaultAccents, "metBuildCells": () => metBuildCells, "metClick": () => metClick, "metFollowBeatTicks": () => metFollowBeatTicks, "metFollowNum": () => metFollowNum, "metPumpFollow": () => metPumpFollow, "metPump": () => metPump, "ensureMetGain": () => ensureMetGain, "metStart": () => metStart, "metHalt": () => metHalt, "applyMetMode": () => applyMetMode, "CHORD_QUALS": () => CHORD_QUALS, "CHORD_ROOTS": () => CHORD_ROOTS, "INS_DURS": () => INS_DURS, "chordLabel": () => chordLabel, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "stampChordBand": () => stampChordBand, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "PROG_LIB": () => PROG_LIB, "cofCanvas": () => cofCanvas, "cofCtx": () => cofCtx, "cofMinor": () => cofMinor, "cofDim": () => cofDim, "cofSigLabel": () => cofSigLabel, "cofMajorName": () => cofMajorName, "wrapSf": () => wrapSf, "drawCof": () => drawCof, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "notelistSheet": () => notelistSheet, "NOTE_GROUPS": () => NOTE_GROUPS, "renderNoteJump": () => renderNoteJump, "renderNoteList": () => renderNoteList, "openNoteList": () => openNoteList, "showHelpTab": () => showHelpTab, "findsel": () => findsel, "refreshFindSel": () => refreshFindSel, "lassobtn": () => lassobtn, "chordEvidence": () => chordEvidence, "openChallenge": () => openChallenge, "applyListener": () => applyListener, "applyChrome": () => applyChrome, "FOOTER_DROPUP_BTN_IDS": () => FOOTER_DROPUP_BTN_IDS, "fitReadline": () => fitReadline, "scheduleFitReadline": () => scheduleFitReadline, "viewbtn": () => viewbtn, "viewSwitchMenu": () => viewSwitchMenu, "renderViewSwitch": () => renderViewSwitch, "applyViewMode": () => applyViewMode, "viewSaved": () => viewSaved, "setViewMode": () => setViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "importHubLabel": () => importHubLabel, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "streamedAudioMagic": () => streamedAudioMagic, "audioMagic": () => audioMagic, "sf2Magic": () => sf2Magic, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "syncDurSeg": () => syncDurSeg, "gridFollowNote": () => gridFollowNote, "instWrap": () => instWrap, "instCanvas": () => instCanvas, "ictx": () => ictx, "WHITE_PCS": () => WHITE_PCS, "GTR_TUNING": () => GTR_TUNING, "GTR_NAMES": () => GTR_NAMES, "GTR_FRETS": () => GTR_FRETS, "DEGREE_LABEL": () => DEGREE_LABEL, "keyNameAt": () => keyNameAt, "degreeOf": () => degreeOf, "instRange": () => instRange, "instLitPitches": () => instLitPitches, "drawInst": () => drawInst, "pianoGeom": () => pianoGeom, "instLitColor": () => instLitColor, "drawPiano": () => drawPiano, "pianoHit": () => pianoHit, "guitarGeom": () => guitarGeom, "drawGuitar": () => drawGuitar, "gtrFold": () => gtrFold, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recOpenEnded": () => recOpenEnded, "recSnap": () => recSnap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinish": () => recFinish, "midiMessage": () => midiMessage, "midiStatusLine": () => midiStatusLine, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "fallActive": () => fallActive, "FALL_WINDOW": () => FALL_WINDOW, "drawFall": () => drawFall, "instResize": () => instResize, "instbtn": () => instbtn, "instFallBtn": () => instFallBtn, "applyInst": () => applyInst, "subbtn": () => subbtn, "toggleSubtitle": () => toggleSubtitle, "editor": () => editor, "fillBarBeatSelects": () => fillBarBeatSelects, "editorType": () => editorType, "applyEditorType": () => applyEditorType, "BASS_SPELLINGS": () => BASS_SPELLINGS, "chordSel": () => chordSel, "refreshChordChips": () => refreshChordChips, "composeChord": () => composeChord, "setChordWidget": () => setChordWidget, "SPEECH": () => SPEECH, "nmic": () => nmic, "micStop": () => micStop, "micJoin": () => micJoin, "micToggle": () => micToggle, "snapBeat": () => snapBeat, "setBeatPair": () => setBeatPair, "getBeatPair": () => getBeatPair, "openEditor": () => openEditor, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "tombKey": () => tombKey, "tombKeyFor": () => tombKeyFor, "noteIdentity": () => noteIdentity, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "tombstone": () => tombstone, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "syncsheet": () => syncsheet, "NR_DIR": () => NR_DIR, "COMP_DIR": () => COMP_DIR, "PROVENANCE_RE": () => PROVENANCE_RE, "READONLY_DIRS": () => READONLY_DIRS, "isCaptureKey": () => isCaptureKey, "ownFolderPath": () => ownFolderPath, "isComposition": () => isComposition, "bakesTempo": () => bakesTempo, "hasProvenanceNote": () => hasProvenanceNote, "originOf": () => originOf, "pendingOriginKey": () => pendingOriginKey, "setOrigin": () => setOrigin, "pendingOrigin": () => pendingOrigin, "originFor": () => originFor, "RULES": () => RULES, "rulesFor": () => rulesFor, "canEditMusic": () => canEditMusic, "bakesMeter": () => bakesMeter, "COMP_ALBUMS": () => COMP_ALBUMS, "albumTitleFor": () => albumTitleFor, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "slugify": () => slugify, "untitledKey": () => untitledKey, "isUnsaved": () => isUnsaved, "RESERVED_FOLDERS": () => RESERVED_FOLDERS, "folderChoices": () => folderChoices, "folderFromInput": () => folderFromInput, "fillFolderSelect": () => fillFolderSelect, "chosenFolder": () => chosenFolder, "renameLocalKeys": () => renameLocalKeys, "saveSongAs": () => saveSongAs, "openSaveForm": () => openSaveForm, "localFolders": () => localFolders, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "setAlbumOrderPref": () => setAlbumOrderPref, "slugOfPath": () => slugOfPath, "albumTrackMap": () => albumTrackMap, "albumHasTrackData": () => albumHasTrackData, "albumOrder": () => albumOrder, "albumEffectiveOrder": () => albumEffectiveOrder, "albumOrderControl": () => albumOrderControl, "songStatus": () => songStatus, "publishDest": () => publishDest, "publishLabel": () => publishLabel, "draftTracks": () => draftTracks, "musicSig": () => musicSig, "draftFingerprint": () => draftFingerprint, "pubCheck": () => pubCheck, "pubCompareDraft": () => pubCompareDraft, "fingerprintOldDrafts": () => fingerprintOldDrafts, "draftDoc": () => draftDoc, "saveDraft": () => saveDraft, "autosaveOn": () => autosaveOn, "versionsStoreKey": () => versionsStoreKey, "readVersionsRaw": () => readVersionsRaw, "writeVersionsRaw": () => writeVersionsRaw, "migrateVersions": () => migrateVersions, "readVersions": () => readVersions, "pushVersion": () => pushVersion, "songUnsaved": () => songUnsaved, "saveVersion": () => saveVersion, "draftKeys": () => draftKeys, "openDraft": () => openDraft, "openDraftDoc": () => openDraftDoc, "midiBase64": () => midiBase64, "createComposition": () => createComposition, "forkCurrentSong": () => forkCurrentSong, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "renderViewMenu": () => renderViewMenu, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "closeDropUp": () => closeDropUp, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "instLibs": () => instLibs, "instWavs": () => instWavs, "instPlayer": () => instPlayer, "instDecodeWav": () => instDecodeWav, "instAlbums": () => instAlbums, "romanValue": () => romanValue, "titleSortKey": () => titleSortKey, "titleCompare": () => titleCompare, "INST_SYS_ORDER": () => INST_SYS_ORDER, "INST_CHIPS": () => INST_CHIPS, "instFolder": () => instFolder, "gameInstUsedBySong": () => gameInstUsedBySong, "gameSongRows": () => gameSongRows, "songInstrumentRows": () => songInstrumentRows, "currentSongGameContext": () => currentSongGameContext, "instLibrary": () => instLibrary, "instSamples": () => instSamples, "instKeys": () => instKeys, "sf2Module": () => sf2Module, "sf2Fonts": () => sf2Fonts, "sf2Bytes": () => sf2Bytes, "sf2Font": () => sf2Font, "sf2Registry": () => sf2Registry, "sf2RegistryAdd": () => sf2RegistryAdd, "instAudition": () => instAudition, "usedInstruments": () => usedInstruments, "usedInstrumentRows": () => usedInstrumentRows, "renderGameInstNav": () => renderGameInstNav, "renderInstSheet": () => renderInstSheet, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "dropLocalSong": () => dropLocalSong, "revertSongToRepo": () => revertSongToRepo, "versionLabel": () => versionLabel, "openVersionsSheet": () => openVersionsSheet, "renderVersionsSheet": () => renderVersionsSheet, "goBackToVersion": () => goBackToVersion, "goBackToPublished": () => goBackToPublished, "wavEncode": () => wavEncode, "audioBufferToWav": () => audioBufferToWav, "offlineWaitForAssets": () => offlineWaitForAssets, "renderSongOffline": () => renderSongOffline, "recordRealtimeAudio": () => recordRealtimeAudio, "deliverAudioFile": () => deliverAudioFile, "impDirFor": () => impDirFor, "importDraftKeys": () => importDraftKeys, "impTrackKey": () => impTrackKey, "CHIPS": () => CHIPS, "sonySeqCapture": () => sonySeqCapture, "psfInflater": () => psfInflater, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipExt": () => chipExt, "chipVaultMeta": () => chipVaultMeta, "chipVaultFile": () => chipVaultFile, "chipModules": () => chipModules, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "impDisplayTitle": () => impDisplayTitle, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "impTrackLabel": () => impTrackLabel, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "localDraftWrite": () => localDraftWrite, "localDraftTracks": () => localDraftTracks, "draftWrite": () => draftWrite, "draftRead": () => draftRead, "idbDraftPut": () => idbDraftPut, "commitImports": () => commitImports, "declaredTsForKey": () => declaredTsForKey, "notesTxtFor": () => notesTxtFor, "putSongsText": () => putSongsText, "uploadAudioClips": () => uploadAudioClips, "uploadAudioClipsFor": () => uploadAudioClipsFor, "isCompositionKey": () => isCompositionKey, "publishSong": () => publishSong, "putMidAt": () => putMidAt, "deleteRepoFile": () => deleteRepoFile, "audioDirFiles": () => audioDirFiles, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "dpTick": () => dpTick, "drumRng": () => drumRng, "DR_TOMS": () => DR_TOMS, "fnv1a32": () => fnv1a32, "DR_FILLS": () => DR_FILLS, "sectionLane": () => sectionLane, "drBoundaries": () => drBoundaries, "drNormParts": () => drNormParts, "drBassTrack": () => drBassTrack, "drBackbeats": () => drBackbeats, "drGenerate": () => drGenerate, "drKitCountT": () => drKitCountT, "fmtBarBeat": () => fmtBarBeat, "bsChordTone": () => bsChordTone, "bsInferTimeline": () => bsInferTimeline, "bsChordTimeline": () => bsChordTimeline, "chordAt": () => chordAt, "nextChange": () => nextChange, "harmonyTrackIndices": () => harmonyTrackIndices, "computeAnalysisLayer": () => computeAnalysisLayer, "scheduleAnalysisRecompute": () => scheduleAnalysisRecompute, "drawAnalysisLayer": () => drawAnalysisLayer, "adoptChordBand": () => adoptChordBand, "adoptAllChords": () => adoptAllChords, "adoptKeyRegion": () => adoptKeyRegion, "openAnalyzeSheet": () => openAnalyzeSheet, "bsGenerate": () => bsGenerate, "applyTake": () => applyTake, "bsBuildControls": () => bsBuildControls, "bsRange": () => bsRange, "bsRefresh": () => bsRefresh, "openBassist": () => openBassist, "drRange": () => drRange, "drRefresh": () => drRefresh, "segGet": () => segGet, "segSet": () => segSet, "drPartsGet": () => drPartsGet, "drPartsSet": () => drPartsSet, "drPartsSync": () => drPartsSync, "drBuildControls": () => drBuildControls, "openDrummer": () => openDrummer, "openPasteTo": () => openPasteTo, "diatonicShift": () => diatonicShift, "removeDuplicateNotes": () => removeDuplicateNotes, "updateEditButtons": () => updateEditButtons, "pushUndo": () => pushUndo, "addTrackUndoable": () => addTrackUndoable, "undoTrackAdd": () => undoTrackAdd, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpTrackKey": () => cmpTrackKey, "cmpDiff": () => cmpDiff, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "cmpBar": () => cmpBar, "drawCompare": () => drawCompare, "ASK_SYS_BASE1": () => ASK_SYS_BASE1, "RULE_LEARNING": () => RULE_LEARNING, "RULE_NORMAL": () => RULE_NORMAL, "ASK_SYS_BASE2": () => ASK_SYS_BASE2, "askSys": () => askSys, "ASK_CPT": () => ASK_CPT, "aiUrl": () => aiUrl, "aiHeaders": () => aiHeaders, "aiSSE": () => aiSSE, "aiHostKind": () => aiHostKind, "aiHostOk": () => aiHostOk, "aiRemote": () => aiRemote, "aiSay": () => aiSay, "aiModelMenu": () => aiModelMenu, "aiPickModel": () => aiPickModel, "AI_TEST_MS": () => AI_TEST_MS, "aiTest": () => aiTest, "aiRunTest": () => aiRunTest, "aiBackendRows": () => aiBackendRows, "AI_WEBLLM_URL": () => AI_WEBLLM_URL, "AI_BROWSER_MODELS": () => AI_BROWSER_MODELS, "aiBrowserMenu": () => aiBrowserMenu, "aiWebllmLoad": () => aiWebllmLoad, "aiEngineFor": () => aiEngineFor, "aiBrowserTest": () => aiBrowserTest, "aiBrowser": () => aiBrowser, "aiProvider": () => aiProvider, "ASK_TOOLS": () => ASK_TOOLS, "askAddAnnotation": () => askAddAnnotation, "askFindAnnotation": () => askFindAnnotation, "askNoteKind": () => askNoteKind, "askNoteValue": () => askNoteValue, "askAnnotationStructural": () => askAnnotationStructural, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "notesTxtForDoc": () => notesTxtForDoc, "askSongPath": () => askSongPath, "ASK_READ_BARS_MAX": () => ASK_READ_BARS_MAX, "askReadBars": () => askReadBars, "askRunTool": () => askRunTool, "askSpan": () => askSpan, "askSpanLabel": () => askSpanLabel, "askKeyDeclared": () => askKeyDeclared, "askKeySpellComment": () => askKeySpellComment, "askSpanNotes": () => askSpanNotes, "askSpanNotesCompact": () => askSpanNotesCompact, "askBarRow": () => askBarRow, "askBarFingerprint": () => askBarFingerprint, "askSpanNotesCompactCached": () => askSpanNotesCompactCached, "askSpanCachedBlock": () => askSpanCachedBlock, "askLegendText": () => askLegendText, "askAppState": () => askAppState, "askModeLine": () => askModeLine, "askKeyStateLine": () => askKeyStateLine, "askViewCursorLine": () => askViewCursorLine, "askOpenSongLine": () => askOpenSongLine, "askCapLines": () => askCapLines, "askNewSinceLines": () => askNewSinceLines, "askSentKey": () => askSentKey, "askSentGet": () => askSentGet, "askSentStage": () => askSentStage, "askSentStageBars": () => askSentStageBars, "ASK_SENT_BARS_CAP": () => ASK_SENT_BARS_CAP, "askSentCommit": () => askSentCommit, "askSentDrop": () => askSentDrop, "askSentReset": () => askSentReset, "askEpochKey": () => askEpochKey, "askEpochGet": () => askEpochGet, "askEpochSet": () => askEpochSet, "askEpochNote": () => askEpochNote, "askCachedBlock": () => askCachedBlock, "askContext": () => askContext, "askBudget": () => askBudget, "askStripContext": () => askStripContext, "ASK_LOCAL_SOFT": () => ASK_LOCAL_SOFT, "ASK_TOTAL_CAP": () => ASK_TOTAL_CAP, "ASK_GENERAL_KEY": () => ASK_GENERAL_KEY, "ASK_GENERAL_LOG": () => ASK_GENERAL_LOG, "ASK_TERMINAL_KEY": () => ASK_TERMINAL_KEY, "askSetMode": () => askSetMode, "askModeButtons": () => askModeButtons, "askStoreKey": () => askStoreKey, "askSeenKey": () => askSeenKey, "askSeenGet": () => askSeenGet, "askMaxErrId": () => askMaxErrId, "askMaxStatusId": () => askMaxStatusId, "askSeenMaxKey": () => askSeenMaxKey, "askSeenMax": () => askSeenMax, "askSeenSet": () => askSeenSet, "askSeenAdvance": () => askSeenAdvance, "askSeenStage": () => askSeenStage, "askSeenCommit": () => askSeenCommit, "askSeenDrop": () => askSeenDrop, "askStore": () => askStore, "askLoad": () => askLoad, "askUnsavedCount": () => askUnsavedCount, "askSave": () => askSave, "askRevertToSaved": () => askRevertToSaved, "askEvictOthers": () => askEvictOthers, "askModelName": () => askModelName, "askLogKey": () => askLogKey, "askLogSong": () => askLogSong, "askLogPath": () => askLogPath, "askLogHeader": () => askLogHeader, "askLogMarkdown": () => askLogMarkdown, "askCommitLog": () => askCommitLog, "askMsgMode": () => askMsgMode, "askBuildMessages": () => askBuildMessages, "askEstimate": () => askEstimate, "asksheet": () => asksheet, "asklog": () => asklog, "askinput": () => askinput, "askstatus": () => askstatus, "askSessionName": () => askSessionName, "ASK_SONG_ONLY_TOOLS": () => ASK_SONG_ONLY_TOOLS, "askToolsNow": () => askToolsNow, "askInboxSeenKey": () => askInboxSeenKey, "askInboxAllowed": () => askInboxAllowed, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "askAgeText": () => askAgeText, "scheduleBackupFlush": () => scheduleBackupFlush, "flushBackupNow": () => flushBackupNow, "deployBeforeInstall": () => deployBeforeInstall, "deployButtonTick": () => deployButtonTick, "deployBannerShow": () => deployBannerShow, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployActive": () => deployActive, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsVisible": () => askTabsVisible, "askTabsApply": () => askTabsApply, "askSessionLine": () => askSessionLine, "askCompactModelName": () => askCompactModelName, "askSessionRender": () => askSessionRender, "askSessionRefresh": () => askSessionRefresh, "askStatusIdle": () => askStatusIdle, "askStatusLine": () => askStatusLine, "askStatusRender": () => askStatusRender, "askStatusRecentShow": () => askStatusRecentShow, "askStatusToggle": () => askStatusToggle, "askStatusFetchCommits": () => askStatusFetchCommits, "askShotShow": () => askShotShow, "askShotLine": () => askShotLine, "ASKSHOT_MAX": () => ASKSHOT_MAX, "b64Bytes": () => b64Bytes, "askShotCapture": () => askShotCapture, "askShotUpload": () => askShotUpload, "askShotTake": () => askShotTake, "askShotStatusLabel": () => askShotStatusLabel, "askShotRender": () => askShotRender, "askShotAdd": () => askShotAdd, "askShotRemove": () => askShotRemove, "askShotClearAll": () => askShotClearAll, "askShotRestore": () => askShotRestore, "askShotOutgoing": () => askShotOutgoing, "askShotDisplayText": () => askShotDisplayText, "MAX_SHOT_SIDE": () => MAX_SHOT_SIDE, "MAX_SHOT_KEEP_BYTES": () => MAX_SHOT_KEEP_BYTES, "askPrepImage": () => askPrepImage, "askPickFiles": () => askPickFiles, "askClock": () => askClock, "askNoteLabel": () => askNoteLabel, "askInboxStart": () => askInboxStart, "askBubble": () => askBubble, "askFillBubble": () => askFillBubble, "askCopyText": () => askCopyText, "askDraftStore": () => askDraftStore, "askDraftSave": () => askDraftSave, "askDraftSaveSoon": () => askDraftSaveSoon, "askComposing": () => askComposing, "askDraftLoad": () => askDraftLoad, "askDraftClear": () => askDraftClear, "askRender": () => askRender, "askRenderEarlier": () => askRenderEarlier, "askRefresh": () => askRefresh, "askPartial": () => askPartial, "askShowThinking": () => askShowThinking, "askJobsSupported": () => askJobsSupported, "askJobId": () => askJobId, "askPendingIndex": () => askPendingIndex, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askBadgeOff": () => askBadgeOff, "askRun": () => askRun, "TERM_MODELS": () => TERM_MODELS, "askTermModelsLoad": () => askTermModelsLoad, "askTerminalContext": () => askTerminalContext, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askResumeSoon": () => askResumeSoon, "askPendingAll": () => askPendingAll, "askRepending": () => askRepending, "askResume": () => askResume, "WM_KEY": () => WM_KEY, "WM_OLD_KEY": () => WM_OLD_KEY, "WM_MIN_W": () => WM_MIN_W, "WM_DEFAULT_W": () => WM_DEFAULT_W, "WM_MIN_H": () => WM_MIN_H, "WM_DEFAULT_H": () => WM_DEFAULT_H, "WM_MIN_SPLIT": () => WM_MIN_SPLIT, "WM_PHONE_MAX": () => WM_PHONE_MAX, "WM_ZONE_FRAC": () => WM_ZONE_FRAC, "WM_EDGE_GAP": () => WM_EDGE_GAP, "wmClampSize": () => wmClampSize, "wmClampHeight": () => wmClampHeight, "wmClampSplit": () => wmClampSplit, "wmAllowed": () => wmAllowed, "wmMigrate": () => wmMigrate, "wmMigrateShape": () => wmMigrateShape, "wmMigrateShapeB": () => wmMigrateShapeB, "wmSetSide": () => wmSetSide, "wmClearSide": () => wmClearSide, "wmSetSideMode": () => wmSetSideMode, "wmAddSideTab": () => wmAddSideTab, "wmRemoveSideTab": () => wmRemoveSideTab, "wmSetActiveSideTab": () => wmSetActiveSideTab, "wmSetSideWidth": () => wmSetSideWidth, "wmZoneFor": () => wmZoneFor, "wmDockBottom": () => wmDockBottom, "wmClearBottom": () => wmClearBottom, "wmSetBottomHeight": () => wmSetBottomHeight, "wmSetBottomSplit": () => wmSetBottomSplit, "wmWhereIs": () => wmWhereIs, "wmLoad": () => wmLoad, "wmSave": () => wmSave, "wmInnerWidth": () => wmInnerWidth, "wmInnerHeight": () => wmInnerHeight, "WM_WINDOWS": () => WM_WINDOWS, "wmSideCells": () => wmSideCells, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmWindowTitle": () => wmWindowTitle, "wmLayoutBottom": () => wmLayoutBottom, "wmDockLabel": () => wmDockLabel, "wmDockShort": () => wmDockShort, "wmSyncDockButtons": () => wmSyncDockButtons, "wmLayoutAll": () => wmLayoutAll, "wmZoneForPointer": () => wmZoneForPointer, "wmShowDropZone": () => wmShowDropZone, "wmHideDropZone": () => wmHideDropZone, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmMenuItem": () => wmMenuItem, "wmOpenMenu": () => wmOpenMenu, "wmCloseMenu": () => wmCloseMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askScrollEnd": () => askScrollEnd, "askFocusIfKeyboard": () => askFocusIfKeyboard, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askGrow": () => askGrow, "askNormChip": () => askNormChip, "askFindTrackIndex": () => askFindTrackIndex, "parsePitch": () => parsePitch, "askNoteVel": () => askNoteVel, "askWriteNotesValidate": () => askWriteNotesValidate, "askWritableGate": () => askWritableGate, "askWriteNotes": () => askWriteNotes, "askBarsCount": () => askBarsCount, "askBarsValidate": () => askBarsValidate, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "filesMirror": () => filesMirror, "filesMirrorSoon": () => filesMirrorSoon, "filesMirrorFor": () => filesMirrorFor, "folderScanAlbums": () => folderScanAlbums, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "draftDirtyState": () => draftDirtyState, "syncable": () => syncable, "pendingSongs": () => pendingSongs, "renderSyncPending": () => renderSyncPending, "discardPending": () => discardPending, "openSyncSheet": () => openSyncSheet, "CFG_PANES": () => CFG_PANES, "cfgShowPane": () => cfgShowPane, "openSettingsSheet": () => openSettingsSheet, "noteTapMovesCursor": () => noteTapMovesCursor, "penInstant": () => penInstant, "recSnapOn": () => recSnapOn, "textSizePref": () => textSizePref, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "ghCheckOut": () => ghCheckOut, "ghCheckMessage": () => ghCheckMessage, "ghCheck": () => ghCheck, "MODAL_KEEP": () => MODAL_KEEP, "APP_REPO": () => APP_REPO, "PUBLIC_BASE": () => PUBLIC_BASE, "publicBase": () => publicBase, "shareLinkFor": () => shareLinkFor, "README_OPEN": () => README_OPEN, "README_CLOSE": () => README_CLOSE, "songsReadmeBlock": () => songsReadmeBlock, "spliceReadme": () => spliceReadme, "writeSongsReadme": () => writeSongsReadme, "openShareSheet": () => openShareSheet, "ghHeaders": () => ghHeaders, "putRollnotes": () => putRollnotes, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "recordLastSync": () => recordLastSync, "writeToken": () => writeToken, "connected": () => connected, "takeToken": () => takeToken, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart}, set: {"rememberRecentSong": (v) => (rememberRecentSong = v), "recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "initCatalog": (v) => (initCatalog = v), "kitSlots": (v) => (kitSlots = v), "songHasDrums": (v) => (songHasDrums = v), "topRow": (v) => (topRow = v), "computeLaneTop": (v) => (computeLaneTop = v), "kitLaneTop": (v) => (kitLaneTop = v), "laneBotRow": (v) => (laneBotRow = v), "botRow": (v) => (botRow = v), "inKitLane": (v) => (inKitLane = v), "noteRow": (v) => (noteRow = v), "drumStep": (v) => (drumStep = v), "hslToHex": (v) => (hslToHex = v), "hueOf": (v) => (hueOf = v), "hueDist": (v) => (hueDist = v), "relLuminance": (v) => (relLuminance = v), "contrastRatio": (v) => (contrastRatio = v), "pickFarthestColor": (v) => (pickFarthestColor = v), "autoTrackColors": (v) => (autoTrackColors = v), "songRegionRight": (v) => (songRegionRight = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "loadEdits": (v) => (loadEdits = v), "saveEdits": (v) => (saveEdits = v), "foldOldOverlay": (v) => (foldOldOverlay = v), "retireOldOverlay": (v) => (retireOldOverlay = v), "placeLassoBtn": (v) => (placeLassoBtn = v), "updateEditBtnVis": (v) => (updateEditBtnVis = v), "computeSongEnd": (v) => (computeSongEnd = v), "sfShownAt": (v) => (sfShownAt = v), "sfAt": (v) => (sfAt = v), "sfDeclaredAt": (v) => (sfDeclaredAt = v), "sfDeclaredAtRaw": (v) => (sfDeclaredAtRaw = v), "annoSnapshot": (v) => (annoSnapshot = v), "annoRestore": (v) => (annoRestore = v), "setAnchorBQ": (v) => (setAnchorBQ = v), "setEndBQ": (v) => (setEndBQ = v), "bakeTempos": (v) => (bakeTempos = v), "bakeMeter": (v) => (bakeMeter = v), "finalizeNotes": (v) => (finalizeNotes = v), "loadNotes": (v) => (loadNotes = v), "subtractTombstones": (v) => (subtractTombstones = v), "mergeLocalAdditions": (v) => (mergeLocalAdditions = v), "annotationsFor": (v) => (annotationsFor = v), "resolveNoteWith": (v) => (resolveNoteWith = v), "saveLocalNotes": (v) => (saveLocalNotes = v), "dirtySongs": (v) => (dirtySongs = v), "updateSyncBtn": (v) => (updateSyncBtn = v), "askAnnotationsText": (v) => (askAnnotationsText = v), "askAnnotationsTextCompact": (v) => (askAnnotationsTextCompact = v), "dropLocalKeyAt": (v) => (dropLocalKeyAt = v), "dropSupersededBy": (v) => (dropSupersededBy = v), "isDirective": (v) => (isDirective = v), "activeNoteAt": (v) => (activeNoteAt = v), "sectionPathAt": (v) => (sectionPathAt = v), "playSec": (v) => (playSec = v), "curTick": (v) => (curTick = v), "homeSong": (v) => (homeSong = v), "appConfirm": (v) => (appConfirm = v), "reflectSongURL": (v) => (reflectSongURL = v), "toggleHl": (v) => (toggleHl = v), "updateLCD": (v) => (updateLCD = v), "governingAt": (v) => (governingAt = v), "updateSubtitle": (v) => (updateSubtitle = v), "loadSong": (v) => (loadSong = v), "loadSongInner": (v) => (loadSongInner = v), "setSong": (v) => (setSong = v), "renderTrackbar": (v) => (renderTrackbar = v), "updateTrackMore": (v) => (updateTrackMore = v), "trackRowNeed": (v) => (trackRowNeed = v), "fitTrackRow": (v) => (fitTrackRow = v), "scheduleFitTrackRow": (v) => (scheduleFitTrackRow = v), "trackToggle": (v) => (trackToggle = v), "trackShown": (v) => (trackShown = v), "mixerIsOpen": (v) => (mixerIsOpen = v), "mixerPanLabel": (v) => (mixerPanLabel = v), "moveInSameOrder": (v) => (moveInSameOrder = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerMasterStripEl": (v) => (mixerMasterStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "ensureMixerMeters": (v) => (ensureMixerMeters = v), "teardownMixerMeters": (v) => (teardownMixerMeters = v), "mixerMeterRms": (v) => (mixerMeterRms = v), "mixerMeterLoop": (v) => (mixerMeterLoop = v), "ensureMixerMeterLoop": (v) => (ensureMixerMeterLoop = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "resize": (v) => (resize = v), "css": (v) => (css = v), "drawRangeTints": (v) => (drawRangeTints = v), "pxPerTick": (v) => (pxPerTick = v), "draw": (v) => (draw = v), "viewKey": (v) => (viewKey = v), "viewPersistSoon": (v) => (viewPersistSoon = v), "viewRestore": (v) => (viewRestore = v), "rangeSelKey": (v) => (rangeSelKey = v), "rangeSelPersist": (v) => (rangeSelPersist = v), "rangeSelRestore": (v) => (rangeSelRestore = v), "playbackFrame": (v) => (playbackFrame = v), "updateCanvasA11y": (v) => (updateCanvasA11y = v), "showAddedOutline": (v) => (showAddedOutline = v), "setAddedOutline": (v) => (setAddedOutline = v), "drawFull": (v) => (drawFull = v), "clearMultiSel": (v) => (clearMultiSel = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "reflectSelVel": (v) => (reflectSelVel = v), "refreshSelInfo": (v) => (refreshSelInfo = v), "renderOctBtn": (v) => (renderOctBtn = v), "fallHitNote": (v) => (fallHitNote = v), "drawLasso": (v) => (drawLasso = v), "tracksLaneH": (v) => (tracksLaneH = v), "laneGeom": (v) => (laneGeom = v), "trackLaneAt": (v) => (trackLaneAt = v), "tracksNoteY": (v) => (tracksNoteY = v), "hitTracksNote": (v) => (hitTracksNote = v), "selClipIs": (v) => (selClipIs = v), "selClipObj": (v) => (selClipObj = v), "clipSpanX": (v) => (clipSpanX = v), "clipStatusText": (v) => (clipStatusText = v), "clipLabel": (v) => (clipLabel = v), "fmtSec": (v) => (fmtSec = v), "drawAudioStrip": (v) => (drawAudioStrip = v), "drawClipLane": (v) => (drawClipLane = v), "writeClips": (v) => (writeClips = v), "setClipDir": (v) => (setClipDir = v), "moveClip": (v) => (moveClip = v), "trimClip": (v) => (trimClip = v), "splitClipAt": (v) => (splitClipAt = v), "splitSelectedClipAtCursor": (v) => (splitSelectedClipAtCursor = v), "deleteClip": (v) => (deleteClip = v), "hitTracksClip": (v) => (hitTracksClip = v), "drawTracks": (v) => (drawTracks = v), "stripPlayheadX": (v) => (stripPlayheadX = v), "drawStripPlayhead": (v) => (drawStripPlayhead = v), "drawPlayheadStripBand": (v) => (drawPlayheadStripBand = v), "drawRuler": (v) => (drawRuler = v), "evtPos": (v) => (evtPos = v), "posToTickPitch": (v) => (posToTickPitch = v), "editableSong": (v) => (editableSong = v), "selEditItems": (v) => (selEditItems = v), "updateChordStale": (v) => (updateChordStale = v), "transposeChordLabel": (v) => (transposeChordLabel = v), "ridealongChordBands": (v) => (ridealongChordBands = v), "selEditApply": (v) => (selEditApply = v), "nudgeSelection": (v) => (nudgeSelection = v), "resizeSelection": (v) => (resizeSelection = v), "annoInLasso": (v) => (annoInLasso = v), "copySelection": (v) => (copySelection = v), "cutSelection": (v) => (cutSelection = v), "pasteAnnotations": (v) => (pasteAnnotations = v), "clipboardHas": (v) => (clipboardHas = v), "clipSummary": (v) => (clipSummary = v), "pasteClipboard": (v) => (pasteClipboard = v), "selectAllNotes": (v) => (selectAllNotes = v), "duplicateSelection": (v) => (duplicateSelection = v), "lassoedAnnos": (v) => (lassoedAnnos = v), "deleteSelection": (v) => (deleteSelection = v), "sweepStrandedClones": (v) => (sweepStrandedClones = v), "duplicateSelectionInPlace": (v) => (duplicateSelectionInPlace = v), "splitApply": (v) => (splitApply = v), "openGapShift": (v) => (openGapShift = v), "closeGap": (v) => (closeGap = v), "insertTime": (v) => (insertTime = v), "openInsertBars": (v) => (openInsertBars = v), "deleteTime": (v) => (deleteTime = v), "openDeleteBars": (v) => (openDeleteBars = v), "divideSelection": (v) => (divideSelection = v), "quantizeSelection": (v) => (quantizeSelection = v), "splitSelectionAt": (v) => (splitSelectionAt = v), "splitSelectionHalves": (v) => (splitSelectionHalves = v), "joinSelection": (v) => (joinSelection = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsSave": (v) => (jobsSave = v), "jobsNotify": (v) => (jobsNotify = v), "jobsOnChange": (v) => (jobsOnChange = v), "jobsLoad": (v) => (jobsLoad = v), "jobProgress": (v) => (jobProgress = v), "jobFraction": (v) => (jobFraction = v), "jobsAutoClear": (v) => (jobsAutoClear = v), "jobStart": (v) => (jobStart = v), "jobApi": (v) => (jobApi = v), "jobsList": (v) => (jobsList = v), "jobsFind": (v) => (jobsFind = v), "jobCancel": (v) => (jobCancel = v), "jobsDismiss": (v) => (jobsDismiss = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "updateJobsBtn": (v) => (updateJobsBtn = v), "jobBarSet": (v) => (jobBarSet = v), "renderJobs": (v) => (renderJobs = v), "openPubJobSheet": (v) => (openPubJobSheet = v), "pubItemIcon": (v) => (pubItemIcon = v), "renderPubJob": (v) => (renderPubJob = v), "debugLogOn": (v) => (debugLogOn = v), "logPush": (v) => (logPush = v), "logLines": (v) => (logLines = v), "errChip": (v) => (errChip = v), "logErr": (v) => (logErr = v), "logDebug": (v) => (logDebug = v), "srAnnounce": (v) => (srAnnounce = v), "setInfo": (v) => (setInfo = v), "minPxq": (v) => (minPxq = v), "songPitchExtent": (v) => (songPitchExtent = v), "pxqFloor": (v) => (pxqFloor = v), "dispPitchExtent": (v) => (dispPitchExtent = v), "rowHFloor": (v) => (rowHFloor = v), "cursorHandleHit": (v) => (cursorHandleHit = v), "cursorHit": (v) => (cursorHit = v), "rulerSnapX": (v) => (rulerSnapX = v), "tickAtX": (v) => (tickAtX = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "armNoteEdit": (v) => (armNoteEdit = v), "endPointer": (v) => (endPointer = v), "fitView": (v) => (fitView = v), "clampView": (v) => (clampView = v), "tap": (v) => (tap = v), "ensureAudio": (v) => (ensureAudio = v), "rebuildAudio": (v) => (rebuildAudio = v), "resumeAudio": (v) => (resumeAudio = v), "sfPreloadForSong": (v) => (sfPreloadForSong = v), "sfWaitForSong": (v) => (sfWaitForSong = v), "autoVoiceLabel": (v) => (autoVoiceLabel = v), "trackColor": (v) => (trackColor = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "gameVoiceFromAll": (v) => (gameVoiceFromAll = v), "gameVoiceFrom": (v) => (gameVoiceFrom = v), "gameVoiceFromSet": (v) => (gameVoiceFromSet = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "transposeTrack": (v) => (transposeTrack = v), "resolveGameVault": (v) => (resolveGameVault = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "instPlayerReady": (v) => (instPlayerReady = v), "gameVoicesInSong": (v) => (gameVoicesInSong = v), "sf2VoicesInSong": (v) => (sf2VoicesInSong = v), "gamePreloadForSong": (v) => (gamePreloadForSong = v), "gameWaitForSong": (v) => (gameWaitForSong = v), "gameNoteBucket": (v) => (gameNoteBucket = v), "gameVoiceWarn": (v) => (gameVoiceWarn = v), "resolveVoiceInstrument": (v) => (resolveVoiceInstrument = v), "scheduleGameNote": (v) => (scheduleGameNote = v), "scheduleNote": (v) => (scheduleNote = v), "previewNote": (v) => (previewNote = v), "buildSchedule": (v) => (buildSchedule = v), "chipTrackNo": (v) => (chipTrackNo = v), "albumMetaFor": (v) => (albumMetaFor = v), "vaultFetch": (v) => (vaultFetch = v), "chipSource": (v) => (chipSource = v), "updateChipBtn": (v) => (updateChipBtn = v), "gatePending": (v) => (gatePending = v), "playGate": (v) => (playGate = v), "playGateKick": (v) => (playGateKick = v), "playGateActive": (v) => (playGateActive = v), "playGateTick": (v) => (playGateTick = v), "playGateWait": (v) => (playGateWait = v), "updateChipBtnInner": (v) => (updateChipBtnInner = v), "chipRenderBudget": (v) => (chipRenderBudget = v), "planChipRender": (v) => (planChipRender = v), "chipEstimateTracks": (v) => (chipEstimateTracks = v), "chipStaticPan": (v) => (chipStaticPan = v), "chipDownmixStatic": (v) => (chipDownmixStatic = v), "chipSilent": (v) => (chipSilent = v), "chipIsPcm": (v) => (chipIsPcm = v), "chipAlbumHasSource": (v) => (chipAlbumHasSource = v), "chipRenderStreamed": (v) => (chipRenderStreamed = v), "chipRender": (v) => (chipRender = v), "chipCleanupAfterFailure": (v) => (chipCleanupAfterFailure = v), "chipPublish": (v) => (chipPublish = v), "chipWorkerAvailable": (v) => (chipWorkerAvailable = v), "chipPreviewBuffer": (v) => (chipPreviewBuffer = v), "chipRenderInWorker": (v) => (chipRenderInWorker = v), "chipActive": (v) => (chipActive = v), "chipHas": (v) => (chipHas = v), "chipBuffers": (v) => (chipBuffers = v), "chipPcmToBuffers": (v) => (chipPcmToBuffers = v), "chipStopSrcs": (v) => (chipStopSrcs = v), "chipStart": (v) => (chipStart = v), "chipStreamMode": (v) => (chipStreamMode = v), "chipAutoShouldStream": (v) => (chipAutoShouldStream = v), "chipAutoReason": (v) => (chipAutoReason = v), "chipSegments": (v) => (chipSegments = v), "chipStreamIdxForTapeSec": (v) => (chipStreamIdxForTapeSec = v), "chipStreamOpenWorker": (v) => (chipStreamOpenWorker = v), "chipStreamOnChunk": (v) => (chipStreamOnChunk = v), "chipStreamOnSilent": (v) => (chipStreamOnSilent = v), "chipStreamRequestRange": (v) => (chipStreamRequestRange = v), "chipStreamWaitFor": (v) => (chipStreamWaitFor = v), "chipStreamPinLoopStart": (v) => (chipStreamPinLoopStart = v), "chipStreamEvict": (v) => (chipStreamEvict = v), "chipStreamScheduled": (v) => (chipStreamScheduled = v), "chipStreamScheduleChunk": (v) => (chipStreamScheduleChunk = v), "chipNoteSlice": (v) => (chipNoteSlice = v), "chipStreamPump": (v) => (chipStreamPump = v), "chipStreamStart": (v) => (chipStreamStart = v), "chipStreamOpen": (v) => (chipStreamOpen = v), "chipRenderAuto": (v) => (chipRenderAuto = v), "audioDirFor": (v) => (audioDirFor = v), "audioCacheKey": (v) => (audioCacheKey = v), "songHasAudio": (v) => (songHasAudio = v), "clipLen": (v) => (clipLen = v), "clipEndTick": (v) => (clipEndTick = v), "clipClamp": (v) => (clipClamp = v), "applyAudioDirs": (v) => (applyAudioDirs = v), "forEachClip": (v) => (forEachClip = v), "audioBytesFor": (v) => (audioBytesFor = v), "decodeAudioBytes": (v) => (decodeAudioBytes = v), "peaksOf": (v) => (peaksOf = v), "audioEnsureFile": (v) => (audioEnsureFile = v), "clipOnsetSec": (v) => (clipOnsetSec = v), "tempoFromPeaks": (v) => (tempoFromPeaks = v), "onsetCurve": (v) => (onsetCurve = v), "beatTrack": (v) => (beatTrack = v), "clipBeatMap": (v) => (clipBeatMap = v), "applyBeatMap": (v) => (applyBeatMap = v), "clipTempo": (v) => (clipTempo = v), "setSongTempo": (v) => (setSongTempo = v), "audioReady": (v) => (audioReady = v), "wsolaStretch": (v) => (wsolaStretch = v), "stretchInWorker": (v) => (stretchInWorker = v), "keepPitch": (v) => (keepPitch = v), "stretchKey": (v) => (stretchKey = v), "stretchEnsure": (v) => (stretchEnsure = v), "audioChaseNow": (v) => (audioChaseNow = v), "stretchEnsureAll": (v) => (stretchEnsureAll = v), "stretchPending": (v) => (stretchPending = v), "scheduleClip": (v) => (scheduleClip = v), "play": (v) => (play = v), "stop": (v) => (stop = v), "albumPos": (v) => (albumPos = v), "armAlbumLink": (v) => (armAlbumLink = v), "albumStrip": (v) => (albumStrip = v), "albumClear": (v) => (albumClear = v), "albumLeave": (v) => (albumLeave = v), "albumStart": (v) => (albumStart = v), "albumNext": (v) => (albumNext = v), "albumPrev": (v) => (albumPrev = v), "albumPlayIdx": (v) => (albumPlayIdx = v), "albumAdvance": (v) => (albumAdvance = v), "drumScoreRole": (v) => (drumScoreRole = v), "vexKey": (v) => (vexKey = v), "durationPieces": (v) => (durationPieces = v), "buildScoreModel": (v) => (buildScoreModel = v), "scoreContentH": (v) => (scoreContentH = v), "renderMeasure": (v) => (renderMeasure = v), "renderIntro": (v) => (renderIntro = v), "scoreTickToX": (v) => (scoreTickToX = v), "scoreXToTick": (v) => (scoreXToTick = v), "drawScore": (v) => (drawScore = v), "scoreMeasureAnchors": (v) => (scoreMeasureAnchors = v), "scorePencilTick": (v) => (scorePencilTick = v), "drawScorePencilGuides": (v) => (drawScorePencilGuides = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "songTitleOf": (v) => (songTitleOf = v), "songWhereLabel": (v) => (songWhereLabel = v), "updateSongBtn": (v) => (updateSongBtn = v), "songDirtyFlag": (v) => (songDirtyFlag = v), "songRow": (v) => (songRow = v), "songHeader": (v) => (songHeader = v), "localLabel": (v) => (localLabel = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "updateSongMeta": (v) => (updateSongMeta = v), "applySpeed": (v) => (applySpeed = v), "keyEstimateSig": (v) => (keyEstimateSig = v), "estimateKey": (v) => (estimateKey = v), "fileMeterAt": (v) => (fileMeterAt = v), "tonicPcFromName": (v) => (tonicPcFromName = v), "checkKeyVsFile": (v) => (checkKeyVsFile = v), "fileCheckLine": (v) => (fileCheckLine = v), "runKeyCheck": (v) => (runKeyCheck = v), "runMeterCheck": (v) => (runMeterCheck = v), "useFileKey": (v) => (useFileKey = v), "useFileMeter": (v) => (useFileMeter = v), "keyNameShownAt": (v) => (keyNameShownAt = v), "expandKeyName": (v) => (expandKeyName = v), "keyLabelState": (v) => (keyLabelState = v), "tonicLabel": (v) => (tonicLabel = v), "tonicPcOfName": (v) => (tonicPcOfName = v), "modeOfName": (v) => (modeOfName = v), "chosenTonic": (v) => (chosenTonic = v), "chosenTonicPc": (v) => (chosenTonicPc = v), "partialNameOf": (v) => (partialNameOf = v), "tonicOptionValue": (v) => (tonicOptionValue = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "refreshKeysetLabel": (v) => (refreshKeysetLabel = v), "metDefaultAccents": (v) => (metDefaultAccents = v), "metBuildCells": (v) => (metBuildCells = v), "metClick": (v) => (metClick = v), "metFollowBeatTicks": (v) => (metFollowBeatTicks = v), "metFollowNum": (v) => (metFollowNum = v), "metPumpFollow": (v) => (metPumpFollow = v), "metPump": (v) => (metPump = v), "ensureMetGain": (v) => (ensureMetGain = v), "metStart": (v) => (metStart = v), "metHalt": (v) => (metHalt = v), "applyMetMode": (v) => (applyMetMode = v), "chordLabel": (v) => (chordLabel = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "stampChordBand": (v) => (stampChordBand = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofMinor": (v) => (cofMinor = v), "cofDim": (v) => (cofDim = v), "cofSigLabel": (v) => (cofSigLabel = v), "cofMajorName": (v) => (cofMajorName = v), "drawCof": (v) => (drawCof = v), "cofRelease": (v) => (cofRelease = v), "renderNoteJump": (v) => (renderNoteJump = v), "renderNoteList": (v) => (renderNoteList = v), "openNoteList": (v) => (openNoteList = v), "showHelpTab": (v) => (showHelpTab = v), "refreshFindSel": (v) => (refreshFindSel = v), "chordEvidence": (v) => (chordEvidence = v), "openChallenge": (v) => (openChallenge = v), "applyListener": (v) => (applyListener = v), "applyChrome": (v) => (applyChrome = v), "fitReadline": (v) => (fitReadline = v), "scheduleFitReadline": (v) => (scheduleFitReadline = v), "renderViewSwitch": (v) => (renderViewSwitch = v), "applyViewMode": (v) => (applyViewMode = v), "setViewMode": (v) => (setViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "importHubLabel": (v) => (importHubLabel = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "streamedAudioMagic": (v) => (streamedAudioMagic = v), "audioMagic": (v) => (audioMagic = v), "sf2Magic": (v) => (sf2Magic = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "syncDurSeg": (v) => (syncDurSeg = v), "gridFollowNote": (v) => (gridFollowNote = v), "keyNameAt": (v) => (keyNameAt = v), "degreeOf": (v) => (degreeOf = v), "instRange": (v) => (instRange = v), "instLitPitches": (v) => (instLitPitches = v), "drawInst": (v) => (drawInst = v), "pianoGeom": (v) => (pianoGeom = v), "instLitColor": (v) => (instLitColor = v), "drawPiano": (v) => (drawPiano = v), "pianoHit": (v) => (pianoHit = v), "guitarGeom": (v) => (guitarGeom = v), "drawGuitar": (v) => (drawGuitar = v), "gtrFold": (v) => (gtrFold = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recOpenEnded": (v) => (recOpenEnded = v), "recSnap": (v) => (recSnap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "recFinish": (v) => (recFinish = v), "midiMessage": (v) => (midiMessage = v), "midiStatusLine": (v) => (midiStatusLine = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "fallActive": (v) => (fallActive = v), "drawFall": (v) => (drawFall = v), "instResize": (v) => (instResize = v), "applyInst": (v) => (applyInst = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "fillBarBeatSelects": (v) => (fillBarBeatSelects = v), "editorType": (v) => (editorType = v), "applyEditorType": (v) => (applyEditorType = v), "refreshChordChips": (v) => (refreshChordChips = v), "composeChord": (v) => (composeChord = v), "setChordWidget": (v) => (setChordWidget = v), "micStop": (v) => (micStop = v), "micJoin": (v) => (micJoin = v), "micToggle": (v) => (micToggle = v), "snapBeat": (v) => (snapBeat = v), "setBeatPair": (v) => (setBeatPair = v), "getBeatPair": (v) => (getBeatPair = v), "openEditor": (v) => (openEditor = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "tombKey": (v) => (tombKey = v), "tombKeyFor": (v) => (tombKeyFor = v), "noteIdentity": (v) => (noteIdentity = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "tombstone": (v) => (tombstone = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "isCaptureKey": (v) => (isCaptureKey = v), "ownFolderPath": (v) => (ownFolderPath = v), "isComposition": (v) => (isComposition = v), "bakesTempo": (v) => (bakesTempo = v), "hasProvenanceNote": (v) => (hasProvenanceNote = v), "originOf": (v) => (originOf = v), "pendingOriginKey": (v) => (pendingOriginKey = v), "setOrigin": (v) => (setOrigin = v), "pendingOrigin": (v) => (pendingOrigin = v), "originFor": (v) => (originFor = v), "rulesFor": (v) => (rulesFor = v), "canEditMusic": (v) => (canEditMusic = v), "bakesMeter": (v) => (bakesMeter = v), "albumTitleFor": (v) => (albumTitleFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "slugify": (v) => (slugify = v), "untitledKey": (v) => (untitledKey = v), "isUnsaved": (v) => (isUnsaved = v), "folderChoices": (v) => (folderChoices = v), "folderFromInput": (v) => (folderFromInput = v), "fillFolderSelect": (v) => (fillFolderSelect = v), "chosenFolder": (v) => (chosenFolder = v), "renameLocalKeys": (v) => (renameLocalKeys = v), "saveSongAs": (v) => (saveSongAs = v), "openSaveForm": (v) => (openSaveForm = v), "localFolders": (v) => (localFolders = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "setAlbumOrderPref": (v) => (setAlbumOrderPref = v), "slugOfPath": (v) => (slugOfPath = v), "albumTrackMap": (v) => (albumTrackMap = v), "albumHasTrackData": (v) => (albumHasTrackData = v), "albumOrder": (v) => (albumOrder = v), "albumEffectiveOrder": (v) => (albumEffectiveOrder = v), "albumOrderControl": (v) => (albumOrderControl = v), "songStatus": (v) => (songStatus = v), "publishDest": (v) => (publishDest = v), "publishLabel": (v) => (publishLabel = v), "draftTracks": (v) => (draftTracks = v), "musicSig": (v) => (musicSig = v), "draftFingerprint": (v) => (draftFingerprint = v), "pubCompareDraft": (v) => (pubCompareDraft = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "draftDoc": (v) => (draftDoc = v), "saveDraft": (v) => (saveDraft = v), "autosaveOn": (v) => (autosaveOn = v), "versionsStoreKey": (v) => (versionsStoreKey = v), "readVersionsRaw": (v) => (readVersionsRaw = v), "writeVersionsRaw": (v) => (writeVersionsRaw = v), "migrateVersions": (v) => (migrateVersions = v), "readVersions": (v) => (readVersions = v), "pushVersion": (v) => (pushVersion = v), "songUnsaved": (v) => (songUnsaved = v), "saveVersion": (v) => (saveVersion = v), "draftKeys": (v) => (draftKeys = v), "openDraft": (v) => (openDraft = v), "openDraftDoc": (v) => (openDraftDoc = v), "midiBase64": (v) => (midiBase64 = v), "createComposition": (v) => (createComposition = v), "forkCurrentSong": (v) => (forkCurrentSong = v), "renderViewMenu": (v) => (renderViewMenu = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "closeDropUp": (v) => (closeDropUp = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "instPlayer": (v) => (instPlayer = v), "instDecodeWav": (v) => (instDecodeWav = v), "instAlbums": (v) => (instAlbums = v), "romanValue": (v) => (romanValue = v), "titleSortKey": (v) => (titleSortKey = v), "titleCompare": (v) => (titleCompare = v), "instFolder": (v) => (instFolder = v), "gameInstUsedBySong": (v) => (gameInstUsedBySong = v), "gameSongRows": (v) => (gameSongRows = v), "songInstrumentRows": (v) => (songInstrumentRows = v), "currentSongGameContext": (v) => (currentSongGameContext = v), "instLibrary": (v) => (instLibrary = v), "instSamples": (v) => (instSamples = v), "instKeys": (v) => (instKeys = v), "sf2Module": (v) => (sf2Module = v), "sf2Bytes": (v) => (sf2Bytes = v), "sf2Font": (v) => (sf2Font = v), "sf2Registry": (v) => (sf2Registry = v), "sf2RegistryAdd": (v) => (sf2RegistryAdd = v), "instAudition": (v) => (instAudition = v), "usedInstruments": (v) => (usedInstruments = v), "usedInstrumentRows": (v) => (usedInstrumentRows = v), "renderGameInstNav": (v) => (renderGameInstNav = v), "renderInstSheet": (v) => (renderInstSheet = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "dropLocalSong": (v) => (dropLocalSong = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "versionLabel": (v) => (versionLabel = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "goBackToPublished": (v) => (goBackToPublished = v), "wavEncode": (v) => (wavEncode = v), "audioBufferToWav": (v) => (audioBufferToWav = v), "offlineWaitForAssets": (v) => (offlineWaitForAssets = v), "renderSongOffline": (v) => (renderSongOffline = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "deliverAudioFile": (v) => (deliverAudioFile = v), "impDirFor": (v) => (impDirFor = v), "importDraftKeys": (v) => (importDraftKeys = v), "impTrackKey": (v) => (impTrackKey = v), "sonySeqCapture": (v) => (sonySeqCapture = v), "psfInflater": (v) => (psfInflater = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipExt": (v) => (chipExt = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "chipVaultFile": (v) => (chipVaultFile = v), "chipModules": (v) => (chipModules = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "impDisplayTitle": (v) => (impDisplayTitle = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "impTrackLabel": (v) => (impTrackLabel = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "localDraftWrite": (v) => (localDraftWrite = v), "localDraftTracks": (v) => (localDraftTracks = v), "draftWrite": (v) => (draftWrite = v), "draftRead": (v) => (draftRead = v), "idbDraftPut": (v) => (idbDraftPut = v), "commitImports": (v) => (commitImports = v), "declaredTsForKey": (v) => (declaredTsForKey = v), "notesTxtFor": (v) => (notesTxtFor = v), "putSongsText": (v) => (putSongsText = v), "uploadAudioClips": (v) => (uploadAudioClips = v), "uploadAudioClipsFor": (v) => (uploadAudioClipsFor = v), "isCompositionKey": (v) => (isCompositionKey = v), "publishSong": (v) => (publishSong = v), "putMidAt": (v) => (putMidAt = v), "deleteRepoFile": (v) => (deleteRepoFile = v), "audioDirFiles": (v) => (audioDirFiles = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "dpTick": (v) => (dpTick = v), "drumRng": (v) => (drumRng = v), "fnv1a32": (v) => (fnv1a32 = v), "sectionLane": (v) => (sectionLane = v), "drBoundaries": (v) => (drBoundaries = v), "drNormParts": (v) => (drNormParts = v), "drBassTrack": (v) => (drBassTrack = v), "drBackbeats": (v) => (drBackbeats = v), "drGenerate": (v) => (drGenerate = v), "drKitCountT": (v) => (drKitCountT = v), "fmtBarBeat": (v) => (fmtBarBeat = v), "bsChordTone": (v) => (bsChordTone = v), "bsInferTimeline": (v) => (bsInferTimeline = v), "bsChordTimeline": (v) => (bsChordTimeline = v), "chordAt": (v) => (chordAt = v), "nextChange": (v) => (nextChange = v), "harmonyTrackIndices": (v) => (harmonyTrackIndices = v), "computeAnalysisLayer": (v) => (computeAnalysisLayer = v), "scheduleAnalysisRecompute": (v) => (scheduleAnalysisRecompute = v), "drawAnalysisLayer": (v) => (drawAnalysisLayer = v), "adoptChordBand": (v) => (adoptChordBand = v), "adoptAllChords": (v) => (adoptAllChords = v), "adoptKeyRegion": (v) => (adoptKeyRegion = v), "openAnalyzeSheet": (v) => (openAnalyzeSheet = v), "bsGenerate": (v) => (bsGenerate = v), "applyTake": (v) => (applyTake = v), "bsBuildControls": (v) => (bsBuildControls = v), "bsRange": (v) => (bsRange = v), "bsRefresh": (v) => (bsRefresh = v), "openBassist": (v) => (openBassist = v), "drRange": (v) => (drRange = v), "drRefresh": (v) => (drRefresh = v), "segGet": (v) => (segGet = v), "segSet": (v) => (segSet = v), "drPartsGet": (v) => (drPartsGet = v), "drPartsSet": (v) => (drPartsSet = v), "drPartsSync": (v) => (drPartsSync = v), "drBuildControls": (v) => (drBuildControls = v), "openDrummer": (v) => (openDrummer = v), "openPasteTo": (v) => (openPasteTo = v), "diatonicShift": (v) => (diatonicShift = v), "removeDuplicateNotes": (v) => (removeDuplicateNotes = v), "updateEditButtons": (v) => (updateEditButtons = v), "pushUndo": (v) => (pushUndo = v), "addTrackUndoable": (v) => (addTrackUndoable = v), "undoTrackAdd": (v) => (undoTrackAdd = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpTrackKey": (v) => (cmpTrackKey = v), "cmpDiff": (v) => (cmpDiff = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "cmpBar": (v) => (cmpBar = v), "drawCompare": (v) => (drawCompare = v), "askSys": (v) => (askSys = v), "aiUrl": (v) => (aiUrl = v), "aiHeaders": (v) => (aiHeaders = v), "aiSSE": (v) => (aiSSE = v), "aiHostKind": (v) => (aiHostKind = v), "aiHostOk": (v) => (aiHostOk = v), "aiRemote": (v) => (aiRemote = v), "aiSay": (v) => (aiSay = v), "aiModelMenu": (v) => (aiModelMenu = v), "aiPickModel": (v) => (aiPickModel = v), "aiTest": (v) => (aiTest = v), "aiRunTest": (v) => (aiRunTest = v), "aiBackendRows": (v) => (aiBackendRows = v), "aiBrowserMenu": (v) => (aiBrowserMenu = v), "aiWebllmLoad": (v) => (aiWebllmLoad = v), "aiEngineFor": (v) => (aiEngineFor = v), "aiBrowserTest": (v) => (aiBrowserTest = v), "aiBrowser": (v) => (aiBrowser = v), "aiProvider": (v) => (aiProvider = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askFindAnnotation": (v) => (askFindAnnotation = v), "askNoteKind": (v) => (askNoteKind = v), "askNoteValue": (v) => (askNoteValue = v), "askAnnotationStructural": (v) => (askAnnotationStructural = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "notesTxtForDoc": (v) => (notesTxtForDoc = v), "askSongPath": (v) => (askSongPath = v), "askReadBars": (v) => (askReadBars = v), "askRunTool": (v) => (askRunTool = v), "askSpan": (v) => (askSpan = v), "askSpanLabel": (v) => (askSpanLabel = v), "askKeyDeclared": (v) => (askKeyDeclared = v), "askKeySpellComment": (v) => (askKeySpellComment = v), "askSpanNotes": (v) => (askSpanNotes = v), "askSpanNotesCompact": (v) => (askSpanNotesCompact = v), "askBarRow": (v) => (askBarRow = v), "askBarFingerprint": (v) => (askBarFingerprint = v), "askSpanNotesCompactCached": (v) => (askSpanNotesCompactCached = v), "askSpanCachedBlock": (v) => (askSpanCachedBlock = v), "askLegendText": (v) => (askLegendText = v), "askAppState": (v) => (askAppState = v), "askModeLine": (v) => (askModeLine = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askViewCursorLine": (v) => (askViewCursorLine = v), "askOpenSongLine": (v) => (askOpenSongLine = v), "askCapLines": (v) => (askCapLines = v), "askNewSinceLines": (v) => (askNewSinceLines = v), "askSentKey": (v) => (askSentKey = v), "askSentGet": (v) => (askSentGet = v), "askSentStage": (v) => (askSentStage = v), "askSentStageBars": (v) => (askSentStageBars = v), "askSentCommit": (v) => (askSentCommit = v), "askSentDrop": (v) => (askSentDrop = v), "askSentReset": (v) => (askSentReset = v), "askEpochKey": (v) => (askEpochKey = v), "askEpochGet": (v) => (askEpochGet = v), "askEpochSet": (v) => (askEpochSet = v), "askEpochNote": (v) => (askEpochNote = v), "askCachedBlock": (v) => (askCachedBlock = v), "askContext": (v) => (askContext = v), "askBudget": (v) => (askBudget = v), "askStripContext": (v) => (askStripContext = v), "askSetMode": (v) => (askSetMode = v), "askModeButtons": (v) => (askModeButtons = v), "askStoreKey": (v) => (askStoreKey = v), "askSeenKey": (v) => (askSeenKey = v), "askSeenGet": (v) => (askSeenGet = v), "askMaxErrId": (v) => (askMaxErrId = v), "askMaxStatusId": (v) => (askMaxStatusId = v), "askSeenMaxKey": (v) => (askSeenMaxKey = v), "askSeenMax": (v) => (askSeenMax = v), "askSeenSet": (v) => (askSeenSet = v), "askSeenAdvance": (v) => (askSeenAdvance = v), "askSeenStage": (v) => (askSeenStage = v), "askSeenCommit": (v) => (askSeenCommit = v), "askSeenDrop": (v) => (askSeenDrop = v), "askStore": (v) => (askStore = v), "askLoad": (v) => (askLoad = v), "askUnsavedCount": (v) => (askUnsavedCount = v), "askSave": (v) => (askSave = v), "askRevertToSaved": (v) => (askRevertToSaved = v), "askEvictOthers": (v) => (askEvictOthers = v), "askModelName": (v) => (askModelName = v), "askLogKey": (v) => (askLogKey = v), "askLogSong": (v) => (askLogSong = v), "askLogPath": (v) => (askLogPath = v), "askLogHeader": (v) => (askLogHeader = v), "askLogMarkdown": (v) => (askLogMarkdown = v), "askCommitLog": (v) => (askCommitLog = v), "askMsgMode": (v) => (askMsgMode = v), "askBuildMessages": (v) => (askBuildMessages = v), "askEstimate": (v) => (askEstimate = v), "askSessionName": (v) => (askSessionName = v), "askToolsNow": (v) => (askToolsNow = v), "askInboxSeenKey": (v) => (askInboxSeenKey = v), "askInboxAllowed": (v) => (askInboxAllowed = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "askAgeText": (v) => (askAgeText = v), "scheduleBackupFlush": (v) => (scheduleBackupFlush = v), "flushBackupNow": (v) => (flushBackupNow = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployButtonTick": (v) => (deployButtonTick = v), "deployBannerShow": (v) => (deployBannerShow = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployActive": (v) => (deployActive = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsVisible": (v) => (askTabsVisible = v), "askTabsApply": (v) => (askTabsApply = v), "askSessionLine": (v) => (askSessionLine = v), "askCompactModelName": (v) => (askCompactModelName = v), "askSessionRender": (v) => (askSessionRender = v), "askSessionRefresh": (v) => (askSessionRefresh = v), "askStatusIdle": (v) => (askStatusIdle = v), "askStatusLine": (v) => (askStatusLine = v), "askStatusRender": (v) => (askStatusRender = v), "askStatusRecentShow": (v) => (askStatusRecentShow = v), "askStatusToggle": (v) => (askStatusToggle = v), "askStatusFetchCommits": (v) => (askStatusFetchCommits = v), "askShotShow": (v) => (askShotShow = v), "askShotLine": (v) => (askShotLine = v), "b64Bytes": (v) => (b64Bytes = v), "askShotCapture": (v) => (askShotCapture = v), "askShotUpload": (v) => (askShotUpload = v), "askShotTake": (v) => (askShotTake = v), "askShotStatusLabel": (v) => (askShotStatusLabel = v), "askShotRender": (v) => (askShotRender = v), "askShotAdd": (v) => (askShotAdd = v), "askShotRemove": (v) => (askShotRemove = v), "askShotClearAll": (v) => (askShotClearAll = v), "askShotRestore": (v) => (askShotRestore = v), "askShotOutgoing": (v) => (askShotOutgoing = v), "askShotDisplayText": (v) => (askShotDisplayText = v), "askPrepImage": (v) => (askPrepImage = v), "askPickFiles": (v) => (askPickFiles = v), "askClock": (v) => (askClock = v), "askNoteLabel": (v) => (askNoteLabel = v), "askInboxStart": (v) => (askInboxStart = v), "askBubble": (v) => (askBubble = v), "askFillBubble": (v) => (askFillBubble = v), "askCopyText": (v) => (askCopyText = v), "askDraftStore": (v) => (askDraftStore = v), "askDraftSave": (v) => (askDraftSave = v), "askDraftSaveSoon": (v) => (askDraftSaveSoon = v), "askComposing": (v) => (askComposing = v), "askDraftLoad": (v) => (askDraftLoad = v), "askDraftClear": (v) => (askDraftClear = v), "askRender": (v) => (askRender = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askRefresh": (v) => (askRefresh = v), "askShowThinking": (v) => (askShowThinking = v), "askJobsSupported": (v) => (askJobsSupported = v), "askJobId": (v) => (askJobId = v), "askPendingIndex": (v) => (askPendingIndex = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askBadgeOff": (v) => (askBadgeOff = v), "askRun": (v) => (askRun = v), "askTermModelsLoad": (v) => (askTermModelsLoad = v), "askTerminalContext": (v) => (askTerminalContext = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askResumeSoon": (v) => (askResumeSoon = v), "askPendingAll": (v) => (askPendingAll = v), "askRepending": (v) => (askRepending = v), "askResume": (v) => (askResume = v), "wmClampSize": (v) => (wmClampSize = v), "wmClampHeight": (v) => (wmClampHeight = v), "wmClampSplit": (v) => (wmClampSplit = v), "wmAllowed": (v) => (wmAllowed = v), "wmMigrate": (v) => (wmMigrate = v), "wmMigrateShape": (v) => (wmMigrateShape = v), "wmMigrateShapeB": (v) => (wmMigrateShapeB = v), "wmSetSide": (v) => (wmSetSide = v), "wmClearSide": (v) => (wmClearSide = v), "wmSetSideMode": (v) => (wmSetSideMode = v), "wmAddSideTab": (v) => (wmAddSideTab = v), "wmRemoveSideTab": (v) => (wmRemoveSideTab = v), "wmSetActiveSideTab": (v) => (wmSetActiveSideTab = v), "wmSetSideWidth": (v) => (wmSetSideWidth = v), "wmZoneFor": (v) => (wmZoneFor = v), "wmDockBottom": (v) => (wmDockBottom = v), "wmClearBottom": (v) => (wmClearBottom = v), "wmSetBottomHeight": (v) => (wmSetBottomHeight = v), "wmSetBottomSplit": (v) => (wmSetBottomSplit = v), "wmWhereIs": (v) => (wmWhereIs = v), "wmLoad": (v) => (wmLoad = v), "wmSave": (v) => (wmSave = v), "wmInnerWidth": (v) => (wmInnerWidth = v), "wmInnerHeight": (v) => (wmInnerHeight = v), "wmSideCells": (v) => (wmSideCells = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmWindowTitle": (v) => (wmWindowTitle = v), "wmLayoutBottom": (v) => (wmLayoutBottom = v), "wmDockLabel": (v) => (wmDockLabel = v), "wmDockShort": (v) => (wmDockShort = v), "wmSyncDockButtons": (v) => (wmSyncDockButtons = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmZoneForPointer": (v) => (wmZoneForPointer = v), "wmShowDropZone": (v) => (wmShowDropZone = v), "wmHideDropZone": (v) => (wmHideDropZone = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmMenuItem": (v) => (wmMenuItem = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmCloseMenu": (v) => (wmCloseMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askScrollEnd": (v) => (askScrollEnd = v), "askFocusIfKeyboard": (v) => (askFocusIfKeyboard = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askGrow": (v) => (askGrow = v), "askNormChip": (v) => (askNormChip = v), "askFindTrackIndex": (v) => (askFindTrackIndex = v), "parsePitch": (v) => (parsePitch = v), "askNoteVel": (v) => (askNoteVel = v), "askWriteNotesValidate": (v) => (askWriteNotesValidate = v), "askWritableGate": (v) => (askWritableGate = v), "askWriteNotes": (v) => (askWriteNotes = v), "askBarsCount": (v) => (askBarsCount = v), "askBarsValidate": (v) => (askBarsValidate = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "filesMirror": (v) => (filesMirror = v), "filesMirrorSoon": (v) => (filesMirrorSoon = v), "filesMirrorFor": (v) => (filesMirrorFor = v), "folderScanAlbums": (v) => (folderScanAlbums = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "draftDirtyState": (v) => (draftDirtyState = v), "syncable": (v) => (syncable = v), "pendingSongs": (v) => (pendingSongs = v), "renderSyncPending": (v) => (renderSyncPending = v), "discardPending": (v) => (discardPending = v), "openSyncSheet": (v) => (openSyncSheet = v), "cfgShowPane": (v) => (cfgShowPane = v), "openSettingsSheet": (v) => (openSettingsSheet = v), "noteTapMovesCursor": (v) => (noteTapMovesCursor = v), "penInstant": (v) => (penInstant = v), "recSnapOn": (v) => (recSnapOn = v), "textSizePref": (v) => (textSizePref = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "ghCheckOut": (v) => (ghCheckOut = v), "ghCheckMessage": (v) => (ghCheckMessage = v), "ghCheck": (v) => (ghCheck = v), "publicBase": (v) => (publicBase = v), "shareLinkFor": (v) => (shareLinkFor = v), "songsReadmeBlock": (v) => (songsReadmeBlock = v), "spliceReadme": (v) => (spliceReadme = v), "writeSongsReadme": (v) => (writeSongsReadme = v), "openShareSheet": (v) => (openShareSheet = v), "ghHeaders": (v) => (ghHeaders = v), "putRollnotes": (v) => (putRollnotes = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "recordLastSync": (v) => (recordLastSync = v), "writeToken": (v) => (writeToken = v), "connected": (v) => (connected = v), "takeToken": (v) => (takeToken = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v)}};
+export const __nrExpose$ = {get: {"rememberRecentSong": () => rememberRecentSong, "recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "initCatalog": () => initCatalog, "DRUM_LABELS": () => DRUM_LABELS, "DRUM_SLOTS": () => DRUM_SLOTS, "kitSlots": () => kitSlots, "songHasDrums": () => songHasDrums, "topRow": () => topRow, "computeLaneTop": () => computeLaneTop, "kitLaneTop": () => kitLaneTop, "laneBotRow": () => laneBotRow, "botRow": () => botRow, "inKitLane": () => inKitLane, "noteRow": () => noteRow, "drumStep": () => drumStep, "AUTO_COLOR_S": () => AUTO_COLOR_S, "AUTO_COLOR_L": () => AUTO_COLOR_L, "hslToHex": () => hslToHex, "hueOf": () => hueOf, "hueDist": () => hueDist, "relLuminance": () => relLuminance, "contrastRatio": () => contrastRatio, "ROLL_SURFACE_COLORS": () => ROLL_SURFACE_COLORS, "TRACK_COLOR_CANDIDATES": () => TRACK_COLOR_CANDIDATES, "pickFarthestColor": () => pickFarthestColor, "TRACK_COLORS": () => TRACK_COLORS, "autoTrackColors": () => autoTrackColors, "PSX_SOUNDING_ON": () => PSX_SOUNDING_ON, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "canvas": () => canvas, "ctx": () => ctx, "wrap": () => wrap, "songRegionRight": () => songRegionRight, "RULER_W_ROLL": () => RULER_W_ROLL, "TRACKS_GUTTER": () => TRACKS_GUTTER, "BASE_RULER_H": () => BASE_RULER_H, "LANE_H": () => LANE_H, "AUDIO_STRIP_H": () => AUDIO_STRIP_H, "STRIP_H": () => STRIP_H, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "loadEdits": () => loadEdits, "saveEdits": () => saveEdits, "foldOldOverlay": () => foldOldOverlay, "retireOldOverlay": () => retireOldOverlay, "placeLassoBtn": () => placeLassoBtn, "updateEditBtnVis": () => updateEditBtnVis, "computeSongEnd": () => computeSongEnd, "sfShownAt": () => sfShownAt, "sfAt": () => sfAt, "sfDeclaredAt": () => sfDeclaredAt, "sfDeclaredAtRaw": () => sfDeclaredAtRaw, "annoSnapshot": () => annoSnapshot, "annoRestore": () => annoRestore, "setAnchorBQ": () => setAnchorBQ, "setEndBQ": () => setEndBQ, "bakeTempos": () => bakeTempos, "bakeMeter": () => bakeMeter, "finalizeNotes": () => finalizeNotes, "loadNotes": () => loadNotes, "subtractTombstones": () => subtractTombstones, "mergeLocalAdditions": () => mergeLocalAdditions, "annotationsFor": () => annotationsFor, "resolveNoteWith": () => resolveNoteWith, "saveLocalNotes": () => saveLocalNotes, "dirtySongs": () => dirtySongs, "updateSyncBtn": () => updateSyncBtn, "askAnnotationsText": () => askAnnotationsText, "askAnnotationsTextCompact": () => askAnnotationsTextCompact, "dropLocalKeyAt": () => dropLocalKeyAt, "dropSupersededBy": () => dropSupersededBy, "isDirective": () => isDirective, "activeNoteAt": () => activeNoteAt, "sectionPathAt": () => sectionPathAt, "curTick": () => curTick, "homeSong": () => homeSong, "appConfirm": () => appConfirm, "reflectSongURL": () => reflectSongURL, "toggleHl": () => toggleHl, "updateLCD": () => updateLCD, "governingAt": () => governingAt, "updateSubtitle": () => updateSubtitle, "loadSong": () => loadSong, "loadSongInner": () => loadSongInner, "setSong": () => setSong, "renderTrackbar": () => renderTrackbar, "updateTrackMore": () => updateTrackMore, "TRACK_ROW_SLACK": () => TRACK_ROW_SLACK, "trackRowNeed": () => trackRowNeed, "fitTrackRow": () => fitTrackRow, "scheduleFitTrackRow": () => scheduleFitTrackRow, "trackToggle": () => trackToggle, "trackShown": () => trackShown, "mixerIsOpen": () => mixerIsOpen, "mixerPanLabel": () => mixerPanLabel, "moveInSameOrder": () => moveInSameOrder, "reorderTrack": () => reorderTrack, "renderMixer": () => renderMixer, "mixerStripEl": () => mixerStripEl, "mixerMasterStripEl": () => mixerMasterStripEl, "mixerStripDragize": () => mixerStripDragize, "ensureMixerMeters": () => ensureMixerMeters, "teardownMixerMeters": () => teardownMixerMeters, "mixerMeterRms": () => mixerMeterRms, "mixerMeterLoop": () => mixerMeterLoop, "ensureMixerMeterLoop": () => ensureMixerMeterLoop, "openMixer": () => openMixer, "closeMixer": () => closeMixer, "toggleMixer": () => toggleMixer, "resize": () => resize, "cssCache": () => cssCache, "css": () => css, "drawRangeTints": () => drawRangeTints, "pxPerTick": () => pxPerTick, "draw": () => draw, "viewKey": () => viewKey, "viewPersistSoon": () => viewPersistSoon, "viewRestore": () => viewRestore, "rangeSelKey": () => rangeSelKey, "rangeSelPersist": () => rangeSelPersist, "rangeSelRestore": () => rangeSelRestore, "playbackFrame": () => playbackFrame, "updateCanvasA11y": () => updateCanvasA11y, "showAddedOutline": () => showAddedOutline, "setAddedOutline": () => setAddedOutline, "drawFull": () => drawFull, "clearMultiSel": () => clearMultiSel, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "reflectSelVel": () => reflectSelVel, "refreshSelInfo": () => refreshSelInfo, "renderOctBtn": () => renderOctBtn, "fallHitNote": () => fallHitNote, "drawLasso": () => drawLasso, "tracksLaneH": () => tracksLaneH, "laneGeom": () => laneGeom, "trackLaneAt": () => trackLaneAt, "tracksNoteY": () => tracksNoteY, "hitTracksNote": () => hitTracksNote, "selClipIs": () => selClipIs, "selClipObj": () => selClipObj, "clipSpanX": () => clipSpanX, "clipStatusText": () => clipStatusText, "clipLabel": () => clipLabel, "fmtSec": () => fmtSec, "drawAudioStrip": () => drawAudioStrip, "drawClipLane": () => drawClipLane, "writeClips": () => writeClips, "setClipDir": () => setClipDir, "moveClip": () => moveClip, "trimClip": () => trimClip, "splitClipAt": () => splitClipAt, "splitSelectedClipAtCursor": () => splitSelectedClipAtCursor, "deleteClip": () => deleteClip, "hitTracksClip": () => hitTracksClip, "drawTracks": () => drawTracks, "stripPlayheadX": () => stripPlayheadX, "drawStripPlayhead": () => drawStripPlayhead, "drawPlayheadStripBand": () => drawPlayheadStripBand, "drawRuler": () => drawRuler, "evtPos": () => evtPos, "posToTickPitch": () => posToTickPitch, "editableSong": () => editableSong, "selEditItems": () => selEditItems, "updateChordStale": () => updateChordStale, "transposeChordLabel": () => transposeChordLabel, "ridealongChordBands": () => ridealongChordBands, "selEditApply": () => selEditApply, "nudgeSelection": () => nudgeSelection, "resizeSelection": () => resizeSelection, "isCopyableAnno": () => isCopyableAnno, "annoInLasso": () => annoInLasso, "copySelection": () => copySelection, "cutSelection": () => cutSelection, "pasteAnnotations": () => pasteAnnotations, "clipboardHas": () => clipboardHas, "clipSummary": () => clipSummary, "pasteClipboard": () => pasteClipboard, "selectAllNotes": () => selectAllNotes, "duplicateSelection": () => duplicateSelection, "lassoedAnnos": () => lassoedAnnos, "deleteSelection": () => deleteSelection, "sweepStrandedClones": () => sweepStrandedClones, "duplicateSelectionInPlace": () => duplicateSelectionInPlace, "splitApply": () => splitApply, "openGapShift": () => openGapShift, "closeGap": () => closeGap, "insertTime": () => insertTime, "openInsertBars": () => openInsertBars, "deleteTime": () => deleteTime, "openDeleteBars": () => openDeleteBars, "divideSelection": () => divideSelection, "quantizeSelection": () => quantizeSelection, "splitSelectionAt": () => splitSelectionAt, "splitSelectionHalves": () => splitSelectionHalves, "joinSelection": () => joinSelection, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "appErrors": () => appErrors, "JOB_KINDS": () => JOB_KINDS, "jobListeners": () => jobListeners, "jobControls": () => jobControls, "jobsSave": () => jobsSave, "jobsNotify": () => jobsNotify, "jobsOnChange": () => jobsOnChange, "jobsLoad": () => jobsLoad, "jobProgress": () => jobProgress, "jobFraction": () => jobFraction, "JOBS_AUTOCLEAR_MS": () => JOBS_AUTOCLEAR_MS, "jobsAutoClear": () => jobsAutoClear, "jobStart": () => jobStart, "jobApi": () => jobApi, "jobsList": () => jobsList, "jobsFind": () => jobsFind, "jobCancel": () => jobCancel, "jobsDismiss": () => jobsDismiss, "jobsClearFinished": () => jobsClearFinished, "updateJobsBtn": () => updateJobsBtn, "jobBarSet": () => jobBarSet, "renderJobs": () => renderJobs, "openPubJobSheet": () => openPubJobSheet, "pubItemIcon": () => pubItemIcon, "renderPubJob": () => renderPubJob, "appDebug": () => appDebug, "debugLogOn": () => debugLogOn, "logPush": () => logPush, "logLines": () => logLines, "errChip": () => errChip, "logErr": () => logErr, "logDebug": () => logDebug, "logLine": () => logLine, "BENIGN_ERRORS": () => BENIGN_ERRORS, "srAnnounce": () => srAnnounce, "STATUS_HISTORY_CAP": () => STATUS_HISTORY_CAP, "setInfo": () => setInfo, "minPxq": () => minPxq, "songPitchExtent": () => songPitchExtent, "pxqFloor": () => pxqFloor, "ROLL_AIR": () => ROLL_AIR, "dispPitchExtent": () => dispPitchExtent, "rowHFloor": () => rowHFloor, "cursorHandleHit": () => cursorHandleHit, "cursorHit": () => cursorHit, "rulerSnapX": () => rulerSnapX, "tickAtX": () => tickAtX, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "armNoteEdit": () => armNoteEdit, "endPointer": () => endPointer, "fitView": () => fitView, "PAN_TAIL_BARS": () => PAN_TAIL_BARS, "clampView": () => clampView, "tap": () => tap, "ensureAudio": () => ensureAudio, "rebuildAudio": () => rebuildAudio, "resumeAudio": () => resumeAudio, "sfPreloadForSong": () => sfPreloadForSong, "sfWaitForSong": () => sfWaitForSong, "autoVoiceLabel": () => autoVoiceLabel, "trackColor": () => trackColor, "saveVoices": () => saveVoices, "saveTrackDir": () => saveTrackDir, "GAME_FAMILY": () => GAME_FAMILY, "gameVoiceLabels": () => gameVoiceLabels, "gameVoiceLabel": () => gameVoiceLabel, "SF2_FAMILY": () => SF2_FAMILY, "sf2VoiceLabels": () => sf2VoiceLabels, "sf2VoiceLabel": () => sf2VoiceLabel, "openVoiceMenu": () => openVoiceMenu, "buildVoiceMenu": () => buildVoiceMenu, "buildGameVoicePicker": () => buildGameVoicePicker, "openGameVoiceMenuTo": () => openGameVoiceMenuTo, "gameVoiceFromAll": () => gameVoiceFromAll, "gameVoiceFrom": () => gameVoiceFrom, "gameVoiceFromSet": () => gameVoiceFromSet, "renderSf2Nav": () => renderSf2Nav, "sf2AuditionPreset": () => sf2AuditionPreset, "buildSf2VoicePicker": () => buildSf2VoicePicker, "buildClipControls": () => buildClipControls, "transposeTrack": () => transposeTrack, "resolveGameVault": () => resolveGameVault, "gameVaultResolved": () => gameVaultResolved, "resolvedGameVaultSync": () => resolvedGameVaultSync, "instPlayerReady": () => instPlayerReady, "gameLibSync": () => gameLibSync, "sf2Sync": () => sf2Sync, "gameVoicesInSong": () => gameVoicesInSong, "sf2VoicesInSong": () => sf2VoicesInSong, "gamePreloadTokens": () => gamePreloadTokens, "gamePreloadForSong": () => gamePreloadForSong, "gameWaitForSong": () => gameWaitForSong, "gameNoteCache": () => gameNoteCache, "gameNoteBucket": () => gameNoteBucket, "gameVoiceWarned": () => gameVoiceWarned, "gameVoiceWarn": () => gameVoiceWarn, "resolveVoiceInstrument": () => resolveVoiceInstrument, "scheduleGameNote": () => scheduleGameNote, "scheduleNote": () => scheduleNote, "previewNote": () => previewNote, "buildSchedule": () => buildSchedule, "chipSource": () => chipSource, "updateChipBtn": () => updateChipBtn, "PLAY_GATE_GRACE": () => PLAY_GATE_GRACE, "PLAY_GATE_MAX": () => PLAY_GATE_MAX, "gateSettled": () => gateSettled, "gateWatched": () => gateWatched, "gatePending": () => gatePending, "playGate": () => playGate, "playGateKick": () => playGateKick, "playGateActive": () => playGateActive, "playGateTick": () => playGateTick, "playGateWait": () => playGateWait, "updateChipBtnInner": () => updateChipBtnInner, "chipEstimateTracks": () => chipEstimateTracks, "chipRender": () => chipRender, "chipCleanupAfterFailure": () => chipCleanupAfterFailure, "chipPublish": () => chipPublish, "chipRenderInWorker": () => chipRenderInWorker, "chipStreamOpenWorker": () => chipStreamOpenWorker, "chipStreamOpen": () => chipStreamOpen, "chipRenderAuto": () => chipRenderAuto, "applyAudioDirs": () => applyAudioDirs, "audioEnsureFile": () => audioEnsureFile, "applyBeatMap": () => applyBeatMap, "setSongTempo": () => setSongTempo, "stretchEnsure": () => stretchEnsure, "audioChaseNow": () => audioChaseNow, "stretchEnsureAll": () => stretchEnsureAll, "scheduleClip": () => scheduleClip, "play": () => play, "stop": () => stop, "albumPos": () => albumPos, "armAlbumLink": () => armAlbumLink, "albumStrip": () => albumStrip, "albumClear": () => albumClear, "albumLeave": () => albumLeave, "albumStart": () => albumStart, "albumNext": () => albumNext, "albumPrev": () => albumPrev, "albumPlayIdx": () => albumPlayIdx, "albumAdvance": () => albumAdvance, "VF": () => VF, "STAVE_H": () => STAVE_H, "SCORE_TOP": () => SCORE_TOP, "SCORE_PAD": () => SCORE_PAD, "SCORE_INTRO_W": () => SCORE_INTRO_W, "DRUM_SCORE": () => DRUM_SCORE, "drumScoreRole": () => drumScoreRole, "vexKey": () => vexKey, "durationPieces": () => durationPieces, "buildScoreModel": () => buildScoreModel, "scoreContentH": () => scoreContentH, "renderMeasure": () => renderMeasure, "renderIntro": () => renderIntro, "scoreTickToX": () => scoreTickToX, "scoreXToTick": () => scoreXToTick, "drawScore": () => drawScore, "scoreMeasureAnchors": () => scoreMeasureAnchors, "scorePencilTick": () => scorePencilTick, "drawScorePencilGuides": () => drawScorePencilGuides, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "songtitleEl": () => songtitleEl, "songsheet": () => songsheet, "songTitleOf": () => songTitleOf, "songWhereLabel": () => songWhereLabel, "updateSongBtn": () => updateSongBtn, "songDirtyFlag": () => songDirtyFlag, "songRow": () => songRow, "songHeader": () => songHeader, "localLabel": () => localLabel, "publishedLabel": () => publishedLabel, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "updateSongMeta": () => updateSongMeta, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "keysel": () => keysel, "keysetBtn": () => keysetBtn, "keymodeSel": () => keymodeSel, "KS_MAJOR_PROFILE": () => KS_MAJOR_PROFILE, "KS_MINOR_PROFILE": () => KS_MINOR_PROFILE, "keyEstimateSig": () => keyEstimateSig, "estimateKey": () => estimateKey, "fileMeterAt": () => fileMeterAt, "tonicPcFromName": () => tonicPcFromName, "checkKeyVsFile": () => checkKeyVsFile, "fileCheckLine": () => fileCheckLine, "runKeyCheck": () => runKeyCheck, "runMeterCheck": () => runMeterCheck, "useFileKey": () => useFileKey, "useFileMeter": () => useFileMeter, "keyNameShownAt": () => keyNameShownAt, "expandKeyName": () => expandKeyName, "keyLabelState": () => keyLabelState, "tonicLabel": () => tonicLabel, "tonicPcOfName": () => tonicPcOfName, "modeOfName": () => modeOfName, "chosenTonic": () => chosenTonic, "chosenTonicPc": () => chosenTonicPc, "partialNameOf": () => partialNameOf, "tonicOptionValue": () => tonicOptionValue, "refreshKeyPreview": () => refreshKeyPreview, "refreshKeysetLabel": () => refreshKeysetLabel, "metStart": () => metStart, "CHORD_QUALS": () => CHORD_QUALS, "CHORD_ROOTS": () => CHORD_ROOTS, "INS_DURS": () => INS_DURS, "chordLabel": () => chordLabel, "renameTrack": () => renameTrack, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "stampChordBand": () => stampChordBand, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "PROG_LIB": () => PROG_LIB, "cofCanvas": () => cofCanvas, "cofCtx": () => cofCtx, "cofMinor": () => cofMinor, "cofDim": () => cofDim, "cofSigLabel": () => cofSigLabel, "cofMajorName": () => cofMajorName, "wrapSf": () => wrapSf, "drawCof": () => drawCof, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "notelistSheet": () => notelistSheet, "NOTE_GROUPS": () => NOTE_GROUPS, "renderNoteJump": () => renderNoteJump, "renderNoteList": () => renderNoteList, "openNoteList": () => openNoteList, "showHelpTab": () => showHelpTab, "findsel": () => findsel, "refreshFindSel": () => refreshFindSel, "lassobtn": () => lassobtn, "chordEvidence": () => chordEvidence, "openChallenge": () => openChallenge, "applyListener": () => applyListener, "applyChrome": () => applyChrome, "FOOTER_DROPUP_BTN_IDS": () => FOOTER_DROPUP_BTN_IDS, "fitReadline": () => fitReadline, "scheduleFitReadline": () => scheduleFitReadline, "viewbtn": () => viewbtn, "viewSwitchMenu": () => viewSwitchMenu, "renderViewSwitch": () => renderViewSwitch, "applyViewMode": () => applyViewMode, "viewSaved": () => viewSaved, "setViewMode": () => setViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "importHubLabel": () => importHubLabel, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "streamedAudioMagic": () => streamedAudioMagic, "audioMagic": () => audioMagic, "sf2Magic": () => sf2Magic, "SF2_SIZE_WARN": () => SF2_SIZE_WARN, "SF2_SIZE_REFUSE": () => SF2_SIZE_REFUSE, "importSf2File": () => importSf2File, "slugFile": () => slugFile, "monoWavBytes": () => monoWavBytes, "AUDIO_SIZE_GATE": () => AUDIO_SIZE_GATE, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "syncDurSeg": () => syncDurSeg, "gridFollowNote": () => gridFollowNote, "instWrap": () => instWrap, "instCanvas": () => instCanvas, "ictx": () => ictx, "WHITE_PCS": () => WHITE_PCS, "GTR_TUNING": () => GTR_TUNING, "GTR_NAMES": () => GTR_NAMES, "GTR_FRETS": () => GTR_FRETS, "DEGREE_LABEL": () => DEGREE_LABEL, "keyNameAt": () => keyNameAt, "degreeOf": () => degreeOf, "instRange": () => instRange, "instLitPitches": () => instLitPitches, "drawInst": () => drawInst, "pianoGeom": () => pianoGeom, "instLitColor": () => instLitColor, "drawPiano": () => drawPiano, "pianoHit": () => pianoHit, "guitarGeom": () => guitarGeom, "drawGuitar": () => drawGuitar, "gtrFold": () => gtrFold, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recOpenEnded": () => recOpenEnded, "recSnap": () => recSnap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinish": () => recFinish, "midiMessage": () => midiMessage, "midiStatusLine": () => midiStatusLine, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "fallActive": () => fallActive, "FALL_WINDOW": () => FALL_WINDOW, "drawFall": () => drawFall, "instResize": () => instResize, "instbtn": () => instbtn, "instFallBtn": () => instFallBtn, "applyInst": () => applyInst, "subbtn": () => subbtn, "toggleSubtitle": () => toggleSubtitle, "editor": () => editor, "fillBarBeatSelects": () => fillBarBeatSelects, "editorType": () => editorType, "applyEditorType": () => applyEditorType, "BASS_SPELLINGS": () => BASS_SPELLINGS, "chordSel": () => chordSel, "refreshChordChips": () => refreshChordChips, "composeChord": () => composeChord, "setChordWidget": () => setChordWidget, "SPEECH": () => SPEECH, "nmic": () => nmic, "micStop": () => micStop, "micJoin": () => micJoin, "micToggle": () => micToggle, "snapBeat": () => snapBeat, "setBeatPair": () => setBeatPair, "getBeatPair": () => getBeatPair, "openEditor": () => openEditor, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "tombKey": () => tombKey, "tombKeyFor": () => tombKeyFor, "noteIdentity": () => noteIdentity, "retireEdited": () => retireEdited, "pruneTombstones": () => pruneTombstones, "tombstone": () => tombstone, "clearTombstones": () => clearTombstones, "clearTombstonesFor": () => clearTombstonesFor, "syncsheet": () => syncsheet, "NR_DIR": () => NR_DIR, "COMP_DIR": () => COMP_DIR, "PROVENANCE_RE": () => PROVENANCE_RE, "READONLY_DIRS": () => READONLY_DIRS, "isCaptureKey": () => isCaptureKey, "ownFolderPath": () => ownFolderPath, "isComposition": () => isComposition, "bakesTempo": () => bakesTempo, "hasProvenanceNote": () => hasProvenanceNote, "originOf": () => originOf, "pendingOriginKey": () => pendingOriginKey, "setOrigin": () => setOrigin, "pendingOrigin": () => pendingOrigin, "originFor": () => originFor, "RULES": () => RULES, "rulesFor": () => rulesFor, "canEditMusic": () => canEditMusic, "bakesMeter": () => bakesMeter, "COMP_ALBUMS": () => COMP_ALBUMS, "albumTitleFor": () => albumTitleFor, "updateManifest": () => updateManifest, "manifestPlace": () => manifestPlace, "slugify": () => slugify, "untitledKey": () => untitledKey, "isUnsaved": () => isUnsaved, "RESERVED_FOLDERS": () => RESERVED_FOLDERS, "folderChoices": () => folderChoices, "folderFromInput": () => folderFromInput, "fillFolderSelect": () => fillFolderSelect, "chosenFolder": () => chosenFolder, "renameLocalKeys": () => renameLocalKeys, "saveSongAs": () => saveSongAs, "openSaveForm": () => openSaveForm, "localFolders": () => localFolders, "folderTree": () => folderTree, "nodeAt": () => nodeAt, "nodeCount": () => nodeCount, "parentFolder": () => parentFolder, "subfolderKeys": () => subfolderKeys, "setAlbumOrderPref": () => setAlbumOrderPref, "slugOfPath": () => slugOfPath, "albumTrackMap": () => albumTrackMap, "albumHasTrackData": () => albumHasTrackData, "albumOrder": () => albumOrder, "albumEffectiveOrder": () => albumEffectiveOrder, "albumOrderControl": () => albumOrderControl, "songStatus": () => songStatus, "publishDest": () => publishDest, "publishLabel": () => publishLabel, "draftTracks": () => draftTracks, "musicSig": () => musicSig, "draftFingerprint": () => draftFingerprint, "pubCheck": () => pubCheck, "pubCompareDraft": () => pubCompareDraft, "fingerprintOldDrafts": () => fingerprintOldDrafts, "draftDoc": () => draftDoc, "saveDraft": () => saveDraft, "autosaveOn": () => autosaveOn, "versionsStoreKey": () => versionsStoreKey, "readVersionsRaw": () => readVersionsRaw, "writeVersionsRaw": () => writeVersionsRaw, "migrateVersions": () => migrateVersions, "readVersions": () => readVersions, "pushVersion": () => pushVersion, "songUnsaved": () => songUnsaved, "saveVersion": () => saveVersion, "draftKeys": () => draftKeys, "openDraft": () => openDraft, "openDraftDoc": () => openDraftDoc, "createComposition": () => createComposition, "forkCurrentSong": () => forkCurrentSong, "fileStatus": () => fileStatus, "filesheet": () => filesheet, "renderViewMenu": () => renderViewMenu, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "filesub": () => filesub, "closeFileMenus": () => closeFileMenus, "closeDropUp": () => closeDropUp, "openDropUp": () => openDropUp, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "draftRow": () => draftRow, "fsubLocalFolder": () => fsubLocalFolder, "publishJobStart": () => publishJobStart, "fsubImportAlbum": () => fsubImportAlbum, "instLibs": () => instLibs, "instWavs": () => instWavs, "instPlayer": () => instPlayer, "instDecodeWav": () => instDecodeWav, "instAlbums": () => instAlbums, "romanValue": () => romanValue, "titleSortKey": () => titleSortKey, "titleCompare": () => titleCompare, "INST_SYS_ORDER": () => INST_SYS_ORDER, "INST_CHIPS": () => INST_CHIPS, "instFolder": () => instFolder, "gameInstUsedBySong": () => gameInstUsedBySong, "gameSongRows": () => gameSongRows, "songInstrumentRows": () => songInstrumentRows, "currentSongGameContext": () => currentSongGameContext, "instLibrary": () => instLibrary, "instSamples": () => instSamples, "instKeys": () => instKeys, "sf2Module": () => sf2Module, "sf2Fonts": () => sf2Fonts, "sf2Bytes": () => sf2Bytes, "sf2Font": () => sf2Font, "sf2Registry": () => sf2Registry, "sf2RegistryAdd": () => sf2RegistryAdd, "instAudition": () => instAudition, "usedInstruments": () => usedInstruments, "usedInstrumentRows": () => usedInstrumentRows, "renderGameInstNav": () => renderGameInstNav, "renderInstSheet": () => renderInstSheet, "renameRepoTitle": () => renameRepoTitle, "renameRepoTitles": () => renameRepoTitles, "editHereNow": () => editHereNow, "forkClashTitle": () => forkClashTitle, "makeItMine": () => makeItMine, "dropLocalSong": () => dropLocalSong, "revertSongToRepo": () => revertSongToRepo, "versionLabel": () => versionLabel, "openVersionsSheet": () => openVersionsSheet, "renderVersionsSheet": () => renderVersionsSheet, "goBackToVersion": () => goBackToVersion, "goBackToPublished": () => goBackToPublished, "offlineWaitForAssets": () => offlineWaitForAssets, "renderSongOffline": () => renderSongOffline, "recordRealtimeAudio": () => recordRealtimeAudio, "impDirFor": () => impDirFor, "importDraftKeys": () => importDraftKeys, "impTrackKey": () => impTrackKey, "CHIPS": () => CHIPS, "sonySeqCapture": () => sonySeqCapture, "psfInflater": () => psfInflater, "chipTrackOrder": () => chipTrackOrder, "chipKindOf": () => chipKindOf, "chipExt": () => chipExt, "chipVaultMeta": () => chipVaultMeta, "chipVaultFile": () => chipVaultFile, "chipModules": () => chipModules, "nsfModules": () => nsfModules, "captureChipTrack": () => captureChipTrack, "openChipImport": () => openChipImport, "openNsfImport": () => openNsfImport, "impStatus": () => impStatus, "impDisplayTitle": () => impDisplayTitle, "renameImportDraft": () => renameImportDraft, "impCapture": () => impCapture, "impTrackLabel": () => impTrackLabel, "captureJobStart": () => captureJobStart, "impRename": () => impRename, "computeImportAlbumJson": () => computeImportAlbumJson, "batchCommit": () => batchCommit, "localDraftWrite": () => localDraftWrite, "localDraftTracks": () => localDraftTracks, "draftWrite": () => draftWrite, "draftRead": () => draftRead, "idbDraftPut": () => idbDraftPut, "commitImports": () => commitImports, "declaredTsForKey": () => declaredTsForKey, "notesTxtFor": () => notesTxtFor, "putSongsText": () => putSongsText, "uploadAudioClips": () => uploadAudioClips, "uploadAudioClipsFor": () => uploadAudioClipsFor, "isCompositionKey": () => isCompositionKey, "publishSong": () => publishSong, "putMidAt": () => putMidAt, "deleteRepoFile": () => deleteRepoFile, "audioDirFiles": () => audioDirFiles, "copyAudioClips": () => copyAudioClips, "moveComposition": () => moveComposition, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "dpTick": () => dpTick, "drumRng": () => drumRng, "DR_TOMS": () => DR_TOMS, "fnv1a32": () => fnv1a32, "DR_FILLS": () => DR_FILLS, "sectionLane": () => sectionLane, "drBoundaries": () => drBoundaries, "drNormParts": () => drNormParts, "drBassTrack": () => drBassTrack, "drBackbeats": () => drBackbeats, "drGenerate": () => drGenerate, "drKitCountT": () => drKitCountT, "fmtBarBeat": () => fmtBarBeat, "bsChordTone": () => bsChordTone, "bsInferTimeline": () => bsInferTimeline, "bsChordTimeline": () => bsChordTimeline, "chordAt": () => chordAt, "nextChange": () => nextChange, "harmonyTrackIndices": () => harmonyTrackIndices, "computeAnalysisLayer": () => computeAnalysisLayer, "scheduleAnalysisRecompute": () => scheduleAnalysisRecompute, "drawAnalysisLayer": () => drawAnalysisLayer, "adoptChordBand": () => adoptChordBand, "adoptAllChords": () => adoptAllChords, "adoptKeyRegion": () => adoptKeyRegion, "openAnalyzeSheet": () => openAnalyzeSheet, "bsGenerate": () => bsGenerate, "applyTake": () => applyTake, "bsBuildControls": () => bsBuildControls, "bsRange": () => bsRange, "bsRefresh": () => bsRefresh, "openBassist": () => openBassist, "drRange": () => drRange, "drRefresh": () => drRefresh, "segGet": () => segGet, "segSet": () => segSet, "drPartsGet": () => drPartsGet, "drPartsSet": () => drPartsSet, "drPartsSync": () => drPartsSync, "drBuildControls": () => drBuildControls, "openDrummer": () => openDrummer, "openPasteTo": () => openPasteTo, "diatonicShift": () => diatonicShift, "removeDuplicateNotes": () => removeDuplicateNotes, "updateEditButtons": () => updateEditButtons, "pushUndo": () => pushUndo, "addTrackUndoable": () => addTrackUndoable, "undoTrackAdd": () => undoTrackAdd, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "cmpTrackKey": () => cmpTrackKey, "cmpDiff": () => cmpDiff, "cmpEnter": () => cmpEnter, "cmpExit": () => cmpExit, "cmpShow": () => cmpShow, "cmpBar": () => cmpBar, "drawCompare": () => drawCompare, "ASK_SYS_BASE1": () => ASK_SYS_BASE1, "RULE_LEARNING": () => RULE_LEARNING, "RULE_NORMAL": () => RULE_NORMAL, "ASK_SYS_BASE2": () => ASK_SYS_BASE2, "askSys": () => askSys, "ASK_CPT": () => ASK_CPT, "aiUrl": () => aiUrl, "aiHeaders": () => aiHeaders, "aiSSE": () => aiSSE, "aiHostKind": () => aiHostKind, "aiHostOk": () => aiHostOk, "aiRemote": () => aiRemote, "aiSay": () => aiSay, "aiModelMenu": () => aiModelMenu, "aiPickModel": () => aiPickModel, "AI_TEST_MS": () => AI_TEST_MS, "aiTest": () => aiTest, "aiRunTest": () => aiRunTest, "aiBackendRows": () => aiBackendRows, "AI_WEBLLM_URL": () => AI_WEBLLM_URL, "AI_BROWSER_MODELS": () => AI_BROWSER_MODELS, "aiBrowserMenu": () => aiBrowserMenu, "aiWebllmLoad": () => aiWebllmLoad, "aiEngineFor": () => aiEngineFor, "aiBrowserTest": () => aiBrowserTest, "aiBrowser": () => aiBrowser, "aiProvider": () => aiProvider, "ASK_TOOLS": () => ASK_TOOLS, "askAddAnnotation": () => askAddAnnotation, "askFindAnnotation": () => askFindAnnotation, "askNoteKind": () => askNoteKind, "askNoteValue": () => askNoteValue, "askAnnotationStructural": () => askAnnotationStructural, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "notesTxtForDoc": () => notesTxtForDoc, "askSongPath": () => askSongPath, "ASK_READ_BARS_MAX": () => ASK_READ_BARS_MAX, "askReadBars": () => askReadBars, "askRunTool": () => askRunTool, "askSpan": () => askSpan, "askSpanLabel": () => askSpanLabel, "askKeyDeclared": () => askKeyDeclared, "askKeySpellComment": () => askKeySpellComment, "askSpanNotes": () => askSpanNotes, "askSpanNotesCompact": () => askSpanNotesCompact, "askBarRow": () => askBarRow, "askBarFingerprint": () => askBarFingerprint, "askSpanNotesCompactCached": () => askSpanNotesCompactCached, "askSpanCachedBlock": () => askSpanCachedBlock, "askLegendText": () => askLegendText, "askAppState": () => askAppState, "askModeLine": () => askModeLine, "askKeyStateLine": () => askKeyStateLine, "askViewCursorLine": () => askViewCursorLine, "askOpenSongLine": () => askOpenSongLine, "askCapLines": () => askCapLines, "askNewSinceLines": () => askNewSinceLines, "askSentKey": () => askSentKey, "askSentGet": () => askSentGet, "askSentStage": () => askSentStage, "askSentStageBars": () => askSentStageBars, "ASK_SENT_BARS_CAP": () => ASK_SENT_BARS_CAP, "askSentCommit": () => askSentCommit, "askSentDrop": () => askSentDrop, "askSentReset": () => askSentReset, "askEpochKey": () => askEpochKey, "askEpochGet": () => askEpochGet, "askEpochSet": () => askEpochSet, "askEpochNote": () => askEpochNote, "askCachedBlock": () => askCachedBlock, "askContext": () => askContext, "askBudget": () => askBudget, "askStripContext": () => askStripContext, "ASK_LOCAL_SOFT": () => ASK_LOCAL_SOFT, "ASK_TOTAL_CAP": () => ASK_TOTAL_CAP, "ASK_GENERAL_KEY": () => ASK_GENERAL_KEY, "ASK_GENERAL_LOG": () => ASK_GENERAL_LOG, "ASK_TERMINAL_KEY": () => ASK_TERMINAL_KEY, "askSetMode": () => askSetMode, "askModeButtons": () => askModeButtons, "askStoreKey": () => askStoreKey, "askSeenKey": () => askSeenKey, "askSeenGet": () => askSeenGet, "askMaxErrId": () => askMaxErrId, "askMaxStatusId": () => askMaxStatusId, "askSeenMaxKey": () => askSeenMaxKey, "askSeenMax": () => askSeenMax, "askSeenSet": () => askSeenSet, "askSeenAdvance": () => askSeenAdvance, "askSeenStage": () => askSeenStage, "askSeenCommit": () => askSeenCommit, "askSeenDrop": () => askSeenDrop, "askStore": () => askStore, "askLoad": () => askLoad, "askUnsavedCount": () => askUnsavedCount, "askSave": () => askSave, "askRevertToSaved": () => askRevertToSaved, "askEvictOthers": () => askEvictOthers, "askModelName": () => askModelName, "askLogKey": () => askLogKey, "askLogSong": () => askLogSong, "askLogPath": () => askLogPath, "askLogHeader": () => askLogHeader, "askLogMarkdown": () => askLogMarkdown, "askCommitLog": () => askCommitLog, "askMsgMode": () => askMsgMode, "askBuildMessages": () => askBuildMessages, "askEstimate": () => askEstimate, "asksheet": () => asksheet, "asklog": () => asklog, "askinput": () => askinput, "askstatus": () => askstatus, "askSessionName": () => askSessionName, "ASK_SONG_ONLY_TOOLS": () => ASK_SONG_ONLY_TOOLS, "askToolsNow": () => askToolsNow, "askInboxSeenKey": () => askInboxSeenKey, "askInboxAllowed": () => askInboxAllowed, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "askAgeText": () => askAgeText, "scheduleBackupFlush": () => scheduleBackupFlush, "flushBackupNow": () => flushBackupNow, "deployBeforeInstall": () => deployBeforeInstall, "deployButtonTick": () => deployButtonTick, "deployBannerShow": () => deployBannerShow, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployActive": () => deployActive, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsVisible": () => askTabsVisible, "askTabsApply": () => askTabsApply, "askSessionLine": () => askSessionLine, "askCompactModelName": () => askCompactModelName, "askSessionRender": () => askSessionRender, "askSessionRefresh": () => askSessionRefresh, "askStatusIdle": () => askStatusIdle, "askStatusLine": () => askStatusLine, "askStatusRender": () => askStatusRender, "askStatusRecentShow": () => askStatusRecentShow, "askStatusToggle": () => askStatusToggle, "askStatusFetchCommits": () => askStatusFetchCommits, "askShotShow": () => askShotShow, "askShotLine": () => askShotLine, "ASKSHOT_MAX": () => ASKSHOT_MAX, "b64Bytes": () => b64Bytes, "askShotCapture": () => askShotCapture, "askShotUpload": () => askShotUpload, "askShotTake": () => askShotTake, "askShotStatusLabel": () => askShotStatusLabel, "askShotRender": () => askShotRender, "askShotAdd": () => askShotAdd, "askShotRemove": () => askShotRemove, "askShotClearAll": () => askShotClearAll, "askShotRestore": () => askShotRestore, "askShotOutgoing": () => askShotOutgoing, "askShotDisplayText": () => askShotDisplayText, "MAX_SHOT_SIDE": () => MAX_SHOT_SIDE, "MAX_SHOT_KEEP_BYTES": () => MAX_SHOT_KEEP_BYTES, "askPrepImage": () => askPrepImage, "askPickFiles": () => askPickFiles, "askClock": () => askClock, "askNoteLabel": () => askNoteLabel, "askInboxStart": () => askInboxStart, "askBubble": () => askBubble, "askFillBubble": () => askFillBubble, "askCopyText": () => askCopyText, "askDraftStore": () => askDraftStore, "askDraftSave": () => askDraftSave, "askDraftSaveSoon": () => askDraftSaveSoon, "askComposing": () => askComposing, "askDraftLoad": () => askDraftLoad, "askDraftClear": () => askDraftClear, "askRender": () => askRender, "askRenderEarlier": () => askRenderEarlier, "askRefresh": () => askRefresh, "askPartial": () => askPartial, "askShowThinking": () => askShowThinking, "askJobsSupported": () => askJobsSupported, "askJobId": () => askJobId, "askPendingIndex": () => askPendingIndex, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askBadgeOff": () => askBadgeOff, "askRun": () => askRun, "TERM_MODELS": () => TERM_MODELS, "askTermModelsLoad": () => askTermModelsLoad, "askTerminalContext": () => askTerminalContext, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askResumeSoon": () => askResumeSoon, "askPendingAll": () => askPendingAll, "askRepending": () => askRepending, "askResume": () => askResume, "WM_KEY": () => WM_KEY, "WM_OLD_KEY": () => WM_OLD_KEY, "WM_MIN_W": () => WM_MIN_W, "WM_DEFAULT_W": () => WM_DEFAULT_W, "WM_MIN_H": () => WM_MIN_H, "WM_DEFAULT_H": () => WM_DEFAULT_H, "WM_MIN_SPLIT": () => WM_MIN_SPLIT, "WM_PHONE_MAX": () => WM_PHONE_MAX, "WM_ZONE_FRAC": () => WM_ZONE_FRAC, "WM_EDGE_GAP": () => WM_EDGE_GAP, "wmClampSize": () => wmClampSize, "wmClampHeight": () => wmClampHeight, "wmClampSplit": () => wmClampSplit, "wmAllowed": () => wmAllowed, "wmMigrate": () => wmMigrate, "wmMigrateShape": () => wmMigrateShape, "wmMigrateShapeB": () => wmMigrateShapeB, "wmSetSide": () => wmSetSide, "wmClearSide": () => wmClearSide, "wmSetSideMode": () => wmSetSideMode, "wmAddSideTab": () => wmAddSideTab, "wmRemoveSideTab": () => wmRemoveSideTab, "wmSetActiveSideTab": () => wmSetActiveSideTab, "wmSetSideWidth": () => wmSetSideWidth, "wmZoneFor": () => wmZoneFor, "wmDockBottom": () => wmDockBottom, "wmClearBottom": () => wmClearBottom, "wmSetBottomHeight": () => wmSetBottomHeight, "wmSetBottomSplit": () => wmSetBottomSplit, "wmWhereIs": () => wmWhereIs, "wmLoad": () => wmLoad, "wmSave": () => wmSave, "wmInnerWidth": () => wmInnerWidth, "wmInnerHeight": () => wmInnerHeight, "WM_WINDOWS": () => WM_WINDOWS, "wmSideCells": () => wmSideCells, "wmLayoutSide": () => wmLayoutSide, "wmLayoutTabs": () => wmLayoutTabs, "wmCloseWindow": () => wmCloseWindow, "wmWindowTitle": () => wmWindowTitle, "wmLayoutBottom": () => wmLayoutBottom, "wmDockLabel": () => wmDockLabel, "wmDockShort": () => wmDockShort, "wmSyncDockButtons": () => wmSyncDockButtons, "wmLayoutAll": () => wmLayoutAll, "wmZoneForPointer": () => wmZoneForPointer, "wmShowDropZone": () => wmShowDropZone, "wmHideDropZone": () => wmHideDropZone, "wmDockSide": () => wmDockSide, "wmSetSideModeFor": () => wmSetSideModeFor, "wmDockBottomWindow": () => wmDockBottomWindow, "wmFloat": () => wmFloat, "makeWindow": () => makeWindow, "wmMenuItem": () => wmMenuItem, "wmOpenMenu": () => wmOpenMenu, "wmCloseMenu": () => wmCloseMenu, "wmSideDividerize": () => wmSideDividerize, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askScrollEnd": () => askScrollEnd, "askFocusIfKeyboard": () => askFocusIfKeyboard, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askGrow": () => askGrow, "askNormChip": () => askNormChip, "askFindTrackIndex": () => askFindTrackIndex, "parsePitch": () => parsePitch, "askNoteVel": () => askNoteVel, "askWriteNotesValidate": () => askWriteNotesValidate, "askWritableGate": () => askWritableGate, "askWriteNotes": () => askWriteNotes, "askBarsCount": () => askBarsCount, "askBarsValidate": () => askBarsValidate, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "filesMirror": () => filesMirror, "filesMirrorSoon": () => filesMirrorSoon, "filesMirrorFor": () => filesMirrorFor, "folderScanAlbums": () => folderScanAlbums, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "draftDirtyState": () => draftDirtyState, "syncable": () => syncable, "pendingSongs": () => pendingSongs, "renderSyncPending": () => renderSyncPending, "discardPending": () => discardPending, "openSyncSheet": () => openSyncSheet, "CFG_PANES": () => CFG_PANES, "cfgShowPane": () => cfgShowPane, "openSettingsSheet": () => openSettingsSheet, "noteTapMovesCursor": () => noteTapMovesCursor, "penInstant": () => penInstant, "recSnapOn": () => recSnapOn, "textSizePref": () => textSizePref, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "ghCheckOut": () => ghCheckOut, "ghCheckMessage": () => ghCheckMessage, "ghCheck": () => ghCheck, "MODAL_KEEP": () => MODAL_KEEP, "APP_REPO": () => APP_REPO, "PUBLIC_BASE": () => PUBLIC_BASE, "publicBase": () => publicBase, "shareLinkFor": () => shareLinkFor, "README_OPEN": () => README_OPEN, "README_CLOSE": () => README_CLOSE, "songsReadmeBlock": () => songsReadmeBlock, "spliceReadme": () => spliceReadme, "writeSongsReadme": () => writeSongsReadme, "openShareSheet": () => openShareSheet, "putRollnotes": () => putRollnotes, "markPublished": () => markPublished, "markCurrentSongSynced": () => markCurrentSongSynced, "recordLastSync": () => recordLastSync, "writeToken": () => writeToken, "connected": () => connected, "takeToken": () => takeToken, "publishOpenComposition": () => publishOpenComposition, "publishUnsavedSong": () => publishUnsavedSong, "publishAllJobStart": () => publishAllJobStart}, set: {"rememberRecentSong": (v) => (rememberRecentSong = v), "recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "initCatalog": (v) => (initCatalog = v), "kitSlots": (v) => (kitSlots = v), "songHasDrums": (v) => (songHasDrums = v), "topRow": (v) => (topRow = v), "computeLaneTop": (v) => (computeLaneTop = v), "kitLaneTop": (v) => (kitLaneTop = v), "laneBotRow": (v) => (laneBotRow = v), "botRow": (v) => (botRow = v), "inKitLane": (v) => (inKitLane = v), "noteRow": (v) => (noteRow = v), "drumStep": (v) => (drumStep = v), "hslToHex": (v) => (hslToHex = v), "hueOf": (v) => (hueOf = v), "hueDist": (v) => (hueDist = v), "relLuminance": (v) => (relLuminance = v), "contrastRatio": (v) => (contrastRatio = v), "pickFarthestColor": (v) => (pickFarthestColor = v), "autoTrackColors": (v) => (autoTrackColors = v), "songRegionRight": (v) => (songRegionRight = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "loadEdits": (v) => (loadEdits = v), "saveEdits": (v) => (saveEdits = v), "foldOldOverlay": (v) => (foldOldOverlay = v), "retireOldOverlay": (v) => (retireOldOverlay = v), "placeLassoBtn": (v) => (placeLassoBtn = v), "updateEditBtnVis": (v) => (updateEditBtnVis = v), "computeSongEnd": (v) => (computeSongEnd = v), "sfShownAt": (v) => (sfShownAt = v), "sfAt": (v) => (sfAt = v), "sfDeclaredAt": (v) => (sfDeclaredAt = v), "sfDeclaredAtRaw": (v) => (sfDeclaredAtRaw = v), "annoSnapshot": (v) => (annoSnapshot = v), "annoRestore": (v) => (annoRestore = v), "setAnchorBQ": (v) => (setAnchorBQ = v), "setEndBQ": (v) => (setEndBQ = v), "bakeTempos": (v) => (bakeTempos = v), "bakeMeter": (v) => (bakeMeter = v), "finalizeNotes": (v) => (finalizeNotes = v), "loadNotes": (v) => (loadNotes = v), "subtractTombstones": (v) => (subtractTombstones = v), "mergeLocalAdditions": (v) => (mergeLocalAdditions = v), "annotationsFor": (v) => (annotationsFor = v), "resolveNoteWith": (v) => (resolveNoteWith = v), "saveLocalNotes": (v) => (saveLocalNotes = v), "dirtySongs": (v) => (dirtySongs = v), "updateSyncBtn": (v) => (updateSyncBtn = v), "askAnnotationsText": (v) => (askAnnotationsText = v), "askAnnotationsTextCompact": (v) => (askAnnotationsTextCompact = v), "dropLocalKeyAt": (v) => (dropLocalKeyAt = v), "dropSupersededBy": (v) => (dropSupersededBy = v), "isDirective": (v) => (isDirective = v), "activeNoteAt": (v) => (activeNoteAt = v), "sectionPathAt": (v) => (sectionPathAt = v), "curTick": (v) => (curTick = v), "homeSong": (v) => (homeSong = v), "appConfirm": (v) => (appConfirm = v), "reflectSongURL": (v) => (reflectSongURL = v), "toggleHl": (v) => (toggleHl = v), "updateLCD": (v) => (updateLCD = v), "governingAt": (v) => (governingAt = v), "updateSubtitle": (v) => (updateSubtitle = v), "loadSong": (v) => (loadSong = v), "loadSongInner": (v) => (loadSongInner = v), "setSong": (v) => (setSong = v), "renderTrackbar": (v) => (renderTrackbar = v), "updateTrackMore": (v) => (updateTrackMore = v), "trackRowNeed": (v) => (trackRowNeed = v), "fitTrackRow": (v) => (fitTrackRow = v), "scheduleFitTrackRow": (v) => (scheduleFitTrackRow = v), "trackToggle": (v) => (trackToggle = v), "trackShown": (v) => (trackShown = v), "mixerIsOpen": (v) => (mixerIsOpen = v), "mixerPanLabel": (v) => (mixerPanLabel = v), "moveInSameOrder": (v) => (moveInSameOrder = v), "reorderTrack": (v) => (reorderTrack = v), "renderMixer": (v) => (renderMixer = v), "mixerStripEl": (v) => (mixerStripEl = v), "mixerMasterStripEl": (v) => (mixerMasterStripEl = v), "mixerStripDragize": (v) => (mixerStripDragize = v), "ensureMixerMeters": (v) => (ensureMixerMeters = v), "teardownMixerMeters": (v) => (teardownMixerMeters = v), "mixerMeterRms": (v) => (mixerMeterRms = v), "mixerMeterLoop": (v) => (mixerMeterLoop = v), "ensureMixerMeterLoop": (v) => (ensureMixerMeterLoop = v), "openMixer": (v) => (openMixer = v), "closeMixer": (v) => (closeMixer = v), "toggleMixer": (v) => (toggleMixer = v), "resize": (v) => (resize = v), "css": (v) => (css = v), "drawRangeTints": (v) => (drawRangeTints = v), "pxPerTick": (v) => (pxPerTick = v), "draw": (v) => (draw = v), "viewKey": (v) => (viewKey = v), "viewPersistSoon": (v) => (viewPersistSoon = v), "viewRestore": (v) => (viewRestore = v), "rangeSelKey": (v) => (rangeSelKey = v), "rangeSelPersist": (v) => (rangeSelPersist = v), "rangeSelRestore": (v) => (rangeSelRestore = v), "playbackFrame": (v) => (playbackFrame = v), "updateCanvasA11y": (v) => (updateCanvasA11y = v), "showAddedOutline": (v) => (showAddedOutline = v), "setAddedOutline": (v) => (setAddedOutline = v), "drawFull": (v) => (drawFull = v), "clearMultiSel": (v) => (clearMultiSel = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "reflectSelVel": (v) => (reflectSelVel = v), "refreshSelInfo": (v) => (refreshSelInfo = v), "renderOctBtn": (v) => (renderOctBtn = v), "fallHitNote": (v) => (fallHitNote = v), "drawLasso": (v) => (drawLasso = v), "tracksLaneH": (v) => (tracksLaneH = v), "laneGeom": (v) => (laneGeom = v), "trackLaneAt": (v) => (trackLaneAt = v), "tracksNoteY": (v) => (tracksNoteY = v), "hitTracksNote": (v) => (hitTracksNote = v), "selClipIs": (v) => (selClipIs = v), "selClipObj": (v) => (selClipObj = v), "clipSpanX": (v) => (clipSpanX = v), "clipStatusText": (v) => (clipStatusText = v), "clipLabel": (v) => (clipLabel = v), "fmtSec": (v) => (fmtSec = v), "drawAudioStrip": (v) => (drawAudioStrip = v), "drawClipLane": (v) => (drawClipLane = v), "writeClips": (v) => (writeClips = v), "setClipDir": (v) => (setClipDir = v), "moveClip": (v) => (moveClip = v), "trimClip": (v) => (trimClip = v), "splitClipAt": (v) => (splitClipAt = v), "splitSelectedClipAtCursor": (v) => (splitSelectedClipAtCursor = v), "deleteClip": (v) => (deleteClip = v), "hitTracksClip": (v) => (hitTracksClip = v), "drawTracks": (v) => (drawTracks = v), "stripPlayheadX": (v) => (stripPlayheadX = v), "drawStripPlayhead": (v) => (drawStripPlayhead = v), "drawPlayheadStripBand": (v) => (drawPlayheadStripBand = v), "drawRuler": (v) => (drawRuler = v), "evtPos": (v) => (evtPos = v), "posToTickPitch": (v) => (posToTickPitch = v), "editableSong": (v) => (editableSong = v), "selEditItems": (v) => (selEditItems = v), "updateChordStale": (v) => (updateChordStale = v), "transposeChordLabel": (v) => (transposeChordLabel = v), "ridealongChordBands": (v) => (ridealongChordBands = v), "selEditApply": (v) => (selEditApply = v), "nudgeSelection": (v) => (nudgeSelection = v), "resizeSelection": (v) => (resizeSelection = v), "annoInLasso": (v) => (annoInLasso = v), "copySelection": (v) => (copySelection = v), "cutSelection": (v) => (cutSelection = v), "pasteAnnotations": (v) => (pasteAnnotations = v), "clipboardHas": (v) => (clipboardHas = v), "clipSummary": (v) => (clipSummary = v), "pasteClipboard": (v) => (pasteClipboard = v), "selectAllNotes": (v) => (selectAllNotes = v), "duplicateSelection": (v) => (duplicateSelection = v), "lassoedAnnos": (v) => (lassoedAnnos = v), "deleteSelection": (v) => (deleteSelection = v), "sweepStrandedClones": (v) => (sweepStrandedClones = v), "duplicateSelectionInPlace": (v) => (duplicateSelectionInPlace = v), "splitApply": (v) => (splitApply = v), "openGapShift": (v) => (openGapShift = v), "closeGap": (v) => (closeGap = v), "insertTime": (v) => (insertTime = v), "openInsertBars": (v) => (openInsertBars = v), "deleteTime": (v) => (deleteTime = v), "openDeleteBars": (v) => (openDeleteBars = v), "divideSelection": (v) => (divideSelection = v), "quantizeSelection": (v) => (quantizeSelection = v), "splitSelectionAt": (v) => (splitSelectionAt = v), "splitSelectionHalves": (v) => (splitSelectionHalves = v), "joinSelection": (v) => (joinSelection = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "jobsSave": (v) => (jobsSave = v), "jobsNotify": (v) => (jobsNotify = v), "jobsOnChange": (v) => (jobsOnChange = v), "jobsLoad": (v) => (jobsLoad = v), "jobProgress": (v) => (jobProgress = v), "jobFraction": (v) => (jobFraction = v), "jobsAutoClear": (v) => (jobsAutoClear = v), "jobStart": (v) => (jobStart = v), "jobApi": (v) => (jobApi = v), "jobsList": (v) => (jobsList = v), "jobsFind": (v) => (jobsFind = v), "jobCancel": (v) => (jobCancel = v), "jobsDismiss": (v) => (jobsDismiss = v), "jobsClearFinished": (v) => (jobsClearFinished = v), "updateJobsBtn": (v) => (updateJobsBtn = v), "jobBarSet": (v) => (jobBarSet = v), "renderJobs": (v) => (renderJobs = v), "openPubJobSheet": (v) => (openPubJobSheet = v), "pubItemIcon": (v) => (pubItemIcon = v), "renderPubJob": (v) => (renderPubJob = v), "debugLogOn": (v) => (debugLogOn = v), "logPush": (v) => (logPush = v), "logLines": (v) => (logLines = v), "errChip": (v) => (errChip = v), "logErr": (v) => (logErr = v), "logDebug": (v) => (logDebug = v), "srAnnounce": (v) => (srAnnounce = v), "setInfo": (v) => (setInfo = v), "minPxq": (v) => (minPxq = v), "songPitchExtent": (v) => (songPitchExtent = v), "pxqFloor": (v) => (pxqFloor = v), "dispPitchExtent": (v) => (dispPitchExtent = v), "rowHFloor": (v) => (rowHFloor = v), "cursorHandleHit": (v) => (cursorHandleHit = v), "cursorHit": (v) => (cursorHit = v), "rulerSnapX": (v) => (rulerSnapX = v), "tickAtX": (v) => (tickAtX = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "armNoteEdit": (v) => (armNoteEdit = v), "endPointer": (v) => (endPointer = v), "fitView": (v) => (fitView = v), "clampView": (v) => (clampView = v), "tap": (v) => (tap = v), "ensureAudio": (v) => (ensureAudio = v), "rebuildAudio": (v) => (rebuildAudio = v), "resumeAudio": (v) => (resumeAudio = v), "sfPreloadForSong": (v) => (sfPreloadForSong = v), "sfWaitForSong": (v) => (sfWaitForSong = v), "autoVoiceLabel": (v) => (autoVoiceLabel = v), "trackColor": (v) => (trackColor = v), "saveVoices": (v) => (saveVoices = v), "saveTrackDir": (v) => (saveTrackDir = v), "gameVoiceLabel": (v) => (gameVoiceLabel = v), "sf2VoiceLabel": (v) => (sf2VoiceLabel = v), "openVoiceMenu": (v) => (openVoiceMenu = v), "buildVoiceMenu": (v) => (buildVoiceMenu = v), "buildGameVoicePicker": (v) => (buildGameVoicePicker = v), "openGameVoiceMenuTo": (v) => (openGameVoiceMenuTo = v), "gameVoiceFromAll": (v) => (gameVoiceFromAll = v), "gameVoiceFrom": (v) => (gameVoiceFrom = v), "gameVoiceFromSet": (v) => (gameVoiceFromSet = v), "renderSf2Nav": (v) => (renderSf2Nav = v), "sf2AuditionPreset": (v) => (sf2AuditionPreset = v), "buildSf2VoicePicker": (v) => (buildSf2VoicePicker = v), "buildClipControls": (v) => (buildClipControls = v), "transposeTrack": (v) => (transposeTrack = v), "resolveGameVault": (v) => (resolveGameVault = v), "resolvedGameVaultSync": (v) => (resolvedGameVaultSync = v), "instPlayerReady": (v) => (instPlayerReady = v), "gameVoicesInSong": (v) => (gameVoicesInSong = v), "sf2VoicesInSong": (v) => (sf2VoicesInSong = v), "gamePreloadForSong": (v) => (gamePreloadForSong = v), "gameWaitForSong": (v) => (gameWaitForSong = v), "gameNoteBucket": (v) => (gameNoteBucket = v), "gameVoiceWarn": (v) => (gameVoiceWarn = v), "resolveVoiceInstrument": (v) => (resolveVoiceInstrument = v), "scheduleGameNote": (v) => (scheduleGameNote = v), "scheduleNote": (v) => (scheduleNote = v), "previewNote": (v) => (previewNote = v), "buildSchedule": (v) => (buildSchedule = v), "chipSource": (v) => (chipSource = v), "updateChipBtn": (v) => (updateChipBtn = v), "gatePending": (v) => (gatePending = v), "playGate": (v) => (playGate = v), "playGateKick": (v) => (playGateKick = v), "playGateActive": (v) => (playGateActive = v), "playGateTick": (v) => (playGateTick = v), "playGateWait": (v) => (playGateWait = v), "updateChipBtnInner": (v) => (updateChipBtnInner = v), "chipEstimateTracks": (v) => (chipEstimateTracks = v), "chipRender": (v) => (chipRender = v), "chipCleanupAfterFailure": (v) => (chipCleanupAfterFailure = v), "chipPublish": (v) => (chipPublish = v), "chipRenderInWorker": (v) => (chipRenderInWorker = v), "chipStreamOpenWorker": (v) => (chipStreamOpenWorker = v), "chipStreamOpen": (v) => (chipStreamOpen = v), "chipRenderAuto": (v) => (chipRenderAuto = v), "applyAudioDirs": (v) => (applyAudioDirs = v), "audioEnsureFile": (v) => (audioEnsureFile = v), "applyBeatMap": (v) => (applyBeatMap = v), "setSongTempo": (v) => (setSongTempo = v), "stretchEnsure": (v) => (stretchEnsure = v), "audioChaseNow": (v) => (audioChaseNow = v), "stretchEnsureAll": (v) => (stretchEnsureAll = v), "scheduleClip": (v) => (scheduleClip = v), "play": (v) => (play = v), "stop": (v) => (stop = v), "albumPos": (v) => (albumPos = v), "armAlbumLink": (v) => (armAlbumLink = v), "albumStrip": (v) => (albumStrip = v), "albumClear": (v) => (albumClear = v), "albumLeave": (v) => (albumLeave = v), "albumStart": (v) => (albumStart = v), "albumNext": (v) => (albumNext = v), "albumPrev": (v) => (albumPrev = v), "albumPlayIdx": (v) => (albumPlayIdx = v), "albumAdvance": (v) => (albumAdvance = v), "drumScoreRole": (v) => (drumScoreRole = v), "vexKey": (v) => (vexKey = v), "durationPieces": (v) => (durationPieces = v), "buildScoreModel": (v) => (buildScoreModel = v), "scoreContentH": (v) => (scoreContentH = v), "renderMeasure": (v) => (renderMeasure = v), "renderIntro": (v) => (renderIntro = v), "scoreTickToX": (v) => (scoreTickToX = v), "scoreXToTick": (v) => (scoreXToTick = v), "drawScore": (v) => (drawScore = v), "scoreMeasureAnchors": (v) => (scoreMeasureAnchors = v), "scorePencilTick": (v) => (scorePencilTick = v), "drawScorePencilGuides": (v) => (drawScorePencilGuides = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "songTitleOf": (v) => (songTitleOf = v), "songWhereLabel": (v) => (songWhereLabel = v), "updateSongBtn": (v) => (updateSongBtn = v), "songDirtyFlag": (v) => (songDirtyFlag = v), "songRow": (v) => (songRow = v), "songHeader": (v) => (songHeader = v), "localLabel": (v) => (localLabel = v), "publishedLabel": (v) => (publishedLabel = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "updateSongMeta": (v) => (updateSongMeta = v), "applySpeed": (v) => (applySpeed = v), "keyEstimateSig": (v) => (keyEstimateSig = v), "estimateKey": (v) => (estimateKey = v), "fileMeterAt": (v) => (fileMeterAt = v), "tonicPcFromName": (v) => (tonicPcFromName = v), "checkKeyVsFile": (v) => (checkKeyVsFile = v), "fileCheckLine": (v) => (fileCheckLine = v), "runKeyCheck": (v) => (runKeyCheck = v), "runMeterCheck": (v) => (runMeterCheck = v), "useFileKey": (v) => (useFileKey = v), "useFileMeter": (v) => (useFileMeter = v), "keyNameShownAt": (v) => (keyNameShownAt = v), "expandKeyName": (v) => (expandKeyName = v), "keyLabelState": (v) => (keyLabelState = v), "tonicLabel": (v) => (tonicLabel = v), "tonicPcOfName": (v) => (tonicPcOfName = v), "modeOfName": (v) => (modeOfName = v), "chosenTonic": (v) => (chosenTonic = v), "chosenTonicPc": (v) => (chosenTonicPc = v), "partialNameOf": (v) => (partialNameOf = v), "tonicOptionValue": (v) => (tonicOptionValue = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "refreshKeysetLabel": (v) => (refreshKeysetLabel = v), "metStart": (v) => (metStart = v), "chordLabel": (v) => (chordLabel = v), "renameTrack": (v) => (renameTrack = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "stampChordBand": (v) => (stampChordBand = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofMinor": (v) => (cofMinor = v), "cofDim": (v) => (cofDim = v), "cofSigLabel": (v) => (cofSigLabel = v), "cofMajorName": (v) => (cofMajorName = v), "drawCof": (v) => (drawCof = v), "cofRelease": (v) => (cofRelease = v), "renderNoteJump": (v) => (renderNoteJump = v), "renderNoteList": (v) => (renderNoteList = v), "openNoteList": (v) => (openNoteList = v), "showHelpTab": (v) => (showHelpTab = v), "refreshFindSel": (v) => (refreshFindSel = v), "chordEvidence": (v) => (chordEvidence = v), "openChallenge": (v) => (openChallenge = v), "applyListener": (v) => (applyListener = v), "applyChrome": (v) => (applyChrome = v), "fitReadline": (v) => (fitReadline = v), "scheduleFitReadline": (v) => (scheduleFitReadline = v), "renderViewSwitch": (v) => (renderViewSwitch = v), "applyViewMode": (v) => (applyViewMode = v), "setViewMode": (v) => (setViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "importHubLabel": (v) => (importHubLabel = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "streamedAudioMagic": (v) => (streamedAudioMagic = v), "audioMagic": (v) => (audioMagic = v), "sf2Magic": (v) => (sf2Magic = v), "importSf2File": (v) => (importSf2File = v), "slugFile": (v) => (slugFile = v), "monoWavBytes": (v) => (monoWavBytes = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "syncDurSeg": (v) => (syncDurSeg = v), "gridFollowNote": (v) => (gridFollowNote = v), "keyNameAt": (v) => (keyNameAt = v), "degreeOf": (v) => (degreeOf = v), "instRange": (v) => (instRange = v), "instLitPitches": (v) => (instLitPitches = v), "drawInst": (v) => (drawInst = v), "pianoGeom": (v) => (pianoGeom = v), "instLitColor": (v) => (instLitColor = v), "drawPiano": (v) => (drawPiano = v), "pianoHit": (v) => (pianoHit = v), "guitarGeom": (v) => (guitarGeom = v), "drawGuitar": (v) => (drawGuitar = v), "gtrFold": (v) => (gtrFold = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recOpenEnded": (v) => (recOpenEnded = v), "recSnap": (v) => (recSnap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "recFinish": (v) => (recFinish = v), "midiMessage": (v) => (midiMessage = v), "midiStatusLine": (v) => (midiStatusLine = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "fallActive": (v) => (fallActive = v), "drawFall": (v) => (drawFall = v), "instResize": (v) => (instResize = v), "applyInst": (v) => (applyInst = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "fillBarBeatSelects": (v) => (fillBarBeatSelects = v), "editorType": (v) => (editorType = v), "applyEditorType": (v) => (applyEditorType = v), "refreshChordChips": (v) => (refreshChordChips = v), "composeChord": (v) => (composeChord = v), "setChordWidget": (v) => (setChordWidget = v), "micStop": (v) => (micStop = v), "micJoin": (v) => (micJoin = v), "micToggle": (v) => (micToggle = v), "snapBeat": (v) => (snapBeat = v), "setBeatPair": (v) => (setBeatPair = v), "getBeatPair": (v) => (getBeatPair = v), "openEditor": (v) => (openEditor = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "tombKey": (v) => (tombKey = v), "tombKeyFor": (v) => (tombKeyFor = v), "noteIdentity": (v) => (noteIdentity = v), "retireEdited": (v) => (retireEdited = v), "pruneTombstones": (v) => (pruneTombstones = v), "tombstone": (v) => (tombstone = v), "clearTombstones": (v) => (clearTombstones = v), "clearTombstonesFor": (v) => (clearTombstonesFor = v), "isCaptureKey": (v) => (isCaptureKey = v), "ownFolderPath": (v) => (ownFolderPath = v), "isComposition": (v) => (isComposition = v), "bakesTempo": (v) => (bakesTempo = v), "hasProvenanceNote": (v) => (hasProvenanceNote = v), "originOf": (v) => (originOf = v), "pendingOriginKey": (v) => (pendingOriginKey = v), "setOrigin": (v) => (setOrigin = v), "pendingOrigin": (v) => (pendingOrigin = v), "originFor": (v) => (originFor = v), "rulesFor": (v) => (rulesFor = v), "canEditMusic": (v) => (canEditMusic = v), "bakesMeter": (v) => (bakesMeter = v), "albumTitleFor": (v) => (albumTitleFor = v), "updateManifest": (v) => (updateManifest = v), "manifestPlace": (v) => (manifestPlace = v), "slugify": (v) => (slugify = v), "untitledKey": (v) => (untitledKey = v), "isUnsaved": (v) => (isUnsaved = v), "folderChoices": (v) => (folderChoices = v), "folderFromInput": (v) => (folderFromInput = v), "fillFolderSelect": (v) => (fillFolderSelect = v), "chosenFolder": (v) => (chosenFolder = v), "renameLocalKeys": (v) => (renameLocalKeys = v), "saveSongAs": (v) => (saveSongAs = v), "openSaveForm": (v) => (openSaveForm = v), "localFolders": (v) => (localFolders = v), "folderTree": (v) => (folderTree = v), "nodeAt": (v) => (nodeAt = v), "nodeCount": (v) => (nodeCount = v), "parentFolder": (v) => (parentFolder = v), "subfolderKeys": (v) => (subfolderKeys = v), "setAlbumOrderPref": (v) => (setAlbumOrderPref = v), "slugOfPath": (v) => (slugOfPath = v), "albumTrackMap": (v) => (albumTrackMap = v), "albumHasTrackData": (v) => (albumHasTrackData = v), "albumOrder": (v) => (albumOrder = v), "albumEffectiveOrder": (v) => (albumEffectiveOrder = v), "albumOrderControl": (v) => (albumOrderControl = v), "songStatus": (v) => (songStatus = v), "publishDest": (v) => (publishDest = v), "publishLabel": (v) => (publishLabel = v), "draftTracks": (v) => (draftTracks = v), "musicSig": (v) => (musicSig = v), "draftFingerprint": (v) => (draftFingerprint = v), "pubCompareDraft": (v) => (pubCompareDraft = v), "fingerprintOldDrafts": (v) => (fingerprintOldDrafts = v), "draftDoc": (v) => (draftDoc = v), "saveDraft": (v) => (saveDraft = v), "autosaveOn": (v) => (autosaveOn = v), "versionsStoreKey": (v) => (versionsStoreKey = v), "readVersionsRaw": (v) => (readVersionsRaw = v), "writeVersionsRaw": (v) => (writeVersionsRaw = v), "migrateVersions": (v) => (migrateVersions = v), "readVersions": (v) => (readVersions = v), "pushVersion": (v) => (pushVersion = v), "songUnsaved": (v) => (songUnsaved = v), "saveVersion": (v) => (saveVersion = v), "draftKeys": (v) => (draftKeys = v), "openDraft": (v) => (openDraft = v), "openDraftDoc": (v) => (openDraftDoc = v), "createComposition": (v) => (createComposition = v), "forkCurrentSong": (v) => (forkCurrentSong = v), "renderViewMenu": (v) => (renderViewMenu = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "closeFileMenus": (v) => (closeFileMenus = v), "closeDropUp": (v) => (closeDropUp = v), "openDropUp": (v) => (openDropUp = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "draftRow": (v) => (draftRow = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "publishJobStart": (v) => (publishJobStart = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "instPlayer": (v) => (instPlayer = v), "instDecodeWav": (v) => (instDecodeWav = v), "instAlbums": (v) => (instAlbums = v), "romanValue": (v) => (romanValue = v), "titleSortKey": (v) => (titleSortKey = v), "titleCompare": (v) => (titleCompare = v), "instFolder": (v) => (instFolder = v), "gameInstUsedBySong": (v) => (gameInstUsedBySong = v), "gameSongRows": (v) => (gameSongRows = v), "songInstrumentRows": (v) => (songInstrumentRows = v), "currentSongGameContext": (v) => (currentSongGameContext = v), "instLibrary": (v) => (instLibrary = v), "instSamples": (v) => (instSamples = v), "instKeys": (v) => (instKeys = v), "sf2Module": (v) => (sf2Module = v), "sf2Bytes": (v) => (sf2Bytes = v), "sf2Font": (v) => (sf2Font = v), "sf2Registry": (v) => (sf2Registry = v), "sf2RegistryAdd": (v) => (sf2RegistryAdd = v), "instAudition": (v) => (instAudition = v), "usedInstruments": (v) => (usedInstruments = v), "usedInstrumentRows": (v) => (usedInstrumentRows = v), "renderGameInstNav": (v) => (renderGameInstNav = v), "renderInstSheet": (v) => (renderInstSheet = v), "renameRepoTitle": (v) => (renameRepoTitle = v), "renameRepoTitles": (v) => (renameRepoTitles = v), "editHereNow": (v) => (editHereNow = v), "forkClashTitle": (v) => (forkClashTitle = v), "makeItMine": (v) => (makeItMine = v), "dropLocalSong": (v) => (dropLocalSong = v), "revertSongToRepo": (v) => (revertSongToRepo = v), "versionLabel": (v) => (versionLabel = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "goBackToPublished": (v) => (goBackToPublished = v), "offlineWaitForAssets": (v) => (offlineWaitForAssets = v), "renderSongOffline": (v) => (renderSongOffline = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "impDirFor": (v) => (impDirFor = v), "importDraftKeys": (v) => (importDraftKeys = v), "impTrackKey": (v) => (impTrackKey = v), "sonySeqCapture": (v) => (sonySeqCapture = v), "psfInflater": (v) => (psfInflater = v), "chipTrackOrder": (v) => (chipTrackOrder = v), "chipKindOf": (v) => (chipKindOf = v), "chipExt": (v) => (chipExt = v), "chipVaultMeta": (v) => (chipVaultMeta = v), "chipVaultFile": (v) => (chipVaultFile = v), "chipModules": (v) => (chipModules = v), "nsfModules": (v) => (nsfModules = v), "captureChipTrack": (v) => (captureChipTrack = v), "openChipImport": (v) => (openChipImport = v), "openNsfImport": (v) => (openNsfImport = v), "impDisplayTitle": (v) => (impDisplayTitle = v), "renameImportDraft": (v) => (renameImportDraft = v), "impCapture": (v) => (impCapture = v), "impTrackLabel": (v) => (impTrackLabel = v), "captureJobStart": (v) => (captureJobStart = v), "impRename": (v) => (impRename = v), "computeImportAlbumJson": (v) => (computeImportAlbumJson = v), "batchCommit": (v) => (batchCommit = v), "localDraftWrite": (v) => (localDraftWrite = v), "localDraftTracks": (v) => (localDraftTracks = v), "draftWrite": (v) => (draftWrite = v), "draftRead": (v) => (draftRead = v), "idbDraftPut": (v) => (idbDraftPut = v), "commitImports": (v) => (commitImports = v), "declaredTsForKey": (v) => (declaredTsForKey = v), "notesTxtFor": (v) => (notesTxtFor = v), "putSongsText": (v) => (putSongsText = v), "uploadAudioClips": (v) => (uploadAudioClips = v), "uploadAudioClipsFor": (v) => (uploadAudioClipsFor = v), "isCompositionKey": (v) => (isCompositionKey = v), "publishSong": (v) => (publishSong = v), "putMidAt": (v) => (putMidAt = v), "deleteRepoFile": (v) => (deleteRepoFile = v), "audioDirFiles": (v) => (audioDirFiles = v), "copyAudioClips": (v) => (copyAudioClips = v), "moveComposition": (v) => (moveComposition = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "dpTick": (v) => (dpTick = v), "drumRng": (v) => (drumRng = v), "fnv1a32": (v) => (fnv1a32 = v), "sectionLane": (v) => (sectionLane = v), "drBoundaries": (v) => (drBoundaries = v), "drNormParts": (v) => (drNormParts = v), "drBassTrack": (v) => (drBassTrack = v), "drBackbeats": (v) => (drBackbeats = v), "drGenerate": (v) => (drGenerate = v), "drKitCountT": (v) => (drKitCountT = v), "fmtBarBeat": (v) => (fmtBarBeat = v), "bsChordTone": (v) => (bsChordTone = v), "bsInferTimeline": (v) => (bsInferTimeline = v), "bsChordTimeline": (v) => (bsChordTimeline = v), "chordAt": (v) => (chordAt = v), "nextChange": (v) => (nextChange = v), "harmonyTrackIndices": (v) => (harmonyTrackIndices = v), "computeAnalysisLayer": (v) => (computeAnalysisLayer = v), "scheduleAnalysisRecompute": (v) => (scheduleAnalysisRecompute = v), "drawAnalysisLayer": (v) => (drawAnalysisLayer = v), "adoptChordBand": (v) => (adoptChordBand = v), "adoptAllChords": (v) => (adoptAllChords = v), "adoptKeyRegion": (v) => (adoptKeyRegion = v), "openAnalyzeSheet": (v) => (openAnalyzeSheet = v), "bsGenerate": (v) => (bsGenerate = v), "applyTake": (v) => (applyTake = v), "bsBuildControls": (v) => (bsBuildControls = v), "bsRange": (v) => (bsRange = v), "bsRefresh": (v) => (bsRefresh = v), "openBassist": (v) => (openBassist = v), "drRange": (v) => (drRange = v), "drRefresh": (v) => (drRefresh = v), "segGet": (v) => (segGet = v), "segSet": (v) => (segSet = v), "drPartsGet": (v) => (drPartsGet = v), "drPartsSet": (v) => (drPartsSet = v), "drPartsSync": (v) => (drPartsSync = v), "drBuildControls": (v) => (drBuildControls = v), "openDrummer": (v) => (openDrummer = v), "openPasteTo": (v) => (openPasteTo = v), "diatonicShift": (v) => (diatonicShift = v), "removeDuplicateNotes": (v) => (removeDuplicateNotes = v), "updateEditButtons": (v) => (updateEditButtons = v), "pushUndo": (v) => (pushUndo = v), "addTrackUndoable": (v) => (addTrackUndoable = v), "undoTrackAdd": (v) => (undoTrackAdd = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "cmpTrackKey": (v) => (cmpTrackKey = v), "cmpDiff": (v) => (cmpDiff = v), "cmpEnter": (v) => (cmpEnter = v), "cmpExit": (v) => (cmpExit = v), "cmpShow": (v) => (cmpShow = v), "cmpBar": (v) => (cmpBar = v), "drawCompare": (v) => (drawCompare = v), "askSys": (v) => (askSys = v), "aiUrl": (v) => (aiUrl = v), "aiHeaders": (v) => (aiHeaders = v), "aiSSE": (v) => (aiSSE = v), "aiHostKind": (v) => (aiHostKind = v), "aiHostOk": (v) => (aiHostOk = v), "aiRemote": (v) => (aiRemote = v), "aiSay": (v) => (aiSay = v), "aiModelMenu": (v) => (aiModelMenu = v), "aiPickModel": (v) => (aiPickModel = v), "aiTest": (v) => (aiTest = v), "aiRunTest": (v) => (aiRunTest = v), "aiBackendRows": (v) => (aiBackendRows = v), "aiBrowserMenu": (v) => (aiBrowserMenu = v), "aiWebllmLoad": (v) => (aiWebllmLoad = v), "aiEngineFor": (v) => (aiEngineFor = v), "aiBrowserTest": (v) => (aiBrowserTest = v), "aiBrowser": (v) => (aiBrowser = v), "aiProvider": (v) => (aiProvider = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askFindAnnotation": (v) => (askFindAnnotation = v), "askNoteKind": (v) => (askNoteKind = v), "askNoteValue": (v) => (askNoteValue = v), "askAnnotationStructural": (v) => (askAnnotationStructural = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "notesTxtForDoc": (v) => (notesTxtForDoc = v), "askSongPath": (v) => (askSongPath = v), "askReadBars": (v) => (askReadBars = v), "askRunTool": (v) => (askRunTool = v), "askSpan": (v) => (askSpan = v), "askSpanLabel": (v) => (askSpanLabel = v), "askKeyDeclared": (v) => (askKeyDeclared = v), "askKeySpellComment": (v) => (askKeySpellComment = v), "askSpanNotes": (v) => (askSpanNotes = v), "askSpanNotesCompact": (v) => (askSpanNotesCompact = v), "askBarRow": (v) => (askBarRow = v), "askBarFingerprint": (v) => (askBarFingerprint = v), "askSpanNotesCompactCached": (v) => (askSpanNotesCompactCached = v), "askSpanCachedBlock": (v) => (askSpanCachedBlock = v), "askLegendText": (v) => (askLegendText = v), "askAppState": (v) => (askAppState = v), "askModeLine": (v) => (askModeLine = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askViewCursorLine": (v) => (askViewCursorLine = v), "askOpenSongLine": (v) => (askOpenSongLine = v), "askCapLines": (v) => (askCapLines = v), "askNewSinceLines": (v) => (askNewSinceLines = v), "askSentKey": (v) => (askSentKey = v), "askSentGet": (v) => (askSentGet = v), "askSentStage": (v) => (askSentStage = v), "askSentStageBars": (v) => (askSentStageBars = v), "askSentCommit": (v) => (askSentCommit = v), "askSentDrop": (v) => (askSentDrop = v), "askSentReset": (v) => (askSentReset = v), "askEpochKey": (v) => (askEpochKey = v), "askEpochGet": (v) => (askEpochGet = v), "askEpochSet": (v) => (askEpochSet = v), "askEpochNote": (v) => (askEpochNote = v), "askCachedBlock": (v) => (askCachedBlock = v), "askContext": (v) => (askContext = v), "askBudget": (v) => (askBudget = v), "askStripContext": (v) => (askStripContext = v), "askSetMode": (v) => (askSetMode = v), "askModeButtons": (v) => (askModeButtons = v), "askStoreKey": (v) => (askStoreKey = v), "askSeenKey": (v) => (askSeenKey = v), "askSeenGet": (v) => (askSeenGet = v), "askMaxErrId": (v) => (askMaxErrId = v), "askMaxStatusId": (v) => (askMaxStatusId = v), "askSeenMaxKey": (v) => (askSeenMaxKey = v), "askSeenMax": (v) => (askSeenMax = v), "askSeenSet": (v) => (askSeenSet = v), "askSeenAdvance": (v) => (askSeenAdvance = v), "askSeenStage": (v) => (askSeenStage = v), "askSeenCommit": (v) => (askSeenCommit = v), "askSeenDrop": (v) => (askSeenDrop = v), "askStore": (v) => (askStore = v), "askLoad": (v) => (askLoad = v), "askUnsavedCount": (v) => (askUnsavedCount = v), "askSave": (v) => (askSave = v), "askRevertToSaved": (v) => (askRevertToSaved = v), "askEvictOthers": (v) => (askEvictOthers = v), "askModelName": (v) => (askModelName = v), "askLogKey": (v) => (askLogKey = v), "askLogSong": (v) => (askLogSong = v), "askLogPath": (v) => (askLogPath = v), "askLogHeader": (v) => (askLogHeader = v), "askLogMarkdown": (v) => (askLogMarkdown = v), "askCommitLog": (v) => (askCommitLog = v), "askMsgMode": (v) => (askMsgMode = v), "askBuildMessages": (v) => (askBuildMessages = v), "askEstimate": (v) => (askEstimate = v), "askSessionName": (v) => (askSessionName = v), "askToolsNow": (v) => (askToolsNow = v), "askInboxSeenKey": (v) => (askInboxSeenKey = v), "askInboxAllowed": (v) => (askInboxAllowed = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "askAgeText": (v) => (askAgeText = v), "scheduleBackupFlush": (v) => (scheduleBackupFlush = v), "flushBackupNow": (v) => (flushBackupNow = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployButtonTick": (v) => (deployButtonTick = v), "deployBannerShow": (v) => (deployBannerShow = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployActive": (v) => (deployActive = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsVisible": (v) => (askTabsVisible = v), "askTabsApply": (v) => (askTabsApply = v), "askSessionLine": (v) => (askSessionLine = v), "askCompactModelName": (v) => (askCompactModelName = v), "askSessionRender": (v) => (askSessionRender = v), "askSessionRefresh": (v) => (askSessionRefresh = v), "askStatusIdle": (v) => (askStatusIdle = v), "askStatusLine": (v) => (askStatusLine = v), "askStatusRender": (v) => (askStatusRender = v), "askStatusRecentShow": (v) => (askStatusRecentShow = v), "askStatusToggle": (v) => (askStatusToggle = v), "askStatusFetchCommits": (v) => (askStatusFetchCommits = v), "askShotShow": (v) => (askShotShow = v), "askShotLine": (v) => (askShotLine = v), "b64Bytes": (v) => (b64Bytes = v), "askShotCapture": (v) => (askShotCapture = v), "askShotUpload": (v) => (askShotUpload = v), "askShotTake": (v) => (askShotTake = v), "askShotStatusLabel": (v) => (askShotStatusLabel = v), "askShotRender": (v) => (askShotRender = v), "askShotAdd": (v) => (askShotAdd = v), "askShotRemove": (v) => (askShotRemove = v), "askShotClearAll": (v) => (askShotClearAll = v), "askShotRestore": (v) => (askShotRestore = v), "askShotOutgoing": (v) => (askShotOutgoing = v), "askShotDisplayText": (v) => (askShotDisplayText = v), "askPrepImage": (v) => (askPrepImage = v), "askPickFiles": (v) => (askPickFiles = v), "askClock": (v) => (askClock = v), "askNoteLabel": (v) => (askNoteLabel = v), "askInboxStart": (v) => (askInboxStart = v), "askBubble": (v) => (askBubble = v), "askFillBubble": (v) => (askFillBubble = v), "askCopyText": (v) => (askCopyText = v), "askDraftStore": (v) => (askDraftStore = v), "askDraftSave": (v) => (askDraftSave = v), "askDraftSaveSoon": (v) => (askDraftSaveSoon = v), "askComposing": (v) => (askComposing = v), "askDraftLoad": (v) => (askDraftLoad = v), "askDraftClear": (v) => (askDraftClear = v), "askRender": (v) => (askRender = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askRefresh": (v) => (askRefresh = v), "askShowThinking": (v) => (askShowThinking = v), "askJobsSupported": (v) => (askJobsSupported = v), "askJobId": (v) => (askJobId = v), "askPendingIndex": (v) => (askPendingIndex = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askBadgeOff": (v) => (askBadgeOff = v), "askRun": (v) => (askRun = v), "askTermModelsLoad": (v) => (askTermModelsLoad = v), "askTerminalContext": (v) => (askTerminalContext = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askResumeSoon": (v) => (askResumeSoon = v), "askPendingAll": (v) => (askPendingAll = v), "askRepending": (v) => (askRepending = v), "askResume": (v) => (askResume = v), "wmClampSize": (v) => (wmClampSize = v), "wmClampHeight": (v) => (wmClampHeight = v), "wmClampSplit": (v) => (wmClampSplit = v), "wmAllowed": (v) => (wmAllowed = v), "wmMigrate": (v) => (wmMigrate = v), "wmMigrateShape": (v) => (wmMigrateShape = v), "wmMigrateShapeB": (v) => (wmMigrateShapeB = v), "wmSetSide": (v) => (wmSetSide = v), "wmClearSide": (v) => (wmClearSide = v), "wmSetSideMode": (v) => (wmSetSideMode = v), "wmAddSideTab": (v) => (wmAddSideTab = v), "wmRemoveSideTab": (v) => (wmRemoveSideTab = v), "wmSetActiveSideTab": (v) => (wmSetActiveSideTab = v), "wmSetSideWidth": (v) => (wmSetSideWidth = v), "wmZoneFor": (v) => (wmZoneFor = v), "wmDockBottom": (v) => (wmDockBottom = v), "wmClearBottom": (v) => (wmClearBottom = v), "wmSetBottomHeight": (v) => (wmSetBottomHeight = v), "wmSetBottomSplit": (v) => (wmSetBottomSplit = v), "wmWhereIs": (v) => (wmWhereIs = v), "wmLoad": (v) => (wmLoad = v), "wmSave": (v) => (wmSave = v), "wmInnerWidth": (v) => (wmInnerWidth = v), "wmInnerHeight": (v) => (wmInnerHeight = v), "wmSideCells": (v) => (wmSideCells = v), "wmLayoutSide": (v) => (wmLayoutSide = v), "wmLayoutTabs": (v) => (wmLayoutTabs = v), "wmCloseWindow": (v) => (wmCloseWindow = v), "wmWindowTitle": (v) => (wmWindowTitle = v), "wmLayoutBottom": (v) => (wmLayoutBottom = v), "wmDockLabel": (v) => (wmDockLabel = v), "wmDockShort": (v) => (wmDockShort = v), "wmSyncDockButtons": (v) => (wmSyncDockButtons = v), "wmLayoutAll": (v) => (wmLayoutAll = v), "wmZoneForPointer": (v) => (wmZoneForPointer = v), "wmShowDropZone": (v) => (wmShowDropZone = v), "wmHideDropZone": (v) => (wmHideDropZone = v), "wmDockSide": (v) => (wmDockSide = v), "wmSetSideModeFor": (v) => (wmSetSideModeFor = v), "wmDockBottomWindow": (v) => (wmDockBottomWindow = v), "wmFloat": (v) => (wmFloat = v), "makeWindow": (v) => (makeWindow = v), "wmMenuItem": (v) => (wmMenuItem = v), "wmOpenMenu": (v) => (wmOpenMenu = v), "wmCloseMenu": (v) => (wmCloseMenu = v), "wmSideDividerize": (v) => (wmSideDividerize = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askScrollEnd": (v) => (askScrollEnd = v), "askFocusIfKeyboard": (v) => (askFocusIfKeyboard = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askGrow": (v) => (askGrow = v), "askNormChip": (v) => (askNormChip = v), "askFindTrackIndex": (v) => (askFindTrackIndex = v), "parsePitch": (v) => (parsePitch = v), "askNoteVel": (v) => (askNoteVel = v), "askWriteNotesValidate": (v) => (askWriteNotesValidate = v), "askWritableGate": (v) => (askWritableGate = v), "askWriteNotes": (v) => (askWriteNotes = v), "askBarsCount": (v) => (askBarsCount = v), "askBarsValidate": (v) => (askBarsValidate = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "filesMirror": (v) => (filesMirror = v), "filesMirrorSoon": (v) => (filesMirrorSoon = v), "filesMirrorFor": (v) => (filesMirrorFor = v), "folderScanAlbums": (v) => (folderScanAlbums = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "draftDirtyState": (v) => (draftDirtyState = v), "syncable": (v) => (syncable = v), "pendingSongs": (v) => (pendingSongs = v), "renderSyncPending": (v) => (renderSyncPending = v), "discardPending": (v) => (discardPending = v), "openSyncSheet": (v) => (openSyncSheet = v), "cfgShowPane": (v) => (cfgShowPane = v), "openSettingsSheet": (v) => (openSettingsSheet = v), "noteTapMovesCursor": (v) => (noteTapMovesCursor = v), "penInstant": (v) => (penInstant = v), "recSnapOn": (v) => (recSnapOn = v), "textSizePref": (v) => (textSizePref = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "ghCheckOut": (v) => (ghCheckOut = v), "ghCheckMessage": (v) => (ghCheckMessage = v), "ghCheck": (v) => (ghCheck = v), "publicBase": (v) => (publicBase = v), "shareLinkFor": (v) => (shareLinkFor = v), "songsReadmeBlock": (v) => (songsReadmeBlock = v), "spliceReadme": (v) => (spliceReadme = v), "writeSongsReadme": (v) => (writeSongsReadme = v), "openShareSheet": (v) => (openShareSheet = v), "putRollnotes": (v) => (putRollnotes = v), "markPublished": (v) => (markPublished = v), "markCurrentSongSynced": (v) => (markCurrentSongSynced = v), "recordLastSync": (v) => (recordLastSync = v), "writeToken": (v) => (writeToken = v), "connected": (v) => (connected = v), "takeToken": (v) => (takeToken = v), "publishOpenComposition": (v) => (publishOpenComposition = v), "publishUnsavedSong": (v) => (publishUnsavedSong = v), "publishAllJobStart": (v) => (publishAllJobStart = v)}};

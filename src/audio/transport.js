@@ -46,3 +46,9 @@ export function albumEndSec(seg, wholeEnd, hasMaterial, passes = ALBUM_PASSES, c
   const end = hasMaterial && len > 0 ? seg.end + (passes - 1) * len : wholeEnd; // pass 1 = intro + body; each further pass = the body again
   return Math.min(end, cap);
 }
+
+export function playSec() { // current position on the song timeline, seconds
+  const s = Math.max(0, S.audio.currentTime - S.playT0) + S.playOffset; // playT0 starts slightly ahead; a count-in holds the playhead at its start, even mid-song
+  if (!S.loopSeg || S.loopSeg.end <= S.loopSeg.start) return s;
+  return s < S.loopSeg.end ? s : S.loopSeg.start + (s - S.loopSeg.end) % (S.loopSeg.end - S.loopSeg.start);
+}

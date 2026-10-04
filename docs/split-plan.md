@@ -915,6 +915,212 @@ constraint for whoever next considers moving these two.
 - Verify:
   - chip-worker and psx-stream tests
   - **iPad ear check: a chip song (NES + one streamed console song), an audio-clip song at 0.5× (WSOLA worker), the metronome, and Download audio**
+- **Done** (2026-10-03, Sonnet builder, worktree branch). Six `move.mjs
+  --names` invocations over src/app.js, all by name (every one of this
+  step's five target areas sits in a region laced with UI/import/model
+  calls, the same "a banner's own span runs hundreds of lines past the
+  movable content" shape steps 4-7 each found — a `--range` on any of the
+  five banners here would have swept in the still-blocked `CHIPS` table,
+  the play-gate cluster, or `play`/`stop` themselves). Order mattered:
+  `playSec` moved into the EXISTING `audio/transport.js` first (step 7's
+  file, untouched otherwise), because both `chip-stream.js`'s
+  `chipStreamPump` and `metronome.js`'s `metPumpFollow` needed it and it
+  was still bare in app.js — an unlisted, zero-risk pure leaf (`S` only),
+  not named by any step's table, moved purely to unblock two OTHER files'
+  real content.
+  - `audio/chip.js` ← `chip,chipTrackNo,albumMetaCache,albumMetaFor,
+    ghHeaders,vaultFetch,chipAlbumHasSource,CHIP_BUDGET_APP,CHIP_BUDGET_WEB,
+    CHIP_RATE_STEPS,chipRenderBudget,planChipRender,chipStaticPan,
+    chipDownmixStatic,chipSilent,chipIsPcm,CHIP_STREAMED_RENDER_CHUNK_SEC,
+    chipRenderStreamed,chipWorkerAvailable,chipPreviewPending,
+    chipPreviewCache,chipPreviewProgAt,chipPreviewBuffer,chipActive,
+    chipHas,chipBuffers,chipPcmToBuffers,chipStopSrcs,chipStart` (29 names).
+  - `audio/chip-stream.js` ← `chipStreamMode,chipAutoShouldStream,
+    chipAutoReason,CHIP_STREAM_CHUNK_SEC,CHIP_STREAM_OVERLAP,
+    CHIP_STREAM_HORIZON_VISIBLE,CHIP_STREAM_HORIZON_HIDDEN,
+    CHIP_STREAM_PIN_LOOKAHEAD,CHIP_SEG_HORIZON_SEC,CHIP_SEG_MAX_SEGMENTS,
+    chipSegments,chipStreamIdxForTapeSec,chipStreamOnChunk,
+    chipStreamOnSilent,chipStreamRequestRange,chipStreamWaitFor,
+    chipStreamPinLoopStart,chipStreamEvict,chipStreamScheduled,
+    chipStreamScheduleChunk,chipNoteSlice,chipStreamPump,chipStreamStart`
+    (23 names).
+  - `audio/clips.js` ← `audioBufCache,PEAK_BUCKET,audioDirFor,
+    audioCacheKey,songHasAudio,clipLen,clipEndTick,clipClamp,forEachClip,
+    audioBytesFor,decodeAudioBytes,peaksOf,clipOnsetSec,tempoFromPeaks,
+    onsetCurve,beatTrack,clipBeatMap,clipTempo,audioReady,wsolaStretch,
+    stretchJobs,stretchInWorker,stretchCache,keepPitch,stretchKey,
+    stretchPending` (26 names).
+  - `audio/metronome.js` ← `met,metSave,metDefaultAccents,metBuildCells,
+    metClick,metFollowBeatTicks,metFollowNum,metPumpFollow,metPump,
+    ensureMetGain,metHalt,applyMetMode` (12 names).
+  - `audio/bounce.js` ← `wavEncode,audioBufferToWav,midiBase64,
+    deliverAudioFile` (4 names).
+
+  Every invocation reported zero unresolved free identifiers.
+  `regen-e2e-footer.mjs --file src/app.js` re-run; `check.mjs` clean except
+  the pre-existing `oldBpb` finding (Q6); `check-e2e-globals.mjs` and
+  `check-controls.mjs` clean (26 controls, unchanged — this step touched
+  no control). devtools.js gained `audioChip`/`audioChipStream`/
+  `audioClips`/`audioMetronome`/`audioBounce` namespace imports (GET-only).
+  sw.js APP_MODULES gained all five files, SW_VERSION bumped nr-v13 →
+  nr-v14; index.html's modulepreload list gained all five (after
+  audio/transport.js, before app.js — all layer 3). `node
+  tools/package.mjs --out /tmp/nr-dist-s8`: 47 runtime modules, unchanged
+  from post-step-7 (no tools/-side runtime module corresponds to audio/).
+  Tests, each under `perl -e 'alarm 240; exec @ARGV'`: night-roll 427
+  (426 pass + 1 pre-existing vault-only skip — every "local song: …"
+  SAFETY-regression test passes unchanged, since none of that code
+  moved), modules 33/33
+  (fileCount assertion bumped 23 → 28, the usual mechanical bump — see
+  "Deviations (8)" for the one test-file edit this step made), gestures
+  21/21, controls 3/3, pwa 3/3, package 3/3, nsf 20/23 (3 pre-existing
+  vault-only skips, same gap as every prior step), chip-worker 31/31,
+  bridge 10/10, migrate-rollnotes 9/9, psx-render 7/7, spc-render 5/5,
+  instruments-export 4/4, sounding 8/8. `npm run test:e2e:smoke` run once:
+  8/8 passed. See "Deviations (8)" below for everything that did NOT move
+  and why — this step hit the sharpest version yet of the "one blocked
+  table/function sinks the whole headline feature" pattern (`CHIPS`'s
+  single `logErr` diagnostic call blocks `chipRender` itself, the actual
+  "authentic chip render" entry point) — and for the two prior steps'
+  QUEUED assumptions this step corrected (`initCatalog`/`albumMetaFor`,
+  `scheduleNote`/`previewNote`).
+
+## Deviations (8, 2026-10-03)
+
+- **`CHIPS` — the single biggest finding this step made.** The per-console
+  table (magic-byte sniff + parse/run/render/stream hooks, one entry per
+  nsf/gbs/spc/vgm/psf/psf2/usf) is ENTIRELY pure data/closures except for
+  ONE line: `CHIPS.usf.capture`'s own diagnostic
+  (`if (typeof logErr === "function") logErr(line);`, a Mario-64-scrambling
+  debug aid from 2026-09-27). That one guarded call — inside one chip
+  kind's capture closure, never exercised by rendering — blocks the whole
+  object (and `sonySeqCapture`/`psfInflater`/`PSX_SOUNDING_ON`, which sit
+  beside it and share its only real external reference) from moving to
+  `audio/chip.js`, the same "one `logErr` call sinks an otherwise-clean
+  family" shape step 6 found for `idbDraftPut` — except this time the
+  casualty is bigger: `chipEstimateTracks`, `chipRender` (the actual
+  "authentic chip render" entry point this step's own name promises),
+  `chipPublish`, `chipRenderInWorker`, and `chipCleanupAfterFailure` all
+  read `CHIPS[kind]` directly and so stay blocked right along with it, as
+  does `chipStreamOpenWorker`/`chipStreamOpen` in chip-stream.js. Splitting
+  `CHIPS` by hand (moving only its `.render`/`.renderRate`/`.stream` fields,
+  leaving `.parse`/`.run`/`.capture`/`.files` behind for import/capture.js,
+  step 9) would be a structural edit a verbatim move must not make — not a
+  byte-identical move of one name, but a rewrite of the table's own shape.
+  All five stay bit-for-bit in app.js; every one of chip.js's/
+  chip-stream.js's genuinely pure leaves (the memory-budget math, the
+  live-playback surface, the preview cache, the stream-session bookkeeping)
+  moved clean regardless, and now import back into app.js the same way
+  every prior step's blocked headline function did. Queued in
+  open-items.md for whichever step (9, when `import/capture.js` exists and
+  can hold `CHIPS`'s import-side fields, or a dedicated pass that fully
+  separates the table into a render-side and an import-side half) next
+  considers this.
+- **`isCaptureKey` was checked and deliberately left in app.js, NOT moved,
+  even though its only blocker (`albumMetaCache`) moved to chip.js this
+  step and nothing else stood in its way.** `isCaptureKey`'s other caller,
+  `ownFolderPath`, is itself slated for `model/provenance.js` (layer 2,
+  step 9) by the plan's own table. Moving `isCaptureKey` into `audio/chip.js`
+  (layer 3) would have let `chipSource` move clean today, but would
+  permanently deadlock `ownFolderPath` the moment it lands at layer 2 — a
+  layer-2 module can never import a layer-3 one, the identical shape of
+  mistake `estimateKey`/`theory/key.js` made (and had to live with) in
+  steps 4-5. `ghHeaders` (also moved into chip.js this step, for
+  `vaultFetch`) was checked against the SAME risk and cleared it: its other
+  callers (`putRollnotes`/`markPublished`/`writeToken`, sync/publish.js,
+  step 9) are layer 4, which may legally import layer 3. `chipSource`
+  itself therefore stays in app.js, blocked by `isCaptureKey` alone,
+  importing `chipTrackNo`/`albumMetaFor`/`vaultFetch`/`idbNsfGet`/
+  `idbNsfPut` back from chip.js/platform/storage.js otherwise unchanged.
+- **`scheduleNote`/`previewNote` (open-items.md's QUEUED retry from step 7)
+  still did NOT move, and the reason is NOT the one the queued note named.**
+  Landing `chip`/`chipActive`/`chipHas`/`chipPreviewBuffer`/`chipNoteSlice`
+  in chip.js/chip-stream.js this step DID clear that original blocker
+  exactly as predicted — but a free-identifier re-check surfaced a second,
+  independent one the queued note hadn't anticipated: `scheduleNote`'s
+  `n._clip` branch calls `scheduleClip` (audio/clips.js territory, this
+  step), and `scheduleClip` itself stays in app.js (see the `audio/clips.js`
+  finding below). `previewNote` falls through to `scheduleNote` as its
+  non-chip-register fallback, so it inherits the block one level removed.
+  Corrected in open-items.md and NIGHT-ROLL.md's `audio/voices.js` entry —
+  the same "earlier step's assumption about what unblocks X was itself
+  wrong, here's the real constraint" correction step 5 made for step 4's
+  `estimateKey` note.
+- **`scheduleClip`/`stretchEnsure`/`stretchEnsureAll`/`audioChaseNow`/
+  `applyAudioDirs`/`audioEnsureFile`/`applyBeatMap`/`setSongTempo` — the
+  functions that actually APPLY a decoded/stretched clip to the live
+  song — did NOT move, despite `audio/clips.js` being this step's own
+  target file.** `stretchEnsure`'s blocker is a single `draw()` call at the
+  very end of its stretch-worker `.then()` callback (render, layer 3-ish
+  but still entirely in app.js, step 11) — everything else in that
+  function (`stretchKey`/`stretchCache`/`stretchInWorker`/`audioCacheKey`)
+  is already pure and already moved. `scheduleClip` calls `stretchEnsure`
+  directly, so it inherits the block; `audioChaseNow` calls `scheduleClip`,
+  same inheritance. `applyAudioDirs`/`audioEnsureFile`/`applyBeatMap`/
+  `setSongTempo` each separately need `isComposition`/`isLocalDraft`/
+  `ownFolderPath`/`addTrackUndoable`/`computeSongEnd`/`finalizeNotes`/
+  `playGateKick`/`draw`/`stop`/`play`/`setInfo` — provenance/model/UI/
+  transport, none yet split. What moved instead is everything genuinely
+  pure underneath these: the file/peak cache, the decode path, the tempo-
+  from-a-take math (`tempoFromPeaks`/`onsetCurve`/`beatTrack`/
+  `clipBeatMap`/`clipTempo`/`clipOnsetSec` — none of these read anything
+  but a clip's own `.peaks`/`.buffer`/`.dur`/`.offset`), and the WSOLA
+  algorithm itself (`wsolaStretch`, still `SERIALIZED` per rule 7 — moving
+  which file defines it changes nothing about its own self-containment
+  check) plus its worker plumbing. Every "WSOLA at 0.5×" ear check Josh
+  runs still exercises byte-identical code, now split across two files
+  instead of one.
+- **`buildSchedule` was checked and found genuinely clean (pure `S` +
+  `clipLen`/`tickToSec`) but was deliberately NOT moved.** It's not named
+  by this step's table, moving it wouldn't have unblocked any of this
+  step's actual blocked functions (`renderSongOffline`/`scheduleNote`/
+  `scheduleClip` are each blocked by OTHER calls too — `stop()`/
+  `scheduleClip`/`stretchEnsure` respectively — so `buildSchedule` moving
+  alone buys nothing), and it belongs more to `audio/transport.js` (step
+  7's file, the scheduler) than to any of this step's five targets —
+  touching a different step's already-"Done" file for a dependency that
+  wouldn't even pay for itself felt like scope creep in the wrong
+  direction. Left in app.js for whichever step (9/11/14, once `play()`'s
+  OWN blockers clear) actually needs to move it.
+- **`metStart` (the metronome's own ▶ handler) did NOT move, despite
+  `metHalt` — its exact mirror-image Stop handler — moving clean.**
+  `metStart` calls `ensureAudio()`/`resumeAudio()` directly; both are the
+  SAME permanently-blocked pair step 7 found for `audio/engine.js`
+  (`logDebug`/`logErr`/`setInfo` inside each, `logErr`/`logDebug` both
+  resolving to UI-chrome's `errChip()`) — not "not yet split," permanent,
+  per step 7's own finding. `metHalt` has no such call (`audioSessionType`
+  is already platform/native.js, layer 1). All 13 of the metronome panel's
+  `addEventListener` wiring statements, plus the `#metnum`-populating IIFE,
+  stayed in app.js as one block rather than being split by which handler
+  happens to be movable (`#metbtn`/`#metgo` call the still-blocked
+  `metStart`; the other 11 don't) — a partial-wiring move would have left
+  near-identical-looking statements in two different files for no
+  structural reason, which is its own kind of confusion.
+- **`initCatalog` (open-items.md's QUEUED retry from step 5/6) still did
+  NOT move, and — unlike `scheduleNote`/`previewNote` above — this is now
+  understood to be a PERMANENT structural block, not a temporary one.**
+  `albumMetaFor` landed in `audio/chip.js` this step exactly as the queued
+  note asked, clearing `initCatalog`'s last NAMED blocker — but
+  `model/catalog.js` is layer 2 and `audio/chip.js` is layer 3, and a
+  layer-2 module may only import layer 2 or lower, forever, the identical
+  shape of deadlock step 5 found for `estimateKey`/`theory/key.js` (layer 0
+  importing layer 2) and corrected in its own QUEUED note. The earlier
+  open-items.md entry assumed landing `albumMetaFor` anywhere would clear
+  this; it doesn't — `initCatalog` can only ever move if `albumMetaFor`
+  itself moves to a layer ≤2 module instead (a real option, since
+  `albumMetaFor` has no blocker of its own — it was placed in chip.js this
+  step because chip.js's OWN callers, `chipSource`/`chipAlbumHasSource`,
+  needed it there, not because layer 2 was unreachable for it) — OR
+  `initCatalog` itself moves to a layer ≥3 module, losing the "album/group
+  lookups" cohesion with the rest of `model/catalog.js`. Corrected in
+  open-items.md, same shape as step 5's correction of step 4's
+  `estimateKey` note.
+- **The `tests/modules.test.mjs` `fileCount` assertion needed a one-line
+  edit** (23 → 28, plus the file-list string and the test's own title,
+  `post-step-7` → `post-step-8`) — the same mechanical bump every step
+  since step 3 has made for its own new files; not a logic change, just
+  keeping the hard-coded expectation in step with `checkSrc()`'s real
+  count.
 
 **9. `model/song.js`, `selection.js`, `provenance.js`, `album-order.js`, `versions.js`, `jobs.js`; `import/*`; `sync/publish.js`.**
 - Verify:
