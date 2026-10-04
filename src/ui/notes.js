@@ -42,6 +42,13 @@ import { updateSubtitleImpl as updateSubtitle } from "./chrome.js";
 import { drawImpl as draw } from "./chrome.js";
 import { setInfoImpl as setInfo } from "./chrome.js";
 import { clampViewImpl as clampView } from "./chrome.js";
+import { openDropUp } from "./chrome.js";
+import { closeDropUp } from "./chrome.js";
+import { toggleSubtitle } from "./chrome.js";
+import { renderViewMenu } from "./chrome.js";
+import { closeFileMenus } from "./chrome.js";
+import { draftKeys } from "../model/versions.js";
+import { clearMultiSel } from "../model/selection.js";
 
 // key dial: preview any signature live; Set writes "key: X" at the cursor bar.
 // A signature is mode-ambiguous (Bb major and G minor share two flats), so a
@@ -467,4 +474,141 @@ export function refreshKeyPreview() { // preview applies only when tonic AND mod
   buildScoreModel();
   clampView();
   draw();
+}
+
+export function initNotes1() {
+  {
+    // black keys get THREE options (2026-08-12 spec): fused "A#/Bb" = spelling
+    // undetermined, plus each asserted spelling — Josh can know a tonic is Bb
+    // and not A# before knowing the mode, and the picker must let him say so.
+    // Option value = "pc:spelling", fused/naturals = "pc:".
+    for (let pc = 0; pc < 12; pc++) {
+      const add = (sp, label) => {
+        const o = document.createElement("option");
+        o.value = pc + ":" + sp;
+        o.textContent = label;
+        keysel.appendChild(o);
+      };
+      if (TONIC_SPELL[pc].length === 1) add("", TONIC_SPELL[pc][0]);
+      else {
+        add("", tonicLabel(pc)); // undecided
+        for (const sp of TONIC_SPELL[pc]) add(sp, "· " + sp);
+      }
+    }
+    const nk = document.getElementById("nkeysel"); // editor picker: same tonic list
+    for (const opt of keysel.querySelectorAll("option")) {
+      if (opt.value === "") continue;
+      nk.appendChild(opt.cloneNode(true));
+    }
+  }
+   keysel.addEventListener("change", refreshKeyPreview);
+  keymodeSel.addEventListener("change", refreshKeyPreview);
+  keysetBtn.addEventListener("click", () => {
+    const t = chosenTonic(), mode = keymodeSel.value;
+    if (!t || !S.song || !S.songKey) return;
+    const bar = Math.floor(S.playCursor / barTicks()) + 1;
+    dropLocalKeyAt(bar);
+    let name, fresh;
+    if (mode) {
+      const full = keyNameFor(t.pc, mode);
+      name = full.name;
+      fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + name, keydir: full.sf, added: true};
+    } else { // tonic only: stored, NOT applied — asserted spelling if Josh chose one
+      const tonic = partialNameOf(t);
+      name = tonic + "?";
+      fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + name, keypartial: tonic, added: true};
+    }
+    S.rollnotes.push(resolveNote(fresh));
+    S.previewSf = null;
+    keysel.value = "";
+    keymodeSel.value = "";
+    keysetBtn.style.display = "none";
+    keymodeSel.style.display = "none";
+    finalizeNotes();
+    saveLocalNotes();
+    buildScoreModel();
+    S.lastSubtitle = undefined;
+    updateSubtitle();
+    draw();
+    setInfo(mode ? "key set to " + name + " at bar " + bar + " (unsynced — Sync to commit)"
+                 : "tonic " + name + " stored at bar " + bar + " — NOT applied until a mode is set");
+  });
+  document.getElementById("keysetest").addEventListener("click", () => {
+    // promotes the Normal-mode estimate to a real, declared key: annotation —
+    // still only on a tap, same as any other key declaration (never written
+    // just because Normal mode is on)
+    if (!S.song || !S.songKey) return;
+    const est = estimateKey();
+    if (!est) return;
+    const bar = Math.floor(S.playCursor / barTicks()) + 1;
+    dropLocalKeyAt(bar);
+    const fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + est.name, keydir: est.sf, added: true};
+    S.rollnotes.push(resolveNote(fresh));
+    finalizeNotes();
+    saveLocalNotes();
+    buildScoreModel();
+    S.lastSubtitle = undefined;
+    updateSubtitle();
+    draw();
+    setInfo("key set to " + est.name + " at bar " + bar + " (from the estimate — unsynced — Sync to commit)");
+  });
+}
+
+export function initNotes2() {
+  document.getElementById("listbtn").addEventListener("click", e => {
+    document.getElementById("notesstrip").textContent = S.subOn ? "Hide notes strip" : "Show notes strip";
+    openDropUp(e.currentTarget, document.getElementById("notesmenu"));
+  });
+  document.getElementById("notesstrip").addEventListener("click", () => { closeDropUp(); toggleSubtitle(); renderViewMenu(); });
+  document.getElementById("notesall").addEventListener("click", () => { closeDropUp(); openNoteList(); });
+  document.getElementById("notelistSync").addEventListener("click", () => {
+    notelistSheet.classList.remove("on");
+    document.getElementById("syncbtn").click();
+    S.syncReturnToList = true; // after a successful commit, go back to the list
+  });
+  document.getElementById("notelistAdd").addEventListener("click", () => {
+    notelistSheet.classList.remove("on");
+    openEditor(null);
+  });
+
+  document.getElementById("helptabs").addEventListener("click", e => {
+    const b = e.target.closest("button[data-hs]");
+    if (b) showHelpTab(b.dataset.hs);
+  });
+  document.getElementById("filehelp").addEventListener("click", () => {
+    closeFileMenus();
+    showHelpTab(localStorage.getItem("ff1roll-helptab") || "views");
+    document.getElementById("helpsheet").classList.add("on");
+  });
+  document.getElementById("fileabout").addEventListener("click", () => {
+    closeFileMenus();
+    const n = Object.values(S.CATALOG).reduce((k, s) => k + s.length, 0);
+    document.getElementById("aboutstats").textContent =
+      Object.keys(S.CATALOG).length + " albums · " + n + " songs · " + draftKeys().length + " local drafts";
+    document.getElementById("aboutsheet").classList.add("on");
+  });
+}
+
+export function initNotes3() {
+  lassobtn.addEventListener("click", () => {
+    S.lassoMode = !S.lassoMode;
+    lassobtn.classList.toggle("active", S.lassoMode);
+    lassobtn.setAttribute("aria-pressed", String(S.lassoMode));
+    clearMultiSel();
+    setInfo(S.lassoMode ? "lasso: drag across notes to identify them" : "tap a note");
+    draw();
+  });
+  document.getElementById("chcopy").addEventListener("click", async e => {
+    try { await navigator.clipboard.writeText(S.challengeCopy); e.target.textContent = "✓ copied"; }
+    catch { e.target.textContent = "✗ copy failed"; }
+    setTimeout(() => { e.target.textContent = "Copy"; }, 1200);
+  });
+  document.getElementById("chordbtn").addEventListener("click", () => {
+    if (S.challengeSec) { openChallenge(S.challengeSec); return; }
+    if (!S.multiSel.length) return;
+    const pitches = S.multiSel.map(s => S.song.tracks[s.ti].notes[s.ni].p);
+    const names = [...new Set(pitches)].sort((a, b) => a - b).map(p => pitchName(p, S.multiSelSf));
+    const chordName = nameChord(pitches, S.multiSelSf);
+    setInfo(names.join(" · ") + "  →  " + chordName, names.join(", ") + " — " + chordName);
+  });
 }
