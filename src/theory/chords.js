@@ -145,3 +145,13 @@ export function transposeChordLabel(text, dP) { // "G#m" + 2 → "A#m"; spelling
   const pc = (LETTER_PC[m[1]] + (m[2] === "#" || m[2] === "♯" ? 1 : m[2] === "b" || m[2] === "♭" ? -1 : 0) + 1200 + dP) % 12;
   return CHORD_FLAT[pc] + m[3];
 }
+
+// fractional rotation while a finger is spinning the wheel
+// Insert-chord (Josh, 2026-08-17): stamp a full chord at the cursor with the
+// pencil duration, cursor walks forward — repeated inserts build a progression.
+export const CHORD_QUALS = [
+  ["maj", [0, 4, 7]], ["m", [0, 3, 7]], ["dim", [0, 3, 6]], ["aug", [0, 4, 8]],
+  ["sus2", [0, 2, 7]], ["sus4", [0, 5, 7]], ["6", [0, 4, 7, 9]], ["m6", [0, 3, 7, 9]],
+  ["7", [0, 4, 7, 10]], ["maj7", [0, 4, 7, 11]], ["m7", [0, 3, 7, 10]],
+  ["m7♭5", [0, 3, 6, 10]], ["dim7", [0, 3, 6, 9]],
+];

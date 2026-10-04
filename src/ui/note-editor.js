@@ -47,30 +47,12 @@ import { renderMixer } from "./mixer.js";
 import { saveEdits } from "../model/edits.js";
 import { computeSongEnd } from "../model/song.js";
 
-// fractional rotation while a finger is spinning the wheel
-// Insert-chord (Josh, 2026-08-17): stamp a full chord at the cursor with the
-// pencil duration, cursor walks forward — repeated inserts build a progression.
-export const CHORD_QUALS = [
-  ["maj", [0, 4, 7]], ["m", [0, 3, 7]], ["dim", [0, 3, 6]], ["aug", [0, 4, 8]],
-  ["sus2", [0, 2, 7]], ["sus4", [0, 5, 7]], ["6", [0, 4, 7, 9]], ["m6", [0, 3, 7, 9]],
-  ["7", [0, 4, 7, 10]], ["maj7", [0, 4, 7, 11]], ["m7", [0, 3, 7, 10]],
-  ["m7♭5", [0, 3, 6, 10]], ["dim7", [0, 3, 6, 9]],
-];
 export const CHORD_ROOTS = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
 export const INS_DURS = [["16th", 0.25], ["8th", 0.5], ["8th.", 0.75], ["quarter", 1],
                   ["quarter.", 1.5], ["half", 2], ["half.", 3], ["whole", 4]];
 // quarters — the Insert dialogs' own duration, independent of the pencil
 export function chordLabel() {
   return CHORD_ROOTS[S.chordRoot].split("/")[0] + (S.chordQual === "maj" ? "" : S.chordQual);
-}
-export function stampChordBand(tick, durTicks, sym) { // the matching ruler annotation
-  // end via setEndBQ (inclusive last beat): deriving it from the last tick
-  // rounded every band up a beat, so bar-long chords overlapped (Josh, 2026-09-12)
-  const fresh = {text: sym, chord: true, added: true};
-  setAnchorBQ(fresh, tick);
-  setEndBQ(fresh, tick + durTicks);
-  dropSupersededBy(fresh); // one band per span, same as the dialog path
-  S.rollnotes.push(resolveNote(fresh));
 }
 // Progression library (Josh, 2026-08-17): emotions → Roman-numeral recipes.
 // Numerals are major-scale-relative (♭VI = lowered 6th degree), the app's

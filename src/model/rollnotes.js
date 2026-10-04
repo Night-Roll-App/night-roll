@@ -8,6 +8,7 @@ import { tombKeyFor } from "./edits.js";
 import { noteIdentity } from "./edits.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { readData } from "../platform/folder.js";
+import { setAnchorBQ } from "../hooks.js";
 
 // ---------------------------------------------------------------- rollnotes
 export function barTicks() { return beatsPerBarEff() * S.song.ppq; }
@@ -559,4 +560,14 @@ export function convertAnchors(oldTs, newTs) {
       n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
     }
   }
+}
+
+export function stampChordBand(tick, durTicks, sym) { // the matching ruler annotation
+  // end via setEndBQ (inclusive last beat): deriving it from the last tick
+  // rounded every band up a beat, so bar-long chords overlapped (Josh, 2026-09-12)
+  const fresh = {text: sym, chord: true, added: true};
+  setAnchorBQ(fresh, tick);
+  setEndBQ(fresh, tick + durTicks);
+  dropSupersededBy(fresh); // one band per span, same as the dialog path
+  S.rollnotes.push(resolveNote(fresh));
 }
