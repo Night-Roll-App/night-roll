@@ -6944,3 +6944,33 @@ song — and, since saveDraft/saveEdits/draftWrite changed file, one
 real-browser edit → reload → compare on a scratch local song
 (persistence needs a device test). Verbatim moves, but that rule exists
 because of 6ad5eee.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split phase 2 step 6: src/session/{song,album,files}.js (docs/split-phase2-plan.md)
+
+Seven commits, verbatim-checked. Four re-homes first (`annotationsFor`/
+`subtractTombstones`/`mergeLocalAdditions`/`resolveNoteWith`/`bakeTempos`/
+`bakeMeter` → model/rollnotes.js; `draftFingerprint` → model/versions.js;
+`cmpBar` → ui/chrome.js; `syncDurSeg` → ui/note-editor.js), then the
+three new layer-4 files: song.js (finalizeNotesImpl, loadNotes, loadSong*/
+setSong, openDraft*, fitViewImpl, updateSongMetaImpl, rememberRecentSong,
+reflectSongURL), album.js (the run sequencer), files.js (saveSongAs,
+openSaveForm + folder picker, saveVersion, forkCurrentSong,
+renameLocalKeys). `revertSongToRepo`/`moveComposition` stay — held by the
+sync/publish web (step 8). Manifests all updated (SW_VERSION nr-v21 →
+nr-v24; fileCount 64 → 67). check.mjs clean except `oldBpb`; prof set 29
+unchanged; `npm test` under alarm 1200 — only ps2-real/instruments fail
+(pre-existing); modules 86/86; smoke 8/8; package 181 → 184 files (the
+three session files only). `src/app.js`: 12139 → 11331.
+
+TOOLING GAP (move.mjs, found this step): `profWrapName` matches only
+`X = prof("X", X)`. A port body renamed in step 3 keeps its label —
+`finalizeNotesImpl = prof("finalizeNotes", finalizeNotesImpl)` — so the
+wrap line is NOT carried with the function and is left in app.js
+assigning to an import (a TypeError at module eval, caught by node
+--check/check.mjs only indirectly). Hand-moved this time. Fix before
+step 7 moves `renderTrackbarImpl`/`updateSubtitleImpl`/`drawImpl`/
+`playbackFrameImpl`/`buildScoreModelImpl`: accept `XImpl = prof("X",
+XImpl)` (identifier = declared name, label = name minus `Impl`).
+
+Device check owed (plan §3 step 6): load, draft, Save As, fork, revert —
+scratch songs only.

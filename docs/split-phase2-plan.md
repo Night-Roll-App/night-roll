@@ -114,7 +114,7 @@ illegal-layer imports.
 | 3 | H | **Done.** ports draw, playbackFrame, clampView, fitView, buildScoreModel, renderTrackbar, updateEditBtnVis, updateChipBtn, updateSongBtn, updateSyncBtn, updateSubtitle, askRender, finalizeNotes, recFinish, albumAdvance — plus songTitleOf (step 2's blocker) | ~0 (actual: +9, 14486→14495 — new import lines only) |
 | 4 | M | **Done, with the transport/voices/clips clusters almost entirely blocked (see §2 writeup): only chipRender/chipRenderInWorker/chipPublish/chipStreamOpen/chipRenderAuto actually moved**, unblocked by step 3's songTitleOf port; play/stop/playGate*/buildSchedule/renderSongOffline/audioChaseNow → audio/transport; scheduleNote, previewNote, sf/game preload+wait → audio/voices; scheduleClip, stretchEnsure(All), applyAudioDirs, audioEnsureFile, applyBeatMap, setSongTempo, writeClips, setClipDir, splitClipAt, deleteClip → audio/clips all stayed, still blocked. **Finished in step 4c (worktree agent, 2026-10-04): the whole cluster is out — see the 4c write-up.** | ~1,150 (actual: 220, 14495→14275; 4c: 836 more, 14179→13343) |
 | 5 | M | **Done (worktree agent, 2026-10-04; 18 commits — 14 M + 3 H carrying 4 ports; see write-up; retireOldOverlay landed in model/versions beside saveDraft, its only caller).** saveEdits/loadEdits/foldOldOverlay/retireOldOverlay → model/edits; selEditApply + selection mutators, insertTime/deleteTime, ridealongChordBands, transposeTrack, closeGap → model/selection; scheduleAnalysisRecompute/adopt* → gen/analysis; drGenerate/bsGenerate/applyTake → gen/*; M2's misfiled ones down out of ui/* | ~1,400 (actual: 1,204, 13343→12139) |
-| 6 | M | session/song.js: finalizeNotes, bakeMeter, bakeTempos, loadNotes, updateSongMeta, fitView, loadSong*, setSong, openDraft*; session/album.js: albumStart/PlayIdx/Advance…; session/files.js: saveSongAs, openSaveForm, forkCurrentSong, revertSongToRepo, moveComposition, renameLocalKeys | ~1,000 |
+| 6 | M | **Done (worktree agent, 2026-10-04; 7 commits; see write-up — revertSongToRepo/moveComposition wait for step 8's sync web; bakeMeter/bakeTempos landed in model/rollnotes, not session).** session/song.js: finalizeNotes, bakeMeter, bakeTempos, loadNotes, updateSongMeta, fitView, loadSong*, setSong, openDraft*; session/album.js: albumStart/PlayIdx/Advance…; session/files.js: saveSongAs, openSaveForm, forkCurrentSong, revertSongToRepo, moveComposition, renameLocalKeys | ~1,000 (actual: 808, 12139→11331) |
 | 7 | M | voice menu/pickers/buildClipControls → ui/voice-menu; renderTrackbar/trackToggle/saveTrackDir/saveVoices/renameTrack → ui/trackbar; mixer cluster → ui/mixer; wm actions → ui/wm; renderNoteList → ui/notes; updateChipBtn/updateSubtitle/updateLCD → ui/chrome; drummer/bassist sheets → ui/sheets | ~1,700 |
 | 8 | M | commitImports, impCapture, openChipImport, captureChipTrack, fsub*, batchCommit, importAudioFiles, openPickedFiles, m3u → import/*; publishSong, renderSyncPending, openSyncSheet, fingerprintOldDrafts, discardPending, sweepStrandedClones, renameRepoTitles, manifest* → sync/publish (sheets → ui/sheets) | ~1,350 |
 | 9 | M | askRun, askSend, askContext, askRunTool, askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes… → ask/* | ~720 |
@@ -634,6 +634,71 @@ copy/paste, a drummer/bassist take, and — because saveDraft/saveEdits/
 draftWrite moved file — a real-browser edit → reload → compare on a
 scratch local song before this ships (memory: persistence needs a
 device test).
+
+**Step 6 — Done** (2026-10-04, worktree agent). Seven commits; the
+layer-4 `src/session/` directory check.mjs's LAYERS reserved in step 0
+now exists. `blockers.mjs` on the row's three sets first: song.js was
+held by nine more app.js names, album.js by song.js, files.js by the
+sync/publish web. So:
+
+1–4. **M, re-homes** (each clean): `subtractTombstones`/
+   `mergeLocalAdditions`/`annotationsFor`/`resolveNoteWith` →
+   model/rollnotes.js (how a not-necessarily-open song's annotations are
+   read — the P3/P4 version guard lives in annotationsFor); `bakeTempos`/
+   `bakeMeter` → **model/rollnotes.js, not session/song.js as this row
+   said** — pure by their own comment, and `draftFingerprint` (layer 2)
+   bakes too; `draftFingerprint` → model/versions.js; `cmpBar` →
+   ui/chrome.js and `syncDurSeg` → ui/note-editor.js (DOM-only leaves
+   setSong/loadSong reach).
+5. **M, new `session/song.js`** (463 lines): `finalizeNotesImpl`,
+   `loadNotes`, `loadSong`/`loadSongInner`/`setSong`, `openDraft`/
+   `openDraftDoc`, `fitViewImpl`, `updateSongMetaImpl` (step 5's port
+   body, per the row), plus `rememberRecentSong`/`reflectSongURL`
+   (session-level, carried along). wire.js imports the three `*Impl`
+   from here now.
+6. **M, new `session/album.js`** (119 lines): `albumStart`/
+   `albumPlayIdx`/`albumNext`/`albumPrev`/`albumAdvanceImpl`/`albumLeave`/
+   `albumClear`/`armAlbumLink`/`albumPos` — the part of album play that
+   loads songs; the pure math and the strip stay in audio/transport.js.
+7. **M, new `session/files.js`** (200 lines): `saveSongAs`,
+   `openSaveForm` (+ `fillFolderSelect`/`folderChoices`/`localFolders`),
+   `saveVersion`, `forkCurrentSong`, `renameLocalKeys`.
+   **`revertSongToRepo`/`moveComposition` stay in app.js**: both are held
+   by publishSong/updateManifest/markPublished/askCommitLog/discardPending/
+   openSyncSheet/renderSyncPending/fingerprintOldDrafts/jobStart/
+   clearTombstonesFor/copyAudioClips/fileStatus — step 8's sync web, not
+   forced here.
+
+Two findings worth the tooling queue. (a) **move.mjs's `profWrapName`
+does not match a renamed port body's wrap**: `finalizeNotesImpl =
+prof("finalizeNotes", finalizeNotesImpl)` — identifier `XImpl`, label
+still `"X"` since step 3 — so the line stayed in app.js, assigning to an
+import; hand-moved after the function in song.js, byte-identical, with a
+`prof` import (the Deviations 11/14 prof-orphan precedent). Every later
+move of `renderTrackbarImpl`/`updateSubtitleImpl`/`drawImpl`/
+`playbackFrameImpl`/`buildScoreModelImpl` hits this until profWrapName
+accepts `XImpl = prof("X", XImpl)`. (b) **session/ is layer 4, the same
+layer as ui/*, ask/* and above render/*** — so a session file may not
+call setInfo/draw/clampView/appConfirm/updateSongBtn/updateSyncBtn/
+songTitleOf/buildScoreModel/finalizeNotes/updateSongMeta through their
+ports (rule 10 flagged song.js on the first run, correctly); each such
+import line became step 1/3's `XImpl as X` alias from the impl's home,
+and only ports whose impl is still app.js (renderTrackbar,
+updateEditBtnVis, updateChipBtn, updateSubtitle, askRender) stay
+hooks.js imports. Expect the same rewrite in every later layer-4 move.
+
+Per commit: `verbatim.mjs <sha>` ✔ ×7, zero exceptions (the hand-moved
+prof line is identical text, so it matches); regen-e2e-footer after each
+app.js move; check.mjs clean except `oldBpb` (66 → 69 files); e2e-
+globals/controls clean; prof set 29 unchanged; rule 8's manifests kept
+in step: index.html modulepreload + sw.js APP_MODULES (SW_VERSION nr-v21
+→ nr-v24, one bump per file added) + devtools.js namespaces +
+modules.test fileCount 64 → 67 (66 → 69 with vendor/ai/web). Group:
+`perl -e 'alarm 1200; exec @ARGV' npm test` — only `ps2-real`/
+`instruments` fail (pre-existing); modules 86/86; smoke 8/8;
+`package.mjs`: 184 files = 181 + the three session files, nothing else.
+`src/app.js`: 12139 → 11331 (808 out). **Device check owed** (plan §3
+step 6): load, draft, Save As, fork, revert (scratch only).
 
 Steps 2 and 4 are the biggest wins per risk; step 4 touches the iPad audio
 known-good engine (the one dangerous step). An unexpected blocker: run
