@@ -13,6 +13,12 @@ import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
 import { setInfoImpl as setInfo } from "../ui/chrome.js";
 import { previewNote } from "../audio/voices.js";
 import { drawInst } from "../render/instrument.js";
+import { albumClear } from "../session/album.js";
+import { stop } from "../audio/transport.js";
+import { editableSong } from "../model/song.js";
+import { applyInst } from "../ui/chrome.js";
+import { play } from "../audio/transport.js";
+import { tickToSec } from "../midi/parse.js";
 
 // RAW by default (recSnapOn() off): the exact tick played, just rounded to
 // an integer — no grid involved. recSnapOn() on: the old snap-to-grid
@@ -149,4 +155,29 @@ export function initCoreMidi(C) {
       setInfo("MIDI keyboard connected: " + names.join(", "));
     }
   }).catch(err => { S.midiErr = err; setInfo(midiStatusLine()); });
+}
+
+export function initRecord1() {
+  document.addEventListener("pointerdown", function midiWarm() {
+    document.removeEventListener("pointerdown", midiWarm);
+    // the iPad app's native MIDI bridge starts only when ● asks for it — never
+    // on the first touch, where an untested native path failing would cost
+    // the whole app (2026-09-30, the plugin is new and unheard on a device)
+    const C = typeof window !== "undefined" && window.Capacitor;
+    if (C && C.isNativePlatform && C.isNativePlatform()) return;
+    initWebMidi(); // permission prompt wants a user gesture
+  }, {capture: true});
+  document.getElementById("recbtn").addEventListener("click", async () => {
+    albumClear();
+    if (S.recording || S.playing) { stop(); return; } // ● while rolling = stop (commits the take)
+    if (!S.song || !editableSong()) { setInfo("recording works on your own songs"); return; }
+    if (!S.instOpen) { S.instOpen = true; localStorage.setItem("ff1roll-inst-open", "1"); applyInst(); }
+    S.recording = true;
+    S.recTake = [];
+    document.getElementById("recbtn").classList.add("rec");
+    initWebMidi();
+    setInfo("recording onto " + (S.song.tracks[S.selTrack].name || "track") + " — 🎹 keys or MIDI; ● or ■ stops · " + midiStatusLine());
+    await play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0);
+    if (!S.recording && S.playing) stop(); // ● was released while play() was still waking the audio context
+  });
 }

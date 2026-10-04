@@ -1510,6 +1510,7 @@ import { initWm1 } from "./ui/wm.js";
 import { initWm2 } from "./ui/wm.js";
 import { initGestures1 } from "./input/gestures.js";
 import { initGestures2 } from "./input/gestures.js";
+import { initRecord1 } from "./input/record.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2152,28 +2153,7 @@ document.getElementById("midcreate").addEventListener("click", () => {
 });
 initNoteEditor3();
 initChrome9();
-  document.addEventListener("pointerdown", function midiWarm() {
-  document.removeEventListener("pointerdown", midiWarm);
-  // the iPad app's native MIDI bridge starts only when ● asks for it — never
-  // on the first touch, where an untested native path failing would cost
-  // the whole app (2026-09-30, the plugin is new and unheard on a device)
-  const C = typeof window !== "undefined" && window.Capacitor;
-  if (C && C.isNativePlatform && C.isNativePlatform()) return;
-  initWebMidi(); // permission prompt wants a user gesture
-}, {capture: true});
-document.getElementById("recbtn").addEventListener("click", async () => {
-  albumClear();
-  if (S.recording || S.playing) { stop(); return; } // ● while rolling = stop (commits the take)
-  if (!S.song || !editableSong()) { setInfo("recording works on your own songs"); return; }
-  if (!S.instOpen) { S.instOpen = true; localStorage.setItem("ff1roll-inst-open", "1"); applyInst(); }
-  S.recording = true;
-  S.recTake = [];
-  document.getElementById("recbtn").classList.add("rec");
-  initWebMidi();
-  setInfo("recording onto " + (S.song.tracks[S.selTrack].name || "track") + " — 🎹 keys or MIDI; ● or ■ stops · " + midiStatusLine());
-  await play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0);
-  if (!S.recording && S.playing) stop(); // ● was released while play() was still waking the audio context
-});
+  initRecord1();
 instCanvas.addEventListener("pointerdown", instPointerDown);
 instCanvas.addEventListener("pointermove", instPointerMove);
 instCanvas.addEventListener("pointerup", e => instPointerUp(e, false));
