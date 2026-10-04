@@ -5636,3 +5636,11 @@ status, shots, backups) into a standalone repo that Night Roll consumes as
 plain ES modules (no build step). Night Roll-specific context (song/annotation
 lines, Learning-mode rules) stays in Night Roll as a plug-in to the library.
 Blocked on Q7 (split order) and Q8 (repo).
+
+## OVERNIGHT PLAN 2026-10-03 (Josh, Terminal #97/#99/#100) — all on branch module-split, Josh tests in the morning
+1. Split steps 9–15 (builders, one step at a time, merged here).
+2. AI library: new private repo Night-Roll-App/claude-bridge (name/visibility Josh's, Q8) holding ALL AI support (bridge server, in-browser/cloud models, Ollama, LM Studio, the AI window); Night Roll imports it (plain ES modules, no build step).
+3. AI integration tests (tests/ai.test.mjs): fake bridge/Ollama/LM Studio servers, assert the real request AND the reply landing in the app — being written now.
+4. ✅ npm test runs every file (tools/run-tests.mjs).
+5. "✦ Annotate this song for me" (QUEUED IDEA 2026-09-27): built after the library. Normal mode ONLY (Learning mode never gets AI-written analysis — CLAUDE.md), on-demand per tap, annotations tagged AI-written, clearable in one go.
+Morning: one iPad build of the branch + one checklist; merge to main only after Josh says so.
