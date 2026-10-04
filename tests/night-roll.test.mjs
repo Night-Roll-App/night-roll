@@ -2780,7 +2780,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
-    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
+    "Import…", "NSF", "Game Boy", "Super NES", "Genesis", "PlayStation", "PlayStation 2", "Nintendo 64", "General chat", "Files on this iPad", "Share → Night Roll", "Publish import", "LOCAL", "PUBLISHED", "Edit locally", "Jobs</dt>", "color picker", "sampled", "Rename…", "Chip audio", "Data locations", "Settings…", "Create album", "Messages</dt>", ".m3u", "real copy", "grayed", "moving TOGETHER pan", "hold to grab", "Go back to this", "8va", "Divide", "magnetic", "never clears your note selection", "note value × modifier", "CELL you touch", "normal → solo → mute", "working trio", "⋯ row", "busy", "hard", "follow", "feel", "share their groove", "metal tier", "▸ chevron", "reroll just the kick", "parts</b> chips", "de-fill", "in key ▲", "folds the rest behind", "View ▾ menu", "STAYS OPEN", "Bassist", "Cut</b> cuts" /* was "✂</b> cuts" — content_cut switch */, "Download audio", "share sheet", "Listener mode", "lines per bar", "Play / stop, Logic-style", "Insert bars", "Delete bars", "Tracks view", "another lane", "master volume", "SOUNDING notes get the same treatment", "extensions row STACKS", "Drummer button beside" /* was "🎲 Drummer" — casino switch */, "Pencil drag", "cycles", "Attached notes", "RENAMES the track", "＋ drums", "?song=", "Drum fill", "Delete track", "Record</dt>" /* was "● Record" — recbtn switch */, "Drum chart", "Edit ▾", "edit: Undo, Redo, Copy" /* was "⟳ Redo" — icon audit, 2026-10-02 */, "parks", "re-arm", "entire annotation layer", "tag in the strip under the ruler is draggable", "left edge", "band by its", "all move-handle", "Insert chord", "organized by emotion", "splits at that exact spot", "merge into one note", "helptabs", 'data-hsec="editor"', "HELP.md", "ask/terminal.ask.md", "Closing a sheet", "pinned to its top-right", "No accidental duplicates", "import hub", "New song from a recording",
     "Tap a note", "nothing to double", "Folder on this computer", "Reconnect folder",
     "Status line (footer)", "opens the whole message in a sheet",
     "Audio tracks", "＋∿", "Align first sound", "someone else's recording", "tap again to play from its start",
@@ -4367,6 +4367,75 @@ test("Save & Commit: pendingSongs unions music edits, unsynced annotations and u
   run(`for (const k of ["ff1roll-draft-albums/compositions/nightroll/p-music.mid", "ff1roll-draft-albums/compositions/nightroll/p-clean.mid",
        "ff1roll-notes-albums/nes/final-fantasy-i/songs/p-notes.mid", "ff1roll-ask-albums/compositions/nightroll/p-open.mid",
        "ff1roll-ask-albums/compositions/nightroll/p-saved.mid", "ff1roll-ask-local/p.mid"]) localStorage.removeItem(k); songKey = null;`);
+});
+
+// docs/plans/2026-10-04-repo-tidy.md U1: the ⌨ Terminal chat's log went to
+// terminal.ask.md at the repo ROOT (askLogPath's per-song branch) and
+// Publish all took "terminal" for a song key and ran publishSong on it
+// (commits a25031e2, 88477702 — a terminal.rollnotes.json holding 0 notes).
+test("Terminal chat: logs to ask/terminal.ask.md, is never a song for Publish all, and folder mode seeds the new file from the legacy root one without deleting it", async () => {
+  installSong();
+  run(`songKey = "albums/compositions/nightroll/term-log.mid"; localStorage.setItem("ff1roll-draft-" + songKey, "{}");`);
+  assert.equal(val(`ASK_TERMINAL_LOG`), "ask/terminal.ask.md");
+  assert.equal(val(`askLogPath(ASK_TERMINAL_KEY)`), "ask/terminal.ask.md");
+  assert.equal(val(`askLogPath("terminal")`), "ask/terminal.ask.md", "the bare chat key resolves the same way");
+  assert.match(val(`askLogHeader(ASK_TERMINAL_KEY)`), /^# ✦ AI log — Terminal\n\nThe ⌨ Terminal chat — messages to and from the Mac's Claude Code/);
+  assert.ok(!val(`askLogHeader(ASK_TERMINAL_KEY)`).includes("One file per song"), "not the per-song header");
+  assert.equal(val(`askLogSong(ASK_TERMINAL_KEY)`), null, "no song behind the terminal chat");
+  // the repo-side migration is this commit's move: the file lives under ask/, nothing terminal.* at the root
+  assert.ok(existsSync(new URL("../ask/terminal.ask.md", import.meta.url)), "ask/terminal.ask.md is in the repo");
+  assert.ok(!existsSync(new URL("../terminal.ask.md", import.meta.url)), "no root terminal.ask.md");
+  assert.ok(!existsSync(new URL("../terminal.rollnotes.json", import.meta.url)), "no root terminal.rollnotes.json");
+  // unsaved terminal chat → pending as "terminal", and syncable() never sees it
+  run(`globalThis.__syncCalls = []; globalThis.__realSyncable = syncable; syncable = k => { __syncCalls.push(k); return __realSyncable(k); };
+       localStorage.setItem(ASK_TERMINAL_KEY, JSON.stringify({lastUsed: 1, saved: 0, msgs: [{role: "user", content: "pull and build please", t: 1758000000000}, {role: "note", content: "built 5fc6e79", m: "terminal", t: 1758000060000}]}));`);
+  const pending = JSON.parse(val(`JSON.stringify(pendingSongs())`));
+  assert.ok(pending.includes("terminal"), "unsaved terminal chat shows in the Publish list");
+  assert.ok(!val(`__syncCalls`).includes("terminal"), "\"terminal\" is never asked syncable()");
+  // the PUBLISH sheet: its own block with the one-tap button, no song row
+  run(`renderSyncPending();`);
+  const blocks = val(`[...document.getElementById("syncpending").children].filter(b => b.className.startsWith("psong")).map(b => b.children[0].children[0].textContent)`);
+  assert.ok(blocks.includes("⌨ Terminal chat"), "a Terminal chat block: " + JSON.stringify(blocks));
+  assert.ok(!blocks.some(t => /^terminal/i.test(t) || t.includes("terminal · open")), "no song-style row for it");
+  // Publish all (this row only): exactly one PUT, to ask/terminal.ask.md; no *.rollnotes.json, no .mid
+  run(`jobs = jobs.filter(j => j.kind !== "publishall"); localStorage.removeItem("ff1roll-jobs");
+       globalThis.__puts = []; globalThis.__realFetch = globalThis.fetch; globalThis.__realWriteToken = writeToken;
+       writeToken = () => "tok";
+       globalThis.fetch = async (u, o) => {
+         const url = String(u);
+         if (o && o.method === "PUT") { __puts.push(url.slice(url.indexOf("/contents/") + "/contents/".length)); return {ok: true, status: 201, json: async () => ({})}; }
+         return {ok: false, status: 404, json: async () => ({})};
+       };
+       globalThis.__job = publishAllJobStart(() => {}, ["terminal"]);`);
+  assert.deepEqual(val(`__job.items.map(i => ({label: i.label, key: i.key}))`), [{label: "Terminal chat", key: "terminal"}]);
+  for (let i = 0; i < 50 && val(`__job.state`) === "running"; i++) await new Promise(r => setImmediate(r)); // the host's real loop drains the sandbox's microtasks (its timers are fake)
+  assert.equal(val(`__job.state`), "done", "job finished: " + val(`__job.err`));
+  assert.deepEqual(val(`__puts`), ["ask/terminal.ask.md"], "one PUT, the log under ask/ — never terminal.rollnotes.json");
+  assert.equal(val(`askUnsavedCount(ASK_TERMINAL_KEY)`), 0, "the watermark moved: those two messages are published");
+  run(`globalThis.fetch = __realFetch; writeToken = __realWriteToken; jobs = jobs.filter(j => j.id !== __job.id); localStorage.removeItem("ff1roll-jobs");`);
+  // folder mode: ask/terminal.ask.md absent, a legacy root terminal.ask.md present → the new file starts with the old text; the old file stays
+  const legacy = "# ✦ AI log — Terminal\n\nOne file per song. …\n\n### 2026-09-30 21:00\n\n**Josh:** old root message\n";
+  app.context.fakeRoot = fakeDir("Night Roll");
+  run(`globalThis.__deletes = []; globalThis.__realFolderDelete = folderDelete; folderDelete = async p => { __deletes.push(p); return __realFolderDelete(p); };
+       fsRoot.handle = fakeRoot; fsRoot.name = fakeRoot.name; fsRoot.mode = "picker"; fsRoot.needsGrant = false;
+       localStorage.setItem(ASK_TERMINAL_KEY, JSON.stringify({lastUsed: 1, saved: 0, msgs: [{role: "user", content: "after the move", t: 1758000120000}]}));`);
+  await run(`folderWrite(ASK_TERMINAL_LEGACY_LOG, ${JSON.stringify(legacy)})`);
+  assert.equal(await run(`folderRead(ASK_TERMINAL_LOG)`), null, "nothing under ask/ yet");
+  await run(`askCommitLog(null, ASK_TERMINAL_KEY)`);
+  const seeded = await (await run(`folderRead(ASK_TERMINAL_LOG)`)).text();
+  assert.ok(seeded.startsWith(legacy), "the new log begins with the legacy file's text");
+  assert.match(seeded, /\*\*Josh:\*\* after the move/);
+  assert.equal(await (await run(`folderRead(ASK_TERMINAL_LEGACY_LOG)`)).text(), legacy, "the legacy root file is untouched");
+  assert.deepEqual(val(`__deletes`), [], "nothing deleted");
+  // the next append goes to the new file only — the legacy one is not read again once ask/ exists
+  run(`localStorage.setItem(ASK_TERMINAL_KEY, JSON.stringify({lastUsed: 1, saved: 1, msgs: [{role: "user", content: "after the move", t: 1758000120000}, {role: "user", content: "second", t: 1758000180000}]}));`);
+  await run(`askCommitLog(null, ASK_TERMINAL_KEY)`);
+  const twice = await (await run(`folderRead(ASK_TERMINAL_LOG)`)).text();
+  assert.equal(twice.split("after the move").length, 2, "the legacy text is seeded once, not re-prepended");
+  assert.match(twice, /\*\*Josh:\*\* second/);
+  run(`syncable = __realSyncable; folderDelete = __realFolderDelete; fsRoot.handle = null; fsRoot.name = ""; fsRoot.mode = null;
+       localStorage.removeItem(ASK_TERMINAL_KEY); localStorage.removeItem("ff1roll-draft-" + songKey); songKey = null;
+       for (const k of ["__syncCalls", "__realSyncable", "__puts", "__realFetch", "__realWriteToken", "__job", "__deletes", "__realFolderDelete"]) delete globalThis[k];`);
 });
 
 test("Compare with repo: cmpDiff — by track name, tick+pitch identity, tombstones ignored, unnamed tracks by position", () => {

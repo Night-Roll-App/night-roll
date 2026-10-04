@@ -4705,7 +4705,15 @@ OpenAI-compatible server. Code lives under `// ---- ✦ Ask (in-app AI)`.
     (`ASK_GENERAL_LOG`; `askLogPath/askLogHeader/askCommitLog` take a key).
     Publishing: `pendingSongs()` lists "general" when it has unsaved
     messages; the PUBLISH sheet renders it as its own block with a
-    Publish chat button, and Publish all ships it first. A song's Publish
+    Publish chat button, and Publish all ships it first. The Terminal
+    chat (`ASK_TERMINAL_KEY`) is the same shape: log `ask/terminal.ask.md`
+    (`ASK_TERMINAL_LOG`), its own header, "terminal" in `pendingSongs()`
+    with its own PUBLISH block, never `syncable()`/`publishSong()`. Until
+    2026-10-04 it fell through the per-song branches: the log landed at
+    the repo root as terminal.ask.md and Publish all wrote an empty
+    terminal.rollnotes.json (docs/plans/2026-10-04-repo-tidy.md U1). In
+    folder mode the first append seeds `ask/terminal.ask.md` from a legacy
+    root `terminal.ask.md` and leaves that file in place. A song's Publish
     still ships the SONG's chat even while the general tab is showing
     (`askCommitLog` picks the song key unless given the general one).
     Test: the general-chat block in the "Ask: history is whole…" test.

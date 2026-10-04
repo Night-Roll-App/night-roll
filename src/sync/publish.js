@@ -61,6 +61,7 @@ import { songTitleOfImpl as songTitleOf } from "../ask/context.js";
 import { ghHeaders } from "../audio/chip.js";
 import { pendingSongs } from "../ui/chrome.js";
 import { ASK_GENERAL_KEY } from "../ask/bridge.js";
+import { ASK_TERMINAL_KEY } from "../ask/bridge.js";
 import { draftKeys } from "../model/versions.js";
 import { syncable } from "../ui/chrome.js";
 import { pubCheck } from "../ui/sheets.js";
@@ -603,7 +604,7 @@ export function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's 
   const pending = onlyKeys ? pendingSongs().filter(k => onlyKeys.includes(k)) : pendingSongs();
   if (!pending.length) { statusFn && statusFn("Nothing pending on this device."); return null; }
   if (jobsFind("publishall", null, true)) { statusFn && statusFn("A publish is already running — tap ⏳"); return null; }
-  const items = pending.map(key => ({label: key === "general" ? "General chat" : songTitleOf(key), key}));
+  const items = pending.map(key => ({label: key === "general" ? "General chat" : key === "terminal" ? "Terminal chat" : songTitleOf(key), key}));
   const jobTitle = onlyKeys && pending.length === 1 ? "Publish " + items[0].label : "Publish all";
   return jobStart("publishall", jobTitle, items, async api => {
     const token = writeToken();
@@ -617,6 +618,7 @@ export function publishAllJobStart(statusFn, onlyKeys) { // onlyKeys: one row's 
       api.note("Publishing " + short + "…");
       try {
         if (key === "general") await askCommitLog(ghHeaders(token), ASK_GENERAL_KEY); // the general chat rides Publish all too — no song, so the one publish function doesn't apply
+        else if (key === "terminal") await askCommitLog(ghHeaders(token), ASK_TERMINAL_KEY); // same for the terminal chat: a log, never a song (publishSong on it wrote terminal.rollnotes.json)
         else { await publishSong(key, h, m => api.note(short + ": " + m)); anyPublished = true; }
         api.update(i, {st: "done", pct: 1});
       } catch (err) {

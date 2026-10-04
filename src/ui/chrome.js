@@ -635,7 +635,7 @@ export function pendingSongs() { // every song with anything to ship, the open o
   for (const k of Object.keys(localStorage)) {
     if (!k.startsWith("ff1roll-ask-")) continue;
     const key = k.slice("ff1roll-ask-".length);
-    if (key === "general") { if (askUnsavedCount(k) > 0) set.add("general"); continue; } // the general chat: no song, its own block
+    if (key === "general" || key === "terminal") { if (askUnsavedCount(k) > 0) set.add(key); continue; } // the general and terminal chats: no song, their own blocks — never syncable()
     if (key !== "local" && syncable(key) && askUnsavedCount(k) > 0) set.add(key);
   }
   return [...set].sort((a, b) => (a === S.songKey ? -1 : b === S.songKey ? 1 : 0) || a.localeCompare(b));
