@@ -12,7 +12,7 @@ import {
 import { buildScoreModelImpl } from "./render/score.js";
 import { songTitleOfImpl } from "./ask/context.js";
 import { setAnchorBQImpl, lassoedAnnosImpl } from "./ui/note-editor.js";
-import { drumStepImpl } from "./render/roll.js";
+import { drumStepImpl, annoInLassoImpl } from "./render/roll.js";
 import {
   fitViewImpl, renderTrackbarImpl, updateEditBtnVisImpl, updateChipBtnImpl,
   updateSubtitleImpl, askRenderImpl, finalizeNotesImpl, recFinishImpl, albumAdvanceImpl,
@@ -51,5 +51,6 @@ export function installHooks() {
     updateSongMeta: (...a) => updateSongMetaImpl(...a),
     lassoedAnnos: (...a) => lassoedAnnosImpl(...a),
     drumStep: (...a) => drumStepImpl(...a),
+    annoInLasso: (...a) => annoInLassoImpl(...a),
   });
 }

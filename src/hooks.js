@@ -48,3 +48,4 @@ export function setAnchorBQ(...a) { return (S.hooks.setAnchorBQ || need("setAnch
 export function updateSongMeta(...a) { return (S.hooks.updateSongMeta || need("updateSongMeta"))(...a); }
 export function lassoedAnnos(...a) { return (S.hooks.lassoedAnnos || need("lassoedAnnos"))(...a); }
 export function drumStep(...a) { return (S.hooks.drumStep || need("drumStep"))(...a); }
+export function annoInLasso(...a) { return (S.hooks.annoInLasso || need("annoInLasso"))(...a); }

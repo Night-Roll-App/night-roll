@@ -19,7 +19,7 @@ import { selClipObj } from "../render/tracks.js";
 import { clipboardHas } from "../model/selection.js";
 import { isDirective } from "../model/rollnotes.js";
 import { lassoedAnnos } from "../hooks.js";
-import { annoInLasso } from "../render/roll.js";
+import { annoInLassoImpl as annoInLasso } from "../render/roll.js";
 import { editableSong } from "../model/song.js";
 import { ownFolderPath } from "../model/provenance.js";
 import { originOf } from "../model/provenance.js";

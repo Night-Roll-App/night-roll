@@ -484,7 +484,7 @@ import { laneBotRow } from "./render/roll.js";
 import { kitSlots } from "./render/roll.js";
 import { DRUM_LABELS } from "./render/roll.js";
 import { drumStep } from "./hooks.js";
-import { annoInLasso } from "./render/roll.js";
+import { annoInLasso } from "./hooks.js";
 import { songHasDrums } from "./render/roll.js";
 import { viewRestore } from "./render/roll.js";
 import { TRACKS_GUTTER } from "./render/roll.js";

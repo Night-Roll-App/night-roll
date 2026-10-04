@@ -1,4 +1,5 @@
 import { S, prof } from "../state.js";
+import { annoInLasso } from "../hooks.js";
 import { trackIsDrums } from "../model/grid.js";
 import { secToTick } from "../midi/parse.js";
 import { playSec } from "../audio/transport.js";
@@ -480,7 +481,7 @@ export function drawRuler(W, H) {
   }
 }
 drawRuler = prof("drawRuler", drawRuler); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-export function annoInLasso(n, L) { // lane-precise: the band's own row must be inside the box, and its time
+export function annoInLassoImpl(n, L) { // lane-precise: the band's own row must be inside the box, and its time
   if (!L || !isCopyableAnno(n)) return false;
   if (!(n.start < L.t1 && (n.b2 ? n.end : n.start + 1) > L.t0)) return false;
   if (n.section || n.chord) {

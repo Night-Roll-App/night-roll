@@ -393,7 +393,7 @@ const ALL_PORTS = [
   "recFinish", "albumAdvance", "songTitleOf", "srAnnounce",
   "scheduleBackupFlush", "setAnchorBQ",
   // step 5: the model/gen clusters' three remaining upcalls
-  "updateSongMeta", "lassoedAnnos", "drumStep",
+  "updateSongMeta", "lassoedAnnos", "drumStep", "annoInLasso",
 ];
 
 test("hooks.js: every port throws `hook X not installed` before src/wire.js's installHooks() ever runs", async () => {
@@ -477,6 +477,12 @@ test("hooks.js rebinding: same for drumStep() (docs/split-phase2-plan.md step 5)
   const app = await createApp();
   app.run("drumStep = (p, d) => p + 1000 + d;"); // reassigns hooks.js's OWN top-level binding; drumStepImpl can only ever return a kit slot (a MIDI pitch < 128)
   assert.equal(app.run("drumStep(36, 1)"), 1037); // drumStepImpl never ran
+});
+
+test("hooks.js rebinding: same for annoInLasso() (docs/split-phase2-plan.md step 5) — copySelection (model/selection.js) tests each annotation against the lasso's pixel box through this bare name; a lower-layer caller gets the rebound body, the real annoInLassoImpl (render/roll.js) bypassed", async () => {
+  const app = await createApp();
+  app.run('annoInLasso = () => "rebound";'); // reassigns hooks.js's OWN top-level binding; annoInLassoImpl returns a boolean, and false for a null box
+  assert.equal(app.run("annoInLasso({}, null)"), "rebound"); // annoInLassoImpl never ran
 });
 
 // ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's
