@@ -128,10 +128,18 @@ function indent(text) {
   return text.split("\n").map(l => (l ? "  " + l : l)).join("\n");
 }
 
+// The run's body is the ONE contiguous source span from the first node's
+// start through the last node's trailing same-line comment (phase 2 step
+// 12's prep): a run only ever comes from a line range, so that span holds
+// exactly the selected statements plus the comments and blank lines between
+// them — which a per-node `slice(n.start, n.end)` join silently dropped
+// (every inter-statement comment, every trailing `// why` on a statement's
+// last line). verbatim.mjs never saw it (it skips comment lines), so the
+// first real init move would have shed comments without a word.
 function initGroupText(parsed, nodes, initName) {
   const lc = leadingComments(parsed, nodes[0]);
   const leadingText = parsed.source.slice(lc.start, nodes[0].start);
-  const body = nodes.map(n => parsed.source.slice(n.start, n.end)).join("\n");
+  const body = parsed.source.slice(nodes[0].start, trailingCommentEnd(parsed, nodes[nodes.length - 1])).replace(/\s+$/, "");
   return `${leadingText}export function ${initName}() {\n${indent(body)}\n}\n`;
 }
 

@@ -968,3 +968,64 @@ test("promote-state.mjs: --all promotes every top-level let/var in the file", ()
   const result = promoteState({ filePath: "app.js", fileSource, statePath: "state.js", all: true });
   assert.deepEqual(result.promoted.sort(), ["a", "b"]);
 });
+
+// ---- docs/split-phase2-plan.md step 12 prep (third step 0 addendum) ------
+
+test("move.mjs init wrapper: a run keeps the comments and blank lines BETWEEN its statements and a trailing same-line comment on its last one (the per-node join dropped both)", () => {
+  const fromSource = `// ---- wiring ----\na(); // why a\n// between: why b\n\nb();\nc(); // trailing on the last\n\n// ---- next ----\nfunction kept() {}\n`;
+  const result = planMove({ fromPath: "app.js", fromSource, toPath: "ui/chrome.js", range: "wiring" });
+  assert.match(result.toSource, /a\(\); \/\/ why a\n  \/\/ between: why b\n\n  b\(\);\n  c\(\); \/\/ trailing on the last\n\}/);
+  assert.match(result.fromSource, /^initChrome1\(\);\n\n\/\/ ---- next ----/m);
+  parseModule(result.fromSource, "app.js");
+  parseModule(result.toSource, "ui/chrome.js");
+});
+
+test("verbatim.classifyDiff: `boot` is tolerated as an init wrapper name (docs/split-plan.md §4's main.js calls boot(), not initBoot())", () => {
+  const diff = fakeDiff([
+    { file: "src/app.js", rem: ["(async function boot() {", "})();"], add: ["boot();"] },
+    { file: "src/session/boot.js", add: ["export function boot() {", "  (async function boot() {", "  })();", "}"] },
+  ]);
+  const { lost, extra } = classifyDiff(diff);
+  assert.deepEqual(lost, []);
+  assert.deepEqual(extra, []);
+});
+
+test("fix-port-imports.mjs: a hooks.js port whose impl is at or below the importer's layer becomes an `XImpl as X` alias from the impl's home; a genuine upcall and the impl's own home keep the bare port", async () => {
+  const { fixPortImports } = await import("../tools/split/fix-port-imports.mjs");
+  const declared = new Map([
+    ["ui/chrome.js", new Set(["drawImpl", "setInfoImpl"])],
+    ["session/song.js", new Set(["finalizeNotesImpl"])],
+    ["ui/sheets.js", new Set(["openX"])],
+    ["model/song.js", new Set(["m"])],
+  ]);
+  // ui/sheets.js (layer 4) importing draw/setInfo (impl at layer 4) + finalizeNotes (layer 4): all three rewritten
+  const r1 = fixPortImports("ui/sheets.js", `import { draw, setInfo } from "../hooks.js";\nimport { finalizeNotes } from "../hooks.js";\nexport function openX() { draw(); setInfo(); finalizeNotes(); }\n`, declared);
+  assert.deepEqual(r1.changes, ["draw: hooks.js -> ui/chrome.js", "setInfo: hooks.js -> ui/chrome.js", "finalizeNotes: hooks.js -> session/song.js"]);
+  assert.match(r1.source, /^import \{ drawImpl as draw \} from "\.\/chrome\.js";\nimport \{ setInfoImpl as setInfo \} from "\.\/chrome\.js";\nimport \{ finalizeNotesImpl as finalizeNotes \} from "\.\.\/session\/song\.js";\n/);
+  parseModule(r1.source, "ui/sheets.js");
+  // model/song.js (layer 2) importing draw (impl layer 4): a real upcall, untouched
+  const r2 = fixPortImports("model/song.js", `import { draw } from "../hooks.js";\nexport function m() { draw(); }\n`, declared);
+  assert.deepEqual(r2.changes, []);
+  // ui/chrome.js importing its OWN port back (the self-reference pattern): untouched
+  const r3 = fixPortImports("ui/chrome.js", `import { draw } from "../hooks.js";\nexport function drawImpl() {}\nexport function setInfoImpl() { draw(); }\n`, declared);
+  assert.deepEqual(r3.changes, []);
+  // a multi-name line keeps its legal names on the hooks line
+  const r4 = fixPortImports("ui/sheets.js", `import { draw, nobody } from "../hooks.js";\nexport function openX() { draw(); nobody(); }\n`, declared);
+  assert.equal(r4.source.split("\n")[0], `import { nobody } from "../hooks.js";`);
+  assert.equal(r4.source.split("\n")[1], `import { drawImpl as draw } from "./chrome.js";`);
+});
+
+test("boot-order.mjs: expands a bare side-effect import and init/boot stubs into the statements they stand for, in order", async () => {
+  const { bootOrder } = await import("../tools/split/boot-order.mjs");
+  const { mkdtempSync, writeFileSync, mkdirSync, rmSync } = await import("node:fs");
+  const os = await import("node:os");
+  const dir = mkdtempSync(path.join(os.tmpdir(), "nr-boot-order-"));
+  mkdirSync(path.join(dir, "ui"), { recursive: true });
+  writeFileSync(path.join(dir, "main.js"), `import "./app.js";\nif (window.X) expose();\n`);
+  writeFileSync(path.join(dir, "app.js"), `import { initChrome1 } from "./ui/chrome.js";\nimport { boot } from "./boot.js";\ninstallHooks(); // first\nfunction decl() {}\ninitChrome1();\nplain(); // trailing dropped\nboot();\n`);
+  writeFileSync(path.join(dir, "ui/chrome.js"), `export function initChrome1() {\n  a();\n  // a comment between\n  b(1,\n    2);\n}\n`);
+  writeFileSync(path.join(dir, "boot.js"), `export function boot() {\n  (async function boot() {\n  })();\n}\n`);
+  const order = bootOrder(dir);
+  rmSync(dir, { recursive: true, force: true });
+  assert.deepEqual(order, ["installHooks();", "a();", "b(1,", "plain();", "(async function boot() {", "if (window.X) expose();"]);
+});

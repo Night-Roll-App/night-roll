@@ -22,8 +22,12 @@ const HOOK_FILE_RE = /(^|\/)(hooks|wire)\.js$/;
 // text, tolerated unconditionally (both when added by a fresh --init move
 // and when removed by later reverting one). Matched against norm()'d text,
 // which already strips a leading "export " — so no "export " here either.
-const INIT_HEADER = /^function (init[A-Za-z_$][\w$]*)\(\) \{$/;
-const INIT_STUB = /^(init[A-Za-z_$][\w$]*)\(\);$/;
+// `boot` is the one init wrapper not named init*: docs/split-plan.md §4's
+// end state calls it `boot()` from main.js (session/boot.js, phase 2 step
+// 12's `--init boot` over the boot IIFE), so its header/stub are tolerated
+// by the same rule.
+const INIT_HEADER = /^function (init[A-Za-z_$][\w$]*|boot)\(\) \{$/;
+const INIT_STUB = /^(init[A-Za-z_$][\w$]*|boot)\(\);$/;
 
 // ---- --hook X,Y tolerance (§1 M4.3's "gains ... --hook X,Y" bullet) -------
 // For a listed name X: `function X(` -> `function XImpl(` (export/async
