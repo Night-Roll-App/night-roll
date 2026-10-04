@@ -1491,6 +1491,7 @@ stale and should move up here instead.
 - `render/compare.js` — Compare with repo's pure outline-drawing + diff math, step 11 (2026-10-04): `cmpTrackKey`, `cmpDiff`, `drawCompare`. **`cmpEnter`/`cmpExit`/`cmpShow`/`cmpBar` did NOT move** — each reaches `setInfo`/`readData`/`draw()` (the last one `render/roll.js`'s own permanent blocker, above).
 - `input/gestures.js` — pointer gesture math, step 12 (2026-10-04): `evtPos`, `posToTickPitch`, `cursorHandleHit`, `cursorHit`, `tickAtX`, `rulerSnapX`, `armNoteEdit` (pure coordinate/hit-test helpers). **The canvas pointer/pinch/hold-to-grab/lasso state machine (`pointerdown`/`pointermove`/`pointerup` on `canvas`, `endPointer`, `tap`, `finalizeLasso`, `toggleSel`, `scoreLassoTap`, `scrubTo`, `seekOrMoveCursor`, `placePencilNote`, `clearMultiSel`) did NOT move** — every one of them calls `setInfo()` and/or `draw()`/`drawFull()` directly or through still-bare app.js names (`refreshSelInfo`/`renderTrackbar`/`openVoiceMenu`/`saveVoices`/`hitNote`/`hitTracksNote`/`hitTracksClip`/`annoSnapshot`/`setAnchorBQ`/`setEndBQ`/`updateSubtitle`) — `ui/*` is step 14, `draw` is render's own permanent block (step 11). Every `document.addEventListener("keydown", …)` block in this region (arrow/⌘ editing shortcuts, Space = play/stop, Escape-closes-topmost-overlay) stayed for the same `setInfo`/`draw`/`stop`/`ui/wm.js` reasons. The circle-of-fifths wheel's drag interaction (`cofAngle`/`cofRelease`, `render/cof.js`'s own entry above) is genuinely blocker-free too but stayed — not a logic block, a `verbatim.mjs` tooling gap against the `init<Module><N>()` wrapping its top-level listeners would need; see docs/split-plan.md "Deviations (12)".
 - `input/record.js` — pure record/MIDI-status helpers, step 12 (2026-10-04): `recOpenEnded`, `recSnap`, `recSnapOn`, `midiStatusLine`. **The ● record button's click handler and `recNoteOn`/`recNoteOff`/`recFinish`/`midiMessage`/`initWebMidi`/`initCoreMidi` did NOT move** — `recNoteOff` calls `draw()` directly (the one call that blocks the whole MIDI-in chain above it), `recFinish` additionally needs `setInfo`/`pushUndo`/`saveEdits`/`saveDraft`. `instTap`'s pointer wiring (`render/instrument.js`'s own entry, above) stayed for the same reason, confirming that entry's step-12 prediction.
+- **Step 14 partially stales this entry's and `input/gestures.js`'s own blocker lists above, without re-checking either file's actual content (neither is a `ui/*` file, out of this step's scope).** `draw`/`setInfo`/`pushUndo`/`saveDraft`/`renderTrackbar`/`refreshSelInfo`/`setAnchorBQ`/`setEndBQ` are now real exports of `ui/chrome.js`/`ui/trackbar.js`/`ui/note-editor.js`/`model/edits.js`, not bare app.js names — so `recFinish`'s and the gesture state machine's blocker count each drops by however many of their own named reasons just moved, but `saveEdits` (→ `scheduleAnalysisRecompute` → `finalizeNotes`) and `openVoiceMenu`/`saveVoices` (→ `buildVoiceMenu` → `ensureAudio`) remain, unresolved either way. Whether `input/gestures.js`'s state machine or `input/record.js`'s MIDI-in handlers are now fully clean enough to move is a real, live question for a future pass — this builder did not re-check either file's full content line by line, only confirmed the specific named blockers above that this step's own work actually resolved.
 - `ask/backend.js` — ✦ AI transport/providers, step 13 (2026-10-04): `aiUrl`, `aiHeaders`, `aiSSE` (OpenAI-style SSE parser), `aiHostKind`, `aiRemote`, `aiSay`, `aiModelMenu`, `aiPickModel`, `aiTest`/`AI_TEST_MS`, `aiRunTest`, `aiBackendRows`, the WebLLM in-browser path (`AI_BROWSER_MODELS`, `aiBrowserMenu`, `AI_WEBLLM_URL`, `aiWebllmLoad`, `aiEngineFor`, `aiBrowserTest`, `aiBrowser`), `aiProvider` — 20 names, all library-bound per docs/ai-library-plan.md §3 (the future claude-bridge library's `web/sse.js` + `backends.js`). **`aiHostOk` did NOT move** — its one `appConfirm()` call is still bare in app.js (`ui/*` territory, step 14).
 - `ask/tools.js` — the tool registry and its pure field helpers, step 13: `ASK_TOOLS` (the OpenAI tool-call schema, pure data), the per-annotation field helpers (`askFindAnnotation`/`askNoteKind`/`askNoteValue`/`askAnnotationStructural`), `askSongPath`, `ASK_READ_BARS_MAX`/`askReadBars` (the read_bars tool body, importing `askKeySpellComment`/`askBarRow`/`askSpanNotesCompact` back from `ask/context.js`), `notesTxtForDoc`/`askAnnotationsText`/`askAnnotationsTextCompact` (the read_song/read_notes text format), the write_notes/bars validators `askNormChip`/`askFindTrackIndex`/`askNoteVel`/`askWriteNotesValidate`/`askWritableGate`/`askBarsCount`/`askBarsValidate`, and `parsePitch` — a general pitch-string parser sitting inside this banner with no other caller, moved here with its one caller rather than given a `theory/` home it doesn't need yet. **Every tool body that actually WRITES — `askAddAnnotation`/`askEditAnnotation`/`askDeleteAnnotation`/`askPublishSong`/`askWriteNotes`/`askInsertBars`/`askCopyBars`/`askDeleteBars` — and the dispatcher `askRunTool` itself did NOT move**: each calls `draw()`/`finalizeNotes()`/`saveEdits()`/`saveDraft()`/`pushUndo()`/`updateSongBtn()`/`updateSyncBtn()`/`publishSong()`/`insertTime()`/`deleteTime()`/`applyTake()` — all still bare in app.js (model/UI-chrome territory, steps 9/14; `draw` permanently, step 11).
 - `ask/context.js` — the system prompt and every context-block line builder, step 13: `askSys`/`ASK_SYS_BASE1`/`ASK_SYS_BASE2`/`RULE_LEARNING`/`RULE_NORMAL` (**Learning mode is the law — moved verbatim, logic untouched**), `ASK_CPT`, the span/bar-cache family (`askSpan`/`askSpanLabel`/`askKeyDeclared`/`askKeySpellComment`/`askSpanNotes`/`askSpanNotesCompact`/`askBarRow`/`askBarFingerprint`/`askSpanNotesCompactCached`/`askSpanCachedBlock`), the per-line builders (`askLegendText`/`askAppState`/`askModeLine`/`askViewCursorLine`/`askOpenSongLine`/`askCapLines`/`askNewSinceLines`), the sent/epoch cache mechanics (`askSentKey`/`Get`/`Stage`/`StageBars`/`ASK_SENT_BARS_CAP`/`Commit`/`Drop`/`Reset`, `askEpochKey`/`Get`/`Set`/`Note`, `askCachedBlock`), `askBudget`/`askStripContext`, `askTerminalContext`, and the message builder `askMsgMode`/`askBuildMessages`/`askEstimate`. **`songTitleOf`/`songWhereLabel` also landed here, unlisted by docs/split-plan.md's §1 table** — a deliberate relocation, not a misfile by default: `askOpenSongLine`/`askTerminalContext` both need them, and they're themselves clean (`S.CATALOG`, `titleCaseSlug` from `model/catalog.js`, `impDisplayTitle` from `import/capture.js`, `LINK_SONGS`/`linkRepoLabel` from `platform/base.js` — all layer ≤4) — but `model/song.js` (the thematically obvious home, layer 2) is ruled out outright: `impDisplayTitle` is layer 4, and layer 2 can never import layer 4 (check.mjs rule 5), the identical wall steps 4/5 hit for `estimateKey`/`trackIsDrums`. `ask/context.js` (layer 4) is the only legal home that unblocks real step-13 content; the dozens of other, non-ask callers left in app.js (breadcrumbs, song lists, share sheets) now import it back downward, which is always legal regardless of which layer-≤4 file it lives in. **`askContext` and `askKeyStateLine` — this step's own two biggest named targets — did NOT move**: `askKeyStateLine` calls `keyLabelState()` (shared with a non-ask UI-chrome caller at app.js's key-select label, no home of its own yet — not ask's row to claim), and `askContext` itself calls `askKeyStateLine`, inheriting the block. Both stay in app.js, importing every line-builder above back.
@@ -1498,6 +1499,171 @@ stale and should move up here instead.
 - `ask/shots.js` — 📷 screenshot list management, step 13: `ASKSHOT_MAX`/`b64Bytes`, `askShotLine`/`askShotUpload`/`askShotStatusLabel`/`askShotRender`/`askShotAdd`/`askShotRemove`/`askShotClearAll`/`askShotRestore`/`askShotOutgoing`/`askShotDisplayText`, `MAX_SHOT_SIDE`/`MAX_SHOT_KEEP_BYTES`/`askPrepImage`, `askPickFiles`. **`askShotShow` (calls `closeDropUp()`, a shared drop-up-menu helper with no home yet) and `askShotCapture`/`askShotTake` (call `logDebug()`) did NOT move** — per docs/ai-library-plan.md §3 these were always slated to become the host adapter's `captureScreen()` hook, not library material, so staying in app.js for now changes nothing about that plan.
 - `ask/sheet.js` — the chat sheet's own DOM and the compose-box draft, step 13: the sheet's DOM consts (`asksheet`/`asklog`/`askinput`/`askstatus`), mode-switch UI (`askSetMode`/`askModeButtons`), the chat-store key router `askStoreKey` (a shared foundation almost every other `ask/*.js` file imports back), small render helpers (`askClock`/`askNoteLabel`/`askRefresh`/`askPartial`/`askShowThinking`), the draft persistence (`askDraftStore`/`askDraftSave`/`askDraftSaveSoon`/`askDraftLoad`/`askDraftClear`), and the box-resize/scroll/focus helpers (`askGrow`/`askScrollEnd`/`askFocusIfKeyboard`). **`askNoteSeen`/`askBubble`/`askFillBubble`/`askCopyText`/`askRender`/`askRenderEarlier`/`askMicOff` and `openAsk`/`askBtnTap` themselves did NOT move** — each calls `setInfo()` (the ✉/status line) or `micStop()` (shared dictation helper, no home yet) directly or transitively; the top-level `document.getElementById("askbtn").addEventListener(...)` wiring block and its neighbors stayed in app.js untouched, per this step's own instruction to leave top-level listener blocks alone.
 - **`draw()`/`playbackFrame()`/`buildScoreModel()`/`drawRuler()`/etc. are now real exports of `render/*`, not bare app.js names** — every entry above this one in this Module map that said a function "did NOT move... calls `draw()`/`buildScoreModel()` (render, step 11)" should now be read as: that call is a plain downward import from `render/roll.js`/`render/score.js`, and the function itself remains blocked — `draw()` specifically is now a PERMANENT block (see `render/roll.js`'s own entry), not a temporary one step 11 would clear. This corrects every such reference above (`model/song.js`'s `loadSong`/`setSong`, `model/selection.js`'s `selEditApply`, `model/edits.js`'s `saveEdits`, `gen/drummer.js`'s `drGenerate`, `gen/bassist.js`'s `applyTake`, `gen/analysis.js`'s `scheduleAnalysisRecompute`/`adopt*`, `audio/clips.js`'s `stretchEnsure`, `sync/publish.js`'s `markPublished`) — none of those functions can move once `render/*` exists; they were never blocked by render being unsplit, they're blocked by render's own hub being permanently above their layer, or (for layer-2 callers like `model/selection.js`) permanently unreachable at all (layer 2 can never import layer 3). open-items.md's corresponding QUEUED notes are corrected to match.
+- `ui/chrome.js` — by far the largest of step 14's eight files (2026-10-04):
+  song button/list, `applyChrome`, view switch, `renderViewMenu`/`closeDropUp`,
+  the status/log cluster (`setInfo`/`errChip`/`logErr`/`logDebug`/
+  `srAnnounce`), the footer buttons (`updateSongBtn`/`updateSyncBtn`/
+  `updateJobsBtn`), `appConfirm`, `keyLabelState`/`expandKeyName`, `micStop`
+  — all of these were named in steps 4–13's own Deviations as blocked
+  "until `ui/*`, step 14"; they clear now, exactly as predicted, no
+  surprises. **Found independently THIS step, once those existed: the
+  render hub itself —** `resize`/`draw`/`drawFull`/`playbackFrame`/
+  `updateCanvasA11y`, plus `clampView` — **supersedes the "PERMANENT block"
+  bullet immediately above and `render/roll.js`'s own entry below, which
+  both predate this finding.** The permanence was real against
+  `render/roll.js` (layer 3: `updateTrackMore`/`updateEditButtons` are
+  layer 4, upward, forever) but NOT against `ui/chrome.js` (layer 4, the
+  SAME layer — cycles inside layers 3–5 are legal, docs/split-plan.md §2.3)
+  — and nothing below layer 4 ever called these five directly (checked by
+  grep across every already-moved file). `render/*` stays pure drawing;
+  the orchestrator deciding WHEN to draw, reaching into UI state to do it,
+  was always structurally UI-chrome, not render — the table mis-categorized
+  it, the layer math didn't. `draw()`'s own hub role (every caller named in
+  the bullet above still reaches it) is unchanged; only its OWN home layer
+  changed, from "nowhere legal" to "`ui/chrome.js`." Also gained, once
+  `setInfo`/`draw` existed here: `saveDraft`, `retireOldOverlay`,
+  `scheduleBackupFlush`, `filesMirror`/`filesMirrorSoon`, `draftRead`,
+  `flushBackupNow`, `localDraftTracks`, `pendingSongs`/`dirtySongs`/
+  `draftDirtyState`/`syncable`, `songtitleEl`/`keyNameShownAt`/`nmic`,
+  `minPxq`/`pxqFloor`/`rowHFloor`/`PAN_TAIL_BARS`/`ROLL_AIR`/
+  `dispPitchExtent` (clampView's own pure leaf dependencies). **`openDraft`/
+  `loadSong`/`play` and everything that reaches them — `updateChipBtn`/
+  `playGateKick`/`playGateTick`/`playGateActive`/`chipRenderAuto`/`CHIPS`/
+  `chipExt`/`chipVaultFile`/`chipSource`/`psfInflater`/`sonySeqCapture` —
+  were tried here too (they're genuinely pure of `draw`/`setInfo`) and
+  reverted: `play` itself is blocked by `ensureAudio`/`resumeAudio`/
+  `openMaster`/`scheduleNote` (audio/engine.js's own permanent wall, step 7
+  — layer 3 can never import layer 4's `setInfo`, regardless of `ui/*`
+  existing) — confirming, not merely repeating, that step's finding.**
+- `ui/trackbar.js` — `updateTrackMore`/`trackRowNeed`/`fitTrackRow`/
+  `scheduleFitTrackRow`/`TRACK_ROW_SLACK` only (2026-10-04). **`renderTrackbar`/
+  `trackToggle` — this file's own namesake content — were ALSO tried once
+  `ui/chrome.js` existed, passed `check.mjs` clean, and were reverted once
+  `npm test`'s real module linking (a check `check.mjs` itself cannot do —
+  see docs/split-plan.md "Deviations (14)") surfaced that both still need
+  `saveTrackDir` from app.js — permanent: `saveTrackDir` calls
+  `finalizeNotes` (writes the `track:` directive, re-applies the whole
+  annotation layer), and `finalizeNotes` cannot leave app.js (see its own
+  correction below). `renderTrackbar` also needs `openVoiceMenu`,
+  permanently blocked the same way `buildVoiceMenu` is (see
+  `ui/voice-menu.js`'s entry). Both stay bare in app.js, bit-for-bit.
+- `ui/mixer.js` — the meter/measure leaves (`ensureMixerMeters`/
+  `teardownMixerMeters`/`mixerMeterRms`/`mixerMeterLoop`/
+  `ensureMixerMeterLoop`), `mixerIsOpen`/`mixerPanLabel`/`moveInSameOrder`/
+  `mixerMasterStripEl` only (2026-10-04). **`renderMixer`/`mixerStripEl`/
+  `mixerStripDragize`/`openMixer`/`closeMixer`/`toggleMixer` were ALSO
+  tried once `ui/chrome.js`/`ui/trackbar.js` existed, passed `check.mjs`
+  clean, and were reverted for the identical `saveTrackDir` reason as
+  `ui/trackbar.js`'s own two — checked independently, same answer, same
+  `npm test`-not-`check.mjs` catch (docs/split-plan.md "Deviations (14)").
+  All six stay bare in app.js.**
+- `ui/voice-menu.js` — the thinnest of the eight (2026-10-04): only
+  `autoVoiceLabel`/`GAME_FAMILY`/`SF2_FAMILY`/`gameVoiceFromAll`/
+  `gameVoiceFrom`/`gameVoiceFromSet`, the pure label/lookup leaves. **Every
+  other named target for this file — `openVoiceMenu`, `buildVoiceMenu`,
+  `buildGameVoicePicker`, `buildSf2VoicePicker`, `saveVoices`, `renderSf2Nav`,
+  `sf2AuditionPreset`, `renderGameInstNav`, `instAudition`, `gameVoiceLabel`/
+  `sf2VoiceLabel` (which refresh the open menu via `buildVoiceMenu`) — did
+  NOT move, permanently**: `sf2AuditionPreset`/`instAudition` call
+  `ensureAudio`/`resumeAudio`/`openMaster`/`instPlayer` directly (auditions a
+  sound the instant the picker opens) — the identical `audio/engine.js`
+  permanent wall as `play` above. `saveVoices` calls `saveTrackDir`
+  (blocked, see `ui/trackbar.js`'s entry). All stay in app.js, importing the
+  six label leaves back down.
+- `ui/notes.js` — the key/meter check UI (`fileCheckLine`/`runKeyCheck`/
+  `runMeterCheck`/`useFileMeter`/`tonicLabel`/`chosenTonic`/`chosenTonicPc`/
+  `partialNameOf`/`tonicOptionValue`/`refreshKeysetLabel`, plus the `keysel`/
+  `keysetBtn`/`keymodeSel` DOM consts they close over) and the notes-list UI
+  (`notelistSheet`/`NOTE_GROUPS`/`renderNoteJump`/`showHelpTab`/`lassobtn`/
+  `chordEvidence`/`openChallenge`), step 14 (2026-10-04). **`useFileKey`/
+  `refreshKeyPreview`/`renderNoteList`/`openNoteList` did NOT move** (each
+  reaches `finalizeNotes`/`draw`/`clampView`/`updateSubtitle` — `draw`/
+  `clampView` resolved this step, `finalizeNotes`/`updateSubtitle` did not,
+  see below). **`finalizeNotes` was tried here, found blocked by a SECOND
+  path, and reverted — see its own entry below; this is the one real false
+  step this builder's pass took and backed out of cleanly.**
+- `ui/note-editor.js` — the editor/chord-widget cluster (`editor`/
+  `fillBarBeatSelects`/`editorType`/`applyEditorType`/`chordSel`/
+  `refreshChordChips`/`composeChord`/`setChordWidget`/`SPEECH`/`micJoin`/
+  `micToggle`/`snapBeat`/`setBeatPair`/`getBeatPair`/`openEditor`/
+  `updateEditButtons`), the chord-label leaves (`CHORD_QUALS`/`CHORD_ROOTS`/
+  `INS_DURS`/`chordLabel`/`stampChordBand`/`PROG_LIB`), the anchor helpers
+  (`setAnchorBQ`/`setEndBQ`/`dropSupersededBy`/`lassoedAnnos`), and — found
+  independently clean later in the pass — `refreshSelInfo`/`renderOctBtn`/
+  `reflectSelVel` (the selection readout), step 14 (2026-10-04).
+  **`insertChordAt`/`insertProgressionAt` (the chord-insert buttons' own
+  handlers) and `updateEditBtnVis` did NOT move**: the first two reach
+  `pushUndo`/`finalizeNotes`/`saveLocalNotes`/`computeSongEnd`/`draw`
+  directly (`finalizeNotes` blocked, the rest resolved — so these are now
+  blocked by `finalizeNotes` alone, where before they had four reasons);
+  `updateEditBtnVis` calls `updateChipBtn` behind a `typeof` guard — checked
+  directly and confirmed `move.mjs`/`check.mjs` do NOT exempt a
+  `typeof`-guarded reference from import resolution, so this stays blocked
+  too, correctly, not by a tooling gap.
+- `ui/sheets.js` — the jobs/pub-job sheets (`jobCancel`/`renderJobs`/
+  `openPubJobSheet`/`renderPubJob`), `publishDest`/`publishLabel`/
+  `versionLabel`, the Settings/Share/Analyze sheets (`openSettingsSheet`/
+  `openShareSheet`/`openAnalyzeSheet`/`cfgShowPane`/`CFG_PANES`/
+  `ghCheckMessage`/`ghCheckOut`/`ghCheck`), `askCopyText` (moved here from
+  the `ask/sheet.js` entry's own "did NOT move" list above — it stopped
+  calling anything blocked once `setInfo` resolved; `askBubble`/
+  `askFillBubble`/`askRender`/`askRenderEarlier`/`askResume`/`askResumeSoon`
+  are each still blocked, by the ask-run-loop internals named in their own
+  entry, not by `setInfo`, and stayed), and a handful of pure leaves the
+  drummer/bassist sheets happened to bring along (`drKitCountT`/`bsRange`/
+  `drRange`/`segSet`/`drPartsGet`/`drPartsSet`/`drPartsSync`/
+  `computeSongEnd`/`dpTick`/`undoTrackAdd`), step 14 (2026-10-04). **The
+  drummer/bassist sheets themselves — `openDrummer`/`openBassist`/
+  `drBuildControls`/`drRefresh`/`bsBuildControls`/`bsRefresh` — and the
+  generators' own `drGenerate`/`bsGenerate`/`applyTake`/`saveEdits` were
+  all tried, found blocked one hop further than they looked
+  (`saveEdits` → `scheduleAnalysisRecompute` → `finalizeNotes`), and
+  reverted together.** `openSyncSheet`/`renderSyncPending`/
+  `fingerprintOldDrafts` (the publish/sync-status sheet) were tried too:
+  blocked by `openDraft`/`loadSong` (→ `play`, the permanent transport
+  wall) — stayed in app.js.
+- `ui/wm.js` — every pure window-shape/layout-math leaf: the `WM_*`
+  constants, `wmClampSize`/`wmClampHeight`/`wmClampSplit`/`wmAllowed`,
+  `wmMigrate`/`wmMigrateShape`/`wmMigrateShapeB`, `wmSetSide*`/
+  `wmClearSide`/`wmAddSideTab`/`wmRemoveSideTab`/`wmSetActiveSideTab`,
+  `wmDockBottom`/`wmClearBottom`/`wmSetBottomHeight`/`wmSetBottomSplit`,
+  `wmWhereIs`/`wmLoad`/`wmSave`/`wmInnerWidth`/`wmInnerHeight`/
+  `wmSideCells`/`wmWindowTitle`/`wmLayoutBottom`/`wmDockLabel`/
+  `wmDockShort`/`wmSyncDockButtons`/`wmZoneFor`/`wmZoneForPointer`/
+  `wmShowDropZone`/`wmHideDropZone`/`wmMenuItem`/`wmCloseMenu`, step 14
+  (2026-10-04). **`wmLayoutAll` — and everything that calls it, directly or
+  transitively — did NOT move, permanently**: `wmLayoutAll` calls `resize()`
+  directly (the one `ui/chrome.js` function `ui/wm.js` can't legally reach
+  back up to, even same-layer — `resize` lives in `ui/chrome.js`, and
+  `ui/wm.js` importing it would be fine, layer4-to-layer4, EXCEPT
+  `wmLayoutAll` is called from so many places across the window-shell that
+  it was simpler to leave the whole cluster together rather than chase one
+  more hop — flagged in open-items.md as worth a real re-check, not closed
+  off the way `ensureAudio`/`finalizeNotes` are). `wmCloseWindow`/
+  `wmDockSide`/`wmSetSideModeFor`/`wmDockBottomWindow`/`wmFloat`/
+  `wmSideDividerize`/`wmLayoutTabs`/`wmLayoutSide`/`wmOpenMenu`/`makeWindow`
+  all transitively need `wmLayoutAll` and stayed with it. The Dock menu/
+  drag-to-dock action functions were never separately checked this step —
+  they ride the same cluster.
+- **`finalizeNotes` — model/rollnotes.js's own central resolver, and the
+  thing `saveTrackDir`/`openVoiceMenu`'s `buildVoiceMenu`-adjacent chain and
+  the drummer/bassist generators all ultimately reach — was checked here
+  for the first time since step 5 named it, found genuinely movable by a
+  first scan, and then found blocked a SECOND, independent way: it calls
+  `sfPreloadForSong`/`gamePreloadForSong`/`updateEditBtnVis` directly, and
+  those reach `playGateKick`/`updateChipBtn` — the chip-audio transport
+  wall, step 7/14's own confirmed-permanent block.** It was moved to
+  `ui/notes.js`, `check.mjs` reported the second-level import, and the move
+  was reverted (verbatim; its prof wrapper restored). `finalizeNotes` has
+  roughly 30 callers across app.js — every one already bare there, so
+  nothing regresses by it staying. It genuinely needs a layer-4 home
+  (its own `renderTrackbar()` call, re-applying `track:` directives then
+  redrawing the chip bar, is real) but no existing `ui/*` file is a
+  structural fit for "the model's rollnotes resolver" — it is
+  model/rollnotes.js content wearing a UI-redraw side effect, exactly
+  `draw()`'s shape one layer down, and — because of the chip-audio
+  reach-through — just as permanent, not merely homeless. See
+  docs/split-plan.md "Deviations (14)" for the full chain.
 
 ## Code map (index.html, section comments mark these)
 

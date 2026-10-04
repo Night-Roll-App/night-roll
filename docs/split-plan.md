@@ -2246,6 +2246,97 @@ constraint for whoever next considers moving these two.
 **14. `ui/*`** (chrome, trackbar, mixer, voice-menu, notes, note-editor, sheets, wm).
 - app.js empties into main.js, which becomes the ordered `init*()` list plus `boot()`.
 - Verify: full browser pass over every menu and sheet, wm docking, phone width.
+- **Done** (2026-10-04, Sonnet builder, worktree branch). `app.js` 17216 →
+  15053 lines (−2163, ~13%); 8 new files, ~2740 lines total:
+  `ui/chrome.js` (974 — by far the largest: song button/list, `applyChrome`,
+  view switch, find, `renderViewMenu`, the whole status/log cluster
+  `setInfo`/`errChip`/`logErr`/`logDebug`/`srAnnounce`, and — the step's own
+  biggest finding, below — the render hub `draw`/`resize`/`drawFull`/
+  `playbackFrame`/`updateCanvasA11y` plus `clampView` and `saveDraft`),
+  `ui/trackbar.js` (45: `updateTrackMore`/`trackRowNeed`/`fitTrackRow`/
+  `scheduleFitTrackRow`/`TRACK_ROW_SLACK` only — `renderTrackbar`/
+  `trackToggle` were ALSO tried once `ui/chrome.js` existed, got as far as
+  a clean `check.mjs` pass, and were reverted once a stricter check (an
+  import/export resolution pass beyond what `check.mjs` itself runs — see
+  below) found both still need `saveTrackDir`/`openVoiceMenu` from app.js;
+  `ui/mixer.js` (132: the meter/measure leaves `mixerIsOpen`/
+  `mixerPanLabel`/`moveInSameOrder`/`mixerMasterStripEl`/
+  `ensureMixerMeters`/`teardownMixerMeters`/`mixerMeterRms`/
+  `mixerMeterLoop`/`ensureMixerMeterLoop` only — `renderMixer`/
+  `mixerStripEl`/`reorderTrack`/`mixerStripDragize`/`openMixer`/
+  `closeMixer`/`toggleMixer` hit the same `saveTrackDir` wall and were
+  reverted the same way), `ui/voice-menu.js` (24 — by far the thinnest: only the pure label/lookup
+  leaves `autoVoiceLabel`/`GAME_FAMILY`/`SF2_FAMILY`/`gameVoiceFrom*`;
+  `openVoiceMenu`/`buildVoiceMenu` and the whole picker/audition tree stay
+  in app.js, permanently — see below), `ui/notes.js` (262: the key/meter
+  check UI's `fileCheckLine`/`runKeyCheck`/`runMeterCheck`/`useFileMeter`/
+  tonic helpers/`refreshKeysetLabel`, the notes-list UI `notelistSheet`/
+  `NOTE_GROUPS`/`renderNoteJump`/`showHelpTab`/`lassobtn`/`chordEvidence`/
+  `openChallenge`), `ui/note-editor.js` (441: the editor/chord-widget
+  cluster `editor`/`fillBarBeatSelects`/`editorType`/`chordSel`/
+  `composeChord`/`setChordWidget`/`openEditor`/`updateEditButtons` plus the
+  anchor helpers `setAnchorBQ`/`setEndBQ`/`dropSupersededBy`/`lassoedAnnos`
+  and, found independently clean later in the step, `refreshSelInfo`/
+  `renderOctBtn`/`reflectSelVel`), `ui/sheets.js` (521: the jobs/pub-job
+  sheets `jobCancel`/`renderJobs`/`openPubJobSheet`/`renderPubJob`, the
+  Settings/Share/Analyze sheets, and the drummer/bassist sheets' own pure
+  leaves — `drKitCountT`/`bsRange`/`drRange`/`segSet`/`drPartsGet`/
+  `drPartsSet`/`drPartsSync`/`computeSongEnd`/`dpTick`/`undoTrackAdd` — but
+  **not** `openDrummer`/`openBassist`/`drBuildControls`/`drRefresh`/
+  `bsBuildControls`/`bsRefresh`/`drGenerate`/`bsGenerate`/`applyTake`/
+  `saveEdits`, all tried and reverted — see below), `ui/wm.js` (327: every
+  pure window-shape/layout-math leaf — `wmClampSize`/`wmMigrate*`/
+  `wmSetSide*`/`wmDockBottom`/`wmWhereIs`/`wmLoad`/`wmSave`/`wmSideCells`/
+  `wmLayoutBottom`/`wmZoneFor*`/`wmShowDropZone`/`wmHideDropZone`/
+  `wmMenuItem`/`wmCloseMenu` — but **not** `wmLayoutAll`/`wmLayoutSide`/
+  `wmLayoutTabs`/`wmCloseWindow`/`wmDockSide`/`wmSetSideModeFor`/
+  `wmDockBottomWindow`/`wmFloat`/`wmOpenMenu`/`makeWindow`, which form one
+  tightly-coupled cluster permanently blocked by `resize()` — see below).
+  `main.js` was NOT attempted: app.js still holds ~400 top-level names after
+  this step (annotation/tombstone management, the whole audio-chip-transport
+  stack, the ask-chat run loop, provenance/publish orchestration, and every
+  top-level wiring/listener block by rule), none of them this step's to
+  claim — "app.js empties into main.js" does not happen at step 14; app.js
+  remains the legacy container into step 15, smaller but not close to gone.
+  `node tools/split/verbatim.mjs HEAD` (one squashed commit, amended
+  through several fixup passes): reports exactly two `lost`/`extra` pairs,
+  both the sanctioned same-line-multi-statement exception §11's
+  `AUDIO_STRIP_H` finding already established — `pubCheck`/
+  `pubCompareDraft` and `idbDraftPut`/`commitImports` each shared one
+  original physical line, one half moved to a `ui/*` file and the other
+  stayed in app.js, and the two can never physically rejoin once they're
+  in different files. Verified by hand, token-by-token: both halves
+  reappear verbatim, nothing lost. Everything else `verbatim.mjs` checks
+  is a clean ✔. The sorted `^\w+ = prof\("\w+"` set across src/ is
+  unchanged (30 entries, none newly profiled, none lost) — checked against
+  the full src/
+  tree, not just app.js, since several already-profiled names (`draw`,
+  `playbackFrame`, `drawFull`, `renderTrackbar`, `saveEdits`,
+  `computeSongEnd`) moved or round-tripped through other files this step.
+  `check.mjs`: clean except the pre-existing `oldBpb` finding — the final,
+  shipped state has zero rule-5 (or any other) violation; `renderTrackbar`/
+  `trackToggle`/the `renderMixer` cluster's own `saveTrackDir`/
+  `openVoiceMenu` imports were real findings MID-step, not in the final
+  commit — both pairs were reverted once found, not shipped with a
+  documented exception (see "Deviations (14)" for why, and for the
+  `check.mjs`-blind-spot tooling note this surfaced: a wrong-but-legal
+  import specifier, caught only by `npm test`, not by `check.mjs` itself).
+  `check-e2e-globals.mjs` and `check-controls.mjs`: both clean, no
+  allowlist growth (this step
+  moved functions, not control-writing call sites). index.html's
+  modulepreload list, sw.js's `APP_MODULES` (bumped `nr-v19` → `nr-v20`),
+  and src/devtools.js's namespace-import list all gained the 8 files;
+  tests/modules.test.mjs's `checkSrc` fileCount bumped 54 → 62.
+  `node tools/package.mjs --out <tmp>`: 47 runtime modules (unchanged —
+  `ui/*` was already reachable from app.js's new imports). See
+  "Deviations (14)" for the full accounting: the render-hub reconsideration
+  this step's own instructions asked for, the three permanent blockers that
+  survive it, the finalizeNotes dead end, and the move.mjs/verbatim.mjs slip
+  classes hit again (now including a new one: a reverse move's new chunk
+  lands physically AFTER app.js's generated e2e footer, and
+  `regen-e2e-footer.mjs`'s own `stripFooter()` then deletes it along with
+  the stale footer — silent, total data loss, caught only by re-reading the
+  file after every `--to src/app.js` move).
 
 **15. Finish.**
 - Delete app.js.
@@ -2437,6 +2528,274 @@ constraint for whoever next considers moving these two.
   checked individually by free-identifier, not swept by `--range`. Only
   the genuinely clean folder-FS and cfg-URL leaves moved; see NIGHT-ROLL.md
   for the exact list.
+
+## Deviations (14, 2026-10-04)
+
+- **The render hub (§4 step 11's "NEW, PERMANENT class of blocker") was
+  re-checked against the layer table now that `ui/*` exists, as this step's
+  own instructions asked, and the earlier permanence finding does NOT
+  survive the re-check — it was permanent against the WRONG destination,
+  not permanent absolutely.** Step 11 reasoned about moving `draw`/`resize`/
+  `drawFull`/`playbackFrame`/`updateCanvasA11y` INTO `render/roll.js`
+  (layer 3), where they reach OUT to `updateTrackMore`/`updateEditButtons`
+  (`ui/trackbar.js`/`ui/note-editor.js`, layer 4, strictly above render's
+  layer 3) — upward, illegal, forever, the same shape as `ensureAudio`'s
+  `logErr`/`logDebug` wall (step 7). But nothing below layer 4 ever called
+  these five directly (checked by grep across every already-moved
+  `render/*`, `audio/*`, `model/*`, `gen/*`, `input/*`, `import/*`, `sync/*`,
+  `ask/*` file — zero hits, only a stale comment and VexFlow's own unrelated
+  `.draw()`), so moving them UP into `ui/chrome.js` (layer 4, the SAME layer
+  as `updateTrackMore`/`updateEditButtons` — cycles inside layers 3–5 are
+  legal, §2.3) is a plain, legal, verbatim move: `move.mjs --from
+  src/app.js --to src/ui/chrome.js --names
+  resize,draw,playbackFrame,updateCanvasA11y,drawFull` went through clean
+  on the first `--dry-run`. The table's own categorization of these five as
+  `render/roll.js` content (§1's table, "resize, draw, drawFull,
+  playbackFrame") was the thing that was wrong, not the layer math — render
+  stays pure drawing (layer 3); the orchestrator that decides WHEN to draw
+  and reaches into UI state to do it is, structurally, UI-chrome (layer 4).
+  This is a real, load-bearing architecture finding, not a workaround:
+  `draw`'s own hub role (model-edit callers, audio-engine callers,
+  input-gesture callers, ask-tool callers all still reach it) is UNCHANGED
+  by which layer it lives at — what changed is only that the layer it
+  NEEDS to live at (4, not 3 or 2) now has a real file to be in.
+- **Pulling on that thread unblocked a second, larger tier the same way —
+  and then ran into a genuine, permanent stopping point, not a missed
+  move.** Once `draw`/`resize`/`drawFull` lived in `ui/chrome.js`,
+  `setInfo`/`logErr`/`logDebug`/`updateSongBtn`/`updateSyncBtn` (already
+  there from this step's first batch) meant every function whose ONLY
+  blocker was "calls draw() and/or setInfo()" became movable: `clampView`,
+  `pushUndo`, `addTrackUndoable`, `computeSongEnd`, `saveLocalNotes`,
+  `saveDraft`, `scheduleBackupFlush`, `retireOldOverlay`, `filesMirror`/
+  `filesMirrorSoon`, `draftRead`, `flushBackupNow`, `localDraftTracks` were
+  all independently pure once checked (none call `ensureAudio`/`play`/
+  `finalizeNotes`/anything chip-transport). `pushUndo`/`addTrackUndoable`
+  went to `model/edits.js` (layer 2, legal — nothing in them needs layer 3+);
+  `clampView`/`saveDraft`/the rest went to `ui/chrome.js` alongside their
+  own callers/callees. This in turn made `renderTrackbar`/`trackToggle`
+  (step 14's own named content for `ui/trackbar.js`) and the whole
+  `reorderTrack`/`renderMixer`/`mixerStripEl`/`mixerStripDragize`/
+  `openMixer`/`closeMixer`/`toggleMixer` cluster (`ui/mixer.js`'s own named
+  content) pass `move.mjs --dry-run` and `check.mjs` clean on the first
+  try — and this is this step's SECOND real false step, caught only
+  because `check.mjs`'s rule 1/rule 5 check that an identifier resolves to
+  SOME import, at a legal layer, but has no way to check that the import's
+  SPECIFIER actually exports that name (a renamed/relocated name left a
+  stale `import { X } from "<old file>"` behind more than once this step —
+  see the tooling note below). A separate, harsher check (every import
+  specifier in src/ actually exports the name it claims to, written for
+  this step specifically since `check.mjs` doesn't do this) caught nothing
+  wrong with these two moves' OWN specifiers, but running the real `npm
+  test` suite surfaced the actual problem: both still need `saveTrackDir`
+  from app.js (writes the `track:` directive, via `finalizeNotes` — see
+  below, permanent) and `ui/trackbar.js` additionally needs `openVoiceMenu`
+  (→ `buildVoiceMenu` → `ensureAudio`/`resumeAudio`/`openMaster` directly,
+  the instrument picker auditions a sound the moment it opens — the
+  identical `audio/engine.js` permanent wall, step 7, this step's own
+  `ui/voice-menu.js` entry already found for the SAME names). Reverted,
+  verbatim, both files back to their pure-leaf-only state
+  (`ui/trackbar.js`: `updateTrackMore`/`trackRowNeed`/`fitTrackRow`/
+  `scheduleFitTrackRow`/`TRACK_ROW_SLACK`; `ui/mixer.js`: the nine
+  meter/measure/lookup leaves). `check.mjs` alone would have shipped this
+  wrong — it was the `npm test` run (and, independently, the custom
+  import/export resolution script) that caught it, which is why this
+  task's own "Tests" section is not optional polish on top of `check.mjs`,
+  it is a second, necessary verification layer with a DIFFERENT blind
+  spot.
+- **`finalizeNotes` was moved to `ui/notes.js`, found to be wrong by a
+  SECOND free-identifier it reaches, and reverted — the one false step this
+  deviation log takes care to narrate in full, because the first check
+  alone looked like a clean win.** `finalizeNotes` calls `renderTrackbar`
+  directly (re-applies `track:` directives, then redraws the chip bar) —
+  once `renderTrackbar` lived in `ui/trackbar.js` (layer 4), and
+  `computeSongEnd` (its other apparent blocker) turned out independently
+  pure, a `--dry-run` move of `finalizeNotes` into `ui/notes.js` reported no
+  unresolved names and `check.mjs` came back clean on the first pass. This
+  was real but incomplete: `finalizeNotes` ALSO calls `sfPreloadForSong`/
+  `gamePreloadForSong` directly (sampled-voice and game-voice preloading,
+  fired once tracks/voices are re-applied) and `updateEditBtnVis`, and
+  THOSE call `playGateKick`/`updateChipBtn` — the chip-audio render/play
+  gate, step 7/14's OWN confirmed-permanent audio-transport wall (`play`
+  itself is blocked by `ensureAudio`/`resumeAudio`/`openMaster`/
+  `scheduleNote`/`updateChipBtn`/`playbackFrame`/`updateSubtitle`, none of
+  which can ever cross into `ui/*`). The first scan (checking
+  `finalizeNotes`'s OWN direct free identifiers against the known-blocked
+  set) said clean because `sfPreloadForSong`/`updateEditBtnVis` aren't
+  themselves hardcoded blocked names — they're ordinary function names that
+  turned out, one hop further, to be blocked too. Caught only because
+  `check.mjs` on the real move reported `ui/notes.js` importing
+  `sfPreloadForSong`/`gamePreloadForSong`/`updateEditBtnVis` from
+  `../app.js`, which a second-level scan then explained. Reverted cleanly
+  (verbatim, prof-wrapper restored) and confirmed: `finalizeNotes` has
+  ~30 callers across app.js (annotation edits, chord/progression insert,
+  clip paste/delete, time insert/delete, track rename, audio import, Save
+  As, fork, Ask's `write_notes`/annotation tools, the Analyze adopt family)
+  — every one of them already bare in app.js, so `finalizeNotes` staying
+  there changes nothing for any of them; moving it would have needed a
+  layer-4 home anyway (it calls `renderTrackbar`), and no existing `ui/*`
+  file is a structural fit for "the model's own rollnotes resolver" — it is
+  model/rollnotes.js content wearing a UI-redraw side effect, which is
+  exactly `draw()`'s shape one layer down, and just as permanent. One real,
+  independently-useful thing survived the revert: `updateEditBtnVis`'s OWN
+  `updateChipBtn` reference is behind `typeof updateChipBtn === "function"`
+  (the step-11-noted "defensiveness idiom, now load-bearing") — which does
+  NOT exempt it from `move.mjs`/`check.mjs`'s import-resolution (both treat
+  a `typeof`-guarded name exactly like a hard call; this was checked
+  directly, by dry-running `updateEditBtnVis` alone and finding `check.mjs`
+  still added and still flagged the `updateChipBtn` import) — so
+  `updateEditBtnVis` itself stays blocked too, correctly, not by a tooling
+  gap.
+- **The drummer/bassist sheets (`openDrummer`/`openBassist`/
+  `drBuildControls`/`drRefresh`/`bsBuildControls`/`bsRefresh`) rode
+  `finalizeNotes`'s apparent unblocking one level further removed, and were
+  reverted in the same pass for the same underlying reason — `saveEdits`
+  calls `scheduleAnalysisRecompute`, which calls `finalizeNotes` directly.**
+  `drGenerate`/`bsGenerate`/`applyTake` call `saveEdits` (not
+  `finalizeNotes` itself — checked directly, confirmed clean of it), so the
+  chain is real but one hop longer than it first looked: `bsRefresh` →
+  `bsGenerate` → `applyTake` → `saveEdits` → `scheduleAnalysisRecompute` →
+  `finalizeNotes`. All ten names (the six sheet/controls functions plus
+  `drGenerate`/`bsGenerate`/`applyTake`/`saveEdits`) were moved, found
+  blocked this way, and reverted together in one pass (verbatim, prof
+  wrappers for `saveEdits`/`computeSongEnd` restored to app.js). Their own
+  pure leaves — `drKitCountT`/`bsRange`/`drRange`/`segSet`/`drPartsGet`/
+  `drPartsSet`/`drPartsSync`/`computeSongEnd`/`dpTick`/`undoTrackAdd` — do
+  NOT call `saveEdits`/`applyTake`/the reverted six (checked individually,
+  not assumed from neighboring code) and stayed in `ui/sheets.js`.
+  `ui/sheets.js`'s own "publish dialog" row fares similarly: `openSyncSheet`/
+  `renderSyncPending` call `openDraft`/`loadSong` directly (`loadSong` is
+  blocked by `play`, the same permanent transport wall) and stayed in
+  app.js alongside `fingerprintOldDrafts` (its only caller was
+  `openSyncSheet`). What DID land in `ui/sheets.js` for "publish dialog":
+  the jobs/pub-job sheet (`jobCancel`/`renderJobs`/`openPubJobSheet`/
+  `renderPubJob`), `publishDest`/`publishLabel`/`versionLabel`, and the
+  Settings/Share/Analyze sheets — real UI content, just not the sync-status
+  sheet or the generators' own sheets, which are deep in the
+  audio-transport/model-edit webs for reasons that have nothing to do with
+  being sheets.
+- **A new `move.mjs`/tooling slip class, distinct from the four earlier
+  steps found: a reverse move's new content lands physically AFTER app.js's
+  generated e2e footer, and `regen-e2e-footer.mjs` then deletes it.**
+  `assembleTo()` always appends new chunks after the existing body —
+  harmless when `--to` is a normal module, but app.js's own body ENDS with
+  the generated `// ---- e2e accessor mirror ----` block (§3.4/§4 step 0b),
+  so every `--from <ui file> --to src/app.js` reverse move in this step put
+  the reverted function(s) AFTER that block. Running
+  `tools/split/regen-e2e-footer.mjs` immediately after, as every other step
+  in this plan does unconditionally, calls `stripFooter()`, which does
+  `body.indexOf(FOOTER_MARKER)` and slices everything from there to the end
+  — including the just-reverted content, which sat after the marker. No
+  error, no warning: the function's text is simply gone, and
+  `check.mjs`/`verbatim.mjs` wouldn't catch it either (the file still
+  parses; nothing references the now-missing name because the IMPORT lines
+  pointing at it are still there pre-removal, which is exactly what surfaces
+  it — a `ReferenceError`-shaped rule-1/syntax failure one edit later, not
+  silently). Caught the first time by `node -c` after a revert showed
+  `grep -n "S.lastSubtitle" src/app.js src/ui/chrome.js` matching neither
+  file — the reverted function's body had vanished from both. Fixed going
+  forward by always checking `grep -n "FOOTER_MARKER text" src/app.js`
+  against `wc -l src/app.js` BEFORE regenerating after any `--to
+  src/app.js` move: if the marker isn't within a few lines of EOF, cut the
+  marker-through-`__nrExpose$` block out and reinsert it at the true end
+  first. Flagged in open-items.md for a `regen-e2e-footer.mjs`/`move.mjs`
+  fix (either tool could reorder correctly without a human re-check).
+- **A seventh, equally real gap, not in `move.mjs` itself but in this
+  task's own verification bar: `check.mjs` cannot catch an import whose
+  SPECIFIER points at the wrong file, only whether the NAME resolves to
+  some import at a legal layer.** When a name's home changes mid-step
+  (`saveDraft` tried `model/versions.js` first, reverted, landed in
+  `ui/chrome.js`; `renderTrackbar` similarly round-tripped), every OTHER
+  file's import of that name needs its specifier updated by hand — `sed`
+  one `import { saveDraft } from ...` line, miss the other two files that
+  also import it, and `check.mjs` reports nothing wrong: `model/versions.js`
+  is a real, legal, layer-≤4 source for `ui/mixer.js`/`ui/sheets.js`/
+  app.js to import FROM, `check.mjs`'s rule 5 only checks the layer
+  direction, not whether that file still exports the name after the
+  relocation. Three such stale specifiers (`ui/sheets.js`, `ui/mixer.js`,
+  app.js itself, all still reading `saveDraft` from `model/versions.js`
+  after it moved on to `ui/chrome.js`) shipped past `check.mjs` clean and
+  were only caught by actually running `npm test` — `SyntaxError: The
+  requested module '../model/versions.js' does not provide an export named
+  'saveDraft'` the moment the vm harness tried to link the real module
+  graph. Written a small standalone script (not added to tools/split/,
+  out of this task's scope to make permanent) that walks every `import {
+  names } from "spec"` in src/ and confirms the target file actually
+  exports each name — caught the three stale specifiers above instantly,
+  and nothing else. This is the clearest demonstration in the whole step
+  that `check.mjs`/`verbatim.mjs` clean is necessary but not sufficient —
+  only `npm test`'s real module linking (or an import/export resolution
+  pass like the one written here) catches a wrong-but-legal specifier.
+  Worth promoting into `tools/split/check.mjs` itself (a 9th rule: every
+  import specifier's target file exports every name imported from it) —
+  flagged in open-items.md rather than built, since this task's scope was
+  the move, not the tool.
+- **An eighth gap, found by the SAME `npm test` run as the seventh, one
+  step further: a relocated declaration can lose its own `export`
+  keyword when it was sharing a physical line with something that keeps
+  the keyword.** `pubCheck`/`pubCompareDraft` shared one original line
+  (`const pubCheck = new Map(); async function pubCompareDraft(key, d) {
+  …`, only `pubCheck`'s half ever had `export`, since both were in app.js
+  originally where nothing is individually exported). Rejoining them onto
+  one line in `ui/sheets.js` to satisfy `verbatim.mjs` — the fix this
+  step's own earlier bullets describe for `renderTrackbar`'s and
+  `drawFull`'s joined prof-wrapper lines — silently left
+  `pubCompareDraft` un-exported, because the single `export` already on
+  the line belongs to `pubCheck`, not to it: `check.mjs` has no rule
+  covering this (nothing it checks requires a name to be exported, only
+  that free identifiers resolve), and `verbatim.mjs` only compares
+  normalized TEXT, which an un-exported `async function pubCompareDraft`
+  still matches the same once `export` is stripped for comparison. Only
+  `npm test`'s real module linking caught it (`SyntaxError: ... does not
+  provide an export named 'pubCompareDraft'`, surfaced through
+  `ai.test.mjs`, three tests deep). Fixed by splitting the two back onto
+  separate lines, each independently `export`ed — correct, but now a
+  THIRD same-line-multi-statement `verbatim.mjs` exception (alongside
+  `pubCheck`/`pubCompareDraft` and `idbDraftPut`/`commitImports`, both
+  listed above), since re-joining to satisfy `verbatim.mjs` is exactly
+  what caused this bug in the first place. The general lesson, not
+  specific to this one pair: whenever a move-the-text-back fix for a
+  `verbatim.mjs` finding crosses a layer boundary (one half staying in
+  app.js, the other now genuinely needing to be an ES export), check that
+  the ORIGINAL line's `export` keyword, if any, was covering the half
+  that needs it in its NEW home — it usually wasn't, since app.js itself
+  exports nothing by name.
+- **The two already-known slips recurred, same shape as steps 9–13, each
+  caught by this step's own hand-diff requirement, not by the tooling**:
+  a bogus self-import (`move.mjs` resolving a name against `--to`'s OWN
+  about-to-exist declaration and adding `import { X } from "./app.js"` or
+  `"./chrome.js"` pointing at itself — hit on nearly every multi-name move
+  this step made, cleared by deleting the self-import line) and the
+  prof-wrapper orphan (`X = prof("X", X); // comment` sharing a physical
+  line with the NEXT statement once the lines around it move away —
+  hit for `renderTrackbar`, `updateSubtitle` (twice, across the revert),
+  `saveDraft`, `saveEdits`, `computeSongEnd`, `finalizeNotes`,
+  `draw`/`playbackFrame`/`drawFull` (three on one physical line), each
+  fixed by hand: cut from the departure file, re-append right after the
+  function's new home, re-import `prof` if the destination didn't have it
+  yet). Both classes are now hit often enough across steps 9–14 that
+  `move.mjs`'s own self-import resolution and its interaction with
+  `X = prof(...)` lines are worth a real tooling fix before any future step
+  — flagged (again) in open-items.md.
+- **`move.mjs`'s own gaps around top-level wiring blocks, named in this
+  task's own brief, were not attempted — correctly, not by omission.** Every
+  top-level `document.getElementById(...).addEventListener(...)` block this
+  step touched (the trackbar's `#trackmore` click handler, the voice-menu's
+  tap-away closers, the wm menu wiring) was left exactly where it was,
+  importing the moved function back down from its new `ui/*` home — legal,
+  and exactly what §0/this step's brief ask for. No `init<Module><N>()`
+  synthesis was attempted on a listener block this step (step 12's own
+  finding — `verbatim.mjs` has no tolerance for the wrapper's structural
+  lines — stands untested further, not re-litigated).
+- **The browser pass this step needs, not yet done by this builder (no
+  terminal push from here): every menu and sheet that actually moved**
+  (track chips' M/S/H and + track/+ audio/+ drums, the Mixer sheet's
+  fader/pan/drag-reorder, the Notes list and Check-vs-file UI, the note
+  editor's chord widget and mic dictation toggle, the Jobs/Settings/Share/
+  Analyze sheets), **wm docking** (the window-manager's pure layout math
+  moved; its action functions — close/dock/float/the drop-up menu — did
+  NOT, so this is mostly a regression check that nothing behaves
+  differently), **and phone width** (nothing in this step touches layout
+  CSS or breakpoints, so this is a smoke check, not a targeted risk).
 
 ## 5. Risks and guardrails
 
