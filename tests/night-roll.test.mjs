@@ -1165,6 +1165,21 @@ test("cursor on the ruler/strip: a tap lands on the nearest 8th, a drag steps in
   assert.equal(val(`cursorTapSnapTicks()`), 240, "a tap stays on 8ths");
 });
 
+test("pencil taps land on the PICKED value's grid, even when the song's move grid is 32nds (Josh, 2026-10-04)", () => {
+  installSong();
+  run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: [{t: 60, d: 60, p: 60, v: 80}]}]};
+       _has32 = null; gridDiv = null; pencilNV = 8; pencilMod = 1; pencilDur = 0.5;`);
+  assert.equal(val(`moveSnapTicks()`), 60, "the song has 32nds: moves are 32nd-fine");
+  assert.equal(val(`gridCellStart(1920 + 300)`), 1920 + 240, "an 8th picked: the tap lands on the 8th it's in, not a 32nd");
+  run(`pencilMod = 1.5; pencilDur = 0.75;`);
+  assert.equal(val(`gridCellStart(1920 + 300)`), 1920 + 240, "dotted 8th: the plain 8th grid");
+  run(`pencilNV = 8; pencilMod = 2 / 3; pencilDur = 1 / 3;`);
+  assert.equal(val(`gridCellStart(1920 + 300)`), 1920 + 160, "8th triplet: triplet steps");
+  run(`pencilNV = 32; pencilMod = 1; pencilDur = 0.125;`);
+  assert.equal(val(`gridCellStart(1920 + 70)`), 1920 + 60, "32nd picked: 32nds");
+  run(`song.tracks[0].notes = []; _has32 = null; pencilNV = 8; pencilMod = 1; pencilDur = 0.5;`);
+});
+
 test("gridFollowNote: the move grid follows the note you touch", () => {
   installSong();
   run(`song = {ppq: 480, timesig: [4, 4], tempos: [{tick: 0, usq: 500000}], tracks: [{name: "pulse1", notes: []}]};

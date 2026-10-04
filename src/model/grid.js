@@ -57,9 +57,17 @@ export function pencilCellAt(tick) {
   const snap = pencilTicks();
   return {t: Math.max(0, Math.round(tick / snap) * snap), snap};
 }
+// the pencil's own cell: the picked value's grid — 8th picked, taps land on
+// 8ths even in a song whose move grid went 32nd-fine (Josh, 2026-10-04: "it's
+// always shifted off by a bit"); dotted values use their plain value's grid,
+// triplets their triplet step. Drags still fine-tune on moveSnapTicks.
+export function pencilGridTicks() {
+  if (isTripletDur(S.pencilDur)) return pencilTicks();
+  return Math.max(1, Math.round(S.song.ppq * 4 / (S.pencilNV || 4 / S.pencilDur)));
+}
 export function gridCellStart(tick) { // pencil cell floor — one continuous phase from
   // the anchor, so cells never drift whatever the division
-  const g = moveSnapTicks();
+  const g = pencilGridTicks();
   if (!S.gridDiv) return Math.floor(tick / g) * g;
   const cell = barTicks() / S.gridDiv, a = gridAnchorTick();
   return Math.round(a + Math.floor((tick - a) / cell) * cell);
