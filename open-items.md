@@ -5323,9 +5323,9 @@ Corrects the 2026-10-03 00:50-ish entry this replaces, which assumed step 5 (mov
 
 ## QUEUED 2026-10-03 — split: finish moving initCatalog, finalizeNotes, and the edits-store SAFETY functions once their blocking dependencies land (terminal-only, not a question for Josh)
 Three leftovers from step 5 (docs/split-plan.md "Deviations (5)"), each blocked by a real rule-5 violation (a model/ file, layer 2, would have to import still-unsplit app.js, layer 5), not by anything step 5 itself could fix:
-- `initCatalog` (→ src/model/catalog.js) — UPDATE 2026-10-03 (step 6): `folderOnly`/`songsURL`/`folderScanAlbums` all landed (platform/folder.js + platform/storage.js), but `initCatalog` ALSO needs `albumMetaFor` (audio/chip.js, step 8), so it's still blocked on that one alone. Revisit once step 8 lands.
-- `finalizeNotes` (→ src/model/rollnotes.js) needs `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, steps 7-8), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`bakesTempo` (model/song.js or similar, step 9), `keyLabelState` (ui/notes.js, step 14). This is the deepest-reaching one — likely still blocked even after step 9, until the audio/render/ui layers it touches are further along. Re-check after each of steps 7, 8, 9, 11, 14.
-- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — the 2026-10-02-regression code — UPDATE 2026-10-03 (step 6): `LINK_SONGS` landed (platform/base.js) and no longer blocks anything here; still need `isComposition`/`ownFolderPath`/`isCaptureKey` (provenance, step 9), `scheduleAnalysisRecompute` (gen/analysis.js, step 10), `saveDraft`/`computeSongEnd`/`updateSongMeta`/`draftRead` (model/song.js + model/versions.js, step 9 — `saveDraft`/`draftRead` themselves were ALSO checked in step 6, for platform/storage.js, and are blocked the same way), `updateChipBtn` (audio/chip.js, step 8), `editableSong`/`originOf` (provenance, step 9). Re-check after step 9 (the biggest chunk of this list); treat the SAFETY rule the same way next time — move it verbatim or not at all, never fragment it across a layer boundary.
+- `initCatalog` (→ src/model/catalog.js) — CORRECTED 2026-10-03 (step 8): the earlier UPDATE here assumed landing `albumMetaFor` anywhere would unblock this. Step 8 landed `albumMetaFor` in `audio/chip.js` (layer 3) — and `model/catalog.js` is layer 2, which can only ever import layer 2 or lower. This is now a PERMANENT structural block, the identical shape as `estimateKey`/`theory/key.js` below, not a "not yet split" one: `initCatalog` can only move if `albumMetaFor` itself relocates to a layer-≤2 module (real, since `albumMetaFor` has no blocker of its own — chip.js just happened to be where ITS OWN callers needed it), or `initCatalog` moves to a layer-≥3 module instead, losing its "album/group lookups" cohesion with the rest of model/catalog.js. See docs/split-plan.md "Deviations (8)".
+- `finalizeNotes` (→ src/model/rollnotes.js) needs `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, step 7 — still blocked, see the audio/voices.js QUEUED entry below), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`bakesTempo` (model/song.js or similar, step 9 — `applyAudioDirs` itself was ALSO checked in step 8, for audio/clips.js, and is blocked the same way — draw()/isComposition/ownFolderPath/addTrackUndoable), `keyLabelState` (ui/notes.js, step 14). This is the deepest-reaching one — likely still blocked even after step 9, until the audio/render/ui layers it touches are further along. Re-check after each of steps 9, 11, 14.
+- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — the 2026-10-02-regression code — UPDATE 2026-10-03 (step 6): `LINK_SONGS` landed (platform/base.js) and no longer blocks anything here; UPDATE 2026-10-03 (step 8): `updateChipBtn` did NOT land in audio/chip.js (it's itself blocked by `playGateKick`, UI — see the audio/chip.js QUEUED entry below), so that blocker is unchanged. Still need `isComposition`/`ownFolderPath`/`isCaptureKey` (provenance, step 9 — `isCaptureKey` was deliberately left in app.js by step 8 to avoid a future layer deadlock, see below), `scheduleAnalysisRecompute` (gen/analysis.js, step 10), `saveDraft`/`computeSongEnd`/`updateSongMeta`/`draftRead` (model/song.js + model/versions.js, step 9 — `saveDraft`/`draftRead` themselves were ALSO checked in step 6, for platform/storage.js, and are blocked the same way), `editableSong`/`originOf` (provenance, step 9). Re-check after step 9 (the biggest chunk of this list); treat the SAFETY rule the same way next time — move it verbatim or not at all, never fragment it across a layer boundary.
 
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 6: src/platform/{base,mode,storage,folder,native}.js (docs/split-plan.md)
 Moved, five `move.mjs --names` invocations over src/app.js (base → mode →
@@ -5448,29 +5448,35 @@ Terminal session: review, browser-check (play a synth/SF2/game-voice song,
 tap a note preview), merge, push, build.
 
 ## QUEUED 2026-10-03 — split: scheduleNote/previewNote still can't move to src/audio/voices.js; play/stop/play-gate/album still can't move to src/audio/transport.js (terminal-only, not a question for Josh)
-Leftovers from step 7 (docs/split-plan.md "Deviations (7)"), both the "not
-yet split" kind (unlike ensureAudio/resumeAudio/rebuildAudio below, these
-SHOULD resolve once the blocking steps land — no need to re-litigate
-whether they're movable, just re-run the mover once the blocker is gone):
-- `scheduleNote`/`previewNote` (→ audio/voices.js): both read `chip`/
-  `chipActive()`/`chipHas()`/`chipPreviewBuffer()`/`chipNoteSlice()`
-  directly (audio/chip.js, step 8, still bare in app.js). Retry
+Leftovers from step 7 (docs/split-plan.md "Deviations (7)"):
+- `scheduleNote`/`previewNote` (→ audio/voices.js) — CORRECTED 2026-10-03
+  (step 8): the `chip`/`chipActive`/`chipHas`/`chipPreviewBuffer`/
+  `chipNoteSlice` blocker DID clear exactly as this note predicted (all
+  landed in audio/chip.js/audio/chip-stream.js) — but a re-check surfaced
+  a SECOND, independent blocker this note hadn't named: `scheduleNote`'s
+  `n._clip` branch calls `scheduleClip` (audio/clips.js, step 8), which
+  itself stays in app.js (blocked by `stretchEnsure` → one `draw()` call —
+  see the audio/clips.js QUEUED entry below). `previewNote` falls through
+  to `scheduleNote`, so it inherits the same block. Retry
   `move.mjs --names scheduleNote,previewNote --to audio/voices.js` once
-  step 8 lands chip.js — same layer (3), so this becomes a legal import at
-  that point, no further change needed to either function.
+  `scheduleClip` itself is importable (i.e. once `draw()` moves, step 11,
+  or `stretchEnsure` otherwise clears) — same layer (3), so this becomes a
+  legal import then, no further change needed to either function. See
+  docs/split-plan.md "Deviations (8)".
 - `play`/`stop`/the whole play-gate (`playGate`/`playGateKick`/
   `playGateTick`/`playGateActive`/`playGateWait`)/album orchestration
   (`albumStart`/`albumPlayIdx`/`albumNext`/`albumPrev`/`albumAdvance`/
   `albumLeave`/`albumStrip`/`albumClear`/`armAlbumLink`/`albumPos`) (→
-  audio/transport.js): saturated with `chip.*` (step 8), clip scheduling
-  (`clipLen`, audio/clips.js, step 8), `met.*` (metronome, step 8),
-  `document.getElementById`/`setInfo`/UI-chrome calls (ui/chrome.js, step
-  14), and `loadSong`/`S.CATALOG`/`albumEffectiveOrder` (model, step 9).
-  This is the single most entangled cluster the split has found so far —
-  likely needs steps 8, 9, 11, AND 14 to all land before a clean move is
-  possible. Re-check incrementally (don't wait for all four at once): each
-  step may unblock a subset (e.g. step 8 alone unblocks the `chip`/`met`
-  references but not `document.getElementById`/`loadSong`).
+  audio/transport.js) — UPDATE 2026-10-03 (step 8): `chip.*` (audio/chip.js
+  + audio/chip-stream.js), clip scheduling (`clipLen`, audio/clips.js),
+  and `met.*` (audio/metronome.js) are all real exports now, so THAT
+  specific clause of this note has cleared. Still blocked regardless by
+  `document.getElementById`/`setControl`/`setPlayBtn`/`setInfo`/UI-chrome
+  calls (ui/chrome.js, step 14) and `loadSong`/`S.CATALOG`/
+  `albumEffectiveOrder` (model, step 9) — neither of which step 8 touched.
+  This remains the single most entangled cluster the split has found so
+  far; likely needs steps 9, 11, AND 14 to all land before a clean move is
+  possible. Re-check incrementally after each.
 - The second `?perf=1` instrumentation wrapper (the "mark the timeline on
   an edit" pass over `saveEdits`/`selEditApply`/`insertTime`, same guarded
   block as the now-fixed `wrap()`) is STILL silently broken — same
@@ -5499,6 +5505,91 @@ the UI layer subscribes to, instead of audio code calling into logging
 directly) — is out of scope for a verbatim-move split step; this is a
 design question, not a sequencing one, so flag it to Josh specifically
 (not silently retried) if a future step proposes touching it.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 8: src/audio/{chip,chip-stream,clips,metronome,bounce}.js (docs/split-plan.md)
+Moved, six `move.mjs --names` invocations over src/app.js (`playSec` into
+the EXISTING audio/transport.js first — step 7's file, unlisted by any
+step's table but needed by both chip-stream.js's `chipStreamPump` and
+metronome.js's `metPumpFollow` — then the five new files): `audio/chip.js`
+(29 names: `chip`/`chipTrackNo`/`albumMetaCache`/`albumMetaFor`/
+`ghHeaders`/`vaultFetch`/`chipAlbumHasSource`/the memory-budget math/
+`chipRenderStreamed`/`chipWorkerAvailable`/the preview cache +
+`chipPreviewBuffer`/the live-playback surface), `audio/chip-stream.js` (23
+names: the on/off/auto switch, every stream constant, the tape-time
+segment math, the worker-reply handlers, the cache/pin/evict bookkeeping,
+`chipNoteSlice`, the pump), `audio/clips.js` (26 names: the file/peak
+cache, the decode path, the tempo-from-a-take math, `audioReady`, the
+WSOLA algorithm + worker plumbing), `audio/metronome.js` (12 names: `met`
++ its persistence, `metBuildCells`/`metClick`/follow-mode math/
+`metPump`/`ensureMetGain`/`metHalt`/`applyMetMode`), `audio/bounce.js` (4
+names: `wavEncode`/`audioBufferToWav`/`midiBase64`/`deliverAudioFile`).
+Zero unresolved free identifiers from any invocation.
+
+Three real findings, each a permanent structural block (not "not yet
+split"), full writeups in docs/split-plan.md "Deviations (8)" and
+NIGHT-ROLL.md's module-map entries:
+- **`CHIPS`** (the per-console-kind table) can never move to audio/chip.js
+  as currently written — ONE guarded `logErr` call inside
+  `CHIPS.usf.capture`'s diagnostic blocks the whole table, and with it
+  `chipEstimateTracks`/`chipRender`/`chipPublish`/`chipRenderInWorker`/
+  `chipCleanupAfterFailure` (chip.js) and `chipStreamOpenWorker`/
+  `chipStreamOpen`/`chipRenderAuto` (chip-stream.js) — the actual render
+  entry points this step's name promises. Splitting the table by hand
+  (render fields vs. import fields) would be a structural edit, not a
+  verbatim move. Needs either `logErr` to become injectable/removable, or
+  a deliberate two-table split, whenever someone next considers this —
+  not a silent retry.
+- **`isCaptureKey`** was checked and deliberately NOT moved into
+  audio/chip.js even though doing so would have unblocked `chipSource`
+  today — its other caller, `ownFolderPath`, is slated for
+  model/provenance.js (layer 2, step 9), and layer 2 can never import
+  layer 3. Moving it would have traded today's `chipSource` blocker for a
+  permanent step-9 deadlock, the same mistake `estimateKey`/`theory/key.js`
+  made in steps 4-5. `chipSource` stays in app.js, blocked by
+  `isCaptureKey` alone.
+- **`scheduleClip`/`stretchEnsure`/`stretchEnsureAll`/`audioChaseNow`** (→
+  audio/clips.js) stay in app.js: `stretchEnsure`'s only real blocker is
+  one `draw()` call at the end of its stretch-worker callback (render,
+  step 11) — everything else in it is already pure/moved. This is also
+  WHY `scheduleNote`/`previewNote` still can't move (see the corrected
+  entry above) and why `offlineWaitForAssets`/`renderSongOffline` still
+  can't move to audio/bounce.js (see below).
+- `metStart` (→ audio/metronome.js) stays in app.js: it calls
+  `ensureAudio`/`resumeAudio` directly, both permanently blocked per the
+  existing QUEUED entry above. `metHalt`, its exact mirror, moved clean
+  (only `audioSessionType`, already platform/native.js).
+- `offlineWaitForAssets`/`renderSongOffline`/`recordRealtimeAudio` (→
+  audio/bounce.js) stay in app.js: blocked by `audioEnsureFile`/
+  `stretchEnsureAll` (clips.js's own blocked pair), `stop()`/
+  `scheduleNote()` (transport/voices, both still blocked), and
+  `setInfo`/`stop`/`play` respectively.
+- `initCatalog`'s QUEUED retry note (above) is CORRECTED, not cleared:
+  landing `albumMetaFor` in audio/chip.js (layer 3) cannot unblock a
+  layer-2 `model/catalog.js` import, ever — same shape as `estimateKey`.
+
+`regen-e2e-footer.mjs --file src/app.js` re-run; check.mjs clean except
+the pre-existing `oldBpb` finding (Q6); check-e2e-globals.mjs and
+check-controls.mjs clean (26 controls, unchanged). devtools.js gained
+`audioChip`/`audioChipStream`/`audioClips`/`audioMetronome`/`audioBounce`
+namespace imports; sw.js APP_MODULES gained all five files, SW_VERSION
+nr-v13 → nr-v14; index.html's modulepreload list gained all five.
+tests/modules.test.mjs's checkSrc fileCount assertion bumped 23 → 28 (a
+one-line test edit, same mechanical bump every step since 3 has made).
+
+Verified: night-roll.test.mjs 427 (426 pass + 1 pre-existing env skip —
+every "local song: …" SAFETY-regression test passes unchanged, since none
+of that code moved a byte), modules 33/33, gestures 21/21, controls 3/3,
+pwa 3/3, package 3/3, nsf 20/23 (3 pre-existing vault-only skips),
+chip-worker 31/31, bridge 10/10, migrate-rollnotes 9/9, psx-render 7/7,
+spc-render 5/5, instruments-export 4/4, sounding 8/8 — all green. `node
+tools/split/check.mjs` clean except oldBpb; `node tools/package.mjs --out
+/tmp/nr-dist-s8`: 47 runtime modules (unchanged — audio/ adds no
+tools/-side runtime module of its own). `npm run test:e2e:smoke` (allowed
+once locally): chromium 8/8 passed. NOT pushed: main session still needs
+the iPad ear check (a chip song NES + one streamed console song, an
+audio-clip song at 0.5×, the metronome, Download audio) before pushing
+and building.
+
 ## DONE 2026-10-03 13:55 — Quantize off the toolbar (Josh, Terminal #71: "takes up too much room … never used it"): #quantbtn stays in the markup hidden (Edit ▾ → Quantize… clicks it; Q key unchanged)
 
 ## DONE 2026-10-03 14:10 — Lasso next to Select (Josh, Terminal #73): placeLassoBtn() moves #lassobtn before #modeseg when the edit row shows, back to the footer on read-only songs

@@ -53,6 +53,11 @@ import * as platformNative from "./platform/native.js";
 import * as audioEngine from "./audio/engine.js";
 import * as audioVoices from "./audio/voices.js";
 import * as audioTransport from "./audio/transport.js";
+import * as audioChip from "./audio/chip.js";
+import * as audioChipStream from "./audio/chip-stream.js";
+import * as audioClips from "./audio/clips.js";
+import * as audioMetronome from "./audio/metronome.js";
+import * as audioBounce from "./audio/bounce.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -64,7 +69,8 @@ export function exposeGlobals() {
   const MODULES = { app, edition, icons, controls, midiParse, midiWrite, theoryChords, theoryKey,
                      modelCatalog, modelGrid, modelEdits, modelRollnotes,
                      platformBase, platformMode, platformStorage, platformFolder, platformNative,
-                     audioEngine, audioVoices, audioTransport };
+                     audioEngine, audioVoices, audioTransport,
+                     audioChip, audioChipStream, audioClips, audioMetronome, audioBounce };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global
