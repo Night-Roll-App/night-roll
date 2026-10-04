@@ -43,11 +43,15 @@ export function factsParseBQ(doc, s) {
 }
 export function factsQuarters(doc, ticks) { return Math.round(ticks / doc.ppq * 1000) / 1000; }
 
-// the same predicate tools/query-lib.mjs isDrumTrack and model/grid.js
-// trackIsDrums use on the name; a track already flagged `drums` wins
+// model/grid.js trackIsDrums, rule for rule: an audio take is never a kit,
+// a track already flagged `drums` wins, else the name or MIDI channel 10
+// (tools/query-lib.mjs isDrumTrack knows only the name — its docs carry
+// `ch` so the channel rule holds there too)
 export function factsIsDrums(track) {
-  if (track && track.drums !== undefined) return !!track.drums;
-  return /drum|percussion|kit|noise/i.test((track && track.name) || "");
+  if (!track) return false;
+  if (track.kind === "audio") return false;
+  if (track.drums !== undefined) return !!track.drums;
+  return /drum|percussion|kit|noise/i.test(track.name || "") || (track.notes || []).some(n => n.ch === 9);
 }
 
 export function factsEndTick(doc) {
@@ -127,21 +131,29 @@ export function factsSoundingAt(line, t) {
   return hit;
 }
 // the user's own declared key (a key: annotation's signed fifths) in effect
-// at `tick` — spelling only; null when none, which means neutral sharps
+// at `tick` — spelling only; null when none, which means neutral sharps.
+// Same precedence as model/song.js sfDeclaredAtRaw: a ranged key (b2 set)
+// governs only inside its span and beats an open one there; otherwise the
+// latest open key. `.end` alone cannot tell them apart — the lane layout
+// gives every point annotation a drawn `.end` — so b2 decides.
 export function factsDeclaredSf(doc, tick = 0) {
   if (!doc.rollnotes) return null;
-  let cur = null;
+  let ranged = null, open = null;
   for (const n of doc.rollnotes) {
     if (typeof n.keydir !== "number" || n.start > tick) continue;
-    if (cur === null || n.start >= cur.start) cur = n;
+    if (n.b2) { if (tick < n.end && (!ranged || n.start >= ranged.start)) ranged = n; }
+    else if (!open || n.start >= open.start) open = n;
   }
+  const cur = ranged || open;
   return cur ? cur.keydir : null;
 }
 // the user's chord bands, in time order — spans only; their text is never
-// read by the toolkit (harmonic rhythm counts changes, never names chords)
+// read by the toolkit (harmonic rhythm counts changes, never names chords).
+// A band is a chord annotation WITH a range (b2): a point chord note gets a
+// drawn `.end` from the lane layout too, and that is not a band.
 export function factsChordSpans(doc) {
   if (!doc.rollnotes) return [];
-  return doc.rollnotes.filter(n => n.chord && n.end !== null && n.end !== undefined && n.end > n.start)
+  return doc.rollnotes.filter(n => n.chord && n.b2 && n.end !== null && n.end !== undefined && n.end > n.start)
     .map(n => ({start: n.start, end: n.end})).sort((a, b) => a.start - b.start || a.end - b.end);
 }
 export function factsAbsSemis(a, b) { return Math.abs(a - b); }

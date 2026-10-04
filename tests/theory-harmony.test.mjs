@@ -13,13 +13,12 @@ import { fileURLToPath } from "node:url";
 import { createApp } from "./harness.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-// theory/key.js imports state.js, whose field initialisers read localStorage —
-// absent outside the vm harness; the stub answers "nothing stored"
-globalThis.localStorage ??= {getItem: () => null, setItem() {}, removeItem() {}};
-const R = await import("../src/theory/harmony/roman.js");
-const { hmCadences, hmPhraseEnds, hmTopPitchAt } = await import("../src/theory/harmony/cadence.js");
-const { hmNonChordTones, hmNeighbours } = await import("../src/theory/harmony/nct.js");
-const { hmModulations, hmKeyRelation } = await import("../src/theory/harmony/modulation.js");
+// plain imports: the modules reach nothing that reads localStorage (no
+// key.js → state.js chain), which the purity test at the end pins down
+import * as R from "../src/theory/harmony/roman.js";
+import { hmCadences, hmPhraseEnds, hmTopPitchAt } from "../src/theory/harmony/cadence.js";
+import { hmNonChordTones, hmNeighbours } from "../src/theory/harmony/nct.js";
+import { hmModulations, hmKeyRelation } from "../src/theory/harmony/modulation.js";
 
 const PPQ = 480, GRID = {barTicks: 4 * PPQ, beatTicks: PPQ};
 const bar = b => (b - 1) * GRID.barTicks;
@@ -331,11 +330,11 @@ test("tools/harmony.mjs on airship (FF1): the declared F mixolydian → Bb mixol
 });
 
 // ---- the Learning-mode contract (docs/theory-harmony.md) ------------------------------
-test("purity: src/theory/harmony/* import only theory/ (layer 0) — no S, no model/gen/ask, no DOM", () => {
+test("purity: src/theory/harmony/* import only theory/chords.js (layer 0; never key.js, whose state.js import reads localStorage) — no S, no model/gen/ask, no DOM", () => {
   const dir = path.join(ROOT, "src/theory/harmony");
   for (const f of readdirSync(dir)) {
     const src = readFileSync(path.join(dir, f), "utf8").replace(/\/\/.*$/gm, ""); // comments may NAME S.rollnotes; code may not read it
-    for (const m of src.matchAll(/from "([^"]+)"/g)) assert.match(m[1], /^\.\/|^\.\.\/(chords|key)\.js$/, f + " imports " + m[1]);
+    for (const m of src.matchAll(/^import[^\n]*from "([^"]+)"/gm)) assert.match(m[1], /^\.\/|^\.\.\/chords\.js$/, f + " imports " + m[1]);
     assert.doesNotMatch(src, /\bS\./, f + " reads S");
     assert.doesNotMatch(src, /\b(document|window|localStorage)\s*[.[(]/, f + " touches the DOM/storage");
   }

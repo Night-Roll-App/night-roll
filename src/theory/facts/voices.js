@@ -31,7 +31,7 @@ export function factsPairFacts(doc, upper, lower, {t0 = 0, t1 = null, sf = null}
     if (!p || !p.a || !p.b) continue;
     const da = s.a.p - p.a.p, db = s.b.p - p.b.p;
     if (da && db && Math.sign(da) === Math.sign(db)) { // both move, same direction
-      const ic1 = (((p.a.p - p.b.p) % 12) + 12) % 12, ic2 = (((s.a.p - s.b.p) % 12) + 12) % 12;
+      const ic1 = Math.abs(p.a.p - p.b.p) % 12, ic2 = Math.abs(s.a.p - s.b.p) % 12; // absolute: crossed voices a fourth apart are not a fifth
       const ev = {from: factsBQ(doc, p.t), to: factsBQ(doc, s.t), pitches: pair(p) + " → " + pair(s), direction: da > 0 ? "up" : "down"};
       if (ic1 === 7 && ic2 === 7) out.parallelFifths.push({...ev, interval: "perfect fifth" + (Math.abs(p.a.p - p.b.p) > 12 || Math.abs(s.a.p - s.b.p) > 12 ? " (compound)" : "")});
       else if (ic1 === 0 && ic2 === 0) out.parallelOctaves.push({...ev, interval: p.a.p === p.b.p && s.a.p === s.b.p ? "unison" : "octave"});

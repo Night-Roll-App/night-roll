@@ -94,7 +94,8 @@ export function findPattern(doc, opts = {}) {
 }
 
 // a hit list summarised per distinct transposition — "comes back 4× at the
-// same pitch, 2× a step up"
+// same pitch, 2× a step up"; `shift` is the semitones from the anchor, or
+// the start MIDI when the search had no anchor
 export function factsHitsByTransposition(hits) {
   const by = new Map();
   for (const h of hits) {
@@ -102,5 +103,5 @@ export function factsHitsByTransposition(hits) {
     if (!by.has(k)) by.set(k, []);
     by.get(k).push(h);
   }
-  return [...by.entries()].sort((a, b) => a[0] - b[0]).map(([k, hs]) => ({key: k, count: hs.length, at: hs.map(h => h.at)}));
+  return [...by.entries()].sort((a, b) => a[0] - b[0]).map(([k, hs]) => ({shift: k, count: hs.length, at: hs.map(h => h.at)}));
 }

@@ -1,7 +1,9 @@
 // src/theory/facts/rhythm.js — rhythm facts (docs/theory-toolkit.md §4):
 // attack density per bar, where attacks fall against the beat grid (on the
-// beat / off-beat eighth / sixteenth / off the sixteenth grid) and how many
-// off-beat notes are held across the next beat line, the extreme durations,
+// beat / half-beat / quarter-beat / triplet third / off those grids — named
+// by the BEAT UNIT, never by note values: under a 3/8 ruler the beat is an
+// eighth) and how many off-beat notes are held across the next beat line,
+// the extreme durations,
 // and harmonic rhythm = how often the user's OWN chord bands change. The
 // beat grid is the doc's effective ruler (model/grid.js effTs: declared or
 // the neutral default); the toolkit never names the meter. Chord-band text
@@ -11,22 +13,25 @@ import { factsSpanTicks } from "./melody.js";
 
 export function factsRhythmOfTrack(doc, notes, {sf = null} = {}) {
   if (!notes.length) return {notes: 0};
-  const beat = doc.beatTicks, eighth = beat / 2, sixteenth = beat / 4;
-  const onGrid = (t, g) => Math.abs(t / g - Math.round(t / g)) < 1e-6;
+  const beat = doc.beatTicks, half = beat / 2, quarter = beat / 4, third = beat / 3;
+  // distance from the nearest grid line, in ticks: integer PPQs leave a
+  // triplet a tick off its ideal (96/3 is not whole), so one tick of slack
+  const onGrid = (t, g) => Math.abs(t - Math.round(t / g) * g) <= 1;
   const attacks = [...new Set(notes.map(n => n.t))].sort((a, b) => a - b);
-  const grid = {onBeat: 0, downbeat: 0, offBeatEighth: 0, sixteenth: 0, offGrid: 0};
+  const grid = {onBeat: 0, downbeat: 0, halfBeat: 0, quarterBeat: 0, thirdBeat: 0, offGrid: 0};
   for (const t of attacks) {
     if (onGrid(t, doc.barTicks)) grid.downbeat++;
     if (onGrid(t, beat)) grid.onBeat++;
-    else if (onGrid(t, eighth)) grid.offBeatEighth++;
-    else if (onGrid(t, sixteenth)) grid.sixteenth++;
+    else if (onGrid(t, half)) grid.halfBeat++;
+    else if (onGrid(t, quarter)) grid.quarterBeat++;
+    else if (onGrid(t, third)) grid.thirdBeat++;
     else grid.offGrid++;
   }
   const heldAcross = [];
   for (const n of notes) {
     if (onGrid(n.t, beat)) continue;
-    const nextBeat = Math.ceil(n.t / beat - 1e-6) * beat;
-    if (n.t + n.d > nextBeat + 1e-6) heldAcross.push({at: factsBQ(doc, n.t), pitch: factsPitch(n.p, sf), quarters: factsQuarters(doc, n.d)});
+    const nextBeat = Math.ceil((n.t - 1) / beat) * beat;
+    if (n.t + n.d > nextBeat + 1) heldAcross.push({at: factsBQ(doc, n.t), pitch: factsPitch(n.p, sf), quarters: factsQuarters(doc, n.d)});
   }
   const perBar = [];
   for (const t of attacks) {
@@ -63,7 +68,7 @@ export function factsRhythmOfTrack(doc, notes, {sf = null} = {}) {
 // chord-band change rate over [t0, t1): bands that START in the span
 export function factsHarmonicRhythm(doc, t0 = 0, t1 = null) {
   const spans = factsChordSpans(doc).filter(s => s.start >= t0 && (t1 === null || s.start < t1));
-  if (!spans.length) return {bands: 0, note: "no chord bands annotated in this span — harmonic rhythm needs the user's own chord bands"};
+  if (!spans.length) return {bands: 0, why: "no chord bands annotated in this span — harmonic rhythm needs the user's own chord bands"};
   const starts = [...new Set(spans.map(s => s.start))].sort((a, b) => a - b);
   const changes = starts.map((t, i) => {
     const s = spans.find(x => x.start === t);

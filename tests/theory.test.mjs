@@ -9,9 +9,10 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readFileSync, readdirSync } from "node:fs";
 import {
   factsPitch, factsBQ, factsParseBQ, factsTracks, factsTopLine, factsVoices, factsSoundingAt,
-  factsDeclaredSf, factsChordSpans, factsLines, factsOnsetBarCount, factsBarCount,
+  factsDeclaredSf, factsChordSpans, factsLines, factsOnsetBarCount, factsBarCount, factsIsDrums,
 } from "../src/theory/facts/common.js";
 import { findPattern, factsPatternFromSpan, factsPatternOf, factsCollapseRepeats, factsHitsByTransposition } from "../src/theory/facts/pattern.js";
 import { formFacts, factsLetter, factsUnitRelation } from "../src/theory/facts/form.js";
@@ -89,7 +90,7 @@ test("facts/common: top line, rank voices and sounding-at on a chordal track", (
   assert.deepEqual(mono.map(l => l.voice), [null]);
 });
 
-test("facts/common: the user's declared key is read for spelling only (latest at or before the tick); chord spans are spans, no text", () => {
+test("facts/common: the user's declared key is read for spelling only — the latest open key, or a ranged key inside its span; chord spans are spans, no text", () => {
   const doc = mkDoc({m: [[1, 1, 1, 60]]}, {rollnotes: [
     {b1: 1, q1: 1, keydir: 1, text: "key: G"}, {b1: 5, q1: 1, keydir: -2, text: "key: Bb"},
     {b1: 1, q1: 1, b2: 2, q2: 4, chord: true, text: "G"}, {b1: 3, q1: 1, chord: true, text: "no end"},
@@ -99,6 +100,38 @@ test("facts/common: the user's declared key is read for spelling only (latest at
   assert.equal(factsDeclaredSf(mkDoc({m: []}), 0), null);
   assert.deepEqual(factsChordSpans(doc), [{start: 0, end: PPQ * 8}]);
   assert.equal(factsOnsetBarCount(mkDoc({m: [[1, 1, 8, 60]]})), 1); // the long note does not add an empty bar
+  // a ranged key (b2) governs inside its span and beats the open one there; past its end the open key resumes
+  // (model/song.js sfDeclaredAtRaw's precedence — the old "latest start wins" kept spelling in F forever)
+  const ranged = mkDoc({m: [[1, 1, 1, 60]]}, {rollnotes: [
+    {b1: 1, q1: 1, keydir: 0, text: "key: C"}, {b1: 5, q1: 1, b2: 6, q2: 4, keydir: -1, text: "key: F"},
+  ]});
+  assert.equal(factsDeclaredSf(ranged, factsParseBQ(ranged, "6.1")), -1);
+  assert.equal(factsDeclaredSf(ranged, factsParseBQ(ranged, "9.1")), 0);
+  assert.equal(factsDeclaredSf(ranged, factsParseBQ(ranged, "2.1")), 0);
+});
+
+test("facts/common: a point chord note with the lane layout's drawn .end is NOT a band — b2 decides (the app gives every point annotation a drawn span)", () => {
+  const doc = mkDoc({m: [[1, 1, 16, 60]]}, {rollnotes: [{b1: 1, q1: 1, chord: true, text: "C"}, {b1: 3, q1: 1, b2: 3, q2: 4, chord: true, text: "F"}]});
+  doc.rollnotes[0].end = doc.rollnotes[0].start + doc.barTicks; // what finalizeNotes / query-lib's doc really carry for a point note
+  assert.deepEqual(factsChordSpans(doc), [{start: PPQ * 8, end: PPQ * 12}]);
+  assert.equal(rhythmFacts(doc).harmonicRhythm.bands, 1);
+  doc.rollnotes.pop();
+  assert.equal(rhythmFacts(doc).harmonicRhythm.bands, 0, "a lone point chord note is no harmonic rhythm");
+  assert.equal(bassFacts(doc).perChordBand, null);
+});
+
+test("facts/common: the drum rule is model/grid.js trackIsDrums, rule for rule — audio takes never, the drums flag wins, else the name or MIDI channel 10", () => {
+  assert.equal(factsIsDrums({name: "drums-di.wav", kind: "audio", notes: []}), false);
+  assert.equal(factsIsDrums({name: "noise", drums: false, notes: []}), false);
+  assert.equal(factsIsDrums({name: "lead", drums: true, notes: []}), true);
+  assert.equal(factsIsDrums({name: "Percussion", notes: []}), true);
+  assert.equal(factsIsDrums({name: "track 10", notes: [{t: 0, d: 1, p: 36, ch: 9}]}), true, "channel 10 is the kit by MIDI convention");
+  assert.equal(factsIsDrums({name: "track 1", notes: [{t: 0, d: 1, p: 36, ch: 0}]}), false);
+  assert.equal(factsIsDrums(null), false);
+  const doc = mkDoc({lead: [[1, 1, 1, 60]], kit: [[1, 1, 0.25, 36]]});
+  doc.tracks[1].name = "track 10"; doc.tracks[1].notes.forEach(n => { n.ch = 9; });
+  assert.deepEqual(factsTracks(doc).map(t => t.name), ["lead"]);
+  assert.deepEqual(rhythmFacts(doc).tracks.map(t => [t.track, t.drums]), [["lead", false], ["track 10", true]]);
 });
 
 // ---- pattern -------------------------------------------------------------
@@ -114,7 +147,7 @@ test("facts/pattern: an interval pattern is found at every transposition, with w
   assert.equal(r.hits[0].endAt, "1.3"); // where the last matched note ENDS
   assert.deepEqual(r.hits[0].pitches, ["C4", "D4", "E4", "F4"]);
   assert.deepEqual(r.linesSearched, ["lead", "harmony/v1", "harmony/v2"]);
-  assert.deepEqual(factsHitsByTransposition(r.hits).map(g => [g.key, g.count]), [[0, 1], [7, 1]]);
+  assert.deepEqual(factsHitsByTransposition(r.hits).map(g => [g.shift, g.count]), [[0, 1], [7, 1]]);
   assert.equal(findPattern(PAT_DOC, {intervals: [2, 2, 1], track: "harmony"}).hits.length, 0);
 });
 
@@ -282,7 +315,7 @@ test("facts/melody: tessitura is duration-weighted, spans restrict, the top line
 test("facts/rhythm: density per bar, the beat grid, held-across-beat syncopation and extreme durations", () => {
   const doc = mkDoc({m: [
     [1, 1, 1, 60], [1, 2, 0.5, 62], [1, 2.5, 1, 64],           // 2.5 off-beat eighth, held across beat 3
-    [1, 4, 0.25, 65], [1, 4.25, 0.25, 67], [1, 4 + 1 / 3, 0.25, 69], // a sixteenth position and an off-grid triplet
+    [1, 4, 0.25, 65], [1, 4.25, 0.25, 67], [1, 4 + 1 / 3, 0.25, 69], // a quarter-beat position and a triplet third
     [2, 1, 3, 60],
   ], "Drum kit": [[1, 1, 0.25, 36], [1, 3, 0.25, 36]]});
   const r = rhythmFacts(doc);
@@ -292,7 +325,7 @@ test("facts/rhythm: density per bar, the beat grid, held-across-beat syncopation
   assert.deepEqual(m.density.perBar, [{bar: 1, attacks: 6}, {bar: 2, attacks: 1}]);
   assert.equal(m.density.mean, 3.5);
   assert.deepEqual(m.density.max, {bar: 1, attacks: 6});
-  assert.deepEqual(m.grid, {onBeat: 4, downbeat: 2, offBeatEighth: 1, sixteenth: 1, offGrid: 1});
+  assert.deepEqual(m.grid, {onBeat: 4, downbeat: 2, halfBeat: 1, quarterBeat: 1, thirdBeat: 1, offGrid: 0}); // the triplet is a triplet third, not "off grid"
   assert.equal(m.syncopation.offBeatAttacks, 3);
   assert.equal(m.syncopation.heldAcrossBeat, 1);
   assert.deepEqual(m.syncopation.heldAcrossBeatAt, [{at: "1.2.5", pitch: "E4", quarters: 1}]);
@@ -308,7 +341,7 @@ test("facts/rhythm: density per bar, the beat grid, held-across-beat syncopation
 test("facts/rhythm: harmonic rhythm counts the user's own chord-band changes — and is absent without bands", () => {
   const none = rhythmFacts(mkDoc({m: [[1, 1, 1, 60]]})).harmonicRhythm;
   assert.equal(none.bands, 0);
-  assert.match(none.note, /no chord bands/);
+  assert.match(none.why, /no chord bands/);
   const doc = mkDoc({m: [[1, 1, 16, 60]]}, {rollnotes: [
     {b1: 1, q1: 1, b2: 1, q2: 4, chord: true, text: "C"}, {b1: 2, q1: 1, b2: 2, q2: 2, chord: true, text: "F"},
     {b1: 2, q1: 3, b2: 2, q2: 4, chord: true, text: "G"}, {b1: 3, q1: 1, b2: 4, q2: 4, chord: true, text: "C"},
@@ -346,9 +379,9 @@ test("facts/bass: pedal points — held or repeated, pitch-class with octave cha
   const doc = mkDoc({bass: [[1, 1, 4, 48], [2, 1, 1, 48], [2, 2, 1, 48], [2, 3, 1, 60], [2, 4, 1, 48], [3, 1, 1, 50], [3, 2, 1, 50], [3, 3, 1, 50]]},
     {rollnotes: [{b1: 1, q1: 1, b2: 1, q2: 4, chord: true, text: "x"}, {b1: 2, q1: 1, b2: 3, q2: 4, chord: true, text: "y"}]});
   const r = bassFacts(doc);
-  assert.deepEqual(r.pedals, [{pitch: "C3", pitchClass: "C", from: "1.1", to: "2.4", beats: 8, samePitch: false, mode: "repeated"}]);
+  assert.deepEqual(r.pedals, [{pitch: "C3", pitchClass: "C", from: "1.1", to: "2.4", beats: 8, samePitch: false, how: "repeated"}]);
   const held = bassFacts(mkDoc({b: [[1, 1, 6, 40]]})).pedals[0];
-  assert.equal(held.mode, "held"); assert.equal(held.beats, 6); assert.equal(held.samePitch, true);
+  assert.equal(held.how, "held"); assert.equal(held.beats, 6); assert.equal(held.samePitch, true);
   assert.equal(bassFacts(doc, {pedalBeats: 3}).pedals.length, 2);
   assert.deepEqual(r.perChordBand, [{at: "1.1", to: "2.1", lowest: "C3", track: "bass"}, {at: "2.1", to: "4.1", lowest: "C3", track: "bass"}]);
 });
@@ -375,6 +408,13 @@ test("facts/voices: parallel perfect fifths and octaves/unisons by interval clas
   assert.equal(uni.pairs[0].parallelOctaves[0].interval, "unison");
   const compound = voiceFacts(mkDoc({u: [[1, 1, 1, 72], [1, 2, 1, 74]], l: [[1, 1, 1, 53], [1, 2, 1, 55]]}));
   assert.equal(compound.pairs[0].parallelFifths[0].interval, "perfect fifth (compound)");
+  // crossed voices a FOURTH apart (the nominal upper below the lower) are not fifths: the interval class is the absolute distance
+  const crossed = voiceFacts(mkDoc({u: [[1, 1, 1, 72], [1, 2, 1, 60], [1, 3, 1, 62]], l: [[1, 1, 1, 48], [1, 2, 1, 65], [1, 3, 1, 67]]}));
+  assert.equal(crossed.pairs[0].parallelFifths.length, 0);
+  assert.equal(crossed.pairs[0].crossings.length, 1);
+  // d = 0 notes never sound at a sample, so they make no interval pair
+  const zero = voiceFacts(mkDoc({u: [[1, 1, 0, 60], [1, 2, 0, 62]], l: [[1, 1, 1, 53], [1, 2, 1, 55]]}));
+  assert.equal(zero.totals.parallelFifths, 0);
 });
 
 test("facts/voices: crossing spans, overlaps, large leaps per line, polyphonic tracks as rank voices", () => {
@@ -433,6 +473,17 @@ function assertFactsOnly(label, text) {
     assert.equal(m, null, label + " leaks a " + name + ": " + JSON.stringify(m && m[0]) + " …" + (m ? text.slice(Math.max(0, m.index - 40), m.index + 40) : ""));
   }
 }
+// the JSON shape is part of the contract too: no field may be CALLED key /
+// chord / roman / numeral / meter / mode (a future Ask tool would hand the
+// JSON to a model that reads field names as meaning)
+const FORBIDDEN_KEYS = new Set(["key", "keys", "chord", "chords", "roman", "numeral", "numerals", "meter", "mode", "tonic", "scale", "quality"]);
+function assertNoForbiddenKeys(label, value, path = "") {
+  if (Array.isArray(value)) value.forEach((v, i) => assertNoForbiddenKeys(label, v, path + "[" + i + "]"));
+  else if (value && typeof value === "object") for (const k of Object.keys(value)) {
+    assert.ok(!FORBIDDEN_KEYS.has(k), label + ": field " + path + "." + k + " is a reserved harmony word");
+    assertNoForbiddenKeys(label, value[k], path + "." + k);
+  }
+}
 function allFacts(doc) {
   const first = doc.tracks.find(t => !/drum|noise|percussion|kit/i.test(t.name));
   const lifted = factsPatternFromSpan(doc, {track: first.name, from: "1.1", to: "3.1"});
@@ -478,7 +529,65 @@ test("facts: FF1 Overworld through the app's parser — every command runs, repo
     assert.ok(text.length > 40, kind + " text");
     assertFactsOnly("overworld " + kind + " text", text);
     assertFactsOnly("overworld " + kind + " json", JSON.stringify(result));
+    assertNoForbiddenKeys("overworld " + kind, result);
   }
+});
+
+test("facts: the sources themselves never read an annotation's text (so no user chord label or key name can reach an output) and import nothing but chords.js", () => {
+  const dir = path.join(ROOT, "src/theory/facts");
+  for (const f of readdirSync(dir)) {
+    const src = readFileSync(path.join(dir, f), "utf8").replace(/\/\/.*$/gm, "");
+    assert.doesNotMatch(src, /\.(text|cnote|note)\b/, f + " reads annotation text");
+    for (const m of src.matchAll(/^import[^\n]*from "([^"]+)"/gm)) assert.match(m[1], /^\.\/|^\.\.\/chords\.js$/, f + " imports " + m[1]);
+    assert.doesNotMatch(src, /\bS\.|\b(document|window|localStorage)\s*[.[(]/, f + " touches S or the DOM");
+  }
+});
+
+test("facts: every entry point survives an empty song, a track with no notes and zero-length notes", () => {
+  const empty = {ppq: PPQ, barTicks: PPQ * 4, beatTicks: PPQ, tracks: []};
+  assert.deepEqual(findPattern(empty, {intervals: [2]}).hits, []);
+  assert.equal(formFacts(empty).barString, "-");
+  assert.deepEqual(formFacts(empty).sequences, []);
+  assert.deepEqual(melodyFacts(empty).tracks, []);
+  assert.equal(rhythmFacts(empty).harmonicRhythm.bands, 0);
+  assert.deepEqual(bassFacts(empty).perBeat, []);
+  assert.deepEqual(voiceFacts(empty).pairs, []);
+  for (const kind of ["form", "melody", "rhythm", "bass", "voices"]) assert.ok(formatFacts(kind, {form: formFacts, melody: melodyFacts, rhythm: rhythmFacts, bass: bassFacts, voices: voiceFacts}[kind](empty)).length > 0, kind + " formats");
+  const silent = mkDoc({lead: [[1, 1, 1, 60], [1, 2, 1, 62]], pad: []});
+  assert.deepEqual(melodyFacts(silent).tracks.map(t => [t.track, t.notes]), [["lead", 2], ["pad", 0]]);
+  assert.deepEqual(rhythmFacts(silent).tracks[1], {track: "pad", trackIndex: 1, drums: false, notes: 0});
+  assert.deepEqual(voiceFacts(silent).lines, ["lead"], "a track with no notes is no line");
+  assert.equal(formFacts(silent).tracks.length, 2);
+  assert.match(formatFacts("melody", melodyFacts(silent)), /pad:\n  \(no notes in span\)/);
+  const zero = mkDoc({m: [[1, 1, 0, 60], [1, 2, 0, 64], [1, 3, 1, 67]]});
+  assert.equal(rhythmFacts(zero).tracks[0].attacks, 3, "a zero-length note is still an attack");
+  assert.equal(rhythmFacts(zero).tracks[0].durations.shortest.quarters, 0);
+  assert.equal(melodyFacts(zero).tracks[0].notes, 3);
+  assert.deepEqual(bassFacts(zero).perBeat.map(b => b.pitch), [null, null, "G4"], "nothing sounds during a zero-length note");
+  assert.equal(findPattern(zero, {intervals: [4, 3]}).hits.length, 1);
+});
+
+// Korobeiniki (the GB Tetris A-type tune): E B C D C B A A C E D C B. The
+// search is by intervals, so a copy a fourth up, with one note thrown up an
+// octave and the repeated A sung once, is the same figure to the finder
+// when told to allow both — and not otherwise.
+const KOROBEINIKI = [76, 71, 72, 74, 72, 71, 69, 69, 72, 76, 74, 72, 71];
+test("facts/pattern: Korobeiniki is found at a transposition, with octave displacement and a collapsed repeat, only when the search allows them; the NES Tetris rip does not contain it", async () => {
+  const varied = KOROBEINIKI.filter((p, i) => i !== 7).map(p => p + 5); // the repeated A once, a fourth up
+  varied[2] += 12; // the C an octave up
+  const doc = mkDoc({lead: [...eighths(1, KOROBEINIKI.slice(0, 8)), ...eighths(2, KOROBEINIKI.slice(8)), ...eighths(4, varied.slice(0, 8)), ...eighths(5, varied.slice(8))]});
+  const lifted = factsPatternFromSpan(doc, {track: "lead", from: "1.1", to: "3.1", collapseRepeats: true});
+  assert.deepEqual(lifted.intervals, [-5, 1, 2, -2, -1, -2, 3, 4, -2, -2, -1]);
+  const strict = findPattern(doc, {intervals: lifted.intervals, anchorPitch: lifted.anchorPitch});
+  assert.deepEqual(strict.hits.map(h => h.at), [], "literal intervals: the original's A A breaks the run and the copy's octave breaks it too");
+  const literal = factsPatternFromSpan(doc, {track: "lead", from: "1.1", to: "3.1"});
+  assert.deepEqual(findPattern(doc, {intervals: literal.intervals, anchorPitch: literal.anchorPitch}).hits.map(h => h.at), ["1.1"]);
+  const loose = findPattern(doc, {intervals: lifted.intervals, anchorPitch: lifted.anchorPitch, collapseRepeats: true, octaveEquiv: true});
+  assert.deepEqual(loose.hits.map(h => [h.at, h.transposition]), [["1.1", 0], ["4.1", 5]]);
+  assert.equal(findPattern(doc, {intervals: lifted.intervals, collapseRepeats: true}).hits.length, 1, "collapsed but no octave equivalence: the copy's displaced C still breaks it");
+  const nes = await loadSong("albums/nes/tetris-nintendo/music-2");
+  assert.ok(nes.tracks.length >= 3);
+  assert.equal(findPattern(nes, {intervals: lifted.intervals, collapseRepeats: true, octaveEquiv: true}).hits.length, 0, "Nintendo's NES Tetris has no Korobeiniki");
 });
 
 test("facts: Bach Prelude starter (chord bands annotated, polyphonic arpeggio) — harmonic rhythm counts his bands without naming one; nothing leaks", async () => {
@@ -495,7 +604,22 @@ test("facts: Bach Prelude starter (chord bands annotated, polyphonic arpeggio) �
   for (const [kind, result] of Object.entries(all)) {
     assertFactsOnly("bach " + kind + " text", formatFacts(kind, result));
     assertFactsOnly("bach " + kind + " json", JSON.stringify(result));
+    assertNoForbiddenKeys("bach " + kind, result);
   }
+});
+
+test("facts/rhythm: the grid is named by the beat unit — under a 3/8 ruler (Für Elise) the beat is an eighth, and a triplet song (Moonlight) lands on triplet thirds, not 'off grid'", async () => {
+  const elise = await loadSong("albums/starters/fur-elise");
+  assert.equal(elise.beatTicks, elise.ppq / 2, "the starter declares 3/8: the beat is an eighth");
+  const m = rhythmFacts(elise, {track: "melody"}).tracks[0];
+  assert.equal(m.grid.offGrid, 0);
+  assert.ok(m.grid.halfBeat > 50, "its sixteenths sit at half-beats of the eighth-note beat");
+  assert.match(formatFacts("rhythm", rhythmFacts(elise)), /grid \(by the beat unit\)/);
+  const moon = await loadSong("albums/starters/moonlight-sonata-1");
+  const t = rhythmFacts(moon, {track: "triplets"}).tracks[0];
+  assert.ok(t.grid.thirdBeat > 500, "the triplets are triplet thirds: " + JSON.stringify(t.grid));
+  assert.equal(t.grid.offGrid, 0);
+  assert.equal(t.grid.halfBeat, 0);
 });
 
 test("facts: tools/theory.mjs runs end to end (--json) on a starter", () => {

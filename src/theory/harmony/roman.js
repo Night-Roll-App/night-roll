@@ -3,10 +3,10 @@
 // bands. Nothing here looks at raw notes to guess a key or name a chord —
 // Learning mode is the law (CLAUDE.md): the key and the chords are his
 // findings; this turns the two he has already written down into a numeral.
-// Pure (layer 0): no S, no DOM. docs/theory-harmony.md says where each
+// Pure (layer 0): no S, no DOM, and nothing from key.js (it imports state.js)
+// — the key-name helpers come from chords.js. docs/theory-harmony.md says where each
 // function would be wired in and the Normal-only gate that must guard it.
-import { LETTERS, LETTER_PC, MAJ_STEP, MIN_STEP, CHORD_TEMPLATES, parseChordSym, chordQualParse, spellPc } from "../chords.js";
-import { tonicPcOfName, modeOfName, MODE_OFFSET } from "../key.js";
+import { LETTERS, LETTER_PC, MAJ_STEP, MIN_STEP, CHORD_TEMPLATES, parseChordSym, chordQualParse, spellPc, tonicPcOfName, modeOfName, MODE_OFFSET } from "../chords.js";
 
 export const HM_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
 export const HM_ACC = {"-2": "𝄫", "-1": "♭", "0": "", "1": "♯", "2": "𝄪"};

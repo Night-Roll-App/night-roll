@@ -27,7 +27,7 @@ export function formatPattern(r) {
   if (r.hits.length > 60) lines.push("  … " + (r.hits.length - 60) + " more (--json for all)");
   if (r.hits.length > 1) {
     const by = factsHitsByTransposition(r.hits);
-    lines.push("by transposition: " + by.map(g => (r.hits[0].transposition === null ? "from midi " + g.key : g.key === 0 ? "same pitch" : factsSigned(g.key)) + " ×" + g.count).join(", "));
+    lines.push("by transposition: " + by.map(g => (r.hits[0].transposition === null ? "from midi " + g.shift : g.shift === 0 ? "same pitch" : factsSigned(g.shift)) + " ×" + g.count).join(", "));
   }
   return lines.join("\n") + "\n";
 }
@@ -75,15 +75,15 @@ export function formatRhythm(r) {
     lines.push(t.track + (t.drums ? " (drums)" : "") + ":");
     if (!t.notes) { lines.push("  (no notes in span)"); continue; }
     lines.push("  " + t.attacks + " attacks / " + t.notes + " notes; per bar mean " + t.density.mean + ", max " + t.density.max.attacks + " (bar " + t.density.max.bar + "), min " + t.density.min.attacks + " (bar " + t.density.min.bar + ") over " + t.density.barsWithAttacks + " bars with attacks");
-    lines.push("  grid: " + t.grid.onBeat + " on the beat (" + t.grid.downbeat + " on bar lines), " + t.grid.offBeatEighth + " off-beat eighths, " + t.grid.sixteenth + " sixteenth positions, " + t.grid.offGrid + " off the sixteenth grid");
-    lines.push("  syncopation: " + t.syncopation.offBeatAttacks + " off-beat attacks (" + Math.round(t.syncopation.offBeatFraction * 100) + "%), " + t.syncopation.heldAcrossBeat + " held across the next beat line"
+    lines.push("  grid (by the beat unit): " + t.grid.onBeat + " on the beat (" + t.grid.downbeat + " on bar lines), " + t.grid.halfBeat + " at half-beats, " + t.grid.quarterBeat + " at quarter-beats, " + t.grid.thirdBeat + " at triplet thirds, " + t.grid.offGrid + " off those grids");
+    lines.push("  off the beat: " + t.syncopation.offBeatAttacks + " attacks (" + Math.round(t.syncopation.offBeatFraction * 100) + "%), " + t.syncopation.heldAcrossBeat + " held across the next beat line"
       + (t.syncopation.heldAcrossBeatAt.length ? " — " + t.syncopation.heldAcrossBeatAt.slice(0, 6).map(h => h.pitch + "@" + h.at).join(" ") : ""));
     lines.push("  durations: longest " + t.durations.longest.quarters + "q " + t.durations.longest.pitch + "@" + t.durations.longest.at + ", shortest " + t.durations.shortest.quarters + "q " + t.durations.shortest.pitch + "@" + t.durations.shortest.at
       + "; histogram " + Object.keys(t.durations.histogram).map(Number).sort((a, b) => a - b).map(k => k + "q×" + t.durations.histogram[k]).join(" "));
     lines.push("  attacks per bar: " + t.density.perBar.map(b => b.bar + ":" + b.attacks).join(" "));
   }
   const h = r.harmonicRhythm;
-  if (!h.bands) lines.push("harmonic rhythm: " + h.note);
+  if (!h.bands) lines.push("harmonic rhythm: " + h.why);
   else {
     lines.push("harmonic rhythm (the user's chord bands): " + h.changes + " changes over " + h.bands + " bands, " + h.changesPerBar + " per bar, mean " + h.meanBeatsPerBand + " beats per band");
     lines.push("  band lengths (beats×count): " + Object.keys(h.bandLengthHistogram).map(Number).sort((a, b) => a - b).map(k => k + "×" + h.bandLengthHistogram[k]).join(" ")
@@ -102,7 +102,7 @@ export function formatBass(r) {
   const leaps = r.motion.list.filter(m => m.kind === "leap");
   if (leaps.length) lines.push("  leaps: " + leaps.slice(0, 20).map(m => m.from + "→" + m.to + "(" + factsSigned(m.semitones) + ")@" + m.at).join(" ") + (leaps.length > 20 ? " …" : ""));
   lines.push("pedal points (one pitch class ≥ N beats): " + (r.pedals.length || "none"));
-  for (const p of r.pedals) lines.push("  " + p.pitchClass + " " + p.from + "–" + p.to + " (" + p.beats + " beats, " + p.mode + (p.samePitch ? "" : ", octave changes") + ")");
+  for (const p of r.pedals) lines.push("  " + p.pitchClass + " " + p.from + "–" + p.to + " (" + p.beats + " beats, " + p.how + (p.samePitch ? "" : ", octave changes") + ")");
   if (r.perChordBand) lines.push("lowest under each chord band: " + r.perChordBand.map(b => b.at + ":" + (b.lowest || "·")).join(" "));
   return lines.join("\n") + "\n";
 }

@@ -2,7 +2,7 @@
 // lowest sounding note at every beat (a note ringing into the beat beats
 // one that starts later in it), motion between consecutive beats as
 // repeated/step/leap with direction, pedal points (one pitch class holding
-// or repeating ≥ N beats), and the lowest note under each of the user's own
+// or repeating ≥ N beats — `how`: held | repeated), and the lowest note under each of the user's own
 // chord bands. Which tracks count is the caller's choice (default: every
 // non-drum track together). Pure.
 import { factsTracks, factsBQ, factsPitch, factsPc, factsMotionKind, factsChordSpans, factsDeclaredSf, factsEndTick } from "./common.js";
@@ -23,7 +23,7 @@ export function factsLowestIn(pool, start, end) {
 export function factsPedals(doc, perBeat, pedalBeats, sf) {
   const pedals = [];
   let run = null;
-  const close = () => { if (run && run.beats >= pedalBeats) pedals.push({pitch: factsPitch(run.firstMidi, sf), pitchClass: factsPitch(run.firstMidi, sf).replace(/-?\d+$/, ""), from: run.from, to: run.to, beats: run.beats, samePitch: run.samePitch, mode: run.newOnsets ? "repeated" : "held"}); run = null; };
+  const close = () => { if (run && run.beats >= pedalBeats) pedals.push({pitch: factsPitch(run.firstMidi, sf), pitchClass: factsPitch(run.firstMidi, sf).replace(/-?\d+$/, ""), from: run.from, to: run.to, beats: run.beats, samePitch: run.samePitch, how: run.newOnsets ? "repeated" : "held"}); run = null; };
   for (const b of perBeat) {
     if (b.midi === null) { close(); continue; }
     if (run && factsPc(b.midi) === run.pc) {

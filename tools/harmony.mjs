@@ -7,16 +7,12 @@
 // Learning mode is the law (CLAUDE.md): run this only when he asks for the
 // specific reading, and say what it is — a reading of HIS declarations.
 import "./vm-flag.mjs"; // first: re-execs with --experimental-vm-modules if missing (docs/split-plan.md §3.5)
-import { loadSong, isDrumTrack, outJson } from "./query-lib.mjs";
-
-// src/theory/key.js imports state.js, whose field initialisers read
-// localStorage; outside the vm harness Node has none, so a stub that answers
-// "nothing stored" stands in before the modules load (nothing here reads S)
-globalThis.localStorage ??= {getItem: () => null, setItem() {}, removeItem() {}};
-const roman = await import("../src/theory/harmony/roman.js");
-const { hmCadences } = await import("../src/theory/harmony/cadence.js");
-const { hmNonChordTones } = await import("../src/theory/harmony/nct.js");
-const { hmModulations } = await import("../src/theory/harmony/modulation.js");
+import { loadSong, outJson } from "./query-lib.mjs";
+import { factsIsDrums } from "../src/theory/facts/common.js";
+import * as roman from "../src/theory/harmony/roman.js";
+import { hmCadences } from "../src/theory/harmony/cadence.js";
+import { hmNonChordTones } from "../src/theory/harmony/nct.js";
+import { hmModulations } from "../src/theory/harmony/modulation.js";
 
 const argv = process.argv.slice(2);
 const json = argv.includes("--json"), all = argv.includes("--all");
@@ -31,8 +27,8 @@ const doc = await loadSong(songArg);
 const grid = {barTicks: doc.barTicks, beatTicks: doc.beatTicks};
 const keys = roman.hmKeyRegionsFromNotes(doc.rollnotes);
 const bands = roman.hmBandsFromNotes(doc.rollnotes);
-const sections = doc.rollnotes.filter(n => n.section && n.end).map(n => ({start: n.start, end: n.end, text: n.text}));
-const tracks = doc.tracks.filter(tr => !isDrumTrack(tr.name));
+const sections = doc.rollnotes.filter(n => n.section && n.b2).map(n => ({start: n.start, end: n.end, text: n.text})); // b2, not .end: a point section gets a drawn .end too
+const tracks = doc.tracks.filter(tr => !factsIsDrums(tr)); // the app's drum rule (name, flag, channel 10)
 const head = {song: doc.path, declaredKeys: keys.map(k => ({at: roman.hmBQ(grid, k.start), to: k.end === null ? null : roman.hmBQ(grid, k.end), name: k.name})), chordBands: bands.length};
 const headText = o => `${o.song}\n  declared keys: ${o.declaredKeys.length ? o.declaredKeys.map(k => k.name + " @ " + k.at + (k.to ? "–" + k.to : "")).join(", ") : "NONE — nothing below can be read until a key: annotation exists"}\n  chord bands: ${o.chordBands}\n`;
 

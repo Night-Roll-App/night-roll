@@ -1,5 +1,7 @@
 import { S } from "../state.js";
-import { LETTER_PC } from "./chords.js";
+// MODE_OFFSET, tonicPcOfName and modeOfName live in chords.js (no imports
+// there) so theory/harmony can read key names without this module's S import
+import { LETTER_PC, MODE_OFFSET } from "./chords.js";
 
 export const TONIC_SPELL = [["C"], ["C#", "Db"], ["D"], ["D#", "Eb"], ["E"], ["F"],
                      ["F#", "Gb"], ["G"], ["G#", "Ab"], ["A"], ["A#", "Bb"], ["B"]];
@@ -56,10 +58,6 @@ export function checkMeterVsFile() {
   return {state: "differs", file};
 }
 
-// modes: semitones from the relative major up to the tonic — the signature
-// engraved is always the relative major's; the stored name keeps tonic+mode
-export const MODE_OFFSET = {major: 0, ionian: 0, dorian: 2, phrygian: 4, lydian: 5,
-                     mixolydian: 7, minor: 9, aeolian: 9, locrian: 11};
 // Each natural letter's own circle-of-fifths position (F..B, no accidental);
 // an accidental shifts it by a further ±7 (one "lap" of fifths per semitone
 // of chromatic alteration — e.g. Eb = E's +4 minus the flat's 7 = -3).
@@ -87,12 +85,3 @@ export function keyNameToSf(name) {
   return sf;
 }
 
-export function tonicPcOfName(name) { // "G#m" / "D dorian" / "Bb" -> pc
-  const m = (name || "").match(/^([A-G])([#b]?)/);
-  return m ? (LETTER_PC[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0) + 12) % 12 : null;
-}
-export function modeOfName(name) {
-  const mm = (name || "").match(/\s([a-z]+)$/i);
-  if (mm && mm[1].toLowerCase() in MODE_OFFSET) return mm[1].toLowerCase();
-  return /m$/.test(name) && name.length > 1 ? "minor" : "major";
-}

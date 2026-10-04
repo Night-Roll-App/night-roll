@@ -13,7 +13,7 @@ import { setInfoImpl as setInfo } from "./chrome.js";
 import { linkRepoLabel } from "../platform/base.js";
 import { beatTicks } from "../model/grid.js";
 import { tonicOptionValue } from "./notes.js";
-import { modeOfName } from "../theory/key.js";
+import { modeOfName } from "../theory/chords.js";
 import { selEditItems } from "../model/selection.js";
 import { selClipObj } from "../render/tracks.js";
 import { clipboardHas } from "../model/selection.js";
