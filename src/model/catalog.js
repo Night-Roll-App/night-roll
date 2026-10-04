@@ -114,3 +114,15 @@ export async function folderScanAlbums() { // same shape as albums/manifest.json
   out.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
   return out;
 }
+
+// Titles in reading order: a trailing Roman numeral sorts as its number, so
+// Final Fantasy I, II, III, IV, V … X — plain A–Z put IV before IX and V after
+// Legend, and Josh could not find IV and V in the list (2026-09-29)
+export function romanValue(r) {
+  const v = {I: 1, V: 5, X: 10, L: 50};
+  let n = 0;
+  for (let i = 0; i < r.length; i++) { const a = v[r[i]], b = v[r[i + 1]] || 0; n += a < b ? -a : a; }
+  return n;
+}
+export function titleSortKey(t) { return String(t).replace(/\b([IVXL]+)\b(?=\s*(?:$|[:(\-–]))/, (m, r) => String(romanValue(r)).padStart(3, "0")); }
+export function titleCompare(a, b) { return titleSortKey(a).localeCompare(titleSortKey(b), undefined, {numeric: true, sensitivity: "base"}); }
