@@ -293,3 +293,84 @@ test("quiz page: index.html is its own document (doctype, charset, viewport), no
     assert.equal(quiz[t], app[t], "--" + t + " drifted from css/app.css");
   assert.ok(!html.includes("../src/"), "the page's only module graph entry is main.js");
 });
+
+// ---- ui smoke: a tiny element stub, enough to run every view once --------
+// ui.js is the one quiz file that touches document; nothing else can catch a
+// runtime slip in it (a misspelled helper, a wrong attribute) before the real
+// browser does. The stub records children, listeners and attributes and
+// nothing more — rendering is asserted by text, not layout.
+function fakeDom() {
+  const texts = el => el.tag === "#text" ? el.text : el.children.map(texts).join(" ");
+  const all = el => el.children.flatMap(c => c.tag === "#text" ? [] : [c, ...all(c)]);
+  const mk = tag => {
+    const el = {tag, nodeType: 1, children: [], attrs: {}, dataset: {}, listeners: {}, className: "", style: {}, clientWidth: 360, width: 0, height: 0, parent: null,
+      get textContent() { return texts(el); }, set textContent(v) { el.children = v === "" ? [] : [{tag: "#text", text: String(v)}]; },
+      classList: {toggle(k, f) { const s = new Set(el.className.split(" ").filter(Boolean)); (f === undefined ? !s.has(k) : f) ? s.add(k) : s.delete(k); el.className = [...s].join(" "); }, contains(k) { return el.className.split(" ").includes(k); }},
+      setAttribute(k, v) { el.attrs[k] = String(v); if (k.startsWith("data-")) el.dataset[k.slice(5)] = String(v); },
+      addEventListener(t, fn) { (el.listeners[t] ||= []).push(fn); },
+      append(...kids) { for (const k of kids) { const c = k && k.nodeType ? k : {tag: "#text", text: String(k)}; c.parent = el; el.children.push(c); } },
+      replaceChildren(...kids) { el.children = []; el.append(...kids); },
+      replaceWith(n) { const i = el.parent.children.indexOf(el); el.parent.children.splice(i, 1, n); n.parent = el.parent; },
+      querySelectorAll(sel) { return all(el).filter(e => e.tag === sel); },
+      getContext() { return new Proxy({}, {get: (t, k) => (k in t ? t[k] : () => {}), set: (t, k, v) => ((t[k] = v), true)}); },
+      click() { for (const fn of el.listeners.click || []) fn({currentTarget: el}); },
+    };
+    return el;
+  };
+  return {mk, all, texts, document: {createElement: mk}};
+}
+
+test("quiz ui smoke: home, bank (grade → note → next), every drill kind (miss, then hit) render and respond without throwing; nothing is revealed on a miss", async () => {
+  const dom = fakeDom();
+  context.document = dom.document;
+  context.requestAnimationFrame = fn => fn();
+  const {initQuizUi} = await importQuiz("quiz/ui.js");
+  const {parseBank} = await importQuiz("quiz/bank.js");
+  const {emptySrs} = await importQuiz("quiz/srs.js");
+  const D = await importQuiz("quiz/drills.js");
+  const root = dom.mk("main"), status = dom.mk("footer"), nav = dom.mk("nav");
+  for (const v of ["home", "bank", "drills"]) { const b = dom.mk("button"); b.setAttribute("data-view", v); nav.append(b); }
+  const bank = parseBank(bankMd());
+  const srs = emptySrs(), prefs = {};
+  let saved = 0, played = [];
+  const ui = initQuizUi({root, status, nav, bank, bankPath: "../quizzes.md", bankError: null, srs, prefs,
+    saveSrs: () => saved++, savePrefs: () => {}, tone: {available: () => true, play: ev => { played.push(ev); return true; }}, VF: null,
+    rnd: D.makeRng(42), now: () => 1_700_000_000_000, storageOk: true});
+  const buttons = () => dom.all(root).filter(e => e.tag === "button");
+  const byText = t => buttons().find(b => dom.texts(b).trim() === t);
+  // home
+  assert.match(dom.texts(root), new RegExp(bank.questions.length + " questions"));
+  assert.match(status.textContent, /bank: quizzes\.md/);
+  // bank: a question, graded, its note hidden until asked for
+  ui.go("bank");
+  const shown = bank.questions.find(q => dom.texts(root).includes(q.text));
+  assert.ok(shown, "a bank question is on screen");
+  assert.ok(!shown.note || !dom.texts(root).includes(shown.note), "the file's note is not shown with the question");
+  byText("Got it").click();
+  assert.equal(saved, 1);
+  assert.match(dom.texts(root), /Got it → box \d/);
+  if (shown.note) { byText("Show the file's note").click(); assert.ok(dom.texts(root).includes(shown.note)); }
+  byText("Next").click();
+  assert.ok(bank.questions.some(q => q !== shown && dom.texts(root).includes(q.text)), "a different question follows");
+  byText("Skip").click();
+  byText("Missed").click();
+  assert.match(dom.texts(root), /Missed → box 0/);
+  // drills: each kind renders; a wrong tap dims and reveals nothing; the right one resolves
+  ui.go("drills");
+  for (const def of D.DRILLS) {
+    byText(def.label).click();
+    assert.ok(status.textContent.startsWith(def.label), def.kind + " status");
+    if (def.ear) { byText("▶ Hear it").click(); assert.ok(played.length, def.kind + " plays on tap"); }
+    const choices = () => dom.all(root).filter(e => e.tag === "button" && e.parent && e.parent.className === "choices");
+    assert.ok(choices().length >= 2, def.kind + " offers choices"); // chord quality starts at two (major/minor)
+    let tries = 0;
+    while (!byText("Next") && tries < 20) {
+      choices().filter(b => !("disabled" in b.attrs))[0].click(); tries++;
+      if (!byText("Next")) assert.match(dom.texts(root), /not that one/, def.kind + " says only 'not that one' on a miss");
+    }
+    assert.ok(byText("Next"), def.kind + " resolved within " + tries + " tries");
+    assert.match(dom.texts(root), /✓/);
+    byText("Next").click();
+  }
+  assert.ok(prefs.streaks && Object.keys(prefs.streaks).length >= 1, "streaks are kept in prefs");
+});

@@ -1,0 +1,100 @@
+/* quiz/quiz.css — the quiz page's own stylesheet. The :root tokens are
+   COPIED from css/app.css (tests/quiz.test.mjs fails the suite when they
+   drift) rather than linking app.css: that file is 65 KB of app layout
+   (header/footer/dock rules keyed on the app's ids) that would fight a
+   one-column page. Touch-first: every control is at least 44 px tall;
+   16 px gutters; no horizontal scroll at 375 px. */
+  :root {
+    --bg: #0D1120;
+    --panel: #161C30;
+    --panel2: #1C2340;
+    --grid: #242C48;
+    --grid-soft: #1A2138;
+    --text: #C7D0E8;
+    --dim: #6B77A0;
+    --accent: #5B78E8;
+    --gold: #E4C36A;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --ok: #5BC98A;
+    --bad: #E06C75;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
+  html { font-size: 16px; }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--sans);
+    min-height: 100dvh; display: flex; flex-direction: column;
+    -webkit-tap-highlight-color: transparent;
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px; border-bottom: 1px solid var(--grid); background: var(--panel);
+  }
+  header h1 { font-family: var(--mono); font-size: 1rem; letter-spacing: 0.08em; font-weight: 600; white-space: nowrap; }
+  header h1 span { color: var(--accent); }
+  header h1 small { color: var(--dim); font-weight: 400; margin-left: 8px; letter-spacing: 0; }
+  header nav { display: flex; gap: 6px; margin-left: auto; }
+  main { flex: 1 1 auto; width: 100%; max-width: 720px; margin: 0 auto; padding: 16px; }
+  footer {
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0)); color: var(--dim);
+    font-family: var(--mono); font-size: 0.75rem; border-top: 1px solid var(--grid-soft);
+    overflow-wrap: anywhere;
+  }
+  footer a { color: var(--dim); }
+
+  button {
+    font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--grid);
+    border-radius: 10px; min-height: 44px; padding: 8px 14px; cursor: pointer;
+    transition: transform 60ms ease-out, filter 60ms ease-out;
+  }
+  button:active:not(:disabled) { filter: brightness(0.7); transform: scale(0.96); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.gold { border-color: var(--gold); color: var(--gold); }
+  button.big { min-height: 56px; font-size: 1.05rem; }
+  button.wrong { border-color: var(--bad); color: var(--bad); opacity: 0.55; }
+  button.right { border-color: var(--ok); color: var(--ok); }
+
+  .card { background: var(--panel); border: 1px solid var(--grid); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 1.05rem; margin-bottom: 8px; }
+  .card h2 .count { color: var(--dim); font-weight: 400; font-family: var(--mono); font-size: 0.85rem; margin-left: 8px; }
+  .dim { color: var(--dim); }
+  .mono { font-family: var(--mono); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row.end { justify-content: flex-end; }
+  .stack > * + * { margin-top: 10px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-family: var(--mono); font-size: 0.75rem; color: var(--dim); margin-bottom: 10px; }
+  .badge { border: 1px solid var(--grid); border-radius: 999px; padding: 2px 9px; }
+  .badge.good { color: var(--ok); border-color: var(--ok); }
+  .badge.shaky { color: var(--gold); border-color: var(--gold); }
+  .badge.new { color: var(--accent); border-color: var(--accent); }
+  .question { font-size: 1.2rem; line-height: 1.45; margin: 6px 0 16px; -webkit-user-select: text; user-select: text; }
+  .prompt { font-size: 1.1rem; line-height: 1.4; margin: 4px 0 12px; }
+  .grades { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-top: 12px; }
+  .choices button { min-height: 52px; }
+  .feedback { min-height: 1.5em; margin-top: 12px; font-family: var(--mono); font-size: 0.9rem; }
+  .feedback.ok { color: var(--ok); }
+  .feedback.bad { color: var(--bad); }
+  .note { margin-top: 10px; padding: 10px 12px; background: var(--panel2); border-left: 3px solid var(--gold); border-radius: 6px; color: var(--text); font-size: 0.95rem; line-height: 1.4; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chips button { min-height: 40px; padding: 6px 12px; font-size: 0.9rem; }
+  .boxes { display: flex; gap: 4px; align-items: flex-end; height: 44px; margin: 8px 0 4px; }
+  .boxes div { flex: 1; background: var(--grid); border-radius: 4px 4px 0 0; position: relative; min-height: 3px; }
+  .boxes div.lit { background: var(--accent); }
+  .boxes div span { position: absolute; top: -1.2em; left: 0; right: 0; text-align: center; font-family: var(--mono); font-size: 0.7rem; color: var(--dim); }
+  .boxlabels { display: flex; gap: 4px; font-family: var(--mono); font-size: 0.7rem; color: var(--dim); }
+  .boxlabels span { flex: 1; text-align: center; }
+  .staff { width: 100%; min-height: 150px; background: #F4F1EA; border-radius: 10px; overflow: hidden; display: flex; justify-content: center; }
+  .staff p { color: #333; padding: 16px; font-size: 0.9rem; }
+  .keys { display: block; width: 100%; height: 120px; border-radius: 10px; background: var(--panel2); }
+  .error { color: var(--bad); font-family: var(--mono); font-size: 0.9rem; white-space: pre-wrap; }
+  @media (max-width: 420px) {
+    header { gap: 8px; }
+    header nav button { padding: 8px 10px; font-size: 0.9rem; }
+    .grades { grid-template-columns: 1fr 1fr 1fr; }
+    .choices { grid-template-columns: repeat(2, 1fr); }
+  }

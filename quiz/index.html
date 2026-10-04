@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D1120">
+<meta name="robots" content="noindex">
+<title>Night Roll — Quiz</title>
+<!-- A standalone page (docs/plans/2026-10-04-quiz.md): its own stylesheet,
+     no manifest, no service-worker registration, not linked from the app,
+     not in the iPad package. sw.js steps aside for quiz/ navigations so this
+     page can never be cached as the app shell. -->
+<link rel="stylesheet" href="quiz.css">
+<script src="../vendor/vexflow.js"></script>
+</head>
+<body>
+<header>
+  <h1>NIGHT<span>//</span>ROLL<small>quiz</small></h1>
+  <nav id="nav" aria-label="quiz sections">
+    <button data-view="home">Home</button>
+    <button data-view="bank">Bank</button>
+    <button data-view="drills">Drills</button>
+  </nav>
+</header>
+<main id="app"><p class="dim">Loading…</p></main>
+<footer id="status" aria-live="polite"></footer>
+<script type="module" src="main.js"></script>
+</body>
+</html>
