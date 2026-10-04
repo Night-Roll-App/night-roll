@@ -17,61 +17,6 @@ import { LINK_SONGS } from "../platform/base.js";
 import { cfg } from "../platform/storage.js";
 import { linkRepoLabel } from "../platform/base.js";
 
-// HIS declared meter for a song that may not be the one open right now
-// (Publish all's other-song draft, the ✦ AI read_song tool) — NEVER the
-// file's own label (docs/declared-vs-learner-spec.md C8: that leaked into
-// notes.txt's header even in Learning). Preference: the "ff1roll-ts-<key>"
-// stash setSong() writes at load (see there), else a stored "timesig:"
-// annotation for that key; neither exists = undeclared, same as a fresh song.
-export function declaredTsForKey(key) {
-  if (!key) return null;
-  const stash = localStorage.getItem("ff1roll-ts-" + key);
-  if (stash) { const m = /^(\d+)\/(\d+)$/.exec(stash); if (m) return [+m[1], +m[2]]; }
-  let local = null;
-  try { local = JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "null"); } catch (err) { local = null; }
-  if (Array.isArray(local)) {
-    const tsNote = local.find(n => /^timesig:\s*\d+\s*\/\s*\d+/.test(n.text || ""));
-    if (tsNote) { const m = /^timesig:\s*(\d+)\s*\/\s*(\d+)/.exec(tsNote.text); if (m) return [+m[1], +m[2]]; }
-  }
-  return null;
-}
-export function notesTxtFor(doc, key) { // defaults to the open song; Publish all passes another song's draft // the web-session dump: claude.ai reads text, not .mid binaries
-  doc = doc || S.song; key = key || S.songKey;
-  const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const pn = p => NAMES[p % 12] + (Math.floor(p / 12) - 1);
-  // the meter HE declared, never doc.timesig (the file's own raw label) —
-  // the live variable for the song that's actually open, else the best
-  // record this device has for a different one (see declaredTsForKey)
-  const declared = (S.song && key === S.songKey) ? S.declaredTs : declaredTsForKey(key);
-  const ts = declared || [4, 4];
-  const tsLabel = declared ? declared[0] + "/" + declared[1] : "4/4? (not declared)";
-  const bt = ts[0] * 4 / ts[1] * doc.ppq;
-  let end = 0;
-  doc.tracks.forEach(t => t.notes.forEach(n => { if (!n.gone) end = Math.max(end, n.t + n.d); }));
-  const nBars = Math.ceil(end / bt - 0.05);
-  const fmt = x => x.toFixed(2).replace(/\.?0+$/, "");
-  const L = [];
-  L.push("# " + (key || "song").split("/").pop() + " — " + tsLabel + ", " +
-         Math.round(6e7 / doc.tempos[0].usq) + "bpm, " + nBars + " bars");
-  L.push("# Format: bar N: beat pitch duration-in-quarter-notes");
-  // gate-vs-notated: the 08-25 web session read 0.33 gates as triplets and
-  // asserted it to Josh twice. Onset spacing is the evidence for rhythm.
-  L.push("# duration is GATE TIME (how long the chip held the note), NOT a notated value.");
-  L.push("# RHYTHM comes from ONSET SPACING (the beat column), never from duration:");
-  L.push("# staccato eighths gate at ~0.33 and are still eighths, not triplets.");
-  L.push("# Pitches use sharp spelling; the true key is Josh's to discover — this file states no key.");
-  doc.tracks.forEach((tr, ti) => {
-    L.push("");
-    L.push("## track " + (ti + 1) + (tr.name ? " (" + tr.name + ")" : ""));
-    for (let b = 0; b < nBars; b++) {
-      const ns = tr.notes.filter(n => !n.gone && n.t >= b * bt && n.t < (b + 1) * bt);
-      if (!ns.length) continue;
-      L.push("bar " + (b + 1) + ": " + ns.map(n =>
-        fmt((n.t - b * bt) / doc.ppq + 1) + " " + pn(n.p) + " " + fmt(n.d / doc.ppq)).join(", "));
-    }
-  });
-  return L.join("\n") + "\n";
-}
 export async function putSongsText(path, text, h) { // text sibling files in the songs repo
   if (folderActive()) { await folderWrite(path, text); return {ok: true, status: 200}; }
   const putOnce = async () => {

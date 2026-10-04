@@ -3,7 +3,7 @@ import { S } from "../state.js";
 import { noteToJSON } from "../model/rollnotes.js";
 import { baseName } from "../model/rollnotes.js";
 import { LINK_SONGS } from "../platform/base.js";
-import { declaredTsForKey } from "../sync/publish.js";
+import { declaredTsForKey } from "../model/rollnotes.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
 import { askKeySpellComment } from "./context.js";

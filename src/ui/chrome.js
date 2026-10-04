@@ -101,7 +101,7 @@ import { nativeDirHandle } from "../platform/folder.js";
 import { folderWrite } from "../platform/folder.js";
 import { writeMidi } from "../midi/write.js";
 import { serializeRollnotesStamped } from "../model/rollnotes.js";
-import { notesTxtFor } from "../sync/publish.js";
+import { notesTxtFor } from "../model/rollnotes.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
