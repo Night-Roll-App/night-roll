@@ -1511,6 +1511,8 @@ import { initWm2 } from "./ui/wm.js";
 import { initGestures1 } from "./input/gestures.js";
 import { initGestures2 } from "./input/gestures.js";
 import { initRecord1 } from "./input/record.js";
+import { initKeyboard1 } from "./input/keyboard.js";
+import { initKeyboard2 } from "./input/keyboard.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2154,62 +2156,10 @@ document.getElementById("midcreate").addEventListener("click", () => {
 initNoteEditor3();
 initChrome9();
   initRecord1();
-instCanvas.addEventListener("pointerdown", instPointerDown);
-instCanvas.addEventListener("pointermove", instPointerMove);
-instCanvas.addEventListener("pointerup", e => instPointerUp(e, false));
-instCanvas.addEventListener("pointercancel", e => instPointerUp(e, true));
-new ResizeObserver(instResize).observe(instWrap);
-document.getElementById("instplay").addEventListener("click", () => instSetMode("play"));
-document.getElementById("instscroll").addEventListener("click", () => instSetMode("scroll"));
-document.getElementById("instoctdn").addEventListener("click", () => instOctave(-1));
-document.getElementById("instoctup").addEventListener("click", () => instOctave(1));
-document.getElementById("instlock").addEventListener("click", () => instSetLock(!S.instLock));
-document.getElementById("instsustain").addEventListener("click", () => instSetSustain(!S.instSustain));
-instbtn.addEventListener("click", () => {
-  S.instOpen = !S.instOpen;
-  localStorage.setItem("ff1roll-inst-open", S.instOpen ? "1" : "0");
-  if (!S.instOpen) instReleaseAll(); // nothing rings on from a closed panel
-  applyInst();
-  draw(); // closing the panel while Fall is active must restore the roll
-});
+initKeyboard1();
 initSheets3();
 initChrome10();
-instFallBtn.addEventListener("click", () => {
-  S.fallOn = !S.fallOn;
-  if (S.fallOn) { // fall is piano-only and needs the keys visible
-    S.instTab = "piano";
-    localStorage.setItem("ff1roll-inst-tab", "piano");
-    if (!S.instOpen) { S.instOpen = true; localStorage.setItem("ff1roll-inst-open", "1"); }
-  }
-  localStorage.setItem("ff1roll-inst-fall", S.fallOn ? "1" : "0");
-  applyInst();
-  draw();
-});
-for (const tab of ["piano", "guitar"]) {
-  document.getElementById("insttab-" + tab).addEventListener("click", () => {
-    S.instTab = tab;
-    localStorage.setItem("ff1roll-inst-tab", S.instTab);
-    if (tab === "guitar" && S.fallOn) { // notes can only fall into piano keys
-      S.fallOn = false;
-      localStorage.setItem("ff1roll-inst-fall", "0");
-    }
-    applyInst();
-    draw();
-  });
-}
-S.instTab = localStorage.getItem("ff1roll-inst-tab") || "piano";
-S.instOpen = localStorage.getItem("ff1roll-inst-open") === "1";
-// the keyboard's device-local prefs (2026-10-04): gesture mode, lock,
-// Sustain, and where the keys were left (a white-key index — null = home)
-S.instMode = localStorage.getItem("ff1roll-inst-mode") === "scroll" ? "scroll" : "play";
-S.instLock = localStorage.getItem("ff1roll-inst-lock") === "1";
-S.instSustain = localStorage.getItem("ff1roll-inst-sustain") === "1";
-S.instScroll = (() => { const v = parseFloat(localStorage.getItem("ff1roll-inst-scroll-piano")); return Number.isFinite(v) ? v : null; })();
-// Fall is PARKED (Josh, 2026-09-27: opening it killed playback on the iPad — the
-// per-frame full redraw starves the note scheduler; "we can re-implement it
-// later"). The code stays; the button is hidden and the view never turns on.
-S.fallOn = false; // was: localStorage.getItem("ff1roll-inst-fall") === "1" && instTab === "piano"
-applyInst();
+initKeyboard2();
 
 initNoteEditor4();
 
