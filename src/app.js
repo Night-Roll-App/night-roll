@@ -1529,13 +1529,10 @@ import { initEngine2 } from "./audio/engine.js";
 import { initTransport1 } from "./audio/transport.js";
 import { initAlbum1 } from "./session/album.js";
 import { initRoll1 } from "./render/roll.js";
+import { initBase1 } from "./platform/base.js";
+import { initBase2 } from "./platform/base.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
-try {
-  if (S.APP_BASE && document.head && !document.querySelector("base")) {
-    const b = document.createElement("base"); b.href = S.APP_BASE;
-    document.head.insertBefore(b, document.head.firstChild);
-  }
-} catch (e) {}
+initBase1();
  try {
   const q = typeof location !== "undefined" && songPathFromURL(location.href);
   if (q) setDocTitle(titleCaseSlug(q.split("/").pop().replace(/\.midi?$/i, "")));
@@ -1566,70 +1563,7 @@ S.APP_MODE = (() => {
                                          initRoll1();
            
 
-(function migrateAlbumPaths() {
-  const remap = v => v.replace(/^(ff1roll-(?:notes|edits|ts)-)?midi\//, "$1albums/final-fantasy-i/songs/")
-                     .replace(/^(ff1roll-(?:notes|edits|ts)-)?compositions\//, "$1albums/compositions/");
-  for (const k of Object.keys(localStorage)) {
-    if (!/^ff1roll-(notes|edits|ts)-(midi|compositions)\//.test(k)) continue;
-    const nk = remap(k);
-    if (!localStorage.getItem(nk)) localStorage.setItem(nk, localStorage.getItem(k));
-    localStorage.removeItem(k);
-  }
-  const last = localStorage.getItem("ff1roll-lastsong");
-  if (last && /^(midi|compositions)\//.test(last))
-    rememberLastSong(remap(last));
-  // second wave (same day): ff1 filename prefix dropped, multiword names hyphenated
-  const SONGS = "albums/final-fantasy-i/songs/";
-  const RENAME = {ff1corneliacastle: "cornelia-castle", ff1gurguvolcano: "gurgu-volcano",
-    ff1matouyascave: "matoyas-cave", ff1chaostemple: "chaos-temple",
-    ff1floatingcastle: "floating-castle", ff1underwaterpalace: "underwater-palace",
-    ff1gameover: "game-over"};
-  const remap2 = v => v.replace(new RegExp("(" + SONGS.replace(/[/]/g, "\\/") + ")ff1([a-z]+)(\\.mid)"),
-    (all, pre, base, ext) => pre + (RENAME["ff1" + base] || base) + ext);
-  for (const k of Object.keys(localStorage)) {
-    if (!/^ff1roll-(notes|edits|ts)-/.test(k) || !k.includes(SONGS + "ff1")) continue;
-    const nk = remap2(k);
-    if (nk !== k) {
-      if (!localStorage.getItem(nk)) localStorage.setItem(nk, localStorage.getItem(k));
-      localStorage.removeItem(k);
-    }
-  }
-  const last2 = localStorage.getItem("ff1roll-lastsong");
-  if (last2 && last2.includes(SONGS + "ff1"))
-    rememberLastSong(remap2(last2));
-  // third wave (2026-09-23, Josh's cleanup): two of his songs moved — every
-  // per-song key rides along so no device shows an orphan draft
-  const MOVED = {"albums/compositions/nightroll/town-theme.mid": "albums/compositions/nightroll/carnival.mid",
-                 "albums/compositions/KeyChangeTest-07-26.mid": "albums/compositions/nightroll/KeyChangeTest-07-26.mid"};
-  for (const k of Object.keys(localStorage)) {
-    const m = k.match(/^(ff1roll-(?:notes|edits|ts|draft|tombs|lastsync)-)(.+)$/);
-    if (!m || !MOVED[m[2]]) continue;
-    const nk = m[1] + MOVED[m[2]];
-    if (!localStorage.getItem(nk)) localStorage.setItem(nk, localStorage.getItem(k));
-    localStorage.removeItem(k);
-  }
-  const last3 = localStorage.getItem("ff1roll-lastsong");
-  if (last3 && MOVED[last3]) rememberLastSong(MOVED[last3]);
-  // fourth wave (2026-09-27, "just folders"): whole folders moved under console
-  // folders — every per-song key follows by prefix (MOVED_DIRS, defined with the
-  // link parser); a capture's draft from imports/ is stamped as a capture so
-  // it stays read-only (its new folder no longer says so by name)
-  for (const k of Object.keys(localStorage)) {
-    const m = k.match(/^(ff1roll-(?:notes|edits|ts|draft|tombs|lastsync|save|stash|ask)-)(.+)$/);
-    if (!m) continue;
-    const np = movedPath(m[2]);
-    if (!np) continue;
-    let v = localStorage.getItem(k);
-    if (m[1] === "ff1roll-draft-" && m[2].startsWith("albums/imports/")) {
-      try { const d = JSON.parse(v); if (d && typeof d === "object") { d.capture = true; v = JSON.stringify(d); } } catch (err) { /* keep as is */ }
-      if (typeof idbDraftMove === "function") idbDraftMove(m[2], np); // big drafts keep their notes in IndexedDB
-    }
-    if (!localStorage.getItem(m[1] + np)) localStorage.setItem(m[1] + np, v);
-    localStorage.removeItem(k);
-  }
-  const last4 = localStorage.getItem("ff1roll-lastsong");
-  if (last4 && movedPath(last4)) rememberLastSong(movedPath(last4));
-})();
+initBase2();
  initChrome2();
 
  
