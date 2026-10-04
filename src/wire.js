@@ -20,7 +20,7 @@ import { renderTrackbarImpl } from "./ui/trackbar.js";
 import { askRenderImpl } from "./ask/sheet.js";
 import {
   recFinishImpl,
-} from "./app.js";
+} from "./input/record.js";
 
 export function installHooks() {
   Object.assign(S.hooks, {

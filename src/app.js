@@ -1355,6 +1355,12 @@ import { askRenderImpl } from "./ask/sheet.js";
 import { askRenderEarlier } from "./ask/sheet.js";
 import { askBtnTap } from "./ask/host.js";
 import { openAsk } from "./ask/host.js";
+import { initWebMidi } from "./input/record.js";
+import { recNoteOff } from "./input/record.js";
+import { recNoteOn } from "./input/record.js";
+import { recFinishImpl } from "./input/record.js";
+import { midiMessage } from "./input/record.js";
+import { initCoreMidi } from "./input/record.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -4289,111 +4295,7 @@ function instTap(e, dragging) {
   setTimeout(drawInst, 400); // clear the flash when idle (playback frames handle it otherwise)
   return p;
 }
- function recNoteOn(pid, p, vel) {
-  recNoteOff(pid); // sliding to a new key closes the old one
-  S.recPending.set(pid, {p, vel, tick: recSnap(secToTick(S.song, playSec()))});
-}
-function recNoteOff(pid) {
-  const pend = S.recPending.get(pid);
-  if (!pend) return;
-  S.recPending.delete(pid);
-  const end = recSnap(secToTick(S.song, playSec()));
-  // a snapped take's minimum is one grid step (unchanged); a raw take's
-  // minimum is the app's usual shortest-editable-note floor (resizeSelection
-  // uses the same number) — a very fast tap must not leave a zero/negative
-  // length note behind.
-  const minD = recSnapOn() ? moveSnapTicks() : Math.max(24, Math.round(S.song.ppq / 8));
-  const d = Math.max(minD, end - pend.tick);
-  const tr = S.song.tracks[S.selTrack], isAdd = !isComposition();
-  const vv = pend.vel !== undefined ? pend.vel : S.pencilVel;
-  tr.notes.push({t: pend.tick, d, p: pend.p, v: vv, added: isAdd});
-  if (S.song.rawNotes) S.song.rawNotes[S.selTrack].push({t: pend.tick + S.chopS, d, p: pend.p, v: vv, added: isAdd});
-  S.recTake.push({ti: S.selTrack, ni: tr.notes.length - 1});
-  draw();
-}
-export function recFinishImpl() { // called from stop(): close pendings, commit the take
-  for (const pid of [...S.recPending.keys()]) recNoteOff(pid);
-  S.recording = false;
-  document.getElementById("recbtn").classList.remove("rec");
-  if (S.recTake.length) {
-    pushUndo({kind: "addBatch", items: S.recTake.slice()});
-    saveEdits();
-    if (isComposition() || isLocalDraft()) saveDraft(); // the take is part of the working copy, not just the undo stack
-    computeSongEnd();
-    if (S.viewMode === "score") buildScoreModel();
-    setInfo("recorded " + S.recTake.length + " note" + (S.recTake.length === 1 ? "" : "s") + " — one undo removes the take");
-  }
-  S.recTake = [];
-}
- // CoreMidi source names, once the iPad app has connected any
-// One MIDI message's bytes (status, data1, data2?) — Web MIDI's
-// MIDIMessageEvent.data is already exactly this shape; CoreMidiPlugin
-// expands running status on the native side so its "midi" events are too.
-function midiMessage(data) {
-  const [st, note, vel] = data;
-  const cmd = st & 0xf0;
-  if (cmd === 0x90 && vel > 0) {
-    if (S.recording && S.playing) recNoteOn("midi" + note + (st & 15), note, vel);
-    previewNote(S.selTrack, note);
-    S.instFlash = {p: note, until: performance.now() + 300}; // light the panel key
-    if (S.instOpen) drawInst();
-  } else if (cmd === 0x80 || (cmd === 0x90 && vel === 0)) {
-    recNoteOff("midi" + note + (st & 15));
-  }
-}
-function initWebMidi() {
-  if (S.midiReady) return;
-  const C = typeof window !== "undefined" && window.Capacitor;
-  if (C && C.isNativePlatform && C.isNativePlatform()) { initCoreMidi(C); return; }
-  if (!navigator.requestMIDIAccess) return;
-  S.midiReady = true;
-  navigator.requestMIDIAccess({sysex: false}).then(access => {
-    S.midiAccess = access;
-    const hook = input => input.addEventListener("midimessage", e => midiMessage(e.data));
-    for (const input of access.inputs.values()) hook(input);
-    access.addEventListener("statechange", e => {
-      if (e.port.type === "input" && e.port.state === "connected") hook(e.port);
-      setInfo("MIDI " + e.port.state + ": " + e.port.name);
-    });
-    const names = [...access.inputs.values()].map(i => i.name);
-    if (names.length || S.recording) setInfo(midiStatusLine()); // silence at first tap unless there's a device or ● is waiting
-  }).catch(err => { S.midiErr = err; S.midiReady = false; setInfo(midiStatusLine()); }); // retry on the next tap
-}
-// The iPad app: WKWebView has no Web MIDI, so a keyboard reaches this page
-// through the shell's own CoreMidi plugin instead (registered next to 📷's
-// Screenshot in MainViewController.capacitorDidLoad — same mechanism, see
-// askShotCapture's comment). Capacitor auto-generates Plugins.CoreMidi
-// (addListener + start/stop/list) once a plugin is registered natively, so
-// that's the normal path; Capacitor.addListener/nativePromise underneath it
-// is the same primitive the generated wrapper itself calls, so it's a real
-// fallback (not a guess) if the wrapper object is ever missing.
-function initCoreMidi(C) {
-  if (S.midiReady) return;
-  S.midiReady = true;
-  const plugin = C.Plugins && C.Plugins.CoreMidi;
-  const listen = (name, cb) => plugin && plugin.addListener ? plugin.addListener(name, cb)
-    : C.addListener ? C.addListener("CoreMidi", name, cb) : null;
-  const call = (method, opts) => plugin && plugin[method] ? plugin[method](opts || {})
-    : C.nativePromise ? C.nativePromise("CoreMidi", method, opts || {})
-    : Promise.reject(new Error("no CoreMidi bridge"));
-  if (!(plugin && plugin.addListener) && !C.addListener) { S.midiReady = false; return; } // truly nothing to call: leave midiReady false so a later tap retries
-  listen("midi", e => {
-    if (!e || !Array.isArray(e.data)) return;
-    if (e.source && !S.nativeMidiNames.includes(e.source)) {
-      S.nativeMidiNames.push(e.source);
-      setInfo("MIDI keyboard connected: " + e.source);
-    }
-    midiMessage(e.data);
-  });
-  call("start").then(() => call("list")).then(r => {
-    const names = r && r.sources || [];
-    if (names.length) {
-      S.nativeMidiNames = names;
-      setInfo("MIDI keyboard connected: " + names.join(", "));
-    }
-  }).catch(err => { S.midiErr = err; setInfo(midiStatusLine()); });
-}
-document.addEventListener("pointerdown", function midiWarm() {
+  document.addEventListener("pointerdown", function midiWarm() {
   document.removeEventListener("pointerdown", midiWarm);
   // the iPad app's native MIDI bridge starts only when ● asks for it — never
   // on the first touch, where an untested native path failing would cost
@@ -6887,4 +6789,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "gridFollowNote": () => gridFollowNote, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "instReleaseVoice": () => instReleaseVoice, "instReleaseHeld": () => instReleaseHeld, "instReleaseAll": () => instReleaseAll, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "INST_PAN_SLOP": () => INST_PAN_SLOP, "instPtrXY": () => instPtrXY, "instPtrMeanX": () => instPtrMeanX, "instLetGo": () => instLetGo, "instPtrPlayed": () => instPtrPlayed, "instPtrTicket": () => instPtrTicket, "instPointerDown": () => instPointerDown, "instPointerMove": () => instPointerMove, "instPointerUp": () => instPointerUp, "instScrollPersist": () => instScrollPersist, "instSetMode": () => instSetMode, "instSetLock": () => instSetLock, "instSetSustain": () => instSetSustain, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "gridFollowNote": (v) => (gridFollowNote = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "instReleaseVoice": (v) => (instReleaseVoice = v), "instReleaseHeld": (v) => (instReleaseHeld = v), "instReleaseAll": (v) => (instReleaseAll = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "instPtrXY": (v) => (instPtrXY = v), "instPtrMeanX": (v) => (instPtrMeanX = v), "instLetGo": (v) => (instLetGo = v), "instPtrPlayed": (v) => (instPtrPlayed = v), "instPtrTicket": (v) => (instPtrTicket = v), "instPointerDown": (v) => (instPointerDown = v), "instPointerMove": (v) => (instPointerMove = v), "instPointerUp": (v) => (instPointerUp = v), "instScrollPersist": (v) => (instScrollPersist = v), "instSetMode": (v) => (instSetMode = v), "instSetLock": (v) => (instSetLock = v), "instSetSustain": (v) => (instSetSustain = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
+export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "gridFollowNote": () => gridFollowNote, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "instReleaseVoice": () => instReleaseVoice, "instReleaseHeld": () => instReleaseHeld, "instReleaseAll": () => instReleaseAll, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "INST_PAN_SLOP": () => INST_PAN_SLOP, "instPtrXY": () => instPtrXY, "instPtrMeanX": () => instPtrMeanX, "instLetGo": () => instLetGo, "instPtrPlayed": () => instPtrPlayed, "instPtrTicket": () => instPtrTicket, "instPointerDown": () => instPointerDown, "instPointerMove": () => instPointerMove, "instPointerUp": () => instPointerUp, "instScrollPersist": () => instScrollPersist, "instSetMode": () => instSetMode, "instSetLock": () => instSetLock, "instSetSustain": () => instSetSustain, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "gridFollowNote": (v) => (gridFollowNote = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "instReleaseVoice": (v) => (instReleaseVoice = v), "instReleaseHeld": (v) => (instReleaseHeld = v), "instReleaseAll": (v) => (instReleaseAll = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "instPtrXY": (v) => (instPtrXY = v), "instPtrMeanX": (v) => (instPtrMeanX = v), "instLetGo": (v) => (instLetGo = v), "instPtrPlayed": (v) => (instPtrPlayed = v), "instPtrTicket": (v) => (instPtrTicket = v), "instPointerDown": (v) => (instPointerDown = v), "instPointerMove": (v) => (instPointerMove = v), "instPointerUp": (v) => (instPointerUp = v), "instScrollPersist": (v) => (instScrollPersist = v), "instSetMode": (v) => (instSetMode = v), "instSetLock": (v) => (instSetLock = v), "instSetSustain": (v) => (instSetSustain = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
