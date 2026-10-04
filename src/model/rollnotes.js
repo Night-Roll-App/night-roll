@@ -4,6 +4,10 @@ import { keyNameToSf } from "../theory/key.js";
 import { beatTicks } from "./grid.js";
 import { beatsPerBarDisp } from "./grid.js";
 import { snapBeat } from "./grid.js";
+import { tombKeyFor } from "./edits.js";
+import { noteIdentity } from "./edits.js";
+import { LINK_SONGS } from "../platform/base.js";
+import { readData } from "../platform/folder.js";
 
 // ---------------------------------------------------------------- rollnotes
 export function barTicks() { return beatsPerBarEff() * S.song.ppq; }
@@ -388,4 +392,81 @@ export function notesTxtFor(doc, key) { // defaults to the open song; Publish al
 export function dropLocalKeyAt(bar, q = 1) {
   S.rollnotes = S.rollnotes.filter(n =>
     !((n.keydir !== undefined || n.keypartial) && n.b1 === bar && (n.q1 || 1) === q));
+}
+
+// subtract tombstoned deletions (docs/provenance-plan.md P2: factored out of
+// loadNotes so publishSong can build the same merge for a song that is not
+// open — Bugs found: Publish all re-published a deleted synced note because
+// it never subtracted tombstones for a not-open song)
+export function subtractTombstones(notes, key) {
+  try {
+    const tombs = new Set(JSON.parse(localStorage.getItem(tombKeyFor(key)) || "[]"));
+    if (tombs.size) {
+      const out = notes.filter(n => !tombs.has(noteIdentity(n)));
+      // .filter returns a plain new array — carry the custom properties
+      // parseRollnotesJSON hangs off the array (version/origin/readOnly/
+      // lockReason) along with it, so a not-open annotationsFor(key) (P4,
+      // docs/annotations-v2.md) still sees the file's own origin header
+      // after tombstones are subtracted, not just when nothing was dropped.
+      out.version = notes.version; out.origin = notes.origin;
+      out.readOnly = notes.readOnly; out.lockReason = notes.lockReason;
+      return out;
+    }
+  } catch (err) {}
+  return notes;
+}
+// this device's local (never-synced) additions, merged onto `notes` in place
+// (and returned) — factored out of loadNotes' local-notes loop, same re-
+// derivation (track:/audio:/tempo:/timesig: directives, key: flag) so an
+// unsynced audio: note isn't silently missing its clip when built for a
+// song that isn't open
+export function mergeLocalAdditions(notes, key) {
+  let local = [];
+  try { local = LINK_SONGS ? [] : JSON.parse(localStorage.getItem("ff1roll-notes-" + key) || "[]"); }
+  catch (err) { /* corrupted local notes */ }
+  for (const n of local) {
+    if (notes.some(r => r.b1 === n.b1 && r.q1 === n.q1 && r.text === n.text)) continue;
+    const km = (n.text || "").match(/^key:\s*(\S+(?:\s+[a-z]+)?)/i); // re-derive flag (older saves lack it)
+    if (km && n.keydir === undefined) {
+      const sf = keyNameToSf(km[1].trim());
+      if (sf !== null) n.keydir = sf;
+    }
+    const derived = deriveNoteTypes([{...n, added: true}])[0] || {...n, added: true};
+    notes.push(derived);
+  }
+  return notes;
+}
+// repo file + this device's local additions, minus tombstones — the same
+// merge loadNotes does for the open song, for any key (docs/provenance-
+// plan.md P2: publishSong builds every pending song's annotations this way,
+// open or not). No CDN-bridge/stamp-adoption here (those only matter for
+// the song actually being opened right now); a caller that needs those uses
+// loadNotes instead.
+export async function annotationsFor(key) {
+  const base = key.replace(/\.midi?$/i, "");
+  let notes = [];
+  try {
+    let res = await readData("analysis", base + ".rollnotes.json", true);
+    if (!res.ok) res = await readData("analysis", base + ".rollnotes", true); // legacy
+    if (res.ok) notes = parseRollnotes(await res.text());
+  } catch (err) { /* no sidecar yet */ }
+  // version guard (docs/annotations-v2.md P3): this is the ONE place every
+  // publish/move reads a not-necessarily-open song's existing annotations
+  // before writing — refusing here, before any merge or write, is what
+  // "refuses to publish/overwrite" means for a file a newer Night Roll wrote
+  if (notes.readOnly) throw new Error(notes.lockReason || ROLLNOTES_LOCK_MSG);
+  notes = subtractTombstones(notes, key);
+  notes = mergeLocalAdditions(notes, key);
+  notes.sort((a, b) => (a.b1 - b.b1) || (a.q1 - b.q1));
+  return notes; // NOT resolved: resolveNote reads the OPEN song's meter (barTicks/beatTicks), which may not be key's own — a caller that needs .start (bakeTempos) resolves against key's own ppq/timesig itself (resolveNoteWith)
+}
+// resolveNote, but against an explicit ppq/timesig instead of the globally
+// open song's — for filling in a NOT-open song's own .start/.end (bakeTempos
+// needs it to place tempo: directives; annotationsFor itself never resolves,
+// since serialization doesn't need ticks at all).
+export function resolveNoteWith(n, ppq, ts) {
+  const bt = ts[0] * 4 / ts[1] * ppq, qt = ppq * 4 / ts[1];
+  n.start = (n.b1 - 1) * bt + (n.q1 - 1) * qt;
+  n.end = n.b2 ? (n.b2 - 1) * bt + (n.q2 || ts[0]) * qt : null;
+  return n;
 }
