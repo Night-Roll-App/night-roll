@@ -8386,6 +8386,7 @@ document.getElementById("rwbtn").addEventListener("click", () => {
   const reveal = () => {
     if (!home) { S.view.x = startX; return; }
     const sx = S.viewMode === "score" ? scoreTickToX(home) : S.RULER_W + home * pxPerTick() - S.view.x;
+    if (sx >= S.RULER_W && sx <= canvas.clientWidth - 40) return; // already on screen: leave the view alone
     S.view.x = Math.max(startX, S.view.x + sx - S.RULER_W - 40);
     clampView();
   };
