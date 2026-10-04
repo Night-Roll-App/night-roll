@@ -278,3 +278,10 @@ export function trackDirText(d) {
     (d.vol !== undefined && isFinite(d.vol) ? " vol=" + d.vol : "") + (d.pan !== undefined && isFinite(d.pan) ? " pan=" + d.pan : "") +
     (d.mute ? " mute=1" : "") + (d.solo ? " solo=1" : "") + (d.hide ? " hide=1" : "");
 }
+
+export function isDirective(n) { // anything that isn't a plain text note
+  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined ||
+            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio):/i.test(n.text));
+}
+// {t0, t1, y0, y1} when the last lasso reached INTO the ruler — only then are its bands "lasso'd"
+export const isCopyableAnno = n => n.chord || n.section || !isDirective(n);

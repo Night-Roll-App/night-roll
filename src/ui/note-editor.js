@@ -17,7 +17,7 @@ import { modeOfName } from "../theory/key.js";
 import { selEditItems } from "../model/selection.js";
 import { selClipObj } from "../render/tracks.js";
 import { clipboardHas } from "../model/selection.js";
-import { isDirective } from "../render/roll.js";
+import { isDirective } from "../model/rollnotes.js";
 import { annoInLasso } from "../render/roll.js";
 import { editableSong } from "../model/song.js";
 import { ownFolderPath } from "../model/provenance.js";

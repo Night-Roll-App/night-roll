@@ -7,6 +7,8 @@ import { barTicks } from "../model/rollnotes.js";
 import { beatTicks } from "../model/grid.js";
 import { drawAudioStrip } from "./tracks.js";
 import { appMode } from "../platform/mode.js";
+import { isDirective } from "../model/rollnotes.js";
+import { isCopyableAnno } from "../model/rollnotes.js";
 
 export const DRUM_LABELS = {35: "kick2", 36: "kick", 37: "stick", 38: "snare", 40: "snar2",
   41: "tomF", 42: "hat", 43: "tomL", 44: "hatP", 45: "tom", 46: "hatO",
@@ -201,10 +203,6 @@ export const AUDIO_STRIP_H = 18;
 // it; everything that offsets the note area by RULER_H keeps working as-is
 // because RULER_H now simply includes the strip too.
 export const STRIP_H = BASE_RULER_H;
-export function isDirective(n) { // anything that isn't a plain text note
-  return !!(n.section || n.chord || n.chopdir || n.keydir !== undefined ||
-            n.loopTo !== undefined || n.tempodir !== undefined || n.trackdir || n.audiodir || /^(timesig|key|tempo|track|lane|audio):/i.test(n.text));
-}
 export function activeNoteAt(tick) {
   let best = null;
   for (const n of S.rollnotes) {
@@ -482,8 +480,6 @@ export function drawRuler(W, H) {
   }
 }
 drawRuler = prof("drawRuler", drawRuler); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
-// {t0, t1, y0, y1} when the last lasso reached INTO the ruler — only then are its bands "lasso'd"
-export const isCopyableAnno = n => n.chord || n.section || !isDirective(n);
 export function annoInLasso(n, L) { // lane-precise: the band's own row must be inside the box, and its time
   if (!L || !isCopyableAnno(n)) return false;
   if (!(n.start < L.t1 && (n.b2 ? n.end : n.start + 1) > L.t0)) return false;
