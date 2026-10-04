@@ -1534,6 +1534,7 @@ import { initBase2 } from "./platform/base.js";
 import { initMode1 } from "./platform/mode.js";
 import { initPerf1 } from "./ui/perf.js";
 import { initPerf2 } from "./ui/perf.js";
+import { initSw1 } from "./platform/sw.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 initBase1();
  try {
@@ -1656,21 +1657,7 @@ initPublish3();
 initSheets8();
 
 initChrome16();
-// ---- service worker (Phase 0, 2026-09-26): offline launch from the Home
-// Screen; network-first for the page itself so a stale index.html can never
-// stick. ?sw=0 is the kill switch: unregister + drop the caches, for a device
-// that misbehaves. Secure contexts only (Pages is https; localhost counts).
-if (typeof navigator !== "undefined" && navigator.serviceWorker && typeof location !== "undefined" && S.APP_BASE) {
-  if (PERF_FLAGS.get("sw") === "0") {
-    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
-    if (typeof caches !== "undefined") caches.keys().then(ks => ks.forEach(k => { if (k.startsWith("night-roll-")) caches.delete(k); })).catch(() => {});
-    setInfo("offline support turned off on this device — reload without ?sw=0 to turn it back on");
-  } else {
-    navigator.serviceWorker.register(new URL("sw.js", S.APP_BASE).href, {scope: S.APP_BASE})
-      .then(reg => { const w = reg.active || reg.waiting || reg.installing; if (w && navigator.onLine !== false) w.postMessage("warm"); }) // every catalog song into the cache, in the background
-      .catch(err => console.warn("sw:", err.message));
-  }
-}
+initSw1();
 initSheets9();
 (async function boot() {
   // boot watchdog (docs/split-plan.md §4 step 0b): the inline classic
