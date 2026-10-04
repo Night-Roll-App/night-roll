@@ -72,3 +72,16 @@ export function buildSchedule() {
   });
   S.schedEvents.sort((a, b) => a.sec - b.sec);
 }
+
+export function albumStrip() { // the run's one visible body — text, paused dimming, shown iff a run exists
+  const el = document.getElementById("albumstrip");
+  if (!el) return;
+  if (!S.albumRun) { el.style.display = "none"; return; }
+  const {list, idx} = S.albumRun;
+  const cycling = !!(S.rangeSel && S.rangeSel.cycle && !S.rangeSel.off && S.rangeSel.b > S.rangeSel.a);
+  document.getElementById("albumtext").textContent =
+    (idx + 1) + "/" + list.length + " " + list[idx][0] +
+    (cycling ? " · cycling — album waits" : " · next: " + list[albumNextIdx(idx + 1, list.length)][0]);
+  el.classList.toggle("paused", !S.playing);
+  el.style.display = "";
+}
