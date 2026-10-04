@@ -155,6 +155,16 @@ Q9. (ASK LATER — module split phase 2 steps 3/4/4b/4c, 2026-10-04) iPad
     longer narrowed: synth, SF2, game voice, NES + one streamed console,
     clip at 0.5×, note preview, album auto-advance, metronome. (iPad
     mute → revert first, per the known-good-engine rule.)
+Q10. (ASK before deploying the Tetris repair, 2026-10-04) Game Boy › Tetris:
+    the song published as "A-Type Music (version 1.1)" was the v1.0 A-Type
+    (the rip's second .gbs was never captured — docs/investigations/
+    2026-10-04-gb-tetris-korobeiniki.md). The repair moves that .mid to
+    a-type-music-version-1-0 and puts the REAL v1.1 (Korobeiniki, from
+    DMG-TRA-1.gbs) under a-type-music-version-1-1. The repo holds no
+    annotations on it — but anything device-local on your iPad/Mac keyed
+    to albums/game-boy/tetris/a-type-music-version-1-1.mid (recent list,
+    local notes or edits) would attach to the new song. Did you write
+    anything on it locally? If yes, say so and I move it with the file.
 
 ## QUEUED, READY TO APPLY: SPC NON-voice misclassification fix (2026-10-01) — 12 scratch/ .mid files waiting on a real re-capture + Josh's apply
 Diagnosis: FF4 "Main Theme (Ocean)" voice 6 is a ~4s near-silent "ocean
@@ -7152,6 +7162,29 @@ Build after the module-split branch merges (they touch render/input code the spl
 
 ## QUEUED 2026-10-04 — Game Boy Tetris: Korobeiniki missing from our capture (Josh, Terminal #107–108)
 Josh found Korobeiniki in a Game Boy OST on YouTube, not in our Game Boy › Tetris album (17/17 GBS tracks captured; rip header "Tetris v1.0", Hirokazu Tanaka). Interval search (E B C D C B A A C E, any key, repeats collapsed) over every channel of every GB/NES Tetris capture: found ONLY in NES › Tetris (Bullet-Proof Software) track-01. "A-Type Music (version 1.1)" is a real, different song (Josh confirmed). Next: fetch another GB Tetris rip (Zophar GBS/m3u) and compare track lists/lengths — rip lacks it vs our capture garbled a track.
+RESOLVED 2026-10-04 (Fable, worktree branch; main session publishes): the rip
+lacked it — Zophar's pack is TWO .gbs files and the importer took only the
+first (docs/investigations/2026-10-04-gb-tetris-korobeiniki.md). Generic fix
++ review in docs/plans/2026-10-04-multi-file-chip-sets.md: parseM3u keeps
+each line's file, every chip file of a pick is imported, a non-first file's
+track carries nsf.tracks[base].vault (<slug>.<file slug><ext>), chipSource/
+album-order/applyM3uToAlbum/uploads honour it. Album repaired on the branch:
+the 17 v1.0 files byte-identical (the fixed importer reproduces them exactly;
+the two annotated tracks untouched), the mislabelled n=2 moved to
+a-type-music-version-1-0, Korobeiniki added as a-type-music-version-1-1
+(interval search hits pulse2 at 0 and 37; none in v1.0), track 3 of 18.
+Main session: archive game-boy/tetris.dmg-tra-1.gbs (see the plan's report),
+then push. Q10 before deploy.
+
+## QUEUED 2026-10-04 — archive root audit (found in the multi-file review)
+commitImports (the in-app publish) uploaded chip files to the archive ROOT
+(`slug + ext`, `slug/<base>` for per-file sets) from the 2026-09-29
+by-console reorganization until 2026-10-04, while album.json's vault and
+every reader fetch `<console>/…` — any album published from the app in that
+window plays chip audio only on the importing device. Fixed in the code
+(one upload list at chipVaultMeta/chipVaultFile paths). To do: list the
+archive root (`gh api repos/Night-Roll-App/nsf-archive/contents/`) for
+stray files and move them under their console folders.
 
 ## QUEUED 2026-10-04 — keyboard: stretch keys when the whole piano fits
 On a very wide window (3440 px) all 52 whites at 44 px take 2288 px and the panel's right third is empty. When the full range fits, widen the keys to fill (keep 44 px as the minimum). Small; main's src/app.js instGeom / ui/piano.js pianoKeyW.

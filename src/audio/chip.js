@@ -8,6 +8,7 @@ import { EDITION } from "../edition.js";
 import { trackGain } from "./engine.js";
 import { albumMetaFor } from "../model/provenance.js";
 import { isCaptureKey } from "../model/provenance.js";
+import { slugify } from "../model/provenance.js";
 import { idbNsfGet } from "../platform/storage.js";
 import { idbNsfPut } from "../platform/storage.js";
 import { logErr } from "../hooks.js";
@@ -415,9 +416,12 @@ export function chipCleanupAfterFailure(kind) {
 }
 export async function chipSource() { // {bytes, n, secs} for the current song, or null
   if (chipTrackNo() !== null && (S.nsfSess.bytes || S.nsfSess.rows[chipTrackNo()].bytes)) {
-    const n = chipTrackNo();
+    const n = chipTrackNo(), row = S.nsfSess.rows[n];
     const libs = {}; for (const [k, f] of Object.entries(S.nsfSess.libs || {})) libs[k] = f.bytes; // the set's shared library, by lower-cased name
-    return {bytes: S.nsfSess.bytes || S.nsfSess.rows[n].bytes, n: S.nsfSess.bytes ? n : 1, secs: S.nsfSess.rows[n].secs || 60, chip: S.nsfSess.chip || "nsf", libs};
+    // a row's own file first: a per-file set's track, or a track of a set's
+    // second chip file (both carry bytes); the row id is only the slot when
+    // the row says nothing else (openChipImport sets slot on every row)
+    return {bytes: row.bytes || S.nsfSess.bytes, n: row.slot != null ? row.slot : (S.nsfSess.bytes ? n : 1), secs: row.secs || 60, chip: S.nsfSess.chip || "nsf", libs};
   }
   if (!S.songKey) return null;
   const base = S.songKey.split("/").pop().replace(/\.mid$/, "");
@@ -441,12 +445,17 @@ export async function chipSource() { // {bytes, n, secs} for the current song, o
   if (typeof tr === "number") tr = {n: tr};
   const vault = (meta && meta.nsf && meta.nsf.vault) || "";
   const kind = (rec && rec.chip) || (meta && meta.nsf && meta.nsf.chip) || (/\.gbs$/i.test(vault) ? "gbs" : "nsf");
-  const perFile = !!(meta && meta.nsf && meta.nsf.perFile) || !!(tr && tr.bytes);
-  let bytes = perFile ? tr.bytes : rec && rec.bytes;
-  if (!bytes && meta && meta.nsf && meta.nsf.vault) { // fall back to the vault, then cache
+  // a track of a set's non-first chip file (chipExtraVault) names its own
+  // archive file and keeps its own bytes in its track entry — like a per-file
+  // track, except its n is a real slot in that file, never 1
+  const own = !!(tr && tr.vault);
+  const perFile = !own && (!!(meta && meta.nsf && meta.nsf.perFile) || !!(tr && tr.bytes));
+  let bytes = perFile || own ? tr.bytes : rec && rec.bytes;
+  if (!bytes && (own || (meta && meta.nsf && meta.nsf.vault))) { // fall back to the vault, then cache
     console.log("[chip] fetching the console file from the archive…");
     try {
-      if (perFile) { bytes = await vaultFetch(chipVaultFile(meta.nsf, base)); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
+      if (own) { bytes = await vaultFetch(tr.vault); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
+      else if (perFile) { bytes = await vaultFetch(chipVaultFile(meta.nsf, base)); if (bytes) idbNsfPut(slug, null, {[base]: {...tr, bytes}}, kind); }
       else { bytes = await vaultFetch(meta.nsf.vault); if (bytes) idbNsfPut(slug, bytes, meta.nsf.tracks || {}, kind); }
     } catch (err) { // say WHY and stand down to synthesized voices — never a stuck banner
       chip.fail = {key: S.songKey, why: "the console file didn't download (" + err.message + ")"};
@@ -465,6 +474,21 @@ export async function chipSource() { // {bytes, n, secs} for the current song, o
   return {bytes, n: perFile ? 1 : tr.n, secs: tr.secs || 75, chip: kind, libs: libs || {}};
 }
 export function chipVaultFile(meta, base) { return meta.perFile ? meta.vault + base + chipExt(meta.chip) : meta.vault; }
+// A one-file-per-album kind whose rip ships MORE than one file (Zophar's GB
+// Tetris: DMG-TRA-0.gbs v1.0 + DMG-TRA-1.gbs v1.1): the first file by name is
+// nsf.vault as always; each other file sits beside it as
+// <console>/<slug>.<file slug><ext> ("game-boy/tetris.dmg-tra-1.gbs"), and a
+// track captured from it carries that path in nsf.tracks[base].vault. The dot
+// keeps the name from ever being another album's slug (slugs have no dots —
+// "tetris-2.gbs" would be Tetris 2's), and the whole name stays unique under
+// instrumentsFolder ("<vault>.instruments/"). chipVaultFileSlug reads the
+// file slug back ("dmg-tra-1"; null for a plain vault) — what a playlist
+// line's own file name is matched against (m3uFileSlug, album-order.mjs).
+export function chipExtraVault(meta, fileName) {
+  const ext = meta.vault.match(/\.[a-z0-9]+$/i);
+  return meta.vault.replace(/\.[a-z0-9]+$/i, "") + "." + slugify(fileName.replace(/\.[a-z0-9]+$/i, "")) + (ext ? ext[0] : "");
+}
+export function chipVaultFileSlug(vault) { const m = (vault || "").split("/").pop().match(/^[^.]+\.([^.]+)\.[a-z0-9]+$/i); return m ? m[1] : null; }
 export function chipExt(kind) { return (CHIPS[kind] || CHIPS.nsf).ext; }
 // {chip, M: pipeline modules, nsf: parsed file, rows: [{st, open}]} — the name predates the second chip
 // One chip per descriptor (2026-09-27, Game Boy joins the NES): the GB

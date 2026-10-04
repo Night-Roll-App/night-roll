@@ -2796,7 +2796,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Analyze ▸",
     "VoiceOver",
     "Chip stream (experimental)",
-    "Game order",
+    "Game order", "more than one chip file",
     "without touching your cycle",
     "drag the tag to scrub",
     "Play</b> / <b>Scroll", "two-finger", "‹ ›</b> octave buttons", "lock</b> pins the keys", "Sustain</b> is the piano's pedal",

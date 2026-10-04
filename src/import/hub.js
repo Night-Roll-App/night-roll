@@ -1,6 +1,8 @@
 import { FOLDER_NAMES } from "../model/catalog.js";
 import { S } from "../state.js";
 import { renameImportDraft } from "./capture.js";
+import { impRowId } from "./capture.js";
+import { chipVaultFileSlug } from "../audio/chip.js";
 import { setInfoImpl as setInfo } from "../ui/chrome.js";
 import { albumMetaFor } from "../model/provenance.js";
 import { isCaptureKey } from "../model/provenance.js";
@@ -121,16 +123,21 @@ export function decodeM3u(bytes) {
   try { return new TextDecoder("utf-8", {fatal: true}).decode(bytes); }
   catch { return new TextDecoder("windows-1252").decode(bytes); }
 }
-export function parseM3u(text) { // ordered [{n, title}] — playlist order IS album order
+export function parseM3u(text) { // ordered [{file, n, title, len}] — playlist order IS album order
   const list = [];
   for (const line of text.split(/\r?\n/)) {
     // NSF and GBS rips share the line shape; the length is M:SS (Game Boy rips)
     // or H:MM:SS(.fff) (every Zophar NES rip). Read as M:SS, "0:01:16" was 1 s:
     // every track a "jingle", captured 12 s, never retried (2026-09-27, the
     // Castlevania batch — Stalker came back 12 s of a 64 s song).
-    const m = line.match(/::(?:NSF|GBS),(\d+),(.+?),(?:(\d+):)?(\d+):(\d\d(?:\.\d+)?)/);
+    // The part before "::" is the chip file the line belongs to. A rip can
+    // hold more than one (Zophar's GB Tetris: DMG-TRA-0.gbs v1.0 and
+    // DMG-TRA-1.gbs v1.1, with ONE line naming the second) — dropping it
+    // applied that line to the first file's slot 2, over the v1.0 title
+    // (docs/investigations/2026-10-04-gb-tetris-korobeiniki.md).
+    const m = line.match(/^(.*?)::(?:NSF|GBS),(\d+),(.+?),(?:(\d+):)?(\d+):(\d\d(?:\.\d+)?)/);
     if (!m) continue;
-    const raw = m[2].replace(/\\,/g, ",");
+    const raw = m[3].replace(/\\,/g, ",");
     // split only OUTSIDE brackets: "Bloody Tears (Street - Day time BGM)" is
     // one title, not "Bloody Tears (Street" + "Day time BGM)" (Castlevania II,
     // 2026-09-29 — the song came out as "Day time BGM)")
@@ -150,15 +157,37 @@ export function parseM3u(text) { // ordered [{n, title}] — playlist order IS a
     // (no track 0 in sight) still lands on the right subsong.
     const gb = m[0].includes("::GBS,");
     const title = (gb && parts.length >= 2 ? parts[0] : parts.length >= 3 ? parts.slice(2).join(" - ") : parts[parts.length - 1]).trim();
-    if (title) list.push({n: +m[1] + (gb ? 1 : 0), title, len: (+m[3] || 0) * 3600 + +m[4] * 60 + +m[5]});
+    if (title) list.push({file: m[1].trim() || null, n: +m[2] + (gb ? 1 : 0), title, len: (+m[4] || 0) * 3600 + +m[5] * 60 + +m[6]});
   }
   return list;
 }
+// A playlist line's file, as a slug ("DMG-TRA-1.gbs" → "dmg-tra-1"): the
+// half of chipExtraVault's name that identifies a set's non-first file, so a
+// line can be matched to the album track whose nsf.tracks[base].vault ends
+// in ".dmg-tra-1.gbs". Null when the line names no file.
+export function m3uFileSlug(file) { return file ? slugify(file.replace(/\.[a-z0-9]+$/i, "")) : null; }
+// album.json's (or the device record's) nsf.tracks → the two lookups a
+// playlist line resolves through: a line naming a non-first file matches a
+// track with that file's slug in its own vault; every other line matches a
+// track with no vault of its own. Lets the same n live once per chip file.
+export function m3uTrackKeys(tracks) {
+  const byN = {}, byFile = {};
+  for (const [base, t] of Object.entries(tracks)) {
+    const n = typeof t === "number" ? t : t && t.n;
+    if (n == null) continue;
+    const fs = chipVaultFileSlug(t && t.vault);
+    if (fs) { if (byFile[fs + "::" + n] === undefined) byFile[fs + "::" + n] = base; }
+    else if (byN[n] === undefined) byN[n] = base;
+  }
+  return {byN, byFile};
+}
+export function m3uTrackFor(keys, line) { const fs = m3uFileSlug(line.file); return (fs && keys.byFile[fs + "::" + line.n]) || keys.byN[line.n] || null; }
 export function applyM3uNames(list) {
   if (!S.nsfSess) return 0;
   let applied = 0;
-  for (const {n, title} of list) {
-    const row = S.nsfSess.rows[n];
+  for (const e of list) {
+    const {title} = e;
+    const row = S.nsfSess.rows[impRowId(e, list)];
     if (!row) continue;
     row.name.value = title;
     if (row.key) { // captured already: rename the draft in place
@@ -181,11 +210,12 @@ export async function applyM3uToAlbum(list) {
   let tracks = meta && meta.nsf && meta.nsf.tracks;
   if (!tracks && isCaptureKey(S.songKey)) { const rec = await idbNsfGet(dir.split("/").pop()); tracks = rec && rec.tracks; } // unpublished: the device record
   if (!tracks) { setInfo("⚠ this album has no chip slot numbers to match the playlist against"); return 0; }
-  const byN = {};
-  for (const [base, t] of Object.entries(tracks)) { const n = typeof t === "number" ? t : t && t.n; if (n != null && byN[n] === undefined) byN[n] = dir + "/" + base + ".mid"; }
+  const keys = m3uTrackKeys(tracks);
   const local = {}, published = {};
-  for (const {n, title} of list) {
-    const key = byN[n]; if (!key || !title) continue;
+  for (const e of list) {
+    const base = m3uTrackFor(keys, e), title = e.title;
+    if (!base || !title) continue;
+    const key = dir + "/" + base + ".mid";
     const draft = localStorage.getItem(draftStoreKey(key));
     if (draft !== null && !(JSON.parse(draft) || {}).savedStamp) local[key] = title; else if (catalogHas(key)) published[key] = title;
   }
@@ -257,9 +287,15 @@ export async function openPickedFiles(loaded) { // [{name, bytes}] from the pick
       await importAudioFiles(audios.map(x => ({name: x.name, bytes: x.bytes, type: ""})));
       if (freshSong) setInfo("new song — Edit → Pencil to write notes against the recording. It lives on this device until Save.");
     } else if (nsfs.length) { // a chip-music file (NSF or GBS) is an album by itself
-      if (rest.length > 1 && !CHIPS[chipKindOf(nsfs[0].bytes, nsfs[0].name)].perFile) setInfo("importing the chip file; pick MIDI files separately from other formats");
+      // every chip file of the first one's kind, in name order (numeric, so
+      // DMG-TRA-0 precedes DMG-TRA-1 and "2" precedes "10"): a per-file set's
+      // tracks, or — for a one-file-per-album kind — a rip that ships more
+      // than one file (two ROM revisions). The first by name is the album's
+      // vault; the importer used to take nsfs[0] alone and silently drop the rest.
       const kind = chipKindOf(nsfs[0].bytes, nsfs[0].name);
-      await openChipImport(kind, nsfs[0].bytes, nsfs[0].name, names, CHIPS[kind].perFile ? nsfs.filter(x => chipKindOf(x.bytes, x.name) === kind) : null);
+      const same = nsfs.filter(x => chipKindOf(x.bytes, x.name) === kind).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+      if (rest.length > same.length) setInfo("importing the " + CHIPS[kind].label + " file" + (same.length === 1 ? "" : "s") + "; pick other formats separately");
+      await openChipImport(kind, same[0].bytes, same[0].name, names, same);
     } else if (sf2s.length) { // a SoundFont: parse, keep a device copy, push to the archive — its presets become track voices, no song open needed
       if (sf2s.length < rest.length) setInfo("importing the SoundFont" + (sf2s.length === 1 ? "" : "s") + "; pick other formats separately");
       for (const f of sf2s) await importSf2File(f);

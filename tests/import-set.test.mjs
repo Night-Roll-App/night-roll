@@ -100,3 +100,35 @@ test("import-set: argument parsing", () => {
   assert.equal(o.src, "x.zip"); assert.equal(o.slug, "s"); assert.equal(o.title, "T"); assert.equal(o.console, "nes"); assert.equal(o.publish, true); assert.equal(o.secs, 30);
   assert.throws(() => parseArgs(["a", "b"]), /unexpected argument b/);
 });
+
+// A rip with more than one chip file of a one-file-per-album kind (Zophar's
+// GB Tetris ships DMG-TRA-0.gbs v1.0 and DMG-TRA-1.gbs v1.1; one playlist
+// line names the second): every file is captured, each line lands on the
+// file it names, the first file is the album's vault and a track from the
+// other carries its own archive path (nsf.tracks[base].vault) — both files
+// are uploaded. docs/plans/2026-10-04-multi-file-chip-sets.md.
+test("import-set: two chip files with one playlist — each line on its own file, the second file's track keeps its own vault, both uploaded", async () => {
+  const src = mkdtempSync(path.join(tmpdir(), "nr-set-")), out = mkdtempSync(path.join(tmpdir(), "nr-out-"));
+  writeFileSync(path.join(src, "a.nsf"), makeTestNSF());
+  writeFileSync(path.join(src, "b.nsf"), makeTestNSFVibratoPad());
+  writeFileSync(path.join(src, "01 Tune A.m3u"), "a.nsf::NSF,1,Game - Nobody - Tune A,0:08\n");
+  writeFileSync(path.join(src, "02 Pad B.m3u"), "b.nsf::NSF,1,Game - Nobody - Pad B,0:08\n");
+  const lines = [];
+  const res = await importSet({src, slug: "two-files", out, publish: false}, s => lines.push(s));
+  const dir = path.join(out, "albums", "nes", "two-files");
+  assert.deepEqual(res.rows.map(r => [r.slot, r.file, r.title, r.st]), [[1, null, "Tune A", "done"], [1, "b.nsf", "Pad B", "done"]], "slot 1 of each file; the first file's rows carry no file of their own");
+  assert.ok(lines.some(l => /^  1  Pad B.*\[b\.nsf\]/.test(l)), "the report names the second file on its row: " + lines.join(" | "));
+  const files = readdirSync(dir).sort();
+  assert.ok(files.includes("tune-a.mid") && files.includes("pad-b.mid"), "one .mid per line, each titled by its own line: " + files.join(", "));
+  assert.notDeepEqual([...readFileSync(path.join(dir, "tune-a.mid"))], [...readFileSync(path.join(dir, "pad-b.mid"))], "two different files, two different captures");
+  const meta = JSON.parse(readFileSync(path.join(dir, "album.json"), "utf8"));
+  assert.equal(meta.nsf.vault, "nes/two-files.nsf", "the first file by name is the album's vault, as always");
+  assert.deepEqual(Object.keys(meta.nsf.tracks).sort(), ["pad-b", "tune-a"]);
+  assert.equal(meta.nsf.tracks["tune-a"].vault, undefined, "a track of the album's own file names no vault");
+  assert.equal(meta.nsf.tracks["tune-a"].n, 1);
+  assert.equal(meta.nsf.tracks["pad-b"].vault, "nes/two-files.b.nsf", "chipExtraVault: <console>/<slug>.<file slug><ext>");
+  assert.equal(meta.nsf.tracks["pad-b"].n, 1, "the slot inside ITS file, not a row id");
+  assert.ok(!("bytes" in meta.nsf.tracks["pad-b"]), "the file itself never enters album.json");
+  assert.deepEqual(res.uploads, ["nes/two-files.nsf", "nes/two-files.b.nsf"], "both files go to the archive, each at the path its tracks read");
+  rmSync(src, {recursive: true, force: true}); rmSync(out, {recursive: true, force: true});
+});

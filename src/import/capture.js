@@ -49,7 +49,8 @@ import { setOrigin } from "../model/provenance.js";
 import { LINK_SONGS } from "../platform/base.js";
 import { serializeNotesList } from "../model/rollnotes.js";
 import { idbNsfGet } from "../platform/storage.js";
-import { chipExt } from "../audio/chip.js";
+import { chipVaultFile } from "../audio/chip.js";
+import { chipExtraVault } from "../audio/chip.js";
 import { albumMetaCache } from "../model/provenance.js";
 import { manifestPlace } from "../sync/publish.js";
 import { albumTitleFor } from "../model/provenance.js";
@@ -105,6 +106,26 @@ export function impDisplayTitle(d, base) {
 // the panel keeps painting its rows (hidden or not), the ⏳ list shows the
 // same items, and a reload marks a dead run interrupted with its counts.
 export function impTrackLabel(e) { return (e && (e.title || e.name)) || ("track " + (e ? e.n : "?")); }
+// Session rows are keyed by ONE number everywhere (impCapture, chipTrackNo,
+// the jobs list, applyM3uNames). A set with several chip files repeats slot
+// numbers, so the row id is offset(file) + slot, the first file's offset
+// being 0 — a one-file set's ids ARE its slots, as they always were. A
+// playlist line resolves to a row through its own file name. A line naming
+// a file that was not picked is FOREIGN (-1, no row) when the playlist
+// names any picked file at all — the GB Tetris shape: pick DMG-TRA-0.gbs
+// with all 18 m3us and line 03 (DMG-TRA-1.gbs) used to land on slot 2 over
+// the v1.0 title. A playlist that names none of the picked files (a rip
+// whose m3u spells the file name differently) applies to the first file as
+// it always did; a line naming no file is the first file's.
+export function impFileIndex(fileName, list) {
+  const files = S.nsfSess && S.nsfSess.files;
+  if (!files || !fileName) return 0;
+  const i = files.findIndex(f => f.name.toLowerCase() === fileName.toLowerCase());
+  if (i >= 0) return i;
+  const known = f => files.some(x => x.name.toLowerCase() === String(f || "").toLowerCase());
+  return list && list.some(e => known(e.file)) ? -1 : 0;
+}
+export function impRowId(line, list) { const files = S.nsfSess && S.nsfSess.files; const fi = impFileIndex(line.file, list); return fi < 0 ? -1 : (files && files[fi] ? files[fi].offset : 0) + line.n; }
 
 export const SF2_SIZE_WARN = 50e6, SF2_SIZE_REFUSE = 95e6; // GitHub itself warns over 50 MB, rejects over 100 MB in the Contents API
 // File → Import…'s .sf2 route: parse it (tools/instruments/sf2.mjs), keep a copy on
@@ -334,7 +355,21 @@ export async function openChipImport(kind, bytes, name, m3uList, files) {
     const first = set[0].parsed;
     nsf = {name: first.game || name.replace(/\.[a-z0-9]+$/i, ""), artist: first.artist, songs: set.length};
   } else nsf = CHIPS[kind].parse(M)(bytes);
-  S.nsfSess = {chip: kind, M, nsf, bytes: perFile ? null : bytes, set, libs: perFile ? libFiles : null, rows: []};
+  // a one-file kind whose rip has several files (two ROM revisions): every
+  // file parsed, the first (the album's vault, parsed above — its refusal
+  // still throws) at offset 0, each next file's rows after the previous
+  // file's slots (impRowId). One file: fileSet is [that file], offset 0.
+  let fileSet = null;
+  if (!perFile) {
+    fileSet = [];
+    for (const f of (files && files.length ? files : [{name, bytes}])) {
+      if (f.bytes === bytes) { fileSet.push({name: f.name, bytes, parsed: nsf}); continue; }
+      try { fileSet.push({name: f.name, bytes: f.bytes, parsed: CHIPS[kind].parse(M)(f.bytes)}); }
+      catch (err) { setInfo("⚠ " + f.name + " not imported: " + err.message); }
+    }
+    let off = 0; for (const f of fileSet) { f.offset = off; off += f.parsed.songs; }
+  }
+  S.nsfSess = {chip: kind, M, nsf, bytes: perFile ? null : bytes, set, files: fileSet, libs: perFile ? libFiles : null, rows: []};
   document.getElementById("imptitle").textContent =
     ((nsf.name || name) + (nsf.artist && nsf.artist !== "<?>" ? " — " + nsf.artist : "")).toUpperCase();
   document.getElementById("impslug").value = slugify(nsf.name || name.replace(/\.(nsf|gbs|spc)$/i, ""));
@@ -344,12 +379,24 @@ export async function openChipImport(kind, bytes, name, m3uList, files) {
   // which 95 are sound effects; with a playlist we list only the songs, in
   // album order, pre-named. Without one: every slot, as before. A per-file
   // set is its own list: one row per file, the tag's title, its tagged length.
+  // Several chip files: a playlist line lands on the file it names (a
+  // foreign line — impFileIndex — is dropped and the status names its file);
+  // without a playlist each file lists its own slots, the non-first files'
+  // rows titled by their file so two "track-02"s never collide. Row entries
+  // carry {n: row id, slot, file: index into fileSet}.
+  const strays = new Set();
+  const fileBase = f => f.name.replace(/\.[a-z0-9]+$/i, "");
   S.nsfSess.trackList = perFile
-    ? set.map((f, i) => { const t = M.parseTrackName ? M.parseTrackName(f.name) : null; return {n: i + 1, title: f.parsed.name || (t && t.title) || f.name.replace(/\.[a-z0-9]+$/i, ""), len: f.parsed.tags && f.parsed.tags.seconds || 0}; })
+    ? set.map((f, i) => { const t = M.parseTrackName ? M.parseTrackName(f.name) : null; return {n: i + 1, slot: 1, title: f.parsed.name || (t && t.title) || f.name.replace(/\.[a-z0-9]+$/i, ""), len: f.parsed.tags && f.parsed.tags.seconds || 0}; })
     : m3uList && m3uList.length
-    ? m3uList.filter(e => e.n >= 1 && e.n <= nsf.songs)
-    : Array.from({length: nsf.songs}, (_, i) => ({n: i + 1, title: null}));
-  for (const {n, title} of S.nsfSess.trackList) {
+    ? m3uList.map(e => {
+        const fi = impFileIndex(e.file, m3uList);
+        if (fi < 0) { strays.add(e.file); return null; }
+        return {n: fileSet[fi].offset + e.n, slot: e.n, file: fi, title: e.title, len: e.len};
+      }).filter(e => e && e.slot >= 1 && e.slot <= fileSet[e.file].parsed.songs)
+    : fileSet.flatMap((f, fi) => Array.from({length: f.parsed.songs}, (_, i) => ({n: f.offset + i + 1, slot: i + 1, file: fi, title: fi ? fileBase(f) + " track-" + String(i + 1).padStart(2, "0") : null})));
+  for (const e of S.nsfSess.trackList) {
+    const {n, title} = e;
     const row = document.createElement("div");
     row.className = "row";
     const lbl = document.createElement("input"); // editable: type the real name once you recognize the tune
@@ -377,10 +424,18 @@ export async function openChipImport(kind, bytes, name, m3uList, files) {
     });
     row.append(lbl, st, cap, open);
     list.appendChild(row);
-    S.nsfSess.rows[n] = {name: lbl, st, open, cap, parsed: set ? set[n - 1].parsed : null, bytes: set ? set[n - 1].bytes : null};
+    // a row of a non-first file carries that file (parsed, bytes, name) so
+    // capture and chip audio run it, not the album's; first-file rows leave
+    // parsed/bytes null and fall through to S.nsfSess.nsf/.bytes as always
+    const extra = e.file ? fileSet[e.file] : null;
+    S.nsfSess.rows[n] = {name: lbl, st, open, cap, slot: e.slot != null ? e.slot : n, file: e.file || 0, srcName: extra ? extra.name : null,
+      parsed: set ? set[n - 1].parsed : extra ? extra.parsed : null, bytes: set ? set[n - 1].bytes : extra ? extra.bytes : null};
   }
   document.getElementById("impall").textContent = "Capture all"; // fresh import, fresh verb
-  if (m3uList && m3uList.length) setInfo(S.nsfSess.trackList.length + " songs listed from the playlist (of " + nsf.songs + " NSF slots) — names loaded.");
+  const slotsOf = fileSet && fileSet.length > 1 ? fileSet.map(f => f.name + " (" + f.parsed.songs + ")").join(" + ") : nsf.songs + " NSF slots";
+  if (m3uList && m3uList.length) setInfo(S.nsfSess.trackList.length + " songs listed from the playlist (of " + slotsOf + ") — names loaded." +
+    (strays.size ? " ⚠ the playlist also names " + [...strays].join(", ") + ", not among the picked files — those lines were skipped (pick that file too to import its songs)." : ""));
+  else if (fileSet && fileSet.length > 1) setInfo(fileSet.length + " " + CHIPS[kind].label + " files, no playlist: every slot of each is listed on its own (" + slotsOf + ").");
   const sheet = document.getElementById("importsheet");
   sheet.classList.add("on");
   requestAnimationFrame(() => {
@@ -393,7 +448,7 @@ export async function openChipImport(kind, bytes, name, m3uList, files) {
   const missingLibs = libNames.filter(n => !(S.nsfSess.libs && S.nsfSess.libs[n.toLowerCase()]));
   const pace = kind === "gbs" ? (nsf.timerMode ? " · Game Boy, timer " + Math.round(nsf.playRateHz) + " Hz" : " · Game Boy") : kind === "spc" ? " · Super Nintendo (synth voices; no console audio yet)" : kind === "vgm" ? " · Genesis (synth voices; no console audio yet)" : kind === "psf" ? " · PlayStation (synth voices; no console audio yet)" + (missingLibs.length ? " — ⚠ pick the library file too: " + missingLibs.join(", ") : "") : kind === "psf2" ? " · PlayStation 2 (synth voices; no console audio yet)" + (missingLibs.length ? " — ⚠ pick the library file too: " + missingLibs.join(", ") : "") : kind === "usf" ? " · Nintendo 64 (synth voices; no console audio yet)" + (missingLibs.length ? " — ⚠ pick the library file too: " + missingLibs.join(", ") : "") : "";
   { const b = document.getElementById("impcommit"); b.textContent = publishLabel("kept tracks"); b.disabled = !publishDest(); }
-  impStatus(nsf.songs + " tracks" + pace + " — Capture all, audition, then publish the keepers.");
+  impStatus((fileSet && fileSet.length > 1 ? fileSet.reduce((a, f) => a + f.parsed.songs, 0) + " tracks in " + fileSet.length + " files" : nsf.songs + " tracks") + pace + " — Capture all, audition, then publish the keepers.");
 }
 export function openNsfImport(bytes, name, m3uList) { return openChipImport("nsf", bytes, name, m3uList); }
 export async function impCapture(n, api, i) { // api/i: the capture job and this track's item, when run as one
@@ -410,6 +465,10 @@ export async function impCapture(n, api, i) { // api/i: the capture job and this
   const tagged = !!CHIPS[S.nsfSess.chip || "nsf"].tagged;
   if (meta && meta.len) secs = tagged ? Math.max(12, Math.min(300, Math.ceil(meta.len + 1))) : Math.max(12, Math.min(300, Math.ceil(meta.len * 2.5 + 4)));
   const row = S.nsfSess.rows[n];
+  const slot = row.slot != null ? row.slot : n; // the song index inside the row's own chip file (impRowId: the row id is offset + slot)
+  // a row of a set's non-first file: its own archive path (chipExtraVault),
+  // fixed here because the slug is typed before capture, not at listing
+  row.vault = row.file ? chipExtraVault(chipVaultMeta(slug, S.nsfSess.chip), row.srcName) : null;
   row.st.textContent = "capturing…";
   row.open.style.display = "none";
   item({st: "running", pct: 0, msg: "capturing…"});
@@ -425,13 +484,13 @@ export async function impCapture(n, api, i) { // api/i: the capture job and this
   const pct = tick("");
   try {
     const own = CHIPS[S.nsfSess.chip || "nsf"].capture; // a sequence reader (PSF) writes its MIDI itself
-    let cap = own ? await own(S.nsfSess.M, row.parsed, secs, pct, S.nsfSess) : await captureChipTrack(S.nsfSess.chip, S.nsfSess.M, row.parsed || S.nsfSess.nsf, n, secs, pct);
+    let cap = own ? await own(S.nsfSess.M, row.parsed, secs, pct, S.nsfSess) : await captureChipTrack(S.nsfSess.chip, S.nsfSess.M, row.parsed || S.nsfSess.nsf, slot, secs, pct);
     // the detector needs intro + TWO full passes in frame — a 35s loop with an
     // intro already busts 75s. No loop found? ONE retry straight at the 300s
     // ceiling (a doubling ladder just re-emulates the same song extra times)
     if (cap && !cap.looped && secs < 300 && !isJingle && !tagged && !own) {
       secs = 300;
-      cap = await captureChipTrack(S.nsfSess.chip, S.nsfSess.M, row.parsed || S.nsfSess.nsf, n, secs, tick("no loop — 300s: "));
+      cap = await captureChipTrack(S.nsfSess.chip, S.nsfSess.M, row.parsed || S.nsfSess.nsf, slot, secs, tick("no loop — 300s: "));
     }
     if (!cap) { row.st.textContent = "silent — nothing to keep"; item({st: "silent", msg: "silent"}); return; }
     let raw = row.name.value.trim() || "track-" + String(n).padStart(2, "0");
@@ -486,7 +545,8 @@ export async function impCapture(n, api, i) { // api/i: the capture job and this
     if (chip.key === key) { chip.key = null; updateChipBtn(); } // re-capture invalidates rendered audio
     // NSF bytes + track number persist on this device so chip audio outlives
     // the session (never the repo — *.nsf is gitignored ROM music)
-    if (S.nsfSess.bytes) idbNsfPut(slug, S.nsfSess.bytes, {[base]: {n, secs: cap.secs}}, S.nsfSess.chip);
+    if (row.vault) idbNsfPut(slug, null, {[base]: {n: slot, secs: cap.secs, vault: row.vault, bytes: row.bytes}}, S.nsfSess.chip); // a non-first file's track: its file rides in its entry, the album's record bytes stay the first file's
+    else if (S.nsfSess.bytes) idbNsfPut(slug, S.nsfSess.bytes, {[base]: {n: slot, secs: cap.secs}}, S.nsfSess.chip);
     else if (row.bytes && CHIPS[S.nsfSess.chip || "nsf"].keepBytes) idbNsfPut(slug, null, {[base]: {n: 1, secs: cap.secs, bytes: row.bytes}}, S.nsfSess.chip); // a per-file set with a renderer: the track's own file rides in its entry (64 KB an .spc)
     if (S.nsfSess.libs && Object.keys(S.nsfSess.libs).length && S.nsfSess.libsStored !== slug) { // the set's shared library, once: chip audio after a reload needs it too
       const libs = {}; for (const [k, f] of Object.entries(S.nsfSess.libs)) libs[k] = f.bytes;
@@ -621,57 +681,43 @@ export async function commitImports(status, keys) { // ONE commit for the whole 
       if (rec && rec.tracks) for (const k of keys) {
         const base = k.split("/").pop().replace(/\.mid$/, "");
         const t = rec.tracks[base];
-        if (k.split("/")[2] === slug && t !== undefined) nsfTracks[base] = typeof t === "object" && t && t.bytes ? {n: t.n, secs: t.secs} : t; // the file itself never enters album.json
+        if (k.split("/")[2] === slug && t !== undefined) nsfTracks[base] = typeof t === "object" && t && t.bytes ? {n: t.n, secs: t.secs, ...(t.vault ? {vault: t.vault} : {})} : t; // the file itself never enters album.json; a non-first file's track keeps its own archive path
       }
-      const chipKind = (rec && rec.chip) || "nsf", vaultFile = slug + chipExt(chipKind);
+      const chipKind = (rec && rec.chip) || "nsf";
       const perFile = !!(CHIPS[chipKind] && CHIPS[chipKind].perFile);
       const trackFiles = perFile && rec && rec.tracks ? Object.entries(rec.tracks).filter(([b, t]) => nsfTracks[b] && t && t.bytes) : [];
       const dir = keys.find(k => k.split("/")[2] === slug).replace(/\/[^/]+\.mid$/, "");
       const libFiles = rec && rec.libs ? Object.entries(rec.libs).map(([name, bytes]) => ({name, file: slugify(name.replace(/\.[a-z0-9]+$/i, "")) + (name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase(), bytes})) : [];
       songFiles.push(await computeImportAlbumJson(slug, h, overrides, nsfTracks, chipKind, dir, libFiles.map(l => ({name: l.name, file: l.file}))));
-      if (((rec && rec.bytes) || trackFiles.length) && !folderActive() && !cfg().nsfRepo) status("No game files & instruments repo in Settings → GitHub — the game files stay on this device (the game's own sound here; synth voices elsewhere). Settings → GitHub → create mine sets one up.");
-      if (trackFiles.length && !folderActive() && cfg().nsfRepo) { // a per-file set: one archive file per track, only the ones not there yet
+      // the archive: every file this batch's chip audio reads, at the path the
+      // reader fetches (chipVaultMeta / chipVaultFile / nsf.tracks[].vault —
+      // console folder + slug since the 2026-09-29 reorganization; these
+      // uploads went to the archive ROOT until 2026-10-04, where no reader
+      // looked). Check-before-PUT: a second publish of the album skips what is
+      // there; one list, one loop, so a set's second chip file and a per-file
+      // set's tracks and a library all take the same road. Folder mode: the
+      // chip files stay in this device's IndexedDB.
+      const vmeta = chipVaultMeta(slug, chipKind), uploads = [];
+      const upload = (file, bytes, label) => { if (file && bytes && !uploads.some(u => u.file === file)) uploads.push({file, bytes, label}); };
+      if (rec && rec.bytes) upload(vmeta.vault, rec.bytes, CHIPS[chipKind].label);
+      for (const [b, t] of trackFiles) upload(chipVaultFile(vmeta, b), t.bytes, CHIPS[chipKind].label + " " + b);
+      if (rec && rec.tracks) for (const [b, t] of Object.entries(rec.tracks)) if (nsfTracks[b] && t && t.vault) upload(t.vault, t.bytes, CHIPS[chipKind].label + " " + t.vault.split("/").pop());
+      for (const l of libFiles) upload(vmeta.vault + l.file, l.bytes, "the set's library " + l.file + " (" + Math.round(l.bytes.length / 1024) + " KB)");
+      if (uploads.length && !folderActive() && !cfg().nsfRepo) status("No game files & instruments repo in Settings → GitHub — the game files stay on this device (the game's own sound here; synth voices elsewhere). Settings → GitHub → create mine sets one up.");
+      if (uploads.length && !folderActive() && cfg().nsfRepo) {
         let up = 0, failed = 0;
-        for (const [b, t] of trackFiles) {
-          const file = slug + "/" + b + chipExt(chipKind);
+        for (const u of uploads) {
           try {
-            const chk = await fetch(nsfURL(file) + "?t=" + Date.now(), {cache: "no-cache"});
+            const chk = await fetch(nsfURL(u.file) + "?t=" + Date.now(), {cache: "no-cache"});
             if (chk.ok) continue;
-            status("Uploading " + CHIPS[chipKind].label + " " + (++up) + "/" + trackFiles.length + " to the archive…");
-            const put = await fetch(repoApi("nsf") + file, {method: "PUT", headers: h, body: JSON.stringify({
-              message: CHIPS[chipKind].label + " for " + slug + "/" + b + " (chip audio)", branch: "main",
-              content: midiBase64(t.bytes instanceof Uint8Array ? t.bytes : new Uint8Array(t.bytes))})});
+            status("Uploading " + u.label + " to the archive (" + (++up) + "/" + uploads.length + ")…");
+            const put = await fetch(repoApi("nsf") + u.file, {method: "PUT", headers: h, body: JSON.stringify({
+              message: CHIPS[chipKind].label + " for " + slug + " (chip audio)", branch: "main",
+              content: midiBase64(u.bytes instanceof Uint8Array ? u.bytes : new Uint8Array(u.bytes))})});
             if (!put.ok) throw new Error("HTTP " + put.status);
-          } catch (err) { failed++; }
+          } catch (err) { failed++; status("⚠ " + u.label + " upload failed (" + err.message + ") — chip audio for it stays device-local"); }
         }
-        if (failed) status("⚠ " + failed + " " + CHIPS[chipKind].label + " upload" + (failed === 1 ? "" : "s") + " failed — chip audio for those stays device-local");
-      }
-      if (libFiles.length && !folderActive() && cfg().nsfRepo) { // the set's shared library, once per album (check-before-PUT: a second publish skips it)
-        for (const l of libFiles) {
-          const file = slug + "/" + l.file;
-          try {
-            const chk = await fetch(nsfURL(file) + "?t=" + Date.now(), {cache: "no-cache"});
-            if (chk.ok) continue;
-            status("Uploading the set's library " + l.file + " to the archive (" + Math.round(l.bytes.length / 1024) + " KB)…");
-            const put = await fetch(repoApi("nsf") + file, {method: "PUT", headers: h, body: JSON.stringify({
-              message: CHIPS[chipKind].label + " library for " + slug + " (chip audio)", branch: "main",
-              content: midiBase64(l.bytes instanceof Uint8Array ? l.bytes : new Uint8Array(l.bytes))})});
-            if (!put.ok) throw new Error("HTTP " + put.status);
-          } catch (err) { status("⚠ library upload failed (" + err.message + ") — chip audio for this album stays device-local"); }
-        }
-      }
-      if (rec && rec.bytes && !folderActive() && cfg().nsfRepo) { // folder mode: the chip file stays in this device's IndexedDB
-        try { // chip file -> archive if it isn't publicly there yet
-          const chk = await fetch(nsfURL(vaultFile) + "?t=" + Date.now(), {cache: "no-cache"});
-          if (!chk.ok) {
-            status("Uploading " + CHIPS[chipKind].label + " to the archive…");
-            const put = await fetch(repoApi("nsf") + vaultFile, {
-              method: "PUT", headers: h, body: JSON.stringify({
-                message: CHIPS[chipKind].label + " for " + slug + " (chip audio)", branch: "main",
-                content: midiBase64(rec.bytes instanceof Uint8Array ? rec.bytes : new Uint8Array(rec.bytes))})});
-            if (!put.ok) throw new Error("HTTP " + put.status);
-          }
-        } catch (err) { status("⚠ " + CHIPS[chipKind].label + " upload failed (" + err.message + ") — chip audio stays device-local"); }
+        if (failed > 1) status("⚠ " + failed + " archive uploads failed — chip audio for those stays device-local");
       }
       for (const d of Object.keys(albumMetaCache)) if (d.endsWith("/" + slug)) delete albumMetaCache[d];
     }

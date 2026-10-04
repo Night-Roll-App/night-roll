@@ -66,12 +66,12 @@ function decodeM3u(bytes) { // index.html ~13932
   try { return new TextDecoder("utf-8", {fatal: true}).decode(bytes); }
   catch { return new TextDecoder("windows-1252").decode(bytes); }
 }
-function parseM3u(text) { // index.html ~13936 — ordered [{n, title, len}]; playlist order IS album order
+function parseM3u(text) { // src/import/hub.js parseM3u — ordered [{file, n, title, len}]; playlist order IS album order
   const list = [];
   for (const line of text.split(/\r?\n/)) {
-    const m = line.match(/::(?:NSF|GBS),(\d+),(.+?),(?:(\d+):)?(\d+):(\d\d(?:\.\d+)?)/);
+    const m = line.match(/^(.*?)::(?:NSF|GBS),(\d+),(.+?),(?:(\d+):)?(\d+):(\d\d(?:\.\d+)?)/);
     if (!m) continue;
-    const raw = m[2].replace(/\\,/g, ",");
+    const raw = m[3].replace(/\\,/g, ",");
     const parts = []; let depth = 0, cur = "";
     for (let i = 0; i < raw.length; i++) {
       const ch = raw[i];
@@ -82,10 +82,19 @@ function parseM3u(text) { // index.html ~13936 — ordered [{n, title, len}]; pl
     parts.push(cur);
     const gb = m[0].includes("::GBS,");
     const title = (gb && parts.length >= 2 ? parts[0] : parts.length >= 3 ? parts.slice(2).join(" - ") : parts[parts.length - 1]).trim();
-    if (title) list.push({n: +m[1] + (gb ? 1 : 0), title, len: (+m[3] || 0) * 3600 + +m[4] * 60 + +m[5]});
+    if (title) list.push({file: m[1].trim() || null, n: +m[2] + (gb ? 1 : 0), title, len: (+m[4] || 0) * 3600 + +m[5] * 60 + +m[6]});
   }
   return list;
 }
+// src/audio/chip.js chipVaultFileSlug + src/import/hub.js m3uFileSlug: a rip
+// with several chip files (GB Tetris: DMG-TRA-0.gbs + DMG-TRA-1.gbs) keeps
+// each non-first file in the archive as <slug>.<file slug><ext>, and a track
+// captured from it carries that path in nsf.tracks[slug].vault. A playlist
+// line naming such a file matches the track with that file's slug; any other
+// line matches a track with no vault of its own — the same n can live once
+// per file.
+function vaultFileSlug(vault) { const m = (vault || "").split("/").pop().match(/^[^.]+\.([^.]+)\.[a-z0-9]+$/i); return m ? m[1] : null; }
+function m3uFileSlug(file) { return file ? slugify(file.replace(/\.[a-z0-9]+$/i, "")) : null; }
 // index.html's chipTrackOrder (~18146): a set's files in disc/track/part
 // order, unlisted (99/999) last, anything unparsable-by-name last of all.
 function chipTrackOrder(files) {
@@ -319,10 +328,15 @@ function processAlbum(file) {
   } else {
     const order = orderNonPerFile(candidate);
     if (order === null) { result.noOrderSource = true; result.unmatched = trackSlugs; result.matched = {}; return result; }
-    const nToSlug = {};
-    for (const [s, t] of Object.entries(nsf.tracks)) { const n = typeof t === "number" ? t : t && t.n; if (n != null && !(n in nToSlug)) nToSlug[n] = s; }
+    const nToSlug = {}, byFile = {}; // n → slug for the album's own file; "<file slug>::n" → slug for a track of a non-first chip file
+    for (const [s, t] of Object.entries(nsf.tracks)) {
+      const n = typeof t === "number" ? t : t && t.n; if (n == null) continue;
+      const fs = vaultFileSlug(t && t.vault);
+      if (fs) { if (!((fs + "::" + n) in byFile)) byFile[fs + "::" + n] = s; }
+      else if (!(n in nToSlug)) nToSlug[n] = s;
+    }
     const matched = {}, unmatched = [];
-    order.forEach((e, i) => { const s = nToSlug[e.n]; if (s && !(s in matched)) matched[s] = {track: i + 1, disc: null}; });
+    order.forEach((e, i) => { const fs = m3uFileSlug(e.file); const s = (fs && byFile[fs + "::" + e.n]) || nToSlug[e.n]; if (s && !(s in matched)) matched[s] = {track: i + 1, disc: null}; });
     for (const s of trackSlugs) if (!(s in matched)) unmatched.push(s);
     result.matched = matched; result.unmatched = unmatched;
     result.ripSongCount = order.length;
@@ -387,4 +401,4 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   main(process.argv.slice(2));
 }
 
-export { slugify, titleCaseSlug, parseM3u, decodeM3u, chipTrackOrder, namesMatch, keyOf, keyArabic, assignSlugsAndTracks, locateRip, processAlbum, findAlbumFiles, ripRoots };
+export { slugify, titleCaseSlug, parseM3u, decodeM3u, vaultFileSlug, m3uFileSlug, chipTrackOrder, namesMatch, keyOf, keyArabic, assignSlugsAndTracks, locateRip, processAlbum, findAlbumFiles, ripRoots };

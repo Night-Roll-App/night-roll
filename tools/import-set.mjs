@@ -138,11 +138,13 @@ export async function importSet(opts, log = console.log) {
 
   // ---- Import…: the picker's sniff opens the capture panel
   await app.run("openPickedFiles(__loaded)");
-  const sess = JSON.parse(app.run("JSON.stringify(nsfSess ? {chip: nsfSess.chip, name: nsfSess.nsf.name, artist: nsfSess.nsf.artist, songs: nsfSess.nsf.songs, list: nsfSess.trackList} : null)"));
+  const sess = JSON.parse(app.run("JSON.stringify(nsfSess ? {chip: nsfSess.chip, name: nsfSess.nsf.name, artist: nsfSess.nsf.artist, songs: nsfSess.nsf.songs, list: nsfSess.trackList, files: nsfSess.files ? nsfSess.files.map(f => ({name: f.name, songs: f.parsed.songs})) : null} : null)"));
   if (!sess) throw new Error("the app did not open an import session: " + (infos.filter(s => /⚠|could not/.test(s)).pop() || infos.pop() || "no message"));
   app.el("impslug").value = opts.slug;
   if (opts.secs) app.el("impsecs").value = String(opts.secs);
-  log(`# ${sess.name || opts.slug}${sess.artist && sess.artist !== "<?>" ? " — " + sess.artist : ""} · ${sess.chip} · ${sess.list.length} track${sess.list.length === 1 ? "" : "s"} listed${sess.chip === "nsf" || sess.chip === "gbs" ? " of " + sess.songs + " slots" : ""} → albums/${consoleName}/${opts.slug}/`);
+  const multi = sess.files && sess.files.length > 1; // a rip with several chip files (chipExtraVault): each row's file is reported, slots are per file
+  const slots = multi ? sess.files.map(f => f.name + " (" + f.songs + ")").join(" + ") : sess.songs + " slots";
+  log(`# ${sess.name || opts.slug}${sess.artist && sess.artist !== "<?>" ? " — " + sess.artist : ""} · ${sess.chip} · ${sess.list.length} track${sess.list.length === 1 ? "" : "s"} listed${sess.chip === "nsf" || sess.chip === "gbs" ? " of " + slots : ""} → albums/${consoleName}/${opts.slug}/`);
 
   // ---- Capture all: one job, in list order
   const t0 = Date.now();
@@ -158,16 +160,16 @@ export async function importSet(opts, log = console.log) {
     if (done !== lastDone) { lastDone = done; }
   }
   const items = JSON.parse(app.run("JSON.stringify(jobs.find(j => j.id === " + JSON.stringify(jobId) + ").items)"));
-  const rowInfo = JSON.parse(app.run("JSON.stringify(nsfSess.trackList.map(e => { const r = nsfSess.rows[e.n]; return {n: e.n, title: r.name.value, st: r.st.textContent, warn: r.st.title || '', key: r.key || null, secs: r.secs || null}; }))"));
+  const rowInfo = JSON.parse(app.run("JSON.stringify(nsfSess.trackList.map(e => { const r = nsfSess.rows[e.n]; return {n: e.n, slot: r.slot != null ? r.slot : e.n, file: r.srcName || null, vault: r.vault || null, title: r.name.value, st: r.st.textContent, warn: r.st.title || '', key: r.key || null, secs: r.secs || null}; }))"));
   for (let i = 0; i < rowInfo.length; i++) {
     const r = rowInfo[i], it = items[i];
     let notes = null;
     if (r.key) notes = app.run("(() => { const d = JSON.parse(localStorage.getItem(draftStoreKey(" + JSON.stringify(r.key) + ")) || 'null'); return d && d.tracks ? d.tracks.reduce((s, t) => s + t.notes.length, 0) : null; })()");
     const loop = r.key ? app.run("(() => { const a = JSON.parse(localStorage.getItem('ff1roll-notes-' + " + JSON.stringify(r.key) + ") || '[]'); const l = a.find(x => /^loop:/.test(x.text)); return l ? l.b1 + '.' + l.q1 + ' → ' + l.text.slice(6) : ''; })()") : "";
     const st = it.st === "done" ? "ok" : it.st;
-    const line = `${String(r.n).padStart(3)}  ${(r.title || "").padEnd(40).slice(0, 40)}  ${st.padEnd(7)}  ${notes == null ? "" : String(notes).padStart(5) + " notes"}  ${r.secs ? r.secs.toFixed(1).padStart(6) + "s" : ""}  ${loop ? "loop " + loop : r.key ? "no loop" : ""}${it.st !== "done" && it.msg ? "  " + it.msg : ""}${r.warn ? "  ⚠ " + r.warn.split("\n").join(" · ") : ""}`;
+    const line = `${String(r.slot).padStart(3)}  ${(r.title || "").padEnd(40).slice(0, 40)}  ${st.padEnd(7)}  ${notes == null ? "" : String(notes).padStart(5) + " notes"}  ${r.secs ? r.secs.toFixed(1).padStart(6) + "s" : ""}  ${loop ? "loop " + loop : r.key ? "no loop" : ""}${multi ? "  [" + (r.file || sess.files[0].name) + "]" : ""}${it.st !== "done" && it.msg ? "  " + it.msg : ""}${r.warn ? "  ⚠ " + r.warn.split("\n").join(" · ") : ""}`;
     log(line.replace(/\s+$/, ""));
-    rows.push({n: r.n, title: r.title, st: it.st, msg: it.msg, notes, secs: r.secs, loop, warn: r.warn, key: r.key});
+    rows.push({n: r.n, slot: r.slot, file: r.file, vault: r.vault, title: r.title, st: it.st, msg: it.msg, notes, secs: r.secs, loop, warn: r.warn, key: r.key});
   }
   const captured = rows.filter(r => r.st === "done");
   const capSecs = (Date.now() - t0) / 1000;
@@ -199,6 +201,8 @@ export async function importSet(opts, log = console.log) {
   const uploads = [];
   if (rec && rec.bytes) uploads.push({file: meta.vault, bytes: rec.bytes});
   if (meta.perFile && rec && rec.tracks) for (const [base, t] of Object.entries(rec.tracks)) if (t && t.bytes && captured.some(r => r.key && r.key.endsWith("/" + base + ".mid"))) uploads.push({file: app.run("chipVaultFile(" + JSON.stringify(meta) + ", " + JSON.stringify(base) + ")"), bytes: t.bytes});
+  // a set's non-first chip file (chipExtraVault): once, at the path its tracks' nsf.tracks[].vault names
+  if (rec && rec.tracks) for (const [base, t] of Object.entries(rec.tracks)) if (t && t.vault && t.bytes && captured.some(r => r.key && r.key.endsWith("/" + base + ".mid")) && !uploads.some(u => u.file === t.vault)) uploads.push({file: t.vault, bytes: t.bytes});
   // the set's shared library (PS1 .psflib, N64 .usflib), named as commitImports names it — the first
   // GoldenEye publish left it out and every device but this one rendered synth (2026-09-28)
   if (rec && rec.libs) for (const [name, bytes] of Object.entries(rec.libs)) uploads.push({file: meta.vault + app.run("slugify(" + JSON.stringify(name.replace(/\.[a-z0-9]+$/i, "")) + ")") + (name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase(), bytes});

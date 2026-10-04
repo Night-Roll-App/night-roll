@@ -8,8 +8,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseTrackName } from "../tools/spc/spc.mjs";
 import {
-  chipTrackOrder, assignSlugsAndTracks, slugify, namesMatch, keyOf, keyArabic, parseM3u, decodeM3u,
+  chipTrackOrder, assignSlugsAndTracks, slugify, namesMatch, keyOf, keyArabic, parseM3u, decodeM3u, vaultFileSlug, m3uFileSlug, processAlbum,
 } from "../tools/album-order.mjs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 test("parseTrackName: 2-digit track, 3-digit disc+track, lettered part, unlisted (all-nines)", () => {
   assert.deepEqual(parseTrackName("05 Title.spc"), {disc: null, track: 5, part: "", unlisted: false, title: "Title"});
@@ -74,7 +77,7 @@ test("keyOf / keyArabic: normalization strips extension, console prefix and punc
 
 test("parseM3u: NSF is 1-based already, GBS is 0-based (+1) — playlist order IS album order", () => {
   const nsf = parseM3u("Game.nsf::NSF,1,The Prelude,0:01:16.827,,0:00:03.353\n");
-  assert.deepEqual(nsf, [{n: 1, title: "The Prelude", len: 76.827}]);
+  assert.deepEqual(nsf, [{file: "Game.nsf", n: 1, title: "The Prelude", len: 76.827}], "the line's own chip file rides along: a rip can hold more than one");
   const gbs = parseM3u("DMG-KYJ.gbs::GBS,8,Spicy Food\\, Minty Leaf - Jun Ishikawa - Kirby's Dream Land,0:27,,0:10\n");
   assert.equal(gbs[0].n, 9, "GBS track 8 (0-based) is album slot n=9");
   assert.equal(gbs[0].title, "Spicy Food, Minty Leaf", "escaped comma restored, and the trailing artist/game fields dropped");
@@ -88,4 +91,46 @@ test("parseM3u: splits on ' - ' only outside brackets (Castlevania II's 'Bloody 
 test("decodeM3u: falls back to windows-1252 for a Zophar-style latin-1 byte (the © in a date field)", () => {
   const bytes = new Uint8Array([0x41, 0xA9, 0x42]); // "A" + latin-1 © + "B"
   assert.equal(decodeM3u(bytes), "A©B");
+});
+
+// ---- a rip with more than one chip file (GB Tetris: DMG-TRA-0.gbs v1.0 +
+// DMG-TRA-1.gbs v1.1, one playlist line naming the second): the same n
+// appears once per file, so "first position per n wins" put the second
+// file's track nowhere. docs/plans/2026-10-04-multi-file-chip-sets.md.
+
+test("vaultFileSlug / m3uFileSlug: a non-first chip file's archive name round-trips to the playlist line's file", () => {
+  assert.equal(vaultFileSlug("game-boy/tetris.dmg-tra-1.gbs"), "dmg-tra-1");
+  assert.equal(vaultFileSlug("game-boy/tetris.gbs"), null, "the album's own file has no file slug");
+  assert.equal(vaultFileSlug("snes/chrono-trigger/"), null);
+  assert.equal(m3uFileSlug("DMG-TRA-1.gbs"), "dmg-tra-1");
+  assert.equal(m3uFileSlug(null), null);
+});
+
+test("processAlbum: a two-file rip numbers each file's tracks by the playlist line that names its file", () => {
+  const rips = mkdtempSync(path.join(tmpdir(), "nr-rips-")), albums = mkdtempSync(path.join(tmpdir(), "nr-albums-"));
+  const rip = path.join(rips, "game-boy", "twofile");
+  mkdirSync(rip, {recursive: true});
+  writeFileSync(path.join(rip, "GAME-0.gbs"), "GBS\x01"); // never parsed: album-order reads names and playlists only
+  writeFileSync(path.join(rip, "GAME-1.gbs"), "GBS\x01");
+  writeFileSync(path.join(rip, "01 Title.m3u"), "GAME-0.gbs::GBS,0,Title - Someone - Game,0:0:40,,0:0:0\n");
+  writeFileSync(path.join(rip, "02 Theme (v0).m3u"), "GAME-0.gbs::GBS,1,Theme (v0) - Someone - Game,0:1:00,,0:0:0\n");
+  writeFileSync(path.join(rip, "03 Theme (v1).m3u"), "GAME-1.gbs::GBS,1,Theme (v1) - Someone - Game,0:1:00,,0:0:0\n");
+  writeFileSync(path.join(rip, "04 Ending.m3u"), "GAME-0.gbs::GBS,2,Ending - Someone - Game,0:0:10,,0:0:0\n");
+  const dir = path.join(albums, "game-boy", "twofile");
+  mkdirSync(dir, {recursive: true});
+  const album = {title: "Two File", nsf: {vault: "game-boy/twofile.gbs", chip: "gbs", tracks: {
+    "title": {n: 1, secs: 40}, "theme-v0": {n: 2, secs: 60}, "theme-v1": {n: 2, secs: 60, vault: "game-boy/twofile.game-1.gbs"}, "ending": {n: 3, secs: 10}}}};
+  writeFileSync(path.join(dir, "album.json"), JSON.stringify(album));
+  const prev = process.env.ALBUM_ORDER_RIPS;
+  process.env.ALBUM_ORDER_RIPS = rips;
+  try {
+    const r = processAlbum(path.join(dir, "album.json"));
+    assert.ok(!r.noRip, "the rip is found under the env root");
+    assert.deepEqual(r.matched, {"title": {track: 1, disc: null}, "theme-v0": {track: 2, disc: null}, "theme-v1": {track: 3, disc: null}, "ending": {track: 4, disc: null}},
+      "n=2 lives once per file: the line naming GAME-1.gbs is the vaulted track's position");
+    assert.deepEqual(r.unmatched, []);
+  } finally {
+    if (prev === undefined) delete process.env.ALBUM_ORDER_RIPS; else process.env.ALBUM_ORDER_RIPS = prev;
+    rmSync(rips, {recursive: true, force: true}); rmSync(albums, {recursive: true, force: true});
+  }
 });

@@ -38,6 +38,8 @@ function loadFixture(name) {
   }
   return { files, rows };
 }
+// the m3u line without its file (every row carries one — asserted on its own below)
+const bare = (r) => ({ n: r.n, title: r.title, len: r.len });
 
 test("fixture corpus: only .m3u files travel in the repo (no chip bytes)", () => {
   for (const name of readdirSync(FIXDIR)) {
@@ -53,8 +55,8 @@ test("real rip: NES Contra — one album m3u, 1-based, decimal seconds", () => {
   const { files, rows } = loadFixture("nes-contra");
   assert.equal(files.length, 1, "one m3u for the whole album");
   assert.equal(rows.length, 11);
-  assert.deepEqual(rows[0], { n: 1, title: "Title Screen", len: 5.5 });
-  assert.deepEqual(rows[rows.length - 1], { n: 11, title: "Game Over", len: 6 });
+  assert.deepEqual(bare(rows[0]), { n: 1, title: "Title Screen", len: 5.5 });
+  assert.deepEqual(bare(rows[rows.length - 1]), { n: 11, title: "Game Over", len: 6 });
   // a title with an escaped comma inside it (artist/stage list) survives whole
   assert.ok(rows.some((r) => r.title.includes(",")), "an unescaped comma made it into a title");
 });
@@ -62,8 +64,8 @@ test("real rip: NES Contra — one album m3u, 1-based, decimal seconds", () => {
 test("real rip: NES Castlevania — parenthetical subtitles, H:MM:SS lengths", () => {
   const { rows } = loadFixture("nes-castlevania");
   assert.equal(rows.length, 15);
-  assert.deepEqual(rows[0], { n: 1, title: "Introduction (Castle Gate)", len: 7 });
-  assert.deepEqual(rows[rows.length - 1], { n: 15, title: "Game Over", len: 5 });
+  assert.deepEqual(bare(rows[0]), { n: 1, title: "Introduction (Castle Gate)", len: 7 });
+  assert.deepEqual(bare(rows[rows.length - 1]), { n: 15, title: "Game Over", len: 5 });
   assert.ok(rows.some((r) => /\(.+\)/.test(r.title)), "a parenthetical subtitle");
 });
 
@@ -71,14 +73,14 @@ test("real rip: NES Gimmick! — dashes in the file name, playlist order != trac
   const { rows } = loadFixture("nes-gimmick");
   assert.equal(rows.length, 20);
   // the playlist is not sorted by track number — row order is playlist order
-  assert.deepEqual(rows[0], { n: 18, title: "Good Morning", len: 76 });
+  assert.deepEqual(bare(rows[0]), { n: 18, title: "Good Morning", len: 76 });
   assert.notDeepEqual(rows.map((r) => r.n), [...rows.map((r) => r.n)].sort((a, b) => a - b));
 });
 
 test("real rip: NES Lagrange Point — VRC7 expansion-chip set, fractional seconds", () => {
   const { rows } = loadFixture("nes-lagrange-point");
   assert.equal(rows.length, 31);
-  assert.deepEqual(rows[0], { n: 1, title: "Theme of Isis", len: 104.40899999999999 }); // 1*3600+44*60+5.409 in fp
+  assert.deepEqual(bare(rows[0]), { n: 1, title: "Theme of Isis", len: 104.40899999999999 }); // 1*3600+44*60+5.409 in fp
   const last = rows[rows.length - 1];
   assert.equal(last.n, 23);
   assert.equal(last.title, "Defeated");
@@ -90,30 +92,36 @@ test("real rip: Game Boy Pokemon Red — 51 per-track m3us, Latin-1 (c) symbol, 
   const { files, rows } = loadFixture("game-boy-pokemon-red");
   assert.equal(files.length, 51, "one m3u per track");
   assert.equal(rows.length, 51);
-  assert.deepEqual(rows[0], { n: 1, title: "Opening (part 1)", len: 12 });
-  assert.deepEqual(rows[rows.length - 1], { n: 51, title: "Pokedex Fanfare 2", len: 2 });
+  assert.deepEqual(bare(rows[0]), { n: 1, title: "Opening (part 1)", len: 12 });
+  assert.deepEqual(bare(rows[rows.length - 1]), { n: 51, title: "Pokedex Fanfare 2", len: 2 });
   assert.ok(rows.every((r) => r.n >= 1), "0-based GBS track numbers landed on 1-based rows");
 });
 
 test("real rip: Game Boy Tetris — M:SS lengths with fractional seconds", () => {
   const { rows } = loadFixture("game-boy-tetris");
   assert.equal(rows.length, 18);
-  assert.deepEqual(rows[0], { n: 1, title: "Title", len: 40.009 });
-  assert.deepEqual(rows[rows.length - 1], { n: 13, title: "Unknown Jingle #02", len: 7.512 });
+  assert.deepEqual(bare(rows[0]), { n: 1, title: "Title", len: 40.009 });
+  assert.deepEqual(bare(rows[rows.length - 1]), { n: 13, title: "Unknown Jingle #02", len: 7.512 });
+  // the pack is TWO .gbs files (v1.0 and v1.1); line 03 names the second one
+  // at the same slot as line 02 — the importer used to apply both to one file
+  // (docs/investigations/2026-10-04-gb-tetris-korobeiniki.md)
+  assert.deepEqual(rows[1], { file: "DMG-TRA-0.gbs", n: 2, title: "A-Type Music (version 1.0)", len: 77.149 });
+  assert.deepEqual(rows[2], { file: "DMG-TRA-1.gbs", n: 2, title: "A-Type Music (version 1.1)", len: 77.17 });
+  assert.deepEqual([...new Set(rows.map((r) => r.file))].sort(), ["DMG-TRA-0.gbs", "DMG-TRA-1.gbs"]);
 });
 
 test("real rip: Game Boy Donkey Kong Land — dashes+commas in credits, not titles", () => {
   const { rows } = loadFixture("game-boy-donkey-kong-land");
   assert.equal(rows.length, 20);
-  assert.deepEqual(rows[0], { n: 1, title: "Main Theme", len: 62 });
-  assert.deepEqual(rows[rows.length - 1], { n: 8, title: "Lose Life", len: 3 });
+  assert.deepEqual(bare(rows[0]), { n: 1, title: "Main Theme", len: 62 });
+  assert.deepEqual(bare(rows[rows.length - 1]), { n: 8, title: "Lose Life", len: 3 });
 });
 
 test("real rip: Game Boy Link's Awakening — 96 per-track m3us, a title with a colon", () => {
   const { files, rows } = loadFixture("game-boy-links-awakening");
   assert.equal(files.length, 96);
   assert.equal(rows.length, 96);
-  assert.deepEqual(rows[0], { n: 26, title: "Prologue", len: 51 });
+  assert.deepEqual(bare(rows[0]), { n: 26, title: "Prologue", len: 51 });
   const last = rows[rows.length - 1];
   assert.equal(last.title, "Hidden Track: MOYSE (German Version)", "the title itself carries a colon");
   assert.equal(last.n, 60);
@@ -125,4 +133,11 @@ test("real rip: Latin-1 bytes really are not valid UTF-8 (the fixture earns its 
   const f = readdirSync(dir).sort()[0];
   const bytes = new Uint8Array(readFileSync(path.join(dir, f)));
   assert.throws(() => new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+});
+
+test("fixture corpus: every playlist line names its chip file (the part before ::)", () => {
+  for (const name of readdirSync(FIXDIR)) {
+    const { rows } = loadFixture(name);
+    for (const r of rows) assert.match(r.file || "", /\.(nsf|gbs)$/i, `${name}: ${JSON.stringify(r)}`);
+  }
 });

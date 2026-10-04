@@ -1301,6 +1301,40 @@ writes it and uploads the album's NSF to the archive; FF1's album.json
 maps all 19 tracks to ff1.nsf, so the whole analysis album plays with
 the console's own voice on any device with the token.
 
+**A rip with more than one chip file** (2026-10-04,
+docs/plans/2026-10-04-multi-file-chip-sets.md — Zophar's GB Tetris ships
+DMG-TRA-0.gbs v1.0 and DMG-TRA-1.gbs v1.1, one of 18 playlist lines naming
+the second): `openPickedFiles` hands EVERY chip file of the first one's
+kind to `openChipImport`, in name order. The first is the album's
+`nsf.vault` as always; each other file is archived beside it as
+`<console>/<slug>.<file slug><ext>` (`chipExtraVault` —
+"game-boy/tetris.dmg-tra-1.gbs": a dot, so it can never be another album's
+slug; the whole name, so `instrumentsFolder` stays unique), and a track
+captured from it carries that path as `nsf.tracks[base].vault`.
+`chipSource` reads it: fetches that file and caches the bytes in the
+track's own entry of the album's device record (like a per-file track,
+but with its real slot, never 1). Session rows stay keyed by one number:
+id = `offset(file) + slot`, the first file's offset 0 (`impRowId`), so a
+one-file import is unchanged; a non-first file's rows carry `parsed`,
+`bytes`, `slot`, `srcName`, `vault`. `parseM3u` keeps each line's file
+(`{file, n, title, len}`): a line applies to the file it names; a line
+naming a file that was NOT picked is skipped and named in the status
+whenever the playlist names any picked file (picking one file of a
+two-file pack no longer lets the sibling's line overwrite a slot); a
+playlist naming none of the picked files applies to the first as before.
+No playlist: each file lists its own slots (`<file base> track-NN` for the
+non-first ones). A playlist matched to an album LATER (`applyM3uToAlbum`'s
+`m3uTrackKeys`/`m3uTrackFor`; tools/album-order.mjs mirrors them): a line
+naming a non-first file matches the track whose vault carries that file's
+slug (`chipVaultFileSlug`), any other line a track with no vault — the
+same n lives once per file. Archive uploads (`commitImports`,
+tools/import-set.mjs) go through one list at the paths the readers fetch;
+until 2026-10-04 the in-app publish PUT files at the archive root
+(`slug + ext`) while every reader had fetched `<console>/…` since the
+2026-09-29 reorganization. Tests: tests/multi-file-chip.test.mjs,
+tests/import-set.test.mjs "two chip files", tests/album-order.test.mjs
+"two-file rip", tests/m3u-real.test.mjs (Tetris rows 02/03).
+
 **Robustness:** MIDI parser finds tracks by MTrk magic scan (the original
 ff1battle had corrupt length headers — since rebuilt clean, guard kept),
 honors end-of-track, clamps note durations to 8
