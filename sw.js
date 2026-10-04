@@ -30,7 +30,7 @@
 // from cache when the network failed or timed out.
 
 const SW_VERSION = "nr-v20"; // bumped: step 14 (docs/split-plan.md §4 step 14) adds src/ui/{chrome,trackbar,mixer,voice-menu,notes,note-editor,sheets,wm}.js to APP_MODULES
-const AI_LIB = "900292b"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
+const AI_LIB = "17844fe"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
 const CACHE = "night-roll-" + SW_VERSION + "-" + AI_LIB;
 // APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
 // rule 8) — index.html's modulepreload list, this list, devtools.js's

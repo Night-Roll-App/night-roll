@@ -170,13 +170,6 @@ import fs from "node:fs";
 import os from "node:os";
 import crypto from "node:crypto";
 
-// OpenAI tool definitions carry their JSON schema under a key spelled
-// "param" + "eters" (built in two pieces below, not as one token): this
-// file is scanned for an app's own vocabulary with a plain substring
-// check, and that key happens to contain a run of letters the check also
-// flags. Nothing app-specific here — just dodging that collision.
-const PARAMS_KEY = "param" + "eters";
-
 function flag(argv, name, dflt) { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : dflt; }
 function has(argv, name) { return argv.includes(name); }
 
@@ -294,7 +287,7 @@ if (CLAUDE_MODE !== "off") {
 // ---------------------------------------------------------------- prompts
 function toolInstructions(tools) {
   if (!tools || !tools.length) return "";
-  const list = tools.map(t => { const f = t.function || {}; return `- ${f.name}: ${f.description || ""}\n  schema: ${JSON.stringify(f[PARAMS_KEY] || {})}`; }).join("\n");
+  const list = tools.map(t => { const f = t.function || {}; return `- ${f.name}: ${f.description || ""}\n  schema: ${JSON.stringify(f.parameters || {})}`; }).join("\n");
   return `\n\nAPP TOOLS. The app can run these for you (it, not you, has the open item and the user's device):\n${list}\nTo call one, make your ENTIRE reply exactly one line of JSON and nothing else:\n{"tool_call":{"name":"<name>","arguments":{...}}}\nThe app runs it and sends the result back as a message beginning "TOOL RESULT"; then answer the user in words. Call at most one tool per reply. Follow each tool's own rule about when it may be used.`;
 }
 function flatten(messages) { // OpenAI messages → one prompt; the system message travels separately
