@@ -151,6 +151,10 @@ import { TRACKS_GUTTER } from "../render/roll.js";
 import { RULER_W_ROLL } from "../render/roll.js";
 import { clearRecentSongs } from "../platform/base.js";
 import { albumClear } from "../session/album.js";
+import { stretchCache } from "../audio/clips.js";
+import { stretchEnsureAll } from "../audio/clips.js";
+import { updateSongMetaImpl as updateSongMeta } from "../session/song.js";
+import { tickToSec } from "../midi/parse.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
@@ -1516,3 +1520,32 @@ export function openRecentSong(key) {
   updateSongBtn();
   loadSong(key).catch(err => setInfo(err.message));
 }
+
+export const speedsl = document.getElementById("speedsl");
+export const speedlbl = document.getElementById("speedlbl");
+export const speedreset = document.getElementById("speedreset");
+export function applySpeed(pct) {
+  speedsl.value = String(pct);
+  speedlbl.textContent = pct + "%";
+  speedreset.style.display = pct === 100 ? "none" : ""; // snap-back appears when off-native
+  if (!S.song) { S.playRate = pct / 100; return; }
+  const tk = curTick(); // keep the musical position across the rate change
+  const wasPlaying = S.playing;
+  if (wasPlaying) stop();
+  S.playRate = pct / 100;
+  stretchCache.clear(); // a new rate: re-render the takes (pitch-preserving), old renders go
+  stretchEnsureAll();
+  updateSongMeta();
+  if (wasPlaying) play(tickToSec(S.song, tk));
+  else { S.playCursor = tk; updateSubtitle(); draw(); }
+}
+export const speedbtn = document.getElementById("speedbtn");
+export const _applySpeedInner = applySpeed;
+export function initChrome1() {
+  applySpeed = pct => { _applySpeedInner(pct); speedbtn.textContent = pct + "%"; };
+}
+
+// master volume: device pref, multiplies MASTER_VOL everywhere it lands
+export const volsl = document.getElementById("volsl");
+export const vollbl = document.getElementById("vollbl");
+export const volbtn = document.getElementById("volbtn");
