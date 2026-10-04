@@ -1290,6 +1290,23 @@ import { renderSyncPending } from "./ui/sheets.js";
 import { openSyncSheet } from "./ui/sheets.js";
 import { moveComposition } from "./session/files.js";
 import { revertSongToRepo } from "./session/files.js";
+import { createGameFilesRepo } from "./import/hub.js";
+import { openPickedFiles } from "./import/hub.js";
+import { importAudioFiles } from "./import/hub.js";
+import { localMidiOpen } from "./import/hub.js";
+import { fsubFolder } from "./import/hub.js";
+import { fsubAlbums } from "./import/hub.js";
+import { nativeOpenHook } from "./import/hub.js";
+import { decodeM3u } from "./import/hub.js";
+import { parseM3u } from "./import/hub.js";
+import { applyM3uNames } from "./import/hub.js";
+import { applyM3uToAlbum } from "./import/hub.js";
+import { nativeOpenUrl } from "./import/hub.js";
+import { fsubItem } from "./import/hub.js";
+import { fsubHeader } from "./import/hub.js";
+import { fsubSongs } from "./import/hub.js";
+import { fsubLocalFolder } from "./import/hub.js";
+import { fsubImportAlbum } from "./import/hub.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -3960,128 +3977,6 @@ document.getElementById("accseg").addEventListener("click", e => {
     x.setAttribute("aria-checked", String(x === b));
   }
 });
-// .m3u track-name playlists (the emu-scene convention: NSF rips ship with
-// one). Zero-typing names (Josh, 2026-08-17 — hands hurt; data entry that a
-// file already did is theft): pick the m3u with the NSF, or alone while an
-// import session is open, and every row gets its real title.
-// Zophar's playlists are latin-1, not UTF-8: the © in "©1989-12-15 Square" is
-// one byte (0xA9). A plain UTF-8 decode turns it into U+FFFD, which defeated
-// the copyright test below and made every FFL row read the same (Josh,
-// 2026-09-27). Strict UTF-8 first — real UTF-8 rips keep working — else 1252.
-function decodeM3u(bytes) {
-  try { return new TextDecoder("utf-8", {fatal: true}).decode(bytes); }
-  catch { return new TextDecoder("windows-1252").decode(bytes); }
-}
-function parseM3u(text) { // ordered [{n, title}] — playlist order IS album order
-  const list = [];
-  for (const line of text.split(/\r?\n/)) {
-    // NSF and GBS rips share the line shape; the length is M:SS (Game Boy rips)
-    // or H:MM:SS(.fff) (every Zophar NES rip). Read as M:SS, "0:01:16" was 1 s:
-    // every track a "jingle", captured 12 s, never retried (2026-09-27, the
-    // Castlevania batch — Stalker came back 12 s of a 64 s song).
-    const m = line.match(/::(?:NSF|GBS),(\d+),(.+?),(?:(\d+):)?(\d+):(\d\d(?:\.\d+)?)/);
-    if (!m) continue;
-    const raw = m[2].replace(/\\,/g, ",");
-    // split only OUTSIDE brackets: "Bloody Tears (Street - Day time BGM)" is
-    // one title, not "Bloody Tears (Street" + "Day time BGM)" (Castlevania II,
-    // 2026-09-29 — the song came out as "Day time BGM)")
-    const parts = []; let depth = 0, cur = "";
-    for (let i = 0; i < raw.length; i++) {
-      const ch = raw[i];
-      if ("([{".includes(ch)) depth++; else if (")]}".includes(ch)) depth = Math.max(0, depth - 1);
-      if (depth === 0 && raw.startsWith(" - ", i)) { parts.push(cur); cur = ""; i += 2; continue; }
-      cur += ch;
-    }
-    parts.push(cur);
-    // two scenes, two layouts (the real FFL1 rip, 2026-09-27): NSF lines are
-    // "Game - Artist - Title" with 1-based tracks; GBS lines are "Title -
-    // Artist - Game - ©1989-12-15 Square" with 0-BASED tracks (gbsplay's
-    // numbering, 0-16 for 17 subsongs) — title first, and +1 to the app's
-    // rows. Keyed on the ::GBS marker, so a single picked per-track file
-    // (no track 0 in sight) still lands on the right subsong.
-    const gb = m[0].includes("::GBS,");
-    const title = (gb && parts.length >= 2 ? parts[0] : parts.length >= 3 ? parts.slice(2).join(" - ") : parts[parts.length - 1]).trim();
-    if (title) list.push({n: +m[1] + (gb ? 1 : 0), title, len: (+m[3] || 0) * 3600 + +m[4] * 60 + +m[5]});
-  }
-  return list;
-}
-function applyM3uNames(list) {
-  if (!S.nsfSess) return 0;
-  let applied = 0;
-  for (const {n, title} of list) {
-    const row = S.nsfSess.rows[n];
-    if (!row) continue;
-    row.name.value = title;
-    if (row.key) { // captured already: rename the draft in place
-      const nk = renameImportDraft(row.key, title);
-      if (nk !== null) row.key = nk;
-    }
-    applied++;
-  }
-  return applied;
-}
-// A playlist picked AFTER the import (Josh, 2026-09-28: Zelda and Super Mario
-// Bros. 3 arrived as track-01…): the open song's album is the target; each
-// playlist line names the song whose chip slot number matches — local drafts
-// are renamed in place (file and title, as the import session does), a
-// published album gets its titles in one album.json write.
-async function applyM3uToAlbum(list) {
-  if (!S.songKey || !S.songKey.startsWith("albums/")) { setInfo("⚠ that is a track-name playlist — open a song from the album it names first"); return 0; }
-  const dir = S.songKey.replace(/\/(?:songs\/)?[^/]+\.mid$/, "");
-  const meta = await albumMetaFor(S.songKey);
-  let tracks = meta && meta.nsf && meta.nsf.tracks;
-  if (!tracks && isCaptureKey(S.songKey)) { const rec = await idbNsfGet(dir.split("/").pop()); tracks = rec && rec.tracks; } // unpublished: the device record
-  if (!tracks) { setInfo("⚠ this album has no chip slot numbers to match the playlist against"); return 0; }
-  const byN = {};
-  for (const [base, t] of Object.entries(tracks)) { const n = typeof t === "number" ? t : t && t.n; if (n != null && byN[n] === undefined) byN[n] = dir + "/" + base + ".mid"; }
-  const local = {}, published = {};
-  for (const {n, title} of list) {
-    const key = byN[n]; if (!key || !title) continue;
-    const draft = localStorage.getItem(draftStoreKey(key));
-    if (draft !== null && !(JSON.parse(draft) || {}).savedStamp) local[key] = title; else if (catalogHas(key)) published[key] = title;
-  }
-  const count = Object.keys(local).length + Object.keys(published).length;
-  if (!count) { setInfo("⚠ no playlist line matched a song of this album (slot numbers differ?)"); return 0; }
-  const ok = await appConfirm("NAME " + count + " SONG" + (count === 1 ? "" : "S") + "?",
-    "From the playlist, by chip slot number: " + Object.keys(local).length + " local, " + Object.keys(published).length + " published" +
-    (Object.keys(published).length ? " (one album.json write on GitHub)" : "") + ".", "Name them", "Cancel");
-  if (!ok) return 0;
-  let done = 0;
-  for (const [key, title] of Object.entries(local)) { if (renameImportDraft(key, title) !== null) done++; }
-  if (Object.keys(published).length) {
-    const token = writeToken();
-    if (!token) { setInfo("✓ " + done + " local song(s) named; the published ones need a GitHub token (File → Settings)"); return done; }
-    setInfo("naming " + Object.keys(published).length + " published song(s)…");
-    await renameRepoTitles(published, ghHeaders(token));
-    for (const [key, title] of Object.entries(published)) { for (const songs of Object.values(S.CATALOG)) { const e = songs.find(x => x[1] === key); if (e) e[0] = title; } done++; } // the manifest write is done; the CDN copy lags
-  }
-  if (songsheet.classList.contains("on") && S.songViewRedraw) S.songViewRedraw();
-  updateSongBtn();
-  setInfo("✓ " + done + " song" + (done === 1 ? "" : "s") + " named from the playlist");
-  return done;
-}
-// "create mine": a public <login>/night-roll-archive for this user's game files
-// and instruments. A user on their own songs repo started with none, so their
-// published imports played only on the importing device (Josh, 2026-09-28).
-// Reuses an existing repo of that name; creating needs a token allowed to
-// create repositories, and the status line says so when GitHub refuses.
-async function createGameFilesRepo(say) {
-  const token = writeToken();
-  if (!token) { say("Add your token (step 2) first."); return null; }
-  const h = ghHeaders(token);
-  const me = await fetch("https://api.github.com/user", {headers: h});
-  if (!me.ok) { say("GitHub didn't accept the token (HTTP " + me.status + ")."); return null; }
-  const login = (await me.json()).login, name = "night-roll-archive", full = login + "/" + name;
-  const have = await fetch("https://api.github.com/repos/" + full, {headers: h});
-  if (!have.ok) {
-    const r = await fetch("https://api.github.com/user/repos", {method: "POST", headers: h,
-      body: JSON.stringify({name, description: "Game files and instruments for Night Roll", private: false, auto_init: true})});
-    if (!r.ok) { say("GitHub wouldn't create " + full + " (HTTP " + r.status + "). The token needs permission to create repositories — or create it on github.com and type its name here."); return null; }
-  }
-  saveCfg({nsfRepo: full, nsfBase: "https://raw.githubusercontent.com/" + full + "/main"}); cfg.c = null;
-  say("✓ " + full + (have.ok ? " (already there) " : " created ") + "— your game files and instruments go there from now on. If your token only lists some repos, add this one to it.");
-  return full;
-}
  // [{name, parsed}] awaiting a destination choice
 document.getElementById("cfgnsfcreate").addEventListener("click", async e => {
   const btn = e.currentTarget, out = document.getElementById("cfgnsfstatus");
@@ -4141,155 +4036,11 @@ document.getElementById("importhub").addEventListener("drop", async e => {
   } catch (err) { setInfo("could not import: " + err.message); }
   closeFileMenus();
 });
-async function openPickedFiles(loaded) { // [{name, bytes}] from the picker, a drop, or a file handed to the iPad app
-  {
-    const isM3u = x => /\.m3u8?$/i.test(x.name);
-    const m3us = loaded.filter(isM3u);
-    const rest = loaded.filter(x => !isM3u(x));
-    // Game Boy rips (Zophar) ship ONE .m3u per track — "02 Main Theme.m3u" —
-    // so every picked playlist merges, in file-name order (Josh, from the
-    // Final Fantasy Legend zip, 2026-09-27)
-    const names = m3us.length
-      ? [].concat(...m3us.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true})).map(x => parseM3u(decodeM3u(x.bytes))))
-      : null;
-    const nsfs = rest.filter(x => chipKindOf(x.bytes, x.name));
-    const sf2s = rest.filter(x => sf2Magic(x.bytes));
-    const audios = rest.filter(x => audioMagic(x.bytes));
-    // PS2 rips that are only streamed audio, not sequence data (Zophar's Ico
-    // is GENH-tagged, XIII is Ubisoft's own SShd/SSbd — docs/plans/ps2.md
-    // "Findings, milestone 1"): refused by name at import, not a MIDI parse
-    // error. Format identification only (no game table — CLAUDE.md).
-    const streamed = nsfs.length ? [] : rest.filter(x => streamedAudioMagic(x.bytes));
-    if (audios.length && audios.length === rest.length && !m3us.length) { // recordings → a new song (Import hub's "New song from a recording", no song open) or a track on the open one (the ＋∿ chip's own #audioinput never reaches here)
-      const freshSong = !S.song;
-      if (freshSong) createComposition(120, 4, 4);
-      S.audioReplaceTi = null;
-      await importAudioFiles(audios.map(x => ({name: x.name, bytes: x.bytes, type: ""})));
-      if (freshSong) setInfo("new song — Edit → Pencil to write notes against the recording. It lives on this device until Save.");
-    } else if (nsfs.length) { // a chip-music file (NSF or GBS) is an album by itself
-      if (rest.length > 1 && !CHIPS[chipKindOf(nsfs[0].bytes, nsfs[0].name)].perFile) setInfo("importing the chip file; pick MIDI files separately from other formats");
-      const kind = chipKindOf(nsfs[0].bytes, nsfs[0].name);
-      await openChipImport(kind, nsfs[0].bytes, nsfs[0].name, names, CHIPS[kind].perFile ? nsfs.filter(x => chipKindOf(x.bytes, x.name) === kind) : null);
-    } else if (sf2s.length) { // a SoundFont: parse, keep a device copy, push to the archive — its presets become track voices, no song open needed
-      if (sf2s.length < rest.length) setInfo("importing the SoundFont" + (sf2s.length === 1 ? "" : "s") + "; pick other formats separately");
-      for (const f of sf2s) await importSf2File(f);
-    } else if (m3us.length && !rest.length) { // playlist alone: name the open session's tracks/drafts — or, with no session, the open song's album
-      if (!S.nsfSess) await applyM3uToAlbum(names);
-      else setInfo("✓ " + applyM3uNames(names) + " tracks named from the playlist" +
-                   " — captured drafts renamed in place.");
-    } else if (streamed.length && streamed.length === rest.length) {
-      setInfo("this is streamed audio, not note data — Night Roll reads sequence data (notes), not pre-rendered streams");
-    } else {
-      S.pendingMidis = loaded.map(x => ({name: x.name, parsed: parseMidi(x.bytes.buffer, {trust: true, foreign: true})})); // sniffed: MThd found anywhere; foreign: carries its own source (declared-vs-learner-spec.md C2)
-      document.getElementById("miditle").textContent =
-        "IMPORT " + loaded.length + " MIDI FILE" + (loaded.length === 1 ? "" : "S");
-      document.getElementById("midlocal").style.display = loaded.length === 1 ? "" : "none";
-      const guess = loaded[0].name.replace(/\.(midi?|smf|kar|rmi)$/i, "").replace(/[-_ ]*\d+$/, "");
-      document.getElementById("midalbum").value = loaded.length === 1 ? "" : guess;
-      document.getElementById("midisheet").classList.add("on");
-    }
-  }
-}
-// The iPad app is registered for .mid and chip files: one tapped in Files,
-// or handed over from another app's share sheet, arrives as a file: URL
-// (iOS copies it into Documents/Inbox — documents are not opened in place).
-// Read it through the Filesystem plugin, open it like a picked file, drop
-// the Inbox copy. A lone MIDI skips the import sheet and becomes a local
-// draft straight away: one tap from Files to the roll (hands hurt).
-async function nativeOpenUrl(url) {
-  const fs = nativeFs();
-  if (!fs || !url || !/^file:/i.test(url)) return false;
-  const name = decodeURIComponent(url.split("/").pop() || "file");
-  let bytes;
-  try {
-    const r = await fs.readFile({path: url});
-    bytes = typeof r.data === "string" ? Uint8Array.from(atob(r.data), c => c.charCodeAt(0)) : new Uint8Array(await r.data.arrayBuffer());
-  } catch (err) { setInfo("couldn't read " + name + ": " + err.message); return false; }
-  stop();
-  closeFileMenus();
-  try {
-    if (!chipKindOf(bytes, name) && !audioMagic(bytes) && !streamedAudioMagic(bytes) && !/\.m3u8?$/i.test(name)) localMidiOpen(parseMidi(bytes.buffer, {trust: true, foreign: true}), name);
-    else await openPickedFiles([{name, bytes}]);
-  } catch (err) { setInfo("could not import " + name + ": " + err.message); return false; }
-  if (/\/Inbox\//.test(url)) fs.deleteFile({path: url}).catch(() => {});
-  return true;
-}
-function nativeOpenHook() { // boot, after the first song: the cold-start hand-over, then every later one
-  try {
-    const c = typeof window !== "undefined" && window.Capacitor;
-    const app = c && c.isNativePlatform && c.isNativePlatform() && c.Plugins && c.Plugins.App;
-    if (!app) return;
-    app.addListener("appUrlOpen", e => { nativeOpenUrl(e && e.url); });
-    if (app.getLaunchUrl) app.getLaunchUrl().then(r => { if (r && r.url) nativeOpenUrl(r.url); }).catch(() => {});
-  } catch (err) { /* the web: no shell */ }
-}
 document.getElementById("midcancel").addEventListener("click", () => {
   S.pendingMidis = null;
   document.getElementById("midisheet").classList.remove("on");
 });
- async function importAudioFiles(items) { // items: {name, bytes: Uint8Array, type}
-  if (!S.song) return;
-  if (!(isComposition() || isLocalDraft())) {
-    setInfo("this song is locked — File → Save As… makes an editable copy, then add the recording there");
-    return;
-  }
-  const cursorBar = Math.floor(S.playCursor / barTicks()) * barTicks();
-  let lastTi = -1;
-  for (const it of items) {
-    let bytes = it.bytes;
-    if (!audioMagic(bytes)) { setInfo(it.name + " isn't an audio file this browser knows"); continue; }
-    if (bytes.length > AUDIO_SIZE_GATE) {
-      const mb = (bytes.length / 1e6).toFixed(0);
-      const mono = await appConfirm("BIG RECORDING — " + mb + " MB",
-        "A 3-minute stereo WAV is ~30 MB; the same take as 16-bit mono WAV is half that, and lossless for a guitar or a voice. It stays this size on every device and in every Save.",
-        "Store as 16-bit mono WAV", "Import as-is (" + mb + " MB)");
-      if (mono) {
-        setInfo("converting " + it.name + " to mono…");
-        try { bytes = monoWavBytes((await decodeAudioBytes(bytes.buffer)).buffer); }
-        catch (err) { setInfo("couldn't decode " + it.name + " — importing as-is"); }
-        it.name = it.name.replace(/\.[^.]+$/, "") + ".wav";
-      }
-    }
-    // unique slug and track name within the song
-    let file = slugFile(it.name), k = 2;
-    const taken = f => { let t = false; forEachClip(c => { if (c.file === f) t = true; }); return t; };
-    while (taken(file)) { file = slugFile(it.name).replace(/(\.[^.]+)?$/, "-" + k++ + "$1"); }
-    const stem = file.replace(/\.[^.]+$/, "");
-    let name = stem, j = 2;
-    while (S.song.tracks.some(t => (t.name || "").toLowerCase() === name.toLowerCase())) name = stem + "-" + j++;
-    const stored = await idbAudioPut(S.songKey + "|" + file, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), it.type || "");
-    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-    if (S.audioReplaceTi !== null && S.song.tracks[S.audioReplaceTi] && S.song.tracks[S.audioReplaceTi].kind === "audio") {
-      const ti = S.audioReplaceTi; S.audioReplaceTi = null;
-      // every piece of the old file swaps to the new one, placement kept
-      const old = (S.song.tracks[ti].clips[0] || {}).file;
-      writeClips(ti, S.song.tracks[ti].clips.map(c => c.file === old ? {...c, file, offset: 0, len: null} : c));
-      lastTi = ti;
-      setInfo("replaced the recording on " + (S.song.tracks[ti].name || "the track") + " — one undo brings the old one back");
-      continue;
-    }
-    const before = annoSnapshot();
-    S.autoAlignFiles.add(file);
-    const ti = addTrackUndoable({name, notes: []});
-    pushUndo({kind: "group", entries: [{kind: "trackRemove", ti}, {kind: "anno", json: before}]});
-    const n = {b1: 1, q1: 1, b2: null, q2: null, text: audioDirText({track: name, file, offset: 0, local: false}), added: true};
-    setAnchorBQ(n, cursorBar);
-    S.rollnotes.push(resolveNote(deriveNoteTypes([n])[0]));
-    finalizeNotes();
-    saveLocalNotes();
-    saveDraft();
-    lastTi = ti;
-    S.selTrack = ti; S.selClip = ti; S.trackExpand = true;
-    setInfo("added " + name + " ∿ at bar " + (cursorBar / barTicks() + 1) +
-            (stored ? "" : " — ⚠ this browser wouldn't store the bytes; the take lives for this session only") +
-            (S.viewMode === "tracks" ? "" : " — the Tracks view shows the waveform") +
-            " · tap its chip again to nudge it");
-  }
-  if (lastTi < 0) return;
-  renderTrackbar(); buildScoreModel(); updateTrackGains(); computeSongEnd(); draw();
-  requestAnimationFrame(renderTrackbar);
-}
-document.getElementById("audioinput").addEventListener("change", async e => {
+ document.getElementById("audioinput").addEventListener("change", async e => {
   const files = [...e.target.files];
   e.target.value = "";
   if (!files.length) return;
@@ -4342,35 +4093,6 @@ document.getElementById("midcreate").addEventListener("click", () => {
   setInfo(count + " song" + (count === 1 ? "" : "s") + " in album \"" + alb +
           "\" — Open → LOCAL to audition/rename, ⇪ Publish sends it to the songs repo.");
 });
-// The Normal auto-seed that used to write the file's own meter/key straight
-// into a real annotation at import (P2, 2026-09-29) is GONE
-// (docs/declared-vs-learner-spec.md C5, superseding that ruling): the file's
-// own labels now live apart, in source (see parseMidi/checkKeyVsFile/
-// checkMeterVsFile), never written as his answer just because Normal mode is
-// on. An import writes NO ff1roll-notes-* in either mode.
-function localMidiOpen(parsed, name) {
-  // a local MIDI becomes a device-local draft (Josh's report 2026-08-15:
-  // switching songs used to lose it with no way back) — reopen from
-  // Open → drafts; ✕ there to let it go; never synced to the repo
-  const key = "local/" + slugify(name.replace(/\.(midi?|smf|kar|rmi)$/i, "")) + ".mid";
-  draftWrite(key, {
-    savedStamp: 0, dirty: true, title: name, ppq: parsed.ppq, timesig: parsed.timesig || [4, 4],
-    ...(parsed.source ? {source: parsed.source} : {}), // the file's OWN meter/key history, kept apart from what he later declares (docs/declared-vs-learner-spec.md)
-    tempos: parsed.tempos,
-    tracks: parsed.tracks.map(tr => ({name: tr.name,
-      ...(tr.midiPan !== undefined ? {midiPan: tr.midiPan} : {}), // CC10 in the dropped file — survives to the republished copy
-      ...(tr.offset ? {offset: tr.offset} : {}),
-      ...(tr.srcIndex !== undefined ? {srcIndex: tr.srcIndex} : {}), // docs/declared-vs-learner-spec.md phase 2: how the raw metas in source.metas reattach after edits
-      notes: tr.notes.map(nt => {
-      const o = {t: nt.t, d: nt.d, p: nt.p, v: nt.v};
-      if (nt.ch !== undefined) o.ch = nt.ch; // drums live on ch 9 — must survive the round-trip
-      if (nt.duty !== undefined) o.duty = nt.duty; // chip timbre survives too
-      if (nt.ve !== undefined) o.ve = nt.ve; // decay target survives
-      return o;
-    })}))});
-  openDraft(key);
-  setInfo(name + " imported — edits stay on this device; reopen from Open → LOCAL");
-}
 document.getElementById("modeseg").addEventListener("click", e => {
   const b = e.target.closest("button");
   if (!b) return;
@@ -5365,153 +5087,11 @@ document.getElementById("fmgo").addEventListener("click", e => {
   if (S.dropUpOpen.contains(e.target) || e.target.closest("#viewbtn, #listbtn, #askattach")) return;
   closeDropUp();
 }, {capture: true});
-function fsubItem(label, onTap, dim, icon) { // icon: an ICON table name — label is always a hardcoded string, never user text, so innerHTML is safe here
-  const b = document.createElement("button");
-  b.className = "fitem";
-  if (dim) b.style.color = "var(--dim)";
-  if (icon) b.innerHTML = iconSvg(icon) + "  " + label;
-  else b.textContent = label;
-  b.addEventListener("click", onTap);
-  filesub.appendChild(b);
-}
-function fsubHeader(text) {
-  const h = document.createElement("div");
-  h.className = "meta";
-  h.style.cssText = "padding:8px 10px 2px;letter-spacing:.1em;white-space:normal";
-  h.textContent = text;
-  filesub.appendChild(h);
-}
-function fsubAlbums() { // File → Open, top: LOCAL's top-level folders, then PUBLISHED's
-  filesub.innerHTML = "";
-  const local = folderTree(draftKeys());
-  if (subfolderKeys(local).length) {
-    fsubHeader(localLabel());
-    for (const seg of subfolderKeys(local)) fsubItem(segTitle(local.sub[seg].path) + "  (" + nodeCount(local.sub[seg]) + ")  ›", () => fsubFolder("local", local.sub[seg].path));
-  }
-  fsubHeader(publishedLabel());
-  const pub = folderTree(publishedPaths());
-  for (const seg of subfolderKeys(pub)) fsubItem(segTitle(pub.sub[seg].path) + "  (" + nodeCount(pub.sub[seg]) + ")  ›", () => fsubFolder("published", pub.sub[seg].path));
-  { // build stamp: which deploy THIS tab is actually running (stale-cache tell)
-    // ONE stamp: this runs on every open and every "‹ back", and each run
-    // appended another line (Josh, 2026-09-27: "there's two of them … earlier three")
-    const old = document.getElementById("fsubbuild"); if (old) old.remove();
-    const d = document.createElement("div");
-    d.id = "fsubbuild";
-    d.className = "meta";
-    d.style.cssText = "padding:6px 10px;opacity:.6;white-space:normal";
-    const installed = typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches;
-    d.textContent = "build " + (document.lastModified || "unknown") + (installed ? " · installed" : "") + (typeof navigator !== "undefined" && navigator.onLine === false ? " · offline" : "");
-    document.getElementById("filesheet").appendChild(d);
-  }
-}
-function fsubFolder(section, folder) { // one level: subfolders, then this folder's songs
-  const root = folderTree(section === "local" ? draftKeys() : publishedPaths());
-  const node = nodeAt(root, folder);
-  if (!node) return fsubAlbums();
-  if (section === "local" && node.songs.length && node.songs.every(isCaptureKey) && !subfolderKeys(node).length)
-    return fsubImportAlbum(folder.split("/").pop()); // captures: publish-all + per-track rows
-  filesub.innerHTML = "";
-  const up = parentFolder(folder);
-  fsubItem("‹ " + (up ? segTitle(up) : "All folders"), () => up ? fsubFolder(section, up) : fsubAlbums(), true);
-  fsubHeader((section === "local" ? localLabel() : publishedLabel()) + "  ·  " + folderTitle(folder));
-  for (const seg of subfolderKeys(node)) fsubItem(segTitle(node.sub[seg].path) + "  (" + nodeCount(node.sub[seg]) + ")  ›", () => fsubFolder(section, node.sub[seg].path));
-  if (section === "local") {
-    const songs = node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
-    const rerender = () => { (nodeAt(folderTree(draftKeys()), folder) || {songs: []}).songs.length ? fsubFolder("local", folder) : fsubAlbums(); };
-    for (const key of songs) draftRow(key, songTitleOf(key) + "  · " + songStatus(key), rerender);
-    return;
-  }
-  const group = node.songs.length && groupOf(node.songs[0]);
-  const oneAlbum = !!(group && node.songs.every(p => groupOf(p) === group)); // this folder is one album: the only way into an album run
-  if (oneAlbum && albumHasTrackData(group)) filesub.appendChild(albumOrderControl(group, () => fsubFolder(section, folder)));
-  const songs = oneAlbum
-    ? albumEffectiveOrder(group).map(([, p]) => p).filter(p => node.songs.includes(p))
-    : node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
-  if (oneAlbum) { // play follows the SAME order the list just showed (Josh: WYSIWYG)
-    const here = songs.indexOf(S.currentPath);
-    const from = here >= 0 ? here : 0;
-    fsubItem("Play album" + (here >= 0 ? " from " + (here + 1) + "/" + songs.length : ""),
-             () => { closeFileMenus(); albumStart(group, from); }, false, "album");
-  }
-  for (const path of songs)
-    fsubItem(songTitleOf(path) + (localStorage.getItem(draftStoreKey(path)) !== null ? "  · local copy" : "") + (path === S.currentPath ? "   ✓" : ""), () => {
-      closeFileMenus();
-      albumClear(); // picking a song by hand ends an album run
-      S.currentPath = path;
-      rememberLastSong(path);
-      reflectSongURL(path);
-      updateSongBtn();
-      loadSong(path).catch(err => setInfo(err.message));
-    });
-}
-function fsubSongs(group) { fsubFolder("published", folderOf(S.CATALOG[group][0][1])); } // an album is its folder
-function fsubLocalFolder(folder) { return fsubFolder("local", folder); }
 JOB_KINDS.publish = {
   label: j => "Publish · " + j.title,
   open: j => openPubJobSheet(j), // the publish dialog (Josh, 2026-09-29: the old jump to File → Open → folder "brought me to a weird page")
   retry: j => { const keys = (j.keys || []).filter(k => importDraftKeys().includes(k)); if (!keys.length) { setInfo(j.title + ": nothing left to publish"); return; } const job = publishJobStart(j.slug, keys, setInfo); if (job) openPubJobSheet(job); },
 };
-function fsubImportAlbum(slug) {
-  filesub.innerHTML = "";
-  { const f = folderOf(importDraftKeys().find(k => k.split("/")[2] === slug) || "albums/imports/" + slug + "/x.mid");
-    fsubItem("‹ " + (parentFolder(f) ? segTitle(parentFolder(f)) : "All folders"), () => parentFolder(f) ? fsubFolder("local", parentFolder(f)) : fsubAlbums(), true); }
-  fsubHeader(localLabel());
-  const keys = importDraftKeys().filter(k => k.split("/")[2] === slug);
-  const all = document.createElement("button"); // whole folder in one publish
-  all.className = "fitem";
-  all.style.color = "var(--gold)";
-  all.dataset.impcommit = slug;
-  all.textContent = publishLabel("folder (" + keys.length + " track" + (keys.length === 1 ? "" : "s") + ")");
-  all.disabled = !publishDest();
-  { const live = jobsFind("publish", slug, true); if (live) { all.disabled = true; all.textContent = "⏳ " + (live.note || "publishing…"); } } // reopened mid-run: the job carries the line
-  all.addEventListener("click", () => {
-    const status = s => { // the button if the menu shows it, and the footer strip always
-      const b = filesub.querySelector('[data-impcommit="' + slug + '"]');
-      if (b) b.textContent = s;
-      setInfo("⇪ " + titleCaseSlug(slug) + ": " + s);
-    };
-    const job = publishJobStart(slug, keys, status);
-    if (!job) return;
-    all.disabled = true;
-    closeFileMenus(); // Josh's ask (3a): starting a folder publish from File → Open opens the dialog, not a bare status line
-    openPubJobSheet(job);
-    const off = jobsOnChange(() => { if (job.state === "running") return; off(); importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); });
-  });
-  filesub.appendChild(all);
-  { // the folder's ✕ (tap twice) discards the WHOLE album's captures at once (Josh 2026-08-16)
-    const del = document.createElement("button");
-    del.className = "fitem";
-    del.style.cssText = "color:var(--dim)";
-    del.textContent = "✕ Discard this folder's captures";
-    del.addEventListener("click", () => {
-      if (!del.dataset.armed) { del.dataset.armed = "1"; del.textContent = "✕ Discard all " + keys.length + "? Tap again"; del.style.color = "#e66767"; return; }
-      for (const k of importDraftKeys().filter(k => k.split("/")[2] === slug)) {
-        for (const pre of ["ff1roll-draft-", "ff1roll-notes-", "ff1roll-ts-", "ff1roll-edits-"])
-          localStorage.removeItem(pre + k);
-        idbDraftDelete(k);
-      }
-      fsubAlbums();
-    });
-    filesub.appendChild(del);
-  }
-  for (const key of keys) {
-    const up = document.createElement("button"); // single track -> same album, top level
-    up.className = "fitem";
-    up.style.cssText = "flex:none;width:auto;color:var(--dim)";
-    up.textContent = "⇪";
-    up.setAttribute("aria-label", "Publish this track");
-    up.disabled = !publishDest();
-    up.addEventListener("click", () => {
-      const job = publishJobStart(slug, [key], s => fileStatus(s));
-      if (!job) return;
-      up.disabled = true;
-      const off = jobsOnChange(() => { if (job.state === "running") return; off(); importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); });
-    });
-    draftRow(key, songTitleOf(key) + "  · " + songStatus(key),
-             () => { importDraftKeys().some(k => k.split("/")[2] === slug) ? fsubImportAlbum(slug) : fsubAlbums(); },
-             up);
-  }
-}
   document.getElementById("fileinst").addEventListener("click", () => {
   closeFileMenus();
   document.getElementById("instsheet").classList.add("on");
@@ -7874,4 +7454,4 @@ async function askResume() {
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "decodeM3u": () => decodeM3u, "parseM3u": () => parseM3u, "applyM3uNames": () => applyM3uNames, "applyM3uToAlbum": () => applyM3uToAlbum, "createGameFilesRepo": () => createGameFilesRepo, "openPickedFiles": () => openPickedFiles, "nativeOpenUrl": () => nativeOpenUrl, "nativeOpenHook": () => nativeOpenHook, "importAudioFiles": () => importAudioFiles, "localMidiOpen": () => localMidiOpen, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "fsubItem": () => fsubItem, "fsubHeader": () => fsubHeader, "fsubAlbums": () => fsubAlbums, "fsubFolder": () => fsubFolder, "fsubSongs": () => fsubSongs, "fsubLocalFolder": () => fsubLocalFolder, "fsubImportAlbum": () => fsubImportAlbum, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askRepending": () => askRepending, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "askRenderImpl": () => askRenderImpl, "askBubble": () => askBubble, "askRenderEarlier": () => askRenderEarlier, "askResumeSoon": () => askResumeSoon, "askFillBubble": () => askFillBubble, "askResume": () => askResume}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "decodeM3u": (v) => (decodeM3u = v), "parseM3u": (v) => (parseM3u = v), "applyM3uNames": (v) => (applyM3uNames = v), "applyM3uToAlbum": (v) => (applyM3uToAlbum = v), "createGameFilesRepo": (v) => (createGameFilesRepo = v), "openPickedFiles": (v) => (openPickedFiles = v), "nativeOpenUrl": (v) => (nativeOpenUrl = v), "nativeOpenHook": (v) => (nativeOpenHook = v), "importAudioFiles": (v) => (importAudioFiles = v), "localMidiOpen": (v) => (localMidiOpen = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "fsubItem": (v) => (fsubItem = v), "fsubHeader": (v) => (fsubHeader = v), "fsubAlbums": (v) => (fsubAlbums = v), "fsubFolder": (v) => (fsubFolder = v), "fsubSongs": (v) => (fsubSongs = v), "fsubLocalFolder": (v) => (fsubLocalFolder = v), "fsubImportAlbum": (v) => (fsubImportAlbum = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askRepending": (v) => (askRepending = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "askBubble": (v) => (askBubble = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askResumeSoon": (v) => (askResumeSoon = v), "askFillBubble": (v) => (askFillBubble = v), "askResume": (v) => (askResume = v)}};
+export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "gridFollowNote": () => gridFollowNote, "pianoHit": () => pianoHit, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "recNoteOn": () => recNoteOn, "recNoteOff": () => recNoteOff, "recFinishImpl": () => recFinishImpl, "midiMessage": () => midiMessage, "initWebMidi": () => initWebMidi, "initCoreMidi": () => initCoreMidi, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "aiHostOk": () => aiHostOk, "askAddAnnotation": () => askAddAnnotation, "askEditAnnotation": () => askEditAnnotation, "askDeleteAnnotation": () => askDeleteAnnotation, "askPublishSong": () => askPublishSong, "askRunTool": () => askRunTool, "askKeyStateLine": () => askKeyStateLine, "askContext": () => askContext, "askInboxPoll": () => askInboxPoll, "askNotesArrived": () => askNotesArrived, "deployBeforeInstall": () => deployBeforeInstall, "deployInstallNow": () => deployInstallNow, "deployHoldNow": () => deployHoldNow, "deployWarn": () => deployWarn, "deploySetHeld": () => deploySetHeld, "deployAskTap": () => deployAskTap, "askStatusPoll": () => askStatusPoll, "askTabsApply": () => askTabsApply, "askShotShow": () => askShotShow, "askShotCapture": () => askShotCapture, "askShotTake": () => askShotTake, "askInboxStart": () => askInboxStart, "askFinish": () => askFinish, "askFail": () => askFail, "askLanded": () => askLanded, "askRun": () => askRun, "askTerminalSend": () => askTerminalSend, "askSend": () => askSend, "askRepending": () => askRepending, "askNoteSeen": () => askNoteSeen, "openAsk": () => openAsk, "askBtnTap": () => askBtnTap, "askMicOff": () => askMicOff, "askWriteNotes": () => askWriteNotes, "askInsertBars": () => askInsertBars, "askCopyBars": () => askCopyBars, "askDeleteBars": () => askDeleteBars, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP, "askRenderImpl": () => askRenderImpl, "askBubble": () => askBubble, "askRenderEarlier": () => askRenderEarlier, "askResumeSoon": () => askResumeSoon, "askFillBubble": () => askFillBubble, "askResume": () => askResume}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "gridFollowNote": (v) => (gridFollowNote = v), "pianoHit": (v) => (pianoHit = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "recNoteOn": (v) => (recNoteOn = v), "recNoteOff": (v) => (recNoteOff = v), "midiMessage": (v) => (midiMessage = v), "initWebMidi": (v) => (initWebMidi = v), "initCoreMidi": (v) => (initCoreMidi = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "aiHostOk": (v) => (aiHostOk = v), "askAddAnnotation": (v) => (askAddAnnotation = v), "askEditAnnotation": (v) => (askEditAnnotation = v), "askDeleteAnnotation": (v) => (askDeleteAnnotation = v), "askPublishSong": (v) => (askPublishSong = v), "askRunTool": (v) => (askRunTool = v), "askKeyStateLine": (v) => (askKeyStateLine = v), "askContext": (v) => (askContext = v), "askInboxPoll": (v) => (askInboxPoll = v), "askNotesArrived": (v) => (askNotesArrived = v), "deployBeforeInstall": (v) => (deployBeforeInstall = v), "deployInstallNow": (v) => (deployInstallNow = v), "deployHoldNow": (v) => (deployHoldNow = v), "deployWarn": (v) => (deployWarn = v), "deploySetHeld": (v) => (deploySetHeld = v), "deployAskTap": (v) => (deployAskTap = v), "askStatusPoll": (v) => (askStatusPoll = v), "askTabsApply": (v) => (askTabsApply = v), "askShotShow": (v) => (askShotShow = v), "askShotCapture": (v) => (askShotCapture = v), "askShotTake": (v) => (askShotTake = v), "askInboxStart": (v) => (askInboxStart = v), "askFinish": (v) => (askFinish = v), "askFail": (v) => (askFail = v), "askLanded": (v) => (askLanded = v), "askRun": (v) => (askRun = v), "askTerminalSend": (v) => (askTerminalSend = v), "askSend": (v) => (askSend = v), "askRepending": (v) => (askRepending = v), "askNoteSeen": (v) => (askNoteSeen = v), "openAsk": (v) => (openAsk = v), "askBtnTap": (v) => (askBtnTap = v), "askMicOff": (v) => (askMicOff = v), "askWriteNotes": (v) => (askWriteNotes = v), "askInsertBars": (v) => (askInsertBars = v), "askCopyBars": (v) => (askCopyBars = v), "askDeleteBars": (v) => (askDeleteBars = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v), "askBubble": (v) => (askBubble = v), "askRenderEarlier": (v) => (askRenderEarlier = v), "askResumeSoon": (v) => (askResumeSoon = v), "askFillBubble": (v) => (askFillBubble = v), "askResume": (v) => (askResume = v)}};
