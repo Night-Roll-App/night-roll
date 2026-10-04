@@ -2758,7 +2758,7 @@ test("help sheet covers every shipped feature (drift guard — extend this list 
     "Fall", "💬", "Chop", "Loop points", "Sections", "Chords", "expansion sound chip",
     "Roll zoom-out limit", "Score zoom limit", "Pencil", "undo",
     "New song", "Save As", "Move to…", "moved from", "Download .mid", "Open…", "Open Recent", "Score entry", "inbox", "Outline new notes", "always starts with undo, redo, cut, copy, paste and delete", "chips move to their own row", "16 empty bars past its end", "remembers its ruler selection", "asks for a name and folder first", "remembers its zoom", "AI setup, step by step", "Remove duplicate notes", "Hide notes strip", "Update countdown", "Not now", "Backups on your Mac",
-    "Share a song", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
+    "Share a song", "File → 🔗 Share link", "link preview", "type your own", "minor scale", "no MIDI inputs found", "MIDI blocked",
     "⌘Z", "Delete track is one undo away", "chains straight on", "picks up its grid", "quarter-note triplets", "naming the grid", "turns the grid off", "Paste to…", "ride along", "reaches up into the ruler", "gold outline", "lane by lane", "Backspace) deletes them", "Add .mid to the end",
     "Web session", "Repo ↗", "Sync", "Silent Mode", "copy chip", "tap it to copy that message", "keeps going if you leave the menu", "Drag any sheet by its title line", "Play album", "Prev</b>, <b>Next</b>, and <b>✕", "✕</b> to leave", "reopens with the strip up",
     "follow song", "trial meter", "Count-in", "LCD readout", "Tempo change", "voice &amp; color", "Pan</b>", "re-reads the published list", "names the open song's album after the fact", "create mine</b>", "Instruments…</b>", "game's own instrument for that track", "Game instruments ›</b>", "Instruments in this song", "SoundFont", "Soundfonts ›",
@@ -4896,6 +4896,20 @@ test("Share link: songs= parses owner/repo or a base URL; the link carries it on
   run(`saveCfg({songsBase: "https://raw.githubusercontent.com/alice/tunes/main/"});`);
   assert.equal(val(`shareLinkFor("albums/test/scratch.mid")`), "https://night-roll-app.github.io/night-roll/albums/test/scratch?songs=alice%2Ftunes");
   run(`saveCfg({songsBase: ""}); songKey = null;`);
+});
+
+test("File → Share link shows the song's PUBLIC link — even inside the iPad app (capacitor://) — and says when a song has none (Josh, 2026-10-03)", () => {
+  installSong();
+  run(`APP_BASE = "capacitor://localhost/"; saveCfg({songsBase: ""}); songKey = "albums/compositions/nightroll/ambush.mid";`);
+  assert.equal(val(`shareLinkFor(songKey)`), "https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush");
+  run(`document.getElementById("fileshare").dispatchEvent(new Event("click"));`);
+  assert.equal(val(`document.getElementById("sharesheet").classList.contains("on")`), true);
+  assert.equal(val(`document.getElementById("shUrl").value`), "https://night-roll-app.github.io/night-roll/albums/compositions/nightroll/ambush");
+  run(`document.getElementById("shClose").dispatchEvent(new Event("click")); songKey = "local/untitled-1.mid";`);
+  run(`openShareSheet();`);
+  assert.equal(val(`document.getElementById("shUrl").value`), "");
+  assert.match(val(`document.getElementById("shBody").textContent`), /only lives on this device/);
+  run(`document.getElementById("sharesheet").classList.remove("on"); APP_BASE = "https://night-roll-app.github.io/night-roll/"; songKey = null;`);
 });
 
 test("Connect GitHub: annotations follow the songs repo unless split on purpose; Check messages name the fix", () => {
