@@ -7,6 +7,7 @@ import { S } from "./state.js";
 import {
   setInfoImpl, logErrImpl, logDebugImpl, appConfirmImpl, updateJobsBtnImpl,
   drawImpl, playbackFrameImpl, clampViewImpl, updateSongBtnImpl, updateSyncBtnImpl,
+  srAnnounceImpl,
 } from "./ui/chrome.js";
 import { buildScoreModelImpl } from "./render/score.js";
 import { songTitleOfImpl } from "./ask/context.js";
@@ -39,5 +40,7 @@ export function installHooks() {
     recFinish: (...a) => recFinishImpl(...a),
     albumAdvance: (...a) => albumAdvanceImpl(...a),
     songTitleOf: (...a) => songTitleOfImpl(...a),
+    // docs/split-phase2-plan.md step 4b
+    srAnnounce: (...a) => srAnnounceImpl(...a),
   });
 }

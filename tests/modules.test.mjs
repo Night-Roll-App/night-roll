@@ -381,13 +381,16 @@ async function loadHooksWithoutInstall() {
 // clampView, fitView, buildScoreModel, renderTrackbar, updateEditBtnVis,
 // updateChipBtn, updateSongBtn, updateSyncBtn, updateSubtitle, askRender,
 // finalizeNotes, recFinish, albumAdvance, songTitleOf — the last is step 2's
-// chipRender/etc. blocker) alongside step 1's original five.
+// chipRender/etc. blocker) alongside step 1's original five. Step 4b adds
+// srAnnounce/scheduleBackupFlush/setAnchorBQ — step 4's own three genuinely
+// layer-4 blockers (screen-reader strip, off-device backup timer,
+// anchor-quantize setter) behind the clips/transport clusters.
 const ALL_PORTS = [
   "setInfo", "logErr", "logDebug", "appConfirm", "updateJobsBtn",
   "draw", "playbackFrame", "clampView", "fitView", "buildScoreModel",
   "renderTrackbar", "updateEditBtnVis", "updateChipBtn", "updateSongBtn",
   "updateSyncBtn", "updateSubtitle", "askRender", "finalizeNotes",
-  "recFinish", "albumAdvance", "songTitleOf",
+  "recFinish", "albumAdvance", "songTitleOf", "srAnnounce",
 ];
 
 test("hooks.js: every port throws `hook X not installed` before src/wire.js's installHooks() ever runs", async () => {
@@ -421,6 +424,15 @@ test("hooks.js rebinding: same for draw() — a lower-layer caller (simulated he
   app.run('draw()'); // a model mutator would call this bare name once it's reachable from a lower layer
   assert.equal(app.run("S.__testDrawSeen"), true);
   assert.equal(app.run("S.sceneValid"), true); // drawImpl never ran
+});
+
+test("hooks.js rebinding: same for srAnnounce() (docs/split-phase2-plan.md step 4b) — a lower-layer caller (simulated: the play-gate transport) gets the rebound body, the real srAnnounceImpl (ui/chrome.js) bypassed", async () => {
+  const app = await createApp();
+  app.run("S.srLastText = null;"); // srAnnounceImpl sets this on every real call — the tell that it ran
+  app.run('srAnnounce = (text) => { S.__testSrSeen = text; };'); // reassigns hooks.js's OWN top-level binding
+  app.run('srAnnounce("Playing")');
+  assert.equal(app.run("S.__testSrSeen"), "Playing");
+  assert.equal(app.run("S.srLastText"), null); // srAnnounceImpl never ran
 });
 
 // ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's

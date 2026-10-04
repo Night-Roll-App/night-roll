@@ -1,6 +1,6 @@
 import { connected } from "../sync/publish.js";
 import { S, prof } from "../state.js";
-import { setInfo, logErr, logDebug, draw, updateSongBtn, updateSyncBtn } from "../hooks.js";
+import { setInfo, logErr, logDebug, draw, updateSongBtn, updateSyncBtn, srAnnounce } from "../hooks.js";
 import { setControl } from "./controls.js";
 import { logLines } from "../model/jobs.js";
 import { askSeenMax } from "../ask/bridge.js";
@@ -164,7 +164,7 @@ export function errChip() { // the number shown is UNREAD (new since the last ch
 }
 export function logErrImpl(msg) { logPush(appErrors, msg); errChip(); }
 export function logDebugImpl(msg) { logPush(appDebug, msg); console.log("[debug] " + msg); if (debugLogOn()) errChip(); }
-export function srAnnounce(text) {
+export function srAnnounceImpl(text) {
   if (typeof document === "undefined" || !text || text === S.srLastText) return;
   const el = document.getElementById("srlive");
   if (!el) return;

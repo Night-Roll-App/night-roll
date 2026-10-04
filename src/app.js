@@ -779,7 +779,7 @@ import { updateSongBtn } from "./hooks.js";
 import { appConfirm } from "./hooks.js";
 import { updateJobsBtn } from "./hooks.js";
 import { logErr } from "./hooks.js";
-import { srAnnounce } from "./ui/chrome.js";
+import { srAnnounce } from "./hooks.js";
 import { songHeader } from "./ui/chrome.js";
 import { localLabel } from "./ui/chrome.js";
 import { songRow } from "./ui/chrome.js";

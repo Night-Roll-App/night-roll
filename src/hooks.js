@@ -33,3 +33,8 @@ export function finalizeNotes(...a) { return (S.hooks.finalizeNotes || need("fin
 export function recFinish(...a) { return (S.hooks.recFinish || need("recFinish"))(...a); }
 export function albumAdvance(...a) { return (S.hooks.albumAdvance || need("albumAdvance"))(...a); }
 export function songTitleOf(...a) { return (S.hooks.songTitleOf || need("songTitleOf"))(...a); }
+// docs/split-phase2-plan.md step 4b: the 5 blockers step 4 found behind
+// play/stop's call into the screen-reader strip, the off-device backup
+// timer, and the anchor-quantize setter — genuinely layer-4 bodies, ports
+// not re-homes (see each's own commit for the "why a port" writeup).
+export function srAnnounce(...a) { return (S.hooks.srAnnounce || need("srAnnounce"))(...a); }
