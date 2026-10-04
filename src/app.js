@@ -1467,6 +1467,9 @@ import { HOLD_MS } from "./input/gestures.js";
 import { HOLD_SLOP } from "./input/gestures.js";
 import { RULER_RANGE_SLOP } from "./input/gestures.js";
 import { recordRealtimeAudio } from "./audio/bounce.js";
+import { MODAL_KEEP } from "./ui/wm.js";
+import { refreshKeyPreview } from "./ui/notes.js";
+import { fileMeterAt } from "./ui/notes.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2606,13 +2609,7 @@ volsl.addEventListener("input", () => {
   if (S.audio && S.master) S.master.gain.setValueAtTime(MASTER_VOL * S.masterVol, S.audio.currentTime);
 });
 
- function fileMeterAt(tick) { // the file's own declared meter at a tick, or null
-  if (!S.song || !S.song.source || !S.song.source.timesigs || !S.song.source.timesigs.length) return null;
-  let cur = S.song.source.timesigs[0];
-  for (const ts of S.song.source.timesigs) { if (ts.tick <= tick) cur = ts; else break; }
-  return {num: cur.num, den: cur.den};
-}
-{
+ {
   // black keys get THREE options (2026-08-12 spec): fused "A#/Bb" = spelling
   // undetermined, plus each asserted spelling — Josh can know a tonic is Bb
   // and not A# before knowing the mode, and the picker must let him say so.
@@ -2636,18 +2633,7 @@ volsl.addEventListener("input", () => {
     nk.appendChild(opt.cloneNode(true));
   }
 }
- function refreshKeyPreview() { // preview applies only when tonic AND mode are chosen
-  const pc = chosenTonicPc(), mode = keymodeSel.value;
-  const full = pc !== null && mode ? keyNameFor(pc, mode) : null;
-  S.previewSf = full ? full.sf : null;
-  keymodeSel.style.display = pc === null ? "none" : "";
-  keysetBtn.style.display = pc === null ? "none" : "";
-  refreshKeysetLabel();
-  buildScoreModel();
-  clampView();
-  draw();
-}
-keysel.addEventListener("change", refreshKeyPreview);
+ keysel.addEventListener("change", refreshKeyPreview);
 keymodeSel.addEventListener("change", refreshKeyPreview);
 keysetBtn.addEventListener("click", () => {
   const t = chosenTonic(), mode = keymodeSel.value;
@@ -4794,12 +4780,6 @@ document.getElementById("folderonly").addEventListener("change", e => {
   folderAfterChange(e.target.checked ? "the song list is now your folder only" : "the song list shows the site's albums again");
 });
 document.getElementById("filefolder").addEventListener("click", () => { closeFileMenus(); chooseFolder(); });
-// Every sheet closes three ways (Josh, 2026-08-25: "I have a lot of problems
-// with our modals" — opening the notes list by mistake meant scrolling to the
-// bottom to find Close). Tap the backdrop, press Esc, or hit a ✕ that stays
-// pinned at the top while the body scrolls. confirmsheet is exempt: it asks a
-// question and has to get an answer.
-const MODAL_KEEP = new Set(["confirmsheet"]);
 if (typeof document.querySelectorAll === "function") { // vm harness stubs document
 // A sheet keeps the scroll position it had when it was last closed, so
 // reopening the notes list dropped Josh halfway down it (2026-08-25). Reset on
@@ -5098,4 +5078,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"homeSong": () => homeSong, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v)}};
+export const __nrExpose$ = {get: {"homeSong": () => homeSong}, set: {"homeSong": (v) => (homeSong = v)}};

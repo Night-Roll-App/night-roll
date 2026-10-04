@@ -41,6 +41,7 @@ import { buildScoreModelImpl as buildScoreModel } from "../render/score.js";
 import { updateSubtitleImpl as updateSubtitle } from "./chrome.js";
 import { drawImpl as draw } from "./chrome.js";
 import { setInfoImpl as setInfo } from "./chrome.js";
+import { clampViewImpl as clampView } from "./chrome.js";
 
 // key dial: preview any signature live; Set writes "key: X" at the cursor bar.
 // A signature is mode-ambiguous (Bb major and G minor share two flats), so a
@@ -448,4 +449,22 @@ export function openNoteList() {
   if (!S.song) return;
   renderNoteList();
   notelistSheet.classList.add("on");
+}
+
+export function fileMeterAt(tick) { // the file's own declared meter at a tick, or null
+  if (!S.song || !S.song.source || !S.song.source.timesigs || !S.song.source.timesigs.length) return null;
+  let cur = S.song.source.timesigs[0];
+  for (const ts of S.song.source.timesigs) { if (ts.tick <= tick) cur = ts; else break; }
+  return {num: cur.num, den: cur.den};
+}
+export function refreshKeyPreview() { // preview applies only when tonic AND mode are chosen
+  const pc = chosenTonicPc(), mode = keymodeSel.value;
+  const full = pc !== null && mode ? keyNameFor(pc, mode) : null;
+  S.previewSf = full ? full.sf : null;
+  keymodeSel.style.display = pc === null ? "none" : "";
+  keysetBtn.style.display = pc === null ? "none" : "";
+  refreshKeysetLabel();
+  buildScoreModel();
+  clampView();
+  draw();
 }

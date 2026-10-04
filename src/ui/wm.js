@@ -584,3 +584,10 @@ export function wmSideDividerize(divId, side) {
   };
   document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
 }
+
+// Every sheet closes three ways (Josh, 2026-08-25: "I have a lot of problems
+// with our modals" — opening the notes list by mistake meant scrolling to the
+// bottom to find Close). Tap the backdrop, press Esc, or hit a ✕ that stays
+// pinned at the top while the body scrolls. confirmsheet is exempt: it asks a
+// question and has to get an answer.
+export const MODAL_KEEP = new Set(["confirmsheet"]);
