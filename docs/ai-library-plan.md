@@ -180,10 +180,23 @@ mechanical commit).
 ## 4. Ordered steps (one push each; `npm test` green after each)
 
 0. Split step 13 (verbatim move into `src/ask/*`).
-1. Library repo with `web/sse.js` only + its own tests/CI. Night Roll:
-   `tools/ai-sync.mjs`, `vendor/ai/` v0.1.0, all §1 wiring, `aiSSE` imported.
-   Proves Pages + package + harness + SW on one pure function; browser-check
-   offline and the iPad package.
+1. **DONE 2026-10-04 (branch module-split).** Library repo with `web/sse.js`
+   only + its own tests/CI (`claude-bridge@v0.1.0`, 477ab79). Night Roll:
+   `tools/ai-sync.mjs` (`--ref`/`--repo`, `--from` for the dev loop, `--check`);
+   `vendor/ai/` populated (`web/{sse,index}.js`, `LICENSE`, `README.md`,
+   `VERSION`, `files.json`); all §1 wiring (`sw.js` `AI_LIB`/`AI_MODULES`/
+   `CACHE`, index.html modulepreload, `tools/package.mjs` reachability +
+   never-ships-bridge guards, `tools/split/check.mjs` over `vendor/ai/web`,
+   `tests/modules.test.mjs`'s extended rule 8); `src/ask/backend.js`'s
+   `aiSSE` now imports from `vendor/ai/web/sse.js` and re-exports (every
+   existing importer, and the vm harness's bare-name `aiSSE`, unchanged —
+   no harness change needed: `scopeProxy` already resolves a bare name to
+   whichever module's top level declares it, src/ or not). `npm test`
+   green (ai/bridge/modules/package/pwa; only the pre-existing local-rip
+   gaps ps2-real/instruments fail) and `npm run test:e2e:smoke` green.
+   Proved Pages + package + harness + SW on one pure function, as intended.
+2. Bridge server → `bridge/server.mjs` + profile; bridge.test moves to the
+   library; Night Roll keeps the shim + `tests/bridge-shim.test.mjs` (health,
 2. Bridge server → `bridge/server.mjs` + profile; bridge.test moves to the
    library; Night Roll keeps the shim + `tests/bridge-shim.test.mjs` (health,
    models, /shapes, Learning convention in the system prompt). launchd keeps
