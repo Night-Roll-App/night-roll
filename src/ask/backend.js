@@ -255,3 +255,10 @@ export async function aiHostOk(url) { // per-host consent: the payload is his an
   if (yes) { ok.push(host); localStorage.setItem("ff1roll-ai-hosts", JSON.stringify(ok)); }
   return yes;
 }
+
+export function initBackend1() {
+  document.getElementById("cfgaitest").addEventListener("click", aiRunTest);
+  document.getElementById("cfgaitestb").addEventListener("click", aiRunTest);
+  document.getElementById("cfgaiurl").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); aiRunTest(); } });
+  document.getElementById("cfgaibackend").addEventListener("change", aiBackendRows);
+}

@@ -1518,6 +1518,7 @@ import { initCapture1 } from "./import/capture.js";
 import { initPublish1 } from "./sync/publish.js";
 import { initPublish2 } from "./sync/publish.js";
 import { initPublish3 } from "./sync/publish.js";
+import { initBackend1 } from "./ask/backend.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -2071,10 +2072,7 @@ initSheets5();
 
  
 
-         document.getElementById("cfgaitest").addEventListener("click", aiRunTest);
-document.getElementById("cfgaitestb").addEventListener("click", aiRunTest);
-document.getElementById("cfgaiurl").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); aiRunTest(); } });
-document.getElementById("cfgaibackend").addEventListener("change", aiBackendRows);
+         initBackend1();
 
 
    // what the configured backend can do (askStatusPoll detects; askTabsApply shows). sessions: the bridge's Clear-really-resets/Compact/usage-line trio (askSessionRender gates on it)
