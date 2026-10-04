@@ -11,6 +11,7 @@ import {
 } from "./ui/chrome.js";
 import { buildScoreModelImpl } from "./render/score.js";
 import { songTitleOfImpl } from "./ask/context.js";
+import { setAnchorBQImpl } from "./ui/note-editor.js";
 import {
   fitViewImpl, renderTrackbarImpl, updateEditBtnVisImpl, updateChipBtnImpl,
   updateSubtitleImpl, askRenderImpl, finalizeNotesImpl, recFinishImpl, albumAdvanceImpl,
@@ -43,5 +44,6 @@ export function installHooks() {
     // docs/split-phase2-plan.md step 4b
     srAnnounce: (...a) => srAnnounceImpl(...a),
     scheduleBackupFlush: (...a) => scheduleBackupFlushImpl(...a),
+    setAnchorBQ: (...a) => setAnchorBQImpl(...a),
   });
 }

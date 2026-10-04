@@ -391,7 +391,7 @@ const ALL_PORTS = [
   "renderTrackbar", "updateEditBtnVis", "updateChipBtn", "updateSongBtn",
   "updateSyncBtn", "updateSubtitle", "askRender", "finalizeNotes",
   "recFinish", "albumAdvance", "songTitleOf", "srAnnounce",
-  "scheduleBackupFlush",
+  "scheduleBackupFlush", "setAnchorBQ",
 ];
 
 test("hooks.js: every port throws `hook X not installed` before src/wire.js's installHooks() ever runs", async () => {
@@ -443,6 +443,15 @@ test("hooks.js rebinding: same for scheduleBackupFlush() (docs/split-phase2-plan
   app.run('scheduleBackupFlush()');
   assert.equal(app.run("S.__testBackupFlushSeen"), true);
   assert.equal(app.run("S.backupFlushTimer"), null); // scheduleBackupFlushImpl never ran — no timer armed
+});
+
+test("hooks.js rebinding: same for setAnchorBQ() (docs/split-phase2-plan.md step 4b) — the clips cluster's writeClips/setClipDir call this bare name; a lower-layer caller gets the rebound body, the real setAnchorBQImpl (ui/note-editor.js) bypassed", async () => {
+  const app = await createApp();
+  app.run("S.__testAnchorArg = {};"); // setAnchorBQImpl always writes .b1/.q1 onto its first arg — the tell that it ran
+  app.run('setAnchorBQ = (n, tick) => { S.__testAnchorSeen = tick; };'); // reassigns hooks.js's OWN top-level binding
+  app.run('setAnchorBQ(S.__testAnchorArg, 480)');
+  assert.equal(app.run("S.__testAnchorSeen"), 480);
+  assert.equal(app.run("S.__testAnchorArg.b1"), undefined); // setAnchorBQImpl never ran
 });
 
 // ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's

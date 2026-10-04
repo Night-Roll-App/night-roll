@@ -1,4 +1,5 @@
 import { S, prof } from "../state.js";
+import { setAnchorBQ } from "../hooks.js";
 import { resolveNote } from "../model/rollnotes.js";
 import { barTicks } from "../model/rollnotes.js";
 import { beatsPerBarDisp } from "../model/grid.js";
@@ -352,7 +353,7 @@ export function updateEditButtons() { // disabled = "this can't do anything righ
 }
 updateEditButtons = prof("updateEditButtons", updateEditButtons); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
-export function setAnchorBQ(n, tick) { // start anchor from a tick
+export function setAnchorBQImpl(n, tick) { // start anchor from a tick
   const bt = barTicks(), qt = beatTicks(), t = Math.max(0, tick);
   n.b1 = Math.floor(t / bt) + 1;
   n.q1 = snapBeat((t % bt) / qt + 1);

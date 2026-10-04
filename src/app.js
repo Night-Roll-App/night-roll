@@ -858,7 +858,7 @@ import { SPEECH } from "./ui/note-editor.js";
 import { fillBarBeatSelects } from "./ui/note-editor.js";
 import { setChordWidget } from "./ui/note-editor.js";
 import { micJoin } from "./ui/note-editor.js";
-import { setAnchorBQ } from "./ui/note-editor.js";
+import { setAnchorBQ } from "./hooks.js";
 import { setEndBQ } from "./ui/note-editor.js";
 import { lassoedAnnos } from "./ui/note-editor.js";
 import { dropSupersededBy } from "./ui/note-editor.js";

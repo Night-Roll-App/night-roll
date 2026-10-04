@@ -39,3 +39,4 @@ export function songTitleOf(...a) { return (S.hooks.songTitleOf || need("songTit
 // not re-homes (see each's own commit for the "why a port" writeup).
 export function srAnnounce(...a) { return (S.hooks.srAnnounce || need("srAnnounce"))(...a); }
 export function scheduleBackupFlush(...a) { return (S.hooks.scheduleBackupFlush || need("scheduleBackupFlush"))(...a); }
+export function setAnchorBQ(...a) { return (S.hooks.setAnchorBQ || need("setAnchorBQ"))(...a); }
