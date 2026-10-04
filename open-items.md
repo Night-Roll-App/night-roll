@@ -7074,3 +7074,60 @@ Build after the module-split branch merges (they touch render/input code the spl
 
 ## QUEUED 2026-10-04 — Game Boy Tetris: Korobeiniki missing from our capture (Josh, Terminal #107–108)
 Josh found Korobeiniki in a Game Boy OST on YouTube, not in our Game Boy › Tetris album (17/17 GBS tracks captured; rip header "Tetris v1.0", Hirokazu Tanaka). Interval search (E B C D C B A A C E, any key, repeats collapsed) over every channel of every GB/NES Tetris capture: found ONLY in NES › Tetris (Bullet-Proof Software) track-01. "A-Type Music (version 1.1)" is a real, different song (Josh confirmed). Next: fetch another GB Tetris rip (Zophar GBS/m3u) and compare track lists/lengths — rip lacks it vs our capture garbled a track.
+
+## QUEUED (built on a worktree branch `finish`, not merged/pushed yet) 2026-10-04 — module split phase 2 steps 11–13: app.js is GONE (docs/split-phase2-plan.md)
+
+Branch `finish` (off `origin/module-split`), 39 commits: a third step 0
+addendum, 11 step-11 commits (every remaining declaration out of app.js —
+zero left), 25 step-12 commits (every top-level statement → one of 66
+`init<Module><N>()` functions at its original spot; two new files,
+ui/perf.js and platform/sw.js; the boot IIFE → session/boot.js `boot()`),
+2 step-13 commits (src/app.js deleted; src/main.js = `installHooks();` +
+the 66 init calls in the original order + `boot();` + the devtools gate;
+LEGACY_CONTAINER, the harness legacy path and the e2e footer generator
+retired; doc sweep). Every M commit `verbatim.mjs` ✔; every L commit ✔ with
+the init tolerance; the one non-move commit (step 13's deletion) reports
+exactly the deleted devtools footer-mirror block, nothing else. New test:
+tests/boot-order.test.mjs — main.js's expanded top-level statement
+sequence equals the 328-statement snapshot captured before the first init
+move (tests/split-fixtures/boot-order.txt), statement by statement, and
+did at every commit after the addendum that added it. check.mjs: no exemptions left, one
+finding (`oldBpb`, now model/rollnotes.js — the known pre-existing bug,
+Q6). `npm test` under alarm 1200 after each step: only ps2-real (4) +
+instruments (13) fail (the local-rip gap); smoke 8/8 after each step;
+package 188 → 191 files (+ session/boot.js, ui/perf.js, platform/sw.js)
+→ 190 (− app.js), reachability guard green. Full accounting:
+docs/split-phase2-plan.md's step 11/12/13 write-ups; NIGHT-ROLL.md's
+Module map now opens with the finished state.
+
+MORNING CHECKLIST — every browser/device check owed across phase 2 steps
+4c–13 (each step's write-up lists it; this is the one list). None of
+these steps changed logic — every commit is a verbatim move — so each
+check is "it still works", not "it works differently":
+
+- iPad ear check (steps 4/4c — THE engine moved file; iPad mute → revert
+  first): synth, SF2, game voice, NES + one streamed console, clip at
+  0.5×, note preview, album auto-advance, metronome. (= Q9.)
+- Edits (step 5): edit/undo, quantize/split/join, copy/paste, a drummer
+  take + a bassist take; and a real-browser edit → reload → compare on a
+  scratch local song (saveDraft/saveEdits/draftWrite moved file).
+- Song lifecycle (step 6): load, draft, Save As, fork, revert — scratch only.
+- UI (step 7): chips M/S/H, voice audition, the Mixer, wm dock/float/close,
+  phone width.
+- Import/sync (step 8): an NSF import into scratch, a publish to scratch,
+  one revert and one discard on a scratch song (never his compositions).
+- Ask (step 9): an Ask tool run (write_notes) + a resume, the ✦ open, a
+  Terminal-tab send.
+- Input (step 10): a roll tap/drag/lasso/pinch, a Score pencil + erase,
+  the playhead-tag drag (all three views), a keyboard glissando +
+  two-finger scroll + Sustain + ‹ › + lock + chevrons, one ● record take
+  from the keyboard, the cof drag.
+- Boot + wiring (steps 12–13): a cold boot on Pages and on the iPad
+  (offline relaunch too — SW_VERSION went nr-v28 → nr-v32), `?perf=1`
+  (HUD + ⏺ report), `?sw=0`, Learning vs Normal (estimateKey never called
+  in Learning), and — because every listener in the app re-attached from
+  a different file — one pass over each sheet's open/close/Esc/drag and
+  the File ▾ / View ▾ / Edit ▾ menus, the metronome sheet, the Settings
+  sheet (folder pick, text size), Share.
+- Step 2's (still owed): the ⚠ chip count + debug log, an NSF/SPC chip
+  render.

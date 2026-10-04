@@ -119,9 +119,9 @@ illegal-layer imports.
 | 8 | M | **Done (worktree agent, 2026-10-04; 12 M commits + 1 harness commit; see write-up — jobStart landed in ui/sheets.js beside jobApi, askSave/askCommitLog pulled forward into ask/bridge.js).** commitImports, impCapture, openChipImport, captureChipTrack, fsub*, batchCommit, importAudioFiles, openPickedFiles, m3u → import/*; publishSong, renderSyncPending, openSyncSheet, fingerprintOldDrafts, discardPending, sweepStrandedClones, renameRepoTitles, manifest* → sync/publish (sheets → ui/sheets) | ~1,350 (actual: 1,903, 9360→7457) |
 | 9 | M | **Done (worktree agent, 2026-10-04; 9 commits; see write-up — two new files, ask/client.js (the run/send/resume client) and ask/host.js (openAsk/askBtnTap, the host adapter); deploy* landed in ask/bridge.js).** askRun, askSend, askContext, askRunTool, askResume*, askFinish/Fail/Landed, ask*Annotation, askWriteNotes… → ask/* | ~720 (actual: 748, 7638→6890) |
 | 10 | M | **Done (worktree agent, 2026-10-04; 10 commits + a step 0 addendum; see write-up — one new file, input/keyboard.js (the keyboard gesture machine); six unnamed leaves re-homed to model/selection, ui/chrome, ui/note-editor, input/gestures).** tap, endPointer, finalizeLasso, toggleSel, score pencil/tap/erase, instTap, recFinish, initCoreMidi/initWebMidi → input/*; cof drag → input/gestures | ~650 (actual: 1,025, 6890→5865) |
-| 11 | M | remainder bucketed by blockers.mjs (settings/folder UI, chord/progression insert, compare, versions sheet…) | ~1,500 |
-| 12a–f | L | top-level blocks → init functions, each with its cluster: canvas pointer listeners → input/gestures; editor/chord-widget/notes wiring → ui/note-editor + ui/notes; sheet/wm/modal wiring → ui/sheets + ui/wm; ask wiring → ask/sheet; ?perf HUD → ui/perf.js; migration IIFEs → model/*; boot IIFE → session/boot.js boot() | ~3,400 |
-| 13 | final | app.js = imports + footer + init stubs → delete; stub list becomes main.js; drop LEGACY_CONTAINER + harness legacy path; doc sweep (§4 step 15) | ~1,000 |
+| 11 | M | **Done (worktree agent, 2026-10-04; 11 commits after a third step 0 addendum; see write-up — every declaration out, zero left).** remainder bucketed by blockers.mjs (settings/folder UI, chord/progression insert, compare, versions sheet…) | ~1,500 (actual: 816, 5865→5049; 65 declarations) |
+| 12a–f | L | **Done (worktree agent, 2026-10-04; 25 commits, 66 inits, new ui/perf.js + platform/sw.js; see write-up — the migration IIFE landed in platform/base.js, not model/*: every dependency it has is platform-layer).** top-level blocks → init functions, each with its cluster: canvas pointer listeners → input/gestures; editor/chord-widget/notes wiring → ui/note-editor + ui/notes; sheet/wm/modal wiring → ui/sheets + ui/wm; ask wiring → ask/sheet; ?perf HUD → ui/perf.js; migration IIFEs → model/*; boot IIFE → session/boot.js boot() | ~3,400 (actual: 3,386, 5049→1663) |
+| 13 | final | **Done (worktree agent, 2026-10-04; 2 commits; see write-up).** app.js = imports + footer + init stubs → delete; stub list becomes main.js; drop LEGACY_CONTAINER + harness legacy path; doc sweep (§4 step 15) | ~1,000 (actual: 1,663 → 0) |
 
 **Step 0 — Done** (2026-10-04, tooling-only, no src/ edits). `move.mjs`:
 (a) never emits an import of a file into itself — checks every name already
@@ -1029,6 +1029,155 @@ untouched. **Browser/device check owed** (plan §3 has no step-10 list; this
 is the one): a roll tap/drag/lasso/pinch, a Score pencil + erase, the
 playhead tag drag, a keyboard glissando + two-finger scroll + Sustain, one
 ● record take from the keyboard (recFinish moved file), and the cof drag.
+
+**Step 11 — Done** (2026-10-04, worktree agent, branch `finish`). Eleven
+commits (10 M + one mixed M/L) after a third step 0 addendum (below). The
+65 declarations app.js still held, bucketed by `blockers.mjs` first
+(clean, or blocked by one name the same pass moves earlier):
+
+1. **M** `recentSongsForMenu`/`recentAlbumFor`/`applyMode`/`governingAt`/
+   `songPitchExtent`/`renderSongGroups`/`renderFolder`/`renderSongList`/
+   `openSongPicker`/`applyListener`/`setViewMode`/`applyViewMode`/
+   `toggleSubtitle`/`fileMenuSaveLabels`/`renderOpenRecentRow`/
+   `openRecentSong` → **ui/chrome.js**. `applyMode` is the interactive
+   Learning/Normal flip's UI refresh — its gate (`S.APP_MODE`'s first-launch
+   decision) is a top-level statement, step 12's `initMode1`; both verbatim.
+2. **M+L** the speed/volume popover cluster (`speedsl`…`volbtn`, 9 names)
+   → **ui/chrome.js**, carrying ONE top-level statement with it as
+   `initChrome1()`: `applySpeed = pct => { … }` re-wraps the function's
+   own binding, and an import binding is read-only (rule 2), so the
+   reassignment can only live in the module that declares the function.
+3. **M** `annoRestore`/`shiftAnchors`/`convertAnchors` → **model/
+   rollnotes.js** — `convertAnchors` carries the pre-existing `oldBpb` bug
+   with it; check.mjs's one standing finding now names model/rollnotes.js.
+4. **M** the undo log's apply side `invertEdit`/`editUndoPop`/`editRedoPop`/
+   `applyEditEntry` + `selectAllNotes` → **ui/note-editor.js** (not model/
+   edits.js beside `pushUndo`: the apply side re-renders the trackbar and
+   the Mixer and touches the audio graph, three ports short of layer 2;
+   note-editor.js already holds the edit row's state since phase 1).
+5. **M** the sheet openers + Settings/folder UI (`openInsertBars`,
+   `openDeleteBars`, the versions sheet ×4, `openGridSheet`, `DP_PIECES`/
+   `dp*`, `segGet`, `openPasteTo`, `renderFolderUI`/`folderAfterChange`/
+   `chooseFolder`/`forgetFolder`, `applyTextSize`/`settingsPersist`) →
+   **ui/sheets.js**.
+6. **M, re-homes** `CHORD_QUALS` → **theory/chords.js** and `stampChordBand`
+   → **model/rollnotes.js** (both from ui/note-editor.js — the §1 M2
+   "misfiled upward" shape; `stampChordBand` writes one band through the
+   `setAnchorBQ` port + model/rollnotes.js's own helpers, nothing UI).
+7. **M** `dedupeSong`/`insertChordAt`/`insertProgressionAt` → **model/
+   selection.js** (clean after 6).
+8–11. **M** `HOLD_MS`/`HOLD_SLOP`/`RULER_RANGE_SLOP` → **input/gestures.js**;
+   `recordRealtimeAudio` → **audio/bounce.js**; `MODAL_KEEP` → **ui/wm.js**
+   and `refreshKeyPreview`/`fileMeterAt` (no caller left — kept, not
+   deleted) → **ui/notes.js**; `homeSong` → **new session/boot.js**
+   (manifests: modulepreload, sw.js APP_MODULES + SW_VERSION nr-v28 →
+   nr-v29, devtools `sessionBoot`, fileCount 71 → 72).
+
+Per commit: `verbatim.mjs <sha>` ✔ ×11, zero exceptions; a new tool,
+`tools/split/fix-port-imports.mjs <file>`, replaced the hand-applied rule-10
+`XImpl as X` rewrite after every layer-4 landing (it rewrote 8 lines across
+the step: updateSongMeta, finalizeNotes/buildScoreModel/renderTrackbar,
+askRender, clampView); regen-e2e-footer after every move; check.mjs clean
+except `oldBpb`; e2e-globals/controls clean; prof label set 30, unchanged.
+Group: `perl -e 'alarm 1200; exec @ARGV' npm test` — only `ps2-real` (4) +
+`instruments` (13) fail, the pre-existing local-rip gap; `test:e2e:smoke`
+8/8; `package.mjs`: 189 files = step 10's 188 + session/boot.js.
+`src/app.js`: 5865 → 5049 lines, **zero declarations left** — 327 top-level
+statements (3,408 lines) + 1,460 import lines.
+
+**Step 0 addendum (third)**, its own commit before step 11: (a) move.mjs's
+init wrapper takes a run's body as ONE contiguous source span (first
+statement through the last one's trailing comment) — the per-node join
+dropped every comment and blank line between statements and every trailing
+`// why`, silently (verbatim.mjs skips comment lines); (b) verbatim.mjs
+tolerates `function boot() {` / `boot();` like init* (the §4 end state calls
+boot()); (c) `tools/split/fix-port-imports.mjs` (above); (d)
+`tools/split/boot-order.mjs` + `tests/boot-order.test.mjs` + the snapshot
+`tests/split-fixtures/boot-order.txt` — the §3 L-commit test: main.js's
+expanded top-level statement sequence (bare side-effect imports and
+`initX();`/`boot();` stubs expanded into the statements they stand for, one
+normalized first line each) must equal the 328-statement snapshot captured
+from app.js before the first init move. Four fixture tests (modules 90 → 94).
+
+**Step 12 — Done** (2026-10-04, same pass). Twenty-five L commits, one per
+target module, 66 inits in all; two new files. Every app.js top-level
+statement was assigned a home by original line, and a scratch driver
+(tmp/, not committed; each commit message lists its exact `move.mjs --range`
+invocations) moved every maximal contiguous run of same-home statements
+into one `init<Module><N>()` at its original spot — re-parsing after each
+move, `fix-port-imports.mjs` on the target after each module — so the stub
+sequence in app.js IS the original statement order. Homes (count of inits):
+ui/chrome.js 16 (LCD taps, error log + info strip, Edit-menu tap-away,
+transport buttons, volume, find, footer/panel fold, view switch, resize,
+subtitle button, keyboard transport keys + View ▾/Edit ▾/File ▾ menus,
+Download audio/.mid, Save, new-song form, Compare, backup flush, first
+paint); ui/sheets.js 9 (insert/delete bars, jobs, metronome, chord sheet +
+progression panel, ⎘ Web session, grid, drum fill / bassist / drummer /
+move / paste-to, Settings + folder, share/sync, the interrupted-job notice);
+ui/note-editor.js 6 (octave checkbox, ♮♯♭, the tool/duration/Clear row,
+the annotation editor + chord widget + Save/Delete, velocity + Copy, the
+edit row's buttons, undo/redo + keyboard editing); ui/notes.js 3; ui/wm.js 2 (sheet drag/resize, the
+S.wm load/purge, makeWindow registrations, dividers; every sheet's ✕/
+backdrop/Esc/focus block); input/gestures.js 2 (the canvas pointer/pinch/
+wheel machine; the cof buttons + drag); input/record.js 1; input/keyboard.js
+2; import/hub.js 1; import/capture.js 1 (incl. `JOB_KINDS.capture`);
+sync/publish.js 3 (the fingerprintOldDrafts timer, `JOB_KINDS.publish`,
+`JOB_KINDS.publishall`); ask/backend.js 1; ask/sheet.js 3; ask/bridge.js 2
+(incl. `askInboxStart()`); audio/engine.js 2 (the visibilitychange wake,
+first-touch warm-up); audio/transport.js 1 (`play.gen = 0`); session/album.js
+1; render/roll.js 1 (`S.RULER_W`/`S.STRIP_Y`/`S.RULER_H` — §2.2's S-field-
+in-an-init); platform/base.js 2 (`<base href>`, the four-wave
+migrateAlbumPaths localStorage migration — all platform-layer
+dependencies); platform/mode.js 1 (`S.APP_MODE`'s first-launch decision +
+body.dataset.mode — the Learning-mode gate, verbatim; the stray mid-file
+`"use strict";` rides along as the init's first statement, a no-op inside a
+module); **new ui/perf.js** 2 (the ?dpr= override, the ?perf=1 HUD — SW
+nr-v30, fileCount 73); **new platform/sw.js** 1 (the service-worker
+registration / ?sw=0 — docs/split-plan.md §1's row, finally; SW nr-v31,
+fileCount 74); session/boot.js: `initBoot1` (the launch-time document-title
+set — platform + model, so not a platform/base.js init) and **`boot()`** via
+`--init boot`, wrapping the untouched `(async function boot() { … })();`.
+
+Per commit: `verbatim.mjs <sha>` ✔ ×25 with the init tolerance, zero
+exceptions; `tests/boot-order.test.mjs` green after every commit (the
+sequence never changed); check.mjs clean except `oldBpb`; e2e-globals (2012
+names)/controls clean; prof label set 30, unchanged. Group: `perl -e 'alarm
+1200; exec @ARGV' npm test` — only `ps2-real` (4) + `instruments` (13) fail
+(pre-existing); `test:e2e:smoke` 8/8; `package.mjs`: 191 files = 189 +
+ui/perf.js + platform/sw.js. `src/app.js`: 5049 → 1663 lines — 1,526
+import lines, `installHooks();`, 66 init stubs and `boot();`, nothing else.
+**Browser check owed** (plan §3 step 12): cold boot, `?perf=1` HUD (+ ⏺
+report), `?sw=0`, Learning vs Normal (estimateKey never called in Learning),
+and — because every listener in the app re-attached from a different file —
+one pass over each sheet's open/close/Esc/drag and the File ▾/View ▾/Edit ▾
+menus.
+
+**Step 13 — Done** (2026-10-04, same pass). `src/app.js` deleted; `src/main.js`
+is §4's sketch exactly — `installHooks();`, the 66 init calls in the stub
+order, `boot();`, the `exposeGlobals()` gate — and `tests/boot-order.test.mjs`
+proves main.js's expanded sequence is still the pre-step-12 snapshot (now
+walked through main.js's own calls, not through `import "./app.js"`).
+`devtools.js`: the `import * as app` and the `__nrExpose$` mirror block are
+gone; every module's exports are mirrored as before (GET), `S`'s fields two-
+way — `check-e2e-globals` confirms every bare name tests/e2e/ evaluates
+still resolves (the specs assign only S fields: playCursor, selClip,
+pencilDur, rollnotes, multiSel). `check.mjs`: `LEGACY_CONTAINER` and `app.js`
+dropped from the LAYERS table and from every rule-3/4/5/10 exemption (main.js
+keeps its own, by design); the one finding is still `oldBpb`
+(model/rollnotes.js). `tests/harness.mjs`: the legacy inline-script path and
+its cutover sentinel removed — `createApp()` is module mode, full stop.
+Retired: `tools/split/e2e-footer.mjs`, `regen-e2e-footer.mjs`, `cutover.mjs`
+(move.mjs no longer splits a footer off `--to`; the footer fixture test went
+with them); `blockers.mjs` reads an absent app.js as empty, so its real-repo
+CLI tests still report "clean". Manifests: modulepreload / APP_MODULES
+(SW_VERSION nr-v31 → nr-v32) / devtools lose app.js; fileCount 74 → 73.
+tests/package.test.mjs no longer expects `src/app.js` in the output.
+Doc sweep per docs/split-plan.md §4 step 15: NIGHT-ROLL.md Module map
+(final: main.js/devtools.js/app.js entries rewritten, new entries for
+session/boot.js, ui/perf.js, platform/sw.js, and a closing note that every
+"stays in app.js" clause above it is history), CLAUDE.md's rule needed no
+change (it never named app.js), WEB-SESSION.md had no src/ layout to fix,
+README.md's Development line already describes the module harness.
 
 **Merge of main (2026-10-04)** — `git merge origin/main` into the branch
 after step 8 (15 main-only commits: the ⏮ back-to-selection change, the
