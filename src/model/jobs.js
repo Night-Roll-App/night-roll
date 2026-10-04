@@ -12,7 +12,7 @@ export const appErrors = [];
 // ---------------------------------------------------- jobs (footer ⏳)
 // Long work that must outlive the sheet that started it (Josh, 2026-09-27:
 // "you should not feel worried about minimizing or even closing that
-// capture window as it goes"; design: capture-jobs-design.md, generalized
+// capture window as it goes"; design: docs/design/capture-jobs-design.md, generalized
 // at his ask — captures are the first kind, not the only one). A job is a
 // plain record: no bytes, no DOM. It is mirrored to localStorage on every
 // state change (pct throttled) so a reload can say what was running; the

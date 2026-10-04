@@ -105,12 +105,13 @@ chrome each.)
   still documented there).
 - `analysis/*.md` — per-song derivation docs (his findings + the paths).
 - `analysis/key-sweep.md` — the opening-key sweep tally (may lag rollnotes).
-- `quizzes.md` — quiz protocol + question bank. Sessions open with ~5
-  questions drawn from the previous session's material.
-- `supplemental-learning.md` — session log, quiz source material.
+- `docs/learning/quizzes.md` — quiz protocol + question bank. Sessions open
+  with ~5 questions drawn from the previous session's material.
+- `docs/learning/supplemental-learning.md` — session log, quiz source material.
 - `NIGHT-ROLL.md` — the app's feature reference, if he mentions a tool.
-- `glossary.md` — terms Josh has ENCOUNTERED vs DEMONSTRATED; quiz fodder.
-- `ANALYSIS_CURRICULUM.md` — PARKED proposal (2026-08-23): 12 units of
+- `docs/learning/glossary.md` — terms Josh has ENCOUNTERED vs DEMONSTRATED;
+  quiz fodder.
+- `docs/learning/ANALYSIS_CURRICULUM.md` — PARKED proposal (2026-08-23): 12 units of
   Bach chorales, inventions and chromatic VGM, plus tooling ideas.
   Nothing in it is built or agreed. Do not treat it as a plan of record,
   and do not start a unit from it unless Josh says so.
@@ -149,7 +150,7 @@ memory or from reading the dump by eye.
 1. Clone the repo (above); read `open-items.md` and orient from its
    restart context.
 2. Opening quiz: a few questions from the last session's concepts (see
-   `quizzes.md` protocol). Mark results.
+   `docs/learning/quizzes.md` protocol). Mark results.
 3. Work whatever he brings — usually one song's next stretch. He reads the
    `.notes.txt`; you keep score of evidence and teach concepts on demand.
 4. End by writing a **handoff file** he downloads and gives to Claude Code:

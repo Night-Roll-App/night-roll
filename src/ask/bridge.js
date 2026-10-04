@@ -61,6 +61,13 @@ export const ASK_GENERAL_LOG = "ask/general.ask.md";
 // default (Josh is evaluating it: Ask answers at once while I build). It rides the general chat's
 // UI (askGeneral stays true: no span row, no Fill), with its own store.
 export const ASK_TERMINAL_KEY = "ff1roll-ask-terminal";
+// Its log lives beside the general one. Before 2026-10-04 askLogPath fell
+// through the per-song branch and wrote terminal.ask.md at the repo ROOT, and
+// pendingSongs took "terminal" for a song key, so Publish all ran publishSong
+// on it (commits a25031e2, 88477702: a terminal.rollnotes.json with 0 notes).
+export const ASK_TERMINAL_LOG = "ask/terminal.ask.md";
+export const ASK_TERMINAL_LEGACY_LOG = "terminal.ask.md"; // folder mode seeds the new file from it; never deleted
+export function askLogShared(storeKey) { return storeKey === ASK_GENERAL_KEY || storeKey === ASK_TERMINAL_KEY; } // the two chats that are no song's
 // ---- seen-cursor for the "New since your last message:" bridge context
 // (2026-09-30). Per chat (song key / general / terminal — askStoreKey()
 // already tells them apart, so its value doubles as the cursor's own key),
@@ -147,12 +154,13 @@ export function askLogKey(keyArg) { // a store key ("ff1roll-ask-…"), a song k
   if (!keyArg) return askStoreKey();
   return keyArg.startsWith("ff1roll-ask-") ? keyArg : "ff1roll-ask-" + keyArg;
 }
-export function askLogSong(storeKey) { return storeKey === ASK_GENERAL_KEY ? null : storeKey.slice("ff1roll-ask-".length); }
-export function askLogPath(key) { const sk = askLogKey(key); if (sk === ASK_GENERAL_KEY) return ASK_GENERAL_LOG; const song = askLogSong(sk); return song && song !== "local" ? song.replace(/\.midi?$/i, "") + ".ask.md" : null; }
-// beside the .mid (compositions) or the .rollnotes.json (analyzed); the general chat at the repo root
+export function askLogSong(storeKey) { return askLogShared(storeKey) ? null : storeKey.slice("ff1roll-ask-".length); }
+export function askLogPath(key) { const sk = askLogKey(key); if (sk === ASK_GENERAL_KEY) return ASK_GENERAL_LOG; if (sk === ASK_TERMINAL_KEY) return ASK_TERMINAL_LOG; const song = askLogSong(sk); return song && song !== "local" ? song.replace(/\.midi?$/i, "") + ".ask.md" : null; }
+// beside the .mid (compositions) or the .rollnotes.json (analyzed); the general and terminal chats under ask/
 export function askLogHeader(key) {
   const sk = askLogKey(key);
   if (sk === ASK_GENERAL_KEY) return "# ✦ AI log — general\n\nThe chat that is not about one song (the app, the project, music in general, messages for the terminal). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
+  if (sk === ASK_TERMINAL_KEY) return "# ✦ AI log — Terminal\n\nThe ⌨ Terminal chat — messages to and from the Mac's Claude Code (no song, no model call in the app). Night Roll appends the unsaved messages each time it is published from the PUBLISH sheet; Clear chat starts a new session on the device without touching this file.\n";
   return "# ✦ AI log — " + songTitleOf(askLogSong(sk)) + "\n\nOne file per song. Night Roll appends the chat since the last Save each time the song is saved; Clear chat starts a new session on the device without touching this file.\n";
 }
 export function askLogMarkdown(msgs) { // what Save appends: one heading per question (when, which bars), the reply under it
@@ -409,7 +417,7 @@ export function askSave(msgs, meta, key) {
 }
 export async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: append the unsaved messages to <song>.ask.md (or the general log); keyArg: another song's key for Publish all
   const key = askLogKey(keyArg || (S.askGeneral ? "ff1roll-ask-" + (S.songKey || "local") : null)); // a song's Publish ships the SONG's chat even while the general tab is showing
-  const general = key === ASK_GENERAL_KEY;
+  const general = askLogShared(key); // general and terminal: the songs repo, no composition test
   const sk = askLogSong(key);
   const path = askLogPath(key);
   const st = askStore(key);
@@ -421,7 +429,10 @@ export async function askCommitLog(h, keyArg, comp) { // Publish's chat leg: app
   if (!path || !fresh.length) return;
   const add = askLogMarkdown(fresh);
   if (folderActive()) {
-    const f = await folderRead(path);
+    let f = await folderRead(path);
+    // a folder has no vcs mv: the terminal log's old root file, when the new
+    // one does not exist yet, is copied forward and left where it was
+    if (!f && key === ASK_TERMINAL_KEY) f = await folderRead(ASK_TERMINAL_LEGACY_LOG);
     await folderWrite(path, (f ? await f.text() : askLogHeader(key)) + add);
   } else {
     const repo = general || (comp !== undefined ? comp : (sk && typeof isCompositionKey === "function" ? isCompositionKey(sk) : isComposition())) ? "songs" : "analysis";

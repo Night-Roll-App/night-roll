@@ -36,7 +36,7 @@ import { clipLabel } from "../render/tracks.js";
 
 // ---------------------------------------------------- audio tracks (clips)
 // A recording as a track (Josh's son, 2026-09-15: "I wouldn't use it unless
-// it supported waves"). Design + advisor review: wave-tracks-design.md.
+// it supported waves"). Design + advisor review: docs/design/wave-tracks-design.md.
 // The track itself is an ordinary empty track in the .mid; the "audio:"
 // annotation names it and gives it ONE clip (file, bar.beat anchor, offset),
 // derived here at finalizeNotes exactly as voice/color are. The bytes live in

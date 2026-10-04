@@ -1,99 +1,91 @@
 # Night Roll
 
-A single-file web app for studying game soundtracks: piano roll + engraved
-score over one shared timeline, NES-voiced playback, and a beat-anchored
-annotation system for writing analysis directly onto the music.
+A piano roll and an engraved score over one timeline, for studying game
+music and writing my own. It runs in the browser and installs as an app;
+there is no account, no server and no build step — `index.html`,
+`css/app.css` and plain ES modules under `src/`, served as they are.
 
-**Live:** https://night-roll-app.github.io/night-roll/ — no build step; `git push`
-is deployment. Built for iPad-in-bed ergonomics, works anywhere.
+**Live:** https://night-roll-app.github.io/night-roll/
 
 ## What it does
 
-- **Two views, one timeline** — canvas piano roll and VexFlow-engraved score,
-  sharing the bar ruler, sections, cursor, playhead, and pinch gestures.
-- **Import** — MIDI, NES `.nsf` and Game Boy `.gbs` chip-music files:
-  chip files are captured track by track in the browser through the same
-  emulators that dumped the FF1 album (loop detected, tempo fitted),
-  auditioned as drafts, then published; the original file stays out of
-  the public repo and plays back as the console's own sound.
-- **Playback** — WebAudio NES voices (pulse/pulse/triangle + drum kit),
-  per-track mute/solo, loop directives with mid-song jump points, 25–200%
-  speed, smooth notehead-to-notehead score playhead.
-- **Annotations (`.rollnotes`)** — plain-text sidecar per song: beat-anchored
-  notes, section bands, key changes, loop points. Edited in-app (with
-  dictation), synced to this repo via the GitHub Contents API.
-- **✦ Ask (AI tutor)** — a chat sheet that sees the song, your cursor, your
-  annotations, and the bars in view, talking to any OpenAI-compatible model
-  server you point it at. House rules: hints before answers, never names a
-  key you haven't set. On request it acts: "put an F#m chord annotation on
-  21.1" writes exactly that; "compare this to ambush" reads that song. On
-  your own songs, **✦ Fill** asks it to write notes into a range —
-  validated, applied as one undo step exactly like the Bassist. Design in
-  `local-llm-design.md`.
-- **Installable** — Safari → Share → Add to Home Screen (or the install
-  icon in Chrome/Edge): own icon, full screen, works offline with the songs
-  you have opened; instrument sounds are kept as first used. Nothing to
-  install on a computer, updates arrive on the next launch with a network.
-- **The AI bridge** (`npm run bridge`, `tools/claude-bridge.mjs`, no
-  dependencies) — one small server in front of whatever models you have:
-  LM Studio and Ollama are found automatically when running, any other
-  OpenAI server with `--upstream name=url`, and **Claude Code** if the
-  `claude` CLI is installed (read-only by default; `--claude full` lets it
-  edit, test and push under the repo's rules). Point Settings at the
-  bridge, tap Test, pick a model from what it lists. Every turn is a job
-  that survives your phone or iPad suspending the tab: leave, come back,
-  the answer is there. With Claude Code, each song's chat is one
-  long-running session that remembers earlier turns, can carry a message
-  to the Claude Code sessions in your terminal, and shows the terminal's
-  notes back in ✦ Ask (`node tools/claude-bridge.mjs --say "…"`). `--token` protects it; put TLS in front (Tailscale
-  Serve, Caddy) to reach it from a device that opens Night Roll over https.
-- **Composing** — it grew into a small DAW (2026-08): pencil/drag note entry
-  on a 16th/triplet grid, multi-note selection editing (move, resize, split,
-  join, velocity), chord & progression insertion, a drum kit with its own
-  lane and pattern fill, per-track volume/voice/rename, record from the
-  on-screen piano, and one-button Save & Commit of .mid + annotations +
-  a text dump web sessions can read.
-- **Audio tracks** — a guitar take, a vocal, a phone memo as a track next
-  to the chip voices: waveform in the Tracks view, plays and loops with
-  the song, nudge-to-align, saved beside the .mid (branch `audio-tracks`).
-- **Save to a folder, no GitHub** — Settings → Choose folder… (Chrome/Edge
-  on a computer): every Save writes into a folder laid out like this repo,
-  the song picker lists what's there, and no account or token is needed.
-- **Query tools** — `tools/*.mjs` answer factual questions (what sounds at
-  bar 2.4, pitch-class census, song diffs, annotation anomalies) through
-  the app's own parser. Facts only; findings stay the analyst's.
-- **Analysis-first design** — the app never reveals keys or chords on its
-  own; signatures and spellings render only what the analyst has recorded.
-  Discovery is the point.
-- **Chip-true data** — the NSF pipeline in `tools/nsf/` (a 6502 emulator +
-  APU register logger + note reconstruction) extracts songs from the actual
-  cartridge sound data: real channels, real tempos, frame-exact loops.
+- **Two views, one timeline.** A canvas piano roll and a VexFlow-engraved
+  score share the bar ruler, sections, cursor, playhead and pinch gestures;
+  switching views changes nothing else. Phones open a shared link as a
+  player (Listener mode).
+- **Imports game music from the rips themselves.** MIDI, plus NES `.nsf`,
+  Game Boy `.gbs`, Super NES `.spc`, Genesis `.vgm`, PlayStation `.psf`,
+  PlayStation 2 `.psf2` and Nintendo 64 `.usf`. Each format has its own
+  pipeline under `tools/<console>/` — the console's CPU or sequence driver
+  emulated or parsed in the browser — so the notes, tempos and loops are the
+  cartridge's, not a transcription's. Captures run as background jobs,
+  audition as drafts, then publish; the rip itself stays out of the repo.
+- **Plays through the console's sound.** Chip audio is rendered off the main
+  thread in a Web Worker; synth voices and sampled instruments extracted
+  from the rips are there too, with per-track mute, solo, volume and color.
+- **Annotations are the point.** A plain-text sidecar per song
+  (`.rollnotes.json`): beat-anchored notes, sections, chords, key changes,
+  loop points, dictated or typed in the app. In Learning mode the app never
+  names a key or a chord on its own — signatures and spellings render only
+  what I have written down. Normal mode shows estimates, labelled as such.
+- **A small DAW.** Pencil and drag note entry on a 16th/triplet grid,
+  multi-note editing (move, resize, split, join, velocity), chord and
+  progression insertion, a drum lane with a Drummer and a Bassist that
+  generate parts, recording from the on-screen piano or a real MIDI
+  keyboard, audio takes as tracks beside the chip voices, versions, and
+  Save & Commit of the `.mid` plus its annotations.
+- **✦ Ask.** An in-app chat that sees the song, the cursor, the annotations
+  and the bars in view. It talks to a model in the browser (WebGPU), to any
+  OpenAI-compatible server (LM Studio, Ollama), or to Claude Code on a Mac
+  through the bridge (`npm run bridge`). House rules: hints before answers;
+  it never names a key I have not set.
+- **Your repo, your folder.** Publish pushes songs and annotations to your
+  own GitHub repo through the Contents API (the song list below is written
+  by the app), or Save into a folder on disk with no account at all.
+
+## Run it
+
+```
+git clone https://github.com/Night-Roll-App/night-roll.git
+cd night-roll
+python3 -m http.server 8000     # fetch() needs http; file:// will not do
+```
+
+Open http://localhost:8000. Nothing to install and no runtime dependencies;
+`npm install` is only for the test suites.
+
+## Repo map
+
+| Path | What it is |
+|---|---|
+| `index.html`, `css/app.css`, `src/` | The app. `src/` is layered (docs/split-plan.md §1): `state.js`, `midi/`, `theory/` → `platform/` → `model/`, `gen/` → `audio/`, `render/` → `input/`, `ui/`, `ask/`, `import/`, `sync/` → `main.js`. A module imports only from its own layer or below. |
+| `sw.js`, `app.webmanifest`, `icons/` | Offline cache and install. |
+| `help/` | The in-app Help text; `docs/HELP.md` is generated from it. |
+| `quiz/` | A standalone quiz page — the quizzes.md bank (self-graded, spaced) plus generated ear and sight drills; open `/quiz/`, not linked from the app yet (docs/quiz.md). |
+| `vendor/` | `vexflow.js` (engraving), `ai/` (the claude-bridge library, vendored), `soundfonts/`. |
+| `albums/` | The music, one folder per game under its console: each song's `.mid`, its `.rollnotes.json` annotations and a `.notes.txt` dump; `albums/compositions/` are mine. |
+| `tools/` | The capture pipelines (`nsf/`, `gbs/`, `spc/`, `vgm/`, `psx/`, `ps2/`, `n64/`), the instrument library, the query tools, the bridge and the packager — see tools/README.md. |
+| `tests/` | The vm suite (`tests/harness.mjs` loads `src/` as real ES modules) and the Playwright e2e suite. |
+| `docs/` | The manual, design records, plans and learning docs — see docs/README.md. |
+| `NIGHT-ROLL.md` | The technical reference for the app. |
+| `open-items.md`, `WEB-SESSION.md`, `CLAUDE.md` | Working docs for the sessions that build and use this. |
+
+## Tests
+
+`npm test` runs the vm suite, one file at a time, no browser. The Playwright
+suite (`npm run test:e2e`) runs in GitHub Actions on every code push and
+nightly; `node tools/split/check.mjs` enforces the module rules.
 
 ## The music
 
-- **[albums/nes/final-fantasy-i/](albums/nes/final-fantasy-i/)** — the FF1 (NES)
-  soundtrack, extracted from the NSF, with the analysis work: song docs,
-  chord charts, the key sweep, and the verified loop-cut table
+- [albums/nes/final-fantasy-i/](albums/nes/final-fantasy-i/) — the FF1
+  soundtrack extracted from the NSF, with the analysis work: song docs,
+  chord charts, the key sweep and the verified loop-cut table
   ([CUTS.md](albums/nes/final-fantasy-i/CUTS.md)).
-- **[albums/compositions/](albums/compositions/)** — original pieces written
+- [albums/compositions/](albums/compositions/) — original pieces written
   during the study.
-
-## The learning workflow
-
-Analysis happens in dialogue, not in bulk — see each album's README. Working
-docs at the root: [open-items.md](open-items.md) (questions and owed
-exercises), [quizzes.md](quizzes.md) (spaced-recall bank),
-[supplemental-learning.md](supplemental-learning.md) (session log).
-The bank also runs as a standalone page — `quiz/` (open `/quiz/` on the
-served site; self-graded, Leitner-scheduled, plus generated ear and sight
-drills; not linked from the app on purpose — see [docs/quiz.md](docs/quiz.md)).
-
-## Development
-
-`make serve` → http://localhost:8000 · `make test` → Node's built-in runner
-over `tests/` (the harness loads `src/` as real ES modules in a vm — no
-build step; see docs/split-plan.md). Technical reference:
-[NIGHT-ROLL.md](NIGHT-ROLL.md).
+- The other albums are game soundtracks captured by the pipelines above,
+  kept for private study; the songs list below is what the app has published.
 
 <!-- night-roll:songs -->
 ## Songs — open in Night Roll
@@ -3554,4 +3546,7 @@ Made in [Night Roll](capacitor://localhost/). Links open the song in the player,
 
 ## License
 
-The app (index.html, tools, tests, docs) is under the [PolyForm Noncommercial License 1.0.0](LICENSE): use it, study it, change it and share it for noncommercial purposes; selling it or publishing it on a store needs permission. The music under `albums/` is not covered: Josh's compositions are his, and the game transcriptions belong to their publishers and are here for private study.
+[PolyForm Noncommercial 1.0.0](LICENSE): use, study, change and share it for
+noncommercial purposes; commercial use needs permission. The music under
+`albums/` is not covered — my compositions are mine, and the game
+transcriptions belong to their publishers and are kept for private study.

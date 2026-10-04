@@ -61,9 +61,11 @@ import { askStripContext } from "../ask/context.js";
 import { askPartial } from "../ask/sheet.js";
 import { pendingSongs } from "./chrome.js";
 import { ASK_GENERAL_LOG } from "../ask/bridge.js";
+import { ASK_TERMINAL_LOG } from "../ask/bridge.js";
 import { takeToken } from "../sync/publish.js";
 import { ghHeaders } from "../audio/chip.js";
 import { ASK_GENERAL_KEY } from "../ask/bridge.js";
+import { ASK_TERMINAL_KEY } from "../ask/bridge.js";
 import { draftDirtyState } from "./chrome.js";
 import { aiSay } from "../ask/backend.js";
 import { jobListeners } from "../model/jobs.js";
@@ -1034,26 +1036,29 @@ export function renderSyncPending() {
   if (S.pubCheckRunning) line(box, "checking each song against its published copy…", "pempty");
   for (const key of pendingSongs()) {
     const block = document.createElement("div");
-    if (key === "general") { // the general chat ships by itself: one tap, no song involved
+    if (key === "general" || key === "terminal") { // the general and terminal chats ship by themselves: one tap, no song involved
+      const term = key === "terminal";
+      const chatKey = term ? ASK_TERMINAL_KEY : ASK_GENERAL_KEY, chatLog = term ? ASK_TERMINAL_LOG : ASK_GENERAL_LOG;
+      const chatName = term ? "Terminal chat" : "General chat";
       block.className = "psong";
       const title = document.createElement("div");
       title.className = "ptitle";
-      const tspan = document.createElement("span"); tspan.textContent = "✦ General chat";
+      const tspan = document.createElement("span"); tspan.textContent = (term ? "⌨ " : "✦ ") + chatName;
       const b = document.createElement("button");
       b.textContent = "Publish chat";
-      b.title = "Append the unsaved general chat to " + ASK_GENERAL_LOG;
+      b.title = "Append the unsaved " + chatName.toLowerCase() + " to " + chatLog;
       b.addEventListener("click", async () => {
         const status = document.getElementById("syncstatus");
         const token = folderActive() ? "folder" : takeToken(status);
         if (!token) return;
-        b.disabled = true; status.textContent = "Publishing the general chat…";
-        try { await askCommitLog(folderActive() ? null : ghHeaders(token), ASK_GENERAL_KEY); status.textContent = "General chat published ✓"; }
-        catch (err) { status.textContent = "⚠ general chat: " + err.message; }
+        b.disabled = true; status.textContent = "Publishing the " + chatName.toLowerCase() + "…";
+        try { await askCommitLog(folderActive() ? null : ghHeaders(token), chatKey); status.textContent = chatName + " published ✓"; }
+        catch (err) { status.textContent = "⚠ " + chatName.toLowerCase() + ": " + err.message; }
         b.disabled = false; updateSyncBtn(); renderSyncPending();
       });
       title.append(tspan, b);
       block.appendChild(title);
-      const n = askUnsavedCount(ASK_GENERAL_KEY);
+      const n = askUnsavedCount(chatKey);
       line(block, "✦ " + n + " chat message" + (n === 1 ? "" : "s") + " unsaved");
       box.appendChild(block);
       continue;

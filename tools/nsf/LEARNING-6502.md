@@ -176,11 +176,11 @@ instruction tell you about what the driver expects, and does our caller agree?
 **2. Predict, then verify, the toy tune.** From
 [make-test-nsf.mjs](make-test-nsf.mjs), work out on paper: on which frame does
 pulse 1's first note begin, and why does `init` store 29 rather than 0 into
-`$00`? Verify by running `make test` — the first test in
+`$00`? Verify by running `npm test` — the first test in
 [tests/nsf.test.mjs](../../tests/nsf.test.mjs) asserts the exact frame numbers.
 
 **3. Break something on purpose.** Delete the `^ 0xFF` from `sbc`
-([cpu6502.mjs:52](cpu6502.mjs#L52)), run `make test`, read which tests fail and
+([cpu6502.mjs:52](cpu6502.mjs#L52)), run `npm test`, read which tests fail and
 why. Restore it. Repeat with the page-wrap in `ind()` (make it a plain
 `this.rd(a+1)`) — notice that nothing fails, and think about what that means
 about test coverage vs. faithfulness. Then `git checkout tools/nsf/cpu6502.mjs`.
