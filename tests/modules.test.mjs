@@ -676,6 +676,23 @@ test("move.mjs (b): a moved name's own `X = prof(\"X\", X);` statement travels W
   parseModule(result.toSource, "model/song.js");
 });
 
+test("move.mjs (b): a renamed port body's wrap `XImpl = prof(\"X\", XImpl);` (label unchanged by step 3's M1 recipe) travels WITH XImpl's declaration (docs/split-phase2-plan.md step 6 finding (a))", () => {
+  const fromSource = `import { prof } from "./state.js";\nfunction finalizeNotesImpl() { return 1; }\nfinalizeNotesImpl = prof("finalizeNotes", finalizeNotesImpl); // ?perf=1 attribution\nfunction renderTrackbarImpl() { return 2; }\nrenderTrackbarImpl = prof("renderTrackbar", renderTrackbarImpl);\nfunction other() { return 3; }\n`;
+  const result = planMove({ fromPath: "app.js", fromSource, toPath: "session/song.js", names: ["finalizeNotesImpl"] });
+  assert.match(result.toSource, /export function finalizeNotesImpl\(\) \{ return 1; \}\nfinalizeNotesImpl = prof\("finalizeNotes", finalizeNotesImpl\); \/\/ \?perf=1 attribution/);
+  assert.doesNotMatch(result.fromSource, /finalizeNotesImpl/); // the wrap left with it — not left assigning to an import
+  assert.match(result.fromSource, /function renderTrackbarImpl\(\) \{ return 2; \}\nrenderTrackbarImpl = prof\("renderTrackbar", renderTrackbarImpl\);\nfunction other/); // the OTHER renamed wrap stays, own line intact
+  parseModule(result.fromSource, "app.js");
+  parseModule(result.toSource, "session/song.js");
+});
+
+test("move.mjs (b): a wrap whose label is neither the identifier nor identifier-minus-Impl is NOT a self-wrap and never travels", () => {
+  const fromSource = `import { prof } from "./state.js";\nfunction fooImpl() { return 1; }\nfooImpl = prof("bar", fooImpl);\nfunction other() { return 3; }\n`;
+  const result = planMove({ fromPath: "app.js", fromSource, toPath: "model/song.js", names: ["fooImpl"] });
+  assert.doesNotMatch(result.toSource, /prof\("bar"/);
+  assert.match(result.fromSource, /fooImpl = prof\("bar", fooImpl\);/);
+});
+
 test("move.mjs (b): moving an UNRELATED name near a prof-wrapped one never joins lines or drops the wrap's comment (docs/split-plan.md's Deviations 9-11)", () => {
   const fromSource = `import { prof } from "./state.js";\nfunction computeSongEnd() { return 1; }\ncomputeSongEnd = prof("computeSongEnd", computeSongEnd); // ?perf=1 attribution\nfunction sfShownAt() { return 2; }\nfunction annoSnapshot() { return 3; }\n`;
   const result = planMove({ fromPath: "app.js", fromSource, toPath: "model/song.js", names: ["sfShownAt"] });

@@ -69,8 +69,12 @@ function selectNodes(parsed, range, names) {
 
 // `X = prof("X", X);` (step 7's self-profiler wrap, §2.4) — a plain top-level
 // assignment with no declared name, invisible to --names/--range selection
-// on its own. Returns "X" when `node` is exactly this shape for SOME name,
-// else null.
+// on its own. Returns the assigned identifier ("X") when `node` is exactly
+// this shape for SOME name, else null. A port body renamed by phase 2's M1
+// recipe keeps its ORIGINAL label — `XImpl = prof("X", XImpl)` — so the
+// label may also be the identifier minus the `Impl` suffix (phase 2 step 6's
+// finding (a): finalizeNotesImpl's wrap was left behind, assigning to an
+// import). Any other label/identifier mismatch is not a self-wrap.
 function profWrapName(node) {
   if (node.type !== "ExpressionStatement") return null;
   const e = node.expression;
@@ -81,7 +85,9 @@ function profWrapName(node) {
   if (e.right.callee.type !== "Identifier" || e.right.callee.name !== "prof") return null;
   const args = e.right.arguments;
   if (!args || args.length < 2) return null;
-  if (args[0].type !== "Literal" || args[0].value !== name) return null;
+  if (args[0].type !== "Literal" || typeof args[0].value !== "string") return null;
+  const label = args[0].value;
+  if (label !== name && label + "Impl" !== name) return null;
   if (args[1].type !== "Identifier" || args[1].name !== name) return null;
   return name;
 }
