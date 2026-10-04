@@ -41,6 +41,8 @@ export const AI_TEXT = { // every sentence the loop shows; a host overrides any 
   terminalSentWorking: now => "sent — the terminal is working: " + now,
   terminalSent: () => "sent — the terminal will answer here",
   terminalNotSent: msg => "⚠ not sent — the bridge didn't answer (" + msg + "); your message is back in the box",
+  stillWriting: () => "… (still writing)",
+  pendingHere: () => "… (still working — the reply lands here)",
 };
 export function aiText(host, key, ...args) { const t = host.text ? host.text(key, ...args) : undefined; return t != null ? t : AI_TEXT[key](...args); }
 export function aiPartial(host) { return host.state.askPartial || (host.state.askPartial = {}); } // job id → the words streamed so far: a reopened window redraws from storage, which only holds the marker

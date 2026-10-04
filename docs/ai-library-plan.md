@@ -281,9 +281,48 @@ mechanical commit).
    library fix-up commit inside the step: the loop's status helper was
    named `aiSay`, which collided with Night Roll's Settings `aiSay`
    (check.mjs rule 6 across src/ + vendor/ai/web caught it) → `aiNotice`.
-6. Window in adopt mode (binds today's `#ask*` markup; e2e selectors unchanged).
-7. (Optional, last) the library renders its own markup + CSS +
-   `mountAiSettings` — what makes a second iPad app need no copied HTML.
+6. **DONE 2026-10-04 (claude-bridge `v0.6.0`).** `web/window.js` in adopt
+   mode: `aiEl(host, which)` resolves `host.ids` (defaults `AI_WINDOW_IDS` =
+   today's `ask*` ids, so Night Roll overrides nothing), `host.css` the
+   class names (`askmsg`/`askcopy`/`othermode`/`earlier`). Mechanics moved:
+   `aiGrow`/`aiScrollEnd`/`aiFocusIfKeyboard`, `aiBubble`/`aiFillBubble`
+   (links; copy via `host.copyText`), `aiShowThinking`, the tabs
+   (`aiTabSet`/`aiTabButtons`/`aiTabRestore`; `host.keys.mode`, `host.tabLabel`,
+   `host.placeholder`, `host.onTabsChanged`/`onTabPicked`), the draft
+   (`aiDraftLoad`/`SaveNow`/`SaveSoon`/`Drop`; `host.shotPaths`/`restoreShots`,
+   `host.onDraftChange` → askComposing), `aiRenderLog` (`host.greeting`,
+   `host.msgTag` → `{tag, dim}`, `host.noteLabel`, `host.showText`,
+   `host.renderEarlier(div)`; pending bubbles from `aiPartial` with
+   `AI_TEXT.stillWriting`/`pendingHere`), `aiWindowBind` (Send/Enter →
+   `host.send`, Stop → `state.askBusy.abort()`, input → grow, tab clicks).
+   Night Roll: sheet.js keeps every bare name as a delegate and holds the
+   wording as plain functions (`askTabLabel`, `askPlaceholder`, `askGreeting`,
+   `askMsgTag`, `askNoteLabel`, `askRenderEarlier(div)`); `initSheet1`'s
+   tab restore and `initSheet3`'s five listeners stay as they were (each
+   now a delegate call) so tests/boot-order.test.mjs's snapshot of main.js's
+   expanded init sequence is byte-identical — `aiTabRestore`/`aiWindowBind`
+   are for an app without wiring of its own; index.html/CSS/e2e selectors
+   untouched. Library `tests/window.test.mjs` runs it over a tiny fake DOM.
+7. **Deferred (decided 2026-10-04, Fable review): NOT this round.** What
+   it would be, once a second app exists to need it: `web/window.css` +
+   `aiMountWindow(root, host)` rendering today's `#asksheet` subtree
+   (tabs row, span row, "Now:" strip, log, attach chip, compose row with
+   📷/🖼/🎤/Send/Stop, status line, session line + Compact, the ⌨ model
+   pickers) from a template string with the SAME ids/classes
+   `AI_WINDOW_IDS`/`AI_WINDOW_CSS` already name, so `aiWindowBind` and
+   every adopt-mode function work unchanged on a mounted window;
+   `aiMountSettings(root, host)` rendering the Settings "AI model" rows
+   (`#cfgaibackend`, `#cfgaiurl`+Test, `#cfgaimodel`, `#cfgaikey`,
+   `#cfgaibrowsermodel`) with `aiProbe` + `aiBrowserProbe` behind the
+   buttons and the app's `aiTestWords`-style wording from the host; the
+   app-side bits that would then become host hooks: `askRefresh`'s model
+   line, `askStatusRender`'s strip + the ✦ button's working dot,
+   `askShotRender`'s chip, `askTermModelsLoad`'s pickers, `openAsk`'s
+   window-manager calls (`wmLayoutAll`). Night Roll would keep its markup
+   until the mounted window is pixel-checked against it in the real
+   browser and on the iPad (memory: no unseen layout ships). Nothing is
+   gained today: index.html is the only consumer, and the split just
+   finished.
 
 Dev loop: edit `../claude-bridge`, `ai-sync --from ../claude-bridge` (VERSION
 "dirty" → modules.test fails, so it can't be pushed), then tag the library,

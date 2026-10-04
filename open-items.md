@@ -5948,6 +5948,29 @@ gui/$UID/com.nightroll.bridge`. Steps 3-7 (backends, store/ctx-cache/
 bridge-client/attach, the client loop, the window, the library's own
 markup) remain queued — docs/ai-library-plan.md §4.
 
+**Steps 3–6 DONE 2026-10-04 (Fable, worktree agent-afc27315658904c33, one
+Night Roll commit per step; plan docs/plans/2026-10-04-ai-library-3-7.md):**
+library `v0.3.0` (web/backends.js), `v0.4.0` (store, ctx-cache,
+bridge-client, attach), `v0.5.0` (client.js — the loop), `v0.6.0`
+(window.js, adopt mode) — ALL LOCAL TAGS, unpushed: the main session pushes
+them (`cd ../claude-bridge && git push origin main --tags`) BEFORE merging
+the Night Roll branch, since vendor/ai/VERSION names them. Night Roll:
+`src/ask/host.js`'s `askHost()` is the one adapter (settings, today's exact
+storage keys, the Learning law via `systemPrompt`/`context`/`buildMessages`,
+tools, wording); every `src/ask/*` bare name is a delegate; tests/ai.test.mjs
+and all Learning cases unchanged. NEW GUARD: tests/ask-storage.test.mjs +
+tests/fixtures/ask-storage-2026-10-04.json (no lost chats: every stored shape
+under the real key names reads back identically). One deliberate behaviour
+change (step 4): eviction over the chat-storage cap no longer deletes the
+`-seen`/`-sentctx`/`-epoch` cursors (they share the `ff1roll-ask-` prefix
+and used to go with the clean chats). Step 7 deferred — written up in
+docs/ai-library-plan.md §4. Owed by hand after merge (main session): the AI
+window chat, a ⌨ Terminal-tab send, an attachment, and chat history still
+present after a reload — in the real browser and one iPad build (memory:
+ipad-bundle-differs-from-web — the 9 vendor/ai/web files must be in the
+package; tools/package.mjs guards reachability). Steps 3–6 never touched
+`bridge/`, so no bridge restart is needed for them.
+
 ## OVERNIGHT PLAN 2026-10-03 (Josh, Terminal #97/#99/#100) — all on branch module-split, Josh tests in the morning
 1. Split steps 9–15 (builders, one step at a time, merged here).
 2. AI library: new private repo Night-Roll-App/claude-bridge (name/visibility Josh's, Q8) holding ALL AI support (bridge server, in-browser/cloud models, Ollama, LM Studio, the AI window); Night Roll imports it (plain ES modules, no build step).

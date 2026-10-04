@@ -2131,7 +2131,31 @@ gating, the consent, the span freeze, and the user push itself with its
 the library's `aiSendText` is for other apps; Night Roll hands the built
 messages to `aiRun`) and every bare name as delegates; `askPartial` is now
 `S.askPartial` (aliased in sheet.js). All 68 Learning cases and
-tests/ai.test.mjs's Learning-wire test are unchanged and green.
+tests/ai.test.mjs's Learning-wire test are unchanged and green. Step 6
+(`v0.6.0`): `web/window.js` in ADOPT mode — it binds index.html's existing
+`#asksheet #asklog #askinput #askstatus #asksend #askstop #askmode*
+#askspanrow` by id (`AI_WINDOW_IDS` are exactly this app's; markup, CSS
+and every e2e selector untouched) and owns the mechanics: the box that
+grows (`aiGrow`), bubbles + links + the copy button (`aiBubble`/
+`aiFillBubble`, copy via `host.copyText`), the live stream (`aiShowThinking`),
+the three tabs (`aiTabSet`/`aiTabButtons`/`aiTabRestore`, the choice under
+`host.keys.mode`), the draft (`aiDraftLoad`/`aiDraftSaveNow`/`aiDraftSaveSoon`/
+`aiDraftDrop`), the log render (`aiRenderLog`) and the Send/Enter/Stop/tab
+wiring (`aiWindowBind`). Every sentence a user reads is still this app's:
+sheet.js now holds them as plain functions the host hands over —
+`askTabLabel` (♪ + the song), `askPlaceholder`, `askGreeting` (the Learning
+greeting leads with hints, the Normal one answers), `askMsgTag` (which turn
+is "another mode's": `askMsgMode`/`appMode`, decided here, drawn there),
+`askNoteLabel`, `askRenderEarlier(div)`. `openAsk`/`askBtnTap` stay in
+host.js; `askRenderImpl` = `aiRenderLog(askHost())`. The window's own
+listeners (tabs, Send/Enter, Stop, input) stay in `initSheet3`, and
+`initSheet1`'s tab restore stays as it was — each a one-line call into a
+delegate, kept so tests/boot-order.test.mjs's snapshot (main.js's expanded
+init sequence) is byte-identical; the library's `aiWindowBind`/`aiTabRestore`
+do the same for an app with no wiring of its own. Step 7 (the library's
+own markup + CSS + `mountAiSettings`) is deliberately NOT done: index.html
+is the only consumer today — docs/ai-library-plan.md §4 says what it would
+take once a second app exists.
 
 ## Code map (index.html, section comments mark these)
 

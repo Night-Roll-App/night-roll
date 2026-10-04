@@ -23,7 +23,10 @@ v0.3), `web/store.js` + `web/ctx-cache.js` + `web/bridge-client.js` +
 `web/attach.js` (the chat record and its cursors/drafts, the sent-context
 cache, the bridge's own routes, attachments, v0.4), `web/client.js` (the
 exchange: store-first send, tool rounds, abort, resume of a cut stream,
-the terminal send, v0.5). The AI window moves over in the plan's step 6.
+the terminal send, v0.5), `web/window.js` (the window's mechanics in adopt
+mode — it binds an app's existing markup by id, v0.6). Next (the plan's
+step 7, deferred until a second app needs it): the library's own markup +
+CSS and a `mountAiSettings`.
 
 ## web/
 
@@ -99,6 +102,22 @@ Exports: `aiSendText(host, text, {scope, at})`, `aiTerminalSend(host, text)`,
 `aiPartial(host)` (job id → words streamed so far). Runtime fields on
 `host.state`: `askBusy`, `askPartial`, `askResumeTimer`, `askTerminalTimer`,
 `askTerminalFast`.
+
+`web/window.js` — the window, in ADOPT mode: it binds the app's existing
+elements by id (`host.ids`, defaulting to `AI_WINDOW_IDS`: `asksheet asklog
+askinput askstatus asksend askstop askmodesong askmodegen askmodeterm
+askspanrow`) and draws into them; class names from `host.css`
+(`AI_WINDOW_CSS`). Every sentence a user reads is the host's:
+- `copyText(text, btn)`, `onDraftChange(hasText)`, `shotPaths()`/`restoreShots(paths)`
+- `tabLabel(tab)`, `placeholder(tab)`, `onTabsChanged()`, `onTabPicked(tab)`, `keys.mode`
+- `greeting(tab)` → text|null, `renderEarlier(div)` (a chat trimmed to its file), `msgTag(m)` → `{tag, dim}`, `noteLabel(from)`, `showText(content)`
+- `send()` (the window's Send/Enter), `state.askBusy.abort()` is Stop
+
+Exports: `aiGrow/aiScrollEnd/aiFocusIfKeyboard`, `aiBubble/aiFillBubble/
+aiShowThinking`, `aiTabSet/aiTabButtons/aiTabRestore/aiTab`, `aiDraftLoad/
+aiDraftSaveNow/aiDraftSaveSoon/aiDraftDrop`, `aiRenderLog`, `aiWindowBind`,
+`aiClock`. Runtime fields on `host.state`: `askGeneral`, `askTerminal`,
+`askDraftKey`, `askDraftTimer`.
 
 ## bridge/
 

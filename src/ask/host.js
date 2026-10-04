@@ -51,6 +51,18 @@ import { askDraftClear } from "./sheet.js";
 import { askShotClearAll } from "./shots.js";
 import { askShotDisplayText } from "./shots.js";
 import { askLanded } from "./client.js";
+import { askSend } from "./client.js";
+import { askShotRestore } from "./shots.js";
+import { askCopyText } from "../ui/sheets.js";
+import { askTermModelsLoad } from "./bridge.js";
+import { askStatusRender } from "./bridge.js";
+import { askStripContext } from "./context.js";
+import { askTabLabel } from "./sheet.js";
+import { askPlaceholder } from "./sheet.js";
+import { askGreeting } from "./sheet.js";
+import { askMsgTag } from "./sheet.js";
+import { askNoteLabel } from "./sheet.js";
+import { askRenderEarlier } from "./sheet.js";
 
 // The host adapter (docs/ai-library-plan.md §2): the ONE object the AI
 // library (vendor/ai/web) sees of this app. Every app-specific thing — the
@@ -109,6 +121,22 @@ export function askHost() {
     poll: () => { askInboxPoll(); askStatusPoll(); },
     landed: (key, failed) => askLanded(key, failed),
     text: key => ASK_TEXT[key], // this app's wording where it differs from the library's neutral default (it says "the Mac")
+    // ---- the window (step 6, adopt mode: the library binds index.html's own
+    // #ask* ids — AI_WINDOW_IDS are exactly this app's, no override needed)
+    copyText: (text, btn) => askCopyText(text, btn),
+    onDraftChange: has => askComposing(has), // the bridge's "composing" notice: a build may wait
+    shotPaths: () => S.askShotPending.map(s => s.path),
+    restoreShots: paths => askShotRestore(paths),
+    tabLabel: () => askTabLabel(),
+    placeholder: tab => askPlaceholder(tab),
+    onTabsChanged: () => { askTermModelsLoad(); askStatusRender(); }, // the ⌨ model pickers and the "Now:" strip follow the tab
+    onTabPicked: () => { askRender(); askRefresh(); askSessionRefresh(); },
+    greeting: tab => askGreeting(tab),
+    renderEarlier: div => askRenderEarlier(div),
+    msgTag: m => askMsgTag(m), // which turns are "another mode's" is decided here (askMsgMode/appMode), never in the library
+    noteLabel: from => askNoteLabel(from),
+    showText: content => askStripContext(content),
+    send: () => askSend(),
   };
   return S.aiHost;
 }
