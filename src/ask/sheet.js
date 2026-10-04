@@ -11,6 +11,8 @@ import { askSpan } from "./context.js";
 import { askSpanLabel } from "./context.js";
 import { cfg } from "../platform/storage.js";
 import { AI_BROWSER_MODELS } from "./backend.js";
+import { micStop } from "../ui/chrome.js";
+import { askCopyText } from "../ui/sheets.js";
 
 export function askSetMode(mode) { // "terminal" | "song" | "general" (a boolean still means general/song)
   if (mode === true) mode = "general"; else if (mode === false) mode = "song";
@@ -103,4 +105,44 @@ export function askGrow() { // size the box to its text (CSS caps it) and keep t
   askinput.style.height = askinput.scrollHeight + "px";
   askinput.scrollTop = askinput.scrollHeight;
   askDraftSaveSoon(); // typing and dictation both land here
+}
+
+export function askMicOff() { // Send clears the box: a late result must not refill it
+  if (S.micBtn === document.getElementById("askmic")) micStop(true);
+  // ■ Stop leaves the stopped session's onresult attached (Safari's final
+  // words arrive after stop) — a Send right after it must silence that too,
+  // or the late transcript lands in the emptied box (Josh, 2026-09-30)
+  if (S.micPrev) { S.micPrev.onresult = null; try { S.micPrev.abort(); } catch (err) { /* already gone */ } S.micPrev = null; }
+}
+export function askBubble(role, text) {
+  const div = document.createElement("div");
+  div.className = "askmsg " + role;
+  askFillBubble(div, text);
+  asklog.appendChild(div);
+  asklog.scrollTop = asklog.scrollHeight;
+  return div;
+}
+export function askFillBubble(div, text) { // the words, web addresses tappable, a ⧉ copy at the end
+  div.textContent = text;
+  // links only where the DOM can rebuild children (the test harness's fake
+  // elements keep textContent as a plain string, so they get the text alone)
+  const re = /https?:\/\/[^\s<>"'`]+/g;
+  if (re.test(text) && typeof div.replaceChildren === "function") {
+    const nodes = []; let last = 0, m; re.lastIndex = 0;
+    while ((m = re.exec(text))) {
+      let url = m[0]; const trail = url.match(/[.,;:!?)\]]+$/); if (trail) url = url.slice(0, -trail[0].length);
+      nodes.push(document.createTextNode(text.slice(last, m.index)));
+      const a = document.createElement("a"); a.href = url; a.textContent = url; a.target = "_blank"; a.rel = "noopener"; // the PWA hands _blank to Safari
+      nodes.push(a);
+      last = m.index + url.length;
+    }
+    nodes.push(document.createTextNode(text.slice(last)));
+    div.replaceChildren(...nodes);
+  }
+  if (text.trim() && text !== "…") {
+    const b = document.createElement("button");
+    b.className = "askcopy"; b.type = "button"; b.setAttribute("aria-label", "Copy this message"); b.title = "copy";
+    b.addEventListener("click", ev => { ev.stopPropagation(); askCopyText(text, b); });
+    div.appendChild(b);
+  }
 }
