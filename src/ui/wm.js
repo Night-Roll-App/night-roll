@@ -2,6 +2,11 @@ import { S } from "../state.js";
 import { resize } from "./chrome.js";
 import { askScrollEnd } from "../ask/sheet.js";
 import { songRegionRight } from "./chrome.js";
+import { micStop } from "./chrome.js";
+import { teardownMixerMeters } from "./mixer.js";
+import { renderMixer } from "./mixer.js";
+import { ensureMixerMeters } from "./mixer.js";
+import { ensureMixerMeterLoop } from "./mixer.js";
 
 // ---- Window manager: shell + docks, phase A (open-items.md, "a real
 // windowing system"). Steps 1-2 (REBUILT 2026-09-29 after attempt 1,
@@ -591,3 +596,352 @@ export function wmSideDividerize(divId, side) {
 // pinned at the top while the body scrolls. confirmsheet is exempt: it asks a
 // question and has to get an answer.
 export const MODAL_KEEP = new Set(["confirmsheet"]);
+
+// Drag any sheet by its title line (and the capture panel by its title row).
+// The offset lives in a transform so the overlay's centering still applies;
+// it resets each time the sheet opens. Pointer capture keeps the drag alive
+// when the finger leaves the title.
+export function initWm1() {
+  (function sheetDrag() {
+    if (typeof document === "undefined" || !document.body) return;
+    const handleFor = t => {
+      if (t.closest && t.closest("button")) return null; // never start a drag from a button tap (a window's Dock control lives inside its h2)
+      const h2 = t.closest && t.closest(".sheet > h2");
+      if (h2) return {handle: h2, box: h2.parentElement};
+      const row = t.closest && t.closest("#importsheet .row:first-child");
+      if (row) return {handle: row, box: document.getElementById("importsheet")};
+      return null;
+    };
+    let drag = null, size = null;
+    // the ◢ grip on every sheet and on the capture panel (Josh, 2026-09-27: "resize them too by clicking in the corner")
+    const addGrips = () => { for (const box of [...document.querySelectorAll(".sheet"), document.getElementById("importsheet") && document.getElementById("importsheet").querySelector(".metpanel")]) { if (!box || box.querySelector(":scope > .sheetgrip")) continue; const g = document.createElement("div"); g.className = "sheetgrip"; g.textContent = "◢"; g.setAttribute("aria-label", "Resize"); box.appendChild(g); } };
+    addGrips();
+    document.addEventListener("pointerdown", e => {
+      if (e.button && e.button !== 0) return;
+      const grip = e.target.closest && e.target.closest(".sheetgrip");
+      if (grip) {
+        // a docked sheet is fixed by the dock, not by drag-and-resize — its
+        // divider resizes it instead
+        if (e.target.closest && e.target.closest(".overlay.docked")) return;
+        const box = grip.parentElement.classList.contains("metpanel") ? document.getElementById("importsheet") : grip.parentElement;
+        const r = box.getBoundingClientRect();
+        // a centered sheet grows out from its middle, so the top-left drifts up
+        // and off the screen (Josh, 2026-09-27); hold the corner still by
+        // translating half the growth. The capture panel is absolutely placed
+        // and grows down-right on its own.
+        const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(box.style.transform || "");
+        size = {box, x0: e.clientX, y0: e.clientY, w0: r.width, h0: r.height, id: e.pointerId,
+                tx: m ? +m[1] : 0, ty: m ? +m[2] : 0, centered: box.id !== "importsheet"};
+        try { grip.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+        e.preventDefault(); return;
+      }
+      const hit = handleFor(e.target);
+      if (!hit || !hit.box) return;
+      // Phase B (drag-to-dock): a DOCKED window's title now also arms a drag —
+      // it's undocked once the drag crosses the threshold below (a plain tap
+      // must not rip it out of its dock).
+      const overlay = hit.box.closest && hit.box.closest(".overlay");
+      const wasDocked = !!(overlay && overlay.classList.contains("docked"));
+      const wmId = overlay && overlay.id;
+      const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(hit.box.style.transform || "");
+      drag = {box: hit.box, x0: e.clientX, y0: e.clientY, dx: m ? +m[1] : 0, dy: m ? +m[2] : 0, id: e.pointerId,
+              wasDocked, wmId, moved: false, zone: null};
+      if (!wasDocked) hit.box.classList.add("dragging");
+      try { hit.handle.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+      e.preventDefault();
+    }, {capture: true});
+    document.addEventListener("pointermove", e => {
+      if (size && e.pointerId === size.id) {
+        const w = Math.max(280, Math.round(size.w0 + e.clientX - size.x0)), h = Math.max(160, Math.round(size.h0 + e.clientY - size.y0));
+        size.box.style.width = w + "px"; size.box.style.maxWidth = "none"; size.box.style.height = h + "px"; size.box.style.maxHeight = "none";
+        if (size.centered) size.box.style.transform = "translate(" + Math.round(size.tx + (w - size.w0) / 2) + "px, " + Math.round(size.ty + (h - size.h0) / 2) + "px)";
+        return;
+      }
+      if (!drag || e.pointerId !== drag.id) return;
+      if (drag.wasDocked && !drag.moved) {
+        // a tap on a docked title must not undock it — only a real drag does
+        // (the app's own 8px gesture threshold, reused here for drag-to-dock)
+        if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 8) return;
+        drag.moved = true;
+        drag.box.classList.add("dragging");
+        wmFloat(drag.wmId); // undock — its node moves back to its floating home
+        drag.box.style.transform = ""; // measure the floating (centered) position it just landed at…
+        const r = drag.box.getBoundingClientRect();
+        drag.dx = e.clientX - (r.left + r.width / 2); drag.dy = e.clientY - (r.top + r.height / 2); // …so the drag continues under the SAME finger position instead of jumping to center
+        drag.x0 = e.clientX; drag.y0 = e.clientY;
+      } else if (!drag.moved) {
+        drag.moved = true; // a floating window: unchanged behavior — moves from the very first pixel
+      }
+      drag.box.style.transform = "translate(" + Math.round(drag.dx + e.clientX - drag.x0) + "px, " + Math.round(drag.dy + e.clientY - drag.y0) + "px)";
+      if (drag.wmId && WM_WINDOWS[drag.wmId] && WM_WINDOWS[drag.wmId].dockable) {
+        drag.zone = wmZoneForPointer(e.clientX, e.clientY);
+        wmShowDropZone(drag.zone);
+      }
+    });
+    // where you left a sheet is where it reopens, on this device (Josh,
+    // 2026-09-27): translate + size per overlay id, a UI pref in localStorage
+    const sheetKey = box => { const ov = box.id === "importsheet" ? box : box.closest(".overlay"); return ov && ov.id ? "ff1roll-sheetpos-" + ov.id : null; };
+    const remember = box => {
+      const k = sheetKey(box); if (!k) return;
+      const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(box.style.transform || "");
+      const rec = {tx: m ? +m[1] : 0, ty: m ? +m[2] : 0, w: box.style.width || "", h: box.style.height || ""};
+      try { localStorage.setItem(k, JSON.stringify(rec)); } catch (err) { /* private mode */ }
+    };
+    const restore = box => { // the saved spot, nudged back on screen if the window shrank; nothing saved = centered, as before
+      box.style.transform = ""; box.style.width = ""; box.style.height = ""; box.style.maxWidth = ""; box.style.maxHeight = "";
+      const k = sheetKey(box); let rec = null;
+      try { rec = k && JSON.parse(localStorage.getItem(k) || "null"); } catch (err) { rec = null; }
+      if (!rec) return;
+      if (rec.w) { box.style.width = rec.w; box.style.maxWidth = "none"; }
+      if (rec.h) { box.style.height = rec.h; box.style.maxHeight = "none"; }
+      box.style.transform = "translate(" + rec.tx + "px, " + rec.ty + "px)";
+      // measured right away (the overlay is already display:flex here); an
+      // animation frame would never come in a hidden tab
+      const r = box.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight;
+      if (!r.width) return;
+      let dx = 0, dy = 0;
+      if (r.right > W - 8) dx = W - 8 - r.right; if (r.left + dx < 8) dx += 8 - (r.left + dx);
+      if (r.bottom > H - 8) dy = H - 8 - r.bottom; if (r.top + dy < 8) dy += 8 - (r.top + dy);
+      if (dx || dy) box.style.transform = "translate(" + Math.round(rec.tx + dx) + "px, " + Math.round(rec.ty + dy) + "px)";
+    };
+    const end = e => {
+      if (size && (!e || e.pointerId === size.id)) { remember(size.box); size = null; }
+      if (drag && (!e || e.pointerId === drag.id)) {
+        drag.box.classList.remove("dragging");
+        wmHideDropZone();
+        // released over a drop zone (drag-to-dock): dock there instead of
+        // remembering a floating position
+        if (drag.moved && drag.zone && drag.wmId && WM_WINDOWS[drag.wmId] && WM_WINDOWS[drag.wmId].dockable) {
+          if (drag.zone.side === "bottom") wmDockBottomWindow(drag.wmId);
+          else wmDockSide(drag.wmId, drag.zone.side, drag.zone.mode);
+        } else {
+          remember(drag.box);
+        }
+        drag = null;
+      }
+    };
+    document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+    // a sheet opens where you left it (or centered, the first time) when its
+    // overlay turns on — a docked sheet skips this, the dock lays it out instead
+    if (typeof MutationObserver === "function") new MutationObserver(muts => {
+      for (const mu of muts) { const el = mu.target; if (el.classList && el.classList.contains("on") && !el.classList.contains("docked")) { const box = el.classList.contains("overlay") ? el.querySelector(".sheet") : el.id === "importsheet" ? el : null; if (box) restore(box); } }
+    }).observe(document.body, {attributes: true, attributeFilter: ["class"], subtree: true});
+  })();
+                               S.wm = wmLoad();
+  // ⋯ More is gone entirely now (a drop-up, 2026-10-01, then removed outright
+  // in the chrome density follow-up the same day) — a device that had
+  // "moresheet" docked or tabbed from before either change would otherwise
+  // strand a dead id in wm forever (wmLayoutAll has nothing to lay out for
+  // it; makeWindow() is never called for it either). Purge it once, here,
+  // before any layout runs — pure (wmRemoveSideTab/wmClearBottom take no
+  // DOM), so it's safe at module-eval time in the vm harness too.
+  for (const side of ["left", "right"]) if (S.wm[side] && S.wm[side].ids && S.wm[side].ids.includes("moresheet")) S.wm = wmRemoveSideTab(S.wm, side, "moresheet");
+  if (S.wm.bottom && S.wm.bottom.ids && S.wm.bottom.ids.includes("moresheet")) S.wm = wmClearBottom(S.wm, "moresheet");
+  wmSave(S.wm);
+  try { localStorage.removeItem("ff1roll-sheetpos-moresheet"); } catch (err) { /* private mode */ }  // Applies wm[side] to the DOM: parks EVERY member of the tab group (full or
+  if (typeof document !== "undefined" && document.body) { // real browser only — dismissing the menu is not unit tested (see comment above)
+    document.addEventListener("pointerdown", e => {
+      const menu = document.getElementById("wmmenu");
+      if (menu.classList.contains("on") && !(e.target.closest && (e.target.closest("#wmmenu") || e.target.closest(".wmdock")))) wmCloseMenu();
+    });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") wmCloseMenu(); });
+  }
+  // ---- migrate the windows onto the shared window shape (phase A, extended
+  // footer v2 tweaks 2026-09-30) — asksheet already had a right-only dock;
+  // the rest are new. infosheet
+  // (Status, the full-message reader) is registered but NOT dockable (Josh,
+  // 2026-09-29) — a one-shot reveal for a truncated status line isn't a panel
+  // worth pinning open while working the roll, same reasoning as the import
+  // hub below. Settings (#settingssheet, not yet migrated onto makeWindow at
+  // all) stays non-dockable too.
+  makeWindow("asksheet", {dockable: true});
+  makeWindow("notelistsheet", {dockable: true});
+  makeWindow("instsheet", {dockable: true});
+  makeWindow("jobssheet", {dockable: true});
+  makeWindow("pubjobsheet", {dockable: true});
+  makeWindow("mixersheet", {dockable: true}); // Logic-style: dockable to the bottom
+  // ⋯ More was briefly the seventh window (footer v2 tweaks, 2026-09-30),
+  // then a drop-up (2026-10-01), then removed entirely (chrome density
+  // follow-up, 2026-10-01 pm) — its tools are in View ▾ and the footer now;
+  // nothing here was ever registered for it.
+  makeWindow("infosheet", {dockable: false});
+  // the import hub (docs/import-hub-design.md): a one-shot picker, not a panel
+  // worth pinning open while working the roll — registered so it's a known
+  // window (WM_WINDOWS), but not dockable, so it gets no Dock button.
+  makeWindow("importhub", {dockable: false});
+  makeWindow("versionssheet", {dockable: false});
+  wmSideDividerize("wmdivider-left-full", "left");
+  wmSideDividerize("wmdivider-left-inner", "left");
+  wmSideDividerize("wmdivider-right-full", "right");
+  wmSideDividerize("wmdivider-right-inner", "right");
+  (function wmBottomHeightDividerize() { // along the bottom dock's top edge — drag up (negative clientY delta) grows it
+    const divider = document.getElementById("wmdivider-bottomh");
+    let drag = null, lastTap = -Infinity; // double-tap resets to the default height
+    divider.addEventListener("pointerdown", e => {
+      if (e.button && e.button !== 0) return;
+      if (!S.wm.bottom) return;
+      const now = performance.now();
+      if (now - lastTap < 350) {
+        lastTap = -Infinity;
+        S.wm = wmSetBottomHeight(S.wm, WM_DEFAULT_H, wmInnerHeight());
+        wmSave(S.wm);
+        wmLayoutAll();
+        e.preventDefault();
+        return;
+      }
+      lastTap = now;
+      drag = {y0: e.clientY, h0: S.wm.bottom.h, id: e.pointerId};
+      divider.classList.add("dragging");
+      try { divider.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+      e.preventDefault();
+    });
+    document.addEventListener("pointermove", e => {
+      if (!drag || e.pointerId !== drag.id || !S.wm.bottom) return;
+      S.wm = wmSetBottomHeight(S.wm, drag.h0 - (e.clientY - drag.y0), wmInnerHeight());
+      wmLayoutAll();
+    });
+    const end = e => {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      divider.classList.remove("dragging");
+      drag = null;
+      wmSave(S.wm);
+    };
+    document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+  })();
+  (function wmBottomSplitDividerize() { // between the bottom dock's two slots, only shown with both occupied
+    const divider = document.getElementById("wmdivider-bottomsplit");
+    let drag = null;
+    divider.addEventListener("pointerdown", e => {
+      if (e.button && e.button !== 0) return;
+      if (!S.wm.bottom) return;
+      const r = document.getElementById("dockbottom").getBoundingClientRect();
+      drag = {x0: e.clientX, split0: S.wm.bottom.split != null ? S.wm.bottom.split : 0.5, width: r.width || wmInnerWidth(), id: e.pointerId};
+      divider.classList.add("dragging");
+      try { divider.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+      e.preventDefault();
+    });
+    document.addEventListener("pointermove", e => {
+      if (!drag || e.pointerId !== drag.id || !S.wm.bottom) return;
+      S.wm = wmSetBottomSplit(S.wm, drag.split0 + (e.clientX - drag.x0) / Math.max(1, drag.width));
+      wmLayoutAll();
+    });
+    const end = e => {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      divider.classList.remove("dragging");
+      drag = null;
+      wmSave(S.wm);
+    };
+    document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+  })();
+  // growing/shrinking the window re-checks wmAllowed() live: crossing below
+  // phone width mid-session floats every docked window (the pref itself is
+  // untouched — growing back re-offers and reapplies it)
+  window.addEventListener("resize", wmLayoutAll);
+}
+
+export function initWm2() {
+  if (typeof document.querySelectorAll === "function") { // vm harness stubs document
+  // A sheet keeps the scroll position it had when it was last closed, so
+  // reopening the notes list dropped Josh halfway down it (2026-08-25). Reset on
+  // open wherever the open happens — watching the class beats hunting ~30 call
+  // sites and cannot miss a future one. Scoped to the overlays themselves, NOT
+  // document.body: an app that repaints at 60fps must not run an observer over
+  // every class write in the tree. Overlay classes change only when a sheet
+  // opens or closes.
+  const SHEET_TOP = new MutationObserver(ms => {
+    for (const m of ms) {
+      // VoiceOver (2026-09-30): a docked window sits beside the roll like a
+      // panel, not over it — aria-modal="true" would tell a screen reader
+      // everything else on the page is inert, which is false while docked.
+      // Recomputed on every class write (open/close AND dock-side changes all
+      // touch the class), so it never goes stale.
+      m.target.setAttribute("aria-modal", m.target.classList.contains("on") && !m.target.classList.contains("docked") ? "true" : "false");
+      // any migrated, docked window: reserve/free its dock's space alongside
+      // its own visibility, however it closes (✕, backdrop, Esc, or
+      // reopening) — the one choke point every close path already runs through
+      if (WM_WINDOWS[m.target.id]) wmLayoutAll();
+      if (!m.target.classList.contains("on")) { // closing: a live 🎤 inside must not keep transcribing
+        if (S.micBtn && m.target.contains(S.micBtn)) micStop(true);
+        if (m.target.id === "mixersheet") teardownMixerMeters(); // ✕/backdrop/Esc all end here too — no cost while closed
+        // VoiceOver: give focus back to whatever opened this sheet (a button
+        // in most cases) — otherwise focus is left on a now-hidden node and a
+        // screen reader user loses their place. Deferred repeat closes (the
+        // Escape handler below, or a second class write before this one even
+        // ran) leave nothing to restore — harmless no-op.
+        if (m.target._srReturnFocus) {
+          const back = m.target._srReturnFocus;
+          m.target._srReturnFocus = null;
+          if (typeof back.focus === "function") try { back.focus(); } catch (err) {}
+        }
+        continue;
+      }
+      // only a sheet that has just OPENED starts at its top: docking, undocking
+      // and switching sides rewrite the class too, and reset the AI chat to its
+      // first message every time (Josh, 2026-09-29, the docked AI panel)
+      if (/(^|\s)on(\s|$)/.test(m.oldValue || "")) continue;
+      if (m.target.id === "mixersheet") { // opened some other way than openMixer() (e.g. a docked tab click): render + start meters
+        renderMixer();
+        ensureMixerMeters();
+        ensureMixerMeterLoop();
+      }
+      const sh = m.target.querySelector(".sheet");
+      if (sh) sh.scrollTop = 0;
+      // VoiceOver: remember who had focus, then move focus INTO the sheet —
+      // deferred one frame so a sheet's own open-time focus (e.g. rename's
+      // text input, already existing code) wins if it set one; only step in
+      // when nothing in the sheet already has focus.
+      m.target._srReturnFocus = (typeof document !== "undefined" && document.activeElement && document.activeElement !== document.body) ? document.activeElement : null;
+      const target = m.target;
+      requestAnimationFrame(() => {
+        if (!target.classList.contains("on")) return; // closed again before the frame landed
+        if (document.activeElement && document.activeElement !== document.body && target.contains(document.activeElement)) return; // the sheet already focused itself
+        // the SHEET itself, never a field inside it: focusing a text box pops
+        // the iPad keyboard every time a sheet opens (Josh already fought an
+        // unwanted keyboard in ✦ AI); VoiceOver still announces the dialog
+        const sh2 = target.querySelector(".sheet");
+        const land = sh2 || target;
+        if (land && !land.hasAttribute("tabindex")) land.setAttribute("tabindex", "-1");
+        if (land && typeof land.focus === "function") try { land.focus({preventScroll: true}); } catch (err) {}
+      });
+    }
+  });
+  for (const ov of document.querySelectorAll(".overlay")) {
+    SHEET_TOP.observe(ov, {attributes: true, attributeFilter: ["class"], attributeOldValue: true}); // incl. confirm
+    // VoiceOver: every overlay is a dialog (confirmsheet included — it's the
+    // one MODAL_KEEP exempts from backdrop/Esc dismissal, not from being a
+    // dialog), labelled by its own heading so a screen reader announces WHICH
+    // sheet just opened instead of a bare "dialog". aria-modal is kept live by
+    // the observer above (docked vs. floating can change after open).
+    ov.setAttribute("role", "dialog");
+    ov.setAttribute("aria-modal", "true");
+    const sh0 = ov.querySelector(".sheet");
+    if (sh0) {
+      if (!(sh0.tabIndex >= 0)) sh0.tabIndex = -1; // a focus target with nothing else inside, never in the Tab order itself
+      const h = sh0.querySelector("h2, h3");
+      if (h) {
+        if (!h.id) h.id = ov.id + "-srlabel";
+        ov.setAttribute("aria-labelledby", h.id);
+      }
+    }
+    if (MODAL_KEEP.has(ov.id)) continue;
+    // pointerdown, and only when the backdrop ITSELF is the target — a drag that
+    // starts inside the sheet and releases outside must not count as a dismiss
+    ov.addEventListener("pointerdown", e => { if (e.target === ov) ov.classList.remove("on"); });
+    const sh = ov.querySelector(".sheet");
+    if (!sh || sh.querySelector(".sheetx")) continue;
+    const x = document.createElement("button");
+    x.className = "sheetx";
+    x.textContent = "✕";
+    x.setAttribute("aria-label", "Close");
+    x.addEventListener("click", () => wmCloseWindow(ov));
+    sh.prepend(x);
+  }
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    const open = [...document.querySelectorAll(".overlay.on")].filter(o => !MODAL_KEEP.has(o.id));
+    if (!open.length) return;
+    open[open.length - 1].classList.remove("on"); // topmost only, so Esc unstacks
+    e.preventDefault();
+  });
+  }
+}
