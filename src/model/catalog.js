@@ -8,6 +8,8 @@ import { folderActive } from "../platform/folder.js";
 import { fsRoot } from "../platform/folder.js";
 import { fsReadJSON } from "../platform/folder.js";
 import { albumTitleFor } from "./provenance.js";
+import { linkRepoLabel } from "../platform/base.js";
+import { cfg } from "../platform/storage.js";
 
 export function titleCaseSlug(base) {
   return base.split("-").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
@@ -126,3 +128,22 @@ export function romanValue(r) {
 }
 export function titleSortKey(t) { return String(t).replace(/\b([IVXL]+)\b(?=\s*(?:$|[:(\-–]))/, (m, r) => String(romanValue(r)).padStart(3, "0")); }
 export function titleCompare(a, b) { return titleSortKey(a).localeCompare(titleSortKey(b), undefined, {numeric: true, sensitivity: "base"}); }
+
+export function publishedLabel() { return "PUBLISHED · " + (LINK_SONGS ? linkRepoLabel(LINK_SONGS) : folderActive() ? fsRoot.name : cfg().songsRepo); }
+// Real nesting (Josh, 2026-09-27: "they're not structured like folders,
+// they're just thrown all over the place"): a tree from the paths, one
+// level per tap — NES › Mega Man 2 › songs.
+export function folderTree(paths) { // {sub: {seg: node}, songs: [path], path}
+  const root = {sub: {}, songs: [], path: ""};
+  for (const p of paths) {
+    let node = root;
+    for (const seg of folderOf(p).split("/").filter(Boolean))
+      node = node.sub[seg] || (node.sub[seg] = {sub: {}, songs: [], path: (node.path ? node.path + "/" : "") + seg});
+    node.songs.push(p);
+  }
+  return root;
+}
+export function nodeAt(root, folder) { let n = root; for (const seg of (folder || "").split("/").filter(Boolean)) n = n && n.sub[seg]; return n || null; }
+export function nodeCount(n) { return n.songs.length + Object.values(n.sub).reduce((a, c) => a + nodeCount(c), 0); }
+export function parentFolder(folder) { const i = folder.lastIndexOf("/"); return i < 0 ? "" : folder.slice(0, i); }
+export function subfolderKeys(node) { return Object.keys(node.sub).sort((a, b) => segTitle(node.sub[a].path).localeCompare(segTitle(node.sub[b].path))); }
