@@ -8,6 +8,7 @@ import { SF_MAJOR } from "../theory/chords.js";
 import { TONIC_SPELL } from "../theory/key.js";
 import { fileKeyAt } from "../theory/key.js";
 import { barTicks } from "./rollnotes.js";
+import { appMode } from "../platform/mode.js";
 
 // ------------------------------------------------ selection editing (Josh's
 // requests, 2026-08-17: move lasso'd notes in pitch/time, resize many at
@@ -88,4 +89,42 @@ export function checkKeyVsFile() {
   if (matched === sorted.length && coversAll) return {state: "match", file};
   if (matched === 0) return {state: "differs", file};
   return {state: "partial-match", file};
+}
+
+// ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+ 
+ // sfShownAt / sfAt (P3): what the roll SPELLS with, as opposed to sfDeclaredAt
+// (what Josh actually declared — "the AI context spells by these", chord
+// evidence, etc.). Learning never estimates: undeclared stays neutral (sf 0,
+// the old default). Normal falls back to the Krumhansl-Schmuckler estimate
+// so an unlabelled song still spells sensibly for someone not doing ear work.
+export function sfShownAt(tick) { // declared (or key-dial preview), else the Normal estimate, else null
+  const d = sfDeclaredAt(tick);
+  if (d !== null) return d;
+  if (appMode() === "normal") { const est = estimateKey(); if (est) return est.sf; }
+  return null;
+}
+export function sfAt(tick) { const s = sfShownAt(tick); return s === null ? 0 : s; }
+export function sfDeclaredAt(tick) { // sf if the user has declared a key governing this tick, else null
+  if (S.previewSf !== null) return S.previewSf;
+  return sfDeclaredAtRaw(tick);
+}
+export function sfDeclaredAtRaw(tick) { // committed declarations only — no key-dial preview (the AI context spells by these)
+  let ranged = null, open = null;
+  for (const r of S.keyRegions) {
+    if (r.start > tick) continue;
+    if (r.end !== null) {
+      if (tick < r.end && (!ranged || r.start > ranged.start)) ranged = r;
+    } else if (!open || r.start > open.start) open = r;
+  }
+  return ranged ? ranged.sf : open ? open.sf : null;
+}
+export function keyNameAt(tick) { // recorded key name governing this tick, or null
+  let ranged = null, open = null;
+  for (const r of S.keyRegions) {
+    if (r.start > tick) continue;
+    if (r.end !== null) { if (tick < r.end && (!ranged || r.start > ranged.start)) ranged = r; }
+    else if (!open || r.start > open.start) open = r;
+  }
+  return ranged ? ranged.name : open ? open.name : null;
 }

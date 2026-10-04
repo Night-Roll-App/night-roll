@@ -5326,7 +5326,7 @@ Was: "finish moving initCatalog, finalizeNotes, and the edits-store SAFETY funct
 - `initCatalog` — RESOLVED. The step-8 CORRECTED note assumed `albumMetaFor` living in `audio/chip.js` (layer 3) was permanent; it wasn't — step 9 relocated `albumMetaCache`/`albumMetaFor` OUT of chip.js and into the new `model/provenance.js` (layer 2), a correction chip.js's OWN `isCaptureKey`/`chipSource` situation needed anyway (below). That made `albumMetaFor` same-layer for `model/catalog.js`, and `initCatalog` moved clean, by name, verbatim.
 - `folderScanAlbums` — ALSO RESOLVED, same move, and worth noting explicitly: this function was never actually in step 6's `platform/folder.js` despite some Module-map prose once implying it was (now corrected in NIGHT-ROLL.md) — step 6's own Deviations correctly listed it as blocked, by `albumTitleFor` (then still app.js). `albumTitleFor` landed in `model/provenance.js` this step too, which cleared it — but into `model/catalog.js` (alongside `initCatalog`), NOT `platform/folder.js` (its step-6-table destination): platform is layer 1, and `albumTitleFor` is layer 2, so landing it in platform now would be a permanent upward-import deadlock, the identical mistake `estimateKey`/`theory/key.js` made in steps 4-5. catalog.js was the only legal home once `albumTitleFor` moved to provenance.js.
 - `finalizeNotes` (→ src/model/rollnotes.js) — STILL BLOCKED, re-checked this step: of its dozen-ish call targets, `bakesTempo` is now clear (model/provenance.js, step 9), but `renderTrackbar` (ui/trackbar.js, step 14), `updateTrackGains`/`sfPreloadForSong`/`gamePreloadForSong` (audio/, step 7, still blocked), `fitView` (render/roll.js, step 11), `applyAudioDirs`/`updateSongMeta`/`keyLabelState` (none yet split) remain. Re-check after steps 10/11/14.
-- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — STILL BLOCKED, re-checked this step per its own instruction: `isComposition`/`ownFolderPath`/`isCaptureKey`/`editableSong`/`originOf` are now ALL real, legal imports (model/provenance.js + model/song.js, step 9) — real progress — but `saveEdits` still needs `scheduleAnalysisRecompute` (gen/analysis.js, step 10) and `saveDraft`/`computeSongEnd`/`updateSongMeta` (confirmed BLOCKED themselves, not step 9's to clear — see the versions.js/song.js QUEUED entries); `updateEditBtnVis` still needs `updateChipBtn` (blocked, step 8). All five stay bit-for-bit in app.js. Re-check after step 10 (gen/analysis.js) and whichever step lands `draw`/`buildScoreModel`/`finalizeNotes` for `computeSongEnd`'s sake.
+- `loadEdits`/`saveEdits`/`foldOldOverlay`/`retireOldOverlay`/`updateEditBtnVis` (→ src/model/edits.js) — STILL BLOCKED, re-checked this step per its own instruction: `isComposition`/`ownFolderPath`/`isCaptureKey`/`editableSong`/`originOf` are now ALL real, legal imports (model/provenance.js + model/song.js, step 9) — real progress — but `saveEdits` still needs `scheduleAnalysisRecompute` (gen/analysis.js, step 10) and `saveDraft`/`computeSongEnd`/`updateSongMeta` (confirmed BLOCKED themselves, not step 9's to clear — see the versions.js/song.js QUEUED entries); `updateEditBtnVis` still needs `updateChipBtn` (blocked, step 8). All five stay bit-for-bit in app.js. Re-check after step 10 (gen/analysis.js) and whichever step lands `draw`/`buildScoreModel`/`finalizeNotes` for `computeSongEnd`'s sake. **CORRECTED 2026-10-03 (step 10): this assumption was wrong.** `gen/analysis.js` landed (`harmonyTrackIndices`/`computeAnalysisLayer` only), but `scheduleAnalysisRecompute` itself did NOT move with it — it calls `finalizeNotes()` (model/rollnotes.js's own still-blocked headline, step 5) and `draw()` (render, step 11), neither of which step 10 could clear. `saveEdits` still cannot import `scheduleAnalysisRecompute` from anywhere lower than app.js. Re-check again once `finalizeNotes` and `draw` land (steps 5's own leftover + step 11) — see docs/split-plan.md "Deviations (10)".
 
 ## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 6: src/platform/{base,mode,storage,folder,native}.js (docs/split-plan.md)
 Moved, five `move.mjs --names` invocations over src/app.js (base → mode →
@@ -5740,3 +5740,90 @@ Blocked on Q7 (split order) and Q8 (repo).
 4. ✅ npm test runs every file (tools/run-tests.mjs).
 5. "✦ Annotate this song for me" (QUEUED IDEA 2026-09-27): built after the library. Normal mode ONLY (Learning mode never gets AI-written analysis — CLAUDE.md), on-demand per tap, annotations tagged AI-written, clearable in one go.
 Morning: one iPad build of the branch + one checklist; merge to main only after Josh says so.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-03 — module split step 10: src/gen/{drummer,bassist,analysis}.js (docs/split-plan.md)
+Sparsest "headline moved" ratio of any step so far: of the plan's own named
+targets (`drGenerate`, `bsInferTimeline`/`bsGenerate`, "Analyze layer compute
+and adopt"), only `bsInferTimeline` moved, and even that needed two unlisted,
+zero-blocker relocations first (the real content of this step): `tonicPcOfName`/
+`modeOfName` → `theory/key.js` (pure key-name parsers, inverse of `keyNameFor`),
+`keyNameAt`/`sfDeclaredAt`/`sfDeclaredAtRaw`/`sfShownAt`/`sfAt` → `model/song.js`
+(the declared/shown key+scale-factor family, next to `estimateKey`). Both were
+genuinely blocker-free (unlike every "permanent" UI/render blocker steps 6-9
+found) — nobody had moved them yet, so this step did. `gen/drummer.js` ←
+`drumRng`/`DR_TOMS`/`fnv1a32`/`DR_FILLS`/`sectionLane`/`drBoundaries`/
+`drNormParts`/`drBassTrack`/`drBackbeats`/`fmtBarBeat` (pure fill/skeleton
+math only — `drGenerate`/`drKitCountT` stay, blocked by `setInfo`/`saveEdits`/
+`computeSongEnd`/`draw`/`drPartsGet`). `gen/bassist.js` ← `bsChordTone`/
+`bsInferTimeline`/`bsChordTimeline`/`chordAt`/`nextChange` (`bsGenerate`/
+`applyTake` stay, blocked by `setInfo`/`saveEdits`/`computeSongEnd`/`draw`).
+`gen/analysis.js` ← `harmonyTrackIndices`/`computeAnalysisLayer`
+(`scheduleAnalysisRecompute`/`drawAnalysisLayer`/`adoptChordBand`/
+`adoptAllChords`/`adoptKeyRegion`/`openAnalyzeSheet` stay — `drawAnalysisLayer`
+specifically because it's render/canvas code, not compute, despite sharing
+the banner). Corrects the step-9-era QUEUED note that assumed landing this
+file would unblock `model/edits.js`'s `saveEdits` via `scheduleAnalysisRecompute`
+— it doesn't; see the corrected note above.
+
+Two real `move.mjs` findings this step: the known same-file self-import bug
+(now THREE occurrences across two steps — see the dedicated entry below) and
+a NEW failure mode, a two-statement line join (`computeSongEnd = prof(...)`
+joined onto `function annoSnapshot() {`, with the former's trailing comment
+silently clobbered) — the exact same shape as step 9's own fix commit
+(4316dc7a, "Split the line the step-9 move joined"), now a confirmed repeat,
+not a one-off. Both hand-fixed (import-line deletion; line split with the
+comment restored verbatim). `regen-e2e-footer.mjs` re-run once; check.mjs
+clean except oldBpb; check-e2e-globals.mjs/check-controls.mjs clean (26
+controls, unchanged). devtools.js gained `genDrummer`/`genBassist`/
+`genAnalysis`; sw.js APP_MODULES gained all three, SW_VERSION nr-v15 → nr-v16;
+index.html's modulepreload list gained all three. tests/modules.test.mjs's
+fileCount bumped 37 → 40.
+
+Verified: night-roll.test.mjs 428 (427 pass + 1 pre-existing env skip — the
+six existing "P6 Analyze layer" tests, including the Learning-mode spy test
+and the notes.txt/askContext byte-identity test, already satisfied this
+step's "Analyze is Normal-mode only, nothing leaks into Learning" verify
+line, so no test was added), modules 33/33, gestures 21/21, controls 3/3,
+pwa 3/3, package 3/3, nsf 20/23 (3 pre-existing vault-only skips), chip-worker
+31/31, bridge 10/10, migrate-rollnotes 9/9, import-set 5/5, album-order 8/8,
+psx-render 6/6, spc-render 5/5, instruments-export 4/4, sounding 12/12 — all
+green. `node tools/split/check.mjs` clean except oldBpb; `node
+tools/package.mjs --out /tmp/nr-dist-s10`: 47 runtime modules (unchanged).
+`node tools/dump_notes.mjs` re-verified byte-identical against scratch copies
+of all four albums/starters/ songs (never albums/compositions/); `tools/at.mjs`
+re-verified against fur-elise.mid. `npm run test:e2e:smoke` run once: chromium
+8/8. NOT pushed: this is a pure refactor with no user-facing change, but the
+main session should still browser-verify (open a song, generate a drum/bass
+take, toggle Analyze in Normal mode) before pushing and building, per the
+plan's own checklist.
+
+## QUEUED 2026-10-03 — tools/split/move.mjs: a same-file self-import guard is overdue (three occurrences across two steps)
+`move.mjs` resolves a moved node's free identifier against the `--from`
+file's OWN existing imports before checking whether the name is already a
+LOCAL declaration in `--to`, so when `--from` already imports a name FROM
+the very file now receiving new code, the mover emits a bogus
+self-referencing import line inside `--to` (a parse error, caught
+immediately by check.mjs, never silent). Step 9 hit this twice
+(`albumMetaCache`/`albumMetaFor` into `model/provenance.js`;
+`titleCaseSlug`/`folderScanAlbums` into `model/catalog.js`). Step 10 hit it
+twice more (`MODE_OFFSET` inside `theory/key.js`, moving `modeOfName`;
+`estimateKey` inside `model/song.js`, moving `sfShownAt`). All four were
+one-line hand-fixes (delete the bogus import). Fix: before emitting a
+back-import for a free identifier, check whether the resolved specifier
+equals `--to` itself (or, more generally, whether the name is already a
+local declaration in `--to`) and skip emitting it in that case.
+
+## QUEUED 2026-10-03 — tools/split/move.mjs: a second line-joining bug (two statements landing on one line after a deletion)
+Step 9's fix commit (4316dc7a, "Split the line the step-9 move joined")
+fixed one instance (`saveDraft = prof(...)` joined onto
+`function saveVersion(quiet) {`) by hand, without a tooling fix. Step 10 hit
+the identical shape again (`computeSongEnd = prof(...)` joined onto
+`function annoSnapshot() {`, with the first statement's own trailing comment
+silently replaced by the second statement's leading comment) — two
+occurrences now, confirmed repeatable, not a one-off either. Fix: when
+`move.mjs` deletes a contiguous run of top-level nodes, always leave (or
+insert) a newline between whatever statement remains immediately before the
+deleted run and whatever statement remains immediately after it, so two
+surviving statements are never left sharing one line. Until fixed, every
+future move must keep checking `git diff` for this pattern by hand (this
+task's own instruction already does).

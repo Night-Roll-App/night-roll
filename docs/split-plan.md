@@ -1488,7 +1488,246 @@ constraint for whoever next considers moving these two.
   path — the plan's own four checks for this step, none of which a vm test
   can stand in for completely (Publish's GitHub/folder write path and the
   Versions sheet's rendering are both UI-side).
+
+**10. `gen/drummer.js`, `gen/bassist.js`, `gen/analysis.js`.**
 - Verify: drummer/bassist tests; Analyze is Normal-mode only and nothing leaks into Learning (test).
+- **Done** (2026-10-03, Sonnet builder, worktree branch). Same "named target
+  stays, pure leaves move" pattern as every step since 4, here landing a
+  sparser result than most: of this step's four own named headlines
+  (`drGenerate`, `bsInferTimeline`, `bsGenerate`, "Analyze layer compute and
+  adopt"), only `bsInferTimeline` actually moved. Five `move.mjs --names`
+  invocations over src/app.js, all by name (the Drummer/Bassist/Analysis
+  banners each run hundreds of lines through UI-sheet/model-edit code that
+  stays, the same shape steps 4-9 each found):
+  - **Two unlisted, zero-blocker relocations FIRST**, needed to unblock this
+    step's real content rather than leave it stuck (the same "fix the
+    blocker, not the target" correction steps 4/5/9 each made): `move.mjs
+    --names tonicPcOfName,modeOfName --to src/theory/key.js` (pure key-name
+    parsers, inverse of the already-there `keyNameFor`, zero dependency
+    beyond `LETTER_PC` already in `theory/chords.js`) and `move.mjs --names
+    keyNameAt,sfDeclaredAt,sfDeclaredAtRaw,sfShownAt,sfAt --to
+    src/model/song.js` (the "declared/shown key and scale-factor at a tick"
+    family, next to the already-there `estimateKey`/`checkKeyVsFile` —
+    `sfShownAt` was explicitly flagged in step 4's Deviations as destined for
+    `platform/mode.js`, written back when `estimateKey` itself was still
+    unmovable; `model/song.js` is the only layer-≤2 home that needs no
+    upward import now that `estimateKey` lives there, step 9). Both moves
+    hit `move.mjs`'s known same-file self-import bug (open-items.md, steps
+    8/9): `modeOfName`'s body references `MODE_OFFSET`, already declared in
+    `theory/key.js` itself — app.js's own import of `MODE_OFFSET` pointed at
+    `theory/key.js`, and the mover resolved the free identifier via that
+    stale app.js import instead of noticing `MODE_OFFSET` is a LOCAL
+    declaration in the destination file, producing
+    `import { MODE_OFFSET } from "./key.js";` inside `key.js` itself — a
+    parse error (`Identifier 'MODE_OFFSET' has already been declared`),
+    caught immediately. Same shape for `sfShownAt`'s `estimateKey()` call
+    against `model/song.js`. Both fixed by deleting the one bogus
+    self-import line each time (§0's import-line-only allowance); re-running
+    `check.mjs` immediately after each confirmed the parse error, and ONLY
+    the parse error, was gone.
+  - `gen/drummer.js` ← `drumRng,DR_TOMS,fnv1a32,DR_FILLS,sectionLane,
+    drBoundaries,drNormParts,drBassTrack,drBackbeats,fmtBarBeat` (10 names) —
+    every one of the Drummer's pure skeleton/fill-math leaves. `drGenerate`
+    itself (the actual kit-generation entry point, this file's own namesake)
+    did NOT move: it calls `setInfo`/`renderTrackbar`/`saveDraft` (UI, not
+    yet split), `saveEdits` (model/edits.js's SAFETY-blocked function, step
+    5), `computeSongEnd`/`buildScoreModel`/`draw` (permanently-or-not-yet
+    blocked, model/render). `drKitCountT` also did NOT move — it calls
+    `drPartsGet()` (a UI sheet reader) directly, its own independent
+    blocker. Both stay in app.js, importing every helper above back.
+  - `gen/bassist.js` ← `bsChordTone,bsInferTimeline,bsChordTimeline,chordAt,
+    nextChange` (5 names) — resolved clean against the two relocations
+    above plus `barTicks`/`beatTicks` (model/grid.js, already layer 2).
+    `bsGenerate` (this file's other named headline) did NOT move: it calls
+    `setInfo` directly at four separate sites. `applyTake` (the generators'
+    shared replace-in-range apply, extracted 2026-09-25 for ✦ Fill) did NOT
+    move either: it calls `saveEdits`/`computeSongEnd`/`buildScoreModel`/
+    `draw`, the identical cluster blocking `drGenerate`/`drKitCountT` above.
+    Both stay in app.js, importing `bsChordTone`/`bsInferTimeline`/
+    `bsChordTimeline`/`chordAt`/`nextChange` back, plus `drumRng`/
+    `sectionLane`/`drBassTrack` from `gen/drummer.js` (same layer 2) — the
+    comment at `sectionLane`'s own definition ("same label = same substream
+    … Drummer + Bassist") is now a real cross-file same-layer import, not
+    just a shared convention.
+  - `gen/analysis.js` ← `harmonyTrackIndices,computeAnalysisLayer` (2 names)
+    — `harmonyTrackIndices` sits textually inside the Bassist's banner (it
+    was written right before `computeAnalysisLayer`, which is its one and
+    only caller) but is "Analyze layer compute" content by function, not by
+    banner position, the same "physical banner position lies" finding every
+    step since 4 has made. `computeAnalysisLayer` resolved clean against
+    `analysisAvailable` (platform/mode.js), `barTicks` (model/grid.js),
+    `bsInferTimeline` (gen/bassist.js, same layer 2), `nameChord`
+    (theory/chords.js), and `sfShownAt`/`estimateKey` (model/song.js, both
+    relocated/already-there above). **`scheduleAnalysisRecompute` — the
+    debounced note-edit hook open-items.md's step-9 note assumed would land
+    here and unblock `model/edits.js`'s `saveEdits` — did NOT move**: its
+    body calls `finalizeNotes()` (model/rollnotes.js's own still-blocked
+    headline, step 5) and `draw()` (render, step 11), neither this step's to
+    clear. `drawAnalysisLayer` did NOT move either, and not because it's
+    blocked in the usual sense — it's canvas-drawing code (`ctx`/`css()`/
+    `BASE_RULER_H`/`LANE_H`), genuinely `render/roll.js` territory (step 11),
+    despite sitting in the same banner; the plan's own responsibility line
+    says "compute and adopt", not "draw". `adoptChordBand`/`adoptAllChords`/
+    `adoptKeyRegion` (each calling `setInfo`/`finalizeNotes`/
+    `buildScoreModel`/`updateSubtitle`/`draw`) and `openAnalyzeSheet`
+    (DOM-sheet UI) did NOT move either. All five stay in app.js, importing
+    `computeAnalysisLayer`/`harmonyTrackIndices` back at their two call
+    sites (the View ▾ Analyze toggle handler and the debounce).
+  - **One function-body-joining bug, same shape as step 9's own fix commit
+    (4316dc7a, "Split the line the step-9 move joined")**: removing
+    `sfShownAt`/`sfAt`/`sfDeclaredAt`/`sfDeclaredAtRaw` left
+    `computeSongEnd = prof("computeSongEnd", computeSongEnd); // ?perf=1
+    attribution …` and `function annoSnapshot() {` joined onto one line,
+    with the original trailing comment silently replaced by the next
+    statement's text — caught by `git diff`'s own "every moved line is
+    intact" check (this task's own instruction, echoing step 9's
+    precedent), not by any automated check. Fixed by hand: split back into
+    two lines, restoring the dropped comment verbatim. Confirmed by
+    re-diffing every hunk in `src/app.js`'s full diff for the same pattern
+    (multiple statements on one added line) — this was the only occurrence.
+  - `regen-e2e-footer.mjs --file src/app.js` re-run once, after all five
+    `move.mjs` invocations; `check.mjs` clean except the pre-existing
+    `oldBpb` finding; `check-e2e-globals.mjs` and `check-controls.mjs` clean
+    (26 controls, unchanged — this step touched no control). `devtools.js`
+    gained `genDrummer`/`genBassist`/`genAnalysis` namespace imports
+    (GET-only). `sw.js` `APP_MODULES` gained all three files, `SW_VERSION`
+    bumped nr-v15 → nr-v16; `index.html`'s modulepreload list gained all
+    three (after `sync/publish.js`, before `app.js` — all layer 2).
+    `tests/modules.test.mjs`'s `checkSrc` fileCount assertion bumped 37 →
+    40. `node tools/package.mjs --out /tmp/nr-dist-s10`: 47 runtime modules,
+    unchanged from post-step-9 (no `tools/`-side runtime module corresponds
+    to `gen/`). `node tools/dump_notes.mjs` re-verified against scratch
+    copies of all four `albums/starters/` songs (never
+    `albums/compositions/`) — every one byte-identical to its committed
+    `.notes.txt`; `tools/at.mjs` re-verified against `fur-elise.mid`. Tests,
+    under `perl -e 'alarm 1200; exec @ARGV' npm test`: night-roll 428 (427
+    pass + 1 pre-existing vault-only skip — the six "P6 Analyze layer" tests,
+    including "Learning has no menu item and never calls
+    bsInferTimeline/estimateKey (spy)" and "notes.txt/askContext are
+    byte-identical with the layer on or off", already existed before this
+    step and pass unchanged — they satisfy this step's own "Analyze is
+    Normal-mode only and nothing leaks into Learning" verify line as
+    written, so no new test was added, per this task's instruction to add
+    one only if none existed), modules 33/33 (fileCount bumped 37→40),
+    gestures 21/21, controls 3/3, pwa 3/3, package 3/3, nsf 20/23 (3
+    pre-existing vault-only skips), chip-worker 31/31, bridge 10/10,
+    migrate-rollnotes 9/9, import-set 5/5, album-order 8/8, psx-render 6/6,
+    spc-render 5/5, instruments-export 4/4, sounding 12/12 — all unchanged
+    from post-step-9 baselines except the two noted bumps. `npm run
+    test:e2e:smoke`: chromium 8/8. See "Deviations (10)" below.
+
+## Deviations (10, 2026-10-03)
+
+- **This step's own four named headlines were almost entirely unmet by
+  content, the sparsest ratio of "headline moved" to "headline named" of
+  any step so far** — `drGenerate`, `bsGenerate`, `scheduleAnalysisRecompute`
+  (the Analyze layer's actual compute TRIGGER, as opposed to the one-shot
+  computation `computeAnalysisLayer` itself does), and the three `adopt*`
+  functions all stay in app.js, every one for a reason already seen in
+  steps 4-9 (UI/`setInfo`, model-edits `saveEdits`, render `draw`/
+  `buildScoreModel`, or `finalizeNotes`, none yet split). Only
+  `bsInferTimeline` (of the four) actually moved, and even that needed two
+  unlisted relocations first (below) — without them this step would have
+  landed `gen/drummer.js` (fill/skeleton math only), `gen/bassist.js`
+  (just `bsChordTone`/`chordAt`/`nextChange`, none of which the plan's
+  table names), and an EMPTY `gen/analysis.js`.
+- **The two unlisted relocations — `tonicPcOfName`/`modeOfName` into
+  `theory/key.js`, `keyNameAt`/`sfDeclaredAt`/`sfDeclaredAtRaw`/
+  `sfShownAt`/`sfAt` into `model/song.js` — are the real content of this
+  step**, not a side detail. Both clusters were checked and confirmed to
+  have ZERO blocker of their own (pure string parsing; pure reads of
+  `S.keyRegions`/`S.previewSf` plus `appMode()`/`estimateKey()`, both
+  already legally importable) — this is categorically different from
+  every "permanent" blocker steps 6-9 found (`logErr`/`setInfo`/`draw`/
+  `updateJobsBtn`/`CHIPS`), which stay stuck until a WHOLE OTHER LAYER
+  (UI-chrome, render) lands. Here the blocker was simply "nobody has moved
+  this pure leaf yet" — the exact shape step 4 fixed for `spellFor`/
+  `keySpelling`, step 5 fixed for `keyNameToSf`, and step 9 fixed
+  extensively for `estimateKey`/`checkKeyVsFile`/`albumMetaFor`/
+  `initCatalog`/`folderScanAlbums`. Leaving `bsInferTimeline`/
+  `bsChordTimeline`/`computeAnalysisLayer` blocked by a trivially-movable
+  dependency, rather than moving that dependency, would have been the
+  "leave genuinely clean, on-topic leaf code behind for no structural
+  reason" over-caution step 7's Deviations already warned against (in the
+  opposite direction — leaving code BEHIND rather than moving it forward).
+  `sfShownAt` in particular closes a loop open since step 4: its Deviations
+  named `platform/mode.js` as sfShownAt's destined home, written when
+  `estimateKey` (sfShownAt's other real dependency) was itself still stuck
+  in app.js; step 9 moved `estimateKey` to `model/song.js` instead
+  (`theory/key.js` was impossible for it, permanently — see step 9's own
+  Deviations), which silently made `platform/mode.js` the WRONG answer for
+  `sfShownAt` too (platform is layer 1, `model/song.js` is layer 2 — a
+  layer-1 module importing a layer-2 one is backwards). Nobody had gone
+  back to correct this until this step needed `sfShownAt` directly.
+- **`move.mjs`'s known same-file self-import bug (open-items.md, first
+  seen steps 8/9) recurred twice in this step's first two invocations**,
+  confirming it is a real, narrow, re-triggerable tooling gap, not a
+  one-off: `tonicPcOfName`/`modeOfName --to theory/key.js` produced
+  `import { MODE_OFFSET } from "./key.js";` INSIDE `key.js` (MODE_OFFSET is
+  already declared there, moved in step 5); `keyNameAt`/`sfShownAt`/etc.
+  `--to model/song.js` produced `import { estimateKey } from "./song.js";`
+  inside `song.js` itself (estimateKey landed there in step 9). Both are
+  the exact mechanism open-items.md already documented: `move.mjs`
+  resolves a moved node's free identifier against the `--from` file's OWN
+  existing imports before checking whether the name is already a LOCAL
+  declaration in `--to`, and in both cases `--from` (app.js) already
+  imported the name from the very file receiving the new code. Both surfaced
+  immediately as `check.mjs` rule-0 parse errors (`Identifier '...' has
+  already been declared`), not a silent wrong behavior, and were fixed by
+  deleting the one bogus self-import line each time. `move.mjs` itself was
+  NOT patched this step (per the task's own instruction, this was a
+  check-for-and-hand-fix task, not a tooling task) — the open-items.md
+  entry asking for a guard (skip emitting an import whose resolved
+  specifier equals `--to` itself) now has a third occurrence to point to.
+- **A third, different bug: the mover joined two statements onto one
+  line**, the exact failure mode step 9's own fix commit (4316dc7a,
+  "Split the line the step-9 move joined") already named and fixed once.
+  Removing `sfShownAt`/`sfAt`/`sfDeclaredAt`/`sfDeclaredAtRaw` from between
+  `computeSongEnd = prof(...)` and `function annoSnapshot() {` left the two
+  joined onto one line — AND silently dropped `computeSongEnd`'s own
+  trailing `// ?perf=1 attribution …` comment, replacing it with
+  `annoSnapshot`'s leading comment text. `check.mjs`/the test suite caught
+  nothing (both are syntactically valid: a statement followed by a function
+  declaration on the same line is legal JS, and no test reads that specific
+  comment) — only this task's own explicit instruction to `git diff` every
+  moved line for exactly this pattern caught it. Fixed by hand: split back
+  into two lines, the dropped comment restored verbatim from the pre-move
+  source (confirmed against `git diff`'s own removed-line text, not
+  reconstructed from memory). A full line-by-line pass over every other
+  hunk in this step's `src/app.js` diff found no second occurrence. This is
+  now TWO documented instances of the same `move.mjs` failure mode (step 9's
+  `saveDraft`/`saveVersion` line, this step's `computeSongEnd`/
+  `annoSnapshot` line) — worth a `move.mjs` fix (always emit a newline
+  between the last remaining statement before a deletion and the first
+  kept statement after it) whenever tooling work is next in scope; flagged
+  in open-items.md.
+- **`sectionLane`'s own comment — "same label = same substream, bar-for-bar
+  (Drummer + Bassist)" — is now literally true as an import graph**:
+  `gen/bassist.js` imports `drumRng`/`sectionLane`/`drBassTrack` from
+  `gen/drummer.js` (both layer 2, a same-layer cross-file import, same
+  pattern every model/ pair in steps 5-9 already established). Nothing
+  about either function's body changed.
+- **Correction to open-items.md's step-9-era QUEUED note** (filed under
+  `model/edits.js`'s SAFETY re-check): it assumed landing `gen/analysis.js`
+  in this step would clear `saveEdits`'s `scheduleAnalysisRecompute`
+  blocker. It doesn't — `scheduleAnalysisRecompute` itself never moved
+  (blocked by `finalizeNotes`/`draw`, see above), so `saveEdits` still
+  cannot import it from anywhere lower than app.js. Corrected in
+  open-items.md, same shape as step 5's correction of step 4's `estimateKey`
+  note and step 8's correction of step 7's `scheduleNote` note.
+- **The task's required "Analyze is Normal-mode only and nothing leaks into
+  Learning" test already existed before this step** (tests/night-roll.test.mjs,
+  the "P6 Analyze layer" suite written when the feature itself shipped,
+  2026-09-30) and needed no changes: "Learning has no menu item and never
+  calls bsInferTimeline/estimateKey (spy)" spies on both functions by bare
+  name through the vm harness's `run()`, which resolves a bare name via
+  `scopeProxy` regardless of which file declares it (§3.2) — moving
+  `bsInferTimeline` to `gen/bassist.js` and `computeAnalysisLayer` to
+  `gen/analysis.js` this step required zero test-file changes for this to
+  keep passing. "notes.txt (serializeRollnotes) and askContext are
+  byte-identical with the layer on or off" independently covers "nothing
+  leaks into AI context or repo files". Per this task's own instruction
+  ("if no such test exists, ADD one") no new test was added.
 
 **11. `render/*`.**
 - Verify: **browser screenshots** of roll, tracks, score, instrument, circle of fifths and compare at desktop and phone width, compared to before the step.
