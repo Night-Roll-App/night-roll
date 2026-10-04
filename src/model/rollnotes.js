@@ -516,3 +516,47 @@ export function bakeMeter(base, notes) {
   for (const e of evs) byTick.set(e.tick, e); // same tick: the directive wins
   return [...byTick.values()].sort((a, b) => a.tick - b.tick);
 }
+
+export function annoRestore(str) {
+  const arr = JSON.parse(str);
+  S.rollnotes = deriveNoteTypes(arr.map(e => jsonToRawNote(e.j))).map(resolveNote);
+  S.rollnotes.forEach((n, i) => { n.added = arr[i].a; });
+}
+// two-tap confirmation for meter changes that move annotations
+// re-express every annotation's anchors under a new meter so they stay glued
+// to the MUSIC (bar.beat is a coordinate system; changing the meter re-bars)
+// shift every non-chop annotation in DISPLAYED space (start-chop add/remove)
+export function shiftAnchors(deltaTicks) {
+  const bt = barTicks(), unit = beatTicks();
+  for (const n of S.rollnotes) {
+    if (n.chopdir) continue;
+    const conv = (b, q) => {
+      const tick = Math.max(0, (b - 1) * bt + (q - 1) * unit + deltaTicks);
+      return [Math.floor(tick / bt) + 1, (tick % bt) / unit + 1];
+    };
+    [n.b1, n.q1] = conv(n.b1, n.q1);
+    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || beatsPerBarDisp());
+    const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
+    if (lm) {
+      const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
+      n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
+    }
+  }
+}
+export function convertAnchors(oldTs, newTs) {
+  const oldUnit = S.song.ppq * 4 / oldTs[1], newUnit = S.song.ppq * 4 / newTs[1];
+  const oldBt = oldTs[0] * oldUnit, newBt = newTs[0] * newUnit;
+  const conv = (b, q) => {
+    const tick = (b - 1) * oldBt + (q - 1) * oldUnit;
+    return [Math.floor(tick / newBt) + 1, (tick % newBt) / newUnit + 1];
+  };
+  for (const n of S.rollnotes) {
+    [n.b1, n.q1] = conv(n.b1, n.q1);
+    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldBpb);
+    const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
+    if (lm) {
+      const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
+      n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
+    }
+  }
+}

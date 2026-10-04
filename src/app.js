@@ -1432,6 +1432,9 @@ import { speedbtn } from "./ui/chrome.js";
 import { _applySpeedInner } from "./ui/chrome.js";
 import { volbtn } from "./ui/chrome.js";
 import { initChrome1 } from "./ui/chrome.js";
+import { convertAnchors } from "./model/rollnotes.js";
+import { shiftAnchors } from "./model/rollnotes.js";
+import { annoRestore } from "./model/rollnotes.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1474,11 +1477,6 @@ S.STRIP_Y = BASE_RULER_H;
 S.RULER_H = S.STRIP_Y + STRIP_H;
            
 
-function annoRestore(str) {
-  const arr = JSON.parse(str);
-  S.rollnotes = deriveNoteTypes(arr.map(e => jsonToRawNote(e.j))).map(resolveNote);
-  S.rollnotes.forEach((n, i) => { n.added = arr[i].a; });
-}
 (function migrateAlbumPaths() {
   const remap = v => v.replace(/^(ff1roll-(?:notes|edits|ts)-)?midi\//, "$1albums/final-fantasy-i/songs/")
                      .replace(/^(ff1roll-(?:notes|edits|ts)-)?compositions\//, "$1albums/compositions/");
@@ -3513,45 +3511,7 @@ document.getElementById("notebtn").addEventListener("click", () => {
   openEditor(null);
 });
 document.getElementById("ncancel").addEventListener("click", () => { micStop(true); editor.classList.remove("on"); });
- // two-tap confirmation for meter changes that move annotations
-// re-express every annotation's anchors under a new meter so they stay glued
-// to the MUSIC (bar.beat is a coordinate system; changing the meter re-bars)
-// shift every non-chop annotation in DISPLAYED space (start-chop add/remove)
-function shiftAnchors(deltaTicks) {
-  const bt = barTicks(), unit = beatTicks();
-  for (const n of S.rollnotes) {
-    if (n.chopdir) continue;
-    const conv = (b, q) => {
-      const tick = Math.max(0, (b - 1) * bt + (q - 1) * unit + deltaTicks);
-      return [Math.floor(tick / bt) + 1, (tick % bt) / unit + 1];
-    };
-    [n.b1, n.q1] = conv(n.b1, n.q1);
-    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || beatsPerBarDisp());
-    const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
-    if (lm) {
-      const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
-      n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
-    }
-  }
-}
-function convertAnchors(oldTs, newTs) {
-  const oldUnit = S.song.ppq * 4 / oldTs[1], newUnit = S.song.ppq * 4 / newTs[1];
-  const oldBt = oldTs[0] * oldUnit, newBt = newTs[0] * newUnit;
-  const conv = (b, q) => {
-    const tick = (b - 1) * oldBt + (q - 1) * oldUnit;
-    return [Math.floor(tick / newBt) + 1, (tick % newBt) / newUnit + 1];
-  };
-  for (const n of S.rollnotes) {
-    [n.b1, n.q1] = conv(n.b1, n.q1);
-    if (n.b2) [n.b2, n.q2] = conv(n.b2, n.q2 || oldBpb);
-    const lm = n.text.match(/^loop:\s*(\d+)(?:\.(\d+(?:\.\d+)?))?/);
-    if (lm) {
-      const [lb, lq] = conv(+lm[1], lm[2] ? +lm[2] : 1);
-      n.text = "loop: " + lb + (lq === 1 ? "" : "." + (+lq.toFixed(2)));
-    }
-  }
-}
-document.getElementById("ntext").addEventListener("keydown", e => {
+ document.getElementById("ntext").addEventListener("keydown", e => {
   // sections are one-line labels: Enter = save. Text notes keep Enter = newline
   if (e.key === "Enter" && editorType() === "section") {
     e.preventDefault();
@@ -5627,4 +5587,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
+export const __nrExpose$ = {get: {"HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "homeSong": () => homeSong, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"homeSong": (v) => (homeSong = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
