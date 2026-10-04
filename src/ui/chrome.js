@@ -129,6 +129,28 @@ import { openDraft } from "../session/song.js";
 import { idbDraftDelete } from "../platform/storage.js";
 import { finalizeNotesImpl as finalizeNotes } from "../session/song.js";
 import { clampView } from "../hooks.js";
+import { recentSongs } from "../platform/base.js";
+import { saveRecentSongsRaw } from "../platform/base.js";
+import { groupOf } from "../model/catalog.js";
+import { folderTree } from "../model/catalog.js";
+import { subfolderKeys } from "../model/catalog.js";
+import { segTitle } from "../model/catalog.js";
+import { nodeCount } from "../model/catalog.js";
+import { publishedLabel } from "../model/catalog.js";
+import { publishedPaths } from "../model/catalog.js";
+import { nodeAt } from "../model/catalog.js";
+import { parentFolder } from "../model/catalog.js";
+import { albumHasTrackData } from "../model/album-order.js";
+import { albumOrderControl } from "../model/album-order.js";
+import { albumEffectiveOrder } from "../model/album-order.js";
+import { rememberLastSong } from "../platform/base.js";
+import { reflectSongURL } from "../session/song.js";
+import { loadSong } from "../session/song.js";
+import { initCatalog } from "../model/catalog.js";
+import { TRACKS_GUTTER } from "../render/roll.js";
+import { RULER_W_ROLL } from "../render/roll.js";
+import { clearRecentSongs } from "../platform/base.js";
+import { albumClear } from "../session/album.js";
 
 export function updateSyncBtnImpl() {
   const btn = document.getElementById("syncbtn");
@@ -1255,4 +1277,242 @@ export function setSecDepth(next) { // clamped stepper (the wrap-around cycle re
 export function cycleSecDepth() { // the gutter chevron keeps its one-tap cycle (fold, fold, unfold-all)
   const cur = Math.min(secDepthCap(), S.secMaxDepth - 1);
   setSecDepth(cur - 1 < 0 ? S.secMaxDepth - 1 : cur - 1);
+}
+
+// shown list only: drops a song that's gone from BOTH this device's drafts
+// and the catalog — but only once the catalog has actually loaded (an empty
+// CATALOG at boot means "don't know yet", not "gone"; a genuinely missing
+// song still fails gracefully through loadSong's own error path)
+export function recentSongsForMenu() {
+  const list = recentSongs();
+  const catalogKnown = Object.keys(S.CATALOG).length > 0;
+  const kept = list.filter(r => localStorage.getItem(draftStoreKey(r.key)) !== null || !catalogKnown || catalogHas(r.key));
+  if (kept.length !== list.length) saveRecentSongsRaw(kept);
+  return kept;
+}
+// the album shown beside each title: the catalog's own album name when the
+// song is in it (same value updateSongBtn's breadcrumb uses), else the
+// folder title the breadcrumb falls back to for a local-only song
+export function recentAlbumFor(key) { return groupOf(key) || folderTitle(folderOf(key)); }
+// File ▾ → "Open Recent ▸" expand state — same pattern/reasoning as vwOpenGroup just above
+// UI refresh after an interactive mode flip (View ▾ toggle, Settings
+// checkbox) — boot itself never calls this, it just reads APP_MODE above.
+// Chrome density follow-up (2026-10-01 pm, Josh's ruling): the header's
+// gold "🎓 Learning" tag (#modepill) is gone entirely — Learning mode is
+// read from Settings → Other or View ▾ → Mode only, never a header badge.
+export function applyMode() {
+  if (typeof document === "undefined") return;
+  if (document.body) document.body.dataset.mode = S.APP_MODE; // vm harness has no body (sentinel) — see tests/harness.mjs
+  const cb = document.getElementById("cfglearning");
+  if (cb) cb.checked = S.APP_MODE === "learning";
+  if (typeof S._keyEstCache !== "undefined") S._keyEstCache = null; // stale conf/label from the other mode
+  // P6: Learning is the law — the Analyze layer (and any pending debounced
+  // recompute of it) must stop existing the instant the mode flips, not
+  // just stop being drawn (the spy test proves bsInferTimeline/estimateKey
+  // never fire for it in Learning).
+  if (typeof S.APP_MODE !== "undefined" && S.APP_MODE === "learning" && typeof S.analysisOn !== "undefined") {
+    if (typeof S._analysisTimer !== "undefined" && S._analysisTimer) { clearTimeout(S._analysisTimer); S._analysisTimer = null; }
+    S.analysisOn = false;
+    S.analysisBands = {chords: [], key: null};
+  }
+  if (typeof S.song !== "undefined" && S.song) {
+    finalizeNotes(); // rebuilds keyunset label + keysetest visibility for the new mode
+    if (typeof updateSubtitle === "function") updateSubtitle();
+    if (typeof draw === "function") draw();
+  }
+}
+export function governingAt(match, at) { // latest matching annotation at or before the cursor (or tick `at`)
+  const t = at === undefined ? curTick() : at;
+  let hit = null;
+  for (const n of S.rollnotes)
+    if (match(n) && n.start <= t && (!hit || n.start >= hit.start)) hit = n;
+  return hit;
+}
+// Roll zoom-out clamp (Josh, 2026-08-06): pinch-out stops once the whole song
+// is in view — per axis, flush to the song's own extents (chop-trimmed), no
+// padding. While time still overflows, both axes zoom; once every bar fits,
+// further pinch-out only reveals pitch; once every note is visible, nothing.
+export function songPitchExtent() { // lowest..highest sounding pitch of the (trimmed) song
+  let lo = Infinity, hi = -Infinity;
+  S.song.tracks.forEach(tr => tr.notes.forEach(n => {
+    if (!n.gone) { if (n.p < lo) lo = n.p; if (n.p > hi) hi = n.p; }
+  }));
+  return lo <= hi ? {lo: Math.max(S.PMIN, lo), hi: Math.min(S.PMAX, hi)} : {lo: 55, hi: 79};
+}
+export function renderSongGroups() { // top: LOCAL's top-level folders, then PUBLISHED's
+  S.songViewRedraw = () => renderSongGroups();
+  document.getElementById("songsheettitle").textContent = "OPEN";
+  const rows = document.getElementById("songrows");
+  rows.innerHTML = "";
+  { const sh = rows.closest ? rows.closest(".sheet") : null; if (sh) sh.scrollTop = 0; songsheet.scrollTop = 0; } // a new folder starts at its top: the ‹ row must be in reach (Josh, 2026-09-28) — unless it holds the song you are on: then that row (below)
+  const local = folderTree(draftKeys());
+  if (subfolderKeys(local).length) {
+    rows.appendChild(songHeader(localLabel()));
+    for (const seg of subfolderKeys(local)) rows.appendChild(songRow(segTitle(local.sub[seg].path) + "  (" + nodeCount(local.sub[seg]) + ") ›", () => renderFolder("local", local.sub[seg].path)));
+  }
+  rows.appendChild(songHeader(publishedLabel()));
+  const pub = folderTree(publishedPaths());
+  for (const seg of subfolderKeys(pub)) rows.appendChild(songRow(segTitle(pub.sub[seg].path) + "  (" + nodeCount(pub.sub[seg]) + ") ›", () => renderFolder("published", pub.sub[seg].path)));
+}
+export function renderFolder(section, folder) { // one level: subfolders, then this folder's songs
+  S.songViewRedraw = () => renderFolder(section, folder);
+  const root = folderTree(section === "local" ? draftKeys() : publishedPaths());
+  const node = nodeAt(root, folder);
+  if (!node) return renderSongGroups();
+  document.getElementById("songsheettitle").textContent = folderTitle(folder).toUpperCase();
+  const rows = document.getElementById("songrows");
+  rows.innerHTML = "";
+  { const sh = rows.closest ? rows.closest(".sheet") : null; if (sh) sh.scrollTop = 0; songsheet.scrollTop = 0; } // a new folder starts at its top: the ‹ row must be in reach (Josh, 2026-09-28) — unless it holds the song you are on: then that row (below)
+  const up = parentFolder(folder);
+  rows.appendChild(songRow("‹ " + (up ? segTitle(up) : "All folders"), () => up ? renderFolder(section, up) : renderSongGroups(), true));
+  rows.appendChild(songHeader(section === "local" ? localLabel() : publishedLabel()));
+  for (const seg of subfolderKeys(node)) rows.appendChild(songRow(segTitle(node.sub[seg].path) + "  (" + nodeCount(node.sub[seg]) + ") ›", () => renderFolder(section, node.sub[seg].path)));
+  if (section === "local") {
+    for (const key of node.songs.sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b))))
+      { const r = songRow(songTitleOf(key) + "  · " + songStatus(key) + (key === S.currentPath ? "   ✓" : ""), () => { songsheet.classList.remove("on"); openDraft(key); }); if (key === S.currentPath) r.dataset.current = "1"; rows.appendChild(r); }
+  } else {
+    // this folder is one album iff every song here maps to the same CATALOG
+    // group — the only case where game order (and the switch) applies
+    const group = node.songs.length && groupOf(node.songs[0]);
+    const oneAlbum = !!(group && node.songs.every(p => groupOf(p) === group));
+    if (oneAlbum && albumHasTrackData(group)) rows.appendChild(albumOrderControl(group, () => renderFolder(section, folder)));
+    const songs = oneAlbum
+      ? albumEffectiveOrder(group).map(([, p]) => p).filter(p => node.songs.includes(p))
+      : node.songs.slice().sort((a, b) => songTitleOf(a).localeCompare(songTitleOf(b)));
+    for (const path of songs) {
+      const local = localStorage.getItem(draftStoreKey(path)) !== null; // the tap opens the local copy (draft wins)
+      const r = songRow(songTitleOf(path) + (local ? "  · local copy" : "") + (path === S.currentPath ? "   ✓" : ""), () => {
+        S.currentPath = path;
+        rememberLastSong(path);
+        reflectSongURL(path);
+        updateSongBtn();
+        songsheet.classList.remove("on");
+        loadSong(path).catch(e => setInfo(e.message));
+      }); if (path === S.currentPath) r.dataset.current = "1"; rows.appendChild(r);
+    }
+  }
+  { const cur = rows.querySelector ? rows.querySelector("[data-current]") : null; if (cur && cur.scrollIntoView) cur.scrollIntoView({block: "center"}); } // the song you are on comes into view; a folder without it starts at the top (Josh, 2026-09-28)
+}
+export function renderSongList(group) { renderFolder("published", folderOf(S.CATALOG[group][0][1])); } // an album is its folder
+export function openSongPicker() {
+  // open straight into the current song's folder — one less tap for the sweep
+  if (S.currentPath && localStorage.getItem("ff1roll-draft-" + S.currentPath)) renderFolder("local", folderOf(S.currentPath)); // the local copy is what's open
+  else if (S.currentPath && catalogHas(S.currentPath)) renderFolder("published", folderOf(S.currentPath));
+  else renderSongGroups();
+  songsheet.classList.add("on");
+  // the published list is re-read on every open (at most once per 20 s), and
+  // the view redraws only if something changed — a song published from the
+  // terminal or another device shows up without relaunching (Josh, 2026-09-28)
+  if (Date.now() - S.catalogRefreshedAt > 20000 && typeof initCatalog === "function") {
+    S.catalogRefreshedAt = Date.now();
+    const sig = () => JSON.stringify(Object.entries(S.CATALOG).map(([k, v]) => k + ":" + v.length));
+    const before = sig();
+    initCatalog().then(() => { if (songsheet.classList.contains("on") && S.songViewRedraw && sig() !== before) S.songViewRedraw(); }).catch(() => { /* offline: the list you had */ });
+  }
+}
+export function applyListener() {
+  if (!document.body) return; // vm harness has no body
+  document.body.classList.toggle("listener", S.listenerMode);
+  if (S.song) finalizeNotes(); // band lanes + RULER_H depend on the mode
+  window.dispatchEvent(new Event("resize"));
+}
+// each view keeps its own zoom and scroll, per song, this session (Josh,
+// 2026-09-29: a fully zoomed-out roll came back from Score at ~6 bars —
+// Score raises pxq to what engraving can space). Restored BEFORE
+// applyViewMode, whose clamps would otherwise act on the other view's numbers.
+export function setViewMode(m) {
+  if (m === "score" && !VF) { setInfo("score engine failed to load"); return; }
+  if (S.songKey) viewSaved.set(S.songKey + "|" + S.viewMode, {...S.view});
+  S.viewMode = m;
+  localStorage.setItem("ff1roll-view", S.viewMode);
+  const sv = S.songKey && viewSaved.get(S.songKey + "|" + m);
+  if (sv) Object.assign(S.view, sv);
+  applyViewMode();
+}
+export function applyViewMode() {
+  const tracks = S.viewMode === "tracks", score = S.viewMode === "score";
+  const vText = tracks ? "Tracks" : score ? "Score" : "Roll";
+  const aria = "View: " + vText + " — tap to switch";
+  if (tracks) setControl("viewbtn", {icon: "tableRows", cls: "txt", label: vText + " ▴", aria});
+  else if (score) setControl("viewbtn", {glyph: "𝄞", cls: "txt", label: " " + vText + " ▴", aria});
+  else setControl("viewbtn", {icon: "gridView", cls: "txt", label: vText + " ▴", aria});
+  renderViewSwitch();
+  S.RULER_W = S.viewMode === "tracks" ? TRACKS_GUTTER : RULER_W_ROLL;
+  // score entry (2026-08-15): Edit works in both views; ♮♯♭ is score-only
+  document.getElementById("accseg").style.display =
+    S.viewMode === "score" && S.editOn && S.mode === "pencil" ? "" : "none";
+  if (S.viewMode === "score") {
+    S.view.y = 0;
+    if (S.view.pxq < minPxq()) S.view.pxq = minPxq(); // roll zooms out further than engraving can
+    if (S.view.x < 40) S.view.x = -SCORE_INTRO_W; // near the start: show clef/key column
+  } else if (S.viewMode === "tracks") {
+    S.view.y = 0;
+    if (S.view.x < 0) S.view.x = 0;
+  } else if (S.view.x < 0) S.view.x = 0;
+  clampView();
+  draw();
+}
+export function toggleSubtitle() {
+  S.subOn = !S.subOn;
+  localStorage.setItem("ff1roll-sub", S.subOn ? "1" : "0");
+  subbtn.classList.toggle("active", S.subOn);
+  subbtn.setAttribute("aria-pressed", String(S.subOn));
+  updateSubtitle();
+}
+export function fileMenuSaveLabels() { // Save Version: your own local songs only. Versions…: any open song with a repo path (browsing/going back to the published copy also works on a read-only capture with local annotation edits)
+  // an Untitled song is his too — and Save Version is how it gets a folder at
+  // all (Josh, 2026-10-03: "there is no Save Version")
+  const comp = !!S.song && (isComposition() || isUnsaved(S.songKey)) && !LINK_SONGS;
+  document.getElementById("filesavelocal").style.display = comp ? "" : "none";
+  document.getElementById("filerevert").style.display = !!S.song && !!S.songKey && !S.songKey.startsWith("local/") && !LINK_SONGS ? "" : "none";
+}
+// File ▾ → "Open Recent ▸" (2026-10-01): same expanding-row pattern as
+// View ▾'s own groups (renderViewMenu/vwOpenGroup) — keeps the ▸/▾
+// glyph and #fileopenrecentrow's own rows in sync; called on every File ▾
+// open and again after any tap inside the row (pick/Clear) so the menu
+// reflects the new state in place, without closing.
+export function renderOpenRecentRow() {
+  const btn = document.getElementById("fileopenrecent");
+  btn.textContent = (S.fileOpenRecentOpen ? "▾  " : "▸  ") + "Open Recent";
+  btn.setAttribute("aria-expanded", String(S.fileOpenRecentOpen));
+  const row = document.getElementById("fileopenrecentrow");
+  row.style.display = S.fileOpenRecentOpen ? "" : "none";
+  if (!S.fileOpenRecentOpen) return;
+  row.innerHTML = "";
+  const list = recentSongsForMenu();
+  if (!list.length) {
+    const d = document.createElement("div");
+    d.className = "fitem";
+    d.style.cssText = "min-height:44px;opacity:.55;cursor:default";
+    d.textContent = "No recent songs";
+    row.appendChild(d);
+    return;
+  }
+  for (const r of list) {
+    const b = document.createElement("button");
+    b.className = "fitem";
+    b.style.minHeight = "44px";
+    const current = r.key === S.songKey;
+    b.textContent = (current ? "✓ " : "   ") + r.title + "  — " + recentAlbumFor(r.key);
+    if (current) b.style.opacity = "0.55";
+    b.addEventListener("click", () => { closeFileMenus(); openRecentSong(r.key); });
+    row.appendChild(b);
+  }
+  const clear = document.createElement("button");
+  clear.className = "fitem";
+  clear.style.cssText = "min-height:44px;color:var(--dim)";
+  clear.textContent = "Clear recent";
+  clear.addEventListener("click", () => { clearRecentSongs(); renderOpenRecentRow(); });
+  row.appendChild(clear);
+}
+// tapping a row: the same two functions File → Open…'s own rows use
+// (fsubFolder/renderFolder) — a local draft wins, otherwise the catalog path
+export function openRecentSong(key) {
+  if (localStorage.getItem(draftStoreKey(key)) !== null) { openDraft(key); return; }
+  albumClear(); // picking a song by hand ends an album run — Open…'s own rule (fsubFolder)
+  S.currentPath = key;
+  rememberLastSong(key);
+  reflectSongURL(key);
+  updateSongBtn();
+  loadSong(key).catch(err => setInfo(err.message));
 }
