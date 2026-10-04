@@ -1,4 +1,6 @@
 import { S } from "../state.js";
+import { noteToJSON } from "./rollnotes.js";
+import { prof } from "../state.js";
 
 // ---------------------------------------------------------------- edits
 export function editsKey() { return S.songKey ? "ff1roll-edits-" + S.songKey : null; }
@@ -36,4 +38,23 @@ export function addTrackUndoable(track) { // push a track and return its index; 
   if (S.song.rawNotes) S.song.rawNotes.push([]);
   S.trackState.push({muted: false, solo: false});
   return S.song.tracks.length - 1;
+}
+
+export function annoSnapshot() { // full annotation-layer state, INCLUDING added flags
+  return JSON.stringify(S.rollnotes.map(n => ({j: noteToJSON(n), a: !!n.added})));
+}
+annoSnapshot = prof("annoSnapshot", annoSnapshot); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
+// tombstones (2026-08-19, handoff item): deletions of SYNCED annotations get
+// a persistence path — identities recorded per song, subtracted at load,
+// cleared when a Sync commits the post-deletion file as the new canon
+export function tombKey() { return tombKeyFor(S.songKey); }
+export function tombKeyFor(key) { return "ff1roll-tombs-" + key; } // parameterized: publishSong clears a not-open song's tombstones too (Bugs found, docs/provenance-plan.md)
+export function noteIdentity(n) { return JSON.stringify(noteToJSON(n)); }
+export function tombstone(n) {
+  if (!S.songKey || n.added) return; // never-synced notes die with saveLocalNotes
+  try {
+    const t = JSON.parse(localStorage.getItem(tombKey()) || "[]");
+    t.push(noteIdentity(n));
+    localStorage.setItem(tombKey(), JSON.stringify(t));
+  } catch (err) {}
 }
