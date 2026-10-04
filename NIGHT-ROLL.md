@@ -127,6 +127,40 @@ existing rangeEdge reschedule branch (`handMidGesture` already covers
 `rangeEdge`, so auto-follow stays off during the slide). Tests:
 tests/gestures.test.mjs "dragging the cycle's MIDDLE …" and "Go to bar …".
 
+**Note menu — touch and hold (DAW F2, 2026-10-04 — docs/daw-inventory.md
+§4 #4).** The second stage of the existing hold-to-grab: once a note is
+GRABBED (`S.drag.noteEdit` — the 160 ms `HOLD_MS` dwell, or an instant
+mouse / Pencil-instant / already-selected grab), `armNoteMenu(d)` starts a
+`NOTE_MENU_MS` (600 ms) timer on the drag; it fires only while `S.drag` is
+still that drag, un-`moved` (the 8 px mark) and not already open — a drag
+cancels the timer the moment `moved` flips, a lift before it is today's tap.
+`openNoteMenu(d)` shows `#notemenu` (index.html, `#voicemenu`'s CSS family,
+z 62) at the finger — `d.x/d.y`, clamped inside `songRegionRight()` and the
+viewport — pre-sets the velocity row from the first held note, calls
+`updateEditButtons()` (its `set()` lists now include the `nm*` ids, so the
+menu's disabled states are the row's) and marks `d.menuOpened`: from then
+`pointermove` ignores the finger and `endPointer` clears both timers and
+returns with no commit and no `tap()`. Items (wired in `initGestures1`, one
+block): nmCut/nmCopy/nmPaste/nmDelete/nmSplit/nmQuant `.click()` the edit
+row's button (`cutbtn`…`quantbtn` — same guards, messages, undo entries),
+nmDup is ⌘D's `duplicateSelection()`, nmUndo/nmRedo are `editUndoPop`/
+`editRedoPop`; the `#nmvel` range writes `#velslider.value` and re-dispatches
+`input`/`change` on it, so the live preview and the one-undo-on-release are
+the slider's own (`initNoteEditor5`). Dismissal: a document-level capture
+`pointerdown` outside the menu closes it and, when the target is the canvas,
+`stopPropagation()`s + `preventDefault()`s so the dismissing tap never
+seeks, deselects or starts a gesture; any item closes it first. Clip grabs
+(`kind` `clip*`) never arm it. **Three-finger undo/redo is not implemented
+on purpose:** WebKit delivers iPadOS's system undo gestures only to
+editable content (`beforeinput` with `historyUndo`/`historyRedo` on a
+contenteditable/input), never to a canvas page, and a two-finger double-tap
+collides with the pinch/pan grammar — Undo/Redo live in this menu, the edit
+row, Edit ▾ and ⌘Z. `NOTE_MENU_MS` is the constant to tune by Josh's report
+(the "way too damn hard" history). Tests: tests/gestures.test.mjs "note
+menu (DAW F2) …" (timing to the ms, lift-first, move-first, Delete+Undo
+share the row's undo entry, velocity one-undo, Duplicate, tap-away swallow,
+Pencil never).
+
 **Playback:** WebAudio. Pulse/pulse/triangle voices by track index; drum
 tracks (name match or channel 10) get a synthesized kit. Per-track gain
 nodes make mute/solo instant mid-playback. Songs loop at the final bar

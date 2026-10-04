@@ -36,6 +36,7 @@ canvas.addEventListener("pointerdown", e => {
 canvas.addEventListener("pointermove", e => {
 canvas.addEventListener("pointerup", endPointer);
 canvas.addEventListener("pointercancel", () => { S.drag = null; S.pinch = null; draw(); });
+{
 document.getElementById("lcdbarseg").addEventListener("click", openBarJump);
 document.getElementById("bjgo").addEventListener("click", barJumpGo);
 document.getElementById("bjclose").addEventListener("click", () => document.getElementById("barjumpsheet").classList.remove("on"));

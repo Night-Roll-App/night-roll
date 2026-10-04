@@ -361,7 +361,7 @@ key, meter or chord for him unless asked.
 | 1 | Playhead handle inside the strip; triangle gone in all three views (§1b) — **done 2026-10-04** | S |
 | 2 | Keyboard: fixed key width, Play/Scroll segment, two-finger scroll, ‹ › octave with range readout, off-screen lit-key chevrons (§1a) | M |
 | 3 | Keyboard look: real black-key offsets, rounded whites, shading; Sustain button (§1a) | S |
-| 4 | Touch-and-hold a note → context menu of the edit-row actions; iPadOS three-finger undo/redo | S–M |
+| 4 | Touch-and-hold a note → context menu of the edit-row actions — **done 2026-10-04** (hold a grabbed note still 600 ms; Undo/Redo in the menu); iPadOS three-finger undo/redo — **not built**: WebKit delivers it only to editable content, never to a canvas page | S–M |
 | 5 | Capture MIDI: keep the last ~60 s of noodling; "Keep that" writes it at the cursor, one undo — **done 2026-10-04** | M |
 | 6 | Velocity lane under the roll (drag to shape; shows chip envelopes as facts) — **done 2026-10-04** | M |
 | 7 | Typed bar jump by tapping the LCD bar field; drag the cycle's middle to move it — **done 2026-10-04** (m:ss readout not built) | S |

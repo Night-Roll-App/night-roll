@@ -106,6 +106,9 @@ function makeEl() {
     getAttribute(k) { return attrs.has(k) ? attrs.get(k) : null; },
     hasAttribute(k) { return attrs.has(k); },
     removeAttribute(k) { attrs.delete(k); },
+    // Node.contains over the stub tree — the document-level tap-away closers
+    // (popovers, the note menu) ask it of every synthetic pointerdown
+    contains(c) { return c === el || el.children.some(k => k && typeof k.contains === "function" && k.contains(c)); },
     setPointerCapture: noop,
     releasePointerCapture: noop,
     focus: noop,

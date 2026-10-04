@@ -195,6 +195,90 @@ test("Go to bar (DAW F5): tap the LCD's bar → type → Go or Return seeks; cla
   assert.equal(app.run(`playCursor`), 3 * bt);
 });
 
+test("note menu (DAW F2): a grabbed note held still 600 ms more opens the menu; lifting or moving first doesn't; its items are the edit row's own actions", async () => {
+  const app = await boot("vm-gest-notemenu");
+  app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);
+  const pen = (type, x, y) => app.dispatch("roll", pev(type, {pointerId: 7, pointerType: "touch", clientX: x, clientY: y}));
+  const menuOn = () => app.el("notemenu").classList.contains("on");
+  const pitches = () => notes(app).map(n => n.p);
+  assert.equal(app.run(`NOTE_MENU_MS`), 600);
+  // lift before the hold: today's tap (selects, previews), no menu
+  const s = noteXY(app, 240, 64);
+  pen("pointerdown", s.x, s.y); app.tick(160); app.tick(300); pen("pointerup", s.x, s.y);
+  assert.equal(menuOn(), false, "released at 460 ms: a tap");
+  app.run(`clearMultiSel(); selNote = null; draw();`);
+  // dwell-grab, then hold still through the jitter: the menu opens; the lift commits nothing
+  pen("pointerdown", s.x, s.y); app.tick(160);
+  assert.equal(menuOn(), false, "grabbed at 160 ms, not yet the menu");
+  pen("pointermove", s.x + 5, s.y + 3); // finger jitter inside the 8 px mark
+  app.tick(599); assert.equal(menuOn(), false, "one ms short");
+  app.tick(1); assert.equal(menuOn(), true, "160 + 600 ms still → the note menu");
+  const undoLen = app.run(`editUndo.length`);
+  pen("pointerup", s.x + 5, s.y + 3);
+  assert.deepEqual(notes(app).map(n => n.t), [0, 0, 0], "nothing moved");
+  assert.equal(app.run(`editUndo.length`), undoLen, "no undo entry from a hold");
+  assert.equal(menuOn(), true, "stays open after the finger lifts");
+  assert.equal(app.run(`drag`), null);
+  assert.deepEqual(JSON.parse(app.run(`JSON.stringify([...multiSelKey])`)), ["0:1"], "the held note is the selection the items act on");
+  assert.equal(app.el("nmvel").value, "80", "the velocity row shows the held note's velocity");
+  assert.equal(app.el("nmDelete").disabled, false); assert.equal(app.el("nmRedo").disabled, true, "the row's own disabled states");
+  // Delete from the menu IS the edit row's delete: one undo; Undo from the menu brings it back
+  app.el("nmDelete").click();
+  assert.equal(menuOn(), false, "an action closes the menu");
+  assert.deepEqual(pitches(), [60, 67]);
+  assert.equal(app.run(`editUndo.length`), undoLen + 1, "exactly the row's one entry");
+  app.el("nmUndo").click();
+  assert.deepEqual(pitches().sort((a, b) => a - b), [60, 64, 67]);
+  // a move after the grab is a drag: no menu, the note moves as before
+  const s2 = noteXY(app, 240, 64);
+  pen("pointerdown", s2.x, s2.y); app.tick(160);
+  const px16 = app.run(`(240 / song.ppq) * view.pxq`);
+  for (let i = 1; i <= 4; i++) pen("pointermove", s2.x + (px16 / 4) * i, s2.y);
+  app.tick(700);
+  assert.equal(menuOn(), false, "moved past 8 px: the hold became a drag");
+  pen("pointerup", s2.x + px16, s2.y);
+  assert.ok(notes(app).some(n => n.p === 64 && n.t === 240), "the drag moved it");
+  // an instant grab (mouse / selected note) gets the menu too; the velocity row drives the row's slider — one undo
+  const s3 = noteXY(app, 480, 64);
+  app.dispatch("roll", pev("pointerdown", {clientX: s3.x, clientY: s3.y}));
+  app.tick(600);
+  assert.equal(menuOn(), true, "instant grab + 600 ms still");
+  app.dispatch("roll", pev("pointerup", {clientX: s3.x, clientY: s3.y}));
+  const u2 = app.run(`editUndo.length`);
+  app.el("nmvel").value = "100";
+  app.dispatch("nmvel", {type: "input"});
+  assert.equal(app.run(`song.tracks[0].notes.find(n => !n.gone && n.p === 64).v`), 100, "live while dragging");
+  assert.equal(app.run(`editUndo.length`), u2, "no entry until release");
+  app.dispatch("nmvel", {type: "change"});
+  assert.equal(app.run(`editUndo.length`), u2 + 1, "one undo step on release — the slider's own");
+  assert.equal(app.el("velslider").value, "100", "the edit row's slider followed");
+  assert.equal(app.el("nmvelval").textContent, "100");
+  // Duplicate is ⌘D's handler
+  app.el("nmDup").click();
+  assert.equal(notes(app).length, 4);
+  assert.equal(menuOn(), false);
+  // tap-away closes it; a dismissing tap on the canvas is swallowed (no seek, no deselect)
+  const s4 = noteXY(app, 480, 64);
+  pen("pointerdown", s4.x, s4.y); app.tick(760); pen("pointerup", s4.x, s4.y);
+  assert.equal(menuOn(), true);
+  const swallowed = {type: "pointerdown", target: app.el("roll"), stopped: false, prevented: false,
+                     stopPropagation() { this.stopped = true; }, preventDefault() { this.prevented = true; }};
+  app.docDispatch(swallowed);
+  assert.equal(menuOn(), false, "closed by the tap");
+  assert.ok(swallowed.stopped && swallowed.prevented, "the canvas never sees the dismissing tap");
+  pen("pointerdown", s4.x, s4.y); app.tick(760); pen("pointerup", s4.x, s4.y);
+  const elsewhere = {type: "pointerdown", target: app.el("playbtn"), stopped: false, stopPropagation() { this.stopped = true; }, preventDefault() {}};
+  app.docDispatch(elsewhere);
+  assert.equal(menuOn(), false);
+  assert.equal(elsewhere.stopped, false, "a tap on a button still reaches it");
+  // the Pencil: a grab there is a pencil-drag, never the menu
+  app.run(`mode = "pencil"; draw();`);
+  const empty = noteXY(app, 1920, 72);
+  pen("pointerdown", empty.x, empty.y); app.tick(900);
+  assert.equal(menuOn(), false, "pencil holds place notes, they don't open the menu");
+  pen("pointerup", empty.x, empty.y);
+});
+
 test("gesture: finger fast stroke pans; a dwell cold-grabs; selected = instant", async () => {
   const app = await boot("vm-gest-dwell");
   app.run(`mode = "select"; view.pxq = 600; clampView(); draw();`);

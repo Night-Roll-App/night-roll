@@ -1113,6 +1113,29 @@
 </div>
 <div id="filesub"></div>
 <div id="voicemenu"></div>
+<!-- Note menu (DAW F2, 2026-10-04): a grabbed note held STILL ~600 ms longer
+     opens this at the finger (src/input/gestures.js openNoteMenu). Every item
+     proxies the edit row's own button / handler — no edit logic of its own.
+     Undo/Redo live here because WebKit never delivers iPadOS's three-finger
+     undo gestures to a canvas page (NIGHT-ROLL.md "Note menu"). -->
+<div id="notemenu" role="menu" aria-label="Note menu">
+  <button class="fitem" id="nmCut" role="menuitem">Cut</button>
+  <button class="fitem" id="nmCopy" role="menuitem">Copy</button>
+  <button class="fitem" id="nmPaste" role="menuitem">Paste at cursor</button>
+  <button class="fitem" id="nmDup" role="menuitem">Duplicate</button>
+  <button class="fitem" id="nmDelete" role="menuitem">Delete</button>
+  <div class="fdiv"></div>
+  <button class="fitem" id="nmSplit" role="menuitem">Split at cursor</button>
+  <button class="fitem" id="nmQuant" role="menuitem">Q  Quantize…</button>
+  <div class="row" style="padding:4px 10px;min-height:44px">
+    <span class="lbl">Velocity</span>
+    <input type="range" id="nmvel" min="8" max="127" value="80" style="flex:1;min-width:90px" aria-label="Velocity of the held notes">
+    <span class="lbl" id="nmvelval" style="min-width:26px;text-align:right">80</span>
+  </div>
+  <div class="fdiv"></div>
+  <button class="fitem" id="nmUndo" role="menuitem">Undo</button>
+  <button class="fitem" id="nmRedo" role="menuitem">Redo</button>
+</div>
 <!-- File → Versions… (Model B, 2026-09-29): the published copy (when there
      is one) then this device's dated versions, newest first; makeWindow()
      registers it non-dockable, like Status/the import hub — a browsing

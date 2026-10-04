@@ -579,6 +579,28 @@
   #voicemenu.on { display: block; }
   #voicemenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 40px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; white-space: pre; }
   #voicemenu .fitem:active { background: var(--panel); }
+  /* Note menu (DAW F2): the voice menu's family — a small popover at the
+     finger, above the sheets, never docked (src/input/gestures.js openNoteMenu) */
+  #notemenu {
+    display: none;
+    position: absolute;
+    z-index: 62;
+    background: var(--panel2);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 210px;
+    max-width: 80vw;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  }
+  #notemenu.on { display: block; }
+  #notemenu .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 44px; padding: 8px 10px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; white-space: pre; }
+  #notemenu .fitem:active { background: var(--panel); }
+  #notemenu .fitem:disabled { opacity: 0.4; }
+  #notemenu .fdiv { border-top: 1px solid var(--grid); margin: 4px 6px; }
+  #notemenu .row { display: flex; align-items: center; gap: 8px; }
   #filesub .fitem { display: block; width: 100%; text-align: left; border: 0; background: none; border-radius: 6px; min-height: 42px; padding: 9px 12px; font-family: var(--mono); font-size: 0.8125rem; color: var(--text); cursor: pointer; }
   #filesub .fitem:active { background: var(--panel); }
   #filesheet .fitem {

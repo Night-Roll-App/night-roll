@@ -97,6 +97,9 @@ import { gridCellStart } from "../model/grid.js";
 import { annoSnapshot } from "../model/edits.js";
 import { minPxq } from "../ui/chrome.js";
 import { PAN_TAIL_BARS } from "../ui/chrome.js";
+import { songRegionRight } from "../ui/chrome.js";
+import { editUndoPop, editRedoPop, updateEditButtons } from "../ui/note-editor.js";
+import { duplicateSelection } from "../model/selection.js";
 import { pxqFloor } from "../ui/chrome.js";
 import { rowHFloor } from "../ui/chrome.js";
 import { dispPitchExtent } from "../ui/chrome.js";
@@ -532,6 +535,49 @@ export function barJumpGo() {
         : "bar 1");
   return true;
 }
+// Note menu (DAW F2, 2026-10-04 — docs/daw-inventory.md §4 #4). A grabbed
+// note — after the 160 ms dwell, or an instant mouse / Pencil / already-
+// selected grab — held STILL for NOTE_MENU_MS more opens #notemenu at the
+// finger: Cut, Copy, Paste at cursor, Duplicate, Delete, Split at cursor,
+// Quantize…, a velocity slider, Undo, Redo. Every item proxies the edit
+// row's own button (or the ⌘D / ⌘Z handlers), so the guards, messages and
+// undo entries are the row's — no edit logic lives here. Crossing the 8 px
+// "moved" mark first cancels it (the hold became a drag); lifting first is
+// today's tap. Once open the grab is over: the release commits nothing and
+// runs no tap (S.drag.menuOpened), and a dismissing tap on the canvas is
+// swallowed so it never seeks or deselects. Three-finger swipe undo/redo is
+// deliberately NOT implemented: WebKit delivers iPadOS's undo gestures only
+// to editable content (beforeinput historyUndo/historyRedo), never to a
+// canvas page — Undo/Redo live in this menu instead.
+export function armNoteMenu(d) {
+  if (!d.noteEdit || /^clip/.test(d.noteEdit.kind)) return;
+  clearTimeout(d.menuTimer);
+  d.menuTimer = setTimeout(() => { if (S.drag === d && d.noteEdit && !d.moved && !d.menuOpened) openNoteMenu(d); }, NOTE_MENU_MS);
+}
+export function openNoteMenu(d) {
+  const menu = document.getElementById("notemenu");
+  const first = d.noteEdit.items[0] && d.noteEdit.items[0].n;
+  const v = first && first.v !== undefined ? first.v : S.pencilVel;
+  document.getElementById("nmvel").value = String(v);
+  document.getElementById("nmvelval").textContent = String(v);
+  // at the finger, kept inside the song region (an anchored menu clamped
+  // against raw innerWidth can open under a docked window — see wm.js)
+  const vw = (typeof window !== "undefined" && window.innerWidth) || 1024;
+  const vh = (typeof window !== "undefined" && window.innerHeight) || 768;
+  menu.style.left = Math.max(6, Math.min(d.x - 24, songRegionRight() - 236, vw - 236)) + "px";
+  menu.style.top = Math.max(6, Math.min(d.y + 18, vh - 440)) + "px";
+  menu.classList.add("on");
+  d.menuOpened = true;
+  updateEditButtons(); // the row's disabled states, mirrored onto the menu's items
+  const k = d.noteEdit.items.length;
+  setInfo("note menu — " + k + " note" + (k === 1 ? "" : "s") + " · tap away to close");
+}
+export function closeNoteMenu() {
+  const menu = document.getElementById("notemenu");
+  if (!menu.classList.contains("on")) return false;
+  menu.classList.remove("on");
+  return true;
+}
 export function placePencilNote(pp) { // deferred pencil: called by the dwell timer or a clean tap
   const tr = S.song.tracks[S.selTrack];
   if (tr.kind === "audio") { setInfo("that track is a recording — pick a MIDI track to pencil on"); return; }
@@ -558,6 +604,8 @@ export function endPointer(e) {
   }
   if (!S.drag || S.drag.id !== e.pointerId) return;
   clearTimeout(S.drag.holdTimer);
+  clearTimeout(S.drag.menuTimer);
+  if (S.drag.menuOpened) { S.drag = null; draw(); return; } // the note menu is up: no commit, no tap — its items act next
   if (S.drag.trFader) { // persist the fader as the track: annotation (song truth)
     if (S.drag.moved && editableSong()) { S.voiceMenuTi = S.drag.trFader.ti; saveVoices(); }
     S.drag = null;
@@ -894,7 +942,8 @@ export function cofRelease(e) {
 }
 
 export const HOLD_MS = 160; // hold-to-grab dwell (was 230 — "way too damn hard", 2026-08-24)
-export const HOLD_SLOP = 20;                                                                                             // rollnote being edited, or null for new
+export const NOTE_MENU_MS = 600; // a GRABBED note held still this much longer opens the note menu (DAW F2) — the constant Josh tunes by report
+export const HOLD_SLOP = 20;                                                                                           // rollnote being edited, or null for new
 export const RULER_RANGE_SLOP = 24;                                                           // An anchored menu/dropdown clamped against raw window.innerWidth could open
 
 // iOS Safari ignores user-scalable=no: kill page-level pinch zoom explicitly,
@@ -1106,6 +1155,7 @@ export function initGestures1() {
             // grabbed playhead (onCursor) — one scrub path, one follow rule.
             stripCursor: onCursor || (plain && !!S.song && !fallActive() && p.y >= S.STRIP_Y && p.y < S.RULER_H),
             spos: p};
+    if (noteEdit) armNoteMenu(S.drag); // an instant grab: hold it still for the note menu (DAW F2)
     if (pendingEdit || pendingPencil) { // hold-to-grab: dwell arms the edit; a fast stroke pans
       const d = S.drag;
       d.holdTimer = setTimeout(() => {
@@ -1120,6 +1170,7 @@ export function initGestures1() {
           const k = d.noteEdit.items.length;
           setInfo("✊ grabbed " + k + " note" + (k === 1 ? "" : "s") + " — drag to move");
           previewNote(d.noteEdit.items[0].ti, d.noteEdit.items[0].n.p, d.noteEdit.items[0].n.t); // audible arm cue
+          armNoteMenu(d); // keep holding still → the note menu (DAW F2)
         }
         else if (d.pendingPencil) { d.pencil = placePencilNote(d.pendingPencil); d.pendingPencil = null; }
         draw();
@@ -1158,9 +1209,11 @@ export function initGestures1() {
       return;
     }
     if (!S.drag || S.drag.id !== e.pointerId) return;
+    if (S.drag.menuOpened) return; // the note menu took over: the finger lifting is not a drag
     const dx = e.clientX - S.drag.x, dy = e.clientY - S.drag.y;
     const trav = Math.abs(e.clientX - S.drag.sx) + Math.abs(e.clientY - S.drag.sy);
     if (trav > 8) S.drag.moved = true;
+    if (S.drag.moved && S.drag.menuTimer) { clearTimeout(S.drag.menuTimer); S.drag.menuTimer = null; } // the hold became a drag: no menu
     if (trav > HOLD_SLOP && (S.drag.pendingEdit || S.drag.pendingPencil)) {
       S.drag.pendingEdit = S.drag.pendingPencil = null; // a real swipe, not pen jitter: it's a scroll
       clearTimeout(S.drag.holdTimer);
@@ -1307,6 +1360,26 @@ export function initGestures1() {
   });
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", () => { S.drag = null; S.pinch = null; draw(); });
+  { // note menu (DAW F2): every item is the edit row's own button or handler
+    const act = (id, fn) => document.getElementById(id).addEventListener("click", () => { closeNoteMenu(); fn(); });
+    const press = bid => () => document.getElementById(bid).click();
+    act("nmCut", press("cutbtn")); act("nmCopy", press("copybtn")); act("nmPaste", press("pastebtn"));
+    act("nmDup", () => { if (duplicateSelection()) setInfo("duplicated — ⌘D again repeats it"); });
+    act("nmDelete", press("delbtn")); act("nmSplit", press("splitbtn")); act("nmQuant", press("quantbtn"));
+    act("nmUndo", editUndoPop); act("nmRedo", editRedoPop);
+    // the velocity row drives the edit row's own slider: live while dragging, one undo on release
+    const vs = document.getElementById("velslider"), nv = document.getElementById("nmvel");
+    const forward = type => { vs.value = nv.value; document.getElementById("nmvelval").textContent = nv.value; vs.dispatchEvent(new Event(type)); };
+    nv.addEventListener("input", () => forward("input"));
+    nv.addEventListener("change", () => forward("change"));
+    // tap-away closes it; a dismissing tap on the canvas is swallowed, so it never seeks or deselects
+    document.addEventListener("pointerdown", e => {
+      const m = document.getElementById("notemenu");
+      if (!m.classList.contains("on") || (typeof m.contains === "function" && m.contains(e.target))) return;
+      closeNoteMenu();
+      if (e.target === canvas) { e.stopPropagation(); e.preventDefault(); }
+    }, {capture: true});
+  }
   // Go to bar (DAW F5): the LCD's bar segment, the sheet's Go, and Return in its field
   document.getElementById("lcdbarseg").addEventListener("click", openBarJump);
   document.getElementById("bjgo").addEventListener("click", barJumpGo);

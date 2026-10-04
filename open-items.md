@@ -7177,7 +7177,8 @@ blockers.mjs), step 12 (the ~320 top-level statements → init functions).
 2. Keyboard: fixed key width, Play/Scroll segment, two-finger scroll, ‹ › octave + range readout, off-screen lit-key chevrons — M
 3. Keyboard look (black-key offsets, rounded whites) + Sustain — S
    + F1 (lane A) DONE 2026-10-04: keys stretch to fill when the whole piano fits (see the DONE entry below).
-4. Touch-and-hold a note → edit menu; three-finger undo/redo — S–M
+4. ~~Touch-and-hold a note → edit menu; three-finger undo/redo — S–M~~
+   DONE 2026-10-04 (DAW F2, lane A): a grabbed note held still NOTE_MENU_MS (600) longer opens #notemenu at the finger — Cut/Copy/Paste/Duplicate/Delete/Split/Quantize, a velocity slider (drives #velslider: live, one undo), Undo/Redo; every item proxies the edit row. Three-finger undo NOT built on purpose (WebKit delivers it only to editable content — NIGHT-ROLL.md "Note menu"). Try on the iPad: does 600 ms feel right after the 160 ms grab (the constant to tune); does a wobbly hold still open it; does the dismiss tap stay inert.
 5. ~~Capture MIDI (keep the last ~60 s; "Keep that") — M~~
    DONE 2026-10-04 (Fable, lane B worktree branch; NIGHT-ROLL.md "Capture
    MIDI — Keep that"): S.captureBuf (RAM, 60 s, cleared by setSong) fed by

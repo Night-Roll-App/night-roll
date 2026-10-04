@@ -172,6 +172,9 @@ Pencil and Erase work on the engraved score too: tap a staff position and the no
 **Move**
 Select notes (lasso or tap one), then **drag them** — up/down transposes, left/right slides in time on a 16th-note grid (triplet steps while a T duration is active), and the whole selection moves together, so a chord moves as a chord. Works straight from lasso mode: start the drag on a selected note. Keyboard: arrows (Shift+↑↓ = octave).
 
+**Note menu (touch and hold)**
+Grab a note and **hold it still** a moment longer (about half a second after the grab) and a small menu opens under your finger: **Cut, Copy, Paste at cursor, Duplicate, Delete, Split at cursor, Q Quantize…**, a **Velocity** slider for the held notes (live, one undo on release), then **Undo** and **Redo** — the same actions as the edit row and Edit ▾, nothing new to learn, and it acts on everything selected, so hold one note of a lasso'd chord to cut the whole chord. Start moving before it opens and it's just a drag; lift before it opens and it's just a tap. Tap anywhere else to close it (that tap does nothing else). iPadOS's three-finger undo swipe is **not** supported: Safari only delivers it to text fields, never to a canvas — use Undo here, the edit row, or ⌘Z. Mouse and Pencil: hold still the same way (right-click has no menu).
+
 **Resize**
 Drag a selected note's **right edge** to change its length, or its **left edge** to move the start while the end stays put — every selected note adjusts by the same amount, so "play this chord half as long" is one gesture. Notes too small on screen to have edge zones are all move-handle — zoom in to resize them. Keyboard: Option+←→.
 

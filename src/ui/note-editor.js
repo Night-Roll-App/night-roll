@@ -376,14 +376,14 @@ export function updateEditButtons() { // disabled = "this can't do anything righ
   if (key === S.editBtnCache) return;
   S.editBtnCache = key;
   const set = (id, off) => { const b = document.getElementById(id); if (b) b.disabled = off; };
-  set("undobtn", st[0]); set("emUndo", st[0]);
-  set("redobtn", st[1]); set("emRedo", st[1]);
-  set("splitbtn", st[5]); set("emSplit", st[5]);
+  set("undobtn", st[0]); set("emUndo", st[0]); set("nmUndo", st[0]); // nm* = the hold-still note menu (DAW F2), same states
+  set("redobtn", st[1]); set("emRedo", st[1]); set("nmRedo", st[1]);
+  set("splitbtn", st[5]); set("emSplit", st[5]); set("nmSplit", st[5]);
   for (const id of ["joinbtn", "emJoin", "movebtn", "emMove",
                     "divbtn", "emDivide", "trbtn", "emTranspose",
-                    "quantbtn", "emQuantize"]) set(id, st[2]);
-  for (const id of ["copybtn", "emDup", "cutbtn", "emCut", "delbtn", "emDelete"]) set(id, st[4]); // these also act on lasso'd annotations, notes or not
-  set("pastebtn", st[3]); set("emPaste", st[3]); set("emPasteTo", st[3]);
+                    "quantbtn", "emQuantize", "nmQuant", "nmDup"]) set(id, st[2]);
+  for (const id of ["copybtn", "emDup", "cutbtn", "emCut", "delbtn", "emDelete", "nmCopy", "nmCut", "nmDelete"]) set(id, st[4]); // these also act on lasso'd annotations, notes or not
+  set("pastebtn", st[3]); set("emPaste", st[3]); set("emPasteTo", st[3]); set("nmPaste", st[3]);
 }
 updateEditButtons = prof("updateEditButtons", updateEditButtons); // ?perf=1 attribution (docs/split-plan.md §2.4) — see state.js's prof()
 
