@@ -6,6 +6,22 @@ import { bsInferTimeline } from "./bassist.js";
 import { nameChord } from "../theory/chords.js";
 import { sfShownAt } from "../model/song.js";
 import { estimateKey } from "../model/song.js";
+import { finalizeNotes } from "../hooks.js";
+import { draw } from "../hooks.js";
+import { LINK_SONGS } from "../platform/base.js";
+import { setInfo } from "../hooks.js";
+import { linkRepoLabel } from "../platform/base.js";
+import { ROLLNOTES_LOCK_MSG } from "../model/rollnotes.js";
+import { setAnchorBQ } from "../hooks.js";
+import { setEndBQ } from "../model/rollnotes.js";
+import { annoSnapshot } from "../model/edits.js";
+import { dropSupersededBy } from "../model/rollnotes.js";
+import { resolveNote } from "../model/rollnotes.js";
+import { pushUndo } from "../model/edits.js";
+import { saveLocalNotes } from "../model/edits.js";
+import { buildScoreModel } from "../hooks.js";
+import { updateSubtitle } from "../hooks.js";
+import { dropLocalKeyAt } from "../model/rollnotes.js";
 
 export function harmonyTrackIndices() { // non-drum, non-audio (.kind) tracks — chord evidence only, never the kit
   const out = [];
@@ -59,4 +75,79 @@ export function computeAnalysisLayer() { // called on toggle-on and (debounced) 
   // reaches this line either (spy-tested alongside bsInferTimeline).
   const est = estimateKey();
   S.analysisBands = {chords, key: est ? {start: 0, end, name: est.name, sf: est.sf, conf: est.conf} : null};
+}
+
+export function scheduleAnalysisRecompute() { // debounced: note edits, not per frame (P6 spec)
+  if (!S.analysisOn || !analysisAvailable()) return; // off, or Learning: nothing to recompute, nothing scheduled
+  if (S._analysisTimer) clearTimeout(S._analysisTimer);
+  S._analysisTimer = setTimeout(() => {
+    S._analysisTimer = null;
+    if (!S.analysisOn || !analysisAvailable() || !S.song) return; // flipped off/Learning during the debounce window
+    computeAnalysisLayer();
+    finalizeNotes();
+    draw();
+  }, 400);
+}
+// ---- Adopt: the ONLY path that turns an analysis band into a real
+// annotation — same annoSnapshot/pushUndo("anno") pattern as every other
+// one-tap write (saveTrackDir, useFileKey, keysetest), so ⟲ takes it right
+// back out in one step.
+export function adoptChordBand(entry) {
+  if (!S.song) return;
+  if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  if (S.rollnotesReadOnly) { setInfo(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; } // P4 (docs/annotations-v2.md): closes P3's gap
+  const fresh = {text: entry.text, chord: true, added: true};
+  setAnchorBQ(fresh, entry.start);
+  setEndBQ(fresh, entry.end);
+  const annoBefore = annoSnapshot();
+  dropSupersededBy(fresh);
+  S.rollnotes.push(resolveNote(fresh));
+  pushUndo({kind: "anno", json: annoBefore});
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  S.lastSubtitle = undefined;
+  updateSubtitle();
+  draw();
+  setInfo("chord " + entry.text + " adopted at bar " + fresh.b1 + " (from Analyze — unsynced — Sync to commit)");
+}
+export function adoptAllChords() {
+  if (!S.song || !S.analysisBands.chords.length) return;
+  if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  if (S.rollnotesReadOnly) { setInfo(S.rollnotesLockReason || ROLLNOTES_LOCK_MSG); return; } // P4 (docs/annotations-v2.md): closes P3's gap
+  const annoBefore = annoSnapshot();
+  let n = 0;
+  for (const entry of S.analysisBands.chords) {
+    const fresh = {text: entry.text, chord: true, added: true};
+    setAnchorBQ(fresh, entry.start);
+    setEndBQ(fresh, entry.end);
+    dropSupersededBy(fresh);
+    S.rollnotes.push(resolveNote(fresh));
+    n++;
+  }
+  pushUndo({kind: "anno", json: annoBefore}); // every band adopted here is ONE undo step, not N
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  S.lastSubtitle = undefined;
+  updateSubtitle();
+  draw();
+  setInfo(n + " chord" + (n === 1 ? "" : "s") + " adopted from Analyze (unsynced — Sync to commit)");
+}
+export function adoptKeyRegion(region) {
+  if (!S.song) return;
+  if (LINK_SONGS) { setInfo("you're listening to " + linkRepoLabel(LINK_SONGS) + "'s song from a link — annotations are theirs; open your own copy to write"); return; }
+  const bar = Math.floor(region.start / barTicks()) + 1;
+  const annoBefore = annoSnapshot();
+  dropLocalKeyAt(bar); // anchor-level: same convention as keysetest/useFileKey
+  const fresh = {b1: bar, q1: 1, b2: null, q2: null, text: "key: " + region.name, keydir: region.sf, added: true};
+  S.rollnotes.push(resolveNote(fresh));
+  pushUndo({kind: "anno", json: annoBefore});
+  finalizeNotes();
+  saveLocalNotes();
+  buildScoreModel();
+  S.lastSubtitle = undefined;
+  updateSubtitle();
+  draw();
+  setInfo("key set to " + region.name + " at bar " + bar + " (from Analyze — unsynced — Sync to commit)");
 }
