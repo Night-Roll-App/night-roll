@@ -87,7 +87,7 @@ import { SCORE_INTRO_W } from "../render/score.js";
 import { tracksLaneH } from "../render/tracks.js";
 import { scoreContentH } from "../render/score.js";
 import { isLocalDraft } from "../model/edits.js";
-import { draftWrite } from "./sheets.js";
+import { draftWrite } from "../model/versions.js";
 import { draftDoc } from "../model/versions.js";
 import { editableSong } from "../model/song.js";
 import { baseName } from "../model/rollnotes.js";

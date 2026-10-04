@@ -2,6 +2,9 @@ import { S } from "../state.js";
 import { isComposition } from "./provenance.js";
 import { draftStoreKey } from "../platform/storage.js";
 import { effTs } from "./grid.js";
+import { draftInIdb } from "../platform/storage.js";
+import { idbDraftPut } from "../platform/storage.js";
+import { logErr } from "../hooks.js";
 
 export function songDirtyFlag() { // the draft records dirty; a clean Save clears it
   if (!S.song || !isComposition()) return false;
@@ -128,4 +131,46 @@ export function songUnsaved() { // what the ● means: "not published yet" — o
 export function draftKeys() {
   return Object.keys(localStorage).filter(k => k.startsWith("ff1roll-draft-"))
     .map(k => k.slice("ff1roll-draft-".length)).sort();
+}
+
+export function draftWrite(key, doc) { // synchronous for the caller; the notes follow through the queue
+  if (key.startsWith("local/")) return localDraftWrite(key, doc);
+  if (draftInIdb(key)) {
+    const {tracks, ...stub} = doc;
+    stub.tracksRef = 1;
+    idbDraftPut(key, tracks);
+    localStorage.setItem(draftStoreKey(key), JSON.stringify(stub));
+  } else localStorage.setItem(draftStoreKey(key), JSON.stringify(doc));
+}
+// Local/ songs (2026-10-02 — see "Local song persistence" in NIGHT-ROLL.md):
+// every edit rewrites the whole draft (saveEdits), and the app can be killed
+// right after one (an install relaunch). The IndexedDB put is queued, so a
+// stub alone in localStorage could claim notes that never landed. So a
+// local draft is written WHOLE to localStorage — synchronous, the copy load
+// reads — whenever it fits (500k chars; local songs are usually far
+// smaller), and its notes go to IndexedDB too, so a song that later grows
+// past the cap loses at most the edits in flight, not everything since it
+// last fit. Every write carries seq (stored seq + 1); the IndexedDB record
+// is {seq, tracks}. Past the cap, or when the store is full: stub + IDB as
+// before, logged once — the last edit is crash-safe only once the put lands.
+// Returns true (stored) or the put's promise (true once landed).
+export function localDraftWrite(key, doc) {
+  // seq is the LAST key written (below), so the last "seq": in the stored
+  // JSON is it — no parse of a whole song on every edit (a "seq": inside a
+  // string would be escaped, \"seq\")
+  const old = localStorage.getItem(draftStoreKey(key)) || "", at = old.lastIndexOf('"seq":');
+  const prev = at < 0 ? 0 : parseInt(old.slice(at + 6), 10) || 0;
+  doc = {...doc, seq: prev + 1};
+  const idb = typeof indexedDB !== "undefined";
+  const landed = idb ? idbDraftPut(key, {seq: doc.seq, tracks: doc.tracks}) : true;
+  const whole = JSON.stringify(doc);
+  if (!idb || whole.length <= 500000) {
+    try { localStorage.setItem(draftStoreKey(key), whole); return true; }
+    catch (err) { if (!idb) throw err; } // full: the stub below is smaller
+  }
+  if (localDraftWrite.warned !== key) { localDraftWrite.warned = key; logErr(key.split("/").pop() + " is too big to keep whole on this device — its newest edit is safe only a moment after you make it (IndexedDB)"); }
+  const {tracks, ...stub} = doc;
+  stub.tracksRef = 1;
+  localStorage.setItem(draftStoreKey(key), JSON.stringify(stub));
+  return landed;
 }
