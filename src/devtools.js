@@ -79,6 +79,7 @@ import * as renderCof from "./render/cof.js";
 import * as renderCompare from "./render/compare.js";
 import * as inputGestures from "./input/gestures.js";
 import * as inputRecord from "./input/record.js";
+import * as inputKeyboard from "./input/keyboard.js";
 import * as askBackend from "./ask/backend.js";
 import * as askTools from "./ask/tools.js";
 import * as askContext from "./ask/context.js";
@@ -117,7 +118,7 @@ export function exposeGlobals() {
                      importHub, importCapture, syncPublish,
                      genDrummer, genBassist, genAnalysis,
                      renderRoll, renderTracks, renderScore, renderInstrument, renderCof, renderCompare,
-                     inputGestures, inputRecord,
+                     inputGestures, inputRecord, inputKeyboard,
                      askBackend, askTools, askContext, askBridge, askShots, askSheet, askClient, askHost,
                      uiChrome, uiTrackbar, uiMixer, uiVoiceMenu, uiNotes, uiNoteEditor, uiSheets, uiWm,
                      sessionSong, sessionAlbum, sessionFiles,

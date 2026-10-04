@@ -1361,6 +1361,26 @@ import { recNoteOn } from "./input/record.js";
 import { recFinishImpl } from "./input/record.js";
 import { midiMessage } from "./input/record.js";
 import { initCoreMidi } from "./input/record.js";
+import { instPointerDown } from "./input/keyboard.js";
+import { instPointerMove } from "./input/keyboard.js";
+import { instPointerUp } from "./input/keyboard.js";
+import { instSetMode } from "./input/keyboard.js";
+import { instSetLock } from "./input/keyboard.js";
+import { instSetSustain } from "./input/keyboard.js";
+import { instReleaseAll } from "./input/keyboard.js";
+import { guitarHit } from "./input/keyboard.js";
+import { instPlay } from "./input/keyboard.js";
+import { instReleaseVoice } from "./input/keyboard.js";
+import { instReleaseHeld } from "./input/keyboard.js";
+import { setInstInfo } from "./input/keyboard.js";
+import { instTap } from "./input/keyboard.js";
+import { INST_PAN_SLOP } from "./input/keyboard.js";
+import { instPtrXY } from "./input/keyboard.js";
+import { instPtrMeanX } from "./input/keyboard.js";
+import { instLetGo } from "./input/keyboard.js";
+import { instPtrPlayed } from "./input/keyboard.js";
+import { instPtrTicket } from "./input/keyboard.js";
+import { instScrollPersist } from "./input/keyboard.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -4211,90 +4231,6 @@ document.getElementById("clearbtn").addEventListener("click", () => {
 });
 window.addEventListener("resize", resize);
 new ResizeObserver(resize).observe(wrap);
-function guitarHit(x, y, W, H) {
-  const g = guitarGeom(W, H);
-  const si = Math.max(0, Math.min(5, Math.round((y - g.top) / g.sh)));
-  const f = x < g.nutX ? 0 : Math.min(GTR_FRETS, Math.floor((x - g.nutX) / g.fw) + 1);
-  return {p: GTR_TUNING[si] + f, si, f};
-}
-// Sustain (2026-10-04, the piano's pedal): with it on, a tapped key rings on
-// after the finger lifts — a slow decay, like a held piano string — until
-// Sustain is turned off, which releases everything at once; restriking a
-// ringing key replaces its voice. Off, a tap is the same half-second blip as
-// always. Only the panel's own voices live in S.instHeld: song playback and
-// a recording's note lengths (recNoteOff fires at the finger's release
-// either way) never pass through here.
-async function instPlay(p, ticket) {
-  ensureAudio();
-  await resumeAudio();
-  if (ticket && !ticket.live) return; // the finger was let go (a chord that became a scroll) while the engine woke: nothing sounds
-  openMaster();
-  const o = makeOsc(S.instTab === "guitar" ? "triangle" : "square25");
-  o.frequency.value = 440 * Math.pow(2, (p - 69) / 12);
-  const g = S.audio.createGain();
-  const when = S.audio.currentTime + 0.01, dur = 0.5;
-  g.gain.setValueAtTime(0, when);
-  g.gain.linearRampToValueAtTime(0.35, when + 0.008);
-  o.connect(g);
-  g.connect(S.master); // master, not a track gain: mutes never silence the panel
-  o.start(when);
-  if (S.instSustain) {
-    instReleaseHeld(p);
-    g.gain.setValueAtTime(0.35, when + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.001, when + 7); // the string's own decay; inaudible well before the stop
-    const v = {o, g};
-    S.instHeld.set(p, v);
-    o.stop(when + 7.1);
-    o.onended = () => { if (S.instHeld.get(p) === v) S.instHeld.delete(p); };
-    return;
-  }
-  g.gain.setValueAtTime(0.35, when + dur - 0.06);
-  g.gain.linearRampToValueAtTime(0, when + dur);
-  o.stop(when + dur + 0.05);
-}
-function instReleaseVoice(v) { // a short fade, never a click
-  const t = S.audio.currentTime;
-  v.g.gain.cancelScheduledValues(t);
-  v.g.gain.setValueAtTime(Math.max(0.001, v.g.gain.value || 0.001), t);
-  v.g.gain.linearRampToValueAtTime(0, t + 0.08);
-  v.o.stop(t + 0.1);
-}
-function instReleaseHeld(p) {
-  const v = S.instHeld.get(p);
-  if (!v) return;
-  S.instHeld.delete(p);
-  instReleaseVoice(v);
-}
-function instReleaseAll() {
-  if (!S.audio) { S.instHeld.clear(); return; }
-  for (const v of S.instHeld.values()) instReleaseVoice(v);
-  S.instHeld.clear();
-}
-function setInstInfo(s) { // linger 10s, then fade — a stale key name reads like a live one
-  const el = document.getElementById("instinfo");
-  el.textContent = s;
-  el.style.opacity = "1";
-  clearTimeout(S.instInfoTimer);
-  S.instInfoTimer = setTimeout(() => { el.style.opacity = "0"; }, 10000);
-}
-function instTap(e, dragging) {
-  const r = instCanvas.getBoundingClientRect();
-  const x = e.clientX - r.left, y = e.clientY - r.top;
-  const W = instWrap.clientWidth, H = instWrap.clientHeight;
-  let p, si, f;
-  if (S.instTab === "piano") p = pianoHit(x, y, W, H);
-  else ({p, si, f} = guitarHit(x, y, W, H));
-  if (p === undefined || (dragging && p === S.instLastP)) return p;
-  S.instLastP = p;
-  S.instFlash = {p, si, f, until: performance.now() + 350};
-  instPlay(p, instPtrTicket(e.pointerId));
-  const deg = degreeOf(p % 12, keyNameShownAt(curTick()));
-  const at = si !== undefined ? "  ·  " + GTR_NAMES[si] + " string" + (f ? ", fret " + f : ", open") : "";
-  setInstInfo(pitchName(p, sfShownAt(curTick())) + (deg ? "  ·  degree " + deg : "") + at);
-  drawInst();
-  setTimeout(drawInst, 400); // clear the flash when idle (playback frames handle it otherwise)
-  return p;
-}
   document.addEventListener("pointerdown", function midiWarm() {
   document.removeEventListener("pointerdown", midiWarm);
   // the iPad app's native MIDI bridge starts only when ● asks for it — never
@@ -4317,153 +4253,11 @@ document.getElementById("recbtn").addEventListener("click", async () => {
   await play(S.playCursor > 0 ? tickToSec(S.song, S.playCursor) : 0);
   if (!S.recording && S.playing) stop(); // ● was released while play() was still waking the audio context
 });
-// Keyboard gestures (2026-10-04, docs/daw-inventory.md §1a — Josh: "it
-// would play every note on the piano if you try to scroll on it"). The
-// grammar, in order of precedence:
-//   · a tap on an edge chevron scrolls to the lit key it points at;
-//   · TWO fingers moving sideways together scroll the keys, in either mode,
-//     and never sound — the same "two fingers moving together pan" the roll
-//     teaches. Two fingers placed and held still are a chord (Play mode
-//     plays both as before); the moment they travel past INST_PAN_SLOP the
-//     chord lets go and the drag is a scroll;
-//   · one finger in Play mode: today's behavior exactly — press plays,
-//     sliding plays every new key (the glissando Record relies on);
-//   · one finger in Scroll mode: a drag pans silently; a finger that lifts
-//     without travelling was a tap and plays its key on release.
-// The lock refuses every scroll inside instSetScroll, so no gesture branch
-// needs to know about it. S.instPtrs tracks every finger on the canvas;
-// a `dead` finger is one that has already been spent (it panned, or it
-// belonged to a chord that became a scroll) and must not play on release.
-const INST_PAN_SLOP = 8;
-function instPtrXY(e) {
-  const r = instCanvas.getBoundingClientRect();
-  return {x: e.clientX - r.left, y: e.clientY - r.top};
-}
-function instPtrMeanX() {
-  let sum = 0, n = 0;
-  for (const q of S.instPtrs.values()) { sum += q.x; n++; }
-  return n ? sum / n : 0;
-}
-function instLetGo(pid) { // a finger stops sounding/recording without lifting
-  recNoteOff(pid);
-  const q = S.instPtrs.get(pid);
-  if (q && q.p !== undefined) instReleaseHeld(q.p); // a chord that became a scroll must not ring on under Sustain
-  if (q && q.ticket) q.ticket.live = false; // …nor may a voice still waking up park itself after this
-  S.instPtrOn = false;
-  S.instLastP = null;
-  if (S.instFlash) S.instFlash = null;
-}
-function instPtrPlayed(pid, p) { // remember the key each finger last sounded, for instLetGo
-  const q = S.instPtrs.get(pid);
-  if (q && p !== undefined) q.p = p;
-}
-// one ticket per finger: instPlay's awaits (resumeAudio's clock probes) can
-// outlast the gesture that asked for the note, so the voice checks the
-// ticket is still live before it sounds. A key played from no finger
-// (MIDI, tests) has no ticket and always sounds.
-function instPtrTicket(pid) {
-  const q = S.instPtrs.get(pid);
-  if (!q) return null;
-  return q.ticket || (q.ticket = {live: true});
-}
-function instPointerDown(e) {
-  instCanvas.setPointerCapture(e.pointerId);
-  const {x, y} = instPtrXY(e);
-  const W = instWrap.clientWidth;
-  const piano = S.instTab === "piano";
-  if (piano && S.instPtrs.size === 0 && S.instChevrons) {
-    const ch = S.instChevrons;
-    if (ch.left !== null && x < INST_CHEVRON_W) { instRevealPitch(ch.left); S.instPtrs.set(e.pointerId, {x, y, x0: x, y0: y, dead: true}); return; }
-    if (ch.right !== null && x > W - INST_CHEVRON_W) { instRevealPitch(ch.right); S.instPtrs.set(e.pointerId, {x, y, x0: x, y0: y, dead: true}); return; }
-  }
-  S.instPtrs.set(e.pointerId, {x, y, x0: x, y0: y, dead: false, moved: false});
-  if (piano && S.instPtrs.size === 2) { S.instGesture = "two"; S.instPanX = instPtrMeanX(); S.instPanX0 = S.instPanX; }
-  if (piano && S.instGesture === "pan2") { S.instPtrs.get(e.pointerId).dead = true; S.instPanX = instPtrMeanX(); return; }
-  if (piano && S.instMode === "scroll") return; // tap decided on release, drag on travel
-  S.instPtrOn = true;
-  const p = instTap(e);
-  instPtrPlayed(e.pointerId, p);
-  if (S.recording && S.playing && p !== undefined) recNoteOn(e.pointerId, p);
-}
-function instPointerMove(e) {
-  const pt = S.instPtrs.get(e.pointerId);
-  if (!pt) return;
-  const {x, y} = instPtrXY(e);
-  pt.x = x; pt.y = y;
-  if (S.instGesture === "two" && S.instPtrs.size >= 2) { // the chord becomes a scroll once it travels
-    const mean = instPtrMeanX();
-    if (Math.abs(mean - S.instPanX0) > INST_PAN_SLOP) {
-      S.instGesture = "pan2";
-      for (const pid of S.instPtrs.keys()) { instLetGo(pid); S.instPtrs.get(pid).dead = true; }
-      S.instPanX = mean;
-      drawInst();
-    }
-    return;
-  }
-  if (S.instGesture === "pan2") {
-    const mean = instPtrMeanX();
-    instScrollBy(mean - S.instPanX);
-    S.instPanX = mean;
-    return;
-  }
-  if (pt.dead) return;
-  if (S.instTab === "piano" && S.instMode === "scroll") {
-    if (!pt.moved) {
-      if (Math.abs(x - pt.x0) <= INST_PAN_SLOP) return;
-      pt.moved = true;
-      pt.panX = pt.x0;
-    }
-    instScrollBy(x - pt.panX);
-    pt.panX = x;
-    return;
-  }
-  if (!S.instPtrOn) return;
-  const p = instTap(e, true);
-  instPtrPlayed(e.pointerId, p);
-  if (S.recording && S.playing && p !== undefined) recNoteOn(e.pointerId, p);
-}
-function instPointerUp(e, cancelled) {
-  const pt = S.instPtrs.get(e.pointerId);
-  S.instPtrs.delete(e.pointerId);
-  recNoteOff(e.pointerId);
-  if (S.instGesture === "pan2" || S.instGesture === "two") {
-    if (S.instPtrs.size < 2) { // the remaining finger is spent: lifting one finger of a scroll must not start a note
-      S.instGesture = null;
-      for (const q of S.instPtrs.values()) q.dead = true;
-      instScrollPersist();
-    } else S.instPanX = instPtrMeanX();
-  } else if (pt && !pt.dead && !pt.moved && !cancelled && S.instTab === "piano" && S.instMode === "scroll") {
-    const p = instTap(e); // the Scroll-mode tap: one key, on release
-    if (S.recording && S.playing && p !== undefined) { recNoteOn(e.pointerId, p); recNoteOff(e.pointerId); }
-  } else if (pt && pt.moved) instScrollPersist();
-  if (S.instPtrs.size === 0) { S.instPtrOn = false; S.instLastP = null; S.instGesture = null; }
-}
-// a drag scrolls transiently (no storage write per pointermove); the
-// finger's lift records where it left the keys
-function instScrollPersist() {
-  if (S.instScroll !== null) localStorage.setItem("ff1roll-inst-scroll-piano", String(S.instScroll));
-}
 instCanvas.addEventListener("pointerdown", instPointerDown);
 instCanvas.addEventListener("pointermove", instPointerMove);
 instCanvas.addEventListener("pointerup", e => instPointerUp(e, false));
 instCanvas.addEventListener("pointercancel", e => instPointerUp(e, true));
 new ResizeObserver(instResize).observe(instWrap);
-function instSetMode(m) {
-  S.instMode = m === "scroll" ? "scroll" : "play";
-  localStorage.setItem("ff1roll-inst-mode", S.instMode);
-  applyInstBar();
-}
-function instSetLock(on) {
-  S.instLock = !!on;
-  localStorage.setItem("ff1roll-inst-lock", S.instLock ? "1" : "0");
-  applyInstBar();
-}
-function instSetSustain(on) {
-  S.instSustain = !!on;
-  localStorage.setItem("ff1roll-inst-sustain", S.instSustain ? "1" : "0");
-  if (!S.instSustain) instReleaseAll(); // the pedal comes up: everything ringing lets go
-  applyInstBar();
-}
 document.getElementById("instplay").addEventListener("click", () => instSetMode("play"));
 document.getElementById("instscroll").addEventListener("click", () => instSetMode("scroll"));
 document.getElementById("instoctdn").addEventListener("click", () => instOctave(-1));
@@ -6789,4 +6583,4 @@ try { // a job still "running" in the mirror = the page died mid-way; the row ke
 // check.mjs's rule 1 treats every name referenced here as already bound
 // (they're this module's own top-level declarations), so this block does
 // not introduce free-identifier findings.
-export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "gridFollowNote": () => gridFollowNote, "guitarHit": () => guitarHit, "instPlay": () => instPlay, "instReleaseVoice": () => instReleaseVoice, "instReleaseHeld": () => instReleaseHeld, "instReleaseAll": () => instReleaseAll, "setInstInfo": () => setInstInfo, "instTap": () => instTap, "INST_PAN_SLOP": () => INST_PAN_SLOP, "instPtrXY": () => instPtrXY, "instPtrMeanX": () => instPtrMeanX, "instLetGo": () => instLetGo, "instPtrPlayed": () => instPtrPlayed, "instPtrTicket": () => instPtrTicket, "instPointerDown": () => instPointerDown, "instPointerMove": () => instPointerMove, "instPointerUp": () => instPointerUp, "instScrollPersist": () => instScrollPersist, "instSetMode": () => instSetMode, "instSetLock": () => instSetLock, "instSetSustain": () => instSetSustain, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "gridFollowNote": (v) => (gridFollowNote = v), "guitarHit": (v) => (guitarHit = v), "instPlay": (v) => (instPlay = v), "instReleaseVoice": (v) => (instReleaseVoice = v), "instReleaseHeld": (v) => (instReleaseHeld = v), "instReleaseAll": (v) => (instReleaseAll = v), "setInstInfo": (v) => (setInstInfo = v), "instTap": (v) => (instTap = v), "instPtrXY": (v) => (instPtrXY = v), "instPtrMeanX": (v) => (instPtrMeanX = v), "instLetGo": (v) => (instLetGo = v), "instPtrPlayed": (v) => (instPtrPlayed = v), "instPtrTicket": (v) => (instPtrTicket = v), "instPointerDown": (v) => (instPointerDown = v), "instPointerMove": (v) => (instPointerMove = v), "instPointerUp": (v) => (instPointerUp = v), "instScrollPersist": (v) => (instScrollPersist = v), "instSetMode": (v) => (instSetMode = v), "instSetLock": (v) => (instSetLock = v), "instSetSustain": (v) => (instSetSustain = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
+export const __nrExpose$ = {get: {"recentSongsForMenu": () => recentSongsForMenu, "recentAlbumFor": () => recentAlbumFor, "applyMode": () => applyMode, "HOLD_MS": () => HOLD_MS, "HOLD_SLOP": () => HOLD_SLOP, "RULER_RANGE_SLOP": () => RULER_RANGE_SLOP, "setSecDepth": () => setSecDepth, "cycleSecDepth": () => cycleSecDepth, "annoRestore": () => annoRestore, "homeSong": () => homeSong, "governingAt": () => governingAt, "finalizeLasso": () => finalizeLasso, "toggleSel": () => toggleSel, "fallHitNote": () => fallHitNote, "hitTracksNote": () => hitTracksNote, "hitTracksClip": () => hitTracksClip, "selectAllNotes": () => selectAllNotes, "openInsertBars": () => openInsertBars, "openDeleteBars": () => openDeleteBars, "hitNote": () => hitNote, "scoreLassoTap": () => scoreLassoTap, "beatLabel": () => beatLabel, "noteLabel": () => noteLabel, "songPitchExtent": () => songPitchExtent, "scrubTo": () => scrubTo, "seekOrMoveCursor": () => seekOrMoveCursor, "placePencilNote": () => placePencilNote, "endPointer": () => endPointer, "tap": () => tap, "scorePencilTick": () => scorePencilTick, "scoreStaveAt": () => scoreStaveAt, "scorePencil": () => scorePencil, "scoreErase": () => scoreErase, "scoreTap": () => scoreTap, "renderSongGroups": () => renderSongGroups, "renderFolder": () => renderFolder, "renderSongList": () => renderSongList, "openSongPicker": () => openSongPicker, "speedsl": () => speedsl, "speedlbl": () => speedlbl, "speedreset": () => speedreset, "applySpeed": () => applySpeed, "speedbtn": () => speedbtn, "_applySpeedInner": () => _applySpeedInner, "volsl": () => volsl, "vollbl": () => vollbl, "volbtn": () => volbtn, "fileMeterAt": () => fileMeterAt, "refreshKeyPreview": () => refreshKeyPreview, "moveSelectionToTrack": () => moveSelectionToTrack, "dedupeSong": () => dedupeSong, "insertChordAt": () => insertChordAt, "insertProgressionAt": () => insertProgressionAt, "cofAngle": () => cofAngle, "cofRelease": () => cofRelease, "applyListener": () => applyListener, "setViewMode": () => setViewMode, "applyViewMode": () => applyViewMode, "gridFollowNote": () => gridFollowNote, "toggleSubtitle": () => toggleSubtitle, "shiftAnchors": () => shiftAnchors, "convertAnchors": () => convertAnchors, "openVersionsSheet": () => openVersionsSheet, "goBackToVersion": () => goBackToVersion, "renderVersionsSheet": () => renderVersionsSheet, "goBackToPublished": () => goBackToPublished, "openGridSheet": () => openGridSheet, "fileMenuSaveLabels": () => fileMenuSaveLabels, "renderOpenRecentRow": () => renderOpenRecentRow, "openRecentSong": () => openRecentSong, "recordRealtimeAudio": () => recordRealtimeAudio, "DP_PIECES": () => DP_PIECES, "dpSteps": () => dpSteps, "dpDefault": () => dpDefault, "dpRender": () => dpRender, "dpBuildBeatSelects": () => dpBuildBeatSelects, "segGet": () => segGet, "openPasteTo": () => openPasteTo, "invertEdit": () => invertEdit, "editRedoPop": () => editRedoPop, "editUndoPop": () => editUndoPop, "applyEditEntry": () => applyEditEntry, "renderFolderUI": () => renderFolderUI, "folderAfterChange": () => folderAfterChange, "chooseFolder": () => chooseFolder, "forgetFolder": () => forgetFolder, "applyTextSize": () => applyTextSize, "settingsPersist": () => settingsPersist, "MODAL_KEEP": () => MODAL_KEEP}, set: {"recentSongsForMenu": (v) => (recentSongsForMenu = v), "recentAlbumFor": (v) => (recentAlbumFor = v), "applyMode": (v) => (applyMode = v), "setSecDepth": (v) => (setSecDepth = v), "cycleSecDepth": (v) => (cycleSecDepth = v), "annoRestore": (v) => (annoRestore = v), "homeSong": (v) => (homeSong = v), "governingAt": (v) => (governingAt = v), "finalizeLasso": (v) => (finalizeLasso = v), "toggleSel": (v) => (toggleSel = v), "fallHitNote": (v) => (fallHitNote = v), "hitTracksNote": (v) => (hitTracksNote = v), "hitTracksClip": (v) => (hitTracksClip = v), "selectAllNotes": (v) => (selectAllNotes = v), "openInsertBars": (v) => (openInsertBars = v), "openDeleteBars": (v) => (openDeleteBars = v), "hitNote": (v) => (hitNote = v), "scoreLassoTap": (v) => (scoreLassoTap = v), "beatLabel": (v) => (beatLabel = v), "noteLabel": (v) => (noteLabel = v), "songPitchExtent": (v) => (songPitchExtent = v), "scrubTo": (v) => (scrubTo = v), "seekOrMoveCursor": (v) => (seekOrMoveCursor = v), "placePencilNote": (v) => (placePencilNote = v), "endPointer": (v) => (endPointer = v), "tap": (v) => (tap = v), "scorePencilTick": (v) => (scorePencilTick = v), "scoreStaveAt": (v) => (scoreStaveAt = v), "scorePencil": (v) => (scorePencil = v), "scoreErase": (v) => (scoreErase = v), "scoreTap": (v) => (scoreTap = v), "renderSongGroups": (v) => (renderSongGroups = v), "renderFolder": (v) => (renderFolder = v), "renderSongList": (v) => (renderSongList = v), "openSongPicker": (v) => (openSongPicker = v), "applySpeed": (v) => (applySpeed = v), "fileMeterAt": (v) => (fileMeterAt = v), "refreshKeyPreview": (v) => (refreshKeyPreview = v), "moveSelectionToTrack": (v) => (moveSelectionToTrack = v), "dedupeSong": (v) => (dedupeSong = v), "insertChordAt": (v) => (insertChordAt = v), "insertProgressionAt": (v) => (insertProgressionAt = v), "cofRelease": (v) => (cofRelease = v), "applyListener": (v) => (applyListener = v), "setViewMode": (v) => (setViewMode = v), "applyViewMode": (v) => (applyViewMode = v), "gridFollowNote": (v) => (gridFollowNote = v), "toggleSubtitle": (v) => (toggleSubtitle = v), "shiftAnchors": (v) => (shiftAnchors = v), "convertAnchors": (v) => (convertAnchors = v), "openVersionsSheet": (v) => (openVersionsSheet = v), "goBackToVersion": (v) => (goBackToVersion = v), "renderVersionsSheet": (v) => (renderVersionsSheet = v), "goBackToPublished": (v) => (goBackToPublished = v), "openGridSheet": (v) => (openGridSheet = v), "fileMenuSaveLabels": (v) => (fileMenuSaveLabels = v), "renderOpenRecentRow": (v) => (renderOpenRecentRow = v), "openRecentSong": (v) => (openRecentSong = v), "recordRealtimeAudio": (v) => (recordRealtimeAudio = v), "dpSteps": (v) => (dpSteps = v), "dpDefault": (v) => (dpDefault = v), "dpRender": (v) => (dpRender = v), "dpBuildBeatSelects": (v) => (dpBuildBeatSelects = v), "segGet": (v) => (segGet = v), "openPasteTo": (v) => (openPasteTo = v), "invertEdit": (v) => (invertEdit = v), "editRedoPop": (v) => (editRedoPop = v), "editUndoPop": (v) => (editUndoPop = v), "applyEditEntry": (v) => (applyEditEntry = v), "renderFolderUI": (v) => (renderFolderUI = v), "folderAfterChange": (v) => (folderAfterChange = v), "chooseFolder": (v) => (chooseFolder = v), "forgetFolder": (v) => (forgetFolder = v), "applyTextSize": (v) => (applyTextSize = v), "settingsPersist": (v) => (settingsPersist = v)}};
