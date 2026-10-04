@@ -436,3 +436,7 @@ export function playGateTick() {
   }
   playGateTick.queued = false;
 }
+
+export function initTransport1() {
+  play.gen = 0;
+}

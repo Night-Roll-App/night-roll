@@ -1526,6 +1526,7 @@ import { initBridge1 } from "./ask/bridge.js";
 import { initBridge2 } from "./ask/bridge.js";
 import { initEngine1 } from "./audio/engine.js";
 import { initEngine2 } from "./audio/engine.js";
+import { initTransport1 } from "./audio/transport.js";
 installHooks(); // docs/split-phase2-plan.md §1 M1: before any init*() / top-level effect — every S.hooks port throws if called first
 try {
   if (S.APP_BASE && document.head && !document.querySelector("base")) {
@@ -1989,7 +1990,7 @@ initEngine2();
 initVoiceMenu1();
                          
                         
-        play.gen = 0;
+        initTransport1();
   document.getElementById("albumprev").addEventListener("click", albumPrev);
 document.getElementById("albumnext").addEventListener("click", albumNext);
 document.getElementById("albumleave").addEventListener("click", albumLeave);
