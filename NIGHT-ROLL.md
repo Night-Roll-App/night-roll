@@ -2,7 +2,9 @@
 
 The complete map of the player (`index.html`) for anyone (especially future
 Claude sessions) continuing work. User-facing feature list also lives in the
-in-app help sheet (? button). History: git log tells the build story.
+in-app help sheet (File ▾ → Help; its body is `help/help.html`, fetched on
+first open — see "Help sheet body" below). History: git log tells the build
+story.
 
 Live: https://night-roll-app.github.io/night-roll/ (GitHub Pages, main
 branch, root). Single file app + `vendor/vexflow.js`. No build step —
@@ -1659,7 +1661,7 @@ sections are these modules now.
   `runMeterCheck`/`useFileMeter`/`tonicLabel`/`chosenTonic`/`chosenTonicPc`/
   `partialNameOf`/`tonicOptionValue`/`refreshKeysetLabel`, plus the `keysel`/
   `keysetBtn`/`keymodeSel` DOM consts they close over) and the notes-list UI
-  (`notelistSheet`/`NOTE_GROUPS`/`renderNoteJump`/`showHelpTab`/`lassobtn`/
+  (`notelistSheet`/`NOTE_GROUPS`/`renderNoteJump`/`showHelpTab`/`openHelp`/`ensureHelpLoaded`/`lassobtn`/
   `chordEvidence`/`openChallenge`), step 14 (2026-10-04). **`useFileKey`/
   `refreshKeyPreview`/`renderNoteList`/`openNoteList` did NOT move** (each
   reaches `finalizeNotes`/`draw`/`clampView`/`updateSubtitle` — `draw`/
@@ -2484,11 +2486,12 @@ chord name, key inference, or note classification; findings are Josh's.
 
 ## Shipping checklist (every user-facing feature, Josh's standing rule)
 
-1. **Help dialog**: add/update the entry in index.html's help sheet
-   (#helpsheet — tabbed; put it in the right section, touch gesture
+1. **Help dialog**: add/update the entry in `help/help.html` (the
+   help sheet's body — one `.hsec` per tab; the tab buttons themselves
+   are index.html's #helptabs; put it in the right section, touch gesture
    first, keyboard equivalent after).
 2. **Full manual**: run `node tools/build_help.mjs` to regenerate
-   HELP.md from the help sheet. Never edit HELP.md by hand.
+   HELP.md from help/help.html + the tab labels. Never edit HELP.md by hand.
 3. **Drift guard**: add a keyword for the feature to the FEATURES list
    in tests/night-roll.test.mjs (the keyword must appear in the help
    sheet region). A separate test fails if HELP.md is stale — so a

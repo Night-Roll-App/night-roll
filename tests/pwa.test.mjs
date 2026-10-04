@@ -47,7 +47,16 @@ test("PWA: the stylesheet ships offline — index.html links css/app.css (its on
   const sw = read("sw.js");
   const list = JSON.parse(sw.match(/const PRECACHE = (\[[\s\S]*?\]);/)[1].replace(/\s+/g, " "));
   assert.ok(list.includes("css/app.css"), "precached, so an offline launch is styled");
-  assert.match(sw, /rel\.startsWith\("src\/"\) \|\| rel\.startsWith\("css\/"\)/, "css/ takes the src/ branch: network-first, HTTP cache bypassed, never cache-first");
+  assert.match(sw, /rel\.startsWith\("src\/"\) \|\| rel\.startsWith\("css\/"\) \|\| rel\.startsWith\("help\/"\)/, "css/ and help/ take the src/ branch: network-first, HTTP cache bypassed, never cache-first");
+});
+
+test("PWA: the Help sheet opens offline — help/help.html (docs/plans/2026-10-04-help-out.md) is the file the loader fetches, precached, and routed network-first like src/", () => {
+  assert.ok(existsSync(new URL("help/help.html", root)));
+  assert.match(appSource(), /HELP_URL = "help\/help\.html"/, "src/ui/notes.js fetches exactly the precached path");
+  const sw = read("sw.js");
+  const list = JSON.parse(sw.match(/const PRECACHE = (\[[\s\S]*?\]);/)[1].replace(/\s+/g, " "));
+  assert.ok(list.includes("help/help.html"), "precached, so Help opens offline on a fresh install");
+  assert.match(sw, /rel\.startsWith\("help\/"\)/, "help/ is network-first with cache fallback, never cache-first");
 });
 
 test("PWA: sw.js parses, precaches only files that exist, never the soundfonts", () => {

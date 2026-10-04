@@ -8,10 +8,11 @@
 //   navigations (the page itself)      network-first, 4 s, else the cached
 //                                      index.html — so a path-form song link
 //                                      opens offline too
-//   src/**, css/app.css                 network-first, 4 s, HTTP cache bypassed;
-//                                      the entry modules and the stylesheet
-//                                      precached so an offline launch styles
-//                                      and boots (see the src/ note below)
+//   src/**, css/app.css, help/**        network-first, 4 s, HTTP cache bypassed;
+//                                      the entry modules, the stylesheet and
+//                                      the Help sheet's body precached so an
+//                                      offline launch styles, boots and can
+//                                      open Help (see the src/ note below)
 //   vendor/vexflow.js, manifest, icons  cache-first, precached at install
 //   vendor/ai/web/*.js                  cache-first, precached at install —
 //                                      pinned by tools/ai-sync.mjs (AI_LIB),
@@ -33,7 +34,7 @@
 // A stale-index footgun is avoided by design: index.html is only ever served
 // from cache when the network failed or timed out.
 
-const SW_VERSION = "nr-v33"; // bumped: docs/split-plan.md §4 step 16 moves index.html's CSS to css/app.css — precached and network-first like src/
+const SW_VERSION = "nr-v34"; // bumped: docs/plans/2026-10-04-help-out.md moves the Help sheet's body to help/help.html — precached and network-first like src/ and css/
 const AI_LIB = "17844fe"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
 const CACHE = "night-roll-" + SW_VERSION + "-" + AI_LIB;
 // APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
@@ -52,7 +53,7 @@ const AI_MODULES = ["vendor/ai/web/index.js", "vendor/ai/web/sse.js"];
 // spread in, the same way APP_MODULES' entries above are: tests/pwa.test.mjs
 // JSON.parses this array's own source text verbatim, which a spread
 // (`...AI_MODULES`) isn't.
-const PRECACHE = ["./", "index.html", "css/app.css", "vendor/vexflow.js", "app.webmanifest",
+const PRECACHE = ["./", "index.html", "css/app.css", "help/help.html", "vendor/vexflow.js", "app.webmanifest",
                   "src/edition.js", "src/devtools.js", "src/main.js",
                   "vendor/ai/web/index.js", "vendor/ai/web/sse.js",
                   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
@@ -178,8 +179,10 @@ self.addEventListener("fetch", e => {
   // (the index.html navigation handler above hit the same bug once, 2026-09-26).
   // css/ (docs/split-plan.md §4 step 16) is the same case: index.html always
   // links the same css/app.css URL, so a stale cached sheet would style a new
-  // page with the previous deploy's rules.
-  if (rel.startsWith("src/") || rel.startsWith("css/")) { e.respondWith(networkFirst(req, {timeout: NAV_TIMEOUT_MS, key: rel, revalidate: true})); return; }
+  // page with the previous deploy's rules. help/ (docs/plans/2026-10-04-
+  // help-out.md) likewise: the Help sheet's body is fetched by a fixed URL
+  // and must describe THIS deploy's features.
+  if (rel.startsWith("src/") || rel.startsWith("css/") || rel.startsWith("help/")) { e.respondWith(networkFirst(req, {timeout: NAV_TIMEOUT_MS, key: rel, revalidate: true})); return; }
   if (rel.startsWith("albums/")) { e.respondWith(networkFirst(req, {timeout: 0, key: stripBust(req.url)})); return; }
   // anything else same-origin (tools/nsf, docs): network, cache as a courtesy
   e.respondWith(networkFirst(req, {timeout: 0, key: stripBust(req.url)}));
