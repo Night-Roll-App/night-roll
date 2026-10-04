@@ -34,7 +34,7 @@
 // A stale-index footgun is avoided by design: index.html is only ever served
 // from cache when the network failed or timed out.
 
-const SW_VERSION = "nr-v34"; // bumped: docs/plans/2026-10-04-help-out.md moves the Help sheet's body to help/help.html — precached and network-first like src/ and css/
+const SW_VERSION = "nr-v35"; // bumped: quiz/ + privacy.html navigations bypass the worker (docs/plans/2026-10-04-quiz.md U3); nr-v34 was help/help.html (docs/plans/2026-10-04-help-out.md)
 const AI_LIB = "17844fe"; // vendor/ai's library sha, set by tools/ai-sync.mjs — turns the SW cache over whenever the library does
 const CACHE = "night-roll-" + SW_VERSION + "-" + AI_LIB;
 // APP_MODULES: every file under src/ (docs/split-plan.md §4 step 0b, §3.6
@@ -149,6 +149,11 @@ self.addEventListener("fetch", e => {
   if (!url.pathname.startsWith(scope.pathname)) return;
   const rel = url.pathname.slice(scope.pathname.length);
   if (rel === "sw.js" || rel === "404.html") return;
+  // quiz/ and privacy.html are their own pages, not the app: a navigation
+  // to either must never take the branch below, whose c.put under the key
+  // "index.html" would overwrite the cached APP SHELL with that page and the
+  // app would open the quiz offline (docs/plans/2026-10-04-quiz.md, U3)
+  if (rel === "privacy.html" || rel.startsWith("quiz/")) return;
   if (req.mode === "navigate") {
     // A path-form song link (…/albums/x/song) is served online by Pages'
     // 404.html, which redirects into the app as ?song=. Offline we must do

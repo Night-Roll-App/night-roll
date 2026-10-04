@@ -72,3 +72,15 @@ test("PWA: sw.js parses, precaches only files that exist, never the soundfonts",
   assert.match(sw, /const copy = r\.clone\(\);[\s\S]*await r\.json\(\)/, "the manifest response is cloned before it is read");
   assert.match(sw, /e\.data === "warm"/, "the page can ask for a warm pass");
 });
+
+test("PWA: sw.js steps aside for quiz/ and privacy.html BEFORE the navigate branch — otherwise networkFirst's c.put(\"index.html\") would overwrite the cached app shell with that page (docs/plans/2026-10-04-quiz.md U3)", () => {
+  const sw = read("sw.js");
+  const bypass = sw.search(/if \(rel === "privacy\.html" \|\| rel\.startsWith\("quiz\/"\)\) return;/);
+  const navigate = sw.indexOf('if (req.mode === "navigate")');
+  assert.ok(bypass > 0, "the bypass line exists");
+  assert.ok(navigate > 0 && bypass < navigate, "the bypass runs before any navigation is answered from (or written to) the cache");
+  assert.ok(bypass > sw.indexOf('const rel = url.pathname.slice(scope.pathname.length);'), "rel is defined by then");
+  assert.ok(existsSync(new URL("quiz/index.html", root)) && existsSync(new URL("privacy.html", root)), "both pages exist");
+  // the key used for every other navigation is still "index.html" — the hazard the bypass guards
+  assert.match(sw, /key: songForm \? null : "index\.html"/);
+});
