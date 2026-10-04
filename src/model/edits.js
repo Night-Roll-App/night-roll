@@ -77,3 +77,8 @@ export function saveLocalNotes() {
   if (editableSong()) scheduleBackupFlush(); // off-device backup (2026-10-02 deploy safeguards)
 }
 saveLocalNotes = prof("saveLocalNotes", saveLocalNotes); // A new key at a bar REPLACES the key there — never two keys at one point
+
+export function undoTrackAdd(ti, lenBefore) { // fold a generator's own entry (if it pushed one) into the same step
+  const own = S.editUndo.length > lenBefore ? S.editUndo.pop() : null;
+  pushUndo(own ? {kind: "group", entries: [{kind: "trackRemove", ti}, own]} : {kind: "trackRemove", ti});
+}

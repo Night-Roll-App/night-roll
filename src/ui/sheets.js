@@ -495,7 +495,3 @@ export function dpTick(barId, qId, sId) {
   const q = (+document.getElementById(qId).value || 1) + (+document.getElementById(sId).value || 0);
   return (bar - 1) * barTicks() + (q - 1) * beatTicks();
 }
-export function undoTrackAdd(ti, lenBefore) { // fold a generator's own entry (if it pushed one) into the same step
-  const own = S.editUndo.length > lenBefore ? S.editUndo.pop() : null;
-  pushUndo(own ? {kind: "group", entries: [{kind: "trackRemove", ti}, own]} : {kind: "trackRemove", ti});
-}

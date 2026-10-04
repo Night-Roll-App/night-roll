@@ -970,7 +970,7 @@ import { drPartsSet } from "./ui/sheets.js";
 import { drPartsSync } from "./ui/sheets.js";
 import { computeSongEnd } from "./model/song.js";
 import { dpTick } from "./ui/sheets.js";
-import { undoTrackAdd } from "./ui/sheets.js";
+import { undoTrackAdd } from "./model/edits.js";
 import { refreshSelInfo } from "./ui/note-editor.js";
 import { renderOctBtn } from "./ui/note-editor.js";
 import { reflectSelVel } from "./ui/note-editor.js";
