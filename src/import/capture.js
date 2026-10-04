@@ -55,6 +55,10 @@ import { manifestPlace } from "../sync/publish.js";
 import { albumTitleFor } from "../model/provenance.js";
 import { initCatalog } from "../model/catalog.js";
 import { updateSyncBtnImpl as updateSyncBtn } from "../ui/chrome.js";
+import { JOB_KINDS } from "../model/jobs.js";
+import { jobsOnChange } from "../model/jobs.js";
+import { publishJobStart } from "../sync/publish.js";
+import { fileStatus } from "../ui/chrome.js";
 
 // "Replace file…" from a clip sheet targets this track
 // Streamed-audio containers Night Roll cannot read as notes, by name only —
@@ -715,4 +719,59 @@ export async function commitImports(status, keys) { // ONE commit for the whole 
     status("Published " + keys.length + " track" + (keys.length === 1 ? "" : "s") +
            " in one commit ✓ (Pages takes ~1 min to serve them).");
   } catch (err) { status("Publish failed: " + err.message); }
+}
+
+export function initCapture1() {
+  JOB_KINDS.capture = {
+    label: j => "Capture · " + j.title,
+    open: j => { // the panel, if this session is still the one; else say what a retry needs
+      if (S.nsfSess && S.nsfSess.slug === j.slug) { document.getElementById("importsheet").classList.add("on"); return; }
+      setInfo(j.title + ": " + jobProgress(j) + " — the files are no longer open; Import them again to continue (captured tracks are kept)");
+    },
+    retry: j => { // what is not done, in the same session; a re-import of the same set attaches by slug
+      if (!(S.nsfSess && S.nsfSess.slug === j.slug)) { setInfo(j.title + ": Import the same files again, then Capture all — tracks already captured are skipped"); return; }
+      const left = (j.ns || []).filter((n, i) => !(j.items[i] && j.items[i].st === "done"));
+      if (!left.length) { setInfo(j.title + ": nothing left to capture"); return; }
+      document.getElementById("importsheet").classList.add("on");
+      captureJobStart(left, impStatus);
+    },
+  };
+  document.getElementById("impall").addEventListener("click", e => {
+    if (!S.nsfSess) return;
+    const btn = e.currentTarget; // currentTarget nulls once the dispatch ends — grab it pre-await
+    const list = S.nsfSess.trackList || [];
+    // re-capture skips what this session already saved (Josh's rule: a re-run overwrites only what it captures)
+    const ns = list.map(x => x.n);
+    const job = captureJobStart(ns, impStatus);
+    if (!job) return;
+    btn.disabled = true;
+    const off = jobsOnChange(() => {
+      if (job.state === "running") { btn.textContent = "⏳ " + jobProgress(job).split(" · ")[0]; return; }
+      btn.disabled = false; btn.textContent = "↻ Re-capture all"; off();
+    });
+  });
+  document.getElementById("impclose").addEventListener("click", () =>
+    document.getElementById("importsheet").classList.remove("on")); // captures live on as drafts
+  document.getElementById("impcommit").addEventListener("click", e => {
+    const btn = e.currentTarget;
+    const slug = S.nsfSess && S.nsfSess.slug;
+    const job = publishJobStart(slug || null, slug ? importDraftKeys().filter(k => k.split("/")[2] === slug) : importDraftKeys(), impStatus);
+    if (!job) return;
+    btn.disabled = true;
+    const off = jobsOnChange(() => { if (job.state === "running") return; off(); btn.disabled = false; });
+  });
+   document.getElementById("fileimpcommit").addEventListener("click", e => {
+    const btn = e.currentTarget;
+    const job = publishJobStart(null, importDraftKeys(), fileStatus);
+    if (!job) return;
+    btn.disabled = true;
+    const off = jobsOnChange(() => {
+      if (job.state === "running") return;
+      off();
+      btn.disabled = false;
+      const n = importDraftKeys().length;
+      btn.style.display = n ? "" : "none";
+      btn.textContent = publishLabel("import (" + n + ")");
+    });
+  });
 }
