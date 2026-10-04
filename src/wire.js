@@ -11,7 +11,8 @@ import {
 } from "./ui/chrome.js";
 import { buildScoreModelImpl } from "./render/score.js";
 import { songTitleOfImpl } from "./ask/context.js";
-import { setAnchorBQImpl } from "./ui/note-editor.js";
+import { setAnchorBQImpl, lassoedAnnosImpl } from "./ui/note-editor.js";
+import { drumStepImpl } from "./render/roll.js";
 import {
   fitViewImpl, renderTrackbarImpl, updateEditBtnVisImpl, updateChipBtnImpl,
   updateSubtitleImpl, askRenderImpl, finalizeNotesImpl, recFinishImpl, albumAdvanceImpl,
@@ -48,5 +49,7 @@ export function installHooks() {
     setAnchorBQ: (...a) => setAnchorBQImpl(...a),
     // docs/split-phase2-plan.md step 5
     updateSongMeta: (...a) => updateSongMetaImpl(...a),
+    lassoedAnnos: (...a) => lassoedAnnosImpl(...a),
+    drumStep: (...a) => drumStepImpl(...a),
   });
 }

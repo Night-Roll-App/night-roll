@@ -393,7 +393,7 @@ const ALL_PORTS = [
   "recFinish", "albumAdvance", "songTitleOf", "srAnnounce",
   "scheduleBackupFlush", "setAnchorBQ",
   // step 5: the model/gen clusters' three remaining upcalls
-  "updateSongMeta",
+  "updateSongMeta", "lassoedAnnos", "drumStep",
 ];
 
 test("hooks.js: every port throws `hook X not installed` before src/wire.js's installHooks() ever runs", async () => {
@@ -463,6 +463,20 @@ test("hooks.js rebinding: same for updateSongMeta() (docs/split-phase2-plan.md s
   app.run("updateSongMeta()");
   assert.equal(app.run("S.__testMetaSeen"), true);
   assert.equal(app.run('document.getElementById("songmeta").textContent'), "untouched"); // updateSongMetaImpl never ran
+});
+
+test("hooks.js rebinding: same for lassoedAnnos() (docs/split-phase2-plan.md step 5) — cut/delete/copySelection (model/selection.js) ask the lasso's pixel box which annotations it holds through this bare name; a lower-layer caller gets the rebound body, the real lassoedAnnosImpl (ui/note-editor.js) bypassed", async () => {
+  const app = await createApp();
+  app.run("S.lassoAnno = null;"); // lassoedAnnosImpl returns [] whenever no lasso box is up — the tell that it ran
+  app.run('lassoedAnnos = () => ["rebound"];'); // reassigns hooks.js's OWN top-level binding
+  assert.equal(app.run("lassoedAnnos().length"), 1);
+  assert.equal(app.run("lassoedAnnos()[0]"), "rebound"); // lassoedAnnosImpl never ran
+});
+
+test("hooks.js rebinding: same for drumStep() (docs/split-phase2-plan.md step 5) — nudgeSelection/pasteClipboard (model/selection.js) walk a drum track's visible kit slots through this bare name; a lower-layer caller gets the rebound body, the real drumStepImpl (render/roll.js) bypassed", async () => {
+  const app = await createApp();
+  app.run("drumStep = (p, d) => p + 1000 + d;"); // reassigns hooks.js's OWN top-level binding; drumStepImpl can only ever return a kit slot (a MIDI pitch < 128)
+  assert.equal(app.run("drumStep(36, 1)"), 1037); // drumStepImpl never ran
 });
 
 // ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's

@@ -57,7 +57,7 @@ export function noteRow(ti, p) { // display row: drums live in the docked lane
   const i = kitSlots().indexOf(p);
   return kitLaneTop() - (i < 0 ? 0 : i);
 }
-export function drumStep(p, d) { // vertical moves walk the VISIBLE kit slots, not semitones
+export function drumStepImpl(p, d) { // vertical moves walk the VISIBLE kit slots, not semitones
   const ks = kitSlots();
   const i = ks.indexOf(p);
   return ks[Math.min(ks.length - 1, Math.max(0, (i < 0 ? 0 : i) + d))];

@@ -18,6 +18,7 @@ import { selEditItems } from "../model/selection.js";
 import { selClipObj } from "../render/tracks.js";
 import { clipboardHas } from "../model/selection.js";
 import { isDirective } from "../model/rollnotes.js";
+import { lassoedAnnos } from "../hooks.js";
 import { annoInLasso } from "../render/roll.js";
 import { editableSong } from "../model/song.js";
 import { ownFolderPath } from "../model/provenance.js";
@@ -360,7 +361,7 @@ export function setAnchorBQImpl(n, tick) { // start anchor from a tick
   n.b1 = Math.floor(t / bt) + 1;
   n.q1 = snapBeat((t % bt) / qt + 1);
 }
-export function lassoedAnnos() { return S.lassoAnno ? S.rollnotes.filter(n => annoInLasso(n, S.lassoAnno)) : []; }
+export function lassoedAnnosImpl() { return S.lassoAnno ? S.rollnotes.filter(n => annoInLasso(n, S.lassoAnno)) : []; }
 
 export function refreshSelInfo() { // one source of truth for the selection readout
   // 8va (footer v2, 2026-09-30): moved into ⋯ More → SELECTION READOUT as an
