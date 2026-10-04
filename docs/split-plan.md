@@ -2036,6 +2036,139 @@ constraint for whoever next considers moving these two.
 
 **12. `input/gestures.js`, `input/record.js`.**
 - Verify: gestures.test; e2e editor/docking specs in CI; on the iPad, draw a note, hold-to-grab, pinch.
+- **Done** (2026-10-04, Sonnet builder, worktree branch). `move.mjs
+  --names evtPos,posToTickPitch,cursorHandleHit,cursorHit,tickAtX,
+  rulerSnapX,armNoteEdit --to src/input/gestures.js`, then `--names
+  recOpenEnded,recSnap,recSnapOn,midiStatusLine --to src/input/record.js`,
+  both over src/app.js, by name. Seven names in `input/gestures.js`
+  (the table's own `evtPos`/`posToTickPitch` plus five more pure hit-
+  test/coordinate helpers found by reading the surrounding code:
+  `cursorHandleHit`, `cursorHit`, `tickAtX`, `rulerSnapX`, `armNoteEdit`),
+  four in `input/record.js` (`recOpenEnded`/`recSnap`/`midiStatusLine`
+  plus `recSnapOn`, pulled along because `recSnap` calls it and it would
+  otherwise resolve to a layer-5 app.js import — the same "pull the
+  load-bearing helper along" pattern steps 4/5/6 already established for
+  tables/constants). Everything else the plan's
+  table describes for these two files (the canvas pointer/pinch/hold-to-
+  grab/lasso state machine; `tap`/`finalizeLasso`/`toggleSel`/
+  `scoreLassoTap`/`scrubTo`/`seekOrMoveCursor`/`placePencilNote`/
+  `endPointer`/`clearMultiSel`; the circle-of-fifths wheel's own drag
+  interaction, `cofAngle`/`cofRelease`; the ● record button handler;
+  `recNoteOn`/`recNoteOff`/`recFinish`/`midiMessage`/`initWebMidi`/
+  `initCoreMidi`; `instTap`'s pointer wiring; every keyboard-shortcut
+  `document.addEventListener("keydown", …)` block) calls `setInfo()`/
+  `draw()`/`drawFull()` directly or transitively through still-bare
+  app.js names (`renderTrackbar`/`openVoiceMenu`/`saveVoices`/`hitNote`/
+  `hitTracksNote`/`hitTracksClip`/`annoSnapshot`/`setAnchorBQ`/`setEndBQ`/
+  `setInstInfo`/`keyNameShownAt`/`instPlay`/`pushUndo`/`saveEdits`/
+  `refreshSelInfo`/`updateSubtitle`) — `ui/*` is step 14, and `draw` is
+  render's own PERMANENT block (step 11's Deviations) — so all of it stays
+  bit-for-bit in app.js, each checked individually for its own specific
+  blocker, not assumed from its neighbors. One exception came close: the
+  cof wheel's `cofRelease` calls only `wrapSf`/`drawCof` (`render/cof.js`,
+  layer 3, already below `input/`'s layer 4) and `S` — genuinely
+  blocker-free — but its four `cofCanvas.addEventListener(...)` top-level
+  listeners need §2.2's `init<Module><N>()` wrapping to move, and
+  `move.mjs`'s wrapper mechanism produces new structural lines
+  (`export function init<Module><N>() { … }` plus the bare
+  `init<Module><N>();` call) that `verbatim.mjs` has no tolerance for —
+  the tool was never exercised against this mechanism on real app.js code
+  before (no prior step's move ever needed it), and the gap surfaced only
+  once attempted. Left in app.js rather than accepting a new, undocumented
+  verbatim exception class on top of step 11's `AUDIO_STRIP_H`; see
+  "Deviations (12)" for the full finding (a real tooling gap, not a logic
+  problem) and open-items.md for the queued tooling fix. `regen-
+  e2e-footer.mjs --file src/app.js` re-run; `check.mjs` clean except the
+  pre-existing `oldBpb` finding; `check-e2e-globals.mjs`/
+  `check-controls.mjs` clean. `devtools.js` gained `inputGestures`/
+  `inputRecord` namespace imports. `sw.js` `APP_MODULES` gained both
+  files, `SW_VERSION` bumped `nr-v17` → `nr-v18`; `index.html`'s
+  modulepreload list gained both, after `render/compare.js`, before
+  `app.js`. `tests/modules.test.mjs`'s `checkSrc` fileCount assertion
+  bumped 46 → 48. `node tools/package.mjs --out /tmp/nr-dist-s12c`: 47
+  runtime modules (unchanged). `node tools/split/verbatim.mjs HEAD` prints
+  a clean ✔. The sorted `^\w+ = prof\("\w+"` set across src/ is unchanged
+  (29 entries) — none of this step's names were ever profiled. Tests
+  (`perl -e 'alarm 1200; exec @ARGV' npm test`): the only two failing test
+  FILES were `ps2-real`/`instruments`, the known pre-existing local-rip-
+  fixture gap; `gestures.test.mjs` 21/21, `modules.test.mjs` 33/33,
+  `controls.test.mjs` 3/3. `npm run test:e2e:smoke`: chromium 8/8.
+
+## Deviations (12, 2026-10-04)
+
+- **A fourth `move.mjs`/tooling slip, distinct from the three steps 9-11
+  already documented, found and then designed around rather than shipped:
+  `verbatim.mjs` has no tolerance for the structural lines §2.2's
+  `init<Module><N>()` wrapping mechanism itself produces.** Attempted
+  (then reverted) on the circle-of-fifths wheel's drag interaction — a
+  genuinely blocker-free move otherwise (`cofRelease` only needs
+  `wrapSf`/`drawCof`, both `render/cof.js`, already below `input/`'s
+  layer): wrapping its four top-level `cofCanvas.addEventListener(...)`
+  calls as `initGestures1()`/`initGestures2()` produced three kinds of new
+  text with no "lost" counterpart — the `export function
+  init<Module><N>() {` header, its closing `}`, and the bare
+  `init<Module><N>();` call left in app.js — none of which existing
+  `verbatim.mjs` tolerates (its tolerance list is only import lines,
+  `export` keywords, the generated e2e footer, the devtools namespace
+  list, and comment placement). Nothing was actually lost — the
+  mechanism is the plan's own sanctioned way to move a top-level side
+  effect (§2.2) — but it doesn't fit this task's instruction to amend
+  until `verbatim.mjs HEAD` prints a clean ✔, and the one sanctioned
+  exception shape that instruction names (a single original line
+  combining two unrelated statements, step 11's `AUDIO_STRIP_H`) doesn't
+  cover it either. No prior step had hit this because no prior step's
+  move ever isolated a pure top-level side-effect statement by itself
+  (every earlier non-declaration-statement move was co-selected with a
+  named declaration, which happened to route its import through the
+  normal declared-name path instead). A related, separate symptom from
+  attempting the same move: `regen-e2e-footer.mjs`, if run mid-step
+  (after the plain-name moves but before the cof-wheel move), generates a
+  stale `set` accessor for a name that is ABOUT to become an import —
+  because at the moment it runs it is correct for the file as it then
+  stands. The fix for that half is procedural, not a tooling bug: run the
+  footer generator exactly once, after every move.mjs invocation for the
+  step is done, never mid-step. Given the `verbatim.mjs` gap has no clean
+  hand-fix (unlike the self-import/line-joining/trailing-comment slips,
+  which are one-line corrections), the cof-wheel move and a companion
+  blocker-free find (a pure VoiceOver Enter/Space→`.click()` keyboard
+  delegate for `role="button"` elements, also zero app dependencies) were
+  both left in app.js rather than shipped with an undocumented verbatim
+  exception. Both remain real, on-topic, zero-blocker candidates for
+  whichever step next budgets a `move.mjs`/`verbatim.mjs` tooling pass —
+  noted in open-items.md, not acted on. This is the one case in the split
+  so far where "it would move cleanly and check.mjs agrees" was not
+  sufficient grounds to ship a move — this task's own instruction treats
+  `verbatim.mjs`'s clean pass as a harder gate than `check.mjs`'s.
+- **Every other named function in the plan's table description for these
+  two files was checked individually, not assumed blocked as a group**,
+  the same discipline step 6's Deviations insisted on: `finalizeLasso`
+  (calls `refreshSelInfo`, app.js), `toggleSel` (calls `refreshSelInfo`
+  directly), `scoreLassoTap` (calls `toggleSel`, transitively blocked),
+  `scrubTo`/`seekOrMoveCursor` (call `updateSubtitle`/`draw`),
+  `placePencilNote` (calls `setInfo`/`draw`/`pushUndo`), the canvas
+  `pointerdown`/`pointermove`/`pointerup` state machine and `endPointer`
+  (call `setInfo`/`draw`/`renderTrackbar`/`openVoiceMenu`/`saveVoices`/
+  `hitNote`/`hitTracksNote`/`hitTracksClip`/`annoSnapshot`/`setAnchorBQ`/
+  `setEndBQ` — the densest single blocker list any one step has hit),
+  `tap` (the master dispatcher, inherits every one of the above),
+  `clearMultiSel` (DOM-only but gated behind `sweepStrandedClones`, itself
+  unmoved), the ● record button's click handler and `recNoteOn`/
+  `recNoteOff`/`recFinish`/`midiMessage`/`initWebMidi`/`initCoreMidi`
+  (call `setInfo`/`draw`/`pushUndo`/`saveEdits`/`saveDraft` —
+  `recNoteOff`'s `draw()` call alone blocks the entire MIDI-in chain above
+  it), and `instTap`'s own pointer wiring (calls `setInstInfo`/
+  `keyNameShownAt`/`instPlay`, all still app.js, confirming step 11's
+  `render/instrument.js` entry was right to leave it). The big
+  keyboard-shortcut `keydown` blocks (arrow/⌘ editing shortcuts,
+  Space = play/stop, Escape-closes-topmost-overlay) likewise all call
+  `setInfo`/`draw`/`stop` or are window-manager/`ui/wm.js` territory (step
+  14). None of these can move before step 14 lands `ui/chrome.js`
+  (`setInfo`/`renderTrackbar`/`openVoiceMenu`/`refreshSelInfo`/
+  `updateSubtitle`) and `ui/trackbar.js`/`ui/note-editor.js`, and `draw`
+  itself never will (step 11's permanent finding) — so `tap`/`endPointer`/
+  the pointer state machine/`recFinish`/`midiMessage` can only ever
+  shrink, never fully move, exactly like `finalizeNotes`/`saveEdits`'s own
+  `draw`-shaped permanent blocks.
 
 **13. `ask/*`.**
 - Verify: bridge.test; on the iPad, send one Ask message, attach a screenshot, see the "Now:" status.

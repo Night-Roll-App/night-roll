@@ -5974,3 +5974,129 @@ next whitespace-only. Three documented bug classes now (self-import,
 line-joining, trailing-comment-misattachment) — worth a combined
 `move.mjs`/`scope.mjs` fix pass before step 12 if tooling work is ever
 budgeted for.
+
+**UPDATE 2026-10-04 (step 12): a fourth variant, found on an attempted
+move that was then reverted — a synthesized `init<Module><N>()` call
+left in `--from` has no import.** Attempted on the circle-of-fifths
+wheel's drag interaction (`cofAngle`/`cofRelease` + its four top-level
+`cofCanvas.addEventListener(...)` calls, wrapped as `initGestures1()`/
+`initGestures2()`). When the selected range is a pure non-declaration
+top-level statement (no accompanying named declaration in the same
+`--names`/`--range` call), `move.mjs` wraps it in `export function
+init<Module><N>()` in `--to` and leaves `init<Module><N>();` at the
+original spot in `--from` — but the back-import logic only scans
+`movedDeclNames` (the declared names of moved DECLARATION nodes) for
+names the remaining body still references; a synthesized init name was
+never a declared name in the original source, so it's invisible to that
+scan and `--from` never gets `import { init<Module><N> } from
+"<--to>";`. Silent until `check.mjs` rule 1 flags it ("free identifier is
+not a local, an import, or in browser-globals.txt") — caught immediately
+(three instances: `initGestures1/2/3`, the third from a separate,
+also-reverted keyboard-delegate move), fixed by hand (one import line per
+call) as a first attempt. No prior step had hit this because every
+earlier non-declaration-statement move happened to leave its init call
+either unreferenced elsewhere or co-located with a moved declaration
+that itself triggered the normal import path (e.g. step 9's
+`initCatalog`, a real pre-existing name, not a synthesized wrapper). Fix:
+`move.mjs` should add `init<Module><N>` to `backReferenced` the moment it
+decides to wrap a group, independent of whether that name is a "moved
+declared name." A related, separate symptom from the same attempted
+move: `regen-e2e-footer.mjs`, run once right after the step's two plain
+name-based moves (before the cof-wheel attempt existed), generated a
+stale `set` accessor for `cofRelease` in its `__nrExpose$` footer, correct
+for the file as it then stood but wrong the moment `cofRelease` became an
+import — `check.mjs` rule 2 caught it; the fix is procedural (run the
+footer generator once, last, after every move.mjs call for the step, not
+mid-step), not a tooling change. Both hand-fixes got the attempted move
+to pass `check.mjs` cleanly — but a THIRD, unrelated gap then surfaced in
+`verbatim.mjs` itself (see the step-12 entry below), with no comparable
+hand-fix, and that one is why the cof-wheel move (and a second,
+independently-blocker-free keyboard delegate) was reverted rather than
+shipped. Five documented bug classes now across `move.mjs`/
+`verbatim.mjs` (self-import, line-joining, trailing-comment-
+misattachment, missing-init-import, verbatim's-no-tolerance-for-init-
+wrapping) — the same combined tooling-fix pass this note has been
+accumulating against, now overdue.
+
+## QUEUED (built on a worktree branch, not merged/pushed yet) 2026-10-04 — module split step 12: src/input/{gestures,record}.js (docs/split-plan.md)
+Shipped: the table's own two named leaf functions (`evtPos`/
+`posToTickPitch`) plus five more pure hit-test/coordinate helpers found by
+reading the surrounding code (`cursorHandleHit`, `cursorHit`, `tickAtX`,
+`rulerSnapX`, `armNoteEdit`) — seven names into `input/gestures.js` — and
+four pure record/MIDI-status helpers (`recOpenEnded`, `recSnap`,
+`recSnapOn`, `midiStatusLine`) into `input/record.js`. Everything else
+named in the plan's table description ("pointer/pinch/hold-to-grab,
+lasso" for gestures; "MIDI-in/keyboard record, punch-in, take handling"
+for record) is a single interlocking cluster — the canvas `pointerdown`/
+`pointermove`/`pointerup` drag/pinch/hold-to-grab state machine, `tap`/
+`finalizeLasso`/`toggleSel`/`scoreLassoTap`/`scrubTo`/`seekOrMoveCursor`/
+`placePencilNote`/`endPointer`/`clearMultiSel`, the ● record button
+handler, `recNoteOn`/`recNoteOff`/`recFinish`/`midiMessage`/`initWebMidi`/
+`initCoreMidi`, `instTap`'s pointer wiring, and every keyboard-shortcut
+`document.addEventListener("keydown", …)` block — and every one of them
+calls `setInfo()` and/or `draw()`/`drawFull()` directly or transitively
+(through `refreshSelInfo`/`renderTrackbar`/`openVoiceMenu`/`saveVoices`/
+`hitNote`/`hitTracksNote`/`hitTracksClip`/`annoSnapshot`/`setAnchorBQ`/
+`setEndBQ`/`setInstInfo`/`keyNameShownAt`/`instPlay`/`pushUndo`/
+`saveEdits`/`updateSubtitle`), all still bare app.js names (`setInfo`/
+`renderTrackbar`/`openVoiceMenu`/etc. are `ui/*`, step 14; `draw` is
+render's own PERMANENT block per step 11's Deviations). Per this task's
+own instruction ("app.js-only names are a problem only if they'd need
+app.js imports: check.mjs decides"), every one of these stays bit-for-bit
+in app.js — checked individually, not assumed as a block (the same
+discipline step 6's Deviations insisted on): each was read in full and
+its specific blocker named, not inferred from its neighbors.
+
+**Attempted, then reverted: the circle-of-fifths wheel's drag interaction
+(`cofAngle`/`cofRelease`) and a VoiceOver Enter/Space→`.click()` keyboard
+delegate for `role="button"` elements.** Both are genuinely blocker-free
+— `cofRelease` calls only `wrapSf`/`drawCof` (`render/cof.js`, already
+below `input/`'s layer) and `S`; the keyboard delegate touches only
+`document`/`t.click()` — and both moved cleanly through `check.mjs` after
+the hand-fixes in the move.mjs-bug entry above. But `node tools/split/
+verbatim.mjs HEAD` then reported several `extra` lines with no `lost`
+counterpart: the `export function init<Module><N>() {` header, its
+closing `}`, and the bare `init<Module><N>();` call that §2.2's own
+wrapping mechanism requires for ANY top-level-statement move are new
+structural text `verbatim.mjs` has no tolerance for (its tolerance list
+is only import lines, `export` keywords, the generated e2e footer, the
+devtools namespace list, and comment placement) — nothing was actually
+lost, but this task's instruction is to amend until `verbatim.mjs HEAD`
+prints a clean ✔, and the one exception shape it names (a single original
+line combining two unrelated statements, step 11's `AUDIO_STRIP_H`)
+doesn't cover this either. No prior step had hit it because no prior
+step's move ever isolated a pure top-level side-effect statement by
+itself (every earlier one was co-selected with a named declaration).
+Rather than ship an undocumented new verbatim-exception class, both moves
+were backed out and left in app.js. Real, on-topic, zero-blocker finds
+for whichever step next budgets a `move.mjs`/`verbatim.mjs` tooling pass
+(teach `verbatim.mjs` to tolerate the §2.2 init-wrap boilerplate the same
+way it already tolerates generated imports/footers) — not acted on this
+step.
+
+`regen-e2e-footer.mjs --file src/app.js` re-run after the final file
+state (the two shipped moves only); re-running after every move.mjs
+invocation in a step, not just once at the end, is the safer habit the
+next step should default to, given the stale-footer symptom above.
+`check.mjs` clean except the pre-existing `oldBpb` finding;
+`check-e2e-globals.mjs`/`check-controls.mjs` clean (26 controls,
+unchanged). `devtools.js` gained `inputGestures`/`inputRecord` namespace
+imports. `sw.js` `APP_MODULES` gained both files, `SW_VERSION` bumped
+`nr-v17` → `nr-v18`; `index.html`'s modulepreload list gained both,
+ordered after `render/compare.js` and before `app.js` (layer 4, below
+app.js's layer 5). `tests/modules.test.mjs`'s `checkSrc` fileCount
+assertion bumped 46 → 48. `node tools/package.mjs --out
+/tmp/nr-dist-s12c`: 47 runtime modules (unchanged — no `tools/`-side
+runtime module corresponds to `input/`). `node tools/split/verbatim.mjs
+HEAD` prints a clean ✔. The sorted `^\w+ = prof\("\w+"` set across src/ is
+unchanged (29 entries). Tests, under `perl -e 'alarm
+1200; exec @ARGV' npm test`: the only two failing test FILES were
+`ps2-real` and `instruments`, both pre-existing local-rip-fixture gaps
+unrelated to this step; `gestures.test.mjs` 21/21, `modules.test.mjs`
+33/33 (fileCount bumped), `controls.test.mjs` 3/3. `npm run
+test:e2e:smoke`: chromium 8/8. None of this step's eleven moved names
+were ever profiled. See docs/split-plan.md "Deviations (12)" and
+NIGHT-ROLL.md's two new `input/*` entries.
+NOT pushed: the main session should browser-check, on the iPad and
+desktop, drawing a note, hold-to-grab, pinch-zoom, a ruler drag, and
+strip tap/drag, before pushing and building.

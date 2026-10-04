@@ -76,6 +76,8 @@ import * as renderScore from "./render/score.js";
 import * as renderInstrument from "./render/instrument.js";
 import * as renderCof from "./render/cof.js";
 import * as renderCompare from "./render/compare.js";
+import * as inputGestures from "./input/gestures.js";
+import * as inputRecord from "./input/record.js";
 import { S } from "./state.js";
 
 export function exposeGlobals() {
@@ -92,7 +94,8 @@ export function exposeGlobals() {
                      modelSong, modelSelection, modelProvenance, modelAlbumOrder, modelVersions, modelJobs,
                      importHub, importCapture, syncPublish,
                      genDrummer, genBassist, genAnalysis,
-                     renderRoll, renderTracks, renderScore, renderInstrument, renderCof, renderCompare };
+                     renderRoll, renderTracks, renderScore, renderInstrument, renderCof, renderCompare,
+                     inputGestures, inputRecord };
   for (const ns of Object.values(MODULES)) {
     for (const name of Object.keys(ns)) {
       if (name === "__nrExpose$") continue; // the accessor object itself, not a global
