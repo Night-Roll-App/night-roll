@@ -954,7 +954,7 @@ import { PAN_TAIL_BARS } from "./ui/chrome.js";
 import { dispPitchExtent } from "./ui/chrome.js";
 import { ROLL_AIR } from "./ui/chrome.js";
 import { saveDraft } from "./ui/chrome.js";
-import { scheduleBackupFlush } from "./ui/chrome.js";
+import { scheduleBackupFlush } from "./hooks.js";
 import { retireOldOverlay } from "./ui/chrome.js";
 import { filesMirrorSoon } from "./ui/chrome.js";
 import { filesMirror } from "./ui/chrome.js";

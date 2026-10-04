@@ -1,6 +1,6 @@
 import { connected } from "../sync/publish.js";
 import { S, prof } from "../state.js";
-import { setInfo, logErr, logDebug, draw, updateSongBtn, updateSyncBtn, srAnnounce } from "../hooks.js";
+import { setInfo, logErr, logDebug, draw, updateSongBtn, updateSyncBtn, srAnnounce, scheduleBackupFlush } from "../hooks.js";
 import { setControl } from "./controls.js";
 import { logLines } from "../model/jobs.js";
 import { askSeenMax } from "../ask/bridge.js";
@@ -919,7 +919,7 @@ export function retireOldOverlay(f, landed) {
     return true;
   }).catch(err => { logDebug("old edits on " + f.key + " kept: " + (err && err.message || err)); return false; });
 }
-export function scheduleBackupFlush() {
+export function scheduleBackupFlushImpl() {
   if (!S.askCaps.bridge) return;
   clearTimeout(S.backupFlushTimer);
   S.backupFlushTimer = setTimeout(flushBackupNow, 5000);

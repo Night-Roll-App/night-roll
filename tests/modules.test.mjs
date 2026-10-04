@@ -391,6 +391,7 @@ const ALL_PORTS = [
   "renderTrackbar", "updateEditBtnVis", "updateChipBtn", "updateSongBtn",
   "updateSyncBtn", "updateSubtitle", "askRender", "finalizeNotes",
   "recFinish", "albumAdvance", "songTitleOf", "srAnnounce",
+  "scheduleBackupFlush",
 ];
 
 test("hooks.js: every port throws `hook X not installed` before src/wire.js's installHooks() ever runs", async () => {
@@ -433,6 +434,15 @@ test("hooks.js rebinding: same for srAnnounce() (docs/split-phase2-plan.md step 
   app.run('srAnnounce("Playing")');
   assert.equal(app.run("S.__testSrSeen"), "Playing");
   assert.equal(app.run("S.srLastText"), null); // srAnnounceImpl never ran
+});
+
+test("hooks.js rebinding: same for scheduleBackupFlush() (docs/split-phase2-plan.md step 4b) — saveDraft/saveLocalNotes call this bare name; a lower-layer caller gets the rebound body, the real scheduleBackupFlushImpl (ui/chrome.js) bypassed", async () => {
+  const app = await createApp();
+  app.run("S.askCaps.bridge = true;"); // scheduleBackupFlushImpl only arms the timer when this is set — the tell that it ran
+  app.run('scheduleBackupFlush = () => { S.__testBackupFlushSeen = true; };'); // reassigns hooks.js's OWN top-level binding
+  app.run('scheduleBackupFlush()');
+  assert.equal(app.run("S.__testBackupFlushSeen"), true);
+  assert.equal(app.run("S.backupFlushTimer"), null); // scheduleBackupFlushImpl never ran — no timer armed
 });
 
 // ---- check.mjs rule 8, wired against the real repo (docs/split-plan.md's
