@@ -4,6 +4,22 @@ Standing list of things agreed but not done, and questions asked but not
 answered. Prune as items close; add as they appear. (Claude: check this at
 session start alongside the quiz.)
 
+## Theory FACTS toolkit — BUILT 2026-10-04, not wired in (Josh: "make sure they're tested… just tell me where it would be integrated")
+
+`src/theory/facts/*.js` + `tools/theory.mjs` + tests/theory.test.mjs
+(docs/theory-toolkit.md). Pattern finder (any transposition, across a
+library), form/repeats/sequences, melody, rhythm (+ harmonic rhythm from
+HIS chord bands), bass, voice-leading facts — facts only, Learning-mode
+nets in the tests. The CLI is live for sessions now.
+
+- QUEUED (Josh's call): wire the six ✦ Ask tools (find_pattern, form_facts,
+  melody_facts, rhythm_facts, bass_facts, voice_facts) — docs/theory-toolkit.md
+  §3.1 names the exact lines in src/ask/tools.js + context.js and the
+  tests; §3.0 is the three-line `factsDocFromState()` adapter. Help-sheet
+  entry + drift keyword + HELP.md at that point, not before.
+- Later, on demand only: pattern hits highlighted on the roll, a form
+  strip lane, a Facts… sheet (§3.3).
+
 
 ## On-screen keyboard — DONE 2026-10-04 (docs/daw-inventory.md §1a, the
 shortlist's first item). Real-piano look, fixed 44 px keys over the whole
