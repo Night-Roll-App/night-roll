@@ -4,7 +4,9 @@ Josh (2026-10-04): "We rely a lot on Claude to help with doing analysis, but
 maybe we can build it and Claude can delegate to that." This is the
 harmony half: roman numerals, cadences, non-chord tones, modulations and a
 chromatic-chord summary. The fact tools (pattern/form/melody/rhythm facts)
-are a separate builder's `src/theory/*.js` + `tools/theory.mjs`.
+are `src/theory/facts/*.js` + `tools/theory.mjs` — docs/theory-toolkit.md
+is the index for both halves; the review of both is
+docs/reviews/2026-10-04-theory-toolkit-review.md.
 
 **Status: built, tested, NOT wired into the app** (Josh, same day: "make
 sure they're tested. We don't have to integrate them just yet, but we can.
@@ -37,6 +39,12 @@ Claude session with Josh.
 ## Modules — `src/theory/harmony/` (layer 0, pure: no S, no DOM)
 
 All names are `hm`-prefixed (check.mjs rule 6, unique top-level names).
+The only import outside the folder is `theory/chords.js` — never
+`theory/key.js`, whose `state.js` import reads localStorage at load, so
+the key-name helpers (`tonicPcOfName`, `modeOfName`, `MODE_OFFSET`) moved
+to chords.js (review, 2026-10-04); the modules, the CLI and the tests load
+in plain Node with no stub. tests/theory-harmony.test.mjs pins the import
+list.
 Inputs are plain data; the adapters at the top of `roman.js` build them
 from a resolved rollnotes list — `S.rollnotes` in the app, `doc.rollnotes`
 from `tools/query-lib.mjs` — so the same code runs in both.
@@ -71,7 +79,9 @@ from `tools/query-lib.mjs` — so the same code runs in both.
 - `hmChromaticSummary(rows)` → `{total, of, kinds, items}`.
 - `hmScaleDegree(key, pitch)` → `"1̂"`, `"♭7̂"`, `"♯4̂"`.
 - `hmBQ(grid, tick)`, `hmPitchName(p, sf)` — spelled in the declared key
-  via `keySpelling`.
+  via `keySpelling` (which prefers the flat for a key's chromatic ♭3/♭6/♭7:
+  A minor's lower neighbour D♯ prints as Eb — the app's convention, not a
+  reading).
 
 ### `cadence.js`
 - `hmCadences(rows, keys, tracks, grid, endTick, sections, {phraseBars,
@@ -117,7 +127,10 @@ from `tools/query-lib.mjs` — so the same code runs in both.
 
     node tools/harmony.mjs <song> roman|cadences|nct|modulation|chromatic [--json] [--all] [--phrase N] [--track T]
 
-Same loader as the fact tools (`query-lib.mjs`, the app's own parser).
+Same loader as the fact tools (`query-lib.mjs`, the app's own parser);
+drums are excluded by the app's rule (`factsIsDrums`: audio never, the
+`drums` flag, the name, MIDI channel 10); section edges are the ranged
+section annotations (`b2` — a point section carries a drawn `.end` too).
 `<song>` = a bare name under albums/ or a path. Needs a `key:` annotation
 in the song — without one every row says so. Demonstrated on
 `bach-prelude-in-c`, `fur-elise` (starters) and FF1's `airship`
@@ -143,11 +156,13 @@ Every tool is song-only: add the five names to `ASK_SONG_ONLY_TOOLS`
 1. **Offered only in Normal mode.** `askToolsNow()` (`src/ask/bridge.js`)
    is the one place the tool list is built for a request (`client.js`
    `askSend` passes it as `tools:`). Add a `ASK_NORMAL_ONLY_TOOLS` list
-   holding the five names and filter them out whenever `appMode() !==
-   "normal"`. The AI cannot call a tool it is not offered, so in Learning
-   mode the gate is structural, not a prompt instruction.
+   holding the five names and filter them out whenever
+   `!analysisAvailable()` (`src/platform/mode.js` — the same gate the
+   Analyze layer uses; it is `appMode() === "normal"`). The AI cannot call
+   a tool it is not offered, so in Learning mode the gate is structural,
+   not a prompt instruction.
 2. **Dispatcher refuses too.** `askRunTool` branches for the five start
-   with `if (appMode() !== "normal") throw new Error("… Normal mode
+   with `if (!analysisAvailable()) throw new Error("… Normal mode
    only")` — belt and braces against a stale tool list (a request built
    in Normal and answered after a switch).
 3. **Nothing leaks into a Learning-mode context.** Their replies travel as

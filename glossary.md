@@ -147,6 +147,12 @@ Terms Josh has ENCOUNTERED, with where they live in real music. Rules:
   or over it. — `encountered` earlier sessions; used deliberately.
   Anchor: Cool Bmaj — B5 through the chord sway, then the F♯6 a fifth
   up. FF: *(find one)*.
+- **Tessitura** — where a line mostly SITS, as against its range (the
+  extremes it touches): the comfortable middle. `tools/theory.mjs
+  <song> melody` reports it as the duration-weighted middle half. —
+  `encountered` 2026-10-04 (the theory toolkit's melody facts). FF:
+  *(find one — a melody whose range is wide but whose tessitura is a
+  fifth)*.
 - **Varied repetition** — repeats earn a change; identical passes go
   stale ("it did the same exact thing every time"). — `encountered`
   2026-08-18, applied twice unprompted (melody F♯6 lift; the groove
@@ -297,6 +303,15 @@ Terms Josh has ENCOUNTERED, with where they live in real music. Rules:
   BREAKS: G♯ over D, the tritone, where the section tilts. Cross-ref:
   the Mustaine fourths-and-tritones device from his own structural
   notes. FF: *(find one)*.
+- **Parallel fifths / parallel octaves** — two voices moving in the same
+  direction a perfect fifth (or an octave) apart, landing on the same
+  interval again; the fifths hollow the texture like the fourths above,
+  the octaves collapse two voices into one. Common-practice part-writing
+  avoids them BETWEEN independent voices; chip music doubles in octaves
+  on purpose (two pulses an octave apart are a timbre, not a mistake).
+  `tools/theory.mjs <song> voices` lists them as interval facts, never as
+  errors. — `encountered` 2026-10-04 (the theory toolkit's voice facts).
+  FF: *(find one — Overworld bar 12 shows pulse2/triangle in unison)*.
 - **Pedal with scalar motion** — a repeated bass note under a stepwise
   line; the pedal IS the harmony, the movers are passing — no chord
   should be named. — **`demonstrated`** 2026-08-21: arrived at "maybe

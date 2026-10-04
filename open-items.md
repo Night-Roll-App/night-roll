@@ -19,6 +19,16 @@ nets in the tests. The CLI is live for sessions now.
   entry + drift keyword + HELP.md at that point, not before.
 - Later, on demand only: pattern hits highlighted on the roll, a form
   strip lane, a Facts… sheet (§3.3).
+- The VERDICT half — `src/theory/harmony/*.js` + `tools/harmony.mjs` +
+  tests/theory-harmony.test.mjs (docs/theory-harmony.md): roman numerals,
+  cadences, non-chord tones, modulations, chromatic chords, read ONLY
+  from his `key:` + chord bands. Normal-only by design; not wired; the
+  five Ask tools + the `analysisAvailable()` gate are specified in the
+  doc and ship together or not at all. In a session with Josh the CLI
+  runs only when he asks for that reading.
+- Reviewed 2026-10-04 (docs/reviews/2026-10-04-theory-toolkit-review.md):
+  merged on branch `theory-review`, bugs fixed, tests added — ready to
+  merge to main.
 
 
 ## On-screen keyboard — DONE 2026-10-04 (docs/daw-inventory.md §1a, the
