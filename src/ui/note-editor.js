@@ -415,3 +415,20 @@ export function reflectSelVel() { // slider face shows the selection's velocity
   const sl = document.getElementById("velslider");
   if (sl) { sl.value = v; document.getElementById("velval").textContent = v; }
 }
+
+export function syncDurSeg() {
+  if (typeof document.querySelectorAll !== "function") return; // vm harness
+  const seg = document.getElementById("durseg"); // a custom grid outranks the chips: say so, always
+  // (handoff 2026-09-12: a 4/bar grid left armed from another song read as
+  // "everything moves in quarters" with nothing on screen to say why)
+  seg.title = S.gridDiv ? "custom grid " + S.gridDiv + "/bar rules — pencil taps and moves use its cells (the grid chip to change or turn off)" : "";
+  const gc = document.getElementById("gridchip");
+  if (gc) { gc.style.display = S.gridDiv ? "" : "none"; const l = gc.querySelector(".lbl"); if (l) l.textContent = S.gridDiv || ""; gc.classList.toggle("active", !!S.gridDiv); gc.setAttribute("aria-pressed", String(!!S.gridDiv)); }
+  for (const x of document.querySelectorAll("#durseg button")) {
+    if (x.dataset.grid) continue;
+    const on = !S.gridDiv && (x.dataset.nv ? +x.dataset.nv === S.pencilNV : parseFloat(x.dataset.mod) === S.pencilMod);
+    x.classList.toggle("active", on);
+    x.setAttribute("aria-pressed", String(on));
+    x.style.opacity = S.gridDiv ? "0.45" : "";
+  }
+}

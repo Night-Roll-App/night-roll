@@ -902,3 +902,18 @@ export function flushBackupNow() {
   } catch (err) { logDebug("backup: " + (err && err.message || err)); }
 }
 
+export function cmpBar() {
+  const bar = document.getElementById("cmpbar");
+  if (!bar) return;
+  if (!S.cmp) { bar.style.display = "none"; return; }
+  const d = S.cmp.diff, mine = S.cmp.showing === "mine";
+  const txt = document.getElementById("cmptext");
+  txt.innerHTML = "";
+  const add = (t, cls) => { const sp = document.createElement("span"); if (cls) sp.className = cls; sp.textContent = t; txt.appendChild(sp); };
+  add("⇄ compare · hearing " + (mine ? "YOUR version" : "the SAVED copy") + " · ");
+  add("+" + d.added + " yours only", "gold"); add(" · ");
+  add("−" + d.removed + " saved only", "red"); add(" · ");
+  add("~" + d.changed + " changed" + (d.tracks.some(t => t.ti < 0) ? " · a deleted track is counted, not drawn" : ""));
+  document.getElementById("cmpswap").textContent = mine ? "hear the saved copy" : "hear your version";
+  bar.style.display = "";
+}
